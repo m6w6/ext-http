@@ -560,7 +560,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 			}
 		}
 		smart_str_0(&qstr);
-		
+
 		if (qstr.c) {
 			curl_easy_setopt(ch, CURLOPT_COOKIE, qstr.c);
 		}
@@ -578,7 +578,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		char *header_key, header[1024] = {0};
 		zval **header_val;
 		struct curl_slist *headers = NULL;
-		
+
 		zend_hash_internal_pointer_reset(Z_ARRVAL_P(zoption));
 		while (HASH_KEY_NON_EXISTANT != (key_type = zend_hash_get_current_key_type(Z_ARRVAL_P(zoption)))) {
 			if (key_type == HASH_KEY_IS_STRING) {
@@ -1023,7 +1023,7 @@ PHP_HTTP_API inline zval *_http_get_server_var(const char *key TSRMLS_DC)
 {
 	zval **var;
 	if (SUCCESS == zend_hash_find(
-			Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]),
+			HTTP_SERVER_VARS,
 			(char *) key, strlen(key) + 1, (void **) &var)) {
 		return *var;
 	}
@@ -1046,12 +1046,16 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 
 	if (mode & PHP_OUTPUT_HANDLER_END) {
 		PHP_MD5Final(digest, &HTTP_G(etag_md5));
-		make_digest(etag, digest);
+		
+		/* just do that if desired */
+		if (HTTP_G(etag_started)) {
+            make_digest(etag, digest);
 
-		if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
-			http_send_status(304);
-		} else {
-			http_send_etag(etag, 32);
+            if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
+                http_send_status(304);
+            } else {
+                http_send_etag(etag, 32);
+            }
 		}
 	}
 
@@ -1074,6 +1078,12 @@ PHP_HTTP_API int _http_modified_match(const char *entry, const time_t t TSRMLS_D
 		chr_ptr = 0;
 	}
 	retval = (t <= http_parse_date(modified));
+#if defined(PHP_DEBUG)
+	fprintf(stderr, 
+		"\nComparing Last-Modified %s(%s)==%d:\n\t%d\n\t%d\n\n", 
+		get_active_function_name(TSRMLS_C), entry, retval, t, 
+		http_parse_date(modified));
+#endif
 	efree(modified);
 	return retval;
 }
@@ -1100,19 +1110,28 @@ PHP_HTTP_API int _http_etag_match(const char *entry, const char *etag TSRMLS_DC)
 	} else {
 		result = (NULL != strstr(Z_STRVAL_P(zetag), quoted_etag));
 	}
-
+#if defined(PHP_DEBUG)
+	fprintf(stderr, 
+		"\nComparing E-Tag %s(%s)==%d:\n\t<%s>\n\t<%s>\n\n", 
+		get_active_function_name(TSRMLS_C), entry, result, 
+		Z_STRVAL_P(zetag), quoted_etag);
+#endif
 	efree(quoted_etag);
 	return result;
 }
 /* }}} */
 
 /* {{{ STATUS http_send_last_modified(int) */
-PHP_HTTP_API STATUS _http_send_last_modified(const int t TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_last_modified(const time_t t TSRMLS_DC)
 {
 	char modified[96] = "Last-Modified: ", *date;
 	date = http_date(t);
 	strcat(modified, date);
 	efree(date);
+	
+	/* remember */
+	HTTP_G(lmod) = t;
+	
 	return http_send_header(modified);
 }
 /* }}} */
@@ -1130,6 +1149,13 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag,
 	snprintf(etag_header, header_len, "ETag: \"%s\"", etag);
 	ret = http_send_header(etag_header);
 	efree(etag_header);
+	
+	/* remember */
+	if (HTTP_G(etag)) {
+		efree(HTTP_G(etag));
+	}
+	HTTP_G(etag) = estrdup(etag);
+	
 	return ret;
 }
 /* }}} */
@@ -1319,6 +1345,10 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 				ptr = &end;
 			break;
 
+			case ' ':
+				/* IE - ignore for now */
+			break;
+			
 			case 0:
 			case ',':
 
@@ -1394,7 +1424,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const size_t size, const http_send_mode mode TSRMLS_DC)
 {
 	zval **zrange;
-	long b, e, **begin, **end;
+	long **begin, **end;
 	char range_header[255], multi_header[68] = "Content-Type: multipart/byteranges; boundary=", bound[23], preface[1024];
 	int i, c;
 
@@ -1407,20 +1437,12 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 		zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &begin);
 		zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &end);
 
-		/* so zranges can be freed */
-		b = **begin;
-		e = **end;
-
-		/* free zranges */
-		zval_dtor(zranges);
-		efree(zranges);
-
 		/* send content range header */
-		snprintf(range_header, 255, "Content-Range: bytes %d-%d/%d", b, e, size);
+		snprintf(range_header, 255, "Content-Range: bytes %d-%d/%d", **begin, **end, size);
 		http_send_header(range_header);
 
 		/* send requested chunk */
-		return http_send_chunk(data, b, e + 1, mode);
+		return http_send_chunk(data, **begin, **end + 1, mode);
 	}
 
 	/* multi range */
@@ -1448,15 +1470,10 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 			**begin, **end, size);
 		php_body_write(preface, strlen(preface) TSRMLS_CC);
 		http_send_chunk(data, **begin, **end + 1, mode);
-
 	}
 
-	/* free zranges */
-	zval_dtor(zranges);
-	efree(zranges);
-
 	/* write boundary once more */
-	php_body_write("\n", 1 TSRMLS_CC);
+	php_body_write("\r\n", 1 TSRMLS_CC);
 	php_body_write(bound, strlen(bound) TSRMLS_CC);
 
 	return SUCCESS;
@@ -1467,16 +1484,19 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 	const http_send_mode data_mode TSRMLS_DC)
 {
-	zval *zranges = NULL;
-
+	char *new_etag = NULL;
+	int is_range_request = http_is_range_request();
+	
 	if (!data_ptr) {
 		return FAILURE;
 	}
 
-	/* never ever use the output to compute the ETag if http_send() is used */
+	/* etag handling */
 	if (HTTP_G(etag_started)) {
-		char *new_etag = (char *) emalloc(33);
-
+		new_etag = (char *) emalloc(33);
+		
+		/* never ever use the output to compute the ETag if http_send() is used */
+		HTTP_G(etag_started) = 0;
 		php_end_ob_buffer(0, 0 TSRMLS_CC);
 		if (NULL == http_etag(&new_etag, data_ptr, data_size, data_mode)) {
 			efree(new_etag);
@@ -1484,7 +1504,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 		}
 
 		/* send 304 Not Modified if etag matches */
-		if (http_etag_match("HTTP_IF_NONE_MATCH", new_etag)) {
+		if ((!is_range_request) && http_etag_match("HTTP_IF_NONE_MATCH", new_etag)) {
 			efree(new_etag);
 			return http_send_status(304);
 		}
@@ -1492,34 +1512,54 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 		http_send_etag(new_etag, 32);
 		efree(new_etag);
 	}
+	
+	/* send 304 Not Modified if last-modified matches*/
+    if ((!is_range_request) && http_modified_match("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
+        return http_send_status(304);
+    }
 
-	if (http_is_range_request()) {
+	if (is_range_request) {
 
-		MAKE_STD_ZVAL(zranges);
-		array_init(zranges);
+		/* only send ranges if entity hasn't changed */
+		if (
+			((!zend_hash_exists(HTTP_SERVER_VARS, "HTTP_IF_MATCH", 13)) ||
+			http_etag_match("HTTP_IF_MATCH", HTTP_G(etag)))
+			&&
+			((!zend_hash_exists(HTTP_SERVER_VARS, "HTTP_IF_UNMODIFIED_SINCE", 25)) ||
+			http_modified_match("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(lmod)))
+		) {
+			
+			STATUS result = FAILURE;
+			zval *zranges = NULL;
+			MAKE_STD_ZVAL(zranges);
+			array_init(zranges);
 
-		switch (http_get_request_ranges(zranges, data_size))
-		{
-			case RANGE_NO:
-				zval_dtor(zranges);
-				efree(zranges);
-				/* go ahead and send all */
-			break;
+			switch (http_get_request_ranges(zranges, data_size))
+			{
+				case RANGE_NO:
+					zval_dtor(zranges);
+					efree(zranges);
+					/* go ahead and send all */
+				break;
 
-			case RANGE_OK:
-				return http_send_ranges(zranges, data_ptr, data_size, data_mode);
-			break;
+				case RANGE_OK:
+					result = http_send_ranges(zranges, data_ptr, data_size, data_mode);
+					zval_dtor(zranges);
+					efree(zranges);
+					return result;
+				break;
 
-			case RANGE_ERR:
-				zval_dtor(zranges);
-				efree(zranges);
-				http_send_status(416);
-				return FAILURE;
-			break;
+				case RANGE_ERR:
+					zval_dtor(zranges);
+					efree(zranges);
+					http_send_status(416);
+					return FAILURE;
+				break;
 
-			default:
-				return FAILURE;
-			break;
+				default:
+					return FAILURE;
+				break;
+			}
 		}
 	}
 	/* send all */
@@ -1537,7 +1577,7 @@ PHP_HTTP_API STATUS _http_send_data(const zval *zdata TSRMLS_DC)
 		return FAILURE;
 	}
 
-	return http_send((void *) zdata, Z_STRLEN_P(zdata), SEND_DATA);
+	return http_send(zdata, Z_STRLEN_P(zdata), SEND_DATA);
 }
 /* }}} */
 
@@ -1548,7 +1588,7 @@ PHP_HTTP_API STATUS _http_send_stream(const php_stream *file TSRMLS_DC)
 		return FAILURE;
 	}
 
-	return http_send((void *) file, HTTP_G(ssb).sb.st_size, SEND_RSRC);
+	return http_send(file, HTTP_G(ssb).sb.st_size, SEND_RSRC);
 }
 /* }}} */
 

@@ -48,6 +48,9 @@ typedef enum {
 /* buffer size */
 #define HTTP_BUF_SIZE 2097152
 
+/* server vars shorthand */
+#define HTTP_SERVER_VARS Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER])
+
 /* {{{ HAVE_CURL */
 #if defined(HAVE_CURL) && HAVE_CURL
 
@@ -108,7 +111,7 @@ PHP_HTTP_API int _http_modified_match(const char *entry, const time_t t TSRMLS_D
 PHP_HTTP_API int _http_etag_match(const char *entry, const char *etag TSRMLS_DC);
 
 #define http_send_last_modified(t) _http_send_last_modified((t) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_last_modified(const int t TSRMLS_DC);
+PHP_HTTP_API STATUS _http_send_last_modified(const time_t t TSRMLS_DC);
 
 #define http_send_etag(e, l) _http_send_etag((e), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_etag(const char *etag, const int etag_len TSRMLS_DC);
@@ -181,3 +184,4 @@ PHP_HTTP_API void _http_auth_header(const char *type, const char *realm TSRMLS_D
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+

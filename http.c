@@ -347,12 +347,12 @@ PHP_FUNCTION(http_cache_last_modified)
 
 	/* 0 or omitted */
 	if (!last_modified) {
-		/* does the client have? */
+		/* does the client have? (att: caching "forever") */
 		if (zlm = http_get_server_var("HTTP_IF_MODIFIED_SINCE")) {
 			last_modified = send_modified = http_parse_date(Z_STRVAL_P(zlm));
-		/* use current time */
+		/* send current time */
 		} else {
-			last_modified = send_modified = t;
+			send_modified = t;
 		}
 	/* negative value is supposed to be expiration time */
 	} else if (last_modified < 0) {
@@ -397,8 +397,7 @@ PHP_FUNCTION(http_cache_etag)
 		RETURN_FALSE;
 	}
 
-	/* send remaining data to nirvana */
-	http_send_header("Connection: close");
+	php_end_ob_buffers(0 TSRMLS_CC);
 	http_send_header("Cache-Control: private, must-revalidate, max-age=0");
 
 	/* if no etag is given and we didn't already
@@ -434,6 +433,8 @@ PHP_FUNCTION(http_cache_etag)
  * ("301 Moved Permanently") or a temporary ("302 Found") redirection
  * status code.
  *
+ * To be RFC compliant, "Redirecting to <a>URI</a>." will be displayed,
+ * if the client doesn't redirect immediatly.
  */
 PHP_FUNCTION(http_redirect)
 {
@@ -441,9 +442,9 @@ PHP_FUNCTION(http_redirect)
 	zend_bool session = 0, permanent = 0;
 	zval *params = NULL;
 	smart_str qstr = {0};
-	char *url, *URI, LOC[HTTP_URI_MAXLEN + 9];
+	char *url, *URI, LOC[HTTP_URI_MAXLEN + 9], RED[HTTP_URI_MAXLEN * 2 + 34];
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sa!bb", &url, &url_len, &params, &session, &permanent) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sa!/bb", &url, &url_len, &params, &session, &permanent) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
@@ -473,13 +474,19 @@ PHP_FUNCTION(http_redirect)
 	URI = http_absolute_uri(url, NULL);
 	if (qstr.c) {
 		snprintf(LOC, HTTP_URI_MAXLEN + strlen("Location: "), "Location: %s?%s", URI, qstr.c);
+		sprintf(RED, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, qstr.c, URI, qstr.c);
 		efree(qstr.c);
 	} else {
 		snprintf(LOC, HTTP_URI_MAXLEN + strlen("Location: "), "Location: %s", URI);
+		sprintf(RED, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
 	}
 	efree(URI);
-
-	RETVAL_BOOL((SUCCESS == http_send_header(LOC)) && (SUCCESS == http_send_status((permanent ? 301 : 302))));
+	
+	if ((SUCCESS == http_send_header(LOC)) && (SUCCESS == http_send_status((permanent ? 301 : 302)))) {
+		php_body_write(RED, strlen(RED) TSRMLS_CC);
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
 }
 /* }}} */
 
@@ -933,6 +940,8 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 {
 	http_globals->etag_started = 0;
 	http_globals->ctype = NULL;
+	http_globals->etag  = NULL;
+	http_globals->lmod  = 0;
 #if defined(HAVE_CURL) && HAVE_CURL
 	http_globals->curlbuf.body.data = NULL;
 	http_globals->curlbuf.body.used = 0;
@@ -962,6 +971,9 @@ PHP_RSHUTDOWN_FUNCTION(http)
 {
 	if (HTTP_G(ctype)) {
 		efree(HTTP_G(ctype));
+	}
+	if (HTTP_G(etag)) {
+		efree(HTTP_G(etag));
 	}
 #if defined(HAVE_CURL) && HAVE_CURL
 	if (HTTP_G(curlbuf).body.data) {
@@ -1000,3 +1012,4 @@ PHP_MINFO_FUNCTION(http)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+

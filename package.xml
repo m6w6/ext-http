@@ -5,15 +5,15 @@
   <summary>Extended HTTP support</summary>
   <description>
 <![CDATA[
-Currently implemented features:
-===============================
-
 * Building absolute URIs
 * RCF compliant HTTP redirects
-* Caching by "Last-Modified" and/or ETag (with 'on the fly' option)
+* RFC compliant HTTP date handling
+* Caching by "Last-Modified" and/or ETag
+  (with 'on the fly' option for ETag generation from buffered output)
 * Sending data/files/streams with (multiple) ranges support
 * Negotiating user preferred language/charset
 * Convenient request functions to HEAD/GET/POST if libcurl is available
+* HTTP auth hooks (Basic)
 ]]>
   </description>
   <license>PHP License 3.0</license>
@@ -33,7 +33,11 @@ Currently implemented features:
     <state>alpha</state>
     <notes><![CDATA[
  * ctype is now mandatory
- * replaced calls to php_parse_date() to http_parse_date() (original by libcurls Curl_parsedate())
+ * implemented additional third/fourth informational parameter to http_(get|head|post*)
+   which will be filled with an associative array containing request/response information
+ * removed http_accept_ranges()
+ * output "Redirecting to <a>URI</a>." in http_redirect() for full RFC compliance
+ * fixed http_cache_last_modified(): if parameter was omitted, would have always sent 304 Not Modified
 ]]>
     </notes>
   </release>

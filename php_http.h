@@ -70,6 +70,8 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	PHP_MD5_CTX etag_md5;
 	php_stream_statbuf ssb;
 	char *ctype;
+	char *etag;
+	time_t lmod;
 #if defined(HAVE_CURL) && HAVE_CURL
 	struct {
 		struct {
@@ -96,3 +98,4 @@ ZEND_END_MODULE_GLOBALS(http)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+
