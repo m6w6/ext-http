@@ -1,5 +1,2 @@
-CREDITS
-=======
-Michael Wallner, <mike@php.net>
-Sara Golemon, <pollita@php.net> php_url_encode_hash(), http_build_query()
-Daniel Stenberg, <daniel@haxx.se>, et al. http_parse_date()
+HTTP
+Michael Wallner, Sara Golemon, Daniel Stenberg et al.
