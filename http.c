@@ -384,7 +384,7 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 	http_globals->etag  = NULL;
 	http_globals->lmod  = 0;
 #ifdef HTTP_HAVE_CURL
-	//phpstr_init_ex(&http_globals->curlbuf, HTTP_CURLBUF_SIZE, 1);
+	phpstr_init_ex(&http_globals->curlbuf, HTTP_CURLBUF_SIZE, 0);
 	zend_llist_init(&http_globals->to_free, sizeof(char *), free_to_free, 0);
 #endif
 	http_globals->allowed_methods = NULL;
