@@ -19,13 +19,13 @@
 #define PHP_HTTP_API_H
 
 #ifdef PHP_WIN32
-#define PHP_HTTP_API __declspec(dllexport)
+#	define PHP_HTTP_API __declspec(dllexport)
 #else
-#define PHP_HTTP_API
+#	define PHP_HTTP_API
 #endif
 
 #ifndef ZEND_ENGINE_2
-#include "php_http_build_query.h"
+#	include "php_http_build_query.h"
 #endif
 
 /* make functions that return SUCCESS|FAILURE more obvious */

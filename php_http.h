@@ -28,14 +28,14 @@ extern zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
 
 #ifdef ZTS
-#include "TSRM.h"
-#define HTTP_G(v) TSRMG(http_globals_id, zend_http_globals *, v)
+#	include "TSRM.h"
+#	define HTTP_G(v) TSRMG(http_globals_id, zend_http_globals *, v)
 #else
-#define HTTP_G(v) (http_globals.v)
+#	define HTTP_G(v) (http_globals.v)
 #endif
 
 #ifndef ZEND_ENGINE_2
-#include "php_http_build_query.h"
+#	include "php_http_build_query.h"
 #endif
 
 PHP_FUNCTION(http_date);

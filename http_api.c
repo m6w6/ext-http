@@ -18,7 +18,7 @@
 #define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#	include "config.h"
 #endif
 
 #include <ctype.h>
@@ -37,9 +37,9 @@
 #include "SAPI.h"
 
 #ifdef ZEND_ENGINE_2
-#include "ext/standard/php_http.h"
+#	include "ext/standard/php_http.h"
 #else
-#include "http_build_query.c"
+	#include "http_build_query.c"
 #endif
 
 #include "php_http.h"
@@ -47,13 +47,14 @@
 
 #ifdef HTTP_HAVE_CURL
 
-#ifdef PHP_WIN32
-#include <winsock2.h>
-#include <sys/types.h>
-#endif
+#	ifdef PHP_WIN32
+#		include <winsock2.h>
+#		include <sys/types.h>
+#	endif
 
-#include <curl/curl.h>
-#include <curl/easy.h>
+#	include <curl/curl.h>
+#	include <curl/easy.h>
+
 #endif
 
 
@@ -1428,7 +1429,7 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 	/* single range */
 	if ((c = zend_hash_num_elements(Z_ARRVAL_P(zranges))) == 1) {
 		char range_header[256] = {0};
-		
+
 		zend_hash_index_find(Z_ARRVAL_P(zranges), 0, (void **) &zrange);
 		zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &begin);
 		zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &end);
@@ -1444,9 +1445,9 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 	/* multi range */
 	else {
 		int i;
-		char bound[23] = {0}, preface[1024] = {0}, 
+		char bound[23] = {0}, preface[1024] = {0},
 			multi_header[68] = "Content-Type: multipart/byteranges; boundary=";
-		
+
 		snprintf(bound, 22, "--%d%0.9f", time(NULL), php_combined_lcg(TSRMLS_C));
 		strncat(multi_header, bound + 2, 21);
 		http_send_header(multi_header);
@@ -1462,22 +1463,22 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 					SUCCESS != zend_hash_index_find(
 						Z_ARRVAL_PP(zrange), 1, (void **) &end)) {
 				break;
-			}	
+			}
 
 			snprintf(preface, 1023,
-				HTTP_CRLF "%s" 
+				HTTP_CRLF "%s"
 				HTTP_CRLF "Content-Type: %s"
 				HTTP_CRLF "Content-Range: bytes %ld-%ld/%ld"
-				HTTP_CRLF 
+				HTTP_CRLF
 				HTTP_CRLF,
-				
-				bound, 
-				HTTP_G(ctype) ? HTTP_G(ctype) : "application/x-octetstream", 
-				**begin, 
-				**end, 
+
+				bound,
+				HTTP_G(ctype) ? HTTP_G(ctype) : "application/x-octetstream",
+				**begin,
+				**end,
 				size
 			);
-			
+
 			php_body_write(preface, strlen(preface) TSRMLS_CC);
 			http_send_chunk(data, **begin, **end + 1, mode);
 		}

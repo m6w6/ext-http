@@ -18,7 +18,7 @@
 #define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#	include "config.h"
 #endif
 
 #include "php.h"
@@ -32,27 +32,20 @@
 #include "php_http_api.h"
 
 #ifdef ZEND_ENGINE_2
-#include "ext/standard/php_http.h"
+#	include "ext/standard/php_http.h"
 #endif
 
 #ifdef HTTP_HAVE_CURL
 
-#ifdef PHP_WIN32
-#include <winsock2.h>
-#include <sys/types.h>
-#endif
+#	ifdef PHP_WIN32
+#		include <winsock2.h>
+#		include <sys/types.h>
+#	endif
 
-#include <curl/curl.h>
-#endif
-
-ZEND_DECLARE_MODULE_GLOBALS(http)
-
-#ifdef COMPILE_DL_HTTP
-ZEND_GET_MODULE(http)
-#endif
+#	include <curl/curl.h>
 
 /* {{{ ARG_INFO */
-#ifdef ZEND_BEGIN_ARG_INFO
+#	ifdef ZEND_BEGIN_ARG_INFO
 ZEND_BEGIN_ARG_INFO(http_request_info_ref_3, 0)
 	ZEND_ARG_PASS_INFO(0)
 	ZEND_ARG_PASS_INFO(0)
@@ -65,11 +58,20 @@ ZEND_BEGIN_ARG_INFO(http_request_info_ref_4, 0)
 	ZEND_ARG_PASS_INFO(0)
 	ZEND_ARG_PASS_INFO(1)
 ZEND_END_ARG_INFO();
-#else
+#	else
 static unsigned char http_request_info_ref_3[] = {3, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
 static unsigned char http_request_info_ref_4[] = {4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
+#	endif
+/* }}} ARG_INFO */
+
+#endif /* HTTP_HAVE_CURL */
+
+ZEND_DECLARE_MODULE_GLOBALS(http)
+
+#ifdef COMPILE_DL_HTTP
+ZEND_GET_MODULE(http)
 #endif
-/* }}}*/
+
 
 /* {{{ http_functions[] */
 function_entry http_functions[] = {
