@@ -42,9 +42,7 @@
 #include "php_http_curl_api.h"
 #include "php_http_std_defs.h"
 
-#ifdef ZEND_ENGINE_2
-#	include "ext/standard/php_http.h"
-#endif
+#include "phpstr/phpstr.h"
 
 #ifdef HTTP_HAVE_CURL
 /* {{{ ARG_INFO */
@@ -77,6 +75,7 @@ ZEND_GET_MODULE(http)
 
 /* {{{ http_functions[] */
 function_entry http_functions[] = {
+	PHP_FE(http_test, NULL)
 	PHP_FE(http_date, NULL)
 	PHP_FE(http_absolute_uri, NULL)
 	PHP_FE(http_negotiate_language, NULL)
@@ -116,49 +115,49 @@ function_entry http_functions[] = {
 
 #ifdef ZEND_ENGINE_2
 
-/* {{{ HTTPi */
+/* {{{ HttpUtil */
 
-zend_class_entry *httpi_ce;
+zend_class_entry *http_util_ce;
 
-#define HTTPi_ME(me, al, ai) ZEND_FENTRY(me, ZEND_FN(al), ai, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+#define HTTP_UTIL_ME(me, al, ai) ZEND_FENTRY(me, ZEND_FN(al), ai, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
 
-zend_function_entry httpi_class_methods[] = {
-	HTTPi_ME(date, http_date, NULL)
-	HTTPi_ME(absoluteURI, http_absolute_uri, NULL)
-	HTTPi_ME(negotiateLanguage, http_negotiate_language, NULL)
-	HTTPi_ME(negotiateCharset, http_negotiate_charset, NULL)
-	HTTPi_ME(redirect, http_redirect, NULL)
-	HTTPi_ME(sendStatus, http_send_status, NULL)
-	HTTPi_ME(sendLastModified, http_send_last_modified, NULL)
-	HTTPi_ME(sendContentType, http_send_content_type, NULL)
-	HTTPi_ME(sendContentDisposition, http_send_content_disposition, NULL)
-	HTTPi_ME(matchModified, http_match_modified, NULL)
-	HTTPi_ME(matchEtag, http_match_etag, NULL)
-	HTTPi_ME(cacheLastModified, http_cache_last_modified, NULL)
-	HTTPi_ME(cacheEtag, http_cache_etag, NULL)
-	HTTPi_ME(chunkedDecode, http_chunked_decode, NULL)
-	HTTPi_ME(splitResponse, http_split_response, NULL)
-	HTTPi_ME(parseHeaders, http_parse_headers, NULL)
-	HTTPi_ME(getRequestHeaders, http_get_request_headers, NULL)
+zend_function_entry http_util_class_methods[] = {
+	HTTP_UTIL_ME(date, http_date, NULL)
+	HTTP_UTIL_ME(absoluteURI, http_absolute_uri, NULL)
+	HTTP_UTIL_ME(negotiateLanguage, http_negotiate_language, NULL)
+	HTTP_UTIL_ME(negotiateCharset, http_negotiate_charset, NULL)
+	HTTP_UTIL_ME(redirect, http_redirect, NULL)
+	HTTP_UTIL_ME(sendStatus, http_send_status, NULL)
+	HTTP_UTIL_ME(sendLastModified, http_send_last_modified, NULL)
+	HTTP_UTIL_ME(sendContentType, http_send_content_type, NULL)
+	HTTP_UTIL_ME(sendContentDisposition, http_send_content_disposition, NULL)
+	HTTP_UTIL_ME(matchModified, http_match_modified, NULL)
+	HTTP_UTIL_ME(matchEtag, http_match_etag, NULL)
+	HTTP_UTIL_ME(cacheLastModified, http_cache_last_modified, NULL)
+	HTTP_UTIL_ME(cacheEtag, http_cache_etag, NULL)
+	HTTP_UTIL_ME(chunkedDecode, http_chunked_decode, NULL)
+	HTTP_UTIL_ME(splitResponse, http_split_response, NULL)
+	HTTP_UTIL_ME(parseHeaders, http_parse_headers, NULL)
+	HTTP_UTIL_ME(getRequestHeaders, http_get_request_headers, NULL)
 #ifdef HTTP_HAVE_CURL
-	HTTPi_ME(get, http_get, http_request_info_ref_3)
-	HTTPi_ME(head, http_head, http_request_info_ref_3)
-	HTTPi_ME(postData, http_post_data, http_request_info_ref_4)
-	HTTPi_ME(postArray, http_post_array, http_request_info_ref_4)
+	HTTP_UTIL_ME(get, http_get, http_request_info_ref_3)
+	HTTP_UTIL_ME(head, http_head, http_request_info_ref_3)
+	HTTP_UTIL_ME(postData, http_post_data, http_request_info_ref_4)
+	HTTP_UTIL_ME(postArray, http_post_array, http_request_info_ref_4)
 #endif
-	HTTPi_ME(authBasic, http_auth_basic, NULL)
-	HTTPi_ME(authBasicCallback, http_auth_basic_cb, NULL)
+	HTTP_UTIL_ME(authBasic, http_auth_basic, NULL)
+	HTTP_UTIL_ME(authBasicCallback, http_auth_basic_cb, NULL)
 	{NULL, NULL, NULL}
 };
-/* }}} HTTPi */
+/* }}} HttpUtil */
 
-/* {{{ HTTPi_Response */
+/* {{{ HttpResponse */
 
-zend_class_entry *httpi_response_ce;
-static zend_object_handlers httpi_response_object_handlers;
+zend_class_entry *http_response_ce;
+static zend_object_handlers http_response_object_handlers;
 
-#define httpi_response_declare_default_properties(ce) _httpi_response_declare_default_properties(ce TSRMLS_CC)
-static inline void _httpi_response_declare_default_properties(zend_class_entry *ce TSRMLS_DC)
+#define http_response_declare_default_properties(ce) _http_response_declare_default_properties(ce TSRMLS_CC)
+static inline void _http_response_declare_default_properties(zend_class_entry *ce TSRMLS_DC)
 {
 	DCL_PROP(PROTECTED, string, contentType, "application/x-octetstream");
 	DCL_PROP(PROTECTED, string, eTag, "");
@@ -176,10 +175,10 @@ static inline void _httpi_response_declare_default_properties(zend_class_entry *
 	DCL_PROP(PRIVATE, long, send_mode, -1);
 }
 
-#define httpi_response_destroy_object _httpi_response_destroy_object
-void _httpi_response_destroy_object(void *object, zend_object_handle handle TSRMLS_DC)
+#define http_response_destroy_object _http_response_destroy_object
+void _http_response_destroy_object(void *object, zend_object_handle handle TSRMLS_DC)
 {
-	httpi_response_object *o = object;
+	http_response_object *o = object;
 	if (OBJ_PROP(o)) {
 		zend_hash_destroy(OBJ_PROP(o));
 		FREE_HASHTABLE(OBJ_PROP(o));
@@ -187,70 +186,70 @@ void _httpi_response_destroy_object(void *object, zend_object_handle handle TSRM
 	efree(o);
 }
 
-#define httpi_response_new_object _httpi_response_new_object
-zend_object_value _httpi_response_new_object(zend_class_entry *ce TSRMLS_DC)
+#define http_response_new_object _http_response_new_object
+zend_object_value _http_response_new_object(zend_class_entry *ce TSRMLS_DC)
 {
 	zend_object_value ov;
-	httpi_response_object *o;
+	http_response_object *o;
 
-	o = ecalloc(1, sizeof(httpi_response_object));
+	o = ecalloc(1, sizeof(http_response_object));
 	o->zo.ce = ce;
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 
-	ov.handle = zend_objects_store_put(o, httpi_response_destroy_object, NULL, NULL TSRMLS_CC);
-	ov.handlers = &httpi_response_object_handlers;
+	ov.handle = zend_objects_store_put(o, http_response_destroy_object, NULL, NULL TSRMLS_CC);
+	ov.handlers = &http_response_object_handlers;
 
 	return ov;
 }
 
-zend_function_entry httpi_response_class_methods[] = {
-	PHP_ME(HTTPi_Response, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-/*	PHP_ME(HTTPi_Response, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
+zend_function_entry http_response_class_methods[] = {
+	PHP_ME(HttpResponse, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+/*	PHP_ME(HttpResponse, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
 */
-	PHP_ME(HTTPi_Response, setETag, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Response, getETag, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, setETag, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getETag, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, setContentDisposition, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Response, getContentDisposition, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, setContentDisposition, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getContentDisposition, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, setContentType, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Response, getContentType, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, setContentType, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getContentType, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, setCache, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Response, getCache, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, setCache, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getCache, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, setCacheControl, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Response, getCacheControl, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, setCacheControl, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getCacheControl, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, setGzip, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Response, getGzip, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, setGzip, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getGzip, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, setData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Response, getData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, setData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getData, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, setFile, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Response, getFile, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, setFile, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getFile, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, setStream, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Response, getStream, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, setStream, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getStream, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, send, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, send, NULL, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };
 /* }}} */
 
-/* {{{ HTTPi_Request */
+/* {{{ HttpRequest */
 #ifdef HTTP_HAVE_CURL
 
-zend_class_entry *httpi_request_ce;
-static zend_object_handlers httpi_request_object_handlers;
+zend_class_entry *http_request_ce;
+static zend_object_handlers http_request_object_handlers;
 
-#define httpi_request_declare_default_properties(ce) _httpi_request_declare_default_properties(ce TSRMLS_CC)
-static inline void _httpi_request_declare_default_properties(zend_class_entry *ce TSRMLS_DC)
+#define http_request_declare_default_properties(ce) _http_request_declare_default_properties(ce TSRMLS_CC)
+static inline void _http_request_declare_default_properties(zend_class_entry *ce TSRMLS_DC)
 {
 	DCL_PROP_N(PROTECTED, options);
 	DCL_PROP_N(PROTECTED, responseInfo);
@@ -266,10 +265,10 @@ static inline void _httpi_request_declare_default_properties(zend_class_entry *c
 	DCL_PROP(PROTECTED, string, postData, "");
 }
 
-#define httpi_request_free_object _httpi_request_free_object
-void _httpi_request_free_object(zend_object /* void */ *object TSRMLS_DC)
+#define http_request_free_object _http_request_free_object
+void _http_request_free_object(zend_object /* void */ *object TSRMLS_DC)
 {
-	httpi_request_object *o = (httpi_request_object *) object;
+	http_request_object *o = (http_request_object *) object;
 
 	if (OBJ_PROP(o)) {
 		zend_hash_destroy(OBJ_PROP(o));
@@ -282,13 +281,13 @@ void _httpi_request_free_object(zend_object /* void */ *object TSRMLS_DC)
 	efree(o);
 }
 
-#define httpi_request_new_object _httpi_request_new_object
-zend_object_value _httpi_request_new_object(zend_class_entry *ce TSRMLS_DC)
+#define http_request_new_object _http_request_new_object
+zend_object_value _http_request_new_object(zend_class_entry *ce TSRMLS_DC)
 {
 	zend_object_value ov;
-	httpi_request_object *o;
+	http_request_object *o;
 
-	o = ecalloc(1, sizeof(httpi_request_object));
+	o = ecalloc(1, sizeof(http_request_object));
 	o->zo.ce = ce;
 	o->ch = curl_easy_init();
 
@@ -296,53 +295,53 @@ zend_object_value _httpi_request_new_object(zend_class_entry *ce TSRMLS_DC)
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 
-	ov.handle = zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, httpi_request_free_object, NULL TSRMLS_CC);
-	ov.handlers = &httpi_request_object_handlers;
+	ov.handle = zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, http_request_free_object, NULL TSRMLS_CC);
+	ov.handlers = &http_request_object_handlers;
 
 	return ov;
 }
 
-zend_function_entry httpi_request_class_methods[] = {
-	PHP_ME(HTTPi_Request, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(HTTPi_Request, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
+zend_function_entry http_request_class_methods[] = {
+	PHP_ME(HttpRequest, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpRequest, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
 
-	PHP_ME(HTTPi_Request, setOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, unsetOptions, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, setOptions, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getOptions, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, unsetOptions, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Request, addHeader, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, addCookie, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, addHeader, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, addCookie, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Request, setMethod, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getMethod, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, setMethod, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getMethod, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Request, setURL, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getURL, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, setURL, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getURL, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Request, setContentType, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getContentType, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, setContentType, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getContentType, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Request, setQueryData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getQueryData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, addQueryData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, unsetQueryData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, setQueryData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getQueryData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, addQueryData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, unsetQueryData, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Request, setPostData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getPostData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, addPostData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, unsetPostData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, setPostData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getPostData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, addPostData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, unsetPostData, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Request, addPostFile, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getPostFiles, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, unsetPostFiles, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, addPostFile, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getPostFiles, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, unsetPostFiles, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Request, send, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, send, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Request, getResponseData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getResponseHeader, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getResponseCode, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getResponseBody, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getResponseInfo, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getResponseData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getResponseHeader, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getResponseCode, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getResponseBody, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getResponseInfo, NULL, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };
@@ -365,7 +364,7 @@ zend_module_entry http_module_entry = {
 	PHP_RSHUTDOWN(http),
 	PHP_MINFO(http),
 #if ZEND_MODULE_API_NO >= 20010901
-	PHP_EXT_HTTP_VERSION,
+	HTTP_PEXT_VERSION,
 #endif
 	STANDARD_MODULE_PROPERTIES
 };
@@ -385,10 +384,7 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 	http_globals->etag  = NULL;
 	http_globals->lmod  = 0;
 #ifdef HTTP_HAVE_CURL
-	http_globals->curlbuf.data = NULL;
-	http_globals->curlbuf.used = 0;
-	http_globals->curlbuf.free = 0;
-	http_globals->curlbuf.size = 0;
+	//phpstr_init_ex(&http_globals->curlbuf, HTTP_CURLBUF_SIZE, 1);
 	zend_llist_init(&http_globals->to_free, sizeof(char *), free_to_free, 0);
 #endif
 	http_globals->allowed_methods = NULL;
@@ -452,8 +448,8 @@ PHP_MINIT_FUNCTION(http)
 
 #ifdef HTTP_HAVE_CURL
 #	ifdef HTTP_CURL_USE_ZEND_MM
-	if (CURLE_OK != curl_global_init_mem(CURL_GLOBAL_ALL, 
-			http_curl_malloc, 
+	if (CURLE_OK != curl_global_init_mem(CURL_GLOBAL_ALL,
+			http_curl_malloc,
 			http_curl_free,
 			http_curl_realloc,
 			http_curl_strdup,
@@ -461,6 +457,7 @@ PHP_MINIT_FUNCTION(http)
 		return FAILURE;
 	}
 #	endif /* HTTP_CURL_USE_ZEND_MM */
+
 #	if LIBCURL_VERSION_NUM >= 0x070a05
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST, CONST_CS | CONST_PERSISTENT);
@@ -469,10 +466,11 @@ PHP_MINIT_FUNCTION(http)
 #endif /* HTTP_HAVE_CURL */
 
 #ifdef ZEND_ENGINE_2
-	HTTP_REGISTER_CLASS(HTTPi, httpi, NULL, ZEND_ACC_FINAL_CLASS);
-	HTTP_REGISTER_CLASS_EX(HTTPi_Response, httpi_response, NULL, 0);
+	HTTP_REGISTER_CLASS(HttpUtil, http_util, NULL, ZEND_ACC_FINAL_CLASS);
+	HTTP_REGISTER_CLASS_EX(HttpResponse, http_response, NULL, 0);
 #	ifdef HTTP_HAVE_CURL
-	HTTP_REGISTER_CLASS_EX(HTTPi_Request, httpi_request, NULL, 0);
+	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request, NULL, 0);
+
 	REGISTER_LONG_CONSTANT("HTTP_GET", HTTP_GET, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_HEAD", HTTP_HEAD, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_POST", HTTP_POST, CONST_CS | CONST_PERSISTENT);
@@ -487,6 +485,7 @@ PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
+	//phpstr_free(&HTTP_G(curlbuf));
 	curl_global_cleanup();
 #endif
 	return SUCCESS;
@@ -519,12 +518,7 @@ PHP_RSHUTDOWN_FUNCTION(http)
 	}
 
 #ifdef HTTP_HAVE_CURL
-	if (HTTP_G(curlbuf).data) {
-		efree(HTTP_G(curlbuf).data);
-		HTTP_G(curlbuf).data = NULL;
-		HTTP_G(curlbuf).used = 0;
-		HTTP_G(curlbuf).free = 0;
-	}
+	//phpstr_free(&HTTP_G(curlbuf));
 #endif
 
 	return SUCCESS;
@@ -553,7 +547,7 @@ PHP_MINFO_FUNCTION(http)
 #endif
 
 	char full_version_string[1024] = {0};
-	snprintf(full_version_string, 1023, "%s (%s)", PHP_EXT_HTTP_VERSION, HTTP_CURL_VERSION);
+	snprintf(full_version_string, 1023, "%s (%s)", HTTP_PEXT_VERSION, HTTP_CURL_VERSION);
 
 	php_info_print_table_start();
 	php_info_print_table_row(2, "Extended HTTP support", "enabled");
@@ -562,9 +556,9 @@ PHP_MINFO_FUNCTION(http)
 
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Functionality",            "Availability");
-	php_info_print_table_row(2,    "Miscellaneous Utilities:", HTTP_FUNC_AVAIL("HTTPi"));
-	php_info_print_table_row(2,    "Extended HTTP Responses:", HTTP_FUNC_AVAIL("HTTPi_Response"));
-	php_info_print_table_row(2,    "Extended HTTP Requests:",  HTTP_CURL_AVAIL("HTTPi_Request"));
+	php_info_print_table_row(2,    "Miscellaneous Utilities:", HTTP_FUNC_AVAIL("HttpUtil"));
+	php_info_print_table_row(2,    "Extended HTTP Responses:", HTTP_FUNC_AVAIL("HttpResponse"));
+	php_info_print_table_row(2,    "Extended HTTP Requests:",  HTTP_CURL_AVAIL("HttpRequest"));
 	php_info_print_table_end();
 
 	DISPLAY_INI_ENTRIES();

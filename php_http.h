@@ -18,7 +18,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "0.7.0-dev"
+#define HTTP_PEXT_VERSION "0.7.0-dev"
 
 /* make compile on Win32 */
 #include "php_streams.h"
@@ -38,9 +38,11 @@ extern zend_module_entry http_module_entry;
 
 typedef struct {
 	zend_object	zo;
-} httpi_response_object;
+} http_response_object;
 
 #ifdef HTTP_HAVE_CURL
+
+#include "phpstr/phpstr.h"
 
 #ifdef	PHP_WIN32
 #	include <winsock2.h>
@@ -51,7 +53,7 @@ typedef struct {
 typedef struct {
 	zend_object zo;
 	CURL *ch;
-} httpi_request_object;
+} http_request_object;
 
 typedef enum {
 	HTTP_GET,
@@ -61,93 +63,93 @@ typedef enum {
 
 #endif /* HTTP_HAVE _CURL */
 
-PHP_METHOD(HTTPi, date);
-PHP_METHOD(HTTPi, absoluteURI);
-PHP_METHOD(HTTPi, negotiateLanguage);
-PHP_METHOD(HTTPi, negotiateCharset);
-PHP_METHOD(HTTPi, redirect);
-PHP_METHOD(HTTPi, sendStatus);
-PHP_METHOD(HTTPi, sendLastModified);
-PHP_METHOD(HTTPi, sendContentType);
-PHP_METHOD(HTTPi, sendContentDisposition);
-PHP_METHOD(HTTPi, matchModified);
-PHP_METHOD(HTTPi, matchEtag);
-PHP_METHOD(HTTPi, cacheLastModified);
-PHP_METHOD(HTTPi, cacheEtag);
-PHP_METHOD(HTTPi, chunkedDecode);
-PHP_METHOD(HTTPi, splitResponse);
-PHP_METHOD(HTTPi, parseHeaders);
-PHP_METHOD(HTTPi, getRequestHeaders);
+PHP_METHOD(HttpUtil, date);
+PHP_METHOD(HttpUtil, absoluteURI);
+PHP_METHOD(HttpUtil, negotiateLanguage);
+PHP_METHOD(HttpUtil, negotiateCharset);
+PHP_METHOD(HttpUtil, redirect);
+PHP_METHOD(HttpUtil, sendStatus);
+PHP_METHOD(HttpUtil, sendLastModified);
+PHP_METHOD(HttpUtil, sendContentType);
+PHP_METHOD(HttpUtil, sendContentDisposition);
+PHP_METHOD(HttpUtil, matchModified);
+PHP_METHOD(HttpUtil, matchEtag);
+PHP_METHOD(HttpUtil, cacheLastModified);
+PHP_METHOD(HttpUtil, cacheEtag);
+PHP_METHOD(HttpUtil, chunkedDecode);
+PHP_METHOD(HttpUtil, splitResponse);
+PHP_METHOD(HttpUtil, parseHeaders);
+PHP_METHOD(HttpUtil, getRequestHeaders);
 #ifdef HTTP_HAVE_CURL
-PHP_METHOD(HTTPi, get);
-PHP_METHOD(HTTPi, head);
-PHP_METHOD(HTTPi, postData);
-PHP_METHOD(HTTPi, postArray);
+PHP_METHOD(HttpUtil, get);
+PHP_METHOD(HttpUtil, head);
+PHP_METHOD(HttpUtil, postData);
+PHP_METHOD(HttpUtil, postArray);
 #endif /* HTTP_HAVE_CURL */
-PHP_METHOD(HTTPi, authBasic);
-PHP_METHOD(HTTPi, authBasicCallback);
+PHP_METHOD(HttpUtil, authBasic);
+PHP_METHOD(HttpUtil, authBasicCallback);
 
 
-PHP_METHOD(HTTPi_Response, __construct);/*
-PHP_METHOD(HTTPi_Response, __destruct);*/
-PHP_METHOD(HTTPi_Response, setETag);
-PHP_METHOD(HTTPi_Response, getETag);
-PHP_METHOD(HTTPi_Response, setContentDisposition);
-PHP_METHOD(HTTPi_Response, getContentDisposition);
-PHP_METHOD(HTTPi_Response, setContentType);
-PHP_METHOD(HTTPi_Response, getContentType);
-PHP_METHOD(HTTPi_Response, setCache);
-PHP_METHOD(HTTPi_Response, getCache);
-PHP_METHOD(HTTPi_Response, setCacheControl);
-PHP_METHOD(HTTPi_Response, getCacheControl);
-PHP_METHOD(HTTPi_Response, setGzip);
-PHP_METHOD(HTTPi_Response, getGzip);
-PHP_METHOD(HTTPi_Response, setData);
-PHP_METHOD(HTTPi_Response, getData);
-PHP_METHOD(HTTPi_Response, setFile);
-PHP_METHOD(HTTPi_Response, getFile);
-PHP_METHOD(HTTPi_Response, setStream);
-PHP_METHOD(HTTPi_Response, getStream);
-PHP_METHOD(HTTPi_Response, send);
+PHP_METHOD(HttpResponse, __construct);/*
+PHP_METHOD(HttpResponse, __destruct);*/
+PHP_METHOD(HttpResponse, setETag);
+PHP_METHOD(HttpResponse, getETag);
+PHP_METHOD(HttpResponse, setContentDisposition);
+PHP_METHOD(HttpResponse, getContentDisposition);
+PHP_METHOD(HttpResponse, setContentType);
+PHP_METHOD(HttpResponse, getContentType);
+PHP_METHOD(HttpResponse, setCache);
+PHP_METHOD(HttpResponse, getCache);
+PHP_METHOD(HttpResponse, setCacheControl);
+PHP_METHOD(HttpResponse, getCacheControl);
+PHP_METHOD(HttpResponse, setGzip);
+PHP_METHOD(HttpResponse, getGzip);
+PHP_METHOD(HttpResponse, setData);
+PHP_METHOD(HttpResponse, getData);
+PHP_METHOD(HttpResponse, setFile);
+PHP_METHOD(HttpResponse, getFile);
+PHP_METHOD(HttpResponse, setStream);
+PHP_METHOD(HttpResponse, getStream);
+PHP_METHOD(HttpResponse, send);
 
 #ifdef HTTP_HAVE_CURL
 
-PHP_METHOD(HTTPi_Request, __construct);
-PHP_METHOD(HTTPi_Request, __destruct);
-PHP_METHOD(HTTPi_Request, setOptions);
-PHP_METHOD(HTTPi_Request, getOptions);
-PHP_METHOD(HTTPi_Request, unsetOptions);
-PHP_METHOD(HTTPi_Request, addHeader);
-PHP_METHOD(HTTPi_Request, addCookie);
-PHP_METHOD(HTTPi_Request, setMethod);
-PHP_METHOD(HTTPi_Request, getMethod);
-PHP_METHOD(HTTPi_Request, setURL);
-PHP_METHOD(HTTPi_Request, getURL);
-PHP_METHOD(HTTPi_Request, setContentType);
-PHP_METHOD(HTTPi_Request, getContentType);
-PHP_METHOD(HTTPi_Request, setQueryData);
-PHP_METHOD(HTTPi_Request, getQueryData);
-PHP_METHOD(HTTPi_Request, addQueryData);
-PHP_METHOD(HTTPi_Request, unsetQueryData);
-PHP_METHOD(HTTPi_Request, setPostData);
-PHP_METHOD(HTTPi_Request, getPostData);
-PHP_METHOD(HTTPi_Request, addPostData);
-PHP_METHOD(HTTPi_Request, unsetPostData);
-PHP_METHOD(HTTPi_Request, addPostFile);
-PHP_METHOD(HTTPi_Request, getPostFiles);
-PHP_METHOD(HTTPi_Request, unsetPostFiles);
-PHP_METHOD(HTTPi_Request, send);
-PHP_METHOD(HTTPi_Request, getResponseData);
-PHP_METHOD(HTTPi_Request, getResponseHeader);
-PHP_METHOD(HTTPi_Request, getResponseCode);
-PHP_METHOD(HTTPi_Request, getResponseBody);
-PHP_METHOD(HTTPi_Request, getResponseInfo);
+PHP_METHOD(HttpRequest, __construct);
+PHP_METHOD(HttpRequest, __destruct);
+PHP_METHOD(HttpRequest, setOptions);
+PHP_METHOD(HttpRequest, getOptions);
+PHP_METHOD(HttpRequest, unsetOptions);
+PHP_METHOD(HttpRequest, addHeader);
+PHP_METHOD(HttpRequest, addCookie);
+PHP_METHOD(HttpRequest, setMethod);
+PHP_METHOD(HttpRequest, getMethod);
+PHP_METHOD(HttpRequest, setURL);
+PHP_METHOD(HttpRequest, getURL);
+PHP_METHOD(HttpRequest, setContentType);
+PHP_METHOD(HttpRequest, getContentType);
+PHP_METHOD(HttpRequest, setQueryData);
+PHP_METHOD(HttpRequest, getQueryData);
+PHP_METHOD(HttpRequest, addQueryData);
+PHP_METHOD(HttpRequest, unsetQueryData);
+PHP_METHOD(HttpRequest, setPostData);
+PHP_METHOD(HttpRequest, getPostData);
+PHP_METHOD(HttpRequest, addPostData);
+PHP_METHOD(HttpRequest, unsetPostData);
+PHP_METHOD(HttpRequest, addPostFile);
+PHP_METHOD(HttpRequest, getPostFiles);
+PHP_METHOD(HttpRequest, unsetPostFiles);
+PHP_METHOD(HttpRequest, send);
+PHP_METHOD(HttpRequest, getResponseData);
+PHP_METHOD(HttpRequest, getResponseHeader);
+PHP_METHOD(HttpRequest, getResponseCode);
+PHP_METHOD(HttpRequest, getResponseBody);
+PHP_METHOD(HttpRequest, getResponseInfo);
 
 #endif /* HTTP_HAVE_CURL */
 
 #endif /* ZEND_ENGINE_2 */
 
-
+PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);
 PHP_FUNCTION(http_absolute_uri);
 PHP_FUNCTION(http_negotiate_language);
@@ -196,12 +198,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	time_t lmod;
 	char *allowed_methods;
 #ifdef HTTP_HAVE_CURL
-	struct {
-		char *data;
-		size_t used;
-		size_t free;
-		size_t size;
-	} curlbuf;
+	phpstr curlbuf;
 	zend_llist to_free;
 #endif /* HTTP_HAVE_CURL */
 ZEND_END_MODULE_GLOBALS(http)
