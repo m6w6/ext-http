@@ -100,6 +100,18 @@ SOURCE=.\http.c
 
 SOURCE=.\http_api.c
 # End Source File
+# Begin Source File
+
+SOURCE=.\http_curl_api.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\http_functions.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\http_methods.c
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
@@ -111,6 +123,10 @@ SOURCE=.\php_http.h
 # Begin Source File
 
 SOURCE=.\php_http_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_curl_api.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
