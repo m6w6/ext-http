@@ -15,6 +15,8 @@
 
 /* $Id$ */
 
+#define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
