@@ -36,11 +36,10 @@
 
 #include "SAPI.h"
 
-#if (PHP_MAJOR_VERSION >= 5)
+#ifdef ZEND_ENGINE_2
 #include "ext/standard/php_http.h"
 #else
-#include "php_http_build_query.h"
-#include "http_build_query.c"
+#include "php_http_build_query.c"
 #endif
 
 #include "php_http.h"

@@ -34,6 +34,10 @@ extern zend_module_entry http_module_entry;
 #define HTTP_G(v) (http_globals.v)
 #endif
 
+#ifndef ZEND_ENGINE_2
+#include "php_http_build_query.h"
+#endif
+
 PHP_FUNCTION(http_date);
 PHP_FUNCTION(http_absolute_uri);
 PHP_FUNCTION(http_negotiate_language);

@@ -31,6 +31,10 @@
 #include "php_http.h"
 #include "php_http_api.h"
 
+#ifdef ZEND_ENGINE_2
+#include "ext/standard/php_http.h"
+#endif
+
 #ifdef HTTP_HAVE_CURL
 
 #ifdef PHP_WIN32
@@ -75,6 +79,9 @@ function_entry http_functions[] = {
 #endif
 	PHP_FE(http_auth_basic, NULL)
 	PHP_FE(http_auth_basic_cb, NULL)
+#ifndef ZEND_ENGINE_2
+	PHP_FE(http_build_query, NULL)
+#endif
 	{NULL, NULL, NULL}
 };
 /* }}} */

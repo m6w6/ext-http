@@ -24,6 +24,10 @@
 #define PHP_HTTP_API
 #endif
 
+#ifndef ZEND_ENGINE_2
+#include "php_http_build_query.h"
+#endif
+
 /* make functions that return SUCCESS|FAILURE more obvious */
 typedef int STATUS;
 
