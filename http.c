@@ -736,7 +736,7 @@ static zend_object_handlers httpi_request_object_handlers;
 typedef struct {
 	zend_object zo;
 	CURL *ch;
-	
+
 	zval *options;
 	zval *responseInfo;
 	zval *responseData;
@@ -761,11 +761,11 @@ static inline void _httpi_request_declare_default_properties(zend_class_entry *c
 void _httpi_request_destroy_object(void *object, zend_object_handle handle TSRMLS_DC)
 {
 	httpi_request_object *o = object;
-	
+
 	FREE_PARR(o->options);
 	FREE_PARR(o->responseInfo);
 	FREE_PARR(o->responseData);
-	
+
 	if (OBJ_PROP(o)) {
 		zend_hash_destroy(OBJ_PROP(o));
 		FREE_HASHTABLE(OBJ_PROP(o));
@@ -852,7 +852,7 @@ PHP_METHOD(HTTPi_Request, __construct)
 	INIT_PARR(obj, options);
 	INIT_PARR(obj, responseInfo);
 	INIT_PARR(obj, responseData);
-	
+
 	if (URL) {
 		UPD_PROP(obj, string, url, URL);
 	}
@@ -866,21 +866,21 @@ PHP_METHOD(HTTPi_Request, __destruct)
 {
 	zval *opts, *info, *resp;
 	getObject(httpi_request_object, obj);
-	
+
 	/*
 	 * this never happens ???
 	 */
-	
-	fprintf(stderr, "\n\n\nYAY, DESTRCUTOR CALLED!\n\n\n");
-	
+
+	fprintf(stderr, "\n\n\nYAY, DESTRUCTOR CALLED!\n\n\n");
+
 	opts = GET_PROP(obj, options);
 	zval_dtor(opts);
 	FREE_ZVAL(opts);
-	
-	info = GET_PROP(obj, reeponseInfo);
+
+	info = GET_PROP(obj, responseInfo);
 	zval_dtor(info);
 	FREE_ZVAL(info);
-	
+
 	resp = GET_PROP(obj, responseData);
 	zval_dtor(resp);
 	FREE_ZVAL(resp);
@@ -893,13 +893,13 @@ PHP_METHOD(HTTPi_Request, setOptions)
 {
 	zval *opts, *old_opts, **opt;
 	getObject(httpi_request_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &opts)) {
 		RETURN_FALSE;
 	}
-	
+
 	old_opts = GET_PROP(obj, options);
-	
+
 	/* headers and cookies need extra attention -- thus cannot use zend_hash_merge() or php_array_merge() directly */
 	for (	zend_hash_internal_pointer_reset(Z_ARRVAL_P(opts));
 			zend_hash_get_current_data(Z_ARRVAL_P(opts), (void **) &opt) == SUCCESS;
@@ -920,8 +920,8 @@ PHP_METHOD(HTTPi_Request, setOptions)
 					continue;
 				}
 			}
-		zval_add_ref(opt);
-		add_assoc_zval(old_opts, key, *opt);
+			zval_add_ref(opt);
+			add_assoc_zval(old_opts, key, *opt);
 		}
 	}
 	RETURN_TRUE;
@@ -935,9 +935,9 @@ PHP_METHOD(HTTPi_Request, getOptions)
 {
 	zval *opts;
 	getObject(httpi_request_object, obj);
-	
+
 	NO_ARGS;
-	
+
 	opts = GET_PROP(obj, options);
 	array_init(return_value);
 	array_copy(opts, return_value);
@@ -1211,9 +1211,9 @@ PHP_METHOD(HTTPi_Request, getResponseInfo)
 {
 	zval *info;
 	getObject(httpi_request_object, obj);
-	
+
 	NO_ARGS;
-	
+
 	info = GET_PROP(obj, responseInfo);
 	array_init(return_value);
 	array_copy(info, return_value);
@@ -1249,7 +1249,7 @@ PHP_METHOD(HTTPi_Request, send)
 	request_uri = ecalloc(HTTP_URI_MAXLEN + 1, 1);
 	strcpy(request_uri, uri);
 	efree(uri);
-	
+
 	if (Z_STRLEN_P(qdata) && (strlen(request_uri) < HTTP_URI_MAXLEN)) {
 		if (!strchr(request_uri, '?')) {
 			strcat(request_uri, "?");
@@ -1277,7 +1277,7 @@ PHP_METHOD(HTTPi_Request, send)
 	}
 
 	efree(request_uri);
-	
+
 	/* final data handling */
 	if (status != SUCCESS) {
 		RETURN_FALSE;
@@ -1298,7 +1298,7 @@ PHP_METHOD(HTTPi_Request, send)
 
 		add_assoc_zval(resp, "headers", zheaders);
 		add_assoc_zval(resp, "body", zbody);
-		
+
 		efree(response_data);
 
 		RETURN_TRUE;
