@@ -22,11 +22,12 @@
 #include "php.h"
 #include "php_version.h"
 #include "php_streams.h"
-#include "main/snprintf.h"
+#include "snprintf.h"
 #include "ext/standard/md5.h"
 #include "ext/standard/url.h"
 #include "ext/standard/base64.h"
 #include "ext/standard/php_string.h"
+#include "ext/standard/php_smart_str.h"
 #include "ext/standard/php_lcg.h"
 
 #include "SAPI.h"
@@ -42,7 +43,6 @@
 #include "php_http_api.h"
 
 #include <ctype.h>
-
 #if defined(HAVE_CURL) && HAVE_CURL
 #include <curl/curl.h>
 #include <curl/easy.h>
@@ -58,7 +58,7 @@ static const char *wkdays[] = {
 	"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
 };
 static const char *weekdays[] = {
-	"Monday", "Tuesday", "Wednesday", 
+	"Monday", "Tuesday", "Wednesday",
 	"Thursday", "Friday", "Saturday", "Sunday"
 };
 static const char *months[] = {
@@ -156,6 +156,14 @@ static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, i
 
 static size_t http_curl_body_callback(char *, size_t, size_t, void *);
 static size_t http_curl_hdrs_callback(char *, size_t, size_t, void *);
+
+#define http_curl_getinfo(c, h) _http_curl_getinfo((c), (h) TSRMLS_CC)
+static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC);
+#define http_curl_getinfo_ex(c, i, a) _http_curl_getinfo_ex((c), (i), (a) TSRMLS_CC)
+static inline void _http_curl_getinfo_ex(CURL *ch, CURLINFO i, zval *array TSRMLS_DC);
+#define http_curl_getinfoname(i) _http_curl_getinfoname((i) TSRMLS_CC)
+static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC);
+
 #endif
 /* }}} HAVE_CURL */
 
@@ -469,7 +477,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		return;
 	}
 
-	/* redirects */
+	/* redirects, defaults to 0 */
 	if (zoption = http_curl_getopt1(options, "redirect", IS_LONG)) {
 		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
 		curl_easy_setopt(ch, CURLOPT_MAXREDIRS, Z_LVAL_P(zoption));
@@ -505,9 +513,12 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		curl_easy_setopt(ch, CURLOPT_HTTPAUTH, Z_LVAL_P(zoption));
 	}
 
-	/* compress */
+	/* compress, enabled by default (empty string enables deflate and gzip) */
 	if (zoption = http_curl_getopt2(options, "compress", IS_LONG, IS_BOOL)) {
-		/* empty string enables deflate and gzip */
+		if (Z_LVAL_P(zoption)) {
+			curl_easy_setopt(ch, CURLOPT_ENCODING, "");
+		}
+	} else {
 		curl_easy_setopt(ch, CURLOPT_ENCODING, "");
 	}
 
@@ -521,18 +532,37 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		curl_easy_setopt(ch, CURLOPT_REFERER, Z_STRVAL_P(zoption));
 	}
 
-	/* useragent */
+	/* useragent, default "PECL::HTTP/version (PHP/version)" */
 	if (zoption = http_curl_getopt1(options, "useragent", IS_STRING)) {
 		curl_easy_setopt(ch, CURLOPT_USERAGENT, Z_STRVAL_P(zoption));
+	} else {
+		curl_easy_setopt(ch, CURLOPT_USERAGENT,
+			"PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
 	}
 
-	/* cookies */
+	/* cookies, array('name' => 'value') */
 	if (zoption = http_curl_getopt1(options, "cookies", IS_ARRAY)) {
-		zval cookies, glue;
-		ZVAL_STRINGL(&glue, "; ", 2, 0);
-		php_implode(&glue, zoption, &cookies);
-		if (Z_STRVAL(cookies)) {
-			curl_easy_setopt(ch, CURLOPT_COOKIE, Z_STRVAL(cookies));
+		char *cookie_key;
+		zval **cookie_val;
+		int key_type;
+		smart_str qstr = {0};
+
+		zend_hash_internal_pointer_reset(Z_ARRVAL_P(zoption));
+		while (HASH_KEY_NON_EXISTANT != (key_type = zend_hash_get_current_key_type(Z_ARRVAL_P(zoption)))) {
+			if (key_type == HASH_KEY_IS_STRING) {
+				zend_hash_get_current_key(Z_ARRVAL_P(zoption), &cookie_key, NULL, 0);
+				zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &cookie_val);
+				smart_str_appends(&qstr, cookie_key);
+				smart_str_appendl(&qstr, "=", 1);
+				smart_str_appendl(&qstr, Z_STRVAL_PP(cookie_val), Z_STRLEN_PP(cookie_val));
+				smart_str_appendl(&qstr, "; ", 2);
+				zend_hash_move_forward(Z_ARRVAL_P(zoption));
+			}
+		}
+		smart_str_0(&qstr);
+		
+		if (qstr.c) {
+			curl_easy_setopt(ch, CURLOPT_COOKIE, qstr.c);
 		}
 	}
 
@@ -542,14 +572,22 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		curl_easy_setopt(ch, CURLOPT_COOKIEJAR, Z_STRVAL_P(zoption));
 	}
 
-	/* additional headers */
+	/* additional headers, array('name' => 'value') */
 	if (zoption = http_curl_getopt1(options, "headers", IS_ARRAY)) {
-		zval **header;
+		int key_type;
+		char *header_key, header[1024] = {0};
+		zval **header_val;
 		struct curl_slist *headers = NULL;
+		
 		zend_hash_internal_pointer_reset(Z_ARRVAL_P(zoption));
-		while (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header)) {
-			headers = curl_slist_append(headers, Z_STRVAL_PP(header));
-			zend_hash_move_forward(Z_ARRVAL_P(zoption));
+		while (HASH_KEY_NON_EXISTANT != (key_type = zend_hash_get_current_key_type(Z_ARRVAL_P(zoption)))) {
+			if (key_type == HASH_KEY_IS_STRING) {
+				zend_hash_get_current_key(Z_ARRVAL_P(zoption), &header_key, NULL, 0);
+				zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header_val);
+				snprintf(header, 1024, "%s: %s", header_key, Z_STRVAL_PP(header_val));
+				headers = curl_slist_append(headers, header);
+				zend_hash_move_forward(Z_ARRVAL_P(zoption));
+			}
 		}
 		if (headers) {
 			curl_easy_setopt(ch, CURLOPT_HTTPHEADER, headers);
@@ -558,9 +596,168 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 }
 /* }}} */
 
-#endif
-/* }}} HAVE_CURL */
+/* {{{ static inline char *http_curl_getinfoname(CURLINFO) */
+static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC)
+{
+#define CASE(I) case CURLINFO_ ##I : return #I
+	switch (i)
+	{
+		/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
+		CASE(EFFECTIVE_URL);
+		/* CURLINFO_RESPONSE_CODE			=	CURLINFO_LONG	+2, */
+		CASE(RESPONSE_CODE);
+		/* CURLINFO_TOTAL_TIME				=	CURLINFO_DOUBLE	+3, */
+		CASE(TOTAL_TIME);
+		/* CURLINFO_NAMELOOKUP_TIME			=	CURLINFO_DOUBLE	+4, */
+		CASE(NAMELOOKUP_TIME);
+		/* CURLINFO_CONNECT_TIME			=	CURLINFO_DOUBLE	+5, */
+		CASE(CONNECT_TIME);
+		/* CURLINFO_PRETRANSFER_TIME		=	CURLINFO_DOUBLE	+6, */
+		CASE(PRETRANSFER_TIME);
+		/* CURLINFO_SIZE_UPLOAD				=	CURLINFO_DOUBLE	+7, */
+		CASE(SIZE_UPLOAD);
+		/* CURLINFO_SIZE_DOWNLOAD			=	CURLINFO_DOUBLE	+8, */
+		CASE(SIZE_DOWNLOAD);
+		/* CURLINFO_SPEED_DOWNLOAD			=	CURLINFO_DOUBLE	+9, */
+		CASE(SPEED_DOWNLOAD);
+		/* CURLINFO_SPEED_UPLOAD			=	CURLINFO_DOUBLE	+10, */
+		CASE(SPEED_UPLOAD);
+		/* CURLINFO_HEADER_SIZE				=	CURLINFO_LONG	+11, */
+		CASE(HEADER_SIZE);
+		/* CURLINFO_REQUEST_SIZE			=	CURLINFO_LONG	+12, */
+		CASE(REQUEST_SIZE);
+		/* CURLINFO_SSL_VERIFYRESULT		=	CURLINFO_LONG	+13, */
+		CASE(SSL_VERIFYRESULT);
+		/* CURLINFO_FILETIME				=	CURLINFO_LONG	+14, */
+		CASE(FILETIME);
+		/* CURLINFO_CONTENT_LENGTH_DOWNLOAD	=	CURLINFO_DOUBLE	+15, */
+		CASE(CONTENT_LENGTH_DOWNLOAD);
+		/* CURLINFO_CONTENT_LENGTH_UPLOAD	=	CURLINFO_DOUBLE	+16, */
+		CASE(CONTENT_LENGTH_UPLOAD);
+		/* CURLINFO_STARTTRANSFER_TIME		=	CURLINFO_DOUBLE	+17, */
+		CASE(STARTTRANSFER_TIME);
+		/* CURLINFO_CONTENT_TYPE			=	CURLINFO_STRING	+18, */
+		CASE(CONTENT_TYPE);
+		/* CURLINFO_REDIRECT_TIME			=	CURLINFO_DOUBLE	+19, */
+		CASE(REDIRECT_TIME);
+		/* CURLINFO_REDIRECT_COUNT			=	CURLINFO_LONG	+20, */
+		CASE(REDIRECT_COUNT);
+		/* CURLINFO_PRIVATE					=	CURLINFO_STRING	+21, */
+		CASE(PRIVATE);
+		/* CURLINFO_HTTP_CONNECTCODE		=	CURLINFO_LONG	+22, */
+		CASE(HTTP_CONNECTCODE);
+		/* CURLINFO_HTTPAUTH_AVAIL			=	CURLINFO_LONG	+23, */
+		CASE(HTTPAUTH_AVAIL);
+		/* CURLINFO_PROXYAUTH_AVAIL			=	CURLINFO_LONG	+24, */
+		CASE(PROXYAUTH_AVAIL);
+	}
+#undef CASE
+	return NULL;
+}
+/* }}} */
 
+/* {{{ static inline void http_curl_getinfo_ex(CURL, CURLINFO, zval *) */
+static inline void _http_curl_getinfo_ex(CURL *ch, CURLINFO i, zval *array TSRMLS_DC)
+{
+	char *key;
+	if (key = http_curl_getinfoname(i)) {
+		switch (i & ~CURLINFO_MASK)
+		{
+			case CURLINFO_STRING:
+			{
+				char *c;
+				if (CURLE_OK == curl_easy_getinfo(ch, i, &c)) {
+					add_assoc_string(array, key, c ? c : "", 1);
+				}
+			}
+			break;
+
+			case CURLINFO_DOUBLE:
+			{
+				double d;
+				if (CURLE_OK == curl_easy_getinfo(ch, i, &d)) {
+					add_assoc_double(array, key, (double) d);
+				}
+			}
+			break;
+
+			case CURLINFO_LONG:
+			{
+				long l;
+				if (CURLE_OK == curl_easy_getinfo(ch, i, &l)) {
+					add_assoc_long(array, key, (long) l);
+				}
+			}
+			break;
+		}
+	}
+}
+/* }}} */
+
+/* {{{ static inline http_curl_getinfo(CURL, HashTable *) */
+static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
+{
+	zval *array;
+
+	MAKE_STD_ZVAL(array);
+	Z_ARRVAL_P(array) = info;
+
+#define INFO(I) http_curl_getinfo_ex(ch, CURLINFO_ ##I , array)
+	/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
+	INFO(EFFECTIVE_URL);
+	/* CURLINFO_RESPONSE_CODE			=	CURLINFO_LONG	+2, */
+	INFO(RESPONSE_CODE);
+	/* CURLINFO_TOTAL_TIME				=	CURLINFO_DOUBLE	+3, */
+	INFO(TOTAL_TIME);
+	/* CURLINFO_NAMELOOKUP_TIME			=	CURLINFO_DOUBLE	+4, */
+	INFO(NAMELOOKUP_TIME);
+	/* CURLINFO_CONNECT_TIME			=	CURLINFO_DOUBLE	+5, */
+	INFO(CONNECT_TIME);
+	/* CURLINFO_PRETRANSFER_TIME		=	CURLINFO_DOUBLE	+6, */
+	INFO(PRETRANSFER_TIME);
+	/* CURLINFO_SIZE_UPLOAD				=	CURLINFO_DOUBLE	+7, */
+	INFO(SIZE_UPLOAD);
+	/* CURLINFO_SIZE_DOWNLOAD			=	CURLINFO_DOUBLE	+8, */
+	INFO(SIZE_DOWNLOAD);
+	/* CURLINFO_SPEED_DOWNLOAD			=	CURLINFO_DOUBLE	+9, */
+	INFO(SPEED_DOWNLOAD);
+	/* CURLINFO_SPEED_UPLOAD			=	CURLINFO_DOUBLE	+10, */
+	INFO(SPEED_UPLOAD);
+	/* CURLINFO_HEADER_SIZE				=	CURLINFO_LONG	+11, */
+	INFO(HEADER_SIZE);
+	/* CURLINFO_REQUEST_SIZE			=	CURLINFO_LONG	+12, */
+	INFO(REQUEST_SIZE);
+	/* CURLINFO_SSL_VERIFYRESULT		=	CURLINFO_LONG	+13, */
+	INFO(SSL_VERIFYRESULT);
+	/* CURLINFO_FILETIME				=	CURLINFO_LONG	+14, */
+	INFO(FILETIME);
+	/* CURLINFO_CONTENT_LENGTH_DOWNLOAD	=	CURLINFO_DOUBLE	+15, */
+	INFO(CONTENT_LENGTH_DOWNLOAD);
+	/* CURLINFO_CONTENT_LENGTH_UPLOAD	=	CURLINFO_DOUBLE	+16, */
+	INFO(CONTENT_LENGTH_UPLOAD);
+	/* CURLINFO_STARTTRANSFER_TIME		=	CURLINFO_DOUBLE	+17, */
+	INFO(STARTTRANSFER_TIME);
+	/* CURLINFO_CONTENT_TYPE			=	CURLINFO_STRING	+18, */
+	INFO(CONTENT_TYPE);
+	/* CURLINFO_REDIRECT_TIME			=	CURLINFO_DOUBLE	+19, */
+	INFO(REDIRECT_TIME);
+	/* CURLINFO_REDIRECT_COUNT			=	CURLINFO_LONG	+20, */
+	INFO(REDIRECT_COUNT);
+	/* CURLINFO_PRIVATE					=	CURLINFO_STRING	+21, */
+	INFO(PRIVATE);
+	/* CURLINFO_HTTP_CONNECTCODE		=	CURLINFO_LONG	+22, */
+	INFO(HTTP_CONNECTCODE);
+	/* CURLINFO_HTTPAUTH_AVAIL			=	CURLINFO_LONG	+23, */
+	INFO(HTTPAUTH_AVAIL);
+	/* CURLINFO_PROXYAUTH_AVAIL			=	CURLINFO_LONG	+24, */
+	INFO(PROXYAUTH_AVAIL);
+#undef INFO
+	efree(array);
+}
+/* }}} */
+
+/* {{{ Day/Month/TZ checks for http_parse_date()
+	Originally by libcurl, Copyright (C) 1998 - 2004, Daniel Stenberg, <daniel@haxx.se>, et al. */
 static int check_day(char *day, size_t len)
 {
 	int i;
@@ -602,6 +799,10 @@ static int check_tzone(char *tzone)
 	}
 	return -1;
 }
+/* }}} */
+
+#endif
+/* }}} HAVE_CURL */
 
 /* }}} internals */
 
@@ -624,12 +825,12 @@ PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 }
 /* }}} */
 
-/* time_t http_parse_date(char *)
+/* {{{ time_t http_parse_date(char *)
 	Originally by libcurl, Copyright (C) 1998 - 2004, Daniel Stenberg, <daniel@haxx.se>, et al. */
-PHP_HTTP_API time_t http_parse_date(const char *date)
+PHP_HTTP_API time_t _http_parse_date(const char *date)
 {
 	time_t t = 0;
-	int tz_offset = -1, year = -1, month = -1, monthday = -1, weekday = -1, 
+	int tz_offset = -1, year = -1, month = -1, monthday = -1, weekday = -1,
 		hours = -1, minutes = -1, seconds = -1;
 	struct tm tm;
 	enum assume_next dignext = DATE_MDAY;
@@ -657,14 +858,14 @@ PHP_HTTP_API time_t http_parse_date(const char *date)
 					found = 1;
 				}
 			}
-			
+
 			if (!found && (month == -1)) {
 				month = check_month(buf);
 				if (month != -1) {
 					found = 1;
 				}
 			}
-			
+
 			if (!found && (tz_offset == -1)) {
 				/* this just must be a time zone string */
 				tz_offset = check_tzone(buf);
@@ -672,7 +873,7 @@ PHP_HTTP_API time_t http_parse_date(const char *date)
 					found = 1;
 				}
 			}
-			
+
 			if (!found) {
 				return -1; /* bad string */
 			}
@@ -786,7 +987,7 @@ PHP_HTTP_API time_t http_parse_date(const char *date)
 		if((delta > 0) && (t + delta < t)) {
 			return -1; /* time_t overflow */
 		}
-		
+
 		t += delta;
 	}
 
@@ -1499,9 +1700,9 @@ PHP_HTTP_API void _http_split_response(const zval *zresponse, zval *zheaders,
 /* {{{ HAVE_CURL */
 #if defined(HAVE_CURL) && HAVE_CURL
 
-/* {{{ STATUS http_get(char *, HashTable *, char **, size_t *) */
+/* {{{ STATUS http_get(char *, HashTable *, HashTable *, char **, size_t *) */
 PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options,
-	char **data, size_t *data_len TSRMLS_DC)
+	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
 {
 	CURL *ch = curl_easy_init();
 
@@ -1519,6 +1720,9 @@ PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options,
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
+	if (info) {
+		http_curl_getinfo(ch, info);
+	}
 	curl_easy_cleanup(ch);
 
 	http_curl_movebuf(CURLBUF_EVRY, data, data_len);
@@ -1527,9 +1731,9 @@ PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options,
 }
 /* }}} */
 
-/* {{{ STATUS http_head(char *, HashTable *, char **data, size_t *) */
+/* {{{ STATUS http_head(char *, HashTable *, HashTable *, char **data, size_t *) */
 PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options,
-	char **data, size_t *data_len TSRMLS_DC)
+	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
 {
 	CURL *ch = curl_easy_init();
 
@@ -1548,6 +1752,9 @@ PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options,
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
+	if (info) {
+		http_curl_getinfo(ch, info);
+	}
 	curl_easy_cleanup(ch);
 
 	http_curl_movebuf(CURLBUF_HDRS, data, data_len);
@@ -1556,9 +1763,9 @@ PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options,
 }
 /* }}} */
 
-/* {{{ STATUS http_post_data(char *, char *, size_t, HashTable *, char **, size_t *) */
+/* {{{ STATUS http_post_data(char *, char *, size_t, HashTable *, HashTable *, char **, size_t *) */
 PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata,
-	size_t postdata_len, HashTable *options, char **data,
+	size_t postdata_len, HashTable *options, HashTable *info, char **data,
 	size_t *data_len TSRMLS_DC)
 {
 	CURL *ch = curl_easy_init();
@@ -1580,6 +1787,9 @@ PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata,
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
+	if (info) {
+		http_curl_getinfo(ch, info);
+	}
 	curl_easy_cleanup(ch);
 
 	http_curl_movebuf(CURLBUF_EVRY, data, data_len);
@@ -1588,9 +1798,9 @@ PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata,
 }
 /* }}} */
 
-/* {{{ STATUS http_post_array(char *, HashTable *, HashTable *, char **, size_t *) */
+/* {{{ STATUS http_post_array(char *, HashTable *, HashTable *, HashTable *, char **, size_t *) */
 PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray,
-	HashTable *options, char **data, size_t *data_len TSRMLS_DC)
+	HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC)
 {
 	smart_str qstr = {0};
 	STATUS status;
@@ -1604,7 +1814,7 @@ PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray,
 	}
 	smart_str_0(&qstr);
 
-	status = http_post_data(URL, qstr.c, qstr.len, options, data, data_len);
+	status = http_post_data(URL, qstr.c, qstr.len, options, info, data, data_len);
 	if (qstr.c) {
 		efree(qstr.c);
 	}

@@ -83,7 +83,8 @@ typedef enum {
 #define http_date(t) _http_date((t) TSRMLS_CC)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC);
 
-PHP_HTTP_API time_t http_parse_date(const char *date);
+#define http_parse_date(d) _http_parse_date((d))
+PHP_HTTP_API time_t _http_parse_date(const char *date);
 
 #define http_send_status(s) _http_send_status((s) TSRMLS_CC)
 PHP_HTTP_API inline STATUS _http_send_status(const int status TSRMLS_DC);
@@ -147,17 +148,17 @@ PHP_HTTP_API void _http_split_response(const zval *zresponse, zval *zheaders, zv
 /* {{{ HAVE_CURL */
 #if defined(HAVE_CURL) && HAVE_CURL
 
-#define http_get(u, o, d, l) _http_get((u), (o), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options, char **data, size_t *data_len TSRMLS_DC);
+#define http_get(u, o, i, d, l) _http_get((u), (o), (i), (d), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
 
-#define http_head(u, o, d, l) _http_head((u), (o), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options, char **data, size_t *data_len TSRMLS_DC);
+#define http_head(u, o, i, d, l) _http_head((u), (o), (i), (d), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
 
-#define http_post_data(u, pd, pl, o, d, l) _http_post_data((u), (pd), (pl), (o), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata, size_t postdata_len, HashTable *options, char **data, size_t *data_len TSRMLS_DC);
+#define http_post_data(u, pd, pl, o, i, d, l) _http_post_data((u), (pd), (pl), (o), (i), (d), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata, size_t postdata_len, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
 
-#define http_post_array(u, p, o, d, l) _http_post_array((u), (p), (o), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray, HashTable *options, char **data, size_t *data_len TSRMLS_DC);
+#define http_post_array(u, p, o, i, d, l) _http_post_array((u), (p), (o), (i), (d), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
 
 #endif
 /* }}} HAVE_CURL */

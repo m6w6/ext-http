@@ -20,9 +20,8 @@
 #endif
 
 #include "php.h"
-#include "main/snprintf.h"
+#include "snprintf.h"
 #include "ext/standard/info.h"
-#include "ext/standard/datetime.h"
 #include "ext/session/php_session.h"
 #include "ext/standard/php_string.h"
 #include "ext/standard/php_smart_str.h"
@@ -53,7 +52,6 @@ function_entry http_functions[] = {
 	PHP_FE(http_match_etag, NULL)
 	PHP_FE(http_cache_last_modified, NULL)
 	PHP_FE(http_cache_etag, NULL)
-	PHP_FE(http_accept_ranges, NULL)
 	PHP_FE(http_content_type, NULL)
 	PHP_FE(http_content_disposition, NULL)
 	PHP_FE(http_send_data, NULL)
@@ -93,6 +91,7 @@ zend_module_entry http_module_entry = {
 /* }}} */
 
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
+#define HASH_ORNULL(z) ((z) ? Z_ARRVAL_P(z) : NULL)
 
 /* {{{ proto string http_date([int timestamp])
  *
@@ -242,10 +241,6 @@ PHP_FUNCTION(http_negotiate_charset)
 /* {{{ proto bool http_send_status(int status)
  *
  * Send HTTP status code.
- * This function sends the desired HTTP status code along with its corresponding
- * status message, e.g. calling http_send_status(304) will issue a
- * "Status: 304 Not Modified" with CGI-SAPIs and "HTTP/1.1 304 Not Modified"
- * when PHP is run as web server module.
  *
  */
 PHP_FUNCTION(http_send_status)
@@ -268,7 +263,7 @@ PHP_FUNCTION(http_send_status)
  *
  * This converts the given timestamp to a valid HTTP date and
  * sends it as "Last-Modified" HTTP header.  If timestamp is
- * omitted, current time is taken.
+ * omitted, current time is sent.
  *
  */
 PHP_FUNCTION(http_send_last_modified)
@@ -289,7 +284,7 @@ PHP_FUNCTION(http_send_last_modified)
 
 /* {{{ proto bool http_match_modified([int timestamp])
  *
- * Matches the given timestamp against the clients "If-Modified-Since" and
+ * Matches the given timestamp against the clients "If-Modified-Since" resp.
  * "If-Unmodified-Since" HTTP headers.
  *
  */
@@ -313,7 +308,7 @@ PHP_FUNCTION(http_match_modified)
 /* {{{ proto bool http_match_etag(string etag)
  *
  * This matches the given ETag against the clients
- * "If-Match" and "If-None-Match" HTTP headers.
+ * "If-Match" resp. "If-None-Match" HTTP headers.
  *
  */
 PHP_FUNCTION(http_match_etag)
@@ -334,7 +329,7 @@ PHP_FUNCTION(http_match_etag)
  * If timestamp_or_exires is greater than 0, it is handled as timestamp
  * and will be sent as date of last modification.  If it is 0 or omitted,
  * the current time will be sent as Last-Modified date.  If it's negative,
- * it is handled as expiration tim in seconds, which means that if the
+ * it is handled as expiration time in seconds, which means that if the
  * requested last modification date is not between the calculated timespan,
  * the Last-Modified header is updated and the actual body will be sent.
  *
@@ -502,7 +497,7 @@ PHP_FUNCTION(http_send_data)
 	}
 
 	convert_to_string_ex(&zdata);
-
+	http_send_header("Accept-Ranges: bytes");
 	RETURN_SUCCESS(http_send_data(zdata));
 }
 /* }}} */
@@ -521,7 +516,7 @@ PHP_FUNCTION(http_send_file)
 	}
 
 	convert_to_string_ex(&zfile);
-
+	http_send_header("Accept-Ranges: bytes");
 	RETURN_SUCCESS(http_send_file(zfile));
 }
 /* }}} */
@@ -541,33 +536,8 @@ PHP_FUNCTION(http_send_stream)
 	}
 
 	php_stream_from_zval(file, &zstream);
-
+	http_send_header("Accept-Ranges: bytes");
 	RETURN_SUCCESS(http_send_stream(file));
-}
-/* }}} */
-
-/* {{{ proto bool http_accept_ranges(void)
- *
- * Issues a "Accept-Ranges: bytes" header.
- *
- * Example:
- * <pre>
- * <?php
- * http_content_type('application/x-zip');
- * http_content_disposition('latest.zip');
- * http_accept_ranges();
- * http_cache_etag();
- * http_send_file('../some/download.zip');
- * ?>
- * </pre>
- *
- */
-PHP_FUNCTION(http_accept_ranges)
-{
-	if (ZEND_NUM_ARGS()) {
-		WRONG_PARAM_COUNT;
-	}
-	RETURN_SUCCESS(http_send_header("Accept-Ranges: bytes"));
 }
 /* }}} */
 
@@ -696,16 +666,16 @@ PHP_FUNCTION(http_split_response)
 /* {{{ HAVE_CURL */
 #if defined(HAVE_CURL) && HAVE_CURL
 
-/* {{{ proto string http_get(string url[, array options])
+/* {{{ proto string http_get(string url[, array options[, array &info]])
  *
  * Performs an HTTP GET request on the supplied url.
  *
  * The second parameter is expected to be an associative
  * array where the following keys will be recognized:
  * <pre>
- *  - redirect:      	int, whether and how many redirects to follow
+ *  - redirect:         int, whether and how many redirects to follow
  *  - unrestrictedauth: bool, whether to continue sending credentials on
- * 	                    redirects to a different host
+ *                      redirects to a different host
  *  - proxyhost:        string, proxy host in "host[:port]" format
  *  - proxyport:        int, use another proxy port as specified in proxyhost
  *  - proxyauth:        string, proxy credentials in "user:pass" format
@@ -713,26 +683,39 @@ PHP_FUNCTION(http_split_response)
  *  - httpauth:         string, http credentials in "user:pass" format
  *  - httpauthtype:     int, HTTP_AUTH_BASIC, DIGEST and/or NTLM
  *  - compress:         bool, whether to allow gzip/deflate content encoding
+ *                      (defaults to true)
  *  - port:             int, use another port as specified in the url
  *  - referer:          string, the referer to sends
  *  - useragent:        string, the user agent to send
- *  - headers:          array, list of custom headers in "header: value" format
- *  - cookies:          array, list of cookies in "name=value" format
+ *                      (defaults to PECL::HTTP/version (PHP/version)))
+ *  - headers:          array, list of custom headers as associative array
+ *                      like array("header" => "value")
+ *  - cookies:          array, list of cookies as associative array
+ *                      like array("cookie" => "value")
  *  - cookiestore:      string, path to a file where cookies are/will be stored
  * </pre>
+ *
+ * The optional third parameter will be filled with some additional information
+ * in form af an associative array, if supplied (don't forget to initialize it
+ * with NULL or array()).
  */
 PHP_FUNCTION(http_get)
 {
 	char *URL, *data = NULL;
 	size_t data_len = 0;
 	int URL_len;
-	zval *options = NULL;
+	zval *options = NULL, *info = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a", &URL, &URL_len, &options) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a/!z", &URL, &URL_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	if (SUCCESS == http_get(URL, options ? Z_ARRVAL_P(options) : NULL, &data, &data_len)) {
+	if (info) {
+		zval_dtor(info);
+		array_init(info);
+	}
+
+	if (SUCCESS == http_get(URL, HASH_ORNULL(options), HASH_ORNULL(info), &data, &data_len)) {
 		RETURN_STRINGL(data, data_len, 0);
 	} else {
 		RETURN_FALSE;
@@ -740,7 +723,7 @@ PHP_FUNCTION(http_get)
 }
 /* }}} */
 
-/* {{{ proto string http_head(string url[, array options])
+/* {{{ proto string http_head(string url[, array options[, array &info]])
  *
  * Performs an HTTP HEAD request on the suppied url.
  * Returns the HTTP response as string.
@@ -751,13 +734,18 @@ PHP_FUNCTION(http_head)
 	char *URL, *data = NULL;
 	size_t data_len = 0;
 	int URL_len;
-	zval *options = NULL;
+	zval *options = NULL, *info = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a", &URL, &URL_len, &options) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a/!z", &URL, &URL_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	if (SUCCESS == http_head(URL, options ? Z_ARRVAL_P(options) : NULL, &data, &data_len)) {
+	if (info) {
+		zval_dtor(info);
+		array_init(info);
+	}
+
+	if (SUCCESS == http_head(URL, HASH_ORNULL(options), HASH_ORNULL(info), &data, &data_len)) {
 		RETURN_STRINGL(data, data_len, 0);
 	} else {
 		RETURN_FALSE;
@@ -765,7 +753,7 @@ PHP_FUNCTION(http_head)
 }
 /* }}} */
 
-/* {{{ proto string http_post_data(string url, string data[, array options])
+/* {{{ proto string http_post_data(string url, string data[, array options[, &info]])
  *
  * Performs an HTTP POST request, posting data.
  * Returns the HTTP response as string.
@@ -776,13 +764,18 @@ PHP_FUNCTION(http_post_data)
 	char *URL, *postdata, *data = NULL;
 	size_t data_len = 0;
 	int postdata_len, URL_len;
-	zval *options = NULL;
+	zval *options = NULL, *info = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|a", &URL, &URL_len, &postdata, &postdata_len, &options) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|a/!z", &URL, &URL_len, &postdata, &postdata_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	if (SUCCESS == http_post_data(URL, postdata, (size_t) postdata_len, options ? Z_ARRVAL_P(options) : NULL, &data, &data_len)) {
+	if (info) {
+		zval_dtor(info);
+		array_init(info);
+	}
+
+	if (SUCCESS == http_post_data(URL, postdata, (size_t) postdata_len, HASH_ORNULL(options), HASH_ORNULL(info), &data, &data_len)) {
 		RETURN_STRINGL(data, data_len, 0);
 	} else {
 		RETURN_FALSE;
@@ -790,7 +783,7 @@ PHP_FUNCTION(http_post_data)
 }
 /* }}} */
 
-/* {{{ proto string http_post_data(string url, array data[, array options])
+/* {{{ proto string http_post_array(string url, array data[, array options[, array &info]])
  *
  * Performs an HTTP POST request, posting www-form-urlencoded array data.
  * Returns the HTTP response as string.
@@ -801,13 +794,18 @@ PHP_FUNCTION(http_post_array)
 	char *URL, *data = NULL;
 	size_t data_len = 0;
 	int URL_len;
-	zval *options = NULL, *postdata;
+	zval *options = NULL, *info = NULL, *postdata;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa|a", &URL, &URL_len, &postdata, &options) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa|a/!z", &URL, &URL_len, &postdata, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	if (SUCCESS == http_post_array(URL, Z_ARRVAL_P(postdata), options ? Z_ARRVAL_P(options) : NULL, &data, &data_len)) {
+	if (info) {
+		zval_dtor(info);
+		array_init(info);
+	}
+
+	if (SUCCESS == http_post_array(URL, Z_ARRVAL_P(postdata), HASH_ORNULL(options), HASH_ORNULL(info), &data, &data_len)) {
 		RETURN_STRINGL(data, data_len, 0);
 	} else {
 		RETURN_FALSE;

@@ -45,7 +45,6 @@ PHP_FUNCTION(http_match_modified);
 PHP_FUNCTION(http_match_etag);
 PHP_FUNCTION(http_cache_last_modified);
 PHP_FUNCTION(http_cache_etag);
-PHP_FUNCTION(http_accept_ranges);
 PHP_FUNCTION(http_content_type);
 PHP_FUNCTION(http_content_disposition);
 PHP_FUNCTION(http_send_data);

@@ -8,13 +8,6 @@ PHP_ARG_WITH([curl], [for CURL support],
 
 if test "$PHP_HTTP" != "no"; then
 
-dnl -----
-dnl CTYPE
-dnl -----
-	if test -r /usr/include/ctype.h -o -r /usr/local/include/ctype.h ; then
-		AC_DEFINE([HAVE_CTYPE], [1], [Have ctype support])
-	fi
-
 dnl ----
 dnl CURL
 dnl ----
@@ -31,15 +24,15 @@ dnl ----
 			fi
 			done
 		fi
-		
+
 		if test -z "$CURL_DIR"; then
 			AC_MSG_RESULT(not found)
 			AC_MSG_ERROR(Please reinstall the libcurl distribution -
 			easy.h should be in <curl-dir>/include/curl/)
 		fi
-		
+
 		CURL_CONFIG="curl-config"
-		
+
 		if ${CURL_DIR}/bin/curl-config --libs print > /dev/null 2>&1; then
 			CURL_CONFIG=${CURL_DIR}/bin/curl-config
 		else
@@ -47,26 +40,20 @@ dnl ----
 			CURL_CONFIG=${CURL_DIR}/curl-config
 			fi
 		fi
-		
+
 		PHP_ADD_INCLUDE($CURL_DIR/include)
 		PHP_EVAL_LIBLINE($CURL_LIBS, CURL_SHARED_LIBADD)
 		PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/lib, HTTP_SHARED_LIBADD)
-		
-		PHP_CHECK_LIBRARY(curl,curl_easy_init, 
-		[ 
+
+		PHP_CHECK_LIBRARY(curl,curl_easy_init,
+		[
 			AC_DEFINE(HAVE_CURL,1,[Have CURL easy support])
 		],[
 			AC_MSG_ERROR(There is something wrong with libcurl. Please check config.log for more information.)
 		],[
 			$CURL_LIBS -L$CURL_DIR/lib
 		])
-		
-		PHP_CHECK_LIBRARY(curl,curl_version_info,
-		[
-			AC_DEFINE(HAVE_CURL_VERSION_INFO,1,[ ])
-		],[],[
-			$CURL_LIBS -L$CURL_DIR/lib
-		])
+
 	fi
 
 dnl ----
