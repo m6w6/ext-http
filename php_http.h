@@ -39,19 +39,6 @@ extern zend_module_entry http_module_entry;
 #else
 
 #ifdef HTTP_HAVE_CURL
-typedef struct {
-	struct {
-		char *data;
-		size_t used;
-		size_t free;
-	} body;
-	struct {
-		char *data;
-		size_t used;
-		size_t free;
-	} hdrs;
-} http_curlbuf;
-
 typedef enum {
 	HTTP_GET,
 	HTTP_HEAD,
@@ -185,7 +172,18 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	time_t lmod;
 	char *allowed_methods;
 #ifdef HTTP_HAVE_CURL
-	http_curlbuf curlbuf;
+	struct {
+		struct {
+			char *data;
+			size_t used;
+			size_t free;
+		} body;
+		struct {
+			char *data;
+			size_t used;
+			size_t free;
+		} hdrs;
+	} curlbuf;
 #endif
 ZEND_END_MODULE_GLOBALS(http)
 
