@@ -290,7 +290,7 @@ static STATUS _http_send_chunk(const void *data, const size_t begin,
 		break;
 
 		case SEND_DATA:
-			return len == php_body_write(data + begin, len TSRMLS_CC)
+			return len == php_body_write(((char *)data) + begin, len TSRMLS_CC)
 				? SUCCESS : FAILURE;
 		break;
 
@@ -1067,7 +1067,7 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 {
 	char etag[33] = { 0 };
 	unsigned char digest[16];
-	
+
 	if (mode & PHP_OUTPUT_HANDLER_START) {
 		PHP_MD5Init(&HTTP_G(etag_md5));
 	}
@@ -1076,7 +1076,7 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 
 	if (mode & PHP_OUTPUT_HANDLER_END) {
 		PHP_MD5Final(digest, &HTTP_G(etag_md5));
-		
+
 		/* just do that if desired */
 		if (HTTP_G(etag_started)) {
 			make_digest(etag, digest);
@@ -1541,7 +1541,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 			efree(etag);
 			return FAILURE;
 		}
-		
+
 		/* send 304 Not Modified if etag matches */
 		if ((!is_range_request) && http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
 			efree(etag);
