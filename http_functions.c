@@ -682,6 +682,13 @@ PHP_FUNCTION(http_get_request_headers)
  *  - cookies:          array, list of cookies as associative array
  *                      like array("cookie" => "value")
  *  - cookiestore:      string, path to a file where cookies are/will be stored
+ *  - resume:			int, byte offset to start the download from;
+ *                      if the server supports ranges
+ *  - maxfilesize:		int, maximum file size that should be downloaded;
+ *                      has no effect, if the size of the requested entity is not known
+ *  - lastmodified:     int, timestamp for If-(Un)Modified-Since header
+ *  - timeout:          int, seconds the request may take
+ *  - connecttimeout:   int, seconds the connect may take
  * </pre>
  *
  * The optional third parameter will be filled with some additional information

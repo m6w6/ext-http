@@ -193,31 +193,22 @@ static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, i
 static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSRMLS_DC)
 {
 	zval *zoption;
+	zend_bool range_req = 0;
 
 	/* standard options */
 	curl_easy_setopt(ch, CURLOPT_URL, url);
 	curl_easy_setopt(ch, CURLOPT_HEADER, 0);
+	curl_easy_setopt(ch, CURLOPT_FILETIME, 1);
 	curl_easy_setopt(ch, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt(ch, CURLOPT_AUTOREFERER, 1);
 	curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, http_curl_body_callback);
 	curl_easy_setopt(ch, CURLOPT_HEADERFUNCTION, http_curl_hdrs_callback);
-#if defined(ZTS) && (LIBCURL_VERSION_NUM >= 0x070a00)
+#if defined(ZTS) && (LIBCURL_VERSION_NUM >= 71000)
 	curl_easy_setopt(ch, CURLOPT_NOSIGNAL, 1);
 #endif
 
 	if ((!options) || (1 > zend_hash_num_elements(options))) {
 		return;
-	}
-
-	/* redirects, defaults to 0 */
-	if (zoption = http_curl_getopt1(options, "redirect", IS_LONG)) {
-		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
-		curl_easy_setopt(ch, CURLOPT_MAXREDIRS, Z_LVAL_P(zoption));
-		if (zoption = http_curl_getopt2(options, "unrestrictedauth", IS_LONG, IS_BOOL)) {
-			curl_easy_setopt(ch, CURLOPT_UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
-		}
-	} else {
-		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, 0);
 	}
 
 	/* proxy */
@@ -231,7 +222,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		if (zoption = http_curl_getopt1(options, "proxyauth", IS_STRING)) {
 			curl_easy_setopt(ch, CURLOPT_PROXYUSERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
 		}
-#if LIBCURL_VERSION_NUM > 0x070a06
+#if LIBCURL_VERSION_NUM >= 71007
 		/* auth method */
 		if (zoption = http_curl_getopt1(options, "proxyauthtype", IS_LONG)) {
 			curl_easy_setopt(ch, CURLOPT_PROXYAUTH, Z_LVAL_P(zoption));
@@ -239,26 +230,42 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 #endif
 	}
 
+	/* outgoing interface */
+	if (zoption = http_curl_getopt1(options, "interface", IS_STRING)) {
+		curl_easy_setopt(ch, CURLOPT_INTERFACE, http_curl_copystr(Z_STRVAL_P(zoption)));
+	}
+	
+	/* another port */
+	if (zoption = http_curl_getopt1(options, "port", IS_LONG)) {
+		curl_easy_setopt(ch, CURLOPT_PORT, Z_LVAL_P(zoption));
+	}
+
 	/* auth */
 	if (zoption = http_curl_getopt1(options, "httpauth", IS_STRING)) {
 		curl_easy_setopt(ch, CURLOPT_USERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
-#if LIBCURL_VERSION_NUM > 0x070a05
+#if LIBCURL_VERSION_NUM >= 71006
 	if (zoption = http_curl_getopt1(options, "httpauthtype", IS_LONG)) {
 		curl_easy_setopt(ch, CURLOPT_HTTPAUTH, Z_LVAL_P(zoption));
 	}
 #endif
 
-	/* compress, enabled by default (empty string enables deflate and gzip) */
+	/* compress, empty string enables deflate and gzip */
 	if (zoption = http_curl_getopt2(options, "compress", IS_LONG, IS_BOOL)) {
 		if (Z_LVAL_P(zoption)) {
 			curl_easy_setopt(ch, CURLOPT_ENCODING, "");
 		}
 	}
 
-	/* another port */
-	if (zoption = http_curl_getopt1(options, "port", IS_LONG)) {
-		curl_easy_setopt(ch, CURLOPT_PORT, Z_LVAL_P(zoption));
+	/* redirects, defaults to 0 */
+	if (zoption = http_curl_getopt1(options, "redirect", IS_LONG)) {
+		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
+		curl_easy_setopt(ch, CURLOPT_MAXREDIRS, Z_LVAL_P(zoption));
+		if (zoption = http_curl_getopt2(options, "unrestrictedauth", IS_LONG, IS_BOOL)) {
+			curl_easy_setopt(ch, CURLOPT_UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
+		}
+	} else {
+		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, 0);
 	}
 
 	/* referer */
@@ -272,6 +279,31 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 	} else {
 		curl_easy_setopt(ch, CURLOPT_USERAGENT,
 			"PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
+	}
+
+	/* additional headers, array('name' => 'value') */
+	if (zoption = http_curl_getopt1(options, "headers", IS_ARRAY)) {
+		char *header_key;
+		long header_idx;
+		struct curl_slist *headers = NULL;
+
+		FOREACH_KEY(zoption, header_key, header_idx) {
+			if (header_key) {
+				zval **header_val;
+				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header_val)) {
+					char header[1024] = {0};
+					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
+					headers = curl_slist_append(headers, http_curl_copystr(header));
+				}
+
+				/* reset */
+				header_key = NULL;
+			}
+		}
+
+		if (headers) {
+			curl_easy_setopt(ch, CURLOPT_HTTPHEADER, headers);
+		}
 	}
 
 	/* cookies, array('name' => 'value') */
@@ -289,7 +321,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 					smart_str_appendl(&qstr, Z_STRVAL_PP(cookie_val), Z_STRLEN_PP(cookie_val));
 					smart_str_appendl(&qstr, "; ", 2);
 				}
-				
+
 				/* reset */
 				cookie_key = NULL;
 			}
@@ -308,29 +340,31 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		curl_easy_setopt(ch, CURLOPT_COOKIEJAR, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
 
-	/* additional headers, array('name' => 'value') */
-	if (zoption = http_curl_getopt1(options, "headers", IS_ARRAY)) {
-		char *header_key;
-		long header_idx;
-		struct curl_slist *headers = NULL;
+	/* resume */
+	if (zoption = http_curl_getopt1(options, "resume", IS_LONG)) {
+		range_req = 1;
+		curl_easy_setopt(ch, CURLOPT_RESUME_FROM, Z_LVAL_P(zoption));
+	}
 
-		FOREACH_KEY(zoption, header_key, header_idx) {
-			if (header_key) {
-				zval **header_val;
-				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header_val)) {
-					char header[1024] = {0};
-					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
-					headers = curl_slist_append(headers, http_curl_copystr(header));
-				}
-				
-				/* reset */
-				header_key = NULL;
-			}
-		}
-		
-		if (headers) {
-			curl_easy_setopt(ch, CURLOPT_HTTPHEADER, headers);
-		}
+	/* maxfilesize */
+	if (zoption = http_curl_getopt1(options, "maxfilesize", IS_LONG)) {
+		curl_easy_setopt(ch, CURLOPT_MAXFILESIZE, Z_LVAL_P(zoption));
+	}
+	
+	/* lastmodified */
+	if (zoption = http_curl_getopt1(options, "lastmodified", IS_LONG)) {
+		curl_easy_setopt(ch, CURLOPT_TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
+		curl_easy_setopt(ch, CURLOPT_TIMEVALUE, Z_LVAL_P(zoption));
+	}
+
+	/* timeout */
+	if (zoption = http_curl_getopt1(options, "timeout", IS_LONG)) {
+		curl_easy_setopt(ch, CURLOPT_TIMEOUT, Z_LVAL_P(zoption));
+	}
+
+	/* connecttimeout */
+	if (zoption = http_curl_getopt1(options, "connecttimeout", IS_LONG)) {
+		curl_easy_setopt(ch, CURLOPT_CONNECTTIMEOUT, Z_LVAL_P(zoption));
 	}
 }
 /* }}} */
@@ -371,61 +405,63 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 			} \
 		} \
 		break; \
-	} \
+	}
 
-	/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
 	HTTP_CURL_INFO(EFFECTIVE_URL);
-#if LIBCURL_VERSION_NUM > 0x070a06
-	/* CURLINFO_RESPONSE_CODE			=	CURLINFO_LONG	+2, */
+
+#if LIBCURL_VERSION_NUM >= 71007
 	HTTP_CURL_INFO(RESPONSE_CODE);
 #else
 	HTTP_CURL_INFO_EX(HTTP_CODE, RESPONSE_CODE);
 #endif
-	/* CURLINFO_TOTAL_TIME				=	CURLINFO_DOUBLE	+3, */
-	HTTP_CURL_INFO(TOTAL_TIME);
-	/* CURLINFO_NAMELOOKUP_TIME			=	CURLINFO_DOUBLE	+4, */
-	HTTP_CURL_INFO(NAMELOOKUP_TIME);
-	/* CURLINFO_CONNECT_TIME			=	CURLINFO_DOUBLE	+5, */
-	HTTP_CURL_INFO(CONNECT_TIME);
-	/* CURLINFO_PRETRANSFER_TIME		=	CURLINFO_DOUBLE	+6, */
-	HTTP_CURL_INFO(PRETRANSFER_TIME);
-	/* CURLINFO_SIZE_UPLOAD				=	CURLINFO_DOUBLE	+7, */
-	HTTP_CURL_INFO(SIZE_UPLOAD);
-	/* CURLINFO_SIZE_DOWNLOAD			=	CURLINFO_DOUBLE	+8, */
-	HTTP_CURL_INFO(SIZE_DOWNLOAD);
-	/* CURLINFO_SPEED_DOWNLOAD			=	CURLINFO_DOUBLE	+9, */
-	HTTP_CURL_INFO(SPEED_DOWNLOAD);
-	/* CURLINFO_SPEED_UPLOAD			=	CURLINFO_DOUBLE	+10, */
-	HTTP_CURL_INFO(SPEED_UPLOAD);
-	/* CURLINFO_HEADER_SIZE				=	CURLINFO_LONG	+11, */
-	HTTP_CURL_INFO(HEADER_SIZE);
-	/* CURLINFO_REQUEST_SIZE			=	CURLINFO_LONG	+12, */
-	HTTP_CURL_INFO(REQUEST_SIZE);
-	/* CURLINFO_SSL_VERIFYRESULT		=	CURLINFO_LONG	+13, */
-	HTTP_CURL_INFO(SSL_VERIFYRESULT);
-	/* CURLINFO_FILETIME				=	CURLINFO_LONG	+14, */
-	HTTP_CURL_INFO(FILETIME);
-	/* CURLINFO_CONTENT_LENGTH_DOWNLOAD	=	CURLINFO_DOUBLE	+15, */
-	HTTP_CURL_INFO(CONTENT_LENGTH_DOWNLOAD);
-	/* CURLINFO_CONTENT_LENGTH_UPLOAD	=	CURLINFO_DOUBLE	+16, */
-	HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
-	/* CURLINFO_STARTTRANSFER_TIME		=	CURLINFO_DOUBLE	+17, */
-	HTTP_CURL_INFO(STARTTRANSFER_TIME);
-	/* CURLINFO_CONTENT_TYPE			=	CURLINFO_STRING	+18, */
-	HTTP_CURL_INFO(CONTENT_TYPE);
-	/* CURLINFO_REDIRECT_TIME			=	CURLINFO_DOUBLE	+19, */
-	HTTP_CURL_INFO(REDIRECT_TIME);
-	/* CURLINFO_REDIRECT_COUNT			=	CURLINFO_LONG	+20, */
-	HTTP_CURL_INFO(REDIRECT_COUNT);
-	/* CURLINFO_PRIVATE					=	CURLINFO_STRING	+21, */
-	HTTP_CURL_INFO(PRIVATE);
-	/* CURLINFO_HTTP_CONNECTCODE		=	CURLINFO_LONG	+22, */
 	HTTP_CURL_INFO(HTTP_CONNECTCODE);
-#if LIBCURL_VERSION_NUM > 0x070a07
-	/* CURLINFO_HTTPAUTH_AVAIL			=	CURLINFO_LONG	+23, */
+
+#if LIBCURL_VERSION_NUM >= 70500
+	HTTP_CURL_INFO(FILETIME);
+#endif
+	HTTP_CURL_INFO(TOTAL_TIME);
+	HTTP_CURL_INFO(NAMELOOKUP_TIME);
+	HTTP_CURL_INFO(CONNECT_TIME);
+	HTTP_CURL_INFO(PRETRANSFER_TIME);
+	HTTP_CURL_INFO(STARTTRANSFER_TIME);
+#if LIBCURL_VERSION_NUM >= 70907
+	HTTP_CURL_INFO(REDIRECT_TIME);
+	HTTP_CURL_INFO(REDIRECT_COUNT);
+#endif
+
+	HTTP_CURL_INFO(SIZE_UPLOAD);
+	HTTP_CURL_INFO(SIZE_DOWNLOAD);
+	HTTP_CURL_INFO(SPEED_DOWNLOAD);
+	HTTP_CURL_INFO(SPEED_UPLOAD);
+
+	HTTP_CURL_INFO(HEADER_SIZE);
+	HTTP_CURL_INFO(REQUEST_SIZE);
+
+	HTTP_CURL_INFO(SSL_VERIFYRESULT);
+#if LIBCURL_VERSION_NUM >= 71203
+	/*HTTP_CURL_INFO(SSL_ENGINES); 
+		todo: CURLINFO_SLIST */
+#endif
+
+	HTTP_CURL_INFO(CONTENT_LENGTH_DOWNLOAD);
+	HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
+	HTTP_CURL_INFO(CONTENT_TYPE);
+
+#if LIBCURL_VERSION_NUM >= 71003
+	/*HTTP_CURL_INFO(PRIVATE);*/
+#endif
+
+#if LIBCURL_VERSION_NUM >= 71008
 	HTTP_CURL_INFO(HTTPAUTH_AVAIL);
-	/* CURLINFO_PROXYAUTH_AVAIL			=	CURLINFO_LONG	+24, */
 	HTTP_CURL_INFO(PROXYAUTH_AVAIL);
+#endif
+
+#if LIBCURL_VERSION_NUM >= 71202
+	/*HTTP_CURL_INFO(OS_ERRNO);*/
+#endif
+
+#if LIBCURL_VERSION_NUM >= 71203
+	HTTP_CURL_INFO(NUM_CONNECTS);
 #endif
 }
 /* }}} */
@@ -437,8 +473,7 @@ PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options,
 	zend_bool clean_curl = 0;
 
 	http_curl_startup(ch, clean_curl, URL, options);
-	curl_easy_setopt(ch, CURLOPT_NOBODY, 0);
-	curl_easy_setopt(ch, CURLOPT_POST, 0);
+	curl_easy_setopt(ch, CURLOPT_HTTPGET, 1);
 
 	if (CURLE_OK != curl_easy_perform(ch)) {
 		http_curl_cleanup(ch, clean_curl);
@@ -464,7 +499,6 @@ PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options,
 
 	http_curl_startup(ch, clean_curl, URL, options);
 	curl_easy_setopt(ch, CURLOPT_NOBODY, 1);
-	curl_easy_setopt(ch, CURLOPT_POST, 0);
 
 	if (CURLE_OK != curl_easy_perform(ch)) {
 		http_curl_cleanup(ch, clean_curl);
