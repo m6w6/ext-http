@@ -23,6 +23,7 @@
 /* make compile on Win32 */
 #include "php_streams.h"
 #include "ext/standard/md5.h"
+#include "phpstr/phpstr.h"
 
 extern zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
@@ -41,8 +42,6 @@ typedef struct {
 } http_response_object;
 
 #ifdef HTTP_HAVE_CURL
-
-#include "phpstr/phpstr.h"
 
 #ifdef	PHP_WIN32
 #	include <winsock2.h>
