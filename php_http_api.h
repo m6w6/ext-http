@@ -150,7 +150,10 @@ PHP_HTTP_API STATUS _http_send_file(const zval *zfile TSRMLS_DC);
 PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, const size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
 #define http_split_response(r, h, b) _http_split_response((r), (h), (b) TSRMLS_CC)
-PHP_HTTP_API void _http_split_response(const zval *zresponse, zval *zheaders, zval *zbody TSRMLS_DC);
+PHP_HTTP_API STATUS _http_split_response(const zval *zresponse, zval *zheaders, zval *zbody TSRMLS_DC);
+
+#define http_parse_header(h, l, a) _http_parse_header((h), (l), (a) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_parse_header(char *header, long header_len, zval *array TSRMLS_DC);
 
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL

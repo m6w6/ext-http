@@ -71,6 +71,7 @@ function_entry http_functions[] = {
 	PHP_FE(http_send_stream, NULL)
 	PHP_FE(http_chunked_decode, NULL)
 	PHP_FE(http_split_response, NULL)
+	PHP_FE(http_parse_header, NULL)
 #ifdef HTTP_HAVE_CURL
 	PHP_FE(http_get, NULL)
 	PHP_FE(http_head, NULL)
@@ -677,13 +678,39 @@ PHP_FUNCTION(http_split_response)
 	MAKE_STD_ZVAL(zheaders);
 	array_init(zheaders);
 
-	http_split_response(zresponse, zheaders, zbody);
+	if (SUCCESS != http_split_response(zresponse, zheaders, zbody)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP response");
+		RETURN_FALSE;
+	}
 
 	array_init(return_value);
 	add_index_zval(return_value, 0, zheaders);
 	add_index_zval(return_value, 1, zbody);
 }
 /* }}} */
+
+/* {{{ proto array http_parse_header(string header) */
+PHP_FUNCTION(http_parse_header)
+{
+	char *header, *rnrn;
+	int header_len;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &header, &header_len)) {
+		RETURN_FALSE;
+	}
+	
+	array_init(return_value);
+	
+	if (rnrn = strstr(header, "\r\n\r\n")) {
+		header_len = rnrn - header + 2;
+	}
+	if (SUCCESS != http_parse_header(header, header_len, return_value)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP header");
+		zval_dtor(return_value);
+		RETURN_FALSE;
+	}
+}
+/* }}}*/
 
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL

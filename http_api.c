@@ -1669,8 +1669,8 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 }
 /* }}} */
 
-/* {{{ proto void http_split_response(zval *, zval *, zval *) */
-PHP_HTTP_API void _http_split_response(const zval *zresponse, zval *zheaders,
+/* {{{ proto STATUS http_split_response(zval *, zval *, zval *) */
+PHP_HTTP_API STATUS _http_split_response(const zval *zresponse, zval *zheaders,
 	zval *zbody TSRMLS_DC)
 {
 	char *header, *response, *body = NULL;
@@ -1693,42 +1693,56 @@ PHP_HTTP_API void _http_split_response(const zval *zresponse, zval *zheaders,
 		Z_TYPE_P(zbody) = IS_NULL;
 	}
 
-	/* check for HTTP status - FIXXME: strchr() */
+	return http_parse_header(header, body - Z_STRVAL_P(zresponse), zheaders);
+}
+/* }}} */
+
+/* {{{ STATUS http_parse_header(char *, long, zval *) */
+PHP_HTTP_API STATUS _http_parse_header(char *header, long header_len, zval *array TSRMLS_DC)
+{
+	char *colon = NULL, *line = NULL, *begin = header;
+
+	if (header_len < 8) {
+		return FAILURE;
+	}
+
+	/* status code */
 	if (!strncmp(header, "HTTP/1.", 7)) {
-		char *end = strchr(header, '\r');
-		add_assoc_stringl(zheaders, "Status",
+		char *end = strstr(header, "\r\n");
+		add_assoc_stringl(array, "Status",
 			header + strlen("HTTP/1.x "),
 			end - (header + strlen("HTTP/1.x ")), 1);
 		header = end + 2;
 	}
-	/* split headers */
-	{
-		char *colon = NULL, *line = header;
 
-		while (	(line - Z_STRVAL_P(zresponse) + 3) <
-				(body - Z_STRVAL_P(zresponse))) {
-			switch (*line++)
-			{
-				case '\r':
-					if (colon && (*line == '\n')) {
-						char *key = estrndup(header, colon - header);
-						add_assoc_stringl(zheaders, key,
-							colon + 2, line - colon - 3, 1);
-						efree(key);
+	line = header;
 
-						colon = NULL;
-						header += line - header + 1;
-					}
-				break;
+	/*
+	 * FIXXME: support for folded headers
+	 */
+	while (header_len > (line - begin)) {
+		switch (*line++)
+		{
+			case 0:
+			case '\r':
+				if (colon && (*line == '\n')) {
+					char *key = estrndup(header, colon - header);
+					add_assoc_stringl(array, key, colon + 2, line - colon - 3, 1);
+					efree(key);
 
-				case ':':
-					if (!colon) {
-						colon = line - 1;
-					}
-				break;
-			}
+					colon = NULL;
+					header += line - header + 1;
+				}
+			break;
+
+			case ':':
+				if (!colon) {
+					colon = line - 1;
+				}
+			break;
 		}
 	}
+	return SUCCESS;
 }
 /* }}} */
 
