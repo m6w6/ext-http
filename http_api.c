@@ -1061,9 +1061,12 @@ PHP_HTTP_API inline time_t _http_lmod(const void *data_ptr, const http_send_mode
 
 		default:
 		{
-			zval mtime;
-			php_stat(Z_STRVAL_P((zval *) data_ptr), Z_STRLEN_P((zval *) data_ptr), 6, &mtime TSRMLS_CC);
-			return Z_LVAL(mtime);
+			if (!HTTP_G(ssb).sb.st_mtime) {
+				if(php_stream_stat_path(Z_STRVAL_P((zval *) data_ptr), &HTTP_G(ssb))) {
+					return 0;
+				}
+			}
+			return HTTP_G(ssb).sb.st_mtime;
 		}
 	}
 }

@@ -185,7 +185,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, const size_t encod
 
 #define http_split_response(r, h, b) _http_split_response_ex(Z_STRVAL_P(r), Z_STRLEN_P(r), (h), (b) TSRMLS_CC)
 #define http_split_response_ex(r, l, h, b) _http_split_response_ex((r), (l), (h), (b) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_split_response(char *response, size_t repsonse_len, zval *zheaders, zval *zbody TSRMLS_DC);
+PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t repsonse_len, zval *zheaders, zval *zbody TSRMLS_DC);
 
 #define http_parse_headers(h, l, a) _http_parse_headers((h), (l), (a) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *array TSRMLS_DC);
