@@ -15,6 +15,9 @@
 
 /* $Id$ */
 
+#define _WINSOCKAPI_
+#define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
+
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
@@ -1040,7 +1043,7 @@ PHP_METHOD(HTTPi_Request, send)
 					status = http_post_array_ex(obj->ch, request_uri, Z_ARRVAL_P(post_data), Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &response_data, &response_len);
 
 				} else {
-					
+
 					/*
 					 * multipart post
 					 */
