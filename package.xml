@@ -6,7 +6,7 @@
   <description>
 <![CDATA[
 * Building absolute URIs
-* RCF compliant HTTP redirects
+* RFC compliant HTTP redirects
 * RFC compliant HTTP date handling
 * Parsing of HTTP headers and responses
 * Caching by "Last-Modified" and/or ETag
@@ -15,7 +15,7 @@
 * Negotiating user preferred language/charset
 * Convenient request functions to HEAD/GET/POST if libcurl is available
 * HTTP auth hooks (Basic)
-* HTTPi, HTTPi_Response and HTTPi_Request (with libcurl) classes
+* HTTPi, HTTPi_Response and HTTPi_Request classes (HTTPi_Request only with libcurl)
 ]]>
   </description>
   <license>PHP License 3.0</license>
@@ -30,11 +30,16 @@
   </maintainers>
 
   <release>
-    <version>0.7.0dev</version>
-    <date>2005-03-00</date>
+    <version>0.6.1</version>
+    <date>2005-03-07</date>
     <state>alpha</state>
     <notes><![CDATA[
-*
+* fixed overflow in http_split_response()
+- removed HTTPi_Request::getResponseHeaders()
++ added HTTPi_Request::getResponseCode()
++ added HTTPi_Request::getResponseHeader([string name]), allowing retrieval of single header values
++ HTTPi_Request::getResponseInfo([string name]) now allows retrieval of single info values
++ vastly enhanced http_absolute_uri()
 ]]>
     </notes>
   </release>
