@@ -45,6 +45,11 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 #	define http_curl_reset(ch)
 #endif
 
+/* FIXXME: correct version where strerror is supported! */
+#if LIBCURL_VERSION_NUM < 0x070b01
+#	define curl_easy_strerror(code) "unkown error"
+#endif
+
 #define http_curl_startup(ch, clean_curl, URL, options) \
 	if (!ch) { \
 		if (!(ch = curl_easy_init())) { \
@@ -79,11 +84,15 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 #define http_curl_freestr() \
 	zend_llist_clean(&HTTP_G(to_free))
 
-#define http_curl_initbuf() http_curl_initbuf_ex(0)
+#define http_curl_initbuf() \
+	http_curl_initbuf_ex(0)
 
 #define http_curl_initbuf_ex(chunk_size) \
 	{ \
-		size_t size = (chunk_size > 0) ? chunk_size : HTTP_CURLBUF_SIZE; \
+		size_t size = chunk_size; \
+		if (size < 1) { \
+			size = HTTP_CURLBUF_SIZE; \
+		} \
 		http_curl_freebuf(); \
 		HTTP_G(curlbuf).data = emalloc(size); \
 		HTTP_G(curlbuf).free = size; \

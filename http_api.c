@@ -30,6 +30,7 @@
 #include "php.h"
 #include "php_version.h"
 #include "php_streams.h"
+#include "php_output.h"
 #include "snprintf.h"
 #include "ext/standard/md5.h"
 #include "ext/standard/url.h"
@@ -156,18 +157,20 @@ static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 static STATUS _http_send_chunk(const void *data, const size_t begin,
 	const size_t end, const http_send_mode mode TSRMLS_DC)
 {
-	char *buf;
-	size_t read = 0;
 	long len = end - begin;
-	php_stream *s;
 
 	switch (mode)
 	{
 		case SEND_RSRC:
-			s = (php_stream *) data;
+		{
+			char *buf;
+			size_t read = 0;
+			php_stream *s = (php_stream *) data;
+
 			if (php_stream_seek(s, begin, SEEK_SET)) {
 				return FAILURE;
 			}
+
 			buf = (char *) ecalloc(1, HTTP_SENDBUF_SIZE);
 			/* read into buf and write out */
 			while ((len -= HTTP_SENDBUF_SIZE) >= 0) {
@@ -179,6 +182,9 @@ static STATUS _http_send_chunk(const void *data, const size_t begin,
 					efree(buf);
 					return FAILURE;
 				}
+				/* ob_flush() && flush() */
+				php_end_ob_buffer(1, 1 TSRMLS_CC);
+				sapi_flush(TSRMLS_C);
 			}
 
 			/* read & write left over */
@@ -192,15 +198,39 @@ static STATUS _http_send_chunk(const void *data, const size_t begin,
 					efree(buf);
 					return FAILURE;
 				}
+				/* ob_flush() & flush() */
+				php_end_ob_buffer(1, 1 TSRMLS_CC);
+				sapi_flush(TSRMLS_C);
 			}
 			efree(buf);
 			return SUCCESS;
-		break;
+		}
 
 		case SEND_DATA:
-			return len == php_body_write(((char *)data) + begin, len TSRMLS_CC)
-				? SUCCESS : FAILURE;
-		break;
+		{
+			char *s = (char *) data + begin;
+
+			while ((len -= HTTP_SENDBUF_SIZE) >= 0) {
+				if (HTTP_SENDBUF_SIZE - php_body_write(s, HTTP_SENDBUF_SIZE TSRMLS_CC)) {
+					return FAILURE;
+				}
+				s += HTTP_SENDBUF_SIZE;
+				/* ob_flush() & flush() */
+				php_end_ob_buffer(1, 1 TSRMLS_CC);
+				sapi_flush(TSRMLS_C);
+			}
+
+			/* write left over */
+			if (len) {
+				if (HTTP_SENDBUF_SIZE + len - php_body_write(s, HTTP_SENDBUF_SIZE + len TSRMLS_CC)) {
+						return FAILURE;
+				}
+				/* ob_flush() & flush() */
+				php_end_ob_buffer(1, 1 TSRMLS_CC);
+				sapi_flush(TSRMLS_C);
+			}
+			return SUCCESS;
+		}
 
 		default:
 			return FAILURE;
@@ -587,6 +617,15 @@ PHP_HTTP_API zval *_http_get_server_var(const char *key TSRMLS_DC)
 }
 /* }}} */
 
+/* {{{ int http_got_server_var(char *) */
+PHP_HTTP_API int _http_got_server_var(const char *key TSRMLS_DC)
+{
+	zval *dummy;
+	HTTP_GSC(dummy, key, 0);
+	return 1;
+}
+/* }}} */
+
 /* {{{ void http_ob_etaghandler(char *, uint, char **, uint *, int) */
 PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 	char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
@@ -609,6 +648,7 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 
 			if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
 				http_send_status(304);
+				zend_bailout();
 			} else {
 				http_send_etag(etag, 32);
 			}
@@ -664,14 +704,15 @@ PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_fun
 }
 /* }}} */
 
-/* {{{ int http_modified_match(char *, int) */
-PHP_HTTP_API int _http_modified_match(const char *entry, const time_t t TSRMLS_DC)
+/* {{{ int http_modified_match(char *, time_t) */
+PHP_HTTP_API int _http_modified_match_ex(const char *entry, const time_t t, 
+	const int enforce_presence TSRMLS_DC)
 {
 	int retval;
 	zval *zmodified;
 	char *modified, *chr_ptr;
 
-	HTTP_GSC(zmodified, entry, 0);
+	HTTP_GSC(zmodified, entry, !enforce_presence);
 
 	modified = estrndup(Z_STRVAL_P(zmodified), Z_STRLEN_P(zmodified));
 	if (chr_ptr = strrchr(modified, ';')) {
@@ -684,13 +725,14 @@ PHP_HTTP_API int _http_modified_match(const char *entry, const time_t t TSRMLS_D
 /* }}} */
 
 /* {{{ int http_etag_match(char *, char *) */
-PHP_HTTP_API int _http_etag_match(const char *entry, const char *etag TSRMLS_DC)
+PHP_HTTP_API int _http_etag_match_ex(const char *entry, const char *etag, 
+	const int enforce_presence TSRMLS_DC)
 {
 	zval *zetag;
 	char *quoted_etag;
 	STATUS result;
 
-	HTTP_GSC(zetag, entry, 0);
+	HTTP_GSC(zetag, entry, !enforce_presence);
 
 	if (NULL != strchr(Z_STRVAL_P(zetag), '*')) {
 		return 1;
@@ -916,7 +958,7 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 	furl.query		= purl->query;
 	furl.fragment	= purl->fragment;
 
-	if (proto) {
+	if (proto && proto_len) {
 		furl.scheme = scheme = estrdup(proto);
 	} else if (purl->scheme) {
 		furl.scheme = purl->scheme;
@@ -936,11 +978,10 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
 		if (se = getservbyname(furl.scheme, "tcp")) {
 			furl.port = se->s_port;
-		} else
+		}
 #endif
-		furl.port = 80;
 	} else {
-		furl.port = (furl.scheme[5] == 's') ? 443 : 80;
+		furl.port = (furl.scheme[4] == 's') ? 443 : 80;
 	}
 
 	if (host) {
@@ -1152,7 +1193,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges,
 					{
 						/* "0-12345" */
 						case -10:
-							if ((length - end) < 1) {
+							if (length <= end) {
 								return RANGE_ERR;
 							}
 							begin = 0;
@@ -1160,11 +1201,11 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges,
 
 						/* "-12345" */
 						case -1:
-							if ((length - end) < 1) {
+							if (length <= end) {
 								return RANGE_ERR;
 							}
 							begin = length - end;
-							end = length;
+							end = length - 1;
 						break;
 
 						/* "12345-(xxx)" */
@@ -1173,7 +1214,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges,
 							{
 								/* "12345-" */
 								case -1:
-									if ((length - begin) < 1) {
+									if (length <= begin) {
 										return RANGE_ERR;
 									}
 									end = length - 1;
@@ -1181,9 +1222,9 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges,
 
 								/* "12345-67890" */
 								default:
-									if (	((length - begin) < 1) ||
-											((length - end) < 1) ||
-											((begin - end) >= 0)) {
+									if (	(length <= begin) ||
+											(length <= end)   ||
+											(end    <  begin)) {
 										return RANGE_ERR;
 									}
 								break;
@@ -1294,7 +1335,8 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, const
 PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 	const http_send_mode data_mode TSRMLS_DC)
 {
-	int is_range_request = http_is_range_request();
+	HashTable ranges;
+	http_range_status range_status;
 
 	if (!data_ptr) {
 		return FAILURE;
@@ -1303,19 +1345,34 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 		return SUCCESS;
 	}
 
+	zend_hash_init(&ranges, 0, NULL, ZVAL_PTR_DTOR, 0);
+	range_status = http_get_request_ranges(&ranges, data_size);
+
+	if (range_status != RANGE_OK) {
+		zend_hash_destroy(&ranges);
+	}
+
+	if (range_status == RANGE_ERR) {
+		http_send_status(416);
+		return FAILURE;
+	}
+
 	/* etag handling */
+
 	if (HTTP_G(etag_started)) {
 		char *etag;
+
 		/* interrupt */
 		HTTP_G(etag_started) = 0;
 		/* never ever use the output to compute the ETag if http_send() is used */
 		php_end_ob_buffer(0, 0 TSRMLS_CC);
+
 		if (!(etag = http_etag(data_ptr, data_size, data_mode))) {
 			return FAILURE;
 		}
 
 		/* send 304 Not Modified if etag matches */
-		if ((!is_range_request) && http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
+		if ((range_status == RANGE_NO) && http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
 			efree(etag);
 			return http_send_status(304);
 		}
@@ -1324,53 +1381,26 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 		efree(etag);
 	}
 
-	/* send 304 Not Modified if last-modified matches*/
-    if ((!is_range_request) && http_modified_match("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
-        return http_send_status(304);
-    }
+	switch (range_status) {
+		/* breaks intentionally left out */
 
-	if (is_range_request) {
-
-		/* only send ranges if entity hasn't changed */
-		if (
-			((!zend_hash_exists(HTTP_SERVER_VARS, "HTTP_IF_MATCH", 13)) ||
-			http_etag_match("HTTP_IF_MATCH", HTTP_G(etag)))
-			&&
-			((!zend_hash_exists(HTTP_SERVER_VARS, "HTTP_IF_UNMODIFIED_SINCE", 25)) ||
-			http_modified_match("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(lmod)))
-		) {
-
-			STATUS result = FAILURE;
-			HashTable ranges;
-			zend_hash_init(&ranges, 0, NULL, ZVAL_PTR_DTOR, 0);
-
-			switch (http_get_request_ranges(&ranges, data_size))
-			{
-				case RANGE_NO:
-					zend_hash_destroy(&ranges);
-					/* go ahead and send all */
-				break;
-
-				case RANGE_OK:
-					result = http_send_ranges(&ranges, data_ptr, data_size, data_mode);
-					zend_hash_destroy(&ranges);
-					return result;
-				break;
-
-				case RANGE_ERR:
-					zend_hash_destroy(&ranges);
-					http_send_status(416);
-					return FAILURE;
-				break;
-
-				default:
-					return FAILURE;
-				break;
+		case RANGE_OK:
+			/* only send ranges if entity hasn't changed */
+			if (	http_etag_match_ex("HTTP_IF_MATCH", HTTP_G(etag), 0) &&
+					http_modified_match_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(lmod), 0)) {
+				STATUS result = http_send_ranges(&ranges, data_ptr, data_size, data_mode);
+				zend_hash_destroy(&ranges);
+				return result;
+			} else {
+				zend_hash_destroy(&ranges);
 			}
-		}
+		
+		case RANGE_NO:
+			if (http_modified_match("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
+				return http_send_status(304);
+			}
+			return http_send_chunk(data_ptr, 0, data_size, data_mode);
 	}
-	/* send all */
-	return http_send_chunk(data_ptr, 0, data_size, data_mode);
 }
 /* }}} */
 

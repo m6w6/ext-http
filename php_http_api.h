@@ -56,16 +56,18 @@ PHP_HTTP_API time_t _http_parse_date(const char *date);
 #define http_send_status(s) sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) (s) TSRMLS_CC)
 #define http_send_header(h) http_send_status_header(0, (h))
 #define http_send_status_header(s, h) _http_send_status_header((s), (h) TSRMLS_CC)
-PHP_HTTP_API inline STATUS _http_send_status_header(const int status, const char *header TSRMLS_DC);
+PHP_HTTP_API STATUS _http_send_status_header(const int status, const char *header TSRMLS_DC);
 
 #define http_get_server_var(v) _http_get_server_var((v) TSRMLS_CC)
-PHP_HTTP_API inline zval *_http_get_server_var(const char *key TSRMLS_DC);
+PHP_HTTP_API zval *_http_get_server_var(const char *key TSRMLS_DC);
+#define http_got_server_var(v) _http_got_server_var((v) TSRMLS_CC)
+PHP_HTTP_API int _http_got_server_var(const char *key TSRMLS_DC);
 
 #define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
-PHP_HTTP_API inline char *_http_etag(const void *data_ptr, const size_t data_len, const http_send_mode data_mode TSRMLS_DC);
+PHP_HTTP_API char *_http_etag(const void *data_ptr, const size_t data_len, const http_send_mode data_mode TSRMLS_DC);
 
 #define http_lmod(p, m) _http_lmod((p), (m) TSRMLS_CC)
-PHP_HTTP_API inline time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC);
+PHP_HTTP_API time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC);
 
 #define http_ob_etaghandler(o, l, ho, hl, m) _http_ob_etaghandler((o), (l), (ho), (hl), (m) TSRMLS_CC)
 PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC);
@@ -73,11 +75,13 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len, char **han
 #define http_start_ob_handler(f, h, s, e) _http_start_ob_handler((f), (h), (s), (e) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_func, char *handler_name, uint chunk_size, zend_bool erase TSRMLS_DC);
 
-#define http_modified_match(entry, modified) _http_modified_match((entry), (modified) TSRMLS_CC)
-PHP_HTTP_API int _http_modified_match(const char *entry, const time_t t TSRMLS_DC);
+#define http_modified_match(entry, modified) _http_modified_match_ex((entry), (modified), 1 TSRMLS_CC)
+#define http_modified_match_ex(entry, modified, ep) _http_modified_match_ex((entry), (modified), (ep) TSRMLS_CC)
+PHP_HTTP_API int _http_modified_match_ex(const char *entry, const time_t t, const int enforce_presence TSRMLS_DC);
 
-#define http_etag_match(entry, etag) _http_etag_match((entry), (etag) TSRMLS_CC)
-PHP_HTTP_API int _http_etag_match(const char *entry, const char *etag TSRMLS_DC);
+#define http_etag_match(entry, etag) _http_etag_match_ex((entry), (etag), 1 TSRMLS_CC)
+#define http_etag_match_ex(entry, etag, ep) _http_etag_match_ex((entry), (etag), (ep) TSRMLS_CC)
+PHP_HTTP_API int _http_etag_match_ex(const char *entry, const char *etag, const int enforce_presence TSRMLS_DC);
 
 #define http_send_last_modified(t) _http_send_last_modified((t) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_last_modified(const time_t t TSRMLS_DC);
