@@ -48,7 +48,7 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 	} \
 	http_curl_initbuf(); \
 	http_curl_setopts(ch, URL, options);
-		
+
 
 #define http_curl_cleanup(ch, clean_curl) \
 	http_curl_freestr(); \
@@ -98,7 +98,7 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 			HTTP_G(curlbuf).free += bsize; \
 		} \
 	}
-		
+
 
 #define http_curl_copystr(s) _http_curl_copystr((s) TSRMLS_CC)
 static inline char *_http_curl_copystr(const char *str TSRMLS_DC);
@@ -253,8 +253,6 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		if (Z_LVAL_P(zoption)) {
 			curl_easy_setopt(ch, CURLOPT_ENCODING, "");
 		}
-	} else {
-		curl_easy_setopt(ch, CURLOPT_ENCODING, "");
 	}
 
 	/* another port */
@@ -506,7 +504,7 @@ PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options,
 	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
 {
 	zend_bool clean_curl = 0;
-	
+
 	http_curl_startup(ch, clean_curl, URL, options);
 	curl_easy_setopt(ch, CURLOPT_NOBODY, 0);
 	curl_easy_setopt(ch, CURLOPT_POST, 0);
@@ -516,14 +514,14 @@ PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options,
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
-	
+
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
-	
+
 	http_curl_copybuf(data, data_len);
 	http_curl_cleanup(ch, clean_curl);
-	
+
 	return SUCCESS;
 }
 
@@ -532,7 +530,7 @@ PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options,
 	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
 {
 	zend_bool clean_curl = 0;
-	
+
 	http_curl_startup(ch, clean_curl, URL, options);
 	curl_easy_setopt(ch, CURLOPT_NOBODY, 1);
 	curl_easy_setopt(ch, CURLOPT_POST, 0);
@@ -542,14 +540,14 @@ PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options,
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
-	
+
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
-	
+
 	http_curl_copybuf(data, data_len);
 	http_curl_cleanup(ch, clean_curl);
-	
+
 	return SUCCESS;
 }
 
@@ -559,7 +557,7 @@ PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata
 	size_t *data_len TSRMLS_DC)
 {
 	zend_bool clean_curl = 0;
-	
+
 	http_curl_startup(ch, clean_curl, URL, options);
 	curl_easy_setopt(ch, CURLOPT_POST, 1);
 	curl_easy_setopt(ch, CURLOPT_POSTFIELDS, postdata);
@@ -570,14 +568,14 @@ PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
-	
+
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
-	
+
 	http_curl_copybuf(data, data_len);
 	http_curl_cleanup(ch, clean_curl);
-	
+
 	return SUCCESS;
 }
 /* }}} */
@@ -616,7 +614,7 @@ PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL,
 	char **data, size_t *data_len TSRMLS_DC)
 {
 	zend_bool clean_curl = 0;
-	
+
 	http_curl_startup(ch, clean_curl, URL, options);
 	curl_easy_setopt(ch, CURLOPT_POST, 1);
 	curl_easy_setopt(ch, CURLOPT_HTTPPOST, curldata);
@@ -626,14 +624,14 @@ PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL,
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
-	
+
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
-	
+
 	http_curl_copybuf(data, data_len);
 	http_curl_cleanup(ch, clean_curl);
-	
+
 	return SUCCESS;
 }
 /* }}} */
