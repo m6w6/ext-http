@@ -15,6 +15,7 @@
 
 /* $Id$ */
 
+#define _WINSOCKAPI_
 #define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
 
 #ifdef HAVE_CONFIG_H
@@ -445,7 +446,7 @@ PHP_FUNCTION(http_cache_etag)
 	if (etag_len) {
 		RETURN_SUCCESS(http_send_etag(etag, etag_len));
 	}
-	
+
 	/* if no etag is given and we didn't already
 	 * start ob_etaghandler -- start it
 	 */
@@ -1135,12 +1136,12 @@ PHP_RSHUTDOWN_FUNCTION(http)
 {
 	HTTP_G(etag_started) = 0;
 	HTTP_G(lmod) = 0;
-	
+
 	if (HTTP_G(etag)) {
 		efree(HTTP_G(etag));
 		HTTP_G(etag) = NULL;
 	}
-	
+
 	if (HTTP_G(ctype)) {
 		efree(HTTP_G(ctype));
 		HTTP_G(ctype) = NULL;
