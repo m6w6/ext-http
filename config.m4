@@ -71,7 +71,7 @@ dnl ----
 dnl ----
 dnl DONE
 dnl ----
-	PHP_NEW_EXTENSION([http], [http.c http_api.c http_curl_api.c http_functions.c http_methods.c], [$ext_shared])
+	PHP_NEW_EXTENSION([http], [http.c http_api.c http_curl_api.c http_functions.c http_methods.c phpstr/phpstr.c], [$ext_shared])
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
 fi

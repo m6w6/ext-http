@@ -112,6 +112,10 @@ SOURCE=.\http_functions.c
 
 SOURCE=.\http_methods.c
 # End Source File
+# Begin Source File
+
+SOURCE=.\phpstr\phpstr.c
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
@@ -131,6 +135,10 @@ SOURCE=.\php_http_curl_api.h
 # Begin Source File
 
 SOURCE=.\php_http_std_defs.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\phpstr\phpstr.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
