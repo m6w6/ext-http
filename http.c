@@ -14,7 +14,7 @@
 */
 
 /* $Id$ */
-#define ZEND_ENGINE_2
+
 #define _WINSOCKAPI_
 #define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
 
@@ -200,7 +200,7 @@ static inline void _httpi_response_declare_default_properties(zend_class_entry *
 	DCL_PROP(PROTECTED, long, dispoInline, 0);
 	DCL_PROP(PROTECTED, long, cache, 0);
 	DCL_PROP(PROTECTED, long, gzip, 0);
-	
+
 	DCL_PROP(PRIVATE, long, raw_cache_header, 0);
 }
 
@@ -219,16 +219,16 @@ zend_object_value _httpi_response_new_object(zend_class_entry *ce TSRMLS_DC)
 {
 	zend_object_value ov;
 	httpi_response_object *o;
-	
+
 	o = ecalloc(sizeof(httpi_response_object), 1);
 	o->zo.ce = ce;
-	
+
 	ALLOC_HASHTABLE(o->zo.properties);
 	zend_hash_init(o->zo.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-	
+
 	ov.handle = zend_objects_store_put(o, httpi_response_destroy_object, NULL, NULL TSRMLS_CC);
 	ov.handlers = &httpi_response_object_handlers;
-	
+
 	return ov;
 }
 
@@ -264,7 +264,7 @@ zend_function_entry httpi_response_class_methods[] = {
 	PHP_ME(HTTPi_Response, getStream, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HTTPi_Response, send, NULL, ZEND_ACC_PUBLIC)*/
-	
+
 	{NULL, NULL, NULL}
 };
 
@@ -275,12 +275,12 @@ PHP_METHOD(HTTPi_Response, __construct)
 {
 	zend_bool do_cache = 0, do_gzip = 0;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bb", &do_cache, &do_gzip)) {
 		// throw exception
 		return;
 	}
-	
+
 	UPD_PROP(obj, long, cache, do_cache);
 	UPD_PROP(obj, long, gzip, do_gzip);
 }
@@ -293,11 +293,11 @@ PHP_METHOD(HTTPi_Response, setCache)
 {
 	zend_bool do_cache = 0;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "b", &do_cache)) {
 		RETURN_FALSE;
 	}
-	
+
 	UPD_PROP(obj, long, cache, do_cache);
 	RETURN_TRUE;
 }
@@ -310,11 +310,11 @@ PHP_METHOD(HTTPi_Response, getCache)
 {
 	zval *do_cache = NULL;
 	getObject(httpi_response_object, obj);
-	
+
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
 	}
-	
+
 	do_cache = GET_PROP(obj, cache);
 	RETURN_BOOL(Z_LVAL_P(do_cache));
 }
@@ -327,11 +327,11 @@ PHP_METHOD(HTTPi_Response, setGzip)
 {
 	zend_bool do_gzip = 0;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "b", &do_gzip)) {
 		RETURN_FALSE;
 	}
-	
+
 	UPD_PROP(obj, long, gzip, do_gzip);
 	RETURN_TRUE;
 }
@@ -344,11 +344,11 @@ PHP_METHOD(HTTPi_Response, getGzip)
 {
 	zval *do_gzip = NULL;
 	getObject(httpi_response_object, obj);
-	
+
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
 	}
-	
+
 	do_gzip = GET_PROP(obj, gzip);
 	RETURN_BOOL(Z_LVAL_P(do_gzip));
 }
@@ -363,16 +363,16 @@ PHP_METHOD(HTTPi_Response, setCacheControl)
 	int cc_len;
 	zend_bool raw = 0;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &ccontrol, &cc_len, &raw)) {
 		RETURN_FALSE;
 	}
-	
+
 	if ((!raw) && (strcmp(ccontrol, "public") && strcmp(ccontrol, "private") && strcmp(ccontrol, "no-cache"))) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
 		RETURN_FALSE;
 	}
-	
+
 	UPD_PROP(obj, long, raw_cache_header, raw);
 	UPD_PROP(obj, string, cacheControl, ccontrol);
 	RETURN_TRUE;
@@ -386,11 +386,11 @@ PHP_METHOD(HTTPi_Response, getCacheControl)
 {
 	zval *ccontrol;
 	getObject(httpi_response_object, obj);
-	
+
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
 	}
-	
+
 	ccontrol = GET_PROP(obj, cacheControl);
 	RETURN_STRINGL(Z_STRVAL_P(ccontrol), Z_STRLEN_P(ccontrol), 1);
 }
@@ -404,16 +404,16 @@ PHP_METHOD(HTTPi_Response, setContentType)
 	char *ctype;
 	int ctype_len;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ctype, &ctype_len)) {
 		RETURN_FALSE;
 	}
-	
+
 	if (!strchr(ctype, '/')) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Content type '%s' doesn't seem to contain a primary and secondary part", ctype);
 		RETURN_FALSE;
 	}
-	
+
 	UPD_PROP(obj, string, contentType, ctype);
 	RETURN_TRUE;
 }
@@ -426,11 +426,11 @@ PHP_METHOD(HTTPi_Response, getContentType)
 {
 	zval *ctype;
 	getObject(httpi_response_object, obj);
-	
+
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
 	}
-	
+
 	ctype = GET_PROP(obj, contentType);
 	RETURN_STRINGL(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
 }
@@ -445,11 +445,11 @@ PHP_METHOD(HTTPi_Response, setContentDisposition)
 	int file_len;
 	zend_bool is_inline = 0;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &file, &file_len, &is_inline)) {
 		RETURN_FALSE;
 	}
-	
+
 	UPD_PROP(obj, string, dispoFile, file);
 	UPD_PROP(obj, long, dispoInline, is_inline);
 	RETURN_TRUE;
@@ -464,14 +464,14 @@ PHP_METHOD(HTTPi_Response, getContentDisposition)
 	zval *file;
 	zval *is_inline;
 	getObject(httpi_response_object, obj);
-	
+
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
 	}
-	
+
 	file = GET_PROP(obj, dispoFile);
 	is_inline = GET_PROP(obj, dispoInline);
-	
+
 	array_init(return_value);
 	add_assoc_stringl(return_value, "filename", Z_STRVAL_P(file), Z_STRLEN_P(file), 1);
 	add_assoc_bool(return_value, "inline", Z_LVAL_P(is_inline));
@@ -486,11 +486,11 @@ PHP_METHOD(HTTPi_Response, setETag)
 	char *etag;
 	int etag_len;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &etag, &etag_len)) {
 		RETURN_FALSE;
 	}
-	
+
 	UPD_PROP(obj, string, eTag, etag);
 	RETURN_TRUE;
 }
@@ -503,11 +503,11 @@ PHP_METHOD(HTTPi_Response, getETag)
 {
 	zval *etag;
 	getObject(httpi_response_object, obj);
-	
+
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
 	}
-	
+
 	etag = GET_PROP(obj, eTag);
 	RETURN_STRINGL(Z_STRVAL_P(etag), Z_STRLEN_P(etag), 1);
 }
