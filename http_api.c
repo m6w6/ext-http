@@ -533,6 +533,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 
 		if (qstr.c) {
 			curl_easy_setopt(ch, CURLOPT_COOKIE, qstr.c);
+			efree(qstr.c);
 		}
 	}
 
