@@ -1,14 +1,14 @@
 --TEST--
-HTTPi_Request options
+HttpRequest options
 --SKIPIF--
 <?php 
 include 'skip.inc';
-(5 > (int) PHP_VERSION) and die('skip PHP5 is required for HTTPi');
+(5 > (int) PHP_VERSION) and die('skip PHP5 is required for Http classes');
 ?>
 --FILE--
 <?php
-$r1 = new HTTPi_Request;
-$r2 = new HTTPi_Request;
+$r1 = new HttpRequest;
+$r2 = new HttpRequest;
 $r1->setOptions(array('redirect'=>11, 'headers'=>array('X-Foo'=>'Bar')));
 $r2->setOptions(array('redirect'=>99, 'headers'=>array('X-Bar'=>'Foo')));
 $o1 = $r1->getOptions();

@@ -1,13 +1,13 @@
 --TEST--
-HTTPi_Request GET
+HttpRequest GET
 --SKIPIF--
 <?php 
 include 'skip.inc';
-(5 > (int) PHP_VERSION) and die('skip PHP5 is required for HTTPi');
+(5 > (int) PHP_VERSION) and die('skip PHP5 is required for Http classes');
 ?>
 --FILE--
 <?php
-$r = new HTTPi_Request('http://localhost', HTTP_GET);
+$r = new HttpRequest('http://www.google.com', HTTP_GET);
 var_dump($r->send());
 print_r($r->getResponseInfo());
 ?>
@@ -18,10 +18,10 @@ X-Powered-By: PHP/%s
 bool(true)
 Array
 (
-    [effective_url] => http://localhost/
-    [response_code] => 200
-    [http_connectcode] => 0
-    [filetime] => -1
+    [effective_url] => http://www.google.com/
+    [response_code] => %d
+    [http_connectcode] => %d
+    [filetime] => %s
     [total_time] => %f
     [namelookup_time] => %f
     [connect_time] => %f
@@ -38,7 +38,8 @@ Array
     [ssl_verifyresult] => %d
     [content_length_download] => %d
     [content_length_upload] => %d
-    [content_type] => text/html%s
+    [content_type] => %s
     [httpauth_avail] => %d
     [proxyauth_avail] => %d
+    [num_connects] => %d
 )
