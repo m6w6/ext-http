@@ -7,7 +7,7 @@ strncasecmp(PHP_SAPI, 'CLI', 3) or die('cannot run tests with CLI');
 ?>
 --FILE--
 <?php
-var_export(http_split_response("HTTP/1.1 200 Ok\r\nContent-Type: text/plain\r\nContent-Language: de-AT\r\nDate: Sat, 22 Jan 2005 18:10:02 GMT\r\n\r\nHallo Du!)"));
+var_export(http_split_response("HTTP/1.1 200 Ok\r\nContent-Type: text/plain\r\nContent-Language: de-AT\r\nDate: Sat, 22 Jan 2005 18:10:02 GMT\r\n\r\nHallo Du!"));
 ?>
 --EXPECTF--
 Content-type: text/html

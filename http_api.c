@@ -23,6 +23,7 @@
 #endif
 
 #include <ctype.h>
+#include <netdb.h>
 
 #include "php.h"
 #include "php_version.h"
@@ -918,7 +919,7 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 	} else if (purl->scheme) {
 		furl.scheme = purl->scheme;
 #ifdef ZEND_ENGINE_2
-	} else if (port && (se = getservbyport(htons(port), "tcp"))) {
+	} else if (port && (se = getservbyport(port, "tcp"))) {
 		furl.scheme = (scheme = estrdup(se->s_name));
 #endif
 	} else {
@@ -932,7 +933,7 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 	} else if (strncmp(furl.scheme, "http", 4)) {
 #ifdef ZEND_ENGINE_2
 		if (se = getservbyname(furl.scheme, "tcp")) {
-			furl.port = ntohs(se->s_port);
+			furl.port = se->s_port;
 		} else
 #endif
 		furl.port = 80;
@@ -982,14 +983,17 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 
 	HTTP_URI_STRLCATL(URL, full_len, furl.host);
 
-	if (	(strcmp(furl.scheme, "http") && (furl.port != 80)) ||
-			(strcmp(furl.scheme, "https") && (furl.port != 443))) {
+	if (	(!strcmp(furl.scheme, "http") && (furl.port != 80)) ||
+			(!strcmp(furl.scheme, "https") && (furl.port != 443))) {
 		char port_string[8] = {0};
 		snprintf(port_string, 7, ":%u", furl.port);
 		HTTP_URI_STRLCATL(URL, full_len, port_string);
 	}
 
 	if (furl.path) {
+		if (furl.path[0] != '/') {
+			HTTP_URI_STRLCATS(URL, full_len, "/");
+		}
 		HTTP_URI_STRLCATL(URL, full_len, furl.path);
 	} else {
 		HTTP_URI_STRLCATS(URL, full_len, "/");
@@ -1456,7 +1460,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 PHP_HTTP_API STATUS _http_split_response(zval *response, zval *headers, zval *body TSRMLS_DC)
 {
 	char *b = NULL;
-	long l = 0;
+	size_t l = 0;
 	STATUS status = http_split_response_ex(Z_STRVAL_P(response), Z_STRLEN_P(response), Z_ARRVAL_P(headers), &b, &l);
 	ZVAL_STRINGL(body, b, l, 0);
 	return status;
