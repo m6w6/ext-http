@@ -19,6 +19,14 @@
 #include "config.h"
 #endif
 
+#if defined(HAVE_CURL) && HAVE_CURL
+#	ifdef PHP_WIN32
+#	include <winsock2.h>
+#	include <sys/types.h>
+#	endif
+#include <curl/curl.h>
+#endif
+
 #include "php.h"
 #include "snprintf.h"
 #include "ext/standard/info.h"
@@ -28,14 +36,6 @@
 
 #include "php_http.h"
 #include "php_http_api.h"
-
-#if defined(HAVE_CURL) && HAVE_CURL
-#	ifdef PHP_WIN32
-#	include <winsock2.h>
-#	include <sys/types.h>
-#	endif
-#include <curl/curl.h>
-#endif
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
 
