@@ -111,6 +111,9 @@ PHP_HTTP_API inline zval *_http_get_server_var(const char *key TSRMLS_DC);
 #define http_ob_etaghandler(o, l, ho, hl, m) _http_ob_etaghandler((o), (l), (ho), (hl), (m) TSRMLS_CC)
 PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC);
 
+#define http_start_ob_handler(f, h, s, e) _http_start_ob_handler((f), (h), (s), (e) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_func, char *handler_name, uint chunk_size, zend_bool erase TSRMLS_DC);
+
 #define http_modified_match(entry, modified) _http_modified_match((entry), (modified) TSRMLS_CC)
 PHP_HTTP_API int _http_modified_match(const char *entry, const time_t t TSRMLS_DC);
 

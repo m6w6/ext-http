@@ -18,7 +18,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "0.4.0"
+#define PHP_EXT_HTTP_VERSION "0.5.0-dev"
 
 /* make compile on Win32 */
 #include "php_streams.h"
@@ -66,6 +66,8 @@ PHP_FUNCTION(http_post_array);
 #endif
 PHP_FUNCTION(http_auth_basic);
 PHP_FUNCTION(http_auth_basic_cb);
+
+PHP_FUNCTION(ob_httpetaghandler);
 
 PHP_MINIT_FUNCTION(http);
 PHP_MSHUTDOWN_FUNCTION(http);

@@ -29,18 +29,13 @@
   </maintainers>
 
   <release>
-    <version>0.4.0</version>
+    <version>0.5.0</version>
     <date>2005-02-16</date>
     <state>alpha</state>
     <notes><![CDATA[
-* No need to initialize $info in http_(get|head|post*) functions anymore
-* Array keys of $info in http_(get|head|post*) functions are now lower case
-* Added http_get_request_headers()
-* Added http.allowed_methods INI entry
-* Fixed memory corruption in http_parse_headers() with empty header values
-* Fixed ETag caching
-* Fixed http_send_data()
-* Correctly send the full entity if the clients Range header is syntactically invalid
+* added ob_httpetaghandler() (has major limitations compared to http_cache_etag())
+* smarter ob handling in http_cache_etag() - used buffers will be fetched, freed
+  and piped through again, so that everything passes the etag ob handler
 ]]>
     </notes>
   </release>

@@ -147,6 +147,8 @@ static int check_tzone(char *tzone);
 
 static char *pretty_key(char *key, int key_len, int uctitle, int xhyphen);
 
+static int http_ob_stack_get(php_ob_buffer *, php_ob_buffer **);
+
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL
 #define http_curl_initbuf(m) _http_curl_initbuf((m) TSRMLS_CC)
@@ -835,6 +837,20 @@ static char *pretty_key(char *key, int key_len, int uctitle, int xhyphen)
 }
 /* }}} */
 
+/* {{{ static STATUS http_ob_stack_get(php_ob_buffer *, php_ob_buffer **) */
+static STATUS http_ob_stack_get(php_ob_buffer *o, php_ob_buffer **s)
+{
+	static int i = 0;
+	php_ob_buffer *b = emalloc(sizeof(php_ob_buffer));
+	b->handler_name = estrdup(o->handler_name);
+	b->buffer = estrndup(o->buffer, o->text_length);
+	b->chunk_size = o->chunk_size;
+	b->erase = o->erase;
+	s[i++] = b;
+	return SUCCESS;
+}
+/* }}} */
+
 /* }}} internals */
 
 /* {{{ public API */
@@ -1092,6 +1108,43 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 
 	*handled_output_len = output_len;
 	*handled_output = estrndup(output, output_len);
+}
+/* }}} */
+
+/* {{{ STATUS http_start_ob_handler(php_output_handler_func_t, char *, uint, zend_bool) */
+PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_func, 
+	char *handler_name, uint chunk_size, zend_bool erase TSRMLS_DC)
+{
+	php_ob_buffer **stack;
+	int count, i;
+	STATUS result;
+	
+	count = OG(ob_nesting_level);
+	stack = emalloc(sizeof(php_ob_buffer *) * count);
+
+	if (count > 1) {
+		zend_stack_apply_with_argument(&OG(ob_buffers), ZEND_STACK_APPLY_BOTTOMUP, 
+			(int (*)(void *elem, void *)) http_ob_stack_get, stack);
+	}
+	
+	if (count > 0) {
+		http_ob_stack_get(&OG(active_ob_buffer), stack);
+	}
+	
+	while (OG(ob_nesting_level)) {
+		php_end_ob_buffer(0, 0 TSRMLS_CC);
+	}
+	
+	php_ob_set_internal_handler(handler_func, 0, handler_name, 0 TSRMLS_CC);
+	result = php_start_ob_buffer_named(handler_name, chunk_size, erase TSRMLS_CC);
+	
+	for (i = 0; i < count; i++) {
+		php_ob_buffer *s = stack[i];
+		php_start_ob_buffer_named(s->handler_name, s->chunk_size, s->erase TSRMLS_CC);
+		php_body_write(s->buffer, s->text_length TSRMLS_CC);
+	}
+	
+	return result;
 }
 /* }}} */
 

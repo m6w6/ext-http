@@ -110,6 +110,7 @@ function_entry http_functions[] = {
 #ifndef ZEND_ENGINE_2
 	PHP_FE(http_build_query, NULL)
 #endif
+	PHP_FE(ob_httpetaghandler, NULL)
 	{NULL, NULL, NULL}
 };
 /* }}} */
@@ -440,31 +441,57 @@ PHP_FUNCTION(http_cache_etag)
 		RETURN_FALSE;
 	}
 
-	php_end_ob_buffers(0 TSRMLS_CC);
 	http_send_header("Cache-Control: private, must-revalidate, max-age=0");
 
 	if (etag_len) {
-		RETURN_SUCCESS(http_send_etag(etag, etag_len));
-	}
-
-	/* if no etag is given and we didn't already
-	 * start ob_etaghandler -- start it
-	 */
-	if (!HTTP_G(etag_started)) {
-		php_ob_set_internal_handler(_http_ob_etaghandler, (uint) 4096, "etag output handler", 0 TSRMLS_CC);
-		HTTP_G(etag_started) = 1;
-		RETURN_BOOL(php_start_ob_buffer_named("etag output handler", (uint) 4096, 0 TSRMLS_CC));
-	}
-
-	if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
-		if (SUCCESS == http_send_status(304)) {
-			zend_bailout();
-		} else {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not send 304 Not Modified");
-			RETURN_FALSE;
+		http_send_etag(etag, etag_len);
+		if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
+			if (SUCCESS == http_send_status(304)) {
+				zend_bailout();
+			} else {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not send 304 Not Modified");
+				RETURN_FALSE;
+			}
 		}
 	}
 
+	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
+	if (!HTTP_G(etag_started)) {
+		RETURN_BOOL(HTTP_G(etag_started) = (SUCCESS == http_start_ob_handler(_http_ob_etaghandler, "ob_etaghandler", 0, 1)));
+	}
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string ob_httpetaghandler(string data, int mode)
+ *
+ * For use with ob_start(). Note that this has to be started as first output buffer.
+ */
+PHP_FUNCTION(ob_httpetaghandler)
+{
+	char *data;
+	int data_len;
+	long mode;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &data, &data_len, &mode)) {
+		RETURN_FALSE;
+	}
+	
+	if (mode & PHP_OUTPUT_HANDLER_START) {
+		if (HTTP_G(etag_started)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "ob_etaghandler can only be used once");
+			RETURN_FALSE;
+		}
+		if (OG(ob_nesting_level)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "must be started prior to other output buffers");
+			RETURN_FALSE;
+		}
+		http_send_header("Cache-Control: private, must-revalidate, max-age=0");
+		HTTP_G(etag_started) = 1;
+	}
+	
+	Z_TYPE_P(return_value) = IS_STRING;
+	http_ob_etaghandler(data, data_len, &Z_STRVAL_P(return_value), &Z_STRLEN_P(return_value), mode);
 }
 /* }}} */
 
