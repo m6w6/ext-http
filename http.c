@@ -765,7 +765,7 @@ void _httpi_request_destroy_object(void *object, zend_object_handle handle TSRML
 void _httpi_request_free_object(zend_object /* void */ *object TSRMLS_DC)
 {
 	httpi_request_object *o = (httpi_request_object *) object;
-	
+
 	if (OBJ_PROP(o)) {
 		zend_hash_destroy(OBJ_PROP(o));
 		FREE_HASHTABLE(OBJ_PROP(o));
@@ -868,9 +868,9 @@ PHP_METHOD(HTTPi_Request, __construct)
 PHP_METHOD(HTTPi_Request, __destruct)
 {
 	getObject(httpi_request_object, obj);
-	
+
 	NO_ARGS;
-	
+
 	FREE_PARR(obj, options);
 	FREE_PARR(obj, responseInfo);
 	FREE_PARR(obj, responseData);
@@ -2272,7 +2272,7 @@ PHP_MINIT_FUNCTION(http)
 	ZEND_INIT_MODULE_GLOBALS(http, php_http_init_globals, NULL);
 	REGISTER_INI_ENTRIES();
 
-#ifdef HTTP_HAVE_CURL
+#if defined(HTTP_HAVE_CURL) && (LIBCURL_VERSION_NUM >= 0x070a05)
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_NTLM", CURLAUTH_NTLM, CONST_CS | CONST_PERSISTENT);
