@@ -439,7 +439,7 @@ PHP_METHOD(HTTPi_Response, send)
 	getObject(httpi_response_object, obj);
 
 	NO_ARGS;
-	
+
 	do_cache = GET_PROP(obj, cache);
 	do_gzip  = GET_PROP(obj, gzip);
 
@@ -668,7 +668,7 @@ PHP_METHOD(HTTPi_Request, getURL)
 
 /* {{{ proto bool HTTPi_Request::setMethod(long request_method)
  *
- * Set the request methods; one of the <tt>HTTP_HEAD</tt>, <tt>HTTP_GET</tt> or 
+ * Set the request methods; one of the <tt>HTTP_HEAD</tt>, <tt>HTTP_GET</tt> or
  * <tt>HTTP_POST</tt> constants.
  */
 PHP_METHOD(HTTPi_Request, setMethod)
@@ -1087,8 +1087,8 @@ PHP_METHOD(HTTPi_Request, send)
 	info  = GET_PROP(obj, responseInfo);
 	resp  = GET_PROP(obj, responseData);
 
-	// HTTP_URI_MAXLEN+1 big char *
-	request_uri = http_absolute_uri(Z_STRVAL_P(URL), NULL);
+	// HTTP_URI_MAXLEN+1 long char *
+	request_uri = http_absolute_uri_ex(Z_STRVAL_P(URL), Z_STRLEN_P(URL), NULL, 0, NULL, 0, 0);
 
 	if (Z_STRLEN_P(qdata) && (strlen(request_uri) < HTTP_URI_MAXLEN)) {
 		if (!strchr(request_uri, '?')) {

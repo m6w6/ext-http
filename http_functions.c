@@ -61,7 +61,7 @@ PHP_FUNCTION(http_date)
 }
 /* }}} */
 
-/* {{{ proto string http_absolute_uri(string url[, string proto])
+/* {{{ proto string http_absolute_uri(string url[, string proto[, string host[, int port]]])
  *
  * This function returns an absolute URI constructed from url.
  * If the url is already abolute but a different proto was supplied,
@@ -80,14 +80,15 @@ PHP_FUNCTION(http_date)
  */
 PHP_FUNCTION(http_absolute_uri)
 {
-	char *url = NULL, *proto = NULL;
-	int url_len = 0, proto_len = 0;
+	char *url = NULL, *proto = NULL, *host = NULL;
+	int url_len = 0, proto_len = 0, host_len = 0;
+	long port = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s", &url, &url_len, &proto, &proto_len) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ssl", &url, &url_len, &proto, &proto_len, &host, &host_len, &port) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	RETURN_STRING(http_absolute_uri(url, proto), 0);
+	RETURN_STRING(http_absolute_uri_ex(url, url_len, proto, proto_len, host, host_len, port), 0);
 }
 /* }}} */
 
@@ -467,7 +468,8 @@ PHP_FUNCTION(http_redirect)
 		}
 	}
 
-	URI = http_absolute_uri(url, NULL);
+	URI = http_absolute_uri(url);
+	
 	if (query_len) {
 		snprintf(LOC, HTTP_URI_MAXLEN + sizeof("Location: "), "Location: %s?%s", URI, query);
 		sprintf(RED, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);

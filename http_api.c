@@ -28,6 +28,7 @@
 #include "php_version.h"
 #include "php_streams.h"
 #include "snprintf.h"
+#include "spprintf.h"
 #include "ext/standard/md5.h"
 #include "ext/standard/url.h"
 #include "ext/standard/base64.h"
@@ -879,62 +880,124 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, const size_t etag_len,
 }
 /* }}} */
 
-/* {{{ char *http_absolute_uri(char *, char *) */
-PHP_HTTP_API char *_http_absolute_uri(const char *url,
-	const char *proto TSRMLS_DC)
+/* {{{ char *http_absolute_uri(char *) */
+PHP_HTTP_API char *_http_absolute_uri_ex(
+	const char *url,	size_t url_len,
+	const char *proto,	size_t proto_len,
+	const char *host,	size_t host_len,
+	unsigned port TSRMLS_DC)
 {
-	char *proto_ptr, *host, *path, *PTR, *URI = ecalloc(1, HTTP_URI_MAXLEN + 1);
-	zval *zhost;
+	php_url *purl, furl = {NULL};
+	struct servent *se;
+	size_t full_len = 0;
+	zval *zhost = NULL;
+	char *scheme = NULL, *URL = ecalloc(1, HTTP_URI_MAXLEN + 1);
 
-	if (!url || !strlen(url)) {
-		if (!SG(request_info).request_uri) {
-			return NULL;
-		}
-		url = SG(request_info).request_uri;
-	}
-	/* Mess around with already absolute URIs */
-	else if (proto_ptr = strstr(url, "://")) {
-		if (!proto || !strncmp(url, proto, strlen(proto))) {
-			strncpy(URI, url, HTTP_URI_MAXLEN);
-			return URI;
-		} else {
-			snprintf(URI, HTTP_URI_MAXLEN, "%s%s", proto, proto_ptr + 3);
-			return URI;
-		}
+	if ((!url || !url_len) && (
+			(!(url = SG(request_info).request_uri)) ||
+			(!(url_len = strlen(SG(request_info).request_uri))))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING,
+			"Cannot build an absolute URI if supplied URL and REQUEST_URI is empty");
+		return NULL;
 	}
 
-	/* protocol defaults to http */
-	if (!proto || !strlen(proto)) {
-		proto = "http";
+	if (!(purl = php_url_parse(url))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse supplied URL");
+		return NULL;
 	}
 
-	/* get host name */
-	if (	(zhost = http_get_server_var("HTTP_HOST")) ||
-			(zhost = http_get_server_var("SERVER_NAME"))) {
-		host = Z_STRVAL_P(zhost);
+	furl.user		= purl->user;
+	furl.pass		= purl->pass;
+	furl.path		= purl->path;
+	furl.fragment	= purl->fragment;
+
+	if (proto) {
+		furl.scheme = scheme = estrdup(proto);
+	} else if (purl->scheme) {
+		furl.scheme = purl->scheme;
+	} else if (port && (se = getservbyport(htons(port), "tcp"))) {
+		furl.scheme = (scheme = estrdup(se->s_name));
 	} else {
-		host = "localhost";
+		furl.scheme = "http";
 	}
 
-
-	/* glue together */
-	if (url[0] == '/') {
-		snprintf(URI, HTTP_URI_MAXLEN, "%s://%s%s", proto, host, url);
-	} else if (SG(request_info).request_uri) {
-		path = estrdup(SG(request_info).request_uri);
-		php_dirname(path, strlen(path));
-		snprintf(URI, HTTP_URI_MAXLEN, "%s://%s%s/%s", proto, host, path, url);
-		efree(path);
+	if (port) {
+		furl.port = port;
+	} else if (purl->port) {
+		furl.port = purl->port;
+	} else if (strncmp(furl.scheme, "http", 4) && (se = getservbyname(furl.scheme, "tcp"))) {
+		furl.port = ntohs(se->s_port);
 	} else {
-		snprintf(URI, HTTP_URI_MAXLEN, "%s://%s/%s", proto, host, url);
+		furl.port = furl.scheme[5] ? 443 : 80;
 	}
 
-	/* strip everything after a new line */
-	if ((PTR = strchr(URI, '\r')) || (PTR = strchr(URI, '\n'))) {
-		PTR = 0;
+	if (host) {
+		furl.host = (char *) host;
+	} else if (purl->host) {
+		furl.host = purl->host;
+	} else if (	(zhost = http_get_server_var("HTTP_HOST")) ||
+				(zhost = http_get_server_var("SERVER_NAME"))) {
+		furl.host = Z_STRVAL_P(zhost);
+	} else {
+		furl.host = "localhost";
 	}
 
-	return URI;
+#define HTTP_URI_STRLCATS(URL, full_len, add_string) HTTP_URI_STRLCAT(URL, full_len, add_string, sizeof(add_string)-1)
+#define HTTP_URI_STRLCATL(URL, full_len, add_string) HTTP_URI_STRLCAT(URL, full_len, add_string, strlen(add_string))
+#define HTTP_URI_STRLCAT(URL, full_len, add_string, add_len) \
+	if ((full_len += add_len) > HTTP_URI_MAXLEN) { \
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, \
+			"Absolute URI would have exceeded max URI length (%d bytes) - " \
+			"tried to add %d bytes ('%s')", \
+			HTTP_URI_MAXLEN, add_len, add_string); \
+		if (scheme) { \
+			efree(scheme); \
+		} \
+		php_url_free(purl); \
+		return URL; \
+	} else { \
+		strcat(URL, add_string); \
+	}
+
+	HTTP_URI_STRLCATL(URL, full_len, furl.scheme);
+	HTTP_URI_STRLCATS(URL, full_len, "://");
+
+	if (furl.user) {
+		HTTP_URI_STRLCATL(URL, full_len, furl.user);
+		if (furl.pass) {
+			HTTP_URI_STRLCATS(URL, full_len, ":");
+			HTTP_URI_STRLCATL(URL, full_len, furl.pass);
+		}
+		HTTP_URI_STRLCATS(URL, full_len, "@");
+	}
+
+	HTTP_URI_STRLCATL(URL, full_len, furl.host);
+
+	if (	(strcmp(furl.scheme, "http") && (furl.port != 80)) ||
+			(strcmp(furl.scheme, "https") && (furl.port != 443))) {
+		char port_string[8] = {0};
+		snprintf(port_string, 7, ":%u", furl.port);
+		HTTP_URI_STRLCATL(URL, full_len, port_string);
+	}
+
+	if (furl.path) {
+		HTTP_URI_STRLCATL(URL, full_len, furl.path);
+		if (furl.query) {
+			HTTP_URI_STRLCATS(URL, full_len, "?");
+			HTTP_URI_STRLCATL(URL, full_len, furl.query);
+		}
+		if (furl.fragment) {
+			HTTP_URI_STRLCATS(URL, full_len, "#");
+			HTTP_URI_STRLCATL(URL, full_len, furl.fragment);
+		}
+	}
+
+	if (scheme) {
+		efree(scheme);
+	}
+	php_url_free(purl);
+
+	return URL;
 }
 /* }}} */
 
@@ -1406,7 +1469,7 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, HashTable 
 {
 	char *colon = NULL, *line = NULL, *begin = header;
 	zval array;
-	
+
 	Z_ARRVAL(array) = headers;
 
 	if (header_len < 2) {

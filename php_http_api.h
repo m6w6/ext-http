@@ -100,8 +100,9 @@ PHP_HTTP_API STATUS _http_cache_last_modified(const time_t last_modified, const 
 #define http_cache_etag(e, el, cc, ccl) _http_cache_etag((e), (el), (cc), (ccl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_cache_etag(const char *etag, const size_t etag_len, const char *cache_control, const size_t cc_len TSRMLS_DC);
 
-#define http_absolute_uri(url, proto) _http_absolute_uri((url), (proto) TSRMLS_CC)
-PHP_HTTP_API char *_http_absolute_uri(const char *url, const char *proto TSRMLS_DC);
+#define http_absolute_uri(url) http_absolute_uri_ex((url), strlen(url), NULL, 0, NULL, 0, 0)
+#define http_absolute_uri_ex(url, url_len, proto, proto_len, host, host_len, port) _http_absolute_uri_ex((url), (url_len), (proto), (proto_len), (host), (host_len), (port) TSRMLS_CC)
+PHP_HTTP_API char *_http_absolute_uri_ex(const char *url, size_t url_len, const char *proto, size_t proto_len, const char *host, size_t host_len, unsigned port TSRMLS_DC);
 
 #define http_negotiate_language(supported, def) _http_negotiate_q("HTTP_ACCEPT_LANGUAGE", (supported), (def) TSRMLS_CC)
 #define http_negotiate_charset(supported, def)  _http_negotiate_q("HTTP_ACCEPT_CHARSET", (supported), (def) TSRMLS_CC)
