@@ -331,7 +331,7 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSR
 	if (zoption = http_curl_getopt1(options, "connecttimeout", IS_LONG)) {
 		HTTP_CURL_OPT(CONNECTTIMEOUT, Z_LVAL_P(zoption));
 	}
-	
+
 	/* ssl */
 	if (zoption = http_curl_getopt1(options, "ssl", IS_ARRAY)) {
 		long idx;
@@ -344,7 +344,7 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSR
 #define HTTP_CURL_OPT_STRING_EX(keyname, optname) \
 	if (!strcasecmp(key, #keyname)) { \
 		convert_to_string_ex(param); \
-		HTTP_CURL_OPT( ##optname, Z_STRVAL_PP(param)); \
+		HTTP_CURL_OPT(optname, Z_STRVAL_PP(param)); \
 		key = NULL; \
 		continue; \
 	}
@@ -354,7 +354,7 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSR
 #define HTTP_CURL_OPT_LONG_EX(keyname, optname) \
 	if (!strcasecmp(key, #keyname)) { \
 		convert_to_long_ex(param); \
-		HTTP_CURL_OPT( ##optname, Z_LVAL_PP(param)); \
+		HTTP_CURL_OPT(optname, Z_LVAL_PP(param)); \
 		key = NULL; \
 		continue; \
 	}
