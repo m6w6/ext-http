@@ -33,10 +33,10 @@ dnl ----
 
 		CURL_CONFIG="curl-config"
 
-		if ${CURL_DIR}/bin/curl-config --libs print > /dev/null 2>&1; then
+		if ${CURL_DIR}/bin/curl-config --libs > /dev/null 2>&1; then
 			CURL_CONFIG=${CURL_DIR}/bin/curl-config
 		else
-			if ${CURL_DIR}/curl-config --libs print > /dev/null 2>&1; then
+			if ${CURL_DIR}/curl-config --libs > /dev/null 2>&1; then
 			CURL_CONFIG=${CURL_DIR}/curl-config
 			fi
 		fi
