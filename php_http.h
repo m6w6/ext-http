@@ -18,7 +18,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "0.6.0-dev"
+#define PHP_EXT_HTTP_VERSION "0.6.0"
 
 /* make compile on Win32 */
 #include "php_streams.h"

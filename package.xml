@@ -31,10 +31,13 @@
 
   <release>
     <version>0.6.0</version>
-    <date>2005-02-00</date>
+    <date>2005-03-04</date>
     <state>alpha</state>
     <notes><![CDATA[
-* added POST support to HTTPi_Request
++ added POST support to HTTPi_Request
++ added some more curl options
++ better recognition of older libcurl versions
+* internal API optimizations
 ]]>
     </notes>
   </release>

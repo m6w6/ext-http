@@ -478,6 +478,7 @@ PHP_RSHUTDOWN_FUNCTION(http)
 		efree(HTTP_G(ctype));
 		HTTP_G(ctype) = NULL;
 	}
+
 #ifdef HTTP_HAVE_CURL
 	if (HTTP_G(curlbuf).data) {
 		efree(HTTP_G(curlbuf).data);
@@ -486,6 +487,7 @@ PHP_RSHUTDOWN_FUNCTION(http)
 		HTTP_G(curlbuf).free = 0;
 	}
 #endif
+
 	return SUCCESS;
 }
 /* }}} */

@@ -1,209 +1,316 @@
 <html>
-<head><title>Function Summary</title>
-<style>body { font-size: 80%; font-family: sans-serif; } h2 { color: #339; } pre { font-size: 1.2em; } </style></head>
-<body>
-<h1>http.c</h1>
-<h2>void HTTPi_Response::__construct(bool cache, bool gzip)</h2>
-<p></p>
-<h2>bool HTTPi_Response::setCache(bool cache)</h2>
-<p></p>
-<h2>bool HTTPi_Response::getCache()</h2>
-<p></p>
-<h2>bool HTTPi_Response::setGzip(bool gzip)</h2>
-<p></p>
-<h2>bool HTTPi_Response::getGzip()</h2>
-<p></p>
-<h2>bool HTTPi_Response::setCacheControl(string control[, bool raw = false])</h2>
-<p></p>
-<h2>string HTTPi_Response::getCacheControl()</h2>
-<p></p>
-<h2>bool HTTPi::setContentType(string content_type)</h2>
-<p></p>
-<h2>string HTTPi_Response::getContentType()</h2>
-<p></p>
-<h2>bool HTTPi_Response::setContentDisposition(string filename[, bool inline = false])</h2>
-<p></p>
-<h2>array HTTPi_Response::getContentDisposition()</h2>
-<p></p>
-<h2>bool HTTPi_Response::setETag(string etag)</h2>
-<p></p>
-<h2>string HTTPi_Response::getETag()</h2>
-<p></p>
-<h2>bool HTTPi_Response::setData(string data)</h2>
-<p></p>
-<h2>string HTTPi_Response::getData()</h2>
-<p></p>
-<h2>bool HTTPi_Response::setStream(resource stream)</h2>
-<p></p>
-<h2>resource HTTPi_Response::getStream()</h2>
-<p></p>
-<h2>bool HTTPi_Response::setFile(string file)</h2>
-<p></p>
-<h2>string HTTPi_Response::getFile()</h2>
-<p></p>
-<h2>int HTTPi_Response::getSize()</h2>
-<p></p>
-<h2>string http_date([int timestamp])</h2>
-<p>This function returns a valid HTTP date regarding RFC 822/1123
+<head>
+    <title>Function Summary of ext/http</title>
+    <style>
+        body { 
+            font-size: 80%; 
+            font-family: sans-serif; 
+        } 
+        h2 { 
+            color: #339; 
+            clear: both;
+            font-size: 1.2em;
+            background: #ffc;
+            padding: .2em;
+        } 
+        p { 
+            margin-left: 1em;
+        } 
+        pre { 
+            font-size: 1.2em; 
+        } 
+        br { 
+            display: none; 
+        } 
+        blockquote {
+            margin-bottom: 3em;
+            border: 1px solid #ccc;
+            background: #f0f0f0;
+            padding: 0em 1em;
+            width: auto;
+            float: left;
+        }
+        p br, pre code br { 
+            display: block; 
+        } 
+    </style>
+</head>
+<body><h1>http_functions.c</h1>
+<h2 id="http_date">string http_date([int timestamp])</h2>
+<p>This function returns a valid HTTP date regarding RFC 822/1123<br />
 looking like: "Wed, 22 Dec 2004 11:34:47 GMT"</p>
-<h2>string http_absolute_uri(string url[, string proto])</h2>
-<p>This function returns an absolute URI constructed from url.
-If the url is already abolute but a different proto was supplied,
-only the proto part of the URI will be updated.  If url has no
-path specified, the path of the current REQUEST_URI will be taken.
-The host will be taken either from the Host HTTP header of the client
-the SERVER_NAME or just localhost if prior are not available.</p><p>Some examples:
-<pre>
-url = "page.php"                    => http://www.example.com/current/path/page.php
-url = "/page.php"                   => http://www.example.com/page.php
-url = "/page.php", proto = "https"  => https://www.example.com/page.php
+<h2 id="http_absolute_uri">string http_absolute_uri(string url[, string proto])</h2>
+<p>This function returns an absolute URI constructed from url.<br />
+If the url is already abolute but a different proto was supplied,<br />
+only the proto part of the URI will be updated.  If url has no<br />
+path specified, the path of the current REQUEST_URI will be taken.<br />
+The host will be taken either from the Host HTTP header of the client<br />
+the SERVER_NAME or just localhost if prior are not available.<br />
+<br />
+Some examples:</p><pre> url = "page.php"                    => http://www.example.com/current/path/page.php<br />
+ url = "/page.php"                   => http://www.example.com/page.php<br />
+ url = "/page.php", proto = "https"  => https://www.example.com/page.php<br />
 </pre></p>
-<h2>string http_negotiate_language(array supported[, string default = 'en-US'])</h2>
-<p>This function negotiates the clients preferred language based on its
-Accept-Language HTTP header.  It returns the negotiated language or
-the default language if none match.</p><p>The qualifier is recognized and languages without qualifier are rated highest.</p><p>The supported parameter is expected to be an array having
-the supported languages as array values.</p><p>Example:
-<pre>
-<code><span style="color: #000000">
-<span style="color: #0000BB">&lt;?php<br />$langs </span><span style="color: #007700">= array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'en-US'</span><span style="color: #007700">,</span><span style="color: #FF8000">// default<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'fr'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'fr-FR'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'de'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'de-DE'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'de-AT'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'de-CH'</span><span style="color: #007700">,<br />);<br />include </span><span style="color: #DD0000">'./langs/'</span><span style="color: #007700">. </span><span style="color: #0000BB">http_negotiate_language</span><span style="color: #007700">(</span><span style="color: #0000BB">$langs</span><span style="color: #007700">) .</span><span style="color: #DD0000">'.php'</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">?&gt;</span>
-</span>
-</code>
+<h2 id="http_negotiate_language">string http_negotiate_language(array supported[, string default = 'en-US'])</h2>
+<p>This function negotiates the clients preferred language based on its<br />
+Accept-Language HTTP header.  It returns the negotiated language or<br />
+the default language if none match.<br />
+<br />
+The qualifier is recognized and languages without qualifier are rated highest.<br />
+<br />
+The supported parameter is expected to be an array having<br />
+the supported languages as array values.<br />
+<br />
+Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br />$langs </font><font color="#007700">= array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'en-US'</font><font color="#007700">,</font><font color="#FF8000">// default<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'fr'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'fr-FR'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'de'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'de-DE'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'de-AT'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'de-CH'</font><font color="#007700">,<br />);<br />include </font><font color="#DD0000">'./langs/'</font><font color="#007700">. </font><font color="#0000BB">http_negotiate_language</font><font color="#007700">(</font><font color="#0000BB">$langs</font><font color="#007700">) .</font><font color="#DD0000">'.php'</font><font color="#007700">;<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
+</code></blockquote><br />
+<br />
 </pre></p>
-<h2>string http_negotiate_charset(array supported[, string default = 'iso-8859-1'])</h2>
-<p>This function negotiates the clients preferred charset based on its
-Accept-Charset HTTP header.  It returns the negotiated charset or
-the default charset if none match.</p><p>The qualifier is recognized and charset without qualifier are rated highest.</p><p>The supported parameter is expected to be an array having
-the supported charsets as array values.</p><p>Example:
-<pre>
-<code><span style="color: #000000">
-<span style="color: #0000BB">&lt;?php<br />$charsets </span><span style="color: #007700">= array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'iso-8859-1'</span><span style="color: #007700">, </span><span style="color: #FF8000">// default<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'iso-8859-2'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'iso-8859-15'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'utf-8'<br /></span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$pref </span><span style="color: #007700">= </span><span style="color: #0000BB">http_negotiate_charset</span><span style="color: #007700">(</span><span style="color: #0000BB">$charsets</span><span style="color: #007700">);<br />if (!</span><span style="color: #0000BB">strcmp</span><span style="color: #007700">(</span><span style="color: #0000BB">$pref</span><span style="color: #007700">, </span><span style="color: #DD0000">'iso-8859-1'</span><span style="color: #007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">iconv_set_encoding</span><span style="color: #007700">(</span><span style="color: #DD0000">'internal_encoding'</span><span style="color: #007700">, </span><span style="color: #DD0000">'iso-8859-1'</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">iconv_set_encoding</span><span style="color: #007700">(</span><span style="color: #DD0000">'output_encoding'</span><span style="color: #007700">, </span><span style="color: #0000BB">$pref</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">ob_start</span><span style="color: #007700">(</span><span style="color: #DD0000">'ob_iconv_handler'</span><span style="color: #007700">);<br />}<br /></span><span style="color: #0000BB">?&gt;</span>
-</span>
-</code>
+<h2 id="http_negotiate_charset">string http_negotiate_charset(array supported[, string default = 'iso-8859-1'])</h2>
+<p>This function negotiates the clients preferred charset based on its<br />
+Accept-Charset HTTP header.  It returns the negotiated charset or<br />
+the default charset if none match.<br />
+<br />
+The qualifier is recognized and charset without qualifier are rated highest.<br />
+<br />
+The supported parameter is expected to be an array having<br />
+the supported charsets as array values.<br />
+<br />
+Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br />$charsets </font><font color="#007700">= array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'iso-8859-1'</font><font color="#007700">, </font><font color="#FF8000">// default<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'iso-8859-2'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'iso-8859-15'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'utf-8'<br /></font><font color="#007700">);<br /></font><font color="#0000BB">$pref </font><font color="#007700">= </font><font color="#0000BB">http_negotiate_charset</font><font color="#007700">(</font><font color="#0000BB">$charsets</font><font color="#007700">);<br />if (!</font><font color="#0000BB">strcmp</font><font color="#007700">(</font><font color="#0000BB">$pref</font><font color="#007700">, </font><font color="#DD0000">'iso-8859-1'</font><font color="#007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">iconv_set_encoding</font><font color="#007700">(</font><font color="#DD0000">'internal_encoding'</font><font color="#007700">, </font><font color="#DD0000">'iso-8859-1'</font><font color="#007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">iconv_set_encoding</font><font color="#007700">(</font><font color="#DD0000">'output_encoding'</font><font color="#007700">, </font><font color="#0000BB">$pref</font><font color="#007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">ob_start</font><font color="#007700">(</font><font color="#DD0000">'ob_iconv_handler'</font><font color="#007700">);<br />}<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
+</code></blockquote><br />
+<br />
 </pre></p>
-<h2>bool http_send_status(int status)</h2>
+<h2 id="http_send_status">bool http_send_status(int status)</h2>
 <p>Send HTTP status code.</p>
-<h2>bool http_send_last_modified([int timestamp])</h2>
-<p>This converts the given timestamp to a valid HTTP date and
-sends it as "Last-Modified" HTTP header.  If timestamp is
+<h2 id="http_send_last_modified">bool http_send_last_modified([int timestamp])</h2>
+<p>This converts the given timestamp to a valid HTTP date and<br />
+sends it as "Last-Modified" HTTP header.  If timestamp is<br />
 omitted, current time is sent.</p>
-<h2>bool http_match_modified([int timestamp])</h2>
-<p>Matches the given timestamp against the clients "If-Modified-Since" resp.
-"If-Unmodified-Since" HTTP headers.</p>
-<h2>bool http_match_etag(string etag)</h2>
-<p>This matches the given ETag against the clients
-"If-Match" resp. "If-None-Match" HTTP headers.</p>
-<h2>bool http_cache_last_modified([int timestamp_or_expires]])</h2>
-<p>If timestamp_or_exires is greater than 0, it is handled as timestamp
-and will be sent as date of last modification.  If it is 0 or omitted,
-the current time will be sent as Last-Modified date.  If it's negative,
-it is handled as expiration time in seconds, which means that if the
-requested last modification date is not between the calculated timespan,
-the Last-Modified header is updated and the actual body will be sent.</p>
-<h2>bool http_cache_etag([string etag])</h2>
-<p>This function attempts to cache the HTTP body based on an ETag,
-either supplied or generated through calculation of the MD5
-checksum of the output (uses output buffering).</p><p>If clients "If-None-Match" header matches the supplied/calculated
-ETag, the body is considered cached on the clients side and
-a "304 Not Modified" status code is issued.</p>
-<h2>string ob_httpetaghandler(string data, int mode)</h2>
-<p>For use with ob_start().
-Note that this has to be started as first output buffer.
-WARNING: Don't use with http_send_*().</p>
-<h2>void http_redirect([string url[, array params[, bool session,[ bool permanent]]]])</h2>
-<p>Redirect to a given url.
-The supplied url will be expanded with http_absolute_uri(), the params array will
-be treated with http_build_query() and the session identification will be appended
-if session is true.</p><p>Depending on permanent the redirection will be issued with a permanent
-("301 Moved Permanently") or a temporary ("302 Found") redirection
-status code.</p><p>To be RFC compliant, "Redirecting to <a>URI</a>." will be displayed,
-if the client doesn't redirect immediatly.</p>
-<h2>bool http_send_data(string data)</h2>
-<p>Sends raw data with support for (multiple) range requests.</p>
-<h2>bool http_send_file(string file)</h2>
-<p>Sends a file with support for (multiple) range requests.</p>
-<h2>bool http_send_stream(resource stream)</h2>
-<p>Sends an already opened stream with support for (multiple) range requests.</p>
-<h2>bool http_content_type([string content_type = 'application/x-octetstream'])</h2>
+<h2 id="http_send_content_type">bool http_send_content_type([string content_type = 'application/x-octetstream'])</h2>
 <p>Sets the content type.</p>
-<h2>bool http_content_disposition(string filename[, bool inline = false])</h2>
-<p>Set the Content Disposition.  The Content-Disposition header is very useful
-if the data actually sent came from a file or something similar, that should
+<h2 id="http_send_content_disposition">bool http_send_content_disposition(string filename[, bool inline = false])</h2>
+<p>Set the Content Disposition.  The Content-Disposition header is very useful<br />
+if the data actually sent came from a file or something similar, that should<br />
 be "saved" by the client/user (i.e. by browsers "Save as..." popup window).</p>
-<h2>string http_chunked_decode(string encoded)</h2>
-<p>This function decodes a string that was HTTP-chunked encoded.
+<h2 id="http_match_modified">bool http_match_modified([int timestamp[, for_range = false]])</h2>
+<p>Matches the given timestamp against the clients "If-Modified-Since" resp.<br />
+"If-Unmodified-Since" HTTP headers.</p>
+<h2 id="http_match_etag">bool http_match_etag(string etag[, for_range = false])</h2>
+<p>This matches the given ETag against the clients<br />
+"If-Match" resp. "If-None-Match" HTTP headers.</p>
+<h2 id="http_cache_last_modified">bool http_cache_last_modified([int timestamp_or_expires]])</h2>
+<p>If timestamp_or_exires is greater than 0, it is handled as timestamp<br />
+and will be sent as date of last modification.  If it is 0 or omitted,<br />
+the current time will be sent as Last-Modified date.  If it's negative,<br />
+it is handled as expiration time in seconds, which means that if the<br />
+requested last modification date is not between the calculated timespan,<br />
+the Last-Modified header is updated and the actual body will be sent.</p>
+<h2 id="http_cache_etag">bool http_cache_etag([string etag])</h2>
+<p>This function attempts to cache the HTTP body based on an ETag,<br />
+either supplied or generated through calculation of the MD5<br />
+checksum of the output (uses output buffering).<br />
+<br />
+If clients "If-None-Match" header matches the supplied/calculated<br />
+ETag, the body is considered cached on the clients side and<br />
+a "304 Not Modified" status code is issued.</p>
+<h2 id="ob_httpetaghandler">string ob_httpetaghandler(string data, int mode)</h2>
+<p>For use with ob_start().<br />
+Note that this has to be started as first output buffer.<br />
+WARNING: Don't use with http_send_*().</p>
+<h2 id="http_redirect">void http_redirect([string url[, array params[, bool session,[ bool permanent]]]])</h2>
+<p>Redirect to a given url.<br />
+The supplied url will be expanded with http_absolute_uri(), the params array will<br />
+be treated with http_build_query() and the session identification will be appended<br />
+if session is true.<br />
+<br />
+Depending on permanent the redirection will be issued with a permanent<br />
+("301 Moved Permanently") or a temporary ("302 Found") redirection<br />
+status code.<br />
+<br />
+To be RFC compliant, "Redirecting to <a>URI</a>." will be displayed,<br />
+if the client doesn't redirect immediatly.</p>
+<h2 id="http_send_data">bool http_send_data(string data)</h2>
+<p>Sends raw data with support for (multiple) range requests.</p>
+<h2 id="http_send_file">bool http_send_file(string file)</h2>
+<p>Sends a file with support for (multiple) range requests.</p>
+<h2 id="http_send_stream">bool http_send_stream(resource stream)</h2>
+<p>Sends an already opened stream with support for (multiple) range requests.</p>
+<h2 id="http_chunked_decode">string http_chunked_decode(string encoded)</h2>
+<p>This function decodes a string that was HTTP-chunked encoded.<br />
 Returns false on failure.</p>
-<h2>array http_split_response(string http_response)</h2>
-<p>This function splits an HTTP response into an array with headers and the
-content body. The returned array may look simliar to the following example:</p><p><pre>
-<code><span style="color: #000000">
-<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">array(<br /></span><span style="color: #0000BB">0 </span><span style="color: #007700">=&gt; array(<br /></span><span style="color: #DD0000">'Status' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'200 Ok'</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'Content-Type' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'text/plain'</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'Content-Language' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'en-US'<br /></span><span style="color: #007700">),<br /></span><span style="color: #0000BB">1 </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">"Hello World!\"<br />);<br />?&gt;</span>
-</span>
-</code>
+<h2 id="http_split_response">array http_split_response(string http_response)</h2>
+<p>This function splits an HTTP response into an array with headers and the<br />
+content body. The returned array may look simliar to the following example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br /></font><font color="#007700">array(<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">0 </font><font color="#007700">=&gt; array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'Status' </font><font color="#007700">=&gt; </font><font color="#DD0000">'200 Ok'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'Content-Type' </font><font color="#007700">=&gt; </font><font color="#DD0000">'text/plain'</font><font color="#007700">,<br /><br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'Content-Language' </font><font color="#007700">=&gt; </font><font color="#DD0000">'en-US'<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#007700">),<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">1 </font><font color="#007700">=&gt; </font><font color="#DD0000">"Hello World!"<br /></font><font color="#007700">);<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
+</code></blockquote><br />
+<br />
 </pre></p>
-<h2>array http_parse_headers(string header)</h2>
+<h2 id="http_parse_headers">array http_parse_headers(string header)</h2>
 <p></p>
-<h2>array http_get_request_headers(void)</h2>
+<h2 id="http_get_request_headers">array http_get_request_headers(void)</h2>
 <p></p>
-<h2>string http_get(string url[, array options[, array &info]])</h2>
-<p>Performs an HTTP GET request on the supplied url.</p><p>The second parameter is expected to be an associative
-array where the following keys will be recognized:
-<pre>
-- redirect:         int, whether and how many redirects to follow
-- unrestrictedauth: bool, whether to continue sending credentials on
-redirects to a different host
-- proxyhost:        string, proxy host in "host[:port]" format
-- proxyport:        int, use another proxy port as specified in proxyhost
-- proxyauth:        string, proxy credentials in "user:pass" format
-- proxyauthtype:    int, HTTP_AUTH_BASIC and/or HTTP_AUTH_NTLM
-- httpauth:         string, http credentials in "user:pass" format
-- httpauthtype:     int, HTTP_AUTH_BASIC, DIGEST and/or NTLM
-- compress:         bool, whether to allow gzip/deflate content encoding
-(defaults to true)
-- port:             int, use another port as specified in the url
-- referer:          string, the referer to sends
-- useragent:        string, the user agent to send
-(defaults to PECL::HTTP/version (PHP/version)))
-- headers:          array, list of custom headers as associative array
-like array("header" => "value")
-- cookies:          array, list of cookies as associative array
-like array("cookie" => "value")
-- cookiestore:      string, path to a file where cookies are/will be stored
-</pre></p><p>The optional third parameter will be filled with some additional information
-in form af an associative array, if supplied, like the following example:
-<pre>
-<code><span style="color: #000000">
-<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">array (<br /></span><span style="color: #DD0000">'effective_url' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'http://localhost'</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'response_code' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">403</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'total_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.017</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'namelookup_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.013</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'connect_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.014</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'pretransfer_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.014</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'size_upload' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'size_download' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">202</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'speed_download' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">11882</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'speed_upload' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'header_size' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">145</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'request_size' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">62</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'ssl_verifyresult' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'filetime' </span><span style="color: #007700">=&gt; -</span><span style="color: #0000BB">1</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'content_length_download' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">202</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'content_length_upload' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'starttransfer_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.017</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'content_type' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'text/html; charset=iso-8859-1'</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'redirect_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'redirect_count' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'private' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">''</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'http_connectcode' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'httpauth_avail' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br /></span><span style="color: #DD0000">'proxyauth_avail' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />)<br /></span><span style="color: #0000BB">?&gt;</span>
-</span>
-</code>
+<h2 id="http_get">string http_get(string url[, array options[, array &info]])</h2>
+<p>Performs an HTTP GET request on the supplied url.<br />
+<br />
+The second parameter is expected to be an associative<br />
+array where the following keys will be recognized:</p><pre> - redirect:         int, whether and how many redirects to follow<br />
+ - unrestrictedauth: bool, whether to continue sending credentials on<br />
+                     redirects to a different host<br />
+ - proxyhost:        string, proxy host in "host[:port]" format<br />
+ - proxyport:        int, use another proxy port as specified in proxyhost<br />
+ - proxyauth:        string, proxy credentials in "user:pass" format<br />
+ - proxyauthtype:    int, HTTP_AUTH_BASIC and/or HTTP_AUTH_NTLM<br />
+ - httpauth:         string, http credentials in "user:pass" format<br />
+ - httpauthtype:     int, HTTP_AUTH_BASIC, DIGEST and/or NTLM<br />
+ - compress:         bool, whether to allow gzip/deflate content encoding<br />
+                     (defaults to true)<br />
+ - port:             int, use another port as specified in the url<br />
+ - referer:          string, the referer to sends<br />
+ - useragent:        string, the user agent to send<br />
+                     (defaults to PECL::HTTP/version (PHP/version)))<br />
+ - headers:          array, list of custom headers as associative array<br />
+                     like array("header" => "value")<br />
+ - cookies:          array, list of cookies as associative array<br />
+                     like array("cookie" => "value")<br />
+ - cookiestore:      string, path to a file where cookies are/will be stored<br />
+ - resume:           int, byte offset to start the download from;<br />
+                     if the server supports ranges<br />
+ - maxfilesize:      int, maximum file size that should be downloaded;<br />
+                     has no effect, if the size of the requested entity is not known<br />
+ - lastmodified:     int, timestamp for If-(Un)Modified-Since header<br />
+ - timeout:          int, seconds the request may take<br />
+ - connecttimeout:   int, seconds the connect may take</pre><p>The optional third parameter will be filled with some additional information<br />
+in form af an associative array, if supplied, like the following example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br /></font><font color="#007700">array (<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'effective_url' </font><font color="#007700">=&gt; </font><font color="#DD0000">'http://localhost'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'response_code' </font><font color="#007700">=&gt; </font><font color="#0000BB">403</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'total_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.017</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'namelookup_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.013</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'connect_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.014</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'pretransfer_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.014</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'size_upload' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'size_download' </font><font color="#007700">=&gt; </font><font color="#0000BB">202</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'speed_download' </font><font color="#007700">=&gt; </font><font color="#0000BB">11882</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'speed_upload' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'header_size' </font><font color="#007700">=&gt; </font><font color="#0000BB">145</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'request_size' </font><font color="#007700">=&gt; </font><font color="#0000BB">62</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'ssl_verifyresult' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'filetime' </font><font color="#007700">=&gt; -</font><font color="#0000BB">1</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'content_length_download' </font><font color="#007700">=&gt; </font><font color="#0000BB">202</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'content_length_upload' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'starttransfer_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.017</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'content_type' </font><font color="#007700">=&gt; </font><font color="#DD0000">'text/html; charset=iso-8859-1'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'redirect_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'redirect_count' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'private' </font><font color="#007700">=&gt; </font><font color="#DD0000">''</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'http_connectcode' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'httpauth_avail' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'proxyauth_avail' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />)<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
+</code></blockquote><br />
+<br />
 </pre></p>
-<h2>string http_head(string url[, array options[, array &info]])</h2>
-<p>Performs an HTTP HEAD request on the suppied url.
-Returns the HTTP response as string.
+<h2 id="http_head">string http_head(string url[, array options[, array &info]])</h2>
+<p>Performs an HTTP HEAD request on the suppied url.<br />
+Returns the HTTP response as string.<br />
 See http_get() for a full list of available options.</p>
-<h2>string http_post_data(string url, string data[, array options[, &info]])</h2>
-<p>Performs an HTTP POST request, posting data.
-Returns the HTTP response as string.
+<h2 id="http_post_data">string http_post_data(string url, string data[, array options[, &info]])</h2>
+<p>Performs an HTTP POST request, posting data.<br />
+Returns the HTTP response as string.<br />
 See http_get() for a full list of available options.</p>
-<h2>string http_post_array(string url, array data[, array options[, array &info]])</h2>
-<p>Performs an HTTP POST request, posting www-form-urlencoded array data.
-Returns the HTTP response as string.
+<h2 id="http_post_array">string http_post_array(string url, array data[, array options[, array &info]])</h2>
+<p>Performs an HTTP POST request, posting www-form-urlencoded array data.<br />
+Returns the HTTP response as string.<br />
 See http_get() for a full list of available options.</p>
-<h2>bool http_auth_basic(string user, string pass[, string realm = "Restricted"])</h2>
-<p>Example:
-<pre>
-<code><span style="color: #000000">
-<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">if (!</span><span style="color: #0000BB">http_auth_basic</span><span style="color: #007700">(</span><span style="color: #DD0000">'mike'</span><span style="color: #007700">, </span><span style="color: #DD0000">'s3c|r3t'</span><span style="color: #007700">)) {<br />die(</span><span style="color: #DD0000">'&lt;h1&gt;Authorization failed!&lt;/h1&gt;'</span><span style="color: #007700">);<br />}<br /></span><span style="color: #0000BB">?&gt;</span>
-</span>
-</code>
+<h2 id="http_auth_basic">bool http_auth_basic(string user, string pass[, string realm = "Restricted"])</h2>
+<p>Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br /></font><font color="#007700">if (!</font><font color="#0000BB">http_auth_basic</font><font color="#007700">(</font><font color="#DD0000">'mike'</font><font color="#007700">, </font><font color="#DD0000">'s3c|r3t'</font><font color="#007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;die(</font><font color="#DD0000">'&lt;h1&gt;Authorization failed!&lt;/h1&gt;'</font><font color="#007700">);<br />}<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
+</code></blockquote><br />
+<br />
 </pre></p>
-<h2>bool http_auth_basic_cb(mixed callback[, string realm = "Restricted"])</h2>
-<p>Example:
-<pre>
-<code><span style="color: #000000">
-<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">function </span><span style="color: #0000BB">auth_cb</span><span style="color: #007700">(</span><span style="color: #0000BB">$user</span><span style="color: #007700">, </span><span style="color: #0000BB">$pass</span><span style="color: #007700">)<br />{<br />global </span><span style="color: #0000BB">$db</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">$query </span><span style="color: #007700">= </span><span style="color: #DD0000">'SELECT pass FROM users WHERE user='</span><span style="color: #007700">. </span><span style="color: #0000BB">$db</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">quoteSmart</span><span style="color: #007700">(</span><span style="color: #0000BB">$user</span><span style="color: #007700">);<br />if (</span><span style="color: #0000BB">strlen</span><span style="color: #007700">(</span><span style="color: #0000BB">$realpass </span><span style="color: #007700">= </span><span style="color: #0000BB">$db</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">getOne</span><span style="color: #007700">(</span><span style="color: #0000BB">$query</span><span style="color: #007700">)) {<br />return </span><span style="color: #0000BB">$pass </span><span style="color: #007700">=== </span><span style="color: #0000BB">$realpass</span><span style="color: #007700">;<br />}<br />return </span><span style="color: #0000BB">false</span><span style="color: #007700">;<br />}<br /><br />if (!</span><span style="color: #0000BB">http_auth_basic_cb</span><span style="color: #007700">(</span><span style="color: #DD0000">'auth_cb'</span><span style="color: #007700">)) {<br />die(</span><span style="color: #DD0000">'&lt;h1&gt;Authorization failed&lt;/h1&gt;'</span><span style="color: #007700">);<br />}<br /></span><span style="color: #0000BB">?&gt;</span>
-</span>
-</code>
+<h2 id="http_auth_basic_cb">bool http_auth_basic_cb(mixed callback[, string realm = "Restricted"])</h2>
+<p>Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br /></font><font color="#007700">function </font><font color="#0000BB">auth_cb</font><font color="#007700">(</font><font color="#0000BB">$user</font><font color="#007700">, </font><font color="#0000BB">$pass</font><font color="#007700">)<br />{<br />&nbsp;&nbsp;&nbsp;&nbsp;global </font><font color="#0000BB">$db</font><font color="#007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">$query </font><font color="#007700">= </font><font color="#DD0000">'SELECT pass FROM users WHERE user='</font><font color="#007700">. </font><font color="#0000BB">$db</font><font color="#007700">-&gt;</font><font color="#0000BB">quoteSmart</font><font color="#007700">(</font><font color="#0000BB">$user</font><font color="#007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;if (</font><font color="#0000BB">strlen</font><font color="#007700">(</font><font color="#0000BB">$realpass </font><font color="#007700">= </font><font color="#0000BB">$db</font><font color="#007700">-&gt;</font><font color="#0000BB">getOne</font><font color="#007700">(</font><font color="#0000BB">$query</font><font color="#007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return </font><font color="#0000BB">$pass </font><font color="#007700">=== </font><font color="#0000BB">$realpass</font><font color="#007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;return </font><font color="#0000BB">false</font><font color="#007700">;<br />}<br />if (!</font><font color="#0000BB">http_auth_basic_cb</font><font color="#007700">(</font><font color="#DD0000">'auth_cb'</font><font color="#007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;die(</font><font color="#DD0000">'&lt;h1&gt;Authorization failed&lt;/h1&gt;'</font><font color="#007700">);<br />}<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
+</code></blockquote><br />
+<br />
 </pre></p>
-<hr noshade><p><b> Generated at: Thu, 17 Feb 2005 22:42:18 +0100</b></p>
+<h2 id="http_build_query">string http_build_query(mixed formdata [, string prefix])</h2>
+<p>Generates a form-encoded query string from an associative array or object.</p>
+<hr noshade>
+<h1>http_methods.c</h1>
+<h2 id="HTTPi_Response, __construct">void HTTPi_Response::__construct(bool cache, bool gzip)</h2>
+<p></p>
+<h2 id="HTTPi_Response, setCache">bool HTTPi_Response::setCache(bool cache)</h2>
+<p></p>
+<h2 id="HTTPi_Response, getCache">bool HTTPi_Response::getCache()</h2>
+<p></p>
+<h2 id="HTTPi_Response, setGzip">bool HTTPi_Response::setGzip(bool gzip)</h2>
+<p></p>
+<h2 id="HTTPi_Response, getGzip">bool HTTPi_Response::getGzip()</h2>
+<p></p>
+<h2 id="HTTPi_Response, setCacheControl">bool HTTPi_Response::setCacheControl(string control[, bool raw = false])</h2>
+<p></p>
+<h2 id="HTTPi_Response, getCacheControl">string HTTPi_Response::getCacheControl()</h2>
+<p></p>
+<h2 id="HTTPi_Response, setContentType">bool HTTPi::setContentType(string content_type)</h2>
+<p></p>
+<h2 id="HTTPi_Response, getContentType">string HTTPi_Response::getContentType()</h2>
+<p></p>
+<h2 id="HTTPi_Response, setContentDisposition">bool HTTPi_Response::setContentDisposition(string filename[, bool inline = false])</h2>
+<p></p>
+<h2 id="HTTPi_Response, getContentDisposition">array HTTPi_Response::getContentDisposition()</h2>
+<p></p>
+<h2 id="HTTPi_Response, setETag">bool HTTPi_Response::setETag(string etag)</h2>
+<p></p>
+<h2 id="HTTPi_Response, getETag">string HTTPi_Response::getETag()</h2>
+<p></p>
+<h2 id="HTTPi_Response, setData">bool HTTPi_Response::setData(string data)</h2>
+<p></p>
+<h2 id="HTTPi_Response, getData">string HTTPi_Response::getData()</h2>
+<p></p>
+<h2 id="HTTPi_Response, setStream">bool HTTPi_Response::setStream(resource stream)</h2>
+<p></p>
+<h2 id="HTTPi_Response, getStream">resource HTTPi_Response::getStream()</h2>
+<p></p>
+<h2 id="HTTPi_Response, setFile">bool HTTPi_Response::setFile(string file)</h2>
+<p></p>
+<h2 id="HTTPi_Response, getFile">string HTTPi_Response::getFile()</h2>
+<p></p>
+<h2 id="HTTPi_Request, __construct">void HTTPi_Request::__construct([string url[, long request_method = HTTP_GET]])</h2>
+<p></p>
+<h2 id="HTTPi_Request, __destruct">void HTTPi_Request::__destruct()</h2>
+<p></p>
+<h2 id="HTTPi_Request, setOptions">bool HTTPi_Request::setOptions(array options)</h2>
+<p></p>
+<h2 id="HTTPi_Request, getOptions">array HTTPi_Request::getOptions()</h2>
+<p></p>
+<h2 id="HTTPi_Request, setURL">bool HTTPi_Request::setURL(string url)</h2>
+<p></p>
+<h2 id="HTTPi_Request, getURL">string HTTPi_Request::getUrl()</h2>
+<p></p>
+<h2 id="HTTPi_Request, setMethod">bool HTTPi_Request::setMethod(long request_method)</h2>
+<p></p>
+<h2 id="HTTPi_Request, getMethod">long HTTPi_Request::getMethod()</h2>
+<p></p>
+<h2 id="HTTPi_Request, setContentType">bool HTTPi_Request::setContentType(string content_type)</h2>
+<p></p>
+<h2 id="HTTPi_Request, getContentType">string HTTPi_Request::getContentType()</h2>
+<p></p>
+<h2 id="HTTPi_Request, setQueryData">bool HTTPi_Request::setQueryData(mixed query_data)</h2>
+<p></p>
+<h2 id="HTTPi_Request, getQueryData">string HTTPi_Request::getQueryData()</h2>
+<p></p>
+<h2 id="HTTPi_Request, addQueryData">bool HTTPi_Request::addQueryData(array query_params)</h2>
+<p></p>
+<h2 id="HTTPi_Request, unsetQueryData">void HTTPi_Request::unsetQueryData()</h2>
+<p></p>
+<h2 id="HTTPi_Request, addPostData">bool HTTPi_Request::addPostData(array post_data)</h2>
+<p></p>
+<h2 id="HTTPi_Request, setPostData">bool HTTPi_Request::setPostData(array post_data)</h2>
+<p></p>
+<h2 id="HTTPi_Request, getPostData">array HTTPi_Request::getPostData()</h2>
+<p></p>
+<h2 id="HTTPi_Request, unsetPostData">void HTTPi_Request::unsetPostData()</h2>
+<p></p>
+<h2 id="HTTPi_Request, addPostFile">bool HTTPi_Request::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])</h2>
+<p></p>
+<h2 id="HTTPi_Request, getPostFiles">array HTTPi_Request::getPostFiles()</h2>
+<p></p>
+<h2 id="HTTPi_Request, unsetPostFiles">void HTTPi_Request::unsetPostFiles()</h2>
+<p></p>
+<h2 id="HTTPi_Request, getResponseData">array HTTPi_Request::getResponseData()</h2>
+<p></p>
+<h2 id="HTTPi_Request, getResponseHeaders">array HTTPi_Request::getResponseHeaders()</h2>
+<p></p>
+<h2 id="HTTPi_Request, getResponseBody">string HTTPi_Request::getResponseBody()</h2>
+<p></p>
+<h2 id="HTTPi_Request, getResponseInfo">array HTTPi_Request::getResponseInfo()</h2>
+<p></p>
+<h2 id="HTTPi_Request, send">bool HTTPi_Request::send()</h2>
+<p></p>
+<hr noshade>
+    <p><b>Generated at: Fri,  4 Mar 2005 14:02:55 +0100</b></p>
 </body>
 </html>

@@ -643,9 +643,7 @@ PHP_FUNCTION(http_parse_headers)
  */
 PHP_FUNCTION(http_get_request_headers)
 {
-	if (ZEND_NUM_ARGS()) {
-		WRONG_PARAM_COUNT;
-	}
+	NO_ARGS;
 
 	array_init(return_value);
 	http_get_request_headers(return_value);
@@ -682,9 +680,9 @@ PHP_FUNCTION(http_get_request_headers)
  *  - cookies:          array, list of cookies as associative array
  *                      like array("cookie" => "value")
  *  - cookiestore:      string, path to a file where cookies are/will be stored
- *  - resume:			int, byte offset to start the download from;
+ *  - resume:           int, byte offset to start the download from;
  *                      if the server supports ranges
- *  - maxfilesize:		int, maximum file size that should be downloaded;
+ *  - maxfilesize:      int, maximum file size that should be downloaded;
  *                      has no effect, if the size of the requested entity is not known
  *  - lastmodified:     int, timestamp for If-(Un)Modified-Since header
  *  - timeout:          int, seconds the request may take
@@ -899,7 +897,6 @@ PHP_FUNCTION(http_auth_basic)
  *     }
  *     return false;
  * }
- *
  * if (!http_auth_basic_cb('auth_cb')) {
  *     die('<h1>Authorization failed</h1>');
  * }

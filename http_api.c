@@ -1572,7 +1572,7 @@ PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC)
 
 #ifndef ZEND_ENGINE_2
 /* {{{ php_url_encode_hash
-	Author: Sarah Golemon <pollita@php.net> */
+	Author: Sara Golemon <pollita@php.net> */
 PHP_HTTP_API STATUS php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 				const char *num_prefix, int num_prefix_len,
 				const char *key_prefix, int key_prefix_len,
