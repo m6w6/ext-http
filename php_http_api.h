@@ -93,13 +93,6 @@ typedef enum {
 		}
 /* }}} */
 
-#define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
-inline char *_http_etag(const void *data_ptr, const size_t data_len, const http_send_mode data_mode TSRMLS_DC);
-#define http_lmod(p, m) _http_lmod((p), (m) TSRMLS_CC)
-inline time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC);
-#define http_is_range_request() _http_is_range_request(TSRMLS_C)
-inline int _http_is_range_request(TSRMLS_D);
-
 /* {{{ public API */
 #define http_date(t) _http_date((t) TSRMLS_CC)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC);
@@ -118,6 +111,15 @@ PHP_HTTP_API inline STATUS _http_send_status_header(const int status, const char
 
 #define http_get_server_var(v) _http_get_server_var((v) TSRMLS_CC)
 PHP_HTTP_API inline zval *_http_get_server_var(const char *key TSRMLS_DC);
+
+#define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
+PHP_HTTP_API inline char *_http_etag(const void *data_ptr, const size_t data_len, const http_send_mode data_mode TSRMLS_DC);
+
+#define http_lmod(p, m) _http_lmod((p), (m) TSRMLS_CC)
+PHP_HTTP_API inline time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC);
+
+#define http_is_range_request() _http_is_range_request(TSRMLS_C)
+PHP_HTTP_API inline int _http_is_range_request(TSRMLS_D);
 
 #define http_ob_etaghandler(o, l, ho, hl, m) _http_ob_etaghandler((o), (l), (ho), (hl), (m) TSRMLS_CC)
 PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC);

@@ -178,88 +178,6 @@ static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC);
 #endif
 /* }}} HAVE_CURL */
 
-/* {{{ inline char *http_etag(void *, size_t, http_send_mode) */
-inline char *_http_etag(const void *data_ptr, const size_t data_len,
-	const http_send_mode data_mode TSRMLS_DC)
-{
-	char ssb_buf[128] = {0};
-	unsigned char digest[16];
-	PHP_MD5_CTX ctx;
-	char *new_etag = ecalloc(33, 1);
-
-	PHP_MD5Init(&ctx);
-
-	switch (data_mode)
-	{
-		case SEND_DATA:
-			PHP_MD5Update(&ctx, data_ptr, data_len);
-		break;
-
-		case SEND_RSRC:
-			if (!HTTP_G(ssb).sb.st_ino) {
-				if (php_stream_stat((php_stream *) data_ptr, &HTTP_G(ssb))) {
-					return NULL;
-				}
-			}
-			snprintf(ssb_buf, 127, "%ld=%ld=%ld",
-				HTTP_G(ssb).sb.st_mtime,
-				HTTP_G(ssb).sb.st_ino,
-				HTTP_G(ssb).sb.st_size
-			);
-			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
-		break;
-
-		default:
-			efree(new_etag);
-			return NULL;
-		break;
-	}
-
-	PHP_MD5Final(digest, &ctx);
-	make_digest(new_etag, digest);
-
-	return new_etag;
-}
-/* }}} */
-
-/* {{{ inline http_lmod(void *, http_send_mode) */
-inline time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC)
-{
-	switch (data_mode)
-	{
-		case SEND_DATA:
-		{
-			return time(NULL);
-		}
-		
-		case SEND_RSRC:
-		{
-			if (!HTTP_G(ssb).sb.st_mtime) {
-				if (php_stream_stat((php_stream *) data_ptr, &HTTP_G(ssb))) {
-					return 0;
-				}
-			}
-			return HTTP_G(ssb).sb.st_mtime;
-		}
-		
-		default:
-		{
-			zval mtime;
-			php_stat(Z_STRVAL_P((zval *) data_ptr), Z_STRLEN_P((zval *) data_ptr), FS_MTIME, &mtime TSRMLS_CC);
-			return Z_LVAL(mtime);
-		}
-	}
-}
-/* }}} */
-
-/* {{{inline int http_is_range_request(void) */
-inline int _http_is_range_request(TSRMLS_D)
-{
-	return zend_hash_exists(Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]),
-		"HTTP_RANGE", strlen("HTTP_RANGE") + 1);
-}
-/* }}} */
-
 /* {{{ static int http_sort_q(const void *, const void *) */
 static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 {
@@ -1076,6 +994,88 @@ PHP_HTTP_API time_t _http_parse_date(const char *date)
 }
 /* }}} */
 
+/* {{{ inline char *http_etag(void *, size_t, http_send_mode) */
+PHP_HTTP_API inline char *_http_etag(const void *data_ptr, const size_t data_len,
+	const http_send_mode data_mode TSRMLS_DC)
+{
+	char ssb_buf[128] = {0};
+	unsigned char digest[16];
+	PHP_MD5_CTX ctx;
+	char *new_etag = ecalloc(33, 1);
+
+	PHP_MD5Init(&ctx);
+
+	switch (data_mode)
+	{
+		case SEND_DATA:
+			PHP_MD5Update(&ctx, data_ptr, data_len);
+		break;
+
+		case SEND_RSRC:
+			if (!HTTP_G(ssb).sb.st_ino) {
+				if (php_stream_stat((php_stream *) data_ptr, &HTTP_G(ssb))) {
+					return NULL;
+				}
+			}
+			snprintf(ssb_buf, 127, "%ld=%ld=%ld",
+				HTTP_G(ssb).sb.st_mtime,
+				HTTP_G(ssb).sb.st_ino,
+				HTTP_G(ssb).sb.st_size
+			);
+			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
+		break;
+
+		default:
+			efree(new_etag);
+			return NULL;
+		break;
+	}
+
+	PHP_MD5Final(digest, &ctx);
+	make_digest(new_etag, digest);
+
+	return new_etag;
+}
+/* }}} */
+
+/* {{{ inline http_lmod(void *, http_send_mode) */
+PHP_HTTP_API inline time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC)
+{
+	switch (data_mode)
+	{
+		case SEND_DATA:
+		{
+			return time(NULL);
+		}
+
+		case SEND_RSRC:
+		{
+			if (!HTTP_G(ssb).sb.st_mtime) {
+				if (php_stream_stat((php_stream *) data_ptr, &HTTP_G(ssb))) {
+					return 0;
+				}
+			}
+			return HTTP_G(ssb).sb.st_mtime;
+		}
+
+		default:
+		{
+			zval mtime;
+			php_stat(Z_STRVAL_P((zval *) data_ptr), Z_STRLEN_P((zval *) data_ptr), FS_MTIME, &mtime TSRMLS_CC);
+			return Z_LVAL(mtime);
+		}
+	}
+}
+/* }}} */
+
+/* {{{inline int http_is_range_request(void) */
+PHP_HTTP_API inline int _http_is_range_request(TSRMLS_D)
+{
+	return zend_hash_exists(Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]),
+		"HTTP_RANGE", strlen("HTTP_RANGE") + 1);
+}
+/* }}} */
+
 /* {{{ inline STATUS http_send_status(int) */
 PHP_HTTP_API inline STATUS _http_send_status(const int status TSRMLS_DC)
 {
@@ -1279,15 +1279,15 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag,
 /* }}} */
 
 /* {{{ STATUS http_send_cache_control(char *, size_t) */
-PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control, 
+PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control,
 	const size_t cc_len TSRMLS_DC)
 {
 	STATUS status;
 	char *cc_header = ecalloc(sizeof("Cache-Control: ") + cc_len, 1);
-	
+
 	sprintf(cc_header, "Cache-Control: %s", cache_control);
 	if (SUCCESS != (status = http_send_header(cc_header))) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, 
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE,
 			"Could not send '%s' header", cc_header);
 	}
 	efree(cc_header);
@@ -1301,14 +1301,14 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type,
 {
 	STATUS status;
 	char *ct_header;
-	
+
 	if (!strchr(content_type, '/')) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, 
+		php_error_docref(NULL TSRMLS_CC, E_WARNING,
 			"Content-Type '%s' doesn't seem to consist of a primary and a secondary part",
 			content_type);
 		return FAILURE;
 	}
-	
+
 	/* remember for multiple ranges */
 	if (HTTP_G(ctype)) {
 		efree(HTTP_G(ctype));
@@ -1319,7 +1319,7 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type,
 	sprintf(ct_header, "Content-Type: %s", content_type);
 
 	if (SUCCESS != (status = http_send_header(ct_header))) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, 
+		php_error_docref(NULL TSRMLS_CC, E_WARNING,
 			"Couldn't send '%s' header", ct_header);
 	}
 	efree(ct_header);
@@ -1333,7 +1333,7 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename,
 {
 	STATUS status;
 	char *cd_header;
-	
+
 	if (send_inline) {
 		cd_header = ecalloc(sizeof("Content-Disposition: inline; filename=\"\"") + f_len, 1);
 		sprintf(cd_header, "Content-Disposition: inline; filename=\"%s\"", filename);
@@ -1351,13 +1351,13 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename,
 /* }}} */
 
 /* {{{ STATUS http_cache_last_modified(time_t, time_t, char *, size_t) */
-PHP_HTTP_API STATUS _http_cache_last_modified(const time_t last_modified, 
+PHP_HTTP_API STATUS _http_cache_last_modified(const time_t last_modified,
 	const time_t send_modified, const char *cache_control, const size_t cc_len TSRMLS_DC)
 {
 	if (cc_len) {
 		http_send_cache_control(cache_control, cc_len);
 	}
-	
+
 	if (http_modified_match("HTTP_IF_MODIFIED_SINCE", last_modified)) {
 		if (SUCCESS == http_send_status(304)) {
 			zend_bailout();
@@ -1377,7 +1377,7 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, const size_t etag_len,
 	if (cc_len) {
 		http_send_cache_control(cache_control, cc_len);
 	}
-	
+
 	if (etag_len) {
 		http_send_etag(etag, etag_len);
 		if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
