@@ -25,7 +25,6 @@
 #include "ext/standard/info.h"
 #include "ext/session/php_session.h"
 #include "ext/standard/php_string.h"
-#include "ext/standard/php_smart_str.h"
 
 #include "SAPI.h"
 
@@ -33,6 +32,8 @@
 #include "php_http_api.h"
 #include "php_http_curl_api.h"
 #include "php_http_std_defs.h"
+
+#include "phpstr/phpstr.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
 
@@ -956,9 +957,9 @@ PHP_FUNCTION(http_auth_basic_cb)
 PHP_FUNCTION(http_build_query)
 {
 	zval *formdata;
-	char *prefix = NULL;
+	char *prefix = NULL, *arg_sep = NULL;
 	int prefix_len = 0;
-	smart_str formstr = {0};
+	phpstr *formstr = phpstr_new();
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|s", &formdata, &prefix, &prefix_len) != SUCCESS) {
 		RETURN_FALSE;
@@ -969,24 +970,28 @@ PHP_FUNCTION(http_build_query)
 		RETURN_FALSE;
 	}
 
-	if (php_url_encode_hash_ex(HASH_OF(formdata), &formstr, prefix, prefix_len, NULL, 0, NULL, 0, (Z_TYPE_P(formdata) == IS_OBJECT ? formdata : NULL) TSRMLS_CC) == FAILURE) {
-		if (formstr.c) {
-			efree(formstr.c);
-		}
+	if (!strlen(arg_sep = INI_STR("arg_separator.output"))) {
+		arg_sep = HTTP_URL_ARGSEP_DEFAULT;
+	}
+
+	if (SUCCESS != http_urlencode_hash_implementation_ex(HASH_OF(formdata), formstr, arg_sep, prefix, prefix_len, NULL, 0, NULL, 0, (Z_TYPE_P(formdata) == IS_OBJECT ? formdata : NULL) TSRMLS_CC)) {
+		phpstr_dtor(formstr);
 		RETURN_FALSE;
 	}
 
-	if (!formstr.c) {
+	if (!formstr->used) {
 		RETURN_NULL();
 	}
 
-	smart_str_0(&formstr);
-
-	RETURN_STRINGL(formstr.c, formstr.len, 0);
+	RETURN_PHPSTR_PTR(formstr);
 }
 /* }}} */
 #endif /* !ZEND_ENGINE_2 */
 /* }}} */
+
+PHP_FUNCTION(http_test)
+{
+}
 
 /*
  * Local variables:
