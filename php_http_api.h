@@ -180,7 +180,7 @@ PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray, Hash
 PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC);
 
 #define http_auth_header(t, r) _http_auth_header((t), (r) TSRMLS_CC)
-PHP_HTTP_API void _http_auth_header(const char *type, const char *realm TSRMLS_DC);
+PHP_HTTP_API STATUS _http_auth_header(const char *type, const char *realm TSRMLS_DC);
 
 /* }}} */
 
