@@ -1159,8 +1159,12 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 					{
 						/* "0-12345" */
 						case -10:
-							/* "0-", "0-0" or overflow */
-							if (end == -1 || end == -10 || length <= end) {
+							/* "0-" */
+							if (end == -1) {
+								return RANGE_NO;
+							}
+							/* "0-0" or overflow */
+							if (end == -10 || length <= end) {
 								return RANGE_ERR;
 							}
 							begin = 0;
@@ -1184,7 +1188,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 								case -10:
 									return RANGE_ERR;
 								break;
-								
+
 								/* "12345-" */
 								case -1:
 									if (length <= begin) {
