@@ -18,6 +18,11 @@
 #ifndef PHP_HTTP_CURL_API_H
 #define PHP_HTTP_CURL_API_H
 
+#ifdef PHP_WIN32
+#	define _WINSOCKAPI_
+#	include <winsock2.h>
+#endif
+
 #include <curl/curl.h>
 
 #define http_get(u, o, i, d, l) _http_get_ex(NULL, (u), (o), (i), (d), (l) TSRMLS_CC)
