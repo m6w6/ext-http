@@ -35,6 +35,10 @@
 #include "php_http_curl_api.h"
 #include "php_http_std_defs.h"
 
+#ifdef ZEND_ENGINE_2
+#	include "ext/standard/php_http.h"
+#endif
+
 #include "ext/standard/php_smart_str.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
@@ -117,10 +121,6 @@ static size_t http_curl_hdrs_callback(char *, size_t, size_t, void *);
 
 #define http_curl_getinfo(c, h) _http_curl_getinfo((c), (h) TSRMLS_CC)
 static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC);
-#define http_curl_getinfo_ex(c, i, a) _http_curl_getinfo_ex((c), (i), (a) TSRMLS_CC)
-static inline void _http_curl_getinfo_ex(CURL *ch, CURLINFO i, zval *array TSRMLS_DC);
-#define http_curl_getinfoname(i) _http_curl_getinfoname((i) TSRMLS_CC)
-static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC);
 
 /* {{{ static inline char *http_curl_copystr(char *) */
 static inline char *_http_curl_copystr(const char *str TSRMLS_DC)
@@ -276,21 +276,22 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 
 	/* cookies, array('name' => 'value') */
 	if (zoption = http_curl_getopt1(options, "cookies", IS_ARRAY)) {
-		char *cookie_key;
-		zval **cookie_val;
-		int key_type;
+		char *cookie_key = NULL;
+		long cookie_idx = 0;
 		smart_str qstr = {0};
 
-		zend_hash_internal_pointer_reset(Z_ARRVAL_P(zoption));
-		while (HASH_KEY_NON_EXISTANT != (key_type = zend_hash_get_current_key_type(Z_ARRVAL_P(zoption)))) {
-			if (key_type == HASH_KEY_IS_STRING) {
-				zend_hash_get_current_key(Z_ARRVAL_P(zoption), &cookie_key, NULL, 0);
-				zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &cookie_val);
-				smart_str_appends(&qstr, cookie_key);
-				smart_str_appendl(&qstr, "=", 1);
-				smart_str_appendl(&qstr, Z_STRVAL_PP(cookie_val), Z_STRLEN_PP(cookie_val));
-				smart_str_appendl(&qstr, "; ", 2);
-				zend_hash_move_forward(Z_ARRVAL_P(zoption));
+		FOREACH_KEY(zoption, cookie_key, cookie_idx) {
+			if (cookie_key) {
+				zval **cookie_val;
+				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &cookie_val)) {
+					smart_str_appends(&qstr, cookie_key);
+					smart_str_appendl(&qstr, "=", 1);
+					smart_str_appendl(&qstr, Z_STRVAL_PP(cookie_val), Z_STRLEN_PP(cookie_val));
+					smart_str_appendl(&qstr, "; ", 2);
+				}
+				
+				/* reset */
+				cookie_key = NULL;
 			}
 		}
 		smart_str_0(&qstr);
@@ -309,127 +310,26 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 
 	/* additional headers, array('name' => 'value') */
 	if (zoption = http_curl_getopt1(options, "headers", IS_ARRAY)) {
-		int key_type;
-		char *header_key, header[1024] = {0};
-		zval **header_val;
+		char *header_key;
+		long header_idx;
 		struct curl_slist *headers = NULL;
 
-		zend_hash_internal_pointer_reset(Z_ARRVAL_P(zoption));
-		while (HASH_KEY_NON_EXISTANT != (key_type = zend_hash_get_current_key_type(Z_ARRVAL_P(zoption)))) {
-			if (key_type == HASH_KEY_IS_STRING) {
-				zend_hash_get_current_key(Z_ARRVAL_P(zoption), &header_key, NULL, 0);
-				zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header_val);
-				snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
-				headers = curl_slist_append(headers, http_curl_copystr(header));
-				zend_hash_move_forward(Z_ARRVAL_P(zoption));
+		FOREACH_KEY(zoption, header_key, header_idx) {
+			if (header_key) {
+				zval **header_val;
+				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header_val)) {
+					char header[1024] = {0};
+					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
+					headers = curl_slist_append(headers, http_curl_copystr(header));
+				}
+				
+				/* reset */
+				header_key = NULL;
 			}
 		}
+		
 		if (headers) {
 			curl_easy_setopt(ch, CURLOPT_HTTPHEADER, headers);
-		}
-	}
-}
-/* }}} */
-
-/* {{{ static inline char *http_curl_getinfoname(CURLINFO) */
-static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC)
-{
-#define CASE(I) case CURLINFO_ ##I : { return pretty_key(http_curl_copystr(#I), sizeof(#I)-1, 0, 0); }
-	switch (i)
-	{
-		/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
-		CASE(EFFECTIVE_URL);
-		/* CURLINFO_RESPONSE_CODE			=	CURLINFO_LONG	+2, */
-#if LIBCURL_VERSION_NUM > 0x070a06
-		CASE(RESPONSE_CODE);
-#else
-		CASE(HTTP_CODE);
-#endif
-		/* CURLINFO_TOTAL_TIME				=	CURLINFO_DOUBLE	+3, */
-		CASE(TOTAL_TIME);
-		/* CURLINFO_NAMELOOKUP_TIME			=	CURLINFO_DOUBLE	+4, */
-		CASE(NAMELOOKUP_TIME);
-		/* CURLINFO_CONNECT_TIME			=	CURLINFO_DOUBLE	+5, */
-		CASE(CONNECT_TIME);
-		/* CURLINFO_PRETRANSFER_TIME		=	CURLINFO_DOUBLE	+6, */
-		CASE(PRETRANSFER_TIME);
-		/* CURLINFO_SIZE_UPLOAD				=	CURLINFO_DOUBLE	+7, */
-		CASE(SIZE_UPLOAD);
-		/* CURLINFO_SIZE_DOWNLOAD			=	CURLINFO_DOUBLE	+8, */
-		CASE(SIZE_DOWNLOAD);
-		/* CURLINFO_SPEED_DOWNLOAD			=	CURLINFO_DOUBLE	+9, */
-		CASE(SPEED_DOWNLOAD);
-		/* CURLINFO_SPEED_UPLOAD			=	CURLINFO_DOUBLE	+10, */
-		CASE(SPEED_UPLOAD);
-		/* CURLINFO_HEADER_SIZE				=	CURLINFO_LONG	+11, */
-		CASE(HEADER_SIZE);
-		/* CURLINFO_REQUEST_SIZE			=	CURLINFO_LONG	+12, */
-		CASE(REQUEST_SIZE);
-		/* CURLINFO_SSL_VERIFYRESULT		=	CURLINFO_LONG	+13, */
-		CASE(SSL_VERIFYRESULT);
-		/* CURLINFO_FILETIME				=	CURLINFO_LONG	+14, */
-		CASE(FILETIME);
-		/* CURLINFO_CONTENT_LENGTH_DOWNLOAD	=	CURLINFO_DOUBLE	+15, */
-		CASE(CONTENT_LENGTH_DOWNLOAD);
-		/* CURLINFO_CONTENT_LENGTH_UPLOAD	=	CURLINFO_DOUBLE	+16, */
-		CASE(CONTENT_LENGTH_UPLOAD);
-		/* CURLINFO_STARTTRANSFER_TIME		=	CURLINFO_DOUBLE	+17, */
-		CASE(STARTTRANSFER_TIME);
-		/* CURLINFO_CONTENT_TYPE			=	CURLINFO_STRING	+18, */
-		CASE(CONTENT_TYPE);
-		/* CURLINFO_REDIRECT_TIME			=	CURLINFO_DOUBLE	+19, */
-		CASE(REDIRECT_TIME);
-		/* CURLINFO_REDIRECT_COUNT			=	CURLINFO_LONG	+20, */
-		CASE(REDIRECT_COUNT);
-		/* CURLINFO_PRIVATE					=	CURLINFO_STRING	+21, * (mike) /
-		CASE(PRIVATE);
-		/* CURLINFO_HTTP_CONNECTCODE		=	CURLINFO_LONG	+22, */
-		CASE(HTTP_CONNECTCODE);
-#if LIBCURL_VERSION_NUM > 0x070a07
-		/* CURLINFO_HTTPAUTH_AVAIL			=	CURLINFO_LONG	+23, */
-		CASE(HTTPAUTH_AVAIL);
-		/* CURLINFO_PROXYAUTH_AVAIL			=	CURLINFO_LONG	+24, */
-		CASE(PROXYAUTH_AVAIL);
-#endif
-	}
-#undef CASE
-	return NULL;
-}
-/* }}} */
-
-/* {{{ static inline void http_curl_getinfo_ex(CURL, CURLINFO, zval *) */
-static inline void _http_curl_getinfo_ex(CURL *ch, CURLINFO i, zval *array TSRMLS_DC)
-{
-	char *key;
-	if (key = http_curl_getinfoname(i)) {
-		switch (i & ~CURLINFO_MASK)
-		{
-			case CURLINFO_STRING:
-			{
-				char *c;
-				if (CURLE_OK == curl_easy_getinfo(ch, i, &c)) {
-					add_assoc_string(array, key, c ? c : "", 1);
-				}
-			}
-			break;
-
-			case CURLINFO_DOUBLE:
-			{
-				double d;
-				if (CURLE_OK == curl_easy_getinfo(ch, i, &d)) {
-					add_assoc_double(array, key, d);
-				}
-			}
-			break;
-
-			case CURLINFO_LONG:
-			{
-				long l;
-				if (CURLE_OK == curl_easy_getinfo(ch, i, &l)) {
-					add_assoc_long(array, key, l);
-				}
-			}
-			break;
 		}
 	}
 }
@@ -441,62 +341,92 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 	zval array;
 	Z_ARRVAL(array) = info;
 
-#define INFO(I) http_curl_getinfo_ex(ch, CURLINFO_ ##I , &array)
+#define HTTP_CURL_INFO(I) HTTP_CURL_INFO_EX(I, I)
+#define HTTP_CURL_INFO_EX(I, X) \
+	switch (CURLINFO_ ##I & ~CURLINFO_MASK) \
+	{ \
+		case CURLINFO_STRING: \
+		{ \
+			char *c; \
+			if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_ ##I, &c)) { \
+				add_assoc_string(&array, pretty_key(http_curl_copystr(#X), sizeof(#X)-1, 0, 0), c ? c : "", 1); \
+			} \
+		} \
+		break; \
+\
+		case CURLINFO_DOUBLE: \
+		{ \
+			double d; \
+			if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_ ##I, &d)) { \
+				add_assoc_double(&array, pretty_key(http_curl_copystr(#X), sizeof(#X)-1, 0, 0), d); \
+			} \
+		} \
+		break; \
+\
+		case CURLINFO_LONG: \
+		{ \
+			long l; \
+			if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_ ##I, &l)) { \
+				add_assoc_long(&array, pretty_key(http_curl_copystr(#X), sizeof(#X)-1, 0, 0), l); \
+			} \
+		} \
+		break; \
+	} \
+
 	/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
-	INFO(EFFECTIVE_URL);
+	HTTP_CURL_INFO(EFFECTIVE_URL);
 #if LIBCURL_VERSION_NUM > 0x070a06
 	/* CURLINFO_RESPONSE_CODE			=	CURLINFO_LONG	+2, */
-	INFO(RESPONSE_CODE);
+	HTTP_CURL_INFO(RESPONSE_CODE);
 #else
-	INFO(HTTP_CODE);
+	HTTP_CURL_INFO_EX(HTTP_CODE, RESPONSE_CODE);
 #endif
 	/* CURLINFO_TOTAL_TIME				=	CURLINFO_DOUBLE	+3, */
-	INFO(TOTAL_TIME);
+	HTTP_CURL_INFO(TOTAL_TIME);
 	/* CURLINFO_NAMELOOKUP_TIME			=	CURLINFO_DOUBLE	+4, */
-	INFO(NAMELOOKUP_TIME);
+	HTTP_CURL_INFO(NAMELOOKUP_TIME);
 	/* CURLINFO_CONNECT_TIME			=	CURLINFO_DOUBLE	+5, */
-	INFO(CONNECT_TIME);
+	HTTP_CURL_INFO(CONNECT_TIME);
 	/* CURLINFO_PRETRANSFER_TIME		=	CURLINFO_DOUBLE	+6, */
-	INFO(PRETRANSFER_TIME);
+	HTTP_CURL_INFO(PRETRANSFER_TIME);
 	/* CURLINFO_SIZE_UPLOAD				=	CURLINFO_DOUBLE	+7, */
-	INFO(SIZE_UPLOAD);
+	HTTP_CURL_INFO(SIZE_UPLOAD);
 	/* CURLINFO_SIZE_DOWNLOAD			=	CURLINFO_DOUBLE	+8, */
-	INFO(SIZE_DOWNLOAD);
+	HTTP_CURL_INFO(SIZE_DOWNLOAD);
 	/* CURLINFO_SPEED_DOWNLOAD			=	CURLINFO_DOUBLE	+9, */
-	INFO(SPEED_DOWNLOAD);
+	HTTP_CURL_INFO(SPEED_DOWNLOAD);
 	/* CURLINFO_SPEED_UPLOAD			=	CURLINFO_DOUBLE	+10, */
-	INFO(SPEED_UPLOAD);
+	HTTP_CURL_INFO(SPEED_UPLOAD);
 	/* CURLINFO_HEADER_SIZE				=	CURLINFO_LONG	+11, */
-	INFO(HEADER_SIZE);
+	HTTP_CURL_INFO(HEADER_SIZE);
 	/* CURLINFO_REQUEST_SIZE			=	CURLINFO_LONG	+12, */
-	INFO(REQUEST_SIZE);
+	HTTP_CURL_INFO(REQUEST_SIZE);
 	/* CURLINFO_SSL_VERIFYRESULT		=	CURLINFO_LONG	+13, */
-	INFO(SSL_VERIFYRESULT);
+	HTTP_CURL_INFO(SSL_VERIFYRESULT);
 	/* CURLINFO_FILETIME				=	CURLINFO_LONG	+14, */
-	INFO(FILETIME);
+	HTTP_CURL_INFO(FILETIME);
 	/* CURLINFO_CONTENT_LENGTH_DOWNLOAD	=	CURLINFO_DOUBLE	+15, */
-	INFO(CONTENT_LENGTH_DOWNLOAD);
+	HTTP_CURL_INFO(CONTENT_LENGTH_DOWNLOAD);
 	/* CURLINFO_CONTENT_LENGTH_UPLOAD	=	CURLINFO_DOUBLE	+16, */
-	INFO(CONTENT_LENGTH_UPLOAD);
+	HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
 	/* CURLINFO_STARTTRANSFER_TIME		=	CURLINFO_DOUBLE	+17, */
-	INFO(STARTTRANSFER_TIME);
+	HTTP_CURL_INFO(STARTTRANSFER_TIME);
 	/* CURLINFO_CONTENT_TYPE			=	CURLINFO_STRING	+18, */
-	INFO(CONTENT_TYPE);
+	HTTP_CURL_INFO(CONTENT_TYPE);
 	/* CURLINFO_REDIRECT_TIME			=	CURLINFO_DOUBLE	+19, */
-	INFO(REDIRECT_TIME);
+	HTTP_CURL_INFO(REDIRECT_TIME);
 	/* CURLINFO_REDIRECT_COUNT			=	CURLINFO_LONG	+20, */
-	INFO(REDIRECT_COUNT);
+	HTTP_CURL_INFO(REDIRECT_COUNT);
 	/* CURLINFO_PRIVATE					=	CURLINFO_STRING	+21, */
-	INFO(PRIVATE);
+	HTTP_CURL_INFO(PRIVATE);
 	/* CURLINFO_HTTP_CONNECTCODE		=	CURLINFO_LONG	+22, */
-	INFO(HTTP_CONNECTCODE);
+	HTTP_CURL_INFO(HTTP_CONNECTCODE);
 #if LIBCURL_VERSION_NUM > 0x070a07
 	/* CURLINFO_HTTPAUTH_AVAIL			=	CURLINFO_LONG	+23, */
-	INFO(HTTPAUTH_AVAIL);
+	HTTP_CURL_INFO(HTTPAUTH_AVAIL);
 	/* CURLINFO_PROXYAUTH_AVAIL			=	CURLINFO_LONG	+24, */
-	INFO(PROXYAUTH_AVAIL);
+	HTTP_CURL_INFO(PROXYAUTH_AVAIL);
 #endif
-#undef INFO
 }
 /* }}} */
 
