@@ -202,7 +202,8 @@ static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 static inline char *_http_etag(char **new_etag, const void *data_ptr,
 	const size_t data_len, const http_send_mode data_mode TSRMLS_DC)
 {
-	char ssb_buf[127], digest[16];
+	char ssb_buf[127];
+	unsigned char digest[16];
 	PHP_MD5_CTX ctx;
 
 	PHP_MD5Init(&ctx);
@@ -289,8 +290,7 @@ static STATUS _http_send_chunk(const void *data, const size_t begin,
 		break;
 
 		case SEND_DATA:
-			return len == php_body_write(
-				Z_STRVAL_P((zval *) data) + begin, len TSRMLS_CC)
+			return len == php_body_write(data + begin, len TSRMLS_CC)
 				? SUCCESS : FAILURE;
 		break;
 
@@ -1067,7 +1067,7 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 {
 	char etag[33] = { 0 };
 	unsigned char digest[16];
-
+	
 	if (mode & PHP_OUTPUT_HANDLER_START) {
 		PHP_MD5Init(&HTTP_G(etag_md5));
 	}
@@ -1076,7 +1076,7 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 
 	if (mode & PHP_OUTPUT_HANDLER_END) {
 		PHP_MD5Final(digest, &HTTP_G(etag_md5));
-
+		
 		/* just do that if desired */
 		if (HTTP_G(etag_started)) {
 			make_digest(etag, digest);
@@ -1168,6 +1168,11 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag,
 	ret = http_send_header(etag_header);
 	efree(etag_header);
 
+	if (!etag_len){
+		php_error_docref(NULL TSRMLS_CC,E_ERROR,
+			"Sending empty Etag (previous: %s)\n", HTTP_G(etag));
+		return FAILURE;
+	}
 	/* remember */
 	if (HTTP_G(etag)) {
 		efree(HTTP_G(etag));
@@ -1519,7 +1524,6 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 	const http_send_mode data_mode TSRMLS_DC)
 {
-	char *new_etag = NULL;
 	int is_range_request = http_is_range_request();
 
 	if (!data_ptr) {
@@ -1528,24 +1532,24 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 
 	/* etag handling */
 	if (HTTP_G(etag_started)) {
-		new_etag = (char *) emalloc(33);
-
-		/* never ever use the output to compute the ETag if http_send() is used */
+		char *etag = ecalloc(33, 1);
+		/* interrupt */
 		HTTP_G(etag_started) = 0;
+		/* never ever use the output to compute the ETag if http_send() is used */
 		php_end_ob_buffer(0, 0 TSRMLS_CC);
-		if (NULL == http_etag(&new_etag, data_ptr, data_size, data_mode)) {
-			efree(new_etag);
+		if (NULL == http_etag(&etag, data_ptr, data_size, data_mode)) {
+			efree(etag);
 			return FAILURE;
 		}
-
+		
 		/* send 304 Not Modified if etag matches */
-		if ((!is_range_request) && http_etag_match("HTTP_IF_NONE_MATCH", new_etag)) {
-			efree(new_etag);
+		if ((!is_range_request) && http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
+			efree(etag);
 			return http_send_status(304);
 		}
 
-		http_send_etag(new_etag, 32);
-		efree(new_etag);
+		http_send_etag(etag, 32);
+		efree(etag);
 	}
 
 	/* send 304 Not Modified if last-modified matches*/
@@ -1612,7 +1616,7 @@ PHP_HTTP_API STATUS _http_send_data(const zval *zdata TSRMLS_DC)
 		return FAILURE;
 	}
 
-	return http_send(zdata, Z_STRLEN_P(zdata), SEND_DATA);
+	return http_send(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata), SEND_DATA);
 }
 /* }}} */
 
