@@ -1,0 +1,1670 @@
+/*
+   +----------------------------------------------------------------------+
+   | PECL :: http                                                         |
+   +----------------------------------------------------------------------+
+   | This source file is subject to version 3.0 of the PHP license, that  |
+   | is bundled with this package in the file LICENSE, and is available   |
+   | through the world-wide-web at http://www.php.net/license/3_0.txt.    |
+   | If you did not receive a copy of the PHP license and are unable to   |
+   | obtain it through the world-wide-web, please send a note to          |
+   | license@php.net so we can mail you a copy immediately.               |
+   +----------------------------------------------------------------------+
+   | Copyright (c) 2004-2005 Michael Wallner <mike@php.net>               |
+   +----------------------------------------------------------------------+
+*/
+
+/* $Id$ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "php.h"
+#include "php_version.h"
+#include "php_streams.h"
+#include "ext/standard/md5.h"
+#include "ext/standard/url.h"
+#include "ext/standard/base64.h"
+#include "ext/standard/php_string.h"
+#include "ext/standard/php_lcg.h"
+
+#include "SAPI.h"
+
+#if (PHP_MAJOR_VERSION >= 5)
+#include "ext/standard/php_http.h"
+#else
+#include "php_http_build_query.h"
+#include "http_build_query.c"
+#endif
+
+#include "php_http.h"
+#include "php_http_api.h"
+
+#include <ctype.h>
+
+#if defined(HAVE_CURL) && HAVE_CURL
+#include <curl/curl.h>
+#include <curl/easy.h>
+#endif
+
+ZEND_DECLARE_MODULE_GLOBALS(http)
+
+/* {{{ day/month names */
+static const char *days[] = {
+	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
+static const char *wkdays[] = {
+	"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+};
+static const char *weekdays[] = {
+	"Monday", "Tuesday", "Wednesday", 
+	"Thursday", "Friday", "Saturday", "Sunday"
+};
+static const char *months[] = {
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Okt", "Nov", "Dec"
+};
+enum assume_next {
+	DATE_MDAY,
+	DATE_YEAR,
+	DATE_TIME
+};
+static const struct time_zone {
+	const char *name;
+	const int offset;
+} time_zones[] = {
+    {"GMT", 0},     /* Greenwich Mean */
+    {"UTC", 0},     /* Universal (Coordinated) */
+    {"WET", 0},     /* Western European */
+    {"BST", 0},     /* British Summer */
+    {"WAT", 60},    /* West Africa */
+    {"AST", 240},   /* Atlantic Standard */
+    {"ADT", 240},   /* Atlantic Daylight */
+    {"EST", 300},   /* Eastern Standard */
+    {"EDT", 300},   /* Eastern Daylight */
+    {"CST", 360},   /* Central Standard */
+    {"CDT", 360},   /* Central Daylight */
+    {"MST", 420},   /* Mountain Standard */
+    {"MDT", 420},   /* Mountain Daylight */
+    {"PST", 480},   /* Pacific Standard */
+    {"PDT", 480},   /* Pacific Daylight */
+    {"YST", 540},   /* Yukon Standard */
+    {"YDT", 540},   /* Yukon Daylight */
+    {"HST", 600},   /* Hawaii Standard */
+    {"HDT", 600},   /* Hawaii Daylight */
+    {"CAT", 600},   /* Central Alaska */
+    {"AHST", 600},  /* Alaska-Hawaii Standard */
+    {"NT",  660},   /* Nome */
+    {"IDLW", 720},  /* International Date Line West */
+    {"CET", -60},   /* Central European */
+    {"MET", -60},   /* Middle European */
+    {"MEWT", -60},  /* Middle European Winter */
+    {"MEST", -120}, /* Middle European Summer */
+    {"CEST", -120}, /* Central European Summer */
+    {"MESZ", -60},  /* Middle European Summer */
+    {"FWT", -60},   /* French Winter */
+    {"FST", -60},   /* French Summer */
+    {"EET", -120},  /* Eastern Europe, USSR Zone 1 */
+    {"WAST", -420}, /* West Australian Standard */
+    {"WADT", -420}, /* West Australian Daylight */
+    {"CCT", -480},  /* China Coast, USSR Zone 7 */
+    {"JST", -540},  /* Japan Standard, USSR Zone 8 */
+    {"EAST", -600}, /* Eastern Australian Standard */
+    {"EADT", -600}, /* Eastern Australian Daylight */
+    {"GST", -600},  /* Guam Standard, USSR Zone 9 */
+    {"NZT", -720},  /* New Zealand */
+    {"NZST", -720}, /* New Zealand Standard */
+    {"NZDT", -720}, /* New Zealand Daylight */
+    {"IDLE", -720}, /* International Date Line East */
+};
+/* }}} */
+
+/* {{{ internals */
+
+static int http_sort_q(const void *a, const void *b TSRMLS_DC);
+#define http_etag(e, p, l, m) _http_etag((e), (p), (l), (m) TSRMLS_CC)
+static inline char *_http_etag(char **new_etag, const void *data_ptr, const size_t data_len, const http_send_mode data_mode TSRMLS_DC);
+#define http_is_range_request() _http_is_range_request(TSRMLS_C)
+static inline int _http_is_range_request(TSRMLS_D);
+#define http_send_chunk(d, b, e, m) _http_send_chunk((d), (b), (e), (m) TSRMLS_CC)
+static STATUS _http_send_chunk(const void *data, const size_t begin, const size_t end, const http_send_mode mode TSRMLS_DC);
+
+static int check_day(char *day, size_t len);
+static int check_month(char *month);
+static int check_tzone(char *tzone);
+
+/* {{{ HAVE_CURL */
+#if defined(HAVE_CURL) && HAVE_CURL
+#define http_curl_initbuf(m) _http_curl_initbuf((m) TSRMLS_CC)
+static inline void _http_curl_initbuf(http_curlbuf_member member TSRMLS_DC);
+#define http_curl_freebuf(m) _http_curl_freebuf((m) TSRMLS_CC)
+static inline void _http_curl_freebuf(http_curlbuf_member member TSRMLS_DC);
+#define http_curl_sizebuf(m, l) _http_curl_sizebuf((m), (l) TSRMLS_CC)
+static inline void _http_curl_sizebuf(http_curlbuf_member member, size_t len TSRMLS_DC);
+#define http_curl_movebuf(m, d, l) _http_curl_movebuf((m), (d), (l) TSRMLS_CC)
+static inline void _http_curl_movebuf(http_curlbuf_member member, char **data, size_t *data_len TSRMLS_DC);
+#define http_curl_copybuf(m, d, l) _http_curl_copybuf((m), (d), (l) TSRMLS_CC)
+static inline void _http_curl_copybuf(http_curlbuf_member member, char **data, size_t *data_len TSRMLS_DC);
+#define http_curl_setopts(c, u, o) _http_curl_setopts((c), (u), (o) TSRMLS_CC)
+static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSRMLS_DC);
+
+#define http_curl_getopt(o, k) _http_curl_getopt((o), (k) TSRMLS_CC, 0)
+#define http_curl_getopt1(o, k, t1) _http_curl_getopt((o), (k) TSRMLS_CC, 1, (t1))
+#define http_curl_getopt2(o, k, t1, t2) _http_curl_getopt((o), (k) TSRMLS_CC, 2, (t1), (t2))
+static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, int checks, ...);
+
+static size_t http_curl_body_callback(char *, size_t, size_t, void *);
+static size_t http_curl_hdrs_callback(char *, size_t, size_t, void *);
+#endif
+/* }}} HAVE_CURL */
+
+/* {{{ static int http_sort_q(const void *, const void *) */
+static int http_sort_q(const void *a, const void *b TSRMLS_DC)
+{
+	Bucket *f, *s;
+	zval result, *first, *second;
+
+	f = *((Bucket **) a);
+	s = *((Bucket **) b);
+
+	first = *((zval **) f->pData);
+	second= *((zval **) s->pData);
+
+	if (numeric_compare_function(&result, first, second TSRMLS_CC) != SUCCESS) {
+		return 0;
+	}
+	return (Z_LVAL(result) > 0 ? -1 : (Z_LVAL(result) < 0 ? 1 : 0));
+}
+/* }}} */
+
+/* {{{ static inline char *http_etag(char **, void *, size_t, http_send_mode) */
+static inline char *_http_etag(char **new_etag, const void *data_ptr,
+	const size_t data_len, const http_send_mode data_mode TSRMLS_DC)
+{
+	char ssb_buf[127], digest[16];
+	PHP_MD5_CTX ctx;
+
+	PHP_MD5Init(&ctx);
+
+	switch (data_mode)
+	{
+		case SEND_DATA:
+			PHP_MD5Update(&ctx, data_ptr, data_len);
+		break;
+
+		case SEND_RSRC:
+			snprintf(ssb_buf, 127, "%l=%l=%l",
+				HTTP_G(ssb).sb.st_mtime,
+				HTTP_G(ssb).sb.st_ino,
+				HTTP_G(ssb).sb.st_size
+			);
+			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
+		break;
+
+		default:
+			return NULL;
+		break;
+	}
+
+	PHP_MD5Final(digest, &ctx);
+	make_digest(*new_etag, digest);
+
+	return *new_etag;
+}
+/* }}} */
+
+/* {{{ static inline int http_is_range_request(void) */
+static inline int _http_is_range_request(TSRMLS_D)
+{
+	return zend_hash_exists(Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]),
+		"HTTP_RANGE", strlen("HTTP_RANGE") + 1);
+}
+/* }}} */
+
+/* {{{ static STATUS http_send_chunk(const void *, size_t, size_t,
+	http_send_mode) */
+static STATUS _http_send_chunk(const void *data, const size_t begin,
+	const size_t end, const http_send_mode mode TSRMLS_DC)
+{
+	char *buf;
+	size_t read = 0;
+	long len = end - begin;
+	php_stream *s;
+
+	switch (mode)
+	{
+		case SEND_RSRC:
+			s = (php_stream *) data;
+			if (php_stream_seek(s, begin, SEEK_SET)) {
+				return FAILURE;
+			}
+			buf = (char *) ecalloc(1, HTTP_BUF_SIZE);
+			/* read into buf and write out */
+			while ((len -= HTTP_BUF_SIZE) >= 0) {
+				if (!(read = php_stream_read(s, buf, HTTP_BUF_SIZE))) {
+					efree(buf);
+					return FAILURE;
+				}
+				if (read - php_body_write(buf, read TSRMLS_CC)) {
+					efree(buf);
+					return FAILURE;
+				}
+			}
+
+			/* read & write left over */
+			if (len) {
+				if (read = php_stream_read(s, buf, HTTP_BUF_SIZE + len)) {
+					if (read - php_body_write(buf, read TSRMLS_CC)) {
+						efree(buf);
+						return FAILURE;
+					}
+				} else {
+					efree(buf);
+					return FAILURE;
+				}
+			}
+			efree(buf);
+			return SUCCESS;
+		break;
+
+		case SEND_DATA:
+			return len == php_body_write(
+				Z_STRVAL_P((zval *) data) + begin, len TSRMLS_CC)
+				? SUCCESS : FAILURE;
+		break;
+
+		default:
+			return FAILURE;
+		break;
+	}
+}
+/* }}} */
+
+/* {{{ HAVE_CURL */
+#if defined(HAVE_CURL) && HAVE_CURL
+
+/* {{{ static inline void http_curl_initbuf(http_curlbuf_member) */
+static inline void _http_curl_initbuf(http_curlbuf_member member TSRMLS_DC)
+{
+	http_curl_freebuf(member);
+
+	if (member & CURLBUF_HDRS) {
+		HTTP_G(curlbuf).hdrs.data = emalloc(HTTP_CURLBUF_HDRSSIZE);
+		HTTP_G(curlbuf).hdrs.free = HTTP_CURLBUF_HDRSSIZE;
+	}
+	if (member & CURLBUF_BODY) {
+		HTTP_G(curlbuf).body.data = emalloc(HTTP_CURLBUF_BODYSIZE);
+		HTTP_G(curlbuf).body.free = HTTP_CURLBUF_BODYSIZE;
+	}
+}
+/* }}} */
+
+/* {{{ static inline void http_curl_freebuf(http_curlbuf_member) */
+static inline void _http_curl_freebuf(http_curlbuf_member member TSRMLS_DC)
+{
+	if (member & CURLBUF_HDRS) {
+		if (HTTP_G(curlbuf).hdrs.data) {
+			efree(HTTP_G(curlbuf).hdrs.data);
+			HTTP_G(curlbuf).hdrs.data = NULL;
+		}
+		HTTP_G(curlbuf).hdrs.used = 0;
+		HTTP_G(curlbuf).hdrs.free = 0;
+	}
+	if (member & CURLBUF_BODY) {
+		if (HTTP_G(curlbuf).body.data) {
+			efree(HTTP_G(curlbuf).body.data);
+			HTTP_G(curlbuf).body.data = NULL;
+		}
+		HTTP_G(curlbuf).body.used = 0;
+		HTTP_G(curlbuf).body.free = 0;
+	}
+}
+/* }}} */
+
+/* {{{ static inline void http_curl_copybuf(http_curlbuf_member, char **,
+	size_t *) */
+static inline void _http_curl_copybuf(http_curlbuf_member member, char **data,
+	size_t *data_len TSRMLS_DC)
+{
+	*data = NULL;
+	*data_len = 0;
+
+	if ((member & CURLBUF_HDRS) && HTTP_G(curlbuf).hdrs.used) {
+		if ((member & CURLBUF_BODY) && HTTP_G(curlbuf).body.used) {
+			*data = emalloc(HTTP_G(curlbuf).hdrs.used + HTTP_G(curlbuf).body.used + 1);
+		} else {
+			*data = emalloc(HTTP_G(curlbuf).hdrs.used + 1);
+		}
+		memcpy(*data, HTTP_G(curlbuf).hdrs.data, HTTP_G(curlbuf).hdrs.used);
+		*data_len = HTTP_G(curlbuf).hdrs.used;
+	}
+
+	if ((member & CURLBUF_BODY) && HTTP_G(curlbuf).body.used) {
+		if (*data) {
+			memcpy((*data) + HTTP_G(curlbuf).hdrs.used,
+				HTTP_G(curlbuf).body.data, HTTP_G(curlbuf).body.used);
+			*data_len = HTTP_G(curlbuf).hdrs.used + HTTP_G(curlbuf).body.used;
+		} else {
+			emalloc(HTTP_G(curlbuf).body.used + 1);
+			memcpy(*data, HTTP_G(curlbuf).body.data, HTTP_G(curlbuf).body.used);
+			*data_len = HTTP_G(curlbuf).body.used;
+		}
+	}
+	if (*data) {
+		(*data)[*data_len] = 0;
+	} else {
+		*data = "";
+	}
+}
+/* }}} */
+
+/* {{{ static inline void http_curl_movebuf(http_curlbuf_member, char **,
+	size_t *) */
+static inline void _http_curl_movebuf(http_curlbuf_member member, char **data,
+	size_t *data_len TSRMLS_DC)
+{
+	http_curl_copybuf(member, data, data_len);
+	http_curl_freebuf(member);
+}
+/* }}} */
+
+/* {{{ static size_t http_curl_body_callback(char *, size_t, size_t, void *) */
+static size_t http_curl_body_callback(char *buf, size_t len, size_t n, void *s)
+{
+	TSRMLS_FETCH();
+
+	if ((len *= n) > HTTP_G(curlbuf).body.free) {
+		size_t bsize = HTTP_CURLBUF_BODYSIZE;
+		while (bsize < len) {
+			bsize *= 2;
+		}
+		HTTP_G(curlbuf).body.data = erealloc(HTTP_G(curlbuf).body.data,
+			HTTP_G(curlbuf).body.used + bsize);
+		HTTP_G(curlbuf).body.free += bsize;
+	}
+
+	memcpy(HTTP_G(curlbuf).body.data + HTTP_G(curlbuf).body.used, buf, len);
+	HTTP_G(curlbuf).body.free -= len;
+	HTTP_G(curlbuf).body.used += len;
+
+	return len;
+}
+/* }}} */
+
+/* {{{ static size_t http_curl_hdrs_callback(char*, size_t, size_t, void *) */
+static size_t http_curl_hdrs_callback(char *buf, size_t len, size_t n, void *s)
+{
+	TSRMLS_FETCH();
+
+	/* discard previous headers */
+	if ((HTTP_G(curlbuf).hdrs.used) && (!strncmp(buf, "HTTP/1.", strlen("HTTP/1.")))) {
+		http_curl_initbuf(CURLBUF_HDRS);
+	}
+
+	if ((len *= n) > HTTP_G(curlbuf).hdrs.free) {
+		size_t bsize = HTTP_CURLBUF_HDRSSIZE;
+		while (bsize < len) {
+			bsize *= 2;
+		}
+		HTTP_G(curlbuf).hdrs.data = erealloc(HTTP_G(curlbuf).hdrs.data,
+			HTTP_G(curlbuf).hdrs.used + bsize);
+		HTTP_G(curlbuf).hdrs.free += bsize;
+	}
+
+	memcpy(HTTP_G(curlbuf).hdrs.data + HTTP_G(curlbuf).hdrs.used, buf, len);
+	HTTP_G(curlbuf).hdrs.free -= len;
+	HTTP_G(curlbuf).hdrs.used += len;
+
+	return len;
+}
+/* }}} */
+
+/* {{{ static inline zval *http_curl_getopt(HashTable *, char *, int, ...) */
+static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, int checks, ...)
+{
+	zval **zoption;
+	va_list types;
+	int i;
+
+	if (SUCCESS != zend_hash_find(options, key, strlen(key) + 1, (void **) &zoption)) {
+		return NULL;
+	}
+	if (checks < 1) {
+		return *zoption;
+	}
+
+	va_start(types, checks);
+	for (i = 0; i < checks; ++i) {
+		if ((va_arg(types, int)) == (Z_TYPE_PP(zoption))) {
+			va_end(types);
+			return *zoption;
+		}
+	}
+	va_end(types);
+	return NULL;
+}
+/* }}} */
+
+/* {{{ static inline void http_curl_setopts(CURL *, char *, HashTable *) */
+static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSRMLS_DC)
+{
+	zval *zoption;
+
+	/* standard options */
+	curl_easy_setopt(ch, CURLOPT_URL, url);
+	curl_easy_setopt(ch, CURLOPT_HEADER, 0);
+	curl_easy_setopt(ch, CURLOPT_NOPROGRESS, 1);
+	curl_easy_setopt(ch, CURLOPT_AUTOREFERER, 1);
+	curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, http_curl_body_callback);
+	curl_easy_setopt(ch, CURLOPT_HEADERFUNCTION, http_curl_hdrs_callback);
+#if defined(ZTS)
+	curl_easy_setopt(ch, CURLOPT_NOSIGNAL, 1);
+#endif
+#if defined(PHP_DEBUG)
+	curl_easy_setopt(ch, CURLOPT_VERBOSE, 1);
+#endif
+
+	if ((!options) || (1 > zend_hash_num_elements(options))) {
+		return;
+	}
+
+	/* redirects */
+	if (zoption = http_curl_getopt1(options, "redirect", IS_LONG)) {
+		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
+		curl_easy_setopt(ch, CURLOPT_MAXREDIRS, Z_LVAL_P(zoption));
+		if (zoption = http_curl_getopt2(options, "unrestrictedauth", IS_LONG, IS_BOOL)) {
+			curl_easy_setopt(ch, CURLOPT_UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
+		}
+	} else {
+		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, 0);
+	}
+
+	/* proxy */
+	if (zoption = http_curl_getopt1(options, "proxyhost", IS_STRING)) {
+		curl_easy_setopt(ch, CURLOPT_PROXY, Z_STRVAL_P(zoption));
+		/* port */
+		if (zoption = http_curl_getopt1(options, "proxyport", IS_LONG)) {
+			curl_easy_setopt(ch, CURLOPT_PROXYPORT, Z_LVAL_P(zoption));
+		}
+		/* user:pass */
+		if (zoption = http_curl_getopt1(options, "proxyauth", IS_STRING)) {
+			curl_easy_setopt(ch, CURLOPT_PROXYUSERPWD, Z_STRVAL_P(zoption));
+		}
+		/* auth method */
+		if (zoption = http_curl_getopt1(options, "proxyauthtype", IS_LONG)) {
+			curl_easy_setopt(ch, CURLOPT_PROXYAUTH, Z_LVAL_P(zoption));
+		}
+	}
+
+	/* auth */
+	if (zoption = http_curl_getopt1(options, "httpauth", IS_STRING)) {
+		curl_easy_setopt(ch, CURLOPT_USERPWD, Z_STRVAL_P(zoption));
+	}
+	if (zoption = http_curl_getopt1(options, "httpauthtype", IS_LONG)) {
+		curl_easy_setopt(ch, CURLOPT_HTTPAUTH, Z_LVAL_P(zoption));
+	}
+
+	/* compress */
+	if (zoption = http_curl_getopt2(options, "compress", IS_LONG, IS_BOOL)) {
+		/* empty string enables deflate and gzip */
+		curl_easy_setopt(ch, CURLOPT_ENCODING, "");
+	}
+
+	/* another port */
+	if (zoption = http_curl_getopt1(options, "port", IS_LONG)) {
+		curl_easy_setopt(ch, CURLOPT_PORT, Z_LVAL_P(zoption));
+	}
+
+	/* referer */
+	if (zoption = http_curl_getopt1(options, "referer", IS_STRING)) {
+		curl_easy_setopt(ch, CURLOPT_REFERER, Z_STRVAL_P(zoption));
+	}
+
+	/* useragent */
+	if (zoption = http_curl_getopt1(options, "useragent", IS_STRING)) {
+		curl_easy_setopt(ch, CURLOPT_USERAGENT, Z_STRVAL_P(zoption));
+	}
+
+	/* cookies */
+	if (zoption = http_curl_getopt1(options, "cookies", IS_ARRAY)) {
+		zval cookies, glue;
+		ZVAL_STRINGL(&glue, "; ", 2, 0);
+		php_implode(&glue, zoption, &cookies);
+		if (Z_STRVAL(cookies)) {
+			curl_easy_setopt(ch, CURLOPT_COOKIE, Z_STRVAL(cookies));
+		}
+	}
+
+	/* cookiestore */
+	if (zoption = http_curl_getopt1(options, "cookiestore", IS_STRING)) {
+		curl_easy_setopt(ch, CURLOPT_COOKIEFILE, Z_STRVAL_P(zoption));
+		curl_easy_setopt(ch, CURLOPT_COOKIEJAR, Z_STRVAL_P(zoption));
+	}
+
+	/* additional headers */
+	if (zoption = http_curl_getopt1(options, "headers", IS_ARRAY)) {
+		zval **header;
+		struct curl_slist *headers = NULL;
+		zend_hash_internal_pointer_reset(Z_ARRVAL_P(zoption));
+		while (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header)) {
+			headers = curl_slist_append(headers, Z_STRVAL_PP(header));
+			zend_hash_move_forward(Z_ARRVAL_P(zoption));
+		}
+		if (headers) {
+			curl_easy_setopt(ch, CURLOPT_HTTPHEADER, headers);
+		}
+	}
+}
+/* }}} */
+
+#endif
+/* }}} HAVE_CURL */
+
+static int check_day(char *day, size_t len)
+{
+	int i;
+	const char * const *check = (len > 3) ? &weekdays[0] : &wkdays[0];
+	for (i = 0; i < 7; i++) {
+	    if (!strcmp(day, check[0])) {
+	    	return i;
+		}
+		check++;
+	}
+	return -1;
+}
+
+static int check_month(char *month)
+{
+	int i;
+	const char * const *check = &months[0];
+	for (i = 0; i < 12; i++) {
+		if (!strcmp(month, check[0])) {
+			return i;
+		}
+		check++;
+	}
+	return -1;
+}
+
+/* return the time zone offset between GMT and the input one, in number
+   of seconds or -1 if the timezone wasn't found/legal */
+
+static int check_tzone(char *tzone)
+{
+	int i;
+	const struct time_zone *check = time_zones;
+	for (i = 0; i < sizeof(time_zones) / sizeof(time_zones[0]); i++) {
+		if (!strcmp(tzone, check->name)) {
+			return check->offset * 60;
+		}
+		check++;
+	}
+	return -1;
+}
+
+/* }}} internals */
+
+/* {{{ public API */
+
+/* {{{ char *http_date(time_t) */
+PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
+{
+	struct tm *gmtime, tmbuf;
+	char *date = ecalloc(1, 30);
+
+	gmtime = php_gmtime_r(&t, &tmbuf);
+	snprintf(date, 30,
+		"%s, %02d %s %04d %02d:%02d:%02d GMT",
+		days[gmtime->tm_wday], gmtime->tm_mday,
+		months[gmtime->tm_mon], gmtime->tm_year + 1900,
+		gmtime->tm_hour, gmtime->tm_min, gmtime->tm_sec
+	);
+	return date;
+}
+/* }}} */
+
+/* time_t http_parse_date(char *)
+	Originally by libcurl, Copyright (C) 1998 - 2004, Daniel Stenberg, <daniel@haxx.se>, et al. */
+PHP_HTTP_API time_t http_parse_date(const char *date)
+{
+	time_t t = 0;
+	int tz_offset = -1, year = -1, month = -1, monthday = -1, weekday = -1, 
+		hours = -1, minutes = -1, seconds = -1;
+	struct tm tm;
+	enum assume_next dignext = DATE_MDAY;
+	const char *indate = date;
+
+	int found = 0, part = 0; /* max 6 parts */
+
+	while (*date && (part < 6)) {
+		int found = 0;
+
+		while (*date && !isalnum(*date)) {
+			date++;
+		}
+
+		if (isalpha(*date)) {
+			/* a name coming up */
+			char buf[32] = "";
+			size_t len;
+			sscanf(date, "%31[A-Za-z]", buf);
+			len = strlen(buf);
+
+			if (weekday == -1) {
+				weekday = check_day(buf, len);
+				if (weekday != -1) {
+					found = 1;
+				}
+			}
+			
+			if (!found && (month == -1)) {
+				month = check_month(buf);
+				if (month != -1) {
+					found = 1;
+				}
+			}
+			
+			if (!found && (tz_offset == -1)) {
+				/* this just must be a time zone string */
+				tz_offset = check_tzone(buf);
+				if (tz_offset != -1) {
+					found = 1;
+				}
+			}
+			
+			if (!found) {
+				return -1; /* bad string */
+			}
+			date += len;
+		}
+		else if (isdigit(*date)) {
+			/* a digit */
+			int val;
+			char *end;
+			if((seconds == -1) && (3 == sscanf(date, "%02d:%02d:%02d", &hours, &minutes, &seconds))) {
+				/* time stamp! */
+				date += 8;
+				found = 1;
+			}
+			else {
+				val = (int) strtol(date, &end, 10);
+
+				if ((tz_offset == -1) && ((end - date) == 4) && (val < 1300) &&	(indate < date) && ((date[-1] == '+' || date[-1] == '-'))) {
+					/* four digits and a value less than 1300 and it is preceeded with
+					a plus or minus. This is a time zone indication. */
+					found = 1;
+					tz_offset = (val / 100 * 60 + val % 100) * 60;
+
+					/* the + and - prefix indicates the local time compared to GMT,
+					this we need ther reversed math to get what we want */
+					tz_offset = date[-1] == '+' ? -tz_offset : tz_offset;
+				}
+
+				if (((end - date) == 8) && (year == -1) && (month == -1) && (monthday == -1)) {
+					/* 8 digits, no year, month or day yet. This is YYYYMMDD */
+					found = 1;
+					year = val / 10000;
+					month = (val % 10000) / 100 - 1; /* month is 0 - 11 */
+					monthday = val % 100;
+				}
+
+				if (!found && (dignext == DATE_MDAY) && (monthday == -1)) {
+					if ((val > 0) && (val < 32)) {
+						monthday = val;
+						found = 1;
+					}
+					dignext = DATE_YEAR;
+				}
+
+				if (!found && (dignext == DATE_YEAR) && (year == -1)) {
+					year = val;
+					found = 1;
+					if (year < 1900) {
+						year += year > 70 ? 1900 : 2000;
+					}
+					if(monthday == -1) {
+						dignext = DATE_MDAY;
+					}
+				}
+
+				if (!found) {
+					return -1;
+				}
+
+				date = end;
+			}
+		}
+
+		part++;
+	}
+
+	if (-1 == seconds) {
+		seconds = minutes = hours = 0; /* no time, make it zero */
+	}
+
+	if ((-1 == monthday) || (-1 == month) || (-1 == year)) {
+		/* lacks vital info, fail */
+		return -1;
+	}
+
+	if (sizeof(time_t) < 5) {
+		/* 32 bit time_t can only hold dates to the beginning of 2038 */
+		if (year > 2037) {
+			return 0x7fffffff;
+		}
+	}
+
+	tm.tm_sec = seconds;
+	tm.tm_min = minutes;
+	tm.tm_hour = hours;
+	tm.tm_mday = monthday;
+	tm.tm_mon = month;
+	tm.tm_year = year - 1900;
+	tm.tm_wday = 0;
+	tm.tm_yday = 0;
+	tm.tm_isdst = 0;
+
+	t = mktime(&tm);
+
+	/* time zone adjust */
+	{
+		struct tm *gmt, keeptime2;
+		long delta;
+		time_t t2;
+
+		if(!(gmt = php_gmtime_r(&t, &keeptime2))) {
+			return -1; /* illegal date/time */
+		}
+
+		t2 = mktime(gmt);
+
+		/* Add the time zone diff (between the given timezone and GMT) and the
+		diff between the local time zone and GMT. */
+		delta = (tz_offset != -1 ? tz_offset : 0) + (t - t2);
+
+		if((delta > 0) && (t + delta < t)) {
+			return -1; /* time_t overflow */
+		}
+		
+		t += delta;
+	}
+
+	return t;
+}
+/* }}} */
+
+/* {{{ inline STATUS http_send_status(int) */
+PHP_HTTP_API inline STATUS _http_send_status(const int status TSRMLS_DC)
+{
+	int s = status;
+	return sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) s TSRMLS_CC);
+}
+/* }}} */
+
+/* {{{ inline STATUS http_send_header(char *) */
+PHP_HTTP_API inline STATUS _http_send_header(const char *header TSRMLS_DC)
+{
+	return http_send_status_header(0, header);
+}
+/* }}} */
+
+/* {{{ inline STATUS http_send_status_header(int, char *) */
+PHP_HTTP_API inline STATUS _http_send_status_header(const int status, const char *header TSRMLS_DC)
+{
+	sapi_header_line h = {(char *) header, strlen(header), status};
+	return sapi_header_op(SAPI_HEADER_REPLACE, &h TSRMLS_CC);
+}
+/* }}} */
+
+/* {{{ inline zval *http_get_server_var(char *) */
+PHP_HTTP_API inline zval *_http_get_server_var(const char *key TSRMLS_DC)
+{
+	zval **var;
+	if (SUCCESS == zend_hash_find(
+			Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]),
+			(char *) key, strlen(key) + 1, (void **) &var)) {
+		return *var;
+	}
+	return NULL;
+}
+/* }}} */
+
+/* {{{ void http_ob_etaghandler(char *, uint, char **, uint *, int) */
+PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
+	char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
+{
+	char etag[33] = { 0 };
+	unsigned char digest[16];
+
+	if (mode & PHP_OUTPUT_HANDLER_START) {
+		PHP_MD5Init(&HTTP_G(etag_md5));
+	}
+
+	PHP_MD5Update(&HTTP_G(etag_md5), output, output_len);
+
+	if (mode & PHP_OUTPUT_HANDLER_END) {
+		PHP_MD5Final(digest, &HTTP_G(etag_md5));
+		make_digest(etag, digest);
+
+		if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
+			http_send_status(304);
+		} else {
+			http_send_etag(etag, 32);
+		}
+	}
+
+	*handled_output_len = output_len;
+	*handled_output = estrndup(output, output_len);
+}
+/* }}} */
+
+/* {{{ int http_modified_match(char *, int) */
+PHP_HTTP_API int _http_modified_match(const char *entry, const time_t t TSRMLS_DC)
+{
+	int retval;
+	zval *zmodified;
+	char *modified, *chr_ptr;
+
+	HTTP_GSC(zmodified, entry, 0);
+
+	modified = estrndup(Z_STRVAL_P(zmodified), Z_STRLEN_P(zmodified));
+	if (chr_ptr = strrchr(modified, ';')) {
+		chr_ptr = 0;
+	}
+	retval = (t <= http_parse_date(modified));
+	efree(modified);
+	return retval;
+}
+/* }}} */
+
+/* {{{ int http_etag_match(char *, char *) */
+PHP_HTTP_API int _http_etag_match(const char *entry, const char *etag TSRMLS_DC)
+{
+	zval *zetag;
+	char *quoted_etag;
+	STATUS result;
+
+	HTTP_GSC(zetag, entry, 0);
+
+	if (NULL != strchr(Z_STRVAL_P(zetag), '*')) {
+		return 1;
+	}
+
+	quoted_etag = (char *) emalloc(strlen(etag) + 3);
+	sprintf(quoted_etag, "\"%s\"", etag);
+
+	if (!strchr(Z_STRVAL_P(zetag), ',')) {
+		result = !strcmp(Z_STRVAL_P(zetag), quoted_etag);
+	} else {
+		result = (NULL != strstr(Z_STRVAL_P(zetag), quoted_etag));
+	}
+
+	efree(quoted_etag);
+	return result;
+}
+/* }}} */
+
+/* {{{ STATUS http_send_last_modified(int) */
+PHP_HTTP_API STATUS _http_send_last_modified(const int t TSRMLS_DC)
+{
+	char modified[96] = "Last-Modified: ", *date;
+	date = http_date(t);
+	strcat(modified, date);
+	efree(date);
+	return http_send_header(modified);
+}
+/* }}} */
+
+/* {{{ static STATUS http_send_etag(char *, int) */
+PHP_HTTP_API STATUS _http_send_etag(const char *etag,
+	const int etag_len TSRMLS_DC)
+{
+	STATUS ret;
+	int header_len;
+	char *etag_header;
+
+	header_len = strlen("ETag: \"\"") + etag_len + 1;
+	etag_header = (char *) emalloc(header_len);
+	snprintf(etag_header, header_len, "ETag: \"%s\"", etag);
+	ret = http_send_header(etag_header);
+	efree(etag_header);
+	return ret;
+}
+/* }}} */
+
+/* {{{ char *http_absolute_uri(char *, char *) */
+PHP_HTTP_API char *_http_absolute_uri(const char *url,
+	const char *proto TSRMLS_DC)
+{
+	char URI[HTTP_URI_MAXLEN + 1], *PTR, *proto_ptr, *host, *path;
+	zval *zhost;
+
+	if (!url || !strlen(url)) {
+		if (!SG(request_info).request_uri) {
+			return NULL;
+		}
+		url = SG(request_info).request_uri;
+	}
+	/* Mess around with already absolute URIs */
+	else if (proto_ptr = strstr(url, "://")) {
+		if (!proto || !strncmp(url, proto, strlen(proto))) {
+			return estrdup(url);
+		} else {
+			snprintf(URI, HTTP_URI_MAXLEN, "%s%s", proto, proto_ptr + 3);
+			return estrdup(URI);
+		}
+	}
+
+	/* protocol defaults to http */
+	if (!proto || !strlen(proto)) {
+		proto = "http";
+	}
+
+	/* get host name */
+	if (	(zhost = http_get_server_var("HTTP_HOST")) ||
+			(zhost = http_get_server_var("SERVER_NAME"))) {
+		host = Z_STRVAL_P(zhost);
+	} else {
+		host = "localhost";
+	}
+
+
+	/* glue together */
+	if (url[0] == '/') {
+		snprintf(URI, HTTP_URI_MAXLEN, "%s://%s%s", proto, host, url);
+	} else if (SG(request_info).request_uri) {
+		path = estrdup(SG(request_info).request_uri);
+		php_dirname(path, strlen(path));
+		snprintf(URI, HTTP_URI_MAXLEN, "%s://%s%s/%s", proto, host, path, url);
+		efree(path);
+	} else {
+		snprintf(URI, HTTP_URI_MAXLEN, "%s://%s/%s", proto, host, url);
+	}
+
+	/* strip everything after a new line */
+	PTR = URI;
+	while (*PTR != 0) {
+		if (*PTR == '\n' || *PTR == '\r') {
+			*PTR = 0;
+			break;
+		}
+		PTR++;
+	}
+
+	return estrdup(URI);
+}
+/* }}} */
+
+/* {{{ char *http_negotiate_q(char *, zval *, char *, hash_entry_type) */
+PHP_HTTP_API char *_http_negotiate_q(const char *entry, const zval *supported,
+	const char *def TSRMLS_DC)
+{
+	zval *zaccept, *zarray, *zdelim, **zentry, *zentries, **zsupp;
+	char *q_ptr, *result;
+	int i, c;
+	double qual;
+
+	HTTP_GSC(zaccept, entry, estrdup(def));
+
+	MAKE_STD_ZVAL(zarray);
+	array_init(zarray);
+
+	MAKE_STD_ZVAL(zdelim);
+	ZVAL_STRING(zdelim, ",", 0);
+	php_explode(zdelim, zaccept, zarray, -1);
+	efree(zdelim);
+
+	MAKE_STD_ZVAL(zentries);
+	array_init(zentries);
+
+	c = zend_hash_num_elements(Z_ARRVAL_P(zarray));
+	for (i = 0; i < c; i++, zend_hash_move_forward(Z_ARRVAL_P(zarray))) {
+
+		if (SUCCESS != zend_hash_get_current_data(
+				Z_ARRVAL_P(zarray), (void **) &zentry)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+				"Cannot parse %s header: %s", entry, Z_STRVAL_P(zaccept));
+			break;
+		}
+
+		/* check for qualifier */
+		if (NULL != (q_ptr = strrchr(Z_STRVAL_PP(zentry), ';'))) {
+			qual = strtod(q_ptr + 3, NULL);
+		} else {
+			qual = 1000.0 - 1;
+		}
+
+		/* walk through the supported array */
+		for (	zend_hash_internal_pointer_reset(Z_ARRVAL_P(supported));
+				SUCCESS == zend_hash_get_current_data(
+					Z_ARRVAL_P(supported), (void **) &zsupp);
+				zend_hash_move_forward(Z_ARRVAL_P(supported))) {
+			if (!strcasecmp(Z_STRVAL_PP(zsupp), Z_STRVAL_PP(zentry))) {
+				add_assoc_double(zentries, Z_STRVAL_PP(zsupp), qual);
+				break;
+			}
+		}
+	}
+
+	zval_dtor(zarray);
+	efree(zarray);
+
+	zend_hash_internal_pointer_reset(Z_ARRVAL_P(zentries));
+
+	if (	(SUCCESS != zend_hash_sort(Z_ARRVAL_P(zentries), zend_qsort,
+					http_sort_q, 0 TSRMLS_CC)) ||
+			(HASH_KEY_NON_EXISTANT == zend_hash_get_current_key(
+					Z_ARRVAL_P(zentries), &result, 0, 1))) {
+		result = estrdup(def);
+	}
+
+	zval_dtor(zentries);
+	efree(zentries);
+
+	return result;
+}
+/* }}} */
+
+/* {{{ http_range_status http_get_request_ranges(zval *zranges, size_t) */
+PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
+	const size_t length TSRMLS_DC)
+{
+	zval *zrange, *zentry, **zentries;
+	char *range, c;
+	long begin = -1, end = -1, *ptr;
+
+	HTTP_GSC(zrange, "HTTP_RANGE", RANGE_NO);
+	range = Z_STRVAL_P(zrange);
+
+	if (strncmp(range, "bytes=", strlen("bytes="))) {
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Range header misses bytes=");
+		return RANGE_ERR;
+	}
+
+	ptr = &begin;
+	range += strlen("bytes=");
+
+	do {
+		switch (c = *(range++))
+		{
+			case '0':
+				*ptr *= 10;
+			break;
+
+			case '1': case '2': case '3':
+			case '4': case '5': case '6':
+			case '7': case '8': case '9':
+				/*
+				 * If the value of the pointer is already set (non-negative)
+				 * then multiply its value by ten and add the current value,
+				 * else initialise the pointers value with the current value
+				 * --
+				 * This let us recognize empty fields when validating the
+				 * ranges, i.e. a "-10" for begin and "12345" for the end
+				 * was the following range request: "Range: bytes=0-12345";
+				 * While a "-1" for begin and "12345" for the end would
+				 * have been: "Range: bytes=-12345".
+				 */
+				if (*ptr > 0) {
+					*ptr *= 10;
+					*ptr += c - '0';
+				} else {
+					*ptr = c - '0';
+				}
+			break;
+
+			case '-':
+				ptr = &end;
+			break;
+
+			case 0:
+			case ',':
+
+				if (length) {
+					/* validate ranges */
+					switch (begin)
+					{
+						/* "0-12345" */
+						case -10:
+							if ((length - end) < 1) {
+								return RANGE_ERR;
+							}
+							begin = 0;
+						break;
+
+						/* "-12345" */
+						case -1:
+							if ((length - end) < 1) {
+								return RANGE_ERR;
+							}
+							begin = length - end;
+							end = length;
+						break;
+
+						/* "12345-(xxx)" */
+						default:
+							switch (end)
+							{
+								/* "12345-" */
+								case -1:
+									if ((length - begin) < 1) {
+										return RANGE_ERR;
+									}
+									end = length - 1;
+								break;
+
+								/* "12345-67890" */
+								default:
+									if (	((length - begin) < 1) ||
+											((length - end) < 1) ||
+											((begin - end) >= 0)) {
+										return RANGE_ERR;
+									}
+								break;
+							}
+						break;
+					}
+				}
+
+				zentry = (zval *) zentries++;
+				MAKE_STD_ZVAL(zentry);
+				array_init(zentry);
+				add_index_long(zentry, 0, begin);
+				add_index_long(zentry, 1, end);
+				add_next_index_zval(zranges, zentry);
+
+				begin = -1;
+				end = -1;
+				ptr = &begin;
+			break;
+
+			default:
+				return RANGE_ERR;
+			break;
+		}
+	} while (c != 0);
+
+	return RANGE_OK;
+}
+/* }}} */
+
+/* {{{ STATUS http_send_ranges(zval *, void *, size_t, http_send_mode) */
+PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const size_t size, const http_send_mode mode TSRMLS_DC)
+{
+	zval **zrange;
+	long b, e, **begin, **end;
+	char range_header[255], multi_header[68] = "Content-Type: multipart/byteranges; boundary=", bound[23], preface[1024];
+	int i, c;
+
+	/* Send HTTP 206 Partial Content */
+	http_send_status(206);
+
+	/* single range */
+	if ((c = zend_hash_num_elements(Z_ARRVAL_P(zranges))) == 1) {
+		zend_hash_index_find(Z_ARRVAL_P(zranges), 0, (void **) &zrange);
+		zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &begin);
+		zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &end);
+
+		/* so zranges can be freed */
+		b = **begin;
+		e = **end;
+
+		/* free zranges */
+		zval_dtor(zranges);
+		efree(zranges);
+
+		/* send content range header */
+		snprintf(range_header, 255, "Content-Range: bytes %d-%d/%d", b, e, size);
+		http_send_header(range_header);
+
+		/* send requested chunk */
+		return http_send_chunk(data, b, e + 1, mode);
+	}
+
+	/* multi range */
+
+	snprintf(bound, 23, "--%d%0.9f", time(NULL), php_combined_lcg(TSRMLS_C));
+	strncat(multi_header, bound + 2, 21);
+	http_send_header(multi_header);
+
+	/* send each requested chunk */
+	for (	i = 0,	zend_hash_internal_pointer_reset(Z_ARRVAL_P(zranges));
+			i < c;
+			i++,	zend_hash_move_forward(Z_ARRVAL_P(zranges))) {
+		if (	HASH_KEY_NON_EXISTANT == zend_hash_get_current_data(
+					Z_ARRVAL_P(zranges), (void **) &zrange) ||
+				SUCCESS != zend_hash_index_find(
+					Z_ARRVAL_PP(zrange), 0, (void **) &begin) ||
+				SUCCESS != zend_hash_index_find(
+					Z_ARRVAL_PP(zrange), 1, (void **) &end)) {
+			break;
+		}
+
+		snprintf(preface, 1024,
+			"\r\n%s\r\nContent-Type: %s\r\nContent-Range: bytes %d-%d/%d\r\n\r\n", bound,
+			HTTP_G(ctype) ? HTTP_G(ctype) : "application/x-octetstream",
+			**begin, **end, size);
+		php_body_write(preface, strlen(preface) TSRMLS_CC);
+		http_send_chunk(data, **begin, **end + 1, mode);
+
+	}
+
+	/* free zranges */
+	zval_dtor(zranges);
+	efree(zranges);
+
+	/* write boundary once more */
+	php_body_write("\n", 1 TSRMLS_CC);
+	php_body_write(bound, strlen(bound) TSRMLS_CC);
+
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ STATUS http_send(void *, sizezo_t, http_send_mode) */
+PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
+	const http_send_mode data_mode TSRMLS_DC)
+{
+	zval *zranges = NULL;
+
+	if (!data_ptr) {
+		return FAILURE;
+	}
+
+	/* never ever use the output to compute the ETag if http_send() is used */
+	if (HTTP_G(etag_started)) {
+		char *new_etag = (char *) emalloc(33);
+
+		php_end_ob_buffer(0, 0 TSRMLS_CC);
+		if (NULL == http_etag(&new_etag, data_ptr, data_size, data_mode)) {
+			efree(new_etag);
+			return FAILURE;
+		}
+
+		/* send 304 Not Modified if etag matches */
+		if (http_etag_match("HTTP_IF_NONE_MATCH", new_etag)) {
+			efree(new_etag);
+			return http_send_status(304);
+		}
+
+		http_send_etag(new_etag, 32);
+		efree(new_etag);
+	}
+
+	if (http_is_range_request()) {
+
+		MAKE_STD_ZVAL(zranges);
+		array_init(zranges);
+
+		switch (http_get_request_ranges(zranges, data_size))
+		{
+			case RANGE_NO:
+				zval_dtor(zranges);
+				efree(zranges);
+				/* go ahead and send all */
+			break;
+
+			case RANGE_OK:
+				return http_send_ranges(zranges, data_ptr, data_size, data_mode);
+			break;
+
+			case RANGE_ERR:
+				zval_dtor(zranges);
+				efree(zranges);
+				http_send_status(416);
+				return FAILURE;
+			break;
+
+			default:
+				return FAILURE;
+			break;
+		}
+	}
+	/* send all */
+	return http_send_chunk(data_ptr, 0, data_size, data_mode);
+}
+/* }}} */
+
+/* {{{ STATUS http_send_data(zval *) */
+PHP_HTTP_API STATUS _http_send_data(const zval *zdata TSRMLS_DC)
+{
+	if (!Z_STRLEN_P(zdata)) {
+		return SUCCESS;
+	}
+	if (!Z_STRVAL_P(zdata)) {
+		return FAILURE;
+	}
+
+	return http_send((void *) zdata, Z_STRLEN_P(zdata), SEND_DATA);
+}
+/* }}} */
+
+/* {{{ STATUS http_send_stream(php_stream *) */
+PHP_HTTP_API STATUS _http_send_stream(const php_stream *file TSRMLS_DC)
+{
+	if (php_stream_stat((php_stream *) file, &HTTP_G(ssb))) {
+		return FAILURE;
+	}
+
+	return http_send((void *) file, HTTP_G(ssb).sb.st_size, SEND_RSRC);
+}
+/* }}} */
+
+/* {{{ STATUS http_send_file(zval *) */
+PHP_HTTP_API STATUS _http_send_file(const zval *zfile TSRMLS_DC)
+{
+	php_stream *file;
+	STATUS ret;
+
+	if (!Z_STRLEN_P(zfile)) {
+		return FAILURE;
+	}
+
+	if (!(file = php_stream_open_wrapper(Z_STRVAL_P(zfile), "rb",
+			REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL))) {
+		return FAILURE;
+	}
+
+	ret = http_send_stream(file);
+	php_stream_close(file);
+	return ret;
+}
+/* }}} */
+
+/* {{{ proto STATUS http_chunked_decode(char *, size_t, char **, size_t *) */
+PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
+	const size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+{
+	const char *e_ptr;
+	char *d_ptr;
+
+	*decoded_len = 0;
+	*decoded = (char *) ecalloc(1, encoded_len);
+	d_ptr = *decoded;
+	e_ptr = encoded;
+
+	while (((e_ptr - encoded) - encoded_len) > 0) {
+		char hex_len[9] = {0};
+		size_t chunk_len = 0;
+		int i = 0;
+
+		/* read in chunk size */
+		while (isxdigit(*e_ptr)) {
+			if (i == 9) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Chunk size is too long: 0x%s...", hex_len);
+				efree(*decoded);
+				return FAILURE;
+			}
+			hex_len[i++] = *e_ptr++;
+		}
+
+		/* hex to long */
+		if (strcmp(hex_len, "0")) {
+			char *error = NULL;
+			chunk_len = strtol(hex_len, &error, 16);
+			if (error == hex_len) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Invalid chunk size string: '%s'", hex_len);
+				efree(*decoded);
+				return FAILURE;
+			}
+		} else {
+			break;
+		}
+
+		/* new line */
+		if (*e_ptr++ != '\r' || *e_ptr++ != '\n') {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+				"Invalid character (expected 0x0A, 0x0D; got: %x)",
+				*(e_ptr - 1));
+			efree(*decoded);
+			return FAILURE;
+		}
+
+		memcpy(d_ptr, e_ptr, chunk_len);
+		d_ptr += chunk_len;
+		e_ptr += chunk_len + 2;
+		*decoded_len += chunk_len;
+	}
+
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ proto void http_split_response(zval *, zval *, zval *) */
+PHP_HTTP_API void _http_split_response(const zval *zresponse, zval *zheaders,
+	zval *zbody TSRMLS_DC)
+{
+	char *header, *response, *body = NULL;
+	long response_len = Z_STRLEN_P(zresponse);
+	header = response = Z_STRVAL_P(zresponse);
+
+	while ((response - Z_STRVAL_P(zresponse) + 3) < response_len) {
+		if (	(*response++ == '\r') &&
+				(*response++ == '\n') &&
+				(*response++ == '\r') &&
+				(*response++ == '\n')) {
+			body = response;
+			break;
+		}
+	}
+
+	if (body && (response_len - (body - header))) {
+		ZVAL_STRINGL(zbody, body, response_len - (body - header) - 1, 1);
+	} else {
+		Z_TYPE_P(zbody) = IS_NULL;
+	}
+
+	/* check for HTTP status - FIXXME: strchr() */
+	if (!strncmp(header, "HTTP/1.", 7)) {
+		char *end = strchr(header, '\r');
+		add_assoc_stringl(zheaders, "Status",
+			header + strlen("HTTP/1.x "),
+			end - (header + strlen("HTTP/1.x ")), 1);
+		header = end + 2;
+	}
+	/* split headers */
+	{
+		char *colon = NULL, *line = header;
+
+		while (	(line - Z_STRVAL_P(zresponse) + 3) <
+				(body - Z_STRVAL_P(zresponse))) {
+			switch (*line++)
+			{
+				case '\r':
+					if (colon && (*line == '\n')) {
+						char *key = estrndup(header, colon - header);
+						add_assoc_stringl(zheaders, key,
+							colon + 2, line - colon - 3, 1);
+						efree(key);
+
+						colon = NULL;
+						header += line - header + 1;
+					}
+				break;
+
+				case ':':
+					if (!colon) {
+						colon = line - 1;
+					}
+				break;
+			}
+		}
+	}
+}
+/* }}} */
+
+/* {{{ HAVE_CURL */
+#if defined(HAVE_CURL) && HAVE_CURL
+
+/* {{{ STATUS http_get(char *, HashTable *, char **, size_t *) */
+PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options,
+	char **data, size_t *data_len TSRMLS_DC)
+{
+	CURL *ch = curl_easy_init();
+
+	if (!ch) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize curl");
+		return FAILURE;
+	}
+
+	http_curl_initbuf(CURLBUF_EVRY);
+	http_curl_setopts(ch, URL, options);
+
+	if (CURLE_OK != curl_easy_perform(ch)) {
+		curl_easy_cleanup(ch);
+		http_curl_freebuf(CURLBUF_EVRY);
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
+		return FAILURE;
+	}
+	curl_easy_cleanup(ch);
+
+	http_curl_movebuf(CURLBUF_EVRY, data, data_len);
+
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ STATUS http_head(char *, HashTable *, char **data, size_t *) */
+PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options,
+	char **data, size_t *data_len TSRMLS_DC)
+{
+	CURL *ch = curl_easy_init();
+
+	if (!ch) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize curl");
+		return FAILURE;
+	}
+
+	http_curl_initbuf(CURLBUF_HDRS);
+	http_curl_setopts(ch, URL, options);
+	curl_easy_setopt(ch, CURLOPT_NOBODY, 1);
+
+	if (CURLE_OK != curl_easy_perform(ch)) {
+		curl_easy_cleanup(ch);
+		http_curl_freebuf(CURLBUF_HDRS);
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
+		return FAILURE;
+	}
+	curl_easy_cleanup(ch);
+
+	http_curl_movebuf(CURLBUF_HDRS, data, data_len);
+
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ STATUS http_post_data(char *, char *, size_t, HashTable *, char **, size_t *) */
+PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata,
+	size_t postdata_len, HashTable *options, char **data,
+	size_t *data_len TSRMLS_DC)
+{
+	CURL *ch = curl_easy_init();
+
+	if (!ch) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize curl");
+		return FAILURE;
+	}
+
+	http_curl_initbuf(CURLBUF_EVRY);
+	http_curl_setopts(ch, URL, options);
+	curl_easy_setopt(ch, CURLOPT_POST, 1);
+	curl_easy_setopt(ch, CURLOPT_POSTFIELDS, postdata);
+	curl_easy_setopt(ch, CURLOPT_POSTFIELDSIZE, postdata_len);
+
+	if (CURLE_OK != curl_easy_perform(ch)) {
+		curl_easy_cleanup(ch);
+		http_curl_freebuf(CURLBUF_EVRY);
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
+		return FAILURE;
+	}
+	curl_easy_cleanup(ch);
+
+	http_curl_movebuf(CURLBUF_EVRY, data, data_len);
+
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ STATUS http_post_array(char *, HashTable *, HashTable *, char **, size_t *) */
+PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray,
+	HashTable *options, char **data, size_t *data_len TSRMLS_DC)
+{
+	smart_str qstr = {0};
+	STATUS status;
+
+	if (php_url_encode_hash_ex(postarray, &qstr, NULL,0,NULL,0,NULL,0,NULL TSRMLS_CC) != SUCCESS) {
+		if (qstr.c) {
+			efree(qstr.c);
+		}
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not encode post data");
+		return FAILURE;
+	}
+	smart_str_0(&qstr);
+
+	status = http_post_data(URL, qstr.c, qstr.len, options, data, data_len);
+	if (qstr.c) {
+		efree(qstr.c);
+	}
+	return status;
+}
+/* }}} */
+
+#endif
+/* }}} HAVE_CURL */
+
+/* {{{ void http_auth_header(char *, char*) */
+PHP_HTTP_API void _http_auth_header(const char *type, const char *realm TSRMLS_DC)
+{
+	char realm_header[1024];
+	snprintf(realm_header, 1024, "WWW-Authenticate: %s realm=\"%s\"", type, realm);
+	http_send_status_header(401, realm_header);
+}
+/* }}} */
+
+/* {{{ STATUS http_auth_credentials(char **, char **) */
+PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC)
+{
+	if (strncmp(sapi_module.name, "isapi", 5)) {
+		zval *zuser, *zpass;
+
+		HTTP_GSC(zuser, "PHP_AUTH_USER", FAILURE);
+		HTTP_GSC(zpass, "PHP_AUTH_PW", FAILURE);
+
+		*user = estrndup(Z_STRVAL_P(zuser), Z_STRLEN_P(zuser));
+		*pass = estrndup(Z_STRVAL_P(zpass), Z_STRLEN_P(zpass));
+
+		return SUCCESS;
+	} else {
+		zval *zauth = NULL;
+		HTTP_GSC(zauth, "HTTP_AUTHORIZATION", FAILURE);
+		{
+			char *decoded, *colon;
+			int decoded_len;
+			decoded = php_base64_decode(Z_STRVAL_P(zauth), Z_STRLEN_P(zauth),
+				&decoded_len);
+
+			if (colon = strchr(decoded + 6, ':')) {
+				*user = estrndup(decoded + 6, colon - decoded - 6);
+				*pass = estrndup(colon + 1, decoded + decoded_len - colon - 6 - 1);
+
+				return SUCCESS;
+			} else {
+				return FAILURE;
+			}
+		}
+	}
+}
+/* }}} */
+
+/* }}} public API */
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
+<package>
+  <name>pecl_http</name>
+  <summary>Extended HTTP support</summary>
+  <description>
+<![CDATA[
+Currently implemented features:
+===============================
+
+* Building absolute URIs
+* RCF compliant HTTP redirects
+* Caching by "Last-Modified" and/or ETag (with 'on the fly' option)
+* Sending data/files/streams with (multiple) ranges support
+* Negotiating user preferred language/charset
+* Convenient request functions to HEAD/GET/POST if libcurl is available
+]]>
+  </description>
+  <license>PHP License 3.0</license>
+
+  <maintainers>
+    <maintainer>
+      <user>mike</user>
+      <name>Michael Wallner</name>
+      <email>mike@php.net</email>
+      <role>lead</role>
+    </maintainer>
+  </maintainers>
+
+  <release>
+    <version>0.3.0</version>
+    <date>2005-02-xx</date>
+    <state>alpha</state>
+    <notes><![CDATA[
+ * ctype is now mandatory
+ * replaced calls to php_parse_date() to http_parse_date() (original by libcurls Curl_parsedate())
+]]>
+    </notes>
+  </release>
+
+  <filelist>
+    <dir name="/">
+      <file role="doc">EXPERIMENTAL</file>
+      <file role="doc">docs/functions.html</file>
+      <file role="src" platform="windows">config.w32</file>
+      <file role="src">config.m4</file>
+      <file role="src">http.c</file>
+      <file role="src">php_http.h</file>
+      <file role="src">http_api.c</file>
+      <file role="src">php_http_api.h</file>
+      <file role="src">http_build_query.c</file>
+      <file role="src">php_http_build_query.h</file>
+    </dir>
+  </filelist>
+</package>
+
