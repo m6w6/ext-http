@@ -842,10 +842,10 @@ static char *pretty_key(char *key, int key_len, int uctitle, int xhyphen)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 {
 	struct tm *gmtime, tmbuf;
-	char *date = ecalloc(1, 30);
+	char *date = ecalloc(31, 1);
 
 	gmtime = php_gmtime_r(&t, &tmbuf);
-	snprintf(date, 29,
+	snprintf(date, 30,
 		"%s, %02d %s %04d %02d:%02d:%02d GMT",
 		days[gmtime->tm_wday], gmtime->tm_mday,
 		months[gmtime->tm_mon], gmtime->tm_year + 1900,
@@ -1162,9 +1162,9 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag,
 	int header_len;
 	char *etag_header;
 
-	header_len = strlen("ETag: \"\"") + etag_len + 1;
-	etag_header = (char *) emalloc(header_len);
-	snprintf(etag_header, header_len - 1, "ETag: \"%s\"", etag);
+	header_len = sizeof("ETag: \"\"") + etag_len + 1;
+	etag_header = ecalloc(header_len, 1);
+	sprintf(etag_header, "ETag: \"%s\"", etag);
 	ret = http_send_header(etag_header);
 	efree(etag_header);
 
@@ -1745,7 +1745,7 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 {
 	char *colon = NULL, *line = NULL, *begin = header;
 
-	if (header_len < 8) {
+	if (header_len < 2) {
 		return FAILURE;
 	}
 
@@ -1782,7 +1782,7 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 
 						if (value_len < 1) {
 							/* hm, empty header? */
-							add_assoc_stringl(array, key, "", 0, 0);
+							add_assoc_stringl(array, key, "", 0, 1);
 						} else {
 							add_assoc_stringl(array, key, colon, value_len, 1);
 						}

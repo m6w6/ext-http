@@ -1071,7 +1071,7 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 
 /* {{{ static inline STATUS http_check_allowed_methods(char *, int) */
 #define http_check_allowed_methods(m, l) _http_check_allowed_methods((m), (l) TSRMLS_CC)
-static inline STATUS _http_check_allowed_methods(char *methods, int length TSRMLS_DC)
+static inline void _http_check_allowed_methods(char *methods, int length TSRMLS_DC)
 {
 	if (length && SG(request_info).request_method && (!strstr(methods, SG(request_info).request_method))) {
 		char *allow_header = emalloc(length + sizeof("Allow: "));
@@ -1079,23 +1079,20 @@ static inline STATUS _http_check_allowed_methods(char *methods, int length TSRML
 		http_send_header(allow_header);
 		efree(allow_header);
 		http_send_status(405);
-		return FAILURE;
+		zend_bailout();
 	}
-	return SUCCESS;
 }
 /* }}} */
 
 /* {{{ PHP_INI */
 PHP_INI_MH(update_allowed_methods)
 {
-	if (SUCCESS != http_check_allowed_methods(new_value, new_value_length)) {
-		return FAILURE;
-	}
+	http_check_allowed_methods(new_value, new_value_length);
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
 
 PHP_INI_BEGIN()
-	STD_PHP_INI_ENTRY("http.allowed_methods", "HEAD,GET,POST", PHP_INI_ALL, update_allowed_methods, allowed_methods, zend_http_globals, http_globals)
+	STD_PHP_INI_ENTRY("http.allowed_methods", "OPTIONS,GET,HEAD,POST,PUT,DELETE,TRACE,CONNECT", PHP_INI_ALL, update_allowed_methods, allowed_methods, zend_http_globals, http_globals)
 PHP_INI_END()
 /* }}} */
 
@@ -1125,7 +1122,8 @@ PHP_MSHUTDOWN_FUNCTION(http)
 PHP_RINIT_FUNCTION(http)
 {
 	char *allowed_methods = INI_STR("http.allowed_methods");
-	return http_check_allowed_methods(allowed_methods, strlen(allowed_methods));
+	http_check_allowed_methods(allowed_methods, strlen(allowed_methods));
+	return SUCCESS;
 }
 /* }}} */
 
