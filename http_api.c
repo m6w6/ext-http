@@ -34,6 +34,7 @@
 #include "ext/standard/php_string.h"
 #include "ext/standard/php_smart_str.h"
 #include "ext/standard/php_lcg.h"
+#include "ext/standard/php_filestat.h"
 
 #include "SAPI.h"
 
@@ -1061,7 +1062,7 @@ PHP_HTTP_API inline time_t _http_lmod(const void *data_ptr, const http_send_mode
 		default:
 		{
 			zval mtime;
-			php_stat(Z_STRVAL_P((zval *) data_ptr), Z_STRLEN_P((zval *) data_ptr), FS_MTIME, &mtime TSRMLS_CC);
+			php_stat(Z_STRVAL_P((zval *) data_ptr), Z_STRLEN_P((zval *) data_ptr), 6, &mtime TSRMLS_CC);
 			return Z_LVAL(mtime);
 		}
 	}
@@ -1937,7 +1938,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 /* }}} */
 
 /* {{{ proto STATUS http_split_response_ex(char *, size_t, zval *, zval *) */
-PHP_HTTP_API STATUS _http_split_response_ex( char *response, 
+PHP_HTTP_API STATUS _http_split_response_ex( char *response,
 	size_t response_len, zval *zheaders, zval *zbody TSRMLS_DC)
 {
 	char *body = NULL;
