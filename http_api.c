@@ -179,7 +179,7 @@ static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC);
 /* }}} HAVE_CURL */
 
 /* {{{ inline char *http_etag(void *, size_t, http_send_mode) */
-inline char *_http_etag(const void *data_ptr, const size_t data_len, 
+inline char *_http_etag(const void *data_ptr, const size_t data_len,
 	const http_send_mode data_mode TSRMLS_DC)
 {
 	char ssb_buf[128] = {0};
@@ -201,7 +201,7 @@ inline char *_http_etag(const void *data_ptr, const size_t data_len,
 					return NULL;
 				}
 			}
-			snprintf(ssb_buf, 127, "%l=%l=%l",
+			snprintf(ssb_buf, 127, "%ld=%ld=%ld",
 				HTTP_G(ssb).sb.st_mtime,
 				HTTP_G(ssb).sb.st_ino,
 				HTTP_G(ssb).sb.st_size
@@ -219,6 +219,36 @@ inline char *_http_etag(const void *data_ptr, const size_t data_len,
 	make_digest(new_etag, digest);
 
 	return new_etag;
+}
+/* }}} */
+
+/* {{{ inline http_lmod(void *, http_send_mode) */
+inline time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC)
+{
+	switch (data_mode)
+	{
+		case SEND_DATA:
+		{
+			return time(NULL);
+		}
+		
+		case SEND_RSRC:
+		{
+			if (!HTTP_G(ssb).sb.st_mtime) {
+				if (php_stream_stat((php_stream *) data_ptr, &HTTP_G(ssb))) {
+					return 0;
+				}
+			}
+			return HTTP_G(ssb).sb.st_mtime;
+		}
+		
+		default:
+		{
+			zval mtime;
+			php_stat(Z_STRVAL_P((zval *) data_ptr), Z_STRLEN_P((zval *) data_ptr), FS_MTIME, &mtime TSRMLS_CC);
+			return Z_LVAL(mtime);
+		}
+	}
 }
 /* }}} */
 
@@ -1223,28 +1253,154 @@ PHP_HTTP_API STATUS _http_send_last_modified(const time_t t TSRMLS_DC)
 PHP_HTTP_API STATUS _http_send_etag(const char *etag,
 	const int etag_len TSRMLS_DC)
 {
-	STATUS ret;
-	int header_len;
+	STATUS status;
 	char *etag_header;
-
-	header_len = sizeof("ETag: \"\"") + etag_len + 1;
-	etag_header = ecalloc(header_len, 1);
-	sprintf(etag_header, "ETag: \"%s\"", etag);
-	ret = http_send_header(etag_header);
-	efree(etag_header);
 
 	if (!etag_len){
 		php_error_docref(NULL TSRMLS_CC,E_ERROR,
-			"Sending empty Etag (previous: %s)\n", HTTP_G(etag));
+			"Attempt to send empty ETag (previous: %s)\n", HTTP_G(etag));
 		return FAILURE;
 	}
+
 	/* remember */
 	if (HTTP_G(etag)) {
 		efree(HTTP_G(etag));
 	}
 	HTTP_G(etag) = estrdup(etag);
 
-	return ret;
+	etag_header = ecalloc(sizeof("ETag: \"\"") + etag_len, 1);
+	sprintf(etag_header, "ETag: \"%s\"", etag);
+	if (SUCCESS != (status = http_send_header(etag_header))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Couldn't send '%s' header", etag_header);
+	}
+	efree(etag_header);
+	return status;
+}
+/* }}} */
+
+/* {{{ STATUS http_send_cache_control(char *, size_t) */
+PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control, 
+	const size_t cc_len TSRMLS_DC)
+{
+	STATUS status;
+	char *cc_header = ecalloc(sizeof("Cache-Control: ") + cc_len, 1);
+	
+	sprintf(cc_header, "Cache-Control: %s", cache_control);
+	if (SUCCESS != (status = http_send_header(cc_header))) {
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, 
+			"Could not send '%s' header", cc_header);
+	}
+	efree(cc_header);
+	return status;
+}
+/* }}} */
+
+/* {{{ STATUS http_send_content_type(char *, size_t) */
+PHP_HTTP_API STATUS _http_send_content_type(const char *content_type,
+	const size_t ct_len TSRMLS_DC)
+{
+	STATUS status;
+	char *ct_header;
+	
+	if (!strchr(content_type, '/')) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, 
+			"Content-Type '%s' doesn't seem to consist of a primary and a secondary part",
+			content_type);
+		return FAILURE;
+	}
+	
+	/* remember for multiple ranges */
+	if (HTTP_G(ctype)) {
+		efree(HTTP_G(ctype));
+	}
+	HTTP_G(ctype) = estrndup(content_type, ct_len);
+
+	ct_header = ecalloc(sizeof("Content-Type: ") + ct_len, 1);
+	sprintf(ct_header, "Content-Type: %s", content_type);
+
+	if (SUCCESS != (status = http_send_header(ct_header))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, 
+			"Couldn't send '%s' header", ct_header);
+	}
+	efree(ct_header);
+	return status;
+}
+/* }}} */
+
+/* {{{ STATUS http_send_content_disposition(char *, size_t, zend_bool) */
+PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename,
+	const size_t f_len, const zend_bool send_inline TSRMLS_DC)
+{
+	STATUS status;
+	char *cd_header;
+	
+	if (send_inline) {
+		cd_header = ecalloc(sizeof("Content-Disposition: inline; filename=\"\"") + f_len, 1);
+		sprintf(cd_header, "Content-Disposition: inline; filename=\"%s\"", filename);
+	} else {
+		cd_header = ecalloc(sizeof("Content-Disposition: attachment; filename=\"\"") + f_len, 1);
+		sprintf(cd_header, "Content-Disposition: attachment; filename=\"%s\"", filename);
+	}
+
+	if (SUCCESS != (status = http_send_header(cd_header))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Couldn't send '%s' header", cd_header);
+	}
+	efree(cd_header);
+	return status;
+}
+/* }}} */
+
+/* {{{ STATUS http_cache_last_modified(time_t, time_t, char *, size_t) */
+PHP_HTTP_API STATUS _http_cache_last_modified(const time_t last_modified, 
+	const time_t send_modified, const char *cache_control, const size_t cc_len TSRMLS_DC)
+{
+	if (cc_len) {
+		http_send_cache_control(cache_control, cc_len);
+	}
+	
+	if (http_modified_match("HTTP_IF_MODIFIED_SINCE", last_modified)) {
+		if (SUCCESS == http_send_status(304)) {
+			zend_bailout();
+		} else {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not send 304 Not Modified");
+			return FAILURE;
+		}
+	}
+	return http_send_last_modified(send_modified);
+}
+/* }}} */
+
+/* {{{ STATUS http_cache_etag(char *, size_t, char *, size_t) */
+PHP_HTTP_API STATUS _http_cache_etag(const char *etag, const size_t etag_len,
+	const char *cache_control, const size_t cc_len TSRMLS_DC)
+{
+	if (cc_len) {
+		http_send_cache_control(cache_control, cc_len);
+	}
+	
+	if (etag_len) {
+		http_send_etag(etag, etag_len);
+		if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
+			if (SUCCESS == http_send_status(304)) {
+				zend_bailout();
+			} else {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not send 304 Not Modified");
+				return FAILURE;
+			}
+		}
+	}
+
+	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
+	if (!HTTP_G(etag_started)) {
+		if (SUCCESS == http_start_ob_handler(_http_ob_etaghandler, "ob_etaghandler", 4096, 1)) {
+			HTTP_G(etag_started) = 1;
+			return SUCCESS;
+		} else {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not start ob_etaghandler");
+			return FAILURE;
+		}
+	}
+	return SUCCESS;
 }
 /* }}} */
 

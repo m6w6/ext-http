@@ -85,12 +85,12 @@ function_entry http_functions[] = {
 	PHP_FE(http_redirect, NULL)
 	PHP_FE(http_send_status, NULL)
 	PHP_FE(http_send_last_modified, NULL)
+	PHP_FE(http_send_content_type, NULL)
+	PHP_FE(http_send_content_disposition, NULL)
 	PHP_FE(http_match_modified, NULL)
 	PHP_FE(http_match_etag, NULL)
 	PHP_FE(http_cache_last_modified, NULL)
 	PHP_FE(http_cache_etag, NULL)
-	PHP_FE(http_content_type, NULL)
-	PHP_FE(http_content_disposition, NULL)
 	PHP_FE(http_send_data, NULL)
 	PHP_FE(http_send_file, NULL)
 	PHP_FE(http_send_stream, NULL)
@@ -161,6 +161,8 @@ zend_function_entry httpi_class_methods[] = {
 	HTTPi_ME(redirect, http_redirect, NULL)
 	HTTPi_ME(sendStatus, http_send_status, NULL)
 	HTTPi_ME(sendLastModified, http_send_last_modified, NULL)
+	HTTPi_ME(sendContentType, http_send_content_type, NULL)
+	HTTPi_ME(sendContentDisposition, http_send_content_disposition, NULL)
 	HTTPi_ME(matchModified, http_match_modified, NULL)
 	HTTPi_ME(matchEtag, http_match_etag, NULL)
 	HTTPi_ME(cacheLastModified, http_cache_last_modified, NULL)
@@ -200,7 +202,6 @@ static inline void _httpi_response_declare_default_properties(zend_class_entry *
 	DCL_PROP(PROTECTED, string, data, "");
 	DCL_PROP(PROTECTED, string, file, "");
 	DCL_PROP(PROTECTED, long, stream, 0);
-	DCL_PROP(PROTECTED, long, size, 0);
 	DCL_PROP(PROTECTED, long, lastModified, 0);
 	DCL_PROP(PROTECTED, long, dispoInline, 0);
 	DCL_PROP(PROTECTED, long, cache, 0);
@@ -233,7 +234,7 @@ zend_object_value _httpi_response_new_object(zend_class_entry *ce TSRMLS_DC)
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-	
+
 	ov.handle = zend_objects_store_put(o, httpi_response_destroy_object, NULL, NULL TSRMLS_CC);
 	ov.handlers = &httpi_response_object_handlers;
 
@@ -272,8 +273,6 @@ zend_function_entry httpi_response_class_methods[] = {
 	PHP_ME(HTTPi_Response, getStream, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HTTPi_Response, send, NULL, ZEND_ACC_PUBLIC)
-	
-	PHP_ME(HTTPi_Response, getSize, NULL, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };
@@ -420,15 +419,13 @@ PHP_METHOD(HTTPi_Response, setContentType)
 	}
 
 	if (!strchr(ctype, '/')) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Content type '%s' doesn't seem to contain a primary and secondary part", ctype);
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, 
+			"Content type '%s' doesn't seem to contain a primary and a secondary part", ctype);
 		RETURN_FALSE;
 	}
 
 	UPD_PROP(obj, string, contentType, ctype);
-	if (HTTP_G(ctype)) {
-		efree(HTTP_G(ctype));
-	}
-	HTTP_G(ctype) = estrndup(ctype, ctype_len);
+	
 	RETURN_TRUE;
 }
 /* }}} */
@@ -535,19 +532,15 @@ PHP_METHOD(HTTPi_Response, setData)
 	zval *the_data;
 	char *etag;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
 		RETURN_FALSE;
 	}
-	
+
 	convert_to_string_ex(&the_data);
-	etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
 	SET_PROP(obj, data, the_data);
-	UPD_PROP(obj, string, eTag, etag);
-	UPD_PROP(obj, long, size, Z_STRLEN_P(the_data));
-	UPD_PROP(obj, long, lastModified, time(NULL));
+	UPD_PROP(obj, long, lastModified, http_lmod(the_data, SEND_DATA));
 	UPD_PROP(obj, long, send_mode, SEND_DATA);
-	efree(etag);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -559,11 +552,11 @@ PHP_METHOD(HTTPi_Response, getData)
 {
 	zval *the_data;
 	getObject(httpi_response_object, obj);
-	
+
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
 	}
-	
+
 	the_data = GET_PROP(obj, data);
 	RETURN_STRINGL(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), 1);
 }
@@ -578,20 +571,16 @@ PHP_METHOD(HTTPi_Response, setStream)
 	php_stream *the_real_stream;
 	char *etag;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &the_stream)) {
 		RETURN_FALSE;
 	}
-	
+
 	php_stream_from_zval(the_real_stream, &the_stream);
-	etag = http_etag(the_real_stream, 0, SEND_RSRC);
-	
+
 	SET_PROP(obj, stream, the_stream);
-	UPD_PROP(obj, string, eTag, etag);
-	UPD_PROP(obj, long, size, HTTP_G(ssb).sb.st_size);
-	UPD_PROP(obj, long, lastModified, HTTP_G(ssb).sb.st_mtime);
+	UPD_PROP(obj, long, lastModified, http_lmod(the_real_stream, SEND_RSRC));
 	UPD_PROP(obj, long, send_mode, SEND_RSRC);
-	efree(etag);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -603,11 +592,11 @@ PHP_METHOD(HTTPi_Response, getStream)
 {
 	zval *the_stream;
 	getObject(httpi_response_object, obj);
-	
+
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
 	}
-	
+
 	the_stream = GET_PROP(obj, stream);
 	RETURN_RESOURCE(Z_LVAL_P(the_stream));
 }
@@ -618,21 +607,17 @@ PHP_METHOD(HTTPi_Response, getStream)
  */
 PHP_METHOD(HTTPi_Response, setFile)
 {
-	char *the_file;
-	int file_len;
-	zval fmtime, fsize;
+	zval *the_file;
 	getObject(httpi_response_object, obj);
-	
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &the_file, &file_len)) {
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_file)) {
 		RETURN_FALSE;
 	}
 	
-	php_stat(the_file, file_len, FS_SIZE, &fsize TSRMLS_CC);
-	php_stat(the_file, file_len, FS_MTIME, &fmtime TSRMLS_CC);
-	
-	UPD_PROP(obj, string, file, the_file);
-	UPD_PROP(obj, long, size, Z_LVAL(fsize));
-	UPD_PROP(obj, long, lastModified, Z_LVAL(fmtime));
+	convert_to_string_ex(&the_file);
+
+	UPD_PROP(obj, string, file, Z_STRVAL_P(the_file));
+	UPD_PROP(obj, long, lastModified, http_lmod(the_file, -1));
 	UPD_PROP(obj, long, send_mode, -1);
 	RETURN_TRUE;
 }
@@ -645,136 +630,68 @@ PHP_METHOD(HTTPi_Response, getFile)
 {
 	zval *the_file;
 	getObject(httpi_response_object, obj);
-	
+
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
 	}
-	
+
 	the_file = GET_PROP(obj, file);
 	RETURN_STRINGL(Z_STRVAL_P(the_file), Z_STRLEN_P(the_file), 1);
 }
 /* }}} */
 
-/* {{{ proto int HTTPi_Response::getSize()
- *
- */
-PHP_METHOD(HTTPi_Response, getSize)
-{
-	zval *the_size;
-	getObject(httpi_response_object, obj);
-	
-	if (ZEND_NUM_ARGS()) {
-		WRONG_PARAM_COUNT;
-	}
-	
-	the_size = GET_PROP(obj, size);
-	RETURN_LONG(Z_LVAL_P(the_size));
-}
-/* }}} */
-
 PHP_METHOD(HTTPi_Response, send)
 {
-	zval *do_cache;
+	zval *do_cache, *do_gzip;
 	getObject(httpi_response_object, obj);
-	
+
 	do_cache = GET_PROP(obj, cache);
-	
+	do_gzip  = GET_PROP(obj, gzip);
+
 	/* caching */
 	if (Z_LVAL_P(do_cache)) {
-		/* cache header */
-		{
-			zval *ccontrol = GET_PROP(obj, cacheControl);
-			if (Z_STRLEN_P(ccontrol)) {
-				char *cc_header;
-				zval *cc_raw = GET_PROP(obj, raw_cache_header);
-				if (Z_LVAL_P(cc_raw)) {
-					cc_header = ecalloc(sizeof("Cache-Control: ") + Z_STRLEN_P(ccontrol), 1);
-					sprintf(cc_header, "Cache-Control: %s", Z_STRVAL_P(ccontrol));
-				} else {
-					cc_header = ecalloc(sizeof("Cache-Control: , must-revalidate, max-age=0") + Z_STRLEN_P(ccontrol), 1);
-					sprintf(cc_header, "Cache-Control: %s, must-revalidate, max-age=0", Z_STRVAL_P(ccontrol));
-				}
-				http_send_header(cc_header);
-				efree(cc_header);
-			} else {
-				http_send_header("Cache-Control: public, must-revalidate, max-age=0");
-			}
+		zval *cctrl, *etag, *lmod, *ccraw;
+		
+		etag  = GET_PROP(obj, eTag);
+		lmod  = GET_PROP(obj, lastModified);
+		cctrl = GET_PROP(obj, cacheControl);
+		ccraw = GET_PROP(obj, raw_cache_header);
+		
+		if (Z_LVAL_P(ccraw)) {
+			http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), Z_STRVAL_P(cctrl), Z_STRLEN_P(cctrl));
+			http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), Z_STRVAL_P(cctrl), Z_STRLEN_P(cctrl));
+		} else {
+			char cc_header[42] = {0};
+			sprintf(cc_header, "%s, must-revalidate, max-age=0", Z_STRVAL_P(cctrl));
+			http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), cc_header, strlen(cc_header));
+			http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), cc_header, strlen(cc_header));
 		}
-		/* etag */
-		{
-			zval *etag = GET_PROP(obj, eTag);
-			if (Z_STRLEN_P(etag)) {
-				if ((!http_is_range_request()) && http_etag_match("HTTP_IF_NONE_MATCH", Z_STRVAL_P(etag))) {
-					http_send_status(304);
-					RETURN_TRUE;
-				}
-				http_send_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag));
-				if (HTTP_G(etag)) {
-					efree(HTTP_G(etag));
-				}
-				HTTP_G(etag) = estrndup(Z_STRVAL_P(etag), Z_STRLEN_P(etag));
-			}
-		}
-		/* last modified */
-		{
-			zval *lmod = GET_PROP(obj, lastModified);
-			if (Z_LVAL_P(lmod)) {
-				if (http_modified_match("HTTP_IF_MODIFIED_SINCE", Z_LVAL_P(lmod))) {
-					http_send_status(304);
-					RETURN_TRUE;
-				}
-				http_send_last_modified(Z_LVAL_P(lmod));
-				HTTP_G(lmod) = Z_LVAL_P(lmod);
-			} else {
-				time_t t = time(NULL);
-				http_send_last_modified(t);
-				HTTP_G(lmod) = t;
-			}
-		}
-	} /* caching done */
-	
+	}
+
 	/* gzip */
-	/* ... */
-	
+	if (Z_LVAL_P(do_gzip)) {
+		/* ... */
+	}
+
 	/* content type */
 	{
 		zval *ctype = GET_PROP(obj, contentType);
 		if (Z_STRLEN_P(ctype)) {
-			char *ctype_header = ecalloc(sizeof("Content-Type: ") + Z_STRLEN_P(ctype), 1);
-			sprintf(ctype_header, "Content-Type: %s", Z_STRVAL_P(ctype));
-			http_send_header(ctype_header);
-			efree(ctype_header);
-			if (HTTP_G(ctype)) {
-				efree(HTTP_G(ctype));
-			}
-			HTTP_G(ctype) = estrndup(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
+			http_send_content_type(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
 		} else {
-			http_send_header("Content-Type: application/x-octetstream");
-			if (HTTP_G(ctype)) {
-				efree(HTTP_G(ctype));
-			}
-			HTTP_G(ctype) = estrdup("application/x-octetstream");
+			http_send_content_type("application/x-octetstream", sizeof("application/x-octetstream") - 1);
 		}
 	}
-	
+
 	/* content disposition */
 	{
 		zval *dispo_file = GET_PROP(obj, dispoFile);
 		if (Z_STRLEN_P(dispo_file)) {
-			char *dispo_header;
 			zval *dispo_inline = GET_PROP(obj, dispoInline);
-			if (Z_LVAL_P(dispo_inline)) {
-				dispo_header = ecalloc(sizeof("Content-Disposition: inline; filename=\"\"") + Z_STRLEN_P(dispo_file), 1);
-				sprintf(dispo_header, "Content-Disposition: inline; filename=\"%s\"", Z_STRVAL_P(dispo_file));
-			} else {
-				dispo_header = ecalloc(sizeof("Content-Disposition: attachment; filename=\"\"") + Z_STRLEN_P(dispo_file), 1);
-				sprintf(dispo_header, "Content-Disposition: attachment; filename=\"%s\"", Z_STRVAL_P(dispo_file));
-			}
-			http_send_header(dispo_header);
-			efree(dispo_header);
+			http_send_content_disposition(Z_STRVAL_P(dispo_file), Z_STRLEN_P(dispo_file), Z_LVAL_P(dispo_inline));
 		}
 	}
-	
+
 	/* send */
 	{
 		zval *send_mode = GET_PROP(obj, send_mode);
@@ -784,7 +701,7 @@ PHP_METHOD(HTTPi_Response, send)
 			{
 				RETURN_SUCCESS(http_send_data(GET_PROP(obj, data)));
 			}
-			
+
 			case SEND_RSRC:
 			{
 				php_stream *the_real_stream;
@@ -792,7 +709,7 @@ PHP_METHOD(HTTPi_Response, send)
 				php_stream_from_zval(the_real_stream, &the_stream);
 				RETURN_SUCCESS(http_send_stream(the_real_stream));
 			}
-			
+
 			default:
 			{
 				RETURN_SUCCESS(http_send_file(GET_PROP(obj, file)));
@@ -1011,6 +928,47 @@ PHP_FUNCTION(http_send_last_modified)
 }
 /* }}} */
 
+/* {{{ proto bool http_send_content_type([string content_type = 'application/x-octetstream'])
+ *
+ * Sets the content type.
+ *
+ */
+PHP_FUNCTION(http_send_content_type)
+{
+	char *ct;
+	int ct_len = 0;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &ct, &ct_len) != SUCCESS) {
+		RETURN_FALSE;
+	}
+
+	if (!ct_len) {
+		RETURN_SUCCESS(http_send_content_type("application/x-octetstream", sizeof("application/x-octetstream") - 1));
+	}
+	RETURN_SUCCESS(http_send_content_type(ct, ct_len));
+}
+/* }}} */
+
+/* {{{ proto bool http_send_content_disposition(string filename[, bool inline = false])
+ *
+ * Set the Content Disposition.  The Content-Disposition header is very useful
+ * if the data actually sent came from a file or something similar, that should
+ * be "saved" by the client/user (i.e. by browsers "Save as..." popup window).
+ *
+ */
+PHP_FUNCTION(http_send_content_disposition)
+{
+	char *filename;
+	int f_len;
+	zend_bool send_inline = 0;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &filename, &f_len, &send_inline) != SUCCESS) {
+		RETURN_FALSE;
+	}
+	RETURN_SUCCESS(http_send_content_disposition(filename, f_len, send_inline));
+}
+/* }}} */
+
 /* {{{ proto bool http_match_modified([int timestamp])
  *
  * Matches the given timestamp against the clients "If-Modified-Since" resp.
@@ -1092,17 +1050,7 @@ PHP_FUNCTION(http_cache_last_modified)
 		send_modified = last_modified;
 	}
 
-	http_send_header("Cache-Control: private, must-revalidate, max-age=0");
-
-	if (http_modified_match("HTTP_IF_MODIFIED_SINCE", last_modified)) {
-		if (SUCCESS == http_send_status(304)) {
-			zend_bailout();
-		} else {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not send 304 Not Modified");
-			RETURN_FALSE;
-		}
-	}
-	RETURN_SUCCESS(http_send_last_modified(send_modified));
+	RETURN_SUCCESS(http_cache_last_modified(last_modified, send_modified, HTTP_DEFAULT_CACHECONTROL, sizeof(HTTP_DEFAULT_CACHECONTROL) - 1));
 }
 /* }}} */
 
@@ -1125,26 +1073,8 @@ PHP_FUNCTION(http_cache_etag)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &etag, &etag_len) != SUCCESS) {
 		RETURN_FALSE;
 	}
-
-	http_send_header("Cache-Control: private, must-revalidate, max-age=0");
-
-	if (etag_len) {
-		http_send_etag(etag, etag_len);
-		if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
-			if (SUCCESS == http_send_status(304)) {
-				zend_bailout();
-			} else {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not send 304 Not Modified");
-				RETURN_FALSE;
-			}
-		}
-	}
-
-	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
-	if (!HTTP_G(etag_started)) {
-		RETURN_BOOL(HTTP_G(etag_started) = (SUCCESS == http_start_ob_handler(_http_ob_etaghandler, "ob_etaghandler", 4096, 1)));
-	}
-	RETURN_TRUE;
+	
+	RETURN_SUCCESS(http_cache_etag(etag, etag_len, HTTP_DEFAULT_CACHECONTROL, sizeof(HTTP_DEFAULT_CACHECONTROL) - 1));
 }
 /* }}} */
 
@@ -1169,7 +1099,7 @@ PHP_FUNCTION(ob_httpetaghandler)
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "ob_httpetaghandler can only be used once");
 			RETURN_STRINGL(data, data_len, 1);
 		}
-		http_send_header("Cache-Control: private, must-revalidate, max-age=0");
+		http_send_header("Cache-Control: " HTTP_DEFAULT_CACHECONTROL);
 		HTTP_G(etag_started) = 1;
 	}
 
@@ -1306,68 +1236,6 @@ PHP_FUNCTION(http_send_stream)
 	php_stream_from_zval(file, &zstream);
 	http_send_header("Accept-Ranges: bytes");
 	RETURN_SUCCESS(http_send_stream(file));
-}
-/* }}} */
-
-/* {{{ proto bool http_content_type([string content_type = 'application/x-octetstream'])
- *
- * Sets the content type.
- *
- */
-PHP_FUNCTION(http_content_type)
-{
-	char *ct, *content_type;
-	int ct_len = 0;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &ct, &ct_len) != SUCCESS) {
-		RETURN_FALSE;
-	}
-
-	if (!ct_len) {
-		RETURN_SUCCESS(http_send_header("Content-Type: application/x-octetstream"));
-	}
-
-	/* remember for multiple ranges */
-	if (HTTP_G(ctype)) {
-		efree(HTTP_G(ctype));
-	}
-	HTTP_G(ctype) = estrndup(ct, ct_len);
-
-	content_type = (char *) emalloc(strlen("Content-Type: ") + ct_len + 1);
-	sprintf(content_type, "Content-Type: %s", ct);
-
-	RETVAL_BOOL(SUCCESS == http_send_header(content_type));
-	efree(content_type);
-}
-/* }}} */
-
-/* {{{ proto bool http_content_disposition(string filename[, bool inline = false])
- *
- * Set the Content Disposition.  The Content-Disposition header is very useful
- * if the data actually sent came from a file or something similar, that should
- * be "saved" by the client/user (i.e. by browsers "Save as..." popup window).
- *
- */
-PHP_FUNCTION(http_content_disposition)
-{
-	char *filename, *header;
-	int f_len;
-	zend_bool send_inline = 0;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &filename, &f_len, &send_inline) != SUCCESS) {
-		RETURN_FALSE;
-	}
-
-	if (send_inline) {
-		header = (char *) emalloc(strlen("Content-Disposition: inline; filename=\"\"") + f_len + 1);
-		sprintf(header, "Content-Disposition: inline; filename=\"%s\"", filename);
-	} else {
-		header = (char *) emalloc(strlen("Content-Disposition: attachment; filename=\"\"") + f_len + 1);
-		sprintf(header, "Content-Disposition: attachment; filename=\"%s\"", filename);
-	}
-
-	RETVAL_BOOL(SUCCESS == http_send_header(header));
-	efree(header);
 }
 /* }}} */
 

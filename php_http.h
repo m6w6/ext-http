@@ -45,6 +45,8 @@ PHP_METHOD(HTTPi, negotiateCharset);
 PHP_METHOD(HTTPi, redirect);
 PHP_METHOD(HTTPi, sendStatus);
 PHP_METHOD(HTTPi, sendLastModified);
+PHP_METHOD(HTTPi, sendContentType);
+PHP_METHOD(HTTPi, sendContentDisposition);
 PHP_METHOD(HTTPi, matchModified);
 PHP_METHOD(HTTPi, matchEtag);
 PHP_METHOD(HTTPi, cacheLastModified);
@@ -84,7 +86,6 @@ PHP_METHOD(HTTPi_Response, getFile);
 PHP_METHOD(HTTPi_Response, setStream);
 PHP_METHOD(HTTPi_Response, getStream);
 PHP_METHOD(HTTPi_Response, send);
-PHP_METHOD(HTTPi_Response, getSize);
 
 #endif /* ZEND_ENGINE_2 */
 
@@ -96,12 +97,12 @@ PHP_FUNCTION(http_negotiate_charset);
 PHP_FUNCTION(http_redirect);
 PHP_FUNCTION(http_send_status);
 PHP_FUNCTION(http_send_last_modified);
+PHP_FUNCTION(http_send_content_type);
+PHP_FUNCTION(http_send_content_disposition);
 PHP_FUNCTION(http_match_modified);
 PHP_FUNCTION(http_match_etag);
 PHP_FUNCTION(http_cache_last_modified);
 PHP_FUNCTION(http_cache_etag);
-PHP_FUNCTION(http_content_type);
-PHP_FUNCTION(http_content_disposition);
 PHP_FUNCTION(http_send_data);
 PHP_FUNCTION(http_send_file);
 PHP_FUNCTION(http_send_stream);

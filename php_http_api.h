@@ -49,6 +49,9 @@ typedef enum {
 /* CR LF */
 #define HTTP_CRLF "\r\n"
 
+/* default cache control */
+#define HTTP_DEFAULT_CACHECONTROL "private, must-revalidate, max-age=0"
+
 /* max URI length */
 #define HTTP_URI_MAXLEN 2048
 
@@ -92,6 +95,8 @@ typedef enum {
 
 #define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
 inline char *_http_etag(const void *data_ptr, const size_t data_len, const http_send_mode data_mode TSRMLS_DC);
+#define http_lmod(p, m) _http_lmod((p), (m) TSRMLS_CC)
+inline time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC);
 #define http_is_range_request() _http_is_range_request(TSRMLS_C)
 inline int _http_is_range_request(TSRMLS_D);
 
@@ -131,6 +136,21 @@ PHP_HTTP_API STATUS _http_send_last_modified(const time_t t TSRMLS_DC);
 
 #define http_send_etag(e, l) _http_send_etag((e), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_etag(const char *etag, const int etag_len TSRMLS_DC);
+
+#define http_send_cache_control(c, l) _http_send_cache_control((c), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control, const size_t cc_len TSRMLS_DC);
+
+#define http_send_content_type(c, l) _http_send_content_type((c), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, const size_t ct_len TSRMLS_DC);
+
+#define http_send_content_disposition(f, l, i) _http_send_content_disposition((f), (l), (i) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, const size_t f_len, const zend_bool send_inline TSRMLS_DC);
+
+#define http_cache_last_modified(l, s, cc, ccl) _http_cache_last_modified((l), (s), (cc), (ccl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_cache_last_modified(const time_t last_modified, const time_t send_modified, const char *cache_control, const size_t cc_len TSRMLS_DC);
+
+#define http_cache_etag(e, el, cc, ccl) _http_cache_etag((e), (el), (cc), (ccl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_cache_etag(const char *etag, const size_t etag_len, const char *cache_control, const size_t cc_len TSRMLS_DC);
 
 #define http_absolute_uri(url, proto) _http_absolute_uri((url), (proto) TSRMLS_CC)
 PHP_HTTP_API char *_http_absolute_uri(const char *url, const char *proto TSRMLS_DC);
