@@ -43,7 +43,12 @@
 #include "php_http_api.h"
 
 #include <ctype.h>
+
 #if defined(HAVE_CURL) && HAVE_CURL
+#	ifdef PHP_WIN32
+#	include <winsock2.h>
+#	include <sys/types.h>
+#	endif
 #include <curl/curl.h>
 #include <curl/easy.h>
 #endif
@@ -1046,16 +1051,16 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 
 	if (mode & PHP_OUTPUT_HANDLER_END) {
 		PHP_MD5Final(digest, &HTTP_G(etag_md5));
-		
+
 		/* just do that if desired */
 		if (HTTP_G(etag_started)) {
-            make_digest(etag, digest);
+			make_digest(etag, digest);
 
-            if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
-                http_send_status(304);
-            } else {
-                http_send_etag(etag, 32);
-            }
+			if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
+				http_send_status(304);
+			} else {
+				http_send_etag(etag, 32);
+			}
 		}
 	}
 
@@ -1079,9 +1084,9 @@ PHP_HTTP_API int _http_modified_match(const char *entry, const time_t t TSRMLS_D
 	}
 	retval = (t <= http_parse_date(modified));
 #if defined(PHP_DEBUG)
-	fprintf(stderr, 
-		"\nComparing Last-Modified %s(%s)==%d:\n\t%d\n\t%d\n\n", 
-		get_active_function_name(TSRMLS_C), entry, retval, t, 
+	fprintf(stderr,
+		"\nComparing Last-Modified %s(%s)==%d:\n\t%d\n\t%d\n\n",
+		get_active_function_name(TSRMLS_C), entry, retval, t,
 		http_parse_date(modified));
 #endif
 	efree(modified);
@@ -1111,9 +1116,9 @@ PHP_HTTP_API int _http_etag_match(const char *entry, const char *etag TSRMLS_DC)
 		result = (NULL != strstr(Z_STRVAL_P(zetag), quoted_etag));
 	}
 #if defined(PHP_DEBUG)
-	fprintf(stderr, 
-		"\nComparing E-Tag %s(%s)==%d:\n\t<%s>\n\t<%s>\n\n", 
-		get_active_function_name(TSRMLS_C), entry, result, 
+	fprintf(stderr,
+		"\nComparing E-Tag %s(%s)==%d:\n\t<%s>\n\t<%s>\n\n",
+		get_active_function_name(TSRMLS_C), entry, result,
 		Z_STRVAL_P(zetag), quoted_etag);
 #endif
 	efree(quoted_etag);
@@ -1128,10 +1133,10 @@ PHP_HTTP_API STATUS _http_send_last_modified(const time_t t TSRMLS_DC)
 	date = http_date(t);
 	strcat(modified, date);
 	efree(date);
-	
+
 	/* remember */
 	HTTP_G(lmod) = t;
-	
+
 	return http_send_header(modified);
 }
 /* }}} */
@@ -1149,13 +1154,13 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag,
 	snprintf(etag_header, header_len, "ETag: \"%s\"", etag);
 	ret = http_send_header(etag_header);
 	efree(etag_header);
-	
+
 	/* remember */
 	if (HTTP_G(etag)) {
 		efree(HTTP_G(etag));
 	}
 	HTTP_G(etag) = estrdup(etag);
-	
+
 	return ret;
 }
 /* }}} */
@@ -1259,7 +1264,7 @@ PHP_HTTP_API char *_http_negotiate_q(const char *entry, const zval *supported,
 		if (NULL != (q_ptr = strrchr(Z_STRVAL_PP(zentry), ';'))) {
 			qual = strtod(q_ptr + 3, NULL);
 		} else {
-			qual = 1000.0 - 1;
+			qual = 1000.0 - i;
 		}
 
 		/* walk through the supported array */
@@ -1297,7 +1302,7 @@ PHP_HTTP_API char *_http_negotiate_q(const char *entry, const zval *supported,
 PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 	const size_t length TSRMLS_DC)
 {
-	zval *zrange, *zentry, **zentries;
+	zval *zrange;
 	char *range, c;
 	long begin = -1, end = -1, *ptr;
 
@@ -1348,7 +1353,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 			case ' ':
 				/* IE - ignore for now */
 			break;
-			
+
 			case 0:
 			case ',':
 
@@ -1397,17 +1402,18 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 						break;
 					}
 				}
+				{
+					zval *zentry;
+					MAKE_STD_ZVAL(zentry);
+					array_init(zentry);
+					add_index_long(zentry, 0, begin);
+					add_index_long(zentry, 1, end);
+					add_next_index_zval(zranges, zentry);
 
-				zentry = (zval *) zentries++;
-				MAKE_STD_ZVAL(zentry);
-				array_init(zentry);
-				add_index_long(zentry, 0, begin);
-				add_index_long(zentry, 1, end);
-				add_next_index_zval(zranges, zentry);
-
-				begin = -1;
-				end = -1;
-				ptr = &begin;
+					begin = -1;
+					end = -1;
+					ptr = &begin;
+				}
 			break;
 
 			default:
@@ -1486,7 +1492,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 {
 	char *new_etag = NULL;
 	int is_range_request = http_is_range_request();
-	
+
 	if (!data_ptr) {
 		return FAILURE;
 	}
@@ -1494,7 +1500,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 	/* etag handling */
 	if (HTTP_G(etag_started)) {
 		new_etag = (char *) emalloc(33);
-		
+
 		/* never ever use the output to compute the ETag if http_send() is used */
 		HTTP_G(etag_started) = 0;
 		php_end_ob_buffer(0, 0 TSRMLS_CC);
@@ -1512,7 +1518,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 		http_send_etag(new_etag, 32);
 		efree(new_etag);
 	}
-	
+
 	/* send 304 Not Modified if last-modified matches*/
     if ((!is_range_request) && http_modified_match("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
         return http_send_status(304);
@@ -1528,7 +1534,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 			((!zend_hash_exists(HTTP_SERVER_VARS, "HTTP_IF_UNMODIFIED_SINCE", 25)) ||
 			http_modified_match("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(lmod)))
 		) {
-			
+
 			STATUS result = FAILURE;
 			zval *zranges = NULL;
 			MAKE_STD_ZVAL(zranges);
