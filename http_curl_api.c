@@ -43,6 +43,12 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
 
+#if LIBCURL_VERSION_NUM >= 0x070c01
+#	define http_curl_reset(ch) curl_easy_reset(ch)
+#else
+#	define http_curl_reset(ch)
+#endif
+
 #define http_curl_startup(ch, clean_curl, URL, options) \
 	if (!ch) { \
 		if (!(ch = curl_easy_init())) { \
@@ -50,6 +56,8 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 			return FAILURE; \
 		} \
 		clean_curl = 1; \
+	} else { \
+		http_curl_reset(ch); \
 	} \
 	http_curl_initbuf(); \
 	http_curl_setopts(ch, URL, options);
@@ -203,7 +211,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 	curl_easy_setopt(ch, CURLOPT_AUTOREFERER, 1);
 	curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, http_curl_body_callback);
 	curl_easy_setopt(ch, CURLOPT_HEADERFUNCTION, http_curl_hdrs_callback);
-#if defined(ZTS) && (LIBCURL_VERSION_NUM >= 71000)
+#if defined(ZTS) && (LIBCURL_VERSION_NUM >= 0x070a00)
 	curl_easy_setopt(ch, CURLOPT_NOSIGNAL, 1);
 #endif
 
@@ -222,7 +230,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		if (zoption = http_curl_getopt1(options, "proxyauth", IS_STRING)) {
 			curl_easy_setopt(ch, CURLOPT_PROXYUSERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
 		}
-#if LIBCURL_VERSION_NUM >= 71007
+#if LIBCURL_VERSION_NUM >= 0x070a07
 		/* auth method */
 		if (zoption = http_curl_getopt1(options, "proxyauthtype", IS_LONG)) {
 			curl_easy_setopt(ch, CURLOPT_PROXYAUTH, Z_LVAL_P(zoption));
@@ -234,7 +242,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 	if (zoption = http_curl_getopt1(options, "interface", IS_STRING)) {
 		curl_easy_setopt(ch, CURLOPT_INTERFACE, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
-	
+
 	/* another port */
 	if (zoption = http_curl_getopt1(options, "port", IS_LONG)) {
 		curl_easy_setopt(ch, CURLOPT_PORT, Z_LVAL_P(zoption));
@@ -244,7 +252,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 	if (zoption = http_curl_getopt1(options, "httpauth", IS_STRING)) {
 		curl_easy_setopt(ch, CURLOPT_USERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
-#if LIBCURL_VERSION_NUM >= 71006
+#if LIBCURL_VERSION_NUM >= 0x070a06
 	if (zoption = http_curl_getopt1(options, "httpauthtype", IS_LONG)) {
 		curl_easy_setopt(ch, CURLOPT_HTTPAUTH, Z_LVAL_P(zoption));
 	}
@@ -350,7 +358,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 	if (zoption = http_curl_getopt1(options, "maxfilesize", IS_LONG)) {
 		curl_easy_setopt(ch, CURLOPT_MAXFILESIZE, Z_LVAL_P(zoption));
 	}
-	
+
 	/* lastmodified */
 	if (zoption = http_curl_getopt1(options, "lastmodified", IS_LONG)) {
 		curl_easy_setopt(ch, CURLOPT_TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
@@ -409,14 +417,14 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 
 	HTTP_CURL_INFO(EFFECTIVE_URL);
 
-#if LIBCURL_VERSION_NUM >= 71007
+#if LIBCURL_VERSION_NUM >= 0x070a07
 	HTTP_CURL_INFO(RESPONSE_CODE);
 #else
 	HTTP_CURL_INFO_EX(HTTP_CODE, RESPONSE_CODE);
 #endif
 	HTTP_CURL_INFO(HTTP_CONNECTCODE);
 
-#if LIBCURL_VERSION_NUM >= 70500
+#if LIBCURL_VERSION_NUM >= 0x070500
 	HTTP_CURL_INFO(FILETIME);
 #endif
 	HTTP_CURL_INFO(TOTAL_TIME);
@@ -424,7 +432,7 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 	HTTP_CURL_INFO(CONNECT_TIME);
 	HTTP_CURL_INFO(PRETRANSFER_TIME);
 	HTTP_CURL_INFO(STARTTRANSFER_TIME);
-#if LIBCURL_VERSION_NUM >= 70907
+#if LIBCURL_VERSION_NUM >= 0x070907
 	HTTP_CURL_INFO(REDIRECT_TIME);
 	HTTP_CURL_INFO(REDIRECT_COUNT);
 #endif
@@ -438,8 +446,8 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 	HTTP_CURL_INFO(REQUEST_SIZE);
 
 	HTTP_CURL_INFO(SSL_VERIFYRESULT);
-#if LIBCURL_VERSION_NUM >= 71203
-	/*HTTP_CURL_INFO(SSL_ENGINES); 
+#if LIBCURL_VERSION_NUM >= 0x070c03
+	/*HTTP_CURL_INFO(SSL_ENGINES);
 		todo: CURLINFO_SLIST */
 #endif
 
@@ -447,20 +455,20 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 	HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
 	HTTP_CURL_INFO(CONTENT_TYPE);
 
-#if LIBCURL_VERSION_NUM >= 71003
+#if LIBCURL_VERSION_NUM >= 0x070a03
 	/*HTTP_CURL_INFO(PRIVATE);*/
 #endif
 
-#if LIBCURL_VERSION_NUM >= 71008
+#if LIBCURL_VERSION_NUM >= 0x070a08
 	HTTP_CURL_INFO(HTTPAUTH_AVAIL);
 	HTTP_CURL_INFO(PROXYAUTH_AVAIL);
 #endif
 
-#if LIBCURL_VERSION_NUM >= 71202
+#if LIBCURL_VERSION_NUM >= 0x070c02
 	/*HTTP_CURL_INFO(OS_ERRNO);*/
 #endif
 
-#if LIBCURL_VERSION_NUM >= 71203
+#if LIBCURL_VERSION_NUM >= 0x070c03
 	HTTP_CURL_INFO(NUM_CONNECTS);
 #endif
 }
