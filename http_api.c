@@ -1418,16 +1418,17 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 /* {{{ STATUS http_send_ranges(zval *, void *, size_t, http_send_mode) */
 PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const size_t size, const http_send_mode mode TSRMLS_DC)
 {
-	zval **zrange;
+	int c;
 	long **begin, **end;
-	char range_header[255], multi_header[68] = "Content-Type: multipart/byteranges; boundary=", bound[23], preface[1024];
-	int i, c;
+	zval **zrange;
 
 	/* Send HTTP 206 Partial Content */
 	http_send_status(206);
 
 	/* single range */
 	if ((c = zend_hash_num_elements(Z_ARRVAL_P(zranges))) == 1) {
+		char range_header[256] = {0};
+		
 		zend_hash_index_find(Z_ARRVAL_P(zranges), 0, (void **) &zrange);
 		zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &begin);
 		zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &end);
@@ -1441,37 +1442,52 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 	}
 
 	/* multi range */
+	else {
+		int i;
+		char bound[23] = {0}, preface[1024] = {0}, 
+			multi_header[68] = "Content-Type: multipart/byteranges; boundary=";
+		
+		snprintf(bound, 22, "--%d%0.9f", time(NULL), php_combined_lcg(TSRMLS_C));
+		strncat(multi_header, bound + 2, 21);
+		http_send_header(multi_header);
 
-	snprintf(bound, 23, "--%d%0.9f", time(NULL), php_combined_lcg(TSRMLS_C));
-	strncat(multi_header, bound + 2, 21);
-	http_send_header(multi_header);
+		/* send each requested chunk */
+		for (	i = 0,	zend_hash_internal_pointer_reset(Z_ARRVAL_P(zranges));
+				i < c;
+				i++,	zend_hash_move_forward(Z_ARRVAL_P(zranges))) {
+			if (	HASH_KEY_NON_EXISTANT == zend_hash_get_current_data(
+						Z_ARRVAL_P(zranges), (void **) &zrange) ||
+					SUCCESS != zend_hash_index_find(
+						Z_ARRVAL_PP(zrange), 0, (void **) &begin) ||
+					SUCCESS != zend_hash_index_find(
+						Z_ARRVAL_PP(zrange), 1, (void **) &end)) {
+				break;
+			}	
 
-	/* send each requested chunk */
-	for (	i = 0,	zend_hash_internal_pointer_reset(Z_ARRVAL_P(zranges));
-			i < c;
-			i++,	zend_hash_move_forward(Z_ARRVAL_P(zranges))) {
-		if (	HASH_KEY_NON_EXISTANT == zend_hash_get_current_data(
-					Z_ARRVAL_P(zranges), (void **) &zrange) ||
-				SUCCESS != zend_hash_index_find(
-					Z_ARRVAL_PP(zrange), 0, (void **) &begin) ||
-				SUCCESS != zend_hash_index_find(
-					Z_ARRVAL_PP(zrange), 1, (void **) &end)) {
-			break;
+			snprintf(preface, 1023,
+				HTTP_CRLF "%s" 
+				HTTP_CRLF "Content-Type: %s"
+				HTTP_CRLF "Content-Range: bytes %ld-%ld/%ld"
+				HTTP_CRLF 
+				HTTP_CRLF,
+				
+				bound, 
+				HTTP_G(ctype) ? HTTP_G(ctype) : "application/x-octetstream", 
+				**begin, 
+				**end, 
+				size
+			);
+			
+			php_body_write(preface, strlen(preface) TSRMLS_CC);
+			http_send_chunk(data, **begin, **end + 1, mode);
 		}
 
-		snprintf(preface, 1024,
-			"\r\n%s\r\nContent-Type: %s\r\nContent-Range: bytes %d-%d/%d\r\n\r\n", bound,
-			HTTP_G(ctype) ? HTTP_G(ctype) : "application/x-octetstream",
-			**begin, **end, size);
-		php_body_write(preface, strlen(preface) TSRMLS_CC);
-		http_send_chunk(data, **begin, **end + 1, mode);
+		/* write boundary once more */
+		php_body_write(HTTP_CRLF, 2 TSRMLS_CC);
+		php_body_write(bound, strlen(bound) TSRMLS_CC);
+
+		return SUCCESS;
 	}
-
-	/* write boundary once more */
-	php_body_write(HTTP_CRLF, 1 TSRMLS_CC);
-	php_body_write(bound, strlen(bound) TSRMLS_CC);
-
-	return SUCCESS;
 }
 /* }}} */
 
@@ -1717,7 +1733,7 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 			end - (header + strlen("HTTP/1.x ")), 1);
 		header = end + 2;
 	}
-	
+
 	line = header;
 
 	while (header_len > (line - begin)) {
