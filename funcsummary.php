@@ -77,7 +77,8 @@ foreach (array_slice($_SERVER['argv'], 1) as $f) {
     if (mf($f, $m)) {
         printf("<h1>%s</h1>\n", basename($f));
         foreach ($m[1] as $i => $p) {
-            printf("<h2 id=\"%s\">%s</h2>\n%s\n", $m[4][$i], $p, ff($m[3][$i]));
+            printf("<h2 id=\"%s\">%s</h2>\n%s\n", 
+                str_replace(', ', '_', $m[4][$i]), $p, ff($m[3][$i]));
         }
         print "<hr noshade>\n";
     }
