@@ -1083,7 +1083,6 @@ PHP_METHOD(HTTPi_Request, send)
 
 							curl_formadd(&http_post_data[0], &http_post_data[1],
 								CURLFORM_COPYNAME,		Z_STRVAL_PP(name),
-								CURLFORM_FILENAME,		Z_STRVAL_PP(name),
 								CURLFORM_FILE,			Z_STRVAL_PP(file),
 								CURLFORM_CONTENTTYPE,	Z_STRVAL_PP(type),
 								CURLFORM_END
