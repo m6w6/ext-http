@@ -485,7 +485,7 @@ PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
-	//phpstr_free(&HTTP_G(curlbuf));
+	phpstr_dtor(&HTTP_G(curlbuf));
 	curl_global_cleanup();
 #endif
 	return SUCCESS;
@@ -518,7 +518,7 @@ PHP_RSHUTDOWN_FUNCTION(http)
 	}
 
 #ifdef HTTP_HAVE_CURL
-	//phpstr_free(&HTTP_G(curlbuf));
+	phpstr_dtor(&HTTP_G(curlbuf));
 #endif
 
 	return SUCCESS;

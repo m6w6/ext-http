@@ -478,7 +478,7 @@ PHP_METHOD(HttpResponse, send)
 		zval *dispo_file = GET_PROP(obj, dispoFile);
 		if (Z_STRLEN_P(dispo_file)) {
 			zval *dispo_inline = GET_PROP(obj, dispoInline);
-			http_send_content_disposition(Z_STRVAL_P(dispo_file), Z_STRLEN_P(dispo_file), Z_LVAL_P(dispo_inline));
+			http_send_content_disposition(Z_STRVAL_P(dispo_file), Z_STRLEN_P(dispo_file), (zend_bool) Z_LVAL_P(dispo_inline));
 		}
 	}
 

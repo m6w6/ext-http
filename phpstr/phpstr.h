@@ -10,28 +10,29 @@
 #	define PHPSTR_API
 #endif
 
-#define FREE_PHPSTR_PTR(STR) phpstr_dtor(STR)
-#define FREE_PHPSTR_VAL(STR) phpstr_free(STR)
+#define FREE_PHPSTR_PTR(STR) efree(STR)
+#define FREE_PHPSTR_VAL(STR) phpstr_dtor(STR)
+#define FREE_PHPSTR_ALL(STR) phpstr_free(STR)
 #define FREE_PHPSTR(free, STR) \
 	switch (free) \
 	{ \
-		case PHPSTR_FREE_VAL:	phpstr_free(STR);	break; \
-		case PHPSTR_FREE_PTR:	phpstr_dtor(STR);	break; \
+		case PHPSTR_FREE_PTR:	efree(STR);			break; \
+		case PHPSTR_FREE_VAL:	phpstr_dtor(STR);	break; \
+		case PHPSTR_FREE_ALL:	phpstr_free(STR);	break; \
 		case PHPSTR_FREE_NOT:						break; \
 		default:									break; \
 	}
 
-#define RETURN_PHPSTR_PTR(STR) RETURN_PHPSTR((STR), PHPSTR_FREE_PTR)
-#define RETURN_PHPSTR_VAL(STR) RETURN_PHPSTR((STR), PHPSTR_FREE_VAL)
-#define RETURN_PHPSTR(STR, free) \
-	RETVAL_PHPSTR((STR), (free)); \
+#define RETURN_PHPSTR_PTR(STR) RETURN_PHPSTR((STR), PHPSTR_FREE_PTR, 0)
+#define RETURN_PHPSTR_VAL(STR) RETURN_PHPSTR(&(STR), PHPSTR_FREE_NOT, 0)
+/* RETURN_PHPSTR(buf, PHPSTR_FREE_PTR, 0) */
+#define RETURN_PHPSTR(STR, free, dup) \
+	RETVAL_PHPSTR((STR), (free), (dup)); \
 	return;
 
-#define RETVAL_PHPSTR_PTR(STR) RETVAL_PHPSTR((STR), PHPSTR_FREE_PTR)
-#define RETVAL_PHPSTR_VAL(STR) RETVAL_PHPSTR((STR), PHPSTR_FREE_VAL)
-#define RETVAL_PHPSTR(STR, free) \
+#define RETVAL_PHPSTR(STR, free, dup) \
 	phpstr_fix(STR); \
-	RETVAL_STRINGL((STR)->data, (STR)->used, 1); \
+	RETVAL_STRINGL((STR)->data, (STR)->used, (dup)); \
 	FREE_PHPSTR((free), (STR));
 
 struct _phpstr {
@@ -44,11 +45,13 @@ typedef struct _phpstr phpstr;
 
 enum _phpstr_free {
 	PHPSTR_FREE_NOT = 0,
-	PHPSTR_FREE_VAL = 1,	/* phpstr_free() */
-	PHPSTR_FREE_PTR = 2		/* phpstr_dtor() */
+	PHPSTR_FREE_PTR,	/* efree() */
+	PHPSTR_FREE_VAL,	/* phpstr_dtor() */
+	PHPSTR_FREE_ALL		/* phpstr_free() */
 };
 typedef enum _phpstr_free phpstr_free_t;
 
+#define PHPSTR_ALL_FREE(STR) PHPSTR_FREE_ALL,(STR)
 #define PHPSTR_PTR_FREE(STR) PHPSTR_FREE_PTR,(STR)
 #define PHPSTR_VAL_FREE(STR) PHPSTR_FREE_VAL,(STR)
 #define PHPSTR_NOT_FREE(STR) PHPSTR_FREE_NOT,(STR)
@@ -107,7 +110,7 @@ PHPSTR_API phpstr *phpstr_dup(const phpstr *buf);
 
 	phpstr *final = phpstr_merge(3,
 		PHPSTR_NOT_FREE(&keep),
-		PHPSTR_PTR_FREE(middle_ptr),
+		PHPSTR_ALL_FREE(middle_ptr),
 		PHPSTR_VAL_FREE(&local);
 */
 PHPSTR_API phpstr *phpstr_merge(unsigned argc, ...);
@@ -117,12 +120,11 @@ PHPSTR_API phpstr *phpstr_merge_va(phpstr *buf, unsigned argc, va_list argv);
 /* sets a trailing NUL byte */
 PHPSTR_API void phpstr_fix(phpstr *buf);
 
-/* free a phpstr objects data (resets used and free) */
-PHPSTR_API void phpstr_free(phpstr *buf);
-
-/* free a phpstr object (calls phpstr_free, too) */
-#define phpstr_del(b) phpstr_dtor(b)
+/* free a phpstr objects contents */
 PHPSTR_API void phpstr_dtor(phpstr *buf);
+
+/* free a phpstr object completely */
+PHPSTR_API void phpstr_free(phpstr *buf);
 
 #endif
 

@@ -72,7 +72,7 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 	}
 
 #define http_curl_cleanup(ch, clean_curl) \
-	phpstr_free(&HTTP_G(curlbuf)); \
+	phpstr_dtor(&HTTP_G(curlbuf)); \
 	zend_llist_clean(&HTTP_G(to_free)); \
 	if (clean_curl) { \
 		curl_easy_cleanup(ch); \
@@ -298,7 +298,7 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSR
 			phpstr_fix(qstr);
 			curl_easy_setopt(ch, CURLOPT_COOKIE, http_curl_copystr(qstr->data));
 		}
-		phpstr_dtor(qstr);
+		phpstr_free(qstr);
 	}
 
 	/* cookiestore */
@@ -512,7 +512,7 @@ PHP_HTTP_API STATUS _http_post_array_ex(CURL *ch, const char *URL, HashTable *po
 
 	status = http_post_data_ex(ch, URL, encoded, encoded_len, options, info, data, data_len);
 	efree(encoded);
-	
+
 	return status;
 }
 /* }}} */
@@ -548,4 +548,3 @@ PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL,
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

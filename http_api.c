@@ -1387,7 +1387,7 @@ PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file, zend_bool close_strea
 /* }}} */
 
 /* {{{ STATUS http_chunked_decode(char *, size_t, char **, size_t *) */
-PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len, 
+PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len,
 	char **decoded, size_t *decoded_len TSRMLS_DC)
 {
 	const char *e_ptr;
@@ -1605,12 +1605,12 @@ PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, zend_bool override_
 
 	if (SUCCESS != http_urlencode_hash_implementation(hash, qstr, arg_sep)) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Couldn't encode query data");
-		phpstr_dtor(qstr);
+		phpstr_free(qstr);
 		return FAILURE;
 	}
 
 	phpstr_data(qstr, encoded_data, encoded_len);
-	phpstr_dtor(qstr);
+	phpstr_free(qstr);
 
 	return SUCCESS;
 }
@@ -1674,7 +1674,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_implementation_ex(
 	ulong idx;
 	zval **zdata = NULL, *copyzval;
 
-	if (!ht) {
+	if (!ht || !formstr) {
 		return FAILURE;
 	}
 
@@ -1766,7 +1766,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_implementation_ex(
 				*p = '\0';
 			}
 			ht->nApplyCount++;
-			http_urlencode_hash_implementation_ex(HASH_OF(*zdata), formstr, arg_sep, 
+			http_urlencode_hash_implementation_ex(HASH_OF(*zdata), formstr, arg_sep,
 				NULL, 0, newprefix, newprefix_len, "]", 1, (Z_TYPE_PP(zdata) == IS_OBJECT ? *zdata : NULL));
 			ht->nApplyCount--;
 			efree(newprefix);

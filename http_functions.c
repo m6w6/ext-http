@@ -975,11 +975,12 @@ PHP_FUNCTION(http_build_query)
 	}
 
 	if (SUCCESS != http_urlencode_hash_implementation_ex(HASH_OF(formdata), formstr, arg_sep, prefix, prefix_len, NULL, 0, NULL, 0, (Z_TYPE_P(formdata) == IS_OBJECT ? formdata : NULL) TSRMLS_CC)) {
-		phpstr_dtor(formstr);
+		phpstr_free(formstr);
 		RETURN_FALSE;
 	}
 
 	if (!formstr->used) {
+		phpstr_free(formstr);
 		RETURN_NULL();
 	}
 

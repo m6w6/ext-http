@@ -5,7 +5,7 @@
 #include "phpstr.h"
 
 #ifndef PHPSTR_DEFAULT_SIZE
-#define PHPSTR_DEFAULT_SIZE 4096
+#define PHPSTR_DEFAULT_SIZE 256
 #endif
 
 PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, zend_bool pre_alloc)
@@ -14,17 +14,17 @@ PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, zend_bool pre_
 		buf = ecalloc(1, sizeof(phpstr));
 	}
 
-	buf->used = 0;
 	buf->size = chunk_size > 0 ? chunk_size : PHPSTR_DEFAULT_SIZE;
-	buf->free = pre_alloc ? buf->size : 0;
 	buf->data = pre_alloc ? emalloc(buf->size) : NULL;
+	buf->free = pre_alloc ? buf->size : 0;
+	buf->used = 0;
 
 	return buf;
 }
 
 PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, char *string, size_t length)
 {
-    buf = phpstr_init(buf);
+	buf = phpstr_init(buf);
 	phpstr_append(buf, string, length);
 	return buf;
 }
@@ -230,7 +230,7 @@ PHPSTR_API int phpstr_cmp(phpstr *left, phpstr *right)
 	}
 }
 
-PHPSTR_API void phpstr_free(phpstr *buf)
+PHPSTR_API void phpstr_dtor(phpstr *buf)
 {
 	if (buf->data) {
 		efree(buf->data);
@@ -240,10 +240,10 @@ PHPSTR_API void phpstr_free(phpstr *buf)
 	buf->free = 0;
 }
 
-PHPSTR_API void phpstr_dtor(phpstr *buf)
+PHPSTR_API void phpstr_free(phpstr *buf)
 {
 	if (buf) {
-		phpstr_free(buf);
+		phpstr_dtor(buf);
 		efree(buf);
 	}
 }
