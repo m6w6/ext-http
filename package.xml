@@ -8,6 +8,7 @@
 * Building absolute URIs
 * RCF compliant HTTP redirects
 * RFC compliant HTTP date handling
+* Parsing of HTTP headers and responses
 * Caching by "Last-Modified" and/or ETag
   (with 'on the fly' option for ETag generation from buffered output)
 * Sending data/files/streams with (multiple) ranges support
@@ -38,6 +39,7 @@
  * removed http_accept_ranges()
  * output "Redirecting to <a>URI</a>." in http_redirect() for full RFC compliance
  * fixed http_cache_last_modified(): if parameter was omitted, would have always sent 304 Not Modified
+ * added http_parse_header()
 ]]>
     </notes>
   </release>
