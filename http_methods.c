@@ -628,6 +628,73 @@ PHP_METHOD(HTTPi_Request, getOptions)
 }
 /* }}} */
 
+/* {{{ proto void HTTPi_Request::unsetOptions()
+ *
+ * Unset all options/headers/cookies.
+ */
+PHP_METHOD(HTTPi_Request, unsetOptions)
+{
+	getObject(httpi_request_object, obj);
+	
+	NO_ARGS;
+	
+	FREE_PARR(obj, options);
+	INIT_PARR(obj, options);
+}
+/* }}} */
+
+/* {{{ proto bool HTTPi_Request::addHeader(array header)
+ *
+ * Add (a) request header name/value pair(s).
+ */
+PHP_METHOD(HTTPi_Request, addHeader)
+{
+	zval *opts, **headers, *new_headers;
+	getObject(httpi_request_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &new_headers)) {
+		RETURN_FALSE;
+	}
+	
+	opts = GET_PROP(obj, options);
+	
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) {
+		array_merge(new_headers, *headers);
+	} else {
+		zval_add_ref(new_headers);
+		add_assoc_zval(opts, "headers", new_headers);
+	}
+	
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto bool HTTPi_Request::addCookie(array cookie)
+ *
+ * Add (a) cookie(s).
+ */
+PHP_METHOD(HTTPi_Request, addCookie)
+{
+	zval *opts, **cookies, *new_cookies;
+	getObject(httpi_request_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &new_cookies)) {
+		RETURN_FALSE;
+	}
+	
+	opts = GET_PROP(obj, options);
+	
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "cookies", sizeof("cookies"), (void **) &cookies)) {
+		array_merge(new_cookies, *cookies);
+	} else {
+		zval_add_ref(new_cookies);
+		add_assoc_zval(opts, "cookies", new_cookies);
+	}
+	
+	RETURN_TRUE;
+}
+/* }}} */
+
 /* {{{ proto bool HTTPi_Request::setURL(string url)
  *
  * Set the request URL.

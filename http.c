@@ -308,6 +308,10 @@ zend_function_entry httpi_request_class_methods[] = {
 
 	PHP_ME(HTTPi_Request, setOptions, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, getOptions, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HTTPi_Request, unsetOptions, NULL, ZEND_ACC_PUBLIC)
+	
+	PHP_ME(HTTPi_Request, addHeader, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HTTPi_Request, addCookie, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HTTPi_Request, setMethod, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, getMethod, NULL, ZEND_ACC_PUBLIC)
@@ -530,7 +534,7 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_row(2, "Extended HTTP support", "enabled");
 	php_info_print_table_row(2, "Extension Version:", full_version_string);
 	php_info_print_table_end();
-	
+
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Functionality",            "Availability");
 	php_info_print_table_row(2,    "Miscellaneous Utilities:", HTTP_FUNC_AVAIL("HTTPi"));
