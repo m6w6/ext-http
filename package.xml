@@ -30,16 +30,17 @@
   </maintainers>
 
   <release>
-    <version>0.6.1</version>
-    <date>2005-03-07</date>
-    <state>alpha</state>
+    <version>0.7.0</version>
+    <date>2005-03-24</date>
+    <state>beta</state>
     <notes><![CDATA[
-* fixed overflow in http_split_response()
-- removed HTTPi_Request::getResponseHeaders()
-+ added HTTPi_Request::getResponseCode()
-+ added HTTPi_Request::getResponseHeader([string name]), allowing retrieval of single header values
-+ HTTPi_Request::getResponseInfo([string name]) now allows retrieval of single info values
-+ vastly enhanced http_absolute_uri()
+* Renamed HTTPi to HttpUtil
+* Renamed HTTPi_Request to HttpRequest
+* Renamed HTTPi_Response to HttpResponse
+* Added several methods to HttpRequest: unsetOptions(), addHeaders(array),
+  getHeaders(), unsetHeaders(), addCookies(array), getCookies(), unsetCookies(),
+  setSslOptions(array), getSslOptions(), unsetSslOptions()
+* Improved HTTP ranges support
 ]]>
     </notes>
   </release>
@@ -52,6 +53,9 @@
       
       <file role="src" platform="windows">config.w32</file>
       <file role="src">config.m4</file>
+      
+      <file role="src">phpstr/phpstr.h</file>
+      <file role="src">phpstr/phpstr.c</file>
       
       <file role="src">php_http.h</file>
       <file role="src">php_http_api.h</file>

@@ -219,7 +219,7 @@ See http_get() for a full list of available options.</p>
 </code></blockquote><br />
 <br />
 </pre></p>
-<h2 id="http_build_query">string http_build_query(mixed formdata [, string prefix])</h2>
+<h2 id="http_build_query">string http_build_query(mixed formdata [, string prefix[, string arg_separator]])</h2>
 <p>Generates a form-encoded query string from an associative array or object.</p>
 <hr noshade>
 <h1>http_methods.c</h1>
@@ -299,10 +299,24 @@ and POST (including posting files) HTTP requests.</p>
 <p>Get current set options.</p>
 <h2 id="HttpRequest_unsetOptions">void HttpRequest::unsetOptions()</h2>
 <p>Unset all options/headers/cookies.</p>
-<h2 id="HttpRequest_addHeader">bool HttpRequest::addHeader(array header)</h2>
-<p>Add (a) request header name/value pair(s).</p>
-<h2 id="HttpRequest_addCookie">bool HttpRequest::addCookie(array cookie)</h2>
-<p>Add (a) cookie(s).</p>
+<h2 id="HttpRequest_setSslOptions">bool HttpRequest::setSslOptions(array options)</h2>
+<p>Set additional SSL options.</p>
+<h2 id="HttpRequest_getSslOptions">array HttpRequest::getSslOtpions()</h2>
+<p>Get previously set SSL options.</p>
+<h2 id="HttpRequest_unsetSslOptions">void HttpRequest::unsetSslOptions()</h2>
+<p>Unset previously set SSL options.</p>
+<h2 id="HttpRequest_addHeaders">bool HttpRequest::addHeaders(array headers)</h2>
+<p>Add request header name/value pairs.</p>
+<h2 id="HttpRequest_getHeaders">array HttpRequest::getHeaders()</h2>
+<p>Get previously set request headers.</p>
+<h2 id="HttpRequest_unsetHeaders">void HttpRequest::unsetHeaders()</h2>
+<p>Unset previously set request headers.</p>
+<h2 id="HttpRequest_addCookies">bool HttpRequest::addCookies(array cookies)</h2>
+<p>Add cookies.</p>
+<h2 id="HttpRequest_getCookies">array HttpRequest::getCookies()</h2>
+<p>Get previously set cookies.</p>
+<h2 id="HttpRequest_unsetCookies">void HttpRequest::unsetCookies()</h2>
+<p></p>
 <h2 id="HttpRequest_setURL">bool HttpRequest::setURL(string url)</h2>
 <p>Set the request URL.</p>
 <h2 id="HttpRequest_getURL">string HttpRequest::getUrl()</h2>
@@ -351,8 +365,10 @@ Affects only POST requests.</p>
 Affects only POST requests.</p>
 <h2 id="HttpRequest_getResponseData">array HttpRequest::getResponseData()</h2>
 <p>Get all response data after the request has been sent.</p>
-<h2 id="HttpRequest_getResponseHeader">string HttpRequest::getResponseHeader([string name])</h2>
+<h2 id="HttpRequest_getResponseHeader">mixed HttpRequest::getResponseHeader([string name])</h2>
 <p>Get response header(s) after the request has been sent.</p>
+<h2 id="HttpRequest_getResponseCookie">array HttpRequest::getResponseCookie([string name])</h2>
+<p>Get response cookie(s) after the request has been sent.</p>
 <h2 id="HttpRequest_getResponseBody">string HttpRequest::getResponseBody()</h2>
 <p>Get the response body after the request has been sent.</p>
 <h2 id="HttpRequest_getResponseCode">int HttpRequest::getResponseCode()</h2>
@@ -373,7 +389,7 @@ GET example:</p><pre><blockquote><code><span style="color: #000000"><br />
 <br />
 </pre></p>
 <hr noshade>
-    <p><b>Generated at: Tue, 22 Mar 2005 15:41:10 +0100</b></p>
+    <p><b>Generated at: Thu, 24 Mar 2005 18:02:15 +0100</b></p>
 </body>
 </html>
 
