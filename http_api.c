@@ -1327,7 +1327,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 
 	if (strncmp(range, "bytes=", strlen("bytes="))) {
 		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Range header misses bytes=");
-		return RANGE_ERR;
+		return RANGE_NO;
 	}
 
 	ptr = &begin;
@@ -1433,7 +1433,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 			break;
 
 			default:
-				return RANGE_ERR;
+				return RANGE_NO;
 			break;
 		}
 	} while (c != 0);
@@ -1765,24 +1765,24 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 
 	while (header_len >= (line - begin)) {
 		int value_len = 0;
-		
+
 		switch (*line++)
 		{
 			case 0:
 				--value_len; /* we don't have CR so value length is one char less */
 			case '\n':
 				if (colon && ((!(*line - 1)) || ((*line != ' ') && (*line != '\t')))) {
-				
+
 					/* skip empty key */
 					if (header != colon) {
 						char *key = estrndup(header, colon - header);
 						value_len += line - colon - 1;
-							
+
 						/* skip leading ws */
 						while (isspace(*(++colon))) --value_len;
 						/* skip trailing ws */
 						while (isspace(colon[value_len - 1])) --value_len;
-						
+
 						if (value_len < 1) {
 							/* hm, empty header? */
 							add_assoc_stringl(array, key, "", 0, 0);
@@ -1791,7 +1791,7 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 						}
 						efree(key);
 					}
-					
+
 					colon = NULL;
 					value_len = 0;
 					header += line - header;
@@ -1813,7 +1813,7 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 PHP_HTTP_API void _http_get_request_headers(zval *array TSRMLS_DC)
 {
     char *key;
-    
+
     for (   zend_hash_internal_pointer_reset(HTTP_SERVER_VARS);
             zend_hash_get_current_key(HTTP_SERVER_VARS, &key, NULL, 0) != HASH_KEY_NON_EXISTANT;
             zend_hash_move_forward(HTTP_SERVER_VARS)) {
