@@ -1073,6 +1073,10 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 PHP_INI_MH(update_allowed_methods)
 {
 	if (SG(request_info).request_method && new_value_length && (!strstr(new_value, SG(request_info).request_method))) {
+		char *allow_header = emalloc(new_value_length + sizeof("Allow: "));
+		sprintf(allow_header, "Allow: %s", new_value);
+		http_send_header(allow_header);
+		efree(allow_header);
 		http_send_status(405);
 		return SUCCESS;
 	}
@@ -1110,7 +1114,12 @@ PHP_MSHUTDOWN_FUNCTION(http)
 PHP_RINIT_FUNCTION(http)
 {
 	char *allowed_methods = INI_STR("http.allowed_methods");
-	if (SG(request_info).request_method && strlen(allowed_methods) && (!strstr(allowed_methods, SG(request_info).request_method))) {
+	int am_len;
+	if (SG(request_info).request_method && (am_len = strlen(allowed_methods)) && (!strstr(allowed_methods, SG(request_info).request_method))) {
+		char *allow_header = emalloc(am_len + sizeof("Allow: "));
+		sprintf(allow_header, "Allow: %s", allowed_methods);
+		http_send_header(allow_header);
+		efree(allow_header);
 		http_send_status(405);
 	}
 	return SUCCESS;
@@ -1156,7 +1165,7 @@ PHP_MINFO_FUNCTION(http)
 #endif
 	);
 	php_info_print_table_end();
-	
+
 	DISPLAY_INI_ENTRIES();
 }
 /* }}} */
