@@ -763,6 +763,9 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 }
 /* }}} */
 
+#endif
+/* }}} HAVE_CURL */
+
 /* {{{ Day/Month/TZ checks for http_parse_date()
 	Originally by libcurl, Copyright (C) 1998 - 2004, Daniel Stenberg, <daniel@haxx.se>, et al. */
 static int check_day(char *day, size_t len)
@@ -807,9 +810,6 @@ static int check_tzone(char *tzone)
 	return -1;
 }
 /* }}} */
-
-#endif
-/* }}} HAVE_CURL */
 
 /* }}} internals */
 

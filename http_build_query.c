@@ -19,13 +19,14 @@
 /* $Id$ */
 
 #include "php_http.h"
+#include "php_http_api.h"
 #include "php_ini.h"
 #include "ext/standard/url.h"
 
 #define URL_DEFAULT_ARG_SEP "&"
 
 /* {{{ php_url_encode_hash */
-PHPAPI int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
+PHP_HTTP_API int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 				const char *num_prefix, int num_prefix_len,
 				const char *key_prefix, int key_prefix_len,
 				const char *key_suffix, int key_suffix_len,
