@@ -598,7 +598,7 @@ PHP_FUNCTION(http_split_response)
 		RETURN_FALSE;
 	}
 
-	convert_to_string_ex(&zresponse);
+	convert_to_string(zresponse);
 
 	MAKE_STD_ZVAL(zbody);
 	MAKE_STD_ZVAL(zheaders);
@@ -608,7 +608,7 @@ PHP_FUNCTION(http_split_response)
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP response");
 		RETURN_FALSE;
 	}
-
+	
 	array_init(return_value);
 	add_index_zval(return_value, 0, zheaders);
 	add_index_zval(return_value, 1, zbody);

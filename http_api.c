@@ -1388,7 +1388,7 @@ PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file,
 }
 /* }}} */
 
-/* {{{ proto STATUS http_chunked_decode(char *, size_t, char **, size_t *) */
+/* {{{ STATUS http_chunked_decode(char *, size_t, char **, size_t *) */
 PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 	const size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
@@ -1452,28 +1452,39 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 }
 /* }}} */
 
-/* {{{ proto STATUS http_split_response_ex(char *, size_t, zval *, zval *) */
+/* {{{ STATUS http_split_response(zval *, zval *, zval *) */
+PHP_HTTP_API STATUS _http_split_response(zval *response, zval *headers, zval *body TSRMLS_DC)
+{
+	char *b = NULL;
+	long l = 0;
+	STATUS status = http_split_response_ex(Z_STRVAL_P(response), Z_STRLEN_P(response), Z_ARRVAL_P(headers), &b, &l);
+	ZVAL_STRINGL(body, b, l, 0);
+	return status;
+}
+/* }}} */
+
+/* {{{ STATUS http_split_response(char *, size_t, HashTable *, char **, size_t *) */
 PHP_HTTP_API STATUS _http_split_response_ex(char *response,
 	size_t response_len, HashTable *headers, char **body, size_t *body_len TSRMLS_DC)
 {
-	char *header = response;
-	*body = NULL;
+	char *header = response, *real_body = NULL;
 
 	while (0 < (response_len - (response - header + 4))) {
 		if (	(*response++ == '\r') &&
 				(*response++ == '\n') &&
 				(*response++ == '\r') &&
 				(*response++ == '\n')) {
-			*body = response;
+			real_body = response;
 			break;
 		}
 	}
 
-	if (*body && (*body_len = (response_len - (*body - header)))) {
-		*body = estrndup(*body, *body_len);
+	if (real_body && (*body_len = (response_len - (real_body - header)))) {
+		*body = ecalloc(1, *body_len + 1);
+		memcpy(*body, real_body, *body_len);
 	}
 
-	return http_parse_headers_ex(header, *body ? response_len - *body_len : response_len, headers, 1);
+	return http_parse_headers_ex(header, real_body ? response_len - *body_len : response_len, headers, 1);
 }
 /* }}} */
 
