@@ -641,11 +641,74 @@ PHP_METHOD(HttpRequest, unsetOptions)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::addHeader(array header)
+/* {{{ proto bool HttpRequest::setSslOptions(array options)
  *
- * Add (a) request header name/value pair(s).
+ * Set additional SSL options.
  */
-PHP_METHOD(HttpRequest, addHeader)
+PHP_METHOD(HttpRequest, setSslOptions)
+{
+	zval *opts, *old_opts, **ssl_options;
+	getObject(http_request_object, obj);
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &opts)) {
+		RETURN_FALSE;
+	}
+
+	old_opts = GET_PROP(obj, options);
+
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(old_opts), "ssl", sizeof("ssl"), (void **) &ssl_options)) {
+		array_merge(opts, *ssl_options);
+	} else {
+		zval_add_ref(&opts);
+		add_assoc_zval(old_opts, "ssl", opts);
+	}
+
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto array HttpRequest::getSslOtpions()
+ *
+ * Get previously set SSL options.
+ */
+PHP_METHOD(HttpRequest, getSslOptions)
+{
+	zval *opts, **ssl_options;
+	getObject(http_request_object, obj);
+
+	NO_ARGS;
+
+	opts = GET_PROP(obj, options);
+
+	array_init(return_value);
+
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "ssl", sizeof("ssl"), (void **) &ssl_options)) {
+		array_copy(*ssl_options, return_value);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpRequest::unsetSslOptions()
+ *
+ * Unset previously set SSL options.
+ */
+PHP_METHOD(HttpRequest, unsetSslOptions)
+{
+	zval *opts;
+	getObject(http_request_object, obj);
+
+	NO_ARGS;
+
+	opts = GET_PROP(obj, options);
+	zend_hash_del(Z_ARRVAL_P(opts), "ssl", sizeof("ssl"));
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequest::addHeaders(array headers)
+ *
+ * Add request header name/value pairs.
+ */
+PHP_METHOD(HttpRequest, addHeaders)
 {
 	zval *opts, **headers, *new_headers;
 	getObject(http_request_object, obj);
@@ -667,11 +730,48 @@ PHP_METHOD(HttpRequest, addHeader)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::addCookie(array cookie)
+/* {{{ proto array HttpRequest::getHeaders()
  *
- * Add (a) cookie(s).
+ * Get previously set request headers.
  */
-PHP_METHOD(HttpRequest, addCookie)
+PHP_METHOD(HttpRequest, getHeaders)
+{
+	zval *opts, **headers;
+	getObject(http_request_object, obj);
+
+	NO_ARGS;
+
+	opts = GET_PROP(obj, options);
+
+	array_init(return_value);
+
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) {
+		array_copy(*headers, return_value);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpRequest::unsetHeaders()
+ *
+ * Unset previously set request headers.
+ */
+PHP_METHOD(HttpRequest, unsetHeaders)
+{
+	zval *opts;
+	getObject(http_request_object, obj);
+
+	NO_ARGS;
+
+	opts = GET_PROP(obj, options);
+	zend_hash_del(Z_ARRVAL_P(opts), "headers", sizeof("headers"));
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequest::addCookies(array cookies)
+ *
+ * Add cookies.
+ */
+PHP_METHOD(HttpRequest, addCookies)
 {
 	zval *opts, **cookies, *new_cookies;
 	getObject(http_request_object, obj);
@@ -690,6 +790,42 @@ PHP_METHOD(HttpRequest, addCookie)
 	}
 
 	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto array HttpRequest::getCookies()
+ *
+ * Get previously set cookies.
+ */
+PHP_METHOD(HttpRequest, getCookies)
+{
+	zval *opts, **cookies;
+	getObject(http_request_object, obj);
+
+	NO_ARGS;
+
+	opts = GET_PROP(obj, options);
+
+	array_init(return_value);
+
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "cookies", sizeof("cookies"), (void **) &cookies)) {
+		array_copy(*cookies, return_value);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpRequest::unsetCookies()
+ *
+ */
+PHP_METHOD(HttpRequest, unsetCookies)
+{
+	zval *opts;
+	getObject(http_request_object, obj);
+
+	NO_ARGS;
+
+	opts = GET_PROP(obj, options);
+	zend_hash_del(Z_ARRVAL_P(opts), "cookies", sizeof("cookies"));
 }
 /* }}} */
 
@@ -1066,7 +1202,7 @@ PHP_METHOD(HttpRequest, getResponseData)
 }
 /* }}} */
 
-/* {{{ proto string HttpRequest::getResponseHeader([string name])
+/* {{{ proto mixed HttpRequest::getResponseHeader([string name])
  *
  * Get response header(s) after the request has been sent.
  */
@@ -1095,6 +1231,94 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 		RETURN_FALSE;
 	}
 }
+/* }}} */
+
+/* {{{ proto array HttpRequest::getResponseCookie([string name])
+ *
+ * Get response cookie(s) after the request has been sent.
+ */
+PHP_METHOD(HttpRequest, getResponseCookie)
+{
+	zval *data, **headers;
+	char *cookie_name = NULL;
+	int cookie_len = 0;
+	getObject(http_request_object, obj);
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &cookie_name, &cookie_len)) {
+		RETURN_FALSE;
+	}
+
+	array_init(return_value);
+
+	data = GET_PROP(obj, responseData);
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) {
+		ulong idx = 0;
+		char *key = NULL;
+		zval **header = NULL;
+
+		FOREACH_HASH_KEYVAL(Z_ARRVAL_PP(headers), key, idx, header) {
+			if (key && !strcasecmp(key, "Set-Cookie")) {
+				/* several cookies? */
+				if (Z_TYPE_PP(header) == IS_ARRAY) {
+					zval **cookie;
+
+					FOREACH_HASH_VAL(Z_ARRVAL_PP(header), cookie) {
+						zval *cookie_hash;
+						MAKE_STD_ZVAL(cookie_hash);
+						array_init(cookie_hash);
+
+						if (SUCCESS == http_parse_cookie(Z_STRVAL_PP(cookie), Z_ARRVAL_P(cookie_hash))) {
+							if (!cookie_len) {
+								add_next_index_zval(return_value, cookie_hash);
+							} else {
+								zval **name;
+
+								if (	(SUCCESS == zend_hash_find(Z_ARRVAL_P(cookie_hash), "name", sizeof("name"), (void **) &name)) &&
+										(!strcmp(Z_STRVAL_PP(name), cookie_name))) {
+									add_next_index_zval(return_value, cookie_hash);
+									return; /* <<< FOUND >>> */
+								} else {
+									zval_dtor(cookie_hash);
+									efree(cookie_hash);
+								}
+							}
+						} else {
+							zval_dtor(cookie_hash);
+							efree(cookie_hash);
+						}
+					}
+				} else {
+					zval *cookie_hash;
+					MAKE_STD_ZVAL(cookie_hash);
+					array_init(cookie_hash);
+
+					if (SUCCESS == http_parse_cookie(Z_STRVAL_PP(header), Z_ARRVAL_P(cookie_hash))) {
+						if (!cookie_len) {
+							add_next_index_zval(return_value, cookie_hash);
+						} else {
+							zval **name;
+
+							if (	(SUCCESS == zend_hash_find(Z_ARRVAL_P(cookie_hash), "name", sizeof("name"), (void **) &name)) &&
+									(!strcmp(Z_STRVAL_PP(name), cookie_name))) {
+								add_next_index_zval(return_value, cookie_hash);
+							} else {
+								zval_dtor(cookie_hash);
+								efree(cookie_hash);
+							}
+						}
+					} else {
+						zval_dtor(cookie_hash);
+						efree(cookie_hash);
+					}
+				}
+				break;
+			}
+			/* reset key */
+			key = NULL;
+		}
+	}
+}
+/* }}} */
 
 /* {{{ proto string HttpRequest::getResponseBody()
  *

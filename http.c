@@ -308,9 +308,16 @@ zend_function_entry http_request_class_methods[] = {
 	PHP_ME(HttpRequest, setOptions, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getOptions, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, unsetOptions, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, setSslOptions, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getSslOptions, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, unsetSslOptions, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, addHeader, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, addCookie, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, addHeaders, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getHeaders, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, unsetHeaders, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, addCookies, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getCookies, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, unsetCookies, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HttpRequest, setMethod, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getMethod, NULL, ZEND_ACC_PUBLIC)
@@ -339,6 +346,7 @@ zend_function_entry http_request_class_methods[] = {
 
 	PHP_ME(HttpRequest, getResponseData, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getResponseHeader, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getResponseCookie, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getResponseCode, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getResponseBody, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getResponseInfo, NULL, ZEND_ACC_PUBLIC)
