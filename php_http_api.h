@@ -135,11 +135,13 @@ PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, int override_argsep
 #define http_split_response_ex(r, rl, h, b, bl) _http_split_response_ex((r), (rl), (h), (b), (bl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t repsonse_len, HashTable *headers, char **body, size_t *body_len TSRMLS_DC);
 
-#define http_parse_headers(h, l, a) _http_parse_headers((h), (l), (a) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, HashTable *headers TSRMLS_DC);
+#define http_parse_headers(h, l, a) _http_parse_headers_ex((h), (l), Z_ARRVAL_P(a), 1 TSRMLS_CC)
+#define http_parse_headers_ex(h, l, ht, p) _http_parse_headers_ex((h), (l), (ht), (p) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, int header_len, HashTable *headers, zend_bool prettify TSRMLS_DC);
 
-#define http_get_request_headers(h) _http_get_request_headers((h) TSRMLS_CC)
-PHP_HTTP_API void _http_get_request_headers(zval *array TSRMLS_DC);
+#define http_get_request_headers(h) _http_get_request_headers_ex(Z_ARRVAL_P(h), 1 TSRMLS_CC)
+#define http_get_request_headers_ex(h, p) _http_get_request_headers_ex((h), (s) TSRMLS_CC)
+PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool prettify TSRMLS_DC);
 
 #define http_auth_credentials(u, p) _http_auth_credentials((u), (p) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC);

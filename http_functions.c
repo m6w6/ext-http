@@ -469,7 +469,7 @@ PHP_FUNCTION(http_redirect)
 	}
 
 	URI = http_absolute_uri(url);
-	
+
 	if (query_len) {
 		snprintf(LOC, HTTP_URI_MAXLEN + sizeof("Location: "), "Location: %s?%s", URI, query);
 		sprintf(RED, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);
@@ -632,8 +632,8 @@ PHP_FUNCTION(http_parse_headers)
 	if (rnrn = strstr(header, HTTP_CRLF HTTP_CRLF)) {
 		header_len = rnrn - header + 2;
 	}
-	if (SUCCESS != http_parse_headers(header, header_len, Z_ARRVAL_P(return_value))) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP header");
+	if (SUCCESS != http_parse_headers(header, header_len, return_value)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP headers");
 		zval_dtor(return_value);
 		RETURN_FALSE;
 	}

@@ -28,7 +28,6 @@
 #include "php_version.h"
 #include "php_streams.h"
 #include "snprintf.h"
-#include "spprintf.h"
 #include "ext/standard/md5.h"
 #include "ext/standard/url.h"
 #include "ext/standard/base64.h"
@@ -909,6 +908,7 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 	furl.user		= purl->user;
 	furl.pass		= purl->pass;
 	furl.path		= purl->path;
+	furl.query		= purl->query;
 	furl.fragment	= purl->fragment;
 
 	if (proto) {
@@ -982,14 +982,18 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 
 	if (furl.path) {
 		HTTP_URI_STRLCATL(URL, full_len, furl.path);
-		if (furl.query) {
-			HTTP_URI_STRLCATS(URL, full_len, "?");
-			HTTP_URI_STRLCATL(URL, full_len, furl.query);
-		}
-		if (furl.fragment) {
-			HTTP_URI_STRLCATS(URL, full_len, "#");
-			HTTP_URI_STRLCATL(URL, full_len, furl.fragment);
-		}
+	} else {
+		HTTP_URI_STRLCATS(URL, full_len, "/");
+	}
+
+	if (furl.query) {
+		HTTP_URI_STRLCATS(URL, full_len, "?");
+		HTTP_URI_STRLCATL(URL, full_len, furl.query);
+	}
+
+	if (furl.fragment) {
+		HTTP_URI_STRLCATS(URL, full_len, "#");
+		HTTP_URI_STRLCATL(URL, full_len, furl.fragment);
 	}
 
 	if (scheme) {
@@ -1460,12 +1464,13 @@ PHP_HTTP_API STATUS _http_split_response_ex(char *response,
 		*body = estrndup(*body, *body_len - 1);
 	}
 
-	return http_parse_headers(header, *body ? *body - header : response_len, headers);
+	return http_parse_headers_ex(header, *body ? *body - header : response_len, headers, 1);
 }
 /* }}} */
 
 /* {{{ STATUS http_parse_headers(char *, long, zval *) */
-PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, HashTable *headers TSRMLS_DC)
+PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, int header_len, 
+	HashTable *headers, zend_bool prettify TSRMLS_DC)
 {
 	char *colon = NULL, *line = NULL, *begin = header;
 	zval array;
@@ -1500,6 +1505,11 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, HashTable 
 					/* skip empty key */
 					if (header != colon) {
 						char *key = estrndup(header, colon - header);
+
+						if (prettify) {
+							key = pretty_key(key, colon - header, 1, 1);
+						}
+
 						value_len += line - colon - 1;
 
 						/* skip leading ws */
@@ -1533,17 +1543,26 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, HashTable 
 }
 /* }}} */
 
-/* {{{ void http_get_request_headers(zval *) */
-PHP_HTTP_API void _http_get_request_headers(zval *array TSRMLS_DC)
+/* {{{ void http_get_request_headers_ex(HashTable *, zend_bool) */
+PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool prettify TSRMLS_DC)
 {
     char *key = NULL;
     long idx = 0;
+    zval array;
+    
+    Z_ARRVAL(array) = headers;
 
     FOREACH_HASH_KEY(HTTP_SERVER_VARS, key, idx) {
         if (key && !strncmp(key, "HTTP_", 5)) {
             zval **header;
+            
+            if (prettify) {
+            	key = pretty_key(key + 5, strlen(key) - 5, 1, 1);
+            }
+            
             zend_hash_get_current_data(HTTP_SERVER_VARS, (void **) &header);
-            add_assoc_stringl(array, pretty_key(key + 5, strlen(key) - 5, 1, 1), Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
+            add_assoc_stringl(&array, key, Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
+            key = NULL;
         }
     }
 }
