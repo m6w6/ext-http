@@ -39,7 +39,7 @@
 #ifdef ZEND_ENGINE_2
 #include "ext/standard/php_http.h"
 #else
-#include "php_http_build_query.c"
+#include "http_build_query.c"
 #endif
 
 #include "php_http.h"
