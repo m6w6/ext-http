@@ -60,6 +60,7 @@ PHPAPI int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 			key_len -= 1;
 		}
 
+#ifdef ZEND_ENGINE_2
 		/* handling for private & protected object properties */
 		if (key && *key == '\0' && type != NULL) {
 			char *tmp;
@@ -72,6 +73,7 @@ PHPAPI int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 			zend_unmangle_property_name(key, &tmp, &key);
 			key_len = strlen(key);		
 		}
+#endif
 
 		if (zend_hash_get_current_data_ex(ht, (void **)&zdata, NULL) == FAILURE || !zdata || !(*zdata)) {
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Error traversing form data array.");
@@ -127,8 +129,7 @@ PHPAPI int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 				*p = '\0';
 			}
 			ht->nApplyCount++;
-			php_url_encode_hash_ex(HASH_OF(*zdata), formstr, NULL, 0, newprefix, newprefix_len, "]", 1, 
-(Z_TYPE_PP(zdata) == IS_OBJECT ? *zdata : NULL) TSRMLS_CC);
+			php_url_encode_hash_ex(HASH_OF(*zdata), formstr, NULL, 0, newprefix, newprefix_len, "]", 1, (Z_TYPE_PP(zdata) == IS_OBJECT ? *zdata : NULL) TSRMLS_CC);
 			ht->nApplyCount--;
 			efree(newprefix);
 		} else if (Z_TYPE_PP(zdata) == IS_NULL || Z_TYPE_PP(zdata) == IS_RESOURCE) {
