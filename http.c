@@ -161,14 +161,16 @@ function_entry http_functions[] = {
 		MAKE_STD_ZVAL(__tmp); \
 		array_init(__tmp); \
 		SET_PROP(o, n, __tmp); \
-		o->n = __tmp; \
 	}
 
-#	define FREE_PARR(p) \
-	if (p) { \
-		zval_dtor(p); \
-		FREE_ZVAL(p); \
-		(p) = NULL; \
+#	define FREE_PARR(o, p) \
+	{ \
+		zval *__tmp = NULL; \
+		if (__tmp = GET_PROP(o, p)) { \
+			zval_dtor(__tmp); \
+			FREE_ZVAL(__tmp); \
+			__tmp = NULL; \
+		} \
 	}
 
 /* {{{ HTTPi */
@@ -736,10 +738,6 @@ static zend_object_handlers httpi_request_object_handlers;
 typedef struct {
 	zend_object zo;
 	CURL *ch;
-
-	zval *options;
-	zval *responseInfo;
-	zval *responseData;
 } httpi_request_object;
 
 #define httpi_request_declare_default_properties(ce) _httpi_request_declare_default_properties(ce TSRMLS_CC)
@@ -760,14 +758,14 @@ static inline void _httpi_request_declare_default_properties(zend_class_entry *c
 #define httpi_request_destroy_object _httpi_request_destroy_object
 void _httpi_request_destroy_object(void *object, zend_object_handle handle TSRMLS_DC)
 {
-	httpi_request_object *o = object;
-	
 	zend_objects_destroy_object(object, handle TSRMLS_CC);
+}
 
-	FREE_PARR(o->options);
-	FREE_PARR(o->responseInfo);
-	FREE_PARR(o->responseData);
-
+#define httpi_request_free_object _httpi_request_free_object
+void _httpi_request_free_object(zend_object /* void */ *object TSRMLS_DC)
+{
+	httpi_request_object *o = (httpi_request_object *) object;
+	
 	if (OBJ_PROP(o)) {
 		zend_hash_destroy(OBJ_PROP(o));
 		FREE_HASHTABLE(OBJ_PROP(o));
@@ -793,7 +791,7 @@ zend_object_value _httpi_request_new_object(zend_class_entry *ce TSRMLS_DC)
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 
-	ov.handle = zend_objects_store_put(o, httpi_request_destroy_object, NULL, NULL TSRMLS_CC);
+	ov.handle = zend_objects_store_put(o, httpi_request_destroy_object, httpi_request_free_object, NULL TSRMLS_CC);
 	ov.handlers = &httpi_request_object_handlers;
 
 	return ov;
@@ -864,29 +862,20 @@ PHP_METHOD(HTTPi_Request, __construct)
 }
 /* }}} */
 
+/* {{{ proto void HTTPi_Request::__destruct()
+ *
+ */
 PHP_METHOD(HTTPi_Request, __destruct)
 {
-	zval *opts, *info, *resp;
 	getObject(httpi_request_object, obj);
-
-	/*
-	 * this never happens ???
-	 */
-
-	fprintf(stderr, "\n\n\nYAY, DESTRUCTOR CALLED!\n\n\n");
-
-	opts = GET_PROP(obj, options);
-	zval_dtor(opts);
-	FREE_ZVAL(opts);
-
-	info = GET_PROP(obj, responseInfo);
-	zval_dtor(info);
-	FREE_ZVAL(info);
-
-	resp = GET_PROP(obj, responseData);
-	zval_dtor(resp);
-	FREE_ZVAL(resp);
+	
+	NO_ARGS;
+	
+	FREE_PARR(obj, options);
+	FREE_PARR(obj, responseInfo);
+	FREE_PARR(obj, responseData);
 }
+/* }}} */
 
 /* {{{ proto bool HTTPi_Request::setOptions(array options)
  *
