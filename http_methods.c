@@ -989,7 +989,7 @@ PHP_METHOD(HTTPi_Request, unsetPostFiles)
 
 /* {{{ proto array HTTPi_Request::getResponseData()
  *
- * Get all resposonse data after the request has been sent.
+ * Get all response data after the request has been sent.
  */
 PHP_METHOD(HTTPi_Request, getResponseData)
 {
@@ -1014,16 +1014,16 @@ PHP_METHOD(HTTPi_Request, getResponseHeader)
 	char *header_name = NULL;
 	int header_len = 0;
 	getObject(httpi_response_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &header_name, &header_len)) {
 		RETURN_FALSE;
 	}
-	
+
 	data = GET_PROP(obj, responseData);
 	if (SUCCESS != zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) {
 		RETURN_FALSE;
 	}
-	
+
 	if (!header_len || !header_name) {
 		array_init(return_value);
 		array_copy(*headers, return_value);
@@ -1062,9 +1062,9 @@ PHP_METHOD(HTTPi_Request, getResponseCode)
 {
 	zval **code, **hdrs, *data;
 	getObject(httpi_request_object, obj);
-	
+
 	NO_ARGS;
-	
+
 	data = GET_PROP(obj, responseData);
 	if (	(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &hdrs)) &&
 			(SUCCESS == zend_hash_find(Z_ARRVAL_PP(hdrs), "Status", sizeof("Status"), (void **) &code))) {
@@ -1093,7 +1093,7 @@ PHP_METHOD(HTTPi_Request, getResponseInfo)
 	}
 
 	info = GET_PROP(obj, responseInfo);
-	
+
 	if (info_len && info_name) {
 		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), pretty_key(info_name, info_len, 0, 0), info_len + 1, (void **) &infop)) {
 			RETURN_ZVAL(*infop, 1, ZVAL_PTR_DTOR);
@@ -1111,6 +1111,31 @@ PHP_METHOD(HTTPi_Request, getResponseInfo)
 /* {{{ proto bool HTTPi_Request::send()
  *
  * Send the HTTP request.
+ *
+ * GET example:
+ * <pre>
+ * <?php
+ * $r = new HTTPi_Request('http://example.com/feed.rss', HTTP_GET);
+ * $r->setOptions(array('lastmodified' => filemtime('local.rss')));
+ * $r->addQueryData(array('category' => 3));
+ * if ($r->send() && $r->getResponseCode() == 200) {
+ *     file_put_contents('local.rss', $r->getResponseBody());
+ * }
+ * ?>
+ * </pre>
+ *
+ * POST example:
+ * <pre>
+ * <?php
+ * $r = new HTTPi_Request('http://example.com/form.php', HTTP_POST);
+ * $r->setOptions(array('cookies' => array('lang' => 'de')));
+ * $r->addPostData(array('user' => 'mike', 'pass' => 's3c|r3t'));
+ * $r->addPostFile('image', 'profile.jpg', 'image/jpeg');
+ * if ($r->send()) {
+ *     echo $r->getResponseBody();
+ * }
+ * ?>
+ * </pre>
  */
 PHP_METHOD(HTTPi_Request, send)
 {
