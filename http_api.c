@@ -1050,7 +1050,8 @@ PHP_HTTP_API char *_http_negotiate_q(const char *entry, const HashTable *support
 {
 	zval *zaccept, zdelim, zarray, zentries, **zentry, **zsupp;
 	char *q_ptr = NULL, *key = NULL;
-	int i = 0, idx = 0;
+	int i = 0;
+	ulong idx = 0;
 	double qual;
 
 	HTTP_GSC(zaccept, entry, estrdup(def));
@@ -1644,7 +1645,7 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *cookie, HashTable *values TSR
 		key = val + strlen(val);
 		HTTP_COOKIE_FIXVAL();
 		HTTP_COOKIE_VAL(&array, "value", val, vallen);
-	} 
+	}
 	/* additional info appended */
 	else {
 		char *keydup = NULL;
