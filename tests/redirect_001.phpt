@@ -2,8 +2,7 @@
 http_redirect() with params
 --SKIPIF--
 <?php 
-extension_loaded('http') or die('ext/http not available');
-strncasecmp(PHP_SAPI, 'CLI', 3) or die('cannot run tests with CLI');
+include 'skip.inc';
 ?>
 --FILE--
 <?php
