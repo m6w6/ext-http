@@ -844,6 +844,7 @@ static STATUS http_ob_stack_get(php_ob_buffer *o, php_ob_buffer **s)
 	php_ob_buffer *b = emalloc(sizeof(php_ob_buffer));
 	b->handler_name = estrdup(o->handler_name);
 	b->buffer = estrndup(o->buffer, o->text_length);
+	b->text_length = o->text_length;
 	b->chunk_size = o->chunk_size;
 	b->erase = o->erase;
 	s[i++] = b;
@@ -1134,12 +1135,14 @@ PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_fun
 			php_end_ob_buffer(0, 0 TSRMLS_CC);
 		}
 	}
-	
+
 	php_ob_set_internal_handler(handler_func, chunk_size, handler_name, erase TSRMLS_CC);
 
 	for (i = 0; i < count; i++) {
 		php_ob_buffer *s = stack[i];
-		php_start_ob_buffer_named(s->handler_name, s->chunk_size, s->erase TSRMLS_CC);
+		if (strcmp(s->handler_name, "default output handler")) {
+			php_start_ob_buffer_named(s->handler_name, s->chunk_size, s->erase TSRMLS_CC);
+		}
 		php_body_write(s->buffer, s->text_length TSRMLS_CC);
 	}
 
