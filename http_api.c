@@ -36,7 +36,6 @@
 #include "ext/standard/url.h"
 #include "ext/standard/base64.h"
 #include "ext/standard/php_string.h"
-#include "ext/standard/php_smart_str.h"
 #include "ext/standard/php_lcg.h"
 
 #include "SAPI.h"
@@ -125,7 +124,7 @@ static const struct time_zone {
 
 static int http_sort_q(const void *a, const void *b TSRMLS_DC);
 #define http_send_chunk(d, b, e, m) _http_send_chunk((d), (b), (e), (m) TSRMLS_CC)
-static STATUS _http_send_chunk(const void *data, const size_t begin, const size_t end, const http_send_mode mode TSRMLS_DC);
+static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_send_mode mode TSRMLS_DC);
 
 static int check_day(char *day, size_t len);
 static int check_month(char *month);
@@ -154,8 +153,7 @@ static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 
 /* {{{ static STATUS http_send_chunk(const void *, size_t, size_t,
 	http_send_mode) */
-static STATUS _http_send_chunk(const void *data, const size_t begin,
-	const size_t end, const http_send_mode mode TSRMLS_DC)
+static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_send_mode mode TSRMLS_DC)
 {
 	long len = end - begin;
 
@@ -284,8 +282,8 @@ static int check_tzone(char *tzone)
 }
 /* }}} */
 
-/* char *pretty_key(char *, int, int, int) */
-char *pretty_key(char *key, int key_len, int uctitle, int xhyphen)
+/* char *pretty_key(char *, size_t, zend_bool, zebd_bool) */
+char *pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
 	if (key && key_len) {
 		int i, wasalpha;
@@ -520,8 +518,7 @@ PHP_HTTP_API time_t _http_parse_date(const char *date)
 /* }}} */
 
 /* {{{ char *http_etag(void *, size_t, http_send_mode) */
-PHP_HTTP_API char *_http_etag(const void *data_ptr, const size_t data_len,
-	const http_send_mode data_mode TSRMLS_DC)
+PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
 {
 	char ssb_buf[128] = {0};
 	unsigned char digest[16];
@@ -564,7 +561,7 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, const size_t data_len,
 /* }}} */
 
 /* {{{ time_t http_lmod(void *, http_send_mode) */
-PHP_HTTP_API time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC)
+PHP_HTTP_API time_t _http_lmod(const void *data_ptr, http_send_mode data_mode TSRMLS_DC)
 {
 	switch (data_mode)
 	{
@@ -597,7 +594,7 @@ PHP_HTTP_API time_t _http_lmod(const void *data_ptr, const http_send_mode data_m
 /* }}} */
 
 /* {{{ STATUS http_send_status_header(int, char *) */
-PHP_HTTP_API STATUS _http_send_status_header(const int status, const char *header TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_status_header(int status, const char *header TSRMLS_DC)
 {
 	sapi_header_line h = {(char *) header, strlen(header), status};
 	return sapi_header_op(SAPI_HEADER_REPLACE, &h TSRMLS_CC);
@@ -697,11 +694,10 @@ PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_fun
 }
 /* }}} */
 
-/* {{{ int http_modified_match(char *, time_t) */
-PHP_HTTP_API int _http_modified_match_ex(const char *entry, const time_t t,
-	const int enforce_presence TSRMLS_DC)
+/* {{{ zend_bool http_modified_match(char *, time_t) */
+PHP_HTTP_API zend_bool _http_modified_match_ex(const char *entry, time_t t, zend_bool enforce_presence TSRMLS_DC)
 {
-	int retval;
+	zend_bool retval;
 	zval *zmodified;
 	char *modified, *chr_ptr;
 
@@ -717,13 +713,12 @@ PHP_HTTP_API int _http_modified_match_ex(const char *entry, const time_t t,
 }
 /* }}} */
 
-/* {{{ int http_etag_match(char *, char *) */
-PHP_HTTP_API int _http_etag_match_ex(const char *entry, const char *etag,
-	const int enforce_presence TSRMLS_DC)
+/* {{{ zend_bool http_etag_match(char *, char *) */
+PHP_HTTP_API zend_bool _http_etag_match_ex(const char *entry, const char *etag, zend_bool enforce_presence TSRMLS_DC)
 {
 	zval *zetag;
 	char *quoted_etag;
-	STATUS result;
+	zend_bool result;
 
 	HTTP_GSC(zetag, entry, !enforce_presence);
 
@@ -745,7 +740,7 @@ PHP_HTTP_API int _http_etag_match_ex(const char *entry, const char *etag,
 /* }}} */
 
 /* {{{ STATUS http_send_last_modified(int) */
-PHP_HTTP_API STATUS _http_send_last_modified(const time_t t TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_last_modified(time_t t TSRMLS_DC)
 {
 	char *date = NULL;
 	if (date = http_date(t)) {
@@ -762,9 +757,8 @@ PHP_HTTP_API STATUS _http_send_last_modified(const time_t t TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ static STATUS http_send_etag(char *, int) */
-PHP_HTTP_API STATUS _http_send_etag(const char *etag,
-	const int etag_len TSRMLS_DC)
+/* {{{ STATUS http_send_etag(char *, size_t) */
+PHP_HTTP_API STATUS _http_send_etag(const char *etag, size_t etag_len TSRMLS_DC)
 {
 	STATUS status;
 	char *etag_header;
@@ -792,8 +786,7 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag,
 /* }}} */
 
 /* {{{ STATUS http_send_cache_control(char *, size_t) */
-PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control,
-	const size_t cc_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control, size_t cc_len TSRMLS_DC)
 {
 	STATUS status;
 	char *cc_header = ecalloc(1, sizeof("Cache-Control: ") + cc_len);
@@ -809,8 +802,7 @@ PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control,
 /* }}} */
 
 /* {{{ STATUS http_send_content_type(char *, size_t) */
-PHP_HTTP_API STATUS _http_send_content_type(const char *content_type,
-	const size_t ct_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_len TSRMLS_DC)
 {
 	STATUS status;
 	char *ct_header;
@@ -841,8 +833,7 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type,
 /* }}} */
 
 /* {{{ STATUS http_send_content_disposition(char *, size_t, zend_bool) */
-PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename,
-	const size_t f_len, const int send_inline TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, size_t f_len, zend_bool send_inline TSRMLS_DC)
 {
 	STATUS status;
 	char *cd_header;
@@ -864,8 +855,8 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename,
 /* }}} */
 
 /* {{{ STATUS http_cache_last_modified(time_t, time_t, char *, size_t) */
-PHP_HTTP_API STATUS _http_cache_last_modified(const time_t last_modified,
-	const time_t send_modified, const char *cache_control, const size_t cc_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified,
+	time_t send_modified, const char *cache_control, size_t cc_len TSRMLS_DC)
 {
 	if (cc_len) {
 		http_send_cache_control(cache_control, cc_len);
@@ -884,8 +875,8 @@ PHP_HTTP_API STATUS _http_cache_last_modified(const time_t last_modified,
 /* }}} */
 
 /* {{{ STATUS http_cache_etag(char *, size_t, char *, size_t) */
-PHP_HTTP_API STATUS _http_cache_etag(const char *etag, const size_t etag_len,
-	const char *cache_control, const size_t cc_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
+	const char *cache_control, size_t cc_len TSRMLS_DC)
 {
 	if (cc_len) {
 		http_send_cache_control(cache_control, cc_len);
@@ -1090,7 +1081,7 @@ PHP_HTTP_API char *_http_negotiate_q(const char *entry, const HashTable *support
 	zval_dtor(&zarray);
 
 	zend_hash_sort(Z_ARRVAL(zentries), zend_qsort, http_sort_q, 0 TSRMLS_CC);
-	
+
 	FOREACH_HASH_KEY(Z_ARRVAL(zentries), key, idx) {
 		if (key) {
 			key = estrdup(key);
@@ -1099,14 +1090,13 @@ PHP_HTTP_API char *_http_negotiate_q(const char *entry, const HashTable *support
 		}
 	}
 	zval_dtor(&zentries);
-	
+
 	return estrdup(def);
 }
 /* }}} */
 
 /* {{{ http_range_status http_get_request_ranges(HashTable *ranges, size_t) */
-PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges,
-	const size_t length TSRMLS_DC)
+PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_t length TSRMLS_DC)
 {
 	zval *zrange;
 	char *range, c;
@@ -1233,7 +1223,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges,
 /* }}} */
 
 /* {{{ STATUS http_send_ranges(HashTable *, void *, size_t, http_send_mode) */
-PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, const size_t size, const http_send_mode mode TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_t size, http_send_mode mode TSRMLS_DC)
 {
 	long **begin, **end;
 	zval **zrange;
@@ -1308,8 +1298,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, const
 /* }}} */
 
 /* {{{ STATUS http_send(void *, size_t, http_send_mode) */
-PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
-	const http_send_mode data_mode TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send_mode data_mode TSRMLS_DC)
 {
 	HashTable ranges;
 	http_range_status range_status;
@@ -1347,7 +1336,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 		zend_hash_destroy(&ranges);
 		return result;
 	}
-			
+
 	zend_hash_destroy(&ranges);
 
 	/* send 304 Not Modified if etag matches */
@@ -1362,7 +1351,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 		http_send_etag(etag, 32);
 		etag_match = http_etag_match("HTTP_IF_NONE_MATCH", etag);
 		efree(etag);
-		
+
 		if (etag_match) {
 			return http_send_status(304);
 		}
@@ -1372,15 +1361,14 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 	if (http_modified_match("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
 		return http_send_status(304);
 	}
-			
+
 	/* send full entity */
 	return http_send_chunk(data_ptr, 0, data_size, data_mode);
 }
 /* }}} */
 
 /* {{{ STATUS http_send_stream(php_stream *) */
-PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file,
-	zend_bool close_stream TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file, zend_bool close_stream TSRMLS_DC)
 {
 	STATUS status;
 
@@ -1399,8 +1387,8 @@ PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file,
 /* }}} */
 
 /* {{{ STATUS http_chunked_decode(char *, size_t, char **, size_t *) */
-PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
-	const size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len, 
+	char **decoded, size_t *decoded_len TSRMLS_DC)
 {
 	const char *e_ptr;
 	char *d_ptr;
@@ -1474,8 +1462,8 @@ PHP_HTTP_API STATUS _http_split_response(zval *response, zval *headers, zval *bo
 /* }}} */
 
 /* {{{ STATUS http_split_response(char *, size_t, HashTable *, char **, size_t *) */
-PHP_HTTP_API STATUS _http_split_response_ex(char *response,
-	size_t response_len, HashTable *headers, char **body, size_t *body_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t response_len,
+	HashTable *headers, char **body, size_t *body_len TSRMLS_DC)
 {
 	char *header = response, *real_body = NULL;
 
@@ -1498,8 +1486,8 @@ PHP_HTTP_API STATUS _http_split_response_ex(char *response,
 }
 /* }}} */
 
-/* {{{ STATUS http_parse_headers(char *, long, zval *) */
-PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, int header_len,
+/* {{{ STATUS http_parse_headers(char *, size_t, HashTable *, zend_bool) */
+PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 	HashTable *headers, zend_bool prettify TSRMLS_DC)
 {
 	char *colon = NULL, *line = NULL, *begin = header;
@@ -1599,42 +1587,30 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 }
 /* }}} */
 
-/* {{{ STATUS http_urlencode_hash_ex(HashTable *, int, char **, size_t *) */
-PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, int override_argsep,
+/* {{{ STATUS http_urlencode_hash_ex(HashTable *, zend_bool, char *, size_t, char **, size_t *) */
+PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, zend_bool override_argsep,
 	char *pre_encoded_data, size_t pre_encoded_len,
 	char **encoded_data, size_t *encoded_len TSRMLS_DC)
 {
-	smart_str qstr = {0};
+	char *arg_sep;
+	phpstr *qstr = phpstr_new();
 
-	if (override_argsep) {
-		HTTP_URL_ARGSEP_OVERRIDE;
+	if (override_argsep || !strlen(arg_sep = INI_STR("arg_separator.output"))) {
+		arg_sep = HTTP_URL_ARGSEP_DEFAULT;
 	}
 
 	if (pre_encoded_len && pre_encoded_data) {
-		smart_str_appendl(&qstr, pre_encoded_data, pre_encoded_len);
+		phpstr_append(qstr, pre_encoded_data, pre_encoded_len);
 	}
 
-	if (SUCCESS != php_url_encode_hash_ex(hash, &qstr, NULL, 0, NULL, 0, NULL, 0, NULL TSRMLS_CC)) {
+	if (SUCCESS != http_urlencode_hash_implementation(hash, qstr, arg_sep)) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Couldn't encode query data");
-		if (qstr.c) {
-			efree(qstr.c);
-		}
-		if (override_argsep) {
-			HTTP_URL_ARGSEP_RESTORE;
-		}
+		phpstr_dtor(qstr);
 		return FAILURE;
 	}
 
-	if (override_argsep) {
-		HTTP_URL_ARGSEP_RESTORE;
-	}
-
-	smart_str_0(&qstr);
-
-	*encoded_data = qstr.c;
-	if (encoded_len) {
-		*encoded_len  = qstr.len;
-	}
+	phpstr_data(qstr, encoded_data, encoded_len);
+	phpstr_dtor(qstr);
 
 	return SUCCESS;
 }
@@ -1684,16 +1660,16 @@ PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC)
 }
 /* }}} */
 
-#ifndef ZEND_ENGINE_2
-/* {{{ php_url_encode_hash
-	Author: Sara Golemon <pollita@php.net> */
-PHP_HTTP_API STATUS php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
+/* {{{ http_urlencode_hash_implementation
+	Original Author: Sara Golemon <pollita@php.net> */
+PHP_HTTP_API STATUS _http_urlencode_hash_implementation_ex(
+				HashTable *ht, phpstr *formstr, char *arg_sep,
 				const char *num_prefix, int num_prefix_len,
 				const char *key_prefix, int key_prefix_len,
 				const char *key_suffix, int key_suffix_len,
 				zval *type TSRMLS_DC)
 {
-	char *arg_sep = NULL, *key = NULL, *ekey, *newprefix, *p;
+	char *key = NULL, *ekey, *newprefix, *p;
 	int arg_sep_len, key_len, ekey_len, key_type, newprefix_len;
 	ulong idx;
 	zval **zdata = NULL, *copyzval;
@@ -1707,7 +1683,6 @@ PHP_HTTP_API STATUS php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 		return SUCCESS;
 	}
 
-	arg_sep = INI_STR("arg_separator.output");
 	if (!arg_sep || !strlen(arg_sep)) {
 		arg_sep = HTTP_URL_ARGSEP_DEFAULT;
 	}
@@ -1791,33 +1766,34 @@ PHP_HTTP_API STATUS php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 				*p = '\0';
 			}
 			ht->nApplyCount++;
-			php_url_encode_hash_ex(HASH_OF(*zdata), formstr, NULL, 0, newprefix, newprefix_len, "]", 1, (Z_TYPE_PP(zdata) == IS_OBJECT ? *zdata : NULL) TSRMLS_CC);
+			http_urlencode_hash_implementation_ex(HASH_OF(*zdata), formstr, arg_sep, 
+				NULL, 0, newprefix, newprefix_len, "]", 1, (Z_TYPE_PP(zdata) == IS_OBJECT ? *zdata : NULL));
 			ht->nApplyCount--;
 			efree(newprefix);
 		} else if (Z_TYPE_PP(zdata) == IS_NULL || Z_TYPE_PP(zdata) == IS_RESOURCE) {
 			/* Skip these types */
 			continue;
 		} else {
-			if (formstr->len) {
-				smart_str_appendl(formstr, arg_sep, arg_sep_len);
+			if (formstr->used) {
+				phpstr_append(formstr, arg_sep, arg_sep_len);
 			}
 			/* Simple key=value */
-			smart_str_appendl(formstr, key_prefix, key_prefix_len);
+			phpstr_append(formstr, key_prefix, key_prefix_len);
 			if (key_type == HASH_KEY_IS_STRING) {
 				ekey = php_url_encode(key, key_len, &ekey_len);
-				smart_str_appendl(formstr, ekey, ekey_len);
+				phpstr_append(formstr, ekey, ekey_len);
 				efree(ekey);
 			} else {
 				/* Numeric key */
 				if (num_prefix) {
-					smart_str_appendl(formstr, num_prefix, num_prefix_len);
+					phpstr_append(formstr, num_prefix, num_prefix_len);
 				}
 				ekey_len = spprintf(&ekey, 12, "%ld", idx);
-				smart_str_appendl(formstr, ekey, ekey_len);
+				phpstr_append(formstr, ekey, ekey_len);
 				efree(ekey);
 			}
-			smart_str_appendl(formstr, key_suffix, key_suffix_len);
-			smart_str_appendl(formstr, "=", 1);
+			phpstr_append(formstr, key_suffix, key_suffix_len);
+			phpstr_appends(formstr, "=");
 			switch (Z_TYPE_PP(zdata)) {
 				case IS_STRING:
 					ekey = php_url_encode(Z_STRVAL_PP(zdata), Z_STRLEN_PP(zdata), &ekey_len);
@@ -1838,7 +1814,7 @@ PHP_HTTP_API STATUS php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 					ekey = php_url_encode(Z_STRVAL_P(copyzval), Z_STRLEN_P(copyzval), &ekey_len);
 					zval_ptr_dtor(&copyzval);
 			}
-			smart_str_appendl(formstr, ekey, ekey_len);
+			phpstr_append(formstr, ekey, ekey_len);
 			efree(ekey);
 		}
 	}
@@ -1846,7 +1822,6 @@ PHP_HTTP_API STATUS php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 	return SUCCESS;
 }
 /* }}} */
-#endif /* !ZEND_ENDGINE_2 */
 
 /* }}} public API */
 
