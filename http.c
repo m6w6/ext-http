@@ -457,7 +457,7 @@ PHP_FUNCTION(http_cache_etag)
 
 	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
 	if (!HTTP_G(etag_started)) {
-		RETURN_BOOL(HTTP_G(etag_started) = (SUCCESS == http_start_ob_handler(_http_ob_etaghandler, "ob_etaghandler", 0, 1)));
+		RETURN_BOOL(HTTP_G(etag_started) = (SUCCESS == http_start_ob_handler(_http_ob_etaghandler, "ob_etaghandler", 4096, 1)));
 	}
 	RETURN_TRUE;
 }
@@ -472,11 +472,11 @@ PHP_FUNCTION(ob_httpetaghandler)
 	char *data;
 	int data_len;
 	long mode;
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &data, &data_len, &mode)) {
 		RETURN_FALSE;
 	}
-	
+
 	if (mode & PHP_OUTPUT_HANDLER_START) {
 		if (HTTP_G(etag_started)) {
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "ob_etaghandler can only be used once");
@@ -489,7 +489,7 @@ PHP_FUNCTION(ob_httpetaghandler)
 		http_send_header("Cache-Control: private, must-revalidate, max-age=0");
 		HTTP_G(etag_started) = 1;
 	}
-	
+
 	Z_TYPE_P(return_value) = IS_STRING;
 	http_ob_etaghandler(data, data_len, &Z_STRVAL_P(return_value), &Z_STRLEN_P(return_value), mode);
 }
