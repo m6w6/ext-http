@@ -18,7 +18,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "0.5.0-dev"
+#define PHP_EXT_HTTP_VERSION "0.6.0-dev"
 
 /* make compile on Win32 */
 #include "php_streams.h"
@@ -110,11 +110,14 @@ PHP_METHOD(HTTPi_Request, getContentType);
 PHP_METHOD(HTTPi_Request, setQueryData);
 PHP_METHOD(HTTPi_Request, getQueryData);
 PHP_METHOD(HTTPi_Request, addQueryData);
-PHP_METHOD(HTTPi_Request, unsetQueryData);/*
+PHP_METHOD(HTTPi_Request, unsetQueryData);
 PHP_METHOD(HTTPi_Request, setPostData);
+PHP_METHOD(HTTPi_Request, getPostData);
 PHP_METHOD(HTTPi_Request, addPostData);
 PHP_METHOD(HTTPi_Request, unsetPostData);
-PHP_METHOD(HTTPi_Request, addPostFile);*/
+PHP_METHOD(HTTPi_Request, addPostFile);
+PHP_METHOD(HTTPi_Request, getPostFiles);
+PHP_METHOD(HTTPi_Request, unsetPostFiles);
 PHP_METHOD(HTTPi_Request, send);
 PHP_METHOD(HTTPi_Request, getResponseData);
 PHP_METHOD(HTTPi_Request, getResponseHeaders);

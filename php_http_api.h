@@ -61,6 +61,11 @@ typedef enum {
 /* server vars shorthand */
 #define HTTP_SERVER_VARS Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER])
 
+/* override arg_separator.output to "&" for data used in outgoing requests */
+#include "zend_ini.h"
+#define HTTP_URL_ARGSEP_OVERRIDE zend_alter_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, "&", 1, ZEND_INI_ALL, ZEND_INI_STAGE_RUNTIME)
+#define HTTP_URL_ARGSEP_RESTORE zend_restore_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, ZEND_INI_STAGE_RUNTIME)
+
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL
 #include <curl/curl.h>
@@ -211,8 +216,12 @@ PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata, size_t post
 #define http_post_data_ex(c, u, pd, pl, o, i, d, l) _http_post_data_ex((c), (u), (pd), (pl), (o), (i), (d), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata, size_t postdata_len, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
 
-#define http_post_array(u, p, o, i, d, l) _http_post_array((u), (p), (o), (i), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
+#define http_post_array(u, p, o, i, d, l) _http_post_array_ex(NULL, (u), (p), (o), (i), (d), (l) TSRMLS_CC)
+#define http_post_array_ex(c, u, p, o, i, d, l) _http_post_array_ex((c), (u), (p), (o), (i), (d), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_post_array_ex(CURL *ch, const char *URL, HashTable *postarray, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
+
+#define http_post_curldata_ex(c, u, h, o, i, d, l) _http_post_curldata_ex((c), (u), (h), (o), (i), (d), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL, struct curl_httppost *curldata, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
 
 #endif
 /* }}} HAVE_CURL */

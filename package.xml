@@ -30,14 +30,11 @@
   </maintainers>
 
   <release>
-    <version>0.5.1</version>
-    <date>2005-02-22</date>
+    <version>0.6.0</version>
+    <date>2005-02-00</date>
     <state>alpha</state>
     <notes><![CDATA[
-* added some compatibility checks for older libcurl versions
-* fixed some memory leaks
-* fixed a typo which made http_split_response() useless
-* fixed HTTPi_Request object destruction
+* added POST support to HTTPi_Request
 ]]>
     </notes>
   </release>

@@ -117,8 +117,6 @@ function_entry http_functions[] = {
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
 #define HASH_ORNULL(z) ((z) ? Z_ARRVAL_P(z) : NULL)
 #define NO_ARGS if (ZEND_NUM_ARGS()) WRONG_PARAM_COUNT
-#define HTTP_URL_ARGSEP_OVERRIDE zend_alter_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, "&", 1, ZEND_INI_ALL, ZEND_INI_STAGE_RUNTIME)
-#define HTTP_URL_ARGSEP_RESTORE zend_restore_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, ZEND_INI_STAGE_RUNTIME)
 
 #define array_copy(src, dst) zend_hash_copy(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
 #define array_merge(src, dst) zend_hash_merge(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *), 1)
@@ -254,7 +252,7 @@ zend_object_value _httpi_response_new_object(zend_class_entry *ce TSRMLS_DC)
 	zend_object_value ov;
 	httpi_response_object *o;
 
-	o = ecalloc(sizeof(httpi_response_object), 1);
+	o = ecalloc(1, sizeof(httpi_response_object));
 	o->zo.ce = ce;
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
@@ -738,6 +736,9 @@ static zend_object_handlers httpi_request_object_handlers;
 typedef struct {
 	zend_object zo;
 	CURL *ch;
+	
+	struct curl_httppost *post_data[2];
+	
 } httpi_request_object;
 
 #define httpi_request_declare_default_properties(ce) _httpi_request_declare_default_properties(ce TSRMLS_CC)
@@ -746,6 +747,8 @@ static inline void _httpi_request_declare_default_properties(zend_class_entry *c
 	DCL_PROP_N(PROTECTED, options);
 	DCL_PROP_N(PROTECTED, responseInfo);
 	DCL_PROP_N(PROTECTED, responseData);
+	DCL_PROP_N(PROTECTED, postData);
+	DCL_PROP_N(PROTECTED, postFiles);
 
 	DCL_PROP(PROTECTED, long, method, HTTP_GET);
 
@@ -777,9 +780,11 @@ zend_object_value _httpi_request_new_object(zend_class_entry *ce TSRMLS_DC)
 	zend_object_value ov;
 	httpi_request_object *o;
 
-	o = ecalloc(sizeof(httpi_request_object), 1);
+	o = ecalloc(1, sizeof(httpi_request_object));
 	o->zo.ce = ce;
 	o->ch = curl_easy_init();
+	o->post_data[0] = NULL;
+	o->post_data[1] = NULL;
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
@@ -811,13 +816,16 @@ zend_function_entry httpi_request_class_methods[] = {
 	PHP_ME(HTTPi_Request, getQueryData, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, addQueryData, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, unsetQueryData, NULL, ZEND_ACC_PUBLIC)
-/*
+	
 	PHP_ME(HTTPi_Request, setPostData, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HTTPi_Request, getPostData, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, addPostData, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, unsetPostData, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HTTPi_Request, addPostFile, NULL, ZEND_ACC_PUBLIC)
-*/
+	PHP_ME(HTTPi_Request, getPostFiles, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HTTPi_Request, unsetPostFiles, NULL, ZEND_ACC_PUBLIC)
+	
 	PHP_ME(HTTPi_Request, send, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HTTPi_Request, getResponseData, NULL, ZEND_ACC_PUBLIC)
@@ -846,6 +854,8 @@ PHP_METHOD(HTTPi_Request, __construct)
 	INIT_PARR(obj, options);
 	INIT_PARR(obj, responseInfo);
 	INIT_PARR(obj, responseData);
+	INIT_PARR(obj, postData);
+	INIT_PARR(obj, postFiles);
 
 	if (URL) {
 		UPD_PROP(obj, string, url, URL);
@@ -868,6 +878,8 @@ PHP_METHOD(HTTPi_Request, __destruct)
 	FREE_PARR(obj, options);
 	FREE_PARR(obj, responseInfo);
 	FREE_PARR(obj, responseData);
+	FREE_PARR(obj, postData);
+	FREE_PARR(obj, postFiles);
 }
 /* }}} */
 
@@ -1136,6 +1148,146 @@ PHP_METHOD(HTTPi_Request, unsetQueryData)
 }
 /* }}} */
 
+/* {{{ proto bool HTTPi_Request::addPostData(array post_data)
+ *
+ */
+PHP_METHOD(HTTPi_Request, addPostData)
+{
+	zval *post, *post_data;
+	getObject(httpi_request_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &post_data)) {
+		RETURN_FALSE;
+	}
+	
+	post = GET_PROP(obj, postData);
+	array_merge(post_data, post);
+	
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto bool HTTPi_Request::setPostData(array post_data)
+ *
+ */
+PHP_METHOD(HTTPi_Request, setPostData)
+{
+	zval *post, *post_data;
+	getObject(httpi_request_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &post_data)) {
+		RETURN_FALSE;
+	}
+	
+	post = GET_PROP(obj, postData);
+	zend_hash_clean(Z_ARRVAL_P(post));
+	array_copy(post_data, post);
+	
+	RETURN_TRUE;
+}
+/* }}}*/
+
+/* {{{ proto array HTTPi_Request::getPostData()
+ *
+ */
+PHP_METHOD(HTTPi_Request, getPostData)
+{
+	zval *post_data;
+	getObject(httpi_request_object, obj);
+	
+	NO_ARGS;
+	
+	post_data = GET_PROP(obj, postData);
+	array_init(return_value);
+	array_copy(post_data, return_value);
+}
+/* }}} */
+
+/* {{{ proto void HTTPi_Request::unsetPostData()
+ *
+ */
+PHP_METHOD(HTTPi_Request, unsetPostData)
+{
+	zval *post_data;
+	getObject(httpi_request_object, obj);
+	
+	NO_ARGS;
+	
+	post_data = GET_PROP(obj, postData);
+	zend_hash_clean(Z_ARRVAL_P(post_data));
+}
+/* }}} */
+
+/* {{{ proto bool HTTPi_Request::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])
+ *
+ */
+PHP_METHOD(HTTPi_Request, addPostFile)
+{
+	zval *files, *entry;
+	char *name, *file, *type = NULL;
+	int name_len, file_len, type_len = 0;
+	getObject(httpi_request_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|s", &name, &name_len, &file, &file_len, &type, &type_len)) {
+		RETURN_FALSE;
+	}
+	
+	if (type_len) {
+		if (!strchr(type, '/')) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", type);
+			RETURN_FALSE;
+		}
+	} else {
+		type = "application/x-octetstream";
+		type_len = sizeof("application/x-octetstream") - 1;
+	}
+	
+	MAKE_STD_ZVAL(entry);
+	array_init(entry);
+	
+	add_assoc_stringl(entry, "name", name, name_len, 1);
+	add_assoc_stringl(entry, "type", type, type_len, 1);
+	add_assoc_stringl(entry, "file", file, file_len, 1);
+	
+	files  = GET_PROP(obj, postFiles);
+	add_next_index_zval(files, entry);
+	
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto array HTTPi_Request::getPostFiles()
+ *
+ */
+PHP_METHOD(HTTPi_Request, getPostFiles)
+{
+	zval *files;
+	getObject(httpi_request_object, obj);
+	
+	NO_ARGS;
+	
+	files = GET_PROP(obj, postFiles);
+	
+	array_init(return_value);
+	array_copy(files, return_value);
+}
+/* }}} */
+
+/* {{{ proto void HTTPi_Request::unsetPostFiles()
+ *
+ */
+PHP_METHOD(HTTPi_Request, unsetPostFiles)
+{
+	zval *files;
+	getObject(httpi_request_object, obj);
+	
+	NO_ARGS;
+	
+	files = GET_PROP(obj, postFiles);
+	zend_hash_clean(Z_ARRVAL_P(files));
+}
+/* }}} */
+
 /* {{{ proto array HTTPi_Request::getResponseData()
  *
  */
@@ -1212,7 +1364,7 @@ PHP_METHOD(HTTPi_Request, send)
 {
 	STATUS status = FAILURE;
 	zval *meth, *URL, *qdata, *opts, *info, *resp;
-	char *response_data, *request_uri, *uri;
+	char *response_data, *request_uri;
 	size_t response_len;
 	getObject(httpi_request_object, obj);
 
@@ -1230,10 +1382,8 @@ PHP_METHOD(HTTPi_Request, send)
 	info  = GET_PROP(obj, responseInfo);
 	resp  = GET_PROP(obj, responseData);
 
-	uri = http_absolute_uri(Z_STRVAL_P(URL), NULL);
-	request_uri = ecalloc(HTTP_URI_MAXLEN + 1, 1);
-	strcpy(request_uri, uri);
-	efree(uri);
+	// HTTP_URI_MAXLEN+1 big char *
+	request_uri = http_absolute_uri(Z_STRVAL_P(URL), NULL);
 
 	if (Z_STRLEN_P(qdata) && (strlen(request_uri) < HTTP_URI_MAXLEN)) {
 		if (!strchr(request_uri, '?')) {
@@ -1255,6 +1405,68 @@ PHP_METHOD(HTTPi_Request, send)
 		break;
 
 		case HTTP_POST:
+			{
+				zval *post_files, *post_data, **data;
+				
+				post_files = GET_PROP(obj, postFiles);
+				post_data  = GET_PROP(obj, postData);
+				
+				if (!zend_hash_num_elements(Z_ARRVAL_P(post_files))) {
+
+					/* urlencoded post */
+					status = http_post_array_ex(obj->ch, request_uri, Z_ARRVAL_P(post_data), Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &response_data, &response_len);
+					
+				} else {
+				
+					/*
+					 * multipart post 
+					 */
+					
+					/* normal data */
+					for (	zend_hash_internal_pointer_reset(Z_ARRVAL_P(post_data));
+							zend_hash_get_current_data(Z_ARRVAL_P(post_data), (void **) &data) == SUCCESS;
+							zend_hash_move_forward(Z_ARRVAL_P(post_data))) {
+						
+						char *key;
+						long idx;
+						
+						if (HASH_KEY_IS_STRING == zend_hash_get_current_key(Z_ARRVAL_P(post_data), &key, &idx, 0)) {
+							convert_to_string_ex(data);
+							curl_formadd(&obj->post_data[0], &obj->post_data[1],
+								CURLFORM_COPYNAME,			key,
+								CURLFORM_COPYCONTENTS,		Z_STRVAL_PP(data),
+								CURLFORM_CONTENTSLENGTH,	Z_STRLEN_PP(data),
+								CURLFORM_END
+							);
+						}
+					}
+					
+					/* file data */
+					for (	zend_hash_internal_pointer_reset(Z_ARRVAL_P(post_files));
+							zend_hash_get_current_data(Z_ARRVAL_P(post_files), (void **) &data) == SUCCESS;
+							zend_hash_move_forward(Z_ARRVAL_P(post_files))) {
+						
+						zval **file, **type, **name;
+						
+						if (
+							SUCCESS == zend_hash_find(Z_ARRVAL_PP(data), "name", sizeof("name"), (void **) &name) &&
+							SUCCESS == zend_hash_find(Z_ARRVAL_PP(data), "type", sizeof("type"), (void **) &type) &&
+							SUCCESS == zend_hash_find(Z_ARRVAL_PP(data), "file", sizeof("file"), (void **) &file)
+						) {
+						
+							curl_formadd(&obj->post_data[0], &obj->post_data[1],
+								CURLFORM_COPYNAME,		Z_STRVAL_PP(name),
+								CURLFORM_FILE,			Z_STRVAL_PP(file),
+								CURLFORM_CONTENTTYPE,	Z_STRVAL_PP(type),
+								CURLFORM_END
+							);
+						}
+					}
+					
+					status = http_post_curldata_ex(obj->ch, request_uri, obj->post_data[0], Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &response_data, &response_len);
+					curl_formfree(obj->post_data[0]);
+				}
+			}
 		break;
 
 		default:

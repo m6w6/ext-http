@@ -533,7 +533,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 
 		if (qstr.c) {
 			curl_easy_setopt(ch, CURLOPT_COOKIE, qstr.c);
-			efree(qstr.c);
+			/* FIXXXME: mem-leak */
 		}
 	}
 
@@ -831,7 +831,7 @@ static STATUS http_ob_stack_get(php_ob_buffer *o, php_ob_buffer **s)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 {
 	struct tm *gmtime, tmbuf;
-	char *date = ecalloc(31, 1);
+	char *date = ecalloc(1, 31);
 
 	gmtime = php_gmtime_r(&t, &tmbuf);
 	snprintf(date, 30,
@@ -1021,7 +1021,7 @@ PHP_HTTP_API inline char *_http_etag(const void *data_ptr, const size_t data_len
 	char ssb_buf[128] = {0};
 	unsigned char digest[16];
 	PHP_MD5_CTX ctx;
-	char *new_etag = ecalloc(33, 1);
+	char *new_etag = ecalloc(1, 33);
 
 	PHP_MD5Init(&ctx);
 
@@ -1176,7 +1176,7 @@ PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_fun
 	int count, i;
 
 	if (count = OG(ob_nesting_level)) {
-		stack = ecalloc(sizeof(php_ob_buffer *), count);
+		stack = ecalloc(count, sizeof(php_ob_buffer *));
 
 		if (count > 1) {
 			zend_stack_apply_with_argument(&OG(ob_buffers), ZEND_STACK_APPLY_BOTTOMUP,
@@ -1291,7 +1291,7 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag,
 	}
 	HTTP_G(etag) = estrdup(etag);
 
-	etag_header = ecalloc(sizeof("ETag: \"\"") + etag_len, 1);
+	etag_header = ecalloc(1, sizeof("ETag: \"\"") + etag_len);
 	sprintf(etag_header, "ETag: \"%s\"", etag);
 	if (SUCCESS != (status = http_send_header(etag_header))) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Couldn't send '%s' header", etag_header);
@@ -1306,7 +1306,7 @@ PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control,
 	const size_t cc_len TSRMLS_DC)
 {
 	STATUS status;
-	char *cc_header = ecalloc(sizeof("Cache-Control: ") + cc_len, 1);
+	char *cc_header = ecalloc(1, sizeof("Cache-Control: ") + cc_len);
 
 	sprintf(cc_header, "Cache-Control: %s", cache_control);
 	if (SUCCESS != (status = http_send_header(cc_header))) {
@@ -1338,7 +1338,7 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type,
 	}
 	HTTP_G(ctype) = estrndup(content_type, ct_len);
 
-	ct_header = ecalloc(sizeof("Content-Type: ") + ct_len, 1);
+	ct_header = ecalloc(1, sizeof("Content-Type: ") + ct_len);
 	sprintf(ct_header, "Content-Type: %s", content_type);
 
 	if (SUCCESS != (status = http_send_header(ct_header))) {
@@ -1358,10 +1358,10 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename,
 	char *cd_header;
 
 	if (send_inline) {
-		cd_header = ecalloc(sizeof("Content-Disposition: inline; filename=\"\"") + f_len, 1);
+		cd_header = ecalloc(1, sizeof("Content-Disposition: inline; filename=\"\"") + f_len);
 		sprintf(cd_header, "Content-Disposition: inline; filename=\"%s\"", filename);
 	} else {
-		cd_header = ecalloc(sizeof("Content-Disposition: attachment; filename=\"\"") + f_len, 1);
+		cd_header = ecalloc(1, sizeof("Content-Disposition: attachment; filename=\"\"") + f_len);
 		sprintf(cd_header, "Content-Disposition: attachment; filename=\"%s\"", filename);
 	}
 
@@ -1431,7 +1431,7 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, const size_t etag_len,
 PHP_HTTP_API char *_http_absolute_uri(const char *url,
 	const char *proto TSRMLS_DC)
 {
-	char URI[HTTP_URI_MAXLEN + 1], *PTR, *proto_ptr, *host, *path;
+	char *proto_ptr, *host, *path, *PTR, *URI = ecalloc(1, HTTP_URI_MAXLEN + 1);
 	zval *zhost;
 
 	if (!url || !strlen(url)) {
@@ -1443,10 +1443,11 @@ PHP_HTTP_API char *_http_absolute_uri(const char *url,
 	/* Mess around with already absolute URIs */
 	else if (proto_ptr = strstr(url, "://")) {
 		if (!proto || !strncmp(url, proto, strlen(proto))) {
-			return estrdup(url);
+			strncpy(URI, url, HTTP_URI_MAXLEN);
+			return URI;
 		} else {
 			snprintf(URI, HTTP_URI_MAXLEN, "%s%s", proto, proto_ptr + 3);
-			return estrdup(URI);
+			return URI;
 		}
 	}
 
@@ -1477,16 +1478,11 @@ PHP_HTTP_API char *_http_absolute_uri(const char *url,
 	}
 
 	/* strip everything after a new line */
-	PTR = URI;
-	while (*PTR != 0) {
-		if (*PTR == '\n' || *PTR == '\r') {
-			*PTR = 0;
-			break;
-		}
-		PTR++;
+	if ((PTR = strchr(URI, '\r')) || (PTR = strchr(URI, '\n'))) {
+		PTR = 0;
 	}
-
-	return estrdup(URI);
+	
+	return URI;
 }
 /* }}} */
 
@@ -1903,7 +1899,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 	char *d_ptr;
 
 	*decoded_len = 0;
-	*decoded = (char *) ecalloc(encoded_len, 1);
+	*decoded = ecalloc(1, encoded_len);
 	d_ptr = *decoded;
 	e_ptr = encoded;
 
@@ -2192,28 +2188,58 @@ PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata
 }
 /* }}} */
 
-/* {{{ STATUS http_post_array(char *, HashTable *, HashTable *, HashTable *, char **, size_t *) */
-PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray,
+/* {{{ STATUS http_post_array_ex(CURL *, char *, HashTable *, HashTable *, HashTable *, char **, size_t *) */
+PHP_HTTP_API STATUS _http_post_array_ex(CURL *ch, const char *URL, HashTable *postarray,
 	HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC)
 {
 	smart_str qstr = {0};
 	STATUS status;
 
+	HTTP_URL_ARGSEP_OVERRIDE;
 	if (php_url_encode_hash_ex(postarray, &qstr, NULL,0,NULL,0,NULL,0,NULL TSRMLS_CC) != SUCCESS) {
 		if (qstr.c) {
 			efree(qstr.c);
 		}
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not encode post data");
+		HTTP_URL_ARGSEP_RESTORE;
 		return FAILURE;
 	}
 	smart_str_0(&qstr);
+	HTTP_URL_ARGSEP_RESTORE;
 
-	status = http_post_data(URL, qstr.c, qstr.len, options, info, data, data_len);
+	if (ch) {
+		status = http_post_data_ex(ch, URL, qstr.c, qstr.len, options, info, data, data_len);
+	} else {
+		status = http_post_data(URL, qstr.c, qstr.len, options, info, data, data_len);
+	}
+	
 	if (qstr.c) {
 		efree(qstr.c);
 	}
 	return status;
 }
+/* }}} */
+
+/* {{{ STATUS http_post_curldata_ex(CURL *, char *, curl_httppost *, HashTable *, HashTable *, char **, size_t *) */
+PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL, 
+	struct curl_httppost *curldata,	HashTable *options, HashTable *info, 
+	char **data, size_t *data_len TSRMLS_DC)
+{
+	http_curl_initbuf(CURLBUF_EVRY);
+	http_curl_setopts(ch, URL, options);
+	curl_easy_setopt(ch, CURLOPT_POST, 1);
+	curl_easy_setopt(ch, CURLOPT_HTTPPOST, curldata);
+
+	if (CURLE_OK != curl_easy_perform(ch)) {
+		http_curl_freebuf(CURLBUF_EVRY);
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
+		return FAILURE;
+	}
+	if (info) {
+		http_curl_getinfo(ch, info);
+	}
+	http_curl_movebuf(CURLBUF_EVRY, data, data_len);
+	return SUCCESS;}
 /* }}} */
 
 #endif
