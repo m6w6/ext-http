@@ -38,6 +38,11 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
 
+#define http_curl_copystr(s) _http_curl_copystr((s) TSRMLS_CC)
+static inline char *_http_curl_copystr(const char *str TSRMLS_DC);
+#define http_curl_freestr() _http_curl_freestr(TSRMLS_C)
+static inline void _http_curl_freestr(TSRMLS_D);
+
 #define http_curl_initbuf() _http_curl_initbuf_ex(0 TSRMLS_CC)
 #define http_curl_initbuf_ex(s) _http_curl_initbuf_ex((s) TSRMLS_CC)
 static inline void _http_curl_initbuf_ex(size_t chunk_size TSRMLS_DC);
@@ -68,13 +73,29 @@ static inline void _http_curl_getinfo_ex(CURL *ch, CURLINFO i, zval *array TSRML
 #define http_curl_getinfoname(i) _http_curl_getinfoname((i) TSRMLS_CC)
 static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC);
 
+/* {{{ */
+static inline char *_http_curl_copystr(const char *str TSRMLS_DC)
+{
+	char *new_str = estrdup(str);
+	zend_llist_add_element(&HTTP_G(to_free), &new_str);
+	return new_str;
+}
+/* }}} */
+
+/* {{{ */
+static inline void _http_curl_freestr(TSRMLS_D)
+{
+	zend_llist_clean(&HTTP_G(to_free));
+}
+/* }}} */
+
 /* {{{ static inline void http_curl_initbuf(size_t chunk_size) */
 static inline void _http_curl_initbuf_ex(size_t chunk_size TSRMLS_DC)
 {
 	size_t size = (chunk_size > 0) ? chunk_size : HTTP_CURLBUF_SIZE;
-	
+
 	http_curl_freebuf();
-	
+
 	HTTP_G(curlbuf).data = emalloc(size);
 	HTTP_G(curlbuf).free = size;
 	HTTP_G(curlbuf).size = size;
@@ -98,7 +119,7 @@ static inline void _http_curl_freebuf(TSRMLS_D)
 static inline void _http_curl_copybuf(char **data, size_t *data_len TSRMLS_DC)
 {
 	*data_len = HTTP_G(curlbuf).used;
-	
+
 	*data = ecalloc(1, HTTP_G(curlbuf).used + 1);
 	memcpy(*data, HTTP_G(curlbuf).data, *data_len);
 }
@@ -115,48 +136,48 @@ static inline void _http_curl_movebuf(char **data, size_t *data_len TSRMLS_DC)
 /* {{{ static inline void http_curl_sizebuf(size_t len) */
 static inline void _http_curl_sizebuf(size_t len TSRMLS_DC)
 {
-	if (len > HTTP_G(curlbuf).free) { 
-		size_t bsize = HTTP_G(curlbuf).size; 
-		while (bsize < len) { 
-			bsize *= 2; 
-		} 
-		HTTP_G(curlbuf).data = erealloc(HTTP_G(curlbuf).data, HTTP_G(curlbuf).used + bsize); 
-		HTTP_G(curlbuf).free += bsize; 
-	} 
+	if (len > HTTP_G(curlbuf).free) {
+		size_t bsize = HTTP_G(curlbuf).size;
+		while (bsize < len) {
+			bsize *= 2;
+		}
+		HTTP_G(curlbuf).data = erealloc(HTTP_G(curlbuf).data, HTTP_G(curlbuf).used + bsize);
+		HTTP_G(curlbuf).free += bsize;
+	}
 }
 /* }}} */
 
-/* {{{ static size_t http_curl_body_callback(char *, size_t, size_t, void *) */ 
-static size_t http_curl_body_callback(char *buf, size_t len, size_t n, void *s) 
-{ 
-	TSRMLS_FETCH(); 
-	
-	http_curl_sizebuf(len *= n);
-	
-	memcpy(HTTP_G(curlbuf).data + HTTP_G(curlbuf).used, buf, len); 
-	HTTP_G(curlbuf).free -= len; 
-	HTTP_G(curlbuf).used += len; 
-	return len; 
-} 
-/* }}} */ 
+/* {{{ static size_t http_curl_body_callback(char *, size_t, size_t, void *) */
+static size_t http_curl_body_callback(char *buf, size_t len, size_t n, void *s)
+{
+	TSRMLS_FETCH();
 
-/* {{{ static size_t http_curl_hdrs_callback(char *, size_t, size_t, void *) */ 
-static size_t http_curl_hdrs_callback(char *buf, size_t len, size_t n, void *s) 
-{ 
-	TSRMLS_FETCH(); 
-	
-	/* discard previous headers */  
-	if ((HTTP_G(curlbuf).used) && (!strncmp(buf, "HTTP/1.", sizeof("HTTP/1.") - 1))) { 
-		http_curl_initbuf(); 
+	http_curl_sizebuf(len *= n);
+
+	memcpy(HTTP_G(curlbuf).data + HTTP_G(curlbuf).used, buf, len);
+	HTTP_G(curlbuf).free -= len;
+	HTTP_G(curlbuf).used += len;
+	return len;
+}
+/* }}} */
+
+/* {{{ static size_t http_curl_hdrs_callback(char *, size_t, size_t, void *) */
+static size_t http_curl_hdrs_callback(char *buf, size_t len, size_t n, void *s)
+{
+	TSRMLS_FETCH();
+
+	/* discard previous headers */
+	if ((HTTP_G(curlbuf).used) && (!strncmp(buf, "HTTP/1.", sizeof("HTTP/1.") - 1))) {
+		http_curl_initbuf();
 	}
 	http_curl_sizebuf(len *= n);
-	
-	memcpy(HTTP_G(curlbuf).data + HTTP_G(curlbuf).used, buf, len); 
-	HTTP_G(curlbuf).free -= len; 
-	HTTP_G(curlbuf).used += len; 
-	return len; 
-} 
-/* }}} */ 
+
+	memcpy(HTTP_G(curlbuf).data + HTTP_G(curlbuf).used, buf, len);
+	HTTP_G(curlbuf).free -= len;
+	HTTP_G(curlbuf).used += len;
+	return len;
+}
+/* }}} */
 
 /* {{{ static inline zval *http_curl_getopt(HashTable *, char *, int, ...) */
 static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, int checks, ...)
@@ -217,14 +238,14 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 
 	/* proxy */
 	if (zoption = http_curl_getopt1(options, "proxyhost", IS_STRING)) {
-		curl_easy_setopt(ch, CURLOPT_PROXY, Z_STRVAL_P(zoption));
+		curl_easy_setopt(ch, CURLOPT_PROXY, http_curl_copystr(Z_STRVAL_P(zoption)));
 		/* port */
 		if (zoption = http_curl_getopt1(options, "proxyport", IS_LONG)) {
 			curl_easy_setopt(ch, CURLOPT_PROXYPORT, Z_LVAL_P(zoption));
 		}
 		/* user:pass */
 		if (zoption = http_curl_getopt1(options, "proxyauth", IS_STRING)) {
-			curl_easy_setopt(ch, CURLOPT_PROXYUSERPWD, Z_STRVAL_P(zoption));
+			curl_easy_setopt(ch, CURLOPT_PROXYUSERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
 		}
 #if LIBCURL_VERSION_NUM > 0x070a06
 		/* auth method */
@@ -236,7 +257,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 
 	/* auth */
 	if (zoption = http_curl_getopt1(options, "httpauth", IS_STRING)) {
-		curl_easy_setopt(ch, CURLOPT_USERPWD, Z_STRVAL_P(zoption));
+		curl_easy_setopt(ch, CURLOPT_USERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
 #if LIBCURL_VERSION_NUM > 0x070a05
 	if (zoption = http_curl_getopt1(options, "httpauthtype", IS_LONG)) {
@@ -260,12 +281,12 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 
 	/* referer */
 	if (zoption = http_curl_getopt1(options, "referer", IS_STRING)) {
-		curl_easy_setopt(ch, CURLOPT_REFERER, Z_STRVAL_P(zoption));
+		curl_easy_setopt(ch, CURLOPT_REFERER, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
 	if (zoption = http_curl_getopt1(options, "useragent", IS_STRING)) {
-		curl_easy_setopt(ch, CURLOPT_USERAGENT, Z_STRVAL_P(zoption));
+		curl_easy_setopt(ch, CURLOPT_USERAGENT, http_curl_copystr(Z_STRVAL_P(zoption)));
 	} else {
 		curl_easy_setopt(ch, CURLOPT_USERAGENT,
 			"PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
@@ -293,15 +314,15 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		smart_str_0(&qstr);
 
 		if (qstr.c) {
-			curl_easy_setopt(ch, CURLOPT_COOKIE, qstr.c);
-			/* FIXXXME: mem-leak */
+			curl_easy_setopt(ch, CURLOPT_COOKIE, http_curl_copystr(qstr.c));
+			efree(qstr.c);
 		}
 	}
 
 	/* cookiestore */
 	if (zoption = http_curl_getopt1(options, "cookiestore", IS_STRING)) {
-		curl_easy_setopt(ch, CURLOPT_COOKIEFILE, Z_STRVAL_P(zoption));
-		curl_easy_setopt(ch, CURLOPT_COOKIEJAR, Z_STRVAL_P(zoption));
+		curl_easy_setopt(ch, CURLOPT_COOKIEFILE, http_curl_copystr(Z_STRVAL_P(zoption)));
+		curl_easy_setopt(ch, CURLOPT_COOKIEJAR, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
 
 	/* additional headers, array('name' => 'value') */
@@ -317,7 +338,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 				zend_hash_get_current_key(Z_ARRVAL_P(zoption), &header_key, NULL, 0);
 				zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header_val);
 				snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
-				headers = curl_slist_append(headers, header);
+				headers = curl_slist_append(headers, http_curl_copystr(header));
 				zend_hash_move_forward(Z_ARRVAL_P(zoption));
 			}
 		}
@@ -528,6 +549,7 @@ PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options,
 
 	if (CURLE_OK != curl_easy_perform(ch)) {
 		http_curl_freebuf();
+		http_curl_freestr();
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
@@ -535,6 +557,7 @@ PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options,
 		http_curl_getinfo(ch, info);
 	}
 	http_curl_movebuf(data, data_len);
+	http_curl_freestr();
 	return SUCCESS;
 }
 
@@ -567,6 +590,7 @@ PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options,
 
 	if (CURLE_OK != curl_easy_perform(ch)) {
 		http_curl_freebuf();
+		http_curl_freestr();
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
@@ -574,6 +598,7 @@ PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options,
 		http_curl_getinfo(ch, info);
 	}
 	http_curl_movebuf(data, data_len);
+	http_curl_freestr();
 	return SUCCESS;
 }
 
@@ -608,6 +633,7 @@ PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata
 
 	if (CURLE_OK != curl_easy_perform(ch)) {
 		http_curl_freebuf();
+		http_curl_freestr();
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
@@ -615,6 +641,7 @@ PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata
 		http_curl_getinfo(ch, info);
 	}
 	http_curl_movebuf(data, data_len);
+	http_curl_freestr();
 	return SUCCESS;
 }
 /* }}} */
@@ -663,6 +690,7 @@ PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL,
 
 	if (CURLE_OK != curl_easy_perform(ch)) {
 		http_curl_freebuf();
+		http_curl_freestr();
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
 	}
@@ -670,6 +698,7 @@ PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL,
 		http_curl_getinfo(ch, info);
 	}
 	http_curl_movebuf(data, data_len);
+	http_curl_freestr();
 	return SUCCESS;}
 /* }}} */
 

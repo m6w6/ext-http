@@ -194,6 +194,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		size_t free;
 		size_t size;
 	} curlbuf;
+	zend_llist to_free;
 #endif
 ZEND_END_MODULE_GLOBALS(http)
 

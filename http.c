@@ -368,6 +368,11 @@ zend_module_entry http_module_entry = {
 };
 /* }}} */
 
+static void free_to_free(void **s)
+{
+	efree(*s);
+}
+
 /* {{{ php_http_init_globals(zend_http_globals *) */
 static void php_http_init_globals(zend_http_globals *http_globals)
 {
@@ -380,6 +385,7 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 	http_globals->curlbuf.used = 0;
 	http_globals->curlbuf.free = 0;
 	http_globals->curlbuf.size = 0;
+	zend_llist_init(&http_globals->to_free, sizeof(char *), free_to_free, 0);
 #endif
 	http_globals->allowed_methods = NULL;
 }
