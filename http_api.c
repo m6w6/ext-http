@@ -1890,18 +1890,30 @@ PHP_HTTP_API void _http_get_request_headers(zval *array TSRMLS_DC)
 PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options,
 	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
 {
+	STATUS rs;
 	CURL *ch = curl_easy_init();
 
 	if (!ch) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize curl");
 		return FAILURE;
 	}
+	
+	rs = http_get_ex(ch, URL, options, info, data, data_len);
+	curl_easy_cleanup(ch);
+	return rs;
+}
+/* }}} */
 
+/* {{{ STATUS http_get_ex(CURL *, char *, HashTable *, HashTable *, char **, size_t *) */
+PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options,
+	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
+{
 	http_curl_initbuf(CURLBUF_EVRY);
 	http_curl_setopts(ch, URL, options);
+	curl_easy_setopt(ch, CURLOPT_NOBODY, 0);
+	curl_easy_setopt(ch, CURLOPT_POST, 0);
 
 	if (CURLE_OK != curl_easy_perform(ch)) {
-		curl_easy_cleanup(ch);
 		http_curl_freebuf(CURLBUF_EVRY);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
@@ -1909,31 +1921,38 @@ PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options,
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
-	curl_easy_cleanup(ch);
-
 	http_curl_movebuf(CURLBUF_EVRY, data, data_len);
-
 	return SUCCESS;
 }
-/* }}} */
 
 /* {{{ STATUS http_head(char *, HashTable *, HashTable *, char **data, size_t *) */
 PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options,
 	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
 {
+	STATUS rs;
 	CURL *ch = curl_easy_init();
 
 	if (!ch) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize curl");
 		return FAILURE;
 	}
+	
+	rs = http_head_ex(ch, URL, options, info, data, data_len);
+	curl_easy_cleanup(ch);
+	return rs;
+}
+/* }}} */
 
+/* {{{ STATUS http_head_ex(CURL *, char *, HashTable *, HashTable *, char **data, size_t *) */
+PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options,
+	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
+{
 	http_curl_initbuf(CURLBUF_HDRS);
 	http_curl_setopts(ch, URL, options);
 	curl_easy_setopt(ch, CURLOPT_NOBODY, 1);
+	curl_easy_setopt(ch, CURLOPT_POST, 0);
 
 	if (CURLE_OK != curl_easy_perform(ch)) {
-		curl_easy_cleanup(ch);
 		http_curl_freebuf(CURLBUF_HDRS);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
@@ -1941,26 +1960,33 @@ PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options,
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
-	curl_easy_cleanup(ch);
-
 	http_curl_movebuf(CURLBUF_HDRS, data, data_len);
-
 	return SUCCESS;
 }
-/* }}} */
 
 /* {{{ STATUS http_post_data(char *, char *, size_t, HashTable *, HashTable *, char **, size_t *) */
 PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata,
 	size_t postdata_len, HashTable *options, HashTable *info, char **data,
 	size_t *data_len TSRMLS_DC)
 {
+	STATUS rs;
 	CURL *ch = curl_easy_init();
 
 	if (!ch) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize curl");
 		return FAILURE;
 	}
+	rs = http_post_data_ex(ch, URL, postdata, postdata_len, options, info, data, data_len);
+	curl_easy_cleanup(ch);
+	return rs;
+}
+/* }}} */
 
+/* {{{ STATUS http_post_data_ex(CURL *, char *, char *, size_t, HashTable *, HashTable *, char **, size_t *) */
+PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata,
+	size_t postdata_len, HashTable *options, HashTable *info, char **data,
+	size_t *data_len TSRMLS_DC)
+{
 	http_curl_initbuf(CURLBUF_EVRY);
 	http_curl_setopts(ch, URL, options);
 	curl_easy_setopt(ch, CURLOPT_POST, 1);
@@ -1968,7 +1994,6 @@ PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata,
 	curl_easy_setopt(ch, CURLOPT_POSTFIELDSIZE, postdata_len);
 
 	if (CURLE_OK != curl_easy_perform(ch)) {
-		curl_easy_cleanup(ch);
 		http_curl_freebuf(CURLBUF_EVRY);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
 		return FAILURE;
@@ -1976,10 +2001,7 @@ PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata,
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
-	curl_easy_cleanup(ch);
-
 	http_curl_movebuf(CURLBUF_EVRY, data, data_len);
-
 	return SUCCESS;
 }
 /* }}} */

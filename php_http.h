@@ -36,7 +36,57 @@ extern zend_module_entry http_module_entry;
 
 #ifndef ZEND_ENGINE_2
 #	include "php_http_build_query.h"
+#else
+
+PHP_METHOD(HTTPi, date);
+PHP_METHOD(HTTPi, absoluteURI);
+PHP_METHOD(HTTPi, negotiateLanguage);
+PHP_METHOD(HTTPi, negotiateCharset);
+PHP_METHOD(HTTPi, redirect);
+PHP_METHOD(HTTPi, sendStatus);
+PHP_METHOD(HTTPi, sendLastModified);
+PHP_METHOD(HTTPi, matchModified);
+PHP_METHOD(HTTPi, matchEtag);
+PHP_METHOD(HTTPi, cacheLastModified);
+PHP_METHOD(HTTPi, cacheEtag);
+PHP_METHOD(HTTPi, chunkedDecode);
+PHP_METHOD(HTTPi, splitResponse);
+PHP_METHOD(HTTPi, parseHeaders);
+PHP_METHOD(HTTPi, getRequestHeaders);
+#ifdef HTTP_HAVE_CURL
+PHP_METHOD(HTTPi, get);
+PHP_METHOD(HTTPi, head);
+PHP_METHOD(HTTPi, postData);
+PHP_METHOD(HTTPi, postArray);
 #endif
+PHP_METHOD(HTTPi, authBasic);
+PHP_METHOD(HTTPi, authBasicCallback);
+
+
+PHP_METHOD(HTTPi_Response, __construct);/*
+PHP_METHOD(HTTPi_Response, __destruct);*/
+PHP_METHOD(HTTPi_Response, setETag);
+PHP_METHOD(HTTPi_Response, getETag);
+PHP_METHOD(HTTPi_Response, setContentDisposition);
+PHP_METHOD(HTTPi_Response, getContentDisposition);
+PHP_METHOD(HTTPi_Response, setContentType);
+PHP_METHOD(HTTPi_Response, getContentType);
+PHP_METHOD(HTTPi_Response, setCache);
+PHP_METHOD(HTTPi_Response, getCache);
+PHP_METHOD(HTTPi_Response, setCacheControl);
+PHP_METHOD(HTTPi_Response, getCacheControl);
+PHP_METHOD(HTTPi_Response, setGzip);
+PHP_METHOD(HTTPi_Response, getGzip);/*
+PHP_METHOD(HTTPi_Response, setData);
+PHP_METHOD(HTTPi_Response, getData);
+PHP_METHOD(HTTPi_Response, setFile);
+PHP_METHOD(HTTPi_Response, getFile);
+PHP_METHOD(HTTPi_Response, setStream);
+PHP_METHOD(HTTPi_Response, getStream);
+PHP_METHOD(HTTPi_Response, send);*/
+
+#endif /* ZEND_ENGINE_2 */
+
 
 PHP_FUNCTION(http_date);
 PHP_FUNCTION(http_absolute_uri);
@@ -71,6 +121,7 @@ PHP_FUNCTION(ob_httpetaghandler);
 
 PHP_MINIT_FUNCTION(http);
 PHP_MSHUTDOWN_FUNCTION(http);
+PHP_RINIT_FUNCTION(http);
 PHP_RSHUTDOWN_FUNCTION(http);
 PHP_MINFO_FUNCTION(http);
 

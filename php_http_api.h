@@ -60,6 +60,7 @@ typedef enum {
 
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL
+#include <curl/curl.h>
 
 /* CURL buffer size */
 #define HTTP_CURLBUF_BODYSIZE 16384
@@ -169,12 +170,18 @@ PHP_HTTP_API void _http_get_request_headers(zval *array TSRMLS_DC);
 
 #define http_get(u, o, i, d, l) _http_get((u), (o), (i), (d), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
+#define http_get_ex(c, u, o, i, d, l) _http_get_ex((c), (u), (o), (i), (d), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
 
 #define http_head(u, o, i, d, l) _http_head((u), (o), (i), (d), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
+#define http_head_ex(c, u, o, i, d, l) _http_head_ex((c), (u), (o), (i), (d), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
 
 #define http_post_data(u, pd, pl, o, i, d, l) _http_post_data((u), (pd), (pl), (o), (i), (d), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata, size_t postdata_len, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
+#define http_post_data_ex(c, u, pd, pl, o, i, d, l) _http_post_data_ex((c), (u), (pd), (pl), (o), (i), (d), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata, size_t postdata_len, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
 
 #define http_post_array(u, p, o, i, d, l) _http_post_array((u), (p), (o), (i), (d), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
