@@ -22,11 +22,14 @@
 #endif
 
 #include "php.h"
+#include "php_ini.h"
 #include "snprintf.h"
 #include "ext/standard/info.h"
 #include "ext/session/php_session.h"
 #include "ext/standard/php_string.h"
 #include "ext/standard/php_smart_str.h"
+
+#include "SAPI.h"
 
 #include "php_http.h"
 #include "php_http_api.h"
@@ -1062,13 +1065,30 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 	http_globals->curlbuf.hdrs.used = 0;
 	http_globals->curlbuf.hdrs.free = 0;
 #endif
+	http_globals->allowed_methods = NULL;
 }
+/* }}} */
+
+/* {{{ PHP_INI */
+PHP_INI_MH(update_allowed_methods)
+{
+	if (SG(request_info).request_method && new_value_length && (!strstr(new_value, SG(request_info).request_method))) {
+		http_send_status(405);
+		return SUCCESS;
+	}
+	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
+}
+
+PHP_INI_BEGIN()
+	STD_PHP_INI_ENTRY("http.allowed_methods", "HEAD,GET,POST", PHP_INI_ALL, update_allowed_methods, allowed_methods, zend_http_globals, http_globals)
+PHP_INI_END()
 /* }}} */
 
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(http)
 {
 	ZEND_INIT_MODULE_GLOBALS(http, php_http_init_globals, NULL);
+	REGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST, CONST_CS | CONST_PERSISTENT);
@@ -1078,21 +1098,44 @@ PHP_MINIT_FUNCTION(http)
 }
 /* }}} */
 
+/* {{{ PHP_MSHUTDOWN_FUNCTION */
+PHP_MSHUTDOWN_FUNCTION(http)
+{
+	UNREGISTER_INI_ENTRIES();
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ PHP_RINIT_FUNCTION */
+PHP_RINIT_FUNCTION(http)
+{
+	char *allowed_methods = INI_STR("http.allowed_methods");
+	if (SG(request_info).request_method && strlen(allowed_methods) && (!strstr(allowed_methods, SG(request_info).request_method))) {
+		http_send_status(405);
+	}
+	return SUCCESS;
+}
+/* }}} */
+
 /* {{{ PHP_RSHUTDOWN_FUNCTION */
 PHP_RSHUTDOWN_FUNCTION(http)
 {
 	if (HTTP_G(ctype)) {
 		efree(HTTP_G(ctype));
+		HTTP_G(ctype) = NULL;
 	}
 	if (HTTP_G(etag)) {
 		efree(HTTP_G(etag));
+		HTTP_G(etag) = NULL;
 	}
 #ifdef HTTP_HAVE_CURL
 	if (HTTP_G(curlbuf).body.data) {
 		efree(HTTP_G(curlbuf).body.data);
+		HTTP_G(curlbuf).body.data = NULL;
 	}
 	if (HTTP_G(curlbuf).hdrs.data) {
 		efree(HTTP_G(curlbuf).hdrs.data);
+		HTTP_G(curlbuf).hdrs.data = NULL;
 	}
 #endif
 	return SUCCESS;
@@ -1113,6 +1156,8 @@ PHP_MINFO_FUNCTION(http)
 #endif
 	);
 	php_info_print_table_end();
+	
+	DISPLAY_INI_ENTRIES();
 }
 /* }}} */
 

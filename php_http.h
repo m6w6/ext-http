@@ -68,6 +68,7 @@ PHP_FUNCTION(http_auth_basic);
 PHP_FUNCTION(http_auth_basic_cb);
 
 PHP_MINIT_FUNCTION(http);
+PHP_MSHUTDOWN_FUNCTION(http);
 PHP_RSHUTDOWN_FUNCTION(http);
 PHP_MINFO_FUNCTION(http);
 
@@ -78,6 +79,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	char *ctype;
 	char *etag;
 	time_t lmod;
+	char *allowed_methods;
 #ifdef HTTP_HAVE_CURL
 	struct {
 		struct {
