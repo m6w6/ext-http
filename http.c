@@ -761,6 +761,8 @@ static inline void _httpi_request_declare_default_properties(zend_class_entry *c
 void _httpi_request_destroy_object(void *object, zend_object_handle handle TSRMLS_DC)
 {
 	httpi_request_object *o = object;
+	
+	zend_objects_destroy_object(object, handle TSRMLS_CC);
 
 	FREE_PARR(o->options);
 	FREE_PARR(o->responseInfo);
