@@ -1123,7 +1123,7 @@ PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_fun
 	int count, i;
 
 	if (count = OG(ob_nesting_level)) {
-		stack = ecalloc(sizeof(php_ob_buffer), count);
+		stack = ecalloc(sizeof(php_ob_buffer *), count);
 
 		if (count > 1) {
 			zend_stack_apply_with_argument(&OG(ob_buffers), ZEND_STACK_APPLY_BOTTOMUP,
@@ -1147,6 +1147,12 @@ PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_fun
 			php_start_ob_buffer_named(s->handler_name, s->chunk_size, s->erase TSRMLS_CC);
 		}
 		php_body_write(s->buffer, s->text_length TSRMLS_CC);
+		efree(s->handler_name);
+		efree(s->buffer);
+		efree(s);
+	}
+	if (count) {
+		efree(stack);
 	}
 
 	return SUCCESS;

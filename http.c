@@ -218,6 +218,7 @@ void _httpi_response_destroy_object(void *object, zend_object_handle handle TSRM
 		zend_hash_destroy(OBJ_PROP(o));
 		FREE_HASHTABLE(OBJ_PROP(o));
 	}
+	efree(o);
 }
 
 #define httpi_response_new_object _httpi_response_new_object
@@ -229,9 +230,10 @@ zend_object_value _httpi_response_new_object(zend_class_entry *ce TSRMLS_DC)
 	o = ecalloc(sizeof(httpi_response_object), 1);
 	o->zo.ce = ce;
 
-	ALLOC_HASHTABLE(o->zo.properties);
-	zend_hash_init(o->zo.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-
+	ALLOC_HASHTABLE(OBJ_PROP(o));
+	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	
 	ov.handle = zend_objects_store_put(o, httpi_response_destroy_object, NULL, NULL TSRMLS_CC);
 	ov.handlers = &httpi_response_object_handlers;
 
@@ -531,6 +533,7 @@ PHP_METHOD(HTTPi_Response, getETag)
 PHP_METHOD(HTTPi_Response, setData)
 {
 	zval *the_data;
+	char *etag;
 	getObject(httpi_response_object, obj);
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
@@ -538,11 +541,13 @@ PHP_METHOD(HTTPi_Response, setData)
 	}
 	
 	convert_to_string_ex(&the_data);
+	etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
 	SET_PROP(obj, data, the_data);
-	UPD_PROP(obj, string, eTag, http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA));
+	UPD_PROP(obj, string, eTag, etag);
 	UPD_PROP(obj, long, size, Z_STRLEN_P(the_data));
 	UPD_PROP(obj, long, lastModified, time(NULL));
 	UPD_PROP(obj, long, send_mode, SEND_DATA);
+	efree(etag);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -571,6 +576,7 @@ PHP_METHOD(HTTPi_Response, setStream)
 {
 	zval *the_stream;
 	php_stream *the_real_stream;
+	char *etag;
 	getObject(httpi_response_object, obj);
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &the_stream)) {
@@ -578,12 +584,14 @@ PHP_METHOD(HTTPi_Response, setStream)
 	}
 	
 	php_stream_from_zval(the_real_stream, &the_stream);
+	etag = http_etag(the_real_stream, 0, SEND_RSRC);
 	
 	SET_PROP(obj, stream, the_stream);
-	UPD_PROP(obj, string, eTag, http_etag(the_real_stream, 0, SEND_RSRC));
+	UPD_PROP(obj, string, eTag, etag);
 	UPD_PROP(obj, long, size, HTTP_G(ssb).sb.st_size);
 	UPD_PROP(obj, long, lastModified, HTTP_G(ssb).sb.st_mtime);
 	UPD_PROP(obj, long, send_mode, SEND_RSRC);
+	efree(etag);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -678,7 +686,7 @@ PHP_METHOD(HTTPi_Response, send)
 			zval *ccontrol = GET_PROP(obj, cacheControl);
 			if (Z_STRLEN_P(ccontrol)) {
 				char *cc_header;
-				zval *cc_raw = GET_PROP(obj, raw_cache_control);
+				zval *cc_raw = GET_PROP(obj, raw_cache_header);
 				if (Z_LVAL_P(cc_raw)) {
 					cc_header = ecalloc(sizeof("Cache-Control: ") + Z_STRLEN_P(ccontrol), 1);
 					sprintf(cc_header, "Cache-Control: %s", Z_STRVAL_P(ccontrol));
