@@ -564,7 +564,7 @@ PHP_HTTP_API inline time_t _http_lmod(const void *data_ptr, const http_send_mode
 PHP_HTTP_API inline int _http_is_range_request(TSRMLS_D)
 {
 	return zend_hash_exists(Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]),
-		"HTTP_RANGE", strlen("HTTP_RANGE") + 1);
+		"HTTP_RANGE", sizeof("HTTP_RANGE"));
 }
 /* }}} */
 
@@ -1036,13 +1036,13 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 	HTTP_GSC(zrange, "HTTP_RANGE", RANGE_NO);
 	range = Z_STRVAL_P(zrange);
 
-	if (strncmp(range, "bytes=", strlen("bytes="))) {
+	if (strncmp(range, "bytes=", sizeof("bytes=") - 1)) {
 		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Range header misses bytes=");
 		return RANGE_NO;
 	}
 
 	ptr = &begin;
-	range += strlen("bytes=");
+	range += sizeof("bytes=") - 1;
 
 	do {
 		switch (c = *(range++))
@@ -1464,8 +1464,8 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 	if (!strncmp(header, "HTTP/1.", 7)) {
 		char *end = strstr(header, HTTP_CRLF);
 		add_assoc_stringl(array, "Status",
-			header + strlen("HTTP/1.x "),
-			end - (header + strlen("HTTP/1.x ")), 1);
+			header + sizeof("HTTP/1.x ") - 1,
+			end - (header + sizeof("HTTP/1.x ") - 1), 1);
 		header = end + 2;
 	}
 
@@ -1588,4 +1588,4 @@ PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
- 
+
