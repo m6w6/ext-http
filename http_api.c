@@ -1093,9 +1093,12 @@ PHP_HTTP_API char *_http_negotiate_q(const char *entry, const HashTable *support
 	
 	FOREACH_HASH_KEY(Z_ARRVAL(zentries), key, idx) {
 		if (key) {
-			return estrdup(key);
+			key = estrdup(key);
+			zval_dtor(&zentries);
+			return key;
 		}
 	}
+	zval_dtor(&zentries);
 	
 	return estrdup(def);
 }
