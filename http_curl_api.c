@@ -72,8 +72,6 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 		} \
 	}
 
-
-
 #define http_curl_cleanup(ch, clean_curl) \
 	http_curl_freestr(); \
 	http_curl_freebuf(); \
@@ -106,9 +104,9 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 	HTTP_G(curlbuf).size = 0;
 
 #define http_curl_copybuf(data, size) \
-	* size = HTTP_G(curlbuf).used; \
-	* data = ecalloc(1, HTTP_G(curlbuf).used + 1); \
-	memcpy(* data, HTTP_G(curlbuf).data, * size);
+	*size = HTTP_G(curlbuf).used; \
+	*data = ecalloc(1, HTTP_G(curlbuf).used + 1); \
+	memcpy(*data, HTTP_G(curlbuf).data, HTTP_G(curlbuf).used);
 
 #define http_curl_sizebuf(for_size) \
 	{ \

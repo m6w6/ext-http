@@ -338,7 +338,8 @@ zend_function_entry httpi_request_class_methods[] = {
 	PHP_ME(HTTPi_Request, send, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HTTPi_Request, getResponseData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HTTPi_Request, getResponseHeaders, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HTTPi_Request, getResponseHeader, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HTTPi_Request, getResponseCode, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, getResponseBody, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, getResponseInfo, NULL, ZEND_ACC_PUBLIC)
 

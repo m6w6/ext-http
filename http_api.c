@@ -933,7 +933,7 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 #ifdef ZEND_ENGINE_2
 		if (se = getservbyname(furl.scheme, "tcp")) {
 			furl.port = ntohs(se->s_port);
-		} else 
+		} else
 #endif
 		furl.port = 80;
 	} else {
@@ -1469,11 +1469,11 @@ PHP_HTTP_API STATUS _http_split_response_ex(char *response,
 		}
 	}
 
-	if (*body && (*body_len = response_len - (*body - header))) {
-		*body = estrndup(*body, *body_len - 1);
+	if (*body && (*body_len = (response_len - (*body - header)))) {
+		*body = estrndup(*body, *body_len);
 	}
 
-	return http_parse_headers_ex(header, *body ? *body - header : response_len, headers, 1);
+	return http_parse_headers_ex(header, *body ? response_len - *body_len : response_len, headers, 1);
 }
 /* }}} */
 

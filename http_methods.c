@@ -989,7 +989,7 @@ PHP_METHOD(HTTPi_Request, unsetPostFiles)
 
 /* {{{ proto array HTTPi_Request::getResponseData()
  *
- * Get all resposonse data after sending the request.
+ * Get all resposonse data after the request has been sent.
  */
 PHP_METHOD(HTTPi_Request, getResponseData)
 {
@@ -1004,28 +1004,39 @@ PHP_METHOD(HTTPi_Request, getResponseData)
 }
 /* }}} */
 
-/* {{{ proto array HTTPi_Request::getResponseHeaders()
+/* {{{ proto string HTTPi_Request::getResponseHeader([string name])
  *
- * Get the response headers after sending the request.
+ * Get response header(s) after the request has been sent.
  */
-PHP_METHOD(HTTPi_Request, getResponseHeaders)
+PHP_METHOD(HTTPi_Request, getResponseHeader)
 {
-	zval *data, **headers;
-	getObject(httpi_request_object, obj);
-
-	NO_ARGS;
-
-	array_init(return_value);
+	zval *data, **headers, **header;
+	char *header_name = NULL;
+	int header_len = 0;
+	getObject(httpi_response_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &header_name, &header_len)) {
+		RETURN_FALSE;
+	}
+	
 	data = GET_PROP(obj, responseData);
-	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) {
+	if (SUCCESS != zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) {
+		RETURN_FALSE;
+	}
+	
+	if (!header_len || !header_name) {
+		array_init(return_value);
 		array_copy(*headers, return_value);
+	} else if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(headers), pretty_key(header_name, header_len, 1, 1), header_len + 1, (void **) &header)) {
+		RETURN_STRINGL(Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
+	} else {
+		RETURN_FALSE;
 	}
 }
-/* }}} */
 
 /* {{{ proto string HTTPi_Request::getResponseBody()
  *
- * Get the response body after sending the request.
+ * Get the response body after the request has been sent.
  */
 PHP_METHOD(HTTPi_Request, getResponseBody)
 {
@@ -1038,26 +1049,62 @@ PHP_METHOD(HTTPi_Request, getResponseBody)
 	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "body", sizeof("body"), (void **) &body)) {
 		RETURN_STRINGL(Z_STRVAL_PP(body), Z_STRLEN_PP(body), 1);
 	} else {
-		Z_TYPE_P(return_value) = IS_NULL;
+		RETURN_FALSE;
 	}
 }
 /* }}} */
 
-/* {{{ proto array HTTPi_Request::getResponseInfo()
+/* {{{ proto int HTTPi_Request::getResponseCode()
  *
- * Get response info after sending the request.
+ * Get the response code after the request has been sent.
+ */
+PHP_METHOD(HTTPi_Request, getResponseCode)
+{
+	zval **code, **hdrs, *data;
+	getObject(httpi_request_object, obj);
+	
+	NO_ARGS;
+	
+	data = GET_PROP(obj, responseData);
+	if (	(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &hdrs)) &&
+			(SUCCESS == zend_hash_find(Z_ARRVAL_PP(hdrs), "Status", sizeof("Status"), (void **) &code))) {
+		RETVAL_STRINGL(Z_STRVAL_PP(code), Z_STRLEN_PP(code), 1);
+		convert_to_long(return_value);
+	} else {
+		RETURN_FALSE;
+	}
+}
+/* }}} */
+
+/* {{{ proto array HTTPi_Request::getResponseInfo([string name])
+ *
+ * Get response info after the request has been sent.
  * See http_get() for a full list of returned info.
  */
 PHP_METHOD(HTTPi_Request, getResponseInfo)
 {
-	zval *info;
+	zval *info, **infop;
+	char *info_name = NULL;
+	int info_len = 0;
 	getObject(httpi_request_object, obj);
 
-	NO_ARGS;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &info_name, &info_len)) {
+		RETURN_FALSE;
+	}
 
 	info = GET_PROP(obj, responseInfo);
-	array_init(return_value);
-	array_copy(info, return_value);
+	
+	if (info_len && info_name) {
+		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), pretty_key(info_name, info_len, 0, 0), info_len + 1, (void **) &infop)) {
+			RETURN_ZVAL(*infop, 1, ZVAL_PTR_DTOR);
+		} else {
+			php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not find response info named %s", info_name);
+			RETURN_FALSE;
+		}
+	} else {
+		array_init(return_value);
+		array_copy(info, return_value);
+	}
 }
 /* }}}*/
 

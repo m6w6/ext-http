@@ -131,7 +131,8 @@ PHP_METHOD(HTTPi_Request, getPostFiles);
 PHP_METHOD(HTTPi_Request, unsetPostFiles);
 PHP_METHOD(HTTPi_Request, send);
 PHP_METHOD(HTTPi_Request, getResponseData);
-PHP_METHOD(HTTPi_Request, getResponseHeaders);
+PHP_METHOD(HTTPi_Request, getResponseHeader);
+PHP_METHOD(HTTPi_Request, getResponseCode);
 PHP_METHOD(HTTPi_Request, getResponseBody);
 PHP_METHOD(HTTPi_Request, getResponseInfo);
 
