@@ -494,7 +494,7 @@ PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options,
 	http_curl_startup(ch, clean_curl, URL, options);
 	curl_easy_setopt(ch, CURLOPT_HTTPGET, 1);
 	http_curl_perform(ch, clean_curl);
-	
+
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}

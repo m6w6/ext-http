@@ -1378,35 +1378,36 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 
 /* {{{ proto STATUS http_split_response_ex(char *, size_t, zval *, zval *) */
 PHP_HTTP_API STATUS _http_split_response_ex(char *response,
-	size_t response_len, zval *zheaders, zval *zbody TSRMLS_DC)
+	size_t response_len, HashTable *headers, char **body, size_t *body_len TSRMLS_DC)
 {
-	char *body = NULL;
 	char *header = response;
+	*body = NULL;
 
 	while (0 < (response_len - (response - header + 4))) {
 		if (	(*response++ == '\r') &&
 				(*response++ == '\n') &&
 				(*response++ == '\r') &&
 				(*response++ == '\n')) {
-			body = response;
+			*body = response;
 			break;
 		}
 	}
 
-	if (body && (response_len - (body - header))) {
-		ZVAL_STRINGL(zbody, body, response_len - (body - header) - 1, 1);
-	} else {
-		Z_TYPE_P(zbody) = IS_NULL;
+	if (*body && (*body_len = response_len - (*body - header))) {
+		*body = estrndup(*body, *body_len - 1);
 	}
 
-	return http_parse_headers(header, body ? body - header : response_len, zheaders);
+	return http_parse_headers(header, *body ? *body - header : response_len, headers);
 }
 /* }}} */
 
 /* {{{ STATUS http_parse_headers(char *, long, zval *) */
-PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *array TSRMLS_DC)
+PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, HashTable *headers TSRMLS_DC)
 {
 	char *colon = NULL, *line = NULL, *begin = header;
+	zval array;
+	
+	Z_ARRVAL(array) = headers;
 
 	if (header_len < 2) {
 		return FAILURE;
@@ -1415,7 +1416,7 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 	/* status code */
 	if (!strncmp(header, "HTTP/1.", 7)) {
 		char *end = strstr(header, HTTP_CRLF);
-		add_assoc_stringl(array, "Status",
+		add_assoc_stringl(&array, "Status",
 			header + sizeof("HTTP/1.x ") - 1,
 			end - (header + sizeof("HTTP/1.x ") - 1), 1);
 		header = end + 2;
@@ -1445,9 +1446,9 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 
 						if (value_len < 1) {
 							/* hm, empty header? */
-							add_assoc_stringl(array, key, "", 0, 1);
+							add_assoc_stringl(&array, key, "", 0, 1);
 						} else {
-							add_assoc_stringl(array, key, colon, value_len, 1);
+							add_assoc_stringl(&array, key, colon, value_len, 1);
 						}
 						efree(key);
 					}

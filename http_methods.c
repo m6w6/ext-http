@@ -36,6 +36,11 @@
 
 /* {{{ proto void HTTPi_Response::__construct(bool cache, bool gzip)
  *
+ * Instantiates a new HTTPi_Response object, which can be used to send
+ * any data/resource/file to an HTTP client with caching and multiple
+ * ranges/resuming support.
+ *
+ * NOTE: GZIPping is not implemented yet.
  */
 PHP_METHOD(HTTPi_Response, __construct)
 {
@@ -54,6 +59,13 @@ PHP_METHOD(HTTPi_Response, __construct)
 
 /* {{{ proto bool HTTPi_Response::setCache(bool cache)
  *
+ * Whether it sould be attempted to cache the entitity.
+ * This will result in necessary caching headers and checks of clients
+ * "If-Modified-Since" and "If-None-Match" headers.  If one of those headers
+ * matches a "304 Not Modified" status code will be issued.
+ *
+ * NOTE: If you're using sessions, be shure that you set session.cache_limiter
+ * to something more appropriate than "no-cache"!
  */
 PHP_METHOD(HTTPi_Response, setCache)
 {
@@ -71,6 +83,7 @@ PHP_METHOD(HTTPi_Response, setCache)
 
 /* {{{ proto bool HTTPi_Response::getCache()
  *
+ * Get current caching setting.
  */
 PHP_METHOD(HTTPi_Response, getCache)
 {
@@ -86,6 +99,7 @@ PHP_METHOD(HTTPi_Response, getCache)
 
 /* {{{ proto bool HTTPi_Response::setGzip(bool gzip)
  *
+ * Enable on-thy-fly gzipping of the sent entity. NOT IMPLEMENTED YET.
  */
 PHP_METHOD(HTTPi_Response, setGzip)
 {
@@ -103,6 +117,7 @@ PHP_METHOD(HTTPi_Response, setGzip)
 
 /* {{{ proto bool HTTPi_Response::getGzip()
  *
+ * Get current gzipping setting.
  */
 PHP_METHOD(HTTPi_Response, getGzip)
 {
@@ -118,6 +133,8 @@ PHP_METHOD(HTTPi_Response, getGzip)
 
 /* {{{ proto bool HTTPi_Response::setCacheControl(string control[, bool raw = false])
  *
+ * Set a custom cache-control header, usually being "private" or "public";  if
+ * $raw is set to true the header will be sent as-is.
  */
 PHP_METHOD(HTTPi_Response, setCacheControl)
 {
@@ -143,6 +160,7 @@ PHP_METHOD(HTTPi_Response, setCacheControl)
 
 /* {{{ proto string HTTPi_Response::getCacheControl()
  *
+ * Get current Cache-Control header setting.
  */
 PHP_METHOD(HTTPi_Response, getCacheControl)
 {
@@ -156,8 +174,9 @@ PHP_METHOD(HTTPi_Response, getCacheControl)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi::setContentType(string content_type)
+/* {{{ proto bool HTTPi_Response::setContentType(string content_type)
  *
+ * Set the content-type of the sent entity.
  */
 PHP_METHOD(HTTPi_Response, setContentType)
 {
@@ -183,6 +202,7 @@ PHP_METHOD(HTTPi_Response, setContentType)
 
 /* {{{ proto string HTTPi_Response::getContentType()
  *
+ * Get current Content-Type header setting.
  */
 PHP_METHOD(HTTPi_Response, getContentType)
 {
@@ -198,6 +218,9 @@ PHP_METHOD(HTTPi_Response, getContentType)
 
 /* {{{ proto bool HTTPi_Response::setContentDisposition(string filename[, bool inline = false])
  *
+ * Set the Content-Disposition of the sent entity.  This setting aims to suggest
+ * the receiveing user agent how to handle the sent entity;  usually the client
+ * will show the user a "Save As..." popup.
  */
 PHP_METHOD(HTTPi_Response, setContentDisposition)
 {
@@ -218,6 +241,14 @@ PHP_METHOD(HTTPi_Response, setContentDisposition)
 
 /* {{{ proto array HTTPi_Response::getContentDisposition()
  *
+ * Get current Content-Disposition setting.
+ * Will return an associative array like:
+ * <pre>
+ * array(
+ *     'filename' => 'foo.bar',
+ *     'inline'   => false
+ * )
+ * </pre>
  */
 PHP_METHOD(HTTPi_Response, getContentDisposition)
 {
@@ -240,6 +271,7 @@ PHP_METHOD(HTTPi_Response, getContentDisposition)
 
 /* {{{ proto bool HTTPi_Response::setETag(string etag)
  *
+ * Set a custom ETag.  Use this only if you know what you're doing.
  */
 PHP_METHOD(HTTPi_Response, setETag)
 {
@@ -258,6 +290,7 @@ PHP_METHOD(HTTPi_Response, setETag)
 
 /* {{{ proto string HTTPi_Response::getETag()
  *
+ * Get the previously set custom ETag.
  */
 PHP_METHOD(HTTPi_Response, getETag)
 {
@@ -273,6 +306,7 @@ PHP_METHOD(HTTPi_Response, getETag)
 
 /* {{{ proto bool HTTPi_Response::setData(string data)
  *
+ * Set the data to be sent.
  */
 PHP_METHOD(HTTPi_Response, setData)
 {
@@ -293,6 +327,7 @@ PHP_METHOD(HTTPi_Response, setData)
 
 /* {{{ proto string HTTPi_Response::getData()
  *
+ * Get the previously set data to be sent.
  */
 PHP_METHOD(HTTPi_Response, getData)
 {
@@ -308,6 +343,7 @@ PHP_METHOD(HTTPi_Response, getData)
 
 /* {{{ proto bool HTTPi_Response::setStream(resource stream)
  *
+ * Set the resource to be sent.
  */
 PHP_METHOD(HTTPi_Response, setStream)
 {
@@ -330,6 +366,7 @@ PHP_METHOD(HTTPi_Response, setStream)
 
 /* {{{ proto resource HTTPi_Response::getStream()
  *
+ * Get the previously set resource to be sent.
  */
 PHP_METHOD(HTTPi_Response, getStream)
 {
@@ -345,6 +382,7 @@ PHP_METHOD(HTTPi_Response, getStream)
 
 /* {{{ proto bool HTTPi_Response::setFile(string file)
  *
+ * Set the file to be sent.
  */
 PHP_METHOD(HTTPi_Response, setFile)
 {
@@ -366,6 +404,7 @@ PHP_METHOD(HTTPi_Response, setFile)
 
 /* {{{ proto string HTTPi_Response::getFile()
  *
+ * Get the previously set file to be sent.
  */
 PHP_METHOD(HTTPi_Response, getFile)
 {
@@ -379,11 +418,28 @@ PHP_METHOD(HTTPi_Response, getFile)
 }
 /* }}} */
 
+/* {{{ proto bool HTTPi_Response::send()
+ *
+ * Finally send the entity.
+ *
+ * Example:
+ * <pre>
+ * <?php
+ * $r = new HTTPi_Response(true);
+ * $r->setFile('../hidden/contract.pdf');
+ * $r->setContentType('application/pdf');
+ * $r->send();
+ * ?>
+ * </pre>
+ *
+ */
 PHP_METHOD(HTTPi_Response, send)
 {
 	zval *do_cache, *do_gzip;
 	getObject(httpi_response_object, obj);
 
+	NO_ARGS;
+	
 	do_cache = GET_PROP(obj, cache);
 	do_gzip  = GET_PROP(obj, gzip);
 
@@ -466,6 +522,8 @@ PHP_METHOD(HTTPi_Response, send)
 
 /* {{{ proto void HTTPi_Request::__construct([string url[, long request_method = HTTP_GET]])
  *
+ * Instantiate a new HTTPi_Request object which can be used to issue HEAD, GET
+ * and POST (including posting files) HTTP requests.
  */
 PHP_METHOD(HTTPi_Request, __construct)
 {
@@ -495,6 +553,7 @@ PHP_METHOD(HTTPi_Request, __construct)
 
 /* {{{ proto void HTTPi_Request::__destruct()
  *
+ * Destroys the HTTPi_Request object.
  */
 PHP_METHOD(HTTPi_Request, __destruct)
 {
@@ -512,6 +571,7 @@ PHP_METHOD(HTTPi_Request, __destruct)
 
 /* {{{ proto bool HTTPi_Request::setOptions(array options)
  *
+ * Set the request options to use.  See http_get() for a full list of available options.
  */
 PHP_METHOD(HTTPi_Request, setOptions)
 {
@@ -556,6 +616,7 @@ PHP_METHOD(HTTPi_Request, setOptions)
 
 /* {{{ proto array HTTPi_Request::getOptions()
  *
+ * Get current set options.
  */
 PHP_METHOD(HTTPi_Request, getOptions)
 {
@@ -572,6 +633,7 @@ PHP_METHOD(HTTPi_Request, getOptions)
 
 /* {{{ proto bool HTTPi_Request::setURL(string url)
  *
+ * Set the request URL.
  */
 PHP_METHOD(HTTPi_Request, setURL)
 {
@@ -590,6 +652,7 @@ PHP_METHOD(HTTPi_Request, setURL)
 
 /* {{{ proto string HTTPi_Request::getUrl()
  *
+ * Get the previously set request URL.
  */
 PHP_METHOD(HTTPi_Request, getURL)
 {
@@ -605,6 +668,8 @@ PHP_METHOD(HTTPi_Request, getURL)
 
 /* {{{ proto bool HTTPi_Request::setMethod(long request_method)
  *
+ * Set the request methods; one of the <tt>HTTP_HEAD</tt>, <tt>HTTP_GET</tt> or 
+ * <tt>HTTP_POST</tt> constants.
  */
 PHP_METHOD(HTTPi_Request, setMethod)
 {
@@ -622,6 +687,7 @@ PHP_METHOD(HTTPi_Request, setMethod)
 
 /* {{{ proto long HTTPi_Request::getMethod()
  *
+ * Get the previously set request method.
  */
 PHP_METHOD(HTTPi_Request, getMethod)
 {
@@ -637,6 +703,8 @@ PHP_METHOD(HTTPi_Request, getMethod)
 
 /* {{{ proto bool HTTPi_Request::setContentType(string content_type)
  *
+ * Set the content type the post request should have.
+ * Use this only if you know what you're doing.
  */
 PHP_METHOD(HTTPi_Request, setContentType)
 {
@@ -662,6 +730,7 @@ PHP_METHOD(HTTPi_Request, setContentType)
 
 /* {{{ proto string HTTPi_Request::getContentType()
  *
+ * Get the previously content type.
  */
 PHP_METHOD(HTTPi_Request, getContentType)
 {
@@ -677,6 +746,9 @@ PHP_METHOD(HTTPi_Request, getContentType)
 
 /* {{{ proto bool HTTPi_Request::setQueryData(mixed query_data)
  *
+ * Set the URL query parameters to use.
+ * Overwrites previously set query parameters.
+ * Affects any request types.
  */
 PHP_METHOD(HTTPi_Request, setQueryData)
 {
@@ -705,6 +777,7 @@ PHP_METHOD(HTTPi_Request, setQueryData)
 
 /* {{{ proto string HTTPi_Request::getQueryData()
  *
+ * Get the current query data in form of an urlencoded query string.
  */
 PHP_METHOD(HTTPi_Request, getQueryData)
 {
@@ -720,6 +793,8 @@ PHP_METHOD(HTTPi_Request, getQueryData)
 
 /* {{{ proto bool HTTPi_Request::addQueryData(array query_params)
  *
+ * Add parameters to the query parameter list.
+ * Affects any request type.
  */
 PHP_METHOD(HTTPi_Request, addQueryData)
 {
@@ -746,6 +821,8 @@ PHP_METHOD(HTTPi_Request, addQueryData)
 
 /* {{{ proto void HTTPi_Request::unsetQueryData()
  *
+ * Clean the query parameters.
+ * Affects any request type.
  */
 PHP_METHOD(HTTPi_Request, unsetQueryData)
 {
@@ -759,6 +836,8 @@ PHP_METHOD(HTTPi_Request, unsetQueryData)
 
 /* {{{ proto bool HTTPi_Request::addPostData(array post_data)
  *
+ * Adds POST data entries.
+ * Affects only POST requests.
  */
 PHP_METHOD(HTTPi_Request, addPostData)
 {
@@ -778,6 +857,9 @@ PHP_METHOD(HTTPi_Request, addPostData)
 
 /* {{{ proto bool HTTPi_Request::setPostData(array post_data)
  *
+ * Set the POST data entries.
+ * Overwrites previously set POST data.
+ * Affects only POST requests.
  */
 PHP_METHOD(HTTPi_Request, setPostData)
 {
@@ -798,6 +880,7 @@ PHP_METHOD(HTTPi_Request, setPostData)
 
 /* {{{ proto array HTTPi_Request::getPostData()
  *
+ * Get previously set POST data.
  */
 PHP_METHOD(HTTPi_Request, getPostData)
 {
@@ -814,6 +897,8 @@ PHP_METHOD(HTTPi_Request, getPostData)
 
 /* {{{ proto void HTTPi_Request::unsetPostData()
  *
+ * Clean POST data entires.
+ * Affects only POST requests.
  */
 PHP_METHOD(HTTPi_Request, unsetPostData)
 {
@@ -829,6 +914,8 @@ PHP_METHOD(HTTPi_Request, unsetPostData)
 
 /* {{{ proto bool HTTPi_Request::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])
  *
+ * Add a file to the POST request.
+ * Affects only POST requests.
  */
 PHP_METHOD(HTTPi_Request, addPostFile)
 {
@@ -867,6 +954,7 @@ PHP_METHOD(HTTPi_Request, addPostFile)
 
 /* {{{ proto array HTTPi_Request::getPostFiles()
  *
+ * Get all previously added POST files.
  */
 PHP_METHOD(HTTPi_Request, getPostFiles)
 {
@@ -884,6 +972,8 @@ PHP_METHOD(HTTPi_Request, getPostFiles)
 
 /* {{{ proto void HTTPi_Request::unsetPostFiles()
  *
+ * Unset the POST files list.
+ * Affects only POST requests.
  */
 PHP_METHOD(HTTPi_Request, unsetPostFiles)
 {
@@ -899,6 +989,7 @@ PHP_METHOD(HTTPi_Request, unsetPostFiles)
 
 /* {{{ proto array HTTPi_Request::getResponseData()
  *
+ * Get all resposonse data after sending the request.
  */
 PHP_METHOD(HTTPi_Request, getResponseData)
 {
@@ -915,6 +1006,7 @@ PHP_METHOD(HTTPi_Request, getResponseData)
 
 /* {{{ proto array HTTPi_Request::getResponseHeaders()
  *
+ * Get the response headers after sending the request.
  */
 PHP_METHOD(HTTPi_Request, getResponseHeaders)
 {
@@ -933,6 +1025,7 @@ PHP_METHOD(HTTPi_Request, getResponseHeaders)
 
 /* {{{ proto string HTTPi_Request::getResponseBody()
  *
+ * Get the response body after sending the request.
  */
 PHP_METHOD(HTTPi_Request, getResponseBody)
 {
@@ -952,6 +1045,8 @@ PHP_METHOD(HTTPi_Request, getResponseBody)
 
 /* {{{ proto array HTTPi_Request::getResponseInfo()
  *
+ * Get response info after sending the request.
+ * See http_get() for a full list of returned info.
  */
 PHP_METHOD(HTTPi_Request, getResponseInfo)
 {
@@ -968,6 +1063,7 @@ PHP_METHOD(HTTPi_Request, getResponseInfo)
 
 /* {{{ proto bool HTTPi_Request::send()
  *
+ * Send the HTTP request.
  */
 PHP_METHOD(HTTPi_Request, send)
 {
@@ -1084,22 +1180,22 @@ PHP_METHOD(HTTPi_Request, send)
 	if (status != SUCCESS) {
 		RETURN_FALSE;
 	} else {
-		zval *zheaders, *zbody;
+		char *body = NULL;
+		size_t body_len = 0;
+		zval *zheaders;
 
-		MAKE_STD_ZVAL(zbody);
 		MAKE_STD_ZVAL(zheaders)
 		array_init(zheaders);
 
-		if (SUCCESS != http_split_response_ex(response_data, response_len, zheaders, zbody)) {
+		if (SUCCESS != http_split_response_ex(response_data, response_len, Z_ARRVAL_P(zheaders), &body, &body_len)) {
 			zval_dtor(zheaders);
 			efree(zheaders),
-			efree(zbody);
 			efree(response_data);
 			RETURN_FALSE;
 		}
 
 		add_assoc_zval(resp, "headers", zheaders);
-		add_assoc_zval(resp, "body", zbody);
+		add_assoc_stringl(resp, "body", body, body_len, 0);
 
 		efree(response_data);
 

@@ -130,12 +130,12 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, const size_t encod
 #define http_urlencode_hash_ex(h, o, p, pl, q, ql) _http_urlencode_hash_ex((h), (o), (p), (pl), (q), (ql) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, int override_argsep, char *pre_encoded_data, size_t pre_encoded_len, char **encoded_data, size_t *encoded_len TSRMLS_DC);
 
-#define http_split_response(r, h, b) _http_split_response_ex(Z_STRVAL_P(r), Z_STRLEN_P(r), (h), (b) TSRMLS_CC)
-#define http_split_response_ex(r, l, h, b) _http_split_response_ex((r), (l), (h), (b) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t repsonse_len, zval *zheaders, zval *zbody TSRMLS_DC);
+#define http_split_response(r, h, b) _http_split_response_ex(Z_STRVAL_P(r), Z_STRLEN_P(r), Z_ARRVAL_P(h), &Z_STRVAL_P(b), &Z_STRLEN_P(b) TSRMLS_CC)
+#define http_split_response_ex(r, rl, h, b, bl) _http_split_response_ex((r), (rl), (h), (b), (bl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t repsonse_len, HashTable *headers, char **body, size_t *body_len TSRMLS_DC);
 
 #define http_parse_headers(h, l, a) _http_parse_headers((h), (l), (a) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *array TSRMLS_DC);
+PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, HashTable *headers TSRMLS_DC);
 
 #define http_get_request_headers(h) _http_get_request_headers((h) TSRMLS_CC)
 PHP_HTTP_API void _http_get_request_headers(zval *array TSRMLS_DC);

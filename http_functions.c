@@ -630,7 +630,7 @@ PHP_FUNCTION(http_parse_headers)
 	if (rnrn = strstr(header, HTTP_CRLF HTTP_CRLF)) {
 		header_len = rnrn - header + 2;
 	}
-	if (SUCCESS != http_parse_headers(header, header_len, return_value)) {
+	if (SUCCESS != http_parse_headers(header, header_len, Z_ARRVAL_P(return_value))) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP header");
 		zval_dtor(return_value);
 		RETURN_FALSE;
