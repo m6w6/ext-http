@@ -373,7 +373,7 @@ PHP_FUNCTION(http_cache_last_modified)
  */
 PHP_FUNCTION(http_cache_etag)
 {
-	char *etag;
+	char *etag = NULL;
 	int etag_len = 0;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &etag, &etag_len) != SUCCESS) {

@@ -45,8 +45,6 @@ typedef enum {
 char *pretty_key(char *key, int key_len, int uctitle, int xhyphen);
 
 /* {{{ public API */
-#define http_is_range_request() zend_hash_exists(HTTP_SERVER_VARS, "HTTP_RANGE", sizeof("HTTP_RANGE"))
-
 #define http_date(t) _http_date((t) TSRMLS_CC)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC);
 
@@ -58,10 +56,10 @@ PHP_HTTP_API time_t _http_parse_date(const char *date);
 #define http_send_status_header(s, h) _http_send_status_header((s), (h) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_status_header(const int status, const char *header TSRMLS_DC);
 
-#define http_get_server_var(v) _http_get_server_var((v) TSRMLS_CC)
-PHP_HTTP_API zval *_http_get_server_var(const char *key TSRMLS_DC);
-#define http_got_server_var(v) _http_got_server_var((v) TSRMLS_CC)
-PHP_HTTP_API int _http_got_server_var(const char *key TSRMLS_DC);
+#define http_got_server_var(v) (NULL != _http_get_server_var_ex((v), sizeof(v), 1 TSRMLS_CC))
+#define http_get_server_var(v) http_get_server_var_ex((v), sizeof(v))
+#define http_get_server_var_ex(v, s) _http_get_server_var_ex((v), (s), 0 TSRMLS_CC)
+PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zend_bool check TSRMLS_DC);
 
 #define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
 PHP_HTTP_API char *_http_etag(const void *data_ptr, const size_t data_len, const http_send_mode data_mode TSRMLS_DC);
@@ -108,10 +106,12 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, const size_t etag_len, co
 #define http_absolute_uri_ex(url, url_len, proto, proto_len, host, host_len, port) _http_absolute_uri_ex((url), (url_len), (proto), (proto_len), (host), (host_len), (port) TSRMLS_CC)
 PHP_HTTP_API char *_http_absolute_uri_ex(const char *url, size_t url_len, const char *proto, size_t proto_len, const char *host, size_t host_len, unsigned port TSRMLS_DC);
 
-#define http_negotiate_language(supported, def) _http_negotiate_q("HTTP_ACCEPT_LANGUAGE", (supported), (def) TSRMLS_CC)
-#define http_negotiate_charset(supported, def)  _http_negotiate_q("HTTP_ACCEPT_CHARSET", (supported), (def) TSRMLS_CC)
-#define http_negotiate_q(e, s, d, t) _http_negotiate_q((e), (s), (d), (t) TSRMLS_CC)
-PHP_HTTP_API char *_http_negotiate_q(const char *entry, const zval *supported, const char *def TSRMLS_DC);
+#define http_negotiate_language(zsupported, def) http_negotiate_language_ex(Z_ARRVAL_P(zsupported), (def))
+#define http_negotiate_language_ex(supported, def) http_negotiate_q("HTTP_ACCEPT_LANGUAGE", (supported), (def))
+#define http_negotiate_charset(zsupported, def) http_negotiate_charset_ex(Z_ARRVAL_P(zsupported), (def))
+#define http_negotiate_charset_ex(supported, def)  http_negotiate_q("HTTP_ACCEPT_CHARSET", (supported), (def))
+#define http_negotiate_q(e, s, d) _http_negotiate_q((e), (s), (d) TSRMLS_CC)
+PHP_HTTP_API char *_http_negotiate_q(const char *entry, const HashTable *supported, const char *def TSRMLS_DC);
 
 #define http_get_request_ranges(r, l) _http_get_request_ranges((r), (l) TSRMLS_CC)
 PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, const size_t length TSRMLS_DC);

@@ -47,10 +47,7 @@
 
 /* {{{ HTTP_GSP(var, name, ret) */
 #define HTTP_GSP(var, name, ret) \
-		if (!(var = http_get_server_var(name))) { \
-			ret; \
-		} \
-		if (!Z_STRLEN_P(var)) { \
+		if (!(var = _http_get_server_var_ex(name, strlen(name)+1, 1 TSRMLS_CC))) { \
 			ret; \
 		}
 /* }}} */

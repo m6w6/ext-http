@@ -604,25 +604,18 @@ PHP_HTTP_API STATUS _http_send_status_header(const int status, const char *heade
 }
 /* }}} */
 
-/* {{{ zval *http_get_server_var(char *) */
-PHP_HTTP_API zval *_http_get_server_var(const char *key TSRMLS_DC)
+/* {{{ zval *http_get_server_var_ex(char *, size_t) */
+PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zend_bool check TSRMLS_DC)
 {
 	zval **var;
-	if (SUCCESS == zend_hash_find(
-			HTTP_SERVER_VARS,
-			(char *) key, strlen(key) + 1, (void **) &var)) {
-		return *var;
+	if (SUCCESS == zend_hash_find(HTTP_SERVER_VARS,	(char *) key, key_size, (void **) &var)) {
+		if (check) {
+			return Z_STRVAL_PP(var) && Z_STRLEN_PP(var) ? *var : NULL;
+		} else {
+			return *var;
+		}
 	}
 	return NULL;
-}
-/* }}} */
-
-/* {{{ int http_got_server_var(char *) */
-PHP_HTTP_API int _http_got_server_var(const char *key TSRMLS_DC)
-{
-	zval *dummy;
-	HTTP_GSC(dummy, key, 0);
-	return 1;
 }
 /* }}} */
 
@@ -705,7 +698,7 @@ PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_fun
 /* }}} */
 
 /* {{{ int http_modified_match(char *, time_t) */
-PHP_HTTP_API int _http_modified_match_ex(const char *entry, const time_t t, 
+PHP_HTTP_API int _http_modified_match_ex(const char *entry, const time_t t,
 	const int enforce_presence TSRMLS_DC)
 {
 	int retval;
@@ -725,7 +718,7 @@ PHP_HTTP_API int _http_modified_match_ex(const char *entry, const time_t t,
 /* }}} */
 
 /* {{{ int http_etag_match(char *, char *) */
-PHP_HTTP_API int _http_etag_match_ex(const char *entry, const char *etag, 
+PHP_HTTP_API int _http_etag_match_ex(const char *entry, const char *etag,
 	const int enforce_presence TSRMLS_DC)
 {
 	zval *zetag;
@@ -947,7 +940,7 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 		return NULL;
 	}
 
-	if (!(purl = php_url_parse(url))) {
+	if (!(purl = php_url_parse((char *) url))) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse supplied URL");
 		return NULL;
 	}
@@ -1061,70 +1054,50 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 }
 /* }}} */
 
-/* {{{ char *http_negotiate_q(char *, zval *, char *, hash_entry_type) */
-PHP_HTTP_API char *_http_negotiate_q(const char *entry, const zval *supported,
-	const char *def TSRMLS_DC)
+/* {{{ char *http_negotiate_q(char *, HashTable *, char *) */
+PHP_HTTP_API char *_http_negotiate_q(const char *entry, const HashTable *supported,	const char *def TSRMLS_DC)
 {
-	zval *zaccept, *zarray, *zdelim, **zentry, *zentries, **zsupp;
-	char *q_ptr, *result;
-	int i, c;
+	zval *zaccept, zdelim, zarray, zentries, **zentry, **zsupp;
+	char *q_ptr = NULL, *key = NULL;
+	int i = 0, idx = 0;
 	double qual;
 
 	HTTP_GSC(zaccept, entry, estrdup(def));
 
-	MAKE_STD_ZVAL(zarray);
-	array_init(zarray);
+	array_init(&zarray);
+	array_init(&zentries);
 
-	MAKE_STD_ZVAL(zdelim);
-	ZVAL_STRING(zdelim, ",", 0);
-	php_explode(zdelim, zaccept, zarray, -1);
-	efree(zdelim);
+	Z_STRVAL(zdelim) = ",";
+	Z_STRLEN(zdelim) = 1;
 
-	MAKE_STD_ZVAL(zentries);
-	array_init(zentries);
+	php_explode(&zdelim, zaccept, &zarray, -1);
 
-	c = zend_hash_num_elements(Z_ARRVAL_P(zarray));
-	for (i = 0; i < c; i++, zend_hash_move_forward(Z_ARRVAL_P(zarray))) {
-
-		if (SUCCESS != zend_hash_get_current_data(
-				Z_ARRVAL_P(zarray), (void **) &zentry)) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING,
-				"Cannot parse %s header: %s", entry, Z_STRVAL_P(zaccept));
-			break;
-		}
-
-		/* check for qualifier */
-		if (NULL != (q_ptr = strrchr(Z_STRVAL_PP(zentry), ';'))) {
+	FOREACH_HASH_VAL(Z_ARRVAL(zarray), zentry) {
+		if (q_ptr = strrchr(Z_STRVAL_PP(zentry), ';')) {
 			qual = strtod(q_ptr + 3, NULL);
+			*q_ptr = 0;
+			q_ptr = NULL;
 		} else {
-			qual = 1000.0 - i;
+			qual = 1000.0 - i++;
 		}
-
-		/* walk through the supported array */
-		FOREACH_VAL(supported, zsupp) {
+		FOREACH_HASH_VAL((HashTable *)supported, zsupp) {
 			if (!strcasecmp(Z_STRVAL_PP(zsupp), Z_STRVAL_PP(zentry))) {
-				add_assoc_double(zentries, Z_STRVAL_PP(zsupp), qual);
+				add_assoc_double(&zentries, Z_STRVAL_PP(zsupp), qual);
 				break;
 			}
 		}
 	}
+	zval_dtor(&zarray);
 
-	zval_dtor(zarray);
-	efree(zarray);
-
-	zend_hash_internal_pointer_reset(Z_ARRVAL_P(zentries));
-
-	if (	(SUCCESS != zend_hash_sort(Z_ARRVAL_P(zentries), zend_qsort,
-					http_sort_q, 0 TSRMLS_CC)) ||
-			(HASH_KEY_NON_EXISTANT == zend_hash_get_current_key(
-					Z_ARRVAL_P(zentries), &result, 0, 1))) {
-		result = estrdup(def);
+	zend_hash_sort(Z_ARRVAL(zentries), zend_qsort, http_sort_q, 0 TSRMLS_CC);
+	
+	FOREACH_HASH_KEY(Z_ARRVAL(zentries), key, idx) {
+		if (key) {
+			return estrdup(key);
+		}
 	}
-
-	zval_dtor(zentries);
-	efree(zentries);
-
-	return result;
+	
+	return estrdup(def);
 }
 /* }}} */
 
@@ -1337,6 +1310,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 {
 	HashTable ranges;
 	http_range_status range_status;
+	int cache_etag = 0;
 
 	if (!data_ptr) {
 		return FAILURE;
@@ -1345,62 +1319,59 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 		return SUCCESS;
 	}
 
+	/* stop on-the-fly etag generation */
+	if (cache_etag = HTTP_G(etag_started)) {
+		/* interrupt */
+		HTTP_G(etag_started) = 0;
+		/* never ever use the output to compute the ETag if http_send() is used */
+		php_end_ob_buffers(0 TSRMLS_CC);
+	}
+
 	zend_hash_init(&ranges, 0, NULL, ZVAL_PTR_DTOR, 0);
 	range_status = http_get_request_ranges(&ranges, data_size);
 
-	if (range_status != RANGE_OK) {
-		zend_hash_destroy(&ranges);
-	}
-
 	if (range_status == RANGE_ERR) {
+		zend_hash_destroy(&ranges);
 		http_send_status(416);
 		return FAILURE;
 	}
 
-	/* etag handling */
+	/* Range Request - only send ranges if entity hasn't changed */
+	if (	range_status == RANGE_OK &&
+			http_etag_match_ex("HTTP_IF_MATCH", HTTP_G(etag), 0) &&
+			http_modified_match_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(lmod), 0)) {
+		STATUS result = http_send_ranges(&ranges, data_ptr, data_size, data_mode);
+		zend_hash_destroy(&ranges);
+		return result;
+	}
+			
+	zend_hash_destroy(&ranges);
 
-	if (HTTP_G(etag_started)) {
-		char *etag;
-
-		/* interrupt */
-		HTTP_G(etag_started) = 0;
-		/* never ever use the output to compute the ETag if http_send() is used */
-		php_end_ob_buffer(0, 0 TSRMLS_CC);
+	/* send 304 Not Modified if etag matches */
+	if (cache_etag) {
+		char *etag = NULL;
+		int etag_match = 0;
 
 		if (!(etag = http_etag(data_ptr, data_size, data_mode))) {
 			return FAILURE;
 		}
 
-		/* send 304 Not Modified if etag matches */
-		if ((range_status == RANGE_NO) && http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
-			efree(etag);
+		http_send_etag(etag, 32);
+		etag_match = http_etag_match("HTTP_IF_NONE_MATCH", etag);
+		efree(etag);
+		
+		if (etag_match) {
 			return http_send_status(304);
 		}
-
-		http_send_etag(etag, 32);
-		efree(etag);
 	}
 
-	switch (range_status) {
-		/* breaks intentionally left out */
-
-		case RANGE_OK:
-			/* only send ranges if entity hasn't changed */
-			if (	http_etag_match_ex("HTTP_IF_MATCH", HTTP_G(etag), 0) &&
-					http_modified_match_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(lmod), 0)) {
-				STATUS result = http_send_ranges(&ranges, data_ptr, data_size, data_mode);
-				zend_hash_destroy(&ranges);
-				return result;
-			} else {
-				zend_hash_destroy(&ranges);
-			}
-		
-		case RANGE_NO:
-			if (http_modified_match("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
-				return http_send_status(304);
-			}
-			return http_send_chunk(data_ptr, 0, data_size, data_mode);
+	/* send 304 Not Modified if last modified matches */
+	if (http_modified_match("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
+		return http_send_status(304);
 	}
+			
+	/* send full entity */
+	return http_send_chunk(data_ptr, 0, data_size, data_mode);
 }
 /* }}} */
 
@@ -1602,25 +1573,26 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, int header_len,
 /* {{{ void http_get_request_headers_ex(HashTable *, zend_bool) */
 PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool prettify TSRMLS_DC)
 {
-    char *key = NULL;
-    long idx = 0;
-    zval array;
+	char *key = NULL;
+	long idx = 0;
+	zval array;
 
-    Z_ARRVAL(array) = headers;
+	Z_ARRVAL(array) = headers;
 
-    FOREACH_HASH_KEY(HTTP_SERVER_VARS, key, idx) {
-        if (key && !strncmp(key, "HTTP_", 5)) {
-            zval **header;
+	FOREACH_HASH_KEY(HTTP_SERVER_VARS, key, idx) {
+		if (key && !strncmp(key, "HTTP_", 5)) {
+			zval **header;
 
-            if (prettify) {
-            	key = pretty_key(key + 5, strlen(key) - 5, 1, 1);
-            }
+			key += 5;
+			if (prettify) {
+				key = pretty_key(key, strlen(key), 1, 1);
+			}
 
-            zend_hash_get_current_data(HTTP_SERVER_VARS, (void **) &header);
-            add_assoc_stringl(&array, key, Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
-            key = NULL;
-        }
-    }
+			zend_hash_get_current_data(HTTP_SERVER_VARS, (void **) &header);
+			add_assoc_stringl(&array, key, Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
+			key = NULL;
+		}
+	}
 }
 /* }}} */
 
