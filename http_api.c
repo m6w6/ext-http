@@ -1744,7 +1744,8 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 			case '\n':
 				if (colon && (*line != ' ') && (*line != '\t')) {
 					char *key = estrndup(header, colon - header);
-					add_assoc_stringl(array, key, colon + 2, line - colon - 4, 1);
+					while (isspace(*(++colon)));
+					add_assoc_stringl(array, key, colon, line - colon - 2, 1);
 					efree(key);
 
 					colon = NULL;
@@ -1891,12 +1892,12 @@ PHP_HTTP_API STATUS _http_post_array(const char *URL, HashTable *postarray,
 #endif
 /* }}} HAVE_CURL */
 
-/* {{{ void http_auth_header(char *, char*) */
-PHP_HTTP_API void _http_auth_header(const char *type, const char *realm TSRMLS_DC)
+/* {{{ STATUS http_auth_header(char *, char*) */
+PHP_HTTP_API STATUS _http_auth_header(const char *type, const char *realm TSRMLS_DC)
 {
-	char realm_header[1024];
-	snprintf(realm_header, 1024, "WWW-Authenticate: %s realm=\"%s\"", type, realm);
-	http_send_status_header(401, realm_header);
+	char realm_header[1024] = {0};
+	snprintf(realm_header, 1023, "WWW-Authenticate: %s realm=\"%s\"", type, realm);
+	return http_send_status_header(401, realm_header);
 }
 /* }}} */
 
