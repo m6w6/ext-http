@@ -435,7 +435,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 	curl_easy_setopt(ch, CURLOPT_AUTOREFERER, 1);
 	curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, http_curl_body_callback);
 	curl_easy_setopt(ch, CURLOPT_HEADERFUNCTION, http_curl_hdrs_callback);
-#ifdef ZTS
+#if defined(ZTS) && (LIBCURL_VERSION_NUM >= 0x070a00)
 	curl_easy_setopt(ch, CURLOPT_NOSIGNAL, 1);
 #endif
 
