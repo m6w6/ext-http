@@ -45,18 +45,16 @@ typedef enum {
 char *pretty_key(char *key, int key_len, int uctitle, int xhyphen);
 
 /* {{{ public API */
+#define http_is_range_request() zend_hash_exists(HTTP_SERVER_VARS, "HTTP_RANGE", sizeof("HTTP_RANGE"))
+
 #define http_date(t) _http_date((t) TSRMLS_CC)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC);
 
 #define http_parse_date(d) _http_parse_date((d))
 PHP_HTTP_API time_t _http_parse_date(const char *date);
 
-#define http_send_status(s) _http_send_status((s) TSRMLS_CC)
-PHP_HTTP_API inline STATUS _http_send_status(const int status TSRMLS_DC);
-
-#define http_send_header(h) _http_send_header((h) TSRMLS_CC)
-PHP_HTTP_API inline STATUS _http_send_header(const char *header TSRMLS_DC);
-
+#define http_send_status(s) sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) (s) TSRMLS_CC)
+#define http_send_header(h) http_send_status_header(0, (h))
 #define http_send_status_header(s, h) _http_send_status_header((s), (h) TSRMLS_CC)
 PHP_HTTP_API inline STATUS _http_send_status_header(const int status, const char *header TSRMLS_DC);
 
@@ -68,9 +66,6 @@ PHP_HTTP_API inline char *_http_etag(const void *data_ptr, const size_t data_len
 
 #define http_lmod(p, m) _http_lmod((p), (m) TSRMLS_CC)
 PHP_HTTP_API inline time_t _http_lmod(const void *data_ptr, const http_send_mode data_mode TSRMLS_DC);
-
-#define http_is_range_request() _http_is_range_request(TSRMLS_C)
-PHP_HTTP_API inline int _http_is_range_request(TSRMLS_D);
 
 #define http_ob_etaghandler(o, l, ho, hl, m) _http_ob_etaghandler((o), (l), (ho), (hl), (m) TSRMLS_CC)
 PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC);
@@ -114,22 +109,19 @@ PHP_HTTP_API char *_http_absolute_uri(const char *url, const char *proto TSRMLS_
 PHP_HTTP_API char *_http_negotiate_q(const char *entry, const zval *supported, const char *def TSRMLS_DC);
 
 #define http_get_request_ranges(r, l) _http_get_request_ranges((r), (l) TSRMLS_CC)
-PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges, const size_t length TSRMLS_DC);
+PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, const size_t length TSRMLS_DC);
 
 #define http_send_ranges(r, d, s, m) _http_send_ranges((r), (d), (s), (m) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const size_t size, const http_send_mode mode TSRMLS_DC);
+PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, const size_t size, const http_send_mode mode TSRMLS_DC);
 
+#define http_send_data(d, l) http_send((d), (l), SEND_DATA)
 #define http_send(d, s, m) _http_send((d), (s), (m) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send(const void *data, const size_t data_size, const http_send_mode mode TSRMLS_DC);
 
-#define http_send_data(z) _http_send_data((z) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_data(const zval *zdata TSRMLS_DC);
-
-#define http_send_stream(s) _http_send_stream((s) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_stream(const php_stream *s TSRMLS_DC);
-
-#define http_send_file(f) _http_send_file((f) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_file(const zval *zfile TSRMLS_DC);
+#define http_send_file(f) http_send_stream_ex(php_stream_open_wrapper(f, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL), 1)
+#define http_send_stream(s) http_send_stream_ex((s), 0)
+#define http_send_stream_ex(s, c) _http_send_stream_ex((s), (c) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *s, zend_bool close_stream TSRMLS_DC);
 
 #define http_chunked_decode(e, el, d, dl) _http_chunked_decode((e), (el), (d), (dl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, const size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);

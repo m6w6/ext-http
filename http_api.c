@@ -298,16 +298,19 @@ static STATUS http_ob_stack_get(php_ob_buffer *o, php_ob_buffer **s)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 {
 	struct tm *gmtime, tmbuf;
-	char *date = ecalloc(1, 31);
 
-	gmtime = php_gmtime_r(&t, &tmbuf);
-	snprintf(date, 30,
-		"%s, %02d %s %04d %02d:%02d:%02d GMT",
-		days[gmtime->tm_wday], gmtime->tm_mday,
-		months[gmtime->tm_mon], gmtime->tm_year + 1900,
-		gmtime->tm_hour, gmtime->tm_min, gmtime->tm_sec
-	);
-	return date;
+	if (gmtime = php_gmtime_r(&t, &tmbuf)) {
+		char *date = ecalloc(1, 31);
+		snprintf(date, 30,
+			"%s, %02d %s %04d %02d:%02d:%02d GMT",
+			days[gmtime->tm_wday], gmtime->tm_mday,
+			months[gmtime->tm_mon], gmtime->tm_year + 1900,
+			gmtime->tm_hour, gmtime->tm_min, gmtime->tm_sec
+		);
+		return date;
+	}
+
+	return NULL;
 }
 /* }}} */
 
@@ -369,7 +372,8 @@ PHP_HTTP_API time_t _http_parse_date(const char *date)
 			/* a digit */
 			int val;
 			char *end;
-			if((seconds == -1) && (3 == sscanf(date, "%02d:%02d:%02d", &hours, &minutes, &seconds))) {
+			if ((seconds == -1) &&
+				(3 == sscanf(date, "%02d:%02d:%02d", &hours, &minutes, &seconds))) {
 				/* time stamp! */
 				date += 8;
 				found = 1;
@@ -377,7 +381,8 @@ PHP_HTTP_API time_t _http_parse_date(const char *date)
 			else {
 				val = (int) strtol(date, &end, 10);
 
-				if ((tz_offset == -1) && ((end - date) == 4) && (val < 1300) &&	(indate < date) && ((date[-1] == '+' || date[-1] == '-'))) {
+				if ((tz_offset == -1) && ((end - date) == 4) && (val < 1300) &&
+					(indate < date) && ((date[-1] == '+' || date[-1] == '-'))) {
 					/* four digits and a value less than 1300 and it is preceeded with
 					a plus or minus. This is a time zone indication. */
 					found = 1;
@@ -558,29 +563,6 @@ PHP_HTTP_API time_t _http_lmod(const void *data_ptr, const http_send_mode data_m
 }
 /* }}} */
 
-/* {{{ int http_is_range_request(void) */
-PHP_HTTP_API int _http_is_range_request(TSRMLS_D)
-{
-	return zend_hash_exists(Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]),
-		"HTTP_RANGE", sizeof("HTTP_RANGE"));
-}
-/* }}} */
-
-/* {{{ STATUS http_send_status(int) */
-PHP_HTTP_API STATUS _http_send_status(const int status TSRMLS_DC)
-{
-	int s = status;
-	return sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) s TSRMLS_CC);
-}
-/* }}} */
-
-/* {{{ STATUS http_send_header(char *) */
-PHP_HTTP_API STATUS _http_send_header(const char *header TSRMLS_DC)
-{
-	return http_send_status_header(0, header);
-}
-/* }}} */
-
 /* {{{ STATUS http_send_status_header(int, char *) */
 PHP_HTTP_API STATUS _http_send_status_header(const int status, const char *header TSRMLS_DC)
 {
@@ -727,15 +709,18 @@ PHP_HTTP_API int _http_etag_match(const char *entry, const char *etag TSRMLS_DC)
 /* {{{ STATUS http_send_last_modified(int) */
 PHP_HTTP_API STATUS _http_send_last_modified(const time_t t TSRMLS_DC)
 {
-	char modified[96] = "Last-Modified: ", *date;
-	date = http_date(t);
-	strcat(modified, date);
-	efree(date);
+	char *date = NULL;
+	if (date = http_date(t)) {
+		char modified[96] = "Last-Modified: ";
+		strcat(modified, date);
+		efree(date);
 
-	/* remember */
-	HTTP_G(lmod) = t;
+		/* remember */
+		HTTP_G(lmod) = t;
 
-	return http_send_header(modified);
+		return http_send_header(modified);
+	}
+	return FAILURE;
 }
 /* }}} */
 
@@ -1020,8 +1005,8 @@ PHP_HTTP_API char *_http_negotiate_q(const char *entry, const zval *supported,
 }
 /* }}} */
 
-/* {{{ http_range_status http_get_request_ranges(zval *zranges, size_t) */
-PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
+/* {{{ http_range_status http_get_request_ranges(HashTable *ranges, size_t) */
+PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges,
 	const size_t length TSRMLS_DC)
 {
 	zval *zrange;
@@ -1130,7 +1115,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 					array_init(zentry);
 					add_index_long(zentry, 0, begin);
 					add_index_long(zentry, 1, end);
-					add_next_index_zval(zranges, zentry);
+					zend_hash_next_index_insert(ranges, &zentry, sizeof(zval *), NULL);
 
 					begin = -1;
 					end = -1;
@@ -1148,23 +1133,24 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(zval *zranges,
 }
 /* }}} */
 
-/* {{{ STATUS http_send_ranges(zval *, void *, size_t, http_send_mode) */
-PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const size_t size, const http_send_mode mode TSRMLS_DC)
+/* {{{ STATUS http_send_ranges(HashTable *, void *, size_t, http_send_mode) */
+PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, const size_t size, const http_send_mode mode TSRMLS_DC)
 {
-	int c;
 	long **begin, **end;
 	zval **zrange;
 
-	/* Send HTTP 206 Partial Content */
-	http_send_status(206);
-
 	/* single range */
-	if ((c = zend_hash_num_elements(Z_ARRVAL_P(zranges))) == 1) {
+	if (zend_hash_num_elements(ranges) == 1) {
 		char range_header[256] = {0};
 
-		zend_hash_index_find(Z_ARRVAL_P(zranges), 0, (void **) &zrange);
-		zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &begin);
-		zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &end);
+		if (SUCCESS != zend_hash_index_find(ranges, 0, (void **) &zrange) ||
+			SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &begin) ||
+			SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &end)) {
+			return FAILURE;
+		}
+
+		/* Send HTTP 206 Partial Content */
+		http_send_status(206);
 
 		/* send content range header */
 		snprintf(range_header, 255, "Content-Range: bytes %d-%d/%d", **begin, **end, size);
@@ -1176,24 +1162,21 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 
 	/* multi range */
 	else {
-		int i;
 		char bound[23] = {0}, preface[1024] = {0},
 			multi_header[68] = "Content-Type: multipart/byteranges; boundary=";
 
+		/* Send HTTP 206 Partial Content */
+		http_send_status(206);
+
+		/* send multipart/byteranges header */
 		snprintf(bound, 22, "--%d%0.9f", time(NULL), php_combined_lcg(TSRMLS_C));
 		strncat(multi_header, bound + 2, 21);
 		http_send_header(multi_header);
 
 		/* send each requested chunk */
-		for (	i = 0,	zend_hash_internal_pointer_reset(Z_ARRVAL_P(zranges));
-				i < c;
-				i++,	zend_hash_move_forward(Z_ARRVAL_P(zranges))) {
-			if (	HASH_KEY_NON_EXISTANT == zend_hash_get_current_data(
-						Z_ARRVAL_P(zranges), (void **) &zrange) ||
-					SUCCESS != zend_hash_index_find(
-						Z_ARRVAL_PP(zrange), 0, (void **) &begin) ||
-					SUCCESS != zend_hash_index_find(
-						Z_ARRVAL_PP(zrange), 1, (void **) &end)) {
+		FOREACH_HASH_VAL(ranges, zrange) {
+			if (SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &begin) ||
+				SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &end)) {
 				break;
 			}
 
@@ -1216,15 +1199,16 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 		}
 
 		/* write boundary once more */
-		php_body_write(HTTP_CRLF, 2 TSRMLS_CC);
+		php_body_write(HTTP_CRLF, sizeof(HTTP_CRLF) - 1 TSRMLS_CC);
 		php_body_write(bound, strlen(bound) TSRMLS_CC);
+		php_body_write("--", 2 TSRMLS_CC);
 
 		return SUCCESS;
 	}
 }
 /* }}} */
 
-/* {{{ STATUS http_send(void *, sizezo_t, http_send_mode) */
+/* {{{ STATUS http_send(void *, size_t, http_send_mode) */
 PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 	const http_send_mode data_mode TSRMLS_DC)
 {
@@ -1232,6 +1216,9 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 
 	if (!data_ptr) {
 		return FAILURE;
+	}
+	if (!data_size) {
+		return SUCCESS;
 	}
 
 	/* etag handling */
@@ -1272,28 +1259,24 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 		) {
 
 			STATUS result = FAILURE;
-			zval *zranges = NULL;
-			MAKE_STD_ZVAL(zranges);
-			array_init(zranges);
+			HashTable ranges;
+			zend_hash_init(&ranges, 0, NULL, ZVAL_PTR_DTOR, 0);
 
-			switch (http_get_request_ranges(zranges, data_size))
+			switch (http_get_request_ranges(&ranges, data_size))
 			{
 				case RANGE_NO:
-					zval_dtor(zranges);
-					efree(zranges);
+					zend_hash_destroy(&ranges);
 					/* go ahead and send all */
 				break;
 
 				case RANGE_OK:
-					result = http_send_ranges(zranges, data_ptr, data_size, data_mode);
-					zval_dtor(zranges);
-					efree(zranges);
+					result = http_send_ranges(&ranges, data_ptr, data_size, data_mode);
+					zend_hash_destroy(&ranges);
 					return result;
 				break;
 
 				case RANGE_ERR:
-					zval_dtor(zranges);
-					efree(zranges);
+					zend_hash_destroy(&ranges);
 					http_send_status(416);
 					return FAILURE;
 				break;
@@ -1309,49 +1292,23 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 }
 /* }}} */
 
-/* {{{ STATUS http_send_data(zval *) */
-PHP_HTTP_API STATUS _http_send_data(const zval *zdata TSRMLS_DC)
-{
-	if (!Z_STRLEN_P(zdata)) {
-		return SUCCESS;
-	}
-	if (!Z_STRVAL_P(zdata)) {
-		return FAILURE;
-	}
-
-	return http_send(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata), SEND_DATA);
-}
-/* }}} */
-
 /* {{{ STATUS http_send_stream(php_stream *) */
-PHP_HTTP_API STATUS _http_send_stream(const php_stream *file TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file,
+	zend_bool close_stream TSRMLS_DC)
 {
-	if (php_stream_stat((php_stream *) file, &HTTP_G(ssb))) {
+	STATUS status;
+
+	if ((!file) || php_stream_stat(file, &HTTP_G(ssb))) {
 		return FAILURE;
 	}
 
-	return http_send(file, HTTP_G(ssb).sb.st_size, SEND_RSRC);
-}
-/* }}} */
+	status = http_send(file, HTTP_G(ssb).sb.st_size, SEND_RSRC);
 
-/* {{{ STATUS http_send_file(zval *) */
-PHP_HTTP_API STATUS _http_send_file(const zval *zfile TSRMLS_DC)
-{
-	php_stream *file;
-	STATUS ret;
-
-	if (!Z_STRLEN_P(zfile)) {
-		return FAILURE;
+	if (close_stream) {
+		php_stream_close(file);
 	}
 
-	if (!(file = php_stream_open_wrapper(Z_STRVAL_P(zfile), "rb",
-			REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL))) {
-		return FAILURE;
-	}
-
-	ret = http_send_stream(file);
-	php_stream_close(file);
-	return ret;
+	return status;
 }
 /* }}} */
 
@@ -1420,7 +1377,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 /* }}} */
 
 /* {{{ proto STATUS http_split_response_ex(char *, size_t, zval *, zval *) */
-PHP_HTTP_API STATUS _http_split_response_ex( char *response,
+PHP_HTTP_API STATUS _http_split_response_ex(char *response,
 	size_t response_len, zval *zheaders, zval *zbody TSRMLS_DC)
 {
 	char *body = NULL;

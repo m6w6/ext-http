@@ -269,7 +269,7 @@ PHP_FUNCTION(http_send_content_disposition)
 }
 /* }}} */
 
-/* {{{ proto bool http_match_modified([int timestamp])
+/* {{{ proto bool http_match_modified([int timestamp[, for_range = false]])
  *
  * Matches the given timestamp against the clients "If-Modified-Since" resp.
  * "If-Unmodified-Since" HTTP headers.
@@ -278,8 +278,9 @@ PHP_FUNCTION(http_send_content_disposition)
 PHP_FUNCTION(http_match_modified)
 {
 	long t = -1;
+	zend_bool for_range = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &t) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|lb", &t, &for_range) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
@@ -288,11 +289,14 @@ PHP_FUNCTION(http_match_modified)
 		t = (long) time(NULL);
 	}
 
-	RETURN_BOOL(http_modified_match("HTTP_IF_MODIFIED_SINCE", t) || http_modified_match("HTTP_IF_UNMODIFIED_SINCE", t));
+	if (for_range) {
+		RETURN_BOOL(http_modified_match("HTTP_IF_UNMODIFIED_SINCE", t));
+	}
+	RETURN_BOOL(http_modified_match("HTTP_IF_MODIFIED_SINCE", t));
 }
 /* }}} */
 
-/* {{{ proto bool http_match_etag(string etag)
+/* {{{ proto bool http_match_etag(string etag[, for_range = false])
  *
  * This matches the given ETag against the clients
  * "If-Match" resp. "If-None-Match" HTTP headers.
@@ -302,12 +306,16 @@ PHP_FUNCTION(http_match_etag)
 {
 	int etag_len;
 	char *etag;
+	zend_bool for_range = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &etag, &etag_len) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &etag, &etag_len, &for_range) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	RETURN_BOOL(http_etag_match("HTTP_IF_NONE_MATCH", etag) || http_etag_match("HTTP_IF_MATCH", etag));
+	if (for_range) {
+		RETURN_BOOL(http_etag_match("HTTP_IF_MATCH", etag));
+	}
+	RETURN_BOOL(http_etag_match("HTTP_IF_NONE_MATCH", etag));
 }
 /* }}} */
 
@@ -493,7 +501,7 @@ PHP_FUNCTION(http_send_data)
 
 	convert_to_string_ex(&zdata);
 	http_send_header("Accept-Ranges: bytes");
-	RETURN_SUCCESS(http_send_data(zdata));
+	RETURN_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
 }
 /* }}} */
 
@@ -504,15 +512,18 @@ PHP_FUNCTION(http_send_data)
  */
 PHP_FUNCTION(http_send_file)
 {
-	zval *zfile;
+	char *file;
+	int flen = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &zfile) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &file, &flen) != SUCCESS) {
+		RETURN_FALSE;
+	}
+	if (!flen) {
 		RETURN_FALSE;
 	}
 
-	convert_to_string_ex(&zfile);
 	http_send_header("Accept-Ranges: bytes");
-	RETURN_SUCCESS(http_send_file(zfile));
+	RETURN_SUCCESS(http_send_file(file));
 }
 /* }}} */
 
@@ -569,6 +580,7 @@ PHP_FUNCTION(http_chunked_decode)
  *     0 => array(
  *         'Status' => '200 Ok',
  *         'Content-Type' => 'text/plain',
+
  *         'Content-Language' => 'en-US'
  *     ),
  *     1 => "Hello World!"
@@ -934,7 +946,7 @@ PHP_FUNCTION(http_auth_basic_cb)
 /* }}}*/
 
 /* {{{ Sara Golemons http_build_query() */
-#ifndef ZEND_ENGINE_2 
+#ifndef ZEND_ENGINE_2
 
 /* {{{ proto string http_build_query(mixed formdata [, string prefix])
    Generates a form-encoded query string from an associative array or object. */

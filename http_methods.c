@@ -438,7 +438,8 @@ PHP_METHOD(HTTPi_Response, send)
 		{
 			case SEND_DATA:
 			{
-				RETURN_SUCCESS(http_send_data(GET_PROP(obj, data)));
+				zval *zdata = GET_PROP(obj, data);
+				RETURN_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
 			}
 
 			case SEND_RSRC:
@@ -451,7 +452,8 @@ PHP_METHOD(HTTPi_Response, send)
 
 			default:
 			{
-				RETURN_SUCCESS(http_send_file(GET_PROP(obj, file)));
+				zval *zfile = GET_PROP(obj, file);
+				RETURN_SUCCESS(http_send_file(Z_STRVAL_P(zfile)));
 			}
 		}
 	}
@@ -1119,3 +1121,4 @@ PHP_METHOD(HTTPi_Request, send)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+
