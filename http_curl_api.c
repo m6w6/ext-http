@@ -62,6 +62,17 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 	http_curl_initbuf(); \
 	http_curl_setopts(ch, URL, options);
 
+#define http_curl_perform(ch, clean_curl) \
+	{ \
+		CURLcode result; \
+		if (CURLE_OK != (result = curl_easy_perform(ch))) { \
+			http_curl_cleanup(ch, clean_curl); \
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request: %s", curl_easy_strerror(result)); \
+			return FAILURE; \
+		} \
+	}
+
+
 
 #define http_curl_cleanup(ch, clean_curl) \
 	http_curl_freestr(); \
@@ -482,13 +493,8 @@ PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options,
 
 	http_curl_startup(ch, clean_curl, URL, options);
 	curl_easy_setopt(ch, CURLOPT_HTTPGET, 1);
-
-	if (CURLE_OK != curl_easy_perform(ch)) {
-		http_curl_cleanup(ch, clean_curl);
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
-		return FAILURE;
-	}
-
+	http_curl_perform(ch, clean_curl);
+	
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
@@ -507,12 +513,7 @@ PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options,
 
 	http_curl_startup(ch, clean_curl, URL, options);
 	curl_easy_setopt(ch, CURLOPT_NOBODY, 1);
-
-	if (CURLE_OK != curl_easy_perform(ch)) {
-		http_curl_cleanup(ch, clean_curl);
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
-		return FAILURE;
-	}
+	http_curl_perform(ch, clean_curl);
 
 	if (info) {
 		http_curl_getinfo(ch, info);
@@ -535,12 +536,7 @@ PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata
 	curl_easy_setopt(ch, CURLOPT_POST, 1);
 	curl_easy_setopt(ch, CURLOPT_POSTFIELDS, postdata);
 	curl_easy_setopt(ch, CURLOPT_POSTFIELDSIZE, postdata_len);
-
-	if (CURLE_OK != curl_easy_perform(ch)) {
-		http_curl_cleanup(ch, clean_curl);
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
-		return FAILURE;
-	}
+	http_curl_perform(ch, clean_curl);
 
 	if (info) {
 		http_curl_getinfo(ch, info);
@@ -591,12 +587,7 @@ PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL,
 	http_curl_startup(ch, clean_curl, URL, options);
 	curl_easy_setopt(ch, CURLOPT_POST, 1);
 	curl_easy_setopt(ch, CURLOPT_HTTPPOST, curldata);
-
-	if (CURLE_OK != curl_easy_perform(ch)) {
-		http_curl_cleanup(ch, clean_curl);
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request");
-		return FAILURE;
-	}
+	http_curl_perform(ch, clean_curl);
 
 	if (info) {
 		http_curl_getinfo(ch, info);
