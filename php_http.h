@@ -34,9 +34,7 @@ extern zend_module_entry http_module_entry;
 #	define HTTP_G(v) (http_globals.v)
 #endif
 
-#ifndef ZEND_ENGINE_2
-#	include "php_http_build_query.h"
-#else
+#ifdef ZEND_ENGINE_2
 
 typedef struct {
 	zend_object	zo;
@@ -170,7 +168,9 @@ PHP_FUNCTION(http_post_array);
 #endif
 PHP_FUNCTION(http_auth_basic);
 PHP_FUNCTION(http_auth_basic_cb);
-
+#ifndef ZEND_ENGINE_2
+PHP_FUNCTION(http_build_query);
+#endif
 PHP_FUNCTION(ob_httpetaghandler);
 
 PHP_MINIT_FUNCTION(http);

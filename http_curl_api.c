@@ -33,6 +33,7 @@
 #include "php_http.h"
 #include "php_http_api.h"
 #include "php_http_curl_api.h"
+#include "php_http_std_defs.h"
 
 #include "ext/standard/php_smart_str.h"
 

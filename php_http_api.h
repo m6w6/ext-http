@@ -24,69 +24,6 @@
 #	define PHP_HTTP_API
 #endif
 
-#ifndef ZEND_ENGINE_2
-#	include "php_http_build_query.h"
-#endif
-
-#define RETURN_SUCCESS(v)	RETURN_BOOL(SUCCESS == (v))
-#define HASH_ORNULL(z) 		((z) ? Z_ARRVAL_P(z) : NULL)
-#define NO_ARGS 			if (ZEND_NUM_ARGS()) WRONG_PARAM_COUNT
-
-#define array_copy(src, dst)	zend_hash_copy(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
-#define array_merge(src, dst)	zend_hash_merge(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *), 1)
-
-#ifdef ZEND_ENGINE_2
-
-#	define HTTP_REGISTER_CLASS_EX(classname, name, parent, flags) \
-	{ \
-		zend_class_entry ce; \
-		INIT_CLASS_ENTRY(ce, #classname, name## _class_methods); \
-		ce.create_object = name## _new_object; \
-		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
-		name## _ce->ce_flags |= flags;  \
-		memcpy(& name## _object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
-		name## _object_handlers.clone_obj = NULL; \
-		name## _declare_default_properties(name## _ce); \
-	}
-
-#	define HTTP_REGISTER_CLASS(classname, name, parent, flags) \
-	{ \
-		zend_class_entry ce; \
-		INIT_CLASS_ENTRY(ce, #classname, name## _class_methods); \
-		ce.create_object = NULL; \
-		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
-		name## _ce->ce_flags |= flags;  \
-	}
-
-#	define getObject(t, o) t * o = ((t *) zend_object_store_get_object(getThis() TSRMLS_CC))
-#	define OBJ_PROP(o) o->zo.properties
-#	define DCL_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
-#	define DCL_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
-#	define DCL_PROP_N(a, n) zend_declare_property_null(ce, (#n), sizeof(#n), (ZEND_ACC_ ##a) TSRMLS_CC)
-#	define UPD_PROP(o, t, n, v) zend_update_property_ ##t(o->zo.ce, getThis(), (#n), sizeof(#n), (v) TSRMLS_CC)
-#	define SET_PROP(o, n, z) zend_update_property(o->zo.ce, getThis(), (#n), sizeof(#n), (z) TSRMLS_CC)
-#	define GET_PROP(o, n) zend_read_property(o->zo.ce, getThis(), (#n), sizeof(#n), 0 TSRMLS_CC)
-
-#	define INIT_PARR(o, n) \
-	{ \
-		zval *__tmp; \
-		MAKE_STD_ZVAL(__tmp); \
-		array_init(__tmp); \
-		SET_PROP(o, n, __tmp); \
-	}
-
-#	define FREE_PARR(o, p) \
-	{ \
-		zval *__tmp = NULL; \
-		if (__tmp = GET_PROP(o, p)) { \
-			zval_dtor(__tmp); \
-			FREE_ZVAL(__tmp); \
-			__tmp = NULL; \
-		} \
-	}
-
-#endif /* ZEND_ENGINE_2 */
-
 /* make functions that return SUCCESS|FAILURE more obvious */
 typedef int STATUS;
 
@@ -103,36 +40,6 @@ typedef enum {
 	SEND_DATA,
 	SEND_RSRC
 } http_send_mode;
-/* }}} */
-
-/* CR LF */
-#define HTTP_CRLF "\r\n"
-
-/* default cache control */
-#define HTTP_DEFAULT_CACHECONTROL "private, must-revalidate, max-age=0"
-
-/* max URI length */
-#define HTTP_URI_MAXLEN 2048
-
-/* buffer size */
-#define HTTP_BUF_SIZE 2097152
-
-/* server vars shorthand */
-#define HTTP_SERVER_VARS Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER])
-
-
-/* {{{ HTTP_GSC(var, name, ret) */
-#define HTTP_GSC(var, name, ret)  HTTP_GSP(var, name, return ret)
-/* }}} */
-
-/* {{{ HTTP_GSP(var, name, ret) */
-#define HTTP_GSP(var, name, ret) \
-		if (!(var = http_get_server_var(name))) { \
-			ret; \
-		} \
-		if (!Z_STRLEN_P(var)) { \
-			ret; \
-		}
 /* }}} */
 
 char *pretty_key(char *key, int key_len, int uctitle, int xhyphen);
@@ -227,6 +134,10 @@ PHP_HTTP_API STATUS _http_send_file(const zval *zfile TSRMLS_DC);
 #define http_chunked_decode(e, el, d, dl) _http_chunked_decode((e), (el), (d), (dl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, const size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
+#define http_urlencode_hash(h, q) _http_urlencode_hash_ex((h), 1, NULL, 0, (q), NULL TSRMLS_CC)
+#define http_urlencode_hash_ex(h, o, p, pl, q, ql) _http_urlencode_hash_ex((h), (o), (p), (pl), (q), (ql) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, int override_argsep, char *pre_encoded_data, size_t pre_encoded_len, char **encoded_data, size_t *encoded_len TSRMLS_DC);
+
 #define http_split_response(r, h, b) _http_split_response_ex(Z_STRVAL_P(r), Z_STRLEN_P(r), (h), (b) TSRMLS_CC)
 #define http_split_response_ex(r, l, h, b) _http_split_response_ex((r), (l), (h), (b) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t repsonse_len, zval *zheaders, zval *zbody TSRMLS_DC);
@@ -242,6 +153,15 @@ PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC);
 
 #define http_auth_header(t, r) _http_auth_header((t), (r) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_auth_header(const char *type, const char *realm TSRMLS_DC);
+
+#ifndef ZEND_ENGINE_2
+#define php_url_encode_hash(ht, formstr)	php_url_encode_hash_ex((ht), (formstr), NULL, 0, NULL, 0, NULL, 0, NULL TSRMLS_CC)
+PHPAPI int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
+				const char *num_prefix, int num_prefix_len,
+				const char *key_prefix, int key_prefix_len,
+				const char *key_suffix, int key_suffix_len,
+				zval *type TSRMLS_DC);
+#endif
 
 /* }}} */
 

@@ -35,6 +35,7 @@
 #include "php_http.h"
 #include "php_http_api.h"
 #include "php_http_curl_api.h"
+#include "php_http_std_defs.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
 
@@ -429,10 +430,12 @@ PHP_FUNCTION(ob_httpetaghandler)
 PHP_FUNCTION(http_redirect)
 {
 	int url_len;
+	size_t query_len = 0;
 	zend_bool session = 0, permanent = 0;
 	zval *params = NULL;
-	smart_str qstr = {0};
-	char *url, *URI, LOC[HTTP_URI_MAXLEN + 9], RED[HTTP_URI_MAXLEN * 2 + 34];
+	char *query, *url, *URI,
+		LOC[HTTP_URI_MAXLEN + sizeof("Location: ")],
+		RED[HTTP_URI_MAXLEN * 2 + sizeof("Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n")];
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sa!/bb", &url, &url_len, &params, &session, &permanent) != SUCCESS) {
 		RETURN_FALSE;
@@ -451,23 +454,18 @@ PHP_FUNCTION(http_redirect)
 
 	/* treat params array with http_build_query() */
 	if (params) {
-		if (php_url_encode_hash_ex(Z_ARRVAL_P(params), &qstr, NULL,0,NULL,0,NULL,0,NULL TSRMLS_CC) != SUCCESS) {
-			if (qstr.c) {
-				efree(qstr.c);
-			}
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not encode query parameters");
+		if (SUCCESS != http_urlencode_hash_ex(Z_ARRVAL_P(params), 0, NULL, 0, &query, &query_len)) {
 			RETURN_FALSE;
 		}
-		smart_str_0(&qstr);
 	}
 
 	URI = http_absolute_uri(url, NULL);
-	if (qstr.c) {
-		snprintf(LOC, HTTP_URI_MAXLEN + strlen("Location: "), "Location: %s?%s", URI, qstr.c);
-		sprintf(RED, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, qstr.c, URI, qstr.c);
-		efree(qstr.c);
+	if (query_len) {
+		snprintf(LOC, HTTP_URI_MAXLEN + sizeof("Location: "), "Location: %s?%s", URI, query);
+		sprintf(RED, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);
+		efree(query);
 	} else {
-		snprintf(LOC, HTTP_URI_MAXLEN + strlen("Location: "), "Location: %s", URI);
+		snprintf(LOC, HTTP_URI_MAXLEN + sizeof("Location: "), "Location: %s", URI);
 		sprintf(RED, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
 	}
 	efree(URI);
@@ -935,6 +933,45 @@ PHP_FUNCTION(http_auth_basic_cb)
 }
 /* }}}*/
 
+/* {{{ Sara Golemons http_build_query() */
+#ifndef ZEND_ENGINE_2 
+
+/* {{{ proto string http_build_query(mixed formdata [, string prefix])
+   Generates a form-encoded query string from an associative array or object. */
+PHP_FUNCTION(http_build_query)
+{
+	zval *formdata;
+	char *prefix = NULL;
+	int prefix_len = 0;
+	smart_str formstr = {0};
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|s", &formdata, &prefix, &prefix_len) != SUCCESS) {
+		RETURN_FALSE;
+	}
+
+	if (Z_TYPE_P(formdata) != IS_ARRAY && Z_TYPE_P(formdata) != IS_OBJECT) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Parameter 1 expected to be Array or Object.  Incorrect value given.");
+		RETURN_FALSE;
+	}
+
+	if (php_url_encode_hash_ex(HASH_OF(formdata), &formstr, prefix, prefix_len, NULL, 0, NULL, 0, (Z_TYPE_P(formdata) == IS_OBJECT ? formdata : NULL) TSRMLS_CC) == FAILURE) {
+		if (formstr.c) {
+			efree(formstr.c);
+		}
+		RETURN_FALSE;
+	}
+
+	if (!formstr.c) {
+		RETURN_NULL();
+	}
+
+	smart_str_0(&formstr);
+
+	RETURN_STRINGL(formstr.c, formstr.len, 0);
+}
+/* }}} */
+#endif /* !ZEND_ENGINE_2 */
+/* }}} */
 
 /*
  * Local variables:

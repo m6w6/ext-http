@@ -19,14 +19,6 @@
 #define PHP_HTTP_CURL_API_H
 
 #include <curl/curl.h>
-#include "zend_ini.h"
-
-/* override arg_separator.output to "&" for data used in outgoing requests */
-#define HTTP_URL_ARGSEP_OVERRIDE zend_alter_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, "&", 1, ZEND_INI_ALL, ZEND_INI_STAGE_RUNTIME)
-#define HTTP_URL_ARGSEP_RESTORE zend_restore_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, ZEND_INI_STAGE_RUNTIME)
-
-/* CURL buffer size */
-#define HTTP_CURLBUF_SIZE 16384
 
 #define http_get(u, o, i, d, l) _http_get_ex(NULL, (u), (o), (i), (d), (l) TSRMLS_CC)
 #define http_get_ex(c, u, o, i, d, l) _http_get_ex((c), (u), (o), (i), (d), (l) TSRMLS_CC)
