@@ -53,6 +53,9 @@ $preface = <<<_PREFACE
             width: auto;
             float: left;
         }
+        p, pre {
+            clear: both;
+        }
         p br, pre code br { 
             display: block; 
         } 
@@ -65,6 +68,7 @@ $footer = <<<_FOOTER
     <p><b>Generated at: %s</b></p>
 </body>
 </html>
+
 _FOOTER;
 
 if ($_SERVER['argc'] < 2) {
@@ -86,3 +90,4 @@ foreach (array_slice($_SERVER['argv'], 1) as $f) {
 
 printf($footer, date('r'));
 ?>
+
