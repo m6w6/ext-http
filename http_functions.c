@@ -952,16 +952,16 @@ PHP_FUNCTION(http_auth_basic_cb)
 /* {{{ Sara Golemons http_build_query() */
 #ifndef ZEND_ENGINE_2
 
-/* {{{ proto string http_build_query(mixed formdata [, string prefix])
+/* {{{ proto string http_build_query(mixed formdata [, string prefix[, string arg_separator]])
    Generates a form-encoded query string from an associative array or object. */
 PHP_FUNCTION(http_build_query)
 {
 	zval *formdata;
-	char *prefix = NULL, *arg_sep = NULL;
-	int prefix_len = 0;
+	int prefix_len = 0, arg_sep_len = 0;
+	char *prefix = NULL, *arg_sep = INI_STR("arg_separator.output");
 	phpstr *formstr = phpstr_new();
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|s", &formdata, &prefix, &prefix_len) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|ss", &formdata, &prefix, &prefix_len, &arg_sep, &arg_sep_len) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
@@ -970,7 +970,7 @@ PHP_FUNCTION(http_build_query)
 		RETURN_FALSE;
 	}
 
-	if (!strlen(arg_sep = INI_STR("arg_separator.output"))) {
+	if (!arg_sep_len) {
 		arg_sep = HTTP_URL_ARGSEP_DEFAULT;
 	}
 
@@ -992,6 +992,7 @@ PHP_FUNCTION(http_build_query)
 
 PHP_FUNCTION(http_test)
 {
+	RETURN_TRUE;
 }
 
 /*
