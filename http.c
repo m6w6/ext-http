@@ -505,16 +505,37 @@ PHP_RSHUTDOWN_FUNCTION(http)
 /* {{{ PHP_MINFO_FUNCTION */
 PHP_MINFO_FUNCTION(http)
 {
-	php_info_print_table_start();
-	php_info_print_table_header(2, "Extended HTTP support", "enabled");
-	php_info_print_table_row(2, "Version:", PHP_EXT_HTTP_VERSION);
-	php_info_print_table_row(2, "cURL convenience functions:",
-#ifdef HTTP_HAVE_CURL
-			"enabled"
+#ifdef ZEND_ENGINE_2
+#	define HTTP_FUNC_AVAIL(CLASS) "procedural, object oriented (class " CLASS ")"
 #else
-			"disabled"
+#	define HTTP_FUNC_AVAIL(CLASS) "procedural"
 #endif
-	);
+
+#ifdef HTTP_HAVE_CURL
+#	define HTTP_CURL_VERSION curl_version()
+#	ifdef ZEND_ENGINE_2
+#		define HTTP_CURL_AVAIL(CLASS) "procedural, object oriented (class " CLASS ")"
+#	else
+#		define HTTP_CURL_AVAIL(CLASS) "procedural"
+#	endif
+#else
+#	define HTTP_CURL_VERSION "libcurl not available"
+#	define HTTP_CURL_AVAIL(CLASS) "libcurl not available"
+#endif
+
+	char full_version_string[1024] = {0};
+	snprintf(full_version_string, 1023, "%s (%s)", PHP_EXT_HTTP_VERSION, HTTP_CURL_VERSION);
+
+	php_info_print_table_start();
+	php_info_print_table_row(2, "Extended HTTP support", "enabled");
+	php_info_print_table_row(2, "Extension Version:", full_version_string);
+	php_info_print_table_end();
+	
+	php_info_print_table_start();
+	php_info_print_table_header(2, "Functionality",            "Availability");
+	php_info_print_table_row(2,    "Miscellaneous Utilities:", HTTP_FUNC_AVAIL("HTTPi"));
+	php_info_print_table_row(2,    "Extended HTTP Responses:", HTTP_FUNC_AVAIL("HTTPi_Response"));
+	php_info_print_table_row(2,    "Extended HTTP Requests:",  HTTP_CURL_AVAIL("HTTPi_Request"));
 	php_info_print_table_end();
 
 	DISPLAY_INI_ENTRIES();
