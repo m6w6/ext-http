@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package>
+<package version="1.0">
   <name>pecl_http</name>
   <summary>Extended HTTP support</summary>
   <description>
