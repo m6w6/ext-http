@@ -368,9 +368,10 @@ zend_module_entry http_module_entry = {
 };
 /* }}} */
 
-static void free_to_free(void **s)
+
+static void free_to_free(void *s)
 {
-	efree(*s);
+	efree(*(char **)s);
 }
 
 /* {{{ php_http_init_globals(zend_http_globals *) */
