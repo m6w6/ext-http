@@ -593,7 +593,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 			if (key_type == HASH_KEY_IS_STRING) {
 				zend_hash_get_current_key(Z_ARRVAL_P(zoption), &header_key, NULL, 0);
 				zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header_val);
-				snprintf(header, 1024, "%s: %s", header_key, Z_STRVAL_PP(header_val));
+				snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
 				headers = curl_slist_append(headers, header);
 				zend_hash_move_forward(Z_ARRVAL_P(zoption));
 			}
@@ -685,7 +685,7 @@ static inline void _http_curl_getinfo_ex(CURL *ch, CURLINFO i, zval *array TSRML
 			{
 				double d;
 				if (CURLE_OK == curl_easy_getinfo(ch, i, &d)) {
-					add_assoc_double(array, key, (double) d);
+					add_assoc_double(array, key, d);
 				}
 			}
 			break;
@@ -694,7 +694,7 @@ static inline void _http_curl_getinfo_ex(CURL *ch, CURLINFO i, zval *array TSRML
 			{
 				long l;
 				if (CURLE_OK == curl_easy_getinfo(ch, i, &l)) {
-					add_assoc_long(array, key, (long) l);
+					add_assoc_long(array, key, l);
 				}
 			}
 			break;
@@ -706,12 +706,10 @@ static inline void _http_curl_getinfo_ex(CURL *ch, CURLINFO i, zval *array TSRML
 /* {{{ static inline http_curl_getinfo(CURL, HashTable *) */
 static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 {
-	zval *array;
+	zval array;
+	Z_ARRVAL(array) = info;
 
-	MAKE_STD_ZVAL(array);
-	Z_ARRVAL_P(array) = info;
-
-#define INFO(I) http_curl_getinfo_ex(ch, CURLINFO_ ##I , array)
+#define INFO(I) http_curl_getinfo_ex(ch, CURLINFO_ ##I , &array)
 	/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
 	INFO(EFFECTIVE_URL);
 	/* CURLINFO_RESPONSE_CODE			=	CURLINFO_LONG	+2, */
@@ -761,7 +759,6 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 	/* CURLINFO_PROXYAUTH_AVAIL			=	CURLINFO_LONG	+24, */
 	INFO(PROXYAUTH_AVAIL);
 #undef INFO
-	efree(array);
 }
 /* }}} */
 
@@ -848,7 +845,7 @@ PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 	char *date = ecalloc(1, 30);
 
 	gmtime = php_gmtime_r(&t, &tmbuf);
-	snprintf(date, 30,
+	snprintf(date, 29,
 		"%s, %02d %s %04d %02d:%02d:%02d GMT",
 		days[gmtime->tm_wday], gmtime->tm_mday,
 		months[gmtime->tm_mon], gmtime->tm_year + 1900,
@@ -1167,7 +1164,7 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag,
 
 	header_len = strlen("ETag: \"\"") + etag_len + 1;
 	etag_header = (char *) emalloc(header_len);
-	snprintf(etag_header, header_len, "ETag: \"%s\"", etag);
+	snprintf(etag_header, header_len - 1, "ETag: \"%s\"", etag);
 	ret = http_send_header(etag_header);
 	efree(etag_header);
 
