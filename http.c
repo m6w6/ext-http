@@ -30,6 +30,10 @@
 #include "php_http_api.h"
 
 #if defined(HAVE_CURL) && HAVE_CURL
+#	ifdef PHP_WIN32
+#	include <winsock2.h>
+#	include <sys/types.h>
+#	endif
 #include <curl/curl.h>
 #endif
 
@@ -481,7 +485,7 @@ PHP_FUNCTION(http_redirect)
 		sprintf(RED, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
 	}
 	efree(URI);
-	
+
 	if ((SUCCESS == http_send_header(LOC)) && (SUCCESS == http_send_status((permanent ? 301 : 302)))) {
 		php_body_write(RED, strlen(RED) TSRMLS_CC);
 		RETURN_TRUE;
