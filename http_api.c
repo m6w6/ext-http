@@ -465,19 +465,23 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 		if (zoption = http_curl_getopt1(options, "proxyauth", IS_STRING)) {
 			curl_easy_setopt(ch, CURLOPT_PROXYUSERPWD, Z_STRVAL_P(zoption));
 		}
+#if LIBCURL_VERSION_NUM > 0x070a06
 		/* auth method */
 		if (zoption = http_curl_getopt1(options, "proxyauthtype", IS_LONG)) {
 			curl_easy_setopt(ch, CURLOPT_PROXYAUTH, Z_LVAL_P(zoption));
 		}
+#endif
 	}
 
 	/* auth */
 	if (zoption = http_curl_getopt1(options, "httpauth", IS_STRING)) {
 		curl_easy_setopt(ch, CURLOPT_USERPWD, Z_STRVAL_P(zoption));
 	}
+#if LIBCURL_VERSION_NUM > 0x070a05
 	if (zoption = http_curl_getopt1(options, "httpauthtype", IS_LONG)) {
 		curl_easy_setopt(ch, CURLOPT_HTTPAUTH, Z_LVAL_P(zoption));
 	}
+#endif
 
 	/* compress, enabled by default (empty string enables deflate and gzip) */
 	if (zoption = http_curl_getopt2(options, "compress", IS_LONG, IS_BOOL)) {
@@ -570,9 +574,11 @@ static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC)
 	{
 		/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
 		CASE(EFFECTIVE_URL);
-#ifdef CURLINFO_RESONSE_CODE
 		/* CURLINFO_RESPONSE_CODE			=	CURLINFO_LONG	+2, */
+#if LIBCURL_VERSION_NUM > 0x070a06
 		CASE(RESPONSE_CODE);
+#else
+		CASE(HTTP_CODE);
 #endif
 		/* CURLINFO_TOTAL_TIME				=	CURLINFO_DOUBLE	+3, */
 		CASE(TOTAL_TIME);
@@ -610,17 +616,15 @@ static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC)
 		CASE(REDIRECT_TIME);
 		/* CURLINFO_REDIRECT_COUNT			=	CURLINFO_LONG	+20, */
 		CASE(REDIRECT_COUNT);
-		/* CURLINFO_PRIVATE					=	CURLINFO_STRING	+21, */
+		/* CURLINFO_PRIVATE					=	CURLINFO_STRING	+21, * (mike) /
 		CASE(PRIVATE);
 		/* CURLINFO_HTTP_CONNECTCODE		=	CURLINFO_LONG	+22, */
 		CASE(HTTP_CONNECTCODE);
-#ifdef CURLINFO_HTTPAUTH_AVAIL
+#if LIBCURL_VERSION_NUM > 0x070a07
 		/* CURLINFO_HTTPAUTH_AVAIL			=	CURLINFO_LONG	+23, */
 		CASE(HTTPAUTH_AVAIL);
-#endif
-#ifdef CURLINFO_PROXYAUTH_AVAIL
 		/* CURLINFO_PROXYAUTH_AVAIL			=	CURLINFO_LONG	+24, */
-		CASE(PROXYAUTH_AVAIL); 
+		CASE(PROXYAUTH_AVAIL);
 #endif
 	}
 #undef CASE
@@ -675,9 +679,11 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 #define INFO(I) http_curl_getinfo_ex(ch, CURLINFO_ ##I , &array)
 	/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
 	INFO(EFFECTIVE_URL);
-#ifdef CURLINFO_RESONSE_CODE
+#if LIBCURL_VERSION_NUM > 0x070a06
 	/* CURLINFO_RESPONSE_CODE			=	CURLINFO_LONG	+2, */
 	INFO(RESPONSE_CODE);
+#else
+	INFO(HTTP_CODE);
 #endif
 	/* CURLINFO_TOTAL_TIME				=	CURLINFO_DOUBLE	+3, */
 	INFO(TOTAL_TIME);
@@ -719,11 +725,9 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 	INFO(PRIVATE);
 	/* CURLINFO_HTTP_CONNECTCODE		=	CURLINFO_LONG	+22, */
 	INFO(HTTP_CONNECTCODE);
-#ifdef CURLINFO_HTTPAUTH_AVAIL
+#if LIBCURL_VERSION_NUM > 0x070a07
 	/* CURLINFO_HTTPAUTH_AVAIL			=	CURLINFO_LONG	+23, */
 	INFO(HTTPAUTH_AVAIL);
-#endif
-#ifdef CURLINFO_PROXYAUTH_AVAIL
 	/* CURLINFO_PROXYAUTH_AVAIL			=	CURLINFO_LONG	+24, */
 	INFO(PROXYAUTH_AVAIL);
 #endif
