@@ -144,6 +144,9 @@ PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t repsonse_len,
 #define http_parse_headers_ex(h, l, ht, p) _http_parse_headers_ex((h), (l), (ht), (p) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len, HashTable *headers, zend_bool prettify TSRMLS_DC);
 
+#define http_parse_cookie(c, ht) _http_parse_cookie((c), (ht) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_parse_cookie(const char *cookie, HashTable *values TSRMLS_DC);
+
 #define http_get_request_headers(h) _http_get_request_headers_ex(Z_ARRVAL_P(h), 1 TSRMLS_CC)
 #define http_get_request_headers_ex(h, p) _http_get_request_headers_ex((h), (s) TSRMLS_CC)
 PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool prettify TSRMLS_DC);

@@ -1533,10 +1533,12 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 
 					/* skip empty key */
 					if (header != colon) {
-						char *key = estrndup(header, colon - header);
+						zval **previous = NULL;
+						int keylen = colon - header;
+						char *key = estrndup(header, keylen);
 
 						if (prettify) {
-							key = pretty_key(key, colon - header, 1, 1);
+							key = pretty_key(key, keylen, 1, 1);
 						}
 
 						value_len += line - colon - 1;
@@ -1546,11 +1548,37 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 						/* skip trailing ws */
 						while (isspace(colon[value_len - 1])) --value_len;
 
-						if (value_len < 1) {
+						/* if we already have got such a header make an array of those */
+						if (SUCCESS == zend_hash_find(headers, key, keylen + 1, (void **) &previous)) {
+							/* already an array? - just add */
+							if (Z_TYPE_PP(previous) == IS_ARRAY) {
+								if (value_len > 0) {
+									add_next_index_stringl(*previous, colon, value_len, 1);
+								} else {
+									add_next_index_stringl(*previous, "", 0, 1);
+								}
+							} else {
+								/* create the array */
+								zval *new_array;
+								MAKE_STD_ZVAL(new_array);
+								array_init(new_array);
+
+								add_next_index_stringl(new_array, Z_STRVAL_PP(previous), Z_STRLEN_PP(previous), 1);
+								if (value_len > 0) {
+									add_next_index_stringl(new_array, colon, value_len, 1);
+								} else {
+									add_next_index_stringl(new_array, "", 0, 1);
+								}
+
+								add_assoc_zval(&array, key, new_array);
+							}
+
+							previous = NULL;
+						} else if (value_len > 0) {
+							add_assoc_stringl(&array, key, colon, value_len, 1);
+						} else {
 							/* hm, empty header? */
 							add_assoc_stringl(&array, key, "", 0, 1);
-						} else {
-							add_assoc_stringl(&array, key, colon, value_len, 1);
 						}
 						efree(key);
 					}
@@ -1567,6 +1595,78 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 				}
 			break;
 		}
+	}
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ */
+PHP_HTTP_API STATUS _http_parse_cookie(const char *cookie, HashTable *values TSRMLS_DC)
+{
+	const char *key = cookie, *val = NULL;
+	int vallen = 0, keylen = 0, done = 0;
+	zval array;
+
+	Z_ARRVAL(array) = values;
+
+	if (!(val = strchr(cookie, '='))) {
+		return FAILURE;
+	}
+
+#define HTTP_COOKIE_VAL(array, k, str, len) \
+	{ \
+		const char *encoded = str; \
+		char *decoded = NULL; \
+		int decoded_len = 0, encoded_len = len; \
+		decoded = estrndup(encoded, encoded_len); \
+		decoded_len = php_url_decode(decoded, encoded_len); \
+		add_assoc_stringl(array, k, decoded, decoded_len, 0); \
+	}
+#define HTTP_COOKIE_FIXKEY() \
+	{ \
+			while (isspace(*key)) ++key; \
+			keylen = val - key; \
+			while (isspace(key[keylen - 1])) --keylen; \
+	}
+#define HTTP_COOKIE_FIXVAL() \
+	{ \
+			++val; \
+			while (isspace(*val)) ++val; \
+			vallen = key - val; \
+			while (isspace(val[vallen - 1])) --vallen; \
+	}
+
+	HTTP_COOKIE_FIXKEY();
+	HTTP_COOKIE_VAL(&array, "name", key, keylen);
+
+	/* just a name=value cookie */
+	if (!(key = strchr(val, ';'))) {
+		key = val + strlen(val);
+		HTTP_COOKIE_FIXVAL();
+		HTTP_COOKIE_VAL(&array, "value", val, vallen);
+	} 
+	/* additional info appended */
+	else {
+		char *keydup = NULL;
+
+		HTTP_COOKIE_FIXVAL();
+		HTTP_COOKIE_VAL(&array, "value", val, vallen);
+
+		do {
+			if (!(val = strchr(key, '='))) {
+				break;
+			}
+			++key;
+			HTTP_COOKIE_FIXKEY();
+			keydup = estrndup(key, keylen);
+			if (!(key = strchr(val, ';'))) {
+				done = 1;
+				key = val + strlen(val);
+			}
+			HTTP_COOKIE_FIXVAL();
+			HTTP_COOKIE_VAL(&array, keydup, val, vallen);
+			efree(keydup);
+		} while (!done);
 	}
 	return SUCCESS;
 }
