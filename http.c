@@ -755,12 +755,6 @@ static inline void _httpi_request_declare_default_properties(zend_class_entry *c
 	DCL_PROP(PROTECTED, string, postData, "");
 }
 
-#define httpi_request_destroy_object _httpi_request_destroy_object
-void _httpi_request_destroy_object(void *object, zend_object_handle handle TSRMLS_DC)
-{
-	zend_objects_destroy_object(object, handle TSRMLS_CC);
-}
-
 #define httpi_request_free_object _httpi_request_free_object
 void _httpi_request_free_object(zend_object /* void */ *object TSRMLS_DC)
 {
@@ -791,7 +785,7 @@ zend_object_value _httpi_request_new_object(zend_class_entry *ce TSRMLS_DC)
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 
-	ov.handle = zend_objects_store_put(o, httpi_request_destroy_object, httpi_request_free_object, NULL TSRMLS_CC);
+	ov.handle = zend_objects_store_put(o, zend_objects_destroy_object, httpi_request_free_object, NULL TSRMLS_CC);
 	ov.handlers = &httpi_request_object_handlers;
 
 	return ov;
