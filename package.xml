@@ -30,14 +30,11 @@
   </maintainers>
 
   <release>
-    <version>0.6.0</version>
-    <date>2005-03-04</date>
+    <version>0.7.0dev</version>
+    <date>2005-03-00</date>
     <state>alpha</state>
     <notes><![CDATA[
-+ added POST support to HTTPi_Request
-+ added some more curl options
-+ better recognition of older libcurl versions
-* internal API optimizations
+*
 ]]>
     </notes>
   </release>
