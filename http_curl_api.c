@@ -46,7 +46,7 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 #endif
 
 /* FIXXME: correct version where strerror is supported! */
-#if LIBCURL_VERSION_NUM < 0x070b01
+#if LIBCURL_VERSION_NUM < 0x070c00
 #	define curl_easy_strerror(code) "unkown error"
 #endif
 
