@@ -21,7 +21,6 @@
 
 #ifdef PHP_WIN32
 #	define _WINSOCKAPI_
-#	define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
 #	include <winsock2.h>
 #	include <sys/types.h>
 #endif

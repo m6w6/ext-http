@@ -15,9 +15,6 @@
 
 /* $Id$ */
 
-#define _WINSOCKAPI_
-#define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
-
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
@@ -608,7 +605,7 @@ PHP_FUNCTION(http_split_response)
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP response");
 		RETURN_FALSE;
 	}
-	
+
 	array_init(return_value);
 	add_index_zval(return_value, 0, zheaders);
 	add_index_zval(return_value, 1, zbody);

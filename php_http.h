@@ -55,7 +55,7 @@ typedef enum {
 	HTTP_POST,
 } http_request_method;
 
-#endif
+#endif /* HTTP_HAVE _CURL */
 
 PHP_METHOD(HTTPi, date);
 PHP_METHOD(HTTPi, absoluteURI);
@@ -79,7 +79,7 @@ PHP_METHOD(HTTPi, get);
 PHP_METHOD(HTTPi, head);
 PHP_METHOD(HTTPi, postData);
 PHP_METHOD(HTTPi, postArray);
-#endif
+#endif /* HTTP_HAVE_CURL */
 PHP_METHOD(HTTPi, authBasic);
 PHP_METHOD(HTTPi, authBasicCallback);
 
@@ -166,12 +166,12 @@ PHP_FUNCTION(http_get);
 PHP_FUNCTION(http_head);
 PHP_FUNCTION(http_post_data);
 PHP_FUNCTION(http_post_array);
-#endif
+#endif /* HTTP_HAVE_CURL */
 PHP_FUNCTION(http_auth_basic);
 PHP_FUNCTION(http_auth_basic_cb);
 #ifndef ZEND_ENGINE_2
 PHP_FUNCTION(http_build_query);
-#endif
+#endif /* ZEND_ENGINE_2 */
 PHP_FUNCTION(ob_httpetaghandler);
 
 PHP_MINIT_FUNCTION(http);
@@ -196,7 +196,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		size_t size;
 	} curlbuf;
 	zend_llist to_free;
-#endif
+#endif /* HTTP_HAVE_CURL */
 ZEND_END_MODULE_GLOBALS(http)
 
 #endif	/* PHP_HTTP_H */

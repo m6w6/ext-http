@@ -15,11 +15,18 @@
 
 /* $Id$ */
 
-#define _WINSOCKAPI_
-#define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
 
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
+#endif
+
+#ifdef HTTP_HAVE_CURL
+#	ifdef PHP_WIN32
+#		define _WINSOCKAPI_
+#		include <winsock2.h>
+#		include <sys/types.h>
+#	endif
+#	include <curl/curl.h>
 #endif
 
 #include "php.h"
@@ -42,14 +49,6 @@
 #endif
 
 #ifdef HTTP_HAVE_CURL
-
-#	ifdef PHP_WIN32
-#		include <winsock2.h>
-#		include <sys/types.h>
-#	endif
-
-#	include <curl/curl.h>
-
 /* {{{ ARG_INFO */
 #	ifdef ZEND_BEGIN_ARG_INFO
 ZEND_BEGIN_ARG_INFO(http_request_info_ref_3, 0)
