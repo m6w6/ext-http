@@ -51,6 +51,26 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 ZEND_GET_MODULE(http)
 #endif
 
+/* {{{ ARG_INFO */
+#ifdef ZEND_BEGIN_ARG_INFO
+ZEND_BEGIN_ARG_INFO(http_request_info_ref_3, 0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(1)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(http_request_info_ref_4, 0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(1)
+ZEND_END_ARG_INFO();
+#else
+static unsigned char http_request_info_ref_3[] = {3, BYREF_NONE, BYREF_FORCE_REST};
+static unsigned char http_request_info_ref_4[] = {4, BYREF_NONE, BYREF_FORCE_REST};
+#endif
+/* }}}*/
+
 /* {{{ http_functions[] */
 function_entry http_functions[] = {
 	PHP_FE(http_date, NULL)
@@ -73,10 +93,10 @@ function_entry http_functions[] = {
 	PHP_FE(http_split_response, NULL)
 	PHP_FE(http_parse_headers, NULL)
 #ifdef HTTP_HAVE_CURL
-	PHP_FE(http_get, NULL)
-	PHP_FE(http_head, NULL)
-	PHP_FE(http_post_data, NULL)
-	PHP_FE(http_post_array, NULL)
+	PHP_FE(http_get, http_request_info_ref_3)
+	PHP_FE(http_head, http_request_info_ref_3)
+	PHP_FE(http_post_data, http_request_info_ref_4)
+	PHP_FE(http_post_array, http_request_info_ref_4)
 #endif
 	PHP_FE(http_auth_basic, NULL)
 	PHP_FE(http_auth_basic_cb, NULL)
