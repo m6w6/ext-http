@@ -111,9 +111,9 @@ PHP_METHOD(HTTPi_Response, send);
 #ifdef HTTP_HAVE_CURL
 
 PHP_METHOD(HTTPi_Request, __construct);/*
-PHP_METHOD(HTTPi_Request, __destruct);
+PHP_METHOD(HTTPi_Request, __destruct);*/
 PHP_METHOD(HTTPi_Request, setOptions);
-PHP_METHOD(HTTPi_Request, getOptions);*/
+PHP_METHOD(HTTPi_Request, getOptions);
 PHP_METHOD(HTTPi_Request, setMethod);
 PHP_METHOD(HTTPi_Request, getMethod);
 PHP_METHOD(HTTPi_Request, setURL);
@@ -132,6 +132,7 @@ PHP_METHOD(HTTPi_Request, send);
 PHP_METHOD(HTTPi_Request, getResponseData);
 PHP_METHOD(HTTPi_Request, getResponseHeaders);
 PHP_METHOD(HTTPi_Request, getResponseBody);
+PHP_METHOD(HTTPi_Request, getResponseInfo);
 
 #endif /* HTTP_HAVE_CURL */
 
