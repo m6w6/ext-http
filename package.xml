@@ -30,17 +30,14 @@
   </maintainers>
 
   <release>
-    <version>0.5.0</version>
-    <date>2005-02-19</date>
+    <version>0.5.1</version>
+    <date>2005-02-22</date>
     <state>alpha</state>
     <notes><![CDATA[
-* added ob_httpetaghandler() (has major limitations compared to http_cache_etag())
-* smarter ob handling in http_cache_etag() - used buffers will be fetched, freed
-  and piped through again, so that everything passes the etag ob handler
-* added static final HTTPi class (PHP5) providing fairly every function as static method
-* added HTTPi_Response class (PHP5)
-* added HTTPi_Request class, only HEAD/GET support for now (PHP5/curl)
-* renamed http_content_type() and http_content_disposition() to http_send_*
+* added some compatibility checks for older libcurl versions
+* fixed some memory leaks
+* fixed a typo which made http_split_response() useless
+* fixed HTTPi_Request object destruction
 ]]>
     </notes>
   </release>
