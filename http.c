@@ -20,6 +20,7 @@
 #endif
 
 #include "php.h"
+#include "main/snprintf.h"
 #include "ext/standard/info.h"
 #include "ext/standard/datetime.h"
 #include "ext/session/php_session.h"

@@ -22,6 +22,7 @@
 #include "php.h"
 #include "php_version.h"
 #include "php_streams.h"
+#include "main/snprintf.h"
 #include "ext/standard/md5.h"
 #include "ext/standard/url.h"
 #include "ext/standard/base64.h"
