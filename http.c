@@ -442,10 +442,14 @@ PHP_FUNCTION(http_cache_etag)
 	php_end_ob_buffers(0 TSRMLS_CC);
 	http_send_header("Cache-Control: private, must-revalidate, max-age=0");
 
+	if (etag_len) {
+		RETURN_SUCCESS(http_send_etag(etag, etag_len));
+	}
+	
 	/* if no etag is given and we didn't already
 	 * start ob_etaghandler -- start it
 	 */
-	if (!HTTP_G(etag_started) && !etag_len) {
+	if (!HTTP_G(etag_started)) {
 		php_ob_set_internal_handler(_http_ob_etaghandler, (uint) 4096, "etag output handler", 0 TSRMLS_CC);
 		HTTP_G(etag_started) = 1;
 		RETURN_BOOL(php_start_ob_buffer_named("etag output handler", (uint) 4096, 0 TSRMLS_CC));
@@ -460,7 +464,6 @@ PHP_FUNCTION(http_cache_etag)
 		}
 	}
 
-	RETURN_SUCCESS(http_send_etag(etag, etag_len));
 }
 /* }}} */
 
@@ -1130,13 +1133,17 @@ PHP_RINIT_FUNCTION(http)
 /* {{{ PHP_RSHUTDOWN_FUNCTION */
 PHP_RSHUTDOWN_FUNCTION(http)
 {
-	if (HTTP_G(ctype)) {
-		efree(HTTP_G(ctype));
-		HTTP_G(ctype) = NULL;
-	}
+	HTTP_G(etag_started) = 0;
+	HTTP_G(lmod) = 0;
+	
 	if (HTTP_G(etag)) {
 		efree(HTTP_G(etag));
 		HTTP_G(etag) = NULL;
+	}
+	
+	if (HTTP_G(ctype)) {
+		efree(HTTP_G(ctype));
+		HTTP_G(ctype) = NULL;
 	}
 #ifdef HTTP_HAVE_CURL
 	if (HTTP_G(curlbuf).body.data) {
