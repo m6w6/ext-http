@@ -146,7 +146,7 @@ PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control, const si
 PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, const size_t ct_len TSRMLS_DC);
 
 #define http_send_content_disposition(f, l, i) _http_send_content_disposition((f), (l), (i) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, const size_t f_len, const zend_bool send_inline TSRMLS_DC);
+PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, const size_t f_len, const int send_inline TSRMLS_DC);
 
 #define http_cache_last_modified(l, s, cc, ccl) _http_cache_last_modified((l), (s), (cc), (ccl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_cache_last_modified(const time_t last_modified, const time_t send_modified, const char *cache_control, const size_t cc_len TSRMLS_DC);
@@ -183,8 +183,9 @@ PHP_HTTP_API STATUS _http_send_file(const zval *zfile TSRMLS_DC);
 #define http_chunked_decode(e, el, d, dl) _http_chunked_decode((e), (el), (d), (dl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, const size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
-#define http_split_response(r, h, b) _http_split_response((r), (h), (b) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_split_response(const zval *zresponse, zval *zheaders, zval *zbody TSRMLS_DC);
+#define http_split_response(r, h, b) _http_split_response_ex(Z_STRVAL_P(r), Z_STRLEN_P(r), (h), (b) TSRMLS_CC)
+#define http_split_response_ex(r, l, h, b) _http_split_response_ex((r), (l), (h), (b) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_split_response(char *response, size_t repsonse_len, zval *zheaders, zval *zbody TSRMLS_DC);
 
 #define http_parse_headers(h, l, a) _http_parse_headers((h), (l), (a) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *array TSRMLS_DC);

@@ -1329,7 +1329,7 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type,
 
 /* {{{ STATUS http_send_content_disposition(char *, size_t, zend_bool) */
 PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename,
-	const size_t f_len, const zend_bool send_inline TSRMLS_DC)
+	const size_t f_len, const int send_inline TSRMLS_DC)
 {
 	STATUS status;
 	char *cd_header;
@@ -1936,15 +1936,14 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 }
 /* }}} */
 
-/* {{{ proto STATUS http_split_response(zval *, zval *, zval *) */
-PHP_HTTP_API STATUS _http_split_response(const zval *zresponse, zval *zheaders,
-	zval *zbody TSRMLS_DC)
+/* {{{ proto STATUS http_split_response_ex(char *, size_t, zval *, zval *) */
+PHP_HTTP_API STATUS _http_split_response_ex( char *response, 
+	size_t response_len, zval *zheaders, zval *zbody TSRMLS_DC)
 {
-	char *header, *response, *body = NULL;
-	long response_len = Z_STRLEN_P(zresponse);
-	header = response = Z_STRVAL_P(zresponse);
+	char *body = NULL;
+	char *header = response;
 
-	while ((response - Z_STRVAL_P(zresponse) + 3) < response_len) {
+	while ((response - header + 4) < response_len) {
 		if (	(*response++ == '\r') &&
 				(*response++ == '\n') &&
 				(*response++ == '\r') &&
@@ -1960,7 +1959,7 @@ PHP_HTTP_API STATUS _http_split_response(const zval *zresponse, zval *zheaders,
 		Z_TYPE_P(zbody) = IS_NULL;
 	}
 
-	return http_parse_headers(header, body - Z_STRVAL_P(zresponse), zheaders);
+	return http_parse_headers(header, body ? body - header : response_len, zheaders);
 }
 /* }}} */
 

@@ -38,6 +38,27 @@ extern zend_module_entry http_module_entry;
 #	include "php_http_build_query.h"
 #else
 
+#ifdef HTTP_HAVE_CURL
+typedef struct {
+	struct {
+		char *data;
+		size_t used;
+		size_t free;
+	} body;
+	struct {
+		char *data;
+		size_t used;
+		size_t free;
+	} hdrs;
+} http_curlbuf;
+
+typedef enum {
+	HTTP_GET,
+	HTTP_HEAD,
+	HTTP_POST,
+} http_request_method;
+#endif
+
 PHP_METHOD(HTTPi, date);
 PHP_METHOD(HTTPi, absoluteURI);
 PHP_METHOD(HTTPi, negotiateLanguage);
@@ -86,6 +107,33 @@ PHP_METHOD(HTTPi_Response, getFile);
 PHP_METHOD(HTTPi_Response, setStream);
 PHP_METHOD(HTTPi_Response, getStream);
 PHP_METHOD(HTTPi_Response, send);
+
+#ifdef HTTP_HAVE_CURL
+
+PHP_METHOD(HTTPi_Request, __construct);/*
+PHP_METHOD(HTTPi_Request, __destruct);
+PHP_METHOD(HTTPi_Request, setOptions);
+PHP_METHOD(HTTPi_Request, getOptions);*/
+PHP_METHOD(HTTPi_Request, setMethod);
+PHP_METHOD(HTTPi_Request, getMethod);
+PHP_METHOD(HTTPi_Request, setURL);
+PHP_METHOD(HTTPi_Request, getURL);
+PHP_METHOD(HTTPi_Request, setContentType);
+PHP_METHOD(HTTPi_Request, getContentType);
+PHP_METHOD(HTTPi_Request, setQueryData);
+PHP_METHOD(HTTPi_Request, getQueryData);
+PHP_METHOD(HTTPi_Request, addQueryData);
+PHP_METHOD(HTTPi_Request, unsetQueryData);/*
+PHP_METHOD(HTTPi_Request, setPostData);
+PHP_METHOD(HTTPi_Request, addPostData);
+PHP_METHOD(HTTPi_Request, unsetPostData);
+PHP_METHOD(HTTPi_Request, addPostFile);*/
+PHP_METHOD(HTTPi_Request, send);
+PHP_METHOD(HTTPi_Request, getResponseData);
+PHP_METHOD(HTTPi_Request, getResponseHeaders);
+PHP_METHOD(HTTPi_Request, getResponseBody);
+
+#endif /* HTTP_HAVE_CURL */
 
 #endif /* ZEND_ENGINE_2 */
 
@@ -136,18 +184,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	time_t lmod;
 	char *allowed_methods;
 #ifdef HTTP_HAVE_CURL
-	struct {
-		struct {
-			char *data;
-			size_t used;
-			size_t free;
-		} body;
-		struct {
-			char *data;
-			size_t used;
-			size_t free;
-		} hdrs;
-	} curlbuf;
+	http_curlbuf curlbuf;
 #endif
 ZEND_END_MODULE_GLOBALS(http)
 
