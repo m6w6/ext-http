@@ -1737,18 +1737,37 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 
 	line = header;
 
-	while (header_len > (line - begin)) {
+	while (header_len >= (line - begin)) {
+		int value_len = 0;
+		
 		switch (*line++)
 		{
 			case 0:
+				--value_len; /* we don't have CR so value length is one char less */
 			case '\n':
-				if (colon && (*line != ' ') && (*line != '\t')) {
-					char *key = estrndup(header, colon - header);
-					while (isspace(*(++colon)));
-					add_assoc_stringl(array, key, colon, line - colon - 2, 1);
-					efree(key);
-
+				if (colon && ((!(*line - 1)) || ((*line != ' ') && (*line != '\t')))) {
+				
+					/* skip empty key */
+					if (header != colon) {
+						char *key = estrndup(header, colon - header);
+						value_len += line - colon - 1;
+							
+						/* skip leading ws */
+						while (isspace(*(++colon))) --value_len;
+						/* skip trailing ws */
+						while (isspace(colon[value_len - 1])) --value_len;
+						
+						if (value_len < 1) {
+							/* hm, empty header? */
+							add_assoc_stringl(array, key, "", 0, 0);
+						} else {
+							add_assoc_stringl(array, key, colon, value_len, 1);
+						}
+						efree(key);
+					}
+					
 					colon = NULL;
+					value_len = 0;
 					header += line - header;
 				}
 			break;
