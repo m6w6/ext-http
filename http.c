@@ -416,8 +416,18 @@ PHP_INI_MH(update_allowed_methods)
 }
 
 PHP_INI_BEGIN()
-	STD_PHP_INI_ENTRY("http.allowed_methods", 
-		"OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PROPFIND, PROPPATCH, MKCOL, COPY, MOVE, LOCK, UNLOCK", 
+	STD_PHP_INI_ENTRY("http.allowed_methods",
+		/* HTTP 1.1 */
+		"GET, HEAD, POST, PUT, DELETE, OPTIONS, TRACE, CONNECT, "
+		/* WebDAV - RFC 2518 * /
+		"PROPFIND, PROPPATCH, MKCOL, COPY, MOVE, LOCK, UNLOCK, "
+		/* WebDAV Versioning - RFC 3253 * /
+		"VERSION-CONTROL, REPORT, CHECKOUT, CHECKIN, UNCHECKOUT, "
+		"MKWORKSPACE, UPDATE, LABEL, MERGE, BASELINE-CONTROL, MKACTIVITY, "
+		/* WebDAV Access Control - RFC 3744 * /
+		"ACL, "
+		/* END */
+		,
 		PHP_INI_ALL, update_allowed_methods, allowed_methods, zend_http_globals, http_globals)
 PHP_INI_END()
 /* }}} */
