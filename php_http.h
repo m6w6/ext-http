@@ -38,12 +38,25 @@ extern zend_module_entry http_module_entry;
 #	include "php_http_build_query.h"
 #else
 
+typedef struct {
+	zend_object	zo;
+} httpi_response_object;
+
 #ifdef HTTP_HAVE_CURL
+
+#include <curl/curl.h>
+
+typedef struct {
+	zend_object zo;
+	CURL *ch;
+} httpi_request_object;
+
 typedef enum {
 	HTTP_GET,
 	HTTP_HEAD,
 	HTTP_POST,
 } http_request_method;
+
 #endif
 
 PHP_METHOD(HTTPi, date);
@@ -176,16 +189,10 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	char *allowed_methods;
 #ifdef HTTP_HAVE_CURL
 	struct {
-		struct {
-			char *data;
-			size_t used;
-			size_t free;
-		} body;
-		struct {
-			char *data;
-			size_t used;
-			size_t free;
-		} hdrs;
+		char *data;
+		size_t used;
+		size_t free;
+		size_t size;
 	} curlbuf;
 #endif
 ZEND_END_MODULE_GLOBALS(http)

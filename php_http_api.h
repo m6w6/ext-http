@@ -28,6 +28,65 @@
 #	include "php_http_build_query.h"
 #endif
 
+#define RETURN_SUCCESS(v)	RETURN_BOOL(SUCCESS == (v))
+#define HASH_ORNULL(z) 		((z) ? Z_ARRVAL_P(z) : NULL)
+#define NO_ARGS 			if (ZEND_NUM_ARGS()) WRONG_PARAM_COUNT
+
+#define array_copy(src, dst)	zend_hash_copy(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
+#define array_merge(src, dst)	zend_hash_merge(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *), 1)
+
+#ifdef ZEND_ENGINE_2
+
+#	define HTTP_REGISTER_CLASS_EX(classname, name, parent, flags) \
+	{ \
+		zend_class_entry ce; \
+		INIT_CLASS_ENTRY(ce, #classname, name## _class_methods); \
+		ce.create_object = name## _new_object; \
+		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
+		name## _ce->ce_flags |= flags;  \
+		memcpy(& name## _object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
+		name## _object_handlers.clone_obj = NULL; \
+		name## _declare_default_properties(name## _ce); \
+	}
+
+#	define HTTP_REGISTER_CLASS(classname, name, parent, flags) \
+	{ \
+		zend_class_entry ce; \
+		INIT_CLASS_ENTRY(ce, #classname, name## _class_methods); \
+		ce.create_object = NULL; \
+		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
+		name## _ce->ce_flags |= flags;  \
+	}
+
+#	define getObject(t, o) t * o = ((t *) zend_object_store_get_object(getThis() TSRMLS_CC))
+#	define OBJ_PROP(o) o->zo.properties
+#	define DCL_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
+#	define DCL_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
+#	define DCL_PROP_N(a, n) zend_declare_property_null(ce, (#n), sizeof(#n), (ZEND_ACC_ ##a) TSRMLS_CC)
+#	define UPD_PROP(o, t, n, v) zend_update_property_ ##t(o->zo.ce, getThis(), (#n), sizeof(#n), (v) TSRMLS_CC)
+#	define SET_PROP(o, n, z) zend_update_property(o->zo.ce, getThis(), (#n), sizeof(#n), (z) TSRMLS_CC)
+#	define GET_PROP(o, n) zend_read_property(o->zo.ce, getThis(), (#n), sizeof(#n), 0 TSRMLS_CC)
+
+#	define INIT_PARR(o, n) \
+	{ \
+		zval *__tmp; \
+		MAKE_STD_ZVAL(__tmp); \
+		array_init(__tmp); \
+		SET_PROP(o, n, __tmp); \
+	}
+
+#	define FREE_PARR(o, p) \
+	{ \
+		zval *__tmp = NULL; \
+		if (__tmp = GET_PROP(o, p)) { \
+			zval_dtor(__tmp); \
+			FREE_ZVAL(__tmp); \
+			__tmp = NULL; \
+		} \
+	}
+
+#endif /* ZEND_ENGINE_2 */
+
 /* make functions that return SUCCESS|FAILURE more obvious */
 typedef int STATUS;
 
@@ -61,28 +120,6 @@ typedef enum {
 /* server vars shorthand */
 #define HTTP_SERVER_VARS Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER])
 
-/* override arg_separator.output to "&" for data used in outgoing requests */
-#include "zend_ini.h"
-#define HTTP_URL_ARGSEP_OVERRIDE zend_alter_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, "&", 1, ZEND_INI_ALL, ZEND_INI_STAGE_RUNTIME)
-#define HTTP_URL_ARGSEP_RESTORE zend_restore_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, ZEND_INI_STAGE_RUNTIME)
-
-/* {{{ HAVE_CURL */
-#ifdef HTTP_HAVE_CURL
-#include <curl/curl.h>
-
-/* CURL buffer size */
-#define HTTP_CURLBUF_BODYSIZE 16384
-#define HTTP_CURLBUF_HDRSSIZE  4096
-
-/* {{{ http_curlbuf_member */
-typedef enum {
-	CURLBUF_BODY = 1,
-	CURLBUF_HDRS = 2,
-	CURLBUF_EVRY = 3
-} http_curlbuf_member;
-/* }}} */
-#endif
-/* }}} HAVE_CURL */
 
 /* {{{ HTTP_GSC(var, name, ret) */
 #define HTTP_GSC(var, name, ret)  HTTP_GSP(var, name, return ret)
@@ -97,6 +134,8 @@ typedef enum {
 			ret; \
 		}
 /* }}} */
+
+char *pretty_key(char *key, int key_len, int uctitle, int xhyphen);
 
 /* {{{ public API */
 #define http_date(t) _http_date((t) TSRMLS_CC)
@@ -197,34 +236,6 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 
 #define http_get_request_headers(h) _http_get_request_headers((h) TSRMLS_CC)
 PHP_HTTP_API void _http_get_request_headers(zval *array TSRMLS_DC);
-
-/* {{{ HAVE_CURL */
-#ifdef HTTP_HAVE_CURL
-
-#define http_get(u, o, i, d, l) _http_get((u), (o), (i), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
-#define http_get_ex(c, u, o, i, d, l) _http_get_ex((c), (u), (o), (i), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
-
-#define http_head(u, o, i, d, l) _http_head((u), (o), (i), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
-#define http_head_ex(c, u, o, i, d, l) _http_head_ex((c), (u), (o), (i), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
-
-#define http_post_data(u, pd, pl, o, i, d, l) _http_post_data((u), (pd), (pl), (o), (i), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_post_data(const char *URL, char *postdata, size_t postdata_len, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
-#define http_post_data_ex(c, u, pd, pl, o, i, d, l) _http_post_data_ex((c), (u), (pd), (pl), (o), (i), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata, size_t postdata_len, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
-
-#define http_post_array(u, p, o, i, d, l) _http_post_array_ex(NULL, (u), (p), (o), (i), (d), (l) TSRMLS_CC)
-#define http_post_array_ex(c, u, p, o, i, d, l) _http_post_array_ex((c), (u), (p), (o), (i), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_post_array_ex(CURL *ch, const char *URL, HashTable *postarray, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
-
-#define http_post_curldata_ex(c, u, h, o, i, d, l) _http_post_curldata_ex((c), (u), (h), (o), (i), (d), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL, struct curl_httppost *curldata, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);
-
-#endif
-/* }}} HAVE_CURL */
 
 #define http_auth_credentials(u, p) _http_auth_credentials((u), (p) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC);

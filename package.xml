@@ -43,12 +43,20 @@
     <dir name="/">
       <file role="doc">EXPERIMENTAL</file>
       <file role="doc">docs/functions.html</file>
+      
       <file role="src" platform="windows">config.w32</file>
       <file role="src">config.m4</file>
-      <file role="src">http.c</file>
+      
       <file role="src">php_http.h</file>
-      <file role="src">http_api.c</file>
       <file role="src">php_http_api.h</file>
+      <file role="src">php_http_curl_api.h</file>
+      
+      <file role="src">http.c</file>
+      <file role="src">http_functions.c</file>
+      <file role="src">http_methods.c</file>
+      <file role="src">http_api.c</file>
+      <file role="src">http_curl_api.c</file>
+      
       <file role="src">http_build_query.c</file>
       <file role="src">php_http_build_query.h</file>
     </dir>

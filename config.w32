@@ -4,7 +4,7 @@
 ARG_ENABLE("http", "whether to enable extended HTTP support", "no");
 
 if (PHP_HTTP != "no") {
-	EXTENSION("http", "http.c http_api.c")
+	EXTENSION("http", "http.c http_functions.c http_methods.c http_api.c http_curl_api.c")
 	AC_DEFINE("HAVE_HTTP", 1, "Have extended HTTP support")
     if (CHECK_LIB("libcurl.lib", "http", PHP_HTTP) &&
             CHECK_HEADER_ADD_INCLUDE("curl/easy.h", "CFLAGS_HTTP") &&
