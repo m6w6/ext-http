@@ -139,10 +139,10 @@ PHPSTR_API phpstr *phpstr_dup(const phpstr *buf)
 	return dup;
 }
 
-PHPSTR_API ssize_t phpstr_cut(phpstr *buf, size_t offset, size_t length)
+PHPSTR_API size_t phpstr_cut(phpstr *buf, size_t offset, size_t length)
 {
 	if (offset >= buf->used) {
-		return -1;
+		return 0;
 	}
 	if (offset + length > buf->used) {
 		length = buf->used - offset;

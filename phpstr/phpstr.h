@@ -98,7 +98,7 @@ PHPSTR_API phpstr *phpstr_right(const phpstr *buf, size_t length);
 PHPSTR_API phpstr *phpstr_sub(const phpstr *buf, size_t offset, size_t len);
 
 /* remove a substring */
-PHPSTR_API ssize_t phpstr_cut(phpstr *buf, size_t offset, size_t length);
+PHPSTR_API size_t phpstr_cut(phpstr *buf, size_t offset, size_t length);
 
 /* get a complete phpstr duplicate */
 PHPSTR_API phpstr *phpstr_dup(const phpstr *buf);
