@@ -7,7 +7,7 @@ strncasecmp(PHP_SAPI, 'CLI', 3) or die('cannot run tests with CLI');
 ?>
 --FILE--
 <?php
-http_content_type('text/plain');
+http_send_content_type('text/plain');
 http_send_data(str_repeat('123abc', 1));
 ?>
 --EXPECTREGEX--

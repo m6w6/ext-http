@@ -110,8 +110,8 @@ PHP_METHOD(HTTPi_Response, send);
 
 #ifdef HTTP_HAVE_CURL
 
-PHP_METHOD(HTTPi_Request, __construct);/*
-PHP_METHOD(HTTPi_Request, __destruct);*/
+PHP_METHOD(HTTPi_Request, __construct);
+PHP_METHOD(HTTPi_Request, __destruct);
 PHP_METHOD(HTTPi_Request, setOptions);
 PHP_METHOD(HTTPi_Request, getOptions);
 PHP_METHOD(HTTPi_Request, setMethod);

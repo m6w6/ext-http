@@ -563,7 +563,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 /* {{{ static inline char *http_curl_getinfoname(CURLINFO) */
 static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC)
 {
-#define CASE(I) case CURLINFO_ ##I : return pretty_key(estrdup( #I ), strlen(#I), 0, 0)
+#define CASE(I) case CURLINFO_ ##I : { static char I[] = #I; return pretty_key(I, sizeof(#I)-1, 0, 0); }
 	switch (i)
 	{
 		/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
