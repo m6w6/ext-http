@@ -476,11 +476,8 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 	curl_easy_setopt(ch, CURLOPT_AUTOREFERER, 1);
 	curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, http_curl_body_callback);
 	curl_easy_setopt(ch, CURLOPT_HEADERFUNCTION, http_curl_hdrs_callback);
-#if defined(ZTS)
+#ifdef ZTS
 	curl_easy_setopt(ch, CURLOPT_NOSIGNAL, 1);
-#endif
-#if defined(PHP_DEBUG)
-	curl_easy_setopt(ch, CURLOPT_VERBOSE, 1);
 #endif
 
 	if ((!options) || (1 > zend_hash_num_elements(options))) {
@@ -1088,12 +1085,6 @@ PHP_HTTP_API int _http_modified_match(const char *entry, const time_t t TSRMLS_D
 		chr_ptr = 0;
 	}
 	retval = (t <= http_parse_date(modified));
-#if defined(PHP_DEBUG)
-	fprintf(stderr,
-		"\nComparing Last-Modified %s(%s)==%d:\n\t%d\n\t%d\n\n",
-		get_active_function_name(TSRMLS_C), entry, retval, t,
-		http_parse_date(modified));
-#endif
 	efree(modified);
 	return retval;
 }
@@ -1120,12 +1111,6 @@ PHP_HTTP_API int _http_etag_match(const char *entry, const char *etag TSRMLS_DC)
 	} else {
 		result = (NULL != strstr(Z_STRVAL_P(zetag), quoted_etag));
 	}
-#if defined(PHP_DEBUG)
-	fprintf(stderr,
-		"\nComparing E-Tag %s(%s)==%d:\n\t<%s>\n\t<%s>\n\n",
-		get_active_function_name(TSRMLS_C), entry, result,
-		Z_STRVAL_P(zetag), quoted_etag);
-#endif
 	efree(quoted_etag);
 	return result;
 }
