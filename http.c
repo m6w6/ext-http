@@ -66,8 +66,8 @@ ZEND_BEGIN_ARG_INFO(http_request_info_ref_4, 0)
 	ZEND_ARG_PASS_INFO(1)
 ZEND_END_ARG_INFO();
 #else
-static unsigned char http_request_info_ref_3[] = {3, BYREF_NONE, BYREF_FORCE_REST};
-static unsigned char http_request_info_ref_4[] = {4, BYREF_NONE, BYREF_FORCE_REST};
+static unsigned char http_request_info_ref_3[] = {3, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
+static unsigned char http_request_info_ref_4[] = {4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
 #endif
 /* }}}*/
 
