@@ -134,10 +134,6 @@ static const struct time_zone {
 /* {{{ internals */
 
 static int http_sort_q(const void *a, const void *b TSRMLS_DC);
-#define http_etag(e, p, l, m) _http_etag((e), (p), (l), (m) TSRMLS_CC)
-static inline char *_http_etag(char **new_etag, const void *data_ptr, const size_t data_len, const http_send_mode data_mode TSRMLS_DC);
-#define http_is_range_request() _http_is_range_request(TSRMLS_C)
-static inline int _http_is_range_request(TSRMLS_D);
 #define http_send_chunk(d, b, e, m) _http_send_chunk((d), (b), (e), (m) TSRMLS_CC)
 static STATUS _http_send_chunk(const void *data, const size_t begin, const size_t end, const http_send_mode mode TSRMLS_DC);
 
@@ -182,6 +178,58 @@ static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC);
 #endif
 /* }}} HAVE_CURL */
 
+/* {{{ inline char *http_etag(void *, size_t, http_send_mode) */
+inline char *_http_etag(const void *data_ptr, const size_t data_len, 
+	const http_send_mode data_mode TSRMLS_DC)
+{
+	char ssb_buf[128] = {0};
+	unsigned char digest[16];
+	PHP_MD5_CTX ctx;
+	char *new_etag = ecalloc(33, 1);
+
+	PHP_MD5Init(&ctx);
+
+	switch (data_mode)
+	{
+		case SEND_DATA:
+			PHP_MD5Update(&ctx, data_ptr, data_len);
+		break;
+
+		case SEND_RSRC:
+			if (!HTTP_G(ssb).sb.st_ino) {
+				if (php_stream_stat((php_stream *) data_ptr, &HTTP_G(ssb))) {
+					return NULL;
+				}
+			}
+			snprintf(ssb_buf, 127, "%l=%l=%l",
+				HTTP_G(ssb).sb.st_mtime,
+				HTTP_G(ssb).sb.st_ino,
+				HTTP_G(ssb).sb.st_size
+			);
+			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
+		break;
+
+		default:
+			efree(new_etag);
+			return NULL;
+		break;
+	}
+
+	PHP_MD5Final(digest, &ctx);
+	make_digest(new_etag, digest);
+
+	return new_etag;
+}
+/* }}} */
+
+/* {{{inline int http_is_range_request(void) */
+inline int _http_is_range_request(TSRMLS_D)
+{
+	return zend_hash_exists(Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]),
+		"HTTP_RANGE", strlen("HTTP_RANGE") + 1);
+}
+/* }}} */
+
 /* {{{ static int http_sort_q(const void *, const void *) */
 static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 {
@@ -198,51 +246,6 @@ static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 		return 0;
 	}
 	return (Z_LVAL(result) > 0 ? -1 : (Z_LVAL(result) < 0 ? 1 : 0));
-}
-/* }}} */
-
-/* {{{ static inline char *http_etag(char **, void *, size_t, http_send_mode) */
-static inline char *_http_etag(char **new_etag, const void *data_ptr,
-	const size_t data_len, const http_send_mode data_mode TSRMLS_DC)
-{
-	char ssb_buf[127];
-	unsigned char digest[16];
-	PHP_MD5_CTX ctx;
-
-	PHP_MD5Init(&ctx);
-
-	switch (data_mode)
-	{
-		case SEND_DATA:
-			PHP_MD5Update(&ctx, data_ptr, data_len);
-		break;
-
-		case SEND_RSRC:
-			snprintf(ssb_buf, 127, "%l=%l=%l",
-				HTTP_G(ssb).sb.st_mtime,
-				HTTP_G(ssb).sb.st_ino,
-				HTTP_G(ssb).sb.st_size
-			);
-			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
-		break;
-
-		default:
-			return NULL;
-		break;
-	}
-
-	PHP_MD5Final(digest, &ctx);
-	make_digest(*new_etag, digest);
-
-	return *new_etag;
-}
-/* }}} */
-
-/* {{{ static inline int http_is_range_request(void) */
-static inline int _http_is_range_request(TSRMLS_D)
-{
-	return zend_hash_exists(Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]),
-		"HTTP_RANGE", strlen("HTTP_RANGE") + 1);
 }
 /* }}} */
 
@@ -1588,13 +1591,12 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, const size_t data_size,
 
 	/* etag handling */
 	if (HTTP_G(etag_started)) {
-		char *etag = ecalloc(33, 1);
+		char *etag;
 		/* interrupt */
 		HTTP_G(etag_started) = 0;
 		/* never ever use the output to compute the ETag if http_send() is used */
 		php_end_ob_buffer(0, 0 TSRMLS_CC);
-		if (NULL == http_etag(&etag, data_ptr, data_size, data_mode)) {
-			efree(etag);
+		if (!(etag = http_etag(data_ptr, data_size, data_mode))) {
 			return FAILURE;
 		}
 
@@ -1897,7 +1899,7 @@ PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options,
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize curl");
 		return FAILURE;
 	}
-	
+
 	rs = http_get_ex(ch, URL, options, info, data, data_len);
 	curl_easy_cleanup(ch);
 	return rs;
@@ -1936,7 +1938,7 @@ PHP_HTTP_API STATUS _http_head(const char *URL, HashTable *options,
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize curl");
 		return FAILURE;
 	}
-	
+
 	rs = http_head_ex(ch, URL, options, info, data, data_len);
 	curl_easy_cleanup(ch);
 	return rs;

@@ -76,14 +76,15 @@ PHP_METHOD(HTTPi_Response, getCache);
 PHP_METHOD(HTTPi_Response, setCacheControl);
 PHP_METHOD(HTTPi_Response, getCacheControl);
 PHP_METHOD(HTTPi_Response, setGzip);
-PHP_METHOD(HTTPi_Response, getGzip);/*
+PHP_METHOD(HTTPi_Response, getGzip);
 PHP_METHOD(HTTPi_Response, setData);
 PHP_METHOD(HTTPi_Response, getData);
 PHP_METHOD(HTTPi_Response, setFile);
 PHP_METHOD(HTTPi_Response, getFile);
 PHP_METHOD(HTTPi_Response, setStream);
 PHP_METHOD(HTTPi_Response, getStream);
-PHP_METHOD(HTTPi_Response, send);*/
+PHP_METHOD(HTTPi_Response, send);
+PHP_METHOD(HTTPi_Response, getSize);
 
 #endif /* ZEND_ENGINE_2 */
 

@@ -90,6 +90,11 @@ typedef enum {
 		}
 /* }}} */
 
+#define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
+inline char *_http_etag(const void *data_ptr, const size_t data_len, const http_send_mode data_mode TSRMLS_DC);
+#define http_is_range_request() _http_is_range_request(TSRMLS_C)
+inline int _http_is_range_request(TSRMLS_D);
+
 /* {{{ public API */
 #define http_date(t) _http_date((t) TSRMLS_CC)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC);

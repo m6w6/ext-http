@@ -144,6 +144,7 @@ function_entry http_functions[] = {
 #	define OBJ_PROP(o) o->zo.properties
 #	define DCL_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define UPD_PROP(o, t, n, v) zend_update_property_ ##t(o->zo.ce, getThis(), (#n), sizeof(#n), (v) TSRMLS_CC)
+#	define SET_PROP(o, n, z) zend_update_property(o->zo.ce, getThis(), (#n), sizeof(#n), (z) TSRMLS_CC)
 #	define GET_PROP(o, n) zend_read_property(o->zo.ce, getThis(), (#n), sizeof(#n), 0 TSRMLS_CC)
 
 /* {{{ HTTPi */
@@ -196,12 +197,17 @@ static inline void _httpi_response_declare_default_properties(zend_class_entry *
 	DCL_PROP(PROTECTED, string, eTag, "");
 	DCL_PROP(PROTECTED, string, dispoFile, "");
 	DCL_PROP(PROTECTED, string, cacheControl, "public");
+	DCL_PROP(PROTECTED, string, data, "");
+	DCL_PROP(PROTECTED, string, file, "");
+	DCL_PROP(PROTECTED, long, stream, 0);
+	DCL_PROP(PROTECTED, long, size, 0);
 	DCL_PROP(PROTECTED, long, lastModified, 0);
 	DCL_PROP(PROTECTED, long, dispoInline, 0);
 	DCL_PROP(PROTECTED, long, cache, 0);
 	DCL_PROP(PROTECTED, long, gzip, 0);
 
 	DCL_PROP(PRIVATE, long, raw_cache_header, 0);
+	DCL_PROP(PRIVATE, long, send_mode, -1);
 }
 
 #define httpi_response_destroy_object _httpi_response_destroy_object
@@ -253,7 +259,7 @@ zend_function_entry httpi_response_class_methods[] = {
 
 	PHP_ME(HTTPi_Response, setGzip, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Response, getGzip, NULL, ZEND_ACC_PUBLIC)
-/*
+
 	PHP_ME(HTTPi_Response, setData, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Response, getData, NULL, ZEND_ACC_PUBLIC)
 
@@ -263,7 +269,9 @@ zend_function_entry httpi_response_class_methods[] = {
 	PHP_ME(HTTPi_Response, setStream, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Response, getStream, NULL, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HTTPi_Response, send, NULL, ZEND_ACC_PUBLIC)*/
+	PHP_ME(HTTPi_Response, send, NULL, ZEND_ACC_PUBLIC)
+	
+	PHP_ME(HTTPi_Response, getSize, NULL, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };
@@ -415,6 +423,10 @@ PHP_METHOD(HTTPi_Response, setContentType)
 	}
 
 	UPD_PROP(obj, string, contentType, ctype);
+	if (HTTP_G(ctype)) {
+		efree(HTTP_G(ctype));
+	}
+	HTTP_G(ctype) = estrndup(ctype, ctype_len);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -512,6 +524,274 @@ PHP_METHOD(HTTPi_Response, getETag)
 	RETURN_STRINGL(Z_STRVAL_P(etag), Z_STRLEN_P(etag), 1);
 }
 /* }}} */
+
+/* {{{ proto bool HTTPi_Response::setData(string data)
+ *
+ */
+PHP_METHOD(HTTPi_Response, setData)
+{
+	zval *the_data;
+	getObject(httpi_response_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
+		RETURN_FALSE;
+	}
+	
+	convert_to_string_ex(&the_data);
+	SET_PROP(obj, data, the_data);
+	UPD_PROP(obj, string, eTag, http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA));
+	UPD_PROP(obj, long, size, Z_STRLEN_P(the_data));
+	UPD_PROP(obj, long, lastModified, time(NULL));
+	UPD_PROP(obj, long, send_mode, SEND_DATA);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HTTPi_Response::getData()
+ *
+ */
+PHP_METHOD(HTTPi_Response, getData)
+{
+	zval *the_data;
+	getObject(httpi_response_object, obj);
+	
+	if (ZEND_NUM_ARGS()) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	the_data = GET_PROP(obj, data);
+	RETURN_STRINGL(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), 1);
+}
+/* }}} */
+
+/* {{{ proto bool HTTPi_Response::setStream(resource stream)
+ *
+ */
+PHP_METHOD(HTTPi_Response, setStream)
+{
+	zval *the_stream;
+	php_stream *the_real_stream;
+	getObject(httpi_response_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &the_stream)) {
+		RETURN_FALSE;
+	}
+	
+	php_stream_from_zval(the_real_stream, &the_stream);
+	
+	SET_PROP(obj, stream, the_stream);
+	UPD_PROP(obj, string, eTag, http_etag(the_real_stream, 0, SEND_RSRC));
+	UPD_PROP(obj, long, size, HTTP_G(ssb).sb.st_size);
+	UPD_PROP(obj, long, lastModified, HTTP_G(ssb).sb.st_mtime);
+	UPD_PROP(obj, long, send_mode, SEND_RSRC);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto resource HTTPi_Response::getStream()
+ *
+ */
+PHP_METHOD(HTTPi_Response, getStream)
+{
+	zval *the_stream;
+	getObject(httpi_response_object, obj);
+	
+	if (ZEND_NUM_ARGS()) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	the_stream = GET_PROP(obj, stream);
+	RETURN_RESOURCE(Z_LVAL_P(the_stream));
+}
+/* }}} */
+
+/* {{{ proto bool HTTPi_Response::setFile(string file)
+ *
+ */
+PHP_METHOD(HTTPi_Response, setFile)
+{
+	char *the_file;
+	int file_len;
+	zval fmtime, fsize;
+	getObject(httpi_response_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &the_file, &file_len)) {
+		RETURN_FALSE;
+	}
+	
+	php_stat(the_file, file_len, FS_SIZE, &fsize TSRMLS_CC);
+	php_stat(the_file, file_len, FS_MTIME, &fmtime TSRMLS_CC);
+	
+	UPD_PROP(obj, string, file, the_file);
+	UPD_PROP(obj, long, size, Z_LVAL(fsize));
+	UPD_PROP(obj, long, lastModified, Z_LVAL(fmtime));
+	UPD_PROP(obj, long, send_mode, -1);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HTTPi_Response::getFile()
+ *
+ */
+PHP_METHOD(HTTPi_Response, getFile)
+{
+	zval *the_file;
+	getObject(httpi_response_object, obj);
+	
+	if (ZEND_NUM_ARGS()) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	the_file = GET_PROP(obj, file);
+	RETURN_STRINGL(Z_STRVAL_P(the_file), Z_STRLEN_P(the_file), 1);
+}
+/* }}} */
+
+/* {{{ proto int HTTPi_Response::getSize()
+ *
+ */
+PHP_METHOD(HTTPi_Response, getSize)
+{
+	zval *the_size;
+	getObject(httpi_response_object, obj);
+	
+	if (ZEND_NUM_ARGS()) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	the_size = GET_PROP(obj, size);
+	RETURN_LONG(Z_LVAL_P(the_size));
+}
+/* }}} */
+
+PHP_METHOD(HTTPi_Response, send)
+{
+	zval *do_cache;
+	getObject(httpi_response_object, obj);
+	
+	do_cache = GET_PROP(obj, cache);
+	
+	/* caching */
+	if (Z_LVAL_P(do_cache)) {
+		/* cache header */
+		{
+			zval *ccontrol = GET_PROP(obj, cacheControl);
+			if (Z_STRLEN_P(ccontrol)) {
+				char *cc_header;
+				zval *cc_raw = GET_PROP(obj, raw_cache_control);
+				if (Z_LVAL_P(cc_raw)) {
+					cc_header = ecalloc(sizeof("Cache-Control: ") + Z_STRLEN_P(ccontrol), 1);
+					sprintf(cc_header, "Cache-Control: %s", Z_STRVAL_P(ccontrol));
+				} else {
+					cc_header = ecalloc(sizeof("Cache-Control: , must-revalidate, max-age=0") + Z_STRLEN_P(ccontrol), 1);
+					sprintf(cc_header, "Cache-Control: %s, must-revalidate, max-age=0", Z_STRVAL_P(ccontrol));
+				}
+				http_send_header(cc_header);
+				efree(cc_header);
+			} else {
+				http_send_header("Cache-Control: public, must-revalidate, max-age=0");
+			}
+		}
+		/* etag */
+		{
+			zval *etag = GET_PROP(obj, eTag);
+			if (Z_STRLEN_P(etag)) {
+				if ((!http_is_range_request()) && http_etag_match("HTTP_IF_NONE_MATCH", Z_STRVAL_P(etag))) {
+					http_send_status(304);
+					RETURN_TRUE;
+				}
+				http_send_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag));
+				if (HTTP_G(etag)) {
+					efree(HTTP_G(etag));
+				}
+				HTTP_G(etag) = estrndup(Z_STRVAL_P(etag), Z_STRLEN_P(etag));
+			}
+		}
+		/* last modified */
+		{
+			zval *lmod = GET_PROP(obj, lastModified);
+			if (Z_LVAL_P(lmod)) {
+				if (http_modified_match("HTTP_IF_MODIFIED_SINCE", Z_LVAL_P(lmod))) {
+					http_send_status(304);
+					RETURN_TRUE;
+				}
+				http_send_last_modified(Z_LVAL_P(lmod));
+				HTTP_G(lmod) = Z_LVAL_P(lmod);
+			} else {
+				time_t t = time(NULL);
+				http_send_last_modified(t);
+				HTTP_G(lmod) = t;
+			}
+		}
+	} /* caching done */
+	
+	/* gzip */
+	/* ... */
+	
+	/* content type */
+	{
+		zval *ctype = GET_PROP(obj, contentType);
+		if (Z_STRLEN_P(ctype)) {
+			char *ctype_header = ecalloc(sizeof("Content-Type: ") + Z_STRLEN_P(ctype), 1);
+			sprintf(ctype_header, "Content-Type: %s", Z_STRVAL_P(ctype));
+			http_send_header(ctype_header);
+			efree(ctype_header);
+			if (HTTP_G(ctype)) {
+				efree(HTTP_G(ctype));
+			}
+			HTTP_G(ctype) = estrndup(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
+		} else {
+			http_send_header("Content-Type: application/x-octetstream");
+			if (HTTP_G(ctype)) {
+				efree(HTTP_G(ctype));
+			}
+			HTTP_G(ctype) = estrdup("application/x-octetstream");
+		}
+	}
+	
+	/* content disposition */
+	{
+		zval *dispo_file = GET_PROP(obj, dispoFile);
+		if (Z_STRLEN_P(dispo_file)) {
+			char *dispo_header;
+			zval *dispo_inline = GET_PROP(obj, dispoInline);
+			if (Z_LVAL_P(dispo_inline)) {
+				dispo_header = ecalloc(sizeof("Content-Disposition: inline; filename=\"\"") + Z_STRLEN_P(dispo_file), 1);
+				sprintf(dispo_header, "Content-Disposition: inline; filename=\"%s\"", Z_STRVAL_P(dispo_file));
+			} else {
+				dispo_header = ecalloc(sizeof("Content-Disposition: attachment; filename=\"\"") + Z_STRLEN_P(dispo_file), 1);
+				sprintf(dispo_header, "Content-Disposition: attachment; filename=\"%s\"", Z_STRVAL_P(dispo_file));
+			}
+			http_send_header(dispo_header);
+			efree(dispo_header);
+		}
+	}
+	
+	/* send */
+	{
+		zval *send_mode = GET_PROP(obj, send_mode);
+		switch (Z_LVAL_P(send_mode))
+		{
+			case SEND_DATA:
+			{
+				RETURN_SUCCESS(http_send_data(GET_PROP(obj, data)));
+			}
+			
+			case SEND_RSRC:
+			{
+				php_stream *the_real_stream;
+				zval *the_stream = GET_PROP(obj, stream);
+				php_stream_from_zval(the_real_stream, &the_stream);
+				RETURN_SUCCESS(http_send_stream(the_real_stream));
+			}
+			
+			default:
+			{
+				RETURN_SUCCESS(http_send_file(GET_PROP(obj, file)));
+			}
+		}
+	}
+}
 
 #endif /* ZEND_ENGINE_2 */
 
@@ -1532,11 +1812,7 @@ PHP_MINIT_FUNCTION(http)
 {
 	ZEND_INIT_MODULE_GLOBALS(http, php_http_init_globals, NULL);
 	REGISTER_INI_ENTRIES();
-	/*
-	REGISTER_LONG_CONSTANT("HTTP_GET", HTTP_GET, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("HTTP_HEAD", HTTP_HEAD, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("HTTP_POST", HTTP_POST, CONST_CS | CONST_PERSISTENT);
-	*/
+
 #ifdef HTTP_HAVE_CURL
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST, CONST_CS | CONST_PERSISTENT);
@@ -1544,6 +1820,11 @@ PHP_MINIT_FUNCTION(http)
 #endif
 
 #ifdef ZEND_ENGINE_2
+	/*
+	REGISTER_LONG_CONSTANT("HTTP_GET", HTTP_GET, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("HTTP_HEAD", HTTP_HEAD, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("HTTP_POST", HTTP_POST, CONST_CS | CONST_PERSISTENT);
+	*/
 	HTTP_REGISTER_CLASS(HTTPi, httpi, NULL, ZEND_ACC_FINAL_CLASS);
 	HTTP_REGISTER_CLASS_EX(HTTPi_Response, httpi_response, NULL, 0);
 #endif
