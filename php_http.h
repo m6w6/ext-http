@@ -57,6 +57,7 @@ PHP_FUNCTION(http_send_stream);
 PHP_FUNCTION(http_chunked_decode);
 PHP_FUNCTION(http_split_response);
 PHP_FUNCTION(http_parse_headers);
+PHP_FUNCTION(http_get_request_headers);
 #ifdef HTTP_HAVE_CURL
 PHP_FUNCTION(http_get);
 PHP_FUNCTION(http_head);

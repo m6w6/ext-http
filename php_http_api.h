@@ -158,6 +158,9 @@ PHP_HTTP_API STATUS _http_split_response(const zval *zresponse, zval *zheaders, 
 #define http_parse_headers(h, l, a) _http_parse_headers((h), (l), (a) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *array TSRMLS_DC);
 
+#define http_get_request_headers(h) _http_get_request_headers((h) TSRMLS_CC)
+PHP_HTTP_API void _http_get_request_headers(zval *array TSRMLS_DC);
+
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL
 

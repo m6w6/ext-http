@@ -144,6 +144,8 @@ static int check_day(char *day, size_t len);
 static int check_month(char *month);
 static int check_tzone(char *tzone);
 
+static char *pretty_key(char *key, int key_len, int uctitle, int xhyphen);
+
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL
 #define http_curl_initbuf(m) _http_curl_initbuf((m) TSRMLS_CC)
@@ -606,7 +608,7 @@ static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *opti
 /* {{{ static inline char *http_curl_getinfoname(CURLINFO) */
 static inline char *_http_curl_getinfoname(CURLINFO i TSRMLS_DC)
 {
-#define CASE(I) case CURLINFO_ ##I : return #I
+#define CASE(I) case CURLINFO_ ##I : return pretty_key(estrdup( #I ), strlen(#I), 0, 0)
 	switch (i)
 	{
 		/* CURLINFO_EFFECTIVE_URL			=	CURLINFO_STRING	+1, */
@@ -808,6 +810,30 @@ static int check_tzone(char *tzone)
 		check++;
 	}
 	return -1;
+}
+/* }}} */
+
+/* static char *pretty_key(char *, int, int, int) */
+static char *pretty_key(char *key, int key_len, int uctitle, int xhyphen)
+{
+	if (key && key_len) {
+		int i, wasalpha;
+		if (wasalpha = isalpha(key[0])) {
+			key[0] = uctitle ? toupper(key[0]) : tolower(key[0]);
+		}
+		for (i = 1; i < key_len; i++) {
+			if (isalpha(key[i])) {
+				key[i] = ((!wasalpha) && uctitle) ? toupper(key[i]) : tolower(key[i]);
+				wasalpha = 1;
+			} else {
+				if (xhyphen && (key[i] == '_')) {
+					key[i] = '-';
+				}
+				wasalpha = 0;
+			}
+		}
+	}
+	return key;
 }
 /* }}} */
 
@@ -1780,6 +1806,23 @@ PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *arra
 		}
 	}
 	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ void http_get_request_headers(zval *) */
+PHP_HTTP_API void _http_get_request_headers(zval *array TSRMLS_DC)
+{
+    char *key;
+    
+    for (   zend_hash_internal_pointer_reset(HTTP_SERVER_VARS);
+            zend_hash_get_current_key(HTTP_SERVER_VARS, &key, NULL, 0) != HASH_KEY_NON_EXISTANT;
+            zend_hash_move_forward(HTTP_SERVER_VARS)) {
+        if (!strncmp(key, "HTTP_", 5)) {
+            zval **header;
+            zend_hash_get_current_data(HTTP_SERVER_VARS, (void **) &header);
+            add_assoc_stringl(array, pretty_key(key + 5, strlen(key) - 5, 1, 1), Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
+        }
+    }
 }
 /* }}} */
 

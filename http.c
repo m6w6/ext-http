@@ -94,6 +94,7 @@ function_entry http_functions[] = {
 	PHP_FE(http_chunked_decode, NULL)
 	PHP_FE(http_split_response, NULL)
 	PHP_FE(http_parse_headers, NULL)
+	PHP_FE(http_get_request_headers, NULL)
 #ifdef HTTP_HAVE_CURL
 	PHP_FE(http_get, http_request_info_ref_3)
 	PHP_FE(http_head, http_request_info_ref_3)
@@ -676,6 +677,7 @@ PHP_FUNCTION(http_chunked_decode)
  * content body. The returned array may look simliar to the following example:
  *
  * <pre>
+ * <?php
  * array(
  *     0 => array(
  *         'Status' => '200 Ok',
@@ -684,6 +686,7 @@ PHP_FUNCTION(http_chunked_decode)
  *     ),
  *     1 => "Hello World!"
  * );
+ * ?>
  * </pre>
  */
 PHP_FUNCTION(http_split_response)
@@ -711,7 +714,9 @@ PHP_FUNCTION(http_split_response)
 }
 /* }}} */
 
-/* {{{ proto array http_parse_headers(string header) */
+/* {{{ proto array http_parse_headers(string header)
+ *
+ */
 PHP_FUNCTION(http_parse_headers)
 {
 	char *header, *rnrn;
@@ -733,6 +738,20 @@ PHP_FUNCTION(http_parse_headers)
 	}
 }
 /* }}}*/
+
+/* {{{ proto array http_get_request_headers(void)
+ *
+ */
+PHP_FUNCTION(http_get_request_headers)
+{
+	if (ZEND_NUM_ARGS()) {
+		WRONG_PARAM_COUNT;
+	}
+
+	array_init(return_value);
+	http_get_request_headers(return_value);
+}
+/* }}} */
 
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL
@@ -767,8 +786,37 @@ PHP_FUNCTION(http_parse_headers)
  * </pre>
  *
  * The optional third parameter will be filled with some additional information
- * in form af an associative array, if supplied (don't forget to initialize it
- * with NULL or array()).
+ * in form af an associative array, if supplied, like the following example:
+ * <pre>
+ * <?php
+ * array (
+ *     'effective_url' => 'http://localhost',
+ *     'response_code' => 403,
+ *     'total_time' => 0.017,
+ *     'namelookup_time' => 0.013,
+ *     'connect_time' => 0.014,
+ *     'pretransfer_time' => 0.014,
+ *     'size_upload' => 0,
+ *     'size_download' => 202,
+ *     'speed_download' => 11882,
+ *     'speed_upload' => 0,
+ *     'header_size' => 145,
+ *     'request_size' => 62,
+ *     'ssl_verifyresult' => 0,
+ *     'filetime' => -1,
+ *     'content_length_download' => 202,
+ *     'content_length_upload' => 0,
+ *     'starttransfer_time' => 0.017,
+ *     'content_type' => 'text/html; charset=iso-8859-1',
+ *     'redirect_time' => 0,
+ *     'redirect_count' => 0,
+ *     'private' => '',
+ *     'http_connectcode' => 0,
+ *     'httpauth_avail' => 0,
+ *     'proxyauth_avail' => 0,
+ * )
+ * ?>
+ * </pre>
  */
 PHP_FUNCTION(http_get)
 {
