@@ -25,24 +25,22 @@
 #include "php_http_curl_api.h"
 #include "php_http_std_defs.h"
 
-#include "ext/standard/php_smart_str.h"
-
 #ifdef ZEND_ENGINE_2
 
-/* {{{ HTTPi_Response */
+/* {{{ HttpResponse */
 
-/* {{{ proto void HTTPi_Response::__construct(bool cache, bool gzip)
+/* {{{ proto void HttpResponse::__construct(bool cache, bool gzip)
  *
- * Instantiates a new HTTPi_Response object, which can be used to send
+ * Instantiates a new HttpResponse object, which can be used to send
  * any data/resource/file to an HTTP client with caching and multiple
  * ranges/resuming support.
  *
  * NOTE: GZIPping is not implemented yet.
  */
-PHP_METHOD(HTTPi_Response, __construct)
+PHP_METHOD(HttpResponse, __construct)
 {
 	zend_bool do_cache = 0, do_gzip = 0;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bb", &do_cache, &do_gzip)) {
 		// throw exception
@@ -54,7 +52,7 @@ PHP_METHOD(HTTPi_Response, __construct)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::setCache(bool cache)
+/* {{{ proto bool HttpResponse::setCache(bool cache)
  *
  * Whether it sould be attempted to cache the entitity.
  * This will result in necessary caching headers and checks of clients
@@ -64,10 +62,10 @@ PHP_METHOD(HTTPi_Response, __construct)
  * NOTE: If you're using sessions, be shure that you set session.cache_limiter
  * to something more appropriate than "no-cache"!
  */
-PHP_METHOD(HTTPi_Response, setCache)
+PHP_METHOD(HttpResponse, setCache)
 {
 	zend_bool do_cache = 0;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "b", &do_cache)) {
 		RETURN_FALSE;
@@ -78,14 +76,14 @@ PHP_METHOD(HTTPi_Response, setCache)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::getCache()
+/* {{{ proto bool HttpResponse::getCache()
  *
  * Get current caching setting.
  */
-PHP_METHOD(HTTPi_Response, getCache)
+PHP_METHOD(HttpResponse, getCache)
 {
 	zval *do_cache = NULL;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	NO_ARGS;
 
@@ -94,14 +92,14 @@ PHP_METHOD(HTTPi_Response, getCache)
 }
 /* }}}*/
 
-/* {{{ proto bool HTTPi_Response::setGzip(bool gzip)
+/* {{{ proto bool HttpResponse::setGzip(bool gzip)
  *
  * Enable on-thy-fly gzipping of the sent entity. NOT IMPLEMENTED YET.
  */
-PHP_METHOD(HTTPi_Response, setGzip)
+PHP_METHOD(HttpResponse, setGzip)
 {
 	zend_bool do_gzip = 0;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "b", &do_gzip)) {
 		RETURN_FALSE;
@@ -112,14 +110,14 @@ PHP_METHOD(HTTPi_Response, setGzip)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::getGzip()
+/* {{{ proto bool HttpResponse::getGzip()
  *
  * Get current gzipping setting.
  */
-PHP_METHOD(HTTPi_Response, getGzip)
+PHP_METHOD(HttpResponse, getGzip)
 {
 	zval *do_gzip = NULL;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	NO_ARGS;
 
@@ -128,17 +126,17 @@ PHP_METHOD(HTTPi_Response, getGzip)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::setCacheControl(string control[, bool raw = false])
+/* {{{ proto bool HttpResponse::setCacheControl(string control[, bool raw = false])
  *
  * Set a custom cache-control header, usually being "private" or "public";  if
  * $raw is set to true the header will be sent as-is.
  */
-PHP_METHOD(HTTPi_Response, setCacheControl)
+PHP_METHOD(HttpResponse, setCacheControl)
 {
 	char *ccontrol;
 	int cc_len;
 	zend_bool raw = 0;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &ccontrol, &cc_len, &raw)) {
 		RETURN_FALSE;
@@ -155,14 +153,14 @@ PHP_METHOD(HTTPi_Response, setCacheControl)
 }
 /* }}} */
 
-/* {{{ proto string HTTPi_Response::getCacheControl()
+/* {{{ proto string HttpResponse::getCacheControl()
  *
  * Get current Cache-Control header setting.
  */
-PHP_METHOD(HTTPi_Response, getCacheControl)
+PHP_METHOD(HttpResponse, getCacheControl)
 {
 	zval *ccontrol;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	NO_ARGS;
 
@@ -171,15 +169,15 @@ PHP_METHOD(HTTPi_Response, getCacheControl)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::setContentType(string content_type)
+/* {{{ proto bool HttpResponse::setContentType(string content_type)
  *
  * Set the content-type of the sent entity.
  */
-PHP_METHOD(HTTPi_Response, setContentType)
+PHP_METHOD(HttpResponse, setContentType)
 {
 	char *ctype;
 	int ctype_len;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ctype, &ctype_len)) {
 		RETURN_FALSE;
@@ -197,14 +195,14 @@ PHP_METHOD(HTTPi_Response, setContentType)
 }
 /* }}} */
 
-/* {{{ proto string HTTPi_Response::getContentType()
+/* {{{ proto string HttpResponse::getContentType()
  *
  * Get current Content-Type header setting.
  */
-PHP_METHOD(HTTPi_Response, getContentType)
+PHP_METHOD(HttpResponse, getContentType)
 {
 	zval *ctype;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	NO_ARGS;
 
@@ -213,18 +211,18 @@ PHP_METHOD(HTTPi_Response, getContentType)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::setContentDisposition(string filename[, bool inline = false])
+/* {{{ proto bool HttpResponse::setContentDisposition(string filename[, bool inline = false])
  *
  * Set the Content-Disposition of the sent entity.  This setting aims to suggest
  * the receiveing user agent how to handle the sent entity;  usually the client
  * will show the user a "Save As..." popup.
  */
-PHP_METHOD(HTTPi_Response, setContentDisposition)
+PHP_METHOD(HttpResponse, setContentDisposition)
 {
 	char *file;
 	int file_len;
 	zend_bool is_inline = 0;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &file, &file_len, &is_inline)) {
 		RETURN_FALSE;
@@ -236,7 +234,7 @@ PHP_METHOD(HTTPi_Response, setContentDisposition)
 }
 /* }}} */
 
-/* {{{ proto array HTTPi_Response::getContentDisposition()
+/* {{{ proto array HttpResponse::getContentDisposition()
  *
  * Get current Content-Disposition setting.
  * Will return an associative array like:
@@ -247,11 +245,11 @@ PHP_METHOD(HTTPi_Response, setContentDisposition)
  * )
  * </pre>
  */
-PHP_METHOD(HTTPi_Response, getContentDisposition)
+PHP_METHOD(HttpResponse, getContentDisposition)
 {
 	zval *file;
 	zval *is_inline;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (ZEND_NUM_ARGS()) {
 		WRONG_PARAM_COUNT;
@@ -266,15 +264,15 @@ PHP_METHOD(HTTPi_Response, getContentDisposition)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::setETag(string etag)
+/* {{{ proto bool HttpResponse::setETag(string etag)
  *
  * Set a custom ETag.  Use this only if you know what you're doing.
  */
-PHP_METHOD(HTTPi_Response, setETag)
+PHP_METHOD(HttpResponse, setETag)
 {
 	char *etag;
 	int etag_len;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &etag, &etag_len)) {
 		RETURN_FALSE;
@@ -285,14 +283,14 @@ PHP_METHOD(HTTPi_Response, setETag)
 }
 /* }}} */
 
-/* {{{ proto string HTTPi_Response::getETag()
+/* {{{ proto string HttpResponse::getETag()
  *
  * Get the previously set custom ETag.
  */
-PHP_METHOD(HTTPi_Response, getETag)
+PHP_METHOD(HttpResponse, getETag)
 {
 	zval *etag;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	NO_ARGS;
 
@@ -301,14 +299,14 @@ PHP_METHOD(HTTPi_Response, getETag)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::setData(string data)
+/* {{{ proto bool HttpResponse::setData(string data)
  *
  * Set the data to be sent.
  */
-PHP_METHOD(HTTPi_Response, setData)
+PHP_METHOD(HttpResponse, setData)
 {
 	zval *the_data;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
 		RETURN_FALSE;
@@ -322,14 +320,14 @@ PHP_METHOD(HTTPi_Response, setData)
 }
 /* }}} */
 
-/* {{{ proto string HTTPi_Response::getData()
+/* {{{ proto string HttpResponse::getData()
  *
  * Get the previously set data to be sent.
  */
-PHP_METHOD(HTTPi_Response, getData)
+PHP_METHOD(HttpResponse, getData)
 {
 	zval *the_data;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	NO_ARGS;
 
@@ -338,15 +336,15 @@ PHP_METHOD(HTTPi_Response, getData)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::setStream(resource stream)
+/* {{{ proto bool HttpResponse::setStream(resource stream)
  *
  * Set the resource to be sent.
  */
-PHP_METHOD(HTTPi_Response, setStream)
+PHP_METHOD(HttpResponse, setStream)
 {
 	zval *the_stream;
 	php_stream *the_real_stream;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &the_stream)) {
 		RETURN_FALSE;
@@ -361,14 +359,14 @@ PHP_METHOD(HTTPi_Response, setStream)
 }
 /* }}} */
 
-/* {{{ proto resource HTTPi_Response::getStream()
+/* {{{ proto resource HttpResponse::getStream()
  *
  * Get the previously set resource to be sent.
  */
-PHP_METHOD(HTTPi_Response, getStream)
+PHP_METHOD(HttpResponse, getStream)
 {
 	zval *the_stream;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	NO_ARGS;
 
@@ -377,14 +375,14 @@ PHP_METHOD(HTTPi_Response, getStream)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::setFile(string file)
+/* {{{ proto bool HttpResponse::setFile(string file)
  *
  * Set the file to be sent.
  */
-PHP_METHOD(HTTPi_Response, setFile)
+PHP_METHOD(HttpResponse, setFile)
 {
 	zval *the_file;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_file)) {
 		RETURN_FALSE;
@@ -399,14 +397,14 @@ PHP_METHOD(HTTPi_Response, setFile)
 }
 /* }}} */
 
-/* {{{ proto string HTTPi_Response::getFile()
+/* {{{ proto string HttpResponse::getFile()
  *
  * Get the previously set file to be sent.
  */
-PHP_METHOD(HTTPi_Response, getFile)
+PHP_METHOD(HttpResponse, getFile)
 {
 	zval *the_file;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	NO_ARGS;
 
@@ -415,14 +413,14 @@ PHP_METHOD(HTTPi_Response, getFile)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Response::send()
+/* {{{ proto bool HttpResponse::send()
  *
  * Finally send the entity.
  *
  * Example:
  * <pre>
  * <?php
- * $r = new HTTPi_Response(true);
+ * $r = new HttpResponse(true);
  * $r->setFile('../hidden/contract.pdf');
  * $r->setContentType('application/pdf');
  * $r->send();
@@ -430,10 +428,10 @@ PHP_METHOD(HTTPi_Response, getFile)
  * </pre>
  *
  */
-PHP_METHOD(HTTPi_Response, send)
+PHP_METHOD(HttpResponse, send)
 {
 	zval *do_cache, *do_gzip;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	NO_ARGS;
 
@@ -515,19 +513,19 @@ PHP_METHOD(HTTPi_Response, send)
 /* }}} */
 
 #ifdef HTTP_HAVE_CURL
-/* {{{ HTTPi_Request */
+/* {{{ HttpRequest */
 
-/* {{{ proto void HTTPi_Request::__construct([string url[, long request_method = HTTP_GET]])
+/* {{{ proto void HttpRequest::__construct([string url[, long request_method = HTTP_GET]])
  *
- * Instantiate a new HTTPi_Request object which can be used to issue HEAD, GET
+ * Instantiate a new HttpRequest object which can be used to issue HEAD, GET
  * and POST (including posting files) HTTP requests.
  */
-PHP_METHOD(HTTPi_Request, __construct)
+PHP_METHOD(HttpRequest, __construct)
 {
 	char *URL = NULL;
 	int URL_len;
 	long meth = -1;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sl", &URL, &URL_len, &meth)) {
 		return;
@@ -548,13 +546,13 @@ PHP_METHOD(HTTPi_Request, __construct)
 }
 /* }}} */
 
-/* {{{ proto void HTTPi_Request::__destruct()
+/* {{{ proto void HttpRequest::__destruct()
  *
- * Destroys the HTTPi_Request object.
+ * Destroys the HttpRequest object.
  */
-PHP_METHOD(HTTPi_Request, __destruct)
+PHP_METHOD(HttpRequest, __destruct)
 {
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -566,16 +564,16 @@ PHP_METHOD(HTTPi_Request, __destruct)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::setOptions(array options)
+/* {{{ proto bool HttpRequest::setOptions(array options)
  *
  * Set the request options to use.  See http_get() for a full list of available options.
  */
-PHP_METHOD(HTTPi_Request, setOptions)
+PHP_METHOD(HttpRequest, setOptions)
 {
 	char *key = NULL;
 	long idx = 0;
 	zval *opts, *old_opts, **opt;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &opts)) {
 		RETURN_FALSE;
@@ -611,14 +609,14 @@ PHP_METHOD(HTTPi_Request, setOptions)
 }
 /* }}} */
 
-/* {{{ proto array HTTPi_Request::getOptions()
+/* {{{ proto array HttpRequest::getOptions()
  *
  * Get current set options.
  */
-PHP_METHOD(HTTPi_Request, getOptions)
+PHP_METHOD(HttpRequest, getOptions)
 {
 	zval *opts;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -628,13 +626,13 @@ PHP_METHOD(HTTPi_Request, getOptions)
 }
 /* }}} */
 
-/* {{{ proto void HTTPi_Request::unsetOptions()
+/* {{{ proto void HttpRequest::unsetOptions()
  *
  * Unset all options/headers/cookies.
  */
-PHP_METHOD(HTTPi_Request, unsetOptions)
+PHP_METHOD(HttpRequest, unsetOptions)
 {
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -643,14 +641,14 @@ PHP_METHOD(HTTPi_Request, unsetOptions)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::addHeader(array header)
+/* {{{ proto bool HttpRequest::addHeader(array header)
  *
  * Add (a) request header name/value pair(s).
  */
-PHP_METHOD(HTTPi_Request, addHeader)
+PHP_METHOD(HttpRequest, addHeader)
 {
 	zval *opts, **headers, *new_headers;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &new_headers)) {
 		RETURN_FALSE;
@@ -669,14 +667,14 @@ PHP_METHOD(HTTPi_Request, addHeader)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::addCookie(array cookie)
+/* {{{ proto bool HttpRequest::addCookie(array cookie)
  *
  * Add (a) cookie(s).
  */
-PHP_METHOD(HTTPi_Request, addCookie)
+PHP_METHOD(HttpRequest, addCookie)
 {
 	zval *opts, **cookies, *new_cookies;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &new_cookies)) {
 		RETURN_FALSE;
@@ -695,15 +693,15 @@ PHP_METHOD(HTTPi_Request, addCookie)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::setURL(string url)
+/* {{{ proto bool HttpRequest::setURL(string url)
  *
  * Set the request URL.
  */
-PHP_METHOD(HTTPi_Request, setURL)
+PHP_METHOD(HttpRequest, setURL)
 {
 	char *URL = NULL;
 	int URL_len;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &URL, &URL_len)) {
 		RETURN_FALSE;
@@ -714,14 +712,14 @@ PHP_METHOD(HTTPi_Request, setURL)
 }
 /* }}} */
 
-/* {{{ proto string HTTPi_Request::getUrl()
+/* {{{ proto string HttpRequest::getUrl()
  *
  * Get the previously set request URL.
  */
-PHP_METHOD(HTTPi_Request, getURL)
+PHP_METHOD(HttpRequest, getURL)
 {
 	zval *URL;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -730,15 +728,15 @@ PHP_METHOD(HTTPi_Request, getURL)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::setMethod(long request_method)
+/* {{{ proto bool HttpRequest::setMethod(long request_method)
  *
  * Set the request methods; one of the <tt>HTTP_HEAD</tt>, <tt>HTTP_GET</tt> or
  * <tt>HTTP_POST</tt> constants.
  */
-PHP_METHOD(HTTPi_Request, setMethod)
+PHP_METHOD(HttpRequest, setMethod)
 {
 	long meth;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &meth)) {
 		RETURN_FALSE;
@@ -749,14 +747,14 @@ PHP_METHOD(HTTPi_Request, setMethod)
 }
 /* }}} */
 
-/* {{{ proto long HTTPi_Request::getMethod()
+/* {{{ proto long HttpRequest::getMethod()
  *
  * Get the previously set request method.
  */
-PHP_METHOD(HTTPi_Request, getMethod)
+PHP_METHOD(HttpRequest, getMethod)
 {
 	zval *meth;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -765,16 +763,16 @@ PHP_METHOD(HTTPi_Request, getMethod)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::setContentType(string content_type)
+/* {{{ proto bool HttpRequest::setContentType(string content_type)
  *
  * Set the content type the post request should have.
  * Use this only if you know what you're doing.
  */
-PHP_METHOD(HTTPi_Request, setContentType)
+PHP_METHOD(HttpRequest, setContentType)
 {
 	char *ctype;
 	int ct_len;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ctype, &ct_len)) {
 		RETURN_FALSE;
@@ -792,14 +790,14 @@ PHP_METHOD(HTTPi_Request, setContentType)
 }
 /* }}} */
 
-/* {{{ proto string HTTPi_Request::getContentType()
+/* {{{ proto string HttpRequest::getContentType()
  *
  * Get the previously content type.
  */
-PHP_METHOD(HTTPi_Request, getContentType)
+PHP_METHOD(HttpRequest, getContentType)
 {
 	zval *ctype;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -808,17 +806,17 @@ PHP_METHOD(HTTPi_Request, getContentType)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::setQueryData(mixed query_data)
+/* {{{ proto bool HttpRequest::setQueryData(mixed query_data)
  *
  * Set the URL query parameters to use.
  * Overwrites previously set query parameters.
  * Affects any request types.
  */
-PHP_METHOD(HTTPi_Request, setQueryData)
+PHP_METHOD(HttpRequest, setQueryData)
 {
 	zval *qdata;
 	char *query_data = NULL;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &qdata)) {
 		RETURN_FALSE;
@@ -839,14 +837,14 @@ PHP_METHOD(HTTPi_Request, setQueryData)
 }
 /* }}} */
 
-/* {{{ proto string HTTPi_Request::getQueryData()
+/* {{{ proto string HttpRequest::getQueryData()
  *
  * Get the current query data in form of an urlencoded query string.
  */
-PHP_METHOD(HTTPi_Request, getQueryData)
+PHP_METHOD(HttpRequest, getQueryData)
 {
 	zval *qdata;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -855,16 +853,16 @@ PHP_METHOD(HTTPi_Request, getQueryData)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::addQueryData(array query_params)
+/* {{{ proto bool HttpRequest::addQueryData(array query_params)
  *
  * Add parameters to the query parameter list.
  * Affects any request type.
  */
-PHP_METHOD(HTTPi_Request, addQueryData)
+PHP_METHOD(HttpRequest, addQueryData)
 {
 	zval *qdata, *old_qdata;
 	char *query_data = NULL;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &qdata)) {
 		RETURN_FALSE;
@@ -883,14 +881,14 @@ PHP_METHOD(HTTPi_Request, addQueryData)
 }
 /* }}} */
 
-/* {{{ proto void HTTPi_Request::unsetQueryData()
+/* {{{ proto void HttpRequest::unsetQueryData()
  *
  * Clean the query parameters.
  * Affects any request type.
  */
-PHP_METHOD(HTTPi_Request, unsetQueryData)
+PHP_METHOD(HttpRequest, unsetQueryData)
 {
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -898,15 +896,15 @@ PHP_METHOD(HTTPi_Request, unsetQueryData)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::addPostData(array post_data)
+/* {{{ proto bool HttpRequest::addPostData(array post_data)
  *
  * Adds POST data entries.
  * Affects only POST requests.
  */
-PHP_METHOD(HTTPi_Request, addPostData)
+PHP_METHOD(HttpRequest, addPostData)
 {
 	zval *post, *post_data;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &post_data)) {
 		RETURN_FALSE;
@@ -919,16 +917,16 @@ PHP_METHOD(HTTPi_Request, addPostData)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::setPostData(array post_data)
+/* {{{ proto bool HttpRequest::setPostData(array post_data)
  *
  * Set the POST data entries.
  * Overwrites previously set POST data.
  * Affects only POST requests.
  */
-PHP_METHOD(HTTPi_Request, setPostData)
+PHP_METHOD(HttpRequest, setPostData)
 {
 	zval *post, *post_data;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &post_data)) {
 		RETURN_FALSE;
@@ -942,14 +940,14 @@ PHP_METHOD(HTTPi_Request, setPostData)
 }
 /* }}}*/
 
-/* {{{ proto array HTTPi_Request::getPostData()
+/* {{{ proto array HttpRequest::getPostData()
  *
  * Get previously set POST data.
  */
-PHP_METHOD(HTTPi_Request, getPostData)
+PHP_METHOD(HttpRequest, getPostData)
 {
 	zval *post_data;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -959,15 +957,15 @@ PHP_METHOD(HTTPi_Request, getPostData)
 }
 /* }}} */
 
-/* {{{ proto void HTTPi_Request::unsetPostData()
+/* {{{ proto void HttpRequest::unsetPostData()
  *
  * Clean POST data entires.
  * Affects only POST requests.
  */
-PHP_METHOD(HTTPi_Request, unsetPostData)
+PHP_METHOD(HttpRequest, unsetPostData)
 {
 	zval *post_data;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -976,17 +974,17 @@ PHP_METHOD(HTTPi_Request, unsetPostData)
 }
 /* }}} */
 
-/* {{{ proto bool HTTPi_Request::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])
+/* {{{ proto bool HttpRequest::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])
  *
  * Add a file to the POST request.
  * Affects only POST requests.
  */
-PHP_METHOD(HTTPi_Request, addPostFile)
+PHP_METHOD(HttpRequest, addPostFile)
 {
 	zval *files, *entry;
 	char *name, *file, *type = NULL;
 	int name_len, file_len, type_len = 0;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|s", &name, &name_len, &file, &file_len, &type, &type_len)) {
 		RETURN_FALSE;
@@ -1016,14 +1014,14 @@ PHP_METHOD(HTTPi_Request, addPostFile)
 }
 /* }}} */
 
-/* {{{ proto array HTTPi_Request::getPostFiles()
+/* {{{ proto array HttpRequest::getPostFiles()
  *
  * Get all previously added POST files.
  */
-PHP_METHOD(HTTPi_Request, getPostFiles)
+PHP_METHOD(HttpRequest, getPostFiles)
 {
 	zval *files;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -1034,15 +1032,15 @@ PHP_METHOD(HTTPi_Request, getPostFiles)
 }
 /* }}} */
 
-/* {{{ proto void HTTPi_Request::unsetPostFiles()
+/* {{{ proto void HttpRequest::unsetPostFiles()
  *
  * Unset the POST files list.
  * Affects only POST requests.
  */
-PHP_METHOD(HTTPi_Request, unsetPostFiles)
+PHP_METHOD(HttpRequest, unsetPostFiles)
 {
 	zval *files;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -1051,14 +1049,14 @@ PHP_METHOD(HTTPi_Request, unsetPostFiles)
 }
 /* }}} */
 
-/* {{{ proto array HTTPi_Request::getResponseData()
+/* {{{ proto array HttpRequest::getResponseData()
  *
  * Get all response data after the request has been sent.
  */
-PHP_METHOD(HTTPi_Request, getResponseData)
+PHP_METHOD(HttpRequest, getResponseData)
 {
 	zval *data;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -1068,16 +1066,16 @@ PHP_METHOD(HTTPi_Request, getResponseData)
 }
 /* }}} */
 
-/* {{{ proto string HTTPi_Request::getResponseHeader([string name])
+/* {{{ proto string HttpRequest::getResponseHeader([string name])
  *
  * Get response header(s) after the request has been sent.
  */
-PHP_METHOD(HTTPi_Request, getResponseHeader)
+PHP_METHOD(HttpRequest, getResponseHeader)
 {
 	zval *data, **headers, **header;
 	char *header_name = NULL;
 	int header_len = 0;
-	getObject(httpi_response_object, obj);
+	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &header_name, &header_len)) {
 		RETURN_FALSE;
@@ -1098,14 +1096,14 @@ PHP_METHOD(HTTPi_Request, getResponseHeader)
 	}
 }
 
-/* {{{ proto string HTTPi_Request::getResponseBody()
+/* {{{ proto string HttpRequest::getResponseBody()
  *
  * Get the response body after the request has been sent.
  */
-PHP_METHOD(HTTPi_Request, getResponseBody)
+PHP_METHOD(HttpRequest, getResponseBody)
 {
 	zval *data, **body;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -1118,14 +1116,14 @@ PHP_METHOD(HTTPi_Request, getResponseBody)
 }
 /* }}} */
 
-/* {{{ proto int HTTPi_Request::getResponseCode()
+/* {{{ proto int HttpRequest::getResponseCode()
  *
  * Get the response code after the request has been sent.
  */
-PHP_METHOD(HTTPi_Request, getResponseCode)
+PHP_METHOD(HttpRequest, getResponseCode)
 {
 	zval **code, **hdrs, *data;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
@@ -1140,17 +1138,17 @@ PHP_METHOD(HTTPi_Request, getResponseCode)
 }
 /* }}} */
 
-/* {{{ proto array HTTPi_Request::getResponseInfo([string name])
+/* {{{ proto array HttpRequest::getResponseInfo([string name])
  *
  * Get response info after the request has been sent.
  * See http_get() for a full list of returned info.
  */
-PHP_METHOD(HTTPi_Request, getResponseInfo)
+PHP_METHOD(HttpRequest, getResponseInfo)
 {
 	zval *info, **infop;
 	char *info_name = NULL;
 	int info_len = 0;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &info_name, &info_len)) {
 		RETURN_FALSE;
@@ -1172,14 +1170,14 @@ PHP_METHOD(HTTPi_Request, getResponseInfo)
 }
 /* }}}*/
 
-/* {{{ proto bool HTTPi_Request::send()
+/* {{{ proto bool HttpRequest::send()
  *
  * Send the HTTP request.
  *
  * GET example:
  * <pre>
  * <?php
- * $r = new HTTPi_Request('http://example.com/feed.rss', HTTP_GET);
+ * $r = new HttpRequest('http://example.com/feed.rss', HTTP_GET);
  * $r->setOptions(array('lastmodified' => filemtime('local.rss')));
  * $r->addQueryData(array('category' => 3));
  * if ($r->send() && $r->getResponseCode() == 200) {
@@ -1191,7 +1189,7 @@ PHP_METHOD(HTTPi_Request, getResponseInfo)
  * POST example:
  * <pre>
  * <?php
- * $r = new HTTPi_Request('http://example.com/form.php', HTTP_POST);
+ * $r = new HttpRequest('http://example.com/form.php', HTTP_POST);
  * $r->setOptions(array('cookies' => array('lang' => 'de')));
  * $r->addPostData(array('user' => 'mike', 'pass' => 's3c|r3t'));
  * $r->addPostFile('image', 'profile.jpg', 'image/jpeg');
@@ -1201,13 +1199,13 @@ PHP_METHOD(HTTPi_Request, getResponseInfo)
  * ?>
  * </pre>
  */
-PHP_METHOD(HTTPi_Request, send)
+PHP_METHOD(HttpRequest, send)
 {
 	STATUS status = FAILURE;
 	zval *meth, *URL, *qdata, *opts, *info, *resp;
 	char *response_data, *request_uri;
 	size_t response_len;
-	getObject(httpi_request_object, obj);
+	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
