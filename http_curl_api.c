@@ -45,7 +45,6 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 #	define http_curl_reset(ch)
 #endif
 
-/* FIXXME: correct version where strerror is supported! */
 #if LIBCURL_VERSION_NUM < 0x070c00
 #	define curl_easy_strerror(code) "unkown error"
 #endif
@@ -131,7 +130,7 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 static inline char *_http_curl_copystr(const char *str TSRMLS_DC);
 
 #define http_curl_setopts(c, u, o) _http_curl_setopts((c), (u), (o) TSRMLS_CC)
-static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSRMLS_DC);
+static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSRMLS_DC);
 
 #define http_curl_getopt(o, k) _http_curl_getopt((o), (k) TSRMLS_CC, 0)
 #define http_curl_getopt1(o, k, t1) _http_curl_getopt((o), (k) TSRMLS_CC, 1, (t1))
@@ -211,8 +210,8 @@ static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, i
 }
 /* }}} */
 
-/* {{{ static inline void http_curl_setopts(CURL *, char *, HashTable *) */
-static inline void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSRMLS_DC)
+/* {{{ static void http_curl_setopts(CURL *, char *, HashTable *) */
+static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSRMLS_DC)
 {
 	zval *zoption;
 	zend_bool range_req = 0;

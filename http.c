@@ -309,7 +309,7 @@ zend_function_entry httpi_request_class_methods[] = {
 	PHP_ME(HTTPi_Request, setOptions, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, getOptions, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, unsetOptions, NULL, ZEND_ACC_PUBLIC)
-	
+
 	PHP_ME(HTTPi_Request, addHeader, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HTTPi_Request, addCookie, NULL, ZEND_ACC_PUBLIC)
 
@@ -434,17 +434,39 @@ PHP_INI_BEGIN()
 PHP_INI_END()
 /* }}} */
 
+/* {{{ HTTP_CURL_USE_ZEND_MM */
+#if defined(HTTP_HAVE_CURL) && defined(HTTP_CURL_USE_ZEND_MM)
+static void http_curl_free(void *p)					{ efree(p); }
+static char *http_curl_strdup(const char *p)		{ return estrdup(p); }
+static void *http_curl_malloc(size_t s)				{ return emalloc(s); }
+static void *http_curl_realloc(void *p, size_t s)	{ return erealloc(p, s); }
+static void *http_curl_calloc(size_t n, size_t s)	{ return ecalloc(n, s); }
+#endif /* HTTP_HAVE_CURL && HTTP_CURL_USE_ZEND_MM */
+/* }}} */
+
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(http)
 {
 	ZEND_INIT_MODULE_GLOBALS(http, php_http_init_globals, NULL);
 	REGISTER_INI_ENTRIES();
 
-#if defined(HTTP_HAVE_CURL) && (LIBCURL_VERSION_NUM >= 0x070a05)
+#ifdef HTTP_HAVE_CURL
+#	ifdef HTTP_CURL_USE_ZEND_MM
+	if (CURLE_OK != curl_global_init_mem(CURL_GLOBAL_ALL, 
+			http_curl_malloc, 
+			http_curl_free,
+			http_curl_realloc,
+			http_curl_strdup,
+			http_curl_calloc)) {
+		return FAILURE;
+	}
+#	endif /* HTTP_CURL_USE_ZEND_MM */
+#	if LIBCURL_VERSION_NUM >= 0x070a05
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_NTLM", CURLAUTH_NTLM, CONST_CS | CONST_PERSISTENT);
-#endif
+#	endif /* LIBCURL_VERSION_NUM */
+#endif /* HTTP_HAVE_CURL */
 
 #ifdef ZEND_ENGINE_2
 	HTTP_REGISTER_CLASS(HTTPi, httpi, NULL, ZEND_ACC_FINAL_CLASS);
@@ -464,6 +486,9 @@ PHP_MINIT_FUNCTION(http)
 PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
+#ifdef HTTP_HAVE_CURL
+	curl_global_cleanup();
+#endif
 	return SUCCESS;
 }
 /* }}} */
