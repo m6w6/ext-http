@@ -46,6 +46,9 @@ typedef enum {
 } http_send_mode;
 /* }}} */
 
+/* CR LF */
+#define HTTP_CRLF "\r\n"
+
 /* max URI length */
 #define HTTP_URI_MAXLEN 2048
 
@@ -152,8 +155,8 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, const size_t encod
 #define http_split_response(r, h, b) _http_split_response((r), (h), (b) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_split_response(const zval *zresponse, zval *zheaders, zval *zbody TSRMLS_DC);
 
-#define http_parse_header(h, l, a) _http_parse_header((h), (l), (a) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_parse_header(char *header, long header_len, zval *array TSRMLS_DC);
+#define http_parse_headers(h, l, a) _http_parse_headers((h), (l), (a) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *array TSRMLS_DC);
 
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL

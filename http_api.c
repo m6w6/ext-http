@@ -1468,7 +1468,7 @@ PHP_HTTP_API STATUS _http_send_ranges(zval *zranges, const void *data, const siz
 	}
 
 	/* write boundary once more */
-	php_body_write("\r\n", 1 TSRMLS_CC);
+	php_body_write(HTTP_CRLF, 1 TSRMLS_CC);
 	php_body_write(bound, strlen(bound) TSRMLS_CC);
 
 	return SUCCESS;
@@ -1616,7 +1616,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 	char *d_ptr;
 
 	*decoded_len = 0;
-	*decoded = (char *) ecalloc(1, encoded_len);
+	*decoded = (char *) ecalloc(encoded_len, 1);
 	d_ptr = *decoded;
 	e_ptr = encoded;
 
@@ -1636,8 +1636,22 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 			hex_len[i++] = *e_ptr++;
 		}
 
+		/* reached the end */
+		if (!strcmp(hex_len, "0")) {
+			break;
+		}
+
+		/* new line */
+		if (strncmp(e_ptr, HTTP_CRLF, 2)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+				"Invalid character (expected 0x0D 0x0A; got: %x %x)",
+				*e_ptr, *(e_ptr + 1));
+			efree(*decoded);
+			return FAILURE;
+		}
+
 		/* hex to long */
-		if (strcmp(hex_len, "0")) {
+		{
 			char *error = NULL;
 			chunk_len = strtol(hex_len, &error, 16);
 			if (error == hex_len) {
@@ -1646,20 +1660,9 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded,
 				efree(*decoded);
 				return FAILURE;
 			}
-		} else {
-			break;
 		}
 
-		/* new line */
-		if (*e_ptr++ != '\r' || *e_ptr++ != '\n') {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING,
-				"Invalid character (expected 0x0A, 0x0D; got: %x)",
-				*(e_ptr - 1));
-			efree(*decoded);
-			return FAILURE;
-		}
-
-		memcpy(d_ptr, e_ptr, chunk_len);
+		memcpy(d_ptr, e_ptr += 2, chunk_len);
 		d_ptr += chunk_len;
 		e_ptr += chunk_len + 2;
 		*decoded_len += chunk_len;
@@ -1693,12 +1696,12 @@ PHP_HTTP_API STATUS _http_split_response(const zval *zresponse, zval *zheaders,
 		Z_TYPE_P(zbody) = IS_NULL;
 	}
 
-	return http_parse_header(header, body - Z_STRVAL_P(zresponse), zheaders);
+	return http_parse_headers(header, body - Z_STRVAL_P(zresponse), zheaders);
 }
 /* }}} */
 
-/* {{{ STATUS http_parse_header(char *, long, zval *) */
-PHP_HTTP_API STATUS _http_parse_header(char *header, long header_len, zval *array TSRMLS_DC)
+/* {{{ STATUS http_parse_headers(char *, long, zval *) */
+PHP_HTTP_API STATUS _http_parse_headers(char *header, int header_len, zval *array TSRMLS_DC)
 {
 	char *colon = NULL, *line = NULL, *begin = header;
 
@@ -1708,30 +1711,27 @@ PHP_HTTP_API STATUS _http_parse_header(char *header, long header_len, zval *arra
 
 	/* status code */
 	if (!strncmp(header, "HTTP/1.", 7)) {
-		char *end = strstr(header, "\r\n");
+		char *end = strstr(header, HTTP_CRLF);
 		add_assoc_stringl(array, "Status",
 			header + strlen("HTTP/1.x "),
 			end - (header + strlen("HTTP/1.x ")), 1);
 		header = end + 2;
 	}
-
+	
 	line = header;
 
-	/*
-	 * FIXXME: support for folded headers
-	 */
 	while (header_len > (line - begin)) {
 		switch (*line++)
 		{
 			case 0:
-			case '\r':
-				if (colon && (*line == '\n')) {
+			case '\n':
+				if (colon && (*line != ' ') && (*line != '\t')) {
 					char *key = estrndup(header, colon - header);
-					add_assoc_stringl(array, key, colon + 2, line - colon - 3, 1);
+					add_assoc_stringl(array, key, colon + 2, line - colon - 4, 1);
 					efree(key);
 
 					colon = NULL;
-					header += line - header + 1;
+					header += line - header;
 				}
 			break;
 
