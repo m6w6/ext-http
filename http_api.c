@@ -34,7 +34,6 @@
 #include "ext/standard/php_string.h"
 #include "ext/standard/php_smart_str.h"
 #include "ext/standard/php_lcg.h"
-#include "ext/standard/php_filestat.h"
 
 #include "SAPI.h"
 
