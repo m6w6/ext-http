@@ -465,7 +465,9 @@ PHP_FUNCTION(http_cache_etag)
 
 /* {{{ proto string ob_httpetaghandler(string data, int mode)
  *
- * For use with ob_start(). Note that this has to be started as first output buffer.
+ * For use with ob_start(). 
+ * Note that this has to be started as first output buffer.
+ * WARNING: Don't use with http_send_*().
  */
 PHP_FUNCTION(ob_httpetaghandler)
 {
@@ -479,17 +481,18 @@ PHP_FUNCTION(ob_httpetaghandler)
 
 	if (mode & PHP_OUTPUT_HANDLER_START) {
 		if (HTTP_G(etag_started)) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "ob_etaghandler can only be used once");
-			RETURN_FALSE;
-		}
-		if (OG(ob_nesting_level)) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "must be started prior to other output buffers");
-			RETURN_FALSE;
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "ob_httpetaghandler can only be used once");
+			RETURN_STRINGL(data, data_len, 1);
 		}
 		http_send_header("Cache-Control: private, must-revalidate, max-age=0");
 		HTTP_G(etag_started) = 1;
 	}
 
+    if (OG(ob_nesting_level) > 1) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING, "ob_httpetaghandler must be started prior to other output buffers");
+        RETURN_STRINGL(data, data_len, 1);
+    }
+    
 	Z_TYPE_P(return_value) = IS_STRING;
 	http_ob_etaghandler(data, data_len, &Z_STRVAL_P(return_value), &Z_STRLEN_P(return_value), mode);
 }
