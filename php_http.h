@@ -56,7 +56,7 @@ typedef struct {
 } http_request_object;
 
 typedef enum {
-	HTTP_GET,
+	HTTP_GET = 1,
 	HTTP_HEAD,
 	HTTP_POST,
 } http_request_method;

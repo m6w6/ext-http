@@ -31,10 +31,6 @@
 #include "php_http_curl_api.h"
 #include "php_http_std_defs.h"
 
-#ifdef ZEND_ENGINE_2
-#	include "ext/standard/php_http.h"
-#endif
-
 #include "phpstr/phpstr.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
