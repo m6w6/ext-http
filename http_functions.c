@@ -957,8 +957,8 @@ PHP_FUNCTION(http_auth_basic_cb)
 PHP_FUNCTION(http_build_query)
 {
 	zval *formdata;
-	int prefix_len = 0, arg_sep_len = 0;
 	char *prefix = NULL, *arg_sep = INI_STR("arg_separator.output");
+	int prefix_len = 0, arg_sep_len = strlen(arg_sep);
 	phpstr *formstr = phpstr_new();
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|ss", &formdata, &prefix, &prefix_len, &arg_sep, &arg_sep_len) != SUCCESS) {
