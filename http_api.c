@@ -22,7 +22,6 @@
 #include <ctype.h>
 
 #ifdef PHP_WIN32
-#	define _WINSOCKAPI_
 #	include <winsock2.h>
 #elif defined(HAVE_NETDB_H)
 #	include <netdb.h>

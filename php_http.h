@@ -43,7 +43,6 @@ typedef struct {
 #ifdef HTTP_HAVE_CURL
 
 #ifdef	PHP_WIN32
-#	define _WINSOCKAPI_
 #	include <winsock2.h>
 #endif
 

@@ -19,7 +19,6 @@
 #define PHP_HTTP_CURL_API_H
 
 #ifdef PHP_WIN32
-#	define _WINSOCKAPI_
 #	include <winsock2.h>
 #endif
 
