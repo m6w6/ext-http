@@ -8,6 +8,18 @@ PHP_ARG_WITH([curl], [for CURL support],
 
 if test "$PHP_HTTP" != "no"; then
 
+dnl -------
+dnl NETDB.H
+dnl -------
+
+	AC_MSG_CHECKING(for netdb.h)
+	if test -r /usr/include/netdb.h -o -r /usr/local/include/netdb.h; then
+		AC_DEFINE(HAVE_NETDB_H, 1, [Have netdb.h])
+		AC_MSG_RESULT(found in default path)
+	else
+		AC_MSG_RESULT(not found in default path)
+	fi
+
 dnl ----
 dnl CURL
 dnl ----

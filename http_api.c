@@ -23,7 +23,12 @@
 #endif
 
 #include <ctype.h>
-#include <netdb.h>
+
+#ifdef PHP_WIN32
+#	include <winsock2.h>
+#elif defined(HAVE_NETDB_H)
+#	include <netdb.h>
+#endif
 
 #include "php.h"
 #include "php_version.h"
@@ -887,7 +892,7 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 	const char *host,	size_t host_len,
 	unsigned port TSRMLS_DC)
 {
-#ifdef ZEND_ENGINE_2
+#if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
 	struct servent *se;
 #endif
 	php_url *purl, furl = {NULL};
@@ -918,7 +923,7 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 		furl.scheme = scheme = estrdup(proto);
 	} else if (purl->scheme) {
 		furl.scheme = purl->scheme;
-#ifdef ZEND_ENGINE_2
+#if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
 	} else if (port && (se = getservbyport(port, "tcp"))) {
 		furl.scheme = (scheme = estrdup(se->s_name));
 #endif
@@ -931,7 +936,7 @@ PHP_HTTP_API char *_http_absolute_uri_ex(
 	} else if (purl->port) {
 		furl.port = purl->port;
 	} else if (strncmp(furl.scheme, "http", 4)) {
-#ifdef ZEND_ENGINE_2
+#if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
 		if (se = getservbyname(furl.scheme, "tcp")) {
 			furl.port = se->s_port;
 		} else
