@@ -286,7 +286,7 @@ static int check_tzone(char *tzone)
 char *pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
 	if (key && key_len) {
-		int i, wasalpha;
+		unsigned i, wasalpha;
 		if (wasalpha = isalpha(key[0])) {
 			key[0] = uctitle ? toupper(key[0]) : tolower(key[0]);
 		}
@@ -1159,7 +1159,8 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 					{
 						/* "0-12345" */
 						case -10:
-							if (length <= end) {
+							/* "0-", "0-0" or overflow */
+							if (end == -1 || end == -10 || length <= end) {
 								return RANGE_ERR;
 							}
 							begin = 0;
@@ -1167,7 +1168,8 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 
 						/* "-12345" */
 						case -1:
-							if (length <= end) {
+							/* "-", "-0" or overflow */
+							if (end == -1 || end == -10 || length <= end) {
 								return RANGE_ERR;
 							}
 							begin = length - end;
@@ -1178,6 +1180,11 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 						default:
 							switch (end)
 							{
+								/* "12345-0" */
+								case -10:
+									return RANGE_ERR;
+								break;
+								
 								/* "12345-" */
 								case -1:
 									if (length <= begin) {
