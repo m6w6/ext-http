@@ -156,7 +156,7 @@ PHP_HTTP_API STATUS _http_auth_header(const char *type, const char *realm TSRMLS
 
 #ifndef ZEND_ENGINE_2
 #define php_url_encode_hash(ht, formstr)	php_url_encode_hash_ex((ht), (formstr), NULL, 0, NULL, 0, NULL, 0, NULL TSRMLS_CC)
-PHPAPI int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
+PHP_HTTP_API STATUS php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 				const char *num_prefix, int num_prefix_len,
 				const char *key_prefix, int key_prefix_len,
 				const char *key_suffix, int key_suffix_len,
@@ -175,4 +175,3 @@ PHPAPI int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

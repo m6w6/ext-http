@@ -1426,7 +1426,7 @@ PHP_HTTP_API STATUS _http_split_response_ex( char *response,
 	char *body = NULL;
 	char *header = response;
 
-	while ((response - header + 4) < response_len) {
+	while (0 < (response_len - (response - header + 4))) {
 		if (	(*response++ == '\r') &&
 				(*response++ == '\n') &&
 				(*response++ == '\r') &&
@@ -1614,9 +1614,9 @@ PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC)
 /* }}} */
 
 #ifndef ZEND_ENGINE_2
-/* {{{ php_url_encode_hash 
+/* {{{ php_url_encode_hash
 	Author: Sarah Golemon <pollita@php.net> */
-PHP_HTTP_API int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
+PHP_HTTP_API STATUS php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 				const char *num_prefix, int num_prefix_len,
 				const char *key_prefix, int key_prefix_len,
 				const char *key_suffix, int key_suffix_len,
@@ -1787,4 +1787,3 @@ PHP_HTTP_API int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-
