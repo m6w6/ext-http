@@ -128,6 +128,10 @@ SOURCE=.\php_http_api.h
 
 SOURCE=.\php_http_curl_api.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\php_http_std_defs.h
+# End Source File
 # End Group
 # Begin Group "Resource Files"
 
