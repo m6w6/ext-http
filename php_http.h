@@ -52,7 +52,7 @@ PHP_FUNCTION(http_send_file);
 PHP_FUNCTION(http_send_stream);
 PHP_FUNCTION(http_chunked_decode);
 PHP_FUNCTION(http_split_response);
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 PHP_FUNCTION(http_get);
 PHP_FUNCTION(http_head);
 PHP_FUNCTION(http_post_data);
@@ -72,7 +72,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	char *ctype;
 	char *etag;
 	time_t lmod;
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 	struct {
 		struct {
 			char *data;

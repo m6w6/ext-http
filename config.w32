@@ -12,7 +12,7 @@ if (PHP_HTTP != "no") {
             CHECK_LIB("libeay32.lib", "http", PHP_HTTP) &&
             CHECK_LIB("zlib.lib", "http", PHP_HTTP) &&
             CHECK_LIB("winmm.lib", "http", PHP_HTTP)) {
-        AC_DEFINE('HAVE_CURL', 1, 'Have CURL library');
+        AC_DEFINE("HTTP_HAVE_CURL", 1, "Have CURL library");
     } else {
         WARNING("curl convenience functions not enabled; libraries and headers not found");
     }

@@ -52,7 +52,7 @@ typedef enum {
 #define HTTP_SERVER_VARS Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER])
 
 /* {{{ HAVE_CURL */
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 
 /* CURL buffer size */
 #define HTTP_CURLBUF_BODYSIZE 16384
@@ -149,7 +149,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, const size_t encod
 PHP_HTTP_API void _http_split_response(const zval *zresponse, zval *zheaders, zval *zbody TSRMLS_DC);
 
 /* {{{ HAVE_CURL */
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 
 #define http_get(u, o, i, d, l) _http_get((u), (o), (i), (d), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC);

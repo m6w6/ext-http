@@ -21,14 +21,6 @@
 #include "config.h"
 #endif
 
-#if defined(HAVE_CURL) && HAVE_CURL
-#	ifdef PHP_WIN32
-#	include <winsock2.h>
-#	include <sys/types.h>
-#	endif
-#include <curl/curl.h>
-#endif
-
 #include "php.h"
 #include "snprintf.h"
 #include "ext/standard/info.h"
@@ -38,6 +30,16 @@
 
 #include "php_http.h"
 #include "php_http_api.h"
+
+#ifdef HTTP_HAVE_CURL
+
+#ifdef PHP_WIN32
+#include <winsock2.h>
+#include <sys/types.h>
+#endif
+
+#include <curl/curl.h>
+#endif
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
 
@@ -65,7 +67,7 @@ function_entry http_functions[] = {
 	PHP_FE(http_send_stream, NULL)
 	PHP_FE(http_chunked_decode, NULL)
 	PHP_FE(http_split_response, NULL)
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 	PHP_FE(http_get, NULL)
 	PHP_FE(http_head, NULL)
 	PHP_FE(http_post_data, NULL)
@@ -677,7 +679,7 @@ PHP_FUNCTION(http_split_response)
 /* }}} */
 
 /* {{{ HAVE_CURL */
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 
 /* {{{ proto string http_get(string url[, array options[, array &info]])
  *
@@ -948,7 +950,7 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 	http_globals->ctype = NULL;
 	http_globals->etag  = NULL;
 	http_globals->lmod  = 0;
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 	http_globals->curlbuf.body.data = NULL;
 	http_globals->curlbuf.body.used = 0;
 	http_globals->curlbuf.body.free = 0;
@@ -963,7 +965,7 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 PHP_MINIT_FUNCTION(http)
 {
 	ZEND_INIT_MODULE_GLOBALS(http, php_http_init_globals, NULL);
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_AUTH_NTLM", CURLAUTH_NTLM, CONST_CS | CONST_PERSISTENT);
@@ -981,7 +983,7 @@ PHP_RSHUTDOWN_FUNCTION(http)
 	if (HTTP_G(etag)) {
 		efree(HTTP_G(etag));
 	}
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 	if (HTTP_G(curlbuf).body.data) {
 		efree(HTTP_G(curlbuf).body.data);
 	}
@@ -1000,7 +1002,7 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_header(2, "Extended HTTP support", "enabled");
 	php_info_print_table_row(2, "Version:", PHP_EXT_HTTP_VERSION);
 	php_info_print_table_row(2, "cURL convenience functions:",
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 			"enabled"
 #else
 			"disabled"

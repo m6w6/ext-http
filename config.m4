@@ -47,7 +47,7 @@ dnl ----
 
 		PHP_CHECK_LIBRARY(curl,curl_easy_init,
 		[
-			AC_DEFINE(HAVE_CURL,1,[Have CURL easy support])
+			AC_DEFINE(HTTP_HAVE_CURL,1,[Have CURL easy support])
 		],[
 			AC_MSG_ERROR(There is something wrong with libcurl. Please check config.log for more information.)
 		],[

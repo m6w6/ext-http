@@ -23,15 +23,6 @@
 
 #include <ctype.h>
 
-#if defined(HAVE_CURL) && HAVE_CURL
-#	ifdef PHP_WIN32
-#	include <winsock2.h>
-#	include <sys/types.h>
-#	endif
-#include <curl/curl.h>
-#include <curl/easy.h>
-#endif
-
 #include "php.h"
 #include "php_version.h"
 #include "php_streams.h"
@@ -54,6 +45,18 @@
 
 #include "php_http.h"
 #include "php_http_api.h"
+
+#ifdef HTTP_HAVE_CURL
+
+#ifdef PHP_WIN32
+#include <winsock2.h>
+#include <sys/types.h>
+#endif
+
+#include <curl/curl.h>
+#include <curl/easy.h>
+#endif
+
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
 
@@ -142,7 +145,7 @@ static int check_month(char *month);
 static int check_tzone(char *tzone);
 
 /* {{{ HAVE_CURL */
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 #define http_curl_initbuf(m) _http_curl_initbuf((m) TSRMLS_CC)
 static inline void _http_curl_initbuf(http_curlbuf_member member TSRMLS_DC);
 #define http_curl_freebuf(m) _http_curl_freebuf((m) TSRMLS_CC)
@@ -297,7 +300,7 @@ static STATUS _http_send_chunk(const void *data, const size_t begin,
 /* }}} */
 
 /* {{{ HAVE_CURL */
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 
 /* {{{ static inline void http_curl_initbuf(http_curlbuf_member) */
 static inline void _http_curl_initbuf(http_curlbuf_member member TSRMLS_DC)
@@ -1746,7 +1749,7 @@ PHP_HTTP_API void _http_split_response(const zval *zresponse, zval *zheaders,
 /* }}} */
 
 /* {{{ HAVE_CURL */
-#if defined(HAVE_CURL) && HAVE_CURL
+#ifdef HTTP_HAVE_CURL
 
 /* {{{ STATUS http_get(char *, HashTable *, HashTable *, char **, size_t *) */
 PHP_HTTP_API STATUS _http_get(const char *URL, HashTable *options,
