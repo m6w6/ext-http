@@ -11,7 +11,7 @@
 PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, zend_bool pre_alloc)
 {
 	if (!buf) {
-		buf = ecalloc(1, sizeof(phpstr));
+		buf = emalloc(sizeof(phpstr));
 	}
 
 	buf->size = chunk_size > 0 ? chunk_size : PHPSTR_DEFAULT_SIZE;
@@ -22,7 +22,7 @@ PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, zend_bool pre_
 	return buf;
 }
 
-PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, char *string, size_t length)
+PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t length)
 {
 	buf = phpstr_init(buf);
 	phpstr_append(buf, string, length);

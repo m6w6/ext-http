@@ -206,6 +206,9 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	char *allowed_methods;
 #ifdef HTTP_HAVE_CURL
 	phpstr curlbuf;
+#	if LIBCURL_VERSION_NUM < 0x070c00
+	char curlerr[CURL_ERROR_SIZE + 1];
+#	endif
 	zend_llist to_free;
 #endif /* HTTP_HAVE_CURL */
 ZEND_END_MODULE_GLOBALS(http)

@@ -18,6 +18,8 @@
 #ifndef PHP_HTTP_CURL_API_H
 #define PHP_HTTP_CURL_API_H
 
+#include "php_http_std_defs.h"
+
 #ifdef PHP_WIN32
 #	include <winsock2.h>
 #endif

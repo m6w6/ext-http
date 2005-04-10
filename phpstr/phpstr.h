@@ -4,11 +4,17 @@
 #ifndef _PHPSTR_H_
 #define _PHPSTR_H_
 
+#include "php.h"
+
 #ifdef PHP_WIN32
 #	define PHPSTR_API __declspec(dllexport)
 #else
 #	define PHPSTR_API
 #endif
+
+#define PHPSTR(p) ((phpstr *) (p))
+#define PHPSTR_VAL(p) (PHPSTR(p))->data;
+#define PHPSTR_LEN(p) (PHPSTR(p))->used;
 
 #define FREE_PHPSTR_PTR(STR) efree(STR)
 #define FREE_PHPSTR_VAL(STR) phpstr_dtor(STR)
@@ -64,7 +70,7 @@ PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, zend_bool pre_
 #define phpstr_from_zval(z) phpstr_from_string(Z_STRVAL(z), Z_STRLEN(z))
 #define phpstr_from_zval_ex(b, z) phpstr_from_string_ex(b, Z_STRVAL(z), Z_STRLEN(z))
 #define phpstr_from_string(s, l) phpstr_from_string_ex(NULL, (s), (l))
-PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, char *string, size_t length);
+PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t length);
 
 /* usually only called from within the internal functions */
 #define phpstr_resize(b, s) phpstr_resize_ex((b), (s), 0)

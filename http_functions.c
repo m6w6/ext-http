@@ -20,22 +20,28 @@
 #endif
 
 #include "php.h"
-#include "php_ini.h"
-#include "snprintf.h"
 #include "ext/standard/info.h"
 #include "ext/session/php_session.h"
 #include "ext/standard/php_string.h"
 
 #include "SAPI.h"
 
-#include "php_http.h"
-#include "php_http_api.h"
-#include "php_http_curl_api.h"
-#include "php_http_std_defs.h"
-
 #include "phpstr/phpstr.h"
 
-ZEND_DECLARE_MODULE_GLOBALS(http)
+#include "php_http.h"
+#include "php_http_std_defs.h"
+#include "php_http_api.h"
+#include "php_http_auth_api.h"
+#include "php_http_curl_api.h"
+#include "php_http_cache_api.h"
+#include "php_http_curl_api.h"
+#include "php_http_date_api.h"
+#include "php_http_headers_api.h"
+#include "php_http_message_api.h"
+#include "php_http_send_api.h"
+#include "php_http_url_api.h"
+
+ZEND_EXTERN_MODULE_GLOBALS(http)
 
 /* {{{ proto string http_date([int timestamp])
  *
@@ -738,7 +744,7 @@ PHP_FUNCTION(http_get)
 		array_init(info);
 	}
 
-	if (SUCCESS == http_get(URL, HASH_ORNULL(options), HASH_ORNULL(info), &data, &data_len)) {
+	if (SUCCESS == http_get(URL, Z_ARRVAL_P(options), Z_ARRVAL_P(info), &data, &data_len)) {
 		RETURN_STRINGL(data, data_len, 0);
 	} else {
 		RETURN_FALSE;
@@ -768,7 +774,7 @@ PHP_FUNCTION(http_head)
 		array_init(info);
 	}
 
-	if (SUCCESS == http_head(URL, HASH_ORNULL(options), HASH_ORNULL(info), &data, &data_len)) {
+	if (SUCCESS == http_head(URL, Z_ARRVAL_P(options), Z_ARRVAL_P(info), &data, &data_len)) {
 		RETURN_STRINGL(data, data_len, 0);
 	} else {
 		RETURN_FALSE;
@@ -798,7 +804,7 @@ PHP_FUNCTION(http_post_data)
 		array_init(info);
 	}
 
-	if (SUCCESS == http_post_data(URL, postdata, (size_t) postdata_len, HASH_ORNULL(options), HASH_ORNULL(info), &data, &data_len)) {
+	if (SUCCESS == http_post_data(URL, postdata, (size_t) postdata_len, Z_ARRVAL_P(options), Z_ARRVAL_P(info), &data, &data_len)) {
 		RETURN_STRINGL(data, data_len, 0);
 	} else {
 		RETURN_FALSE;
@@ -828,7 +834,7 @@ PHP_FUNCTION(http_post_array)
 		array_init(info);
 	}
 
-	if (SUCCESS == http_post_array(URL, Z_ARRVAL_P(postdata), HASH_ORNULL(options), HASH_ORNULL(info), &data, &data_len)) {
+	if (SUCCESS == http_post_array(URL, Z_ARRVAL_P(postdata), Z_ARRVAL_P(options), Z_ARRVAL_P(info), &data, &data_len)) {
 		RETURN_STRINGL(data, data_len, 0);
 	} else {
 		RETURN_FALSE;
@@ -959,7 +965,7 @@ PHP_FUNCTION(http_build_query)
 	zval *formdata;
 	char *prefix = NULL, *arg_sep = INI_STR("arg_separator.output");
 	int prefix_len = 0, arg_sep_len = strlen(arg_sep);
-	phpstr *formstr = phpstr_new();
+	phpstr *formstr;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|ss", &formdata, &prefix, &prefix_len, &arg_sep, &arg_sep_len) != SUCCESS) {
 		RETURN_FALSE;
@@ -974,6 +980,7 @@ PHP_FUNCTION(http_build_query)
 		arg_sep = HTTP_URL_ARGSEP_DEFAULT;
 	}
 
+	formstr = phpstr_new();
 	if (SUCCESS != http_urlencode_hash_implementation_ex(HASH_OF(formdata), formstr, arg_sep, prefix, prefix_len, NULL, 0, NULL, 0, (Z_TYPE_P(formdata) == IS_OBJECT ? formdata : NULL) TSRMLS_CC)) {
 		phpstr_free(formstr);
 		RETURN_FALSE;
@@ -992,7 +999,21 @@ PHP_FUNCTION(http_build_query)
 
 PHP_FUNCTION(http_test)
 {
-	RETURN_TRUE;
+#define HTTP_MESSAGE_STR \
+	"GET / HTTP/1.1\r\n" \
+	"Content-Type: foo/bar\r\n" \
+	"Robots: Noindex,Nofollow\r\n" \
+	"\r\n" \
+	"Body Data!\n"
+#define HTTP_MESSAGE_LEN lenof(HTTP_MESSAGE_STR)
+	http_message *msg = http_message_parse(HTTP_MESSAGE_STR, HTTP_MESSAGE_LEN);
+	char *str;
+	size_t len;
+
+	http_message_tostring(msg, &str, &len);
+
+	RETVAL_STRINGL(str, len, 0);
+	http_message_free(msg);
 }
 
 /*

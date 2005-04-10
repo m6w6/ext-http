@@ -38,9 +38,17 @@
 #include "SAPI.h"
 
 #include "php_http.h"
-#include "php_http_api.h"
-#include "php_http_curl_api.h"
 #include "php_http_std_defs.h"
+#include "php_http_api.h"
+#include "php_http_auth_api.h"
+#include "php_http_curl_api.h"
+#include "php_http_cache_api.h"
+#include "php_http_curl_api.h"
+#include "php_http_date_api.h"
+#include "php_http_headers_api.h"
+#include "php_http_message_api.h"
+#include "php_http_send_api.h"
+#include "php_http_url_api.h"
 
 #include "phpstr/phpstr.h"
 
@@ -393,6 +401,9 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 	http_globals->lmod  = 0;
 #ifdef HTTP_HAVE_CURL
 	phpstr_init_ex(&http_globals->curlbuf, HTTP_CURLBUF_SIZE, 0);
+#	if LIBCURL_VERSION_NUM < 0x070c00
+	memset(&http_globals->curlerr, 0, sizeof(http_globals->curlerr));
+#	endif
 	zend_llist_init(&http_globals->to_free, sizeof(char *), free_to_free, 0);
 #endif
 	http_globals->allowed_methods = NULL;
@@ -526,6 +537,9 @@ PHP_RSHUTDOWN_FUNCTION(http)
 	}
 
 #ifdef HTTP_HAVE_CURL
+#	if LIBCURL_VERSION_NUM < 0x070c00
+	memset(&HTTP_G(curlerr), 0, sizeof(HTTP_G(curlerr)));
+#	endif
 	phpstr_dtor(&HTTP_G(curlbuf));
 #endif
 

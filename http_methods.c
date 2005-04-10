@@ -21,9 +21,14 @@
 
 #include "php.h"
 #include "php_http.h"
-#include "php_http_api.h"
-#include "php_http_curl_api.h"
 #include "php_http_std_defs.h"
+#include "php_http_api.h"
+#include "php_http_cache_api.h"
+#include "php_http_curl_api.h"
+#include "php_http_date_api.h"
+#include "php_http_headers_api.h"
+#include "php_http_send_api.h"
+#include "php_http_url_api.h"
 
 #ifdef ZEND_ENGINE_2
 
@@ -438,6 +443,11 @@ PHP_METHOD(HttpResponse, send)
 	do_cache = GET_PROP(obj, cache);
 	do_gzip  = GET_PROP(obj, gzip);
 
+	/* gzip */
+	if (Z_LVAL_P(do_gzip)) {
+		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
+	}
+
 	/* caching */
 	if (Z_LVAL_P(do_cache)) {
 		zval *cctrl, *etag, *lmod, *ccraw;
@@ -456,11 +466,6 @@ PHP_METHOD(HttpResponse, send)
 			http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), cc_header, strlen(cc_header));
 			http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), cc_header, strlen(cc_header));
 		}
-	}
-
-	/* gzip */
-	if (Z_LVAL_P(do_gzip)) {
-		/* ... */
 	}
 
 	/* content type */

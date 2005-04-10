@@ -18,9 +18,23 @@
 #ifndef PHP_HTTP_STD_DEFS_H
 #define PHP_HTTP_STD_DEFS_H
 
-#define RETURN_SUCCESS(v)	RETURN_BOOL(SUCCESS == (v))
-#define HASH_ORNULL(z) 		((z) ? Z_ARRVAL_P(z) : NULL)
-#define NO_ARGS 			if (ZEND_NUM_ARGS()) WRONG_PARAM_COUNT
+#ifdef PHP_WIN32
+#	define PHP_HTTP_API __declspec(dllexport)
+#else
+#	define PHP_HTTP_API
+#endif
+
+/* make functions that return SUCCESS|FAILURE more obvious */
+typedef int STATUS;
+
+/* lenof() */
+#define lenof(S) (sizeof(S) - 1)
+
+/* return bool (v == SUCCESS) */
+#define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
+
+/* function accepts no args */
+#define NO_ARGS if (ZEND_NUM_ARGS()) WRONG_PARAM_COUNT
 
 /* CR LF */
 #define HTTP_CRLF "\r\n"
@@ -28,8 +42,13 @@
 /* default cache control */
 #define HTTP_DEFAULT_CACHECONTROL "private, must-revalidate, max-age=0"
 
-/* max URI length */
-#define HTTP_URI_MAXLEN 2048
+/* max URL length */
+#define HTTP_URL_MAXLEN 2048
+#define HTTP_URI_MAXLEN HTTP_URL_MAXLEN
+
+/* def URL arg separator */
+#define HTTP_URL_ARGSEP "&"
+#define HTTP_URI_ARGSEP HTTP_URL_ARGSEP
 
 /* send buffer size */
 #define HTTP_SENDBUF_SIZE 2097152
@@ -39,24 +58,6 @@
 
 /* server vars shorthand */
 #define HTTP_SERVER_VARS Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER])
-
-
-/* {{{ HTTP_GSC(var, name, ret) */
-#define HTTP_GSC(var, name, ret)  HTTP_GSP(var, name, return ret)
-/* }}} */
-
-/* {{{ HTTP_GSP(var, name, ret) */
-#define HTTP_GSP(var, name, ret) \
-		if (!(var = _http_get_server_var_ex(name, strlen(name)+1, 1 TSRMLS_CC))) { \
-			ret; \
-		}
-/* }}} */
-
-/* override arg_separator.output to "&" for data used in outgoing requests */
-#include "zend_ini.h"
-#define HTTP_URL_ARGSEP_DEFAULT "&"
-#define HTTP_URL_ARGSEP_OVERRIDE zend_alter_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, HTTP_URL_ARGSEP_DEFAULT, sizeof(HTTP_URL_ARGSEP_DEFAULT) - 1, ZEND_INI_ALL, ZEND_INI_STAGE_RUNTIME)
-#define HTTP_URL_ARGSEP_RESTORE zend_restore_ini_entry("arg_separator.output", sizeof("arg_separator.output") - 1, ZEND_INI_STAGE_RUNTIME)
 
 /* {{{ arrays */
 #define FOREACH_VAL(array, val) FOREACH_HASH_VAL(Z_ARRVAL_P(array), val)
