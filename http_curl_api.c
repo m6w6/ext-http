@@ -25,15 +25,16 @@
 
 #include <curl/curl.h>
 
-#include "php.h"
-#include "php_http.h"
-#include "php_http_api.h"
-#include "php_http_curl_api.h"
-#include "php_http_std_defs.h"
-
 #include "phpstr/phpstr.h"
 
-ZEND_DECLARE_MODULE_GLOBALS(http)
+#include "php.h"
+#include "php_http.h"
+#include "php_http_std_defs.h"
+#include "php_http_api.h"
+#include "php_http_curl_api.h"
+#include "php_http_url_api.h"
+
+ZEND_EXTERN_MODULE_GLOBALS(http)
 
 #if LIBCURL_VERSION_NUM >= 0x070c01
 #	define http_curl_reset(ch) curl_easy_reset(ch)
@@ -42,7 +43,10 @@ ZEND_DECLARE_MODULE_GLOBALS(http)
 #endif
 
 #if LIBCURL_VERSION_NUM < 0x070c00
+#	define http_curl_error(dummy) HTTP_G(curlerr)
 #	define curl_easy_strerror(code) "unkown error"
+#else
+#	define http_curl_error(code) curl_easy_strerror(code)
 #endif
 
 #define http_curl_startup(ch, clean_curl, URL, options) \
@@ -108,7 +112,6 @@ static inline char *_http_curl_copystr(const char *str TSRMLS_DC)
 static size_t http_curl_body_callback(char *buf, size_t len, size_t n, void *s)
 {
 	TSRMLS_FETCH();
-
 	phpstr_append(&HTTP_G(curlbuf), buf, len *= n);
 	return len;
 }
@@ -123,7 +126,6 @@ static size_t http_curl_hdrs_callback(char *buf, size_t len, size_t n, void *s)
 	if (HTTP_G(curlbuf).used && (!strncmp(buf, "HTTP/1.", sizeof("HTTP/1.") - 1))) {
 		phpstr_free(&HTTP_G(curlbuf));
 	}
-
 	phpstr_append(&HTTP_G(curlbuf), buf, len *= n);
 	return len;
 }
@@ -173,6 +175,9 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSR
 	HTTP_CURL_OPT(HEADERFUNCTION, http_curl_hdrs_callback);
 #if defined(ZTS) && (LIBCURL_VERSION_NUM >= 0x070a00)
 	HTTP_CURL_OPT(NOSIGNAL, 1);
+#endif
+#if LIBCURL_VERSION_NUM < 0x070c00
+	HTTP_CURL_OPT(ERRORBUFFER, HTTP_G(curlerr));
 #endif
 
 	if ((!options) || (1 > zend_hash_num_elements(options))) {
