@@ -56,12 +56,7 @@ struct _http_message {
 	} info;
 
 	size_t 		len;
-	zend_bool 	dup;
-
-	union {
-		char *dup;
-		const char *ptr;
-	} raw;
+	char		*raw;
 
 	http_message *nested;
 };
@@ -81,7 +76,7 @@ PHP_HTTP_API void _http_message_free(http_message *message);
 
 #define http_message_parse(m, l) http_message_parse_ex((m), (l), 1)
 #define http_message_parse_ex(m, l, d) _http_message_parse_ex((m), (l), (d) TSRMLS_CC)
-PHP_HTTP_API http_message *_http_message_parse_ex(const char *message, size_t length, zend_bool duplicate TSRMLS_DC);
+PHP_HTTP_API http_message *_http_message_parse_ex(char *message, size_t length, zend_bool duplicate TSRMLS_DC);
 
 #define http_message_tostring(m, s, l) _http_message_tostring((m), (s), (l))
 PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_t *length);

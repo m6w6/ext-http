@@ -32,8 +32,8 @@ PHP_HTTP_API void _http_message_dtor(http_message *message)
 	if (message) {
 		zend_hash_destroy(&message->hdrs);
 		phpstr_dtor(PHPSTR(message));
-		if (message->dup && message->raw.dup) {
-			efree(message->raw.dup);
+		if (message->raw) {
+			efree(message->raw);
 		}
 		if (message->type == HTTP_MSG_REQUEST) {
 			if (message->info.request.method) {
@@ -71,9 +71,9 @@ PHP_HTTP_API http_message *_http_message_init_ex(http_message *message, http_mes
 	return message;
 }
 
-PHP_HTTP_API http_message *_http_message_parse_ex(const char *message, size_t length, zend_bool dup TSRMLS_DC)
+PHP_HTTP_API http_message *_http_message_parse_ex(char *message, size_t length, zend_bool dup TSRMLS_DC)
 {
-	const char *message_start = message, *body = NULL;
+	char *message_start = message, *body = NULL;
 	size_t message_length = length, header_length = 0;
 	http_message *msg;
 
@@ -89,6 +89,9 @@ PHP_HTTP_API http_message *_http_message_parse_ex(const char *message, size_t le
 	}
 
 	msg = http_message_init();
+
+	msg->len = length;
+	msg->raw = dup ? estrndup(message, length) : message;
 
 	// response
 	if (!strncmp(message, "HTTP/1.", lenof("HTTP/1."))) {
@@ -111,14 +114,6 @@ PHP_HTTP_API http_message *_http_message_parse_ex(const char *message, size_t le
 
 	message_start += lenof(HTTP_CRLF);
 	message_length -= message_start - message;
-
-	if (msg->dup = dup) {
-		msg->len = length;
-		msg->raw.dup = estrndup(message, length);
-	} else {
-		msg->len = length;
-		msg->raw.ptr = message;
-	}
 
 	if (body = strstr(message_start, HTTP_CRLF HTTP_CRLF)) {
 		body += lenof(HTTP_CRLF HTTP_CRLF);
