@@ -22,6 +22,8 @@
 #include <ctype.h>
 
 #include "php.h"
+#include "ext/standard/php_string.h"
+#include "ext/standard/url.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
@@ -254,7 +256,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, size_t header_len
 		char *end = strstr(header, HTTP_CRLF);
 		size_t len = end - (header + lenof("HTTP/1.x "));
 		char *val = estrndup(header + lenof("HTTP/1.x "), len);
-		
+
 		add_assoc_stringl(&array, "Status", val, len, 0);
 		header = end + 2;
 	}
