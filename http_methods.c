@@ -1358,7 +1358,7 @@ PHP_METHOD(HttpRequest, getResponseCode)
 
 	data = GET_PROP(obj, responseData);
 	if (	(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &hdrs)) &&
-			(SUCCESS == zend_hash_find(Z_ARRVAL_PP(hdrs), "Status", sizeof("Status"), (void **) &code))) {
+			(SUCCESS == zend_hash_find(Z_ARRVAL_PP(hdrs), "Response Status", sizeof("Response Status"), (void **) &code))) {
 		RETVAL_STRINGL(Z_STRVAL_PP(code), Z_STRLEN_PP(code), 1);
 		convert_to_long(return_value);
 	} else {
