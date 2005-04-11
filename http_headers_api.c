@@ -267,7 +267,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 					if (	(!strncmp(header, "HTTP/1.", lenof("HTTP/1."))) ||
 							(!strncmp(line - lenof("HTTP/1.x\r") + value_len, "HTTP/1.", lenof("HTTP/1.")))) {
 						if (func) {
-							func(callback_data, header, header - (line + 1), &headers TSRMLS_CC);
+							func(callback_data, header, line - header + value_len, &headers TSRMLS_CC);
 							Z_ARRVAL(array) = headers;
 						}
 					} else
@@ -346,7 +346,7 @@ PHP_HTTP_API void _http_parse_headers_default_callback(void **cb_data, char *htt
 	
 	/* response */
 	if (!strncmp(http_line, "HTTP/1.", lenof("HTTP/1."))) {
-		add_assoc_stringl(&array, "Response Status", http_line + lenof("HTTP/1.x "), line_length - lenof("HTTP/1.x \r\n"), 0);
+		add_assoc_stringl(&array, "Response Status", http_line + lenof("HTTP/1.x "), line_length - lenof("HTTP/1.x \r\n"), 1);
 	} else
 	/* request */
 	if (!strncmp(http_line + line_length - lenof("HTTP/1.x\r\n"), "HTTP/1.", lenof("HTTP/1."))) {
