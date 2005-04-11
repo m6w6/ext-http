@@ -66,7 +66,10 @@ PHP_HTTP_API http_message *_http_message_parse_ex(char *message, size_t message_
 		header_length = message_length;
 	}
 	
-	http_parse_headers_cb(message, header_length, &msg->hdrs, 1, http_message_parse_headers_callback, (void **) &msg);
+	if (SUCCESS != http_parse_headers_cb(message, header_length, &msg->hdrs, 1, http_message_parse_headers_callback, (void **) &msg)) {
+		http_message_free(msg);
+		return NULL;
+	}
 	
 	if (body) {
 		phpstr_from_string_ex(PHPSTR(msg), body, message_length - header_length);
