@@ -239,26 +239,17 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 /* }}} */
 
 /* {{{ STATUS http_parse_headers(char *, size_t, HashTable *, zend_bool) */
-PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, size_t header_len,
-	HashTable *headers, zend_bool prettify TSRMLS_DC)
+PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
+	HashTable *headers, zend_bool prettify,
+	http_parse_headers_callback_t func, void **callback_data TSRMLS_DC)
 {
-	const char *colon = NULL, *line = NULL, *begin = header;
+	char *colon = NULL, *line = NULL, *begin = header;
 	zval array;
 
 	Z_ARRVAL(array) = headers;
 
 	if (header_len < 2) {
 		return FAILURE;
-	}
-
-	/* status code */
-	if (!strncmp(header, "HTTP/1.", 7)) {
-		char *end = strstr(header, HTTP_CRLF);
-		size_t len = end - (header + lenof("HTTP/1.x "));
-		char *val = estrndup(header + lenof("HTTP/1.x "), len);
-
-		add_assoc_stringl(&array, "Status", val, len, 0);
-		header = end + 2;
 	}
 
 	line = header;
@@ -271,55 +262,66 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, size_t header_len
 			case 0:
 				--value_len; /* we don't have CR so value length is one char less */
 			case '\n':
-				if (colon && ((!(*line - 1)) || ((*line != ' ') && (*line != '\t')))) {
-
-					/* skip empty key */
-					if (header != colon) {
-						zval **previous = NULL;
-						char *value = empty_string;
-						int keylen = colon - header;
-						char *key = estrndup(header, keylen);
-
-						if (prettify) {
-							key = pretty_key(key, keylen, 1, 1);
+				if ((!(*line - 1)) || ((*line != ' ') && (*line != '\t'))) {
+					/* response/request line */
+					if (	(!strncmp(header, "HTTP/1.", lenof("HTTP/1."))) ||
+							(!strncmp(line - lenof("HTTP/1.x\r") + value_len, "HTTP/1.", lenof("HTTP/1.")))) {
+						if (func) {
+							func(callback_data, header, header - (line + 1), &headers TSRMLS_CC);
+							Z_ARRVAL(array) = headers;
 						}
+					} else
+				
+					/* "header: value" pair */
+					if (colon) {
 
-						value_len += line - colon - 1;
+						/* skip empty key */
+						if (header != colon) {
+							zval **previous = NULL;
+							char *value = empty_string;
+							int keylen = colon - header;
+							char *key = estrndup(header, keylen);
 
-						/* skip leading ws */
-						while (isspace(*(++colon))) --value_len;
-						/* skip trailing ws */
-						while (isspace(colon[value_len - 1])) --value_len;
-
-						if (value_len > 0) {
-							value = estrndup(colon, value_len);
-						} else {
-							value_len = 0;
-						}
-
-						/* if we already have got such a header make an array of those */
-						if (SUCCESS == zend_hash_find(headers, key, keylen + 1, (void **) &previous)) {
-							/* already an array? - just add */
-							if (Z_TYPE_PP(previous) == IS_ARRAY) {
-									add_next_index_stringl(*previous, value, value_len, 0);
-							} else {
-								/* create the array */
-								zval *new_array;
-								MAKE_STD_ZVAL(new_array);
-								array_init(new_array);
-
-								add_next_index_stringl(new_array, Z_STRVAL_PP(previous), Z_STRLEN_PP(previous), 1);
-								add_next_index_stringl(new_array, value, value_len, 0);
-								add_assoc_zval(&array, key, new_array);
+							if (prettify) {
+								key = pretty_key(key, keylen, 1, 1);
 							}
 
-							previous = NULL;
-						} else {
-							add_assoc_stringl(&array, key, value, value_len, 0);
-						}
-						efree(key);
-					}
+							value_len += line - colon - 1;
 
+							/* skip leading ws */
+							while (isspace(*(++colon))) --value_len;
+							/* skip trailing ws */
+							while (isspace(colon[value_len - 1])) --value_len;
+
+							if (value_len > 0) {
+								value = estrndup(colon, value_len);
+							} else {
+								value_len = 0;
+							}
+
+							/* if we already have got such a header make an array of those */
+							if (SUCCESS == zend_hash_find(headers, key, keylen + 1, (void **) &previous)) {
+								/* already an array? - just add */
+								if (Z_TYPE_PP(previous) == IS_ARRAY) {
+										add_next_index_stringl(*previous, value, value_len, 0);
+								} else {
+									/* create the array */
+									zval *new_array;
+									MAKE_STD_ZVAL(new_array);
+									array_init(new_array);
+
+									add_next_index_stringl(new_array, Z_STRVAL_PP(previous), Z_STRLEN_PP(previous), 1);
+									add_next_index_stringl(new_array, value, value_len, 0);
+									add_assoc_zval(&array, key, new_array);
+								}
+
+								previous = NULL;
+							} else {
+								add_assoc_stringl(&array, key, value, value_len, 0);
+							}
+							efree(key);
+						}
+					}
 					colon = NULL;
 					value_len = 0;
 					header += line - header;
@@ -336,6 +338,24 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, size_t header_len
 	return SUCCESS;
 }
 /* }}} */
+
+PHP_HTTP_API void _http_parse_headers_default_callback(void **cb_data, char *http_line, size_t line_length, HashTable **headers TSRMLS_DC)
+{
+	zval array;
+	Z_ARRVAL(array) = *headers;
+	
+	/* response */
+	if (!strncmp(http_line, "HTTP/1.", lenof("HTTP/1."))) {
+		add_assoc_stringl(&array, "Response Status", http_line + lenof("HTTP/1.x "), line_length - lenof("HTTP/1.x \r\n"), 0);
+	} else
+	/* request */
+	if (!strncmp(http_line + line_length - lenof("HTTP/1.x\r\n"), "HTTP/1.", lenof("HTTP/1."))) {
+		char *sep = strchr(http_line, ' ');
+		
+		add_assoc_stringl(&array, "Request Method", http_line, sep - http_line, 1);
+		add_assoc_stringl(&array, "Request Uri", sep + 1, strstr(sep, "HTTP/1.") - sep + 1 + 1, 1);
+	}
+}
 
 /* {{{ */
 PHP_HTTP_API STATUS _http_parse_cookie(const char *cookie, HashTable *values TSRMLS_DC)

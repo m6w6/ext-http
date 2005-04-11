@@ -27,6 +27,7 @@ HttpMessage
 */
 
 #include "phpstr/phpstr.h"
+#include "php_http_headers_api.h"
 
 typedef enum {
 	HTTP_MSG_NONE,
@@ -64,21 +65,32 @@ struct _http_message {
 /* required minimum length of an HTTP message "HTTP/1.1 200\r\n" */
 #define HTTP_MSG_MIN_SIZE 15
 
-#define HTTP_MSG_RAW(msg) ( (msg)->dup ? msg->raw.dup : msg->raw.ptr )
-
-#define http_message_init() _http_message_init_ex(NULL, 0)
+#define http_message_new() _http_message_init_ex(NULL, 0)
+#define http_message_init(m) _http_message_init_ex((m), 0)
 #define http_message_init_ex(m, t) _http_message_init_ex((m), (t))
-#define http_message_free(m) _http_message_free((m))
-#define http_message_dtor(m) _http_message_dtor((m))
-
-PHP_HTTP_API void _http_message_dtor(http_message *message);
-PHP_HTTP_API void _http_message_free(http_message *message);
+PHP_HTTP_API http_message *_http_message_init_ex(http_message *m, http_message_type t);
 
 #define http_message_parse(m, l) http_message_parse_ex((m), (l), 1)
 #define http_message_parse_ex(m, l, d) _http_message_parse_ex((m), (l), (d) TSRMLS_CC)
 PHP_HTTP_API http_message *_http_message_parse_ex(char *message, size_t length, zend_bool duplicate TSRMLS_DC);
 
+#define http_message_parse_headers_callback _http_message_parse_headers_callback
+PHP_HTTP_API void _http_message_parse_headers_callback(void *message, char *http_line, size_t line_length, HashTable **headers TSRMLS_DC);
+
 #define http_message_tostring(m, s, l) _http_message_tostring((m), (s), (l))
 PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_t *length);
+#define http_message_dtor(m) _http_message_dtor((m))
+PHP_HTTP_API void _http_message_dtor(http_message *message);
 
+#define http_message_free(m) _http_message_free((m))
+PHP_HTTP_API void _http_message_free(http_message *message);
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
 

@@ -999,21 +999,6 @@ PHP_FUNCTION(http_build_query)
 
 PHP_FUNCTION(http_test)
 {
-#define HTTP_MESSAGE_STR \
-	"GET / HTTP/1.1\r\n" \
-	"Content-Type: foo/bar\r\n" \
-	"Robots: Noindex,Nofollow\r\n" \
-	"\r\n" \
-	"Body Data!\n"
-#define HTTP_MESSAGE_LEN lenof(HTTP_MESSAGE_STR)
-	http_message *msg = http_message_parse(HTTP_MESSAGE_STR, HTTP_MESSAGE_LEN);
-	char *str;
-	size_t len;
-
-	http_message_tostring(msg, &str, &len);
-
-	RETVAL_STRINGL(str, len, 0);
-	http_message_free(msg);
 }
 
 /*
