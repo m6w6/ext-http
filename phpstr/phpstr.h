@@ -13,8 +13,8 @@
 #endif
 
 #define PHPSTR(p) ((phpstr *) (p))
-#define PHPSTR_VAL(p) (PHPSTR(p))->data;
-#define PHPSTR_LEN(p) (PHPSTR(p))->used;
+#define PHPSTR_VAL(p) (PHPSTR(p))->data
+#define PHPSTR_LEN(p) (PHPSTR(p))->used
 
 #define FREE_PHPSTR_PTR(STR) efree(STR)
 #define FREE_PHPSTR_VAL(STR) phpstr_dtor(STR)
