@@ -138,6 +138,7 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 	zval **header;
 
 	phpstr_init_ex(&str, msg->len, 1);
+	str.size = 4096;
 
 	switch (msg->type)
 	{
@@ -157,13 +158,29 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 
 	FOREACH_HASH_KEYVAL(&msg->hdrs, key, idx, header) {
 		if (key) {
-			phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(header));
+			switch (Z_TYPE_PP(header))
+			{
+				case IS_STRING:
+					phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(header));
+				break;
+				
+				case IS_ARRAY:
+				{
+					zval **single_header;
+					
+					FOREACH_VAL(*header, single_header) {
+						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(single_header));
+					}
+				}
+				break;
+			}
+			
 			key = NULL;
 		}
 	}
 
 	phpstr_appends(&str, HTTP_CRLF);
-	phpstr_append(&str, msg->body.data, msg->body.used);
+	phpstr_append(&str, PHPSTR_VAL(msg), PHPSTR_LEN(msg));
 	phpstr_fix(&str);
 
 	data = phpstr_data(&str, string, length);
