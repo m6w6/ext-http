@@ -29,50 +29,42 @@
 
 #include "php.h"
 #include "php_ini.h"
-#include "snprintf.h"
 #include "ext/standard/info.h"
-#include "ext/session/php_session.h"
-#include "ext/standard/php_string.h"
-#include "ext/standard/php_smart_str.h"
 
 #include "SAPI.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
-#include "php_http_api.h"
-#include "php_http_auth_api.h"
-#include "php_http_curl_api.h"
-#include "php_http_cache_api.h"
-#include "php_http_curl_api.h"
-#include "php_http_date_api.h"
-#include "php_http_headers_api.h"
-#include "php_http_message_api.h"
+
 #include "php_http_send_api.h"
-#include "php_http_url_api.h"
+
+#include "php_http_util_object.h"
+#include "php_http_message_object.h"
+#include "php_http_response_object.h"
+#include "php_http_request_object.h"
 
 #include "phpstr/phpstr.h"
 
 #ifdef HTTP_HAVE_CURL
-/* {{{ ARG_INFO */
-#	ifdef ZEND_BEGIN_ARG_INFO
+#ifdef ZEND_ENGINE_2
+static
 ZEND_BEGIN_ARG_INFO(http_request_info_ref_3, 0)
 	ZEND_ARG_PASS_INFO(0)
 	ZEND_ARG_PASS_INFO(0)
 	ZEND_ARG_PASS_INFO(1)
 ZEND_END_ARG_INFO();
 
+static
 ZEND_BEGIN_ARG_INFO(http_request_info_ref_4, 0)
 	ZEND_ARG_PASS_INFO(0)
 	ZEND_ARG_PASS_INFO(0)
 	ZEND_ARG_PASS_INFO(0)
 	ZEND_ARG_PASS_INFO(1)
 ZEND_END_ARG_INFO();
-#	else
+#else
 static unsigned char http_request_info_ref_3[] = {3, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
 static unsigned char http_request_info_ref_4[] = {4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
-#	endif
-/* }}} ARG_INFO */
-
+#endif /* ZEND_ENGINE_2 */
 #endif /* HTTP_HAVE_CURL */
 
 ZEND_DECLARE_MODULE_GLOBALS(http)
@@ -119,581 +111,6 @@ function_entry http_functions[] = {
 	{NULL, NULL, NULL}
 };
 /* }}} */
-
-
-#ifdef ZEND_ENGINE_2
-
-/* {{{ HttpUtil */
-
-zend_class_entry *http_util_ce;
-
-#define HTTP_UTIL_ME(me, al, ai) ZEND_FENTRY(me, ZEND_FN(al), ai, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-
-zend_function_entry http_util_class_methods[] = {
-	HTTP_UTIL_ME(date, http_date, NULL)
-	HTTP_UTIL_ME(absoluteURI, http_absolute_uri, NULL)
-	HTTP_UTIL_ME(negotiateLanguage, http_negotiate_language, NULL)
-	HTTP_UTIL_ME(negotiateCharset, http_negotiate_charset, NULL)
-	HTTP_UTIL_ME(redirect, http_redirect, NULL)
-	HTTP_UTIL_ME(sendStatus, http_send_status, NULL)
-	HTTP_UTIL_ME(sendLastModified, http_send_last_modified, NULL)
-	HTTP_UTIL_ME(sendContentType, http_send_content_type, NULL)
-	HTTP_UTIL_ME(sendContentDisposition, http_send_content_disposition, NULL)
-	HTTP_UTIL_ME(matchModified, http_match_modified, NULL)
-	HTTP_UTIL_ME(matchEtag, http_match_etag, NULL)
-	HTTP_UTIL_ME(cacheLastModified, http_cache_last_modified, NULL)
-	HTTP_UTIL_ME(cacheEtag, http_cache_etag, NULL)
-	HTTP_UTIL_ME(chunkedDecode, http_chunked_decode, NULL)
-	HTTP_UTIL_ME(splitResponse, http_split_response, NULL)
-	HTTP_UTIL_ME(parseHeaders, http_parse_headers, NULL)
-	HTTP_UTIL_ME(getRequestHeaders, http_get_request_headers, NULL)
-#ifdef HTTP_HAVE_CURL
-	HTTP_UTIL_ME(get, http_get, http_request_info_ref_3)
-	HTTP_UTIL_ME(head, http_head, http_request_info_ref_3)
-	HTTP_UTIL_ME(postData, http_post_data, http_request_info_ref_4)
-	HTTP_UTIL_ME(postArray, http_post_array, http_request_info_ref_4)
-#endif
-	HTTP_UTIL_ME(authBasic, http_auth_basic, NULL)
-	HTTP_UTIL_ME(authBasicCallback, http_auth_basic_cb, NULL)
-	{NULL, NULL, NULL}
-};
-/* }}} HttpUtil */
-
-/* {{{ HttpMessage */
-zend_class_entry *http_message_ce;
-static zend_object_handlers http_message_object_handlers;
-
-#define HTTP_MSG_PROPHASH_TYPE                 276192743LU
-#define HTTP_MSG_PROPHASH_HTTP_VERSION         1138628683LU
-#define HTTP_MSG_PROPHASH_RAW                  2090679983LU
-#define HTTP_MSG_PROPHASH_BODY                 254474387LU
-#define HTTP_MSG_PROPHASH_HEADERS              3199929089LU
-#define HTTP_MSG_PROPHASH_NESTED_MESSAGE       3652857165LU
-#define HTTP_MSG_PROPHASH_REQUEST_METHOD       1669022159LU
-#define HTTP_MSG_PROPHASH_REQUEST_URI          3208695486LU
-#define HTTP_MSG_PROPHASH_RESPONSE_STATUS      3857097400LU
-
-#define http_message_object_read_prop _http_message_object_read_prop
-static zval *_http_message_object_read_prop(zval *object, zval *member, int type TSRMLS_DC)
-{
-	getObjectEx(http_message_object, obj, object);
-	http_message *msg = obj->message;
-	zval *return_value;
-
-	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
-		return EG(uninitialized_zval_ptr);
-	}
-
-    ALLOC_ZVAL(return_value);
-    return_value->refcount = 0;
-
-#if 0
-	fprintf(stderr, "Reading property: %s(%d==%d) (%lu)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)),
-		zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1)
-	);
-#endif
-
-	switch (zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1))
-	{
-		case HTTP_MSG_PROPHASH_TYPE:
-			RETVAL_LONG(msg->type);
-		break;
-
-		case HTTP_MSG_PROPHASH_HTTP_VERSION:
-			switch (msg->type)
-			{
-				case HTTP_MSG_NONE:
-					RETVAL_NULL();
-				break;
-
-				case HTTP_MSG_REQUEST:
-					RETVAL_DOUBLE(msg->info.request.http_version);
-				break;
-
-				case HTTP_MSG_RESPONSE:
-					RETVAL_DOUBLE(msg->info.response.http_version);
-				break;
-			}
-		break;
-
-		case HTTP_MSG_PROPHASH_RAW:
-			if (msg->raw) {
-				if (msg->len) {
-					RETVAL_STRINGL(msg->raw, msg->len, 1);
-				} else {
-					RETVAL_STRINGL(empty_string, 0, 0);
-				}
-			} else {
-				RETVAL_NULL();
-			}
-		break;
-
-		case HTTP_MSG_PROPHASH_BODY:
-			phpstr_fix(PHPSTR(msg));
-			RETVAL_PHPSTR(PHPSTR(msg), 0, 1);
-		break;
-
-		case HTTP_MSG_PROPHASH_HEADERS:
-			Z_TYPE_P(return_value) = IS_ARRAY;
-			Z_ARRVAL_P(return_value) = &msg->hdrs;
-		break;
-
-		case HTTP_MSG_PROPHASH_NESTED_MESSAGE:
-			RETVAL_NULL();
-		break;
-
-		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
-			if (msg->type == HTTP_MSG_REQUEST && msg->info.request.method) {
-				RETVAL_STRING(msg->info.request.method, 1);
-			} else {
-				RETVAL_NULL();
-			}
-		break;
-
-		case HTTP_MSG_PROPHASH_REQUEST_URI:
-			if (msg->type == HTTP_MSG_REQUEST && msg->info.request.URI) {
-				RETVAL_STRING(msg->info.request.URI, 1);
-			} else {
-				RETVAL_NULL();
-			}
-		break;
-
-		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
-			if (msg->type == HTTP_MSG_RESPONSE) {
-				RETVAL_LONG(msg->info.response.status);
-			} else {
-				RETVAL_NULL();
-			}
-		break;
-
-		default:
-			RETVAL_NULL();
-		break;
-	}
-
-	return return_value;
-}
-
-#define http_message_object_write_prop _http_message_object_write_prop
-static void _http_message_object_write_prop(zval *object, zval *member, zval *value TSRMLS_DC)
-{
-	getObjectEx(http_message_object, obj, object);
-	http_message *msg = obj->message;
-
-	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
-	}
-
-#if 0
-	fprintf(stderr, "Writing property: %s(%d==%d) (%lu)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)),
-		zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1)
-	);
-#endif
-
-	switch (zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1))
-	{
-		case HTTP_MSG_PROPHASH_TYPE:
-			msg->type = Z_LVAL_P(value);
-		break;
-
-		case HTTP_MSG_PROPHASH_HTTP_VERSION:
-			switch (msg->type)
-			{
-				case HTTP_MSG_REQUEST:
-					msg->info.request.http_version = (float) Z_DVAL_P(value);
-				break;
-
-				case HTTP_MSG_RESPONSE:
-					msg->info.response.http_version = (float) Z_DVAL_P(value);
-				break;
-			}
-		break;
-
-		case HTTP_MSG_PROPHASH_RAW:
-			http_message_dtor(msg);
-			http_message_parse_ex(msg, Z_STRVAL_P(value), Z_STRLEN_P(value), 1);
-		break;
-
-		case HTTP_MSG_PROPHASH_BODY:
-			phpstr_dtor(PHPSTR(msg));
-			phpstr_from_string_ex(PHPSTR(msg), Z_STRVAL_P(value), Z_STRLEN_P(value));
-		break;
-
-		case HTTP_MSG_PROPHASH_HEADERS:
-			zend_hash_clean(&msg->hdrs);
-			zend_hash_copy(&msg->hdrs, Z_ARRVAL_P(value), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-		break;
-
-		case HTTP_MSG_PROPHASH_NESTED_MESSAGE:
-		break;
-
-		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
-			if (msg->type == HTTP_MSG_REQUEST) {
-				if (msg->info.request.method) {
-					efree(msg->info.request.method);
-				}
-				msg->info.request.method = estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value));
-			}
-		break;
-
-		case HTTP_MSG_PROPHASH_REQUEST_URI:
-			if (msg->type == HTTP_MSG_REQUEST) {
-				if (msg->info.request.URI) {
-					efree(msg->info.request.URI);
-				}
-				msg->info.request.URI = estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value));
-			}
-		break;
-
-		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
-			if (msg->type == HTTP_MSG_RESPONSE) {
-				msg->info.response.status = Z_LVAL_P(value);
-			}
-		break;
-	}
-}
-
-#define http_message_object_get_props _http_message_object_get_props
-static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
-{
-	zval *headers;
-	getObjectEx(http_message_object, obj, object);
-	http_message *msg = obj->message;
-
-#define ASSOC_PROP(obj, ptype, name, val) \
-	{ \
-		zval array; \
-		char *m_prop_name; \
-		int m_prop_len; \
-		Z_ARRVAL(array) = OBJ_PROP(obj); \
-		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
-		add_assoc_ ##ptype## _ex(&array, m_prop_name, sizeof(name)+4, val); \
-	}
-#define ASSOC_STRING(obj, name, val) ASSOC_STRINGL(obj, name, val, strlen(val))
-#define ASSOC_STRINGL(obj, name, val, len) \
-	{ \
-		zval array; \
-		char *m_prop_name; \
-		int m_prop_len; \
-		Z_ARRVAL(array) = OBJ_PROP(obj); \
-		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
-		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+4, val, len, val != empty_string); \
-	}
-
-	zend_hash_clean(OBJ_PROP(obj));
-	
-	ASSOC_PROP(obj, long, "type", msg->type);
-	ASSOC_STRINGL(obj, "raw", msg->raw, msg->len)
-	ASSOC_STRINGL(obj, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
-
-	MAKE_STD_ZVAL(headers);
-	array_init(headers);
-
-	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-	ASSOC_PROP(obj, zval, "headers", headers);
-
-	switch (msg->type)
-	{
-		case HTTP_MSG_REQUEST:
-			ASSOC_PROP(obj, double, "httpVersion", msg->info.request.http_version);
-			ASSOC_PROP(obj, long, "responseStatus", 0);
-			ASSOC_STRING(obj, "requestMethod", msg->info.request.method);
-			ASSOC_STRING(obj, "requestUri", msg->info.request.URI);
-		break;
-
-		case HTTP_MSG_RESPONSE:
-			ASSOC_PROP(obj, double, "httpVersion", msg->info.response.http_version);
-			ASSOC_PROP(obj, long, "responseStatus", msg->info.response.status);
-			ASSOC_STRING(obj, "requestMethod", empty_string);
-			ASSOC_STRING(obj, "requestUri", empty_string);
-		break;
-
-		case HTTP_MSG_NONE:
-		default:
-			ASSOC_PROP(obj, double, "httpVersion", 0.0);
-			ASSOC_PROP(obj, long, "responseStatus", 0);
-			ASSOC_STRING(obj, "requestMethod", empty_string);
-			ASSOC_STRING(obj, "requestUri", empty_string);
-		break;
-	}
-
-	return OBJ_PROP(obj);
-}
-
-#define http_message_global_init() _http_message_global_init(TSRMLS_C)
-static inline void _http_message_global_init(TSRMLS_D)
-{
-	http_message_object_handlers.read_property = http_message_object_read_prop;
-	http_message_object_handlers.write_property = http_message_object_write_prop;
-	http_message_object_handlers.get_properties = http_message_object_get_props;
-}
-
-#define http_message_declare_default_properties(ce) _http_message_declare_default_properties(ce TSRMLS_CC)
-static inline void _http_message_declare_default_properties(zend_class_entry *ce TSRMLS_DC)
-{
-	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
-
-	DCL_PROP(PROTECTED, string, raw, "");
-	DCL_PROP(PROTECTED, string, body, "");
-
-	DCL_PROP(PROTECTED, string, requestMethod, "");
-	DCL_PROP(PROTECTED, string, requestUri, "");
-	DCL_PROP(PROTECTED, long, responseStatus, 0);
-
-	DCL_PROP_N(PROTECTED, httpVersion);
-	DCL_PROP_N(PROTECTED, headers);
-	DCL_PROP_N(PROTECTED, nestedMessage);
-}
-
-#define http_message_free_object _http_message_free_object
-void _http_message_free_object(zend_object *object TSRMLS_DC)
-{
-	http_message_object *o = (http_message_object *) object;
-
-	if (OBJ_PROP(o)) {
-		zend_hash_destroy(OBJ_PROP(o));
-		FREE_HASHTABLE(OBJ_PROP(o));
-	}
-	if (o->message) {
-		http_message_free(o->message);
-	}
-	efree(o);
-}
-
-#define http_message_new_object _http_message_new_object
-zend_object_value _http_message_new_object(zend_class_entry *ce TSRMLS_DC)
-{
-	zend_object_value ov;
-	http_message_object *o;
-
-	o = ecalloc(1, sizeof(http_message_object));
-	o->zo.ce = ce;
-	o->message = http_message_new();
-
-	ALLOC_HASHTABLE(OBJ_PROP(o));
-	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
-
-	ov.handle = zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, http_message_free_object, NULL TSRMLS_CC);
-	ov.handlers = &http_message_object_handlers;
-
-	return ov;
-}
-
-zend_function_entry http_message_class_methods[] = {
-	PHP_ME(HttpMessage, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(HttpMessage, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
-	{NULL, NULL, NULL}
-};
-/* }}} */
-
-/* {{{ HttpResponse */
-
-zend_class_entry *http_response_ce;
-static zend_object_handlers http_response_object_handlers;
-
-#define http_response_declare_default_properties(ce) _http_response_declare_default_properties(ce TSRMLS_CC)
-static inline void _http_response_declare_default_properties(zend_class_entry *ce TSRMLS_DC)
-{
-	DCL_PROP(PROTECTED, string, contentType, "application/x-octetstream");
-	DCL_PROP(PROTECTED, string, eTag, "");
-	DCL_PROP(PROTECTED, string, dispoFile, "");
-	DCL_PROP(PROTECTED, string, cacheControl, "public");
-	DCL_PROP(PROTECTED, string, data, "");
-	DCL_PROP(PROTECTED, string, file, "");
-	DCL_PROP(PROTECTED, long, stream, 0);
-	DCL_PROP(PROTECTED, long, lastModified, 0);
-	DCL_PROP(PROTECTED, long, dispoInline, 0);
-	DCL_PROP(PROTECTED, long, cache, 0);
-	DCL_PROP(PROTECTED, long, gzip, 0);
-
-	DCL_PROP(PRIVATE, long, raw_cache_header, 0);
-	DCL_PROP(PRIVATE, long, send_mode, -1);
-}
-
-#define http_response_destroy_object _http_response_destroy_object
-void _http_response_destroy_object(void *object, zend_object_handle handle TSRMLS_DC)
-{
-	http_response_object *o = object;
-	if (OBJ_PROP(o)) {
-		zend_hash_destroy(OBJ_PROP(o));
-		FREE_HASHTABLE(OBJ_PROP(o));
-	}
-	efree(o);
-}
-
-#define http_response_new_object _http_response_new_object
-zend_object_value _http_response_new_object(zend_class_entry *ce TSRMLS_DC)
-{
-	zend_object_value ov;
-	http_response_object *o;
-
-	o = ecalloc(1, sizeof(http_response_object));
-	o->zo.ce = ce;
-
-	ALLOC_HASHTABLE(OBJ_PROP(o));
-	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
-	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-
-	ov.handle = zend_objects_store_put(o, http_response_destroy_object, NULL, NULL TSRMLS_CC);
-	ov.handlers = &http_response_object_handlers;
-
-	return ov;
-}
-
-zend_function_entry http_response_class_methods[] = {
-	PHP_ME(HttpResponse, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-/*	PHP_ME(HttpResponse, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
-*/
-	PHP_ME(HttpResponse, setETag, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getETag, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpResponse, setContentDisposition, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getContentDisposition, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpResponse, setContentType, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getContentType, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpResponse, setCache, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getCache, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpResponse, setCacheControl, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getCacheControl, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpResponse, setGzip, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getGzip, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpResponse, setData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getData, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpResponse, setFile, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getFile, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpResponse, setStream, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getStream, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpResponse, send, NULL, ZEND_ACC_PUBLIC)
-
-	{NULL, NULL, NULL}
-};
-/* }}} */
-
-/* {{{ HttpRequest */
-#ifdef HTTP_HAVE_CURL
-
-zend_class_entry *http_request_ce;
-static zend_object_handlers http_request_object_handlers;
-
-#define http_request_declare_default_properties(ce) _http_request_declare_default_properties(ce TSRMLS_CC)
-static inline void _http_request_declare_default_properties(zend_class_entry *ce TSRMLS_DC)
-{
-	DCL_PROP_N(PROTECTED, options);
-	DCL_PROP_N(PROTECTED, responseInfo);
-	DCL_PROP_N(PROTECTED, responseData);
-	DCL_PROP_N(PROTECTED, postData);
-	DCL_PROP_N(PROTECTED, postFiles);
-
-	DCL_PROP(PROTECTED, long, method, HTTP_GET);
-
-	DCL_PROP(PROTECTED, string, url, "");
-	DCL_PROP(PROTECTED, string, contentType, "");
-	DCL_PROP(PROTECTED, string, queryData, "");
-	DCL_PROP(PROTECTED, string, postData, "");
-}
-
-#define http_request_free_object _http_request_free_object
-void _http_request_free_object(zend_object /* void */ *object TSRMLS_DC)
-{
-	http_request_object *o = (http_request_object *) object;
-
-	if (OBJ_PROP(o)) {
-		zend_hash_destroy(OBJ_PROP(o));
-		FREE_HASHTABLE(OBJ_PROP(o));
-	}
-	if (o->ch) {
-		curl_easy_cleanup(o->ch);
-		o->ch = NULL;
-	}
-	efree(o);
-}
-
-#define http_request_new_object _http_request_new_object
-zend_object_value _http_request_new_object(zend_class_entry *ce TSRMLS_DC)
-{
-	zend_object_value ov;
-	http_request_object *o;
-
-	o = ecalloc(1, sizeof(http_request_object));
-	o->zo.ce = ce;
-	o->ch = curl_easy_init();
-
-	ALLOC_HASHTABLE(OBJ_PROP(o));
-	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
-	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-
-	ov.handle = zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, http_request_free_object, NULL TSRMLS_CC);
-	ov.handlers = &http_request_object_handlers;
-
-	return ov;
-}
-
-zend_function_entry http_request_class_methods[] = {
-	PHP_ME(HttpRequest, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(HttpRequest, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
-
-	PHP_ME(HttpRequest, setOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, setSslOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getSslOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetSslOptions, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpRequest, addHeaders, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getHeaders, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetHeaders, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, addCookies, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getCookies, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetCookies, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpRequest, setMethod, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getMethod, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpRequest, setURL, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getURL, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpRequest, setContentType, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getContentType, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpRequest, setQueryData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getQueryData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, addQueryData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetQueryData, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpRequest, setPostData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getPostData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, addPostData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetPostData, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpRequest, addPostFile, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getPostFiles, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetPostFiles, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpRequest, send, NULL, ZEND_ACC_PUBLIC)
-
-	PHP_ME(HttpRequest, getResponseData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseHeader, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseCookie, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseCode, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseBody, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseInfo, NULL, ZEND_ACC_PUBLIC)
-
-	{NULL, NULL, NULL}
-};
-
-#endif /* HTTP_HAVE_CURL */
-/* }}} */
-
-#endif /* ZEND_ENGINE_2 */
 
 /* {{{ http_module_entry */
 zend_module_entry http_module_entry = {
@@ -804,29 +221,17 @@ PHP_MINIT_FUNCTION(http)
 		return FAILURE;
 	}
 #	endif /* HTTP_CURL_USE_ZEND_MM */
-
-#	if LIBCURL_VERSION_NUM >= 0x070a05
-	REGISTER_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("HTTP_AUTH_NTLM", CURLAUTH_NTLM, CONST_CS | CONST_PERSISTENT);
-#	endif /* LIBCURL_VERSION_NUM */
 #endif /* HTTP_HAVE_CURL */
 
 #ifdef ZEND_ENGINE_2
-	HTTP_REGISTER_CLASS(HttpUtil, http_util, NULL, ZEND_ACC_FINAL_CLASS);
-	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message, NULL, 0);
-	HTTP_REGISTER_CLASS_EX(HttpResponse, http_response, NULL, 0);
+	http_util_object_init(INIT_FUNC_ARGS_PASSTHRU);
+	http_message_object_init(INIT_FUNC_ARGS_PASSTHRU);
+	http_response_object_init(INIT_FUNC_ARGS_PASSTHRU);
 #	ifdef HTTP_HAVE_CURL
-	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request, NULL, 0);
-
-	REGISTER_LONG_CONSTANT("HTTP_GET", HTTP_GET, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("HTTP_HEAD", HTTP_HEAD, CONST_CS | CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("HTTP_POST", HTTP_POST, CONST_CS | CONST_PERSISTENT);
+	http_request_object_init(INIT_FUNC_ARGS_PASSTHRU);
 #	endif /* HTTP_HAVE_CURL */
-
-	http_message_global_init();
-
 #endif /* ZEND_ENGINE_2 */
+
 	return SUCCESS;
 }
 /* }}} */

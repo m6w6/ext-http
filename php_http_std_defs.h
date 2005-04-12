@@ -83,25 +83,27 @@ typedef int STATUS;
 #define array_merge(src, dst)	zend_hash_merge(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *), 1)
 /* }}} */
 
+#define HTTP_LONG_CONSTANT(name, const) REGISTER_LONG_CONSTANT(name, const, CONST_CS | CONST_PERSISTENT);
+
 /* {{{ objects & properties */
 #ifdef ZEND_ENGINE_2
+
 
 #	define HTTP_REGISTER_CLASS_EX(classname, name, parent, flags) \
 	{ \
 		zend_class_entry ce; \
-		INIT_CLASS_ENTRY(ce, #classname, name## _class_methods); \
-		ce.create_object = name## _new_object; \
+		INIT_CLASS_ENTRY(ce, #classname, name## _fe); \
+		ce.create_object = name## _new; \
 		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
 		name## _ce->ce_flags |= flags;  \
-		memcpy(& name## _object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
-		name## _object_handlers.clone_obj = NULL; \
-		name## _declare_default_properties(name## _ce); \
+		memcpy(& name## _handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
+		name## _declare_default_properties(); \
 	}
 
 #	define HTTP_REGISTER_CLASS(classname, name, parent, flags) \
 	{ \
 		zend_class_entry ce; \
-		INIT_CLASS_ENTRY(ce, #classname, name## _class_methods); \
+		INIT_CLASS_ENTRY(ce, #classname, name## _fe); \
 		ce.create_object = NULL; \
 		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
 		name## _ce->ce_flags |= flags;  \

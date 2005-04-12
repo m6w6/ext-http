@@ -72,6 +72,7 @@ dnl ----
 dnl DONE
 dnl ----
 	PHP_HTTP_SOURCES="http.c http_functions.c http_methods.c phpstr/phpstr.c \
+		http_util_object.c http_message_object.c http_request_object.c http_response_object.c \
 		http_api.c http_auth_api.c http_cache_api.c http_curl_api.c http_date_api.c \
 		http_headers_api.c http_message_api.c http_send_api.c http_url_api.c"
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, [$ext_shared])

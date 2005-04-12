@@ -30,6 +30,10 @@
 #include "php_http_send_api.h"
 #include "php_http_url_api.h"
 
+#include "php_http_message_object.h"
+#include "php_http_response_object.h"
+#include "php_http_request_object.h"
+
 #ifdef ZEND_ENGINE_2
 
 /* {{{ HttpResponse */
@@ -526,7 +530,7 @@ PHP_METHOD(HttpMessage, __construct)
 	int message_len;
 	getObject(http_message_object, obj);
 	http_message *msg = obj->message;
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z/", &message)) {
 		return;
 	}
@@ -541,9 +545,9 @@ PHP_METHOD(HttpMessage, __construct)
 PHP_METHOD(HttpMessage, __destruct)
 {
 	getObject(http_message_object, obj);
-	
+
 	NO_ARGS;
-	
+
 }
 /* }}} */
 
