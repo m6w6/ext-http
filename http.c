@@ -35,13 +35,16 @@
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
-
 #include "php_http_send_api.h"
 
-#include "php_http_util_object.h"
-#include "php_http_message_object.h"
-#include "php_http_response_object.h"
-#include "php_http_request_object.h"
+#ifdef ZEND_ENGINE_2
+#	include "php_http_util_object.h"
+#	include "php_http_message_object.h"
+#	include "php_http_response_object.h"
+#	ifdef HTTP_HAVE_CURL
+#		include "php_http_request_object.h"
+#	endif
+#endif
 
 #include "phpstr/phpstr.h"
 
