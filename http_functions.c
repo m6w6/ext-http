@@ -20,6 +20,7 @@
 #endif
 
 #include "php.h"
+#include "php_ini.h"
 #include "ext/standard/info.h"
 #include "ext/session/php_session.h"
 #include "ext/standard/php_string.h"
@@ -976,7 +977,7 @@ PHP_FUNCTION(http_build_query)
 	}
 
 	if (!arg_sep_len) {
-		arg_sep = HTTP_URL_ARGSEP_DEFAULT;
+		arg_sep = HTTP_URL_ARGSEP;
 	}
 
 	formstr = phpstr_new();
