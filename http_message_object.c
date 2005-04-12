@@ -173,7 +173,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 				if (msg->len) {
 					RETVAL_STRINGL(msg->raw, msg->len, 1);
 				} else {
-					RETVAL_STRINGL(empty_string, 0, 1);
+					RETVAL_STRINGL("", 0, 1);
 				}
 			} else {
 				RETVAL_NULL();
@@ -327,7 +327,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		int m_prop_len; \
 		Z_ARRVAL(array) = OBJ_PROP(obj); \
 		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
-		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+4, val, len, val != empty_string); \
+		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+4, val, len, 1); \
 	}
 
 	zend_hash_clean(OBJ_PROP(obj));
@@ -354,16 +354,16 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		case HTTP_MSG_RESPONSE:
 			ASSOC_PROP(obj, double, "httpVersion", msg->info.response.http_version);
 			ASSOC_PROP(obj, long, "responseCode", msg->info.response.code);
-			ASSOC_STRING(obj, "requestMethod", empty_string);
-			ASSOC_STRING(obj, "requestUri", empty_string);
+			ASSOC_STRING(obj, "requestMethod", "");
+			ASSOC_STRING(obj, "requestUri", "");
 		break;
 
 		case HTTP_MSG_NONE:
 		default:
 			ASSOC_PROP(obj, double, "httpVersion", 0.0);
 			ASSOC_PROP(obj, long, "responseCode", 0);
-			ASSOC_STRING(obj, "requestMethod", empty_string);
-			ASSOC_STRING(obj, "requestUri", empty_string);
+			ASSOC_STRING(obj, "requestMethod", "");
+			ASSOC_STRING(obj, "requestUri", "");
 		break;
 	}
 

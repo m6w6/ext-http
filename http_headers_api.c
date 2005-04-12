@@ -271,14 +271,14 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 							Z_ARRVAL(array) = headers;
 						}
 					} else
-				
+
 					/* "header: value" pair */
 					if (colon) {
 
 						/* skip empty key */
 						if (header != colon) {
 							zval **previous = NULL;
-							char *value = empty_string;
+							char *value;
 							int keylen = colon - header;
 							char *key = estrndup(header, keylen);
 
@@ -296,6 +296,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 							if (value_len > 0) {
 								value = estrndup(colon, value_len);
 							} else {
+								value = estrdup("");
 								value_len = 0;
 							}
 
@@ -343,7 +344,7 @@ PHP_HTTP_API void _http_parse_headers_default_callback(void **cb_data, char *htt
 {
 	zval array;
 	Z_ARRVAL(array) = *headers;
-	
+
 	/* response */
 	if (!strncmp(http_line, "HTTP/1.", lenof("HTTP/1."))) {
 		add_assoc_stringl(&array, "Response Status", http_line + lenof("HTTP/1.x "), line_length - lenof("HTTP/1.x \r\n"), 1);
@@ -351,7 +352,7 @@ PHP_HTTP_API void _http_parse_headers_default_callback(void **cb_data, char *htt
 	/* request */
 	if (!strncmp(http_line + line_length - lenof("HTTP/1.x\r\n"), "HTTP/1.", lenof("HTTP/1."))) {
 		char *sep = strchr(http_line, ' ');
-		
+
 		add_assoc_stringl(&array, "Request Method", http_line, sep - http_line, 1);
 		add_assoc_stringl(&array, "Request Uri", sep + 1, strstr(sep, "HTTP/1.") - sep + 1 + 1, 1);
 	}
