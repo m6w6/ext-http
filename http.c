@@ -44,6 +44,7 @@
 #	ifdef HTTP_HAVE_CURL
 #		include "php_http_request_object.h"
 #	endif
+#	include "php_http_exception_object.h"
 #endif
 
 #include "phpstr/phpstr.h"
@@ -233,6 +234,7 @@ PHP_MINIT_FUNCTION(http)
 #	ifdef HTTP_HAVE_CURL
 	http_request_object_init(INIT_FUNC_ARGS_PASSTHRU);
 #	endif /* HTTP_HAVE_CURL */
+	http_exception_object_init(INIT_FUNC_ARGS_PASSTHRU);
 #endif /* ZEND_ENGINE_2 */
 
 	return SUCCESS;

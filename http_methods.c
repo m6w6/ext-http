@@ -33,6 +33,7 @@
 #include "php_http_message_object.h"
 #include "php_http_response_object.h"
 #include "php_http_request_object.h"
+#include "php_http_exception_object.h"
 
 #ifdef ZEND_ENGINE_2
 
@@ -51,13 +52,12 @@ PHP_METHOD(HttpResponse, __construct)
 	zend_bool do_cache = 0, do_gzip = 0;
 	getObject(http_response_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bb", &do_cache, &do_gzip)) {
-		// throw exception
-		return;
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bb", &do_cache, &do_gzip)) {
+		UPD_PROP(obj, long, cache, do_cache);
+		UPD_PROP(obj, long, gzip, do_gzip);
 	}
-
-	UPD_PROP(obj, long, cache, do_cache);
-	UPD_PROP(obj, long, gzip, do_gzip);
+	SET_EH_NORMAL();
 }
 /* }}} */
 
@@ -553,7 +553,7 @@ PHP_METHOD(HttpMessage, setRaw)
 {
 	zval *message;
 	getObject(http_message_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &message)) {
 		return;
 	}
@@ -571,7 +571,7 @@ PHP_METHOD(HttpMessage, getBody)
 {
 	zval *body;
 	getObject(http_message_object, obj);
-	
+
 	NO_ARGS;
 
 	body = GET_PROP(obj, body);
@@ -587,9 +587,9 @@ PHP_METHOD(HttpMessage, getHeaders)
 {
 	zval *headers;
 	getObject(http_message_object, obj);
-	
+
 	NO_ARGS;
-	
+
 	headers = GET_PROP(obj, headers);
 	array_init(return_value);
 	array_copy(headers, return_value);
@@ -613,22 +613,22 @@ PHP_METHOD(HttpRequest, __construct)
 	long meth = -1;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sl", &URL, &URL_len, &meth)) {
-		return;
-	}
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sl", &URL, &URL_len, &meth)) {
+		INIT_PARR(obj, options);
+		INIT_PARR(obj, responseInfo);
+		INIT_PARR(obj, responseData);
+		INIT_PARR(obj, postData);
+		INIT_PARR(obj, postFiles);
 
-	INIT_PARR(obj, options);
-	INIT_PARR(obj, responseInfo);
-	INIT_PARR(obj, responseData);
-	INIT_PARR(obj, postData);
-	INIT_PARR(obj, postFiles);
-
-	if (URL) {
-		UPD_PROP(obj, string, url, URL);
+		if (URL) {
+			UPD_PROP(obj, string, url, URL);
+		}
+		if (meth > -1) {
+			UPD_PROP(obj, long, method, meth);
+		}
 	}
-	if (meth > -1) {
-		UPD_PROP(obj, long, method, meth);
-	}
+	SET_EH_NORMAL();
 }
 /* }}} */
 
@@ -1518,6 +1518,8 @@ PHP_METHOD(HttpRequest, send)
 	getObject(http_request_object, obj);
 
 	NO_ARGS;
+	
+	SET_EH_THROW_HTTP();
 
 	if ((!obj->ch) && (!(obj->ch = curl_easy_init()))) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initilaize cURL");
@@ -1621,9 +1623,7 @@ PHP_METHOD(HttpRequest, send)
 	efree(request_uri);
 
 	/* final data handling */
-	if (status != SUCCESS) {
-		RETURN_FALSE;
-	} else {
+	if (status == SUCCESS) {
 		char *body = NULL;
 		size_t body_len = 0;
 		zval *zheaders;
@@ -1645,7 +1645,9 @@ PHP_METHOD(HttpRequest, send)
 
 		RETURN_TRUE;
 	}
-	/* */
+
+	SET_EH_NORMAL();
+	RETURN_SUCCESS(status);
 }
 /* }}} */
 /* }}} */

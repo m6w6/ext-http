@@ -137,6 +137,11 @@ typedef int STATUS;
 		} \
 	}
 
+#	define SET_EH_THROW() SET_EH_THROW_EX(zend_exception_get_default())
+#	define SET_EH_THROW_HTTP() SET_EH_THROW_EX(http_exception_get_default())
+#	define SET_EH_THROW_EX(ex) php_set_error_handling(EH_THROW, ex TSRMLS_CC)
+#	define SET_EH_NORMAL() php_set_error_handling(EH_NORMAL, NULL TSRMLS_CC)
+
 #endif /* ZEND_ENGINE_2 */
 /* }}} */
 

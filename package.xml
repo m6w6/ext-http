@@ -66,6 +66,7 @@
       <file role="src">php_http_message_object.h</file>
       <file role="src">php_http_request_object.h</file>
       <file role="src">php_http_response_object.h</file>
+      <file role="src">php_http_exception_object.h</file>
       
       <file role="src">http.c</file>
       <file role="src">http_functions.c</file>
@@ -83,6 +84,7 @@
       <file role="src">http_message_object.c</file>
       <file role="src">http_request_object.c</file>
       <file role="src">http_response_object.c</file>
+      <file role="src">http_exception_object.c</file>
       
     </dir>
   </filelist>
