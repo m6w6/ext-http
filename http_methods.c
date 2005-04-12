@@ -523,31 +523,76 @@ PHP_METHOD(HttpResponse, send)
 
 /* {{{ HttpMessage */
 
-/* {{{ void HttpMessage::__construct([string raw_message]) */
+/* {{{ void HttpMessage::__construct([string raw_message])
+ *
+ * Instantiate a new HttpMessage object based on the optionally provided
+ * raw message.  An HTTP Message can be either a response or a request.
+ */
 PHP_METHOD(HttpMessage, __construct)
 {
 	zval *message = NULL;
 	int message_len;
 	getObject(http_message_object, obj);
-	http_message *msg = obj->message;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z/", &message)) {
 		return;
 	}
 
 	if (message) {
+		convert_to_string(message);
 		SET_PROP(obj, raw, message);
 	}
 }
 /* }}} */
 
-/* {{{ void HttpMessage::__destruct() */
-PHP_METHOD(HttpMessage, __destruct)
+/* {{{ void HttpMessage::setRaw(string raw_message)
+ *
+ * Parse a new raw message.
+ */
+PHP_METHOD(HttpMessage, setRaw)
 {
+	zval *message;
 	getObject(http_message_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &message)) {
+		return;
+	}
 
+	convert_to_string(message);
+	SET_PROP(obj, raw, message);
+}
+/* }}} */
+
+/* {{{ string HttpMessage::getBody()
+ *
+ * Get the body of the parsed Message.
+ */
+PHP_METHOD(HttpMessage, getBody)
+{
+	zval *body;
+	getObject(http_message_object, obj);
+	
 	NO_ARGS;
 
+	body = GET_PROP(obj, body);
+	RETURN_STRINGL(Z_STRVAL_P(body), Z_STRLEN_P(body), 1);
+}
+/* }}} */
+
+/* {{{ array HttpMessage::getHeaders()
+ *
+ * Get Message Headers.
+ */
+PHP_METHOD(HttpMessage, getHeaders)
+{
+	zval *headers;
+	getObject(http_message_object, obj);
+	
+	NO_ARGS;
+	
+	headers = GET_PROP(obj, headers);
+	array_init(return_value);
+	array_copy(headers, return_value);
 }
 /* }}} */
 

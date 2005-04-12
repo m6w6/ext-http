@@ -22,10 +22,13 @@
 
 #include "php.h"
 
+#include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_message_object.h"
 
 #ifdef ZEND_ENGINE_2
+
+ZEND_EXTERN_MODULE_GLOBALS(http);
 
 #define http_message_object_declare_default_properties() _http_message_object_declare_default_properties(TSRMLS_C)
 static inline void _http_message_object_declare_default_properties(TSRMLS_D);
@@ -39,7 +42,9 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC);
 zend_class_entry *http_message_object_ce;
 zend_function_entry http_message_object_fe[] = {
 	PHP_ME(HttpMessage, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(HttpMessage, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
+	PHP_ME(HttpMessage, setRaw, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, getBody, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, getHeaders, NULL, ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL}
 };
 static zend_object_handlers http_message_object_handlers;
@@ -107,15 +112,14 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 {
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
-	zval *return_value;
+	zval *return_value = &HTTP_G(message_object_tmp_property);
 
 	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
 		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 		return EG(uninitialized_zval_ptr);
 	}
 
-    ALLOC_ZVAL(return_value);
-    return_value->refcount = 0;
+    zval_dtor(return_value);
 
 #if 0
 	fprintf(stderr, "Reading property: %s(%d==%d) (%lu)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)),
@@ -151,7 +155,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 				if (msg->len) {
 					RETVAL_STRINGL(msg->raw, msg->len, 1);
 				} else {
-					RETVAL_STRINGL(empty_string, 0, 0);
+					RETVAL_STRINGL(empty_string, 0, 1);
 				}
 			} else {
 				RETVAL_NULL();
@@ -164,8 +168,8 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		break;
 
 		case HTTP_MSG_PROPHASH_HEADERS:
-			Z_TYPE_P(return_value) = IS_ARRAY;
-			Z_ARRVAL_P(return_value) = &msg->hdrs;
+			array_init(return_value);
+			zend_hash_copy(Z_ARRVAL_P(return_value), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 		break;
 
 		case HTTP_MSG_PROPHASH_NESTED_MESSAGE:

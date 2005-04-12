@@ -47,7 +47,9 @@ extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 #define HTTP_MSG_PROPHASH_RESPONSE_STATUS      3857097400LU
 
 PHP_METHOD(HttpMessage, __construct);
-PHP_METHOD(HttpMessage, __destruct);
+PHP_METHOD(HttpMessage, setRaw);
+PHP_METHOD(HttpMessage, getBody);
+PHP_METHOD(HttpMessage, getHeaders);
 
 #endif
 #endif

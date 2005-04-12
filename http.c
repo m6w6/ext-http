@@ -283,6 +283,8 @@ PHP_RSHUTDOWN_FUNCTION(http)
 	phpstr_dtor(&HTTP_G(curlbuf));
 #endif
 
+	zval_dtor(&HTTP_G(message_object_tmp_property));
+
 	return SUCCESS;
 }
 /* }}} */
