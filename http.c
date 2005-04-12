@@ -188,7 +188,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
     ALLOC_ZVAL(return_value);
     return_value->refcount = 0;
 
-#if 1
+#if 0
 	fprintf(stderr, "Reading property: %s(%d==%d) (%lu)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)),
 		zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1)
 	);
@@ -285,7 +285,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 	}
 
-#if 1
+#if 0
 	fprintf(stderr, "Writing property: %s(%d==%d) (%lu)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)),
 		zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1)
 	);
@@ -378,9 +378,11 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		int m_prop_len; \
 		Z_ARRVAL(array) = OBJ_PROP(obj); \
 		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
-		add_assoc_stringl_ex(&array, m_prop_name, m_prop_len, val, len, val != empty_string); \
+		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+4, val, len, val != empty_string); \
 	}
 
+	zend_hash_clean(OBJ_PROP(obj));
+	
 	ASSOC_PROP(obj, long, "type", msg->type);
 	ASSOC_STRINGL(obj, "raw", msg->raw, msg->len)
 	ASSOC_STRINGL(obj, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
@@ -420,7 +422,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 }
 
 #define http_message_global_init() _http_message_global_init(TSRMLS_C)
-static void _http_message_global_init(TSRMLS_D)
+static inline void _http_message_global_init(TSRMLS_D)
 {
 	http_message_object_handlers.read_property = http_message_object_read_prop;
 	http_message_object_handlers.write_property = http_message_object_write_prop;
@@ -471,7 +473,6 @@ zend_object_value _http_message_new_object(zend_class_entry *ce TSRMLS_DC)
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
-	//zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 
 	ov.handle = zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, http_message_free_object, NULL TSRMLS_CC);
 	ov.handlers = &http_message_object_handlers;
