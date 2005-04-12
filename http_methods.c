@@ -531,7 +531,6 @@ PHP_METHOD(HttpResponse, send)
 PHP_METHOD(HttpMessage, __construct)
 {
 	zval *message = NULL;
-	int message_len;
 	getObject(http_message_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z/", &message)) {
@@ -1518,7 +1517,7 @@ PHP_METHOD(HttpRequest, send)
 	getObject(http_request_object, obj);
 
 	NO_ARGS;
-	
+
 	SET_EH_THROW_HTTP();
 
 	if ((!obj->ch) && (!(obj->ch = curl_easy_init()))) {

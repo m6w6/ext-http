@@ -21,8 +21,7 @@
 
 #include "php.h"
 #include "php_streams.h"
-#include "snprintf.h"
-
+#include "ext/standard/php_lcg.h"
 #include "SAPI.h"
 
 #include "php_http.h"
