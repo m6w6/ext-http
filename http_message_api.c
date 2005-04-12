@@ -99,7 +99,7 @@ PHP_HTTP_API void _http_message_parse_headers_callback(void **message, char *htt
 	if (!strncmp(http_line, "HTTP/1.", lenof("HTTP/1."))) {
 		new->type = HTTP_MSG_RESPONSE;
 		new->info.response.http_version = atof(http_line + lenof("HTTP/"));
-		new->info.response.status = atoi(http_line + lenof("HTTP/1.1 "));
+		new->info.response.code = atoi(http_line + lenof("HTTP/1.1 "));
 	} else
 	// request
 	if (!strncmp(http_line + line_length - lenof("HTTP/1.1"), "HTTP/1.", lenof("HTTP/1."))) {
@@ -135,7 +135,7 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 		case HTTP_MSG_RESPONSE:
 			phpstr_appendf(&str, "HTTP/%1.1f %d" HTTP_CRLF,
 				msg->info.response.http_version,
-				msg->info.response.status);
+				msg->info.response.code);
 		break;
 	}
 
