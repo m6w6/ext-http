@@ -110,7 +110,31 @@ SOURCE=.\http_functions.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\http_methods.c
+SOURCE=.\http_auth_api.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\http_cache_api.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\http_date_api.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\http_headers_api.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\http_message_api.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\http_send_api.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\http_url_api.c
 # End Source File
 # Begin Source File
 
@@ -131,6 +155,34 @@ SOURCE=.\php_http_api.h
 # Begin Source File
 
 SOURCE=.\php_http_curl_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_auth_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_cache_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_date_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_message_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_send_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_headers_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_url_api.h
 # End Source File
 # Begin Source File
 
