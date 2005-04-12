@@ -586,7 +586,6 @@ PHP_FUNCTION(http_chunked_decode)
  *     0 => array(
  *         'Status' => '200 Ok',
  *         'Content-Type' => 'text/plain',
-
  *         'Content-Language' => 'en-US'
  *     ),
  *     1 => "Hello World!"

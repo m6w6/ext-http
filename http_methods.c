@@ -517,6 +517,38 @@ PHP_METHOD(HttpResponse, send)
 /* }}} */
 /* }}} */
 
+/* {{{ HttpMessage */
+
+/* {{{ void HttpMessage::__construct([string raw_message]) */
+PHP_METHOD(HttpMessage, __construct)
+{
+	zval *message = NULL;
+	int message_len;
+	getObject(http_message_object, obj);
+	http_message *msg = obj->message;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z/", &message)) {
+		return;
+	}
+
+	if (message) {
+		SET_PROP(obj, raw, message);
+	}
+}
+/* }}} */
+
+/* {{{ void HttpMessage::__destruct() */
+PHP_METHOD(HttpMessage, __destruct)
+{
+	getObject(http_message_object, obj);
+	
+	NO_ARGS;
+	
+}
+/* }}} */
+
+/* }}} */
+
 #ifdef HTTP_HAVE_CURL
 /* {{{ HttpRequest */
 

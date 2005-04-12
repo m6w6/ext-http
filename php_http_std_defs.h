@@ -107,7 +107,8 @@ typedef int STATUS;
 		name## _ce->ce_flags |= flags;  \
 	}
 
-#	define getObject(t, o) t * o = ((t *) zend_object_store_get_object(getThis() TSRMLS_CC))
+#	define getObject(t, o) getObjectEx(t, o, getThis())
+#	define getObjectEx(t, o, v) t * o = ((t *) zend_object_store_get_object(v TSRMLS_CC))
 #	define OBJ_PROP(o) o->zo.properties
 #	define DCL_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define DCL_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)

@@ -18,12 +18,13 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define HTTP_PEXT_VERSION "0.7.0"
+#define HTTP_PEXT_VERSION "0.8.0-dev"
 
 /* make compile on Win32 */
 #include "php_streams.h"
 #include "ext/standard/md5.h"
 #include "phpstr/phpstr.h"
+#include "php_http_message_api.h"
 
 extern zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
@@ -36,6 +37,11 @@ extern zend_module_entry http_module_entry;
 #endif
 
 #ifdef ZEND_ENGINE_2
+
+typedef struct {
+	zend_object zo;
+	http_message *message;
+} http_message_object;
 
 typedef struct {
 	zend_object	zo;
@@ -88,6 +94,8 @@ PHP_METHOD(HttpUtil, postArray);
 PHP_METHOD(HttpUtil, authBasic);
 PHP_METHOD(HttpUtil, authBasicCallback);
 
+PHP_METHOD(HttpMessage, __construct);
+PHP_METHOD(HttpMessage, __destruct);
 
 PHP_METHOD(HttpResponse, __construct);/*
 PHP_METHOD(HttpResponse, __destruct);*/

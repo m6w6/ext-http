@@ -41,11 +41,11 @@ PHP_HTTP_API http_message *_http_message_init_ex(http_message *message, http_mes
 	return message;
 }
 
-PHP_HTTP_API http_message *_http_message_parse_ex(char *message, size_t message_length, zend_bool dup TSRMLS_DC)
+PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, char *message, size_t message_length, zend_bool dup TSRMLS_DC)
 {
 	char *body = NULL;
 	size_t header_length = 0;
-	http_message *msg;
+	zend_bool free_msg = msg ? 0 : 1;
 
 	if (message_length < HTTP_MSG_MIN_SIZE) {
 		return NULL;
@@ -55,7 +55,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(char *message, size_t message_
 		return NULL;
 	}
 
-	msg = http_message_new();
+	msg = http_message_init(msg);
 	msg->len = message_length;
 	msg->raw = dup ? estrndup(message, message_length) : message;
 
@@ -65,16 +65,18 @@ PHP_HTTP_API http_message *_http_message_parse_ex(char *message, size_t message_
 	} else {
 		header_length = message_length;
 	}
-	
+
 	if (SUCCESS != http_parse_headers_cb(message, header_length, &msg->hdrs, 1, http_message_parse_headers_callback, (void **) &msg)) {
-		http_message_free(msg);
+		if (free_msg) {
+			http_message_free(msg);
+		}
 		return NULL;
 	}
-	
+
 	if (body) {
 		phpstr_from_string_ex(PHPSTR(msg), body, message_length - header_length);
 	}
-	
+
 	return msg;
 }
 
@@ -82,17 +84,17 @@ PHP_HTTP_API void _http_message_parse_headers_callback(void **message, char *htt
 {
 	http_message *old = (http_message *) *message;
 	http_message *new;
-	
+
 	if (old->type || zend_hash_num_elements(&old->hdrs) || PHPSTR_LEN(old)) {
 		new = http_message_new();
-	
+
 		new->nested = old;
 		*message = new;
 		*headers = &new->hdrs;
 	} else {
 		new = old;
 	}
-	
+
 	// response
 	if (!strncmp(http_line, "HTTP/1.", lenof("HTTP/1."))) {
 		new->type = HTTP_MSG_RESPONSE;
@@ -146,14 +148,14 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 				case IS_STRING:
 					phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(header));
 				break;
-				
+
 				case IS_ARRAY:
 					FOREACH_VAL(*header, single_header) {
 						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(single_header));
 					}
 				break;
 			}
-			
+
 			key = NULL;
 		}
 	}
@@ -176,13 +178,16 @@ PHP_HTTP_API void _http_message_dtor(http_message *message)
 		phpstr_dtor(PHPSTR(message));
 		if (message->raw) {
 			efree(message->raw);
+			message->raw = NULL;
 		}
 		if (message->type == HTTP_MSG_REQUEST) {
 			if (message->info.request.method) {
 				efree(message->info.request.method);
+				message->info.request.method = NULL;
 			}
 			if (message->info.request.URI) {
 				efree(message->info.request.URI);
+				message->info.request.URI = NULL;
 			}
 		}
 	}

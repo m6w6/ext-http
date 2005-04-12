@@ -159,6 +159,333 @@ zend_function_entry http_util_class_methods[] = {
 };
 /* }}} HttpUtil */
 
+/* {{{ HttpMessage */
+zend_class_entry *http_message_ce;
+static zend_object_handlers http_message_object_handlers;
+
+#define HTTP_MSG_PROPHASH_TYPE                 276192743LU
+#define HTTP_MSG_PROPHASH_HTTP_VERSION         1138628683LU
+#define HTTP_MSG_PROPHASH_RAW                  2090679983LU
+#define HTTP_MSG_PROPHASH_BODY                 254474387LU
+#define HTTP_MSG_PROPHASH_HEADERS              3199929089LU
+#define HTTP_MSG_PROPHASH_NESTED_MESSAGE       3652857165LU
+#define HTTP_MSG_PROPHASH_REQUEST_METHOD       1669022159LU
+#define HTTP_MSG_PROPHASH_REQUEST_URI          3208695486LU
+#define HTTP_MSG_PROPHASH_RESPONSE_STATUS      3857097400LU
+
+#define http_message_object_read_prop _http_message_object_read_prop
+static zval *_http_message_object_read_prop(zval *object, zval *member, int type TSRMLS_DC)
+{
+	getObjectEx(http_message_object, obj, object);
+	http_message *msg = obj->message;
+	zval *return_value;
+
+	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
+		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
+		return EG(uninitialized_zval_ptr);
+	}
+
+    ALLOC_ZVAL(return_value);
+    return_value->refcount = 0;
+
+#if 1
+	fprintf(stderr, "Reading property: %s(%d==%d) (%lu)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)),
+		zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1)
+	);
+#endif
+
+	switch (zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1))
+	{
+		case HTTP_MSG_PROPHASH_TYPE:
+			RETVAL_LONG(msg->type);
+		break;
+
+		case HTTP_MSG_PROPHASH_HTTP_VERSION:
+			switch (msg->type)
+			{
+				case HTTP_MSG_NONE:
+					RETVAL_NULL();
+				break;
+
+				case HTTP_MSG_REQUEST:
+					RETVAL_DOUBLE(msg->info.request.http_version);
+				break;
+
+				case HTTP_MSG_RESPONSE:
+					RETVAL_DOUBLE(msg->info.response.http_version);
+				break;
+			}
+		break;
+
+		case HTTP_MSG_PROPHASH_RAW:
+			if (msg->raw) {
+				if (msg->len) {
+					RETVAL_STRINGL(msg->raw, msg->len, 1);
+				} else {
+					RETVAL_STRINGL(empty_string, 0, 0);
+				}
+			} else {
+				RETVAL_NULL();
+			}
+		break;
+
+		case HTTP_MSG_PROPHASH_BODY:
+			phpstr_fix(PHPSTR(msg));
+			RETVAL_PHPSTR(PHPSTR(msg), 0, 1);
+		break;
+
+		case HTTP_MSG_PROPHASH_HEADERS:
+			Z_TYPE_P(return_value) = IS_ARRAY;
+			Z_ARRVAL_P(return_value) = &msg->hdrs;
+		break;
+
+		case HTTP_MSG_PROPHASH_NESTED_MESSAGE:
+			RETVAL_NULL();
+		break;
+
+		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
+			if (msg->type == HTTP_MSG_REQUEST && msg->info.request.method) {
+				RETVAL_STRING(msg->info.request.method, 1);
+			} else {
+				RETVAL_NULL();
+			}
+		break;
+
+		case HTTP_MSG_PROPHASH_REQUEST_URI:
+			if (msg->type == HTTP_MSG_REQUEST && msg->info.request.URI) {
+				RETVAL_STRING(msg->info.request.URI, 1);
+			} else {
+				RETVAL_NULL();
+			}
+		break;
+
+		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
+			if (msg->type == HTTP_MSG_RESPONSE) {
+				RETVAL_LONG(msg->info.response.status);
+			} else {
+				RETVAL_NULL();
+			}
+		break;
+
+		default:
+			RETVAL_NULL();
+		break;
+	}
+
+	return return_value;
+}
+
+#define http_message_object_write_prop _http_message_object_write_prop
+static void _http_message_object_write_prop(zval *object, zval *member, zval *value TSRMLS_DC)
+{
+	getObjectEx(http_message_object, obj, object);
+	http_message *msg = obj->message;
+
+	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
+		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
+	}
+
+#if 1
+	fprintf(stderr, "Writing property: %s(%d==%d) (%lu)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)),
+		zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1)
+	);
+#endif
+
+	switch (zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1))
+	{
+		case HTTP_MSG_PROPHASH_TYPE:
+			msg->type = Z_LVAL_P(value);
+		break;
+
+		case HTTP_MSG_PROPHASH_HTTP_VERSION:
+			switch (msg->type)
+			{
+				case HTTP_MSG_REQUEST:
+					msg->info.request.http_version = (float) Z_DVAL_P(value);
+				break;
+
+				case HTTP_MSG_RESPONSE:
+					msg->info.response.http_version = (float) Z_DVAL_P(value);
+				break;
+			}
+		break;
+
+		case HTTP_MSG_PROPHASH_RAW:
+			http_message_dtor(msg);
+			http_message_parse_ex(msg, Z_STRVAL_P(value), Z_STRLEN_P(value), 1);
+		break;
+
+		case HTTP_MSG_PROPHASH_BODY:
+			phpstr_dtor(PHPSTR(msg));
+			phpstr_from_string_ex(PHPSTR(msg), Z_STRVAL_P(value), Z_STRLEN_P(value));
+		break;
+
+		case HTTP_MSG_PROPHASH_HEADERS:
+			zend_hash_clean(&msg->hdrs);
+			zend_hash_copy(&msg->hdrs, Z_ARRVAL_P(value), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+		break;
+
+		case HTTP_MSG_PROPHASH_NESTED_MESSAGE:
+		break;
+
+		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
+			if (msg->type == HTTP_MSG_REQUEST) {
+				if (msg->info.request.method) {
+					efree(msg->info.request.method);
+				}
+				msg->info.request.method = estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value));
+			}
+		break;
+
+		case HTTP_MSG_PROPHASH_REQUEST_URI:
+			if (msg->type == HTTP_MSG_REQUEST) {
+				if (msg->info.request.URI) {
+					efree(msg->info.request.URI);
+				}
+				msg->info.request.URI = estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value));
+			}
+		break;
+
+		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
+			if (msg->type == HTTP_MSG_RESPONSE) {
+				msg->info.response.status = Z_LVAL_P(value);
+			}
+		break;
+	}
+}
+
+#define http_message_object_get_props _http_message_object_get_props
+static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
+{
+	zval *headers;
+	getObjectEx(http_message_object, obj, object);
+	http_message *msg = obj->message;
+
+#define ASSOC_PROP(obj, ptype, name, val) \
+	{ \
+		zval array; \
+		char *m_prop_name; \
+		int m_prop_len; \
+		Z_ARRVAL(array) = OBJ_PROP(obj); \
+		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
+		add_assoc_ ##ptype## _ex(&array, m_prop_name, sizeof(name)+4, val); \
+	}
+#define ASSOC_STRING(obj, name, val) ASSOC_STRINGL(obj, name, val, strlen(val))
+#define ASSOC_STRINGL(obj, name, val, len) \
+	{ \
+		zval array; \
+		char *m_prop_name; \
+		int m_prop_len; \
+		Z_ARRVAL(array) = OBJ_PROP(obj); \
+		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
+		add_assoc_stringl_ex(&array, m_prop_name, m_prop_len, val, len, val != empty_string); \
+	}
+
+	ASSOC_PROP(obj, long, "type", msg->type);
+	ASSOC_STRINGL(obj, "raw", msg->raw, msg->len)
+	ASSOC_STRINGL(obj, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
+
+	MAKE_STD_ZVAL(headers);
+	array_init(headers);
+
+	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	ASSOC_PROP(obj, zval, "headers", headers);
+
+	switch (msg->type)
+	{
+		case HTTP_MSG_REQUEST:
+			ASSOC_PROP(obj, double, "httpVersion", msg->info.request.http_version);
+			ASSOC_PROP(obj, long, "responseStatus", 0);
+			ASSOC_STRING(obj, "requestMethod", msg->info.request.method);
+			ASSOC_STRING(obj, "requestUri", msg->info.request.URI);
+		break;
+
+		case HTTP_MSG_RESPONSE:
+			ASSOC_PROP(obj, double, "httpVersion", msg->info.response.http_version);
+			ASSOC_PROP(obj, long, "responseStatus", msg->info.response.status);
+			ASSOC_STRING(obj, "requestMethod", empty_string);
+			ASSOC_STRING(obj, "requestUri", empty_string);
+		break;
+
+		case HTTP_MSG_NONE:
+		default:
+			ASSOC_PROP(obj, double, "httpVersion", 0.0);
+			ASSOC_PROP(obj, long, "responseStatus", 0);
+			ASSOC_STRING(obj, "requestMethod", empty_string);
+			ASSOC_STRING(obj, "requestUri", empty_string);
+		break;
+	}
+
+	return OBJ_PROP(obj);
+}
+
+#define http_message_global_init() _http_message_global_init(TSRMLS_C)
+static void _http_message_global_init(TSRMLS_D)
+{
+	http_message_object_handlers.read_property = http_message_object_read_prop;
+	http_message_object_handlers.write_property = http_message_object_write_prop;
+	http_message_object_handlers.get_properties = http_message_object_get_props;
+}
+
+#define http_message_declare_default_properties(ce) _http_message_declare_default_properties(ce TSRMLS_CC)
+static inline void _http_message_declare_default_properties(zend_class_entry *ce TSRMLS_DC)
+{
+	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
+
+	DCL_PROP(PROTECTED, string, raw, "");
+	DCL_PROP(PROTECTED, string, body, "");
+
+	DCL_PROP(PROTECTED, string, requestMethod, "");
+	DCL_PROP(PROTECTED, string, requestUri, "");
+	DCL_PROP(PROTECTED, long, responseStatus, 0);
+
+	DCL_PROP_N(PROTECTED, httpVersion);
+	DCL_PROP_N(PROTECTED, headers);
+	DCL_PROP_N(PROTECTED, nestedMessage);
+}
+
+#define http_message_free_object _http_message_free_object
+void _http_message_free_object(zend_object *object TSRMLS_DC)
+{
+	http_message_object *o = (http_message_object *) object;
+
+	if (OBJ_PROP(o)) {
+		zend_hash_destroy(OBJ_PROP(o));
+		FREE_HASHTABLE(OBJ_PROP(o));
+	}
+	if (o->message) {
+		http_message_free(o->message);
+	}
+	efree(o);
+}
+
+#define http_message_new_object _http_message_new_object
+zend_object_value _http_message_new_object(zend_class_entry *ce TSRMLS_DC)
+{
+	zend_object_value ov;
+	http_message_object *o;
+
+	o = ecalloc(1, sizeof(http_message_object));
+	o->zo.ce = ce;
+	o->message = http_message_new();
+
+	ALLOC_HASHTABLE(OBJ_PROP(o));
+	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
+	//zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+
+	ov.handle = zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, http_message_free_object, NULL TSRMLS_CC);
+	ov.handlers = &http_message_object_handlers;
+
+	return ov;
+}
+
+zend_function_entry http_message_class_methods[] = {
+	PHP_ME(HttpMessage, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpMessage, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
+	{NULL, NULL, NULL}
+};
+/* }}} */
+
 /* {{{ HttpResponse */
 
 zend_class_entry *http_response_ce;
@@ -486,6 +813,7 @@ PHP_MINIT_FUNCTION(http)
 
 #ifdef ZEND_ENGINE_2
 	HTTP_REGISTER_CLASS(HttpUtil, http_util, NULL, ZEND_ACC_FINAL_CLASS);
+	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message, NULL, 0);
 	HTTP_REGISTER_CLASS_EX(HttpResponse, http_response, NULL, 0);
 #	ifdef HTTP_HAVE_CURL
 	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request, NULL, 0);
@@ -494,6 +822,9 @@ PHP_MINIT_FUNCTION(http)
 	REGISTER_LONG_CONSTANT("HTTP_HEAD", HTTP_HEAD, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("HTTP_POST", HTTP_POST, CONST_CS | CONST_PERSISTENT);
 #	endif /* HTTP_HAVE_CURL */
+
+	http_message_global_init();
+
 #endif /* ZEND_ENGINE_2 */
 	return SUCCESS;
 }
