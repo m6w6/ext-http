@@ -28,8 +28,6 @@
 
 #ifdef ZEND_ENGINE_2
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #define http_message_object_declare_default_properties() _http_message_object_declare_default_properties(TSRMLS_C)
 static inline void _http_message_object_declare_default_properties(TSRMLS_D);
 #define http_message_object_read_prop _http_message_object_read_prop
@@ -105,6 +103,7 @@ static void _http_message_object_free(zend_object *object TSRMLS_DC)
 	if (o->message) {
 		http_message_free(o->message);
 	}
+	zval_dtor(&o->_tmp_property);
 	efree(o);
 }
 
@@ -112,7 +111,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 {
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
-	zval *return_value = &HTTP_G(message_object_tmp_property);
+	zval *return_value = &obj->_tmp_property;
 
 	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
 		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));

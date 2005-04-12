@@ -24,6 +24,7 @@
 typedef struct {
 	zend_object zo;
 	http_message *message;
+	zval _tmp_property;
 } http_message_object;
 
 extern zend_class_entry *http_message_object_ce;

@@ -47,7 +47,6 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	char curlerr[CURL_ERROR_SIZE + 1];
 #	endif
 	zend_llist to_free;
-	zval message_object_tmp_property;
 #endif /* HTTP_HAVE_CURL */
 ZEND_END_MODULE_GLOBALS(http)
 
