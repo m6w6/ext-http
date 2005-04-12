@@ -8,14 +8,13 @@
 * Building absolute URIs
 * RFC compliant HTTP redirects
 * RFC compliant HTTP date handling
-* Parsing of HTTP headers and responses
+* Parsing of HTTP headers and messages
 * Caching by "Last-Modified" and/or ETag
   (with 'on the fly' option for ETag generation from buffered output)
 * Sending data/files/streams with (multiple) ranges support
 * Negotiating user preferred language/charset
 * Convenient request functions to HEAD/GET/POST if libcurl is available
 * HTTP auth hooks (Basic)
-* HTTPi, HTTPi_Response and HTTPi_Request classes (HTTPi_Request only with libcurl)
 ]]>
   </description>
   <license>PHP License 3.0</license>
@@ -30,17 +29,11 @@
   </maintainers>
 
   <release>
-    <version>0.7.0</version>
-    <date>2005-03-24</date>
+    <version>0.8.0dev</version>
+    <date>2005-04-00</date>
     <state>beta</state>
     <notes><![CDATA[
-* Renamed HTTPi to HttpUtil
-* Renamed HTTPi_Request to HttpRequest
-* Renamed HTTPi_Response to HttpResponse
-* Added several methods to HttpRequest: unsetOptions(), addHeaders(array),
-  getHeaders(), unsetHeaders(), addCookies(array), getCookies(), unsetCookies(),
-  setSslOptions(array), getSslOptions(), unsetSslOptions()
-* Improved HTTP ranges support
+* 
 ]]>
     </notes>
   </release>
@@ -51,6 +44,7 @@
       <file role="doc">EXPERIMENTAL</file>
       <file role="doc">docs/functions.html</file>
       
+      <file role="src" platform="windows">http.dsp</file>
       <file role="src" platform="windows">config.w32</file>
       <file role="src">config.m4</file>
       
@@ -58,15 +52,37 @@
       <file role="src">phpstr/phpstr.c</file>
       
       <file role="src">php_http.h</file>
-      <file role="src">php_http_api.h</file>
-      <file role="src">php_http_curl_api.h</file>
       <file role="src">php_http_std_defs.h</file>
+      <file role="src">php_http_api.h</file>
+      <file role="src">php_http_auth_api.h</file>
+      <file role="src">php_http_cache_api.h</file>
+      <file role="src">php_http_curl_api.h</file>
+      <file role="src">php_http_date_api.h</file>
+      <file role="src">php_http_headers_api.h</file>
+      <file role="src">php_http_message_api.h</file>
+      <file role="src">php_http_send_api.h</file>
+      <file role="src">php_http_url_api.h</file>
+      <file role="src">php_http_util_object.h</file>
+      <file role="src">php_http_message_object.h</file>
+      <file role="src">php_http_request_object.h</file>
+      <file role="src">php_http_response_object.h</file>
       
       <file role="src">http.c</file>
       <file role="src">http_functions.c</file>
       <file role="src">http_methods.c</file>
       <file role="src">http_api.c</file>
+      <file role="src">http_auth_api.c</file>
+      <file role="src">http_cache_api.c</file>
       <file role="src">http_curl_api.c</file>
+      <file role="src">http_Date_api.c</file>
+      <file role="src">http_headers_api.c</file>
+      <file role="src">http_message_api.c</file>
+      <file role="src">http_send_api.c</file>
+      <file role="src">http_url_api.c</file>
+      <file role="src">http_util_object.c</file>
+      <file role="src">http_message_object.c</file>
+      <file role="src">http_request_object.c</file>
+      <file role="src">http_response_object.c</file>
       
     </dir>
   </filelist>
