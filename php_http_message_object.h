@@ -34,6 +34,9 @@ extern zend_function_entry http_message_object_fe[];
 extern void _http_message_object_init(INIT_FUNC_ARGS);
 #define http_message_object_new _http_message_object_new
 extern zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC);
+#define http_message_object_new_ex(ce, msg) _http_message_object_new_ex(ce, msg TSRMLS_CC)
+#define http_message_object_from_msg(msg) _http_message_object_new_ex(http_message_object_ce, msg TSRMLS_CC)
+extern zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message *msg TSRMLS_DC);
 #define http_message_object_free _http_message_object_free
 extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 
@@ -46,11 +49,20 @@ extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 #define HTTP_MSG_PROPHASH_REQUEST_METHOD       1669022159LU
 #define HTTP_MSG_PROPHASH_REQUEST_URI          3208695486LU
 #define HTTP_MSG_PROPHASH_RESPONSE_STATUS      3857097400LU
+#define HTTP_MSG_PROPHASH_RESPONSE_CODE        1305615119LU
 
 PHP_METHOD(HttpMessage, __construct);
 PHP_METHOD(HttpMessage, setRaw);
 PHP_METHOD(HttpMessage, getBody);
 PHP_METHOD(HttpMessage, getHeaders);
+PHP_METHOD(HttpMessage, getType);
+PHP_METHOD(HttpMessage, getResponseCode);
+PHP_METHOD(HttpMessage, getRequestMethod);
+PHP_METHOD(HttpMessage, getRequestUri);
+PHP_METHOD(HttpMessage, getHttpVersion);
+PHP_METHOD(HttpMessage, toString);
+
+PHP_METHOD(HttpMessage, fromString);
 
 #endif
 #endif

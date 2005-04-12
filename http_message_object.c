@@ -43,6 +43,16 @@ zend_function_entry http_message_object_fe[] = {
 	PHP_ME(HttpMessage, setRaw, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getBody, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getHeaders, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, getType, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, getResponseCode, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, getRequestMethod, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, getRequestUri, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, getHttpVersion, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, toString, NULL, ZEND_ACC_PUBLIC)
+
+	ZEND_MALIAS(HttpMessage, __toString, toString, NULL, ZEND_ACC_PUBLIC)
+
+	PHP_ME(HttpMessage, fromString, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	{NULL, NULL, NULL}
 };
 static zend_object_handlers http_message_object_handlers;
@@ -51,6 +61,10 @@ void _http_message_object_init(INIT_FUNC_ARGS)
 {
 	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message_object, NULL, 0);
 
+	HTTP_LONG_CONSTANT("HTTP_MSG_NONE", HTTP_MSG_NONE);
+	HTTP_LONG_CONSTANT("HTTP_MSG_REQUEST", HTTP_MSG_REQUEST);
+	HTTP_LONG_CONSTANT("HTTP_MSG_RESPONSE", HTTP_MSG_RESPONSE);
+
 	http_message_object_handlers.read_property = http_message_object_read_prop;
 	http_message_object_handlers.write_property = http_message_object_write_prop;
 	http_message_object_handlers.get_properties = http_message_object_get_props;
@@ -58,12 +72,17 @@ void _http_message_object_init(INIT_FUNC_ARGS)
 
 zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC)
 {
+	return http_message_object_new_ex(ce, NULL);
+}
+
+zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message *msg TSRMLS_DC)
+{
 	zend_object_value ov;
 	http_message_object *o;
 
 	o = ecalloc(1, sizeof(http_message_object));
 	o->zo.ce = ce;
-	o->message = http_message_new();
+	o->message = msg ? msg : http_message_new();
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
@@ -85,7 +104,7 @@ static inline void _http_message_object_declare_default_properties(TSRMLS_D)
 
 	DCL_PROP(PROTECTED, string, requestMethod, "");
 	DCL_PROP(PROTECTED, string, requestUri, "");
-	DCL_PROP(PROTECTED, long, responseStatus, 0);
+	DCL_PROP(PROTECTED, long, responseCode, 0);
 
 	DCL_PROP_N(PROTECTED, httpVersion);
 	DCL_PROP_N(PROTECTED, headers);
@@ -191,9 +210,9 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 			}
 		break;
 
-		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
+		case HTTP_MSG_PROPHASH_RESPONSE_CODE:
 			if (msg->type == HTTP_MSG_RESPONSE) {
-				RETVAL_LONG(msg->info.response.status);
+				RETVAL_LONG(msg->info.response.code);
 			} else {
 				RETVAL_NULL();
 			}
@@ -279,7 +298,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 
 		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
 			if (msg->type == HTTP_MSG_RESPONSE) {
-				msg->info.response.status = Z_LVAL_P(value);
+				msg->info.response.code = Z_LVAL_P(value);
 			}
 		break;
 	}
@@ -327,14 +346,14 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	{
 		case HTTP_MSG_REQUEST:
 			ASSOC_PROP(obj, double, "httpVersion", msg->info.request.http_version);
-			ASSOC_PROP(obj, long, "responseStatus", 0);
+			ASSOC_PROP(obj, long, "responseCode", 0);
 			ASSOC_STRING(obj, "requestMethod", msg->info.request.method);
 			ASSOC_STRING(obj, "requestUri", msg->info.request.URI);
 		break;
 
 		case HTTP_MSG_RESPONSE:
 			ASSOC_PROP(obj, double, "httpVersion", msg->info.response.http_version);
-			ASSOC_PROP(obj, long, "responseStatus", msg->info.response.status);
+			ASSOC_PROP(obj, long, "responseCode", msg->info.response.code);
 			ASSOC_STRING(obj, "requestMethod", empty_string);
 			ASSOC_STRING(obj, "requestUri", empty_string);
 		break;
@@ -342,7 +361,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		case HTTP_MSG_NONE:
 		default:
 			ASSOC_PROP(obj, double, "httpVersion", 0.0);
-			ASSOC_PROP(obj, long, "responseStatus", 0);
+			ASSOC_PROP(obj, long, "responseCode", 0);
 			ASSOC_STRING(obj, "requestMethod", empty_string);
 			ASSOC_STRING(obj, "requestUri", empty_string);
 		break;
