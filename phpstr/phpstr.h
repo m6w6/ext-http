@@ -79,19 +79,19 @@ PHPSTR_API void phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size);
 /* append data to the phpstr */
 #define phpstr_appends(b, a) phpstr_append((b), (a), sizeof(a)-1)
 #define phpstr_appendl(b, a) phpstr_append((b), (a), strlen(a))
-PHPSTR_API void phpstr_append(phpstr *buf, const char *append, size_t append_len);
+PHPSTR_API size_t phpstr_append(phpstr *buf, const char *append, size_t append_len);
 PHPSTR_API size_t phpstr_appendf(phpstr *buf, const char *format, ...);
 
 /* insert data at a specific position of the phpstr */
 #define phpstr_inserts(b, i, o) phpstr_insert((b), (i), sizeof(i)-1, (o))
 #define phpstr_insertl(b, i, o) phpstr_insert((b), (i), strlen(i), (o))
-PHPSTR_API void phpstr_insert(phpstr *buf, const char *insert, size_t insert_len, size_t offset);
+PHPSTR_API size_t phpstr_insert(phpstr *buf, const char *insert, size_t insert_len, size_t offset);
 PHPSTR_API size_t phpstr_insertf(phpstr *buf, size_t offset, const char *format, ...);
 
 /* prepend data */
 #define phpstr_prepends(b, p) phpstr_prepend((b), (p), sizeof(p)-1)
 #define phpstr_prependl(b, p) phpstr_prepend((b), (p), strlen(p))
-PHPSTR_API void phpstr_prepend(phpstr *buf, const char *prepend, size_t prepend_len);
+PHPSTR_API size_t phpstr_prepend(phpstr *buf, const char *prepend, size_t prepend_len);
 PHPSTR_API size_t phpstr_prependf(phpstr *buf, const char *format, ...);
 
 /* get a zero-terminated string */

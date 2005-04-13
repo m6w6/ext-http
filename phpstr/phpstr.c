@@ -45,12 +45,13 @@ PHPSTR_API void phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size)
 	}
 }
 
-PHPSTR_API void phpstr_append(phpstr *buf, const char *append, size_t append_len)
+PHPSTR_API size_t phpstr_append(phpstr *buf, const char *append, size_t append_len)
 {
 	phpstr_resize(buf, append_len);
 	memcpy(buf->data + buf->used, append, append_len);
 	buf->used += append_len;
 	buf->free -= append_len;
+	return append_len;
 }
 
 PHPSTR_API size_t phpstr_appendf(phpstr *buf, const char *format, ...)
@@ -69,13 +70,14 @@ PHPSTR_API size_t phpstr_appendf(phpstr *buf, const char *format, ...)
 	return append_len;
 }
 
-PHPSTR_API void phpstr_insert(phpstr *buf, const char *insert, size_t insert_len, size_t offset)
+PHPSTR_API size_t phpstr_insert(phpstr *buf, const char *insert, size_t insert_len, size_t offset)
 {
 	phpstr_resize(buf, insert_len);
 	memmove(buf->data + offset + insert_len, buf->data + offset, insert_len);
 	memcpy(buf->data + offset, insert, insert_len);
 	buf->used += insert_len;
 	buf->free -= insert_len;
+	return insert_len;
 }
 
 PHPSTR_API size_t phpstr_insertf(phpstr *buf, size_t offset, const char *format, ...)
@@ -94,13 +96,14 @@ PHPSTR_API size_t phpstr_insertf(phpstr *buf, size_t offset, const char *format,
 	return insert_len;
 }
 
-PHPSTR_API void phpstr_prepend(phpstr *buf, const char *prepend, size_t prepend_len)
+PHPSTR_API size_t phpstr_prepend(phpstr *buf, const char *prepend, size_t prepend_len)
 {
 	phpstr_resize(buf, prepend_len);
 	memmove(buf->data + prepend_len, buf->data, buf->used);
 	memcpy(buf->data, prepend, prepend_len);
 	buf->used += prepend_len;
 	buf->free -= prepend_len;
+	return prepend_len;
 }
 
 PHPSTR_API size_t phpstr_prependf(phpstr *buf, const char *format, ...)
