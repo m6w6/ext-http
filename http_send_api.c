@@ -124,8 +124,12 @@ static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_
 /* {{{ STATUS http_send_status_header(int, char *) */
 PHP_HTTP_API STATUS _http_send_status_header(int status, const char *header TSRMLS_DC)
 {
+	STATUS ret;
 	sapi_header_line h = {(char *) header, strlen(header), status};
-	return sapi_header_op(SAPI_HEADER_REPLACE, &h TSRMLS_CC);
+	if (SUCCESS != (ret = sapi_header_op(SAPI_HEADER_REPLACE, &h TSRMLS_CC))) {
+		http_error_ex(E_WARNING, HTTP_E_HEADER, "Could not send header: %s (%d)", header, status);
+	}
+	return ret;
 }
 /* }}} */
 
@@ -154,8 +158,7 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag, size_t etag_len TSRMLS_DC)
 	char *etag_header;
 
 	if (!etag_len){
-		php_error_docref(NULL TSRMLS_CC,E_ERROR,
-			"Attempt to send empty ETag (previous: %s)\n", HTTP_G(etag));
+		http_error_ex(E_WARNING, HTTP_E_HEADER, "Attempt to send empty ETag (previous: %s)\n", HTTP_G(etag));
 		return FAILURE;
 	}
 
@@ -167,9 +170,7 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag, size_t etag_len TSRMLS_DC)
 
 	etag_header = ecalloc(1, sizeof("ETag: \"\"") + etag_len);
 	sprintf(etag_header, "ETag: \"%s\"", etag);
-	if (SUCCESS != (status = http_send_header(etag_header))) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Couldn't send '%s' header", etag_header);
-	}
+	status = http_send_header(etag_header);
 	efree(etag_header);
 	return status;
 }
@@ -182,10 +183,7 @@ PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control, size_t c
 	char *cc_header = ecalloc(1, sizeof("Cache-Control: ") + cc_len);
 
 	sprintf(cc_header, "Cache-Control: %s", cache_control);
-	if (SUCCESS != (status = http_send_header(cc_header))) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE,
-			"Could not send '%s' header", cc_header);
-	}
+	status = http_send_header(cc_header);
 	efree(cc_header);
 	return status;
 }
@@ -198,9 +196,7 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_
 	char *ct_header;
 
 	if (!strchr(content_type, '/')) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING,
-			"Content-Type '%s' doesn't seem to consist of a primary and a secondary part",
-			content_type);
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Content-Type '%s' doesn't seem to consist of a primary and a secondary part", content_type);
 		return FAILURE;
 	}
 
@@ -212,11 +208,7 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_
 
 	ct_header = ecalloc(1, sizeof("Content-Type: ") + ct_len);
 	sprintf(ct_header, "Content-Type: %s", content_type);
-
-	if (SUCCESS != (status = http_send_header(ct_header))) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING,
-			"Couldn't send '%s' header", ct_header);
-	}
+	status = http_send_header(ct_header);
 	efree(ct_header);
 	return status;
 }
@@ -236,9 +228,7 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, size_t 
 		sprintf(cd_header, "Content-Disposition: attachment; filename=\"%s\"", filename);
 	}
 
-	if (SUCCESS != (status = http_send_header(cd_header))) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Couldn't send '%s' header", cd_header);
-	}
+	status = http_send_header(cd_header);
 	efree(cd_header);
 	return status;
 }

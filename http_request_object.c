@@ -88,6 +88,7 @@ zend_function_entry http_request_object_fe[] = {
 	PHP_ME(HttpRequest, getResponseCode, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getResponseBody, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getResponseInfo, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getResponseMessage, NULL, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };
@@ -115,6 +116,8 @@ zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC)
 	o->zo.ce = ce;
 	o->ch = curl_easy_init();
 
+	phpstr_init_ex(&o->response, HTTP_CURLBUF_SIZE, 0);
+
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
@@ -132,6 +135,8 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP_N(PROTECTED, options);
 	DCL_PROP_N(PROTECTED, responseInfo);
 	DCL_PROP_N(PROTECTED, responseData);
+	DCL_PROP_N(PROTECTED, responseCode);
+	DCL_PROP_N(PROTECTED, responseMessage);
 	DCL_PROP_N(PROTECTED, postData);
 	DCL_PROP_N(PROTECTED, postFiles);
 
@@ -153,8 +158,8 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 	}
 	if (o->ch) {
 		curl_easy_cleanup(o->ch);
-		o->ch = NULL;
 	}
+	phpstr_dtor(&o->response);
 	efree(o);
 }
 

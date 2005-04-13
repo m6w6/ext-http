@@ -49,52 +49,48 @@ ZEND_EXTERN_MODULE_GLOBALS(http)
 #	define http_curl_error(code) curl_easy_strerror(code)
 #endif
 
-#define http_curl_startup(ch, clean_curl, URL, options) \
+#define http_curl_startup(ch, clean_curl, URL, options, response) \
 	if (!ch) { \
 		if (!(ch = curl_easy_init())) { \
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize curl"); \
+			http_error(E_WARNING, HTTP_E_CURL, "Could not initialize curl"); \
 			return FAILURE; \
 		} \
 		clean_curl = 1; \
 	} else { \
 		http_curl_reset(ch); \
 	} \
-	http_curl_setopts(ch, URL, options);
+	http_curl_setopts(ch, URL, options, response);
 
-#define http_curl_perform(ch, clean_curl) \
+#define http_curl_perform(ch, clean_curl, response) \
 	{ \
 		CURLcode result; \
 		if (CURLE_OK != (result = curl_easy_perform(ch))) { \
-			http_curl_cleanup(ch, clean_curl); \
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not perform request: %s", curl_easy_strerror(result)); \
+			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not perform request: %s", curl_easy_strerror(result)); \
+			http_curl_cleanup(ch, clean_curl, response); \
 			return FAILURE; \
 		} \
 	}
 
-#define http_curl_cleanup(ch, clean_curl) \
-	phpstr_dtor(&HTTP_G(curlbuf)); \
+#define http_curl_cleanup(ch, clean_curl, response) \
 	zend_llist_clean(&HTTP_G(to_free)); \
 	if (clean_curl) { \
 		curl_easy_cleanup(ch); \
 		ch = NULL; \
-	}
-
-#define http_curl_copybuf(d, l) \
-	phpstr_data(&HTTP_G(curlbuf), d, l)
+	} \
+	phpstr_fix(PHPSTR(response))
 
 #define http_curl_copystr(s) _http_curl_copystr((s) TSRMLS_CC)
 static inline char *_http_curl_copystr(const char *str TSRMLS_DC);
 
-#define http_curl_setopts(c, u, o) _http_curl_setopts((c), (u), (o) TSRMLS_CC)
-static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSRMLS_DC);
+#define http_curl_setopts(c, u, o, r) _http_curl_setopts((c), (u), (o), (r) TSRMLS_CC)
+static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, phpstr *response TSRMLS_DC);
 
 #define http_curl_getopt(o, k) _http_curl_getopt((o), (k) TSRMLS_CC, 0)
 #define http_curl_getopt1(o, k, t1) _http_curl_getopt((o), (k) TSRMLS_CC, 1, (t1))
 #define http_curl_getopt2(o, k, t1, t2) _http_curl_getopt((o), (k) TSRMLS_CC, 2, (t1), (t2))
 static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, int checks, ...);
 
-static size_t http_curl_body_callback(char *, size_t, size_t, void *);
-static size_t http_curl_hdrs_callback(char *, size_t, size_t, void *);
+static size_t http_curl_callback(char *, size_t, size_t, void *);
 
 #define http_curl_getinfo(c, h) _http_curl_getinfo((c), (h) TSRMLS_CC)
 static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC);
@@ -108,25 +104,10 @@ static inline char *_http_curl_copystr(const char *str TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ static size_t http_curl_body_callback(char *, size_t, size_t, void *) */
-static size_t http_curl_body_callback(char *buf, size_t len, size_t n, void *s)
+/* {{{ static size_t http_curl_callback(char *, size_t, size_t, void *) */
+static size_t http_curl_callback(char *buf, size_t len, size_t n, void *s)
 {
-	TSRMLS_FETCH();
-	phpstr_append(&HTTP_G(curlbuf), buf, len *= n);
-	return len;
-}
-/* }}} */
-
-/* {{{ static size_t http_curl_hdrs_callback(char *, size_t, size_t, void *) */
-static size_t http_curl_hdrs_callback(char *buf, size_t len, size_t n, void *s)
-{
-	TSRMLS_FETCH();
-
-	/* discard previous headers */
-	if (HTTP_G(curlbuf).used && (!strncmp(buf, "HTTP/1.", sizeof("HTTP/1.") - 1))) {
-		phpstr_free(&HTTP_G(curlbuf));
-	}
-	phpstr_append(&HTTP_G(curlbuf), buf, len *= n);
+	phpstr_append(PHPSTR(s), buf, len *= n);
 	return len;
 }
 /* }}} */
@@ -157,8 +138,8 @@ static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, i
 }
 /* }}} */
 
-/* {{{ static void http_curl_setopts(CURL *, char *, HashTable *) */
-static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSRMLS_DC)
+/* {{{ static void http_curl_setopts(CURL *, char *, HashTable *, phpstr *) */
+static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, phpstr *response TSRMLS_DC)
 {
 	zval *zoption;
 	zend_bool range_req = 0;
@@ -171,8 +152,10 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options TSR
 	HTTP_CURL_OPT(FILETIME, 1);
 	HTTP_CURL_OPT(NOPROGRESS, 1);
 	HTTP_CURL_OPT(AUTOREFERER, 1);
-	HTTP_CURL_OPT(WRITEFUNCTION, http_curl_body_callback);
-	HTTP_CURL_OPT(HEADERFUNCTION, http_curl_hdrs_callback);
+	HTTP_CURL_OPT(WRITEFUNCTION, http_curl_callback);
+	HTTP_CURL_OPT(HEADERFUNCTION, http_curl_callback);
+	HTTP_CURL_OPT(WRITEDATA, response);
+	HTTP_CURL_OPT(WRITEHEADER, response);
 #if defined(ZTS) && (LIBCURL_VERSION_NUM >= 0x070a00)
 	HTTP_CURL_OPT(NOSIGNAL, 1);
 #endif
@@ -496,108 +479,100 @@ static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ STATUS http_get_ex(CURL *, char *, HashTable *, HashTable *, char **, size_t *) */
-PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options,
-	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
+/* {{{ STATUS http_get_ex(CURL *, char *, HashTable *, HashTable *, phpstr *) */
+PHP_HTTP_API STATUS _http_get_ex(CURL *ch, const char *URL, HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
 {
 	zend_bool clean_curl = 0;
 
-	http_curl_startup(ch, clean_curl, URL, options);
+	http_curl_startup(ch, clean_curl, URL, options, response);
 	curl_easy_setopt(ch, CURLOPT_HTTPGET, 1);
-	http_curl_perform(ch, clean_curl);
+	http_curl_perform(ch, clean_curl, response);
 
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
 
-	http_curl_copybuf(data, data_len);
-	http_curl_cleanup(ch, clean_curl);
+	http_curl_cleanup(ch, clean_curl, response);
 
 	return SUCCESS;
 }
 
-/* {{{ STATUS http_head_ex(CURL *, char *, HashTable *, HashTable *, char **data, size_t *) */
-PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options,
-	HashTable *info, char **data, size_t *data_len TSRMLS_DC)
+/* {{{ STATUS http_head_ex(CURL *, char *, HashTable *, HashTable *, phpstr *) */
+PHP_HTTP_API STATUS _http_head_ex(CURL *ch, const char *URL, HashTable *options,HashTable *info, phpstr *response TSRMLS_DC)
 {
 	zend_bool clean_curl = 0;
 
-	http_curl_startup(ch, clean_curl, URL, options);
+	http_curl_startup(ch, clean_curl, URL, options, response);
 	curl_easy_setopt(ch, CURLOPT_NOBODY, 1);
-	http_curl_perform(ch, clean_curl);
+	http_curl_perform(ch, clean_curl, response);
 
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
 
-	http_curl_copybuf(data, data_len);
-	http_curl_cleanup(ch, clean_curl);
+	http_curl_cleanup(ch, clean_curl, response);
 
 	return SUCCESS;
 }
 
-/* {{{ STATUS http_post_data_ex(CURL *, char *, char *, size_t, HashTable *, HashTable *, char **, size_t *) */
+/* {{{ STATUS http_post_data_ex(CURL *, char *, char *, size_t, HashTable *, HashTable *, phpstr *) */
 PHP_HTTP_API STATUS _http_post_data_ex(CURL *ch, const char *URL, char *postdata,
-	size_t postdata_len, HashTable *options, HashTable *info, char **data,
-	size_t *data_len TSRMLS_DC)
+	size_t postdata_len, HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
 {
 	zend_bool clean_curl = 0;
 
-	http_curl_startup(ch, clean_curl, URL, options);
+	http_curl_startup(ch, clean_curl, URL, options, response);
 	curl_easy_setopt(ch, CURLOPT_POST, 1);
 	curl_easy_setopt(ch, CURLOPT_POSTFIELDS, postdata);
 	curl_easy_setopt(ch, CURLOPT_POSTFIELDSIZE, postdata_len);
-	http_curl_perform(ch, clean_curl);
+	http_curl_perform(ch, clean_curl, response);
 
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
 
-	http_curl_copybuf(data, data_len);
-	http_curl_cleanup(ch, clean_curl);
+	http_curl_cleanup(ch, clean_curl, response);
 
 	return SUCCESS;
 }
 /* }}} */
 
-/* {{{ STATUS http_post_array_ex(CURL *, char *, HashTable *, HashTable *, HashTable *, char **, size_t *) */
+/* {{{ STATUS http_post_array_ex(CURL *, char *, HashTable *, HashTable *, HashTable *, phpstr *) */
 PHP_HTTP_API STATUS _http_post_array_ex(CURL *ch, const char *URL, HashTable *postarray,
-	HashTable *options, HashTable *info, char **data, size_t *data_len TSRMLS_DC)
+	HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
 {
 	STATUS status;
 	char *encoded;
 	size_t encoded_len;
 
 	if (SUCCESS != http_urlencode_hash_ex(postarray, 1, NULL, 0, &encoded, &encoded_len)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not encode post data");
+		http_error(E_WARNING, HTTP_E_ENCODE, "Could not encode post data");
 		return FAILURE;
 	}
 
-	status = http_post_data_ex(ch, URL, encoded, encoded_len, options, info, data, data_len);
+	status = http_post_data_ex(ch, URL, encoded, encoded_len, options, info, response);
 	efree(encoded);
 
 	return status;
 }
 /* }}} */
 
-/* {{{ STATUS http_post_curldata_ex(CURL *, char *, curl_httppost *, HashTable *, HashTable *, char **, size_t *) */
-PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL,
-	struct curl_httppost *curldata,	HashTable *options, HashTable *info,
-	char **data, size_t *data_len TSRMLS_DC)
+/* {{{ STATUS http_post_curldata_ex(CURL *, char *, curl_httppost *, HashTable *, HashTable *, phpstr *) */
+PHP_HTTP_API STATUS _http_post_curldata_ex(CURL *ch, const char *URL, struct curl_httppost *curldata,
+	HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
 {
 	zend_bool clean_curl = 0;
 
-	http_curl_startup(ch, clean_curl, URL, options);
+	http_curl_startup(ch, clean_curl, URL, options, response);
 	curl_easy_setopt(ch, CURLOPT_POST, 1);
 	curl_easy_setopt(ch, CURLOPT_HTTPPOST, curldata);
-	http_curl_perform(ch, clean_curl);
+	http_curl_perform(ch, clean_curl, response);
 
 	if (info) {
 		http_curl_getinfo(ch, info);
 	}
 
-	http_curl_copybuf(data, data_len);
-	http_curl_cleanup(ch, clean_curl);
+	http_curl_cleanup(ch, clean_curl, response);
 
 	return SUCCESS;
 }

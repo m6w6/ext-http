@@ -111,7 +111,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 	range = Z_STRVAL_P(zrange);
 
 	if (strncmp(range, "bytes=", sizeof("bytes=") - 1)) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Range header misses bytes=");
+		http_error(E_NOTICE, HTTP_E_HEADER, "Range header misses bytes=");
 		return RANGE_NO;
 	}
 
@@ -248,7 +248,8 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 
 	Z_ARRVAL(array) = headers;
 
-	if (header_len < 2) {
+	if (header_len < 2 || !strchr(header, ':')) {
+		http_error(E_WARNING, HTTP_E_PARSE, "Cannot parse too short or malformed HTTP headers");
 		return FAILURE;
 	}
 

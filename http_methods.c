@@ -27,6 +27,7 @@
 #include "php_http_curl_api.h"
 #include "php_http_date_api.h"
 #include "php_http_headers_api.h"
+#include "php_http_message_api.h"
 #include "php_http_send_api.h"
 #include "php_http_url_api.h"
 
@@ -152,7 +153,7 @@ PHP_METHOD(HttpResponse, setCacheControl)
 	}
 
 	if ((!raw) && (strcmp(ccontrol, "public") && strcmp(ccontrol, "private") && strcmp(ccontrol, "no-cache"))) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
 		RETURN_FALSE;
 	}
 
@@ -193,8 +194,7 @@ PHP_METHOD(HttpResponse, setContentType)
 	}
 
 	if (!strchr(ctype, '/')) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING,
-			"Content type '%s' doesn't seem to contain a primary and a secondary part", ctype);
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Content type '%s' doesn't seem to contain a primary and a secondary part", ctype);
 		RETURN_FALSE;
 	}
 
@@ -711,7 +711,7 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 	if (Z_TYPE_P(version) == IS_NULL) {
 		RETURN_NULL();
 	}
-	
+
 	sprintf(ver, "1.1f", Z_DVAL_P(version));
 	RETURN_STRINGL(ver, 3, 1);
 }
@@ -726,9 +726,9 @@ PHP_METHOD(HttpMessage, toString)
 	char *string;
 	size_t length;
 	getObject(http_message_object, obj);
-	
+
 	NO_ARGS;
-	
+
 	http_message_tostring(obj->message, &string, &length);
 	RETURN_STRINGL(string, length, 0);
 }
@@ -1139,9 +1139,7 @@ PHP_METHOD(HttpRequest, setContentType)
 	}
 
 	if (!strchr(ctype, '/')) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING,
-			"Content-Type '%s' doesn't seem to contain a primary and a secondary part",
-			ctype);
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", ctype);
 		RETURN_FALSE;
 	}
 
@@ -1352,7 +1350,7 @@ PHP_METHOD(HttpRequest, addPostFile)
 
 	if (type_len) {
 		if (!strchr(type, '/')) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", type);
+			http_error_ex(E_WARNING, HTTP_E_PARAM, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", type);
 			RETURN_FALSE;
 		}
 	} else {
@@ -1570,19 +1568,13 @@ PHP_METHOD(HttpRequest, getResponseBody)
  */
 PHP_METHOD(HttpRequest, getResponseCode)
 {
-	zval **code, **hdrs, *data;
+	zval *code;
 	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
-	data = GET_PROP(obj, responseData);
-	if (	(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &hdrs)) &&
-			(SUCCESS == zend_hash_find(Z_ARRVAL_PP(hdrs), "Response Status", sizeof("Response Status"), (void **) &code))) {
-		RETVAL_STRINGL(Z_STRVAL_PP(code), Z_STRLEN_PP(code), 1);
-		convert_to_long(return_value);
-	} else {
-		RETURN_FALSE;
-	}
+	code = GET_PROP(obj, responseCode);
+	RETURN_LONG(Z_LVAL_P(code));
 }
 /* }}} */
 
@@ -1608,7 +1600,7 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), pretty_key(info_name, info_len, 0, 0), info_len + 1, (void **) &infop)) {
 			RETURN_ZVAL(*infop, 1, ZVAL_PTR_DTOR);
 		} else {
-			php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not find response info named %s", info_name);
+			http_error_ex(E_NOTICE, HTTP_E_PARAM, "Could not find response info named %s", info_name);
 			RETURN_FALSE;
 		}
 	} else {
@@ -1617,6 +1609,24 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 	}
 }
 /* }}}*/
+
+/* {{{ proto HttpMessage HttpRequest::getResponseMessage()
+ *
+ * Get the full response as HttpMessage object.
+ */
+PHP_METHOD(HttpRequest, getResponseMessage)
+{
+	zval *message;
+	getObject(http_request_object, obj);
+
+	NO_ARGS;
+
+	message = GET_PROP(obj, responseMessage);
+	Z_TYPE_P(return_value) = IS_OBJECT;
+	return_value->is_ref = 1;
+	return_value->value.obj = message->value.obj;
+	zval_add_ref(&return_value);
+}
 
 /* {{{ proto bool HttpRequest::send()
  *
@@ -1628,8 +1638,13 @@ PHP_METHOD(HttpRequest, getResponseInfo)
  * $r = new HttpRequest('http://example.com/feed.rss', HTTP_GET);
  * $r->setOptions(array('lastmodified' => filemtime('local.rss')));
  * $r->addQueryData(array('category' => 3));
- * if ($r->send() && $r->getResponseCode() == 200) {
- *     file_put_contents('local.rss', $r->getResponseBody());
+ * try {
+ *     $r->send();
+ *     if ($r->getResponseCode() == 200) {
+ *         file_put_contents('local.rss', $r->getResponseBody());
+ *    }
+ * } catch (HttpException $ex) {
+ *     echo $ex;
  * }
  * ?>
  * </pre>
@@ -1651,8 +1666,7 @@ PHP_METHOD(HttpRequest, send)
 {
 	STATUS status = FAILURE;
 	zval *meth, *URL, *qdata, *opts, *info, *resp;
-	char *response_data, *request_uri;
-	size_t response_len;
+	char *request_uri;
 	getObject(http_request_object, obj);
 
 	NO_ARGS;
@@ -1660,7 +1674,7 @@ PHP_METHOD(HttpRequest, send)
 	SET_EH_THROW_HTTP();
 
 	if ((!obj->ch) && (!(obj->ch = curl_easy_init()))) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initilaize cURL");
+		http_error(E_WARNING, HTTP_E_CURL, "Could not initilaize curl");
 		RETURN_FALSE;
 	}
 
@@ -1686,11 +1700,11 @@ PHP_METHOD(HttpRequest, send)
 	switch (Z_LVAL_P(meth))
 	{
 		case HTTP_GET:
-			status = http_get_ex(obj->ch, request_uri, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &response_data, &response_len);
+			status = http_get_ex(obj->ch, request_uri, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
 		break;
 
 		case HTTP_HEAD:
-			status = http_head_ex(obj->ch, request_uri, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &response_data, &response_len);
+			status = http_head_ex(obj->ch, request_uri, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
 		break;
 
 		case HTTP_POST:
@@ -1703,7 +1717,7 @@ PHP_METHOD(HttpRequest, send)
 				if (!zend_hash_num_elements(Z_ARRVAL_P(post_files))) {
 
 					/* urlencoded post */
-					status = http_post_array_ex(obj->ch, request_uri, Z_ARRVAL_P(post_data), Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &response_data, &response_len);
+					status = http_post_array_ex(obj->ch, request_uri, Z_ARRVAL_P(post_data), Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
 
 				} else {
 
@@ -1748,7 +1762,7 @@ PHP_METHOD(HttpRequest, send)
 						}
 					}
 
-					status = http_post_curldata_ex(obj->ch, request_uri, http_post_data[0], Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &response_data, &response_len);
+					status = http_post_curldata_ex(obj->ch, request_uri, http_post_data[0], Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
 					curl_formfree(http_post_data[0]);
 				}
 			}
@@ -1762,26 +1776,32 @@ PHP_METHOD(HttpRequest, send)
 
 	/* final data handling */
 	if (status == SUCCESS) {
-		char *body = NULL;
-		size_t body_len = 0;
-		zval *zheaders;
+		http_message *msg;
 
-		MAKE_STD_ZVAL(zheaders)
-		array_init(zheaders);
+		if (msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response))) {
+			zval *headers, *message;
+			char *body;
+			size_t body_len;
 
-		if (SUCCESS != http_split_response_ex(response_data, response_len, Z_ARRVAL_P(zheaders), &body, &body_len)) {
-			zval_dtor(zheaders);
-			efree(zheaders),
-			efree(response_data);
-			RETURN_FALSE;
+			UPD_PROP(obj, long, responseCode, msg->info.response.code);
+
+			MAKE_STD_ZVAL(headers)
+			array_init(headers);
+
+			zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+			phpstr_data(PHPSTR(msg), &body, &body_len);
+
+			add_assoc_zval(resp, "headers", headers);
+			add_assoc_stringl(resp, "body", body, body_len, 0);
+
+			message = GET_PROP(obj, responseMessage);
+			zval_dtor(message);
+			Z_TYPE_P(message)  = IS_OBJECT;
+			message->value.obj = http_message_object_from_msg(msg);
+			SET_PROP(obj, responseMessage, message);
+		} else {
+			status = FAILURE;
 		}
-
-		add_assoc_zval(resp, "headers", zheaders);
-		add_assoc_stringl(resp, "body", body, body_len, 0);
-
-		efree(response_data);
-
-		RETURN_TRUE;
 	}
 
 	SET_EH_NORMAL();

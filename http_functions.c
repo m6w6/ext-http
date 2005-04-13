@@ -203,7 +203,7 @@ PHP_FUNCTION(http_send_status)
 		RETURN_FALSE;
 	}
 	if (status < 100 || status > 510) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid HTTP status code (100-510): %d", status);
+		http_error_ex(E_WARNING, HTTP_E_HEADER, "Invalid HTTP status code (100-510): %d", status);
 		RETURN_FALSE;
 	}
 
@@ -410,7 +410,7 @@ PHP_FUNCTION(ob_httpetaghandler)
 
 	if (mode & PHP_OUTPUT_HANDLER_START) {
 		if (HTTP_G(etag_started)) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "ob_httpetaghandler can only be used once");
+			http_error(E_WARNING, HTTP_E_OBUFFER, "ob_httpetaghandler can only be used once");
 			RETURN_STRINGL(data, data_len, 1);
 		}
 		http_send_header("Cache-Control: " HTTP_DEFAULT_CACHECONTROL);
@@ -418,7 +418,7 @@ PHP_FUNCTION(ob_httpetaghandler)
 	}
 
     if (OG(ob_nesting_level) > 1) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "ob_httpetaghandler must be started prior to other output buffers");
+        http_error(E_WARNING, HTTP_E_OBUFFER, "ob_httpetaghandler must be started prior to other output buffers");
         RETURN_STRINGL(data, data_len, 1);
     }
 
@@ -462,7 +462,7 @@ PHP_FUNCTION(http_redirect)
 			array_init(params);
 		}
 		if (add_assoc_string(params, PS(session_name), PS(id), 1) != SUCCESS) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not append session information");
+			http_error(E_WARNING, HTTP_E_ENCODE, "Could not append session information");
 		}
 	}
 
@@ -609,7 +609,7 @@ PHP_FUNCTION(http_split_response)
 	array_init(zheaders);
 
 	if (SUCCESS != http_split_response(zresponse, zheaders, zbody)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP response");
+		http_error(E_WARNING, HTTP_E_PARSE, "Could not parse HTTP response");
 		RETURN_FALSE;
 	}
 
@@ -637,7 +637,7 @@ PHP_FUNCTION(http_parse_headers)
 		header_len = rnrn - header + 2;
 	}
 	if (SUCCESS != http_parse_headers(header, header_len, return_value)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP headers");
+		http_error(E_WARNING, HTTP_E_PARSE, "Could not parse HTTP headers");
 		zval_dtor(return_value);
 		RETURN_FALSE;
 	}
@@ -730,10 +730,10 @@ PHP_FUNCTION(http_get_request_headers)
  */
 PHP_FUNCTION(http_get)
 {
-	char *URL, *data = NULL;
-	size_t data_len = 0;
-	int URL_len;
 	zval *options = NULL, *info = NULL;
+	char *URL;
+	int URL_len;
+	phpstr response;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a/!z", &URL, &URL_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
@@ -744,8 +744,9 @@ PHP_FUNCTION(http_get)
 		array_init(info);
 	}
 
-	if (SUCCESS == http_get(URL, Z_ARRVAL_P(options), Z_ARRVAL_P(info), &data, &data_len)) {
-		RETURN_STRINGL(data, data_len, 0);
+	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
+	if (SUCCESS == http_get(URL, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
+		RETURN_PHPSTR_VAL(response);
 	} else {
 		RETURN_FALSE;
 	}
@@ -760,10 +761,10 @@ PHP_FUNCTION(http_get)
  */
 PHP_FUNCTION(http_head)
 {
-	char *URL, *data = NULL;
-	size_t data_len = 0;
-	int URL_len;
 	zval *options = NULL, *info = NULL;
+	char *URL;
+	int URL_len;
+	phpstr response;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a/!z", &URL, &URL_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
@@ -774,8 +775,9 @@ PHP_FUNCTION(http_head)
 		array_init(info);
 	}
 
-	if (SUCCESS == http_head(URL, Z_ARRVAL_P(options), Z_ARRVAL_P(info), &data, &data_len)) {
-		RETURN_STRINGL(data, data_len, 0);
+	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
+	if (SUCCESS == http_head(URL, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
+		RETURN_PHPSTR_VAL(response);
 	} else {
 		RETURN_FALSE;
 	}
@@ -790,10 +792,10 @@ PHP_FUNCTION(http_head)
  */
 PHP_FUNCTION(http_post_data)
 {
-	char *URL, *postdata, *data = NULL;
-	size_t data_len = 0;
-	int postdata_len, URL_len;
 	zval *options = NULL, *info = NULL;
+	char *URL, *postdata;
+	int postdata_len, URL_len;
+	phpstr response;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|a/!z", &URL, &URL_len, &postdata, &postdata_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
@@ -804,8 +806,9 @@ PHP_FUNCTION(http_post_data)
 		array_init(info);
 	}
 
-	if (SUCCESS == http_post_data(URL, postdata, (size_t) postdata_len, Z_ARRVAL_P(options), Z_ARRVAL_P(info), &data, &data_len)) {
-		RETURN_STRINGL(data, data_len, 0);
+	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
+	if (SUCCESS == http_post_data(URL, postdata, (size_t) postdata_len, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
+		RETURN_PHPSTR_VAL(response);
 	} else {
 		RETURN_FALSE;
 	}
@@ -820,10 +823,10 @@ PHP_FUNCTION(http_post_data)
  */
 PHP_FUNCTION(http_post_array)
 {
-	char *URL, *data = NULL;
-	size_t data_len = 0;
-	int URL_len;
 	zval *options = NULL, *info = NULL, *postdata;
+	char *URL;
+	int URL_len;
+	phpstr response;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa|a/!z", &URL, &URL_len, &postdata, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
@@ -834,8 +837,9 @@ PHP_FUNCTION(http_post_array)
 		array_init(info);
 	}
 
-	if (SUCCESS == http_post_array(URL, Z_ARRVAL_P(postdata), Z_ARRVAL_P(options), Z_ARRVAL_P(info), &data, &data_len)) {
-		RETURN_STRINGL(data, data_len, 0);
+	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
+	if (SUCCESS == http_post_array(URL, Z_ARRVAL_P(postdata), options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
+		RETURN_PHPSTR_VAL(response);
 	} else {
 		RETURN_FALSE;
 	}
@@ -972,7 +976,7 @@ PHP_FUNCTION(http_build_query)
 	}
 
 	if (Z_TYPE_P(formdata) != IS_ARRAY && Z_TYPE_P(formdata) != IS_OBJECT) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Parameter 1 expected to be Array or Object.  Incorrect value given.");
+		http_error(E_WARNING, HTTP_E_PARAM, "Parameter 1 expected to be Array or Object.  Incorrect value given.");
 		RETURN_FALSE;
 	}
 

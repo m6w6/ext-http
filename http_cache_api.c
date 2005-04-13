@@ -157,7 +157,7 @@ PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified,
 		if (SUCCESS == http_send_status(304)) {
 			zend_bailout();
 		} else {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not send 304 Not Modified");
+			http_error(E_WARNING, HTTP_E_HEADER, "Could not send 304 Not Modified");
 			return FAILURE;
 		}
 	}
@@ -179,7 +179,7 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 			if (SUCCESS == http_send_status(304)) {
 				zend_bailout();
 			} else {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not send 304 Not Modified");
+				http_error(E_WARNING, HTTP_E_HEADER, "Could not send 304 Not Modified");
 				return FAILURE;
 			}
 		}
@@ -191,7 +191,7 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 			HTTP_G(etag_started) = 1;
 			return SUCCESS;
 		} else {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not start ob_etaghandler");
+			http_error(E_WARNING, HTTP_E_OBUFFER, "Could not start ob_etaghandler");
 			return FAILURE;
 		}
 	}

@@ -26,9 +26,12 @@
 
 #include <curl/curl.h>
 
+#include "phpstr/phpstr.h"
+
 typedef struct {
 	zend_object zo;
 	CURL *ch;
+	phpstr response;
 } http_request_object;
 
 typedef enum {
@@ -85,6 +88,7 @@ PHP_METHOD(HttpRequest, getResponseCookie);
 PHP_METHOD(HttpRequest, getResponseCode);
 PHP_METHOD(HttpRequest, getResponseBody);
 PHP_METHOD(HttpRequest, getResponseInfo);
+PHP_METHOD(HttpRequest, getResponseMessage);
 
 #endif
 #endif
