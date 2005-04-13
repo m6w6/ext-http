@@ -28,14 +28,6 @@ extern void _http_exception_object_init(INIT_FUNC_ARGS);
 #define http_exception_get_default _http_exception_get_default
 extern zend_class_entry *_http_exception_get_default();
 
-#define http_exception_throw() http_exception_throw_ex(0)
-#define http_exception_throw_ex(code) http_exception_throw_ce_ex(NULL, code)
-#define http_exception_throw_ce(ce) http_exception_throw_ce_ex(ce, 0)
-#define http_exception_throw_ce_ex(ce, code) _http_exception_throw_ce_ex(ce, code TSRMLS_CC)
-extern void _http_exception_throw_ce_ex(zend_class_entry *ce, int code TSRMLS_DC);
-
-#define HTTP_E_UNKOWN 0
-
 #endif
 #endif
 

@@ -45,19 +45,6 @@ zend_class_entry *_http_exception_get_default()
 	return http_exception_object_ce;
 }
 
-void _http_exception_throw_ce_ex(zend_class_entry *ce, int code TSRMLS_DC)
-{
-	static char * const errors[] = {
-		"Unkown Error"
-	};
-	
-	if (!ce) {
-		ce = http_exception_get_default();
-	}
-	
-	zend_throw_exception(ce, errors[code], code TSRMLS_CC);
-}
-
 #endif
 
 /*
