@@ -85,8 +85,9 @@ static inline char *_http_curl_copystr(const char *str TSRMLS_DC);
 #define http_curl_setopts(c, u, o, r) _http_curl_setopts((c), (u), (o), (r) TSRMLS_CC)
 static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, phpstr *response TSRMLS_DC);
 
-#define http_curl_getopt(o, k, t) _http_curl_getopt((o), (k), (t) TSRMLS_CC)
-static inline zval *_http_curl_getopt(HashTable *options, char *key, int type TSRMLS_DC);
+#define http_curl_getopt(o, k, t) _http_curl_getopt_ex((o), (k), sizeof(k), (t) TSRMLS_CC)
+#define http_curl_getopt_ex(o, k, l, t) _http_curl_getopt_ex((o), (k), (l), (t) TSRMLS_CC)
+static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t keylen, int type TSRMLS_DC);
 
 static size_t http_curl_callback(char *, size_t, size_t, void *);
 
@@ -109,12 +110,12 @@ static size_t http_curl_callback(char *buf, size_t len, size_t n, void *s)
 }
 /* }}} */
 
-/* {{{ static inline zval *http_curl_getopt(HashTable *, char *, int) */
-static inline zval *_http_curl_getopt(HashTable *options, char *key, int type TSRMLS_DC)
+/* {{{ static inline zval *http_curl_getopt(HashTable *, char *, size_t, int) */
+static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t keylen, int type TSRMLS_DC)
 {
 	zval **zoption;
 
-	if (SUCCESS != zend_hash_find(options, key, strlen(key) + 1, (void **) &zoption)) {
+	if (!options || (SUCCESS != zend_hash_find(options, key, keylen, (void **) &zoption))) {
 		return NULL;
 	}
 
@@ -145,15 +146,22 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 #define HTTP_CURL_OPT(OPTION, p) curl_easy_setopt(ch, CURLOPT_##OPTION, (p))
 
 	/* standard options */
-	HTTP_CURL_OPT(URL, url);
+	if (url) {
+		HTTP_CURL_OPT(URL, url);
+	}
+
 	HTTP_CURL_OPT(HEADER, 0);
 	HTTP_CURL_OPT(FILETIME, 1);
 	HTTP_CURL_OPT(NOPROGRESS, 1);
 	HTTP_CURL_OPT(AUTOREFERER, 1);
 	HTTP_CURL_OPT(WRITEFUNCTION, http_curl_callback);
 	HTTP_CURL_OPT(HEADERFUNCTION, http_curl_callback);
-	HTTP_CURL_OPT(WRITEDATA, response);
-	HTTP_CURL_OPT(WRITEHEADER, response);
+
+	if (response) {
+		HTTP_CURL_OPT(WRITEDATA, response);
+		HTTP_CURL_OPT(WRITEHEADER, response);
+	}
+
 #if defined(ZTS) && (LIBCURL_VERSION_NUM >= 0x070a00)
 	HTTP_CURL_OPT(NOSIGNAL, 1);
 #endif
