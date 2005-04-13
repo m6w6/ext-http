@@ -34,7 +34,10 @@ typedef int STATUS;
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
 
 /* function accepts no args */
-#define NO_ARGS if (ZEND_NUM_ARGS()) WRONG_PARAM_COUNT
+#define NO_ARGS \
+	if (ZEND_NUM_ARGS()) { \
+		zend_error(E_NOTICE, "Wrong parameter count for %s()", get_active_function_name(TSRMLS_C)); \
+	}
 
 /* CR LF */
 #define HTTP_CRLF "\r\n"
@@ -142,12 +145,12 @@ typedef int STATUS;
 #	define SET_EH_THROW_EX(ex) php_set_error_handling(EH_THROW, ex TSRMLS_CC)
 #	define SET_EH_NORMAL() php_set_error_handling(EH_NORMAL, NULL TSRMLS_CC)
 
-#	ifndef E_THROW
-#		define E_THROW 0
-#	endif
-
 #endif /* ZEND_ENGINE_2 */
 /* }}} */
+
+#ifndef E_THROW
+#	define E_THROW 0
+#endif
 
 #define HTTP_E_UNKOWN		0L
 #define HTTP_E_PARSE		1L
