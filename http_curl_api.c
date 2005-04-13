@@ -105,8 +105,7 @@ static inline char *_http_curl_copystr(const char *str TSRMLS_DC)
 /* {{{ static size_t http_curl_callback(char *, size_t, size_t, void *) */
 static size_t http_curl_callback(char *buf, size_t len, size_t n, void *s)
 {
-	phpstr_append(PHPSTR(s), buf, len *= n);
-	return len;
+	return phpstr_append(PHPSTR(s), buf, len *= n);
 }
 /* }}} */
 
