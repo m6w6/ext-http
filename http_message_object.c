@@ -296,7 +296,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 			}
 		break;
 
-		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
+		case HTTP_MSG_PROPHASH_RESPONSE_CODE:
 			if (msg->type == HTTP_MSG_RESPONSE) {
 				msg->info.response.code = Z_LVAL_P(value);
 			}

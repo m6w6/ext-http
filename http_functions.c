@@ -981,7 +981,7 @@ PHP_FUNCTION(http_build_query)
 	}
 
 	formstr = phpstr_new();
-	if (SUCCESS != http_urlencode_hash_implementation_ex(HASH_OF(formdata), formstr, arg_sep, prefix, prefix_len, NULL, 0, NULL, 0, (Z_TYPE_P(formdata) == IS_OBJECT ? formdata : NULL) TSRMLS_CC)) {
+	if (SUCCESS != http_urlencode_hash_implementation_ex(HASH_OF(formdata), formstr, arg_sep, prefix, prefix_len, NULL, 0, NULL, 0, (Z_TYPE_P(formdata) == IS_OBJECT ? formdata : NULL))) {
 		phpstr_free(formstr);
 		RETURN_FALSE;
 	}
