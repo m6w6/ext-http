@@ -85,10 +85,8 @@ static inline char *_http_curl_copystr(const char *str TSRMLS_DC);
 #define http_curl_setopts(c, u, o, r) _http_curl_setopts((c), (u), (o), (r) TSRMLS_CC)
 static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, phpstr *response TSRMLS_DC);
 
-#define http_curl_getopt(o, k) _http_curl_getopt((o), (k) TSRMLS_CC, 0)
-#define http_curl_getopt1(o, k, t1) _http_curl_getopt((o), (k) TSRMLS_CC, 1, (t1))
-#define http_curl_getopt2(o, k, t1, t2) _http_curl_getopt((o), (k) TSRMLS_CC, 2, (t1), (t2))
-static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, int checks, ...);
+#define http_curl_getopt(o, k, t) _http_curl_getopt((o), (k), (t) TSRMLS_CC)
+static inline zval *_http_curl_getopt(HashTable *options, char *key, int type TSRMLS_DC);
 
 static size_t http_curl_callback(char *, size_t, size_t, void *);
 
@@ -112,29 +110,30 @@ static size_t http_curl_callback(char *buf, size_t len, size_t n, void *s)
 }
 /* }}} */
 
-/* {{{ static inline zval *http_curl_getopt(HashTable *, char *, int, ...) */
-static inline zval *_http_curl_getopt(HashTable *options, char *key TSRMLS_DC, int checks, ...)
+/* {{{ static inline zval *http_curl_getopt(HashTable *, char *, int) */
+static inline zval *_http_curl_getopt(HashTable *options, char *key, int type TSRMLS_DC)
 {
 	zval **zoption;
-	va_list types;
-	int i;
 
 	if (SUCCESS != zend_hash_find(options, key, strlen(key) + 1, (void **) &zoption)) {
 		return NULL;
 	}
-	if (checks < 1) {
-		return *zoption;
-	}
 
-	va_start(types, checks);
-	for (i = 0; i < checks; ++i) {
-		if ((va_arg(types, int)) == (Z_TYPE_PP(zoption))) {
-			va_end(types);
-			return *zoption;
+	if (Z_TYPE_PP(zoption) != type) {
+		switch (type)
+		{
+			case IS_BOOL:	convert_to_boolean_ex(zoption);	break;
+			case IS_LONG:	convert_to_long_ex(zoption);	break;
+			case IS_DOUBLE:	convert_to_double_ex(zoption);	break;
+			case IS_STRING:	convert_to_string_ex(zoption);	break;
+			case IS_ARRAY:	convert_to_array_ex(zoption);	break;
+			case IS_OBJECT: convert_to_object_ex(zoption);	break;
+			default:
+			break;
 		}
 	}
-	va_end(types);
-	return NULL;
+
+	return *zoption;
 }
 /* }}} */
 
@@ -163,61 +162,57 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 	HTTP_CURL_OPT(ERRORBUFFER, HTTP_G(curlerr));
 #endif
 
-	if ((!options) || (1 > zend_hash_num_elements(options))) {
-		return;
-	}
-
 	/* proxy */
-	if (zoption = http_curl_getopt1(options, "proxyhost", IS_STRING)) {
+	if (zoption = http_curl_getopt(options, "proxyhost", IS_STRING)) {
 		HTTP_CURL_OPT(PROXY, http_curl_copystr(Z_STRVAL_P(zoption)));
 		/* port */
-		if (zoption = http_curl_getopt1(options, "proxyport", IS_LONG)) {
+		if (zoption = http_curl_getopt(options, "proxyport", IS_LONG)) {
 			HTTP_CURL_OPT(PROXYPORT, Z_LVAL_P(zoption));
 		}
 		/* user:pass */
-		if (zoption = http_curl_getopt1(options, "proxyauth", IS_STRING)) {
+		if (zoption = http_curl_getopt(options, "proxyauth", IS_STRING)) {
 			HTTP_CURL_OPT(PROXYUSERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
 		}
 #if LIBCURL_VERSION_NUM >= 0x070a07
 		/* auth method */
-		if (zoption = http_curl_getopt1(options, "proxyauthtype", IS_LONG)) {
+		if (zoption = http_curl_getopt(options, "proxyauthtype", IS_LONG)) {
 			HTTP_CURL_OPT(PROXYAUTH, Z_LVAL_P(zoption));
 		}
 #endif
 	}
 
 	/* outgoing interface */
-	if (zoption = http_curl_getopt1(options, "interface", IS_STRING)) {
+	if (zoption = http_curl_getopt(options, "interface", IS_STRING)) {
 		HTTP_CURL_OPT(INTERFACE, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
 
 	/* another port */
-	if (zoption = http_curl_getopt1(options, "port", IS_LONG)) {
+	if (zoption = http_curl_getopt(options, "port", IS_LONG)) {
 		HTTP_CURL_OPT(PORT, Z_LVAL_P(zoption));
 	}
 
 	/* auth */
-	if (zoption = http_curl_getopt1(options, "httpauth", IS_STRING)) {
+	if (zoption = http_curl_getopt(options, "httpauth", IS_STRING)) {
 		HTTP_CURL_OPT(USERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
 #if LIBCURL_VERSION_NUM >= 0x070a06
-	if (zoption = http_curl_getopt1(options, "httpauthtype", IS_LONG)) {
+	if (zoption = http_curl_getopt(options, "httpauthtype", IS_LONG)) {
 		HTTP_CURL_OPT(HTTPAUTH, Z_LVAL_P(zoption));
 	}
 #endif
 
 	/* compress, empty string enables deflate and gzip */
-	if (zoption = http_curl_getopt2(options, "compress", IS_LONG, IS_BOOL)) {
+	if (zoption = http_curl_getopt(options, "compress", IS_BOOL)) {
 		if (Z_LVAL_P(zoption)) {
 			HTTP_CURL_OPT(ENCODING, "");
 		}
 	}
 
 	/* redirects, defaults to 0 */
-	if (zoption = http_curl_getopt1(options, "redirect", IS_LONG)) {
+	if (zoption = http_curl_getopt(options, "redirect", IS_LONG)) {
 		HTTP_CURL_OPT(FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
 		HTTP_CURL_OPT(MAXREDIRS, Z_LVAL_P(zoption));
-		if (zoption = http_curl_getopt2(options, "unrestrictedauth", IS_LONG, IS_BOOL)) {
+		if (zoption = http_curl_getopt(options, "unrestrictedauth", IS_BOOL)) {
 			HTTP_CURL_OPT(UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
 		}
 	} else {
@@ -225,12 +220,12 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 	}
 
 	/* referer */
-	if (zoption = http_curl_getopt1(options, "referer", IS_STRING)) {
+	if (zoption = http_curl_getopt(options, "referer", IS_STRING)) {
 		HTTP_CURL_OPT(REFERER, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
-	if (zoption = http_curl_getopt1(options, "useragent", IS_STRING)) {
+	if (zoption = http_curl_getopt(options, "useragent", IS_STRING)) {
 		HTTP_CURL_OPT(USERAGENT, http_curl_copystr(Z_STRVAL_P(zoption)));
 	} else {
 		HTTP_CURL_OPT(USERAGENT,
@@ -238,7 +233,7 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 	}
 
 	/* additional headers, array('name' => 'value') */
-	if (zoption = http_curl_getopt1(options, "headers", IS_ARRAY)) {
+	if (zoption = http_curl_getopt(options, "headers", IS_ARRAY)) {
 		char *header_key;
 		long header_idx;
 		struct curl_slist *headers = NULL;
@@ -263,7 +258,7 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 	}
 
 	/* cookies, array('name' => 'value') */
-	if (zoption = http_curl_getopt1(options, "cookies", IS_ARRAY)) {
+	if (zoption = http_curl_getopt(options, "cookies", IS_ARRAY)) {
 		char *cookie_key = NULL;
 		long cookie_idx = 0;
 		phpstr *qstr = phpstr_new();
@@ -288,44 +283,42 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 	}
 
 	/* cookiestore */
-	if (zoption = http_curl_getopt1(options, "cookiestore", IS_STRING)) {
+	if (zoption = http_curl_getopt(options, "cookiestore", IS_STRING)) {
 		HTTP_CURL_OPT(COOKIEFILE, http_curl_copystr(Z_STRVAL_P(zoption)));
 		HTTP_CURL_OPT(COOKIEJAR, http_curl_copystr(Z_STRVAL_P(zoption)));
 	}
 
 	/* resume */
-	if (zoption = http_curl_getopt1(options, "resume", IS_LONG)) {
+	if (zoption = http_curl_getopt(options, "resume", IS_LONG)) {
 		range_req = 1;
 		HTTP_CURL_OPT(RESUME_FROM, Z_LVAL_P(zoption));
 	}
 
 	/* maxfilesize */
-	if (zoption = http_curl_getopt1(options, "maxfilesize", IS_LONG)) {
+	if (zoption = http_curl_getopt(options, "maxfilesize", IS_LONG)) {
 		HTTP_CURL_OPT(MAXFILESIZE, Z_LVAL_P(zoption));
 	}
 
 	/* lastmodified */
-	if (zoption = http_curl_getopt1(options, "lastmodified", IS_LONG)) {
+	if (zoption = http_curl_getopt(options, "lastmodified", IS_LONG)) {
 		HTTP_CURL_OPT(TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
 		HTTP_CURL_OPT(TIMEVALUE, Z_LVAL_P(zoption));
 	}
 
 	/* timeout */
-	if (zoption = http_curl_getopt1(options, "timeout", IS_LONG)) {
+	if (zoption = http_curl_getopt(options, "timeout", IS_LONG)) {
 		HTTP_CURL_OPT(TIMEOUT, Z_LVAL_P(zoption));
 	}
 
-	/* connecttimeout */
-	if (zoption = http_curl_getopt1(options, "connecttimeout", IS_LONG)) {
+	/* connecttimeout, defaults to 1 */
+	if (zoption = http_curl_getopt(options, "connecttimeout", IS_LONG)) {
 		HTTP_CURL_OPT(CONNECTTIMEOUT, Z_LVAL_P(zoption));
+	} else {
+		HTTP_CURL_OPT(CONNECTTIMEOUT, 1);
 	}
 
 	/* ssl */
-	if (zoption = http_curl_getopt1(options, "ssl", IS_ARRAY)) {
-		long idx;
-		char *key = NULL;
-		zval **param;
-
+	if (zoption = http_curl_getopt(options, "ssl", IS_ARRAY)) {
 #define HTTP_CURL_OPT_STRING(keyname) HTTP_CURL_OPT_STRING_EX(keyname, keyname)
 #define HTTP_CURL_OPT_SSL_STRING(keyname) HTTP_CURL_OPT_STRING_EX(keyname, SSL##keyname)
 #define HTTP_CURL_OPT_SSL_STRING_(keyname) HTTP_CURL_OPT_STRING_EX(keyname, SSL_##keyname)
@@ -347,8 +340,12 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 		continue; \
 	}
 
+		long idx;
+		char *key = NULL;
+		zval **param;
+
 		FOREACH_KEYVAL(zoption, key, idx, param) {
-			if (key) {
+			if (key) {fprintf(stderr, "%s\n", key);
 				HTTP_CURL_OPT_SSL_STRING(CERT);
 #if LIBCURL_VERSION_NUM >= 0x070903
 				HTTP_CURL_OPT_SSL_STRING(CERTTYPE);
@@ -378,6 +375,10 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 				key = NULL;
 			}
 		}
+	} else {
+		/* disable SSL verification by default */
+		HTTP_CURL_OPT(SSL_VERIFYPEER, 0);
+		HTTP_CURL_OPT(SSL_VERIFYHOST, 0);
 	}
 }
 /* }}} */
