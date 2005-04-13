@@ -32,10 +32,14 @@
 #include "php_http_cache_api.h"
 #include "php_http_headers_api.h"
 
+#ifdef ZEND_ENGINE_2
+#	include "php_http_exception_object.h"
+#endif
+
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 /* char *pretty_key(char *, size_t, zend_bool, zebd_bool) */
-char *pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
+char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
 	if (key && key_len) {
 		unsigned i, wasalpha;
@@ -55,6 +59,29 @@ char *pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen
 		}
 	}
 	return key;
+}
+/* }}} */
+
+/* {{{ void http_error(long, long, char*) */
+void _http_error_ex(long type, long code, const char *format, ...)
+{
+	va_list args;
+	TSRMLS_FETCH();
+
+	va_start(args, format);
+	if (type == E_THROW) {
+#ifdef ZEND_ENGINE_2
+		char *message;
+		vspprintf(&message, 0, format, args);
+		zend_throw_exception(http_exception_get_default(), message, code TSRMLS_CC);
+#else
+		type = E_WARNING;
+#endif
+	}
+	if (type != E_THROW) {
+		php_verror(NULL, "", type, format, args TSRMLS_CC);
+	}
+	va_end(args);
 }
 /* }}} */
 
@@ -186,8 +213,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len
 		/* read in chunk size */
 		while (isxdigit(*e_ptr)) {
 			if (i == 9) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-					"Chunk size is too long: 0x%s...", hex_len);
+				http_error_ex(E_WARNING, HTTP_E_PARSE, "Chunk size is too long: 0x%s...", hex_len);
 				efree(*decoded);
 				return FAILURE;
 			}
@@ -201,9 +227,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len
 
 		/* new line */
 		if (strncmp(e_ptr, HTTP_CRLF, 2)) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING,
-				"Invalid character (expected 0x0D 0x0A; got: %x %x)",
-				*e_ptr, *(e_ptr + 1));
+			http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid character (expected 0x0D 0x0A; got: %x %x)", *e_ptr, *(e_ptr + 1));
 			efree(*decoded);
 			return FAILURE;
 		}
@@ -213,8 +237,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len
 			char *error = NULL;
 			chunk_len = strtol(hex_len, &error, 16);
 			if (error == hex_len) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-					"Invalid chunk size string: '%s'", hex_len);
+				http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid chunk size string: '%s'", hex_len);
 				efree(*decoded);
 				return FAILURE;
 			}

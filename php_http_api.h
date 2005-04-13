@@ -20,7 +20,12 @@
 
 #include "php_http_std_defs.h"
 
-char *pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
+#define pretty_key(key, key_len, uctitle, xhyphen) _http_pretty_key(key, key_len, uctitle, xhyphen)
+extern char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
+
+#define http_error(type, code, string) _http_error_ex(type, code, "%s", string)
+#define http_error_ex _http_error_ex
+extern void _http_error_ex(long type, long code, const char *format, ...);
 
 #define HTTP_GSC(var, name, ret)  HTTP_GSP(var, name, return ret)
 #define HTTP_GSP(var, name, ret) \
