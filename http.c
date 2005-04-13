@@ -27,6 +27,8 @@
 #	include <curl/curl.h>
 #endif
 
+#include <ctype.h>
+
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
@@ -163,14 +165,24 @@ static void php_http_init_globals(zend_http_globals *http_globals)
 #define http_check_allowed_methods(m, l) _http_check_allowed_methods((m), (l) TSRMLS_CC)
 static inline void _http_check_allowed_methods(char *methods, int length TSRMLS_DC)
 {
-	if (length && SG(request_info).request_method && (!strstr(methods, SG(request_info).request_method))) {
-		char *allow_header = emalloc(length + sizeof("Allow: "));
-		sprintf(allow_header, "Allow: %s", methods);
-		http_send_header(allow_header);
-		efree(allow_header);
-		http_send_status(405);
-		zend_bailout();
+	char *found, *header;
+
+	if (!length || !SG(request_info).request_method) {
+		return;
 	}
+
+	if (	(found = strstr(methods, SG(request_info).request_method)) &&
+			(found == SG(request_info).request_method || !isalpha(found[-1])) &&
+			(!isalpha(found[strlen(SG(request_info).request_method) + 1]))) {
+		return;
+	}
+
+	header = emalloc(length + sizeof("Allow: "));
+	sprintf(header, "Allow: %s", methods);
+	http_send_header(header);
+	efree(header);
+	http_send_status(405);
+	zend_bailout();
 }
 /* }}} */
 
@@ -293,7 +305,7 @@ PHP_RSHUTDOWN_FUNCTION(http)
 PHP_MINFO_FUNCTION(http)
 {
 #ifdef ZEND_ENGINE_2
-#	define HTTP_FUNC_AVAIL(CLASS) "procedural, object oriented (class " CLASS ")"
+#	define HTTP_FUNC_AVAIL(CLASS) "procedural, object oriented (" CLASS ")"
 #else
 #	define HTTP_FUNC_AVAIL(CLASS) "procedural"
 #endif
@@ -301,7 +313,7 @@ PHP_MINFO_FUNCTION(http)
 #ifdef HTTP_HAVE_CURL
 #	define HTTP_CURL_VERSION curl_version()
 #	ifdef ZEND_ENGINE_2
-#		define HTTP_CURL_AVAIL(CLASS) "procedural, object oriented (class " CLASS ")"
+#		define HTTP_CURL_AVAIL(CLASS) "procedural, object oriented (" CLASS ")"
 #	else
 #		define HTTP_CURL_AVAIL(CLASS) "procedural"
 #	endif
@@ -320,7 +332,7 @@ PHP_MINFO_FUNCTION(http)
 
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Functionality",            "Availability");
-	php_info_print_table_row(2,    "Miscellaneous Utilities:", HTTP_FUNC_AVAIL("HttpUtil"));
+	php_info_print_table_row(2,    "Miscellaneous Utilities:", HTTP_FUNC_AVAIL("HttpUtil, HttpMessage"));
 	php_info_print_table_row(2,    "Extended HTTP Responses:", HTTP_FUNC_AVAIL("HttpResponse"));
 	php_info_print_table_row(2,    "Extended HTTP Requests:",  HTTP_CURL_AVAIL("HttpRequest"));
 	php_info_print_table_end();
