@@ -42,7 +42,6 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	time_t lmod;
 	char *allowed_methods;
 #ifdef HTTP_HAVE_CURL
-	phpstr curlbuf;
 #	if LIBCURL_VERSION_NUM < 0x070c00
 	char curlerr[CURL_ERROR_SIZE + 1];
 #	endif

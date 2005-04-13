@@ -143,15 +143,14 @@ static void free_to_free(void *s)
 	efree(*(char **)s);
 }
 
-/* {{{ php_http_init_globals(zend_http_globals *) */
-static void php_http_init_globals(zend_http_globals *http_globals)
+/* {{{ void _http_init_globals(zend_http_globals *) */
+static void _http_init_globals(zend_http_globals *http_globals)
 {
 	http_globals->etag_started = 0;
 	http_globals->ctype = NULL;
 	http_globals->etag  = NULL;
 	http_globals->lmod  = 0;
 #ifdef HTTP_HAVE_CURL
-	phpstr_init_ex(&http_globals->curlbuf, HTTP_CURLBUF_SIZE, 0);
 #	if LIBCURL_VERSION_NUM < 0x070c00
 	memset(&http_globals->curlerr, 0, sizeof(http_globals->curlerr));
 #	endif
@@ -223,7 +222,7 @@ static void *http_curl_calloc(size_t n, size_t s)	{ return ecalloc(n, s); }
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(http)
 {
-	ZEND_INIT_MODULE_GLOBALS(http, php_http_init_globals, NULL);
+	ZEND_INIT_MODULE_GLOBALS(http, _http_init_globals, NULL);
 	REGISTER_INI_ENTRIES();
 
 #ifdef HTTP_HAVE_CURL
@@ -258,7 +257,6 @@ PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
-	phpstr_dtor(&HTTP_G(curlbuf));
 	curl_global_cleanup();
 #endif
 	return SUCCESS;
@@ -294,7 +292,6 @@ PHP_RSHUTDOWN_FUNCTION(http)
 #	if LIBCURL_VERSION_NUM < 0x070c00
 	memset(&HTTP_G(curlerr), 0, sizeof(HTTP_G(curlerr)));
 #	endif
-	phpstr_dtor(&HTTP_G(curlbuf));
 #endif
 
 	return SUCCESS;
