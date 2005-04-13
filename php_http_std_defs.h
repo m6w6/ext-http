@@ -142,9 +142,21 @@ typedef int STATUS;
 #	define SET_EH_THROW_EX(ex) php_set_error_handling(EH_THROW, ex TSRMLS_CC)
 #	define SET_EH_NORMAL() php_set_error_handling(EH_NORMAL, NULL TSRMLS_CC)
 
+#	ifndef E_THROW
+#		define E_THROW 0
+#	endif
+
 #endif /* ZEND_ENGINE_2 */
 /* }}} */
 
+#define HTTP_E_UNKOWN		0L
+#define HTTP_E_PARSE		1L
+#define HTTP_E_HEADER		2L
+#define HTTP_E_OBUFFER		3L
+#define HTTP_E_CURL			4L
+#define HTTP_E_ENCODE		5L
+#define HTTP_E_PARAM		6L
+#define HTTP_E_URL			7L
 
 #endif /* PHP_HTTP_STD_DEFS_H */
 
