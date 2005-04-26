@@ -782,6 +782,10 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &method, &method_len)) {
 		RETURN_FALSE;
 	}
+	if (method_len < 1) {
+		http_error(E_WARNING, HTTP_E_PARAM, "Cannot set HttpMessage::requestMethod to an empty string");
+		RETURN_FALSE;
+	}
 
 	UPD_PROP(obj, string, requestMethod, method);
 	RETURN_TRUE;
@@ -828,7 +832,7 @@ PHP_METHOD(HttpMessage, setRequestUri)
 		RETURN_FALSE;
 	}
 	if (URIlen < 1) {
-		http_error(E_WARNING, HTTP_E_PARAM, "Cannot set HttpMessage::requestMethod to an empty string");
+		http_error(E_WARNING, HTTP_E_PARAM, "Cannot set HttpMessage::requestUri to an empty string");
 		RETURN_FALSE;
 	}
 
@@ -867,22 +871,22 @@ PHP_METHOD(HttpMessage, getHttpVersion)
  */
 PHP_METHOD(HttpMessage, setHttpVersion)
 {
-	zval *v;
-	zval *version;
+	char v[4];
+	zval *zv, *version;
 	getObject(http_message_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &v)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &zv)) {
 		return;
 	}
 
-	convert_to_string_ex(&v);
-	if (strcmp(Z_STRVAL_P(v), "1.0") && strcmp(Z_STRVAL_P(v), "1.1")) {
-		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid HTTP version (1.0 or 1.1): %s", Z_STRVAL_P(v));
+	convert_to_double_ex(&zv);
+	sprintf(v, "%1.1f", Z_DVAL_P(zv));
+	if (strcmp(v, "1.0") && strcmp(v, "1.1")) {
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid HTTP version (1.0 or 1.1): %s", v);
 		RETURN_FALSE;
 	}
-	convert_to_double_ex(&v);
 
-	SET_PROP(obj, httpVersion, v);
+	SET_PROP(obj, httpVersion, zv);
 }
 /* }}} */
 

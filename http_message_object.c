@@ -266,7 +266,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 					msg->info.request.URI = NULL;
 				}
 			}
-			
+
 		break;
 
 		case HTTP_MSG_PROPHASH_HTTP_VERSION:
@@ -324,6 +324,8 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 			}
 		break;
 	}
+	zval_dtor(value);
+	FREE_ZVAL(value);
 }
 
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
