@@ -44,6 +44,9 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len, const ch
 #define http_cache_exit() _http_cache_exit(TSRMLS_C)
 PHP_HTTP_API STATUS _http_cache_exit(TSRMLS_D);
 
+#define http_ob_etaghandler(o, l, ho, hl, m) _http_ob_etaghandler((o), (l), (ho), (hl), (m) TSRMLS_CC)
+PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC);
+
 #endif
 
 /*
