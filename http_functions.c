@@ -249,7 +249,7 @@ PHP_FUNCTION(http_send_content_type)
 	}
 
 	if (!ct_len) {
-		RETURN_SUCCESS(http_send_content_type("application/x-octetstream", sizeof("application/x-octetstream") - 1));
+		RETURN_SUCCESS(http_send_content_type("application/x-octetstream", lenof("application/x-octetstream")));
 	}
 	RETURN_SUCCESS(http_send_content_type(ct, ct_len));
 }
@@ -296,9 +296,9 @@ PHP_FUNCTION(http_match_modified)
 	}
 
 	if (for_range) {
-		RETURN_BOOL(http_modified_match("HTTP_IF_UNMODIFIED_SINCE", t));
+		RETURN_BOOL(http_match_last_modified("HTTP_IF_UNMODIFIED_SINCE", t));
 	}
-	RETURN_BOOL(http_modified_match("HTTP_IF_MODIFIED_SINCE", t));
+	RETURN_BOOL(http_match_last_modified("HTTP_IF_MODIFIED_SINCE", t));
 }
 /* }}} */
 
@@ -319,9 +319,9 @@ PHP_FUNCTION(http_match_etag)
 	}
 
 	if (for_range) {
-		RETURN_BOOL(http_etag_match("HTTP_IF_MATCH", etag));
+		RETURN_BOOL(http_match_etag("HTTP_IF_MATCH", etag));
 	}
-	RETURN_BOOL(http_etag_match("HTTP_IF_NONE_MATCH", etag));
+	RETURN_BOOL(http_match_etag("HTTP_IF_NONE_MATCH", etag));
 }
 /* }}} */
 
@@ -364,7 +364,7 @@ PHP_FUNCTION(http_cache_last_modified)
 		send_modified = last_modified;
 	}
 
-	RETURN_SUCCESS(http_cache_last_modified(last_modified, send_modified, HTTP_DEFAULT_CACHECONTROL, sizeof(HTTP_DEFAULT_CACHECONTROL) - 1));
+	RETURN_SUCCESS(http_cache_last_modified(last_modified, send_modified, HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL)));
 }
 /* }}} */
 
@@ -388,17 +388,15 @@ PHP_FUNCTION(http_cache_etag)
 		RETURN_FALSE;
 	}
 
-	RETURN_SUCCESS(http_cache_etag(etag, etag_len, HTTP_DEFAULT_CACHECONTROL, sizeof(HTTP_DEFAULT_CACHECONTROL) - 1));
+	RETURN_SUCCESS(http_cache_etag(etag, etag_len, HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL)));
 }
 /* }}} */
 
-/* {{{ proto string ob_httpetaghandler(string data, int mode)
+/* {{{ proto string ob_etaghandler(string data, int mode)
  *
  * For use with ob_start().
- * Note that this has to be started as first output buffer.
- * WARNING: Don't use with http_send_*().
  */
-PHP_FUNCTION(ob_httpetaghandler)
+PHP_FUNCTION(ob_etaghandler)
 {
 	char *data;
 	int data_len;
@@ -407,20 +405,6 @@ PHP_FUNCTION(ob_httpetaghandler)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &data, &data_len, &mode)) {
 		RETURN_FALSE;
 	}
-
-	if (mode & PHP_OUTPUT_HANDLER_START) {
-		if (HTTP_G(etag_started)) {
-			http_error(E_WARNING, HTTP_E_OBUFFER, "ob_httpetaghandler can only be used once");
-			RETURN_STRINGL(data, data_len, 1);
-		}
-		http_send_header("Cache-Control: " HTTP_DEFAULT_CACHECONTROL);
-		HTTP_G(etag_started) = 1;
-	}
-
-    if (OG(ob_nesting_level) > 1) {
-        http_error(E_WARNING, HTTP_E_OBUFFER, "ob_httpetaghandler must be started prior to other output buffers");
-        RETURN_STRINGL(data, data_len, 1);
-    }
 
 	Z_TYPE_P(return_value) = IS_STRING;
 	http_ob_etaghandler(data, data_len, &Z_STRVAL_P(return_value), &Z_STRLEN_P(return_value), mode);

@@ -88,7 +88,7 @@ PHP_FUNCTION(http_auth_basic_cb);
 #ifndef ZEND_ENGINE_2
 PHP_FUNCTION(http_build_query);
 #endif /* ZEND_ENGINE_2 */
-PHP_FUNCTION(ob_httpetaghandler);
+PHP_FUNCTION(ob_etaghandler);
 
 PHP_MINIT_FUNCTION(http);
 PHP_MSHUTDOWN_FUNCTION(http);

@@ -323,7 +323,7 @@ PHP_METHOD(HttpResponse, setData)
 
 	convert_to_string_ex(&the_data);
 	SET_PROP(obj, data, the_data);
-	UPD_PROP(obj, long, lastModified, http_lmod(the_data, SEND_DATA));
+	UPD_PROP(obj, long, lastModified, http_last_modified(the_data, SEND_DATA));
 	UPD_PROP(obj, long, send_mode, SEND_DATA);
 	RETURN_TRUE;
 }
@@ -362,7 +362,7 @@ PHP_METHOD(HttpResponse, setStream)
 	php_stream_from_zval(the_real_stream, &the_stream);
 
 	SET_PROP(obj, stream, the_stream);
-	UPD_PROP(obj, long, lastModified, http_lmod(the_real_stream, SEND_RSRC));
+	UPD_PROP(obj, long, lastModified, http_last_modified(the_real_stream, SEND_RSRC));
 	UPD_PROP(obj, long, send_mode, SEND_RSRC);
 	RETURN_TRUE;
 }
@@ -400,7 +400,7 @@ PHP_METHOD(HttpResponse, setFile)
 	convert_to_string_ex(&the_file);
 
 	UPD_PROP(obj, string, file, Z_STRVAL_P(the_file));
-	UPD_PROP(obj, long, lastModified, http_lmod(the_file, -1));
+	UPD_PROP(obj, long, lastModified, http_last_modified(the_file, -1));
 	UPD_PROP(obj, long, send_mode, -1);
 	RETURN_TRUE;
 }

@@ -24,22 +24,25 @@
 #define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC);
 
-#define http_lmod(p, m) _http_lmod((p), (m) TSRMLS_CC)
-PHP_HTTP_API time_t _http_lmod(const void *data_ptr, http_send_mode data_mode TSRMLS_DC);
+#define http_last_modified(p, m) _http_last_modified((p), (m) TSRMLS_CC)
+PHP_HTTP_API time_t _http_last_modified(const void *data_ptr, http_send_mode data_mode TSRMLS_DC);
 
-#define http_modified_match(entry, modified) _http_modified_match_ex((entry), (modified), 1 TSRMLS_CC)
-#define http_modified_match_ex(entry, modified, ep) _http_modified_match_ex((entry), (modified), (ep) TSRMLS_CC)
-PHP_HTTP_API zend_bool _http_modified_match_ex(const char *entry, time_t t, zend_bool enforce_presence TSRMLS_DC);
+#define http_match_last_modified(entry, modified) _http_match_last_modified_ex((entry), (modified), 1 TSRMLS_CC)
+#define http_match_last_modified_ex(entry, modified, ep) _http_match_last_modified_ex((entry), (modified), (ep) TSRMLS_CC)
+PHP_HTTP_API zend_bool _http_match_last_modified_ex(const char *entry, time_t t, zend_bool enforce_presence TSRMLS_DC);
 
-#define http_etag_match(entry, etag) _http_etag_match_ex((entry), (etag), 1 TSRMLS_CC)
-#define http_etag_match_ex(entry, etag, ep) _http_etag_match_ex((entry), (etag), (ep) TSRMLS_CC)
-PHP_HTTP_API zend_bool _http_etag_match_ex(const char *entry, const char *etag, zend_bool enforce_presence TSRMLS_DC);
+#define http_match_etag(entry, etag) _http_match_etag_ex((entry), (etag), 1 TSRMLS_CC)
+#define http_match_etag_ex(entry, etag, ep) _http_match_etag_ex((entry), (etag), (ep) TSRMLS_CC)
+PHP_HTTP_API zend_bool _http_match_etag_ex(const char *entry, const char *etag, zend_bool enforce_presence TSRMLS_DC);
 
 #define http_cache_last_modified(l, s, cc, ccl) _http_cache_last_modified((l), (s), (cc), (ccl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified, time_t send_modified, const char *cache_control, size_t cc_len TSRMLS_DC);
 
 #define http_cache_etag(e, el, cc, ccl) _http_cache_etag((e), (el), (cc), (ccl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len, const char *cache_control, size_t cc_len TSRMLS_DC);
+
+#define http_cache_exit() _http_cache_exit(TSRMLS_C)
+PHP_HTTP_API STATUS _http_cache_exit(TSRMLS_D);
 
 #endif
 

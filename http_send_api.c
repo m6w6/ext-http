@@ -325,10 +325,8 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 
 	/* stop on-the-fly etag generation */
 	if (cache_etag = HTTP_G(etag_started)) {
-		/* interrupt */
+		/* interrupt ob_etaghandler */
 		HTTP_G(etag_started) = 0;
-		/* never ever use the output to compute the ETag if http_send() is used */
-		php_end_ob_buffers(0 TSRMLS_CC);
 	}
 
 	zend_hash_init(&ranges, 0, NULL, ZVAL_PTR_DTOR, 0);
@@ -342,8 +340,8 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 
 	/* Range Request - only send ranges if entity hasn't changed */
 	if (	range_status == RANGE_OK &&
-			http_etag_match_ex("HTTP_IF_MATCH", HTTP_G(etag), 0) &&
-			http_modified_match_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(lmod), 0)) {
+			http_match_etag_ex("HTTP_IF_MATCH", HTTP_G(etag), 0) &&
+			http_match_last_modified_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(lmod), 0)) {
 		STATUS result = http_send_ranges(&ranges, data_ptr, data_size, data_mode);
 		zend_hash_destroy(&ranges);
 		return result;
@@ -354,24 +352,24 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 	/* send 304 Not Modified if etag matches */
 	if (cache_etag) {
 		char *etag = NULL;
-		int etag_match = 0;
 
 		if (!(etag = http_etag(data_ptr, data_size, data_mode))) {
 			return FAILURE;
 		}
-
-		http_send_etag(etag, 32);
-		etag_match = http_etag_match("HTTP_IF_NONE_MATCH", etag);
-		efree(etag);
-
-		if (etag_match) {
-			return http_send_status(304);
+		if (SUCCESS != http_send_etag(etag, 32)) {
+			efree(etag);
+			return FAILURE;
 		}
+		if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
+			efree(etag);
+			return http_cache_exit();
+		}
+		efree(etag);
 	}
 
 	/* send 304 Not Modified if last modified matches */
-	if (http_modified_match("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
-		return http_send_status(304);
+	if (http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
+		return http_cache_exit();
 	}
 
 	/* send full entity */

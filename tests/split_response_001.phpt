@@ -1,7 +1,7 @@
 --TEST--
 http_split_response()
 --SKIPIF--
-<?php 
+<?php
 include 'skip.inc';
 ?>
 --FILE--
@@ -15,7 +15,7 @@ X-Powered-By: PHP/%s
 array (
   0 => 
   array (
-    'Status' => '200 Ok',
+    'Response Status' => '200 Ok',
     'Content-Type' => 'text/plain',
     'Content-Language' => 'de-AT',
     'Date' => 'Sat, 22 Jan 2005 18:10:02 GMT',

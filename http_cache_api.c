@@ -21,13 +21,14 @@
 
 #include "php.h"
 #include "php_streams.h"
+#include "php_output.h"
 #include "ext/standard/md5.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
+#include "php_http_api.h"
 #include "php_http_cache_api.h"
 #include "php_http_send_api.h"
-#include "php_http_api.h"
 #include "php_http_date_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
@@ -75,8 +76,8 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 }
 /* }}} */
 
-/* {{{ time_t http_lmod(void *, http_send_mode) */
-PHP_HTTP_API time_t _http_lmod(const void *data_ptr, http_send_mode data_mode TSRMLS_DC)
+/* {{{ time_t http_last_modified(void *, http_send_mode) */
+PHP_HTTP_API time_t _http_last_modified(const void *data_ptr, http_send_mode data_mode TSRMLS_DC)
 {
 	switch (data_mode)
 	{
@@ -100,8 +101,8 @@ PHP_HTTP_API time_t _http_lmod(const void *data_ptr, http_send_mode data_mode TS
 }
 /* }}} */
 
-/* {{{ zend_bool http_modified_match(char *, time_t) */
-PHP_HTTP_API zend_bool _http_modified_match_ex(const char *entry, time_t t, zend_bool enforce_presence TSRMLS_DC)
+/* {{{ zend_bool http_match_last_modified(char *, time_t) */
+PHP_HTTP_API zend_bool _http_match_last_modified_ex(const char *entry, time_t t, zend_bool enforce_presence TSRMLS_DC)
 {
 	zend_bool retval;
 	zval *zmodified;
@@ -119,8 +120,8 @@ PHP_HTTP_API zend_bool _http_modified_match_ex(const char *entry, time_t t, zend
 }
 /* }}} */
 
-/* {{{ zend_bool http_etag_match(char *, char *) */
-PHP_HTTP_API zend_bool _http_etag_match_ex(const char *entry, const char *etag, zend_bool enforce_presence TSRMLS_DC)
+/* {{{ zend_bool http_match_etag(char *, char *) */
+PHP_HTTP_API zend_bool _http_match_etag_ex(const char *entry, const char *etag, zend_bool enforce_presence TSRMLS_DC)
 {
 	zval *zetag;
 	char *quoted_etag;
@@ -149,19 +150,19 @@ PHP_HTTP_API zend_bool _http_etag_match_ex(const char *entry, const char *etag, 
 PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified,
 	time_t send_modified, const char *cache_control, size_t cc_len TSRMLS_DC)
 {
-	if (cc_len) {
-		http_send_cache_control(cache_control, cc_len);
+	if (cc_len && (SUCCESS != http_send_cache_control(cache_control, cc_len))) {
+		return FAILURE;
 	}
 
-	if (http_modified_match("HTTP_IF_MODIFIED_SINCE", last_modified)) {
-		if (SUCCESS == http_send_status(304)) {
-			zend_bailout();
-		} else {
-			http_error(E_WARNING, HTTP_E_HEADER, "Could not send 304 Not Modified");
-			return FAILURE;
-		}
+	if (SUCCESS != http_send_last_modified(send_modified)) {
+		return FAILURE;
 	}
-	return http_send_last_modified(send_modified);
+
+	if (http_match_last_modified("HTTP_IF_MODIFIED_SINCE", last_modified)) {
+		return http_cache_exit();
+	}
+
+	return SUCCESS;
 }
 /* }}} */
 
@@ -169,36 +170,80 @@ PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified,
 PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 	const char *cache_control, size_t cc_len TSRMLS_DC)
 {
-	if (cc_len) {
-		http_send_cache_control(cache_control, cc_len);
+	if (cc_len && (SUCCESS != http_send_cache_control(cache_control, cc_len))) {
+		return FAILURE;
 	}
 
 	if (etag_len) {
-		http_send_etag(etag, etag_len);
-		if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
-			if (SUCCESS == http_send_status(304)) {
-				zend_bailout();
-			} else {
-				http_error(E_WARNING, HTTP_E_HEADER, "Could not send 304 Not Modified");
-				return FAILURE;
+		if (SUCCESS != http_send_etag(etag, etag_len)) {
+			return FAILURE;
+		}
+		if (!http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
+			return SUCCESS;
+		}
+		return http_cache_exit();
+	}
+
+	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
+	if (HTTP_G(etag_started)) {
+		return SUCCESS;
+	}
+
+	if (HTTP_G(etag_started) = (SUCCESS == php_start_ob_buffer_named("ob_etaghandler", HTTP_SENDBUF_SIZE, 1 TSRMLS_CC))) {
+		return SUCCESS;
+	} else {
+		return FAILURE;
+	}
+		
+}
+/* }}} */
+
+/* {{{ STATUS http_cache_exit() */
+PHP_HTTP_API STATUS _http_cache_exit(TSRMLS_D)
+{
+	if (SUCCESS != http_send_status(304)) {
+		http_error(E_WARNING, HTTP_E_HEADER, "Could not send 304 Not Modified");
+		return FAILURE;
+	}
+	/* TODO: cache_log */
+	zend_bailout();
+	return SUCCESS; /* fake */
+}
+/* }}} */
+
+/* {{{ void http_ob_etaghandler(char *, uint, char **, uint *, int) */
+PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
+	char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
+{
+	char etag[33] = { 0 };
+	unsigned char digest[16];
+
+	if (mode & PHP_OUTPUT_HANDLER_START) {
+		HTTP_G(etag_started) = 1;
+		PHP_MD5Init(&HTTP_G(etag_md5));
+	}
+
+	PHP_MD5Update(&HTTP_G(etag_md5), output, output_len);
+
+	if (mode & PHP_OUTPUT_HANDLER_END) {
+		PHP_MD5Final(digest, &HTTP_G(etag_md5));
+
+		/* just do that if desired */
+		if (HTTP_G(etag_started)) {
+			make_digest(etag, digest);
+			http_send_header("Cache-Control: " HTTP_DEFAULT_CACHECONTROL);
+			http_send_etag(etag, 32);
+
+			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
+				http_cache_exit();
 			}
 		}
 	}
 
-	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
-	if (!HTTP_G(etag_started)) {
-		if (SUCCESS == http_start_ob_handler(_http_ob_etaghandler, "ob_etaghandler", 4096, 1)) {
-			HTTP_G(etag_started) = 1;
-			return SUCCESS;
-		} else {
-			http_error(E_WARNING, HTTP_E_OBUFFER, "Could not start ob_etaghandler");
-			return FAILURE;
-		}
-	}
-	return SUCCESS;
+	*handled_output_len = output_len;
+	*handled_output = estrndup(output, output_len);
 }
 /* }}} */
-
 
 /*
  * Local variables:

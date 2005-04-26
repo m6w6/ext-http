@@ -113,7 +113,7 @@ function_entry http_functions[] = {
 #ifndef ZEND_ENGINE_2
 	PHP_FE(http_build_query, NULL)
 #endif
-	PHP_FE(ob_httpetaghandler, NULL)
+	PHP_FE(ob_etaghandler, NULL)
 	{NULL, NULL, NULL}
 };
 /* }}} */

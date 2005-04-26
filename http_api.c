@@ -22,14 +22,10 @@
 #include <ctype.h>
 
 #include "php.h"
-#include "php_output.h"
-#include "ext/standard/md5.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
-#include "php_http_send_api.h"
-#include "php_http_cache_api.h"
 #include "php_http_headers_api.h"
 
 #ifdef ZEND_ENGINE_2
@@ -85,21 +81,6 @@ void _http_error_ex(long type, long code, const char *format, ...)
 }
 /* }}} */
 
-/* {{{ static STATUS http_ob_stack_get(php_ob_buffer *, php_ob_buffer **) */
-static STATUS http_ob_stack_get(php_ob_buffer *o, php_ob_buffer **s)
-{
-	static int i = 0;
-	php_ob_buffer *b = emalloc(sizeof(php_ob_buffer));
-	b->handler_name = estrdup(o->handler_name);
-	b->buffer = estrndup(o->buffer, o->text_length);
-	b->text_length = o->text_length;
-	b->chunk_size = o->chunk_size;
-	b->erase = o->erase;
-	s[i++] = b;
-	return SUCCESS;
-}
-/* }}} */
-
 /* {{{ zval *http_get_server_var_ex(char *, size_t) */
 PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zend_bool check TSRMLS_DC)
 {
@@ -115,83 +96,6 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 }
 /* }}} */
 
-/* {{{ void http_ob_etaghandler(char *, uint, char **, uint *, int) */
-PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
-	char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
-{
-	char etag[33] = { 0 };
-	unsigned char digest[16];
-
-	if (mode & PHP_OUTPUT_HANDLER_START) {
-		PHP_MD5Init(&HTTP_G(etag_md5));
-	}
-
-	PHP_MD5Update(&HTTP_G(etag_md5), output, output_len);
-
-	if (mode & PHP_OUTPUT_HANDLER_END) {
-		PHP_MD5Final(digest, &HTTP_G(etag_md5));
-
-		/* just do that if desired */
-		if (HTTP_G(etag_started)) {
-			make_digest(etag, digest);
-
-			if (http_etag_match("HTTP_IF_NONE_MATCH", etag)) {
-				http_send_status(304);
-				zend_bailout();
-			} else {
-				http_send_etag(etag, 32);
-			}
-		}
-	}
-
-	*handled_output_len = output_len;
-	*handled_output = estrndup(output, output_len);
-}
-/* }}} */
-
-/* {{{ STATUS http_start_ob_handler(php_output_handler_func_t, char *, uint, zend_bool) */
-PHP_HTTP_API STATUS _http_start_ob_handler(php_output_handler_func_t handler_func,
-	char *handler_name, uint chunk_size, zend_bool erase TSRMLS_DC)
-{
-	php_ob_buffer **stack;
-	int count, i;
-
-	if (count = OG(ob_nesting_level)) {
-		stack = ecalloc(count, sizeof(php_ob_buffer *));
-
-		if (count > 1) {
-			zend_stack_apply_with_argument(&OG(ob_buffers), ZEND_STACK_APPLY_BOTTOMUP,
-				(int (*)(void *elem, void *)) http_ob_stack_get, stack);
-		}
-
-		if (count > 0) {
-			http_ob_stack_get(&OG(active_ob_buffer), stack);
-		}
-
-		while (OG(ob_nesting_level)) {
-			php_end_ob_buffer(0, 0 TSRMLS_CC);
-		}
-	}
-
-	php_ob_set_internal_handler(handler_func, chunk_size, handler_name, erase TSRMLS_CC);
-
-	for (i = 0; i < count; i++) {
-		php_ob_buffer *s = stack[i];
-		if (strcmp(s->handler_name, "default output handler")) {
-			php_start_ob_buffer_named(s->handler_name, s->chunk_size, s->erase TSRMLS_CC);
-		}
-		php_body_write(s->buffer, s->text_length TSRMLS_CC);
-		efree(s->handler_name);
-		efree(s->buffer);
-		efree(s);
-	}
-	if (count) {
-		efree(stack);
-	}
-
-	return SUCCESS;
-}
-/* }}} */
 
 /* {{{ STATUS http_chunked_decode(char *, size_t, char **, size_t *) */
 PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len,
