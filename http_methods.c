@@ -683,7 +683,7 @@ PHP_METHOD(HttpMessage, setType)
 {
 	long type;
 	getObject(http_message_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &type)) {
 		return;
 	}
@@ -715,7 +715,7 @@ PHP_METHOD(HttpMessage, getResponseCode)
 /* {{{ bool HttpMessage::setResponseCode(long code)
  *
  * Set the response code of an HTTP Response Message.
- * Returns false if the Message is not of type HTTP_MSG_RESPONSE, 
+ * Returns false if the Message is not of type HTTP_MSG_RESPONSE,
  * or if the response code is out of range (100-510).
  */
 PHP_METHOD(HttpMessage, setResponseCode)
@@ -731,7 +731,7 @@ PHP_METHOD(HttpMessage, setResponseCode)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
 		RETURN_FALSE;
 	}
-	if (code < 100 && code > 510) {
+	if (code < 100 || code > 510) {
 		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid response code (100-510): %ld", code);
 		RETURN_FALSE;
 	}
@@ -861,7 +861,7 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 /* }}} */
 
 /* {{{ bool HttpMessage::setHttpVersion(string version)
- * 
+ *
  * Set the HTTP Protocol version of the Message.
  * Returns false if version is invalid (1.0 and 1.1).
  */
@@ -870,7 +870,7 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 	zval *v;
 	zval *version;
 	getObject(http_message_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &v)) {
 		return;
 	}
