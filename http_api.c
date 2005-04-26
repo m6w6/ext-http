@@ -27,6 +27,7 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_headers_api.h"
+#include "php_http_send_api.h"
 
 #ifdef ZEND_ENGINE_2
 #	include "php_http_exception_object.h"
@@ -78,6 +79,25 @@ void _http_error_ex(long type, long code, const char *format, ...)
 		php_verror(NULL, "", type, format, args TSRMLS_CC);
 	}
 	va_end(args);
+}
+/* }}} */
+
+/* {{{ STATUS http_exit(int, char*) */
+STATUS _http_exit_ex(int status, char *header, zend_bool free_header TSRMLS_DC)
+{
+	if (SUCCESS != http_send_status_header(status, header)) {
+		http_error_ex(E_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
+		if (free_header && header) {
+			efree(header);
+		}
+		return FAILURE;
+	}
+	if (free_header && header) {
+		efree(header);
+	}
+	zend_bailout();
+	/* fake */
+	return SUCCESS;
 }
 /* }}} */
 

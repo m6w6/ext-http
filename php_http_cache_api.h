@@ -19,7 +19,12 @@
 #define PHP_HTTP_CACHE_API_H
 
 #include "php_http_std_defs.h"
+#include "php_http_api.h"
 #include "php_http_send_api.h"
+
+#define http_cache_exit(t, e) http_cache_exit_ex((t), (e), 1)
+#define http_cache_exit_ex(t, e, f) _http_cache_exit_ex((t), (e), (f) TSRMLS_CC)
+extern STATUS _http_cache_exit_ex(char *cache_token, zend_bool etag, zend_bool free_token TSRMLS_DC);
 
 #define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC);
@@ -40,9 +45,6 @@ PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified, time_t send_
 
 #define http_cache_etag(e, el, cc, ccl) _http_cache_etag((e), (el), (cc), (ccl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len, const char *cache_control, size_t cc_len TSRMLS_DC);
-
-#define http_cache_exit() _http_cache_exit(TSRMLS_C)
-PHP_HTTP_API STATUS _http_cache_exit(TSRMLS_D);
 
 #define http_ob_etaghandler(o, l, ho, hl, m) _http_ob_etaghandler((o), (l), (ho), (hl), (m) TSRMLS_CC)
 PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC);

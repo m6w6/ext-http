@@ -37,6 +37,7 @@
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
+#include "php_http_api.h"
 #include "php_http_send_api.h"
 
 #ifdef ZEND_ENGINE_2
@@ -143,8 +144,9 @@ static void free_to_free(void *s)
 	efree(*(char **)s);
 }
 
-/* {{{ void _http_init_globals(zend_http_globals *) */
-static void _http_init_globals(zend_http_globals *http_globals)
+/* {{{ void http_globals_ctor(zend_http_globals *) */
+#define http_globals_ctor _http_globals_ctor
+static inline void _http_globals_ctor(zend_http_globals *http_globals)
 {
 	http_globals->etag_started = 0;
 	http_globals->ctype = NULL;
@@ -157,10 +159,37 @@ static void _http_init_globals(zend_http_globals *http_globals)
 	zend_llist_init(&http_globals->to_free, sizeof(char *), free_to_free, 0);
 #endif
 	http_globals->allowed_methods = NULL;
+	http_globals->cache_log = NULL;
 }
 /* }}} */
 
-/* {{{ static inline STATUS http_check_allowed_methods(char *, int) */
+/* {{{ void http_globals_dtor() */
+#define http_globals_dtor() _http_globals_dtor(TSRMLS_C)
+static inline void _http_globals_dtor(TSRMLS_D)
+{
+	HTTP_G(etag_started) = 0;
+	HTTP_G(lmod) = 0;
+
+	if (HTTP_G(etag)) {
+		efree(HTTP_G(etag));
+		HTTP_G(etag) = NULL;
+	}
+
+	if (HTTP_G(ctype)) {
+		efree(HTTP_G(ctype));
+		HTTP_G(ctype) = NULL;
+	}
+	
+#ifdef HTTP_HAVE_CURL
+#	if LIBCURL_VERSION_NUM < 0x070c00
+	memset(&HTTP_G(curlerr), 0, sizeof(HTTP_G(curlerr)));
+#	endif
+#endif
+
+}
+/* }}} */
+
+/* {{{ static inline void http_check_allowed_methods(char *, int) */
 #define http_check_allowed_methods(m, l) _http_check_allowed_methods((m), (l) TSRMLS_CC)
 static inline void _http_check_allowed_methods(char *methods, int length TSRMLS_DC)
 {
@@ -178,34 +207,22 @@ static inline void _http_check_allowed_methods(char *methods, int length TSRMLS_
 
 	header = emalloc(length + sizeof("Allow: "));
 	sprintf(header, "Allow: %s", methods);
-	http_send_header(header);
-	efree(header);
-	http_send_status(405);
-	zend_bailout();
+	http_exit(405, header);
 }
 /* }}} */
 
 /* {{{ PHP_INI */
-PHP_INI_MH(update_allowed_methods)
+PHP_INI_MH(http_update_allowed_methods)
 {
 	http_check_allowed_methods(new_value, new_value_length);
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
 
+#define http_update_cache_log OnUpdateString
+
 PHP_INI_BEGIN()
-	STD_PHP_INI_ENTRY("http.allowed_methods",
-		/* HTTP 1.1 */
-		"GET, HEAD, POST, PUT, DELETE, OPTIONS, TRACE, CONNECT, "
-		/* WebDAV - RFC 2518 * /
-		"PROPFIND, PROPPATCH, MKCOL, COPY, MOVE, LOCK, UNLOCK, "
-		/* WebDAV Versioning - RFC 3253 * /
-		"VERSION-CONTROL, REPORT, CHECKOUT, CHECKIN, UNCHECKOUT, "
-		"MKWORKSPACE, UPDATE, LABEL, MERGE, BASELINE-CONTROL, MKACTIVITY, "
-		/* WebDAV Access Control - RFC 3744 * /
-		"ACL, "
-		/* END */
-		,
-		PHP_INI_ALL, update_allowed_methods, allowed_methods, zend_http_globals, http_globals)
+	HTTP_INI_ENTRY("http.allowed_methods", HTTP_KNOWN_METHODS, PHP_INI_ALL, allowed_methods)
+	HTTP_INI_ENTRY("http.cache_log", NULL, PHP_INI_ALL, cache_log)
 PHP_INI_END()
 /* }}} */
 
@@ -222,7 +239,7 @@ static void *http_curl_calloc(size_t n, size_t s)	{ return ecalloc(n, s); }
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(http)
 {
-	ZEND_INIT_MODULE_GLOBALS(http, _http_init_globals, NULL);
+	ZEND_INIT_MODULE_GLOBALS(http, http_globals_ctor, NULL);
 	REGISTER_INI_ENTRIES();
 
 #ifdef HTTP_HAVE_CURL
@@ -275,25 +292,7 @@ PHP_RINIT_FUNCTION(http)
 /* {{{ PHP_RSHUTDOWN_FUNCTION */
 PHP_RSHUTDOWN_FUNCTION(http)
 {
-	HTTP_G(etag_started) = 0;
-	HTTP_G(lmod) = 0;
-
-	if (HTTP_G(etag)) {
-		efree(HTTP_G(etag));
-		HTTP_G(etag) = NULL;
-	}
-
-	if (HTTP_G(ctype)) {
-		efree(HTTP_G(ctype));
-		HTTP_G(ctype) = NULL;
-	}
-
-#ifdef HTTP_HAVE_CURL
-#	if LIBCURL_VERSION_NUM < 0x070c00
-	memset(&HTTP_G(curlerr), 0, sizeof(HTTP_G(curlerr)));
-#	endif
-#endif
-
+	http_globals_dtor();
 	return SUCCESS;
 }
 /* }}} */

@@ -27,6 +27,10 @@ extern char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend
 #define http_error_ex _http_error_ex
 extern void _http_error_ex(long type, long code, const char *format, ...);
 
+#define http_exit(s, h) http_exit_ex((s), (h), 1)
+#define http_exit_ex(s, h, f) _http_exit_ex((s), (h), (f) TSRMLS_CC)
+extern STATUS _http_exit_ex(int status, char *header, zend_bool free_header TSRMLS_DC);
+
 #define HTTP_GSC(var, name, ret)  HTTP_GSP(var, name, return ret)
 #define HTTP_GSP(var, name, ret) \
 		if (!(var = _http_get_server_var_ex(name, strlen(name)+1, 1 TSRMLS_CC))) { \

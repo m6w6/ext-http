@@ -24,6 +24,8 @@
 #include "php_output.h"
 #include "ext/standard/md5.h"
 
+#include "SAPI.h"
+
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
@@ -32,6 +34,30 @@
 #include "php_http_date_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
+
+/* {{{ STATUS http_cache_exit(char *, zend_bool) */
+STATUS _http_cache_exit_ex(char *cache_token, zend_bool etag, zend_bool free_token TSRMLS_DC)
+{
+	if (HTTP_G(cache_log) && strlen(HTTP_G(cache_log))) {
+		php_stream *log = php_stream_open_wrapper(HTTP_G(cache_log), "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL);
+
+		if (log) {
+			time_t now;
+			struct tm nowtm;
+			char datetime[128];
+
+			time(&now);
+			strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", php_localtime_r(&now, &nowtm));
+ 			php_stream_printf(log TSRMLS_CC, "%s [%s] %32s %s\n", datetime, etag ? "ETAG":"LMOD", cache_token, SG(request_info).request_uri);
+ 			php_stream_close(log);
+		}
+	}
+	if (free_token && cache_token) {
+		efree(cache_token);
+	}
+	return http_exit_ex(304, NULL, 0);
+}
+/* }}} */
 
 /* {{{ char *http_etag(void *, size_t, http_send_mode) */
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
@@ -159,7 +185,7 @@ PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified,
 	}
 
 	if (http_match_last_modified("HTTP_IF_MODIFIED_SINCE", last_modified)) {
-		return http_cache_exit();
+		return http_cache_exit(http_date(last_modified), 0);
 	}
 
 	return SUCCESS;
@@ -181,7 +207,7 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 		if (!http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
 			return SUCCESS;
 		}
-		return http_cache_exit();
+		return http_cache_exit_ex(etag, 1, 0);
 	}
 
 	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
@@ -194,20 +220,7 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 	} else {
 		return FAILURE;
 	}
-		
-}
-/* }}} */
 
-/* {{{ STATUS http_cache_exit() */
-PHP_HTTP_API STATUS _http_cache_exit(TSRMLS_D)
-{
-	if (SUCCESS != http_send_status(304)) {
-		http_error(E_WARNING, HTTP_E_HEADER, "Could not send 304 Not Modified");
-		return FAILURE;
-	}
-	/* TODO: cache_log */
-	zend_bailout();
-	return SUCCESS; /* fake */
 }
 /* }}} */
 
@@ -235,7 +248,7 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 			http_send_etag(etag, 32);
 
 			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
-				http_cache_exit();
+				http_cache_exit_ex(etag, 1, 0);
 			}
 		}
 	}

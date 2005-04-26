@@ -27,6 +27,7 @@
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
+#include "php_http_date_api.h"
 #include "php_http_send_api.h"
 #include "php_http_headers_api.h"
 #include "php_http_date_api.h"
@@ -125,7 +126,7 @@ static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_
 PHP_HTTP_API STATUS _http_send_status_header(int status, const char *header TSRMLS_DC)
 {
 	STATUS ret;
-	sapi_header_line h = {(char *) header, strlen(header), status};
+	sapi_header_line h = {(char *) header, header ? strlen(header) : 0, status};
 	if (SUCCESS != (ret = sapi_header_op(SAPI_HEADER_REPLACE, &h TSRMLS_CC))) {
 		http_error_ex(E_WARNING, HTTP_E_HEADER, "Could not send header: %s (%d)", header, status);
 	}
@@ -361,15 +362,14 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 			return FAILURE;
 		}
 		if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
-			efree(etag);
-			return http_cache_exit();
+			return http_cache_exit(etag, 1, 1);
 		}
 		efree(etag);
 	}
 
 	/* send 304 Not Modified if last modified matches */
 	if (http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
-		return http_cache_exit();
+		return http_cache_exit(http_date(HTTP_G(lmod)), 0, 1);
 	}
 
 	/* send full entity */

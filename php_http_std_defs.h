@@ -59,8 +59,25 @@ typedef int STATUS;
 /* CURL buffer size */
 #define HTTP_CURLBUF_SIZE 16384
 
+/* known methods */
+#define HTTP_KNOWN_METHODS \
+		/* HTTP 1.1 */ \
+		"GET, HEAD, POST, PUT, DELETE, OPTIONS, TRACE, CONNECT, " \
+		/* WebDAV - RFC 2518 */ \
+		/* "PROPFIND, PROPPATCH, MKCOL, COPY, MOVE, LOCK, UNLOCK, " */ \
+		/* WebDAV Versioning - RFC 3253 */ \
+		/* "VERSION-CONTROL, REPORT, CHECKOUT, CHECKIN, UNCHECKOUT, " */ \
+		/* "MKWORKSPACE, UPDATE, LABEL, MERGE, BASELINE-CONTROL, MKACTIVITY, " */ \
+		/* WebDAV Access Control - RFC 3744 */ \
+		/* "ACL, " */ \
+		/* END */
+
+
 /* server vars shorthand */
 #define HTTP_SERVER_VARS Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER])
+
+#define HTTP_INI_ENTRY(entry, default, scope, global) \
+	STD_PHP_INI_ENTRY(entry, default, scope, http_update_##global, global, zend_http_globals, http_globals)
 
 /* {{{ arrays */
 #define FOREACH_VAL(array, val) FOREACH_HASH_VAL(Z_ARRVAL_P(array), val)
