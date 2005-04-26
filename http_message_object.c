@@ -43,11 +43,18 @@ zend_function_entry http_message_object_fe[] = {
 	PHP_ME(HttpMessage, setRaw, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getBody, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getHeaders, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, setHeaders, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, addHeaders, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getType, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, setType, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getResponseCode, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, setResponseCode, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getRequestMethod, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, setRequestMethod, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getRequestUri, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, setRequestUri, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getHttpVersion, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, setHttpVersion, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, toString, NULL, ZEND_ACC_PUBLIC)
 
 	ZEND_MALIAS(HttpMessage, __toString, toString, NULL, ZEND_ACC_PUBLIC)
@@ -244,7 +251,22 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	switch (zend_get_hash_value(Z_STRVAL_P(member), strlen(Z_STRVAL_P(member)) + 1))
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
-			msg->type = Z_LVAL_P(value);
+			if (Z_LVAL_P(value) != msg->type) {
+				if (msg->type == HTTP_MSG_REQUEST) {
+					if (msg->info.request.method) {
+						efree(msg->info.request.method);
+					}
+					if (msg->info.request.URI) {
+						efree(msg->info.request.URI);
+					}
+				}
+				msg->type = Z_LVAL_P(value);
+				if (msg->type == HTTP_MSG_REQUEST) {
+					msg->info.request.method = NULL;
+					msg->info.request.URI = NULL;
+				}
+			}
+			
 		break;
 
 		case HTTP_MSG_PROPHASH_HTTP_VERSION:

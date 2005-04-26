@@ -84,6 +84,34 @@ typedef int STATUS;
 
 #define array_copy(src, dst)	zend_hash_copy(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
 #define array_merge(src, dst)	zend_hash_merge(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *), 1)
+#define array_append(src, dst)	\
+	{ \
+		ulong idx; \
+		uint klen; \
+		char *key = NULL; \
+		zval **data; \
+		 \
+		for (	zend_hash_internal_pointer_reset(Z_ARRVAL_P(src)); \
+				zend_hash_get_current_key_ex(Z_ARRVAL_P(src), &key, &klen, &idx, 0, NULL) != HASH_KEY_NON_EXISTANT && \
+				zend_hash_get_current_data(Z_ARRVAL_P(src), (void **) &data) == SUCCESS; \
+				zend_hash_move_forward(Z_ARRVAL_P(src))) \
+		{ \
+			if (key) { \
+				zval **tmp; \
+				 \
+				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(dst), key, klen, (void **) &tmp)) { \
+					if (Z_TYPE_PP(tmp) != IS_ARRAY) { \
+						convert_to_array_ex(tmp); \
+					} \
+					add_next_index_zval(*tmp, *data); \
+				} else { \
+					add_assoc_zval(dst, key, *data); \
+				} \
+				zval_add_ref(data); \
+				key = NULL; \
+			} \
+		} \
+	}
 /* }}} */
 
 #define HTTP_LONG_CONSTANT(name, const) REGISTER_LONG_CONSTANT(name, const, CONST_CS | CONST_PERSISTENT);
@@ -160,6 +188,7 @@ typedef int STATUS;
 #define HTTP_E_ENCODE		5L
 #define HTTP_E_PARAM		6L
 #define HTTP_E_URL			7L
+#define HTTP_E_MSG			8L
 
 #endif /* PHP_HTTP_STD_DEFS_H */
 

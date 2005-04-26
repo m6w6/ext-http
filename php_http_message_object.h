@@ -55,11 +55,18 @@ PHP_METHOD(HttpMessage, __construct);
 PHP_METHOD(HttpMessage, setRaw);
 PHP_METHOD(HttpMessage, getBody);
 PHP_METHOD(HttpMessage, getHeaders);
+PHP_METHOD(HttpMessage, setHeaders);
+PHP_METHOD(HttpMessage, addHeaders);
 PHP_METHOD(HttpMessage, getType);
+PHP_METHOD(HttpMessage, setType);
 PHP_METHOD(HttpMessage, getResponseCode);
+PHP_METHOD(HttpMessage, setResponseCode);
 PHP_METHOD(HttpMessage, getRequestMethod);
+PHP_METHOD(HttpMessage, setRequestMethod);
 PHP_METHOD(HttpMessage, getRequestUri);
+PHP_METHOD(HttpMessage, setRequestUri);
 PHP_METHOD(HttpMessage, getHttpVersion);
+PHP_METHOD(HttpMessage, setHttpVersion);
 PHP_METHOD(HttpMessage, toString);
 
 PHP_METHOD(HttpMessage, fromString);
