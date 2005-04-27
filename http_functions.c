@@ -327,7 +327,7 @@ PHP_FUNCTION(http_match_etag)
 
 /* {{{ proto bool http_cache_last_modified([int timestamp_or_expires]])
  *
- * If timestamp_or_exires is greater than 0, it is handled as timestamp
+ * If timestamp_or_expires is greater than 0, it is handled as timestamp
  * and will be sent as date of last modification.  If it is 0 or omitted,
  * the current time will be sent as Last-Modified date.  If it's negative,
  * it is handled as expiration time in seconds, which means that if the
@@ -491,7 +491,6 @@ PHP_FUNCTION(http_send_data)
 	}
 
 	convert_to_string_ex(&zdata);
-	http_send_header("Accept-Ranges: bytes");
 	RETURN_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
 }
 /* }}} */
@@ -513,7 +512,6 @@ PHP_FUNCTION(http_send_file)
 		RETURN_FALSE;
 	}
 
-	http_send_header("Accept-Ranges: bytes");
 	RETURN_SUCCESS(http_send_file(file));
 }
 /* }}} */
@@ -533,7 +531,6 @@ PHP_FUNCTION(http_send_stream)
 	}
 
 	php_stream_from_zval(file, &zstream);
-	http_send_header("Accept-Ranges: bytes");
 	RETURN_SUCCESS(http_send_stream(file));
 }
 /* }}} */

@@ -67,9 +67,20 @@ PHP_METHOD(HttpMessage, getRequestUri);
 PHP_METHOD(HttpMessage, setRequestUri);
 PHP_METHOD(HttpMessage, getHttpVersion);
 PHP_METHOD(HttpMessage, setHttpVersion);
+PHP_METHOD(HttpMessage, getNestedMessage);
 PHP_METHOD(HttpMessage, toString);
 
 PHP_METHOD(HttpMessage, fromString);
 
 #endif
 #endif
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+

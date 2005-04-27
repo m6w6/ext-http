@@ -330,6 +330,9 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 		HTTP_G(etag_started) = 0;
 	}
 
+	/* enable partial dl and resume */
+	http_send_header("Accept-Ranges: bytes");
+
 	zend_hash_init(&ranges, 0, NULL, ZVAL_PTR_DTOR, 0);
 	range_status = http_get_request_ranges(&ranges, data_size);
 
@@ -362,14 +365,14 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 			return FAILURE;
 		}
 		if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
-			return http_cache_exit(etag, 1, 1);
+			return http_cache_exit_ex(etag, 1, 1);
 		}
 		efree(etag);
 	}
 
 	/* send 304 Not Modified if last modified matches */
 	if (http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G(lmod))) {
-		return http_cache_exit(http_date(HTTP_G(lmod)), 0, 1);
+		return http_cache_exit_ex(http_date(HTTP_G(lmod)), 0, 1);
 	}
 
 	/* send full entity */

@@ -23,9 +23,29 @@
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_message_api.h"
+#include "php_http_api.h"
 #include "php_http_headers_api.h"
 
 #include "phpstr/phpstr.h"
+
+#define http_message_parse_nested(msg, begin, length) _http_message_parse_nested((msg), (begin), (length) TSRMLS_CC)
+static inline http_message *_http_message_parse_nested(http_message *msg, const char *begin, size_t length TSRMLS_DC)
+{
+	http_message *new;
+
+	while (isspace(*begin)) {
+		++begin;
+		if (!length--) {
+			return NULL;
+		}
+	}
+
+	if (new = http_message_parse(begin, length)) {
+		new->nested = msg;
+		return new;
+	}
+	return NULL;
+}
 
 PHP_HTTP_API http_message *_http_message_init_ex(http_message *message, http_message_type type)
 {
@@ -41,7 +61,7 @@ PHP_HTTP_API http_message *_http_message_init_ex(http_message *message, http_mes
 	return message;
 }
 
-PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, char *message, size_t message_length, zend_bool dup TSRMLS_DC)
+PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char *message, size_t message_length TSRMLS_DC)
 {
 	char *body = NULL;
 	size_t header_length = 0;
@@ -56,8 +76,6 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, char *messa
 	}
 
 	msg = http_message_init(msg);
-	msg->len = message_length;
-	msg->raw = dup ? estrndup(message, message_length) : message;
 
 	if (body = strstr(message, HTTP_CRLF HTTP_CRLF)) {
 		body += lenof(HTTP_CRLF HTTP_CRLF);
@@ -66,7 +84,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, char *messa
 		header_length = message_length;
 	}
 
-	if (SUCCESS != http_parse_headers_cb(message, header_length, &msg->hdrs, 1, http_message_parse_headers_callback, (void **) &msg)) {
+	if (SUCCESS != http_parse_headers_cb((char *)message, header_length, &msg->hdrs, 1, http_message_parse_headers_callback, (void **) &msg)) {
 		if (free_msg) {
 			http_message_free(msg);
 		}
@@ -74,7 +92,32 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, char *messa
 	}
 
 	if (body) {
-		phpstr_from_string_ex(PHPSTR(msg), body, message_length - header_length);
+		zval **c;
+		http_message *nested;
+
+		if (SUCCESS == zend_hash_find(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void **) &c)) {
+			long len = atol(Z_STRVAL_PP(c));
+			phpstr_from_string_ex(PHPSTR(msg), body, len);
+			if (nested = http_message_parse_nested(msg, body + len,  message + message_length - body - len)) {
+				return nested;
+			}
+		} else if (
+				SUCCESS == zend_hash_find(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"), (void **) &c) &&
+				!strcasecmp("chunked", Z_STRVAL_PP(c))) {
+
+			char *decoded, *end;
+			size_t decoded_len;
+
+			if (end = http_chunked_decode(body, message_length - header_length, &decoded, &decoded_len)) { 
+				phpstr_from_string_ex(PHPSTR(msg), decoded, decoded_len);
+				efree(decoded);
+				if (nested = http_message_parse_nested(msg, end, message + message_length - end)) {
+					return nested;
+				}
+			}
+		} else {
+			phpstr_from_string_ex(PHPSTR(msg), body, message_length - header_length);
+		}
 	}
 
 	return msg;
@@ -119,49 +162,52 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 	ulong idx;
 	zval **header;
 
-	phpstr_init_ex(&str, msg->len, 1);
-	/* set sane alloc size */
-	str.size = 4096;
+	phpstr_init_ex(&str, 4096, 0);
 
-	switch (msg->type)
-	{
-		case HTTP_MSG_REQUEST:
-			phpstr_appendf(&str, "%s %s HTTP/%1.1f" HTTP_CRLF,
-				msg->info.request.method,
-				msg->info.request.URI,
-				msg->info.request.http_version);
-		break;
+	do {
 
-		case HTTP_MSG_RESPONSE:
-			phpstr_appendf(&str, "HTTP/%1.1f %d" HTTP_CRLF,
-				msg->info.response.http_version,
-				msg->info.response.code);
-		break;
-	}
+		switch (msg->type)
+		{
+			case HTTP_MSG_REQUEST:
+				phpstr_appendf(&str, "%s %s HTTP/%1.1f" HTTP_CRLF,
+					msg->info.request.method,
+					msg->info.request.URI,
+					msg->info.request.http_version);
+			break;
 
-	FOREACH_HASH_KEYVAL(&msg->hdrs, key, idx, header) {
-		if (key) {
-			zval **single_header;
-
-			switch (Z_TYPE_PP(header))
-			{
-				case IS_STRING:
-					phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(header));
-				break;
-
-				case IS_ARRAY:
-					FOREACH_VAL(*header, single_header) {
-						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(single_header));
-					}
-				break;
-			}
-
-			key = NULL;
+			case HTTP_MSG_RESPONSE:
+				phpstr_appendf(&str, "HTTP/%1.1f %d" HTTP_CRLF,
+					msg->info.response.http_version,
+					msg->info.response.code);
+			break;
 		}
-	}
 
-	phpstr_appends(&str, HTTP_CRLF);
-	phpstr_append(&str, PHPSTR_VAL(msg), PHPSTR_LEN(msg));
+		FOREACH_HASH_KEYVAL(&msg->hdrs, key, idx, header) {
+			if (key) {
+				zval **single_header;
+
+				switch (Z_TYPE_PP(header))
+				{
+					case IS_STRING:
+						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(header));
+					break;
+
+					case IS_ARRAY:
+						FOREACH_VAL(*header, single_header) {
+							phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(single_header));
+						}
+					break;
+				}
+
+				key = NULL;
+			}
+		}
+
+		phpstr_appends(&str, HTTP_CRLF);
+		phpstr_append(&str, PHPSTR_VAL(msg), PHPSTR_LEN(msg));
+		phpstr_appends(&str, HTTP_CRLF);
+
+	} while (msg = msg->nested);
 
 	data = phpstr_data(&str, string, length);
 	if (!string) {
@@ -176,10 +222,6 @@ PHP_HTTP_API void _http_message_dtor(http_message *message)
 	if (message) {
 		zend_hash_destroy(&message->hdrs);
 		phpstr_dtor(PHPSTR(message));
-		if (message->raw) {
-			efree(message->raw);
-			message->raw = NULL;
-		}
 		if (message->type == HTTP_MSG_REQUEST) {
 			if (message->info.request.method) {
 				efree(message->info.request.method);
@@ -198,6 +240,7 @@ PHP_HTTP_API void _http_message_free(http_message *message)
 	if (message) {
 		if (message->nested) {
 			http_message_free(message->nested);
+			message->nested = NULL;
 		}
 		http_message_dtor(message);
 		efree(message);

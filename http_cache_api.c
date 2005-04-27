@@ -207,7 +207,7 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 		if (!http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
 			return SUCCESS;
 		}
-		return http_cache_exit_ex(etag, 1, 0);
+		return http_cache_exit_ex((char *)etag, 1, 0);
 	}
 
 	/* if no etag is given and we didn't already start ob_etaghandler -- start it */

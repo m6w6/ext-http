@@ -179,7 +179,7 @@ static inline void _http_globals_dtor(TSRMLS_D)
 		efree(HTTP_G(ctype));
 		HTTP_G(ctype) = NULL;
 	}
-	
+
 #ifdef HTTP_HAVE_CURL
 #	if LIBCURL_VERSION_NUM < 0x070c00
 	memset(&HTTP_G(curlerr), 0, sizeof(HTTP_G(curlerr)));
@@ -193,21 +193,13 @@ static inline void _http_globals_dtor(TSRMLS_D)
 #define http_check_allowed_methods(m, l) _http_check_allowed_methods((m), (l) TSRMLS_CC)
 static inline void _http_check_allowed_methods(char *methods, int length TSRMLS_DC)
 {
-	char *found, *header;
-
-	if (!length || !SG(request_info).request_method) {
-		return;
+	if (length && SG(request_info).request_method) {
+		if (SUCCESS != http_check_method(SG(request_info).request_method, methods)) {
+			char *header = emalloc(length + sizeof("Allow: "));
+			sprintf(header, "Allow: %s", methods);
+			http_exit(405, header);
+		}
 	}
-
-	if (	(found = strstr(methods, SG(request_info).request_method)) &&
-			(found == SG(request_info).request_method || !isalpha(found[-1])) &&
-			(!isalpha(found[strlen(SG(request_info).request_method) + 1]))) {
-		return;
-	}
-
-	header = emalloc(length + sizeof("Allow: "));
-	sprintf(header, "Allow: %s", methods);
-	http_exit(405, header);
 }
 /* }}} */
 

@@ -101,6 +101,20 @@ STATUS _http_exit_ex(int status, char *header, zend_bool free_header TSRMLS_DC)
 }
 /* }}} */
 
+/* {{{ STATUS http_check_method(char *) */
+STATUS _http_check_method_ex(const char *method, const char *methods)
+{
+	const char *found;
+
+	if (	(found = strstr(methods, method)) &&
+			(found == method || !isalpha(found[-1])) &&
+			(!isalpha(found[strlen(method) + 1]))) {
+		return SUCCESS;
+	}
+	return FAILURE;
+}
+/* }}} */
+
 /* {{{ zval *http_get_server_var_ex(char *, size_t) */
 PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zend_bool check TSRMLS_DC)
 {
@@ -117,8 +131,8 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 /* }}} */
 
 
-/* {{{ STATUS http_chunked_decode(char *, size_t, char **, size_t *) */
-PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len,
+/* {{{ char *http_chunked_decode(char *, size_t, char **, size_t *) */
+PHP_HTTP_API char *_http_chunked_decode(const char *encoded, size_t encoded_len,
 	char **decoded, size_t *decoded_len TSRMLS_DC)
 {
 	const char *e_ptr;
@@ -139,7 +153,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len
 			if (i == 9) {
 				http_error_ex(E_WARNING, HTTP_E_PARSE, "Chunk size is too long: 0x%s...", hex_len);
 				efree(*decoded);
-				return FAILURE;
+				return NULL;
 			}
 			hex_len[i++] = *e_ptr++;
 		}
@@ -151,9 +165,11 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len
 
 		/* new line */
 		if (strncmp(e_ptr, HTTP_CRLF, 2)) {
-			http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid character (expected 0x0D 0x0A; got: %x %x)", *e_ptr, *(e_ptr + 1));
+			http_error_ex(E_WARNING, HTTP_E_PARSE, 
+				"Invalid character (expected 0x0D 0x0A; got: 0x%x(%c) 0x%x(%c))", 
+				*e_ptr, *e_ptr, *(e_ptr + 1), *(e_ptr + 1));
 			efree(*decoded);
-			return FAILURE;
+			return NULL;
 		}
 
 		/* hex to long */
@@ -163,7 +179,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len
 			if (error == hex_len) {
 				http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid chunk size string: '%s'", hex_len);
 				efree(*decoded);
-				return FAILURE;
+				return NULL;
 			}
 		}
 
@@ -173,7 +189,7 @@ PHP_HTTP_API STATUS _http_chunked_decode(const char *encoded, size_t encoded_len
 		*decoded_len += chunk_len;
 	}
 
-	return SUCCESS;
+	return e_ptr;
 }
 /* }}} */
 

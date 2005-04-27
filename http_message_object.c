@@ -55,6 +55,7 @@ zend_function_entry http_message_object_fe[] = {
 	PHP_ME(HttpMessage, setRequestUri, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getHttpVersion, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, setHttpVersion, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, getNestedMessage, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, toString, NULL, ZEND_ACC_PUBLIC)
 
 	ZEND_MALIAS(HttpMessage, __toString, toString, NULL, ZEND_ACC_PUBLIC)
@@ -106,7 +107,6 @@ static inline void _http_message_object_declare_default_properties(TSRMLS_D)
 
 	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
 
-	DCL_PROP(PROTECTED, string, raw, "");
 	DCL_PROP(PROTECTED, string, body, "");
 
 	DCL_PROP(PROTECTED, string, requestMethod, "");
@@ -144,7 +144,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		return EG(uninitialized_zval_ptr);
 	}
 
-    zval_dtor(return_value);
+    zval_ptr_dtor(&return_value);
 
 #if 0
 	fprintf(stderr, "Reading property: %s(%d==%d) (%lu)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)),
@@ -175,18 +175,6 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 			}
 		break;
 
-		case HTTP_MSG_PROPHASH_RAW:
-			if (msg->raw) {
-				if (msg->len) {
-					RETVAL_STRINGL(msg->raw, msg->len, 1);
-				} else {
-					RETVAL_STRINGL("", 0, 1);
-				}
-			} else {
-				RETVAL_NULL();
-			}
-		break;
-
 		case HTTP_MSG_PROPHASH_BODY:
 			phpstr_fix(PHPSTR(msg));
 			RETVAL_PHPSTR(PHPSTR(msg), 0, 1);
@@ -198,7 +186,12 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		break;
 
 		case HTTP_MSG_PROPHASH_NESTED_MESSAGE:
-			RETVAL_NULL();
+			if (msg->nested) {
+				Z_TYPE_P(return_value) = IS_OBJECT;
+				return_value->value.obj = http_message_object_from_msg(msg->nested);
+			} else {
+				RETVAL_NULL();
+			}
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
@@ -282,11 +275,6 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 			}
 		break;
 
-		case HTTP_MSG_PROPHASH_RAW:
-			http_message_dtor(msg);
-			http_message_parse_ex(msg, Z_STRVAL_P(value), Z_STRLEN_P(value), 1);
-		break;
-
 		case HTTP_MSG_PROPHASH_BODY:
 			phpstr_dtor(PHPSTR(msg));
 			phpstr_from_string_ex(PHPSTR(msg), Z_STRVAL_P(value), Z_STRLEN_P(value));
@@ -357,7 +345,6 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	zend_hash_clean(OBJ_PROP(obj));
 
 	ASSOC_PROP(obj, long, "type", msg->type);
-	ASSOC_STRINGL(obj, "raw", msg->raw, msg->len)
 	ASSOC_STRINGL(obj, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
 
 	MAKE_STD_ZVAL(headers);

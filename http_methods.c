@@ -875,7 +875,7 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 	zval *zv, *version;
 	getObject(http_message_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &zv)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &zv)) {
 		return;
 	}
 
@@ -887,6 +887,29 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 	}
 
 	SET_PROP(obj, httpVersion, zv);
+}
+/* }}} */
+
+/* {{{ proto HttpMessage HttpMessage::getNestedMessage()
+ *
+ * Get nested HTTP Message.
+ */
+PHP_METHOD(HttpMessage, getNestedMessage)
+{
+	zval *nested;
+	getObject(http_message_object, obj);
+	
+	NO_ARGS;
+	
+	nested = GET_PROP(obj, nestedMessage);
+	if (Z_TYPE_P(nested) == IS_OBJECT) {
+		Z_TYPE_P(return_value) = IS_OBJECT;
+		return_value->is_ref = 1;
+		return_value->value.obj = nested->value.obj;
+		zval_add_ref(&return_value);
+	} else {
+		RETVAL_NULL();
+	}
 }
 /* }}} */
 

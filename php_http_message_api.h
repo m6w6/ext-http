@@ -59,9 +59,6 @@ struct _http_message {
 
 	} info;
 
-	size_t 		len;
-	char		*raw;
-
 	http_message *nested;
 };
 
@@ -73,9 +70,9 @@ struct _http_message {
 #define http_message_init_ex(m, t) _http_message_init_ex((m), (t))
 PHP_HTTP_API http_message *_http_message_init_ex(http_message *m, http_message_type t);
 
-#define http_message_parse(m, l) http_message_parse_ex(NULL, (m), (l), 1)
-#define http_message_parse_ex(h, m, l, d) _http_message_parse_ex((h), (m), (l), (d) TSRMLS_CC)
-PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, char *message, size_t length, zend_bool duplicate TSRMLS_DC);
+#define http_message_parse(m, l) http_message_parse_ex(NULL, (m), (l))
+#define http_message_parse_ex(h, m, l) _http_message_parse_ex((h), (m), (l) TSRMLS_CC)
+PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char *message, size_t length TSRMLS_DC);
 
 #define http_message_parse_headers_callback _http_message_parse_headers_callback
 PHP_HTTP_API void _http_message_parse_headers_callback(void *message, char *http_line, size_t line_length, HashTable **headers TSRMLS_DC);
