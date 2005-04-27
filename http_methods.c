@@ -532,6 +532,7 @@ PHP_METHOD(HttpMessage, fromString)
 	char *string = NULL;
 	int length = 0;
 	http_message *msg = NULL;
+	http_message_object obj;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
 		RETURN_NULL();
@@ -543,45 +544,6 @@ PHP_METHOD(HttpMessage, fromString)
 
 	Z_TYPE_P(return_value) = IS_OBJECT;
 	return_value->value.obj = http_message_object_from_msg(msg);
-}
-/* }}} */
-
-/* {{{ proto void HttpMessage::__construct([string raw_message])
- *
- * Instantiate a new HttpMessage object based on the optionally provided
- * raw message.  An HTTP Message can be either a response or a request.
- */
-PHP_METHOD(HttpMessage, __construct)
-{
-	zval *message = NULL;
-	getObject(http_message_object, obj);
-
-	SET_EH_THROW_HTTP();
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z/", &message)) {
-		if (message) {
-			convert_to_string(message);
-			SET_PROP(obj, raw, message);
-		}
-	}
-	SET_EH_NORMAL();
-}
-/* }}} */
-
-/* {{{ proto void HttpMessage::setRaw(string raw_message)
- *
- * Parse a new raw message.
- */
-PHP_METHOD(HttpMessage, setRaw)
-{
-	zval *message;
-	getObject(http_message_object, obj);
-
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &message)) {
-		return;
-	}
-
-	convert_to_string(message);
-	SET_PROP(obj, raw, message);
 }
 /* }}} */
 
@@ -887,29 +849,6 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 	}
 
 	SET_PROP(obj, httpVersion, zv);
-}
-/* }}} */
-
-/* {{{ proto HttpMessage HttpMessage::getNestedMessage()
- *
- * Get nested HTTP Message.
- */
-PHP_METHOD(HttpMessage, getNestedMessage)
-{
-	zval *nested;
-	getObject(http_message_object, obj);
-	
-	NO_ARGS;
-	
-	nested = GET_PROP(obj, nestedMessage);
-	if (Z_TYPE_P(nested) == IS_OBJECT) {
-		Z_TYPE_P(return_value) = IS_OBJECT;
-		return_value->is_ref = 1;
-		return_value->value.obj = nested->value.obj;
-		zval_add_ref(&return_value);
-	} else {
-		RETVAL_NULL();
-	}
 }
 /* }}} */
 

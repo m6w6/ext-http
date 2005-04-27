@@ -108,7 +108,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 			char *decoded, *end;
 			size_t decoded_len;
 
-			if (end = http_chunked_decode(body, message_length - header_length, &decoded, &decoded_len)) { 
+			if (end = http_chunked_decode(body, message_length - header_length, &decoded, &decoded_len)) {
 				phpstr_from_string_ex(PHPSTR(msg), decoded, decoded_len);
 				efree(decoded);
 				if (nested = http_message_parse_nested(msg, end, message + message_length - end)) {

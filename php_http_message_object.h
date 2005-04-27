@@ -24,6 +24,7 @@
 typedef struct {
 	zend_object zo;
 	http_message *message;
+	zval *nested;
 	zval _tmp_property;
 } http_message_object;
 
@@ -51,8 +52,6 @@ extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 #define HTTP_MSG_PROPHASH_RESPONSE_STATUS      3857097400LU
 #define HTTP_MSG_PROPHASH_RESPONSE_CODE        1305615119LU
 
-PHP_METHOD(HttpMessage, __construct);
-PHP_METHOD(HttpMessage, setRaw);
 PHP_METHOD(HttpMessage, getBody);
 PHP_METHOD(HttpMessage, getHeaders);
 PHP_METHOD(HttpMessage, setHeaders);
@@ -67,7 +66,6 @@ PHP_METHOD(HttpMessage, getRequestUri);
 PHP_METHOD(HttpMessage, setRequestUri);
 PHP_METHOD(HttpMessage, getHttpVersion);
 PHP_METHOD(HttpMessage, setHttpVersion);
-PHP_METHOD(HttpMessage, getNestedMessage);
 PHP_METHOD(HttpMessage, toString);
 
 PHP_METHOD(HttpMessage, fromString);
