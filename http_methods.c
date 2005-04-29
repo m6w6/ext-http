@@ -317,7 +317,7 @@ PHP_METHOD(HttpResponse, setData)
 	zval *the_data;
 	getObject(http_response_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &the_data)) {
 		RETURN_FALSE;
 	}
 
@@ -558,8 +558,7 @@ PHP_METHOD(HttpMessage, getBody)
 
 	NO_ARGS;
 
-	body = GET_PROP(obj, body);
-	RETURN_STRINGL(Z_STRVAL_P(body), Z_STRLEN_P(body), 1);
+	RETURN_PHPSTR(&obj->message->body, PHPSTR_FREE_NOT, 1);
 }
 /* }}} */
 
@@ -569,14 +568,14 @@ PHP_METHOD(HttpMessage, getBody)
  */
 PHP_METHOD(HttpMessage, getHeaders)
 {
-	zval *headers;
+	zval headers;
 	getObject(http_message_object, obj);
 
 	NO_ARGS;
 
-	headers = GET_PROP(obj, headers);
+	Z_ARRVAL(headers) = &obj->message->hdrs;
 	array_init(return_value);
-	array_copy(headers, return_value);
+	array_copy(&headers, return_value);
 }
 /* }}} */
 
@@ -586,14 +585,16 @@ PHP_METHOD(HttpMessage, getHeaders)
  */
 PHP_METHOD(HttpMessage, setHeaders)
 {
-	zval *headers;
+	zval *new_headers, old_headers;
 	getObject(http_message_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &headers)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &new_headers)) {
 		return;
 	}
 
-	SET_PROP(obj, headers, headers);
+	zend_hash_clean(&obj->message->hdrs);
+	Z_ARRVAL(old_headers) = &obj->message->hdrs;
+	array_copy(new_headers, &old_headers);
 }
 /* }}} */
 
@@ -603,7 +604,7 @@ PHP_METHOD(HttpMessage, setHeaders)
  */
 PHP_METHOD(HttpMessage, addHeaders)
 {
-	zval *old_headers, *new_headers;
+	zval old_headers, *new_headers;
 	zend_bool append = 0;
 	getObject(http_message_object, obj);
 
@@ -611,13 +612,12 @@ PHP_METHOD(HttpMessage, addHeaders)
 		return;
 	}
 
-	old_headers = GET_PROP(obj, headers);
+	Z_ARRVAL(old_headers) = &obj->message->hdrs;
 	if (append) {
-		array_append(new_headers, old_headers);
+		array_append(new_headers, &old_headers);
 	} else {
-		array_merge(new_headers, old_headers);
+		array_merge(new_headers, &old_headers);
 	}
-	SET_PROP(obj, headers, old_headers);
 }
 /* }}} */
 
@@ -627,13 +627,11 @@ PHP_METHOD(HttpMessage, addHeaders)
  */
 PHP_METHOD(HttpMessage, getType)
 {
-	zval *type;
 	getObject(http_message_object, obj);
 
 	NO_ARGS;
 
-	type = GET_PROP(obj, type);
-	RETURN_LONG(Z_LVAL_P(type));
+	RETURN_LONG(obj->message->type);
 }
 /* }}} */
 
@@ -649,7 +647,21 @@ PHP_METHOD(HttpMessage, setType)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &type)) {
 		return;
 	}
-	UPD_PROP(obj, long, type, type);
+	if (type != obj->message->type) {
+		if (obj->message->type == HTTP_MSG_REQUEST) {
+			if (obj->message->info.request.method) {
+				efree(obj->message->info.request.method);
+			}
+			if (obj->message->info.request.URI) {
+				efree(obj->message->info.request.URI);
+			}
+		}
+		obj->message->type = type;
+		if (obj->message->type == HTTP_MSG_REQUEST) {
+			obj->message->info.request.method = NULL;
+			obj->message->info.request.URI = NULL;
+		}
+	}
 }
 /* }}} */
 
@@ -659,7 +671,6 @@ PHP_METHOD(HttpMessage, setType)
  */
 PHP_METHOD(HttpMessage, getResponseCode)
 {
-	zval *status;
 	getObject(http_message_object, obj);
 
 	NO_ARGS;
@@ -669,8 +680,7 @@ PHP_METHOD(HttpMessage, getResponseCode)
 		RETURN_NULL();
 	}
 
-	status = GET_PROP(obj, responseCode);
-	RETURN_LONG(Z_LVAL_P(status));
+	RETURN_LONG(obj->message->info.response.code);
 }
 /* }}} */
 
@@ -698,7 +708,7 @@ PHP_METHOD(HttpMessage, setResponseCode)
 		RETURN_FALSE;
 	}
 
-	UPD_PROP(obj, long, responseCode, code);
+	obj->message->info.response.code = code;
 	RETURN_TRUE;
 }
 /* }}} */
@@ -710,7 +720,6 @@ PHP_METHOD(HttpMessage, setResponseCode)
  */
 PHP_METHOD(HttpMessage, getRequestMethod)
 {
-	zval *method;
 	getObject(http_message_object, obj);
 
 	NO_ARGS;
@@ -720,8 +729,7 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 		RETURN_NULL();
 	}
 
-	method = GET_PROP(obj, requestMethod);
-	RETURN_STRINGL(Z_STRVAL_P(method), Z_STRLEN_P(method), 1);
+	RETURN_STRING(obj->message->info.request.method, 1);
 }
 /* }}} */
 
@@ -748,8 +756,15 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 		http_error(E_WARNING, HTTP_E_PARAM, "Cannot set HttpMessage::requestMethod to an empty string");
 		RETURN_FALSE;
 	}
+	if (SUCCESS != http_check_method(method)) {
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Unkown request method: %s", method);
+		RETURN_FALSE;
+	}
 
-	UPD_PROP(obj, string, requestMethod, method);
+	if (obj->message->info.request.method) {
+		efree(obj->message->info.request.method);
+	}
+	obj->message->info.request.method = estrndup(method, method_len);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -766,11 +781,11 @@ PHP_METHOD(HttpMessage, getRequestUri)
 	NO_ARGS;
 
 	if (obj->message->type != HTTP_MSG_REQUEST) {
+		http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_REQUEST");
 		RETURN_NULL();
 	}
 
-	uri = GET_PROP(obj, requestUri);
-	RETURN_STRINGL(Z_STRVAL_P(uri), Z_STRLEN_P(uri), 1);
+	RETURN_STRING(obj->message->info.request.URI, 1);
 }
 /* }}} */
 
@@ -798,7 +813,10 @@ PHP_METHOD(HttpMessage, setRequestUri)
 		RETURN_FALSE;
 	}
 
-	UPD_PROP(obj, string, requestUri, URI);
+	if (obj->message->info.request.URI) {
+		efree(obj->message->info.request.URI);
+	}
+	obj->message->info.request.URI = estrndup(URI, URIlen);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -809,19 +827,25 @@ PHP_METHOD(HttpMessage, setRequestUri)
  */
 PHP_METHOD(HttpMessage, getHttpVersion)
 {
-	zval *version;
 	char ver[4] = {0};
+	float *version;
 	getObject(http_message_object, obj);
 
 	NO_ARGS;
 
-	version = GET_PROP(obj, httpVersion);
-
-	if (Z_TYPE_P(version) == IS_NULL) {
-		RETURN_NULL();
+	switch (obj->message->type)
+	{
+		case HTTP_MSG_RESPONSE:
+			version = &obj->message->info.response.http_version;
+		break;
+		case HTTP_MSG_REQUEST:
+			version = &obj->message->info.request.http_version;
+		break;
+		case HTTP_MSG_NONE:
+		default:
+			RETURN_NULL();
 	}
-
-	sprintf(ver, "1.1f", Z_DVAL_P(version));
+	sprintf(ver, "1.1f", version);
 	RETURN_STRINGL(ver, 3, 1);
 }
 /* }}} */
@@ -841,14 +865,45 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 		return;
 	}
 
-	convert_to_double_ex(&zv);
-	sprintf(v, "%1.1f", Z_DVAL_P(zv));
-	if (strcmp(v, "1.0") && strcmp(v, "1.1")) {
-		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid HTTP version (1.0 or 1.1): %s", v);
+	if (obj->message->type == HTTP_MSG_NONE) {
+		http_error(E_WARNING, HTTP_E_MSG, "Message is neither of type HTTP_MSG_RESPONSE nor HTTP_MSG_REQUEST");
 		RETURN_FALSE;
 	}
 
-	SET_PROP(obj, httpVersion, zv);
+	convert_to_double_ex(&zv);
+	sprintf(v, "%1.1f", Z_DVAL_P(zv));
+	if (strcmp(v, "1.0") && strcmp(v, "1.1")) {
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid HTTP protocol version (1.0 or 1.1): %s", v);
+		RETURN_FALSE;
+	}
+
+	if (obj->message->type == HTTP_MSG_RESPONSE) {
+		obj->message->info.response.http_version = (float) Z_DVAL_P(zv);
+	} else {
+		obj->message->info.request.http_version = (float) Z_DVAL_P(zv);
+	}
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto HttpMessage HttpMessage::getNestedMessage()
+ *
+ * Get nested Message.
+ */
+PHP_METHOD(HttpMessage, getNestedMessage)
+{
+	getObject(http_message_object, obj);
+
+	NO_ARGS;
+
+	if (obj->message->nested) {
+		Z_TYPE_P(return_value) = IS_OBJECT;
+		return_value->value.obj = obj->nested;
+		return_value->is_ref = 1;
+		zend_objects_store_add_ref(return_value TSRMLS_CC);
+	} else {
+		RETVAL_NULL();
+	}
 }
 /* }}} */
 

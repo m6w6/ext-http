@@ -24,8 +24,7 @@
 typedef struct {
 	zend_object zo;
 	http_message *message;
-	zval *nested;
-	zval _tmp_property;
+	zend_object_value nested;
 } http_message_object;
 
 extern zend_class_entry *http_message_object_ce;
@@ -66,6 +65,7 @@ PHP_METHOD(HttpMessage, getRequestUri);
 PHP_METHOD(HttpMessage, setRequestUri);
 PHP_METHOD(HttpMessage, getHttpVersion);
 PHP_METHOD(HttpMessage, setHttpVersion);
+PHP_METHOD(HttpMessage, getNestedMessage);
 PHP_METHOD(HttpMessage, toString);
 
 PHP_METHOD(HttpMessage, fromString);

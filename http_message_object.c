@@ -53,6 +53,7 @@ zend_function_entry http_message_object_fe[] = {
 	PHP_ME(HttpMessage, setRequestUri, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getHttpVersion, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, setHttpVersion, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, getNestedMessage, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, toString, NULL, ZEND_ACC_PUBLIC)
 
 	ZEND_MALIAS(HttpMessage, __toString, toString, NULL, ZEND_ACC_PUBLIC)
@@ -87,17 +88,13 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 
 	o = ecalloc(1, sizeof(http_message_object));
 	o->zo.ce = ce;
-	
-	MAKE_STD_ZVAL(o->nested);
-	Z_TYPE_P(o->nested) = IS_OBJECT;
+	o->message = NULL;
 
 	if (msg) {
 		o->message = msg;
 		if (msg->nested) {
-			o->nested->value.obj = http_message_object_from_msg(msg->nested);
+			o->nested = http_message_object_from_msg(msg->nested);
 		}
-	} else {
-		o->message = http_message_new();
 	}
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
@@ -114,16 +111,13 @@ static inline void _http_message_object_declare_default_properties(TSRMLS_D)
 	zend_class_entry *ce = http_message_object_ce;
 
 	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
-
 	DCL_PROP(PROTECTED, string, body, "");
-
 	DCL_PROP(PROTECTED, string, requestMethod, "");
 	DCL_PROP(PROTECTED, string, requestUri, "");
 	DCL_PROP(PROTECTED, long, responseCode, 0);
-
 	DCL_PROP_N(PROTECTED, httpVersion);
 	DCL_PROP_N(PROTECTED, headers);
-	
+
 	DCL_PROP_N(PUBLIC, nestedMessage);
 }
 
@@ -139,8 +133,6 @@ static void _http_message_object_free(zend_object *object TSRMLS_DC)
 		http_message_dtor(o->message);
 		efree(o->message);
 	}
-	FREE_ZVAL(o->nested);
-	zval_dtor(&o->_tmp_property);
 	efree(o);
 }
 
@@ -148,14 +140,15 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 {
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
-	zval *return_value = &obj->_tmp_property;
+	zval *return_value;
 
-	/* public */
-	if (strcmp(Z_STRVAL_P(member), "nestedMessage")) {
-		if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-			zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
-			return EG(uninitialized_zval_ptr);
-		}
+	/* tmp var */
+	ALLOC_ZVAL(return_value);
+	return_value->refcount = 0;
+
+	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
+		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
+		return EG(uninitialized_zval_ptr);
 	}
 
     zval_dtor(return_value);
@@ -200,9 +193,12 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		break;
 
 		case HTTP_MSG_PROPHASH_NESTED_MESSAGE:
-			RETVAL_NULL();
 			if (msg->nested) {
-				return obj->nested;
+				Z_TYPE_P(return_value)	= IS_OBJECT;
+				return_value->value.obj	= obj->nested;
+				zend_objects_store_add_ref(return_value TSRMLS_CC);
+			} else {
+				RETVAL_NULL();
 			}
 		break;
 
@@ -243,11 +239,8 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
 
-	/* public */
-	if (strcmp("nestedMessage", Z_STRVAL_P(member))) {
-		if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-			zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
-		}
+	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
+		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 	}
 
 #if 0
@@ -301,9 +294,13 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		break;
 
 		case HTTP_MSG_PROPHASH_NESTED_MESSAGE:
-			zval_ptr_dtor(&obj->nested);
-			obj->nested->value.obj = value->value.obj;
-			zval_add_ref(&value);
+			if (msg->nested) {
+				zval tmp;
+				tmp.value.obj = obj->nested;
+				zend_objects_store_del_ref(&tmp TSRMLS_CC);
+			}
+			zend_objects_store_add_ref(value TSRMLS_CC);
+			obj->nested = value->value.obj;
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
@@ -330,8 +327,6 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 			}
 		break;
 	}
-	zval_dtor(value);
-	FREE_ZVAL(value);
 }
 
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
