@@ -132,7 +132,7 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 
 
 /* {{{ char *http_chunked_decode(char *, size_t, char **, size_t *) */
-PHP_HTTP_API char *_http_chunked_decode(const char *encoded, size_t encoded_len,
+PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encoded_len,
 	char **decoded, size_t *decoded_len TSRMLS_DC)
 {
 	const char *e_ptr;
@@ -158,20 +158,6 @@ PHP_HTTP_API char *_http_chunked_decode(const char *encoded, size_t encoded_len,
 			hex_len[i++] = *e_ptr++;
 		}
 
-		/* reached the end */
-		if (!strcmp(hex_len, "0")) {
-			break;
-		}
-
-		/* new line */
-		if (strncmp(e_ptr, HTTP_CRLF, 2)) {
-			http_error_ex(E_WARNING, HTTP_E_PARSE, 
-				"Invalid character (expected 0x0D 0x0A; got: 0x%x(%c) 0x%x(%c))", 
-				*e_ptr, *e_ptr, *(e_ptr + 1), *(e_ptr + 1));
-			efree(*decoded);
-			return NULL;
-		}
-
 		/* hex to long */
 		{
 			char *error = NULL;
@@ -181,6 +167,19 @@ PHP_HTTP_API char *_http_chunked_decode(const char *encoded, size_t encoded_len,
 				efree(*decoded);
 				return NULL;
 			}
+		}
+
+		/* reached the end */
+		if (!chunk_len) {
+			break;
+		}
+
+		/* new line */
+		if (strncmp(e_ptr, HTTP_CRLF, 2)) {
+			http_error_ex(E_WARNING, HTTP_E_PARSE,
+				"Invalid character (expected 0x0D 0x0A; got: 0x%x 0x%x)", *e_ptr, *(e_ptr + 1));
+			efree(*decoded);
+			return NULL;
 		}
 
 		memcpy(d_ptr, e_ptr += 2, chunk_len);
@@ -225,7 +224,7 @@ PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t response_len,
 		memcpy(*body, real_body, *body_len);
 	}
 
-	return http_parse_headers_ex(header, real_body ? response_len - *body_len : response_len, headers, 1);
+	return http_parse_headers_ex(header, headers, 1);
 }
 /* }}} */
 

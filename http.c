@@ -194,7 +194,7 @@ static inline void _http_globals_dtor(TSRMLS_D)
 static inline void _http_check_allowed_methods(char *methods, int length TSRMLS_DC)
 {
 	if (length && SG(request_info).request_method) {
-		if (SUCCESS != http_check_method(SG(request_info).request_method, methods)) {
+		if (SUCCESS != http_check_method_ex(SG(request_info).request_method, methods)) {
 			char *header = emalloc(length + sizeof("Allow: "));
 			sprintf(header, "Allow: %s", methods);
 			http_exit(405, header);

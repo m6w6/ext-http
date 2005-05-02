@@ -24,7 +24,7 @@
 typedef struct {
 	zend_object zo;
 	http_message *message;
-	zend_object_value nested;
+	zend_object_value parent;
 } http_message_object;
 
 extern zend_class_entry *http_message_object_ce;
@@ -46,11 +46,26 @@ extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 #define HTTP_MSG_PROPHASH_BODY                 254474387LU
 #define HTTP_MSG_PROPHASH_HEADERS              3199929089LU
 #define HTTP_MSG_PROPHASH_NESTED_MESSAGE       3652857165LU
+#define HTTP_MSG_PROPHASH_PARENT_MESSAGE       0LU
 #define HTTP_MSG_PROPHASH_REQUEST_METHOD       1669022159LU
 #define HTTP_MSG_PROPHASH_REQUEST_URI          3208695486LU
 #define HTTP_MSG_PROPHASH_RESPONSE_STATUS      3857097400LU
 #define HTTP_MSG_PROPHASH_RESPONSE_CODE        1305615119LU
 
+#define HTTP_MSG_CHECK_OBJ(obj, dofail) \
+	if (!(obj)->message) { \
+		http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is empty"); \
+		dofail; \
+	}
+#define HTTP_MSG_CHECK_STD() HTTP_MSG_CHECK_OBJ(obj, RETURN_FALSE)
+
+#define HTTP_MSG_INIT_OBJ(obj) \
+	if (!(obj)->message) { \
+		(obj)->message = http_message_new(); \
+	}
+#define HTTP_MSG_INIT_STD() HTTP_MSG_INIT_OBJ(obj)
+
+PHP_METHOD(HttpMessage, __construct);
 PHP_METHOD(HttpMessage, getBody);
 PHP_METHOD(HttpMessage, getHeaders);
 PHP_METHOD(HttpMessage, setHeaders);
@@ -65,7 +80,8 @@ PHP_METHOD(HttpMessage, getRequestUri);
 PHP_METHOD(HttpMessage, setRequestUri);
 PHP_METHOD(HttpMessage, getHttpVersion);
 PHP_METHOD(HttpMessage, setHttpVersion);
-PHP_METHOD(HttpMessage, getNestedMessage);
+PHP_METHOD(HttpMessage, getParentMessage);
+PHP_METHOD(HttpMessage, send);
 PHP_METHOD(HttpMessage, toString);
 
 PHP_METHOD(HttpMessage, fromString);

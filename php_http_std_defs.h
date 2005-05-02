@@ -31,7 +31,25 @@ typedef int STATUS;
 #define lenof(S) (sizeof(S) - 1)
 
 /* return bool (v == SUCCESS) */
+#define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
+/* return object(values) */
+#define RETVAL_OBJECT(o) \
+	return_value->is_ref = 1; \
+	return_value->type = IS_OBJECT; \
+	return_value->value.obj = (o)->value.obj; \
+	zval_add_ref(&return_value)
+#define RETURN_OBJECT(o) \
+	RETVAL_OBJECT(o); \
+	return
+#define RETVAL_OBJVAL(ov) \
+	return_value->is_ref = 1; \
+	return_value->type = IS_OBJECT; \
+	return_value->value.obj = (ov); \
+	zend_objects_store_add_ref(return_value TSRMLS_CC)
+#define RETURN_OBJVAL(ov) \
+	RETVAL_OBJVAL(ov); \
+	return
 
 /* function accepts no args */
 #define NO_ARGS \

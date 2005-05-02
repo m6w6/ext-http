@@ -238,15 +238,21 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 }
 /* }}} */
 
-/* {{{ STATUS http_parse_headers(char *, size_t, HashTable *, zend_bool) */
-PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
-	HashTable *headers, zend_bool prettify,
-	http_parse_headers_callback_t func, void **callback_data TSRMLS_DC)
+/* {{{ STATUS http_parse_headers(char *, HashTable *, zend_bool) */
+PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *headers, zend_bool prettify, http_parse_headers_callback_t func, void **callback_data TSRMLS_DC)
 {
-	char *colon = NULL, *line = NULL, *begin = header;
+	const char *colon = NULL, *line = NULL, *begin = header, *crlfcrlf = NULL;
+	size_t header_len;
 	zval array;
 
 	Z_ARRVAL(array) = headers;
+
+	if (crlfcrlf = strstr(header, HTTP_CRLF HTTP_CRLF)) {
+		header_len = crlfcrlf - header;
+	} else {
+		header_len = strlen(header);
+	}
+	
 
 	if (header_len < 2 || !strchr(header, ':')) {
 		http_error(E_WARNING, HTTP_E_PARSE, "Cannot parse too short or malformed HTTP headers");
@@ -265,10 +271,10 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 			case '\n':
 				if ((!(*line - 1)) || ((*line != ' ') && (*line != '\t'))) {
 					/* response/request line */
-					if (	(!strncmp(header, "HTTP/1.", lenof("HTTP/1."))) ||
-							(!strncmp(line - lenof("HTTP/1.x\r") + value_len, "HTTP/1.", lenof("HTTP/1.")))) {
+                    if (    (!strncmp(header, "HTTP/1.", lenof("HTTP/1."))) ||
+                            (!strncmp(line - lenof("HTTP/1.x" HTTP_CRLF) + value_len, "HTTP/1.", lenof("HTTP/1.")))) {
 						if (func) {
-							func(callback_data, header, line - header + value_len, &headers TSRMLS_CC);
+							func(header, &headers, callback_data TSRMLS_CC);
 							Z_ARRVAL(array) = headers;
 						}
 					} else
@@ -324,6 +330,10 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 							efree(key);
 						}
 					}
+					/* stop at CRLF CRLF */
+					if (!strncmp(HTTP_CRLF, line + 1, lenof(HTTP_CRLF))) {
+						return SUCCESS;
+					}
 					colon = NULL;
 					value_len = 0;
 					header += line - header;
@@ -341,21 +351,32 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(char *header, size_t header_len,
 }
 /* }}} */
 
-PHP_HTTP_API void _http_parse_headers_default_callback(void **cb_data, char *http_line, size_t line_length, HashTable **headers TSRMLS_DC)
+PHP_HTTP_API void _http_parse_headers_default_callback(const char *http_line, HashTable **headers, void **cb_data TSRMLS_DC)
 {
 	zval array;
+	char *crlf = NULL;
+	size_t line_length;
 	Z_ARRVAL(array) = *headers;
+
+	if (crlf = strstr(http_line, HTTP_CRLF)) {
+		line_length = crlf - http_line;
+	} else {
+		line_length = strlen(http_line);
+	}
 
 	/* response */
 	if (!strncmp(http_line, "HTTP/1.", lenof("HTTP/1."))) {
-		add_assoc_stringl(&array, "Response Status", http_line + lenof("HTTP/1.x "), line_length - lenof("HTTP/1.x \r\n"), 1);
+		char *status = estrndup(http_line + lenof("HTTP/1.x "), line_length - lenof("HTTP/1.x "));
+		add_assoc_stringl(&array, "Response Status", status, line_length - lenof("HTTP/1.x "), 0);
 	} else
 	/* request */
-	if (!strncmp(http_line + line_length - lenof("HTTP/1.x\r\n"), "HTTP/1.", lenof("HTTP/1."))) {
+	if (!strncmp(http_line + line_length - lenof("HTTP/1.x"), "HTTP/1.", lenof("HTTP/1."))) {
 		char *sep = strchr(http_line, ' ');
+		char *url = estrndup(sep + 1, strstr(sep, "HTTP/1.") - sep + 1 + 1);
+		char *met = estrndup(http_line, sep - http_line);
 
-		add_assoc_stringl(&array, "Request Method", http_line, sep - http_line, 1);
-		add_assoc_stringl(&array, "Request Uri", sep + 1, strstr(sep, "HTTP/1.") - sep + 1 + 1, 1);
+		add_assoc_stringl(&array, "Request Method", met, sep - http_line, 0);
+		add_assoc_stringl(&array, "Request Uri", url, strstr(sep, "HTTP/1.") - sep + 1 + 1, 0);
 	}
 }
 

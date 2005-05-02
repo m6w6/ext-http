@@ -18,19 +18,7 @@
 #ifndef PHP_HTTP_MESSAGE_API_H
 #define PHP_HTTP_MESSAGE_API_H
 
-/*
-DUMP:
-HttpMessage
-	->toResponseString();
-	->toRequestString();
-	->__toString();	->__sleep(); ->serialize();
-	->fromString(); __wakeup($message); ->unserialize();
-	->setStatusCode();
-	->setHeader(); ->addHeader()...
-*/
-
 #include "phpstr/phpstr.h"
-#include "php_http_headers_api.h"
 
 typedef enum {
 	HTTP_MSG_NONE,
@@ -59,26 +47,36 @@ struct _http_message {
 
 	} info;
 
-	http_message *nested;
+	http_message *parent;
 };
 
 /* required minimum length of an HTTP message "HTTP/1.1 200\r\n" */
 #define HTTP_MSG_MIN_SIZE 15
+
+/* shorthand for type checks */
+#define HTTP_MSG_TYPE(TYPE, msg) ((msg) && ((msg)->type == HTTP_MSG_ ##TYPE))
 
 #define http_message_new() _http_message_init_ex(NULL, 0)
 #define http_message_init(m) _http_message_init_ex((m), 0)
 #define http_message_init_ex(m, t) _http_message_init_ex((m), (t))
 PHP_HTTP_API http_message *_http_message_init_ex(http_message *m, http_message_type t);
 
+#define http_message_set_type(m, t) _http_message_set_type((m), (t))
+PHP_HTTP_API void _http_message_set_type(http_message *m, http_message_type t);
+
 #define http_message_parse(m, l) http_message_parse_ex(NULL, (m), (l))
 #define http_message_parse_ex(h, m, l) _http_message_parse_ex((h), (m), (l) TSRMLS_CC)
 PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char *message, size_t length TSRMLS_DC);
 
-#define http_message_parse_headers_callback _http_message_parse_headers_callback
-PHP_HTTP_API void _http_message_parse_headers_callback(void *message, char *http_line, size_t line_length, HashTable **headers TSRMLS_DC);
-
 #define http_message_tostring(m, s, l) _http_message_tostring((m), (s), (l))
 PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_t *length);
+
+#define http_message_serialize(m, s, l) _http_message_serialize((m), (s), (l))
+PHP_HTTP_API void _http_message_serialize(http_message *message, char **string, size_t *length);
+
+#define http_message_send(m) _http_message_send((m) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC);
+
 #define http_message_dtor(m) _http_message_dtor((m))
 PHP_HTTP_API void _http_message_dtor(http_message *message);
 

@@ -549,7 +549,7 @@ PHP_FUNCTION(http_chunked_decode)
 		RETURN_FALSE;
 	}
 
-	if (SUCCESS == http_chunked_decode(encoded, encoded_len, &decoded, &decoded_len)) {
+	if (NULL != http_chunked_decode(encoded, encoded_len, &decoded, &decoded_len)) {
 		RETURN_STRINGL(decoded, decoded_len, 0);
 	} else {
 		RETURN_FALSE;
@@ -566,7 +566,7 @@ PHP_FUNCTION(http_chunked_decode)
  * <?php
  * array(
  *     0 => array(
- *         'Status' => '200 Ok',
+ *         'Response Status' => '200 Ok',
  *         'Content-Type' => 'text/plain',
  *         'Content-Language' => 'en-US'
  *     ),
@@ -605,7 +605,7 @@ PHP_FUNCTION(http_split_response)
  */
 PHP_FUNCTION(http_parse_headers)
 {
-	char *header, *rnrn;
+	char *header;
 	int header_len;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &header, &header_len)) {
@@ -613,11 +613,7 @@ PHP_FUNCTION(http_parse_headers)
 	}
 
 	array_init(return_value);
-
-	if (rnrn = strstr(header, HTTP_CRLF HTTP_CRLF)) {
-		header_len = rnrn - header + 2;
-	}
-	if (SUCCESS != http_parse_headers(header, header_len, return_value)) {
+	if (SUCCESS != http_parse_headers(header, return_value)) {
 		http_error(E_WARNING, HTTP_E_PARSE, "Could not parse HTTP headers");
 		zval_dtor(return_value);
 		RETURN_FALSE;
@@ -984,6 +980,7 @@ PHP_FUNCTION(http_build_query)
 
 PHP_FUNCTION(http_test)
 {
+	RETURN_NULL();
 }
 
 /*

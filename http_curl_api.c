@@ -106,7 +106,7 @@ static inline char *_http_curl_copystr(const char *str TSRMLS_DC)
 /* {{{ static size_t http_curl_callback(char *, size_t, size_t, void *) */
 static size_t http_curl_callback(char *buf, size_t len, size_t n, void *s)
 {
-	return phpstr_append(PHPSTR(s), buf, len *= n);
+	return s ? phpstr_append(PHPSTR(s), buf, len * n) : len * n;
 }
 /* }}} */
 
@@ -211,7 +211,7 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 	/* compress, empty string enables deflate and gzip */
 	if (zoption = http_curl_getopt(options, "compress", IS_BOOL)) {
 		if (Z_LVAL_P(zoption)) {
-			HTTP_CURL_OPT(ENCODING, "");
+			HTTP_CURL_OPT(ENCODING, http_curl_copystr(""));
 		}
 	}
 
@@ -332,7 +332,7 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 #define HTTP_CURL_OPT_STRING_EX(keyname, optname) \
 	if (!strcasecmp(key, #keyname)) { \
 		convert_to_string_ex(param); \
-		HTTP_CURL_OPT(optname, Z_STRVAL_PP(param)); \
+		HTTP_CURL_OPT(optname, http_curl_copystr(Z_STRVAL_PP(param))); \
 		key = NULL; \
 		continue; \
 	}

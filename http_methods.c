@@ -547,6 +547,30 @@ PHP_METHOD(HttpMessage, fromString)
 }
 /* }}} */
 
+/* {{{ proto void HttpMessage::__construct([string message])
+ *
+ * Instantiate a new HttpMessage object.
+ */
+PHP_METHOD(HttpMessage, __construct)
+{
+	char *message = NULL;
+	int length = 0;
+	getObject(http_message_object, obj);
+
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &message, &length) && message && length) {
+		if (obj->message = http_message_parse(message, length)) {
+			if (obj->message->parent) {
+				obj->parent = http_message_object_from_msg(obj->message->parent);
+			}
+		}
+	} else if (!obj->message) {
+		obj->message = http_message_new();
+	}
+	SET_EH_NORMAL();
+}
+/* }}} */
+
 /* {{{ proto string HttpMessage::getBody()
  *
  * Get the body of the parsed Message.
@@ -647,21 +671,7 @@ PHP_METHOD(HttpMessage, setType)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &type)) {
 		return;
 	}
-	if (type != obj->message->type) {
-		if (obj->message->type == HTTP_MSG_REQUEST) {
-			if (obj->message->info.request.method) {
-				efree(obj->message->info.request.method);
-			}
-			if (obj->message->info.request.URI) {
-				efree(obj->message->info.request.URI);
-			}
-		}
-		obj->message->type = type;
-		if (obj->message->type == HTTP_MSG_REQUEST) {
-			obj->message->info.request.method = NULL;
-			obj->message->info.request.URI = NULL;
-		}
-	}
+	http_message_set_type(obj->message, type);
 }
 /* }}} */
 
@@ -675,7 +685,7 @@ PHP_METHOD(HttpMessage, getResponseCode)
 
 	NO_ARGS;
 
-	if (obj->message->type != HTTP_MSG_RESPONSE) {
+	if (!HTTP_MSG_TYPE(RESPONSE, obj->message)) {
 		http_error(E_NOTICE, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_RESPONSE");
 		RETURN_NULL();
 	}
@@ -828,7 +838,7 @@ PHP_METHOD(HttpMessage, setRequestUri)
 PHP_METHOD(HttpMessage, getHttpVersion)
 {
 	char ver[4] = {0};
-	float *version;
+	float version;
 	getObject(http_message_object, obj);
 
 	NO_ARGS;
@@ -836,16 +846,18 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 	switch (obj->message->type)
 	{
 		case HTTP_MSG_RESPONSE:
-			version = &obj->message->info.response.http_version;
+			version = obj->message->info.response.http_version;
 		break;
+
 		case HTTP_MSG_REQUEST:
-			version = &obj->message->info.request.http_version;
+			version = obj->message->info.request.http_version;
 		break;
+
 		case HTTP_MSG_NONE:
 		default:
 			RETURN_NULL();
 	}
-	sprintf(ver, "1.1f", version);
+	sprintf(ver, "%1.1f", version);
 	RETURN_STRINGL(ver, 3, 1);
 }
 /* }}} */
@@ -886,28 +898,39 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 }
 /* }}} */
 
-/* {{{ proto HttpMessage HttpMessage::getNestedMessage()
+/* {{{ proto HttpMessage HttpMessage::getParentMessage()
  *
- * Get nested Message.
+ * Get parent Message.
  */
-PHP_METHOD(HttpMessage, getNestedMessage)
+PHP_METHOD(HttpMessage, getParentMessage)
 {
 	getObject(http_message_object, obj);
 
 	NO_ARGS;
 
-	if (obj->message->nested) {
-		Z_TYPE_P(return_value) = IS_OBJECT;
-		return_value->value.obj = obj->nested;
-		return_value->is_ref = 1;
-		zend_objects_store_add_ref(return_value TSRMLS_CC);
+	if (obj->message->parent) {
+		RETVAL_OBJVAL(obj->parent);
 	} else {
 		RETVAL_NULL();
 	}
 }
 /* }}} */
 
-/* {{{ proto string HttpMessage::toString()
+/* {{{ proto bool HttpMessage::send()
+ *
+ * Send the Message according to its type as Response or Request.
+ */
+PHP_METHOD(HttpMessage, send)
+{
+	getObject(http_message_object, obj);
+
+	NO_ARGS;
+
+	RETURN_SUCCESS(http_message_send(obj->message));
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::toString([bool include_parent = true])
  *
  * Get the string representation of the Message.
  */
@@ -915,11 +938,18 @@ PHP_METHOD(HttpMessage, toString)
 {
 	char *string;
 	size_t length;
+	zend_bool include_parent = 1;
 	getObject(http_message_object, obj);
 
-	NO_ARGS;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &include_parent)) {
+		RETURN_FALSE;
+	}
 
-	http_message_tostring(obj->message, &string, &length);
+	if (include_parent) {
+		http_message_serialize(obj->message, &string, &length);
+	} else {
+		http_message_tostring(obj->message, &string, &length);
+	}
 	RETURN_STRINGL(string, length, 0);
 }
 /* }}} */
