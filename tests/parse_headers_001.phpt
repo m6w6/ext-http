@@ -8,6 +8,7 @@ include 'skip.inc';
 <?php
 print_r(http_parse_headers(
 "Host: localhost\r\n".
+"Host: ambigious\r\n".
 "Nospace:here\r\n".
 "Muchspace:  there   \r\n".
 "Empty:\r\n".
@@ -26,7 +27,12 @@ X-Powered-By: PHP/%s
 
 Array
 (
-    [Host] => localhost
+    [Host] => Array
+        (
+            [0] => localhost
+            [1] => ambigious
+        )
+
     [Nospace] => here
     [Muchspace] => there
     [Empty] => 
