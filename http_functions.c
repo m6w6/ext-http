@@ -671,6 +671,7 @@ PHP_FUNCTION(http_get_request_headers)
  *  - timeout:          int, seconds the request may take
  *  - connecttimeout:   int, seconds the connect may take
  *  - onprogress:       mixed, progress callback
+ *  - ondebug:          mixed, debug callback
  * </pre>
  *
  * The optional third parameter will be filled with some additional information
