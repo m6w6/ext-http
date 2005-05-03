@@ -1,0 +1,42 @@
+Index: run-tests.php
+===================================================================
+RCS file: /repository/php-src/run-tests.php,v
+retrieving revision 1.209
+diff -u -r1.209 run-tests.php
+--- run-tests.php	20 Mar 2005 19:47:13 -0000	1.209
++++ run-tests.php	3 May 2005 06:13:20 -0000
+@@ -836,6 +836,12 @@
+ 		$query_string = '';
+ 	}
+ 
++    if (!empty($section_text['ENV'])) {
++        foreach (explode("\n", $section_text['ENV']) as $env) {
++            ($env = trim($env)) and putenv($env);
++        }
++    }
++
+ 	putenv("REDIRECT_STATUS=1");
+ 	putenv("QUERY_STRING=$query_string");
+ 	putenv("PATH_TRANSLATED=$tmp_file");
+@@ -861,7 +867,7 @@
+ 		putenv("CONTENT_TYPE=");
+ 		putenv("CONTENT_LENGTH=");
+ 
+-		$cmd = "$php$pass_options$ini_settings -f \"$tmp_file\" $args 2>&1";
++		$cmd = "$php$pass_options$ini_settings < \"$tmp_file\" $args 2>&1";
+ 	}
+ 
+ 	if ($DETAILED) echo "
+@@ -878,6 +884,12 @@
+ //	$out = `$cmd`;
+ 	$out = system_with_timeout($cmd);
+ 
++    if (!empty($section_text['ENV'])) {
++        foreach (explode("\n", $section_text['ENV']) as $env) {
++            ($env = trim($env)) and putenv(array_shift(explode('=', $env)).'=');
++        }
++    }
++
+ 	@unlink($tmp_post);
+ 
+ 	// Does the output match what is expected?
