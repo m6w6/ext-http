@@ -144,29 +144,25 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 	e_ptr = encoded;
 
 	while (((e_ptr - encoded) - encoded_len) > 0) {
-		char hex_len[9] = {0};
+		char *n_ptr;
 		size_t chunk_len = 0;
-		int i = 0;
-
-		/* read in chunk size */
-		while (isxdigit(*e_ptr)) {
-			if (i == 9) {
-				http_error_ex(E_WARNING, HTTP_E_PARSE, "Chunk size is too long: 0x%s...", hex_len);
-				efree(*decoded);
+		
+		chunk_len = strtol(e_ptr, &n_ptr, 16);
+		
+		if (n_ptr == e_ptr) {
+			/* don't fail on apperently not encoded data */
+			if (e_ptr == encoded) {
+				memcpy(*decoded, encoded, encoded_len);
+				*decoded_len = encoded_len;
+				return encoded + encoded_len;
+			} else {
+				char *error = estrndup(n_ptr, strcspn(n_ptr, "\r\n \0"));
+				http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid chunk size: '%s' at pos %d", error, n_ptr - encoded);
+				efree(error);
 				return NULL;
 			}
-			hex_len[i++] = *e_ptr++;
-		}
-
-		/* hex to long */
-		{
-			char *error = NULL;
-			chunk_len = strtol(hex_len, &error, 16);
-			if (error == hex_len) {
-				http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid chunk size string: '%s'", hex_len);
-				efree(*decoded);
-				return NULL;
-			}
+		} else {
+			e_ptr = n_ptr;
 		}
 
 		/* reached the end */
