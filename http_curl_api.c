@@ -189,7 +189,6 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 
 	HTTP_CURL_OPT(HEADER, 0);
 	HTTP_CURL_OPT(FILETIME, 1);
-	HTTP_CURL_OPT(NOPROGRESS, 1);
 	HTTP_CURL_OPT(AUTOREFERER, 1);
 	HTTP_CURL_OPT(WRITEFUNCTION, http_curl_write_callback);
 	HTTP_CURL_OPT(HEADERFUNCTION, http_curl_write_callback);
