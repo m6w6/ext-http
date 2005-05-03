@@ -670,6 +670,7 @@ PHP_FUNCTION(http_get_request_headers)
  *  - lastmodified:     int, timestamp for If-(Un)Modified-Since header
  *  - timeout:          int, seconds the request may take
  *  - connecttimeout:   int, seconds the connect may take
+ *  - onprogress:       mixed, progress callback
  * </pre>
  *
  * The optional third parameter will be filled with some additional information

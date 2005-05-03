@@ -90,6 +90,7 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t keylen, int type TSRMLS_DC);
 
 static size_t http_curl_callback(char *, size_t, size_t, void *);
+static int http_curl_progress(void *, double, double, double, double);
 
 #define http_curl_getinfo(c, h) _http_curl_getinfo((c), (h) TSRMLS_CC)
 static inline void _http_curl_getinfo(CURL *ch, HashTable *info TSRMLS_DC);
@@ -107,6 +108,26 @@ static inline char *_http_curl_copystr(const char *str TSRMLS_DC)
 static size_t http_curl_callback(char *buf, size_t len, size_t n, void *s)
 {
 	return s ? phpstr_append(PHPSTR(s), buf, len * n) : len * n;
+}
+/* }}} */
+
+/* {{{ static int http_curl_progress(void *, double, double, double, double) */
+static int http_curl_progress(void *data, double dltotal, double dlnow, double ultotal, double ulnow)
+{
+	int i;
+	zval *params_pass[4], params_local[4], retval, *func = (zval *) data;
+	TSRMLS_FETCH();
+
+	for (i = 0; i < 5; ++i) {
+		params_pass[i] = &params_local[i];
+	}
+
+	ZVAL_DOUBLE(params_pass[0], dltotal);
+	ZVAL_DOUBLE(params_pass[1], dlnow);
+	ZVAL_DOUBLE(params_pass[2], ultotal);
+	ZVAL_DOUBLE(params_pass[3], ulnow);
+	
+	return call_user_function(EG(function_table), NULL, func, &retval, 4, params_pass TSRMLS_CC);
 }
 /* }}} */
 
@@ -168,6 +189,15 @@ static void _http_curl_setopts(CURL *ch, const char *url, HashTable *options, ph
 #if LIBCURL_VERSION_NUM < 0x070c00
 	HTTP_CURL_OPT(ERRORBUFFER, HTTP_G(curlerr));
 #endif
+
+	/* progress callback */
+	if (zoption = http_curl_getopt(options, "onprogress", 0)) {
+		HTTP_CURL_OPT(NOPROGRESS, 0);
+		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress);
+		HTTP_CURL_OPT(PROGRESSDATA, zoption);
+	} else {
+		HTTP_CURL_OPT(NOPROGRESS, 1);
+	}
 
 	/* proxy */
 	if (zoption = http_curl_getopt(options, "proxyhost", IS_STRING)) {
