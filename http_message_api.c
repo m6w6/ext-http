@@ -182,8 +182,21 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				char *decoded;
 				size_t decoded_len;
 
+				/* decode and replace Transfer-Encoding with Content-Length header */
 				if (continue_at = http_chunked_decode(body, message + message_length - body, &decoded, &decoded_len)) {
 					phpstr_from_string_ex(PHPSTR(msg), decoded, decoded_len);
+					efree(decoded);
+					{
+						zval *len;
+						char *tmp;
+
+						spprintf(&tmp, 0, "%lu", decoded_len);
+						MAKE_STD_ZVAL(len);
+						ZVAL_STRING(len, tmp, 0);
+
+						zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
+						zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
+					}
 				}
 			}
 		} else
@@ -273,9 +286,11 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 		}
 	}
 
-	phpstr_appends(&str, HTTP_CRLF);
-	phpstr_append(&str, PHPSTR_VAL(msg), PHPSTR_LEN(msg));
-	phpstr_appends(&str, HTTP_CRLF);
+	if (PHPSTR_LEN(msg)) {
+		phpstr_appends(&str, HTTP_CRLF);
+		phpstr_append(&str, PHPSTR_VAL(msg), PHPSTR_LEN(msg));
+		phpstr_appends(&str, HTTP_CRLF);
+	}
 
 	data = phpstr_data(&str, string, length);
 	if (!string) {
@@ -295,7 +310,7 @@ PHP_HTTP_API void _http_message_serialize(http_message *message, char **string, 
 
 	do {
 		http_message_tostring(message, &buf, &len);
-		phpstr_append(&str, buf, len);
+		phpstr_prepend(&str, buf, len);
 		efree(buf);
 	} while (message = message->parent);
 
