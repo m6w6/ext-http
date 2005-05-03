@@ -78,5 +78,6 @@ dnl ----
 		http_headers_api.c http_message_api.c http_send_api.c http_url_api.c"
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, [$ext_shared])
 	PHP_SUBST([HTTP_SHARED_LIBADD])
+	PHP_ADD_MAKEFILE_FRAGMENT
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
 fi
