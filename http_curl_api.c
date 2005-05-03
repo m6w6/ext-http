@@ -115,13 +115,13 @@ static size_t http_curl_write_callback(char *buf, size_t len, size_t n, void *s)
 /* {{{ static int http_curl_progress_callback(void *, double, double, double, double) */
 static int http_curl_progress_callback(void *data, double dltotal, double dlnow, double ultotal, double ulnow)
 {
-	int i;
 	zval *params_pass[4], params_local[4], retval, *func = (zval *) data;
 	TSRMLS_FETCH();
 
-	for (i = 0; i < 5; ++i) {
-		params_pass[i] = &params_local[i];
-	}
+	params_pass[0] = &params_local[0];
+	params_pass[1] = &params_local[1];
+	params_pass[2] = &params_local[2];
+	params_pass[3] = &params_local[3];
 
 	ZVAL_DOUBLE(params_pass[0], dltotal);
 	ZVAL_DOUBLE(params_pass[1], dlnow);
@@ -134,7 +134,6 @@ static int http_curl_progress_callback(void *data, double dltotal, double dlnow,
 
 static int http_curl_debug_callback(CURL *ch, curl_infotype type, char *string, size_t length, void *data)
 {
-	int i;
 	zval *params_pass[2], params_local[2], retval, *func = (zval *) data;
 	TSRMLS_FETCH();
 
@@ -146,7 +145,7 @@ static int http_curl_debug_callback(CURL *ch, curl_infotype type, char *string, 
 
 	call_user_function(EG(function_table), NULL, func, &retval, 2, params_pass TSRMLS_CC);
 
-	return 0;	
+	return 0;
 }
 /* {{{ static inline zval *http_curl_getopt(HashTable *, char *, size_t, int) */
 static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t keylen, int type TSRMLS_DC)
