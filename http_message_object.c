@@ -26,6 +26,8 @@
 #include "php_http_std_defs.h"
 #include "php_http_message_object.h"
 
+#include "phpstr/phpstr.h"
+
 #ifdef ZEND_ENGINE_2
 
 #define http_message_object_declare_default_properties() _http_message_object_declare_default_properties(TSRMLS_C)
@@ -124,7 +126,7 @@ static inline void _http_message_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP_N(PROTECTED, parentMessage);
 }
 
-static void _http_message_object_free(zend_object *object TSRMLS_DC)
+void _http_message_object_free(zend_object *object TSRMLS_DC)
 {
 	http_message_object *o = (http_message_object *) object;
 
