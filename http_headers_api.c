@@ -248,11 +248,11 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 	Z_ARRVAL(array) = headers;
 
 	if (crlfcrlf = strstr(header, HTTP_CRLF HTTP_CRLF)) {
-		header_len = crlfcrlf - header;
+		header_len = crlfcrlf - header + lenof(HTTP_CRLF);
 	} else {
-		header_len = strlen(header);
+		header_len = strlen(header) + 1;
 	}
-	
+
 
 	if (header_len < 2 || !strchr(header, ':')) {
 		http_error(E_WARNING, HTTP_E_PARSE, "Cannot parse too short or malformed HTTP headers");
@@ -309,30 +309,16 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 
 							/* if we already have got such a header make an array of those */
 							if (SUCCESS == zend_hash_find(headers, key, keylen + 1, (void **) &previous)) {
-								/* already an array? - just add */
-								if (Z_TYPE_PP(previous) == IS_ARRAY) {
-										add_next_index_stringl(*previous, value, value_len, 0);
-								} else {
-									/* create the array */
-									zval *new_array;
-									MAKE_STD_ZVAL(new_array);
-									array_init(new_array);
-
-									add_next_index_stringl(new_array, Z_STRVAL_PP(previous), Z_STRLEN_PP(previous), 1);
-									add_next_index_stringl(new_array, value, value_len, 0);
-									add_assoc_zval(&array, key, new_array);
+								/* convert to array */
+								if (Z_TYPE_PP(previous) != IS_ARRAY) {
+									convert_to_array(*previous);
 								}
-
-								previous = NULL;
+								add_next_index_stringl(*previous, value, value_len, 0);
 							} else {
 								add_assoc_stringl(&array, key, value, value_len, 0);
 							}
 							efree(key);
 						}
-					}
-					/* stop at CRLF CRLF */
-					if (!strncmp(HTTP_CRLF, line + 1, lenof(HTTP_CRLF))) {
-						return SUCCESS;
 					}
 					colon = NULL;
 					value_len = 0;
