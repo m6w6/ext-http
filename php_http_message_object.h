@@ -40,13 +40,11 @@ extern zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_
 #define http_message_object_free _http_message_object_free
 extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 
-#define HTTP_MSG_PROPHASH_TYPE                 276192743LU
+#define HTTP_MSG_PROPHASH_TYPE                  276192743LU
 #define HTTP_MSG_PROPHASH_HTTP_VERSION         1138628683LU
-#define HTTP_MSG_PROPHASH_RAW                  2090679983LU
-#define HTTP_MSG_PROPHASH_BODY                 254474387LU
+#define HTTP_MSG_PROPHASH_BODY                  254474387LU
 #define HTTP_MSG_PROPHASH_HEADERS              3199929089LU
-#define HTTP_MSG_PROPHASH_NESTED_MESSAGE       3652857165LU
-#define HTTP_MSG_PROPHASH_PARENT_MESSAGE       0LU
+#define HTTP_MSG_PROPHASH_PARENT_MESSAGE       2105714836LU
 #define HTTP_MSG_PROPHASH_REQUEST_METHOD       1669022159LU
 #define HTTP_MSG_PROPHASH_REQUEST_URI          3208695486LU
 #define HTTP_MSG_PROPHASH_RESPONSE_STATUS      3857097400LU
