@@ -30,10 +30,13 @@
 
   <release>
     <version>0.8.0dev</version>
-    <date>2005-04-00</date>
+    <date>2005-05-00</date>
     <state>beta</state>
     <notes><![CDATA[
-* 
+* renamed ob_httpetaghandler to ob_etaghandler
+* added HttpMessage class and HttpException (PHP5 only)
+* added http.cache_log INI directive
+* http_chunked_decode() now silently passes through apparently not encoded data
 ]]>
     </notes>
   </release>

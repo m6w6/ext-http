@@ -18,8 +18,14 @@
 #ifndef PHP_HTTP_STD_DEFS_H
 #define PHP_HTTP_STD_DEFS_H
 
-#ifdef PHP_WIN32
-#	define PHP_HTTP_API __declspec(dllexport)
+#if defined(PHP_WIN32)
+#	if defined(HTTP_EXPORTS)
+#		define PHP_HTTP_API __declspec(dllexport)
+#	elif defined(COMPILE_DL_HTTP)
+#		define PHP_HTTP_API __declspec(dllimport)
+#	else
+#		define PHP_HTTP_API
+#	endif
 #else
 #	define PHP_HTTP_API
 #endif
