@@ -57,7 +57,7 @@ zend_function_entry http_message_object_fe[] = {
 	PHP_ME(HttpMessage, getParentMessage, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, send, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, toString, NULL, ZEND_ACC_PUBLIC)
-	
+
 	ZEND_MALIAS(HttpMessage, __toString, toString, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HttpMessage, fromString, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
@@ -154,10 +154,6 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		return EG(uninitialized_zval_ptr);
 	}
 
-#if 1
-	fprintf(stderr, "Reading property: %s(%d==%d)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)));
-#endif
-
 	switch (zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1))
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
@@ -244,10 +240,6 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 	}
 
-#if 1
-	fprintf(stderr, "Writing property: %s(%d==%d)\n", Z_STRVAL_P(member), Z_STRLEN_P(member), strlen(Z_STRVAL_P(member)));
-#endif
-
 	switch (zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1))
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
@@ -271,7 +263,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		break;
 
 		case HTTP_MSG_PROPHASH_HTTP_VERSION:
-			convert_to_long_ex(&value);
+			convert_to_double_ex(&value);
 			switch (msg->type)
 			{
 				case HTTP_MSG_REQUEST:
