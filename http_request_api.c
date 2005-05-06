@@ -193,6 +193,10 @@ PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC)
 		case HTTP_REQUEST_BODY_CURLPOST:
 			curl_formfree(body->data);
 		break;
+
+		case HTTP_REQUEST_BODY_UPLOADFILE:
+			php_stream_close(body->data);
+		break;
 	}
 }
 /* }}} */

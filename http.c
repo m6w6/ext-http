@@ -118,6 +118,8 @@ function_entry http_functions[] = {
 	PHP_FE(http_head, http_request_info_ref_3)
 	PHP_FE(http_post_data, http_request_info_ref_4)
 	PHP_FE(http_post_fields, http_request_info_ref_5)
+	PHP_FE(http_put_file, http_request_info_ref_4)
+	PHP_FE(http_put_stream, http_request_info_ref_4)
 #endif
 	PHP_FE(http_auth_basic, NULL)
 	PHP_FE(http_auth_basic_cb, NULL)

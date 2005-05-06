@@ -95,6 +95,9 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 #define http_post(u, b, o, i, r) _http_request_ex(NULL, HTTP_POST, (u), (b), (o), (i), (r) TSRMLS_CC)
 #define http_post_ex(c, u, b, o, i, r) _http_request_ex((c), HTTP_POST, (u), (b), (o), (i), (r) TSRMLS_CC)
 
+#define http_put(u, b, o, i, r) _http_request_ex(NULL, HTTP_PUT, (u), (b), (o), (i), (r) TSRMLS_CC)
+#define http_put_ex(c, u, b, o, i, r) _http_request_ex((c), HTTP_PUT, (u), (b), (o), (i), (r) TSRMLS_CC)
+
 #endif
 
 /*
