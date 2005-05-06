@@ -77,7 +77,7 @@ typedef struct {
 PHP_HTTP_API const char *_http_request_method_string(http_request_method m);
 
 #define http_request_body_fill(b, fields, files) _http_request_body_fill((b), (fields), (files) TSRMLS_CC)
-PHP_HTTP_API _http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files TSRMLS_DC);
+PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files TSRMLS_DC);
 
 #define http_request_body_dtor(b) _http_request_body_dtor((b) TSRMLS_CC)
 PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC);
