@@ -24,7 +24,7 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_cache_api.h"
-#include "php_http_curl_api.h"
+#include "php_http_request_api.h"
 #include "php_http_date_api.h"
 #include "php_http_headers_api.h"
 #include "php_http_message_api.h"
@@ -1920,75 +1920,24 @@ PHP_METHOD(HttpRequest, send)
 	switch (Z_LVAL_P(meth))
 	{
 		case HTTP_GET:
-			status = http_get_ex(obj->ch, request_uri, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
+		case HTTP_HEAD:
+			status = http_request_ex(obj->ch, Z_LVAL_P(meth), request_uri, NULL, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
 		break;
 
-		case HTTP_HEAD:
-			status = http_head_ex(obj->ch, request_uri, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
+		case HTTP_PUT:
 		break;
 
 		case HTTP_POST:
-			{
-				zval *post_files, *post_data;
-
-				post_files = GET_PROP(obj, postFiles);
-				post_data  = GET_PROP(obj, postData);
-
-				if (!zend_hash_num_elements(Z_ARRVAL_P(post_files))) {
-
-					/* urlencoded post */
-					status = http_post_array_ex(obj->ch, request_uri, Z_ARRVAL_P(post_data), Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
-
-				} else {
-
-					/*
-					 * multipart post
-					 */
-					char *key = NULL;
-					long idx;
-					zval **data;
-					struct curl_httppost *http_post_data[2] = {NULL, NULL};
-
-					/* normal data */
-					FOREACH_KEYVAL(post_data, key, idx, data) {
-						if (key) {
-							convert_to_string_ex(data);
-							curl_formadd(&http_post_data[0], &http_post_data[1],
-								CURLFORM_COPYNAME,			key,
-								CURLFORM_COPYCONTENTS,		Z_STRVAL_PP(data),
-								CURLFORM_CONTENTSLENGTH,	Z_STRLEN_PP(data),
-								CURLFORM_END
-							);
-
-							/* reset */
-							key = NULL;
-						}
-					}
-
-					/* file data */
-					FOREACH_VAL(post_files, data) {
-						zval **file, **type, **name;
-
-						if (	SUCCESS == zend_hash_find(Z_ARRVAL_PP(data), "name", sizeof("name"), (void **) &name) &&
-								SUCCESS == zend_hash_find(Z_ARRVAL_PP(data), "type", sizeof("type"), (void **) &type) &&
-								SUCCESS == zend_hash_find(Z_ARRVAL_PP(data), "file", sizeof("file"), (void **) &file)) {
-
-							curl_formadd(&http_post_data[0], &http_post_data[1],
-								CURLFORM_COPYNAME,		Z_STRVAL_PP(name),
-								CURLFORM_FILE,			Z_STRVAL_PP(file),
-								CURLFORM_CONTENTTYPE,	Z_STRVAL_PP(type),
-								CURLFORM_END
-							);
-						}
-					}
-
-					status = http_post_curldata_ex(obj->ch, request_uri, http_post_data[0], Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
-					curl_formfree(http_post_data[0]);
-				}
-			}
-		break;
-
 		default:
+		{
+			http_request_body body;
+			zval *fields = GET_PROP(obj, postData), *files = GET_PROP(obj, postFiles);
+
+			if (SUCCESS == (status = http_request_body_fill(&body, Z_ARRVAL_P(fields), Z_ARRVAL_P(files)))) {
+				status = http_request_ex(obj->ch, Z_LVAL_P(meth), request_uri, &body, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
+				http_request_body_dtor(&body);
+			}
+		}
 		break;
 	}
 
@@ -2041,4 +1990,3 @@ PHP_METHOD(HttpRequest, send)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

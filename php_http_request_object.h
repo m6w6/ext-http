@@ -34,12 +34,6 @@ typedef struct {
 	phpstr response;
 } http_request_object;
 
-typedef enum {
-	HTTP_GET = 1,
-	HTTP_HEAD,
-	HTTP_POST,
-} http_request_method;
-
 extern zend_class_entry *http_request_object_ce;
 extern zend_function_entry http_request_object_fe[];
 

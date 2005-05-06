@@ -42,6 +42,15 @@ ZEND_BEGIN_ARG_INFO(http_request_info_ref_4, 0)
 	ZEND_ARG_PASS_INFO(0)
 	ZEND_ARG_PASS_INFO(1)
 ZEND_END_ARG_INFO();
+
+static
+ZEND_BEGIN_ARG_INFO(http_request_info_ref_5, 0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(1)
+ZEND_END_ARG_INFO();
 #endif /* HTTP_HAVE_CURL */
 
 zend_class_entry *http_util_object_ce;
@@ -68,7 +77,7 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ME(get, http_get, http_request_info_ref_3)
 	HTTP_UTIL_ME(head, http_head, http_request_info_ref_3)
 	HTTP_UTIL_ME(postData, http_post_data, http_request_info_ref_4)
-	HTTP_UTIL_ME(postArray, http_post_array, http_request_info_ref_4)
+	HTTP_UTIL_ME(postFields, http_post_fields, http_request_info_ref_5)
 #endif /* HTTP_HAVE_CURL */
 	HTTP_UTIL_ME(authBasic, http_auth_basic, NULL)
 	HTTP_UTIL_ME(authBasicCallback, http_auth_basic_cb, NULL)

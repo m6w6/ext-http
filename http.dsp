@@ -102,7 +102,7 @@ SOURCE=.\http_api.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\http_curl_api.c
+SOURCE=.\http_request_api.c
 # End Source File
 # Begin Source File
 
@@ -154,7 +154,7 @@ SOURCE=.\php_http_api.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\php_http_curl_api.h
+SOURCE=.\php_http_request_api.h
 # End Source File
 # Begin Source File
 

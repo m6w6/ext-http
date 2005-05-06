@@ -26,7 +26,7 @@
 #include "php_http_message_api.h"
 #include "php_http_headers_api.h"
 #include "php_http_send_api.h"
-#include "php_http_curl_api.h"
+#include "php_http_request_api.h"
 #include "php_http_url_api.h"
 
 #include "phpstr/phpstr.h"
@@ -382,7 +382,8 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 			}
 
 			if (!strcasecmp("POST", message->info.request.method)) {
-				rs = http_post_data(uri, PHPSTR_VAL(message), PHPSTR_LEN(message), Z_ARRVAL(options), NULL, NULL);
+				http_request_body body = {HTTP_REQUEST_BODY_CSTRING, PHPSTR_VAL(message), PHPSTR_LEN(message)};
+				rs = http_post(uri, &body, Z_ARRVAL(options), NULL, NULL);
 			} else
 			if (!strcasecmp("GET", message->info.request.method)) {
 				rs = http_get(uri, Z_ARRVAL(options), NULL, NULL);
@@ -449,4 +450,3 @@ PHP_HTTP_API void _http_message_free(http_message *message)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

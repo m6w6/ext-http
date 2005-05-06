@@ -83,7 +83,7 @@ PHP_FUNCTION(http_get_request_headers);
 PHP_FUNCTION(http_get);
 PHP_FUNCTION(http_head);
 PHP_FUNCTION(http_post_data);
-PHP_FUNCTION(http_post_array);
+PHP_FUNCTION(http_post_fields);
 #endif /* HTTP_HAVE_CURL */
 PHP_FUNCTION(http_auth_basic);
 PHP_FUNCTION(http_auth_basic_cb);

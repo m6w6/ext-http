@@ -155,7 +155,7 @@ typedef int STATUS;
 	}
 /* }}} */
 
-#define HTTP_LONG_CONSTANT(name, const) REGISTER_LONG_CONSTANT(name, const, CONST_CS | CONST_PERSISTENT);
+#define HTTP_LONG_CONSTANT(name, const) REGISTER_LONG_CONSTANT(name, const, CONST_CS | CONST_PERSISTENT)
 
 /* {{{ objects & properties */
 #ifdef ZEND_ENGINE_2

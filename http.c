@@ -68,9 +68,19 @@ ZEND_BEGIN_ARG_INFO(http_request_info_ref_4, 0)
 	ZEND_ARG_PASS_INFO(0)
 	ZEND_ARG_PASS_INFO(1)
 ZEND_END_ARG_INFO();
+
+static
+ZEND_BEGIN_ARG_INFO(http_request_info_ref_5, 0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(0)
+	ZEND_ARG_PASS_INFO(1)
+ZEND_END_ARG_INFO();
 #else
 static unsigned char http_request_info_ref_3[] = {3, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
 static unsigned char http_request_info_ref_4[] = {4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
+static unsigned char http_request_info_ref_5[] = {5, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
 #endif /* ZEND_ENGINE_2 */
 #endif /* HTTP_HAVE_CURL */
 
@@ -107,7 +117,7 @@ function_entry http_functions[] = {
 	PHP_FE(http_get, http_request_info_ref_3)
 	PHP_FE(http_head, http_request_info_ref_3)
 	PHP_FE(http_post_data, http_request_info_ref_4)
-	PHP_FE(http_post_array, http_request_info_ref_4)
+	PHP_FE(http_post_fields, http_request_info_ref_5)
 #endif
 	PHP_FE(http_auth_basic, NULL)
 	PHP_FE(http_auth_basic_cb, NULL)

@@ -33,9 +33,9 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_auth_api.h"
-#include "php_http_curl_api.h"
+#include "php_http_request_api.h"
 #include "php_http_cache_api.h"
-#include "php_http_curl_api.h"
+#include "php_http_request_api.h"
 #include "php_http_date_api.h"
 #include "php_http_headers_api.h"
 #include "php_http_message_api.h"
@@ -775,6 +775,7 @@ PHP_FUNCTION(http_post_data)
 	char *URL, *postdata;
 	int postdata_len, URL_len;
 	phpstr response;
+	http_request_body body;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|a/!z", &URL, &URL_len, &postdata, &postdata_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
@@ -785,29 +786,39 @@ PHP_FUNCTION(http_post_data)
 		array_init(info);
 	}
 
+	body.type = HTTP_REQUEST_BODY_CSTRING;
+	body.data = postdata;
+	body.size = postdata_len;
+
 	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
-	if (SUCCESS == http_post_data(URL, postdata, (size_t) postdata_len, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETURN_PHPSTR_VAL(response);
+	if (SUCCESS == http_post(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
+		RETVAL_PHPSTR_VAL(response);
 	} else {
-		RETURN_FALSE;
+		RETVAL_FALSE;
 	}
+	http_request_body_dtor(&body);
 }
 /* }}} */
 
-/* {{{ proto string http_post_array(string url, array data[, array options[, array &info]])
+/* {{{ proto string http_post_fields(string url, array data[, array files[, array options[, array &info]]])
  *
  * Performs an HTTP POST request, posting www-form-urlencoded array data.
  * Returns the HTTP response as string.
  * See http_get() for a full list of available options.
  */
-PHP_FUNCTION(http_post_array)
+PHP_FUNCTION(http_post_fields)
 {
-	zval *options = NULL, *info = NULL, *postdata;
+	zval *options = NULL, *info = NULL, *fields, *files = NULL;
 	char *URL;
 	int URL_len;
 	phpstr response;
+	http_request_body body;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa|a/!z", &URL, &URL_len, &postdata, &options, &info) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa|aa/!z", &URL, &URL_len, &fields, &files, &options, &info) != SUCCESS) {
+		RETURN_FALSE;
+	}
+
+	if (SUCCESS != http_request_body_fill(&body, Z_ARRVAL_P(fields), files ? Z_ARRVAL_P(files) : NULL)) {
 		RETURN_FALSE;
 	}
 
@@ -817,11 +828,12 @@ PHP_FUNCTION(http_post_array)
 	}
 
 	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
-	if (SUCCESS == http_post_array(URL, Z_ARRVAL_P(postdata), options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETURN_PHPSTR_VAL(response);
+	if (SUCCESS == http_post(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
+		RETVAL_PHPSTR_VAL(response);
 	} else {
-		RETURN_FALSE;
+		RETVAL_FALSE;
 	}
+	http_request_body_dtor(&body);
 }
 /* }}} */
 
@@ -993,4 +1005,3 @@ PHP_FUNCTION(http_test)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-
