@@ -7,7 +7,7 @@ HTTP_HEADER_FILES= \
 	php_http_response_object.h \
 	php_http_util_object.h \
 	php_http.h \
-	php_http_curl_api.h \
+	php_http_request_api.h \
 	php_http_message_api.h \
 	php_http_send_api.h \
 	php_http_api.h \
