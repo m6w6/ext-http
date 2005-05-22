@@ -2073,7 +2073,7 @@ PHP_METHOD(HttpRequest, send)
 			php_stream_statbuf ssb;
 			zval *file = GET_PROP(obj, putFile);
 
-			if (	(stream = php_stream_open_wrapper(Z_STRVAL_P(file), , "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL)) &&
+			if (	(stream = php_stream_open_wrapper(Z_STRVAL_P(file), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL)) &&
 					!php_stream_stat(stream, &ssb)) {
 				body.type = HTTP_REQUEST_BODY_UPLOADFILE;
 				body.data = stream;
