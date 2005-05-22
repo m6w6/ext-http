@@ -412,6 +412,21 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 	return rs;
 }
 
+PHP_HTTP_API http_message *_http_message_dup(http_message *msg TSRMLS_DC)
+{
+	/*
+	 * TODO: unroll
+	 */
+	http_message *new;
+	char *serialized_data;
+	size_t serialized_length;
+
+	http_message_serialize(msg, &serialized_data, &serialized_length);
+	new = http_message_parse(serialized_data, serialized_length);
+	efree(serialized_data);
+	return new;
+}
+
 PHP_HTTP_API void _http_message_dtor(http_message *message)
 {
 	if (message) {

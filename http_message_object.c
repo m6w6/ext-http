@@ -38,6 +38,8 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 static void _http_message_object_write_prop(zval *object, zval *member, zval *value TSRMLS_DC);
 #define http_message_object_get_props _http_message_object_get_props
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC);
+#define http_message_object_clone_obj _http_message_object_clone_obj
+static inline zend_object_value _http_message_object_clone_obj(zval *object TSRMLS_DC);
 
 zend_class_entry *http_message_object_ce;
 zend_function_entry http_message_object_fe[] = {
@@ -75,6 +77,7 @@ void _http_message_object_init(INIT_FUNC_ARGS)
 	HTTP_LONG_CONSTANT("HTTP_MSG_REQUEST", HTTP_MSG_REQUEST);
 	HTTP_LONG_CONSTANT("HTTP_MSG_RESPONSE", HTTP_MSG_RESPONSE);
 
+	http_message_object_handlers.clone_obj = http_message_object_clone_obj;
 	http_message_object_handlers.read_property = http_message_object_read_prop;
 	http_message_object_handlers.write_property = http_message_object_write_prop;
 	http_message_object_handlers.get_properties = http_message_object_get_props;
@@ -112,6 +115,11 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 	return ov;
 }
 
+zend_object_value _http_message_object_clone(zval *this_ptr TSRMLS_DC)
+{
+	return http_message_object_clone_obj(this_ptr TSRMLS_CC);
+}
+
 static inline void _http_message_object_declare_default_properties(TSRMLS_D)
 {
 	zend_class_entry *ce = http_message_object_ce;
@@ -139,6 +147,12 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 		efree(o->message);
 	}
 	efree(o);
+}
+
+static inline zend_object_value _http_message_object_clone_obj(zval *this_ptr TSRMLS_DC)
+{
+	getObject(http_message_object, obj);
+	return http_message_object_from_msg(http_message_dup(obj->message));
 }
 
 static zval *_http_message_object_read_prop(zval *object, zval *member, int type TSRMLS_DC)

@@ -52,6 +52,12 @@ zend_function_entry http_response_object_fe[] = {
 	PHP_ME(HttpResponse, setGzip, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpResponse, getGzip, NULL, ZEND_ACC_PUBLIC)
 
+	PHP_ME(HttpResponse, setThrottleDelay, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getThrottleDelay, NULL, ZEND_ACC_PUBLIC)
+
+	PHP_ME(HttpResponse, setSendBuffersize, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpResponse, getSendBuffersize, NULL, ZEND_ACC_PUBLIC)
+
 	PHP_ME(HttpResponse, setData, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpResponse, getData, NULL, ZEND_ACC_PUBLIC)
 
@@ -105,6 +111,8 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PROTECTED, long, dispoInline, 0);
 	DCL_PROP(PROTECTED, long, cache, 0);
 	DCL_PROP(PROTECTED, long, gzip, 0);
+	DCL_PROP(PROTECTED, long, sendBuffersize, HTTP_SENDBUF_SIZE);
+	DCL_PROP(PROTECTED, double, throttleDelay, 0.0);
 
 	DCL_PROP(PRIVATE, long, raw_cache_header, 0);
 	DCL_PROP(PRIVATE, long, send_mode, -1);

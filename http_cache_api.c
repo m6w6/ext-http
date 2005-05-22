@@ -38,8 +38,8 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 /* {{{ STATUS http_cache_exit(char *, zend_bool) */
 STATUS _http_cache_exit_ex(char *cache_token, zend_bool etag, zend_bool free_token TSRMLS_DC)
 {
-	if (HTTP_G(cache_log) && strlen(HTTP_G(cache_log))) {
-		php_stream *log = php_stream_open_wrapper(HTTP_G(cache_log), "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL);
+	if (HTTP_G(log).cache && strlen(HTTP_G(log).cache)) {
+		php_stream *log = php_stream_open_wrapper(HTTP_G(log).cache, "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL);
 
 		if (log) {
 			time_t now;
@@ -76,17 +76,15 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 		break;
 
 		case SEND_RSRC:
-			if (!HTTP_G(ssb).sb.st_ino) {
-				if (php_stream_stat((php_stream *) data_ptr, &HTTP_G(ssb))) {
-					return NULL;
-				}
-			}
-			snprintf(ssb_buf, 127, "%ld=%ld=%ld",
-				HTTP_G(ssb).sb.st_mtime,
-				HTTP_G(ssb).sb.st_ino,
-				HTTP_G(ssb).sb.st_size
-			);
+		{
+			php_stream_statbuf ssb;
+
+            if (php_stream_stat((php_stream *) data_ptr, &ssb)) {
+                return NULL;
+            }
+			snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
 			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
+		}
 		break;
 
 		default:
@@ -105,24 +103,13 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 /* {{{ time_t http_last_modified(void *, http_send_mode) */
 PHP_HTTP_API time_t _http_last_modified(const void *data_ptr, http_send_mode data_mode TSRMLS_DC)
 {
+	php_stream_statbuf ssb;
+
 	switch (data_mode)
 	{
-		case SEND_DATA:
-		{
-			return time(NULL);
-		}
-
-		case SEND_RSRC:
-		{
-			php_stream_stat((php_stream *) data_ptr, &HTTP_G(ssb));
-			return HTTP_G(ssb).sb.st_mtime;
-		}
-
-		default:
-		{
-			php_stream_stat_path(Z_STRVAL_P((zval *) data_ptr), &HTTP_G(ssb));
-			return HTTP_G(ssb).sb.st_mtime;
-		}
+		case SEND_DATA:	return time(NULL);
+		case SEND_RSRC:	return php_stream_stat((php_stream *) data_ptr, &ssb) ? 0 : ssb.sb.st_mtime;
+		default:		return php_stream_stat_path(Z_STRVAL_P((zval *) data_ptr), &ssb) ? 0 : ssb.sb.st_mtime;
 	}
 }
 /* }}} */
@@ -211,16 +198,15 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 	}
 
 	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
-	if (HTTP_G(etag_started)) {
+	if (HTTP_G(etag).started) {
 		return SUCCESS;
 	}
 
-	if (HTTP_G(etag_started) = (SUCCESS == php_start_ob_buffer_named("ob_etaghandler", HTTP_SENDBUF_SIZE, 1 TSRMLS_CC))) {
+	if (HTTP_G(etag).started = (SUCCESS == php_start_ob_buffer_named("ob_etaghandler", HTTP_SENDBUF_SIZE, 1 TSRMLS_CC))) {
 		return SUCCESS;
 	} else {
 		return FAILURE;
 	}
-
 }
 /* }}} */
 
@@ -232,17 +218,17 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 	unsigned char digest[16];
 
 	if (mode & PHP_OUTPUT_HANDLER_START) {
-		HTTP_G(etag_started) = 1;
-		PHP_MD5Init(&HTTP_G(etag_md5));
+		HTTP_G(etag).started = 1;
+		PHP_MD5Init(&HTTP_G(etag).md5ctx);
 	}
 
-	PHP_MD5Update(&HTTP_G(etag_md5), output, output_len);
+	PHP_MD5Update(&HTTP_G(etag).md5ctx, output, output_len);
 
 	if (mode & PHP_OUTPUT_HANDLER_END) {
-		PHP_MD5Final(digest, &HTTP_G(etag_md5));
+		PHP_MD5Final(digest, &HTTP_G(etag).md5ctx);
 
 		/* just do that if desired */
-		if (HTTP_G(etag_started)) {
+		if (HTTP_G(etag).started) {
 			make_digest(etag, digest);
 			http_send_header("Cache-Control: " HTTP_DEFAULT_CACHECONTROL);
 			http_send_etag(etag, 32);

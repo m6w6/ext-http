@@ -31,16 +31,29 @@
 #include "zend_exceptions.h"
 
 zend_class_entry *http_exception_object_ce;
-zend_function_entry http_exception_object_fe[] = {
-	{NULL, NULL, NULL}
-};
+zend_function_entry http_exception_object_fe[] = {{NULL, NULL, NULL}};
 
 void _http_exception_object_init(INIT_FUNC_ARGS)
 {
 	HTTP_REGISTER_CLASS(HttpException, http_exception_object, zend_exception_get_default(), 0);
+	
+	HTTP_LONG_CONSTANT("HTTP_E_UNKNOWN", HTTP_E_UNKOWN);
+	HTTP_LONG_CONSTANT("HTTP_E_PARSE", HTTP_E_PARSE);
+	HTTP_LONG_CONSTANT("HTTP_E_HEADER", HTTP_E_HEADER);
+	HTTP_LONG_CONSTANT("HTTP_E_OBUFFER", HTTP_E_OBUFFER);
+	HTTP_LONG_CONSTANT("HTTP_E_CURL", HTTP_E_CURL);
+	HTTP_LONG_CONSTANT("HTTP_E_ENCODE", HTTP_E_ENCODE);
+	HTTP_LONG_CONSTANT("HTTP_E_PARAM", HTTP_E_PARAM);
+	HTTP_LONG_CONSTANT("HTTP_E_URL", HTTP_E_URL);
+	HTTP_LONG_CONSTANT("HTTP_E_MSG", HTTP_E_MSG);
 }
 
 zend_class_entry *_http_exception_get_default()
+{
+	return http_exception_object_ce;
+}
+
+zend_class_entry *_http_exception_get_for_code(long code)
 {
 	return http_exception_object_ce;
 }

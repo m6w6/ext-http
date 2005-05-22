@@ -77,6 +77,9 @@ PHP_HTTP_API void _http_message_serialize(http_message *message, char **string, 
 #define http_message_send(m) _http_message_send((m) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC);
 
+#define http_message_dup(m) _http_message_dup((m) TSRMLS_CC)
+PHP_HTTP_API http_message *_http_message_dup(http_message *msg TSRMLS_DC);
+
 #define http_message_dtor(m) _http_message_dtor((m))
 PHP_HTTP_API void _http_message_dtor(http_message *message);
 

@@ -63,6 +63,9 @@ typedef enum {
 	HTTP_MAX_REQUEST_METHOD	= 28
 } http_request_method;
 
+#define HTTP_STD_REQUEST_METHOD(m) ((m > HTTP_NO_REQUEST_METHOD) && (m < HTTP_MAX_REQUEST_METHOD))
+#define HTTP_CUSTOM_REQUEST_METHOD(m) (m - HTTP_MAX_REQUEST_METHOD)
+
 #define HTTP_REQUEST_BODY_CSTRING		0
 #define HTTP_REQUEST_BODY_CURLPOST		1
 #define HTTP_REQUEST_BODY_UPLOADFILE	2
@@ -73,8 +76,17 @@ typedef struct {
 	size_t size;
 } http_request_body;
 
-#define http_request_method_string(m) _http_request_method((m))
-PHP_HTTP_API const char *_http_request_method_string(http_request_method m);
+#define http_request_method_name(m) _http_request_method_name((m) TSRMLS_CC)
+PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC);
+
+#define http_request_method_exists(u, l, c) _http_request_method_exists((u), (l), (c) TSRMLS_CC)
+PHP_HTTP_API unsigned long _http_request_method_exists(zend_bool by_name, unsigned long id, const char *name TSRMLS_DC);
+
+#define http_request_method_register(m) _http_request_method_register((m) TSRMLS_CC)
+PHP_HTTP_API unsigned long _http_request_method_register(const char *method TSRMLS_DC);
+
+#define http_request_method_unregister(mn) _http_request_method_unregister((mn) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_DC);
 
 #define http_request_body_fill(b, fields, files) _http_request_body_fill((b), (fields), (files) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files TSRMLS_DC);

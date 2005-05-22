@@ -37,7 +37,7 @@
 ZEND_EXTERN_MODULE_GLOBALS(http)
 
 #if LIBCURL_VERSION_NUM < 0x070c00
-#	define curl_easy_strerror(code) HTTP_G(curlerr)
+#	define curl_easy_strerror(code) HTTP_G(request).curl.error
 #endif
 
 #define HTTP_CURL_INFO(I) HTTP_CURL_INFO_EX(I, I)
@@ -156,6 +156,8 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 					curl_formfree(http_post_data[0]);
 					return FAILURE;
 				}
+			} else {
+				http_error(E_NOTICE, HTTP_E_PARAM, "Post file array entry misses either 'name', 'type' or 'file' entry");
 			}
 		}
 
@@ -244,7 +246,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 	HTTP_CURL_OPT(NOSIGNAL, 1);
 #endif
 #if LIBCURL_VERSION_NUM < 0x070c00
-	HTTP_CURL_OPT(ERRORBUFFER, HTTP_G(curlerr));
+	HTTP_CURL_OPT(ERRORBUFFER, HTTP_G(request).curl.error);
 #endif
 
 	/* progress callback */
@@ -331,14 +333,13 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 	if (zoption = http_curl_getopt(options, "useragent", IS_STRING)) {
 		HTTP_CURL_OPT(USERAGENT, http_curl_copystr(Z_STRVAL_P(zoption)));
 	} else {
-		HTTP_CURL_OPT(USERAGENT,
-			"PECL::HTTP/" HTTP_PEXT_VERSION " (PHP/" PHP_VERSION ")");
+		HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" HTTP_PEXT_VERSION " (PHP/" PHP_VERSION ")");
 	}
 
 	/* additional headers, array('name' => 'value') */
 	if (zoption = http_curl_getopt(options, "headers", IS_ARRAY)) {
 		char *header_key;
-		long header_idx;
+		ulong header_idx;
 		struct curl_slist *headers = NULL;
 
 		FOREACH_KEY(zoption, header_key, header_idx) {
@@ -363,7 +364,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 	/* cookies, array('name' => 'value') */
 	if (zoption = http_curl_getopt(options, "cookies", IS_ARRAY)) {
 		char *cookie_key = NULL;
-		long cookie_idx = 0;
+		ulong cookie_idx = 0;
 		phpstr *qstr = phpstr_new();
 
 		FOREACH_KEY(zoption, cookie_key, cookie_idx) {
@@ -427,7 +428,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 		zval **param;
 
 		FOREACH_KEYVAL(zoption, key, idx, param) {
-			if (key) {fprintf(stderr, "%s\n", key);
+			if (key) {
 				HTTP_CURL_OPT_SSL_STRING(CERT);
 #if LIBCURL_VERSION_NUM >= 0x070903
 				HTTP_CURL_OPT_SSL_STRING(CERTTYPE);
@@ -483,8 +484,8 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 		break;
 
 		default:
-			if ((meth > HTTP_NO_REQUEST_METHOD) && (meth < HTTP_MAX_REQUEST_METHOD)) {
-				curl_easy_setopt(ch, CURLOPT_CUSTOMREQUEST, http_request_methods[meth]);
+			if (http_request_method_exists(0, meth, NULL)) {
+				curl_easy_setopt(ch, CURLOPT_CUSTOMREQUEST, http_request_method_name(meth));
 			} else {
 				http_error_ex(E_WARNING, HTTP_E_CURL, "Unsupported request method: %d", meth);
 				status = FAILURE;
@@ -580,7 +581,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 
 http_request_end:
 	/* free strings copied with http_curl_copystr() */
-	zend_llist_clean(&HTTP_G(to_free));
+	zend_llist_clean(&HTTP_G(request).curl.copies);
 
 	/* clean curl handle if acquired */
 	if (clean_curl) {
@@ -597,13 +598,68 @@ http_request_end:
 }
 /* }}} */
 
-/* {{{ char *http_request_method_string(http_request_method) */
-PHP_HTTP_API const char *_http_request_method_string(http_request_method m)
+/* {{{ char *http_request_method_name(http_request_method) */
+PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC)
 {
-	if ((m > HTTP_NO_REQUEST_METHOD) && (m < HTTP_MAX_REQUEST_METHOD)) {
+	zval **meth;
+
+	if (HTTP_STD_REQUEST_METHOD(m)) {
 		return http_request_methods[m];
 	}
+
+	if (SUCCESS == zend_hash_index_find(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(m), (void **) &meth)) {
+		return Z_STRVAL_PP(meth);
+	}
+
 	return http_request_methods[0];
+}
+/* }}} */
+
+/* {{{ unsigned long http_request_method_exists(zend_bool, unsigned long, char *) */
+PHP_HTTP_API unsigned long _http_request_method_exists(zend_bool by_name, unsigned long id, const char *name TSRMLS_DC)
+{
+	if (by_name) {
+		unsigned i;
+
+		for (i = HTTP_NO_REQUEST_METHOD + 1; i < HTTP_MAX_REQUEST_METHOD; ++i) {
+			if (!strcmp(name, http_request_methods[i])) {
+				return i;
+			}
+		}
+		{
+			zval **data;
+			char *key;
+			ulong idx;
+
+			FOREACH_HASH_KEYVAL(&HTTP_G(request).methods.custom, key, idx, data) {
+				if (!strcmp(name, Z_STRVAL_PP(data))) {
+					return idx + HTTP_MAX_REQUEST_METHOD;
+				}
+			}
+		}
+		return 0;
+	} else {
+		return HTTP_STD_REQUEST_METHOD(id) || zend_hash_index_exists(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(id)) ? id : 0;
+	}
+}
+/* }}} */
+
+/* {{{ unsigned long http_request_method_register(char *) */
+PHP_HTTP_API unsigned long _http_request_method_register(const char *method TSRMLS_DC)
+{
+	zval array;
+	unsigned long meth_num = HTTP_G(request).methods.custom.nNextFreeElement + HTTP_MAX_REQUEST_METHOD;
+
+	Z_ARRVAL(array) = &HTTP_G(request).methods.custom;
+	add_next_index_string(&array, estrdup(method), 0);
+	return meth_num;
+}
+/* }}} */
+
+/* {{{ STATUS http_request_method_unregister(usngigned long) */
+PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_DC)
+{
+	return zend_hash_index_del(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(method));
 }
 /* }}} */
 
@@ -649,7 +705,7 @@ static const char *const http_request_methods[] = {
 static inline char *_http_curl_copystr(const char *str TSRMLS_DC)
 {
 	char *new_str = estrdup(str);
-	zend_llist_add_element(&HTTP_G(to_free), &new_str);
+	zend_llist_add_element(&HTTP_G(request).curl.copies, &new_str);
 	return new_str;
 }
 /* }}} */

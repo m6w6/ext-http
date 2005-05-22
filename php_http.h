@@ -34,29 +34,51 @@ extern zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
 
 ZEND_BEGIN_MODULE_GLOBALS(http)
-	zend_bool etag_started;
-	PHP_MD5_CTX etag_md5;
-	php_stream_statbuf ssb;
-	char *ctype;
-	char *etag;
-	time_t lmod;
-	char *allowed_methods;
-	char *cache_log;
+
+	struct _http_globals_etag {
+		zend_bool started;
+		PHP_MD5_CTX md5ctx;
+	} etag;
+
+	struct _http_globals_log {
+		char *cache;
+	} log;
+
+	struct _http_globals_send {
+		double throttle_delay;
+		size_t buffer_size;
+		char *content_type;
+		char *unquoted_etag;
+		time_t last_modified;
+	} send;
+
+	struct _http_globals_request {
+		struct _http_globals_request_methods {
+			char *allowed;
+			HashTable custom;
+		} methods;
 
 #ifdef HTTP_HAVE_CURL
+		struct _http_globals_request_curl {
+			zend_llist copies;
 #	if LIBCURL_VERSION_NUM < 0x070c00
-	char curlerr[CURL_ERROR_SIZE + 1];
+			char error[CURL_ERROR_SIZE + 1];
 #	endif
-	zend_llist to_free;
+		} curl;
 #endif /* HTTP_HAVE_CURL */
+	} request;
+
 ZEND_END_MODULE_GLOBALS(http)
 
 #ifdef ZTS
 #	include "TSRM.h"
 #	define HTTP_G(v) TSRMG(http_globals_id, zend_http_globals *, v)
+#	define HTTP_GLOBALS ((zend_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(http_globals_id)])
 #else
 #	define HTTP_G(v) (http_globals.v)
+#	define HTTP_GLOBALS http_globals
 #endif
+#define getGlobals(G) zend_http_globals *G = HTTP_GLOBALS;
 
 PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);
@@ -64,6 +86,7 @@ PHP_FUNCTION(http_absolute_uri);
 PHP_FUNCTION(http_negotiate_language);
 PHP_FUNCTION(http_negotiate_charset);
 PHP_FUNCTION(http_redirect);
+PHP_FUNCTION(http_throttle);
 PHP_FUNCTION(http_send_status);
 PHP_FUNCTION(http_send_last_modified);
 PHP_FUNCTION(http_send_content_type);
@@ -86,6 +109,11 @@ PHP_FUNCTION(http_post_data);
 PHP_FUNCTION(http_post_fields);
 PHP_FUNCTION(http_put_file);
 PHP_FUNCTION(http_put_stream);
+/*PHP_FUNCTION(http_request)*/
+PHP_FUNCTION(http_request_method_register);
+PHP_FUNCTION(http_request_method_unregister);
+PHP_FUNCTION(http_request_method_exists);
+PHP_FUNCTION(http_request_method_name);
 #endif /* HTTP_HAVE_CURL */
 PHP_FUNCTION(http_auth_basic);
 PHP_FUNCTION(http_auth_basic_cb);

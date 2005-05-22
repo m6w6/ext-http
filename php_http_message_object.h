@@ -30,13 +30,15 @@ typedef struct {
 extern zend_class_entry *http_message_object_ce;
 extern zend_function_entry http_message_object_fe[];
 
-#define http_message_object_init _http_message_object_init
+#define http_message_object_init() _http_message_object_init(INIT_FUNC_ARGS_PASSTHRU)
 extern void _http_message_object_init(INIT_FUNC_ARGS);
 #define http_message_object_new _http_message_object_new
 extern zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC);
 #define http_message_object_new_ex(ce, msg) _http_message_object_new_ex(ce, msg TSRMLS_CC)
 #define http_message_object_from_msg(msg) _http_message_object_new_ex(http_message_object_ce, msg TSRMLS_CC)
 extern zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message *msg TSRMLS_DC);
+#define http_message_object_clone(zobj) _http_message_object_clone(zobj TSRMLS_CC)
+extern zend_object_value _http_message_object_clone(zval *object TSRMLS_DC);
 #define http_message_object_free _http_message_object_free
 extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 

@@ -70,7 +70,7 @@ void _http_error_ex(long type, long code, const char *format, ...)
 #ifdef ZEND_ENGINE_2
 		char *message;
 		vspprintf(&message, 0, format, args);
-		zend_throw_exception(http_exception_get_default(), message, code TSRMLS_CC);
+		zend_throw_exception(http_exception_get_for_code(code), message, code TSRMLS_CC);
 #else
 		type = E_WARNING;
 #endif
@@ -146,9 +146,9 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 	while (((e_ptr - encoded) - encoded_len) > 0) {
 		char *n_ptr;
 		size_t chunk_len = 0;
-		
+
 		chunk_len = strtol(e_ptr, &n_ptr, 16);
-		
+
 		if (n_ptr == e_ptr) {
 			/* don't fail on apperently not encoded data */
 			if (e_ptr == encoded) {

@@ -26,7 +26,7 @@ typedef struct {
 extern zend_class_entry *http_response_object_ce;
 extern zend_function_entry http_response_object_fe[];
 
-#define http_response_object_init _http_response_object_init
+#define http_response_object_init() _http_response_object_init(INIT_FUNC_ARGS_PASSTHRU)
 extern void _http_response_object_init(INIT_FUNC_ARGS);
 #define http_response_object_new _http_response_object_new
 extern zend_object_value _http_response_object_new(zend_class_entry *ce TSRMLS_DC);
@@ -46,6 +46,10 @@ PHP_METHOD(HttpResponse, setCacheControl);
 PHP_METHOD(HttpResponse, getCacheControl);
 PHP_METHOD(HttpResponse, setGzip);
 PHP_METHOD(HttpResponse, getGzip);
+PHP_METHOD(HttpResponse, setThrottleDelay);
+PHP_METHOD(HttpResponse, getThrottleDelay);
+PHP_METHOD(HttpResponse, setSendBuffersize);
+PHP_METHOD(HttpResponse, getSendBuffersize);
 PHP_METHOD(HttpResponse, setData);
 PHP_METHOD(HttpResponse, getData);
 PHP_METHOD(HttpResponse, setFile);

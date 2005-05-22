@@ -37,6 +37,7 @@
 * added HttpMessage class and HttpException (PHP5 only)
 * added http.cache_log INI directive
 * http_chunked_decode() now silently passes through apparently not encoded data
+* added throttling capability to http_send()/HttpResponse
 ]]>
     </notes>
   </release>

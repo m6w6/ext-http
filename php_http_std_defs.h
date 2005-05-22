@@ -36,6 +36,11 @@ typedef int STATUS;
 /* lenof() */
 #define lenof(S) (sizeof(S) - 1)
 
+/* STR_SET() */
+#define STR_SET(target, source) \
+	if(target) efree(target); \
+	target = source
+
 /* return bool (v == SUCCESS) */
 #define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
@@ -62,6 +67,12 @@ typedef int STATUS;
 	if (ZEND_NUM_ARGS()) { \
 		zend_error(E_NOTICE, "Wrong parameter count for %s()", get_active_function_name(TSRMLS_C)); \
 	}
+
+/* check if return value is used */
+#define IF_RETVAL_USED \
+	if (!return_value_used) { \
+		return; \
+	} else
 
 /* CR LF */
 #define HTTP_CRLF "\r\n"
@@ -100,8 +111,8 @@ typedef int STATUS;
 /* server vars shorthand */
 #define HTTP_SERVER_VARS Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER])
 
-#define HTTP_INI_ENTRY(entry, default, scope, global) \
-	STD_PHP_INI_ENTRY(entry, default, scope, http_update_##global, global, zend_http_globals, http_globals)
+#define HTTP_PHP_INI_ENTRY(entry, default, scope, updater, global) \
+	STD_PHP_INI_ENTRY(entry, default, scope, updater, global, zend_http_globals, http_globals)
 
 /* {{{ arrays */
 #define FOREACH_VAL(array, val) FOREACH_HASH_VAL(Z_ARRVAL_P(array), val)

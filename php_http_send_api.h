@@ -29,8 +29,10 @@ typedef enum {
 
 #define http_send_status(s) sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) (s) TSRMLS_CC)
 #define http_send_header(h) http_send_status_header(0, (h))
-#define http_send_status_header(s, h) _http_send_status_header((s), (h) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_status_header(int status, const char *header TSRMLS_DC);
+#define http_send_header_ex(h, r) http_send_status_header_ex(0, (h), (r))
+#define http_send_status_header(s, h) _http_send_status_header_ex((s), (h), 1 TSRMLS_CC)
+#define http_send_status_header_ex(s, h, r) _http_send_status_header_ex((s), (h), (r) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, zend_bool replace TSRMLS_DC);
 
 #define http_send_last_modified(t) _http_send_last_modified((t) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_last_modified(time_t t TSRMLS_DC);

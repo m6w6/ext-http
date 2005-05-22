@@ -411,6 +411,35 @@ PHP_FUNCTION(ob_etaghandler)
 }
 /* }}} */
 
+/* {{{ proto void http_throttle(double sec[, long bytes = 2097152])
+ *
+ * Use with http_send() API.
+ *
+ * Example:
+ * <code>
+ * <?php
+ * // ~ 20 kbyte/s
+ * # http_throttle(1, 20000);
+ * # http_throttle(0.5, 10000);
+ * # http_throttle(0.1, 2000);
+ * http_send_file('document.pdf');
+ * ?>
+ * </code>
+ */
+PHP_FUNCTION(http_throttle)
+{
+	long chunk_size;
+	double interval;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "dl", &interval, &chunk_size)) {
+		return;
+	}
+
+	HTTP_G(send).throttle_delay = interval;
+	HTTP_G(send).buffer_size = chunk_size;
+}
+/* }}} */
+
 /* {{{ proto void http_redirect([string url[, array params[, bool session,[ bool permanent]]]])
  *
  * Redirect to a given url.
@@ -893,25 +922,25 @@ PHP_FUNCTION(http_put_stream)
 	php_stream *stream;
 	php_stream_statbuf ssb;
 	http_request_body body;
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sr|a/!z", &URL, &URL_len, &resource, &options, &info)) {
 		RETURN_FALSE;
 	}
-	
+
 	php_stream_from_zval(stream, &resource);
 	if (php_stream_stat(stream, &ssb)) {
 		RETURN_FALSE;
 	}
-	
+
 	if (info) {
 		zval_dtor(info);
 		array_init(info);
 	}
-	
+
 	body.type = HTTP_REQUEST_BODY_UPLOADFILE;
 	body.data = stream;
 	body.size = ssb.sb.st_size;
-	
+
 	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
 	if (SUCCESS == http_put(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
 		RETURN_PHPSTR_VAL(response);
@@ -921,6 +950,114 @@ PHP_FUNCTION(http_put_stream)
 }
 /* }}} */
 
+/* {{{ proto bool http_request()
+ */
+/* }}} */
+
+/* {{{ proto long http_request_method_register(string method)
+ *
+ */
+PHP_FUNCTION(http_request_method_register)
+{
+	char *method;
+	int *method_len;
+	unsigned long existing;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &method, &method_len)) {
+		RETURN_FALSE;
+	}
+	if (existing = http_request_method_exists(1, 0, method)) {
+		RETURN_LONG((long) existing);
+	}
+
+	RETVAL_LONG((long) http_request_method_register(method));
+}
+/* }}} */
+
+/* {{{ proto bool http_request_method_unregister(mixed method)
+ *
+ */
+PHP_FUNCTION(http_request_method_unregister)
+{
+	zval *method;
+	zend_bool numeric;
+	unsigned long existing;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &method)) {
+		RETURN_FALSE;
+	}
+
+	switch (Z_TYPE_P(method))
+	{
+		case IS_OBJECT:
+			convert_to_string(method);
+		case IS_STRING:
+#include "zend_operators.h"
+			if (is_numeric_string(Z_STRVAL_P(method), Z_STRLEN_P(method), NULL, NULL, 1)) {
+				convert_to_long(method);
+			} else {
+				unsigned long mn;
+				if (!(mn = http_request_method_exists(1, 0, Z_STRVAL_P(method)))) {
+					RETURN_FALSE;
+				}
+				zval_dtor(method);
+				ZVAL_LONG(method, (long)mn);
+			}
+		case IS_LONG:
+			RETURN_SUCCESS(http_request_method_unregister(Z_LVAL_P(method)));
+		default:
+			RETURN_FALSE;
+	}
+}
+/* }}} */
+
+/* {{{ proto long http_request_method_exists(mixed method)
+ *
+ */
+PHP_FUNCTION(http_request_method_exists)
+{
+	IF_RETVAL_USED {
+		zval *method;
+
+		if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &method)) {
+			RETURN_FALSE;
+		}
+
+		switch (Z_TYPE_P(method))
+		{
+			case IS_OBJECT:
+				convert_to_string(method);
+			case IS_STRING:
+				if (is_numeric_string(Z_STRVAL_P(method), Z_STRLEN_P(method), NULL, NULL, 1)) {
+					convert_to_long(method);
+				} else {
+					RETURN_LONG((long) http_request_method_exists(1, 0, Z_STRVAL_P(method)));
+				}
+			case IS_LONG:
+				RETURN_LONG((long) http_request_method_exists(0, Z_LVAL_P(method), NULL));
+			default:
+				RETURN_FALSE;
+		}
+	}
+}
+/* }}} */
+
+/* {{{ proto string http_request_method_name(long method)
+ *
+ */
+PHP_FUNCTION(http_request_method_name)
+{
+	IF_RETVAL_USED {
+		long method;
+
+		if ((SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &method)) || (method < 0)) {
+			RETURN_FALSE;
+		}
+
+		RETURN_STRING(estrdup(http_request_method_name((unsigned long) method)), 0);
+	}
+}
+/* }}} */
 #endif
 /* }}} HAVE_CURL */
 
