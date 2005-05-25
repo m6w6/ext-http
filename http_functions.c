@@ -416,7 +416,7 @@ PHP_FUNCTION(ob_etaghandler)
  * Use with http_send() API.
  *
  * Example:
- * <code>
+ * <pre>
  * <?php
  * // ~ 20 kbyte/s
  * # http_throttle(1, 20000);
@@ -424,7 +424,7 @@ PHP_FUNCTION(ob_etaghandler)
  * # http_throttle(0.1, 2000);
  * http_send_file('document.pdf');
  * ?>
- * </code>
+ * </pre>
  */
 PHP_FUNCTION(http_throttle)
 {

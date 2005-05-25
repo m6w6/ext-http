@@ -29,13 +29,20 @@ $preface = <<<_PREFACE
             font-size: 80%%; 
             font-family: sans-serif; 
         } 
-        h2 { 
+        h2, h3 { 
             color: #339; 
             clear: both;
             font-size: 1.2em;
             background: #ffc;
             padding: .2em;
         } 
+        h2.o {
+            color: #66b; 
+            clear: both;
+            font-size: 1.3em;
+            background: #f0f0f0;
+            padding: .2em;
+        }
         p { 
             margin-left: 1em;
         } 
@@ -81,8 +88,13 @@ foreach (array_slice($_SERVER['argv'], 1) as $f) {
     if (mf($f, $m)) {
         printf("<h1>%s</h1>\n", basename($f));
         foreach ($m[1] as $i => $p) {
-            printf("<h2 id=\"%s\">%s</h2>\n%s\n", 
-                str_replace(', ', '_', $m[4][$i]), $p, ff($m[3][$i]));
+            if ($o = preg_match('/^(.*), (.*)$/', $m[4][$i], $n)) {
+                if ($n[2] == '__construct') {
+                    printf("<h2 id=\"%s\" class=\"o\">%s</h2>\n", $n[1], $n[1]);
+                }
+            }
+            printf("<h%d id=\"%s\">%s</h%d>\n%s\n", 
+                $o?3:2, $o?$n[1].'_'.$n[2]:$m[4][$i], $p, $o?3:2, ff($m[3][$i]));
         }
         print "<hr noshade>\n";
     }

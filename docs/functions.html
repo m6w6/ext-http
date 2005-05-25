@@ -6,13 +6,20 @@
             font-size: 80%; 
             font-family: sans-serif; 
         } 
-        h2 { 
+        h2, h3 { 
             color: #339; 
             clear: both;
             font-size: 1.2em;
             background: #ffc;
             padding: .2em;
         } 
+        h2.o {
+            color: #66b; 
+            clear: both;
+            font-size: 1.3em;
+            background: #f0f0f0;
+            padding: .2em;
+        }
         p { 
             margin-left: 1em;
         } 
@@ -64,9 +71,9 @@ The qualifier is recognized and languages without qualifier are rated highest.<b
 The supported parameter is expected to be an array having<br />
 the supported languages as array values.<br />
 <br />
-Example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />$langs </span><span style="color: #007700">= array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'en-US'</span><span style="color: #007700">,</span><span style="color: #FF8000">// default<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'fr'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'fr-FR'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'de'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'de-DE'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'de-AT'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'de-CH'</span><span style="color: #007700">,<br />);<br />include </span><span style="color: #DD0000">'./langs/'</span><span style="color: #007700">. </span><span style="color: #0000BB">http_negotiate_language</span><span style="color: #007700">(</span><span style="color: #0000BB">$langs</span><span style="color: #007700">) .</span><span style="color: #DD0000">'.php'</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
+Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br />$langs </font><font color="#007700">= array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'en-US'</font><font color="#007700">,</font><font color="#FF8000">// default<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'fr'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'fr-FR'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'de'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'de-DE'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'de-AT'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'de-CH'</font><font color="#007700">,<br />);<br />include </font><font color="#DD0000">'./langs/'</font><font color="#007700">. </font><font color="#0000BB">http_negotiate_language</font><font color="#007700">(</font><font color="#0000BB">$langs</font><font color="#007700">) .</font><font color="#DD0000">'.php'</font><font color="#007700">;<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
 </code></blockquote><br />
 <br />
 </pre></p>
@@ -80,9 +87,9 @@ The qualifier is recognized and charset without qualifier are rated highest.<br 
 The supported parameter is expected to be an array having<br />
 the supported charsets as array values.<br />
 <br />
-Example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />$charsets </span><span style="color: #007700">= array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'iso-8859-1'</span><span style="color: #007700">, </span><span style="color: #FF8000">// default<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'iso-8859-2'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'iso-8859-15'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'utf-8'<br /></span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$pref </span><span style="color: #007700">= </span><span style="color: #0000BB">http_negotiate_charset</span><span style="color: #007700">(</span><span style="color: #0000BB">$charsets</span><span style="color: #007700">);<br />if (!</span><span style="color: #0000BB">strcmp</span><span style="color: #007700">(</span><span style="color: #0000BB">$pref</span><span style="color: #007700">, </span><span style="color: #DD0000">'iso-8859-1'</span><span style="color: #007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">iconv_set_encoding</span><span style="color: #007700">(</span><span style="color: #DD0000">'internal_encoding'</span><span style="color: #007700">, </span><span style="color: #DD0000">'iso-8859-1'</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">iconv_set_encoding</span><span style="color: #007700">(</span><span style="color: #DD0000">'output_encoding'</span><span style="color: #007700">, </span><span style="color: #0000BB">$pref</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">ob_start</span><span style="color: #007700">(</span><span style="color: #DD0000">'ob_iconv_handler'</span><span style="color: #007700">);<br />}<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
+Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br />$charsets </font><font color="#007700">= array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'iso-8859-1'</font><font color="#007700">, </font><font color="#FF8000">// default<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'iso-8859-2'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'iso-8859-15'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'utf-8'<br /></font><font color="#007700">);<br /></font><font color="#0000BB">$pref </font><font color="#007700">= </font><font color="#0000BB">http_negotiate_charset</font><font color="#007700">(</font><font color="#0000BB">$charsets</font><font color="#007700">);<br />if (!</font><font color="#0000BB">strcmp</font><font color="#007700">(</font><font color="#0000BB">$pref</font><font color="#007700">, </font><font color="#DD0000">'iso-8859-1'</font><font color="#007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">iconv_set_encoding</font><font color="#007700">(</font><font color="#DD0000">'internal_encoding'</font><font color="#007700">, </font><font color="#DD0000">'iso-8859-1'</font><font color="#007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">iconv_set_encoding</font><font color="#007700">(</font><font color="#DD0000">'output_encoding'</font><font color="#007700">, </font><font color="#0000BB">$pref</font><font color="#007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">ob_start</font><font color="#007700">(</font><font color="#DD0000">'ob_iconv_handler'</font><font color="#007700">);<br />}<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
 </code></blockquote><br />
 <br />
 </pre></p>
@@ -105,7 +112,7 @@ be "saved" by the client/user (i.e. by browsers "Save as..." popup window).</p>
 <p>This matches the given ETag against the clients<br />
 "If-Match" resp. "If-None-Match" HTTP headers.</p>
 <h2 id="http_cache_last_modified">bool http_cache_last_modified([int timestamp_or_expires]])</h2>
-<p>If timestamp_or_exires is greater than 0, it is handled as timestamp<br />
+<p>If timestamp_or_expires is greater than 0, it is handled as timestamp<br />
 and will be sent as date of last modification.  If it is 0 or omitted,<br />
 the current time will be sent as Last-Modified date.  If it's negative,<br />
 it is handled as expiration time in seconds, which means that if the<br />
@@ -119,10 +126,17 @@ checksum of the output (uses output buffering).<br />
 If clients "If-None-Match" header matches the supplied/calculated<br />
 ETag, the body is considered cached on the clients side and<br />
 a "304 Not Modified" status code is issued.</p>
-<h2 id="ob_httpetaghandler">string ob_httpetaghandler(string data, int mode)</h2>
-<p>For use with ob_start().<br />
-Note that this has to be started as first output buffer.<br />
-WARNING: Don't use with http_send_*().</p>
+<h2 id="ob_etaghandler">string ob_etaghandler(string data, int mode)</h2>
+<p>For use with ob_start().</p>
+<h2 id="http_throttle">void http_throttle(double sec[, long bytes = 2097152])</h2>
+<p>Use with http_send() API.<br />
+<br />
+Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br /></font><font color="#FF8000">// ~ 20 kbyte/s<br /># http_throttle(1, 20000);<br /># http_throttle(0.5, 10000);<br /># http_throttle(0.1, 2000);<br /></font><font color="#0000BB">http_send_file</font><font color="#007700">(</font><font color="#DD0000">'document.pdf'</font><font color="#007700">);<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
+</code></blockquote><br />
+<br />
+</pre></p>
 <h2 id="http_redirect">void http_redirect([string url[, array params[, bool session,[ bool permanent]]]])</h2>
 <p>Redirect to a given url.<br />
 The supplied url will be expanded with http_absolute_uri(), the params array will<br />
@@ -146,9 +160,9 @@ if the client doesn't redirect immediatly.</p>
 Returns false on failure.</p>
 <h2 id="http_split_response">array http_split_response(string http_response)</h2>
 <p>This function splits an HTTP response into an array with headers and the<br />
-content body. The returned array may look simliar to the following example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">array(<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">0 </span><span style="color: #007700">=&gt; array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'Status' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'200 Ok'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'Content-Type' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'text/plain'</span><span style="color: #007700">,<br /><br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'Content-Language' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'en-US'<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">),<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">1 </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">"Hello World!"<br /></span><span style="color: #007700">);<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
+content body. The returned array may look simliar to the following example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br /></font><font color="#007700">array(<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">0 </font><font color="#007700">=&gt; array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'Response Status' </font><font color="#007700">=&gt; </font><font color="#DD0000">'200 Ok'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'Content-Type' </font><font color="#007700">=&gt; </font><font color="#DD0000">'text/plain'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'Content-Language' </font><font color="#007700">=&gt; </font><font color="#DD0000">'en-US'<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#007700">),<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">1 </font><font color="#007700">=&gt; </font><font color="#DD0000">"Hello World!"<br /></font><font color="#007700">);<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
 </code></blockquote><br />
 <br />
 </pre></p>
@@ -186,10 +200,12 @@ array where the following keys will be recognized:</p><pre> - redirect:         
                      has no effect, if the size of the requested entity is not known<br />
  - lastmodified:     int, timestamp for If-(Un)Modified-Since header<br />
  - timeout:          int, seconds the request may take<br />
- - connecttimeout:   int, seconds the connect may take</pre><p>The optional third parameter will be filled with some additional information<br />
-in form af an associative array, if supplied, like the following example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">array (<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'effective_url' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'http://localhost'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'response_code' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">403</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'total_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.017</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'namelookup_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.013</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'connect_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.014</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'pretransfer_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.014</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'size_upload' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'size_download' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">202</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'speed_download' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">11882</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'speed_upload' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'header_size' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">145</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'request_size' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">62</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'ssl_verifyresult' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'filetime' </span><span style="color: #007700">=&gt; -</span><span style="color: #0000BB">1</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'content_length_download' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">202</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'content_length_upload' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'starttransfer_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0.017</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'content_type' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'text/html; charset=iso-8859-1'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'redirect_time' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'redirect_count' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'private' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">''</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'http_connectcode' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'httpauth_avail' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'proxyauth_avail' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />)<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
+ - connecttimeout:   int, seconds the connect may take<br />
+ - onprogress:       mixed, progress callback<br />
+ - ondebug:          mixed, debug callback</pre><p>The optional third parameter will be filled with some additional information<br />
+in form af an associative array, if supplied, like the following example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br /></font><font color="#007700">array (<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'effective_url' </font><font color="#007700">=&gt; </font><font color="#DD0000">'http://localhost'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'response_code' </font><font color="#007700">=&gt; </font><font color="#0000BB">403</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'total_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.017</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'namelookup_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.013</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'connect_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.014</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'pretransfer_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.014</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'size_upload' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'size_download' </font><font color="#007700">=&gt; </font><font color="#0000BB">202</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'speed_download' </font><font color="#007700">=&gt; </font><font color="#0000BB">11882</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'speed_upload' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'header_size' </font><font color="#007700">=&gt; </font><font color="#0000BB">145</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'request_size' </font><font color="#007700">=&gt; </font><font color="#0000BB">62</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'ssl_verifyresult' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'filetime' </font><font color="#007700">=&gt; -</font><font color="#0000BB">1</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'content_length_download' </font><font color="#007700">=&gt; </font><font color="#0000BB">202</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'content_length_upload' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'starttransfer_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0.017</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'content_type' </font><font color="#007700">=&gt; </font><font color="#DD0000">'text/html; charset=iso-8859-1'</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'redirect_time' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'redirect_count' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'private' </font><font color="#007700">=&gt; </font><font color="#DD0000">''</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'http_connectcode' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'httpauth_avail' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#DD0000">'proxyauth_avail' </font><font color="#007700">=&gt; </font><font color="#0000BB">0</font><font color="#007700">,<br />)<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
 </code></blockquote><br />
 <br />
 </pre></p>
@@ -201,21 +217,35 @@ See http_get() for a full list of available options.</p>
 <p>Performs an HTTP POST request, posting data.<br />
 Returns the HTTP response as string.<br />
 See http_get() for a full list of available options.</p>
-<h2 id="http_post_array">string http_post_array(string url, array data[, array options[, array &info]])</h2>
+<h2 id="http_post_fields">string http_post_fields(string url, array data[, array files[, array options[, array &info]]])</h2>
 <p>Performs an HTTP POST request, posting www-form-urlencoded array data.<br />
 Returns the HTTP response as string.<br />
 See http_get() for a full list of available options.</p>
+<h2 id="http_put_file">string http_put_file(string url, string file[, array options[, array &info]])</h2>
+<p></p>
+<h2 id="http_put_stream">string http_put_stream(string url, resource stream[, array options[, array &info]])</h2>
+<p></p>
+<h2 id="http_request_method_register">bool http_request()</h2>
+<p>}}} */<br />
+<br />
+/* {{{ proto long http_request_method_register(string method)</p>
+<h2 id="http_request_method_unregister">bool http_request_method_unregister(mixed method)</h2>
+<p></p>
+<h2 id="http_request_method_exists">long http_request_method_exists(mixed method)</h2>
+<p></p>
+<h2 id="http_request_method_name">string http_request_method_name(long method)</h2>
+<p></p>
 <h2 id="http_auth_basic">bool http_auth_basic(string user, string pass[, string realm = "Restricted"])</h2>
-<p>Example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">if (!</span><span style="color: #0000BB">http_auth_basic</span><span style="color: #007700">(</span><span style="color: #DD0000">'mike'</span><span style="color: #007700">, </span><span style="color: #DD0000">'s3c|r3t'</span><span style="color: #007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;die(</span><span style="color: #DD0000">'&lt;h1&gt;Authorization failed!&lt;/h1&gt;'</span><span style="color: #007700">);<br />}<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
+<p>Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br /></font><font color="#007700">if (!</font><font color="#0000BB">http_auth_basic</font><font color="#007700">(</font><font color="#DD0000">'mike'</font><font color="#007700">, </font><font color="#DD0000">'s3c|r3t'</font><font color="#007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;die(</font><font color="#DD0000">'&lt;h1&gt;Authorization failed!&lt;/h1&gt;'</font><font color="#007700">);<br />}<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
 </code></blockquote><br />
 <br />
 </pre></p>
 <h2 id="http_auth_basic_cb">bool http_auth_basic_cb(mixed callback[, string realm = "Restricted"])</h2>
-<p>Example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">function </span><span style="color: #0000BB">auth_cb</span><span style="color: #007700">(</span><span style="color: #0000BB">$user</span><span style="color: #007700">, </span><span style="color: #0000BB">$pass</span><span style="color: #007700">)<br />{<br />&nbsp;&nbsp;&nbsp;&nbsp;global </span><span style="color: #0000BB">$db</span><span style="color: #007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$query </span><span style="color: #007700">= </span><span style="color: #DD0000">'SELECT pass FROM users WHERE user='</span><span style="color: #007700">. </span><span style="color: #0000BB">$db</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">quoteSmart</span><span style="color: #007700">(</span><span style="color: #0000BB">$user</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;if (</span><span style="color: #0000BB">strlen</span><span style="color: #007700">(</span><span style="color: #0000BB">$realpass </span><span style="color: #007700">= </span><span style="color: #0000BB">$db</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">getOne</span><span style="color: #007700">(</span><span style="color: #0000BB">$query</span><span style="color: #007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return </span><span style="color: #0000BB">$pass </span><span style="color: #007700">=== </span><span style="color: #0000BB">$realpass</span><span style="color: #007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;return </span><span style="color: #0000BB">false</span><span style="color: #007700">;<br />}<br />if (!</span><span style="color: #0000BB">http_auth_basic_cb</span><span style="color: #007700">(</span><span style="color: #DD0000">'auth_cb'</span><span style="color: #007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;die(</span><span style="color: #DD0000">'&lt;h1&gt;Authorization failed&lt;/h1&gt;'</span><span style="color: #007700">);<br />}<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
+<p>Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br /></font><font color="#007700">function </font><font color="#0000BB">auth_cb</font><font color="#007700">(</font><font color="#0000BB">$user</font><font color="#007700">, </font><font color="#0000BB">$pass</font><font color="#007700">)<br />{<br />&nbsp;&nbsp;&nbsp;&nbsp;global </font><font color="#0000BB">$db</font><font color="#007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">$query </font><font color="#007700">= </font><font color="#DD0000">'SELECT pass FROM users WHERE user='</font><font color="#007700">. </font><font color="#0000BB">$db</font><font color="#007700">-&gt;</font><font color="#0000BB">quoteSmart</font><font color="#007700">(</font><font color="#0000BB">$user</font><font color="#007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;if (</font><font color="#0000BB">strlen</font><font color="#007700">(</font><font color="#0000BB">$realpass </font><font color="#007700">= </font><font color="#0000BB">$db</font><font color="#007700">-&gt;</font><font color="#0000BB">getOne</font><font color="#007700">(</font><font color="#0000BB">$query</font><font color="#007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return </font><font color="#0000BB">$pass </font><font color="#007700">=== </font><font color="#0000BB">$realpass</font><font color="#007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;return </font><font color="#0000BB">false</font><font color="#007700">;<br />}<br />if (!</font><font color="#0000BB">http_auth_basic_cb</font><font color="#007700">(</font><font color="#DD0000">'auth_cb'</font><font color="#007700">)) {<br />&nbsp;&nbsp;&nbsp;&nbsp;die(</font><font color="#DD0000">'&lt;h1&gt;Authorization failed&lt;/h1&gt;'</font><font color="#007700">);<br />}<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
 </code></blockquote><br />
 <br />
 </pre></p>
@@ -223,13 +253,14 @@ See http_get() for a full list of available options.</p>
 <p>Generates a form-encoded query string from an associative array or object.</p>
 <hr noshade>
 <h1>http_methods.c</h1>
-<h2 id="HttpResponse___construct">void HttpResponse::__construct(bool cache, bool gzip)</h2>
+<h2 id="HttpResponse" class="o">HttpResponse</h2>
+<h3 id="HttpResponse___construct">void HttpResponse::__construct(bool cache, bool gzip)</h3>
 <p>Instantiates a new HttpResponse object, which can be used to send<br />
 any data/resource/file to an HTTP client with caching and multiple<br />
 ranges/resuming support.<br />
 <br />
 NOTE: GZIPping is not implemented yet.</p>
-<h2 id="HttpResponse_setCache">bool HttpResponse::setCache(bool cache)</h2>
+<h3 id="HttpResponse_setCache">bool HttpResponse::setCache(bool cache)</h3>
 <p>Whether it sould be attempted to cache the entitity.<br />
 This will result in necessary caching headers and checks of clients<br />
 "If-Modified-Since" and "If-None-Match" headers.  If one of those headers<br />
@@ -237,159 +268,216 @@ matches a "304 Not Modified" status code will be issued.<br />
 <br />
 NOTE: If you're using sessions, be shure that you set session.cache_limiter<br />
 to something more appropriate than "no-cache"!</p>
-<h2 id="HttpResponse_getCache">bool HttpResponse::getCache()</h2>
+<h3 id="HttpResponse_getCache">bool HttpResponse::getCache()</h3>
 <p>Get current caching setting.</p>
-<h2 id="HttpResponse_setGzip">bool HttpResponse::setGzip(bool gzip)</h2>
+<h3 id="HttpResponse_setGzip">bool HttpResponse::setGzip(bool gzip)</h3>
 <p>Enable on-thy-fly gzipping of the sent entity. NOT IMPLEMENTED YET.</p>
-<h2 id="HttpResponse_getGzip">bool HttpResponse::getGzip()</h2>
+<h3 id="HttpResponse_getGzip">bool HttpResponse::getGzip()</h3>
 <p>Get current gzipping setting.</p>
-<h2 id="HttpResponse_setCacheControl">bool HttpResponse::setCacheControl(string control[, bool raw = false])</h2>
+<h3 id="HttpResponse_setCacheControl">bool HttpResponse::setCacheControl(string control[, bool raw = false])</h3>
 <p>Set a custom cache-control header, usually being "private" or "public";  if<br />
 $raw is set to true the header will be sent as-is.</p>
-<h2 id="HttpResponse_getCacheControl">string HttpResponse::getCacheControl()</h2>
+<h3 id="HttpResponse_getCacheControl">string HttpResponse::getCacheControl()</h3>
 <p>Get current Cache-Control header setting.</p>
-<h2 id="HttpResponse_setContentType">bool HttpResponse::setContentType(string content_type)</h2>
+<h3 id="HttpResponse_setContentType">bool HttpResponse::setContentType(string content_type)</h3>
 <p>Set the content-type of the sent entity.</p>
-<h2 id="HttpResponse_getContentType">string HttpResponse::getContentType()</h2>
+<h3 id="HttpResponse_getContentType">string HttpResponse::getContentType()</h3>
 <p>Get current Content-Type header setting.</p>
-<h2 id="HttpResponse_setContentDisposition">bool HttpResponse::setContentDisposition(string filename[, bool inline = false])</h2>
+<h3 id="HttpResponse_setContentDisposition">bool HttpResponse::setContentDisposition(string filename[, bool inline = false])</h3>
 <p>Set the Content-Disposition of the sent entity.  This setting aims to suggest<br />
 the receiveing user agent how to handle the sent entity;  usually the client<br />
 will show the user a "Save As..." popup.</p>
-<h2 id="HttpResponse_getContentDisposition">array HttpResponse::getContentDisposition()</h2>
+<h3 id="HttpResponse_getContentDisposition">array HttpResponse::getContentDisposition()</h3>
 <p>Get current Content-Disposition setting.<br />
 Will return an associative array like:</p><pre>array(<br />
     'filename' => 'foo.bar',<br />
     'inline'   => false<br />
 )<br />
 </pre></p>
-<h2 id="HttpResponse_setETag">bool HttpResponse::setETag(string etag)</h2>
+<h3 id="HttpResponse_setETag">bool HttpResponse::setETag(string etag)</h3>
 <p>Set a custom ETag.  Use this only if you know what you're doing.</p>
-<h2 id="HttpResponse_getETag">string HttpResponse::getETag()</h2>
+<h3 id="HttpResponse_getETag">string HttpResponse::getETag()</h3>
 <p>Get the previously set custom ETag.</p>
-<h2 id="HttpResponse_setData">bool HttpResponse::setData(string data)</h2>
+<h3 id="HttpResponse_setThrottleDelay">void HttpResponse::setThrottleDelay(double seconds)</h3>
+<p></p>
+<h3 id="HttpResponse_getThrottleDelay">double HttpResponse::getThrottleDelay()</h3>
+<p></p>
+<h3 id="HttpResponse_setSendBuffersize">void HttpResponse::setSendBuffersize(long bytes)</h3>
+<p></p>
+<h3 id="HttpResponse_getSendBuffersize">long HttpResponse::getSendBuffersize()</h3>
+<p></p>
+<h3 id="HttpResponse_setData">bool HttpResponse::setData(string data)</h3>
 <p>Set the data to be sent.</p>
-<h2 id="HttpResponse_getData">string HttpResponse::getData()</h2>
+<h3 id="HttpResponse_getData">string HttpResponse::getData()</h3>
 <p>Get the previously set data to be sent.</p>
-<h2 id="HttpResponse_setStream">bool HttpResponse::setStream(resource stream)</h2>
+<h3 id="HttpResponse_setStream">bool HttpResponse::setStream(resource stream)</h3>
 <p>Set the resource to be sent.</p>
-<h2 id="HttpResponse_getStream">resource HttpResponse::getStream()</h2>
+<h3 id="HttpResponse_getStream">resource HttpResponse::getStream()</h3>
 <p>Get the previously set resource to be sent.</p>
-<h2 id="HttpResponse_setFile">bool HttpResponse::setFile(string file)</h2>
+<h3 id="HttpResponse_setFile">bool HttpResponse::setFile(string file)</h3>
 <p>Set the file to be sent.</p>
-<h2 id="HttpResponse_getFile">string HttpResponse::getFile()</h2>
+<h3 id="HttpResponse_getFile">string HttpResponse::getFile()</h3>
 <p>Get the previously set file to be sent.</p>
-<h2 id="HttpResponse_send">bool HttpResponse::send()</h2>
+<h3 id="HttpResponse_send">bool HttpResponse::send()</h3>
 <p>Finally send the entity.<br />
 <br />
-Example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />$r </span><span style="color: #007700">= new </span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">(</span><span style="color: #0000BB">true</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">setFile</span><span style="color: #007700">(</span><span style="color: #DD0000">'../hidden/contract.pdf'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">setContentType</span><span style="color: #007700">(</span><span style="color: #DD0000">'application/pdf'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">send</span><span style="color: #007700">();<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
+Example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br />$r </font><font color="#007700">= new </font><font color="#0000BB">HttpResponse</font><font color="#007700">(</font><font color="#0000BB">true</font><font color="#007700">);<br /></font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">setFile</font><font color="#007700">(</font><font color="#DD0000">'../hidden/contract.pdf'</font><font color="#007700">);<br /></font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">setContentType</font><font color="#007700">(</font><font color="#DD0000">'application/pdf'</font><font color="#007700">);<br /></font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">send</font><font color="#007700">();<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
 </code></blockquote><br />
 <br />
 </pre></p>
-<h2 id="HttpRequest___construct">void HttpRequest::__construct([string url[, long request_method = HTTP_GET]])</h2>
+<h3 id="HttpMessage_fromString">static HttpMessage HttpMessage::fromString(string raw_message)</h3>
+<p>Create an HttpMessage object from a string.</p>
+<h2 id="HttpMessage" class="o">HttpMessage</h2>
+<h3 id="HttpMessage___construct">void HttpMessage::__construct([string message])</h3>
+<p>Instantiate a new HttpMessage object.</p>
+<h3 id="HttpMessage_getBody">string HttpMessage::getBody()</h3>
+<p>Get the body of the parsed Message.</p>
+<h3 id="HttpMessage_getHeaders">array HttpMessage::getHeaders()</h3>
+<p>Get Message Headers.</p>
+<h3 id="HttpMessage_setHeaders">void HttpMessage::setHeaders(array headers)</h3>
+<p>Sets new headers.</p>
+<h3 id="HttpMessage_addHeaders">void HttpMessage::addHeaders(array headers[, bool append = false])</h3>
+<p>Add headers. If append is true, headers with the same name will be separated, else overwritten.</p>
+<h3 id="HttpMessage_getType">long HttpMessage::getType()</h3>
+<p>Get Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)</p>
+<h3 id="HttpMessage_setType">void HttpMessage::setType(long type)</h3>
+<p>Set Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)</p>
+<h3 id="HttpMessage_getResponseCode">long HttpMessage::getResponseCode()</h3>
+<p>Get the Response Code of the Message.</p>
+<h3 id="HttpMessage_setResponseCode">bool HttpMessage::setResponseCode(long code)</h3>
+<p>Set the response code of an HTTP Response Message.<br />
+Returns false if the Message is not of type HTTP_MSG_RESPONSE,<br />
+or if the response code is out of range (100-510).</p>
+<h3 id="HttpMessage_getRequestMethod">string HttpMessage::getRequestMethod()</h3>
+<p>Get the Request Method of the Message.<br />
+Returns false if the Message is not of type HTTP_MSG_REQUEST.</p>
+<h3 id="HttpMessage_setRequestMethod">bool HttpMessage::setRequestMethod(string method)</h3>
+<p>Set the Request Method of the HTTP Message.<br />
+Returns false if the Message is not of type HTTP_MSG_REQUEST.</p>
+<h3 id="HttpMessage_getRequestUri">string HttpMessage::getRequestUri()</h3>
+<p>Get the Request URI of the Message.</p>
+<h3 id="HttpMessage_setRequestUri">bool HttpMessage::setRequestUri(string URI)</h3>
+<p>Set the Request URI of the HTTP Message.<br />
+Returns false if the Message is not of type HTTP_MSG_REQUEST,<br />
+or if paramtere URI was empty.</p>
+<h3 id="HttpMessage_getHttpVersion">string HttpMessage::getHttpVersion()</h3>
+<p>Get the HTTP Protocol Version of the Message.</p>
+<h3 id="HttpMessage_setHttpVersion">bool HttpMessage::setHttpVersion(string version)</h3>
+<p>Set the HTTP Protocol version of the Message.<br />
+Returns false if version is invalid (1.0 and 1.1).</p>
+<h3 id="HttpMessage_getParentMessage">HttpMessage HttpMessage::getParentMessage()</h3>
+<p>Get parent Message.</p>
+<h3 id="HttpMessage_send">bool HttpMessage::send()</h3>
+<p>Send the Message according to its type as Response or Request.</p>
+<h3 id="HttpMessage_toString">string HttpMessage::toString([bool include_parent = true])</h3>
+<p>Get the string representation of the Message.</p>
+<h2 id="HttpRequest" class="o">HttpRequest</h2>
+<h3 id="HttpRequest___construct">void HttpRequest::__construct([string url[, long request_method = HTTP_GET]])</h3>
 <p>Instantiate a new HttpRequest object which can be used to issue HEAD, GET<br />
 and POST (including posting files) HTTP requests.</p>
-<h2 id="HttpRequest___destruct">void HttpRequest::__destruct()</h2>
+<h3 id="HttpRequest___destruct">void HttpRequest::__destruct()</h3>
 <p>Destroys the HttpRequest object.</p>
-<h2 id="HttpRequest_setOptions">bool HttpRequest::setOptions(array options)</h2>
+<h3 id="HttpRequest_setOptions">bool HttpRequest::setOptions(array options)</h3>
 <p>Set the request options to use.  See http_get() for a full list of available options.</p>
-<h2 id="HttpRequest_getOptions">array HttpRequest::getOptions()</h2>
+<h3 id="HttpRequest_getOptions">array HttpRequest::getOptions()</h3>
 <p>Get current set options.</p>
-<h2 id="HttpRequest_unsetOptions">void HttpRequest::unsetOptions()</h2>
+<h3 id="HttpRequest_unsetOptions">void HttpRequest::unsetOptions()</h3>
 <p>Unset all options/headers/cookies.</p>
-<h2 id="HttpRequest_setSslOptions">bool HttpRequest::setSslOptions(array options)</h2>
+<h3 id="HttpRequest_setSslOptions">bool HttpRequest::setSslOptions(array options)</h3>
 <p>Set additional SSL options.</p>
-<h2 id="HttpRequest_getSslOptions">array HttpRequest::getSslOtpions()</h2>
+<h3 id="HttpRequest_getSslOptions">array HttpRequest::getSslOtpions()</h3>
 <p>Get previously set SSL options.</p>
-<h2 id="HttpRequest_unsetSslOptions">void HttpRequest::unsetSslOptions()</h2>
+<h3 id="HttpRequest_unsetSslOptions">void HttpRequest::unsetSslOptions()</h3>
 <p>Unset previously set SSL options.</p>
-<h2 id="HttpRequest_addHeaders">bool HttpRequest::addHeaders(array headers)</h2>
+<h3 id="HttpRequest_addHeaders">bool HttpRequest::addHeaders(array headers)</h3>
 <p>Add request header name/value pairs.</p>
-<h2 id="HttpRequest_getHeaders">array HttpRequest::getHeaders()</h2>
+<h3 id="HttpRequest_getHeaders">array HttpRequest::getHeaders()</h3>
 <p>Get previously set request headers.</p>
-<h2 id="HttpRequest_unsetHeaders">void HttpRequest::unsetHeaders()</h2>
+<h3 id="HttpRequest_unsetHeaders">void HttpRequest::unsetHeaders()</h3>
 <p>Unset previously set request headers.</p>
-<h2 id="HttpRequest_addCookies">bool HttpRequest::addCookies(array cookies)</h2>
+<h3 id="HttpRequest_addCookies">bool HttpRequest::addCookies(array cookies)</h3>
 <p>Add cookies.</p>
-<h2 id="HttpRequest_getCookies">array HttpRequest::getCookies()</h2>
+<h3 id="HttpRequest_getCookies">array HttpRequest::getCookies()</h3>
 <p>Get previously set cookies.</p>
-<h2 id="HttpRequest_unsetCookies">void HttpRequest::unsetCookies()</h2>
+<h3 id="HttpRequest_unsetCookies">void HttpRequest::unsetCookies()</h3>
 <p></p>
-<h2 id="HttpRequest_setURL">bool HttpRequest::setURL(string url)</h2>
+<h3 id="HttpRequest_setURL">bool HttpRequest::setURL(string url)</h3>
 <p>Set the request URL.</p>
-<h2 id="HttpRequest_getURL">string HttpRequest::getUrl()</h2>
+<h3 id="HttpRequest_getURL">string HttpRequest::getUrl()</h3>
 <p>Get the previously set request URL.</p>
-<h2 id="HttpRequest_setMethod">bool HttpRequest::setMethod(long request_method)</h2>
+<h3 id="HttpRequest_setMethod">bool HttpRequest::setMethod(long request_method)</h3>
 <p>Set the request methods; one of the <tt>HTTP_HEAD</tt>, <tt>HTTP_GET</tt> or<br />
 <tt>HTTP_POST</tt> constants.</p>
-<h2 id="HttpRequest_getMethod">long HttpRequest::getMethod()</h2>
+<h3 id="HttpRequest_getMethod">long HttpRequest::getMethod()</h3>
 <p>Get the previously set request method.</p>
-<h2 id="HttpRequest_setContentType">bool HttpRequest::setContentType(string content_type)</h2>
+<h3 id="HttpRequest_setContentType">bool HttpRequest::setContentType(string content_type)</h3>
 <p>Set the content type the post request should have.<br />
 Use this only if you know what you're doing.</p>
-<h2 id="HttpRequest_getContentType">string HttpRequest::getContentType()</h2>
+<h3 id="HttpRequest_getContentType">string HttpRequest::getContentType()</h3>
 <p>Get the previously content type.</p>
-<h2 id="HttpRequest_setQueryData">bool HttpRequest::setQueryData(mixed query_data)</h2>
+<h3 id="HttpRequest_setQueryData">bool HttpRequest::setQueryData(mixed query_data)</h3>
 <p>Set the URL query parameters to use.<br />
 Overwrites previously set query parameters.<br />
 Affects any request types.</p>
-<h2 id="HttpRequest_getQueryData">string HttpRequest::getQueryData()</h2>
+<h3 id="HttpRequest_getQueryData">string HttpRequest::getQueryData()</h3>
 <p>Get the current query data in form of an urlencoded query string.</p>
-<h2 id="HttpRequest_addQueryData">bool HttpRequest::addQueryData(array query_params)</h2>
+<h3 id="HttpRequest_addQueryData">bool HttpRequest::addQueryData(array query_params)</h3>
 <p>Add parameters to the query parameter list.<br />
 Affects any request type.</p>
-<h2 id="HttpRequest_unsetQueryData">void HttpRequest::unsetQueryData()</h2>
+<h3 id="HttpRequest_unsetQueryData">void HttpRequest::unsetQueryData()</h3>
 <p>Clean the query parameters.<br />
 Affects any request type.</p>
-<h2 id="HttpRequest_addPostData">bool HttpRequest::addPostData(array post_data)</h2>
+<h3 id="HttpRequest_addPostFields">bool HttpRequest::addPostFields(array post_data)</h3>
 <p>Adds POST data entries.<br />
 Affects only POST requests.</p>
-<h2 id="HttpRequest_setPostData">bool HttpRequest::setPostData(array post_data)</h2>
+<h3 id="HttpRequest_setPostFields">bool HttpRequest::setPostFields(array post_data)</h3>
 <p>Set the POST data entries.<br />
 Overwrites previously set POST data.<br />
 Affects only POST requests.</p>
-<h2 id="HttpRequest_getPostData">array HttpRequest::getPostData()</h2>
+<h3 id="HttpRequest_getPostFields">array HttpRequest::getPostFields()</h3>
 <p>Get previously set POST data.</p>
-<h2 id="HttpRequest_unsetPostData">void HttpRequest::unsetPostData()</h2>
+<h3 id="HttpRequest_unsetPostFields">void HttpRequest::unsetPostFields()</h3>
 <p>Clean POST data entires.<br />
 Affects only POST requests.</p>
-<h2 id="HttpRequest_addPostFile">bool HttpRequest::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])</h2>
+<h3 id="HttpRequest_addPostFile">bool HttpRequest::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])</h3>
 <p>Add a file to the POST request.<br />
 Affects only POST requests.</p>
-<h2 id="HttpRequest_getPostFiles">array HttpRequest::getPostFiles()</h2>
+<h3 id="HttpRequest_getPostFiles">array HttpRequest::getPostFiles()</h3>
 <p>Get all previously added POST files.</p>
-<h2 id="HttpRequest_unsetPostFiles">void HttpRequest::unsetPostFiles()</h2>
+<h3 id="HttpRequest_unsetPostFiles">void HttpRequest::unsetPostFiles()</h3>
 <p>Unset the POST files list.<br />
 Affects only POST requests.</p>
-<h2 id="HttpRequest_getResponseData">array HttpRequest::getResponseData()</h2>
+<h3 id="HttpRequest_getResponseData">array HttpRequest::getResponseData()</h3>
 <p>Get all response data after the request has been sent.</p>
-<h2 id="HttpRequest_getResponseHeader">mixed HttpRequest::getResponseHeader([string name])</h2>
+<h3 id="HttpRequest_getResponseHeader">mixed HttpRequest::getResponseHeader([string name])</h3>
 <p>Get response header(s) after the request has been sent.</p>
-<h2 id="HttpRequest_getResponseCookie">array HttpRequest::getResponseCookie([string name])</h2>
+<h3 id="HttpRequest_getResponseCookie">array HttpRequest::getResponseCookie([string name])</h3>
 <p>Get response cookie(s) after the request has been sent.</p>
-<h2 id="HttpRequest_getResponseBody">string HttpRequest::getResponseBody()</h2>
+<h3 id="HttpRequest_getResponseBody">string HttpRequest::getResponseBody()</h3>
 <p>Get the response body after the request has been sent.</p>
-<h2 id="HttpRequest_getResponseCode">int HttpRequest::getResponseCode()</h2>
+<h3 id="HttpRequest_getResponseCode">int HttpRequest::getResponseCode()</h3>
 <p>Get the response code after the request has been sent.</p>
-<h2 id="HttpRequest_getResponseInfo">array HttpRequest::getResponseInfo([string name])</h2>
+<h3 id="HttpRequest_getResponseInfo">array HttpRequest::getResponseInfo([string name])</h3>
 <p>Get response info after the request has been sent.<br />
 See http_get() for a full list of returned info.</p>
-<h2 id="HttpRequest_send">bool HttpRequest::send()</h2>
+<h3 id="HttpRequest_getResponseMessage">HttpMessage HttpRequest::getResponseMessage()</h3>
+<p>Get the full response as HttpMessage object.</p>
+<h3 id="HttpRequest_send">bool HttpRequest::send()</h3>
 <p>Send the HTTP request.<br />
 <br />
-GET example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />$r </span><span style="color: #007700">= new </span><span style="color: #0000BB">HttpRequest</span><span style="color: #007700">(</span><span style="color: #DD0000">'http://example.com/feed.rss'</span><span style="color: #007700">, </span><span style="color: #0000BB">HTTP_GET</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">setOptions</span><span style="color: #007700">(array(</span><span style="color: #DD0000">'lastmodified' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">filemtime</span><span style="color: #007700">(</span><span style="color: #DD0000">'local.rss'</span><span style="color: #007700">)));<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">addQueryData</span><span style="color: #007700">(array(</span><span style="color: #DD0000">'category' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">3</span><span style="color: #007700">));<br />if (</span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">send</span><span style="color: #007700">() &amp;&amp; </span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">getResponseCode</span><span style="color: #007700">() == </span><span style="color: #0000BB">200</span><span style="color: #007700">) {<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">file_put_contents</span><span style="color: #007700">(</span><span style="color: #DD0000">'local.rss'</span><span style="color: #007700">, </span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">getResponseBody</span><span style="color: #007700">());<br />}<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
-</code></blockquote></pre><p>POST example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />$r </span><span style="color: #007700">= new </span><span style="color: #0000BB">HttpRequest</span><span style="color: #007700">(</span><span style="color: #DD0000">'http://example.com/form.php'</span><span style="color: #007700">, </span><span style="color: #0000BB">HTTP_POST</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">setOptions</span><span style="color: #007700">(array(</span><span style="color: #DD0000">'cookies' </span><span style="color: #007700">=&gt; array(</span><span style="color: #DD0000">'lang' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'de'</span><span style="color: #007700">)));<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">addPostData</span><span style="color: #007700">(array(</span><span style="color: #DD0000">'user' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'mike'</span><span style="color: #007700">, </span><span style="color: #DD0000">'pass' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'s3c|r3t'</span><span style="color: #007700">));<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">addPostFile</span><span style="color: #007700">(</span><span style="color: #DD0000">'image'</span><span style="color: #007700">, </span><span style="color: #DD0000">'profile.jpg'</span><span style="color: #007700">, </span><span style="color: #DD0000">'image/jpeg'</span><span style="color: #007700">);<br />if (</span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">send</span><span style="color: #007700">()) {<br />&nbsp;&nbsp;&nbsp;&nbsp;echo </span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">getResponseBody</span><span style="color: #007700">();<br />}<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
+GET example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br />$r </font><font color="#007700">= new </font><font color="#0000BB">HttpRequest</font><font color="#007700">(</font><font color="#DD0000">'http://example.com/feed.rss'</font><font color="#007700">, </font><font color="#0000BB">HTTP_GET</font><font color="#007700">);<br /></font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">setOptions</font><font color="#007700">(array(</font><font color="#DD0000">'lastmodified' </font><font color="#007700">=&gt; </font><font color="#0000BB">filemtime</font><font color="#007700">(</font><font color="#DD0000">'local.rss'</font><font color="#007700">)));<br /></font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">addQueryData</font><font color="#007700">(array(</font><font color="#DD0000">'category' </font><font color="#007700">=&gt; </font><font color="#0000BB">3</font><font color="#007700">));<br /></font><font color="#0000BB">try </font><font color="#007700">{<br />&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">send</font><font color="#007700">();<br />&nbsp;&nbsp;&nbsp;&nbsp;if (</font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">getResponseCode</font><font color="#007700">() == </font><font color="#0000BB">200</font><font color="#007700">) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#0000BB">file_put_contents</font><font color="#007700">(</font><font color="#DD0000">'local.rss'</font><font color="#007700">, </font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">getResponseBody</font><font color="#007700">());<br />&nbsp;&nbsp;&nbsp;}<br />} </font><font color="#0000BB">catch </font><font color="#007700">(</font><font color="#0000BB">HttpException $ex</font><font color="#007700">) {<br />&nbsp;&nbsp;&nbsp;&nbsp;echo </font><font color="#0000BB">$ex</font><font color="#007700">;<br />}<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
+</code></blockquote></pre><p>POST example:</p><pre><blockquote><code><font color="#000000"><br />
+<font color="#0000BB">&lt;?php<br />$r </font><font color="#007700">= new </font><font color="#0000BB">HttpRequest</font><font color="#007700">(</font><font color="#DD0000">'http://example.com/form.php'</font><font color="#007700">, </font><font color="#0000BB">HTTP_POST</font><font color="#007700">);<br /></font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">setOptions</font><font color="#007700">(array(</font><font color="#DD0000">'cookies' </font><font color="#007700">=&gt; array(</font><font color="#DD0000">'lang' </font><font color="#007700">=&gt; </font><font color="#DD0000">'de'</font><font color="#007700">)));<br /></font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">addpostFields</font><font color="#007700">(array(</font><font color="#DD0000">'user' </font><font color="#007700">=&gt; </font><font color="#DD0000">'mike'</font><font color="#007700">, </font><font color="#DD0000">'pass' </font><font color="#007700">=&gt; </font><font color="#DD0000">'s3c|r3t'</font><font color="#007700">));<br /></font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">addPostFile</font><font color="#007700">(</font><font color="#DD0000">'image'</font><font color="#007700">, </font><font color="#DD0000">'profile.jpg'</font><font color="#007700">, </font><font color="#DD0000">'image/jpeg'</font><font color="#007700">);<br />if (</font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">send</font><font color="#007700">()) {<br />&nbsp;&nbsp;&nbsp;&nbsp;echo </font><font color="#0000BB">$r</font><font color="#007700">-&gt;</font><font color="#0000BB">getResponseBody</font><font color="#007700">();<br />}<br /></font><font color="#0000BB">?&gt;</font><br />
+</font><br />
 </code></blockquote><br />
 <br />
 </pre></p>
 <hr noshade>
-    <p><b>Generated at: Thu, 24 Mar 2005 18:02:15 +0100</b></p>
+    <p><b>Generated at: Wed, 25 May 2005 19:01:02 +0200</b></p>
 </body>
 </html>
 
