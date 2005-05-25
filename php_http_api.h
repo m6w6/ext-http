@@ -33,13 +33,13 @@ extern STATUS _http_exit_ex(int status, char *header, zend_bool free_header TSRM
 
 #define http_check_method(m) http_check_method_ex((m), HTTP_KNOWN_METHODS)
 #define http_check_method_ex(m, a) _http_check_method_ex((m), (a))
-extern STATUS _http_check_method(const char *method, const char *methods);
+extern STATUS _http_check_method_ex(const char *method, const char *methods);
 
 #define HTTP_GSC(var, name, ret)  HTTP_GSP(var, name, return ret)
 #define HTTP_GSP(var, name, ret) \
-		if (!(var = _http_get_server_var_ex(name, strlen(name)+1, 1 TSRMLS_CC))) { \
-			ret; \
-		}
+        if (!(var = _http_get_server_var_ex(name, strlen(name)+1, 1 TSRMLS_CC))) { \
+            ret; \
+        }
 #define http_got_server_var(v) (NULL != _http_get_server_var_ex((v), sizeof(v), 1 TSRMLS_CC))
 #define http_get_server_var(v) http_get_server_var_ex((v), sizeof(v))
 #define http_get_server_var_ex(v, s) _http_get_server_var_ex((v), (s), 0 TSRMLS_CC)
