@@ -30,6 +30,7 @@
 #include "php_http_send_api.h"
 
 #ifdef ZEND_ENGINE_2
+#	include "zend_exceptions.h"
 #	include "php_http_exception_object.h"
 #endif
 

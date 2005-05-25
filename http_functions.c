@@ -980,8 +980,6 @@ PHP_FUNCTION(http_request_method_register)
 PHP_FUNCTION(http_request_method_unregister)
 {
 	zval *method;
-	zend_bool numeric;
-	unsigned long existing;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &method)) {
 		RETURN_FALSE;

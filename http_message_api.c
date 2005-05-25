@@ -59,14 +59,14 @@ static void _http_message_headers_cb(const char *http_line, HashTable **headers,
 	// response
 	if (!strncmp(http_line, "HTTP/1.", lenof("HTTP/1."))) {
 		new->type = HTTP_MSG_RESPONSE;
-		new->info.response.http_version = atof(http_line + lenof("HTTP/"));
+		new->info.response.http_version = (float) atof(http_line + lenof("HTTP/"));
 		new->info.response.code = atoi(http_line + lenof("HTTP/1.1 "));
 	} else
 	// request
 	if (!strncmp(http_line + line_length - lenof("HTTP/1.1"), "HTTP/1.", lenof("HTTP/1."))) {
 		const char *method_sep_uri = strchr(http_line, ' ');
 		new->type = HTTP_MSG_REQUEST;
-		new->info.request.http_version = atof(http_line + line_length - lenof("1.1"));
+		new->info.request.http_version = (float) atof(http_line + line_length - lenof("1.1"));
 		new->info.request.method = estrndup(http_line, method_sep_uri - http_line);
 		new->info.request.URI = estrndup(method_sep_uri + 1, http_line + line_length - method_sep_uri - 1 - lenof(" HTTP/1.1"));
 	}

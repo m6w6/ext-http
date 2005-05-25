@@ -40,6 +40,8 @@
 
 #ifdef ZEND_ENGINE_2
 
+#include "missing.h"
+
 ZEND_EXTERN_MODULE_GLOBALS(http)
 
 /* {{{ HttpResponse */
@@ -629,7 +631,6 @@ PHP_METHOD(HttpMessage, fromString)
 	char *string = NULL;
 	int length = 0;
 	http_message *msg = NULL;
-	http_message_object obj;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
 		RETURN_NULL();
@@ -889,7 +890,6 @@ PHP_METHOD(HttpMessage, getRequestUri)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *uri;
 		getObject(http_message_object, obj);
 
 		if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
@@ -972,7 +972,7 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 PHP_METHOD(HttpMessage, setHttpVersion)
 {
 	char v[4];
-	zval *zv, *version;
+	zval *zv;
 	getObject(http_message_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &zv)) {

@@ -27,6 +27,8 @@
 
 #ifdef ZEND_ENGINE_2
 
+#include "missing.h"
+
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
