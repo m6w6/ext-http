@@ -868,6 +868,9 @@ PHP_FUNCTION(http_post_fields)
 
 /* {{{ proto string http_put_file(string url, string file[, array options[, array &info]])
  *
+ * Performs an HTTP PUT request, uploading file.
+ * Returns the HTTP response as string.
+ * See http_get() for a full list of available options.
  */
 PHP_FUNCTION(http_put_file)
 {
@@ -912,6 +915,9 @@ PHP_FUNCTION(http_put_file)
 
 /* {{{ proto string http_put_stream(string url, resource stream[, array options[, array &info]])
  *
+ * Performs an HTTP PUT request, uploading stream.
+ * Returns the HTTP response as string.
+ * See http_get() for a full list of available options.
  */
 PHP_FUNCTION(http_put_stream)
 {
@@ -950,12 +956,9 @@ PHP_FUNCTION(http_put_stream)
 }
 /* }}} */
 
-/* {{{ proto bool http_request()
- */
-/* }}} */
-
 /* {{{ proto long http_request_method_register(string method)
  *
+ * Register a custom request method.
  */
 PHP_FUNCTION(http_request_method_register)
 {
@@ -976,6 +979,7 @@ PHP_FUNCTION(http_request_method_register)
 
 /* {{{ proto bool http_request_method_unregister(mixed method)
  *
+ * Unregister a previously registered custom request method.
  */
 PHP_FUNCTION(http_request_method_unregister)
 {
@@ -1011,6 +1015,7 @@ PHP_FUNCTION(http_request_method_unregister)
 
 /* {{{ proto long http_request_method_exists(mixed method)
  *
+ * Check if a request method is registered (or available by default).
  */
 PHP_FUNCTION(http_request_method_exists)
 {
@@ -1042,6 +1047,7 @@ PHP_FUNCTION(http_request_method_exists)
 
 /* {{{ proto string http_request_method_name(long method)
  *
+ * Get the literal string representation of a standard or registered request method.
  */
 PHP_FUNCTION(http_request_method_name)
 {
