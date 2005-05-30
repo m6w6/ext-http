@@ -33,6 +33,8 @@
 extern zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
 
+extern int http_module_number;
+
 ZEND_BEGIN_MODULE_GLOBALS(http)
 
 	struct _http_globals_etag {

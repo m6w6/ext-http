@@ -155,6 +155,8 @@ zend_module_entry http_module_entry = {
 };
 /* }}} */
 
+int http_module_number;
+
 #ifdef HTTP_HAVE_CURL
 #	ifdef HTTP_CURL_USE_ZEND_MM
 static void http_curl_free(void *p)					{ efree(p); }
@@ -215,6 +217,8 @@ PHP_INI_END()
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(http)
 {
+	http_module_number = module_number;
+
 	ZEND_INIT_MODULE_GLOBALS(http, NULL, NULL);
 	REGISTER_INI_ENTRIES();
 
