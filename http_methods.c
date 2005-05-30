@@ -507,7 +507,7 @@ PHP_METHOD(HttpResponse, getFile)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::send()
+/* {{{ proto bool HttpResponse::send([bool clean_ob = true])
  *
  * Finally send the entity.
  *
@@ -524,13 +524,23 @@ PHP_METHOD(HttpResponse, getFile)
  */
 PHP_METHOD(HttpResponse, send)
 {
+	zend_bool clean_ob = 1;
 	zval *do_cache, *do_gzip;
 	getObject(http_response_object, obj);
 
-	NO_ARGS;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {
+		RETURN_FALSE;
+	}
 
 	do_cache = GET_PROP(obj, cache);
 	do_gzip  = GET_PROP(obj, gzip);
+
+	if (clean_ob) {
+		/* interrupt on-the-fly etag generation */
+		HTTP_G(etag).started = 0;
+		/* discard previous output buffers */
+		php_end_ob_buffers(0 TSRMLS_CC);
+	}
 
 	/* gzip */
 	if (Z_LVAL_P(do_gzip)) {
@@ -622,29 +632,6 @@ PHP_METHOD(HttpResponse, send)
 
 /* {{{ HttpMessage */
 
-/* {{{ proto static HttpMessage HttpMessage::fromString(string raw_message)
- *
- * Create an HttpMessage object from a string.
- */
-PHP_METHOD(HttpMessage, fromString)
-{
-	char *string = NULL;
-	int length = 0;
-	http_message *msg = NULL;
-
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
-		RETURN_NULL();
-	}
-
-	if (!(msg = http_message_parse(string, length))) {
-		RETURN_NULL();
-	}
-
-	Z_TYPE_P(return_value) = IS_OBJECT;
-	return_value->value.obj = http_message_object_from_msg(msg);
-}
-/* }}} */
-
 /* {{{ proto void HttpMessage::__construct([string message])
  *
  * Instantiate a new HttpMessage object.
@@ -666,6 +653,29 @@ PHP_METHOD(HttpMessage, __construct)
 		obj->message = http_message_new();
 	}
 	SET_EH_NORMAL();
+}
+/* }}} */
+
+/* {{{ proto static HttpMessage HttpMessage::fromString(string raw_message)
+ *
+ * Create an HttpMessage object from a string.
+ */
+PHP_METHOD(HttpMessage, fromString)
+{
+	char *string = NULL;
+	int length = 0;
+	http_message *msg = NULL;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
+		RETURN_NULL();
+	}
+
+	if (!(msg = http_message_parse(string, length))) {
+		RETURN_NULL();
+	}
+
+	Z_TYPE_P(return_value) = IS_OBJECT;
+	return_value->value.obj = http_message_object_from_msg(msg);
 }
 /* }}} */
 
