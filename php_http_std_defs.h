@@ -171,6 +171,7 @@ typedef int STATUS;
 /* {{{ objects & properties */
 #ifdef ZEND_ENGINE_2
 
+#	define HTTP_STATIC_ME_ALIAS(me, al, ai) ZEND_FENTRY(me, ZEND_FN(al), ai, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
 
 #	define HTTP_REGISTER_CLASS_EX(classname, name, parent, flags) \
 	{ \
