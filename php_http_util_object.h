@@ -46,7 +46,7 @@ PHP_METHOD(HttpUtil, getRequestHeaders);
 PHP_METHOD(HttpUtil, get);
 PHP_METHOD(HttpUtil, head);
 PHP_METHOD(HttpUtil, postData);
-PHP_METHOD(HttpUtil, postArray);
+PHP_METHOD(HttpUtil, postFields);
 #endif /* HTTP_HAVE_CURL */
 PHP_METHOD(HttpUtil, authBasic);
 PHP_METHOD(HttpUtil, authBasicCallback);
