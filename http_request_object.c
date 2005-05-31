@@ -77,10 +77,15 @@ zend_function_entry http_request_object_fe[] = {
 	PHP_ME(HttpRequest, addPostFields, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, unsetPostFields, NULL, ZEND_ACC_PUBLIC)
 
+	PHP_ME(HttpRequest, setPostFiles, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, addPostFile, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getPostFiles, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, unsetPostFiles, NULL, ZEND_ACC_PUBLIC)
 
+	PHP_ME(HttpRequest, setPutFile, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, getPutFile, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequest, unsetPutFile, NULL, ZEND_ACC_PUBLIC)
+	
 	PHP_ME(HttpRequest, send, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HttpRequest, getResponseData, NULL, ZEND_ACC_PUBLIC)
@@ -177,7 +182,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PROTECTED, string, url, "");
 	DCL_PROP(PROTECTED, string, contentType, "");
 	DCL_PROP(PROTECTED, string, queryData, "");
-	DCL_PROP(PROTECTED, string, postFields, "");
+	DCL_PROP(PROTECTED, string, putFile, "");
 }
 
 void _http_request_object_free(zend_object *object TSRMLS_DC)

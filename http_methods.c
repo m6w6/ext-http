@@ -1726,6 +1726,29 @@ PHP_METHOD(HttpRequest, addPostFile)
 }
 /* }}} */
 
+/* {{{ proto bool HttpRequest::setPostFiles()
+ *
+ * Set files to post.
+ * Overwrites previously set post files.
+ * Affects only POST requests.
+ */
+PHP_METHOD(HttpRequest, setPostFiles)
+{
+	zval *files, *pFiles;
+	getObject(http_request_object, obj);
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &files)) {
+		RETURN_FALSE;
+	}
+
+	pFiles = GET_PROP(obj, postFiles);
+	zend_hash_clean(Z_ARRVAL_P(pFiles));
+	array_copy(files, pFiles);
+
+	RETURN_TRUE;
+}
+/* }}} */
+
 /* {{{ proto array HttpRequest::getPostFiles()
  *
  * Get all previously added POST files.
@@ -1760,6 +1783,59 @@ PHP_METHOD(HttpRequest, unsetPostFiles)
 
 	files = GET_PROP(obj, postFiles);
 	zend_hash_clean(Z_ARRVAL_P(files));
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequest::SetPutFile(string file)
+ *
+ * Set file to put.
+ * Affects only PUT requests.
+ */
+PHP_METHOD(HttpRequest, setPutFile)
+{
+	char *file;
+	int file_len;
+	getObject(http_request_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &file, &file_len)) {
+		RETURN_FALSE;
+	}
+	
+	UPD_PROP(obj, string, putFile, file);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpRequest::getPutFile()
+ *
+ * Get previously set put file.
+ */
+PHP_METHOD(HttpRequest, getPutFile)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *putfile;
+		getObject(http_request_object, obj);
+
+		putfile = GET_PROP(obj, putFile);
+		RETVAL_STRINGL(Z_STRVAL_P(putfile), Z_STRLEN_P(putfile), 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpRequest::unsetPutFile()
+ *
+ * Unset file to put.
+ * Affects only PUT requests.
+ */
+PHP_METHOD(HttpRequest, unsetPutFile)
+{
+	getObject(http_request_object, obj);
+
+	NO_ARGS;
+
+	UPD_PROP(obj, string, putFile, "");
 }
 /* }}} */
 
