@@ -145,21 +145,34 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 	e_ptr = encoded;
 
 	while (((e_ptr - encoded) - encoded_len) > 0) {
+		int no_crlf = 0;
 		char *n_ptr;
 		size_t chunk_len = 0;
 
 		chunk_len = strtol(e_ptr, &n_ptr, 16);
 
-		if (n_ptr == e_ptr) {
+		/* check if:
+		 * - we could not read in chunk size
+		 * - chunk size is not followed by HTTP_CRLF|NUL
+		 */
+		if ((n_ptr == e_ptr) || (*n_ptr && (no_crlf = strncmp(n_ptr, HTTP_CRLF, lenof(HTTP_CRLF))))) {
 			/* don't fail on apperently not encoded data */
 			if (e_ptr == encoded) {
 				memcpy(*decoded, encoded, encoded_len);
 				*decoded_len = encoded_len;
 				return encoded + encoded_len;
 			} else {
-				char *error = estrndup(n_ptr, strcspn(n_ptr, "\r\n \0"));
-				http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid chunk size: '%s' at pos %d", error, n_ptr - encoded);
-				efree(error);
+				efree(*decoded);
+				if (no_crlf) {
+					http_error_ex(E_WARNING, HTTP_E_PARSE,
+						"Invalid character (expected 0x0D 0x0A; got: 0x%x 0x%x)", *n_ptr, *(n_ptr + 1));
+				} else {
+					char *error = estrndup(n_ptr, strcspn(n_ptr, "\r\n \0"));
+					http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid chunk size: '%s' at pos %d", error, n_ptr - encoded);
+					efree(error);
+					efree(decoded);
+				}
+				
 				return NULL;
 			}
 		} else {
@@ -169,14 +182,6 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 		/* reached the end */
 		if (!chunk_len) {
 			break;
-		}
-
-		/* new line */
-		if (strncmp(e_ptr, HTTP_CRLF, 2)) {
-			http_error_ex(E_WARNING, HTTP_E_PARSE,
-				"Invalid character (expected 0x0D 0x0A; got: 0x%x 0x%x)", *e_ptr, *(e_ptr + 1));
-			efree(*decoded);
-			return NULL;
 		}
 
 		memcpy(d_ptr, e_ptr += 2, chunk_len);
