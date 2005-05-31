@@ -514,7 +514,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 			break;
 
 			default:
-				http_error_ex(E_WARNING, HTTP_E_CURL, "Unkown request body type: %d", body->type);
+				http_error_ex(E_WARNING, HTTP_E_CURL, "Unknown request body type: %d", body->type);
 				status = FAILURE;
 				goto http_request_end;
 			break;
@@ -746,7 +746,7 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *s)
 {
 	static char *offset = NULL, *original = NULL;
 	http_request_body *body = (http_request_body *) s;
-	
+
 	switch (body->type)
 	{
 		case HTTP_REQUEST_BODY_UPLOADFILE:
