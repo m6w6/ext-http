@@ -667,21 +667,21 @@ PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_
 {
 	zval **zmethod;
 	char *http_method;
-	
+
 	if (SUCCESS != zend_hash_index_find(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(method), (void **) &zmethod)) {
 		http_error_ex(E_NOTICE, HTTP_E_PARAM, "Request method with id %lu does not exist", method);
 		return FAILURE;
 	}
 
 	spprintf(&http_method, 0, "HTTP_%s", Z_STRVAL_PP(zmethod));
-	
+
 	if (	(SUCCESS != zend_hash_index_del(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(method)))
 		||	(SUCCESS != zend_hash_del(EG(zend_constants), http_method, strlen(http_method) + 1))) {
 		http_error_ex(E_NOTICE, 0, "Could not unregister request method: %s", http_method);
 		efree(http_method);
 		return FAILURE;
 	}
-	
+
 	efree(http_method);
 	return SUCCESS;
 }
@@ -746,7 +746,7 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *s)
 {
 	static char *offset = NULL, *original = NULL;
 	http_request_body *body = (http_request_body *) s;
-
+	
 	switch (body->type)
 	{
 		case HTTP_REQUEST_BODY_UPLOADFILE:
