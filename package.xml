@@ -15,6 +15,7 @@
 * Negotiating user preferred language/charset
 * Convenient request functions to HEAD/GET/POST if libcurl is available
 * HTTP auth hooks (Basic)
+* PHP5 classes: HttpUtil, HttpResponse, HttpRequest, HttpMessage
 ]]>
   </description>
   <license>PHP License 3.0</license>
@@ -29,8 +30,8 @@
   </maintainers>
 
   <release>
-    <version>0.8.0dev</version>
-    <date>2005-05-00</date>
+    <version>0.8.0</version>
+    <date>2005-05-31</date>
     <state>beta</state>
     <notes><![CDATA[
 * renamed ob_httpetaghandler to ob_etaghandler
@@ -38,6 +39,8 @@
 * added http.cache_log INI directive
 * http_chunked_decode() now silently passes through apparently not encoded data
 * added throttling capability to http_send()/HttpResponse
+* added hooks for custom request methods
+* added PUT support
 ]]>
     </notes>
   </release>
