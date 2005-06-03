@@ -1,7 +1,7 @@
 --TEST--
-HttpRequest GET
+HttpRequest GET/POST
 --SKIPIF--
-<?php 
+<?php
 include 'skip.inc';
 (5 > (int) PHP_VERSION) and die('skip PHP5 is required for Http classes');
 ?>
@@ -10,6 +10,11 @@ include 'skip.inc';
 $r = new HttpRequest('http://www.google.com', HTTP_GET);
 var_dump($r->send());
 print_r($r->getResponseInfo());
+$r->setMethod(HTTP_POST);
+$r->addPostFields(array('q'=>'foobar','start'=>10));
+$r->send();
+var_dump($r->getResponseCode());
+var_dump(false != strstr($r->getResponseBody(), "Not Implemented"));
 ?>
 --EXPECTF--
 Content-type: text/html
@@ -43,3 +48,5 @@ Array
     [proxyauth_avail] => %d
     [num_connects] => %d
 )
+int(501)
+bool(true)
