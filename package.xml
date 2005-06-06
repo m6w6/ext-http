@@ -13,7 +13,7 @@
   (with 'on the fly' option for ETag generation from buffered output)
 * Sending data/files/streams with (multiple) ranges support
 * Negotiating user preferred language/charset
-* Convenient request functions to HEAD/GET/POST if libcurl is available
+* Convenient request functions built upon libcurl
 * HTTP auth hooks (Basic)
 * PHP5 classes: HttpUtil, HttpResponse, HttpRequest, HttpMessage
 ]]>
@@ -31,16 +31,18 @@
 
   <release>
     <version>0.8.0</version>
-    <date>2005-05-31</date>
+    <date>2005-06-06</date>
     <state>beta</state>
     <notes><![CDATA[
 * renamed ob_httpetaghandler to ob_etaghandler
+* http_chunked_decode() now silently passes through apparently not encoded data
 * added HttpMessage class and HttpException (PHP5 only)
 * added http.cache_log INI directive
-* http_chunked_decode() now silently passes through apparently not encoded data
 * added throttling capability to http_send()/HttpResponse
 * added hooks for custom request methods
 * added PUT support
+* added http_match_request_header()
+* added clean_ob parameter to HttpResponse::send()
 ]]>
     </notes>
   </release>
