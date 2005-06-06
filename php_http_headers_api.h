@@ -40,7 +40,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 PHP_HTTP_API STATUS _http_parse_cookie(const char *cookie, HashTable *values TSRMLS_DC);
 
 #define http_get_request_headers(h) _http_get_request_headers_ex(Z_ARRVAL_P(h), 1 TSRMLS_CC)
-#define http_get_request_headers_ex(h, p) _http_get_request_headers_ex((h), (s) TSRMLS_CC)
+#define http_get_request_headers_ex(h, p) _http_get_request_headers_ex((h), (p) TSRMLS_CC)
 PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool prettify TSRMLS_DC);
 
 #define http_negotiate_language(zsupported, def) http_negotiate_language_ex(Z_ARRVAL_P(zsupported), (def))
@@ -52,6 +52,10 @@ PHP_HTTP_API char *_http_negotiate_q(const char *entry, const HashTable *support
 
 #define http_get_request_ranges(r, l) _http_get_request_ranges((r), (l) TSRMLS_CC)
 PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_t length TSRMLS_DC);
+
+#define http_match_request_header(h, v) http_match_request_header_ex((h), (v), 0)
+#define http_match_request_header_ex(h, v, c) _http_match_request_header_ex((h), (v), (c) TSRMLS_CC)
+PHP_HTTP_API zend_bool _http_match_request_header_ex(const char *header, const char *value, zend_bool match_case TSRMLS_DC);
 
 #endif
 

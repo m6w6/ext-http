@@ -652,6 +652,7 @@ PHP_FUNCTION(http_parse_headers)
 
 /* {{{ proto array http_get_request_headers(void)
  *
+ * Get a list of incoming HTTP headers.
  */
 PHP_FUNCTION(http_get_request_headers)
 {
@@ -659,6 +660,24 @@ PHP_FUNCTION(http_get_request_headers)
 
 	array_init(return_value);
 	http_get_request_headers(return_value);
+}
+/* }}} */
+
+/* {{{ proto bool http_match_request_header(string header, string value[, bool match_case = false])
+ *
+ * Match an incoming HTTP header.
+ */
+PHP_FUNCTION(http_match_request_header)
+{
+	char *header, *value;
+	int header_len, value_len;
+	zend_bool match_case = 0, result = 0;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|b", &header, &header_len, &value, &value_len, &match_case)) {
+		RETURN_FALSE;
+	}
+
+	RETURN_BOOL(http_match_request_header_ex(header, value, match_case));
 }
 /* }}} */
 
@@ -825,7 +844,6 @@ PHP_FUNCTION(http_post_data)
 	} else {
 		RETVAL_FALSE;
 	}
-	http_request_body_dtor(&body);
 }
 /* }}} */
 
