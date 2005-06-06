@@ -19,12 +19,6 @@
 #	include "config.h"
 #endif
 
-#ifdef PHP_WIN32
-#	include <winsock2.h>
-#elif defined(HAVE_NETDB_H)
-#	include <netdb.h>
-#endif
-
 #include "php.h"
 #include "zend_ini.h"
 #include "php_output.h"
@@ -38,6 +32,12 @@
 #include "php_http_api.h"
 #include "php_http_url_api.h"
 #include "php_http_std_defs.h"
+
+#ifdef PHP_WIN32
+#	include <winsock2.h>
+#elif defined(HAVE_NETDB_H)
+#	include <netdb.h>
+#endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
