@@ -106,6 +106,19 @@ static size_t http_curl_read_callback(void *, size_t, size_t, void *);
 static int http_curl_progress_callback(void *, double, double, double, double);
 static int http_curl_debug_callback(CURL *, curl_infotype, char *, size_t, void *);
 
+typedef struct {
+	void ***tsrm_ctx;
+	void *data;
+} http_curl_callback_ctx;
+
+#define HTTP_CURL_CALLBACK_DATA(from, type, var) \
+	http_curl_callback_ctx *__CTX = (http_curl_callback_ctx *) (from); \
+	TSRMLS_FETCH_FROM_CTX(__CTX->tsrm_ctx); \
+	type (var) = (type) (__CTX->data)
+
+#define http_curl_callback_data(data) _http_curl_callback_data((data) TSRMLS_CC)
+static http_curl_callback_ctx *_http_curl_callback_data(void *data TSRMLS_DC);
+
 static void http_request_pool_freebody(http_request_body **body);
 static void http_request_pool_responsehandler(zval **req TSRMLS_DC);
 static inline STATUS http_request_pool_select(http_request_pool *pool);
@@ -255,8 +268,8 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const
 	}
 
 	if (response) {
-		HTTP_CURL_OPT(WRITEDATA, response);
-		HTTP_CURL_OPT(WRITEHEADER, response);
+		HTTP_CURL_OPT(WRITEDATA, http_curl_callback_data(response));
+		HTTP_CURL_OPT(WRITEHEADER, http_curl_callback_data(response));
 	}
 
 	HTTP_CURL_OPT(HEADER, 0);
@@ -275,9 +288,8 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const
 
 	/* progress callback */
 	if (zoption = http_curl_getopt(options, "onprogress", 0)) {
-		HTTP_CURL_OPT(NOPROGRESS, 0);
 		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
-		HTTP_CURL_OPT(PROGRESSDATA, zoption);
+		HTTP_CURL_OPT(PROGRESSDATA,  http_curl_callback_data(zoption));
 	} else {
 		HTTP_CURL_OPT(NOPROGRESS, 1);
 	}
@@ -286,7 +298,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const
 	if (zoption = http_curl_getopt(options, "ondebug", 0)) {
 		HTTP_CURL_OPT(VERBOSE, 1);
 		HTTP_CURL_OPT(DEBUGFUNCTION, http_curl_debug_callback);
-		HTTP_CURL_OPT(DEBUGDATA, zoption);
+		HTTP_CURL_OPT(DEBUGDATA, http_curl_callback_data(zoption));
 	} else {
 		HTTP_CURL_OPT(VERBOSE, 0);
 	}
@@ -551,7 +563,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const
 PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info TSRMLS_DC)
 {
 	CURLcode result;
-	
+
 	/* perform request */
 	if (CURLE_OK != (result = curl_easy_perform(ch))) {
 		http_error_ex(E_WARNING, HTTP_E_CURL, "Could not perform request: %s", curl_easy_strerror(result));
@@ -897,7 +909,8 @@ static const char *const http_request_methods[] = {
 /* {{{ static size_t http_curl_write_callback(char *, size_t, size_t, void *) */
 static size_t http_curl_write_callback(char *buf, size_t len, size_t n, void *s)
 {
-	return s ? phpstr_append(PHPSTR(s), buf, len * n) : len * n;
+	HTTP_CURL_CALLBACK_DATA(s, phpstr *, str);
+	return str ? phpstr_append(PHPSTR(str), buf, len * n) : len * n;
 }
 /* }}} */
 
@@ -905,7 +918,7 @@ static size_t http_curl_write_callback(char *buf, size_t len, size_t n, void *s)
 static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *s)
 {
 	static char *offset = NULL, *original = NULL;
-	http_request_body *body = (http_request_body *) s;
+	HTTP_CURL_CALLBACK_DATA(s, http_request_body *, body);
 
 	switch (body->type)
 	{
@@ -944,12 +957,22 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *s)
 }
 /* }}} */
 
+/* {{{ http_curl_callback_ctx http_curl_callback_data(void *) */
+static http_curl_callback_ctx *_http_curl_callback_data(void *data TSRMLS_DC)
+{
+	http_curl_callback_ctx *ctx = emalloc(sizeof(http_curl_callback_ctx));
+	TSRMLS_SET_CTX(ctx->tsrm_ctx);
+	ctx->data = data;
+	return ctx;
+}
+/* }}} */
+
 /* {{{ static int http_curl_progress_callback(void *, double, double, double, double) */
 static int http_curl_progress_callback(void *data, double dltotal, double dlnow, double ultotal, double ulnow)
 {
-	zval *params_pass[4], params_local[4], retval, *func = (zval *) data;
-	TSRMLS_FETCH();
-
+	zval *params_pass[4], params_local[4], retval;
+	HTTP_CURL_CALLBACK_DATA(data, zval *, func);
+	
 	params_pass[0] = &params_local[0];
 	params_pass[1] = &params_local[1];
 	params_pass[2] = &params_local[2];
@@ -966,8 +989,8 @@ static int http_curl_progress_callback(void *data, double dltotal, double dlnow,
 
 static int http_curl_debug_callback(CURL *ch, curl_infotype type, char *string, size_t length, void *data)
 {
-	zval *params_pass[2], params_local[2], retval, *func = (zval *) data;
-	TSRMLS_FETCH();
+	zval *params_pass[2], params_local[2], retval;
+	HTTP_CURL_CALLBACK_DATA(data, zval *, func);
 
 	params_pass[0] = &params_local[0];
 	params_pass[1] = &params_local[1];
