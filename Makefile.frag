@@ -17,6 +17,7 @@ HTTP_HEADER_FILES= \
 	php_http_auth_api.h \
 	php_http_exception_object.h \
 	php_http_request_object.h \
+	php_http_requestpool_object.h \
 	php_http_url_api.h
 
 install-http-headers:

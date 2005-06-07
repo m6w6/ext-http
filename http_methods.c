@@ -36,6 +36,7 @@
 #include "php_http_message_object.h"
 #include "php_http_response_object.h"
 #include "php_http_request_object.h"
+#include "php_http_requestpool_object.h"
 #include "php_http_exception_object.h"
 
 #ifdef ZEND_ENGINE_2
@@ -1796,11 +1797,11 @@ PHP_METHOD(HttpRequest, setPutFile)
 	char *file;
 	int file_len;
 	getObject(http_request_object, obj);
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &file, &file_len)) {
 		RETURN_FALSE;
 	}
-	
+
 	UPD_PROP(obj, string, putFile, file);
 	RETURN_TRUE;
 }
@@ -2111,130 +2112,102 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 PHP_METHOD(HttpRequest, send)
 {
 	STATUS status = FAILURE;
-	zval *meth, *URL, *qdata, *opts, *info, *resp;
-	char *request_uri;
+	http_request_body body = {0};
 	getObject(http_request_object, obj);
 
 	NO_ARGS;
 
 	SET_EH_THROW_HTTP();
 
-	if ((!obj->ch) && (!(obj->ch = curl_easy_init()))) {
-		http_error(E_WARNING, HTTP_E_CURL, "Could not initilaize curl");
+	if (obj->attached) {
+		http_error(E_WARNING, HTTP_E_CURL, "You cannot call HttpRequest::send() while attached to an HttpRequestPool");
 		RETURN_FALSE;
 	}
 
-	meth  = GET_PROP(obj, method);
-	URL   = GET_PROP(obj, url);
-	qdata = GET_PROP(obj, queryData);
-	opts  = GET_PROP(obj, options);
-	info  = GET_PROP(obj, responseInfo);
-	resp  = GET_PROP(obj, responseData);
-
-	// HTTP_URI_MAXLEN+1 long char *
-	if (!(request_uri = http_absolute_uri_ex(Z_STRVAL_P(URL), Z_STRLEN_P(URL), NULL, 0, NULL, 0, 0))) {
-		RETURN_FALSE;
+	if (SUCCESS == (status = http_request_object_requesthandler(obj, getThis(), &body))) {
+		zval *info = GET_PROP(obj, responseInfo);
+		status = http_request_exec(obj->ch, Z_ARRVAL_P(info));
+		SET_PROP(obj, responseInfo, info);
 	}
-
-	if (Z_STRLEN_P(qdata) && (strlen(request_uri) < HTTP_URI_MAXLEN)) {
-		if (!strchr(request_uri, '?')) {
-			strcat(request_uri, "?");
-		} else {
-			strcat(request_uri, "&");
-		}
-		strncat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN - strlen(request_uri));
-	}
-
-	switch (Z_LVAL_P(meth))
-	{
-		case HTTP_GET:
-		case HTTP_HEAD:
-			status = http_request_ex(obj->ch, Z_LVAL_P(meth), request_uri, NULL, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
-		break;
-
-		case HTTP_PUT:
-		{
-			http_request_body body;
-			php_stream *stream;
-			php_stream_statbuf ssb;
-			zval *file = GET_PROP(obj, putFile);
-
-			if (	(stream = php_stream_open_wrapper(Z_STRVAL_P(file), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL)) &&
-					!php_stream_stat(stream, &ssb)) {
-				body.type = HTTP_REQUEST_BODY_UPLOADFILE;
-				body.data = stream;
-				body.size = ssb.sb.st_size;
-
-				status = http_put_ex(obj->ch, request_uri, &body, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
-				http_request_body_dtor(&body);
-			} else {
-				status = FAILURE;
-			}
-		}
-		break;
-
-		case HTTP_POST:
-		{
-			http_request_body body;
-			zval *fields = GET_PROP(obj, postFields), *files = GET_PROP(obj, postFiles);
-
-			if (SUCCESS == (status = http_request_body_fill(&body, Z_ARRVAL_P(fields), Z_ARRVAL_P(files)))) {
-				status = http_post_ex(obj->ch, request_uri, &body, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
-				http_request_body_dtor(&body);
-			}
-		}
-		break;
-
-		default:
-		{
-			http_request_body body;
-			zval *post = GET_PROP(obj, postData);
-
-			body.type = HTTP_REQUEST_BODY_CSTRING;
-			body.data = Z_STRVAL_P(post);
-			body.size = Z_STRLEN_P(post);
-
-			status = http_request_ex(obj->ch, Z_LVAL_P(meth), request_uri, &body, Z_ARRVAL_P(opts), Z_ARRVAL_P(info), &obj->response);
-		}
-		break;
-	}
-
-	efree(request_uri);
+	http_request_body_dtor(&body);
 
 	/* final data handling */
-	if (status == SUCCESS) {
-		http_message *msg;
-
-		if (msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response))) {
-			zval *headers, *message;
-			char *body;
-			size_t body_len;
-
-			UPD_PROP(obj, long, responseCode, msg->info.response.code);
-
-			MAKE_STD_ZVAL(headers)
-			array_init(headers);
-
-			zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-			phpstr_data(PHPSTR(msg), &body, &body_len);
-
-			add_assoc_zval(resp, "headers", headers);
-			add_assoc_stringl(resp, "body", body, body_len, 0);
-
-			message = GET_PROP(obj, responseMessage);
-			zval_dtor(message);
-			Z_TYPE_P(message)  = IS_OBJECT;
-			message->value.obj = http_message_object_from_msg(msg);
-			SET_PROP(obj, responseMessage, message);
-		} else {
-			status = FAILURE;
-		}
+	if (SUCCESS == status) {
+		status = http_request_object_responsehandler(obj, getThis(), NULL);
 	}
 
 	SET_EH_NORMAL();
 	RETURN_SUCCESS(status);
 }
 /* }}} */
+
+/* {{{ HttpRequestPool */
+
+/* {{{ proto void HttpRequestPool::__construct(void)
+ *
+ * Instantiate a new HttpRequestPool object.
+ */
+PHP_METHOD(HttpRequestPool, __construct)
+{
+	NO_ARGS;
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequestPool::attach(HttpRequest request)
+ *
+ * Attach an HttpRequest object to this HttpRequestPool.
+ * NOTE: set all options prior attaching!
+ */
+PHP_METHOD(HttpRequestPool, attach)
+{
+	zval *request;
+	STATUS status = FAILURE;
+	getObject(http_requestpool_object, obj);
+
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, http_request_object_ce)) {
+		status = http_request_pool_attach(&obj->pool, request);
+	}
+	SET_EH_NORMAL();
+	RETURN_SUCCESS(status);
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequestPool::detach(HttpRequest request)
+ *
+ * Detach an HttpRequest object from this HttpRequestPool.
+ */
+PHP_METHOD(HttpRequestPool, detach)
+{
+	zval *request;
+	STATUS status = FAILURE;
+	getObject(http_requestpool_object, obj);
+
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, http_request_object_ce)) {
+		status = http_request_pool_detach(&obj->pool, request);
+	}
+	SET_EH_NORMAL();
+	RETURN_SUCCESS(status);
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequestPool::send()
+ *
+ * Send all attached HttpRequest objects in parallel.
+ */
+PHP_METHOD(HttpRequestPool, send)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	RETURN_SUCCESS(http_request_pool_send(&obj->pool));
+}
+/* }}} */
+
+/* }}} */
+
 /* }}} */
 #endif /* HTTP_HAVE_CURL */
 

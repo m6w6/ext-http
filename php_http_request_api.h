@@ -66,15 +66,25 @@ typedef enum {
 #define HTTP_STD_REQUEST_METHOD(m) ((m > HTTP_NO_REQUEST_METHOD) && (m < HTTP_MAX_REQUEST_METHOD))
 #define HTTP_CUSTOM_REQUEST_METHOD(m) (m - HTTP_MAX_REQUEST_METHOD)
 
-#define HTTP_REQUEST_BODY_CSTRING		0
-#define HTTP_REQUEST_BODY_CURLPOST		1
-#define HTTP_REQUEST_BODY_UPLOADFILE	2
-#define HTTP_REQUEST_BODY_UPLOADDATA	3
+#define HTTP_REQUEST_BODY_CSTRING		1
+#define HTTP_REQUEST_BODY_CURLPOST		2
+#define HTTP_REQUEST_BODY_UPLOADFILE	3
+#define HTTP_REQUEST_BODY_UPLOADDATA	4
 typedef struct {
 	int type;
 	void *data;
 	size_t size;
 } http_request_body;
+
+typedef struct {
+	CURLM *ch;
+	zend_llist handles;
+	zend_llist bodies;
+	int unfinished;
+} http_request_pool;
+
+#define http_request_copystr(s) _http_request_copystr((s) TSRMLS_CC)
+PHP_HTTP_API char *_http_request_copystr(const char *string TSRMLS_DC);
 
 #define http_request_method_name(m) _http_request_method_name((m) TSRMLS_CC)
 PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC);
@@ -88,11 +98,38 @@ PHP_HTTP_API unsigned long _http_request_method_register(const char *method TSRM
 #define http_request_method_unregister(mn) _http_request_method_unregister((mn) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_DC);
 
+#define http_request_body_new() _http_request_body_new(TSRMLS_C)
+PHP_HTTP_API http_request_body *_http_request_body_new(TSRMLS_D);
+
 #define http_request_body_fill(b, fields, files) _http_request_body_fill((b), (fields), (files) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files TSRMLS_DC);
 
 #define http_request_body_dtor(b) _http_request_body_dtor((b) TSRMLS_CC)
 PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC);
+
+#define http_request_body_free(b) _http_request_body_free((b) TSRMLS_CC)
+PHP_HTTP_API void _http_request_body_free(http_request_body *body TSRMLS_DC);
+
+#define http_request_pool_init(p) _http_request_pool_init((p) TSRMLS_CC)
+PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool TSRMLS_DC);
+
+#define http_request_pool_attach(p, r) _http_request_pool_attach((p), (r) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *request TSRMLS_DC);
+
+#define http_request_pool_detach(p, r) _http_request_pool_detach((p), (r) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *request TSRMLS_DC);
+
+#define http_request_pool_send(p) _http_request_pool_send((p) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC);
+
+#define http_request_init(ch, meth, url, body, options, response) _http_request_init((ch), (meth), (url), (body), (options), (response) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const char *url, http_request_body *body, HashTable *options, phpstr *response TSRMLS_DC);
+
+#define http_request_exec(ch, i) _http_request_exec((ch), (i) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info TSRMLS_DC);
+
+#define http_request_info(ch, i) _http_request_info((ch), (i) TSRMLS_CC)
+PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC);
 
 #define http_request(meth, url, body, opt, info, resp) _http_request_ex(NULL, (meth), (url), (body), (opt), (info), (resp) TSRMLS_CC)
 #define http_request_ex(ch, meth, url, body, opt, info, resp) _http_request_ex((ch), (meth), (url), (body), (opt), (info), (resp) TSRMLS_CC)

@@ -32,6 +32,8 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_request_api.h"
+#include "php_http_request_object.h"
+#include "php_http_requestpool_object.h"
 #include "php_http_url_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http)
@@ -48,7 +50,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http)
 		{ \
 			char *c; \
 			if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_ ##I, &c)) { \
-				add_assoc_string(&array, pretty_key(http_curl_copystr(#X), sizeof(#X)-1, 0, 0), c ? c : "", 1); \
+				add_assoc_string(&array, pretty_key(http_request_copystr(#X), sizeof(#X)-1, 0, 0), c ? c : "", 1); \
 			} \
 		} \
 		break; \
@@ -57,7 +59,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http)
 		{ \
 			double d; \
 			if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_ ##I, &d)) { \
-				add_assoc_double(&array, pretty_key(http_curl_copystr(#X), sizeof(#X)-1, 0, 0), d); \
+				add_assoc_double(&array, pretty_key(http_request_copystr(#X), sizeof(#X)-1, 0, 0), d); \
 			} \
 		} \
 		break; \
@@ -66,7 +68,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http)
 		{ \
 			long l; \
 			if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_ ##I, &l)) { \
-				add_assoc_long(&array, pretty_key(http_curl_copystr(#X), sizeof(#X)-1, 0, 0), l); \
+				add_assoc_long(&array, pretty_key(http_request_copystr(#X), sizeof(#X)-1, 0, 0), l); \
 			} \
 		} \
 		break; \
@@ -79,7 +81,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http)
 #define HTTP_CURL_OPT_STRING_EX(keyname, optname) \
 	if (!strcasecmp(key, #keyname)) { \
 		convert_to_string_ex(param); \
-		HTTP_CURL_OPT(optname, http_curl_copystr(Z_STRVAL_PP(param))); \
+		HTTP_CURL_OPT(optname, http_request_copystr(Z_STRVAL_PP(param))); \
 		key = NULL; \
 		continue; \
 	}
@@ -96,8 +98,6 @@ ZEND_EXTERN_MODULE_GLOBALS(http)
 
 
 static const char *const http_request_methods[HTTP_MAX_REQUEST_METHOD + 1];
-#define http_curl_copystr(s) _http_curl_copystr((s) TSRMLS_CC)
-static inline char *_http_curl_copystr(const char *str TSRMLS_DC);
 #define http_curl_getopt(o, k, t) _http_curl_getopt_ex((o), (k), sizeof(k), (t) TSRMLS_CC)
 #define http_curl_getopt_ex(o, k, l, t) _http_curl_getopt_ex((o), (k), (l), (t) TSRMLS_CC)
 static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t keylen, int type TSRMLS_DC);
@@ -106,6 +106,27 @@ static size_t http_curl_read_callback(void *, size_t, size_t, void *);
 static int http_curl_progress_callback(void *, double, double, double, double);
 static int http_curl_debug_callback(CURL *, curl_infotype, char *, size_t, void *);
 
+static void http_request_pool_freebody(http_request_body **body);
+static void http_request_pool_responsehandler(zval **req TSRMLS_DC);
+static inline STATUS http_request_pool_select(http_request_pool *pool);
+static inline void http_request_pool_perform(http_request_pool *pool);
+
+/* {{{ char *http_request_copystr(char *) */
+PHP_HTTP_API char *_http_request_copystr(const char *str TSRMLS_DC)
+{
+	char *new_str = estrdup(str);
+	zend_llist_add_element(&HTTP_G(request).curl.copies, &new_str);
+	return new_str;
+}
+/* }}} */
+
+/* {{{ http_request_body *http_request_body_new() */
+PHP_HTTP_API http_request_body *_http_request_body_new(TSRMLS_D)
+{
+	http_request_body *body = ecalloc(1, sizeof(http_request_body));
+	return body;
+}
+/* }}} */
 
 /* {{{ STATUS http_request_body_fill(http_request_body *body, HashTable *, HashTable *) */
 PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files TSRMLS_DC)
@@ -186,48 +207,56 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 /* {{{ void http_request_body_dtor(http_request_body *) */
 PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC)
 {
-	switch (body->type)
-	{
-		case HTTP_REQUEST_BODY_CSTRING:
-			efree(body->data);
-		break;
+	if (body) {
+		switch (body->type)
+		{
+			case HTTP_REQUEST_BODY_CSTRING:
+				if (body->data) {
+					efree(body->data);
+				}
+			break;
 
-		case HTTP_REQUEST_BODY_CURLPOST:
-			curl_formfree(body->data);
-		break;
+			case HTTP_REQUEST_BODY_CURLPOST:
+				curl_formfree(body->data);
+			break;
 
-		case HTTP_REQUEST_BODY_UPLOADFILE:
-			php_stream_close(body->data);
-		break;
+			case HTTP_REQUEST_BODY_UPLOADFILE:
+				php_stream_close(body->data);
+			break;
+		}
 	}
 }
 /* }}} */
 
-/* {{{ STATUS http_request_ex(CURL *, http_request_method, char *, http_request_body, HashTable, HashTable, phpstr *) */
-PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const char *url, http_request_body *body, HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
+/* {{{ void http_request_body_free(http_request_body *) */
+PHP_HTTP_API void _http_request_body_free(http_request_body *body TSRMLS_DC)
 {
-	CURLcode result = CURLE_OK;
-	STATUS status = SUCCESS;
-	zend_bool clean_curl = 0, range_req = 0;
-	zval *zoption;
-
-	/* check/init CURL handle */
-	if (ch) {
-#if LIBCURL_VERSION_NUM >= 0x070c01
-		curl_easy_reset(ch);
-#endif
-	} else {
-		if (ch = curl_easy_init()) {
-			clean_curl = 1;
-		} else {
-			http_error(E_WARNING, HTTP_E_CURL, "Could not initialize curl");
-			return FAILURE;
-		}
+	if (body) {
+		http_request_body_dtor(body);
+		efree(body);
 	}
+}
+/* }}} */
+
+/* {{{ STATUS http_request_init(CURL *, http_request_method, char *, http_request_body *, HashTable *, phpstr *) */
+PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const char *url, http_request_body *body, HashTable *options, phpstr *response TSRMLS_DC)
+{
+	zval *zoption;
+	zend_bool range_req = 0;
+
+	/* reset CURL handle */
+#if LIBCURL_VERSION_NUM >= 0x070c01
+	curl_easy_reset(ch);
+#endif
 
 	/* set options */
 	if (url) {
 		HTTP_CURL_OPT(URL, url);
+	}
+
+	if (response) {
+		HTTP_CURL_OPT(WRITEDATA, response);
+		HTTP_CURL_OPT(WRITEHEADER, response);
 	}
 
 	HTTP_CURL_OPT(HEADER, 0);
@@ -236,11 +265,6 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 	HTTP_CURL_OPT(READFUNCTION, http_curl_read_callback);
 	HTTP_CURL_OPT(WRITEFUNCTION, http_curl_write_callback);
 	HTTP_CURL_OPT(HEADERFUNCTION, http_curl_write_callback);
-
-	if (response) {
-		HTTP_CURL_OPT(WRITEDATA, response);
-		HTTP_CURL_OPT(WRITEHEADER, response);
-	}
 
 #if defined(ZTS) && (LIBCURL_VERSION_NUM >= 0x070a00)
 	HTTP_CURL_OPT(NOSIGNAL, 1);
@@ -269,14 +293,14 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 
 	/* proxy */
 	if (zoption = http_curl_getopt(options, "proxyhost", IS_STRING)) {
-		HTTP_CURL_OPT(PROXY, http_curl_copystr(Z_STRVAL_P(zoption)));
+		HTTP_CURL_OPT(PROXY, http_request_copystr(Z_STRVAL_P(zoption)));
 		/* port */
 		if (zoption = http_curl_getopt(options, "proxyport", IS_LONG)) {
 			HTTP_CURL_OPT(PROXYPORT, Z_LVAL_P(zoption));
 		}
 		/* user:pass */
 		if (zoption = http_curl_getopt(options, "proxyauth", IS_STRING)) {
-			HTTP_CURL_OPT(PROXYUSERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
+			HTTP_CURL_OPT(PROXYUSERPWD, http_request_copystr(Z_STRVAL_P(zoption)));
 		}
 #if LIBCURL_VERSION_NUM >= 0x070a07
 		/* auth method */
@@ -288,7 +312,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 
 	/* outgoing interface */
 	if (zoption = http_curl_getopt(options, "interface", IS_STRING)) {
-		HTTP_CURL_OPT(INTERFACE, http_curl_copystr(Z_STRVAL_P(zoption)));
+		HTTP_CURL_OPT(INTERFACE, http_request_copystr(Z_STRVAL_P(zoption)));
 	}
 
 	/* another port */
@@ -298,7 +322,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 
 	/* auth */
 	if (zoption = http_curl_getopt(options, "httpauth", IS_STRING)) {
-		HTTP_CURL_OPT(USERPWD, http_curl_copystr(Z_STRVAL_P(zoption)));
+		HTTP_CURL_OPT(USERPWD, http_request_copystr(Z_STRVAL_P(zoption)));
 	}
 #if LIBCURL_VERSION_NUM >= 0x070a06
 	if (zoption = http_curl_getopt(options, "httpauthtype", IS_LONG)) {
@@ -309,7 +333,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 	/* compress, empty string enables deflate and gzip */
 	if (zoption = http_curl_getopt(options, "compress", IS_BOOL)) {
 		if (Z_LVAL_P(zoption)) {
-			HTTP_CURL_OPT(ENCODING, http_curl_copystr(""));
+			HTTP_CURL_OPT(ENCODING, http_request_copystr(""));
 		}
 	}
 
@@ -326,12 +350,12 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 
 	/* referer */
 	if (zoption = http_curl_getopt(options, "referer", IS_STRING)) {
-		HTTP_CURL_OPT(REFERER, http_curl_copystr(Z_STRVAL_P(zoption)));
+		HTTP_CURL_OPT(REFERER, http_request_copystr(Z_STRVAL_P(zoption)));
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
 	if (zoption = http_curl_getopt(options, "useragent", IS_STRING)) {
-		HTTP_CURL_OPT(USERAGENT, http_curl_copystr(Z_STRVAL_P(zoption)));
+		HTTP_CURL_OPT(USERAGENT, http_request_copystr(Z_STRVAL_P(zoption)));
 	} else {
 		HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" HTTP_PEXT_VERSION " (PHP/" PHP_VERSION ")");
 	}
@@ -348,7 +372,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header_val)) {
 					char header[1024] = {0};
 					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
-					headers = curl_slist_append(headers, http_curl_copystr(header));
+					headers = curl_slist_append(headers, http_request_copystr(header));
 				}
 
 				/* reset */
@@ -381,15 +405,15 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 
 		if (qstr->used) {
 			phpstr_fix(qstr);
-			HTTP_CURL_OPT(COOKIE, http_curl_copystr(qstr->data));
+			HTTP_CURL_OPT(COOKIE, http_request_copystr(qstr->data));
 		}
 		phpstr_free(qstr);
 	}
 
 	/* cookiestore */
 	if (zoption = http_curl_getopt(options, "cookiestore", IS_STRING)) {
-		HTTP_CURL_OPT(COOKIEFILE, http_curl_copystr(Z_STRVAL_P(zoption)));
-		HTTP_CURL_OPT(COOKIEJAR, http_curl_copystr(Z_STRVAL_P(zoption)));
+		HTTP_CURL_OPT(COOKIEFILE, http_request_copystr(Z_STRVAL_P(zoption)));
+		HTTP_CURL_OPT(COOKIEJAR, http_request_copystr(Z_STRVAL_P(zoption)));
 	}
 
 	/* resume */
@@ -488,8 +512,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 				curl_easy_setopt(ch, CURLOPT_CUSTOMREQUEST, http_request_method_name(meth));
 			} else {
 				http_error_ex(E_WARNING, HTTP_E_CURL, "Unsupported request method: %d", meth);
-				status = FAILURE;
-				goto http_request_end;
+				return FAILURE;
 			}
 		break;
 	}
@@ -515,86 +538,95 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const c
 
 			default:
 				http_error_ex(E_WARNING, HTTP_E_CURL, "Unknown request body type: %d", body->type);
-				status = FAILURE;
-				goto http_request_end;
+				return FAILURE;
 			break;
 		}
 	}
 
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ STATUS http_request_exec(CURL *, HashTable *) */
+PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info TSRMLS_DC)
+{
+	CURLcode result;
+	
 	/* perform request */
-	if (CURLE_OK == (result = curl_easy_perform(ch))) {
+	if (CURLE_OK != (result = curl_easy_perform(ch))) {
+		http_error_ex(E_WARNING, HTTP_E_CURL, "Could not perform request: %s", curl_easy_strerror(result));
+		return FAILURE;
+	} else {
 		/* get curl info */
 		if (info) {
-			zval array;
-			Z_ARRVAL(array) = info;
+			http_request_info(ch, info);
+		}
+		return SUCCESS;
+	}
+}
+/* }}} */
 
-			HTTP_CURL_INFO(EFFECTIVE_URL);
+/* {{{ void http_request_info(CURL *, HashTable *) */
+PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
+{
+	zval array;
+	Z_ARRVAL(array) = info;
+
+	HTTP_CURL_INFO(EFFECTIVE_URL);
 #if LIBCURL_VERSION_NUM >= 0x070a07
-			HTTP_CURL_INFO(RESPONSE_CODE);
+	HTTP_CURL_INFO(RESPONSE_CODE);
 #else
-			HTTP_CURL_INFO_EX(HTTP_CODE, RESPONSE_CODE);
+	HTTP_CURL_INFO_EX(HTTP_CODE, RESPONSE_CODE);
 #endif
-			HTTP_CURL_INFO(HTTP_CONNECTCODE);
+	HTTP_CURL_INFO(HTTP_CONNECTCODE);
 #if LIBCURL_VERSION_NUM >= 0x070500
-			HTTP_CURL_INFO(FILETIME);
+	HTTP_CURL_INFO(FILETIME);
 #endif
-			HTTP_CURL_INFO(TOTAL_TIME);
-			HTTP_CURL_INFO(NAMELOOKUP_TIME);
-			HTTP_CURL_INFO(CONNECT_TIME);
-			HTTP_CURL_INFO(PRETRANSFER_TIME);
-			HTTP_CURL_INFO(STARTTRANSFER_TIME);
+	HTTP_CURL_INFO(TOTAL_TIME);
+	HTTP_CURL_INFO(NAMELOOKUP_TIME);
+	HTTP_CURL_INFO(CONNECT_TIME);
+	HTTP_CURL_INFO(PRETRANSFER_TIME);
+	HTTP_CURL_INFO(STARTTRANSFER_TIME);
 #if LIBCURL_VERSION_NUM >= 0x070907
-			HTTP_CURL_INFO(REDIRECT_TIME);
-			HTTP_CURL_INFO(REDIRECT_COUNT);
+	HTTP_CURL_INFO(REDIRECT_TIME);
+	HTTP_CURL_INFO(REDIRECT_COUNT);
 #endif
-			HTTP_CURL_INFO(SIZE_UPLOAD);
-			HTTP_CURL_INFO(SIZE_DOWNLOAD);
-			HTTP_CURL_INFO(SPEED_DOWNLOAD);
-			HTTP_CURL_INFO(SPEED_UPLOAD);
-			HTTP_CURL_INFO(HEADER_SIZE);
-			HTTP_CURL_INFO(REQUEST_SIZE);
-			HTTP_CURL_INFO(SSL_VERIFYRESULT);
+	HTTP_CURL_INFO(SIZE_UPLOAD);
+	HTTP_CURL_INFO(SIZE_DOWNLOAD);
+	HTTP_CURL_INFO(SPEED_DOWNLOAD);
+	HTTP_CURL_INFO(SPEED_UPLOAD);
+	HTTP_CURL_INFO(HEADER_SIZE);
+	HTTP_CURL_INFO(REQUEST_SIZE);
+	HTTP_CURL_INFO(SSL_VERIFYRESULT);
 #if LIBCURL_VERSION_NUM >= 0x070c03
-			/*HTTP_CURL_INFO(SSL_ENGINES); todo: CURLINFO_SLIST */
+	/*HTTP_CURL_INFO(SSL_ENGINES); todo: CURLINFO_SLIST */
 #endif
-			HTTP_CURL_INFO(CONTENT_LENGTH_DOWNLOAD);
-			HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
-			HTTP_CURL_INFO(CONTENT_TYPE);
+	HTTP_CURL_INFO(CONTENT_LENGTH_DOWNLOAD);
+	HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
+	HTTP_CURL_INFO(CONTENT_TYPE);
 #if LIBCURL_VERSION_NUM >= 0x070a03
-			/*HTTP_CURL_INFO(PRIVATE);*/
+	/*HTTP_CURL_INFO(PRIVATE);*/
 #endif
 #if LIBCURL_VERSION_NUM >= 0x070a08
-			HTTP_CURL_INFO(HTTPAUTH_AVAIL);
-			HTTP_CURL_INFO(PROXYAUTH_AVAIL);
+	HTTP_CURL_INFO(HTTPAUTH_AVAIL);
+	HTTP_CURL_INFO(PROXYAUTH_AVAIL);
 #endif
 #if LIBCURL_VERSION_NUM >= 0x070c02
-			/*HTTP_CURL_INFO(OS_ERRNO);*/
+	/*HTTP_CURL_INFO(OS_ERRNO);*/
 #endif
 #if LIBCURL_VERSION_NUM >= 0x070c03
-			HTTP_CURL_INFO(NUM_CONNECTS);
+	HTTP_CURL_INFO(NUM_CONNECTS);
 #endif
-		}
-	} else {
-		http_error_ex(E_WARNING, HTTP_E_CURL, "Could not perform request: %s", curl_easy_strerror(result));
-		status = FAILURE;
+}
+/* }}} */
+
+/* {{{ STATUS http_request_ex(CURL *, http_request_method, char *, http_request_body, HashTable, HashTable, phpstr *) */
+PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const char *url, http_request_body *body, HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
+{
+	if (SUCCESS != http_request_init(ch, meth, url, body, options, response)) {
+		return FAILURE;
 	}
-
-http_request_end:
-	/* free strings copied with http_curl_copystr() */
-	zend_llist_clean(&HTTP_G(request).curl.copies);
-
-	/* clean curl handle if acquired */
-	if (clean_curl) {
-		curl_easy_cleanup(ch);
-		ch = NULL;
-	}
-
-	/* finalize response */
-	if (response) {
-		phpstr_fix(PHPSTR(response));
-	}
-
-	return status;
+	return http_request_exec(ch, info);
 }
 /* }}} */
 
@@ -687,6 +719,143 @@ PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_
 }
 /* }}} */
 
+
+/* {{{ http_request_pool *http_request_pool_init(http_request_pool *) */
+PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool TSRMLS_DC)
+{
+	zend_bool free_pool;
+
+	if ((free_pool = (!pool))) {
+		pool = emalloc(sizeof(http_request_pool));
+		pool->ch = NULL;
+	}
+
+	if (!pool->ch) {
+		if (!(pool->ch = curl_multi_init())) {
+			http_error(E_WARNING, HTTP_E_CURL, "Could not initialize curl");
+			if (free_pool) {
+				efree(pool);
+			}
+			return NULL;
+		}
+	}
+
+	pool->unfinished = 0;
+	zend_llist_init(&pool->handles, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
+	zend_llist_init(&pool->bodies, sizeof(http_request_body *), (llist_dtor_func_t) http_request_pool_freebody, 0);
+
+	return pool;
+}
+/* }}} */
+
+/* {{{ STATUS http_request_pool_attach(http_request_pool *, zval *) */
+PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *request TSRMLS_DC)
+{
+	getObjectEx(http_request_object, req, request);
+
+	if (req->attached) {
+		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is already member of an HttpRequestPool");
+	} else {
+		CURLMcode code;
+		http_request_body *body = http_request_body_new();
+		zval *info = GET_PROP_EX(req, request, responseInfo);
+
+		if (SUCCESS != http_request_object_requesthandler(req, request, body)) {
+			efree(body);
+			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
+		} else if (CURLM_OK != (code = curl_multi_add_handle(pool->ch, req->ch))) {
+			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
+		} else {
+			req->attached = 1;
+			zval_add_ref(&request);
+			zend_llist_add_element(&pool->handles, &request);
+			zend_llist_add_element(&pool->bodies, &body);
+			return SUCCESS;
+		}
+	}
+	return FAILURE;
+}
+/* }}} */
+
+/* {{{ STATUS http_request_pool_detach(http_request_pool *, zval *) */
+PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *request TSRMLS_DC)
+{
+	getObjectEx(http_request_object, req, request);
+
+	if (!req->attached) {
+		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is not attached to an HttpRequestPool");
+	} else {
+		CURLMcode code;
+
+		if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->ch))) {
+			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
+		} else {
+			req->attached = 0;
+			zval_ptr_dtor(&request);
+			return SUCCESS;
+		}
+	}
+	return FAILURE;
+}
+/* }}} */
+
+/* {{{ STATUS http_request_pool_send(http_request_pool *) */
+PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
+{
+	http_request_pool_perform(pool);
+	while (pool->unfinished) {
+		if (SUCCESS != http_request_pool_select(pool)) {
+			http_error(E_WARNING, HTTP_E_CURL, "Socket error");
+			return FAILURE;
+		}
+		http_request_pool_perform(pool);
+	}
+	zend_llist_apply(&pool->handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
+	return SUCCESS;
+}
+/* }}} */
+
+/*#*/
+
+/* {{{ static void http_request_pool_free_body(http_request_body *) */
+static void http_request_pool_freebody(http_request_body **body)
+{
+	TSRMLS_FETCH();
+	http_request_body_free(*body);
+}
+/* }}} */
+
+/* {{{ static void http_request_pool_responsehandler(zval **) */
+static void http_request_pool_responsehandler(zval **req TSRMLS_DC)
+{
+	getObjectEx(http_request_object, obj, *req);
+	http_request_object_responsehandler(obj, *req, NULL);
+}
+/* }}} */
+
+/* {{{ static inline STATUS http_request_pool_select(http_request_pool *) */
+static inline STATUS http_request_pool_select(http_request_pool *pool)
+{
+	int MAX;
+	fd_set R, W, E;
+	struct timeval timeout = {1, 0};
+
+	FD_ZERO(&R);
+	FD_ZERO(&W);
+	FD_ZERO(&E);
+
+	curl_multi_fdset(pool->ch, &R, &W, &E, &MAX);
+	return (-1 != select(MAX + 1, &R, &W, &E, &timeout)) ? SUCCESS : FAILURE;
+}
+/* }}} */
+
+/* {{{ static inline void http_request_pool_perform(http_request_pool *) */
+static inline void http_request_pool_perform(http_request_pool *pool)
+{
+	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(pool->ch, &pool->unfinished));
+}
+/* }}} */
+
 /* {{{ char *http_request_methods[] */
 static const char *const http_request_methods[] = {
 	"UNKOWN",
@@ -723,15 +892,6 @@ static const char *const http_request_methods[] = {
 	"ACL",
 	NULL
 };
-/* }}} */
-
-/* {{{ static inline char *http_curl_copystr(char *) */
-static inline char *_http_curl_copystr(const char *str TSRMLS_DC)
-{
-	char *new_str = estrdup(str);
-	zend_llist_add_element(&HTTP_G(request).curl.copies, &new_str);
-	return new_str;
-}
 /* }}} */
 
 /* {{{ static size_t http_curl_write_callback(char *, size_t, size_t, void *) */

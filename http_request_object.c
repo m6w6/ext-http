@@ -32,6 +32,10 @@
 #include "php_http_std_defs.h"
 #include "php_http_request_object.h"
 #include "php_http_request_api.h"
+#include "php_http_api.h"
+#include "php_http_url_api.h"
+#include "php_http_message_api.h"
+#include "php_http_message_object.h"
 
 #ifdef ZEND_ENGINE_2
 #ifdef HTTP_HAVE_CURL
@@ -85,7 +89,7 @@ zend_function_entry http_request_object_fe[] = {
 	PHP_ME(HttpRequest, setPutFile, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, getPutFile, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequest, unsetPutFile, NULL, ZEND_ACC_PUBLIC)
-	
+
 	PHP_ME(HttpRequest, send, NULL, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HttpRequest, getResponseData, NULL, ZEND_ACC_PUBLIC)
@@ -152,6 +156,7 @@ zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC)
 	o = ecalloc(1, sizeof(http_request_object));
 	o->zo.ce = ce;
 	o->ch = curl_easy_init();
+	o->attached = 0;
 
 	phpstr_init_ex(&o->response, HTTP_CURLBUF_SIZE, 0);
 
@@ -198,6 +203,131 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 	}
 	phpstr_dtor(&o->response);
 	efree(o);
+}
+
+STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr, http_request_body *body TSRMLS_DC)
+{
+	zval *meth, *URL, *qdata, *opts;
+	char *request_uri, *uri;
+	STATUS status;
+
+	if (!body) {
+		return FAILURE;
+	}
+	if ((!obj->ch) && (!(obj->ch = curl_easy_init()))) {
+		http_error(E_WARNING, HTTP_E_CURL, "Could not initilaize curl");
+		return FAILURE;
+	}
+
+	meth  = GET_PROP(obj, method);
+	URL   = GET_PROP(obj, url);
+	qdata = GET_PROP(obj, queryData);
+	opts  = GET_PROP(obj, options);
+
+	// HTTP_URI_MAXLEN+1 long char *
+	if (!(request_uri = http_absolute_uri_ex(Z_STRVAL_P(URL), Z_STRLEN_P(URL), NULL, 0, NULL, 0, 0))) {
+		return FAILURE;
+	}
+
+	if (Z_STRLEN_P(qdata) && (strlen(request_uri) < HTTP_URI_MAXLEN)) {
+		if (!strchr(request_uri, '?')) {
+			strcat(request_uri, "?");
+		} else {
+			strcat(request_uri, "&");
+		}
+		strncat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN - strlen(request_uri));
+	}
+	
+	uri = http_request_copystr(request_uri);
+	efree(request_uri);
+
+	switch (Z_LVAL_P(meth))
+	{
+		case HTTP_GET:
+		case HTTP_HEAD:
+			body->type = -1;
+			status = http_request_init(obj->ch, Z_LVAL_P(meth), uri, NULL, Z_ARRVAL_P(opts), &obj->response);
+		break;
+
+		case HTTP_PUT:
+		{
+			php_stream *stream;
+			php_stream_statbuf ssb;
+			zval *file = GET_PROP(obj, putFile);
+
+			if (	(stream = php_stream_open_wrapper(Z_STRVAL_P(file), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL)) &&
+					!php_stream_stat(stream, &ssb)) {
+				body->type = HTTP_REQUEST_BODY_UPLOADFILE;
+				body->data = stream;
+				body->size = ssb.sb.st_size;
+
+				status = http_request_init(obj->ch, HTTP_PUT, uri, body, Z_ARRVAL_P(opts), &obj->response);
+			} else {
+				status = FAILURE;
+			}
+		}
+		break;
+
+		case HTTP_POST:
+		{
+			zval *fields = GET_PROP(obj, postFields), *files = GET_PROP(obj, postFiles);
+
+			if (SUCCESS == (status = http_request_body_fill(body, Z_ARRVAL_P(fields), Z_ARRVAL_P(files)))) {
+				status = http_request_init(obj->ch, HTTP_POST, uri, body, Z_ARRVAL_P(opts), &obj->response);
+			}
+		}
+		break;
+
+		default:
+		{
+			zval *post = GET_PROP(obj, postData);
+
+			body->type = HTTP_REQUEST_BODY_CSTRING;
+			body->data = Z_STRVAL_P(post);
+			body->size = Z_STRLEN_P(post);
+
+			status = http_request_init(obj->ch, Z_LVAL_P(meth), uri, body, Z_ARRVAL_P(opts), &obj->response);
+		}
+		break;
+	}
+
+	return status;
+}
+
+STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr, HashTable *info TSRMLS_DC)
+{
+	http_message *msg;
+	
+	phpstr_fix(&obj->response);
+
+	if (msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response))) {
+		char *body;
+		size_t body_len;
+		zval *headers, *message = GET_PROP(obj, responseMessage), *resp = GET_PROP(obj, responseData);
+
+		UPD_PROP(obj, long, responseCode, msg->info.response.code);
+
+		MAKE_STD_ZVAL(headers)
+		array_init(headers);
+
+		zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+		phpstr_data(PHPSTR(msg), &body, &body_len);
+
+		add_assoc_zval(resp, "headers", headers);
+		add_assoc_stringl(resp, "body", body, body_len, 0);
+
+		//zval_dtor(&message);
+		Z_TYPE_P(message)  = IS_OBJECT;
+		message->value.obj = http_message_object_from_msg(msg);
+		SET_PROP(obj, responseMessage, message);
+
+		if (info) {
+			http_request_info(obj->ch, info);
+		}
+
+		return SUCCESS;
+	}
+	return FAILURE;
 }
 
 #endif /* HTTP_HAVE_CURL */

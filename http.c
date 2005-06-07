@@ -46,6 +46,7 @@
 #	include "php_http_response_object.h"
 #	ifdef HTTP_HAVE_CURL
 #		include "php_http_request_object.h"
+#		include "php_http_requestpool_object.h"
 #	endif
 #	include "php_http_exception_object.h"
 #endif
@@ -184,6 +185,7 @@ static inline void http_globals_free(zend_http_globals *G)
 	STR_FREE(G->send.content_type);
 	STR_FREE(G->send.unquoted_etag);
 	zend_hash_destroy(&G->request.methods.custom);
+	zend_llist_clean(&G->request.curl.copies);
 }
 /* }}} */
 
@@ -242,6 +244,7 @@ PHP_MINIT_FUNCTION(http)
 	http_response_object_init();
 #	ifdef HTTP_HAVE_CURL
 	http_request_object_init();
+	http_requestpool_object_init();
 #	endif /* HTTP_HAVE_CURL */
 	http_exception_object_init();
 #endif /* ZEND_ENGINE_2 */

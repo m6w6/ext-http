@@ -26,11 +26,13 @@
 
 #include <curl/curl.h>
 
+#include "php_http_request_api.h"
 #include "phpstr/phpstr.h"
 
 typedef struct {
 	zend_object zo;
 	CURL *ch;
+	zend_bool attached;
 	phpstr response;
 } http_request_object;
 
@@ -43,6 +45,11 @@ extern void _http_request_object_init(INIT_FUNC_ARGS);
 extern zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC);
 #define http_request_object_free _http_request_object_free
 extern void _http_request_object_free(zend_object *object TSRMLS_DC);
+
+#define http_request_object_requesthandler(req, this, body) _http_request_object_requesthandler((req), (this), (body) TSRMLS_CC)
+extern STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr, http_request_body *body TSRMLS_DC);
+#define http_request_object_responsehandler(req, this, info) _http_request_object_responsehandler((req), (this), (info) TSRMLS_CC)
+extern STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr, HashTable *info TSRMLS_DC);
 
 PHP_METHOD(HttpRequest, __construct);
 PHP_METHOD(HttpRequest, __destruct);
