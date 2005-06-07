@@ -83,8 +83,17 @@ typedef struct {
 	int unfinished;
 } http_request_pool;
 
-#define http_request_copystr(s) _http_request_copystr((s) TSRMLS_CC)
-PHP_HTTP_API char *_http_request_copystr(const char *string TSRMLS_DC);
+#define COPY_STRING	1
+#define	COPY_SLIST	2
+#define http_request_data_copy(type, data) _http_request_data_copy((type), (data) TSRMLS_CC)
+extern void *_http_request_data_copy(int type, void *data TSRMLS_DC);
+#define http_request_data_free_string _http_request_data_free_string
+extern void _http_request_data_free_string(void *string);
+#define http_request_data_free_slist _http_request_data_free_slist
+extern void _http_request_data_free_slist(void *list);
+
+#define http_request_global_init _http_request_global_init
+extern STATUS _http_request_global_init(void);
 
 #define http_request_method_name(m) _http_request_method_name((m) TSRMLS_CC)
 PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC);

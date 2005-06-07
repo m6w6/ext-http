@@ -61,12 +61,13 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		} methods;
 
 #ifdef HTTP_HAVE_CURL
-		struct _http_globals_request_curl {
-			zend_llist copies;
+		struct _http_globlas_request_copies {
+			zend_llist strings;
+			zend_llist slists;
+		} copies;
 #	if LIBCURL_VERSION_NUM < 0x070c00
-			char error[CURL_ERROR_SIZE + 1];
+		char error[CURL_ERROR_SIZE + 1];
 #	endif
-		} curl;
 #endif /* HTTP_HAVE_CURL */
 	} request;
 

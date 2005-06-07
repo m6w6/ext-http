@@ -27,31 +27,7 @@
 
 #ifdef ZEND_ENGINE_2
 
-#ifdef HTTP_HAVE_CURL
-static
-ZEND_BEGIN_ARG_INFO(http_request_info_ref_3, 0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(1)
-ZEND_END_ARG_INFO();
-
-static
-ZEND_BEGIN_ARG_INFO(http_request_info_ref_4, 0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(1)
-ZEND_END_ARG_INFO();
-
-static
-ZEND_BEGIN_ARG_INFO(http_request_info_ref_5, 0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(1)
-ZEND_END_ARG_INFO();
-#endif /* HTTP_HAVE_CURL */
+HTTP_DECLARE_ARG_PASS_INFO();
 
 zend_class_entry *http_util_object_ce;
 zend_function_entry http_util_object_fe[] = {
@@ -73,10 +49,10 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_STATIC_ME_ALIAS(parseHeaders, http_parse_headers, NULL)
 	HTTP_STATIC_ME_ALIAS(getRequestHeaders, http_get_request_headers, NULL)
 #ifdef HTTP_HAVE_CURL
-	HTTP_STATIC_ME_ALIAS(get, http_get, http_request_info_ref_3)
-	HTTP_STATIC_ME_ALIAS(head, http_head, http_request_info_ref_3)
-	HTTP_STATIC_ME_ALIAS(postData, http_post_data, http_request_info_ref_4)
-	HTTP_STATIC_ME_ALIAS(postFields, http_post_fields, http_request_info_ref_5)
+	HTTP_STATIC_ME_ALIAS(get, http_get, http_arg_pass_ref_3)
+	HTTP_STATIC_ME_ALIAS(head, http_head, http_arg_pass_ref_3)
+	HTTP_STATIC_ME_ALIAS(postData, http_post_data, http_arg_pass_ref_4)
+	HTTP_STATIC_ME_ALIAS(postFields, http_post_fields, http_arg_pass_ref_5)
 #endif /* HTTP_HAVE_CURL */
 	HTTP_STATIC_ME_ALIAS(authBasic, http_auth_basic, NULL)
 	HTTP_STATIC_ME_ALIAS(authBasicCallback, http_auth_basic_cb, NULL)

@@ -53,39 +53,8 @@
 
 #include "phpstr/phpstr.h"
 
-#ifdef HTTP_HAVE_CURL
-#ifdef ZEND_ENGINE_2
-static
-ZEND_BEGIN_ARG_INFO(http_request_info_ref_3, 0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(1)
-ZEND_END_ARG_INFO();
-
-static
-ZEND_BEGIN_ARG_INFO(http_request_info_ref_4, 0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(1)
-ZEND_END_ARG_INFO();
-
-static
-ZEND_BEGIN_ARG_INFO(http_request_info_ref_5, 0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(0)
-	ZEND_ARG_PASS_INFO(1)
-ZEND_END_ARG_INFO();
-#else
-static unsigned char http_request_info_ref_3[] = {3, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
-static unsigned char http_request_info_ref_4[] = {4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
-static unsigned char http_request_info_ref_5[] = {5, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
-#endif /* ZEND_ENGINE_2 */
-#endif /* HTTP_HAVE_CURL */
-
-ZEND_DECLARE_MODULE_GLOBALS(http)
+ZEND_DECLARE_MODULE_GLOBALS(http);
+HTTP_DECLARE_ARG_PASS_INFO();
 
 #ifdef COMPILE_DL_HTTP
 ZEND_GET_MODULE(http)
@@ -117,12 +86,12 @@ function_entry http_functions[] = {
 	PHP_FE(http_get_request_headers, NULL)
 	PHP_FE(http_match_request_header, NULL)
 #ifdef HTTP_HAVE_CURL
-	PHP_FE(http_get, http_request_info_ref_3)
-	PHP_FE(http_head, http_request_info_ref_3)
-	PHP_FE(http_post_data, http_request_info_ref_4)
-	PHP_FE(http_post_fields, http_request_info_ref_5)
-	PHP_FE(http_put_file, http_request_info_ref_4)
-	PHP_FE(http_put_stream, http_request_info_ref_4)
+	PHP_FE(http_get, http_arg_pass_ref_3)
+	PHP_FE(http_head, http_arg_pass_ref_3)
+	PHP_FE(http_post_data, http_arg_pass_ref_4)
+	PHP_FE(http_post_fields, http_arg_pass_ref_5)
+	PHP_FE(http_put_file, http_arg_pass_ref_4)
+	PHP_FE(http_put_stream, http_arg_pass_ref_4)
 	PHP_FE(http_request_method_register, NULL)
 	PHP_FE(http_request_method_unregister, NULL)
 	PHP_FE(http_request_method_exists, NULL)
@@ -159,17 +128,6 @@ zend_module_entry http_module_entry = {
 
 int http_module_number;
 
-#ifdef HTTP_HAVE_CURL
-#	ifdef HTTP_CURL_USE_ZEND_MM
-static void http_curl_free(void *p)					{ efree(p); }
-static char *http_curl_strdup(const char *p)		{ return estrdup(p); }
-static void *http_curl_malloc(size_t s)				{ return emalloc(s); }
-static void *http_curl_realloc(void *p, size_t s)	{ return erealloc(p, s); }
-static void *http_curl_calloc(size_t n, size_t s)	{ return ecalloc(n, s); }
-#	endif /* HTTP_CURL_USE_ZEND_MM */
-static void http_curl_freestr(void *s)				{ efree(*(char **)s); }
-#endif /* HTTP_HAVE_CURL */
-
 /* {{{ http_globals */
 static inline void http_globals_init(zend_http_globals *G)
 {
@@ -177,15 +135,18 @@ static inline void http_globals_init(zend_http_globals *G)
 	G->send.buffer_size = HTTP_SENDBUF_SIZE;
 	zend_hash_init(&G->request.methods.custom, 0, NULL, ZVAL_PTR_DTOR, 0);
 #ifdef HTTP_HAVE_CURL
-	zend_llist_init(&G->request.curl.copies, sizeof(char *), http_curl_freestr, 0);
+	zend_llist_init(&G->request.copies.strings, sizeof(char *), http_request_data_free_string, 0);
+	zend_llist_init(&G->request.copies.slists, sizeof(struct curl_slist *), http_request_data_free_slist, 0);
 #endif
 }
+
 static inline void http_globals_free(zend_http_globals *G)
 {
 	STR_FREE(G->send.content_type);
 	STR_FREE(G->send.unquoted_etag);
 	zend_hash_destroy(&G->request.methods.custom);
-	zend_llist_clean(&G->request.curl.copies);
+	zend_llist_clean(&G->request.copies.strings);
+	zend_llist_clean(&G->request.copies.slists);
 }
 /* }}} */
 
@@ -226,16 +187,9 @@ PHP_MINIT_FUNCTION(http)
 	REGISTER_INI_ENTRIES();
 
 #ifdef HTTP_HAVE_CURL
-#	ifdef HTTP_CURL_USE_ZEND_MM
-	if (CURLE_OK != curl_global_init_mem(CURL_GLOBAL_ALL,
-			http_curl_malloc,
-			http_curl_free,
-			http_curl_realloc,
-			http_curl_strdup,
-			http_curl_calloc)) {
+	if (SUCCESS != http_request_global_init()) {
 		return FAILURE;
 	}
-#	endif /* HTTP_CURL_USE_ZEND_MM */
 #endif /* HTTP_HAVE_CURL */
 
 #ifdef ZEND_ENGINE_2
@@ -353,7 +307,7 @@ PHP_MINFO_FUNCTION(http)
 		php_info_print_table_header(2, "Functionality",            "Availability");
 		php_info_print_table_row(2,    "Miscellaneous Utilities:", HTTP_FUNC_AVAIL("HttpUtil, HttpMessage"));
 		php_info_print_table_row(2,    "Extended HTTP Responses:", HTTP_FUNC_AVAIL("HttpResponse"));
-		php_info_print_table_row(2,    "Extended HTTP Requests:",  HTTP_CURL_AVAIL("HttpRequest"));
+		php_info_print_table_row(2,    "Extended HTTP Requests:",  HTTP_CURL_AVAIL("HttpRequest, HttpRequestPool"));
 	}
 	php_info_print_table_end();
 

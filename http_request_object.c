@@ -237,16 +237,13 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		}
 		strncat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN - strlen(request_uri));
 	}
-	
-	uri = http_request_copystr(request_uri);
-	efree(request_uri);
 
 	switch (Z_LVAL_P(meth))
 	{
 		case HTTP_GET:
 		case HTTP_HEAD:
 			body->type = -1;
-			status = http_request_init(obj->ch, Z_LVAL_P(meth), uri, NULL, Z_ARRVAL_P(opts), &obj->response);
+			status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, NULL, Z_ARRVAL_P(opts), &obj->response);
 		break;
 
 		case HTTP_PUT:
@@ -261,7 +258,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 				body->data = stream;
 				body->size = ssb.sb.st_size;
 
-				status = http_request_init(obj->ch, HTTP_PUT, uri, body, Z_ARRVAL_P(opts), &obj->response);
+				status = http_request_init(obj->ch, HTTP_PUT, request_uri, body, Z_ARRVAL_P(opts), &obj->response);
 			} else {
 				status = FAILURE;
 			}
@@ -273,7 +270,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			zval *fields = GET_PROP(obj, postFields), *files = GET_PROP(obj, postFiles);
 
 			if (SUCCESS == (status = http_request_body_fill(body, Z_ARRVAL_P(fields), Z_ARRVAL_P(files)))) {
-				status = http_request_init(obj->ch, HTTP_POST, uri, body, Z_ARRVAL_P(opts), &obj->response);
+				status = http_request_init(obj->ch, HTTP_POST, request_uri, body, Z_ARRVAL_P(opts), &obj->response);
 			}
 		}
 		break;
@@ -291,13 +288,14 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		break;
 	}
 
+	efree(request_uri);
 	return status;
 }
 
 STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr, HashTable *info TSRMLS_DC)
 {
 	http_message *msg;
-	
+
 	phpstr_fix(&obj->response);
 
 	if (msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response))) {
