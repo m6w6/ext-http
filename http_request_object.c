@@ -156,7 +156,7 @@ zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC)
 	o = ecalloc(1, sizeof(http_request_object));
 	o->zo.ce = ce;
 	o->ch = curl_easy_init();
-	o->attached = 0;
+	o->pool = NULL;
 
 	phpstr_init_ex(&o->response, HTTP_CURLBUF_SIZE, 0);
 

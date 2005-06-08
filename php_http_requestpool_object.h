@@ -42,8 +42,11 @@ extern void _http_requestpool_object_init(INIT_FUNC_ARGS);
 extern zend_object_value _http_requestpool_object_new(zend_class_entry *ce TSRMLS_DC);
 #define http_requestpool_object_free _http_requestpool_object_free
 extern void _http_requestpool_object_free(zend_object *object TSRMLS_DC);
+#define http_requestpool_object_ondestruct(p) _http_requestpool_object_ondestruct((p) TSRMLS_CC)
+extern void _http_requestpool_object_ondestruct(http_request_pool *pool TSRMLS_DC);
 
 PHP_METHOD(HttpRequestPool, __construct);
+PHP_METHOD(HttpRequestPool, __destruct);
 PHP_METHOD(HttpRequestPool, attach);
 PHP_METHOD(HttpRequestPool, detach);
 PHP_METHOD(HttpRequestPool, send);

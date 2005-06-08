@@ -2119,7 +2119,7 @@ PHP_METHOD(HttpRequest, send)
 
 	SET_EH_THROW_HTTP();
 
-	if (obj->attached) {
+	if (obj->pool) {
 		http_error(E_WARNING, HTTP_E_CURL, "You cannot call HttpRequest::send() while attached to an HttpRequestPool");
 		RETURN_FALSE;
 	}
@@ -2152,6 +2152,15 @@ PHP_METHOD(HttpRequestPool, __construct)
 	NO_ARGS;
 }
 /* }}} */
+
+PHP_METHOD(HttpRequestPool, __destruct)
+{
+	getObject(http_requestpool_object, obj);
+	
+	NO_ARGS;
+	
+	http_requestpool_object_ondestruct(&obj->pool);
+}
 
 /* {{{ proto bool HttpRequestPool::attach(HttpRequest request)
  *

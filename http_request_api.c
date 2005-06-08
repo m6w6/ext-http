@@ -124,6 +124,7 @@ typedef struct {
 static http_curl_callback_ctx *_http_curl_callback_data(void *data TSRMLS_DC);
 
 static void http_request_pool_freebody(http_request_body **body);
+static void http_request_pool_freehandle(zval **request);
 static void http_request_pool_responsehandler(zval **req TSRMLS_DC);
 static inline STATUS http_request_pool_select(http_request_pool *pool);
 static inline void http_request_pool_perform(http_request_pool *pool);
@@ -168,13 +169,13 @@ void *_http_request_data_copy(int type, void *data TSRMLS_DC)
 			zend_llist_add_element(&HTTP_G(request).copies.strings, &new_str);
 			return new_str;
 		}
-		
+
 		case COPY_SLIST:
 		{
 			zend_llist_add_element(&HTTP_G(request).copies.slists, &data);
 			return data;
 		}
-		
+
 		default:
 		{
 			return data;
@@ -831,7 +832,7 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 {
 	getObjectEx(http_request_object, req, request);
 
-	if (req->attached) {
+	if (req->pool) {
 		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is already member of an HttpRequestPool");
 	} else {
 		CURLMcode code;
@@ -844,7 +845,7 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 		} else if (CURLM_OK != (code = curl_multi_add_handle(pool->ch, req->ch))) {
 			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
 		} else {
-			req->attached = 1;
+			req->pool = pool;
 			zval_add_ref(&request);
 			zend_llist_add_element(&pool->handles, &request);
 			zend_llist_add_element(&pool->bodies, &body);
@@ -860,15 +861,15 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 {
 	getObjectEx(http_request_object, req, request);
 
-	if (!req->attached) {
-		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is not attached to an HttpRequestPool");
+	if (req->pool != pool) {
+		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is not attached to this HttpRequestPool");
 	} else {
 		CURLMcode code;
 
 		if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->ch))) {
 			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
 		} else {
-			req->attached = 0;
+			req->pool = NULL;
 			zval_ptr_dtor(&request);
 			return SUCCESS;
 		}
@@ -893,9 +894,19 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 }
 /* }}} */
 
+/* {{{ void http_request_pool_dtor(http_request_pool *) */
+PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC)
+{
+	pool->unfinished = 0;
+	zend_llist_clean(&pool->handles);
+	zend_llist_clean(&pool->bodies);
+	curl_multi_cleanup(pool->ch);
+}
+/* }}} */
+
 /*#*/
 
-/* {{{ static void http_request_pool_free_body(http_request_body *) */
+/* {{{ static void http_request_pool_freebody(http_request_body **) */
 static void http_request_pool_freebody(http_request_body **body)
 {
 	TSRMLS_FETCH();

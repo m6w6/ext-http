@@ -32,7 +32,7 @@
 typedef struct {
 	zend_object zo;
 	CURL *ch;
-	zend_bool attached;
+	http_request_pool *pool;
 	phpstr response;
 } http_request_object;
 
