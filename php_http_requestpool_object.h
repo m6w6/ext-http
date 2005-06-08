@@ -49,6 +49,9 @@ PHP_METHOD(HttpRequestPool, attach);
 PHP_METHOD(HttpRequestPool, detach);
 PHP_METHOD(HttpRequestPool, send);
 PHP_METHOD(HttpRequestPool, reset);
+PHP_METHOD(HttpRequestPool, socketSend);
+PHP_METHOD(HttpRequestPool, socketSelect);
+PHP_METHOD(HttpRequestPool, socketRead);
 
 #endif
 #endif

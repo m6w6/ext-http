@@ -129,9 +129,6 @@ static http_curl_callback_ctx *_http_curl_callback_data(void *data TSRMLS_DC);
 
 static void http_request_pool_freebody(http_request_body **body);
 static void http_request_pool_freehandle(zval **request, http_request_pool *pool TSRMLS_DC);
-static void http_request_pool_responsehandler(zval **req TSRMLS_DC);
-static inline STATUS http_request_pool_select(http_request_pool *pool);
-static inline void http_request_pool_perform(http_request_pool *pool);
 
 #if HTTP_CURL_USE_ZEND_MM
 static void http_curl_free(void *p)					{ efree(p); }
@@ -906,8 +903,7 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 #if HTTP_DEBUG_REQPOOLS
 	fprintf(stderr, "Attempt to send requests of pool %p\n", pool);
 #endif
-	http_request_pool_perform(pool);
-	while (pool->unfinished) {
+	while (http_request_pool_perform(pool)) {
 #if HTTP_DEBUG_REQPOOLS
 		fprintf(stderr, "%d unfinished requests of pool %p remaining\n", pool->unfinished, pool);
 #endif
@@ -915,7 +911,6 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 			http_error(E_WARNING, HTTP_E_CURL, "Socket error");
 			return FAILURE;
 		}
-		http_request_pool_perform(pool);
 	}
 	zend_llist_apply(&pool->handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
 	return SUCCESS;
@@ -932,6 +927,41 @@ PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC)
 	zend_llist_clean(&pool->handles);
 	zend_llist_clean(&pool->bodies);
 	curl_multi_cleanup(pool->ch);
+}
+/* }}} */
+
+/* {{{ STATUS http_request_pool_select(http_request_pool *) */
+PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
+{
+	int MAX;
+	fd_set R, W, E;
+	struct timeval timeout = {1, 0};
+
+	FD_ZERO(&R);
+	FD_ZERO(&W);
+	FD_ZERO(&E);
+
+	curl_multi_fdset(pool->ch, &R, &W, &E, &MAX);
+	return (-1 != select(MAX + 1, &R, &W, &E, &timeout)) ? SUCCESS : FAILURE;
+}
+/* }}} */
+
+/* {{{ int http_request_pool_perform(http_request_pool *) */
+PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool)
+{
+	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(pool->ch, &pool->unfinished));
+	return pool->unfinished;
+}
+/* }}} */
+
+/* {{{ void http_request_pool_responsehandler(zval **) */
+void _http_request_pool_responsehandler(zval **req TSRMLS_DC)
+{
+	getObjectEx(http_request_object, obj, *req);
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Fetching data from request %p of pool %p\n", obj, obj->pool);
+#endif
+	http_request_object_responsehandler(obj, *req, NULL);
 }
 /* }}} */
 
@@ -955,40 +985,6 @@ static void http_request_pool_freehandle(zval **request, http_request_pool *pool
 #if HTTP_DEBUG_REQPOOLS
 	else fprintf(stderr, "Request %p (pool: %p) is not (anymore) attached to pool %p\n", req, req->pool, pool);
 #endif
-}
-/* }}} */
-
-/* {{{ static void http_request_pool_responsehandler(zval **) */
-static void http_request_pool_responsehandler(zval **req TSRMLS_DC)
-{
-	getObjectEx(http_request_object, obj, *req);
-#if HTTP_DEBUG_REQPOOLS
-	fprintf(stderr, "Fetching data from request %p of pool %p\n", obj, obj->pool);
-#endif
-	http_request_object_responsehandler(obj, *req, NULL);
-}
-/* }}} */
-
-/* {{{ static inline STATUS http_request_pool_select(http_request_pool *) */
-static inline STATUS http_request_pool_select(http_request_pool *pool)
-{
-	int MAX;
-	fd_set R, W, E;
-	struct timeval timeout = {1, 0};
-
-	FD_ZERO(&R);
-	FD_ZERO(&W);
-	FD_ZERO(&E);
-
-	curl_multi_fdset(pool->ch, &R, &W, &E, &MAX);
-	return (-1 != select(MAX + 1, &R, &W, &E, &timeout)) ? SUCCESS : FAILURE;
-}
-/* }}} */
-
-/* {{{ static inline void http_request_pool_perform(http_request_pool *) */
-static inline void http_request_pool_perform(http_request_pool *pool)
-{
-	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(pool->ch, &pool->unfinished));
 }
 /* }}} */
 

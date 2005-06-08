@@ -47,6 +47,10 @@ zend_function_entry http_requestpool_object_fe[] = {
 	PHP_ME(HttpRequestPool, detach, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequestPool, send, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequestPool, reset, NULL, ZEND_ACC_PUBLIC)
+	
+	PHP_ME(HttpRequestPool, socketSend, NULL, ZEND_ACC_PROTECTED)
+	PHP_ME(HttpRequestPool, socketSelect, NULL, ZEND_ACC_PROTECTED)
+	PHP_ME(HttpRequestPool, socketRead, NULL, ZEND_ACC_PROTECTED)
 
 	{NULL, NULL, NULL}
 };

@@ -2233,6 +2233,58 @@ PHP_METHOD(HttpRequestPool, send)
 }
 /* }}} */
 
+/* {{{ proto protected bool HttpRequestPool::socketSend()
+ *
+ * Usage:
+ * <pre>
+ *	<?php
+ *		while ($pool->socketSend()) {
+ *			do_something_else();
+ *			if (!$pool->socketSelect()) {
+ *				die('Socket error');
+ *			}
+ *		}
+ *		$pool->socketRead();
+ *	?>
+ * </pre>
+ */
+PHP_METHOD(HttpRequestPool, socketSend)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	RETURN_BOOL(0 < http_request_pool_perform(&obj->pool));
+}
+/* }}} */
+
+/* {{{ proto protected bool HttpRequestPool::socketSelect()
+ *
+ * See HttpRequestPool::socketSend().
+ */
+PHP_METHOD(HttpRequestPool, socketSelect)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	RETURN_SUCCESS(http_request_pool_select(&obj->pool));
+}
+/* }}} */
+
+/* {{{ proto protected void HttpRequestPool::socketRead()
+ *
+ * See HttpRequestPool::socketSend().
+ */
+PHP_METHOD(HttpRequestPool, socketRead)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	zend_llist_apply(&obj->pool.handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
+}
+
 /* }}} */
 
 /* }}} */

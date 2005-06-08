@@ -92,6 +92,9 @@ extern void _http_request_data_free_string(void *string);
 #define http_request_data_free_slist _http_request_data_free_slist
 extern void _http_request_data_free_slist(void *list);
 
+#define http_request_pool_responsehandler _http_request_pool_responsehandler
+extern void http_request_pool_responsehandler(zval **req TSRMLS_DC);
+
 #define http_request_global_init _http_request_global_init
 extern STATUS _http_request_global_init(void);
 
@@ -133,6 +136,12 @@ PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_D
 
 #define http_request_pool_send(p) _http_request_pool_send((p) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC);
+
+#define http_request_pool_select _http_request_pool_select
+PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool);
+
+#define http_request_pool_perform _http_request_pool_perform
+PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool);
 
 #define http_request_pool_dtor(p) _http_request_pool_dtor((p) TSRMLS_CC)
 PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC);
