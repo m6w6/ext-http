@@ -2143,7 +2143,7 @@ PHP_METHOD(HttpRequest, send)
 
 /* {{{ HttpRequestPool */
 
-/* {{{ proto void HttpRequestPool::__construct(void)
+/* {{{ proto void HttpRequestPool::__construct()
  *
  * Instantiate a new HttpRequestPool object.
  */
@@ -2153,13 +2153,31 @@ PHP_METHOD(HttpRequestPool, __construct)
 }
 /* }}} */
 
+/* {{{ proto void HttpRequestPool::__destruct()
+ *
+ * Clean up HttpRequestPool object.
+ */
 PHP_METHOD(HttpRequestPool, __destruct)
 {
 	getObject(http_requestpool_object, obj);
-	
+
 	NO_ARGS;
-	
-	http_requestpool_object_ondestruct(&obj->pool);
+
+	http_request_pool_detach_all(&obj->pool);
+}
+/* }}} */
+
+/* {{{ proto void HttpRequestPool::reset()
+ *
+ * Detach all attached HttpRequest objects.
+ */
+PHP_METHOD(HttpRequestPool, reset)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	http_request_pool_detach_all(&obj->pool);
 }
 
 /* {{{ proto bool HttpRequestPool::attach(HttpRequest request)

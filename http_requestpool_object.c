@@ -46,6 +46,7 @@ zend_function_entry http_requestpool_object_fe[] = {
 	PHP_ME(HttpRequestPool, attach, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequestPool, detach, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequestPool, send, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpRequestPool, reset, NULL, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };
@@ -94,17 +95,6 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
 	http_request_pool_dtor(&o->pool);
 	efree(o);
 }
-
-static void http_requestpool_object_ondestructhandler(zval **request, http_request_pool *pool TSRMLS_DC)
-{
-	http_request_pool_detach(pool, *request);
-}
-
-void _http_requestpool_object_ondestruct(http_request_pool *pool TSRMLS_DC)
-{
-	zend_llist_apply_with_argument(&pool->handles, (llist_apply_with_arg_func_t) http_requestpool_object_ondestructhandler, pool TSRMLS_CC);
-}
-
 
 #endif /* HTTP_HAVE_CURL */
 #endif /* ZEND_ENGINE_2 */

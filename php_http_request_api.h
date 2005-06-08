@@ -128,6 +128,9 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 #define http_request_pool_detach(p, r) _http_request_pool_detach((p), (r) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *request TSRMLS_DC);
 
+#define http_request_pool_detach_all(p) _http_request_pool_detach_all((p) TSRMLS_CC)
+PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_DC);
+
 #define http_request_pool_send(p) _http_request_pool_send((p) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC);
 

@@ -40,6 +40,10 @@
 #	define HTTP_CURL_USE_ZEND_MM 0
 #endif
 
+#ifndef HTTP_DEBUG_REQPOOLS
+#	define HTTP_DEBUG_REQPOOLS 0
+#endif
+
 ZEND_EXTERN_MODULE_GLOBALS(http)
 
 #if LIBCURL_VERSION_NUM < 0x070c00
@@ -124,7 +128,7 @@ typedef struct {
 static http_curl_callback_ctx *_http_curl_callback_data(void *data TSRMLS_DC);
 
 static void http_request_pool_freebody(http_request_body **body);
-static void http_request_pool_freehandle(zval **request);
+static void http_request_pool_freehandle(zval **request, http_request_pool *pool TSRMLS_DC);
 static void http_request_pool_responsehandler(zval **req TSRMLS_DC);
 static inline STATUS http_request_pool_select(http_request_pool *pool);
 static inline void http_request_pool_perform(http_request_pool *pool);
@@ -803,7 +807,9 @@ PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_
 PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool TSRMLS_DC)
 {
 	zend_bool free_pool;
-
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Initializing request pool\n");
+#endif
 	if ((free_pool = (!pool))) {
 		pool = emalloc(sizeof(http_request_pool));
 		pool->ch = NULL;
@@ -822,7 +828,9 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 	pool->unfinished = 0;
 	zend_llist_init(&pool->handles, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	zend_llist_init(&pool->bodies, sizeof(http_request_body *), (llist_dtor_func_t) http_request_pool_freebody, 0);
-
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Initialized request pool %p\n", pool);
+#endif
 	return pool;
 }
 /* }}} */
@@ -831,7 +839,9 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *request TSRMLS_DC)
 {
 	getObjectEx(http_request_object, req, request);
-
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Attaching request %p to pool %p\n", req, pool);
+#endif
 	if (req->pool) {
 		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is already member of an HttpRequestPool");
 	} else {
@@ -860,9 +870,11 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *request TSRMLS_DC)
 {
 	getObjectEx(http_request_object, req, request);
-
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Detaching request %p (pool: %p) from pool %p\n", req, req->pool, pool);
+#endif
 	if (req->pool != pool) {
-		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is not attached to this HttpRequestPool");
+		http_error_ex(E_WARNING, HTTP_E_CURL, "HttpRequest object is not attached to this HttpRequestPool (%p != %p)", req->pool, pool);
 	} else {
 		CURLMcode code;
 
@@ -878,11 +890,27 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 }
 /* }}} */
 
+/* {{{ void http_request_pool_detach_all(http_request_pool *) */
+PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_DC)
+{
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Detaching all requests from pool %p\n", pool);
+#endif
+	zend_llist_apply_with_argument(&pool->handles, (llist_apply_with_arg_func_t) http_request_pool_freehandle, pool TSRMLS_CC);
+}
+
+
 /* {{{ STATUS http_request_pool_send(http_request_pool *) */
 PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 {
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Attempt to send requests of pool %p\n", pool);
+#endif
 	http_request_pool_perform(pool);
 	while (pool->unfinished) {
+#if HTTP_DEBUG_REQPOOLS
+		fprintf(stderr, "%d unfinished requests of pool %p remaining\n", pool->unfinished, pool);
+#endif
 		if (SUCCESS != http_request_pool_select(pool)) {
 			http_error(E_WARNING, HTTP_E_CURL, "Socket error");
 			return FAILURE;
@@ -897,6 +925,9 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 /* {{{ void http_request_pool_dtor(http_request_pool *) */
 PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC)
 {
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Destructing request pool %p\n", pool);
+#endif
 	pool->unfinished = 0;
 	zend_llist_clean(&pool->handles);
 	zend_llist_clean(&pool->bodies);
@@ -914,10 +945,26 @@ static void http_request_pool_freebody(http_request_body **body)
 }
 /* }}} */
 
+/* {{{ static void http_request_pool_freehandle(zval **, http_request_pool *) */
+static void http_request_pool_freehandle(zval **request, http_request_pool *pool TSRMLS_DC)
+{
+	getObjectEx(http_request_object, req, *request);
+	if (req->pool) {
+		http_request_pool_detach(pool, *request);
+	}
+#if HTTP_DEBUG_REQPOOLS
+	else fprintf(stderr, "Request %p (pool: %p) is not (anymore) attached to pool %p\n", req, req->pool, pool);
+#endif
+}
+/* }}} */
+
 /* {{{ static void http_request_pool_responsehandler(zval **) */
 static void http_request_pool_responsehandler(zval **req TSRMLS_DC)
 {
 	getObjectEx(http_request_object, obj, *req);
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Fetching data from request %p of pool %p\n", obj, obj->pool);
+#endif
 	http_request_object_responsehandler(obj, *req, NULL);
 }
 /* }}} */
