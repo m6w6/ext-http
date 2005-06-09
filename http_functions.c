@@ -1108,18 +1108,18 @@ PHP_FUNCTION(http_auth_basic)
 		realm = "Restricted";
 	}
 
-	if (SUCCESS != http_auth_credentials(&suser, &spass)) {
-		http_auth_header("Basic", realm);
+	if (SUCCESS != http_auth_basic_credentials(&suser, &spass)) {
+		http_auth_basic_header(realm);
 		RETURN_FALSE;
 	}
 
 	if (strcasecmp(suser, user)) {
-		http_auth_header("Basic", realm);
+		http_auth_basic_header(realm);
 		RETURN_FALSE;
 	}
 
 	if (strcmp(spass, pass)) {
-		http_auth_header("Basic", realm);
+		http_auth_basic_header(realm);
 		RETURN_FALSE;
 	}
 
@@ -1161,8 +1161,8 @@ PHP_FUNCTION(http_auth_basic_cb)
 		realm = "Restricted";
 	}
 
-	if (SUCCESS != http_auth_credentials(&user, &pass)) {
-		http_auth_header("Basic", realm);
+	if (SUCCESS != http_auth_basic_credentials(&user, &pass)) {
+		http_auth_basic_header(realm);
 		RETURN_FALSE;
 	}
 	{
@@ -1185,7 +1185,7 @@ PHP_FUNCTION(http_auth_basic_cb)
 		efree(zparams[1]);
 
 		if (!result) {
-			http_auth_header("Basic", realm);
+			http_auth_basic_header(realm);
 		}
 
 		RETURN_BOOL(result);

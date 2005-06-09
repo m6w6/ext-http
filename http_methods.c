@@ -2237,15 +2237,15 @@ PHP_METHOD(HttpRequestPool, send)
  *
  * Usage:
  * <pre>
- *	<?php
- *		while ($pool->socketSend()) {
- *			do_something_else();
- *			if (!$pool->socketSelect()) {
- *				die('Socket error');
- *			}
- *		}
- *		$pool->socketRead();
- *	?>
+ * <?php
+ *     while ($pool->socketSend()) {
+ *         do_something_else();
+ *         if (!$pool->socketSelect()) {
+ *             die('Socket error');
+ *         }
+ *     }
+ *     $pool->socketRead();
+ * ?>
  * </pre>
  */
 PHP_METHOD(HttpRequestPool, socketSend)
@@ -2284,6 +2284,7 @@ PHP_METHOD(HttpRequestPool, socketRead)
 
 	zend_llist_apply(&obj->pool.handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
 }
+/* }}} */
 
 /* }}} */
 

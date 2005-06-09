@@ -23,6 +23,14 @@
 #define pretty_key(key, key_len, uctitle, xhyphen) _http_pretty_key(key, key_len, uctitle, xhyphen)
 extern char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
 
+typedef void (*http_key_list_decode_t)(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
+#define http_key_list_default_decoder _http_key_list_default_decoder
+extern void _http_key_list_default_decoder(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
+
+#define http_parse_cookie(l, i) _http_parse_key_list((l), (i), ';', http_key_list_default_decoder, 1 TSRMLS_CC)
+#define http_parse_key_list(l, i, s, d, f) _http_parse_key_list((l), (i), (s), (d), (f) TSRMLS_CC)
+extern STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, http_key_list_decode_t decode, zend_bool first_entry_is_name_value_pair TSRMLS_DC);
+
 #define http_error(type, code, string) _http_error_ex(type, code, "%s", string)
 #define http_error_ex _http_error_ex
 extern void _http_error_ex(long type, long code, const char *format, ...);

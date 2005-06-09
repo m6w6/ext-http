@@ -60,6 +60,99 @@ char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool x
 }
 /* }}} */
 
+/* {{{ */
+void _http_key_list_default_decoder(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+{
+	*decoded = estrndup(encoded, encoded_len);
+	*decoded_len = (size_t) php_url_decode(*decoded, encoded_len);
+}
+/* }}} */
+
+/* {{{ */
+STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, http_key_list_decode_t decode, zend_bool first_entry_is_name_value_pair TSRMLS_DC)
+{
+	const char *key = list, *val = NULL;
+	int vallen = 0, keylen = 0, done = 0;
+	zval array;
+
+	Z_ARRVAL(array) = items;
+
+	if (!(val = strchr(list, '='))) {
+		return FAILURE;
+	}
+
+#define HTTP_KEYLIST_VAL(array, k, str, len) \
+	{ \
+		char *decoded; \
+		size_t decoded_len; \
+		if (decode) { \
+			decode(str, len, &decoded, &decoded_len TSRMLS_CC); \
+		} else { \
+			decoded = estrdup(str); \
+			decoded_len = len; \
+		} \
+		add_assoc_stringl(array, k, decoded, decoded_len, 0); \
+	}
+#define HTTP_KEYLIST_FIXKEY() \
+	{ \
+			while (isspace(*key)) ++key; \
+			keylen = val - key; \
+			while (isspace(key[keylen - 1])) --keylen; \
+	}
+#define HTTP_KEYLIST_FIXVAL() \
+	{ \
+			++val; \
+			while (isspace(*val)) ++val; \
+			vallen = key - val; \
+			while (isspace(val[vallen - 1])) --vallen; \
+	}
+
+	HTTP_KEYLIST_FIXKEY();
+	
+	if (first_entry_is_name_value_pair) {
+		HTTP_KEYLIST_VAL(&array, "name", key, keylen);
+
+		/* just one name=value */
+		if (!(key = strchr(val, separator))) {
+			key = val + strlen(val);
+			HTTP_KEYLIST_FIXVAL();
+			HTTP_KEYLIST_VAL(&array, "value", val, vallen);
+			goto list_done;
+		}
+		/* additional info appended */
+		else {
+			HTTP_KEYLIST_FIXVAL();
+			HTTP_KEYLIST_VAL(&array, "value", val, vallen);
+		}
+	}
+
+	do {
+		char *keydup = NULL;
+
+		if (!(val = strchr(key, '='))) {
+			break;
+		}
+
+		/* start at 0 if first_entry_is_name_value_pair==0 */
+		if (zend_hash_num_elements(items)) {
+			++key;
+		}
+
+		HTTP_KEYLIST_FIXKEY();
+		keydup = estrndup(key, keylen);
+		if (!(key = strchr(val, separator))) {
+			done = 1;
+			key = val + strlen(val);
+		}
+		HTTP_KEYLIST_FIXVAL();
+		HTTP_KEYLIST_VAL(&array, keydup, val, vallen);
+		efree(keydup);
+	} while (!done);
+
+list_done:
+	return SUCCESS;
+}
+
 /* {{{ void http_error(long, long, char*) */
 void _http_error_ex(long type, long code, const char *format, ...)
 {

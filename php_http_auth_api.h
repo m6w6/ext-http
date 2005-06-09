@@ -20,11 +20,19 @@
 
 #include "php_http_std_defs.h"
 
-#define http_auth_credentials(u, p) _http_auth_credentials((u), (p) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_auth_credentials(char **user, char **pass TSRMLS_DC);
+#define http_auth_basic_credentials(u, p) _http_auth_basic_credentials((u), (p) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_auth_basic_credentials(char **user, char **pass TSRMLS_DC);
 
-#define http_auth_header(t, r) _http_auth_header((t), (r) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_auth_header(const char *type, const char *realm TSRMLS_DC);
+#define http_auth_basic_header(r) _http_auth_basic_header((r) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_auth_basic_header(const char *realm TSRMLS_DC);
+
+/*
+#define http_auth_digest_credentials(i) _http_auth_digest_credentials((i) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_auth_digest_credentials(HashTable *items TSRMLS_DC);
+
+#define http_auth_digest_header(r) _http_auth_digest_header((r) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_auth_digest_header(const char *realm TSRMLS_DC);
+*/
 
 #endif
 

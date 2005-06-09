@@ -208,7 +208,7 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr, http_request_body *body TSRMLS_DC)
 {
 	zval *meth, *URL, *qdata, *opts;
-	char *request_uri, *uri;
+	char *request_uri;
 	STATUS status;
 
 	if (!body) {
@@ -283,7 +283,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			body->data = Z_STRVAL_P(post);
 			body->size = Z_STRLEN_P(post);
 
-			status = http_request_init(obj->ch, Z_LVAL_P(meth), uri, body, Z_ARRVAL_P(opts), &obj->response);
+			status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, body, Z_ARRVAL_P(opts), &obj->response);
 		}
 		break;
 	}
