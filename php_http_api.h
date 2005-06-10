@@ -56,10 +56,8 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 #define http_chunked_decode(e, el, d, dl) _http_chunked_decode((e), (el), (d), (dl) TSRMLS_CC)
 PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
-#define http_split_response(r, h, b) _http_split_response((r), (h), (b) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_split_response(zval *response, zval *headers, zval *body TSRMLS_DC);
-#define http_split_response_ex(r, rl, h, b, bl) _http_split_response_ex((r), (rl), (h), (b), (bl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t repsonse_len, HashTable *headers, char **body, size_t *body_len TSRMLS_DC);
+#define http_split_response(r, rl, h, b, bl) _http_split_response((r), (rl), (h), (b), (bl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_split_response(char *response, size_t repsonse_len, HashTable *headers, char **body, size_t *body_len TSRMLS_DC);
 
 #endif
 

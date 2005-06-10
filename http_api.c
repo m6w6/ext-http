@@ -22,6 +22,7 @@
 #include <ctype.h>
 
 #include "php.h"
+#include "ext/standard/url.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
@@ -108,7 +109,7 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 	}
 
 	HTTP_KEYLIST_FIXKEY();
-	
+
 	if (first_entry_is_name_value_pair) {
 		HTTP_KEYLIST_VAL(&array, "name", key, keylen);
 
@@ -285,19 +286,8 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 }
 /* }}} */
 
-/* {{{ STATUS http_split_response(zval *, zval *, zval *) */
-PHP_HTTP_API STATUS _http_split_response(zval *response, zval *headers, zval *body TSRMLS_DC)
-{
-	char *b = NULL;
-	size_t l = 0;
-	STATUS status = http_split_response_ex(Z_STRVAL_P(response), Z_STRLEN_P(response), Z_ARRVAL_P(headers), &b, &l);
-	ZVAL_STRINGL(body, b, l, 0);
-	return status;
-}
-/* }}} */
-
 /* {{{ STATUS http_split_response(char *, size_t, HashTable *, char **, size_t *) */
-PHP_HTTP_API STATUS _http_split_response_ex(char *response, size_t response_len,
+PHP_HTTP_API STATUS _http_split_response(char *response, size_t response_len,
 	HashTable *headers, char **body, size_t *body_len TSRMLS_DC)
 {
 	char *header = response, *real_body = NULL;

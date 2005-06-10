@@ -618,7 +618,7 @@ PHP_FUNCTION(http_split_response)
 	MAKE_STD_ZVAL(zheaders);
 	array_init(zheaders);
 
-	if (SUCCESS != http_split_response(zresponse, zheaders, zbody)) {
+	if (SUCCESS != http_split_response(Z_STRVAL_P(zresponse), Z_STRLEN_P(zresponse), Z_ARRVAL_P(zheaders), &Z_STRVAL_P(zbody), &Z_STRLEN_P(zbody))) {
 		http_error(E_WARNING, HTTP_E_PARSE, "Could not parse HTTP response");
 		RETURN_FALSE;
 	}

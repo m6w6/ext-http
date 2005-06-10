@@ -47,7 +47,7 @@
 ZEND_EXTERN_MODULE_GLOBALS(http)
 
 #if LIBCURL_VERSION_NUM < 0x070c00
-#	define curl_easy_strerror(code) HTTP_G(request).curl.error
+#	define curl_easy_strerror(code) HTTP_G(request).error
 #endif
 
 #define HTTP_CURL_INFO(I) HTTP_CURL_INFO_EX(I, I)
