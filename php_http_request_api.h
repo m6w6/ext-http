@@ -69,7 +69,6 @@ typedef enum {
 #define HTTP_REQUEST_BODY_CSTRING		1
 #define HTTP_REQUEST_BODY_CURLPOST		2
 #define HTTP_REQUEST_BODY_UPLOADFILE	3
-#define HTTP_REQUEST_BODY_UPLOADDATA	4
 typedef struct {
 	int type;
 	void *data;

@@ -602,7 +602,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const
 		switch (body->type)
 		{
 			case HTTP_REQUEST_BODY_CSTRING:
-				curl_easy_setopt(ch, CURLOPT_POSTFIELDS, (char *) body->data);
+				curl_easy_setopt(ch, CURLOPT_POSTFIELDS, body->data);
 				curl_easy_setopt(ch, CURLOPT_POSTFIELDSIZE, body->size);
 			break;
 
@@ -611,8 +611,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const
 			break;
 
 			case HTTP_REQUEST_BODY_UPLOADFILE:
-			case HTTP_REQUEST_BODY_UPLOADDATA:
-				curl_easy_setopt(ch, CURLOPT_READDATA, body);
+				curl_easy_setopt(ch, CURLOPT_READDATA, http_curl_callback_data(body));
 				curl_easy_setopt(ch, CURLOPT_INFILESIZE, body->size);
 			break;
 
@@ -1040,40 +1039,10 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *s)
 	static char *offset = NULL, *original = NULL;
 	HTTP_CURL_CALLBACK_DATA(s, http_request_body *, body);
 
-	switch (body->type)
-	{
-		case HTTP_REQUEST_BODY_UPLOADFILE:
-		{
-			TSRMLS_FETCH();
-			return php_stream_read((php_stream *) body->data, data, len * n);
-		}
-		break;
-
-		case HTTP_REQUEST_BODY_UPLOADDATA:
-		{
-			size_t avail;
-			if (original != s) {
-				original = offset = s;
-			}
-			if ((avail = body->size - (offset - original)) < 1) {
-				return 0;
-			}
-			if (avail < (len * n)) {
-				memcpy(data, offset, avail);
-				offset += avail;
-				return avail;
-			} else {
-				memcpy(data, offset, len * n);
-				offset += len * n;
-				return len * n;
-			}
-		}
-		break;
-
-		default:
-			return 0;
-		break;
+	if (body->type != HTTP_REQUEST_BODY_UPLOADFILE) {
+		return 0;
 	}
+	return php_stream_read((php_stream *) body->data, data, len * n);
 }
 /* }}} */
 
