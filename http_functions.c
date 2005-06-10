@@ -606,26 +606,26 @@ PHP_FUNCTION(http_chunked_decode)
  */
 PHP_FUNCTION(http_split_response)
 {
-	zval *zresponse, *zbody, *zheaders;
+	char *response, *body;
+	int response_len;
+	size_t body_len;
+	zval *zheaders;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &zresponse) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &response, &response_len) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	convert_to_string(zresponse);
-
-	MAKE_STD_ZVAL(zbody);
 	MAKE_STD_ZVAL(zheaders);
 	array_init(zheaders);
 
-	if (SUCCESS != http_split_response(Z_STRVAL_P(zresponse), Z_STRLEN_P(zresponse), Z_ARRVAL_P(zheaders), &Z_STRVAL_P(zbody), &Z_STRLEN_P(zbody))) {
+	if (SUCCESS != http_split_response(response, response_len, Z_ARRVAL_P(zheaders), &body, &body_len)) {
 		http_error(E_WARNING, HTTP_E_PARSE, "Could not parse HTTP response");
 		RETURN_FALSE;
 	}
 
 	array_init(return_value);
 	add_index_zval(return_value, 0, zheaders);
-	add_index_zval(return_value, 1, zbody);
+	add_index_stringl(return_value, 1, body, body_len, 0);
 }
 /* }}} */
 
