@@ -2,7 +2,7 @@
 // $Id$
 
 ARG_ENABLE("http", "whether to enable extended HTTP support", "no");
-ARG_WITH("http-curl-zend-mm", "wheter ext/http's curl should use zend mm");
+ARG_WITH("http-curl-zend-mm", "whether ext/http's curl should use zend mm");
 
 if (PHP_HTTP != "no") {
 	EXTENSION("http",
