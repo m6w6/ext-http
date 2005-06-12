@@ -702,10 +702,23 @@ PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
 /* {{{ STATUS http_request_ex(CURL *, http_request_method, char *, http_request_body, HashTable, HashTable, phpstr *) */
 PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const char *url, http_request_body *body, HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
 {
-	if (SUCCESS != http_request_init(ch, meth, url, body, options, response)) {
-		return FAILURE;
+	STATUS status;
+	zend_bool clean_curl;
+
+	if ((clean_curl = (!ch))) {
+		if (!(ch = curl_easy_init())) {
+			http_error(E_WARNING, HTTP_E_CURL, "Could not initialize curl.");
+			return FAILURE;
+		}
 	}
-	return http_request_exec(ch, info);
+
+	status =	((SUCCESS == http_request_init(ch, meth, url, body, options, response)) &&
+				(SUCCESS == http_request_exec(ch, info))) ? SUCCESS : FAILURE;
+
+	if (clean_curl) {
+		curl_easy_cleanup(ch);
+	}
+	return status;
 }
 /* }}} */
 
@@ -846,7 +859,6 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 		zval *info = GET_PROP_EX(req, request, responseInfo);
 
 		if (SUCCESS != http_request_object_requesthandler(req, request, body)) {
-			efree(body);
 			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
 		} else if (CURLM_OK != (code = curl_multi_add_handle(pool->ch, req->ch))) {
 			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
@@ -857,6 +869,7 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 			zend_llist_add_element(&pool->bodies, &body);
 			return SUCCESS;
 		}
+		efree(body);
 	}
 	return FAILURE;
 }
@@ -870,7 +883,7 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 	fprintf(stderr, "Detaching request %p (pool: %p) from pool %p\n", req, req->pool, pool);
 #endif
 	if (req->pool != pool) {
-		http_error_ex(E_WARNING, HTTP_E_CURL, "HttpRequest object is not attached to this HttpRequestPool (%p != %p)", req->pool, pool);
+		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is not attached to this HttpRequestPool");
 	} else {
 		CURLMcode code;
 

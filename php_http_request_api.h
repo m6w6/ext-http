@@ -92,7 +92,7 @@ extern void _http_request_data_free_string(void *string);
 extern void _http_request_data_free_slist(void *list);
 
 #define http_request_pool_responsehandler _http_request_pool_responsehandler
-extern void http_request_pool_responsehandler(zval **req TSRMLS_DC);
+extern void _http_request_pool_responsehandler(zval **req TSRMLS_DC);
 
 #define http_request_global_init _http_request_global_init
 extern STATUS _http_request_global_init(void);
