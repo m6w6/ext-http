@@ -349,7 +349,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const
 	HTTP_CURL_OPT(NOSIGNAL, 1);
 #endif
 #if LIBCURL_VERSION_NUM < 0x070c00
-	HTTP_CURL_OPT(ERRORBUFFER, HTTP_G(request).curl.error);
+	HTTP_CURL_OPT(ERRORBUFFER, HTTP_G(request).error);
 #endif
 
 	/* progress callback */
