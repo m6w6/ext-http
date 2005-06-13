@@ -292,7 +292,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	return status;
 }
 
-STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr, HashTable *info TSRMLS_DC)
+STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr TSRMLS_DC)
 {
 	http_message *msg;
 
@@ -301,7 +301,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	if (msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response))) {
 		char *body;
 		size_t body_len;
-		zval *headers, *message = GET_PROP(obj, responseMessage), *resp = GET_PROP(obj, responseData);
+		zval *headers, *message, *resp = GET_PROP(obj, responseData), *info = GET_PROP(obj, responseInfo);
 
 		UPD_PROP(obj, long, responseCode, msg->info.response.code);
 
@@ -314,14 +314,13 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		add_assoc_zval(resp, "headers", headers);
 		add_assoc_stringl(resp, "body", body, body_len, 0);
 
-		//zval_dtor(&message);
+		MAKE_STD_ZVAL(message);
 		Z_TYPE_P(message)  = IS_OBJECT;
 		message->value.obj = http_message_object_from_msg(msg);
 		SET_PROP(obj, responseMessage, message);
 
-		if (info) {
-			http_request_info(obj->ch, info);
-		}
+		http_request_info(obj->ch, Z_ARRVAL_P(info));
+		SET_PROP(obj, responseInfo, info);
 
 		return SUCCESS;
 	}

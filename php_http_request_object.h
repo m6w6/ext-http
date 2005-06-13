@@ -48,8 +48,8 @@ extern void _http_request_object_free(zend_object *object TSRMLS_DC);
 
 #define http_request_object_requesthandler(req, this, body) _http_request_object_requesthandler((req), (this), (body) TSRMLS_CC)
 extern STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr, http_request_body *body TSRMLS_DC);
-#define http_request_object_responsehandler(req, this, info) _http_request_object_responsehandler((req), (this), (info) TSRMLS_CC)
-extern STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr, HashTable *info TSRMLS_DC);
+#define http_request_object_responsehandler(req, this) _http_request_object_responsehandler((req), (this) TSRMLS_CC)
+extern STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr TSRMLS_DC);
 
 PHP_METHOD(HttpRequest, __construct);
 PHP_METHOD(HttpRequest, __destruct);

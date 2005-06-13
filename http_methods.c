@@ -2125,15 +2125,13 @@ PHP_METHOD(HttpRequest, send)
 	}
 
 	if (SUCCESS == (status = http_request_object_requesthandler(obj, getThis(), &body))) {
-		zval *info = GET_PROP(obj, responseInfo);
-		status = http_request_exec(obj->ch, Z_ARRVAL_P(info));
-		SET_PROP(obj, responseInfo, info);
+		status = http_request_exec(obj->ch, NULL);
 	}
 	http_request_body_dtor(&body);
 
 	/* final data handling */
 	if (SUCCESS == status) {
-		status = http_request_object_responsehandler(obj, getThis(), NULL);
+		status = http_request_object_responsehandler(obj, getThis());
 	}
 
 	SET_EH_NORMAL();

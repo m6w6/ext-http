@@ -48,6 +48,14 @@ ZEND_EXTERN_MODULE_GLOBALS(http)
 
 #if LIBCURL_VERSION_NUM < 0x070c00
 #	define curl_easy_strerror(code) HTTP_G(request).error
+#	ifndef curl_multi_strerror
+		static char *curl_multi_strerror(int code)
+		{
+			char message[256] = {0};
+			snprintf(message, 255, "Unknown HttpRequestPool error (curl multi code: %d)", code);
+			return http_request_data_copy(COPY_STRING, message);
+		}
+#endif
 #endif
 
 #define HTTP_CURL_INFO(I) HTTP_CURL_INFO_EX(I, I)
@@ -973,7 +981,7 @@ void _http_request_pool_responsehandler(zval **req TSRMLS_DC)
 #if HTTP_DEBUG_REQPOOLS
 	fprintf(stderr, "Fetching data from request %p of pool %p\n", obj, obj->pool);
 #endif
-	http_request_object_responsehandler(obj, *req, NULL);
+	http_request_object_responsehandler(obj, *req);
 }
 /* }}} */
 
