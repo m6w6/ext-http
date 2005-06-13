@@ -48,14 +48,6 @@ ZEND_EXTERN_MODULE_GLOBALS(http)
 
 #if LIBCURL_VERSION_NUM < 0x070c00
 #	define curl_easy_strerror(code) HTTP_G(request).error
-#	ifndef curl_multi_strerror
-		static char *curl_multi_strerror(int code)
-		{
-			char message[256] = {0};
-			snprintf(message, 255, "Unknown HttpRequestPool error (curl multi code: %d)", code);
-			return http_request_data_copy(COPY_STRING, message);
-		}
-#endif
 #endif
 
 #define HTTP_CURL_INFO(I) HTTP_CURL_INFO_EX(I, I)
@@ -122,11 +114,6 @@ static size_t http_curl_read_callback(void *, size_t, size_t, void *);
 static int http_curl_progress_callback(void *, double, double, double, double);
 static int http_curl_debug_callback(CURL *, curl_infotype, char *, size_t, void *);
 
-typedef struct {
-	void ***tsrm_ctx;
-	void *data;
-} http_curl_callback_ctx;
-
 #define HTTP_CURL_CALLBACK_DATA(from, type, var) \
 	http_curl_callback_ctx *__CTX = (http_curl_callback_ctx *) (from); \
 	TSRMLS_FETCH_FROM_CTX(__CTX->tsrm_ctx); \
@@ -185,6 +172,12 @@ void *_http_request_data_copy(int type, void *data TSRMLS_DC)
 			return data;
 		}
 
+		case COPY_CONTEXT:
+		{
+			zend_llist_add_element(&HTTP_G(request).copies.contexts, &data);
+			return data;
+		}
+		
 		default:
 		{
 			return data;
@@ -204,6 +197,13 @@ void _http_request_data_free_string(void *string)
 void _http_request_data_free_slist(void *list)
 {
 	curl_slist_free_all(*((struct curl_slist **) list));
+}
+/* }}} */
+
+/* {{{ _http_request_data_free_context(http_curl_callback_ctx **) */
+void _http_request_data_free_context(void *context)
+{
+	efree(*((http_curl_callback_ctx **) context));
 }
 /* }}} */
 
@@ -1073,7 +1073,7 @@ static http_curl_callback_ctx *_http_curl_callback_data(void *data TSRMLS_DC)
 	http_curl_callback_ctx *ctx = emalloc(sizeof(http_curl_callback_ctx));
 	TSRMLS_SET_CTX(ctx->tsrm_ctx);
 	ctx->data = data;
-	return ctx;
+	return http_request_data_copy(COPY_CONTEXT, ctx);
 }
 /* }}} */
 

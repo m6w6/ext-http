@@ -64,6 +64,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		struct _http_globlas_request_copies {
 			zend_llist strings;
 			zend_llist slists;
+			zend_llist contexts;
 		} copies;
 #	if LIBCURL_VERSION_NUM < 0x070c00
 		char error[CURL_ERROR_SIZE + 1];
