@@ -148,6 +148,7 @@ static inline void http_globals_free(zend_http_globals *G)
 	zend_hash_destroy(&G->request.methods.custom);
 	zend_llist_clean(&G->request.copies.strings);
 	zend_llist_clean(&G->request.copies.slists);
+	zend_llist_clean(&G->request.copies.contexts);
 }
 /* }}} */
 
