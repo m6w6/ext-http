@@ -33,7 +33,7 @@ extern STATUS _http_parse_key_list(const char *list, HashTable *items, char sepa
 
 #define http_error(type, code, string) _http_error_ex(type, code, "%s", string)
 #define http_error_ex _http_error_ex
-extern void _http_error_ex(long type, long code, const char *format, ...);
+extern void _http_error_ex(long type, long code, const char *format, ...) PHP_ATTRIBUTE_FORMAT(printf, 3, 4);
 
 #define http_exit(s, h) http_exit_ex((s), (h), 1)
 #define http_exit_ex(s, h, f) _http_exit_ex((s), (h), (f) TSRMLS_CC)
