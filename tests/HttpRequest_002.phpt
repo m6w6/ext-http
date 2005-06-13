@@ -14,6 +14,7 @@ $r->setMethod(HTTP_POST);
 $r->addPostFields(array('q'=>'foobar','start'=>10));
 $r->send();
 var_dump($r->getResponseCode());
+var_dump($r->getResponseMessage()->getResponseCode());
 var_dump(false != strstr($r->getResponseBody(), "Not Implemented"));
 ?>
 --EXPECTF--
@@ -48,5 +49,6 @@ Array
     [proxyauth_avail] => %d
     [num_connects] => %d
 )
+int(501)
 int(501)
 bool(true)
