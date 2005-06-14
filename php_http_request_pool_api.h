@@ -29,6 +29,7 @@
 
 typedef struct {
 	CURLM *ch;
+	zend_bool sent;
 	zend_llist handles;
 	zend_llist bodies;
 	int unfinished;

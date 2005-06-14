@@ -2156,8 +2156,8 @@ PHP_METHOD(HttpRequest, send)
  *     }
  *     $pool->send();
  *     foreach ($urls as $url) {
- *         printf("%s (%s) is %s\n", 
- *             $url, $req[$url]->getResponseInfo('effective_url'), 
+ *         printf("%s (%s) is %s\n",
+ *             $url, $req[$url]->getResponseInfo('effective_url'),
  *             $r->getResponseCode() == 200 ? 'alive' : 'not alive'
  *         );
  *     }
@@ -2255,11 +2255,16 @@ PHP_METHOD(HttpRequestPool, detach)
  */
 PHP_METHOD(HttpRequestPool, send)
 {
+	STATUS status;
 	getObject(http_requestpool_object, obj);
 
 	NO_ARGS;
 
-	RETURN_SUCCESS(http_request_pool_send(&obj->pool));
+	SET_EH_THROW_HTTP();
+	status = http_request_pool_send(&obj->pool);
+	SET_EH_NORMAL();
+
+	RETURN_SUCCESS(status);
 }
 /* }}} */
 

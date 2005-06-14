@@ -59,6 +59,7 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 		}
 	}
 
+	pool->sent = 0;
 	pool->unfinished = 0;
 	zend_llist_init(&pool->handles, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	zend_llist_init(&pool->bodies, sizeof(http_request_body *), (llist_dtor_func_t) http_request_pool_freebody, 0);
@@ -108,7 +109,7 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 {
 	getObjectEx(http_request_object, req, request);
 #if HTTP_DEBUG_REQPOOLS
-	fprintf(stderr, "Detaching request %p (pool: %p) from pool %p\n", req, req->pool, pool);
+	fprintf(stderr, "Detaching request %p from pool %p\n", req, pool);
 #endif
 	if (req->pool != pool) {
 		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is not attached to this HttpRequestPool");
@@ -161,6 +162,12 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 #if HTTP_DEBUG_REQPOOLS
 	fprintf(stderr, "Attempt to send requests of pool %p\n", pool);
 #endif
+	if (pool->sent) {
+		http_error(E_WARNING, HTTP_E_CURL, "HttpRequestPools can only be used once");
+		return FAILURE;
+	} else {
+		pool->sent = 1;
+	}
 	while (http_request_pool_perform(pool)) {
 #if HTTP_DEBUG_REQPOOLS
 		fprintf(stderr, "%d unfinished requests of pool %p remaining\n", pool->unfinished, pool);

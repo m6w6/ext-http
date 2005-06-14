@@ -153,7 +153,8 @@ void *_http_request_data_copy(int type, void *data TSRMLS_DC)
 	{
 		case COPY_STRING:
 		{
-			char *new_str = estrdup((const char*) data);
+			char *new_str = estrdup(data);
+			//fprintf(stderr, "COPY STRING: %p (%s)\n", new_str, new_str);
 			zend_llist_add_element(&HTTP_G(request).copies.strings, &new_str);
 			return new_str;
 		}
@@ -181,6 +182,7 @@ void *_http_request_data_copy(int type, void *data TSRMLS_DC)
 /* {{{ void http_request_data_free_string(char **) */
 void _http_request_data_free_string(void *string)
 {
+	//fprintf(stderr, "FREE STRING %p (%s)\n", *((char **)string), *((char **)string));
 	efree(*((char **)string));
 }
 /* }}} */
@@ -318,7 +320,7 @@ PHP_HTTP_API void _http_request_body_free(http_request_body *body TSRMLS_DC)
 /* }}} */
 
 /* {{{ STATUS http_request_init(CURL *, http_request_method, char *, http_request_body *, HashTable *, phpstr *) */
-PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const char *url, http_request_body *body, HashTable *options, phpstr *response TSRMLS_DC)
+PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char *url, http_request_body *body, HashTable *options, phpstr *response TSRMLS_DC)
 {
 	zval *zoption;
 	zend_bool range_req = 0;
@@ -330,7 +332,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const
 
 	/* set options */
 	if (url) {
-		HTTP_CURL_OPT(URL, http_request_data_copy(COPY_STRING, (void *) url));
+		HTTP_CURL_OPT(URL, http_request_data_copy(COPY_STRING, url));
 	}
 
 	if (response) {
@@ -701,7 +703,7 @@ PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
 /* }}} */
 
 /* {{{ STATUS http_request_ex(CURL *, http_request_method, char *, http_request_body, HashTable, HashTable, phpstr *) */
-PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, const char *url, http_request_body *body, HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
+PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, char *url, http_request_body *body, HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
 {
 	STATUS status;
 	zend_bool clean_curl;
