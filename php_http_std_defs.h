@@ -46,10 +46,7 @@ typedef int STATUS;
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
 /* return object(values) */
 #define RETVAL_OBJECT(o) \
-	return_value->is_ref = 1; \
-	return_value->type = IS_OBJECT; \
-	return_value->value.obj = (o)->value.obj; \
-	zval_add_ref(&return_value)
+	RETVAL_OBJVAL((o)->value.obj)
 #define RETURN_OBJECT(o) \
 	RETVAL_OBJECT(o); \
 	return
@@ -57,6 +54,7 @@ typedef int STATUS;
 	return_value->is_ref = 1; \
 	return_value->type = IS_OBJECT; \
 	return_value->value.obj = (ov); \
+	zval_add_ref(&return_value); \
 	zend_objects_store_add_ref(return_value TSRMLS_CC)
 #define RETURN_OBJVAL(ov) \
 	RETVAL_OBJVAL(ov); \

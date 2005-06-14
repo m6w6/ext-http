@@ -2069,12 +2069,10 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 		getObject(http_request_object, obj);
 
 		message = GET_PROP(obj, responseMessage);
-		Z_TYPE_P(return_value) = IS_OBJECT;
-		return_value->is_ref = 1;
-		return_value->value.obj = message->value.obj;
-		zval_add_ref(&return_value);
+		RETVAL_OBJECT(message);
 	}
 }
+/* }}} */
 
 /* {{{ proto bool HttpRequest::send()
  *
@@ -2333,3 +2331,4 @@ PHP_METHOD(HttpRequestPool, socketRead)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+
