@@ -27,6 +27,7 @@
 #include "php_http_api.h"
 #include "php_http_cache_api.h"
 #include "php_http_request_api.h"
+#include "php_http_request_pool_api.h"
 #include "php_http_date_api.h"
 #include "php_http_headers_api.h"
 #include "php_http_message_api.h"
@@ -2161,7 +2162,7 @@ PHP_METHOD(HttpRequestPool, __destruct)
 
 	NO_ARGS;
 
-	http_request_pool_detach_all(&obj->pool);
+	//http_request_pool_detach_all(&obj->pool);
 }
 /* }}} */
 

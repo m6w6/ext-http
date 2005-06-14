@@ -27,6 +27,7 @@
 #include <curl/curl.h>
 
 #include "php_http_request_api.h"
+#include "php_http_request_pool_api.h"
 #include "phpstr/phpstr.h"
 
 typedef struct {

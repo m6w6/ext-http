@@ -32,6 +32,7 @@
 #include "php_http_std_defs.h"
 #include "php_http_request_object.h"
 #include "php_http_request_api.h"
+#include "php_http_request_pool_api.h"
 #include "php_http_api.h"
 #include "php_http_url_api.h"
 #include "php_http_message_api.h"
