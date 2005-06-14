@@ -185,7 +185,6 @@ PHP_MINIT_FUNCTION(http)
 {
 	http_module_number = module_number;
 
-	ZEND_INIT_MODULE_GLOBALS(http, NULL, NULL);
 	REGISTER_INI_ENTRIES();
 
 #ifdef HTTP_HAVE_CURL
