@@ -135,7 +135,7 @@ PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_D
 	fprintf(stderr, "Detaching %d requests from pool %p\n", count, pool);
 #endif
 	/*
-	 * we cannot apply a function to the llist which actually detaches 
+	 * we cannot apply a function to the llist which actually detaches
 	 * the curl handle *and* removes the llist element --
 	 * so let's get our hands dirty
 	 */
@@ -143,13 +143,14 @@ PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_D
 		int i = 0;
 		zend_llist_position pos;
 		zval **handle, **handles = emalloc(count * sizeof(zval *));
-		
+
 		for (handle = zend_llist_get_first_ex(&pool->handles, &pos); handle; handle = zend_llist_get_next_ex(&pool->handles, &pos)) {
 			handles[i++] = *handle;
 		}
 		for (i = 0; i < count; ++i) {
 			http_request_pool_detach(pool, handles[i]);
 		}
+		efree(handles);
 	}
 }
 
