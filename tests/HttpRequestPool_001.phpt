@@ -18,13 +18,17 @@ foreach ($urls as $url) {
 }
 $pool->send();
 foreach ($reqs as $req) {
-    echo $req->getResponseInfo('effective_url'), '=', 
+    echo $req->getResponseInfo('effective_url'), '=',
         $req->getResponseCode(), ':',
         $req->getResponseMessage()->getResponseCode(), "\n";
     $pool->detach($req);
     $pool->attach($req);
 }
-$pool->send();
+try {
+	$pool->send();
+} catch (HttpException $ex) {
+	echo "Catched\n";
+}
 $pool->reset();
 echo "Done\n";
 ?>
@@ -35,4 +39,5 @@ X-Powered-By: PHP/%s
 http://www.php.net/=200:200
 http://pear.php.net/=200:200
 http://pecl.php.net/=200:200
+Catched
 Done
