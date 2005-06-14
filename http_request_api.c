@@ -819,7 +819,7 @@ PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_
 }
 /* }}} */
 
-
+#ifdef ZEND_ENGINE_2
 /* {{{ http_request_pool *http_request_pool_init(http_request_pool *) */
 PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool TSRMLS_DC)
 {
@@ -1010,6 +1010,7 @@ static void http_request_pool_freehandle(zval **request, http_request_pool *pool
 #endif
 }
 /* }}} */
+#endif /* ZEND_ENGINE_2 */
 
 /* {{{ char *http_request_methods[] */
 static const char *const http_request_methods[] = {
