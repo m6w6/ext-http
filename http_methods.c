@@ -2142,13 +2142,46 @@ PHP_METHOD(HttpRequest, send)
 
 /* {{{ HttpRequestPool */
 
-/* {{{ proto void HttpRequestPool::__construct()
+/* {{{ proto void HttpRequestPool::__construct([HttpRequest request[, ...]])
  *
- * Instantiate a new HttpRequestPool object.
+ * Instantiate a new HttpRequestPool object.  An HttpRequestPool is
+ * able to send several HttpRequests in parallel.
+ *
+ * Example:
+ * <pre>
+ * <?php
+ *     $urls = array('www.php.net', 'pecl.php.net', 'pear.php.net')
+ *     $pool = new HttpRequestPool;
+ *     foreach ($urls as $url) {
+ *         $req[$url] = new HttpRequest("http://$url", HTTP_HEAD);
+ *         $pool->attach($req[$url]);
+ *     }
+ *     $pool->send();
+ *     foreach ($urls as $url) {
+ *         printf("%s (%s) is %s\n", 
+ *             $url, $req[$url]->getResponseInfo('effective_url'), 
+ *             $r->getResponseCode() == 200 ? 'alive' : 'not alive'
+ *         );
+ *     }
+ * ?>
+ * </pre>
  */
 PHP_METHOD(HttpRequestPool, __construct)
 {
-	NO_ARGS;
+	int argc = ZEND_NUM_ARGS();
+	zval ***argv = safe_emalloc(argc, sizeof(zval *), 0);
+	getObject(http_requestpool_object, obj);
+
+	if (SUCCESS == zend_get_parameters_array_ex(argc, argv)) {
+		int i;
+
+		for (i = 0; i < argc; ++i) {
+			if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), http_request_object_ce TSRMLS_CC)) {
+				http_request_pool_attach(&obj->pool, *(argv[i]));
+			}
+		}
+	}
+	efree(argv);
 }
 /* }}} */
 
@@ -2162,7 +2195,7 @@ PHP_METHOD(HttpRequestPool, __destruct)
 
 	NO_ARGS;
 
-	//http_request_pool_detach_all(&obj->pool);
+	http_request_pool_detach_all(&obj->pool);
 }
 /* }}} */
 

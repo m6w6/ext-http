@@ -36,12 +36,14 @@
 #ifdef ZEND_ENGINE_2
 #ifdef HTTP_HAVE_CURL
 
+HTTP_DECLARE_ARG_PASS_INFO();
+
 #define http_requestpool_object_declare_default_properties() _http_requestpool_object_declare_default_properties(TSRMLS_C)
 static inline void _http_requestpool_object_declare_default_properties(TSRMLS_D);
 
 zend_class_entry *http_requestpool_object_ce;
 zend_function_entry http_requestpool_object_fe[] = {
-	PHP_ME(HttpRequestPool, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpRequestPool, __construct, http_arg_pass_ref_all, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(HttpRequestPool, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
 	PHP_ME(HttpRequestPool, attach, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpRequestPool, detach, NULL, ZEND_ACC_PUBLIC)
