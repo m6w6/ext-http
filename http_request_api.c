@@ -177,7 +177,7 @@ void *_http_request_data_copy(int type, void *data TSRMLS_DC)
 			zend_llist_add_element(&HTTP_G(request).copies.contexts, &data);
 			return data;
 		}
-		
+
 		default:
 		{
 			return data;
@@ -868,14 +868,17 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 
 		if (SUCCESS != http_request_object_requesthandler(req, request, body)) {
 			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
-		} else if (CURLM_OK != (code = curl_multi_add_handle(pool->ch, req->ch))) {
-			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
 		} else {
-			req->pool = pool;
-			zval_add_ref(&request);
-			zend_llist_add_element(&pool->handles, &request);
-			zend_llist_add_element(&pool->bodies, &body);
-			return SUCCESS;
+			code = curl_multi_add_handle(pool->ch, req->ch);
+			if ((CURLM_OK != code) && (CURLM_CALL_MULTI_PERFORM != code)) {
+				http_error_ex(E_WARNING, HTTP_E_CURL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
+			} else {
+				req->pool = pool;
+				zval_add_ref(&request);
+				zend_llist_add_element(&pool->handles, &request);
+				zend_llist_add_element(&pool->bodies, &body);
+				return SUCCESS;
+			}
 		}
 		efree(body);
 	}
