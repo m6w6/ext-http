@@ -334,8 +334,9 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, const
 	}
 
 	if (response) {
-		HTTP_CURL_OPT(WRITEDATA, http_curl_callback_data(response));
-		HTTP_CURL_OPT(WRITEHEADER, http_curl_callback_data(response));
+		http_curl_callback_ctx *response_ctx = http_curl_callback_data(response);
+		HTTP_CURL_OPT(WRITEDATA, response_ctx);
+		HTTP_CURL_OPT(WRITEHEADER, response_ctx);
 	}
 
 	HTTP_CURL_OPT(HEADER, 0);
