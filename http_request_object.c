@@ -315,11 +315,12 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		add_assoc_zval(resp, "headers", headers);
 		add_assoc_stringl(resp, "body", body, body_len, 0);
 
-		/* XXX */
 		MAKE_STD_ZVAL(message);
-		Z_TYPE_P(message)  = IS_OBJECT;
+		message->type = IS_OBJECT;
+		message->is_ref = 1;
 		message->value.obj = http_message_object_from_msg(msg);
 		SET_PROP(obj, responseMessage, message);
+		zval_ptr_dtor(&message);
 
 		http_request_info(obj->ch, Z_ARRVAL_P(info));
 		SET_PROP(obj, responseInfo, info);

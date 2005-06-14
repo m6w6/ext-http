@@ -4,208 +4,29 @@ $Id$
 
 Issues I don't know how to solve yet are as follows:
 
-There's a mem-leak in http_request_object.c in the function 
-http_request_object_responsehandler when updating the
-ResponseMessage member with a new object.
-
 There are odd memory corruptions when HttpRequest objects
 are created with urls out of an array and attached to an
 HttpRequestPool object -- see HttpRequestPool_001.phpt
 
-The debug output on Win32:
-
-[Tue Jun 14 09:16:58 2005]  Script:  'ext\http\tests\HttpRequestPool_001.php'
+[Tue Jun 14 20:19:34 2005]  Script:  'tests/HttpRequestPool_001.php'
 ---------------------------------------
-D:\Daten\Source\php-5.0.4\ext\http\http_request_api.c(206) : Block 0x00FCF757 status:
+/home/mike/dev/cvs/pecl/http/http_request_api.c(184) : Block 0x082919EF status:
 Beginning:      Overrun (magic=0x12F8DC00, expected=0x7312F8DC)
       End:      Unknown
 ---------------------------------------
-[Tue Jun 14 09:16:58 2005]  Script:  'ext\http\tests\HttpRequestPool_001.php'
+[Tue Jun 14 20:19:34 2005]  Script:  'tests/HttpRequestPool_001.php'
 ---------------------------------------
-D:\Daten\Source\php-5.0.4\ext\http\http_request_api.c(206) : Block 0x00FCF8B7 status:
+/home/mike/dev/cvs/pecl/http/http_request_api.c(184) : Block 0x08291BE7 status:
 Beginning:      Overrun (magic=0x12F8DC00, expected=0x7312F8DC)
       End:      Unknown
 ---------------------------------------
-[Tue Jun 14 09:16:58 2005]  Script:  'ext\http\tests\HttpRequestPool_001.php'
+[Tue Jun 14 20:19:34 2005]  Script:  'tests/HttpRequestPool_001.php'
 ---------------------------------------
-D:\Daten\Source\php-5.0.4\ext\http\http_request_api.c(206) : Block 0x00FCFAE7 status:
+/home/mike/dev/cvs/pecl/http/http_request_api.c(184) : Block 0x08291D3F status:
 Beginning:      Overrun (magic=0x12F8DC00, expected=0x7312F8DC)
       End:      Unknown
 ---------------------------------------
-
-This is the valgrind output on linux (debian), most probably covering quite more problems:
-
-==13945== Invalid read of size 4
-==13945==    at 0x81191F1: _zval_ptr_dtor (zend_execute_API.c:384)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812BF51: _zend_hash_add_or_update (zend_hash.c:229)
-==13945==    by 0x812B386: zend_symtable_update (zend_hash.h:329)
-==13945==    by 0x812799A: add_assoc_string_ex (zend_API.c:850)
-==13945==    by 0x1BC349DF: _http_request_info (in /home/mike/lib/php/extensions/debug-zts-20041031/http.so)
-==13945==    by 0x1BC2ED1F: _http_request_object_responsehandler (http_request_object.c:323)
-==13945==    by 0x1BC354AF: _http_request_pool_responsehandler (http_request_api.c:988)
-==13945==    by 0x811C5CB: zend_llist_apply (zend_llist.c:191)
-==13945==    by 0x1BC352F8: _http_request_pool_send (http_request_api.c:939)
-==13945==    by 0x1BC2B4EA: zif_HttpRequestPool_send (http_methods.c:2230)
-==13945==    by 0x814BA8C: zend_do_fcall_common_helper_SPEC (zend_vm_execute.h:184)
-==13945==  Address 0x1BDF1EB0 is 8 bytes inside a block of size 16 free'd
-==13945==    at 0x1B904B04: free (vg_replace_malloc.c:152)
-==13945==    by 0x1BC2AF24: zif_HttpRequest_getResponseInfo (http_methods.c:2045)
-==13945==    by 0x814BA8C: zend_do_fcall_common_helper_SPEC (zend_vm_execute.h:184)
-==13945==    by 0x814B11B: execute (zend_vm_execute.h:87)
-==13945==    by 0x8125C8B: zend_execute_scripts (zend.c:1080)
-==13945==    by 0x80E3533: php_execute_script (main.c:1670)
-==13945==    by 0x81BDBCB: main (cgi_main.c:1572)
-==13945==
-==13945== Invalid write of size 4
-==13945==    at 0x81191F9: _zval_ptr_dtor (zend_execute_API.c:384)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812BF51: _zend_hash_add_or_update (zend_hash.c:229)
-==13945==    by 0x812B386: zend_symtable_update (zend_hash.h:329)
-==13945==    by 0x812799A: add_assoc_string_ex (zend_API.c:850)
-==13945==    by 0x1BC349DF: _http_request_info (in /home/mike/lib/php/extensions/debug-zts-20041031/http.so)
-==13945==    by 0x1BC2ED1F: _http_request_object_responsehandler (http_request_object.c:323)
-==13945==    by 0x1BC354AF: _http_request_pool_responsehandler (http_request_api.c:988)
-==13945==    by 0x811C5CB: zend_llist_apply (zend_llist.c:191)
-==13945==    by 0x1BC352F8: _http_request_pool_send (http_request_api.c:939)
-==13945==    by 0x1BC2B4EA: zif_HttpRequestPool_send (http_methods.c:2230)
-==13945==    by 0x814BA8C: zend_do_fcall_common_helper_SPEC (zend_vm_execute.h:184)
-==13945==  Address 0x1BDF1EB0 is 8 bytes inside a block of size 16 free'd
-==13945==    at 0x1B904B04: free (vg_replace_malloc.c:152)
-==13945==    by 0x1BC2AF24: zif_HttpRequest_getResponseInfo (http_methods.c:2045)
-==13945==    by 0x814BA8C: zend_do_fcall_common_helper_SPEC (zend_vm_execute.h:184)
-==13945==    by 0x814B11B: execute (zend_vm_execute.h:87)
-==13945==    by 0x8125C8B: zend_execute_scripts (zend.c:1080)
-==13945==    by 0x80E3533: php_execute_script (main.c:1670)
-==13945==    by 0x81BDBCB: main (cgi_main.c:1572)
-Done
-==13945==
-==13945== Invalid read of size 4
-==13945==    at 0x81191F1: _zval_ptr_dtor (zend_execute_API.c:384)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812C947: zend_hash_destroy (zend_hash.c:519)
-==13945==    by 0x1BC2E5C7: _http_request_object_free (http_request_object.c:198)
-==13945==    by 0x813D6F3: zend_objects_store_del_ref (zend_objects_API.c:161)
-==13945==    by 0x812335E: _zval_dtor_func (zend_variables.c:52)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812C947: zend_hash_destroy (zend_hash.c:519)
-==13945==    by 0x81233C2: _zval_dtor_func (zend_variables.c:43)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==  Address 0x1BDCA378 is 8 bytes inside a block of size 16 free'd
-==13945==    at 0x1B904B04: free (vg_replace_malloc.c:152)
-==13945==    by 0x1BC2806B: zif_HttpRequest___destruct (http_methods.c:1120)
-==13945==    by 0x8119F75: zend_call_function (zend_execute_API.c:867)
-==13945==    by 0x8135FAC: zend_call_method (zend_interfaces.c:87)
-==13945==    by 0x813AA2A: zend_objects_destroy_object (zend_objects.c:78)
-==13945==    by 0x813D433: zend_objects_store_call_destructors (zend_objects_API.c:54)
-==13945==    by 0x81187DA: shutdown_destructors (zend_execute_API.c:190)
-==13945==    by 0x81251DA: zend_call_destructors (zend.c:808)
-==13945==    by 0x80E28D8: php_request_shutdown (main.c:1201)
-==13945==    by 0x81BDA83: main (cgi_main.c:1630)
-==13945==
-==13945== Invalid write of size 4
-==13945==    at 0x81191F9: _zval_ptr_dtor (zend_execute_API.c:384)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812C947: zend_hash_destroy (zend_hash.c:519)
-==13945==    by 0x1BC2E5C7: _http_request_object_free (http_request_object.c:198)
-==13945==    by 0x813D6F3: zend_objects_store_del_ref (zend_objects_API.c:161)
-==13945==    by 0x812335E: _zval_dtor_func (zend_variables.c:52)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812C947: zend_hash_destroy (zend_hash.c:519)
-==13945==    by 0x81233C2: _zval_dtor_func (zend_variables.c:43)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==  Address 0x1BDCA378 is 8 bytes inside a block of size 16 free'd
-==13945==    at 0x1B904B04: free (vg_replace_malloc.c:152)
-==13945==    by 0x1BC2806B: zif_HttpRequest___destruct (http_methods.c:1120)
-==13945==    by 0x8119F75: zend_call_function (zend_execute_API.c:867)
-==13945==    by 0x8135FAC: zend_call_method (zend_interfaces.c:87)
-==13945==    by 0x813AA2A: zend_objects_destroy_object (zend_objects.c:78)
-==13945==    by 0x813D433: zend_objects_store_call_destructors (zend_objects_API.c:54)
-==13945==    by 0x81187DA: shutdown_destructors (zend_execute_API.c:190)
-==13945==    by 0x81251DA: zend_call_destructors (zend.c:808)
-==13945==    by 0x80E28D8: php_request_shutdown (main.c:1201)
-==13945==    by 0x81BDA83: main (cgi_main.c:1630)
-==13945==
-==13945== Invalid write of size 1
-==13945==    at 0x8119263: _zval_ptr_dtor (zend_execute_API.c:389)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812C947: zend_hash_destroy (zend_hash.c:519)
-==13945==    by 0x1BC2E5C7: _http_request_object_free (http_request_object.c:198)
-==13945==    by 0x813D6F3: zend_objects_store_del_ref (zend_objects_API.c:161)
-==13945==    by 0x812335E: _zval_dtor_func (zend_variables.c:52)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812C947: zend_hash_destroy (zend_hash.c:519)
-==13945==    by 0x81233C2: _zval_dtor_func (zend_variables.c:43)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==  Address 0x1BDCA37D is 13 bytes inside a block of size 16 free'd
-==13945==    at 0x1B904B04: free (vg_replace_malloc.c:152)
-==13945==    by 0x1BC2806B: zif_HttpRequest___destruct (http_methods.c:1120)
-==13945==    by 0x8119F75: zend_call_function (zend_execute_API.c:867)
-==13945==    by 0x8135FAC: zend_call_method (zend_interfaces.c:87)
-==13945==    by 0x813AA2A: zend_objects_destroy_object (zend_objects.c:78)
-==13945==    by 0x813D433: zend_objects_store_call_destructors (zend_objects_API.c:54)
-==13945==    by 0x81187DA: shutdown_destructors (zend_execute_API.c:190)
-==13945==    by 0x81251DA: zend_call_destructors (zend.c:808)
-==13945==    by 0x80E28D8: php_request_shutdown (main.c:1201)
-==13945==    by 0x81BDA83: main (cgi_main.c:1630)
-==13945==
-==13945== Invalid read of size 4
-==13945==    at 0x81191F1: _zval_ptr_dtor (zend_execute_API.c:384)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x811C41D: zend_llist_destroy (zend_llist.c:114)
-==13945==    by 0x811C433: zend_llist_clean (zend_llist.c:126)
-==13945==    by 0x1BC3532B: _http_request_pool_dtor (http_request_api.c:951)
-==13945==    by 0x1BC2F8F2: _http_requestpool_object_free (http_requestpool_object.c:99)
-==13945==    by 0x813D6F3: zend_objects_store_del_ref (zend_objects_API.c:161)
-==13945==    by 0x812335E: _zval_dtor_func (zend_variables.c:52)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812CAF7: zend_hash_apply_deleter (zend_hash.c:574)
-==13945==    by 0x812CBAB: zend_hash_graceful_reverse_destroy (zend_hash.c:640)
-==13945==  Address 0x1BDC17B0 is 8 bytes inside a block of size 16 free'd
-==13945==    at 0x1B904B04: free (vg_replace_malloc.c:152)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812C947: zend_hash_destroy (zend_hash.c:519)
-==13945==    by 0x81233C2: _zval_dtor_func (zend_variables.c:43)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812CAF7: zend_hash_apply_deleter (zend_hash.c:574)
-==13945==    by 0x812CBAB: zend_hash_graceful_reverse_destroy (zend_hash.c:640)
-==13945==    by 0x8119067: shutdown_executor (zend_execute_API.c:216)
-==13945==    by 0x81252C8: zend_deactivate (zend.c:823)
-==13945==    by 0x80E2313: php_request_shutdown (main.c:1237)
-==13945==    by 0x81BDA83: main (cgi_main.c:1630)
-==13945==
-==13945== Invalid write of size 4
-==13945==    at 0x81191F9: _zval_ptr_dtor (zend_execute_API.c:384)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x811C41D: zend_llist_destroy (zend_llist.c:114)
-==13945==    by 0x811C433: zend_llist_clean (zend_llist.c:126)
-==13945==    by 0x1BC3532B: _http_request_pool_dtor (http_request_api.c:951)
-==13945==    by 0x1BC2F8F2: _http_requestpool_object_free (http_requestpool_object.c:99)
-==13945==    by 0x813D6F3: zend_objects_store_del_ref (zend_objects_API.c:161)
-==13945==    by 0x812335E: _zval_dtor_func (zend_variables.c:52)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812CAF7: zend_hash_apply_deleter (zend_hash.c:574)
-==13945==    by 0x812CBAB: zend_hash_graceful_reverse_destroy (zend_hash.c:640)
-==13945==  Address 0x1BDC17B0 is 8 bytes inside a block of size 16 free'd
-==13945==    at 0x1B904B04: free (vg_replace_malloc.c:152)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812C947: zend_hash_destroy (zend_hash.c:519)
-==13945==    by 0x81233C2: _zval_dtor_func (zend_variables.c:43)
-==13945==    by 0x811925A: _zval_ptr_dtor (zend_variables.h:35)
-==13945==    by 0x81236C2: _zval_ptr_dtor_wrapper (zend_variables.c:175)
-==13945==    by 0x812CAF7: zend_hash_apply_deleter (zend_hash.c:574)
-==13945==    by 0x812CBAB: zend_hash_graceful_reverse_destroy (zend_hash.c:640)
-==13945==    by 0x8119067: shutdown_executor (zend_execute_API.c:216)
-==13945==    by 0x81252C8: zend_deactivate (zend.c:823)
-==13945==    by 0x80E2313: php_request_shutdown (main.c:1237)
-==13945==    by 0x81BDA83: main (cgi_main.c:1630)
+/home/mike/dev/cvs/pecl/http/http_request_api.c(156) :  Freeing 0x08291D68 (36 bytes), script=tests/HttpRequestPool_001.php
+Last leak repeated 2 times
+=== Total 3 memory leaks detected ===
 
