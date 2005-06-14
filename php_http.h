@@ -80,7 +80,7 @@ ZEND_END_MODULE_GLOBALS(http)
 #	define HTTP_GLOBALS ((zend_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(http_globals_id)])
 #else
 #	define HTTP_G(v) (http_globals.v)
-#	define HTTP_GLOBALS http_globals
+#	define HTTP_GLOBALS (&http_globals)
 #endif
 #define getGlobals(G) zend_http_globals *G = HTTP_GLOBALS;
 
