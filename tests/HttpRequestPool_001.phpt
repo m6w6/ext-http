@@ -23,13 +23,20 @@ foreach ($reqs as $req) {
         $req->getResponseMessage()->getResponseCode(), "\n";
     $pool->detach($req);
     $pool->attach($req);
+    $pool->detach($req);
+    $pool->attach($req);
+    $pool->detach($req);
+    $pool->attach($req);
+    $pool->detach($req);
+    $pool->attach($req);
+    $req->getResponseMessage()->getResponseCode();
+    $req->getResponseMessage()->getResponseCode();
+    $req->getResponseMessage()->getResponseCode();
+    $req->getResponseMessage()->getResponseCode();
 }
-try {
-	$pool->send();
-} catch (HttpException $ex) {
-	echo "Catched\n";
-}
+$pool->send();
 $pool->reset();
+$pool->attach($req);
 echo "Done\n";
 ?>
 --EXPECTF--
@@ -39,5 +46,4 @@ X-Powered-By: PHP/%s
 http://www.php.net/=200:200
 http://pear.php.net/=200:200
 http://pecl.php.net/=200:200
-Catched
 Done
