@@ -154,7 +154,6 @@ void *_http_request_data_copy(int type, void *data TSRMLS_DC)
 		case COPY_STRING:
 		{
 			char *new_str = estrdup(data);
-			//fprintf(stderr, "COPY STRING: %p (%s)\n", new_str, new_str);
 			zend_llist_add_element(&HTTP_G(request).copies.strings, &new_str);
 			return new_str;
 		}
@@ -414,7 +413,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	/* compress, empty string enables deflate and gzip */
 	if (zoption = http_curl_getopt(options, "compress", IS_BOOL)) {
 		if (Z_LVAL_P(zoption)) {
-			HTTP_CURL_OPT(ENCODING, http_request_data_copy(COPY_STRING, ""));
+			HTTP_CURL_OPT(ENCODING, "");
 		}
 	}
 
@@ -438,7 +437,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	if (zoption = http_curl_getopt(options, "useragent", IS_STRING)) {
 		HTTP_CURL_OPT(USERAGENT, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 	} else {
-		HTTP_CURL_OPT(USERAGENT, http_request_data_copy(COPY_STRING, "PECL::HTTP/" HTTP_PEXT_VERSION " (PHP/" PHP_VERSION ")"));
+		HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" HTTP_PEXT_VERSION " (PHP/" PHP_VERSION ")");
 	}
 
 	/* additional headers, array('name' => 'value') */
