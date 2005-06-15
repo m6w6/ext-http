@@ -15,7 +15,7 @@
 * Negotiating user preferred language/charset
 * Convenient request functions built upon libcurl
 * HTTP auth hooks (Basic)
-* PHP5 classes: HttpUtil, HttpResponse, HttpRequest, HttpMessage
+* PHP5 classes: HttpUtil, HttpResponse, HttpRequest, HttpRequestPool, HttpMessage
 ]]>
   </description>
   <license>PHP License 3.0</license>
@@ -30,19 +30,12 @@
   </maintainers>
 
   <release>
-    <version>0.8.0</version>
-    <date>2005-06-06</date>
+    <version>0.9.0</version>
+    <date>2005-06-15</date>
     <state>beta</state>
     <notes><![CDATA[
-* renamed ob_httpetaghandler to ob_etaghandler
-* http_chunked_decode() now silently passes through apparently not encoded data
-* added HttpMessage class and HttpException (PHP5 only)
-* added http.cache_log INI directive
-* added throttling capability to http_send()/HttpResponse
-* added hooks for custom request methods
-* added PUT support
-* added http_match_request_header()
-* added clean_ob parameter to HttpResponse::send()
+* added HttpRequestPool class (PHP5)
+* added missing files to package.xml
 ]]>
     </notes>
   </release>
@@ -60,6 +53,9 @@
       <file role="src">phpstr/phpstr.h</file>
       <file role="src">phpstr/phpstr.c</file>
       
+      <file role="src">missing.h</file>
+      <file role="src">missing.c</file>
+      
       <file role="src">php_http.h</file>
       <file role="src">php_http_std_defs.h</file>
       <file role="src">php_http_api.h</file>
@@ -69,11 +65,13 @@
       <file role="src">php_http_headers_api.h</file>
       <file role="src">php_http_message_api.h</file>
       <file role="src">php_http_request_api.h</file>
+      <file role="src">php_http_request_pool_api.h</file>
       <file role="src">php_http_send_api.h</file>
       <file role="src">php_http_url_api.h</file>
       <file role="src">php_http_util_object.h</file>
       <file role="src">php_http_message_object.h</file>
       <file role="src">php_http_request_object.h</file>
+      <file role="src">php_http_requestpool_object.h</file>
       <file role="src">php_http_response_object.h</file>
       <file role="src">php_http_exception_object.h</file>
       
@@ -87,11 +85,13 @@
       <file role="src">http_headers_api.c</file>
       <file role="src">http_message_api.c</file>
       <file role="src">http_request_api.c</file>
+      <file role="src">http_request_pool_api.c</file>
       <file role="src">http_send_api.c</file>
       <file role="src">http_url_api.c</file>
       <file role="src">http_util_object.c</file>
       <file role="src">http_message_object.c</file>
       <file role="src">http_request_object.c</file>
+      <file role="src">http_requestpool_object.c</file>
       <file role="src">http_response_object.c</file>
       <file role="src">http_exception_object.c</file>
       
