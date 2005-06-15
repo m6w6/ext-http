@@ -287,6 +287,24 @@ typedef int STATUS;
 #endif /* HTTP_HAVE_CURL */
 
 
+#ifndef TSRMLS_FETCH_FROM_CTX
+#	ifdef ZTS
+#		define TSRMLS_FETCH_FROM_CTX(ctx)	void ***tsrm_ls = (void ***) ctx
+#	else
+#		define TSRMLS_FETCH_FROM_CTX(ctx)
+#	endif
+#endif
+
+#ifndef TSRMLS_SET_CTX
+#	ifdef ZTS
+#		define TSRMLS_SET_CTX(ctx)	(void ***) ctx = tsrm_ls
+#	else
+#		define TSRMLS_SET_CTX(ctx)
+#	endif
+#endif
+
+
+
 #endif /* PHP_HTTP_STD_DEFS_H */
 
 /*
