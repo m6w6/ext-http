@@ -4,29 +4,4 @@ $Id$
 
 Issues I don't know how to solve yet are as follows:
 
-There are odd memory corruptions when HttpRequest objects
-are created with urls out of an array and attached to an
-HttpRequestPool object -- see HttpRequestPool_001.phpt
-
-[Tue Jun 14 20:19:34 2005]  Script:  'tests/HttpRequestPool_001.php'
----------------------------------------
-/home/mike/dev/cvs/pecl/http/http_request_api.c(184) : Block 0x082919EF status:
-Beginning:      Overrun (magic=0x12F8DC00, expected=0x7312F8DC)
-      End:      Unknown
----------------------------------------
-[Tue Jun 14 20:19:34 2005]  Script:  'tests/HttpRequestPool_001.php'
----------------------------------------
-/home/mike/dev/cvs/pecl/http/http_request_api.c(184) : Block 0x08291BE7 status:
-Beginning:      Overrun (magic=0x12F8DC00, expected=0x7312F8DC)
-      End:      Unknown
----------------------------------------
-[Tue Jun 14 20:19:34 2005]  Script:  'tests/HttpRequestPool_001.php'
----------------------------------------
-/home/mike/dev/cvs/pecl/http/http_request_api.c(184) : Block 0x08291D3F status:
-Beginning:      Overrun (magic=0x12F8DC00, expected=0x7312F8DC)
-      End:      Unknown
----------------------------------------
-/home/mike/dev/cvs/pecl/http/http_request_api.c(156) :  Freeing 0x08291D68 (36 bytes), script=tests/HttpRequestPool_001.php
-Last leak repeated 2 times
-=== Total 3 memory leaks detected ===
-
+There are random segfaults with PHP-5.1 and HttpRequestPool.
