@@ -492,8 +492,41 @@ GET example:</p><pre><blockquote><code><span style="color: #000000"><br />
 </code></blockquote><br />
 <br />
 </pre></p>
+<h2 id="HttpRequestPool" class="o">HttpRequestPool</h2>
+<h3 id="HttpRequestPool___construct">void HttpRequestPool::__construct()</h3>
+<p>Instantiate a new HttpRequestPool object.  An HttpRequestPool is<br />
+able to send several HttpRequests in parallel.<br />
+<br />
+Example:</p><pre><blockquote><code><span style="color: #000000"><br />
+<span style="color: #0000BB">&lt;?php<br />&nbsp;&nbsp;&nbsp;&nbsp;$urls </span><span style="color: #007700">= array(</span><span style="color: #DD0000">'www.php.net'</span><span style="color: #007700">, </span><span style="color: #DD0000">'pecl.php.net'</span><span style="color: #007700">, </span><span style="color: #DD0000">'pear.php.net'</span><span style="color: #007700">)<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool </span><span style="color: #007700">= new </span><span style="color: #0000BB">HttpRequestPool</span><span style="color: #007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;foreach (</span><span style="color: #0000BB">$urls </span><span style="color: #007700">as </span><span style="color: #0000BB">$url</span><span style="color: #007700">) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$req</span><span style="color: #007700">[</span><span style="color: #0000BB">$url</span><span style="color: #007700">] = new </span><span style="color: #0000BB">HttpRequest</span><span style="color: #007700">(</span><span style="color: #DD0000">"http://$url"</span><span style="color: #007700">, </span><span style="color: #0000BB">HTTP_HEAD</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">attach</span><span style="color: #007700">(</span><span style="color: #0000BB">$req</span><span style="color: #007700">[</span><span style="color: #0000BB">$url</span><span style="color: #007700">]);<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">send</span><span style="color: #007700">();<br />&nbsp;&nbsp;&nbsp;&nbsp;foreach (</span><span style="color: #0000BB">$urls </span><span style="color: #007700">as </span><span style="color: #0000BB">$url</span><span style="color: #007700">) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">printf</span><span style="color: #007700">(</span><span style="color: #DD0000">"%s (%s) is %s\n"</span><span style="color: #007700">, <br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$url</span><span style="color: #007700">, </span><span style="color: #0000BB">$req</span><span style="color: #007700">[</span><span style="color: #0000BB">$url</span><span style="color: #007700">]-&gt;</span><span style="color: #0000BB">getResponseInfo</span><span style="color: #007700">(</span><span style="color: #DD0000">'effective_url'</span><span style="color: #007700">), <br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">getResponseCode</span><span style="color: #007700">() == </span><span style="color: #0000BB">200 </span><span style="color: #007700">? </span><span style="color: #DD0000">'alive' </span><span style="color: #007700">: </span><span style="color: #DD0000">'not alive'<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br /></span><span style="color: #0000BB">?&gt;</span><br />
+</span><br />
+</code></blockquote><br />
+<br />
+</pre></p>
+<h3 id="HttpRequestPool___destruct">void HttpRequestPool::__destruct()</h3>
+<p>Clean up HttpRequestPool object.</p>
+<h3 id="HttpRequestPool_reset">void HttpRequestPool::reset()</h3>
+<p>Detach all attached HttpRequest objects.</p>
+<h3 id="HttpRequestPool_attach">bool HttpRequestPool::attach(HttpRequest request)</h3>
+<p>Attach an HttpRequest object to this HttpRequestPool.<br />
+NOTE: set all options prior attaching!</p>
+<h3 id="HttpRequestPool_detach">bool HttpRequestPool::detach(HttpRequest request)</h3>
+<p>Detach an HttpRequest object from this HttpRequestPool.</p>
+<h3 id="HttpRequestPool_send">bool HttpRequestPool::send()</h3>
+<p>Send all attached HttpRequest objects in parallel.</p>
+<h3 id="HttpRequestPool_socketSend">protected bool HttpRequestPool::socketSend()</h3>
+<p>Usage:</p><pre><blockquote><code><span style="color: #000000"><br />
+<span style="color: #0000BB">&lt;?php<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">while (</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">socketSend</span><span style="color: #007700">()) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">do_something_else</span><span style="color: #007700">();<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (!</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">socketSelect</span><span style="color: #007700">()) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;die(</span><span style="color: #DD0000">'Socket error'</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">socketRead</span><span style="color: #007700">();<br /></span><span style="color: #0000BB">?&gt;</span><br />
+</span><br />
+</code></blockquote><br />
+<br />
+</pre></p>
+<h3 id="HttpRequestPool_socketSelect">protected bool HttpRequestPool::socketSelect()</h3>
+<p>See HttpRequestPool::socketSend().</p>
+<h3 id="HttpRequestPool_socketRead">protected void HttpRequestPool::socketRead()</h3>
+<p>See HttpRequestPool::socketSend().</p>
 <hr noshade>
-    <p><b>Generated at: Mon,  6 Jun 2005 13:44:11 +0200</b></p>
+    <p><b>Generated at: Tue, 14 Jun 2005 16:56:52 +0200</b></p>
 </body>
 </html>
 
