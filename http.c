@@ -39,6 +39,7 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_send_api.h"
+#include "php_http_request_api.h"
 
 #ifdef ZEND_ENGINE_2
 #	include "php_http_util_object.h"
@@ -146,9 +147,11 @@ static inline void http_globals_free(zend_http_globals *G)
 	STR_FREE(G->send.content_type);
 	STR_FREE(G->send.unquoted_etag);
 	zend_hash_destroy(&G->request.methods.custom);
+#ifdef HTTP_HAVE_CURL
 	zend_llist_clean(&G->request.copies.strings);
 	zend_llist_clean(&G->request.copies.slists);
 	zend_llist_clean(&G->request.copies.contexts);
+#endif
 }
 /* }}} */
 
