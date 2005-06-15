@@ -2069,7 +2069,11 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 		getObject(http_request_object, obj);
 
 		message = GET_PROP(obj, responseMessage);
-		RETVAL_OBJECT(message);
+		if (Z_TYPE_P(message) == IS_OBJECT) {
+			RETVAL_OBJECT(message);
+		} else {
+			RETURN_NULL();
+		}
 	}
 }
 /* }}} */
