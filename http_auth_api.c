@@ -61,7 +61,7 @@ PHP_HTTP_API STATUS _http_auth_basic_credentials(char **user, char **pass TSRMLS
 		HTTP_GSC(zauth, "HTTP_AUTHORIZATION", FAILURE);
 		{
 			int decoded_len;
-			char *colon, *decoded = php_base64_decode(Z_STRVAL_P(zauth), Z_STRLEN_P(zauth), &decoded_len);
+			char *colon, *decoded = (char *) php_base64_decode((const unsigned char *) Z_STRVAL_P(zauth), Z_STRLEN_P(zauth), &decoded_len);
 
 			if (colon = strchr(decoded + 6, ':')) {
 				*user = estrndup(decoded + 6, colon - decoded - 6);

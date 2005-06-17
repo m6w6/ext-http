@@ -181,7 +181,6 @@ void *_http_request_data_copy(int type, void *data TSRMLS_DC)
 /* {{{ void http_request_data_free_string(char **) */
 void _http_request_data_free_string(void *string)
 {
-	//fprintf(stderr, "FREE STRING %p (%s)\n", *((char **)string), *((char **)string));
 	efree(*((char **)string));
 }
 /* }}} */
@@ -863,7 +862,6 @@ static size_t http_curl_write_callback(char *buf, size_t len, size_t n, void *s)
 /* {{{ static size_t http_curl_read_callback(void *, size_t, size_t, void *) */
 static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *s)
 {
-	static char *offset = NULL, *original = NULL;
 	HTTP_CURL_CALLBACK_DATA(s, http_request_body *, body);
 
 	if (body->type != HTTP_REQUEST_BODY_UPLOADFILE) {

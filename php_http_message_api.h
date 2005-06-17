@@ -35,7 +35,7 @@ struct _http_message {
 
 	union {
 		struct {
-			float http_version;
+			double http_version;
 			char *method;
 			char *URI;
 		} request;

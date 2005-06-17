@@ -283,11 +283,11 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 			switch (msg->type)
 			{
 				case HTTP_MSG_REQUEST:
-					msg->info.request.http_version = (float) Z_DVAL_P(value);
+					msg->info.request.http_version = Z_DVAL_P(value);
 				break;
 
 				case HTTP_MSG_RESPONSE:
-					msg->info.response.http_version = (float) Z_DVAL_P(value);
+					msg->info.response.http_version = Z_DVAL_P(value);
 				break;
 			}
 		break;

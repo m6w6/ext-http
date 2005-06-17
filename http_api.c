@@ -41,13 +41,14 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
 	if (key && key_len) {
-		unsigned i, wasalpha;
-		if (wasalpha = isalpha(key[0])) {
-			key[0] = uctitle ? toupper(key[0]) : tolower(key[0]);
+		size_t i;
+		int wasalpha;
+		if (wasalpha = isalpha((int) key[0])) {
+			key[0] = (char) (uctitle ? toupper((int) key[0]) : tolower((int) key[0]));
 		}
 		for (i = 1; i < key_len; i++) {
-			if (isalpha(key[i])) {
-				key[i] = ((!wasalpha) && uctitle) ? toupper(key[i]) : tolower(key[i]);
+			if (isalpha((int) key[i])) {
+				key[i] = (char) (((!wasalpha) && uctitle) ? toupper((int) key[i]) : tolower((int) key[i]));
 				wasalpha = 1;
 			} else {
 				if (xhyphen && (key[i] == '_')) {

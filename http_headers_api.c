@@ -370,7 +370,7 @@ PHP_HTTP_API void _http_parse_headers_default_callback(const char *http_line, Ha
 PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool prettify TSRMLS_DC)
 {
 	char *key = NULL;
-	long idx = 0;
+	ulong idx = 0;
 	zval array;
 
 	Z_ARRVAL(array) = headers;

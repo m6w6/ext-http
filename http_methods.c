@@ -1133,7 +1133,7 @@ PHP_METHOD(HttpRequest, __destruct)
 PHP_METHOD(HttpRequest, setOptions)
 {
 	char *key = NULL;
-	long idx = 0;
+	ulong idx = 0;
 	zval *opts, *old_opts, **opt;
 	getObject(http_request_object, obj);
 

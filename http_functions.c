@@ -460,7 +460,7 @@ PHP_FUNCTION(http_redirect)
 	size_t query_len = 0;
 	zend_bool session = 0, permanent = 0;
 	zval *params = NULL;
-	char *query, *url, *URI,
+	char *query = NULL, *url = NULL, *URI,
 		LOC[HTTP_URI_MAXLEN + sizeof("Location: ")],
 		RED[HTTP_URI_MAXLEN * 2 + sizeof("Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n")];
 
