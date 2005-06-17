@@ -410,10 +410,10 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 #endif
 
 	/* compress, empty string enables deflate and gzip */
-	if (zoption = http_curl_getopt(options, "compress", IS_BOOL)) {
-		if (Z_LVAL_P(zoption)) {
-			HTTP_CURL_OPT(ENCODING, "");
-		}
+	if ((zoption = http_curl_getopt(options, "compress", IS_BOOL)) && Z_LVAL_P(zoption)) {
+		HTTP_CURL_OPT(ENCODING, "");
+	} else {
+		HTTP_CURL_OPT(ENCODING, 0);
 	}
 
 	/* redirects, defaults to 0 */
@@ -430,6 +430,8 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	/* referer */
 	if (zoption = http_curl_getopt(options, "referer", IS_STRING)) {
 		HTTP_CURL_OPT(REFERER, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
+	} else {
+		HTTP_CURL_OPT(REFERER, NULL);
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
@@ -489,34 +491,60 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 			HTTP_CURL_OPT(COOKIE, http_request_data_copy(COPY_STRING, qstr->data));
 		}
 		phpstr_free(qstr);
+	} else {
+		HTTP_CURL_OPT(COOKIE, NULL);
 	}
 
-	/* cookiestore */
-	if (zoption = http_curl_getopt(options, "cookiestore", IS_STRING)) {
+	/* session cookies */
+	if (zoption = http_curl_getopt(options, "cookiesession", IS_BOOL)) {
+		if (Z_LVAL_P(zoption)) {
+			/* accept cookies for this session */
+			HTTP_CURL_OPT(COOKIEFILE, "");
+		} else {
+			/* reset session cookies */
+			HTTP_CURL_OPT(COOKIESESSION, 1);
+		}
+	} else {
+		HTTP_CURL_OPT(COOKIEFILE, NULL);
+	}
+	
+	/* cookiestore, read initial cookies from that file and store cookies back into that file */
+	if ((zoption = http_curl_getopt(options, "cookiestore", IS_STRING)) && Z_STRLEN_P(zoption)) {
 		HTTP_CURL_OPT(COOKIEFILE, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 		HTTP_CURL_OPT(COOKIEJAR, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
+	} else {
+		HTTP_CURL_OPT(COOKIEFILE, NULL);
+		HTTP_CURL_OPT(COOKIEJAR, NULL);
 	}
 
 	/* resume */
 	if (zoption = http_curl_getopt(options, "resume", IS_LONG)) {
 		range_req = 1;
 		HTTP_CURL_OPT(RESUME_FROM, Z_LVAL_P(zoption));
+	} else {
+		HTTP_CURL_OPT(RESUME_FROM, 0);
 	}
 
 	/* maxfilesize */
 	if (zoption = http_curl_getopt(options, "maxfilesize", IS_LONG)) {
 		HTTP_CURL_OPT(MAXFILESIZE, Z_LVAL_P(zoption));
+	} else {
+		HTTP_CURL_OPT(MAXFILESIZE, 0);
 	}
 
 	/* lastmodified */
 	if (zoption = http_curl_getopt(options, "lastmodified", IS_LONG)) {
 		HTTP_CURL_OPT(TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
 		HTTP_CURL_OPT(TIMEVALUE, Z_LVAL_P(zoption));
+	} else {
+		HTTP_CURL_OPT(TIMEVALUE, 0);
 	}
 
 	/* timeout */
 	if (zoption = http_curl_getopt(options, "timeout", IS_LONG)) {
 		HTTP_CURL_OPT(TIMEOUT, Z_LVAL_P(zoption));
+	} else {
+		HTTP_CURL_OPT(TIMEOUT, 1);
 	}
 
 	/* connecttimeout, defaults to 1 */
