@@ -41,7 +41,7 @@ struct _http_message {
 		} request;
 
 		struct {
-			float http_version;
+			double http_version;
 			int code;
 		} response;
 
