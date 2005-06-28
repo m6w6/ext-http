@@ -540,18 +540,18 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		HTTP_CURL_OPT(TIMEVALUE, 0);
 	}
 
-	/* timeout */
+	/* timeout, defaults to 3 */
 	if (zoption = http_curl_getopt(options, "timeout", IS_LONG)) {
 		HTTP_CURL_OPT(TIMEOUT, Z_LVAL_P(zoption));
 	} else {
-		HTTP_CURL_OPT(TIMEOUT, 1);
+		HTTP_CURL_OPT(TIMEOUT, 3);
 	}
 
-	/* connecttimeout, defaults to 1 */
+	/* connecttimeout, defaults to 3 */
 	if (zoption = http_curl_getopt(options, "connecttimeout", IS_LONG)) {
 		HTTP_CURL_OPT(CONNECTTIMEOUT, Z_LVAL_P(zoption));
 	} else {
-		HTTP_CURL_OPT(CONNECTTIMEOUT, 1);
+		HTTP_CURL_OPT(CONNECTTIMEOUT, 3);
 	}
 
 	/* ssl */
