@@ -19,16 +19,15 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
-
-#include "php_http.h"
-#include "php_http_std_defs.h"
 
 #ifdef ZEND_ENGINE_2
 
-#include "php_http_exception_object.h"
 #include "zend_exceptions.h"
+
+#include "php_http.h"
+#include "php_http_std_defs.h"
+#include "php_http_exception_object.h"
 
 zend_class_entry *http_exception_object_ce;
 zend_function_entry http_exception_object_fe[] = {{NULL, NULL, NULL}};
@@ -36,7 +35,7 @@ zend_function_entry http_exception_object_fe[] = {{NULL, NULL, NULL}};
 void _http_exception_object_init(INIT_FUNC_ARGS)
 {
 	HTTP_REGISTER_CLASS(HttpException, http_exception_object, zend_exception_get_default(), 0);
-	
+
 	HTTP_LONG_CONSTANT("HTTP_E_UNKNOWN", HTTP_E_UNKOWN);
 	HTTP_LONG_CONSTANT("HTTP_E_PARSE", HTTP_E_PARSE);
 	HTTP_LONG_CONSTANT("HTTP_E_HEADER", HTTP_E_HEADER);

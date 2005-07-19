@@ -18,6 +18,15 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
+#include "php.h"
+
+#include "php_http.h"
+#include "php_http_std_defs.h"
+#include "php_http_api.h"
+#include "php_http_request_api.h"
+#include "php_http_url_api.h"
+
+#include "phpstr/phpstr.h"
 
 #ifdef PHP_WIN32
 #	include <winsock2.h>
@@ -25,20 +34,11 @@
 
 #include <curl/curl.h>
 
-#include "phpstr/phpstr.h"
-
-#include "php.h"
-#include "php_http.h"
-#include "php_http_std_defs.h"
-#include "php_http_api.h"
-#include "php_http_request_api.h"
-#include "php_http_url_api.h"
+ZEND_EXTERN_MODULE_GLOBALS(http);
 
 #ifndef HTTP_CURL_USE_ZEND_MM
 #	define HTTP_CURL_USE_ZEND_MM 0
 #endif
-
-ZEND_EXTERN_MODULE_GLOBALS(http)
 
 #if LIBCURL_VERSION_NUM < 0x070c00
 #	define curl_easy_strerror(code) HTTP_G(request).error
@@ -507,7 +507,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	} else {
 		HTTP_CURL_OPT(COOKIEFILE, NULL);
 	}
-	
+
 	/* cookiestore, read initial cookies from that file and store cookies back into that file */
 	if ((zoption = http_curl_getopt(options, "cookiestore", IS_STRING)) && Z_STRLEN_P(zoption)) {
 		HTTP_CURL_OPT(COOKIEFILE, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));

@@ -18,8 +18,10 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
+
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
+
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
@@ -27,8 +29,6 @@
 #include "php_http_request_pool_api.h"
 #include "php_http_request_object.h"
 #include "php_http_requestpool_object.h"
-
-#ifdef ZEND_ENGINE_2
 
 #ifndef HTTP_DEBUG_REQPOOLS
 #	define HTTP_DEBUG_REQPOOLS 0
@@ -240,7 +240,7 @@ static int http_request_pool_compare_handles(void *h1, void *h2)
 }
 /* }}} */
 
-#endif /* ZEND_ENGINE_2 */
+#endif /* ZEND_ENGINE_2 && HTTP_HAVE_CURL */
 
 
 /*

@@ -19,21 +19,11 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
-#ifdef HTTP_HAVE_CURL
-#	ifdef PHP_WIN32
-#		include <winsock2.h>
-#	endif
-#	include <curl/curl.h>
-#endif
-
-#include <ctype.h>
-
 #include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
 
 #include "SAPI.h"
+#include "php_ini.h"
+#include "ext/standard/info.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
@@ -53,6 +43,15 @@
 #endif
 
 #include "phpstr/phpstr.h"
+
+#ifdef HTTP_HAVE_CURL
+#	ifdef PHP_WIN32
+#		include <winsock2.h>
+#	endif
+#	include <curl/curl.h>
+#endif
+
+#include <ctype.h>
 
 ZEND_DECLARE_MODULE_GLOBALS(http);
 HTTP_DECLARE_ARG_PASS_INFO();

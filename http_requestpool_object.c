@@ -19,22 +19,18 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
-#ifdef HTTP_HAVE_CURL
-#	ifdef PHP_WIN32
-#		include <winsock2.h>
-#	endif
-#	include <curl/curl.h>
-#endif
-
 #include "php.h"
+
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 
 #include "php_http_std_defs.h"
 #include "php_http_requestpool_object.h"
 #include "php_http_request_pool_api.h"
 
-#ifdef ZEND_ENGINE_2
-#ifdef HTTP_HAVE_CURL
+#ifdef PHP_WIN32
+#	include <winsock2.h>
+#endif
+#include <curl/curl.h>
 
 HTTP_DECLARE_ARG_PASS_INFO();
 
@@ -102,8 +98,7 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
 	efree(o);
 }
 
-#endif /* HTTP_HAVE_CURL */
-#endif /* ZEND_ENGINE_2 */
+#endif /* ZEND_ENGINE_2 && HTTP_HAVE_CURL */
 
 /*
  * Local variables:

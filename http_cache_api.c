@@ -18,13 +18,12 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
+
+#include "SAPI.h"
 #include "php_streams.h"
 #include "php_output.h"
 #include "ext/standard/md5.h"
-
-#include "SAPI.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"

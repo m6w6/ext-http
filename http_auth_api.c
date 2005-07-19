@@ -18,11 +18,10 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
-#include "ext/standard/base64.h"
 
 #include "SAPI.h"
+#include "ext/standard/base64.h"
 
 #include "php_http.h"
 #include "php_http_api.h"

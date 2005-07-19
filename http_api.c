@@ -18,13 +18,10 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
-#include <ctype.h>
-
 #include "php.h"
-#include "ext/standard/url.h"
 
 #include "SAPI.h"
+#include "ext/standard/url.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
@@ -36,6 +33,8 @@
 #	include "zend_exceptions.h"
 #	include "php_http_exception_object.h"
 #endif
+
+#include <ctype.h>
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 

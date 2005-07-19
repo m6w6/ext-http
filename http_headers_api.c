@@ -18,10 +18,8 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
-#include <ctype.h>
-
 #include "php.h"
+
 #include "ext/standard/php_string.h"
 #include "ext/standard/url.h"
 
@@ -29,6 +27,8 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_headers_api.h"
+
+#include <ctype.h>
 
 /* {{{ static int http_sort_q(const void *, const void *) */
 static int http_sort_q(const void *a, const void *b TSRMLS_DC)

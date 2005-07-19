@@ -19,15 +19,9 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
-#ifdef HTTP_HAVE_CURL
-#	ifdef PHP_WIN32
-#		include <winsock2.h>
-#	endif
-#	include <curl/curl.h>
-#endif
-
 #include "php.h"
+
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 
 #include "php_http_std_defs.h"
 #include "php_http_request_object.h"
@@ -38,8 +32,10 @@
 #include "php_http_message_api.h"
 #include "php_http_message_object.h"
 
-#ifdef ZEND_ENGINE_2
-#ifdef HTTP_HAVE_CURL
+#ifdef PHP_WIN32
+#	include <winsock2.h>
+#endif
+#include <curl/curl.h>
 
 #define http_request_object_declare_default_properties() _http_request_object_declare_default_properties(TSRMLS_C)
 static inline void _http_request_object_declare_default_properties(TSRMLS_D);
@@ -330,8 +326,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	return FAILURE;
 }
 
-#endif /* HTTP_HAVE_CURL */
-#endif /* ZEND_ENGINE_2 */
+#endif /* ZEND_ENGINE_2 && HTTP_HAVE_CURL */
 
 /*
  * Local variables:

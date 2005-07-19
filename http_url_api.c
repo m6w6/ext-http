@@ -18,20 +18,19 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
+
+#include "SAPI.h"
 #include "zend_ini.h"
 #include "php_output.h"
 #include "ext/standard/url.h"
-
-#include "SAPI.h"
-
-#include "phpstr/phpstr.h"
 
 #include "php_http.h"
 #include "php_http_api.h"
 #include "php_http_url_api.h"
 #include "php_http_std_defs.h"
+
+#include "phpstr/phpstr.h"
 
 #ifdef PHP_WIN32
 #	include <winsock2.h>

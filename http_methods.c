@@ -18,8 +18,10 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
+
+#ifdef ZEND_ENGINE_2
+
 #include "php_streams.h"
 
 #include "php_http.h"
@@ -40,11 +42,9 @@
 #include "php_http_requestpool_object.h"
 #include "php_http_exception_object.h"
 
-#ifdef ZEND_ENGINE_2
-
 #include "missing.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http)
+ZEND_EXTERN_MODULE_GLOBALS(http);
 
 /* {{{ HttpResponse */
 

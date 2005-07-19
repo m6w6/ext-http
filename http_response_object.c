@@ -19,13 +19,12 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
+
+#ifdef ZEND_ENGINE_2
 
 #include "php_http_std_defs.h"
 #include "php_http_response_object.h"
-
-#ifdef ZEND_ENGINE_2
 
 #include "missing.h"
 

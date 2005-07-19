@@ -19,16 +19,15 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
+
+#ifdef ZEND_ENGINE_2
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_message_object.h"
 
 #include "phpstr/phpstr.h"
-
-#ifdef ZEND_ENGINE_2
 
 #define http_message_object_declare_default_properties() _http_message_object_declare_default_properties(TSRMLS_C)
 static inline void _http_message_object_declare_default_properties(TSRMLS_D);

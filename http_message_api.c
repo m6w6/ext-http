@@ -18,8 +18,8 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
+
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_api.h"

@@ -18,16 +18,13 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-
 #include "php.h"
+
+#include "SAPI.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "ext/session/php_session.h"
 #include "ext/standard/php_string.h"
-
-#include "SAPI.h"
-
-#include "phpstr/phpstr.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
@@ -41,6 +38,8 @@
 #include "php_http_message_api.h"
 #include "php_http_send_api.h"
 #include "php_http_url_api.h"
+
+#include "phpstr/phpstr.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http)
 
