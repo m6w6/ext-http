@@ -6,8 +6,14 @@
 
 #include "php.h"
 
-#ifdef PHP_WIN32
-#	define PHPSTR_API __declspec(dllexport)
+#if defined(PHP_WIN32)
+#	if defined(PHPSTR_EXPORTS)
+#		define PHPSTR_API __declspec(dllexport)
+#	elif defined(COMPILE_DL_PHPSTR)
+#		define PHPSTR_API __declspec(dllimport)
+#	else
+#		define PHPSTR_API
+#	endif
 #else
 #	define PHPSTR_API
 #endif
@@ -143,4 +149,3 @@ PHPSTR_API void phpstr_free(phpstr *buf);
  * vim600: sw=4 ts=4 fdm=marker
  * vim<600: sw=4 ts=4
  */
-

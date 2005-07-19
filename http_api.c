@@ -91,8 +91,8 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 		if (decode) { \
 			decode(str, len, &decoded, &decoded_len TSRMLS_CC); \
 		} else { \
-			decoded = estrdup(str); \
 			decoded_len = len; \
+			decoded = estrndup(str, decoded_len); \
 		} \
 		add_assoc_stringl(array, k, decoded, decoded_len, 0); \
 	}
@@ -120,7 +120,7 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 			key = val + strlen(val);
 			HTTP_KEYLIST_FIXVAL();
 			HTTP_KEYLIST_VAL(&array, "value", val, vallen);
-			goto list_done;
+			return SUCCESS;
 		}
 		/* additional info appended */
 		else {
@@ -152,7 +152,6 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 		efree(keydup);
 	} while (!done);
 
-list_done:
 	return SUCCESS;
 }
 

@@ -48,18 +48,24 @@ static inline void _http_flush(TSRMLS_D)
 /* {{{ static inline void http_sleep() */
 static inline void _http_sleep(TSRMLS_D)
 {
-	if (HTTP_G(send).throttle_delay >= 0.001) {
+#define HTTP_MSEC(s) (s * 1000)
+#define HTTP_USEC(s) (HTTP_MSEC(s) * 1000)
+#define HTTP_NSEC(s) (HTTP_USEC(s) * 1000)
+#define HTTP_NANOSEC (1000 * 1000 * 1000)
+#define HTTP_DIFFSEC (0.001)
+
+	if (HTTP_G(send).throttle_delay >= HTTP_DIFFSEC) {
 #if defined(PHP_WIN32)
-		Sleep((DWORD) (HTTP_G(send).throttle_delay * 1000));
+		Sleep((DWORD) HTTP_MSEC(HTTP_G(send).throttle_delay));
 #elif defined(HAVE_USLEEP)
-		usleep(HTTP_G(send).throttle_delay * 1000000);
+		usleep(HTTP_USEC(HTTP_G(send).throttle_delay));
 #elif defined(HAVE_NANOSLEEP)
 		struct timespec req, rem;
 
 		req.tv_sec = (time_t) HTTP_G(send).throttle_delay;
-		req.tv_nsec = (HTTP_G(send).throttle_delay * 1000000000) % 1000000000;
+		req.tv_nsec = HTTP_NSEC(HTTP_G(send).throttle_delay) % HTTP_NANOSEC;
 
-		while (nanosleep(&req, &rem) && (errno == EINTR) && (rem.tv_nsec > 1000000)) {
+		while (nanosleep(&req, &rem) && (errno == EINTR) && (HTTP_NSEC(rem.tv_sec) + rem.tv_nsec) > HTTP_NSEC(HTTP_DIFFSEC))) {
 			req.tv_sec = rem.tv_sec;
 			req.tv_nsec = rem.tv_nsec;
 		}
