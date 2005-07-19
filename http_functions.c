@@ -674,7 +674,7 @@ PHP_FUNCTION(http_get_request_body)
 	NO_ARGS;
 
 	if (SUCCESS == http_get_request_body(&body, &length)) {
-		RETURN_STRING(body, (int) length, 0);
+		RETURN_STRINGL(body, (int) length, 0);
 	} else {
 		RETURN_NULL();
 	}
