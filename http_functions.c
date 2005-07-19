@@ -663,6 +663,25 @@ PHP_FUNCTION(http_get_request_headers)
 }
 /* }}} */
 
+/* {{{ proto string http_get_request_body(void)
+ *
+ * Get the raw request body (e.g. POST or PUT data).
+ */
+PHP_FUNCTION(http_get_request_body)
+{
+	char *body;
+	size_t length;
+
+	NO_ARGS;
+
+	if (SUCCESS == http_get_request_body(&body, &length)) {
+		RETURN_STRING(body, (int) length, 0);
+	} else {
+		RETURN_NULL();
+	}
+}
+/* }}} */
+
 /* {{{ proto bool http_match_request_header(string header, string value[, bool match_case = false])
  *
  * Match an incoming HTTP header.

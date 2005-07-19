@@ -42,6 +42,7 @@ PHP_METHOD(HttpUtil, chunkedDecode);
 PHP_METHOD(HttpUtil, splitResponse);
 PHP_METHOD(HttpUtil, parseHeaders);
 PHP_METHOD(HttpUtil, getRequestHeaders);
+PHP_METHOD(HttpUtil, getRequestBody);
 #ifdef HTTP_HAVE_CURL
 PHP_METHOD(HttpUtil, get);
 PHP_METHOD(HttpUtil, head);

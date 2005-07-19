@@ -48,6 +48,7 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_STATIC_ME_ALIAS(splitResponse, http_split_response, NULL)
 	HTTP_STATIC_ME_ALIAS(parseHeaders, http_parse_headers, NULL)
 	HTTP_STATIC_ME_ALIAS(getRequestHeaders, http_get_request_headers, NULL)
+	HTTP_STATIC_ME_ALIAS(getRequestBody, http_get_request_body, NULL)
 #ifdef HTTP_HAVE_CURL
 	HTTP_STATIC_ME_ALIAS(get, http_get, http_arg_pass_ref_3)
 	HTTP_STATIC_ME_ALIAS(head, http_head, http_arg_pass_ref_3)

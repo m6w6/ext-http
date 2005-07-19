@@ -85,6 +85,7 @@ function_entry http_functions[] = {
 	PHP_FE(http_split_response, NULL)
 	PHP_FE(http_parse_headers, NULL)
 	PHP_FE(http_get_request_headers, NULL)
+	PHP_FE(http_get_request_body, NULL)
 	PHP_FE(http_match_request_header, NULL)
 #ifdef HTTP_HAVE_CURL
 	PHP_FE(http_get, http_arg_pass_ref_3)
