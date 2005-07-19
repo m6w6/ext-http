@@ -28,47 +28,117 @@
 
 #include "missing.h"
 
+#define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpResponse, method, 0, req_args)
+#define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpResponse, method, ret_ref)
+#define HTTP_RESPONSE_ME(method, visibility)	PHP_ME(HttpResponse, method, HTTP_ARGS(HttpResponse, method), visibility)
+
+HTTP_BEGIN_ARGS(__construct, 0)
+	HTTP_ARG_VAL(cache, 0)
+	HTTP_ARG_VAL(gzip, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getETag, 0);
+HTTP_BEGIN_ARGS(setETag, 1)
+	HTTP_ARG_VAL(etag, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getCache, 0);
+HTTP_BEGIN_ARGS(setCache, 1)
+	HTTP_ARG_VAL(cache, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getGzip, 0);
+HTTP_BEGIN_ARGS(setGzip, 1)
+	HTTP_ARG_VAL(gzip, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getCacheControl, 0);
+HTTP_BEGIN_ARGS(setCacheControl, 1)
+	HTTP_ARG_VAL(cache_control, 0)
+	HTTP_ARG_VAL(raw, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getContentType, 0);
+HTTP_BEGIN_ARGS(setContentType, 1)
+	HTTP_ARG_VAL(content_type, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getContentDisposition, 0);
+HTTP_BEGIN_ARGS(setContentDisposition, 1)
+	HTTP_ARG_VAL(filename, 0)
+	HTTP_ARG_VAL(send_inline, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getThrottleDelay, 0);
+HTTP_BEGIN_ARGS(setThrottleDelay, 1)
+	HTTP_ARG_VAL(seconds, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getSendBuffersize, 0);
+HTTP_BEGIN_ARGS(setSendBuffersize, 1)
+	HTTP_ARG_VAL(bytes, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getData, 0);
+HTTP_BEGIN_ARGS(setData, 1)
+	HTTP_ARG_VAL(data, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getStream, 0);
+HTTP_BEGIN_ARGS(setStream, 1)
+	HTTP_ARG_VAL(stream, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getFile, 0);
+HTTP_BEGIN_ARGS(setFile, 1)
+	HTTP_ARG_VAL(filepath, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(send, 0)
+	HTTP_ARG_VAL(clean_ob, 0)
+HTTP_END_ARGS;
+
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
-	PHP_ME(HttpResponse, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	HTTP_RESPONSE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 
-	PHP_ME(HttpResponse, setETag, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getETag, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setETag, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getETag, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setContentDisposition, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getContentDisposition, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setContentDisposition, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getContentDisposition, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setContentType, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getContentType, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setContentType, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getContentType, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setCache, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getCache, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setCache, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getCache, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setCacheControl, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getCacheControl, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setCacheControl, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getCacheControl, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setGzip, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getGzip, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setGzip, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getGzip, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setThrottleDelay, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getThrottleDelay, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setThrottleDelay, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getThrottleDelay, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setSendBuffersize, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getSendBuffersize, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setSendBuffersize, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getSendBuffersize, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getData, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setData, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getData, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setFile, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getFile, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setFile, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getFile, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, setStream, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpResponse, getStream, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setStream, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getStream, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpResponse, send, NULL, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(send, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };

@@ -32,23 +32,48 @@
 #endif
 #include <curl/curl.h>
 
-HTTP_DECLARE_ARG_PASS_INFO();
+#define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpRequestPool, method, ZEND_RETURN_REFERENCE_AGNOSTIC, req_args)
+#define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpRequestPool, method, ret_ref)
+#define HTTP_REQPOOL_ME(method, visibility)		PHP_ME(HttpRequestPool, method, HTTP_ARGS(HttpRequestPool, method), visibility)
+
+HTTP_BEGIN_ARGS_AR(HttpRequestPool, __construct, 0, 0)
+	HTTP_ARG_OBJ(HttpRequest, request0, 0)
+	HTTP_ARG_OBJ(HttpRequest, request1, 0)
+	HTTP_ARG_OBJ(HttpRequest, requestN, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(__destruct, 0);
+HTTP_EMPTY_ARGS(reset, 0);
+
+HTTP_BEGIN_ARGS(attach, 1)
+	HTTP_ARG_OBJ(HttpRequest, request, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(detach, 1)
+	HTTP_ARG_OBJ(HttpRequest, request, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(send, 0);
+HTTP_EMPTY_ARGS(socketSend, 0);
+HTTP_EMPTY_ARGS(socketSelect, 0);
+HTTP_EMPTY_ARGS(socketRead, 0);
+
 
 #define http_requestpool_object_declare_default_properties() _http_requestpool_object_declare_default_properties(TSRMLS_C)
 static inline void _http_requestpool_object_declare_default_properties(TSRMLS_D);
 
 zend_class_entry *http_requestpool_object_ce;
 zend_function_entry http_requestpool_object_fe[] = {
-	PHP_ME(HttpRequestPool, __construct, http_arg_pass_ref_all, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(HttpRequestPool, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
-	PHP_ME(HttpRequestPool, attach, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequestPool, detach, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequestPool, send, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequestPool, reset, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	HTTP_REQPOOL_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
+	HTTP_REQPOOL_ME(attach, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(detach, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(send, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(reset, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequestPool, socketSend, NULL, ZEND_ACC_PROTECTED)
-	PHP_ME(HttpRequestPool, socketSelect, NULL, ZEND_ACC_PROTECTED)
-	PHP_ME(HttpRequestPool, socketRead, NULL, ZEND_ACC_PROTECTED)
+	HTTP_REQPOOL_ME(socketSend, ZEND_ACC_PROTECTED)
+	HTTP_REQPOOL_ME(socketSelect, ZEND_ACC_PROTECTED)
+	HTTP_REQPOOL_ME(socketRead, ZEND_ACC_PROTECTED)
 
 	{NULL, NULL, NULL}
 };

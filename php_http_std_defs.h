@@ -244,6 +244,16 @@ typedef int STATUS;
 #define HTTP_E_URL			7L
 #define HTTP_E_MSG			8L
 
+#ifdef ZEND_ENGINE_2
+#	define HTTP_BEGIN_ARGS_EX(class, method, ret_ref, req_args)	static ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 0, ret_ref, req_args)
+#	define HTTP_BEGIN_ARGS_AR(class, method, ret_ref, req_args)	static ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 1, ret_ref, req_args)
+#	define HTTP_END_ARGS										}
+#	define HTTP_EMPTY_ARGS_EX(class, method, ret_ref)			HTTP_BEGIN_ARGS_EX(class, method, ret_ref, 0) HTTP_END_ARGS
+#	define HTTP_ARGS(class, method)								args_for_ ##class## _ ##method
+#	define HTTP_ARG_VAL(name, pass_ref)							ZEND_ARG_INFO(pass_ref, name)
+#	define HTTP_ARG_OBJ(class, name, allow_null)				ZEND_ARG_OBJ_INFO(1, name, class, allow_null)
+#endif
+
 #ifdef HTTP_HAVE_CURL
 #	ifdef ZEND_ENGINE_2
 #		define HTTP_DECLARE_ARG_PASS_INFO() \

@@ -29,6 +29,60 @@
 
 #include "phpstr/phpstr.h"
 
+#define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpMessage, method, ZEND_RETURN_REFERENCE_AGNOSTIC, req_args)
+#define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpMessage, method, ret_ref)
+#define HTTP_MESSAGE_ME(method, visibility)		PHP_ME(HttpMessage, method, HTTP_ARGS(HttpMessage, method), visibility)
+
+HTTP_BEGIN_ARGS(__construct, 0)
+	HTTP_ARG_VAL(message, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(fromString, 1)
+	HTTP_ARG_VAL(message, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getBody, 0);
+HTTP_EMPTY_ARGS(getHeaders, 0);
+HTTP_BEGIN_ARGS(setHeaders, 1)
+	HTTP_ARG_VAL(headers, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(addHeaders, 1)
+	HTTP_ARG_VAL(headers, 0)
+	HTTP_ARG_VAL(append, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getType, 0);
+HTTP_BEGIN_ARGS(setType, 1)
+	HTTP_ARG_VAL(type, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getResponseCode, 0);
+HTTP_BEGIN_ARGS(setResponseCode, 1)
+	HTTP_ARG_VAL(response_code, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getRequestMethod, 0);
+HTTP_BEGIN_ARGS(setRequestMethod, 1)
+	HTTP_ARG_VAL(request_method, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getRequestUri, 0);
+HTTP_BEGIN_ARGS(setRequestUri, 1)
+	HTTP_ARG_VAL(uri, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getHttpVersion, 0);
+HTTP_BEGIN_ARGS(setHttpVersion, 1)
+	HTTP_ARG_VAL(http_version, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getParentMessage, 1);
+HTTP_EMPTY_ARGS(send, 0);
+HTTP_BEGIN_ARGS(toString, 0)
+	HTTP_ARG_VAL(include_parent, 0)
+HTTP_END_ARGS;
+
 #define http_message_object_declare_default_properties() _http_message_object_declare_default_properties(TSRMLS_C)
 static inline void _http_message_object_declare_default_properties(TSRMLS_D);
 #define http_message_object_read_prop _http_message_object_read_prop
@@ -42,28 +96,28 @@ static inline zend_object_value _http_message_object_clone_obj(zval *object TSRM
 
 zend_class_entry *http_message_object_ce;
 zend_function_entry http_message_object_fe[] = {
-	PHP_ME(HttpMessage, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(HttpMessage, getBody, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, getHeaders, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, setHeaders, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, addHeaders, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, getType, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, setType, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, getResponseCode, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, setResponseCode, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, getRequestMethod, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, setRequestMethod, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, getRequestUri, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, setRequestUri, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, getHttpVersion, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, setHttpVersion, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, getParentMessage, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, send, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, toString, NULL, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	HTTP_MESSAGE_ME(getBody, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getHeaders, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setHeaders, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(addHeaders, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getType, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setType, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getResponseCode, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setResponseCode, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getRequestMethod, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setRequestMethod, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getRequestUri, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setRequestUri, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getHttpVersion, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setHttpVersion, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getParentMessage, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(send, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(toString, ZEND_ACC_PUBLIC)
 
-	ZEND_MALIAS(HttpMessage, __toString, toString, NULL, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpMessage, __toString, toString, HTTP_ARGS(HttpMessage, toString), ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpMessage, fromString, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	HTTP_MESSAGE_ME(fromString, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	{NULL, NULL, NULL}
 };
 static zend_object_handlers http_message_object_handlers;
