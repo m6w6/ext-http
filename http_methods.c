@@ -53,8 +53,6 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
  * Instantiates a new HttpResponse object, which can be used to send
  * any data/resource/file to an HTTP client with caching and multiple
  * ranges/resuming support.
- *
- * NOTE: GZIPping is not implemented yet.
  */
 PHP_METHOD(HttpResponse, __construct)
 {
@@ -67,6 +65,37 @@ PHP_METHOD(HttpResponse, __construct)
 		UPD_PROP(obj, long, gzip, do_gzip);
 	}
 	SET_EH_NORMAL();
+}
+/* }}} */
+
+/* {{{ proto void HttpResponse::__destruct()
+ *
+ * -
+ */
+PHP_METHOD(HttpResponse, __destruct)
+{
+	getObject(http_response_object, obj);
+	zval *catch_ob = GET_PROP(obj, catch_ob), *sent = GET_PROP(obj, sent);
+	fprintf(stderr, "DTOR!\n"); fflush(stderr);
+	if (!Z_LVAL_P(sent) && Z_LVAL_P(catch_ob)) {
+		zval ob_data;
+
+		/* fetch catched output buffer */
+		if (SUCCESS == php_ob_get_buffer(&ob_data TSRMLS_CC)) {
+			zval *lmod = GET_PROP(obj, lastModified);
+
+			SET_PROP(obj, data, &ob_data);
+			UPD_PROP(obj, long, send_mode, SEND_DATA);
+
+			if (!Z_LVAL_P(lmod)) {
+				UPD_PROP(obj, long, lastModified, http_last_modified(&ob_data, SEND_DATA));
+			}
+			zval_dtor(&ob_data);
+
+			http_response_object_sendhandler(getThis(), obj, 1, return_value);
+			RETVAL_NULL();
+		}
+	}
 }
 /* }}} */
 
@@ -527,15 +556,40 @@ PHP_METHOD(HttpResponse, getFile)
 PHP_METHOD(HttpResponse, send)
 {
 	zend_bool clean_ob = 1;
-	zval *do_cache, *do_gzip;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {
+		RETURN_FALSE;
+	}
+
+	http_response_object_sendhandler(getThis(), NULL, clean_ob, return_value);
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::catchOutput([bool clean_ob = false])
+ *
+ * Use this method instead of HttpResponse::set*() and HttpResponse::send()
+ * to let HttpResponse catch and handle the scripts output (i.e. echo/print).
+ *
+ * Example:
+ * <pre>
+ * <?php
+ * $r = new HttpResponse(true, true);
+ * $r->setContentType('text/html; charset=utf-8');
+ * $r->catchOutput(true);
+ * // script follows
+ * ?>
+ * </pre>
+ */
+PHP_METHOD(HttpResponse, catchOutput)
+{
+	zend_bool clean_ob = 0;
 	getObject(http_response_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {
 		RETURN_FALSE;
 	}
 
-	do_cache = GET_PROP(obj, cache);
-	do_gzip  = GET_PROP(obj, gzip);
+	UPD_PROP(obj, long, catch_ob, 1);
 
 	if (clean_ob) {
 		/* interrupt on-the-fly etag generation */
@@ -544,92 +598,12 @@ PHP_METHOD(HttpResponse, send)
 		php_end_ob_buffers(0 TSRMLS_CC);
 	}
 
-	/* gzip */
-	if (Z_LVAL_P(do_gzip)) {
-		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
+	if (SUCCESS != php_start_ob_buffer(NULL, 0, 1 TSRMLS_CC)) {
+		RETURN_FALSE;
 	}
-
-	/* caching */
-	if (Z_LVAL_P(do_cache)) {
-		char *cc_hdr;
-		int cc_len;
-		zval *cctrl, *etag, *lmod, *ccraw;
-
-		etag  = GET_PROP(obj, eTag);
-		lmod  = GET_PROP(obj, lastModified);
-		cctrl = GET_PROP(obj, cacheControl);
-		ccraw = GET_PROP(obj, raw_cache_header);
-
-		if (Z_LVAL_P(ccraw)) {
-			cc_hdr = Z_STRVAL_P(cctrl);
-			cc_len = Z_STRLEN_P(cctrl);
-		} else {
-			char cc_header[42] = {0};
-			sprintf(cc_header, "%s, must-revalidate, max-age=0", Z_STRVAL_P(cctrl));
-			cc_hdr = cc_header;
-			cc_len = Z_STRLEN_P(cctrl) + lenof(", must-revalidate, max-age=0");
-		}
-
-		http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), cc_hdr, cc_len);
-		http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), cc_hdr, cc_len);
-	}
-
-	/* content type */
-	{
-		zval *ctype = GET_PROP(obj, contentType);
-		if (Z_STRLEN_P(ctype)) {
-			http_send_content_type(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
-		} else {
-			http_send_content_type("application/x-octetstream", lenof("application/x-octetstream"));
-		}
-	}
-
-	/* content disposition */
-	{
-		zval *dispo_file = GET_PROP(obj, dispoFile);
-		if (Z_STRLEN_P(dispo_file)) {
-			zval *dispo_inline = GET_PROP(obj, dispoInline);
-			http_send_content_disposition(Z_STRVAL_P(dispo_file), Z_STRLEN_P(dispo_file), (zend_bool) Z_LVAL_P(dispo_inline));
-		}
-	}
-
-	/* throttling */
-	{
-		zval *send_buffersize, *throttle_delay;
-		send_buffersize = GET_PROP(obj, sendBuffersize);
-		throttle_delay  = GET_PROP(obj, throttleDelay);
-		HTTP_G(send).buffer_size    = Z_LVAL_P(send_buffersize);
-		HTTP_G(send).throttle_delay = Z_DVAL_P(throttle_delay);
-	}
-
-	/* send */
-	{
-		zval *send_mode = GET_PROP(obj, send_mode);
-		switch (Z_LVAL_P(send_mode))
-		{
-			case SEND_DATA:
-			{
-				zval *zdata = GET_PROP(obj, data);
-				RETURN_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
-			}
-
-			case SEND_RSRC:
-			{
-				php_stream *the_real_stream;
-				zval *the_stream = GET_PROP(obj, stream);
-				php_stream_from_zval(the_real_stream, &the_stream);
-				RETURN_SUCCESS(http_send_stream(the_real_stream));
-			}
-
-			default:
-			{
-				zval *zfile = GET_PROP(obj, file);
-				RETURN_SUCCESS(http_send_file(Z_STRVAL_P(zfile)));
-			}
-		}
-	}
+	
+	RETURN_TRUE;
 }
-/* }}} */
 /* }}} */
 
 /* {{{ HttpMessage */
@@ -1399,11 +1373,11 @@ PHP_METHOD(HttpRequest, unsetCookies)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::setURL(string url)
+/* {{{ proto bool HttpRequest::setUrl(string url)
  *
  * Set the request URL.
  */
-PHP_METHOD(HttpRequest, setURL)
+PHP_METHOD(HttpRequest, setUrl)
 {
 	char *URL = NULL;
 	int URL_len;
@@ -1422,7 +1396,7 @@ PHP_METHOD(HttpRequest, setURL)
  *
  * Get the previously set request URL.
  */
-PHP_METHOD(HttpRequest, getURL)
+PHP_METHOD(HttpRequest, getUrl)
 {
 	NO_ARGS;
 
@@ -1728,7 +1702,7 @@ PHP_METHOD(HttpRequest, addPostFile)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::setPostFiles()
+/* {{{ proto bool HttpRequest::setPostFiles(array post_files)
  *
  * Set files to post.
  * Overwrites previously set post files.
@@ -2123,7 +2097,8 @@ PHP_METHOD(HttpRequest, send)
 	SET_EH_THROW_HTTP();
 
 	if (obj->pool) {
-		http_error(E_WARNING, HTTP_E_CURL, "You cannot call HttpRequest::send() while attached to an HttpRequestPool");
+		http_error(E_WARNING, HTTP_E_CURL, "Cannot perform HttpRequest::send() while attached to an HttpRequestPool");
+		SET_EH_NORMAL();
 		RETURN_FALSE;
 	}
 

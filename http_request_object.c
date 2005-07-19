@@ -37,65 +37,170 @@
 #endif
 #include <curl/curl.h>
 
+#define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpRequest, method, ZEND_RETURN_REFERENCE_AGNOSTIC, req_args)
+#define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpRequest, method, ret_ref)
+#define HTTP_REQUEST_ME(method, visibility)		PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)
+
+HTTP_EMPTY_ARGS(__destruct, 0);
+HTTP_BEGIN_ARGS(__construct, 0)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(method, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getOptions, 0);
+HTTP_EMPTY_ARGS(unsetOptions, 0);
+HTTP_BEGIN_ARGS(setOptions, 1)
+	HTTP_ARG_VAL(options, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getSslOptions, 0);
+HTTP_EMPTY_ARGS(unsetSslOptions, 0);
+HTTP_BEGIN_ARGS(setSslOptions, 1)
+	HTTP_ARG_VAL(ssl_options, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getHeaders, 0);
+HTTP_EMPTY_ARGS(unsetHeaders, 0);
+HTTP_BEGIN_ARGS(addHeaders, 1)
+	HTTP_ARG_VAL(headers, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getCookies, 0);
+HTTP_EMPTY_ARGS(unsetCookies, 0);
+HTTP_BEGIN_ARGS(addCookies, 1)
+	HTTP_ARG_VAL(cookies, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getUrl, 0);
+HTTP_BEGIN_ARGS(setUrl, 1)
+	HTTP_ARG_VAL(url, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getMethod, 0);
+HTTP_BEGIN_ARGS(setMethod, 1)
+	HTTP_ARG_VAL(request_method, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getContentType, 0);
+HTTP_BEGIN_ARGS(setContentType, 1)
+	HTTP_ARG_VAL(content_type, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getQueryData, 0);
+HTTP_EMPTY_ARGS(unsetQueryData, 0);
+HTTP_BEGIN_ARGS(setQueryData, 1)
+	HTTP_ARG_VAL(query_data, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(addQueryData, 1)
+	HTTP_ARG_VAL(query_data, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getPostFields, 0);
+HTTP_EMPTY_ARGS(unsetPostFields, 0);
+HTTP_BEGIN_ARGS(setPostFields, 1)
+	HTTP_ARG_VAL(post_fields, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(addPostFields, 1)
+	HTTP_ARG_VAL(post_fields, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getPostFiles, 0);
+HTTP_EMPTY_ARGS(unsetPostFiles, 0);
+HTTP_BEGIN_ARGS(setPostFiles, 1)
+	HTTP_ARG_VAL(post_files, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(addPostFile, 2)
+	HTTP_ARG_VAL(formname, 0)
+	HTTP_ARG_VAL(filename, 0)
+	HTTP_ARG_VAL(content_type, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getPutFile, 0);
+HTTP_EMPTY_ARGS(unsetPutFile, 0);
+HTTP_BEGIN_ARGS(setPutFile, 1)
+	HTTP_ARG_VAL(filename, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getResponseData, 0);
+HTTP_BEGIN_ARGS(getResponseHeader, 0)
+	HTTP_ARG_VAL(name, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(getResponseCookie, 0)
+	HTTP_ARG_VAL(name, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getResponseBody, 0);
+HTTP_EMPTY_ARGS(getResponseCode, 0);
+HTTP_BEGIN_ARGS(getResponseInfo, 0)
+	HTTP_ARG_VAL(name, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getResponseMessage, 1);
+HTTP_EMPTY_ARGS(send, 0);
+
 #define http_request_object_declare_default_properties() _http_request_object_declare_default_properties(TSRMLS_C)
 static inline void _http_request_object_declare_default_properties(TSRMLS_D);
 
 zend_class_entry *http_request_object_ce;
 zend_function_entry http_request_object_fe[] = {
-	PHP_ME(HttpRequest, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(HttpRequest, __destruct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
+	HTTP_REQUEST_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	HTTP_REQUEST_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
 
-	PHP_ME(HttpRequest, setOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, setSslOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getSslOptions, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetSslOptions, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setOptions, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getOptions, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(unsetOptions, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setSslOptions, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getSslOptions, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(unsetSslOptions, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, addHeaders, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getHeaders, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetHeaders, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, addCookies, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getCookies, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetCookies, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(addHeaders, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getHeaders, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(unsetHeaders, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(addCookies, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getCookies, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(unsetCookies, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, setMethod, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getMethod, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setMethod, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getMethod, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, setURL, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getURL, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setUrl, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getUrl, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, setContentType, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getContentType, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setContentType, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getContentType, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, setQueryData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getQueryData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, addQueryData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetQueryData, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setQueryData, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getQueryData, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(addQueryData, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(unsetQueryData, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, setPostFields, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getPostFields, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, addPostFields, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetPostFields, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setPostFields, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getPostFields, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(addPostFields, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(unsetPostFields, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, setPostFiles, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, addPostFile, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getPostFiles, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetPostFiles, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setPostFiles, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(addPostFile, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getPostFiles, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(unsetPostFiles, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, setPutFile, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getPutFile, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, unsetPutFile, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setPutFile, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getPutFile, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(unsetPutFile, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, send, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(send, ZEND_ACC_PUBLIC)
 
-	PHP_ME(HttpRequest, getResponseData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseHeader, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseCookie, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseCode, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseBody, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseInfo, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpRequest, getResponseMessage, NULL, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getResponseData, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getResponseHeader, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getResponseCookie, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getResponseCode, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getResponseBody, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getResponseInfo, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getResponseMessage, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };

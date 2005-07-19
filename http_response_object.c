@@ -23,15 +23,22 @@
 
 #ifdef ZEND_ENGINE_2
 
+#include "php_http.h"
+#include "php_http_api.h"
 #include "php_http_std_defs.h"
 #include "php_http_response_object.h"
+#include "php_http_send_api.h"
+#include "php_http_cache_api.h"
 
 #include "missing.h"
+
+ZEND_EXTERN_MODULE_GLOBALS(http);
 
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpResponse, method, 0, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpResponse, method, ret_ref)
 #define HTTP_RESPONSE_ME(method, visibility)	PHP_ME(HttpResponse, method, HTTP_ARGS(HttpResponse, method), visibility)
 
+HTTP_EMPTY_ARGS(__destruct, 0);
 HTTP_BEGIN_ARGS(__construct, 0)
 	HTTP_ARG_VAL(cache, 0)
 	HTTP_ARG_VAL(gzip, 0)
@@ -98,12 +105,17 @@ HTTP_BEGIN_ARGS(send, 0)
 	HTTP_ARG_VAL(clean_ob, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(catchOutput, 0)
+	HTTP_ARG_VAL(clean_ob, 0)
+HTTP_END_ARGS;
+
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
 	HTTP_RESPONSE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	HTTP_RESPONSE_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
 
 	HTTP_RESPONSE_ME(setETag, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(getETag, ZEND_ACC_PUBLIC)
@@ -139,6 +151,7 @@ zend_function_entry http_response_object_fe[] = {
 	HTTP_RESPONSE_ME(getStream, ZEND_ACC_PUBLIC)
 
 	HTTP_RESPONSE_ME(send, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(catchOutput, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };
@@ -187,6 +200,8 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 
 	DCL_PROP(PRIVATE, long, raw_cache_header, 0);
 	DCL_PROP(PRIVATE, long, send_mode, -1);
+	DCL_PROP(PRIVATE, long, sent, 0);
+	DCL_PROP(PRIVATE, long, catch_ob, 0);
 }
 
 void _http_response_object_free(zend_object *object TSRMLS_DC)
@@ -198,6 +213,111 @@ void _http_response_object_free(zend_object *object TSRMLS_DC)
 		FREE_HASHTABLE(OBJ_PROP(o));
 	}
 	efree(o);
+}
+
+void _http_response_object_sendhandler(zval *this_ptr, http_response_object *obj, zend_bool clean_ob, zval *return_value TSRMLS_DC)
+{
+	zval *do_cache, *do_gzip;
+
+	if (!obj) {
+		getObject(http_response_object, o);
+		obj = o;
+	}
+
+	do_cache = GET_PROP(obj, cache);
+	do_gzip  = GET_PROP(obj, gzip);
+
+	if (clean_ob) {
+		/* interrupt on-the-fly etag generation */
+		HTTP_G(etag).started = 0;
+		/* discard previous output buffers */
+		php_end_ob_buffers(0 TSRMLS_CC);
+	}
+
+	/* gzip */
+	if (Z_LVAL_P(do_gzip)) {
+		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
+	}
+
+	/* caching */
+	if (Z_LVAL_P(do_cache)) {
+		char *cc_hdr;
+		int cc_len;
+		zval *cctrl, *etag, *lmod, *ccraw;
+
+		etag  = GET_PROP(obj, eTag);
+		lmod  = GET_PROP(obj, lastModified);
+		cctrl = GET_PROP(obj, cacheControl);
+		ccraw = GET_PROP(obj, raw_cache_header);
+
+		if (Z_LVAL_P(ccraw)) {
+			cc_hdr = Z_STRVAL_P(cctrl);
+			cc_len = Z_STRLEN_P(cctrl);
+		} else {
+			char cc_header[42] = {0};
+			sprintf(cc_header, "%s, must-revalidate, max-age=0", Z_STRVAL_P(cctrl));
+			cc_hdr = cc_header;
+			cc_len = Z_STRLEN_P(cctrl) + lenof(", must-revalidate, max-age=0");
+		}
+
+		http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), cc_hdr, cc_len);
+		http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), cc_hdr, cc_len);
+	}
+
+	/* content type */
+	{
+		zval *ctype = GET_PROP(obj, contentType);
+		if (Z_STRLEN_P(ctype)) {
+			http_send_content_type(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
+		} else {
+			http_send_content_type("application/x-octetstream", lenof("application/x-octetstream"));
+		}
+	}
+
+	/* content disposition */
+	{
+		zval *dispo_file = GET_PROP(obj, dispoFile);
+		if (Z_STRLEN_P(dispo_file)) {
+			zval *dispo_inline = GET_PROP(obj, dispoInline);
+			http_send_content_disposition(Z_STRVAL_P(dispo_file), Z_STRLEN_P(dispo_file), (zend_bool) Z_LVAL_P(dispo_inline));
+		}
+	}
+
+	/* throttling */
+	{
+		zval *send_buffersize, *throttle_delay;
+		send_buffersize = GET_PROP(obj, sendBuffersize);
+		throttle_delay  = GET_PROP(obj, throttleDelay);
+		HTTP_G(send).buffer_size    = Z_LVAL_P(send_buffersize);
+		HTTP_G(send).throttle_delay = Z_DVAL_P(throttle_delay);
+	}
+
+	/* send */
+	{
+		zval *send_mode = GET_PROP(obj, send_mode);
+		switch (Z_LVAL_P(send_mode))
+		{
+			case SEND_DATA:
+			{
+				zval *zdata = GET_PROP(obj, data);
+				RETURN_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
+			}
+
+			case SEND_RSRC:
+			{
+				php_stream *the_real_stream;
+				zval *the_stream = GET_PROP(obj, stream);
+				php_stream_from_zval(the_real_stream, &the_stream);
+				RETURN_SUCCESS(http_send_stream(the_real_stream));
+			}
+
+			default:
+			{
+				zval *zfile = GET_PROP(obj, file);
+				RETURN_SUCCESS(http_send_file(Z_STRVAL_P(zfile)));
+			}
+		}
+	}
 }
 
 #endif /* ZEND_ENGINE_2 */

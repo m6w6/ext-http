@@ -33,7 +33,11 @@ extern zend_object_value _http_response_object_new(zend_class_entry *ce TSRMLS_D
 #define http_response_object_free _http_response_object_free
 extern void _http_response_object_free(zend_object *object TSRMLS_DC);
 
+#define http_response_object_sendhandler(z, o, c, r) _http_response_object_sendhandler((z), (o), (c), (r) TSRMLS_CC)
+extern void _http_response_object_sendhandler(zval *this_ptr, http_response_object *obj, zend_bool clean_ob, zval *return_value TSRMLS_DC);
+
 PHP_METHOD(HttpResponse, __construct);
+PHP_METHOD(HttpResponse, __destruct);
 PHP_METHOD(HttpResponse, setETag);
 PHP_METHOD(HttpResponse, getETag);
 PHP_METHOD(HttpResponse, setContentDisposition);
@@ -57,6 +61,7 @@ PHP_METHOD(HttpResponse, getFile);
 PHP_METHOD(HttpResponse, setStream);
 PHP_METHOD(HttpResponse, getStream);
 PHP_METHOD(HttpResponse, send);
+PHP_METHOD(HttpResponse, catchOutput);
 
 #endif
 #endif
