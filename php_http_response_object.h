@@ -19,25 +19,12 @@
 #define PHP_HTTP_RESPONSE_OBJECT_H
 #ifdef ZEND_ENGINE_2
 
-typedef struct {
-	zend_object	zo;
-} http_response_object;
-
 extern zend_class_entry *http_response_object_ce;
 extern zend_function_entry http_response_object_fe[];
 
 #define http_response_object_init() _http_response_object_init(INIT_FUNC_ARGS_PASSTHRU)
 extern void _http_response_object_init(INIT_FUNC_ARGS);
-#define http_response_object_new _http_response_object_new
-extern zend_object_value _http_response_object_new(zend_class_entry *ce TSRMLS_DC);
-#define http_response_object_free _http_response_object_free
-extern void _http_response_object_free(zend_object *object TSRMLS_DC);
 
-#define http_response_object_sendhandler(z, o, c, r) _http_response_object_sendhandler((z), (o), (c), (r) TSRMLS_CC)
-extern void _http_response_object_sendhandler(zval *this_ptr, http_response_object *obj, zend_bool clean_ob, zval *return_value TSRMLS_DC);
-
-PHP_METHOD(HttpResponse, __construct);
-PHP_METHOD(HttpResponse, __destruct);
 PHP_METHOD(HttpResponse, setETag);
 PHP_METHOD(HttpResponse, getETag);
 PHP_METHOD(HttpResponse, setContentDisposition);
@@ -52,8 +39,8 @@ PHP_METHOD(HttpResponse, setGzip);
 PHP_METHOD(HttpResponse, getGzip);
 PHP_METHOD(HttpResponse, setThrottleDelay);
 PHP_METHOD(HttpResponse, getThrottleDelay);
-PHP_METHOD(HttpResponse, setSendBuffersize);
-PHP_METHOD(HttpResponse, getSendBuffersize);
+PHP_METHOD(HttpResponse, setBufferSize);
+PHP_METHOD(HttpResponse, getBufferSize);
 PHP_METHOD(HttpResponse, setData);
 PHP_METHOD(HttpResponse, getData);
 PHP_METHOD(HttpResponse, setFile);
@@ -61,7 +48,6 @@ PHP_METHOD(HttpResponse, getFile);
 PHP_METHOD(HttpResponse, setStream);
 PHP_METHOD(HttpResponse, getStream);
 PHP_METHOD(HttpResponse, send);
-PHP_METHOD(HttpResponse, catchOutput);
 
 #endif
 #endif

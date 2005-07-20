@@ -26,6 +26,8 @@
 #include "php_http_std_defs.h"
 #include "php_http_requestpool_object.h"
 #include "php_http_request_pool_api.h"
+#include "php_http_request_object.h"
+#include "php_http_exception_object.h"
 
 #ifdef PHP_WIN32
 #	include <winsock2.h>
@@ -122,6 +124,189 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
 	http_request_pool_dtor(&o->pool);
 	efree(o);
 }
+
+/* ### USERLAND ### */
+
+/* {{{ proto void HttpRequestPool::__construct([HttpRequest request[, ...]])
+ *
+ * Instantiate a new HttpRequestPool object.  An HttpRequestPool is
+ * able to send several HttpRequests in parallel.
+ *
+ * Example:
+ * <pre>
+ * <?php
+ *     $urls = array('www.php.net', 'pecl.php.net', 'pear.php.net')
+ *     $pool = new HttpRequestPool;
+ *     foreach ($urls as $url) {
+ *         $req[$url] = new HttpRequest("http://$url", HTTP_HEAD);
+ *         $pool->attach($req[$url]);
+ *     }
+ *     $pool->send();
+ *     foreach ($urls as $url) {
+ *         printf("%s (%s) is %s\n",
+ *             $url, $req[$url]->getResponseInfo('effective_url'),
+ *             $r->getResponseCode() == 200 ? 'alive' : 'not alive'
+ *         );
+ *     }
+ * ?>
+ * </pre>
+ */
+PHP_METHOD(HttpRequestPool, __construct)
+{
+	int argc = ZEND_NUM_ARGS();
+	zval ***argv = safe_emalloc(argc, sizeof(zval *), 0);
+	getObject(http_requestpool_object, obj);
+
+	if (SUCCESS == zend_get_parameters_array_ex(argc, argv)) {
+		int i;
+
+		for (i = 0; i < argc; ++i) {
+			if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), http_request_object_ce TSRMLS_CC)) {
+				http_request_pool_attach(&obj->pool, *(argv[i]));
+			}
+		}
+	}
+	efree(argv);
+}
+/* }}} */
+
+/* {{{ proto void HttpRequestPool::__destruct()
+ *
+ * Clean up HttpRequestPool object.
+ */
+PHP_METHOD(HttpRequestPool, __destruct)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	http_request_pool_detach_all(&obj->pool);
+}
+/* }}} */
+
+/* {{{ proto void HttpRequestPool::reset()
+ *
+ * Detach all attached HttpRequest objects.
+ */
+PHP_METHOD(HttpRequestPool, reset)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	http_request_pool_detach_all(&obj->pool);
+}
+
+/* {{{ proto bool HttpRequestPool::attach(HttpRequest request)
+ *
+ * Attach an HttpRequest object to this HttpRequestPool.
+ * NOTE: set all options prior attaching!
+ */
+PHP_METHOD(HttpRequestPool, attach)
+{
+	zval *request;
+	STATUS status = FAILURE;
+	getObject(http_requestpool_object, obj);
+
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, http_request_object_ce)) {
+		status = http_request_pool_attach(&obj->pool, request);
+	}
+	SET_EH_NORMAL();
+	RETURN_SUCCESS(status);
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequestPool::detach(HttpRequest request)
+ *
+ * Detach an HttpRequest object from this HttpRequestPool.
+ */
+PHP_METHOD(HttpRequestPool, detach)
+{
+	zval *request;
+	STATUS status = FAILURE;
+	getObject(http_requestpool_object, obj);
+
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, http_request_object_ce)) {
+		status = http_request_pool_detach(&obj->pool, request);
+	}
+	SET_EH_NORMAL();
+	RETURN_SUCCESS(status);
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequestPool::send()
+ *
+ * Send all attached HttpRequest objects in parallel.
+ */
+PHP_METHOD(HttpRequestPool, send)
+{
+	STATUS status;
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	SET_EH_THROW_HTTP();
+	status = http_request_pool_send(&obj->pool);
+	SET_EH_NORMAL();
+
+	RETURN_SUCCESS(status);
+}
+/* }}} */
+
+/* {{{ proto protected bool HttpRequestPool::socketSend()
+ *
+ * Usage:
+ * <pre>
+ * <?php
+ *     while ($pool->socketSend()) {
+ *         do_something_else();
+ *         if (!$pool->socketSelect()) {
+ *             die('Socket error');
+ *         }
+ *     }
+ *     $pool->socketRead();
+ * ?>
+ * </pre>
+ */
+PHP_METHOD(HttpRequestPool, socketSend)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	RETURN_BOOL(0 < http_request_pool_perform(&obj->pool));
+}
+/* }}} */
+
+/* {{{ proto protected bool HttpRequestPool::socketSelect()
+ *
+ * See HttpRequestPool::socketSend().
+ */
+PHP_METHOD(HttpRequestPool, socketSelect)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	RETURN_SUCCESS(http_request_pool_select(&obj->pool));
+}
+/* }}} */
+
+/* {{{ proto protected void HttpRequestPool::socketRead()
+ *
+ * See HttpRequestPool::socketSend().
+ */
+PHP_METHOD(HttpRequestPool, socketRead)
+{
+	getObject(http_requestpool_object, obj);
+
+	NO_ARGS;
+
+	zend_llist_apply(&obj->pool.handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
+}
+/* }}} */
 
 #endif /* ZEND_ENGINE_2 && HTTP_HAVE_CURL */
 

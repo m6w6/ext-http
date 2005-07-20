@@ -24,8 +24,10 @@
 #ifdef ZEND_ENGINE_2
 
 #include "php_http.h"
+#include "php_http_api.h"
 #include "php_http_std_defs.h"
 #include "php_http_message_object.h"
+#include "php_http_exception_object.h"
 
 #include "phpstr/phpstr.h"
 
@@ -460,6 +462,446 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 
 	return OBJ_PROP(obj);
 }
+
+/* ### USERLAND ### */
+
+/* {{{ proto void HttpMessage::__construct([string message])
+ *
+ * Instantiate a new HttpMessage object.
+ */
+PHP_METHOD(HttpMessage, __construct)
+{
+	char *message = NULL;
+	int length = 0;
+	getObject(http_message_object, obj);
+
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &message, &length) && message && length) {
+		if (obj->message = http_message_parse(message, length)) {
+			if (obj->message->parent) {
+				obj->parent = http_message_object_from_msg(obj->message->parent);
+			}
+		}
+	} else if (!obj->message) {
+		obj->message = http_message_new();
+	}
+	SET_EH_NORMAL();
+}
+/* }}} */
+
+/* {{{ proto static HttpMessage HttpMessage::fromString(string raw_message)
+ *
+ * Create an HttpMessage object from a string.
+ */
+PHP_METHOD(HttpMessage, fromString)
+{
+	char *string = NULL;
+	int length = 0;
+	http_message *msg = NULL;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
+		RETURN_NULL();
+	}
+
+	if (!(msg = http_message_parse(string, length))) {
+		RETURN_NULL();
+	}
+
+	Z_TYPE_P(return_value) = IS_OBJECT;
+	return_value->value.obj = http_message_object_from_msg(msg);
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::getBody()
+ *
+ * Get the body of the parsed Message.
+ */
+PHP_METHOD(HttpMessage, getBody)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_message_object, obj);
+		RETURN_PHPSTR(&obj->message->body, PHPSTR_FREE_NOT, 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto array HttpMessage::getHeaders()
+ *
+ * Get Message Headers.
+ */
+PHP_METHOD(HttpMessage, getHeaders)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval headers;
+		getObject(http_message_object, obj);
+
+		Z_ARRVAL(headers) = &obj->message->hdrs;
+		array_init(return_value);
+		array_copy(&headers, return_value);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpMessage::setHeaders(array headers)
+ *
+ * Sets new headers.
+ */
+PHP_METHOD(HttpMessage, setHeaders)
+{
+	zval *new_headers, old_headers;
+	getObject(http_message_object, obj);
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &new_headers)) {
+		return;
+	}
+
+	zend_hash_clean(&obj->message->hdrs);
+	Z_ARRVAL(old_headers) = &obj->message->hdrs;
+	array_copy(new_headers, &old_headers);
+}
+/* }}} */
+
+/* {{{ proto void HttpMessage::addHeaders(array headers[, bool append = false])
+ *
+ * Add headers. If append is true, headers with the same name will be separated, else overwritten.
+ */
+PHP_METHOD(HttpMessage, addHeaders)
+{
+	zval old_headers, *new_headers;
+	zend_bool append = 0;
+	getObject(http_message_object, obj);
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|b", &new_headers, &append)) {
+		return;
+	}
+
+	Z_ARRVAL(old_headers) = &obj->message->hdrs;
+	if (append) {
+		array_append(new_headers, &old_headers);
+	} else {
+		array_merge(new_headers, &old_headers);
+	}
+}
+/* }}} */
+
+/* {{{ proto long HttpMessage::getType()
+ *
+ * Get Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)
+ */
+PHP_METHOD(HttpMessage, getType)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_message_object, obj);
+		RETURN_LONG(obj->message->type);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpMessage::setType(long type)
+ *
+ * Set Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)
+ */
+PHP_METHOD(HttpMessage, setType)
+{
+	long type;
+	getObject(http_message_object, obj);
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &type)) {
+		return;
+	}
+	http_message_set_type(obj->message, type);
+}
+/* }}} */
+
+/* {{{ proto long HttpMessage::getResponseCode()
+ *
+ * Get the Response Code of the Message.
+ */
+PHP_METHOD(HttpMessage, getResponseCode)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_message_object, obj);
+
+		if (!HTTP_MSG_TYPE(RESPONSE, obj->message)) {
+			http_error(E_NOTICE, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_RESPONSE");
+			RETURN_NULL();
+		}
+
+		RETURN_LONG(obj->message->info.response.code);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpMessage::setResponseCode(long code)
+ *
+ * Set the response code of an HTTP Response Message.
+ * Returns false if the Message is not of type HTTP_MSG_RESPONSE,
+ * or if the response code is out of range (100-510).
+ */
+PHP_METHOD(HttpMessage, setResponseCode)
+{
+	long code;
+	getObject(http_message_object, obj);
+
+	if (!HTTP_MSG_TYPE(RESPONSE, obj->message)) {
+		http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_RESPONSE");
+		RETURN_FALSE;
+	}
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
+		RETURN_FALSE;
+	}
+	if (code < 100 || code > 510) {
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid response code (100-510): %ld", code);
+		RETURN_FALSE;
+	}
+
+	obj->message->info.response.code = code;
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::getRequestMethod()
+ *
+ * Get the Request Method of the Message.
+ * Returns false if the Message is not of type HTTP_MSG_REQUEST.
+ */
+PHP_METHOD(HttpMessage, getRequestMethod)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_message_object, obj);
+
+		if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
+			http_error(E_NOTICE, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_REQUEST");
+			RETURN_NULL();
+		}
+
+		RETURN_STRING(obj->message->info.request.method, 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpMessage::setRequestMethod(string method)
+ *
+ * Set the Request Method of the HTTP Message.
+ * Returns false if the Message is not of type HTTP_MSG_REQUEST.
+ */
+PHP_METHOD(HttpMessage, setRequestMethod)
+{
+	char *method;
+	int method_len;
+	getObject(http_message_object, obj);
+
+	if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
+		http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_REQUEST");
+		RETURN_FALSE;
+	}
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &method, &method_len)) {
+		RETURN_FALSE;
+	}
+	if (method_len < 1) {
+		http_error(E_WARNING, HTTP_E_PARAM, "Cannot set HttpMessage::requestMethod to an empty string");
+		RETURN_FALSE;
+	}
+	if (SUCCESS != http_check_method(method)) {
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Unkown request method: %s", method);
+		RETURN_FALSE;
+	}
+
+	STR_SET(obj->message->info.request.method, estrndup(method, method_len));
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::getRequestUri()
+ *
+ * Get the Request URI of the Message.
+ */
+PHP_METHOD(HttpMessage, getRequestUri)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_message_object, obj);
+
+		if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
+			http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_REQUEST");
+			RETURN_NULL();
+		}
+
+		RETURN_STRING(obj->message->info.request.URI, 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpMessage::setRequestUri(string URI)
+ *
+ * Set the Request URI of the HTTP Message.
+ * Returns false if the Message is not of type HTTP_MSG_REQUEST,
+ * or if paramtere URI was empty.
+ */
+PHP_METHOD(HttpMessage, setRequestUri)
+{
+	char *URI;
+	int URIlen;
+	getObject(http_message_object, obj);
+
+	if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
+		http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_REQUEST");
+		RETURN_FALSE;
+	}
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &URI, &URIlen)) {
+		RETURN_FALSE;
+	}
+	if (URIlen < 1) {
+		http_error(E_WARNING, HTTP_E_PARAM, "Cannot set HttpMessage::requestUri to an empty string");
+		RETURN_FALSE;
+	}
+
+	STR_SET(obj->message->info.request.URI, estrndup(URI, URIlen));
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::getHttpVersion()
+ *
+ * Get the HTTP Protocol Version of the Message.
+ */
+PHP_METHOD(HttpMessage, getHttpVersion)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		char ver[4] = {0};
+		float version;
+		getObject(http_message_object, obj);
+
+		switch (obj->message->type)
+		{
+			case HTTP_MSG_RESPONSE:
+				version = obj->message->info.response.http_version;
+			break;
+
+			case HTTP_MSG_REQUEST:
+				version = obj->message->info.request.http_version;
+			break;
+
+			case HTTP_MSG_NONE:
+			default:
+				RETURN_NULL();
+		}
+		sprintf(ver, "%1.1f", version);
+		RETURN_STRINGL(ver, 3, 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpMessage::setHttpVersion(string version)
+ *
+ * Set the HTTP Protocol version of the Message.
+ * Returns false if version is invalid (1.0 and 1.1).
+ */
+PHP_METHOD(HttpMessage, setHttpVersion)
+{
+	char v[4];
+	zval *zv;
+	getObject(http_message_object, obj);
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &zv)) {
+		return;
+	}
+
+	if (HTTP_MSG_TYPE(NONE, obj->message)) {
+		http_error(E_WARNING, HTTP_E_MSG, "Message is neither of type HTTP_MSG_RESPONSE nor HTTP_MSG_REQUEST");
+		RETURN_FALSE;
+	}
+
+	convert_to_double(zv);
+	sprintf(v, "%1.1f", Z_DVAL_P(zv));
+	if (strcmp(v, "1.0") && strcmp(v, "1.1")) {
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid HTTP protocol version (1.0 or 1.1): %s", v);
+		RETURN_FALSE;
+	}
+
+	if (HTTP_MSG_TYPE(RESPONSE, obj->message)) {
+		obj->message->info.response.http_version = (float) Z_DVAL_P(zv);
+	} else {
+		obj->message->info.request.http_version = (float) Z_DVAL_P(zv);
+	}
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto HttpMessage HttpMessage::getParentMessage()
+ *
+ * Get parent Message.
+ */
+PHP_METHOD(HttpMessage, getParentMessage)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_message_object, obj);
+
+		if (obj->message->parent) {
+			RETVAL_OBJVAL(obj->parent);
+		} else {
+			RETVAL_NULL();
+		}
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpMessage::send()
+ *
+ * Send the Message according to its type as Response or Request.
+ */
+PHP_METHOD(HttpMessage, send)
+{
+	getObject(http_message_object, obj);
+
+	NO_ARGS;
+
+	RETURN_SUCCESS(http_message_send(obj->message));
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::toString([bool include_parent = true])
+ *
+ * Get the string representation of the Message.
+ */
+PHP_METHOD(HttpMessage, toString)
+{
+	IF_RETVAL_USED {
+		char *string;
+		size_t length;
+		zend_bool include_parent = 1;
+		getObject(http_message_object, obj);
+
+		if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &include_parent)) {
+			RETURN_FALSE;
+		}
+
+		if (include_parent) {
+			http_message_serialize(obj->message, &string, &length);
+		} else {
+			http_message_tostring(obj->message, &string, &length);
+		}
+		RETURN_STRINGL(string, length, 0);
+	}
+}
+/* }}} */
 
 #endif /* ZEND_ENGINE_2 */
 

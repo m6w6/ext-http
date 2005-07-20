@@ -41,6 +41,19 @@ typedef int STATUS;
 	if(target) efree(target); \
 	target = source
 
+#define ZVAL_STRING_FREE(z, s, d) \
+	{\
+		zval *__tmp = (z); \
+		zval_dtor(__tmp); \
+		ZVAL_STRING(__tmp, (s), (d)); \
+	}
+#define ZVAL_STRINGL_FREE(z, s, l, d) \
+	{\
+		zval *__tmp = (z); \
+		zval_dtor(__tmp); \
+		ZVAL_STRINGL(__tmp, (s), (l), (d)); \
+	}
+
 /* return bool (v == SUCCESS) */
 #define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
@@ -194,6 +207,10 @@ typedef int STATUS;
 #	define getObject(t, o) getObjectEx(t, o, getThis())
 #	define getObjectEx(t, o, v) t * o = ((t *) zend_object_store_get_object(v TSRMLS_CC))
 #	define OBJ_PROP(o) o->zo.properties
+#	define DCL_STATIC_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
+#	define DCL_STATIC_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
+#	define DCL_STATIC_PROP_N(a, n) zend_declare_property_null(ce, (#n), sizeof(#n), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
+#	define GET_STATIC_PROP_EX(ce, n) zend_std_get_static_property(ce, (#n), sizeof(#n), 0 TSRMLS_CC)
 #	define DCL_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define DCL_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define DCL_PROP_N(a, n) zend_declare_property_null(ce, (#n), sizeof(#n), (ZEND_ACC_ ##a) TSRMLS_CC)
@@ -203,6 +220,11 @@ typedef int STATUS;
 #	define SET_PROP_EX(o, this, n, z) zend_update_property(o->zo.ce, this, (#n), sizeof(#n), (z) TSRMLS_CC)
 #	define GET_PROP(o, n) GET_PROP_EX(o, getThis(), n)
 #	define GET_PROP_EX(o, this, n) zend_read_property(o->zo.ce, this, (#n), sizeof(#n), 0 TSRMLS_CC)
+
+#	define ACC_PROP_PRIVATE(ce, flags)		((flags & ZEND_ACC_PRIVATE) && (EG(scope) && ce == EG(scope))
+#	define ACC_PROP_PROTECTED(ce, flags)	((flags & ZEND_ACC_PROTECTED) && (zend_check_protected(ce, EG(scope))))
+#	define ACC_PROP_PUBLIC(flags)			(flags & ZEND_ACC_PUBLIC)
+#	define ACC_PROP(ce, flags)				(ACC_PROP_PUBLIC(flags) || ACC_PROP_PRIVATE(ce, flags) || ACC_PROP_PROTECTED(ce, flags))
 
 #	define INIT_PARR(o, n) \
 	{ \

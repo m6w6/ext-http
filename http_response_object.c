@@ -23,10 +23,14 @@
 
 #ifdef ZEND_ENGINE_2
 
+#include "SAPI.h"
+#include "php_ini.h"
+
 #include "php_http.h"
 #include "php_http_api.h"
 #include "php_http_std_defs.h"
 #include "php_http_response_object.h"
+#include "php_http_exception_object.h"
 #include "php_http_send_api.h"
 #include "php_http_cache_api.h"
 
@@ -34,15 +38,11 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
+#define GET_STATIC_PROP(n) *GET_STATIC_PROP_EX(http_response_object_ce, n)
+
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpResponse, method, 0, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpResponse, method, ret_ref)
-#define HTTP_RESPONSE_ME(method, visibility)	PHP_ME(HttpResponse, method, HTTP_ARGS(HttpResponse, method), visibility)
-
-HTTP_EMPTY_ARGS(__destruct, 0);
-HTTP_BEGIN_ARGS(__construct, 0)
-	HTTP_ARG_VAL(cache, 0)
-	HTTP_ARG_VAL(gzip, 0)
-HTTP_END_ARGS;
+#define HTTP_RESPONSE_ME(method, visibility)	PHP_ME(HttpResponse, method, HTTP_ARGS(HttpResponse, method), visibility|ZEND_ACC_STATIC)
 
 HTTP_EMPTY_ARGS(getETag, 0);
 HTTP_BEGIN_ARGS(setETag, 1)
@@ -62,7 +62,7 @@ HTTP_END_ARGS;
 HTTP_EMPTY_ARGS(getCacheControl, 0);
 HTTP_BEGIN_ARGS(setCacheControl, 1)
 	HTTP_ARG_VAL(cache_control, 0)
-	HTTP_ARG_VAL(raw, 0)
+	HTTP_ARG_VAL(max_age, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getContentType, 0);
@@ -81,8 +81,8 @@ HTTP_BEGIN_ARGS(setThrottleDelay, 1)
 	HTTP_ARG_VAL(seconds, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getSendBuffersize, 0);
-HTTP_BEGIN_ARGS(setSendBuffersize, 1)
+HTTP_EMPTY_ARGS(getBufferSize, 0);
+HTTP_BEGIN_ARGS(setBufferSize, 1)
 	HTTP_ARG_VAL(bytes, 0)
 HTTP_END_ARGS;
 
@@ -105,17 +105,11 @@ HTTP_BEGIN_ARGS(send, 0)
 	HTTP_ARG_VAL(clean_ob, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(catchOutput, 0)
-	HTTP_ARG_VAL(clean_ob, 0)
-HTTP_END_ARGS;
-
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
-	HTTP_RESPONSE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	HTTP_RESPONSE_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
 
 	HTTP_RESPONSE_ME(setETag, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(getETag, ZEND_ACC_PUBLIC)
@@ -138,8 +132,8 @@ zend_function_entry http_response_object_fe[] = {
 	HTTP_RESPONSE_ME(setThrottleDelay, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(getThrottleDelay, ZEND_ACC_PUBLIC)
 
-	HTTP_RESPONSE_ME(setSendBuffersize, ZEND_ACC_PUBLIC)
-	HTTP_RESPONSE_ME(getSendBuffersize, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(setBufferSize, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getBufferSize, ZEND_ACC_PUBLIC)
 
 	HTTP_RESPONSE_ME(setData, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(getData, ZEND_ACC_PUBLIC)
@@ -151,7 +145,6 @@ zend_function_entry http_response_object_fe[] = {
 	HTTP_RESPONSE_ME(getStream, ZEND_ACC_PUBLIC)
 
 	HTTP_RESPONSE_ME(send, ZEND_ACC_PUBLIC)
-	HTTP_RESPONSE_ME(catchOutput, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };
@@ -159,114 +152,455 @@ static zend_object_handlers http_response_object_handlers;
 
 void _http_response_object_init(INIT_FUNC_ARGS)
 {
-	HTTP_REGISTER_CLASS_EX(HttpResponse, http_response_object, NULL, 0);
-}
-
-zend_object_value _http_response_object_new(zend_class_entry *ce TSRMLS_DC)
-{
-	zend_object_value ov;
-	http_response_object *o;
-
-	o = ecalloc(1, sizeof(http_response_object));
-	o->zo.ce = ce;
-
-	ALLOC_HASHTABLE(OBJ_PROP(o));
-	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
-	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-
-	ov.handle = zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, http_response_object_free, NULL TSRMLS_CC);
-	ov.handlers = &http_response_object_handlers;
-
-	return ov;
+	HTTP_REGISTER_CLASS(HttpResponse, http_response_object, NULL, 0);
+	http_response_object_declare_default_properties();
 }
 
 static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 {
 	zend_class_entry *ce = http_response_object_ce;
 
-	DCL_PROP(PROTECTED, string, contentType, "application/x-octetstream");
-	DCL_PROP(PROTECTED, string, eTag, "");
-	DCL_PROP(PROTECTED, string, dispoFile, "");
-	DCL_PROP(PROTECTED, string, cacheControl, "public");
-	DCL_PROP(PROTECTED, string, data, "");
-	DCL_PROP(PROTECTED, string, file, "");
-	DCL_PROP(PROTECTED, long, stream, 0);
-	DCL_PROP(PROTECTED, long, lastModified, 0);
-	DCL_PROP(PROTECTED, long, dispoInline, 0);
-	DCL_PROP(PROTECTED, long, cache, 0);
-	DCL_PROP(PROTECTED, long, gzip, 0);
-	DCL_PROP(PROTECTED, long, sendBuffersize, HTTP_SENDBUF_SIZE);
-	DCL_PROP(PROTECTED, double, throttleDelay, 0.0);
-
-	DCL_PROP(PRIVATE, long, raw_cache_header, 0);
-	DCL_PROP(PRIVATE, long, send_mode, -1);
-	DCL_PROP(PRIVATE, long, sent, 0);
-	DCL_PROP(PRIVATE, long, catch_ob, 0);
+	DCL_STATIC_PROP(PRIVATE, long, sent, 0);
+	DCL_STATIC_PROP(PRIVATE, long, mode, -1);
+	DCL_STATIC_PROP(PRIVATE, long, catch, 0);
+	DCL_STATIC_PROP(PROTECTED, long, cache, 0);
+	DCL_STATIC_PROP(PROTECTED, long, gzip, 0);
+	DCL_STATIC_PROP(PROTECTED, long, stream, 0);
+	DCL_STATIC_PROP(PROTECTED, string, file, "");
+	DCL_STATIC_PROP(PROTECTED, string, data, "");
+	DCL_STATIC_PROP(PROTECTED, string, eTag, "");
+	DCL_STATIC_PROP(PROTECTED, long, lastModified, 0);
+	DCL_STATIC_PROP(PROTECTED, string, cacheControl, HTTP_DEFAULT_CACHECONTROL);
+	DCL_STATIC_PROP(PROTECTED, string, contentType, INI_STR("default_content_type"));
+	DCL_STATIC_PROP(PROTECTED, string, contentDisposition, "");
+	DCL_STATIC_PROP(PROTECTED, long, bufferSize, HTTP_SENDBUF_SIZE);
+	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
 }
 
-void _http_response_object_free(zend_object *object TSRMLS_DC)
+/* ### USERLAND ### */
+
+/* {{{ proto bool HttpResponse::setCache(bool cache)
+ *
+ * Whether it sould be attempted to cache the entitity.
+ * This will result in necessary caching headers and checks of clients
+ * "If-Modified-Since" and "If-None-Match" headers.  If one of those headers
+ * matches a "304 Not Modified" status code will be issued.
+ *
+ * NOTE: If you're using sessions, be shure that you set session.cache_limiter
+ * to something more appropriate than "no-cache"!
+ */
+PHP_METHOD(HttpResponse, setCache)
 {
-	http_response_object *o = (http_response_object *) object;
+	zend_bool do_cache = 0;
 
-	if (OBJ_PROP(o)) {
-		zend_hash_destroy(OBJ_PROP(o));
-		FREE_HASHTABLE(OBJ_PROP(o));
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "b", &do_cache)) {
+		RETURN_FALSE;
 	}
-	efree(o);
-}
 
-void _http_response_object_sendhandler(zval *this_ptr, http_response_object *obj, zend_bool clean_ob, zval *return_value TSRMLS_DC)
+	ZVAL_LONG(GET_STATIC_PROP(cache), do_cache);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::getCache()
+ *
+ * Get current caching setting.
+ */
+PHP_METHOD(HttpResponse, getCache)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		RETURN_BOOL(Z_LVAL_P(GET_STATIC_PROP(cache)));
+	}
+}
+/* }}}*/
+
+/* {{{ proto bool HttpResponse::setGzip(bool gzip)
+ *
+ * Enable on-thy-fly gzipping of the sent entity. NOT IMPLEMENTED YET.
+ */
+PHP_METHOD(HttpResponse, setGzip)
+{
+	zend_bool do_gzip = 0;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "b", &do_gzip)) {
+		RETURN_FALSE;
+	}
+
+	ZVAL_LONG(GET_STATIC_PROP(gzip), do_gzip);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::getGzip()
+ *
+ * Get current gzipping setting.
+ */
+PHP_METHOD(HttpResponse, getGzip)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		RETURN_BOOL(Z_LVAL_P(GET_STATIC_PROP(gzip)));
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::setCacheControl(string control[, long max_age = 0])
+ *
+ * Set a custom cache-control header, usually being "private" or "public"; 
+ * The max_age parameter controls how long the cache entry is valid on the client side.
+ */
+PHP_METHOD(HttpResponse, setCacheControl)
+{
+	char *ccontrol, *cctl;
+	int cc_len;
+	long max_age = 0;
+
+#define HTTP_CACHECONTROL_TEMPLATE "%s, must-revalidate, max_age=%ld"
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &ccontrol, &cc_len, &max_age)) {
+		RETURN_FALSE;
+	}
+
+	if (strcmp(ccontrol, "public") && strcmp(ccontrol, "private") && strcmp(ccontrol, "no-cache")) {
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
+		RETURN_FALSE;
+	} else {
+		spprintf(&cctl, 0, HTTP_CACHECONTROL_TEMPLATE, ccontrol, max_age);
+		ZVAL_STRING_FREE(GET_STATIC_PROP(cacheControl), cctl, 0);
+		RETURN_TRUE;
+	}
+}
+/* }}} */
+
+/* {{{ proto string HttpResponse::getCacheControl()
+ *
+ * Get current Cache-Control header setting.
+ */
+PHP_METHOD(HttpResponse, getCacheControl)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *ccontrol = GET_STATIC_PROP(cacheControl);
+		RETURN_STRINGL(Z_STRVAL_P(ccontrol), Z_STRLEN_P(ccontrol), 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::setContentType(string content_type)
+ *
+ * Set the content-type of the sent entity.
+ */
+PHP_METHOD(HttpResponse, setContentType)
+{
+	char *ctype;
+	int ctype_len;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ctype, &ctype_len)) {
+		RETURN_FALSE;
+	}
+
+	if (!strchr(ctype, '/')) {
+		http_error_ex(E_WARNING, HTTP_E_PARAM, "Content type '%s' doesn't seem to contain a primary and a secondary part", ctype);
+		RETURN_FALSE;
+	}
+
+	ZVAL_STRINGL_FREE(GET_STATIC_PROP(contentType), ctype, ctype_len, 1);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpResponse::getContentType()
+ *
+ * Get current Content-Type header setting.
+ */
+PHP_METHOD(HttpResponse, getContentType)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *ctype = GET_STATIC_PROP(contentType);
+		RETURN_STRINGL(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::setContentDisposition(string filename[, bool inline = false])
+ *
+ * Set the Content-Disposition of the sent entity.  This setting aims to suggest
+ * the receiveing user agent how to handle the sent entity;  usually the client
+ * will show the user a "Save As..." popup.
+ */
+PHP_METHOD(HttpResponse, setContentDisposition)
+{
+	char *file, *cd;
+	int file_len;
+	zend_bool send_inline = 0;
+
+#define HTTP_CONTENTDISPOSITION_TEMPLATE "%s; filename=\"%s\""
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &file, &file_len, &send_inline)) {
+		RETURN_FALSE;
+	}
+
+	spprintf(&cd, 0, HTTP_CONTENTDISPOSITION_TEMPLATE, send_inline ? "inline" : "attachment", file);
+	ZVAL_STRING_FREE(GET_STATIC_PROP(contentDisposition), cd, 0);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpResponse::getContentDisposition()
+ *
+ * Get current Content-Disposition setting.
+ */
+PHP_METHOD(HttpResponse, getContentDisposition)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *cd = GET_STATIC_PROP(contentDisposition);
+		RETURN_STRINGL(Z_STRVAL_P(cd), Z_STRLEN_P(cd), 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::setETag(string etag)
+ *
+ * Set a custom ETag.  Use this only if you know what you're doing.
+ */
+PHP_METHOD(HttpResponse, setETag)
+{
+	char *etag;
+	int etag_len;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &etag, &etag_len)) {
+		RETURN_FALSE;
+	}
+
+	ZVAL_STRINGL_FREE(GET_STATIC_PROP(eTag), etag, etag_len, 1);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpResponse::getETag()
+ *
+ * Get the previously set custom ETag.
+ */
+PHP_METHOD(HttpResponse, getETag)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *etag = GET_STATIC_PROP(eTag);
+		RETURN_STRINGL(Z_STRVAL_P(etag), Z_STRLEN_P(etag), 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpResponse::setThrottleDelay(double seconds)
+ *
+ */
+PHP_METHOD(HttpResponse, setThrottleDelay)
+{
+	double seconds;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "d", &seconds)) {
+		ZVAL_DOUBLE(GET_STATIC_PROP(throttleDelay), seconds);
+	}
+}
+/* }}} */
+
+/* {{{ proto double HttpResponse::getThrottleDelay()
+ *
+ */
+PHP_METHOD(HttpResponse, getThrottleDelay)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		RETURN_DOUBLE(Z_DVAL_P(GET_STATIC_PROP(throttleDelay)));
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpResponse::setBufferSize(long bytes)
+ *
+ */
+PHP_METHOD(HttpResponse, setBufferSize)
+{
+	long bytes;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &bytes)) {
+		ZVAL_LONG(GET_STATIC_PROP(bufferSize), bytes);
+	}
+}
+/* }}} */
+
+/* {{{ proto long HttpResponse::getBufferSize()
+ *
+ */
+PHP_METHOD(HttpResponse, getBufferSize)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		RETURN_LONG(Z_LVAL_P(GET_STATIC_PROP(bufferSize)));
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::setData(string data)
+ *
+ * Set the data to be sent.
+ */
+PHP_METHOD(HttpResponse, setData)
+{
+	zval *the_data, *data;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &the_data)) {
+		RETURN_FALSE;
+	}
+
+	convert_to_string_ex(&the_data);
+	data = GET_STATIC_PROP(data);
+	ZVAL_STRINGL_FREE(data, Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), 1);
+	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_data, SEND_DATA));
+	ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpResponse::getData()
+ *
+ * Get the previously set data to be sent.
+ */
+PHP_METHOD(HttpResponse, getData)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *the_data = GET_STATIC_PROP(data);
+		RETURN_STRINGL(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::setStream(resource stream)
+ *
+ * Set the resource to be sent.
+ */
+PHP_METHOD(HttpResponse, setStream)
+{
+	zval *the_stream;
+	php_stream *the_real_stream;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &the_stream)) {
+		RETURN_FALSE;
+	}
+
+	php_stream_from_zval(the_real_stream, &the_stream);
+	ZVAL_LONG(GET_STATIC_PROP(stream), Z_LVAL_P(the_stream));
+	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_real_stream, SEND_RSRC));
+	ZVAL_LONG(GET_STATIC_PROP(mode), SEND_RSRC);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto resource HttpResponse::getStream()
+ *
+ * Get the previously set resource to be sent.
+ */
+PHP_METHOD(HttpResponse, getStream)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		RETURN_RESOURCE(Z_LVAL_P(GET_STATIC_PROP(stream)));
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::setFile(string file)
+ *
+ * Set the file to be sent.
+ */
+PHP_METHOD(HttpResponse, setFile)
+{
+	zval *the_file;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &the_file)) {
+		RETURN_FALSE;
+	}
+
+	convert_to_string_ex(&the_file);
+	ZVAL_STRINGL_FREE(GET_STATIC_PROP(file), Z_STRVAL_P(the_file), Z_STRLEN_P(the_file), 1);
+	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_file, -1));
+	ZVAL_LONG(GET_STATIC_PROP(mode), -1);
+
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpResponse::getFile()
+ *
+ * Get the previously set file to be sent.
+ */
+PHP_METHOD(HttpResponse, getFile)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *the_file = GET_STATIC_PROP(file);
+		RETURN_STRINGL(Z_STRVAL_P(the_file), Z_STRLEN_P(the_file), 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpResponse::send([bool clean_ob = true])
+ *
+ * Finally send the entity.
+ */
+PHP_METHOD(HttpResponse, send)
 {
 	zval *do_cache, *do_gzip;
+	zend_bool clean_ob = 1;
 
-	if (!obj) {
-		getObject(http_response_object, o);
-		obj = o;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {
+		RETURN_FALSE;
 	}
-
-	do_cache = GET_PROP(obj, cache);
-	do_gzip  = GET_PROP(obj, gzip);
 
 	if (clean_ob) {
 		/* interrupt on-the-fly etag generation */
 		HTTP_G(etag).started = 0;
 		/* discard previous output buffers */
-		php_end_ob_buffers(0 TSRMLS_CC);
+		//php_end_ob_buffers(0 TSRMLS_CC);
 	}
 
 	/* gzip */
-	if (Z_LVAL_P(do_gzip)) {
+	if (Z_LVAL_P(GET_STATIC_PROP(gzip))) {
 		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
 	}
 
 	/* caching */
-	if (Z_LVAL_P(do_cache)) {
+	if (Z_LVAL_P(GET_STATIC_PROP(cache))) {
 		char *cc_hdr;
 		int cc_len;
-		zval *cctrl, *etag, *lmod, *ccraw;
+		zval *cctl, *etag, *lmod;
 
-		etag  = GET_PROP(obj, eTag);
-		lmod  = GET_PROP(obj, lastModified);
-		cctrl = GET_PROP(obj, cacheControl);
-		ccraw = GET_PROP(obj, raw_cache_header);
+		etag = GET_STATIC_PROP(eTag);
+		lmod = GET_STATIC_PROP(lastModified);
+		cctl = GET_STATIC_PROP(cacheControl);
 
-		if (Z_LVAL_P(ccraw)) {
-			cc_hdr = Z_STRVAL_P(cctrl);
-			cc_len = Z_STRLEN_P(cctrl);
-		} else {
-			char cc_header[42] = {0};
-			sprintf(cc_header, "%s, must-revalidate, max-age=0", Z_STRVAL_P(cctrl));
-			cc_hdr = cc_header;
-			cc_len = Z_STRLEN_P(cctrl) + lenof(", must-revalidate, max-age=0");
-		}
-
-		http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), cc_hdr, cc_len);
-		http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), cc_hdr, cc_len);
+		http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag),Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
+		http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
 	}
 
 	/* content type */
 	{
-		zval *ctype = GET_PROP(obj, contentType);
+		zval *ctype = GET_STATIC_PROP(contentType);
 		if (Z_STRLEN_P(ctype)) {
 			http_send_content_type(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
 		} else {
@@ -276,49 +610,48 @@ void _http_response_object_sendhandler(zval *this_ptr, http_response_object *obj
 
 	/* content disposition */
 	{
-		zval *dispo_file = GET_PROP(obj, dispoFile);
-		if (Z_STRLEN_P(dispo_file)) {
-			zval *dispo_inline = GET_PROP(obj, dispoInline);
-			http_send_content_disposition(Z_STRVAL_P(dispo_file), Z_STRLEN_P(dispo_file), (zend_bool) Z_LVAL_P(dispo_inline));
+		zval *cd = GET_STATIC_PROP(contentDisposition);
+		if (Z_STRLEN_P(cd)) {
+			char *cds;
+			
+			spprintf(&cds, 0, "Content-Disposition: %s", Z_STRVAL_P(cd));
+			http_send_header(cds);
+			efree(cds);
 		}
 	}
 
 	/* throttling */
 	{
-		zval *send_buffersize, *throttle_delay;
-		send_buffersize = GET_PROP(obj, sendBuffersize);
-		throttle_delay  = GET_PROP(obj, throttleDelay);
-		HTTP_G(send).buffer_size    = Z_LVAL_P(send_buffersize);
-		HTTP_G(send).throttle_delay = Z_DVAL_P(throttle_delay);
+		HTTP_G(send).buffer_size    = Z_LVAL_P(GET_STATIC_PROP(bufferSize));
+		HTTP_G(send).throttle_delay = Z_DVAL_P(GET_STATIC_PROP(throttleDelay));
 	}
 
 	/* send */
 	{
-		zval *send_mode = GET_PROP(obj, send_mode);
-		switch (Z_LVAL_P(send_mode))
+		switch (Z_LVAL_P(GET_STATIC_PROP(mode)))
 		{
 			case SEND_DATA:
 			{
-				zval *zdata = GET_PROP(obj, data);
+				zval *zdata = GET_STATIC_PROP(data);
 				RETURN_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
 			}
 
 			case SEND_RSRC:
 			{
 				php_stream *the_real_stream;
-				zval *the_stream = GET_PROP(obj, stream);
+				zval *the_stream = GET_STATIC_PROP(stream);
 				php_stream_from_zval(the_real_stream, &the_stream);
 				RETURN_SUCCESS(http_send_stream(the_real_stream));
 			}
 
 			default:
 			{
-				zval *zfile = GET_PROP(obj, file);
-				RETURN_SUCCESS(http_send_file(Z_STRVAL_P(zfile)));
+				RETURN_SUCCESS(http_send_file(Z_STRVAL_P(GET_STATIC_PROP(file))));
 			}
 		}
 	}
 }
+/* }}} */
 
 #endif /* ZEND_ENGINE_2 */
 
