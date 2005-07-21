@@ -38,7 +38,11 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-#define GET_STATIC_PROP(n) *GET_STATIC_PROP_EX(http_response_object_ce, n)
+#define USE_STATIC_PROP()		USE_STATIC_PROP_EX(http_response_object_ce)
+#define GET_STATIC_PROP(n)		*GET_STATIC_PROP_EX(http_response_object_ce, n)
+#define SET_STATIC_PROP(n, v)	SET_STATIC_PROP_EX(http_response_object_ce, n, v)
+#define SET_STATIC_PROP_STRING(n, s, d) SET_STATIC_PROP_STRING_EX(http_response_object_ce, n, s, d)
+#define SET_STATIC_PROP_STRINGL(n, s, l, d) SET_STATIC_PROP_STRINGL_EX(http_response_object_ce, n, s, l, d)
 
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpResponse, method, 0, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpResponse, method, ret_ref)
@@ -166,13 +170,13 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP(PROTECTED, bool, cache, 0);
 	DCL_STATIC_PROP(PROTECTED, bool, gzip, 0);
 	DCL_STATIC_PROP(PROTECTED, long, stream, 0);
-	DCL_STATIC_PROP(PROTECTED, string, file, "");
-	DCL_STATIC_PROP(PROTECTED, string, data, "");
-	DCL_STATIC_PROP(PROTECTED, string, eTag, "");
+	DCL_STATIC_PROP_N(PROTECTED, file);
+	DCL_STATIC_PROP_N(PROTECTED, data);
+	DCL_STATIC_PROP_N(PROTECTED, eTag);
 	DCL_STATIC_PROP(PROTECTED, long, lastModified, 0);
-	DCL_STATIC_PROP(PROTECTED, string, cacheControl, HTTP_DEFAULT_CACHECONTROL);
-	DCL_STATIC_PROP(PROTECTED, string, contentType, INI_STR("default_content_type"));
-	DCL_STATIC_PROP(PROTECTED, string, contentDisposition, "");
+	DCL_STATIC_PROP_N(PROTECTED, cacheControl);
+	DCL_STATIC_PROP_N(PROTECTED, contentType);
+	DCL_STATIC_PROP_N(PROTECTED, contentDisposition);
 	DCL_STATIC_PROP(PROTECTED, long, bufferSize, HTTP_SENDBUF_SIZE);
 	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
 }
@@ -197,7 +201,7 @@ PHP_METHOD(HttpResponse, setCache)
 		RETURN_FALSE;
 	}
 
-	ZVAL_LONG(GET_STATIC_PROP(cache), do_cache);
+	ZVAL_BOOL(GET_STATIC_PROP(cache), do_cache);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -228,7 +232,7 @@ PHP_METHOD(HttpResponse, setGzip)
 		RETURN_FALSE;
 	}
 
-	ZVAL_LONG(GET_STATIC_PROP(gzip), do_gzip);
+	ZVAL_BOOL(GET_STATIC_PROP(gzip), do_gzip);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -268,8 +272,9 @@ PHP_METHOD(HttpResponse, setCacheControl)
 		http_error_ex(E_WARNING, HTTP_E_PARAM, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
 		RETURN_FALSE;
 	} else {
+		USE_STATIC_PROP();
 		spprintf(&cctl, 0, HTTP_CACHECONTROL_TEMPLATE, ccontrol, max_age);
-		ZVAL_STRING_FREE(GET_STATIC_PROP(cacheControl), cctl, 0);
+		SET_STATIC_PROP_STRING(cacheControl, cctl, 0);
 		RETURN_TRUE;
 	}
 }
@@ -308,7 +313,8 @@ PHP_METHOD(HttpResponse, setContentType)
 		RETURN_FALSE;
 	}
 
-	ZVAL_STRINGL_FREE(GET_STATIC_PROP(contentType), ctype, ctype_len, 1);
+	USE_STATIC_PROP();
+	SET_STATIC_PROP_STRINGL(contentType, ctype, ctype_len, 1);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -458,15 +464,15 @@ PHP_METHOD(HttpResponse, getBufferSize)
  */
 PHP_METHOD(HttpResponse, setData)
 {
-	zval *the_data, *data;
+	zval *the_data, **data;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &the_data)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
 		RETURN_FALSE;
 	}
-
 	convert_to_string_ex(&the_data);
-	data = GET_STATIC_PROP(data);
-	ZVAL_STRINGL_FREE(data, Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), 1);
+
+	USE_STATIC_PROP();
+	SET_STATIC_PROP(data, the_data);
 	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_data, SEND_DATA));
 	ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
 	RETURN_TRUE;
@@ -501,6 +507,7 @@ PHP_METHOD(HttpResponse, setStream)
 		RETURN_FALSE;
 	}
 
+	USE_STATIC_PROP();
 	php_stream_from_zval(the_real_stream, &the_stream);
 	ZVAL_LONG(GET_STATIC_PROP(stream), Z_LVAL_P(the_stream));
 	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_real_stream, SEND_RSRC));
@@ -531,12 +538,13 @@ PHP_METHOD(HttpResponse, setFile)
 {
 	zval *the_file;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &the_file)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_file)) {
 		RETURN_FALSE;
 	}
 
 	convert_to_string_ex(&the_file);
-	ZVAL_STRINGL_FREE(GET_STATIC_PROP(file), Z_STRVAL_P(the_file), Z_STRLEN_P(the_file), 1);
+	USE_STATIC_PROP();
+	SET_STATIC_PROP(file, the_file);
 	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_file, -1));
 	ZVAL_LONG(GET_STATIC_PROP(mode), -1);
 

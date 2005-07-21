@@ -44,13 +44,13 @@ typedef int STATUS;
 #define ZVAL_STRING_FREE(z, s, d) \
 	{\
 		zval *__tmp = (z); \
-		zval_dtor(__tmp); \
+		/*zval_ptr_dtor(&__tmp);*/ \
 		ZVAL_STRING(__tmp, (s), (d)); \
 	}
 #define ZVAL_STRINGL_FREE(z, s, l, d) \
 	{\
 		zval *__tmp = (z); \
-		zval_dtor(__tmp); \
+		/*zval_ptr_dtor(&__tmp);*/ \
 		ZVAL_STRINGL(__tmp, (s), (l), (d)); \
 	}
 
@@ -211,6 +211,37 @@ typedef int STATUS;
 #	define DCL_STATIC_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
 #	define DCL_STATIC_PROP_N(a, n) zend_declare_property_null(ce, (#n), sizeof(#n), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
 #	define GET_STATIC_PROP_EX(ce, n) zend_std_get_static_property(ce, (#n), sizeof(#n), 0 TSRMLS_CC)
+#	define USE_STATIC_PROP_EX(ce) zend_update_class_constants(ce TSRMLS_CC)
+#	define SET_STATIC_PROP_EX(ce, n, v) \
+	{ \
+		int refcount; \
+		zend_uchar is_ref; \
+		zval **__static = GET_STATIC_PROP_EX(ce, n); \
+ \
+		refcount = (*__static)->refcount; \
+		is_ref = (*__static)->is_ref; \
+		zval_dtor(*__static); \
+		**__static = *(v); \
+		zval_copy_ctor(*__static); \
+		(*__static)->refcount = refcount; \
+		(*__static)->is_ref = is_ref; \
+	}
+#define SET_STATIC_PROP_STRING_EX(ce, n, s, d) \
+	{ \
+		zval *__tmp; \
+		MAKE_STD_ZVAL(__tmp); \
+		ZVAL_STRING(__tmp, (s), (d)); \
+		SET_STATIC_PROP_EX(ce, n, __tmp); \
+		efree(__tmp); \
+	}
+#define SET_STATIC_PROP_STRINGL_EX(ce, n, s, l, d) \
+	{ \
+		zval *__tmp; \
+		MAKE_STD_ZVAL(__tmp); \
+		ZVAL_STRINGL(__tmp, (s), (l), (d)); \
+		SET_STATIC_PROP_EX(ce, n, __tmp); \
+		efree(__tmp); \
+	}
 #	define DCL_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define DCL_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define DCL_PROP_N(a, n) zend_declare_property_null(ce, (#n), sizeof(#n), (ZEND_ACC_ ##a) TSRMLS_CC)
