@@ -61,6 +61,7 @@ STATUS _http_cache_exit_ex(char *cache_token, zend_bool etag, zend_bool free_tok
 /* {{{ char *http_etag(void *, size_t, http_send_mode) */
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
 {
+	php_stream_statbuf ssb;
 	char ssb_buf[128] = {0};
 	unsigned char digest[16];
 	PHP_MD5_CTX ctx;
@@ -76,19 +77,26 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 
 		case SEND_RSRC:
 		{
-			php_stream_statbuf ssb;
-
             if (php_stream_stat((php_stream *) data_ptr, &ssb)) {
+            	efree(new_etag);
                 return NULL;
             }
+
 			snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
 			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
 		}
 		break;
 
 		default:
-			efree(new_etag);
-			return NULL;
+		{
+            if (php_stream_stat_path(Z_STRVAL_P((zval *) data_ptr), &ssb)) {
+            	efree(new_etag);
+                return NULL;
+            }
+
+			snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
+			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
+		}
 		break;
 	}
 
