@@ -160,11 +160,11 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 {
 	zend_class_entry *ce = http_response_object_ce;
 
-	DCL_STATIC_PROP(PRIVATE, long, sent, 0);
+	DCL_STATIC_PROP(PRIVATE, bool, sent, 0);
+	DCL_STATIC_PROP(PRIVATE, bool, catch, 0);
 	DCL_STATIC_PROP(PRIVATE, long, mode, -1);
-	DCL_STATIC_PROP(PRIVATE, long, catch, 0);
-	DCL_STATIC_PROP(PROTECTED, long, cache, 0);
-	DCL_STATIC_PROP(PROTECTED, long, gzip, 0);
+	DCL_STATIC_PROP(PROTECTED, bool, cache, 0);
+	DCL_STATIC_PROP(PROTECTED, bool, gzip, 0);
 	DCL_STATIC_PROP(PROTECTED, long, stream, 0);
 	DCL_STATIC_PROP(PROTECTED, string, file, "");
 	DCL_STATIC_PROP(PROTECTED, string, data, "");
@@ -249,7 +249,7 @@ PHP_METHOD(HttpResponse, getGzip)
 
 /* {{{ proto bool HttpResponse::setCacheControl(string control[, long max_age = 0])
  *
- * Set a custom cache-control header, usually being "private" or "public"; 
+ * Set a custom cache-control header, usually being "private" or "public";
  * The max_age parameter controls how long the cache entry is valid on the client side.
  */
 PHP_METHOD(HttpResponse, setCacheControl)
@@ -613,7 +613,7 @@ PHP_METHOD(HttpResponse, send)
 		zval *cd = GET_STATIC_PROP(contentDisposition);
 		if (Z_STRLEN_P(cd)) {
 			char *cds;
-			
+
 			spprintf(&cds, 0, "Content-Disposition: %s", Z_STRVAL_P(cd));
 			http_send_header(cds);
 			efree(cds);

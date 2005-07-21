@@ -34,9 +34,9 @@
 #endif
 #include <curl/curl.h>
 
-#define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpRequestPool, method, ZEND_RETURN_REFERENCE_AGNOSTIC, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpRequestPool, method, ret_ref)
-#define HTTP_REQPOOL_ME(method, visibility)		PHP_ME(HttpRequestPool, method, HTTP_ARGS(HttpRequestPool, method), visibility)
+#define HTTP_BEGIN_ARGS(method, req_args) 	HTTP_BEGIN_ARGS_EX(HttpRequestPool, method, 0, req_args)
+#define HTTP_EMPTY_ARGS(method, ret_ref)	HTTP_EMPTY_ARGS_EX(HttpRequestPool, method, ret_ref)
+#define HTTP_REQPOOL_ME(method, visibility)	PHP_ME(HttpRequestPool, method, HTTP_ARGS(HttpRequestPool, method), visibility)
 
 HTTP_BEGIN_ARGS_AR(HttpRequestPool, __construct, 0, 0)
 	HTTP_ARG_OBJ(HttpRequest, request0, 0)

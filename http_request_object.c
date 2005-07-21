@@ -38,82 +38,82 @@
 #endif
 #include <curl/curl.h>
 
-#define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpRequest, method, ZEND_RETURN_REFERENCE_AGNOSTIC, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpRequest, method, ret_ref)
-#define HTTP_REQUEST_ME(method, visibility)		PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)
+#define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpRequest, method, ret_ref, req_args)
+#define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpRequest, method, ret_ref)
+#define HTTP_REQUEST_ME(method, visibility)			PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)
 
 HTTP_EMPTY_ARGS(__destruct, 0);
-HTTP_BEGIN_ARGS(__construct, 0)
+HTTP_BEGIN_ARGS(__construct, 0, 0)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(method, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getOptions, 0);
 HTTP_EMPTY_ARGS(unsetOptions, 0);
-HTTP_BEGIN_ARGS(setOptions, 1)
+HTTP_BEGIN_ARGS(setOptions, 0, 1)
 	HTTP_ARG_VAL(options, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getSslOptions, 0);
 HTTP_EMPTY_ARGS(unsetSslOptions, 0);
-HTTP_BEGIN_ARGS(setSslOptions, 1)
+HTTP_BEGIN_ARGS(setSslOptions, 0, 1)
 	HTTP_ARG_VAL(ssl_options, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getHeaders, 0);
 HTTP_EMPTY_ARGS(unsetHeaders, 0);
-HTTP_BEGIN_ARGS(addHeaders, 1)
+HTTP_BEGIN_ARGS(addHeaders, 0, 1)
 	HTTP_ARG_VAL(headers, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getCookies, 0);
 HTTP_EMPTY_ARGS(unsetCookies, 0);
-HTTP_BEGIN_ARGS(addCookies, 1)
+HTTP_BEGIN_ARGS(addCookies, 0, 1)
 	HTTP_ARG_VAL(cookies, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getUrl, 0);
-HTTP_BEGIN_ARGS(setUrl, 1)
+HTTP_BEGIN_ARGS(setUrl, 0, 1)
 	HTTP_ARG_VAL(url, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getMethod, 0);
-HTTP_BEGIN_ARGS(setMethod, 1)
+HTTP_BEGIN_ARGS(setMethod, 0, 1)
 	HTTP_ARG_VAL(request_method, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getContentType, 0);
-HTTP_BEGIN_ARGS(setContentType, 1)
+HTTP_BEGIN_ARGS(setContentType, 0, 1)
 	HTTP_ARG_VAL(content_type, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getQueryData, 0);
 HTTP_EMPTY_ARGS(unsetQueryData, 0);
-HTTP_BEGIN_ARGS(setQueryData, 1)
+HTTP_BEGIN_ARGS(setQueryData, 0, 1)
 	HTTP_ARG_VAL(query_data, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addQueryData, 1)
+HTTP_BEGIN_ARGS(addQueryData, 0, 1)
 	HTTP_ARG_VAL(query_data, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getPostFields, 0);
 HTTP_EMPTY_ARGS(unsetPostFields, 0);
-HTTP_BEGIN_ARGS(setPostFields, 1)
+HTTP_BEGIN_ARGS(setPostFields, 0, 1)
 	HTTP_ARG_VAL(post_fields, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addPostFields, 1)
+HTTP_BEGIN_ARGS(addPostFields, 0, 1)
 	HTTP_ARG_VAL(post_fields, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getPostFiles, 0);
 HTTP_EMPTY_ARGS(unsetPostFiles, 0);
-HTTP_BEGIN_ARGS(setPostFiles, 1)
+HTTP_BEGIN_ARGS(setPostFiles, 0, 1)
 	HTTP_ARG_VAL(post_files, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addPostFile, 2)
+HTTP_BEGIN_ARGS(addPostFile, 0, 2)
 	HTTP_ARG_VAL(formname, 0)
 	HTTP_ARG_VAL(filename, 0)
 	HTTP_ARG_VAL(content_type, 0)
@@ -121,22 +121,22 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getPutFile, 0);
 HTTP_EMPTY_ARGS(unsetPutFile, 0);
-HTTP_BEGIN_ARGS(setPutFile, 1)
+HTTP_BEGIN_ARGS(setPutFile, 0, 1)
 	HTTP_ARG_VAL(filename, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getResponseData, 0);
-HTTP_BEGIN_ARGS(getResponseHeader, 0)
+HTTP_BEGIN_ARGS(getResponseHeader, 0, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(getResponseCookie, 0)
+HTTP_BEGIN_ARGS(getResponseCookie, 0, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getResponseBody, 0);
 HTTP_EMPTY_ARGS(getResponseCode, 0);
-HTTP_BEGIN_ARGS(getResponseInfo, 0)
+HTTP_BEGIN_ARGS(getResponseInfo, 0, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 

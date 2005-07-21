@@ -31,57 +31,57 @@
 
 #include "phpstr/phpstr.h"
 
-#define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpMessage, method, ZEND_RETURN_REFERENCE_AGNOSTIC, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpMessage, method, ret_ref)
-#define HTTP_MESSAGE_ME(method, visibility)		PHP_ME(HttpMessage, method, HTTP_ARGS(HttpMessage, method), visibility)
+#define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpMessage, method, ret_ref, req_args)
+#define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpMessage, method, ret_ref)
+#define HTTP_MESSAGE_ME(method, visibility)			PHP_ME(HttpMessage, method, HTTP_ARGS(HttpMessage, method), visibility)
 
-HTTP_BEGIN_ARGS(__construct, 0)
+HTTP_BEGIN_ARGS(__construct, 0, 0)
 	HTTP_ARG_VAL(message, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(fromString, 1)
+HTTP_BEGIN_ARGS(fromString, 1, 1)
 	HTTP_ARG_VAL(message, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getBody, 0);
 HTTP_EMPTY_ARGS(getHeaders, 0);
-HTTP_BEGIN_ARGS(setHeaders, 1)
+HTTP_BEGIN_ARGS(setHeaders, 0, 1)
 	HTTP_ARG_VAL(headers, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addHeaders, 1)
+HTTP_BEGIN_ARGS(addHeaders, 0, 1)
 	HTTP_ARG_VAL(headers, 0)
 	HTTP_ARG_VAL(append, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getType, 0);
-HTTP_BEGIN_ARGS(setType, 1)
+HTTP_BEGIN_ARGS(setType, 0, 1)
 	HTTP_ARG_VAL(type, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getResponseCode, 0);
-HTTP_BEGIN_ARGS(setResponseCode, 1)
+HTTP_BEGIN_ARGS(setResponseCode, 0, 1)
 	HTTP_ARG_VAL(response_code, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getRequestMethod, 0);
-HTTP_BEGIN_ARGS(setRequestMethod, 1)
+HTTP_BEGIN_ARGS(setRequestMethod, 0, 1)
 	HTTP_ARG_VAL(request_method, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getRequestUri, 0);
-HTTP_BEGIN_ARGS(setRequestUri, 1)
+HTTP_BEGIN_ARGS(setRequestUri, 0, 1)
 	HTTP_ARG_VAL(uri, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getHttpVersion, 0);
-HTTP_BEGIN_ARGS(setHttpVersion, 1)
+HTTP_BEGIN_ARGS(setHttpVersion, 0, 1)
 	HTTP_ARG_VAL(http_version, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getParentMessage, 1);
 HTTP_EMPTY_ARGS(send, 0);
-HTTP_BEGIN_ARGS(toString, 0)
+HTTP_BEGIN_ARGS(toString, 0, 0)
 	HTTP_ARG_VAL(include_parent, 0)
 HTTP_END_ARGS;
 
