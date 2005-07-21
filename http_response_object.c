@@ -476,6 +476,10 @@ PHP_METHOD(HttpResponse, setData)
 	SET_STATIC_PROP(data, the_data);
 	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_data, SEND_DATA));
 	ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
+	if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
+		SET_STATIC_PROP_STRING(eTag, http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA), 0);
+	}
+
 	RETURN_TRUE;
 }
 /* }}} */
@@ -507,12 +511,16 @@ PHP_METHOD(HttpResponse, setStream)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &the_stream)) {
 		RETURN_FALSE;
 	}
+	php_stream_from_zval(the_real_stream, &the_stream);
 
 	USE_STATIC_PROP();
-	php_stream_from_zval(the_real_stream, &the_stream);
 	ZVAL_LONG(GET_STATIC_PROP(stream), Z_LVAL_P(the_stream));
 	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_real_stream, SEND_RSRC));
 	ZVAL_LONG(GET_STATIC_PROP(mode), SEND_RSRC);
+	if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
+		SET_STATIC_PROP_STRING(eTag, http_etag(the_real_stream, 0, SEND_RSRC), 0);
+	}
+
 	RETURN_TRUE;
 }
 /* }}} */
@@ -548,6 +556,9 @@ PHP_METHOD(HttpResponse, setFile)
 	SET_STATIC_PROP(file, the_file);
 	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_file, -1));
 	ZVAL_LONG(GET_STATIC_PROP(mode), -1);
+	if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
+		SET_STATIC_PROP_STRING(eTag, http_etag(the_file, 0, -1), 0);
+	}
 
 	RETURN_TRUE;
 }
@@ -590,7 +601,7 @@ PHP_METHOD(HttpResponse, send)
 
 	/* gzip */
 	if (Z_LVAL_P(GET_STATIC_PROP(gzip))) {
-		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
+		php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
 	} else {
 		php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
 	}
@@ -617,7 +628,7 @@ PHP_METHOD(HttpResponse, send)
 		} else {
 			char *ctypes = INI_STR("default_mimetype");
 			size_t ctlen = ctypes ? strlen(ctypes) : 0;
-			
+
 			if (ctlen) {
 				http_send_content_type(ctypes, ctlen);
 			} else {
