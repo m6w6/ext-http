@@ -77,10 +77,10 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 
 		case SEND_RSRC:
 		{
-            if (php_stream_stat((php_stream *) data_ptr, &ssb)) {
+			if (php_stream_stat((php_stream *) data_ptr, &ssb)) {
 				efree(new_etag);
-                return NULL;
-            }
+				return NULL;
+			}
 
 			snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
 			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
