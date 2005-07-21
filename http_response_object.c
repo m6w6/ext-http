@@ -353,7 +353,7 @@ PHP_METHOD(HttpResponse, setContentDisposition)
 	}
 
 	spprintf(&cd, 0, HTTP_CONTENTDISPOSITION_TEMPLATE, send_inline ? "inline" : "attachment", file);
-	ZVAL_STRING_FREE(GET_STATIC_PROP(contentDisposition), cd, 0);
+	SET_STATIC_PROP_STRING(contentDisposition, cd, 0);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -386,7 +386,8 @@ PHP_METHOD(HttpResponse, setETag)
 		RETURN_FALSE;
 	}
 
-	ZVAL_STRINGL_FREE(GET_STATIC_PROP(eTag), etag, etag_len, 1);
+	USE_STATIC_PROP();
+	SET_STATIC_PROP_STRINGL(eTag, etag, etag_len, 1);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -584,12 +585,14 @@ PHP_METHOD(HttpResponse, send)
 		/* interrupt on-the-fly etag generation */
 		HTTP_G(etag).started = 0;
 		/* discard previous output buffers */
-		//php_end_ob_buffers(0 TSRMLS_CC);
+		php_end_ob_buffers(0 TSRMLS_CC);
 	}
 
 	/* gzip */
 	if (Z_LVAL_P(GET_STATIC_PROP(gzip))) {
 		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
+	} else {
+		php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
 	}
 
 	/* caching */
@@ -602,7 +605,7 @@ PHP_METHOD(HttpResponse, send)
 		lmod = GET_STATIC_PROP(lastModified);
 		cctl = GET_STATIC_PROP(cacheControl);
 
-		http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag),Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
+		http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
 		http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
 	}
 
@@ -612,7 +615,14 @@ PHP_METHOD(HttpResponse, send)
 		if (Z_STRLEN_P(ctype)) {
 			http_send_content_type(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
 		} else {
-			http_send_content_type("application/x-octetstream", lenof("application/x-octetstream"));
+			char *ctypes = INI_STR("default_mimetype");
+			size_t ctlen = ctypes ? strlen(ctypes) : 0;
+			
+			if (ctlen) {
+				http_send_content_type(ctypes, ctlen);
+			} else {
+				http_send_content_type("application/x-octetstream", lenof("application/x-octetstream"));
+			}
 		}
 	}
 

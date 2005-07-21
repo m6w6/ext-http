@@ -41,19 +41,6 @@ typedef int STATUS;
 	if(target) efree(target); \
 	target = source
 
-#define ZVAL_STRING_FREE(z, s, d) \
-	{\
-		zval *__tmp = (z); \
-		/*zval_ptr_dtor(&__tmp);*/ \
-		ZVAL_STRING(__tmp, (s), (d)); \
-	}
-#define ZVAL_STRINGL_FREE(z, s, l, d) \
-	{\
-		zval *__tmp = (z); \
-		/*zval_ptr_dtor(&__tmp);*/ \
-		ZVAL_STRINGL(__tmp, (s), (l), (d)); \
-	}
-
 /* return bool (v == SUCCESS) */
 #define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
@@ -232,6 +219,7 @@ typedef int STATUS;
 		MAKE_STD_ZVAL(__tmp); \
 		ZVAL_STRING(__tmp, (s), (d)); \
 		SET_STATIC_PROP_EX(ce, n, __tmp); \
+		zval_dtor(__tmp); \
 		efree(__tmp); \
 	}
 #define SET_STATIC_PROP_STRINGL_EX(ce, n, s, l, d) \
@@ -240,6 +228,7 @@ typedef int STATUS;
 		MAKE_STD_ZVAL(__tmp); \
 		ZVAL_STRINGL(__tmp, (s), (l), (d)); \
 		SET_STATIC_PROP_EX(ce, n, __tmp); \
+		zval_dtor(__tmp); \
 		efree(__tmp); \
 	}
 #	define DCL_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a) TSRMLS_CC)
