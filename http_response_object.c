@@ -511,6 +511,7 @@ PHP_METHOD(HttpResponse, setStream)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &the_stream)) {
 		RETURN_FALSE;
 	}
+	zend_list_addref(Z_LVAL_P(the_stream));
 	php_stream_from_zval(the_real_stream, &the_stream);
 
 	USE_STATIC_PROP();
@@ -591,6 +592,9 @@ PHP_METHOD(HttpResponse, send)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {
 		RETURN_FALSE;
 	}
+	if (SG(headers_sent)) {
+		RETURN_FALSE;
+	}
 
 	if (clean_ob) {
 		/* interrupt on-the-fly etag generation */
@@ -669,6 +673,7 @@ PHP_METHOD(HttpResponse, send)
 			{
 				php_stream *the_real_stream;
 				zval *the_stream = GET_STATIC_PROP(stream);
+				the_stream->type = IS_RESOURCE;
 				php_stream_from_zval(the_real_stream, &the_stream);
 				RETURN_SUCCESS(http_send_stream(the_real_stream));
 			}
