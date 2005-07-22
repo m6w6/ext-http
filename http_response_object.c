@@ -179,6 +179,8 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP_N(PROTECTED, contentDisposition);
 	DCL_STATIC_PROP(PROTECTED, long, bufferSize, HTTP_SENDBUF_SIZE);
 	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
+
+	DCL_STATIC_PROP(PUBLIC, string, dummy, "EMPTY");
 }
 
 /* ### USERLAND ### */
@@ -583,6 +585,17 @@ PHP_METHOD(HttpResponse, getFile)
 /* {{{ proto bool HttpResponse::send([bool clean_ob = true])
  *
  * Finally send the entity.
+ *
+ * Example:
+ * <pre>
+ * <?php
+ * HttpResponse::setCache(true);
+ * HttpResponse::setContentType('application/pdf');
+ * HttpResponse::setContentDisposition("$user.pdf", false);
+ * HttpResponse::setFile('sheet.pdf');
+ * HttpResponse::send();
+ * ?>
+ * </pre>
  */
 PHP_METHOD(HttpResponse, send)
 {
