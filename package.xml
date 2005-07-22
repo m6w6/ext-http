@@ -30,12 +30,13 @@
   </maintainers>
 
   <release>
-    <version>0.9.0</version>
-    <date>2005-06-15</date>
+    <version>0.10.0dev</version>
+    <date>2005-07-00</date>
     <state>beta</state>
     <notes><![CDATA[
-* added HttpRequestPool class (PHP5)
-* added missing files to package.xml
+* changed HttpResponse to a completely static class, please see docs/functions.html for reference
+* added http_get_request_body()
+* several bug fixes
 ]]>
     </notes>
   </release>
@@ -77,7 +78,6 @@
       
       <file role="src">http.c</file>
       <file role="src">http_functions.c</file>
-      <file role="src">http_methods.c</file>
       <file role="src">http_api.c</file>
       <file role="src">http_auth_api.c</file>
       <file role="src">http_cache_api.c</file>
