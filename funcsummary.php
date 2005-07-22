@@ -19,6 +19,12 @@ function ff($t)
     $t = preg_replace('/(\<br \/\>\n)+\<\/pre\>(\<br \/\>\n)+/', '</pre><p>', $t);
     return sprintf('<p>%s</p>', ltrim($t, ' *'));
 }
+function e($s)
+{
+    $a = func_get_args();
+    array_unshift($a, STDERR);
+    call_user_func_array('fprintf', $a);
+}
 
 $preface = <<<_PREFACE
 <html>
@@ -84,22 +90,28 @@ if ($_SERVER['argc'] < 2) {
 
 printf($preface, basename(getcwd()));
 
-foreach (array_slice($_SERVER['argv'], 1) as $f) {
-    if (mf($f, $m)) {
-        printf("<h1>%s</h1>\n", basename($f));
-        foreach ($m[1] as $i => $p) {
-            if ($o = preg_match('/^(.*), (.*)$/', $m[4][$i], $n)) {
-                if ($n[2] == '__construct') {
-                    printf("<h2 id=\"%s\" class=\"o\">%s</h2>\n", $n[1], $n[1]);
+foreach (array_slice($_SERVER['argv'], 1) as $fp) {
+    foreach (glob($fp) as $f) {
+        
+        if (mf($f, $m)) {
+            e("\nAnalyzing %s\n", basename($f));
+            printf("<h1>%s</h1>\n", basename($f));
+            foreach ($m[1] as $i => $p) {
+                e("Documenting $p\n");
+                if ($o = preg_match('/^(.*), (.*)$/', $m[4][$i], $n)) {
+                    if ($n[2] == '__construct') {
+                        printf("<h2 id=\"%s\" class=\"o\">%s</h2>\n", $n[1], $n[1]);
+                    }
                 }
+                printf("<h%d id=\"%s\">%s</h%d>\n%s\n", 
+                    $o?3:2, $o?$n[1].'_'.$n[2]:$m[4][$i], $p, $o?3:2, ff($m[3][$i]));
             }
-            printf("<h%d id=\"%s\">%s</h%d>\n%s\n", 
-                $o?3:2, $o?$n[1].'_'.$n[2]:$m[4][$i], $p, $o?3:2, ff($m[3][$i]));
+            print "<hr noshade>\n";
         }
-        print "<hr noshade>\n";
     }
 }
 
 printf($footer, date('r'));
+e("\nDone\n");
 ?>
 

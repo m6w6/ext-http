@@ -170,6 +170,8 @@ content body. The returned array may look simliar to the following example:</p><
 <p></p>
 <h2 id="http_get_request_headers">array http_get_request_headers(void)</h2>
 <p>Get a list of incoming HTTP headers.</p>
+<h2 id="http_get_request_body">string http_get_request_body(void)</h2>
+<p>Get the raw request body (e.g. POST or PUT data).</p>
 <h2 id="http_match_request_header">bool http_match_request_header(string header, string value[, bool match_case = false])</h2>
 <p>Match an incoming HTTP header.</p>
 <h2 id="http_get">string http_get(string url[, array options[, array &info]])</h2>
@@ -256,81 +258,7 @@ See http_get() for a full list of available options.</p>
 <h2 id="http_build_query">string http_build_query(mixed formdata [, string prefix[, string arg_separator]])</h2>
 <p>Generates a form-encoded query string from an associative array or object.</p>
 <hr noshade>
-<h1>http_methods.c</h1>
-<h2 id="HttpResponse" class="o">HttpResponse</h2>
-<h3 id="HttpResponse___construct">void HttpResponse::__construct(bool cache, bool gzip)</h3>
-<p>Instantiates a new HttpResponse object, which can be used to send<br />
-any data/resource/file to an HTTP client with caching and multiple<br />
-ranges/resuming support.<br />
-<br />
-NOTE: GZIPping is not implemented yet.</p>
-<h3 id="HttpResponse_setCache">bool HttpResponse::setCache(bool cache)</h3>
-<p>Whether it sould be attempted to cache the entitity.<br />
-This will result in necessary caching headers and checks of clients<br />
-"If-Modified-Since" and "If-None-Match" headers.  If one of those headers<br />
-matches a "304 Not Modified" status code will be issued.<br />
-<br />
-NOTE: If you're using sessions, be shure that you set session.cache_limiter<br />
-to something more appropriate than "no-cache"!</p>
-<h3 id="HttpResponse_getCache">bool HttpResponse::getCache()</h3>
-<p>Get current caching setting.</p>
-<h3 id="HttpResponse_setGzip">bool HttpResponse::setGzip(bool gzip)</h3>
-<p>Enable on-thy-fly gzipping of the sent entity. NOT IMPLEMENTED YET.</p>
-<h3 id="HttpResponse_getGzip">bool HttpResponse::getGzip()</h3>
-<p>Get current gzipping setting.</p>
-<h3 id="HttpResponse_setCacheControl">bool HttpResponse::setCacheControl(string control[, bool raw = false])</h3>
-<p>Set a custom cache-control header, usually being "private" or "public";  if<br />
-$raw is set to true the header will be sent as-is.</p>
-<h3 id="HttpResponse_getCacheControl">string HttpResponse::getCacheControl()</h3>
-<p>Get current Cache-Control header setting.</p>
-<h3 id="HttpResponse_setContentType">bool HttpResponse::setContentType(string content_type)</h3>
-<p>Set the content-type of the sent entity.</p>
-<h3 id="HttpResponse_getContentType">string HttpResponse::getContentType()</h3>
-<p>Get current Content-Type header setting.</p>
-<h3 id="HttpResponse_setContentDisposition">bool HttpResponse::setContentDisposition(string filename[, bool inline = false])</h3>
-<p>Set the Content-Disposition of the sent entity.  This setting aims to suggest<br />
-the receiveing user agent how to handle the sent entity;  usually the client<br />
-will show the user a "Save As..." popup.</p>
-<h3 id="HttpResponse_getContentDisposition">array HttpResponse::getContentDisposition()</h3>
-<p>Get current Content-Disposition setting.<br />
-Will return an associative array like:</p><pre>array(<br />
-    'filename' => 'foo.bar',<br />
-    'inline'   => false<br />
-)<br />
-</pre></p>
-<h3 id="HttpResponse_setETag">bool HttpResponse::setETag(string etag)</h3>
-<p>Set a custom ETag.  Use this only if you know what you're doing.</p>
-<h3 id="HttpResponse_getETag">string HttpResponse::getETag()</h3>
-<p>Get the previously set custom ETag.</p>
-<h3 id="HttpResponse_setThrottleDelay">void HttpResponse::setThrottleDelay(double seconds)</h3>
-<p></p>
-<h3 id="HttpResponse_getThrottleDelay">double HttpResponse::getThrottleDelay()</h3>
-<p></p>
-<h3 id="HttpResponse_setSendBuffersize">void HttpResponse::setSendBuffersize(long bytes)</h3>
-<p></p>
-<h3 id="HttpResponse_getSendBuffersize">long HttpResponse::getSendBuffersize()</h3>
-<p></p>
-<h3 id="HttpResponse_setData">bool HttpResponse::setData(string data)</h3>
-<p>Set the data to be sent.</p>
-<h3 id="HttpResponse_getData">string HttpResponse::getData()</h3>
-<p>Get the previously set data to be sent.</p>
-<h3 id="HttpResponse_setStream">bool HttpResponse::setStream(resource stream)</h3>
-<p>Set the resource to be sent.</p>
-<h3 id="HttpResponse_getStream">resource HttpResponse::getStream()</h3>
-<p>Get the previously set resource to be sent.</p>
-<h3 id="HttpResponse_setFile">bool HttpResponse::setFile(string file)</h3>
-<p>Set the file to be sent.</p>
-<h3 id="HttpResponse_getFile">string HttpResponse::getFile()</h3>
-<p>Get the previously set file to be sent.</p>
-<h3 id="HttpResponse_send">bool HttpResponse::send([bool clean_ob = true])</h3>
-<p>Finally send the entity.<br />
-<br />
-Example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />$r </span><span style="color: #007700">= new </span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">(</span><span style="color: #0000BB">true</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">setFile</span><span style="color: #007700">(</span><span style="color: #DD0000">'../hidden/contract.pdf'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">setContentType</span><span style="color: #007700">(</span><span style="color: #DD0000">'application/pdf'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">send</span><span style="color: #007700">();<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span><br />
-</code></blockquote><br />
-<br />
-</pre></p>
+<h1>http_message_object.c</h1>
 <h2 id="HttpMessage" class="o">HttpMessage</h2>
 <h3 id="HttpMessage___construct">void HttpMessage::__construct([string message])</h3>
 <p>Instantiate a new HttpMessage object.</p>
@@ -377,6 +305,8 @@ Returns false if version is invalid (1.0 and 1.1).</p>
 <p>Send the Message according to its type as Response or Request.</p>
 <h3 id="HttpMessage_toString">string HttpMessage::toString([bool include_parent = true])</h3>
 <p>Get the string representation of the Message.</p>
+<hr noshade>
+<h1>http_request_object.c</h1>
 <h2 id="HttpRequest" class="o">HttpRequest</h2>
 <h3 id="HttpRequest___construct">void HttpRequest::__construct([string url[, long request_method = HTTP_GET]])</h3>
 <p>Instantiate a new HttpRequest object which can be used to issue HEAD, GET<br />
@@ -407,9 +337,9 @@ and POST (including posting files) HTTP requests.</p>
 <p>Get previously set cookies.</p>
 <h3 id="HttpRequest_unsetCookies">void HttpRequest::unsetCookies()</h3>
 <p></p>
-<h3 id="HttpRequest_setURL">bool HttpRequest::setURL(string url)</h3>
+<h3 id="HttpRequest_setUrl">bool HttpRequest::setUrl(string url)</h3>
 <p>Set the request URL.</p>
-<h3 id="HttpRequest_getURL">string HttpRequest::getUrl()</h3>
+<h3 id="HttpRequest_getUrl">string HttpRequest::getUrl()</h3>
 <p>Get the previously set request URL.</p>
 <h3 id="HttpRequest_setMethod">bool HttpRequest::setMethod(long request_method)</h3>
 <p>Set the request methods; one of the <tt>HTTP_HEAD</tt>, <tt>HTTP_GET</tt> or<br />
@@ -448,7 +378,7 @@ Affects only POST requests.</p>
 <h3 id="HttpRequest_addPostFile">bool HttpRequest::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])</h3>
 <p>Add a file to the POST request.<br />
 Affects only POST requests.</p>
-<h3 id="HttpRequest_setPostFiles">bool HttpRequest::setPostFiles()</h3>
+<h3 id="HttpRequest_setPostFiles">bool HttpRequest::setPostFiles(array post_files)</h3>
 <p>Set files to post.<br />
 Overwrites previously set post files.<br />
 Affects only POST requests.</p>
@@ -492,13 +422,15 @@ GET example:</p><pre><blockquote><code><span style="color: #000000"><br />
 </code></blockquote><br />
 <br />
 </pre></p>
+<hr noshade>
+<h1>http_requestpool_object.c</h1>
 <h2 id="HttpRequestPool" class="o">HttpRequestPool</h2>
-<h3 id="HttpRequestPool___construct">void HttpRequestPool::__construct()</h3>
+<h3 id="HttpRequestPool___construct">void HttpRequestPool::__construct([HttpRequest request[, ...]])</h3>
 <p>Instantiate a new HttpRequestPool object.  An HttpRequestPool is<br />
 able to send several HttpRequests in parallel.<br />
 <br />
 Example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />&nbsp;&nbsp;&nbsp;&nbsp;$urls </span><span style="color: #007700">= array(</span><span style="color: #DD0000">'www.php.net'</span><span style="color: #007700">, </span><span style="color: #DD0000">'pecl.php.net'</span><span style="color: #007700">, </span><span style="color: #DD0000">'pear.php.net'</span><span style="color: #007700">)<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool </span><span style="color: #007700">= new </span><span style="color: #0000BB">HttpRequestPool</span><span style="color: #007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;foreach (</span><span style="color: #0000BB">$urls </span><span style="color: #007700">as </span><span style="color: #0000BB">$url</span><span style="color: #007700">) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$req</span><span style="color: #007700">[</span><span style="color: #0000BB">$url</span><span style="color: #007700">] = new </span><span style="color: #0000BB">HttpRequest</span><span style="color: #007700">(</span><span style="color: #DD0000">"http://$url"</span><span style="color: #007700">, </span><span style="color: #0000BB">HTTP_HEAD</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">attach</span><span style="color: #007700">(</span><span style="color: #0000BB">$req</span><span style="color: #007700">[</span><span style="color: #0000BB">$url</span><span style="color: #007700">]);<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">send</span><span style="color: #007700">();<br />&nbsp;&nbsp;&nbsp;&nbsp;foreach (</span><span style="color: #0000BB">$urls </span><span style="color: #007700">as </span><span style="color: #0000BB">$url</span><span style="color: #007700">) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">printf</span><span style="color: #007700">(</span><span style="color: #DD0000">"%s (%s) is %s\n"</span><span style="color: #007700">, <br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$url</span><span style="color: #007700">, </span><span style="color: #0000BB">$req</span><span style="color: #007700">[</span><span style="color: #0000BB">$url</span><span style="color: #007700">]-&gt;</span><span style="color: #0000BB">getResponseInfo</span><span style="color: #007700">(</span><span style="color: #DD0000">'effective_url'</span><span style="color: #007700">), <br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">getResponseCode</span><span style="color: #007700">() == </span><span style="color: #0000BB">200 </span><span style="color: #007700">? </span><span style="color: #DD0000">'alive' </span><span style="color: #007700">: </span><span style="color: #DD0000">'not alive'<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br /></span><span style="color: #0000BB">?&gt;</span><br />
+<span style="color: #0000BB">&lt;?php<br />&nbsp;&nbsp;&nbsp;&nbsp;$urls </span><span style="color: #007700">= array(</span><span style="color: #DD0000">'www.php.net'</span><span style="color: #007700">, </span><span style="color: #DD0000">'pecl.php.net'</span><span style="color: #007700">, </span><span style="color: #DD0000">'pear.php.net'</span><span style="color: #007700">)<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool </span><span style="color: #007700">= new </span><span style="color: #0000BB">HttpRequestPool</span><span style="color: #007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;foreach (</span><span style="color: #0000BB">$urls </span><span style="color: #007700">as </span><span style="color: #0000BB">$url</span><span style="color: #007700">) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$req</span><span style="color: #007700">[</span><span style="color: #0000BB">$url</span><span style="color: #007700">] = new </span><span style="color: #0000BB">HttpRequest</span><span style="color: #007700">(</span><span style="color: #DD0000">"http://$url"</span><span style="color: #007700">, </span><span style="color: #0000BB">HTTP_HEAD</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">attach</span><span style="color: #007700">(</span><span style="color: #0000BB">$req</span><span style="color: #007700">[</span><span style="color: #0000BB">$url</span><span style="color: #007700">]);<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">send</span><span style="color: #007700">();<br />&nbsp;&nbsp;&nbsp;&nbsp;foreach (</span><span style="color: #0000BB">$urls </span><span style="color: #007700">as </span><span style="color: #0000BB">$url</span><span style="color: #007700">) {<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">printf</span><span style="color: #007700">(</span><span style="color: #DD0000">"%s (%s) is %s\n"</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$url</span><span style="color: #007700">, </span><span style="color: #0000BB">$req</span><span style="color: #007700">[</span><span style="color: #0000BB">$url</span><span style="color: #007700">]-&gt;</span><span style="color: #0000BB">getResponseInfo</span><span style="color: #007700">(</span><span style="color: #DD0000">'effective_url'</span><span style="color: #007700">),<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$r</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">getResponseCode</span><span style="color: #007700">() == </span><span style="color: #0000BB">200 </span><span style="color: #007700">? </span><span style="color: #DD0000">'alive' </span><span style="color: #007700">: </span><span style="color: #DD0000">'not alive'<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br /></span><span style="color: #0000BB">?&gt;</span><br />
 </span><br />
 </code></blockquote><br />
 <br />
@@ -526,7 +458,80 @@ NOTE: set all options prior attaching!</p>
 <h3 id="HttpRequestPool_socketRead">protected void HttpRequestPool::socketRead()</h3>
 <p>See HttpRequestPool::socketSend().</p>
 <hr noshade>
-    <p><b>Generated at: Tue, 14 Jun 2005 16:56:52 +0200</b></p>
+<h1>http_response_object.c</h1>
+<h3 id="HttpResponse_setCache">static bool HttpResponse::setCache(bool cache)</h3>
+<p>Whether it sould be attempted to cache the entitity.<br />
+This will result in necessary caching headers and checks of clients<br />
+"If-Modified-Since" and "If-None-Match" headers.  If one of those headers<br />
+matches a "304 Not Modified" status code will be issued.<br />
+<br />
+NOTE: If you're using sessions, be shure that you set session.cache_limiter<br />
+to something more appropriate than "no-cache"!</p>
+<h3 id="HttpResponse_getCache">static bool HttpResponse::getCache()</h3>
+<p>Get current caching setting.</p>
+<h3 id="HttpResponse_setGzip">static bool HttpResponse::setGzip(bool gzip)</h3>
+<p>Enable on-thy-fly gzipping of the sent entity. NOT IMPLEMENTED YET.</p>
+<h3 id="HttpResponse_getGzip">static bool HttpResponse::getGzip()</h3>
+<p>Get current gzipping setting.</p>
+<h3 id="HttpResponse_setCacheControl">static bool HttpResponse::setCacheControl(string control[, long max_age = 0])</h3>
+<p>Set a custom cache-control header, usually being "private" or "public";<br />
+The max_age parameter controls how long the cache entry is valid on the client side.</p>
+<h3 id="HttpResponse_getCacheControl">static string HttpResponse::getCacheControl()</h3>
+<p>Get current Cache-Control header setting.</p>
+<h3 id="HttpResponse_setContentType">static bool HttpResponse::setContentType(string content_type)</h3>
+<p>Set the content-type of the sent entity.</p>
+<h3 id="HttpResponse_getContentType">static string HttpResponse::getContentType()</h3>
+<p>Get current Content-Type header setting.</p>
+<h3 id="HttpResponse_setContentDisposition">static bool HttpResponse::setContentDisposition(string filename[, bool inline = false])</h3>
+<p>Set the Content-Disposition of the sent entity.  This setting aims to suggest<br />
+the receiveing user agent how to handle the sent entity;  usually the client<br />
+will show the user a "Save As..." popup.</p>
+<h3 id="HttpResponse_getContentDisposition">static string HttpResponse::getContentDisposition()</h3>
+<p>Get current Content-Disposition setting.</p>
+<h3 id="HttpResponse_setETag">static bool HttpResponse::setETag(string etag)</h3>
+<p>Set a custom ETag.  Use this only if you know what you're doing.</p>
+<h3 id="HttpResponse_getETag">static string HttpResponse::getETag()</h3>
+<p>Get the previously set custom ETag.</p>
+<h3 id="HttpResponse_setThrottleDelay">static void HttpResponse::setThrottleDelay(double seconds)</h3>
+<p></p>
+<h3 id="HttpResponse_getThrottleDelay">static double HttpResponse::getThrottleDelay()</h3>
+<p></p>
+<h3 id="HttpResponse_setBufferSize">static void HttpResponse::setBufferSize(long bytes)</h3>
+<p></p>
+<h3 id="HttpResponse_getBufferSize">static long HttpResponse::getBufferSize()</h3>
+<p></p>
+<h3 id="HttpResponse_setData">static bool HttpResponse::setData(string data)</h3>
+<p>Set the data to be sent.</p>
+<h3 id="HttpResponse_getData">static string HttpResponse::getData()</h3>
+<p>Get the previously set data to be sent.</p>
+<h3 id="HttpResponse_setStream">static bool HttpResponse::setStream(resource stream)</h3>
+<p>Set the resource to be sent.</p>
+<h3 id="HttpResponse_getStream">static resource HttpResponse::getStream()</h3>
+<p>Get the previously set resource to be sent.</p>
+<h3 id="HttpResponse_setFile">static bool HttpResponse::setFile(string file)</h3>
+<p>Set the file to be sent.</p>
+<h3 id="HttpResponse_getFile">static string HttpResponse::getFile()</h3>
+<p>Get the previously set file to be sent.</p>
+<h3 id="HttpResponse_send">static bool HttpResponse::send([bool clean_ob = true])</h3>
+<p>Finally send the entity.<br />
+<br />
+Example:</p><pre><blockquote><code><span style="color: #000000"><br />
+<span style="color: #0000BB">&lt;?php<br />HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">setCache</span><span style="color: #007700">(</span><span style="color: #0000BB">true</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">setContentType</span><span style="color: #007700">(</span><span style="color: #DD0000">'application/pdf'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">setContentDisposition</span><span style="color: #007700">(</span><span style="color: #DD0000">"$user.pdf"</span><span style="color: #007700">, </span><span style="color: #0000BB">false</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">setFile</span><span style="color: #007700">(</span><span style="color: #DD0000">'sheet.pdf'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">send</span><span style="color: #007700">();<br /></span><span style="color: #0000BB">?&gt;</span><br />
+</span><br />
+</code></blockquote><br />
+<br />
+</pre></p>
+<h3 id="HttpResponse_capture">static void HttpResponse::capture()</h3>
+<p>Capture script output.<br />
+<br />
+Example:</p><pre><blockquote><code><span style="color: #000000"><br />
+<span style="color: #0000BB">&lt;?php<br />HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">setCache</span><span style="color: #007700">(</span><span style="color: #0000BB">true</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">capture</span><span style="color: #007700">();<br /></span><span style="color: #FF8000">// script follows<br /></span><span style="color: #0000BB">?&gt;</span><br />
+</span><br />
+</code></blockquote><br />
+<br />
+</pre></p>
+<hr noshade>
+    <p><b>Generated at: Fri, 22 Jul 2005 17:44:59 +0200</b></p>
 </body>
 </html>
 

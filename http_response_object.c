@@ -188,7 +188,7 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 
 /* ### USERLAND ### */
 
-/* {{{ proto bool HttpResponse::setCache(bool cache)
+/* {{{ proto static bool HttpResponse::setCache(bool cache)
  *
  * Whether it sould be attempted to cache the entitity.
  * This will result in necessary caching headers and checks of clients
@@ -211,7 +211,7 @@ PHP_METHOD(HttpResponse, setCache)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::getCache()
+/* {{{ proto static bool HttpResponse::getCache()
  *
  * Get current caching setting.
  */
@@ -225,7 +225,7 @@ PHP_METHOD(HttpResponse, getCache)
 }
 /* }}}*/
 
-/* {{{ proto bool HttpResponse::setGzip(bool gzip)
+/* {{{ proto static bool HttpResponse::setGzip(bool gzip)
  *
  * Enable on-thy-fly gzipping of the sent entity. NOT IMPLEMENTED YET.
  */
@@ -242,7 +242,7 @@ PHP_METHOD(HttpResponse, setGzip)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::getGzip()
+/* {{{ proto static bool HttpResponse::getGzip()
  *
  * Get current gzipping setting.
  */
@@ -256,7 +256,7 @@ PHP_METHOD(HttpResponse, getGzip)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::setCacheControl(string control[, long max_age = 0])
+/* {{{ proto static bool HttpResponse::setCacheControl(string control[, long max_age = 0])
  *
  * Set a custom cache-control header, usually being "private" or "public";
  * The max_age parameter controls how long the cache entry is valid on the client side.
@@ -285,7 +285,7 @@ PHP_METHOD(HttpResponse, setCacheControl)
 }
 /* }}} */
 
-/* {{{ proto string HttpResponse::getCacheControl()
+/* {{{ proto static string HttpResponse::getCacheControl()
  *
  * Get current Cache-Control header setting.
  */
@@ -300,7 +300,7 @@ PHP_METHOD(HttpResponse, getCacheControl)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::setContentType(string content_type)
+/* {{{ proto static bool HttpResponse::setContentType(string content_type)
  *
  * Set the content-type of the sent entity.
  */
@@ -324,7 +324,7 @@ PHP_METHOD(HttpResponse, setContentType)
 }
 /* }}} */
 
-/* {{{ proto string HttpResponse::getContentType()
+/* {{{ proto static string HttpResponse::getContentType()
  *
  * Get current Content-Type header setting.
  */
@@ -339,7 +339,7 @@ PHP_METHOD(HttpResponse, getContentType)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::setContentDisposition(string filename[, bool inline = false])
+/* {{{ proto static bool HttpResponse::setContentDisposition(string filename[, bool inline = false])
  *
  * Set the Content-Disposition of the sent entity.  This setting aims to suggest
  * the receiveing user agent how to handle the sent entity;  usually the client
@@ -363,7 +363,7 @@ PHP_METHOD(HttpResponse, setContentDisposition)
 }
 /* }}} */
 
-/* {{{ proto string HttpResponse::getContentDisposition()
+/* {{{ proto static string HttpResponse::getContentDisposition()
  *
  * Get current Content-Disposition setting.
  */
@@ -378,7 +378,7 @@ PHP_METHOD(HttpResponse, getContentDisposition)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::setETag(string etag)
+/* {{{ proto static bool HttpResponse::setETag(string etag)
  *
  * Set a custom ETag.  Use this only if you know what you're doing.
  */
@@ -397,7 +397,7 @@ PHP_METHOD(HttpResponse, setETag)
 }
 /* }}} */
 
-/* {{{ proto string HttpResponse::getETag()
+/* {{{ proto static string HttpResponse::getETag()
  *
  * Get the previously set custom ETag.
  */
@@ -412,7 +412,7 @@ PHP_METHOD(HttpResponse, getETag)
 }
 /* }}} */
 
-/* {{{ proto void HttpResponse::setThrottleDelay(double seconds)
+/* {{{ proto static void HttpResponse::setThrottleDelay(double seconds)
  *
  */
 PHP_METHOD(HttpResponse, setThrottleDelay)
@@ -425,7 +425,7 @@ PHP_METHOD(HttpResponse, setThrottleDelay)
 }
 /* }}} */
 
-/* {{{ proto double HttpResponse::getThrottleDelay()
+/* {{{ proto static double HttpResponse::getThrottleDelay()
  *
  */
 PHP_METHOD(HttpResponse, getThrottleDelay)
@@ -438,7 +438,7 @@ PHP_METHOD(HttpResponse, getThrottleDelay)
 }
 /* }}} */
 
-/* {{{ proto void HttpResponse::setBufferSize(long bytes)
+/* {{{ proto static void HttpResponse::setBufferSize(long bytes)
  *
  */
 PHP_METHOD(HttpResponse, setBufferSize)
@@ -451,7 +451,7 @@ PHP_METHOD(HttpResponse, setBufferSize)
 }
 /* }}} */
 
-/* {{{ proto long HttpResponse::getBufferSize()
+/* {{{ proto static long HttpResponse::getBufferSize()
  *
  */
 PHP_METHOD(HttpResponse, getBufferSize)
@@ -464,7 +464,7 @@ PHP_METHOD(HttpResponse, getBufferSize)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::setData(string data)
+/* {{{ proto static bool HttpResponse::setData(string data)
  *
  * Set the data to be sent.
  */
@@ -489,7 +489,7 @@ PHP_METHOD(HttpResponse, setData)
 }
 /* }}} */
 
-/* {{{ proto string HttpResponse::getData()
+/* {{{ proto static string HttpResponse::getData()
  *
  * Get the previously set data to be sent.
  */
@@ -504,7 +504,7 @@ PHP_METHOD(HttpResponse, getData)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::setStream(resource stream)
+/* {{{ proto static bool HttpResponse::setStream(resource stream)
  *
  * Set the resource to be sent.
  */
@@ -531,7 +531,7 @@ PHP_METHOD(HttpResponse, setStream)
 }
 /* }}} */
 
-/* {{{ proto resource HttpResponse::getStream()
+/* {{{ proto static resource HttpResponse::getStream()
  *
  * Get the previously set resource to be sent.
  */
@@ -545,7 +545,7 @@ PHP_METHOD(HttpResponse, getStream)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::setFile(string file)
+/* {{{ proto static bool HttpResponse::setFile(string file)
  *
  * Set the file to be sent.
  */
@@ -570,7 +570,7 @@ PHP_METHOD(HttpResponse, setFile)
 }
 /* }}} */
 
-/* {{{ proto string HttpResponse::getFile()
+/* {{{ proto static string HttpResponse::getFile()
  *
  * Get the previously set file to be sent.
  */
@@ -585,7 +585,7 @@ PHP_METHOD(HttpResponse, getFile)
 }
 /* }}} */
 
-/* {{{ proto bool HttpResponse::send([bool clean_ob = true])
+/* {{{ proto static bool HttpResponse::send([bool clean_ob = true])
  *
  * Finally send the entity.
  *
@@ -731,9 +731,18 @@ PHP_METHOD(HttpResponse, send)
 }
 /* }}} */
 
-/* {{{ proto void HttpResponse::capture()
+/* {{{ proto static void HttpResponse::capture()
  *
  * Capture script output.
+ *
+ * Example:
+ * <pre>
+ * <?php
+ * HttpResponse::setCache(true);
+ * HttpResponse::capture();
+ * // script follows
+ * ?>
+ * </pre>
  */
 PHP_METHOD(HttpResponse, capture)
 {
