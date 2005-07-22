@@ -3,7 +3,8 @@ HttpRequest SSL
 --SKIPIF--
 <?php
 include 'skip.inc';
-(5 > (int) PHP_VERSION) and die('skip PHP5 is required for Http classes');
+checkver(5);
+checkurl('http://arweb.info');
 ?>
 --FILE--
 <?php

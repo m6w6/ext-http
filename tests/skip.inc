@@ -1,4 +1,9 @@
 <?php
-extension_loaded('http') or @dl('php_http.dll') or @dl('http.so') or die('skip ext/http not available');
-strncasecmp(PHP_SAPI, 'CLI', 3) or die('skip cannot run tests with CLI');
+defined('STDOUT') or define('STDOUT', fopen('php://stdout', 'w'));
+function skipif($if, $skip) { if ($if) { fprintf(STDOUT, "skip $skip"); exit(); }}
+function checkcgi() { skipif(!strncasecmp('CLI', PHP_SAPI, 3), 'need CGI SAPI'); }
+function checkext($ext) { skipif(!extension_loaded($ext), "need ext/$ext"); }
+function checkver($ver) { skipif($ver > (int) PHP_VERSION, "need PHP v$ver"); }
+function checkurl($url) { skipif(!@fsockopen($url, 80), "$url not responsive"); }
+checkext('http');
 ?>

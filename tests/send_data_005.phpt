@@ -3,6 +3,7 @@ http_send_data() oversized range
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --ENV--
 HTTP_RANGE=bytes=5990-6000

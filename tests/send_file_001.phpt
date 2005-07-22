@@ -3,6 +3,7 @@ http_send_file()
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --FILE--
 <?php

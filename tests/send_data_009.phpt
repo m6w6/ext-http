@@ -3,6 +3,7 @@ http_send_data() last modified caching
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --FILE--
 <?php

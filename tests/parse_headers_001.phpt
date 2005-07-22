@@ -22,10 +22,7 @@ print_r(http_parse_headers(
 ));
 ?>
 --EXPECTF--
-Content-type: text/html
-X-Powered-By: PHP/%s
-
-Array
+%sArray
 (
     [Host] => Array
         (

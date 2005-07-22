@@ -1,9 +1,9 @@
 --TEST--
-HttpMessage simple redirects
+HttpMessage
 --SKIPIF--
 <?php 
 include 'skip.inc';
-(5 > (int) PHP_VERSION) and die('skip PHP5 is required for Http classes');
+checkver(5);
 ?>
 --FILE--
 <?php
@@ -26,10 +26,7 @@ var_dump($m->toString());
 var_dump(HttpMessage::fromString($m->toString())->toString());
 ?>
 --EXPECTF--
-Content-type: text/html
-X-Powered-By: PHP/%s
-
-string(1) "X"
+%sstring(1) "X"
 string(134) "HTTP/1.1 301
 Location: /anywhere
 HTTP/1.1 302

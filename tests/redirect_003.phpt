@@ -3,6 +3,7 @@ http_redirect() permanent
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --FILE--
 <?php

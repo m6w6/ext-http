@@ -3,6 +3,7 @@ http_send_file() multiple ranges
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --ENV--
 HTTP_RANGE=bytes=0-3, 4-5,9-11

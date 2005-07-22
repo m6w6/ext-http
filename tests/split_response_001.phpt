@@ -11,10 +11,7 @@ var_export(http_split_response($data));
 echo "\nDone\n";
 ?>
 --EXPECTF--
-Content-type: text/html
-X-Powered-By: PHP/%s
-
-array (
+%sarray (
   0 => 
   array (
     'Response Status' => '200 Ok',

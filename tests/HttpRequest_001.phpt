@@ -3,7 +3,7 @@ HttpRequest options
 --SKIPIF--
 <?php 
 include 'skip.inc';
-(5 > (int) PHP_VERSION) and die('skip PHP5 is required for Http classes');
+checkver(5);
 ?>
 --FILE--
 <?php
@@ -21,10 +21,7 @@ $r1 = null;
 $r2 = null;
 ?>
 --EXPECTF--
-Content-type: text/html
-X-Powered-By: PHP/%s
-
-Array
+%sArray
 (
     [0] => Array
         (

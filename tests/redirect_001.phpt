@@ -3,6 +3,7 @@ http_redirect() with params
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --FILE--
 <?php

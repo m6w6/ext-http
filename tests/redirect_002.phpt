@@ -3,6 +3,7 @@ http_redirect() with session
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --FILE--
 <?php

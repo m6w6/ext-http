@@ -3,6 +3,7 @@ http_send_data() etag caching
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --ENV--
 HTTP_IF_NONE_MATCH="0bee89b07a248e27c83fc3d5951213c1"

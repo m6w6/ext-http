@@ -3,6 +3,7 @@ http_send_data() syntactically invalid range
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --ENV--
 HTTP_RANGE=bytes=123,-wtf ?

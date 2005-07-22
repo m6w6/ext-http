@@ -3,6 +3,7 @@ http_send_data() NIL-NUM range
 --SKIPIF--
 <?php 
 include 'skip.inc';
+checkcgi();
 ?>
 --ENV--
 HTTP_RANGE=bytes=-5
