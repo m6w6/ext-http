@@ -355,6 +355,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 
 	/* progress callback */
 	if (zoption = http_curl_getopt(options, "onprogress", 0)) {
+		HTTP_CURL_OPT(NOPROGRESS, 0);
 		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
 		HTTP_CURL_OPT(PROGRESSDATA,  http_curl_callback_data(zoption));
 	} else {
@@ -920,6 +921,10 @@ static int http_curl_progress_callback(void *data, double dltotal, double dlnow,
 	params_pass[2] = &params_local[2];
 	params_pass[3] = &params_local[3];
 
+	INIT_PZVAL(params_pass[0]);
+	INIT_PZVAL(params_pass[1]);
+	INIT_PZVAL(params_pass[2]);
+	INIT_PZVAL(params_pass[3]);
 	ZVAL_DOUBLE(params_pass[0], dltotal);
 	ZVAL_DOUBLE(params_pass[1], dlnow);
 	ZVAL_DOUBLE(params_pass[2], ultotal);
@@ -937,8 +942,10 @@ static int http_curl_debug_callback(CURL *ch, curl_infotype type, char *string, 
 	params_pass[0] = &params_local[0];
 	params_pass[1] = &params_local[1];
 
+	INIT_PZVAL(params_pass[0]);
+	INIT_PZVAL(params_pass[1]);
 	ZVAL_LONG(params_pass[0], type);
-	ZVAL_STRINGL(params_pass[1], string, length, 1);
+	ZVAL_STRINGL(params_pass[1], string, length, 0);
 
 	call_user_function(EG(function_table), NULL, func, &retval, 2, params_pass TSRMLS_CC);
 
