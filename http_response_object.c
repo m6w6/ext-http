@@ -155,7 +155,6 @@ zend_function_entry http_response_object_fe[] = {
 
 	{NULL, NULL, NULL}
 };
-static zend_object_handlers http_response_object_handlers;
 
 void _http_response_object_init(INIT_FUNC_ARGS)
 {
@@ -269,7 +268,7 @@ PHP_METHOD(HttpResponse, setCacheControl)
 
 #define HTTP_CACHECONTROL_TEMPLATE "%s, must-revalidate, max_age=%ld"
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &ccontrol, &cc_len, &max_age)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &ccontrol, &cc_len, &max_age)) {
 		RETURN_FALSE;
 	}
 
@@ -649,7 +648,7 @@ PHP_METHOD(HttpResponse, send)
 
 	/* gzip */
 	if (Z_LVAL_P(GET_STATIC_PROP(gzip))) {
-		php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
+		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
 	} else {
 		php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
 	}
