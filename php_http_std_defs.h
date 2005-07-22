@@ -193,7 +193,7 @@ typedef int STATUS;
 
 #	define getObject(t, o) getObjectEx(t, o, getThis())
 #	define getObjectEx(t, o, v) t * o = ((t *) zend_object_store_get_object(v TSRMLS_CC))
-#	define OBJ_PROP(o) o->zo.properties
+#	define OBJ_PROP(o) (o)->zo.properties
 #	define DCL_STATIC_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
 #	define DCL_STATIC_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
 #	define DCL_STATIC_PROP_N(a, n) zend_declare_property_null(ce, (#n), sizeof(#n), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
@@ -207,9 +207,54 @@ typedef int STATUS;
  \
 		refcount = (*__static)->refcount; \
 		is_ref = (*__static)->is_ref; \
-		zval_dtor(*__static); \
+		switch (Z_TYPE_PP(__static)) \
+		{ \
+			case IS_BOOL: case IS_LONG: case IS_NULL: \
+			break; \
+			case IS_RESOURCE: \
+				zend_list_delete(Z_LVAL_PP(__static)); \
+			break; \
+			case IS_STRING: case IS_CONSTANT: \
+				free(Z_STRVAL_PP(__static)); \
+			break; \
+			case IS_OBJECT: \
+				Z_OBJ_HT_PP(__static)->del_ref(*__static TSRMLS_CC); \
+			break; \
+			case IS_ARRAY: case IS_CONSTANT_ARRAY: \
+				if (Z_ARRVAL_PP(__static) && Z_ARRVAL_PP(__static) != &EG(symbol_table)) { \
+					zend_hash_destroy(Z_ARRVAL_PP(__static)); \
+					free(Z_ARRVAL_PP(__static)); \
+				} \
+			break; \
+		} \
 		**__static = *(v); \
-		zval_copy_ctor(*__static); \
+		switch (Z_TYPE_PP(__static)) \
+		{ \
+			case IS_BOOL: case IS_LONG: case IS_NULL: \
+			break; \
+			case IS_RESOURCE: \
+				zend_list_addref(Z_LVAL_PP(__static)); \
+			break; \
+			case IS_STRING: case IS_CONSTANT: \
+				Z_STRVAL_PP(__static) = (char *) zend_strndup(Z_STRVAL_PP(__static), Z_STRLEN_PP(__static)); \
+			break; \
+			case IS_OBJECT: \
+			{ \
+				Z_OBJ_HT_PP(__static)->add_ref(*__static TSRMLS_CC); \
+			} \
+			break; \
+			case IS_ARRAY: case IS_CONSTANT_ARRAY: \
+			{ \
+				if (Z_ARRVAL_PP(__static) != &EG(symbol_table)) { \
+					zval *tmp; \
+					HashTable *old = Z_ARRVAL_PP(__static); \
+					Z_ARRVAL_PP(__static) = (HashTable *) malloc(sizeof(HashTable)); \
+					zend_hash_init(Z_ARRVAL_PP(__static), 0, NULL, ZVAL_PTR_DTOR, 0); \
+					zend_hash_copy(Z_ARRVAL_PP(__static), old, (copy_ctor_func_t) zval_add_ref, (void *) &tmp, sizeof(zval *)); \
+				} \
+			} \
+			break; \
+		} \
 		(*__static)->refcount = refcount; \
 		(*__static)->is_ref = is_ref; \
 	}

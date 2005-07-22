@@ -240,19 +240,9 @@ PHP_RINIT_FUNCTION(http)
 }
 /* }}} */
 
-static int cleanup_statics(void *p TSRMLS_DC)
-{
-	zval_dtor(*(zval **)p);
-	return 0;
-}
-
 /* {{{ PHP_RSHUTDOWN_FUNCTION */
 PHP_RSHUTDOWN_FUNCTION(http)
 {
-	/* ZE kludge */
-#ifdef ZEND_ENGINE_2
-	zend_hash_apply(http_response_object_ce->static_members, cleanup_statics TSRMLS_CC);
-#endif
 	http_globals_free(HTTP_GLOBALS);
 	return SUCCESS;
 }
