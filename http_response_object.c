@@ -612,10 +612,11 @@ PHP_METHOD(HttpResponse, send)
 		http_error(E_WARNING, HTTP_E_HEADER, "Cannot send HttpResponse, headers have already been sent");
 		RETURN_FALSE;
 	}
-	
+
 	sent = GET_STATIC_PROP(sent);
 	if (Z_LVAL_P(sent)) {
 		http_error(E_WARNING, HTTP_E_UNKOWN, "Cannot send HttpResponse, response has already been sent");
+		RETURN_FALSE;
 	} else {
 		Z_LVAL_P(sent) = 1;
 	}
