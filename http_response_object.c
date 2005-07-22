@@ -109,6 +109,8 @@ HTTP_BEGIN_ARGS(send, 0)
 	HTTP_ARG_VAL(clean_ob, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(capture, 0);
+
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
@@ -149,6 +151,7 @@ zend_function_entry http_response_object_fe[] = {
 	HTTP_RESPONSE_ME(getStream, ZEND_ACC_PUBLIC)
 
 	HTTP_RESPONSE_ME(send, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(capture, ZEND_ACC_PUBLIC)
 
 	{NULL, NULL, NULL}
 };
@@ -599,7 +602,7 @@ PHP_METHOD(HttpResponse, getFile)
  */
 PHP_METHOD(HttpResponse, send)
 {
-	zval *do_cache, *do_gzip;
+	zval *do_cache, *do_gzip, *sent;
 	zend_bool clean_ob = 1;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {
@@ -608,6 +611,32 @@ PHP_METHOD(HttpResponse, send)
 	if (SG(headers_sent)) {
 		http_error(E_WARNING, HTTP_E_HEADER, "Cannot send HttpResponse, headers have already been sent");
 		RETURN_FALSE;
+	}
+	
+	sent = GET_STATIC_PROP(sent);
+	if (Z_LVAL_P(sent)) {
+		http_error(E_WARNING, HTTP_E_UNKOWN, "Cannot send HttpResponse, response has already been sent");
+	} else {
+		Z_LVAL_P(sent) = 1;
+	}
+
+	/* capture mode */
+	if (Z_LVAL_P(GET_STATIC_PROP(catch))) {
+		zval the_data;
+
+		INIT_PZVAL(&the_data);
+		php_ob_get_buffer(&the_data TSRMLS_CC);
+
+		USE_STATIC_PROP();
+		SET_STATIC_PROP(data, &the_data);
+		ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
+
+		if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
+			SET_STATIC_PROP_STRING(eTag, http_etag(Z_STRVAL(the_data), Z_STRLEN(the_data), SEND_DATA), 0);
+		}
+		zval_dtor(&the_data);
+
+		clean_ob = 1;
 	}
 
 	if (clean_ob) {
@@ -697,6 +726,43 @@ PHP_METHOD(HttpResponse, send)
 				RETURN_SUCCESS(http_send_file(Z_STRVAL_P(GET_STATIC_PROP(file))));
 			}
 		}
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpResponse::capture()
+ *
+ * Capture script output.
+ */
+PHP_METHOD(HttpResponse, capture)
+{
+	zval do_catch;
+
+	NO_ARGS;
+
+	INIT_PZVAL(&do_catch);
+	ZVAL_LONG(&do_catch, 1);
+	USE_STATIC_PROP();
+	SET_STATIC_PROP(catch, &do_catch);
+
+	php_end_ob_buffers(0 TSRMLS_CC);
+	php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
+
+	/* register shutdown function */
+	{
+		zval func, retval, arg, *argp[1];
+
+		INIT_PZVAL(&arg);
+		INIT_PZVAL(&func);
+		INIT_PZVAL(&retval);
+		ZVAL_STRINGL(&func, "register_shutdown_function", lenof("register_shutdown_function"), 0);
+
+		array_init(&arg);
+		add_next_index_stringl(&arg, "HttpResponse", lenof("HttpResponse"), 1);
+		add_next_index_stringl(&arg, "send", lenof("send"), 1);
+		argp[0] = &arg;
+		call_user_function(EG(function_table), NULL, &func, &retval, 1, argp TSRMLS_CC);
+		zval_dtor(&arg);
 	}
 }
 /* }}} */

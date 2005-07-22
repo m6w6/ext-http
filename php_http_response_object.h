@@ -48,6 +48,7 @@ PHP_METHOD(HttpResponse, getFile);
 PHP_METHOD(HttpResponse, setStream);
 PHP_METHOD(HttpResponse, getStream);
 PHP_METHOD(HttpResponse, send);
+PHP_METHOD(HttpResponse, capture);
 
 #endif
 #endif
