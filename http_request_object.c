@@ -391,6 +391,9 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		break;
 	}
 
+	/* clean previous response */
+	phpstr_dtor(&obj->response);
+
 	efree(request_uri);
 	return status;
 }
