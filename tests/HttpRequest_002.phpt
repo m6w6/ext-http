@@ -4,7 +4,7 @@ HttpRequest GET/POST
 <?php
 include 'skip.inc';
 checkver(5);
-checkurl('http://www.google.com');
+checkurl('www.google.com');
 ?>
 --FILE--
 <?php
@@ -53,3 +53,4 @@ Array
 int(501)
 int(501)
 bool(true)
+

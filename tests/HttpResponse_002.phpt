@@ -1,7 +1,7 @@
 --TEST--
 HttpResponse - send gzipped file
 --SKIPIF--
-<?php 
+<?php
 include 'skip.inc';
 checkver(5);
 checkcgi();

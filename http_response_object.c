@@ -469,7 +469,7 @@ PHP_METHOD(HttpResponse, getBufferSize)
  */
 PHP_METHOD(HttpResponse, setData)
 {
-	zval *the_data, **data;
+	zval *the_data;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
 		RETURN_FALSE;
@@ -601,7 +601,7 @@ PHP_METHOD(HttpResponse, getFile)
  */
 PHP_METHOD(HttpResponse, send)
 {
-	zval *do_cache, *do_gzip, *sent;
+	zval *sent;
 	zend_bool clean_ob = 1;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {
@@ -655,8 +655,6 @@ PHP_METHOD(HttpResponse, send)
 
 	/* caching */
 	if (Z_LVAL_P(GET_STATIC_PROP(cache))) {
-		char *cc_hdr;
-		int cc_len;
 		zval *cctl, *etag, *lmod;
 
 		etag = GET_STATIC_PROP(eTag);

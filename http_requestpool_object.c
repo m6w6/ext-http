@@ -29,6 +29,8 @@
 #include "php_http_request_object.h"
 #include "php_http_exception_object.h"
 
+#include "zend_interfaces.h"
+
 #ifdef PHP_WIN32
 #	include <winsock2.h>
 #endif
@@ -60,6 +62,11 @@ HTTP_EMPTY_ARGS(socketSend, 0);
 HTTP_EMPTY_ARGS(socketSelect, 0);
 HTTP_EMPTY_ARGS(socketRead, 0);
 
+HTTP_EMPTY_ARGS(valid, 0);
+HTTP_EMPTY_ARGS(current, 1);
+HTTP_EMPTY_ARGS(key, 0);
+HTTP_EMPTY_ARGS(next, 0);
+HTTP_EMPTY_ARGS(rewind, 0);
 
 #define http_requestpool_object_declare_default_properties() _http_requestpool_object_declare_default_properties(TSRMLS_C)
 static inline void _http_requestpool_object_declare_default_properties(TSRMLS_D);
@@ -77,6 +84,13 @@ zend_function_entry http_requestpool_object_fe[] = {
 	HTTP_REQPOOL_ME(socketSelect, ZEND_ACC_PROTECTED)
 	HTTP_REQPOOL_ME(socketRead, ZEND_ACC_PROTECTED)
 
+	/* implements Interator */
+	HTTP_REQPOOL_ME(valid, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(current, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(key, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(next, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(rewind, ZEND_ACC_PUBLIC)
+
 	{NULL, NULL, NULL}
 };
 static zend_object_handlers http_requestpool_object_handlers;
@@ -84,6 +98,7 @@ static zend_object_handlers http_requestpool_object_handlers;
 void _http_requestpool_object_init(INIT_FUNC_ARGS)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequestPool, http_requestpool_object, NULL, 0);
+	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 1, zend_ce_iterator);
 }
 
 zend_object_value _http_requestpool_object_new(zend_class_entry *ce TSRMLS_DC)
@@ -95,6 +110,7 @@ zend_object_value _http_requestpool_object_new(zend_class_entry *ce TSRMLS_DC)
 	o->zo.ce = ce;
 
 	http_request_pool_init(&o->pool);
+	o->iterator.pos = 0;
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
@@ -135,19 +151,22 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
  * Example:
  * <pre>
  * <?php
- *     $urls = array('www.php.net', 'pecl.php.net', 'pear.php.net')
- *     $pool = new HttpRequestPool;
- *     foreach ($urls as $url) {
- *         $req[$url] = new HttpRequest("http://$url", HTTP_HEAD);
- *         $pool->attach($req[$url]);
- *     }
+ * try {
+ *     $pool = new HttpRequestPool(
+ *         new HttpRequest('http://www.google.com/', HTTP_HEAD),
+ *         new HttpRequest('http://www.php.net/', HTTP_HEAD)
+ *     );
  *     $pool->send();
- *     foreach ($urls as $url) {
- *         printf("%s (%s) is %s\n",
- *             $url, $req[$url]->getResponseInfo('effective_url'),
- *             $r->getResponseCode() == 200 ? 'alive' : 'not alive'
+ *     foreach($pool as $request) {
+ *         printf("%s is %s (%d)\n",
+ *             $request->getResponseInfo('effective_url'),
+ *             $request->getResponseCode() ? 'alive' : 'not alive',
+ *             $request->getResponseCode()
  *         );
  *     }
+ * } catch (HttpException $e) {
+ *     echo $e;
+ * }
  * ?>
  * </pre>
  */
@@ -305,6 +324,81 @@ PHP_METHOD(HttpRequestPool, socketRead)
 	NO_ARGS;
 
 	zend_llist_apply(&obj->pool.handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
+}
+/* }}} */
+
+/* implements Iterator */
+
+/* {{{ proto bool HttpRequestPool::valid()
+ */
+PHP_METHOD(HttpRequestPool, valid)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_requestpool_object, obj);
+		RETURN_BOOL(obj->iterator.pos < zend_llist_count(&obj->pool.handles));
+	}
+}
+/* }}} */
+
+/* {{{ proto HttpRequest HttpRequestPool::current()
+ */
+PHP_METHOD(HttpRequestPool, current)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		long pos = 0;
+		zval **current = NULL;
+		zend_llist_position lpos;
+		getObject(http_requestpool_object, obj);
+
+		if (obj->iterator.pos < zend_llist_count(&obj->pool.handles)) {
+			for (	current = zend_llist_get_first_ex(&obj->pool.handles, &lpos); 
+					current && obj->iterator.pos != pos++; 
+					current = zend_llist_get_next_ex(&obj->pool.handles, &lpos));
+			if (current) {
+				RETURN_OBJECT(*current);
+			}
+		}
+		RETURN_NULL();
+	}
+}
+/* }}} */
+
+/* {{{ proto long HttpRequestPool::key()
+ */
+PHP_METHOD(HttpRequestPool, key)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_requestpool_object, obj);
+		RETURN_LONG(obj->iterator.pos);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpRequestPool::next()
+ */
+PHP_METHOD(HttpRequestPool, next)
+{
+	NO_ARGS {
+		getObject(http_requestpool_object, obj);
+		++(obj->iterator.pos);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpRequestPool::rewind()
+ */
+PHP_METHOD(HttpRequestPool, rewind)
+{
+	NO_ARGS {
+		getObject(http_requestpool_object, obj);
+		obj->iterator.pos = 0;
+	}
 }
 /* }}} */
 

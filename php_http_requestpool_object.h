@@ -31,6 +31,9 @@
 typedef struct {
 	zend_object zo;
 	http_request_pool pool;
+	struct {
+		long pos;
+	} iterator;
 } http_requestpool_object;
 
 extern zend_class_entry *http_requestpool_object_ce;
@@ -52,6 +55,11 @@ PHP_METHOD(HttpRequestPool, reset);
 PHP_METHOD(HttpRequestPool, socketSend);
 PHP_METHOD(HttpRequestPool, socketSelect);
 PHP_METHOD(HttpRequestPool, socketRead);
+PHP_METHOD(HttpRequestPool, valid);
+PHP_METHOD(HttpRequestPool, current);
+PHP_METHOD(HttpRequestPool, key);
+PHP_METHOD(HttpRequestPool, next);
+PHP_METHOD(HttpRequestPool, rewind);
 
 #endif
 #endif

@@ -198,7 +198,11 @@ typedef int STATUS;
 #	define DCL_STATIC_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
 #	define DCL_STATIC_PROP_N(a, n) zend_declare_property_null(ce, (#n), sizeof(#n), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
 #	define GET_STATIC_PROP_EX(ce, n) zend_std_get_static_property(ce, (#n), sizeof(#n), 0 TSRMLS_CC)
+#ifdef zend_update_class_constants
 #	define USE_STATIC_PROP_EX(ce) zend_update_class_constants(ce TSRMLS_CC)
+#else
+#	define USE_STATIC_PROP_EX(ce)
+#endif
 #	define SET_STATIC_PROP_EX(ce, n, v) \
 	{ \
 		int refcount; \

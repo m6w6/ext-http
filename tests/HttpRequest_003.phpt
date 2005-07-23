@@ -4,7 +4,7 @@ HttpRequest SSL
 <?php
 include 'skip.inc';
 checkver(5);
-checkurl('http://arweb.info');
+checkurl('arweb.info');
 ?>
 --FILE--
 <?php
@@ -17,3 +17,4 @@ Content-type: text/html
 X-Powered-By: PHP/%s
 
 string(10) "1234567890"
+

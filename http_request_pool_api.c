@@ -42,7 +42,7 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 {
 	zend_bool free_pool;
 #if HTTP_DEBUG_REQPOOLS
-	fprintf(stderr, "Initializing request pool\n");
+	fprintf(stderr, "Initializing request pool %p\n", pool);
 #endif
 	if ((free_pool = (!pool))) {
 		pool = emalloc(sizeof(http_request_pool));
@@ -74,26 +74,33 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 {
 	getObjectEx(http_request_object, req, request);
 #if HTTP_DEBUG_REQPOOLS
-	fprintf(stderr, "Attaching request %p to pool %p\n", req, pool);
+	fprintf(stderr, "Attaching HttpRequest(#%d) %p to pool %p\n", Z_OBJ_HANDLE_P(request), req, pool);
 #endif
 	if (req->pool) {
-		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is already member of an HttpRequestPool");
+		http_error_ex(E_WARNING, HTTP_E_CURL, "HttpRequest object(#%d) is already member of %s HttpRequestPool", Z_OBJ_HANDLE_P(request), req->pool == pool ? "this" : "another");
 	} else {
-		CURLMcode code;
 		http_request_body *body = http_request_body_new();
 		zval *info = GET_PROP_EX(req, request, responseInfo);
 
 		if (SUCCESS != http_request_object_requesthandler(req, request, body)) {
 			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
 		} else {
-			code = curl_multi_add_handle(pool->ch, req->ch);
+			CURLMcode code = curl_multi_add_handle(pool->ch, req->ch);
+
 			if ((CURLM_OK != code) && (CURLM_CALL_MULTI_PERFORM != code)) {
 				http_error_ex(E_WARNING, HTTP_E_CURL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
 			} else {
 				req->pool = pool;
+
 				zend_llist_add_element(&pool->handles, &request);
 				zend_llist_add_element(&pool->bodies, &body);
+
 				zval_add_ref(&request);
+				zend_objects_store_add_ref(request TSRMLS_CC);
+
+#if HTTP_DEBUG_REQPOOLS
+				fprintf(stderr, "> %d HttpRequests attached to pool %p\n", zend_llist_count(&pool->handles), pool);
+#endif
 				return SUCCESS;
 			}
 		}
@@ -108,18 +115,26 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 {
 	getObjectEx(http_request_object, req, request);
 #if HTTP_DEBUG_REQPOOLS
-	fprintf(stderr, "Detaching request %p from pool %p\n", req, pool);
+	fprintf(stderr, "Detaching HttpRequest(#%d) %p from pool %p\n", Z_OBJ_HANDLE_P(request), req, pool);
 #endif
-	if (req->pool != pool) {
-		http_error(E_WARNING, HTTP_E_CURL, "HttpRequest object is not attached to this HttpRequestPool");
+	if (!req->pool) {
+		/* not attached to any pool */
+#if HTTP_DEBUG_REQPOOLS
+		fprintf(stderr, "HttpRequest object(#%d) %p is not attached to any HttpRequestPool\n", Z_OBJ_HANDLE_P(request), req);
+#endif
+	} else if (req->pool != pool) {
+		http_error_ex(E_WARNING, HTTP_E_CURL, "HttpRequest object(#%d) is not attached to this HttpRequestPool", Z_OBJ_HANDLE_P(request));
 	} else {
 		CURLMcode code;
 
+		req->pool = NULL;
+		zend_llist_del_element(&pool->handles, request, http_request_pool_compare_handles);
+#if HTTP_DEBUG_REQPOOLS
+		fprintf(stderr, "> %d HttpRequests remaining in pool %p\n", zend_llist_count(&pool->handles), pool);
+#endif
 		if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->ch))) {
 			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
 		} else {
-			req->pool = NULL;
-			zend_llist_del_element(&pool->handles, request, http_request_pool_compare_handles);
 			return SUCCESS;
 		}
 	}
@@ -163,13 +178,16 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 #endif
 	while (http_request_pool_perform(pool)) {
 #if HTTP_DEBUG_REQPOOLS
-		fprintf(stderr, "%d unfinished requests of pool %p remaining\n", pool->unfinished, pool);
+		fprintf(stderr, "> %d unfinished requests of pool %p remaining\n", pool->unfinished, pool);
 #endif
 		if (SUCCESS != http_request_pool_select(pool)) {
 			http_error(E_WARNING, HTTP_E_CURL, "Socket error");
 			return FAILURE;
 		}
 	}
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Finished sending %d HttpRequests of pool %p (still unfinished: %d)\n", zend_llist_count(&pool->handles), pool, pool->unfinished);
+#endif
 	zend_llist_apply(&pool->handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
 	return SUCCESS;
 }
@@ -217,7 +235,7 @@ void _http_request_pool_responsehandler(zval **req TSRMLS_DC)
 {
 	getObjectEx(http_request_object, obj, *req);
 #if HTTP_DEBUG_REQPOOLS
-	fprintf(stderr, "Fetching data from request %p of pool %p\n", obj, obj->pool);
+	fprintf(stderr, "Fetching data from HttpRequest(#%d) %p of pool %p\n", Z_OBJ_HANDLE_PP(req), obj, obj->pool);
 #endif
 	http_request_object_responsehandler(obj, *req);
 }
@@ -236,7 +254,11 @@ static void http_request_pool_freebody(http_request_body **body)
 /* {{{ static int http_request_pool_compare_handles(void *, void *) */
 static int http_request_pool_compare_handles(void *h1, void *h2)
 {
-	return ((*((zval **) h1)) == ((zval *) h2));
+	int match = (Z_OBJ_HANDLE_PP((zval **) h1) == Z_OBJ_HANDLE_P((zval *) h2));
+#if HTTP_DEBUG_REQPOOLS
+	/* if(match) fprintf(stderr, "OK\n"); */
+#endif
+	return match;
 }
 /* }}} */
 

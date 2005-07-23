@@ -4,47 +4,27 @@ HttpRequestPool
 <?php
 include 'skip.inc';
 checkver(5);
-checkurl('http://www.php.net');
+checkurl('www.php.net');
+checkurl('pear.php.net');
+checkurl('pecl.php.net');
 ?>
 --FILE--
 <?php
-$urls = array(
-    'http://www.php.net',
-    'http://pear.php.net',
-    'http://pecl.php.net'
+$pool = new HttpRequestPool(
+    new HttpRequest('http://www.php.net/', HTTP_HEAD),
+    new HttpRequest('http://pear.php.net/', HTTP_HEAD),
+    new HttpRequest('http://pecl.php.net/', HTTP_HEAD)
 );
-$pool = new HttpRequestPool;
-foreach ($urls as $url) {
-    $pool->attach($reqs[] = new HttpRequest($url, HTTP_HEAD));
-}
 $pool->send();
-foreach ($reqs as $req) {
-    echo $req->getResponseInfo('effective_url'), '=',
+foreach ($pool as $req) {
+    echo $req->getUrl(), '=',
         $req->getResponseCode(), ':',
         $req->getResponseMessage()->getResponseCode(), "\n";
-    $pool->detach($req);
-    $pool->attach($req);
-    $pool->detach($req);
-    $pool->attach($req);
-    $pool->detach($req);
-    $pool->attach($req);
-    $pool->detach($req);
-    $pool->attach($req);
-    $req->getResponseMessage()->getResponseCode();
-    $req->getResponseMessage()->getResponseCode();
-    $req->getResponseMessage()->getResponseCode();
-    $req->getResponseMessage()->getResponseCode();
 }
-$pool->send();
-$pool->reset();
-$pool->attach($req);
 echo "Done\n";
 ?>
 --EXPECTF--
-Content-type: text/html
-X-Powered-By: PHP/%s
-
-http://www.php.net/=200:200
+%shttp://www.php.net/=200:200
 http://pear.php.net/=200:200
 http://pecl.php.net/=200:200
 Done

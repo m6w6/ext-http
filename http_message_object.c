@@ -136,6 +136,7 @@ void _http_message_object_init(INIT_FUNC_ARGS)
 	http_message_object_handlers.read_property = http_message_object_read_prop;
 	http_message_object_handlers.write_property = http_message_object_write_prop;
 	http_message_object_handlers.get_properties = http_message_object_get_props;
+	http_message_object_handlers.get_property_ptr_ptr = NULL;
 }
 
 zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC)
@@ -216,10 +217,13 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	http_message *msg = obj->message;
 	zval *return_value;
 
-	/* tmp var */
-	ALLOC_ZVAL(return_value);
+	return_value = &EG(uninitialized_zval);
 	return_value->refcount = 0;
+	return_value->is_ref = 0;
 
+#if 0
+	fprintf(stderr, "Read HttpMessage::$%s\n", Z_STRVAL_P(member));
+#endif
 	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
 		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 		return EG(uninitialized_zval_ptr);
@@ -255,8 +259,18 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		break;
 
 		case HTTP_MSG_PROPHASH_HEADERS:
-			array_init(return_value);
-			zend_hash_copy(Z_ARRVAL_P(return_value), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+			/* This is needed for situations like
+			 * $this->headers['foo'] = 'bar';
+			 */
+			if (type == BP_VAR_W) {
+				return_value->refcount = 1;
+				return_value->is_ref = 1;
+				Z_TYPE_P(return_value) = IS_ARRAY;
+				Z_ARRVAL_P(return_value) = &msg->hdrs;
+			} else {
+				array_init(return_value);
+				zend_hash_copy(Z_ARRVAL_P(return_value), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+			}
 		break;
 
 		case HTTP_MSG_PROPHASH_PARENT_MESSAGE:
@@ -307,6 +321,9 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
 
+#if 0
+	fprintf(stderr, "Write HttpMessage::$%s\n", Z_STRVAL_P(member));
+#endif
 	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
 		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 	}
@@ -784,7 +801,7 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 
 	IF_RETVAL_USED {
 		char ver[4] = {0};
-		float version;
+		double version;
 		getObject(http_message_object, obj);
 
 		switch (obj->message->type)
@@ -801,7 +818,7 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 			default:
 				RETURN_NULL();
 		}
-		sprintf(ver, "%1.1f", version);
+		sprintf(ver, "%1.1lf", version);
 		RETURN_STRINGL(ver, 3, 1);
 	}
 }
@@ -828,16 +845,16 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 	}
 
 	convert_to_double(zv);
-	sprintf(v, "%1.1f", Z_DVAL_P(zv));
+	sprintf(v, "%1.1lf", Z_DVAL_P(zv));
 	if (strcmp(v, "1.0") && strcmp(v, "1.1")) {
 		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid HTTP protocol version (1.0 or 1.1): %s", v);
 		RETURN_FALSE;
 	}
 
 	if (HTTP_MSG_TYPE(RESPONSE, obj->message)) {
-		obj->message->info.response.http_version = (float) Z_DVAL_P(zv);
+		obj->message->info.response.http_version = Z_DVAL_P(zv);
 	} else {
-		obj->message->info.request.http_version = (float) Z_DVAL_P(zv);
+		obj->message->info.request.http_version = Z_DVAL_P(zv);
 	}
 	RETURN_TRUE;
 }
