@@ -79,8 +79,6 @@ dnl ----
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, [$ext_shared])
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 	PHP_ADD_MAKEFILE_FRAGMENT
-	CFLAGS=" -g -O2 -W -Wchar-subscripts -Wformat=2 -Wno-format-y2k -Wimplicit -Wmissing-braces -Wunused-variable -Wuninitialized -Wstrict-aliasing -Wfloat-equal -Wshadow -Wbad-function-cast -Wpointer-arith -Wsign-compare -Winline"
-	PHP_SUBST([CFLAGS])
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
 fi
 
