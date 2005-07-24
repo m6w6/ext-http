@@ -76,6 +76,7 @@ PHP_HTTP_API char *_http_negotiate_q(const char *entry, const HashTable *support
 		} else {
 			qual = 1000.0 - i++;
 		}
+		/* TODO: support primaries only, too */
 		FOREACH_HASH_VAL((HashTable *)supported, zsupp) {
 			if (!strcasecmp(Z_STRVAL_PP(zsupp), Z_STRVAL_PP(zentry))) {
 				add_assoc_double(&zentries, Z_STRVAL_PP(zsupp), qual);
@@ -111,7 +112,9 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 	range = Z_STRVAL_P(zrange);
 
 	if (strncmp(range, "bytes=", sizeof("bytes=") - 1)) {
+		/* should we really issue a notice for a client misbehaviour?
 		http_error(E_NOTICE, HTTP_E_HEADER, "Range header misses bytes=");
+		*/
 		return RANGE_NO;
 	}
 
@@ -169,7 +172,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 								return RANGE_NO;
 							}
 							/* "0-0" or overflow */
-							if (end == -10 || length <= end) {
+							if (end == -10 || length <= (size_t) end) {
 								return RANGE_ERR;
 							}
 							begin = 0;
@@ -178,7 +181,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 						/* "-12345" */
 						case -1:
 							/* "-", "-0" or overflow */
-							if (end == -1 || end == -10 || length <= end) {
+							if (end == -1 || end == -10 || length <= (size_t) end) {
 								return RANGE_ERR;
 							}
 							begin = length - end;
@@ -196,7 +199,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 
 								/* "12345-" */
 								case -1:
-									if (length <= begin) {
+									if (length <= (size_t) begin) {
 										return RANGE_ERR;
 									}
 									end = length - 1;
@@ -204,8 +207,8 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 
 								/* "12345-67890" */
 								default:
-									if (	(length <= begin) ||
-											(length <= end)   ||
+									if (	(length <= (size_t) begin) ||
+											(length <= (size_t) end)   ||
 											(end    <  begin)) {
 										return RANGE_ERR;
 									}
@@ -261,7 +264,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 
 	line = header;
 
-	while (header_len >= (line - begin)) {
+	while (header_len >= (size_t) (line - begin)) {
 		int value_len = 0;
 
 		switch (*line++)

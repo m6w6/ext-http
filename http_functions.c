@@ -689,7 +689,7 @@ PHP_FUNCTION(http_match_request_header)
 {
 	char *header, *value;
 	int header_len, value_len;
-	zend_bool match_case = 0, result = 0;
+	zend_bool match_case = 0;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|b", &header, &header_len, &value, &value_len, &match_case)) {
 		RETURN_FALSE;

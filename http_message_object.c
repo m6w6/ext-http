@@ -165,7 +165,7 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
 
-	ov.handle = zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, http_message_object_free, NULL TSRMLS_CC);
+	ov.handle = putObject(http_message_object, o);
 	ov.handlers = &http_message_object_handlers;
 
 	return ov;
@@ -332,7 +332,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
 			convert_to_long_ex(&value);
-			if (Z_LVAL_P(value) != msg->type) {
+			if ((http_message_type) Z_LVAL_P(value) != msg->type) {
 				if (HTTP_MSG_TYPE(REQUEST, msg)) {
 					if (msg->info.request.method) {
 						efree(msg->info.request.method);

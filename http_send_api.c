@@ -279,7 +279,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 		http_send_status(206);
 
 		/* send content range header */
-		snprintf(range_header, 255, "Content-Range: bytes %d-%d/%d", **begin, **end, size);
+		snprintf(range_header, 255, "Content-Range: bytes %ld-%ld/%lu", **begin, **end, (ulong) size);
 		http_send_header(range_header);
 
 		/* send requested chunk */
@@ -295,7 +295,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 		http_send_status(206);
 
 		/* send multipart/byteranges header */
-		snprintf(bound, 22, "--%d%0.9f", time(NULL), php_combined_lcg(TSRMLS_C));
+		snprintf(bound, 22, "--%lu%0.9f", (ulong) time(NULL), php_combined_lcg(TSRMLS_C));
 		strncat(multi_header, bound + 2, 21);
 		http_send_header(multi_header);
 
@@ -309,7 +309,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 			snprintf(preface, 1023,
 				HTTP_CRLF "%s"
 				HTTP_CRLF "Content-Type: %s"
-				HTTP_CRLF "Content-Range: bytes %ld-%ld/%ld"
+				HTTP_CRLF "Content-Range: bytes %ld-%ld/%lu"
 				HTTP_CRLF
 				HTTP_CRLF,
 
@@ -317,7 +317,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 				HTTP_G(send).content_type ? HTTP_G(send).content_type : "application/x-octetstream",
 				**begin,
 				**end,
-				size
+				(ulong) size
 			);
 
 			PHPWRITE(preface, strlen(preface));

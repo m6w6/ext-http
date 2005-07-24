@@ -79,6 +79,10 @@ dnl ----
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, [$ext_shared])
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 	PHP_ADD_MAKEFILE_FRAGMENT
+	if ! test -z "$HTTP_ODD_WARNINGS"; then
+		CFLAGS=" -g -O2 -W -Wchar-subscripts -Wformat=2 -Wno-format-y2k -Wimplicit -Wmissing-braces -Wunused-variable -Wbad-function-cast -Wpointer-arith -Wsign-compare -Winline"
+		PHP_SUBST([CFLAGS])
+	fi
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
 fi
 

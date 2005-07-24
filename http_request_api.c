@@ -968,7 +968,7 @@ static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t k
 			case IS_DOUBLE:	convert_to_double_ex(zoption);	break;
 			case IS_STRING:	convert_to_string_ex(zoption);	break;
 			case IS_ARRAY:	convert_to_array_ex(zoption);	break;
-			case IS_OBJECT: convert_to_object_ex(zoption);	break;
+			case IS_OBJECT:	convert_to_object_ex(zoption);	break;
 			default:
 			break;
 		}

@@ -116,7 +116,7 @@ zend_object_value _http_requestpool_object_new(zend_class_entry *ce TSRMLS_DC)
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 
-	ov.handle = zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, http_requestpool_object_free, NULL TSRMLS_CC);
+	ov.handle = putObject(http_requestpool_object, o);
 	ov.handlers = &http_requestpool_object_handlers;
 
 	return ov;

@@ -132,7 +132,7 @@ static int check_month(char *month)
 
 static int check_tzone(char *tzone)
 {
-	int i;
+	unsigned i;
 	const struct time_zone *check = time_zones;
 	for (i = 0; i < sizeof(time_zones) / sizeof(time_zones[0]); i++) {
 		if (!strcmp(tzone, check->name)) {
@@ -175,7 +175,7 @@ PHP_HTTP_API time_t _http_parse_date(const char *date)
 	enum assume_next dignext = DATE_MDAY;
 	const char *indate = date;
 
-	int found = 0, part = 0; /* max 6 parts */
+	int part = 0; /* max 6 parts */
 
 	while (*date && (part < 6)) {
 		int found = 0;

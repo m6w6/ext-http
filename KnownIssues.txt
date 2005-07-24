@@ -4,4 +4,3 @@ $Id$
 
 Issues I don't know how to solve yet are as follows:
 
-There are random segfaults with PHP-5.1 and HttpRequestPool.

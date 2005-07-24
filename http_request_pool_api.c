@@ -80,7 +80,6 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 		http_error_ex(E_WARNING, HTTP_E_CURL, "HttpRequest object(#%d) is already member of %s HttpRequestPool", Z_OBJ_HANDLE_P(request), req->pool == pool ? "this" : "another");
 	} else {
 		http_request_body *body = http_request_body_new();
-		zval *info = GET_PROP_EX(req, request, responseInfo);
 
 		if (SUCCESS != http_request_object_requesthandler(req, request, body)) {
 			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");

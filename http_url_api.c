@@ -50,7 +50,7 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
 	struct servent *se;
 #endif
-	php_url *purl, furl = {NULL};
+	php_url *purl = NULL, furl;
 	size_t full_len = 0;
 	zval *zhost = NULL;
 	char *scheme = NULL, *uri, *URL = ecalloc(1, HTTP_URI_MAXLEN + 1);
