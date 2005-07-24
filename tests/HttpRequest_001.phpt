@@ -1,12 +1,13 @@
 --TEST--
 HttpRequest options
 --SKIPIF--
-<?php 
+<?php
 include 'skip.inc';
 checkver(5);
 ?>
 --FILE--
 <?php
+echo "-TEST\n";
 $r1 = new HttpRequest;
 $r2 = new HttpRequest;
 $r1->setOptions(array('redirect'=>11, 'headers'=>array('X-Foo'=>'Bar')));
@@ -21,7 +22,8 @@ $r1 = null;
 $r2 = null;
 ?>
 --EXPECTF--
-%sArray
+%sTEST
+Array
 (
     [0] => Array
         (

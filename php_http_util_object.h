@@ -29,26 +29,11 @@ PHP_METHOD(HttpUtil, date);
 PHP_METHOD(HttpUtil, absoluteURI);
 PHP_METHOD(HttpUtil, negotiateLanguage);
 PHP_METHOD(HttpUtil, negotiateCharset);
-PHP_METHOD(HttpUtil, redirect);
-PHP_METHOD(HttpUtil, sendStatus);
-PHP_METHOD(HttpUtil, sendLastModified);
-PHP_METHOD(HttpUtil, sendContentType);
-PHP_METHOD(HttpUtil, sendContentDisposition);
 PHP_METHOD(HttpUtil, matchModified);
 PHP_METHOD(HttpUtil, matchEtag);
-PHP_METHOD(HttpUtil, cacheLastModified);
-PHP_METHOD(HttpUtil, cacheEtag);
 PHP_METHOD(HttpUtil, chunkedDecode);
 PHP_METHOD(HttpUtil, splitResponse);
 PHP_METHOD(HttpUtil, parseHeaders);
-PHP_METHOD(HttpUtil, getRequestHeaders);
-PHP_METHOD(HttpUtil, getRequestBody);
-#ifdef HTTP_HAVE_CURL
-PHP_METHOD(HttpUtil, get);
-PHP_METHOD(HttpUtil, head);
-PHP_METHOD(HttpUtil, postData);
-PHP_METHOD(HttpUtil, postFields);
-#endif /* HTTP_HAVE_CURL */
 PHP_METHOD(HttpUtil, authBasic);
 PHP_METHOD(HttpUtil, authBasicCallback);
 

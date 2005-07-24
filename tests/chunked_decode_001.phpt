@@ -1,12 +1,13 @@
 --TEST--
 http_chunked_decode()
 --SKIPIF--
-<?php 
+<?php
 include 'skip.inc';
 ?>
 --FILE--
 <?php
-$data = 
+echo "-TEST\n";
+$data =
 "02\r\n".
 "ab\r\n".
 "03\r\n".
@@ -18,8 +19,7 @@ $data =
 var_dump(http_chunked_decode($data));
 ?>
 --EXPECTF--
-Content-type: text/html
-X-Powered-By: PHP/%s
-
+%sTEST
 string(9) "aba
 cabcd"
+

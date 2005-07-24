@@ -49,6 +49,11 @@ PHP_METHOD(HttpResponse, setStream);
 PHP_METHOD(HttpResponse, getStream);
 PHP_METHOD(HttpResponse, send);
 PHP_METHOD(HttpResponse, capture);
+PHP_METHOD(HttpResponse, redirect);
+PHP_METHOD(HttpResponse, sendStatus);
+PHP_METHOD(HttpResponse, sendHeader);
+PHP_METHOD(HttpResponse, getRequestHeaders);
+PHP_METHOD(HttpResponse, getRequestBody);
 
 #endif
 #endif

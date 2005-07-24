@@ -25,6 +25,7 @@
 
 #include "SAPI.h"
 #include "php_ini.h"
+#include "ext/standard/head.h"
 
 #include "php_http.h"
 #include "php_http_api.h"
@@ -47,6 +48,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpResponse, method, 0, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpResponse, method, ret_ref)
 #define HTTP_RESPONSE_ME(method, visibility)	PHP_ME(HttpResponse, method, HTTP_ARGS(HttpResponse, method), visibility|ZEND_ACC_STATIC)
+#define HTTP_RESPONSE_ALIAS(method, func)		HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpResponse, method))
 
 HTTP_EMPTY_ARGS(getETag, 0);
 HTTP_BEGIN_ARGS(setETag, 1)
@@ -111,6 +113,26 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(capture, 0);
 
+HTTP_BEGIN_ARGS(redirect, 0)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(params, 0)
+	HTTP_ARG_VAL(session, 0)
+	HTTP_ARG_VAL(permanent, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(sendStatus, 1)
+	HTTP_ARG_VAL(status, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(sendHeader, 1)
+	HTTP_ARG_VAL(header, 0)
+	HTTP_ARG_VAL(replace, 0)
+	HTTP_ARG_VAL(status, 0)
+HTTP_END_ARGS;
+
+HTTP_EMPTY_ARGS(getRequestHeaders, 0);
+HTTP_EMPTY_ARGS(getRequestBody, 0);
+
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
@@ -152,6 +174,14 @@ zend_function_entry http_response_object_fe[] = {
 
 	HTTP_RESPONSE_ME(send, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(capture, ZEND_ACC_PUBLIC)
+
+	HTTP_RESPONSE_ALIAS(redirect, http_redirect)
+
+	HTTP_RESPONSE_ALIAS(sendStatus, http_send_status)
+	HTTP_RESPONSE_ALIAS(sendHeader, header)
+
+	HTTP_RESPONSE_ALIAS(getRequestHeaders, http_get_request_headers)
+	HTTP_RESPONSE_ALIAS(getRequestBody, http_get_request_body)
 
 	{NULL, NULL, NULL}
 };

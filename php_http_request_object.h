@@ -96,6 +96,18 @@ PHP_METHOD(HttpRequest, getResponseBody);
 PHP_METHOD(HttpRequest, getResponseInfo);
 PHP_METHOD(HttpRequest, getResponseMessage);
 
+PHP_METHOD(HttpRequest, get);
+PHP_METHOD(HttpRequest, head);
+PHP_METHOD(HttpRequest, postData);
+PHP_METHOD(HttpRequest, postFields);
+PHP_METHOD(HttpRequest, putFile);
+PHP_METHOD(HttpRequest, putStream);
+
+PHP_METHOD(HttpRequest, methodRegister);
+PHP_METHOD(HttpRequest, methodUnregister);
+PHP_METHOD(HttpRequest, methodName);
+PHP_METHOD(HttpRequest, methodExists);
+
 #endif
 #endif
 #endif

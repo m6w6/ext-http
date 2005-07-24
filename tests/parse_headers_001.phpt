@@ -1,11 +1,12 @@
 --TEST--
 http_parse_headers()
 --SKIPIF--
-<?php 
+<?php
 include 'skip.inc';
 ?>
 --FILE--
 <?php
+echo "-TEST\n";
 print_r(http_parse_headers(
 "Host: localhost\r\n".
 "Host: ambigious\r\n".
@@ -22,7 +23,8 @@ print_r(http_parse_headers(
 ));
 ?>
 --EXPECTF--
-%sArray
+%sTEST
+Array
 (
     [Host] => Array
         (
@@ -38,3 +40,4 @@ print_r(http_parse_headers(
 	two
   three
 )
+

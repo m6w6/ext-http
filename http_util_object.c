@@ -27,34 +27,17 @@
 #include "php_http_std_defs.h"
 #include "php_http_util_object.h"
 
-HTTP_DECLARE_ARG_PASS_INFO();
-
 zend_class_entry *http_util_object_ce;
 zend_function_entry http_util_object_fe[] = {
 	HTTP_STATIC_ME_ALIAS(date, http_date, NULL)
 	HTTP_STATIC_ME_ALIAS(absoluteURI, http_absolute_uri, NULL)
 	HTTP_STATIC_ME_ALIAS(negotiateLanguage, http_negotiate_language, NULL)
 	HTTP_STATIC_ME_ALIAS(negotiateCharset, http_negotiate_charset, NULL)
-	HTTP_STATIC_ME_ALIAS(redirect, http_redirect, NULL)
-	HTTP_STATIC_ME_ALIAS(sendStatus, http_send_status, NULL)
-	HTTP_STATIC_ME_ALIAS(sendLastModified, http_send_last_modified, NULL)
-	HTTP_STATIC_ME_ALIAS(sendContentType, http_send_content_type, NULL)
-	HTTP_STATIC_ME_ALIAS(sendContentDisposition, http_send_content_disposition, NULL)
 	HTTP_STATIC_ME_ALIAS(matchModified, http_match_modified, NULL)
 	HTTP_STATIC_ME_ALIAS(matchEtag, http_match_etag, NULL)
-	HTTP_STATIC_ME_ALIAS(cacheLastModified, http_cache_last_modified, NULL)
-	HTTP_STATIC_ME_ALIAS(cacheEtag, http_cache_etag, NULL)
 	HTTP_STATIC_ME_ALIAS(chunkedDecode, http_chunked_decode, NULL)
 	HTTP_STATIC_ME_ALIAS(splitResponse, http_split_response, NULL)
 	HTTP_STATIC_ME_ALIAS(parseHeaders, http_parse_headers, NULL)
-	HTTP_STATIC_ME_ALIAS(getRequestHeaders, http_get_request_headers, NULL)
-	HTTP_STATIC_ME_ALIAS(getRequestBody, http_get_request_body, NULL)
-#ifdef HTTP_HAVE_CURL
-	HTTP_STATIC_ME_ALIAS(get, http_get, http_arg_pass_ref_3)
-	HTTP_STATIC_ME_ALIAS(head, http_head, http_arg_pass_ref_3)
-	HTTP_STATIC_ME_ALIAS(postData, http_post_data, http_arg_pass_ref_4)
-	HTTP_STATIC_ME_ALIAS(postFields, http_post_fields, http_arg_pass_ref_5)
-#endif /* HTTP_HAVE_CURL */
 	HTTP_STATIC_ME_ALIAS(authBasic, http_auth_basic, NULL)
 	HTTP_STATIC_ME_ALIAS(authBasicCallback, http_auth_basic_cb, NULL)
 	{NULL, NULL, NULL}

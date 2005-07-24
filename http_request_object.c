@@ -27,6 +27,7 @@
 #include "php_http_request_object.h"
 #include "php_http_request_api.h"
 #include "php_http_request_pool_api.h"
+#include "php_http.h"
 #include "php_http_api.h"
 #include "php_http_url_api.h"
 #include "php_http_message_api.h"
@@ -41,6 +42,7 @@
 #define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpRequest, method, ret_ref, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpRequest, method, ret_ref)
 #define HTTP_REQUEST_ME(method, visibility)			PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)
+#define HTTP_REQUEST_ALIAS(method, func)			HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpRequest, method))
 
 HTTP_EMPTY_ARGS(__destruct, 0);
 HTTP_BEGIN_ARGS(__construct, 0, 0)
@@ -143,6 +145,62 @@ HTTP_END_ARGS;
 HTTP_EMPTY_ARGS(getResponseMessage, 1);
 HTTP_EMPTY_ARGS(send, 0);
 
+HTTP_BEGIN_ARGS(get, 1, 0)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(options, 0)
+	HTTP_ARG_VAL(info, 1)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(head, 1, 0)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(options, 0)
+	HTTP_ARG_VAL(info, 1)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(postData, 2, 0)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(data, 0)
+	HTTP_ARG_VAL(options, 0)
+	HTTP_ARG_VAL(info, 1)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(postFields, 2, 0)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(data, 0)
+	HTTP_ARG_VAL(options, 0)
+	HTTP_ARG_VAL(info, 1)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(putFile, 2, 0)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(file, 0)
+	HTTP_ARG_VAL(options, 0)
+	HTTP_ARG_VAL(info, 1)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(putStream, 2, 0)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(stream, 0)
+	HTTP_ARG_VAL(options, 0)
+	HTTP_ARG_VAL(info, 1)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(methodRegister, 1, 0)
+	HTTP_ARG_VAL(method_name, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(methodUnregister, 1, 0)
+	HTTP_ARG_VAL(method, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(methodName, 1, 0)
+	HTTP_ARG_VAL(method_id, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(methodExists, 1, 0)
+	HTTP_ARG_VAL(method, 0)
+HTTP_END_ARGS;
+
 #define http_request_object_declare_default_properties() _http_request_object_declare_default_properties(TSRMLS_C)
 static inline void _http_request_object_declare_default_properties(TSRMLS_D);
 
@@ -202,6 +260,18 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(getResponseBody, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseInfo, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseMessage, ZEND_ACC_PUBLIC)
+
+	HTTP_REQUEST_ALIAS(get, http_get)
+	HTTP_REQUEST_ALIAS(head, http_head)
+	HTTP_REQUEST_ALIAS(postData, http_post_data)
+	HTTP_REQUEST_ALIAS(postFields, http_post_fields)
+	HTTP_REQUEST_ALIAS(putFile, http_put_file)
+	HTTP_REQUEST_ALIAS(putStream, http_put_stream)
+
+	HTTP_REQUEST_ALIAS(methodRegister, http_request_method_register)
+	HTTP_REQUEST_ALIAS(methodUnregister, http_request_method_unregister)
+	HTTP_REQUEST_ALIAS(methodName, http_request_method_name)
+	HTTP_REQUEST_ALIAS(methodExists, http_request_method_exists)
 
 	{NULL, NULL, NULL}
 };

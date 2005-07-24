@@ -1,12 +1,13 @@
 --TEST--
 HttpMessage
 --SKIPIF--
-<?php 
+<?php
 include 'skip.inc';
 checkver(5);
 ?>
 --FILE--
 <?php
+echo "-TEST\n";
 $m = new HttpMessage(
 	"HTTP/1.1 301\r\n".
 	"Location: /anywhere\r\n".
@@ -26,7 +27,8 @@ var_dump($m->toString());
 var_dump(HttpMessage::fromString($m->toString())->toString());
 ?>
 --EXPECTF--
-%sstring(1) "X"
+%sTEST
+string(1) "X"
 string(134) "HTTP/1.1 301
 Location: /anywhere
 HTTP/1.1 302
@@ -47,3 +49,4 @@ Content-Length: 1
 
 X
 "
+
