@@ -1,7 +1,0 @@
-001+ 
-001- %sTEST
-002- bool(true)
-003- string(9) "cache.log"
-004- bool(true)
-005- string(15) "POST, HEAD, GET"
-006- Done
