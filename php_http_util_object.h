@@ -26,7 +26,7 @@ extern zend_function_entry http_util_object_fe[];
 extern void _http_util_object_init(INIT_FUNC_ARGS);
 
 PHP_METHOD(HttpUtil, date);
-PHP_METHOD(HttpUtil, absoluteURI);
+PHP_METHOD(HttpUtil, absoluteUri);
 PHP_METHOD(HttpUtil, negotiateLanguage);
 PHP_METHOD(HttpUtil, negotiateCharset);
 PHP_METHOD(HttpUtil, matchModified);

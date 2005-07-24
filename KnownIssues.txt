@@ -4,3 +4,6 @@ $Id$
 
 Issues I don't know how to solve yet are as follows:
 
+- INI entry allowed_methods is not working properly
+- Reflection on static class members does not work
+
