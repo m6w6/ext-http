@@ -226,7 +226,7 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 }
 /* }}} */
 
-/* {{{ zend_bool http_get_request_body(char **, size_t *) */
+/* {{{ STATUS http_get_request_body(char **, size_t *) */
 PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_bool dup TSRMLS_DC)
 {
 	*length = 0;
