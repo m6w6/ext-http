@@ -30,14 +30,11 @@
   </maintainers>
 
   <release>
-    <version>0.10.0</version>
+    <version>0.10.1</version>
     <date>2005-07-25</date>
     <state>beta</state>
     <notes><![CDATA[
-* changed HttpResponse to a completely static class, please see docs/functions.html for reference
-* added http_get_request_body()
-* several bug fixes
-* added test files
+* fixed installation through the PEAR installer
 ]]>
     </notes>
   </release>
