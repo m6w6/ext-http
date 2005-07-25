@@ -46,15 +46,17 @@
     <dir name="/">
       <file role="doc">CREDITS</file>
       <file role="doc">EXPERIMENTAL</file>
-      <file role="doc">docs/functions.html</file>
+      <file role="doc" install-as="functions.html">docs/functions.html</file>
       <file role="doc">KnownIssues.txt</file>
       
       <file role="src" platform="windows">http.dsp</file>
       <file role="src" platform="windows">config.w32</file>
       <file role="src">config.m4</file>
       
-      <file role="src">phpstr/phpstr.h</file>
-      <file role="src">phpstr/phpstr.c</file>
+      <dir name="phpstr">
+        <file role="src">phpstr.h</file>
+        <file role="src">phpstr.c</file>
+      </dir>
       
       <file role="src">missing.h</file>
       <file role="src">missing.c</file>
@@ -98,8 +100,8 @@
       <file role="src">http_exception_object.c</file>
       
       <dir name="tests" role="test">
-        <file>README.txt</file>
-        <file>run-tests.diff</file>
+        <file install-as="README.txt">README.txt</file>
+        <file install-as="run-tests.diff">run-tests.diff</file>
         <file>data.txt</file>
         <file>skip.inc</file>
         <file>abs_uri_001.phpt</file>
@@ -143,8 +145,7 @@
     </dir>
   </filelist>
   <deps>
-  	<dep type="php" rel="ge" version="4.3.1" optional="no" />
-  	<dep type="php" rel="ge" version="5.0.4" optional="yes" />
+  	<dep type="php" rel="ge" version="4.3" optional="no" />
   	<dep type="ext" rel="has" optional="yes">session</dep>
   	<dep type="ext" rel="has" optional="yes">zlib</dep>
   </deps>
