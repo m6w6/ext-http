@@ -159,7 +159,7 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
  *     $pool->send();
  *     foreach($pool as $request) {
  *         printf("%s is %s (%d)\n",
- *             $request->getResponseInfo('effective_url'),
+ *             $request->getUrl(),
  *             $request->getResponseCode() ? 'alive' : 'not alive',
  *             $request->getResponseCode()
  *         );
@@ -330,6 +330,8 @@ PHP_METHOD(HttpRequestPool, socketRead)
 /* implements Iterator */
 
 /* {{{ proto bool HttpRequestPool::valid()
+ *
+ * Implements Iterator::valid().
  */
 PHP_METHOD(HttpRequestPool, valid)
 {
@@ -343,6 +345,8 @@ PHP_METHOD(HttpRequestPool, valid)
 /* }}} */
 
 /* {{{ proto HttpRequest HttpRequestPool::current()
+ *
+ * Implements Iterator::current().
  */
 PHP_METHOD(HttpRequestPool, current)
 {
@@ -355,8 +359,8 @@ PHP_METHOD(HttpRequestPool, current)
 		getObject(http_requestpool_object, obj);
 
 		if (obj->iterator.pos < zend_llist_count(&obj->pool.handles)) {
-			for (	current = zend_llist_get_first_ex(&obj->pool.handles, &lpos); 
-					current && obj->iterator.pos != pos++; 
+			for (	current = zend_llist_get_first_ex(&obj->pool.handles, &lpos);
+					current && obj->iterator.pos != pos++;
 					current = zend_llist_get_next_ex(&obj->pool.handles, &lpos));
 			if (current) {
 				RETURN_OBJECT(*current);
@@ -368,6 +372,8 @@ PHP_METHOD(HttpRequestPool, current)
 /* }}} */
 
 /* {{{ proto long HttpRequestPool::key()
+ *
+ * Implements Iterator::key().
  */
 PHP_METHOD(HttpRequestPool, key)
 {
@@ -381,6 +387,8 @@ PHP_METHOD(HttpRequestPool, key)
 /* }}} */
 
 /* {{{ proto void HttpRequestPool::next()
+ *
+ * Implements Iterator::next().
  */
 PHP_METHOD(HttpRequestPool, next)
 {
@@ -392,6 +400,8 @@ PHP_METHOD(HttpRequestPool, next)
 /* }}} */
 
 /* {{{ proto void HttpRequestPool::rewind()
+ *
+ * Implements Iterator::rewind().
  */
 PHP_METHOD(HttpRequestPool, rewind)
 {
