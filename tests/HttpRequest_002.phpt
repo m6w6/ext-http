@@ -8,6 +8,7 @@ checkurl('www.google.com');
 ?>
 --FILE--
 <?php
+echo "-TEST\n";
 $r = new HttpRequest('http://www.google.com', HTTP_GET);
 var_dump($r->send());
 print_r($r->getResponseInfo());
@@ -19,9 +20,7 @@ var_dump($r->getResponseMessage()->getResponseCode());
 var_dump(false != strstr($r->getResponseBody(), "Not Implemented"));
 ?>
 --EXPECTF--
-Content-type: text/html
-X-Powered-By: PHP/%s
-
+%sTEST
 bool(true)
 Array
 (

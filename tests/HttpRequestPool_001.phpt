@@ -10,6 +10,7 @@ checkurl('pecl.php.net');
 ?>
 --FILE--
 <?php
+echo "-TEST\n";
 $pool = new HttpRequestPool(
     new HttpRequest('http://www.php.net/', HTTP_HEAD),
     new HttpRequest('http://pear.php.net/', HTTP_HEAD),
@@ -24,7 +25,8 @@ foreach ($pool as $req) {
 echo "Done\n";
 ?>
 --EXPECTF--
-%shttp://www.php.net/=200:200
+%sTEST
+http://www.php.net/=200:200
 http://pear.php.net/=200:200
 http://pecl.php.net/=200:200
 Done
