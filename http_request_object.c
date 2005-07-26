@@ -602,7 +602,7 @@ PHP_METHOD(HttpRequest, setOptions)
 
 	old_opts = GET_PROP(obj, options);
 
-	/* headers and cookies need extra attention -- thus cannot use array_merge() directly */
+	/* some options need extra attention -- thus cannot use array_merge() directly */
 	FOREACH_KEYVAL(opts, key, idx, opt) {
 		if (key) {
 			if (!strcmp(key, "headers")) {
@@ -615,6 +615,16 @@ PHP_METHOD(HttpRequest, setOptions)
 				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(old_opts), "cookies", sizeof("cookies"), (void **) &cookies)) {
 					array_merge(*opt, *cookies);
 				}
+			} else if ((!strcasecmp(key, "url")) || (!strcasecmp(key, "uri"))) {
+				if (Z_TYPE_PP(opt) != IS_STRING) {
+					convert_to_string_ex(opt);
+				}
+				UPD_PROP(obj, string, url, Z_STRVAL_PP(opt));
+			} else if (!strcmp(key, "method")) {
+				if (Z_TYPE_PP(opt) != IS_LONG) {
+					convert_to_long_ex(opt);
+				}
+				UPD_PROP(obj, long, method, Z_LVAL_PP(opt));
 			} else {
 				if (!strcmp(key, "ondebug")) {
 					SET_PROP(obj, dbg_user_cb, *opt);

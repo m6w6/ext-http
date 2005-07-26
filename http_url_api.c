@@ -53,7 +53,7 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 	php_url *purl = NULL, furl;
 	size_t full_len = 0;
 	zval *zhost = NULL;
-	char *scheme = NULL, *uri, *URL = ecalloc(1, HTTP_URI_MAXLEN + 1);
+	char *scheme = NULL, *uri, *URL;
 
 	if ((!url || !url_len) && (
 			(!(url = SG(request_info).request_uri)) ||
@@ -62,6 +62,7 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 		return NULL;
 	}
 
+	URL = ecalloc(1, HTTP_URI_MAXLEN + 1);
 	uri = estrndup(url, url_len);
 	if (!(purl = php_url_parse(uri))) {
 		http_error_ex(E_WARNING, HTTP_E_PARSE, "Could not parse supplied URL: %s", url);
