@@ -25,6 +25,9 @@
 #include "php_http_api.h"
 #include "php_http_request_api.h"
 #include "php_http_url_api.h"
+#ifdef ZEND_ENGINE_2
+#	include "php_http_request_object.h"
+#endif
 
 #include "phpstr/phpstr.h"
 
@@ -934,6 +937,7 @@ static int http_curl_progress_callback(void *data, double dltotal, double dlnow,
 }
 /* }}} */
 
+/* {{{ static int http_curl_debug_callback(CURL *, curl_infotype, char *, size_t, void *) */
 static int http_curl_debug_callback(CURL *ch, curl_infotype type, char *string, size_t length, void *data)
 {
 	zval *params_pass[2], params_local[2], retval;
@@ -942,15 +946,28 @@ static int http_curl_debug_callback(CURL *ch, curl_infotype type, char *string, 
 	params_pass[0] = &params_local[0];
 	params_pass[1] = &params_local[1];
 
+	INIT_PZVAL(&retval);
 	INIT_PZVAL(params_pass[0]);
 	INIT_PZVAL(params_pass[1]);
 	ZVAL_LONG(params_pass[0], type);
 	ZVAL_STRINGL(params_pass[1], string, length, 0);
 
-	call_user_function(EG(function_table), NULL, func, &retval, 2, params_pass TSRMLS_CC);
+#ifdef ZEND_ENGINE_2
+	/* ensure we can call private HttpRequest::debugWrapper() */
+	{
+		void *sc = EG(scope);
+		EG(scope) = http_request_object_ce;
+#endif
+		call_user_function(EG(function_table), NULL, func, &retval, 2, params_pass TSRMLS_CC);
+#ifdef ZEND_ENGINE_2
+		EG(scope) = sc;
+	}
+#endif
 
 	return 0;
 }
+/* }}} */
+
 /* {{{ static inline zval *http_curl_getopt(HashTable *, char *, size_t, int) */
 static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t keylen, int type TSRMLS_DC)
 {

@@ -143,62 +143,68 @@ HTTP_BEGIN_ARGS(getResponseInfo, 0, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getResponseMessage, 1);
+HTTP_EMPTY_ARGS(getRequestMessage, 1);
 HTTP_EMPTY_ARGS(send, 0);
 
-HTTP_BEGIN_ARGS(get, 1, 0)
+HTTP_BEGIN_ARGS(get, 0, 1)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(head, 1, 0)
+HTTP_BEGIN_ARGS(head, 0, 1)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(postData, 2, 0)
-	HTTP_ARG_VAL(url, 0)
-	HTTP_ARG_VAL(data, 0)
-	HTTP_ARG_VAL(options, 0)
-	HTTP_ARG_VAL(info, 1)
-HTTP_END_ARGS;
-
-HTTP_BEGIN_ARGS(postFields, 2, 0)
+HTTP_BEGIN_ARGS(postData, 0, 2)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(data, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(putFile, 2, 0)
+HTTP_BEGIN_ARGS(postFields, 0, 2)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(data, 0)
+	HTTP_ARG_VAL(options, 0)
+	HTTP_ARG_VAL(info, 1)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(putFile, 0, 2)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(file, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(putStream, 2, 0)
+HTTP_BEGIN_ARGS(putStream, 0, 2)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(stream, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(methodRegister, 1, 0)
+HTTP_BEGIN_ARGS(methodRegister, 0, 1)
 	HTTP_ARG_VAL(method_name, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(methodUnregister, 1, 0)
+HTTP_BEGIN_ARGS(methodUnregister, 0, 1)
 	HTTP_ARG_VAL(method, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(methodName, 1, 0)
+HTTP_BEGIN_ARGS(methodName, 0, 1)
 	HTTP_ARG_VAL(method_id, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(methodExists, 1, 0)
+HTTP_BEGIN_ARGS(methodExists, 0, 1)
 	HTTP_ARG_VAL(method, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(debugWrapper, 0, 2)
+	HTTP_ARG_VAL(info_type, 0)
+	HTTP_ARG_VAL(info_message, 0)
 HTTP_END_ARGS;
 
 #define http_request_object_declare_default_properties() _http_request_object_declare_default_properties(TSRMLS_C)
@@ -260,6 +266,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(getResponseBody, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseInfo, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseMessage, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getRequestMessage, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ALIAS(get, http_get)
 	HTTP_REQUEST_ALIAS(head, http_head)
@@ -272,6 +279,8 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ALIAS(methodUnregister, http_request_method_unregister)
 	HTTP_REQUEST_ALIAS(methodName, http_request_method_name)
 	HTTP_REQUEST_ALIAS(methodExists, http_request_method_exists)
+
+	HTTP_REQUEST_ME(debugWrapper, ZEND_ACC_PRIVATE|ZEND_ACC_FINAL)
 
 	{NULL, NULL, NULL}
 };
@@ -331,6 +340,7 @@ zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC)
 	o->ch = curl_easy_init();
 	o->pool = NULL;
 
+	phpstr_init(&o->request);
 	phpstr_init_ex(&o->response, HTTP_CURLBUF_SIZE, 0);
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
@@ -361,6 +371,8 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PROTECTED, string, contentType, "");
 	DCL_PROP(PROTECTED, string, queryData, "");
 	DCL_PROP(PROTECTED, string, putFile, "");
+
+	DCL_PROP_N(PRIVATE, dbg_user_cb);
 }
 
 void _http_request_object_free(zend_object *object TSRMLS_DC)
@@ -372,9 +384,13 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 		FREE_HASHTABLE(OBJ_PROP(o));
 	}
 	if (o->ch) {
+		/* avoid nasty segfaults with already cleaned up callbacks */
+		curl_easy_setopt(o->ch, CURLOPT_NOPROGRESS, 1);
+		curl_easy_setopt(o->ch, CURLOPT_VERBOSE, 0);
 		curl_easy_cleanup(o->ch);
 	}
 	phpstr_dtor(&o->response);
+	phpstr_dtor(&o->request);
 	efree(o);
 }
 
@@ -409,6 +425,16 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			strcat(request_uri, "&");
 		}
 		strncat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN - strlen(request_uri));
+	}
+
+	/* ensure we have HttpRequest::debugWrapper as dbg callback */
+	{
+		zval *dbg_cb;
+		MAKE_STD_ZVAL(dbg_cb);
+		array_init(dbg_cb);
+		add_next_index_zval(dbg_cb, getThis());
+		add_next_index_stringl(dbg_cb, "debugWrapper", lenof("debugWrapper"), 1);
+		add_assoc_zval(opts, "ondebug", dbg_cb);
 	}
 
 	switch (Z_LVAL_P(meth))
@@ -463,6 +489,8 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 
 	/* clean previous response */
 	phpstr_dtor(&obj->response);
+	/* clean previous request */
+	phpstr_dtor(&obj->request);
 
 	efree(request_uri);
 	return status;
@@ -472,6 +500,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 {
 	http_message *msg;
 
+	phpstr_fix(&obj->request);
 	phpstr_fix(&obj->response);
 
 	if (msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response))) {
@@ -580,17 +609,19 @@ PHP_METHOD(HttpRequest, setOptions)
 				zval **headers;
 				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(old_opts), "headers", sizeof("headers"), (void **) &headers)) {
 					array_merge(*opt, *headers);
-					continue;
 				}
 			} else if (!strcmp(key, "cookies")) {
 				zval **cookies;
 				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(old_opts), "cookies", sizeof("cookies"), (void **) &cookies)) {
 					array_merge(*opt, *cookies);
-					continue;
 				}
+			} else {
+				if (!strcmp(key, "ondebug")) {
+					SET_PROP(obj, dbg_user_cb, *opt);
+				}
+				zval_add_ref(opt);
+				add_assoc_zval(old_opts, key, *opt);
 			}
-			zval_add_ref(opt);
-			add_assoc_zval(old_opts, key, *opt);
 
 			/* reset */
 			key = NULL;
@@ -1498,12 +1529,36 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 		zval *message;
 		getObject(http_request_object, obj);
 
+		SET_EH_THROW_HTTP();
 		message = GET_PROP(obj, responseMessage);
 		if (Z_TYPE_P(message) == IS_OBJECT) {
 			RETVAL_OBJECT(message);
 		} else {
-			RETURN_NULL();
+			RETVAL_NULL();
 		}
+		SET_EH_NORMAL();
+	}
+}
+/* }}} */
+
+/* {{{ proto HttpMessage HttpRequest::getRequestMessage()
+ *
+ * Get sent HTTP message.
+ */
+PHP_METHOD(HttpRequest, getRequestMessage)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *message;
+		http_message *msg;
+		getObject(http_request_object, obj);
+
+		SET_EH_THROW_HTTP();
+		if (msg = http_message_parse(PHPSTR_VAL(&obj->request), PHPSTR_LEN(&obj->request))) {
+			RETVAL_OBJVAL(http_message_object_from_msg(msg));
+		}
+		SET_EH_NORMAL();
 	}
 }
 /* }}} */
@@ -1570,6 +1625,41 @@ PHP_METHOD(HttpRequest, send)
 
 	SET_EH_NORMAL();
 	RETURN_SUCCESS(status);
+}
+/* }}} */
+
+/* {{{ proto private HttpRequest::debugWrapper(long type, string message)
+ */
+PHP_METHOD(HttpRequest, debugWrapper)
+{
+	getObject(http_request_object, obj);
+	zval *type, *message, *dbg_user_cb = GET_PROP(obj, dbg_user_cb);
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &type, &message)) {
+		RETURN_NULL();
+	}
+	if (Z_TYPE_P(type) != IS_LONG) {
+		convert_to_long_ex(&type);
+	}
+	if (Z_TYPE_P(message) != IS_STRING) {
+		convert_to_string_ex(&message);
+	}
+
+	/* fetch outgoing request message */
+	if (Z_LVAL_P(type) == CURLINFO_HEADER_OUT || Z_LVAL_P(type) == CURLINFO_DATA_OUT) {
+		phpstr_append(&obj->request, Z_STRVAL_P(message), Z_STRLEN_P(message));
+	}
+
+	/* call user debug callback */
+	if (Z_TYPE_P(dbg_user_cb) != IS_NULL) {
+		zval *args[2], cb_ret;
+
+		args[0] = type;
+		args[1] = message;
+		call_user_function(EG(function_table), NULL, dbg_user_cb, &cb_ret, 2, args TSRMLS_CC);
+	}
+
+	RETURN_NULL();
 }
 /* }}} */
 

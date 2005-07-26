@@ -35,6 +35,7 @@ typedef struct {
 	CURL *ch;
 	http_request_pool *pool;
 	phpstr response;
+	phpstr request;
 } http_request_object;
 
 extern zend_class_entry *http_request_object_ce;
@@ -95,6 +96,7 @@ PHP_METHOD(HttpRequest, getResponseCode);
 PHP_METHOD(HttpRequest, getResponseBody);
 PHP_METHOD(HttpRequest, getResponseInfo);
 PHP_METHOD(HttpRequest, getResponseMessage);
+PHP_METHOD(HttpRequest, getRequestMessage);
 
 PHP_METHOD(HttpRequest, get);
 PHP_METHOD(HttpRequest, head);
@@ -107,6 +109,8 @@ PHP_METHOD(HttpRequest, methodRegister);
 PHP_METHOD(HttpRequest, methodUnregister);
 PHP_METHOD(HttpRequest, methodName);
 PHP_METHOD(HttpRequest, methodExists);
+
+PHP_METHOD(HttpRequest, debugWrapper);
 
 #endif
 #endif
