@@ -663,6 +663,7 @@ PHP_METHOD(HttpRequest, unsetOptions)
 
 	FREE_PARR(obj, options);
 	INIT_PARR(obj, options);
+	zend_update_property_null(http_request_object_ce, getThis(), "dbg_user_cb", lenof("dbg_user_cb") TSRMLS_CC);
 }
 /* }}} */
 
