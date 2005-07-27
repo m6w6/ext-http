@@ -390,7 +390,9 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 	if (o->ch) {
 		/* avoid nasty segfaults with already cleaned up callbacks */
 		curl_easy_setopt(o->ch, CURLOPT_NOPROGRESS, 1);
+		curl_easy_setopt(o->ch, CURLOPT_PROGRESSFUNCTION, NULL);
 		curl_easy_setopt(o->ch, CURLOPT_VERBOSE, 0);
+		curl_easy_setopt(o->ch, CURLOPT_DEBUGFUNCTION, NULL);
 		curl_easy_cleanup(o->ch);
 	}
 	phpstr_dtor(&o->response);
