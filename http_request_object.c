@@ -144,6 +144,7 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getResponseMessage, 1);
 HTTP_EMPTY_ARGS(getRequestMessage, 1);
+HTTP_EMPTY_ARGS(getHistory, 1);
 HTTP_EMPTY_ARGS(send, 0);
 
 HTTP_BEGIN_ARGS(get, 0, 1)
@@ -267,6 +268,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(getResponseInfo, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseMessage, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getRequestMessage, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getHistory, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ALIAS(get, http_get)
 	HTTP_REQUEST_ALIAS(head, http_head)
@@ -340,6 +342,7 @@ zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC)
 	o->ch = curl_easy_init();
 	o->pool = NULL;
 
+	phpstr_init(&o->history);
 	phpstr_init(&o->request);
 	phpstr_init_ex(&o->response, HTTP_CURLBUF_SIZE, 0);
 
@@ -373,6 +376,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PROTECTED, string, putFile, "");
 
 	DCL_PROP_N(PRIVATE, dbg_user_cb);
+	DCL_PROP(PUBLIC, bool, recordHistory, 1);
 }
 
 void _http_request_object_free(zend_object *object TSRMLS_DC)
@@ -391,6 +395,7 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 	}
 	phpstr_dtor(&o->response);
 	phpstr_dtor(&o->request);
+	phpstr_dtor(&o->history);
 	efree(o);
 }
 
@@ -432,10 +437,12 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		zval *dbg_cb;
 		MAKE_STD_ZVAL(dbg_cb);
 		array_init(dbg_cb);
+		zval_add_ref(&getThis());
 		add_next_index_zval(dbg_cb, getThis());
 		add_next_index_stringl(dbg_cb, "debugWrapper", lenof("debugWrapper"), 1);
 		add_assoc_zval(opts, "ondebug", dbg_cb);
 	}
+	/* */
 
 	switch (Z_LVAL_P(meth))
 	{
@@ -506,7 +513,39 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	if (msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response))) {
 		char *body;
 		size_t body_len;
-		zval *headers, *message, *resp = GET_PROP(obj, responseData), *info = GET_PROP(obj, responseInfo);
+		zval *headers, *message,
+			*resp = GET_PROP(obj, responseData),
+			*info = GET_PROP(obj, responseInfo),
+			*hist = GET_PROP(obj, recordHistory);
+
+		if (Z_TYPE_P(hist) != IS_BOOL) {
+			convert_to_boolean_ex(&hist);
+		}
+		if (Z_LVAL_P(hist)) {
+			/* we need to act like a zipper, as we'll receive
+			 * the requests and the responses in separate chains
+			 * for redirects
+			 */
+			http_message *response = msg, *request = http_message_parse(PHPSTR_VAL(&obj->request), PHPSTR_LEN(&obj->request));
+			http_message *free_msg = request;
+
+			do {
+				char *message;
+				size_t msglen;
+
+				http_message_tostring(response, &message, &msglen);
+				phpstr_append(&obj->history, message, msglen);
+				efree(message);
+
+				http_message_tostring(request, &message, &msglen);
+				phpstr_append(&obj->history, message, msglen);
+				efree(message);
+
+			} while ((response = response->parent) && (request = request->parent));
+
+			http_message_free(free_msg);
+			phpstr_fix(&obj->history);
+		}
 
 		UPD_PROP(obj, long, responseCode, msg->info.response.code);
 
@@ -1574,6 +1613,23 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 }
 /* }}} */
 
+PHP_METHOD(HttpRequest, getHistory)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *history;
+		http_message *msg;
+		getObject(http_request_object, obj);
+
+		SET_EH_THROW_HTTP();
+		if (msg = http_message_parse(PHPSTR_VAL(&obj->history), PHPSTR_LEN(&obj->history))) {
+			RETVAL_OBJVAL(http_message_object_from_msg(msg));
+		}
+		SET_EH_NORMAL();
+	}
+}
+
 /* {{{ proto bool HttpRequest::send()
  *
  * Send the HTTP request.
@@ -1643,12 +1699,14 @@ PHP_METHOD(HttpRequest, send)
  */
 PHP_METHOD(HttpRequest, debugWrapper)
 {
+	static int curl_ignores_body = 0;
 	getObject(http_request_object, obj);
 	zval *type, *message, *dbg_user_cb = GET_PROP(obj, dbg_user_cb);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &type, &message)) {
 		RETURN_NULL();
 	}
+
 	if (Z_TYPE_P(type) != IS_LONG) {
 		convert_to_long_ex(&type);
 	}
@@ -1656,9 +1714,25 @@ PHP_METHOD(HttpRequest, debugWrapper)
 		convert_to_string_ex(&message);
 	}
 
-	/* fetch outgoing request message */
-	if (Z_LVAL_P(type) == CURLINFO_HEADER_OUT || Z_LVAL_P(type) == CURLINFO_DATA_OUT) {
-		phpstr_append(&obj->request, Z_STRVAL_P(message), Z_STRLEN_P(message));
+	switch (Z_LVAL_P(type))
+	{
+		case CURLINFO_DATA_IN:
+			/* fetch ignored body */
+			if (curl_ignores_body && Z_LVAL_P(type) == CURLINFO_DATA_IN) {
+				phpstr_append(&obj->response, Z_STRVAL_P(message), Z_STRLEN_P(message));
+			}
+		break;
+
+		case CURLINFO_TEXT:
+			/* check if following incoming data would be ignored */
+			curl_ignores_body = !strcmp(Z_STRVAL_P(message), "Ignoring the response-body\n");
+		break;
+
+		case CURLINFO_HEADER_OUT:
+		case CURLINFO_DATA_OUT:
+			/* fetch outgoing request message */
+			phpstr_append(&obj->request, Z_STRVAL_P(message), Z_STRLEN_P(message));
+		break;
 	}
 
 	/* call user debug callback */

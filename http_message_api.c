@@ -213,8 +213,10 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		} else
 
 		/* no headers that indicate content length */
-		if (1) {
+		if (HTTP_MSG_TYPE(RESPONSE, msg)) {
 			phpstr_from_string_ex(PHPSTR(msg), body, message + message_length - body);
+		} else {
+			continue_at = body;
 		}
 
 		/* check for following messages */

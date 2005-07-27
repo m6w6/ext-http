@@ -36,6 +36,7 @@ typedef struct {
 	http_request_pool *pool;
 	phpstr response;
 	phpstr request;
+	phpstr history;
 } http_request_object;
 
 extern zend_class_entry *http_request_object_ce;
@@ -97,6 +98,7 @@ PHP_METHOD(HttpRequest, getResponseBody);
 PHP_METHOD(HttpRequest, getResponseInfo);
 PHP_METHOD(HttpRequest, getResponseMessage);
 PHP_METHOD(HttpRequest, getRequestMessage);
+PHP_METHOD(HttpRequest, getHistory);
 
 PHP_METHOD(HttpRequest, get);
 PHP_METHOD(HttpRequest, head);
