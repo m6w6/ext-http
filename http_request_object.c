@@ -658,7 +658,13 @@ PHP_METHOD(HttpRequest, setOptions)
 					array_merge(*opt, *cookies);
 					continue;
 				}
-			} else if ((!strcasecmp(key, "url")) || (!strcasecmp(key, "uri"))) {
+			} else if (!strcmp(key, "ssl")) {
+				zval **ssl;
+				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(old_opts), "ssl", sizeof("ssl"), (void **) &ssl)) {
+					array_merge(*opt, *ssl);
+					continue;
+				}
+			}else if ((!strcasecmp(key, "url")) || (!strcasecmp(key, "uri"))) {
 				if (Z_TYPE_PP(opt) != IS_STRING) {
 					convert_to_string_ex(opt);
 				}
