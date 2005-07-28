@@ -101,15 +101,20 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 		continue; \
 	}
 
+typedef struct _http_curl_conv {
+	phpstr *response;
+	phpstr *request;
+	curl_infotype last_info;
+} http_curl_conv;
 
 static const char *const http_request_methods[HTTP_MAX_REQUEST_METHOD + 1];
 #define http_curl_getopt(o, k, t) _http_curl_getopt_ex((o), (k), sizeof(k), (t) TSRMLS_CC)
 #define http_curl_getopt_ex(o, k, l, t) _http_curl_getopt_ex((o), (k), (l), (t) TSRMLS_CC)
 static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t keylen, int type TSRMLS_DC);
-static size_t http_curl_write_callback(char *, size_t, size_t, void *);
 static size_t http_curl_read_callback(void *, size_t, size_t, void *);
 static int http_curl_progress_callback(void *, double, double, double, double);
-static int http_curl_debug_callback(CURL *, curl_infotype, char *, size_t, void *);
+static int http_curl_raw_callback(CURL *, curl_infotype, char *, size_t, void *);
+static int http_curl_dummy_callback(char *data, size_t n, size_t l, void *s) { return n*l; }
 
 #define HTTP_CURL_CALLBACK_DATA(from, type, var) \
 	http_curl_callback_ctx *__CTX = (http_curl_callback_ctx *) (from); \
@@ -320,8 +325,8 @@ PHP_HTTP_API void _http_request_body_free(http_request_body *body TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ STATUS http_request_init(CURL *, http_request_method, char *, http_request_body *, HashTable *, phpstr *) */
-PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char *url, http_request_body *body, HashTable *options, phpstr *response TSRMLS_DC)
+/* {{{ STATUS http_request_init(CURL *, http_request_method, char *, http_request_body *, HashTable *) */
+PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char *url, http_request_body *body, HashTable *options TSRMLS_DC)
 {
 	zval *zoption;
 	zend_bool range_req = 0;
@@ -336,18 +341,16 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		HTTP_CURL_OPT(URL, http_request_data_copy(COPY_STRING, url));
 	}
 
-	if (response) {
-		http_curl_callback_ctx *response_ctx = http_curl_callback_data(response);
-		HTTP_CURL_OPT(WRITEDATA, response_ctx);
-		HTTP_CURL_OPT(WRITEHEADER, response_ctx);
-	}
-
 	HTTP_CURL_OPT(HEADER, 0);
 	HTTP_CURL_OPT(FILETIME, 1);
 	HTTP_CURL_OPT(AUTOREFERER, 1);
 	HTTP_CURL_OPT(READFUNCTION, http_curl_read_callback);
-	HTTP_CURL_OPT(WRITEFUNCTION, http_curl_write_callback);
-	HTTP_CURL_OPT(HEADERFUNCTION, http_curl_write_callback);
+	/* we'll get all data through the debug function */
+	HTTP_CURL_OPT(WRITEFUNCTION, http_curl_dummy_callback);
+	HTTP_CURL_OPT(HEADERFUNCTION, NULL);
+
+	HTTP_CURL_OPT(VERBOSE, 1);
+	HTTP_CURL_OPT(DEBUGFUNCTION, http_curl_raw_callback);
 
 #if defined(ZTS) && (LIBCURL_VERSION_NUM >= 0x070a00)
 	HTTP_CURL_OPT(NOSIGNAL, 1);
@@ -363,15 +366,6 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		HTTP_CURL_OPT(PROGRESSDATA,  http_curl_callback_data(zoption));
 	} else {
 		HTTP_CURL_OPT(NOPROGRESS, 1);
-	}
-
-	/* debug callback */
-	if (zoption = http_curl_getopt(options, "ondebug", 0)) {
-		HTTP_CURL_OPT(VERBOSE, 1);
-		HTTP_CURL_OPT(DEBUGFUNCTION, http_curl_debug_callback);
-		HTTP_CURL_OPT(DEBUGDATA, http_curl_callback_data(zoption));
-	} else {
-		HTTP_CURL_OPT(VERBOSE, 0);
 	}
 
 	/* proxy */
@@ -660,9 +654,12 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 /* }}} */
 
 /* {{{ STATUS http_request_exec(CURL *, HashTable *) */
-PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info TSRMLS_DC)
+PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info, phpstr *response, phpstr *request TSRMLS_DC)
 {
 	CURLcode result;
+	http_curl_conv conv = {response, request, -1};
+
+	HTTP_CURL_OPT(DEBUGDATA, http_curl_callback_data(&conv));
 
 	/* perform request */
 	if (CURLE_OK != (result = curl_easy_perform(ch))) {
@@ -745,8 +742,8 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, char *u
 		}
 	}
 
-	status =	((SUCCESS == http_request_init(ch, meth, url, body, options, response)) &&
-				(SUCCESS == http_request_exec(ch, info))) ? SUCCESS : FAILURE;
+	status =	((SUCCESS == http_request_init(ch, meth, url, body, options)) &&
+				(SUCCESS == http_request_exec(ch, info, response, NULL))) ? SUCCESS : FAILURE;
 
 	if (clean_curl) {
 		curl_easy_cleanup(ch);
@@ -883,14 +880,6 @@ static const char *const http_request_methods[] = {
 };
 /* }}} */
 
-/* {{{ static size_t http_curl_write_callback(char *, size_t, size_t, void *) */
-static size_t http_curl_write_callback(char *buf, size_t len, size_t n, void *s)
-{
-	HTTP_CURL_CALLBACK_DATA(s, phpstr *, str);
-	return str ? phpstr_append(PHPSTR(str), buf, len * n) : len * n;
-}
-/* }}} */
-
 /* {{{ static size_t http_curl_read_callback(void *, size_t, size_t, void *) */
 static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *s)
 {
@@ -937,33 +926,36 @@ static int http_curl_progress_callback(void *data, double dltotal, double dlnow,
 }
 /* }}} */
 
-/* {{{ static int http_curl_debug_callback(CURL *, curl_infotype, char *, size_t, void *) */
-static int http_curl_debug_callback(CURL *ch, curl_infotype type, char *string, size_t length, void *data)
+/* {{{ static int http_curl_raw_callback(CURL *, curl_infotype, char *, size_t, void *) */
+static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size_t length, void *ctx)
 {
-	zval *params_pass[2], params_local[2], retval;
-	HTTP_CURL_CALLBACK_DATA(data, zval *, func);
+	HTTP_CURL_CALLBACK_DATA(ctx, http_curl_conv *, conv);
 
-	params_pass[0] = &params_local[0];
-	params_pass[1] = &params_local[1];
-
-	INIT_PZVAL(&retval);
-	INIT_PZVAL(params_pass[0]);
-	INIT_PZVAL(params_pass[1]);
-	ZVAL_LONG(params_pass[0], type);
-	ZVAL_STRINGL(params_pass[1], string, length, 0);
-
-#ifdef ZEND_ENGINE_2
-	/* ensure we can call private HttpRequest::debugWrapper() */
+	switch (type)
 	{
-		void *sc = EG(scope);
-		EG(scope) = http_request_object_ce;
-#endif
-		call_user_function(EG(function_table), NULL, func, &retval, 2, params_pass TSRMLS_CC);
-#ifdef ZEND_ENGINE_2
-		EG(scope) = sc;
+		case CURLINFO_DATA_IN:
+			if (conv->response && conv->last_info == CURLINFO_HEADER_IN) {
+				phpstr_appends(conv->response, HTTP_CRLF);
+			}
+		case CURLINFO_HEADER_IN:
+			if (conv->response) {
+				phpstr_append(conv->response, data, length);
+			}
+		break;
+		case CURLINFO_DATA_OUT:
+			if (conv->request && conv->last_info == CURLINFO_HEADER_OUT) {
+				phpstr_appends(conv->request, HTTP_CRLF);
+			}
+		case CURLINFO_HEADER_OUT:
+			if (conv->request) {
+				phpstr_append(conv->request, data, length);
+			}
+		break;
 	}
-#endif
 
+	if (type) {
+		conv->last_info = type;
+	}
 	return 0;
 }
 /* }}} */

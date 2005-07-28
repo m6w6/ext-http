@@ -64,6 +64,17 @@ PHP_HTTP_API http_message *_http_message_init_ex(http_message *m, http_message_t
 #define http_message_set_type(m, t) _http_message_set_type((m), (t))
 PHP_HTTP_API void _http_message_set_type(http_message *m, http_message_type t);
 
+#define http_message_header(m, h) _http_message_header_ex((m), (h), sizeof(h))
+#define http_message_header_ex _http_message_header_ex
+static inline zval *_http_message_header_ex(http_message *msg, char *key_str, size_t key_len)
+{
+	zval **header;
+	if (SUCCESS == zend_hash_find(&msg->hdrs, key_str, key_len, (void **) &header)) {
+		return *header;
+	}
+	return NULL;
+}
+
 #define http_message_parse(m, l) http_message_parse_ex(NULL, (m), (l))
 #define http_message_parse_ex(h, m, l) _http_message_parse_ex((h), (m), (l) TSRMLS_CC)
 PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char *message, size_t length TSRMLS_DC);

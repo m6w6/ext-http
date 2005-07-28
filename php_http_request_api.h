@@ -119,11 +119,11 @@ PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC);
 #define http_request_body_free(b) _http_request_body_free((b) TSRMLS_CC)
 PHP_HTTP_API void _http_request_body_free(http_request_body *body TSRMLS_DC);
 
-#define http_request_init(ch, meth, url, body, options, response) _http_request_init((ch), (meth), (url), (body), (options), (response) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char *url, http_request_body *body, HashTable *options, phpstr *response TSRMLS_DC);
+#define http_request_init(ch, meth, url, body, options) _http_request_init((ch), (meth), (url), (body), (options) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char *url, http_request_body *body, HashTable *options TSRMLS_DC);
 
-#define http_request_exec(ch, i) _http_request_exec((ch), (i) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info TSRMLS_DC);
+#define http_request_exec(ch, i, response, request) _http_request_exec((ch), (i), (response), (request) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info, phpstr *response, phpstr *request TSRMLS_DC);
 
 #define http_request_info(ch, i) _http_request_info((ch), (i) TSRMLS_CC)
 PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC);

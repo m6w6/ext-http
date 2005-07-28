@@ -737,7 +737,6 @@ PHP_FUNCTION(http_match_request_header)
  *  - timeout:          int, seconds the request may take
  *  - connecttimeout:   int, seconds the connect may take
  *  - onprogress:       mixed, progress callback
- *  - ondebug:          mixed, debug callback
  * </pre>
  *
  * The optional third parameter will be filled with some additional information

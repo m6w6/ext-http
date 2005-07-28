@@ -94,17 +94,6 @@ static inline void _http_message_init_type(http_message *message, http_message_t
 	}
 }
 
-#define http_message_header(m, h) _http_message_header_ex((m), (h), sizeof(h))
-#define http_message_header_ex _http_message_header_ex
-static inline zval *_http_message_header_ex(http_message *msg, char *key_str, size_t key_len)
-{
-	zval **header;
-	if (SUCCESS == zend_hash_find(&msg->hdrs, key_str, key_len, (void **) &header)) {
-		return *header;
-	}
-	return NULL;
-}
-
 PHP_HTTP_API http_message *_http_message_init_ex(http_message *message, http_message_type type)
 {
 	if (!message) {

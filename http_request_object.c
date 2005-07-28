@@ -203,11 +203,6 @@ HTTP_BEGIN_ARGS(methodExists, 0, 1)
 	HTTP_ARG_VAL(method, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(debugWrapper, 0, 2)
-	HTTP_ARG_VAL(info_type, 0)
-	HTTP_ARG_VAL(info_message, 0)
-HTTP_END_ARGS;
-
 #define http_request_object_declare_default_properties() _http_request_object_declare_default_properties(TSRMLS_C)
 static inline void _http_request_object_declare_default_properties(TSRMLS_D);
 
@@ -281,8 +276,6 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ALIAS(methodUnregister, http_request_method_unregister)
 	HTTP_REQUEST_ALIAS(methodName, http_request_method_name)
 	HTTP_REQUEST_ALIAS(methodExists, http_request_method_exists)
-
-	HTTP_REQUEST_ME(debugWrapper, ZEND_ACC_PRIVATE|ZEND_ACC_FINAL)
 
 	{NULL, NULL, NULL}
 };
@@ -375,7 +368,6 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PROTECTED, string, queryData, "");
 	DCL_PROP(PROTECTED, string, putFile, "");
 
-	DCL_PROP_N(PRIVATE, dbg_user_cb);
 	DCL_PROP(PUBLIC, bool, recordHistory, 1);
 }
 
@@ -434,24 +426,12 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		strncat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN - strlen(request_uri));
 	}
 
-	/* ensure we have HttpRequest::debugWrapper as dbg callback */
-	{
-		zval *dbg_cb;
-		MAKE_STD_ZVAL(dbg_cb);
-		array_init(dbg_cb);
-		zval_add_ref(&getThis());
-		add_next_index_zval(dbg_cb, getThis());
-		add_next_index_stringl(dbg_cb, "debugWrapper", lenof("debugWrapper"), 1);
-		add_assoc_zval(opts, "ondebug", dbg_cb);
-	}
-	/* */
-
 	switch (Z_LVAL_P(meth))
 	{
 		case HTTP_GET:
 		case HTTP_HEAD:
 			body->type = -1;
-			status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, NULL, Z_ARRVAL_P(opts), &obj->response);
+			status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, NULL, Z_ARRVAL_P(opts));
 		break;
 
 		case HTTP_PUT:
@@ -466,7 +446,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 				body->data = stream;
 				body->size = ssb.sb.st_size;
 
-				status = http_request_init(obj->ch, HTTP_PUT, request_uri, body, Z_ARRVAL_P(opts), &obj->response);
+				status = http_request_init(obj->ch, HTTP_PUT, request_uri, body, Z_ARRVAL_P(opts));
 			} else {
 				status = FAILURE;
 			}
@@ -478,7 +458,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			zval *fields = GET_PROP(obj, postFields), *files = GET_PROP(obj, postFiles);
 
 			if (SUCCESS == (status = http_request_body_fill(body, Z_ARRVAL_P(fields), Z_ARRVAL_P(files)))) {
-				status = http_request_init(obj->ch, HTTP_POST, request_uri, body, Z_ARRVAL_P(opts), &obj->response);
+				status = http_request_init(obj->ch, HTTP_POST, request_uri, body, Z_ARRVAL_P(opts));
 			}
 		}
 		break;
@@ -491,7 +471,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			body->data = Z_STRVAL_P(post);
 			body->size = Z_STRLEN_P(post);
 
-			status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, body, Z_ARRVAL_P(opts), &obj->response);
+			status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, body, Z_ARRVAL_P(opts));
 		}
 		break;
 	}
@@ -520,6 +500,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 			*info = GET_PROP(obj, responseInfo),
 			*hist = GET_PROP(obj, recordHistory);
 
+		/* should we record history? */
 		if (Z_TYPE_P(hist) != IS_BOOL) {
 			convert_to_boolean_ex(&hist);
 		}
@@ -676,8 +657,6 @@ PHP_METHOD(HttpRequest, setOptions)
 				}
 				UPD_PROP(obj, long, method, Z_LVAL_PP(opt));
 				continue;
-			} else if (!strcmp(key, "ondebug")) {
-				SET_PROP(obj, dbg_user_cb, *opt);
 			}
 
 			zval_add_ref(opt);
@@ -723,7 +702,6 @@ PHP_METHOD(HttpRequest, unsetOptions)
 
 	FREE_PARR(obj, options);
 	INIT_PARR(obj, options);
-	zend_update_property_null(http_request_object_ce, getThis(), "dbg_user_cb", lenof("dbg_user_cb") TSRMLS_CC);
 }
 /* }}} */
 
@@ -1692,7 +1670,7 @@ PHP_METHOD(HttpRequest, send)
 	}
 
 	if (SUCCESS == (status = http_request_object_requesthandler(obj, getThis(), &body))) {
-		status = http_request_exec(obj->ch, NULL);
+		status = http_request_exec(obj->ch, NULL, &obj->response, &obj->request);
 	}
 	http_request_body_dtor(&body);
 
@@ -1703,59 +1681,6 @@ PHP_METHOD(HttpRequest, send)
 
 	SET_EH_NORMAL();
 	RETURN_SUCCESS(status);
-}
-/* }}} */
-
-/* {{{ proto private HttpRequest::debugWrapper(long type, string message)
- */
-PHP_METHOD(HttpRequest, debugWrapper)
-{
-	static int curl_ignores_body = 0;
-	getObject(http_request_object, obj);
-	zval *type, *message, *dbg_user_cb = GET_PROP(obj, dbg_user_cb);
-
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz", &type, &message)) {
-		RETURN_NULL();
-	}
-
-	if (Z_TYPE_P(type) != IS_LONG) {
-		convert_to_long_ex(&type);
-	}
-	if (Z_TYPE_P(message) != IS_STRING) {
-		convert_to_string_ex(&message);
-	}
-
-	switch (Z_LVAL_P(type))
-	{
-		case CURLINFO_DATA_IN:
-			/* fetch ignored body */
-			if (curl_ignores_body && Z_LVAL_P(type) == CURLINFO_DATA_IN) {
-				phpstr_append(&obj->response, Z_STRVAL_P(message), Z_STRLEN_P(message));
-			}
-		break;
-
-		case CURLINFO_TEXT:
-			/* check if following incoming data would be ignored */
-			curl_ignores_body = !strcmp(Z_STRVAL_P(message), "Ignoring the response-body\n");
-		break;
-
-		case CURLINFO_HEADER_OUT:
-		case CURLINFO_DATA_OUT:
-			/* fetch outgoing request message */
-			phpstr_append(&obj->request, Z_STRVAL_P(message), Z_STRLEN_P(message));
-		break;
-	}
-
-	/* call user debug callback */
-	if (Z_TYPE_P(dbg_user_cb) != IS_NULL) {
-		zval *args[2], cb_ret;
-
-		args[0] = type;
-		args[1] = message;
-		call_user_function(EG(function_table), NULL, dbg_user_cb, &cb_ret, 2, args TSRMLS_CC);
-	}
-
-	RETURN_NULL();
 }
 /* }}} */
 
