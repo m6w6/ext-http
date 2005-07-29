@@ -54,7 +54,6 @@ typedef int STATUS;
 	return_value->is_ref = 1; \
 	return_value->type = IS_OBJECT; \
 	return_value->value.obj = (ov); \
-	zval_add_ref(&return_value); \
 	zend_objects_store_add_ref(return_value TSRMLS_CC)
 #define RETURN_OBJVAL(ov) \
 	RETVAL_OBJVAL(ov); \

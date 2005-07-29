@@ -46,8 +46,7 @@ Array
     [content_length_upload] => %d
     [content_type] => %s
     [httpauth_avail] => %d
-    [proxyauth_avail] => %d
-    [num_connects] => %d
+    [proxyauth_avail] => %s
 )
 int(501)
 int(501)
