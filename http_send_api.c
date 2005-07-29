@@ -155,7 +155,7 @@ PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, 
 	STATUS ret;
 	sapi_header_line h = {(char *) header, header ? strlen(header) : 0, status};
 	if (SUCCESS != (ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, &h TSRMLS_CC))) {
-		http_error_ex(E_WARNING, HTTP_E_HEADER, "Could not send header: %s (%d)", header, status);
+		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Could not send header: %s (%d)", header, status);
 	}
 	return ret;
 }
@@ -186,7 +186,7 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag, size_t etag_len TSRMLS_DC)
 	char *etag_header;
 
 	if (!etag_len){
-		http_error_ex(E_WARNING, HTTP_E_HEADER, "Attempt to send empty ETag (previous: %s)\n", HTTP_G(send).unquoted_etag);
+		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Attempt to send empty ETag (previous: %s)\n", HTTP_G(send).unquoted_etag);
 		return FAILURE;
 	}
 
@@ -222,7 +222,7 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_
 	char *ct_header;
 
 	if (!strchr(content_type, '/')) {
-		http_error_ex(E_WARNING, HTTP_E_PARAM, "Content-Type '%s' doesn't seem to consist of a primary and a secondary part", content_type);
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Content-Type '%s' doesn't seem to consist of a primary and a secondary part", content_type);
 		return FAILURE;
 	}
 
@@ -382,7 +382,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 		char *etag = NULL;
 
 		if (!(etag = http_etag(data_ptr, data_size, data_mode))) {
-			http_error(E_NOTICE, HTTP_E_PARAM, "Failed to generate ETag for data source");
+			http_error(HE_NOTICE, HTTP_E_RUNTIME, "Failed to generate ETag for data source");
 		} else {
 			http_send_etag(etag, 32);
 			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {

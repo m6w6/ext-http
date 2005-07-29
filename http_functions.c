@@ -202,7 +202,7 @@ PHP_FUNCTION(http_send_status)
 		RETURN_FALSE;
 	}
 	if (status < 100 || status > 510) {
-		http_error_ex(E_WARNING, HTTP_E_HEADER, "Invalid HTTP status code (100-510): %d", status);
+		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Invalid HTTP status code (100-510): %d", status);
 		RETURN_FALSE;
 	}
 
@@ -474,7 +474,7 @@ PHP_FUNCTION(http_redirect)
 			array_init(params);
 		}
 		if (add_assoc_string(params, PS(session_name), PS(id), 1) != SUCCESS) {
-			http_error(E_WARNING, HTTP_E_ENCODE, "Could not append session information");
+			http_error(HE_WARNING, HTTP_E_RUNTIME, "Could not append session information");
 		}
 	}
 
@@ -618,7 +618,6 @@ PHP_FUNCTION(http_split_response)
 	array_init(zheaders);
 
 	if (SUCCESS != http_split_response(response, response_len, Z_ARRVAL_P(zheaders), &body, &body_len)) {
-		http_error(E_WARNING, HTTP_E_PARSE, "Could not parse HTTP response");
 		RETURN_FALSE;
 	}
 
@@ -642,7 +641,6 @@ PHP_FUNCTION(http_parse_headers)
 
 	array_init(return_value);
 	if (SUCCESS != http_parse_headers(header, return_value)) {
-		http_error(E_WARNING, HTTP_E_PARSE, "Could not parse HTTP headers");
 		zval_dtor(return_value);
 		RETURN_FALSE;
 	}
@@ -1227,7 +1225,7 @@ PHP_FUNCTION(http_build_query)
 	}
 
 	if (Z_TYPE_P(formdata) != IS_ARRAY && Z_TYPE_P(formdata) != IS_OBJECT) {
-		http_error(E_WARNING, HTTP_E_PARAM, "Parameter 1 expected to be Array or Object.  Incorrect value given.");
+		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Parameter 1 expected to be Array or Object.  Incorrect value given.");
 		RETURN_FALSE;
 	}
 
@@ -1254,7 +1252,7 @@ PHP_FUNCTION(http_build_query)
 
 PHP_FUNCTION(http_test)
 {
-	RETURN_NULL();
+	RETURN_BOOL(HTTP_G(only_exceptions));
 }
 
 /*
@@ -1265,3 +1263,4 @@ PHP_FUNCTION(http_test)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+

@@ -30,6 +30,8 @@
 
 #include <ctype.h>
 
+ZEND_EXTERN_MODULE_GLOBALS(http);
+
 /* {{{ static int http_sort_q(const void *, const void *) */
 static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 {
@@ -112,9 +114,6 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 	range = Z_STRVAL_P(zrange);
 
 	if (strncmp(range, "bytes=", sizeof("bytes=") - 1)) {
-		/* should we really issue a notice for a client misbehaviour?
-		http_error(E_NOTICE, HTTP_E_HEADER, "Range header misses bytes=");
-		*/
 		return RANGE_NO;
 	}
 
@@ -258,7 +257,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 
 
 	if (header_len < 2 || !strchr(header, ':')) {
-		http_error(E_WARNING, HTTP_E_PARSE, "Cannot parse too short or malformed HTTP headers");
+		http_error(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Cannot parse too short or malformed HTTP headers");
 		return FAILURE;
 	}
 

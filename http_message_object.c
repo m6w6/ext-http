@@ -31,6 +31,8 @@
 
 #include "phpstr/phpstr.h"
 
+ZEND_EXTERN_MODULE_GLOBALS(http);
+
 #define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpMessage, method, ret_ref, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpMessage, method, ret_ref)
 #define HTTP_MESSAGE_ME(method, visibility)			PHP_ME(HttpMessage, method, HTTP_ARGS(HttpMessage, method), visibility)
@@ -225,7 +227,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	fprintf(stderr, "Read HttpMessage::$%s\n", Z_STRVAL_P(member));
 #endif
 	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
+		zend_error(HE_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 		return EG(uninitialized_zval_ptr);
 	}
 
@@ -325,7 +327,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	fprintf(stderr, "Write HttpMessage::$%s\n", Z_STRVAL_P(member));
 #endif
 	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
+		zend_error(HE_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 	}
 
 	switch (zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1))
@@ -648,7 +650,7 @@ PHP_METHOD(HttpMessage, getResponseCode)
 		getObject(http_message_object, obj);
 
 		if (!HTTP_MSG_TYPE(RESPONSE, obj->message)) {
-			http_error(E_NOTICE, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_RESPONSE");
+			http_error(HE_NOTICE, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_RESPONSE");
 			RETURN_NULL();
 		}
 
@@ -669,7 +671,7 @@ PHP_METHOD(HttpMessage, setResponseCode)
 	getObject(http_message_object, obj);
 
 	if (!HTTP_MSG_TYPE(RESPONSE, obj->message)) {
-		http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_RESPONSE");
+		http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_RESPONSE");
 		RETURN_FALSE;
 	}
 
@@ -677,7 +679,7 @@ PHP_METHOD(HttpMessage, setResponseCode)
 		RETURN_FALSE;
 	}
 	if (code < 100 || code > 510) {
-		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid response code (100-510): %ld", code);
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid response code (100-510): %ld", code);
 		RETURN_FALSE;
 	}
 
@@ -699,7 +701,7 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 		getObject(http_message_object, obj);
 
 		if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
-			http_error(E_NOTICE, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_REQUEST");
+			http_error(HE_NOTICE, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
 			RETURN_NULL();
 		}
 
@@ -720,7 +722,7 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 	getObject(http_message_object, obj);
 
 	if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
-		http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_REQUEST");
+		http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
 		RETURN_FALSE;
 	}
 
@@ -728,11 +730,11 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 		RETURN_FALSE;
 	}
 	if (method_len < 1) {
-		http_error(E_WARNING, HTTP_E_PARAM, "Cannot set HttpMessage::requestMethod to an empty string");
+		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Cannot set HttpMessage::requestMethod to an empty string");
 		RETURN_FALSE;
 	}
 	if (SUCCESS != http_check_method(method)) {
-		http_error_ex(E_WARNING, HTTP_E_PARAM, "Unkown request method: %s", method);
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Unkown request method: %s", method);
 		RETURN_FALSE;
 	}
 
@@ -753,7 +755,7 @@ PHP_METHOD(HttpMessage, getRequestUri)
 		getObject(http_message_object, obj);
 
 		if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
-			http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_REQUEST");
+			http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
 			RETURN_NULL();
 		}
 
@@ -775,14 +777,14 @@ PHP_METHOD(HttpMessage, setRequestUri)
 	getObject(http_message_object, obj);
 
 	if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
-		http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is not of type HTTP_MSG_REQUEST");
+		http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
 		RETURN_FALSE;
 	}
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &URI, &URIlen)) {
 		RETURN_FALSE;
 	}
 	if (URIlen < 1) {
-		http_error(E_WARNING, HTTP_E_PARAM, "Cannot set HttpMessage::requestUri to an empty string");
+		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Cannot set HttpMessage::requestUri to an empty string");
 		RETURN_FALSE;
 	}
 
@@ -840,14 +842,14 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 	}
 
 	if (HTTP_MSG_TYPE(NONE, obj->message)) {
-		http_error(E_WARNING, HTTP_E_MSG, "Message is neither of type HTTP_MSG_RESPONSE nor HTTP_MSG_REQUEST");
+		http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "Message is neither of type HTTP_MSG_RESPONSE nor HTTP_MSG_REQUEST");
 		RETURN_FALSE;
 	}
 
 	convert_to_double(zv);
 	sprintf(v, "%1.1lf", Z_DVAL_P(zv));
 	if (strcmp(v, "1.0") && strcmp(v, "1.1")) {
-		http_error_ex(E_WARNING, HTTP_E_PARAM, "Invalid HTTP protocol version (1.0 or 1.1): %s", v);
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid HTTP protocol version (1.0 or 1.1): %s", v);
 		RETURN_FALSE;
 	}
 

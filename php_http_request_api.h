@@ -80,9 +80,16 @@ typedef struct {
 	void *data;
 } http_curl_callback_ctx;
 
+typedef struct {
+	phpstr *response;
+	phpstr *request;
+	curl_infotype last_info;
+} http_curl_conv;
+
 #define COPY_STRING		1
 #define	COPY_SLIST		2
 #define COPY_CONTEXT	3
+#define COPY_CONV		4
 #define http_request_data_copy(type, data) _http_request_data_copy((type), (data) TSRMLS_CC)
 extern void *_http_request_data_copy(int type, void *data TSRMLS_DC);
 #define http_request_data_free_string _http_request_data_free_string
@@ -91,6 +98,11 @@ extern void _http_request_data_free_string(void *string);
 extern void _http_request_data_free_slist(void *list);
 #define http_request_data_free_context _http_request_data_free_context
 extern void _http_request_data_free_context(void *context);
+#define http_request_data_free_conv _http_request_data_free_conv
+extern void _http_request_data_free_conv(void *conv);
+
+#define http_request_conv(ch, rs, rq) _http_request_conv((ch), (rs), (rq) TSRMLS_CC)
+extern void _http_request_conv(CURL *ch, phpstr* response, phpstr *request TSRMLS_DC);
 
 #define http_request_global_init _http_request_global_init
 extern STATUS _http_request_global_init(void);
@@ -154,4 +166,3 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, char *U
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

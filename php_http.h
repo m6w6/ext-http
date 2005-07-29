@@ -37,6 +37,9 @@ extern int http_module_number;
 
 ZEND_BEGIN_MODULE_GLOBALS(http)
 
+#ifdef ZEND_ENGINE_2
+	zend_bool only_exceptions;
+#endif
 	struct _http_globals_etag {
 		zend_bool started;
 		PHP_MD5_CTX md5ctx;
@@ -65,6 +68,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 			zend_llist strings;
 			zend_llist slists;
 			zend_llist contexts;
+			zend_llist convs;
 		} copies;
 #	if LIBCURL_VERSION_NUM < 0x070c00
 		char error[CURL_ERROR_SIZE + 1];

@@ -34,7 +34,7 @@ diff -u -r1.223 run-tests.php
 +	if (!empty($section_text['ENV'])) {
 +		foreach (explode("\n", $section_text['ENV']) as $env) {
 +			$env = explode('=', $env);
-+			($env = trim($env)) and putenv($env[0] .'=');
++			putenv($env[0] .'=');
 +		}
 +	}
 +

@@ -182,7 +182,7 @@ void _http_error_ex(long type, long code, const char *format, ...)
 STATUS _http_exit_ex(int status, char *header, zend_bool free_header TSRMLS_DC)
 {
 	if (SUCCESS != http_send_status_header(status, header)) {
-		http_error_ex(E_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
+		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
 		if (free_header && header) {
 			efree(header);
 		}
@@ -273,10 +273,10 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 			} else {
 				efree(*decoded);
 				if (no_crlf) {
-					http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid character (expected 0x0D 0x0A; got: 0x%x 0x%x)", *n_ptr, *(n_ptr + 1));
+					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0D 0x0A; got: 0x%x 0x%x)", *n_ptr, *(n_ptr + 1));
 				} else {
 					char *error = estrndup(n_ptr, strcspn(n_ptr, "\r\n \0"));
-					http_error_ex(E_WARNING, HTTP_E_PARSE, "Invalid chunk size: '%s' at pos %d", error, n_ptr - encoded);
+					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid chunk size: '%s' at pos %d", error, n_ptr - encoded);
 					efree(error);
 				}
 

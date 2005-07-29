@@ -58,14 +58,14 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 	if ((!url || !url_len) && (
 			(!(url = SG(request_info).request_uri)) ||
 			(!(url_len = strlen(SG(request_info).request_uri))))) {
-		http_error(E_WARNING, HTTP_E_PARAM, "Cannot build an absolute URI if supplied URL and REQUEST_URI is empty");
+		http_error(HE_WARNING, HTTP_E_RUNTIME, "Cannot build an absolute URI if supplied URL and REQUEST_URI is empty");
 		return NULL;
 	}
 
 	URL = ecalloc(1, HTTP_URI_MAXLEN + 1);
 	uri = estrndup(url, url_len);
 	if (!(purl = php_url_parse(uri))) {
-		http_error_ex(E_WARNING, HTTP_E_PARSE, "Could not parse supplied URL: %s", url);
+		http_error_ex(HE_WARNING, HTTP_E_URL, "Could not parse supplied URL: %s", url);
 		return NULL;
 	}
 
@@ -116,7 +116,7 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 #define HTTP_URI_STRLCATL(URL, full_len, add_string) HTTP_URI_STRLCAT(URL, full_len, add_string, strlen(add_string))
 #define HTTP_URI_STRLCAT(URL, full_len, add_string, add_len) \
 	if ((full_len += add_len) > HTTP_URI_MAXLEN) { \
-		http_error_ex(E_NOTICE, HTTP_E_URL, \
+		http_error_ex(HE_NOTICE, HTTP_E_URL, \
 			"Absolute URI would have exceeded max URI length (%d bytes) - " \
 			"tried to add %d bytes ('%s')", \
 			HTTP_URI_MAXLEN, add_len, add_string); \
@@ -223,7 +223,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_implementation_ex(
 	zval **zdata = NULL, *copyzval;
 
 	if (!ht || !formstr) {
-		http_error(E_WARNING, HTTP_E_PARAM, "Invalid parameters");
+		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid parameters");
 		return FAILURE;
 	}
 
@@ -262,7 +262,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_implementation_ex(
 #endif
 
 		if (zend_hash_get_current_data_ex(ht, (void **)&zdata, NULL) == FAILURE || !zdata || !(*zdata)) {
-			http_error(E_WARNING, HTTP_E_ENCODE, "Error traversing form data array.");
+			http_error(HE_WARNING, HTTP_E_ENCODING, "Error traversing form data array.");
 			return FAILURE;
 		}
 		if (Z_TYPE_PP(zdata) == IS_ARRAY || Z_TYPE_PP(zdata) == IS_OBJECT) {

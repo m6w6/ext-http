@@ -39,6 +39,8 @@
 #endif
 #include <curl/curl.h>
 
+ZEND_EXTERN_MODULE_GLOBALS(http);
+
 #define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpRequest, method, ret_ref, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpRequest, method, ret_ref)
 #define HTTP_REQUEST_ME(method, visibility)			PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)
@@ -403,7 +405,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		return FAILURE;
 	}
 	if ((!obj->ch) && (!(obj->ch = curl_easy_init()))) {
-		http_error(E_WARNING, HTTP_E_CURL, "Could not initilaize curl");
+		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not initilaize curl");
 		return FAILURE;
 	}
 
@@ -989,7 +991,7 @@ PHP_METHOD(HttpRequest, setContentType)
 	}
 
 	if (!strchr(ctype, '/')) {
-		http_error_ex(E_WARNING, HTTP_E_PARAM, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", ctype);
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", ctype);
 		RETURN_FALSE;
 	}
 
@@ -1206,7 +1208,7 @@ PHP_METHOD(HttpRequest, addPostFile)
 
 	if (type_len) {
 		if (!strchr(type, '/')) {
-			http_error_ex(E_WARNING, HTTP_E_PARAM, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", type);
+			http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", type);
 			RETURN_FALSE;
 		}
 	} else {
@@ -1545,7 +1547,7 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), pretty_key(info_name, info_len, 0, 0), info_len + 1, (void **) &infop)) {
 				RETURN_ZVAL(*infop, 1, ZVAL_PTR_DTOR);
 			} else {
-				http_error_ex(E_NOTICE, HTTP_E_PARAM, "Could not find response info named %s", info_name);
+				http_error_ex(HE_NOTICE, HTTP_E_INVALID_PARAM, "Could not find response info named %s", info_name);
 				RETURN_FALSE;
 			}
 		} else {
@@ -1589,7 +1591,6 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *message;
 		http_message *msg;
 		getObject(http_request_object, obj);
 
@@ -1607,7 +1608,6 @@ PHP_METHOD(HttpRequest, getHistory)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *history;
 		http_message *msg;
 		getObject(http_request_object, obj);
 
@@ -1664,7 +1664,7 @@ PHP_METHOD(HttpRequest, send)
 	SET_EH_THROW_HTTP();
 
 	if (obj->pool) {
-		http_error(E_WARNING, HTTP_E_CURL, "Cannot perform HttpRequest::send() while attached to an HttpRequestPool");
+		http_error(HE_WARNING, HTTP_E_RUNTIME, "Cannot perform HttpRequest::send() while attached to an HttpRequestPool");
 		SET_EH_NORMAL();
 		RETURN_FALSE;
 	}

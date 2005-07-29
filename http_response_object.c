@@ -211,8 +211,6 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP_N(PROTECTED, contentDisposition);
 	DCL_STATIC_PROP(PROTECTED, long, bufferSize, HTTP_SENDBUF_SIZE);
 	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
-
-	DCL_STATIC_PROP(PUBLIC, string, dummy, "EMPTY");
 }
 
 /* ### USERLAND ### */
@@ -303,7 +301,7 @@ PHP_METHOD(HttpResponse, setCacheControl)
 	}
 
 	if (strcmp(ccontrol, "public") && strcmp(ccontrol, "private") && strcmp(ccontrol, "no-cache")) {
-		http_error_ex(E_WARNING, HTTP_E_PARAM, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
 		RETURN_FALSE;
 	} else {
 		USE_STATIC_PROP();
@@ -343,7 +341,7 @@ PHP_METHOD(HttpResponse, setContentType)
 	}
 
 	if (!strchr(ctype, '/')) {
-		http_error_ex(E_WARNING, HTTP_E_PARAM, "Content type '%s' doesn't seem to contain a primary and a secondary part", ctype);
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Content type '%s' doesn't seem to contain a primary and a secondary part", ctype);
 		RETURN_FALSE;
 	}
 
@@ -638,13 +636,13 @@ PHP_METHOD(HttpResponse, send)
 		RETURN_FALSE;
 	}
 	if (SG(headers_sent)) {
-		http_error(E_WARNING, HTTP_E_HEADER, "Cannot send HttpResponse, headers have already been sent");
+		http_error(HE_WARNING, HTTP_E_RESPONSE, "Cannot send HttpResponse, headers have already been sent");
 		RETURN_FALSE;
 	}
 
 	sent = GET_STATIC_PROP(sent);
 	if (Z_LVAL_P(sent)) {
-		http_error(E_WARNING, HTTP_E_UNKOWN, "Cannot send HttpResponse, response has already been sent");
+		http_error(HE_WARNING, HTTP_E_RESPONSE, "Cannot send HttpResponse, response has already been sent");
 		RETURN_FALSE;
 	} else {
 		Z_LVAL_P(sent) = 1;

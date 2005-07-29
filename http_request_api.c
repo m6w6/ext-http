@@ -101,12 +101,6 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 		continue; \
 	}
 
-typedef struct _http_curl_conv {
-	phpstr *response;
-	phpstr *request;
-	curl_infotype last_info;
-} http_curl_conv;
-
 static const char *const http_request_methods[HTTP_MAX_REQUEST_METHOD + 1];
 #define http_curl_getopt(o, k, t) _http_curl_getopt_ex((o), (k), sizeof(k), (t) TSRMLS_CC)
 #define http_curl_getopt_ex(o, k, l, t) _http_curl_getopt_ex((o), (k), (l), (t) TSRMLS_CC)
@@ -178,6 +172,12 @@ void *_http_request_data_copy(int type, void *data TSRMLS_DC)
 			return data;
 		}
 
+		case COPY_CONV:
+		{
+			zend_llist_add_element(&HTTP_G(request).copies.convs, &data);
+			return data;
+		}
+
 		default:
 		{
 			return data;
@@ -204,6 +204,13 @@ void _http_request_data_free_slist(void *list)
 void _http_request_data_free_context(void *context)
 {
 	efree(*((http_curl_callback_ctx **) context));
+}
+/* }}} */
+
+/* {{{ _http_request_data_free_conv(http_curl_conv **) */
+void _http_request_data_free_conv(void *conv)
+{
+	efree(*((http_curl_conv **) conv));
 }
 /* }}} */
 
@@ -236,7 +243,7 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 					CURLFORM_END
 				);
 				if (CURLE_OK != err) {
-					http_error_ex(E_WARNING, HTTP_E_CURL, "Could not encode post fields: %s", curl_easy_strerror(err));
+					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post fields: %s", curl_easy_strerror(err));
 					curl_formfree(http_post_data[0]);
 					return FAILURE;
 				}
@@ -260,12 +267,12 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 					CURLFORM_END
 				);
 				if (CURLE_OK != err) {
-					http_error_ex(E_WARNING, HTTP_E_CURL, "Could not encode post files: %s", curl_easy_strerror(err));
+					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post files: %s", curl_easy_strerror(err));
 					curl_formfree(http_post_data[0]);
 					return FAILURE;
 				}
 			} else {
-				http_error(E_NOTICE, HTTP_E_PARAM, "Post file array entry misses either 'name', 'type' or 'file' entry");
+				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Post file array entry misses either 'name', 'type' or 'file' entry");
 			}
 		}
 
@@ -278,7 +285,7 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 		size_t encoded_len;
 
 		if (SUCCESS != http_urlencode_hash_ex(fields, 1, NULL, 0, &encoded, &encoded_len)) {
-			http_error(E_WARNING, HTTP_E_ENCODE, "Could not encode post data");
+			http_error(HE_WARNING, HTTP_E_ENCODING, "Could not encode post data");
 			return FAILURE;
 		}
 
@@ -618,7 +625,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 			if (http_request_method_exists(0, meth, NULL)) {
 				curl_easy_setopt(ch, CURLOPT_CUSTOMREQUEST, http_request_method_name(meth));
 			} else {
-				http_error_ex(E_WARNING, HTTP_E_CURL, "Unsupported request method: %d", meth);
+				http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Unsupported request method: %d", meth);
 				return FAILURE;
 			}
 		break;
@@ -643,7 +650,8 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 			break;
 
 			default:
-				http_error_ex(E_WARNING, HTTP_E_CURL, "Unknown request body type: %d", body->type);
+				/* shouldn't ever happen */
+				http_error_ex(HE_ERROR, 0, "Unknown request body type: %d", body->type);
 				return FAILURE;
 			break;
 		}
@@ -653,17 +661,27 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 }
 /* }}} */
 
+/* {{{ void http_request_conv(CURL *, phpstr *, phpstr *) */
+void _http_request_conv(CURL *ch, phpstr* response, phpstr *request TSRMLS_DC)
+{
+	http_curl_conv *conv = emalloc(sizeof(http_curl_conv));
+	conv->response = response;
+	conv->request = request;
+	conv->last_info = -1;
+	HTTP_CURL_OPT(DEBUGDATA, http_curl_callback_data(http_request_data_copy(COPY_CONV, conv)));
+}
+/* }}} */
+
 /* {{{ STATUS http_request_exec(CURL *, HashTable *) */
 PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info, phpstr *response, phpstr *request TSRMLS_DC)
 {
 	CURLcode result;
-	http_curl_conv conv = {response, request, -1};
 
-	HTTP_CURL_OPT(DEBUGDATA, http_curl_callback_data(&conv));
+	http_request_conv(ch, response, request);
 
 	/* perform request */
 	if (CURLE_OK != (result = curl_easy_perform(ch))) {
-		http_error_ex(E_WARNING, HTTP_E_CURL, "Could not perform request: %s", curl_easy_strerror(result));
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not perform request: %s", curl_easy_strerror(result));
 		return FAILURE;
 	} else {
 		/* get curl info */
@@ -737,7 +755,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, char *u
 
 	if ((clean_curl = (!ch))) {
 		if (!(ch = curl_easy_init())) {
-			http_error(E_WARNING, HTTP_E_CURL, "Could not initialize curl.");
+			http_error(HE_WARNING, HTTP_E_REQUEST, "Could not initialize curl.");
 			return FAILURE;
 		}
 	}
@@ -823,7 +841,7 @@ PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_
 	char *http_method;
 
 	if (SUCCESS != zend_hash_index_find(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(method), (void **) &zmethod)) {
-		http_error_ex(E_NOTICE, HTTP_E_PARAM, "Request method with id %lu does not exist", method);
+		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Request method with id %lu does not exist", method);
 		return FAILURE;
 	}
 
@@ -831,7 +849,7 @@ PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_
 
 	if (	(SUCCESS != zend_hash_index_del(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(method)))
 		||	(SUCCESS != zend_hash_del(EG(zend_constants), http_method, strlen(http_method) + 1))) {
-		http_error_ex(E_NOTICE, 0, "Could not unregister request method: %s", http_method);
+		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Could not unregister request method: %s", http_method);
 		efree(http_method);
 		return FAILURE;
 	}

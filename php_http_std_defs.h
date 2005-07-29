@@ -191,6 +191,14 @@ typedef int STATUS;
 		name## _ce->ce_flags |= flags;  \
 	}
 
+#	define HTTP_REGISTER_EXCEPTION(classname, cename, parent) \
+	{ \
+		zend_class_entry ce; \
+		INIT_CLASS_ENTRY(ce, #classname, NULL); \
+		ce.create_object = NULL; \
+		cename = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
+	}
+
 #	define getObject(t, o) getObjectEx(t, o, getThis())
 #	define getObjectEx(t, o, v) t * o = ((t *) zend_object_store_get_object(v TSRMLS_CC))
 #	define putObject(t, o) zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, (zend_objects_free_object_storage_t) t## _free, NULL TSRMLS_CC);
@@ -325,16 +333,23 @@ typedef int STATUS;
 #ifndef E_THROW
 #	define E_THROW 0
 #endif
+#define HE_THROW	E_THROW
+#define HE_NOTICE	(HTTP_G(only_exceptions) ? E_THROW : E_NOTICE)
+#define HE_WARNING	(HTTP_G(only_exceptions) ? E_THROW : E_WARNING)
+#define HE_ERROR	(HTTP_G(only_exceptions) ? E_THROW : E_ERROR)
 
-#define HTTP_E_UNKOWN		0L
-#define HTTP_E_PARSE		1L
-#define HTTP_E_HEADER		2L
-#define HTTP_E_OBUFFER		3L
-#define HTTP_E_CURL			4L
-#define HTTP_E_ENCODE		5L
-#define HTTP_E_PARAM		6L
-#define HTTP_E_URL			7L
-#define HTTP_E_MSG			8L
+#define HTTP_E_RUNTIME				1L
+#define HTTP_E_INVALID_PARAM		2L
+#define HTTP_E_HEADER				3L
+#define HTTP_E_MALFORMED_HEADERS	4L
+#define HTTP_E_REQUEST_METHOD		5L
+#define HTTP_E_MESSAGE_TYPE			6L
+#define HTTP_E_ENCODING				7L
+#define HTTP_E_REQUEST				8L
+#define HTTP_E_REQUEST_POOL			9L
+#define HTTP_E_SOCKET				10L
+#define HTTP_E_RESPONSE				11L
+#define HTTP_E_URL					12L
 
 #ifdef ZEND_ENGINE_2
 #	define HTTP_BEGIN_ARGS_EX(class, method, ret_ref, req_args)	static ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 0, ret_ref, req_args)

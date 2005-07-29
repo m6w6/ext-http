@@ -34,6 +34,8 @@
 #	define HTTP_DEBUG_REQPOOLS 0
 #endif
 
+ZEND_EXTERN_MODULE_GLOBALS(http);
+
 static void http_request_pool_freebody(http_request_body **body);
 static int http_request_pool_compare_handles(void *h1, void *h2);
 
@@ -51,7 +53,7 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 
 	if (!pool->ch) {
 		if (!(pool->ch = curl_multi_init())) {
-			http_error(E_WARNING, HTTP_E_CURL, "Could not initialize curl");
+			http_error(HE_WARNING, HTTP_E_REQUEST, "Could not initialize curl");
 			if (free_pool) {
 				efree(pool);
 			}
@@ -77,17 +79,17 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 	fprintf(stderr, "Attaching HttpRequest(#%d) %p to pool %p\n", Z_OBJ_HANDLE_P(request), req, pool);
 #endif
 	if (req->pool) {
-		http_error_ex(E_WARNING, HTTP_E_CURL, "HttpRequest object(#%d) is already member of %s HttpRequestPool", Z_OBJ_HANDLE_P(request), req->pool == pool ? "this" : "another");
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "HttpRequest object(#%d) is already member of %s HttpRequestPool", Z_OBJ_HANDLE_P(request), req->pool == pool ? "this" : "another");
 	} else {
 		http_request_body *body = http_request_body_new();
 
-		if (SUCCESS != http_request_object_requesthandler(req, request, body)) {
-			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
+		if (SUCCESS != http_request_pool_requesthandler(request, body)) {
+			http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
 		} else {
 			CURLMcode code = curl_multi_add_handle(pool->ch, req->ch);
 
 			if ((CURLM_OK != code) && (CURLM_CALL_MULTI_PERFORM != code)) {
-				http_error_ex(E_WARNING, HTTP_E_CURL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
+				http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
 			} else {
 				req->pool = pool;
 
@@ -122,7 +124,7 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 		fprintf(stderr, "HttpRequest object(#%d) %p is not attached to any HttpRequestPool\n", Z_OBJ_HANDLE_P(request), req);
 #endif
 	} else if (req->pool != pool) {
-		http_error_ex(E_WARNING, HTTP_E_CURL, "HttpRequest object(#%d) is not attached to this HttpRequestPool", Z_OBJ_HANDLE_P(request));
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "HttpRequest object(#%d) is not attached to this HttpRequestPool", Z_OBJ_HANDLE_P(request));
 	} else {
 		CURLMcode code;
 
@@ -132,7 +134,7 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 		fprintf(stderr, "> %d HttpRequests remaining in pool %p\n", zend_llist_count(&pool->handles), pool);
 #endif
 		if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->ch))) {
-			http_error_ex(E_WARNING, HTTP_E_CURL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
+			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
 		} else {
 			return SUCCESS;
 		}
@@ -180,7 +182,7 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 		fprintf(stderr, "> %d unfinished requests of pool %p remaining\n", pool->unfinished, pool);
 #endif
 		if (SUCCESS != http_request_pool_select(pool)) {
-			http_error(E_WARNING, HTTP_E_CURL, "Socket error");
+			http_error(HE_WARNING, HTTP_E_SOCKET, "Socket error");
 			return FAILURE;
 		}
 	}
@@ -226,6 +228,18 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool)
 {
 	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(pool->ch, &pool->unfinished));
 	return pool->unfinished;
+}
+/* }}} */
+
+/* {{{ STATUS http_request_pool_requesthandler(zval *, http_request_body *) */
+STATUS _http_request_pool_requesthandler(zval *request, http_request_body *body TSRMLS_DC)
+{
+	getObjectEx(http_request_object, req, request);
+	if (SUCCESS == http_request_object_requesthandler(req, request, body)) {
+		http_request_conv(req->ch, &req->response, &req->request);
+		return SUCCESS;
+	}
+	return FAILURE;
 }
 /* }}} */
 

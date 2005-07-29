@@ -31,6 +31,8 @@
 
 #include "phpstr/phpstr.h"
 
+ZEND_EXTERN_MODULE_GLOBALS(http);
+
 #define http_message_headers_cb _http_message_headers_cb
 static void _http_message_headers_cb(const char *http_line, HashTable **headers, void **message TSRMLS_DC)
 {
@@ -382,21 +384,21 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 			if (!strcasecmp("HEAD", message->info.request.method)) {
 				rs = http_head(uri, Z_ARRVAL(options), NULL, NULL);
 			} else {
-				http_error_ex(E_WARNING, HTTP_E_MSG,
+				http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD,
 					"Cannot send HttpMessage. Request method %s not supported",
 					message->info.request.method);
 			}
 
 			efree(uri);
 #else
-			http_error(E_WARNING, HTTP_E_MSG, "HTTP requests not supported - ext/http was not linked against libcurl.");
+			http_error(HE_WARNING, HTTP_E_RUNTIME, "HTTP requests not supported - ext/http was not linked against libcurl.");
 #endif
 		}
 		break;
 
 		case HTTP_MSG_NONE:
 		default:
-			http_error(E_WARNING, HTTP_E_MSG, "HttpMessage is neither of type HTTP_MSG_REQUEST nor HTTP_MSG_RESPONSE");
+			http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is neither of type HTTP_MSG_REQUEST nor HTTP_MSG_RESPONSE");
 		break;
 	}
 
@@ -456,3 +458,4 @@ PHP_HTTP_API void _http_message_free(http_message *message)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+

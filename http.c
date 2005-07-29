@@ -139,6 +139,7 @@ static inline void http_globals_init(zend_http_globals *G)
 	zend_llist_init(&G->request.copies.strings, sizeof(char *), http_request_data_free_string, 0);
 	zend_llist_init(&G->request.copies.slists, sizeof(struct curl_slist *), http_request_data_free_slist, 0);
 	zend_llist_init(&G->request.copies.contexts, sizeof(http_curl_callback_ctx *), http_request_data_free_context, 0);
+	zend_llist_init(&G->request.copies.convs, sizeof(http_curl_conv *), http_request_data_free_conv, 0);
 #endif
 }
 
@@ -151,6 +152,7 @@ static inline void http_globals_free(zend_http_globals *G)
 	zend_llist_clean(&G->request.copies.strings);
 	zend_llist_clean(&G->request.copies.slists);
 	zend_llist_clean(&G->request.copies.contexts);
+	zend_llist_clean(&G->request.copies.convs);
 #endif
 }
 /* }}} */
@@ -177,8 +179,11 @@ PHP_INI_MH(http_update_allowed_methods)
 }
 
 PHP_INI_BEGIN()
-	HTTP_PHP_INI_ENTRY("http.allowed_methods", NULL, PHP_INI_ALL, http_update_allowed_methods, request.methods.allowed)
-	HTTP_PHP_INI_ENTRY("http.cache_log", NULL, PHP_INI_ALL, OnUpdateString, log.cache)
+	HTTP_PHP_INI_ENTRY("http.allowed_methods", "", PHP_INI_ALL, http_update_allowed_methods, request.methods.allowed)
+	HTTP_PHP_INI_ENTRY("http.cache_log", "", PHP_INI_ALL, OnUpdateString, log.cache)
+#ifdef ZEND_ENGINE_2
+	HTTP_PHP_INI_ENTRY("http.only_exceptions", "0", PHP_INI_ALL, OnUpdateBool, only_exceptions)
+#endif
 PHP_INI_END()
 /* }}} */
 

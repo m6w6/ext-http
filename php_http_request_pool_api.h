@@ -19,6 +19,7 @@
 #define PHP_HTTP_REQUEST_POOL_API_H
 
 #include "php_http_std_defs.h"
+#include "php_http_request_api.h"
 #include "phpstr/phpstr.h"
 
 #ifdef PHP_WIN32
@@ -36,6 +37,8 @@ typedef struct {
 
 #define http_request_pool_responsehandler _http_request_pool_responsehandler
 extern void _http_request_pool_responsehandler(zval **req TSRMLS_DC);
+#define http_request_pool_requesthandler(r, b) _http_request_pool_requesthandler((r), (b) TSRMLS_CC)
+extern STATUS _http_request_pool_requesthandler(zval *request, http_request_body *body TSRMLS_DC);
 
 #define http_request_pool_init(p) _http_request_pool_init((p) TSRMLS_CC)
 PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool TSRMLS_DC);
