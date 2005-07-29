@@ -12,9 +12,15 @@ a=b&c=d
 --FILE--
 <?php
 echo "-TEST\n";
-print_r(http_get_request_headers());
-var_dump(http_get_request_body());
+$h = http_get_request_headers();
+ksort($h);
+print_r($h);
+$b = http_get_request_body();
+if (php_sapi_name() == 'cli' || $b == 'a=b&c=d') {
+	echo "OK\n";
+}
 ?>
+===DONE===
 --EXPECTF--
 %sTEST
 Array
@@ -22,5 +28,5 @@ Array
     [Accept-Charset] => iso-8859-1, *
     [User-Agent] => Mozilla/5.0
 )
-string(7) "a=b&c=d"
-
+OK
+===DONE===

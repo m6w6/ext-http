@@ -278,7 +278,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ALIAS(methodUnregister, http_request_method_unregister)
 	HTTP_REQUEST_ALIAS(methodName, http_request_method_name)
 	HTTP_REQUEST_ALIAS(methodExists, http_request_method_exists)
-
+	
 	{NULL, NULL, NULL}
 };
 static zend_object_handlers http_request_object_handlers;
@@ -286,6 +286,8 @@ static zend_object_handlers http_request_object_handlers;
 void _http_request_object_init(INIT_FUNC_ARGS)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request_object, NULL, 0);
+
+	_http_request_object_declare_default_properties(TSRMLS_C);
 
 	/* HTTP/1.1 */
 	HTTP_LONG_CONSTANT("HTTP_GET", HTTP_GET);
