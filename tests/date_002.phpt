@@ -4,6 +4,8 @@ http_date() without timestamp
 <?php
 include 'skip.inc';
 ?>
+--INI--
+date.timezone=GMT
 --FILE--
 <?php
 echo "-TEST\n";
