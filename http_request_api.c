@@ -39,10 +39,6 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-#ifndef HTTP_CURL_USE_ZEND_MM
-#	define HTTP_CURL_USE_ZEND_MM 0
-#endif
-
 #if LIBCURL_VERSION_NUM < 0x070c00
 #	define curl_easy_strerror(code) HTTP_G(request).error
 #endif
@@ -118,35 +114,6 @@ static int http_curl_dummy_callback(char *data, size_t n, size_t l, void *s) { r
 #define http_curl_callback_data(data) _http_curl_callback_data((data) TSRMLS_CC)
 static http_curl_callback_ctx *_http_curl_callback_data(void *data TSRMLS_DC);
 
-
-#if HTTP_CURL_USE_ZEND_MM
-static void http_curl_free(void *p)					{ efree(p); }
-static char *http_curl_strdup(const char *p)		{ return estrdup(p); }
-static void *http_curl_malloc(size_t s)				{ return emalloc(s); }
-static void *http_curl_realloc(void *p, size_t s)	{ return erealloc(p, s); }
-static void *http_curl_calloc(size_t n, size_t s)	{ return ecalloc(n, s); }
-#endif
-
-/* {{{ STATUS http_request_global_init() */
-STATUS _http_request_global_init(void)
-{
-#if HTTP_CURL_USE_ZEND_MM
-	if (CURLE_OK != curl_global_init_mem(CURL_GLOBAL_ALL,
-			http_curl_malloc,
-			http_curl_free,
-			http_curl_realloc,
-			http_curl_strdup,
-			http_curl_calloc)) {
-		return FAILURE;
-	}
-#else
-	if (CURLE_OK != curl_global_init(CURL_GLOBAL_ALL)) {
-		return FAILURE;
-	}
-#endif
-	return SUCCESS;
-}
-/* }}} */
 
 /* {{{ void *http_request_data_copy(int, void *) */
 void *_http_request_data_copy(int type, void *data TSRMLS_DC)

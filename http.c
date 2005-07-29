@@ -200,7 +200,7 @@ PHP_MINIT_FUNCTION(http)
 	REGISTER_INI_ENTRIES();
 
 #ifdef HTTP_HAVE_CURL
-	if (SUCCESS != http_request_global_init()) {
+	if (CURLE_OK != curl_global_init(CURL_GLOBAL_ALL)) {
 		return FAILURE;
 	}
 #endif /* HTTP_HAVE_CURL */
