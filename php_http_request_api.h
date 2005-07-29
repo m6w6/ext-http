@@ -104,9 +104,6 @@ extern void _http_request_data_free_conv(void *conv);
 #define http_request_conv(ch, rs, rq) _http_request_conv((ch), (rs), (rq) TSRMLS_CC)
 extern void _http_request_conv(CURL *ch, phpstr* response, phpstr *request TSRMLS_DC);
 
-#define http_request_global_init _http_request_global_init
-extern STATUS _http_request_global_init(void);
-
 #define http_request_method_name(m) _http_request_method_name((m) TSRMLS_CC)
 PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC);
 
