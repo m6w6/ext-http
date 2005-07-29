@@ -287,8 +287,6 @@ void _http_request_object_init(INIT_FUNC_ARGS)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request_object, NULL, 0);
 
-	_http_request_object_declare_default_properties(TSRMLS_C);
-
 	/* HTTP/1.1 */
 	HTTP_LONG_CONSTANT("HTTP_GET", HTTP_GET);
 	HTTP_LONG_CONSTANT("HTTP_HEAD", HTTP_HEAD);
