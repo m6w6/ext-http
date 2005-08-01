@@ -30,11 +30,16 @@
   </maintainers>
 
   <release>
-    <version>0.10.1</version>
-    <date>2005-07-25</date>
+    <version>0.11.0</version>
+    <date>2005-08-01</date>
     <state>beta</state>
     <notes><![CDATA[
-* fixed installation through the PEAR installer
+* Fixed HttpRequest with redirects
+* Fixed http.allowed_methods INI entry
++ Added HTTP specific exceptions
++ Added http.only_exceptions INI entry
++ Added HttpRequest::$recordHistory and HttpRequest::getHistory()
+- Removed the ondebug callback option for requests
 ]]>
     </notes>
   </release>
