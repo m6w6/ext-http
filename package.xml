@@ -103,7 +103,6 @@
       
       <dir name="tests" role="test">
         <file install-as="README.txt">README.txt</file>
-        <file install-as="run-tests.diff">run-tests.diff</file>
         <file>data.txt</file>
         <file>skip.inc</file>
         <file>abs_uri_001.phpt</file>
