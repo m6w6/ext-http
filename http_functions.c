@@ -497,8 +497,10 @@ PHP_FUNCTION(http_redirect)
 	}
 	efree(URI);
 
-	if ((SUCCESS == http_send_header(LOC)) && (SUCCESS == http_send_status((permanent ? 301 : 302)))) {
-		php_body_write(RED, strlen(RED) TSRMLS_CC);
+	if ((SUCCESS == http_send_header_string(LOC)) && (SUCCESS == http_send_status((permanent ? 301 : 302)))) {
+		if (SG(request_info).request_method && strcmp(SG(request_info).request_method, "HEAD")) {
+			PHPWRITE(RED, strlen(RED));
+		}
 		RETURN_TRUE;
 	}
 	RETURN_FALSE;

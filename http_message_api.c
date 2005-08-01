@@ -329,10 +329,17 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 
 			FOREACH_HASH_KEYVAL(&message->hdrs, key, idx, val) {
 				if (key) {
-					char *header;
-					spprintf(&header, 0, "%s: %s", key, Z_STRVAL_PP(val));
-					http_send_header(header);
-					efree(header);
+					if (Z_TYPE_PP(val) == IS_ARRAY) {
+						zend_bool first = 1;
+						zval **data;
+						
+						FOREACH_VAL(*val, data) {
+							http_send_header_ex(key, strlen(key), Z_STRVAL_PP(data), Z_STRLEN_PP(data), first);
+							first = 0;
+						}
+					} else {
+						http_send_header_ex(key, strlen(key), Z_STRVAL_PP(val), Z_STRLEN_PP(val), 1);
+					}
 					key = NULL;
 				}
 			}

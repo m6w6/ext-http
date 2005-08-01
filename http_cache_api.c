@@ -237,7 +237,7 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 		/* just do that if desired */
 		if (HTTP_G(etag).started) {
 			make_digest(etag, digest);
-			http_send_header("Cache-Control: " HTTP_DEFAULT_CACHECONTROL);
+			http_send_cache_control(HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL));
 			http_send_etag(etag, 32);
 
 			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {

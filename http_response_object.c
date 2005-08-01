@@ -50,6 +50,16 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #define HTTP_RESPONSE_ME(method, visibility)	PHP_ME(HttpResponse, method, HTTP_ARGS(HttpResponse, method), visibility|ZEND_ACC_STATIC)
 #define HTTP_RESPONSE_ALIAS(method, func)		HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpResponse, method))
 
+HTTP_BEGIN_ARGS(setHeader, 2)
+	HTTP_ARG_VAL(name, 0)
+	HTTP_ARG_VAL(value, 0)
+	HTTP_ARG_VAL(replace, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(getHeader, 0)
+	HTTP_ARG_VAL(name, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getETag, 0);
 HTTP_BEGIN_ARGS(setETag, 1)
 	HTTP_ARG_VAL(etag, 0)
@@ -120,14 +130,8 @@ HTTP_BEGIN_ARGS(redirect, 0)
 	HTTP_ARG_VAL(permanent, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(sendStatus, 1)
-	HTTP_ARG_VAL(status, 0)
-HTTP_END_ARGS;
-
-HTTP_BEGIN_ARGS(sendHeader, 1)
-	HTTP_ARG_VAL(header, 0)
-	HTTP_ARG_VAL(replace, 0)
-	HTTP_ARG_VAL(status, 0)
+HTTP_BEGIN_ARGS(status, 1)
+	HTTP_ARG_VAL(code, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getRequestHeaders, 0);
@@ -138,6 +142,9 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
+
+	HTTP_RESPONSE_ME(setHeader, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getHeader, ZEND_ACC_PUBLIC)
 
 	HTTP_RESPONSE_ME(setETag, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(getETag, ZEND_ACC_PUBLIC)
@@ -176,10 +183,7 @@ zend_function_entry http_response_object_fe[] = {
 	HTTP_RESPONSE_ME(capture, ZEND_ACC_PUBLIC)
 
 	HTTP_RESPONSE_ALIAS(redirect, http_redirect)
-
-	HTTP_RESPONSE_ALIAS(sendStatus, http_send_status)
-	HTTP_RESPONSE_ALIAS(sendHeader, header)
-
+	HTTP_RESPONSE_ALIAS(status, http_send_status)
 	HTTP_RESPONSE_ALIAS(getRequestHeaders, http_get_request_headers)
 	HTTP_RESPONSE_ALIAS(getRequestBody, http_get_request_body)
 
@@ -211,9 +215,81 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP_N(PROTECTED, contentDisposition);
 	DCL_STATIC_PROP(PROTECTED, long, bufferSize, HTTP_SENDBUF_SIZE);
 	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
+	DCL_STATIC_PROP_N(PROTECTED, headers);
 }
 
 /* ### USERLAND ### */
+
+/* {{{ proto static bool HttpResponse::setHeader(string name, mixed value[, bool replace = true)
+ */
+PHP_METHOD(HttpResponse, setHeader)
+{
+	zend_bool replace = 1;
+	char *name;
+	int name_len = 0;
+	zval *value = NULL, *headers, **header;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz/!|b", &name, &name_len, &value, &replace)) {
+		RETURN_FALSE;
+	}
+	if (!name_len) {
+		http_error(HE_WARNING, HTTP_E_HEADER, "Cannot send anonymous headers");
+		RETURN_FALSE;
+	}
+
+	USE_STATIC_PROP();
+	headers = GET_STATIC_PROP(headers);
+
+	if (Z_TYPE_P(headers) != IS_ARRAY) {
+		convert_to_array(headers);
+	}
+
+	/* delete header if value == null */
+	if (!value || Z_TYPE_P(value) == IS_NULL) {
+		RETURN_SUCCESS(zend_hash_del(Z_ARRVAL_P(headers), name, name_len + 1));
+	}
+
+	if (Z_TYPE_P(value) != IS_STRING) {
+		convert_to_string_ex(&value);
+	}
+
+	/* convert old header to an array and add new one if header exists and replace == false */
+	if (replace || SUCCESS != zend_hash_find(Z_ARRVAL_P(headers), name, name_len + 1, (void **) &header)) {
+		RETURN_SUCCESS(add_assoc_stringl_ex(headers, name, name_len + 1, Z_STRVAL_P(value), Z_STRLEN_P(value), 1));
+	} else {
+		convert_to_array(*header);
+		RETURN_SUCCESS(add_next_index_stringl(*header, Z_STRVAL_P(value), Z_STRLEN_P(value), 1));
+	}
+}
+/* }}} */
+
+/* {{{ proto static mixed HttpResponse::getHeader([string name])
+ */
+PHP_METHOD(HttpResponse, getHeader)
+{
+	char *name = NULL;
+	int name_len = 0;
+	zval *headers, **header;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &name, &name_len)) {
+		RETURN_FALSE;
+	}
+	
+	headers = GET_STATIC_PROP(headers);
+	if (Z_TYPE_P(headers) != IS_ARRAY) {
+		convert_to_array(headers);
+	}
+	
+	if (!name || !name_len) {
+		array_init(return_value);
+		array_copy(headers, return_value);
+	} else if (SUCCESS == zend_hash_find(Z_ARRVAL_P(headers), name, name_len + 1, (void **) &header)) {
+		RETURN_ZVAL(*header, ZVAL_PTR_DTOR, 1);
+	} else {
+		RETURN_NULL();
+	}
+}
+/* }}} */
 
 /* {{{ proto static bool HttpResponse::setCache(bool cache)
  *
@@ -378,13 +454,12 @@ PHP_METHOD(HttpResponse, setContentDisposition)
 	int file_len;
 	zend_bool send_inline = 0;
 
-#define HTTP_CONTENTDISPOSITION_TEMPLATE "%s; filename=\"%s\""
-
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &file, &file_len, &send_inline)) {
 		RETURN_FALSE;
 	}
 
-	spprintf(&cd, 0, HTTP_CONTENTDISPOSITION_TEMPLATE, send_inline ? "inline" : "attachment", file);
+	spprintf(&cd, 0, "%s; filename=\"%s\"", send_inline ? "inline" : "attachment", file);
+	USE_STATIC_PROP();
 	SET_STATIC_PROP_STRING(contentDisposition, cd, 0);
 	RETURN_TRUE;
 }
@@ -629,7 +704,7 @@ PHP_METHOD(HttpResponse, getFile)
  */
 PHP_METHOD(HttpResponse, send)
 {
-	zval *sent;
+	zval *sent, *headers;
 	zend_bool clean_ob = 1;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {
@@ -674,6 +749,31 @@ PHP_METHOD(HttpResponse, send)
 		php_end_ob_buffers(0 TSRMLS_CC);
 	}
 
+	/* custom headers */
+	headers = GET_STATIC_PROP(headers);
+	if (Z_TYPE_P(headers) == IS_ARRAY) {
+		char *name = NULL;
+		ulong idx = 0;
+		zval **value;
+
+		FOREACH_KEYVAL(headers, name, idx, value) {
+			if (name) {
+				if (Z_TYPE_PP(value) == IS_ARRAY) {
+					zend_bool first = 1;
+					zval **data;
+
+					FOREACH_VAL(*value, data) {
+						http_send_header_ex(name, strlen(name), Z_STRVAL_PP(data), Z_STRLEN_PP(data), first);
+						first = 0;
+					}
+				} else {
+					http_send_header_ex(name, strlen(name), Z_STRVAL_PP(value), Z_STRLEN_PP(value), 1);
+				}
+				name = NULL;
+			}
+		}
+	}
+
 	/* gzip */
 	if (Z_LVAL_P(GET_STATIC_PROP(gzip))) {
 		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
@@ -714,11 +814,7 @@ PHP_METHOD(HttpResponse, send)
 	{
 		zval *cd = GET_STATIC_PROP(contentDisposition);
 		if (Z_STRLEN_P(cd)) {
-			char *cds;
-
-			spprintf(&cds, 0, "Content-Disposition: %s", Z_STRVAL_P(cd));
-			http_send_header(cds);
-			efree(cds);
+			http_send_header_ex("Content-Disposition", lenof("Content-Disposition"), Z_STRVAL_P(cd), Z_STRLEN_P(cd), 1);
 		}
 	}
 

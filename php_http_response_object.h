@@ -25,6 +25,8 @@ extern zend_function_entry http_response_object_fe[];
 #define http_response_object_init() _http_response_object_init(INIT_FUNC_ARGS_PASSTHRU)
 extern void _http_response_object_init(INIT_FUNC_ARGS);
 
+PHP_METHOD(HttpResponse, setHeader);
+PHP_METHOD(HttpResponse, getHeader);
 PHP_METHOD(HttpResponse, setETag);
 PHP_METHOD(HttpResponse, getETag);
 PHP_METHOD(HttpResponse, setContentDisposition);

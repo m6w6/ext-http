@@ -28,8 +28,11 @@ typedef enum {
 } http_send_mode;
 
 #define http_send_status(s) sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) (s) TSRMLS_CC)
-#define http_send_header(h) http_send_status_header(0, (h))
-#define http_send_header_ex(h, r) http_send_status_header_ex(0, (h), (r))
+#define http_send_header(n, v, r) _http_send_header_ex((n), strlen(n), (v), strlen(v), (r) TSRMLS_CC)
+#define http_send_header_ex(n, nl, v, vl, r) _http_send_header_ex((n), (nl), (v), (vl), (r) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace TSRMLS_DC);
+#define http_send_header_string(h) _http_send_status_header_ex(0, (h), 1 TSRMLS_CC)
+#define http_send_header_string_ex(h, r) _http_send_status_header_ex(0, (h), (r) TSRMLS_CC)
 #define http_send_status_header(s, h) _http_send_status_header_ex((s), (h), 1 TSRMLS_CC)
 #define http_send_status_header_ex(s, h, r) _http_send_status_header_ex((s), (h), (r) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, zend_bool replace TSRMLS_DC);
@@ -40,8 +43,7 @@ PHP_HTTP_API STATUS _http_send_last_modified(time_t t TSRMLS_DC);
 #define http_send_etag(e, l) _http_send_etag((e), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_etag(const char *etag, size_t etag_len TSRMLS_DC);
 
-#define http_send_cache_control(c, l) _http_send_cache_control((c), (l) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control, size_t cc_len TSRMLS_DC);
+#define http_send_cache_control(cc, cl) http_send_header_ex("Cache-Control", lenof("Cache-Control"), (cc), (cl), 1)
 
 #define http_send_content_type(c, l) _http_send_content_type((c), (l) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_len TSRMLS_DC);

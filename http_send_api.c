@@ -148,6 +148,20 @@ static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_
 }
 /* }}} */
 
+/* {{{ STATUS http_send_header(char *, char *, zend_bool) */
+PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace TSRMLS_DC)
+{
+	STATUS ret;
+	size_t header_len = 1 + lenof(": ") + name_len + value_len;
+	char *header = emalloc(header_len);
+
+	header[header_len - 1] = '\0';
+	snprintf(header, header_len, "%s: %s", name, value);
+	ret = http_send_header_string_ex(header, replace);
+	efree(header);
+	return ret;
+}
+/* }}} */
 
 /* {{{ STATUS http_send_status_header(int, char *) */
 PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, zend_bool replace TSRMLS_DC)
@@ -164,18 +178,20 @@ PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, 
 /* {{{ STATUS http_send_last_modified(int) */
 PHP_HTTP_API STATUS _http_send_last_modified(time_t t TSRMLS_DC)
 {
-	char *date = NULL;
-	if (date = http_date(t)) {
-		char modified[96] = "Last-Modified: ";
-		strcat(modified, date);
-		efree(date);
+	STATUS ret;
+	char *date = http_date(t);
 
-		/* remember */
-		HTTP_G(send).last_modified = t;
-
-		return http_send_header(modified);
+	if (!date) {
+		return FAILURE;
 	}
-	return FAILURE;
+
+	ret = http_send_header("Last-Modified", date, 1);
+	efree(date);
+
+	/* remember */
+	HTTP_G(send).last_modified = t;
+
+	return ret;
 }
 /* }}} */
 
@@ -196,21 +212,8 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag, size_t etag_len TSRMLS_DC)
 
 	etag_header = ecalloc(1, sizeof("ETag: \"\"") + etag_len);
 	sprintf(etag_header, "ETag: \"%s\"", etag);
-	status = http_send_header(etag_header);
+	status = http_send_header_string(etag_header);
 	efree(etag_header);
-	return status;
-}
-/* }}} */
-
-/* {{{ STATUS http_send_cache_control(char *, size_t) */
-PHP_HTTP_API STATUS _http_send_cache_control(const char *cache_control, size_t cc_len TSRMLS_DC)
-{
-	STATUS status;
-	char *cc_header = ecalloc(1, sizeof("Cache-Control: ") + cc_len);
-
-	sprintf(cc_header, "Cache-Control: %s", cache_control);
-	status = http_send_header(cc_header);
-	efree(cc_header);
 	return status;
 }
 /* }}} */
@@ -230,11 +233,7 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_
 	STR_FREE(HTTP_G(send).content_type);
 	HTTP_G(send).content_type = estrndup(content_type, ct_len);
 
-	ct_header = ecalloc(1, sizeof("Content-Type: ") + ct_len);
-	sprintf(ct_header, "Content-Type: %s", content_type);
-	status = http_send_header(ct_header);
-	efree(ct_header);
-	return status;
+	return http_send_header_ex("Content-Type", lenof("Content-Type"), content_type, ct_len, 1);
 }
 /* }}} */
 
@@ -252,7 +251,7 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, size_t 
 		sprintf(cd_header, "Content-Disposition: attachment; filename=\"%s\"", filename);
 	}
 
-	status = http_send_header(cd_header);
+	status = http_send_header_string(cd_header);
 	efree(cd_header);
 	return status;
 }
@@ -280,7 +279,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 
 		/* send content range header */
 		snprintf(range_header, 255, "Content-Range: bytes %ld-%ld/%lu", **begin, **end, (ulong) size);
-		http_send_header(range_header);
+		http_send_header_string(range_header);
 
 		/* send requested chunk */
 		return http_send_chunk(data, **begin, **end + 1, mode);
@@ -297,7 +296,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 		/* send multipart/byteranges header */
 		snprintf(bound, 22, "--%lu%0.9f", (ulong) time(NULL), php_combined_lcg(TSRMLS_C));
 		strncat(multi_header, bound + 2, 21);
-		http_send_header(multi_header);
+		http_send_header_string(multi_header);
 
 		/* send each requested chunk */
 		FOREACH_HASH_VAL(ranges, zrange) {
@@ -355,7 +354,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 	}
 
 	/* enable partial dl and resume */
-	http_send_header("Accept-Ranges: bytes");
+	http_send_header_string("Accept-Ranges: bytes");
 
 	zend_hash_init(&ranges, 0, NULL, ZVAL_PTR_DTOR, 0);
 	range_status = http_get_request_ranges(&ranges, data_size);
