@@ -1254,7 +1254,6 @@ PHP_FUNCTION(http_build_query)
 
 PHP_FUNCTION(http_test)
 {
-	RETURN_BOOL(HTTP_G(only_exceptions));
 }
 
 /*

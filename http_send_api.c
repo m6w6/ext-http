@@ -221,9 +221,6 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag, size_t etag_len TSRMLS_DC)
 /* {{{ STATUS http_send_content_type(char *, size_t) */
 PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_len TSRMLS_DC)
 {
-	STATUS status;
-	char *ct_header;
-
 	if (!strchr(content_type, '/')) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Content-Type '%s' doesn't seem to consist of a primary and a secondary part", content_type);
 		return FAILURE;
