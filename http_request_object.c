@@ -34,6 +34,8 @@
 #include "php_http_message_object.h"
 #include "php_http_exception_object.h"
 
+#include "missing.h"
+
 #ifdef PHP_WIN32
 #	include <winsock2.h>
 #endif
@@ -278,7 +280,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ALIAS(methodUnregister, http_request_method_unregister)
 	HTTP_REQUEST_ALIAS(methodName, http_request_method_name)
 	HTTP_REQUEST_ALIAS(methodExists, http_request_method_exists)
-	
+
 	{NULL, NULL, NULL}
 };
 static zend_object_handlers http_request_object_handlers;
