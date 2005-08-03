@@ -128,6 +128,8 @@ static zend_object_handlers http_message_object_handlers;
 
 void _http_message_object_init(INIT_FUNC_ARGS)
 {
+	zval constants;
+	
 	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message_object, NULL, 0);
 
 	HTTP_LONG_CONSTANT("HTTP_MSG_NONE", HTTP_MSG_NONE);
@@ -181,6 +183,10 @@ zend_object_value _http_message_object_clone(zval *this_ptr TSRMLS_DC)
 static inline void _http_message_object_declare_default_properties(TSRMLS_D)
 {
 	zend_class_entry *ce = http_message_object_ce;
+
+	DCL_CONST(long, "NONE", HTTP_MSG_NONE);
+	DCL_CONST(long, "REQUEST", HTTP_MSG_REQUEST);
+	DCL_CONST(long, "RESPONSE", HTTP_MSG_RESPONSE);
 
 	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
 	DCL_PROP(PROTECTED, string, body, "");

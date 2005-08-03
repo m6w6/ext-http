@@ -178,6 +178,7 @@ typedef int STATUS;
 		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
 		name## _ce->ce_flags |= flags;  \
 		memcpy(& name## _handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
+		zend_hash_init(& name## _ce->constants_table, 0, NULL, ZVAL_INTERNAL_PTR_DTOR, 1); \
 		name## _declare_default_properties(); \
 	}
 
@@ -297,6 +298,8 @@ typedef int STATUS;
 #	define SET_PROP_EX(o, this, n, z) zend_update_property(o->zo.ce, this, (#n), sizeof(#n)-1, (z) TSRMLS_CC)
 #	define GET_PROP(o, n) GET_PROP_EX(o, getThis(), n)
 #	define GET_PROP_EX(o, this, n) zend_read_property(o->zo.ce, this, (#n), sizeof(#n)-1, 0 TSRMLS_CC)
+
+#	define DCL_CONST(t, n, v) zend_declare_class_constant_ ##t(ce, (n), sizeof(n), (v) TSRMLS_CC)
 
 #	define ACC_PROP_PRIVATE(ce, flags)		((flags & ZEND_ACC_PRIVATE) && (EG(scope) && ce == EG(scope))
 #	define ACC_PROP_PROTECTED(ce, flags)	((flags & ZEND_ACC_PROTECTED) && (zend_check_protected(ce, EG(scope))))

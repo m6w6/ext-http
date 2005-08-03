@@ -71,6 +71,61 @@ void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name
 
 #endif
 
+static inline zval *new_class_constant_zval(zend_class_entry *ce)
+{
+	zval *z;
+	if (ce->type & ZEND_INTERNAL_CLASS) {
+		z = malloc(sizeof(zval));
+	} else {
+		ALLOC_ZVAL(z);
+	}
+	INIT_PZVAL(z);
+	return z;
+}
+
+int zend_declare_class_constant(zend_class_entry *ce, char *name, size_t name_length, zval *value TSRMLS_DC)
+{
+	return zend_hash_add(&ce->constants_table, name, name_length, &value, sizeof(zval *), NULL);
+}
+
+int zend_declare_class_constant_long(zend_class_entry *ce, char *name, size_t name_length, long value TSRMLS_DC)
+{
+	zval *constant = new_class_constant_zval(ce);
+	ZVAL_LONG(constant, value);
+	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
+}
+
+int zend_declare_class_constant_bool(zend_class_entry *ce, char *name, size_t name_length, zend_bool value TSRMLS_DC)
+{
+	zval *constant = new_class_constant_zval(ce);
+	ZVAL_BOOL(constant, value);
+	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
+}
+
+int zend_declare_class_constant_double(zend_class_entry *ce, char *name, size_t name_length, double value TSRMLS_DC)
+{
+	zval *constant = new_class_constant_zval(ce);
+	ZVAL_DOUBLE(constant, value);
+	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
+}
+
+int zend_declare_class_constant_string(zend_class_entry *ce, char *name, size_t name_length, char *value TSRMLS_DC)
+{
+	return zend_declare_class_constant_stringl(ce, name, name_length, value, strlen(value) TSRMLS_CC);
+}
+
+int zend_declare_class_constant_stringl(zend_class_entry *ce, char *name, size_t name_length, char *value, size_t value_length TSRMLS_DC)
+{
+	zval *constant = new_class_constant_zval(ce);
+	Z_TYPE_P(constant) = IS_STRING;
+	Z_STRLEN_P(constant) = value_length;
+	Z_STRVAL_P(constant) = malloc(value_length + 1);
+	memcpy(Z_STRVAL_P(constant), value, value_length);
+	Z_STRVAL_P(constant)[value_length] = '\0';
+	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
+}
+
+
 /*
  * Local variables:
  * tab-width: 4
