@@ -20,6 +20,8 @@
 #endif
 #include "php.h"
 
+#ifdef HTTP_HAVE_CURL
+
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
@@ -971,6 +973,8 @@ static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t k
 	return *zoption;
 }
 /* }}} */
+
+#endif
 
 /*
  * Local variables:

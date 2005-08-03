@@ -17,6 +17,7 @@
 
 #ifndef PHP_HTTP_REQUEST_API_H
 #define PHP_HTTP_REQUEST_API_H
+#ifdef HTTP_HAVE_CURL
 
 #include "php_http_std_defs.h"
 #include "phpstr/phpstr.h"
@@ -154,6 +155,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, char *U
 #define http_put_ex(c, u, b, o, i, r) _http_request_ex((c), HTTP_PUT, (u), (b), (o), (i), (r) TSRMLS_CC)
 
 #endif
+#endif
 
 /*
  * Local variables:
@@ -163,3 +165,4 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, char *U
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+

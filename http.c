@@ -29,7 +29,9 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_send_api.h"
-#include "php_http_request_api.h"
+#ifdef HTTP_HAVE_CURL
+#	include "php_http_request_api.h"
+#endif
 
 #ifdef ZEND_ENGINE_2
 #	include "php_http_util_object.h"
@@ -286,6 +288,7 @@ PHP_MINFO_FUNCTION(http)
 	}
 	php_info_print_table_end();
 
+#ifdef HTTP_HAVE_CURL
 	php_info_print_table_start();
 	{
 		unsigned i;
@@ -314,6 +317,7 @@ PHP_MINFO_FUNCTION(http)
 		phpstr_free(custom_request_methods);
 	}
 	php_info_print_table_end();
+#endif
 
 	php_info_print_table_start();
 	{

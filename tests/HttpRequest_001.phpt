@@ -4,6 +4,7 @@ HttpRequest options
 <?php
 include 'skip.inc';
 checkver(5);
+checkcls('HttpRequest');
 ?>
 --FILE--
 <?php

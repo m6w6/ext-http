@@ -4,6 +4,7 @@ HttpRequestPool
 <?php
 include 'skip.inc';
 checkver(5);
+checkcls('HttpRequestPool');
 checkurl('www.php.net');
 checkurl('pear.php.net');
 checkurl('pecl.php.net');

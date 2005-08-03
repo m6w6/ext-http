@@ -5,5 +5,6 @@ function checkcgi() { skipif(!strncasecmp('CLI', PHP_SAPI, 3), 'need CGI SAPI');
 function checkext($ext) { skipif(!extension_loaded($ext), "need ext/$ext"); }
 function checkver($ver) { skipif($ver > (int) PHP_VERSION, "need PHP v$ver"); }
 function checkurl($url) { skipif(!@fsockopen($url, 80), "$url not responsive"); }
+function checkcls($cls) { skipif(!class_exists($cls), "need class $cls"); }
 checkext('http');
 ?>

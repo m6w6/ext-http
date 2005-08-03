@@ -4,6 +4,7 @@ HttpRequest GET/POST
 <?php
 include 'skip.inc';
 checkver(5);
+checkcls('HttpRequest');
 checkurl('www.google.com');
 ?>
 --FILE--

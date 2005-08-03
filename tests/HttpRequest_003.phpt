@@ -4,6 +4,7 @@ HttpRequest SSL
 <?php
 include 'skip.inc';
 checkver(5);
+checkcls('HttpRequest');
 checkurl('arweb.info');
 ?>
 --FILE--

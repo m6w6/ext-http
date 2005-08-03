@@ -17,6 +17,7 @@
 
 #ifndef PHP_HTTP_REQUEST_POOL_API_H
 #define PHP_HTTP_REQUEST_POOL_API_H
+#ifdef HTTP_HAVE_CURL
 
 #include "php_http_std_defs.h"
 #include "php_http_request_api.h"
@@ -64,6 +65,7 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool);
 #define http_request_pool_dtor(p) _http_request_pool_dtor((p) TSRMLS_CC)
 PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC);
 
+#endif
 #endif
 
 /*
