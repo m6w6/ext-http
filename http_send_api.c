@@ -365,7 +365,8 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 	/* Range Request - only send ranges if entity hasn't changed */
 	if (	range_status == RANGE_OK &&
 			http_match_etag_ex("HTTP_IF_MATCH", HTTP_G(send).unquoted_etag, 0) &&
-			http_match_last_modified_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(send).last_modified, 0)) {
+			http_match_last_modified_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(send).last_modified, 0) &&
+			http_match_last_modified_ex("HTTP_UNLESS_MODIFIED_SINCE", HTTP_G(send).last_modified, 0)) {
 		STATUS result = http_send_ranges(&ranges, data_ptr, data_size, data_mode);
 		zend_hash_destroy(&ranges);
 		return result;
