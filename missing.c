@@ -71,6 +71,8 @@ void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name
 
 #endif
 
+#if (PHP_MAJOR_VERSION >= 5)
+
 static inline zval *new_class_constant_zval(zend_class_entry *ce)
 {
 	zval *z;
@@ -124,7 +126,7 @@ int zend_declare_class_constant_stringl(zend_class_entry *ce, char *name, size_t
 	Z_STRVAL_P(constant)[value_length] = '\0';
 	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
 }
-
+#endif
 
 /*
  * Local variables:
