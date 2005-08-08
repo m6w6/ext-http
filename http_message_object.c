@@ -129,8 +129,6 @@ static zend_object_handlers http_message_object_handlers;
 
 void _http_message_object_init(INIT_FUNC_ARGS)
 {
-	zval constants;
-
 	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message_object, NULL, 0);
 
 	HTTP_LONG_CONSTANT("HTTP_MSG_NONE", HTTP_MSG_NONE);
