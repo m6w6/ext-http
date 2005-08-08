@@ -23,8 +23,10 @@
 #include "SAPI.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
-#include "ext/session/php_session.h"
 #include "ext/standard/php_string.h"
+#if defined(HAVE_PHP_SESSION) && !defined(COMPILE_DL_SESSION)
+#	include "ext/session/php_session.h"
+#endif
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
@@ -457,7 +459,7 @@ PHP_FUNCTION(http_redirect)
 {
 	int url_len;
 	size_t query_len = 0;
-	zend_bool session = 0, permanent = 0;
+	zend_bool session = 0, permanent = 0, free_params = 0;
 	zval *params = NULL;
 	char *query = NULL, *url = NULL, *URI,
 		LOC[HTTP_URI_MAXLEN + sizeof("Location: ")],
@@ -468,19 +470,56 @@ PHP_FUNCTION(http_redirect)
 	}
 
 	/* append session info */
-	if (session && (PS(session_status) == php_session_active)) {
+	if (session) {
 		if (!params) {
+			free_params = 1;
 			MAKE_STD_ZVAL(params);
 			array_init(params);
 		}
-		if (add_assoc_string(params, PS(session_name), PS(id), 1) != SUCCESS) {
-			http_error(HE_WARNING, HTTP_E_RUNTIME, "Could not append session information");
+#ifdef HAVE_PHP_SESSION
+#	ifdef COMPILE_DL_SESSION
+		if (SUCCESS == zend_get_module_started("session")) {
+			zval nm_retval, id_retval, func;
+			
+			INIT_PZVAL(&func);
+			INIT_PZVAL(&nm_retval);
+			INIT_PZVAL(&id_retval);
+			ZVAL_NULL(&nm_retval);
+			ZVAL_NULL(&id_retval);
+			
+			ZVAL_STRINGL(&func, "session_id", lenof("session_id"), 0);
+			call_user_function(EG(function_table), NULL, &func, &id_retval, 0, NULL TSRMLS_CC);
+			ZVAL_STRINGL(&func, "session_name", lenof("session_name"), 0);
+			call_user_function(EG(function_table), NULL, &func, &nm_retval, 0, NULL TSRMLS_CC);
+			
+			if (	Z_TYPE(nm_retval) == IS_STRING && Z_STRLEN(nm_retval) &&
+					Z_TYPE(id_retval) == IS_STRING && Z_STRLEN(id_retval)) {
+				if (add_assoc_stringl_ex(params, Z_STRVAL(nm_retval), Z_STRLEN(nm_retval)+1, 
+						Z_STRVAL(id_retval), Z_STRLEN(id_retval), 0) != SUCCESS) {
+					http_error(HE_WARNING, HTTP_E_RUNTIME, "Could not append session information");
+				}
+			}
 		}
+#	else
+		if (PS(session_status) == php_session_active) {
+			if (add_assoc_string(params, PS(session_name), PS(id), 1) != SUCCESS) {
+				http_error(HE_WARNING, HTTP_E_RUNTIME, "Could not append session information");
+			}
+		}
+#	endif
+#endif
 	}
 
 	/* treat params array with http_build_query() */
 	if (params) {
 		if (SUCCESS != http_urlencode_hash_ex(Z_ARRVAL_P(params), 0, NULL, 0, &query, &query_len)) {
+			if (free_params) {
+				zval_dtor(params);
+				FREE_ZVAL(params);
+			}
+			if (query) {
+				efree(query);
+			}
 			RETURN_FALSE;
 		}
 	}
@@ -490,12 +529,19 @@ PHP_FUNCTION(http_redirect)
 	if (query_len) {
 		snprintf(LOC, HTTP_URI_MAXLEN + sizeof("Location: "), "Location: %s?%s", URI, query);
 		sprintf(RED, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);
-		efree(query);
 	} else {
 		snprintf(LOC, HTTP_URI_MAXLEN + sizeof("Location: "), "Location: %s", URI);
 		sprintf(RED, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
 	}
+	
 	efree(URI);
+	if (query) {
+		efree(query);
+	}
+	if (free_params) {
+		zval_dtor(params);
+		FREE_ZVAL(params);
+	}
 
 	if ((SUCCESS == http_send_header_string(LOC)) && (SUCCESS == http_send_status((permanent ? 301 : 302)))) {
 		if (SG(request_info).request_method && strcmp(SG(request_info).request_method, "HEAD")) {
