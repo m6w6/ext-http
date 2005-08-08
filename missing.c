@@ -43,6 +43,7 @@ static inline zval *tmp_zval(void)
 
 
 #if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION == 0)
+
 int zend_declare_property_double(zend_class_entry *ce, char *name, int name_length, double value, int access_type TSRMLS_DC)
 {
 	zval *property = new_zval(ce);
@@ -71,7 +72,7 @@ void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name
 	zend_update_property(scope, object, name, name_length, tmp TSRMLS_CC);
 }
 
-#endif
+#endif /* PHP_VERSION == 5.0 */
 
 #if (PHP_MAJOR_VERSION >= 5)
 
@@ -125,16 +126,12 @@ int zend_update_static_property(zend_class_entry *scope, char *name, size_t name
 	zend_class_entry *old_scope = EG(scope);
 	
 	EG(scope) = scope;
-	if (!(property = zend_std_get_static_property(scope, name, name_len, 0 TSRMLS_CC))) {
-		EG(scope) = old_scope;
-		return FAILURE;
-	}
-	EG(scope) = old_scope;
-	if (*property == value) {
-		return SUCCESS;
-	}
 	
-	if (scope->type & ZEND_INTERNAL_CLASS) {
+	if (!(property = zend_std_get_static_property(scope, name, name_len, 0 TSRMLS_CC))) {
+		retval = FAILURE;
+	} else if (*property == value) {
+		retval = SUCCESS;
+	} else if (scope->type & ZEND_INTERNAL_CLASS) {
 		int refcount;
 		zend_uchar is_ref;
 	
@@ -237,6 +234,8 @@ int zend_update_static_property(zend_class_entry *scope, char *name, size_t name
 		FREE_ZVAL(value);
 	}
 	
+	EG(scope) = old_scope;
+	
 	return retval;
 }
 
@@ -275,8 +274,8 @@ int zend_update_static_property_stringl(zend_class_entry *scope, char *name, siz
 	return zend_update_static_property(scope, name, name_len, tmp TSRMLS_CC);
 }
 
-#endif
-#endif
+#endif /* PHP_MAJOR_VERSION >= 5 */
+#endif /* ZEND_ENGINE_2 */
 
 /*
  * Local variables:
