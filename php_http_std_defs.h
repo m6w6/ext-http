@@ -212,82 +212,22 @@ typedef int STATUS;
 #else
 #	define USE_STATIC_PROP_EX(ce)
 #endif
-#	define SET_STATIC_PROP_EX(ce, n, v) \
+#	define SET_STATIC_PROP_EX(ce, n, v) zend_update_static_property(ce, #n, sizeof(#n), v TSRMLS_CC)
+#	define SET_STATIC_PROP_STRING_EX(ce, n, s, d) \
 	{ \
-		int refcount; \
-		zend_uchar is_ref; \
-		zval **__static = GET_STATIC_PROP_EX(ce, n); \
- \
-		refcount = (*__static)->refcount; \
-		is_ref = (*__static)->is_ref; \
-		switch (Z_TYPE_PP(__static)) \
-		{ \
-			case IS_BOOL: case IS_LONG: case IS_NULL: \
-			break; \
-			case IS_RESOURCE: \
-				zend_list_delete(Z_LVAL_PP(__static)); \
-			break; \
-			case IS_STRING: case IS_CONSTANT: \
-				free(Z_STRVAL_PP(__static)); \
-			break; \
-			case IS_OBJECT: \
-				Z_OBJ_HT_PP(__static)->del_ref(*__static TSRMLS_CC); \
-			break; \
-			case IS_ARRAY: case IS_CONSTANT_ARRAY: \
-				if (Z_ARRVAL_PP(__static) && Z_ARRVAL_PP(__static) != &EG(symbol_table)) { \
-					zend_hash_destroy(Z_ARRVAL_PP(__static)); \
-					free(Z_ARRVAL_PP(__static)); \
-				} \
-			break; \
+		char *c = (s); \
+		zend_update_static_property_string(ce, #n, sizeof(#n), (c) TSRMLS_CC); \
+		if (!d) { \
+			efree(c); \
 		} \
-		**__static = *(v); \
-		switch (Z_TYPE_PP(__static)) \
-		{ \
-			case IS_BOOL: case IS_LONG: case IS_NULL: \
-			break; \
-			case IS_RESOURCE: \
-				zend_list_addref(Z_LVAL_PP(__static)); \
-			break; \
-			case IS_STRING: case IS_CONSTANT: \
-				Z_STRVAL_PP(__static) = (char *) zend_strndup(Z_STRVAL_PP(__static), Z_STRLEN_PP(__static)); \
-			break; \
-			case IS_OBJECT: \
-			{ \
-				Z_OBJ_HT_PP(__static)->add_ref(*__static TSRMLS_CC); \
-			} \
-			break; \
-			case IS_ARRAY: case IS_CONSTANT_ARRAY: \
-			{ \
-				if (Z_ARRVAL_PP(__static) != &EG(symbol_table)) { \
-					zval *tmp; \
-					HashTable *old = Z_ARRVAL_PP(__static); \
-					Z_ARRVAL_PP(__static) = (HashTable *) malloc(sizeof(HashTable)); \
-					zend_hash_init(Z_ARRVAL_PP(__static), 0, NULL, ZVAL_PTR_DTOR, 0); \
-					zend_hash_copy(Z_ARRVAL_PP(__static), old, (copy_ctor_func_t) zval_add_ref, (void *) &tmp, sizeof(zval *)); \
-				} \
-			} \
-			break; \
-		} \
-		(*__static)->refcount = refcount; \
-		(*__static)->is_ref = is_ref; \
 	}
-#define SET_STATIC_PROP_STRING_EX(ce, n, s, d) \
+#	define SET_STATIC_PROP_STRINGL_EX(ce, n, s, l, d) \
 	{ \
-		zval *__tmp; \
-		MAKE_STD_ZVAL(__tmp); \
-		ZVAL_STRING(__tmp, (s), (d)); \
-		SET_STATIC_PROP_EX(ce, n, __tmp); \
-		zval_dtor(__tmp); \
-		efree(__tmp); \
-	}
-#define SET_STATIC_PROP_STRINGL_EX(ce, n, s, l, d) \
-	{ \
-		zval *__tmp; \
-		MAKE_STD_ZVAL(__tmp); \
-		ZVAL_STRINGL(__tmp, (s), (l), (d)); \
-		SET_STATIC_PROP_EX(ce, n, __tmp); \
-		zval_dtor(__tmp); \
-		efree(__tmp); \
+		char *c = (s); \
+		zend_update_static_property_stringl(ce, #n, sizeof(#n), (c), (l) TSRMLS_CC); \
+		if (!d) { \
+			efree(c); \
+		}\
 	}
 #	define DCL_PROP(a, t, n, v) zend_declare_property_ ##t(ce, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define DCL_PROP_Z(a, n, v) zend_declare_property(ce, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a) TSRMLS_CC)
