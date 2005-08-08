@@ -119,11 +119,11 @@ int zend_declare_class_constant_string(zend_class_entry *ce, char *name, size_t 
 int zend_declare_class_constant_stringl(zend_class_entry *ce, char *name, size_t name_length, char *value, size_t value_length TSRMLS_DC)
 {
 	zval *constant = new_class_constant_zval(ce);
-	Z_TYPE_P(constant) = IS_STRING;
-	Z_STRLEN_P(constant) = value_length;
-	Z_STRVAL_P(constant) = malloc(value_length + 1);
-	memcpy(Z_STRVAL_P(constant), value, value_length);
-	Z_STRVAL_P(constant)[value_length] = '\0';
+	if (ce->type & ZEND_INTERNAL_CLASS) {
+		ZVAL_STRINGL(constant, zend_strndup(value, value_length), value_length, 0);
+	} else {
+		ZVAL_STRINGL(constant, value, value_length, 1);
+	}
 	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
 }
 #endif

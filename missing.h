@@ -28,6 +28,7 @@ extern int zend_declare_property_bool(zend_class_entry *ce, char *name, int name
 extern void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name, int name_length, long value TSRMLS_DC);
 #endif
 
+#if (PHP_MAJOR_VERSION >= 5)
 int zend_declare_class_constant(zend_class_entry *ce, char *name, size_t name_length, zval *value TSRMLS_DC);
 int zend_declare_class_constant_null(zend_class_entry *ce, char *name, size_t name_length TSRMLS_DC);
 int zend_declare_class_constant_long(zend_class_entry *ce, char *name, size_t name_length, long value TSRMLS_DC);
@@ -35,6 +36,8 @@ int zend_declare_class_constant_bool(zend_class_entry *ce, char *name, size_t na
 int zend_declare_class_constant_double(zend_class_entry *ce, char *name, size_t name_length, double value TSRMLS_DC);
 int zend_declare_class_constant_string(zend_class_entry *ce, char *name, size_t name_length, char *value TSRMLS_DC);
 int zend_declare_class_constant_stringl(zend_class_entry *ce, char *name, size_t name_length, char *value, size_t value_length TSRMLS_DC);
+#endif
+
 #endif
 
 /*
