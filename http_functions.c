@@ -675,6 +675,104 @@ PHP_FUNCTION(http_split_response)
 }
 /* }}} */
 
+static void http_message_toobject_recursive(http_message *msg, zval *obj TSRMLS_DC)
+{
+	zval *headers;
+	
+	add_property_long(obj, "type", msg->type);
+	switch (msg->type)
+	{
+		case HTTP_MSG_RESPONSE:
+			add_property_double(obj, "httpVersion", msg->info.response.http_version);
+			add_property_long(obj, "responseCode", msg->info.response.code);
+		break;
+		
+		case HTTP_MSG_REQUEST:
+			add_property_double(obj, "httpVersion", msg->info.request.http_version);
+			add_property_string(obj, "requestMethod", msg->info.request.method, 1);
+			add_property_string(obj, "requestUri", msg->info.request.URI, 1);
+		break;
+	}
+	
+	MAKE_STD_ZVAL(headers);
+	array_init(headers);
+	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	add_property_zval(obj, "headers", headers);
+	zval_ptr_dtor(&headers);
+	
+	add_property_stringl(obj, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg), 1);
+	
+	if (msg->parent) {
+		zval *parent;
+		
+		MAKE_STD_ZVAL(parent);
+		object_init(parent);
+		add_property_zval(obj, "parentMessage", parent);
+		http_message_toobject_recursive(msg->parent, parent TSRMLS_CC);
+		zval_ptr_dtor(&parent);
+	} else {
+		add_property_null(obj, "parentMessage");
+	}
+	http_message_dtor(msg);
+	efree(msg);
+}
+
+/* {{{ proto object http_parse_message(string message)
+ *
+ * Parses (a) http_message(s) into a simple recursive object structure:
+ * 
+ * <pre>
+ * <?php
+ * print_r(http_parse_message(http_get(URL, array('redirect' => 3)));
+ * 
+ * stdClass object
+ * (
+ *     [type] => 2
+ *     [httpVersion] => 1.1
+ *     [responseCode] => 200
+ *     [headers] => Array 
+ *         (
+ *             [Content-Length] => 3
+ *             [Server] => Apache
+ *         )
+ *     [body]  => Hi!
+ *     [parentMessage] => stdClass object
+ *     (
+ *         [type] => 2
+ *         [httpVersion] => 1.1
+ *         [responseCode] => 302
+ *         [headers] => Array 
+ *             (
+ *                 [Content-Length] => 0
+ *                 [Location] => ...
+ *             )
+ *         [body]  => 
+ *         [parentMessage] => ...
+ *     )
+ * )
+ * ?>
+ * </pre>
+ */
+PHP_FUNCTION(http_parse_message)
+{
+	char *message;
+	int message_len;
+	http_message *msg = NULL;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &message, &message_len)) {
+		RETURN_NULL();
+	}
+	
+	
+	if (msg = http_message_parse(message, message_len)) {
+		object_init(return_value);
+		http_message_toobject_recursive(msg, return_value TSRMLS_CC);
+	} else {
+		RETURN_NULL();
+	}
+}
+/* }}} */
+
 /* {{{ proto array http_parse_headers(string header)
  *
  */

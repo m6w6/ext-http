@@ -225,7 +225,7 @@ int zend_update_static_property(zend_class_entry *scope, char *name, size_t name
 				SEPARATE_ZVAL(&value);
 			}
 			
-			retval = zend_hash_update(scope->static_members, name, name_len+1, &value, sizeof(zval *), NULL);
+			retval = zend_hash_update(scope->static_members, name, name_len, &value, sizeof(zval *), NULL);
 		}
 	}
 	
