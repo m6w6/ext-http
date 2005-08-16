@@ -18,16 +18,11 @@
 #include "php.h"
 #include "missing.h"
 
-#ifdef ZEND_ENGINE_2
+#if PHP_MAJOR_VERSION == 5
 
-static inline zval *new_zval(zend_class_entry *ce)
+static inline zval *new_zval(int persistent)
 {
-	zval *z;
-	if (ce->type & ZEND_INTERNAL_CLASS) {
-		z = malloc(sizeof(zval));
-	} else {
-		ALLOC_ZVAL(z);
-	}
+	zval *z = pemalloc(sizeof(zval), persistent);
 	INIT_PZVAL(z);
 	return z;
 }
@@ -41,12 +36,18 @@ static inline zval *tmp_zval(void)
 	return z;
 }
 
+static void dup_zval(zval **z)
+{
+	zval_add_ref(z);
+	SEPARATE_ZVAL(z);
+}
 
-#if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION == 0)
+
+#	if PHP_MINOR_VERSION == 0
 
 int zend_declare_property_double(zend_class_entry *ce, char *name, int name_length, double value, int access_type TSRMLS_DC)
 {
-	zval *property = new_zval(ce);
+	zval *property = new_zval(ce->type & ZEND_INTERNAL_CLASS);
 	ZVAL_DOUBLE(property, value);
 	return zend_declare_property(ce, name, name_length, property, access_type TSRMLS_CC);
 }
@@ -60,7 +61,7 @@ void zend_update_property_double(zend_class_entry *scope, zval *object, char *na
 
 int zend_declare_property_bool(zend_class_entry *ce, char *name, int name_length, long value, int access_type TSRMLS_DC)
 {
-	zval *property = new_zval(ce);
+	zval *property = new_zval(ce->type & ZEND_INTERNAL_CLASS);
 	ZVAL_BOOL(property, value);
 	return zend_declare_property(ce, name, name_length, property, access_type TSRMLS_CC);
 }
@@ -72,9 +73,7 @@ void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name
 	zend_update_property(scope, object, name, name_length, tmp TSRMLS_CC);
 }
 
-#endif /* PHP_VERSION == 5.0 */
-
-#if (PHP_MAJOR_VERSION >= 5)
+#	endif /* PHP_MINOR_VERSION == 0 */
 
 int zend_declare_class_constant(zend_class_entry *ce, char *name, size_t name_length, zval *value TSRMLS_DC)
 {
@@ -83,21 +82,21 @@ int zend_declare_class_constant(zend_class_entry *ce, char *name, size_t name_le
 
 int zend_declare_class_constant_long(zend_class_entry *ce, char *name, size_t name_length, long value TSRMLS_DC)
 {
-	zval *constant = new_zval(ce);
+	zval *constant = new_zval(ce->type & ZEND_INTERNAL_CLASS);
 	ZVAL_LONG(constant, value);
 	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
 }
 
 int zend_declare_class_constant_bool(zend_class_entry *ce, char *name, size_t name_length, zend_bool value TSRMLS_DC)
 {
-	zval *constant = new_zval(ce);
+	zval *constant = new_zval(ce->type & ZEND_INTERNAL_CLASS);
 	ZVAL_BOOL(constant, value);
 	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
 }
 
 int zend_declare_class_constant_double(zend_class_entry *ce, char *name, size_t name_length, double value TSRMLS_DC)
 {
-	zval *constant = new_zval(ce);
+	zval *constant = new_zval(ce->type & ZEND_INTERNAL_CLASS);
 	ZVAL_DOUBLE(constant, value);
 	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
 }
@@ -109,7 +108,7 @@ int zend_declare_class_constant_string(zend_class_entry *ce, char *name, size_t 
 
 int zend_declare_class_constant_stringl(zend_class_entry *ce, char *name, size_t name_length, char *value, size_t value_length TSRMLS_DC)
 {
-	zval *constant = new_zval(ce);
+	zval *constant = new_zval(ce->type & ZEND_INTERNAL_CLASS);
 	if (ce->type & ZEND_INTERNAL_CLASS) {
 		ZVAL_STRINGL(constant, zend_strndup(value, value_length), value_length, 0);
 	} else {
@@ -118,8 +117,45 @@ int zend_declare_class_constant_stringl(zend_class_entry *ce, char *name, size_t
 	return zend_declare_class_constant(ce, name, name_length, constant TSRMLS_CC);
 }
 
-
 int zend_update_static_property(zend_class_entry *scope, char *name, size_t name_len, zval *value TSRMLS_DC)
+{
+	int retval;
+	zval **property = NULL;
+	zend_class_entry *old_scope = EG(scope);
+	
+	EG(scope) = scope;
+	
+	if (!(property = zend_std_get_static_property(scope, name, name_len, 0 TSRMLS_CC))) {
+		retval = FAILURE;
+	} else if (*property == value) {
+		retval = SUCCESS;
+	} else {
+		if (PZVAL_IS_REF(*property)) {
+			zval_dtor(*property);
+			(*property)->type = value->type;
+			(*property)->value = value->value;
+			
+			if (value->refcount) {
+				zval_copy_ctor(*property);
+			}
+		} else {
+			**property = *value;
+			zval_copy_ctor(*property);
+		}
+		retval = SUCCESS;
+	}
+	
+	if (!value->refcount) {
+		zval_dtor(value);
+		FREE_ZVAL(value);
+	}
+	
+	EG(scope) = old_scope;
+	
+	return retval;
+}
+
+int trash(zend_class_entry *scope, char *name, size_t name_len, zval *value TSRMLS_DC)
 {
 	int retval;
 	zval **property = NULL;
@@ -274,8 +310,24 @@ int zend_update_static_property_stringl(zend_class_entry *scope, char *name, siz
 	return zend_update_static_property(scope, name, name_len, tmp TSRMLS_CC);
 }
 
-#endif /* PHP_MAJOR_VERSION >= 5 */
-#endif /* ZEND_ENGINE_2 */
+void zend_fix_static_properties(zend_class_entry *ce, HashTable *static_members TSRMLS_DC)
+{
+	zend_hash_copy(static_members, ce->static_members, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	zend_hash_destroy(ce->static_members);
+	zend_hash_init_ex(ce->static_members, 0, NULL, ZVAL_PTR_DTOR, 1, 0);
+}
+
+void zend_init_static_properties(zend_class_entry *ce, HashTable *static_members TSRMLS_DC)
+{
+	zend_hash_copy(ce->static_members, static_members, (copy_ctor_func_t) dup_zval, NULL, sizeof(zval *));
+}
+
+void zend_clean_static_properties(zend_class_entry *ce TSRMLS_DC)
+{
+	zend_hash_clean(ce->static_members);
+}
+
+#endif /* PHP_MAJOR_VERSION == 5 */
 
 /*
  * Local variables:

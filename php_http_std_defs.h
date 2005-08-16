@@ -362,7 +362,7 @@ typedef int STATUS;
 
 #ifndef TSRMLS_SET_CTX
 #	ifdef ZTS
-#		define TSRMLS_SET_CTX(ctx)	(void ***) ctx = tsrm_ls
+#		define TSRMLS_SET_CTX(ctx)	ctx = (void ***) tsrm_ls
 #	else
 #		define TSRMLS_SET_CTX(ctx)
 #	endif

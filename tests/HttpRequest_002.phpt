@@ -11,7 +11,7 @@ checkurl('www.google.com');
 <?php
 echo "-TEST\n";
 $r = new HttpRequest('http://www.google.com', HTTP_GET);
-var_dump($r->send());
+$r->send();
 print_r($r->getResponseInfo());
 $r->setMethod(HTTP_POST);
 $r->addPostFields(array('q'=>'foobar','start'=>10));
@@ -22,7 +22,6 @@ var_dump(false != strstr($r->getResponseBody(), "Not Implemented"));
 ?>
 --EXPECTF--
 %sTEST
-bool(true)
 Array
 (
     [effective_url] => http://www.google.com/

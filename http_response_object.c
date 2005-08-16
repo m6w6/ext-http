@@ -140,6 +140,8 @@ HTTP_EMPTY_ARGS(getRequestBody, 0);
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
+HashTable http_response_statics;
+
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
 
