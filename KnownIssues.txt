@@ -2,7 +2,5 @@ Known Issues
 ============
 $Id$
 
-Issues I don't know how to solve yet are as follows:
-
-- Reflection on static class members does not work
-
+HttpResponse class is infunctional with current ZendEngine2,
+a fix is pending.
