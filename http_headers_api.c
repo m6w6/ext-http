@@ -124,7 +124,10 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 		switch (c = *(range++))
 		{
 			case '0':
-				*ptr *= 10;
+				/* allow 000... - shall we? */
+				if (*ptr != -10) {
+					*ptr *= 10;
+				}
 			break;
 
 			case '1': case '2': case '3':
