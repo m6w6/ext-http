@@ -562,7 +562,7 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 	zval *opts, **options, *new_options = NULL;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/!", &new_options)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a/!", &new_options)) {
 		RETURN_FALSE;
 	}
 
@@ -670,7 +670,7 @@ PHP_METHOD(HttpRequest, setOptions)
 	zval *opts = NULL, *old_opts, **opt;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/!", &opts)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a/!", &opts)) {
 		RETURN_FALSE;
 	}
 	
