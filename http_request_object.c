@@ -55,25 +55,29 @@ HTTP_BEGIN_ARGS(__construct, 0, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getOptions, 0);
-HTTP_EMPTY_ARGS(unsetOptions, 0);
-HTTP_BEGIN_ARGS(setOptions, 0, 1)
+HTTP_BEGIN_ARGS(setOptions, 0, 0)
 	HTTP_ARG_VAL(options, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getSslOptions, 0);
-HTTP_EMPTY_ARGS(unsetSslOptions, 0);
-HTTP_BEGIN_ARGS(setSslOptions, 0, 1)
+HTTP_BEGIN_ARGS(setSslOptions, 0, 0)
 	HTTP_ARG_VAL(ssl_options, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getHeaders, 0);
-HTTP_EMPTY_ARGS(unsetHeaders, 0);
+HTTP_BEGIN_ARGS(setHeaders, 0, 0)
+	HTTP_ARG_VAL(headers, 0)
+HTTP_END_ARGS;
+
 HTTP_BEGIN_ARGS(addHeaders, 0, 1)
 	HTTP_ARG_VAL(headers, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getCookies, 0);
-HTTP_EMPTY_ARGS(unsetCookies, 0);
+HTTP_BEGIN_ARGS(setCookies, 0, 0)
+	HTTP_ARG_VAL(cookies, 0)
+HTTP_END_ARGS;
+
 HTTP_BEGIN_ARGS(addCookies, 0, 1)
 	HTTP_ARG_VAL(cookies, 0)
 HTTP_END_ARGS;
@@ -94,8 +98,7 @@ HTTP_BEGIN_ARGS(setContentType, 0, 1)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getQueryData, 0);
-HTTP_EMPTY_ARGS(unsetQueryData, 0);
-HTTP_BEGIN_ARGS(setQueryData, 0, 1)
+HTTP_BEGIN_ARGS(setQueryData, 0, 0)
 	HTTP_ARG_VAL(query_data, 0)
 HTTP_END_ARGS;
 
@@ -104,8 +107,7 @@ HTTP_BEGIN_ARGS(addQueryData, 0, 1)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getPostFields, 0);
-HTTP_EMPTY_ARGS(unsetPostFields, 0);
-HTTP_BEGIN_ARGS(setPostFields, 0, 1)
+HTTP_BEGIN_ARGS(setPostFields, 0, 0)
 	HTTP_ARG_VAL(post_fields, 0)
 HTTP_END_ARGS;
 
@@ -114,8 +116,7 @@ HTTP_BEGIN_ARGS(addPostFields, 0, 1)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getPostFiles, 0);
-HTTP_EMPTY_ARGS(unsetPostFiles, 0);
-HTTP_BEGIN_ARGS(setPostFiles, 0, 1)
+HTTP_BEGIN_ARGS(setPostFiles, 0, 0)
 	HTTP_ARG_VAL(post_files, 0)
 HTTP_END_ARGS;
 
@@ -126,8 +127,7 @@ HTTP_BEGIN_ARGS(addPostFile, 0, 2)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getPutFile, 0);
-HTTP_EMPTY_ARGS(unsetPutFile, 0);
-HTTP_BEGIN_ARGS(setPutFile, 0, 1)
+HTTP_BEGIN_ARGS(setPutFile, 0, 0)
 	HTTP_ARG_VAL(filename, 0)
 HTTP_END_ARGS;
 
@@ -149,7 +149,7 @@ HTTP_END_ARGS;
 HTTP_EMPTY_ARGS(getResponseMessage, 1);
 HTTP_EMPTY_ARGS(getRequestMessage, 1);
 HTTP_EMPTY_ARGS(getHistory, 1);
-HTTP_EMPTY_ARGS(send, 0);
+HTTP_EMPTY_ARGS(send, 1);
 
 HTTP_BEGIN_ARGS(get, 0, 1)
 	HTTP_ARG_VAL(url, 0)
@@ -217,17 +217,16 @@ zend_function_entry http_request_object_fe[] = {
 
 	HTTP_REQUEST_ME(setOptions, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getOptions, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(unsetOptions, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(setSslOptions, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getSslOptions, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(unsetSslOptions, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(addHeaders, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getHeaders, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(unsetHeaders, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setHeaders, ZEND_ACC_PUBLIC)
+	
 	HTTP_REQUEST_ME(addCookies, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getCookies, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(unsetCookies, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setCookies, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(setMethod, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getMethod, ZEND_ACC_PUBLIC)
@@ -241,21 +240,17 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(setQueryData, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getQueryData, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(addQueryData, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(unsetQueryData, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(setPostFields, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getPostFields, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(addPostFields, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(unsetPostFields, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(setPostFiles, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(addPostFile, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getPostFiles, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(unsetPostFiles, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(setPutFile, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getPutFile, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(unsetPutFile, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(send, ZEND_ACC_PUBLIC)
 
@@ -560,6 +555,59 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	return FAILURE;
 }
 
+#define http_request_object_set_options_subr(key, ow) \
+	_http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM_PASSTHRU, (key), sizeof(key), (ow))
+static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAMETERS, char *key, size_t len, int overwrite)
+{
+	zval *opts, **options, *new_options = NULL;
+	getObject(http_request_object, obj);
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/!", &new_options)) {
+		RETURN_FALSE;
+	}
+
+	opts = GET_PROP(obj, options);
+
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), key, len, (void **) &options)) {
+		if (overwrite) {
+			zend_hash_clean(Z_ARRVAL_PP(options));
+		}
+		if (new_options && zend_hash_num_elements(Z_ARRVAL_P(new_options))) {
+			if (overwrite) {
+				array_copy(new_options, *options);
+			} else {
+				array_merge(new_options, *options);
+			}
+		}
+	} else if (new_options && zend_hash_num_elements(Z_ARRVAL_P(new_options))) {
+		zval_add_ref(&new_options);
+		add_assoc_zval(opts, key, new_options);
+	}
+
+	RETURN_TRUE;
+}
+
+#define http_request_object_get_options_subr(key) \
+	_http_request_get_options_subr(INTERNAL_FUNCTION_PARAM_PASSTHRU, (key), sizeof(key))
+static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, char *key, size_t len)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		zval *opts, **options;
+		getObject(http_request_object, obj);
+
+		opts = GET_PROP(obj, options);
+
+		array_init(return_value);
+
+		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), key, len, (void **) &options)) {
+			array_copy(*options, return_value);
+		}
+	}
+}
+
+
 /* ### USERLAND ### */
 
 /* {{{ proto void HttpRequest::__construct([string url[, long request_method = HTTP_GET]])
@@ -611,7 +659,7 @@ PHP_METHOD(HttpRequest, __destruct)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::setOptions(array options)
+/* {{{ proto bool HttpRequest::setOptions([array options])
  *
  * Set the request options to use.  See http_get() for a full list of available options.
  */
@@ -619,14 +667,19 @@ PHP_METHOD(HttpRequest, setOptions)
 {
 	char *key = NULL;
 	ulong idx = 0;
-	zval *opts, *old_opts, **opt;
+	zval *opts = NULL, *old_opts, **opt;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &opts)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/!", &opts)) {
 		RETURN_FALSE;
 	}
-
+	
 	old_opts = GET_PROP(obj, options);
+
+	if (!opts || !zend_hash_num_elements(Z_ARRVAL_P(opts))) {
+		zend_hash_clean(Z_ARRVAL_P(old_opts));
+		RETURN_TRUE;
+	}
 
 	/* some options need extra attention -- thus cannot use array_merge() directly */
 	FOREACH_KEYVAL(opts, key, idx, opt) {
@@ -677,7 +730,7 @@ PHP_METHOD(HttpRequest, setOptions)
 
 /* {{{ proto array HttpRequest::getOptions()
  *
- * Get current set options.
+ * Get currently set options.
  */
 PHP_METHOD(HttpRequest, getOptions)
 {
@@ -694,44 +747,23 @@ PHP_METHOD(HttpRequest, getOptions)
 }
 /* }}} */
 
-/* {{{ proto void HttpRequest::unsetOptions()
+/* {{{ proto bool HttpRequest::setSslOptions([array options])
  *
- * Unset all options/headers/cookies.
- */
-PHP_METHOD(HttpRequest, unsetOptions)
-{
-	getObject(http_request_object, obj);
-
-	NO_ARGS;
-
-	FREE_PARR(obj, options);
-	INIT_PARR(obj, options);
-}
-/* }}} */
-
-/* {{{ proto bool HttpRequest::setSslOptions(array options)
- *
- * Set additional SSL options.
+ * Set SSL options.
  */
 PHP_METHOD(HttpRequest, setSslOptions)
 {
-	zval *opts, *old_opts, **ssl_options;
-	getObject(http_request_object, obj);
+	http_request_object_set_options_subr("ssl", 1);
+}
+/* }}} */
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &opts)) {
-		RETURN_FALSE;
-	}
-
-	old_opts = GET_PROP(obj, options);
-
-	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(old_opts), "ssl", sizeof("ssl"), (void **) &ssl_options)) {
-		array_merge(opts, *ssl_options);
-	} else {
-		zval_add_ref(&opts);
-		add_assoc_zval(old_opts, "ssl", opts);
-	}
-
-	RETURN_TRUE;
+/* {{{ proto bool HttpRequest::addSslOptions(array options)
+ *
+ * Set additional SSL options.
+ */
+PHP_METHOD(HttpRequest, addSslOptions)
+{
+	http_request_object_set_options_subr("ssl", 0);
 }
 /* }}} */
 
@@ -741,36 +773,7 @@ PHP_METHOD(HttpRequest, setSslOptions)
  */
 PHP_METHOD(HttpRequest, getSslOptions)
 {
-	NO_ARGS;
-
-	IF_RETVAL_USED {
-		zval *opts, **ssl_options;
-		getObject(http_request_object, obj);
-
-		opts = GET_PROP(obj, options);
-
-		array_init(return_value);
-
-		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "ssl", sizeof("ssl"), (void **) &ssl_options)) {
-			array_copy(*ssl_options, return_value);
-		}
-	}
-}
-/* }}} */
-
-/* {{{ proto void HttpRequest::unsetSslOptions()
- *
- * Unset previously set SSL options.
- */
-PHP_METHOD(HttpRequest, unsetSslOptions)
-{
-	zval *opts;
-	getObject(http_request_object, obj);
-
-	NO_ARGS;
-
-	opts = GET_PROP(obj, options);
-	zend_hash_del(Z_ARRVAL_P(opts), "ssl", sizeof("ssl"));
+	http_request_object_get_options_subr("ssl");
 }
 /* }}} */
 
@@ -780,23 +783,16 @@ PHP_METHOD(HttpRequest, unsetSslOptions)
  */
 PHP_METHOD(HttpRequest, addHeaders)
 {
-	zval *opts, **headers, *new_headers;
-	getObject(http_request_object, obj);
+	http_request_object_set_options_subr("headers", 0);
+}
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &new_headers)) {
-		RETURN_FALSE;
-	}
-
-	opts = GET_PROP(obj, options);
-
-	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) {
-		array_merge(new_headers, *headers);
-	} else {
-		zval_add_ref(&new_headers);
-		add_assoc_zval(opts, "headers", new_headers);
-	}
-
-	RETURN_TRUE;
+/* {{{ proto bool HttpRequest::setHeaders([array headers])
+ *
+ * Set request header name/value pairs.
+ */
+PHP_METHOD(HttpRequest, setHeaders)
+{
+	http_request_object_set_options_subr("headers", 1);
 }
 /* }}} */
 
@@ -806,36 +802,17 @@ PHP_METHOD(HttpRequest, addHeaders)
  */
 PHP_METHOD(HttpRequest, getHeaders)
 {
-	NO_ARGS;
-
-	IF_RETVAL_USED {
-		zval *opts, **headers;
-		getObject(http_request_object, obj);
-
-		opts = GET_PROP(obj, options);
-
-		array_init(return_value);
-
-		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) {
-			array_copy(*headers, return_value);
-		}
-	}
+	http_request_object_get_options_subr("headers");
 }
 /* }}} */
 
-/* {{{ proto void HttpRequest::unsetHeaders()
+/* {{{ proto bool HttpRequest::setCookies([array cookies])
  *
- * Unset previously set request headers.
+ * Set cookies.
  */
-PHP_METHOD(HttpRequest, unsetHeaders)
+PHP_METHOD(HttpRequest, setCookies)
 {
-	zval *opts;
-	getObject(http_request_object, obj);
-
-	NO_ARGS;
-
-	opts = GET_PROP(obj, options);
-	zend_hash_del(Z_ARRVAL_P(opts), "headers", sizeof("headers"));
+	http_request_object_set_options_subr("cookies", 1);
 }
 /* }}} */
 
@@ -845,23 +822,7 @@ PHP_METHOD(HttpRequest, unsetHeaders)
  */
 PHP_METHOD(HttpRequest, addCookies)
 {
-	zval *opts, **cookies, *new_cookies;
-	getObject(http_request_object, obj);
-
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &new_cookies)) {
-		RETURN_FALSE;
-	}
-
-	opts = GET_PROP(obj, options);
-
-	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "cookies", sizeof("cookies"), (void **) &cookies)) {
-		array_merge(new_cookies, *cookies);
-	} else {
-		zval_add_ref(&new_cookies);
-		add_assoc_zval(opts, "cookies", new_cookies);
-	}
-
-	RETURN_TRUE;
+	http_request_object_set_options_subr("cookies", 0);
 }
 /* }}} */
 
@@ -871,35 +832,7 @@ PHP_METHOD(HttpRequest, addCookies)
  */
 PHP_METHOD(HttpRequest, getCookies)
 {
-	NO_ARGS;
-
-	IF_RETVAL_USED {
-		zval *opts, **cookies;
-		getObject(http_request_object, obj);
-
-		opts = GET_PROP(obj, options);
-
-		array_init(return_value);
-
-		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "cookies", sizeof("cookies"), (void **) &cookies)) {
-			array_copy(*cookies, return_value);
-		}
-	}
-}
-/* }}} */
-
-/* {{{ proto void HttpRequest::unsetCookies()
- *
- */
-PHP_METHOD(HttpRequest, unsetCookies)
-{
-	zval *opts;
-	getObject(http_request_object, obj);
-
-	NO_ARGS;
-
-	opts = GET_PROP(obj, options);
-	zend_hash_del(Z_ARRVAL_P(opts), "cookies", sizeof("cookies"));
+	http_request_object_get_options_subr("cookies");
 }
 /* }}} */
 
@@ -1020,7 +953,7 @@ PHP_METHOD(HttpRequest, getContentType)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::setQueryData(mixed query_data)
+/* {{{ proto bool HttpRequest::setQueryData([mixed query_data])
  *
  * Set the URL query parameters to use.
  * Overwrites previously set query parameters.
@@ -1028,25 +961,28 @@ PHP_METHOD(HttpRequest, getContentType)
  */
 PHP_METHOD(HttpRequest, setQueryData)
 {
-	zval *qdata;
-	char *query_data = NULL;
+	zval *qdata = NULL;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &qdata)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!", &qdata)) {
 		RETURN_FALSE;
 	}
 
-	if ((Z_TYPE_P(qdata) == IS_ARRAY) || (Z_TYPE_P(qdata) == IS_OBJECT)) {
+	if ((!qdata) || Z_TYPE_P(qdata) == IS_NULL) {
+		UPD_PROP(obj, string, queryData, "");
+	} else if ((Z_TYPE_P(qdata) == IS_ARRAY) || (Z_TYPE_P(qdata) == IS_OBJECT)) {
+		char *query_data = NULL;
+		
 		if (SUCCESS != http_urlencode_hash(HASH_OF(qdata), &query_data)) {
 			RETURN_FALSE;
 		}
+		
 		UPD_PROP(obj, string, queryData, query_data);
 		efree(query_data);
-		RETURN_TRUE;
+	} else {
+		convert_to_string(qdata);
+		UPD_PROP(obj, string, queryData, Z_STRVAL_P(qdata));
 	}
-
-	convert_to_string(qdata);
-	UPD_PROP(obj, string, queryData, Z_STRVAL_P(qdata));
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1097,21 +1033,6 @@ PHP_METHOD(HttpRequest, addQueryData)
 }
 /* }}} */
 
-/* {{{ proto void HttpRequest::unsetQueryData()
- *
- * Clean the query parameters.
- * Affects any request type.
- */
-PHP_METHOD(HttpRequest, unsetQueryData)
-{
-	getObject(http_request_object, obj);
-
-	NO_ARGS;
-
-	UPD_PROP(obj, string, queryData, "");
-}
-/* }}} */
-
 /* {{{ proto bool HttpRequest::addPostFields(array post_data)
  *
  * Adds POST data entries.
@@ -1133,7 +1054,7 @@ PHP_METHOD(HttpRequest, addPostFields)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::setPostFields(array post_data)
+/* {{{ proto bool HttpRequest::setPostFields([array post_data])
  *
  * Set the POST data entries.
  * Overwrites previously set POST data.
@@ -1141,16 +1062,19 @@ PHP_METHOD(HttpRequest, addPostFields)
  */
 PHP_METHOD(HttpRequest, setPostFields)
 {
-	zval *post, *post_data;
+	zval *post, *post_data = NULL;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &post_data)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!", &post_data)) {
 		RETURN_FALSE;
 	}
 
 	post = GET_PROP(obj, postFields);
 	zend_hash_clean(Z_ARRVAL_P(post));
-	array_copy(post_data, post);
+	
+	if (post_data && zend_hash_num_elements(Z_ARRVAL_P(post_data))) {
+		array_copy(post_data, post);
+	}
 
 	RETURN_TRUE;
 }
@@ -1172,23 +1096,6 @@ PHP_METHOD(HttpRequest, getPostFields)
 		array_init(return_value);
 		array_copy(post_data, return_value);
 	}
-}
-/* }}} */
-
-/* {{{ proto void HttpRequest::unsetPostFields()
- *
- * Clean POST data entires.
- * Affects only POST requests.
- */
-PHP_METHOD(HttpRequest, unsetPostFields)
-{
-	zval *post_data;
-	getObject(http_request_object, obj);
-
-	NO_ARGS;
-
-	post_data = GET_PROP(obj, postFields);
-	zend_hash_clean(Z_ARRVAL_P(post_data));
 }
 /* }}} */
 
@@ -1232,7 +1139,7 @@ PHP_METHOD(HttpRequest, addPostFile)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::setPostFiles(array post_files)
+/* {{{ proto bool HttpRequest::setPostFiles([array post_files])
  *
  * Set files to post.
  * Overwrites previously set post files.
@@ -1249,7 +1156,10 @@ PHP_METHOD(HttpRequest, setPostFiles)
 
 	pFiles = GET_PROP(obj, postFiles);
 	zend_hash_clean(Z_ARRVAL_P(pFiles));
-	array_copy(files, pFiles);
+	
+	if (files && zend_hash_num_elements(Z_ARRVAL_P(files))) {
+		array_copy(files, pFiles);
+	}
 
 	RETURN_TRUE;
 }
@@ -1275,35 +1185,18 @@ PHP_METHOD(HttpRequest, getPostFiles)
 }
 /* }}} */
 
-/* {{{ proto void HttpRequest::unsetPostFiles()
- *
- * Unset the POST files list.
- * Affects only POST requests.
- */
-PHP_METHOD(HttpRequest, unsetPostFiles)
-{
-	zval *files;
-	getObject(http_request_object, obj);
-
-	NO_ARGS;
-
-	files = GET_PROP(obj, postFiles);
-	zend_hash_clean(Z_ARRVAL_P(files));
-}
-/* }}} */
-
-/* {{{ proto bool HttpRequest::SetPutFile(string file)
+/* {{{ proto bool HttpRequest::setPutFile([string file])
  *
  * Set file to put.
  * Affects only PUT requests.
  */
 PHP_METHOD(HttpRequest, setPutFile)
 {
-	char *file;
-	int file_len;
+	char *file = "";
+	int file_len = 0;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &file, &file_len)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &file, &file_len)) {
 		RETURN_FALSE;
 	}
 
@@ -1327,21 +1220,6 @@ PHP_METHOD(HttpRequest, getPutFile)
 		putfile = GET_PROP(obj, putFile);
 		RETVAL_STRINGL(Z_STRVAL_P(putfile), Z_STRLEN_P(putfile), 1);
 	}
-}
-/* }}} */
-
-/* {{{ proto void HttpRequest::unsetPutFile()
- *
- * Unset file to put.
- * Affects only PUT requests.
- */
-PHP_METHOD(HttpRequest, unsetPutFile)
-{
-	getObject(http_request_object, obj);
-
-	NO_ARGS;
-
-	UPD_PROP(obj, string, putFile, "");
 }
 /* }}} */
 
@@ -1621,7 +1499,7 @@ PHP_METHOD(HttpRequest, getHistory)
 	}
 }
 
-/* {{{ proto bool HttpRequest::send()
+/* {{{ proto HttpMessage HttpRequest::send()
  *
  * Send the HTTP request.
  *
@@ -1647,10 +1525,12 @@ PHP_METHOD(HttpRequest, getHistory)
  * <?php
  * $r = new HttpRequest('http://example.com/form.php', HTTP_POST);
  * $r->setOptions(array('cookies' => array('lang' => 'de')));
- * $r->addpostFields(array('user' => 'mike', 'pass' => 's3c|r3t'));
+ * $r->addPostFields(array('user' => 'mike', 'pass' => 's3c|r3t'));
  * $r->addPostFile('image', 'profile.jpg', 'image/jpeg');
- * if ($r->send()) {
- *     echo $r->getResponseBody();
+ * try {
+ *     echo $r->send()->getBody();
+ * } catch (HttpException $ex) {
+ *     echo $ex;
  * }
  * ?>
  * </pre>
@@ -1681,8 +1561,8 @@ PHP_METHOD(HttpRequest, send)
 		status = http_request_object_responsehandler(obj, getThis());
 	}
 
+	RETVAL_OBJECT(GET_PROP(obj, responseMessage));
 	SET_EH_NORMAL();
-	RETURN_SUCCESS(status);
 }
 /* }}} */
 
