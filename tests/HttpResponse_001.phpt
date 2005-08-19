@@ -20,5 +20,6 @@ Cache-Control: public, must-revalidate, max_age=3600
 Last-Modified: %s, %d %s 20%d %d:%d:%d GMT
 Content-Type: %s
 Accept-Ranges: bytes
+Content-Length: 6
 
 foobar

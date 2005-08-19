@@ -14,5 +14,6 @@ http_send_data('00000000000000000000');
 Content-type: text/html
 X-Powered-By: PHP/%s
 Accept-Ranges: bytes
+Content-Length: 20
 
 00000000000000000000

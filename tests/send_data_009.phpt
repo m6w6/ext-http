@@ -16,5 +16,6 @@ X-Powered-By: PHP/%s
 Cache-Control: private, must-revalidate, max-age=0
 Last-Modified: %s, %d %s %d %d:%d:%d GMT
 Accept-Ranges: bytes
+Content-Length: 4
 
 abc
