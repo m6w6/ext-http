@@ -62,7 +62,7 @@ HTTP_BEGIN_ARGS(setETag, 1)
 	HTTP_ARG_VAL(etag, 0)
 HTTP_END_ARGS;
 
-HTTP_EMTPY_ARGS(getLastModified, 0);
+HTTP_EMPTY_ARGS(getLastModified, 0);
 HTTP_BEGIN_ARGS(setLastModified, 1)
 	HTTP_ARG_VAL(timestamp, 0)
 HTTP_END_ARGS;
