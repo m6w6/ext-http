@@ -31,6 +31,8 @@ PHP_METHOD(HttpResponse, setHeader);
 PHP_METHOD(HttpResponse, getHeader);
 PHP_METHOD(HttpResponse, setETag);
 PHP_METHOD(HttpResponse, getETag);
+PHP_METHOD(HttpResponse, setLastModified);
+PHP_METHOD(HttpResponse, getLastModified);
 PHP_METHOD(HttpResponse, setContentDisposition);
 PHP_METHOD(HttpResponse, getContentDisposition);
 PHP_METHOD(HttpResponse, setContentType);
@@ -54,8 +56,7 @@ PHP_METHOD(HttpResponse, getStream);
 PHP_METHOD(HttpResponse, send);
 PHP_METHOD(HttpResponse, capture);
 PHP_METHOD(HttpResponse, redirect);
-PHP_METHOD(HttpResponse, sendStatus);
-PHP_METHOD(HttpResponse, sendHeader);
+PHP_METHOD(HttpResponse, status);
 PHP_METHOD(HttpResponse, getRequestHeaders);
 PHP_METHOD(HttpResponse, getRequestBody);
 

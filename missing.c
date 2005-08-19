@@ -130,6 +130,7 @@ int zend_update_static_property(zend_class_entry *scope, char *name, size_t name
 	} else if (*property == value) {
 		retval = SUCCESS;
 	} else {
+		value->refcount++;
 		if (PZVAL_IS_REF(*property)) {
 			zval_dtor(*property);
 			(*property)->type = value->type;
@@ -143,11 +144,6 @@ int zend_update_static_property(zend_class_entry *scope, char *name, size_t name
 			zval_copy_ctor(*property);
 		}
 		retval = SUCCESS;
-	}
-	
-	if (!value->refcount) {
-		zval_dtor(value);
-		FREE_ZVAL(value);
 	}
 	
 	EG(scope) = old_scope;

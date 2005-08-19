@@ -25,7 +25,6 @@
 
 #include "SAPI.h"
 #include "php_ini.h"
-#include "ext/standard/head.h"
 
 #include "php_http.h"
 #include "php_http_api.h"
@@ -39,11 +38,9 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-#define USE_STATIC_PROP()		USE_STATIC_PROP_EX(http_response_object_ce)
-#define GET_STATIC_PROP(n)		*GET_STATIC_PROP_EX(http_response_object_ce, n)
-#define SET_STATIC_PROP(n, v)	SET_STATIC_PROP_EX(http_response_object_ce, n, v)
-#define SET_STATIC_PROP_STRING(n, s, d) SET_STATIC_PROP_STRING_EX(http_response_object_ce, n, s, d)
-#define SET_STATIC_PROP_STRINGL(n, s, l, d) SET_STATIC_PROP_STRINGL_EX(http_response_object_ce, n, s, l, d)
+#define GET_STATIC_PROP(n)			*GET_STATIC_PROP_EX(http_response_object_ce, n)
+#define UPD_STATIC_PROP(t, n, v)	UPD_STATIC_PROP_EX(http_response_object_ce, t, n, v)
+#define SET_STATIC_PROP(n, v)		SET_STATIC_PROP_EX(http_response_object_ce, n, v)
 
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpResponse, method, 0, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpResponse, method, ret_ref)
@@ -63,6 +60,11 @@ HTTP_END_ARGS;
 HTTP_EMPTY_ARGS(getETag, 0);
 HTTP_BEGIN_ARGS(setETag, 1)
 	HTTP_ARG_VAL(etag, 0)
+HTTP_END_ARGS;
+
+HTTP_EMTPY_ARGS(getLastModified, 0);
+HTTP_BEGIN_ARGS(setLastModified, 1)
+	HTTP_ARG_VAL(timestamp, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getCache, 0);
@@ -150,6 +152,9 @@ zend_function_entry http_response_object_fe[] = {
 
 	HTTP_RESPONSE_ME(setETag, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(getETag, ZEND_ACC_PUBLIC)
+	
+	HTTP_RESPONSE_ME(setLastModified, ZEND_ACC_PUBLIC)
+	HTTP_RESPONSE_ME(getLastModified, ZEND_ACC_PUBLIC)
 
 	HTTP_RESPONSE_ME(setContentDisposition, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(getContentDisposition, ZEND_ACC_PUBLIC)
@@ -239,7 +244,6 @@ PHP_METHOD(HttpResponse, setHeader)
 		RETURN_FALSE;
 	}
 
-	USE_STATIC_PROP();
 	headers = GET_STATIC_PROP(headers);
 
 	if (Z_TYPE_P(headers) != IS_ARRAY) {
@@ -256,7 +260,7 @@ PHP_METHOD(HttpResponse, setHeader)
 	}
 
 	/* convert old header to an array and add new one if header exists and replace == false */
-	if (replace || SUCCESS != zend_hash_find(Z_ARRVAL_P(headers), name, name_len + 1, (void **) &header)) {
+	if (replace || (SUCCESS != zend_hash_find(Z_ARRVAL_P(headers), name, name_len + 1, (void **) &header))) {
 		RETURN_SUCCESS(add_assoc_stringl_ex(headers, name, name_len + 1, Z_STRVAL_P(value), Z_STRLEN_P(value), 1));
 	} else {
 		convert_to_array(*header);
@@ -311,8 +315,7 @@ PHP_METHOD(HttpResponse, setCache)
 		RETURN_FALSE;
 	}
 
-	ZVAL_BOOL(GET_STATIC_PROP(cache), do_cache);
-	RETURN_TRUE;
+	RETURN_SUCCESS(UPD_STATIC_PROP(bool, cache, do_cache));
 }
 /* }}} */
 
@@ -342,8 +345,7 @@ PHP_METHOD(HttpResponse, setGzip)
 		RETURN_FALSE;
 	}
 
-	ZVAL_BOOL(GET_STATIC_PROP(gzip), do_gzip);
-	RETURN_TRUE;
+	RETURN_SUCCESS(UPD_STATIC_PROP(bool, gzip, do_gzip));
 }
 /* }}} */
 
@@ -372,8 +374,6 @@ PHP_METHOD(HttpResponse, setCacheControl)
 	int cc_len;
 	long max_age = 0;
 
-#define HTTP_CACHECONTROL_TEMPLATE "%s, must-revalidate, max_age=%ld"
-
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &ccontrol, &cc_len, &max_age)) {
 		RETURN_FALSE;
 	}
@@ -382,10 +382,9 @@ PHP_METHOD(HttpResponse, setCacheControl)
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
 		RETURN_FALSE;
 	} else {
-		USE_STATIC_PROP();
-		spprintf(&cctl, 0, HTTP_CACHECONTROL_TEMPLATE, ccontrol, max_age);
-		SET_STATIC_PROP_STRING(cacheControl, cctl, 0);
-		RETURN_TRUE;
+		spprintf(&cctl, 0, "%s, must-revalidate, max_age=%ld", ccontrol, max_age);
+		RETVAL_SUCCESS(UPD_STATIC_PROP(string, cacheControl, cctl));
+		efree(cctl);
 	}
 }
 /* }}} */
@@ -423,9 +422,7 @@ PHP_METHOD(HttpResponse, setContentType)
 		RETURN_FALSE;
 	}
 
-	USE_STATIC_PROP();
-	SET_STATIC_PROP_STRINGL(contentType, ctype, ctype_len, 1);
-	RETURN_TRUE;
+	RETURN_SUCCESS(UPD_STATIC_PROP(string, contentType, ctype));
 }
 /* }}} */
 
@@ -461,9 +458,8 @@ PHP_METHOD(HttpResponse, setContentDisposition)
 	}
 
 	spprintf(&cd, 0, "%s; filename=\"%s\"", send_inline ? "inline" : "attachment", file);
-	USE_STATIC_PROP();
-	SET_STATIC_PROP_STRING(contentDisposition, cd, 0);
-	RETURN_TRUE;
+	RETVAL_SUCCESS(UPD_STATIC_PROP(string, contentDisposition, cd));
+	efree(cd);
 }
 /* }}} */
 
@@ -495,15 +491,13 @@ PHP_METHOD(HttpResponse, setETag)
 		RETURN_FALSE;
 	}
 
-	USE_STATIC_PROP();
-	SET_STATIC_PROP_STRINGL(eTag, etag, etag_len, 1);
-	RETURN_TRUE;
+	RETURN_SUCCESS(UPD_STATIC_PROP(string, eTag, etag));
 }
 /* }}} */
 
 /* {{{ proto static string HttpResponse::getETag()
  *
- * Get the previously set custom ETag.
+ * Get calculated or previously set custom ETag.
  */
 PHP_METHOD(HttpResponse, getETag)
 {
@@ -516,16 +510,47 @@ PHP_METHOD(HttpResponse, getETag)
 }
 /* }}} */
 
-/* {{{ proto static void HttpResponse::setThrottleDelay(double seconds)
+/* {{{ proto static bool HttpResponse::setLastModified(long timestamp)
+ *
+ * Set a custom Last-Modified date.
+ */
+PHP_METHOD(HttpResponse, setLastModified)
+{
+	long lm;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &lm)) {
+		RETURN_FALSE;
+	}
+	
+	RETURN_SUCCESS(UPD_STATIC_PROP(long, lastModified, lm));
+}
+/* }}} */
+
+/* {{{ proto static HttpResponse::getLastModified()
+ *
+ * Get calculated or previously set custom Last-Modified date.
+ */
+PHP_METHOD(HttpResponse, getLastModified)
+{
+	NO_ARGS;
+	
+	IF_RETVAL_USED {
+		RETURN_LONG(Z_LVAL_P(GET_STATIC_PROP(lastModified)));
+	}
+}
+/* }}} */
+
+/* {{{ proto static bool HttpResponse::setThrottleDelay(double seconds)
  *
  */
 PHP_METHOD(HttpResponse, setThrottleDelay)
 {
 	double seconds;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "d", &seconds)) {
-		ZVAL_DOUBLE(GET_STATIC_PROP(throttleDelay), seconds);
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "d", &seconds)) {
+		RETURN_FALSE;
 	}
+	RETURN_SUCCESS(UPD_STATIC_PROP(double, throttleDelay, seconds));
 }
 /* }}} */
 
@@ -542,16 +567,17 @@ PHP_METHOD(HttpResponse, getThrottleDelay)
 }
 /* }}} */
 
-/* {{{ proto static void HttpResponse::setBufferSize(long bytes)
+/* {{{ proto static bool HttpResponse::setBufferSize(long bytes)
  *
  */
 PHP_METHOD(HttpResponse, setBufferSize)
 {
 	long bytes;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &bytes)) {
-		ZVAL_LONG(GET_STATIC_PROP(bufferSize), bytes);
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &bytes)) {
+		RETURN_FALSE;
 	}
+	RETURN_SUCCESS(UPD_STATIC_PROP(long, bufferSize, bytes));
 }
 /* }}} */
 
@@ -579,14 +605,22 @@ PHP_METHOD(HttpResponse, setData)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
 		RETURN_FALSE;
 	}
-	convert_to_string_ex(&the_data);
+	if (Z_TYPE_P(the_data) != IS_STRING) {
+		convert_to_string_ex(&the_data);
+	}
 
-	USE_STATIC_PROP();
-	SET_STATIC_PROP(data, the_data);
-	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_data, SEND_DATA));
-	ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
+	if (	(SUCCESS != SET_STATIC_PROP(data, the_data)) ||
+			(SUCCESS != UPD_STATIC_PROP(long, mode, SEND_DATA))) {
+		RETURN_FALSE;
+	}
+	
+	if (!(Z_LVAL_P(GET_STATIC_PROP(lastModified)) > 0)) {
+		UPD_STATIC_PROP(long, lastModified, http_last_modified(the_data, SEND_DATA));
+	}
 	if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
-		SET_STATIC_PROP_STRING(eTag, http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA), 0);
+		char *etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
+		UPD_STATIC_PROP(string, eTag, etag);
+		efree(etag);
 	}
 
 	RETURN_TRUE;
@@ -623,12 +657,18 @@ PHP_METHOD(HttpResponse, setStream)
 	zend_list_addref(Z_LVAL_P(the_stream));
 	php_stream_from_zval(the_real_stream, &the_stream);
 
-	USE_STATIC_PROP();
-	ZVAL_LONG(GET_STATIC_PROP(stream), Z_LVAL_P(the_stream));
-	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_real_stream, SEND_RSRC));
-	ZVAL_LONG(GET_STATIC_PROP(mode), SEND_RSRC);
+	if (	(SUCCESS != UPD_STATIC_PROP(long, stream, Z_LVAL_P(the_stream))) ||
+			(SUCCESS != UPD_STATIC_PROP(long, mode, SEND_RSRC))) {
+		RETURN_FALSE;
+	}
+
+	if (!(Z_LVAL_P(GET_STATIC_PROP(lastModified)) > 0)) {
+		UPD_STATIC_PROP(long, lastModified, http_last_modified(the_real_stream, SEND_RSRC));
+	}
 	if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
-		SET_STATIC_PROP_STRING(eTag, http_etag(the_real_stream, 0, SEND_RSRC), 0);
+		char *etag = http_etag(the_real_stream, 0, SEND_RSRC);
+		UPD_STATIC_PROP(string, eTag, etag);
+		efree(etag);
 	}
 
 	RETURN_TRUE;
@@ -655,19 +695,25 @@ PHP_METHOD(HttpResponse, getStream)
  */
 PHP_METHOD(HttpResponse, setFile)
 {
-	zval *the_file;
+	char *the_file;
+	int file_len;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_file)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &the_file, &file_len)) {
+		RETURN_FALSE;
+	}
+	
+	if (	(SUCCESS != UPD_STATIC_PROP(string, file, the_file)) ||
+			(SUCCESS != UPD_STATIC_PROP(long, mode, -1))) {
 		RETURN_FALSE;
 	}
 
-	convert_to_string_ex(&the_file);
-	USE_STATIC_PROP();
-	SET_STATIC_PROP(file, the_file);
-	ZVAL_LONG(GET_STATIC_PROP(lastModified), http_last_modified(the_file, -1));
-	ZVAL_LONG(GET_STATIC_PROP(mode), -1);
+	if (!(Z_LVAL_P(GET_STATIC_PROP(lastModified)))) {
+		UPD_STATIC_PROP(long, lastModified, http_last_modified(the_file, -1));
+	}
 	if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
-		SET_STATIC_PROP_STRING(eTag, http_etag(the_file, 0, -1), 0);
+		char *etag = http_etag(the_file, 0, -1);
+		UPD_STATIC_PROP(string, eTag, etag);
+		efree(etag);
 	}
 
 	RETURN_TRUE;
@@ -726,20 +772,20 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* capture mode */
-	if (Z_LVAL_P(GET_STATIC_PROP(catch))) {
-		zval the_data;
+	if (Z_BVAL_P(GET_STATIC_PROP(catch))) {
+		zval *the_data;
 
-		INIT_PZVAL(&the_data);
-		php_ob_get_buffer(&the_data TSRMLS_CC);
+		MAKE_STD_ZVAL(the_data);
+		php_ob_get_buffer(the_data TSRMLS_CC);
 
-		USE_STATIC_PROP();
-		SET_STATIC_PROP(data, &the_data);
+		SET_STATIC_PROP(data, the_data);
 		ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
 
 		if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
-			SET_STATIC_PROP_STRING(eTag, http_etag(Z_STRVAL(the_data), Z_STRLEN(the_data), SEND_DATA), 0);
+			char *etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
+			UPD_STATIC_PROP(string, eTag, etag);
+			efree(etag);
 		}
-		zval_dtor(&the_data);
 
 		clean_ob = 1;
 	}
@@ -778,9 +824,9 @@ PHP_METHOD(HttpResponse, send)
 
 	/* gzip */
 	if (Z_LVAL_P(GET_STATIC_PROP(gzip))) {
-		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
+		php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
 	} else {
-		php_start_ob_buffer(NULL, 0, 1 TSRMLS_CC);
+		php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
 	}
 
 	/* caching */
@@ -864,24 +910,30 @@ PHP_METHOD(HttpResponse, send)
  * HttpResponse::setCache(true);
  * HttpResponse::capture();
  * // script follows
+ * // note that you need to call
+ * HttpResponse::send();
+ * // at the end of the script unless 
+ * // you use PHP-5.1 or greater
  * ?>
  * </pre>
  */
 PHP_METHOD(HttpResponse, capture)
 {
-	zval do_catch;
+	zval *do_catch;
 
 	NO_ARGS;
 
-	INIT_PZVAL(&do_catch);
-	ZVAL_LONG(&do_catch, 1);
-	USE_STATIC_PROP();
-	SET_STATIC_PROP(catch, &do_catch);
+	MAKE_STD_ZVAL(do_catch);
+	ZVAL_LONG(do_catch, 1);
+
+	SET_STATIC_PROP(catch, do_catch);
 
 	php_end_ob_buffers(0 TSRMLS_CC);
 	php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
 
-	/* register shutdown function */
+#if (PHP_MAJOR_VERSION > 5) || (PHP_MINOR_VERSION > 0)
+	/* register shutdown function --
+		messing around with ob and headers only works in PHP-5.1 or greater */
 	{
 		zval func, retval, arg, *argp[1];
 
@@ -897,6 +949,7 @@ PHP_METHOD(HttpResponse, capture)
 		call_user_function(EG(function_table), NULL, &func, &retval, 1, argp TSRMLS_CC);
 		zval_dtor(&arg);
 	}
+#endif
 }
 /* }}} */
 
