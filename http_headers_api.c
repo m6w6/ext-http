@@ -376,22 +376,24 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 {
 	char *key = NULL;
 	ulong idx = 0;
-	zval array;
+	zval array, **hsv;
 
 	Z_ARRVAL(array) = headers;
 
-	FOREACH_HASH_KEY(HTTP_SERVER_VARS, key, idx) {
-		if (key && !strncmp(key, "HTTP_", 5)) {
-			zval **header;
-
-			key += 5;
-			if (prettify) {
-				key = pretty_key(key, strlen(key), 1, 1);
+	if (SUCCESS == zend_hash_find(&EG(symbol_table), "HTTP_SERVER_VARS", sizeof("HTTP_SERVER_VARS"), (void **) &hsv)) {
+		FOREACH_KEY(*hsv, key, idx) {
+			if (key && !strncmp(key, "HTTP_", 5)) {
+				zval **header;
+	
+				key += 5;
+				if (prettify) {
+					key = pretty_key(key, strlen(key), 1, 1);
+				}
+	
+				zend_hash_get_current_data(Z_ARRVAL_PP(hsv), (void **) &header);
+				add_assoc_stringl(&array, key, Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
+				key = NULL;
 			}
-
-			zend_hash_get_current_data(HTTP_SERVER_VARS, (void **) &header);
-			add_assoc_stringl(&array, key, Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
-			key = NULL;
 		}
 	}
 }

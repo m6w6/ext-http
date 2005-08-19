@@ -105,9 +105,6 @@ typedef int STATUS;
 		/* END */
 
 
-/* server vars shorthand */
-#define HTTP_SERVER_VARS Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER])
-
 #define HTTP_PHP_INI_ENTRY(entry, default, scope, updater, global) \
 	STD_PHP_INI_ENTRY(entry, default, scope, updater, global, zend_http_globals, http_globals)
 

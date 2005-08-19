@@ -780,7 +780,7 @@ PHP_METHOD(HttpResponse, send)
 	if (Z_LVAL_P(GET_STATIC_PROP(gzip))) {
 		php_start_ob_buffer_named("ob_gzhandler", 0, 1 TSRMLS_CC);
 	} else {
-		php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
+		php_start_ob_buffer(NULL, 0, 1 TSRMLS_CC);
 	}
 
 	/* caching */
