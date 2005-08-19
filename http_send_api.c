@@ -152,10 +152,10 @@ static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_
 PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace TSRMLS_DC)
 {
 	STATUS ret;
-	size_t header_len = 1 + lenof(": ") + name_len + value_len;
-	char *header = emalloc(header_len);
+	size_t header_len = sizeof(": ") + name_len + value_len;
+	char *header = emalloc(header_len + 1);
 
-	header[header_len - 1] = '\0';
+	header[header_len] = '\0';
 	snprintf(header, header_len, "%s: %s", name, value);
 	ret = http_send_header_string_ex(header, replace);
 	efree(header);
@@ -394,6 +394,13 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 		return http_cache_exit_ex(http_date(HTTP_G(send).last_modified), 0, 1);
 	}
 
+	/* emit a content-length header */
+	if (!php_ob_handler_used("ob_gzhandler" TSRMLS_CC)) {
+		char *cl;
+		spprintf(&cl, 0, "Content-Length: %lu", (unsigned long) data_size);
+		http_send_header_string(cl);
+		efree(cl);
+	}
 	/* send full entity */
 	return http_send_chunk(data_ptr, 0, data_size, data_mode);
 }
