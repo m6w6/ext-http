@@ -89,7 +89,7 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 
 		default:
 		{
-			if (php_stream_stat_path(Z_STRVAL_P((zval *) data_ptr), &ssb)) {
+			if (php_stream_stat_path((char *) data_ptr, &ssb)) {
 				efree(new_etag);
 				return NULL;
 			}
@@ -116,7 +116,7 @@ PHP_HTTP_API time_t _http_last_modified(const void *data_ptr, http_send_mode dat
 	{
 		case SEND_DATA:	return time(NULL);
 		case SEND_RSRC:	return php_stream_stat((php_stream *) data_ptr, &ssb) ? 0 : ssb.sb.st_mtime;
-		default:		return php_stream_stat_path(Z_STRVAL_P((zval *) data_ptr), &ssb) ? 0 : ssb.sb.st_mtime;
+		default:		return php_stream_stat_path((char *) data_ptr, &ssb) ? 0 : ssb.sb.st_mtime;
 	}
 }
 /* }}} */
