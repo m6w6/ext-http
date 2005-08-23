@@ -235,19 +235,17 @@ PHPSTR_API int phpstr_cmp(phpstr *left, phpstr *right)
 
 PHPSTR_API void phpstr_dtor(phpstr *buf)
 {
-	if (buf->data) {
-		efree(buf->data);
-		buf->data = NULL;
-	}
+	STR_SET(buf->data, NULL);
 	buf->used = 0;
 	buf->free = 0;
 }
 
-PHPSTR_API void phpstr_free(phpstr *buf)
+PHPSTR_API void phpstr_free(phpstr **buf)
 {
-	if (buf) {
-		phpstr_dtor(buf);
-		efree(buf);
+	if (*buf) {
+		phpstr_dtor(*buf);
+		efree(*buf);
+		*buf = NULL;
 	}
 }
 

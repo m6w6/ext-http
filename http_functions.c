@@ -461,9 +461,7 @@ PHP_FUNCTION(http_redirect)
 	size_t query_len = 0;
 	zend_bool session = 0, permanent = 0, free_params = 0;
 	zval *params = NULL;
-	char *query = NULL, *url = NULL, *URI,
-		LOC[HTTP_URI_MAXLEN + sizeof("Location: ")],
-		RED[HTTP_URI_MAXLEN * 2 + sizeof("Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n")];
+	char *query = NULL, *url = NULL, *URI, *LOC, *RED = NULL;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sa!/bb", &url, &url_len, &params, &session, &permanent) != SUCCESS) {
 		RETURN_FALSE;
@@ -527,11 +525,15 @@ PHP_FUNCTION(http_redirect)
 	URI = http_absolute_uri(url);
 
 	if (query_len) {
-		snprintf(LOC, HTTP_URI_MAXLEN + sizeof("Location: "), "Location: %s?%s", URI, query);
-		sprintf(RED, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);
+		spprintf(&LOC, 0, "Location: %s?%s", URI, query);
+		if (SG(request_info).request_method && strcmp(SG(request_info).request_method, "HEAD")) {
+			spprintf(&RED, 0, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);
+		}
 	} else {
-		snprintf(LOC, HTTP_URI_MAXLEN + sizeof("Location: "), "Location: %s", URI);
-		sprintf(RED, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
+		spprintf(&LOC, 0, "Location: %s", URI);
+		if (SG(request_info).request_method && strcmp(SG(request_info).request_method, "HEAD")) {
+			spprintf(&RED, 0, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
+		}
 	}
 	
 	efree(URI);
@@ -543,13 +545,7 @@ PHP_FUNCTION(http_redirect)
 		FREE_ZVAL(params);
 	}
 
-	if ((SUCCESS == http_send_header_string(LOC)) && (SUCCESS == http_send_status((permanent ? 301 : 302)))) {
-		if (SG(request_info).request_method && strcmp(SG(request_info).request_method, "HEAD")) {
-			PHPWRITE(RED, strlen(RED));
-		}
-		RETURN_TRUE;
-	}
-	RETURN_FALSE;
+	RETURN_SUCCESS(http_exit_ex(permanent ? 301 : 302, LOC, RED, 1));
 }
 /* }}} */
 
@@ -633,90 +629,6 @@ PHP_FUNCTION(http_chunked_decode)
 }
 /* }}} */
 
-/* {{{ proto array http_split_response(string http_response)
- *
- * This function splits an HTTP response into an array with headers and the
- * content body. The returned array may look simliar to the following example:
- *
- * <pre>
- * <?php
- * array(
- *     0 => array(
- *         'Response Status' => '200 Ok',
- *         'Content-Type' => 'text/plain',
- *         'Content-Language' => 'en-US'
- *     ),
- *     1 => "Hello World!"
- * );
- * ?>
- * </pre>
- */
-PHP_FUNCTION(http_split_response)
-{
-	char *response, *body;
-	int response_len;
-	size_t body_len;
-	zval *zheaders;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &response, &response_len) != SUCCESS) {
-		RETURN_FALSE;
-	}
-
-	MAKE_STD_ZVAL(zheaders);
-	array_init(zheaders);
-
-	if (SUCCESS != http_split_response(response, response_len, Z_ARRVAL_P(zheaders), &body, &body_len)) {
-		RETURN_FALSE;
-	}
-
-	array_init(return_value);
-	add_index_zval(return_value, 0, zheaders);
-	add_index_stringl(return_value, 1, body, body_len, 0);
-}
-/* }}} */
-
-static void http_message_toobject_recursive(http_message *msg, zval *obj TSRMLS_DC)
-{
-	zval *headers;
-	
-	add_property_long(obj, "type", msg->type);
-	switch (msg->type)
-	{
-		case HTTP_MSG_RESPONSE:
-			add_property_double(obj, "httpVersion", msg->info.response.http_version);
-			add_property_long(obj, "responseCode", msg->info.response.code);
-		break;
-		
-		case HTTP_MSG_REQUEST:
-			add_property_double(obj, "httpVersion", msg->info.request.http_version);
-			add_property_string(obj, "requestMethod", msg->info.request.method, 1);
-			add_property_string(obj, "requestUri", msg->info.request.URI, 1);
-		break;
-	}
-	
-	MAKE_STD_ZVAL(headers);
-	array_init(headers);
-	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-	add_property_zval(obj, "headers", headers);
-	zval_ptr_dtor(&headers);
-	
-	add_property_stringl(obj, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg), 1);
-	
-	if (msg->parent) {
-		zval *parent;
-		
-		MAKE_STD_ZVAL(parent);
-		object_init(parent);
-		add_property_zval(obj, "parentMessage", parent);
-		http_message_toobject_recursive(msg->parent, parent TSRMLS_CC);
-		zval_ptr_dtor(&parent);
-	} else {
-		add_property_null(obj, "parentMessage");
-	}
-	http_message_dtor(msg);
-	efree(msg);
-}
-
 /* {{{ proto object http_parse_message(string message)
  *
  * Parses (a) http_message(s) into a simple recursive object structure:
@@ -766,7 +678,7 @@ PHP_FUNCTION(http_parse_message)
 	
 	if (msg = http_message_parse(message, message_len)) {
 		object_init(return_value);
-		http_message_toobject_recursive(msg, return_value TSRMLS_CC);
+		http_message_tostruct_recursive(msg, return_value);
 	} else {
 		RETURN_NULL();
 	}
@@ -908,7 +820,6 @@ PHP_FUNCTION(http_match_request_header)
  *     'content_type' => 'text/html; charset=iso-8859-1',
  *     'redirect_time' => 0,
  *     'redirect_count' => 0,
- *     'private' => '',
  *     'http_connectcode' => 0,
  *     'httpauth_avail' => 0,
  *     'proxyauth_avail' => 0,
@@ -934,7 +845,7 @@ PHP_FUNCTION(http_get)
 
 	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
 	if (SUCCESS == http_get(URL, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETURN_PHPSTR_VAL(response);
+		RETURN_PHPSTR_VAL(&response);
 	} else {
 		RETURN_FALSE;
 	}
@@ -965,14 +876,14 @@ PHP_FUNCTION(http_head)
 
 	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
 	if (SUCCESS == http_head(URL, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETURN_PHPSTR_VAL(response);
+		RETURN_PHPSTR_VAL(&response);
 	} else {
 		RETURN_FALSE;
 	}
 }
 /* }}} */
 
-/* {{{ proto string http_post_data(string url, string data[, array options[, &info]])
+/* {{{ proto string http_post_data(string url, string data[, array options[, array &info]])
  *
  * Performs an HTTP POST request, posting data.
  * Returns the HTTP response as string.
@@ -1001,7 +912,7 @@ PHP_FUNCTION(http_post_data)
 
 	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
 	if (SUCCESS == http_post(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETVAL_PHPSTR_VAL(response);
+		RETVAL_PHPSTR_VAL(&response);
 	} else {
 		RETVAL_FALSE;
 	}
@@ -1037,7 +948,7 @@ PHP_FUNCTION(http_post_fields)
 
 	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
 	if (SUCCESS == http_post(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETVAL_PHPSTR_VAL(response);
+		RETVAL_PHPSTR_VAL(&response);
 	} else {
 		RETVAL_FALSE;
 	}
@@ -1084,7 +995,7 @@ PHP_FUNCTION(http_put_file)
 
 	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
 	if (SUCCESS == http_put(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETVAL_PHPSTR_VAL(response);
+		RETVAL_PHPSTR_VAL(&response);
 	} else {
 		RETVAL_FALSE;
 	}
@@ -1128,7 +1039,7 @@ PHP_FUNCTION(http_put_stream)
 
 	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
 	if (SUCCESS == http_put(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETURN_PHPSTR_VAL(response);
+		RETURN_PHPSTR_VAL(&response);
 	} else {
 		RETURN_NULL();
 	}
@@ -1381,12 +1292,12 @@ PHP_FUNCTION(http_build_query)
 
 	formstr = phpstr_new();
 	if (SUCCESS != http_urlencode_hash_implementation_ex(HASH_OF(formdata), formstr, arg_sep, prefix, prefix_len, NULL, 0, NULL, 0, (Z_TYPE_P(formdata) == IS_OBJECT ? formdata : NULL))) {
-		phpstr_free(formstr);
+		phpstr_free(&formstr);
 		RETURN_FALSE;
 	}
 
 	if (!formstr->used) {
-		phpstr_free(formstr);
+		phpstr_free(&formstr);
 		RETURN_NULL();
 	}
 
@@ -1398,6 +1309,13 @@ PHP_FUNCTION(http_build_query)
 
 PHP_FUNCTION(http_test)
 {
+	ulong idx;
+	char *key;
+	zval **data;
+	FOREACH_HASH_KEYVAL(&EG(symbol_table), key, idx, data) {
+		convert_to_string_ex(data);
+		fprintf(stderr, "\t %s => %s\n", key, Z_STRVAL_PP(data));
+	}
 }
 
 /*

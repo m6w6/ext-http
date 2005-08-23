@@ -525,11 +525,11 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 
 			} while ((response = response->parent) && (request = request->parent));
 
-			http_message_free(free_msg);
+			http_message_free(&free_msg);
 			phpstr_fix(&obj->history);
 		}
 
-		UPD_PROP(obj, long, responseCode, msg->info.response.code);
+		UPD_PROP(obj, long, responseCode, msg->http.info.response.code);
 
 		MAKE_STD_ZVAL(headers)
 		array_init(headers);

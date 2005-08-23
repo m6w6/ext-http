@@ -46,7 +46,11 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	} etag;
 
 	struct _http_globals_log {
+		char *auth;
 		char *cache;
+		char *redirect;
+		char *allowed_methods;
+		char *composite;
 	} log;
 
 	struct _http_globals_send {
@@ -64,7 +68,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		} methods;
 
 #ifdef HTTP_HAVE_CURL
-		struct _http_globlas_request_copies {
+		struct _http_globals_request_copies {
 			zend_llist strings;
 			zend_llist slists;
 			zend_llist contexts;
@@ -107,7 +111,6 @@ PHP_FUNCTION(http_send_data);
 PHP_FUNCTION(http_send_file);
 PHP_FUNCTION(http_send_stream);
 PHP_FUNCTION(http_chunked_decode);
-PHP_FUNCTION(http_split_response);
 PHP_FUNCTION(http_parse_message);
 PHP_FUNCTION(http_parse_headers);
 PHP_FUNCTION(http_get_request_headers);

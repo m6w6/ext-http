@@ -34,30 +34,6 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-/* {{{ STATUS http_cache_exit(char *, zend_bool) */
-STATUS _http_cache_exit_ex(char *cache_token, zend_bool etag, zend_bool free_token TSRMLS_DC)
-{
-	if (HTTP_G(log).cache && strlen(HTTP_G(log).cache)) {
-		php_stream *log = php_stream_open_wrapper(HTTP_G(log).cache, "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL);
-
-		if (log) {
-			time_t now;
-			struct tm nowtm;
-			char datetime[128];
-
-			time(&now);
-			strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", php_localtime_r(&now, &nowtm));
- 			php_stream_printf(log TSRMLS_CC, "%s [%s] %32s %s\n", datetime, etag ? "ETAG":"LMOD", cache_token, SG(request_info).request_uri);
- 			php_stream_close(log);
-		}
-	}
-	if (free_token && cache_token) {
-		efree(cache_token);
-	}
-	return http_exit_ex(304, NULL, 0);
-}
-/* }}} */
-
 /* {{{ char *http_etag(void *, size_t, http_send_mode) */
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
 {
@@ -170,16 +146,20 @@ PHP_HTTP_API zend_bool _http_match_etag_ex(const char *entry, const char *etag, 
 PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified,
 	time_t send_modified, const char *cache_control, size_t cc_len TSRMLS_DC)
 {
+	char *sent_header = NULL;
+	
 	if (cc_len && (SUCCESS != http_send_cache_control(cache_control, cc_len))) {
 		return FAILURE;
 	}
 
-	if (SUCCESS != http_send_last_modified(send_modified)) {
+	if (SUCCESS != http_send_last_modified_ex(send_modified, &sent_header)) {
 		return FAILURE;
 	}
 
 	if (http_match_last_modified("HTTP_IF_MODIFIED_SINCE", last_modified)) {
-		return http_cache_exit(http_date(last_modified), 0);
+		http_exit_ex(304, sent_header, NULL, 0);
+	} else {
+		STR_FREE(sent_header);
 	}
 
 	return SUCCESS;
@@ -190,18 +170,22 @@ PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified,
 PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 	const char *cache_control, size_t cc_len TSRMLS_DC)
 {
+	char *sent_header = NULL;
+	
 	if (cc_len && (SUCCESS != http_send_cache_control(cache_control, cc_len))) {
 		return FAILURE;
 	}
 
 	if (etag_len) {
-		if (SUCCESS != http_send_etag(etag, etag_len)) {
+		if (SUCCESS != http_send_etag_ex(etag, etag_len, &sent_header)) {
 			return FAILURE;
 		}
-		if (!http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
-			return SUCCESS;
+		if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
+			http_exit_ex(304, sent_header, NULL, 0);
+		} else {
+			STR_FREE(sent_header);
 		}
-		return http_cache_exit_ex((char *)etag, 1, 0);
+		return SUCCESS;
 	}
 
 	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
@@ -236,12 +220,16 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 
 		/* just do that if desired */
 		if (HTTP_G(etag).started) {
+			char *sent_header = NULL;
+			
 			make_digest(etag, digest);
 			http_send_cache_control(HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL));
-			http_send_etag(etag, 32);
+			http_send_etag_ex(etag, 32, &sent_header);
 
 			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
-				http_cache_exit_ex(etag, 1, 0);
+				http_exit_ex(304, sent_header, NULL, 0);
+			} else {
+				STR_FREE(sent_header);
 			}
 		}
 	}

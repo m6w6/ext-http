@@ -19,6 +19,7 @@
 #define PHP_HTTP_HEADERS_API_H
 
 #include "php_http_std_defs.h"
+#include "php_http_info_api.h"
 
 typedef enum {
 	RANGE_OK,
@@ -26,15 +27,10 @@ typedef enum {
 	RANGE_ERR
 } http_range_status;
 
-typedef void (*http_parse_headers_callback_t)(const char *http_line, HashTable **headers, void **callback_data TSRMLS_DC);
-
-#define http_parse_headers_default_callback _http_parse_headers_default_callback
-PHP_HTTP_API void _http_parse_headers_default_callback(const char *http_line, HashTable **headers, void **cb_data TSRMLS_DC);
-
-#define http_parse_headers(h, a) _http_parse_headers_ex((h), Z_ARRVAL_P(a), 1, _http_parse_headers_default_callback, NULL TSRMLS_CC)
-#define http_parse_headers_ex(h, ht, p) _http_parse_headers_ex((h), (ht), (p), _http_parse_headers_default_callback, NULL TSRMLS_CC)
+#define http_parse_headers(h, a) _http_parse_headers_ex((h), Z_ARRVAL_P(a), 1, http_info_default_callback, NULL TSRMLS_CC)
+#define http_parse_headers_ex(h, ht, p) _http_parse_headers_ex((h), (ht), (p), http_info_default_callback, NULL TSRMLS_CC)
 #define http_parse_headers_cb(h, ht, p, f, d) _http_parse_headers_ex((h), (ht), (p), (f), (d) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *headers, zend_bool prettify, http_parse_headers_callback_t func, void **callback_data TSRMLS_DC);
+PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *headers, zend_bool prettify, http_info_callback callback_func, void **callback_data TSRMLS_DC);
 
 #define http_get_request_headers(h) _http_get_request_headers_ex(Z_ARRVAL_P(h), 1 TSRMLS_CC)
 #define http_get_request_headers_ex(h, p) _http_get_request_headers_ex((h), (p) TSRMLS_CC)

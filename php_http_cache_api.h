@@ -22,10 +22,6 @@
 #include "php_http_api.h"
 #include "php_http_send_api.h"
 
-#define http_cache_exit(t, e) http_cache_exit_ex((t), (e), 1)
-#define http_cache_exit_ex(t, e, f) _http_cache_exit_ex((t), (e), (f) TSRMLS_CC)
-extern STATUS _http_cache_exit_ex(char *cache_token, zend_bool etag, zend_bool free_token TSRMLS_DC);
-
 #define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC);
 

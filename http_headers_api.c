@@ -27,6 +27,7 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_headers_api.h"
+#include "php_http_info_api.h"
 
 #include <ctype.h>
 
@@ -244,26 +245,25 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 /* }}} */
 
 /* {{{ STATUS http_parse_headers(char *, HashTable *, zend_bool) */
-PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *headers, zend_bool prettify, http_parse_headers_callback_t func, void **callback_data TSRMLS_DC)
+PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *headers, zend_bool prettify, 
+	http_info_callback callback_func, void **callback_data TSRMLS_DC)
 {
-	const char *colon = NULL, *line = NULL, *begin = header, *crlfcrlf = NULL;
+	const char *colon = NULL, *line = NULL, *begin = header;
+	const char *body = http_locate_body(header);
 	size_t header_len;
 	zval array;
 
 	Z_ARRVAL(array) = headers;
-
-	if (crlfcrlf = strstr(header, HTTP_CRLF HTTP_CRLF)) {
-		header_len = crlfcrlf - header + lenof(HTTP_CRLF);
-	} else {
-		header_len = strlen(header) + 1;
-	}
-
-
-	if (header_len < 2 || !strchr(header, ':')) {
+	header_len = body ? body - header : strlen(header) + 1;
+	
+/*
+	if (header_len < 2 || ((!lflf) && (!crlfcrlf) && (!strchr(header, ':')))) {
+		fprintf(stderr, "header_len: %lu, lflf: %p, crlfcrlf: %p, ':': %p\n(%s)\n",
+			header_len, lflf, crlfcrlf, strchr(header, ':'), header);
 		http_error(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Cannot parse too short or malformed HTTP headers");
 		return FAILURE;
 	}
-
+*/
 	line = header;
 
 	while (header_len >= (size_t) (line - begin)) {
@@ -271,11 +271,26 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 
 		switch (*line++)
 		{
+			case ':':
+				if (!colon) {
+					colon = line - 1;
+				}
+			break;
+			
 			case 0:
 				--value_len; /* we don't have CR so value length is one char less */
 			case '\n':
 				if ((!(*line - 1)) || ((*line != ' ') && (*line != '\t'))) {
+					http_info i;
+					
 					/* response/request line */
+					if (SUCCESS == http_info_parse(header, &i)) {
+						callback_func(callback_data, &headers, &i TSRMLS_CC);
+						http_info_dtor(&i);
+						Z_ARRVAL(array) = headers;
+					} else
+					
+					/*
                     if (    (!strncmp(header, "HTTP/1.", lenof("HTTP/1."))) ||
                             (!strncmp(line - lenof("HTTP/1.x" HTTP_CRLF) + value_len, "HTTP/1.", lenof("HTTP/1.")))) {
 						if (func) {
@@ -283,6 +298,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 							Z_ARRVAL(array) = headers;
 						}
 					} else
+					*/
 
 					/* "header: value" pair */
 					if (colon) {
@@ -330,46 +346,11 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 					header += line - header;
 				}
 			break;
-
-			case ':':
-				if (!colon) {
-					colon = line - 1;
-				}
-			break;
 		}
 	}
 	return SUCCESS;
 }
 /* }}} */
-
-PHP_HTTP_API void _http_parse_headers_default_callback(const char *http_line, HashTable **headers, void **cb_data TSRMLS_DC)
-{
-	zval array;
-	char *crlf = NULL;
-	size_t line_length;
-	Z_ARRVAL(array) = *headers;
-
-	if (crlf = strstr(http_line, HTTP_CRLF)) {
-		line_length = crlf - http_line;
-	} else {
-		line_length = strlen(http_line);
-	}
-
-	/* response */
-	if (!strncmp(http_line, "HTTP/1.", lenof("HTTP/1."))) {
-		char *status = estrndup(http_line + lenof("HTTP/1.x "), line_length - lenof("HTTP/1.x "));
-		add_assoc_stringl(&array, "Response Status", status, line_length - lenof("HTTP/1.x "), 0);
-	} else
-	/* request */
-	if (!strncmp(http_line + line_length - lenof("HTTP/1.x"), "HTTP/1.", lenof("HTTP/1."))) {
-		char *sep = strchr(http_line, ' ');
-		char *url = estrndup(sep + 1, strstr(sep, "HTTP/1.") - sep + 1 + 1);
-		char *met = estrndup(http_line, sep - http_line);
-
-		add_assoc_stringl(&array, "Request Method", met, sep - http_line, 0);
-		add_assoc_stringl(&array, "Request Uri", url, strstr(sep, "HTTP/1.") - sep + 1 + 1, 0);
-	}
-}
 
 /* {{{ void http_get_request_headers_ex(HashTable *, zend_bool) */
 PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool prettify TSRMLS_DC)
@@ -380,7 +361,7 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 
 	Z_ARRVAL(array) = headers;
 
-	if (SUCCESS == zend_hash_find(&EG(symbol_table), "HTTP_SERVER_VARS", sizeof("HTTP_SERVER_VARS"), (void **) &hsv)) {
+	if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &hsv)) {
 		FOREACH_KEY(*hsv, key, idx) {
 			if (key && !strncmp(key, "HTTP_", 5)) {
 				zval **header;

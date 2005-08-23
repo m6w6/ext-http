@@ -38,7 +38,7 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-/* char *pretty_key(char *, size_t, zend_bool, zebd_bool) */
+/* char *pretty_key(char *, size_t, zend_bool, zend_bool) */
 char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
 	if (key && key_len) {
@@ -179,19 +179,53 @@ void _http_error_ex(long type, long code, const char *format, ...)
 }
 /* }}} */
 
-/* {{{ STATUS http_exit(int, char*) */
-STATUS _http_exit_ex(int status, char *header, zend_bool free_header TSRMLS_DC)
+/* {{{ STATUS http_exit(int, char*, char*, zend_bool) */
+STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header TSRMLS_DC)
 {
-	if (SUCCESS != http_send_status_header(status, header)) {
+	char datetime[128];
+	
+	if (SUCCESS != http_send_status_header(status, send_header ? header : NULL)) {
 		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
-		if (free_header && header) {
-			efree(header);
-		}
+		STR_FREE(header);
+		STR_FREE(body);
 		return FAILURE;
 	}
-	if (free_header && header) {
-		efree(header);
+	if (body) {
+		PHPWRITE(body, strlen(body));
 	}
+	{
+		time_t now;
+		struct tm nowtm;
+		
+		time(&now);
+		strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", php_localtime_r(&now, &nowtm));
+	}
+
+#define HTTP_LOG_WRITE(for, type, header) \
+	HTTP_LOG_WRITE_EX(for, type, header); \
+	HTTP_LOG_WRITE_EX(composite, type, header);
+
+#define HTTP_LOG_WRITE_EX(for, type, header) \
+	if (HTTP_G(log).##for && strlen(HTTP_G(log).##for)) { \
+	 	php_stream *log = php_stream_open_wrapper(HTTP_G(log).##for, "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL); \
+		 \
+		if (log) { \
+			php_stream_printf(log TSRMLS_CC, "%s [%12s] %32s <%s>%s", datetime, type, header, SG(request_info).request_uri, PHP_EOL); \
+			php_stream_close(log); \
+		} \
+	 \
+	}
+	switch (status)
+	{
+		case 301:	HTTP_LOG_WRITE(redirect, "301-REDIRECT", header);			break;
+		case 302:	HTTP_LOG_WRITE(redirect, "302-REDIRECT", header);			break;
+		case 304:	HTTP_LOG_WRITE(cache, "304-CACHE", header);					break;
+		case 401:	HTTP_LOG_WRITE(auth, "401-AUTH", header);					break;
+		case 403:	HTTP_LOG_WRITE(auth, "403-AUTH", header);					break;
+		case 405:	HTTP_LOG_WRITE(allowed_methods, "405-ALLOWED", header);		break;
+	}
+	STR_FREE(header);
+	STR_FREE(body);
 	zend_bailout();
 	/* fake */
 	return SUCCESS;
@@ -218,7 +252,7 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 	zval **hsv;
 	zval **var;
 	
-	if (SUCCESS != zend_hash_find(&EG(symbol_table), "HTTP_SERVER_VARS", sizeof("HTTP_SERVER_VARS"), (void **) &hsv)) {
+	if (SUCCESS != zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &hsv)) {
 		return NULL;
 	}
 	if (SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), (char *) key, key_size, (void **) &var)) {
@@ -306,29 +340,8 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 }
 /* }}} */
 
-/* {{{ STATUS http_split_response(char *, size_t, HashTable *, char **, size_t *) */
-PHP_HTTP_API STATUS _http_split_response(char *response, size_t response_len,
-	HashTable *headers, char **body, size_t *body_len TSRMLS_DC)
-{
-	char *header = response, *real_body = NULL;
-
-	while (0 < (response_len - (response - header + 4))) {
-		if (	(*response++ == '\r') &&
-				(*response++ == '\n') &&
-				(*response++ == '\r') &&
-				(*response++ == '\n')) {
-			real_body = response;
-			break;
-		}
-	}
-
-	if (real_body && (*body_len = (response_len - (real_body - header)))) {
-		*body = ecalloc(1, *body_len + 1);
-		memcpy(*body, real_body, *body_len);
-	}
-
-	return http_parse_headers_ex(header, headers, 1);
-}
+/* {{{ STATUS http_locate_body(char *, size_t) */
+PHP_HTTP_API 
 /* }}} */
 
 /*

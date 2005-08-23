@@ -464,7 +464,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 			phpstr_fix(qstr);
 			HTTP_CURL_OPT(COOKIE, http_request_data_copy(COPY_STRING, qstr->data));
 		}
-		phpstr_free(qstr);
+		phpstr_free(&qstr);
 	} else {
 		HTTP_CURL_OPT(COOKIE, NULL);
 	}

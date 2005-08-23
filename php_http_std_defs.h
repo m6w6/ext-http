@@ -36,10 +36,21 @@ typedef int STATUS;
 /* lenof() */
 #define lenof(S) (sizeof(S) - 1)
 
+#ifndef MIN
+#	define MIN(a,b) (a<b?a:b)
+#endif
+#ifndef MAX
+#	define MAX(a,b) (a>b?a:b)
+#endif
+
 /* STR_SET() */
-#define STR_SET(target, source) \
-	if(target) efree(target); \
-	target = source
+#ifndef STR_SET
+#	define STR_SET(STR, SET) \
+	{ \
+		STR_FREE(STR); \
+		STR = SET; \
+	}
+#endif
 
 /* return bool (v == SUCCESS) */
 #define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))

@@ -35,9 +35,9 @@ extern STATUS _http_parse_key_list(const char *list, HashTable *items, char sepa
 #define http_error_ex _http_error_ex
 extern void _http_error_ex(long type, long code, const char *format, ...) PHP_ATTRIBUTE_FORMAT(printf, 3, 4);
 
-#define http_exit(s, h) http_exit_ex((s), (h), 1)
-#define http_exit_ex(s, h, f) _http_exit_ex((s), (h), (f) TSRMLS_CC)
-extern STATUS _http_exit_ex(int status, char *header, zend_bool free_header TSRMLS_DC);
+#define http_exit(s, h) http_exit_ex((s), (h), NULL, 1)
+#define http_exit_ex(s, h, b, e) _http_exit_ex((s), (h), (b), (e) TSRMLS_CC)
+extern STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header TSRMLS_DC);
 
 #define http_check_method(m) http_check_method_ex((m), HTTP_KNOWN_METHODS)
 #define http_check_method_ex(m, a) _http_check_method_ex((m), (a))
@@ -60,8 +60,20 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 #define http_chunked_decode(e, el, d, dl) _http_chunked_decode((e), (el), (d), (dl) TSRMLS_CC)
 PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
-#define http_split_response(r, rl, h, b, bl) _http_split_response((r), (rl), (h), (b), (bl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_split_response(char *response, size_t repsonse_len, HashTable *headers, char **body, size_t *body_len TSRMLS_DC);
+#define http_locate_body _http_locate_body
+static inline const char *_http_locate_body(const char *message)
+{
+	const char *cr = strstr(message, "\r\n\r\n");
+	const char *lf = strstr(message, "\n\n");
+
+	if (lf && cr) {
+		return MIN(lf + 2, cr + 4);
+	} else if (lf || cr) {
+		return MAX(lf + 2, cr + 4);
+	} else {
+		return NULL;
+	}
+}
 
 #endif
 

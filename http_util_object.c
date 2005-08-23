@@ -73,8 +73,8 @@ HTTP_BEGIN_ARGS(chunkedDecode, 1)
 	HTTP_ARG_VAL(encoded_string, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(splitResponse, 1)
-	HTTP_ARG_VAL(response_string, 0)
+HTTP_BEGIN_ARGS(parseMessage, 1)
+	HTTP_ARG_VAL(message_string, 0)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(parseHeaders, 1)
@@ -102,7 +102,7 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(matchEtag, http_match_etag)
 	HTTP_UTIL_ALIAS(matchRequestHeader, http_match_request_header)
 	HTTP_UTIL_ALIAS(chunkedDecode, http_chunked_decode)
-	HTTP_UTIL_ALIAS(splitResponse, http_split_response)
+	HTTP_UTIL_ALIAS(parseMessage, http_parse_message)
 	HTTP_UTIL_ALIAS(parseHeaders, http_parse_headers)
 	HTTP_UTIL_ALIAS(authBasic, http_auth_basic)
 	HTTP_UTIL_ALIAS(authBasicCallback, http_auth_basic_cb)

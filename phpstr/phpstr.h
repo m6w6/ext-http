@@ -6,6 +6,14 @@
 
 #include "php.h"
 
+#ifndef STR_SET
+#	define STR_SET(STR, SET) \
+	{ \
+		STR_FREE(STR); \
+		STR = SET; \
+	}
+#endif
+
 #if defined(PHP_WIN32)
 #	if defined(PHPSTR_EXPORTS)
 #		define PHPSTR_API __declspec(dllexport)
@@ -24,21 +32,26 @@
 
 #define FREE_PHPSTR_PTR(STR) efree(STR)
 #define FREE_PHPSTR_VAL(STR) phpstr_dtor(STR)
-#define FREE_PHPSTR_ALL(STR) phpstr_free(STR)
+#define FREE_PHPSTR_ALL(STR) phpstr_free(&(STR))
 #define FREE_PHPSTR(free, STR) \
 	switch (free) \
 	{ \
+		case PHPSTR_FREE_NOT:						break; \
 		case PHPSTR_FREE_PTR:	efree(STR);			break; \
 		case PHPSTR_FREE_VAL:	phpstr_dtor(STR);	break; \
-		case PHPSTR_FREE_ALL:	phpstr_free(STR);	break; \
-		case PHPSTR_FREE_NOT:						break; \
+		case PHPSTR_FREE_ALL: \
+		{ \
+			phpstr *PTR = (STR); \
+			phpstr_free(&PTR); \
+		} \
+		break; \
 		default:									break; \
 	}
 
 #define RETURN_PHPSTR_PTR(STR) RETURN_PHPSTR((STR), PHPSTR_FREE_PTR, 0)
-#define RETURN_PHPSTR_VAL(STR) RETURN_PHPSTR(&(STR), PHPSTR_FREE_NOT, 0)
+#define RETURN_PHPSTR_VAL(STR) RETURN_PHPSTR((STR), PHPSTR_FREE_NOT, 0)
 #define RETVAL_PHPSTR_PTR(STR) RETVAL_PHPSTR((STR), PHPSTR_FREE_PTR, 0)
-#define RETVAL_PHPSTR_VAL(STR) RETVAL_PHPSTR(&(STR), PHPSTR_FREE_NOT, 0)
+#define RETVAL_PHPSTR_VAL(STR) RETVAL_PHPSTR((STR), PHPSTR_FREE_NOT, 0)
 /* RETURN_PHPSTR(buf, PHPSTR_FREE_PTR, 0) */
 #define RETURN_PHPSTR(STR, free, dup) \
 	RETVAL_PHPSTR((STR), (free), (dup)); \
@@ -136,7 +149,7 @@ PHPSTR_API void phpstr_fix(phpstr *buf);
 PHPSTR_API void phpstr_dtor(phpstr *buf);
 
 /* free a phpstr object completely */
-PHPSTR_API void phpstr_free(phpstr *buf);
+PHPSTR_API void phpstr_free(phpstr **buf);
 
 #endif
 

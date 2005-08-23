@@ -197,12 +197,12 @@ PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, zend_bool override_
 	}
 
 	if (SUCCESS != http_urlencode_hash_implementation(hash, qstr, arg_sep)) {
-		phpstr_free(qstr);
+		phpstr_free(&qstr);
 		return FAILURE;
 	}
 
 	phpstr_data(qstr, encoded_data, encoded_len);
-	phpstr_free(qstr);
+	phpstr_free(&qstr);
 
 	return SUCCESS;
 }

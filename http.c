@@ -84,7 +84,6 @@ function_entry http_functions[] = {
 	PHP_FE(http_send_stream, NULL)
 	PHP_FE(http_chunked_decode, NULL)
 	PHP_FE(http_parse_message, NULL)
-	PHP_FE(http_split_response, NULL)
 	PHP_FE(http_parse_headers, NULL)
 	PHP_FE(http_get_request_headers, NULL)
 	PHP_FE(http_get_request_body, NULL)
@@ -184,6 +183,9 @@ PHP_INI_MH(http_update_allowed_methods)
 PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.allowed_methods", "", PHP_INI_ALL, http_update_allowed_methods, request.methods.allowed)
 	HTTP_PHP_INI_ENTRY("http.cache_log", "", PHP_INI_ALL, OnUpdateString, log.cache)
+	HTTP_PHP_INI_ENTRY("http.redirect_log", "", PHP_INI_ALL, OnUpdateString, log.redirect)
+	HTTP_PHP_INI_ENTRY("http.allowed_methods_log", "", PHP_INI_ALL, OnUpdateString, log.allowed_methods)
+	HTTP_PHP_INI_ENTRY("http.composite_log", "", PHP_INI_ALL, OnUpdateString, log.composite)
 #ifdef ZEND_ENGINE_2
 	HTTP_PHP_INI_ENTRY("http.only_exceptions", "0", PHP_INI_ALL, OnUpdateBool, only_exceptions)
 #endif
@@ -319,8 +321,8 @@ PHP_MINFO_FUNCTION(http)
 		php_info_print_table_row(2, "Custom Request Methods:",
 			PHPSTR_LEN(custom_request_methods) ? PHPSTR_VAL(custom_request_methods) : "none registered");
 
-		phpstr_free(known_request_methods);
-		phpstr_free(custom_request_methods);
+		phpstr_free(&known_request_methods);
+		phpstr_free(&custom_request_methods);
 	}
 	php_info_print_table_end();
 #endif

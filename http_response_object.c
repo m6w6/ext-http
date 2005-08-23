@@ -811,11 +811,11 @@ PHP_METHOD(HttpResponse, send)
 					zval **data;
 
 					FOREACH_VAL(*value, data) {
-						http_send_header_ex(name, strlen(name), Z_STRVAL_PP(data), Z_STRLEN_PP(data), first);
+						http_send_header_ex(name, strlen(name), Z_STRVAL_PP(data), Z_STRLEN_PP(data), first, NULL);
 						first = 0;
 					}
 				} else {
-					http_send_header_ex(name, strlen(name), Z_STRVAL_PP(value), Z_STRLEN_PP(value), 1);
+					http_send_header_ex(name, strlen(name), Z_STRVAL_PP(value), Z_STRLEN_PP(value), 1, NULL);
 				}
 				name = NULL;
 			}
@@ -862,7 +862,7 @@ PHP_METHOD(HttpResponse, send)
 	{
 		zval *cd = GET_STATIC_PROP(contentDisposition);
 		if (Z_STRLEN_P(cd)) {
-			http_send_header_ex("Content-Disposition", lenof("Content-Disposition"), Z_STRVAL_P(cd), Z_STRLEN_P(cd), 1);
+			http_send_header_ex("Content-Disposition", lenof("Content-Disposition"), Z_STRVAL_P(cd), Z_STRLEN_P(cd), 1, NULL);
 		}
 	}
 

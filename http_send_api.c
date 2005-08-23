@@ -149,10 +149,10 @@ static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_
 /* }}} */
 
 /* {{{ STATUS http_send_header(char *, char *, zend_bool) */
-PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace, char **sent_header TSRMLS_DC)
 {
 	STATUS ret;
-	size_t header_len = sizeof(": ") + name_len + value_len;
+	size_t header_len = sizeof(": ") + name_len + value_len + 1;
 	char *header = emalloc(header_len + 1);
 
 	header[header_len] = '\0';
@@ -176,7 +176,7 @@ PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, 
 /* }}} */
 
 /* {{{ STATUS http_send_last_modified(int) */
-PHP_HTTP_API STATUS _http_send_last_modified(time_t t TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_last_modified_ex(time_t t, char **sent_header TSRMLS_DC)
 {
 	STATUS ret;
 	char *date = http_date(t);
@@ -185,7 +185,7 @@ PHP_HTTP_API STATUS _http_send_last_modified(time_t t TSRMLS_DC)
 		return FAILURE;
 	}
 
-	ret = http_send_header("Last-Modified", date, 1);
+	ret = http_send_header_ex("Last-Modified", lenof("Last-Modifed"), date, strlen(date), 1, sent_header);
 	efree(date);
 
 	/* remember */
@@ -196,7 +196,7 @@ PHP_HTTP_API STATUS _http_send_last_modified(time_t t TSRMLS_DC)
 /* }}} */
 
 /* {{{ STATUS http_send_etag(char *, size_t) */
-PHP_HTTP_API STATUS _http_send_etag(const char *etag, size_t etag_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_etag_ex(const char *etag, size_t etag_len, char **sent_header TSRMLS_DC)
 {
 	STATUS status;
 	char *etag_header;
@@ -213,7 +213,13 @@ PHP_HTTP_API STATUS _http_send_etag(const char *etag, size_t etag_len TSRMLS_DC)
 	etag_header = ecalloc(1, sizeof("ETag: \"\"") + etag_len);
 	sprintf(etag_header, "ETag: \"%s\"", etag);
 	status = http_send_header_string(etag_header);
-	efree(etag_header);
+	
+	if (sent_header) {
+		*sent_header = etag_header;
+	} else {
+		efree(etag_header);
+	}
+	
 	return status;
 }
 /* }}} */
@@ -230,7 +236,7 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_
 	STR_FREE(HTTP_G(send).content_type);
 	HTTP_G(send).content_type = estrndup(content_type, ct_len);
 
-	return http_send_header_ex("Content-Type", lenof("Content-Type"), content_type, ct_len, 1);
+	return http_send_header_ex("Content-Type", lenof("Content-Type"), content_type, ct_len, 1, NULL);
 }
 /* }}} */
 
@@ -381,9 +387,13 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 		if (!(etag = http_etag(data_ptr, data_size, data_mode))) {
 			http_error(HE_NOTICE, HTTP_E_RUNTIME, "Failed to generate ETag for data source");
 		} else {
-			http_send_etag(etag, 32);
+			char *sent_header = NULL;
+			
+			http_send_etag_ex(etag, 32, &sent_header);
 			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
-				return http_cache_exit_ex(etag, 1, 1);
+				return http_exit_ex(304, sent_header, NULL, 0);
+			} else {
+				STR_FREE(sent_header);
 			}
 			efree(etag);
 		}
@@ -391,7 +401,9 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 
 	/* send 304 Not Modified if last modified matches */
 	if (http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G(send).last_modified)) {
-		return http_cache_exit_ex(http_date(HTTP_G(send).last_modified), 0, 1);
+		char *sent_header = NULL;
+		http_send_last_modified_ex(HTTP_G(send).last_modified, &sent_header);
+		return http_exit_ex(304, sent_header, NULL, 0);
 	}
 
 	/* emit a content-length header */

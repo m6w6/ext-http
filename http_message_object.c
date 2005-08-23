@@ -243,21 +243,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		break;
 
 		case HTTP_MSG_PROPHASH_HTTP_VERSION:
-			switch (msg->type)
-			{
-				case HTTP_MSG_REQUEST:
-					RETVAL_DOUBLE(msg->info.request.http_version);
-				break;
-
-				case HTTP_MSG_RESPONSE:
-					RETVAL_DOUBLE(msg->info.response.http_version);
-				break;
-
-				case HTTP_MSG_NONE:
-				default:
-					RETVAL_NULL();
-				break;
-			}
+			RETVAL_DOUBLE(msg->http.version);
 		break;
 
 		case HTTP_MSG_PROPHASH_BODY:
@@ -283,25 +269,22 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		case HTTP_MSG_PROPHASH_PARENT_MESSAGE:
 			if (msg->parent) {
 				RETVAL_OBJVAL(obj->parent);
-				Z_TYPE_P(return_value)	= IS_OBJECT;
-				return_value->value.obj	= obj->parent;
-				zend_objects_store_add_ref(return_value TSRMLS_CC);
 			} else {
 				RETVAL_NULL();
 			}
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
-			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->info.request.method) {
-				RETVAL_STRING(msg->info.request.method, 1);
+			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->http.info.request.method) {
+				RETVAL_STRING(msg->http.info.request.method, 1);
 			} else {
 				RETVAL_NULL();
 			}
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_URI:
-			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->info.request.URI) {
-				RETVAL_STRING(msg->info.request.URI, 1);
+			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->http.info.request.URI) {
+				RETVAL_STRING(msg->http.info.request.URI, 1);
 			} else {
 				RETVAL_NULL();
 			}
@@ -309,12 +292,20 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 
 		case HTTP_MSG_PROPHASH_RESPONSE_CODE:
 			if (HTTP_MSG_TYPE(RESPONSE, msg)) {
-				RETVAL_LONG(msg->info.response.code);
+				RETVAL_LONG(msg->http.info.response.code);
 			} else {
 				RETVAL_NULL();
 			}
 		break;
-
+		
+		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
+			if (HTTP_MSG_TYPE(RESPONSE, msg) && msg->http.info.response.status) {
+				RETVAL_STRING(msg->http.info.response.status, 1);
+			} else {
+				RETVAL_NULL();
+			}
+		break;
+		
 		default:
 			RETVAL_NULL();
 		break;
@@ -339,36 +330,12 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
 			convert_to_long_ex(&value);
-			if ((http_message_type) Z_LVAL_P(value) != msg->type) {
-				if (HTTP_MSG_TYPE(REQUEST, msg)) {
-					if (msg->info.request.method) {
-						efree(msg->info.request.method);
-					}
-					if (msg->info.request.URI) {
-						efree(msg->info.request.URI);
-					}
-				}
-				msg->type = Z_LVAL_P(value);
-				if (HTTP_MSG_TYPE(REQUEST, msg)) {
-					msg->info.request.method = NULL;
-					msg->info.request.URI = NULL;
-				}
-			}
-
+			http_message_set_type(msg, Z_LVAL_P(value));
 		break;
 
 		case HTTP_MSG_PROPHASH_HTTP_VERSION:
 			convert_to_double_ex(&value);
-			switch (msg->type)
-			{
-				case HTTP_MSG_REQUEST:
-					msg->info.request.http_version = Z_DVAL_P(value);
-				break;
-
-				case HTTP_MSG_RESPONSE:
-					msg->info.response.http_version = Z_DVAL_P(value);
-				break;
-			}
+			msg->http.version = Z_DVAL_P(value);
 		break;
 
 		case HTTP_MSG_PROPHASH_BODY:
@@ -394,31 +361,32 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
-			convert_to_string_ex(&value);
 			if (HTTP_MSG_TYPE(REQUEST, msg)) {
-				if (msg->info.request.method) {
-					efree(msg->info.request.method);
-				}
-				msg->info.request.method = estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value));
+				convert_to_string_ex(&value);
+				STR_SET(msg->http.info.request.method, estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value)));
 			}
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_URI:
-			convert_to_string_ex(&value);
 			if (HTTP_MSG_TYPE(REQUEST, msg)) {
-				if (msg->info.request.URI) {
-					efree(msg->info.request.URI);
-				}
-				msg->info.request.URI = estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value));
+				convert_to_string_ex(&value);
+				STR_SET(msg->http.info.request.URI, estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value)));
 			}
 		break;
 
 		case HTTP_MSG_PROPHASH_RESPONSE_CODE:
-			convert_to_long_ex(&value);
 			if (HTTP_MSG_TYPE(RESPONSE, msg)) {
-				msg->info.response.code = Z_LVAL_P(value);
+				convert_to_long_ex(&value);
+				msg->http.info.response.code = Z_LVAL_P(value);
 			}
 		break;
+		
+		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
+			if (HTTP_MSG_TYPE(RESPONSE, msg)) {
+				convert_to_string_ex(&value);
+				STR_SET(msg->http.info.response.status, estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value)));
+			}
+			
 	}
 }
 
@@ -451,38 +419,38 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	zend_hash_clean(OBJ_PROP(obj));
 
 	ASSOC_PROP(obj, long, "type", msg->type);
-	ASSOC_STRINGL(obj, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
-
-	MAKE_STD_ZVAL(headers);
-	array_init(headers);
-
-	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-	ASSOC_PROP(obj, zval, "headers", headers);
+	ASSOC_PROP(obj, double, "httpVersion", msg->http.version);
 
 	switch (msg->type)
 	{
 		case HTTP_MSG_REQUEST:
-			ASSOC_PROP(obj, double, "httpVersion", msg->info.request.http_version);
 			ASSOC_PROP(obj, long, "responseCode", 0);
-			ASSOC_STRING(obj, "requestMethod", msg->info.request.method);
-			ASSOC_STRING(obj, "requestUri", msg->info.request.URI);
+			ASSOC_STRINGL(obj, "responseStatus", "", 0);
+			ASSOC_STRING(obj, "requestMethod", msg->http.info.request.method);
+			ASSOC_STRING(obj, "requestUri", msg->http.info.request.URI);
 		break;
 
 		case HTTP_MSG_RESPONSE:
-			ASSOC_PROP(obj, double, "httpVersion", msg->info.response.http_version);
-			ASSOC_PROP(obj, long, "responseCode", msg->info.response.code);
-			ASSOC_STRING(obj, "requestMethod", "");
-			ASSOC_STRING(obj, "requestUri", "");
+			ASSOC_PROP(obj, long, "responseCode", msg->http.info.response.code);
+			ASSOC_STRING(obj, "responseStatus", msg->http.info.response.status);
+			ASSOC_STRINGL(obj, "requestMethod", "", 0);
+			ASSOC_STRINGL(obj, "requestUri", "", 0);
 		break;
 
 		case HTTP_MSG_NONE:
 		default:
-			ASSOC_PROP(obj, double, "httpVersion", 0.0);
 			ASSOC_PROP(obj, long, "responseCode", 0);
-			ASSOC_STRING(obj, "requestMethod", "");
-			ASSOC_STRING(obj, "requestUri", "");
+			ASSOC_STRINGL(obj, "responseStatus", "", 0);
+			ASSOC_STRINGL(obj, "requestMethod", "", 0);
+			ASSOC_STRINGL(obj, "requestUri", "", 0);
 		break;
 	}
+
+	MAKE_STD_ZVAL(headers);
+	array_init(headers);
+	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	ASSOC_PROP(obj, zval, "headers", headers);
+	ASSOC_STRINGL(obj, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
 
 	return OBJ_PROP(obj);
 }
@@ -659,7 +627,7 @@ PHP_METHOD(HttpMessage, getResponseCode)
 			RETURN_NULL();
 		}
 
-		RETURN_LONG(obj->message->info.response.code);
+		RETURN_LONG(obj->message->http.info.response.code);
 	}
 }
 /* }}} */
@@ -688,7 +656,7 @@ PHP_METHOD(HttpMessage, setResponseCode)
 		RETURN_FALSE;
 	}
 
-	obj->message->info.response.code = code;
+	obj->message->http.info.response.code = code;
 	RETURN_TRUE;
 }
 /* }}} */
@@ -710,7 +678,7 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 			RETURN_NULL();
 		}
 
-		RETURN_STRING(obj->message->info.request.method, 1);
+		RETURN_STRING(obj->message->http.info.request.method, 1);
 	}
 }
 /* }}} */
@@ -743,7 +711,7 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 		RETURN_FALSE;
 	}
 
-	STR_SET(obj->message->info.request.method, estrndup(method, method_len));
+	STR_SET(obj->message->http.info.request.method, estrndup(method, method_len));
 	RETURN_TRUE;
 }
 /* }}} */
@@ -764,7 +732,7 @@ PHP_METHOD(HttpMessage, getRequestUri)
 			RETURN_NULL();
 		}
 
-		RETURN_STRING(obj->message->info.request.URI, 1);
+		RETURN_STRING(obj->message->http.info.request.URI, 1);
 	}
 }
 /* }}} */
@@ -793,7 +761,7 @@ PHP_METHOD(HttpMessage, setRequestUri)
 		RETURN_FALSE;
 	}
 
-	STR_SET(obj->message->info.request.URI, estrndup(URI, URIlen));
+	STR_SET(obj->message->http.info.request.URI, estrndup(URI, URIlen));
 	RETURN_TRUE;
 }
 /* }}} */
@@ -811,21 +779,7 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 		double version;
 		getObject(http_message_object, obj);
 
-		switch (obj->message->type)
-		{
-			case HTTP_MSG_RESPONSE:
-				version = obj->message->info.response.http_version;
-			break;
-
-			case HTTP_MSG_REQUEST:
-				version = obj->message->info.request.http_version;
-			break;
-
-			case HTTP_MSG_NONE:
-			default:
-				RETURN_NULL();
-		}
-		sprintf(ver, "%1.1lf", version);
+		sprintf(ver, "%1.1lf", obj->message->http.version);
 		RETURN_STRINGL(ver, 3, 1);
 	}
 }
@@ -846,11 +800,6 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 		return;
 	}
 
-	if (HTTP_MSG_TYPE(NONE, obj->message)) {
-		http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "Message is neither of type HTTP_MSG_RESPONSE nor HTTP_MSG_REQUEST");
-		RETURN_FALSE;
-	}
-
 	convert_to_double(zv);
 	sprintf(v, "%1.1lf", Z_DVAL_P(zv));
 	if (strcmp(v, "1.0") && strcmp(v, "1.1")) {
@@ -858,11 +807,7 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 		RETURN_FALSE;
 	}
 
-	if (HTTP_MSG_TYPE(RESPONSE, obj->message)) {
-		obj->message->info.response.http_version = Z_DVAL_P(zv);
-	} else {
-		obj->message->info.request.http_version = Z_DVAL_P(zv);
-	}
+	obj->message->http.version = Z_DVAL_P(zv);
 	RETURN_TRUE;
 }
 /* }}} */
