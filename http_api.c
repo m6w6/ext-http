@@ -340,10 +340,6 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 }
 /* }}} */
 
-/* {{{ STATUS http_locate_body(char *, size_t) */
-PHP_HTTP_API 
-/* }}} */
-
 /*
  * Local variables:
  * tab-width: 4

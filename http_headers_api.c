@@ -255,15 +255,6 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 
 	Z_ARRVAL(array) = headers;
 	header_len = body ? body - header : strlen(header) + 1;
-	
-/*
-	if (header_len < 2 || ((!lflf) && (!crlfcrlf) && (!strchr(header, ':')))) {
-		fprintf(stderr, "header_len: %lu, lflf: %p, crlfcrlf: %p, ':': %p\n(%s)\n",
-			header_len, lflf, crlfcrlf, strchr(header, ':'), header);
-		http_error(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Cannot parse too short or malformed HTTP headers");
-		return FAILURE;
-	}
-*/
 	line = header;
 
 	while (header_len >= (size_t) (line - begin)) {
@@ -290,16 +281,6 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 						Z_ARRVAL(array) = headers;
 					} else
 					
-					/*
-                    if (    (!strncmp(header, "HTTP/1.", lenof("HTTP/1."))) ||
-                            (!strncmp(line - lenof("HTTP/1.x" HTTP_CRLF) + value_len, "HTTP/1.", lenof("HTTP/1.")))) {
-						if (func) {
-							func(header, &headers, callback_data TSRMLS_CC);
-							Z_ARRVAL(array) = headers;
-						}
-					} else
-					*/
-
 					/* "header: value" pair */
 					if (colon) {
 

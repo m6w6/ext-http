@@ -129,7 +129,7 @@ PHP_HTTP_API void _http_message_set_type(http_message *message, http_message_typ
 
 PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char *message, size_t message_length TSRMLS_DC)
 {
-	char *body = NULL, *cr, *lf;
+	const char *body = NULL;
 	zend_bool free_msg = msg ? 0 : 1;
 
 	if ((!message) || (message_length < HTTP_MSG_MIN_SIZE)) {
@@ -146,11 +146,10 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 	}
 
 	/* header parsing stops at (CR)LF (CR)LF */
-	if (body = strstr(message, HTTP_CRLF HTTP_CRLF)) {
+	if (body = http_locate_body(message)) {
 		zval *c;
 		const char *continue_at = NULL;
 
-		body += lenof(HTTP_CRLF HTTP_CRLF);
 		/* message has content-length header */
 		if (c = http_message_header(msg, "Content-Length")) {
 			long len = atol(Z_STRVAL_P(c));
