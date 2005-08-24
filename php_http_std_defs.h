@@ -62,15 +62,17 @@ typedef int STATUS;
 	RETVAL_OBJECT(o); \
 	return
 #define RETVAL_OBJVAL(ov) \
-	return_value->is_ref = 1; \
-	return_value->type = IS_OBJECT; \
-	return_value->value.obj = (ov); \
-	if (Z_OBJ_HT_P(return_value)->add_ref) { \
-		Z_OBJ_HT_P(return_value)->add_ref(return_value TSRMLS_CC); \
-	}
+	ZVAL_OBJVAL(return_value, ov)
 #define RETURN_OBJVAL(ov) \
 	RETVAL_OBJVAL(ov); \
 	return
+#define ZVAL_OBJVAL(zv, ov) \
+	(zv)->is_ref = 1; \
+	(zv)->type = IS_OBJECT; \
+	(zv)->value.obj = (ov); \
+	if (Z_OBJ_HT_P(zv)->add_ref) { \
+		Z_OBJ_HT_P(zv)->add_ref((zv) TSRMLS_CC); \
+	}
 
 /* function accepts no args */
 #define NO_ARGS \

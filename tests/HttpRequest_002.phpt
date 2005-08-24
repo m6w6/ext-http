@@ -6,19 +6,26 @@ include 'skip.inc';
 checkver(5);
 checkcls('HttpRequest');
 checkurl('www.google.com');
+checkurl('dev.iworks.at');
 ?>
 --FILE--
 <?php
 echo "-TEST\n";
+
 $r = new HttpRequest('http://www.google.com', HTTP_GET);
 $r->send();
 print_r($r->getResponseInfo());
-$r->setMethod(HTTP_POST);
-$r->addPostFields(array('q'=>'foobar','start'=>10));
+
+$r = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_POST);
+$r->addCookies(array('MyCookie' => 'foobar'));
+$r->addQueryData(array('gq'=>'foobar','gi'=>10));
+$r->addPostFields(array('pq'=>'foobar','pi'=>10));
+$r->addPostFile('upload', dirname(__FILE__).'/data.txt', 'text/plain');
 $r->send();
-var_dump($r->getResponseCode());
+echo $r->getResponseBody();
 var_dump($r->getResponseMessage()->getResponseCode());
-var_dump(false != strstr($r->getResponseBody(), "Not Implemented"));
+
+echo "Done";
 ?>
 --EXPECTF--
 %sTEST
@@ -48,7 +55,26 @@ Array
     [httpauth_avail] => %d
     [proxyauth_avail] => %s
 )
-int(501)
-int(501)
-bool(true)
+Array
+(
+    [gq] => foobar
+    [gi] => 10
+    [pq] => foobar
+    [pi] => 10
+    [MyCookie] => foobar
+)
+Array
+(
+    [upload] => Array
+        (
+            [name] => data.txt
+            [type] => text/plain
+            [tmp_name] => %s
+            [error] => 0
+            [size] => 1010
+        )
 
+)
+
+int(200)
+Done

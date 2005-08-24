@@ -394,9 +394,9 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 
 STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr, http_request_body *body TSRMLS_DC)
 {
-	zval *meth, *URL, *qdata, *opts;
+	zval *meth, *URL;
 	char *request_uri;
-	STATUS status;
+	STATUS status = SUCCESS;
 
 	if (!body) {
 		return FAILURE;
@@ -406,46 +406,30 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		return FAILURE;
 	}
 
-	meth  = GET_PROP(obj, method);
-	URL   = GET_PROP(obj, url);
-	qdata = GET_PROP(obj, queryData);
-	opts  = GET_PROP(obj, options);
-
+	URL = GET_PROP(obj, url);
 	// HTTP_URI_MAXLEN+1 long char *
 	if (!(request_uri = http_absolute_uri_ex(Z_STRVAL_P(URL), Z_STRLEN_P(URL), NULL, 0, NULL, 0, 0))) {
 		return FAILURE;
 	}
-
-	if (Z_STRLEN_P(qdata) && (strlen(request_uri) < HTTP_URI_MAXLEN)) {
-		if (!strchr(request_uri, '?')) {
-			strcat(request_uri, "?");
-		} else {
-			strcat(request_uri, "&");
-		}
-		strncat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN - strlen(request_uri));
-	}
-
+	
+	meth = GET_PROP(obj, method);
 	switch (Z_LVAL_P(meth))
 	{
 		case HTTP_GET:
 		case HTTP_HEAD:
 			body->type = -1;
-			status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, NULL, Z_ARRVAL_P(opts));
+			body = NULL;
 		break;
 
 		case HTTP_PUT:
 		{
-			php_stream *stream;
 			php_stream_statbuf ssb;
-			zval *file = GET_PROP(obj, putFile);
-
-			if (	(stream = php_stream_open_wrapper(Z_STRVAL_P(file), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL)) &&
-					!php_stream_stat(stream, &ssb)) {
+			php_stream *stream = php_stream_open_wrapper(Z_STRVAL_P(GET_PROP(obj, putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL);
+			
+			if (stream && !php_stream_stat(stream, &ssb)) {
 				body->type = HTTP_REQUEST_BODY_UPLOADFILE;
 				body->data = stream;
 				body->size = ssb.sb.st_size;
-
-				status = http_request_init(obj->ch, HTTP_PUT, request_uri, body, Z_ARRVAL_P(opts));
 			} else {
 				status = FAILURE;
 			}
@@ -453,34 +437,32 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		break;
 
 		case HTTP_POST:
-		{
-			zval *fields = GET_PROP(obj, postFields), *files = GET_PROP(obj, postFiles);
-
-			if (SUCCESS == (status = http_request_body_fill(body, Z_ARRVAL_P(fields), Z_ARRVAL_P(files)))) {
-				status = http_request_init(obj->ch, HTTP_POST, request_uri, body, Z_ARRVAL_P(opts));
-			}
-		}
-		break;
-
 		default:
-		{
-			zval *post = GET_PROP(obj, postData);
-
-			body->type = HTTP_REQUEST_BODY_CSTRING;
-			body->data = Z_STRVAL_P(post);
-			body->size = Z_STRLEN_P(post);
-
-			status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, body, Z_ARRVAL_P(opts));
-		}
+			status = http_request_body_fill(body, Z_ARRVAL_P(GET_PROP(obj, postFields)), Z_ARRVAL_P(GET_PROP(obj, postFiles)));
 		break;
 	}
+	
+	if (status == SUCCESS) {
+		zval *qdata = GET_PROP(obj, queryData);
+		
+		if (Z_STRLEN_P(qdata) && (strlen(request_uri) < HTTP_URI_MAXLEN)) {
+			if (!strchr(request_uri, '?')) {
+				strcat(request_uri, "?");
+			} else {
+				strcat(request_uri, "&");
+			}
+			strncat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN - strlen(request_uri));
+		}
+		
+		status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, body, Z_ARRVAL_P(GET_PROP(obj, options)));
+	}
+	efree(request_uri);
 
 	/* clean previous response */
 	phpstr_dtor(&obj->response);
 	/* clean previous request */
 	phpstr_dtor(&obj->request);
 
-	efree(request_uri);
 	return status;
 }
 
@@ -490,8 +472,12 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 
 	phpstr_fix(&obj->request);
 	phpstr_fix(&obj->response);
-
-	if (msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response))) {
+	
+	msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response));
+	
+	if (!msg) {
+		return FAILURE;
+	} else {
 		char *body;
 		size_t body_len;
 		zval *headers, *message,
@@ -501,7 +487,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 
 		/* should we record history? */
 		if (Z_TYPE_P(hist) != IS_BOOL) {
-			convert_to_boolean_ex(&hist);
+			convert_to_boolean(hist);
 		}
 		if (Z_LVAL_P(hist)) {
 			/* we need to act like a zipper, as we'll receive
@@ -541,9 +527,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		add_assoc_stringl(resp, "body", body, body_len, 0);
 
 		MAKE_STD_ZVAL(message);
-		message->type = IS_OBJECT;
-		message->is_ref = 1;
-		message->value.obj = http_message_object_from_msg(msg);
+		ZVAL_OBJVAL(message, http_message_object_from_msg(msg));
 		SET_PROP(obj, responseMessage, message);
 		zval_ptr_dtor(&message);
 
@@ -552,7 +536,6 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 
 		return SUCCESS;
 	}
-	return FAILURE;
 }
 
 #define http_request_object_set_options_subr(key, ow) \
@@ -1551,17 +1534,15 @@ PHP_METHOD(HttpRequest, send)
 		RETURN_FALSE;
 	}
 
-	if (SUCCESS == (status = http_request_object_requesthandler(obj, getThis(), &body))) {
-		status = http_request_exec(obj->ch, NULL, &obj->response, &obj->request);
+	RETVAL_NULL();
+	
+	if (	(SUCCESS == http_request_object_requesthandler(obj, getThis(), &body)) &&
+			(SUCCESS == http_request_exec(obj->ch, NULL, &obj->response, &obj->request)) &&
+			(SUCCESS == http_request_object_responsehandler(obj, getThis()))) {
+		RETVAL_OBJECT(GET_PROP(obj, responseMessage));
 	}
 	http_request_body_dtor(&body);
 
-	/* final data handling */
-	if (SUCCESS == status) {
-		status = http_request_object_responsehandler(obj, getThis());
-	}
-
-	RETVAL_OBJECT(GET_PROP(obj, responseMessage));
 	SET_EH_NORMAL();
 }
 /* }}} */
