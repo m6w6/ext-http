@@ -65,7 +65,7 @@ typedef int STATUS;
 	return_value->is_ref = 1; \
 	return_value->type = IS_OBJECT; \
 	return_value->value.obj = (ov); \
-	if (Z_OBJ_HT_P(return_value)) { \
+	if (Z_OBJ_HT_P(return_value)->add_ref) { \
 		Z_OBJ_HT_P(return_value)->add_ref(return_value TSRMLS_CC); \
 	}
 #define RETURN_OBJVAL(ov) \
