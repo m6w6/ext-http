@@ -222,8 +222,10 @@ PHP_MINIT_FUNCTION(http)
 	http_exception_object_init();
 #endif /* ZEND_ENGINE_2 */
 
+#ifdef ZEND_ENGINE_2
 	zend_hash_init_ex(&http_response_statics, 0, NULL, ZVAL_INTERNAL_PTR_DTOR, 1, 0);
 	zend_fix_static_properties(http_response_object_ce, &http_response_statics TSRMLS_CC);
+#endif
 	return SUCCESS;
 }
 /* }}} */
@@ -258,7 +260,9 @@ PHP_RINIT_FUNCTION(http)
 /* {{{ PHP_RSHUTDOWN_FUNCTION */
 PHP_RSHUTDOWN_FUNCTION(http)
 {
+#ifdef ZEND_ENGINE_2
 	zend_clean_static_properties(http_response_object_ce TSRMLS_CC);
+#endif
 	http_globals_free(HTTP_GLOBALS);
 	return SUCCESS;
 }
