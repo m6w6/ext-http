@@ -4,3 +4,6 @@ $Id$
 
 HttpResponse class is infunctional with current ZendEngine2,
 a fix is pending.
+
+http_chunked_decode() still depends on CRLF.
+

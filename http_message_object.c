@@ -776,7 +776,6 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 
 	IF_RETVAL_USED {
 		char ver[4] = {0};
-		double version;
 		getObject(http_message_object, obj);
 
 		sprintf(ver, "%1.1lf", obj->message->http.version);

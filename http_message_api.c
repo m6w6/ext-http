@@ -353,8 +353,6 @@ PHP_HTTP_API void _http_message_tostruct_recursive(http_message *msg, zval *obj 
 	} else {
 		add_assoc_null(&strct, "parentMessage");
 	}
-	http_message_dtor(msg);
-	efree(msg);
 }
 
 PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)

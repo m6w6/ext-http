@@ -679,6 +679,7 @@ PHP_FUNCTION(http_parse_message)
 	if (msg = http_message_parse(message, message_len)) {
 		object_init(return_value);
 		http_message_tostruct_recursive(msg, return_value);
+		http_message_free(&msg);
 	} else {
 		RETURN_NULL();
 	}

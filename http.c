@@ -44,6 +44,7 @@
 #	include "php_http_exception_object.h"
 #endif
 
+#include "missing.h"
 #include "phpstr/phpstr.h"
 
 #ifdef HTTP_HAVE_CURL
