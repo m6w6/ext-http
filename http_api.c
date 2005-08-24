@@ -281,29 +281,28 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 /* }}} */
 
 /* {{{ char *http_chunked_decode(char *, size_t, char **, size_t *) */
-PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encoded_len,
-	char **decoded, size_t *decoded_len TSRMLS_DC)
+PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
 	const char *e_ptr;
 	char *d_ptr;
-
+	
 	*decoded_len = 0;
 	*decoded = ecalloc(1, encoded_len);
 	d_ptr = *decoded;
 	e_ptr = encoded;
 
 	while (((e_ptr - encoded) - encoded_len) > 0) {
-		int no_crlf = 0;
+		size_t chunk_len = 0, EOL_len = 0;
+		int eol_mismatch = 0;
 		char *n_ptr;
-		size_t chunk_len = 0;
 
 		chunk_len = strtol(e_ptr, &n_ptr, 16);
 
 		/* check if:
 		 * - we could not read in chunk size
-		 * - chunk size is not followed by HTTP_CRLF|NUL
+		 * - chunk size is not followed by (CR)LF|NUL
 		 */
-		if ((n_ptr == e_ptr) || (*n_ptr && (no_crlf = strncmp(n_ptr, HTTP_CRLF, lenof(HTTP_CRLF))))) {
+		if ((n_ptr == e_ptr) || (*n_ptr && (eol_mismatch = n_ptr != http_locate_eol(e_ptr, &EOL_len)))) {
 			/* don't fail on apperently not encoded data */
 			if (e_ptr == encoded) {
 				memcpy(*decoded, encoded, encoded_len);
@@ -311,10 +310,14 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 				return encoded + encoded_len;
 			} else {
 				efree(*decoded);
-				if (no_crlf) {
-					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0D 0x0A; got: 0x%x 0x%x)", *n_ptr, *(n_ptr + 1));
+				if (eol_mismatch) {
+					if (EOL_len == 2) {
+						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0D 0x0A; got: 0x%X 0x%X)", *n_ptr, *(n_ptr + 1));
+					} else {
+						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0A; got: 0x%X)", *n_ptr);
+					}
 				} else {
-					char *error = estrndup(n_ptr, strcspn(n_ptr, "\r\n \0"));
+					char *error = estrndup(n_ptr, strcspn(n_ptr, "\r\n "));
 					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid chunk size: '%s' at pos %d", error, n_ptr - encoded);
 					efree(error);
 				}
@@ -330,9 +333,9 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 			break;
 		}
 
-		memcpy(d_ptr, e_ptr += 2, chunk_len);
+		memcpy(d_ptr, e_ptr += EOL_len, chunk_len);
 		d_ptr += chunk_len;
-		e_ptr += chunk_len + 2;
+		e_ptr += chunk_len + EOL_len;
 		*decoded_len += chunk_len;
 	}
 

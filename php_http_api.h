@@ -75,6 +75,17 @@ static inline const char *_http_locate_body(const char *message)
 	}
 }
 
+#define http_locate_eol _http_locate_eol
+static inline const char *_http_locate_eol(const char *line, size_t *eol_len)
+{
+	const char *eol = strpbrk(line, "\r\n");
+	
+	if (eol_len) {
+		*eol_len = eol ? ((eol[0] == '\r' && eol[1] == '\n') ? 2 : 1) : 0;
+	}
+	return eol;
+}
+
 #endif
 
 /*

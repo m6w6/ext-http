@@ -1,5 +1,5 @@
 --TEST--
-http_chunked_decode() "\r\n"
+http_chunked_decode() "\n"
 --SKIPIF--
 <?php
 include 'skip.inc';
@@ -8,14 +8,14 @@ include 'skip.inc';
 <?php
 echo "-TEST\n";
 $data =
-"02\r\n".
-"ab\r\n".
-"04\r\n".
-"ra\nc\r\n".
-"06\r\n".
-"adabra\r\n".
-"0\r\n".
-"nothing\n";
+"02\n".
+"ab\n".
+"04\n".
+"ra\nc\n".
+"06\n".
+"adabra\n".
+"0\n".
+"hidden\n";
 var_dump(http_chunked_decode($data));
 ?>
 --EXPECTF--
