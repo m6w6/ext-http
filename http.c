@@ -134,9 +134,13 @@ zend_module_entry http_module_entry = {
 int http_module_number;
 
 /* {{{ http_globals */
-static inline void http_globals_init(zend_http_globals *G)
+static void http_globals_init_once(zend_http_globals *G)
 {
 	memset(G, 0, sizeof(zend_http_globals));
+}
+
+static inline void http_globals_init(zend_http_globals *G)
+{
 	G->send.buffer_size = HTTP_SENDBUF_SIZE;
 	zend_hash_init(&G->request.methods.custom, 0, NULL, ZVAL_PTR_DTOR, 0);
 #ifdef HTTP_HAVE_CURL
@@ -149,8 +153,8 @@ static inline void http_globals_init(zend_http_globals *G)
 
 static inline void http_globals_free(zend_http_globals *G)
 {
-	STR_FREE(G->send.content_type);
-	STR_FREE(G->send.unquoted_etag);
+	STR_SET(G->send.content_type, NULL);
+	STR_SET(G->send.unquoted_etag, NULL);
 	zend_hash_destroy(&G->request.methods.custom);
 #ifdef HTTP_HAVE_CURL
 	zend_llist_clean(&G->request.copies.strings);
@@ -201,9 +205,7 @@ PHP_MINIT_FUNCTION(http)
 {
 	http_module_number = module_number;
 
-#ifdef ZTS
-	ZEND_INIT_MODULE_GLOBALS(http, NULL, NULL)
-#endif
+	ZEND_INIT_MODULE_GLOBALS(http, http_globals_init_once, NULL)
 
 	REGISTER_INI_ENTRIES();
 	
