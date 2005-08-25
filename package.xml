@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
+<!-- $Revision: 1.34 $ -->
 <package version="1.0">
   <name>pecl_http</name>
   <summary>Extended HTTP support</summary>
@@ -30,16 +31,29 @@
   </maintainers>
 
   <release>
-    <version>0.11.0</version>
-    <date>2005-08-01</date>
+    <version>0.12.0</version>
+    <date>2005-08-00</date>
     <state>beta</state>
     <notes><![CDATA[
-* Fixed HttpRequest with redirects
-* Fixed http.allowed_methods INI entry
-+ Added HTTP specific exceptions
-+ Added http.only_exceptions INI entry
-+ Added HttpRequest::$recordHistory and HttpRequest::getHistory()
-- Removed the ondebug callback option for requests
++ Added ETag generation through libmhash
++ Added http_parse_message()
++ Added single LF awareness to the parsers
++ Added HttpResponse::setHeader(), HttpResponse::getHeader(), HttpResponse::status()
++ Added HttpResponse::status()
++ Added constants HttpMessage::NONE, Http_Message::REQUEST, HttpMessage::RESPONSE
++ Added Content-Length header if HttpResponse sends full plain entity
++ Added ZendEngine workaround for internal class' static properties (HttpResponse)
+
+- Removed http_split_response()
+- Removed HttpResponse::sendHeader(), HttpResponse::sendStatus()
+- Removed HttpRequest::unset*() methods, now handled through set*() with empty parameter
+
+* Fixed initialization and cleanup of module globals
+* Fixed builds and tests without libcurl
+* Fixed access of request headers through $_SERVER
+* Fixed check for ext/session in http_redirect()
+* Fixed custom ETags and Last-Modified dates in HttpResponse
+* Fixed PHP4 build
 ]]>
     </notes>
   </release>
@@ -70,6 +84,7 @@
       <file role="src">php_http_cache_api.h</file>
       <file role="src">php_http_date_api.h</file>
       <file role="src">php_http_headers_api.h</file>
+      <file role="src">php_http_info_api.h</file>
       <file role="src">php_http_message_api.h</file>
       <file role="src">php_http_request_api.h</file>
       <file role="src">php_http_request_pool_api.h</file>
@@ -89,6 +104,7 @@
       <file role="src">http_cache_api.c</file>
       <file role="src">http_date_api.c</file>
       <file role="src">http_headers_api.c</file>
+      <file role="src">http_info_api.c</file>
       <file role="src">http_message_api.c</file>
       <file role="src">http_request_api.c</file>
       <file role="src">http_request_pool_api.c</file>
@@ -102,13 +118,13 @@
       <file role="src">http_exception_object.c</file>
       
       <dir name="tests" role="test">
-        <file install-as="README.txt">README.txt</file>
         <file>data.txt</file>
         <file>skip.inc</file>
         <file>abs_uri_001.phpt</file>
         <file>abs_uri_002.phpt</file>
         <file>allowed_methods_001.phpt</file>
         <file>chunked_decode_001.phpt</file>
+        <file>chunked_decode_002.phpt</file>
         <file>date_001.phpt</file>
         <file>date_002.phpt</file>
         <file>get_request_data_001.phpt</file>
@@ -121,6 +137,7 @@
         <file>HttpResponse_002.phpt</file>
         <file>INI_001.phpt</file>
         <file>parse_headers_001.phpt</file>
+        <file>parse_message_001.phpt</file>
         <file>redirect_001.phpt</file>
         <file>redirect_002.phpt</file>
         <file>redirect_003.phpt</file>
@@ -140,8 +157,6 @@
         <file>send_file_005.phpt</file>
         <file>send_file_006.phpt</file>
         <file>send_file_007.phpt</file>
-        <file>split_response_001.phpt</file>
-        <file>split_response_002.phpt</file>
       </dir>
     </dir>
   </filelist>
