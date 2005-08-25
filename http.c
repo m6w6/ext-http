@@ -241,7 +241,9 @@ PHP_MINIT_FUNCTION(http)
 /* {{{ PHP_MSHUTDOWN_FUNCTION */
 PHP_MSHUTDOWN_FUNCTION(http)
 {
+#ifdef ZEND_ENGINE_2
 	zend_hash_destroy(&http_response_statics);
+#endif
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
 	curl_global_cleanup();
@@ -260,7 +262,9 @@ PHP_RINIT_FUNCTION(http)
 	}
 
 	http_globals_init(HTTP_GLOBALS);
+#ifdef ZEND_ENGINE_2
 	zend_init_static_properties(http_response_object_ce, &http_response_statics TSRMLS_CC);
+#endif
 	return SUCCESS;
 }
 /* }}} */
