@@ -186,6 +186,10 @@ PHP_INI_MH(http_update_allowed_methods)
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
 
+#ifndef ZEND_ENGINE_2
+#	define OnUpdateLong OnUpdateInt
+#endif
+
 PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.allowed_methods", "", PHP_INI_ALL, http_update_allowed_methods, request.methods.allowed)
 	HTTP_PHP_INI_ENTRY("http.cache_log", "", PHP_INI_ALL, OnUpdateString, log.cache)

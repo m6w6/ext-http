@@ -150,13 +150,6 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		zval *c;
 		const char *continue_at = NULL;
 
-		/* message has content-length header */
-		if (c = http_message_header(msg, "Content-Length")) {
-			long len = atol(Z_STRVAL_P(c));
-			phpstr_from_string_ex(PHPSTR(msg), body, len);
-			continue_at = body + len;
-		} else
-
 		/* message has chunked transfer encoding */
 		if (c = http_message_header(msg, "Transfer-Encoding")) {
 			if (!strcasecmp("chunked", Z_STRVAL_P(c))) {
@@ -180,6 +173,13 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 					}
 				}
 			}
+		} else
+
+		/* message has content-length header */
+		if (c = http_message_header(msg, "Content-Length")) {
+			long len = atol(Z_STRVAL_P(c));
+			phpstr_from_string_ex(PHPSTR(msg), body, len);
+			continue_at = body + len;
 		} else
 
 		/* message has content-range header */

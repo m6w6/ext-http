@@ -1310,13 +1310,6 @@ PHP_FUNCTION(http_build_query)
 
 PHP_FUNCTION(http_test)
 {
-	ulong idx;
-	char *key;
-	zval **data;
-	FOREACH_HASH_KEYVAL(&EG(symbol_table), key, idx, data) {
-		convert_to_string_ex(data);
-		fprintf(stderr, "\t %s => %s\n", key, Z_STRVAL_PP(data));
-	}
 }
 
 /*

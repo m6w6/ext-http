@@ -202,9 +202,6 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 	char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
 {
-	char etag[41] = { 0 };
-	unsigned char digest[20];
-
 	if (mode & PHP_OUTPUT_HANDLER_START) {
 		if (HTTP_G(etag).started) {
 			http_error(HE_WARNING, HTTP_E_RUNTIME, "ob_etaghandler can only be used once");
