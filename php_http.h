@@ -28,6 +28,7 @@
 #	include <curl/curl.h>
 #endif
 #include "ext/standard/md5.h"
+#include "ext/standard/sha1.h"
 #include "phpstr/phpstr.h"
 
 extern zend_module_entry http_module_entry;
@@ -41,8 +42,9 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	zend_bool only_exceptions;
 #endif
 	struct _http_globals_etag {
+		long mode;
+		void *ctx;
 		zend_bool started;
-		PHP_MD5_CTX md5ctx;
 	} etag;
 
 	struct _http_globals_log {

@@ -29,6 +29,7 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_send_api.h"
+#include "php_http_cache_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
 #endif
@@ -190,6 +191,7 @@ PHP_INI_BEGIN()
 #ifdef ZEND_ENGINE_2
 	HTTP_PHP_INI_ENTRY("http.only_exceptions", "0", PHP_INI_ALL, OnUpdateBool, only_exceptions)
 #endif
+	HTTP_PHP_INI_ENTRY("http.etag_mode", "-2", PHP_INI_ALL, OnUpdateLong, etag.mode)
 PHP_INI_END()
 /* }}} */
 
@@ -204,6 +206,10 @@ PHP_MINIT_FUNCTION(http)
 #endif
 
 	REGISTER_INI_ENTRIES();
+	
+	HTTP_LONG_CONSTANT("HTTP_ETAG_MD5", HTTP_ETAG_MD5);
+	HTTP_LONG_CONSTANT("HTTP_ETAG_SHA1", HTTP_ETAG_SHA1);
+	HTTP_LONG_CONSTANT("HTTP_ETAG_MHASH", HTTP_ETAG_MHASH);
 
 #ifdef HTTP_HAVE_CURL
 	if (CURLE_OK != curl_global_init(CURL_GLOBAL_ALL)) {

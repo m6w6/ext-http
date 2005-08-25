@@ -24,6 +24,7 @@
 #include "php_streams.h"
 #include "php_output.h"
 #include "ext/standard/md5.h"
+#include "ext/standard/sha1.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
@@ -39,47 +40,39 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 {
 	php_stream_statbuf ssb;
 	char ssb_buf[128] = {0};
-	unsigned char digest[16];
-	PHP_MD5_CTX ctx;
-	char *new_etag = ecalloc(1, 33);
-
-	PHP_MD5Init(&ctx);
-
+	size_t ssb_len;
+	void *ctx = http_etag_init();
+	
 	switch (data_mode)
 	{
 		case SEND_DATA:
-			PHP_MD5Update(&ctx, data_ptr, data_len);
+			http_etag_update(ctx, data_ptr, data_len);
 		break;
 
 		case SEND_RSRC:
 		{
 			if (php_stream_stat((php_stream *) data_ptr, &ssb)) {
-				efree(new_etag);
+				efree(ctx);
 				return NULL;
 			}
-
-			snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
-			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
+			ssb_len = snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
+			http_etag_update(ctx, ssb_buf, ssb_len);
 		}
 		break;
 
 		default:
 		{
 			if (php_stream_stat_path((char *) data_ptr, &ssb)) {
-				efree(new_etag);
+				efree(ctx);
 				return NULL;
 			}
-
-			snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
-			PHP_MD5Update(&ctx, ssb_buf, strlen(ssb_buf));
+			ssb_len = snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
+			http_etag_update(ctx, ssb_buf, ssb_len);
 		}
 		break;
 	}
 
-	PHP_MD5Final(digest, &ctx);
-	make_digest(new_etag, digest);
-
-	return new_etag;
+	return http_etag_finish(ctx);
 }
 /* }}} */
 
@@ -205,33 +198,38 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 	char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
 {
-	char etag[33] = { 0 };
-	unsigned char digest[16];
+	char etag[41] = { 0 };
+	unsigned char digest[20];
 
 	if (mode & PHP_OUTPUT_HANDLER_START) {
+		if (HTTP_G(etag).started) {
+			http_error(HE_WARNING, HTTP_E_RUNTIME, "ob_etaghandler can only be used once");
+			return;
+		}
 		HTTP_G(etag).started = 1;
-		PHP_MD5Init(&HTTP_G(etag).md5ctx);
+		HTTP_G(etag).ctx = http_etag_init();
 	}
 
-	PHP_MD5Update(&HTTP_G(etag).md5ctx, output, output_len);
+	http_etag_update(HTTP_G(etag).ctx, output, output_len);
 
 	if (mode & PHP_OUTPUT_HANDLER_END) {
-		PHP_MD5Final(digest, &HTTP_G(etag).md5ctx);
-
+		char *etag = http_etag_finish(HTTP_G(etag).ctx);
+		
 		/* just do that if desired */
 		if (HTTP_G(etag).started) {
 			char *sent_header = NULL;
 			
-			make_digest(etag, digest);
 			http_send_cache_control(HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL));
-			http_send_etag_ex(etag, 32, &sent_header);
-
+			http_send_etag_ex(etag, strlen(etag), &sent_header);
+			
 			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
+				efree(etag);
 				http_exit_ex(304, sent_header, NULL, 0);
 			} else {
 				STR_FREE(sent_header);
 			}
 		}
+		efree(etag);
 	}
 
 	*handled_output_len = output_len;

@@ -2,8 +2,19 @@
 // $Id$
 
 ARG_ENABLE("http", "whether to enable extended HTTP support", "no");
+ARG_WITH("mhash", "mhash support", "no");
 
 if (PHP_HTTP != "no") {
+
+	if (PHP_MHASH != "no") {
+		if (CHECK_HEADER_ADD_INCLUDE('mhash.h', 'CFLAGS_HTTP') &&
+				CHECK_LIB('libmhash.lib', 'mhash')) {
+			AC_DEFINE('HAVE_LIBMHASH', 1 , "Have mhash library");
+		} else {
+			WARNING("mhash not enabled; libraries and headers not found");
+		}
+	}
+
 	EXTENSION("http",
 		"missing.c http.c http_functions.c http_exception_object.c "+
 		"http_util_object.c http_message_object.c http_requestpool_object.c "+

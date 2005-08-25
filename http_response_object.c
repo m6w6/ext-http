@@ -773,19 +773,19 @@ PHP_METHOD(HttpResponse, send)
 
 	/* capture mode */
 	if (Z_BVAL_P(GET_STATIC_PROP(catch))) {
-		zval *the_data;
+		zval the_data;
 
-		MAKE_STD_ZVAL(the_data);
-		php_ob_get_buffer(the_data TSRMLS_CC);
-
-		SET_STATIC_PROP(data, the_data);
+		INIT_PZVAL(&the_data);
+		php_ob_get_buffer(&the_data TSRMLS_CC);
+		SET_STATIC_PROP(data, &the_data);
 		ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
 
 		if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
-			char *etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
+			char *etag = http_etag(Z_STRVAL(the_data), Z_STRLEN(the_data), SEND_DATA);
 			UPD_STATIC_PROP(string, eTag, etag);
 			efree(etag);
 		}
+		zval_dtor(&the_data);
 
 		clean_ob = 1;
 	}
@@ -919,14 +919,14 @@ PHP_METHOD(HttpResponse, send)
  */
 PHP_METHOD(HttpResponse, capture)
 {
-	zval *do_catch;
+	zval do_catch;
 
 	NO_ARGS;
 
-	MAKE_STD_ZVAL(do_catch);
-	ZVAL_LONG(do_catch, 1);
+	INIT_PZVAL(&do_catch);
+	ZVAL_LONG(&do_catch, 1);
 
-	SET_STATIC_PROP(catch, do_catch);
+	SET_STATIC_PROP(catch, &do_catch);
 
 	php_end_ob_buffers(0 TSRMLS_CC);
 	php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);

@@ -38,6 +38,7 @@ static inline zval *tmp_zval(void)
 
 static void dup_zval(zval **z)
 {
+	zval *o = *z;
 	zval_add_ref(z);
 	SEPARATE_ZVAL(z);
 }
@@ -145,7 +146,7 @@ int zend_update_static_property(zend_class_entry *scope, char *name, size_t name
 		}
 		retval = SUCCESS;
 	}
-	
+	zval_ptr_dtor(&value);
 	EG(scope) = old_scope;
 	
 	return retval;
@@ -190,7 +191,7 @@ void zend_fix_static_properties(zend_class_entry *ce, HashTable *static_members 
 {
 	zend_hash_copy(static_members, ce->static_members, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	zend_hash_destroy(ce->static_members);
-	zend_hash_init_ex(ce->static_members, 0, NULL, ZVAL_PTR_DTOR, 1, 0);
+	zend_hash_init_ex(ce->static_members, static_members->nNumOfElements, NULL, ZVAL_PTR_DTOR, 1, 0);
 }
 
 void zend_init_static_properties(zend_class_entry *ce, HashTable *static_members TSRMLS_DC)
