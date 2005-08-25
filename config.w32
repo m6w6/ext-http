@@ -8,7 +8,7 @@ if (PHP_HTTP != "no") {
 
 	if (PHP_MHASH != "no") {
 		if (CHECK_HEADER_ADD_INCLUDE('mhash.h', 'CFLAGS_HTTP') &&
-				CHECK_LIB('libmhash.lib', 'mhash')) {
+				CHECK_LIB('libmhash.lib', 'http')) {
 			AC_DEFINE('HAVE_LIBMHASH', 1 , "Have mhash library");
 		} else {
 			WARNING("mhash not enabled; libraries and headers not found");
