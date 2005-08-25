@@ -38,7 +38,6 @@ static inline zval *tmp_zval(void)
 
 static void dup_zval(zval **z)
 {
-	zval *o = *z;
 	zval_add_ref(z);
 	SEPARATE_ZVAL(z);
 }
@@ -141,8 +140,7 @@ int zend_update_static_property(zend_class_entry *scope, char *name, size_t name
 				zval_copy_ctor(*property);
 			}
 		} else {
-			**property = *value;
-			zval_copy_ctor(*property);
+			REPLACE_ZVAL_VALUE(property, value, 1);
 		}
 		retval = SUCCESS;
 	}
