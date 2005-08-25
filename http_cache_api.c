@@ -33,6 +33,10 @@
 #include "php_http_send_api.h"
 #include "php_http_date_api.h"
 
+#ifdef HAVE_LIBMHASH
+#	include <mhash.h>
+#endif
+
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 /* {{{ char *http_etag(void *, size_t, http_send_mode) */

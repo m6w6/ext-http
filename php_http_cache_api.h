@@ -18,12 +18,15 @@
 #ifndef PHP_HTTP_CACHE_API_H
 #define PHP_HTTP_CACHE_API_H
 
+#include "zend_ini.h"
+
+#include "ext/standard/md5.h"
+#include "ext/standard/sha1.h"
+
 #include "php_http_std_defs.h"
 #include "php_http.h"
 #include "php_http_api.h"
 #include "php_http_send_api.h"
-
-#include "zend_ini.h"
 
 #ifdef HAVE_LIBMHASH
 #	include <mhash.h>

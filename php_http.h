@@ -27,8 +27,7 @@
 #	endif
 #	include <curl/curl.h>
 #endif
-#include "ext/standard/md5.h"
-#include "ext/standard/sha1.h"
+
 #include "phpstr/phpstr.h"
 
 extern zend_module_entry http_module_entry;
