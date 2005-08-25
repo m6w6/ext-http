@@ -334,7 +334,6 @@ PHP_HTTP_API void _http_message_tostruct_recursive(http_message *msg, zval *obj 
 	array_init(headers);
 	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	add_assoc_zval(&strct, "headers", headers);
-	zval_ptr_dtor(&headers);
 	
 	add_assoc_stringl(&strct, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg), 1);
 	
