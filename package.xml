@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<!-- $Revision: 1.34 $ -->
+<!-- $Revision: 1.35 $ -->
 <package version="1.0">
   <name>pecl_http</name>
   <summary>Extended HTTP support</summary>
@@ -15,7 +15,6 @@
 * Sending data/files/streams with (multiple) ranges support
 * Negotiating user preferred language/charset
 * Convenient request functions built upon libcurl
-* HTTP auth hooks (Basic)
 * PHP5 classes: HttpUtil, HttpResponse, HttpRequest, HttpRequestPool, HttpMessage
 ]]>
   </description>
@@ -45,6 +44,7 @@
 + Added ZendEngine workaround for internal class' static properties (HttpResponse)
 
 - Removed http_split_response()
+- Removed AuthBasic hooks
 - Removed HttpResponse::sendHeader(), HttpResponse::sendStatus()
 - Removed HttpRequest::unset*() methods, now handled through set*() with empty parameter
 
@@ -80,7 +80,6 @@
       <file role="src">php_http.h</file>
       <file role="src">php_http_std_defs.h</file>
       <file role="src">php_http_api.h</file>
-      <file role="src">php_http_auth_api.h</file>
       <file role="src">php_http_cache_api.h</file>
       <file role="src">php_http_date_api.h</file>
       <file role="src">php_http_headers_api.h</file>
@@ -100,7 +99,6 @@
       <file role="src">http.c</file>
       <file role="src">http_functions.c</file>
       <file role="src">http_api.c</file>
-      <file role="src">http_auth_api.c</file>
       <file role="src">http_cache_api.c</file>
       <file role="src">http_date_api.c</file>
       <file role="src">http_headers_api.c</file>

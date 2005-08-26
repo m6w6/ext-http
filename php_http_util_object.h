@@ -33,9 +33,7 @@ PHP_METHOD(HttpUtil, matchModified);
 PHP_METHOD(HttpUtil, matchEtag);
 PHP_METHOD(HttpUtil, chunkedDecode);
 PHP_METHOD(HttpUtil, parseHeaders);
-PHP_METHOD(HttpUril, parseMessage);
-PHP_METHOD(HttpUtil, authBasic);
-PHP_METHOD(HttpUtil, authBasicCallback);
+PHP_METHOD(HttpUtil, parseMessage);
 
 #endif
 #endif

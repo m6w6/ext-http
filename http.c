@@ -102,8 +102,6 @@ function_entry http_functions[] = {
 	PHP_FE(http_request_method_exists, NULL)
 	PHP_FE(http_request_method_name, NULL)
 #endif
-	PHP_FE(http_auth_basic, NULL)
-	PHP_FE(http_auth_basic_cb, NULL)
 #ifndef ZEND_ENGINE_2
 	PHP_FE(http_build_query, NULL)
 #endif

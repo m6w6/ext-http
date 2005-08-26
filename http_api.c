@@ -179,53 +179,60 @@ void _http_error_ex(long type, long code, const char *format, ...)
 }
 /* }}} */
 
-/* {{{ STATUS http_exit(int, char*, char*, zend_bool) */
-STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header TSRMLS_DC)
+/* {{{ void http_log(char *, char *, char *) */
+void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)
 {
+	time_t now;
+	struct tm nowtm;
 	char datetime[128];
 	
-	if (SUCCESS != http_send_status_header(status, send_header ? header : NULL)) {
-		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
-		STR_FREE(header);
-		STR_FREE(body);
-		return FAILURE;
-	}
-	if (body) {
-		PHPWRITE(body, strlen(body));
-	}
-	{
-		time_t now;
-		struct tm nowtm;
-		
-		time(&now);
-		strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", php_localtime_r(&now, &nowtm));
-	}
+	time(&now);
+	strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", php_localtime_r(&now, &nowtm));
 
-#define HTTP_LOG_WRITE(for, type, header) \
-	HTTP_LOG_WRITE_EX(for, type, header); \
-	HTTP_LOG_WRITE_EX(composite, type, header);
-
-#define HTTP_LOG_WRITE_EX(for, type, header) \
-	if (HTTP_G(log).for && strlen(HTTP_G(log).for)) { \
-	 	php_stream *log = php_stream_open_wrapper(HTTP_G(log).for, "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL); \
+#define HTTP_LOG_WRITE(file, type, msg) \
+	if (file && strlen(file)) { \
+	 	php_stream *log = php_stream_open_wrapper(file, "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL); \
 		 \
 		if (log) { \
-			php_stream_printf(log TSRMLS_CC, "%s [%12s] %32s <%s>%s", datetime, type, header, SG(request_info).request_uri, PHP_EOL); \
+			php_stream_printf(log TSRMLS_CC, "%s [%12s] %32s <%s>%s", datetime, type, msg, SG(request_info).request_uri, PHP_EOL); \
 			php_stream_close(log); \
 		} \
 	 \
 	}
+	
+	HTTP_LOG_WRITE(file, ident, message);
+	HTTP_LOG_WRITE(HTTP_G(log).composite, ident, message);
+}
+/* }}} */
+
+/* {{{ STATUS http_exit(int, char*, char*) */
+STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header TSRMLS_DC)
+{
+	if (status || send_header) {
+		if (SUCCESS != http_send_status_header(status, send_header ? header : NULL)) {
+			http_error_ex(HE_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
+			STR_FREE(header);
+			STR_FREE(body);
+			return FAILURE;
+		}
+	}
+	
+	if (body) {
+		PHPWRITE(body, strlen(body));
+	}
+	
 	switch (status)
 	{
-		case 301:	HTTP_LOG_WRITE(redirect, "301-REDIRECT", header);			break;
-		case 302:	HTTP_LOG_WRITE(redirect, "302-REDIRECT", header);			break;
-		case 304:	HTTP_LOG_WRITE(cache, "304-CACHE", header);					break;
-		case 401:	HTTP_LOG_WRITE(auth, "401-AUTH", header);					break;
-		case 403:	HTTP_LOG_WRITE(auth, "403-AUTH", header);					break;
-		case 405:	HTTP_LOG_WRITE(allowed_methods, "405-ALLOWED", header);		break;
+		case 301:	http_log(HTTP_G(log).redirect, "301-REDIRECT", header);			break;
+		case 302:	http_log(HTTP_G(log).redirect, "302-REDIRECT", header);			break;
+		case 304:	http_log(HTTP_G(log).cache, "304-CACHE", header);				break;
+		case 405:	http_log(HTTP_G(log).allowed_methods, "405-ALLOWED", header);	break;
+		default:	http_log(NULL, header, body);									break;
 	}
+	
 	STR_FREE(header);
 	STR_FREE(body);
+	
 	zend_bailout();
 	/* fake */
 	return SUCCESS;

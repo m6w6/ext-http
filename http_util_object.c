@@ -81,17 +81,6 @@ HTTP_BEGIN_ARGS(parseHeaders, 1)
 	HTTP_ARG_VAL(headers_string, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(authBasic, 2)
-	HTTP_ARG_VAL(username, 0)
-	HTTP_ARG_VAL(password, 0)
-	HTTP_ARG_VAL(realm, 0)
-HTTP_END_ARGS;
-
-HTTP_BEGIN_ARGS(authBasicCallback, 1)
-	HTTP_ARG_VAL(callback, 0)
-	HTTP_ARG_VAL(realm, 0)
-HTTP_END_ARGS;
-
 zend_class_entry *http_util_object_ce;
 zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(date, http_date)
@@ -104,8 +93,6 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(chunkedDecode, http_chunked_decode)
 	HTTP_UTIL_ALIAS(parseMessage, http_parse_message)
 	HTTP_UTIL_ALIAS(parseHeaders, http_parse_headers)
-	HTTP_UTIL_ALIAS(authBasic, http_auth_basic)
-	HTTP_UTIL_ALIAS(authBasicCallback, http_auth_basic_cb)
 	{NULL, NULL, NULL}
 };
 

@@ -31,7 +31,6 @@
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
-#include "php_http_auth_api.h"
 #include "php_http_request_api.h"
 #include "php_http_cache_api.h"
 #include "php_http_request_api.h"
@@ -1155,116 +1154,6 @@ PHP_FUNCTION(http_request_method_name)
 /* }}} */
 #endif
 /* }}} HAVE_CURL */
-
-
-/* {{{ proto bool http_auth_basic(string user, string pass[, string realm = "Restricted"])
- *
- * Example:
- * <pre>
- * <?php
- * if (!http_auth_basic('mike', 's3c|r3t')) {
- *     die('<h1>Authorization failed!</h1>');
- * }
- * ?>
- * </pre>
- */
-PHP_FUNCTION(http_auth_basic)
-{
-	char *realm = NULL, *user, *pass, *suser, *spass;
-	int r_len, u_len, p_len;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|s", &user, &u_len, &pass, &p_len, &realm, &r_len) != SUCCESS) {
-		RETURN_FALSE;
-	}
-
-	if (!realm) {
-		realm = "Restricted";
-	}
-
-	if (SUCCESS != http_auth_basic_credentials(&suser, &spass)) {
-		http_auth_basic_header(realm);
-		RETURN_FALSE;
-	}
-
-	if (strcasecmp(suser, user)) {
-		http_auth_basic_header(realm);
-		RETURN_FALSE;
-	}
-
-	if (strcmp(spass, pass)) {
-		http_auth_basic_header(realm);
-		RETURN_FALSE;
-	}
-
-	RETURN_TRUE;
-}
-/* }}} */
-
-/* {{{ proto bool http_auth_basic_cb(mixed callback[, string realm = "Restricted"])
- *
- * Example:
- * <pre>
- * <?php
- * function auth_cb($user, $pass)
- * {
- *     global $db;
- *     $query = 'SELECT pass FROM users WHERE user='. $db->quoteSmart($user);
- *     if (strlen($realpass = $db->getOne($query)) {
- *         return $pass === $realpass;
- *     }
- *     return false;
- * }
- * if (!http_auth_basic_cb('auth_cb')) {
- *     die('<h1>Authorization failed</h1>');
- * }
- * ?>
- * </pre>
- */
-PHP_FUNCTION(http_auth_basic_cb)
-{
-	zval *cb;
-	char *realm = NULL, *user, *pass;
-	int r_len;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|s", &cb, &realm, &r_len) != SUCCESS) {
-		RETURN_FALSE;
-	}
-
-	if (!realm) {
-		realm = "Restricted";
-	}
-
-	if (SUCCESS != http_auth_basic_credentials(&user, &pass)) {
-		http_auth_basic_header(realm);
-		RETURN_FALSE;
-	}
-	{
-		zval *zparams[2] = {NULL, NULL}, retval;
-		int result = 0;
-
-		MAKE_STD_ZVAL(zparams[0]);
-		MAKE_STD_ZVAL(zparams[1]);
-		ZVAL_STRING(zparams[0], user, 0);
-		ZVAL_STRING(zparams[1], pass, 0);
-
-		if (SUCCESS == call_user_function(EG(function_table), NULL, cb,
-				&retval, 2, zparams TSRMLS_CC)) {
-			result = Z_LVAL(retval);
-		}
-
-		efree(user);
-		efree(pass);
-		efree(zparams[0]);
-		efree(zparams[1]);
-
-		if (!result) {
-			http_auth_basic_header(realm);
-		}
-
-		RETURN_BOOL(result);
-	}
-}
-/* }}}*/
 
 /* {{{ Sara Golemons http_build_query() */
 #ifndef ZEND_ENGINE_2

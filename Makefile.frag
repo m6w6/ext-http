@@ -14,7 +14,6 @@ HTTP_HEADER_FILES= \
 	php_http_date_api.h \
 	php_http_message_object.h \
 	php_http_std_defs.h \
-	php_http_auth_api.h \
 	php_http_exception_object.h \
 	php_http_request_object.h \
 	php_http_requestpool_object.h \

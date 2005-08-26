@@ -35,6 +35,9 @@ extern STATUS _http_parse_key_list(const char *list, HashTable *items, char sepa
 #define http_error_ex _http_error_ex
 extern void _http_error_ex(long type, long code, const char *format, ...) PHP_ATTRIBUTE_FORMAT(printf, 3, 4);
 
+#define http_log(f, i, m) _http_log_ex((f), (i), (m) TSRMLS_CC)
+extern void http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC);
+
 #define http_exit(s, h) http_exit_ex((s), (h), NULL, 1)
 #define http_exit_ex(s, h, b, e) _http_exit_ex((s), (h), (b), (e) TSRMLS_CC)
 extern STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header TSRMLS_DC);
