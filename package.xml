@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<!-- $Revision: 1.36 $ -->
+<!-- $Revision: 1.37 $ -->
 <package version="1.0">
   <name>pecl_http</name>
   <summary>Extended HTTP support</summary>
@@ -31,7 +31,7 @@
 
   <release>
     <version>0.12.0</version>
-    <date>2005-08-00</date>
+    <date>2005-08-26</date>
     <state>beta</state>
     <notes><![CDATA[
 + Added ETag generation through libmhash
