@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<!-- $Revision: 1.35 $ -->
+<!-- $Revision: 1.36 $ -->
 <package version="1.0">
   <name>pecl_http</name>
   <summary>Extended HTTP support</summary>
@@ -42,11 +42,13 @@
 + Added constants HttpMessage::NONE, Http_Message::REQUEST, HttpMessage::RESPONSE
 + Added Content-Length header if HttpResponse sends full plain entity
 + Added ZendEngine workaround for internal class' static properties (HttpResponse)
++ Added HttpRequestPool::socketPerform()
 
 - Removed http_split_response()
 - Removed AuthBasic hooks
 - Removed HttpResponse::sendHeader(), HttpResponse::sendStatus()
 - Removed HttpRequest::unset*() methods, now handled through set*() with empty parameter
+- Removed HttpRequestPool::socketRead(), HttpRequestPool::socketSend()
 
 * Fixed initialization and cleanup of module globals
 * Fixed builds and tests without libcurl

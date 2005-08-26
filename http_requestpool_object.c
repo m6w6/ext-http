@@ -58,9 +58,8 @@ HTTP_BEGIN_ARGS(detach, 1)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(send, 0);
-HTTP_EMPTY_ARGS(socketSend, 0);
+HTTP_EMPTY_ARGS(socketPerform, 0);
 HTTP_EMPTY_ARGS(socketSelect, 0);
-HTTP_EMPTY_ARGS(socketRead, 0);
 
 HTTP_EMPTY_ARGS(valid, 0);
 HTTP_EMPTY_ARGS(current, 1);
@@ -80,9 +79,8 @@ zend_function_entry http_requestpool_object_fe[] = {
 	HTTP_REQPOOL_ME(send, ZEND_ACC_PUBLIC)
 	HTTP_REQPOOL_ME(reset, ZEND_ACC_PUBLIC)
 
-	HTTP_REQPOOL_ME(socketSend, ZEND_ACC_PROTECTED)
+	HTTP_REQPOOL_ME(socketPerform, ZEND_ACC_PROTECTED)
 	HTTP_REQPOOL_ME(socketSelect, ZEND_ACC_PROTECTED)
-	HTTP_REQPOOL_ME(socketRead, ZEND_ACC_PROTECTED)
 
 	/* implements Interator */
 	HTTP_REQPOOL_ME(valid, ZEND_ACC_PUBLIC)
@@ -279,29 +277,33 @@ PHP_METHOD(HttpRequestPool, send)
  * Usage:
  * <pre>
  * <?php
- *     while ($pool->socketSend()) {
+ *     while ($pool->socketPerform()) {
  *         do_something_else();
  *         if (!$pool->socketSelect()) {
  *             die('Socket error');
  *         }
  *     }
- *     $pool->socketRead();
  * ?>
  * </pre>
  */
-PHP_METHOD(HttpRequestPool, socketSend)
+PHP_METHOD(HttpRequestPool, socketPerform)
 {
 	getObject(http_requestpool_object, obj);
 
 	NO_ARGS;
 
-	RETURN_BOOL(0 < http_request_pool_perform(&obj->pool));
+	if (0 < http_request_pool_perform(&obj->pool)) {
+		RETURN_TRUE;
+	} else {
+		zend_llist_apply(&obj->pool.handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
+		RETURN_FALSE;
+	}
 }
 /* }}} */
 
 /* {{{ proto protected bool HttpRequestPool::socketSelect()
  *
- * See HttpRequestPool::socketSend().
+ * See HttpRequestPool::socketPerform().
  */
 PHP_METHOD(HttpRequestPool, socketSelect)
 {
@@ -310,20 +312,6 @@ PHP_METHOD(HttpRequestPool, socketSelect)
 	NO_ARGS;
 
 	RETURN_SUCCESS(http_request_pool_select(&obj->pool));
-}
-/* }}} */
-
-/* {{{ proto protected void HttpRequestPool::socketRead()
- *
- * See HttpRequestPool::socketSend().
- */
-PHP_METHOD(HttpRequestPool, socketRead)
-{
-	getObject(http_requestpool_object, obj);
-
-	NO_ARGS;
-
-	zend_llist_apply(&obj->pool.handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
 }
 /* }}} */
 
