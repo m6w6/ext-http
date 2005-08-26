@@ -87,7 +87,7 @@ static inline void *_http_etag_init(TSRMLS_D)
 #ifdef HAVE_LIBMHASH
 		default:
 			if ((mode < 0) || ((ulong)mode > mhash_count()) || (!(ctx = mhash_init(mode)))) {
-				http_error_ex(HE_ERROR, HE_RUNTIME, "Invalid ETag mode: %ld", mode);
+				http_error_ex(HE_ERROR, HTTP_E_RUNTIME, "Invalid ETag mode: %ld", mode);
 			}
 		break;
 #endif
