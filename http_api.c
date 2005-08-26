@@ -206,8 +206,8 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 	HTTP_LOG_WRITE_EX(composite, type, header);
 
 #define HTTP_LOG_WRITE_EX(for, type, header) \
-	if (HTTP_G(log).##for && strlen(HTTP_G(log).##for)) { \
-	 	php_stream *log = php_stream_open_wrapper(HTTP_G(log).##for, "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL); \
+	if (HTTP_G(log).for && strlen(HTTP_G(log).for)) { \
+	 	php_stream *log = php_stream_open_wrapper(HTTP_G(log).for, "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL); \
 		 \
 		if (log) { \
 			php_stream_printf(log TSRMLS_CC, "%s [%12s] %32s <%s>%s", datetime, type, header, SG(request_info).request_uri, PHP_EOL); \
