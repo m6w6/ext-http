@@ -335,7 +335,7 @@ PHP_METHOD(HttpResponse, getCache)
 
 /* {{{ proto static bool HttpResponse::setGzip(bool gzip)
  *
- * Enable on-thy-fly gzipping of the sent entity. NOT IMPLEMENTED YET.
+ * Enable on-thy-fly gzipping of the sent entity.
  */
 PHP_METHOD(HttpResponse, setGzip)
 {
