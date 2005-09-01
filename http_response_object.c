@@ -143,10 +143,6 @@ HTTP_EMPTY_ARGS(getRequestBody, 0);
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
-#if BROKEN_STATICS
-HashTable http_response_statics;
-#endif
-
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
 
@@ -934,7 +930,7 @@ PHP_METHOD(HttpResponse, capture)
 	php_end_ob_buffers(0 TSRMLS_CC);
 	php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
 
-#if (PHP_MAJOR_VERSION > 5) || (PHP_MINOR_VERSION > 0)
+#ifndef WONKY
 	/* register shutdown function --
 		messing around with ob and headers only works in PHP-5.1 or greater */
 	{
@@ -956,7 +952,7 @@ PHP_METHOD(HttpResponse, capture)
 }
 /* }}} */
 
-#endif /* ZEND_ENGINE_2 */
+#endif /* ZEND_ENGINE_2 && !WONKY */
 
 /*
  * Local variables:
