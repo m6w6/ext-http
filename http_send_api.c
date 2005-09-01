@@ -337,7 +337,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 /* }}} */
 
 /* {{{ STATUS http_send(void *, size_t, http_send_mode) */
-PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send_mode data_mode TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_send_mode data_mode, zend_bool no_cache TSRMLS_DC)
 {
 	HashTable ranges;
 	http_range_status range_status;
@@ -381,7 +381,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 	zend_hash_destroy(&ranges);
 
 	/* send 304 Not Modified if etag matches - DON'T return on ETag generation failure */
-	if (cache_etag) {
+	if (!no_cache && cache_etag) {
 		char *etag = NULL;
 
 		if (!(etag = http_etag(data_ptr, data_size, data_mode))) {
@@ -400,7 +400,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 	}
 
 	/* send 304 Not Modified if last modified matches */
-	if (http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G(send).last_modified)) {
+	if (!no_cache && http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G(send).last_modified)) {
 		char *sent_header = NULL;
 		http_send_last_modified_ex(HTTP_G(send).last_modified, &sent_header);
 		return http_exit_ex(304, sent_header, NULL, 0);
@@ -419,7 +419,7 @@ PHP_HTTP_API STATUS _http_send(const void *data_ptr, size_t data_size, http_send
 /* }}} */
 
 /* {{{ STATUS http_send_stream(php_stream *) */
-PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file, zend_bool close_stream TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file, zend_bool close_stream, zend_bool no_cache TSRMLS_DC)
 {
 	STATUS status;
 	php_stream_statbuf ssb;
@@ -428,7 +428,7 @@ PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file, zend_bool close_strea
 		return FAILURE;
 	}
 
-	status = http_send(file, ssb.sb.st_size, SEND_RSRC);
+	status = http_send_ex(file, ssb.sb.st_size, SEND_RSRC, no_cache);
 
 	if (close_stream) {
 		php_stream_close(file);

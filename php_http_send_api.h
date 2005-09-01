@@ -57,13 +57,16 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, size_t 
 PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_t size, http_send_mode mode TSRMLS_DC);
 
 #define http_send_data(d, l) http_send((d), (l), SEND_DATA)
-#define http_send(d, s, m) _http_send((d), (s), (m) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send(const void *data, size_t data_size, http_send_mode mode TSRMLS_DC);
+#define http_send_data_ex(d, l, nc) http_send_ex((d), (l), SEND_DATA, (nc))
+#define http_send(d, s, m) _http_send_ex((d), (s), (m), 0 TSRMLS_CC)
+#define http_send_ex(d, s, m, nc) _http_send_ex((d), (s), (m), (nc) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_send_ex(const void *data, size_t data_size, http_send_mode mode, zend_bool no_cache TSRMLS_DC);
 
-#define http_send_file(f) http_send_stream_ex(php_stream_open_wrapper(f, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL), 1)
-#define http_send_stream(s) http_send_stream_ex((s), 0)
-#define http_send_stream_ex(s, c) _http_send_stream_ex((s), (c) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *s, zend_bool close_stream TSRMLS_DC);
+#define http_send_file(f) http_send_stream_ex(php_stream_open_wrapper(f, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL), 1, 0)
+#define http_send_file_ex(f, nc) http_send_stream_ex(php_stream_open_wrapper(f, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL), 1, (nc))
+#define http_send_stream(s) http_send_stream_ex((s), 0, 0)
+#define http_send_stream_ex(s, c, nc) _http_send_stream_ex((s), (c), (nc) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *s, zend_bool close_stream, zend_bool no_cache TSRMLS_DC);
 
 #endif
 
