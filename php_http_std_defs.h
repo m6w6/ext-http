@@ -216,12 +216,12 @@ typedef int STATUS;
 #	define putObject(t, o) zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, (zend_objects_free_object_storage_t) t## _free, NULL TSRMLS_CC);
 #	define OBJ_PROP(o) (o)->zo.properties
 
-#	define DCL_STATIC_PROP(a, t, n, v)		zend_declare_property_ ##t(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
-#	define DCL_STATIC_PROP_Z(a, n, v)		zend_declare_property(ce, (#n), sizeof(#n), (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
-#	define DCL_STATIC_PROP_N(a, n)			zend_declare_property_null(ce, (#n), sizeof(#n), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
-#	define GET_STATIC_PROP_EX(ce, n)		zend_std_get_static_property(ce, (#n), sizeof(#n), 0 TSRMLS_CC)
-#	define UPD_STATIC_PROP_EX(ce, t, n, v)	zend_update_static_property_ ##t(ce, #n, sizeof(#n), (v) TSRMLS_CC)
-#	define SET_STATIC_PROP_EX(ce, n, v)		zend_update_static_property(ce, #n, sizeof(#n), v TSRMLS_CC)
+#	define DCL_STATIC_PROP(a, t, n, v)		zend_declare_property_ ##t(ce, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
+#	define DCL_STATIC_PROP_Z(a, n, v)		zend_declare_property(ce, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
+#	define DCL_STATIC_PROP_N(a, n)			zend_declare_property_null(ce, (#n), sizeof(#n)-1, (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
+#	define GET_STATIC_PROP_EX(ce, n)		zend_std_get_static_property(ce, (#n), sizeof(#n)-1, 0 TSRMLS_CC)
+#	define UPD_STATIC_PROP_EX(ce, t, n, v)	zend_update_static_property_ ##t(ce, #n, sizeof(#n)-1, (v) TSRMLS_CC)
+#	define SET_STATIC_PROP_EX(ce, n, v)		zend_update_static_property(ce, #n, sizeof(#n)-1, v TSRMLS_CC)
 
 #	define DCL_PROP(a, t, n, v)				zend_declare_property_ ##t(ce, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define DCL_PROP_Z(a, n, v)				zend_declare_property(ce, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a) TSRMLS_CC)
@@ -233,7 +233,7 @@ typedef int STATUS;
 #	define GET_PROP(o, n) 					GET_PROP_EX(o, getThis(), n)
 #	define GET_PROP_EX(o, this, n) 			zend_read_property(o->zo.ce, this, (#n), sizeof(#n)-1, 0 TSRMLS_CC)
 
-#	define DCL_CONST(t, n, v) zend_declare_class_constant_ ##t(ce, (n), sizeof(n), (v) TSRMLS_CC)
+#	define DCL_CONST(t, n, v) zend_declare_class_constant_ ##t(ce, (n), sizeof(n)-1, (v) TSRMLS_CC)
 
 #	define ACC_PROP_PRIVATE(ce, flags)		((flags & ZEND_ACC_PRIVATE) && (EG(scope) && ce == EG(scope))
 #	define ACC_PROP_PROTECTED(ce, flags)	((flags & ZEND_ACC_PROTECTED) && (zend_check_protected(ce, EG(scope))))

@@ -909,10 +909,6 @@ PHP_METHOD(HttpResponse, send)
  * HttpResponse::setCache(true);
  * HttpResponse::capture();
  * // script follows
- * // note that you need to call
- * HttpResponse::send();
- * // at the end of the script unless 
- * // you use PHP-5.1 or greater
  * ?>
  * </pre>
  */
