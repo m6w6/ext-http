@@ -18,7 +18,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define HTTP_PEXT_VERSION "0.12.0"
+#define HTTP_PEXT_VERSION "0.13.0dev"
 
 /* make compile on Win32 */
 #ifdef HTTP_HAVE_CURL
@@ -47,7 +47,6 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	} etag;
 
 	struct _http_globals_log {
-		char *auth;
 		char *cache;
 		char *redirect;
 		char *allowed_methods;
@@ -130,8 +129,6 @@ PHP_FUNCTION(http_request_method_unregister);
 PHP_FUNCTION(http_request_method_exists);
 PHP_FUNCTION(http_request_method_name);
 #endif /* HTTP_HAVE_CURL */
-PHP_FUNCTION(http_auth_basic);
-PHP_FUNCTION(http_auth_basic_cb);
 #ifndef ZEND_ENGINE_2
 PHP_FUNCTION(http_build_query);
 #endif /* ZEND_ENGINE_2 */
