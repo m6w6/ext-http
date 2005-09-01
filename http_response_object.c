@@ -772,19 +772,19 @@ PHP_METHOD(HttpResponse, send)
 
 	/* capture mode */
 	if (Z_BVAL_P(GET_STATIC_PROP(catch))) {
-		zval the_data;
+		zval *the_data;
 
-		INIT_PZVAL(&the_data);
-		php_ob_get_buffer(&the_data TSRMLS_CC);
-		SET_STATIC_PROP(data, &the_data);
+		MAKE_STD_ZVAL(the_data);
+		php_ob_get_buffer(the_data TSRMLS_CC);
+		SET_STATIC_PROP(data, the_data);
 		ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
 
 		if (!Z_STRLEN_P(GET_STATIC_PROP(eTag))) {
-			char *etag = http_etag(Z_STRVAL(the_data), Z_STRLEN(the_data), SEND_DATA);
+			char *etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
 			UPD_STATIC_PROP(string, eTag, etag);
 			efree(etag);
 		}
-		zval_dtor(&the_data);
+		zval_ptr_dtor(&the_data);
 
 		clean_ob = 1;
 	}
