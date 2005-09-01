@@ -208,7 +208,7 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 				err = curl_formadd(&http_post_data[0], &http_post_data[1],
 					CURLFORM_COPYNAME,			key,
 					CURLFORM_COPYCONTENTS,		Z_STRVAL_PP(data),
-					CURLFORM_CONTENTSLENGTH,	Z_STRLEN_PP(data),
+					CURLFORM_CONTENTSLENGTH,	(long) Z_STRLEN_PP(data),
 					CURLFORM_END
 				);
 				if (CURLE_OK != err) {
@@ -492,7 +492,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	}
 
 	/* resume */
-	if (zoption = http_curl_getopt(options, "resume", IS_LONG)) {
+	if ((zoption = http_curl_getopt(options, "resume", IS_LONG)) && (Z_LVAL_P(zoption) != 0)) {
 		range_req = 1;
 		HTTP_CURL_OPT(RESUME_FROM, Z_LVAL_P(zoption));
 	} else {
@@ -514,11 +514,11 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		HTTP_CURL_OPT(TIMEVALUE, 0);
 	}
 
-	/* timeout, defaults to 3 */
+	/* timeout, defaults to 0 */
 	if (zoption = http_curl_getopt(options, "timeout", IS_LONG)) {
 		HTTP_CURL_OPT(TIMEOUT, Z_LVAL_P(zoption));
 	} else {
-		HTTP_CURL_OPT(TIMEOUT, 3);
+		HTTP_CURL_OPT(TIMEOUT, 0);
 	}
 
 	/* connecttimeout, defaults to 3 */
