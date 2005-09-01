@@ -20,35 +20,18 @@
 
 #include "php_version.h"
 
-#if (PHP_MAJOR_VERSION == 5) 
-#	if (PHP_MINOR_VERSION == 0)
+#if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION == 0)
+#	define WONKY
+#endif
+
+#ifdef WONKY
 extern int zend_declare_property_double(zend_class_entry *ce, char *name, int name_length, double value, int access_type TSRMLS_DC);
 extern void zend_update_property_double(zend_class_entry *scope, zval *object, char *name, int name_length, double value TSRMLS_DC);
 
 extern int zend_declare_property_bool(zend_class_entry *ce, char *name, int name_length, long value, int access_type TSRMLS_DC);
 extern void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name, int name_length, long value TSRMLS_DC);
-#	endif
-
-extern int zend_declare_class_constant(zend_class_entry *ce, char *name, size_t name_length, zval *value TSRMLS_DC);
-extern int zend_declare_class_constant_null(zend_class_entry *ce, char *name, size_t name_length TSRMLS_DC);
-extern int zend_declare_class_constant_long(zend_class_entry *ce, char *name, size_t name_length, long value TSRMLS_DC);
-extern int zend_declare_class_constant_bool(zend_class_entry *ce, char *name, size_t name_length, zend_bool value TSRMLS_DC);
-extern int zend_declare_class_constant_double(zend_class_entry *ce, char *name, size_t name_length, double value TSRMLS_DC);
-extern int zend_declare_class_constant_string(zend_class_entry *ce, char *name, size_t name_length, char *value TSRMLS_DC);
-extern int zend_declare_class_constant_stringl(zend_class_entry *ce, char *name, size_t name_length, char *value, size_t value_length TSRMLS_DC);
-
-extern int zend_update_static_property(zend_class_entry *scope, char *name, size_t name_len, zval *value TSRMLS_DC);
-extern int zend_update_static_property_bool(zend_class_entry *scope, char *name, size_t name_len, zend_bool value TSRMLS_DC);
-extern int zend_update_static_property_long(zend_class_entry *scope, char *name, size_t name_len, long value TSRMLS_DC);
-extern int zend_update_static_property_double(zend_class_entry *scope, char *name, size_t name_len, double value TSRMLS_DC);
-extern int zend_update_static_property_string(zend_class_entry *scope, char *name, size_t name_len, char *value TSRMLS_DC);
-extern int zend_update_static_property_stringl(zend_class_entry *scope, char *name, size_t name_len, char *value, size_t value_len TSRMLS_DC);
-
-extern void zend_fix_static_properties(zend_class_entry *ce, HashTable *static_members TSRMLS_DC);
-extern void zend_init_static_properties(zend_class_entry *ce, HashTable *static_members TSRMLS_DC);
-extern void zend_clean_static_properties(zend_class_entry *ce TSRMLS_DC);
-
 #endif
+
 #endif
 
 /*

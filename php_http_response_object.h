@@ -19,7 +19,9 @@
 #define PHP_HTTP_RESPONSE_OBJECT_H
 #ifdef ZEND_ENGINE_2
 
-extern HashTable http_response_statics;
+#include "missing.h"
+
+#ifndef WONKY
 
 extern zend_class_entry *http_response_object_ce;
 extern zend_function_entry http_response_object_fe[];
@@ -60,6 +62,7 @@ PHP_METHOD(HttpResponse, status);
 PHP_METHOD(HttpResponse, getRequestHeaders);
 PHP_METHOD(HttpResponse, getRequestBody);
 
+#endif
 #endif
 #endif
 

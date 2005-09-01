@@ -224,7 +224,9 @@ PHP_MINIT_FUNCTION(http)
 #ifdef ZEND_ENGINE_2
 	http_util_object_init();
 	http_message_object_init();
+#	ifndef WONKY
 	http_response_object_init();
+#	endif
 #	ifdef HTTP_HAVE_CURL
 	http_request_object_init();
 	http_requestpool_object_init();
@@ -232,10 +234,6 @@ PHP_MINIT_FUNCTION(http)
 	http_exception_object_init();
 #endif /* ZEND_ENGINE_2 */
 
-#ifdef ZEND_ENGINE_2
-	zend_hash_init_ex(&http_response_statics, 0, NULL, ZVAL_INTERNAL_PTR_DTOR, 1, 0);
-	zend_fix_static_properties(http_response_object_ce, &http_response_statics TSRMLS_CC);
-#endif
 	return SUCCESS;
 }
 /* }}} */
@@ -243,9 +241,6 @@ PHP_MINIT_FUNCTION(http)
 /* {{{ PHP_MSHUTDOWN_FUNCTION */
 PHP_MSHUTDOWN_FUNCTION(http)
 {
-#ifdef ZEND_ENGINE_2
-	zend_hash_destroy(&http_response_statics);
-#endif
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
 	curl_global_cleanup();
@@ -264,9 +259,6 @@ PHP_RINIT_FUNCTION(http)
 	}
 
 	http_globals_init(HTTP_GLOBALS);
-#ifdef ZEND_ENGINE_2
-	zend_init_static_properties(http_response_object_ce, &http_response_statics TSRMLS_CC);
-#endif
 	return SUCCESS;
 }
 /* }}} */
@@ -274,9 +266,6 @@ PHP_RINIT_FUNCTION(http)
 /* {{{ PHP_RSHUTDOWN_FUNCTION */
 PHP_RSHUTDOWN_FUNCTION(http)
 {
-#ifdef ZEND_ENGINE_2
-	zend_clean_static_properties(http_response_object_ce TSRMLS_CC);
-#endif
 	http_globals_free(HTTP_GLOBALS);
 	return SUCCESS;
 }

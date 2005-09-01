@@ -21,7 +21,10 @@
 #endif
 #include "php.h"
 
-#ifdef ZEND_ENGINE_2
+#include "missing.h"
+
+/* broken static properties in PHP 5.0 */
+#if defined(ZEND_ENGINE_2) && !defined(WONKY)
 
 #include "SAPI.h"
 #include "php_ini.h"
@@ -33,8 +36,6 @@
 #include "php_http_exception_object.h"
 #include "php_http_send_api.h"
 #include "php_http_cache_api.h"
-
-#include "missing.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
@@ -142,7 +143,9 @@ HTTP_EMPTY_ARGS(getRequestBody, 0);
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 
+#if BROKEN_STATICS
 HashTable http_response_statics;
+#endif
 
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
@@ -879,7 +882,7 @@ PHP_METHOD(HttpResponse, send)
 			case SEND_DATA:
 			{
 				zval *zdata = GET_STATIC_PROP(data);
-				RETURN_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
+				RETURN_SUCCESS(http_send_data_ex(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata), 1));
 			}
 
 			case SEND_RSRC:
@@ -888,12 +891,12 @@ PHP_METHOD(HttpResponse, send)
 				zval *the_stream = GET_STATIC_PROP(stream);
 				the_stream->type = IS_RESOURCE;
 				php_stream_from_zval(the_real_stream, &the_stream);
-				RETURN_SUCCESS(http_send_stream(the_real_stream));
+				RETURN_SUCCESS(http_send_stream_ex(the_real_stream, 0, 1));
 			}
 
 			default:
 			{
-				RETURN_SUCCESS(http_send_file(Z_STRVAL_P(GET_STATIC_PROP(file))));
+				RETURN_SUCCESS(http_send_file_ex(Z_STRVAL_P(GET_STATIC_PROP(file)), 1));
 			}
 		}
 	}
