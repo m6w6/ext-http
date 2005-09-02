@@ -140,14 +140,14 @@ static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t dat
 	switch (INI_INT("http.etag_mode"))
 	{
 		case HTTP_ETAG_SHA1:
-			PHP_SHA1Update(ctx, data_ptr, data_len);
+			PHP_SHA1Update(ctx, (const unsigned char *) data_ptr, data_len);
 		break;
 		
 		case HTTP_ETAG_MD5:
 #ifndef HAVE_LIBMHASH
 		default:
 #endif
-			PHP_MD5Update(ctx, data_ptr, data_len);
+			PHP_MD5Update(ctx, (const unsigned char *) data_ptr, data_len);
 		break;
 		
 #ifdef HAVE_LIBMHASH

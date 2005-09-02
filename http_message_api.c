@@ -138,7 +138,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 
 	msg = http_message_init(msg);
 
-	if (SUCCESS != http_parse_headers_cb(message, &msg->hdrs, 1, (http_info_callback) http_message_info_callback, &msg)) {
+	if (SUCCESS != http_parse_headers_cb(message, &msg->hdrs, 1, (http_info_callback) http_message_info_callback, (void **) &msg)) {
 		if (free_msg) {
 			http_message_free(&msg);
 		}

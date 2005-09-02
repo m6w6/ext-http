@@ -1408,7 +1408,7 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 
 		if (info_len && info_name) {
 			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), pretty_key(info_name, info_len, 0, 0), info_len + 1, (void **) &infop)) {
-				RETURN_ZVAL(*infop, 1, ZVAL_PTR_DTOR);
+				RETURN_ZVAL(*infop, 1, 0);
 			} else {
 				http_error_ex(HE_NOTICE, HTTP_E_INVALID_PARAM, "Could not find response info named %s", info_name);
 				RETURN_FALSE;

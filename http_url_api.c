@@ -218,7 +218,8 @@ PHP_HTTP_API STATUS _http_urlencode_hash_implementation_ex(
 				zval *type TSRMLS_DC)
 {
 	char *key = NULL, *ekey, *newprefix, *p;
-	int arg_sep_len, key_len, ekey_len, key_type, newprefix_len;
+	int arg_sep_len, ekey_len, key_type, newprefix_len;
+	uint key_len;
 	ulong idx;
 	zval **zdata = NULL, *copyzval;
 

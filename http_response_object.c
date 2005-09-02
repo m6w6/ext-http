@@ -289,7 +289,7 @@ PHP_METHOD(HttpResponse, getHeader)
 		array_init(return_value);
 		array_copy(headers, return_value);
 	} else if (SUCCESS == zend_hash_find(Z_ARRVAL_P(headers), name, name_len + 1, (void **) &header)) {
-		RETURN_ZVAL(*header, ZVAL_PTR_DTOR, 1);
+		RETURN_ZVAL(*header, 1, 0);
 	} else {
 		RETURN_NULL();
 	}

@@ -407,7 +407,7 @@ PHP_FUNCTION(ob_etaghandler)
 	}
 
 	Z_TYPE_P(return_value) = IS_STRING;
-	http_ob_etaghandler(data, data_len, &Z_STRVAL_P(return_value), &Z_STRLEN_P(return_value), mode);
+	http_ob_etaghandler(data, data_len, &Z_STRVAL_P(return_value), (uint *) &Z_STRLEN_P(return_value), mode);
 }
 /* }}} */
 
@@ -614,14 +614,15 @@ PHP_FUNCTION(http_send_stream)
 PHP_FUNCTION(http_chunked_decode)
 {
 	char *encoded = NULL, *decoded = NULL;
-	int encoded_len = 0, decoded_len = 0;
+	size_t decoded_len = 0;
+	int encoded_len = 0;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &encoded, &encoded_len) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
 	if (NULL != http_chunked_decode(encoded, encoded_len, &decoded, &decoded_len)) {
-		RETURN_STRINGL(decoded, decoded_len, 0);
+		RETURN_STRINGL(decoded, (int) decoded_len, 0);
 	} else {
 		RETURN_FALSE;
 	}
