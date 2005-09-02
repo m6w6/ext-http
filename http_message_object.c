@@ -183,9 +183,11 @@ static inline void _http_message_object_declare_default_properties(TSRMLS_D)
 {
 	zend_class_entry *ce = http_message_object_ce;
 
+#ifndef WONKY
 	DCL_CONST(long, "NONE", HTTP_MSG_NONE);
 	DCL_CONST(long, "REQUEST", HTTP_MSG_REQUEST);
 	DCL_CONST(long, "RESPONSE", HTTP_MSG_RESPONSE);
+#endif
 
 	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
 	DCL_PROP(PROTECTED, string, body, "");

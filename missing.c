@@ -21,28 +21,29 @@
 #ifdef WONKY
 int zend_declare_property_double(zend_class_entry *ce, char *name, int name_length, double value, int access_type TSRMLS_DC)
 {
-	zval *property = new_zval(ce->type & ZEND_INTERNAL_CLASS);
+	zval *property = pemalloc(sizeof(zval), ce->type & ZEND_INTERNAL_CLASS);
+	INIT_PZVAL(property);
 	ZVAL_DOUBLE(property, value);
 	return zend_declare_property(ce, name, name_length, property, access_type TSRMLS_CC);
 }
 
 void zend_update_property_double(zend_class_entry *scope, zval *object, char *name, int name_length, double value TSRMLS_DC)
 {
-	zval *tmp = tmp_zval();
+	zval *tmp = ecalloc(1, sizeof(zval));
 	ZVAL_DOUBLE(tmp, value);
 	zend_update_property(scope, object, name, name_length, tmp TSRMLS_CC);
 }
 
 int zend_declare_property_bool(zend_class_entry *ce, char *name, int name_length, long value, int access_type TSRMLS_DC)
 {
-	zval *property = new_zval(ce->type & ZEND_INTERNAL_CLASS);
+	zval *property = pemalloc(sizeof(zval), ce->type & ZEND_INTERNAL_CLASS);
+	INIT_PZVAL(property);
 	ZVAL_BOOL(property, value);
 	return zend_declare_property(ce, name, name_length, property, access_type TSRMLS_CC);
 }
 
 void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name, int name_length, long value TSRMLS_DC)
-{
-	zval *tmp = tmp_zval();
+{	zval *tmp = ecalloc(1, sizeof(zval));
 	ZVAL_BOOL(tmp, value);
 	zend_update_property(scope, object, name, name_length, tmp TSRMLS_CC);
 }
