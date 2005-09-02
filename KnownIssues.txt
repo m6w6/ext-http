@@ -2,7 +2,6 @@ Known Issues
 ============
 $Id$
 
-HttpResponse class may be infunctional with current ZendEngine2,
-a fix is pending.
+HttpResponse class is only available for PHP >= 5.1
 
 
