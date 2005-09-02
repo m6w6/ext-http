@@ -2,17 +2,14 @@
 // $Id$
 
 ARG_ENABLE("http", "whether to enable extended HTTP support", "no");
-ARG_WITH("mhash", "mhash support", "no");
 
 if (PHP_HTTP != "no") {
 
-	if (PHP_MHASH != "no") {
-		if (CHECK_HEADER_ADD_INCLUDE('mhash.h', 'CFLAGS_HTTP') &&
-				CHECK_LIB('libmhash.lib', 'http')) {
-			AC_DEFINE('HAVE_LIBMHASH', 1 , "Have mhash library");
-		} else {
-			WARNING("mhash not enabled; libraries and headers not found");
-		}
+	if (CHECK_HEADER_ADD_INCLUDE('mhash.h', 'CFLAGS_HTTP') &&
+			CHECK_LIB('libmhash.lib', 'http', PHP_HTTP)) {
+		AC_DEFINE('HTTP_HAVE_MHASH', 1 , "Have mhash library");
+	} else {
+		WARNING("mhash etag generator not enabled; libraries and headers not found");
 	}
 
 	EXTENSION("http",
@@ -26,7 +23,7 @@ if (PHP_HTTP != "no") {
 		null,
 		"/I\"" + configure_module_dirname + "/phpstr\"");
 	ADD_SOURCES(configure_module_dirname + "/phpstr", "phpstr.c", "http");
-	AC_DEFINE("HAVE_HTTP", 1, "Have extended HTTP support")
+	AC_DEFINE("HAVE_HTTP", 1, "Have extended HTTP support");
     if (CHECK_LIB("libcurl.lib", "http", PHP_HTTP) &&
             CHECK_HEADER_ADD_INCLUDE("curl/easy.h", "CFLAGS_HTTP") &&
             CHECK_LIB("ssleay32.lib", "http", PHP_HTTP) &&
