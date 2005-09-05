@@ -106,6 +106,10 @@ SOURCE=.\http_request_api.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\http_request_method_api.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\http_functions.c
 # End Source File
 # Begin Source File
@@ -155,6 +159,10 @@ SOURCE=.\php_http_api.h
 # Begin Source File
 
 SOURCE=.\php_http_request_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_request_method_api.h
 # End Source File
 # Begin Source File
 

@@ -33,6 +33,7 @@
 #include "php_http_api.h"
 #include "php_http_request_api.h"
 #include "php_http_cache_api.h"
+#include "php_http_request_method_api.h"
 #include "php_http_request_api.h"
 #include "php_http_date_api.h"
 #include "php_http_headers_api.h"

@@ -74,7 +74,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 			zend_llist contexts;
 			zend_llist convs;
 		} copies;
-#	if LIBCURL_VERSION_NUM < 0x070c00
+#	ifndef HAVE_CURL_EASY_STRERROR
 		char error[CURL_ERROR_SIZE + 1];
 #	endif
 #endif /* HTTP_HAVE_CURL */
@@ -123,12 +123,11 @@ PHP_FUNCTION(http_post_data);
 PHP_FUNCTION(http_post_fields);
 PHP_FUNCTION(http_put_file);
 PHP_FUNCTION(http_put_stream);
-/*PHP_FUNCTION(http_request)*/
+#endif /* HTTP_HAVE_CURL */
 PHP_FUNCTION(http_request_method_register);
 PHP_FUNCTION(http_request_method_unregister);
 PHP_FUNCTION(http_request_method_exists);
 PHP_FUNCTION(http_request_method_name);
-#endif /* HTTP_HAVE_CURL */
 #ifndef ZEND_ENGINE_2
 PHP_FUNCTION(http_build_query);
 #endif /* ZEND_ENGINE_2 */

@@ -33,7 +33,7 @@
 #include "php_http_send_api.h"
 #include "php_http_date_api.h"
 
-#ifdef HAVE_LIBMHASH
+#ifdef HTTP_HAVE_MHASH
 #	include <mhash.h>
 #endif
 

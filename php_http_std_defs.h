@@ -122,6 +122,8 @@ typedef int STATUS;
 
 #define HTTP_PHP_INI_ENTRY(entry, default, scope, updater, global) \
 	STD_PHP_INI_ENTRY(entry, default, scope, updater, global, zend_http_globals, http_globals)
+#define HTTP_PHP_INI_ENTRY_EX(entry, default, scope, updater, displayer, global) \
+	STD_PHP_INI_ENTRY_EX(entry, default, scope, updater, global, zend_http_globals, http_globals, displayer)
 
 /* {{{ arrays */
 #define FOREACH_VAL(array, val) FOREACH_HASH_VAL(Z_ARRVAL_P(array), val)

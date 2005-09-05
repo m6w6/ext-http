@@ -58,13 +58,19 @@ dnl ----
 			AC_MSG_RESULT([found: $CURL_CONFIG])
 		fi
 		
+		CURL_LIBS=`$CURL_CONFIG --libs`
+		
 		PHP_ADD_INCLUDE($CURL_DIR/include)
 		PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-		PHP_EVAL_LIBLINE(`$CURL_CONFIG --libs`, HTTP_SHARED_LIBADD)
+		PHP_EVAL_LIBLINE($CURL_LIBS, HTTP_SHARED_LIBADD)
 		AC_DEFINE([HTTP_HAVE_CURL], [1], [Have cURL support])
 		
 		PHP_CHECK_LIBRARY(curl, curl_multi_strerror, 
 			[AC_DEFINE([HAVE_CURL_MULTI_STRERROR], [1], [ ])], [ ], 
+			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
+		)
+		PHP_CHECK_LIBRARY(curl, curl_easy_strerror,
+			[AC_DEFINE([HAVE_CURL_EASY_STRERROR], [1], [ ])], [ ],
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
 		)
 	fi
@@ -91,7 +97,7 @@ dnl ----
 	
 		PHP_ADD_INCLUDE($MHASH_DIR/include)
 		PHP_ADD_LIBRARY_WITH_PATH(mhash, $MHASH_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-		AC_DEFINE([HAVE_LIBMHASH], [1], [Have mhash support])
+		AC_DEFINE([HTTP_HAVE_MHASH], [1], [Have mhash support])
 	fi
 
 dnl ----
@@ -102,7 +108,7 @@ dnl ----
 		http_response_object.c http_exception_object.c http_requestpool_object.c \
 		http_api.c http_cache_api.c http_request_api.c http_date_api.c \
 		http_headers_api.c http_message_api.c http_send_api.c http_url_api.c \
-		http_info_api.c"
+		http_info_api.c http_request_method_api.c"
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, [$ext_shared])
 	PHP_ADD_BUILD_DIR($ext_builddir/phpstr, 1)
 	PHP_SUBST([HTTP_SHARED_LIBADD])

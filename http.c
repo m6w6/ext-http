@@ -30,6 +30,7 @@
 #include "php_http_api.h"
 #include "php_http_send_api.h"
 #include "php_http_cache_api.h"
+#include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
 #endif
@@ -37,7 +38,9 @@
 #ifdef ZEND_ENGINE_2
 #	include "php_http_util_object.h"
 #	include "php_http_message_object.h"
-#	include "php_http_response_object.h"
+#	ifndef WONKY
+#		include "php_http_response_object.h"
+#	endif
 #	ifdef HTTP_HAVE_CURL
 #		include "php_http_request_object.h"
 #		include "php_http_requestpool_object.h"
@@ -97,11 +100,11 @@ function_entry http_functions[] = {
 	PHP_FE(http_post_fields, http_arg_pass_ref_5)
 	PHP_FE(http_put_file, http_arg_pass_ref_4)
 	PHP_FE(http_put_stream, http_arg_pass_ref_4)
+#endif
 	PHP_FE(http_request_method_register, NULL)
 	PHP_FE(http_request_method_unregister, NULL)
 	PHP_FE(http_request_method_exists, NULL)
 	PHP_FE(http_request_method_name, NULL)
-#endif
 #ifndef ZEND_ENGINE_2
 	PHP_FE(http_build_query, NULL)
 #endif
@@ -184,6 +187,48 @@ PHP_INI_MH(http_update_allowed_methods)
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
 
+PHP_INI_DISP(http_etag_mode_displayer)
+{
+	long value;
+	
+	if (type == ZEND_INI_DISPLAY_ORIG && ini_entry->modified) {
+		value = (ini_entry->orig_value) ? atoi(ini_entry->orig_value) : HTTP_ETAG_MD5;
+	} else if (ini_entry->value) {
+		value = (ini_entry->value[0]) ? atoi(ini_entry->value) : HTTP_ETAG_MD5;
+	} else {
+		value = HTTP_ETAG_MD5;
+	}
+	
+	switch (value)
+	{
+		case HTTP_ETAG_SHA1:
+			ZEND_WRITE("HTTP_ETAG_SHA1", lenof("HTTP_ETAG_SHA1"));
+		break;
+		
+		case HTTP_ETAG_MD5:
+#ifndef HTTP_HAVE_MHASH
+		default:
+#endif
+			ZEND_WRITE("HTTP_ETAG_MD5", lenof("HTTP_ETAG_MD5"));
+		break;
+		
+#ifdef HTTP_HAVE_MHASH
+		default:
+		{
+			const char *hash_name = mhash_get_hash_name_static(value);
+			
+			if (!hash_name) {
+				ZEND_WRITE("HTTP_ETAG_MD5", lenof("HTTP_ETAG_MD5"));
+			} else {
+				ZEND_WRITE("HTTP_ETAG_MHASH|MHASH_", lenof("HTTP_ETAG_MHASH|MHASH_"));
+				ZEND_WRITE(hash_name, strlen(hash_name));
+			}
+		}
+		break;
+#endif
+	}
+}
+
 #ifndef ZEND_ENGINE_2
 #	define OnUpdateLong OnUpdateInt
 #endif
@@ -197,7 +242,7 @@ PHP_INI_BEGIN()
 #ifdef ZEND_ENGINE_2
 	HTTP_PHP_INI_ENTRY("http.only_exceptions", "0", PHP_INI_ALL, OnUpdateBool, only_exceptions)
 #endif
-	HTTP_PHP_INI_ENTRY("http.etag_mode", "-2", PHP_INI_ALL, OnUpdateLong, etag.mode)
+	HTTP_PHP_INI_ENTRY_EX("http.etag_mode", "-2", PHP_INI_ALL, OnUpdateLong, http_etag_mode_displayer, etag.mode)
 PHP_INI_END()
 /* }}} */
 
@@ -274,25 +319,11 @@ PHP_RSHUTDOWN_FUNCTION(http)
 /* {{{ PHP_MINFO_FUNCTION */
 PHP_MINFO_FUNCTION(http)
 {
-#ifdef ZEND_ENGINE_2
-#	define HTTP_FUNC_AVAIL(CLASS) "procedural, object oriented (" CLASS ")"
-#else
-#	define HTTP_FUNC_AVAIL(CLASS) "procedural"
-#endif
-
 #ifdef HTTP_HAVE_CURL
 #	define HTTP_CURL_VERSION curl_version()
-#	ifdef ZEND_ENGINE_2
-#		define HTTP_CURL_AVAIL(CLASS) "procedural, object oriented (" CLASS ")"
-#	else
-#		define HTTP_CURL_AVAIL(CLASS) "procedural"
-#	endif
 #else
 #	define HTTP_CURL_VERSION "libcurl not available"
-#	define HTTP_CURL_AVAIL(CLASS) "libcurl not available"
 #endif
-
-#include "php_http_request_api.h"
 
 	php_info_print_table_start();
 	{
@@ -301,10 +332,34 @@ PHP_MINFO_FUNCTION(http)
 
 		php_info_print_table_row(2, "Extended HTTP support:", "enabled");
 		php_info_print_table_row(2, "Extension Version:", full_version_string);
+#ifdef HTTP_HAVE_CURL
+		php_info_print_table_row(2, "cURL HTTP Requests:", "enabled");
+#else
+		php_info_print_table_row(2, "cURL HTTP Requests:", "disabled");
+#endif
+#ifdef HTTP_HAVE_MHASH
+		php_info_print_table_row(2, "mhash ETag Generator:", "enabled");
+#else
+		php_info_print_table_row(2, "mhash ETag Generator:", "disabled");
+#endif
+		php_info_print_table_row(2, "Registered Classes:",
+#ifndef ZEND_ENGINE_2
+			"none"
+#else
+			"HttpUtil, "
+			"HttpMessage, "
+#	ifdef HTTP_HAVE_CURL
+			"HttpRequest, "
+			"HttpRequestPool, "
+#	endif
+#	ifndef WONKY
+			"HttpResponse"
+#	endif
+#endif
+		);
 	}
 	php_info_print_table_end();
 
-#ifdef HTTP_HAVE_CURL
 	php_info_print_table_start();
 	{
 		unsigned i;
@@ -331,16 +386,6 @@ PHP_MINFO_FUNCTION(http)
 
 		phpstr_free(&known_request_methods);
 		phpstr_free(&custom_request_methods);
-	}
-	php_info_print_table_end();
-#endif
-
-	php_info_print_table_start();
-	{
-		php_info_print_table_header(2, "Functionality",            "Availability");
-		php_info_print_table_row(2,    "Miscellaneous Utilities:", HTTP_FUNC_AVAIL("HttpUtil, HttpMessage"));
-		php_info_print_table_row(2,    "Extended HTTP Responses:", HTTP_FUNC_AVAIL("HttpResponse"));
-		php_info_print_table_row(2,    "Extended HTTP Requests:",  HTTP_CURL_AVAIL("HttpRequest, HttpRequestPool"));
 	}
 	php_info_print_table_end();
 

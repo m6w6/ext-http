@@ -26,6 +26,7 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_request_api.h"
+#include "php_http_request_method_api.h"
 #include "php_http_url_api.h"
 #ifdef ZEND_ENGINE_2
 #	include "php_http_request_object.h"
@@ -41,7 +42,7 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-#if LIBCURL_VERSION_NUM < 0x070c00
+#ifndef HAVE_CURL_EASY_STRERROR
 #	define curl_easy_strerror(code) HTTP_G(request).error
 #endif
 
@@ -99,7 +100,6 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 		continue; \
 	}
 
-static const char *const http_request_methods[HTTP_MAX_REQUEST_METHOD + 1];
 #define http_curl_getopt(o, k, t) _http_curl_getopt_ex((o), (k), sizeof(k), (t) TSRMLS_CC)
 #define http_curl_getopt_ex(o, k, l, t) _http_curl_getopt_ex((o), (k), (l), (t) TSRMLS_CC)
 static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t keylen, int type TSRMLS_DC);
@@ -737,134 +737,6 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, char *u
 	}
 	return status;
 }
-/* }}} */
-
-/* {{{ char *http_request_method_name(http_request_method) */
-PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC)
-{
-	zval **meth;
-
-	if (HTTP_STD_REQUEST_METHOD(m)) {
-		return http_request_methods[m];
-	}
-
-	if (SUCCESS == zend_hash_index_find(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(m), (void **) &meth)) {
-		return Z_STRVAL_PP(meth);
-	}
-
-	return http_request_methods[0];
-}
-/* }}} */
-
-/* {{{ unsigned long http_request_method_exists(zend_bool, unsigned long, char *) */
-PHP_HTTP_API unsigned long _http_request_method_exists(zend_bool by_name, unsigned long id, const char *name TSRMLS_DC)
-{
-	if (by_name) {
-		unsigned i;
-
-		for (i = HTTP_NO_REQUEST_METHOD + 1; i < HTTP_MAX_REQUEST_METHOD; ++i) {
-			if (!strcmp(name, http_request_methods[i])) {
-				return i;
-			}
-		}
-		{
-			zval **data;
-			char *key;
-			ulong idx;
-
-			FOREACH_HASH_KEYVAL(&HTTP_G(request).methods.custom, key, idx, data) {
-				if (!strcmp(name, Z_STRVAL_PP(data))) {
-					return idx + HTTP_MAX_REQUEST_METHOD;
-				}
-			}
-		}
-		return 0;
-	} else {
-		return HTTP_STD_REQUEST_METHOD(id) || zend_hash_index_exists(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(id)) ? id : 0;
-	}
-}
-/* }}} */
-
-/* {{{ unsigned long http_request_method_register(char *) */
-PHP_HTTP_API unsigned long _http_request_method_register(const char *method TSRMLS_DC)
-{
-	zval array;
-	char *http_method;
-	unsigned long meth_num = HTTP_G(request).methods.custom.nNextFreeElement + HTTP_MAX_REQUEST_METHOD;
-
-	Z_ARRVAL(array) = &HTTP_G(request).methods.custom;
-	add_next_index_string(&array, estrdup(method), 0);
-
-	spprintf(&http_method, 0, "HTTP_%s", method);
-	zend_register_long_constant(http_method, strlen(http_method) + 1, meth_num, CONST_CS, http_module_number TSRMLS_CC);
-	efree(http_method);
-
-	return meth_num;
-}
-/* }}} */
-
-/* {{{ STATUS http_request_method_unregister(usngigned long) */
-PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_DC)
-{
-	zval **zmethod;
-	char *http_method;
-
-	if (SUCCESS != zend_hash_index_find(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(method), (void **) &zmethod)) {
-		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Request method with id %lu does not exist", method);
-		return FAILURE;
-	}
-
-	spprintf(&http_method, 0, "HTTP_%s", Z_STRVAL_PP(zmethod));
-
-	if (	(SUCCESS != zend_hash_index_del(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(method)))
-		||	(SUCCESS != zend_hash_del(EG(zend_constants), http_method, strlen(http_method) + 1))) {
-		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Could not unregister request method: %s", http_method);
-		efree(http_method);
-		return FAILURE;
-	}
-
-	efree(http_method);
-	return SUCCESS;
-}
-/* }}} */
-
-
-/* {{{ char *http_request_methods[] */
-static const char *const http_request_methods[] = {
-	"UNKOWN",
-	/* HTTP/1.1 */
-	"GET",
-	"HEAD",
-	"POST",
-	"PUT",
-	"DELETE",
-	"OPTIONS",
-	"TRACE",
-	"CONNECT",
-	/* WebDAV - RFC 2518 */
-	"PROPFIND",
-	"PROPPATCH",
-	"MKCOL",
-	"COPY",
-	"MOVE",
-	"LOCK",
-	"UNLOCK",
-	/* WebDAV Versioning - RFC 3253 */
-	"VERSION-CONTROL",
-	"REPORT",
-	"CHECKOUT",
-	"CHECKIN",
-	"UNCHECKOUT",
-	"MKWORKSPACE",
-	"UPDATE",
-	"LABEL",
-	"MERGE",
-	"BASELINE-CONTROL",
-	"MKACTIVITY",
-	/* WebDAV Access Control - RFC 3744 */
-	"ACL",
-	NULL
-};
 /* }}} */
 
 /* {{{ static size_t http_curl_read_callback(void *, size_t, size_t, void *) */

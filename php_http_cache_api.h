@@ -28,7 +28,7 @@
 #include "php_http_api.h"
 #include "php_http_send_api.h"
 
-#ifdef HAVE_LIBMHASH
+#ifdef HTTP_HAVE_MHASH
 #	include <mhash.h>
 #endif
 
@@ -40,7 +40,7 @@ typedef enum {
 	HTTP_ETAG_MHASH = 0,
 } http_etag_mode;
 
-#ifdef HAVE_LIBMHASH
+#ifdef HTTP_HAVE_MHASH
 static void *http_etag_alloc_mhash_digest(size_t size)
 {
 	return emalloc(size);
@@ -78,13 +78,13 @@ static inline void *_http_etag_init(TSRMLS_D)
 		break;
 		
 		case HTTP_ETAG_MD5:
-#ifndef HAVE_LIBMHASH
+#ifndef HTTP_HAVE_MHASH
 		default:
 #endif
 			PHP_MD5Init(ctx = emalloc(sizeof(PHP_MD5_CTX)));
 		break;
 		
-#ifdef HAVE_LIBMHASH
+#ifdef HTTP_HAVE_MHASH
 		default:
 			if ((mode < 0) || ((ulong)mode > mhash_count()) || (!(ctx = mhash_init(mode)))) {
 				http_error_ex(HE_ERROR, HTTP_E_RUNTIME, "Invalid ETag mode: %ld", mode);
@@ -112,7 +112,7 @@ static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
 		break;
 		
 		case HTTP_ETAG_MD5:
-#ifndef HAVE_LIBMHASH
+#ifndef HTTP_HAVE_MHASH
 		default:
 #endif
 			PHP_MD5Final(digest, ctx);
@@ -120,7 +120,7 @@ static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
 			efree(ctx);
 		break;
 		
-#ifdef HAVE_LIBMHASH
+#ifdef HTTP_HAVE_MHASH
 		default:
 		{
 			unsigned char *mhash_digest = mhash_end_m(ctx, http_etag_alloc_mhash_digest);
@@ -144,13 +144,13 @@ static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t dat
 		break;
 		
 		case HTTP_ETAG_MD5:
-#ifndef HAVE_LIBMHASH
+#ifndef HTTP_HAVE_MHASH
 		default:
 #endif
 			PHP_MD5Update(ctx, (const unsigned char *) data_ptr, data_len);
 		break;
 		
-#ifdef HAVE_LIBMHASH
+#ifdef HTTP_HAVE_MHASH
 		default:
 			mhash(ctx, data_ptr, data_len);
 		break;

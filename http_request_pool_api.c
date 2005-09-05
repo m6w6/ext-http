@@ -36,6 +36,10 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
+#ifndef HAVE_CURL_MULTI_STRERROR
+#	define curl_multi_strerror(dummy) "unknown error"
+#endif
+
 static void http_request_pool_freebody(http_request_body **body);
 static int http_request_pool_compare_handles(void *h1, void *h2);
 
