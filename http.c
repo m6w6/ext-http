@@ -57,6 +57,9 @@
 #	endif
 #	include <curl/curl.h>
 #endif
+#ifdef HTTP_HAVE_MHASH
+#	include <mhash.h>
+#endif
 
 #include <ctype.h>
 
@@ -319,26 +322,17 @@ PHP_RSHUTDOWN_FUNCTION(http)
 /* {{{ PHP_MINFO_FUNCTION */
 PHP_MINFO_FUNCTION(http)
 {
-#ifdef HTTP_HAVE_CURL
-#	define HTTP_CURL_VERSION curl_version()
-#else
-#	define HTTP_CURL_VERSION "libcurl not available"
-#endif
-
 	php_info_print_table_start();
 	{
-		char full_version_string[1024] = {0};
-		snprintf(full_version_string, 1023, "%s (%s)", HTTP_PEXT_VERSION, HTTP_CURL_VERSION);
-
 		php_info_print_table_row(2, "Extended HTTP support:", "enabled");
-		php_info_print_table_row(2, "Extension Version:", full_version_string);
+		php_info_print_table_row(2, "Extension Version:", HTTP_PEXT_VERSION);
 #ifdef HTTP_HAVE_CURL
-		php_info_print_table_row(2, "cURL HTTP Requests:", "enabled");
+		php_info_print_table_row(2, "cURL HTTP Requests:", curl_version());
 #else
 		php_info_print_table_row(2, "cURL HTTP Requests:", "disabled");
 #endif
 #ifdef HTTP_HAVE_MHASH
-		php_info_print_table_row(2, "mhash ETag Generator:", "enabled");
+		php_info_print_table_row(2, "mhash ETag Generator:", MHASH_API_VERSION);
 #else
 		php_info_print_table_row(2, "mhash ETag Generator:", "disabled");
 #endif
