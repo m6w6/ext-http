@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<!-- $Revision: 1.37 $ -->
+<!-- $Revision: 1.38 $ -->
 <package version="1.0">
   <name>pecl_http</name>
   <summary>Extended HTTP support</summary>
@@ -30,32 +30,11 @@
   </maintainers>
 
   <release>
-    <version>0.12.0</version>
-    <date>2005-08-26</date>
+    <version>0.13.0dev</version>
+    <date>2005-09-00</date>
     <state>beta</state>
     <notes><![CDATA[
-+ Added ETag generation through libmhash
-+ Added http_parse_message()
-+ Added single LF awareness to the parsers
-+ Added HttpResponse::setHeader(), HttpResponse::getHeader(), HttpResponse::status()
-+ Added HttpResponse::status()
-+ Added constants HttpMessage::NONE, Http_Message::REQUEST, HttpMessage::RESPONSE
-+ Added Content-Length header if HttpResponse sends full plain entity
-+ Added ZendEngine workaround for internal class' static properties (HttpResponse)
-+ Added HttpRequestPool::socketPerform()
-
-- Removed http_split_response()
-- Removed AuthBasic hooks
-- Removed HttpResponse::sendHeader(), HttpResponse::sendStatus()
-- Removed HttpRequest::unset*() methods, now handled through set*() with empty parameter
-- Removed HttpRequestPool::socketRead(), HttpRequestPool::socketSend()
-
-* Fixed initialization and cleanup of module globals
-* Fixed builds and tests without libcurl
-* Fixed access of request headers through $_SERVER
-* Fixed check for ext/session in http_redirect()
-* Fixed custom ETags and Last-Modified dates in HttpResponse
-* Fixed PHP4 build
++ HTTP request method API is now available for builds without libcurl, too
 ]]>
     </notes>
   </release>
@@ -88,6 +67,7 @@
       <file role="src">php_http_info_api.h</file>
       <file role="src">php_http_message_api.h</file>
       <file role="src">php_http_request_api.h</file>
+      <file role="src">php_http_request_method_api.h</file>
       <file role="src">php_http_request_pool_api.h</file>
       <file role="src">php_http_send_api.h</file>
       <file role="src">php_http_url_api.h</file>
@@ -107,6 +87,7 @@
       <file role="src">http_info_api.c</file>
       <file role="src">http_message_api.c</file>
       <file role="src">http_request_api.c</file>
+      <file role="src">http_request_method_api.c</file>
       <file role="src">http_request_pool_api.c</file>
       <file role="src">http_send_api.c</file>
       <file role="src">http_url_api.c</file>
