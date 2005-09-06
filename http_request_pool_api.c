@@ -186,7 +186,11 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 		fprintf(stderr, "> %d unfinished requests of pool %p remaining\n", pool->unfinished, pool);
 #endif
 		if (SUCCESS != http_request_pool_select(pool)) {
-			http_error(HE_WARNING, HTTP_E_SOCKET, "Socket error");
+#ifdef PHP_WIN32
+			http_error(HE_WARNING, HTTP_E_SOCKET, WSAGetLastError());
+#else
+			http_error(HE_WARNING, HTTP_E_SOCKET, strerror(errno));
+#endif
 			return FAILURE;
 		}
 	}
