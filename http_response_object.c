@@ -707,9 +707,8 @@ PHP_METHOD(HttpResponse, setStream)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &the_stream)) {
 		RETURN_FALSE;
 	}
-	zend_list_addref(Z_LVAL_P(the_stream));
-	php_stream_from_zval(the_real_stream, &the_stream);
 	
+	php_stream_from_zval(the_real_stream, &the_stream);
 	if (php_stream_stat(the_real_stream, &ssb)) {
 		RETURN_FALSE;
 	}
@@ -718,7 +717,8 @@ PHP_METHOD(HttpResponse, setStream)
 			(SUCCESS != UPD_STATIC_PROP(long, mode, SEND_RSRC))) {
 		RETURN_FALSE;
 	}
-
+	zend_list_addref(Z_LVAL_P(the_stream));
+	
 	if (!(Z_LVAL_P(GET_STATIC_PROP(lastModified)) > 0)) {
 		UPD_STATIC_PROP(long, lastModified, http_last_modified(the_real_stream, SEND_RSRC));
 	}
