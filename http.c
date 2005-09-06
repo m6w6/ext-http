@@ -332,7 +332,12 @@ PHP_MINFO_FUNCTION(http)
 		php_info_print_table_row(2, "cURL HTTP Requests:", "disabled");
 #endif
 #ifdef HTTP_HAVE_MHASH
-		php_info_print_table_row(2, "mhash ETag Generator:", MHASH_API_VERSION);
+		{
+			char mhash_info[32];
+			
+			snprintf(mhash_info, 32, "libmhash/%d", MHASH_API_VERSION);
+			php_info_print_table_row(2, "mhash ETag Generator:", mhash_info);
+		}
 #else
 		php_info_print_table_row(2, "mhash ETag Generator:", "disabled");
 #endif
