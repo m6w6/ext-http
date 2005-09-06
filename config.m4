@@ -9,6 +9,9 @@ PHP_ARG_WITH([http-curl-requests], [wheter to enable cURL HTTP requests],
 PHP_ARG_WITH([http-mhash-etags], [whether to enable mhash ETag generator],
 [  --with-http-mhash-etags[=MHASHDIR]
                            With mhash ETag generator support])
+PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
+[  --with-http-magic-mime[=MAGICDIR]
+                           With magic mime response content type guessing])
 
 if test "$PHP_HTTP" != "no"; then
 
@@ -98,6 +101,31 @@ dnl ----
 		PHP_ADD_INCLUDE($MHASH_DIR/include)
 		PHP_ADD_LIBRARY_WITH_PATH(mhash, $MHASH_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 		AC_DEFINE([HTTP_HAVE_MHASH], [1], [Have mhash support])
+	fi
+
+dnl ----
+dnl MAGIC
+dnl ----
+	if test "$PHP_HTTP_MAGIC_MIME" != "no"; then
+	
+		AC_MSG_CHECKING([for magic.h])
+		MAGIC_DIR=
+		for i in "$PHP_HTTP_MAGIC_MIME" /usr/local /usr /opt; do
+			if test -f "$i/include/magic.h"; then
+				MAGIC_DIR=$i
+				break
+			fi
+		done
+		if test -z "$MAGIC_DIR"; then
+			AC_MSG_RESULT([not found])
+			AC_MSG_ERROR([could not find magic.h])
+		else
+			AC_MSG_RESULT([found in $MAGIC_DIR])
+		fi
+		
+		PHP_ADD_INCLUDE($MAGIC_DIR/include)
+		PHP_ADD_LIBRARY_WITH_PATH(magic, $MAGIC_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+		AC_DEFINE([HTTP_HAVE_MAGIC], [1], [Have magic mime support])
 	fi
 
 dnl ----

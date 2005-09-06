@@ -36,6 +36,10 @@
 
 #include <ctype.h>
 
+#ifdef HTTP_HAVE_MAGIC
+#	include <magic.h>
+#endif
+
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 /* char *pretty_key(char *, size_t, zend_bool, zend_bool) */
@@ -328,7 +332,6 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid chunk size: '%s' at pos %d", error, n_ptr - encoded);
 					efree(error);
 				}
-
 				return NULL;
 			}
 		} else {
@@ -350,6 +353,60 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 }
 /* }}} */
 
+/* {{{ char *http_guess_content_type(char *magic_file, long magic_mode, void *data, size_t size, http_send_mode mode) */
+PHP_HTTP_API char *_http_guess_content_type(const char *magicfile, long magicmode, void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
+{
+	char *ct = NULL;
+
+#ifdef HTTP_HAVE_MAGIC
+	struct magic_set *magic = magic_open(magicmode);
+	
+	if (!magic) {
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid magic mode: %ld", magicmode);
+	} else if (-1 == magic_load(magic, magicfile)) {
+		http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Failed to load magic database '%s'", magicfile);
+	} else {
+		const char *ctype = NULL;
+		
+		switch (data_mode)
+		{
+			case SEND_RSRC:
+			{
+				char *buffer;
+				size_t b_len;
+				
+				b_len = php_stream_copy_to_mem(data_ptr, &buffer, 65536, 0);
+				ctype = magic_buffer(magic, buffer, b_len);
+				efree(buffer);
+			}
+			break;
+			
+			case SEND_DATA:
+				ctype = magic_buffer(magic, data_ptr, data_len);
+			break;
+			
+			default:
+				ctype = magic_file(magic, data_ptr);
+			break;
+		}
+		
+		if (ctype) {
+			ct = estrdup(ctype);
+		} else {
+			http_error(HE_WARNING, HTTP_E_RUNTIME, "Failed to guess Content-Type");
+		}
+		
+		if (magic) {
+			magic_close(magic);
+		}
+	}
+#else
+	http_error(HE_WARNING, HTTP_E_RUNTIME, "Cannot guess Content-Type; libmagic not available");
+#endif
+	
+	return ct;
+}
+/* }}} */
 /*
  * Local variables:
  * tab-width: 4

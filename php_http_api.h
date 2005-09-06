@@ -19,6 +19,7 @@
 #define PHP_HTTP_API_H
 
 #include "php_http_std_defs.h"
+#include "php_http_send_api.h"
 
 #define pretty_key(key, key_len, uctitle, xhyphen) _http_pretty_key(key, key_len, uctitle, xhyphen)
 extern char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
@@ -62,6 +63,10 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 
 #define http_chunked_decode(e, el, d, dl) _http_chunked_decode((e), (el), (d), (dl) TSRMLS_CC)
 PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
+
+#define http_guess_content_type(mf, mm, d, l, m) _http_guess_content_type((mf), (mm), (d), (l), (m) TSRMLS_CC)
+PHP_HTTP_API char *_http_guess_content_type(const char *magic_file, long magic_mode, void *data_ptr, size_t data_len, http_send_mode mode TSRMLS_DC);
+
 
 #define http_locate_body _http_locate_body
 static inline const char *_http_locate_body(const char *message)

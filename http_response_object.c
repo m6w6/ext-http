@@ -89,6 +89,11 @@ HTTP_BEGIN_ARGS(setContentType, 1)
 	HTTP_ARG_VAL(content_type, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(guessContentType, 1)
+	HTTP_ARG_VAL(magic_file, 0)
+	HTTP_ARG_VAL(magic_mode, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getContentDisposition, 0);
 HTTP_BEGIN_ARGS(setContentDisposition, 1)
 	HTTP_ARG_VAL(filename, 0)
@@ -160,6 +165,8 @@ zend_function_entry http_response_object_fe[] = {
 
 	HTTP_RESPONSE_ME(setContentType, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(getContentType, ZEND_ACC_PUBLIC)
+	
+	HTTP_RESPONSE_ME(guessContentType, ZEND_ACC_PUBLIC)
 
 	HTTP_RESPONSE_ME(setCache, ZEND_ACC_PUBLIC)
 	HTTP_RESPONSE_ME(getCache, ZEND_ACC_PUBLIC)
@@ -440,6 +447,52 @@ PHP_METHOD(HttpResponse, getContentType)
 }
 /* }}} */
 
+/* {{{ proto static string HttpResponse::guessContentType(string magic_file[, long magic_mode])
+ *
+ * Attempts to guess the content type of supplied payload through libmagic.
+ * See docs/KnownIssues.txt! 
+ */
+PHP_METHOD(HttpResponse, guessContentType)
+{
+	char *magic_file, *ct = NULL;
+	int magic_file_len;
+	long magic_mode = 0;
+	
+	RETVAL_NULL();
+	
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &magic_file, &magic_file_len, &magic_mode)) {
+		switch (Z_LVAL_P(GET_STATIC_PROP(mode))) {
+			case SEND_DATA:
+			{
+				zval *data = GET_STATIC_PROP(data);
+				ct = http_guess_content_type(magic_file, magic_mode, Z_STRVAL_P(data), Z_STRLEN_P(data), SEND_DATA);
+			}
+			break;
+			
+			case SEND_RSRC:
+			{
+				php_stream *s;
+				zval *z = GET_STATIC_PROP(stream);
+				z->type = IS_RESOURCE;
+				php_stream_from_zval(s, &z);
+				ct = http_guess_content_type(magic_file, magic_mode, s, 0, SEND_RSRC);
+			}
+			break;
+			
+			default:
+				ct = http_guess_content_type(magic_file, magic_mode, Z_STRVAL_P(GET_STATIC_PROP(file)), 0, -1);
+			break;
+		}
+		if (ct) {
+			UPD_STATIC_PROP(string, contentType, ct);
+			RETVAL_STRING(ct, 0);
+		}
+	}
+	SET_EH_NORMAL();
+}
+/* }}} */
+
 /* {{{ proto static bool HttpResponse::setContentDisposition(string filename[, bool inline = false])
  *
  * Set the Content-Disposition of the sent entity.  This setting aims to suggest
@@ -649,12 +702,17 @@ PHP_METHOD(HttpResponse, setStream)
 {
 	zval *the_stream;
 	php_stream *the_real_stream;
+	php_stream_statbuf ssb;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &the_stream)) {
 		RETURN_FALSE;
 	}
 	zend_list_addref(Z_LVAL_P(the_stream));
 	php_stream_from_zval(the_real_stream, &the_stream);
+	
+	if (php_stream_stat(the_real_stream, &ssb)) {
+		RETURN_FALSE;
+	}
 
 	if (	(SUCCESS != UPD_STATIC_PROP(long, stream, Z_LVAL_P(the_stream))) ||
 			(SUCCESS != UPD_STATIC_PROP(long, mode, SEND_RSRC))) {
@@ -696,8 +754,13 @@ PHP_METHOD(HttpResponse, setFile)
 {
 	char *the_file;
 	int file_len;
+	php_stream_statbuf ssb;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &the_file, &file_len)) {
+		RETURN_FALSE;
+	}
+	
+	if (php_stream_stat_path(the_file, &ssb)) {
 		RETURN_FALSE;
 	}
 	

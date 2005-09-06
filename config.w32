@@ -37,4 +37,11 @@ if (PHP_HTTP != "no") {
     } else {
         WARNING("curl convenience functions not enabled; libraries and headers not found");
     }
+    
+    if (CHECK_HEADER_ADD_INCLUDE("magic.h", "CFLAGS_HTTP") &&
+			CHECK_LIB("magic.lib", "http", PHP_HTTP)) {
+		AC_DEFINE("HTTP_HAVE_MAGIC", 1, "Have magic library");
+	} else {
+		WARNING("content type guessing not enabled; libraries and headers not found");
+	}
 }

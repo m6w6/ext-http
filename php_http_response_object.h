@@ -39,6 +39,7 @@ PHP_METHOD(HttpResponse, setContentDisposition);
 PHP_METHOD(HttpResponse, getContentDisposition);
 PHP_METHOD(HttpResponse, setContentType);
 PHP_METHOD(HttpResponse, getContentType);
+PHP_METHOD(HttpResponse, guessContentType);
 PHP_METHOD(HttpResponse, setCache);
 PHP_METHOD(HttpResponse, getCache);
 PHP_METHOD(HttpResponse, setCacheControl);
