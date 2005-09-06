@@ -5,7 +5,9 @@ $Id$
 HttpResponse class is only available for PHP >= 5.1
 
 HttpResponse::guessContentType() is not available on Windows at the time this
-was written.  On other platforms you'll need to fix the magic.mime file that's
-shipped with PHP by executing `sed -e "s/\t!/\\\!/" magic.mime > magic.good`
-and using the new magic file.
+was written, unless you compile PHP or ext/http yourself[1]. Additionally
+you'll need to fix the magic.mime file that's shipped with PHP by executing
+`sed -e "s/\t!/\\\!/" magic.mime > magic.good` and then of course use the new 
+magic file.
 
+[1] Fetch http://dev.iworks.at/PATCHES/fileinfo/fileinfo-win32build.zip (84k)
