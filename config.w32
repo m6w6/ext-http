@@ -30,19 +30,19 @@ if (PHP_HTTP != "no") {
 	CURL_LIB = PHP_DEBUG != "no" ? "libcurld.lib":"libcurl.lib";
     if (CHECK_HEADER_ADD_INCLUDE("curl/curl.h", "CFLAGS_HTTP") &&
 			CHECK_LIB(CURL_LIB, "http", PHP_HTTP) &&
-            CHECK_LIB("ssleay32.lib", "http", PHP_HTTP) &&
-            CHECK_LIB("libeay32.lib", "http", PHP_HTTP) &&
-            CHECK_LIB("zlib.lib", "http", PHP_HTTP) &&
-            CHECK_LIB("winmm.lib", "http", PHP_HTTP)) {
-        AC_DEFINE("HTTP_HAVE_CURL", 1, "Have CURL library");
-        AC_DEFINE("HAVE_CURL_MULTI_STRERROR", 1, "");
-        AC_DEFINE("HAVE_CURL_EASY_STRERROR", 1, "")
-    } else {
-        WARNING("curl convenience functions not enabled; libraries and headers not found");
-    }
-    
-    MAGIC_LIB = PHP_DEBUG != "no" ? "libmagic-staticd.lib":"libmagic-static.lib";
-    if (CHECK_HEADER_ADD_INCLUDE("magic.h", "CFLAGS_HTTP") &&
+			CHECK_LIB("ssleay32.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("libeay32.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("zlib.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("winmm.lib", "http", PHP_HTTP)) {
+		AC_DEFINE("HTTP_HAVE_CURL", 1, "Have CURL library");
+		AC_DEFINE("HAVE_CURL_MULTI_STRERROR", 1, "");
+		AC_DEFINE("HAVE_CURL_EASY_STRERROR", 1, "")
+	} else {
+		WARNING("curl convenience functions not enabled; libraries and headers not found");
+	}
+
+	MAGIC_LIB = PHP_DEBUG != "no" ? "libmagic-staticd.lib":"libmagic-static.lib";
+	if (CHECK_HEADER_ADD_INCLUDE("magic.h", "CFLAGS_HTTP") &&
 			CHECK_LIB(MAGIC_LIB, "http", PHP_HTTP)) {
 		AC_DEFINE("HTTP_HAVE_MAGIC", 1, "Have magic library");
 		AC_DEFINE("USE_MAGIC_STATIC", "", "");
