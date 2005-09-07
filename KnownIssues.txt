@@ -4,3 +4,4 @@ $Id$
 
 HttpResponse class is only available for PHP >= 5.1
 
+Not all places where files are handled check for open_basedir and/or safe_mode.

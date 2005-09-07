@@ -108,14 +108,22 @@ static int http_curl_progress_callback(void *, double, double, double, double);
 static int http_curl_raw_callback(CURL *, curl_infotype, char *, size_t, void *);
 static int http_curl_dummy_callback(char *data, size_t n, size_t l, void *s) { return n*l; }
 
-#define HTTP_CURL_CALLBACK_DATA(from, type, var) \
-	http_curl_callback_ctx *__CTX = (http_curl_callback_ctx *) (from); \
-	TSRMLS_FETCH_FROM_CTX(__CTX->tsrm_ctx); \
-	type (var) = (type) (__CTX->data)
 
-#define http_curl_callback_data(data) _http_curl_callback_data((data) TSRMLS_CC)
-static http_curl_callback_ctx *_http_curl_callback_data(void *data TSRMLS_DC);
-
+/* {{{ http_request_callback_ctx http_request_callback_data(void *) */
+http_request_callback_ctx *_http_request_callback_data_ex(void *data, zend_bool cpy TSRMLS_DC)
+{
+	http_request_callback_ctx *ctx = emalloc(sizeof(http_request_callback_ctx));
+	
+	TSRMLS_SET_CTX(ctx->tsrm_ctx);
+	ctx->data = data;
+	
+	if (cpy) {
+		return http_request_data_copy(COPY_CONTEXT, ctx);
+	} else {
+		return ctx;
+	}
+}
+/* }}} */
 
 /* {{{ void *http_request_data_copy(int, void *) */
 void *_http_request_data_copy(int type, void *data TSRMLS_DC)
@@ -169,17 +177,17 @@ void _http_request_data_free_slist(void *list)
 }
 /* }}} */
 
-/* {{{ _http_request_data_free_context(http_curl_callback_ctx **) */
+/* {{{ _http_request_data_free_context(http_request_callback_ctx **) */
 void _http_request_data_free_context(void *context)
 {
-	efree(*((http_curl_callback_ctx **) context));
+	efree(*((http_request_callback_ctx **) context));
 }
 /* }}} */
 
-/* {{{ _http_request_data_free_conv(http_curl_conv **) */
+/* {{{ _http_request_data_free_conv(http_request_conv **) */
 void _http_request_data_free_conv(void *conv)
 {
-	efree(*((http_curl_conv **) conv));
+	efree(*((http_request_conv **) conv));
 }
 /* }}} */
 
@@ -339,7 +347,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	if (zoption = http_curl_getopt(options, "onprogress", 0)) {
 		HTTP_CURL_OPT(NOPROGRESS, 0);
 		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
-		HTTP_CURL_OPT(PROGRESSDATA,  http_curl_callback_data(zoption));
+		HTTP_CURL_OPT(PROGRESSDATA,  http_request_callback_data(zoption));
 	} else {
 		HTTP_CURL_OPT(NOPROGRESS, 1);
 	}
@@ -614,7 +622,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 			break;
 
 			case HTTP_REQUEST_BODY_UPLOADFILE:
-				curl_easy_setopt(ch, CURLOPT_READDATA, http_curl_callback_data(body));
+				curl_easy_setopt(ch, CURLOPT_READDATA, http_request_callback_data(body));
 				curl_easy_setopt(ch, CURLOPT_INFILESIZE, body->size);
 			break;
 
@@ -633,11 +641,11 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 /* {{{ void http_request_conv(CURL *, phpstr *, phpstr *) */
 void _http_request_conv(CURL *ch, phpstr* response, phpstr *request TSRMLS_DC)
 {
-	http_curl_conv *conv = emalloc(sizeof(http_curl_conv));
+	http_request_conv *conv = emalloc(sizeof(http_request_conv));
 	conv->response = response;
 	conv->request = request;
 	conv->last_info = -1;
-	HTTP_CURL_OPT(DEBUGDATA, http_curl_callback_data(http_request_data_copy(COPY_CONV, conv)));
+	HTTP_CURL_OPT(DEBUGDATA, http_request_callback_data(http_request_data_copy(COPY_CONV, conv)));
 }
 /* }}} */
 
@@ -742,7 +750,7 @@ PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, char *u
 /* {{{ static size_t http_curl_read_callback(void *, size_t, size_t, void *) */
 static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *s)
 {
-	HTTP_CURL_CALLBACK_DATA(s, http_request_body *, body);
+	HTTP_REQUEST_CALLBACK_DATA(s, http_request_body *, body);
 
 	if (body->type != HTTP_REQUEST_BODY_UPLOADFILE) {
 		return 0;
@@ -751,21 +759,11 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *s)
 }
 /* }}} */
 
-/* {{{ http_curl_callback_ctx http_curl_callback_data(void *) */
-static http_curl_callback_ctx *_http_curl_callback_data(void *data TSRMLS_DC)
-{
-	http_curl_callback_ctx *ctx = emalloc(sizeof(http_curl_callback_ctx));
-	TSRMLS_SET_CTX(ctx->tsrm_ctx);
-	ctx->data = data;
-	return http_request_data_copy(COPY_CONTEXT, ctx);
-}
-/* }}} */
-
 /* {{{ static int http_curl_progress_callback(void *, double, double, double, double) */
 static int http_curl_progress_callback(void *data, double dltotal, double dlnow, double ultotal, double ulnow)
 {
 	zval *params_pass[4], params_local[4], retval;
-	HTTP_CURL_CALLBACK_DATA(data, zval *, func);
+	HTTP_REQUEST_CALLBACK_DATA(data, zval *, func);
 
 	params_pass[0] = &params_local[0];
 	params_pass[1] = &params_local[1];
@@ -788,7 +786,7 @@ static int http_curl_progress_callback(void *data, double dltotal, double dlnow,
 /* {{{ static int http_curl_raw_callback(CURL *, curl_infotype, char *, size_t, void *) */
 static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size_t length, void *ctx)
 {
-	HTTP_CURL_CALLBACK_DATA(ctx, http_curl_conv *, conv);
+	HTTP_REQUEST_CALLBACK_DATA(ctx, http_request_conv *, conv);
 
 	switch (type)
 	{

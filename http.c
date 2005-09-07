@@ -150,8 +150,8 @@ static inline void http_globals_init(zend_http_globals *G)
 #ifdef HTTP_HAVE_CURL
 	zend_llist_init(&G->request.copies.strings, sizeof(char *), http_request_data_free_string, 0);
 	zend_llist_init(&G->request.copies.slists, sizeof(struct curl_slist *), http_request_data_free_slist, 0);
-	zend_llist_init(&G->request.copies.contexts, sizeof(http_curl_callback_ctx *), http_request_data_free_context, 0);
-	zend_llist_init(&G->request.copies.convs, sizeof(http_curl_conv *), http_request_data_free_conv, 0);
+	zend_llist_init(&G->request.copies.contexts, sizeof(http_request_callback_ctx *), http_request_data_free_context, 0);
+	zend_llist_init(&G->request.copies.convs, sizeof(http_request_conv *), http_request_data_free_conv, 0);
 #endif
 }
 

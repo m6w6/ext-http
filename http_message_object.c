@@ -234,7 +234,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	fprintf(stderr, "Read HttpMessage::$%s\n", Z_STRVAL_P(member));
 #endif
 	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-		zend_error(HE_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
+		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 		return EG(uninitialized_zval_ptr);
 	}
 
@@ -325,7 +325,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	fprintf(stderr, "Write HttpMessage::$%s\n", Z_STRVAL_P(member));
 #endif
 	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-		zend_error(HE_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
+		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
 	}
 
 	switch (zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1))

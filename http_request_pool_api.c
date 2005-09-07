@@ -40,7 +40,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define curl_multi_strerror(dummy) "unknown error"
 #endif
 
-static void http_request_pool_freebody(http_request_body **body);
+static void http_request_pool_freebody(http_request_callback_ctx **body);
 static int http_request_pool_compare_handles(void *h1, void *h2);
 
 /* {{{ http_request_pool *http_request_pool_init(http_request_pool *) */
@@ -67,7 +67,7 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 
 	pool->unfinished = 0;
 	zend_llist_init(&pool->handles, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
-	zend_llist_init(&pool->bodies, sizeof(http_request_body *), (llist_dtor_func_t) http_request_pool_freebody, 0);
+	zend_llist_init(&pool->bodies, sizeof(http_request_callback_ctx *), (llist_dtor_func_t) http_request_pool_freebody, 0);
 #if HTTP_DEBUG_REQPOOLS
 	fprintf(stderr, "Initialized request pool %p\n", pool);
 #endif
@@ -85,9 +85,9 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 	if (req->pool) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "HttpRequest object(#%d) is already member of %s HttpRequestPool", Z_OBJ_HANDLE_P(request), req->pool == pool ? "this" : "another");
 	} else {
-		http_request_body *body = http_request_body_new();
+		http_request_callback_ctx *body = http_request_callback_data_ex(http_request_body_new(), 0);
 
-		if (SUCCESS != http_request_pool_requesthandler(request, body)) {
+		if (SUCCESS != http_request_pool_requesthandler(request, body->data)) {
 			http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
 		} else {
 			CURLMcode code = curl_multi_add_handle(pool->ch, req->ch);
@@ -109,6 +109,7 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 				return SUCCESS;
 			}
 		}
+		efree(body->data);
 		efree(body);
 	}
 	return FAILURE;
@@ -264,11 +265,12 @@ void _http_request_pool_responsehandler(zval **req TSRMLS_DC)
 
 /*#*/
 
-/* {{{ static void http_request_pool_freebody(http_request_body **) */
-static void http_request_pool_freebody(http_request_body **body)
+/* {{{ static void http_request_pool_freebody(http_request_ctx **) */
+static void http_request_pool_freebody(http_request_callback_ctx **body)
 {
-	TSRMLS_FETCH();
-	http_request_body_free(*body);
+	HTTP_REQUEST_CALLBACK_DATA(*body, http_request_body *, b);
+	http_request_body_free(b);
+	efree(*body);
 }
 /* }}} */
 

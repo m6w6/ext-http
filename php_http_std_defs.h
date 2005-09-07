@@ -271,17 +271,16 @@ typedef int STATUS;
 #ifndef E_THROW
 #	define E_THROW 0
 #endif
-#define HE_THROW	E_THROW
 #ifdef ZEND_ENGINE_2
-#	define HE_THROW		E_THROW
-#	define HE_NOTICE	(HTTP_G(only_exceptions) ? E_THROW : E_NOTICE)
-#	define HE_WARNING	(HTTP_G(only_exceptions) ? E_THROW : E_WARNING)
-#	define HE_ERROR		(HTTP_G(only_exceptions) ? E_THROW : E_ERROR)
+#	define HE_THROW		E_THROW TSRMLS_CC
+#	define HE_NOTICE	(HTTP_G(only_exceptions) ? E_THROW : E_NOTICE) TSRMLS_CC
+#	define HE_WARNING	(HTTP_G(only_exceptions) ? E_THROW : E_WARNING) TSRMLS_CC
+#	define HE_ERROR		(HTTP_G(only_exceptions) ? E_THROW : E_ERROR) TSRMLS_CC
 #else
-#	define HE_THROW		E_WARNING
-#	define HE_NOTICE	E_NOTICE
-#	define HE_WARNING	E_WARNING
-#	define HE_ERROR		E_ERROR
+#	define HE_THROW		E_WARNING TSRMLS_CC
+#	define HE_NOTICE	E_NOTICE TSRMLS_CC
+#	define HE_WARNING	E_WARNING TSRMLS_CC
+#	define HE_ERROR		E_ERROR TSRMLS_CC
 #endif
 
 #define HTTP_E_RUNTIME				1L

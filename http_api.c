@@ -164,10 +164,9 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 /* }}} */
 
 /* {{{ void http_error(long, long, char*) */
-void _http_error_ex(long type, long code, const char *format, ...)
+void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...)
 {
 	va_list args;
-	TSRMLS_FETCH();
 	
 	va_start(args, format);
 #ifdef ZEND_ENGINE_2

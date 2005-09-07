@@ -42,13 +42,24 @@ typedef struct {
 typedef struct {
 	void ***tsrm_ctx;
 	void *data;
-} http_curl_callback_ctx;
+} http_request_callback_ctx;
 
 typedef struct {
 	phpstr *response;
 	phpstr *request;
 	curl_infotype last_info;
-} http_curl_conv;
+} http_request_conv;
+
+
+#define HTTP_REQUEST_CALLBACK_DATA(from, type, var) \
+	http_request_callback_ctx *__CTX = (http_request_callback_ctx *) (from); \
+	TSRMLS_FETCH_FROM_CTX(__CTX->tsrm_ctx); \
+	type (var) = (type) (__CTX->data)
+
+#define http_request_callback_data(data) _http_request_callback_data_ex((data), 1 TSRMLS_CC)
+#define http_request_callback_data_ex(data, copy) _http_request_callback_data_ex((data), (copy) TSRMLS_CC)
+extern http_request_callback_ctx *_http_request_callback_data_ex(void *data, zend_bool cpy TSRMLS_DC);
+
 
 #define COPY_STRING		1
 #define	COPY_SLIST		2
