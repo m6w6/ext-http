@@ -37,7 +37,7 @@
 #include <ctype.h>
 
 #ifdef HTTP_HAVE_MAGIC
-#	if defined(PHP_WIN32) && !defined(USE_MAGIC_DLL)
+#	if defined(PHP_WIN32) && !defined(USE_MAGIC_DLL) && !defined(USE_MAGIC_STATIC)
 #		define USE_MAGIC_STATIC
 #	endif
 #	include <magic.h>
@@ -167,19 +167,11 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 void _http_error_ex(long type, long code, const char *format, ...)
 {
 	va_list args;
-	zend_bool throw_exception = 0;
 	TSRMLS_FETCH();
-
-	if (type == E_THROW) {
-		throw_exception = 1;
-		type = E_WARNING;
-	} else if (PG(error_handling) == EH_THROW) {
-		throw_exception = 1;
-	}
-
+	
 	va_start(args, format);
 #ifdef ZEND_ENGINE_2
-	if (throw_exception) {
+	if ((type == E_THROW) || (PG(error_handling) == EH_THROW)) {
 		char *message;
 		
 		vspprintf(&message, 0, format, args);
