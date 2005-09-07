@@ -38,8 +38,10 @@ if (PHP_HTTP != "no") {
         WARNING("curl convenience functions not enabled; libraries and headers not found");
     }
     
+    MAGIC_LIB = PHP_DEBUG != "no" ? "libmagic-staticd.lib":"libmagic-static.lib";
+    
     if (CHECK_HEADER_ADD_INCLUDE("magic.h", "CFLAGS_HTTP") &&
-			CHECK_LIB("magic.lib", "http", PHP_HTTP)) {
+			CHECK_LIB(MAGIC_LIB, "http", PHP_HTTP)) {
 		AC_DEFINE("HTTP_HAVE_MAGIC", 1, "Have magic library");
 	} else {
 		WARNING("content type guessing not enabled; libraries and headers not found");

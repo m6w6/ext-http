@@ -37,6 +37,9 @@
 #include <ctype.h>
 
 #ifdef HTTP_HAVE_MAGIC
+#	if defined(PHP_WIN32) && !defined(USE_MAGIC_DLL)
+#		define USE_MAGIC_STATIC
+#	endif
 #	include <magic.h>
 #endif
 
@@ -164,21 +167,26 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 void _http_error_ex(long type, long code, const char *format, ...)
 {
 	va_list args;
+	zend_bool throw_exception = 0;
 	TSRMLS_FETCH();
 
-	va_start(args, format);
 	if (type == E_THROW) {
+		throw_exception = 1;
+		type = E_WARNING;
+	} else if (PG(error_handling) == EH_THROW) {
+		throw_exception = 1;
+	}
+
+	va_start(args, format);
 #ifdef ZEND_ENGINE_2
+	if (throw_exception) {
 		char *message;
+		
 		vspprintf(&message, 0, format, args);
 		zend_throw_exception(http_exception_get_for_code(code), message, code TSRMLS_CC);
-#else
-		type = E_WARNING;
+	} else
 #endif
-	}
-	if (type != E_THROW) {
-		php_verror(NULL, "", type, format, args TSRMLS_CC);
-	}
+	php_verror(NULL, "", type, format, args TSRMLS_CC);
 	va_end(args);
 }
 /* }}} */
@@ -393,12 +401,11 @@ PHP_HTTP_API char *_http_guess_content_type(const char *magicfile, long magicmod
 		if (ctype) {
 			ct = estrdup(ctype);
 		} else {
-			http_error(HE_WARNING, HTTP_E_RUNTIME, "Failed to guess Content-Type");
+			http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Failed to guess Content-Type: %s", magic_error(magic));
 		}
-		
-		if (magic) {
-			magic_close(magic);
-		}
+	}
+	if (magic) {
+		magic_close(magic);
 	}
 #else
 	http_error(HE_WARNING, HTTP_E_RUNTIME, "Cannot guess Content-Type; libmagic not available");

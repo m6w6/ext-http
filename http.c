@@ -341,6 +341,11 @@ PHP_MINFO_FUNCTION(http)
 #else
 		php_info_print_table_row(2, "mhash ETag Generator:", "disabled");
 #endif
+#if defined(HTTP_HAVE_MAGIC) && !defined(WONKY)
+		php_info_print_table_row(2, "magic MIME Guessing:", "libmagic/unknown");
+#else
+		php_info_print_table_row(2, "magic MIME Guessing:", "disabled");
+#endif
 		php_info_print_table_row(2, "Registered Classes:",
 #ifndef ZEND_ENGINE_2
 			"none"
