@@ -9,6 +9,8 @@ checkcgi();
 HTTP_IF_NONE_MATCH="0bee89b07a248e27c83fc3d5951213c1"
 --FILE--
 <?php
+include 'log.inc';
+log_prepare(_CACHE_LOG);
 http_cache_etag();
 http_send_data("abc\n");
 ?>

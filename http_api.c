@@ -198,7 +198,7 @@ void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)
 	 	php_stream *log = php_stream_open_wrapper(file, "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL); \
 		 \
 		if (log) { \
-			php_stream_printf(log TSRMLS_CC, "%s [%12s] %32s <%s>%s", datetime, type, msg, SG(request_info).request_uri, PHP_EOL); \
+			php_stream_printf(log TSRMLS_CC, "%s\t[%s]\t%s\t<%s>%s", datetime, type, msg, SG(request_info).request_uri, PHP_EOL); \
 			php_stream_close(log); \
 		} \
 	 \

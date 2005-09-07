@@ -7,6 +7,8 @@ checkcgi();
 ?>
 --FILE--
 <?php
+include 'log.inc';
+log_prepare(_REDIR_LOG);
 http_redirect('redirect', null, false, true);
 ?>
 --EXPECTF--
