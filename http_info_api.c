@@ -81,7 +81,7 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 	}
 	
 	/* where's the end of the line */
-	if (!((end = strchr(pre_header, '\r')) || (end = strchr(pre_header, '\n')))) {
+	if (!(end = http_locate_eol(pre_header, NULL))) {
 		end = pre_header + strlen(pre_header);
 	}
 	
