@@ -61,6 +61,12 @@ dnl ----
 			AC_MSG_RESULT([found: $CURL_CONFIG])
 		fi
 		
+		CURL_SSL=`$CURL_CONFIG --features | $EGREP SSL`
+		if test CURL_SSL == "SSL"; then
+			AC_DEFINE([HTTP_HAVE_SSL], [1], [ ])
+		fi
+		AC_CHECK_HEADERS([openssl/crypto.h])
+		
 		CURL_LIBS=`$CURL_CONFIG --libs`
 		
 		PHP_ADD_INCLUDE($CURL_DIR/include)

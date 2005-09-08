@@ -52,6 +52,14 @@
 #include "phpstr/phpstr.h"
 
 #ifdef HTTP_HAVE_CURL
+#	if defined(ZTS) && defined(HTTP_HAVE_SSL)
+#		if !defined(HAVE_OPENSSL_CRYPTO_H)
+#			error "libcurl was compiled with OpenSSL support, but we have no crypto.h"
+#		else
+#			define HTTP_NEED_SSL
+#			include <openssl/crypto.h>
+#		endif
+#	endif
 #	ifdef PHP_WIN32
 #		include <winsock2.h>
 #	endif
@@ -251,9 +259,7 @@ PHP_INI_END()
 /* }}} */
 
 /* {{{ SSL */
-#if defined(ZTS) && defined(HTTP_HAVE_CURL) && defined(HAVE_OPENSSL_CRYPTO_H)
-
-#include <openssl/crypto.h>
+#ifdef HTTP_NEED_SSL
 
 static MUTEX_T *http_ssl_mutex = NULL;
 
@@ -310,7 +316,7 @@ PHP_MINIT_FUNCTION(http)
 
 #ifdef HTTP_HAVE_CURL
 	if (CURLE_OK == curl_global_init(CURL_GLOBAL_ALL)) {
-#	if defined(ZTS) && defined(HAVE_OPENSSL_CRYPTO_H)
+#	ifdef HTTP_NEED_SSL
 		curl_version_info_data *cvid = curl_version_info(CURLVERSION_NOW);
 		if (cvid && (cvid->features & CURL_VERSION_SSL)) {
 			http_ssl_init();
@@ -344,7 +350,7 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
 	curl_global_cleanup();
-#	if defined(ZTS) && defined(HAVE_OPENSSL_CRYPTO_H)
+#	ifdef HTTP_NEED_SSL
 	if (http_ssl_mutex) {
 		http_ssl_cleanup();
 	}
