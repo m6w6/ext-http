@@ -250,6 +250,50 @@ PHP_INI_BEGIN()
 PHP_INI_END()
 /* }}} */
 
+/* {{{ SSL */
+#if defined(ZTS) && defined(HTTP_HAVE_CURL) && defined(HAVE_OPENSSL_CRYPTO_H)
+
+#include <openssl/crypto.h>
+
+static MUTEX_T *http_ssl_mutex = NULL;
+
+static void http_ssl_lock(int mode, int n, const char * file, int line)
+{
+	if (mode & CRYPTO_LOCK) {
+		tsrm_mutex_lock(http_ssl_mutex[n]);
+	} else {
+		tsrm_mutex_unlock(http_ssl_mutex[n]);
+	}
+}
+static unsigned long http_ssl_id(void)
+{
+	return (unsigned long) tsrm_thread_id();
+}
+static inline void http_ssl_init(void)
+{
+	int i, c = CRYPTO_num_locks();
+	http_ssl_mutex = malloc(c * sizeof(MUTEX_T));
+	
+	for (i = 0; i < c; ++i) {
+		http_ssl_mutex[i] = tsrm_mutex_alloc();
+	}
+	
+	CRYPTO_set_id_callback(http_ssl_id);
+	CRYPTO_set_locking_callback(http_ssl_lock);
+}
+static inline void http_ssl_cleanup(void)
+{
+	int i, c = CRYPTO_num_locks();
+	
+	CRYPTO_set_id_callback(NULL);
+	CRYPTO_set_locking_callback(NULL);
+	
+	for (i = 0; i < c; ++i) {
+		tsrm_mutex_free(http_ssl_mutex[i]);
+	}
+}
+#endif
+/* }}} */
 
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(http)
@@ -265,7 +309,14 @@ PHP_MINIT_FUNCTION(http)
 	HTTP_LONG_CONSTANT("HTTP_ETAG_MHASH", HTTP_ETAG_MHASH);
 
 #ifdef HTTP_HAVE_CURL
-	if (CURLE_OK != curl_global_init(CURL_GLOBAL_ALL)) {
+	if (CURLE_OK == curl_global_init(CURL_GLOBAL_ALL)) {
+#	if defined(ZTS) && defined(HAVE_OPENSSL_CRYPTO_H)
+		curl_version_info_data *cvid = curl_version_info(CURLVERSION_NOW);
+		if (cvid && (cvid->features & CURL_VERSION_SSL)) {
+			http_ssl_init();
+		}
+#	endif
+	} else {
 		return FAILURE;
 	}
 #endif /* HTTP_HAVE_CURL */
@@ -293,6 +344,11 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
 	curl_global_cleanup();
+#	if defined(ZTS) && defined(HAVE_OPENSSL_CRYPTO_H)
+	if (http_ssl_mutex) {
+		http_ssl_cleanup();
+	}
+#	endif
 #endif
 	return SUCCESS;
 }
