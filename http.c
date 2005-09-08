@@ -297,6 +297,9 @@ static inline void http_ssl_cleanup(void)
 	for (i = 0; i < c; ++i) {
 		tsrm_mutex_free(http_ssl_mutex[i]);
 	}
+	
+	free(http_ssl_mutex);
+	http_ssl_mutex = NULL;
 }
 #endif
 /* }}} */
