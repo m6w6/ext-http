@@ -306,6 +306,12 @@ typedef int STATUS;
 #	define HTTP_ARG_OBJ(class, name, allow_null)				ZEND_ARG_OBJ_INFO(1, name, class, allow_null)
 #endif
 
+#ifdef ZEND_ENGINE_2
+#	define EMPTY_FUNCTION_ENTRY {NULL, NULL, NULL, 0}
+#else
+#	define EMPTY_FUNCTION_ENTRY {NULL, NULL, NULL}
+#endif
+
 #ifdef HTTP_HAVE_CURL
 #	ifdef ZEND_ENGINE_2
 #		define HTTP_DECLARE_ARG_PASS_INFO() \

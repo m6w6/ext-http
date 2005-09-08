@@ -200,7 +200,7 @@ zend_function_entry http_response_object_fe[] = {
 	HTTP_RESPONSE_ALIAS(getRequestHeaders, http_get_request_headers)
 	HTTP_RESPONSE_ALIAS(getRequestBody, http_get_request_body)
 
-	{NULL, NULL, NULL}
+	EMPTY_FUNCTION_ENTRY
 };
 
 void _http_response_object_init(INIT_FUNC_ARGS)

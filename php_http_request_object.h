@@ -106,8 +106,6 @@ PHP_METHOD(HttpRequest, methodUnregister);
 PHP_METHOD(HttpRequest, methodName);
 PHP_METHOD(HttpRequest, methodExists);
 
-PHP_METHOD(HttpRequest, debugWrapper);
-
 #endif
 #endif
 #endif

@@ -71,7 +71,7 @@ ZEND_GET_MODULE(http)
 #endif
 
 /* {{{ http_functions[] */
-function_entry http_functions[] = {
+zend_function_entry http_functions[] = {
 	PHP_FE(http_test, NULL)
 	PHP_FE(http_date, NULL)
 	PHP_FE(http_absolute_uri, NULL)
@@ -112,7 +112,8 @@ function_entry http_functions[] = {
 	PHP_FE(http_build_query, NULL)
 #endif
 	PHP_FE(ob_etaghandler, NULL)
-	{NULL, NULL, NULL}
+	
+	EMPTY_FUNCTION_ENTRY
 };
 /* }}} */
 

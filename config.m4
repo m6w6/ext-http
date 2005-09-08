@@ -140,13 +140,29 @@ dnl ----
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, [$ext_shared])
 	PHP_ADD_BUILD_DIR($ext_builddir/phpstr, 1)
 	PHP_SUBST([HTTP_SHARED_LIBADD])
-	PHP_ADD_MAKEFILE_FRAGMENT
+
+	HTTP_HEADER_FILES= \
+		phpstr/phpstr.h \
+		php_http_std_defs.h \
+		php_http.h \
+		php_http_api.h \
+		php_http_cache_api.h \
+		php_http_date_api.h \
+		php_http_headers_api.h \
+		php_http_info_api.h \
+		php_http_message_api.h \
+		php_http_request_api.h \
+		php_http_request_method_api.h \
+		php_http_send_api.h \
+		php_http_url_api.h
+	PHP_SUBST([HTTP_HEADER_FILES])
+
+	ifdef([PHP_INSTALL_HEADERS],
+	[
+		PHP_INSTALL_HEADERS(ext/http, [HTTP_HEADER_FILES])
+	], [
+		PHP_ADD_MAKEFILE_FRAGMENT
+	])
+
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
-
-dnl ---
-dnl odd warnings
-dnl ---
-dnl		CFLAGS=" -g -O2 -W -Wchar-subscripts -Wformat=2 -Wno-format-y2k -Wimplicit -Wmissing-braces -Wunused-variable -Wbad-function-cast -Wpointer-arith -Wsign-compare -Winline"
-dnl		PHP_SUBST([CFLAGS])
-
 fi

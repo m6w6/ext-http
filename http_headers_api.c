@@ -254,7 +254,11 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 	zval array;
 
 	Z_ARRVAL(array) = headers;
-	header_len = body ? body - header : strlen(header) + 1;
+	if (body) {
+		header_len = body - header;
+	} else {
+		header_len = strlen(header) + 1;
+	}
 	line = header;
 
 	while (header_len >= (size_t) (line - begin)) {

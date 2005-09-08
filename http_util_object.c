@@ -93,7 +93,8 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(chunkedDecode, http_chunked_decode)
 	HTTP_UTIL_ALIAS(parseMessage, http_parse_message)
 	HTTP_UTIL_ALIAS(parseHeaders, http_parse_headers)
-	{NULL, NULL, NULL}
+	
+	EMPTY_FUNCTION_ENTRY
 };
 
 void _http_util_object_init(INIT_FUNC_ARGS)

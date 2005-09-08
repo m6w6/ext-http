@@ -123,7 +123,8 @@ zend_function_entry http_message_object_fe[] = {
 	ZEND_MALIAS(HttpMessage, __toString, toString, HTTP_ARGS(HttpMessage, toString), ZEND_ACC_PUBLIC)
 
 	HTTP_MESSAGE_ME(fromString, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	{NULL, NULL, NULL}
+	
+	EMPTY_FUNCTION_ENTRY
 };
 static zend_object_handlers http_message_object_handlers;
 

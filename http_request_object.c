@@ -276,7 +276,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ALIAS(methodName, http_request_method_name)
 	HTTP_REQUEST_ALIAS(methodExists, http_request_method_exists)
 
-	{NULL, NULL, NULL}
+	EMPTY_FUNCTION_ENTRY
 };
 static zend_object_handlers http_request_object_handlers;
 
@@ -1520,7 +1520,6 @@ PHP_METHOD(HttpRequest, getHistory)
  */
 PHP_METHOD(HttpRequest, send)
 {
-	STATUS status = FAILURE;
 	http_request_body body = {0, NULL, 0};
 	getObject(http_request_object, obj);
 

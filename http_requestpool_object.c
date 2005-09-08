@@ -89,7 +89,7 @@ zend_function_entry http_requestpool_object_fe[] = {
 	HTTP_REQPOOL_ME(next, ZEND_ACC_PUBLIC)
 	HTTP_REQPOOL_ME(rewind, ZEND_ACC_PUBLIC)
 
-	{NULL, NULL, NULL}
+	EMPTY_FUNCTION_ENTRY
 };
 static zend_object_handlers http_requestpool_object_handlers;
 
