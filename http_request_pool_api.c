@@ -168,11 +168,21 @@ PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_D
 		for (handle = zend_llist_get_first_ex(&pool->handles, &pos); handle; handle = zend_llist_get_next_ex(&pool->handles, &pos)) {
 			handles[i++] = *handle;
 		}
+		/* should never happen */
+		if (i != count) {
+			zend_error(E_ERROR, "number of fetched request handles do not match overall count");
+			count = i;
+		}
 		for (i = 0; i < count; ++i) {
 			http_request_pool_detach(pool, handles[i]);
 		}
 		efree(handles);
 	}
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(srderr, "Destroying %d request bodies of pool %p\n", zend_llist_count(&pool->bodies), pool);
+#endif
+	/* free created bodies too */
+	zend_llist_clean(&pool->bodies);
 }
 
 
