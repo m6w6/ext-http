@@ -307,7 +307,7 @@ typedef int STATUS;
 #endif
 
 #ifdef ZEND_ENGINE_2
-#	define EMPTY_FUNCTION_ENTRY {NULL, NULL, NULL, 0}
+#	define EMPTY_FUNCTION_ENTRY {NULL, NULL, NULL, 0, 0}
 #else
 #	define EMPTY_FUNCTION_ENTRY {NULL, NULL, NULL}
 #endif

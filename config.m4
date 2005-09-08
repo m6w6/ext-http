@@ -141,25 +141,15 @@ dnl ----
 	PHP_ADD_BUILD_DIR($ext_builddir/phpstr, 1)
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 
-	HTTP_HEADER_FILES= \
-		phpstr/phpstr.h \
-		php_http_std_defs.h \
-		php_http.h \
-		php_http_api.h \
-		php_http_cache_api.h \
-		php_http_date_api.h \
-		php_http_headers_api.h \
-		php_http_info_api.h \
-		php_http_message_api.h \
-		php_http_request_api.h \
-		php_http_request_method_api.h \
-		php_http_send_api.h \
-		php_http_url_api.h
+	HTTP_HEADER_FILES="php_http_std_defs.h php_http.h php_http_api.h php_http_cache_api.h \
+		php_http_date_api.h php_http_headers_api.h php_http_info_api.h php_http_message_api.h \
+		php_http_request_api.h php_http_request_method_api.h php_http_send_api.h php_http_url_api.h"
 	PHP_SUBST([HTTP_HEADER_FILES])
 
 	ifdef([PHP_INSTALL_HEADERS],
 	[
-		PHP_INSTALL_HEADERS(ext/http, [HTTP_HEADER_FILES])
+		PHP_INSTALL_HEADERS(ext/http, $HTTP_HEADER_FILES)
+		PHP_INSTALL_HEADERS(ext/http/phpstr, [phpstr/phpstr.h])
 	], [
 		PHP_ADD_MAKEFILE_FRAGMENT
 	])
