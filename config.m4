@@ -62,7 +62,7 @@ dnl ----
 		fi
 		
 		CURL_SSL=`$CURL_CONFIG --features | $EGREP SSL`
-		if test CURL_SSL == "SSL"; then
+		if test "$CURL_SSL" == "SSL"; then
 			AC_DEFINE([HTTP_HAVE_SSL], [1], [ ])
 		fi
 		AC_CHECK_HEADERS([openssl/crypto.h])
