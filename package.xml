@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<!-- $Revision: 1.39 $ -->
+<!-- $Revision: 1.40 $ -->
 <package version="1.0">
   <name>pecl_http</name>
   <summary>Extended HTTP support</summary>
@@ -30,8 +30,8 @@
   </maintainers>
 
   <release>
-    <version>0.13.0dev</version>
-    <date>2005-09-00</date>
+    <version>0.13.0</version>
+    <date>2005-09-09</date>
     <state>beta</state>
     <notes><![CDATA[
 + HTTP request method API is now available for builds without libcurl, too

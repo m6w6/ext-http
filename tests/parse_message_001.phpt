@@ -2,7 +2,7 @@
 http_parse_message()
 --SKIPIF--
 include 'skip.inc';
-checkuri('www.google.com');
+checkurl('www.google.com');
 --FILE--
 <?php
 echo "-TEST\n";
