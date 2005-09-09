@@ -11,7 +11,7 @@ echo "DONE"
 
 echo -n "configuring... "
 CFLAGS="-W -Wchar-subscripts -Wformat=2 -Wno-format-y2k -Wimplicit -Wmissing-braces -Wunused-variable  -Wbad-function-cast -Wpointer-arith -Wsign-compare -Winline" \
-    ./configure >/dev/null
+    ./configure $@ >/dev/null
 if test $? -ne 0 ; then
     echo "FAILED!"
     exit 1

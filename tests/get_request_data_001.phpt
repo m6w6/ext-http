@@ -8,6 +8,7 @@ include 'skip.inc';
 HTTP_ACCEPT_CHARSET=iso-8859-1, *
 HTTP_ACCEPT_ENCODING=none
 HTTP_USER_AGENT=Mozilla/5.0
+HTTP_HOST=localhost
 --POST--
 a=b&c=d
 --FILE--
@@ -28,6 +29,7 @@ Array
 (
     [Accept-Charset] => iso-8859-1, *
     [Accept-Encoding] => none
+    [Host] => localhost
     [User-Agent] => Mozilla/5.0
 )
 OK

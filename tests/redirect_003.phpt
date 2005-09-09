@@ -5,6 +5,8 @@ http_redirect() permanent
 include 'skip.inc';
 checkcgi();
 ?>
+--ENV--
+HTTP_HOST=localhost
 --FILE--
 <?php
 include 'log.inc';
