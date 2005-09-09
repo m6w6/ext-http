@@ -788,6 +788,10 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 {
 	HTTP_REQUEST_CALLBACK_DATA(ctx, http_request_conv *, conv);
 
+#if 0
+	fprintf(stderr, "DEBUG: %s\n", data);
+#endif
+
 	switch (type)
 	{
 		case CURLINFO_DATA_IN:

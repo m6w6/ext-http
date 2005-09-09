@@ -179,12 +179,11 @@ PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_D
 		efree(handles);
 	}
 #if HTTP_DEBUG_REQPOOLS
-	fprintf(srderr, "Destroying %d request bodies of pool %p\n", zend_llist_count(&pool->bodies), pool);
+	fprintf(stderr, "Destroying %d request bodies of pool %p\n", zend_llist_count(&pool->bodies), pool);
 #endif
 	/* free created bodies too */
 	zend_llist_clean(&pool->bodies);
 }
-
 
 /* {{{ STATUS http_request_pool_send(http_request_pool *) */
 PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
@@ -193,9 +192,6 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 	fprintf(stderr, "Attempt to send %d requests of pool %p\n", zend_llist_count(&pool->handles), pool);
 #endif
 	while (http_request_pool_perform(pool)) {
-#if HTTP_DEBUG_REQPOOLS
-		fprintf(stderr, "> %d unfinished requests of pool %p remaining\n", pool->unfinished, pool);
-#endif
 		if (SUCCESS != http_request_pool_select(pool)) {
 #ifdef PHP_WIN32
 			http_error(HE_WARNING, HTTP_E_SOCKET, WSAGetLastError());
@@ -207,6 +203,17 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 	}
 #if HTTP_DEBUG_REQPOOLS
 	fprintf(stderr, "Finished sending %d HttpRequests of pool %p (still unfinished: %d)\n", zend_llist_count(&pool->handles), pool, pool->unfinished);
+	{
+		int remaining = 0;
+		CURLMsg *msg;
+		/*
+		 * FIXXME: populate --somehow
+		 */
+		do {
+			if (msg = curl_multi_info_read(pool->ch, &remaining))
+				fprintf(stderr, "CURL: %s (%d)\n", curl_easy_strerror(msg->data.result), msg->data.result);
+		} while (remaining);
+	}
 #endif
 	zend_llist_apply(&pool->handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
 	return SUCCESS;
