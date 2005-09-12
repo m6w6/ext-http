@@ -48,7 +48,7 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getBody, 0);
 HTTP_BEGIN_ARGS(setBody, 0, 1)
-	HTTP_ARG_VAL(body)
+	HTTP_ARG_VAL(body, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getHeaders, 0);
