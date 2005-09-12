@@ -14,7 +14,7 @@ try {
 	$p->send();
 	// HttpRequestPool implements an iterator over attached HttpRequest objects
 	foreach ($p as $r) {
-		print "Checking ", $r->getUrl(), " reported ", $r->getResponseCode(), "\n";
+		echo "Checking ", $r->getUrl(), " reported ", $r->getResponseCode(), "\n";
 	}
 } catch (HttpException $e) {
 	print $e;

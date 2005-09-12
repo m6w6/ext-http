@@ -38,7 +38,7 @@ class FeedAggregator
 	{
 		$pool = new HttpRequestPool;
 		foreach ($urls as $url) {
-			$pool->attach($this->setupRequest($url));
+			$pool->attach($r = $this->setupRequest($url));
 		}
 		$pool->send();
 
@@ -74,7 +74,7 @@ class FeedAggregator
 
 	protected function loadFeed($file)
 	{
-		if (isset($this->feeds[$file]) {
+		if (isset($this->feeds[$file])) {
 			if ($data = file_get_contents($this->directory .'/'. $file .'.xml')) {
 				return $data;
 			} else {
@@ -93,7 +93,7 @@ class FeedAggregator
 		$file = $this->url2name($url);
 
 		if (isset($this->feeds[$file])) {
-			$r->addOptions(array('lastmodified' => $this->feeds[$file]));
+			$r->setOptions(array('lastmodified' => $this->feeds[$file]));
 		}
 
 		return $r;
@@ -108,7 +108,7 @@ class FeedAggregator
 			if (!strlen($body = $r->getResponseBody())) {
 				throw new Exception("Received empty feed from ". $r->getUrl());
 			}
-			$this->saveFeed($file, $body);
+			$this->saveFeed($this->url2name($r->getUrl()), $body);
 		}
 	}
 }

@@ -93,7 +93,7 @@ try {
 	$p->send();
 	// HttpRequestPool implements an iterator over attached HttpRequest objects
 	foreach ($p as $r) {
-		print "Checking ", $r->getUrl(), " reported ", $r->getResponseCode(), "\n";
+		echo "Checking ", $r->getUrl(), " reported ", $r->getResponseCode(), "\n";
 	}
 } catch (HttpException $e) {
 	print $e;
@@ -121,7 +121,7 @@ class Pool extends HttpRequestPool
 		// while the requests are being executed
 		print "Executing requests";
 		for ($i = 0; $this->socketPerform(); $i++) {
-			$i % 3 or print ".";
+			$i % 10 or print ".";
 			if (!$this->socketSelect()) {
 				throw new HttpException("Socket error!");
 			}
@@ -132,7 +132,7 @@ class Pool extends HttpRequestPool
 
 try {
 	foreach (new Pool as $r) {
-		print "Checking ", $r->getUrl(), " reported ", $r->getResponseCode(), "\n";
+		echo "Checking ", $r->getUrl(), " reported ", $r->getResponseCode(), "\n";
 	}
 } catch (HttpException $ex) {
 	print $e;
@@ -263,7 +263,7 @@ class FeedAggregator
 	{
 		$pool = new HttpRequestPool;
 		foreach ($urls as $url) {
-			$pool->attach($this->setupRequest($url));
+			$pool->attach($r = $this->setupRequest($url));
 		}
 		$pool->send();
 
@@ -299,7 +299,7 @@ class FeedAggregator
 
 	protected function loadFeed($file)
 	{
-		if (isset($this->feeds[$file]) {
+		if (isset($this->feeds[$file])) {
 			if ($data = file_get_contents($this->directory .'/'. $file .'.xml')) {
 				return $data;
 			} else {
@@ -318,7 +318,7 @@ class FeedAggregator
 		$file = $this->url2name($url);
 
 		if (isset($this->feeds[$file])) {
-			$r->addOptions(array('lastmodified' => $this->feeds[$file]));
+			$r->setOptions(array('lastmodified' => $this->feeds[$file]));
 		}
 
 		return $r;
@@ -333,7 +333,7 @@ class FeedAggregator
 			if (!strlen($body = $r->getResponseBody())) {
 				throw new Exception("Received empty feed from ". $r->getUrl());
 			}
-			$this->saveFeed($file, $body);
+			$this->saveFeed($this->url2name($r->getUrl()), $body);
 		}
 	}
 }

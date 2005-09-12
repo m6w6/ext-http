@@ -13,7 +13,7 @@ class Pool extends HttpRequestPool
 		// while the requests are being executed
 		print "Executing requests";
 		for ($i = 0; $this->socketPerform(); $i++) {
-			$i % 3 or print ".";
+			$i % 10 or print ".";
 			if (!$this->socketSelect()) {
 				throw new HttpException("Socket error!");
 			}
@@ -24,7 +24,7 @@ class Pool extends HttpRequestPool
 
 try {
 	foreach (new Pool as $r) {
-		print "Checking ", $r->getUrl(), " reported ", $r->getResponseCode(), "\n";
+		echo "Checking ", $r->getUrl(), " reported ", $r->getResponseCode(), "\n";
 	}
 } catch (HttpException $ex) {
 	print $e;
