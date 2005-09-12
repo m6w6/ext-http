@@ -30,8 +30,8 @@ class FeedAggregator
 	public function addFeed($url)
 	{
 		$r = $this->setupRequest($url);
-        $r->send();
-        $this->handleResponse($r);
+		$r->send();
+		$this->handleResponse($r);
 	}
 
 	public function addFeeds($urls)
@@ -65,11 +65,11 @@ class FeedAggregator
 
 	protected function saveFeed($file, $contents)
 	{
-        if (file_put_contents($this->directory .'/'. $file .'.xml', $contents)) {
-            $this->feeds[$file] = time();
-        } else {
-            throw new Exception("Could not save feed contents to $file.xml");
-        }
+		if (file_put_contents($this->directory .'/'. $file .'.xml', $contents)) {
+			$this->feeds[$file] = time();
+		} else {
+			throw new Exception("Could not save feed contents to $file.xml");
+		}
 	}
 
 	protected function loadFeed($file)
@@ -87,8 +87,8 @@ class FeedAggregator
 
 	protected function setupRequest($url)
 	{
-        $r = new HttpRequest($url);
-        $r->setOptions(array('redirect' => true));
+		$r = new HttpRequest($url);
+		$r->setOptions(array('redirect' => true));
 
 		$file = $this->url2name($url);
 
@@ -102,14 +102,14 @@ class FeedAggregator
 	protected function handleResponse(HttpRequest $r)
 	{
 		if ($r->getResponseCode() != 304) {
-            if ($r->getResponseCode() != 200) {
-                throw new Exception("Unexpected response code ". $r->getResponseCode());
-            }
-            if (!strlen($body = $r->getResponseBody())) {
-                throw new Exception("Received empty feed from ". $r->getUrl());
-            }
-            $this->saveFeed($file, $body);
-        }
+			if ($r->getResponseCode() != 200) {
+				throw new Exception("Unexpected response code ". $r->getResponseCode());
+			}
+			if (!strlen($body = $r->getResponseBody())) {
+				throw new Exception("Received empty feed from ". $r->getUrl());
+			}
+			$this->saveFeed($file, $body);
+		}
 	}
 }
 ?>

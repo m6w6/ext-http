@@ -1,4 +1,7 @@
 <?php
+/**
+ * extract examples from tutorial.txt
+ */
 
 if (preg_match_all('/\n- ([^\n]+).*?(\<\?.+?\?\>)/s', file_get_contents($_SERVER['argv'][1]), $matches)) {
 	for ($i = 0; $i < count($matches[0]); $i++) {
