@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<!-- $Revision: 1.41 $ -->
+<!-- $Revision: 1.42 $ -->
 <package version="1.0">
   <name>pecl_http</name>
   <summary>Extended HTTP support</summary>
@@ -35,6 +35,7 @@
     <state>beta</state>
     <notes><![CDATA[
 + Added missing support for raw post data in HttpRequest
++ Added missing HttpMessage::setBody()
 ]]>
     </notes>
   </release>

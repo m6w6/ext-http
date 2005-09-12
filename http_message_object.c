@@ -47,6 +47,10 @@ HTTP_BEGIN_ARGS(fromString, 1, 1)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getBody, 0);
+HTTP_BEGIN_ARGS(setBody, 0, 1)
+	HTTP_ARG_VAL(body)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getHeaders, 0);
 HTTP_BEGIN_ARGS(setHeaders, 0, 1)
 	HTTP_ARG_VAL(headers, 0)
@@ -103,6 +107,7 @@ zend_class_entry *http_message_object_ce;
 zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	HTTP_MESSAGE_ME(getBody, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setBody, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getHeaders, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setHeaders, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(addHeaders, ZEND_ACC_PUBLIC)
@@ -518,6 +523,24 @@ PHP_METHOD(HttpMessage, getBody)
 	IF_RETVAL_USED {
 		getObject(http_message_object, obj);
 		RETURN_PHPSTR(&obj->message->body, PHPSTR_FREE_NOT, 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpMessage::setBody(string body)
+ *
+ * Set the body of the HttpMessage.
+ * NOTE: Don't forget to update any headers accordingly.
+ */
+PHP_METHOD(HttpMessage, setBody)
+{
+	char *body;
+	int len;
+	getObject(http_message_object, obj);
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &body, &len)) {
+		phpstr_dtor(PHPSTR(obj->message));
+		phpstr_from_string_ex(PHPSTR(obj->message), body, len);		
 	}
 }
 /* }}} */
