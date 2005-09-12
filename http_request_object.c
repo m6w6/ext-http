@@ -126,6 +126,15 @@ HTTP_BEGIN_ARGS(addPostFile, 0, 2)
 	HTTP_ARG_VAL(content_type, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(getRawPostData, 0);
+HTTP_BEGIN_ARGS(setRawPostData, 0, 0)
+	HTTP_ARG_VAL(raw_post_data, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(addRawPostData, 0, 1)
+	HTTP_ARG_VAL(raw_post_data, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getPutFile, 0);
 HTTP_BEGIN_ARGS(setPutFile, 0, 0)
 	HTTP_ARG_VAL(filename, 0)
@@ -244,6 +253,10 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(setPostFields, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getPostFields, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(addPostFields, ZEND_ACC_PUBLIC)
+	
+	HTTP_REQUEST_ME(setRawPostData, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getRawPostData, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(addRawPostData, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(setPostFiles, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(addPostFile, ZEND_ACC_PUBLIC)
@@ -364,6 +377,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 
 	DCL_PROP(PROTECTED, string, url, "");
 	DCL_PROP(PROTECTED, string, contentType, "");
+	DCL_PROP(PROTECTED, string, rawPostData, "");
 	DCL_PROP(PROTECTED, string, queryData, "");
 	DCL_PROP(PROTECTED, string, putFile, "");
 
@@ -438,7 +452,40 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 
 		case HTTP_POST:
 		default:
-			status = http_request_body_fill(body, Z_ARRVAL_P(GET_PROP(obj, postFields)), Z_ARRVAL_P(GET_PROP(obj, postFiles)));
+		{
+			/* check for raw post data */
+			zval *raw_data = GET_PROP(obj, rawPostData);
+			
+			if (Z_STRLEN_P(raw_data)) {
+				zval *ctype = GET_PROP(obj, contentType);
+				
+				if (Z_STRLEN_P(ctype)) {
+					zval **headers, *opts = GET_PROP(obj, options);
+					
+					if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) {
+						zval **ct_header;
+						
+						/* only override if not already set */
+						if (SUCCESS != zend_hash_find(Z_ARRVAL_PP(headers), "Content-Type", sizeof("Content-Type"), (void **) &ct_header)) {
+							add_assoc_stringl(*headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
+						}
+					} else {
+						zval *headers;
+						
+						MAKE_STD_ZVAL(headers);
+						array_init(headers);
+						add_assoc_stringl(headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
+						add_assoc_zval(opts, "headers", headers);
+					}
+				}
+				
+				body->type = HTTP_REQUEST_BODY_CSTRING;
+				body->data = estrndup(Z_STRVAL_P(raw_data), Z_STRLEN_P(raw_data));
+				body->size = Z_STRLEN_P(raw_data);
+			} else {
+				status = http_request_body_fill(body, Z_ARRVAL_P(GET_PROP(obj, postFields)), Z_ARRVAL_P(GET_PROP(obj, postFiles)));
+			}
+		}
 		break;
 	}
 	
@@ -614,7 +661,7 @@ PHP_METHOD(HttpRequest, __construct)
 		INIT_PARR(obj, postFiles);
 
 		if (URL) {
-			UPD_PROP(obj, string, url, URL);
+			UPD_STRL(obj, url, URL, URL_len);
 		}
 		if (meth > -1) {
 			UPD_PROP(obj, long, method, meth);
@@ -689,7 +736,7 @@ PHP_METHOD(HttpRequest, setOptions)
 				if (Z_TYPE_PP(opt) != IS_STRING) {
 					convert_to_string_ex(opt);
 				}
-				UPD_PROP(obj, string, url, Z_STRVAL_PP(opt));
+				UPD_STRL(obj, url, Z_STRVAL_PP(opt), Z_STRLEN_PP(opt));
 				continue;
 			} else if (!strcmp(key, "method")) {
 				if (Z_TYPE_PP(opt) != IS_LONG) {
@@ -833,7 +880,7 @@ PHP_METHOD(HttpRequest, setUrl)
 		RETURN_FALSE;
 	}
 
-	UPD_PROP(obj, string, url, URL);
+	UPD_STRL(obj, url, URL, URL_len);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -913,7 +960,7 @@ PHP_METHOD(HttpRequest, setContentType)
 		RETURN_FALSE;
 	}
 
-	UPD_PROP(obj, string, contentType, ctype);
+	UPD_STRL(obj, contentType, ctype, ct_len);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -952,7 +999,7 @@ PHP_METHOD(HttpRequest, setQueryData)
 	}
 
 	if ((!qdata) || Z_TYPE_P(qdata) == IS_NULL) {
-		UPD_PROP(obj, string, queryData, "");
+		UPD_STRL(obj, queryData, "", 0);
 	} else if ((Z_TYPE_P(qdata) == IS_ARRAY) || (Z_TYPE_P(qdata) == IS_OBJECT)) {
 		char *query_data = NULL;
 		
@@ -964,7 +1011,7 @@ PHP_METHOD(HttpRequest, setQueryData)
 		efree(query_data);
 	} else {
 		convert_to_string(qdata);
-		UPD_PROP(obj, string, queryData, Z_STRVAL_P(qdata));
+		UPD_STRL(obj, queryData, Z_STRVAL_P(qdata), Z_STRLEN_P(qdata));
 	}
 	RETURN_TRUE;
 }
@@ -997,6 +1044,7 @@ PHP_METHOD(HttpRequest, addQueryData)
 {
 	zval *qdata, *old_qdata;
 	char *query_data = NULL;
+	size_t query_data_len = 0;
 	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &qdata)) {
@@ -1005,11 +1053,11 @@ PHP_METHOD(HttpRequest, addQueryData)
 
 	old_qdata = GET_PROP(obj, queryData);
 
-	if (SUCCESS != http_urlencode_hash_ex(HASH_OF(qdata), 1, Z_STRVAL_P(old_qdata), Z_STRLEN_P(old_qdata), &query_data, NULL)) {
+	if (SUCCESS != http_urlencode_hash_ex(HASH_OF(qdata), 1, Z_STRVAL_P(old_qdata), Z_STRLEN_P(old_qdata), &query_data, &query_data_len)) {
 		RETURN_FALSE;
 	}
 
-	UPD_PROP(obj, string, queryData, query_data);
+	UPD_STRL(obj, queryData, query_data, query_data_len);
 	efree(query_data);
 
 	RETURN_TRUE;
@@ -1078,6 +1126,80 @@ PHP_METHOD(HttpRequest, getPostFields)
 		post_data = GET_PROP(obj, postFields);
 		array_init(return_value);
 		array_copy(post_data, return_value);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequest::setRawPostData([string raw_post_data])
+ *
+ * Set raw post data to send.  Don't forget to specify a content type.
+ * Affects only POST requests.
+ */
+PHP_METHOD(HttpRequest, setRawPostData)
+{
+	char *raw_data = NULL;
+	int data_len = 0;
+	getObject(http_request_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &raw_data, &data_len)) {
+		RETURN_FALSE;
+	}
+	
+	if (!raw_data) {
+		raw_data = "";
+	}
+	
+	UPD_STRL(obj, rawPostData, raw_data, data_len);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequest::addRawPostData(string raw_post_data)
+ *
+ * Add raw post data.
+ * Affects only POST requests.
+ */
+PHP_METHOD(HttpRequest, addRawPostData)
+{
+	char *raw_data, *new_data;
+	int data_len;
+	getObject(http_request_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &raw_data, &data_len)) {
+		RETURN_FALSE;
+	}
+	
+	if (data_len) {
+		zval *zdata = GET_PROP(obj, rawPostData);
+		
+		new_data = emalloc(Z_STRLEN_P(zdata) + data_len + 1);
+		new_data[Z_STRLEN_P(zdata) + data_len] = '\0';
+		
+		if (Z_STRLEN_P(zdata)) {
+			memcpy(new_data, Z_STRVAL_P(zdata), Z_STRLEN_P(zdata));
+		}
+		
+		memcpy(new_data + Z_STRLEN_P(zdata), raw_data, data_len);
+		UPD_STRL(obj, rawPostData, new_data, Z_STRLEN_P(zdata) + data_len);
+	}
+	
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpRequest::getRawPostData()
+ *
+ * Get previously set raw post data.
+ */
+PHP_METHOD(HttpRequest, getRawPostData)
+{
+	NO_ARGS;
+	
+	IF_RETVAL_USED {
+		getObject(http_request_object, obj);
+		zval *raw_data = GET_PROP(obj, rawPostData);
+		
+		RETURN_STRINGL(Z_STRVAL_P(raw_data), Z_STRLEN_P(raw_data), 1);
 	}
 }
 /* }}} */
@@ -1183,7 +1305,7 @@ PHP_METHOD(HttpRequest, setPutFile)
 		RETURN_FALSE;
 	}
 
-	UPD_PROP(obj, string, putFile, file);
+	UPD_STRL(obj, putFile, file, file_len);
 	RETURN_TRUE;
 }
 /* }}} */

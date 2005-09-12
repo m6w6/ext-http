@@ -11,3 +11,4 @@ Internals:
 	-	the request bodies created in http_request_pool_attach() are not 
 		destroyed in http_request_pool_detach(); may be a memory problem 
 		in long running scripts
+	-	protected class members are not type safe

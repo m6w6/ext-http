@@ -42,6 +42,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #define GET_STATIC_PROP(n)			*GET_STATIC_PROP_EX(http_response_object_ce, n)
 #define UPD_STATIC_PROP(t, n, v)	UPD_STATIC_PROP_EX(http_response_object_ce, t, n, v)
 #define SET_STATIC_PROP(n, v)		SET_STATIC_PROP_EX(http_response_object_ce, n, v)
+#define UPD_STATIC_STRL(n, v, l)	UPD_STATIC_STRL_EX(http_response_object_ce, n, v, l)
 
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpResponse, method, 0, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpResponse, method, ret_ref)
@@ -388,8 +389,8 @@ PHP_METHOD(HttpResponse, setCacheControl)
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
 		RETURN_FALSE;
 	} else {
-		spprintf(&cctl, 0, "%s, must-revalidate, max_age=%ld", ccontrol, max_age);
-		RETVAL_SUCCESS(UPD_STATIC_PROP(string, cacheControl, cctl));
+		size_t cctl_len = spprintf(&cctl, 0, "%s, must-revalidate, max_age=%ld", ccontrol, max_age);
+		RETVAL_SUCCESS(UPD_STATIC_STRL(cacheControl, cctl, cctl_len));
 		efree(cctl);
 	}
 }
@@ -428,7 +429,7 @@ PHP_METHOD(HttpResponse, setContentType)
 		RETURN_FALSE;
 	}
 
-	RETURN_SUCCESS(UPD_STATIC_PROP(string, contentType, ctype));
+	RETURN_SUCCESS(UPD_STATIC_STRL(contentType, ctype, ctype_len));
 }
 /* }}} */
 
@@ -503,14 +504,15 @@ PHP_METHOD(HttpResponse, setContentDisposition)
 {
 	char *file, *cd;
 	int file_len;
+	size_t cd_len;
 	zend_bool send_inline = 0;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &file, &file_len, &send_inline)) {
 		RETURN_FALSE;
 	}
 
-	spprintf(&cd, 0, "%s; filename=\"%s\"", send_inline ? "inline" : "attachment", file);
-	RETVAL_SUCCESS(UPD_STATIC_PROP(string, contentDisposition, cd));
+	cd_len = spprintf(&cd, 0, "%s; filename=\"%s\"", send_inline ? "inline" : "attachment", file);
+	RETVAL_SUCCESS(UPD_STATIC_STRL(contentDisposition, cd, cd_len));
 	efree(cd);
 }
 /* }}} */
@@ -543,7 +545,7 @@ PHP_METHOD(HttpResponse, setETag)
 		RETURN_FALSE;
 	}
 
-	RETURN_SUCCESS(UPD_STATIC_PROP(string, eTag, etag));
+	RETURN_SUCCESS(UPD_STATIC_STRL(eTag, etag, etag_len));
 }
 /* }}} */
 
@@ -764,7 +766,7 @@ PHP_METHOD(HttpResponse, setFile)
 		RETURN_FALSE;
 	}
 	
-	if (	(SUCCESS != UPD_STATIC_PROP(string, file, the_file)) ||
+	if (	(SUCCESS != UPD_STATIC_STRL(file, the_file, file_len)) ||
 			(SUCCESS != UPD_STATIC_PROP(long, mode, -1))) {
 		RETURN_FALSE;
 	}
