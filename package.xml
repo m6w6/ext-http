@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<!-- $Revision: 1.40 $ -->
+<!-- $Revision: 1.41 $ -->
 <package version="1.0">
   <name>pecl_http</name>
   <summary>Extended HTTP support</summary>
@@ -30,22 +30,11 @@
   </maintainers>
 
   <release>
-    <version>0.13.0</version>
-    <date>2005-09-09</date>
+    <version>0.14.0dev</version>
+    <date>2005-09-00</date>
     <state>beta</state>
     <notes><![CDATA[
-+ HTTP request method API is now available for builds without libcurl, too
-+ Added HttpResponse::guessContentType() through libmagic
-
-- Removed HttpResponse class from PHP-5.0 (WONKY) due to ZE limitations
-
-* Improved the build system
-* Imrpoved logging format
-* Implemented SSL crypto locks for thread safe builds
-* Fixed ridiculous low default transfer timeout of 3 seconds (set to 0 now)
-* Fixed a bug where plain instead of more specific HttpExceptions were thrown
-* Fixed a bug where entities that where not marked for being cached were
-  actually cached if an apropriate ETag or Last-Modified header was seen
++ Added missing support for raw post data in HttpRequest
 ]]>
     </notes>
   </release>
@@ -54,8 +43,18 @@
     <dir name="/">
       <file role="doc">CREDITS</file>
       <file role="doc">EXPERIMENTAL</file>
-      <file role="doc" install-as="functions.html">docs/functions.html</file>
       <file role="doc">KnownIssues.txt</file>
+      <file role="doc" install-as="functions.html">docs/functions.html</file>
+      <file role="doc" install-as="examples/Bandwidth_Throttling.php">docs/examples/Bandwidth_Throttling.php</file>
+      <file role="doc" install-as="examples/Cached_Responses.php">docs/examples/Cached_Responses.php</file>
+      <file role="doc" install-as="examples/GET_Queries.php">docs/examples/GET_Queries.php</file>
+      <file role="doc" install-as="examples/KISS_XMLRPC_Client.php">docs/examples/KISS_XMLRPC_Client.php</file>
+      <file role="doc" install-as="examples/Multipart_Posts.php">docs/examples/Multipart_Posts.php</file>
+      <file role="doc" install-as="examples/Parallel_Requests.php">docs/examples/Parallel_Requests.php</file>
+      <file role="doc" install-as="examples/Parallel_Requests_.php">docs/examples/Parallel_Requests_.php</file>
+      <file role="doc" install-as="examples/Simple_Feed_Aggregator.php">docs/examples/Simple_Feed_Aggregator.php</file>
+      <file role="doc" install-as="examples/extract.php">docs/examples/extract.php</file>
+      <file role="doc" install-as="examples/tutorial.txt">docs/examples/tutorial.txt</file>
       
       <file role="src" platform="windows">http.dsp</file>
       <file role="src" platform="windows">config.w32</file>
@@ -159,8 +158,6 @@
   </filelist>
   <deps>
   	<dep type="php" rel="ge" version="4.3" optional="no" />
-  	<dep type="ext" rel="has" optional="yes">session</dep>
-  	<dep type="ext" rel="has" optional="yes">zlib</dep>
   </deps>
 </package>
 
