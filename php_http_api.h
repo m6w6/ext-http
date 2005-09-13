@@ -94,6 +94,43 @@ static inline const char *_http_locate_eol(const char *line, size_t *eol_len)
 	return eol;
 }
 
+#define convert_to_type(t, z) _convert_to_type((t), (z))
+static inline zval *_convert_to_type(int type, zval *z)
+{
+	if (Z_TYPE_P(z) != type) {
+		switch (type)
+		{
+			case IS_NULL:	convert_to_null(z);		break;
+			case IS_BOOL:	convert_to_boolean(z);	break;
+			case IS_LONG:	convert_to_long(z);		break;
+			case IS_DOUBLE:	convert_to_array(z);	break;
+			case IS_STRING:	convert_to_string(z);	break;
+			case IS_ARRAY:	convert_to_array(z);	break;
+			case IS_OBJECT:	convert_to_object(z);	break;
+		}
+	}
+	return z;
+}
+#define convert_to_type_ex(t, z) _convert_to_type_ex((t), (z))
+static inline zval *_convert_to_type_ex(int type, zval *z)
+{
+	if (Z_TYPE_P(z) != type) {
+		switch (type)
+		{
+			case IS_NULL:	convert_to_null_ex(&z);		break;
+			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
+			case IS_LONG:	convert_to_long_ex(&z);		break;
+			case IS_DOUBLE:	convert_to_array_ex(&z);	break;
+			case IS_STRING:	convert_to_string_ex(&z);	break;
+			case IS_ARRAY:	convert_to_array_ex(&z);	break;
+			case IS_OBJECT:	convert_to_object_ex(&z);	break;
+		}
+	}
+	return z;
+}
+
+#define zval_set_type(z, t)
+
 #endif
 
 /*
