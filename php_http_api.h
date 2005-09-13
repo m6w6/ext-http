@@ -129,7 +129,6 @@ static inline zval *_convert_to_type_ex(int type, zval *z)
 	return z;
 }
 
-#define zval_set_type(z, t)
 
 #endif
 
