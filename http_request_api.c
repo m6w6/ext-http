@@ -22,6 +22,15 @@
 
 #ifdef HTTP_HAVE_CURL
 
+#if defined(ZTS) && defined(HTTP_HAVE_SSL)
+#	if !defined(HAVE_OPENSSL_CRYPTO_H)
+#		error "libcurl was compiled with OpenSSL support, but we have no openssl/crypto.h"
+#	else
+#		define HTTP_NEED_SSL
+#		include <openssl/crypto.h>
+#	endif
+#endif
+
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
@@ -41,6 +50,37 @@
 #include <curl/curl.h>
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
+
+#ifdef HTTP_NEED_SSL
+static inline void http_ssl_init(void);
+static inline void http_ssl_cleanup(void);
+#endif
+
+STATUS _http_request_global_init(INIT_FUNC_ARGS)
+{
+	if (CURLE_OK != curl_global_init(CURL_GLOBAL_ALL)) {
+		return FAILURE;
+	}
+	
+#ifdef HTTP_NEED_SSL
+	{
+		curl_version_info_data *cvid = curl_version_info(CURLVERSION_NOW);
+		if (cvid && (cvid->features & CURL_VERSION_SSL)) {
+			http_ssl_init();
+		}
+	}
+#endif
+
+	return SUCCESS;
+}
+
+void _http_request_global_cleanup(TSRMLS_D)
+{
+	curl_global_cleanup();
+#ifdef HTTP_NEED_SSL
+	http_ssl_cleanup();
+#endif
+}
 
 #ifndef HAVE_CURL_EASY_STRERROR
 #	define curl_easy_strerror(code) HTTP_G(request).error
@@ -107,7 +147,6 @@ static size_t http_curl_read_callback(void *, size_t, size_t, void *);
 static int http_curl_progress_callback(void *, double, double, double, double);
 static int http_curl_raw_callback(CURL *, curl_infotype, char *, size_t, void *);
 static int http_curl_dummy_callback(char *data, size_t n, size_t l, void *s) { return n*l; }
-
 
 /* {{{ http_request_callback_ctx http_request_callback_data(void *) */
 http_request_callback_ctx *_http_request_callback_data_ex(void *data, zend_bool cpy TSRMLS_DC)
@@ -848,7 +887,56 @@ static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t k
 }
 /* }}} */
 
-#endif
+#ifdef HTTP_NEED_SSL
+
+static MUTEX_T *http_ssl_mutex = NULL;
+
+static void http_ssl_lock(int mode, int n, const char * file, int line)
+{
+	if (mode & CRYPTO_LOCK) {
+		tsrm_mutex_lock(http_ssl_mutex[n]);
+	} else {
+		tsrm_mutex_unlock(http_ssl_mutex[n]);
+	}
+}
+
+static unsigned long http_ssl_id(void)
+{
+	return (unsigned long) tsrm_thread_id();
+}
+
+static inline void http_ssl_init(void)
+{
+	int i, c = CRYPTO_num_locks();
+	http_ssl_mutex = malloc(c * sizeof(MUTEX_T));
+	
+	for (i = 0; i < c; ++i) {
+		http_ssl_mutex[i] = tsrm_mutex_alloc();
+	}
+	
+	CRYPTO_set_id_callback(http_ssl_id);
+	CRYPTO_set_locking_callback(http_ssl_lock);
+}
+
+static inline void http_ssl_cleanup(void)
+{
+	if (http_ssl_mutex) {
+		int i, c = CRYPTO_num_locks();
+		
+		CRYPTO_set_id_callback(NULL);
+		CRYPTO_set_locking_callback(NULL);
+		
+		for (i = 0; i < c; ++i) {
+			tsrm_mutex_free(http_ssl_mutex[i]);
+		}
+		
+		free(http_ssl_mutex);
+		http_ssl_mutex = NULL;
+	}
+}
+#endif /* HTTP_NEED_SSL */
+
+#endif /* HTTP_HAVE_CURL */
 
 /*
  * Local variables:

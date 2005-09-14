@@ -39,6 +39,30 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
+STATUS _http_cache_global_init(INIT_FUNC_ARGS)
+{
+	HTTP_LONG_CONSTANT("HTTP_ETAG_MD5", HTTP_ETAG_MD5);
+	HTTP_LONG_CONSTANT("HTTP_ETAG_SHA1", HTTP_ETAG_SHA1);
+
+#ifdef HTTP_HAVE_MHASH
+	{
+		int l, i, c = mhash_count();
+		
+		for (i = 0; i < c; ++i) {
+			char const_name[256] = {0};
+			const char *hash_name = mhash_get_hash_name_static(i);
+			
+			if (hash_name) {
+				l = snprintf(const_name, 255, "HTTP_ETAG_MHASH_%s", hash_name);
+				zend_register_long_constant(const_name, l + 1, i, CONST_CS|CONST_PERSISTENT, module_number TSRMLS_CC);
+			}
+		}
+	}
+#endif
+
+	return SUCCESS;
+}
+
 /* {{{ char *http_etag(void *, size_t, http_send_mode) */
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
 {

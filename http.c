@@ -52,14 +52,6 @@
 #include "phpstr/phpstr.h"
 
 #ifdef HTTP_HAVE_CURL
-#	if defined(ZTS) && defined(HTTP_HAVE_SSL)
-#		if !defined(HAVE_OPENSSL_CRYPTO_H)
-#			error "libcurl was compiled with OpenSSL support, but we have no crypto.h"
-#		else
-#			define HTTP_NEED_SSL
-#			include <openssl/crypto.h>
-#		endif
-#	endif
 #	ifdef PHP_WIN32
 #		include <winsock2.h>
 #	endif
@@ -232,7 +224,7 @@ PHP_INI_DISP(http_etag_mode_displayer)
 			if (!hash_name) {
 				ZEND_WRITE("HTTP_ETAG_MD5", lenof("HTTP_ETAG_MD5"));
 			} else {
-				ZEND_WRITE("HTTP_ETAG_MHASH|MHASH_", lenof("HTTP_ETAG_MHASH|MHASH_"));
+				ZEND_WRITE("HTTP_ETAG_MHASH_", lenof("HTTP_ETAG_MHASH_"));
 				ZEND_WRITE(hash_name, strlen(hash_name));
 			}
 		}
@@ -261,46 +253,6 @@ PHP_INI_END()
 /* {{{ SSL */
 #ifdef HTTP_NEED_SSL
 
-static MUTEX_T *http_ssl_mutex = NULL;
-
-static void http_ssl_lock(int mode, int n, const char * file, int line)
-{
-	if (mode & CRYPTO_LOCK) {
-		tsrm_mutex_lock(http_ssl_mutex[n]);
-	} else {
-		tsrm_mutex_unlock(http_ssl_mutex[n]);
-	}
-}
-static unsigned long http_ssl_id(void)
-{
-	return (unsigned long) tsrm_thread_id();
-}
-static inline void http_ssl_init(void)
-{
-	int i, c = CRYPTO_num_locks();
-	http_ssl_mutex = malloc(c * sizeof(MUTEX_T));
-	
-	for (i = 0; i < c; ++i) {
-		http_ssl_mutex[i] = tsrm_mutex_alloc();
-	}
-	
-	CRYPTO_set_id_callback(http_ssl_id);
-	CRYPTO_set_locking_callback(http_ssl_lock);
-}
-static inline void http_ssl_cleanup(void)
-{
-	int i, c = CRYPTO_num_locks();
-	
-	CRYPTO_set_id_callback(NULL);
-	CRYPTO_set_locking_callback(NULL);
-	
-	for (i = 0; i < c; ++i) {
-		tsrm_mutex_free(http_ssl_mutex[i]);
-	}
-	
-	free(http_ssl_mutex);
-	http_ssl_mutex = NULL;
-}
 #endif
 /* }}} */
 
@@ -313,19 +265,11 @@ PHP_MINIT_FUNCTION(http)
 
 	REGISTER_INI_ENTRIES();
 	
-	HTTP_LONG_CONSTANT("HTTP_ETAG_MD5", HTTP_ETAG_MD5);
-	HTTP_LONG_CONSTANT("HTTP_ETAG_SHA1", HTTP_ETAG_SHA1);
-	HTTP_LONG_CONSTANT("HTTP_ETAG_MHASH", HTTP_ETAG_MHASH);
-
+	if (SUCCESS != http_cache_global_init()) {
+		return FAILURE;
+	}
 #ifdef HTTP_HAVE_CURL
-	if (CURLE_OK == curl_global_init(CURL_GLOBAL_ALL)) {
-#	ifdef HTTP_NEED_SSL
-		curl_version_info_data *cvid = curl_version_info(CURLVERSION_NOW);
-		if (cvid && (cvid->features & CURL_VERSION_SSL)) {
-			http_ssl_init();
-		}
-#	endif
-	} else {
+	if (SUCCESS != http_request_global_init()) {
 		return FAILURE;
 	}
 #endif /* HTTP_HAVE_CURL */
@@ -352,12 +296,7 @@ PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
-	curl_global_cleanup();
-#	ifdef HTTP_NEED_SSL
-	if (http_ssl_mutex) {
-		http_ssl_cleanup();
-	}
-#	endif
+	http_request_global_cleanup();
 #endif
 	return SUCCESS;
 }

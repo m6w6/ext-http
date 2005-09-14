@@ -30,6 +30,11 @@
 
 #include <curl/curl.h>
 
+#define http_request_global_init() _http_request_global_init(INIT_FUNC_ARGS_PASSTHRU)
+extern STATUS _http_request_global_init(INIT_FUNC_ARGS);
+#define http_request_global_cleanup() _http_request_global_cleanup(TSRMLS_C)
+extern void _http_request_global_cleanup(TSRMLS_D);
+
 #define HTTP_REQUEST_BODY_CSTRING		1
 #define HTTP_REQUEST_BODY_CURLPOST		2
 #define HTTP_REQUEST_BODY_UPLOADFILE	3
@@ -49,7 +54,6 @@ typedef struct {
 	phpstr *request;
 	curl_infotype last_info;
 } http_request_conv;
-
 
 #define HTTP_REQUEST_CALLBACK_DATA(from, type, var) \
 	http_request_callback_ctx *__CTX = (http_request_callback_ctx *) (from); \

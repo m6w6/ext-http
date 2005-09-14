@@ -38,6 +38,10 @@
 #include "php_http_cache_api.h"
 #include "php_http_headers_api.h"
 
+#ifdef HTTP_HAVE_MHASH
+#	include <mhash.h>
+#endif
+
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 #define GET_STATIC_PROP(n)			*GET_STATIC_PROP_EX(http_response_object_ce, n)
@@ -232,11 +236,31 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP_N(PROTECTED, contentDisposition);
 	DCL_STATIC_PROP(PROTECTED, long, bufferSize, HTTP_SENDBUF_SIZE);
 	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
+
+	DCL_CONST(long, "ETAG_MD5", HTTP_ETAG_MD5);
+	DCL_CONST(long, "ETAG_SHA1", HTTP_ETAG_SHA1);
+	
+#ifdef HTTP_HAVE_MHASH
+	{
+		int l, i, c = mhash_count();
+		
+		for (i = 0; i < c; ++i) {
+			char const_name[256] = {0};
+			const char *hash_name = mhash_get_hash_name_static(i);
+			
+			if (hash_name) {
+				l = snprintf(const_name, 255, "ETAG_MHASH_%s", hash_name);
+				zend_declare_class_constant_long(ce, const_name, l, i TSRMLS_CC);
+			}
+		}
+	}
+#endif
 }
 
 static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC)
 {
-	phpstr_appendf(PHPSTR(arg), "%s\r\n", ((sapi_header_struct *)data)->header);
+	phpstr_appendl(PHPSTR(arg), ((sapi_header_struct *)data)->header);
+	phpstr_appends(PHPSTR(arg), HTTP_CRLF);
 }
 
 /* ### USERLAND ### */
@@ -476,7 +500,6 @@ PHP_METHOD(HttpResponse, getContentType)
 /* {{{ proto static string HttpResponse::guessContentType(string magic_file[, long magic_mode])
  *
  * Attempts to guess the content type of supplied payload through libmagic.
- * See docs/KnownIssues.txt! 
  */
 PHP_METHOD(HttpResponse, guessContentType)
 {
