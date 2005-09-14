@@ -220,11 +220,11 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP(PRIVATE, bool, sent, 0);
 	DCL_STATIC_PROP(PRIVATE, bool, catch, 0);
 	DCL_STATIC_PROP(PRIVATE, long, mode, -1);
+	DCL_STATIC_PROP(PRIVATE, long, stream, 0);
+	DCL_STATIC_PROP_N(PRIVATE, file);
+	DCL_STATIC_PROP_N(PRIVATE, data);
 	DCL_STATIC_PROP(PROTECTED, bool, cache, 0);
 	DCL_STATIC_PROP(PROTECTED, bool, gzip, 0);
-	DCL_STATIC_PROP(PROTECTED, long, stream, 0);
-	DCL_STATIC_PROP_N(PROTECTED, file);
-	DCL_STATIC_PROP_N(PROTECTED, data);
 	DCL_STATIC_PROP_N(PROTECTED, eTag);
 	DCL_STATIC_PROP(PROTECTED, long, lastModified, 0);
 	DCL_STATIC_PROP_N(PROTECTED, cacheControl);
@@ -232,7 +232,6 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP_N(PROTECTED, contentDisposition);
 	DCL_STATIC_PROP(PROTECTED, long, bufferSize, HTTP_SENDBUF_SIZE);
 	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
-	DCL_STATIC_PROP_N(PROTECTED, headers);
 }
 
 static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC)
