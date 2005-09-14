@@ -36,6 +36,7 @@
 #include "php_http_exception_object.h"
 #include "php_http_send_api.h"
 #include "php_http_cache_api.h"
+#include "php_http_headers_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
@@ -148,6 +149,8 @@ HTTP_EMPTY_ARGS(getRequestBody, 0);
 
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);
+#define http_grab_response_headers _http_grab_response_headers
+static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC);
 
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
@@ -232,6 +235,11 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP_N(PROTECTED, headers);
 }
 
+static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC)
+{
+	phpstr_appendf(PHPSTR(arg), "%s\r\n", ((sapi_header_struct *)data)->header);
+}
+
 /* ### USERLAND ### */
 
 /* {{{ proto static bool HttpResponse::setHeader(string name, mixed value[, bool replace = true)
@@ -241,9 +249,13 @@ PHP_METHOD(HttpResponse, setHeader)
 	zend_bool replace = 1;
 	char *name;
 	int name_len = 0;
-	zval *value = NULL, *headers, **header;
+	zval *value = NULL;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz/!|b", &name, &name_len, &value, &replace)) {
+		RETURN_FALSE;
+	}
+	if (SG(headers_sent)) {
+		http_error(HE_WARNING, HTTP_E_HEADER, "Cannot add another header when headers have already been sent");
 		RETURN_FALSE;
 	}
 	if (!name_len) {
@@ -251,24 +263,27 @@ PHP_METHOD(HttpResponse, setHeader)
 		RETURN_FALSE;
 	}
 
-	headers = convert_to_type(IS_ARRAY, GET_STATIC_PROP(headers));
-
 	/* delete header if value == null */
 	if (!value || Z_TYPE_P(value) == IS_NULL) {
-		RETURN_SUCCESS(zend_hash_del(Z_ARRVAL_P(headers), name, name_len + 1));
+		RETURN_SUCCESS(http_send_header_ex(name, name_len, "", 0, replace, NULL));
 	}
-
+	/* send multiple header if replace is false and value is an array */
+	if (!replace && Z_TYPE_P(value) == IS_ARRAY) {
+		zval **data;
+		
+		FOREACH_VAL(value, data) {
+			convert_to_string_ex(data);
+			if (SUCCESS != http_send_header_ex(name, name_len, Z_STRVAL_PP(data), Z_STRLEN_PP(data), 0, NULL)) {
+				RETURN_FALSE;
+			}
+		}
+		RETURN_TRUE;
+	}
+	/* send standard header */
 	if (Z_TYPE_P(value) != IS_STRING) {
 		convert_to_string_ex(&value);
 	}
-
-	/* convert old header to an array and add new one if header exists and replace == false */
-	if (replace || (SUCCESS != zend_hash_find(Z_ARRVAL_P(headers), name, name_len + 1, (void **) &header))) {
-		RETURN_SUCCESS(add_assoc_stringl_ex(headers, name, name_len + 1, Z_STRVAL_P(value), Z_STRLEN_P(value), 1));
-	} else {
-		convert_to_array(*header);
-		RETURN_SUCCESS(add_next_index_stringl(*header, Z_STRVAL_P(value), Z_STRLEN_P(value), 1));
-	}
+	RETURN_SUCCESS(http_send_header_ex(name, name_len, Z_STRVAL_P(value), Z_STRLEN_P(value), replace, NULL));
 }
 /* }}} */
 
@@ -278,22 +293,34 @@ PHP_METHOD(HttpResponse, getHeader)
 {
 	char *name = NULL;
 	int name_len = 0;
-	zval *headers, **header;
+	phpstr headers;
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &name, &name_len)) {
 		RETURN_FALSE;
 	}
 	
-	headers = convert_to_type_ex(IS_ARRAY, GET_STATIC_PROP(headers));
+	phpstr_init(&headers);
+	zend_llist_apply_with_argument(&SG(sapi_headers).headers, http_grab_response_headers, &headers TSRMLS_CC);
+	phpstr_fix(&headers);
 	
-	if (!name || !name_len) {
-		array_init(return_value);
-		array_copy(headers, return_value);
-	} else if (SUCCESS == zend_hash_find(Z_ARRVAL_P(headers), name, name_len + 1, (void **) &header)) {
-		RETURN_ZVAL(*header, 1, 0);
+	if (name && name_len) {
+		zval **header;
+		HashTable headers_ht;
+		
+		zend_hash_init(&headers_ht, sizeof(zval *), NULL, ZVAL_PTR_DTOR, 0);
+		if (	(SUCCESS == http_parse_headers_ex(PHPSTR_VAL(&headers), &headers_ht, 1)) &&
+				(SUCCESS == zend_hash_find(&headers_ht, name, name_len + 1, (void **) &header))) {
+			RETVAL_ZVAL(*header, 1, 0);
+		} else {
+			RETVAL_NULL();
+		}
+		zend_hash_destroy(&headers_ht);
 	} else {
-		RETURN_NULL();
+		array_init(return_value);
+		http_parse_headers_ex(PHPSTR_VAL(&headers), Z_ARRVAL_P(return_value), 1);
 	}
+	
+	phpstr_dtor(&headers);
 }
 /* }}} */
 
@@ -876,33 +903,6 @@ PHP_METHOD(HttpResponse, send)
 		HTTP_G(etag).started = 0;
 		/* discard previous output buffers */
 		php_end_ob_buffers(0 TSRMLS_CC);
-	}
-
-	/* custom headers */
-	headers = GET_STATIC_PROP(headers);
-	if (Z_TYPE_P(headers) == IS_ARRAY) {
-		char *name = NULL;
-		ulong idx = 0;
-		zval **value;
-
-		FOREACH_KEYVAL(headers, name, idx, value) {
-			if (name) {
-				if (Z_TYPE_PP(value) == IS_ARRAY) {
-					zend_bool first = 1;
-					zval **data;
-
-					FOREACH_VAL(*value, data) {
-						convert_to_string_ex(data);
-						http_send_header_ex(name, strlen(name), Z_STRVAL_PP(data), Z_STRLEN_PP(data), first, NULL);
-						first = 0;
-					}
-				} else {
-					convert_to_string_ex(value);
-					http_send_header_ex(name, strlen(name), Z_STRVAL_PP(value), Z_STRLEN_PP(value), 1, NULL);
-				}
-				name = NULL;
-			}
-		}
 	}
 
 	/* gzip */
