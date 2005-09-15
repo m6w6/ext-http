@@ -20,6 +20,8 @@
 #endif
 #include "php.h"
 
+#include "zend_operators.h"
+
 #include "SAPI.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
@@ -1047,6 +1049,8 @@ PHP_FUNCTION(http_put_stream)
 	}
 }
 /* }}} */
+#endif /* HTTP_HAVE_CURL */
+/* }}} HAVE_CURL */
 
 /* {{{ proto long http_request_method_register(string method)
  *
@@ -1086,7 +1090,6 @@ PHP_FUNCTION(http_request_method_unregister)
 		case IS_OBJECT:
 			convert_to_string(method);
 		case IS_STRING:
-#include "zend_operators.h"
 			if (is_numeric_string(Z_STRVAL_P(method), Z_STRLEN_P(method), NULL, NULL, 1)) {
 				convert_to_long(method);
 			} else {
@@ -1154,8 +1157,6 @@ PHP_FUNCTION(http_request_method_name)
 	}
 }
 /* }}} */
-#endif
-/* }}} HAVE_CURL */
 
 /* {{{ Sara Golemons http_build_query() */
 #ifndef ZEND_ENGINE_2
