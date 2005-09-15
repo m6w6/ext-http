@@ -305,7 +305,7 @@ typedef int STATUS;
 #	define HTTP_EMPTY_ARGS_EX(class, method, ret_ref)			HTTP_BEGIN_ARGS_EX(class, method, ret_ref, 0) HTTP_END_ARGS
 #	define HTTP_ARGS(class, method)								args_for_ ##class## _ ##method
 #	define HTTP_ARG_VAL(name, pass_ref)							ZEND_ARG_INFO(pass_ref, name)
-#	define HTTP_ARG_OBJ(class, name, allow_null)				ZEND_ARG_OBJ_INFO(1, name, class, allow_null)
+#	define HTTP_ARG_OBJ(class, name, allow_null)				ZEND_ARG_OBJ_INFO(0, name, class, allow_null)
 #endif
 
 #ifdef ZEND_ENGINE_2
