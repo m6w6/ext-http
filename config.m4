@@ -82,6 +82,10 @@ dnl ----
 			[AC_DEFINE([HAVE_CURL_EASY_STRERROR], [1], [ ])], [ ],
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
 		)
+		PHP_CHECK_LIBRARY(curl, curl_easy_reset,
+			[AC_DEFINE([HAVE_CURL_EASY_RESET], [1], [ ])], [ ],
+			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
+		)
 	fi
 
 dnl ----

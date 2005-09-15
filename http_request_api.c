@@ -52,7 +52,7 @@
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 #ifdef HTTP_NEED_SSL
-static inline void http_ssl_init(void);
+static inline zend_bool http_ssl_init(void);
 static inline void http_ssl_cleanup(void);
 #endif
 
@@ -63,12 +63,7 @@ STATUS _http_request_global_init(INIT_FUNC_ARGS)
 	}
 	
 #ifdef HTTP_NEED_SSL
-	{
-		curl_version_info_data *cvid = curl_version_info(CURLVERSION_NOW);
-		if (cvid && (cvid->features & CURL_VERSION_SSL)) {
-			http_ssl_init();
-		}
-	}
+	http_ssl_init();
 #endif
 
 #if LIBCURL_VERSION_NUM >= 0x070a05
@@ -150,6 +145,8 @@ void _http_request_global_cleanup(TSRMLS_D)
 #define http_curl_getopt(o, k, t) _http_curl_getopt_ex((o), (k), sizeof(k), (t) TSRMLS_CC)
 #define http_curl_getopt_ex(o, k, l, t) _http_curl_getopt_ex((o), (k), (l), (t) TSRMLS_CC)
 static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t keylen, int type TSRMLS_DC);
+#define http_curl_defaults(ch) _http_curl_defaults((ch))
+static inline void _http_curl_defaults(CURL *ch);
 static size_t http_curl_read_callback(void *, size_t, size_t, void *);
 static int http_curl_progress_callback(void *, double, double, double, double);
 static int http_curl_raw_callback(CURL *, curl_infotype, char *, size_t, void *);
@@ -362,9 +359,10 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	zend_bool range_req = 0;
 
 	/* reset CURL handle */
-#if LIBCURL_VERSION_NUM >= 0x070c01
+#ifdef HAVE_CURL_EASY_RESET
 	curl_easy_reset(ch);
 #endif
+	http_curl_defaults(ch);
 
 	/* set options */
 	if (url) {
@@ -394,8 +392,6 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		HTTP_CURL_OPT(NOPROGRESS, 0);
 		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
 		HTTP_CURL_OPT(PROGRESSDATA,  http_request_callback_data(zoption));
-	} else {
-		HTTP_CURL_OPT(NOPROGRESS, 1);
 	}
 
 	/* proxy */
@@ -440,8 +436,6 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	/* compress, empty string enables deflate and gzip */
 	if ((zoption = http_curl_getopt(options, "compress", IS_BOOL)) && Z_LVAL_P(zoption)) {
 		HTTP_CURL_OPT(ENCODING, "");
-	} else {
-		HTTP_CURL_OPT(ENCODING, 0);
 	}
 
 	/* redirects, defaults to 0 */
@@ -451,22 +445,16 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		if (zoption = http_curl_getopt(options, "unrestrictedauth", IS_BOOL)) {
 			HTTP_CURL_OPT(UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
 		}
-	} else {
-		HTTP_CURL_OPT(FOLLOWLOCATION, 0);
 	}
 
 	/* referer */
 	if (zoption = http_curl_getopt(options, "referer", IS_STRING)) {
 		HTTP_CURL_OPT(REFERER, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
-	} else {
-		HTTP_CURL_OPT(REFERER, NULL);
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
 	if (zoption = http_curl_getopt(options, "useragent", IS_STRING)) {
 		HTTP_CURL_OPT(USERAGENT, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
-	} else {
-		HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" HTTP_PEXT_VERSION " (PHP/" PHP_VERSION ")");
 	}
 
 	/* additional headers, array('name' => 'value') */
@@ -492,8 +480,6 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		if (headers) {
 			HTTP_CURL_OPT(HTTPHEADER, http_request_data_copy(COPY_SLIST, headers));
 		}
-	} else {
-		HTTP_CURL_OPT(HTTPHEADER, NULL);
 	}
 
 	/* cookies, array('name' => 'value') */
@@ -519,8 +505,6 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 			HTTP_CURL_OPT(COOKIE, http_request_data_copy(COPY_STRING, qstr->data));
 		}
 		phpstr_free(&qstr);
-	} else {
-		HTTP_CURL_OPT(COOKIE, NULL);
 	}
 
 	/* session cookies */
@@ -532,54 +516,39 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 			/* reset session cookies */
 			HTTP_CURL_OPT(COOKIESESSION, 1);
 		}
-	} else {
-		HTTP_CURL_OPT(COOKIEFILE, NULL);
 	}
 
 	/* cookiestore, read initial cookies from that file and store cookies back into that file */
 	if ((zoption = http_curl_getopt(options, "cookiestore", IS_STRING)) && Z_STRLEN_P(zoption)) {
 		HTTP_CURL_OPT(COOKIEFILE, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 		HTTP_CURL_OPT(COOKIEJAR, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
-	} else {
-		HTTP_CURL_OPT(COOKIEFILE, NULL);
-		HTTP_CURL_OPT(COOKIEJAR, NULL);
 	}
 
 	/* resume */
 	if ((zoption = http_curl_getopt(options, "resume", IS_LONG)) && (Z_LVAL_P(zoption) != 0)) {
 		range_req = 1;
 		HTTP_CURL_OPT(RESUME_FROM, Z_LVAL_P(zoption));
-	} else {
-		HTTP_CURL_OPT(RESUME_FROM, 0);
 	}
 
 	/* maxfilesize */
 	if (zoption = http_curl_getopt(options, "maxfilesize", IS_LONG)) {
 		HTTP_CURL_OPT(MAXFILESIZE, Z_LVAL_P(zoption));
-	} else {
-		HTTP_CURL_OPT(MAXFILESIZE, 0);
 	}
 
 	/* lastmodified */
 	if (zoption = http_curl_getopt(options, "lastmodified", IS_LONG)) {
 		HTTP_CURL_OPT(TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
 		HTTP_CURL_OPT(TIMEVALUE, Z_LVAL_P(zoption));
-	} else {
-		HTTP_CURL_OPT(TIMEVALUE, 0);
 	}
 
 	/* timeout, defaults to 0 */
 	if (zoption = http_curl_getopt(options, "timeout", IS_LONG)) {
 		HTTP_CURL_OPT(TIMEOUT, Z_LVAL_P(zoption));
-	} else {
-		HTTP_CURL_OPT(TIMEOUT, 0);
 	}
 
 	/* connecttimeout, defaults to 3 */
 	if (zoption = http_curl_getopt(options, "connecttimeout", IS_LONG)) {
 		HTTP_CURL_OPT(CONNECTTIMEOUT, Z_LVAL_P(zoption));
-	} else {
-		HTTP_CURL_OPT(CONNECTTIMEOUT, 3);
 	}
 
 	/* ssl */
@@ -619,10 +588,6 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 				key = NULL;
 			}
 		}
-	} else {
-		/* disable SSL verification by default */
-		HTTP_CURL_OPT(SSL_VERIFYPEER, 0);
-		HTTP_CURL_OPT(SSL_VERIFYHOST, 0);
 	}
 
 	/* request method */
@@ -912,17 +877,26 @@ static unsigned long http_ssl_id(void)
 	return (unsigned long) tsrm_thread_id();
 }
 
-static inline void http_ssl_init(void)
+static inline zend_bool http_ssl_init(void)
 {
-	int i, c = CRYPTO_num_locks();
-	http_ssl_mutex = malloc(c * sizeof(MUTEX_T));
+	curl_version_info_data *cvid = curl_version_info(CURLVERSION_NOW);
 	
-	for (i = 0; i < c; ++i) {
-		http_ssl_mutex[i] = tsrm_mutex_alloc();
+	if (cvid && (cvid->features & CURL_VERSION_SSL)) {
+		int i, c = CRYPTO_num_locks();
+		
+		http_ssl_mutex = malloc(c * sizeof(MUTEX_T));
+		
+		for (i = 0; i < c; ++i) {
+			http_ssl_mutex[i] = tsrm_mutex_alloc();
+		}
+		
+		CRYPTO_set_id_callback(http_ssl_id);
+		CRYPTO_set_locking_callback(http_ssl_lock);
+		
+		return 1;
 	}
 	
-	CRYPTO_set_id_callback(http_ssl_id);
-	CRYPTO_set_locking_callback(http_ssl_lock);
+	return 0;
 }
 
 static inline void http_ssl_cleanup(void)
@@ -942,6 +916,62 @@ static inline void http_ssl_cleanup(void)
 	}
 }
 #endif /* HTTP_NEED_SSL */
+
+static inline void _http_curl_defaults(CURL *ch)
+{
+	HTTP_CURL_OPT(URL, NULL);
+	HTTP_CURL_OPT(NOPROGRESS, 1);
+	HTTP_CURL_OPT(PROXY, NULL);
+	HTTP_CURL_OPT(PROXYPORT, 0);
+	HTTP_CURL_OPT(PROXYUSERPWD, NULL);
+#if LIBCURL_VERSION_NUM >= 0x070a07
+	HTTP_CURL_OPT(PROXYAUTH, 0);
+#endif
+	HTTP_CURL_OPT(INTERFACE, NULL);
+	HTTP_CURL_OPT(PORT, 0);
+	HTTP_CURL_OPT(USERPWD, NULL);
+#if LIBCURL_VERSION_NUM >= 0x070a06
+	HTTP_CURL_OPT(HTTPAUTH, 0);
+#endif
+	HTTP_CURL_OPT(ENCODING, 0);
+	HTTP_CURL_OPT(FOLLOWLOCATION, 0);
+	HTTP_CURL_OPT(UNRESTRICTED_AUTH, 0);
+	HTTP_CURL_OPT(REFERER, NULL);
+	HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" HTTP_PEXT_VERSION " (PHP/" PHP_VERSION ")");
+	HTTP_CURL_OPT(HTTPHEADER, NULL);
+	HTTP_CURL_OPT(COOKIE, NULL);
+	HTTP_CURL_OPT(COOKIEFILE, NULL);
+	HTTP_CURL_OPT(COOKIEJAR, NULL);
+	HTTP_CURL_OPT(RESUME_FROM, 0);
+	HTTP_CURL_OPT(MAXFILESIZE, 0);
+	HTTP_CURL_OPT(TIMEVALUE, 0);
+	HTTP_CURL_OPT(TIMEOUT, 0);
+	HTTP_CURL_OPT(CONNECTTIMEOUT, 3);
+	HTTP_CURL_OPT(SSLCERT, NULL);
+#if LIBCURL_VERSION_NUM >= 0x070903
+	HTTP_CURL_OPT(SSLCERTTYPE, NULL);
+#endif
+	HTTP_CURL_OPT(SSLCERTPASSWD, NULL);
+	HTTP_CURL_OPT(SSLKEY, NULL);
+	HTTP_CURL_OPT(SSLKEYTYPE, NULL);
+	HTTP_CURL_OPT(SSLKEYPASSWD, NULL);
+	HTTP_CURL_OPT(SSLENGINE, NULL);
+	HTTP_CURL_OPT(SSLVERSION, 0);
+	HTTP_CURL_OPT(SSL_VERIFYPEER, 0);
+	HTTP_CURL_OPT(SSL_VERIFYHOST, 0);
+	HTTP_CURL_OPT(SSL_CIPHER_LIST, NULL);
+	HTTP_CURL_OPT(CAINFO, NULL);
+#if LIBCURL_VERSION_NUM >= 0x070908
+	HTTP_CURL_OPT(CAPATH, NULL);
+#endif
+	HTTP_CURL_OPT(RANDOM_FILE, NULL);
+	HTTP_CURL_OPT(EGDSOCKET, NULL);
+	HTTP_CURL_OPT(POSTFIELDS, NULL);
+	HTTP_CURL_OPT(POSTFIELDSIZE, 0);
+	HTTP_CURL_OPT(HTTPPOST, NULL);
+	HTTP_CURL_OPT(READDATA, NULL);
+	HTTP_CURL_OPT(INFILESIZE, 0);
+}
 
 #endif /* HTTP_HAVE_CURL */
 

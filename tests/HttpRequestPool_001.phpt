@@ -14,10 +14,10 @@ checkurl('dev.iworks.at');
 <?php
 echo "-TEST\n";
 $pool = new HttpRequestPool(
-    new HttpRequest('http://www.php.net/', HTTP_HEAD),
-    new HttpRequest('http://pear.php.net/', HTTP_HEAD),
-    new HttpRequest('http://pecl.php.net/', HTTP_HEAD),
-    $post = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_POST)
+    new HttpRequest('http://www.php.net/', HTTP_METH_HEAD),
+    new HttpRequest('http://pear.php.net/', HTTP_METH_HEAD),
+    new HttpRequest('http://pecl.php.net/', HTTP_METH_HEAD),
+    $post = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_METH_POST)
 );
 $post->addPostFields(array('a'=>1,'b'=>2)) ;
 $pool->send();

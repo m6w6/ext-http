@@ -1020,14 +1020,9 @@ PHP_METHOD(HttpResponse, send)
  */
 PHP_METHOD(HttpResponse, capture)
 {
-	zval do_catch;
-
 	NO_ARGS;
 
-	INIT_PZVAL(&do_catch);
-	ZVAL_LONG(&do_catch, 1);
-
-	SET_STATIC_PROP(catch, &do_catch);
+	UPD_STATIC_PROP(long, catch, 1);
 
 	php_end_ob_buffers(0 TSRMLS_CC);
 	php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
