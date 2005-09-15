@@ -268,6 +268,9 @@ PHP_MINIT_FUNCTION(http)
 	if (SUCCESS != http_cache_global_init()) {
 		return FAILURE;
 	}
+	if (SUCCESS != http_request_method_global_init()) {
+		return FAILURE;
+	}
 #ifdef HTTP_HAVE_CURL
 	if (SUCCESS != http_request_global_init()) {
 		return FAILURE;
@@ -319,6 +322,14 @@ PHP_RINIT_FUNCTION(http)
 /* {{{ PHP_RSHUTDOWN_FUNCTION */
 PHP_RSHUTDOWN_FUNCTION(http)
 {
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
+	int i, c = zend_hash_num_elements(&HTTP_G(request).methods.custom);
+	
+	for (i = 0; i < c; ++i) {
+		zend_printf("RSHUTDOWN: unregistering %d (%d)\n", i, 
+		http_request_method_unregister(HTTP_MAX_REQUEST_METHOD + i));
+	}
+#endif
 	http_globals_free(HTTP_GLOBALS);
 	return SUCCESS;
 }
