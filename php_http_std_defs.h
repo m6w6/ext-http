@@ -256,9 +256,7 @@ typedef int STATUS;
 	{ \
 		zval *__tmp = GET_PROP(o, p); \
 		if (__tmp) { \
-			zval_dtor(__tmp); \
-			FREE_ZVAL(__tmp); \
-			__tmp = NULL; \
+			zval_ptr_dtor(&__tmp); \
 		} \
 	}
 
@@ -339,18 +337,13 @@ typedef int STATUS;
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(1) \
-			ZEND_END_ARG_INFO(); \
- \
-			static \
-			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_all, 1) \
-				ZEND_ARG_PASS_INFO(1) \
-			ZEND_END_ARG_INFO()
+			ZEND_END_ARG_INFO();
+
 #	else
 #		define HTTP_DECLARE_ARG_PASS_INFO() \
 			static unsigned char http_arg_pass_ref_3[] = {3, BYREF_NONE, BYREF_NONE, BYREF_FORCE}; \
 			static unsigned char http_arg_pass_ref_4[] = {4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE}; \
-			static unsigned char http_arg_pass_ref_5[] = {5, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE}; \
-			static unsigned char http_arg_pass_ref_all[]={1, BYREF_FORCE_REST}
+			static unsigned char http_arg_pass_ref_5[] = {5, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
 #	endif /* ZEND_ENGINE_2 */
 #else
 #	define HTTP_DECLARE_ARG_PASS_INFO()
