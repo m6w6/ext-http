@@ -33,6 +33,10 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
+#ifndef HTTP_DBG_NEG
+#	define HTTP_DBG_NEG 0
+#endif
+
 /* {{{ static int http_sort_q(const void *, const void *) */
 static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 {
@@ -52,55 +56,131 @@ static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ char *http_negotiate_q(char *, HashTable *, char *) */
-PHP_HTTP_API char *_http_negotiate_q(const char *entry, const HashTable *supported,	const char *def TSRMLS_DC)
+/* {{{ char *http_negotiate_language_func */
+char *_http_negotiate_language_func(const char *test, double *quality, HashTable *supported TSRMLS_DC)
 {
-	zval *zaccept, zdelim, zarray, zentries, **zentry, **zsupp;
-	char *q_ptr = NULL, *key = NULL;
-	int i = 0;
-	ulong idx = 0;
-	double qual;
-
-	HTTP_GSC(zaccept, entry, estrdup(def));
-
-	array_init(&zarray);
-	array_init(&zentries);
-
-	Z_STRVAL(zdelim) = ",";
-	Z_STRLEN(zdelim) = 1;
-
-	php_explode(&zdelim, zaccept, &zarray, -1);
-
-	FOREACH_HASH_VAL(Z_ARRVAL(zarray), zentry) {
-		if (q_ptr = strrchr(Z_STRVAL_PP(zentry), ';')) {
-			qual = strtod(q_ptr + 3, NULL);
-			*q_ptr = 0;
-			q_ptr = NULL;
-		} else {
-			qual = 1000.0 - i++;
+	zval **value;
+	const char *dash_test;
+	
+	FOREACH_HASH_VAL(supported, value) {
+#if HTTP_DBG_NEG
+		fprintf(stderr, "strcasecmp('%s', '%s')\n", Z_STRVAL_PP(value), test);
+#endif
+		if (!strcasecmp(Z_STRVAL_PP(value), test)) {
+			return Z_STRVAL_PP(value);
 		}
-		/* TODO: support primaries only, too */
-		FOREACH_HASH_VAL((HashTable *)supported, zsupp) {
-			if (!strcasecmp(Z_STRVAL_PP(zsupp), Z_STRVAL_PP(zentry))) {
-				add_assoc_double(&zentries, Z_STRVAL_PP(zsupp), qual);
-				break;
+	}
+	
+	/* no distinct match found, so try primaries */
+	if (dash_test = strchr(test, '-')) {
+		FOREACH_HASH_VAL(supported, value) {
+			int len = dash_test - test;
+#if HTTP_DBG_NEG
+			fprintf(stderr, "strncascmp('%s', '%s', %d)\n", Z_STRVAL_PP(value), test, len);
+#endif
+			if (	(!strncasecmp(Z_STRVAL_PP(value), test, len)) &&
+					(	(Z_STRVAL_PP(value)[len] == '\0') || 
+						(Z_STRVAL_PP(value)[len] == '-'))) {
+				*quality /= 2;
+				return Z_STRVAL_PP(value);
 			}
 		}
 	}
-	zval_dtor(&zarray);
+	
+	return NULL;
+}
+/* }}} */
 
-	zend_hash_sort(Z_ARRVAL(zentries), zend_qsort, http_sort_q, 0 TSRMLS_CC);
-
-	FOREACH_HASH_KEY(Z_ARRVAL(zentries), key, idx) {
-		if (key) {
-			key = estrdup(key);
-			zval_dtor(&zentries);
-			return key;
+/* {{{ char *http_negotiate_charset_func */
+char *_http_negotiate_charset_func(const char *test, double *quality, HashTable *supported TSRMLS_DC)
+{
+	zval **value;
+	
+	FOREACH_HASH_VAL(supported, value) {
+#if HTTP_DBG_NEG
+		fprintf(stderr, "strcasecmp('%s', '%s')\n", Z_STRVAL_PP(value), test);
+#endif
+		if (!strcasecmp(Z_STRVAL_PP(value), test)) {
+			return Z_STRVAL_PP(value);
 		}
 	}
-	zval_dtor(&zentries);
+	
+	return NULL;
+}
+/* }}} */
 
-	return estrdup(def);
+/* {{{ HashTable *http_negotiate_q(const char *, HashTable *, negotiate_func_t) */
+PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *supported, negotiate_func_t neg TSRMLS_DC)
+{
+	zval *accept;
+	HashTable *result = NULL;
+	
+#if HTTP_DBG_NEG
+	fprintf(stderr, "Reading header %s: ", header);
+#endif
+	HTTP_GSC(accept, header, NULL);
+#if HTTP_DBG_NEG
+	fprintf(stderr, "%s\n", Z_STRVAL_P(accept));
+#endif
+	
+	if (Z_STRLEN_P(accept)) {
+		zval ex_arr, ex_del;
+		
+		INIT_PZVAL(&ex_del);
+		INIT_PZVAL(&ex_arr);
+		ZVAL_STRINGL(&ex_del, ",", 1, 0);
+		array_init(&ex_arr);
+		
+		php_explode(&ex_del, accept, &ex_arr, -1);
+		
+		if (zend_hash_num_elements(Z_ARRVAL(ex_arr)) > 0) {
+			int i = 0;
+			zval **entry, array;
+			
+			INIT_PZVAL(&array);
+			array_init(&array);
+			
+			FOREACH_HASH_VAL(Z_ARRVAL(ex_arr), entry) {
+				double quality;
+				char *selected, *identifier;
+				const char *separator;
+				
+#if HTTP_DBG_NEG
+				fprintf(stderr, "Checking %s\n", Z_STRVAL_PP(entry));
+#endif
+				
+				if (separator = strchr(Z_STRVAL_PP(entry), ';')) {
+					const char *ptr = separator;
+					
+					do {
+						++ptr;
+					} while ((*ptr == ' ') || (*ptr == 'q') || (*ptr == '='));
+					
+					quality = strtod(ptr, NULL);
+					identifier = estrndup(Z_STRVAL_PP(entry), separator - Z_STRVAL_PP(entry));
+				} else {
+					quality = 1000.0 - i++;
+					identifier = estrndup(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry));
+				}
+				
+				if (selected = neg(identifier, &quality, supported TSRMLS_CC)) {
+					/* don't overwrite previously set with higher quality */
+					if (!zend_hash_exists(Z_ARRVAL(array), selected, strlen(selected) + 1)) {
+						add_assoc_double(&array, selected, quality);
+					}
+				}
+				
+				efree(identifier);
+			}
+			
+			result = Z_ARRVAL(array);
+			zend_hash_sort(result, zend_qsort, http_sort_q, 0 TSRMLS_CC);
+		}
+		
+		zval_dtor(&ex_arr);
+	}
+	
+	return result;
 }
 /* }}} */
 

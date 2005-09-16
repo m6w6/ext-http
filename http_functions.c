@@ -100,11 +100,54 @@ PHP_FUNCTION(http_absolute_uri)
 }
 /* }}} */
 
-/* {{{ proto string http_negotiate_language(array supported[, string default = 'en-US'])
+#define HTTP_DO_NEGOTIATE(type, supported, as_array) \
+{ \
+	HashTable *result; \
+	if (result = http_negotiate_ ##type(supported)) { \
+		if (as_array) { \
+			Z_TYPE_P(return_value) = IS_ARRAY; \
+			Z_ARRVAL_P(return_value) = result; \
+		} else { \
+			char *key; \
+			uint key_len; \
+			ulong idx; \
+			 \
+			if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(result, &key, &key_len, &idx, 1, NULL)) { \
+				RETVAL_STRINGL(key, key_len-1, 0); \
+			} else { \
+				RETVAL_NULL(); \
+			} \
+			zend_hash_destroy(result); \
+		} \
+	} else { \
+		if (as_array) { \
+			zval **value; \
+			 \
+			array_init(return_value); \
+			 \
+			FOREACH_VAL(supported, value) { \
+				convert_to_string_ex(value); \
+				add_assoc_double(return_value, Z_STRVAL_PP(value), 1.0); \
+			} \
+		} else { \
+			zval **value; \
+			 \
+			zend_hash_internal_pointer_reset(Z_ARRVAL_P(supported)); \
+			if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(supported), (void **) &value)) { \
+				RETVAL_ZVAL(*value, 1, 0); \
+			} else { \
+				RETVAL_NULL(); \
+			} \
+		} \
+	} \
+}
+
+
+/* {{{ proto string http_negotiate_language(array supported[, bool return_quality_array = false])
  *
  * This function negotiates the clients preferred language based on its
  * Accept-Language HTTP header.  It returns the negotiated language or
- * the default language if none match.
+ * the default language (i.e. first array entry) if none match.
  *
  * The qualifier is recognized and languages without qualifier are rated highest.
  *
@@ -131,26 +174,21 @@ PHP_FUNCTION(http_absolute_uri)
 PHP_FUNCTION(http_negotiate_language)
 {
 	zval *supported;
-	char *def = NULL;
-	int def_len = 0;
+	zend_bool as_array = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|s", &supported, &def, &def_len) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|b", &supported, &as_array) != SUCCESS) {
 		RETURN_FALSE;
 	}
-
-	if (!def) {
-		def = "en-US";
-	}
-
-	RETURN_STRING(http_negotiate_language(supported, def), 0);
+	
+	HTTP_DO_NEGOTIATE(language, supported, as_array);
 }
 /* }}} */
 
-/* {{{ proto string http_negotiate_charset(array supported[, string default = 'iso-8859-1'])
+/* {{{ proto string http_negotiate_charset(array supported)
  *
  * This function negotiates the clients preferred charset based on its
  * Accept-Charset HTTP header.  It returns the negotiated charset or
- * the default charset if none match.
+ * the default charset (i.e. first array entry) if none match.
  *
  * The qualifier is recognized and charset without qualifier are rated highest.
  *
@@ -178,18 +216,13 @@ PHP_FUNCTION(http_negotiate_language)
 PHP_FUNCTION(http_negotiate_charset)
 {
 	zval *supported;
-	char *def = NULL;
-	int def_len = 0;
+	zend_bool as_array = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|s", &supported, &def, &def_len) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|b", &supported, &as_array) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	if (!def) {
-		def = "iso-8859-1";
-	}
-
-	RETURN_STRING(http_negotiate_charset(supported, def), 0);
+	HTTP_DO_NEGOTIATE(charset, supported, as_array);
 }
 /* }}} */
 

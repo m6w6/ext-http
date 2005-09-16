@@ -110,6 +110,9 @@ class FeedAggregator
 			}
 			$this->saveFeed($this->url2name($r->getUrl()), $body);
 		}
+        echo $r->getHistory();
 	}
 }
+$a = new FeedAggregator();
+$a->getFeed('http://www.planet-php.net/rss/');
 ?>

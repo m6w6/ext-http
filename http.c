@@ -250,12 +250,6 @@ PHP_INI_BEGIN()
 PHP_INI_END()
 /* }}} */
 
-/* {{{ SSL */
-#ifdef HTTP_NEED_SSL
-
-#endif
-/* }}} */
-
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(http)
 {
@@ -326,8 +320,7 @@ PHP_RSHUTDOWN_FUNCTION(http)
 	int i, c = zend_hash_num_elements(&HTTP_G(request).methods.custom);
 	
 	for (i = 0; i < c; ++i) {
-		zend_printf("RSHUTDOWN: unregistering %d (%d)\n", i, 
-		http_request_method_unregister(HTTP_MAX_REQUEST_METHOD + i));
+		http_request_method_unregister(HTTP_MAX_REQUEST_METHOD + i);
 	}
 #endif
 	http_globals_free(HTTP_GLOBALS);
