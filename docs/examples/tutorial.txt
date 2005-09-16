@@ -44,7 +44,7 @@ try {
 	redirect option.
 
 <?php
-$r = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_POST);
+$r = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_METH_POST);
 
 // if redirects is set to true, a single redirect is allowed;
 // one can set any reasonable count of allowed redirects
@@ -82,8 +82,8 @@ try {
 	$p = new HttpRequestPool;
 	// if you want to set _any_ options of the HttpRequest object,
 	// you need to do so *prior attaching* to the request pool!
-	$p->attach(new HttpRequest('http://pear.php.net', HTTP_HEAD));
-	$p->attach(new HttpRequest('http://pecl.php.net', HTTP_HEAD));
+	$p->attach(new HttpRequest('http://pear.php.net', HTTP_METH_HEAD));
+	$p->attach(new HttpRequest('http://pecl.php.net', HTTP_METH_HEAD));
 } catch (HttpException $e) {
 	print $e;
 	exit;
@@ -112,8 +112,8 @@ class Pool extends HttpRequestPool
 	public function __construct()
 	{
 		parent::__construct(
-			new HttpRequest('http://pear.php.net', HTTP_HEAD),
-			new HttpRequest('http://pecl.php.net', HTTP_HEAD)
+			new HttpRequest('http://pear.php.net', HTTP_METH_HEAD),
+			new HttpRequest('http://pecl.php.net', HTTP_METH_HEAD)
 		);
 
 		// HttpRequestPool methods socketPerform() and socketSelect() are
@@ -186,7 +186,7 @@ class XmlRpcClient
 	public function __construct($url, $namespace = '')
 	{
 		$this->namespace = $namespace;
-		$this->request = new HttpRequest($url, HTTP_POST);
+		$this->request = new HttpRequest($url, HTTP_METH_POST);
 		$this->request->setContentType('text/xml');
 	}
 

@@ -1,5 +1,5 @@
 <?php
-$r = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_POST);
+$r = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_METH_POST);
 
 // if redirects is set to true, a single redirect is allowed;
 // one can set any reasonable count of allowed redirects

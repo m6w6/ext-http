@@ -4,8 +4,8 @@ class Pool extends HttpRequestPool
 	public function __construct()
 	{
 		parent::__construct(
-			new HttpRequest('http://pear.php.net', HTTP_HEAD),
-			new HttpRequest('http://pecl.php.net', HTTP_HEAD)
+			new HttpRequest('http://pear.php.net', HTTP_METH_HEAD),
+			new HttpRequest('http://pecl.php.net', HTTP_METH_HEAD)
 		);
 
 		// HttpRequestPool methods socketPerform() and socketSelect() are

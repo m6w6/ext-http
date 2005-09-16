@@ -7,7 +7,7 @@ class XmlRpcClient
 	public function __construct($url, $namespace = '')
 	{
 		$this->namespace = $namespace;
-		$this->request = new HttpRequest($url, HTTP_POST);
+		$this->request = new HttpRequest($url, HTTP_METH_POST);
 		$this->request->setContentType('text/xml');
 	}
 
