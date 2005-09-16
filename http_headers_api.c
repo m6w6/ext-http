@@ -152,9 +152,7 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 				if (separator = strchr(Z_STRVAL_PP(entry), ';')) {
 					const char *ptr = separator;
 					
-					do {
-						++ptr;
-					} while ((*ptr == ' ') || (*ptr == 'q') || (*ptr == '='));
+					while (*++ptr && !isdigit(*ptr));
 					
 					quality = strtod(ptr, NULL);
 					identifier = estrndup(Z_STRVAL_PP(entry), separator - Z_STRVAL_PP(entry));
