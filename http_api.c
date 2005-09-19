@@ -85,7 +85,7 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 	int vallen = 0, keylen = 0, done = 0;
 	zval array;
 
-	Z_ARRVAL(array) = items;
+	INIT_ZARR(array, items);
 
 	if (!(val = strchr(list, '='))) {
 		return FAILURE;

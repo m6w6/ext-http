@@ -685,7 +685,7 @@ PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info, phpstr *respon
 PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
 {
 	zval array;
-	Z_ARRVAL(array) = info;
+	INIT_ZARR(array, info);
 
 	HTTP_CURL_INFO(EFFECTIVE_URL);
 #if LIBCURL_VERSION_NUM >= 0x070a07

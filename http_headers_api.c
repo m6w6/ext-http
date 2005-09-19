@@ -331,7 +331,10 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 	size_t header_len;
 	zval array;
 
+	INIT_PZVAL(&array);
+	Z_TYPE_P(array) = IS_ARRAY;
 	Z_ARRVAL(array) = headers;
+	
 	if (body) {
 		header_len = body - header;
 	} else {
@@ -341,7 +344,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 
 	while (header_len >= (size_t) (line - begin)) {
 		int value_len = 0;
-
+		/* note: valgrind may choke on that -- should be safe though */
 		switch (*line++)
 		{
 			case ':':

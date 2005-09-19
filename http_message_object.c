@@ -409,7 +409,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		zval array; \
 		char *m_prop_name; \
 		int m_prop_len; \
-		Z_ARRVAL(array) = OBJ_PROP(obj); \
+		INIT_ZARR(array, OBJ_PROP(obj)); \
 		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
 		add_assoc_ ##ptype## _ex(&array, m_prop_name, sizeof(name)+4, val); \
 	}
@@ -419,7 +419,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		zval array; \
 		char *m_prop_name; \
 		int m_prop_len; \
-		Z_ARRVAL(array) = OBJ_PROP(obj); \
+		INIT_ZARR(array, OBJ_PROP(obj)); \
 		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
 		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+4, val, len, 1); \
 	}
@@ -557,7 +557,7 @@ PHP_METHOD(HttpMessage, getHeaders)
 		zval headers;
 		getObject(http_message_object, obj);
 
-		Z_ARRVAL(headers) = &obj->message->hdrs;
+		INIT_ZARR(headers, &obj->message->hdrs);
 		array_init(return_value);
 		array_copy(&headers, return_value);
 	}
@@ -578,7 +578,7 @@ PHP_METHOD(HttpMessage, setHeaders)
 	}
 
 	zend_hash_clean(&obj->message->hdrs);
-	Z_ARRVAL(old_headers) = &obj->message->hdrs;
+	INIT_ZARR(old_headers, &obj->message->hdrs);
 	array_copy(new_headers, &old_headers);
 }
 /* }}} */
@@ -597,7 +597,7 @@ PHP_METHOD(HttpMessage, addHeaders)
 		return;
 	}
 
-	Z_ARRVAL(old_headers) = &obj->message->hdrs;
+	INIT_ZARR(old_headers, &obj->message->hdrs);
 	if (append) {
 		array_append(new_headers, &old_headers);
 	} else {

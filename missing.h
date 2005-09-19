@@ -30,6 +30,8 @@ extern void zend_update_property_double(zend_class_entry *scope, zval *object, c
 
 extern int zend_declare_property_bool(zend_class_entry *ce, char *name, int name_length, long value, int access_type TSRMLS_DC);
 extern void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name, int name_length, long value TSRMLS_DC);
+
+extern void zend_update_property_stringl(zend_class_entry *scope, zval *object, char *name, int name_length, char *value, int value_len TSRMLS_DC);
 #endif
 
 #endif

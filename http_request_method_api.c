@@ -167,7 +167,7 @@ PHP_HTTP_API unsigned long _http_request_method_register(const char *method_name
 	}
 	method[method_len] = '\0';
 	
-	Z_ARRVAL(array) = &HTTP_G(request).methods.custom;
+	INIT_ZARR(array, &HTTP_G(request).methods.custom);
 	add_next_index_stringl(&array, method, method_len, 0);
 
 	method_len = spprintf(&http_method, 0, "HTTP_METH_%s", method);

@@ -32,7 +32,8 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 PHP_HTTP_API void _http_info_default_callback(void **nothing, HashTable **headers, http_info *info TSRMLS_DC)
 {
 	zval array;
-	Z_ARRVAL(array) = *headers;
+	
+	INIT_ZARR(array, *headers);
 	
 	switch (info->type)
 	{

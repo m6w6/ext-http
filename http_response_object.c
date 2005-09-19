@@ -237,10 +237,11 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP(PROTECTED, long, bufferSize, HTTP_SENDBUF_SIZE);
 	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
 
+#ifndef WONKY
 	DCL_CONST(long, "ETAG_MD5", HTTP_ETAG_MD5);
 	DCL_CONST(long, "ETAG_SHA1", HTTP_ETAG_SHA1);
 	
-#ifdef HTTP_HAVE_MHASH
+#	ifdef HTTP_HAVE_MHASH
 	{
 		int l, i, c = mhash_count();
 		
@@ -254,7 +255,8 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 			}
 		}
 	}
-#endif
+#	endif /* HTTP_HAVE_MHASH */
+#endif /* WONKY */
 }
 
 static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC)
@@ -880,7 +882,7 @@ PHP_METHOD(HttpResponse, getFile)
  */
 PHP_METHOD(HttpResponse, send)
 {
-	zval *sent, *headers;
+	zval *sent;
 	zend_bool clean_ob = 1;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {

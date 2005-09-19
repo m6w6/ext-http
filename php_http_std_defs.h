@@ -52,6 +52,13 @@ typedef int STATUS;
 	}
 #endif
 
+#define INIT_ZARR(zv, ht) \
+	{ \
+		INIT_PZVAL(&(zv)); \
+		Z_TYPE(zv) = IS_ARRAY; \
+		Z_ARRVAL(zv) = (ht); \
+	}
+
 /* return bool (v == SUCCESS) */
 #define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
@@ -366,6 +373,31 @@ typedef int STATUS;
 #	endif
 #endif
 
+#ifndef ZVAL_ZVAL
+#define ZVAL_ZVAL(z, zv, copy, dtor) {  \
+		int is_ref, refcount;           \
+		is_ref = (z)->is_ref;           \
+		refcount = (z)->refcount;       \
+		*(z) = *(zv);                   \
+		if (copy) {                     \
+			zval_copy_ctor(z);          \
+	    }                               \
+		if (dtor) {                     \
+			if (!copy) {                \
+				ZVAL_NULL(zv);          \
+			}                           \
+			zval_ptr_dtor(&zv);         \
+	    }                               \
+		(z)->is_ref = is_ref;           \
+		(z)->refcount = refcount;       \
+	}
+#endif
+#ifndef RETVAL_ZVAL
+#define RETVAL_ZVAL(zv, copy, dtor)		ZVAL_ZVAL(return_value, zv, copy, dtor)
+#endif
+#ifndef RETURN_ZVAL
+#define RETURN_ZVAL(zv, copy, dtor)		{ RETVAL_ZVAL(zv, copy, dtor); return; }
+#endif
 
 
 #endif /* PHP_HTTP_STD_DEFS_H */

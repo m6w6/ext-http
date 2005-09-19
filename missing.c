@@ -47,6 +47,18 @@ void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name
 	ZVAL_BOOL(tmp, value);
 	zend_update_property(scope, object, name, name_length, tmp TSRMLS_CC);
 }
+
+void zend_update_property_stringl(zend_class_entry *scope, zval *object, char *name, int name_length, char *value, int value_len TSRMLS_DC)
+{
+	zval *tmp;
+	
+	ALLOC_ZVAL(tmp);
+	tmp->is_ref = 0;
+	tmp->refcount = 0;
+	ZVAL_STRINGL(tmp, value, value_len, 1);
+	zend_update_property(scope, object, name, name_length, tmp TSRMLS_CC);
+}
+
 #endif
 
 /*

@@ -344,6 +344,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 
 	DCL_PROP(PUBLIC, bool, recordHistory, 1);
 
+#ifndef WONKY
 	/*
 	 * Request Method Constants
 	 */
@@ -388,6 +389,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_CONST(long, "AUTH_NTLM", CURLAUTH_NTLM);
 	DCL_CONST(long, "AUTH_ANY", CURLAUTH_ANY);
 #	endif /* LIBCURL_VERSION_NUM */
+#endif /* WONKY */
 }
 
 void _http_request_object_free(zend_object *object TSRMLS_DC)

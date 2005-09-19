@@ -312,8 +312,7 @@ PHP_HTTP_API void _http_message_tostruct_recursive(http_message *msg, zval *obj 
 	zval strct;
 	zval *headers;
 	
-	Z_TYPE(strct) = IS_ARRAY;
-	Z_ARRVAL(strct) = HASH_OF(obj);
+	INIT_ZARR(strct, HASH_OF(obj));
 	
 	add_assoc_long(&strct, "type", msg->type);
 	add_assoc_double(&strct, "httpVersion", msg->http.version);
@@ -394,6 +393,8 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 			char *uri = NULL;
 			zval **zhost, options, headers;
 
+			INIT_PZVAL(&options);
+			INIT_PZVAL(&headers);
 			array_init(&options);
 			array_init(&headers);
 			zend_hash_copy(Z_ARRVAL(headers), &message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
