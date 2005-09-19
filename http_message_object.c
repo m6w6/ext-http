@@ -407,62 +407,64 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	zval *headers;
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
+	HashTable *props = OBJ_PROP(obj);
+	zval array;
+	
+	INIT_ZARR(array, props);
 
-#define ASSOC_PROP(obj, ptype, name, val) \
+#define ASSOC_PROP(array, ptype, name, val) \
 	{ \
-		zval array; \
 		char *m_prop_name; \
 		int m_prop_len; \
-		INIT_ZARR(array, OBJ_PROP(obj)); \
-		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
+		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 0); \
 		add_assoc_ ##ptype## _ex(&array, m_prop_name, sizeof(name)+4, val); \
+		efree(m_prop_name); \
 	}
-#define ASSOC_STRING(obj, name, val) ASSOC_STRINGL(obj, name, val, strlen(val))
-#define ASSOC_STRINGL(obj, name, val, len) \
+#define ASSOC_STRING(array, name, val) ASSOC_STRINGL(array, name, val, strlen(val))
+#define ASSOC_STRINGL(array, name, val, len) \
 	{ \
-		zval array; \
 		char *m_prop_name; \
 		int m_prop_len; \
-		INIT_ZARR(array, OBJ_PROP(obj)); \
-		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 1); \
+		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 0); \
 		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+4, val, len, 1); \
+		efree(m_prop_name); \
 	}
 
 	//zend_hash_clean(OBJ_PROP(obj));
 
-	ASSOC_PROP(obj, long, "type", msg->type);
-	ASSOC_PROP(obj, double, "httpVersion", msg->http.version);
+	ASSOC_PROP(array, long, "type", msg->type);
+	ASSOC_PROP(array, double, "httpVersion", msg->http.version);
 
 	switch (msg->type)
 	{
 		case HTTP_MSG_REQUEST:
-			ASSOC_PROP(obj, long, "responseCode", 0);
-			ASSOC_STRINGL(obj, "responseStatus", "", 0);
-			ASSOC_STRING(obj, "requestMethod", msg->http.info.request.method);
-			ASSOC_STRING(obj, "requestUri", msg->http.info.request.URI);
+			ASSOC_PROP(array, long, "responseCode", 0);
+			ASSOC_STRINGL(array, "responseStatus", "", 0);
+			ASSOC_STRING(array, "requestMethod", msg->http.info.request.method);
+			ASSOC_STRING(array, "requestUri", msg->http.info.request.URI);
 		break;
 
 		case HTTP_MSG_RESPONSE:
-			ASSOC_PROP(obj, long, "responseCode", msg->http.info.response.code);
-			ASSOC_STRING(obj, "responseStatus", msg->http.info.response.status);
-			ASSOC_STRINGL(obj, "requestMethod", "", 0);
-			ASSOC_STRINGL(obj, "requestUri", "", 0);
+			ASSOC_PROP(array, long, "responseCode", msg->http.info.response.code);
+			ASSOC_STRING(array, "responseStatus", msg->http.info.response.status);
+			ASSOC_STRINGL(array, "requestMethod", "", 0);
+			ASSOC_STRINGL(array, "requestUri", "", 0);
 		break;
 
 		case HTTP_MSG_NONE:
 		default:
-			ASSOC_PROP(obj, long, "responseCode", 0);
-			ASSOC_STRINGL(obj, "responseStatus", "", 0);
-			ASSOC_STRINGL(obj, "requestMethod", "", 0);
-			ASSOC_STRINGL(obj, "requestUri", "", 0);
+			ASSOC_PROP(array, long, "responseCode", 0);
+			ASSOC_STRINGL(array, "responseStatus", "", 0);
+			ASSOC_STRINGL(array, "requestMethod", "", 0);
+			ASSOC_STRINGL(array, "requestUri", "", 0);
 		break;
 	}
 
 	MAKE_STD_ZVAL(headers);
 	array_init(headers);
 	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-	ASSOC_PROP(obj, zval, "headers", headers);
-	ASSOC_STRINGL(obj, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
+	ASSOC_PROP(array, zval, "headers", headers);
+	ASSOC_STRINGL(array, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
 
 	return OBJ_PROP(obj);
 }
