@@ -430,8 +430,6 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		efree(m_prop_name); \
 	}
 
-	//zend_hash_clean(OBJ_PROP(obj));
-
 	ASSOC_PROP(array, long, "type", msg->type);
 	ASSOC_PROP(array, double, "httpVersion", msg->http.version);
 
