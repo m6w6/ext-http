@@ -871,7 +871,7 @@ PHP_METHOD(HttpMessage, send)
 }
 /* }}} */
 
-/* {{{ proto string HttpMessage::toString([bool include_parent = true])
+/* {{{ proto string HttpMessage::toString([bool include_parent = false])
  *
  * Get the string representation of the Message.
  */
@@ -880,7 +880,7 @@ PHP_METHOD(HttpMessage, toString)
 	IF_RETVAL_USED {
 		char *string;
 		size_t length;
-		zend_bool include_parent = 1;
+		zend_bool include_parent = 0;
 		getObject(http_message_object, obj);
 
 		if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &include_parent)) {

@@ -23,8 +23,8 @@ $m = new HttpMessage(
 );
 
 var_dump($m->getBody());
-var_dump($m->toString());
-var_dump(HttpMessage::fromString($m->toString())->toString());
+var_dump($m->toString(true));
+var_dump(HttpMessage::fromString($m->toString(true))->toString(true));
 ?>
 --EXPECTF--
 %sTEST
