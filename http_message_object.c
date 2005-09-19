@@ -231,6 +231,11 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
 	zval *return_value;
+	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
+	
+	if (!pinfo || ACC_PROP_PUBLIC(pinfo->flags)) {
+		return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
+	}
 
 	return_value = &EG(uninitialized_zval);
 	return_value->refcount = 0;
@@ -239,12 +244,8 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 #if 0
 	fprintf(stderr, "Read HttpMessage::$%s\n", Z_STRVAL_P(member));
 #endif
-	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
-		return EG(uninitialized_zval_ptr);
-	}
 
-	switch (zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1))
+	switch (pinfo->h)
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
 			RETVAL_LONG(msg->type);
@@ -326,15 +327,18 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 {
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
+	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
+	
+	if (!pinfo || ACC_PROP_PUBLIC(pinfo->flags)) {
+		zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
+		return;
+	}
 
 #if 0
 	fprintf(stderr, "Write HttpMessage::$%s\n", Z_STRVAL_P(member));
 #endif
-	if (!EG(scope) || !instanceof_function(EG(scope), obj->zo.ce TSRMLS_CC)) {
-		zend_error(E_WARNING, "Cannot access protected property %s::$%s", obj->zo.ce->name, Z_STRVAL_P(member));
-	}
 
-	switch (zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1))
+	switch (pinfo->h)
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
 			convert_to_long_ex(&value);
@@ -424,7 +428,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+4, val, len, 1); \
 	}
 
-	zend_hash_clean(OBJ_PROP(obj));
+	//zend_hash_clean(OBJ_PROP(obj));
 
 	ASSOC_PROP(obj, long, "type", msg->type);
 	ASSOC_PROP(obj, double, "httpVersion", msg->http.version);
