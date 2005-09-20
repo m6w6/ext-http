@@ -205,6 +205,10 @@ PHP_INI_DISP(http_etag_mode_displayer)
 	
 	switch (value)
 	{
+		case HTTP_ETAG_CRC32:
+			ZEND_WRITE("HTTP_ETAG_CRC32", lenof("HTTP_ETAG_CRC32"));
+		break;
+		
 		case HTTP_ETAG_SHA1:
 			ZEND_WRITE("HTTP_ETAG_SHA1", lenof("HTTP_ETAG_SHA1"));
 		break;
@@ -333,29 +337,29 @@ PHP_MINFO_FUNCTION(http)
 {
 	php_info_print_table_start();
 	{
-		php_info_print_table_row(2, "Extended HTTP support:", "enabled");
-		php_info_print_table_row(2, "Extension Version:", HTTP_PEXT_VERSION);
+		php_info_print_table_row(2, "Extended HTTP support", "enabled");
+		php_info_print_table_row(2, "Extension Version", HTTP_PEXT_VERSION);
 #ifdef HTTP_HAVE_CURL
-		php_info_print_table_row(2, "cURL HTTP Requests:", curl_version());
+		php_info_print_table_row(2, "cURL HTTP Requests", curl_version());
 #else
-		php_info_print_table_row(2, "cURL HTTP Requests:", "disabled");
+		php_info_print_table_row(2, "cURL HTTP Requests", "disabled");
 #endif
 #ifdef HTTP_HAVE_MHASH
 		{
 			char mhash_info[32];
 			
 			snprintf(mhash_info, 32, "libmhash/%d", MHASH_API_VERSION);
-			php_info_print_table_row(2, "mhash ETag Generator:", mhash_info);
+			php_info_print_table_row(2, "mhash ETag Generator", mhash_info);
 		}
 #else
-		php_info_print_table_row(2, "mhash ETag Generator:", "disabled");
+		php_info_print_table_row(2, "mhash ETag Generator", "disabled");
 #endif
 #if defined(HTTP_HAVE_MAGIC) && !defined(WONKY)
-		php_info_print_table_row(2, "magic MIME Guessing:", "libmagic/unknown");
+		php_info_print_table_row(2, "magic MIME Guessing", "libmagic/unknown");
 #else
-		php_info_print_table_row(2, "magic MIME Guessing:", "disabled");
+		php_info_print_table_row(2, "magic MIME Guessing", "disabled");
 #endif
-		php_info_print_table_row(2, "Registered Classes:",
+		php_info_print_table_row(2, "Registered Classes",
 #ifndef ZEND_ENGINE_2
 			"none"
 #else
@@ -372,8 +376,36 @@ PHP_MINFO_FUNCTION(http)
 		);
 	}
 	php_info_print_table_end();
+	
+	php_info_print_table_start();
+	php_info_print_table_colspan_header(2, "Supported ETag Hash Algorithms");
+	{
+			
+		php_info_print_table_row(2, "PHP", "CRC32, MD5, SHA1");
+#ifdef HTTP_HAVE_MHASH
+		{
+			phpstr *algos = phpstr_new();
+			int i, c = mhash_count();
+			
+			for (i = 0; i <= c; ++i) {
+				const char *hash = mhash_get_hash_name_static(i);
+				
+				if (hash) {
+					phpstr_appendf(algos, "%s, ", hash);
+				}
+			}
+			phpstr_fix(algos);
+			php_info_print_table_row(2, "MHASH", PHPSTR_VAL(algos));
+			phpstr_free(&algos);
+		}
+#else
+		php_info_print_table_row(2, "MHASH", "not available");
+#endif
+	}
+	php_info_print_table_end();
 
 	php_info_print_table_start();
+	php_info_print_table_colspan_header(2, "Request Methods");
 	{
 		unsigned i;
 		zval **custom_method;
@@ -393,10 +425,11 @@ PHP_MINFO_FUNCTION(http)
 		phpstr_fix(known_request_methods);
 		phpstr_fix(custom_request_methods);
 
-		php_info_print_table_row(2, "Known Request Methods:", PHPSTR_VAL(known_request_methods));
-		php_info_print_table_row(2, "Custom Request Methods:",
+		php_info_print_table_row(2, "Known", PHPSTR_VAL(known_request_methods));
+		php_info_print_table_row(2, "Custom",
 			PHPSTR_LEN(custom_request_methods) ? PHPSTR_VAL(custom_request_methods) : "none registered");
-
+		php_info_print_table_row(2, "Allowed", strlen(HTTP_G(request).methods.allowed) ? HTTP_G(request).methods.allowed : "(ANY)");
+		
 		phpstr_free(&known_request_methods);
 		phpstr_free(&custom_request_methods);
 	}

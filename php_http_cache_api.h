@@ -22,6 +22,7 @@
 
 #include "ext/standard/md5.h"
 #include "ext/standard/sha1.h"
+#include "ext/standard/crc32.h"
 
 #include "php_http_std_defs.h"
 #include "php_http.h"
@@ -38,6 +39,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 extern STATUS _http_cache_global_init(INIT_FUNC_ARGS);
 
 typedef enum {
+	HTTP_ETAG_CRC32 = -3,
 	HTTP_ETAG_MD5 = -2,
 	HTTP_ETAG_SHA1 = -1,
 } http_etag_mode;
@@ -75,6 +77,11 @@ static inline void *_http_etag_init(TSRMLS_D)
 	
 	switch (mode)
 	{
+		case HTTP_ETAG_CRC32:
+			ctx = emalloc(sizeof(unsigned int));
+			memset(ctx, 1, sizeof(unsigned int));
+		break;
+		
 		case HTTP_ETAG_SHA1:
 			PHP_SHA1Init(ctx = emalloc(sizeof(PHP_SHA1_CTX)));
 		break;
@@ -107,6 +114,12 @@ static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
 	
 	switch (mode)
 	{
+		case HTTP_ETAG_CRC32:
+			*((unsigned int *) ctx) = ~*((unsigned int *) ctx);
+			etag = http_etag_digest((const unsigned char *) ctx, sizeof(unsigned int));
+			efree(ctx);
+		break;
+		
 		case HTTP_ETAG_SHA1:
 			PHP_SHA1Final(digest, ctx);
 			etag = http_etag_digest(digest, 20);
@@ -141,6 +154,17 @@ static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t dat
 {
 	switch (INI_INT("http.etag_mode"))
 	{
+		case HTTP_ETAG_CRC32:
+		{
+			unsigned int i, c = *((unsigned int *) ctx);
+			
+			for (i = 0; i < data_len; ++i) {
+				c = CRC32(c, data_ptr[i]);
+			}
+			*((unsigned int *)ctx) = c;
+		}
+		break;
+		
 		case HTTP_ETAG_SHA1:
 			PHP_SHA1Update(ctx, (const unsigned char *) data_ptr, data_len);
 		break;

@@ -289,6 +289,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 
 	/* multi range */
 	else {
+		size_t preface_len;
 		char bound[23] = {0}, preface[1024] = {0},
 			multi_header[68] = "Content-Type: multipart/byteranges; boundary=";
 
@@ -307,7 +308,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 				break;
 			}
 
-			snprintf(preface, 1023,
+			preface_len = snprintf(preface, 1023,
 				HTTP_CRLF "%s"
 				HTTP_CRLF "Content-Type: %s"
 				HTTP_CRLF "Content-Range: bytes %ld-%ld/%lu"
@@ -321,7 +322,7 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 				(ulong) size
 			);
 
-			PHPWRITE(preface, strlen(preface));
+			PHPWRITE(preface, preface_len);
 			http_send_chunk(data, Z_LVAL_PP(zbegin), Z_LVAL_PP(zend) + 1, mode);
 		}
 

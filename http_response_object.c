@@ -240,6 +240,7 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 #ifndef WONKY
 	DCL_CONST(long, "ETAG_MD5", HTTP_ETAG_MD5);
 	DCL_CONST(long, "ETAG_SHA1", HTTP_ETAG_SHA1);
+	DCL_CONST(long, "ETAG_CRC32", HTTP_ETAG_CRC32);
 	
 #	ifdef HTTP_HAVE_MHASH
 	{
