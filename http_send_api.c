@@ -263,29 +263,28 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, size_t 
 /* {{{ STATUS http_send_ranges(HashTable *, void *, size_t, http_send_mode) */
 PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_t size, http_send_mode mode TSRMLS_DC)
 {
-	long **begin, **end;
-	zval **zrange;
+	zval **zbegin, **zend, **zrange;
 
 	/* single range */
 	if (zend_hash_num_elements(ranges) == 1) {
 		char range_header[256] = {0};
 
 		if (SUCCESS != zend_hash_index_find(ranges, 0, (void **) &zrange) ||
-			SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &begin) ||
-			SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &end)) {
+			SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &zbegin) ||
+			SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &zend)) {
 			http_send_status(500);
 			return FAILURE;
 		}
-
+		
 		/* Send HTTP 206 Partial Content */
 		http_send_status(206);
 
 		/* send content range header */
-		snprintf(range_header, 255, "Content-Range: bytes %ld-%ld/%lu", **begin, **end, (ulong) size);
+		snprintf(range_header, 255, "Content-Range: bytes %ld-%ld/%lu", Z_LVAL_PP(zbegin), Z_LVAL_PP(zend), (ulong) size);
 		http_send_header_string(range_header);
 
 		/* send requested chunk */
-		return http_send_chunk(data, **begin, **end + 1, mode);
+		return http_send_chunk(data, Z_LVAL_PP(zbegin), Z_LVAL_PP(zend) + 1, mode);
 	}
 
 	/* multi range */
@@ -303,8 +302,8 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 
 		/* send each requested chunk */
 		FOREACH_HASH_VAL(ranges, zrange) {
-			if (SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &begin) ||
-				SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &end)) {
+			if (SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &zbegin) ||
+				SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &zend)) {
 				break;
 			}
 
@@ -317,13 +316,13 @@ PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_
 
 				bound,
 				HTTP_G(send).content_type ? HTTP_G(send).content_type : "application/x-octetstream",
-				**begin,
-				**end,
+				Z_LVAL_PP(zbegin),
+				Z_LVAL_PP(zend),
 				(ulong) size
 			);
 
 			PHPWRITE(preface, strlen(preface));
-			http_send_chunk(data, **begin, **end + 1, mode);
+			http_send_chunk(data, Z_LVAL_PP(zbegin), Z_LVAL_PP(zend) + 1, mode);
 		}
 
 		/* write boundary once more */
