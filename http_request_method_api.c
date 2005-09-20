@@ -174,7 +174,7 @@ PHP_HTTP_API unsigned long _http_request_method_register(const char *method_name
 	zend_register_long_constant(http_method, method_len + 1, meth_num, CONST_CS, http_module_number TSRMLS_CC);
 	efree(http_method);
 	
-#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL) && !defined(WONKY)
 	method_len = spprintf(&http_method, 0, "METH_%s", method);
 	zend_declare_class_constant_long(http_request_object_ce, http_method, method_len, meth_num TSRMLS_CC);
 	efree(http_method);
@@ -196,7 +196,7 @@ PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_
 		return FAILURE;
 	}
 
-#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL) && !defined(WONKY)
 	method_len = spprintf(&http_method, 0, "METH_%s", Z_STRVAL_PP(zmethod));
 	if ((SUCCESS != zend_hash_del(&http_request_object_ce->constants_table, http_method, method_len + 1))) {
 		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Could not unregister request method: HttpRequest::%s", http_method);

@@ -231,21 +231,25 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
 	zval *return_value;
+#ifdef WONKY
+	zend_hash_value h = zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member)+1);
+#else
 	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
 	
 	if (!pinfo || ACC_PROP_PUBLIC(pinfo->flags)) {
 		return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
 	}
+#endif
 
 	return_value = &EG(uninitialized_zval);
 	return_value->refcount = 0;
 	return_value->is_ref = 0;
 
-#if 0
-	fprintf(stderr, "Read HttpMessage::$%s\n", Z_STRVAL_P(member));
-#endif
-
+#ifdef WONKY
+	switch (h)
+#else
 	switch (pinfo->h)
+#endif
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
 			RETVAL_LONG(msg->type);
@@ -316,7 +320,11 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		break;
 		
 		default:
+#ifdef WONKY
+			return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
+#else
 			RETVAL_NULL();
+#endif
 		break;
 	}
 
@@ -327,18 +335,22 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 {
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
+#ifdef WONKY
+	zend_hash_value h = zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1);
+#else
 	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
 	
 	if (!pinfo || ACC_PROP_PUBLIC(pinfo->flags)) {
 		zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
 		return;
 	}
-
-#if 0
-	fprintf(stderr, "Write HttpMessage::$%s\n", Z_STRVAL_P(member));
 #endif
 
+#ifdef WONKY
+	switch (h)
+#else
 	switch (pinfo->h)
+#endif
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
 			convert_to_long_ex(&value);
@@ -398,7 +410,13 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 				convert_to_string_ex(&value);
 				STR_SET(msg->http.info.response.status, estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value)));
 			}
-			
+		break;
+		
+		default:
+#ifdef WONKY
+			zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
+#endif
+		break;
 	}
 }
 
