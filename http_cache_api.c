@@ -48,7 +48,7 @@ STATUS _http_cache_global_init(INIT_FUNC_ARGS)
 	{
 		int l, i, c = mhash_count();
 		
-		for (i = 0; i < c; ++i) {
+		for (i = 0; i <= c; ++i) {
 			char const_name[256] = {0};
 			const char *hash_name = mhash_get_hash_name_static(i);
 			

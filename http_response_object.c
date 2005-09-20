@@ -245,7 +245,7 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	{
 		int l, i, c = mhash_count();
 		
-		for (i = 0; i < c; ++i) {
+		for (i = 0; i <= c; ++i) {
 			char const_name[256] = {0};
 			const char *hash_name = mhash_get_hash_name_static(i);
 			
