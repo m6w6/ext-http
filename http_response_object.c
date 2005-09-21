@@ -500,7 +500,7 @@ PHP_METHOD(HttpResponse, getContentType)
 }
 /* }}} */
 
-/* {{{ proto static string HttpResponse::guessContentType(string magic_file[, long magic_mode])
+/* {{{ proto static string HttpResponse::guessContentType(string magic_file[, long magic_mode = MAGIC_MIME])
  *
  * Attempts to guess the content type of supplied payload through libmagic.
  */
@@ -511,6 +511,9 @@ PHP_METHOD(HttpResponse, guessContentType)
 	long magic_mode = 0;
 	
 	RETVAL_NULL();
+	
+#ifdef HTTP_HAVE_MAGIC
+	magic_mode = MAGIC_MIME;
 	
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &magic_file, &magic_file_len, &magic_mode)) {
@@ -542,6 +545,7 @@ PHP_METHOD(HttpResponse, guessContentType)
 		}
 	}
 	SET_EH_NORMAL();
+#endif
 }
 /* }}} */
 

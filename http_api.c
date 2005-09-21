@@ -358,14 +358,18 @@ PHP_HTTP_API char *_http_guess_content_type(const char *magicfile, long magicmod
 	char *ct = NULL;
 
 #ifdef HTTP_HAVE_MAGIC
-	struct magic_set *magic = magic_open(magicmode);
+	/*	magic_load() fails if MAGIC_MIME is set because it 
+		cowardly adds .mime to the file name */
+	struct magic_set *magic = magic_open(magicmode &~ MAGIC_MIME);
 	
 	if (!magic) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid magic mode: %ld", magicmode);
 	} else if (-1 == magic_load(magic, magicfile)) {
-		http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Failed to load magic database '%s'", magicfile);
+		http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Failed to load magic database '%s' (%s)", magicfile, magic_error(magic));
 	} else {
 		const char *ctype = NULL;
+		
+		magic_setflags(magic, magicmode);
 		
 		switch (data_mode)
 		{
