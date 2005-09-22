@@ -41,6 +41,21 @@
  <notes><![CDATA[
 + Added missing support for raw post data in HttpRequest
 + Added missing HttpMessage::setBody()
++ Added HttpRequest::METH_* constants
++ Added HttpRequest::AUTH_* constants
++ Added HttpMessage::TYPE_* constants
++ Added HttpResponse::ETAG_* constants
++ Added HTTP_ETAG_MHASH_* constants
++ Added supported ETag hash algrithms to php_info() output
++ Added ETag hashing through PHPs CRC32() implementation
++ Added new language/charset negotiator
++ Added HttpMessage::setBody()
++ Added HttpRequest raw post data support
+
+* Changed HttpMessage::toString([include_parent = true]) to false
+* Renamed HTTP_GET etc. constants to HTTP_METH_GET
+* Fixed protected property access
+
 ]]></notes>
  <contents>
   <dir name="/">
@@ -181,7 +196,7 @@
  <extsrcrelease>
   <configureoption 
    name="with-http-curl-requests"
-   prompt="wheter to enable cURL HTTP requests"
+   prompt="whether to enable cURL HTTP requests"
    default="yes"
   />
   <configureoption
