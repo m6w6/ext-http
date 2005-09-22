@@ -545,6 +545,8 @@ PHP_METHOD(HttpResponse, guessContentType)
 		}
 	}
 	SET_EH_NORMAL();
+#else
+	http_error(HE_THROW, HTTP_E_RUNTIME, "Cannot guess Content-Type; libmagic not available");
 #endif
 }
 /* }}} */

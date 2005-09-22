@@ -275,12 +275,14 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 
 		/* file data */
 		FOREACH_HASH_VAL(files, data) {
-			CURLcode err;
 			zval **file, **type, **name;
-			if (	SUCCESS == zend_hash_find(Z_ARRVAL_PP(data), "name", sizeof("name"), (void **) &name) &&
-					SUCCESS == zend_hash_find(Z_ARRVAL_PP(data), "type", sizeof("type"), (void **) &type) &&
-					SUCCESS == zend_hash_find(Z_ARRVAL_PP(data), "file", sizeof("file"), (void **) &file)) {
-				err = curl_formadd(&http_post_data[0], &http_post_data[1],
+			
+			if (	SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "name", sizeof("name"), (void **) &name) ||
+					SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "type", sizeof("type"), (void **) &type) ||
+					SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "file", sizeof("file"), (void **) &file)) {
+				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Post file array entry misses either 'name', 'type' or 'file' entry");
+			} else {
+				CURLcode err = curl_formadd(&http_post_data[0], &http_post_data[1],
 					CURLFORM_COPYNAME,		Z_STRVAL_PP(name),
 					CURLFORM_FILE,			Z_STRVAL_PP(file),
 					CURLFORM_CONTENTTYPE,	Z_STRVAL_PP(type),
@@ -291,8 +293,6 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 					curl_formfree(http_post_data[0]);
 					return FAILURE;
 				}
-			} else {
-				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Post file array entry misses either 'name', 'type' or 'file' entry");
 			}
 		}
 

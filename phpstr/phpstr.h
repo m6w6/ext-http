@@ -6,6 +6,10 @@
 
 #include "php.h"
 
+#ifndef PHPSTR_DEFAULT_SIZE
+#	define PHPSTR_DEFAULT_SIZE 256
+#endif
+
 #ifndef STR_SET
 #	define STR_SET(STR, SET) \
 	{ \

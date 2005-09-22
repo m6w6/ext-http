@@ -43,7 +43,8 @@ int zend_declare_property_bool(zend_class_entry *ce, char *name, int name_length
 }
 
 void zend_update_property_bool(zend_class_entry *scope, zval *object, char *name, int name_length, long value TSRMLS_DC)
-{	zval *tmp = ecalloc(1, sizeof(zval));
+{
+	zval *tmp = ecalloc(1, sizeof(zval));
 	ZVAL_BOOL(tmp, value);
 	zend_update_property(scope, object, name, name_length, tmp TSRMLS_CC);
 }

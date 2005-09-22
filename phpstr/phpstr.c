@@ -4,10 +4,6 @@
 #include "php.h"
 #include "phpstr.h"
 
-#ifndef PHPSTR_DEFAULT_SIZE
-#define PHPSTR_DEFAULT_SIZE 256
-#endif
-
 PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, zend_bool pre_alloc)
 {
 	if (!buf) {
