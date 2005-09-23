@@ -108,7 +108,6 @@ zend_object_value _http_requestpool_object_new(zend_class_entry *ce TSRMLS_DC)
 	o->zo.ce = ce;
 
 	http_request_pool_init(&o->pool);
-	o->iterator.pos = 0;
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);

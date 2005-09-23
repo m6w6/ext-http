@@ -3,7 +3,7 @@ dnl $Id$
 
 PHP_ARG_ENABLE([http], [whether to enable extended HTTP support],
 [  --enable-http           Enable extended HTTP support])
-PHP_ARG_WITH([http-curl-requests], [wheter to enable cURL HTTP requests],
+PHP_ARG_WITH([http-curl-requests], [whether to enable cURL HTTP requests],
 [  --with-http-curl-requests[=CURLDIR]
                            With cURL HTTP request support])
 PHP_ARG_WITH([http-mhash-etags], [whether to enable mhash ETag generator],

@@ -295,24 +295,28 @@ PHP_HTTP_API const char *_http_chunked_decode(const char *encoded, size_t encode
 {
 	const char *e_ptr;
 	char *d_ptr;
+	long rest;
 	
 	*decoded_len = 0;
 	*decoded = ecalloc(1, encoded_len);
 	d_ptr = *decoded;
 	e_ptr = encoded;
 
-	while (((e_ptr - encoded) - encoded_len) > 0) {
-		size_t chunk_len = 0, EOL_len = 0;
-		int eol_mismatch = 0;
+	while ((rest = encoded + encoded_len - e_ptr) > 0) {
+		long chunk_len = 0;
+		int EOL_len = 0, eol_mismatch = 0;
 		char *n_ptr;
 
 		chunk_len = strtol(e_ptr, &n_ptr, 16);
 
 		/* check if:
 		 * - we could not read in chunk size
+		 * - we got a negative chunk size
+		 * - chunk size is greater then remaining size
 		 * - chunk size is not followed by (CR)LF|NUL
 		 */
-		if ((n_ptr == e_ptr) || (*n_ptr && (eol_mismatch = n_ptr != http_locate_eol(e_ptr, &EOL_len)))) {
+		if (	(n_ptr == e_ptr) ||	(chunk_len < 0) || (chunk_len > rest) || 
+				(*n_ptr && (eol_mismatch = (n_ptr != http_locate_eol(e_ptr, &EOL_len))))) {
 			/* don't fail on apperently not encoded data */
 			if (e_ptr == encoded) {
 				memcpy(*decoded, encoded, encoded_len);

@@ -160,9 +160,6 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 
 	o = ecalloc(1, sizeof(http_message_object));
 	o->zo.ce = ce;
-	o->message = NULL;
-	o->parent.handle = 0;
-	o->parent.handlers = NULL;
 
 	if (msg) {
 		o->message = msg;

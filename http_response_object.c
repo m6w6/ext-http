@@ -41,6 +41,9 @@
 #ifdef HTTP_HAVE_MHASH
 #	include <mhash.h>
 #endif
+#ifdef HTTP_HAVE_MAGIC
+#	include <magic.h>
+#endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 

@@ -84,7 +84,7 @@ static inline const char *_http_locate_body(const char *message)
 }
 
 #define http_locate_eol _http_locate_eol
-static inline const char *_http_locate_eol(const char *line, size_t *eol_len)
+static inline const char *_http_locate_eol(const char *line, int *eol_len)
 {
 	const char *eol = strpbrk(line, "\r\n");
 	

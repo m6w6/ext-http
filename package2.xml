@@ -49,8 +49,6 @@
 + Added supported ETag hash algrithms to php_info() output
 + Added ETag hashing through PHPs CRC32() implementation
 + Added new language/charset negotiator
-+ Added HttpMessage::setBody()
-+ Added HttpRequest raw post data support
 
 * Changed HttpMessage::toString([include_parent = true]) to false
 * Renamed HTTP_GET etc. constants to HTTP_METH_GET
