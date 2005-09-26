@@ -7,7 +7,7 @@
   http://pear.php.net/dtd/tasks-1.0.xsd
   http://pear.php.net/dtd/package-2.0
   http://pear.php.net/dtd/package-2.0.xsd">
- <name>http</name>
+ <name>pecl_http</name>
  <channel>pecl.php.net</channel>
  <summary>Extended HTTP Support</summary>
  <description><![CDATA[
@@ -181,7 +181,7 @@
     <exclude>6.0.0</exclude>
    </php>
    <pearinstaller>
-    <min>1.4.0</min>
+    <min>1.4.1</min>
    </pearinstaller>
   </required>
   <optional>
@@ -194,20 +194,19 @@
  <extsrcrelease>
   <configureoption 
    name="with-http-curl-requests"
-   prompt="whether to enable cURL HTTP requests"
+   prompt="whether to enable cURL HTTP requests; specify libcurl directory"
    default="yes"
   />
   <configureoption
    name="with-http-mhash-etags"
-   prompt="whether to enable mhash ETag generator"
+   prompt="whether to enable mhash ETag generator; specify libmhash directory"
    default="yes"
   />
   <configureoption
    name="with-http-magic-mime"
-   prompt="whether to enable response content type guessing"
+   prompt="whether to enable response content type guessing; specify libmagic directory"
    default="no"
   />
-  <!--
   <filelist>
    <install as="functions.html" name="docs/functions.html"/>
    <install as="examples/Bandwidth_Throttling.php" name="docs/examples/Bandwidth_Throttling.php"/>
@@ -221,7 +220,6 @@
    <install as="examples/extract.php" name="docs/examples/extract.php"/>
    <install as="examples/tutorial.txt" name="docs/examples/tutorial.txt"/>
   </filelist>
-  -->
  </extsrcrelease>
  <changelog />
 </package>
