@@ -18,7 +18,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define HTTP_PEXT_VERSION "0.14.1dev"
+#define HTTP_PEXT_VERSION "0.14.1"
 
 /* make compile on Win32 */
 #ifdef HTTP_HAVE_CURL

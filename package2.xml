@@ -30,7 +30,7 @@
  </lead>
  <date>2005-00-00</date>
  <version>
-  <release>0.14.1dev</release>
+  <release>0.14.1</release>
   <api>0.14.0</api>
  </version>
  <stability>
@@ -39,21 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes><![CDATA[
-+ Added missing support for raw post data in HttpRequest
-+ Added missing HttpMessage::setBody()
-+ Added HttpRequest::METH_* constants
-+ Added HttpRequest::AUTH_* constants
-+ Added HttpMessage::TYPE_* constants
-+ Added HttpResponse::ETAG_* constants
-+ Added HTTP_ETAG_MHASH_* constants
-+ Added supported ETag hash algrithms to php_info() output
-+ Added ETag hashing through PHPs CRC32() implementation
-+ Added new language/charset negotiator
-
-* Changed HttpMessage::toString([include_parent = true]) to false
-* Renamed HTTP_GET etc. constants to HTTP_METH_GET
-* Fixed protected property access
-
+* Fixed PHP-5.0 build
 ]]></notes>
  <contents>
   <dir name="/">

@@ -23,24 +23,11 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.14.0</version>
-  <date>2005-09-27</date>
+  <version>0.14.1</version>
+  <date>2005-09-30</date>
   <license>PHP License</license>
   <state>beta</state>
-  <notes>+ Added missing support for raw post data in HttpRequest
-+ Added missing HttpMessage::setBody()
-+ Added HttpRequest::METH_* constants
-+ Added HttpRequest::AUTH_* constants
-+ Added HttpMessage::TYPE_* constants
-+ Added HttpResponse::ETAG_* constants
-+ Added HTTP_ETAG_MHASH_* constants
-+ Added supported ETag hash algrithms to php_info() output
-+ Added ETag hashing through PHPs CRC32() implementation
-+ Added new language/charset negotiator
-
-* Changed HttpMessage::toString([include_parent = true]) to false
-* Renamed HTTP_GET etc. constants to HTTP_METH_GET
-* Fixed protected property access
+  <notes>* Fixed PHP-5.0 build
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
