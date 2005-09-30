@@ -30,6 +30,7 @@
 #include "php_http_api.h"
 #include "php_http_send_api.h"
 #include "php_http_cache_api.h"
+#include "php_http_headers_api.h"
 #include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
@@ -263,6 +264,9 @@ PHP_MINIT_FUNCTION(http)
 
 	REGISTER_INI_ENTRIES();
 	
+	if (SUCCESS != http_headers_global_init()) {
+		return FAILURE;
+	}
 	if (SUCCESS != http_cache_global_init()) {
 		return FAILURE;
 	}

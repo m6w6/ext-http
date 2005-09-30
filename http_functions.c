@@ -476,29 +476,37 @@ PHP_FUNCTION(http_throttle)
 }
 /* }}} */
 
-/* {{{ proto void http_redirect([string url[, array params[, bool session,[ bool permanent]]]])
+/* {{{ proto void http_redirect([string url[, array params[, bool session[, int status]]]])
  *
  * Redirect to a given url.
  * The supplied url will be expanded with http_absolute_uri(), the params array will
  * be treated with http_build_query() and the session identification will be appended
  * if session is true.
  *
- * Depending on permanent the redirection will be issued with a permanent
- * ("301 Moved Permanently") or a temporary ("302 Found") redirection
- * status code.
+ * The HTTP response code will be set according to status.
+ * You can use one of the following constants for convenience:
+ *  - HTTP_REDIRECT			302 Found
+ *  - HTTP_REDIRECT_PERM	301 Moved Permanently
+ *  - HTTP_REDIRECT_POST	303 See Other
+ *  - HTTP_REDIRECT_TEMP	307 Temporary Redirect
+ *
+ * Please see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3
+ * for which redirect response code to use in which situation.
  *
  * To be RFC compliant, "Redirecting to <a>URI</a>." will be displayed,
- * if the client doesn't redirect immediatly.
+ * if the client doesn't redirect immediatly, and the request method was
+ * antoher than HEAD.
  */
 PHP_FUNCTION(http_redirect)
 {
 	int url_len;
 	size_t query_len = 0;
-	zend_bool session = 0, permanent = 0, free_params = 0;
+	zend_bool session = 0, free_params = 0;
 	zval *params = NULL;
+	long status = 302;
 	char *query = NULL, *url = NULL, *URI, *LOC, *RED = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sa!/bb", &url, &url_len, &params, &session, &permanent) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sa!/bl", &url, &url_len, &params, &session, &status) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
@@ -580,7 +588,7 @@ PHP_FUNCTION(http_redirect)
 		FREE_ZVAL(params);
 	}
 
-	RETURN_SUCCESS(http_exit_ex(permanent ? 301 : 302, LOC, RED, 1));
+	RETURN_SUCCESS(http_exit_ex(status, LOC, RED, 1));
 }
 /* }}} */
 

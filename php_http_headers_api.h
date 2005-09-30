@@ -21,11 +21,19 @@
 #include "php_http_std_defs.h"
 #include "php_http_info_api.h"
 
+#define HTTP_REDIRECT		302L
+#define HTTP_REDIRECT_PERM	301L
+#define HTTP_REDIRECT_POST	303L
+#define HTTP_REDIRECT_TEMP	307L
+
 typedef enum {
 	RANGE_OK,
 	RANGE_NO,
 	RANGE_ERR
 } http_range_status;
+
+#define http_headers_global_init() _http_headers_global_init(INIT_FUNC_ARGS_PASSTHRU)
+extern STATUS _http_headers_global_init(INIT_FUNC_ARGS);
 
 #define http_parse_headers(h, a) _http_parse_headers_ex((h), Z_ARRVAL_P(a), 1, http_info_default_callback, NULL TSRMLS_CC)
 #define http_parse_headers_ex(h, ht, p) _http_parse_headers_ex((h), (ht), (p), http_info_default_callback, NULL TSRMLS_CC)

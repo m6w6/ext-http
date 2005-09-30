@@ -11,7 +11,7 @@ HTTP_HOST=localhost
 <?php
 include 'log.inc';
 log_prepare(_REDIR_LOG);
-http_redirect('redirect', null, false, true);
+http_redirect('redirect', null, false, HTTP_REDIRECT_PERM);
 ?>
 --EXPECTF--
 Status: 301

@@ -241,6 +241,11 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
 
 #ifndef WONKY
+	DCL_CONST(long, "REDIRECT", HTTP_REDIRECT);
+	DCL_CONST(long, "REDIRECT_PERM", HTTP_REDIRECT_PERM);
+	DCL_CONST(long, "REDIRECT_POST", HTTP_REDIRECT_POST);
+	DCL_CONST(long, "REDIRECT_TEMP", HTTP_REDIRECT_TEMP);
+	
 	DCL_CONST(long, "ETAG_MD5", HTTP_ETAG_MD5);
 	DCL_CONST(long, "ETAG_SHA1", HTTP_ETAG_SHA1);
 	DCL_CONST(long, "ETAG_CRC32", HTTP_ETAG_CRC32);

@@ -37,6 +37,18 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define HTTP_DBG_NEG 0
 #endif
 
+/* {{{ STATUS http_headers_global_init() */
+STATUS _http_headers_global_init(INIT_FUNC_ARGS)
+{
+	HTTP_LONG_CONSTANT("HTTP_REDIRECT", HTTP_REDIRECT);
+	HTTP_LONG_CONSTANT("HTTP_REDIRECT_PERM", HTTP_REDIRECT_PERM);
+	HTTP_LONG_CONSTANT("HTTP_REDIRECT_POST", HTTP_REDIRECT_POST);
+	HTTP_LONG_CONSTANT("HTTP_REDIRECT_TEMP", HTTP_REDIRECT_TEMP);
+	
+	return SUCCESS;
+}
+/* }}} */
+
 /* {{{ static int http_sort_q(const void *, const void *) */
 static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 {
