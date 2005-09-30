@@ -28,6 +28,7 @@
 #	include "php_http_request_object.h"
 #endif
 
+#include "missing.h"
 #include "phpstr/phpstr.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);

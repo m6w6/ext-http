@@ -229,7 +229,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	http_message *msg = obj->message;
 	zval *return_value;
 #ifdef WONKY
-	zend_hash_value h = zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member)+1);
+	ulong h = zend_get_hash_value(Z_STRVAL_P(member), Z_STRLEN_P(member)+1);
 #else
 	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
 	
