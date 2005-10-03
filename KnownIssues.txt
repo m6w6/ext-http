@@ -6,6 +6,8 @@ HttpResponse class is only available for PHP >= 5.1
 
 Not all places where files are handled check for open_basedir and/or safe_mode.
 
+Throttling with the FastCGI SAPI may behave unexpected, because libfcgi seems
+to really write on flush only and every ~20kb.
 
 Internals:
 	-	the request bodies created in http_request_pool_attach() are not 
