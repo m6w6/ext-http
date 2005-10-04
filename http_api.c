@@ -22,6 +22,7 @@
 
 #include "SAPI.h"
 #include "ext/standard/url.h"
+#include "ext/standard/head.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
