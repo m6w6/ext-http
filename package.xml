@@ -23,11 +23,11 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.14.1</version>
-  <date>2005-09-30</date>
+  <version>0.14.2</version>
+  <date>2005-10-04</date>
   <license>PHP License</license>
   <state>beta</state>
-  <notes>* Fixed PHP-5.0 build
+  <notes>* Fixed caching by Last-Modified with dates in october
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
