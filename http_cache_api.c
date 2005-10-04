@@ -215,7 +215,7 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 		return SUCCESS;
 	}
 
-	if (HTTP_G(etag).started = (SUCCESS == php_start_ob_buffer_named("ob_etaghandler", HTTP_SENDBUF_SIZE, 1 TSRMLS_CC))) {
+	if (HTTP_G(etag).started = (SUCCESS == php_start_ob_buffer_named("ob_etaghandler", HTTP_G(send).buffer_size, 1 TSRMLS_CC))) {
 		return SUCCESS;
 	} else {
 		return FAILURE;

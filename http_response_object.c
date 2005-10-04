@@ -944,13 +944,6 @@ PHP_METHOD(HttpResponse, send)
 		php_end_ob_buffers(0 TSRMLS_CC);
 	}
 
-	/* gzip */
-	if (zval_is_true(GET_STATIC_PROP(gzip))) {
-		php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
-	} else {
-		php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
-	}
-
 	/* caching */
 	if (zval_is_true(GET_STATIC_PROP(cache))) {
 		zval *cctl, *etag, *lmod;
@@ -994,29 +987,34 @@ PHP_METHOD(HttpResponse, send)
 		HTTP_G(send).throttle_delay = Z_DVAL_P(convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay)));
 	}
 
+	/* gzip */
+	if (zval_is_true(GET_STATIC_PROP(gzip))) {
+		php_start_ob_buffer_named("ob_gzhandler", HTTP_G(send).buffer_size, 0 TSRMLS_CC);
+	} else {
+		php_start_ob_buffer(NULL, HTTP_G(send).buffer_size, 0 TSRMLS_CC);
+	}
+
 	/* send */
+	switch (Z_LVAL_P(GET_STATIC_PROP(mode)))
 	{
-		switch (Z_LVAL_P(GET_STATIC_PROP(mode)))
+		case SEND_DATA:
 		{
-			case SEND_DATA:
-			{
-				zval *zdata = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(data));
-				RETURN_SUCCESS(http_send_data_ex(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata), 1));
-			}
+			zval *zdata = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(data));
+			RETURN_SUCCESS(http_send_data_ex(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata), 1));
+		}
 
-			case SEND_RSRC:
-			{
-				php_stream *the_real_stream;
-				zval *the_stream = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream));
-				the_stream->type = IS_RESOURCE;
-				php_stream_from_zval(the_real_stream, &the_stream);
-				RETURN_SUCCESS(http_send_stream_ex(the_real_stream, 0, 1));
-			}
+		case SEND_RSRC:
+		{
+			php_stream *the_real_stream;
+			zval *the_stream = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream));
+			the_stream->type = IS_RESOURCE;
+			php_stream_from_zval(the_real_stream, &the_stream);
+			RETURN_SUCCESS(http_send_stream_ex(the_real_stream, 0, 1));
+		}
 
-			default:
-			{
-				RETURN_SUCCESS(http_send_file_ex(Z_STRVAL_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file))), 1));
-			}
+		default:
+		{
+			RETURN_SUCCESS(http_send_file_ex(Z_STRVAL_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file))), 1));
 		}
 	}
 }
@@ -1042,7 +1040,7 @@ PHP_METHOD(HttpResponse, capture)
 	UPD_STATIC_PROP(long, catch, 1);
 
 	php_end_ob_buffers(0 TSRMLS_CC);
-	php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
+	php_start_ob_buffer(NULL, 40960, 0 TSRMLS_CC);
 
 	/* register shutdown function */
 	{
