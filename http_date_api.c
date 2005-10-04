@@ -42,7 +42,7 @@ static const char *weekdays[] = {
 };
 static const char *months[] = {
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-	"Jul", "Aug", "Sep", "Okt", "Nov", "Dec"
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 enum assume_next {
 	DATE_MDAY,

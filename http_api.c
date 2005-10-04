@@ -220,7 +220,7 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		}
 	}
 	
-	if (body) {
+	if (php_header(TSRMLS_C) && body) {
 		PHPWRITE(body, strlen(body));
 	}
 	

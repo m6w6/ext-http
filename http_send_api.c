@@ -158,7 +158,11 @@ PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, cons
 	header[header_len] = '\0';
 	snprintf(header, header_len, "%s: %s", name, value);
 	ret = http_send_header_string_ex(header, replace);
-	efree(header);
+	if (sent_header) {
+		*sent_header = header;
+	} else {
+		efree(header);
+	}
 	return ret;
 }
 /* }}} */
@@ -185,7 +189,7 @@ PHP_HTTP_API STATUS _http_send_last_modified_ex(time_t t, char **sent_header TSR
 		return FAILURE;
 	}
 
-	ret = http_send_header_ex("Last-Modified", lenof("Last-Modifed"), date, strlen(date), 1, sent_header);
+	ret = http_send_header_ex("Last-Modified", lenof("Last-Modified"), date, strlen(date), 1, sent_header);
 	efree(date);
 
 	/* remember */
