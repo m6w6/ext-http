@@ -158,6 +158,7 @@ HTTP_END_ARGS;
 HTTP_EMPTY_ARGS(getResponseMessage, 1);
 HTTP_EMPTY_ARGS(getRequestMessage, 1);
 HTTP_EMPTY_ARGS(getHistory, 1);
+HTTP_EMPTY_ARGS(clearHistory, 0);
 HTTP_EMPTY_ARGS(send, 1);
 
 HTTP_BEGIN_ARGS(get, 0, 1)
@@ -276,6 +277,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(getResponseMessage, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getRequestMessage, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getHistory, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(clearHistory, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ALIAS(get, http_get)
 	HTTP_REQUEST_ALIAS(head, http_head)
@@ -1595,6 +1597,10 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 }
 /* }}} */
 
+/* {{{ proto HttpMessage HttpRequest::getHistory()
+ *
+ * Get all sent requests and received responses as an HttpMessage object.
+ */
 PHP_METHOD(HttpRequest, getHistory)
 {
 	NO_ARGS;
@@ -1610,6 +1616,20 @@ PHP_METHOD(HttpRequest, getHistory)
 		SET_EH_NORMAL();
 	}
 }
+/* }}} */
+
+/* {{{ proto void HttpRequest::clearHistory()
+ *
+ * Clear the history.
+ */
+PHP_METHOD(HttpRequest, clearHistory)
+{
+	NO_ARGS {
+		getObject(http_request_object, obj);
+		phpstr_dtor(&obj->history);
+	}
+}
+/* }}} */
 
 /* {{{ proto HttpMessage HttpRequest::send()
  *

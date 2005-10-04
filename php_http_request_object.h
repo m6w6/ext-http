@@ -96,6 +96,7 @@ PHP_METHOD(HttpRequest, getResponseInfo);
 PHP_METHOD(HttpRequest, getResponseMessage);
 PHP_METHOD(HttpRequest, getRequestMessage);
 PHP_METHOD(HttpRequest, getHistory);
+PHP_METHOD(HttpRequest, clearHistory);
 
 PHP_METHOD(HttpRequest, get);
 PHP_METHOD(HttpRequest, head);
