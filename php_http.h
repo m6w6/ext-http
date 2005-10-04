@@ -94,7 +94,7 @@ ZEND_END_MODULE_GLOBALS(http)
 
 PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);
-PHP_FUNCTION(http_absolute_uri);
+PHP_FUNCTION(http_build_uri);
 PHP_FUNCTION(http_negotiate_language);
 PHP_FUNCTION(http_negotiate_charset);
 PHP_FUNCTION(http_redirect);

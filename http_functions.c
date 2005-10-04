@@ -69,7 +69,7 @@ PHP_FUNCTION(http_date)
 }
 /* }}} */
 
-/* {{{ proto string http_absolute_uri(string url[, string proto[, string host[, int port]]])
+/* {{{ proto string http_build_uri(string url[, string proto[, string host[, int port]]])
  *
  * This function returns an absolute URI constructed from url.
  * If the url is already abolute but a different proto was supplied,
@@ -86,7 +86,7 @@ PHP_FUNCTION(http_date)
  * </pre>
  *
  */
-PHP_FUNCTION(http_absolute_uri)
+PHP_FUNCTION(http_build_uri)
 {
 	char *url = NULL, *proto = NULL, *host = NULL;
 	int url_len = 0, proto_len = 0, host_len = 0;
@@ -118,6 +118,7 @@ PHP_FUNCTION(http_absolute_uri)
 				RETVAL_NULL(); \
 			} \
 			zend_hash_destroy(result); \
+			FREE_HASHTABLE(result); \
 		} \
 	} else { \
 		if (as_array) { \

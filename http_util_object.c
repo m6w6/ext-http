@@ -36,7 +36,7 @@ HTTP_BEGIN_ARGS(date, 0)
 	HTTP_ARG_VAL(timestamp, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(absoluteUri, 1)
+HTTP_BEGIN_ARGS(buildUri, 1)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(proto, 0)
 	HTTP_ARG_VAL(host, 0)
@@ -84,7 +84,7 @@ HTTP_END_ARGS;
 zend_class_entry *http_util_object_ce;
 zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(date, http_date)
-	HTTP_UTIL_ALIAS(absoluteUri, http_absolute_uri)
+	HTTP_UTIL_ALIAS(buildUri, http_build_uri)
 	HTTP_UTIL_ALIAS(negotiateLanguage, http_negotiate_language)
 	HTTP_UTIL_ALIAS(negotiateCharset, http_negotiate_charset)
 	HTTP_UTIL_ALIAS(matchModified, http_match_modified)
