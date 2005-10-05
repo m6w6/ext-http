@@ -560,7 +560,7 @@ PHP_METHOD(HttpResponse, getContentType)
 }
 /* }}} */
 
-/* {{{ proto static string HttpResponse::guessContentType(string magic_file[, long magic_mode = MAGIC_MIME])
+/* {{{ proto static string HttpResponse::guessContentType(string magic_file[, int magic_mode = MAGIC_MIME])
  *
  * Attempts to guess the content type of supplied payload through libmagic.
  * If the attempt is successful, the guessed content type will automatically

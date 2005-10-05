@@ -30,7 +30,7 @@
  </lead>
  <date>2005-00-00</date>
  <version>
-  <release>0.14.2</release>
+  <release>0.15.0</release>
   <api>0.14.0</api>
  </version>
  <stability>
@@ -39,7 +39,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes><![CDATA[
-* Fixed caching by Last-Modified with dates in october
+* Updated documentation
+* Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
+* Changed the signature of the negotiator to fill the second parameter with the results array
 ]]></notes>
  <contents>
   <dir name="/">

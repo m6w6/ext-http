@@ -14,9 +14,10 @@ function ff($t)
 {
     $t = preg_replace('/^ \* /m', '', trim($t, "*/ \n"));
     $t = preg_replace_callback('/(\<\?php.*?\?\>)/s', 'hl', $t);
-    $t = nl2br(preg_replace('/\n *\* */', "\n", $t));
+    $t = str_replace("<br />\n<br />\n", "</p>\n<p>", nl2br(preg_replace('/\n *\* */', "\n", $t)));
     $t = preg_replace('/(\<br \/\>\n)+\<pre\>(\<br \/\>\n)+/', '</p><pre>', $t);
     $t = preg_replace('/(\<br \/\>\n)+\<\/pre\>(\<br \/\>\n)+/', '</pre><p>', $t);
+    $t = str_replace("</span><br />\n</code>", "</span></code>", $t);
     return sprintf('<p>%s</p>', ltrim($t, ' *'));
 }
 function e($s)

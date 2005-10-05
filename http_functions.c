@@ -87,11 +87,11 @@ PHP_FUNCTION(http_date)
  * Returns the absolute URI as string.
  * 
  * Examples:
- * <code>
+ * <pre>
  * <?php
  * $uri = http_build_uri("page.php", "https", NULL, 488);
  * ?>
- * </code>
+ * </pre>
  */
 PHP_FUNCTION(http_build_uri)
 {
@@ -1307,7 +1307,7 @@ PHP_FUNCTION(http_request_method_unregister)
 }
 /* }}} */
 
-/* {{{ proto long http_request_method_exists(mixed method)
+/* {{{ proto int http_request_method_exists(mixed method)
  *
  * Check if a request method is registered (or available by default).
  * 

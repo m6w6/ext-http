@@ -23,11 +23,13 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.14.2</version>
-  <date>2005-10-04</date>
+  <version>0.15.0</version>
+  <date>2005-10-05</date>
   <license>PHP License</license>
   <state>beta</state>
-  <notes>* Fixed caching by Last-Modified with dates in october
+  <notes>* Updated documentation
+* Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
+* Changed the signature of the negotiator to fill the second parameter with the results array
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
