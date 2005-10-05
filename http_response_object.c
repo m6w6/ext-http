@@ -276,7 +276,19 @@ static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC)
 
 /* ### USERLAND ### */
 
-/* {{{ proto static bool HttpResponse::setHeader(string name, mixed value[, bool replace = true)
+/* {{{ proto static bool HttpResponse::setHeader(string name, mixed value[, bool replace = true])
+ *
+ * Send an HTTP header.
+ * 
+ * Expects a string parameter containing the name of the header and a mixed
+ * parameter containing the value of the header, which will be converted to
+ * a string.  Additionally accepts an optional boolean parameter, which
+ * specifies whether an existing header should be replaced.  If the second
+ * parameter is unset no header with this name will be sent. 
+ * 
+ * Returns TRUE on success, or FALSE on failure.
+ * 
+ * Throws HttpHeaderException if http.only_exceptions is TRUE.
  */
 PHP_METHOD(HttpResponse, setHeader)
 {
@@ -322,6 +334,15 @@ PHP_METHOD(HttpResponse, setHeader)
 /* }}} */
 
 /* {{{ proto static mixed HttpResponse::getHeader([string name])
+ *
+ * Get header(s) about to be sent.
+ * 
+ * Accepts a string as optional parameter which specifies the name of the
+ * header to read.  If the parameter is empty or omitted, an associative array
+ * with all headers will be returned.
+ * 
+ * Returns either a string containing the value of the header matching name,
+ * FALSE on failure, or an associative array with all headers. 
  */
 PHP_METHOD(HttpResponse, getHeader)
 {
@@ -367,6 +388,10 @@ PHP_METHOD(HttpResponse, getHeader)
  *
  * NOTE: If you're using sessions, be shure that you set session.cache_limiter
  * to something more appropriate than "no-cache"!
+ * 
+ * Expects a boolean as parameter specifying whether caching should be attempted.
+ * 
+ * Returns TRUE ons success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setCache)
 {
@@ -383,6 +408,8 @@ PHP_METHOD(HttpResponse, setCache)
 /* {{{ proto static bool HttpResponse::getCache()
  *
  * Get current caching setting.
+ * 
+ * Returns TRUE if caching should be attempted, else FALSE.
  */
 PHP_METHOD(HttpResponse, getCache)
 {
@@ -399,6 +426,10 @@ PHP_METHOD(HttpResponse, getCache)
 /* {{{ proto static bool HttpResponse::setGzip(bool gzip)
  *
  * Enable on-thy-fly gzipping of the sent entity.
+ * 
+ * Expects a boolean as parameter indicating if GZip compression should be enabled.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setGzip)
 {
@@ -415,6 +446,8 @@ PHP_METHOD(HttpResponse, setGzip)
 /* {{{ proto static bool HttpResponse::getGzip()
  *
  * Get current gzipping setting.
+ * 
+ * Returns TRUE if GZip compression is enabled, else FALSE.
  */
 PHP_METHOD(HttpResponse, getGzip)
 {
@@ -428,10 +461,18 @@ PHP_METHOD(HttpResponse, getGzip)
 }
 /* }}} */
 
-/* {{{ proto static bool HttpResponse::setCacheControl(string control[, long max_age = 0])
+/* {{{ proto static bool HttpResponse::setCacheControl(string control[, int max_age = 0])
  *
  * Set a custom cache-control header, usually being "private" or "public";
  * The max_age parameter controls how long the cache entry is valid on the client side.
+ * 
+ * Expects a string parameter containing the primary cache control setting.
+ * Addtitionally accepts an int parameter specifying the max-age setting.
+ * 
+ * Returns TRUE on success, or FALSE if control does not match one of
+ * "public" , "private" or "no-cache".
+ * 
+ * Throws HttpInvalidParamException if http.only_exceptions is TRUE.
  */
 PHP_METHOD(HttpResponse, setCacheControl)
 {
@@ -457,6 +498,8 @@ PHP_METHOD(HttpResponse, setCacheControl)
 /* {{{ proto static string HttpResponse::getCacheControl()
  *
  * Get current Cache-Control header setting.
+ * 
+ * Returns the current cache control setting as a string like sent in a header.
  */
 PHP_METHOD(HttpResponse, getCacheControl)
 {
@@ -473,6 +516,13 @@ PHP_METHOD(HttpResponse, getCacheControl)
 /* {{{ proto static bool HttpResponse::setContentType(string content_type)
  *
  * Set the content-type of the sent entity.
+ * 
+ * Expects a string as parameter specifying the content type of the sent entity.
+ * 
+ * Returns TRUE on success, or FALSE if the content type does not seem to
+ * contain a primary and secondary content type part.
+ * 
+ * Throws HttpInvalidParamException if http.only_exceptions is TRUE.
  */
 PHP_METHOD(HttpResponse, setContentType)
 {
@@ -495,6 +545,8 @@ PHP_METHOD(HttpResponse, setContentType)
 /* {{{ proto static string HttpResponse::getContentType()
  *
  * Get current Content-Type header setting.
+ * 
+ * Returns the currently set content type as string.
  */
 PHP_METHOD(HttpResponse, getContentType)
 {
@@ -511,6 +563,16 @@ PHP_METHOD(HttpResponse, getContentType)
 /* {{{ proto static string HttpResponse::guessContentType(string magic_file[, long magic_mode = MAGIC_MIME])
  *
  * Attempts to guess the content type of supplied payload through libmagic.
+ * If the attempt is successful, the guessed content type will automatically
+ * be set as response content type.  
+ * 
+ * Expects a string parameter specifying the magic.mime database to use.
+ * Additionally accepts an optional int parameter, being flags for libmagic.
+ * 
+ * Returns the guessed content type on success, or FALSE on failure.
+ * 
+ * Throws HttpRuntimeException, HttpInvalidParamException 
+ * if http.only_exceptions is TRUE.
  */
 PHP_METHOD(HttpResponse, guessContentType)
 {
@@ -518,7 +580,7 @@ PHP_METHOD(HttpResponse, guessContentType)
 	int magic_file_len;
 	long magic_mode = 0;
 	
-	RETVAL_NULL();
+	RETVAL_FALSE;
 	
 #ifdef HTTP_HAVE_MAGIC
 	magic_mode = MAGIC_MIME;
@@ -561,9 +623,16 @@ PHP_METHOD(HttpResponse, guessContentType)
 
 /* {{{ proto static bool HttpResponse::setContentDisposition(string filename[, bool inline = false])
  *
- * Set the Content-Disposition of the sent entity.  This setting aims to suggest
- * the receiveing user agent how to handle the sent entity;  usually the client
- * will show the user a "Save As..." popup.
+ * Set the Content-Disposition.  The Content-Disposition header is very useful
+ * if the data actually sent came from a file or something similar, that should
+ * be "saved" by the client/user (i.e. by browsers "Save as..." popup window).
+ *
+ * Expects a string parameter specifying the file name the "Save as..." dialogue
+ * should display.  Optionally accepts a bool parameter, which, if set to true
+ * and the user agent knows how to handle the content type, will probably not
+ * cause the popup window to be shown.
+ * 
+ * Returns TRUE on success or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setContentDisposition)
 {
@@ -585,6 +654,8 @@ PHP_METHOD(HttpResponse, setContentDisposition)
 /* {{{ proto static string HttpResponse::getContentDisposition()
  *
  * Get current Content-Disposition setting.
+ * 
+ * Returns the current content disposition as string like sent in a header.
  */
 PHP_METHOD(HttpResponse, getContentDisposition)
 {
@@ -601,6 +672,10 @@ PHP_METHOD(HttpResponse, getContentDisposition)
 /* {{{ proto static bool HttpResponse::setETag(string etag)
  *
  * Set a custom ETag.  Use this only if you know what you're doing.
+ * 
+ * Expects an unquoted string as parameter containing the ETag.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setETag)
 {
@@ -618,6 +693,8 @@ PHP_METHOD(HttpResponse, setETag)
 /* {{{ proto static string HttpResponse::getETag()
  *
  * Get calculated or previously set custom ETag.
+ * 
+ * Returns the calculated or previously set ETag as unquoted string.
  */
 PHP_METHOD(HttpResponse, getETag)
 {
@@ -631,9 +708,14 @@ PHP_METHOD(HttpResponse, getETag)
 }
 /* }}} */
 
-/* {{{ proto static bool HttpResponse::setLastModified(long timestamp)
+/* {{{ proto static bool HttpResponse::setLastModified(int timestamp)
  *
  * Set a custom Last-Modified date.
+ * 
+ * Expects an unix timestamp as parameter representing the last modification
+ * time of the sent entity.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setLastModified)
 {
@@ -647,9 +729,11 @@ PHP_METHOD(HttpResponse, setLastModified)
 }
 /* }}} */
 
-/* {{{ proto static HttpResponse::getLastModified()
+/* {{{ proto static int HttpResponse::getLastModified()
  *
  * Get calculated or previously set custom Last-Modified date.
+ * 
+ * Returns the calculated or previously set unix timestamp.
  */
 PHP_METHOD(HttpResponse, getLastModified)
 {
@@ -665,6 +749,17 @@ PHP_METHOD(HttpResponse, getLastModified)
 
 /* {{{ proto static bool HttpResponse::setThrottleDelay(double seconds)
  *
+ * Sets the throttle delay for use with HttpResponse::setBufferSize().
+ * 
+ * Provides a basic throttling mechanism, which will yield the current process
+ * resp. thread until the entity has been completely sent, though.
+ * 
+ * Note: This doesn't really work with the FastCGI SAPI.
+ *
+ * Expects a double parameter specifying the seconds too sleep() after
+ * each chunk sent.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setThrottleDelay)
 {
@@ -679,6 +774,9 @@ PHP_METHOD(HttpResponse, setThrottleDelay)
 
 /* {{{ proto static double HttpResponse::getThrottleDelay()
  *
+ * Get the current throttle delay.
+ * 
+ * Returns a double representing the throttle delay in seconds.
  */
 PHP_METHOD(HttpResponse, getThrottleDelay)
 {
@@ -692,8 +790,18 @@ PHP_METHOD(HttpResponse, getThrottleDelay)
 }
 /* }}} */
 
-/* {{{ proto static bool HttpResponse::setBufferSize(long bytes)
+/* {{{ proto static bool HttpResponse::setBufferSize(int bytes)
  *
+ * Sets the send buffer size for use with HttpResponse::setThrottleDelay().
+ * 
+ * Provides a basic throttling mechanism, which will yield the current process
+ * resp. thread until the entity has been completely sent, though.
+ * 
+ * Note: This doesn't really work with the FastCGI SAPI.
+ *
+ * Expects an int parameter representing the chunk size in bytes.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setBufferSize)
 {
@@ -706,8 +814,11 @@ PHP_METHOD(HttpResponse, setBufferSize)
 }
 /* }}} */
 
-/* {{{ proto static long HttpResponse::getBufferSize()
+/* {{{ proto static int HttpResponse::getBufferSize()
  *
+ * Get current buffer size.
+ * 
+ * Returns an int representing the current buffer size in bytes.
  */
 PHP_METHOD(HttpResponse, getBufferSize)
 {
@@ -721,9 +832,14 @@ PHP_METHOD(HttpResponse, getBufferSize)
 }
 /* }}} */
 
-/* {{{ proto static bool HttpResponse::setData(string data)
+/* {{{ proto static bool HttpResponse::setData(mixed data)
  *
  * Set the data to be sent.
+ * 
+ * Expects one parameter, which will be converted to a string and contains 
+ * the data to send.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setData)
 {
@@ -759,6 +875,8 @@ PHP_METHOD(HttpResponse, setData)
 /* {{{ proto static string HttpResponse::getData()
  *
  * Get the previously set data to be sent.
+ * 
+ * Returns a string containing the previously set data to send.
  */
 PHP_METHOD(HttpResponse, getData)
 {
@@ -775,6 +893,11 @@ PHP_METHOD(HttpResponse, getData)
 /* {{{ proto static bool HttpResponse::setStream(resource stream)
  *
  * Set the resource to be sent.
+ * 
+ * Expects a resource parameter referencing an already opened stream from
+ * which the data to send will be read.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setStream)
 {
@@ -815,6 +938,8 @@ PHP_METHOD(HttpResponse, setStream)
 /* {{{ proto static resource HttpResponse::getStream()
  *
  * Get the previously set resource to be sent.
+ * 
+ * Returns the previously set resource.
  */
 PHP_METHOD(HttpResponse, getStream)
 {
@@ -829,6 +954,10 @@ PHP_METHOD(HttpResponse, getStream)
 /* {{{ proto static bool HttpResponse::setFile(string file)
  *
  * Set the file to be sent.
+ * 
+ * Expects a string as parameter, specifying the path to the file to send.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setFile)
 {
@@ -867,6 +996,8 @@ PHP_METHOD(HttpResponse, setFile)
 /* {{{ proto static string HttpResponse::getFile()
  *
  * Get the previously set file to be sent.
+ * 
+ * Returns the previously set path to the file to send as string.
  */
 PHP_METHOD(HttpResponse, getFile)
 {
@@ -883,6 +1014,15 @@ PHP_METHOD(HttpResponse, getFile)
 /* {{{ proto static bool HttpResponse::send([bool clean_ob = true])
  *
  * Finally send the entity.
+ * 
+ * Accepts an optional boolean parameter, specifying wheter the ouput
+ * buffers should be discarded prior sending.  A successful caching attempt
+ * will cause a script termination, and write a log entry if the INI setting
+ * http.cache_log is set.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
+ * 
+ * Throws HttpHeaderException, HttpResponseException if http.onyl_excpetions is TRUE.
  *
  * Example:
  * <pre>

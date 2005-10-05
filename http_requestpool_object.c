@@ -158,8 +158,8 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
  * <?php
  * try {
  *     $pool = new HttpRequestPool(
- *         new HttpRequest('http://www.google.com/', HTTP_HEAD),
- *         new HttpRequest('http://www.php.net/', HTTP_HEAD)
+ *         new HttpRequest('http://www.google.com/', HttpRequest::METH_HEAD),
+ *         new HttpRequest('http://www.php.net/', HttpRequest::METH_HEAD)
  *     );
  *     $pool->send();
  *     foreach($pool as $request) {
