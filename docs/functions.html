@@ -43,9 +43,29 @@
         p br, pre code br { 
             display: block; 
         } 
+        .toc {
+        	position: absolute;
+        	top: 10px;
+        	right: 10px;
+        	width: 300px;
+        	height: 95%;
+        	overflow: scroll;
+        	font-size: .9em;
+		}
+		body>div.toc {
+			position: fixed;
+		}
+		.toc ul {
+			padding-left: 15px;
+			margin-left: 0;
+		}
+		.toc li {
+			padding: 0;
+			margin: 0;
+		}
     </style>
 </head>
-<body><h1>http_functions.c</h1>
+<body><h1 id="http_functions.c">http_functions.c</h1>
 <h2 id="http_date">string http_date([int timestamp])</h2>
 <p>Compose a valid HTTP date regarding RFC 822/1123<br />
 looking like: "Wed, 22 Dec 2004 11:34:47 GMT"</p>
@@ -307,7 +327,7 @@ See http_get() for a full list of available options.</p>
 <p>Unregister a previously registered custom request method.</p>
 <p>Expects either the request method name or ID.</p>
 <p>Returns TRUE on success, or FALSE on failure.</p>
-<h2 id="http_request_method_exists">long http_request_method_exists(mixed method)</h2>
+<h2 id="http_request_method_exists">int http_request_method_exists(mixed method)</h2>
 <p>Check if a request method is registered (or available by default).</p>
 <p>Expects either the request method name or ID as parameter.</p>
 <p>Returns TRUE if the request method is known, else FALSE.</p>
@@ -318,7 +338,7 @@ See http_get() for a full list of available options.</p>
 <h2 id="http_build_query">string http_build_query(mixed formdata [, string prefix[, string arg_separator]])</h2>
 <p>Generates a form-encoded query string from an associative array or object.</p>
 <hr noshade>
-<h1>http_message_object.c</h1>
+<h1 id="http_message_object.c">http_message_object.c</h1>
 <h2 id="HttpMessage" class="o">HttpMessage</h2>
 <h3 id="HttpMessage___construct">void HttpMessage::__construct([string message])</h3>
 <p>Instantiate a new HttpMessage object.</p>
@@ -407,7 +427,7 @@ This provides limited functionality compared to HttpRequest and HttpResponse.</p
 should also contain any parent messages.</p>
 <p>Returns the full message as string.</p>
 <hr noshade>
-<h1>http_request_object.c</h1>
+<h1 id="http_request_object.c">http_request_object.c</h1>
 <h2 id="HttpRequest" class="o">HttpRequest</h2>
 <h3 id="HttpRequest___construct">void HttpRequest::__construct([string url[, int request_method = HTTP_METH_GET]])</h3>
 <p>Instantiate a new HttpRequest object.</p>
@@ -647,7 +667,7 @@ HttpMalformedHeaderException, HttpEncodingException.</p>
 </span></code></blockquote></p>
 <p></pre></p>
 <hr noshade>
-<h1>http_requestpool_object.c</h1>
+<h1 id="http_requestpool_object.c">http_requestpool_object.c</h1>
 <h2 id="HttpRequestPool" class="o">HttpRequestPool</h2>
 <h3 id="HttpRequestPool___construct">void HttpRequestPool::__construct([HttpRequest request[, ...]])</h3>
 <p>Instantiate a new HttpRequestPool object.  An HttpRequestPool is<br />
@@ -704,7 +724,7 @@ HttpRequestPoolException, HttpMalformedHeaderException.</p>
 <h3 id="HttpRequestPool_rewind">void HttpRequestPool::rewind()</h3>
 <p>Implements Iterator::rewind().</p>
 <hr noshade>
-<h1>http_response_object.c</h1>
+<h1 id="http_response_object.c">http_response_object.c</h1>
 <h3 id="HttpResponse_setHeader">static bool HttpResponse::setHeader(string name, mixed value[, bool replace = true])</h3>
 <p>Send an HTTP header.</p>
 <p>Expects a string parameter containing the name of the header and a mixed<br />
@@ -760,7 +780,7 @@ contain a primary and secondary content type part.</p>
 <h3 id="HttpResponse_getContentType">static string HttpResponse::getContentType()</h3>
 <p>Get current Content-Type header setting.</p>
 <p>Returns the currently set content type as string.</p>
-<h3 id="HttpResponse_guessContentType">static string HttpResponse::guessContentType(string magic_file[, long magic_mode = MAGIC_MIME])</h3>
+<h3 id="HttpResponse_guessContentType">static string HttpResponse::guessContentType(string magic_file[, int magic_mode = MAGIC_MIME])</h3>
 <p>Attempts to guess the content type of supplied payload through libmagic.<br />
 If the attempt is successful, the guessed content type will automatically<br />
 be set as response content type.  </p>
@@ -859,7 +879,211 @@ http.cache_log is set.</p>
 </span></code></blockquote></p>
 <p></pre></p>
 <hr noshade>
-    <p><b>Generated at: Wed, 05 Oct 2005 14:35:52 +0000</b></p>
+<div class="toc"><strong>Table of Contents</strong>
+<ul>
+<li><a href="#http_functions.c">http_functions.c
+<ul>
+<li><a href="#http_date">http_date</a>
+</li>
+<li><a href="#http_build_uri">http_build_uri</a>
+</li>
+<li><a href="#http_negotiate_language">http_negotiate_language</a>
+</li>
+<li><a href="#http_negotiate_charset">http_negotiate_charset</a>
+</li>
+<li><a href="#http_send_status">http_send_status</a>
+</li>
+<li><a href="#http_send_last_modified">http_send_last_modified</a>
+</li>
+<li><a href="#http_send_content_type">http_send_content_type</a>
+</li>
+<li><a href="#http_send_content_disposition">http_send_content_disposition</a>
+</li>
+<li><a href="#http_match_modified">http_match_modified</a>
+</li>
+<li><a href="#http_match_etag">http_match_etag</a>
+</li>
+<li><a href="#http_cache_last_modified">http_cache_last_modified</a>
+</li>
+<li><a href="#http_cache_etag">http_cache_etag</a>
+</li>
+<li><a href="#ob_etaghandler">ob_etaghandler</a>
+</li>
+<li><a href="#http_throttle">http_throttle</a>
+</li>
+<li><a href="#http_redirect">http_redirect</a>
+</li>
+<li><a href="#http_send_data">http_send_data</a>
+</li>
+<li><a href="#http_send_file">http_send_file</a>
+</li>
+<li><a href="#http_send_stream">http_send_stream</a>
+</li>
+<li><a href="#http_chunked_decode">http_chunked_decode</a>
+</li>
+<li><a href="#http_parse_message">http_parse_message</a>
+</li>
+<li><a href="#http_parse_headers">http_parse_headers</a>
+</li>
+<li><a href="#http_get_request_headers">http_get_request_headers</a>
+</li>
+<li><a href="#http_get_request_body">http_get_request_body</a>
+</li>
+<li><a href="#http_match_request_header">http_match_request_header</a>
+</li>
+<li><a href="#http_get">http_get</a>
+</li>
+<li><a href="#http_head">http_head</a>
+</li>
+<li><a href="#http_post_data">http_post_data</a>
+</li>
+<li><a href="#http_post_fields">http_post_fields</a>
+</li>
+<li><a href="#http_put_file">http_put_file</a>
+</li>
+<li><a href="#http_put_stream">http_put_stream</a>
+</li>
+<li><a href="#http_request_method_register">http_request_method_register</a>
+</li>
+<li><a href="#http_request_method_unregister">http_request_method_unregister</a>
+</li>
+<li><a href="#http_request_method_exists">http_request_method_exists</a>
+</li>
+<li><a href="#http_request_method_name">http_request_method_name</a>
+</li>
+<li><a href="#http_build_query">http_build_query</a>
+</li>
+</ul>
+</li>
+<li><a href="#http_message_object.c">http_message_object.c
+<ul>
+<li><a href="#HttpMessage___construct">HttpMessage::__construct()</a></li>
+<li><a href="#HttpMessage_fromString">HttpMessage::fromString()</a></li>
+<li><a href="#HttpMessage_getBody">HttpMessage::getBody()</a></li>
+<li><a href="#HttpMessage_setBody">HttpMessage::setBody()</a></li>
+<li><a href="#HttpMessage_getHeaders">HttpMessage::getHeaders()</a></li>
+<li><a href="#HttpMessage_setHeaders">HttpMessage::setHeaders()</a></li>
+<li><a href="#HttpMessage_addHeaders">HttpMessage::addHeaders()</a></li>
+<li><a href="#HttpMessage_getType">HttpMessage::getType()</a></li>
+<li><a href="#HttpMessage_setType">HttpMessage::setType()</a></li>
+<li><a href="#HttpMessage_getResponseCode">HttpMessage::getResponseCode()</a></li>
+<li><a href="#HttpMessage_setResponseCode">HttpMessage::setResponseCode()</a></li>
+<li><a href="#HttpMessage_getRequestMethod">HttpMessage::getRequestMethod()</a></li>
+<li><a href="#HttpMessage_setRequestMethod">HttpMessage::setRequestMethod()</a></li>
+<li><a href="#HttpMessage_getRequestUri">HttpMessage::getRequestUri()</a></li>
+<li><a href="#HttpMessage_setRequestUri">HttpMessage::setRequestUri()</a></li>
+<li><a href="#HttpMessage_getHttpVersion">HttpMessage::getHttpVersion()</a></li>
+<li><a href="#HttpMessage_setHttpVersion">HttpMessage::setHttpVersion()</a></li>
+<li><a href="#HttpMessage_getParentMessage">HttpMessage::getParentMessage()</a></li>
+<li><a href="#HttpMessage_send">HttpMessage::send()</a></li>
+<li><a href="#HttpMessage_toString">HttpMessage::toString()</a></li>
+</li>
+</ul>
+</li>
+<li><a href="#http_request_object.c">http_request_object.c
+<ul>
+<li><a href="#HttpRequest___construct">HttpRequest::__construct()</a></li>
+<li><a href="#HttpRequest___destruct">HttpRequest::__destruct()</a></li>
+<li><a href="#HttpRequest_setOptions">HttpRequest::setOptions()</a></li>
+<li><a href="#HttpRequest_getOptions">HttpRequest::getOptions()</a></li>
+<li><a href="#HttpRequest_setSslOptions">HttpRequest::setSslOptions()</a></li>
+<li><a href="#HttpRequest_addSslOptions">HttpRequest::addSslOptions()</a></li>
+<li><a href="#HttpRequest_getSslOptions">HttpRequest::getSslOptions()</a></li>
+<li><a href="#HttpRequest_addHeaders">HttpRequest::addHeaders()</a></li>
+<li><a href="#HttpRequest_setHeaders">HttpRequest::setHeaders()</a></li>
+<li><a href="#HttpRequest_getHeaders">HttpRequest::getHeaders()</a></li>
+<li><a href="#HttpRequest_setCookies">HttpRequest::setCookies()</a></li>
+<li><a href="#HttpRequest_addCookies">HttpRequest::addCookies()</a></li>
+<li><a href="#HttpRequest_getCookies">HttpRequest::getCookies()</a></li>
+<li><a href="#HttpRequest_setUrl">HttpRequest::setUrl()</a></li>
+<li><a href="#HttpRequest_getUrl">HttpRequest::getUrl()</a></li>
+<li><a href="#HttpRequest_setMethod">HttpRequest::setMethod()</a></li>
+<li><a href="#HttpRequest_getMethod">HttpRequest::getMethod()</a></li>
+<li><a href="#HttpRequest_setContentType">HttpRequest::setContentType()</a></li>
+<li><a href="#HttpRequest_getContentType">HttpRequest::getContentType()</a></li>
+<li><a href="#HttpRequest_setQueryData">HttpRequest::setQueryData()</a></li>
+<li><a href="#HttpRequest_getQueryData">HttpRequest::getQueryData()</a></li>
+<li><a href="#HttpRequest_addQueryData">HttpRequest::addQueryData()</a></li>
+<li><a href="#HttpRequest_addPostFields">HttpRequest::addPostFields()</a></li>
+<li><a href="#HttpRequest_setPostFields">HttpRequest::setPostFields()</a></li>
+<li><a href="#HttpRequest_getPostFields">HttpRequest::getPostFields()</a></li>
+<li><a href="#HttpRequest_setRawPostData">HttpRequest::setRawPostData()</a></li>
+<li><a href="#HttpRequest_addRawPostData">HttpRequest::addRawPostData()</a></li>
+<li><a href="#HttpRequest_getRawPostData">HttpRequest::getRawPostData()</a></li>
+<li><a href="#HttpRequest_addPostFile">HttpRequest::addPostFile()</a></li>
+<li><a href="#HttpRequest_setPostFiles">HttpRequest::setPostFiles()</a></li>
+<li><a href="#HttpRequest_getPostFiles">HttpRequest::getPostFiles()</a></li>
+<li><a href="#HttpRequest_setPutFile">HttpRequest::setPutFile()</a></li>
+<li><a href="#HttpRequest_getPutFile">HttpRequest::getPutFile()</a></li>
+<li><a href="#HttpRequest_getResponseData">HttpRequest::getResponseData()</a></li>
+<li><a href="#HttpRequest_getResponseHeader">HttpRequest::getResponseHeader()</a></li>
+<li><a href="#HttpRequest_getResponseCookie">HttpRequest::getResponseCookie()</a></li>
+<li><a href="#HttpRequest_getResponseBody">HttpRequest::getResponseBody()</a></li>
+<li><a href="#HttpRequest_getResponseCode">HttpRequest::getResponseCode()</a></li>
+<li><a href="#HttpRequest_getResponseInfo">HttpRequest::getResponseInfo()</a></li>
+<li><a href="#HttpRequest_getResponseMessage">HttpRequest::getResponseMessage()</a></li>
+<li><a href="#HttpRequest_getRequestMessage">HttpRequest::getRequestMessage()</a></li>
+<li><a href="#HttpRequest_getHistory">HttpRequest::getHistory()</a></li>
+<li><a href="#HttpRequest_clearHistory">HttpRequest::clearHistory()</a></li>
+<li><a href="#HttpRequest_send">HttpRequest::send()</a></li>
+</li>
+</ul>
+</li>
+<li><a href="#http_requestpool_object.c">http_requestpool_object.c
+<ul>
+<li><a href="#HttpRequestPool___construct">HttpRequestPool::__construct()</a></li>
+<li><a href="#HttpRequestPool___destruct">HttpRequestPool::__destruct()</a></li>
+<li><a href="#HttpRequestPool_reset">HttpRequestPool::reset()</a></li>
+<li><a href="#HttpRequestPool_attach">HttpRequestPool::attach()</a></li>
+<li><a href="#HttpRequestPool_detach">HttpRequestPool::detach()</a></li>
+<li><a href="#HttpRequestPool_send">HttpRequestPool::send()</a></li>
+<li><a href="#HttpRequestPool_socketPerform">HttpRequestPool::socketPerform()</a></li>
+<li><a href="#HttpRequestPool_socketSelect">HttpRequestPool::socketSelect()</a></li>
+<li><a href="#HttpRequestPool_valid">HttpRequestPool::valid()</a></li>
+<li><a href="#HttpRequestPool_current">HttpRequestPool::current()</a></li>
+<li><a href="#HttpRequestPool_key">HttpRequestPool::key()</a></li>
+<li><a href="#HttpRequestPool_next">HttpRequestPool::next()</a></li>
+<li><a href="#HttpRequestPool_rewind">HttpRequestPool::rewind()</a></li>
+</li>
+</ul>
+</li>
+<li><a href="#http_response_object.c">http_response_object.c
+<ul>
+<li><a href="#HttpResponse_setHeader">HttpResponse::setHeader()</a></li>
+<li><a href="#HttpResponse_getHeader">HttpResponse::getHeader()</a></li>
+<li><a href="#HttpResponse_setCache">HttpResponse::setCache()</a></li>
+<li><a href="#HttpResponse_getCache">HttpResponse::getCache()</a></li>
+<li><a href="#HttpResponse_setGzip">HttpResponse::setGzip()</a></li>
+<li><a href="#HttpResponse_getGzip">HttpResponse::getGzip()</a></li>
+<li><a href="#HttpResponse_setCacheControl">HttpResponse::setCacheControl()</a></li>
+<li><a href="#HttpResponse_getCacheControl">HttpResponse::getCacheControl()</a></li>
+<li><a href="#HttpResponse_setContentType">HttpResponse::setContentType()</a></li>
+<li><a href="#HttpResponse_getContentType">HttpResponse::getContentType()</a></li>
+<li><a href="#HttpResponse_guessContentType">HttpResponse::guessContentType()</a></li>
+<li><a href="#HttpResponse_setContentDisposition">HttpResponse::setContentDisposition()</a></li>
+<li><a href="#HttpResponse_getContentDisposition">HttpResponse::getContentDisposition()</a></li>
+<li><a href="#HttpResponse_setETag">HttpResponse::setETag()</a></li>
+<li><a href="#HttpResponse_getETag">HttpResponse::getETag()</a></li>
+<li><a href="#HttpResponse_setLastModified">HttpResponse::setLastModified()</a></li>
+<li><a href="#HttpResponse_getLastModified">HttpResponse::getLastModified()</a></li>
+<li><a href="#HttpResponse_setThrottleDelay">HttpResponse::setThrottleDelay()</a></li>
+<li><a href="#HttpResponse_getThrottleDelay">HttpResponse::getThrottleDelay()</a></li>
+<li><a href="#HttpResponse_setBufferSize">HttpResponse::setBufferSize()</a></li>
+<li><a href="#HttpResponse_getBufferSize">HttpResponse::getBufferSize()</a></li>
+<li><a href="#HttpResponse_setData">HttpResponse::setData()</a></li>
+<li><a href="#HttpResponse_getData">HttpResponse::getData()</a></li>
+<li><a href="#HttpResponse_setStream">HttpResponse::setStream()</a></li>
+<li><a href="#HttpResponse_getStream">HttpResponse::getStream()</a></li>
+<li><a href="#HttpResponse_setFile">HttpResponse::setFile()</a></li>
+<li><a href="#HttpResponse_getFile">HttpResponse::getFile()</a></li>
+<li><a href="#HttpResponse_send">HttpResponse::send()</a></li>
+<li><a href="#HttpResponse_capture">HttpResponse::capture()</a></li>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+    <p><b>Generated at: Wed, 05 Oct 2005 15:34:24 +0000</b></p>
 </body>
 </html>
 

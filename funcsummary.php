@@ -73,6 +73,26 @@ $preface = <<<_PREFACE
         p br, pre code br { 
             display: block; 
         } 
+        .toc {
+        	position: absolute;
+        	top: 10px;
+        	right: 10px;
+        	width: 300px;
+        	height: 95%%;
+        	overflow: scroll;
+        	font-size: .9em;
+		}
+		body>div.toc {
+			position: fixed;
+		}
+		.toc ul {
+			padding-left: 15px;
+			margin-left: 0;
+		}
+		.toc li {
+			padding: 0;
+			margin: 0;
+		}
     </style>
 </head>
 <body>
@@ -89,6 +109,8 @@ if ($_SERVER['argc'] < 2) {
     die("Usage: {$_SERVER['argv'][0]} <file>[ <file> ...]\n");
 }
 
+$TOC = array();
+
 printf($preface, basename(getcwd()));
 
 foreach (array_slice($_SERVER['argv'], 1) as $fp) {
@@ -96,21 +118,45 @@ foreach (array_slice($_SERVER['argv'], 1) as $fp) {
         
         if (mf($f, $m)) {
             e("\nAnalyzing %s\n", basename($f));
-            printf("<h1>%s</h1>\n", basename($f));
+            printf("<h1 id=\"%s\">%s</h1>\n", basename($f), basename($f));
             foreach ($m[1] as $i => $p) {
                 e("Documenting $p\n");
                 if ($o = preg_match('/^(.*), (.*)$/', $m[4][$i], $n)) {
                     if ($n[2] == '__construct') {
                         printf("<h2 id=\"%s\" class=\"o\">%s</h2>\n", $n[1], $n[1]);
                     }
-                }
+                	$TOC[basename($f)][$n[1]][$n[2]] = $n[1].'::'.$n[2].'()';
+                	printf("<h%d id=\"%s\">%s</h%d>\n", 3, $n[1].'_'.$n[2], $p, 3);
+				} else {
+					$TOC[basename($f)][$m[4][$i]] = $m[4][$i].'()';
+					printf("<h%d id=\"%s\">%s</h%d>\n", 2, $m[4][$i], $p, 2);
+				}
+				print ff($m[3][$i]) ."\n";
+				/*
                 printf("<h%d id=\"%s\">%s</h%d>\n%s\n", 
                     $o?3:2, $o?$n[1].'_'.$n[2]:$m[4][$i], $p, $o?3:2, ff($m[3][$i]));
+            	*/
             }
             print "<hr noshade>\n";
         }
     }
 }
+printf("<div class=\"toc\"><strong>Table of Contents</strong>\n<ul>\n");
+foreach ($TOC as $file => $f) {
+	printf("<li><a href=\"#%s\">%s\n<ul>\n", $file, $file);
+	foreach ($f as $cof => $met) {
+		if (is_array($met)) {
+			foreach ($met as $id => $m) {
+				printf("<li><a href=\"#%s_%s\">%s</a></li>\n", $cof, $id, $m);
+			}
+		} else {
+			printf("<li><a href=\"#%s\">%s</a>\n", $cof, $cof);
+		}
+		printf("</li>\n");
+	}
+	printf("</ul>\n</li>\n");
+}
+printf("</ul>\n</div>\n");
 
 printf($footer, date('r'));
 e("\nDone\n");
