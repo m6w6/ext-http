@@ -144,7 +144,15 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
  *
  * Instantiate a new HttpRequestPool object.  An HttpRequestPool is
  * able to send several HttpRequests in parallel.
+ * 
+ * WARNING: Don't attach/detach HttpRequest objects to the HttpRequestPool
+ * object while you're using the implemented Interator interface. 
  *
+ * Accepts virtual infinite optional parameters each referencing an
+ * HttpRequest object.
+ * 
+ * Throws HttpRequestException, HttpRequestPoolException, HttpInvalidParamException.
+ * 
  * Example:
  * <pre>
  * <?php
@@ -216,7 +224,15 @@ PHP_METHOD(HttpRequestPool, reset)
 /* {{{ proto bool HttpRequestPool::attach(HttpRequest request)
  *
  * Attach an HttpRequest object to this HttpRequestPool.
- * NOTE: set all options prior attaching!
+ * WARNING: set all options prior attaching!
+ * 
+ * Expects the parameter to be an HttpRequest object not alread attached to
+ * antother HttpRequestPool object.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
+ * 
+ * Throws HttpInvalidParamException, HttpRequestException, 
+ * HttpRequestPoolException, HttpEncodingException.
  */
 PHP_METHOD(HttpRequestPool, attach)
 {
@@ -236,6 +252,13 @@ PHP_METHOD(HttpRequestPool, attach)
 /* {{{ proto bool HttpRequestPool::detach(HttpRequest request)
  *
  * Detach an HttpRequest object from this HttpRequestPool.
+ * 
+ * Expects the parameter to be an HttpRequest object attached to this
+ * HttpRequestPool object.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
+ * 
+ * Throws HttpInvalidParamException, HttpRequestPoolException.
  */
 PHP_METHOD(HttpRequestPool, detach)
 {
@@ -255,6 +278,11 @@ PHP_METHOD(HttpRequestPool, detach)
 /* {{{ proto bool HttpRequestPool::send()
  *
  * Send all attached HttpRequest objects in parallel.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
+ * 
+ * Throws HttpSocketException, HttpRequestException, 
+ * HttpRequestPoolException, HttpMalformedHeaderException.
  */
 PHP_METHOD(HttpRequestPool, send)
 {
@@ -271,8 +299,10 @@ PHP_METHOD(HttpRequestPool, send)
 }
 /* }}} */
 
-/* {{{ proto protected bool HttpRequestPool::socketSend()
+/* {{{ proto protected bool HttpRequestPool::socketPerform()
  *
+ * Returns TRUE until each request has finished its transaction.
+ * 
  * Usage:
  * <pre>
  * <?php
@@ -303,6 +333,8 @@ PHP_METHOD(HttpRequestPool, socketPerform)
 /* {{{ proto protected bool HttpRequestPool::socketSelect()
  *
  * See HttpRequestPool::socketPerform().
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequestPool, socketSelect)
 {
@@ -358,7 +390,7 @@ PHP_METHOD(HttpRequestPool, current)
 }
 /* }}} */
 
-/* {{{ proto long HttpRequestPool::key()
+/* {{{ proto int HttpRequestPool::key()
  *
  * Implements Iterator::key().
  */
