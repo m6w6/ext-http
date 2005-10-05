@@ -649,10 +649,15 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 
 /* ### USERLAND ### */
 
-/* {{{ proto void HttpRequest::__construct([string url[, long request_method = HTTP_GET]])
+/* {{{ proto void HttpRequest::__construct([string url[, int request_method = HTTP_METH_GET]])
  *
- * Instantiate a new HttpRequest object which can be used to issue HEAD, GET
- * and POST (including posting files) HTTP requests.
+ * Instantiate a new HttpRequest object.
+ * 
+ * Accepts a string as optional parameter containing the target request url.
+ * Additianally accepts an optional int parameter specifying the request method
+ * to use.
+ * 
+ * Throws HttpException.
  */
 PHP_METHOD(HttpRequest, __construct)
 {
@@ -701,6 +706,12 @@ PHP_METHOD(HttpRequest, __destruct)
 /* {{{ proto bool HttpRequest::setOptions([array options])
  *
  * Set the request options to use.  See http_get() for a full list of available options.
+ * 
+ * Accepts an array as optional parameters, wich values will overwrite the 
+ * currently set request options.  If the parameter is empty or mitted,
+ * the optoions of the HttpRequest object will be reset.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setOptions)
 {
@@ -776,6 +787,8 @@ PHP_METHOD(HttpRequest, setOptions)
 /* {{{ proto array HttpRequest::getOptions()
  *
  * Get currently set options.
+ * 
+ * Returns an associative array containing currently set options.
  */
 PHP_METHOD(HttpRequest, getOptions)
 {
@@ -795,6 +808,11 @@ PHP_METHOD(HttpRequest, getOptions)
 /* {{{ proto bool HttpRequest::setSslOptions([array options])
  *
  * Set SSL options.
+ * 
+ * Accepts an associative array as parameter containing any SSL specific options.
+ * If the parameter is empty or omitted, the SSL options will be reset.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setSslOptions)
 {
@@ -805,6 +823,10 @@ PHP_METHOD(HttpRequest, setSslOptions)
 /* {{{ proto bool HttpRequest::addSslOptions(array options)
  *
  * Set additional SSL options.
+ * 
+ * Expects an associative array as parameter containing additional SSL specific options.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, addSslOptions)
 {
@@ -815,6 +837,8 @@ PHP_METHOD(HttpRequest, addSslOptions)
 /* {{{ proto array HttpRequest::getSslOtpions()
  *
  * Get previously set SSL options.
+ * 
+ * Returns an associative array containing any previously set SSL options.
  */
 PHP_METHOD(HttpRequest, getSslOptions)
 {
@@ -825,6 +849,11 @@ PHP_METHOD(HttpRequest, getSslOptions)
 /* {{{ proto bool HttpRequest::addHeaders(array headers)
  *
  * Add request header name/value pairs.
+ * 
+ * Expects an ssociative array as parameter containing additional header
+ * name/value pairs.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, addHeaders)
 {
@@ -834,6 +863,11 @@ PHP_METHOD(HttpRequest, addHeaders)
 /* {{{ proto bool HttpRequest::setHeaders([array headers])
  *
  * Set request header name/value pairs.
+ * 
+ * Accepts an associative array as parameter containing header name/value pairs.
+ * If the parameter is empty or omitted, all previously set headers will be unset.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setHeaders)
 {
@@ -844,6 +878,8 @@ PHP_METHOD(HttpRequest, setHeaders)
 /* {{{ proto array HttpRequest::getHeaders()
  *
  * Get previously set request headers.
+ * 
+ * Returns an associative array containing all currently set headers.
  */
 PHP_METHOD(HttpRequest, getHeaders)
 {
@@ -854,6 +890,11 @@ PHP_METHOD(HttpRequest, getHeaders)
 /* {{{ proto bool HttpRequest::setCookies([array cookies])
  *
  * Set cookies.
+ * 
+ * Accepts an associative array as parameter containing cookie name/value pairs.
+ * If the parameter is empty or omitted, all previously set cookies will be unset.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setCookies)
 {
@@ -864,6 +905,11 @@ PHP_METHOD(HttpRequest, setCookies)
 /* {{{ proto bool HttpRequest::addCookies(array cookies)
  *
  * Add cookies.
+ * 
+ * Expects an associative array as parameter containing any cookie name/value
+ * pairs to add.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, addCookies)
 {
@@ -874,6 +920,8 @@ PHP_METHOD(HttpRequest, addCookies)
 /* {{{ proto array HttpRequest::getCookies()
  *
  * Get previously set cookies.
+ * 
+ * Returns an associative array containing any previously set cookies.
  */
 PHP_METHOD(HttpRequest, getCookies)
 {
@@ -884,6 +932,10 @@ PHP_METHOD(HttpRequest, getCookies)
 /* {{{ proto bool HttpRequest::setUrl(string url)
  *
  * Set the request URL.
+ * 
+ * Expects a string as parameter specifying the request url.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setUrl)
 {
@@ -903,6 +955,8 @@ PHP_METHOD(HttpRequest, setUrl)
 /* {{{ proto string HttpRequest::getUrl()
  *
  * Get the previously set request URL.
+ * 
+ * Returns the currently set request url as string.
  */
 PHP_METHOD(HttpRequest, getUrl)
 {
@@ -917,10 +971,14 @@ PHP_METHOD(HttpRequest, getUrl)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::setMethod(long request_method)
+/* {{{ proto bool HttpRequest::setMethod(int request_method)
  *
- * Set the request methods; one of the <tt>HTTP_HEAD</tt>, <tt>HTTP_GET</tt> or
- * <tt>HTTP_POST</tt> constants.
+ * Set the request method.
+ * 
+ * Expects an int as parameter specifying the request method to use.
+ * In PHP 5.1+ HttpRequest::METH, otherwise the HTTP_METH constants can be used.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setMethod)
 {
@@ -936,9 +994,11 @@ PHP_METHOD(HttpRequest, setMethod)
 }
 /* }}} */
 
-/* {{{ proto long HttpRequest::getMethod()
+/* {{{ proto int HttpRequest::getMethod()
  *
  * Get the previously set request method.
+ * 
+ * Returns the currently set request method.
  */
 PHP_METHOD(HttpRequest, getMethod)
 {
@@ -956,7 +1016,12 @@ PHP_METHOD(HttpRequest, getMethod)
 /* {{{ proto bool HttpRequest::setContentType(string content_type)
  *
  * Set the content type the post request should have.
- * Use this only if you know what you're doing.
+ * 
+ * Expects a string as parameters containing the content type of the request
+ * (primary/secondary).
+ * 
+ * Returns TRUE on success, or FALSE if the content type does not seem to
+ * contain a primary and a secondary part.
  */
 PHP_METHOD(HttpRequest, setContentType)
 {
@@ -981,6 +1046,8 @@ PHP_METHOD(HttpRequest, setContentType)
 /* {{{ proto string HttpRequest::getContentType()
  *
  * Get the previously content type.
+ * 
+ * Returns the previously set content type as string.
  */
 PHP_METHOD(HttpRequest, getContentType)
 {
@@ -997,9 +1064,14 @@ PHP_METHOD(HttpRequest, getContentType)
 
 /* {{{ proto bool HttpRequest::setQueryData([mixed query_data])
  *
- * Set the URL query parameters to use.
- * Overwrites previously set query parameters.
+ * Set the URL query parameters to use, overwriting previously set query parameters.
  * Affects any request types.
+ * 
+ * Accepts a string or associative array parameter containing the pre-encoded 
+ * query string or to be encoded query fields.  If the parameter is empty or
+ * omitted, the query data will be unset. 
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setQueryData)
 {
@@ -1032,6 +1104,8 @@ PHP_METHOD(HttpRequest, setQueryData)
 /* {{{ proto string HttpRequest::getQueryData()
  *
  * Get the current query data in form of an urlencoded query string.
+ * 
+ * Returns a string containing the urlencoded query.
  */
 PHP_METHOD(HttpRequest, getQueryData)
 {
@@ -1048,8 +1122,12 @@ PHP_METHOD(HttpRequest, getQueryData)
 
 /* {{{ proto bool HttpRequest::addQueryData(array query_params)
  *
- * Add parameters to the query parameter list.
+ * Add parameters to the query parameter list, leaving previously set unchanged.
  * Affects any request type.
+ * 
+ * Expects an associative array as parameter containing the query fields to add.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, addQueryData)
 {
@@ -1077,8 +1155,13 @@ PHP_METHOD(HttpRequest, addQueryData)
 
 /* {{{ proto bool HttpRequest::addPostFields(array post_data)
  *
- * Adds POST data entries.
- * Affects only POST requests.
+ * Adds POST data entries, leaving previously set unchanged, unless a
+ * post entry with the same name already exists. 
+ * Affects only POST and custom requests.
+ * 
+ * Expects an associative array as parameter containing the post fields.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, addPostFields)
 {
@@ -1098,9 +1181,13 @@ PHP_METHOD(HttpRequest, addPostFields)
 
 /* {{{ proto bool HttpRequest::setPostFields([array post_data])
  *
- * Set the POST data entries.
- * Overwrites previously set POST data.
- * Affects only POST requests.
+ * Set the POST data entries, overwriting previously set POST data.
+ * Affects only POST and custom requests.
+ * 
+ * Accepts an associative array as parameter containing the post fields.
+ * If the parameter is empty or omitted, the post data will be unset.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setPostFields)
 {
@@ -1125,6 +1212,8 @@ PHP_METHOD(HttpRequest, setPostFields)
 /* {{{ proto array HttpRequest::getPostFields()
  *
  * Get previously set POST data.
+ * 
+ * Returns the currently set post fields as associative array.
  */
 PHP_METHOD(HttpRequest, getPostFields)
 {
@@ -1142,8 +1231,15 @@ PHP_METHOD(HttpRequest, getPostFields)
 
 /* {{{ proto bool HttpRequest::setRawPostData([string raw_post_data])
  *
- * Set raw post data to send.  Don't forget to specify a content type.
- * Affects only POST requests.
+ * Set raw post data to send, overwriting previously set raw post data.  Don't 
+ * forget to specify a content type. Affects only POST and custom requests.
+ * Only either post fields or raw post data can be used for each request.
+ * Raw post data has higher precedence and will be used even if post fields
+ * are set.  
+ * 
+ * Accepts a string as parameter containing the *raw* post data.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setRawPostData)
 {
@@ -1166,8 +1262,12 @@ PHP_METHOD(HttpRequest, setRawPostData)
 
 /* {{{ proto bool HttpRequest::addRawPostData(string raw_post_data)
  *
- * Add raw post data.
- * Affects only POST requests.
+ * Add raw post data, leaving previously set raw post data unchanged.
+ * Affects only POST and custom requests.
+ * 
+ * Expects a string as parameter containing the raw post data to concatenate.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, addRawPostData)
 {
@@ -1200,6 +1300,8 @@ PHP_METHOD(HttpRequest, addRawPostData)
 /* {{{ proto string HttpRequest::getRawPostData()
  *
  * Get previously set raw post data.
+ * 
+ * Returns a string containing the currently set raw post data.
  */
 PHP_METHOD(HttpRequest, getRawPostData)
 {
@@ -1216,8 +1318,16 @@ PHP_METHOD(HttpRequest, getRawPostData)
 
 /* {{{ proto bool HttpRequest::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])
  *
- * Add a file to the POST request.
- * Affects only POST requests.
+ * Add a file to the POST request, leaving prefiously set files unchanged.
+ * Affects only POST and custom requests. Cannot be used with raw post data.
+ * 
+ * Expects a string parameter containing the form element name, and a string
+ * paremeter containing the path to the file which should be uploaded.
+ * Additionally accepts an optional string parameter which chould contain
+ * the content type of the file.
+ * 
+ * Returns TRUE on success, or FALSE if the content type seems not to contain a 
+ * primary and a secondary content type part.
  */
 PHP_METHOD(HttpRequest, addPostFile)
 {
@@ -1256,9 +1366,14 @@ PHP_METHOD(HttpRequest, addPostFile)
 
 /* {{{ proto bool HttpRequest::setPostFiles([array post_files])
  *
- * Set files to post.
- * Overwrites previously set post files.
- * Affects only POST requests.
+ * Set files to post, overwriting previously set post files.
+ * Affects only POST and requests. Cannot be used with raw post data.
+ * 
+ * Accepts an array containing the files to post.  Each entry should be an
+ * associative array with "name", "file" and "type" keys.  If the parameter
+ * is empty or omitted the post files will be unset.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setPostFiles)
 {
@@ -1283,6 +1398,8 @@ PHP_METHOD(HttpRequest, setPostFiles)
 /* {{{ proto array HttpRequest::getPostFiles()
  *
  * Get all previously added POST files.
+ * 
+ * Returns an array containing currently set post files.
  */
 PHP_METHOD(HttpRequest, getPostFiles)
 {
@@ -1300,8 +1417,12 @@ PHP_METHOD(HttpRequest, getPostFiles)
 
 /* {{{ proto bool HttpRequest::setPutFile([string file])
  *
- * Set file to put.
- * Affects only PUT requests.
+ * Set file to put. Affects only PUT requests.
+ * 
+ * Accepts a string as parameter referencing the path to file.
+ * If the parameter is empty or omitted the put file will be unset.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, setPutFile)
 {
@@ -1321,6 +1442,8 @@ PHP_METHOD(HttpRequest, setPutFile)
 /* {{{ proto string HttpRequest::getPutFile()
  *
  * Get previously set put file.
+ * 
+ * Returns a string containing the path to the currently set put file.
  */
 PHP_METHOD(HttpRequest, getPutFile)
 {
@@ -1338,6 +1461,13 @@ PHP_METHOD(HttpRequest, getPutFile)
 /* {{{ proto array HttpRequest::getResponseData()
  *
  * Get all response data after the request has been sent.
+ * 
+ * Returns an associative array with the key "headers" containing an associative
+ * array holding all response headers, as well as the ley "body" containing a
+ * string with the response body.  
+ * 
+ * If redirects were allowed and several responses were received, the data 
+ * references the last received response.
  */
 PHP_METHOD(HttpRequest, getResponseData)
 {
@@ -1356,6 +1486,15 @@ PHP_METHOD(HttpRequest, getResponseData)
 /* {{{ proto mixed HttpRequest::getResponseHeader([string name])
  *
  * Get response header(s) after the request has been sent.
+ * 
+ * Accepts an string as optional parameter specifying a certain header to read.
+ * If the parameter is empty or omitted all response headers will be returned.
+ * 
+ * Returns either a string with the value of the header matching name if requested, 
+ * FALSE on failure, or an associative array containing all reponse headers.
+ * 
+ * If redirects were allowed and several responses were received, the data 
+ * references the last received response.
  */
 PHP_METHOD(HttpRequest, getResponseHeader)
 {
@@ -1389,6 +1528,17 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 /* {{{ proto array HttpRequest::getResponseCookie([string name])
  *
  * Get response cookie(s) after the request has been sent.
+ * 
+ * Accepts a string as optional parameter specifying the name of the cookie to read.
+ * If the parameter is empty or omitted, an associative array with all received
+ * cookies will be returned.
+ * 
+ * Returns either an associative array with the cookie's name, value and any
+ * additional params of the cookie matching name if requested, FALSE on failure,
+ * or an array containing all received cookies as arrays.
+ * 
+ * If redirects were allowed and several responses were received, the data 
+ * references the last received response.
  */
 PHP_METHOD(HttpRequest, getResponseCookie)
 {
@@ -1481,6 +1631,11 @@ PHP_METHOD(HttpRequest, getResponseCookie)
 /* {{{ proto string HttpRequest::getResponseBody()
  *
  * Get the response body after the request has been sent.
+ * 
+ * Returns a string containing the response body.
+ * 
+ * If redirects were allowed and several responses were received, the data 
+ * references the last received response.
  */
 PHP_METHOD(HttpRequest, getResponseBody)
 {
@@ -1504,6 +1659,11 @@ PHP_METHOD(HttpRequest, getResponseBody)
 /* {{{ proto int HttpRequest::getResponseCode()
  *
  * Get the response code after the request has been sent.
+ * 
+ * Returns an int representing the response code.
+ * 
+ * If redirects were allowed and several responses were received, the data 
+ * references the last received response.
  */
 PHP_METHOD(HttpRequest, getResponseCode)
 {
@@ -1518,10 +1678,21 @@ PHP_METHOD(HttpRequest, getResponseCode)
 }
 /* }}} */
 
-/* {{{ proto array HttpRequest::getResponseInfo([string name])
+/* {{{ proto mixed HttpRequest::getResponseInfo([string name])
  *
  * Get response info after the request has been sent.
  * See http_get() for a full list of returned info.
+ * 
+ * Accepts a string as optional parameter specifying the info to read.
+ * If the parameter is empty or omitted, an associative array containing
+ * all available info will be returned.
+ * 
+ * Returns either a scalar containing the value of the info matching name if
+ * requested, FALSE on failure, or an associative array containing all
+ * available info.
+ * 
+ * If redirects were allowed and several responses were received, the data 
+ * references the last received response.
  */
 PHP_METHOD(HttpRequest, getResponseInfo)
 {
@@ -1554,7 +1725,16 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 
 /* {{{ proto HttpMessage HttpRequest::getResponseMessage()
  *
- * Get the full response as HttpMessage object.
+ * Get the full response as HttpMessage object after the request has been sent.
+ * 
+ * Returns an HttpMessage object of the response.
+ * 
+ * If redirects were allowed and several responses were received, the data 
+ * references the last received response.  Use HttpMessage::getParentMessage()
+ * to access the data of previously received responses whithin this request
+ * cycle.
+ * 
+ * Throws HttpException.
  */
 PHP_METHOD(HttpRequest, getResponseMessage)
 {
@@ -1579,6 +1759,13 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 /* {{{ proto HttpMessage HttpRequest::getRequestMessage()
  *
  * Get sent HTTP message.
+ * 
+ * Returns an HttpMessage object representing the sent request.
+ * 
+ * If redirects were allowed and several responses were received, the data 
+ * references the last received response.  Use HttpMessage::getParentMessage()
+ * to access the data of previously sent requests whithin this request
+ * cycle.
  */
 PHP_METHOD(HttpRequest, getRequestMessage)
 {
@@ -1600,6 +1787,17 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 /* {{{ proto HttpMessage HttpRequest::getHistory()
  *
  * Get all sent requests and received responses as an HttpMessage object.
+ * 
+ * If you don't want to record history at all, set the instance variable
+ * HttpRequest::$recoedHistory to FALSE. 
+ * 
+ * Returns an HttpMessage object representing the complete request/response
+ * history.
+ * 
+ * The object references the last received response, use HttpMessage::getParentMessage() 
+ * to access the data of previously sent requests and received responses.
+ * 
+ * Throws HttpMalformedHeaderException.
  */
 PHP_METHOD(HttpRequest, getHistory)
 {
@@ -1634,6 +1832,11 @@ PHP_METHOD(HttpRequest, clearHistory)
 /* {{{ proto HttpMessage HttpRequest::send()
  *
  * Send the HTTP request.
+ * 
+ * Returns the received response as HttpMessage object.
+ * 
+ * Throws HttpRuntimeException, HttpRequestException, 
+ * HttpMalformedHeaderException, HttpEncodingException.
  *
  * GET example:
  * <pre>

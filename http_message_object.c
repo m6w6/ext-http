@@ -30,7 +30,7 @@
 #include "php_http_exception_object.h"
 
 #include "phpstr/phpstr.h"
-#include  "missing.h"
+#include "missing.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
@@ -487,6 +487,13 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 /* {{{ proto void HttpMessage::__construct([string message])
  *
  * Instantiate a new HttpMessage object.
+ * 
+ * Accepts an optional string parameter containing a single or several 
+ * consecutive HTTP messages.  The constructed object will actually 
+ * represent the *last* message of the passed string.  If there were
+ * prior messages, those can be accessed by HttpMessage::getParentMessage().
+ * 
+ * Throws HttpMalformedHeaderException.
  */
 PHP_METHOD(HttpMessage, __construct)
 {
@@ -510,7 +517,14 @@ PHP_METHOD(HttpMessage, __construct)
 
 /* {{{ proto static HttpMessage HttpMessage::fromString(string raw_message)
  *
- * Create an HttpMessage object from a string.
+ * Create an HttpMessage object from a string. Kind of a static constructor.
+ * 
+ * Expects a string parameter containing a sinlge or several consecutive
+ * HTTP messages.
+ * 
+ * Returns an HttpMessage object on success or NULL on failure.
+ * 
+ * Throws HttpMalformedHeadersException.
  */
 PHP_METHOD(HttpMessage, fromString)
 {
@@ -518,22 +532,24 @@ PHP_METHOD(HttpMessage, fromString)
 	int length = 0;
 	http_message *msg = NULL;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
-		RETURN_NULL();
+	RETVAL_NULL();
+	
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
+		if (msg = http_message_parse(string, length)) {
+			Z_TYPE_P(return_value) = IS_OBJECT;
+			return_value->value.obj = http_message_object_from_msg(msg);
+		}
 	}
-
-	if (!(msg = http_message_parse(string, length))) {
-		RETURN_NULL();
-	}
-
-	Z_TYPE_P(return_value) = IS_OBJECT;
-	return_value->value.obj = http_message_object_from_msg(msg);
+	SET_EH_NORMAL();
 }
 /* }}} */
 
 /* {{{ proto string HttpMessage::getBody()
  *
- * Get the body of the parsed Message.
+ * Get the body of the parsed HttpMessage.
+ * 
+ * Returns the message body as string.
  */
 PHP_METHOD(HttpMessage, getBody)
 {
@@ -550,6 +566,8 @@ PHP_METHOD(HttpMessage, getBody)
  *
  * Set the body of the HttpMessage.
  * NOTE: Don't forget to update any headers accordingly.
+ * 
+ * Expects a string parameter containing the new body of the message.
  */
 PHP_METHOD(HttpMessage, setBody)
 {
@@ -567,6 +585,8 @@ PHP_METHOD(HttpMessage, setBody)
 /* {{{ proto array HttpMessage::getHeaders()
  *
  * Get Message Headers.
+ * 
+ * Returns an associative array containing the messages HTTP headers.
  */
 PHP_METHOD(HttpMessage, getHeaders)
 {
@@ -586,6 +606,9 @@ PHP_METHOD(HttpMessage, getHeaders)
 /* {{{ proto void HttpMessage::setHeaders(array headers)
  *
  * Sets new headers.
+ * 
+ * Expects an associative array as parameter containing the new HTTP headers,
+ * which will replace *all* previous HTTP headers of the message.
  */
 PHP_METHOD(HttpMessage, setHeaders)
 {
@@ -605,6 +628,12 @@ PHP_METHOD(HttpMessage, setHeaders)
 /* {{{ proto void HttpMessage::addHeaders(array headers[, bool append = false])
  *
  * Add headers. If append is true, headers with the same name will be separated, else overwritten.
+ * 
+ * Expects an associative array as parameter containing the additional HTTP headers
+ * to add to the messages existing headers.  If the optional bool parameter is true,
+ * and a header with the same name of one to add exists already, this respective
+ * header will be converted to an array containing both header values, otherwise
+ * it will be overwritten with the new header value.
  */
 PHP_METHOD(HttpMessage, addHeaders)
 {
@@ -625,9 +654,11 @@ PHP_METHOD(HttpMessage, addHeaders)
 }
 /* }}} */
 
-/* {{{ proto long HttpMessage::getType()
+/* {{{ proto int HttpMessage::getType()
  *
  * Get Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)
+ * 
+ * Returns the HttpMessage::TYPE.
  */
 PHP_METHOD(HttpMessage, getType)
 {
@@ -640,9 +671,11 @@ PHP_METHOD(HttpMessage, getType)
 }
 /* }}} */
 
-/* {{{ proto void HttpMessage::setType(long type)
+/* {{{ proto void HttpMessage::setType(int type)
  *
  * Set Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)
+ * 
+ * Exptects an int parameter, the HttpMessage::TYPE.
  */
 PHP_METHOD(HttpMessage, setType)
 {
@@ -656,9 +689,12 @@ PHP_METHOD(HttpMessage, setType)
 }
 /* }}} */
 
-/* {{{ proto long HttpMessage::getResponseCode()
+/* {{{ proto int HttpMessage::getResponseCode()
  *
  * Get the Response Code of the Message.
+ * 
+ * Returns the HTTP response code if the message is of type 
+ * HttpMessage::TYPE_RESPONSE, else FALSE.
  */
 PHP_METHOD(HttpMessage, getResponseCode)
 {
@@ -669,7 +705,7 @@ PHP_METHOD(HttpMessage, getResponseCode)
 
 		if (!HTTP_MSG_TYPE(RESPONSE, obj->message)) {
 			http_error(HE_NOTICE, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_RESPONSE");
-			RETURN_NULL();
+			RETURN_FALSE;
 		}
 
 		RETURN_LONG(obj->message->http.info.response.code);
@@ -677,11 +713,14 @@ PHP_METHOD(HttpMessage, getResponseCode)
 }
 /* }}} */
 
-/* {{{ proto bool HttpMessage::setResponseCode(long code)
+/* {{{ proto bool HttpMessage::setResponseCode(int code)
  *
  * Set the response code of an HTTP Response Message.
- * Returns false if the Message is not of type HTTP_MSG_RESPONSE,
- * or if the response code is out of range (100-510).
+ * 
+ * Expects an int parameter with the HTTP response code.
+ * 
+ * Returns TRUE on success, or FALSE if the message is not of type
+ * HttpMessage::TYPE_RESPONSE or the response code is out of range (100-510).
  */
 PHP_METHOD(HttpMessage, setResponseCode)
 {
@@ -709,7 +748,9 @@ PHP_METHOD(HttpMessage, setResponseCode)
 /* {{{ proto string HttpMessage::getRequestMethod()
  *
  * Get the Request Method of the Message.
- * Returns false if the Message is not of type HTTP_MSG_REQUEST.
+ * 
+ * Returns the request method name on success, or FALSE if the message is
+ * not of type HttpMessage::TYPE_REQUEST.
  */
 PHP_METHOD(HttpMessage, getRequestMethod)
 {
@@ -720,7 +761,7 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 
 		if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
 			http_error(HE_NOTICE, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
-			RETURN_NULL();
+			RETURN_FALSE;
 		}
 
 		RETURN_STRING(obj->message->http.info.request.method, 1);
@@ -731,7 +772,11 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 /* {{{ proto bool HttpMessage::setRequestMethod(string method)
  *
  * Set the Request Method of the HTTP Message.
- * Returns false if the Message is not of type HTTP_MSG_REQUEST.
+ * 
+ * Expects a string parameter containing the request method name.
+ * 
+ * Returns TRUE on success, or FALSE if the message is not of type
+ * HttpMessage::TYPE_REQUEST or an invalid request method was supplied. 
  */
 PHP_METHOD(HttpMessage, setRequestMethod)
 {
@@ -764,6 +809,9 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 /* {{{ proto string HttpMessage::getRequestUri()
  *
  * Get the Request URI of the Message.
+ * 
+ * Returns the request uri as string on success, or FALSE if the message
+ * is not of type HttpMessage::TYPE_REQUEST. 
  */
 PHP_METHOD(HttpMessage, getRequestUri)
 {
@@ -774,7 +822,7 @@ PHP_METHOD(HttpMessage, getRequestUri)
 
 		if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
 			http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
-			RETURN_NULL();
+			RETURN_FALSE;
 		}
 
 		RETURN_STRING(obj->message->http.info.request.URI, 1);
@@ -785,8 +833,11 @@ PHP_METHOD(HttpMessage, getRequestUri)
 /* {{{ proto bool HttpMessage::setRequestUri(string URI)
  *
  * Set the Request URI of the HTTP Message.
- * Returns false if the Message is not of type HTTP_MSG_REQUEST,
- * or if paramtere URI was empty.
+ * 
+ * Expects a string parameters containing the request uri.
+ * 
+ * Returns TRUE on success, or FALSE if the message is not of type
+ * HttpMessage::TYPE_REQUEST or supplied URI was empty.
  */
 PHP_METHOD(HttpMessage, setRequestUri)
 {
@@ -814,6 +865,8 @@ PHP_METHOD(HttpMessage, setRequestUri)
 /* {{{ proto string HttpMessage::getHttpVersion()
  *
  * Get the HTTP Protocol Version of the Message.
+ * 
+ * Returns the HTTP protocol version as string.
  */
 PHP_METHOD(HttpMessage, getHttpVersion)
 {
@@ -832,7 +885,10 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 /* {{{ proto bool HttpMessage::setHttpVersion(string version)
  *
  * Set the HTTP Protocol version of the Message.
- * Returns false if version is invalid (1.0 and 1.1).
+ * 
+ * Expects a string parameter containing the HTTP protocol version.
+ * 
+ * Returns TRUE on success, or FALSE if supplied version is out of range (1.0/1.1).
  */
 PHP_METHOD(HttpMessage, setHttpVersion)
 {
@@ -859,6 +915,8 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 /* {{{ proto HttpMessage HttpMessage::getParentMessage()
  *
  * Get parent Message.
+ * 
+ * Returns the parent HttpMessage on success, or NULL if there's none.
  */
 PHP_METHOD(HttpMessage, getParentMessage)
 {
@@ -879,6 +937,9 @@ PHP_METHOD(HttpMessage, getParentMessage)
 /* {{{ proto bool HttpMessage::send()
  *
  * Send the Message according to its type as Response or Request.
+ * This provides limited functionality compared to HttpRequest and HttpResponse.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpMessage, send)
 {
@@ -893,6 +954,11 @@ PHP_METHOD(HttpMessage, send)
 /* {{{ proto string HttpMessage::toString([bool include_parent = false])
  *
  * Get the string representation of the Message.
+ * 
+ * Accepts a bool parameter which specifies whether the returned string
+ * should also contain any parent messages.
+ * 
+ * Returns the full message as string.
  */
 PHP_METHOD(HttpMessage, toString)
 {
