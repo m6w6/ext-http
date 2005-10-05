@@ -107,51 +107,50 @@ PHP_FUNCTION(http_build_uri)
 }
 /* }}} */
 
-#define HTTP_DO_NEGOTIATE(type, supported, as_array) \
+#define HTTP_DO_NEGOTIATE(type, supported, rs_array) \
 { \
 	HashTable *result; \
 	if (result = http_negotiate_ ##type(supported)) { \
-		if (as_array) { \
-			Z_TYPE_P(return_value) = IS_ARRAY; \
-			Z_ARRVAL_P(return_value) = result; \
+		char *key; \
+		uint key_len; \
+		ulong idx; \
+		 \
+		if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(result, &key, &key_len, &idx, 1, NULL)) { \
+			RETVAL_STRINGL(key, key_len-1, 0); \
 		} else { \
-			char *key; \
-			uint key_len; \
-			ulong idx; \
-			 \
-			if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(result, &key, &key_len, &idx, 1, NULL)) { \
-				RETVAL_STRINGL(key, key_len-1, 0); \
-			} else { \
-				RETVAL_NULL(); \
-			} \
-			zend_hash_destroy(result); \
-			FREE_HASHTABLE(result); \
+			RETVAL_NULL(); \
 		} \
+		\
+		if (rs_array) { \
+			zend_hash_copy(Z_ARRVAL_P(rs_array), result, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *)); \
+		} \
+		\
+		zend_hash_destroy(result); \
+		FREE_HASHTABLE(result); \
+		\
 	} else { \
-		if (as_array) { \
+		zval **value; \
+		 \
+		zend_hash_internal_pointer_reset(Z_ARRVAL_P(supported)); \
+		if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(supported), (void **) &value)) { \
+			RETVAL_ZVAL(*value, 1, 0); \
+		} else { \
+			RETVAL_NULL(); \
+		} \
+		\
+		if (rs_array) { \
 			zval **value; \
-			 \
-			array_init(return_value); \
 			 \
 			FOREACH_VAL(supported, value) { \
 				convert_to_string_ex(value); \
-				add_assoc_double(return_value, Z_STRVAL_PP(value), 1.0); \
-			} \
-		} else { \
-			zval **value; \
-			 \
-			zend_hash_internal_pointer_reset(Z_ARRVAL_P(supported)); \
-			if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(supported), (void **) &value)) { \
-				RETVAL_ZVAL(*value, 1, 0); \
-			} else { \
-				RETVAL_NULL(); \
+				add_assoc_double(rs_array, Z_STRVAL_PP(value), 1.0); \
 			} \
 		} \
 	} \
 }
 
 
-/* {{{ proto mixed http_negotiate_language(array supported[, array result])
+/* {{{ proto string http_negotiate_language(array supported[, array &result])
  *
  * This function negotiates the clients preferred language based on its
  * Accept-Language HTTP header.  The qualifier is recognized and languages 
@@ -186,18 +185,22 @@ PHP_FUNCTION(http_build_uri)
  */
 PHP_FUNCTION(http_negotiate_language)
 {
-	zval *supported;
-	zend_bool as_array = 0;
+	zval *supported, *rs_array = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|b", &supported, &as_array) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|z", &supported, &rs_array) != SUCCESS) {
 		RETURN_FALSE;
 	}
 	
-	HTTP_DO_NEGOTIATE(language, supported, as_array);
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
+	
+	HTTP_DO_NEGOTIATE(language, supported, rs_array);
 }
 /* }}} */
 
-/* {{{ proto string http_negotiate_charset(array supported[, array result])
+/* {{{ proto string http_negotiate_charset(array supported[, array &result])
  *
  * This function negotiates the clients preferred charset based on its
  * Accept-Charset HTTP header.  The qualifier is recognized and charsets 
@@ -234,14 +237,18 @@ PHP_FUNCTION(http_negotiate_language)
  */
 PHP_FUNCTION(http_negotiate_charset)
 {
-	zval *supported;
-	zend_bool as_array = 0;
+	zval *supported, *rs_array = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|b", &supported, &as_array) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|z", &supported, &rs_array) != SUCCESS) {
 		RETURN_FALSE;
 	}
+	
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
 
-	HTTP_DO_NEGOTIATE(charset, supported, as_array);
+	HTTP_DO_NEGOTIATE(charset, supported, rs_array);
 }
 /* }}} */
 
@@ -308,7 +315,7 @@ PHP_FUNCTION(http_send_last_modified)
 PHP_FUNCTION(http_send_content_type)
 {
 	char *ct = "application/x-octetstream";
-	int ct_len = lenof("application/x-octetstream";
+	int ct_len = lenof("application/x-octetstream");
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &ct, &ct_len) != SUCCESS) {
 		RETURN_FALSE;
@@ -344,7 +351,7 @@ PHP_FUNCTION(http_send_content_disposition)
 }
 /* }}} */
 
-/* {{{ proto bool http_match_modified([int timestamp[, for_range = false]])
+/* {{{ proto bool http_match_modified([int timestamp[, bool for_range = false]])
  *
  * Matches the given unix timestamp against the clients "If-Modified-Since" 
  * resp. "If-Unmodified-Since" HTTP headers.
@@ -378,7 +385,7 @@ PHP_FUNCTION(http_match_modified)
 }
 /* }}} */
 
-/* {{{ proto bool http_match_etag(string etag[, for_range = false])
+/* {{{ proto bool http_match_etag(string etag[, bool for_range = false])
  *
  * Matches the given ETag against the clients "If-Match" resp. 
  * "If-None-Match" HTTP headers.
@@ -505,7 +512,7 @@ PHP_FUNCTION(ob_etaghandler)
 }
 /* }}} */
 
-/* {{{ proto void http_throttle(double sec[, long bytes = 2097152])
+/* {{{ proto void http_throttle(double sec[, int bytes = 2097152])
  *
  * Sets the throttle delay and send buffer size for use with http_send() API.
  * Provides a basic throttling mechanism, which will yield the current process
@@ -530,7 +537,7 @@ PHP_FUNCTION(ob_etaghandler)
  */
 PHP_FUNCTION(http_throttle)
 {
-	long chunk_size = HTTP_SEND_BUFFERSIZE;
+	long chunk_size = HTTP_SENDBUF_SIZE;
 	double interval;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "d|l", &interval, &chunk_size)) {
@@ -668,6 +675,7 @@ PHP_FUNCTION(http_redirect)
  *
  * Sends raw data with support for (multiple) range requests.
  *
+ * Retursn TRUE on success, or FALSE on failure.
  */
 PHP_FUNCTION(http_send_data)
 {
@@ -868,6 +876,8 @@ PHP_FUNCTION(http_parse_headers)
 /* {{{ proto array http_get_request_headers(void)
  *
  * Get a list of incoming HTTP headers.
+ * 
+ * Returns an associative array of incoming request headers.
  */
 PHP_FUNCTION(http_get_request_headers)
 {

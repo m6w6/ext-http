@@ -17,19 +17,23 @@ $csets = array(
 	array('utf-8', 'iso-8859-1'),
 );
 var_dump(http_negotiate_language($langs[0]));
-print_r(http_negotiate_language($langs[0], true));
+var_dump(http_negotiate_language($langs[0], $lresult));
 var_dump(http_negotiate_charset($csets[0]));
-print_r(http_negotiate_charset($csets[0], true));
+var_dump(http_negotiate_charset($csets[0], $cresult));
+print_r($lresult);
+print_r($cresult);
 echo "Done\n";
 --EXPECTF--
 %sTEST
 string(2) "de"
+string(2) "de"
+string(10) "iso-8859-1"
+string(10) "iso-8859-1"
 Array
 (
     [de] => 500
     [en] => 0.15
 )
-string(10) "iso-8859-1"
 Array
 (
     [iso-8859-1] => 1000

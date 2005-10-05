@@ -45,12 +45,12 @@ HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(negotiateLanguage, 1)
 	HTTP_ARG_VAL(supported, 0)
-	HTTP_ARG_VAL(default, 0)
+	HTTP_ARG_VAL(result, 1)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(negotiateCharset, 1)
 	HTTP_ARG_VAL(supported, 0)
-	HTTP_ARG_VAL(default, 0)
+	HTTP_ARG_VAL(result, 1)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(matchModified, 1)
