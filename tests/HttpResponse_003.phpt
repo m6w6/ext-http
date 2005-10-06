@@ -18,7 +18,7 @@ HttpResponse::setFile(__FILE__);
 HttpResponse::send();
 ?>
 --EXPECTF--
-X-Powered-By: PHP/5.1.0RC2-dev
+X-Powered-By: PHP/%s
 ETag: "%s"
 Cache-Control: public, must-revalidate, max_age=3600
 Last-Modified: %s, %d %s 20%d %d:%d:%d GMT

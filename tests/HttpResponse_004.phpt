@@ -20,7 +20,7 @@ HttpResponse::send();
 ?>
 --EXPECTF--
 Status: 304
-Content-type: text/html
-X-Powered-By: PHP/5.1.0RC2-dev
+Content-type: %s
+X-Powered-By: PHP/%s
 Cache-Control: public, must-revalidate, max_age=3600
 ETag: "80b285463881575891e86ba7bfecb4d0"
