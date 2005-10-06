@@ -39,9 +39,12 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes><![CDATA[
-* Updated documentation
-* Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
-* Changed the signature of the negotiator to fill the second parameter with the results array
++ Updated documentation (a lot)
+
+- Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
+- Changed the signature of the negotiator to fill the second parameter with the results array
+
+* Fixed unexpected warnings on request shutdown when etag caching is enabled
 ]]></notes>
  <contents>
   <dir name="/">
@@ -133,6 +136,8 @@
     <file role="test" name="HttpRequest_003.phpt"/>
     <file role="test" name="HttpResponse_001.phpt"/>
     <file role="test" name="HttpResponse_002.phpt"/>
+    <file role="test" name="HttpResponse_003.phpt"/>
+    <file role="test" name="HttpResponse_004.phpt"/>
     <file role="test" name="INI_001.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
     <file role="test" name="parse_message_001.phpt"/>
