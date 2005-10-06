@@ -209,17 +209,16 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 		}
 		return SUCCESS;
 	}
-
-	/* if no etag is given and we didn't already start ob_etaghandler -- start it */
-	if (HTTP_G(etag).started) {
-		return SUCCESS;
-	}
-
-	if (HTTP_G(etag).started = (SUCCESS == php_start_ob_buffer_named("ob_etaghandler", HTTP_G(send).buffer_size, 1 TSRMLS_CC))) {
-		return SUCCESS;
-	} else {
+	
+	/* already running? */
+	if (php_ob_handler_used("ob_etaghandler" TSRMLS_CC)) {
+		http_error(HE_WARNING, HTTP_E_RUNTIME, "ob_etaghandler can only be used once");
 		return FAILURE;
 	}
+	
+	/* we want the etag handler to run */
+	HTTP_G(etag).started = 1;
+	return php_start_ob_buffer_named("ob_etaghandler", HTTP_G(send).buffer_size, 1 TSRMLS_CC);
 }
 /* }}} */
 
@@ -227,39 +226,36 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 	char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
 {
-	if (mode & PHP_OUTPUT_HANDLER_START) {
-		if (HTTP_G(etag).started) {
-			http_error(HE_WARNING, HTTP_E_RUNTIME, "ob_etaghandler can only be used once");
-			return;
+	/* passthru */
+	*handled_output_len = output_len;
+	*handled_output = estrndup(output, output_len);
+	
+	/* are we supposed to run? */
+	if (HTTP_G(etag).started) {
+		/* initialize the etag context */
+		if (mode & PHP_OUTPUT_HANDLER_START) {
+			HTTP_G(etag).ctx = http_etag_init();
 		}
-		HTTP_G(etag).started = 1;
-		HTTP_G(etag).ctx = http_etag_init();
-	}
-
-	http_etag_update(HTTP_G(etag).ctx, output, output_len);
-
-	if (mode & PHP_OUTPUT_HANDLER_END) {
-		char *etag = http_etag_finish(HTTP_G(etag).ctx);
 		
-		/* just do that if desired */
-		if (HTTP_G(etag).started) {
+		/* update */
+		http_etag_update(HTTP_G(etag).ctx, output, output_len);
+		
+		/* finish */
+		if (mode & PHP_OUTPUT_HANDLER_END) {
 			char *sent_header = NULL;
+			char *etag = http_etag_finish(HTTP_G(etag).ctx);
 			
 			http_send_cache_control(HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL));
 			http_send_etag_ex(etag, strlen(etag), &sent_header);
 			
 			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
-				efree(etag);
-				http_exit_ex(304, sent_header, NULL, 0);
-			} else {
-				STR_FREE(sent_header);
+				http_exit_ex(304, sent_header, etag, 0);
 			}
+			
+			STR_FREE(sent_header);
+			STR_FREE(etag);
 		}
-		efree(etag);
 	}
-
-	*handled_output_len = output_len;
-	*handled_output = estrndup(output, output_len);
 }
 /* }}} */
 
