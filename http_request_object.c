@@ -424,10 +424,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	if (!body) {
 		return FAILURE;
 	}
-	if ((!obj->ch) && (!(obj->ch = curl_easy_init()))) {
-		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not initilaize curl");
-		return FAILURE;
-	}
+	HTTP_CHECK_CURL_INIT(obj->ch, curl_easy_init(), return FAILURE);
 
 	URL = convert_to_type_ex(IS_STRING, GET_PROP(obj, url));
 	// HTTP_URI_MAXLEN+1 long char *
@@ -1033,11 +1030,7 @@ PHP_METHOD(HttpRequest, setContentType)
 		RETURN_FALSE;
 	}
 
-	if (!strchr(ctype, '/')) {
-		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", ctype);
-		RETURN_FALSE;
-	}
-
+	HTTP_CHECK_CONTENT_TYPE(ctype, RETURN_FALSE);
 	UPD_STRL(obj, contentType, ctype, ct_len);
 	RETURN_TRUE;
 }
@@ -1341,10 +1334,7 @@ PHP_METHOD(HttpRequest, addPostFile)
 	}
 
 	if (type_len) {
-		if (!strchr(type, '/')) {
-			http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Content-Type '%s' doesn't seem to contain a primary and a secondary part", type);
-			RETURN_FALSE;
-		}
+		HTTP_CHECK_CONTENT_TYPE(type, RETURN_FALSE);
 	} else {
 		type = "application/x-octetstream";
 		type_len = sizeof("application/x-octetstream") - 1;

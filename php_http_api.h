@@ -36,6 +36,29 @@ extern STATUS _http_parse_key_list(const char *list, HashTable *items, char sepa
 #define http_error_ex _http_error_ex
 extern void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...);
 
+#define HTTP_CHECK_CURL_INIT(ch, init, action) \
+	if ((!(ch)) && (!((ch) = init))) { \
+		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not initialize curl"); \
+		action; \
+	}
+#define HTTP_CHECK_CONTENT_TYPE(ct, action) \
+	if (!strchr((ct), '/')) { \
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, \
+			"Content type \"%s\" does not seem to contain a primary and a secondary part", (ct)); \
+		action; \
+	}
+#define HTTP_CHECK_MESSAGE_TYPE_RESPONSE(msg, action) \
+		if (!HTTP_MSG_TYPE(RESPONSE, (msg))) { \
+			http_error(HE_NOTICE, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_RESPONSE"); \
+			action; \
+		}
+#define HTTP_CHECK_MESSAGE_TYPE_REQUEST(msg, action) \
+		if (!HTTP_MSG_TYPE(REQUEST, (msg))) { \
+			http_error(HE_NOTICE, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST"); \
+			action; \
+		}
+
+
 #define http_log(f, i, m) _http_log_ex((f), (i), (m) TSRMLS_CC)
 extern void http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC);
 

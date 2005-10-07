@@ -702,12 +702,7 @@ PHP_METHOD(HttpMessage, getResponseCode)
 
 	IF_RETVAL_USED {
 		getObject(http_message_object, obj);
-
-		if (!HTTP_MSG_TYPE(RESPONSE, obj->message)) {
-			http_error(HE_NOTICE, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_RESPONSE");
-			RETURN_FALSE;
-		}
-
+		HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
 		RETURN_LONG(obj->message->http.info.response.code);
 	}
 }
@@ -727,10 +722,7 @@ PHP_METHOD(HttpMessage, setResponseCode)
 	long code;
 	getObject(http_message_object, obj);
 
-	if (!HTTP_MSG_TYPE(RESPONSE, obj->message)) {
-		http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_RESPONSE");
-		RETURN_FALSE;
-	}
+	HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
 		RETURN_FALSE;
@@ -758,12 +750,7 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 
 	IF_RETVAL_USED {
 		getObject(http_message_object, obj);
-
-		if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
-			http_error(HE_NOTICE, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
-			RETURN_FALSE;
-		}
-
+		HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
 		RETURN_STRING(obj->message->http.info.request.method, 1);
 	}
 }
@@ -784,10 +771,7 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 	int method_len;
 	getObject(http_message_object, obj);
 
-	if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
-		http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
-		RETURN_FALSE;
-	}
+	HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &method, &method_len)) {
 		RETURN_FALSE;
@@ -819,12 +803,7 @@ PHP_METHOD(HttpMessage, getRequestUri)
 
 	IF_RETVAL_USED {
 		getObject(http_message_object, obj);
-
-		if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
-			http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
-			RETURN_FALSE;
-		}
-
+		HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
 		RETURN_STRING(obj->message->http.info.request.URI, 1);
 	}
 }
@@ -845,13 +824,10 @@ PHP_METHOD(HttpMessage, setRequestUri)
 	int URIlen;
 	getObject(http_message_object, obj);
 
-	if (!HTTP_MSG_TYPE(REQUEST, obj->message)) {
-		http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST");
-		RETURN_FALSE;
-	}
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &URI, &URIlen)) {
 		RETURN_FALSE;
 	}
+	HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
 	if (URIlen < 1) {
 		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Cannot set HttpMessage::requestUri to an empty string");
 		RETURN_FALSE;

@@ -55,14 +55,12 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 		pool->ch = NULL;
 	}
 
+	HTTP_CHECK_CURL_INIT(pool->ch, curl_multi_init(), ;);
 	if (!pool->ch) {
-		if (!(pool->ch = curl_multi_init())) {
-			http_error(HE_WARNING, HTTP_E_REQUEST, "Could not initialize curl");
-			if (free_pool) {
-				efree(pool);
-			}
-			return NULL;
+		if (free_pool) {
+			efree(pool);
 		}
+		return NULL;
 	}
 
 	pool->unfinished = 0;

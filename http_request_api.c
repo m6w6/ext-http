@@ -739,14 +739,9 @@ PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
 PHP_HTTP_API STATUS _http_request_ex(CURL *ch, http_request_method meth, char *url, http_request_body *body, HashTable *options, HashTable *info, phpstr *response TSRMLS_DC)
 {
 	STATUS status;
-	zend_bool clean_curl;
+	zend_bool clean_curl = !ch;
 
-	if ((clean_curl = (!ch))) {
-		if (!(ch = curl_easy_init())) {
-			http_error(HE_WARNING, HTTP_E_REQUEST, "Could not initialize curl.");
-			return FAILURE;
-		}
-	}
+	HTTP_CHECK_CURL_INIT(ch, curl_easy_init(), return FAILURE);
 
 	status =	((SUCCESS == http_request_init(ch, meth, url, body, options)) &&
 				(SUCCESS == http_request_exec(ch, info, response, NULL))) ? SUCCESS : FAILURE;

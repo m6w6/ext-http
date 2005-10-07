@@ -533,11 +533,7 @@ PHP_METHOD(HttpResponse, setContentType)
 		RETURN_FALSE;
 	}
 
-	if (!strchr(ctype, '/')) {
-		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Content type '%s' doesn't seem to contain a primary and a secondary part", ctype);
-		RETURN_FALSE;
-	}
-
+	HTTP_CHECK_CONTENT_TYPE(ctype, RETURN_FALSE);
 	RETURN_SUCCESS(UPD_STATIC_STRL(contentType, ctype, ctype_len));
 }
 /* }}} */
