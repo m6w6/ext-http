@@ -93,7 +93,7 @@ char *_http_negotiate_language_func(const char *test, double *quality, HashTable
 			if (	(!strncasecmp(Z_STRVAL_PP(value), test, len)) &&
 					(	(Z_STRVAL_PP(value)[len] == '\0') || 
 						(Z_STRVAL_PP(value)[len] == '-'))) {
-				*quality /= 2;
+				*quality *= .9;
 				return Z_STRVAL_PP(value);
 			}
 		}
