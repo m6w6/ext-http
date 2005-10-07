@@ -132,10 +132,6 @@ foreach (array_slice($_SERVER['argv'], 1) as $fp) {
 					printf("<h%d id=\"%s\">%s</h%d>\n", 2, $m[4][$i], $p, 2);
 				}
 				print ff($m[3][$i]) ."\n";
-				/*
-                printf("<h%d id=\"%s\">%s</h%d>\n%s\n", 
-                    $o?3:2, $o?$n[1].'_'.$n[2]:$m[4][$i], $p, $o?3:2, ff($m[3][$i]));
-            	*/
             }
             print "<hr noshade>\n";
         }

@@ -44,7 +44,7 @@
 - Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
 - Changed the signature of the negotiator to fill the second parameter with the results array
 
-* Fixed unexpected warnings on request shutdown when etag caching is enabled
+* Fixed several ETag issues
 ]]></notes>
  <contents>
   <dir name="/">
@@ -128,6 +128,15 @@
     <file role="test" name="chunked_decode_002.phpt"/>
     <file role="test" name="date_001.phpt"/>
     <file role="test" name="date_002.phpt"/>
+    <file role="test" name="etag_mode_001.phpt"/>
+    <file role="test" name="etag_mode_002.phpt"/>
+    <file role="test" name="etag_mode_003.phpt"/>
+    <file role="test" name="etag_mode_004.phpt"/>
+    <file role="test" name="etag_mode_011.phpt"/>
+    <file role="test" name="etag_mode_012.phpt"/>
+    <file role="test" name="etag_mode_013.phpt"/>
+    <file role="test" name="etag_mode_014.phpt"/>
+    <file role="test" name="etag_mode_crc.phpt"/>
     <file role="test" name="get_request_data_001.phpt"/>
     <file role="test" name="HttpMessage_001.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>

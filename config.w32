@@ -17,6 +17,10 @@ if (PHP_HTTP != "no") {
 		"/I\"" + configure_module_dirname + "/phpstr\"");
 	ADD_SOURCES(configure_module_dirname + "/phpstr", "phpstr.c", "http");
 	AC_DEFINE("HAVE_HTTP", 1, "Have extended HTTP support");
+	
+	if (PHP_DEBUG != "no") {
+		ADD_FLAG("CFLAGS_HTTP", "/W3");
+	}
 
 	MHASH_LIB = PHP_DEBUG != "no" ? "libmhash-staticd.lib":"libmhash-static.lib";
 	if (CHECK_HEADER_ADD_INCLUDE('mhash.h', 'CFLAGS_HTTP') &&
