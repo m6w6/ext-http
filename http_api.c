@@ -176,6 +176,7 @@ void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...)
 		
 		vspprintf(&message, 0, format, args);
 		zend_throw_exception(http_exception_get_for_code(code), message, code TSRMLS_CC);
+		efree(message);
 	} else
 #endif
 	php_verror(NULL, "", type, format, args TSRMLS_CC);
