@@ -839,6 +839,7 @@ PHP_METHOD(HttpResponse, getBufferSize)
  */
 PHP_METHOD(HttpResponse, setData)
 {
+	char *etag;
 	zval *the_data;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
@@ -853,15 +854,10 @@ PHP_METHOD(HttpResponse, setData)
 		RETURN_FALSE;
 	}
 	
-	if (!(Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified))) > 0)) {
-		UPD_STATIC_PROP(long, lastModified, http_last_modified(the_data, SEND_DATA));
-	}
-	if (!Z_STRLEN_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag)))) {
-		char *etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
-		if (etag) {
-			UPD_STATIC_PROP(string, eTag, etag);
-			efree(etag);
-		}
+	UPD_STATIC_PROP(long, lastModified, http_last_modified(the_data, SEND_DATA));
+	if (etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA)) {
+		UPD_STATIC_PROP(string, eTag, etag);
+		efree(etag);
 	}
 
 	RETURN_TRUE;
@@ -897,6 +893,7 @@ PHP_METHOD(HttpResponse, getData)
  */
 PHP_METHOD(HttpResponse, setStream)
 {
+	char *etag;
 	zval *the_stream;
 	php_stream *the_real_stream;
 	php_stream_statbuf ssb;
@@ -916,15 +913,10 @@ PHP_METHOD(HttpResponse, setStream)
 	}
 	zend_list_addref(Z_LVAL_P(the_stream));
 	
-	if (!(Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified))) > 0)) {
-		UPD_STATIC_PROP(long, lastModified, http_last_modified(the_real_stream, SEND_RSRC));
-	}
-	if (!Z_STRLEN_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag)))) {
-		char *etag = http_etag(the_real_stream, 0, SEND_RSRC);
-		if (etag) {
-			UPD_STATIC_PROP(string, eTag, etag);
-			efree(etag);
-		}
+	UPD_STATIC_PROP(long, lastModified, http_last_modified(the_real_stream, SEND_RSRC));
+	if (etag = http_etag(the_real_stream, 0, SEND_RSRC)) {
+		UPD_STATIC_PROP(string, eTag, etag);
+		efree(etag);
 	}
 
 	RETURN_TRUE;
@@ -957,7 +949,7 @@ PHP_METHOD(HttpResponse, getStream)
  */
 PHP_METHOD(HttpResponse, setFile)
 {
-	char *the_file;
+	char *the_file, *etag;
 	int file_len;
 	php_stream_statbuf ssb;
 
@@ -974,15 +966,10 @@ PHP_METHOD(HttpResponse, setFile)
 		RETURN_FALSE;
 	}
 
-	if (!(Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified))) > 0)) {
-		UPD_STATIC_PROP(long, lastModified, http_last_modified(the_file, -1));
-	}
-	if (!Z_STRLEN_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag)))) {
-		char *etag = http_etag(the_file, 0, -1);
-		if (etag) {
-			UPD_STATIC_PROP(string, eTag, etag);
-			efree(etag);
-		}
+	UPD_STATIC_PROP(long, lastModified, http_last_modified(the_file, -1));
+	if (etag = http_etag(the_file, 0, -1)) {
+		UPD_STATIC_PROP(string, eTag, etag);
+		efree(etag);
 	}
 
 	RETURN_TRUE;
