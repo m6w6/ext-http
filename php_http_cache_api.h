@@ -79,7 +79,7 @@ static inline void *_http_etag_init(TSRMLS_D)
 	{
 		case HTTP_ETAG_CRC32:
 			ctx = emalloc(sizeof(unsigned int));
-			memset(ctx, 1, sizeof(unsigned int));
+			*((unsigned int *) ctx) = ~0;
 		break;
 		
 		case HTTP_ETAG_SHA1:
