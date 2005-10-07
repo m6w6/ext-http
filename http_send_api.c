@@ -388,7 +388,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 		if (etag = http_etag(data_ptr, data_size, data_mode)) {
 			char *sent_header = NULL;
 			
-			http_send_etag_ex(etag, 32, &sent_header);
+			http_send_etag_ex(etag, strlen(etag), &sent_header);
 			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
 				return http_exit_ex(304, sent_header, NULL, 0);
 			} else {
