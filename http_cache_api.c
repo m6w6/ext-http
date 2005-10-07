@@ -67,41 +67,35 @@ STATUS _http_cache_global_init(INIT_FUNC_ARGS)
 /* {{{ char *http_etag(void *, size_t, http_send_mode) */
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
 {
-	php_stream_statbuf ssb;
-	char ssb_buf[128] = {0};
-	size_t ssb_len;
 	void *ctx = http_etag_init();
 	
-	switch (data_mode)
-	{
-		case SEND_DATA:
-			http_etag_update(ctx, data_ptr, data_len);
-		break;
-
-		case SEND_RSRC:
-		{
-			if (php_stream_stat((php_stream *) data_ptr, &ssb)) {
-				efree(ctx);
-				return NULL;
-			}
-			ssb_len = snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
+	if (data_mode == SEND_DATA) {
+		http_etag_update(ctx, data_ptr, data_len);
+	} else {
+		STATUS ss = FAILURE;
+		php_stream_statbuf ssb;
+		
+		if (data_mode == SEND_RSRC) {
+			ss = php_stream_stat((php_stream *) data_ptr, &ssb);
+		} else {
+			ss = php_stream_stat_path((char *) data_ptr, &ssb);
+		}
+		
+		if (SUCCESS != ss) {
+			http_etag_free(&ctx);
+			return NULL;
+		} else {
+			size_t ssb_len;
+			char ssb_buf[128] = {0};
+			
+			ssb_len = snprintf(ssb_buf, 127, "%ld=%ld=%ld", (long) ssb.sb.st_mtime, 
+															(long) ssb.sb.st_ino, 
+															(long) ssb.sb.st_size);
 			http_etag_update(ctx, ssb_buf, ssb_len);
 		}
-		break;
-
-		default:
-		{
-			if (php_stream_stat_path((char *) data_ptr, &ssb)) {
-				efree(ctx);
-				return NULL;
-			}
-			ssb_len = snprintf(ssb_buf, 127, "%ld=%ld=%ld", ssb.sb.st_mtime, ssb.sb.st_ino, ssb.sb.st_size);
-			http_etag_update(ctx, ssb_buf, ssb_len);
-		}
-		break;
 	}
-
-	return http_etag_finish(ctx);
+	
+	return http_etag_finish(&ctx);
 }
 /* }}} */
 
@@ -151,15 +145,14 @@ PHP_HTTP_API zend_bool _http_match_etag_ex(const char *entry, const char *etag, 
 		return 1;
 	}
 
-	quoted_etag = (char *) emalloc(strlen(etag) + 3);
-	sprintf(quoted_etag, "\"%s\"", etag);
-
+	spprintf(&quoted_etag, 0, "\"%s\"", etag);
 	if (!strchr(Z_STRVAL_P(zetag), ',')) {
 		result = !strcmp(Z_STRVAL_P(zetag), quoted_etag);
 	} else {
 		result = (NULL != strstr(Z_STRVAL_P(zetag), quoted_etag));
 	}
 	efree(quoted_etag);
+	
 	return result;
 }
 /* }}} */
@@ -210,20 +203,35 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 		return SUCCESS;
 	}
 	
+	/* start ob_etaghandler */
+	return http_start_ob_etaghandler();
+}
+/* }}} */
+
+PHP_HTTP_API STATUS _http_start_ob_etaghandler(TSRMLS_D)
+{
 	/* already running? */
 	if (php_ob_handler_used("ob_etaghandler" TSRMLS_CC)) {
 		http_error(HE_WARNING, HTTP_E_RUNTIME, "ob_etaghandler can only be used once");
 		return FAILURE;
 	}
 	
-	/* we want the etag handler to run */
 	HTTP_G(etag).started = 1;
 	return php_start_ob_buffer_named("ob_etaghandler", HTTP_G(send).buffer_size, 1 TSRMLS_CC);
 }
-/* }}} */
+
+PHP_HTTP_API zend_bool _http_interrupt_ob_etaghandler(TSRMLS_D)
+{
+	if (HTTP_G(etag).started) {
+		HTTP_G(etag).started = 0;
+		http_etag_free(&HTTP_G(etag).ctx);
+		return 1;
+	}
+	return 0;
+}
 
 /* {{{ void http_ob_etaghandler(char *, uint, char **, uint *, int) */
-PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
+void _http_ob_etaghandler(char *output, uint output_len,
 	char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
 {
 	/* passthru */
@@ -243,7 +251,7 @@ PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len,
 		/* finish */
 		if (mode & PHP_OUTPUT_HANDLER_END) {
 			char *sent_header = NULL;
-			char *etag = http_etag_finish(HTTP_G(etag).ctx);
+			char *etag = http_etag_finish(&HTTP_G(etag).ctx);
 			
 			http_send_cache_control(HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL));
 			http_send_etag_ex(etag, strlen(etag), &sent_header);

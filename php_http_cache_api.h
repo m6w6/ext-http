@@ -73,7 +73,7 @@ static inline char *_http_etag_digest(const unsigned char *digest, int len TSRML
 static inline void *_http_etag_init(TSRMLS_D)
 {
 	void *ctx = NULL;
-	long mode = INI_INT("http.etag_mode");
+	long mode = HTTP_G(etag).mode;
 	
 	switch (mode)
 	{
@@ -105,46 +105,90 @@ static inline void *_http_etag_init(TSRMLS_D)
 	return ctx;
 }
 
-#define http_etag_finish(c) _http_etag_finish((c) TSRMLS_CC)
-static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
+#define http_etag_free(cp) _http_etag_free((cp) TSRMLS_CC)
+static inline void _http_etag_free(void **ctx_ptr TSRMLS_DC)
 {
-	char *etag = NULL;
-	unsigned char digest[20];
-	long mode = INI_INT("http.etag_mode");
+	long mode = HTTP_G(etag).mode;
 	
 	switch (mode)
 	{
 		case HTTP_ETAG_CRC32:
-			*((unsigned int *) ctx) = ~*((unsigned int *) ctx);
-			etag = http_etag_digest((const unsigned char *) ctx, sizeof(unsigned int));
-			efree(ctx);
+			if (*((unsigned int **) ctx_ptr)) {
+				efree(*((unsigned int **) ctx_ptr));
+				*((unsigned int **) ctx_ptr) = NULL;
+			}
 		break;
 		
 		case HTTP_ETAG_SHA1:
-			PHP_SHA1Final(digest, ctx);
-			etag = http_etag_digest(digest, 20);
-			efree(ctx);
+			if (*((PHP_SHA1_CTX **) ctx_ptr)) {
+				efree(*((PHP_SHA1_CTX **) ctx_ptr));
+				*((PHP_SHA1_CTX **) ctx_ptr) = NULL;
+			}
 		break;
 		
 		case HTTP_ETAG_MD5:
 #ifndef HTTP_HAVE_MHASH
 		default:
 #endif
-			PHP_MD5Final(digest, ctx);
+			if (*((PHP_MD5_CTX **) ctx_ptr)) {
+				efree(*((PHP_MD5_CTX **) ctx_ptr));
+				*((PHP_MD5_CTX **) ctx_ptr) = NULL;
+			}
+		break;
+		
+#ifdef HTTP_HAVE_MHASH
+		default:
+			/* mhash gets already freed in http_etag_finish() */
+			if (*((MHASH *) ctx_ptr)) {
+				mhash_deinit(*((MHASH *) ctx_ptr), NULL);
+				*((MHASH *) ctx_ptr) = NULL;
+			}
+		break;
+#endif
+	}
+}
+
+#define http_etag_finish(c) _http_etag_finish((c) TSRMLS_CC)
+static inline char *_http_etag_finish(void **ctx_ptr TSRMLS_DC)
+{
+	char *etag = NULL;
+	unsigned char digest[20];
+	long mode = HTTP_G(etag).mode;
+	
+	switch (mode)
+	{
+		case HTTP_ETAG_CRC32:
+			**((unsigned int **) ctx_ptr) = ~**((unsigned int **) ctx_ptr);
+			etag = http_etag_digest(*((const unsigned char **) ctx_ptr), sizeof(unsigned int));
+		break;
+		
+		case HTTP_ETAG_SHA1:
+			PHP_SHA1Final(digest, *((PHP_SHA1_CTX **) ctx_ptr));
+			etag = http_etag_digest(digest, 20);
+		break;
+		
+		case HTTP_ETAG_MD5:
+#ifndef HTTP_HAVE_MHASH
+		default:
+#endif
+			PHP_MD5Final(digest, *((PHP_MD5_CTX **) ctx_ptr));
 			etag = http_etag_digest(digest, 16);
-			efree(ctx);
 		break;
 		
 #ifdef HTTP_HAVE_MHASH
 		default:
 		{
-			unsigned char *mhash_digest = mhash_end_m(ctx, http_etag_alloc_mhash_digest);
+			unsigned char *mhash_digest = mhash_end_m(*((MHASH *) ctx_ptr), http_etag_alloc_mhash_digest);
 			etag = http_etag_digest(mhash_digest, mhash_get_block_size(mode));
 			efree(mhash_digest);
+			/* avoid double free */
+			*((MHASH *) ctx_ptr) = NULL;
 		}
 		break;
 #endif
 	}
+	
+	http_etag_free(ctx_ptr);
 	
 	return etag;
 }
@@ -184,6 +228,9 @@ static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t dat
 	}
 }
 
+#define http_ob_etaghandler(o, l, ho, hl, m) _http_ob_etaghandler((o), (l), (ho), (hl), (m) TSRMLS_CC)
+extern void _http_ob_etaghandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC);
+
 #define http_etag(p, l, m) _http_etag((p), (l), (m) TSRMLS_CC)
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC);
 
@@ -204,8 +251,10 @@ PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified, time_t send_
 #define http_cache_etag(e, el, cc, ccl) _http_cache_etag((e), (el), (cc), (ccl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len, const char *cache_control, size_t cc_len TSRMLS_DC);
 
-#define http_ob_etaghandler(o, l, ho, hl, m) _http_ob_etaghandler((o), (l), (ho), (hl), (m) TSRMLS_CC)
-PHP_HTTP_API void _http_ob_etaghandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC);
+#define http_start_ob_etaghandler() _http_start_ob_etaghandler(TSRMLS_C)
+PHP_HTTP_API STATUS _http_start_ob_etaghandler(TSRMLS_D);
+#define http_interrupt_ob_etaghandler() _http_interrupt_ob_etaghandler(TSRMLS_C)
+PHP_HTTP_API zend_bool _http_interrupt_ob_etaghandler(TSRMLS_D);
 
 #endif
 

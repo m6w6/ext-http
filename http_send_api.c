@@ -355,10 +355,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 	}
 
 	/* stop on-the-fly etag generation */
-	if (cache_etag = HTTP_G(etag).started) {
-		/* interrupt ob_etaghandler */
-		HTTP_G(etag).started = 0;
-	}
+	cache_etag = http_interrupt_ob_etaghandler();
 
 	/* enable partial dl and resume */
 	http_send_header_string("Accept-Ranges: bytes");
@@ -387,10 +384,8 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 	/* send 304 Not Modified if etag matches - DON'T return on ETag generation failure */
 	if (!no_cache && cache_etag) {
 		char *etag = NULL;
-
-		if (!(etag = http_etag(data_ptr, data_size, data_mode))) {
-			http_error(HE_NOTICE, HTTP_E_RUNTIME, "Failed to generate ETag for data source");
-		} else {
+		
+		if (etag = http_etag(data_ptr, data_size, data_mode)) {
 			char *sent_header = NULL;
 			
 			http_send_etag_ex(etag, 32, &sent_header);
