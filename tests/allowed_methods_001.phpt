@@ -7,7 +7,7 @@ checkcgi();
 ?>
 --FILE--
 <?php
-include dirname(__FILE__).'/log.inc';
+include 'log.inc';
 log_prepare(_AMETH_LOG);
 ini_set('http.allowed_methods', 'POST');
 echo "Done\n";
