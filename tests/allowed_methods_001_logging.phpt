@@ -1,8 +1,10 @@
 --TEST--
 logging allowed methods
 --SKIPIF--
+<?php
 include 'skip.inc';
 checkcgi();
+?>
 --ENV--
 HTTP_HOST=example.com
 --FILE--

@@ -1,8 +1,10 @@
 --TEST--
 logging caching
 --SKIPIF--
+<?php
 include 'skip.inc';
 checkcgi();
+?>
 --ENV--
 HTTP_HOST=example.com
 --FILE--
