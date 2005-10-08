@@ -4,6 +4,7 @@ http_redirect() with session
 <?php 
 include 'skip.inc';
 checkcgi();
+checkext('session');
 ?>
 --ENV--
 HTTP_HOST=localhost

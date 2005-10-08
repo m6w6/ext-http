@@ -31,8 +31,8 @@ string(10) "iso-8859-1"
 string(10) "iso-8859-1"
 Array
 (
-    [de] => 500
-    [en] => 0.15
+    [de] => 900
+    [en] => 0.27
 )
 Array
 (
