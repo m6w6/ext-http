@@ -24,6 +24,7 @@
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 
 #include "php_http_std_defs.h"
+#include "php_http_api.h"
 #include "php_http_requestpool_object.h"
 #include "php_http_request_pool_api.h"
 #include "php_http_request_object.h"
@@ -217,7 +218,8 @@ PHP_METHOD(HttpRequestPool, reset)
 	getObject(http_requestpool_object, obj);
 
 	NO_ARGS;
-
+	
+	obj->iterator.pos = 0;
 	http_request_pool_detach_all(&obj->pool);
 }
 
@@ -242,7 +244,11 @@ PHP_METHOD(HttpRequestPool, attach)
 
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, http_request_object_ce)) {
-		status = http_request_pool_attach(&obj->pool, request);
+		if (obj->iterator.pos > 0 && obj->iterator.pos < zend_llist_count(&obj->pool.handles)) {
+			http_error(HE_THROW, HTTP_E_REQUEST_POOL, "Cannot attach to the HttpRequestPool while the iterator is active");
+		} else {
+			status = http_request_pool_attach(&obj->pool, request);
+		}
 	}
 	SET_EH_NORMAL();
 	RETURN_SUCCESS(status);
@@ -268,6 +274,7 @@ PHP_METHOD(HttpRequestPool, detach)
 
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, http_request_object_ce)) {
+		obj->iterator.pos = -1;
 		status = http_request_pool_detach(&obj->pool, request);
 	}
 	SET_EH_NORMAL();
@@ -358,7 +365,7 @@ PHP_METHOD(HttpRequestPool, valid)
 
 	IF_RETVAL_USED {
 		getObject(http_requestpool_object, obj);
-		RETURN_BOOL(obj->iterator.pos < zend_llist_count(&obj->pool.handles));
+		RETURN_BOOL(obj->iterator.pos >= 0 && obj->iterator.pos < zend_llist_count(&obj->pool.handles));
 	}
 }
 /* }}} */

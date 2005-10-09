@@ -26,6 +26,16 @@ foreach ($pool as $req) {
         $req->getResponseCode(), ':',
         $req->getResponseMessage()->getResponseCode(), "\n";
 }
+foreach ($pool as $req) {
+	try {
+		$pool->attach(new HttpRequest('http://foo.bar'));
+	} catch (HttpRequestPoolException $x) {
+		echo ".\n";
+	}
+}
+foreach ($pool as $req) {
+	$pool->detach($req);
+}
 echo "Done\n";
 ?>
 --EXPECTF--
@@ -34,4 +44,8 @@ http://www.php.net/=200:200
 http://pear.php.net/=200:200
 http://pecl.php.net/=200:200
 http://dev.iworks.at/.print_request.php=200:200
+.
+.
+.
+.
 Done
