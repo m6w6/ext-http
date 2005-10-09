@@ -35,7 +35,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 
 /* {{{ char *http_request_methods[] */
 static const char *const http_request_methods[] = {
-	"UNKOWN",
+	"UNKNOWN",
 	/* HTTP/1.1 */
 	"GET",
 	"HEAD",
