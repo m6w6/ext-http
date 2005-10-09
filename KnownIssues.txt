@@ -9,6 +9,10 @@ Not all places where files are handled check for open_basedir and/or safe_mode.
 Throttling with the FastCGI SAPI may behave unexpected, because libfcgi seems
 to really write on flush only and every ~20kb.
 
+If you keep getting "SSL connect error" when trying to issue requests on
+Windows, try another (newer) libeay32.dll/ssleay32.dll pair.
+
+
 Internals:
 	-	the request bodies created in http_request_pool_attach() are not 
 		destroyed in http_request_pool_detach(); may be a memory problem 
