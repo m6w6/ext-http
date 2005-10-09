@@ -23,6 +23,8 @@
 
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 
+#include "zend_interfaces.h"
+
 #include "php_http_std_defs.h"
 #include "php_http_request_object.h"
 #include "php_http_request_api.h"
@@ -52,6 +54,7 @@ HTTP_EMPTY_ARGS(__destruct, 0);
 HTTP_BEGIN_ARGS(__construct, 0, 0)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(method, 0)
+	HTTP_ARG_VAL(options, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getOptions, 0);
@@ -646,13 +649,14 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 
 /* ### USERLAND ### */
 
-/* {{{ proto void HttpRequest::__construct([string url[, int request_method = HTTP_METH_GET]])
+/* {{{ proto void HttpRequest::__construct([string url[, int request_method = HTTP_METH_GET[, array options]]])
  *
  * Instantiate a new HttpRequest object.
  * 
  * Accepts a string as optional parameter containing the target request url.
  * Additianally accepts an optional int parameter specifying the request method
- * to use.
+ * to use and an associative array as optional third parameter which will be
+ * passed to HttpRequest::setOptions(). 
  * 
  * Throws HttpException.
  */
@@ -661,10 +665,11 @@ PHP_METHOD(HttpRequest, __construct)
 	char *URL = NULL;
 	int URL_len;
 	long meth = -1;
+	zval *options = NULL;
 	getObject(http_request_object, obj);
 
 	SET_EH_THROW_HTTP();
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sl", &URL, &URL_len, &meth)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sla", &URL, &URL_len, &meth, &options)) {
 		INIT_PARR(obj, options);
 		INIT_PARR(obj, responseInfo);
 		INIT_PARR(obj, responseData);
@@ -676,6 +681,9 @@ PHP_METHOD(HttpRequest, __construct)
 		}
 		if (meth > -1) {
 			UPD_PROP(obj, long, method, meth);
+		}
+		if (options) {
+			zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setoptions", NULL, options);
 		}
 	}
 	SET_EH_NORMAL();

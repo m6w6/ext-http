@@ -9,9 +9,8 @@ checkcls('HttpRequest');
 --FILE--
 <?php
 echo "-TEST\n";
-$r1 = new HttpRequest;
+$r1 = new HttpRequest(null, 0, array('redirect'=>11, 'headers'=>array('X-Foo'=>'Bar')));
 $r2 = new HttpRequest;
-$r1->setOptions(array('redirect'=>11, 'headers'=>array('X-Foo'=>'Bar')));
 $r2->setOptions(array('redirect'=>99, 'headers'=>array('X-Bar'=>'Foo')));
 $o1 = $r1->getOptions();
 $o2 = $r2->getOptions();
