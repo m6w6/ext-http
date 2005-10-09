@@ -1,9 +1,10 @@
 <?php
-$r = new HttpRequest('http://www.google.com');
+$r = new HttpRequest('http://www.google.com/search');
 
 // store Googles cookies in a dedicated file
+touch('google.txt');
 $r->setOptions(
-	array(	'cookiestore'	=> '../cookies/google.txt',
+	array(	'cookiestore'	=> 'google.txt',
 	)
 );
 

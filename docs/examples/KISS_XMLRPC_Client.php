@@ -26,7 +26,7 @@ class XmlRpcClient
 		if ($this->namespace) {
 			$method = $this->namespace .'.'. $method;
 		}
-		$this->request->setPostData(xmlrpc_encode_request($method, $params));
+		$this->request->setRawPostData(xmlrpc_encode_request($method, $params));
 		$response = $this->request->send();
 		if ($response->getResponseCode() != 200) {
 			throw new Exception($response->getBody(), $response->getResponseCode());
