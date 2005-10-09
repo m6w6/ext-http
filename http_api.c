@@ -195,7 +195,7 @@ void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)
 	strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", php_localtime_r(&now, &nowtm));
 
 #define HTTP_LOG_WRITE(file, type, msg) \
-	if (file && strlen(file)) { \
+	if (file && *file) { \
 	 	php_stream *log = php_stream_open_wrapper(file, "ab", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL); \
 		 \
 		if (log) { \

@@ -501,13 +501,13 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	if (status == SUCCESS) {
 		zval *qdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, queryData));
 		
-		if (Z_STRLEN_P(qdata) && (strlen(request_uri) < HTTP_URI_MAXLEN)) {
+		if (Z_STRLEN_P(qdata)) {
 			if (!strchr(request_uri, '?')) {
-				strcat(request_uri, "?");
+				strlcat(request_uri, "?", HTTP_URI_MAXLEN);
 			} else {
-				strcat(request_uri, "&");
+				strlcat(request_uri, "&", HTTP_URI_MAXLEN);
 			}
-			strncat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN - strlen(request_uri));
+			strlcat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN);
 		}
 		
 		status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, body, Z_ARRVAL_P(GET_PROP(obj, options)));

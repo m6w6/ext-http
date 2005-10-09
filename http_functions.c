@@ -1254,7 +1254,7 @@ PHP_FUNCTION(http_put_stream)
 PHP_FUNCTION(http_request_method_register)
 {
 	char *method;
-	int *method_len;
+	int method_len;
 	unsigned long existing;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &method, &method_len)) {
@@ -1264,7 +1264,7 @@ PHP_FUNCTION(http_request_method_register)
 		RETURN_LONG((long) existing);
 	}
 
-	RETVAL_LONG((long) http_request_method_register(method));
+	RETVAL_LONG((long) http_request_method_register(method, method_len));
 }
 /* }}} */
 

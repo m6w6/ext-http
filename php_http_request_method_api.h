@@ -69,8 +69,8 @@ PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_
 #define http_request_method_exists(u, l, c) _http_request_method_exists((u), (l), (c) TSRMLS_CC)
 PHP_HTTP_API unsigned long _http_request_method_exists(zend_bool by_name, unsigned long id, const char *name TSRMLS_DC);
 
-#define http_request_method_register(m) _http_request_method_register((m) TSRMLS_CC)
-PHP_HTTP_API unsigned long _http_request_method_register(const char *method TSRMLS_DC);
+#define http_request_method_register(m, l) _http_request_method_register((m), (l) TSRMLS_CC)
+PHP_HTTP_API unsigned long _http_request_method_register(const char *method, size_t method_name_len TSRMLS_DC);
 
 #define http_request_method_unregister(mn) _http_request_method_unregister((mn) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_DC);

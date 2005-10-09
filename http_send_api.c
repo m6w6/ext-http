@@ -156,8 +156,8 @@ PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, cons
 	char *header = emalloc(header_len + 1);
 
 	header[header_len] = '\0';
-	snprintf(header, header_len, "%s: %s", name, value);
-	ret = http_send_header_string_ex(header, replace);
+	header_len = snprintf(header, header_len, "%s: %s", name, value);
+	ret = http_send_header_string_ex(header, header_len, replace);
 	if (sent_header) {
 		*sent_header = header;
 	} else {
@@ -168,10 +168,10 @@ PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, cons
 /* }}} */
 
 /* {{{ STATUS http_send_status_header(int, char *) */
-PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, zend_bool replace TSRMLS_DC)
+PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, size_t header_len, zend_bool replace TSRMLS_DC)
 {
 	STATUS ret;
-	sapi_header_line h = {(char *) header, header ? strlen(header) : 0, status};
+	sapi_header_line h = {(char *) header, header_len, status};
 	if (SUCCESS != (ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, &h TSRMLS_CC))) {
 		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Could not send header: %s (%d)", header, status);
 	}
@@ -211,12 +211,10 @@ PHP_HTTP_API STATUS _http_send_etag_ex(const char *etag, size_t etag_len, char *
 	}
 
 	/* remember */
-	STR_FREE(HTTP_G(send).unquoted_etag);
-	HTTP_G(send).unquoted_etag = estrdup(etag);
+	STR_SET(HTTP_G(send).unquoted_etag, estrndup(etag, etag_len));
 
-	etag_header = ecalloc(1, sizeof("ETag: \"\"") + etag_len);
-	sprintf(etag_header, "ETag: \"%s\"", etag);
-	status = http_send_header_string(etag_header);
+	etag_len = spprintf(&etag_header, 0, "ETag: \"%s\"", etag);
+	status = http_send_header_string_ex(etag_header, etag_len, 1);
 	
 	if (sent_header) {
 		*sent_header = etag_header;

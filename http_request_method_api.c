@@ -155,29 +155,28 @@ PHP_HTTP_API unsigned long _http_request_method_exists(zend_bool by_name, unsign
 /* }}} */
 
 /* {{{ unsigned long http_request_method_register(char *) */
-PHP_HTTP_API unsigned long _http_request_method_register(const char *method_name TSRMLS_DC)
+PHP_HTTP_API unsigned long _http_request_method_register(const char *method_name, size_t method_name_len TSRMLS_DC)
 {
 	zval array;
 	char *http_method, *method;
-	int i, method_len = strlen(method_name);
-	unsigned long meth_num = HTTP_G(request).methods.custom.nNextFreeElement + HTTP_MAX_REQUEST_METHOD;
+	unsigned long i, meth_num = HTTP_G(request).methods.custom.nNextFreeElement + HTTP_MAX_REQUEST_METHOD;
 
-	method = emalloc(method_len + 1);
-	for (i = 0; i < method_len; ++i) {
+	method = emalloc(method_name_len + 1);
+	for (i = 0; i < method_name_len; ++i) {
 		method[i] = toupper(method_name[i]);
 	}
-	method[method_len] = '\0';
+	method[method_name_len] = '\0';
 	
 	INIT_ZARR(array, &HTTP_G(request).methods.custom);
-	add_next_index_stringl(&array, method, method_len, 0);
+	add_next_index_stringl(&array, method, method_name_len, 0);
 
-	method_len = spprintf(&http_method, 0, "HTTP_METH_%s", method);
-	zend_register_long_constant(http_method, method_len + 1, meth_num, CONST_CS, http_module_number TSRMLS_CC);
+	method_name_len = spprintf(&http_method, 0, "HTTP_METH_%s", method);
+	zend_register_long_constant(http_method, method_name_len + 1, meth_num, CONST_CS, http_module_number TSRMLS_CC);
 	efree(http_method);
 	
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL) && !defined(WONKY)
-	method_len = spprintf(&http_method, 0, "METH_%s", method);
-	zend_declare_class_constant_long(http_request_object_ce, http_method, method_len, meth_num TSRMLS_CC);
+	method_name_len = spprintf(&http_method, 0, "METH_%s", method);
+	zend_declare_class_constant_long(http_request_object_ce, http_method, method_name_len, meth_num TSRMLS_CC);
 	efree(http_method);
 #endif
 

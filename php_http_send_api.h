@@ -31,11 +31,11 @@ typedef enum {
 #define http_send_header(n, v, r) _http_send_header_ex((n), strlen(n), (v), strlen(v), (r) TSRMLS_CC)
 #define http_send_header_ex(n, nl, v, vl, r, s) _http_send_header_ex((n), (nl), (v), (vl), (r), (s) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace, char **sent_header TSRMLS_DC);
-#define http_send_header_string(h) _http_send_status_header_ex(0, (h), 1 TSRMLS_CC)
-#define http_send_header_string_ex(h, r) _http_send_status_header_ex(0, (h), (r) TSRMLS_CC)
-#define http_send_status_header(s, h) _http_send_status_header_ex((s), (h), 1 TSRMLS_CC)
-#define http_send_status_header_ex(s, h, r) _http_send_status_header_ex((s), (h), (r) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, zend_bool replace TSRMLS_DC);
+#define http_send_header_string(h) _http_send_status_header_ex(0, (h), strlen(h), 1 TSRMLS_CC)
+#define http_send_header_string_ex(h, l, r) _http_send_status_header_ex(0, (h), (l), (r) TSRMLS_CC)
+#define http_send_status_header(s, h) _http_send_status_header_ex((s), (h), (h)?strlen(h):0, 1 TSRMLS_CC)
+#define http_send_status_header_ex(s, h, l, r) _http_send_status_header_ex((s), (h), (l), (r) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, size_t header_len, zend_bool replace TSRMLS_DC);
 
 #define http_send_last_modified(t) _http_send_last_modified_ex((t), NULL TSRMLS_CC)
 #define http_send_last_modified_ex(t, s) _http_send_last_modified_ex((t), (s) TSRMLS_CC)
