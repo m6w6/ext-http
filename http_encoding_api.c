@@ -172,15 +172,15 @@ inline size_t http_finish_gzencode_buffer(z_stream *Z, const char *data, size_t 
 	
 	trailer = *buf_ptr + sizeof(http_gzencode_header) + Z->total_out;
 	
-	/* write crc & stream.total_in in LSB order */
-	trailer[0] = (char) crc & 0xFF;
-	trailer[1] = (char) (crc >> 8) & 0xFF;
-	trailer[2] = (char) (crc >> 16) & 0xFF;
-	trailer[3] = (char) (crc >> 24) & 0xFF;
-	trailer[4] = (char) (Z->total_in) & 0xFF;
-	trailer[5] = (char) (Z->total_in >> 8) & 0xFF;
-	trailer[6] = (char) (Z->total_in >> 16) & 0xFF;
-	trailer[7] = (char) (Z->total_in >> 24) & 0xFF;
+	/* LSB */
+	trailer[0] = (char) (crc & 0xFF);
+	trailer[1] = (char) ((crc >> 8) & 0xFF);
+	trailer[2] = (char) ((crc >> 16) & 0xFF);
+	trailer[3] = (char) ((crc >> 24) & 0xFF);
+	trailer[4] = (char) ((Z->total_in) & 0xFF);
+	trailer[5] = (char) ((Z->total_in >> 8) & 0xFF);
+	trailer[6] = (char) ((Z->total_in >> 16) & 0xFF);
+	trailer[7] = (char) ((Z->total_in >> 24) & 0xFF);
 	
 	return http_finish_buffer(Z->total_out + sizeof(http_gzencode_header) + 8, buf_ptr);
 }
@@ -253,22 +253,22 @@ PHP_HTTP_API STATUS _http_encoding_gzdecode(const char *data, size_t data_len, c
 		if (SUCCESS == http_encoding_inflate(encoded, encoded_len, decoded, decoded_len)) {
 			unsigned long len = 0, cmp = 0, crc = crc32(0L, Z_NULL, 0);
 			
-			crc = crc32(crc, *decoded, *decoded_len);
+			crc = crc32(crc, (const Bytef *) *decoded, *decoded_len);
 			
-			cmp  = (unsigned) (data[data_len-8]);
-			cmp += (unsigned) (data[data_len-7] << 8);
-			cmp += (unsigned) (data[data_len-6] << 16);
-			cmp += (unsigned) (data[data_len-5] << 24);
-			len  = (unsigned) (data[data_len-4]);
-			len += (unsigned) (data[data_len-3] << 8);
-			len += (unsigned) (data[data_len-2] << 16);
-			len += (unsigned) (data[data_len-1] << 24);
+			cmp  = (unsigned) ((data[data_len-8] & 0xFF));
+			cmp += (unsigned) ((data[data_len-7] & 0xFF) << 8);
+			cmp += (unsigned) ((data[data_len-6] & 0xFF) << 16);
+			cmp += (unsigned) ((data[data_len-5] & 0xFF) << 24);
+			len  = (unsigned) ((data[data_len-4] & 0xFF));
+			len += (unsigned) ((data[data_len-3] & 0xFF) << 8);
+			len += (unsigned) ((data[data_len-2] & 0xFF) << 16);
+			len += (unsigned) ((data[data_len-1] & 0xFF) << 24);
 			
 			if (cmp != crc) {
-				http_error(HE_NOTICE, HTTP_E_ENCODING, "Could not verify data integrity: CRC check failed");
+				http_error_ex(HE_NOTICE, HTTP_E_ENCODING, "Could not verify data integrity: CRC checksums do not match (%lu, %lu)", cmp, crc);
 			}
 			if (len != *decoded_len) {
-				http_error(HE_NOTICE, HTTP_E_ENCODING, "Could not verify data integrity: data length check failed");
+				http_error_ex(HE_NOTICE, HTTP_E_ENCODING, "Could not verify data integrity: data sizes do not match (%lu, %lu)", len, *decoded_len);
 			}
 			
 			return SUCCESS;
