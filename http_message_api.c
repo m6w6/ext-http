@@ -157,19 +157,19 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 
 			/* decode and replace Transfer-Encoding with Content-Length header */
 			if (continue_at = http_chunked_decode(body, message + message_length - body, &decoded, &decoded_len)) {
+				zval *len;
+				char *tmp;
+				int tmp_len;
+
+				tmp_len = (int) spprintf(&tmp, 0, "%lu", (ulong) decoded_len);
+				MAKE_STD_ZVAL(len);
+				ZVAL_STRINGL(len, tmp, tmp_len, 0);
+
+				zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
+				zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
+				
 				phpstr_from_string_ex(PHPSTR(msg), decoded, decoded_len);
 				efree(decoded);
-				{
-					zval *len;
-					char *tmp;
-
-					spprintf(&tmp, 0, "%lu", (ulong) decoded_len);
-					MAKE_STD_ZVAL(len);
-					ZVAL_STRING(len, tmp, 0);
-
-					zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
-					zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
-				}
 			}
 		} else
 
@@ -182,12 +182,28 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 
 		/* message has content-range header */
 		if (c = http_message_header(msg, "Content-Range")) {
-			ulong start = 0, end = 0;
+			ulong total = 0, start = 0, end = 0;
+			
+			if (!strncasecmp(Z_STRVAL_P(c), "bytes=", lenof("bytes="))) {
+				char *total_at = NULL, *end_at = NULL;
+				char *start_at = Z_STRVAL_P(c) + lenof("bytes=");
+				
+				start = strtoul(start_at, &end_at, 10);
+				if (end_at) {
+					end = strtoul(end_at + 1, &total_at, 10);
+					if (total_at && strncmp(total_at + 1, "*", 1)) {
+						total = strtoul(total_at + 1, NULL, 10);
+					}
+					
+					if (end >= start && (!total || end < total)) {
+						phpstr_from_string_ex(PHPSTR(msg), body, (size_t) (end + 1 - start));
+						continue_at = body + (end + 1 - start);
+					}
+				}
+			}
 
-			sscanf(Z_STRVAL_P(c), "bytes=%lu-%lu", &start, &end);
-			if (end > start) {
-				phpstr_from_string_ex(PHPSTR(msg), body, (size_t) (end - start));
-				continue_at = body + (end - start);
+			if (!continue_at) {
+				http_error_ex(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Invalid Content-Range header: %s", Z_STRVAL_P(c));
 			}
 		} else
 
