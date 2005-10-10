@@ -151,26 +151,24 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		const char *continue_at = NULL;
 
 		/* message has chunked transfer encoding */
-		if (c = http_message_header(msg, "Transfer-Encoding")) {
-			if (!strcasecmp("chunked", Z_STRVAL_P(c))) {
-				char *decoded;
-				size_t decoded_len;
+		if ((c = http_message_header(msg, "Transfer-Encoding")) && (!strcasecmp("chunked", Z_STRVAL_P(c)))) {
+			char *decoded;
+			size_t decoded_len;
 
-				/* decode and replace Transfer-Encoding with Content-Length header */
-				if (continue_at = http_chunked_decode(body, message + message_length - body, &decoded, &decoded_len)) {
-					phpstr_from_string_ex(PHPSTR(msg), decoded, decoded_len);
-					efree(decoded);
-					{
-						zval *len;
-						char *tmp;
+			/* decode and replace Transfer-Encoding with Content-Length header */
+			if (continue_at = http_chunked_decode(body, message + message_length - body, &decoded, &decoded_len)) {
+				phpstr_from_string_ex(PHPSTR(msg), decoded, decoded_len);
+				efree(decoded);
+				{
+					zval *len;
+					char *tmp;
 
-						spprintf(&tmp, 0, "%lu", (ulong) decoded_len);
-						MAKE_STD_ZVAL(len);
-						ZVAL_STRING(len, tmp, 0);
+					spprintf(&tmp, 0, "%lu", (ulong) decoded_len);
+					MAKE_STD_ZVAL(len);
+					ZVAL_STRING(len, tmp, 0);
 
-						zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
-						zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
-					}
+					zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
+					zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
 				}
 			}
 		} else
