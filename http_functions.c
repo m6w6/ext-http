@@ -42,6 +42,7 @@
 #include "php_http_message_api.h"
 #include "php_http_send_api.h"
 #include "php_http_url_api.h"
+#include "php_http_encoding_api.h"
 
 #include "phpstr/phpstr.h"
 

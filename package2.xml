@@ -40,11 +40,15 @@
  <license uri="http://www.php.net/license">PHP License</license>
  <notes><![CDATA[
 + Updated documentation (a lot)
++ Added optional third parameter to HttpRequest::__construct() accepting an array with options
 
 - Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
 - Changed the signature of the negotiator to fill the second parameter with the results array
 
 * Fixed several ETag issues
+* Fixed HttpRequestPools detach() and attach() methods when the iterator is active
+* Fixed parsing messages with Content-Range headers
+* Fixed parsing messages with another Transfer-Encoding header value than chunked
 ]]></notes>
  <contents>
   <dir name="/">

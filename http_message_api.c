@@ -28,6 +28,7 @@
 #include "php_http_send_api.h"
 #include "php_http_request_api.h"
 #include "php_http_url_api.h"
+#include "php_http_encoding_api.h"
 
 #include "phpstr/phpstr.h"
 
@@ -166,6 +167,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				ZVAL_STRINGL(len, tmp, tmp_len, 0);
 
 				zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
+				zend_hash_del(&msg->hdrs, "Content-Length", sizeof("Content-Length"));
 				zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
 				
 				phpstr_from_string_ex(PHPSTR(msg), decoded, decoded_len);
@@ -213,6 +215,43 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		} else {
 			continue_at = body;
 		}
+		
+#ifdef HTTP_HAVE_ZLIB
+		/* check for compressed data */
+		if (c = http_message_header(msg, "Content-Encoding")) {
+			char *decoded = NULL;
+			size_t decoded_len = 0;
+			
+			if (!strcasecmp(Z_STRVAL_P(c), "gzip")) {
+				http_encoding_gzdecode(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
+			} else
+			if (!strcasecmp(Z_STRVAL_P(c), "deflate")) {
+				http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
+			} else
+			if (!strcasecmp(Z_STRVAL_P(c), "compress")) {
+				http_encoding_uncompress(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
+			}
+			
+			if (decoded && decoded_len) {
+				zval *len;
+				char *tmp;
+				int tmp_len;
+				
+				tmp_len = (int) spprintf(&tmp, 0, "%lu", (ulong) decoded_len);
+				MAKE_STD_ZVAL(len);
+				ZVAL_STRINGL(len, tmp, tmp_len, 0);
+
+				zend_hash_del(&msg->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
+				zend_hash_del(&msg->hdrs, "Content-Length", sizeof("Content-Length"));
+				zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
+				
+				phpstr_dtor(PHPSTR(msg));
+				PHPSTR(msg)->data = decoded;
+				PHPSTR(msg)->used = decoded_len;
+				PHPSTR(msg)->free = 1;
+			}
+		}
+#endif
 
 		/* check for following messages */
 		if (continue_at) {

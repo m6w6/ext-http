@@ -12,6 +12,9 @@ PHP_ARG_WITH([http-mhash-etags], [whether to enable mhash ETag generator],
 PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
 [  --with-http-magic-mime[=MAGICDIR]
                            With magic mime response content type guessing])
+PHP_ARG_WITH([http-zlib-compression], [whether to enable support for gzencoded/deflated message bodies])
+[  --with-http-zlib-compression[=ZLIBDIR]
+                           With zlib gzdecode and inflate support])
 
 if test "$PHP_HTTP" != "no"; then
 
@@ -26,6 +29,26 @@ dnl -------
 		AC_MSG_RESULT(not found in default path)
 	fi
 
+dnl ----
+dnl ZLIB
+dnl ----
+	AC_MSG_CHECKING([for zlib.h])
+	ZLIB_DIR=
+	for i int "$PHP_HTTP_ZLIB_COMPRESSION" /user/local /usr /opt; do
+		if test -r "$i/include/zlib.h"; then
+			ZLIB_DIR=$i
+			break;
+		fi
+	done
+	if test -z "$ZLIB_DIR"; then
+		AC_MSG_RESULT([not found])
+		AC_MSG_WARNING([zlib support not enabled; zlib.h not found])
+	else
+		PHP_ADD_INCLUDE($ZLIB_DIR/include)
+		PHP_ADD_LIBRARY_WITH_PATH(libz, $ZLIB_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+		AC_DEFINE([HTTP_HAVE_ZLIB], [1], [Have zlib support])
+	fi
+	
 dnl ----
 dnl CURL
 dnl ----
@@ -146,14 +169,15 @@ dnl ----
 		http_response_object.c http_exception_object.c http_requestpool_object.c \
 		http_api.c http_cache_api.c http_request_api.c http_date_api.c \
 		http_headers_api.c http_message_api.c http_send_api.c http_url_api.c \
-		http_info_api.c http_request_method_api.c"
+		http_info_api.c http_request_method_api.c http_encoding_api.c"
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, [$ext_shared])
 	PHP_ADD_BUILD_DIR($ext_builddir/phpstr, 1)
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 
 	HTTP_HEADER_FILES="php_http_std_defs.h php_http.h php_http_api.h php_http_cache_api.h \
 		php_http_date_api.h php_http_headers_api.h php_http_info_api.h php_http_message_api.h \
-		php_http_request_api.h php_http_request_method_api.h php_http_send_api.h php_http_url_api.h"
+		php_http_request_api.h php_http_request_method_api.h php_http_send_api.h php_http_url_api.h \
+		php_http_encodig_api.h"
 	PHP_SUBST([HTTP_HEADER_FILES])
 
 	ifdef([PHP_INSTALL_HEADERS],

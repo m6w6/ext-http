@@ -12,7 +12,7 @@ if (PHP_HTTP != "no") {
 		"http_api.c http_cache_api.c http_request_pool_api.c "+
 		"http_request_api.c http_date_api.c http_headers_api.c "+
 		"http_message_api.c http_send_api.c http_url_api.c "+
-		"http_info_api.c http_request_method_api.c",
+		"http_info_api.c http_request_method_api.c http_encoding_api.c",
 		null,
 		"/I\"" + configure_module_dirname + "/phpstr\"");
 	ADD_SOURCES(configure_module_dirname + "/phpstr", "phpstr.c", "http");
@@ -20,6 +20,13 @@ if (PHP_HTTP != "no") {
 	
 	if (PHP_DEBUG != "no") {
 		ADD_FLAG("CFLAGS_HTTP", "/W3");
+	}
+	
+	if (CHECK_HEADER_ADD_INCLUDE('zlib.h', 'CFLAGS_HTTP') &&
+			CHECK_LIB('zlib.lib')) {
+		AC_DEFINE('HTTP_HAVE_ZLIB', 1, "Have zlib library");
+	} else {
+		WARNING("zlib encoding functions not enabled; libraries and headers not found");
 	}
 
 	MHASH_LIB = PHP_DEBUG != "no" ? "libmhash-staticd.lib":"libmhash-static.lib";
