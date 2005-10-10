@@ -95,8 +95,12 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 #ifdef HTTP_HAVE_ZLIB
 #include <zlib.h>
 
+/* max count of uncompress trials, alloc_size <<= 2 for each try */
 #define HTTP_GZMAXTRY 10
-#define HTTP_GZBUFLEN(l) (l + (l / 1000) + 16 + 1)
+/* safe padding */
+#define HTTP_GZSAFPAD 10
+/* add 1% extra space in case we need to encode widely differing (binary) data */
+#define HTTP_GZBUFLEN(l) (l + (l / 100) + HTTP_GZSAFPAD)
 
 static const char http_gzencode_header[] = {
 	(const char) 0x1f, 
@@ -114,9 +118,9 @@ inline void http_init_gzencode_buffer(z_stream *Z, const char *data, size_t data
 	
 	Z->next_in   = (Bytef *) data;
 	Z->avail_in  = data_len;
-	Z->avail_out = HTTP_GZBUFLEN(data_len) - 1;
+	Z->avail_out = HTTP_GZBUFLEN(data_len) + HTTP_GZSAFPAD - 1;
 	
-	*buf_ptr = emalloc(Z->avail_out + sizeof(http_gzencode_header));
+	*buf_ptr = emalloc(HTTP_GZBUFLEN(data_len) + sizeof(http_gzencode_header));
 	memcpy(*buf_ptr, http_gzencode_header, sizeof(http_gzencode_header));
 	
 	Z->next_out = *buf_ptr + sizeof(http_gzencode_header);
@@ -128,11 +132,11 @@ inline void http_init_deflate_buffer(z_stream *Z, const char *data, size_t data_
 	Z->zfree  = Z_NULL;
 	Z->opaque = Z_NULL;
 
-	Z->data_type = Z_ASCII;
+	Z->data_type = Z_UNKNOWN;
 	Z->next_in   = (Bytef *) data;
 	Z->avail_in  = data_len;
 	Z->avail_out = HTTP_GZBUFLEN(data_len) - 1;
-	Z->next_out  = emalloc(Z->avail_out);
+	Z->next_out  = emalloc(HTTP_GZBUFLEN(data_len));
 	
 	*buf_ptr = Z->next_out;
 }

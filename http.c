@@ -114,6 +114,14 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_build_query, NULL)
 #endif
 	PHP_FE(ob_etaghandler, NULL)
+#ifdef HTTP_HAVE_ZLIB
+	PHP_FE(http_gzencode, NULL)
+	PHP_FE(http_gzdecode, NULL)
+	PHP_FE(http_deflate, NULL)
+	PHP_FE(http_inflate, NULL)
+	PHP_FE(http_compress, NULL)
+	PHP_FE(http_uncompress, NULL)
+#endif
 	
 	EMPTY_FUNCTION_ENTRY
 };

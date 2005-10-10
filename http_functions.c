@@ -1544,7 +1544,7 @@ PHP_FUNCTION(http_compress)
 {
 	char *data;
 	int data_len;
-	long level;
+	long level = -1;
 	
 	RETVAL_NULL();
 	
@@ -1582,7 +1582,7 @@ PHP_FUNCTION(http_uncompress)
 		size_t decoded_len;
 		
 		if (SUCCESS == http_encoding_uncompress(data, data_len, &decoded, &decoded_len)) {
-			RETURN_STRINGL(decoded, decoded_len, 0);
+			RETURN_STRINGL(decoded, (int) decoded_len, 0);
 		}
 	}
 }
