@@ -69,16 +69,43 @@ HTTP_BEGIN_ARGS(matchRequestHeader, 2)
 	HTTP_ARG_VAL(case_sensitive, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(chunkedDecode, 1)
-	HTTP_ARG_VAL(encoded_string, 0)
-HTTP_END_ARGS;
-
 HTTP_BEGIN_ARGS(parseMessage, 1)
 	HTTP_ARG_VAL(message_string, 0)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(parseHeaders, 1)
 	HTTP_ARG_VAL(headers_string, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(chunkedDecode, 1)
+	HTTP_ARG_VAL(encoded_string, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(gzEncode, 1)
+	HTTP_ARG_VAL(plain, 0)
+	HTTP_ARG_VAL(level, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(gzDecode, 1)
+	HTTP_ARG_VAL(encoded, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(deflate, 1)
+	HTTP_ARG_VAL(plain, 0)
+	HTTP_ARG_VAL(level, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(inflate, 1)
+	HTTP_ARG_VAL(encoded, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(compress, 1)
+	HTTP_ARG_VAL(plain, 0)
+	HTTP_ARG_VAL(level, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(uncompress, 1)
+	HTTP_ARG_VAL(encoded, 0)
 HTTP_END_ARGS;
 
 zend_class_entry *http_util_object_ce;
@@ -90,9 +117,15 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(matchModified, http_match_modified)
 	HTTP_UTIL_ALIAS(matchEtag, http_match_etag)
 	HTTP_UTIL_ALIAS(matchRequestHeader, http_match_request_header)
-	HTTP_UTIL_ALIAS(chunkedDecode, http_chunked_decode)
 	HTTP_UTIL_ALIAS(parseMessage, http_parse_message)
 	HTTP_UTIL_ALIAS(parseHeaders, http_parse_headers)
+	HTTP_UTIL_ALIAS(chunkedDecode, http_chunked_decode)
+	HTTP_UTIL_ALIAS(gzEncode, http_gzencode)
+	HTTP_UTIL_ALIAS(gzDecode, http_gzdecode)
+	HTTP_UTIL_ALIAS(deflate, http_deflate)
+	HTTP_UTIL_ALIAS(inflate, http_inflate)
+	HTTP_UTIL_ALIAS(compress, http_compress)
+	HTTP_UTIL_ALIAS(uncompress, http_uncompress)
 	
 	EMPTY_FUNCTION_ENTRY
 };

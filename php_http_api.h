@@ -57,7 +57,11 @@ extern void _http_error_ex(long type TSRMLS_DC, long code, const char *format, .
 			http_error(HE_NOTICE, HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type HTTP_MSG_REQUEST"); \
 			action; \
 		}
-
+#define HTTP_CHECK_GZIP_LEVEL(level, action) \
+	if (level < -1 || level > 9) { \
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid compression level (-1 to 9): %d", level); \
+		action; \
+	}
 
 #define http_log(f, i, m) _http_log_ex((f), (i), (m) TSRMLS_CC)
 extern void http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC);
