@@ -18,9 +18,12 @@
 #ifndef PHP_HTTP_ENCODING_API_H
 #define PHP_HTTP_ENCODING_API_H
 
-#ifdef HTTP_HAVE_ZLIB
-
 #include "php_http_std_defs.h"
+
+#define http_encoding_dechunk(e, el, d, dl) _http_encoding_dechunk((e), (el), (d), (dl) TSRMLS_CC)
+PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
+
+#ifdef HTTP_HAVE_ZLIB
 
 #define http_encoding_gzencode(l, d, dl, r, rl) _http_encoding_gzencode((l), (d), (dl), (r), (rl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_gzencode(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);

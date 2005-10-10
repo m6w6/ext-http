@@ -34,7 +34,7 @@ dnl ZLIB
 dnl ----
 	AC_MSG_CHECKING([for zlib.h])
 	ZLIB_DIR=
-	for i int "$PHP_HTTP_ZLIB_COMPRESSION" /user/local /usr /opt; do
+	for i int "$PHP_HTTP_ZLIB_COMPRESSION" "$PHP_ZLIB_DIR" "$PHP_ZLIB" /user/local /usr /opt; do
 		if test -r "$i/include/zlib.h"; then
 			ZLIB_DIR=$i
 			break;
@@ -44,6 +44,7 @@ dnl ----
 		AC_MSG_RESULT([not found])
 		AC_MSG_WARNING([zlib support not enabled; zlib.h not found])
 	else
+		AC_MSG_RESULT([found in $ZLIB_DIR])
 		PHP_ADD_INCLUDE($ZLIB_DIR/include)
 		PHP_ADD_LIBRARY_WITH_PATH(libz, $ZLIB_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 		AC_DEFINE([HTTP_HAVE_ZLIB], [1], [Have zlib support])

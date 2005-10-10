@@ -157,7 +157,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 			size_t decoded_len;
 
 			/* decode and replace Transfer-Encoding with Content-Length header */
-			if (continue_at = http_chunked_decode(body, message + message_length - body, &decoded, &decoded_len)) {
+			if (continue_at = http_encoding_dechunk(body, message + message_length - body, &decoded, &decoded_len)) {
 				zval *len;
 				char *tmp;
 				int tmp_len;

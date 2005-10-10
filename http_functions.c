@@ -755,7 +755,7 @@ PHP_FUNCTION(http_chunked_decode)
 		RETURN_FALSE;
 	}
 
-	if (NULL != http_chunked_decode(encoded, encoded_len, &decoded, &decoded_len)) {
+	if (NULL != http_encoding_dechunk(encoded, encoded_len, &decoded, &decoded_len)) {
 		RETURN_STRINGL(decoded, (int) decoded_len, 0);
 	} else {
 		RETURN_FALSE;
