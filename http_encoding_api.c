@@ -120,7 +120,7 @@ inline void http_init_gzencode_buffer(z_stream *Z, const char *data, size_t data
 	Z->avail_in  = data_len;
 	Z->avail_out = HTTP_GZBUFLEN(data_len) + HTTP_GZSAFPAD - 1;
 	
-	*buf_ptr = emalloc(HTTP_GZBUFLEN(data_len) + sizeof(http_gzencode_header));
+	*buf_ptr = emalloc(HTTP_GZBUFLEN(data_len) + sizeof(http_gzencode_header) + HTTP_GZSAFPAD);
 	memcpy(*buf_ptr, http_gzencode_header, sizeof(http_gzencode_header));
 	
 	Z->next_out = *buf_ptr + sizeof(http_gzencode_header);
