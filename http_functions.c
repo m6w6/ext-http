@@ -1604,11 +1604,11 @@ PHP_FUNCTION(http_uncompress)
  *    and HTTP requests can be issued
  *  - HTTP_SUPPORT_SSLREQUESTS: whether libcurl was linked against openssl,
  *    and SSL requests can be issued 
- *  - HTTP_SUPPORT_ENCOGINS: whether ext/http was linked against zlib,
+ *  - HTTP_SUPPORT_ENCODINGS: whether ext/http was linked against zlib,
  *    and compressed HTTP responses can be decoded
- *  - HTTP_SUPPORTS_MHASHETAGS: whether ext/http was linked against libhmash,
+ *  - HTTP_SUPPORT_MHASHETAGS: whether ext/http was linked against libmhash,
  *    and ETags can be generated with the available mhash algorithms
- *  - HTTP_SUPPORTS_MAGICMIME: whether ext/http was linked against libmagic,
+ *  - HTTP_SUPPORT_MAGICMIME: whether ext/http was linked against libmagic,
  *    and the HttpResponse::guessContentType() method is usable
  * 
  * Returns int, whether requested feature is supported, or a bitmask with
