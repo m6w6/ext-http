@@ -22,8 +22,7 @@ if (PHP_HTTP != "no") {
 		ADD_FLAG("CFLAGS_HTTP", "/W3");
 	}
 	
-	if (CHECK_HEADER_ADD_INCLUDE('zlib.h', 'CFLAGS_HTTP') &&
-			CHECK_LIB('zlib.lib')) {
+	if (CHECK_HEADER_ADD_INCLUDE('zlib.h', 'CFLAGS_HTTP')) {
 		AC_DEFINE('HTTP_HAVE_ZLIB', 1, "Have zlib library");
 	} else {
 		WARNING("zlib encoding functions not enabled; libraries and headers not found");
