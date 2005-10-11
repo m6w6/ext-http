@@ -12,7 +12,7 @@ PHP_ARG_WITH([http-mhash-etags], [whether to enable mhash ETag generator],
 PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
 [  --with-http-magic-mime[=MAGICDIR]
                            With magic mime response content type guessing])
-PHP_ARG_WITH([http-zlib-compression], [whether to enable support for gzencoded/deflated message bodies])
+PHP_ARG_WITH([http-zlib-compression], [whether to enable support for gzencoded/deflated message bodies],
 [  --with-http-zlib-compression[=ZLIBDIR]
                            With zlib gzdecode and inflate support])
 
@@ -34,7 +34,7 @@ dnl ZLIB
 dnl ----
 	AC_MSG_CHECKING([for zlib.h])
 	ZLIB_DIR=
-	for i int "$PHP_HTTP_ZLIB_COMPRESSION" "$PHP_ZLIB_DIR" "$PHP_ZLIB" /user/local /usr /opt; do
+	for i in "$PHP_HTTP_ZLIB_COMPRESSION" "$PHP_ZLIB_DIR" "$PHP_ZLIB" /user/local /usr /opt; do
 		if test -r "$i/include/zlib.h"; then
 			ZLIB_DIR=$i
 			break;
@@ -42,11 +42,11 @@ dnl ----
 	done
 	if test -z "$ZLIB_DIR"; then
 		AC_MSG_RESULT([not found])
-		AC_MSG_WARNING([zlib support not enabled; zlib.h not found])
+		AC_MSG_WARN([gzip support not enabled; zlib.h not found])
 	else
 		AC_MSG_RESULT([found in $ZLIB_DIR])
 		PHP_ADD_INCLUDE($ZLIB_DIR/include)
-		PHP_ADD_LIBRARY_WITH_PATH(libz, $ZLIB_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+		PHP_ADD_LIBRARY_WITH_PATH(z, $ZLIB_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 		AC_DEFINE([HTTP_HAVE_ZLIB], [1], [Have zlib support])
 	fi
 	
