@@ -108,6 +108,10 @@ HTTP_BEGIN_ARGS(uncompress, 1)
 	HTTP_ARG_VAL(encoded, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(support, 0)
+	HTTP_ARG_VAL(feature, 0)
+HTTP_END_ARGS;
+
 zend_class_entry *http_util_object_ce;
 zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(date, http_date)
@@ -126,6 +130,7 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(inflate, http_inflate)
 	HTTP_UTIL_ALIAS(compress, http_compress)
 	HTTP_UTIL_ALIAS(uncompress, http_uncompress)
+	HTTP_UTIL_ALIAS(support, http_support)
 	
 	EMPTY_FUNCTION_ENTRY
 };

@@ -21,6 +21,19 @@
 #include "php_http_std_defs.h"
 #include "php_http_send_api.h"
 
+#define HTTP_SUPPORT				0x01L
+#define HTTP_SUPPORT_REQUESTS		0x02L
+#define HTTP_SUPPORT_MIMEMAGIC		0x04L
+#define HTTP_SUPPORT_ENCODINGS		0x08L
+#define HTTP_SUPPORT_MHASHETAGS		0x10L
+#define HTTP_SUPPORT_SSLREQUESTS	0x20L
+
+#define http_support_global_init() _http_support_global_init(INIT_FUNC_ARGS_PASSTHRU)
+extern STATUS _http_support_global_init(INIT_FUNC_ARGS);
+
+#define http_support(f) _http_support(f)
+PHP_HTTP_API long _http_support(long feature);
+
 #define pretty_key(key, key_len, uctitle, xhyphen) _http_pretty_key(key, key_len, uctitle, xhyphen)
 extern char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
 

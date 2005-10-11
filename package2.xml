@@ -42,6 +42,7 @@
 + Updated documentation (a lot)
 + Added optional third parameter to HttpRequest::__construct() accepting an array with options
 + Added compression functions gzencode/gzdecode, deflate/inflate, compress/uncompress
++ Added http_support() for probing features that depend on external libraries
 
 - Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
 - Changed the signature of the negotiator to fill the second parameter with the results array

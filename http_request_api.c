@@ -970,6 +970,15 @@ static inline void _http_curl_defaults(CURL *ch)
 
 #endif /* HTTP_HAVE_CURL */
 
+zend_bool _http_request_supports_ssl(void)
+{
+#ifdef HTTP_NEED_SSL
+	return (zend_bool) 1;
+#else
+	return (zend_bool) 0;
+#endif
+}
+
 /*
  * Local variables:
  * tab-width: 4

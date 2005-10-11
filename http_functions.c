@@ -1590,6 +1590,42 @@ PHP_FUNCTION(http_uncompress)
 #endif /* HTTP_HAVE_ZLIB */
 /* }}} */
 
+/* {{{ proto int http_support([int feature = 0])
+ *
+ * Check for feature that require external libraries.
+ * 
+ * Accpepts an optional in parameter specifying which feature to probe for.
+ * If the parameter is 0 or omitted, the return value contains a bitmask of 
+ * all supported featuers that depend on external libraries.
+ * 
+ * Available features to probe for are:
+ *  - HTTP_SUPPORT: always set
+ *  - HTTP_SUPPORT_REQUESTS: whether ext/http was linked against libcurl,
+ *    and HTTP requests can be issued
+ *  - HTTP_SUPPORT_SSLREQUESTS: whether libcurl was linked against openssl,
+ *    and SSL requests can be issued 
+ *  - HTTP_SUPPORT_ENCOGINS: whether ext/http was linked against zlib,
+ *    and compressed HTTP responses can be decoded
+ *  - HTTP_SUPPORTS_MHASHETAGS: whether ext/http was linked against libhmash,
+ *    and ETags can be generated with the available mhash algorithms
+ *  - HTTP_SUPPORTS_MAGICMIME: whether ext/http was linked against libmagic,
+ *    and the HttpResponse::guessContentType() method is usable
+ * 
+ * Returns int, whether requested feature is supported, or a bitmask with
+ * all supported features.
+ */
+PHP_FUNCTION(http_support)
+{
+	long feature = 0;
+	
+	RETVAL_LONG(0L);
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &feature)) {
+		RETVAL_LONG(http_support(feature));
+	}
+}
+/* }}} */
+
 PHP_FUNCTION(http_test)
 {
 }

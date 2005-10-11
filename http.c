@@ -61,6 +61,9 @@
 #ifdef HTTP_HAVE_MHASH
 #	include <mhash.h>
 #endif
+#ifdef HTTP_HAVE_ZLIB
+#	include <zlib.h>
+#endif
 
 #include <ctype.h>
 
@@ -122,6 +125,7 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_compress, NULL)
 	PHP_FE(http_uncompress, NULL)
 #endif
+	PHP_FE(http_support, NULL)
 	
 	EMPTY_FUNCTION_ENTRY
 };
@@ -273,13 +277,10 @@ PHP_MINIT_FUNCTION(http)
 
 	REGISTER_INI_ENTRIES();
 	
-	if (SUCCESS != http_headers_global_init()) {
-		return FAILURE;
-	}
-	if (SUCCESS != http_cache_global_init()) {
-		return FAILURE;
-	}
-	if (SUCCESS != http_request_method_global_init()) {
+	if (	(SUCCESS != http_support_global_init())			||
+			(SUCCESS != http_headers_global_init())			||
+			(SUCCESS != http_cache_global_init())			||
+			(SUCCESS != http_request_method_global_init())) {
 		return FAILURE;
 	}
 #ifdef HTTP_HAVE_CURL
@@ -356,6 +357,17 @@ PHP_MINFO_FUNCTION(http)
 		php_info_print_table_row(2, "cURL HTTP Requests", curl_version());
 #else
 		php_info_print_table_row(2, "cURL HTTP Requests", "disabled");
+#endif
+#ifdef HTTP_HAVE_ZLIB
+		{
+			char my_zlib_version[64] = {0};
+			
+			strlcat(my_zlib_version, "zlib/", 63);
+			strlcat(my_zlib_version, zlibVersion(), 63);
+			php_info_print_table_row(2, "zlib GZIP Encodings", my_zlib_version);
+		}
+#else
+		php_info_print_table_row(2, "zlib GZIP Encodings", "disabled");
 #endif
 #ifdef HTTP_HAVE_MHASH
 		{

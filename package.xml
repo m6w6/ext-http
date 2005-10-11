@@ -24,12 +24,21 @@
   </maintainers>
  <release>
   <version>0.15.0</version>
-  <date>2005-10-05</date>
+  <date>2005-10-11</date>
   <license>PHP License</license>
   <state>beta</state>
-  <notes>* Updated documentation
-* Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
-* Changed the signature of the negotiator to fill the second parameter with the results array
+  <notes>+ Updated documentation (a lot)
++ Added optional third parameter to HttpRequest::__construct() accepting an array with options
++ Added compression functions gzencode/gzdecode, deflate/inflate, compress/uncompress
++ Added http_support() for probing features that depend on external libraries
+
+- Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
+- Changed the signature of the negotiator to fill the second parameter with the results array
+
+* Fixed several ETag issues
+* Fixed HttpRequestPools detach() and attach() methods when the iterator is active
+* Fixed parsing messages with Content-Range headers
+* Fixed parsing messages with another Transfer-Encoding header value than chunked
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -70,6 +79,15 @@
     <file role="test" name="data.txt"/>
     <file role="test" name="date_001.phpt"/>
     <file role="test" name="date_002.phpt"/>
+    <file role="test" name="etag_mode_001.phpt"/>
+    <file role="test" name="etag_mode_002.phpt"/>
+    <file role="test" name="etag_mode_003.phpt"/>
+    <file role="test" name="etag_mode_004.phpt"/>
+    <file role="test" name="etag_mode_011.phpt"/>
+    <file role="test" name="etag_mode_012.phpt"/>
+    <file role="test" name="etag_mode_013.phpt"/>
+    <file role="test" name="etag_mode_014.phpt"/>
+    <file role="test" name="etag_mode_crc.phpt"/>
     <file role="test" name="get_request_data_001.phpt"/>
     <file role="test" name="HttpMessage_001.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
@@ -78,6 +96,8 @@
     <file role="test" name="HttpRequest_003.phpt"/>
     <file role="test" name="HttpResponse_001.phpt"/>
     <file role="test" name="HttpResponse_002.phpt"/>
+    <file role="test" name="HttpResponse_003.phpt"/>
+    <file role="test" name="HttpResponse_004.phpt"/>
     <file role="test" name="INI_001.phpt"/>
     <file role="test" name="log.inc"/>
     <file role="test" name="parse_headers_001.phpt"/>
@@ -88,6 +108,7 @@
     <file role="test" name="redirect_002_logging.phpt"/>
     <file role="test" name="redirect_003.phpt"/>
     <file role="test" name="redirect_003_logging.phpt"/>
+    <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
     <file role="test" name="send_data_002.phpt"/>
     <file role="test" name="send_data_003.phpt"/>
@@ -115,6 +136,7 @@
    <file role="src" name="http_api.c"/>
    <file role="src" name="http_cache_api.c"/>
    <file role="src" name="http_date_api.c"/>
+   <file role="src" name="http_encoding_api.c"/>
    <file role="src" name="http_exception_object.c"/>
    <file role="src" name="http_functions.c"/>
    <file role="src" name="http_headers_api.c"/>
@@ -138,6 +160,7 @@
    <file role="src" name="php_http_api.h"/>
    <file role="src" name="php_http_cache_api.h"/>
    <file role="src" name="php_http_date_api.h"/>
+   <file role="src" name="php_http_encoding_api.h"/>
    <file role="src" name="php_http_exception_object.h"/>
    <file role="src" name="php_http_headers_api.h"/>
    <file role="src" name="php_http_info_api.h"/>

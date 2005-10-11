@@ -28,6 +28,7 @@
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_headers_api.h"
+#include "php_http_request_api.h"
 #include "php_http_send_api.h"
 
 #ifdef ZEND_ENGINE_2
@@ -45,6 +46,48 @@
 #endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
+
+static zend_bool http_support_ssl;
+
+STATUS _http_support_global_init(INIT_FUNC_ARGS)
+{
+	http_support_ssl = http_request_supports_ssl();
+	
+	HTTP_LONG_CONSTANT("HTTP_SUPPORT", HTTP_SUPPORT);
+	HTTP_LONG_CONSTANT("HTTP_SUPPORT_REQUESTS", HTTP_SUPPORT_REQUESTS);
+	HTTP_LONG_CONSTANT("HTTP_SUPPORT_MIMEMAGIC", HTTP_SUPPORT_MIMEMAGIC);
+	HTTP_LONG_CONSTANT("HTTP_SUPPORT_ENCODINGS", HTTP_SUPPORT_ENCODINGS);
+	HTTP_LONG_CONSTANT("HTTP_SUPPORT_MHASHETAGS", HTTP_SUPPORT_MHASHETAGS);
+	HTTP_LONG_CONSTANT("HTTP_SUPPORT_SSLREQUESTS", HTTP_SUPPORT_SSLREQUESTS);
+	
+	return SUCCESS;
+}
+
+PHP_HTTP_API long _http_support(long feature)
+{
+	long support = HTTP_SUPPORT;
+	
+#ifdef HTTP_HAVE_CURL
+	support |= HTTP_SUPPORT_REQUESTS;
+	if (http_support_ssl) {
+		support |= HTTP_SUPPORT_SSLREQUESTS;
+	}
+#endif
+#ifdef HTTP_HAVE_MHASH
+	support |= HTTP_SUPPORT_MHASHETAGS;
+#endif
+#ifdef HTTP_HAVE_MAGIC
+	support |= HTTP_SUPPORT_MIMEMAGIC;
+#endif
+#ifdef HTTP_HAVE_ZLIB
+	support |= HTTP_SUPPORT_ENCODINGS;
+#endif
+
+	if (feature) {
+		return (feature == (support & feature));
+	}
+	return support;
+}
 
 /* char *pretty_key(char *, size_t, zend_bool, zend_bool) */
 char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)

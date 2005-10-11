@@ -140,6 +140,7 @@ PHP_FUNCTION(http_inflate);
 PHP_FUNCTION(http_compress);
 PHP_FUNCTION(http_uncompress);
 #endif
+PHP_FUNCTION(http_support);
 
 PHP_MINIT_FUNCTION(http);
 PHP_MSHUTDOWN_FUNCTION(http);

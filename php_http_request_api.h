@@ -17,6 +17,11 @@
 
 #ifndef PHP_HTTP_REQUEST_API_H
 #define PHP_HTTP_REQUEST_API_H
+
+#define http_request_supports_ssl() _http_request_supports_ssl()
+extern zend_bool _http_request_supports_ssl(void);
+
+
 #ifdef HTTP_HAVE_CURL
 
 #include "php_http_std_defs.h"
@@ -27,7 +32,6 @@
 #ifdef PHP_WIN32
 #	include <winsock2.h>
 #endif
-
 #include <curl/curl.h>
 
 #define http_request_global_init() _http_request_global_init(INIT_FUNC_ARGS_PASSTHRU)
