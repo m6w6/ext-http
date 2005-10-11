@@ -48,6 +48,7 @@
    <configureoption name="with-http-curl-requests" default="yes" prompt="whether to enable cURL HTTP requests; specify libcurl directory"/>
    <configureoption name="with-http-mhash-etags" default="yes" prompt="whether to enable mhash ETag generator; specify libmhash directory"/>
    <configureoption name="with-http-magic-mime" default="no" prompt="whether to enable response content type guessing; specify libmagic directory"/>
+   <configureoption name="with-zlib-compression" default="yes" prompt="whether to enable support for gzencoded/deflated message bodies"/>
   </configureoptions>
   <filelist>
    <dir name="docs">
@@ -79,6 +80,7 @@
     <file role="test" name="data.txt"/>
     <file role="test" name="date_001.phpt"/>
     <file role="test" name="date_002.phpt"/>
+    <file role="test" name="encodings.phpt"/>
     <file role="test" name="etag_mode_001.phpt"/>
     <file role="test" name="etag_mode_002.phpt"/>
     <file role="test" name="etag_mode_003.phpt"/>
