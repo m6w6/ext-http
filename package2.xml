@@ -136,6 +136,7 @@
     <file role="test" name="chunked_decode_002.phpt"/>
     <file role="test" name="date_001.phpt"/>
     <file role="test" name="date_002.phpt"/>
+    <file role="test" name="encodings.phpt"/>
     <file role="test" name="etag_mode_001.phpt"/>
     <file role="test" name="etag_mode_002.phpt"/>
     <file role="test" name="etag_mode_003.phpt"/>
@@ -217,6 +218,11 @@
    name="with-http-magic-mime"
    prompt="whether to enable response content type guessing; specify libmagic directory"
    default="no"
+  />
+  <configureoption
+   name="with-zlib-compression"
+   prompt="whether to enable support for gzencoded/deflated message bodies"
+   default="yes"
   />
   <filelist>
    <install as="functions.html" name="docs/functions.html"/>

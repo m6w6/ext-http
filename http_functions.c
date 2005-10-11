@@ -1602,7 +1602,7 @@ PHP_FUNCTION(http_uncompress)
  * 
  * Accpepts an optional in parameter specifying which feature to probe for.
  * If the parameter is 0 or omitted, the return value contains a bitmask of 
- * all supported featuers that depend on external libraries.
+ * all supported features that depend on external libraries.
  * 
  * Available features to probe for are:
  * <ul> 
