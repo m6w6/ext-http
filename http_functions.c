@@ -956,7 +956,7 @@ PHP_FUNCTION(http_match_request_header)
  *  - compress:         bool, whether to allow gzip/deflate content encoding
  *                      (defaults to true)
  *  - port:             int, use another port as specified in the url
- *  - referer:          string, the referer to sends
+ *  - referer:          string, the referer to send
  *  - useragent:        string, the user agent to send
  *                      (defaults to PECL::HTTP/version (PHP/version)))
  *  - headers:          array, list of custom headers as associative array

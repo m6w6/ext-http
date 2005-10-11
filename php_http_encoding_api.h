@@ -38,7 +38,8 @@ PHP_HTTP_API STATUS _http_encoding_compress(int level, const char *data, size_t 
 #define http_encoding_uncompress(d, dl, r, rl) _http_encoding_uncompress((d), (dl), (r), (rl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_uncompress(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
-#endif
+#endif /* HTTP_HAVE_ZLIB */
+
 #endif
 
 /*

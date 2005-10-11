@@ -298,9 +298,10 @@ zend_function_entry http_request_object_fe[] = {
 };
 static zend_object_handlers http_request_object_handlers;
 
-void _http_request_object_init(INIT_FUNC_ARGS)
+PHP_MINIT_FUNCTION(http_request_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request_object, NULL, 0);
+	return SUCCESS;
 }
 
 zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC)

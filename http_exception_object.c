@@ -45,7 +45,7 @@ zend_class_entry *HTTP_EX_CE(socket);
 zend_class_entry *HTTP_EX_CE(response);
 zend_class_entry *HTTP_EX_CE(url);
 
-void _http_exception_object_init(INIT_FUNC_ARGS)
+PHP_MINIT_FUNCTION(http_exception_object)
 {
 	HTTP_REGISTER_EXCEPTION(HttpException, http_exception_object_ce, zend_exception_get_default());
 	HTTP_REGISTER_EXCEPTION(HttpRuntimeException, HTTP_EX_CE(runtime), HTTP_EX_DEF_CE);
@@ -73,6 +73,8 @@ void _http_exception_object_init(INIT_FUNC_ARGS)
 	HTTP_LONG_CONSTANT("HTTP_E_SOCKET", HTTP_E_SOCKET);
 	HTTP_LONG_CONSTANT("HTTP_E_RESPONSE", HTTP_E_RESPONSE);
 	HTTP_LONG_CONSTANT("HTTP_E_URL", HTTP_E_URL);
+	
+	return SUCCESS;
 }
 
 zend_class_entry *_http_exception_get_default()

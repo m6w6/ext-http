@@ -277,29 +277,29 @@ PHP_MINIT_FUNCTION(http)
 
 	REGISTER_INI_ENTRIES();
 	
-	if (	(SUCCESS != http_support_global_init())			||
-			(SUCCESS != http_headers_global_init())			||
-			(SUCCESS != http_cache_global_init())			||
-			(SUCCESS != http_request_method_global_init())) {
-		return FAILURE;
-	}
+	if (	(SUCCESS != PHP_MINIT_CALL(http_support))	||
+			(SUCCESS != PHP_MINIT_CALL(http_headers))	||
+			(SUCCESS != PHP_MINIT_CALL(http_cache))		||
 #ifdef HTTP_HAVE_CURL
-	if (SUCCESS != http_request_global_init()) {
+			(SUCCESS != PHP_MINIT_CALL(http_request))	||
+#endif /* HTTP_HAVE_CURL */
+			(SUCCESS != PHP_MINIT_CALL(http_request_method))) {
 		return FAILURE;
 	}
-#endif /* HTTP_HAVE_CURL */
 
 #ifdef ZEND_ENGINE_2
-	http_util_object_init();
-	http_message_object_init();
+	if (	(SUCCESS != PHP_MINIT_CALL(http_util_object))		||
+			(SUCCESS != PHP_MINIT_CALL(http_message_object))	||
 #	ifndef WONKY
-	http_response_object_init();
-#	endif
+			(SUCCESS != PHP_MINIT_CALL(http_response_object))	||
+#	endif /* WONKY */
 #	ifdef HTTP_HAVE_CURL
-	http_request_object_init();
-	http_requestpool_object_init();
+			(SUCCESS != PHP_MINIT_CALL(http_request_object))	||
+			(SUCCESS != PHP_MINIT_CALL(http_requestpool_object))	||
 #	endif /* HTTP_HAVE_CURL */
-	http_exception_object_init();
+			(SUCCESS != PHP_MINIT_CALL(http_exception_object))) {
+		return FAILURE;
+	}
 #endif /* ZEND_ENGINE_2 */
 
 	return SUCCESS;
@@ -311,7 +311,7 @@ PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
-	http_request_global_cleanup();
+	return PHP_MSHUTDOWN_CALL(http_request);
 #endif
 	return SUCCESS;
 }
@@ -334,15 +334,14 @@ PHP_RINIT_FUNCTION(http)
 /* {{{ PHP_RSHUTDOWN_FUNCTION */
 PHP_RSHUTDOWN_FUNCTION(http)
 {
-#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
-	int i, c = zend_hash_num_elements(&HTTP_G(request).methods.custom);
+	STATUS status = SUCCESS;
 	
-	for (i = 0; i < c; ++i) {
-		http_request_method_unregister(HTTP_MAX_REQUEST_METHOD + i);
-	}
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
+	status = PHP_RSHUTDOWN_CALL(http_request_method);
 #endif
+	
 	http_globals_free(HTTP_GLOBALS);
-	return SUCCESS;
+	return status;
 }
 /* }}} */
 

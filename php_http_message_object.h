@@ -30,8 +30,8 @@ typedef struct {
 extern zend_class_entry *http_message_object_ce;
 extern zend_function_entry http_message_object_fe[];
 
-#define http_message_object_init() _http_message_object_init(INIT_FUNC_ARGS_PASSTHRU)
-extern void _http_message_object_init(INIT_FUNC_ARGS);
+extern PHP_MINIT_FUNCTION(http_message_object);
+
 #define http_message_object_new _http_message_object_new
 extern zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC);
 #define http_message_object_new_ex(ce, msg) _http_message_object_new_ex(ce, msg TSRMLS_CC)

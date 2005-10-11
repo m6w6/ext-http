@@ -19,11 +19,10 @@
 #define PHP_HTTP_EXCEPTION_OBJECT_H
 #ifdef ZEND_ENGINE_2
 
+PHP_MINIT_FUNCTION(http_exception_object);
+
 extern zend_class_entry *http_exception_object_ce;
 extern zend_function_entry http_exception_object_fe[];
-
-#define http_exception_object_init() _http_exception_object_init(INIT_FUNC_ARGS_PASSTHRU)
-extern void _http_exception_object_init(INIT_FUNC_ARGS);
 
 #define http_exception_get_default _http_exception_get_default
 extern zend_class_entry *_http_exception_get_default();

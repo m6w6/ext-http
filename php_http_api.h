@@ -28,8 +28,7 @@
 #define HTTP_SUPPORT_MHASHETAGS		0x10L
 #define HTTP_SUPPORT_SSLREQUESTS	0x20L
 
-#define http_support_global_init() _http_support_global_init(INIT_FUNC_ARGS_PASSTHRU)
-extern STATUS _http_support_global_init(INIT_FUNC_ARGS);
+extern PHP_MINIT_FUNCTION(http_support);
 
 #define http_support(f) _http_support(f)
 PHP_HTTP_API long _http_support(long feature);

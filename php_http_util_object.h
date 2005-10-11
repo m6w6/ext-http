@@ -22,8 +22,7 @@
 extern zend_class_entry *http_util_object_ce;
 extern zend_function_entry http_util_object_fe[];
 
-#define http_util_object_init() _http_util_object_init(INIT_FUNC_ARGS_PASSTHRU)
-extern void _http_util_object_init(INIT_FUNC_ARGS);
+extern PHP_MINIT_FUNCTION(http_util_object);
 
 PHP_METHOD(HttpUtil, date);
 PHP_METHOD(HttpUtil, absoluteUri);

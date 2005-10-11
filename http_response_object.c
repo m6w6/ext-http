@@ -214,10 +214,11 @@ zend_function_entry http_response_object_fe[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-void _http_response_object_init(INIT_FUNC_ARGS)
+PHP_MINIT_FUNCTION(http_response_object)
 {
 	HTTP_REGISTER_CLASS(HttpResponse, http_response_object, NULL, 0);
 	http_response_object_declare_default_properties();
+	return SUCCESS;
 }
 
 static inline void _http_response_object_declare_default_properties(TSRMLS_D)

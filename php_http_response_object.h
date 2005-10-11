@@ -26,8 +26,7 @@
 extern zend_class_entry *http_response_object_ce;
 extern zend_function_entry http_response_object_fe[];
 
-#define http_response_object_init() _http_response_object_init(INIT_FUNC_ARGS_PASSTHRU)
-extern void _http_response_object_init(INIT_FUNC_ARGS);
+extern PHP_MINIT_FUNCTION(http_response_object);
 
 PHP_METHOD(HttpResponse, setHeader);
 PHP_METHOD(HttpResponse, getHeader);

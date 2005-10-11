@@ -42,8 +42,8 @@ typedef struct {
 extern zend_class_entry *http_request_object_ce;
 extern zend_function_entry http_request_object_fe[];
 
-#define http_request_object_init() _http_request_object_init(INIT_FUNC_ARGS_PASSTHRU)
-extern void _http_request_object_init(INIT_FUNC_ARGS);
+extern PHP_MINIT_FUNCTION(http_request_object);
+
 #define http_request_object_new _http_request_object_new
 extern zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC);
 #define http_request_object_free _http_request_object_free

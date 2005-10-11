@@ -49,7 +49,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 
 static zend_bool http_support_ssl;
 
-STATUS _http_support_global_init(INIT_FUNC_ARGS)
+PHP_MINIT_FUNCTION(http_support)
 {
 	http_support_ssl = http_request_supports_ssl();
 	

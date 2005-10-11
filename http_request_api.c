@@ -56,7 +56,7 @@ static inline zend_bool http_ssl_init(void);
 static inline void http_ssl_cleanup(void);
 #endif
 
-STATUS _http_request_global_init(INIT_FUNC_ARGS)
+PHP_MINIT_FUNCTION(http_request)
 {
 	if (CURLE_OK != curl_global_init(CURL_GLOBAL_ALL)) {
 		return FAILURE;
@@ -76,12 +76,13 @@ STATUS _http_request_global_init(INIT_FUNC_ARGS)
 	return SUCCESS;
 }
 
-void _http_request_global_cleanup(TSRMLS_D)
+PHP_MSHUTDOWN_FUNCTION(http_request)
 {
 	curl_global_cleanup();
 #ifdef HTTP_NEED_SSL
 	http_ssl_cleanup();
 #endif
+	return SUCCESS;
 }
 
 #ifndef HAVE_CURL_EASY_STRERROR

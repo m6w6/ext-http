@@ -135,9 +135,10 @@ zend_function_entry http_util_object_fe[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-void _http_util_object_init(INIT_FUNC_ARGS)
+PHP_MINIT_FUNCTION(http_util_object)
 {
 	HTTP_REGISTER_CLASS(HttpUtil, http_util_object, NULL, 0);
+	return SUCCESS;
 }
 
 #endif /* ZEND_ENGINE_2 */

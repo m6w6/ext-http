@@ -94,10 +94,11 @@ zend_function_entry http_requestpool_object_fe[] = {
 };
 static zend_object_handlers http_requestpool_object_handlers;
 
-void _http_requestpool_object_init(INIT_FUNC_ARGS)
+PHP_MINIT_FUNCTION(http_requestpool_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequestPool, http_requestpool_object, NULL, 0);
 	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 1, zend_ce_iterator);
+	return SUCCESS;
 }
 
 zend_object_value _http_requestpool_object_new(zend_class_entry *ce TSRMLS_DC)

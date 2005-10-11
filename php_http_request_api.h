@@ -34,10 +34,8 @@ extern zend_bool _http_request_supports_ssl(void);
 #endif
 #include <curl/curl.h>
 
-#define http_request_global_init() _http_request_global_init(INIT_FUNC_ARGS_PASSTHRU)
-extern STATUS _http_request_global_init(INIT_FUNC_ARGS);
-#define http_request_global_cleanup() _http_request_global_cleanup(TSRMLS_C)
-extern void _http_request_global_cleanup(TSRMLS_D);
+extern PHP_MINIT_FUNCTION(http_request);
+extern PHP_MSHUTDOWN_FUNCTION(http_request);
 
 #define HTTP_REQUEST_BODY_CSTRING		1
 #define HTTP_REQUEST_BODY_CURLPOST		2

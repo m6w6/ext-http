@@ -57,11 +57,11 @@ typedef enum {
 	HTTP_MAX_REQUEST_METHOD	= 28
 } http_request_method;
 
-#define http_request_method_global_init() _http_request_method_global_init(INIT_FUNC_ARGS_PASSTHRU)
-STATUS _http_request_method_global_init(INIT_FUNC_ARGS);
-
 #define HTTP_STD_REQUEST_METHOD(m) ((m > HTTP_NO_REQUEST_METHOD) && (m < HTTP_MAX_REQUEST_METHOD))
 #define HTTP_CUSTOM_REQUEST_METHOD(m) (m - HTTP_MAX_REQUEST_METHOD)
+
+extern PHP_MINIT_FUNCTION(http_request_method);
+extern PHP_RSHUTDOWN_FUNCTION(http_request_method);
 
 #define http_request_method_name(m) _http_request_method_name((m) TSRMLS_CC)
 PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC);

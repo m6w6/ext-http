@@ -133,7 +133,7 @@ zend_function_entry http_message_object_fe[] = {
 };
 static zend_object_handlers http_message_object_handlers;
 
-void _http_message_object_init(INIT_FUNC_ARGS)
+PHP_MINIT_FUNCTION(http_message_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message_object, NULL, 0);
 
@@ -146,6 +146,8 @@ void _http_message_object_init(INIT_FUNC_ARGS)
 	http_message_object_handlers.write_property = http_message_object_write_prop;
 	http_message_object_handlers.get_properties = http_message_object_get_props;
 	http_message_object_handlers.get_property_ptr_ptr = NULL;
+	
+	return SUCCESS;
 }
 
 zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC)

@@ -37,8 +37,8 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define HTTP_DBG_NEG 0
 #endif
 
-/* {{{ STATUS http_headers_global_init() */
-STATUS _http_headers_global_init(INIT_FUNC_ARGS)
+/* {{{ */
+PHP_MINIT_FUNCTION(http_headers)
 {
 	HTTP_LONG_CONSTANT("HTTP_REDIRECT", HTTP_REDIRECT);
 	HTTP_LONG_CONSTANT("HTTP_REDIRECT_PERM", HTTP_REDIRECT_PERM);

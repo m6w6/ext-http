@@ -71,7 +71,7 @@ static const char *const http_request_methods[] = {
 };
 /* }}} */
 
-STATUS _http_request_method_global_init(INIT_FUNC_ARGS)
+PHP_MINIT_FUNCTION(http_request_method)
 {
 	/* HTTP/1.1 */
 	HTTP_LONG_CONSTANT("HTTP_METH_GET", HTTP_GET);
@@ -104,6 +104,17 @@ STATUS _http_request_method_global_init(INIT_FUNC_ARGS)
 	HTTP_LONG_CONSTANT("HTTP_METH_MKACTIVITY", HTTP_MKACTIVITY);
 	/* WebDAV Access Control - RFC 3744 */
 	HTTP_LONG_CONSTANT("HTTP_METH_ACL", HTTP_ACL);
+	
+	return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION(http_request_method)
+{
+	int i, c = zend_hash_num_elements(&HTTP_G(request).methods.custom);
+	
+	for (i = 0; i < c; ++i) {
+		http_request_method_unregister(HTTP_MAX_REQUEST_METHOD + i);
+	}
 	
 	return SUCCESS;
 }

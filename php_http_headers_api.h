@@ -32,8 +32,7 @@ typedef enum {
 	RANGE_ERR
 } http_range_status;
 
-#define http_headers_global_init() _http_headers_global_init(INIT_FUNC_ARGS_PASSTHRU)
-extern STATUS _http_headers_global_init(INIT_FUNC_ARGS);
+extern PHP_MINIT_FUNCTION(http_headers);
 
 #define http_parse_headers(h, a) _http_parse_headers_ex((h), Z_ARRVAL_P(a), 1, http_info_default_callback, NULL TSRMLS_CC)
 #define http_parse_headers_ex(h, ht, p) _http_parse_headers_ex((h), (ht), (p), http_info_default_callback, NULL TSRMLS_CC)

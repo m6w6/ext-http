@@ -35,14 +35,13 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-#define http_cache_global_init() _http_cache_global_init(INIT_FUNC_ARGS_PASSTHRU)
-extern STATUS _http_cache_global_init(INIT_FUNC_ARGS);
-
 typedef enum {
 	HTTP_ETAG_CRC32 = -3,
 	HTTP_ETAG_MD5 = -2,
 	HTTP_ETAG_SHA1 = -1,
 } http_etag_mode;
+
+extern PHP_MINIT_FUNCTION(http_cache);
 
 #ifdef HTTP_HAVE_MHASH
 static void *http_etag_alloc_mhash_digest(size_t size)
