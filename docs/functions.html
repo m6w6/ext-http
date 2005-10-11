@@ -337,6 +337,60 @@ See http_get() for a full list of available options.</p>
 <p>Returns the request method name as string on success, or FALSE on failure.</p>
 <h2 id="http_build_query">string http_build_query(mixed formdata [, string prefix[, string arg_separator]])</h2>
 <p>Generates a form-encoded query string from an associative array or object.</p>
+<h2 id="http_gzencode">string http_gzencode(string data[, int level = -1])</h2>
+<p>Compress data with the HTTP compatible GZIP encoding.</p>
+<p>Expects the first parameter to be a string which contains the data that<br />
+should be encoded.  Additionally accepts an optional in paramter specifying<br />
+the compression level, where -1 is default, 0 is no compression and 9 is<br />
+best compression ratio.</p>
+<p>Returns the encoded string on success, or NULL on failure.</p>
+<h2 id="http_gzdecode">string http_gzdecode(string data)</h2>
+<p>Uncompress data compressed with the HTTP compatible GZIP encoding.</p>
+<p>Expects a string as parameter containing the compressed data.</p>
+<p>Returns the decoded string on success, or NULL on failure.</p>
+<h2 id="http_deflate">string http_deflate(string data[, int level = -1])</h2>
+<p>Compress data with the HTTP compatible DEFLATE encoding.</p>
+<p>Expects the first parameter to be a string containing the data that should<br />
+be encoded.  Additionally accepts an optional int parameter specifying the<br />
+compression level, where -1 is default, 0 is no compression and 9 is best<br />
+compression ratio.</p>
+<p>Returns the encoded string on success, or NULL on failure.</p>
+<h2 id="http_inflate">string http_inflate(string data)</h2>
+<p>Uncompress data compressed with the HTTP compatible DEFLATE encoding.</p>
+<p>Expects a string as parameter containing the compressed data.</p>
+<p>Returns the decoded string on success, or NULL on failure.</p>
+<h2 id="http_compress">string http_compress(string data[, int level = -1])</h2>
+<p>Compress data with the HTTP compatible COMPRESS encoding.</p>
+<p>Expects the first parameter to be a string containing the data which should<br />
+be encoded.  Additionally accepts an optional int parameter specifying the<br />
+compression level, where -1 is default, 0 is no compression and 9 is best<br />
+compression ratio.</p>
+<p>Returns the encoded string on success, or NULL on failure.</p>
+<h2 id="http_uncompress">string http_uncompress(string data)</h2>
+<p>Uncompress data compressed with the HTTP compatible COMPRESS encoding.</p>
+<p>Expects a string as parameter containing the compressed data.</p>
+<p>Returns the decoded string on success, or NULL on failure.</p>
+<h2 id="http_support">int http_support([int feature = 0])</h2>
+<p>Check for feature that require external libraries.</p>
+<p>Accpepts an optional in parameter specifying which feature to probe for.<br />
+If the parameter is 0 or omitted, the return value contains a bitmask of <br />
+all supported featuers that depend on external libraries.</p>
+<p>Available features to probe for are:<br />
+<ul> <br />
+ <li> HTTP_SUPPORT: always set<br />
+ <li> HTTP_SUPPORT_REQUESTS: whether ext/http was linked against libcurl,<br />
+      and HTTP requests can be issued<br />
+ <li> HTTP_SUPPORT_SSLREQUESTS: whether libcurl was linked against openssl,<br />
+      and SSL requests can be issued <br />
+ <li> HTTP_SUPPORT_ENCODINGS: whether ext/http was linked against zlib,<br />
+      and compressed HTTP responses can be decoded<br />
+ <li> HTTP_SUPPORT_MHASHETAGS: whether ext/http was linked against libmhash,<br />
+      and ETags can be generated with the available mhash algorithms<br />
+ <li> HTTP_SUPPORT_MAGICMIME: whether ext/http was linked against libmagic,<br />
+      and the HttpResponse::guessContentType() method is usable<br />
+</ul></p>
+<p>Returns int, whether requested feature is supported, or a bitmask with<br />
+all supported features.</p>
 <hr noshade>
 <h1 id="http_message_object.c">http_message_object.c</h1>
 <h2 id="HttpMessage" class="o">HttpMessage</h2>
@@ -429,11 +483,12 @@ should also contain any parent messages.</p>
 <hr noshade>
 <h1 id="http_request_object.c">http_request_object.c</h1>
 <h2 id="HttpRequest" class="o">HttpRequest</h2>
-<h3 id="HttpRequest___construct">void HttpRequest::__construct([string url[, int request_method = HTTP_METH_GET]])</h3>
+<h3 id="HttpRequest___construct">void HttpRequest::__construct([string url[, int request_method = HTTP_METH_GET[, array options]]])</h3>
 <p>Instantiate a new HttpRequest object.</p>
 <p>Accepts a string as optional parameter containing the target request url.<br />
 Additianally accepts an optional int parameter specifying the request method<br />
-to use.</p>
+to use and an associative array as optional third parameter which will be<br />
+passed to HttpRequest::setOptions(). </p>
 <p>Throws HttpException.</p>
 <h3 id="HttpRequest___destruct">void HttpRequest::__destruct()</h3>
 <p>Destroys the HttpRequest object.</p>
@@ -953,6 +1008,20 @@ http.cache_log is set.</p>
 </li>
 <li><a href="#http_build_query">http_build_query</a>
 </li>
+<li><a href="#http_gzencode">http_gzencode</a>
+</li>
+<li><a href="#http_gzdecode">http_gzdecode</a>
+</li>
+<li><a href="#http_deflate">http_deflate</a>
+</li>
+<li><a href="#http_inflate">http_inflate</a>
+</li>
+<li><a href="#http_compress">http_compress</a>
+</li>
+<li><a href="#http_uncompress">http_uncompress</a>
+</li>
+<li><a href="#http_support">http_support</a>
+</li>
 </ul>
 </li>
 <li><a href="#http_message_object.c">http_message_object.c
@@ -1083,7 +1152,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Wed, 05 Oct 2005 15:34:24 +0000</b></p>
+    <p><b>Generated at: Tue, 11 Oct 2005 11:33:16 +0000</b></p>
 </body>
 </html>
 

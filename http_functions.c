@@ -1605,17 +1605,19 @@ PHP_FUNCTION(http_uncompress)
  * all supported featuers that depend on external libraries.
  * 
  * Available features to probe for are:
- *  - HTTP_SUPPORT: always set
- *  - HTTP_SUPPORT_REQUESTS: whether ext/http was linked against libcurl,
- *    and HTTP requests can be issued
- *  - HTTP_SUPPORT_SSLREQUESTS: whether libcurl was linked against openssl,
- *    and SSL requests can be issued 
- *  - HTTP_SUPPORT_ENCODINGS: whether ext/http was linked against zlib,
- *    and compressed HTTP responses can be decoded
- *  - HTTP_SUPPORT_MHASHETAGS: whether ext/http was linked against libmhash,
- *    and ETags can be generated with the available mhash algorithms
- *  - HTTP_SUPPORT_MAGICMIME: whether ext/http was linked against libmagic,
- *    and the HttpResponse::guessContentType() method is usable
+ * <ul> 
+ *  <li> HTTP_SUPPORT: always set
+ *  <li> HTTP_SUPPORT_REQUESTS: whether ext/http was linked against libcurl,
+ *       and HTTP requests can be issued
+ *  <li> HTTP_SUPPORT_SSLREQUESTS: whether libcurl was linked against openssl,
+ *       and SSL requests can be issued 
+ *  <li> HTTP_SUPPORT_ENCODINGS: whether ext/http was linked against zlib,
+ *       and compressed HTTP responses can be decoded
+ *  <li> HTTP_SUPPORT_MHASHETAGS: whether ext/http was linked against libmhash,
+ *       and ETags can be generated with the available mhash algorithms
+ *  <li> HTTP_SUPPORT_MAGICMIME: whether ext/http was linked against libmagic,
+ *       and the HttpResponse::guessContentType() method is usable
+ * </ul>
  * 
  * Returns int, whether requested feature is supported, or a bitmask with
  * all supported features.
