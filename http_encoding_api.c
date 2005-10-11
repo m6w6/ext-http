@@ -297,7 +297,7 @@ PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, ch
 				}
 			}
 		}
-	} while (max < HTTP_GZMAXTRY);
+	} while (max < HTTP_GZMAXTRY && status == Z_BUF_ERROR);
 	
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s", zError(status));
 	return FAILURE;
