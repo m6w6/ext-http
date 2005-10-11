@@ -1028,6 +1028,7 @@ PHP_FUNCTION(http_get)
 	if (SUCCESS == http_get(URL, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
 		RETURN_PHPSTR_VAL(&response);
 	} else {
+		phpstr_dtor(&response);
 		RETURN_FALSE;
 	}
 }
@@ -1061,6 +1062,7 @@ PHP_FUNCTION(http_head)
 	if (SUCCESS == http_head(URL, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
 		RETURN_PHPSTR_VAL(&response);
 	} else {
+		phpstr_dtor(&response);
 		RETURN_FALSE;
 	}
 }
@@ -1100,6 +1102,7 @@ PHP_FUNCTION(http_post_data)
 	if (SUCCESS == http_post(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
 		RETVAL_PHPSTR_VAL(&response);
 	} else {
+		phpstr_dtor(&response);
 		RETVAL_FALSE;
 	}
 }
@@ -1139,6 +1142,7 @@ PHP_FUNCTION(http_post_fields)
 	if (SUCCESS == http_post(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
 		RETVAL_PHPSTR_VAL(&response);
 	} else {
+		phpstr_dtor(&response);
 		RETVAL_FALSE;
 	}
 	http_request_body_dtor(&body);
@@ -1189,6 +1193,7 @@ PHP_FUNCTION(http_put_file)
 	if (SUCCESS == http_put(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
 		RETVAL_PHPSTR_VAL(&response);
 	} else {
+		phpstr_dtor(&response);
 		RETVAL_FALSE;
 	}
 	http_request_body_dtor(&body);
@@ -1237,6 +1242,7 @@ PHP_FUNCTION(http_put_stream)
 	if (SUCCESS == http_put(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
 		RETURN_PHPSTR_VAL(&response);
 	} else {
+		phpstr_dtor(&response);
 		RETURN_NULL();
 	}
 }
