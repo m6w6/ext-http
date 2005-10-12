@@ -141,11 +141,8 @@ inline void http_init_deflate_buffer(z_stream *Z, const char *data, size_t data_
 	*buf_ptr = Z->next_out;
 }
 
-inline void http_init_inflate_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr, size_t *buf_len, int iteration)
+inline void http_init_uncompress_buffer(size_t data_len, char **buf_ptr, size_t *buf_len, int iteration)
 {
-	Z->zalloc = Z_NULL;
-	Z->zfree  = Z_NULL;
-	
 	if (!iteration) {
 		*buf_len = data_len * 2;
 		*buf_ptr = emalloc(*buf_len + 1);
@@ -153,6 +150,14 @@ inline void http_init_inflate_buffer(z_stream *Z, const char *data, size_t data_
 		*buf_len <<= 2;
 		*buf_ptr = erealloc(*buf_ptr, *buf_len + 1);
 	}
+}
+
+inline void http_init_inflate_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr, size_t *buf_len, int iteration)
+{
+	Z->zalloc = Z_NULL;
+	Z->zfree  = Z_NULL;
+	
+	http_init_uncompress_buffer(data_len, buf_ptr, buf_len, iteration);
 	
 	Z->next_in   = (Bytef *) data;
 	Z->avail_in  = data_len;
@@ -189,6 +194,33 @@ inline size_t http_finish_gzencode_buffer(z_stream *Z, const char *data, size_t 
 	return http_finish_buffer(Z->total_out + sizeof(http_gzencode_header) + 8, buf_ptr);
 }
 
+inline STATUS http_verify_gzdecode_buffer(const char *data, size_t data_len, const char *decoded, size_t decoded_len, int error_level TSRMLS_DC)
+{
+	STATUS status = SUCCESS;
+	unsigned long len, cmp, crc;
+	
+	crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, (const Bytef *) decoded, decoded_len);
+	
+	cmp  = (unsigned) ((data[data_len-8] & 0xFF));
+	cmp += (unsigned) ((data[data_len-7] & 0xFF) << 8);
+	cmp += (unsigned) ((data[data_len-6] & 0xFF) << 16);
+	cmp += (unsigned) ((data[data_len-5] & 0xFF) << 24);
+	len  = (unsigned) ((data[data_len-4] & 0xFF));
+	len += (unsigned) ((data[data_len-3] & 0xFF) << 8);
+	len += (unsigned) ((data[data_len-2] & 0xFF) << 16);
+	len += (unsigned) ((data[data_len-1] & 0xFF) << 24);
+	
+	if (cmp != crc) {
+		http_error_ex(error_level TSRMLS_CC, HTTP_E_ENCODING, "Could not verify data integrity: CRC checksums do not match (%lu, %lu)", cmp, crc);
+		status = FAILURE;
+	}
+	if (len != decoded_len) {
+		http_error_ex(error_level TSRMLS_CC, HTTP_E_ENCODING, "Could not verify data integrity: data sizes do not match (%lu, %lu)", len, decoded_len);
+		status = FAILURE;
+	}
+	return status;
+}
 
 PHP_HTTP_API STATUS _http_encoding_gzencode(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
 {
@@ -255,26 +287,7 @@ PHP_HTTP_API STATUS _http_encoding_gzdecode(const char *data, size_t data_len, c
 		encoded_len = data_len - sizeof(http_gzencode_header) - 8;
 		
 		if (SUCCESS == http_encoding_inflate(encoded, encoded_len, decoded, decoded_len)) {
-			unsigned long len = 0, cmp = 0, crc = crc32(0L, Z_NULL, 0);
-			
-			crc = crc32(crc, (const Bytef *) *decoded, *decoded_len);
-			
-			cmp  = (unsigned) ((data[data_len-8] & 0xFF));
-			cmp += (unsigned) ((data[data_len-7] & 0xFF) << 8);
-			cmp += (unsigned) ((data[data_len-6] & 0xFF) << 16);
-			cmp += (unsigned) ((data[data_len-5] & 0xFF) << 24);
-			len  = (unsigned) ((data[data_len-4] & 0xFF));
-			len += (unsigned) ((data[data_len-3] & 0xFF) << 8);
-			len += (unsigned) ((data[data_len-2] & 0xFF) << 16);
-			len += (unsigned) ((data[data_len-1] & 0xFF) << 24);
-			
-			if (cmp != crc) {
-				http_error_ex(HE_NOTICE, HTTP_E_ENCODING, "Could not verify data integrity: CRC checksums do not match (%lu, %lu)", cmp, crc);
-			}
-			if (len != *decoded_len) {
-				http_error_ex(HE_NOTICE, HTTP_E_ENCODING, "Could not verify data integrity: data sizes do not match (%lu, %lu)", len, *decoded_len);
-			}
-			
+			http_verify_gzdecode_buffer(data, data_len, *decoded, *decoded_len, HE_NOTICE);
 			return SUCCESS;
 		}
 	}
@@ -299,6 +312,7 @@ PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, ch
 		}
 	} while (max < HTTP_GZMAXTRY && status == Z_BUF_ERROR);
 	
+	efree(*decoded);
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s", zError(status));
 	return FAILURE;
 }
@@ -307,21 +321,14 @@ PHP_HTTP_API STATUS _http_encoding_uncompress(const char *data, size_t data_len,
 {
 	int max = 0;
 	STATUS status;
-	size_t want = data_len * 2;
 	
-	*decoded = emalloc(want + 1);
-	if (Z_BUF_ERROR == (status = uncompress(*decoded, &want, data, data_len))) do {
-		/*	this is a lot faster with large data than gzuncompress(),
-			but could be a problem with a low memory limit */
-		want <<= 2;
-		*decoded = erealloc(*decoded, want + 1);
-		status = uncompress(*decoded, &want, data, data_len);
-	} while (++max < HTTP_GZMAXTRY && status == Z_BUF_ERROR);
-	
-	if (Z_OK == status) {
-		*decoded_len = http_finish_buffer(want, decoded);
-		return SUCCESS;
-	}
+	do {
+		http_init_uncompress_buffer(data_len, decoded, decoded_len, max++);
+		if (Z_OK == (status = uncompress(*decoded, decoded_len, data, data_len))) {
+			http_finish_buffer(*decoded_len, decoded);
+			return SUCCESS;
+		}
+	} while (max < HTTP_GZMAXTRY && status == Z_BUF_ERROR);
 	
 	efree(*decoded);
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not uncompress data: %s", zError(status));
