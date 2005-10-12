@@ -261,6 +261,11 @@ inline STATUS http_verify_gzencode_buffer(const char *data, size_t data_len, con
 		}
 	}
 	
+	if (data_len < offset + 8) {
+		http_error(error_level TSRMLS_CC, HTTP_E_ENCODING, "Missing or truncated GZIP footer");
+		return FAILURE;
+	}
+	
 	if (encoded) {
 		*encoded = data + offset;
 	}
