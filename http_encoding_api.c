@@ -103,11 +103,16 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 #define HTTP_GZBUFLEN(l) (l + (l / 100) + HTTP_GZSAFPAD)
 
 static const char http_gzencode_header[] = {
-	(const char) 0x1f, 
-	(const char) 0x8b, 
-	(const char) Z_DEFLATED, 
-	0, 0, 0, 0, 0, 0, 
-	(const char) 0x03
+	(const char) 0x1f,			// fixed value
+	(const char) 0x8b,			// fixed value
+	(const char) Z_DEFLATED,	// compression algorithm
+	(const char) 0,				// none of the possible flags defined by the GZIP "RFC"
+	(const char) 0,				// no MTIME available (4 bytes)
+	(const char) 0,				// =*=
+	(const char) 0,				// =*=
+	(const char) 0,				// =*=
+	(const char) 0,				// two possible flag values for 9 compression levels? o_O
+	(const char) 0x03			// assume *nix OS
 };
 
 inline void http_init_gzencode_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr)
@@ -194,6 +199,82 @@ inline size_t http_finish_gzencode_buffer(z_stream *Z, const char *data, size_t 
 	return http_finish_buffer(Z->total_out + sizeof(http_gzencode_header) + 8, buf_ptr);
 }
 
+inline STATUS http_verify_gzencode_buffer(const char *data, size_t data_len, const char **encoded, size_t *encoded_len, int error_level TSRMLS_DC)
+{
+	size_t offset = sizeof(http_gzencode_header);
+	
+	if (data_len < offset) {
+		goto really_bad_gzip_header;
+	}
+	
+	if (data[0] != (const char) 0x1F || data[1] != (const char) 0x8B) {
+		http_error_ex(error_level TSRMLS_CC, HTTP_E_ENCODING, "Unrecognized GZIP header start: 0x%02X 0x%02X", (int) data[0], (int) (data[1] & 0xFF));
+		return FAILURE;
+	}
+	
+	if (data[2] != (const char) Z_DEFLATED) {
+		http_error_ex(error_level TSRMLS_CC, HTTP_E_ENCODING, "Unrecognized compression format (%d)", (int) (data[2] & 0xFF));
+		/* still try to decode */
+	}
+	if ((data[3] & 0x3) == 0x3) {
+		if (data_len < offset + 2) {
+			goto really_bad_gzip_header;
+		}
+		/* there are extra fields, the length follows the common header as 2 bytes LSB */
+		offset += (unsigned) ((data[offset] & 0xFF));
+		offset += 1;
+		offset += (unsigned) ((data[offset] & 0xFF) << 8);
+		offset += 1;
+	}
+	if ((data[3] & 0x4) == 0x4) {
+		if (data_len <= offset) {
+			goto really_bad_gzip_header;
+		}
+		/* there's a file name */
+		offset += strlen(&data[offset]) + 1 /*NUL*/;
+	}
+	if ((data[3] & 0x5) == 0x5) {
+		if (data_len <= offset) {
+			goto really_bad_gzip_header;
+		}
+		/* there's a comment */
+		offset += strlen(&data[offset]) + 1 /* NUL */;
+	}
+	if ((data[3] & 0x2) == 0x2) {
+		/* there's a CRC16 of the header */
+		offset += 2;
+		if (data_len <= offset) {
+			goto really_bad_gzip_header;
+		} else {
+			unsigned long crc, cmp;
+			
+			cmp =  (unsigned) ((data[offset-2] & 0xFF));
+			cmp += (unsigned) ((data[offset-1] & 0xFF) << 8);
+			
+			crc = crc32(0L, Z_NULL, 0);
+			crc = crc32(crc, data, sizeof(http_gzencode_header));
+			
+			if (cmp != (crc & 0xFFFF)) {
+				http_error_ex(error_level TSRMLS_CC, HTTP_E_ENCODING, "GZIP headers CRC checksums so not match (%lu, %lu)", cmp, crc & 0xFFFF);
+				return FAILURE;
+			}
+		}
+	}
+	
+	if (encoded) {
+		*encoded = data + offset;
+	}
+	if (encoded_len) {
+		*encoded_len = data_len - offset - 8 /* size of the assumed GZIP footer */;	
+	}
+	
+	return SUCCESS;
+	
+really_bad_gzip_header:
+	http_error(error_level TSRMLS_CC, HTTP_E_ENCODING, "Missing or truncated GZIP header");
+	return FAILURE;
+}
+
 inline STATUS http_verify_gzdecode_buffer(const char *data, size_t data_len, const char *decoded, size_t decoded_len, int error_level TSRMLS_DC)
 {
 	STATUS status = SUCCESS;
@@ -278,19 +359,15 @@ PHP_HTTP_API STATUS _http_encoding_compress(int level, const char *data, size_t 
 
 PHP_HTTP_API STATUS _http_encoding_gzdecode(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
-	const char *encoded = data + sizeof(http_gzencode_header);
+	const char *encoded;
 	size_t encoded_len;
 	
-	if (data_len <= sizeof(http_gzencode_header) + 8) {
-		http_error(HE_WARNING, HTTP_E_ENCODING, "Could not gzdecode data: too short data length");
-	} else {
-		encoded_len = data_len - sizeof(http_gzencode_header) - 8;
-		
-		if (SUCCESS == http_encoding_inflate(encoded, encoded_len, decoded, decoded_len)) {
-			http_verify_gzdecode_buffer(data, data_len, *decoded, *decoded_len, HE_NOTICE);
-			return SUCCESS;
-		}
+	if (	(SUCCESS == http_verify_gzencode_buffer(data, data_len, &encoded, &encoded_len, HE_NOTICE)) &&
+			(SUCCESS == http_encoding_inflate(encoded, encoded_len, decoded, decoded_len))) {
+		http_verify_gzdecode_buffer(data, data_len, *decoded, *decoded_len, HE_NOTICE);
+		return SUCCESS;
 	}
+	
 	return FAILURE;
 }
 
