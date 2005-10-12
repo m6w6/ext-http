@@ -216,7 +216,7 @@ inline STATUS http_verify_gzencode_buffer(const char *data, size_t data_len, con
 		http_error_ex(error_level TSRMLS_CC, HTTP_E_ENCODING, "Unrecognized compression format (%d)", (int) (data[2] & 0xFF));
 		/* still try to decode */
 	}
-	if ((data[3] & 0x3) == 0x3) {
+	if ((data[3] & 0x4) == 0x4) {
 		if (data_len < offset + 2) {
 			goto really_bad_gzip_header;
 		}
@@ -226,14 +226,14 @@ inline STATUS http_verify_gzencode_buffer(const char *data, size_t data_len, con
 		offset += (unsigned) ((data[offset] & 0xFF) << 8);
 		offset += 1;
 	}
-	if ((data[3] & 0x4) == 0x4) {
+	if ((data[3] & 0x8) == 0x8) {
 		if (data_len <= offset) {
 			goto really_bad_gzip_header;
 		}
 		/* there's a file name */
 		offset += strlen(&data[offset]) + 1 /*NUL*/;
 	}
-	if ((data[3] & 0x5) == 0x5) {
+	if ((data[3] & 0x10) == 0x10) {
 		if (data_len <= offset) {
 			goto really_bad_gzip_header;
 		}
