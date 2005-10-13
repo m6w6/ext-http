@@ -59,7 +59,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		char *content_type;
 		char *unquoted_etag;
 		time_t last_modified;
-		zend_bool gzip_encoding;
+		int gzip_encoding;
 	} send;
 
 	struct _http_globals_request {
