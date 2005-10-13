@@ -25,6 +25,19 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 
 #ifdef HTTP_HAVE_ZLIB
 
+typedef enum {
+	HTTP_ENCODING_NONE = 0,
+	HTTP_ENCODING_ANY  = 1,
+	HTTP_ENCODING_GZIP,
+	HTTP_ENCODING_DEFLATE,
+	HTTP_ENCODING_COMPRESS
+} http_encoding_type;
+
+#define http_encode(t, l, d, dl, r, rl) _http_encode((t), (l), (d), (dl), (r), (rl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encode(http_encoding_type type, int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
+#define http_decode(t, d, dl, r, rl) _http_decode((t), (l), (d), (dl), (r), (rl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_decode(http_encoding_type type, const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
+
 #define http_encoding_gzencode(l, d, dl, r, rl) _http_encoding_gzencode((l), (d), (dl), (r), (rl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_gzencode(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
 #define http_encoding_gzdecode(d, dl, r, rl) _http_encoding_gzdecode((d), (dl), (r), (rl) TSRMLS_CC)

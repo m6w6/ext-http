@@ -18,7 +18,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define HTTP_PEXT_VERSION "0.15.1dev"
+#define HTTP_PEXT_VERSION "0.16.0dev"
 
 /* make compile on Win32 */
 #ifdef HTTP_HAVE_CURL
@@ -59,6 +59,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		char *content_type;
 		char *unquoted_etag;
 		time_t last_modified;
+		zend_bool gzip_encoding;
 	} send;
 
 	struct _http_globals_request {

@@ -32,6 +32,7 @@
 #include "php_http_headers_api.h"
 #include "php_http_date_api.h"
 #include "php_http_cache_api.h"
+#include "php_http_encoding_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
@@ -73,11 +74,30 @@ static inline void _http_sleep(TSRMLS_D)
 	}
 }
 /* }}} */
+#ifdef HTTP_HAVE_ZLIB
+#	define HTTP_CHUNK_ENCODE(data, size, dogzip) \
+		if (dogzip) { \
+			char *encoded = NULL; \
+			size_t encoded_len = 0; \
+ \
+			if (SUCCESS != http_encode(dogzip, 1, data, size, &encoded, &encoded_len)) { \
+				return FAILURE; \
+			} \
+ \
+			data = encoded; \
+			size = encoded_len; \
+		}
+#else
+#	define HTTP_CHUNK_ENCODE(data, size, dogzip)
+#endif
 
-#define HTTP_CHUNK_AVAIL(len) ((len -= HTTP_G(send).buffer_size) >= 0)
-#define HTTP_CHUNK_WRITE(data, l, dofree, dosleep) \
+#define HTTP_CHUNK_AVAIL(len, cs) ((len -= cs) >= 0)
+#define HTTP_CHUNK_WRITE(d, l, dofree, dosleep, dogzip) \
 	{ \
 		long size = (long) l; \
+		char *data = (char *) d; \
+ \
+		HTTP_CHUNK_ENCODE(data, size, dogzip); \
  \
 		if ((1 > size) || (size - PHPWRITE(data, size))) { \
 			if (dofree) { \
@@ -97,6 +117,8 @@ static inline void _http_sleep(TSRMLS_D)
 static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_send_mode mode TSRMLS_DC)
 {
 	long len = end - begin;
+	size_t chunk_size = HTTP_G(send).buffer_size;
+	http_encoding_type gzip = HTTP_G(send).gzip_encoding;
 
 	switch (mode)
 	{
@@ -111,13 +133,13 @@ static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_
 
 			buf = emalloc(HTTP_G(send).buffer_size);
 
-			while (HTTP_CHUNK_AVAIL(len)) {
-				HTTP_CHUNK_WRITE(buf, php_stream_read(s, buf, HTTP_G(send).buffer_size), 1, 1);
+			while (HTTP_CHUNK_AVAIL(len, chunk_size)) {
+				HTTP_CHUNK_WRITE(buf, php_stream_read(s, buf, chunk_size), 1, 1, gzip);
 			}
 
 			/* read & write left over */
 			if (len) {
-				HTTP_CHUNK_WRITE(buf, php_stream_read(s, buf, HTTP_G(send).buffer_size + len), 1, 0);
+				HTTP_CHUNK_WRITE(buf, php_stream_read(s, buf, chunk_size + len), 1, 0, gzip);
 			}
 
 			efree(buf);
@@ -128,14 +150,14 @@ static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_
 		{
 			char *s = (char *) data + begin;
 
-			while (HTTP_CHUNK_AVAIL(len)) {
-				HTTP_CHUNK_WRITE(s, HTTP_G(send).buffer_size, 0, 1);
-				s += HTTP_G(send).buffer_size;
+			while (HTTP_CHUNK_AVAIL(len, chunk_size)) {
+				HTTP_CHUNK_WRITE(s, chunk_size, 0, 1, gzip);
+				s += chunk_size;
 			}
 
 			/* write left over */
 			if (len) {
-				HTTP_CHUNK_WRITE(s, HTTP_G(send).buffer_size + len, 0, 0);
+				HTTP_CHUNK_WRITE(s, chunk_size + len, 0, 0, gzip);
 			}
 
 			return SUCCESS;
@@ -340,7 +362,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 {
 	HashTable ranges;
 	http_range_status range_status;
-	int cache_etag = 0;
+	int cache_etag = 0, external_gzip_handlers = 0;
 
 	if (!data_ptr) {
 		return FAILURE;
@@ -352,6 +374,10 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 	/* stop on-the-fly etag generation */
 	cache_etag = http_interrupt_ob_etaghandler();
 
+	if (	php_ob_handler_used("ob_gzhandler" TSRMLS_CC) ||
+			php_ob_handler_used("zlib output compression" TSRMLS_CC)) {
+		external_gzip_handlers = 1;
+	}
 	/* enable partial dl and resume */
 	http_send_header_string("Accept-Ranges: bytes");
 
@@ -400,13 +426,62 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 		return http_exit_ex(304, sent_header, NULL, 0);
 	}
 
-	/* emit a content-length header */
-	if (!php_ob_handler_used("ob_gzhandler" TSRMLS_CC)) {
+	if (external_gzip_handlers) {
+#ifdef HTTP_HAVE_ZLIB	
+		if (HTTP_G(send).gzip_encoding) {
+			HTTP_G(send).gzip_encoding = 0;
+		}
+	} else if (HTTP_G(send).gzip_encoding) {
+		HashTable *selected;
+		zval zsupported;
+		
+		INIT_PZVAL(&zsupported);
+		array_init(&zsupported);
+		add_next_index_stringl(&zsupported, "gzip", lenof("gzip"), 1);
+		add_next_index_stringl(&zsupported, "deflate", lenof("deflate"), 1);
+		add_next_index_stringl(&zsupported, "compress", lenof("compress"), 1);
+		
+		if (selected = http_negotiate_encoding(&zsupported)) {
+			char *encoding = NULL;
+			ulong idx;
+			
+			if (HASH_KEY_IS_STRING == zend_hash_get_current_key(selected, &encoding, &idx, 0) && encoding) {
+				STATUS hs = FAILURE;
+				
+				if (!strcmp(encoding, "gzip")) {
+					if (SUCCESS == (hs = http_send_header_string("Content-Encoding: gzip"))) {
+						HTTP_G(send).gzip_encoding = HTTP_ENCODING_GZIP;
+					}
+				} else if (!strcmp(encoding, "deflate")) {
+					if (SUCCESS == (hs = http_send_header_string("Content-Encoding: deflate"))) {
+						HTTP_G(send).gzip_encoding = HTTP_ENCODING_DEFLATE;
+					}
+				} else if (!strcmp(encoding, "compress")) {
+					if (SUCCESS == (hs = http_send_header_string("Content-Encoding: compress"))) {
+						HTTP_G(send).gzip_encoding = HTTP_ENCODING_COMPRESS;
+					}
+				}
+				if (SUCCESS == hs) {
+					http_send_header_string("Vary: Accept-Encoding");
+				} else {
+					HTTP_G(send).gzip_encoding = 0;
+				}
+			}
+			
+			zend_hash_destroy(selected);
+			FREE_HASHTABLE(selected);
+		}
+		
+		zval_dtor(&zsupported);
+#endif
+	} else {
+		/* emit a content-length header */
 		char *cl;
 		spprintf(&cl, 0, "Content-Length: %lu", (unsigned long) data_size);
 		http_send_header_string(cl);
 		efree(cl);
 	}
+	
 	/* send full entity */
 	return http_send_chunk(data_ptr, 0, data_size, data_mode);
 }

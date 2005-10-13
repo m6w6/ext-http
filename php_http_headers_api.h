@@ -47,13 +47,17 @@ typedef char *(*negotiate_func_t)(const char *test, double *quality, HashTable *
 
 #define http_negotiate_language_func _http_negotiate_language_func
 extern char *_http_negotiate_language_func(const char *test, double *quality, HashTable *supported TSRMLS_DC);
-#define http_negotiate_charset_func _http_negotiate_charset_func
-extern char *_http_negotiate_charset_func(const char *test, double *quality, HashTable *supported TSRMLS_DC);
+#define http_negotiate_encoding_func _http_negotiate_default_func
+#define http_negotiate_charset_func _http_negotiate_default_func
+#define http_negotiate_default_func _http_negotiate_default_func
+extern char *_http_negotiate_default_func(const char *test, double *quality, HashTable *supported TSRMLS_DC);
 
 #define http_negotiate_language(zsupported) http_negotiate_language_ex(Z_ARRVAL_P(zsupported))
 #define http_negotiate_language_ex(supported) http_negotiate_q("HTTP_ACCEPT_LANGUAGE", (supported), http_negotiate_language_func)
 #define http_negotiate_charset(zsupported) http_negotiate_charset_ex(Z_ARRVAL_P(zsupported))
 #define http_negotiate_charset_ex(supported)  http_negotiate_q("HTTP_ACCEPT_CHARSET", (supported), http_negotiate_charset_func)
+#define http_negotiate_encoding(zsupported) http_negotiate_encoding_ex(Z_ARRVAL_P(zsupported))
+#define http_negotiate_encoding_ex(supported)  http_negotiate_q("HTTP_ACCEPT_ENCODING", (supported), http_negotiate_encoding_func)
 #define http_negotiate_q(e, s, n) _http_negotiate_q((e), (s), (n) TSRMLS_CC)
 PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *supported, negotiate_func_t neg TSRMLS_DC);
 

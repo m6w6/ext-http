@@ -308,6 +308,71 @@ inline STATUS http_verify_gzdecode_buffer(const char *data, size_t data_len, con
 	return status;
 }
 
+PHP_HTTP_API STATUS _http_encode(http_encoding_type type, int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
+{
+	STATUS status = SUCCESS;
+	
+	switch (type)
+	{
+		case HTTP_ENCODING_ANY:
+		case HTTP_ENCODING_GZIP:
+			status = http_encoding_gzencode(level, data, data_len, encoded, encoded_len);
+		break;
+		
+		case HTTP_ENCODING_DEFLATE:
+			status = http_encoding_deflate(level, data, data_len, encoded, encoded_len);
+		break;
+		
+		case HTTP_ENCODING_COMPRESS:
+			status = http_encoding_compress(level, data, data_len, encoded, encoded_len);
+		break;
+		
+		case HTTP_ENCODING_NONE:
+		default:
+			*encoded = estrndup(data, data_len);
+			*encoded_len = data_len;
+		break;
+	}
+	
+	return status;
+}
+
+PHP_HTTP_API STATUS _http_decode(http_encoding_type type, const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+{
+	STATUS status = SUCCESS;
+	
+	switch (type)
+	{
+		case HTTP_ENCODING_ANY:
+			if (	SUCCESS != http_encoding_gzdecode(data, data_len, decoded, decoded_len) &&
+					SUCCESS != http_encoding_inflate(data, data_len, decoded, decoded_len) &&
+					SUCCESS != http_encoding_uncompress(data, data_len, decoded, decoded_len)) {
+				status = FAILURE;
+			}
+		break;
+		
+		case HTTP_ENCODING_GZIP:
+			status = http_encoding_gzdecode(data, data_len, decoded, decoded_len);
+		break;
+		
+		case HTTP_ENCODING_DEFLATE:
+			status = http_encoding_inflate(data, data_len, decoded, decoded_len);
+		break;
+		
+		case HTTP_ENCODING_COMPRESS:
+			status = http_encoding_uncompress(data, data_len, decoded, decoded_len);
+		break;
+		
+		case HTTP_ENCODING_NONE:
+		default:
+			*decoded = estrndup(data, data_len);
+			*decoded_len = data_len;
+		break;
+	}
+	
+	return status;
+}
+
 PHP_HTTP_API STATUS _http_encoding_gzencode(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
 {
 	z_stream Z;

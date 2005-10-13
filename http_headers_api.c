@@ -103,8 +103,8 @@ char *_http_negotiate_language_func(const char *test, double *quality, HashTable
 }
 /* }}} */
 
-/* {{{ char *http_negotiate_charset_func */
-char *_http_negotiate_charset_func(const char *test, double *quality, HashTable *supported TSRMLS_DC)
+/* {{{ char *http_negotiate_default_func */
+char *_http_negotiate_default_func(const char *test, double *quality, HashTable *supported TSRMLS_DC)
 {
 	zval **value;
 	

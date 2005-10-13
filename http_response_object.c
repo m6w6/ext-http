@@ -1106,17 +1106,14 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* throttling */
-	{
-		HTTP_G(send).buffer_size    = Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize)));
-		HTTP_G(send).throttle_delay = Z_DVAL_P(convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay)));
-	}
+	HTTP_G(send).buffer_size    = Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize)));
+	HTTP_G(send).throttle_delay = Z_DVAL_P(convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay)));
 
 	/* gzip */
-	if (zval_is_true(GET_STATIC_PROP(gzip))) {
-		php_start_ob_buffer_named("ob_gzhandler", HTTP_G(send).buffer_size, 0 TSRMLS_CC);
-	} else {
-		php_start_ob_buffer(NULL, HTTP_G(send).buffer_size, 0 TSRMLS_CC);
-	}
+	HTTP_G(send).gzip_encoding = zval_is_true(GET_STATIC_PROP(gzip));
+	
+	/* start ob */
+	php_start_ob_buffer(NULL, HTTP_G(send).buffer_size, 0 TSRMLS_CC);
 
 	/* send */
 	switch (Z_LVAL_P(GET_STATIC_PROP(mode)))
