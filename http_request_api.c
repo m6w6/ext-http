@@ -542,12 +542,15 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 
 	/* lastmodified */
 	if (zoption = http_curl_getopt(options, "lastmodified", IS_LONG)) {
-		if (Z_LVAL_P(zoption) > 0) {
+		if (Z_LVAL_P(zoption)) {
+			if (Z_LVAL_P(zoption) > 0) {
+				HTTP_CURL_OPT(TIMEVALUE, Z_LVAL_P(zoption));
+			} else {
+				HTTP_CURL_OPT(TIMEVALUE, time(NULL) + Z_LVAL_P(zoption));
+			}
 			HTTP_CURL_OPT(TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
-			HTTP_CURL_OPT(TIMEVALUE, Z_LVAL_P(zoption));
 		} else {
 			HTTP_CURL_OPT(TIMECONDITION, CURL_TIMECOND_NONE);
-			HTTP_CURL_OPT(TIMEVALUE, 0);
 		}
 	}
 
