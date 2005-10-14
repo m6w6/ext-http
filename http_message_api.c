@@ -400,7 +400,6 @@ PHP_HTTP_API void _http_message_tostruct_recursive(http_message *msg, zval *obj 
 		}
 		add_assoc_zval(&strct, "parentMessage", parent);
 		http_message_tostruct_recursive(msg->parent, parent);
-		zval_ptr_dtor(&parent);
 	} else {
 		add_assoc_null(&strct, "parentMessage");
 	}
