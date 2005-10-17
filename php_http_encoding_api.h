@@ -19,11 +19,17 @@
 #define PHP_HTTP_ENCODING_API_H
 
 #include "php_http_std_defs.h"
-#include "phpstr/phpstr.h"
+
+#ifdef HTTP_HAVE_ZLIB
+#	include "phpstr/phpstr.h"
+#	include <zlib.h>
+#endif
 
 #define http_encoding_dechunk(e, el, d, dl) _http_encoding_dechunk((e), (el), (d), (dl) TSRMLS_CC)
 PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
+#define http_encoding_response_start(cl) _http_encoding_response_start((cl) TSRMLS_CC)
+PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRMLS_DC);
 
 #ifdef HTTP_HAVE_ZLIB
 
@@ -54,15 +60,12 @@ typedef struct {
 	phpstr *storage;
 } http_encoding_stream;
 
-#define http_encoding_stream_init(s, g, l, e, el) _http_encoding_stream_init((s), g, (l), (e), (el) TSRMLS_CC)
+#define http_encoding_stream_init(s, g, l, e, el) _http_encoding_stream_init((s), (g), (l), (e), (el) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_stream_init(http_encoding_stream *s, int gzip, int level, char **encoded, size_t *encoded_len TSRMLS_DC);
 #define http_encoding_stream_update(s, d, dl, e, el) _http_encoding_stream_update((s), (d), (dl), (e), (el) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
 #define http_encoding_stream_finish(s, e, el) _http_encoding_stream_finish((s), (e), (el) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC);
-
-#define http_encoding_response_start(cl) _http_encoding_response_start((cl) TSRMS_CC)
-PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRMLS_DC);
 
 #define http_encoding_gzencode(l, d, dl, r, rl) _http_encoding_gzencode((l), (d), (dl), (r), (rl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_gzencode(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);

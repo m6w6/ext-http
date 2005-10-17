@@ -4,7 +4,7 @@
 #include "php.h"
 #include "phpstr.h"
 
-PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, zend_bool pre_alloc)
+PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int pre_alloc)
 {
 	if (!buf) {
 		buf = emalloc(sizeof(phpstr));
@@ -287,6 +287,9 @@ PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_
 		efree(chunk);
 		data = NULL;
 		data_len = 0;
+		if (!chunk_len) {
+			break;
+		}
 	}
 }
 

@@ -108,7 +108,7 @@ typedef int STATUS;
 #define HTTP_URI_ARGSEP HTTP_URL_ARGSEP
 
 /* send buffer size */
-#define HTTP_SENDBUF_SIZE 2097152
+#define HTTP_SENDBUF_SIZE 40960
 
 /* CURL buffer size */
 #define HTTP_CURLBUF_SIZE 16384

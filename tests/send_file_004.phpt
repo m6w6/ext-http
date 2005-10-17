@@ -17,5 +17,6 @@ Content-type: text/html
 X-Powered-By: PHP/%s
 Accept-Ranges: bytes
 Content-Range: bytes 1000-1009/1010
+Content-Length: 10
 
 123456789

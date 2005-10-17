@@ -18,5 +18,6 @@ X-Powered-By: PHP/%s
 Content-Type: text/plain
 Accept-Ranges: bytes
 Content-Range: bytes 5-6/6000
+Content-Length: 2
 
 c1

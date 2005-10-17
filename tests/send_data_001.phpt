@@ -18,5 +18,6 @@ X-Powered-By: PHP/%s
 Content-Type: text/plain
 Accept-Ranges: bytes
 Content-Range: bytes 5995-5999/6000
+Content-Length: 5
 
 23abc

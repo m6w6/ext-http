@@ -89,7 +89,7 @@ typedef enum {
 #define phpstr_new() phpstr_init(NULL)
 #define phpstr_init(b) phpstr_init_ex(b, 0, 0)
 #define phpstr_clone(phpstr_pointer) phpstr_init_ex(NULL, (phpstr_pointer)->size, 0)
-PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, zend_bool pre_alloc);
+PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int pre_alloc);
 
 /* create a phpstr from a zval or c-string */
 #define phpstr_from_zval(z) phpstr_from_string(Z_STRVAL(z), Z_STRLEN(z))

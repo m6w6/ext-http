@@ -513,7 +513,7 @@ PHP_FUNCTION(ob_etaghandler)
 }
 /* }}} */
 
-/* {{{ proto void http_throttle(double sec[, int bytes = 2097152])
+/* {{{ proto void http_throttle(double sec[, int bytes = 40960])
  *
  * Sets the throttle delay and send buffer size for use with http_send() API.
  * Provides a basic throttling mechanism, which will yield the current process

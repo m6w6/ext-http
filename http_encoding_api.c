@@ -531,7 +531,7 @@ PHP_HTTP_API STATUS _http_encoding_stream_update(http_encoding_stream *s, const 
 	status = deflate(&s->Z, Z_SYNC_FLUSH);
 	
 	if (Z_OK != status && Z_STREAM_END != status) {
-		HTTP_GZSTREAM_ERROR(status, *encoded);
+		HTTP_ENCODING_STREAM_ERROR(status, *encoded);
 	}
 	*encoded_len -= s->Z.avail_out;
 	
@@ -556,8 +556,6 @@ PHP_HTTP_API STATUS _http_encoding_stream_finish(http_encoding_stream *s, char *
 		HTTP_ENCODING_STREAM_ERROR(status, *encoded);
 	}
 	
-	fprintf(stderr, "Needed %d bytes\n", *encoded_len - s->Z.avail_out);
-	
 	*encoded_len -= s->Z.avail_out;
 	if (s->gzip) {
 		if (s->Z.avail_out < 8) {
@@ -580,16 +578,17 @@ PHP_HTTP_API STATUS _http_encoding_stream_finish(http_encoding_stream *s, char *
 
 PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRMLS_DC)
 {
-	if (php_ob_handler_used("ob_gzhandler" TSRMLS_DC)||php_ob_handler_used("zlib output compression" TSRMLS_DC)) {
+	if (	php_ob_handler_used("ob_gzhandler" TSRMLS_CC) ||
+			php_ob_handler_used("zlib output compression" TSRMLS_CC)) {
 		HTTP_G(send).gzip_encoding = 0;
 	} else {
 		if (!HTTP_G(send).gzip_encoding) {
 			/* emit a content-length header */
 			if (content_length) {
-				char *cl;
-				spprintf(&cl, 0, "Content-Length: %lu", (unsigned long) content_length);
-				http_send_header_string(cl);
-				efree(cl);
+				char cl_header_str[128];
+				size_t cl_header_len;
+				cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %lu", (unsigned long) content_length);
+				http_send_header_string_ex(cl_header_str, cl_header_len, 1);
 			}
 		} else {
 #ifndef HTTP_HAVE_ZLIB
