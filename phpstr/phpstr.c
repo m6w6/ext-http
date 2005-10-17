@@ -284,15 +284,16 @@ PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_
 	
 	while (got = phpstr_chunk_buffer(s, data, data_len, &chunk, chunk_len)) {
 		passthru(chunk, got TSRMLS_CC);
-		efree(chunk);
-		data = NULL;
-		data_len = 0;
 		if (!chunk_len) {
 			/* 	we already got the last chunk,
 				and freed all resources */
 			break;
 		}
+		data = NULL;
+		data_len = 0;
+		STR_SET(chunk, NULL);
 	}
+	STR_FREE(chunk);
 }
 
 /*

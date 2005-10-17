@@ -30,8 +30,8 @@
  </lead>
  <date>2005-00-00</date>
  <version>
-  <release>0.15.0</release>
-  <api>0.14.0</api>
+  <release>0.16.0</release>
+  <api>0.16.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -39,18 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes><![CDATA[
-+ Updated documentation (a lot)
-+ Added optional third parameter to HttpRequest::__construct() accepting an array with options
-+ Added compression functions gzencode/gzdecode, deflate/inflate, compress/uncompress
-+ Added http_support() for probing features that depend on external libraries
-
-- Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
-- Changed the signature of the negotiator to fill the second parameter with the results array
-
-* Fixed several ETag issues
-* Fixed HttpRequestPools detach() and attach() methods when the iterator is active
-* Fixed parsing messages with Content-Range headers
-* Fixed parsing messages with another Transfer-Encoding header value than chunked
++ Added ext/zlib independant GZIP support
 ]]></notes>
  <contents>
   <dir name="/">
@@ -158,7 +147,9 @@
     <file role="test" name="HttpResponse_004.phpt"/>
     <file role="test" name="INI_001.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
-    <file role="test" name="parse_message_001.phpt"/>
+    <file role="test" name="parse_message_002.phpt"/>
+    <file role="test" name="parse_message_003.phpt"/>
+    <file role="test" name="parse_message_004.phpt"/>
     <file role="test" name="redirect_001.phpt"/>
     <file role="test" name="redirect_001_logging.phpt"/>
     <file role="test" name="redirect_002.phpt"/>
