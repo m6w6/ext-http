@@ -100,7 +100,7 @@ static inline void _http_send_response_data_plain(void **buffer, const char *dat
 		http_encoding_stream *s = *((http_encoding_stream **) buffer);
 		
 		http_encoding_stream_update(s, data, data_len, &encoded, &encoded_len);
-		phpstr_chunked_output(&s->storage, data, data_len, HTTP_G(send).buffer_size, _http_flush TSRMLS_CC);
+		phpstr_chunked_output(&s->storage, encoded, encoded_len, HTTP_G(send).buffer_size, _http_flush TSRMLS_CC);
 		efree(encoded);
 #else
 		http_error(HE_ERROR, HTTP_E_RESPONSE, "Attempt to send GZIP response despite being able to do so; please report this bug");
@@ -167,18 +167,19 @@ static inline void _http_send_response_finish(void **buffer TSRMLS_DC)
 	if (HTTP_G(send).gzip_encoding) {
 #ifdef HTTP_HAVE_ZLIB
 		char *encoded = NULL;
-		size_t encoded_len;
+		size_t encoded_len = 0;
 		http_encoding_stream *s = *((http_encoding_stream **) buffer);
 		
 		http_encoding_stream_finish(s, &encoded, &encoded_len);
-		buffer = &s->storage;
-		phpstr_chunked_output((phpstr **) buffer, encoded, encoded_len, HTTP_G(send).buffer_size, _http_flush TSRMLS_CC);
+		phpstr_chunked_output(&s->storage, encoded, encoded_len, 0, _http_flush TSRMLS_CC);
 		STR_FREE(encoded);
+		efree(s);
 #else
 		http_error(HE_ERROR, HTTP_E_RESPONSE, "Attempt to send GZIP response despite being able to do so; please report this bug");
 #endif
+	} else {
+		phpstr_chunked_output((phpstr **) buffer, NULL, 0, 0, _http_flush TSRMLS_CC);
 	}
-	phpstr_chunked_output((phpstr **) buffer, NULL, 0, 0, _http_flush TSRMLS_CC);
 }
 /* }}} */
 

@@ -262,7 +262,7 @@ PHPSTR_API size_t phpstr_chunk_buffer(phpstr **s, const char *data, size_t data_
 	
 	if (!chunk_size) {
 		phpstr_data(storage, chunk, &chunk_size);
-		phpstr_free(&storage);
+		phpstr_free(s);
 		return chunk_size;
 	}
 	
@@ -288,6 +288,8 @@ PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_
 		data = NULL;
 		data_len = 0;
 		if (!chunk_len) {
+			/* 	we already got the last chunk,
+				and freed all resources */
 			break;
 		}
 	}

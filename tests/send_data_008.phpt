@@ -7,7 +7,7 @@ checkcgi();
 ?>
 --FILE--
 <?php
-http_throttle(0.01, 20);
+http_throttle(0.01, 1);
 http_send_data('00000000000000000000');
 ?>
 --EXPECTF--

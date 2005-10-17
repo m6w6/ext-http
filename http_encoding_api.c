@@ -151,13 +151,13 @@ inline void http_init_uncompress_buffer(size_t data_len, char **buf_ptr, size_t 
 		*buf_ptr = emalloc(*buf_len + 1);
 	} else {
 		size_t new_len = *buf_len << 2;
-		char *new_ptr = erealloc(*buf_ptr, new_len + 1);
+		char *new_ptr = erealloc_recoverable(*buf_ptr, new_len + 1);
 		
 		if (new_ptr) {
 			*buf_ptr = new_ptr;
 			*buf_len = new_len;
 		} else {
-			*iteration = INT_MAX;
+			*iteration = INT_MAX-1; /* avoid integer overflow on increment op */
 		}
 	}
 }
@@ -602,6 +602,8 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			add_next_index_stringl(&zsupported, "gzip", lenof("gzip"), 1);
 			add_next_index_stringl(&zsupported, "deflate", lenof("deflate"), 1);
 			
+			HTTP_G(send).gzip_encoding = 0;
+			
 			if (selected = http_negotiate_encoding(&zsupported)) {
 				STATUS hs = FAILURE;
 				char *encoding = NULL;
@@ -619,8 +621,6 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 					}
 					if (SUCCESS == hs) {
 						http_send_header_string("Vary: Accept-Encoding");
-					} else {
-						HTTP_G(send).gzip_encoding = 0;
 					}
 				}
 				
@@ -629,7 +629,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			}
 			
 			zval_dtor(&zsupported);
-			return 1;
+			return HTTP_G(send).gzip_encoding;
 #endif
 		}
 	}
