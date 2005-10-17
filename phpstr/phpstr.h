@@ -155,6 +155,12 @@ PHPSTR_API void phpstr_dtor(phpstr *buf);
 /* free a phpstr object completely */
 PHPSTR_API void phpstr_free(phpstr **buf);
 
+/* stores data in a phpstr until it reaches chunk_size */
+PHPSTR_API size_t phpstr_chunk_buffer(phpstr **s, const char *data, size_t data_len, char **chunk, size_t chunk_size);
+
+/* wrapper around phpstr_chunk_buffer, which passes available chunks to passthru() */
+PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_len, size_t chunk_size, void (*passthru)(const char *, size_t TSRMLS_DC) TSRMLS_DC);
+
 #endif
 
 

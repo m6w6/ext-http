@@ -245,6 +245,51 @@ PHPSTR_API void phpstr_free(phpstr **buf)
 	}
 }
 
+PHPSTR_API size_t phpstr_chunk_buffer(phpstr **s, const char *data, size_t data_len, char **chunk, size_t chunk_size)
+{
+	phpstr *storage;
+	
+	*chunk = NULL;
+	
+	if (!*s) {
+		*s = phpstr_init_ex(NULL, chunk_size * 2, chunk_size ? 1 : 0);
+	}
+	storage = *s;
+	
+	if (data_len) {
+		phpstr_append(storage, data, data_len);
+	}
+	
+	if (!chunk_size) {
+		phpstr_data(storage, chunk, &chunk_size);
+		phpstr_free(&storage);
+		return chunk_size;
+	}
+	
+	if (storage->used >= storage->size/2) {
+		phpstr *avail = phpstr_left(storage, storage->size/2);
+		*chunk = estrndup(PHPSTR_VAL(avail), PHPSTR_LEN(avail));
+		phpstr_free(&avail);
+		phpstr_cut(storage, 0, storage->size/2);
+		return storage->size/2;
+	}
+	
+	return 0;
+}
+
+PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_len, size_t chunk_len, void (*passthru)(const char *, size_t TSRMLS_DC) TSRMLS_DC)
+{
+	char *chunk = NULL;
+	size_t got = 0;
+	
+	while (got = phpstr_chunk_buffer(s, data, data_len, &chunk, chunk_len)) {
+		passthru(chunk, got TSRMLS_CC);
+		efree(chunk);
+		data = NULL;
+		data_len = 0;
+	}
+}
+
 /*
  * Local variables:
  * tab-width: 4

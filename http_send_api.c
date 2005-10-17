@@ -36,19 +36,14 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-#define http_flush() _http_flush(TSRMLS_C)
+#define http_flush(d, l) _http_flush((d), (l) SRMLS_CC)
 /* {{{ static inline void http_flush() */
-static inline void _http_flush(TSRMLS_D)
+static inline void _http_flush(const char *data, size_t data_len, TSRMLS_DC)
 {
+	PHPWRITE(data, data_len);
 	php_end_ob_buffer(1, 1 TSRMLS_CC);
 	sapi_flush(TSRMLS_C);
-}
-/* }}} */
-
-#define http_sleep() _http_sleep(TSRMLS_C)
-/* {{{ static inline void http_sleep() */
-static inline void _http_sleep(TSRMLS_D)
-{
+	
 #define HTTP_MSEC(s) (s * 1000)
 #define HTTP_USEC(s) (HTTP_MSEC(s) * 1000)
 #define HTTP_NSEC(s) (HTTP_USEC(s) * 1000)
@@ -74,52 +69,50 @@ static inline void _http_sleep(TSRMLS_D)
 	}
 }
 /* }}} */
+
+/* {{{ http_send_start_response */
+#define http_send_start_response(b, cl) _http_send_start_response((b), (cl) TSRMLS_CC)
+static void _http_send_response_start(void *buffer, size_t content_length TSRMLS_DC)
+{
+	if (http_encoding_response_start(content_length)) {
 #ifdef HTTP_HAVE_ZLIB
-#	define HTTP_CHUNK_ENCODE(data, size, dogzip) \
-		if (dogzip) { \
-			char *encoded = NULL; \
-			size_t encoded_len = 0; \
- \
-			if (SUCCESS != http_encode(dogzip, 1, data, size, &encoded, &encoded_len)) { \
-				return FAILURE; \
-			} \
- \
-			data = encoded; \
-			size = encoded_len; \
-		}
-#else
-#	define HTTP_CHUNK_ENCODE(data, size, dogzip)
+		char *encoded;
+		size_t *encoded_len;
+		http_encoding_stream *s = (http_encoding_stream *) buffer;
+		
+		http_encoding_stream_init(s, HTTP_G(gzip).encoding == HTTP_ENCODING_GZIP, -1, &encoded, &encoded_len);
+		phpstr_chunked_output(s.storage, encoded, encoded_len, HTTP_G(send).buffer_size, _http_flush TSRMLS_CC);
+		STR_FREE(encoded);
 #endif
+	}
+}
+
+#define http_send_response_data_plain(b, d, dl) _http_send_response_data_plain((b), (d), (dl) TSRMLS_CC)
+static void _http_send_response_data_plain(void *buffer, const char *data, size_t data_len TSRMLS_DC)
+{
+	if (HTTP_G(send).gzip_encoding) {
+#ifdef HTTP_HAVE_ZLIB
+		char *encoded;
+		size_t encoded_len;
+		
+		http_encoding_stream_update(buffer, data, data_len, &encoded, &encoded_len);
+		phpstr_chunked_output(&(((http_encoding_stream *) buffer)->storage), data, data_len, HTTP_G(send).buffer_size, _http_flush);
+		efree(encoded);
+#else
+		http_error(HE_ERROR, HTTP_E_RESPONSE, "Attempt to send GZIP response despite being able to do so; please report this bug");
+#endif
+	} else {
+		phpstr_chunked_output(&buffer, data, data_len, HTTP_G(send).buffer_size, _http_flush);
+	}
+}
 
 #define HTTP_CHUNK_AVAIL(len, cs) ((len -= cs) >= 0)
-#define HTTP_CHUNK_WRITE(d, l, dofree, dosleep, dogzip) \
-	{ \
-		long size = (long) l; \
-		char *data = (char *) d; \
- \
-		HTTP_CHUNK_ENCODE(data, size, dogzip); \
- \
-		if ((1 > size) || (size - PHPWRITE(data, size))) { \
-			if (dofree) { \
-				efree(data); \
-			} \
-			return FAILURE; \
-		} \
- \
-		http_flush(); \
-		if (dosleep) { \
-			http_sleep(); \
-		} \
-	}
-
-#define http_send_chunk(d, b, e, m) _http_send_chunk((d), (b), (e), (m) TSRMLS_CC)
-/* {{{ static STATUS http_send_chunk(const void *, size_t, size_t, http_send_mode) */
-static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_send_mode mode TSRMLS_DC)
+/* {{{ http_send_response_data_fetch */
+#define http_send_response_data_fetch(b, t, d, l, b, e) _http_send_response_data_fetch((b), (t), (d), (l), (b), (e) TSRMLS_CC)
+static void _http_send_response_data_fetch(void *buffer, const void *data, size_t data_len, http_send_mode mode, size_t begin, size_t end TSRMLS_DC)
 {
-	long len = end - begin;
-	size_t chunk_size = HTTP_G(send).buffer_size;
-	http_encoding_type gzip = HTTP_G(send).gzip_encoding;
-
+	long len = end - begin, chunk_size = 40960;
+	
 	switch (mode)
 	{
 		case SEND_RSRC:
@@ -131,44 +124,61 @@ static STATUS _http_send_chunk(const void *data, size_t begin, size_t end, http_
 				return FAILURE;
 			}
 
-			buf = emalloc(HTTP_G(send).buffer_size);
+			buf = emalloc(chunk_size);
 
 			while (HTTP_CHUNK_AVAIL(len, chunk_size)) {
-				HTTP_CHUNK_WRITE(buf, php_stream_read(s, buf, chunk_size), 1, 1, gzip);
+				http_send_response_data_plain(buffer, buf, php_stream_read(s, buf, chunk_size));
 			}
-
 			/* read & write left over */
 			if (len) {
-				HTTP_CHUNK_WRITE(buf, php_stream_read(s, buf, chunk_size + len), 1, 0, gzip);
+				http_send_response_data_plain(buffer, buf, php_stream_read(s, buf, chunk_size + len));
 			}
 
 			efree(buf);
-			return SUCCESS;
 		}
+		break;
 
 		case SEND_DATA:
 		{
 			char *s = (char *) data + begin;
 
 			while (HTTP_CHUNK_AVAIL(len, chunk_size)) {
-				HTTP_CHUNK_WRITE(s, chunk_size, 0, 1, gzip);
+				http_send_response_data_plain(buffer, s, chunk_size);
 				s += chunk_size;
 			}
-
 			/* write left over */
 			if (len) {
-				HTTP_CHUNK_WRITE(s, chunk_size + len, 0, 0, gzip);
+				http_send_response_data_plain(buffer, s, chunk_size + len);
 			}
-
-			return SUCCESS;
 		}
-
-		default:
-			return FAILURE;
 		break;
+
+		EMPTY_DEFAULT_SWITCH_CASE();
 	}
 }
 /* }}} */
+
+/* {{{ http_send_response_finish */
+#define http_send_response_finish(b) _http_send_response_finish((b) TSRMLS_CC)
+static void _http_send_response_finish(void *buffer TSRMLS_DC)
+{
+	if (HTTP_G(send).gzip_encoding) {
+#ifdef HTTP_HAVE_ZLIB
+		char *encoded = NULL;
+		size_t encoded_len;
+		
+		http_encoding_stream_finish(buffer, &encoded, &encoded_len);
+		buffer = ((http_encoding_stream *) buffer)->storage;
+		phpstr_chunked_output(buffer, encoded, encoded_len, HTTP_G(send).buffer_size, _http_flush);
+		STR_FREE(encoded);
+#else
+		http_error(HE_ERROR, HTTP_E_RESPONSE, "Attempt to send GZIP response despite being able to do so; please report this bug");
+#endif
+	}
+	phpstr_chunked_output(buffer, NULL, 0, 0, _http_flush);
+}
+/* }}} */
+
 
 /* {{{ STATUS http_send_header(char *, char *, zend_bool) */
 PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace, char **sent_header TSRMLS_DC)
@@ -281,103 +291,25 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, size_t 
 }
 /* }}} */
 
-/* {{{ STATUS http_send_ranges(HashTable *, void *, size_t, http_send_mode) */
-PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_t size, http_send_mode mode TSRMLS_DC)
-{
-	zval **zbegin, **zend, **zrange;
-
-	/* single range */
-	if (zend_hash_num_elements(ranges) == 1) {
-		char range_header[256] = {0};
-
-		if (SUCCESS != zend_hash_index_find(ranges, 0, (void **) &zrange) ||
-			SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &zbegin) ||
-			SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &zend)) {
-			http_send_status(500);
-			return FAILURE;
-		}
-		
-		/* Send HTTP 206 Partial Content */
-		http_send_status(206);
-
-		/* send content range header */
-		snprintf(range_header, 255, "Content-Range: bytes %ld-%ld/%lu", Z_LVAL_PP(zbegin), Z_LVAL_PP(zend), (ulong) size);
-		http_send_header_string(range_header);
-
-		/* send requested chunk */
-		return http_send_chunk(data, Z_LVAL_PP(zbegin), Z_LVAL_PP(zend) + 1, mode);
-	}
-
-	/* multi range */
-	else {
-		size_t preface_len;
-		char bound[23] = {0}, preface[1024] = {0},
-			multi_header[68] = "Content-Type: multipart/byteranges; boundary=";
-
-		/* Send HTTP 206 Partial Content */
-		http_send_status(206);
-
-		/* send multipart/byteranges header */
-		snprintf(bound, 22, "--%lu%0.9f", (ulong) time(NULL), php_combined_lcg(TSRMLS_C));
-		strncat(multi_header, bound + 2, 21);
-		http_send_header_string(multi_header);
-
-		/* send each requested chunk */
-		FOREACH_HASH_VAL(ranges, zrange) {
-			if (SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 0, (void **) &zbegin) ||
-				SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(zrange), 1, (void **) &zend)) {
-				break;
-			}
-
-			preface_len = snprintf(preface, 1023,
-				HTTP_CRLF "%s"
-				HTTP_CRLF "Content-Type: %s"
-				HTTP_CRLF "Content-Range: bytes %ld-%ld/%lu"
-				HTTP_CRLF
-				HTTP_CRLF,
-
-				bound,
-				HTTP_G(send).content_type ? HTTP_G(send).content_type : "application/x-octetstream",
-				Z_LVAL_PP(zbegin),
-				Z_LVAL_PP(zend),
-				(ulong) size
-			);
-
-			PHPWRITE(preface, preface_len);
-			http_send_chunk(data, Z_LVAL_PP(zbegin), Z_LVAL_PP(zend) + 1, mode);
-		}
-
-		/* write boundary once more */
-		PHPWRITE(HTTP_CRLF, lenof(HTTP_CRLF));
-		PHPWRITE(bound, strlen(bound));
-		PHPWRITE("--", lenof("--"));
-
-		return SUCCESS;
-	}
-}
-/* }}} */
-
 /* {{{ STATUS http_send(void *, size_t, http_send_mode) */
 PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_send_mode data_mode, zend_bool no_cache TSRMLS_DC)
 {
 	HashTable ranges;
 	http_range_status range_status;
-	int cache_etag = 0, external_gzip_handlers = 0;
-
+	int cache_etag = http_interrupt_etag_handler();
+#ifdef HTTP_HAVE_ZLIB
+	http_encoding_stream s;
+#else
+	phpstr *s = NULL;
+#endif
+	
 	if (!data_ptr) {
 		return FAILURE;
 	}
 	if (!data_size) {
 		return SUCCESS;
 	}
-
-	/* stop on-the-fly etag generation */
-	cache_etag = http_interrupt_ob_etaghandler();
-
-	if (	php_ob_handler_used("ob_gzhandler" TSRMLS_CC) ||
-			php_ob_handler_used("zlib output compression" TSRMLS_CC)) {
-		external_gzip_handlers = 1;
-	}
+	
 	/* enable partial dl and resume */
 	http_send_header_string("Accept-Ranges: bytes");
 
@@ -389,101 +321,113 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 		http_send_status(416);
 		return FAILURE;
 	}
-
-	/* Range Request - only send ranges if entity hasn't changed */
-	if (	range_status == RANGE_OK &&
-			http_match_etag_ex("HTTP_IF_MATCH", HTTP_G(send).unquoted_etag, 0) &&
-			http_match_last_modified_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(send).last_modified, 0) &&
-			http_match_last_modified_ex("HTTP_UNLESS_MODIFIED_SINCE", HTTP_G(send).last_modified, 0)) {
-		STATUS result = http_send_ranges(&ranges, data_ptr, data_size, data_mode);
-		zend_hash_destroy(&ranges);
-		return result;
-	}
-
-	zend_hash_destroy(&ranges);
-
-	/* send 304 Not Modified if etag matches - DON'T return on ETag generation failure */
-	if (!no_cache && cache_etag) {
-		char *etag = NULL;
-		
-		if (etag = http_etag(data_ptr, data_size, data_mode)) {
-			char *sent_header = NULL;
-			
-			http_send_etag_ex(etag, strlen(etag), &sent_header);
-			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
-				return http_exit_ex(304, sent_header, NULL, 0);
-			} else {
-				STR_FREE(sent_header);
-			}
-			efree(etag);
-		}
-	}
-
-	/* send 304 Not Modified if last modified matches */
-	if (!no_cache && http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G(send).last_modified)) {
-		char *sent_header = NULL;
-		http_send_last_modified_ex(HTTP_G(send).last_modified, &sent_header);
-		return http_exit_ex(304, sent_header, NULL, 0);
-	}
-
-	if (external_gzip_handlers) {
-#ifdef HTTP_HAVE_ZLIB	
-		if (HTTP_G(send).gzip_encoding) {
-			HTTP_G(send).gzip_encoding = 0;
-		}
-	} else if (HTTP_G(send).gzip_encoding) {
-		HashTable *selected;
-		zval zsupported;
-		
-		INIT_PZVAL(&zsupported);
-		array_init(&zsupported);
-		add_next_index_stringl(&zsupported, "gzip", lenof("gzip"), 1);
-		add_next_index_stringl(&zsupported, "deflate", lenof("deflate"), 1);
-		add_next_index_stringl(&zsupported, "compress", lenof("compress"), 1);
-		
-		if (selected = http_negotiate_encoding(&zsupported)) {
-			char *encoding = NULL;
-			ulong idx;
-			
-			if (HASH_KEY_IS_STRING == zend_hash_get_current_key(selected, &encoding, &idx, 0) && encoding) {
-				STATUS hs = FAILURE;
-				
-				if (!strcmp(encoding, "gzip")) {
-					if (SUCCESS == (hs = http_send_header_string("Content-Encoding: gzip"))) {
-						HTTP_G(send).gzip_encoding = HTTP_ENCODING_GZIP;
-					}
-				} else if (!strcmp(encoding, "deflate")) {
-					if (SUCCESS == (hs = http_send_header_string("Content-Encoding: deflate"))) {
-						HTTP_G(send).gzip_encoding = HTTP_ENCODING_DEFLATE;
-					}
-				} else if (!strcmp(encoding, "compress")) {
-					if (SUCCESS == (hs = http_send_header_string("Content-Encoding: compress"))) {
-						HTTP_G(send).gzip_encoding = HTTP_ENCODING_COMPRESS;
-					}
-				}
-				if (SUCCESS == hs) {
-					http_send_header_string("Vary: Accept-Encoding");
-				} else {
-					HTTP_G(send).gzip_encoding = 0;
-				}
-			}
-			
-			zend_hash_destroy(selected);
-			FREE_HASHTABLE(selected);
-		}
-		
-		zval_dtor(&zsupported);
-#endif
-	} else {
-		/* emit a content-length header */
-		char *cl;
-		spprintf(&cl, 0, "Content-Length: %lu", (unsigned long) data_size);
-		http_send_header_string(cl);
-		efree(cl);
-	}
 	
-	/* send full entity */
-	return http_send_chunk(data_ptr, 0, data_size, data_mode);
+	switch (range_status)
+	{
+		case RANGE_OK:
+			/* Range Request - only send ranges if entity hasn't changed */
+			if (	http_match_etag_ex("HTTP_IF_MATCH", HTTP_G(send).unquoted_etag, 0) &&
+					http_match_last_modified_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(send).last_modified, 0) &&
+					http_match_last_modified_ex("HTTP_UNLESS_MODIFIED_SINCE", HTTP_G(send).last_modified, 0)) {
+				
+				if (zend_hash_num_elements(&ranges) == 1) {
+					/* single range */
+					zval **range, **begin, **end;
+					
+					if (	SUCCESS == zend_hash_index_find(ranges, 0, (void **) &range) &&
+							SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void **) &begin) &&
+							SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void **) &end)) {
+						char range_header_str[256];
+						size_t range_header_len;
+						
+						range_header_len = snprintf(range_header_str, "Content-Range: bytes %ld-%ld/%lu", Z_LVAL_PP(begin), Z_LVAL_PP(end), (unsigned long) data_size);
+						http_send_status_header_ex(206, range_header_str, range_header_len, 1);
+						http_send_response_start(s, Z_LVAL_PP(end)-Z_LVAL_PP(begin));
+						http_send_response_data_fetch(s, data_ptr, data_size, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
+						http_send_response_finish(s);
+						zend_hash_destroy(&ranges);
+						return SUCCESS;
+					}
+				} else {
+					/* multi range */
+					zval **range, **begin, **end;
+					const char *content_type = HTTP_G(send).content_type;
+					char *boundary_str, *range_header_str;
+					size_t boundary_len, range_header_len;
+					
+					boundary_len = spprintf(&boundary_str, 0, "%lu%0.9f", (unsigned long) time(NULL), (float) php_combined_lcg(TSRMLS_C))
+					range_header_len = spprintf(&range_header_str, 0, "Content-Type: multipart/byteranges; boundary=%s", boundary_str);
+					
+					http_send_status_header_ex(206, range_header, range_header_len, 1);
+					efree(range_header_str);
+					http_send_response_start(s, 0);
+					
+					if (!content_type) {
+						content_type = "application/x-octetstream";
+					}
+					
+					FOREACH_HASH_VAL(&ranges, range) {
+						if (	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void **) &begin) &&
+								SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void **) &begin)) {
+							char preface_str[512];
+							size_t preface_len;
+
+#define HTTP_RANGE_PREFACE \
+	HTTP_CRLF "%s" \
+	HTTP_CRLF "Content-Type: %s" \
+	HTTP_CRLF "Content-Range: %ld-%ld/%lu" \
+	HTTP_CRLF HTTP_CRLF
+							
+							preface_len = snprintf(preface_str, lenof(preface_str), HTTP_RANGE_PREFACE, boundary_str, content_type, Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
+							http_send_response_data_plain(s, preface, preface_len);
+							http_send_response_data_fetch(s, data_ptr, data_len, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
+						}
+					}
+					
+					http_send_response_data_plain(s, HTTP_CRLF, lenof(HTTP_CRLF));
+					http_send_response_data_plain(s, boundary_str, boundary_len);
+					http_send_response_data_plain(s, "--", lenof("--"));
+					
+					efree(boundary_str);
+					
+					http_send_response_finish(s);
+					zend_hash_destroy(&ranges);
+					return SUCCESS;
+				}
+			}
+		case RANGE_NO:
+			zend_hash_destroy(&ranges);
+			
+			/* send 304 Not Modified if etag matches - DON'T return on ETag generation failure */
+			if (!no_cache && cache_etag) {
+				char *etag = NULL;
+				
+				if (etag = http_etag(data_ptr, data_size, data_mode)) {
+					char *sent_header = NULL;
+					
+					http_send_etag_ex(etag, strlen(etag), &sent_header);
+					if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
+						return http_exit_ex(304, sent_header, NULL, 0);
+					} else {
+						STR_FREE(sent_header);
+					}
+					efree(etag);
+				}
+			}
+		
+			/* send 304 Not Modified if last modified matches */
+			if (!no_cache && http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G(send).last_modified)) {
+				char *sent_header = NULL;
+				http_send_last_modified_ex(HTTP_G(send).last_modified, &sent_header);
+				return http_exit_ex(304, sent_header, NULL, 0);
+			}
+			
+			/* send full response */
+			http_send_response_start(s, data_size);
+			http_send_response_data_fetch(s, data_ptr, data_size, data_mode, 0, data_size);
+			http_send_response_finish(s);
+			return SUCCESS;
+	}
 }
 /* }}} */
 

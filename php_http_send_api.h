@@ -53,9 +53,6 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_
 #define http_send_content_disposition(f, l, i) _http_send_content_disposition((f), (l), (i) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, size_t f_len, zend_bool send_inline TSRMLS_DC);
 
-#define http_send_ranges(r, d, s, m) _http_send_ranges((r), (d), (s), (m) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_send_ranges(HashTable *ranges, const void *data, size_t size, http_send_mode mode TSRMLS_DC);
-
 #define http_send_data(d, l) http_send((d), (l), SEND_DATA)
 #define http_send_data_ex(d, l, nc) http_send_ex((d), (l), SEND_DATA, (nc))
 #define http_send(d, s, m) _http_send_ex((d), (s), (m), 0 TSRMLS_CC)

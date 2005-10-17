@@ -24,6 +24,12 @@
 #include "php_http.h"
 #include "php_http_api.h"
 
+#ifdef HTTP_HAVE_ZLIB
+#	include "php_http_send_api.h"
+#	include "php_http_headers_api.h"
+#	include <zlib.h>
+#endif
+
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 /* {{{ char *http_encoding_dechunk(char *, size_t, char **, size_t *) */
@@ -93,16 +99,8 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 /* }}} */
 
 #ifdef HTTP_HAVE_ZLIB
-#include <zlib.h>
 
-/* max count of uncompress trials, alloc_size <<= 2 for each try */
-#define HTTP_GZMAXTRY 10
-/* safe padding */
-#define HTTP_GZSAFPAD 10
-/* add 1% extra space in case we need to encode widely differing (binary) data */
-#define HTTP_GZBUFLEN(l) (l + (l / 100) + HTTP_GZSAFPAD)
-
-static const char http_gzencode_header[] = {
+static const char http_encoding_gzip_header[] = {
 	(const char) 0x1f,			// fixed value
 	(const char) 0x8b,			// fixed value
 	(const char) Z_DEFLATED,	// compression algorithm
@@ -123,12 +121,12 @@ inline void http_init_gzencode_buffer(z_stream *Z, const char *data, size_t data
 	
 	Z->next_in   = (Bytef *) data;
 	Z->avail_in  = data_len;
-	Z->avail_out = HTTP_GZBUFLEN(data_len) + HTTP_GZSAFPAD - 1;
+	Z->avail_out = HTTP_ENCODING_BUFLEN(data_len) + HTTP_ENCODING_SAFPAD - 1;
 	
-	*buf_ptr = emalloc(HTTP_GZBUFLEN(data_len) + sizeof(http_gzencode_header) + HTTP_GZSAFPAD);
-	memcpy(*buf_ptr, http_gzencode_header, sizeof(http_gzencode_header));
+	*buf_ptr = emalloc(HTTP_ENCODING_BUFLEN(data_len) + sizeof(http_encoding_gzip_header) + HTTP_ENCODING_SAFPAD);
+	memcpy(*buf_ptr, http_encoding_gzip_header, sizeof(http_encoding_gzip_header));
 	
-	Z->next_out = *buf_ptr + sizeof(http_gzencode_header);
+	Z->next_out = *buf_ptr + sizeof(http_encoding_gzip_header);
 }
 
 inline void http_init_deflate_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr)
@@ -140,24 +138,31 @@ inline void http_init_deflate_buffer(z_stream *Z, const char *data, size_t data_
 	Z->data_type = Z_UNKNOWN;
 	Z->next_in   = (Bytef *) data;
 	Z->avail_in  = data_len;
-	Z->avail_out = HTTP_GZBUFLEN(data_len) - 1;
-	Z->next_out  = emalloc(HTTP_GZBUFLEN(data_len));
+	Z->avail_out = HTTP_ENCODING_BUFLEN(data_len) - 1;
+	Z->next_out  = emalloc(HTTP_ENCODING_BUFLEN(data_len));
 	
 	*buf_ptr = Z->next_out;
 }
 
-inline void http_init_uncompress_buffer(size_t data_len, char **buf_ptr, size_t *buf_len, int iteration)
+inline void http_init_uncompress_buffer(size_t data_len, char **buf_ptr, size_t *buf_len, int *iteration)
 {
-	if (!iteration) {
+	if (!*iteration) {
 		*buf_len = data_len * 2;
 		*buf_ptr = emalloc(*buf_len + 1);
 	} else {
-		*buf_len <<= 2;
-		*buf_ptr = erealloc(*buf_ptr, *buf_len + 1);
+		size_t new_len = *buf_len << 2;
+		char *new_ptr = erealloc(*buf_ptr, new_len + 1);
+		
+		if (new_ptr) {
+			*buf_ptr = new_ptr;
+			*buf_len = new_len;
+		} else {
+			*iteration = INT_MAX;
+		}
 	}
 }
 
-inline void http_init_inflate_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr, size_t *buf_len, int iteration)
+inline void http_init_inflate_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr, size_t *buf_len, int *iteration)
 {
 	Z->zalloc = Z_NULL;
 	Z->zfree  = Z_NULL;
@@ -184,7 +189,7 @@ inline size_t http_finish_gzencode_buffer(z_stream *Z, const char *data, size_t 
 	crc = crc32(0L, Z_NULL, 0);
 	crc = crc32(crc, (const Bytef *) data, data_len);
 	
-	trailer = *buf_ptr + sizeof(http_gzencode_header) + Z->total_out;
+	trailer = *buf_ptr + sizeof(http_encoding_gzip_header) + Z->total_out;
 	
 	/* LSB */
 	trailer[0] = (char) (crc & 0xFF);
@@ -196,12 +201,12 @@ inline size_t http_finish_gzencode_buffer(z_stream *Z, const char *data, size_t 
 	trailer[6] = (char) ((Z->total_in >> 16) & 0xFF);
 	trailer[7] = (char) ((Z->total_in >> 24) & 0xFF);
 	
-	return http_finish_buffer(Z->total_out + sizeof(http_gzencode_header) + 8, buf_ptr);
+	return http_finish_buffer(Z->total_out + sizeof(http_encoding_gzip_header) + 8, buf_ptr);
 }
 
 inline STATUS http_verify_gzencode_buffer(const char *data, size_t data_len, const char **encoded, size_t *encoded_len, int error_level TSRMLS_DC)
 {
-	size_t offset = sizeof(http_gzencode_header);
+	size_t offset = sizeof(http_encoding_gzip_header);
 	
 	if (data_len < offset) {
 		goto really_bad_gzip_header;
@@ -252,7 +257,7 @@ inline STATUS http_verify_gzencode_buffer(const char *data, size_t data_len, con
 			cmp += (unsigned) ((data[offset-1] & 0xFF) << 8);
 			
 			crc = crc32(0L, Z_NULL, 0);
-			crc = crc32(crc, data, sizeof(http_gzencode_header));
+			crc = crc32(crc, data, sizeof(http_encoding_gzip_header));
 			
 			if (cmp != (crc & 0xFFFF)) {
 				http_error_ex(error_level TSRMLS_CC, HTTP_E_ENCODING, "GZIP headers CRC checksums so not match (%lu, %lu)", cmp, crc & 0xFFFF);
@@ -415,7 +420,7 @@ PHP_HTTP_API STATUS _http_encoding_compress(int level, const char *data, size_t 
 {
 	STATUS status;
 	
-	*encoded = emalloc(*encoded_len = HTTP_GZBUFLEN(data_len));
+	*encoded = emalloc(*encoded_len = HTTP_ENCODING_BUFLEN(data_len));
 	
 	if (Z_OK == (status = compress2(*encoded, encoded_len, data, data_len, level))) {
 		http_finish_buffer(*encoded_len, encoded);
@@ -448,7 +453,7 @@ PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, ch
 	z_stream Z;
 	
 	do {
-		http_init_inflate_buffer(&Z, data, data_len, decoded, decoded_len, max++);
+		http_init_inflate_buffer(&Z, data, data_len, decoded, decoded_len, &max);
 		if (Z_OK == (status = inflateInit2(&Z, -MAX_WBITS))) {
 			if (Z_STREAM_END == (status = inflate(&Z, Z_FINISH))) {
 				if (Z_OK == (status = inflateEnd(&Z))) {
@@ -457,7 +462,7 @@ PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, ch
 				}
 			}
 		}
-	} while (max < HTTP_GZMAXTRY && status == Z_BUF_ERROR);
+	} while (++max < HTTP_ENCODING_MAXTRY && status == Z_BUF_ERROR);
 	
 	efree(*decoded);
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s", zError(status));
@@ -470,19 +475,167 @@ PHP_HTTP_API STATUS _http_encoding_uncompress(const char *data, size_t data_len,
 	STATUS status;
 	
 	do {
-		http_init_uncompress_buffer(data_len, decoded, decoded_len, max++);
+		http_init_uncompress_buffer(data_len, decoded, decoded_len, &max);
 		if (Z_OK == (status = uncompress(*decoded, decoded_len, data, data_len))) {
 			http_finish_buffer(*decoded_len, decoded);
 			return SUCCESS;
 		}
-	} while (max < HTTP_GZMAXTRY && status == Z_BUF_ERROR);
+	} while (++max < HTTP_ENCODING_MAXTRY && status == Z_BUF_ERROR);
 	
 	efree(*decoded);
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not uncompress data: %s", zError(status));
 	return FAILURE;
 }
 
+#define HTTP_ENCODING_STREAM_ERROR(status, tofree) \
+	{ \
+		if (tofree) efree(tofree); \
+		http_error_ex(HE_WARNING, HTTP_E_ENCODING, "GZIP stream error: %s", zError(status)); \
+		return FAILURE; \
+	}
+
+PHP_HTTP_API STATUS _http_encoding_stream_init(http_encoding_stream *s, int gzip, int level, char **encoded, size_t *encoded_len TSRMLS_DC)
+{
+	STATUS status;
+	
+	memset(s, 0, sizeof(http_encoding_stream));
+	if (Z_OK != (status = deflateInit2(&s->Z, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) {
+		HTTP_ENCODING_STREAM_ERROR(status, NULL);
+	}
+	
+	if (s->gzip = gzip) {
+		s->crc = crc32(0L, Z_NULL, 0);
+		*encoded_len = sizeof(http_encoding_gzip_header);
+		*encoded = emalloc(*encoded_len);
+		memcpy(*encoded, http_encoding_gzip_header, *encoded_len);
+	} else {
+		*encoded_len = 0;
+		*encoded = NULL;
+	}
+	
+	return SUCCESS;
+}
+
+PHP_HTTP_API STATUS _http_encoding_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
+{
+	STATUS status;
+	
+	*encoded_len = HTTP_ENCODING_BUFLEN(data_len);
+	*encoded = emalloc(*encoded_len);
+	
+	s->Z.next_in = (Bytef *) data;
+	s->Z.avail_in = data_len;
+	s->Z.next_out = *encoded;
+	s->Z.avail_out = *encoded_len;
+	
+	status = deflate(&s->Z, Z_SYNC_FLUSH);
+	
+	if (Z_OK != status && Z_STREAM_END != status) {
+		HTTP_GZSTREAM_ERROR(status, *encoded);
+	}
+	*encoded_len -= s->Z.avail_out;
+	
+	if (s->gzip) {
+		s->crc = crc32(s->crc, (const Bytef *) data, data_len);
+	}
+	
+	return SUCCESS;
+}
+
+PHP_HTTP_API STATUS _http_encoding_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC)
+{
+	STATUS status;
+	
+	*encoded_len = 1024;
+	*encoded = emalloc(*encoded_len);
+	
+	s->Z.next_out = *encoded;
+	s->Z.avail_out = *encoded_len;
+	
+	if (Z_STREAM_END != (status = deflate(&s->Z, Z_FINISH)) || Z_OK != (status = deflateEnd(&s->Z))) {
+		HTTP_ENCODING_STREAM_ERROR(status, *encoded);
+	}
+	
+	fprintf(stderr, "Needed %d bytes\n", *encoded_len - s->Z.avail_out);
+	
+	*encoded_len -= s->Z.avail_out;
+	if (s->gzip) {
+		if (s->Z.avail_out < 8) {
+			*encoded = erealloc(*encoded, *encoded_len + 8);
+		}
+		(*encoded)[(*encoded_len)++] = (char) (s->crc & 0xFF);
+		(*encoded)[(*encoded_len)++] = (char) ((s->crc >> 8) & 0xFF);
+		(*encoded)[(*encoded_len)++] = (char) ((s->crc >> 16) & 0xFF);
+		(*encoded)[(*encoded_len)++] = (char) ((s->crc >> 24) & 0xFF);
+		(*encoded)[(*encoded_len)++] = (char) ((s->Z.total_in) & 0xFF);
+		(*encoded)[(*encoded_len)++] = (char) ((s->Z.total_in >> 8) & 0xFF);
+		(*encoded)[(*encoded_len)++] = (char) ((s->Z.total_in >> 16) & 0xFF);
+		(*encoded)[(*encoded_len)++] = (char) ((s->Z.total_in >> 24) & 0xFF);
+	}
+	
+	return SUCCESS;
+}
+
 #endif /* HTTP_HAVE_ZLIB */
+
+PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRMLS_DC)
+{
+	if (php_ob_handler_used("ob_gzhandler" TSRMLS_DC)||php_ob_handler_used("zlib output compression" TSRMLS_DC)) {
+		HTTP_G(send).gzip_encoding = 0;
+	} else {
+		if (!HTTP_G(send).gzip_encoding) {
+			/* emit a content-length header */
+			if (content_length) {
+				char *cl;
+				spprintf(&cl, 0, "Content-Length: %lu", (unsigned long) content_length);
+				http_send_header_string(cl);
+				efree(cl);
+			}
+		} else {
+#ifndef HTTP_HAVE_ZLIB
+			php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
+#else
+			HashTable *selected;
+			zval zsupported;
+			
+			INIT_PZVAL(&zsupported);
+			array_init(&zsupported);
+			add_next_index_stringl(&zsupported, "gzip", lenof("gzip"), 1);
+			add_next_index_stringl(&zsupported, "deflate", lenof("deflate"), 1);
+			
+			if (selected = http_negotiate_encoding(&zsupported)) {
+				STATUS hs = FAILURE;
+				char *encoding = NULL;
+				ulong idx;
+				
+				if (HASH_KEY_IS_STRING == zend_hash_get_current_key(selected, &encoding, &idx, 0) && encoding) {
+					if (!strcmp(encoding, "gzip")) {
+						if (SUCCESS == (hs = http_send_header_string("Content-Encoding: gzip"))) {
+							HTTP_G(send).gzip_encoding = HTTP_ENCODING_GZIP;
+						}
+					} else if (!strcmp(encoding, "deflate")) {
+						if (SUCCESS == (hs = http_send_header_string("Content-Encoding: deflate"))) {
+							HTTP_G(send).gzip_encoding = HTTP_ENCODING_DEFLATE;
+						}
+					}
+					if (SUCCESS == hs) {
+						http_send_header_string("Vary: Accept-Encoding");
+					} else {
+						HTTP_G(send).gzip_encoding = 0;
+					}
+				}
+				
+				zend_hash_destroy(selected);
+				FREE_HASHTABLE(selected);
+			}
+			
+			zval_dtor(&zsupported);
+			return 1;
+#endif
+		}
+	}
+	return 0;
+}
 
 /*
  * Local variables:
