@@ -216,20 +216,42 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 			continue_at = body;
 		}
 		
-#ifdef HTTP_HAVE_ZLIB
+#if defined(HTTP_HAVE_ZLIB) || defined(HAVE_ZLIB)
 		/* check for compressed data */
 		if (c = http_message_header(msg, "Content-Encoding")) {
 			char *decoded = NULL;
 			size_t decoded_len = 0;
+#	ifdef HAVE_ZLIB
+			zval func, retval, arg, *args[1];
+			INIT_PZVAL(&func);
+			INIT_PZVAL(&retval);
+			INIT_PZVAL(&arg);
+			ZVAL_STRINGL(&func, "gzinflate", lenof("gzinflate"), 0);
+			args[0] = &arg;
+#	endif /* HAVE_ZLIB */
+
+#	define DECODE_WITH_EXT_ZLIB() \
+				if (SUCCESS == call_user_function(EG(function_table), NULL, &func, &retval, 1, args TSRMLS_CC)) { \
+					if (Z_TYPE(retval) == IS_STRING) { \
+						decoded = Z_STRVAL(retval); \
+						decoded_len = Z_STRLEN(retval); \
+					} \
+				}
 			
-			if (!strcasecmp(Z_STRVAL_P(c), "gzip")) {
+			if (!strcasecmp(Z_STRVAL_P(c), "gzip") || !strcasecmp(Z_STRVAL_P(c), "x-gzip")) {
+#	ifdef HTTP_HAVE_ZLIB
 				http_encoding_gzdecode(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
-			} else
-			if (!strcasecmp(Z_STRVAL_P(c), "deflate")) {
+#	else
+				ZVAL_STRINGL(&arg, PHPSTR_VAL(msg) + 10, PHPSTR_LEN(msg) - 18, 0);
+				DECODE_WITH_EXT_ZLIB();
+#	endif /* HTTP_HAVE_ZLIB */
+			} else if (!strcasecmp(Z_STRVAL_P(c), "deflate")) {
+#	ifdef HTTP_HAVE_ZLIB
 				http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
-			} else
-			if (!strcasecmp(Z_STRVAL_P(c), "compress")) {
-				http_encoding_uncompress(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
+#	else
+				ZVAL_STRINGL(&arg, PHPSTR_VAL(msg), PHPSTR_LEN(msg), 0);
+				DECODE_WITH_EXT_ZLIB();
+#	endif /* HTTP_HAVE_ZLIB */
 			}
 			
 			if (decoded && decoded_len) {
@@ -251,7 +273,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				PHPSTR(msg)->free = 1;
 			}
 		}
-#endif
+#endif /* HTTP_HAVE_ZLIB || HAVE_ZLIB */
 
 		/* check for following messages */
 		if (continue_at) {

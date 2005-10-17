@@ -124,12 +124,14 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(parseMessage, http_parse_message)
 	HTTP_UTIL_ALIAS(parseHeaders, http_parse_headers)
 	HTTP_UTIL_ALIAS(chunkedDecode, http_chunked_decode)
+#ifdef HTTP_HAVE_ZLIB
 	HTTP_UTIL_ALIAS(gzEncode, http_gzencode)
 	HTTP_UTIL_ALIAS(gzDecode, http_gzdecode)
 	HTTP_UTIL_ALIAS(deflate, http_deflate)
 	HTTP_UTIL_ALIAS(inflate, http_inflate)
 	HTTP_UTIL_ALIAS(compress, http_compress)
 	HTTP_UTIL_ALIAS(uncompress, http_uncompress)
+#endif /* HTTP_HAVE_ZLIB */
 	HTTP_UTIL_ALIAS(support, http_support)
 	
 	EMPTY_FUNCTION_ENTRY

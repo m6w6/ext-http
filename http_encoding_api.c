@@ -592,6 +592,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			}
 		} else {
 #ifndef HTTP_HAVE_ZLIB
+			HTTP_G(send).gzip_encoding = 0;
 			php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
 #else
 			HashTable *selected;
