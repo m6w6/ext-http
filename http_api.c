@@ -79,7 +79,7 @@ PHP_HTTP_API long _http_support(long feature)
 #ifdef HTTP_HAVE_MAGIC
 	support |= HTTP_SUPPORT_MAGICMIME;
 #endif
-#ifdef HTTP_HAVE_ZLIB
+#if defined(HTTP_HAVE_ZLIB) || defined(HAVE_ZLIB)
 	support |= HTTP_SUPPORT_ENCODINGS;
 #endif
 

@@ -436,7 +436,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 
 	/* compress, empty string enables all supported if libcurl was build with zlib support */
 	if ((zoption = http_curl_getopt(options, "compress", IS_BOOL)) && Z_LVAL_P(zoption)) {
-#ifdef HTTP_HAVE_ZLIB
+#if defined(HTTP_HAVE_ZLIB) || defined(HAVE_ZLIB)
 		HTTP_CURL_OPT(ENCODING, "gzip;q=1.0, deflate;q=0.5, *;q=0");
 #else
 		HTTP_CURL_OPT(ENCODING, "");
