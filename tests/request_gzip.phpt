@@ -4,6 +4,7 @@ GZIP request
 <?php
 include 'skip.inc';
 checkurl('dev.iworks.at');
+skipif(!http_support(HTTP_SUPPORT_REQUESTS), 'need curl support');
 ?>
 --FILE--
 <?php

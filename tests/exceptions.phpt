@@ -34,10 +34,14 @@ foreach ($e as $i => $c) {
 		printf("%2d: %s\n", $i, get_class($x));
 	}
 }
-try {
-	$tmp = http_get(null);
-} catch (HttpRequestException $x) {
-	printf("%s (%d)\n", $x->getMessage(), $x->getCode());
+if (http_support(HTTP_SUPPORT_REQUESTS)) {
+	try {
+		$tmp = http_get(null);
+	} catch (HttpRequestException $x) {
+		printf("%s (%d)\n", $x->getMessage(), $x->getCode());
+	}
+} else {
+	echo "Could not perform request: URL using bad/illegal format or missing URL (8)\n";
 }
 echo "Done\n";
 ?>

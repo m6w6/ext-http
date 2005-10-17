@@ -4,6 +4,8 @@ mhash etag
 <?php
 include 'skip.inc';
 checkcgi();
+skipif(!http_support(HTTP_SUPPORT_MHASHETAGS), 'need mhash support');
+skipif(!defined('HTTP_ETAG_MHASH_WHIRLPOOL'), 'need whirlpool mhash support');
 ?>
 --FILE--
 <?php

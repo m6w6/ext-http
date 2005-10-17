@@ -1,8 +1,11 @@
 --TEST--
 http_parse_message()
 --SKIPIF--
+<?php
 include 'skip.inc';
 checkurl('www.google.com');
+skipif(!http_support(HTTP_SUPPORT_REQUESTS), 'need curl support');
+?>
 --FILE--
 <?php
 echo "-TEST\n";

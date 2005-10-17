@@ -360,7 +360,17 @@ typedef int STATUS;
 			static unsigned char http_arg_pass_ref_5[] = {5, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
 #	endif /* ZEND_ENGINE_2 */
 #else
-#	define HTTP_DECLARE_ARG_PASS_INFO()
+#	ifdef ZEND_ENGINE_2
+#		define HTTP_DECLARE_ARG_PASS_INFO() \
+			static \
+			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_2, 0) \
+				ZEND_ARG_PASS_INFO(0) \
+				ZEND_ARG_PASS_INFO(1) \
+			ZEND_END_ARG_INFO();
+#	else
+#		define HTTP_DECLARE_ARG_PASS_INFO() \
+			static unsigned char http_arg_pass_ref_2[] = {2, BYREF_NONE, BYREF_FORCE};
+#	endif /* ZEND_ENGINE_2 */
 #endif /* HTTP_HAVE_CURL */
 
 

@@ -4,6 +4,7 @@ ob sha1 etag
 <?php
 include 'skip.inc';
 checkcgi();
+skipif(!http_support(HTTP_SUPPORT_MHASHETAGS), 'need mhash support');
 ?>
 --FILE--
 <?php
