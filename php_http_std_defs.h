@@ -421,6 +421,31 @@ typedef int STATUS;
 #define PHP_MSHUTDOWN_CALL(func) PHP_MSHUTDOWN(func)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
 #define PHP_RSHUTDOWN_CALL(func) PHP_RSHUTDOWN(func)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
 
+#define Z_OBJ_DELREF(z) \
+	if (Z_OBJ_HT(z)->del_ref) { \
+		Z_OBJ_HT(z)->del_ref(&(z) TSRMLS_CC); \
+	}
+#define Z_OBJ_ADDREF(z) \
+	if (Z_OBJ_HT(z)->add_ref) { \
+		Z_OBJ_HT(z)->add_ref(&(z) TSRMLS_CC); \
+	}
+#define Z_OBJ_DELREF_P(z) \
+	if (Z_OBJ_HT_P(z)->del_ref) { \
+		Z_OBJ_HT_P(z)->del_ref((z) TSRMLS_CC); \
+	}
+#define Z_OBJ_ADDREF_P(z) \
+	if (Z_OBJ_HT_P(z)->add_ref) { \
+		Z_OBJ_HT_P(z)->add_ref((z) TSRMLS_CC); \
+	}
+#define Z_OBJ_DELREF_PP(z) \
+	if (Z_OBJ_HT_PP(z)->del_ref) { \
+		Z_OBJ_HT_PP(z)->del_ref(*(z) TSRMLS_CC); \
+	}
+#define Z_OBJ_ADDREF_PP(z) \
+	if (Z_OBJ_HT_PP(z)->add_ref) { \
+		Z_OBJ_HT_PP(z)->add_ref(*(z) TSRMLS_CC); \
+	}
+
 #endif /* PHP_HTTP_STD_DEFS_H */
 
 /*

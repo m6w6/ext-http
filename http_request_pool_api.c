@@ -106,7 +106,7 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 				zend_llist_add_element(&pool->bodies, &body);
 
 				zval_add_ref(&request);
-				zend_objects_store_add_ref(request TSRMLS_CC);
+				Z_OBJ_ADDREF_P(request);
 
 #if HTTP_DEBUG_REQPOOLS
 				fprintf(stderr, "> %d HttpRequests attached to pool %p\n", zend_llist_count(&pool->handles), pool);
@@ -305,7 +305,7 @@ void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC)
 #endif
 		
 		zval_add_ref(req);
-		zend_objects_store_add_ref(*req TSRMLS_CC);
+		Z_OBJ_ADDREF_PP(req);
 		zend_llist_add_element(&obj->pool->finished, req);
 		http_request_object_responsehandler(obj, *req);
 	}

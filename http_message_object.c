@@ -374,13 +374,15 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		break;
 
 		case HTTP_MSG_PROPHASH_PARENT_MESSAGE:
-			if (msg->parent) {
-				zval tmp;
-				tmp.value.obj = obj->parent;
-				zend_objects_store_del_ref(&tmp TSRMLS_CC);
+			if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), http_message_object_ce TSRMLS_CC)) {
+				if (msg->parent) {
+					zval tmp;
+					tmp.value.obj = obj->parent;
+					Z_OBJ_DELREF(tmp);
+				}
+				Z_OBJ_ADDREF_P(value);
+				obj->parent = value->value.obj;
 			}
-			zend_objects_store_add_ref(value TSRMLS_CC);
-			obj->parent = value->value.obj;
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_METHOD:

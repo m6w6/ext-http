@@ -71,10 +71,6 @@ HTTP_EMPTY_ARGS(rewind, 0);
 HTTP_EMPTY_ARGS(getAttachedRequests, 0);
 HTTP_EMPTY_ARGS(getFinishedRequests, 0);
 
-HTTP_BEGIN_ARGS(setRequestOptions, 0)
-	HTTP_ARG_VAL(options, 0)
-HTTP_END_ARGS;
-
 #define http_requestpool_object_declare_default_properties() _http_requestpool_object_declare_default_properties(TSRMLS_C)
 static inline void _http_requestpool_object_declare_default_properties(TSRMLS_D);
 
@@ -154,7 +150,7 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
 static void _http_requestpool_object_llist2array(zval **req, zval *array TSRMLS_DC)
 {
 	zval_add_ref(req);
-	zend_objects_store_add_ref(*req TSRMLS_CC);
+	Z_OBJ_ADDREF_PP(req);
 	add_next_index_zval(array, *req);
 }
 
@@ -471,6 +467,12 @@ PHP_METHOD(HttpRequestPool, rewind)
 }
 /* }}} */
 
+/* {{{ proto array HttpRequestPool::getAttachedRequests()
+ *
+ * Get attached HttpRequest objects.
+ * 
+ * Returns an array containing all currently attached HttpRequest objects.
+ */
 PHP_METHOD(HttpRequestPool, getAttachedRequests)
 {
 	getObject(http_requestpool_object, obj);
@@ -482,7 +484,15 @@ PHP_METHOD(HttpRequestPool, getAttachedRequests)
 		(llist_apply_with_arg_func_t) http_requestpool_object_llist2array, 
 		return_value TSRMLS_CC);
 }
+/* }}} */
 
+/* {{{ proto array HttpRequestPool::getFinishedRequests()
+ *
+ * Get attached HttpRequest objects that already have finished their work.
+ * 
+ * Returns an array containing all attached HttpRequest objects that
+ * already have finished their work.
+ */
 PHP_METHOD(HttpRequestPool, getFinishedRequests)
 {
 	getObject(http_requestpool_object, obj);
@@ -494,6 +504,7 @@ PHP_METHOD(HttpRequestPool, getFinishedRequests)
 		(llist_apply_with_arg_func_t) http_requestpool_object_llist2array,
 		return_value TSRMLS_CC);
 }
+/* }}} */
 
 #endif /* ZEND_ENGINE_2 && HTTP_HAVE_CURL */
 
