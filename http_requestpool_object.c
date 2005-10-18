@@ -68,6 +68,13 @@ HTTP_EMPTY_ARGS(key, 0);
 HTTP_EMPTY_ARGS(next, 0);
 HTTP_EMPTY_ARGS(rewind, 0);
 
+HTTP_EMPTY_ARGS(getAttachedRequests, 0);
+HTTP_EMPTY_ARGS(getFinishedRequests, 0);
+
+HTTP_BEGIN_ARGS(setRequestOptions, 0)
+	HTTP_ARG_VAL(options, 0)
+HTTP_END_ARGS;
+
 #define http_requestpool_object_declare_default_properties() _http_requestpool_object_declare_default_properties(TSRMLS_C)
 static inline void _http_requestpool_object_declare_default_properties(TSRMLS_D);
 
@@ -89,6 +96,9 @@ zend_function_entry http_requestpool_object_fe[] = {
 	HTTP_REQPOOL_ME(key, ZEND_ACC_PUBLIC)
 	HTTP_REQPOOL_ME(next, ZEND_ACC_PUBLIC)
 	HTTP_REQPOOL_ME(rewind, ZEND_ACC_PUBLIC)
+	
+	HTTP_REQPOOL_ME(getAttachedRequests, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(getFinishedRequests, ZEND_ACC_PUBLIC)
 
 	EMPTY_FUNCTION_ENTRY
 };
@@ -138,6 +148,14 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
 	}
 	http_request_pool_dtor(&o->pool);
 	efree(o);
+}
+
+#define http_requestpool_object_llist2array _http_requestpool_object_llist2array
+static void _http_requestpool_object_llist2array(zval **req, zval *array TSRMLS_DC)
+{
+	zval_add_ref(req);
+	zend_objects_store_add_ref(*req TSRMLS_CC);
+	add_next_index_zval(array, *req);
 }
 
 /* ### USERLAND ### */
@@ -314,12 +332,27 @@ PHP_METHOD(HttpRequestPool, send)
  * Usage:
  * <pre>
  * <?php
- *     while ($pool->socketPerform()) {
- *         do_something_else();
- *         if (!$pool->socketSelect()) {
- *             die('Socket error');
+ * class MyPool extends HttpRequestPool
+ * {
+ *     public function send()
+ *     {
+ *         while ($this->socketPerform()) {
+ *             $this->handleRequests();
+ *             if (!$this->socketSelect()) {
+ *                 throw new HttpSocketExcpetion;
+ *             }
+ *         }
+ *         $this->handleRequests();
+ *     }
+ *     
+ *     private function handleRequests()
+ *     {
+ *         foreach ($this->getFinishedRequests() as $r) {
+ *             $this->detach($r);
+ *             // handle response of finished request
  *         }
  *     }
+ * } 
  * ?>
  * </pre>
  */
@@ -332,7 +365,6 @@ PHP_METHOD(HttpRequestPool, socketPerform)
 	if (0 < http_request_pool_perform(&obj->pool)) {
 		RETURN_TRUE;
 	} else {
-		zend_llist_apply(&obj->pool.handles, (llist_apply_func_t) http_request_pool_responsehandler TSRMLS_CC);
 		RETURN_FALSE;
 	}
 }
@@ -438,6 +470,30 @@ PHP_METHOD(HttpRequestPool, rewind)
 	}
 }
 /* }}} */
+
+PHP_METHOD(HttpRequestPool, getAttachedRequests)
+{
+	getObject(http_requestpool_object, obj);
+	
+	NO_ARGS;
+	
+	array_init(return_value);
+	zend_llist_apply_with_argument(&obj->pool.handles, 
+		(llist_apply_with_arg_func_t) http_requestpool_object_llist2array, 
+		return_value TSRMLS_CC);
+}
+
+PHP_METHOD(HttpRequestPool, getFinishedRequests)
+{
+	getObject(http_requestpool_object, obj);
+	
+	NO_ARGS;
+		
+	array_init(return_value);
+	zend_llist_apply_with_argument(&obj->pool.finished,
+		(llist_apply_with_arg_func_t) http_requestpool_object_llist2array,
+		return_value TSRMLS_CC);
+}
 
 #endif /* ZEND_ENGINE_2 && HTTP_HAVE_CURL */
 

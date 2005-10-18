@@ -31,13 +31,14 @@
 
 typedef struct {
 	CURLM *ch;
+	zend_llist finished;
 	zend_llist handles;
 	zend_llist bodies;
 	int unfinished;
 } http_request_pool;
 
 #define http_request_pool_responsehandler _http_request_pool_responsehandler
-extern void _http_request_pool_responsehandler(zval **req TSRMLS_DC);
+extern void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC);
 #define http_request_pool_requesthandler(r, b) _http_request_pool_requesthandler((r), (b) TSRMLS_CC)
 extern STATUS _http_request_pool_requesthandler(zval *request, http_request_body *body TSRMLS_DC);
 
@@ -59,8 +60,8 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC);
 #define http_request_pool_select _http_request_pool_select
 PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool);
 
-#define http_request_pool_perform _http_request_pool_perform
-PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool);
+#define http_request_pool_perform(p) _http_request_pool_perform((p) TSRMLS_CC)
+PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC);
 
 #define http_request_pool_dtor(p) _http_request_pool_dtor((p) TSRMLS_CC)
 PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC);

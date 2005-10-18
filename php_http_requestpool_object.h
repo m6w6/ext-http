@@ -59,6 +59,8 @@ PHP_METHOD(HttpRequestPool, current);
 PHP_METHOD(HttpRequestPool, key);
 PHP_METHOD(HttpRequestPool, next);
 PHP_METHOD(HttpRequestPool, rewind);
+PHP_METHOD(HttpRequestPool, getAttachedRequests);
+PHP_METHOD(HttpRequestPool, getFinishedRequests);
 
 #endif
 #endif

@@ -40,6 +40,7 @@
  <license uri="http://www.php.net/license">PHP License</license>
  <notes><![CDATA[
 + Added ext/zlib independant GZIP support
++ Added HttpRequestPool::getAttachedRequests() and getFinishedRequests()
 ]]></notes>
  <contents>
   <dir name="/">
