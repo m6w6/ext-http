@@ -139,6 +139,7 @@
     <file role="test" name="get_request_data_001.phpt"/>
     <file role="test" name="HttpMessage_001.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
+    <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequest_001.phpt"/>
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>

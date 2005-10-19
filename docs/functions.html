@@ -179,7 +179,7 @@ a "304 Not Modified" status code is issued.</p>
 <h2 id="ob_etaghandler">string ob_etaghandler(string data, int mode)</h2>
 <p>For use with ob_start().  Output buffer handler generating an ETag with<br />
 the hash algorythm specified with the INI setting "http.etag_mode".</p>
-<h2 id="http_throttle">void http_throttle(double sec[, int bytes = 2097152])</h2>
+<h2 id="http_throttle">void http_throttle(double sec[, int bytes = 40960])</h2>
 <p>Sets the throttle delay and send buffer size for use with http_send() API.<br />
 Provides a basic throttling mechanism, which will yield the current process<br />
 resp. thread until the entity has been completely sent, though.</p>
@@ -270,7 +270,7 @@ array where the following keys will be recognized:</p><pre> - redirect:         
  - compress:         bool, whether to allow gzip/deflate content encoding<br />
                      (defaults to true)<br />
  - port:             int, use another port as specified in the url<br />
- - referer:          string, the referer to sends<br />
+ - referer:          string, the referer to send<br />
  - useragent:        string, the user agent to send<br />
                      (defaults to PECL::HTTP/version (PHP/version)))<br />
  - headers:          array, list of custom headers as associative array<br />
@@ -374,7 +374,7 @@ compression ratio.</p>
 <p>Check for feature that require external libraries.</p>
 <p>Accpepts an optional in parameter specifying which feature to probe for.<br />
 If the parameter is 0 or omitted, the return value contains a bitmask of <br />
-all supported featuers that depend on external libraries.</p>
+all supported features that depend on external libraries.</p>
 <p>Available features to probe for are:<br />
 <ul> <br />
  <li> HTTP_SUPPORT: always set<br />
@@ -762,7 +762,7 @@ HttpRequestPoolException, HttpMalformedHeaderException.</p>
 <h3 id="HttpRequestPool_socketPerform">protected bool HttpRequestPool::socketPerform()</h3>
 <p>Returns TRUE until each request has finished its transaction.</p>
 <p>Usage:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">while&nbsp;(</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">socketPerform</span><span style="color: #007700">())&nbsp;{<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">do_something_else</span><span style="color: #007700">();<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(!</span><span style="color: #0000BB">$pool</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">socketSelect</span><span style="color: #007700">())&nbsp;{<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;die(</span><span style="color: #DD0000">'Socket&nbsp;error'</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br /></span><span style="color: #0000BB">?&gt;</span><br />
+<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">class&nbsp;</span><span style="color: #0000BB">MyPool&nbsp;</span><span style="color: #007700">extends&nbsp;</span><span style="color: #0000BB">HttpRequestPool<br /></span><span style="color: #007700">{<br />&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;function&nbsp;</span><span style="color: #0000BB">send</span><span style="color: #007700">()<br />&nbsp;&nbsp;&nbsp;&nbsp;{<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while&nbsp;(</span><span style="color: #0000BB">$this</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">socketPerform</span><span style="color: #007700">())&nbsp;{<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(!</span><span style="color: #0000BB">$this</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">socketSelect</span><span style="color: #007700">())&nbsp;{<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;throw&nbsp;new&nbsp;</span><span style="color: #0000BB">HttpSocketExcpetion</span><span style="color: #007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br />&nbsp;&nbsp;&nbsp;&nbsp;<br />&nbsp;&nbsp;&nbsp;&nbsp;protected&nbsp;final&nbsp;function&nbsp;</span><span style="color: #0000BB">socketPerform</span><span style="color: #007700">()<br />&nbsp;&nbsp;&nbsp;&nbsp;{<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$result&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #0000BB">parent</span><span style="color: #007700">::</span><span style="color: #0000BB">socketPerform</span><span style="color: #007700">();<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;foreach&nbsp;(</span><span style="color: #0000BB">$this</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">getFinishedRequests</span><span style="color: #007700">()&nbsp;as&nbsp;</span><span style="color: #0000BB">$r</span><span style="color: #007700">)&nbsp;{<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">$this</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">detach</span><span style="color: #007700">(</span><span style="color: #0000BB">$r</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #FF8000">//&nbsp;handle&nbsp;response&nbsp;of&nbsp;finished&nbsp;request<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">}<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;</span><span style="color: #0000BB">$result</span><span style="color: #007700">;<br />&nbsp;&nbsp;&nbsp;&nbsp;}<br />}&nbsp;<br /></span><span style="color: #0000BB">?&gt;</span><br />
 </span></code></blockquote></p>
 <p></pre></p>
 <h3 id="HttpRequestPool_socketSelect">protected bool HttpRequestPool::socketSelect()</h3>
@@ -778,6 +778,13 @@ HttpRequestPoolException, HttpMalformedHeaderException.</p>
 <p>Implements Iterator::next().</p>
 <h3 id="HttpRequestPool_rewind">void HttpRequestPool::rewind()</h3>
 <p>Implements Iterator::rewind().</p>
+<h3 id="HttpRequestPool_getAttachedRequests">array HttpRequestPool::getAttachedRequests()</h3>
+<p>Get attached HttpRequest objects.</p>
+<p>Returns an array containing all currently attached HttpRequest objects.</p>
+<h3 id="HttpRequestPool_getFinishedRequests">array HttpRequestPool::getFinishedRequests()</h3>
+<p>Get attached HttpRequest objects that already have finished their work.</p>
+<p>Returns an array containing all attached HttpRequest objects that<br />
+already have finished their work.</p>
 <hr noshade>
 <h1 id="http_response_object.c">http_response_object.c</h1>
 <h3 id="HttpResponse_setHeader">static bool HttpResponse::setHeader(string name, mixed value[, bool replace = true])</h3>
@@ -1113,6 +1120,8 @@ http.cache_log is set.</p>
 <li><a href="#HttpRequestPool_key">HttpRequestPool::key()</a></li>
 <li><a href="#HttpRequestPool_next">HttpRequestPool::next()</a></li>
 <li><a href="#HttpRequestPool_rewind">HttpRequestPool::rewind()</a></li>
+<li><a href="#HttpRequestPool_getAttachedRequests">HttpRequestPool::getAttachedRequests()</a></li>
+<li><a href="#HttpRequestPool_getFinishedRequests">HttpRequestPool::getFinishedRequests()</a></li>
 </li>
 </ul>
 </li>
@@ -1152,7 +1161,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Tue, 11 Oct 2005 11:33:16 +0000</b></p>
+    <p><b>Generated at: Wed, 19 Oct 2005 10:45:25 +0200</b></p>
 </body>
 </html>
 

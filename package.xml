@@ -23,22 +23,12 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.15.0</version>
-  <date>2005-10-11</date>
+  <version>0.16.0</version>
+  <date>2005-10-19</date>
   <license>PHP License</license>
   <state>beta</state>
-  <notes>+ Updated documentation (a lot)
-+ Added optional third parameter to HttpRequest::__construct() accepting an array with options
-+ Added compression functions gzencode/gzdecode, deflate/inflate, compress/uncompress
-+ Added http_support() for probing features that depend on external libraries
-
-- Renamed http_absolute_uri() to http_build_uri() (complements with http_build_query())
-- Changed the signature of the negotiator to fill the second parameter with the results array
-
-* Fixed several ETag issues
-* Fixed HttpRequestPools detach() and attach() methods when the iterator is active
-* Fixed parsing messages with Content-Range headers
-* Fixed parsing messages with another Transfer-Encoding header value than chunked
+  <notes>+ Added ext/zlib independant GZIP support
++ Added HttpRequestPool::getAttachedRequests() and getFinishedRequests()
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -93,6 +83,7 @@
     <file role="test" name="get_request_data_001.phpt"/>
     <file role="test" name="HttpMessage_001.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
+    <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequest_001.phpt"/>
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>
@@ -103,7 +94,9 @@
     <file role="test" name="INI_001.phpt"/>
     <file role="test" name="log.inc"/>
     <file role="test" name="parse_headers_001.phpt"/>
-    <file role="test" name="parse_message_001.phpt"/>
+    <file role="test" name="parse_message_002.phpt"/>
+    <file role="test" name="parse_message_003.phpt"/>
+    <file role="test" name="parse_message_004.phpt"/>
     <file role="test" name="redirect_001.phpt"/>
     <file role="test" name="redirect_001_logging.phpt"/>
     <file role="test" name="redirect_002.phpt"/>
