@@ -333,20 +333,20 @@ PHP_METHOD(HttpRequestPool, send)
  *     public function send()
  *     {
  *         while ($this->socketPerform()) {
- *             $this->handleRequests();
  *             if (!$this->socketSelect()) {
  *                 throw new HttpSocketExcpetion;
  *             }
  *         }
- *         $this->handleRequests();
  *     }
  *     
- *     private function handleRequests()
+ *     protected final function socketPerform()
  *     {
+ *         $result = parent::socketPerform();
  *         foreach ($this->getFinishedRequests() as $r) {
  *             $this->detach($r);
  *             // handle response of finished request
  *         }
+ *         return $result;
  *     }
  * } 
  * ?>

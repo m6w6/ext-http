@@ -14,21 +14,23 @@ class MyPool extends HttpRequestPool
 	public function send()
 	{
 		while ($this->socketPerform()) {
-			$this->handleRequests();
 			if (!$this->socketSelect()) {
 				throw new HttpSocketException;
 			}
 		}
-		$this->handleRequests();
 	}
 	
-	private function handleRequests()
+	protected final function socketPerform()
 	{
+		$result = parent::socketPerform();
+		
 		echo ".";
 		foreach ($this->getFinishedRequests() as $r) {
 			echo "=", $r->getResponseCode(), "=";
 			$this->detach($r);
 		}
+		
+		return $result;
 	}
 }
 
