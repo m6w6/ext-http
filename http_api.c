@@ -47,12 +47,8 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-static zend_bool http_support_ssl;
-
 PHP_MINIT_FUNCTION(http_support)
 {
-	http_support_ssl = http_request_supports_ssl();
-	
 	HTTP_LONG_CONSTANT("HTTP_SUPPORT", HTTP_SUPPORT);
 	HTTP_LONG_CONSTANT("HTTP_SUPPORT_REQUESTS", HTTP_SUPPORT_REQUESTS);
 	HTTP_LONG_CONSTANT("HTTP_SUPPORT_MAGICMIME", HTTP_SUPPORT_MAGICMIME);
@@ -69,9 +65,9 @@ PHP_HTTP_API long _http_support(long feature)
 	
 #ifdef HTTP_HAVE_CURL
 	support |= HTTP_SUPPORT_REQUESTS;
-	if (http_support_ssl) {
-		support |= HTTP_SUPPORT_SSLREQUESTS;
-	}
+#	ifdef HTTP_HAVE_SSL
+	support |= HTTP_SUPPORT_SSLREQUESTS;
+#	endif
 #endif
 #ifdef HTTP_HAVE_MHASH
 	support |= HTTP_SUPPORT_MHASHETAGS;
