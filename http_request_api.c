@@ -49,9 +49,9 @@
 #		define HTTP_NEED_OPENSSL_TSL
 #		include <openssl/crypto.h>
 #	else /* !PHP_WIN32 */
-#		define HTTP_NEED_SSL_TSL
 #		if defined(HTTP_HAVE_OPENSSL)
 #			if defined(HAVE_OPENSSL_CRYPTO_H)
+#				define HTTP_NEED_SSL_TSL
 #				define HTTP_NEED_OPENSSL_TSL
 #				include <openssl/crypto.h>
 #			else
@@ -62,6 +62,7 @@
 #			endif
 #		elif defined(HTTP_HAVE_GNUTLS)
 #			if defined(HAVE_GCRYPT_H)
+#				define HTTP_NEED_SSL_TSL
 #				define HTTP_NEED_GNUTLS_TSL
 #				include <gcrypt.h>
 #			else
