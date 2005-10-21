@@ -40,9 +40,7 @@
 
 #include <curl/curl.h>
 
-/*
- * cruft for thread safe SSL crypto locks
- */
+/* {{{ cruft for thread safe SSL crypto locks */
 #if defined(ZTS) && defined(HTTP_HAVE_SSL)
 #	ifdef PHP_WIN32
 #		define HTTP_NEED_SSL_TSL
@@ -79,6 +77,7 @@
 #		endif /* HTTP_HAVE_OPENSSL || HTTP_HAVE_GNUTLS */
 #	endif /* PHP_WIN32 */
 #endif /* ZTS && HTTP_HAVE_SSL */
+/* }}} */
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
@@ -899,15 +898,15 @@ static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t k
 /* }}} */
 
 #ifdef HTTP_NEED_OPENSSL_TSL
-
-static MUTEX_T *http_ssl_mutex = NULL;
+/* {{{ */
+static MUTEX_T *http_openssl_tsl = NULL;
 
 static void http_ssl_lock(int mode, int n, const char * file, int line)
 {
 	if (mode & CRYPTO_LOCK) {
-		tsrm_mutex_lock(http_ssl_mutex[n]);
+		tsrm_mutex_lock(http_openssl_tsl[n]);
 	} else {
-		tsrm_mutex_unlock(http_ssl_mutex[n]);
+		tsrm_mutex_unlock(http_openssl_tsl[n]);
 	}
 }
 
@@ -920,10 +919,10 @@ static inline void http_ssl_init(void)
 {
 	int i, c = CRYPTO_num_locks();
 	
-	http_ssl_mutex = malloc(c * sizeof(MUTEX_T));
+	http_openssl_tsl = malloc(c * sizeof(MUTEX_T));
 	
 	for (i = 0; i < c; ++i) {
-		http_ssl_mutex[i] = tsrm_mutex_alloc();
+		http_openssl_tsl[i] = tsrm_mutex_alloc();
 	}
 	
 	CRYPTO_set_id_callback(http_ssl_id);
@@ -932,27 +931,28 @@ static inline void http_ssl_init(void)
 
 static inline void http_ssl_cleanup(void)
 {
-	if (http_ssl_mutex) {
+	if (http_openssl_tsl) {
 		int i, c = CRYPTO_num_locks();
 		
 		CRYPTO_set_id_callback(NULL);
 		CRYPTO_set_locking_callback(NULL);
 		
 		for (i = 0; i < c; ++i) {
-			tsrm_mutex_free(http_ssl_mutex[i]);
+			tsrm_mutex_free(http_openssl_tsl[i]);
 		}
 		
-		free(http_ssl_mutex);
-		http_ssl_mutex = NULL;
+		free(http_openssl_tsl);
+		http_openssl_tsl = NULL;
 	}
 }
 #endif /* HTTP_NEED_OPENSSL_TSL */
+/* }}} */
 
 #ifdef HTTP_NEED_GNUTLS_TSL
-
+/* {{{ */
 static int http_ssl_mutex_create(void **m)
 {
-	if (*((MUTEX_T **) m) = tsrm_mutex_alloc()) {
+	if (*((MUTEX_T *) m) = tsrm_mutex_alloc()) {
 		return SUCCESS;
 	} else {
 		return FAILURE;
@@ -961,21 +961,21 @@ static int http_ssl_mutex_create(void **m)
 
 static int http_ssl_mutex_destroy(void **m)
 {
-	tsrm_mutex_free(*((MUTEX_T **) m));
+	tsrm_mutex_free(*((MUTEX_T *) m));
 	return SUCCESS;
 }
 
 static int http_ssl_mutex_lock(void **m)
 {
-	return tsrm_mutex_lock(*((MUTEX_T **) m));
+	return tsrm_mutex_lock(*((MUTEX_T *) m));
 }
 
 static int http_ssl_mutex_unlock(void **m)
 {
-	return tsrm_mutex_unlock(*((MUTEX_T **) m));
+	return tsrm_mutex_unlock(*((MUTEX_T *) m));
 }
 
-static struct gcry_thread_cbs http_ssl_callbacks = {
+static struct gcry_thread_cbs http_gnutls_tsl = {
 	GCRY_THREAD_OPTIONS_USER,
 	NULL,
 	http_ssl_mutex_create,
@@ -986,16 +986,17 @@ static struct gcry_thread_cbs http_ssl_callbacks = {
 
 static inline void http_ssl_init(void)
 {
-	gcry_control(GCRYCTL_SET_THREAD_CBS, &http_ssl_callbacks);
+	gcry_control(GCRYCTL_SET_THREAD_CBS, &http_gnutls_tsl);
 }
 
 static inline void http_ssl_cleanup(void)
 {
 	return;
 }
-
 #endif /* HTTP_NEED_GNUTLS_TSL */
+/* }}} */
 
+/* {{{ http_curl_defaults(CURL *) */
 static inline void _http_curl_defaults(CURL *ch)
 {
 	HTTP_CURL_OPT(URL, NULL);
@@ -1052,6 +1053,7 @@ static inline void _http_curl_defaults(CURL *ch)
 	HTTP_CURL_OPT(READDATA, NULL);
 	HTTP_CURL_OPT(INFILESIZE, 0);
 }
+/* }}} */
 
 #endif /* HTTP_HAVE_CURL */
 
