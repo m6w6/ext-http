@@ -46,8 +46,13 @@ extern PHP_MINIT_FUNCTION(http_request_object);
 
 #define http_request_object_new _http_request_object_new
 extern zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC);
+#define http_request_object_new_ex(ce, ch) _http_request_object_new_ex((ce), (ch) TSRMLS_CC)
+#define http_request_object_from_curl(ch) _http_request_object_new_ex(http_request_object_ce, (ch) TSRMLS_CC)
+extern zend_object_value _http_request_object_new_ex(zend_class_entry *ce, CURL *ch TSRMLS_DC);
 #define http_request_object_free _http_request_object_free
 extern void _http_request_object_free(zend_object *object TSRMLS_DC);
+#define http_request_object_clone(o) _http_request_object_clone((o) TSRMLS_CC)
+extern zend_object_value _http_request_object_clone(zval *object TSRMLS_DC);
 
 #define http_request_object_requesthandler(req, this, body) _http_request_object_requesthandler((req), (this), (body) TSRMLS_CC)
 extern STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr, http_request_body *body TSRMLS_DC);
