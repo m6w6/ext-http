@@ -303,28 +303,18 @@ static zend_object_handlers http_request_object_handlers;
 PHP_MINIT_FUNCTION(http_request_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request_object, NULL, 0);
-	http_request_object_handlers.clone_obj = NULL; /* http_request_object_clone_obj; */
+	http_request_object_handlers.clone_obj = NULL;
 	return SUCCESS;
 }
 
 zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC)
-{
-	return http_request_object_new_ex(ce, NULL);
-}
-
-zend_object_value _http_request_object_new_ex(zend_class_entry *ce, CURL* ch TSRMLS_DC)
 {
 	zend_object_value ov;
 	http_request_object *o;
 
 	o = ecalloc(1, sizeof(http_request_object));
 	o->zo.ce = ce;
-	
-	if (ch) {
-		o->ch = ch;
-	} else {
-		o->ch = curl_easy_init();
-	}
+	o->ch = curl_easy_init();
 
 	phpstr_init(&o->history);
 	phpstr_init(&o->request);
@@ -338,39 +328,6 @@ zend_object_value _http_request_object_new_ex(zend_class_entry *ce, CURL* ch TSR
 	ov.handlers = &http_request_object_handlers;
 
 	return ov;
-}
-
-zend_object_value _http_request_object_clone(zval *object TSRMLS_DC)
-{
-	return http_request_object_clone_obj(object TSRMLS_CC);
-}
-
-static inline zend_object_value _http_request_object_clone_obj(zval *object TSRMLS_DC)
-{
-	zval clone;
-	getObjectEx(http_request_object, obj, object);
-	
-	INIT_PZVAL(&clone);
-	clone.value.obj = http_request_object_new_ex(Z_OBJCE_P(object), curl_easy_duphandle(obj->ch));
-	{
-		getObjectEx(http_request_object, cobj, &clone);
-		
-		/* copy history */
-		phpstr_append(&cobj->history, PHPSTR_VAL(&obj->history), PHPSTR_LEN(&obj->history));
-		/*
-		phpstr_append(&cobj->request, PHPSTR_VAL(&obj->request), PHPSTR_LEN(&obj->request));
-		phpstr_append(&obj->response, PHPSTR_VAL(&obj->response), PHPSTR_ÖEN(&obj->response));
-		*/
-		/* copy properties */
-		zend_hash_copy(OBJ_PROP(cobj), OBJ_PROP(obj), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-		
-		/* attach to pool */
-		if (obj->pool) {
-			http_request_pool_attach(obj->pool, &clone);
-		}
-	}
-	
-	return clone.value.obj;
 }
 
 static inline void _http_request_object_declare_default_properties(TSRMLS_D)
@@ -772,7 +729,7 @@ PHP_METHOD(HttpRequest, setOptions)
 	zval *opts = NULL, *old_opts, **opt;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a/!", &opts)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!", &opts)) {
 		RETURN_FALSE;
 	}
 	
@@ -789,7 +746,7 @@ PHP_METHOD(HttpRequest, setOptions)
 			if (!strcmp(key, "headers")) {
 				zval **headers;
 				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(old_opts), "headers", sizeof("headers"), (void **) &headers)) {
-					convert_to_array(*opt);
+					convert_to_array_ex(opt);
 					convert_to_array(*headers);
 					array_merge(*opt, *headers);
 					continue;
@@ -797,7 +754,7 @@ PHP_METHOD(HttpRequest, setOptions)
 			} else if (!strcmp(key, "cookies")) {
 				zval **cookies;
 				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(old_opts), "cookies", sizeof("cookies"), (void **) &cookies)) {
-					convert_to_array(*opt);
+					convert_to_array_ex(opt);
 					convert_to_array(*cookies);
 					array_merge(*opt, *cookies);
 					continue;
@@ -805,7 +762,7 @@ PHP_METHOD(HttpRequest, setOptions)
 			} else if (!strcmp(key, "ssl")) {
 				zval **ssl;
 				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(old_opts), "ssl", sizeof("ssl"), (void **) &ssl)) {
-					convert_to_array(*opt);
+					convert_to_array_ex(opt);
 					convert_to_array(*ssl);
 					array_merge(*opt, *ssl);
 					continue;
