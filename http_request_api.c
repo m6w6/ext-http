@@ -22,15 +22,6 @@
 
 #ifdef HTTP_HAVE_CURL
 
-#if defined(ZTS) && defined(HTTP_HAVE_SSL)
-#	if !defined(HAVE_OPENSSL_CRYPTO_H)
-#		error "libcurl was compiled with OpenSSL support, but we have no openssl/crypto.h"
-#	else
-#		define HTTP_NEED_SSL
-#		include <openssl/crypto.h>
-#	endif
-#endif
-
 #include "php_http.h"
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
@@ -49,23 +40,62 @@
 
 #include <curl/curl.h>
 
+/*
+ * cruft for thread safe SSL crypto locks
+ */
+#if defined(ZTS) && defined(HTTP_HAVE_SSL)
+#	ifdef PHP_WIN32
+#		define HTTP_NEED_SSL_TSL
+#		define HTTP_NEED_OPENSSL_TSL
+#		include <openssl/crypto.h>
+#	else /* !PHP_WIN32 */
+#		define HTTP_NEED_SSL_TSL
+#		if defined(HTTP_HAVE_OPENSSL)
+#			if defined(HAVE_OPENSSL_CRYPTO_H)
+#				define HTTP_NEED_OPENSSL_TSL
+#				include <openssl/crypto.h>
+#			else
+#				warning \
+					"libcurl was compiled with OpenSSL support, but configure could not find " \
+					"openssl/crypto.h; thus no SSL crypto locking callbacks will be set, which may " \
+					"cause random crashes on SSL requests"
+#			endif
+#		elif defined(HTTP_HAVE_GNUTLS)
+#			if defined(HAVE_GCRYPT_H)
+#				define HTTP_NEED_GNUTLS_TSL
+#				include <gcrypt.h>
+#			else
+#				warning \
+					"libcurl was compiled with GnuTLS support, but configure could not find " \
+					"gcrypt.h; thus no SSL crypto locking callbacks will be set, which may " \
+					"cause random crashes on SSL requests"
+#			endif
+#		else
+#			warning \
+				"libcurl was compiled with SSL support, but configure could not determine which" \
+				"library was used; thus no SSL crypto locking callbacks will be set, which may " \
+				"cause random crashes on SSL requests"
+#		endif /* HTTP_HAVE_OPENSSL || HTTP_HAVE_GNUTLS */
+#	endif /* PHP_WIN32 */
+#endif /* ZTS && HTTP_HAVE_SSL */
+
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-#ifdef HTTP_NEED_SSL
-static inline zend_bool http_ssl_init(void);
+#ifdef HTTP_NEED_SSL_TSL
+static inline void http_ssl_init(void);
 static inline void http_ssl_cleanup(void);
 #endif
 
 PHP_MINIT_FUNCTION(http_request)
 {
+#ifdef HTTP_NEED_SSL_TSL
+	http_ssl_init();
+#endif
+
 	if (CURLE_OK != curl_global_init(CURL_GLOBAL_ALL)) {
 		return FAILURE;
 	}
 	
-#ifdef HTTP_NEED_SSL
-	http_ssl_init();
-#endif
-
 #if LIBCURL_VERSION_NUM >= 0x070a05
 	HTTP_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC);
 	HTTP_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST);
@@ -79,7 +109,7 @@ PHP_MINIT_FUNCTION(http_request)
 PHP_MSHUTDOWN_FUNCTION(http_request)
 {
 	curl_global_cleanup();
-#ifdef HTTP_NEED_SSL
+#ifdef HTTP_NEED_SSL_TSL
 	http_ssl_cleanup();
 #endif
 	return SUCCESS;
@@ -867,7 +897,7 @@ static inline zval *_http_curl_getopt_ex(HashTable *options, char *key, size_t k
 }
 /* }}} */
 
-#ifdef HTTP_NEED_SSL
+#ifdef HTTP_NEED_OPENSSL_TSL
 
 static MUTEX_T *http_ssl_mutex = NULL;
 
@@ -885,26 +915,18 @@ static unsigned long http_ssl_id(void)
 	return (unsigned long) tsrm_thread_id();
 }
 
-static inline zend_bool http_ssl_init(void)
+static inline void http_ssl_init(void)
 {
-	curl_version_info_data *cvid = curl_version_info(CURLVERSION_NOW);
+	int i, c = CRYPTO_num_locks();
 	
-	if (cvid && (cvid->features & CURL_VERSION_SSL)) {
-		int i, c = CRYPTO_num_locks();
-		
-		http_ssl_mutex = malloc(c * sizeof(MUTEX_T));
-		
-		for (i = 0; i < c; ++i) {
-			http_ssl_mutex[i] = tsrm_mutex_alloc();
-		}
-		
-		CRYPTO_set_id_callback(http_ssl_id);
-		CRYPTO_set_locking_callback(http_ssl_lock);
-		
-		return 1;
+	http_ssl_mutex = malloc(c * sizeof(MUTEX_T));
+	
+	for (i = 0; i < c; ++i) {
+		http_ssl_mutex[i] = tsrm_mutex_alloc();
 	}
 	
-	return 0;
+	CRYPTO_set_id_callback(http_ssl_id);
+	CRYPTO_set_locking_callback(http_ssl_lock);
 }
 
 static inline void http_ssl_cleanup(void)
@@ -923,7 +945,55 @@ static inline void http_ssl_cleanup(void)
 		http_ssl_mutex = NULL;
 	}
 }
-#endif /* HTTP_NEED_SSL */
+#endif /* HTTP_NEED_OPENSSL_TSL */
+
+#ifdef HTTP_NEED_GNUTLS_TSL
+
+static int http_ssl_mutex_create(void **m)
+{
+	if (*((MUTEX_T **) m) = tsrm_mutex_alloc()) {
+		return SUCCESS;
+	} else {
+		return FAILURE;
+	}
+}
+
+static int http_ssl_mutex_destroy(void **m)
+{
+	tsrm_mutex_free(*((MUTEX_T **) m));
+	return SUCCESS;
+}
+
+static int http_ssl_mutex_lock(void **m)
+{
+	return tsrm_mutex_lock(*((MUTEX_T **) m));
+}
+
+static int http_ssl_mutex_unlock(void **m)
+{
+	return tsrm_mutex_unlock(*((MUTEX_T **) m));
+}
+
+static struct gcry_thread_cbs http_ssl_callbacks = {
+	GCRY_THREAD_OPTIONS_USER,
+	NULL,
+	http_ssl_mutex_create,
+	http_ssl_mutex_destroy,
+	http_ssl_mutex_lock,
+	http_ssl_mutex_unlock
+};
+
+static inline void http_ssl_init(void)
+{
+	gcry_control(GCRYCTL_SET_THREAD_CBS, &http_ssl_callbacks);
+}
+
+static inline void http_ssl_cleanup(void)
+{
+	return;
+}
+
+#endif /* HTTP_NEED_GNUTLS_TSL */
 
 static inline void _http_curl_defaults(CURL *ch)
 {

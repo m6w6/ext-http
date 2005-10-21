@@ -21,13 +21,7 @@ if test "$PHP_HTTP" != "no"; then
 dnl -------
 dnl NETDB.H
 dnl -------
-	AC_MSG_CHECKING(for netdb.h)
-	if test -r /usr/include/netdb.h -o -r /usr/local/include/netdb.h; then
-		AC_DEFINE(HAVE_NETDB_H, 1, [Have netdb.h])
-		AC_MSG_RESULT(found in default path)
-	else
-		AC_MSG_RESULT(not found in default path)
-	fi
+	AC_CHECK_HEADERS([netdb.h])
 
 dnl ----
 dnl ZLIB
@@ -85,13 +79,39 @@ dnl ----
 			AC_MSG_RESULT([found: $CURL_CONFIG])
 		fi
 		
+		CURL_LIBS=`$CURL_CONFIG --libs`
+		
+		AC_MSG_CHECKING([for SSL support in libcurl])
 		CURL_SSL=`$CURL_CONFIG --features | $EGREP SSL`
 		if test "$CURL_SSL" == "SSL"; then
+			AC_MSG_RESULT([yes])
 			AC_DEFINE([HTTP_HAVE_SSL], [1], [ ])
+			
+			AC_MSG_CHECKING([for SSL library used])
+			CURL_SSL_FLAVOUR=
+			for i in $CURL_LIBS; do
+				if test "$i" == "-lssl"; then
+					CURL_SSL_FLAVOUR="openssl"
+					AC_MSG_RESULT([openssl])
+					AC_DEFINE([HTTP_HAVE_OPENSSL], [1], [ ])
+					AC_CHECK_HEADERS([openssl/crypto.h])
+					break
+				elif test "$i" == "-lgnutls"; then
+					CURL_SSL_FLAVOUR="gnutls"
+					AC_MSG_RESULT([gnutls])
+					AC_DEFINE([HTTP_HAVE_GNUTLS], [1], [ ])
+					AC_CHECK_HEADERS([gcrypt.h])
+					break
+				fi
+			done
+			if test -z "$CURL_SSL_FLAVOUR"; then
+				AC_MSG_RESULT([unknown!])
+				AC_MSG_WARN([Could not determine the type of SSL library used!])
+				AC_MSG_WARN([Building will fail in ZTS mode!])
+			fi
+		else
+			AC_MSG_RESULT([no])
 		fi
-		AC_CHECK_HEADERS([openssl/crypto.h])
-		
-		CURL_LIBS=`$CURL_CONFIG --libs`
 		
 		PHP_ADD_INCLUDE($CURL_DIR/include)
 		PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)

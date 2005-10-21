@@ -126,7 +126,7 @@ inline void http_init_gzencode_buffer(z_stream *Z, const char *data, size_t data
 	*buf_ptr = emalloc(HTTP_ENCODING_BUFLEN(data_len) + sizeof(http_encoding_gzip_header) + HTTP_ENCODING_SAFPAD);
 	memcpy(*buf_ptr, http_encoding_gzip_header, sizeof(http_encoding_gzip_header));
 	
-	Z->next_out = *buf_ptr + sizeof(http_encoding_gzip_header);
+	Z->next_out = (Bytef *) *buf_ptr + sizeof(http_encoding_gzip_header);
 }
 
 inline void http_init_deflate_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr)
@@ -141,7 +141,7 @@ inline void http_init_deflate_buffer(z_stream *Z, const char *data, size_t data_
 	Z->avail_out = HTTP_ENCODING_BUFLEN(data_len) - 1;
 	Z->next_out  = emalloc(HTTP_ENCODING_BUFLEN(data_len));
 	
-	*buf_ptr = Z->next_out;
+	*buf_ptr = (char *) Z->next_out;
 }
 
 inline void http_init_uncompress_buffer(size_t data_len, char **buf_ptr, size_t *buf_len, int *iteration)
@@ -172,7 +172,7 @@ inline void http_init_inflate_buffer(z_stream *Z, const char *data, size_t data_
 	Z->next_in   = (Bytef *) data;
 	Z->avail_in  = data_len;
 	Z->avail_out = *buf_len;
-	Z->next_out  = *buf_ptr;
+	Z->next_out  = (Bytef *) *buf_ptr;
 }
 
 inline size_t http_finish_buffer(size_t buf_len, char **buf_ptr)
@@ -257,7 +257,7 @@ inline STATUS http_verify_gzencode_buffer(const char *data, size_t data_len, con
 			cmp += (unsigned) ((data[offset-1] & 0xFF) << 8);
 			
 			crc = crc32(0L, Z_NULL, 0);
-			crc = crc32(crc, data, sizeof(http_encoding_gzip_header));
+			crc = crc32(crc, (const Bytef *) data, sizeof(http_encoding_gzip_header));
 			
 			if (cmp != (crc & 0xFFFF)) {
 				http_error_ex(error_level TSRMLS_CC, HTTP_E_ENCODING, "GZIP headers CRC checksums so not match (%lu, %lu)", cmp, crc & 0xFFFF);
@@ -422,7 +422,7 @@ PHP_HTTP_API STATUS _http_encoding_compress(int level, const char *data, size_t 
 	
 	*encoded = emalloc(*encoded_len = HTTP_ENCODING_BUFLEN(data_len));
 	
-	if (Z_OK == (status = compress2(*encoded, encoded_len, data, data_len, level))) {
+	if (Z_OK == (status = compress2((Bytef *) *encoded, (uLongf *) encoded_len, (const Bytef *) data, data_len, level))) {
 		http_finish_buffer(*encoded_len, encoded);
 		return SUCCESS;
 	}
@@ -476,7 +476,7 @@ PHP_HTTP_API STATUS _http_encoding_uncompress(const char *data, size_t data_len,
 	
 	do {
 		http_init_uncompress_buffer(data_len, decoded, decoded_len, &max);
-		if (Z_OK == (status = uncompress(*decoded, decoded_len, data, data_len))) {
+		if (Z_OK == (status = uncompress((Bytef *) *decoded, (uLongf *) decoded_len, (const Bytef *) data, data_len))) {
 			http_finish_buffer(*decoded_len, decoded);
 			return SUCCESS;
 		}
@@ -525,7 +525,7 @@ PHP_HTTP_API STATUS _http_encoding_stream_update(http_encoding_stream *s, const 
 	
 	s->Z.next_in = (Bytef *) data;
 	s->Z.avail_in = data_len;
-	s->Z.next_out = *encoded;
+	s->Z.next_out = (Bytef *) *encoded;
 	s->Z.avail_out = *encoded_len;
 	
 	status = deflate(&s->Z, Z_SYNC_FLUSH);
@@ -549,7 +549,7 @@ PHP_HTTP_API STATUS _http_encoding_stream_finish(http_encoding_stream *s, char *
 	*encoded_len = 1024;
 	*encoded = emalloc(*encoded_len);
 	
-	s->Z.next_out = *encoded;
+	s->Z.next_out = (Bytef *) *encoded;
 	s->Z.avail_out = *encoded_len;
 	
 	if (Z_STREAM_END != (status = deflate(&s->Z, Z_FINISH)) || Z_OK != (status = deflateEnd(&s->Z))) {
