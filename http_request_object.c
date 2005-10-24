@@ -1,16 +1,13 @@
 /*
-   +----------------------------------------------------------------------+
-   | PECL :: http                                                         |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.0 of the PHP license, that  |
-   | is bundled with this package in the file LICENSE, and is available   |
-   | through the world-wide-web at http://www.php.net/license/3_0.txt.    |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 2004-2005 Michael Wallner <mike@php.net>               |
-   +----------------------------------------------------------------------+
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2005, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
 */
 
 /* $Id$ */
@@ -622,7 +619,7 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 			}
 		}
 	} else if (new_options && zend_hash_num_elements(Z_ARRVAL_P(new_options))) {
-		zval_add_ref(&new_options);
+		ZVAL_ADDREF(new_options);
 		add_assoc_zval(opts, key, new_options);
 	}
 
@@ -739,7 +736,7 @@ PHP_METHOD(HttpRequest, setOptions)
 		zend_hash_clean(Z_ARRVAL_P(old_opts));
 		RETURN_TRUE;
 	}
-
+	
 	/* some options need extra attention -- thus cannot use array_merge() directly */
 	FOREACH_KEYVAL(opts, key, idx, opt) {
 		if (key) {
@@ -781,13 +778,14 @@ PHP_METHOD(HttpRequest, setOptions)
 				continue;
 			}
 
-			zval_add_ref(opt);
+			ZVAL_ADDREF(*opt);
 			add_assoc_zval(old_opts, key, *opt);
 
 			/* reset */
 			key = NULL;
 		}
 	}
+	SET_PROP(obj, options, old_opts);
 
 	RETURN_TRUE;
 }

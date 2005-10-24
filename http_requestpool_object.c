@@ -1,16 +1,13 @@
 /*
-   +----------------------------------------------------------------------+
-   | PECL :: http                                                         |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.0 of the PHP license, that  |
-   | is bundled with this package in the file LICENSE, and is available   |
-   | through the world-wide-web at http://www.php.net/license/3_0.txt.    |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 2004-2005 Michael Wallner <mike@php.net>               |
-   +----------------------------------------------------------------------+
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2005, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
 */
 
 /* $Id$ */
@@ -149,7 +146,7 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
 #define http_requestpool_object_llist2array _http_requestpool_object_llist2array
 static void _http_requestpool_object_llist2array(zval **req, zval *array TSRMLS_DC)
 {
-	zval_add_ref(req);
+	ZVAL_ADDREF(*req);
 	Z_OBJ_ADDREF_PP(req);
 	add_next_index_zval(array, *req);
 }

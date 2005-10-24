@@ -1,16 +1,13 @@
 /*
-   +----------------------------------------------------------------------+
-   | PECL :: http                                                         |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.0 of the PHP license, that  |
-   | is bundled with this package in the file LICENSE, and is available   |
-   | through the world-wide-web at http://www.php.net/license/3_0.txt.    |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 2004-2005 Michael Wallner <mike@php.net>               |
-   +----------------------------------------------------------------------+
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2005, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
 */
 
 /* $Id$ */
@@ -105,7 +102,7 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 				zend_llist_add_element(&pool->handles, &request);
 				zend_llist_add_element(&pool->bodies, &body);
 
-				zval_add_ref(&request);
+				ZVAL_ADDREF(request);
 				Z_OBJ_ADDREF_P(request);
 
 #if HTTP_DEBUG_REQPOOLS
@@ -304,7 +301,7 @@ void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC)
 		fprintf(stderr, "Fetching data from HttpRequest(#%d) %p of pool %p\n", Z_OBJ_HANDLE_PP(req), obj, obj->pool);
 #endif
 		
-		zval_add_ref(req);
+		ZVAL_ADDREF(*req);
 		Z_OBJ_ADDREF_PP(req);
 		zend_llist_add_element(&obj->pool->finished, req);
 		http_request_object_responsehandler(obj, *req);

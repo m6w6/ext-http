@@ -37,13 +37,15 @@
   <release>beta</release>
   <api>beta</api>
  </stability>
- <license uri="http://www.php.net/license">PHP License</license>
+ <license>BSD, revised</license>
  <notes><![CDATA[
 + Added ext/zlib independant GZIP support
 + Added HttpRequestPool::getAttachedRequests() and getFinishedRequests()
++ Added experimental thread safety for curl-gnutls builds
 ]]></notes>
  <contents>
   <dir name="/">
+   <file role="doc" name="LICENSE"/>
    <file role="doc" name="CREDITS"/>
    <file role="doc" name="EXPERIMENTAL"/>
    <file role="doc" name="KnownIssues.txt"/>
