@@ -29,7 +29,7 @@ dnl ----
 	AC_MSG_CHECKING([for zlib.h])
 	ZLIB_DIR=
 	for i in "$PHP_HTTP_ZLIB_COMPRESSION" "$PHP_ZLIB_DIR" "$PHP_ZLIB" /user/local /usr /opt; do
-		if test -r "$i/include/zlib.h"; then
+		if test -f "$i/include/zlib.h"; then
 			ZLIB_DIR=$i
 			break;
 		fi
@@ -52,7 +52,7 @@ dnl ----
 		AC_MSG_CHECKING([for curl/curl.h])
 		CURL_DIR=
 		for i in "$PHP_HTTP_CURL_REQUESTS" /usr/local /usr /opt; do
-			if test -r "$i/include/curl/curl.h"; then
+			if test -f "$i/include/curl/curl.h"; then
 				CURL_DIR=$i
 				break
 			fi
@@ -191,7 +191,7 @@ dnl ----
 		http_api.c http_cache_api.c http_request_api.c http_date_api.c \
 		http_headers_api.c http_message_api.c http_send_api.c http_url_api.c \
 		http_info_api.c http_request_method_api.c http_encoding_api.c"
-	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, [$ext_shared])
+	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, $ext_shared)
 	PHP_ADD_BUILD_DIR($ext_builddir/phpstr, 1)
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 
