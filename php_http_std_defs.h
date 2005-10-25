@@ -192,7 +192,7 @@ typedef int STATUS;
 	{ \
 		zend_class_entry ce; \
 		INIT_CLASS_ENTRY(ce, #classname, name## _fe); \
-		ce.create_object = name## _new; \
+		ce.create_object = _ ##name## _new; \
 		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
 		name## _ce->ce_flags |= flags;  \
 		memcpy(& name## _handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
@@ -219,7 +219,7 @@ typedef int STATUS;
 
 #	define getObject(t, o) getObjectEx(t, o, getThis())
 #	define getObjectEx(t, o, v) t * o = ((t *) zend_object_store_get_object(v TSRMLS_CC))
-#	define putObject(t, o) zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, (zend_objects_free_object_storage_t) t## _free, NULL TSRMLS_CC);
+#	define putObject(t, o) zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, (zend_objects_free_object_storage_t) _ ##t## _free, NULL TSRMLS_CC);
 #	define OBJ_PROP(o) (o)->zo.properties
 
 #	define DCL_STATIC_PROP(a, t, n, v)		zend_declare_property_ ##t(ce, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
@@ -261,6 +261,18 @@ typedef int STATUS;
 		zval *__tmp = GET_PROP(o, p); \
 		if (__tmp) { \
 			zval_ptr_dtor(&__tmp); \
+		} \
+	}
+
+/*
+ * the property *MUST* be updated after SEP_PROP()
+ */ 
+#	define SEP_PROP(zpp) \
+	{ \
+		zval **op = zpp; \
+		SEPARATE_ZVAL_IF_NOT_REF(zpp); \
+		if (op != zpp) { \
+			zval_ptr_dtor(op); \
 		} \
 	}
 

@@ -38,9 +38,9 @@ extern zend_function_entry http_requestpool_object_fe[];
 
 extern PHP_MINIT_FUNCTION(http_requestpool_object);
 
-#define http_requestpool_object_new _http_requestpool_object_new
+#define http_requestpool_object_new(ce) _http_requestpool_object_new(ce TSRMLS_CC)
 extern zend_object_value _http_requestpool_object_new(zend_class_entry *ce TSRMLS_DC);
-#define http_requestpool_object_free _http_requestpool_object_free
+#define http_requestpool_object_free(o) _http_requestpool_object_free(o TSRMLS_CC)
 extern void _http_requestpool_object_free(zend_object *object TSRMLS_DC);
 
 PHP_METHOD(HttpRequestPool, __construct);

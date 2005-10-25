@@ -149,21 +149,25 @@ PHP_MINIT_FUNCTION(http_message_object)
 
 zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC)
 {
-	return http_message_object_new_ex(ce, NULL);
+	return http_message_object_new_ex(ce, NULL, NULL);
 }
 
-zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message *msg TSRMLS_DC)
+zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message *msg, http_message_object **ptr TSRMLS_DC)
 {
 	zend_object_value ov;
 	http_message_object *o;
 
 	o = ecalloc(1, sizeof(http_message_object));
 	o->zo.ce = ce;
+	
+	if (ptr) {
+		*ptr = o;
+	}
 
 	if (msg) {
 		o->message = msg;
 		if (msg->parent) {
-			o->parent = http_message_object_from_msg(msg->parent);
+			o->parent = http_message_object_new_ex(ce, msg->parent, NULL);
 		}
 	}
 
@@ -176,9 +180,10 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 	return ov;
 }
 
-zend_object_value _http_message_object_clone(zval *this_ptr TSRMLS_DC)
+zend_object_value _http_message_object_clone_obj(zval *this_ptr TSRMLS_DC)
 {
-	return http_message_object_clone_obj(this_ptr TSRMLS_CC);
+	getObject(http_message_object, obj);
+	return http_message_object_new_ex(Z_OBJCE_P(this_ptr), http_message_dup(obj->message), NULL);
 }
 
 static inline void _http_message_object_declare_default_properties(TSRMLS_D)
@@ -214,12 +219,6 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 		efree(o->message);
 	}
 	efree(o);
-}
-
-static inline zend_object_value _http_message_object_clone_obj(zval *this_ptr TSRMLS_DC)
-{
-	getObject(http_message_object, obj);
-	return http_message_object_from_msg(http_message_dup(obj->message));
 }
 
 static zval *_http_message_object_read_prop(zval *object, zval *member, int type TSRMLS_DC)
@@ -506,7 +505,7 @@ PHP_METHOD(HttpMessage, __construct)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &message, &length) && message && length) {
 		if (obj->message = http_message_parse(message, length)) {
 			if (obj->message->parent) {
-				obj->parent = http_message_object_from_msg(obj->message->parent);
+				obj->parent = http_message_object_new_ex(Z_OBJCE_P(getThis()), obj->message->parent, NULL);
 			}
 		}
 	} else if (!obj->message) {
@@ -539,7 +538,7 @@ PHP_METHOD(HttpMessage, fromString)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
 		if (msg = http_message_parse(string, length)) {
 			Z_TYPE_P(return_value) = IS_OBJECT;
-			return_value->value.obj = http_message_object_from_msg(msg);
+			return_value->value.obj = http_message_object_new_ex(http_message_object_ce, msg, NULL);
 		}
 	}
 	SET_EH_NORMAL();

@@ -101,6 +101,7 @@ PHP_MINIT_FUNCTION(http_requestpool_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequestPool, http_requestpool_object, NULL, 0);
 	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 1, zend_ce_iterator);
+	http_requestpool_object_handlers.clone_obj = NULL;
 	return SUCCESS;
 }
 

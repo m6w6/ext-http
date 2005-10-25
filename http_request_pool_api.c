@@ -251,7 +251,11 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 	FD_ZERO(&E);
 
 	curl_multi_fdset(pool->ch, &R, &W, &E, &MAX);
+#ifdef PHP_WIN32
+	return (SOCKET_ERROR != select(MAX + 1, &R, &W, &E, &timeout)) ? SUCCESS : FAILURE;
+#else
 	return (-1 != select(MAX + 1, &R, &W, &E, &timeout)) ? SUCCESS : FAILURE;
+#endif
 }
 /* }}} */
 

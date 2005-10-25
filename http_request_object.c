@@ -300,18 +300,27 @@ static zend_object_handlers http_request_object_handlers;
 PHP_MINIT_FUNCTION(http_request_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request_object, NULL, 0);
-	http_request_object_handlers.clone_obj = NULL;
+	http_request_object_handlers.clone_obj = _http_request_object_clone_obj;
 	return SUCCESS;
 }
 
 zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC)
+{
+	return http_request_object_new_ex(ce, curl_easy_init(), NULL);
+}
+
+zend_object_value _http_request_object_new_ex(zend_class_entry *ce, CURL *ch, http_request_object **ptr TSRMLS_DC)
 {
 	zend_object_value ov;
 	http_request_object *o;
 
 	o = ecalloc(1, sizeof(http_request_object));
 	o->zo.ce = ce;
-	o->ch = curl_easy_init();
+	o->ch = ch;
+	
+	if (ptr) {
+		*ptr = o;
+	}
 
 	phpstr_init(&o->history);
 	phpstr_init(&o->request);
@@ -325,6 +334,24 @@ zend_object_value _http_request_object_new(zend_class_entry *ce TSRMLS_DC)
 	ov.handlers = &http_request_object_handlers;
 
 	return ov;
+}
+
+zend_object_value _http_request_object_clone_obj(zval *this_ptr TSRMLS_DC)
+{
+	zend_object *old_zo;
+	zend_object_value new_ov;
+	http_request_object *new_obj;
+	getObject(http_request_object, old_obj);
+	
+	old_zo = zend_objects_get_address(this_ptr TSRMLS_CC);
+	new_ov = http_request_object_new_ex(old_zo->ce, curl_easy_duphandle(old_obj->ch), &new_obj);
+	
+	zend_objects_clone_members(&new_obj->zo, new_ov, old_zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
+	phpstr_append(&new_obj->history, old_obj->history.data, old_obj->history.used);
+	phpstr_append(&new_obj->request, old_obj->request.data, old_obj->request.used);
+	phpstr_append(&new_obj->response, old_obj->response.data, old_obj->response.used);
+	
+	return new_ov;
 }
 
 static inline void _http_request_object_declare_default_properties(TSRMLS_D)
@@ -544,6 +571,9 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 			*resp = convert_to_type(IS_ARRAY, GET_PROP(obj, responseData)),
 			*info = convert_to_type(IS_ARRAY, GET_PROP(obj, responseInfo));
 
+		SEP_PROP(&resp);
+		SEP_PROP(&info);
+		
 		if (zval_is_true(GET_PROP(obj, recordHistory))) {
 			/* we need to act like a zipper, as we'll receive
 			 * the requests and the responses in separate chains
@@ -580,9 +610,10 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 
 		add_assoc_zval(resp, "headers", headers);
 		add_assoc_stringl(resp, "body", body, body_len, 0);
+		SET_PROP(obj, responseData, resp);
 
 		MAKE_STD_ZVAL(message);
-		ZVAL_OBJVAL(message, http_message_object_from_msg(msg));
+		ZVAL_OBJVAL(message, http_message_object_new_ex(http_message_object_ce, msg, NULL));
 		SET_PROP(obj, responseMessage, message);
 		zval_ptr_dtor(&message);
 
@@ -731,9 +762,11 @@ PHP_METHOD(HttpRequest, setOptions)
 	}
 	
 	old_opts = convert_to_type(IS_ARRAY, GET_PROP(obj, options));
-
+	SEP_PROP(&old_opts);
+	
 	if (!opts || !zend_hash_num_elements(Z_ARRVAL_P(opts))) {
 		zend_hash_clean(Z_ARRVAL_P(old_opts));
+		SET_PROP(obj, options, old_opts);
 		RETURN_TRUE;
 	}
 	
@@ -1202,11 +1235,13 @@ PHP_METHOD(HttpRequest, setPostFields)
 	}
 
 	post = convert_to_type(IS_ARRAY, GET_PROP(obj, postFields));
-	zend_hash_clean(Z_ARRVAL_P(post));
 	
+	SEP_PROP(&post);
+	zend_hash_clean(Z_ARRVAL_P(post));
 	if (post_data && zend_hash_num_elements(Z_ARRVAL_P(post_data))) {
 		array_copy(post_data, post);
 	}
+	SET_PROP(obj, postFields, post);
 
 	RETURN_TRUE;
 }
@@ -1385,11 +1420,13 @@ PHP_METHOD(HttpRequest, setPostFiles)
 	}
 
 	pFiles = convert_to_type(IS_ARRAY, GET_PROP(obj, postFiles));
-	zend_hash_clean(Z_ARRVAL_P(pFiles));
 	
+	SEP_PROP(&pFiles);
+	zend_hash_clean(Z_ARRVAL_P(pFiles));
 	if (files && zend_hash_num_elements(Z_ARRVAL_P(files))) {
 		array_copy(files, pFiles);
 	}
+	SET_PROP(obj, postFiles, pFiles);
 
 	RETURN_TRUE;
 }
@@ -1777,7 +1814,7 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 
 		SET_EH_THROW_HTTP();
 		if (msg = http_message_parse(PHPSTR_VAL(&obj->request), PHPSTR_LEN(&obj->request))) {
-			RETVAL_OBJVAL(http_message_object_from_msg(msg));
+			RETVAL_OBJVAL(http_message_object_new_ex(http_message_object_ce, msg, NULL));
 		}
 		SET_EH_NORMAL();
 	}
@@ -1809,7 +1846,7 @@ PHP_METHOD(HttpRequest, getHistory)
 
 		SET_EH_THROW_HTTP();
 		if (msg = http_message_parse(PHPSTR_VAL(&obj->history), PHPSTR_LEN(&obj->history))) {
-			RETVAL_OBJVAL(http_message_object_from_msg(msg));
+			RETVAL_OBJVAL(http_message_object_new_ex(http_message_object_ce, msg, NULL));
 		}
 		SET_EH_NORMAL();
 	}

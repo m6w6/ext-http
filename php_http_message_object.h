@@ -29,14 +29,13 @@ extern zend_function_entry http_message_object_fe[];
 
 extern PHP_MINIT_FUNCTION(http_message_object);
 
-#define http_message_object_new _http_message_object_new
+#define http_message_object_new(ce) _http_message_object_new((ce) TSRMLS_CC)
 extern zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC);
-#define http_message_object_new_ex(ce, msg) _http_message_object_new_ex(ce, msg TSRMLS_CC)
-#define http_message_object_from_msg(msg) _http_message_object_new_ex(http_message_object_ce, msg TSRMLS_CC)
-extern zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message *msg TSRMLS_DC);
-#define http_message_object_clone(zobj) _http_message_object_clone(zobj TSRMLS_CC)
-extern zend_object_value _http_message_object_clone(zval *object TSRMLS_DC);
-#define http_message_object_free _http_message_object_free
+#define http_message_object_new_ex(ce, msg, ptr) _http_message_object_new_ex((ce), (msg), (ptr) TSRMLS_CC)
+extern zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message *msg, http_message_object **ptr TSRMLS_DC);
+#define http_message_object_clone(zobj) _http_message_object_clone_obj(zobj TSRMLS_CC)
+extern zend_object_value _http_message_object_clone_obj(zval *object TSRMLS_DC);
+#define http_message_object_free(o) _http_message_object_free((o) TSRMLS_CC)
 extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 
 #define HTTP_MSG_PROPHASH_TYPE                  276192743LU
