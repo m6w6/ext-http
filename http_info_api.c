@@ -119,7 +119,7 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 	}
 	
 	/* is request */
-	else {
+	else if (!http[lenof("HTTP/1.x")] || http[lenof("HTTP/1.x")] == '\r' || http[lenof("HTTP/1.x")] == '\n') {
 		const char *url = strchr(pre_header, ' ');
 		
 		info->type = IS_HTTP_REQUEST;
@@ -132,6 +132,11 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 		}
 		
 		return SUCCESS;
+	}
+
+	/* some darn header containing HTTP/1.x */
+	else {
+		return FAILURE;
 	}
 }
 
