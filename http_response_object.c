@@ -414,9 +414,13 @@ PHP_METHOD(HttpResponse, getCache)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *cache = convert_to_type_ex(IS_BOOL, GET_STATIC_PROP(cache));
+		zval *cache_p, *cache = convert_to_type_ex(IS_BOOL, GET_STATIC_PROP(cache), &cache_p);
 		
-		RETURN_ZVAL(cache, 1, 0);
+		RETVAL_ZVAL(cache, 1, 0);
+
+		if (cache_p) {
+			zval_ptr_dtor(&cache_p);
+		}
 	}
 }
 /* }}}*/
@@ -452,9 +456,13 @@ PHP_METHOD(HttpResponse, getGzip)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *gzip = convert_to_type_ex(IS_BOOL, GET_STATIC_PROP(gzip));
+		zval *gzip_p, *gzip = convert_to_type_ex(IS_BOOL, GET_STATIC_PROP(gzip), &gzip_p);
 		
-		RETURN_ZVAL(gzip, 1, 0);
+		RETVAL_ZVAL(gzip, 1, 0);
+
+		if (gzip_p) {
+			zval_ptr_dtor(&gzip_p);
+		}
 	}
 }
 /* }}} */
@@ -504,9 +512,13 @@ PHP_METHOD(HttpResponse, getCacheControl)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *ccontrol = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl));
+		zval *ccontrol_p, *ccontrol = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl), &ccontrol_p);
 		
-		RETURN_ZVAL(ccontrol, 1, 0);
+		RETVAL_ZVAL(ccontrol, 1, 0);
+
+		if (ccontrol_p) {
+			zval_ptr_dtor(&ccontrol_p);
+		}
 	}
 }
 /* }}} */
@@ -547,9 +559,13 @@ PHP_METHOD(HttpResponse, getContentType)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *ctype = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentType));
+		zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentType), &ctype_p);
 		
-		RETURN_ZVAL(ctype, 1, 0);
+		RETVAL_ZVAL(ctype, 1, 0);
+
+		if (ctype_p) {
+			zval_ptr_dtor(&ctype_p);
+		}
 	}
 }
 /* }}} */
@@ -656,9 +672,13 @@ PHP_METHOD(HttpResponse, getContentDisposition)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *cd = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentDisposition));
+		zval *cd_p, *cd = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentDisposition), &cd_p);
 		
-		RETURN_ZVAL(cd, 1, 0);
+		RETVAL_ZVAL(cd, 1, 0);
+
+		if (cd_p) {
+			zval_ptr_dtor(&cd_p);
+		}
 	}
 }
 /* }}} */
@@ -695,9 +715,13 @@ PHP_METHOD(HttpResponse, getETag)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *etag = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag));
+		zval *etag_p, *etag = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag), &etag_p);
 		
-		RETURN_ZVAL(etag, 1, 0);
+		RETVAL_ZVAL(etag, 1, 0);
+
+		if (etag_p) {
+			zval_ptr_dtor(&etag_p);
+		}
 	}
 }
 /* }}} */
@@ -734,9 +758,13 @@ PHP_METHOD(HttpResponse, getLastModified)
 	NO_ARGS;
 	
 	IF_RETVAL_USED {
-		zval *lm = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified));
+		zval *lm_p, *lm = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified), &lm_p);
 		
-		RETURN_ZVAL(lm, 1, 0);
+		RETVAL_ZVAL(lm, 1, 0);
+
+		if (lm_p) {
+			zval_ptr_dtor(&lm_p);
+		}
 	}
 }
 /* }}} */
@@ -777,9 +805,13 @@ PHP_METHOD(HttpResponse, getThrottleDelay)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *delay = convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay));
+		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay), &delay_p);
 		
-		RETURN_ZVAL(delay, 1, 0);
+		RETVAL_ZVAL(delay, 1, 0);
+
+		if (delay_p) {
+			zval_ptr_dtor(&delay_p);
+		}
 	}
 }
 /* }}} */
@@ -819,9 +851,13 @@ PHP_METHOD(HttpResponse, getBufferSize)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *size = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize));
+		zval *size_p, *size = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize), &size_p);
 		
-		RETURN_ZVAL(size, 1, 0);
+		RETVAL_ZVAL(size, 1, 0);
+
+		if (size_p) {
+			zval_ptr_dtor(&size_p);
+		}
 	}
 }
 /* }}} */
@@ -932,7 +968,13 @@ PHP_METHOD(HttpResponse, getStream)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		RETURN_RESOURCE(Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream))));
+		zval *stream_p;
+		
+		RETVAL_RESOURCE(Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream), &stream_p)));
+
+		if (stream_p) {
+			zval_ptr_dtor(&stream_p);
+		}
 	}
 }
 /* }}} */
@@ -985,9 +1027,13 @@ PHP_METHOD(HttpResponse, getFile)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *the_file = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file));
+		zval *the_file_p, *the_file = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file), &the_file_p);
 		
-		RETURN_ZVAL(the_file, 1, 0);
+		RETVAL_ZVAL(the_file, 1, 0);
+
+		if (the_file_p) {
+			zval_ptr_dtor(&the_file_p);
+		}
 	}
 }
 /* }}} */
@@ -1039,14 +1085,14 @@ PHP_METHOD(HttpResponse, send)
 
 	/* capture mode */
 	if (zval_is_true(GET_STATIC_PROP(catch))) {
-		zval *the_data;
+		zval *etag_p, *the_data;
 
 		MAKE_STD_ZVAL(the_data);
 		php_ob_get_buffer(the_data TSRMLS_CC);
 		SET_STATIC_PROP(data, the_data);
 		ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
 
-		if (!Z_STRLEN_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag)))) {
+		if (!Z_STRLEN_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag), &etag_p))) {
 			char *etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
 			if (etag) {
 				UPD_STATIC_PROP(string, eTag, etag);
@@ -1054,6 +1100,10 @@ PHP_METHOD(HttpResponse, send)
 			}
 		}
 		zval_ptr_dtor(&the_data);
+		
+		if (etag_p) {
+			zval_ptr_dtor(&etag_p);
+		}
 
 		clean_ob = 1;
 	}
@@ -1067,19 +1117,23 @@ PHP_METHOD(HttpResponse, send)
 
 	/* caching */
 	if (zval_is_true(GET_STATIC_PROP(cache))) {
-		zval *cctl, *etag, *lmod;
+		zval *cctl, *cctl_p, *etag, *etag_p, *lmod, *lmod_p;
 
-		etag = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag));
-		lmod = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified));
-		cctl = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl));
+		etag = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag), &etag_p);
+		lmod = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified), &lmod_p);
+		cctl = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl), &cctl_p);
 
 		http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
 		http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
+
+		if (etag_p) zval_ptr_dtor(&etag_p);
+		if (lmod_p) zval_ptr_dtor(&lmod_p);
+		if (cctl_p) zval_ptr_dtor(&cctl_p);
 	}
 
 	/* content type */
 	{
-		zval *ctype = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentType));
+		zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentType), &ctype_p);
 		if (Z_STRLEN_P(ctype)) {
 			http_send_content_type(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
 		} else {
@@ -1092,19 +1146,31 @@ PHP_METHOD(HttpResponse, send)
 				http_send_content_type("application/x-octetstream", lenof("application/x-octetstream"));
 			}
 		}
+		if (ctype_p) {
+			zval_ptr_dtor(&ctype_p);
+		}
 	}
 
 	/* content disposition */
 	{
-		zval *cd = GET_STATIC_PROP(contentDisposition);
+		zval *cd_p, *cd = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentDisposition), &cd_p);
 		if (Z_STRLEN_P(cd)) {
 			http_send_header_ex("Content-Disposition", lenof("Content-Disposition"), Z_STRVAL_P(cd), Z_STRLEN_P(cd), 1, NULL);
+		}
+		if (cd_p) {
+			zval_ptr_dtor(&cd_p);
 		}
 	}
 
 	/* throttling */
-	HTTP_G(send).buffer_size    = Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize)));
-	HTTP_G(send).throttle_delay = Z_DVAL_P(convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay)));
+	{
+		zval *bsize_p, *bsize = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize), &bsize_p);
+		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay), &delay_p);
+		HTTP_G(send).buffer_size    = Z_LVAL_P(bsize);
+		HTTP_G(send).throttle_delay = Z_DVAL_P(delay);
+		if (bsize_p) zval_ptr_dtor(&bsize_p);
+		if (delay_p) zval_ptr_dtor(&delay_p);
+	}
 
 	/* gzip */
 	HTTP_G(send).gzip_encoding = zval_is_true(GET_STATIC_PROP(gzip));
@@ -1117,22 +1183,29 @@ PHP_METHOD(HttpResponse, send)
 	{
 		case SEND_DATA:
 		{
-			zval *zdata = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(data));
-			RETURN_SUCCESS(http_send_data_ex(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata), 1));
+			zval *zdata_p, *zdata = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(data), &zdata_p);
+			RETVAL_SUCCESS(http_send_data_ex(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata), 1));
+			if (zdata_p) zval_ptr_dtor(&zdata_p);
+			return;
 		}
 
 		case SEND_RSRC:
 		{
 			php_stream *the_real_stream;
-			zval *the_stream = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream));
+			zval *the_stream_p, *the_stream = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream), &the_stream_p);
 			the_stream->type = IS_RESOURCE;
 			php_stream_from_zval(the_real_stream, &the_stream);
-			RETURN_SUCCESS(http_send_stream_ex(the_real_stream, 0, 1));
+			RETVAL_SUCCESS(http_send_stream_ex(the_real_stream, 0, 1));
+			if (the_stream_p) zval_ptr_dtor(&the_stream_p);
+			return;
 		}
 
 		default:
 		{
-			RETURN_SUCCESS(http_send_file_ex(Z_STRVAL_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file))), 1));
+			zval *file_p;
+			RETVAL_SUCCESS(http_send_file_ex(Z_STRVAL_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file), &file_p)), 1));
+			if (file_p) zval_ptr_dtor(&file_p);
+			return;
 		}
 	}
 }

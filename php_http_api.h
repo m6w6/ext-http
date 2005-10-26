@@ -144,9 +144,10 @@ static inline zval *_convert_to_type(int type, zval *z)
 	}
 	return z;
 }
-#define convert_to_type_ex(t, z) _convert_to_type_ex((t), (z))
-static inline zval *_convert_to_type_ex(int type, zval *z)
+#define convert_to_type_ex(t, z, p) _convert_to_type_ex((t), (z), (p))
+static inline zval *_convert_to_type_ex(int type, zval *z, zval **p)
 {
+	*p = z;
 	if (Z_TYPE_P(z) != type) {
 		switch (type)
 		{
@@ -158,6 +159,11 @@ static inline zval *_convert_to_type_ex(int type, zval *z)
 			case IS_ARRAY:	convert_to_array_ex(&z);	break;
 			case IS_OBJECT:	convert_to_object_ex(&z);	break;
 		}
+	}
+	if (*p == z) {
+		*p = NULL;
+	} else {
+		*p = z;
 	}
 	return z;
 }

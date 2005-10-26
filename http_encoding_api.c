@@ -84,8 +84,8 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0A; got: 0x%02X)", *n_ptr);
 					}
 				} else {
-					char *error = estrndup(n_ptr, strcspn(n_ptr, "\r\n "));
-					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid chunk size: '%s' at pos %d", error, n_ptr - encoded);
+					char *error = estrndup(e_ptr, strcspn(n_ptr, "\r\n "));
+					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid chunk size: '%s' at pos %ld of %lu", error, (long) (n_ptr - encoded), (unsigned long) encoded_len);
 					efree(error);
 				}
 				return NULL;

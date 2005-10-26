@@ -374,7 +374,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PROTECTED, string, queryData, "");
 	DCL_PROP(PROTECTED, string, putFile, "");
 
-	DCL_PROP(PUBLIC, bool, recordHistory, 1);
+	DCL_PROP(PUBLIC, bool, recordHistory, 0);
 
 #ifndef WONKY
 	/*
@@ -448,7 +448,7 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 
 STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr, http_request_body *body TSRMLS_DC)
 {
-	zval *meth, *URL;
+	zval *meth, *URL, *meth_p, *URL_p;
 	char *request_uri;
 	STATUS status = SUCCESS;
 
@@ -457,13 +457,19 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	}
 	HTTP_CHECK_CURL_INIT(obj->ch, curl_easy_init(), return FAILURE);
 
-	URL = convert_to_type_ex(IS_STRING, GET_PROP(obj, url));
+	URL = convert_to_type_ex(IS_STRING, GET_PROP(obj, url), &URL_p);
 	// HTTP_URI_MAXLEN+1 long char *
 	if (!(request_uri = http_absolute_uri_ex(Z_STRVAL_P(URL), Z_STRLEN_P(URL), NULL, 0, NULL, 0, 0))) {
+		if (URL_p) {
+			zval_ptr_dtor(&URL_p);
+		}
 		return FAILURE;
 	}
+	if (URL_p) {
+		zval_ptr_dtor(&URL_p);
+	}
 	
-	meth = convert_to_type_ex(IS_LONG, GET_PROP(obj, method));
+	meth = convert_to_type_ex(IS_LONG, GET_PROP(obj, method), &meth_p);
 	switch (Z_LVAL_P(meth))
 	{
 		case HTTP_GET:
@@ -491,10 +497,10 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		default:
 		{
 			/* check for raw post data */
-			zval *raw_data = convert_to_type_ex(IS_STRING, GET_PROP(obj, rawPostData));
+			zval *raw_data_p, *raw_data = convert_to_type_ex(IS_STRING, GET_PROP(obj, rawPostData), &raw_data_p);
 			
 			if (Z_STRLEN_P(raw_data)) {
-				zval *ctype = convert_to_type_ex(IS_STRING, GET_PROP(obj, contentType));
+				zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, GET_PROP(obj, contentType), &ctype_p);
 				
 				if (Z_STRLEN_P(ctype)) {
 					zval **headers, *opts = GET_PROP(obj, options);
@@ -518,6 +524,10 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 						add_assoc_zval(opts, "headers", headers);
 					}
 				}
+
+				if (ctype_p) {
+					zval_ptr_dtor(&ctype_p);
+				}
 				
 				body->type = HTTP_REQUEST_BODY_CSTRING;
 				body->data = estrndup(Z_STRVAL_P(raw_data), Z_STRLEN_P(raw_data));
@@ -525,12 +535,20 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			} else {
 				status = http_request_body_fill(body, Z_ARRVAL_P(GET_PROP(obj, postFields)), Z_ARRVAL_P(GET_PROP(obj, postFiles)));
 			}
+
+			if (raw_data_p) {
+				zval_ptr_dtor(&raw_data_p);
+			}
 		}
 		break;
 	}
+
+	if (meth_p) {
+		zval_ptr_dtor(&meth_p);
+	}
 	
 	if (status == SUCCESS) {
-		zval *qdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, queryData));
+		zval *qdata_p, *qdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, queryData), &qdata_p);
 		
 		if (Z_STRLEN_P(qdata)) {
 			if (!strchr(request_uri, '?')) {
@@ -539,6 +557,10 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 				strlcat(request_uri, "&", HTTP_URI_MAXLEN);
 			}
 			strlcat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN);
+		}
+		
+		if (qdata_p) {
+			zval_ptr_dtor(&qdata_p);
 		}
 		
 		status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, body, Z_ARRVAL_P(GET_PROP(obj, options)));
@@ -664,16 +686,20 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *opts, **options;
+		zval *opts_p, *opts, **options;
 		getObject(http_request_object, obj);
 
-		opts = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, options));
+		opts = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, options), &opts_p);
 
 		array_init(return_value);
 
 		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), key, len, (void **) &options)) {
 			convert_to_array(*options);
 			array_copy(*options, return_value);
+		}
+
+		if (opts_p) {
+			zval_ptr_dtor(&opts_p);
 		}
 	}
 }
@@ -835,12 +861,16 @@ PHP_METHOD(HttpRequest, getOptions)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		zval *opts;
+		zval *opts_p, *opts;
 		getObject(http_request_object, obj);
 
-		opts = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, options));
+		opts = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, options), &opts_p);
 		array_init(return_value);
 		array_copy(opts, return_value);
+
+		if (opts_p) {
+			zval_ptr_dtor(&opts_p);
+		}
 	}
 }
 /* }}} */
@@ -1149,9 +1179,13 @@ PHP_METHOD(HttpRequest, getQueryData)
 
 	IF_RETVAL_USED {
 		getObject(http_request_object, obj);
-		zval *qdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, queryData));
+		zval *qdata_p, *qdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, queryData), &qdata_p);
 		
 		RETURN_ZVAL(qdata, 1, 0);
+
+		if (qdata_p) {
+			zval_ptr_dtor(&qdata_p);
+		}
 	}
 }
 /* }}} */
@@ -1167,7 +1201,7 @@ PHP_METHOD(HttpRequest, getQueryData)
  */
 PHP_METHOD(HttpRequest, addQueryData)
 {
-	zval *qdata, *old_qdata;
+	zval *qdata, *old_qdata, *old_qdata_p;
 	char *query_data = NULL;
 	size_t query_data_len = 0;
 	getObject(http_request_object, obj);
@@ -1176,14 +1210,21 @@ PHP_METHOD(HttpRequest, addQueryData)
 		RETURN_FALSE;
 	}
 
-	old_qdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, queryData));
+	old_qdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, queryData), &old_qdata_p);
 
 	if (SUCCESS != http_urlencode_hash_ex(HASH_OF(qdata), 1, Z_STRVAL_P(old_qdata), Z_STRLEN_P(old_qdata), &query_data, &query_data_len)) {
+		if (old_qdata_p) {
+			zval_ptr_dtor(&old_qdata_p);
+		}
 		RETURN_FALSE;
 	}
 
 	UPD_STRL(obj, queryData, query_data, query_data_len);
 	efree(query_data);
+
+	if (old_qdata_p) {
+		zval_ptr_dtor(&old_qdata_p);
+	}
 
 	RETURN_TRUE;
 }
@@ -1259,10 +1300,14 @@ PHP_METHOD(HttpRequest, getPostFields)
 
 	IF_RETVAL_USED {
 		getObject(http_request_object, obj);
-		zval *post_data = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, postFields));
+		zval *post_data_p, *post_data = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, postFields), &post_data_p);
 		
 		array_init(return_value);
 		array_copy(post_data, return_value);
+
+		if (post_data_p) {
+			zval_ptr_dtor(&post_data_p);
+		}
 	}
 }
 /* }}} */
@@ -1318,7 +1363,7 @@ PHP_METHOD(HttpRequest, addRawPostData)
 	}
 	
 	if (data_len) {
-		zval *zdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, rawPostData));
+		zval *zdata_p, *zdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, rawPostData), &zdata_p);
 		
 		new_data = emalloc(Z_STRLEN_P(zdata) + data_len + 1);
 		new_data[Z_STRLEN_P(zdata) + data_len] = '\0';
@@ -1329,6 +1374,10 @@ PHP_METHOD(HttpRequest, addRawPostData)
 		
 		memcpy(new_data + Z_STRLEN_P(zdata), raw_data, data_len);
 		UPD_STRL(obj, rawPostData, new_data, Z_STRLEN_P(zdata) + data_len);
+
+		if (zdata_p) {
+			zval_ptr_dtor(&zdata_p);
+		}
 	}
 	
 	RETURN_TRUE;
@@ -1347,9 +1396,13 @@ PHP_METHOD(HttpRequest, getRawPostData)
 	
 	IF_RETVAL_USED {
 		getObject(http_request_object, obj);
-		zval *raw_data = convert_to_type_ex(IS_STRING, GET_PROP(obj, rawPostData));
+		zval *raw_data_p, *raw_data = convert_to_type_ex(IS_STRING, GET_PROP(obj, rawPostData), &raw_data_p);
 		
-		RETURN_ZVAL(raw_data, 1, 0);
+		RETVAL_ZVAL(raw_data, 1, 0);
+
+		if (raw_data_p) {
+			zval_ptr_dtor(&raw_data_p);
+		}
 	}
 }
 /* }}} */
@@ -1444,10 +1497,14 @@ PHP_METHOD(HttpRequest, getPostFiles)
 
 	IF_RETVAL_USED {
 		getObject(http_request_object, obj);
-		zval *files = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, postFiles));
+		zval *files_p, *files = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, postFiles), &files_p);
 
 		array_init(return_value);
 		array_copy(files, return_value);
+
+		if (files_p) {
+			zval_ptr_dtor(&files_p);
+		}
 	}
 }
 /* }}} */
@@ -1488,9 +1545,13 @@ PHP_METHOD(HttpRequest, getPutFile)
 
 	IF_RETVAL_USED {
 		getObject(http_request_object, obj);
-		zval *putfile = convert_to_type_ex(IS_STRING, GET_PROP(obj, putFile));
+		zval *putfile_p, *putfile = convert_to_type_ex(IS_STRING, GET_PROP(obj, putFile), &putfile_p);
 		
-		RETURN_ZVAL(putfile, 1, 0);
+		RETVAL_ZVAL(putfile, 1, 0);
+
+		if (putfile_p) {
+			zval_ptr_dtor(&putfile_p);
+		}
 	}
 }
 /* }}} */
@@ -1512,10 +1573,14 @@ PHP_METHOD(HttpRequest, getResponseData)
 
 	IF_RETVAL_USED {
 		getObject(http_request_object, obj);
-		zval *data = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, responseData));
+		zval *data_p, *data = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, responseData), &data_p);
 		
 		array_init(return_value);
 		array_copy(data, return_value);
+
+		if (data_p) {
+			zval_ptr_dtor(&data_p);
+		}
 	}
 }
 /* }}} */
@@ -1536,7 +1601,7 @@ PHP_METHOD(HttpRequest, getResponseData)
 PHP_METHOD(HttpRequest, getResponseHeader)
 {
 	IF_RETVAL_USED {
-		zval *data, **headers, **header;
+		zval *data_p, *data, **headers, **header;
 		char *header_name = NULL;
 		int header_len = 0;
 		getObject(http_request_object, obj);
@@ -1545,18 +1610,23 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 			RETURN_FALSE;
 		}
 
-		data = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, responseData));
-		if (SUCCESS != zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) {
-			RETURN_FALSE;
-		}
-		convert_to_array_ex(headers);
-		if (!header_len || !header_name) {
-			array_init(return_value);
-			array_copy(*headers, return_value);
-		} else if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(headers), pretty_key(header_name, header_len, 1, 1), header_len + 1, (void **) &header)) {
-			RETURN_ZVAL(*header, 1, 0);
+		data = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, responseData), &data_p);
+		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) {
+			convert_to_array(*headers);
+			if (!header_len || !header_name) {
+				array_init(return_value);
+				array_copy(*headers, return_value);
+			} else if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(headers), pretty_key(header_name, header_len, 1, 1), header_len + 1, (void **) &header)) {
+				RETVAL_ZVAL(*header, 1, 0);
+			} else {
+				RETVAL_FALSE;
+			}
 		} else {
-			RETURN_FALSE;
+			RETVAL_FALSE;
+		}
+
+		if (data_p) {
+			zval_ptr_dtor(&data_p);
 		}
 	}
 }
@@ -1591,7 +1661,7 @@ PHP_METHOD(HttpRequest, getResponseCookie)
 
 		array_init(return_value);
 
-		data = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, responseData));
+		data = convert_to_type(IS_ARRAY, GET_PROP(obj, responseData));
 		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) {
 			ulong idx = 0;
 			char *key = NULL;
@@ -1681,10 +1751,9 @@ PHP_METHOD(HttpRequest, getResponseBody)
 	IF_RETVAL_USED {
 		zval **body;
 		getObject(http_request_object, obj);
-		zval *data = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, responseData));
+		zval *data = convert_to_type(IS_ARRAY, GET_PROP(obj, responseData));
 		
 		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "body", sizeof("body"), (void **) &body)) {
-			convert_to_string_ex(body);
 			RETURN_ZVAL(*body, 1, 0);
 		} else {
 			RETURN_FALSE;
@@ -1708,9 +1777,13 @@ PHP_METHOD(HttpRequest, getResponseCode)
 
 	IF_RETVAL_USED {
 		getObject(http_request_object, obj);
-		zval *code = convert_to_type_ex(IS_LONG, GET_PROP(obj, responseCode));
+		zval *code_p, *code = convert_to_type_ex(IS_LONG, GET_PROP(obj, responseCode), &code_p);
 		
-		RETURN_ZVAL(code, 1, 0);
+		RETVAL_ZVAL(code, 1, 0);
+
+		if (code_p) {
+			zval_ptr_dtor(&code_p);
+		}
 	}
 }
 /* }}} */
@@ -1743,7 +1816,7 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 			RETURN_FALSE;
 		}
 
-		info = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, responseInfo));
+		info = convert_to_type(IS_ARRAY, GET_PROP(obj, responseInfo));
 
 		if (info_len && info_name) {
 			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), pretty_key(info_name, info_len, 0, 0), info_len + 1, (void **) &infop)) {
