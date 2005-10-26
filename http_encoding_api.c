@@ -29,6 +29,20 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
+static inline int eol_match(char **line, int *EOL_len)
+{
+	char *ptr = *line;
+	
+	while (0x20 == *ptr) ++ptr;
+
+	if (ptr == http_locate_eol(*line, EOL_len)) {
+		*line = ptr;
+		return 1;
+	} else {
+		return 0;
+	}
+}
+			
 /* {{{ char *http_encoding_dechunk(char *, size_t, char **, size_t *) */
 PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
@@ -55,7 +69,7 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 		 * - chunk size is not followed by (CR)LF|NUL
 		 */
 		if (	(n_ptr == e_ptr) ||	(chunk_len < 0) || (chunk_len > rest) || 
-				(*n_ptr && (eol_mismatch = (n_ptr != http_locate_eol(e_ptr, &EOL_len))))) {
+				(*n_ptr && (eol_mismatch = !eol_match(&n_ptr, &EOL_len)))) {
 			/* don't fail on apperently not encoded data */
 			if (e_ptr == encoded) {
 				memcpy(*decoded, encoded, encoded_len);
@@ -65,9 +79,9 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 				efree(*decoded);
 				if (eol_mismatch) {
 					if (EOL_len == 2) {
-						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0D 0x0A; got: 0x%X 0x%X)", *n_ptr, *(n_ptr + 1));
+						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0D 0x0A; got: 0x%02X 0x%02X)", *n_ptr, *(n_ptr + 1));
 					} else {
-						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0A; got: 0x%X)", *n_ptr);
+						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0A; got: 0x%02X)", *n_ptr);
 					}
 				} else {
 					char *error = estrndup(n_ptr, strcspn(n_ptr, "\r\n "));
