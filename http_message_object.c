@@ -97,8 +97,6 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 static void _http_message_object_write_prop(zval *object, zval *member, zval *value TSRMLS_DC);
 #define http_message_object_get_props _http_message_object_get_props
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC);
-#define http_message_object_clone_obj _http_message_object_clone_obj
-static inline zend_object_value _http_message_object_clone_obj(zval *object TSRMLS_DC);
 
 zend_class_entry *http_message_object_ce;
 zend_function_entry http_message_object_fe[] = {
@@ -138,7 +136,7 @@ PHP_MINIT_FUNCTION(http_message_object)
 	HTTP_LONG_CONSTANT("HTTP_MSG_REQUEST", HTTP_MSG_REQUEST);
 	HTTP_LONG_CONSTANT("HTTP_MSG_RESPONSE", HTTP_MSG_RESPONSE);
 
-	http_message_object_handlers.clone_obj = http_message_object_clone_obj;
+	http_message_object_handlers.clone_obj = _http_message_object_clone_obj;
 	http_message_object_handlers.read_property = http_message_object_read_prop;
 	http_message_object_handlers.write_property = http_message_object_write_prop;
 	http_message_object_handlers.get_properties = http_message_object_get_props;

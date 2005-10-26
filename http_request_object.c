@@ -219,8 +219,6 @@ HTTP_END_ARGS;
 
 #define http_request_object_declare_default_properties() _http_request_object_declare_default_properties(TSRMLS_C)
 static inline void _http_request_object_declare_default_properties(TSRMLS_D);
-#define http_request_object_clone_obj _http_request_object_clone_obj
-static inline zend_object_value _http_request_object_clone_obj(zval *object TSRMLS_DC);
 
 zend_class_entry *http_request_object_ce;
 zend_function_entry http_request_object_fe[] = {
