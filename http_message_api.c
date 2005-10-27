@@ -147,6 +147,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 	if (body = http_locate_body(message)) {
 		zval *c;
 		const char *continue_at = NULL;
+		size_t remaining = message + message_length - body;
 
 		/* message has chunked transfer encoding */
 		if ((c = http_message_header(msg, "Transfer-Encoding")) && (!strcasecmp("chunked", Z_STRVAL_P(c)))) {
@@ -174,14 +175,18 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 
 		/* message has content-length header */
 		if (c = http_message_header(msg, "Content-Length")) {
-			long len = atol(Z_STRVAL_P(c));
+			unsigned long len = strtoul(Z_STRVAL_P(c), NULL, 10);
+			if (len > remaining) {
+				http_error_ex(HE_NOTICE, HTTP_E_MALFORMED_HEADERS, "The Content-Length header pretends a larger body than actually received (expected %lu bytes; got %lu bytes)", len, remaining);
+				len = remaining;
+			}
 			phpstr_from_string_ex(PHPSTR(msg), body, len);
 			continue_at = body + len;
 		} else
 
 		/* message has content-range header */
 		if (c = http_message_header(msg, "Content-Range")) {
-			ulong total = 0, start = 0, end = 0;
+			ulong total = 0, start = 0, end = 0, len = 0;
 			
 			if (!strncasecmp(Z_STRVAL_P(c), "bytes=", lenof("bytes="))) {
 				char *total_at = NULL, *end_at = NULL;
@@ -193,9 +198,12 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 					if (total_at && strncmp(total_at + 1, "*", 1)) {
 						total = strtoul(total_at + 1, NULL, 10);
 					}
-					
+					if ((len = (end + 1 - start)) > remaining) {
+						http_error_ex(HE_NOTICE, HTTP_E_MALFORMED_HEADERS, "The Content-Range header pretends a larger body than actually received (expected %lu bytes; got %lu bytes)", len, remaining);
+						len = remaining;
+					}
 					if (end >= start && (!total || end < total)) {
-						phpstr_from_string_ex(PHPSTR(msg), body, (size_t) (end + 1 - start));
+						phpstr_from_string_ex(PHPSTR(msg), body, len);
 						continue_at = body + (end + 1 - start);
 					}
 				}
@@ -208,7 +216,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 
 		/* no headers that indicate content length */
 		if (HTTP_MSG_TYPE(RESPONSE, msg)) {
-			phpstr_from_string_ex(PHPSTR(msg), body, message + message_length - body);
+			phpstr_from_string_ex(PHPSTR(msg), body, remaining);
 		} else {
 			continue_at = body;
 		}
@@ -218,14 +226,14 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		if (c = http_message_header(msg, "Content-Encoding")) {
 			char *decoded = NULL;
 			size_t decoded_len = 0;
-#	ifdef HAVE_ZLIB
+#	if defined(HAVE_ZLIB) && !defined(HTTP_HAVE_ZLIB)
 			zval func, retval, arg, *args[1];
 			INIT_PZVAL(&func);
 			INIT_PZVAL(&retval);
 			INIT_PZVAL(&arg);
 			ZVAL_STRINGL(&func, "gzinflate", lenof("gzinflate"), 0);
 			args[0] = &arg;
-#	endif /* HAVE_ZLIB */
+#	endif /* HAVE_ZLIB && !HTTP_HAVE_ZLIB */
 
 #	define DECODE_WITH_EXT_ZLIB() \
 				if (SUCCESS == call_user_function(EG(function_table), NULL, &func, &retval, 1, args TSRMLS_CC)) { \
