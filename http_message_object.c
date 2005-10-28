@@ -167,6 +167,8 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 		if (msg->parent) {
 			o->parent = http_message_object_new_ex(ce, msg->parent, NULL);
 		}
+	} else {
+		o->message = http_message_init(NULL);
 	}
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
@@ -234,9 +236,15 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	}
 #endif
 
-	return_value = &EG(uninitialized_zval);
-	return_value->refcount = 0;
-	return_value->is_ref = 0;
+	if (type == BP_VAR_W) {
+		return_value = &EG(uninitialized_zval);
+		return_value->refcount = 1;
+		return_value->is_ref = 1;
+	} else {
+		ALLOC_ZVAL(return_value);
+		return_value->refcount = 0;
+		return_value->is_ref = 0;
+	}
 
 #ifdef WONKY
 	switch (h)
@@ -245,25 +253,24 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 #endif
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
+		case HTTP_MSG_CHILD_PROPHASH_TYPE:
 			RETVAL_LONG(msg->type);
 		break;
 
 		case HTTP_MSG_PROPHASH_HTTP_VERSION:
+		case HTTP_MSG_CHILD_PROPHASH_HTTP_VERSION:
 			RETVAL_DOUBLE(msg->http.version);
 		break;
 
 		case HTTP_MSG_PROPHASH_BODY:
+		case HTTP_MSG_CHILD_PROPHASH_BODY:
 			phpstr_fix(PHPSTR(msg));
-			RETVAL_PHPSTR(PHPSTR(msg), 0, 1);
+			RETVAL_PHPSTR(PHPSTR(msg), 0, !return_value->is_ref);
 		break;
 
 		case HTTP_MSG_PROPHASH_HEADERS:
-			/* This is needed for situations like
-			 * $this->headers['foo'] = 'bar';
-			 */
-			if (type == BP_VAR_W) {
-				return_value->refcount = 1;
-				return_value->is_ref = 1;
+		case HTTP_MSG_CHILD_PROPHASH_HEADERS:
+			if (return_value->is_ref) {
 				Z_TYPE_P(return_value) = IS_ARRAY;
 				Z_ARRVAL_P(return_value) = &msg->hdrs;
 			} else {
@@ -273,6 +280,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		break;
 
 		case HTTP_MSG_PROPHASH_PARENT_MESSAGE:
+		case HTTP_MSG_CHILD_PROPHASH_PARENT_MESSAGE:
 			if (msg->parent) {
 				RETVAL_OBJVAL(obj->parent);
 			} else {
@@ -281,22 +289,25 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
+		case HTTP_MSG_CHILD_PROPHASH_REQUEST_METHOD:
 			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->http.info.request.method) {
-				RETVAL_STRING(msg->http.info.request.method, 1);
+				RETVAL_STRING(msg->http.info.request.method, !return_value->is_ref);
 			} else {
 				RETVAL_NULL();
 			}
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_URI:
+		case HTTP_MSG_CHILD_PROPHASH_REQUEST_URI:
 			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->http.info.request.URI) {
-				RETVAL_STRING(msg->http.info.request.URI, 1);
+				RETVAL_STRING(msg->http.info.request.URI, !return_value->is_ref);
 			} else {
 				RETVAL_NULL();
 			}
 		break;
 
 		case HTTP_MSG_PROPHASH_RESPONSE_CODE:
+		case HTTP_MSG_CHILD_PROPHASH_RESPONSE_CODE:
 			if (HTTP_MSG_TYPE(RESPONSE, msg)) {
 				RETVAL_LONG(msg->http.info.response.code);
 			} else {
@@ -305,8 +316,9 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		break;
 		
 		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
+		case HTTP_MSG_CHILD_PROPHASH_RESPONSE_STATUS:
 			if (HTTP_MSG_TYPE(RESPONSE, msg) && msg->http.info.response.status) {
-				RETVAL_STRING(msg->http.info.response.status, 1);
+				RETVAL_STRING(msg->http.info.response.status, !return_value->is_ref);
 			} else {
 				RETVAL_NULL();
 			}
@@ -346,28 +358,33 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 #endif
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
+		case HTTP_MSG_CHILD_PROPHASH_TYPE:
 			convert_to_long_ex(&value);
 			http_message_set_type(msg, Z_LVAL_P(value));
 		break;
 
 		case HTTP_MSG_PROPHASH_HTTP_VERSION:
+		case HTTP_MSG_CHILD_PROPHASH_HTTP_VERSION:
 			convert_to_double_ex(&value);
 			msg->http.version = Z_DVAL_P(value);
 		break;
 
 		case HTTP_MSG_PROPHASH_BODY:
+		case HTTP_MSG_CHILD_PROPHASH_BODY:
 			convert_to_string_ex(&value);
 			phpstr_dtor(PHPSTR(msg));
 			phpstr_from_string_ex(PHPSTR(msg), Z_STRVAL_P(value), Z_STRLEN_P(value));
 		break;
 
 		case HTTP_MSG_PROPHASH_HEADERS:
+		case HTTP_MSG_CHILD_PROPHASH_HEADERS:
 			convert_to_array_ex(&value);
 			zend_hash_clean(&msg->hdrs);
 			zend_hash_copy(&msg->hdrs, Z_ARRVAL_P(value), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 		break;
 
 		case HTTP_MSG_PROPHASH_PARENT_MESSAGE:
+		case HTTP_MSG_CHILD_PROPHASH_PARENT_MESSAGE:
 			if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), http_message_object_ce TSRMLS_CC)) {
 				if (msg->parent) {
 					zval tmp;
@@ -380,6 +397,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
+		case HTTP_MSG_CHILD_PROPHASH_REQUEST_METHOD:
 			if (HTTP_MSG_TYPE(REQUEST, msg)) {
 				convert_to_string_ex(&value);
 				STR_SET(msg->http.info.request.method, estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value)));
@@ -387,6 +405,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		break;
 
 		case HTTP_MSG_PROPHASH_REQUEST_URI:
+		case HTTP_MSG_CHILD_PROPHASH_REQUEST_URI:
 			if (HTTP_MSG_TYPE(REQUEST, msg)) {
 				convert_to_string_ex(&value);
 				STR_SET(msg->http.info.request.URI, estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value)));
@@ -394,6 +413,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		break;
 
 		case HTTP_MSG_PROPHASH_RESPONSE_CODE:
+		case HTTP_MSG_CHILD_PROPHASH_RESPONSE_CODE:
 			if (HTTP_MSG_TYPE(RESPONSE, msg)) {
 				convert_to_long_ex(&value);
 				msg->http.info.response.code = Z_LVAL_P(value);
@@ -401,6 +421,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		break;
 		
 		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
+		case HTTP_MSG_CHILD_PROPHASH_RESPONSE_STATUS:
 			if (HTTP_MSG_TYPE(RESPONSE, msg)) {
 				convert_to_string_ex(&value);
 				STR_SET(msg->http.info.response.status, estrndup(Z_STRVAL_P(value), Z_STRLEN_P(value)));

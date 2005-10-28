@@ -71,7 +71,6 @@ typedef int STATUS;
 	RETVAL_OBJVAL(ov); \
 	return
 #define ZVAL_OBJVAL(zv, ov) \
-	INIT_PZVAL(zv); \
 	(zv)->type = IS_OBJECT; \
 	(zv)->value.obj = (ov); \
 	if (Z_OBJ_HT_P(zv)->add_ref) { \
