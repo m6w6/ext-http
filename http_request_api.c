@@ -834,10 +834,6 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 {
 	HTTP_REQUEST_CALLBACK_DATA(ctx, http_request_conv *, conv);
 
-#if 0
-	fprintf(stderr, "DEBUG: %s\n", data);
-#endif
-
 	switch (type)
 	{
 		case CURLINFO_DATA_IN:
@@ -858,6 +854,26 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 				phpstr_append(conv->request, data, length);
 			}
 		break;
+#if 0
+		default:
+			fprintf(stderr, "## ", type);
+			if (!type) {
+				fprintf(stderr, "%s", data);
+			} else {
+				ulong i;
+				for (i = 1; i <= length; ++i) {
+					fprintf(stderr, "%02X ", data[i-1] & 0xFF);
+					if (!(i % 20)) {
+						fprintf(stderr, "\n## ");
+					}
+				}
+				fprintf(stderr, "\n");
+			}
+			if (data[length-1] != 0xa) {
+				fprintf(stderr, "\n");
+			}
+		break;
+#endif
 	}
 
 	if (type) {
@@ -907,9 +923,9 @@ static void http_ssl_lock(int mode, int n, const char * file, int line)
 	}
 }
 
-static unsigned long http_ssl_id(void)
+static ulong http_ssl_id(void)
 {
-	return (unsigned long) tsrm_thread_id();
+	return (ulong) tsrm_thread_id();
 }
 
 static inline void http_ssl_init(void)

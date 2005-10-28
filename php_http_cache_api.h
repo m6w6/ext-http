@@ -74,8 +74,8 @@ static inline void *_http_etag_init(TSRMLS_D)
 	switch (mode)
 	{
 		case HTTP_ETAG_CRC32:
-			ctx = emalloc(sizeof(unsigned int));
-			*((unsigned int *) ctx) = ~0;
+			ctx = emalloc(sizeof(uint));
+			*((uint *) ctx) = ~0;
 		break;
 		
 		case HTTP_ETAG_SHA1:
@@ -109,9 +109,9 @@ static inline void _http_etag_free(void **ctx_ptr TSRMLS_DC)
 	switch (mode)
 	{
 		case HTTP_ETAG_CRC32:
-			if (*((unsigned int **) ctx_ptr)) {
-				efree(*((unsigned int **) ctx_ptr));
-				*((unsigned int **) ctx_ptr) = NULL;
+			if (*((uint **) ctx_ptr)) {
+				efree(*((uint **) ctx_ptr));
+				*((uint **) ctx_ptr) = NULL;
 			}
 		break;
 		
@@ -154,8 +154,8 @@ static inline char *_http_etag_finish(void **ctx_ptr TSRMLS_DC)
 	switch (mode)
 	{
 		case HTTP_ETAG_CRC32:
-			**((unsigned int **) ctx_ptr) = ~**((unsigned int **) ctx_ptr);
-			etag = http_etag_digest(*((const unsigned char **) ctx_ptr), sizeof(unsigned int));
+			**((uint **) ctx_ptr) = ~**((uint **) ctx_ptr);
+			etag = http_etag_digest(*((const unsigned char **) ctx_ptr), sizeof(uint));
 		break;
 		
 		case HTTP_ETAG_SHA1:
@@ -196,12 +196,12 @@ static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t dat
 	{
 		case HTTP_ETAG_CRC32:
 		{
-			unsigned int i, c = *((unsigned int *) ctx);
+			uint i, c = *((uint *) ctx);
 			
 			for (i = 0; i < data_len; ++i) {
 				c = CRC32(c, data_ptr[i]);
 			}
-			*((unsigned int *)ctx) = c;
+			*((uint *)ctx) = c;
 		}
 		break;
 		

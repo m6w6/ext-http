@@ -133,8 +133,8 @@ PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_
 }
 /* }}} */
 
-/* {{{ unsigned long http_request_method_exists(zend_bool, unsigned long, char *) */
-PHP_HTTP_API unsigned long _http_request_method_exists(zend_bool by_name, unsigned long id, const char *name TSRMLS_DC)
+/* {{{ ulong http_request_method_exists(zend_bool, ulong, char *) */
+PHP_HTTP_API ulong _http_request_method_exists(zend_bool by_name, ulong id, const char *name TSRMLS_DC)
 {
 	if (by_name) {
 		unsigned i;
@@ -162,12 +162,12 @@ PHP_HTTP_API unsigned long _http_request_method_exists(zend_bool by_name, unsign
 }
 /* }}} */
 
-/* {{{ unsigned long http_request_method_register(char *) */
-PHP_HTTP_API unsigned long _http_request_method_register(const char *method_name, size_t method_name_len TSRMLS_DC)
+/* {{{ ulong http_request_method_register(char *) */
+PHP_HTTP_API ulong _http_request_method_register(const char *method_name, size_t method_name_len TSRMLS_DC)
 {
 	zval array;
 	char *http_method, *method;
-	unsigned long i, meth_num = HTTP_G(request).methods.custom.nNextFreeElement + HTTP_MAX_REQUEST_METHOD;
+	ulong i, meth_num = HTTP_G(request).methods.custom.nNextFreeElement + HTTP_MAX_REQUEST_METHOD;
 
 	method = emalloc(method_name_len + 1);
 	for (i = 0; i < method_name_len; ++i) {
@@ -193,7 +193,7 @@ PHP_HTTP_API unsigned long _http_request_method_register(const char *method_name
 /* }}} */
 
 /* {{{ STATUS http_request_method_unregister(usngigned long) */
-PHP_HTTP_API STATUS _http_request_method_unregister(unsigned long method TSRMLS_DC)
+PHP_HTTP_API STATUS _http_request_method_unregister(ulong method TSRMLS_DC)
 {
 	zval **zmethod;
 	char *http_method;

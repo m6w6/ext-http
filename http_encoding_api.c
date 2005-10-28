@@ -54,7 +54,7 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 	*decoded = ecalloc(1, encoded_len);
 
 	while ((encoded + encoded_len - e_ptr) > 0) {
-		unsigned long chunk_len = 0, rest;
+		ulong chunk_len = 0, rest;
 
 		chunk_len = strtoul(e_ptr, &n_ptr, 16);
 
@@ -72,7 +72,7 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 				return encoded + encoded_len;
 			} else {
 				efree(*decoded);
-				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected chunk size at pos %lu of %lu but got trash", (unsigned long) (n_ptr - encoded), (unsigned long) encoded_len);
+				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected chunk size at pos %lu of %lu but got trash", (ulong) (n_ptr - encoded), (ulong) encoded_len);
 				return NULL;
 			}
 		}
@@ -85,16 +85,16 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 		/* there should be CRLF after the chunk size, but we'll ignore SP+ too */
 		if (*n_ptr && !eol_match(&n_ptr, &eol_len)) {
 			if (eol_len == 2) {
-				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected CRLF at pos %lu of %lu but got 0x%02X 0x%02X", (unsigned long) (n_ptr - encoded), (unsigned long) encoded_len, *n_ptr, *(n_ptr + 1));
+				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected CRLF at pos %lu of %lu but got 0x%02X 0x%02X", (ulong) (n_ptr - encoded), (ulong) encoded_len, *n_ptr, *(n_ptr + 1));
 			} else {
-				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected LF at pos %lu of %lu but got 0x%02X", (unsigned long) (n_ptr - encoded), (unsigned long) encoded_len, *n_ptr);
+				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected LF at pos %lu of %lu but got 0x%02X", (ulong) (n_ptr - encoded), (ulong) encoded_len, *n_ptr);
 			}
 		}
 		n_ptr += eol_len;
 		
 		/* chunk size pretends more data than we actually got, so it's probably a truncated message */
 		if (chunk_len > (rest = encoded + encoded_len - n_ptr)) {
-			http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Truncated message: chunk size %lu exceeds remaining data size %lu at pos %lu of %lu", chunk_len, rest, (unsigned long) (n_ptr - encoded), (unsigned long) encoded_len);
+			http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Truncated message: chunk size %lu exceeds remaining data size %lu at pos %lu of %lu", chunk_len, rest, (ulong) (n_ptr - encoded), (ulong) encoded_len);
 			chunk_len = rest;
 		}
 
@@ -200,7 +200,7 @@ inline size_t http_finish_buffer(size_t buf_len, char **buf_ptr)
 
 inline size_t http_finish_gzencode_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr)
 {
-	unsigned long crc;
+	ulong crc;
 	char *trailer;
 	
 	crc = crc32(0L, Z_NULL, 0);
@@ -268,7 +268,7 @@ inline STATUS http_verify_gzencode_buffer(const char *data, size_t data_len, con
 		if (data_len <= offset) {
 			goto really_bad_gzip_header;
 		} else {
-			unsigned long crc, cmp;
+			ulong crc, cmp;
 			
 			cmp =  (unsigned) ((data[offset-2] & 0xFF));
 			cmp += (unsigned) ((data[offset-1] & 0xFF) << 8);
@@ -305,7 +305,7 @@ really_bad_gzip_header:
 inline STATUS http_verify_gzdecode_buffer(const char *data, size_t data_len, const char *decoded, size_t decoded_len, int error_level TSRMLS_DC)
 {
 	STATUS status = SUCCESS;
-	unsigned long len, cmp, crc;
+	ulong len, cmp, crc;
 	
 	crc = crc32(0L, Z_NULL, 0);
 	crc = crc32(crc, (const Bytef *) decoded, decoded_len);
@@ -604,7 +604,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			if (content_length) {
 				char cl_header_str[128];
 				size_t cl_header_len;
-				cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %lu", (unsigned long) content_length);
+				cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %lu", (ulong) content_length);
 				http_send_header_string_ex(cl_header_str, cl_header_len, 1);
 			}
 		} else {

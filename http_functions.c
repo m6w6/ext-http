@@ -1259,7 +1259,7 @@ PHP_FUNCTION(http_request_method_register)
 {
 	char *method;
 	int method_len;
-	unsigned long existing;
+	ulong existing;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &method, &method_len)) {
 		RETURN_FALSE;
@@ -1296,7 +1296,7 @@ PHP_FUNCTION(http_request_method_unregister)
 			if (is_numeric_string(Z_STRVAL_P(method), Z_STRLEN_P(method), NULL, NULL, 1)) {
 				convert_to_long(method);
 			} else {
-				unsigned long mn;
+				ulong mn;
 				if (!(mn = http_request_method_exists(1, 0, Z_STRVAL_P(method)))) {
 					RETURN_FALSE;
 				}
@@ -1364,7 +1364,7 @@ PHP_FUNCTION(http_request_method_name)
 			RETURN_FALSE;
 		}
 
-		RETURN_STRING(estrdup(http_request_method_name((unsigned long) method)), 0);
+		RETURN_STRING(estrdup(http_request_method_name((ulong) method)), 0);
 	}
 }
 /* }}} */

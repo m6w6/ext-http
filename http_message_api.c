@@ -175,7 +175,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 
 		/* message has content-length header */
 		if (c = http_message_header(msg, "Content-Length")) {
-			unsigned long len = strtoul(Z_STRVAL_P(c), NULL, 10);
+			ulong len = strtoul(Z_STRVAL_P(c), NULL, 10);
 			if (len > remaining) {
 				http_error_ex(HE_NOTICE, HTTP_E_MALFORMED_HEADERS, "The Content-Length header pretends a larger body than actually received (expected %lu bytes; got %lu bytes)", len, remaining);
 				len = remaining;
@@ -204,7 +204,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 					}
 					if (end >= start && (!total || end < total)) {
 						phpstr_from_string_ex(PHPSTR(msg), body, len);
-						continue_at = body + (end + 1 - start);
+						continue_at = body + len;
 					}
 				}
 			}

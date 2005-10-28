@@ -237,14 +237,13 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 #endif
 
 	if (type == BP_VAR_W) {
-		return_value = &EG(uninitialized_zval);
-		return_value->refcount = 1;
-		return_value->is_ref = 1;
-	} else {
-		ALLOC_ZVAL(return_value);
-		return_value->refcount = 0;
-		return_value->is_ref = 0;
+		zend_error(E_ERROR, "Cannot access HttpMessage properties by reference or array key/index");
+		return NULL;
 	}
+	
+	ALLOC_ZVAL(return_value);
+	return_value->refcount = 0;
+	return_value->is_ref = 0;
 
 #ifdef WONKY
 	switch (h)
@@ -265,18 +264,13 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		case HTTP_MSG_PROPHASH_BODY:
 		case HTTP_MSG_CHILD_PROPHASH_BODY:
 			phpstr_fix(PHPSTR(msg));
-			RETVAL_PHPSTR(PHPSTR(msg), 0, !return_value->is_ref);
+			RETVAL_PHPSTR(PHPSTR(msg), 0, 1);
 		break;
 
 		case HTTP_MSG_PROPHASH_HEADERS:
 		case HTTP_MSG_CHILD_PROPHASH_HEADERS:
-			if (return_value->is_ref) {
-				Z_TYPE_P(return_value) = IS_ARRAY;
-				Z_ARRVAL_P(return_value) = &msg->hdrs;
-			} else {
-				array_init(return_value);
-				zend_hash_copy(Z_ARRVAL_P(return_value), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-			}
+			array_init(return_value);
+			zend_hash_copy(Z_ARRVAL_P(return_value), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 		break;
 
 		case HTTP_MSG_PROPHASH_PARENT_MESSAGE:
@@ -291,7 +285,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
 		case HTTP_MSG_CHILD_PROPHASH_REQUEST_METHOD:
 			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->http.info.request.method) {
-				RETVAL_STRING(msg->http.info.request.method, !return_value->is_ref);
+				RETVAL_STRING(msg->http.info.request.method, 1);
 			} else {
 				RETVAL_NULL();
 			}
@@ -300,7 +294,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		case HTTP_MSG_PROPHASH_REQUEST_URI:
 		case HTTP_MSG_CHILD_PROPHASH_REQUEST_URI:
 			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->http.info.request.URI) {
-				RETVAL_STRING(msg->http.info.request.URI, !return_value->is_ref);
+				RETVAL_STRING(msg->http.info.request.URI, 1);
 			} else {
 				RETVAL_NULL();
 			}
@@ -318,7 +312,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
 		case HTTP_MSG_CHILD_PROPHASH_RESPONSE_STATUS:
 			if (HTTP_MSG_TYPE(RESPONSE, msg) && msg->http.info.response.status) {
-				RETVAL_STRING(msg->http.info.response.status, !return_value->is_ref);
+				RETVAL_STRING(msg->http.info.response.status, 1);
 			} else {
 				RETVAL_NULL();
 			}

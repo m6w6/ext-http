@@ -53,7 +53,7 @@ PHP_HTTP_API STATUS _http_decode(http_encoding_type type, const char *data, size
 typedef struct {
 	z_stream Z;
 	int gzip;
-	unsigned long crc;
+	ulong crc;
 	phpstr *storage;
 } http_encoding_stream;
 
