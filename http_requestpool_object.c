@@ -148,7 +148,6 @@ void _http_requestpool_object_free(zend_object *object TSRMLS_DC)
 static void _http_requestpool_object_llist2array(zval **req, zval *array TSRMLS_DC)
 {
 	ZVAL_ADDREF(*req);
-	Z_OBJ_ADDREF_PP(req);
 	add_next_index_zval(array, *req);
 }
 
