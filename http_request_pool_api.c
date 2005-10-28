@@ -239,6 +239,12 @@ PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC)
 }
 /* }}} */
 
+#ifdef PHP_WIN32
+#	define SELECT_ERROR SOCKET_ERROR
+#else
+#	define SELECT_ERROR -1
+#endif
+
 /* {{{ STATUS http_request_pool_select(http_request_pool *) */
 PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 {
@@ -250,12 +256,12 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 	FD_ZERO(&W);
 	FD_ZERO(&E);
 
-	curl_multi_fdset(pool->ch, &R, &W, &E, &MAX);
-#ifdef PHP_WIN32
-	return (SOCKET_ERROR != select(MAX + 1, &R, &W, &E, &timeout)) ? SUCCESS : FAILURE;
-#else
-	return (-1 != select(MAX + 1, &R, &W, &E, &timeout)) ? SUCCESS : FAILURE;
-#endif
+	if (CURLM_OK == curl_multi_fdset(pool->ch, &R, &W, &E, &MAX)) {
+		if (MAX == -1 || SELECT_ERROR != select(MAX + 1, &R, &W, &E, &timeout)) {
+			return SUCCESS;
+		}
+	}
+	return FAILURE;
 }
 /* }}} */
 
@@ -269,11 +275,9 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 	
 	while (msg = curl_multi_info_read(pool->ch, &remaining)) {
 		if (CURLMSG_DONE == msg->msg) {
-
-#if HTTP_DEBUG_REQPOOLS
-			fprintf(stderr, "Done CURL handle: %p (remaining: %d)\n", msg->easy_handle, remaining);
-#endif
-			
+			if (CURLE_OK != msg->data.result) {
+				http_error(HE_WARNING, HTTP_E_REQUEST, curl_easy_strerror(msg->data.result));
+			}
 			zend_llist_apply_with_argument(&pool->handles, (llist_apply_with_arg_func_t) http_request_pool_responsehandler, msg->easy_handle TSRMLS_CC);
 		}
 	}

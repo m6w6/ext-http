@@ -41,7 +41,12 @@
  <notes><![CDATA[
 + Added ext/zlib independant GZIP support
 + Added HttpRequestPool::getAttachedRequests() and getFinishedRequests()
-+ Added experimental thread safety for curl-gnutls builds
++ Added experimental thread safety for builds linking against libcurl-gnutls
++ Improved the chunked decoder
+
+- License change!
+
+* Fixed a bug where HttpRequest warnings were hidden within the HttpRequestPool
 ]]></notes>
  <contents>
   <dir name="/">
@@ -118,14 +123,19 @@
    
    <dir name="tests">
     <file role="test" name="data.txt"/>
+    <file role="test" name="urls.txt"/>
     <file role="test" name="skip.inc"/>
     <file role="test" name="log.inc"/>
     <file role="test" name="abs_uri_001.phpt"/>
     <file role="test" name="abs_uri_002.phpt"/>
     <file role="test" name="allowed_methods_001.phpt"/>
     <file role="test" name="allowed_methods_001_logging.phpt"/>
+    <file role="test" name="build_uri_001.phpt"/>
     <file role="test" name="chunked_decode_001.phpt"/>
     <file role="test" name="chunked_decode_002.phpt"/>
+    <file role="test" name="chunked_decode_003.phpt"/>
+    <file role="test" name="chunked_decode_004.phpt"/>
+    <file role="test" name="cloning_001.phpt"/>
     <file role="test" name="date_001.phpt"/>
     <file role="test" name="date_002.phpt"/>
     <file role="test" name="encodings.phpt"/>
@@ -142,6 +152,7 @@
     <file role="test" name="HttpMessage_001.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
     <file role="test" name="HttpRequestPool_002.phpt"/>
+    <file role="test" name="HttpRequestPool_003.phpt"/>
     <file role="test" name="HttpRequest_001.phpt"/>
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>
@@ -151,6 +162,7 @@
     <file role="test" name="HttpResponse_004.phpt"/>
     <file role="test" name="INI_001.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
+    <file role="test" name="parse_message_001.phpt"/>
     <file role="test" name="parse_message_002.phpt"/>
     <file role="test" name="parse_message_003.phpt"/>
     <file role="test" name="parse_message_004.phpt"/>
@@ -161,6 +173,7 @@
     <file role="test" name="redirect_003.phpt"/>
     <file role="test" name="redirect_003_logging.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
+    <file role="test" name="request_methods.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
     <file role="test" name="send_data_002.phpt"/>
     <file role="test" name="send_data_003.phpt"/>

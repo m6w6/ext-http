@@ -29,13 +29,13 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-static inline int eol_match(char **line, int *EOL_len)
+static inline int eol_match(char **line, int *eol_len)
 {
 	char *ptr = *line;
 	
 	while (0x20 == *ptr) ++ptr;
 
-	if (ptr == http_locate_eol(*line, EOL_len)) {
+	if (ptr == http_locate_eol(*line, eol_len)) {
 		*line = ptr;
 		return 1;
 	} else {
@@ -46,63 +46,69 @@ static inline int eol_match(char **line, int *EOL_len)
 /* {{{ char *http_encoding_dechunk(char *, size_t, char **, size_t *) */
 PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
-	const char *e_ptr;
-	char *d_ptr;
-	long rest;
+	int eol_len = 0;
+	char *n_ptr = NULL;
+	const char *e_ptr = encoded;
 	
 	*decoded_len = 0;
 	*decoded = ecalloc(1, encoded_len);
-	d_ptr = *decoded;
-	e_ptr = encoded;
 
-	while ((rest = encoded + encoded_len - e_ptr) > 0) {
-		long chunk_len = 0;
-		int EOL_len = 0, eol_mismatch = 0;
-		char *n_ptr;
+	while ((encoded + encoded_len - e_ptr) > 0) {
+		unsigned long chunk_len = 0, rest;
 
-		chunk_len = strtol(e_ptr, &n_ptr, 16);
+		chunk_len = strtoul(e_ptr, &n_ptr, 16);
 
-		/* check if:
-		 * - we could not read in chunk size
-		 * - we got a negative chunk size
-		 * - chunk size is greater then remaining size
-		 * - chunk size is not followed by (CR)LF|NUL
-		 */
-		if (	(n_ptr == e_ptr) ||	(chunk_len < 0) || (chunk_len > rest) || 
-				(*n_ptr && (eol_mismatch = !eol_match(&n_ptr, &EOL_len)))) {
-			/* don't fail on apperently not encoded data */
+		/* we could not read in chunk size */
+		if (n_ptr == e_ptr) {
+			/*
+			 * if this is the first turn and there doesn't seem to be a chunk
+			 * size at the begining of the body, do not fail on apparently
+			 * not encoded data and return a copy
+			 */
 			if (e_ptr == encoded) {
+				http_error(HE_NOTICE, HTTP_E_ENCODING, "Data does not seem to be chunked encoded");
 				memcpy(*decoded, encoded, encoded_len);
 				*decoded_len = encoded_len;
 				return encoded + encoded_len;
 			} else {
 				efree(*decoded);
-				if (eol_mismatch) {
-					if (EOL_len == 2) {
-						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0D 0x0A; got: 0x%02X 0x%02X)", *n_ptr, *(n_ptr + 1));
-					} else {
-						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid character (expected 0x0A; got: 0x%02X)", *n_ptr);
-					}
-				} else {
-					char *error = estrndup(e_ptr, strcspn(n_ptr, "\r\n "));
-					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Invalid chunk size: '%s' at pos %ld of %lu", error, (long) (n_ptr - encoded), (unsigned long) encoded_len);
-					efree(error);
-				}
+				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected chunk size at pos %lu of %lu but got trash", (unsigned long) (n_ptr - encoded), (unsigned long) encoded_len);
 				return NULL;
 			}
-		} else {
-			e_ptr = n_ptr;
 		}
-
+		
 		/* reached the end */
 		if (!chunk_len) {
 			break;
 		}
 
-		memcpy(d_ptr, e_ptr += EOL_len, chunk_len);
-		d_ptr += chunk_len;
-		e_ptr += chunk_len + EOL_len;
+		/* there should be CRLF after the chunk size, but we'll ignore SP+ too */
+		if (*n_ptr && !eol_match(&n_ptr, &eol_len)) {
+			if (eol_len == 2) {
+				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected CRLF at pos %lu of %lu but got 0x%02X 0x%02X", (unsigned long) (n_ptr - encoded), (unsigned long) encoded_len, *n_ptr, *(n_ptr + 1));
+			} else {
+				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected LF at pos %lu of %lu but got 0x%02X", (unsigned long) (n_ptr - encoded), (unsigned long) encoded_len, *n_ptr);
+			}
+		}
+		n_ptr += eol_len;
+		
+		/* chunk size pretends more data than we actually got, so it's probably a truncated message */
+		if (chunk_len > (rest = encoded + encoded_len - n_ptr)) {
+			http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Truncated message: chunk size %lu exceeds remaining data size %lu at pos %lu of %lu", chunk_len, rest, (unsigned long) (n_ptr - encoded), (unsigned long) encoded_len);
+			chunk_len = rest;
+		}
+
+		/* copy the chunk */
+		memcpy(*decoded + *decoded_len, n_ptr, chunk_len);
 		*decoded_len += chunk_len;
+		
+		if (chunk_len == rest) {
+			e_ptr = n_ptr + chunk_len;
+			break;
+		} else {
+			/* advance to next chunk */
+			e_ptr = n_ptr + chunk_len + eol_len;
+		}
 	}
 
 	return e_ptr;
