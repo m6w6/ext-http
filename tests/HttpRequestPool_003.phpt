@@ -2,7 +2,7 @@
 HttpRequestPool chain
 --SKIPIF--
 <?php
-inlcude 'skip.inc';
+include 'skip.inc';
 checkcls('HttpRequest');
 checkcls('HttpRequestPool');
 ?>
@@ -48,8 +48,9 @@ class Pool extends HttpRequestPool
 					HttpRequest::METH_GET,
 					array(
 						'redirect'	=> 5,
-						'timeout'	=> 50,
-						'connecttimeout' => 10,
+                        'compress'  => GZIP,
+						'timeout'	=> TOUT,
+						'connecttimeout' => TOUT,
 						'lastmodified' => is_file($file)?filemtime($file):0
 					)
 				)
@@ -93,10 +94,10 @@ class Pool extends HttpRequestPool
 						$url,
 						HttpRequest::METH_GET,
 						array(
-							'redirect'	=> 3,
-							'timeout'	=> 25,
-							'compress'	=> true,
-							'connecttimeout' => 10,
+							'redirect'	=> 5,
+							'compress'	=> GZIP,
+							'timeout'	=> TOUT,
+							'connecttimeout' => TOUT,
 							'lastmodified' => is_file($file)?filemtime($file):0
 						)
 					)
@@ -107,11 +108,13 @@ class Pool extends HttpRequestPool
 	}
 }
 
+define('GZIP', true);
+define('TOUT', 50);
 define('RMAX', 10);
 chdir(dirname(__FILE__));
 
 $time = microtime(true);
-new Pool();
+$p = new Pool();
 printf("Elapsed: %0.3fs\n", microtime(true)-$time);
 
 echo "Done\n";

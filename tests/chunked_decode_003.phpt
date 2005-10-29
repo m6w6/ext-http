@@ -20,7 +20,7 @@ var_dump(http_chunked_decode($data));
 ?>
 --EXPECTF--
 %sTEST
-%sWarning%s:%shttp_chunked_decode()%sTruncated message: chunk size %d exceeds remaining data size %d at pos %d of %d%s
+%sWarning%shttp_chunked_decode()%sTruncated message: chunk size 255 exceeds remaining data size 12 at pos 34 of 46 in%s
 string(24) "abra
 cadabra
 all we got
