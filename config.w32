@@ -24,6 +24,7 @@ if (PHP_HTTP != "no") {
 	
 	if (CHECK_HEADER_ADD_INCLUDE('zlib.h', 'CFLAGS_HTTP')) {
 		AC_DEFINE('HTTP_HAVE_ZLIB', 1, "Have zlib library");
+		ADD_FLAG("LDFLAGS_HTTP", "/FORCE:MULTIPLE");
 	} else {
 		WARNING("zlib encoding functions not enabled; libraries and headers not found");
 	}
