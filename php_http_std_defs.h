@@ -146,7 +146,14 @@ typedef int STATUS;
 	for (	zend_hash_internal_pointer_reset(hash); \
 			zend_hash_get_current_key(hash, &strkey, &numkey, 0) != HASH_KEY_NON_EXISTANT && \
 			zend_hash_get_current_data(hash, (void **) &val) == SUCCESS; \
-			zend_hash_move_forward(hash)) \
+			zend_hash_move_forward(hash))
+
+#define FOREACH_KEYLENVAL(array, strkey, keylen, numkey, val) FOREACH_HASH_KEYVAL(Z_ARRVAL_P(array), strkey, keylen, numkey, val)
+#define FOREACH_HASH_KEYLENVAL(hash, strkey, keylen, numkey, val) \
+	for (	zend_hash_internal_pointer_reset(hash); \
+			zend_hash_get_current_key_ex(hash, &strkey, &keylen, &numkey, 0, NULL) != HASH_KEY_NON_EXISTANT && \
+			zend_hash_get_current_data(hash, (void **) &val) == SUCCESS; \
+			zend_hash_move_forward(hash))
 
 #define array_copy(src, dst)	zend_hash_copy(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
 #define array_merge(src, dst)	zend_hash_merge(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *), 1)

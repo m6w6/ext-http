@@ -27,17 +27,8 @@ PHP_HTTP_API char *_http_absolute_url_ex(const char *url, size_t url_len, const 
 #define http_urlencode_hash_ex(h, o, p, pl, q, ql) _http_urlencode_hash_ex((h), (o), (p), (pl), (q), (ql) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, zend_bool override_argsep, char *pre_encoded_data, size_t pre_encoded_len, char **encoded_data, size_t *encoded_len TSRMLS_DC);
 
-#define http_urlencode_hash_implementation(ht, formstr, argsep) \
-	http_urlencode_hash_implementation_ex((ht), (formstr), (argsep), NULL, 0, NULL, 0, NULL, 0, NULL)
-#define http_urlencode_hash_implementation_ex(ht, formstr, argsep, np, npl, kp, kpl, ks, ksl, type) \
-	_http_urlencode_hash_implementation_ex((ht), (formstr), (argsep), (np), (npl), (kp), (kpl), (ks), (ksl), (type) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_urlencode_hash_implementation_ex(
-	HashTable *ht, phpstr *formstr, char *arg_sep,
-	const char *num_prefix, int num_prefix_len,
-	const char *key_prefix, int key_prefix_len,
-	const char *key_suffix, int key_suffix_len,
-	zval *type TSRMLS_DC);
-
+#define http_urlencode_hash_recursive(ht, s, as, al, pr, pl) _http_urlencode_hash_recursive((ht), (s), (as), (al), (pr), (pl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, const char *arg_sep, size_t arg_sep_len, const char *prefix, size_t prefix_len TSRMLS_DC);
 
 #endif
 

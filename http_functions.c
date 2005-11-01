@@ -1381,21 +1381,17 @@ PHP_FUNCTION(http_build_query)
 	int prefix_len = 0, arg_sep_len = strlen(arg_sep);
 	phpstr *formstr;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|ss", &formdata, &prefix, &prefix_len, &arg_sep, &arg_sep_len) != SUCCESS) {
-		RETURN_FALSE;
-	}
-
-	if (Z_TYPE_P(formdata) != IS_ARRAY && Z_TYPE_P(formdata) != IS_OBJECT) {
-		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Parameter 1 expected to be Array or Object.  Incorrect value given.");
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|ss", &formdata, &prefix, &prefix_len, &arg_sep, &arg_sep_len) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
 	if (!arg_sep_len) {
 		arg_sep = HTTP_URL_ARGSEP;
+		arg_sep_len = lenof(HTTP_URL_ARGSEP);
 	}
 
 	formstr = phpstr_new();
-	if (SUCCESS != http_urlencode_hash_implementation_ex(HASH_OF(formdata), formstr, arg_sep, prefix, prefix_len, NULL, 0, NULL, 0, (Z_TYPE_P(formdata) == IS_OBJECT ? formdata : NULL))) {
+	if (SUCCESS != http_urlencode_hash_recursive(HASH_OF(formdata), formstr, arg_sep, prefix, prefix_len)) {
 		phpstr_free(&formstr);
 		RETURN_FALSE;
 	}
