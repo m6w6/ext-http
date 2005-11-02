@@ -4,7 +4,7 @@ http_redirect() with params
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 ?>
 --ENV--
 HTTP_HOST=localhost
@@ -16,9 +16,9 @@ http_redirect('redirect', array('a' => 1, 'b' => 2));
 ?>
 --EXPECTF--
 Status: 302
-Content-type: %s
 X-Powered-By: PHP/%s
 Location: http://localhost/redirect?a=1&b=2
+Content-type: %s
 
 Redirecting to <a href="http://localhost/redirect?a=1&b=2">http://localhost/redirect?a=1&b=2</a>.
 

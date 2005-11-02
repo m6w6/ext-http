@@ -3,7 +3,7 @@ exceptions
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkver(5);
+checkmin(5);
 ?>
 --FILE--
 <?php

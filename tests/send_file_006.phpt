@@ -4,6 +4,7 @@ http_send_file() syntactically invalid range
 <?php 
 include 'skip.inc';
 checkcgi();
+checkmax(5.0);
 ?>
 --ENV--
 HTTP_RANGE=bytes=xxx
@@ -12,7 +13,7 @@ HTTP_RANGE=bytes=xxx
 http_send_file('data.txt');
 ?>
 --EXPECTF--
-Content-type: text/html
+Content-type: %s
 X-Powered-By: PHP/%s
 Accept-Ranges: bytes
 Content-Length: 1010

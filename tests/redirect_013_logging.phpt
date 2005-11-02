@@ -4,7 +4,7 @@ logging redirects
 <?php
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 ?>
 --ENV--
 HTTP_HOST=example.com
@@ -17,5 +17,5 @@ echo "Done";
 ?>
 --EXPECTF--
 %sTEST
-%d%d%d%d-%d%d-%d%d %d%d:%d%d:%d%d	[302-REDIRECT]	Location: http%s	<%s>
+%d%d%d%d-%d%d-%d%d %d%d:%d%d:%d%d	[301-REDIRECT]	Location: http%s	<%s>
 Done

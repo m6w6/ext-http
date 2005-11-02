@@ -4,7 +4,7 @@ allowed methods
 <?php
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 ?>
 --FILE--
 <?php
@@ -15,7 +15,7 @@ echo "Done\n";
 ?>
 --EXPECTF--
 Status: 405
-Content-type: %s
 X-Powered-By: PHP/%s
 Allow: POST
+Content-type: %s
 

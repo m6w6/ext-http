@@ -4,6 +4,7 @@ http_send_data() etag caching
 <?php 
 include 'skip.inc';
 checkcgi();
+checkmax(5.0);
 ?>
 --ENV--
 HTTP_IF_NONE_MATCH="0bee89b07a248e27c83fc3d5951213c1"
@@ -16,7 +17,7 @@ http_send_data("abc\n");
 ?>
 --EXPECTF--
 Status: 304
-Content-type: text/html
+Content-type: %s
 X-Powered-By: PHP/%s
 Cache-Control: private, must-revalidate, max-age=0
 %s

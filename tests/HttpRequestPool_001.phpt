@@ -3,7 +3,7 @@ HttpRequestPool
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkver(5);
+checkmin(5);
 checkcls('HttpRequestPool');
 checkurl('www.php.net');
 checkurl('de.php.net');

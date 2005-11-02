@@ -1,22 +1,23 @@
 --TEST--
-http_send_data() last modified caching
+crc32 etag
 --SKIPIF--
-<?php 
+<?php
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 ?>
 --FILE--
 <?php
-http_cache_last_modified(-5);
+ini_set('http.etag_mode', HTTP_ETAG_CRC32);
+http_cache_etag();
 http_send_data("abc\n");
 ?>
 --EXPECTF--
-Content-type: %s
 X-Powered-By: PHP/%s
 Cache-Control: private, must-revalidate, max-age=0
-Last-Modified: %s, %d %s %d %d:%d:%d GMT
 Accept-Ranges: bytes
+ETag: "4e818847"
 Content-Length: 4
+Content-type: %s
 
 abc

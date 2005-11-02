@@ -4,7 +4,7 @@ http_redirect() permanent
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 ?>
 --ENV--
 HTTP_HOST=localhost
@@ -16,9 +16,9 @@ http_redirect('redirect', null, false, HTTP_REDIRECT_PERM);
 ?>
 --EXPECTF--
 Status: 301
-Content-type: %s
 X-Powered-By: PHP/%s
 Location: http://localhost/redirect
+Content-type: %s
 
 Redirecting to <a href="http://localhost/redirect">http://localhost/redirect</a>.
 

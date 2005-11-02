@@ -4,7 +4,7 @@ http_redirect() with session
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 checkext('session');
 ?>
 --ENV--
@@ -18,10 +18,10 @@ http_redirect('redirect', array('a' => 1), true);
 ?>
 --EXPECTF--
 Status: 302
-Content-type: %s
 X-Powered-By: PHP/%s
 Set-Cookie: PHPSESSID=%s; path=/
 Expires: %s
 Cache-Control: %s
 Pragma: %s
 Location: http://localhost/redirect?a=1&PHPSESSID=%s
+Content-type: %s

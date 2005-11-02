@@ -3,8 +3,8 @@ HttpResponse - send cached gzipped data
 --SKIPIF--
 <?php 
 include 'skip.inc';
-checkver(5);
 checkcgi();
+checkmin(5.1);
 checkext('zlib');
 ?>
 --ENV--
@@ -20,7 +20,7 @@ HttpResponse::send();
 ?>
 --EXPECTF--
 Status: 304
-Content-type: %s
 X-Powered-By: PHP/%s
-Cache-Control: public, must-revalidate, max_age=3600
+Cache-Control: public, must-revalidate, max-age=3600
 ETag: "80b285463881575891e86ba7bfecb4d0"
+Content-type: %s

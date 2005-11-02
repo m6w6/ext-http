@@ -4,7 +4,7 @@ ob sha1 etag
 <?php
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 skipif(!http_support(HTTP_SUPPORT_MHASHETAGS), 'need mhash support');
 ?>
 --FILE--
@@ -14,9 +14,9 @@ http_cache_etag();
 print("abc\n");
 ?>
 --EXPECTF--
-Content-type: %s
 X-Powered-By: PHP/%s
 Cache-Control: private, must-revalidate, max-age=0
 ETag: "03cfd743661f07975fa2f1220c5194cbaff48451"
+Content-type: %s
 
 abc

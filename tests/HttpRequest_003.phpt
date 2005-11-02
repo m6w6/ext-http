@@ -3,7 +3,7 @@ HttpRequest SSL
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkver(5);
+checkmin(5);
 checkcls('HttpRequest');
 checkurl('arweb.info');
 ?>

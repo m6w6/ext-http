@@ -3,7 +3,7 @@ HttpResponse - send data with caching headers
 --SKIPIF--
 <?php 
 include 'skip.inc';
-checkver(5);
+checkmin(5);
 checkcgi();
 ?>
 --FILE--
@@ -16,7 +16,7 @@ HttpResponse::send();
 --EXPECTF--
 X-Powered-By: PHP/%s
 ETag: "3858f62230ac3c915f300c664312c63f"
-Cache-Control: public, must-revalidate, max_age=3600
+Cache-Control: public, must-revalidate, max-age=3600
 Last-Modified: %s, %d %s 20%d %d:%d:%d GMT
 Content-Type: %s
 Accept-Ranges: bytes

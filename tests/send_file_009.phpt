@@ -4,7 +4,7 @@ http_send_file() NUM-NUM range
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 ?>
 --ENV--
 HTTP_RANGE=bytes=5-9
@@ -14,10 +14,10 @@ http_send_file('data.txt');
 ?>
 --EXPECTF--
 Status: 206
-Content-type: %s
 X-Powered-By: PHP/%s
 Accept-Ranges: bytes
 Content-Range: bytes 5-9/1010
 Content-Length: 5
+Content-type: %s
 
 56789

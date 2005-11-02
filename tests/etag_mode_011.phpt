@@ -4,6 +4,7 @@ ob crc32 etag
 <?php
 include 'skip.inc';
 checkcgi();
+checkmax(5.0);
 ?>
 --FILE--
 <?php

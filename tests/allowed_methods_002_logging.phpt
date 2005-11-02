@@ -1,10 +1,10 @@
 --TEST--
-logging redirects
+logging allowed methods
 --SKIPIF--
 <?php
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 ?>
 --ENV--
 HTTP_HOST=example.com
@@ -12,10 +12,10 @@ HTTP_HOST=example.com
 <?php
 echo "-TEST\n";
 include 'log.inc';
-log_content(_REDIR_LOG);
+log_content(_AMETH_LOG);
 echo "Done";
 ?>
 --EXPECTF--
 %sTEST
-%d%d%d%d-%d%d-%d%d %d%d:%d%d:%d%d	[302-REDIRECT]	Location: http%s	<%s>
+%d%d%d%d-%d%d-%d%d %d%d:%d%d:%d%d	[405-ALLOWED]	Allow: POST	<%s>
 Done

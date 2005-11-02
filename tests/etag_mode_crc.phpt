@@ -3,7 +3,7 @@ sane crc etags
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkver(5.1);
+checkmin(5.1);
 skipif(!http_support(HTTP_SUPPORT_MHASHETAGS), 'need mhash support');
 skipif(!defined('HTTP_ETAG_MHASH_CRC32'), 'need CRC32 mhash support');
 skipif(!defined('HTTP_ETAG_MHASH_CRC32B'), 'need CRC32B mhash support');

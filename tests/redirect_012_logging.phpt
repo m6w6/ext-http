@@ -4,7 +4,7 @@ logging redirects
 <?php
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 ?>
 --ENV--
 HTTP_HOST=example.com

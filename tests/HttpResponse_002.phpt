@@ -3,7 +3,7 @@ HttpResponse - send gzipped file
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkver(5);
+checkmin(5);
 checkcgi();
 checkext('zlib');
 ?>

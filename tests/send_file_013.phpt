@@ -4,7 +4,7 @@ http_send_file() oversized range
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmax(5.0);
+checkmin(5.1);
 ?>
 --ENV--
 HTTP_RANGE=bytes=-1111
@@ -14,5 +14,5 @@ http_send_file('data.txt');
 ?>
 --EXPECTF--
 Status: 416
-Content-type: %s
 X-Powered-By: PHP/%s
+Content-type: %s
