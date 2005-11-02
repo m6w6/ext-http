@@ -167,8 +167,6 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 		if (msg->parent) {
 			o->parent = http_message_object_new_ex(ce, msg->parent, NULL);
 		}
-	} else {
-		o->message = http_message_init(NULL);
 	}
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
