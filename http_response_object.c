@@ -494,7 +494,7 @@ PHP_METHOD(HttpResponse, setCacheControl)
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
 		RETURN_FALSE;
 	} else {
-		size_t cctl_len = spprintf(&cctl, 0, "%s, must-revalidate, max_age=%ld", ccontrol, max_age);
+		size_t cctl_len = spprintf(&cctl, 0, "%s, must-revalidate, max-age=%ld", ccontrol, max_age);
 		RETVAL_SUCCESS(UPD_STATIC_STRL(cacheControl, cctl, cctl_len));
 		efree(cctl);
 	}
