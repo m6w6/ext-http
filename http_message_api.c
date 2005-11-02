@@ -259,7 +259,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 #	endif /* HTTP_HAVE_ZLIB */
 			}
 			
-			if (decoded && decoded_len) {
+			if (decoded) {
 				zval *len;
 				char *tmp;
 				int tmp_len;

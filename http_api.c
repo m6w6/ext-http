@@ -249,13 +249,12 @@ void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)
 /* {{{ STATUS http_exit(int, char*, char*) */
 STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header TSRMLS_DC)
 {
-	if (status || send_header) {
-		if (SUCCESS != http_send_status_header(status, send_header ? header : NULL)) {
-			http_error_ex(HE_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
-			STR_FREE(header);
-			STR_FREE(body);
-			return FAILURE;
-		}
+	if (	(send_header && (SUCCESS != http_send_status_header(status, header))) ||
+			(!send_header && status && (SUCCESS != http_send_status(status)))) {
+		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
+		STR_FREE(header);
+		STR_FREE(body);
+		return FAILURE;
 	}
 	
 	if (php_header(TSRMLS_C) && body) {
