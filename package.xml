@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package version="1.0" packagerversion="1.4.2">
+<package version="1.0" packagerversion="1.4.3">
  <name>pecl_http</name>
  <summary>Extended HTTP Support</summary>
- <description>* Building absolute URIs
+ <description>* Building absolute URLs
 * RFC compliant HTTP redirects
 * RFC compliant HTTP date handling
 * Parsing of HTTP headers and messages
@@ -23,18 +23,27 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.16.0</version>
-  <date>2005-10-28</date>
+  <version>0.17.0</version>
+  <date>2005-11-04</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>+ Added ext/zlib independant GZIP support
-+ Added HttpRequestPool::getAttachedRequests() and getFinishedRequests()
-+ Added experimental thread safety for builds linking against libcurl-gnutls
+  <notes>+ Added experimental thread safety for builds linking against libcurl-gnutls
 + Improved the chunked decoder
++ Added clone support to HttpRequest objects
 
-- License change!
+- License changed from PHP license to revised BSD license!
+- HttpMessage properties are not accessible by reference or array index/key!
+- HttpRequest history logging is disabled by default!
+- HttpRequestPool is not clonable!
 
 * Fixed a bug where HttpRequest warnings were hidden within the HttpRequestPool
+* Fixed shared build within the PHP source tree
+* Fixed parallel build with ext/zlib on Win32
+* Fixed object deallocation
+* Fixed http_support() pretending no support for SSL in non-threadsafe builds
+* Fixed the message parser to not choke on headers containing HTTP/1.x
+* Fixed access to protected HttpMessage properties in extending classes
+* Fixed lots of tests for the changed HTTP header order in PHP-5.1
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -44,7 +53,7 @@
    <configureoption name="with-http-curl-requests" default="yes" prompt="whether to enable cURL HTTP requests; specify libcurl directory"/>
    <configureoption name="with-http-mhash-etags" default="yes" prompt="whether to enable mhash ETag generator; specify libmhash directory"/>
    <configureoption name="with-http-magic-mime" default="no" prompt="whether to enable response content type guessing; specify libmagic directory"/>
-   <configureoption name="with-zlib-compression" default="yes" prompt="whether to enable support for gzencoded/deflated message bodies"/>
+   <configureoption name="with-zlib-compression" default="yes" prompt="whether to enable support for gzencoded/deflated message bodies; specify zlib directory"/>
   </configureoptions>
   <filelist>
    <dir name="docs">
@@ -71,6 +80,8 @@
     <file role="test" name="abs_uri_002.phpt"/>
     <file role="test" name="allowed_methods_001.phpt"/>
     <file role="test" name="allowed_methods_001_logging.phpt"/>
+    <file role="test" name="allowed_methods_002.phpt"/>
+    <file role="test" name="allowed_methods_002_logging.phpt"/>
     <file role="test" name="build_uri_001.phpt"/>
     <file role="test" name="chunked_decode_001.phpt"/>
     <file role="test" name="chunked_decode_002.phpt"/>
@@ -89,9 +100,19 @@
     <file role="test" name="etag_mode_012.phpt"/>
     <file role="test" name="etag_mode_013.phpt"/>
     <file role="test" name="etag_mode_014.phpt"/>
+    <file role="test" name="etag_mode_031.phpt"/>
+    <file role="test" name="etag_mode_032.phpt"/>
+    <file role="test" name="etag_mode_033.phpt"/>
+    <file role="test" name="etag_mode_034.phpt"/>
+    <file role="test" name="etag_mode_041.phpt"/>
+    <file role="test" name="etag_mode_042.phpt"/>
+    <file role="test" name="etag_mode_043.phpt"/>
+    <file role="test" name="etag_mode_044.phpt"/>
     <file role="test" name="etag_mode_crc.phpt"/>
+    <file role="test" name="exceptions.phpt"/>
     <file role="test" name="get_request_data_001.phpt"/>
     <file role="test" name="HttpMessage_001.phpt"/>
+    <file role="test" name="HttpMessage_002.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
     <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequestPool_003.phpt"/>
@@ -104,6 +125,7 @@
     <file role="test" name="HttpResponse_004.phpt"/>
     <file role="test" name="INI_001.phpt"/>
     <file role="test" name="log.inc"/>
+    <file role="test" name="negotiation_001.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
     <file role="test" name="parse_message_001.phpt"/>
     <file role="test" name="parse_message_002.phpt"/>
@@ -115,6 +137,12 @@
     <file role="test" name="redirect_002_logging.phpt"/>
     <file role="test" name="redirect_003.phpt"/>
     <file role="test" name="redirect_003_logging.phpt"/>
+    <file role="test" name="redirect_011.phpt"/>
+    <file role="test" name="redirect_011_logging.phpt"/>
+    <file role="test" name="redirect_012.phpt"/>
+    <file role="test" name="redirect_012_logging.phpt"/>
+    <file role="test" name="redirect_013.phpt"/>
+    <file role="test" name="redirect_013_logging.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="request_methods.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
@@ -126,6 +154,8 @@
     <file role="test" name="send_data_007_logging.phpt"/>
     <file role="test" name="send_data_008.phpt"/>
     <file role="test" name="send_data_009.phpt"/>
+    <file role="test" name="send_data_010.phpt"/>
+    <file role="test" name="send_data_011.phpt"/>
     <file role="test" name="send_file_001.phpt"/>
     <file role="test" name="send_file_002.phpt"/>
     <file role="test" name="send_file_003.phpt"/>
@@ -133,6 +163,12 @@
     <file role="test" name="send_file_005.phpt"/>
     <file role="test" name="send_file_006.phpt"/>
     <file role="test" name="send_file_007.phpt"/>
+    <file role="test" name="send_file_008.phpt"/>
+    <file role="test" name="send_file_009.phpt"/>
+    <file role="test" name="send_file_010.phpt"/>
+    <file role="test" name="send_file_011.phpt"/>
+    <file role="test" name="send_file_012.phpt"/>
+    <file role="test" name="send_file_013.phpt"/>
     <file role="test" name="skip.inc"/>
     <file role="test" name="urls.txt"/>
    </dir> <!-- /tests -->
