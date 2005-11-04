@@ -1391,7 +1391,7 @@ PHP_FUNCTION(http_build_query)
 	}
 
 	formstr = phpstr_new();
-	if (SUCCESS != http_urlencode_hash_recursive(HASH_OF(formdata), formstr, arg_sep, prefix, prefix_len)) {
+	if (SUCCESS != http_urlencode_hash_recursive(HASH_OF(formdata), formstr, arg_sep, arg_sep_len, prefix, prefix_len)) {
 		phpstr_free(&formstr);
 		RETURN_FALSE;
 	}
