@@ -28,7 +28,7 @@
 #include "php_http_requestpool_object.h"
 
 #ifndef HTTP_DEBUG_REQPOOLS
-#	define HTTP_DEBUG_REQPOOLS 1
+#	define HTTP_DEBUG_REQPOOLS 0
 #endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
