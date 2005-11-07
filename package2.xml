@@ -30,8 +30,8 @@
  </lead>
  <date>2005-00-00</date>
  <version>
-  <release>0.17.0</release>
-  <api>0.17.0</api>
+  <release>0.18.0dev</release>
+  <api>0.18.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -39,23 +39,8 @@
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added experimental thread safety for builds linking against libcurl-gnutls
-+ Improved the chunked decoder
-+ Added clone support to HttpRequest objects
-
-- License changed from PHP license to revised BSD license!
-- HttpMessage properties are not accessible by reference or array index/key!
-- HttpRequest history logging is disabled by default!
-- HttpRequestPool is not clonable!
-
-* Fixed a bug where HttpRequest warnings were hidden within the HttpRequestPool
-* Fixed shared build within the PHP source tree
-* Fixed parallel build with ext/zlib on Win32
-* Fixed object deallocation
-* Fixed http_support() pretending no support for SSL in non-threadsafe builds
-* Fixed the message parser to not choke on headers containing HTTP/1.x
-* Fixed access to protected HttpMessage properties in extending classes
-* Fixed lots of tests for the changed HTTP header order in PHP-5.1
++ Classes HttpMessage and HttpRequestPool implements Countable if SPL is available
++ Class HttpMessage implements Serializable if PHP version is greater or equal to 5.1
 ]]></notes>
  <contents>
   <dir name="/">
@@ -171,6 +156,7 @@
     <file role="test" name="get_request_data_001.phpt"/>
     <file role="test" name="HttpMessage_001.phpt"/>
     <file role="test" name="HttpMessage_002.phpt"/>
+    <file role="test" name="HttpMessage_003.phpt"/>
     <file role="test" name="HttpRequest_001.phpt"/>
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>
