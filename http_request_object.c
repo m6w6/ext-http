@@ -1874,6 +1874,13 @@ PHP_METHOD(HttpRequest, getResponseMessage)
  * references the last received response.  Use HttpMessage::getParentMessage()
  * to access the data of previously sent requests whithin this request
  * cycle.
+ * 
+ * Note that the internal request message is immutable, that means that the
+ * request message received through HttpRequest::getRequestMessage() will
+ * always look the same for the same request, regardless of any changes you
+ * may have made to the returned object.
+ * 
+ * Throws HttpMalformedHeadersException, HttpEncodingException.
  */
 PHP_METHOD(HttpRequest, getRequestMessage)
 {
@@ -1905,7 +1912,11 @@ PHP_METHOD(HttpRequest, getRequestMessage)
  * The object references the last received response, use HttpMessage::getParentMessage() 
  * to access the data of previously sent requests and received responses.
  * 
- * Throws HttpMalformedHeaderException.
+ * Note that the internal history is immutable, that means that any changes
+ * you make the the message list won't affect a history message list newly 
+ * created by another call to HttpRequest::getHistory().
+ * 
+ * Throws HttpMalformedHeaderException, HttpEncodingException.
  */
 PHP_METHOD(HttpRequest, getHistory)
 {
