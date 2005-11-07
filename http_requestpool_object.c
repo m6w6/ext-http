@@ -28,6 +28,10 @@
 #include "php_http_exception_object.h"
 
 #include "zend_interfaces.h"
+#ifdef HAVE_SPL
+#	include "ext/spl/spl_array.h"
+#	include "ext/spl/spl_iterators.h"
+#endif
 
 #ifdef PHP_WIN32
 #	include <winsock2.h>
@@ -65,6 +69,8 @@ HTTP_EMPTY_ARGS(key, 0);
 HTTP_EMPTY_ARGS(next, 0);
 HTTP_EMPTY_ARGS(rewind, 0);
 
+HTTP_EMPTY_ARGS(count, 0);
+
 HTTP_EMPTY_ARGS(getAttachedRequests, 0);
 HTTP_EMPTY_ARGS(getFinishedRequests, 0);
 
@@ -90,6 +96,9 @@ zend_function_entry http_requestpool_object_fe[] = {
 	HTTP_REQPOOL_ME(next, ZEND_ACC_PUBLIC)
 	HTTP_REQPOOL_ME(rewind, ZEND_ACC_PUBLIC)
 	
+	/* implmenents Countable */
+	HTTP_REQPOOL_ME(count, ZEND_ACC_PUBLIC)
+	
 	HTTP_REQPOOL_ME(getAttachedRequests, ZEND_ACC_PUBLIC)
 	HTTP_REQPOOL_ME(getFinishedRequests, ZEND_ACC_PUBLIC)
 
@@ -100,7 +109,12 @@ static zend_object_handlers http_requestpool_object_handlers;
 PHP_MINIT_FUNCTION(http_requestpool_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequestPool, http_requestpool_object, NULL, 0);
+#ifdef HAVE_SPL
+	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 2, spl_ce_Countable, spl_ce_Iterator);
+#else
 	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 1, zend_ce_iterator);
+#endif
+
 	http_requestpool_object_handlers.clone_obj = NULL;
 	return SUCCESS;
 }
@@ -460,6 +474,21 @@ PHP_METHOD(HttpRequestPool, rewind)
 	NO_ARGS {
 		getObject(http_requestpool_object, obj);
 		obj->iterator.pos = 0;
+	}
+}
+/* }}} */
+
+/* {{{ proto int HttpRequestPool::count()
+ *
+ * Implements Countable.
+ * 
+ * Returns the number of attached HttpRequest objects.
+ */
+PHP_METHOD(HttpRequestPool, count)
+{
+	NO_ARGS {
+		getObject(http_requestpool_object, obj);
+		RETURN_LONG((long) zend_llist_count(&obj->pool.handles));
 	}
 }
 /* }}} */

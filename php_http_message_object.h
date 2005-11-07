@@ -91,6 +91,10 @@ PHP_METHOD(HttpMessage, getParentMessage);
 PHP_METHOD(HttpMessage, send);
 PHP_METHOD(HttpMessage, toString);
 
+PHP_METHOD(HttpMessage, count);
+PHP_METHOD(HttpMessage, serialize);
+PHP_METHOD(HttpMessage, unserialize);
+
 PHP_METHOD(HttpMessage, fromString);
 
 #endif

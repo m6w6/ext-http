@@ -29,6 +29,13 @@
 #include "phpstr/phpstr.h"
 #include "missing.h"
 
+#ifndef WONKY
+#	include "zend_interfaces.h"
+#endif
+#ifdef HAVE_SPL
+#	include "ext/spl/spl_array.h"
+#endif
+
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 #define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpMessage, method, ret_ref, req_args)
@@ -89,6 +96,13 @@ HTTP_BEGIN_ARGS(toString, 0, 0)
 	HTTP_ARG_VAL(include_parent, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(count, 0);
+
+HTTP_EMPTY_ARGS(serialize, 0);
+HTTP_BEGIN_ARGS(unserialize, 0, 1)
+	HTTP_ARG_VAL(serialized, 0)
+HTTP_END_ARGS;
+
 #define http_message_object_declare_default_properties() _http_message_object_declare_default_properties(TSRMLS_C)
 static inline void _http_message_object_declare_default_properties(TSRMLS_D);
 #define http_message_object_read_prop _http_message_object_read_prop
@@ -120,6 +134,13 @@ zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(send, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(toString, ZEND_ACC_PUBLIC)
 
+	/* implements Countable */
+	HTTP_MESSAGE_ME(count, ZEND_ACC_PUBLIC)
+	
+	/* implements Serializable */
+	HTTP_MESSAGE_ME(serialize, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(unserialize, ZEND_ACC_PUBLIC)
+	
 	ZEND_MALIAS(HttpMessage, __toString, toString, HTTP_ARGS(HttpMessage, toString), ZEND_ACC_PUBLIC)
 
 	HTTP_MESSAGE_ME(fromString, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
@@ -131,6 +152,17 @@ static zend_object_handlers http_message_object_handlers;
 PHP_MINIT_FUNCTION(http_message_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message_object, NULL, 0);
+#ifndef WONKY
+#	ifdef HAVE_SPL
+	zend_class_implements(http_message_object_ce TSRMLS_CC, 2, spl_ce_Countable, zend_ce_serializable);
+#	else
+	zend_class_implements(http_message_object_ce TSRMLS_CC, 1, zend_ce_serializable);
+#	endif
+#else
+#	ifdef HAVE_SPL
+	zend_class_implements(http_message_object_ce TSRMLS_CC, 1, spl_ce_Countable);
+#	endif
+#endif
 
 	HTTP_LONG_CONSTANT("HTTP_MSG_NONE", HTTP_MSG_NONE);
 	HTTP_LONG_CONSTANT("HTTP_MSG_REQUEST", HTTP_MSG_REQUEST);
@@ -508,18 +540,25 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
  */
 PHP_METHOD(HttpMessage, __construct)
 {
-	char *message = NULL;
 	int length = 0;
+	char *message = NULL;
+	
 	getObject(http_message_object, obj);
-
+	
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &message, &length) && message && length) {
-		if (obj->message = http_message_parse(message, length)) {
+		http_message *msg = obj->message;
+		
+		http_message_dtor(msg);
+		if (obj->message = http_message_parse_ex(msg, message, length)) {
 			if (obj->message->parent) {
 				obj->parent = http_message_object_new_ex(Z_OBJCE_P(getThis()), obj->message->parent, NULL);
 			}
+		} else {
+			obj->message = http_message_init(msg);
 		}
-	} else if (!obj->message) {
+	}
+	if (!obj->message) {
 		obj->message = http_message_new();
 	}
 	SET_EH_NORMAL();
@@ -548,8 +587,7 @@ PHP_METHOD(HttpMessage, fromString)
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
 		if (msg = http_message_parse(string, length)) {
-			Z_TYPE_P(return_value) = IS_OBJECT;
-			return_value->value.obj = http_message_object_new_ex(http_message_object_ce, msg, NULL);
+			ZVAL_OBJVAL(return_value, http_message_object_new_ex(http_message_object_ce, msg, NULL));
 		}
 	}
 	SET_EH_NORMAL();
@@ -965,6 +1003,66 @@ PHP_METHOD(HttpMessage, toString)
 			http_message_tostring(obj->message, &string, &length);
 		}
 		RETURN_STRINGL(string, length, 0);
+	}
+}
+/* }}} */
+
+/* {{{ proto int HttpMessage::count()
+ *
+ * Implements Countable.
+ * 
+ * Returns the number of parent messages + 1.
+ */
+PHP_METHOD(HttpMessage, count)
+{
+	NO_ARGS {
+		long i;
+		http_message *msg;
+		getObject(http_message_object, obj);
+		
+		for (i = 0, msg = obj->message; msg; msg = msg->parent, ++i);
+		RETURN_LONG(i);
+	}
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::serialize()
+ *
+ * Implements Serializable.
+ * 
+ * Returns the serialized representation of the HttpMessage.
+ */
+PHP_METHOD(HttpMessage, serialize)
+{
+	NO_ARGS {
+		char *string;
+		size_t length;
+		getObject(http_message_object, obj);
+		
+		http_message_serialize(obj->message, &string, &length);
+		RETURN_STRINGL(string, length, 0);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpMessage::unserialize(string serialized)
+ *
+ * Implements Serializable.
+ * 
+ * Re-constructs the HttpMessage based upon the serialized string.
+ */
+PHP_METHOD(HttpMessage, unserialize)
+{
+	int length;
+	char *serialized;
+	getObject(http_message_object, obj);
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &serialized, &length)) {
+		http_message_dtor(obj->message);
+		if (!http_message_parse_ex(obj->message, serialized, (size_t) length)) {
+			http_error(HE_ERROR, HTTP_E_RUNTIME, "Could not unserialize HttpMessage");
+			http_message_init(obj->message);
+		}
 	}
 }
 /* }}} */
