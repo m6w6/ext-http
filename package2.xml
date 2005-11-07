@@ -41,6 +41,8 @@
  <notes><![CDATA[
 + Classes HttpMessage and HttpRequestPool implement Countable if PHP >= 5.1 with SPL is available
 + Class HttpMessage implements Serializable if PHP >= 5.1 is available
+
+* Fixed a bug that caused a warning about an invalid curl handle at HttpRequestPool destruction
 ]]></notes>
  <contents>
   <dir name="/">

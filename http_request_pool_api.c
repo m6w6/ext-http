@@ -28,7 +28,7 @@
 #include "php_http_requestpool_object.h"
 
 #ifndef HTTP_DEBUG_REQPOOLS
-#	define HTTP_DEBUG_REQPOOLS 0
+#	define HTTP_DEBUG_REQPOOLS 1
 #endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
@@ -136,18 +136,18 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 	} else {
 		CURLMcode code;
 
-		req->pool = NULL;
-		zend_llist_del_element(&pool->handles, request, http_request_pool_compare_handles);
-		zend_llist_del_element(&pool->finished, request, http_request_pool_compare_handles);
-		
+		if (CURLM_OK == (code = curl_multi_remove_handle(pool->ch, req->ch))) {
+			req->pool = NULL;
+			zend_llist_del_element(&pool->handles, request, http_request_pool_compare_handles);
+			zend_llist_del_element(&pool->finished, request, http_request_pool_compare_handles);
+			
 #if HTTP_DEBUG_REQPOOLS
-		fprintf(stderr, "> %d HttpRequests remaining in pool %p\n", zend_llist_count(&pool->handles), pool);
+			fprintf(stderr, "> %d HttpRequests remaining in pool %p\n", zend_llist_count(&pool->handles), pool);
 #endif
 		
-		if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->ch))) {
-			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
-		} else {
 			return SUCCESS;
+		} else {
+			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
 		}
 	}
 	return FAILURE;
