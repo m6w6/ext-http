@@ -48,7 +48,7 @@ class Pool extends HttpRequestPool
 					HttpRequest::METH_GET,
 					array(
 						'redirect'	=> 5,
-                        'compress'  => GZIP,
+						'compress'  => GZIP,
 						'timeout'	=> TOUT,
 						'connecttimeout' => TOUT,
 						'lastmodified' => is_file($file)?filemtime($file):0
@@ -114,7 +114,7 @@ define('RMAX', 10);
 chdir(dirname(__FILE__));
 
 $time = microtime(true);
-$p = new Pool();
+$pool = new Pool();
 printf("Elapsed: %0.3fs\n", microtime(true)-$time);
 
 echo "Done\n";
