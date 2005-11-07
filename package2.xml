@@ -39,8 +39,8 @@
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Classes HttpMessage and HttpRequestPool implements Countable if SPL is available
-+ Class HttpMessage implements Serializable if PHP version is greater or equal to 5.1
++ Classes HttpMessage and HttpRequestPool implement Countable if PHP >= 5.1 with SPL is available
++ Class HttpMessage implements Serializable if PHP >= 5.1 is available
 ]]></notes>
  <contents>
   <dir name="/">

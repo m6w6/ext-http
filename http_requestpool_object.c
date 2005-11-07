@@ -28,7 +28,7 @@
 #include "php_http_exception_object.h"
 
 #include "zend_interfaces.h"
-#ifdef HAVE_SPL
+#if defined(HAVE_SPL) && !defined(WONKY)
 #	include "ext/spl/spl_array.h"
 #	include "ext/spl/spl_iterators.h"
 #endif
@@ -109,7 +109,7 @@ static zend_object_handlers http_requestpool_object_handlers;
 PHP_MINIT_FUNCTION(http_requestpool_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequestPool, http_requestpool_object, NULL, 0);
-#ifdef HAVE_SPL
+#if defined(HAVE_SPL) && !defined(WONKY)
 	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 2, spl_ce_Countable, spl_ce_Iterator);
 #else
 	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 1, zend_ce_iterator);

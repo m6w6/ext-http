@@ -31,9 +31,9 @@
 
 #ifndef WONKY
 #	include "zend_interfaces.h"
-#endif
-#ifdef HAVE_SPL
-#	include "ext/spl/spl_array.h"
+#	if defined(HAVE_SPL)
+#		include "ext/spl/spl_array.h"
+#	endif
 #endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
@@ -157,10 +157,6 @@ PHP_MINIT_FUNCTION(http_message_object)
 	zend_class_implements(http_message_object_ce TSRMLS_CC, 2, spl_ce_Countable, zend_ce_serializable);
 #	else
 	zend_class_implements(http_message_object_ce TSRMLS_CC, 1, zend_ce_serializable);
-#	endif
-#else
-#	ifdef HAVE_SPL
-	zend_class_implements(http_message_object_ce TSRMLS_CC, 1, spl_ce_Countable);
 #	endif
 #endif
 
