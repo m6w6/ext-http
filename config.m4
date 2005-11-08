@@ -1,5 +1,6 @@
 dnl config.m4 for pecl/http
 dnl $Id$
+dnl vim: noet ts=1 sw=1
 
 PHP_ARG_ENABLE([http], [whether to enable extended HTTP support],
 [  --enable-http           Enable extended HTTP support])
@@ -201,10 +202,10 @@ dnl ----
 		php_http_encoding_api.h phpstr/phpstr.h"
 	PHP_SUBST([PHP_HTTP_HEADERS])
 
-    dnl outside src dir
-    PHP_ADD_MAKEFILE_FRAGMENT
-    dnl within src dir
-    ifdef([PHP_INSTALL_HEADERS], [PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADER_FILES)], [ ])
+	dnl outside src dir
+	PHP_ADD_MAKEFILE_FRAGMENT
+	dnl within src dir
+	ifdef([PHP_INSTALL_HEADERS], [PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADER_FILES)], [ ])
 
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
 fi
