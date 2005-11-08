@@ -165,6 +165,7 @@
     <file role="test" name="HttpRequestPool_001.phpt"/>
     <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequestPool_003.phpt"/>
+    <file role="test" name="HttpRequestPool_004.phpt"/>
     <file role="test" name="HttpResponse_001.phpt"/>
     <file role="test" name="HttpResponse_002.phpt"/>
     <file role="test" name="HttpResponse_003.phpt"/>
@@ -252,7 +253,7 @@
    default="no"
   />
   <configureoption
-   name="with-zlib-compression"
+   name="with-http-zlib-compression"
    prompt="whether to enable support for gzencoded/deflated message bodies; specify zlib directory"
    default="yes"
   />

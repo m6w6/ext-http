@@ -120,6 +120,7 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 /* {{{ STATUS http_request_pool_detach(http_request_pool *, zval *) */
 PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *request TSRMLS_DC)
 {
+	CURLMcode code;
 	getObjectEx(http_request_object, req, request);
 	
 #if HTTP_DEBUG_REQPOOLS
@@ -133,22 +134,18 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 #endif
 	} else if (req->pool != pool) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "HttpRequest object(#%d) is not attached to this HttpRequestPool", Z_OBJ_HANDLE_P(request));
+	} else if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->ch))) {
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
 	} else {
-		CURLMcode code;
-
-		if (CURLM_OK == (code = curl_multi_remove_handle(pool->ch, req->ch))) {
-			req->pool = NULL;
-			zend_llist_del_element(&pool->handles, request, http_request_pool_compare_handles);
-			zend_llist_del_element(&pool->finished, request, http_request_pool_compare_handles);
-			
-#if HTTP_DEBUG_REQPOOLS
-			fprintf(stderr, "> %d HttpRequests remaining in pool %p\n", zend_llist_count(&pool->handles), pool);
-#endif
+		req->pool = NULL;
+		zend_llist_del_element(&pool->finished, request, http_request_pool_compare_handles);
+		zend_llist_del_element(&pool->handles, request, http_request_pool_compare_handles);
 		
-			return SUCCESS;
-		} else {
-			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
-		}
+#if HTTP_DEBUG_REQPOOLS
+		fprintf(stderr, "> %d HttpRequests remaining in pool %p\n", zend_llist_count(&pool->handles), pool);
+#endif
+	
+		return SUCCESS;
 	}
 	return FAILURE;
 }
