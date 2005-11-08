@@ -210,6 +210,7 @@ typedef int STATUS;
 #	define HTTP_REGISTER_CLASS(classname, name, parent, flags) \
 	{ \
 		zend_class_entry ce; \
+		memset(&ce, 0, sizeof(zend_class_entry)); \
 		INIT_CLASS_ENTRY(ce, #classname, name## _fe); \
 		ce.create_object = NULL; \
 		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
@@ -219,6 +220,7 @@ typedef int STATUS;
 #	define HTTP_REGISTER_EXCEPTION(classname, cename, parent) \
 	{ \
 		zend_class_entry ce; \
+		memset(&ce, 0, sizeof(zend_class_entry)); \
 		INIT_CLASS_ENTRY(ce, #classname, NULL); \
 		ce.create_object = NULL; \
 		cename = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
