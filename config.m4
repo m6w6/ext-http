@@ -84,20 +84,20 @@ dnl ----
 		
 		AC_MSG_CHECKING([for SSL support in libcurl])
 		CURL_SSL=`$CURL_CONFIG --features | $EGREP SSL`
-		if test "$CURL_SSL" == "SSL"; then
+		if test "$CURL_SSL" = "SSL"; then
 			AC_MSG_RESULT([yes])
 			AC_DEFINE([HTTP_HAVE_SSL], [1], [ ])
 			
 			AC_MSG_CHECKING([for SSL library used])
 			CURL_SSL_FLAVOUR=
 			for i in $CURL_LIBS; do
-				if test "$i" == "-lssl"; then
+				if test "$i" = "-lssl"; then
 					CURL_SSL_FLAVOUR="openssl"
 					AC_MSG_RESULT([openssl])
 					AC_DEFINE([HTTP_HAVE_OPENSSL], [1], [ ])
 					AC_CHECK_HEADERS([openssl/crypto.h])
 					break
-				elif test "$i" == "-lgnutls"; then
+				elif test "$i" = "-lgnutls"; then
 					CURL_SSL_FLAVOUR="gnutls"
 					AC_MSG_RESULT([gnutls])
 					AC_DEFINE([HTTP_HAVE_GNUTLS], [1], [ ])

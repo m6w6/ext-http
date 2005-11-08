@@ -1,4 +1,8 @@
+# vim: noet ts=1 sw=1
+
 phpincludedir=$(prefix)/include/php
+
+install-http: install install-http-headers
 
 install-http-headers:
 	@echo "Installing HTTP headers:          $(INSTALL_ROOT)$(phpincludedir)/ext/http/"
@@ -16,7 +20,4 @@ install-http-headers:
 			echo "WTF? $$f"; \
 		fi \
 	done;
-
-# mini hack
-install: $(all_targets) $(install_targets) install-http-headers
 
