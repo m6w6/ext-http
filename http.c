@@ -429,6 +429,7 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_colspan_header(2, "Request Methods");
 	{
 		unsigned i;
+		HashPosition pos;
 		zval **custom_method;
 		phpstr *known_request_methods = phpstr_new();
 		phpstr *custom_request_methods = phpstr_new();
@@ -437,7 +438,7 @@ PHP_MINFO_FUNCTION(http)
 			phpstr_appendl(known_request_methods, http_request_method_name(i));
 			phpstr_appends(known_request_methods, ", ");
 		}
-		FOREACH_HASH_VAL(&HTTP_G(request).methods.custom, custom_method) {
+		FOREACH_HASH_VAL(pos, &HTTP_G(request).methods.custom, custom_method) {
 			phpstr_append(custom_request_methods, Z_STRVAL_PP(custom_method), Z_STRLEN_PP(custom_method));
 			phpstr_appends(custom_request_methods, ", ");
 		}

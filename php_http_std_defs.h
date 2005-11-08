@@ -129,31 +129,31 @@ typedef int STATUS;
 	STD_PHP_INI_ENTRY_EX(entry, default, scope, updater, global, zend_http_globals, http_globals, displayer)
 
 /* {{{ arrays */
-#define FOREACH_VAL(array, val) FOREACH_HASH_VAL(Z_ARRVAL_P(array), val)
-#define FOREACH_HASH_VAL(hash, val) \
-	for (	zend_hash_internal_pointer_reset(hash); \
-			zend_hash_get_current_data(hash, (void **) &val) == SUCCESS; \
-			zend_hash_move_forward(hash))
+#define FOREACH_VAL(pos, array, val) FOREACH_HASH_VAL(pos, Z_ARRVAL_P(array), val)
+#define FOREACH_HASH_VAL(pos, hash, val) \
+	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
+			zend_hash_get_current_data_ex(hash, (void **) &val, &pos) == SUCCESS; \
+			zend_hash_move_forward_ex(hash, &pos))
 
-#define FOREACH_KEY(array, strkey, numkey) FOREACH_HASH_KEY(Z_ARRVAL_P(array), strkey, numkey)
-#define FOREACH_HASH_KEY(hash, strkey, numkey) \
-	for (	zend_hash_internal_pointer_reset(hash); \
-			zend_hash_get_current_key(hash, &strkey, &numkey, 0) != HASH_KEY_NON_EXISTANT; \
-			zend_hash_move_forward(hash)) \
+#define FOREACH_KEY(pos, array, strkey, numkey) FOREACH_HASH_KEY(pos, Z_ARRVAL_P(array), strkey, numkey)
+#define FOREACH_HASH_KEY(pos, hash, strkey, numkey) \
+	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
+			zend_hash_get_current_key_ex(hash, &strkey, NULL, &numkey, 0, &pos) != HASH_KEY_NON_EXISTANT; \
+			zend_hash_move_forward_ex(hash, &pos)) \
 
-#define FOREACH_KEYVAL(array, strkey, numkey, val) FOREACH_HASH_KEYVAL(Z_ARRVAL_P(array), strkey, numkey, val)
-#define FOREACH_HASH_KEYVAL(hash, strkey, numkey, val) \
-	for (	zend_hash_internal_pointer_reset(hash); \
-			zend_hash_get_current_key(hash, &strkey, &numkey, 0) != HASH_KEY_NON_EXISTANT && \
-			zend_hash_get_current_data(hash, (void **) &val) == SUCCESS; \
-			zend_hash_move_forward(hash))
+#define FOREACH_KEYVAL(pos, array, strkey, numkey, val) FOREACH_HASH_KEYVAL(pos, Z_ARRVAL_P(array), strkey, numkey, val)
+#define FOREACH_HASH_KEYVAL(pos, hash, strkey, numkey, val) \
+	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
+			zend_hash_get_current_key_ex(hash, &strkey, NULL, &numkey, 0, &pos) != HASH_KEY_NON_EXISTANT && \
+			zend_hash_get_current_data_ex(hash, (void **) &val, &pos) == SUCCESS; \
+			zend_hash_move_forward_ex(hash, &pos))
 
-#define FOREACH_KEYLENVAL(array, strkey, keylen, numkey, val) FOREACH_HASH_KEYVAL(Z_ARRVAL_P(array), strkey, keylen, numkey, val)
-#define FOREACH_HASH_KEYLENVAL(hash, strkey, keylen, numkey, val) \
-	for (	zend_hash_internal_pointer_reset(hash); \
-			zend_hash_get_current_key_ex(hash, &strkey, &keylen, &numkey, 0, NULL) != HASH_KEY_NON_EXISTANT && \
-			zend_hash_get_current_data(hash, (void **) &val) == SUCCESS; \
-			zend_hash_move_forward(hash))
+#define FOREACH_KEYLENVAL(pos, array, strkey, keylen, numkey, val) FOREACH_HASH_KEYVAL(pos, Z_ARRVAL_P(array), strkey, keylen, numkey, val)
+#define FOREACH_HASH_KEYLENVAL(pos, hash, strkey, keylen, numkey, val) \
+	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
+			zend_hash_get_current_key_ex(hash, &strkey, &keylen, &numkey, 0, &pos) != HASH_KEY_NON_EXISTANT && \
+			zend_hash_get_current_data_ex(hash, (void **) &val, &pos) == SUCCESS; \
+			zend_hash_move_forward_ex(hash, &pos))
 
 #define array_copy(src, dst)	zend_hash_copy(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
 #define array_merge(src, dst)	zend_hash_merge(Z_ARRVAL_P(dst), Z_ARRVAL_P(src), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *), 1)
@@ -163,11 +163,12 @@ typedef int STATUS;
 		uint klen; \
 		char *key = NULL; \
 		zval **data; \
+		HashPosition pos; \
 		 \
-		for (	zend_hash_internal_pointer_reset(Z_ARRVAL_P(src)); \
-				zend_hash_get_current_key_ex(Z_ARRVAL_P(src), &key, &klen, &idx, 0, NULL) != HASH_KEY_NON_EXISTANT && \
-				zend_hash_get_current_data(Z_ARRVAL_P(src), (void **) &data) == SUCCESS; \
-				zend_hash_move_forward(Z_ARRVAL_P(src))) \
+		for (	zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(src), &pos); \
+				zend_hash_get_current_key_ex(Z_ARRVAL_P(src), &key, &klen, &idx, 0, &pos) != HASH_KEY_NON_EXISTANT && \
+				zend_hash_get_current_data_ex(Z_ARRVAL_P(src), (void **) &data, &pos) == SUCCESS; \
+				zend_hash_move_forward_ex(Z_ARRVAL_P(src), &pos)) \
 		{ \
 			if (key) { \
 				zval **tmp; \

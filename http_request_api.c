@@ -277,12 +277,15 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 		char *key = NULL;
 		ulong idx;
 		zval **data;
+		HashPosition pos;
 		struct curl_httppost *http_post_data[2] = {NULL, NULL};
 
 		/* normal data */
-		FOREACH_HASH_KEYVAL(fields, key, idx, data) {
+		FOREACH_HASH_KEYVAL(pos, fields, key, idx, data) {
 			CURLcode err;
 			if (key) {
+				zval *orig = *data;
+				
 				convert_to_string_ex(data);
 				err = curl_formadd(&http_post_data[0], &http_post_data[1],
 					CURLFORM_COPYNAME,			key,
@@ -290,6 +293,11 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 					CURLFORM_CONTENTSLENGTH,	(long) Z_STRLEN_PP(data),
 					CURLFORM_END
 				);
+				
+				if (orig != *data) {
+					zval_ptr_dtor(data);
+				}
+				
 				if (CURLE_OK != err) {
 					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post fields: %s", curl_easy_strerror(err));
 					curl_formfree(http_post_data[0]);
@@ -302,12 +310,14 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 		}
 
 		/* file data */
-		FOREACH_HASH_VAL(files, data) {
+		FOREACH_HASH_VAL(pos, files, data) {
 			zval **file, **type, **name;
 			
-			if (	SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "name", sizeof("name"), (void **) &name) ||
-					SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "type", sizeof("type"), (void **) &type) ||
-					SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "file", sizeof("file"), (void **) &file)) {
+			if (Z_TYPE_PP(data) != IS_ARRAY) {
+				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Unrecognized type of post file array entry");
+			} else if (	SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "name", sizeof("name"), (void **) &name) ||
+						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "type", sizeof("type"), (void **) &type) ||
+						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "file", sizeof("file"), (void **) &file)) {
 				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Post file array entry misses either 'name', 'type' or 'file' entry");
 			} else {
 				CURLcode err = curl_formadd(&http_post_data[0], &http_post_data[1],
@@ -493,12 +503,13 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	if (zoption = http_curl_getopt(options, "headers", IS_ARRAY)) {
 		char *header_key;
 		ulong header_idx;
+		HashPosition pos;
 		struct curl_slist *headers = NULL;
 
-		FOREACH_KEY(zoption, header_key, header_idx) {
+		FOREACH_KEY(pos, zoption, header_key, header_idx) {
 			if (header_key) {
 				zval **header_val;
-				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &header_val)) {
+				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void **) &header_val, &pos)) {
 					char header[1024] = {0};
 					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
 					headers = curl_slist_append(headers, http_request_data_copy(COPY_STRING, header));
@@ -518,12 +529,13 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	if (zoption = http_curl_getopt(options, "cookies", IS_ARRAY)) {
 		char *cookie_key = NULL;
 		ulong cookie_idx = 0;
+		HashPosition pos;
 		phpstr *qstr = phpstr_new();
 
-		FOREACH_KEY(zoption, cookie_key, cookie_idx) {
+		FOREACH_KEY(pos, zoption, cookie_key, cookie_idx) {
 			if (cookie_key) {
 				zval **cookie_val;
-				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &cookie_val)) {
+				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void **) &cookie_val, &pos)) {
 					phpstr_appendf(qstr, "%s=%s; ", cookie_key, Z_STRVAL_PP(cookie_val));
 				}
 
@@ -596,8 +608,9 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		ulong idx;
 		char *key = NULL;
 		zval **param;
+		HashPosition pos;
 
-		FOREACH_KEYVAL(zoption, key, idx, param) {
+		FOREACH_KEYVAL(pos, zoption, key, idx, param) {
 			if (key) {
 				HTTP_CURL_OPT_SSL_STRING(CERT);
 #if LIBCURL_VERSION_NUM >= 0x070903

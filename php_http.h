@@ -34,9 +34,6 @@ extern int http_module_number;
 
 ZEND_BEGIN_MODULE_GLOBALS(http)
 
-#ifdef ZEND_ENGINE_2
-	zend_bool only_exceptions;
-#endif
 	struct _http_globals_etag {
 		long mode;
 		void *ctx;
@@ -77,6 +74,10 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 #	endif
 #endif /* HTTP_HAVE_CURL */
 	} request;
+
+#ifdef ZEND_ENGINE_2
+	zend_bool only_exceptions;
+#endif
 
 ZEND_END_MODULE_GLOBALS(http)
 

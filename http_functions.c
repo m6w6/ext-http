@@ -137,9 +137,10 @@ PHP_FUNCTION(http_build_uri)
 		} \
 		\
 		if (rs_array) { \
+			HashPosition pos; \
 			zval **value; \
 			 \
-			FOREACH_VAL(supported, value) { \
+			FOREACH_VAL(pos, supported, value) { \
 				convert_to_string_ex(value); \
 				add_assoc_double(rs_array, Z_STRVAL_PP(value), 1.0); \
 			} \

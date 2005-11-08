@@ -214,6 +214,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 	uint len = 0;
 	ulong idx = 0;
 	zval **data = NULL;
+	HashPosition pos;
 
 	if (!ht || !str) {
 		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid parameters");
@@ -223,7 +224,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 		return SUCCESS;
 	}
 	
-	FOREACH_HASH_KEYLENVAL(ht, key, len, idx, data) {
+	FOREACH_HASH_KEYLENVAL(pos, ht, key, len, idx, data) {
 		char *encoded_key;
 		int encoded_len;
 		phpstr new_prefix;

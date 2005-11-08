@@ -348,6 +348,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 					}
 				} else {
 					/* multi range */
+					HashPosition pos;
 					zval **range, **begin, **end;
 					const char *content_type = HTTP_G(send).content_type;
 					char boundary_str[32], range_header_str[256];
@@ -363,7 +364,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 						content_type = "application/x-octetstream";
 					}
 					
-					FOREACH_HASH_VAL(&ranges, range) {
+					FOREACH_HASH_VAL(pos, &ranges, range) {
 						if (	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void **) &begin) &&
 								SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void **) &end)) {
 							char preface_str[512];

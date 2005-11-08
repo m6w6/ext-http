@@ -148,8 +148,9 @@ PHP_HTTP_API ulong _http_request_method_exists(zend_bool by_name, ulong id, cons
 			zval **data;
 			char *key;
 			ulong idx;
+			HashPosition pos;
 
-			FOREACH_HASH_KEYVAL(&HTTP_G(request).methods.custom, key, idx, data) {
+			FOREACH_HASH_KEYVAL(pos, &HTTP_G(request).methods.custom, key, idx, data) {
 				if (!strcmp(name, Z_STRVAL_PP(data))) {
 					return idx + HTTP_MAX_REQUEST_METHOD;
 				}

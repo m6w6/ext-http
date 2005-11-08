@@ -293,7 +293,7 @@ PHP_METHOD(HttpResponse, setHeader)
 	zend_bool replace = 1;
 	char *name;
 	int name_len = 0;
-	zval *value = NULL;
+	zval *value = NULL, *orig = NULL;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz/!|b", &name, &name_len, &value, &replace)) {
 		RETURN_FALSE;
@@ -314,20 +314,31 @@ PHP_METHOD(HttpResponse, setHeader)
 	/* send multiple header if replace is false and value is an array */
 	if (!replace && Z_TYPE_P(value) == IS_ARRAY) {
 		zval **data;
+		HashPosition pos;
 		
-		FOREACH_VAL(value, data) {
+		FOREACH_VAL(pos, value, data) {
+			zval *orig = *data;
+			
 			convert_to_string_ex(data);
 			if (SUCCESS != http_send_header_ex(name, name_len, Z_STRVAL_PP(data), Z_STRLEN_PP(data), 0, NULL)) {
+				if (orig != *data) {
+					zval_ptr_dtor(data);
+				}
 				RETURN_FALSE;
+			}
+			if (orig != *data) {
+				zval_ptr_dtor(data);
 			}
 		}
 		RETURN_TRUE;
 	}
 	/* send standard header */
-	if (Z_TYPE_P(value) != IS_STRING) {
-		convert_to_string_ex(&value);
+	orig = value;
+	convert_to_string_ex(&value);
+	RETVAL_SUCCESS(http_send_header_ex(name, name_len, Z_STRVAL_P(value), Z_STRLEN_P(value), replace, NULL));
+	if (orig != value) {
+		zval_ptr_dtor(&value);
 	}
-	RETURN_SUCCESS(http_send_header_ex(name, name_len, Z_STRVAL_P(value), Z_STRLEN_P(value), replace, NULL));
 }
 /* }}} */
 

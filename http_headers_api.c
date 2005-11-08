@@ -69,9 +69,10 @@ static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 char *_http_negotiate_language_func(const char *test, double *quality, HashTable *supported TSRMLS_DC)
 {
 	zval **value;
+	HashPosition pos;
 	const char *dash_test;
 	
-	FOREACH_HASH_VAL(supported, value) {
+	FOREACH_HASH_VAL(pos, supported, value) {
 #if HTTP_DBG_NEG
 		fprintf(stderr, "strcasecmp('%s', '%s')\n", Z_STRVAL_PP(value), test);
 #endif
@@ -82,7 +83,7 @@ char *_http_negotiate_language_func(const char *test, double *quality, HashTable
 	
 	/* no distinct match found, so try primaries */
 	if (dash_test = strchr(test, '-')) {
-		FOREACH_HASH_VAL(supported, value) {
+		FOREACH_HASH_VAL(pos, supported, value) {
 			int len = dash_test - test;
 #if HTTP_DBG_NEG
 			fprintf(stderr, "strncascmp('%s', '%s', %d)\n", Z_STRVAL_PP(value), test, len);
@@ -104,8 +105,9 @@ char *_http_negotiate_language_func(const char *test, double *quality, HashTable
 char *_http_negotiate_default_func(const char *test, double *quality, HashTable *supported TSRMLS_DC)
 {
 	zval **value;
+	HashPosition pos;
 	
-	FOREACH_HASH_VAL(supported, value) {
+	FOREACH_HASH_VAL(pos, supported, value) {
 #if HTTP_DBG_NEG
 		fprintf(stderr, "strcasecmp('%s', '%s')\n", Z_STRVAL_PP(value), test);
 #endif
@@ -144,12 +146,13 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 		
 		if (zend_hash_num_elements(Z_ARRVAL(ex_arr)) > 0) {
 			int i = 0;
+			HashPosition pos;
 			zval **entry, array;
 			
 			INIT_PZVAL(&array);
 			array_init(&array);
 			
-			FOREACH_HASH_VAL(Z_ARRVAL(ex_arr), entry) {
+			FOREACH_HASH_VAL(pos, Z_ARRVAL(ex_arr), entry) {
 				double quality;
 				char *selected, *identifier;
 				const char *separator;
@@ -431,11 +434,12 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 	char *key = NULL;
 	ulong idx = 0;
 	zval array, **hsv;
+	HashPosition pos;
 
 	Z_ARRVAL(array) = headers;
 
 	if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &hsv)) {
-		FOREACH_KEY(*hsv, key, idx) {
+		FOREACH_KEY(pos, *hsv, key, idx) {
 			if (key && !strncmp(key, "HTTP_", 5)) {
 				zval **header;
 	
@@ -444,7 +448,7 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 					key = pretty_key(key, strlen(key), 1, 1);
 				}
 	
-				zend_hash_get_current_data(Z_ARRVAL_PP(hsv), (void **) &header);
+				zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void **) &header, &pos);
 				add_assoc_stringl(&array, key, Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
 				key = NULL;
 			}
@@ -460,16 +464,17 @@ PHP_HTTP_API zend_bool _http_match_request_header_ex(const char *header, const c
 	ulong idx;
 	zend_bool result = 0;
 	HashTable headers;
+	HashPosition pos;
 
 	name = pretty_key(estrdup(header), strlen(header), 1, 1);
 	zend_hash_init(&headers, 0, NULL, ZVAL_PTR_DTOR, 0);
 	http_get_request_headers_ex(&headers, 1);
 
-	FOREACH_HASH_KEY(&headers, key, idx) {
+	FOREACH_HASH_KEY(pos, &headers, key, idx) {
 		if (key && (!strcmp(key, name))) {
 			zval **data;
 
-			if (SUCCESS == zend_hash_get_current_data(&headers, (void **) &data)) {
+			if (SUCCESS == zend_hash_get_current_data_ex(&headers, (void **) &data, &pos)) {
 				result = (match_case ? strcmp(Z_STRVAL_PP(data), value) : strcasecmp(Z_STRVAL_PP(data), value)) ? 0 : 1;
 			}
 			break;

@@ -778,6 +778,7 @@ PHP_METHOD(HttpRequest, setOptions)
 {
 	char *key = NULL;
 	ulong idx = 0;
+	HashPosition pos;
 	zval *opts = NULL, *old_opts, **opt;
 	getObject(http_request_object, obj);
 
@@ -795,7 +796,7 @@ PHP_METHOD(HttpRequest, setOptions)
 	}
 	
 	/* some options need extra attention -- thus cannot use array_merge() directly */
-	FOREACH_KEYVAL(opts, key, idx, opt) {
+	FOREACH_KEYVAL(pos, opts, key, idx, opt) {
 		if (key) {
 			if (!strcmp(key, "headers")) {
 				zval **headers;
@@ -1664,15 +1665,17 @@ PHP_METHOD(HttpRequest, getResponseCookie)
 			ulong idx = 0;
 			char *key = NULL;
 			zval **header = NULL;
+			HashPosition pos1;
 
-			convert_to_array_ex(headers);
-			FOREACH_HASH_KEYVAL(Z_ARRVAL_PP(headers), key, idx, header) {
+			convert_to_array(*headers);
+			FOREACH_HASH_KEYVAL(pos1, Z_ARRVAL_PP(headers), key, idx, header) {
 				if (key && !strcasecmp(key, "Set-Cookie")) {
 					/* several cookies? */
 					if (Z_TYPE_PP(header) == IS_ARRAY) {
 						zval **cookie;
+						HashPosition pos2;
 
-						FOREACH_HASH_VAL(Z_ARRVAL_PP(header), cookie) {
+						FOREACH_HASH_VAL(pos2, Z_ARRVAL_PP(header), cookie) {
 							zval *cookie_hash;
 							MAKE_STD_ZVAL(cookie_hash);
 							array_init(cookie_hash);

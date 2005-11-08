@@ -305,6 +305,7 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 	char *key, *data;
 	ulong idx;
 	zval **header;
+	HashPosition pos1;
 
 	phpstr_init_ex(&str, 4096, 0);
 
@@ -330,7 +331,7 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 		break;
 	}
 
-	FOREACH_HASH_KEYVAL(&msg->hdrs, key, idx, header) {
+	FOREACH_HASH_KEYVAL(pos1, &msg->hdrs, key, idx, header) {
 		if (key) {
 			zval **single_header;
 
@@ -341,9 +342,12 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 				break;
 
 				case IS_ARRAY:
-					FOREACH_VAL(*header, single_header) {
+				{
+					HashPosition pos2;
+					FOREACH_VAL(pos2, *header, single_header) {
 						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(single_header));
 					}
+				}
 				break;
 			}
 
@@ -443,14 +447,16 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 			char *key;
 			ulong idx;
 			zval **val;
+			HashPosition pos1;
 
-			FOREACH_HASH_KEYVAL(&message->hdrs, key, idx, val) {
+			FOREACH_HASH_KEYVAL(pos1, &message->hdrs, key, idx, val) {
 				if (key) {
 					if (Z_TYPE_PP(val) == IS_ARRAY) {
 						zend_bool first = 1;
 						zval **data;
+						HashPosition pos2;
 						
-						FOREACH_VAL(*val, data) {
+						FOREACH_VAL(pos2, *val, data) {
 							http_send_header_ex(key, strlen(key), Z_STRVAL_PP(data), Z_STRLEN_PP(data), first, NULL);
 							first = 0;
 						}
