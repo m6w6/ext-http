@@ -160,6 +160,10 @@ PHP_HTTP_API STATUS _http_cache_last_modified(time_t last_modified,
 {
 	char *sent_header = NULL;
 	
+	if (SG(headers_sent)) {
+		return FAILURE;
+	}
+	
 	if (cc_len && (SUCCESS != http_send_cache_control(cache_control, cc_len))) {
 		return FAILURE;
 	}
@@ -183,6 +187,10 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 	const char *cache_control, size_t cc_len TSRMLS_DC)
 {
 	char *sent_header = NULL;
+	
+	if (SG(headers_sent)) {
+		return FAILURE;
+	}
 	
 	if (cc_len && (SUCCESS != http_send_cache_control(cache_control, cc_len))) {
 		return FAILURE;

@@ -439,6 +439,8 @@ PHP_FUNCTION(http_cache_last_modified)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &last_modified) != SUCCESS) {
 		RETURN_FALSE;
 	}
+	
+	HTTP_CHECK_HEADERS_SENT(RETURN_FALSE);
 
 	t = (long) time(NULL);
 
@@ -486,6 +488,8 @@ PHP_FUNCTION(http_cache_etag)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &etag, &etag_len) != SUCCESS) {
 		RETURN_FALSE;
 	}
+	
+	HTTP_CHECK_HEADERS_SENT(RETURN_FALSE);
 
 	RETURN_SUCCESS(http_cache_etag(etag, etag_len, HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL)));
 }

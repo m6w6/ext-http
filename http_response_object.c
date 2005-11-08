@@ -1081,13 +1081,11 @@ PHP_METHOD(HttpResponse, send)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &clean_ob)) {
 		RETURN_FALSE;
 	}
-	if (SG(headers_sent)) {
-		http_error(HE_WARNING, HTTP_E_RESPONSE, "Cannot send HttpResponse, headers have already been sent");
-		RETURN_FALSE;
-	}
+	
+	HTTP_CHECK_HEADERS_SENT(RETURN_FALSE);
 
 	sent = GET_STATIC_PROP(sent);
-	if (zval_is_true(sent)) {
+	if (Z_LVAL_P(sent)) {
 		http_error(HE_WARNING, HTTP_E_RESPONSE, "Cannot send HttpResponse, response has already been sent");
 		RETURN_FALSE;
 	} else {
@@ -1140,6 +1138,10 @@ PHP_METHOD(HttpResponse, send)
 		if (etag_p) zval_ptr_dtor(&etag_p);
 		if (lmod_p) zval_ptr_dtor(&lmod_p);
 		if (cctl_p) zval_ptr_dtor(&cctl_p);
+	
+		if (php_ob_handler_used("blackhole" TSRMLS_CC)) {
+			RETURN_TRUE;
+		}
 	}
 
 	/* content type */
@@ -1238,6 +1240,8 @@ PHP_METHOD(HttpResponse, send)
 PHP_METHOD(HttpResponse, capture)
 {
 	NO_ARGS;
+	
+	HTTP_CHECK_HEADERS_SENT(RETURN_FALSE);
 
 	UPD_STATIC_PROP(long, catch, 1);
 

@@ -72,6 +72,21 @@ extern void _http_error_ex(long type TSRMLS_DC, long code, const char *format, .
 		action; \
 	}
 
+#define HTTP_CHECK_HEADERS_SENT(action) \
+	if (SG(headers_sent) && !SG(request_info).no_headers) { \
+		char *output_start_filename = php_get_output_start_filename(TSRMLS_C); \
+		int output_start_lineno = php_get_output_start_lineno(TSRMLS_C); \
+		 \
+		if (output_start_filename) { \
+			http_error_ex(HE_WARNING, HTTP_E_HEADER, "Cannot modify header information - headers already sent by (output started at %s:%d)", \
+				output_start_filename, output_start_lineno); \
+		} else { \
+			http_error(HE_WARNING, HTTP_E_HEADER, "Cannot modify header information - headers already sent"); \
+		} \
+		action; \
+	}
+
+
 #define http_log(f, i, m) _http_log_ex((f), (i), (m) TSRMLS_CC)
 extern void http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC);
 

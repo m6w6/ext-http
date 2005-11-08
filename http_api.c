@@ -246,6 +246,12 @@ void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)
 }
 /* }}} */
 
+static void http_ob_blackhole(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
+{
+	*handled_output = ecalloc(1,1);
+	*handled_output_len = 0;
+}
+
 /* {{{ STATUS http_exit(int, char*, char*) */
 STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header TSRMLS_DC)
 {
@@ -257,6 +263,7 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		return FAILURE;
 	}
 	
+	php_end_ob_buffers(0 TSRMLS_CC);
 	if (php_header(TSRMLS_C) && body) {
 		PHPWRITE(body, strlen(body));
 	}
@@ -275,8 +282,12 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 	STR_FREE(header);
 	STR_FREE(body);
 	
-	zend_bailout();
-	/* fake */
+	if (HTTP_G(force_exit)) {
+		zend_bailout();
+	} else {
+		php_ob_set_internal_handler(http_ob_blackhole, 4096, "blackhole", 0 TSRMLS_CC);
+	}
+	
 	return SUCCESS;
 }
 /* }}} */

@@ -79,6 +79,8 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	zend_bool only_exceptions;
 #endif
 
+	zend_bool force_exit;
+
 ZEND_END_MODULE_GLOBALS(http)
 
 #ifdef ZTS

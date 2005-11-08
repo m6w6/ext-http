@@ -258,10 +258,11 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.redirect_log", "", PHP_INI_ALL, OnUpdateString, log.redirect)
 	HTTP_PHP_INI_ENTRY("http.allowed_methods_log", "", PHP_INI_ALL, OnUpdateString, log.allowed_methods)
 	HTTP_PHP_INI_ENTRY("http.composite_log", "", PHP_INI_ALL, OnUpdateString, log.composite)
+	HTTP_PHP_INI_ENTRY_EX("http.etag_mode", "-2", PHP_INI_ALL, OnUpdateLong, http_etag_mode_displayer, etag.mode)
 #ifdef ZEND_ENGINE_2
 	HTTP_PHP_INI_ENTRY("http.only_exceptions", "0", PHP_INI_ALL, OnUpdateBool, only_exceptions)
 #endif
-	HTTP_PHP_INI_ENTRY_EX("http.etag_mode", "-2", PHP_INI_ALL, OnUpdateLong, http_etag_mode_displayer, etag.mode)
+	HTTP_PHP_INI_ENTRY("http.force_exit", "1", PHP_INI_ALL, OnUpdateBool, force_exit)
 PHP_INI_END()
 /* }}} */
 

@@ -39,6 +39,8 @@
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
++ Added INI setting http.force_exit which can be used to disable script termination
+  in case of redirects and positive cache hits (instead, standard output will be discarded)
 + Classes HttpMessage and HttpRequestPool implement Countable if PHP >= 5.1 with SPL is available
 + Class HttpMessage implements Serializable if PHP >= 5.1 is available
 
