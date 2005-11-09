@@ -18,6 +18,8 @@
 #endif
 #include "php.h"
 
+#include "zend_extensions.h"
+
 #include "SAPI.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
@@ -128,9 +130,23 @@ zend_function_entry http_functions[] = {
 };
 /* }}} */
 
+/* {{{ http_module_dep */
+#if ZEND_EXTENSION_API_NO >= 220050617
+static zend_module_dep http_module_dep[] = {
+#	ifdef HAVE_SPL
+	ZEND_MOD_REQUIRED("spl")
+#	endif
+	{NULL, NULL, NULL, 0}
+};
+#endif
+/* }}} */
+
 /* {{{ http_module_entry */
 zend_module_entry http_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
+#if ZEND_EXTENSION_API_NO >= 220050617
+	STANDARD_MODULE_HEADER_EX, NULL,
+	http_module_dep,
+#else
 	STANDARD_MODULE_HEADER,
 #endif
 	"http",
@@ -140,9 +156,7 @@ zend_module_entry http_module_entry = {
 	PHP_RINIT(http),
 	PHP_RSHUTDOWN(http),
 	PHP_MINFO(http),
-#if ZEND_MODULE_API_NO >= 20010901
 	HTTP_PEXT_VERSION,
-#endif
 	STANDARD_MODULE_PROPERTIES
 };
 /* }}} */

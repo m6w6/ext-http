@@ -202,9 +202,9 @@ dnl ----
 		php_http_encoding_api.h phpstr/phpstr.h"
 	PHP_SUBST([PHP_HTTP_HEADERS])
 
-	dnl outside src dir
+	dnl outside src dir, adds install-http target
 	PHP_ADD_MAKEFILE_FRAGMENT
-	dnl within src dir
+	dnl within src dir, installs http headers
 	ifdef([PHP_INSTALL_HEADERS], [PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADER_FILES)], [ ])
 
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
