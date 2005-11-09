@@ -32,7 +32,8 @@
 #ifndef WONKY
 #	include "zend_interfaces.h"
 #	if defined(HAVE_SPL)
-#		include "ext/spl/spl_array.h"
+/* SPL doesn't install its headers */
+extern PHPAPI zend_class_entry *spl_ce_Countable;
 #	endif
 #endif
 

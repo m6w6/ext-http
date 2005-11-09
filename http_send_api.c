@@ -373,7 +373,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 #define HTTP_RANGE_PREFACE \
 	HTTP_CRLF "--%s" \
 	HTTP_CRLF "Content-Type: %s" \
-	HTTP_CRLF "Content-Range: bytes %ld-%ld/%lu" \
+	HTTP_CRLF "Content-Range: bytes %ld-%ld/%zu" \
 	HTTP_CRLF HTTP_CRLF
 							
 							preface_len = snprintf(preface_str, lenof(preface_str), HTTP_RANGE_PREFACE, boundary_str, content_type, Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);

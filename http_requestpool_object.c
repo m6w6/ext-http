@@ -29,8 +29,8 @@
 
 #include "zend_interfaces.h"
 #if defined(HAVE_SPL) && !defined(WONKY)
-#	include "ext/spl/spl_array.h"
-#	include "ext/spl/spl_iterators.h"
+/* SPL doesn't install its headers */
+extern PHPAPI zend_class_entry *spl_ce_Countable;
 #endif
 
 #ifdef PHP_WIN32
@@ -110,7 +110,7 @@ PHP_MINIT_FUNCTION(http_requestpool_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequestPool, http_requestpool_object, NULL, 0);
 #if defined(HAVE_SPL) && !defined(WONKY)
-	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 2, spl_ce_Countable, spl_ce_Iterator);
+	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 2, spl_ce_Countable, zend_ce_iterator);
 #else
 	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 1, zend_ce_iterator);
 #endif
