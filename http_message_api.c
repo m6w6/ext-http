@@ -160,7 +160,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				char *tmp;
 				int tmp_len;
 
-				tmp_len = (int) spprintf(&tmp, 0, "%lu", (ulong) decoded_len);
+				tmp_len = (int) spprintf(&tmp, 0, "%zu", decoded_len);
 				MAKE_STD_ZVAL(len);
 				ZVAL_STRINGL(len, tmp, tmp_len, 0);
 
@@ -264,7 +264,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				char *tmp;
 				int tmp_len;
 				
-				tmp_len = (int) spprintf(&tmp, 0, "%lu", (ulong) decoded_len);
+				tmp_len = (int) spprintf(&tmp, 0, "%zu", decoded_len);
 				MAKE_STD_ZVAL(len);
 				ZVAL_STRINGL(len, tmp, tmp_len, 0);
 

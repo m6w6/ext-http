@@ -72,7 +72,7 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 				return encoded + encoded_len;
 			} else {
 				efree(*decoded);
-				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected chunk size at pos %lu of %lu but got trash", (ulong) (n_ptr - encoded), (ulong) encoded_len);
+				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected chunk size at pos %tu of %zu but got trash", n_ptr - encoded, encoded_len);
 				return NULL;
 			}
 		}
@@ -85,16 +85,16 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 		/* there should be CRLF after the chunk size, but we'll ignore SP+ too */
 		if (*n_ptr && !eol_match(&n_ptr, &eol_len)) {
 			if (eol_len == 2) {
-				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected CRLF at pos %lu of %lu but got 0x%02X 0x%02X", (ulong) (n_ptr - encoded), (ulong) encoded_len, *n_ptr, *(n_ptr + 1));
+				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected CRLF at pos %tu of %zu but got 0x%02X 0x%02X", n_ptr - encoded, encoded_len, *n_ptr, *(n_ptr + 1));
 			} else {
-				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected LF at pos %lu of %lu but got 0x%02X", (ulong) (n_ptr - encoded), (ulong) encoded_len, *n_ptr);
+				http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Expected LF at pos %tu of %zu but got 0x%02X", n_ptr - encoded, encoded_len, *n_ptr);
 			}
 		}
 		n_ptr += eol_len;
 		
 		/* chunk size pretends more data than we actually got, so it's probably a truncated message */
 		if (chunk_len > (rest = encoded + encoded_len - n_ptr)) {
-			http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Truncated message: chunk size %lu exceeds remaining data size %lu at pos %lu of %lu", chunk_len, rest, (ulong) (n_ptr - encoded), (ulong) encoded_len);
+			http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Truncated message: chunk size %lu exceeds remaining data size %lu at pos %tu of %zu", chunk_len, rest, n_ptr - encoded, encoded_len);
 			chunk_len = rest;
 		}
 
@@ -604,7 +604,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			if (content_length) {
 				char cl_header_str[128];
 				size_t cl_header_len;
-				cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %lu", (ulong) content_length);
+				cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %zu", content_length);
 				http_send_header_string_ex(cl_header_str, cl_header_len, 1);
 			}
 		} else {
