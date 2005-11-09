@@ -474,27 +474,19 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 /* {{{ zend_bool http_match_request_header(char *, char *) */
 PHP_HTTP_API zend_bool _http_match_request_header_ex(const char *header, const char *value, zend_bool match_case TSRMLS_DC)
 {
-	char *name, *key = NULL;
-	ulong idx;
+	char *name;
+	uint name_len = strlen(header);
 	zend_bool result = 0;
 	HashTable headers;
-	HashPosition pos;
+	zval **data;
 
-	name = pretty_key(estrdup(header), strlen(header), 1, 1);
+	name = pretty_key(estrndup(header, name_len), name_len, 1, 1);
 	zend_hash_init(&headers, 0, NULL, ZVAL_PTR_DTOR, 0);
 	http_get_request_headers_ex(&headers, 1);
 
-	FOREACH_HASH_KEY(pos, &headers, key, idx) {
-		if (key && (!strcmp(key, name))) {
-			zval **data;
-
-			if (SUCCESS == zend_hash_get_current_data_ex(&headers, (void **) &data, &pos)) {
-				result = (match_case ? strcmp(Z_STRVAL_PP(data), value) : strcasecmp(Z_STRVAL_PP(data), value)) ? 0 : 1;
-			}
-			break;
-		}
+	if (SUCCESS == zend_hash_find(&headers, name, name_len+1, (void **) &data)) {
+		result = (match_case ? strcmp(Z_STRVAL_PP(data), value) : strcasecmp(Z_STRVAL_PP(data), value)) ? 0 : 1;
 	}
-
 	zend_hash_destroy(&headers);
 	efree(name);
 
