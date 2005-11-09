@@ -188,7 +188,8 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		if (c = http_message_header(msg, "Content-Range")) {
 			ulong total = 0, start = 0, end = 0, len = 0;
 			
-			if (!strncasecmp(Z_STRVAL_P(c), "bytes=", lenof("bytes="))) {
+			if (!strncasecmp(Z_STRVAL_P(c), "bytes", lenof("bytes")) && 
+					(Z_STRVAL_P(c)[lenof("bytes")] == '=' || Z_STRVAL_P(c)[lenof("bytes")] == ' ')) {
 				char *total_at = NULL, *end_at = NULL;
 				char *start_at = Z_STRVAL_P(c) + lenof("bytes=");
 				

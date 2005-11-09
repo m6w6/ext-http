@@ -46,6 +46,7 @@
 
 * Fixed a bug that caused a warning about an invalid curl handle at HttpRequestPool destruction
 * Fixed a bug with http_get_request_headers() modifying $_SERVER array
+* Fixed a bug which required "=" in Content-Range response message headers
 ]]></notes>
  <contents>
   <dir name="/">
