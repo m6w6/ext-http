@@ -45,6 +45,7 @@
 + Class HttpMessage implements Serializable if PHP >= 5.1 is available
 
 * Fixed a bug that caused a warning about an invalid curl handle at HttpRequestPool destruction
+* Fixed a bug with http_get_request_headers() modifying $_SERVER array
 ]]></notes>
  <contents>
   <dir name="/">

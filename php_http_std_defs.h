@@ -141,6 +141,12 @@ typedef int STATUS;
 			zend_hash_get_current_key_ex(hash, &strkey, NULL, &numkey, 0, &pos) != HASH_KEY_NON_EXISTANT; \
 			zend_hash_move_forward_ex(hash, &pos)) \
 
+#define FOREACH_KEYLEN(pos, array, strkey, keylen, numkey) FOREACH_HASH_KEYLEN(pos, Z_ARRVAL_P(array), strkey, keylen, numkey)
+#define FOREACH_HASH_KEYLEN(pos, hash, strkey, keylen, numkey) \
+	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
+			zend_hash_get_current_key_ex(hash, &strkey, &keylen, &numkey, 0, &pos) != HASH_KEY_NON_EXISTANT; \
+			zend_hash_move_forward_ex(hash, &pos)) \
+
 #define FOREACH_KEYVAL(pos, array, strkey, numkey, val) FOREACH_HASH_KEYVAL(pos, Z_ARRVAL_P(array), strkey, numkey, val)
 #define FOREACH_HASH_KEYVAL(pos, hash, strkey, numkey, val) \
 	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \

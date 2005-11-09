@@ -433,24 +433,38 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 {
 	char *key = NULL;
 	ulong idx = 0;
+	uint keylen = 0;
 	zval array, **hsv;
 	HashPosition pos;
 
 	Z_ARRVAL(array) = headers;
 
 	if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &hsv)) {
-		FOREACH_KEY(pos, *hsv, key, idx) {
-			if (key && !strncmp(key, "HTTP_", 5)) {
-				zval **header;
+		FOREACH_KEYLEN(pos, *hsv, key, keylen, idx) {
+			if (key && keylen > 6 && !strncmp(key, "HTTP_", 5)) {
+				zval **header, *orig;
 	
 				key += 5;
+				keylen -= 6;
 				if (prettify) {
-					key = pretty_key(key, strlen(key), 1, 1);
+					key = pretty_key(estrndup(key, keylen), keylen, 1, 1);
 				}
 	
 				zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void **) &header, &pos);
+				
+				orig = *header;
+				convert_to_string_ex(header);
 				add_assoc_stringl(&array, key, Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
+				if (orig != *header) {
+					zval_ptr_dtor(header);
+				}
+				
+				if (prettify) {
+					efree(key);
+				}
+				
 				key = NULL;
+				keylen = 0;
 			}
 		}
 	}
