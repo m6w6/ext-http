@@ -47,6 +47,7 @@
 * Fixed a bug that caused a warning about an invalid curl handle at HttpRequestPool destruction
 * Fixed a bug with http_get_request_headers() modifying $_SERVER array
 * Fixed a bug which required "=" in Content-Range response message headers
+* Fixed a bug with directly setting HttpMessage property values
 ]]></notes>
  <contents>
   <dir name="/">
@@ -175,12 +176,14 @@
     <file role="test" name="HttpResponse_003.phpt"/>
     <file role="test" name="HttpResponse_004.phpt"/>
     <file role="test" name="INI_001.phpt"/>
+    <file role="test" name="match_request_header_001.phpt"/>
     <file role="test" name="negotiation_001.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
     <file role="test" name="parse_message_001.phpt"/>
     <file role="test" name="parse_message_002.phpt"/>
     <file role="test" name="parse_message_003.phpt"/>
     <file role="test" name="parse_message_004.phpt"/>
+    <file role="test" name="parse_message_005.phpt"/>
     <file role="test" name="redirect_001.phpt"/>
     <file role="test" name="redirect_001_logging.phpt"/>
     <file role="test" name="redirect_002.phpt"/>
