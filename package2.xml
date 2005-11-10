@@ -56,14 +56,6 @@
    <file role="doc" name="EXPERIMENTAL"/>
    <file role="doc" name="KnownIssues.txt"/>
    <file role="doc" name="docs/functions.html"/>
-   <file role="doc" name="docs/examples/Bandwidth_Throttling.php"/>
-   <file role="doc" name="docs/examples/Cached_Responses.php"/>
-   <file role="doc" name="docs/examples/GET_Queries.php"/>
-   <file role="doc" name="docs/examples/KISS_XMLRPC_Client.php"/>
-   <file role="doc" name="docs/examples/Multipart_Posts.php"/>
-   <file role="doc" name="docs/examples/Parallel_Requests.php"/>
-   <file role="doc" name="docs/examples/Parallel_Requests_.php"/>
-   <file role="doc" name="docs/examples/Simple_Feed_Aggregator.php"/>
    <file role="doc" name="docs/examples/extract.php"/>
    <file role="doc" name="docs/examples/tutorial.txt"/>
    
