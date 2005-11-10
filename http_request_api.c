@@ -721,16 +721,19 @@ PHP_HTTP_API STATUS _http_request_exec(CURL *ch, HashTable *info, phpstr *respon
 	http_request_conv(ch, response, request);
 
 	/* perform request */
-	if (CURLE_OK != (result = curl_easy_perform(ch))) {
-		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not perform request: %s", curl_easy_strerror(result));
-		return FAILURE;
-	} else {
-		/* get curl info */
-		if (info) {
-			http_request_info(ch, info);
-		}
-		return SUCCESS;
+	switch (result = curl_easy_perform(ch))
+	{
+		default:
+			http_error(HE_WARNING, HTTP_E_REQUEST, curl_easy_strerror(result));
+		case CURLE_OK:
+			/* get curl info */
+			if (info) {
+				http_request_info(ch, info);
+			}
+		break;
 	}
+	/* always succeeds */
+	return SUCCESS;
 }
 /* }}} */
 

@@ -1957,6 +1957,10 @@ PHP_METHOD(HttpRequest, clearHistory)
  * 
  * Returns the received response as HttpMessage object.
  * 
+ * NOTE: While an exception may be thrown, the transfer could have succeeded 
+ * at least partially, so you might want to check the return values of various
+ * HttpRequest::getResponse*() methods.
+ * 
  * Throws HttpRuntimeException, HttpRequestException, 
  * HttpMalformedHeaderException, HttpEncodingException.
  *

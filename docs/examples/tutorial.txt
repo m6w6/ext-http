@@ -28,7 +28,7 @@ $r->setQueryData(
 );
 
 // HttpRequest::send() returns an HttpMessage object
-// of type HttpMessage::RESPONSE or throws an exception
+// of type HttpMessage::TYPE_RESPONSE or throws an exception
 try {
 	print $r->send()->getBody();
 } catch (HttpException $e) {
@@ -62,6 +62,7 @@ $r->setPostFields(
 	)
 );
 // add the file to post (form name, file name, file type)
+touch('profile.jpg');
 $r->addPostFile('image', 'profile.jpg', 'image/jpeg');
 
 try {

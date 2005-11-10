@@ -457,9 +457,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		
 		default:
 #ifdef WONKY
-			zval_ptr_dtor(&cpy);
 			zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
-			return;
 #endif
 		break;
 	}
