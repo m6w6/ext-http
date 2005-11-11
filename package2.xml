@@ -78,6 +78,7 @@
    <file role="src" name="php_http_cache_api.h"/>
    <file role="src" name="php_http_date_api.h"/>
    <file role="src" name="php_http_encoding_api.h"/>
+   <file role="src" name="php_http_filter_api.h"/>
    <file role="src" name="php_http_headers_api.h"/>
    <file role="src" name="php_http_info_api.h"/>
    <file role="src" name="php_http_message_api.h"/>
@@ -99,6 +100,7 @@
    <file role="src" name="http_cache_api.c"/>
    <file role="src" name="http_date_api.c"/>
    <file role="src" name="http_encoding_api.c"/>
+   <file role="src" name="http_filter_api.c"/>
    <file role="src" name="http_headers_api.c"/>
    <file role="src" name="http_info_api.c"/>
    <file role="src" name="http_message_api.c"/>
@@ -190,6 +192,7 @@
     <file role="test" name="redirect_013_logging.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="request_methods.phpt"/>
+    <file role="text" name="stream_filters.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
     <file role="test" name="send_data_002.phpt"/>
     <file role="test" name="send_data_003.phpt"/>

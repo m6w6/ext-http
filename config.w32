@@ -12,7 +12,8 @@ if (PHP_HTTP != "no") {
 		"http_api.c http_cache_api.c http_request_pool_api.c "+
 		"http_request_api.c http_date_api.c http_headers_api.c "+
 		"http_message_api.c http_send_api.c http_url_api.c "+
-		"http_info_api.c http_request_method_api.c http_encoding_api.c",
+		"http_info_api.c http_request_method_api.c http_encoding_api.c "+
+		"http_filter_api.c",
 		null,
 		"/I\"" + configure_module_dirname + "/phpstr\"");
 	ADD_SOURCES(configure_module_dirname + "/phpstr", "phpstr.c", "http");

@@ -30,6 +30,7 @@
 #include "php_http_send_api.h"
 #include "php_http_cache_api.h"
 #include "php_http_headers_api.h"
+#include "php_http_filter_api.h"
 #include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
@@ -292,6 +293,7 @@ PHP_MINIT_FUNCTION(http)
 	if (	(SUCCESS != PHP_MINIT_CALL(http_support))	||
 			(SUCCESS != PHP_MINIT_CALL(http_headers))	||
 			(SUCCESS != PHP_MINIT_CALL(http_cache))		||
+			(SUCCESS != PHP_MINIT_CALL(http_filter))	||
 #ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #endif /* HTTP_HAVE_CURL */
