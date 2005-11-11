@@ -28,25 +28,13 @@
 
 #include "php_streams.h"
 
-#ifndef HTTP_DEBUG_FILTERS
-#	define HTTP_DEBUG_FILTERS 0
-#endif
-
 /*
- * TODO: phpstr is not persistent aware
+ * TODO: allow use with persistent streams
  */
 
-typedef enum {
-	HFS_HEX = 0,
-	HFS_DATA,
-} http_filter_status;
-
 typedef struct {
-	phpstr buffer;
-	size_t wanted;
-	int eollen;
-	int passon;
-	http_filter_status status;
+	phpstr	buffer;
+	ulong	hexlen;
 } http_filter_buffer;
 
 #define PHP_STREAM_FILTER_OP_FILTER_PARAMS \
@@ -60,20 +48,28 @@ typedef struct {
 	static php_stream_filter_status_t function(PHP_STREAM_FILTER_OP_FILTER_PARAMS)
 
 #define NEW_BUCKET(data, length) \
-	php_stream_bucket_append(buckets_out, php_stream_bucket_new(stream, pestrndup(data, length, this->is_persistent), (length), 1, this->is_persistent TSRMLS_CC) TSRMLS_CC);
-
-inline void *pestrndup(const char *s, size_t l, int p)
-{
-	void *d = pemalloc(l + 1, p);
-	if (d) {
-		memcpy(d, s, l);
-		((char *) d)[l] = 0;
+	{ \
+		char *__data; \
+		php_stream_bucket *__buck; \
+		\
+		__data = pemalloc(length, this->is_persistent); \
+		if (!__data) { \
+			return PSFS_ERR_FATAL; \
+		} \
+		memcpy(__data, data, length); \
+		\
+		__buck = php_stream_bucket_new(stream, __data, length, 1, this->is_persistent TSRMLS_CC); \
+		if (!__buck) { \
+			pefree(__data, this->is_persistent); \
+			return PSFS_ERR_FATAL; \
+		} \
+		\
+		php_stream_bucket_append(buckets_out, __buck TSRMLS_CC); \
 	}
-	return d;
-}
 
 PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_decode)
 {
+	int out_avail = 0;
 	php_stream_bucket *ptr, *nxt;
 	http_filter_buffer *buffer = (http_filter_buffer *) (this->abstract);
 	
@@ -81,91 +77,116 @@ PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_decode)
 		*bytes_consumed = 0;
 	}
 	
-	if (!buckets_in->head) {
-		return PSFS_FEED_ME;
-	}
-	
-#if HTTP_DEBUG_FILTERS
-	fprintf(stderr, "Reading in bucket buffers ");
-#endif
-	
-	/* fetch available bucket data */
-	for (ptr = buckets_in->head; ptr; ptr = nxt) {
-		nxt = ptr->next;
-		phpstr_append(PHPSTR(buffer), ptr->buf, ptr->buflen);
-		php_stream_bucket_unlink(ptr TSRMLS_CC);
-		php_stream_bucket_delref(ptr TSRMLS_CC);
-	
-#if HTTP_DEBUG_FILTERS
-		fprintf(stderr, ".");
-#endif
-	}
-	if (bytes_consumed) {
-		*bytes_consumed = PHPSTR_LEN(buffer);
+	/* new data available? */
+	if (buckets_in->head) {
+		
+		/* fetch available bucket data */
+		for (ptr = buckets_in->head; ptr; ptr = nxt) {
+			nxt = ptr->next;
+			if (bytes_consumed) {
+				*bytes_consumed += ptr->buflen;
+			}
+		
+			phpstr_append(PHPSTR(buffer), ptr->buf, ptr->buflen);
+			php_stream_bucket_unlink(ptr TSRMLS_CC);
+			php_stream_bucket_delref(ptr TSRMLS_CC);
+			
+		}
 	}
 	phpstr_fix(PHPSTR(buffer));
 
-#if HTTP_DEBUG_FILTERS
-	fprintf(stderr, " done\nCurrent buffer length: %lu bytes\n", PHPSTR_LEN(buffer));
-#endif
+	/* we have data in our buffer */
+	while (PHPSTR_LEN(buffer)) {
 	
-	buffer->passon = 0;
-	while (1) {
-		if (buffer->status == HFS_HEX) {
-			const char *eol;
-			char *stop;
-			ulong clen;
+		/* we already know the size of the chunk and are waiting for data */
+		if (buffer->hexlen) {
+		
+			/* not enough data buffered */
+			if (PHPSTR_LEN(buffer) < buffer->hexlen) {
 			
-#if HTTP_DEBUG_FILTERS
-			fprintf(stderr, "Status HFS_HEX: ");
-#endif
+				/* flush anyway? */
+				if (flags == PSFS_FLAG_FLUSH_INC) {
+				
+					/* flush all data (should only be chunk data) */
+					out_avail = 1;
+					NEW_BUCKET(PHPSTR_VAL(buffer), PHPSTR_LEN(buffer));
+					
+					/* waiting for less data now */
+					buffer->hexlen -= PHPSTR_LEN(buffer);
+					/* no more buffered data (breaks loop) */
+					phpstr_reset(PHPSTR(buffer));
+				} 
+				
+				/* we have too less data and don't need to flush */
+				else {
+					break;
+				}
+			} 
 			
-			if (!(eol = http_locate_eol(PHPSTR_VAL(buffer), &buffer->eollen))) {
-#if HTTP_DEBUG_FILTERS
-				fprintf(stderr, "return PFSF_FEED_ME (no eol)\n");
-#endif
-				return buffer->passon ? PSFS_PASS_ON : PSFS_FEED_ME;
+			/* we seem to have all data of the chunk */
+			else {
+				out_avail = 1;
+				NEW_BUCKET(PHPSTR_VAL(buffer), buffer->hexlen);
+				
+				/* remove outgoing data from the buffer */
+				phpstr_cut(PHPSTR(buffer), 0, buffer->hexlen);
+				/* reset hexlen */
+				buffer->hexlen = 0;
 			}
-			if (!(clen = strtoul(PHPSTR_VAL(buffer), &stop, 16))) {
-#if HTTP_DEBUG_FILTERS
-				fprintf(stderr, "return PFSF_FEED_ME (no len)\n");
-#endif
-				phpstr_dtor(PHPSTR(buffer));
-				return buffer->passon ? PSFS_PASS_ON : PSFS_FEED_ME;
+		} 
+		
+		/* we don't know the length of the chunk yet */
+		else {
+			size_t off = 0;
+			
+			/* ignore preceeding CRLFs (too loose?) */
+			while (off < PHPSTR_LEN(buffer) && (
+					PHPSTR_VAL(buffer)[off] == 0xa || 
+					PHPSTR_VAL(buffer)[off] == 0xd)) {
+				++off;
+			}
+			if (off) {
+				phpstr_cut(PHPSTR(buffer), 0, off);
 			}
 			
-			buffer->status = HFS_DATA;
-			buffer->wanted = clen;
-			phpstr_cut(PHPSTR(buffer), 0, eol + buffer->eollen - PHPSTR_VAL(buffer));
-			
-#if HTTP_DEBUG_FILTERS
-			fprintf(stderr, "read %lu bytes chunk size\n", buffer->wanted);
-#endif
+			/* still data there? */
+			if (PHPSTR_LEN(buffer)) {
+				int eollen;
+				const char *eolstr;
+				
+				/* we need eol, so we can be sure we have all hex digits */
+				phpstr_fix(PHPSTR(buffer));
+				if (eolstr = http_locate_eol(PHPSTR_VAL(buffer), &eollen)) {
+					char *stop = NULL;
+					
+					/* read in chunk size */
+					buffer->hexlen = strtoul(PHPSTR_VAL(buffer), &stop, 16);
+					
+					/*	if strtoul() stops at the beginning of the buffered data
+						there's domething oddly wrong, i.e. bad input */
+					if (stop == PHPSTR_VAL(buffer)) {
+						return PSFS_ERR_FATAL;
+					}
+					
+					/* cut out <chunk size hex><chunk extension><eol> */
+					phpstr_cut(PHPSTR(buffer), 0, eolstr + eollen - PHPSTR_VAL(buffer));
+					/* buffer->hexlen is 0 now or contains the size of the next chunk */
+					/* continue */
+				}
+			}
+			/* break */
 		}
-		
-#if HTTP_DEBUG_FILTERS
-		fprintf(stderr, "Current status: %s\n", buffer->status == HFS_DATA?"HFS_DATA":"HFS_HEX");
-		fprintf(stderr, "Current buffer length: %lu bytes\n", PHPSTR_LEN(buffer));
-#endif
-		
-		if (buffer->status == HFS_DATA && buffer->wanted > 0 && buffer->wanted <= PHPSTR_LEN(buffer)) {
-		
-#if HTTP_DEBUG_FILTERS
-			fprintf(stderr, "Passing on %lu(%lu) bytes\n", buffer->wanted, PHPSTR_LEN(buffer));
-#endif
-
-			NEW_BUCKET(PHPSTR_VAL(buffer), buffer->wanted);
-			phpstr_cut(PHPSTR(buffer), 0, buffer->wanted + buffer->eollen);
-			buffer->wanted = 0;
-			buffer->eollen = 0;
-			buffer->passon = 1;
-			buffer->status = HFS_HEX;
-			continue;
-		}
-		return buffer->passon ? PSFS_PASS_ON : PSFS_FEED_ME;
 	}
 	
-	return PSFS_FEED_ME;
+	/* flush before close, but only if we are already waiting for more data */
+	if (flags == PSFS_FLAG_FLUSH_CLOSE && buffer->hexlen && PHPSTR_LEN(buffer)) {
+		out_avail = 1;
+		NEW_BUCKET(PHPSTR_VAL(buffer), PHPSTR_LEN(buffer));
+		phpstr_reset(PHPSTR(buffer));
+		buffer->hexlen = 0;
+	}
+	
+	return out_avail ? PSFS_PASS_ON : PSFS_FEED_ME;
 }
 
 static void http_filter_chunked_decode_dtor(php_stream_filter *this TSRMLS_DC)
@@ -178,40 +199,51 @@ static void http_filter_chunked_decode_dtor(php_stream_filter *this TSRMLS_DC)
 
 PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_encode)
 {
-	phpstr buf;
+	int out_avail = 0;
 	php_stream_bucket *ptr, *nxt;
 	
 	if (bytes_consumed) {
 		*bytes_consumed = 0;
 	}
 	
-	if (!buckets_in->head) {
-		return PSFS_FEED_ME;
-	}
-	
-	phpstr_init(&buf);
-	for (ptr = buckets_in->head; ptr; ptr = nxt) {
-		if (bytes_consumed) {
-			*bytes_consumed += ptr->buflen;
+	/* new data available? */
+	if (buckets_in->head) {
+		phpstr buf;
+		out_avail = 1;
+		
+		phpstr_init(&buf);
+		
+		/* fetch available bucket data */
+		for (ptr = buckets_in->head; ptr; ptr = nxt) {
+			nxt = ptr->next;
+			if (bytes_consumed) {
+				*bytes_consumed += ptr->buflen;
+			}
+			
+			phpstr_appendf(&buf, "%x" HTTP_CRLF, ptr->buflen);
+			phpstr_append(&buf, ptr->buf, ptr->buflen);
+			phpstr_appends(&buf, HTTP_CRLF);
+			
+			/* pass through */
+			NEW_BUCKET(PHPSTR_VAL(&buf), PHPSTR_LEN(&buf));
+			/* reset */
+			PHPSTR_LEN(&buf) = 0;
+			
+			php_stream_bucket_unlink(ptr TSRMLS_CC);
+			php_stream_bucket_delref(ptr TSRMLS_CC);
 		}
-		nxt = ptr->next;
 		
-		phpstr_appendf(&buf, "%x" HTTP_CRLF, ptr->buflen);
-		phpstr_append(&buf, ptr->buf, ptr->buflen);
-		phpstr_appends(&buf, HTTP_CRLF);
-		NEW_BUCKET(PHPSTR_VAL(&buf), PHPSTR_LEN(&buf));
-		PHPSTR_LEN(&buf) = 0;
-		
-		php_stream_bucket_unlink(ptr TSRMLS_CC);
-		php_stream_bucket_delref(ptr TSRMLS_CC);
-	}
-	phpstr_dtor(&buf);
-	
-	if (flags & PSFS_FLAG_FLUSH_CLOSE) {
-		NEW_BUCKET("0"HTTP_CRLF, lenof("0"HTTP_CRLF));
+		/* free buffer */
+		phpstr_dtor(&buf);
 	}
 	
-	return PSFS_PASS_ON;
+	/* terminate with "0" */
+	if (flags == PSFS_FLAG_FLUSH_CLOSE) {
+		out_avail = 1;
+		NEW_BUCKET("0" HTTP_CRLF, lenof("0" HTTP_CRLF));
+	}
+	
+	return out_avail ? PSFS_PASS_ON : PSFS_FEED_ME;
 }
 
 static php_stream_filter_ops http_filter_ops_chunked_decode = {
@@ -229,9 +261,15 @@ static php_stream_filter_ops http_filter_ops_chunked_encode = {
 static php_stream_filter *http_filter_create(const char *name, zval *params, int p TSRMLS_DC)
 {
 	php_stream_filter *f = NULL;
-	void *b = NULL;
 	
 	if (!strcasecmp(name, "http.chunked_decode")) {
+		http_filter_buffer *b = NULL;
+		
+		/* FIXXME: allow usage with persistent streams */
+		if (p) {
+			return NULL;
+		}
+		
 		if (b = pecalloc(1, sizeof(http_filter_buffer), p)) {
 			phpstr_init(PHPSTR(b));
 			if (!(f = php_stream_filter_alloc(&http_filter_ops_chunked_decode, b, p))) {
@@ -239,6 +277,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 			}
 		}
 	} else
+	
 	if (!strcasecmp(name, "http.chunked_encode")) {
 		f = php_stream_filter_alloc(&http_filter_ops_chunked_encode, NULL, p);
 	}

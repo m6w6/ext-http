@@ -229,6 +229,12 @@ PHPSTR_API int phpstr_cmp(phpstr *left, phpstr *right)
 	}
 }
 
+PHPSTR_API void phpstr_reset(phpstr *buf)
+{
+	buf->free += buf->used;
+	buf->used = 0;
+}
+
 PHPSTR_API void phpstr_dtor(phpstr *buf)
 {
 	STR_SET(buf->data, NULL);

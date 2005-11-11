@@ -149,6 +149,12 @@ PHPSTR_API phpstr *phpstr_merge_va(phpstr *buf, unsigned argc, va_list argv);
 /* sets a trailing NUL byte */
 PHPSTR_API void phpstr_fix(phpstr *buf);
 
+/* memcmp for phpstr objects */
+PHPSTR_API int phpstr_cmp(phpstr *left, phpstr *right);
+
+/* reset phpstr object */
+PHPSTR_API void phpstr_reset(phpstr *buf);
+
 /* free a phpstr objects contents */
 PHPSTR_API void phpstr_dtor(phpstr *buf);
 

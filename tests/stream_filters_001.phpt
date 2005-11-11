@@ -23,8 +23,11 @@ var_dump(file_get_contents(F));
 $f = fopen(F, 'r');
 stream_filter_append($f, 'http.chunked_decode');
 var_dump(fread($f, 256));
+fclose($f);
 
+unlink(F);
 echo "Done\n";
+?>
 --EXPECTF--
 %sTEST
 string(27) "5
