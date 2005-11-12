@@ -1,16 +1,13 @@
 /*
-   +----------------------------------------------------------------------+
-   | PECL :: http                                                         |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.0 of the PHP license, that  |
-   | is bundled with this package in the file LICENSE, and is available   |
-   | through the world-wide-web at http://www.php.net/license/3_0.txt.    |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 2004-2005 Michael Wallner <mike@php.net>               |
-   +----------------------------------------------------------------------+
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2005, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
 */
 
 /* $Id$ */
@@ -32,20 +29,40 @@
  * TODO: allow use with persistent streams
  */
 
+PHP_MINIT_FUNCTION(http_filter)
+{
+	php_stream_filter_register_factory("http.*", &http_filter_factory TSRMLS_CC);
+	return SUCCESS;
+}
+
+/*
+	-
+*/
+
 typedef struct {
 	phpstr	buffer;
 	ulong	hexlen;
 } http_filter_buffer;
 
-#define PHP_STREAM_FILTER_OP_FILTER_PARAMS \
+#define HTTP_FILTER_PARAMS \
 	php_stream *stream, \
 	php_stream_filter *this, \
 	php_stream_bucket_brigade *buckets_in, \
 	php_stream_bucket_brigade *buckets_out, \
 	size_t *bytes_consumed, int flags \
 	TSRMLS_DC
-#define PHP_STREAM_FILTER_OP_FILTER(function) \
-	static php_stream_filter_status_t function(PHP_STREAM_FILTER_OP_FILTER_PARAMS)
+#define HTTP_FILTER_OP(filter) \
+	http_filter_op_ ##filter
+#define HTTP_FILTER_OPS(filter) \
+	php_stream_filter_ops HTTP_FILTER_OP(filter)
+#define HTTP_FILTER_DTOR(filter) \
+	http_filter_ ##filter## _dtor
+#define HTTP_FILTER_DESTRUCTOR(filter) \
+	void HTTP_FILTER_DTOR(filter)(php_stream_filter *this TSRMLS_DC)
+#define HTTP_FILTER_FUNC(filter) \
+	http_filter_ ##filter
+#define HTTP_FILTER_FUNCTION(filter) \
+	php_stream_filter_status_t HTTP_FILTER_FUNC(filter)(HTTP_FILTER_PARAMS)
 
 #define NEW_BUCKET(data, length) \
 	{ \
@@ -67,7 +84,7 @@ typedef struct {
 		php_stream_bucket_append(buckets_out, __buck TSRMLS_CC); \
 	}
 
-PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_decode)
+static HTTP_FILTER_FUNCTION(chunked_decode)
 {
 	int out_avail = 0;
 	php_stream_bucket *ptr, *nxt;
@@ -113,8 +130,9 @@ PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_decode)
 					
 					/* waiting for less data now */
 					buffer->hexlen -= PHPSTR_LEN(buffer);
-					/* no more buffered data (breaks loop) */
+					/* no more buffered data */
 					phpstr_reset(PHPSTR(buffer));
+					/* break */
 				} 
 				
 				/* we have too less data and don't need to flush */
@@ -132,6 +150,7 @@ PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_decode)
 				phpstr_cut(PHPSTR(buffer), 0, buffer->hexlen);
 				/* reset hexlen */
 				buffer->hexlen = 0;
+				/* continue */
 			}
 		} 
 		
@@ -189,7 +208,7 @@ PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_decode)
 	return out_avail ? PSFS_PASS_ON : PSFS_FEED_ME;
 }
 
-static void http_filter_chunked_decode_dtor(php_stream_filter *this TSRMLS_DC)
+static HTTP_FILTER_DESTRUCTOR(chunked_decode)
 {
 	http_filter_buffer *b = (http_filter_buffer *) (this->abstract);
 	
@@ -197,7 +216,7 @@ static void http_filter_chunked_decode_dtor(php_stream_filter *this TSRMLS_DC)
 	pefree(b, this->is_persistent);
 }
 
-PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_encode)
+static HTTP_FILTER_FUNCTION(chunked_encode)
 {
 	int out_avail = 0;
 	php_stream_bucket *ptr, *nxt;
@@ -227,7 +246,7 @@ PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_encode)
 			/* pass through */
 			NEW_BUCKET(PHPSTR_VAL(&buf), PHPSTR_LEN(&buf));
 			/* reset */
-			PHPSTR_LEN(&buf) = 0;
+			phpstr_reset(&buf);
 			
 			php_stream_bucket_unlink(ptr TSRMLS_CC);
 			php_stream_bucket_delref(ptr TSRMLS_CC);
@@ -246,14 +265,14 @@ PHP_STREAM_FILTER_OP_FILTER(http_filter_chunked_encode)
 	return out_avail ? PSFS_PASS_ON : PSFS_FEED_ME;
 }
 
-static php_stream_filter_ops http_filter_ops_chunked_decode = {
-	http_filter_chunked_decode,
-	http_filter_chunked_decode_dtor,
+static HTTP_FILTER_OPS(chunked_decode) = {
+	HTTP_FILTER_FUNC(chunked_decode),
+	HTTP_FILTER_DTOR(chunked_decode),
 	"http.chunked_decode"
 };
 
-static php_stream_filter_ops http_filter_ops_chunked_encode = {
-	http_filter_chunked_encode,
+static HTTP_FILTER_OPS(chunked_encode) = {
+	HTTP_FILTER_FUNC(chunked_encode),
 	NULL,
 	"http.chunked_encode"
 };
@@ -272,14 +291,14 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		
 		if (b = pecalloc(1, sizeof(http_filter_buffer), p)) {
 			phpstr_init(PHPSTR(b));
-			if (!(f = php_stream_filter_alloc(&http_filter_ops_chunked_decode, b, p))) {
+			if (!(f = php_stream_filter_alloc(&HTTP_FILTER_OP(chunked_decode), b, p))) {
 				pefree(b, p);
 			}
 		}
 	} else
 	
 	if (!strcasecmp(name, "http.chunked_encode")) {
-		f = php_stream_filter_alloc(&http_filter_ops_chunked_encode, NULL, p);
+		f = php_stream_filter_alloc(&HTTP_FILTER_OP(chunked_encode), NULL, p);
 	}
 	
 	return f;
@@ -289,12 +308,6 @@ php_stream_filter_factory http_filter_factory = {
 	http_filter_create
 };
 
-PHP_MINIT_FUNCTION(http_filter)
-{
-	php_stream_filter_register_factory("http.*", &http_filter_factory TSRMLS_CC);
-	return SUCCESS;
-}
-
 /*
  * Local variables:
  * tab-width: 4
@@ -303,4 +316,3 @@ PHP_MINIT_FUNCTION(http_filter)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-
