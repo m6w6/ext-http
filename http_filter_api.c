@@ -114,7 +114,7 @@ static HTTP_FILTER_FUNCTION(chunked_decode)
 
 	/* we have data in our buffer */
 	while (PHPSTR_LEN(buffer)) {
-	fprintf(stderr, ">>> loop\n");
+	
 		/* we already know the size of the chunk and are waiting for data */
 		if (buffer->hexlen) {
 		
