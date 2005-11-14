@@ -114,7 +114,7 @@ static HTTP_FILTER_FUNCTION(chunked_decode)
 
 	/* we have data in our buffer */
 	while (PHPSTR_LEN(buffer)) {
-	
+	fprintf(stderr, ">>> loop\n");
 		/* we already know the size of the chunk and are waiting for data */
 		if (buffer->hexlen) {
 		
@@ -191,6 +191,9 @@ static HTTP_FILTER_FUNCTION(chunked_decode)
 					phpstr_cut(PHPSTR(buffer), 0, eolstr + eollen - PHPSTR_VAL(buffer));
 					/* buffer->hexlen is 0 now or contains the size of the next chunk */
 					/* continue */
+				} else {
+					/* we have not enough data buffered to read in chunk size */
+					break;
 				}
 			}
 			/* break */
