@@ -30,13 +30,14 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-string(27) "5
+string(30) "5
 Here 
 2
 we
 5
  go!
 
+0
 "
 string(12) "Here we go!
 "

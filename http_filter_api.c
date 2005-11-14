@@ -25,10 +25,6 @@
 
 #include "php_streams.h"
 
-/*
- * TODO: allow use with persistent streams
- */
-
 PHP_MINIT_FUNCTION(http_filter)
 {
 	php_stream_filter_register_factory("http.*", &http_filter_factory TSRMLS_CC);
@@ -104,13 +100,17 @@ static HTTP_FILTER_FUNCTION(chunked_decode)
 				*bytes_consumed += ptr->buflen;
 			}
 		
-			phpstr_append(PHPSTR(buffer), ptr->buf, ptr->buflen);
+			if ((size_t) -1 == phpstr_append(PHPSTR(buffer), ptr->buf, ptr->buflen)) {
+				return PSFS_ERR_FATAL;
+			}
+			
 			php_stream_bucket_unlink(ptr TSRMLS_CC);
 			php_stream_bucket_delref(ptr TSRMLS_CC);
-			
 		}
 	}
-	phpstr_fix(PHPSTR(buffer));
+	if (!phpstr_fix(PHPSTR(buffer))) {
+		return PSFS_ERR_FATAL;
+	}
 
 	/* we have data in our buffer */
 	while (PHPSTR_LEN(buffer)) {
@@ -287,13 +287,8 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	if (!strcasecmp(name, "http.chunked_decode")) {
 		http_filter_buffer *b = NULL;
 		
-		/* FIXXME: allow usage with persistent streams */
-		if (p) {
-			return NULL;
-		}
-		
 		if (b = pecalloc(1, sizeof(http_filter_buffer), p)) {
-			phpstr_init(PHPSTR(b));
+			phpstr_init_ex(PHPSTR(b), 4096, p ? PHPSTR_INIT_PERSISTENT : 0);
 			if (!(f = php_stream_filter_alloc(&HTTP_FILTER_OP(chunked_decode), b, p))) {
 				pefree(b, p);
 			}

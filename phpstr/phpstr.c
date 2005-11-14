@@ -4,46 +4,70 @@
 #include "php.h"
 #include "phpstr.h"
 
-PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int pre_alloc)
+#define NOMEM ((size_t) -1)
+
+PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int flags)
 {
 	if (!buf) {
-		buf = emalloc(sizeof(phpstr));
+		buf = pemalloc(sizeof(phpstr), flags & PHPSTR_INIT_PERSISTENT);
 	}
 
-	buf->size = chunk_size > 0 ? chunk_size : PHPSTR_DEFAULT_SIZE;
-	buf->data = pre_alloc ? emalloc(buf->size) : NULL;
-	buf->free = pre_alloc ? buf->size : 0;
-	buf->used = 0;
-
+	if (buf) {
+		buf->size = (chunk_size > 0) ? chunk_size : PHPSTR_DEFAULT_SIZE;
+		buf->pmem = (flags & PHPSTR_INIT_PERSISTENT) ? 1 : 0;
+		buf->data = (flags & PHPSTR_INIT_PREALLOC) ? pemalloc(buf->size, buf->pmem) : NULL;
+		buf->free = (flags & PHPSTR_INIT_PREALLOC) ? buf->size : 0;
+		buf->used = 0;
+	}
+	
 	return buf;
 }
 
 PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t length)
 {
-	buf = phpstr_init(buf);
-	phpstr_append(buf, string, length);
+	if (buf = phpstr_init(buf)) {
+		if (NOMEM == phpstr_append(buf, string, length)) {
+			pefree(buf, buf->pmem);
+			buf = NULL;
+		}
+	}
 	return buf;
 }
 
-PHPSTR_API void phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size)
+PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size)
 {
 	if (buf->free < len) {
 		size_t size = override_size ? override_size : buf->size;
+		
 		while ((size + buf->free) < len) {
 			size *= 2;
 		}
 		if (buf->data) {
-			buf->data = erealloc(buf->data, buf->used + buf->free + size);
+			char *ptr = perealloc(buf->data, buf->used + buf->free + size, buf->pmem);
+			
+			if (ptr) {
+				buf->data = ptr;
+			} else {
+				return NOMEM;
+			}
 		} else {
-			buf->data = emalloc(size);
+			buf->data = pemalloc(size, buf->pmem);
+			
+			if (!buf->data) {
+				return NOMEM;
+			}
 		}
 		buf->free += size;
+		return size;
 	}
+	return 0;
 }
 
 PHPSTR_API size_t phpstr_append(phpstr *buf, const char *append, size_t append_len)
 {
-	phpstr_resize(buf, append_len);
+	if (NOMEM == phpstr_resize(buf, append_len)) {
+		return NOMEM;
+	}
 	memcpy(buf->data + buf->used, append, append_len);
 	buf->used += append_len;
 	buf->free -= append_len;
@@ -54,21 +78,26 @@ PHPSTR_API size_t phpstr_appendf(phpstr *buf, const char *format, ...)
 {
 	va_list argv;
 	char *append;
-	size_t append_len;
+	size_t append_len, alloc;
 
 	va_start(argv, format);
 	append_len = vspprintf(&append, 0, format, argv);
 	va_end(argv);
 
-	phpstr_append(buf, append, append_len);
+	alloc = phpstr_append(buf, append, append_len);
 	efree(append);
 
+	if (NOMEM == alloc) {
+		return NOMEM;
+	}
 	return append_len;
 }
 
 PHPSTR_API size_t phpstr_insert(phpstr *buf, const char *insert, size_t insert_len, size_t offset)
 {
-	phpstr_resize(buf, insert_len);
+	if (NOMEM == phpstr_resize(buf, insert_len)) {
+		return NOMEM;
+	}
 	memmove(buf->data + offset + insert_len, buf->data + offset, insert_len);
 	memcpy(buf->data + offset, insert, insert_len);
 	buf->used += insert_len;
@@ -80,21 +109,26 @@ PHPSTR_API size_t phpstr_insertf(phpstr *buf, size_t offset, const char *format,
 {
 	va_list argv;
 	char *insert;
-	size_t insert_len;
+	size_t insert_len, alloc;
 
 	va_start(argv, format);
 	insert_len = vspprintf(&insert, 0, format, argv);
 	va_end(argv);
 
-	phpstr_insert(buf, insert, insert_len, offset);
+	alloc = phpstr_insert(buf, insert, insert_len, offset);
 	efree(insert);
 
+	if (NOMEM == alloc) {
+		return NOMEM;
+	}
 	return insert_len;
 }
 
 PHPSTR_API size_t phpstr_prepend(phpstr *buf, const char *prepend, size_t prepend_len)
 {
-	phpstr_resize(buf, prepend_len);
+	if (NOMEM == phpstr_resize(buf, prepend_len)) {
+		return NOMEM;
+	}
 	memmove(buf->data + prepend_len, buf->data, buf->used);
 	memcpy(buf->data, prepend, prepend_len);
 	buf->used += prepend_len;
@@ -106,15 +140,18 @@ PHPSTR_API size_t phpstr_prependf(phpstr *buf, const char *format, ...)
 {
 	va_list argv;
 	char *prepend;
-	size_t prepend_len;
+	size_t prepend_len, alloc;
 
 	va_start(argv, format);
 	prepend_len = vspprintf(&prepend, 0, format, argv);
 	va_end(argv);
 
-	phpstr_prepend(buf, prepend, prepend_len);
+	alloc = phpstr_prepend(buf, prepend, prepend_len);
 	efree(prepend);
 
+	if (NOMEM == alloc) {
+		return NOMEM;
+	}
 	return prepend_len;
 }
 
@@ -134,7 +171,9 @@ PHPSTR_API char *phpstr_data(const phpstr *buf, char **into, size_t *len)
 PHPSTR_API phpstr *phpstr_dup(const phpstr *buf)
 {
 	phpstr *dup = phpstr_clone(buf);
-	phpstr_append(dup, buf->data, buf->used);
+	if (NOMEM == phpstr_append(dup, buf->data, buf->used)) {
+		phpstr_free(&dup);
+	}
 	return dup;
 }
 
@@ -158,9 +197,14 @@ PHPSTR_API phpstr *phpstr_sub(const phpstr *buf, size_t offset, size_t length)
 		return NULL;
 	} else {
 		size_t need = (length + offset) > buf->used ? (buf->used - offset) : (length - offset);
-		phpstr *sub = phpstr_init_ex(NULL, need, 1);
-		phpstr_append(sub, buf->data + offset, need);
-		sub->size = buf->size;
+		phpstr *sub = phpstr_init_ex(NULL, need, PHPSTR_INIT_PREALLOC | (buf->pmem ? PHPSTR_INIT_PERSISTENT:0));
+		if (sub) {
+			if (NOMEM == phpstr_append(sub, buf->data + offset, need)) {
+				phpstr_free(&sub);
+			} else {
+				sub->size = buf->size;
+			}
+		}
 		return sub;
 	}
 }
@@ -177,14 +221,22 @@ PHPSTR_API phpstr *phpstr_right(const phpstr *buf, size_t length)
 
 PHPSTR_API phpstr *phpstr_merge_va(phpstr *buf, unsigned argc, va_list argv)
 {
-	unsigned i = 0;
+	unsigned f = 0, i = 0;
 	buf = phpstr_init(buf);
 
-	while (argc > i++) {
-		phpstr_free_t f = va_arg(argv, phpstr_free_t);
-		phpstr *current = va_arg(argv, phpstr *);
-		phpstr_append(buf, current->data, current->used);
-		FREE_PHPSTR(f, current);
+	if (buf) {
+		while (argc > i++) {
+			phpstr_free_t f = va_arg(argv, phpstr_free_t);
+			phpstr *current = va_arg(argv, phpstr *);
+			if (NOMEM == phpstr_append(buf, current->data, current->used)) {
+				f = 1;
+			}
+			FREE_PHPSTR(f, current);
+		}
+		
+		if (f) {
+			phpstr_free(&buf);
+		}
 	}
 
 	return buf;
@@ -212,10 +264,13 @@ PHPSTR_API phpstr *phpstr_merge(unsigned argc, ...)
 	return ret;
 }
 
-PHPSTR_API void phpstr_fix(phpstr *buf)
+PHPSTR_API phpstr *phpstr_fix(phpstr *buf)
 {
-	phpstr_resize_ex(buf, 1, 1);
+	if (NOMEM == phpstr_resize_ex(buf, 1, 1)) {
+		return NULL;
+	}
 	buf->data[buf->used] = '\0';
+	return buf;
 }
 
 PHPSTR_API int phpstr_cmp(phpstr *left, phpstr *right)
@@ -237,7 +292,10 @@ PHPSTR_API void phpstr_reset(phpstr *buf)
 
 PHPSTR_API void phpstr_dtor(phpstr *buf)
 {
-	STR_SET(buf->data, NULL);
+	if (buf->data) {
+		pefree(buf->data, buf->pmem);
+		buf->data = NULL;
+	}
 	buf->used = 0;
 	buf->free = 0;
 }
@@ -246,7 +304,7 @@ PHPSTR_API void phpstr_free(phpstr **buf)
 {
 	if (*buf) {
 		phpstr_dtor(*buf);
-		efree(*buf);
+		pefree(*buf, (*buf)->pmem);
 		*buf = NULL;
 	}
 }
@@ -258,7 +316,7 @@ PHPSTR_API size_t phpstr_chunk_buffer(phpstr **s, const char *data, size_t data_
 	*chunk = NULL;
 	
 	if (!*s) {
-		*s = phpstr_init_ex(NULL, chunk_size * 2, chunk_size ? 1 : 0);
+		*s = phpstr_init_ex(NULL, chunk_size * 2, chunk_size ? PHPSTR_INIT_PREALLOC : 0);
 	}
 	storage = *s;
 	

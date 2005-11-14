@@ -34,22 +34,22 @@
 #define PHPSTR_VAL(p) (PHPSTR(p))->data
 #define PHPSTR_LEN(p) (PHPSTR(p))->used
 
-#define FREE_PHPSTR_PTR(STR) efree(STR)
+#define FREE_PHPSTR_PTR(STR) pefree(STR, STR->pmem)
 #define FREE_PHPSTR_VAL(STR) phpstr_dtor(STR)
 #define FREE_PHPSTR_ALL(STR) phpstr_free(&(STR))
 #define FREE_PHPSTR(free, STR) \
 	switch (free) \
 	{ \
-		case PHPSTR_FREE_NOT:						break; \
-		case PHPSTR_FREE_PTR:	efree(STR);			break; \
-		case PHPSTR_FREE_VAL:	phpstr_dtor(STR);	break; \
+		case PHPSTR_FREE_NOT:							break; \
+		case PHPSTR_FREE_PTR:	pefree(STR, STR->pmem);	break; \
+		case PHPSTR_FREE_VAL:	phpstr_dtor(STR);		break; \
 		case PHPSTR_FREE_ALL: \
 		{ \
 			phpstr *PTR = (STR); \
 			phpstr_free(&PTR); \
 		} \
 		break; \
-		default:									break; \
+		default:										break; \
 	}
 
 #define RETURN_PHPSTR_PTR(STR) RETURN_PHPSTR((STR), PHPSTR_FREE_PTR, 0)
@@ -71,11 +71,12 @@ typedef struct {
 	char  *data;
 	size_t used;
 	size_t free;
+	int    pmem;
 } phpstr;
 
 typedef enum {
 	PHPSTR_FREE_NOT = 0,
-	PHPSTR_FREE_PTR,	/* efree() */
+	PHPSTR_FREE_PTR,	/* pefree() */
 	PHPSTR_FREE_VAL,	/* phpstr_dtor() */
 	PHPSTR_FREE_ALL		/* phpstr_free() */
 } phpstr_free_t;
@@ -85,11 +86,14 @@ typedef enum {
 #define PHPSTR_VAL_FREE(STR) PHPSTR_FREE_VAL,(STR)
 #define PHPSTR_NOT_FREE(STR) PHPSTR_FREE_NOT,(STR)
 
+#define PHPSTR_INIT_PREALLOC	0x01
+#define PHPSTR_INIT_PERSISTENT	0x02
+
 /* create a new phpstr */
 #define phpstr_new() phpstr_init(NULL)
 #define phpstr_init(b) phpstr_init_ex(b, 0, 0)
-#define phpstr_clone(phpstr_pointer) phpstr_init_ex(NULL, (phpstr_pointer)->size, 0)
-PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int pre_alloc);
+#define phpstr_clone(phpstr_pointer) phpstr_init_ex(NULL, (phpstr_pointer)->size, (phpstr_pointer)->pmem ? PHPSTR_INIT_PERSISTENT:0)
+PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int flags);
 
 /* create a phpstr from a zval or c-string */
 #define phpstr_from_zval(z) phpstr_from_string(Z_STRVAL(z), Z_STRLEN(z))
@@ -99,7 +103,7 @@ PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t
 
 /* usually only called from within the internal functions */
 #define phpstr_resize(b, s) phpstr_resize_ex((b), (s), 0)
-PHPSTR_API void phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size);
+PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size);
 
 /* append data to the phpstr */
 #define phpstr_appends(b, a) phpstr_append((b), (a), sizeof(a)-1)
@@ -147,7 +151,7 @@ PHPSTR_API phpstr *phpstr_merge_ex(phpstr *buf, unsigned argc, ...);
 PHPSTR_API phpstr *phpstr_merge_va(phpstr *buf, unsigned argc, va_list argv);
 
 /* sets a trailing NUL byte */
-PHPSTR_API void phpstr_fix(phpstr *buf);
+PHPSTR_API phpstr *phpstr_fix(phpstr *buf);
 
 /* memcmp for phpstr objects */
 PHPSTR_API int phpstr_cmp(phpstr *left, phpstr *right);
