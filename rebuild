@@ -4,7 +4,7 @@ rm -f warnings
 if test -d "$1"; then
     PREFIX=$1
 else
-    PREFIX=/usr
+    PREFIX=/opt
 fi
 
 echo "Using prefix '$PREFIX' for phpize and php-config!"
@@ -18,7 +18,7 @@ fi
 echo "DONE"
 
 echo -n "configuring... "
-CFLAGS="-W -Wchar-subscripts -Wformat=2 -Wno-format-y2k -Wimplicit -Wmissing-braces -Wunused-variable  -Wbad-function-cast -Wpointer-arith -Wsign-compare -Winline" \
+CFLAGS="-Wall -Wextra -Wno-unused-parameter -Wfloat-equal -Wdeclaration-after-statement -Wundef -Wbad-function-cast -Wcast-align -Wmissing-field-initializers -Wnested-externs" \
     ./configure --with-php-config=${PREFIX}/bin/php-config $2 >/dev/null
 if test $? -ne 0 ; then
     echo "FAILED!"
@@ -35,6 +35,6 @@ else
 fi
 
 if test -s warnings; then
-    cat warnings
+    grep -E "^/.+http" warnings
 fi
 
