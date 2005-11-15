@@ -900,7 +900,7 @@ PHP_METHOD(HttpResponse, setData)
 	}
 	
 	UPD_STATIC_PROP(long, lastModified, http_last_modified(the_data, SEND_DATA));
-	if (etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA)) {
+	if ((etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA))) {
 		UPD_STATIC_PROP(string, eTag, etag);
 		efree(etag);
 	}
@@ -959,7 +959,7 @@ PHP_METHOD(HttpResponse, setStream)
 	zend_list_addref(Z_LVAL_P(the_stream));
 	
 	UPD_STATIC_PROP(long, lastModified, http_last_modified(the_real_stream, SEND_RSRC));
-	if (etag = http_etag(the_real_stream, 0, SEND_RSRC)) {
+	if ((etag = http_etag(the_real_stream, 0, SEND_RSRC))) {
 		UPD_STATIC_PROP(string, eTag, etag);
 		efree(etag);
 	}
@@ -1018,7 +1018,7 @@ PHP_METHOD(HttpResponse, setFile)
 	}
 
 	UPD_STATIC_PROP(long, lastModified, http_last_modified(the_file, -1));
-	if (etag = http_etag(the_file, 0, -1)) {
+	if ((etag = http_etag(the_file, 0, -1))) {
 		UPD_STATIC_PROP(string, eTag, etag);
 		efree(etag);
 	}

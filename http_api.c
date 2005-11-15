@@ -88,7 +88,7 @@ char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool x
 	if (key && key_len) {
 		size_t i;
 		int wasalpha;
-		if (wasalpha = isalpha((int) key[0])) {
+		if ((wasalpha = isalpha((int) key[0]))) {
 			key[0] = (char) (uctitle ? toupper((int) key[0]) : tolower((int) key[0]));
 		}
 		for (i = 1; i < key_len; i++) {

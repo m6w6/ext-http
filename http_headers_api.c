@@ -82,7 +82,7 @@ char *_http_negotiate_language_func(const char *test, double *quality, HashTable
 	}
 	
 	/* no distinct match found, so try primaries */
-	if (dash_test = strchr(test, '-')) {
+	if ((dash_test = strchr(test, '-'))) {
 		FOREACH_HASH_VAL(pos, supported, value) {
 			int len = dash_test - test;
 #if HTTP_DBG_NEG
@@ -161,7 +161,7 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 				fprintf(stderr, "Checking %s\n", Z_STRVAL_PP(entry));
 #endif
 				
-				if (separator = strchr(Z_STRVAL_PP(entry), ';')) {
+				if ((separator = strchr(Z_STRVAL_PP(entry), ';'))) {
 					const char *ptr = separator;
 					
 					while (*++ptr && !isdigit(*ptr));
@@ -173,7 +173,7 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 					identifier = estrndup(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry));
 				}
 				
-				if (selected = neg(identifier, &quality, supported TSRMLS_CC)) {
+				if ((selected = neg(identifier, &quality, supported TSRMLS_CC))) {
 					/* don't overwrite previously set with higher quality */
 					if (!zend_hash_exists(Z_ARRVAL(array), selected, strlen(selected) + 1)) {
 						add_assoc_double(&array, selected, quality);

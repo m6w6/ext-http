@@ -334,10 +334,9 @@ PHP_MSHUTDOWN_FUNCTION(http)
 /* {{{ PHP_RINIT_FUNCTION */
 PHP_RINIT_FUNCTION(http)
 {
-	char *m;
-
-	if (m = INI_STR("http.allowed_methods")) {
-		http_check_allowed_methods(m, strlen(m));
+	if (HTTP_G(request).methods.allowed) {
+		http_check_allowed_methods(HTTP_G(request).methods.allowed, 
+			strlen(HTTP_G(request).methods.allowed));
 	}
 
 	http_globals_init(HTTP_GLOBALS);

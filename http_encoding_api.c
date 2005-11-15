@@ -520,7 +520,7 @@ PHP_HTTP_API STATUS _http_encoding_stream_init(http_encoding_stream *s, int gzip
 		HTTP_ENCODING_STREAM_ERROR(status, NULL);
 	}
 	
-	if (s->gzip = gzip) {
+	if ((s->gzip = gzip)) {
 		s->crc = crc32(0L, Z_NULL, 0);
 		*encoded_len = sizeof(http_encoding_gzip_header);
 		*encoded = emalloc(*encoded_len);
@@ -622,7 +622,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			
 			HTTP_G(send).gzip_encoding = 0;
 			
-			if (selected = http_negotiate_encoding(&zsupported)) {
+			if ((selected = http_negotiate_encoding(&zsupported))) {
 				STATUS hs = FAILURE;
 				char *encoding = NULL;
 				ulong idx;

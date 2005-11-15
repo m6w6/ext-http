@@ -90,7 +90,7 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 		furl.port = purl->port;
 	} else if (strncmp(furl.scheme, "http", 4)) {
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
-		if (se = getservbyname(furl.scheme, "tcp")) {
+		if ((se = getservbyname(furl.scheme, "tcp"))) {
 			furl.port = se->s_port;
 		}
 #endif

@@ -269,7 +269,7 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 	
 	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(pool->ch, &pool->unfinished));
 	
-	while (msg = curl_multi_info_read(pool->ch, &remaining)) {
+	while ((msg = curl_multi_info_read(pool->ch, &remaining))) {
 		if (CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
 				http_error(HE_WARNING, HTTP_E_REQUEST, curl_easy_strerror(msg->data.result));

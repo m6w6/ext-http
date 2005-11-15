@@ -1894,7 +1894,7 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 		getObject(http_request_object, obj);
 
 		SET_EH_THROW_HTTP();
-		if (msg = http_message_parse(PHPSTR_VAL(&obj->request), PHPSTR_LEN(&obj->request))) {
+		if ((msg = http_message_parse(PHPSTR_VAL(&obj->request), PHPSTR_LEN(&obj->request)))) {
 			ZVAL_OBJVAL(return_value, http_message_object_new_ex(http_message_object_ce, msg, NULL));
 		}
 		SET_EH_NORMAL();
@@ -1930,7 +1930,7 @@ PHP_METHOD(HttpRequest, getHistory)
 		getObject(http_request_object, obj);
 
 		SET_EH_THROW_HTTP();
-		if (msg = http_message_parse(PHPSTR_VAL(&obj->history), PHPSTR_LEN(&obj->history))) {
+		if ((msg = http_message_parse(PHPSTR_VAL(&obj->history), PHPSTR_LEN(&obj->history)))) {
 			ZVAL_OBJVAL(return_value, http_message_object_new_ex(http_message_object_ce, msg, NULL));
 		}
 		SET_EH_NORMAL();

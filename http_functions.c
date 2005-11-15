@@ -108,7 +108,7 @@ PHP_FUNCTION(http_build_uri)
 #define HTTP_DO_NEGOTIATE(type, supported, rs_array) \
 { \
 	HashTable *result; \
-	if (result = http_negotiate_ ##type(supported)) { \
+	if ((result = http_negotiate_ ##type(supported))) { \
 		char *key; \
 		uint key_len; \
 		ulong idx; \
@@ -447,7 +447,7 @@ PHP_FUNCTION(http_cache_last_modified)
 	/* 0 or omitted */
 	if (!last_modified) {
 		/* does the client have? (att: caching "forever") */
-		if (zlm = http_get_server_var("HTTP_IF_MODIFIED_SINCE")) {
+		if ((zlm = http_get_server_var("HTTP_IF_MODIFIED_SINCE"))) {
 			last_modified = send_modified = http_parse_date(Z_STRVAL_P(zlm));
 		/* send current time */
 		} else {
@@ -817,7 +817,7 @@ PHP_FUNCTION(http_parse_message)
 		RETURN_NULL();
 	}
 	
-	if (msg = http_message_parse(message, message_len)) {
+	if ((msg = http_message_parse(message, message_len))) {
 		object_init(return_value);
 		http_message_tostruct_recursive(msg, return_value);
 		http_message_free(&msg);
@@ -1269,7 +1269,7 @@ PHP_FUNCTION(http_request_method_register)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &method, &method_len)) {
 		RETURN_FALSE;
 	}
-	if (existing = http_request_method_exists(1, 0, method)) {
+	if ((existing = http_request_method_exists(1, 0, method))) {
 		RETURN_LONG((long) existing);
 	}
 

@@ -175,7 +175,7 @@ static HTTP_FILTER_FUNCTION(chunked_decode)
 				
 				/* we need eol, so we can be sure we have all hex digits */
 				phpstr_fix(PHPSTR(buffer));
-				if (eolstr = http_locate_eol(PHPSTR_VAL(buffer), &eollen)) {
+				if ((eolstr = http_locate_eol(PHPSTR_VAL(buffer), &eollen))) {
 					char *stop = NULL;
 					
 					/* read in chunk size */
@@ -287,7 +287,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	if (!strcasecmp(name, "http.chunked_decode")) {
 		http_filter_buffer *b = NULL;
 		
-		if (b = pecalloc(1, sizeof(http_filter_buffer), p)) {
+		if ((b = pecalloc(1, sizeof(http_filter_buffer), p))) {
 			phpstr_init_ex(PHPSTR(b), 4096, p ? PHPSTR_INIT_PERSISTENT : 0);
 			if (!(f = php_stream_filter_alloc(&HTTP_FILTER_OP(chunked_decode), b, p))) {
 				pefree(b, p);

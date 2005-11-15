@@ -313,14 +313,14 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 	zend_hash_init(&ranges, 0, NULL, ZVAL_PTR_DTOR, 0);
 	range_status = http_get_request_ranges(&ranges, data_size);
 
-	if (range_status == RANGE_ERR) {
-		zend_hash_destroy(&ranges);
-		http_send_status(416);
-		return FAILURE;
-	}
-	
 	switch (range_status)
 	{
+		case RANGE_ERR:
+		{
+			zend_hash_destroy(&ranges);
+			http_send_status(416);
+			return FAILURE;
+		}
 		case RANGE_OK:
 		{
 			/* Range Request - only send ranges if entity hasn't changed */
@@ -400,7 +400,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 			if (!no_cache && cache_etag) {
 				char *etag = NULL;
 				
-				if (etag = http_etag(data_ptr, data_size, data_mode)) {
+				if ((etag = http_etag(data_ptr, data_size, data_mode))) {
 					char *sent_header = NULL;
 					
 					http_send_etag_ex(etag, strlen(etag), &sent_header);

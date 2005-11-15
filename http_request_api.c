@@ -426,47 +426,47 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 #endif
 
 	/* progress callback */
-	if (zoption = http_curl_getopt(options, "onprogress", 0)) {
+	if ((zoption = http_curl_getopt(options, "onprogress", 0))) {
 		HTTP_CURL_OPT(NOPROGRESS, 0);
 		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
 		HTTP_CURL_OPT(PROGRESSDATA,  http_request_callback_data(zoption));
 	}
 
 	/* proxy */
-	if (zoption = http_curl_getopt(options, "proxyhost", IS_STRING)) {
+	if ((zoption = http_curl_getopt(options, "proxyhost", IS_STRING))) {
 		HTTP_CURL_OPT(PROXY, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 		/* port */
-		if (zoption = http_curl_getopt(options, "proxyport", IS_LONG)) {
+		if ((zoption = http_curl_getopt(options, "proxyport", IS_LONG))) {
 			HTTP_CURL_OPT(PROXYPORT, Z_LVAL_P(zoption));
 		}
 		/* user:pass */
-		if (zoption = http_curl_getopt(options, "proxyauth", IS_STRING)) {
+		if ((zoption = http_curl_getopt(options, "proxyauth", IS_STRING))) {
 			HTTP_CURL_OPT(PROXYUSERPWD, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 		}
 #if LIBCURL_VERSION_NUM >= 0x070a07
 		/* auth method */
-		if (zoption = http_curl_getopt(options, "proxyauthtype", IS_LONG)) {
+		if ((zoption = http_curl_getopt(options, "proxyauthtype", IS_LONG))) {
 			HTTP_CURL_OPT(PROXYAUTH, Z_LVAL_P(zoption));
 		}
 #endif
 	}
 
 	/* outgoing interface */
-	if (zoption = http_curl_getopt(options, "interface", IS_STRING)) {
+	if ((zoption = http_curl_getopt(options, "interface", IS_STRING))) {
 		HTTP_CURL_OPT(INTERFACE, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 	}
 
 	/* another port */
-	if (zoption = http_curl_getopt(options, "port", IS_LONG)) {
+	if ((zoption = http_curl_getopt(options, "port", IS_LONG))) {
 		HTTP_CURL_OPT(PORT, Z_LVAL_P(zoption));
 	}
 
 	/* auth */
-	if (zoption = http_curl_getopt(options, "httpauth", IS_STRING)) {
+	if ((zoption = http_curl_getopt(options, "httpauth", IS_STRING))) {
 		HTTP_CURL_OPT(USERPWD, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 	}
 #if LIBCURL_VERSION_NUM >= 0x070a06
-	if (zoption = http_curl_getopt(options, "httpauthtype", IS_LONG)) {
+	if ((zoption = http_curl_getopt(options, "httpauthtype", IS_LONG))) {
 		HTTP_CURL_OPT(HTTPAUTH, Z_LVAL_P(zoption));
 	}
 #endif
@@ -481,26 +481,26 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	}
 
 	/* redirects, defaults to 0 */
-	if (zoption = http_curl_getopt(options, "redirect", IS_LONG)) {
+	if ((zoption = http_curl_getopt(options, "redirect", IS_LONG))) {
 		HTTP_CURL_OPT(FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
 		HTTP_CURL_OPT(MAXREDIRS, Z_LVAL_P(zoption));
-		if (zoption = http_curl_getopt(options, "unrestrictedauth", IS_BOOL)) {
+		if ((zoption = http_curl_getopt(options, "unrestrictedauth", IS_BOOL))) {
 			HTTP_CURL_OPT(UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
 		}
 	}
 
 	/* referer */
-	if (zoption = http_curl_getopt(options, "referer", IS_STRING)) {
+	if ((zoption = http_curl_getopt(options, "referer", IS_STRING))) {
 		HTTP_CURL_OPT(REFERER, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
-	if (zoption = http_curl_getopt(options, "useragent", IS_STRING)) {
+	if ((zoption = http_curl_getopt(options, "useragent", IS_STRING))) {
 		HTTP_CURL_OPT(USERAGENT, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 	}
 
 	/* additional headers, array('name' => 'value') */
-	if (zoption = http_curl_getopt(options, "headers", IS_ARRAY)) {
+	if ((zoption = http_curl_getopt(options, "headers", IS_ARRAY))) {
 		char *header_key;
 		ulong header_idx;
 		HashPosition pos;
@@ -526,7 +526,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	}
 
 	/* cookies, array('name' => 'value') */
-	if (zoption = http_curl_getopt(options, "cookies", IS_ARRAY)) {
+	if ((zoption = http_curl_getopt(options, "cookies", IS_ARRAY))) {
 		char *cookie_key = NULL;
 		ulong cookie_idx = 0;
 		HashPosition pos;
@@ -552,7 +552,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	}
 
 	/* session cookies */
-	if (zoption = http_curl_getopt(options, "cookiesession", IS_BOOL)) {
+	if ((zoption = http_curl_getopt(options, "cookiesession", IS_BOOL))) {
 		if (Z_LVAL_P(zoption)) {
 			/* accept cookies for this session */
 			HTTP_CURL_OPT(COOKIEFILE, "");
@@ -575,12 +575,12 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	}
 
 	/* maxfilesize */
-	if (zoption = http_curl_getopt(options, "maxfilesize", IS_LONG)) {
+	if ((zoption = http_curl_getopt(options, "maxfilesize", IS_LONG))) {
 		HTTP_CURL_OPT(MAXFILESIZE, Z_LVAL_P(zoption));
 	}
 
 	/* lastmodified */
-	if (zoption = http_curl_getopt(options, "lastmodified", IS_LONG)) {
+	if ((zoption = http_curl_getopt(options, "lastmodified", IS_LONG))) {
 		if (Z_LVAL_P(zoption)) {
 			if (Z_LVAL_P(zoption) > 0) {
 				HTTP_CURL_OPT(TIMEVALUE, Z_LVAL_P(zoption));
@@ -594,17 +594,17 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	}
 
 	/* timeout, defaults to 0 */
-	if (zoption = http_curl_getopt(options, "timeout", IS_LONG)) {
+	if ((zoption = http_curl_getopt(options, "timeout", IS_LONG))) {
 		HTTP_CURL_OPT(TIMEOUT, Z_LVAL_P(zoption));
 	}
 
 	/* connecttimeout, defaults to 3 */
-	if (zoption = http_curl_getopt(options, "connecttimeout", IS_LONG)) {
+	if ((zoption = http_curl_getopt(options, "connecttimeout", IS_LONG))) {
 		HTTP_CURL_OPT(CONNECTTIMEOUT, Z_LVAL_P(zoption));
 	}
 
 	/* ssl */
-	if (zoption = http_curl_getopt(options, "ssl", IS_ARRAY)) {
+	if ((zoption = http_curl_getopt(options, "ssl", IS_ARRAY))) {
 		ulong idx;
 		char *key = NULL;
 		zval **param;
@@ -628,7 +628,6 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 				HTTP_CURL_OPT_SSL_LONG_(VERIFYPEER);
 				HTTP_CURL_OPT_SSL_LONG_(VERIFYHOST);
 				HTTP_CURL_OPT_SSL_STRING_(CIPHER_LIST);
-
 
 				HTTP_CURL_OPT_STRING(CAINFO);
 #if LIBCURL_VERSION_NUM >= 0x070908
@@ -866,8 +865,8 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 				phpstr_append(conv->request, data, length);
 			}
 		break;
-#if 0
 		default:
+#if 0
 			fprintf(stderr, "## ", type);
 			if (!type) {
 				fprintf(stderr, "%s", data);
@@ -884,8 +883,8 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 			if (data[length-1] != 0xa) {
 				fprintf(stderr, "\n");
 			}
-		break;
 #endif
+		break;
 	}
 
 	if (type) {

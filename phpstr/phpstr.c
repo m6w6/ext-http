@@ -25,7 +25,7 @@ PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int flags)
 
 PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t length)
 {
-	if (buf = phpstr_init(buf)) {
+	if ((buf = phpstr_init(buf))) {
 		if (NOMEM == phpstr_append(buf, string, length)) {
 			pefree(buf, buf->pmem);
 			buf = NULL;
@@ -346,7 +346,7 @@ PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_
 	char *chunk = NULL;
 	size_t got = 0;
 	
-	while (got = phpstr_chunk_buffer(s, data, data_len, &chunk, chunk_len)) {
+	while ((got = phpstr_chunk_buffer(s, data, data_len, &chunk, chunk_len))) {
 		passthru(chunk, got TSRMLS_CC);
 		if (!chunk_len) {
 			/* 	we already got the last chunk,

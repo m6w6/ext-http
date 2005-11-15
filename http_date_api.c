@@ -147,7 +147,7 @@ PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 {
 	struct tm *gmtime, tmbuf;
 
-	if (gmtime = php_gmtime_r(&t, &tmbuf)) {
+	if ((gmtime = php_gmtime_r(&t, &tmbuf))) {
 		char *date = ecalloc(1, 31);
 		snprintf(date, 30,
 			"%s, %02d %s %04d %02d:%02d:%02d GMT",

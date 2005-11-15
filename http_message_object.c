@@ -554,7 +554,7 @@ PHP_METHOD(HttpMessage, __construct)
 		http_message *msg = obj->message;
 		
 		http_message_dtor(msg);
-		if (obj->message = http_message_parse_ex(msg, message, length)) {
+		if ((obj->message = http_message_parse_ex(msg, message, length))) {
 			if (obj->message->parent) {
 				obj->parent = http_message_object_new_ex(Z_OBJCE_P(getThis()), obj->message->parent, NULL);
 			}
@@ -590,7 +590,7 @@ PHP_METHOD(HttpMessage, fromString)
 	
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
-		if (msg = http_message_parse(string, length)) {
+		if ((msg = http_message_parse(string, length))) {
 			ZVAL_OBJVAL(return_value, http_message_object_new_ex(http_message_object_ce, msg, NULL));
 		}
 	}

@@ -144,7 +144,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 	}
 
 	/* header parsing stops at (CR)LF (CR)LF */
-	if (body = http_locate_body(message)) {
+	if ((body = http_locate_body(message))) {
 		zval *c;
 		const char *continue_at = NULL;
 		size_t remaining = message + message_length - body;
@@ -155,7 +155,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 			size_t decoded_len;
 
 			/* decode and replace Transfer-Encoding with Content-Length header */
-			if (continue_at = http_encoding_dechunk(body, message + message_length - body, &decoded, &decoded_len)) {
+			if ((continue_at = http_encoding_dechunk(body, message + message_length - body, &decoded, &decoded_len))) {
 				zval *len;
 				char *tmp;
 				int tmp_len;
@@ -174,7 +174,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		} else
 
 		/* message has content-length header */
-		if (c = http_message_header(msg, "Content-Length")) {
+		if ((c = http_message_header(msg, "Content-Length"))) {
 			ulong len = strtoul(Z_STRVAL_P(c), NULL, 10);
 			if (len > remaining) {
 				http_error_ex(HE_NOTICE, HTTP_E_MALFORMED_HEADERS, "The Content-Length header pretends a larger body than actually received (expected %lu bytes; got %lu bytes)", len, remaining);
@@ -185,7 +185,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		} else
 
 		/* message has content-range header */
-		if (c = http_message_header(msg, "Content-Range")) {
+		if ((c = http_message_header(msg, "Content-Range"))) {
 			ulong total = 0, start = 0, end = 0, len = 0;
 			
 			if (!strncasecmp(Z_STRVAL_P(c), "bytes", lenof("bytes")) && 
@@ -224,7 +224,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		
 #if defined(HTTP_HAVE_ZLIB) || defined(HAVE_ZLIB)
 		/* check for compressed data */
-		if (c = http_message_header(msg, "Content-Encoding")) {
+		if ((c = http_message_header(msg, "Content-Encoding"))) {
 			char *decoded = NULL;
 			size_t decoded_len = 0;
 #	if defined(HAVE_ZLIB) && !defined(HTTP_HAVE_ZLIB)
@@ -288,7 +288,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				http_message *next = NULL, *most = NULL;
 
 				/* set current message to parent of most parent following messages and return deepest */
-				if (most = next = http_message_parse(continue_at, message + message_length - continue_at)) {
+				if ((most = next = http_message_parse(continue_at, message + message_length - continue_at))) {
 					while (most->parent) most = most->parent;
 					most->parent = msg;
 					msg = next;
@@ -382,7 +382,7 @@ PHP_HTTP_API void _http_message_serialize(http_message *message, char **string, 
 		http_message_tostring(message, &buf, &len);
 		phpstr_prepend(&str, buf, len);
 		efree(buf);
-	} while (message = message->parent);
+	} while ((message = message->parent));
 
 	buf = phpstr_data(&str, string, length);
 	if (!string) {
@@ -411,6 +411,10 @@ PHP_HTTP_API void _http_message_tostruct_recursive(http_message *msg, zval *obj 
 		case HTTP_MSG_REQUEST:
 			add_assoc_string(&strct, "requestMethod", msg->http.info.request.method, 1);
 			add_assoc_string(&strct, "requestUri", msg->http.info.request.URI, 1);
+		break;
+		
+		case HTTP_MSG_NONE:
+			/* avoid compiler warning */
 		break;
 	}
 	
@@ -493,7 +497,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 				int port = 0;
 
 				/* check for port */
-				if (colon = strchr(Z_STRVAL_PP(zhost), ':')) {
+				if ((colon = strchr(Z_STRVAL_PP(zhost), ':'))) {
 					port = atoi(colon + 1);
 					host = estrndup(Z_STRVAL_PP(zhost), host_len = (Z_STRVAL_PP(zhost) - colon - 1));
 				} else {

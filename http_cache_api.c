@@ -120,7 +120,7 @@ PHP_HTTP_API zend_bool _http_match_last_modified_ex(const char *entry, time_t t,
 	HTTP_GSC(zmodified, entry, !enforce_presence);
 
 	modified = estrndup(Z_STRVAL_P(zmodified), Z_STRLEN_P(zmodified));
-	if (chr_ptr = strrchr(modified, ';')) {
+	if ((chr_ptr = strrchr(modified, ';'))) {
 		chr_ptr = 0;
 	}
 	retval = (t <= http_parse_date(modified));
