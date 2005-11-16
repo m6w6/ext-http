@@ -30,7 +30,7 @@
  </lead>
  <date>2005-00-00</date>
  <version>
-  <release>0.18.0dev</release>
+  <release>0.18.0</release>
   <api>0.18.0</api>
  </version>
  <stability>
@@ -43,6 +43,7 @@
   in case of redirects and positive cache hits (instead, standard output will be discarded)
 + Classes HttpMessage and HttpRequestPool implement Countable if PHP >= 5.1 with SPL is available
 + Class HttpMessage implements Serializable if PHP >= 5.1 is available
++ Added experimental http.chunked_encode and chunked_decode stream filter
 
 * Fixed a bug that caused a warning about an invalid curl handle at HttpRequestPool destruction
 * Fixed a bug with http_get_request_headers() modifying $_SERVER array
@@ -192,7 +193,7 @@
     <file role="test" name="redirect_013_logging.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="request_methods.phpt"/>
-    <file role="text" name="stream_filters.phpt"/>
+    <file role="test" name="stream_filters_001.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
     <file role="test" name="send_data_002.phpt"/>
     <file role="test" name="send_data_003.phpt"/>
@@ -261,16 +262,6 @@
   />
   <filelist>
    <install as="functions.html" name="docs/functions.html"/>
-   <install as="examples/Bandwidth_Throttling.php" name="docs/examples/Bandwidth_Throttling.php"/>
-   <install as="examples/Cached_Responses.php" name="docs/examples/Cached_Responses.php"/>
-   <install as="examples/GET_Queries.php" name="docs/examples/GET_Queries.php"/>
-   <install as="examples/KISS_XMLRPC_Client.php" name="docs/examples/KISS_XMLRPC_Client.php"/>
-   <install as="examples/Multipart_Posts.php" name="docs/examples/Multipart_Posts.php"/>
-   <install as="examples/Parallel_Requests.php" name="docs/examples/Parallel_Requests.php"/>
-   <install as="examples/Parallel_Requests_.php" name="docs/examples/Parallel_Requests_.php"/>
-   <install as="examples/Simple_Feed_Aggregator.php" name="docs/examples/Simple_Feed_Aggregator.php"/>
-   <install as="examples/extract.php" name="docs/examples/extract.php"/>
-   <install as="examples/tutorial.txt" name="docs/examples/tutorial.txt"/>
   </filelist>
  </extsrcrelease>
  <changelog />

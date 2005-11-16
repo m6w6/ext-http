@@ -19,5 +19,6 @@ was built with zlib support.
 Internals:
 	-	the request bodies created in http_request_pool_attach() are not 
 		destroyed in http_request_pool_detach() but on reset; 
-		may be a memory problem in long running scripts
+		may be a memory problem in long running scripts which reuse one
+		request pool several times
 

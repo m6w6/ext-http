@@ -23,27 +23,20 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.17.0</version>
-  <date>2005-11-04</date>
+  <version>0.18.0</version>
+  <date>2005-11-16</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>+ Added experimental thread safety for builds linking against libcurl-gnutls
-+ Improved the chunked decoder
-+ Added clone support to HttpRequest objects
+  <notes>+ Added INI setting http.force_exit which can be used to disable script termination
+  in case of redirects and positive cache hits (instead, standard output will be discarded)
++ Classes HttpMessage and HttpRequestPool implement Countable if PHP &gt;= 5.1 with SPL is available
++ Class HttpMessage implements Serializable if PHP &gt;= 5.1 is available
++ Added experimental http.chunked_encode and chunked_decode stream filter
 
-- License changed from PHP license to revised BSD license!
-- HttpMessage properties are not accessible by reference or array index/key!
-- HttpRequest history logging is disabled by default!
-- HttpRequestPool is not clonable!
-
-* Fixed a bug where HttpRequest warnings were hidden within the HttpRequestPool
-* Fixed shared build within the PHP source tree
-* Fixed parallel build with ext/zlib on Win32
-* Fixed object deallocation
-* Fixed http_support() pretending no support for SSL in non-threadsafe builds
-* Fixed the message parser to not choke on headers containing HTTP/1.x
-* Fixed access to protected HttpMessage properties in extending classes
-* Fixed lots of tests for the changed HTTP header order in PHP-5.1
+* Fixed a bug that caused a warning about an invalid curl handle at HttpRequestPool destruction
+* Fixed a bug with http_get_request_headers() modifying $_SERVER array
+* Fixed a bug which required &quot;=&quot; in Content-Range response message headers
+* Fixed a bug with directly setting HttpMessage property values
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -53,21 +46,13 @@
    <configureoption name="with-http-curl-requests" default="yes" prompt="whether to enable cURL HTTP requests; specify libcurl directory"/>
    <configureoption name="with-http-mhash-etags" default="yes" prompt="whether to enable mhash ETag generator; specify libmhash directory"/>
    <configureoption name="with-http-magic-mime" default="no" prompt="whether to enable response content type guessing; specify libmagic directory"/>
-   <configureoption name="with-zlib-compression" default="yes" prompt="whether to enable support for gzencoded/deflated message bodies; specify zlib directory"/>
+   <configureoption name="with-http-zlib-compression" default="yes" prompt="whether to enable support for gzencoded/deflated message bodies; specify zlib directory"/>
   </configureoptions>
   <filelist>
    <dir name="docs">
     <dir name="examples">
-     <file role="doc" install-as="examples/Bandwidth_Throttling.php" name="Bandwidth_Throttling.php"/>
-     <file role="doc" install-as="examples/Cached_Responses.php" name="Cached_Responses.php"/>
-     <file role="doc" install-as="examples/extract.php" name="extract.php"/>
-     <file role="doc" install-as="examples/GET_Queries.php" name="GET_Queries.php"/>
-     <file role="doc" install-as="examples/KISS_XMLRPC_Client.php" name="KISS_XMLRPC_Client.php"/>
-     <file role="doc" install-as="examples/Multipart_Posts.php" name="Multipart_Posts.php"/>
-     <file role="doc" install-as="examples/Parallel_Requests.php" name="Parallel_Requests.php"/>
-     <file role="doc" install-as="examples/Parallel_Requests_.php" name="Parallel_Requests_.php"/>
-     <file role="doc" install-as="examples/Simple_Feed_Aggregator.php" name="Simple_Feed_Aggregator.php"/>
-     <file role="doc" install-as="examples/tutorial.txt" name="tutorial.txt"/>
+     <file role="doc" name="extract.php"/>
+     <file role="doc" name="tutorial.txt"/>
     </dir> <!-- /docs/examples -->
     <file role="doc" install-as="functions.html" name="functions.html"/>
    </dir> <!-- /docs -->
@@ -113,9 +98,11 @@
     <file role="test" name="get_request_data_001.phpt"/>
     <file role="test" name="HttpMessage_001.phpt"/>
     <file role="test" name="HttpMessage_002.phpt"/>
+    <file role="test" name="HttpMessage_003.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
     <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequestPool_003.phpt"/>
+    <file role="test" name="HttpRequestPool_004.phpt"/>
     <file role="test" name="HttpRequest_001.phpt"/>
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>
@@ -125,12 +112,14 @@
     <file role="test" name="HttpResponse_004.phpt"/>
     <file role="test" name="INI_001.phpt"/>
     <file role="test" name="log.inc"/>
+    <file role="test" name="match_request_header_001.phpt"/>
     <file role="test" name="negotiation_001.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
     <file role="test" name="parse_message_001.phpt"/>
     <file role="test" name="parse_message_002.phpt"/>
     <file role="test" name="parse_message_003.phpt"/>
     <file role="test" name="parse_message_004.phpt"/>
+    <file role="test" name="parse_message_005.phpt"/>
     <file role="test" name="redirect_001.phpt"/>
     <file role="test" name="redirect_001_logging.phpt"/>
     <file role="test" name="redirect_002.phpt"/>
@@ -170,6 +159,7 @@
     <file role="test" name="send_file_012.phpt"/>
     <file role="test" name="send_file_013.phpt"/>
     <file role="test" name="skip.inc"/>
+    <file role="test" name="stream_filters_001.phpt"/>
     <file role="test" name="urls.txt"/>
    </dir> <!-- /tests -->
    <file role="src" name="config.m4"/>
@@ -183,6 +173,7 @@
    <file role="src" name="http_date_api.c"/>
    <file role="src" name="http_encoding_api.c"/>
    <file role="src" name="http_exception_object.c"/>
+   <file role="src" name="http_filter_api.c"/>
    <file role="src" name="http_functions.c"/>
    <file role="src" name="http_headers_api.c"/>
    <file role="src" name="http_info_api.c"/>
@@ -208,6 +199,7 @@
    <file role="src" name="php_http_date_api.h"/>
    <file role="src" name="php_http_encoding_api.h"/>
    <file role="src" name="php_http_exception_object.h"/>
+   <file role="src" name="php_http_filter_api.h"/>
    <file role="src" name="php_http_headers_api.h"/>
    <file role="src" name="php_http_info_api.h"/>
    <file role="src" name="php_http_message_api.h"/>
