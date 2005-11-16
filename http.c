@@ -30,13 +30,13 @@
 #include "php_http_send_api.h"
 #include "php_http_cache_api.h"
 #include "php_http_headers_api.h"
-#include "php_http_filter_api.h"
 #include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
 #endif
 
 #ifdef ZEND_ENGINE_2
+#	include "php_http_filter_api.h"
 #	include "php_http_util_object.h"
 #	include "php_http_message_object.h"
 #	ifndef WONKY
@@ -293,7 +293,6 @@ PHP_MINIT_FUNCTION(http)
 	if (	(SUCCESS != PHP_MINIT_CALL(http_support))	||
 			(SUCCESS != PHP_MINIT_CALL(http_headers))	||
 			(SUCCESS != PHP_MINIT_CALL(http_cache))		||
-			(SUCCESS != PHP_MINIT_CALL(http_filter))	||
 #ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #endif /* HTTP_HAVE_CURL */
@@ -302,14 +301,15 @@ PHP_MINIT_FUNCTION(http)
 	}
 
 #ifdef ZEND_ENGINE_2
-	if (	(SUCCESS != PHP_MINIT_CALL(http_util_object))		||
+	if (	(SUCCESS != PHP_MINIT_CALL(http_filter))			||
+			(SUCCESS != PHP_MINIT_CALL(http_util_object))		||
 			(SUCCESS != PHP_MINIT_CALL(http_message_object))	||
 #	ifndef WONKY
 			(SUCCESS != PHP_MINIT_CALL(http_response_object))	||
 #	endif /* WONKY */
 #	ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request_object))	||
-			(SUCCESS != PHP_MINIT_CALL(http_requestpool_object))	||
+			(SUCCESS != PHP_MINIT_CALL(http_requestpool_object))||
 #	endif /* HTTP_HAVE_CURL */
 			(SUCCESS != PHP_MINIT_CALL(http_exception_object))) {
 		return FAILURE;

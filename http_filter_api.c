@@ -17,6 +17,8 @@
 #endif
 #include "php.h"
 
+#ifdef ZEND_ENGINE_2
+
 #include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_filter_api.h"
@@ -305,6 +307,8 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 php_stream_filter_factory http_filter_factory = {
 	http_filter_create
 };
+
+#endif /* ZEND_ENGINE_2 */
 
 /*
  * Local variables:
