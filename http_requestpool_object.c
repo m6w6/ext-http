@@ -27,6 +27,8 @@
 #include "php_http_request_object.h"
 #include "php_http_exception_object.h"
 
+#include "missing.h"
+
 #include "zend_interfaces.h"
 #if defined(HAVE_SPL) && !defined(WONKY)
 /* SPL doesn't install its headers */

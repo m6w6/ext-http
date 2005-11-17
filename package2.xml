@@ -30,7 +30,7 @@
  </lead>
  <date>2005-00-00</date>
  <version>
-  <release>0.18.0</release>
+  <release>0.18.1</release>
   <api>0.18.0</api>
  </version>
  <stability>
@@ -39,16 +39,7 @@
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added INI setting http.force_exit which can be used to disable script termination
-  in case of redirects and positive cache hits (instead, standard output will be discarded)
-+ Classes HttpMessage and HttpRequestPool implement Countable if PHP >= 5.1 with SPL is available
-+ Class HttpMessage implements Serializable if PHP >= 5.1 is available
-+ Added experimental http.chunked_encode and chunked_decode stream filter
-
-* Fixed a bug that caused a warning about an invalid curl handle at HttpRequestPool destruction
-* Fixed a bug with http_get_request_headers() modifying $_SERVER array
-* Fixed a bug which required "=" in Content-Range response message headers
-* Fixed a bug with directly setting HttpMessage property values
+* Fixed build with PHP-4 and PHP-5.0
 ]]></notes>
  <contents>
   <dir name="/">

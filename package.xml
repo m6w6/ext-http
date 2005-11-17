@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package version="1.0" packagerversion="1.4.3">
+<package version="1.0" packagerversion="1.4.4">
  <name>pecl_http</name>
  <summary>Extended HTTP Support</summary>
  <description>* Building absolute URLs
@@ -23,20 +23,11 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.18.0</version>
-  <date>2005-11-16</date>
+  <version>0.18.1</version>
+  <date>2005-11-17</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>+ Added INI setting http.force_exit which can be used to disable script termination
-  in case of redirects and positive cache hits (instead, standard output will be discarded)
-+ Classes HttpMessage and HttpRequestPool implement Countable if PHP &gt;= 5.1 with SPL is available
-+ Class HttpMessage implements Serializable if PHP &gt;= 5.1 is available
-+ Added experimental http.chunked_encode and chunked_decode stream filter
-
-* Fixed a bug that caused a warning about an invalid curl handle at HttpRequestPool destruction
-* Fixed a bug with http_get_request_headers() modifying $_SERVER array
-* Fixed a bug which required &quot;=&quot; in Content-Range response message headers
-* Fixed a bug with directly setting HttpMessage property values
+  <notes>* Fixed build with PHP-4 and PHP-5.0
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
