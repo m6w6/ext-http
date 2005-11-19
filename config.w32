@@ -29,6 +29,13 @@ if (PHP_HTTP != "no") {
 	} else {
 		WARNING("zlib encoding functions not enabled; libraries and headers not found");
 	}
+	
+	if (PHP_HASH != "no") {
+		if (glob(configure_module_dirname +"\\..\\hash\\php_hash_sha.h").length) {
+			ADD_FLAG("CFLAGS_HTTP", "/I"+ configure_module_dirname +"\\..\\hash");
+			AC_DEFINE("HTTP_HAVE_HASH_EXT_INCLUDES", 1, "");
+		}
+	}
 
 	MHASH_LIB = PHP_DEBUG != "no" ? "libmhash-staticd.lib":"libmhash-static.lib";
 	if (CHECK_HEADER_ADD_INCLUDE('mhash.h', 'CFLAGS_HTTP') &&

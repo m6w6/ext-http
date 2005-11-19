@@ -217,6 +217,11 @@ PHP_INI_MH(http_update_allowed_methods)
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
 
+#undef CASE_HTTP_ETAG_HASH
+#define CASE_HTTP_ETAG_HASH(HASH) \
+	case HTTP_ETAG_##HASH: \
+		ZEND_WRITE(#HASH, lenof(#HASH)); \
+	break;
 PHP_INI_DISP(http_etag_mode_displayer)
 {
 	long value;
@@ -231,20 +236,19 @@ PHP_INI_DISP(http_etag_mode_displayer)
 	
 	switch (value)
 	{
-		case HTTP_ETAG_CRC32:
-			ZEND_WRITE("HTTP_ETAG_CRC32", lenof("HTTP_ETAG_CRC32"));
-		break;
-		
-		case HTTP_ETAG_SHA1:
-			ZEND_WRITE("HTTP_ETAG_SHA1", lenof("HTTP_ETAG_SHA1"));
-		break;
-		
-		case HTTP_ETAG_MD5:
+#ifdef HTTP_HAVE_HASH_EXT
+		CASE_HTTP_ETAG_HASH(RIPEMD160);
+		CASE_HTTP_ETAG_HASH(RIPEMD128);
+		CASE_HTTP_ETAG_HASH(SHA512);
+		CASE_HTTP_ETAG_HASH(SHA384);
+		CASE_HTTP_ETAG_HASH(SHA256);
+#endif
+		CASE_HTTP_ETAG_HASH(CRC32);
+		CASE_HTTP_ETAG_HASH(SHA1);
 #ifndef HTTP_HAVE_MHASH
 		default:
 #endif
-			ZEND_WRITE("HTTP_ETAG_MD5", lenof("HTTP_ETAG_MD5"));
-		break;
+		CASE_HTTP_ETAG_HASH(MD5);
 		
 #ifdef HTTP_HAVE_MHASH
 		default:
@@ -418,7 +422,11 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_colspan_header(2, "Supported ETag Hash Algorithms");
 	{
 			
-		php_info_print_table_row(2, "PHP", "CRC32, MD5, SHA1");
+		php_info_print_table_row(2, "PHP", "CRC32, MD5, SHA1"
+#ifdef HTTP_HAVE_HASH_EXT
+			", SHA256, SHA384, SHA512, RIPEMD128, RIPEMD160"
+#endif
+		);
 #ifdef HTTP_HAVE_MHASH
 		{
 			phpstr *algos = phpstr_new();

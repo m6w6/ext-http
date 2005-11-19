@@ -26,6 +26,13 @@
 #include "php_http_api.h"
 #include "php_http_send_api.h"
 
+#if defined(HAVE_HASH_EXT) && !defined(COMPILE_DL_HASH) && defined(HTTP_HAVE_HASH_EXT_INCLUDES)
+#	define HTTP_HAVE_HASH_EXT
+#	include "php_hash.h"
+#	include "php_hash_sha.h"
+#	include "php_hash_ripemd.h"
+#endif
+
 #ifdef HTTP_HAVE_MHASH
 #	include <mhash.h>
 #endif
@@ -33,6 +40,13 @@
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 typedef enum {
+#ifdef HTTP_HAVE_HASH_EXT
+	HTTP_ETAG_RIPEMD160 = -8,
+	HTTP_ETAG_RIPEMD128 = -7,
+	HTTP_ETAG_SHA512 = -6,
+	HTTP_ETAG_SHA384 = -5,
+	HTTP_ETAG_SHA256 = -4,
+#endif
 	HTTP_ETAG_CRC32 = -3,
 	HTTP_ETAG_MD5 = -2,
 	HTTP_ETAG_SHA1 = -1,
@@ -50,27 +64,31 @@ static void *http_etag_alloc_mhash_digest(size_t size)
 #define http_etag_digest(d, l) _http_etag_digest((d), (l) TSRMLS_CC)
 static inline char *_http_etag_digest(const unsigned char *digest, int len TSRMLS_DC)
 {
+	static const char hexdigits[16] = "0123456789abcdef";
 	int i;
 	char *hex = emalloc(len * 2 + 1);
 	char *ptr = hex;
 	
-	/* optimize this --
-		look at apache's make_etag */
 	for (i = 0; i < len; ++i) {
-		sprintf(ptr, "%02x", digest[i]);
-		ptr += 2;
+		*ptr++ = hexdigits[digest[i] >> 4];
+		*ptr++ = hexdigits[digest[i] & 0xF];
 	}
 	*ptr = '\0';
 	
 	return hex;
 }
 
+#undef CASE_HTTP_ETAG_HASH
+#define CASE_HTTP_ETAG_HASH(HASH) \
+	case HTTP_ETAG_##HASH: \
+		PHP_##HASH##Init(ctx = emalloc(sizeof(PHP_##HASH##_CTX))); \
+	break;
 #define http_etag_init() _http_etag_init(TSRMLS_C)
 static inline void *_http_etag_init(TSRMLS_D)
 {
 	void *ctx = NULL;
 	long mode = HTTP_G(etag).mode;
-	
+
 	switch (mode)
 	{
 		case HTTP_ETAG_CRC32:
@@ -78,16 +96,18 @@ static inline void *_http_etag_init(TSRMLS_D)
 			*((uint *) ctx) = ~0;
 		break;
 		
-		case HTTP_ETAG_SHA1:
-			PHP_SHA1Init(ctx = emalloc(sizeof(PHP_SHA1_CTX)));
-		break;
-		
-		case HTTP_ETAG_MD5:
+#ifdef HTTP_HAVE_HASH_EXT
+		CASE_HTTP_ETAG_HASH(RIPEMD160);
+		CASE_HTTP_ETAG_HASH(RIPEMD128);
+		CASE_HTTP_ETAG_HASH(SHA512);
+		CASE_HTTP_ETAG_HASH(SHA384);
+		CASE_HTTP_ETAG_HASH(SHA256);
+#endif
+		CASE_HTTP_ETAG_HASH(SHA1);
 #ifndef HTTP_HAVE_MHASH
 		default:
 #endif
-			PHP_MD5Init(ctx = emalloc(sizeof(PHP_MD5_CTX)));
-		break;
+		CASE_HTTP_ETAG_HASH(MD5);
 		
 #ifdef HTTP_HAVE_MHASH
 		default:
@@ -101,12 +121,18 @@ static inline void *_http_etag_init(TSRMLS_D)
 	return ctx;
 }
 
+#undef CASE_HTTP_ETAG_HASH
+#define CASE_HTTP_ETAG_HASH(HASH) \
+	case HTTP_ETAG_##HASH: \
+		if (*((PHP_##HASH##_CTX **) ctx_ptr)) { \
+			efree(*((PHP_##HASH##_CTX **) ctx_ptr)); \
+			*((PHP_##HASH##_CTX **) ctx_ptr) = NULL; \
+		} \
+	break;
 #define http_etag_free(cp) _http_etag_free((cp) TSRMLS_CC)
 static inline void _http_etag_free(void **ctx_ptr TSRMLS_DC)
 {
-	long mode = HTTP_G(etag).mode;
-	
-	switch (mode)
+	switch (HTTP_G(etag).mode)
 	{
 		case HTTP_ETAG_CRC32:
 			if (*((uint **) ctx_ptr)) {
@@ -114,23 +140,19 @@ static inline void _http_etag_free(void **ctx_ptr TSRMLS_DC)
 				*((uint **) ctx_ptr) = NULL;
 			}
 		break;
-		
-		case HTTP_ETAG_SHA1:
-			if (*((PHP_SHA1_CTX **) ctx_ptr)) {
-				efree(*((PHP_SHA1_CTX **) ctx_ptr));
-				*((PHP_SHA1_CTX **) ctx_ptr) = NULL;
-			}
-		break;
-		
-		case HTTP_ETAG_MD5:
+
+#ifdef HTTP_HAVE_HASH_EXT
+		CASE_HTTP_ETAG_HASH(RIPEMD160);
+		CASE_HTTP_ETAG_HASH(RIPEMD128);
+		CASE_HTTP_ETAG_HASH(SHA512);
+		CASE_HTTP_ETAG_HASH(SHA384);
+		CASE_HTTP_ETAG_HASH(SHA256);
+#endif
+		CASE_HTTP_ETAG_HASH(SHA1);
 #ifndef HTTP_HAVE_MHASH
 		default:
 #endif
-			if (*((PHP_MD5_CTX **) ctx_ptr)) {
-				efree(*((PHP_MD5_CTX **) ctx_ptr));
-				*((PHP_MD5_CTX **) ctx_ptr) = NULL;
-			}
-		break;
+		CASE_HTTP_ETAG_HASH(MD5);
 		
 #ifdef HTTP_HAVE_MHASH
 		default:
@@ -144,11 +166,17 @@ static inline void _http_etag_free(void **ctx_ptr TSRMLS_DC)
 	}
 }
 
+#undef CASE_HTTP_ETAG_HASH
+#define CASE_HTTP_ETAG_HASH(HASH, len) \
+	case HTTP_ETAG_##HASH##: \
+		PHP_##HASH##Final(digest, *((PHP_##HASH##_CTX **) ctx_ptr)); \
+		etag = http_etag_digest(digest, len); \
+	break;
 #define http_etag_finish(c) _http_etag_finish((c) TSRMLS_CC)
 static inline char *_http_etag_finish(void **ctx_ptr TSRMLS_DC)
 {
 	char *etag = NULL;
-	unsigned char digest[20];
+	unsigned char digest[128];
 	long mode = HTTP_G(etag).mode;
 	
 	switch (mode)
@@ -157,19 +185,19 @@ static inline char *_http_etag_finish(void **ctx_ptr TSRMLS_DC)
 			**((uint **) ctx_ptr) = ~**((uint **) ctx_ptr);
 			etag = http_etag_digest(*((const unsigned char **) ctx_ptr), sizeof(uint));
 		break;
-		
-		case HTTP_ETAG_SHA1:
-			PHP_SHA1Final(digest, *((PHP_SHA1_CTX **) ctx_ptr));
-			etag = http_etag_digest(digest, 20);
-		break;
-		
-		case HTTP_ETAG_MD5:
+
+#ifdef HTTP_HAVE_HASH_EXT
+		CASE_HTTP_ETAG_HASH(RIPEMD160, 20);
+		CASE_HTTP_ETAG_HASH(RIPEMD128, 16);
+		CASE_HTTP_ETAG_HASH(SHA512, 64);
+		CASE_HTTP_ETAG_HASH(SHA384, 48);
+		CASE_HTTP_ETAG_HASH(SHA256, 32);
+#endif
+		CASE_HTTP_ETAG_HASH(SHA1, 20);
 #ifndef HTTP_HAVE_MHASH
 		default:
 #endif
-			PHP_MD5Final(digest, *((PHP_MD5_CTX **) ctx_ptr));
-			etag = http_etag_digest(digest, 16);
-		break;
+		CASE_HTTP_ETAG_HASH(MD5, 16);
 		
 #ifdef HTTP_HAVE_MHASH
 		default:
@@ -189,10 +217,15 @@ static inline char *_http_etag_finish(void **ctx_ptr TSRMLS_DC)
 	return etag;
 }
 
+#undef CASE_HTTP_ETAG_HASH
+#define CASE_HTTP_ETAG_HASH(HASH) \
+	case HTTP_ETAG_##HASH: \
+		PHP_##HASH##Update(ctx, (const unsigned char *) data_ptr, data_len); \
+	break;
 #define http_etag_update(c, d, l) _http_etag_update((c), (d), (l) TSRMLS_CC)
 static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t data_len TSRMLS_DC)
 {
-	switch (INI_INT("http.etag_mode"))
+	switch (HTTP_G(etag).mode)
 	{
 		case HTTP_ETAG_CRC32:
 		{
@@ -205,16 +238,18 @@ static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t dat
 		}
 		break;
 		
-		case HTTP_ETAG_SHA1:
-			PHP_SHA1Update(ctx, (const unsigned char *) data_ptr, data_len);
-		break;
-		
-		case HTTP_ETAG_MD5:
+#ifdef HTTP_HAVE_HASH_EXT
+		CASE_HTTP_ETAG_HASH(RIPEMD160);
+		CASE_HTTP_ETAG_HASH(RIPEMD128);
+		CASE_HTTP_ETAG_HASH(SHA512);
+		CASE_HTTP_ETAG_HASH(SHA384);
+		CASE_HTTP_ETAG_HASH(SHA256);
+#endif
+		CASE_HTTP_ETAG_HASH(SHA1);
 #ifndef HTTP_HAVE_MHASH
 		default:
 #endif
-			PHP_MD5Update(ctx, (const unsigned char *) data_ptr, data_len);
-		break;
+		CASE_HTTP_ETAG_HASH(MD5);
 		
 #ifdef HTTP_HAVE_MHASH
 		default:

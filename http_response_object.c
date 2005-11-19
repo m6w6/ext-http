@@ -248,6 +248,14 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_CONST(long, "ETAG_SHA1", HTTP_ETAG_SHA1);
 	DCL_CONST(long, "ETAG_CRC32", HTTP_ETAG_CRC32);
 	
+#	ifdef HTTP_HAVE_HASH_EXT
+	DCL_CONST(long, "ETAG_SHA256", HTTP_ETAG_SHA256);
+	DCL_CONST(long, "ETAG_SHA384", HTTP_ETAG_SHA384);
+	DCL_CONST(long, "ETAG_SHA512", HTTP_ETAG_SHA512);
+	DCL_CONST(long, "ETAG_RIPEMD128", HTTP_ETAG_RIPEMD128);
+	DCL_CONST(long, "ETAG_RIPEMD160", HTTP_ETAG_RIPEMD160);
+#	endif
+
 #	ifdef HTTP_HAVE_MHASH
 	{
 		int l, i, c = mhash_count();
