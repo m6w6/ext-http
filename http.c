@@ -220,7 +220,7 @@ PHP_INI_MH(http_update_allowed_methods)
 #undef CASE_HTTP_ETAG_HASH
 #define CASE_HTTP_ETAG_HASH(HASH) \
 	case HTTP_ETAG_##HASH: \
-		ZEND_WRITE(#HASH, lenof(#HASH)); \
+		ZEND_WRITE("HTTP_ETAG_"#HASH, lenof("HTTP_ETAG_"#HASH)); \
 	break;
 PHP_INI_DISP(http_etag_mode_displayer)
 {
