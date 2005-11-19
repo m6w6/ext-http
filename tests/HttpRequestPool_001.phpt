@@ -14,6 +14,7 @@ checkurl('dev.iworks.at');
 --FILE--
 <?php
 echo "-TEST\n";
+
 $pool = new HttpRequestPool(
     new HttpRequest('http://www.php.net/', HTTP_METH_HEAD),
     new HttpRequest('http://at.php.net/', HTTP_METH_HEAD),
@@ -21,13 +22,16 @@ $pool = new HttpRequestPool(
     new HttpRequest('http://ch.php.net/', HTTP_METH_HEAD),
     $post = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_METH_POST)
 );
+
 $post->addPostFields(array('a'=>1,'b'=>2)) ;
 $pool->send();
+
 foreach ($pool as $req) {
     echo $req->getUrl(), '=',
         $req->getResponseCode(), ':',
         $req->getResponseMessage()->getResponseCode(), "\n";
 }
+
 foreach ($pool as $req) {
 	try {
 		$pool->attach(new HttpRequest('http://foo.bar'));
@@ -35,11 +39,14 @@ foreach ($pool as $req) {
 		echo ".\n";
 	}
 }
+
 foreach ($pool as $req) {
 	$pool->detach($req);
 }
+
 echo "Done\n";
 ?>
+
 --EXPECTF--
 %sTEST
 http://www.php.net/=200:200
