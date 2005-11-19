@@ -251,6 +251,44 @@ PHP_FUNCTION(http_negotiate_charset)
 }
 /* }}} */
 
+/* {{{ proto string http_negotiate_ctype(array supported[, array &result])
+ *
+ * This function negotiates the clients preferred content type based on its
+ * Accept HTTP header.  The qualifier is recognized and content types 
+ * without qualifier are rated highest.
+ * 
+ * Expects an array as parameter cotaining the supported content types as values.
+ * If the optional second parameter is supplied, it will be filled with an
+ * array containing the negotiation results.
+ * 
+ * Returns the negotiated content type or the default content type 
+ * (i.e. first array entry) if none match.
+ * 
+ * Example:
+ * <pre>
+ * <?php
+ * $ctypes = array('application/xhtml+xml', 'text/html');
+ * http_send_content_type(http_negotiate_content_type($ctypes));
+ * ?>
+ * </pre>
+ */
+PHP_FUNCTION(http_negotiate_content_type)
+{
+	zval *supported, *rs_array = NULL;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|z", &supported, &rs_array)) {
+		RETURN_FALSE;
+	}
+	
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
+	
+	HTTP_DO_NEGOTIATE(content_type, supported, rs_array);
+}
+/* }}} */
+
 /* {{{ proto bool http_send_status(int status)
  *
  * Send HTTP status code.

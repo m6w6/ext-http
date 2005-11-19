@@ -86,7 +86,7 @@ char *_http_negotiate_language_func(const char *test, double *quality, HashTable
 		FOREACH_HASH_VAL(pos, supported, value) {
 			int len = dash_test - test;
 #if HTTP_DBG_NEG
-			fprintf(stderr, "strncascmp('%s', '%s', %d)\n", Z_STRVAL_PP(value), test, len);
+			fprintf(stderr, "strncasecmp('%s', '%s', %d)\n", Z_STRVAL_PP(value), test, len);
 #endif
 			if (	(!strncasecmp(Z_STRVAL_PP(value), test, len)) &&
 					(	(Z_STRVAL_PP(value)[len] == '\0') || 
@@ -153,8 +153,9 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 			array_init(&array);
 			
 			FOREACH_HASH_VAL(pos, Z_ARRVAL(ex_arr), entry) {
+				int ident_len;
 				double quality;
-				char *selected, *identifier;
+				char *selected, *identifier, *freeme;
 				const char *separator;
 				
 #if HTTP_DBG_NEG
@@ -164,13 +165,22 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 				if ((separator = strchr(Z_STRVAL_PP(entry), ';'))) {
 					const char *ptr = separator;
 					
-					while (*++ptr && !isdigit(*ptr));
+					while (*++ptr && !isdigit(*ptr) && '.' != *ptr);
 					
 					quality = atof(ptr);
-					identifier = estrndup(Z_STRVAL_PP(entry), separator - Z_STRVAL_PP(entry));
+					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = separator - Z_STRVAL_PP(entry));
 				} else {
 					quality = 1000.0 - i++;
-					identifier = estrndup(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry));
+					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = Z_STRLEN_PP(entry));
+				}
+				freeme = identifier;
+				
+				while (isspace(*identifier)) {
+					++identifier;
+					--ident_len;
+				}
+				while (isspace(identifier[ident_len - 1])) {
+					identifier[--ident_len] = '\0';
 				}
 				
 				if ((selected = neg(identifier, &quality, supported TSRMLS_CC))) {
@@ -180,7 +190,7 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 					}
 				}
 				
-				efree(identifier);
+				efree(freeme);
 			}
 			
 			result = Z_ARRVAL(array);
