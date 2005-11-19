@@ -25,6 +25,7 @@ PHP_METHOD(HttpUtil, date);
 PHP_METHOD(HttpUtil, absoluteUri);
 PHP_METHOD(HttpUtil, negotiateLanguage);
 PHP_METHOD(HttpUtil, negotiateCharset);
+PHP_METHOD(HttpUtil, negotiateContentType);
 PHP_METHOD(HttpUtil, matchModified);
 PHP_METHOD(HttpUtil, matchEtag);
 PHP_METHOD(HttpUtil, parseHeaders);

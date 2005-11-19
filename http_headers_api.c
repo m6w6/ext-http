@@ -179,7 +179,7 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 					++identifier;
 					--ident_len;
 				}
-				while (isspace(identifier[ident_len - 1])) {
+				while (ident_len && isspace(identifier[ident_len - 1])) {
 					identifier[--ident_len] = '\0';
 				}
 				

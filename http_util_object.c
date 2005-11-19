@@ -50,6 +50,11 @@ HTTP_BEGIN_ARGS(negotiateCharset, 1)
 	HTTP_ARG_VAL(result, 1)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(negotiateContentType, 1)
+	HTTP_ARG_VAL(supported, 0)
+	HTTP_ARG_VAL(result, 1)
+HTTP_END_ARGS;
+
 HTTP_BEGIN_ARGS(matchModified, 1)
 	HTTP_ARG_VAL(last_modified, 0)
 	HTTP_ARG_VAL(for_range, 0)
@@ -115,6 +120,7 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(buildUri, http_build_uri)
 	HTTP_UTIL_ALIAS(negotiateLanguage, http_negotiate_language)
 	HTTP_UTIL_ALIAS(negotiateCharset, http_negotiate_charset)
+	HTTP_UTIL_ALIAS(negotiateContentType, http_negotiate_content_type)
 	HTTP_UTIL_ALIAS(matchModified, http_match_modified)
 	HTTP_UTIL_ALIAS(matchEtag, http_match_etag)
 	HTTP_UTIL_ALIAS(matchRequestHeader, http_match_request_header)
