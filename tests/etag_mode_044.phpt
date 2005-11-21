@@ -5,7 +5,7 @@ ob ext/hash etag
 include 'skip.inc';
 checkcgi();
 checkmin(5.1);
-skipif(!extendion_loaded('hash'), 'need mhash support');
+skipif(!extension_loaded('hash'), 'need ext/hash support');
 ?>
 --FILE--
 <?php
