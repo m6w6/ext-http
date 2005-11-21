@@ -8,7 +8,7 @@ checkmin(5.1);
 ?>
 --FILE--
 <?php
-ini_set('http.etag_mode', HTTP_ETAG_CRC32);
+ini_set('http.etag_mode', 'crc32');
 http_cache_etag();
 http_send_data("abc\n");
 ?>

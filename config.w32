@@ -31,19 +31,17 @@ if (PHP_HTTP != "no") {
 	}
 	
 	if (PHP_HASH != "no") {
-		if (glob(configure_module_dirname +"\\..\\hash\\php_hash_sha.h").length) {
-			ADD_FLAG("CFLAGS_HTTP", "/I"+ configure_module_dirname +"\\..\\hash");
-			AC_DEFINE("HTTP_HAVE_HASH_EXT_INCLUDES", 1, "");
+		var f;
+		STDOUT.Write("Checking for ext/hash ...  ");
+		if (glob((f = configure_module_dirname +"\\..\\hash") +"\\php_hash.h").length ||
+			glob((f = configure_module_dirname +"\\..\\..\\..\\pecl\\hash") +"\\php_hash.h").length) {
+			ADD_FLAG("CFLAGS_HTTP", "/I"+ f);
+			AC_DEFINE("HTTP_HAVE_EXT_HASH", 1, "");
+			ADD_EXTENSION_DEP("http", "hash", true);
+			STDOUT.WriteLine(condense_path(f));
+		} else {
+			STDOUT.WriteLine("<not found>");
 		}
-	}
-
-	MHASH_LIB = PHP_DEBUG != "no" ? "libmhash-staticd.lib":"libmhash-static.lib";
-	if (CHECK_HEADER_ADD_INCLUDE('mhash.h', 'CFLAGS_HTTP') &&
-			(CHECK_LIB(MHASH_LIB, 'http', PHP_HTTP) ||
-				CHECK_LIB('libmhash.lib', 'http', PHP_HTTP))) {
-		AC_DEFINE('HTTP_HAVE_MHASH', 1 , "Have mhash library");
-	} else {
-		WARNING("mhash etag generator not enabled; libraries and headers not found");
 	}
 
 	CURL_LIB = PHP_DEBUG != "no" ? "libcurld.lib":"libcurl.lib";

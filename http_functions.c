@@ -1649,8 +1649,6 @@ PHP_FUNCTION(http_uncompress)
  *       and SSL requests can be issued 
  *  <li> HTTP_SUPPORT_ENCODINGS: whether ext/http was linked against zlib,
  *       and compressed HTTP responses can be decoded
- *  <li> HTTP_SUPPORT_MHASHETAGS: whether ext/http was linked against libmhash,
- *       and ETags can be generated with the available mhash algorithms
  *  <li> HTTP_SUPPORT_MAGICMIME: whether ext/http was linked against libmagic,
  *       and the HttpResponse::guessContentType() method is usable
  * </ul>

@@ -20,8 +20,6 @@
 #include "SAPI.h"
 #include "php_streams.h"
 #include "php_output.h"
-#include "ext/standard/md5.h"
-#include "ext/standard/sha1.h"
 
 #include "php_http.h"
 #include "php_http_std_defs.h"
@@ -30,44 +28,7 @@
 #include "php_http_send_api.h"
 #include "php_http_date_api.h"
 
-#ifdef HTTP_HAVE_MHASH
-#	include <mhash.h>
-#endif
-
 ZEND_EXTERN_MODULE_GLOBALS(http);
-
-PHP_MINIT_FUNCTION(http_cache)
-{
-	HTTP_LONG_CONSTANT("HTTP_ETAG_MD5", HTTP_ETAG_MD5);
-	HTTP_LONG_CONSTANT("HTTP_ETAG_SHA1", HTTP_ETAG_SHA1);
-	HTTP_LONG_CONSTANT("HTTP_ETAG_CRC32", HTTP_ETAG_CRC32);
-
-#ifdef HTTP_HAVE_HASH_EXT
-	HTTP_LONG_CONSTANT("HTTP_ETAG_SHA256", HTTP_ETAG_SHA256);
-	HTTP_LONG_CONSTANT("HTTP_ETAG_SHA384", HTTP_ETAG_SHA384);
-	HTTP_LONG_CONSTANT("HTTP_ETAG_SHA512", HTTP_ETAG_SHA512);
-	HTTP_LONG_CONSTANT("HTTP_ETAG_RIPEMD128", HTTP_ETAG_RIPEMD128);
-	HTTP_LONG_CONSTANT("HTTP_ETAG_RIPEMD160", HTTP_ETAG_RIPEMD160);
-#endif
-
-#ifdef HTTP_HAVE_MHASH
-	{
-		int l, i, c = mhash_count();
-		
-		for (i = 0; i <= c; ++i) {
-			char const_name[256] = {0};
-			const char *hash_name = mhash_get_hash_name_static(i);
-			
-			if (hash_name) {
-				l = snprintf(const_name, 255, "HTTP_ETAG_MHASH_%s", hash_name);
-				zend_register_long_constant(const_name, l + 1, i, CONST_CS|CONST_PERSISTENT, module_number TSRMLS_CC);
-			}
-		}
-	}
-#endif
-
-	return SUCCESS;
-}
 
 /* {{{ char *http_etag(void *, size_t, http_send_mode) */
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
@@ -87,7 +48,7 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 		}
 		
 		if (SUCCESS != ss) {
-			http_etag_free(&ctx);
+			efree(ctx);
 			return NULL;
 		} else {
 			size_t ssb_len;
@@ -100,7 +61,7 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 		}
 	}
 	
-	return http_etag_finish(&ctx);
+	return http_etag_finish(ctx);
 }
 /* }}} */
 
@@ -237,7 +198,10 @@ PHP_HTTP_API zend_bool _http_interrupt_ob_etaghandler(TSRMLS_D)
 {
 	if (HTTP_G(etag).started) {
 		HTTP_G(etag).started = 0;
-		http_etag_free(&HTTP_G(etag).ctx);
+		if (HTTP_G(etag).ctx) {
+			efree(HTTP_G(etag).ctx);
+			HTTP_G(etag).ctx = NULL;
+		}
 		return 1;
 	}
 	return 0;
@@ -264,7 +228,9 @@ void _http_ob_etaghandler(char *output, uint output_len,
 		/* finish */
 		if (mode & PHP_OUTPUT_HANDLER_END) {
 			char *sent_header = NULL;
-			char *etag = http_etag_finish(&HTTP_G(etag).ctx);
+			char *etag = http_etag_finish(HTTP_G(etag).ctx);
+			
+			HTTP_G(etag).ctx = NULL;
 			
 			http_send_cache_control(HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL));
 			http_send_etag_ex(etag, strlen(etag), &sent_header);

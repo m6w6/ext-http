@@ -35,9 +35,6 @@
 #include "php_http_cache_api.h"
 #include "php_http_headers_api.h"
 
-#ifdef HTTP_HAVE_MHASH
-#	include <mhash.h>
-#endif
 #ifdef HTTP_HAVE_MAGIC
 #	include <magic.h>
 #endif
@@ -243,34 +240,6 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_CONST(long, "REDIRECT_PERM", HTTP_REDIRECT_PERM);
 	DCL_CONST(long, "REDIRECT_POST", HTTP_REDIRECT_POST);
 	DCL_CONST(long, "REDIRECT_TEMP", HTTP_REDIRECT_TEMP);
-	
-	DCL_CONST(long, "ETAG_MD5", HTTP_ETAG_MD5);
-	DCL_CONST(long, "ETAG_SHA1", HTTP_ETAG_SHA1);
-	DCL_CONST(long, "ETAG_CRC32", HTTP_ETAG_CRC32);
-	
-#	ifdef HTTP_HAVE_HASH_EXT
-	DCL_CONST(long, "ETAG_SHA256", HTTP_ETAG_SHA256);
-	DCL_CONST(long, "ETAG_SHA384", HTTP_ETAG_SHA384);
-	DCL_CONST(long, "ETAG_SHA512", HTTP_ETAG_SHA512);
-	DCL_CONST(long, "ETAG_RIPEMD128", HTTP_ETAG_RIPEMD128);
-	DCL_CONST(long, "ETAG_RIPEMD160", HTTP_ETAG_RIPEMD160);
-#	endif
-
-#	ifdef HTTP_HAVE_MHASH
-	{
-		int l, i, c = mhash_count();
-		
-		for (i = 0; i <= c; ++i) {
-			char const_name[256] = {0};
-			const char *hash_name = mhash_get_hash_name_static(i);
-			
-			if (hash_name) {
-				l = snprintf(const_name, 255, "ETAG_MHASH_%s", hash_name);
-				zend_declare_class_constant_long(ce, const_name, l, i TSRMLS_CC);
-			}
-		}
-	}
-#	endif /* HTTP_HAVE_MHASH */
 #endif /* WONKY */
 }
 

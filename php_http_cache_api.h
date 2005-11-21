@@ -17,52 +17,23 @@
 
 #include "zend_ini.h"
 
-#include "ext/standard/md5.h"
-#include "ext/standard/sha1.h"
 #include "ext/standard/crc32.h"
+#include "ext/standard/sha1.h"
+#include "ext/standard/md5.h"
 
 #include "php_http_std_defs.h"
 #include "php_http.h"
 #include "php_http_api.h"
 #include "php_http_send_api.h"
 
-#if defined(HAVE_HASH_EXT) && !defined(COMPILE_DL_HASH) && defined(HTTP_HAVE_HASH_EXT_INCLUDES)
-#	define HTTP_HAVE_HASH_EXT
+#ifdef HTTP_HAVE_EXT_HASH
 #	include "php_hash.h"
-#	include "php_hash_sha.h"
-#	include "php_hash_ripemd.h"
-#endif
-
-#ifdef HTTP_HAVE_MHASH
-#	include <mhash.h>
 #endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-typedef enum {
-#ifdef HTTP_HAVE_HASH_EXT
-	HTTP_ETAG_RIPEMD160 = -8,
-	HTTP_ETAG_RIPEMD128 = -7,
-	HTTP_ETAG_SHA512 = -6,
-	HTTP_ETAG_SHA384 = -5,
-	HTTP_ETAG_SHA256 = -4,
-#endif
-	HTTP_ETAG_CRC32 = -3,
-	HTTP_ETAG_MD5 = -2,
-	HTTP_ETAG_SHA1 = -1,
-} http_etag_mode;
-
-extern PHP_MINIT_FUNCTION(http_cache);
-
-#ifdef HTTP_HAVE_MHASH
-static void *http_etag_alloc_mhash_digest(size_t size)
-{
-	return emalloc(size);
-}
-#endif
-
-#define http_etag_digest(d, l) _http_etag_digest((d), (l) TSRMLS_CC)
-static inline char *_http_etag_digest(const unsigned char *digest, int len TSRMLS_DC)
+#define http_etag_digest(d, l) _http_etag_digest((d), (l))
+static inline char *_http_etag_digest(const unsigned char *digest, int len)
 {
 	static const char hexdigits[16] = "0123456789abcdef";
 	int i;
@@ -78,184 +49,83 @@ static inline char *_http_etag_digest(const unsigned char *digest, int len TSRML
 	return hex;
 }
 
-#undef CASE_HTTP_ETAG_HASH
-#define CASE_HTTP_ETAG_HASH(HASH) \
-	case HTTP_ETAG_##HASH: \
-		PHP_##HASH##Init(ctx = emalloc(sizeof(PHP_##HASH##_CTX))); \
-	break;
 #define http_etag_init() _http_etag_init(TSRMLS_C)
 static inline void *_http_etag_init(TSRMLS_D)
 {
 	void *ctx = NULL;
-	long mode = HTTP_G(etag).mode;
-
-	switch (mode)
-	{
-		case HTTP_ETAG_CRC32:
-			ctx = emalloc(sizeof(uint));
-			*((uint *) ctx) = ~0;
-		break;
-		
-#ifdef HTTP_HAVE_HASH_EXT
-		CASE_HTTP_ETAG_HASH(RIPEMD160);
-		CASE_HTTP_ETAG_HASH(RIPEMD128);
-		CASE_HTTP_ETAG_HASH(SHA512);
-		CASE_HTTP_ETAG_HASH(SHA384);
-		CASE_HTTP_ETAG_HASH(SHA256);
+	char *mode = HTTP_G(etag).mode;
+	
+#ifdef HTTP_HAVE_EXT_HASH
+	php_hash_ops *eho = NULL;
+	
+	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
+		ctx = emalloc(eho->context_size);
+		eho->hash_init(ctx);
+	} else
 #endif
-		CASE_HTTP_ETAG_HASH(SHA1);
-#ifndef HTTP_HAVE_MHASH
-		default:
-#endif
-		CASE_HTTP_ETAG_HASH(MD5);
-		
-#ifdef HTTP_HAVE_MHASH
-		default:
-			if ((mode < 0) || ((ulong)mode > mhash_count()) || (!(ctx = mhash_init(mode)))) {
-				http_error_ex(HE_ERROR, HTTP_E_RUNTIME, "Invalid ETag mode: %ld", mode);
-			}
-		break;
-#endif
+	if (mode && ((!strcasecmp(mode, "crc32")) || (!strcasecmp(mode, "crc32b")))) {
+		ctx = emalloc(sizeof(uint));
+		*((uint *) ctx) = ~0;
+	} else if (mode && !strcasecmp(mode, "sha1")) {
+		PHP_SHA1Init(ctx = emalloc(sizeof(PHP_SHA1_CTX)));
+	} else {
+		PHP_MD5Init(ctx = emalloc(sizeof(PHP_MD5_CTX)));
 	}
 	
 	return ctx;
 }
 
-#undef CASE_HTTP_ETAG_HASH
-#define CASE_HTTP_ETAG_HASH(HASH) \
-	case HTTP_ETAG_##HASH: \
-		if (*((PHP_##HASH##_CTX **) ctx_ptr)) { \
-			efree(*((PHP_##HASH##_CTX **) ctx_ptr)); \
-			*((PHP_##HASH##_CTX **) ctx_ptr) = NULL; \
-		} \
-	break;
-#define http_etag_free(cp) _http_etag_free((cp) TSRMLS_CC)
-static inline void _http_etag_free(void **ctx_ptr TSRMLS_DC)
-{
-	switch (HTTP_G(etag).mode)
-	{
-		case HTTP_ETAG_CRC32:
-			if (*((uint **) ctx_ptr)) {
-				efree(*((uint **) ctx_ptr));
-				*((uint **) ctx_ptr) = NULL;
-			}
-		break;
-
-#ifdef HTTP_HAVE_HASH_EXT
-		CASE_HTTP_ETAG_HASH(RIPEMD160);
-		CASE_HTTP_ETAG_HASH(RIPEMD128);
-		CASE_HTTP_ETAG_HASH(SHA512);
-		CASE_HTTP_ETAG_HASH(SHA384);
-		CASE_HTTP_ETAG_HASH(SHA256);
-#endif
-		CASE_HTTP_ETAG_HASH(SHA1);
-#ifndef HTTP_HAVE_MHASH
-		default:
-#endif
-		CASE_HTTP_ETAG_HASH(MD5);
-		
-#ifdef HTTP_HAVE_MHASH
-		default:
-			/* mhash gets already freed in http_etag_finish() */
-			if (*((MHASH *) ctx_ptr)) {
-				mhash_deinit(*((MHASH *) ctx_ptr), NULL);
-				*((MHASH *) ctx_ptr) = NULL;
-			}
-		break;
-#endif
-	}
-}
-
-#undef CASE_HTTP_ETAG_HASH
-#define CASE_HTTP_ETAG_HASH(HASH, len) \
-	case HTTP_ETAG_##HASH##: \
-		PHP_##HASH##Final(digest, *((PHP_##HASH##_CTX **) ctx_ptr)); \
-		etag = http_etag_digest(digest, len); \
-	break;
 #define http_etag_finish(c) _http_etag_finish((c) TSRMLS_CC)
-static inline char *_http_etag_finish(void **ctx_ptr TSRMLS_DC)
+static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
 {
+	unsigned char digest[128] = {0};
 	char *etag = NULL;
-	unsigned char digest[128];
-	long mode = HTTP_G(etag).mode;
 	
-	switch (mode)
-	{
-		case HTTP_ETAG_CRC32:
-			**((uint **) ctx_ptr) = ~**((uint **) ctx_ptr);
-			etag = http_etag_digest(*((const unsigned char **) ctx_ptr), sizeof(uint));
-		break;
-
-#ifdef HTTP_HAVE_HASH_EXT
-		CASE_HTTP_ETAG_HASH(RIPEMD160, 20);
-		CASE_HTTP_ETAG_HASH(RIPEMD128, 16);
-		CASE_HTTP_ETAG_HASH(SHA512, 64);
-		CASE_HTTP_ETAG_HASH(SHA384, 48);
-		CASE_HTTP_ETAG_HASH(SHA256, 32);
+#ifdef HTTP_HAVE_EXT_HASH
+	php_hash_ops *eho = NULL;
+	char *mode = HTTP_G(etag).mode;
+	
+	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
+		eho->hash_final(digest, ctx);
+		etag = http_etag_digest(digest, eho->digest_size);
+	} else
 #endif
-		CASE_HTTP_ETAG_HASH(SHA1, 20);
-#ifndef HTTP_HAVE_MHASH
-		default:
-#endif
-		CASE_HTTP_ETAG_HASH(MD5, 16);
-		
-#ifdef HTTP_HAVE_MHASH
-		default:
-		{
-			unsigned char *mhash_digest = mhash_end_m(*((MHASH *) ctx_ptr), http_etag_alloc_mhash_digest);
-			etag = http_etag_digest(mhash_digest, mhash_get_block_size(mode));
-			efree(mhash_digest);
-			/* avoid double free */
-			*((MHASH *) ctx_ptr) = NULL;
-		}
-		break;
-#endif
+	if (mode && ((!strcasecmp(mode, "crc32")) || (!strcasecmp(mode, "crc32b")))) {
+		*((uint *) ctx) = ~*((uint *) ctx);
+		etag = http_etag_digest((const unsigned char *) ctx, sizeof(uint));
+	} else if (mode && (!strcasecmp(mode, "sha1"))) {
+		PHP_SHA1Final(digest, ctx);
+		etag = http_etag_digest(digest, 20);
+	} else {
+		PHP_MD5Final(digest, ctx);
+		etag = http_etag_digest(digest, 16);
 	}
-	
-	http_etag_free(ctx_ptr);
+	efree(ctx);
 	
 	return etag;
 }
 
-#undef CASE_HTTP_ETAG_HASH
-#define CASE_HTTP_ETAG_HASH(HASH) \
-	case HTTP_ETAG_##HASH: \
-		PHP_##HASH##Update(ctx, (const unsigned char *) data_ptr, data_len); \
-	break;
 #define http_etag_update(c, d, l) _http_etag_update((c), (d), (l) TSRMLS_CC)
 static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t data_len TSRMLS_DC)
 {
-	switch (HTTP_G(etag).mode)
-	{
-		case HTTP_ETAG_CRC32:
-		{
-			uint i, c = *((uint *) ctx);
-			
-			for (i = 0; i < data_len; ++i) {
-				c = CRC32(c, data_ptr[i]);
-			}
-			*((uint *)ctx) = c;
+#ifdef HTTP_HAVE_EXT_HASH
+	php_hash_ops *eho = NULL;
+	char *mode = HTTP_G(etag).mode;
+	
+	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
+		eho->hash_update(ctx, (const unsigned char *) data_ptr, data_len);
+	} else
+#endif
+	if (mode && ((!strcasecmp(mode, "crc32")) || (!strcasecmp(mode, "crc32b")))) {
+		uint i, c = *((uint *) ctx);
+		for (i = 0; i < data_len; ++i) {
+			c = CRC32(c, data_ptr[i]);
 		}
-		break;
-		
-#ifdef HTTP_HAVE_HASH_EXT
-		CASE_HTTP_ETAG_HASH(RIPEMD160);
-		CASE_HTTP_ETAG_HASH(RIPEMD128);
-		CASE_HTTP_ETAG_HASH(SHA512);
-		CASE_HTTP_ETAG_HASH(SHA384);
-		CASE_HTTP_ETAG_HASH(SHA256);
-#endif
-		CASE_HTTP_ETAG_HASH(SHA1);
-#ifndef HTTP_HAVE_MHASH
-		default:
-#endif
-		CASE_HTTP_ETAG_HASH(MD5);
-		
-#ifdef HTTP_HAVE_MHASH
-		default:
-			mhash(ctx, data_ptr, data_len);
-		break;
-#endif
+		*((uint *)ctx) = c;
+	} else if (mode && (!strcasecmp(mode, "sha1"))) {
+		PHP_SHA1Update(ctx, (const unsigned char *) data_ptr, data_len);
+	} else {
+		PHP_MD5Update(ctx, (const unsigned char *) data_ptr, data_len);
 	}
 }
 

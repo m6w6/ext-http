@@ -35,7 +35,7 @@ extern int http_module_number;
 ZEND_BEGIN_MODULE_GLOBALS(http)
 
 	struct _http_globals_etag {
-		long mode;
+		char *mode;
 		void *ctx;
 		zend_bool started;
 	} etag;

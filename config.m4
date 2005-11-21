@@ -7,9 +7,6 @@ PHP_ARG_ENABLE([http], [whether to enable extended HTTP support],
 PHP_ARG_WITH([http-curl-requests], [whether to enable cURL HTTP requests],
 [  --with-http-curl-requests[=CURLDIR]
                            With cURL HTTP request support])
-PHP_ARG_WITH([http-mhash-etags], [whether to enable mhash ETag generator],
-[  --with-http-mhash-etags[=MHASHDIR]
-                           With mhash ETag generator support])
 PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
 [  --with-http-magic-mime[=MAGICDIR]
                            With magic mime response content type guessing])
@@ -134,31 +131,6 @@ dnl ----
 	fi
 
 dnl ----
-dnl MHASH
-dnl ----
-	if test "$PHP_HTTP_MHASH_ETAGS" != "no"; then
-	
-		AC_MSG_CHECKING([for mhash.h])
-		MHASH_DIR=
-		for i in "$PHP_HTTP_MHASH_ETAGS" /usr/local /usr /opt; do
-			if test -f "$i/include/mhash.h"; then
-				MHASH_DIR=$i
-				break
-			fi
-		done
-		if test -z "$MHASH_DIR"; then
-			AC_MSG_RESULT([not found])
-			AC_MSG_ERROR([could not find mhash.h])
-		else
-			AC_MSG_RESULT([found in $MHASH_DIR])
-		fi
-	
-		PHP_ADD_INCLUDE($MHASH_DIR/include)
-		PHP_ADD_LIBRARY_WITH_PATH(mhash, $MHASH_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-		AC_DEFINE([HTTP_HAVE_MHASH], [1], [Have mhash support])
-	fi
-
-dnl ----
 dnl MAGIC
 dnl ----
 	if test "$PHP_HTTP_MAGIC_MIME" != "no"; then
@@ -184,6 +156,12 @@ dnl ----
 	fi
 
 dnl ----
+dnl HASH
+dnl ----
+
+	dnl TODO
+
+dnl ----
 dnl DONE
 dnl ----
 	PHP_HTTP_SOURCES="missing.c http.c http_functions.c phpstr/phpstr.c \
@@ -206,7 +184,7 @@ dnl ----
 	dnl outside src dir, adds install-http target
 	PHP_ADD_MAKEFILE_FRAGMENT
 	dnl within src dir, installs http headers
-	ifdef([PHP_INSTALL_HEADERS], [PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADER_FILES)], [ ])
+	ifdef([PHP_INSTALL_HEADERS], [PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)], [ ])
 
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
 fi

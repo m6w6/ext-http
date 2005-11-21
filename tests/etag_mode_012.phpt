@@ -5,11 +5,10 @@ ob sha1 etag
 include 'skip.inc';
 checkcgi();
 checkmax(5.0);
-skipif(!http_support(HTTP_SUPPORT_MHASHETAGS), 'need mhash support');
 ?>
 --FILE--
 <?php
-ini_set('http.etag_mode', HTTP_ETAG_SHA1);
+ini_set('http.etag_mode', 'sha1');
 http_cache_etag();
 print("abc\n");
 ?>

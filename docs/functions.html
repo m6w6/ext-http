@@ -113,6 +113,19 @@ if none match.</p>
 <span style="color: #0000BB">&lt;?php<br />$charsets&nbsp;</span><span style="color: #007700">=&nbsp;array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'iso-8859-1'</span><span style="color: #007700">,&nbsp;</span><span style="color: #FF8000">//&nbsp;default<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'iso-8859-2'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'iso-8859-15'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'utf-8'<br /></span><span style="color: #007700">);<br /><br /></span><span style="color: #0000BB">$pref&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #0000BB">http_negotiate_charset</span><span style="color: #007700">(</span><span style="color: #0000BB">$charsets</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$result</span><span style="color: #007700">);<br /><br />if&nbsp;(</span><span style="color: #0000BB">strcmp</span><span style="color: #007700">(</span><span style="color: #0000BB">$pref</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'iso-8859-1'</span><span style="color: #007700">))&nbsp;{<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">iconv_set_encoding</span><span style="color: #007700">(</span><span style="color: #DD0000">'internal_encoding'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'iso-8859-1'</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">iconv_set_encoding</span><span style="color: #007700">(</span><span style="color: #DD0000">'output_encoding'</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$pref</span><span style="color: #007700">);<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">ob_start</span><span style="color: #007700">(</span><span style="color: #DD0000">'ob_iconv_handler'</span><span style="color: #007700">);<br />}<br /><br /></span><span style="color: #0000BB">print_r</span><span style="color: #007700">(</span><span style="color: #0000BB">$result</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">?&gt;</span><br />
 </span></code></blockquote></p>
 <p></pre></p>
+<h2 id="http_negotiate_content_type">string http_negotiate_ctype(array supported[, array &result])</h2>
+<p>This function negotiates the clients preferred content type based on its<br />
+Accept HTTP header.  The qualifier is recognized and content types <br />
+without qualifier are rated highest.</p>
+<p>Expects an array as parameter cotaining the supported content types as values.<br />
+If the optional second parameter is supplied, it will be filled with an<br />
+array containing the negotiation results.</p>
+<p>Returns the negotiated content type or the default content type <br />
+(i.e. first array entry) if none match.</p>
+<p>Example:</p><pre><blockquote><code><span style="color: #000000"><br />
+<span style="color: #0000BB">&lt;?php<br />$ctypes&nbsp;</span><span style="color: #007700">=&nbsp;array(</span><span style="color: #DD0000">'application/xhtml+xml'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'text/html'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">http_send_content_type</span><span style="color: #007700">(</span><span style="color: #0000BB">http_negotiate_content_type</span><span style="color: #007700">(</span><span style="color: #0000BB">$ctypes</span><span style="color: #007700">));<br /></span><span style="color: #0000BB">?&gt;</span><br />
+</span></code></blockquote></p>
+<p></pre></p>
 <h2 id="http_send_status">bool http_send_status(int status)</h2>
 <p>Send HTTP status code.</p>
 <p>Expects an HTTP status code as parameter.</p>
@@ -384,8 +397,6 @@ all supported features that depend on external libraries.</p>
       and SSL requests can be issued <br />
  <li> HTTP_SUPPORT_ENCODINGS: whether ext/http was linked against zlib,<br />
       and compressed HTTP responses can be decoded<br />
- <li> HTTP_SUPPORT_MHASHETAGS: whether ext/http was linked against libmhash,<br />
-      and ETags can be generated with the available mhash algorithms<br />
  <li> HTTP_SUPPORT_MAGICMIME: whether ext/http was linked against libmagic,<br />
       and the HttpResponse::guessContentType() method is usable<br />
 </ul></p>
@@ -480,6 +491,15 @@ This provides limited functionality compared to HttpRequest and HttpResponse.</p
 <p>Accepts a bool parameter which specifies whether the returned string<br />
 should also contain any parent messages.</p>
 <p>Returns the full message as string.</p>
+<h3 id="HttpMessage_count">int HttpMessage::count()</h3>
+<p>Implements Countable.</p>
+<p>Returns the number of parent messages + 1.</p>
+<h3 id="HttpMessage_serialize">string HttpMessage::serialize()</h3>
+<p>Implements Serializable.</p>
+<p>Returns the serialized representation of the HttpMessage.</p>
+<h3 id="HttpMessage_unserialize">void HttpMessage::unserialize(string serialized)</h3>
+<p>Implements Serializable.</p>
+<p>Re-constructs the HttpMessage based upon the serialized string.</p>
 <hr noshade>
 <h1 id="http_request_object.c">http_request_object.c</h1>
 <h2 id="HttpRequest" class="o">HttpRequest</h2>
@@ -697,6 +717,11 @@ cycle.</p>
 references the last received response.  Use HttpMessage::getParentMessage()<br />
 to access the data of previously sent requests whithin this request<br />
 cycle.</p>
+<p>Note that the internal request message is immutable, that means that the<br />
+request message received through HttpRequest::getRequestMessage() will<br />
+always look the same for the same request, regardless of any changes you<br />
+may have made to the returned object.</p>
+<p>Throws HttpMalformedHeadersException, HttpEncodingException.</p>
 <h3 id="HttpRequest_getHistory">HttpMessage HttpRequest::getHistory()</h3>
 <p>Get all sent requests and received responses as an HttpMessage object.</p>
 <p>If you don't want to record history at all, set the instance variable<br />
@@ -705,12 +730,18 @@ HttpRequest::$recoedHistory to FALSE. </p>
 history.</p>
 <p>The object references the last received response, use HttpMessage::getParentMessage() <br />
 to access the data of previously sent requests and received responses.</p>
-<p>Throws HttpMalformedHeaderException.</p>
+<p>Note that the internal history is immutable, that means that any changes<br />
+you make the the message list won't affect a history message list newly <br />
+created by another call to HttpRequest::getHistory().</p>
+<p>Throws HttpMalformedHeaderException, HttpEncodingException.</p>
 <h3 id="HttpRequest_clearHistory">void HttpRequest::clearHistory()</h3>
 <p>Clear the history.</p>
 <h3 id="HttpRequest_send">HttpMessage HttpRequest::send()</h3>
 <p>Send the HTTP request.</p>
 <p>Returns the received response as HttpMessage object.</p>
+<p>NOTE: While an exception may be thrown, the transfer could have succeeded <br />
+at least partially, so you might want to check the return values of various<br />
+HttpRequest::getResponse*() methods.</p>
 <p>Throws HttpRuntimeException, HttpRequestException, <br />
 HttpMalformedHeaderException, HttpEncodingException.</p>
 <p>GET example:</p><pre><blockquote><code><span style="color: #000000"><br />
@@ -778,6 +809,9 @@ HttpRequestPoolException, HttpMalformedHeaderException.</p>
 <p>Implements Iterator::next().</p>
 <h3 id="HttpRequestPool_rewind">void HttpRequestPool::rewind()</h3>
 <p>Implements Iterator::rewind().</p>
+<h3 id="HttpRequestPool_count">int HttpRequestPool::count()</h3>
+<p>Implements Countable.</p>
+<p>Returns the number of attached HttpRequest objects.</p>
 <h3 id="HttpRequestPool_getAttachedRequests">array HttpRequestPool::getAttachedRequests()</h3>
 <p>Get attached HttpRequest objects.</p>
 <p>Returns an array containing all currently attached HttpRequest objects.</p>
@@ -953,6 +987,8 @@ http.cache_log is set.</p>
 </li>
 <li><a href="#http_negotiate_charset">http_negotiate_charset</a>
 </li>
+<li><a href="#http_negotiate_content_type">http_negotiate_content_type</a>
+</li>
 <li><a href="#http_send_status">http_send_status</a>
 </li>
 <li><a href="#http_send_last_modified">http_send_last_modified</a>
@@ -1053,6 +1089,9 @@ http.cache_log is set.</p>
 <li><a href="#HttpMessage_getParentMessage">HttpMessage::getParentMessage()</a></li>
 <li><a href="#HttpMessage_send">HttpMessage::send()</a></li>
 <li><a href="#HttpMessage_toString">HttpMessage::toString()</a></li>
+<li><a href="#HttpMessage_count">HttpMessage::count()</a></li>
+<li><a href="#HttpMessage_serialize">HttpMessage::serialize()</a></li>
+<li><a href="#HttpMessage_unserialize">HttpMessage::unserialize()</a></li>
 </li>
 </ul>
 </li>
@@ -1120,6 +1159,7 @@ http.cache_log is set.</p>
 <li><a href="#HttpRequestPool_key">HttpRequestPool::key()</a></li>
 <li><a href="#HttpRequestPool_next">HttpRequestPool::next()</a></li>
 <li><a href="#HttpRequestPool_rewind">HttpRequestPool::rewind()</a></li>
+<li><a href="#HttpRequestPool_count">HttpRequestPool::count()</a></li>
 <li><a href="#HttpRequestPool_getAttachedRequests">HttpRequestPool::getAttachedRequests()</a></li>
 <li><a href="#HttpRequestPool_getFinishedRequests">HttpRequestPool::getFinishedRequests()</a></li>
 </li>
@@ -1161,7 +1201,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Fri, 04 Nov 2005 12:29:06 +0100</b></p>
+    <p><b>Generated at: Mon, 21 Nov 2005 16:56:18 +0100</b></p>
 </body>
 </html>
 

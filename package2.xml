@@ -41,6 +41,8 @@
  <notes><![CDATA[
 * Fixed bug in http_negotiate_*() when client sends spaces within accept headers
 
+- Removed support for ETag hashing through libmhash
+
 + Added http_negotiate_content_type()
 ]]></notes>
  <contents>
@@ -146,7 +148,6 @@
     <file role="test" name="etag_mode_042.phpt"/>
     <file role="test" name="etag_mode_043.phpt"/>
     <file role="test" name="etag_mode_044.phpt"/>
-    <file role="test" name="etag_mode_crc.phpt"/>
     <file role="test" name="exceptions.phpt"/>
     <file role="test" name="get_request_data_001.phpt"/>
     <file role="test" name="HttpMessage_001.phpt"/>
@@ -236,11 +237,6 @@
   <configureoption 
    name="with-http-curl-requests"
    prompt="whether to enable cURL HTTP requests; specify libcurl directory"
-   default="yes"
-  />
-  <configureoption
-   name="with-http-mhash-etags"
-   prompt="whether to enable mhash ETag generator; specify libmhash directory"
    default="yes"
   />
   <configureoption

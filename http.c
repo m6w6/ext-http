@@ -58,9 +58,6 @@
 #	endif
 #	include <curl/curl.h>
 #endif
-#ifdef HTTP_HAVE_MHASH
-#	include <mhash.h>
-#endif
 #ifdef HTTP_HAVE_ZLIB
 #	include <zlib.h>
 #endif
@@ -218,56 +215,6 @@ PHP_INI_MH(http_update_allowed_methods)
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
 
-#undef CASE_HTTP_ETAG_HASH
-#define CASE_HTTP_ETAG_HASH(HASH) \
-	case HTTP_ETAG_##HASH: \
-		ZEND_WRITE("HTTP_ETAG_"#HASH, lenof("HTTP_ETAG_"#HASH)); \
-	break;
-PHP_INI_DISP(http_etag_mode_displayer)
-{
-	long value;
-	
-	if (type == ZEND_INI_DISPLAY_ORIG && ini_entry->modified) {
-		value = (ini_entry->orig_value) ? atoi(ini_entry->orig_value) : HTTP_ETAG_MD5;
-	} else if (ini_entry->value) {
-		value = (ini_entry->value[0]) ? atoi(ini_entry->value) : HTTP_ETAG_MD5;
-	} else {
-		value = HTTP_ETAG_MD5;
-	}
-	
-	switch (value)
-	{
-#ifdef HTTP_HAVE_HASH_EXT
-		CASE_HTTP_ETAG_HASH(RIPEMD160);
-		CASE_HTTP_ETAG_HASH(RIPEMD128);
-		CASE_HTTP_ETAG_HASH(SHA512);
-		CASE_HTTP_ETAG_HASH(SHA384);
-		CASE_HTTP_ETAG_HASH(SHA256);
-#endif
-		CASE_HTTP_ETAG_HASH(CRC32);
-		CASE_HTTP_ETAG_HASH(SHA1);
-#ifndef HTTP_HAVE_MHASH
-		default:
-#endif
-		CASE_HTTP_ETAG_HASH(MD5);
-		
-#ifdef HTTP_HAVE_MHASH
-		default:
-		{
-			const char *hash_name = mhash_get_hash_name_static(value);
-			
-			if (!hash_name) {
-				ZEND_WRITE("HTTP_ETAG_MD5", lenof("HTTP_ETAG_MD5"));
-			} else {
-				ZEND_WRITE("HTTP_ETAG_MHASH_", lenof("HTTP_ETAG_MHASH_"));
-				ZEND_WRITE(hash_name, strlen(hash_name));
-			}
-		}
-		break;
-#endif
-	}
-}
-
 #ifndef ZEND_ENGINE_2
 #	define OnUpdateLong OnUpdateInt
 #endif
@@ -278,7 +225,7 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.redirect_log", "", PHP_INI_ALL, OnUpdateString, log.redirect)
 	HTTP_PHP_INI_ENTRY("http.allowed_methods_log", "", PHP_INI_ALL, OnUpdateString, log.allowed_methods)
 	HTTP_PHP_INI_ENTRY("http.composite_log", "", PHP_INI_ALL, OnUpdateString, log.composite)
-	HTTP_PHP_INI_ENTRY_EX("http.etag_mode", "-2", PHP_INI_ALL, OnUpdateLong, http_etag_mode_displayer, etag.mode)
+	HTTP_PHP_INI_ENTRY("http.etag_mode", "MD5", PHP_INI_ALL, OnUpdateString, etag.mode)
 #ifdef ZEND_ENGINE_2
 	HTTP_PHP_INI_ENTRY("http.only_exceptions", "0", PHP_INI_ALL, OnUpdateBool, only_exceptions)
 #endif
@@ -297,7 +244,6 @@ PHP_MINIT_FUNCTION(http)
 	
 	if (	(SUCCESS != PHP_MINIT_CALL(http_support))	||
 			(SUCCESS != PHP_MINIT_CALL(http_headers))	||
-			(SUCCESS != PHP_MINIT_CALL(http_cache))		||
 #ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #endif /* HTTP_HAVE_CURL */
@@ -386,16 +332,6 @@ PHP_MINFO_FUNCTION(http)
 #else
 		php_info_print_table_row(2, "zlib GZIP Encodings", "disabled");
 #endif
-#ifdef HTTP_HAVE_MHASH
-		{
-			char mhash_info[32];
-			
-			snprintf(mhash_info, 32, "libmhash/%d", MHASH_API_VERSION);
-			php_info_print_table_row(2, "mhash ETag Generator", mhash_info);
-		}
-#else
-		php_info_print_table_row(2, "mhash ETag Generator", "disabled");
-#endif
 #if defined(HTTP_HAVE_MAGIC) && !defined(WONKY)
 		php_info_print_table_row(2, "magic MIME Guessing", "libmagic/unknown");
 #else
@@ -419,37 +355,6 @@ PHP_MINFO_FUNCTION(http)
 	}
 	php_info_print_table_end();
 	
-	php_info_print_table_start();
-	php_info_print_table_colspan_header(2, "Supported ETag Hash Algorithms");
-	{
-			
-		php_info_print_table_row(2, "PHP", "CRC32, MD5, SHA1"
-#ifdef HTTP_HAVE_HASH_EXT
-			", SHA256, SHA384, SHA512, RIPEMD128, RIPEMD160"
-#endif
-		);
-#ifdef HTTP_HAVE_MHASH
-		{
-			phpstr *algos = phpstr_new();
-			int i, c = mhash_count();
-			
-			for (i = 0; i <= c; ++i) {
-				const char *hash = mhash_get_hash_name_static(i);
-				
-				if (hash) {
-					phpstr_appendf(algos, "%s, ", hash);
-				}
-			}
-			phpstr_fix(algos);
-			php_info_print_table_row(2, "MHASH", PHPSTR_VAL(algos));
-			phpstr_free(&algos);
-		}
-#else
-		php_info_print_table_row(2, "MHASH", "not available");
-#endif
-	}
-	php_info_print_table_end();
-
 	php_info_print_table_start();
 	php_info_print_table_colspan_header(2, "Request Methods");
 	{
