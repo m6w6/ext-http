@@ -15,10 +15,6 @@
 #ifndef PHP_HTTP_SEND_API_H
 #define PHP_HTTP_SEND_API_H
 
-#include "SAPI.h"
-#include "php_streams.h"
-#include "php_http_std_defs.h"
-
 typedef enum {
 	SEND_DATA,
 	SEND_RSRC
@@ -61,6 +57,9 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data, size_t data_size, http_send_
 #define http_send_stream(s) http_send_stream_ex((s), 0, 0)
 #define http_send_stream_ex(s, c, nc) _http_send_stream_ex((s), (c), (nc) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *s, zend_bool close_stream, zend_bool no_cache TSRMLS_DC);
+
+#define http_guess_content_type(mf, mm, d, l, m) _http_guess_content_type((mf), (mm), (d), (l), (m) TSRMLS_CC)
+PHP_HTTP_API char *_http_guess_content_type(const char *magic_file, long magic_mode, void *data_ptr, size_t data_len, http_send_mode mode TSRMLS_DC);
 
 #endif
 

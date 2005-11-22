@@ -15,9 +15,6 @@
 #ifndef PHP_HTTP_RESPONSE_OBJECT_H
 #define PHP_HTTP_RESPONSE_OBJECT_H
 #ifdef ZEND_ENGINE_2
-
-#include "missing.h"
-
 #ifndef WONKY
 
 extern zend_class_entry *http_response_object_ce;

@@ -15,17 +15,12 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
-
-#include "php_http_encoding_api.h"
 #include "php_http.h"
-#include "php_http_api.h"
 
-#ifdef HTTP_HAVE_ZLIB
-#	include "php_http_send_api.h"
-#	include "php_http_headers_api.h"
-#	include <zlib.h>
-#endif
+#include "php_http_api.h"
+#include "php_http_encoding_api.h"
+#include "php_http_send_api.h"
+#include "php_http_headers_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 

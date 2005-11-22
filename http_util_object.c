@@ -16,12 +16,11 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
+
+#include "php_http.h"
 
 #ifdef ZEND_ENGINE_2
 
-#include "php_http.h"
-#include "php_http_std_defs.h"
 #include "php_http_util_object.h"
 
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpUtil, method, 0, req_args)

@@ -12,33 +12,25 @@
 
 /* $Id$ */
 
-
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
+
+#define HTTP_WANT_CURL
+#include "php_http.h"
 
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 
 #include "zend_interfaces.h"
 
-#include "php_http_std_defs.h"
-#include "php_http_request_object.h"
-#include "php_http_request_api.h"
-#include "php_http_request_pool_api.h"
-#include "php_http.h"
 #include "php_http_api.h"
-#include "php_http_url_api.h"
+#include "php_http_exception_object.h"
 #include "php_http_message_api.h"
 #include "php_http_message_object.h"
-#include "php_http_exception_object.h"
-
-#include "missing.h"
-
-#ifdef PHP_WIN32
-#	include <winsock2.h>
-#endif
-#include <curl/curl.h>
+#include "php_http_request_api.h"
+#include "php_http_request_object.h"
+#include "php_http_request_pool_api.h"
+#include "php_http_url_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 

@@ -15,7 +15,6 @@
 #ifndef PHP_HTTP_HEADERS_API_H
 #define PHP_HTTP_HEADERS_API_H
 
-#include "php_http_std_defs.h"
 #include "php_http_info_api.h"
 
 #define HTTP_REDIRECT		302L

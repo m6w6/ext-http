@@ -16,9 +16,9 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
 
-#include "missing.h"
+#define HTTP_WANT_MAGIC
+#include "php_http.h"
 
 /* broken static properties in PHP 5.0 */
 #if defined(ZEND_ENGINE_2) && !defined(WONKY)
@@ -26,18 +26,13 @@
 #include "SAPI.h"
 #include "php_ini.h"
 
-#include "php_http.h"
 #include "php_http_api.h"
-#include "php_http_std_defs.h"
-#include "php_http_response_object.h"
-#include "php_http_exception_object.h"
-#include "php_http_send_api.h"
 #include "php_http_cache_api.h"
+#include "php_http_exception_object.h"
 #include "php_http_headers_api.h"
+#include "php_http_response_object.h"
+#include "php_http_send_api.h"
 
-#ifdef HTTP_HAVE_MAGIC
-#	include <magic.h>
-#endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 

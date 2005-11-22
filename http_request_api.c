@@ -15,27 +15,20 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
+
+#define HTTP_WANT_CURL
+#include "php_http.h"
 
 #ifdef HTTP_HAVE_CURL
 
-#include "php_http.h"
-#include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_request_api.h"
 #include "php_http_request_method_api.h"
 #include "php_http_url_api.h"
+
 #ifdef ZEND_ENGINE_2
 #	include "php_http_request_object.h"
 #endif
-
-#include "phpstr/phpstr.h"
-
-#ifdef PHP_WIN32
-#	include <winsock2.h>
-#endif
-
-#include <curl/curl.h>
 
 /* {{{ cruft for thread safe SSL crypto locks */
 #if defined(ZTS) && defined(HTTP_HAVE_SSL)
@@ -1041,7 +1034,7 @@ static inline void _http_curl_defaults(CURL *ch)
 	HTTP_CURL_OPT(FOLLOWLOCATION, 0);
 	HTTP_CURL_OPT(UNRESTRICTED_AUTH, 0);
 	HTTP_CURL_OPT(REFERER, NULL);
-	HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" HTTP_PEXT_VERSION " (PHP/" PHP_VERSION ")");
+	HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
 	HTTP_CURL_OPT(HTTPHEADER, NULL);
 	HTTP_CURL_OPT(COOKIE, NULL);
 	HTTP_CURL_OPT(COOKIEFILE, NULL);

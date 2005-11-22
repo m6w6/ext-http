@@ -12,24 +12,25 @@
 
 /* $Id$ */
 
-
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
 
-#include "zend_extensions.h"
+#define HTTP_WANT_CURL
+#define HTTP_WANT_ZLIB
+#define HTTP_WANT_MAGIC
+#include "php_http.h"
 
 #include "SAPI.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "zend_extensions.h"
 
-#include "php_http.h"
-#include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_send_api.h"
 #include "php_http_cache_api.h"
 #include "php_http_headers_api.h"
+#include "php_http_message_api.h"
 #include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
@@ -49,20 +50,6 @@
 #	include "php_http_exception_object.h"
 #endif
 
-#include "missing.h"
-#include "phpstr/phpstr.h"
-
-#ifdef HTTP_HAVE_CURL
-#	ifdef PHP_WIN32
-#		include <winsock2.h>
-#	endif
-#	include <curl/curl.h>
-#endif
-#ifdef HTTP_HAVE_ZLIB
-#	include <zlib.h>
-#endif
-
-#include <ctype.h>
 
 ZEND_DECLARE_MODULE_GLOBALS(http);
 HTTP_DECLARE_ARG_PASS_INFO();
@@ -135,6 +122,9 @@ static zend_module_dep http_module_dep[] = {
 #	ifdef HAVE_SPL
 	ZEND_MOD_REQUIRED("spl")
 #	endif
+#	ifdef HTTP_HAVE_EXT_HASH
+	ZEND_MOD_REQUIRED("hash")
+#	endif
 	{NULL, NULL, NULL, 0}
 };
 #endif
@@ -155,7 +145,7 @@ zend_module_entry http_module_entry = {
 	PHP_RINIT(http),
 	PHP_RSHUTDOWN(http),
 	PHP_MINFO(http),
-	HTTP_PEXT_VERSION,
+	PHP_EXT_HTTP_VERSION,
 	STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
@@ -315,7 +305,7 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_start();
 	{
 		php_info_print_table_row(2, "Extended HTTP support", "enabled");
-		php_info_print_table_row(2, "Extension Version", HTTP_PEXT_VERSION);
+		php_info_print_table_row(2, "Extension Version", PHP_EXT_HTTP_VERSION);
 #ifdef HTTP_HAVE_CURL
 		php_info_print_table_row(2, "cURL HTTP Requests", curl_version());
 #else

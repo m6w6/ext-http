@@ -17,15 +17,7 @@
 
 #ifdef HTTP_HAVE_CURL
 
-#include "php_http_std_defs.h"
 #include "php_http_request_method_api.h"
-
-#include "phpstr/phpstr.h"
-
-#ifdef PHP_WIN32
-#	include <winsock2.h>
-#endif
-#include <curl/curl.h>
 
 extern PHP_MINIT_FUNCTION(http_request);
 extern PHP_MSHUTDOWN_FUNCTION(http_request);

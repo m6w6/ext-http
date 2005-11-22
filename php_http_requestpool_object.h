@@ -17,14 +17,6 @@
 #ifdef HTTP_HAVE_CURL
 #ifdef ZEND_ENGINE_2
 
-#ifdef	PHP_WIN32
-#	include <winsock2.h>
-#endif
-
-#include <curl/curl.h>
-
-#include "php_http_request_pool_api.h"
-
 typedef struct {
 	zend_object zo;
 	http_request_pool pool;

@@ -16,7 +16,6 @@
 #define PHP_HTTP_MESSAGE_API_H
 
 #include "php_http_info_api.h"
-#include "phpstr/phpstr.h"
 
 typedef enum {
 	HTTP_MSG_NONE		= 0,

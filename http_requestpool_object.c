@@ -12,33 +12,28 @@
 
 /* $Id$ */
 
-
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
+
+#define HTTP_WANT_CURL
+#include "php_http.h"
 
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 
-#include "php_http_std_defs.h"
-#include "php_http_api.h"
-#include "php_http_requestpool_object.h"
-#include "php_http_request_pool_api.h"
-#include "php_http_request_object.h"
-#include "php_http_exception_object.h"
-
-#include "missing.h"
-
 #include "zend_interfaces.h"
+
+#include "php_http_api.h"
+#include "php_http_exception_object.h"
+#include "php_http_request_api.h"
+#include "php_http_request_object.h"
+#include "php_http_request_pool_api.h"
+#include "php_http_requestpool_object.h"
+
 #if defined(HAVE_SPL) && !defined(WONKY)
 /* SPL doesn't install its headers */
 extern PHPAPI zend_class_entry *spl_ce_Countable;
 #endif
-
-#ifdef PHP_WIN32
-#	include <winsock2.h>
-#endif
-#include <curl/curl.h>
 
 #define HTTP_BEGIN_ARGS(method, req_args) 	HTTP_BEGIN_ARGS_EX(HttpRequestPool, method, 0, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)	HTTP_EMPTY_ARGS_EX(HttpRequestPool, method, ret_ref)

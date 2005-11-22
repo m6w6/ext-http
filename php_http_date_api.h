@@ -15,8 +15,6 @@
 #ifndef PHP_HTTP_DATE_API_H
 #define PHP_HTTP_DATE_API_H
 
-#include "php_http_std_defs.h"
-
 #define http_date(t) _http_date((t) TSRMLS_CC)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC);
 

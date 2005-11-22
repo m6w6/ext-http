@@ -15,19 +15,19 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
 
+#define HTTP_WANT_CURL
 #include "php_http.h"
-#include "php_http_std_defs.h"
-#include "php_http_api.h"
-#include "php_http_message_api.h"
-#include "php_http_headers_api.h"
-#include "php_http_send_api.h"
-#include "php_http_request_api.h"
-#include "php_http_url_api.h"
-#include "php_http_encoding_api.h"
 
-#include "phpstr/phpstr.h"
+#include "SAPI.h"
+
+#include "php_http_api.h"
+#include "php_http_encoding_api.h"
+#include "php_http_headers_api.h"
+#include "php_http_message_api.h"
+#include "php_http_request_api.h"
+#include "php_http_send_api.h"
+#include "php_http_url_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 

@@ -15,8 +15,6 @@
 #ifndef PHP_HTTP_URL_API_H
 #define PHP_HTTP_URL_API_H
 
-#include "php_http_std_defs.h"
-
 #define http_absolute_uri(url) http_absolute_url(url)
 #define http_absolute_uri_ex(url, url_len, proto, proto_len, host, host_len, port) _http_absolute_url_ex((url), (url_len), (proto), (proto_len), (host), (host_len), (port) TSRMLS_CC)
 #define http_absolute_url(url) http_absolute_url_ex((url), strlen(url), NULL, 0, NULL, 0, 0)

@@ -16,6 +16,8 @@
 #define PHP_HTTP_EXCEPTION_OBJECT_H
 #ifdef ZEND_ENGINE_2
 
+#include "zend_exceptions.h"
+
 PHP_MINIT_FUNCTION(http_exception_object);
 
 extern zend_class_entry *http_exception_object_ce;

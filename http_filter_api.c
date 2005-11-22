@@ -15,17 +15,14 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
+
+#include "php_http.h"
 
 #ifdef ZEND_ENGINE_2
 
-#include "php_http_std_defs.h"
+#include "php_streams.h"
 #include "php_http_api.h"
 #include "php_http_filter_api.h"
-
-#include "phpstr/phpstr.h"
-
-#include "php_streams.h"
 
 PHP_MINIT_FUNCTION(http_filter)
 {

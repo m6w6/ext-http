@@ -15,17 +15,41 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define HTTP_PEXT_VERSION "0.18.1"
+#define PHP_EXT_HTTP_VERSION "0.19.0"
 
-/* make compile on Win32 */
-#ifdef HTTP_HAVE_CURL
+#include "php.h"
+#include "php_http_std_defs.h"
+#include "phpstr/phpstr.h"
+#include "missing.h"
+
+
+#ifdef HTTP_WANT_NETDB
+#	ifdef PHP_WIN32
+#		include <winsock2.h>
+#	elif defined(HAVE_NETDB_H)
+#		include <netdb.h>
+#	endif
+#endif
+
+#if defined(HTTP_WANT_CURL) && defined(HTTP_HAVE_CURL)
 #	ifdef PHP_WIN32
 #		include <winsock2.h>
 #	endif
 #	include <curl/curl.h>
 #endif
 
-#include "phpstr/phpstr.h"
+#if defined(HTTP_WANT_MAGIC) && defined(HTTP_HAVE_MAGIC)
+#	if defined(PHP_WIN32) && !defined(USE_MAGIC_DLL) && !defined(USE_MAGIC_STATIC)
+#		define USE_MAGIC_STATIC
+#	endif
+#	include <magic.h>
+#endif
+
+#if defined(HTTP_WANT_ZLIB) && defined(HTTP_HAVE_ZLIB)
+#	include <zlib.h>
+#endif
+
+#include <ctype.h>
 
 extern zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package version="1.0" packagerversion="1.4.4">
+<package version="1.0" packagerversion="1.4.3">
  <name>pecl_http</name>
  <summary>Extended HTTP Support</summary>
  <description>* Building absolute URLs
@@ -23,11 +23,15 @@
   </maintainer>
   </maintainers>
  <release>
-  <version>0.18.1</version>
-  <date>2005-11-17</date>
+  <version>0.19.0</version>
+  <date>2005-11-21</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>* Fixed build with PHP-4 and PHP-5.0
+  <notes>* Fixed bug in http_negotiate_*() when client sends spaces within accept headers
+
+- Removed support for ETag hashing through libmhash
+
++ Added http_negotiate_content_type()
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -35,7 +39,6 @@
   </deps>
   <configureoptions>
    <configureoption name="with-http-curl-requests" default="yes" prompt="whether to enable cURL HTTP requests; specify libcurl directory"/>
-   <configureoption name="with-http-mhash-etags" default="yes" prompt="whether to enable mhash ETag generator; specify libmhash directory"/>
    <configureoption name="with-http-magic-mime" default="no" prompt="whether to enable response content type guessing; specify libmagic directory"/>
    <configureoption name="with-http-zlib-compression" default="yes" prompt="whether to enable support for gzencoded/deflated message bodies; specify zlib directory"/>
   </configureoptions>
@@ -84,7 +87,6 @@
     <file role="test" name="etag_mode_042.phpt"/>
     <file role="test" name="etag_mode_043.phpt"/>
     <file role="test" name="etag_mode_044.phpt"/>
-    <file role="test" name="etag_mode_crc.phpt"/>
     <file role="test" name="exceptions.phpt"/>
     <file role="test" name="get_request_data_001.phpt"/>
     <file role="test" name="HttpMessage_001.phpt"/>

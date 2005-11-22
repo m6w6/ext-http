@@ -16,16 +16,6 @@
 #define PHP_HTTP_REQUEST_POOL_API_H
 #ifdef HTTP_HAVE_CURL
 
-#include "php_http_std_defs.h"
-#include "php_http_request_api.h"
-#include "phpstr/phpstr.h"
-
-#ifdef PHP_WIN32
-#	include <winsock2.h>
-#endif
-
-#include <curl/curl.h>
-
 typedef struct {
 	CURLM *ch;
 	zend_llist finished;

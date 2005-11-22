@@ -15,18 +15,17 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
 
+#define HTTP_WANT_CURL
 #include "php_http.h"
-#include "php_http_std_defs.h"
+
 #include "php_http_api.h"
+#include "php_http_request_api.h"
 #include "php_http_request_method_api.h"
-#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
+
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL) && !defined(WONKY)
 #	include "php_http_request_object.h"
 #endif
-
-#include "missing.h"
-#include "phpstr/phpstr.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 

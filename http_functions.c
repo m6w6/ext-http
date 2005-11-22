@@ -15,33 +15,30 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
 
-#include "zend_operators.h"
+#define HTTP_WANT_CURL
+#include "php_http.h"
 
 #include "SAPI.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "ext/standard/php_string.h"
+#include "zend_operators.h"
+
 #if defined(HAVE_PHP_SESSION) && !defined(COMPILE_DL_SESSION)
 #	include "ext/session/php_session.h"
 #endif
 
-#include "php_http.h"
-#include "php_http_std_defs.h"
 #include "php_http_api.h"
-#include "php_http_request_api.h"
 #include "php_http_cache_api.h"
-#include "php_http_request_method_api.h"
-#include "php_http_request_api.h"
 #include "php_http_date_api.h"
+#include "php_http_encoding_api.h"
 #include "php_http_headers_api.h"
 #include "php_http_message_api.h"
+#include "php_http_request_api.h"
+#include "php_http_request_method_api.h"
 #include "php_http_send_api.h"
 #include "php_http_url_api.h"
-#include "php_http_encoding_api.h"
-
-#include "phpstr/phpstr.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http)
 

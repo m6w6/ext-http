@@ -15,31 +15,19 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
+
+#include "php_http.h"
 
 #include "SAPI.h"
+#include "php_output.h"
 #include "ext/standard/url.h"
 #include "ext/standard/head.h"
 
-#include "php_http.h"
-#include "php_http_std_defs.h"
 #include "php_http_api.h"
-#include "php_http_headers_api.h"
-#include "php_http_request_api.h"
 #include "php_http_send_api.h"
 
 #ifdef ZEND_ENGINE_2
-#	include "zend_exceptions.h"
 #	include "php_http_exception_object.h"
-#endif
-
-#include <ctype.h>
-
-#ifdef HTTP_HAVE_MAGIC
-#	if defined(PHP_WIN32) && !defined(USE_MAGIC_DLL) && !defined(USE_MAGIC_STATIC)
-#		define USE_MAGIC_STATIC
-#	endif
-#	include <magic.h>
 #endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
@@ -337,63 +325,6 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 /* }}} */
 
 
-/* {{{ char *http_guess_content_type(char *magic_file, long magic_mode, void *data, size_t size, http_send_mode mode) */
-PHP_HTTP_API char *_http_guess_content_type(const char *magicfile, long magicmode, void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
-{
-	char *ct = NULL;
-
-#ifdef HTTP_HAVE_MAGIC
-	/*	magic_load() fails if MAGIC_MIME is set because it 
-		cowardly adds .mime to the file name */
-	struct magic_set *magic = magic_open(magicmode &~ MAGIC_MIME);
-	
-	if (!magic) {
-		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid magic mode: %ld", magicmode);
-	} else if (-1 == magic_load(magic, magicfile)) {
-		http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Failed to load magic database '%s' (%s)", magicfile, magic_error(magic));
-	} else {
-		const char *ctype = NULL;
-		
-		magic_setflags(magic, magicmode);
-		
-		switch (data_mode)
-		{
-			case SEND_RSRC:
-			{
-				char *buffer;
-				size_t b_len;
-				
-				b_len = php_stream_copy_to_mem(data_ptr, &buffer, 65536, 0);
-				ctype = magic_buffer(magic, buffer, b_len);
-				efree(buffer);
-			}
-			break;
-			
-			case SEND_DATA:
-				ctype = magic_buffer(magic, data_ptr, data_len);
-			break;
-			
-			default:
-				ctype = magic_file(magic, data_ptr);
-			break;
-		}
-		
-		if (ctype) {
-			ct = estrdup(ctype);
-		} else {
-			http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Failed to guess Content-Type: %s", magic_error(magic));
-		}
-	}
-	if (magic) {
-		magic_close(magic);
-	}
-#else
-	http_error(HE_WARNING, HTTP_E_RUNTIME, "Cannot guess Content-Type; libmagic not available");
-#endif
-	
-	return ct;
-}
-/* }}} */
 /*
  * Local variables:
  * tab-width: 4

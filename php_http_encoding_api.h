@@ -15,10 +15,7 @@
 #ifndef PHP_HTTP_ENCODING_API_H
 #define PHP_HTTP_ENCODING_API_H
 
-#include "php_http_std_defs.h"
-
 #ifdef HTTP_HAVE_ZLIB
-#	include "phpstr/phpstr.h"
 #	include <zlib.h>
 #endif
 

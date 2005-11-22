@@ -16,8 +16,6 @@
 #define PHP_HTTP_MESSAGE_OBJECT_H
 #ifdef ZEND_ENGINE_2
 
-#include "php_http_message_api.h"
-
 typedef struct {
 	zend_object zo;
 	http_message *message;

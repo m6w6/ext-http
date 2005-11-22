@@ -15,16 +15,16 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
+
+#define HTTP_WANT_CURL
+#include "php_http.h"
 
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 
-#include "php_http.h"
-#include "php_http_std_defs.h"
 #include "php_http_api.h"
 #include "php_http_request_api.h"
-#include "php_http_request_pool_api.h"
 #include "php_http_request_object.h"
+#include "php_http_request_pool_api.h"
 #include "php_http_requestpool_object.h"
 
 #ifndef HTTP_DEBUG_REQPOOLS

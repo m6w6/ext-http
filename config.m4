@@ -205,7 +205,7 @@ dnl ----
 	PHP_HTTP_HEADERS="php_http_std_defs.h php_http.h php_http_api.h php_http_cache_api.h \
 		php_http_date_api.h php_http_headers_api.h php_http_info_api.h php_http_message_api.h \
 		php_http_request_api.h php_http_request_method_api.h php_http_send_api.h php_http_url_api.h \
-		php_http_encoding_api.h phpstr/phpstr.h"
+		php_http_encoding_api.h phpstr/phpstr.h missing.h"
 
 	ifdef([PHP_INSTALL_HEADERS], [
 		PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)

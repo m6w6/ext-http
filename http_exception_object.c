@@ -16,14 +16,11 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
+
+#include "php_http.h"
 
 #ifdef ZEND_ENGINE_2
 
-#include "zend_exceptions.h"
-
-#include "php_http.h"
-#include "php_http_std_defs.h"
 #include "php_http_exception_object.h"
 
 #define HTTP_EX_DEF_CE http_exception_object_ce

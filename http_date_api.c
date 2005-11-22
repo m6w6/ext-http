@@ -15,12 +15,9 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
 
 #include "php_http.h"
-#include "php_http_std_defs.h"
-
-#include <ctype.h>
+#include "php_http_date_api.h"
 
 static int check_day(char *day, size_t len);
 static int check_month(char *month);

@@ -15,9 +15,6 @@
 #ifndef PHP_HTTP_API_H
 #define PHP_HTTP_API_H
 
-#include "php_http_std_defs.h"
-#include "php_http_send_api.h"
-
 #define HTTP_SUPPORT				0x01L
 #define HTTP_SUPPORT_REQUESTS		0x02L
 #define HTTP_SUPPORT_MAGICMIME		0x04L
@@ -108,11 +105,8 @@ extern STATUS _http_check_method_ex(const char *method, const char *methods);
 PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zend_bool check TSRMLS_DC);
 
 #define http_get_request_body(b, l) _http_get_request_body_ex((b), (l), 1 TSRMLS_CC)
-#define http_get_Request_body_ex(b, l, d) _http_get_request_body_ex((b), (l), (d) TSRMLS_CC)
+#define http_get_request_body_ex(b, l, d) _http_get_request_body_ex((b), (l), (d) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_bool dup TSRMLS_DC);
-
-#define http_guess_content_type(mf, mm, d, l, m) _http_guess_content_type((mf), (mm), (d), (l), (m) TSRMLS_CC)
-PHP_HTTP_API char *_http_guess_content_type(const char *magic_file, long magic_mode, void *data_ptr, size_t data_len, http_send_mode mode TSRMLS_DC);
 
 
 #define http_locate_body _http_locate_body
@@ -181,7 +175,6 @@ static inline zval *_convert_to_type_ex(int type, zval *z, zval **p)
 	}
 	return z;
 }
-
 
 #endif
 

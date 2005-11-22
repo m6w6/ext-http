@@ -15,14 +15,11 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
 
 #include "php_http.h"
-#include "php_http_api.h"
-#include "php_http_std_defs.h"
-#include "php_http_info_api.h"
 
-#include <ctype.h>
+#include "php_http_api.h"
+#include "php_http_info_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 

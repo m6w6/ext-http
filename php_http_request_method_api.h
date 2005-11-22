@@ -15,9 +15,6 @@
 #ifndef PHP_HTTP_REQUEST_METHOD_API_H
 #define PHP_HTTP_REQUEST_METHOD_API_H
 
-#include "php_http_std_defs.h"
-#include "phpstr/phpstr.h"
-
 typedef enum {
 	HTTP_NO_REQUEST_METHOD	= 0,
 	/* HTTP/1.1 */

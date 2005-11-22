@@ -15,17 +15,11 @@
 #ifndef PHP_HTTP_CACHE_API_H
 #define PHP_HTTP_CACHE_API_H
 
-#include "zend_ini.h"
+#include "php_http_send_api.h"
 
 #include "ext/standard/crc32.h"
 #include "ext/standard/sha1.h"
 #include "ext/standard/md5.h"
-
-#include "php_http_std_defs.h"
-#include "php_http.h"
-#include "php_http_api.h"
-#include "php_http_send_api.h"
-
 #if defined(HTTP_HAVE_EXT_HASH)
 #	include "php_hash.h"
 #elif defined(HTTP_HAVE_HASH_EXT_HASH)

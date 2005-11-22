@@ -15,25 +15,17 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
-#include "php.h"
+
+#define HTTP_WANT_NETDB
+#include "php_http.h"
 
 #include "SAPI.h"
 #include "zend_ini.h"
 #include "php_output.h"
 #include "ext/standard/url.h"
 
-#include "php_http.h"
 #include "php_http_api.h"
 #include "php_http_url_api.h"
-#include "php_http_std_defs.h"
-
-#include "phpstr/phpstr.h"
-
-#ifdef PHP_WIN32
-#	include <winsock2.h>
-#elif defined(HAVE_NETDB_H)
-#	include <netdb.h>
-#endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
