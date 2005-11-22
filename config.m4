@@ -159,7 +159,37 @@ dnl ----
 dnl HASH
 dnl ----
 
-	dnl TODO
+	if test -x "$PHP_EXECUTABLE"; then
+		if test "`$PHP_EXECUTABLE -m | $EGREP '^hash$'`" = "hash"; then
+			if test -d ../hash; then
+				PHP_ADD_INCLUDE([../hash])
+			fi
+			old_CPPFLAGS=$CPPFLAGS
+			CPPFLAGS=$INCLUDES
+			AC_CHECK_HEADER([php_hash.h], 
+			[
+				AC_DEFINE([HTTP_HAVE_EXT_HASH], [1], [Have ext/hash support])
+			], [ 
+				AC_CHECK_HEADER([hash/php_hash.h], 
+				[
+					AC_DEFINE([HTTP_HAVE_HASH_EXT_HASH], [1], [Have ext/hash support])
+					], [ 
+						AC_CHECK_HEADER([ext/hash/php_hash.h], 
+						[
+							AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
+						], [ 
+						])
+					])
+			])
+			CPPFLAGS=$old_CPPFLAGS;
+		fi
+	elif test "$PHP_HASH" != "no" && test "x$PHP_HASH" != "x"; then
+		ifdef([PHP_ADD_EXTENSION_DEP], [
+			PHP_ADD_EXTENSION_DEP([http], [hash], 0)
+			AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
+		], [
+		])
+	fi
 
 dnl ----
 dnl DONE
@@ -179,12 +209,13 @@ dnl ----
 		php_http_date_api.h php_http_headers_api.h php_http_info_api.h php_http_message_api.h \
 		php_http_request_api.h php_http_request_method_api.h php_http_send_api.h php_http_url_api.h \
 		php_http_encoding_api.h phpstr/phpstr.h"
-	PHP_SUBST([PHP_HTTP_HEADERS])
 
-	dnl outside src dir, adds install-http target
-	PHP_ADD_MAKEFILE_FRAGMENT
-	dnl within src dir, installs http headers
-	ifdef([PHP_INSTALL_HEADERS], [PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)], [ ])
+	ifdef([PHP_INSTALL_HEADERS], [
+		PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)
+	], [
+		PHP_SUBST([PHP_HTTP_HEADERS])
+		PHP_ADD_MAKEFILE_FRAGMENT
+	])
 
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
 fi

@@ -26,8 +26,14 @@
 #include "php_http_api.h"
 #include "php_http_send_api.h"
 
-#ifdef HTTP_HAVE_EXT_HASH
+#if defined(HTTP_HAVE_EXT_HASH)
 #	include "php_hash.h"
+#elif defined(HTTP_HAVE_HASH_EXT_HASH)
+#	define HTTP_HAVE_EXT_HASH
+#	include "hash/php_hash.h"
+#elif defined(HTTP_HAVE_EXT_HASH_EXT_HASH)
+#	define HTTP_HAVE_EXT_HASH
+#	include "ext/hash/php_hash.h"
 #endif
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
