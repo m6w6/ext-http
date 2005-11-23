@@ -174,7 +174,6 @@ dnl ----
 				], [ 
 					AC_CHECK_HEADER([ext/hash/php_hash.h], [
 						AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
-					], [ 
 					])
 				])
 			])
@@ -184,7 +183,6 @@ dnl ----
 		ifdef([PHP_ADD_EXTENSION_DEP], [
 			PHP_ADD_EXTENSION_DEP([http], [hash], 0)
 			AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
-		], [
 		])
 	fi
 
