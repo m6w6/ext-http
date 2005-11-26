@@ -159,6 +159,7 @@ dnl ----
 dnl HASH
 dnl ----
 
+	AC_MSG_CHECKING(for ext/hash support)
 	if test -x "$PHP_EXECUTABLE"; then
 		if test "`$PHP_EXECUTABLE -m | $EGREP '^hash$'`" = "hash"; then
 			if test -d ../hash; then
@@ -167,23 +168,31 @@ dnl ----
 			old_CPPFLAGS=$CPPFLAGS
 			CPPFLAGS=$INCLUDES
 			AC_CHECK_HEADER([php_hash.h], [
+				AC_MSG_RESULT(enabled)
 				AC_DEFINE([HTTP_HAVE_EXT_HASH], [1], [Have ext/hash support])
 			], [ 
 				AC_CHECK_HEADER([hash/php_hash.h], [
+					AC_MSG_RESULT(enabled)
 					AC_DEFINE([HTTP_HAVE_HASH_EXT_HASH], [1], [Have ext/hash support])
 				], [ 
 					AC_CHECK_HEADER([ext/hash/php_hash.h], [
+					 AC_MSG_RESULT(enabled)
 						AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
+					], [
+						AC_MSG_RESULT(disabled)
 					])
 				])
 			])
 			CPPFLAGS=$old_CPPFLAGS;
 		fi
 	elif test "$PHP_HASH" != "no" && test "x$PHP_HASH" != "x"; then
+		AC_MSG_RESULT(enabled)
 		ifdef([PHP_ADD_EXTENSION_DEP], [
 			PHP_ADD_EXTENSION_DEP([http], [hash], 0)
 			AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
 		])
+	else
+		AC_MSG_RESULT(disabled)
 	fi
 
 dnl ----
