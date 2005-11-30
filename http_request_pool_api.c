@@ -264,6 +264,18 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 }
 /* }}} */
 
+#define http_request_pool_try \
+	{ \
+		zval *old_exception = EG(exception); \
+		EG(exception) = NULL;
+#define http_request_pool_catch \
+		if (EG(exception)) { \
+			http_request_pool_wrap_exception(old_exception, EG(exception)); \
+		} else { \
+			EG(exception) = old_exception; \
+		} \
+	}
+
 /* {{{ int http_request_pool_perform(http_request_pool *) */
 PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 {
@@ -275,22 +287,21 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 	while ((msg = curl_multi_info_read(pool->ch, &remaining))) {
 		if (CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
-				zval *old_exception = EG(exception);
-				
-				if (old_exception) {
-					EG(exception) = NULL;
-				}
-				http_error(HE_WARNING, HTTP_E_REQUEST, curl_easy_strerror(msg->data.result));
-				if (old_exception) {
-					http_request_pool_wrap_exception(old_exception, EG(exception));
-				}
+				http_request_pool_try {
+					http_error(HE_WARNING, HTTP_E_REQUEST, curl_easy_strerror(msg->data.result));
+				} http_request_pool_catch;
 			}
-			zend_llist_apply_with_argument(&pool->handles, (llist_apply_with_arg_func_t) http_request_pool_responsehandler, msg->easy_handle TSRMLS_CC);
+			http_request_pool_try {
+				zend_llist_apply_with_argument(&pool->handles, (llist_apply_with_arg_func_t) http_request_pool_responsehandler, msg->easy_handle TSRMLS_CC);
+			} http_request_pool_catch;
 		}
 	}
 	if (EG(exception)) {
-		zval *exception = EG(exception);
+		zval *exception;
 		
+		http_request_pool_wrap_exception(NULL, EG(exception));
+		
+		exception = EG(exception);
 		EG(exception) = NULL;
 		zend_throw_exception_object(exception TSRMLS_CC);
 	}
@@ -338,7 +349,7 @@ static inline void _http_request_pool_wrap_exception(zval *old_exception, zval *
 	
 	/*	if old_exception is already an HttpRequestPoolException append the new one, 
 		else create a new HttpRequestPoolException and append the old and new exceptions */
-	if (Z_OBJCE_P(old_exception) == ce) {
+	if (old_exception && Z_OBJCE_P(old_exception) == ce) {
 		zval *exprop;
 		
 		exprop = zend_read_property(ce, old_exception, "requestExceptions", sizeof("requestExceptions")-1, 0 TSRMLS_CC);
@@ -347,10 +358,9 @@ static inline void _http_request_pool_wrap_exception(zval *old_exception, zval *
 		
 		add_next_index_zval(exprop, new_exception);
 		zend_update_property(ce, old_exception, "requestExceptions", sizeof("requestExceptions")-1, exprop TSRMLS_CC);
-		zval_ptr_dtor(&exprop);
 		
 		EG(exception) = old_exception;
-	} else {
+	} else if (new_exception && Z_OBJCE_P(new_exception) != ce){
 		zval *exval, *exprop;
 		
 		MAKE_STD_ZVAL(exval);
@@ -358,7 +368,9 @@ static inline void _http_request_pool_wrap_exception(zval *old_exception, zval *
 		MAKE_STD_ZVAL(exprop);
 		array_init(exprop);
 		
-		add_next_index_zval(exprop, old_exception);
+		if (old_exception) {
+			add_next_index_zval(exprop, old_exception);
+		}
 		add_next_index_zval(exprop, new_exception);
 		zend_update_property(ce, exval, "requestExceptions", sizeof("requestExceptions")-1, exprop TSRMLS_CC);
 		zval_ptr_dtor(&exprop);
