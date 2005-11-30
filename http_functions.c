@@ -985,6 +985,7 @@ PHP_FUNCTION(http_match_request_header)
 			if (msg) { \
 				RETVAL_STRINGL(PHPSTR_VAL(&msg->body), PHPSTR_LEN(&msg->body), 1); \
 				http_message_free(&msg); \
+				phpstr_dtor(&response); \
 				return; \
 			} \
 		} else { \
