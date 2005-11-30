@@ -22,6 +22,7 @@
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 
 #include "php_http_api.h"
+#include "php_http_exception_object.h"
 #include "php_http_request_api.h"
 #include "php_http_request_object.h"
 #include "php_http_request_pool_api.h"
@@ -37,6 +38,8 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define curl_multi_strerror(dummy) "unknown error"
 #endif
 
+#define http_request_pool_wrap_exception(o, n) _http_request_pool_wrap_exception((o), (n) TSRMLS_CC)
+static inline void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception TSRMLS_DC);
 static void http_request_pool_freebody(http_request_callback_ctx **body);
 static int http_request_pool_compare_handles(void *h1, void *h2);
 
@@ -272,10 +275,24 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 	while ((msg = curl_multi_info_read(pool->ch, &remaining))) {
 		if (CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
+				zval *old_exception = EG(exception);
+				
+				if (old_exception) {
+					EG(exception) = NULL;
+				}
 				http_error(HE_WARNING, HTTP_E_REQUEST, curl_easy_strerror(msg->data.result));
+				if (old_exception) {
+					http_request_pool_wrap_exception(old_exception, EG(exception));
+				}
 			}
 			zend_llist_apply_with_argument(&pool->handles, (llist_apply_with_arg_func_t) http_request_pool_responsehandler, msg->easy_handle TSRMLS_CC);
 		}
+	}
+	if (EG(exception)) {
+		zval *exception = EG(exception);
+		
+		EG(exception) = NULL;
+		zend_throw_exception_object(exception TSRMLS_CC);
 	}
 	
 	return pool->unfinished;
@@ -313,6 +330,43 @@ void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC)
 /* }}} */
 
 /*#*/
+
+/* {{{ static void http_request_pool_wrap_exception(zval *, zval *) */
+static inline void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception TSRMLS_DC)
+{
+	zend_class_entry *ce = HTTP_EX_CE(request_pool);
+	
+	/*	if old_exception is already an HttpRequestPoolException append the new one, 
+		else create a new HttpRequestPoolException and append the old and new exceptions */
+	if (Z_OBJCE_P(old_exception) == ce) {
+		zval *exprop;
+		
+		exprop = zend_read_property(ce, old_exception, "requestExceptions", sizeof("requestExceptions")-1, 0 TSRMLS_CC);
+		SEP_PROP(&exprop);
+		convert_to_array(exprop);
+		
+		add_next_index_zval(exprop, new_exception);
+		zend_update_property(ce, old_exception, "requestExceptions", sizeof("requestExceptions")-1, exprop TSRMLS_CC);
+		zval_ptr_dtor(&exprop);
+		
+		EG(exception) = old_exception;
+	} else {
+		zval *exval, *exprop;
+		
+		MAKE_STD_ZVAL(exval);
+		object_init_ex(exval, ce);
+		MAKE_STD_ZVAL(exprop);
+		array_init(exprop);
+		
+		add_next_index_zval(exprop, old_exception);
+		add_next_index_zval(exprop, new_exception);
+		zend_update_property(ce, exval, "requestExceptions", sizeof("requestExceptions")-1, exprop TSRMLS_CC);
+		zval_ptr_dtor(&exprop);
+		
+		EG(exception) = exval;
+	}
+}
+/* }}} */
 
 /* {{{ static void http_request_pool_freebody(http_request_ctx **) */
 static void http_request_pool_freebody(http_request_callback_ctx **body)

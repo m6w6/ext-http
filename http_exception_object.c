@@ -23,9 +23,7 @@
 
 #include "php_http_exception_object.h"
 
-#define HTTP_EX_DEF_CE http_exception_object_ce
 zend_class_entry *http_exception_object_ce;
-#define HTTP_EX_CE(name) http_ ##name## _exception_object_ce
 zend_class_entry *HTTP_EX_CE(runtime);
 zend_class_entry *HTTP_EX_CE(header);
 zend_class_entry *HTTP_EX_CE(malformed_headers);
@@ -54,6 +52,8 @@ PHP_MINIT_FUNCTION(http_exception_object)
 	HTTP_REGISTER_EXCEPTION(HttpSocketException, HTTP_EX_CE(socket), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpResponseException, HTTP_EX_CE(response), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpUrlException, HTTP_EX_CE(url), HTTP_EX_DEF_CE);
+	
+	zend_declare_property_null(HTTP_EX_CE(request_pool), "requestExceptions", sizeof("requestExceptions")-1, ZEND_ACC_PUBLIC TSRMLS_CC);
 
 	HTTP_LONG_CONSTANT("HTTP_E_RUNTIME", HTTP_E_RUNTIME);
 	HTTP_LONG_CONSTANT("HTTP_E_INVALID_PARAM", HTTP_E_INVALID_PARAM);

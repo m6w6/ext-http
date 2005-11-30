@@ -20,8 +20,23 @@
 
 PHP_MINIT_FUNCTION(http_exception_object);
 
+#define HTTP_EX_DEF_CE http_exception_object_ce
+#define HTTP_EX_CE(name) http_ ##name## _exception_object_ce
+
 extern zend_class_entry *http_exception_object_ce;
 extern zend_function_entry http_exception_object_fe[];
+extern zend_class_entry *HTTP_EX_CE(runtime);
+extern zend_class_entry *HTTP_EX_CE(header);
+extern zend_class_entry *HTTP_EX_CE(malformed_headers);
+extern zend_class_entry *HTTP_EX_CE(request_method);
+extern zend_class_entry *HTTP_EX_CE(message_type);
+extern zend_class_entry *HTTP_EX_CE(invalid_param);
+extern zend_class_entry *HTTP_EX_CE(encoding);
+extern zend_class_entry *HTTP_EX_CE(request);
+extern zend_class_entry *HTTP_EX_CE(request_pool);
+extern zend_class_entry *HTTP_EX_CE(socket);
+extern zend_class_entry *HTTP_EX_CE(response);
+extern zend_class_entry *HTTP_EX_CE(url);
 
 #define http_exception_get_default _http_exception_get_default
 extern zend_class_entry *_http_exception_get_default();
