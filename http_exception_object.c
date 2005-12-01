@@ -53,7 +53,7 @@ PHP_MINIT_FUNCTION(http_exception_object)
 	HTTP_REGISTER_EXCEPTION(HttpResponseException, HTTP_EX_CE(response), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpUrlException, HTTP_EX_CE(url), HTTP_EX_DEF_CE);
 	
-	zend_declare_property_null(HTTP_EX_CE(request_pool), "requestExceptions", sizeof("requestExceptions")-1, ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_null(HTTP_EX_CE(request_pool), "exceptionStack", lenof("exceptionStack"), ZEND_ACC_PUBLIC TSRMLS_CC);
 
 	HTTP_LONG_CONSTANT("HTTP_E_RUNTIME", HTTP_E_RUNTIME);
 	HTTP_LONG_CONSTANT("HTTP_E_INVALID_PARAM", HTTP_E_INVALID_PARAM);

@@ -38,8 +38,6 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define curl_multi_strerror(dummy) "unknown error"
 #endif
 
-#define http_request_pool_wrap_exception(o, n) _http_request_pool_wrap_exception((o), (n) TSRMLS_CC)
-static inline void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception TSRMLS_DC);
 static void http_request_pool_freebody(http_request_callback_ctx **body);
 static int http_request_pool_compare_handles(void *h1, void *h2);
 
@@ -264,18 +262,6 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 }
 /* }}} */
 
-#define http_request_pool_try \
-	{ \
-		zval *old_exception = EG(exception); \
-		EG(exception) = NULL;
-#define http_request_pool_catch \
-		if (EG(exception)) { \
-			http_request_pool_wrap_exception(old_exception, EG(exception)); \
-		} else { \
-			EG(exception) = old_exception; \
-		} \
-	}
-
 /* {{{ int http_request_pool_perform(http_request_pool *) */
 PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 {
@@ -289,22 +275,14 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 			if (CURLE_OK != msg->data.result) {
 				http_request_pool_try {
 					http_error(HE_WARNING, HTTP_E_REQUEST, curl_easy_strerror(msg->data.result));
-				} http_request_pool_catch;
+				} http_request_pool_catch();
 			}
 			http_request_pool_try {
 				zend_llist_apply_with_argument(&pool->handles, (llist_apply_with_arg_func_t) http_request_pool_responsehandler, msg->easy_handle TSRMLS_CC);
-			} http_request_pool_catch;
+			} http_request_pool_catch();
 		}
 	}
-	if (EG(exception)) {
-		zval *exception;
-		
-		http_request_pool_wrap_exception(NULL, EG(exception));
-		
-		exception = EG(exception);
-		EG(exception) = NULL;
-		zend_throw_exception_object(exception TSRMLS_CC);
-	}
+	http_request_pool_final();
 	
 	return pool->unfinished;
 }
@@ -340,10 +318,27 @@ void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC)
 }
 /* }}} */
 
-/*#*/
-
-/* {{{ static void http_request_pool_wrap_exception(zval *, zval *) */
-static inline void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception TSRMLS_DC)
+static void move_backtrace_args(zval *from, zval *to TSRMLS_DC)
+{
+	zval **args, **trace_0, *old_trace_0, *trace = NULL;
+	
+	if ((trace = zend_read_property(zend_exception_get_default(), from, "trace", lenof("trace"), 0 TSRMLS_CC))) {
+		if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void **) &trace_0)) {
+			old_trace_0 = *trace_0;
+			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(trace_0), "args", sizeof("args"), (void **) &args)) {
+				if ((trace = zend_read_property(zend_exception_get_default(), to, "trace", lenof("trace"), 0 TSRMLS_CC))) {
+					if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void **) &trace_0)) {
+						ZVAL_ADDREF(*args);
+						add_assoc_zval(*trace_0, "args", *args);
+						zend_hash_del(Z_ARRVAL_P(old_trace_0), "args", sizeof("args"));
+					}
+				}
+			}
+		}
+	}
+}
+/* {{{ void http_request_pool_wrap_exception(zval *, zval *) */
+void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception TSRMLS_DC)
 {
 	zend_class_entry *ce = HTTP_EX_CE(request_pool);
 	
@@ -352,12 +347,12 @@ static inline void _http_request_pool_wrap_exception(zval *old_exception, zval *
 	if (old_exception && Z_OBJCE_P(old_exception) == ce) {
 		zval *exprop;
 		
-		exprop = zend_read_property(ce, old_exception, "requestExceptions", sizeof("requestExceptions")-1, 0 TSRMLS_CC);
+		exprop = zend_read_property(ce, old_exception, "exceptionStack", lenof("exceptionStack"), 0 TSRMLS_CC);
 		SEP_PROP(&exprop);
 		convert_to_array(exprop);
 		
 		add_next_index_zval(exprop, new_exception);
-		zend_update_property(ce, old_exception, "requestExceptions", sizeof("requestExceptions")-1, exprop TSRMLS_CC);
+		zend_update_property(ce, old_exception, "exceptionStack", lenof("exceptionStack"), exprop TSRMLS_CC);
 		
 		EG(exception) = old_exception;
 	} else if (new_exception && Z_OBJCE_P(new_exception) != ce){
@@ -371,14 +366,19 @@ static inline void _http_request_pool_wrap_exception(zval *old_exception, zval *
 		if (old_exception) {
 			add_next_index_zval(exprop, old_exception);
 		}
+		move_backtrace_args(new_exception, exval TSRMLS_CC);
+		zend_update_property_long(ce, exval, "code", lenof("code"), HTTP_E_REQUEST_POOL TSRMLS_CC);
+		zend_update_property_string(ce, exval, "message", lenof("message"), "See exceptionStack property" TSRMLS_CC);
 		add_next_index_zval(exprop, new_exception);
-		zend_update_property(ce, exval, "requestExceptions", sizeof("requestExceptions")-1, exprop TSRMLS_CC);
+		zend_update_property(ce, exval, "exceptionStack", lenof("exceptionStack"), exprop TSRMLS_CC);
 		zval_ptr_dtor(&exprop);
 		
 		EG(exception) = exval;
 	}
 }
 /* }}} */
+
+/*#*/
 
 /* {{{ static void http_request_pool_freebody(http_request_ctx **) */
 static void http_request_pool_freebody(http_request_callback_ctx **body)

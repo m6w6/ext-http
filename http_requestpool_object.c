@@ -175,7 +175,7 @@ static void _http_requestpool_object_llist2array(zval **req, zval *array TSRMLS_
  * Accepts virtual infinite optional parameters each referencing an
  * HttpRequest object.
  * 
- * Throws HttpRequestException, HttpRequestPoolException, HttpInvalidParamException.
+ * Throws HttpRequestPoolException (HttpRequestException, HttpInvalidParamException).
  * 
  * Example:
  * <pre>
@@ -205,16 +205,21 @@ PHP_METHOD(HttpRequestPool, __construct)
 	zval ***argv = safe_emalloc(argc, sizeof(zval *), 0);
 	getObject(http_requestpool_object, obj);
 
+	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_get_parameters_array_ex(argc, argv)) {
 		int i;
 
 		for (i = 0; i < argc; ++i) {
 			if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), http_request_object_ce TSRMLS_CC)) {
-				http_request_pool_attach(&obj->pool, *(argv[i]));
+				http_request_pool_try {
+					http_request_pool_attach(&obj->pool, *(argv[i]));
+				} http_request_pool_catch();
 			}
 		}
+		http_request_pool_final();
 	}
 	efree(argv);
+	SET_EH_NORMAL();
 }
 /* }}} */
 
@@ -311,8 +316,7 @@ PHP_METHOD(HttpRequestPool, detach)
  * 
  * Returns TRUE on success, or FALSE on failure.
  * 
- * Throws HttpSocketException, HttpRequestException, 
- * HttpRequestPoolException, HttpMalformedHeaderException.
+ * Throws HttpRequestPoolException (HttpSocketException, HttpRequestException, HttpMalformedHeaderException).
  */
 PHP_METHOD(HttpRequestPool, send)
 {
