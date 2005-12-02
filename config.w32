@@ -3,6 +3,47 @@
 
 ARG_ENABLE("http", "whether to enable extended HTTP support", "no");
 
+function check_for_main_ext(ext, header)
+{
+	if (!header) {
+		header = "php_"+ ext +".h";
+	}
+	
+	var r = new RegExp(PHP_VERSION +"."+ PHP_MINOR_VERSION);
+	var g = glob(configure_module_dirname +"\\..\\..\\*\\ext\\"+ ext +"\\"+ header);
+	
+	STDOUT.Write("Checking for ext/"+ ext +" ...  ");
+	for (i = 0; i < g.length; i++) {
+		if (g[i].match(r)) {
+			var f = g[i].substr(0, g[i].length - header.length - 1);
+			STDOUT.WriteLine(f);
+			return f;
+		}
+	}
+	STDOUT.WriteLine("<not found>");
+	return false;
+}
+
+function check_for_pecl_ext(ext, header)
+{
+	if (!header) {
+		header = "php_"+ ext +".h";
+	}
+	
+	var g;
+	var s = ext +"\\"+ header;
+	
+	STDOUT.Write("Checking for pecl/"+ ext +" ...  ");
+	if (	(g = glob(configure_module_dirname +"\\..\\"+ s)) ||
+			(g = glob(configure_module_dirname +"\\..\\..\\..\\pecl\\"+ s))) {
+		var f = g[0].substr(0, g[0].length - header.length - 1);
+		STDOUT.WriteLine(f);
+		return f;
+	}
+	STDOUT.WriteLine("<not found>");
+	return false;
+}
+
 if (PHP_HTTP != "no") {
 
 	EXTENSION("http",
@@ -32,15 +73,11 @@ if (PHP_HTTP != "no") {
 	
 	if (PHP_HASH != "no") {
 		var f;
-		STDOUT.Write("Checking for ext/hash ...  ");
-		if (glob((f = configure_module_dirname +"\\..\\hash") +"\\php_hash.h").length ||
-			glob((f = configure_module_dirname +"\\..\\..\\..\\pecl\\hash") +"\\php_hash.h").length) {
+		
+		if ((f = check_for_pecl_ext("hash")) || (f = check_for_main_ext("hash"))) {
 			ADD_FLAG("CFLAGS_HTTP", "/I"+ f);
 			AC_DEFINE("HTTP_HAVE_EXT_HASH", 1, "");
 			ADD_EXTENSION_DEP("http", "hash", true);
-			STDOUT.WriteLine(condense_path(f));
-		} else {
-			STDOUT.WriteLine("<not found>");
 		}
 	}
 
