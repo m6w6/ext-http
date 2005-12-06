@@ -224,7 +224,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		
 #if defined(HTTP_HAVE_ZLIB) || defined(HAVE_ZLIB)
 		/* check for compressed data */
-		if ((c = http_message_header(msg, "Content-Encoding"))) {
+		if (http_message_header(msg, "Vary") && (c = http_message_header(msg, "Content-Encoding"))) {
 			char *decoded = NULL;
 			size_t decoded_len = 0;
 #	if defined(HAVE_ZLIB) && !defined(HTTP_HAVE_ZLIB)

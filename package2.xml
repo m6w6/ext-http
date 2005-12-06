@@ -43,6 +43,8 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
  <license>BSD, revised</license>
  <notes><![CDATA[
 + Added 'bodyonly' request option
+
+* Fixed bug which caused GZIP encoded archives to be decoded
 ]]></notes>
  <contents>
   <dir name="/">
