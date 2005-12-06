@@ -346,16 +346,16 @@ class FeedAggregator
 <?php
 
 /*
-	$bigget = Bigget::url('http://www.example.com/big_file.bin');
-	$bigget->saveTo('file.bin');
+	$bigGet = BigGet::url('http://www.example.com/big_file.bin');
+	$bigGet->saveTo('file.bin');
 */
 
-class BiggetRequest extends HttpRequest
+class BigGetRequest extends HttpRequest
 {
 	public $id;
 }
 
-class Bigget extends HttpRequestPool
+class BigGet extends HttpRequestPool
 {
 	const SIZE = 1048576;
 	
@@ -371,13 +371,13 @@ class Bigget extends HttpRequestPool
 		$head = null;
 		
 		if (!isset($headers['Accept-Ranges'])) {
-			throw new HttpExcpetion("Did not receive an Accept-Ranges header from HEAD $url");
+			throw new HttpException("Did not receive an Accept-Ranges header from HEAD $url");
 		}
 		if (!isset($headers['Content-Length'])) {
 			throw new HttpException("Did not receive a Content-Length header from HEAD $url");
 		}
 		
-		$bigget = new Bigget;
+		$bigget = new BigGet;
 		$bigget->url = $url;
 		$bigget->size = $headers['Content-Length'];
 		return $bigget;
@@ -421,7 +421,7 @@ class Bigget extends HttpRequestPool
 		
 		echo "Attaching new request to get range: $offset-$stop\n";
 		
-		$req = new BiggetRequest(
+		$req = new BigGetRequest(
 			$this->url,
 			HttpRequest::METH_GET,
 			array(
