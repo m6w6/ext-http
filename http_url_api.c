@@ -136,7 +136,7 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 	if (	(!strcmp(furl.scheme, "http") && (furl.port != 80)) ||
 			(!strcmp(furl.scheme, "https") && (furl.port != 443))
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
-		||	((se = getservbyname(furl.scheme, "tcp")) && (ntohs(se->s_port) != furl.port))
+		||	((!(se = getservbyname(furl.scheme, "tcp"))) || (ntohs(se->s_port) != furl.port))
 #endif
 		) {
 		char port_string[8] = {0};
