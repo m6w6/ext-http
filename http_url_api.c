@@ -69,7 +69,7 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 	} else if (purl->scheme) {
 		furl.scheme = purl->scheme;
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
-	} else if (port && (se = getservbyport(port, "tcp"))) {
+	} else if (port && (se = getservbyport(htons(port), "tcp"))) {
 		furl.scheme = (scheme = estrdup(se->s_name));
 #endif
 	} else {
@@ -80,17 +80,17 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 		furl.port = port;
 	} else if (purl->port) {
 		furl.port = purl->port;
-	} else if (strncmp(furl.scheme, "http", 4)) {
+	} else if ((!furl.scheme) || strncmp(furl.scheme, "http", 4)) {
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
 		if ((se = getservbyname(furl.scheme, "tcp"))) {
-			furl.port = se->s_port;
+			furl.port = ntohs(se->s_port);
 		}
 #endif
 	} else {
-		furl.port = (furl.scheme[4] == 's') ? 443 : 80;
+		furl.port = (furl.scheme && furl.scheme[4] == 's') ? 443 : 80;
 	}
 
-	if (host) {
+	if (host && host_len) {
 		furl.host = (char *) host;
 	} else if (purl->host) {
 		furl.host = purl->host;

@@ -79,7 +79,7 @@ PHP_FUNCTION(http_date)
  * If a port is pecified in either the url or as sperate parameter,
  * it will be added if it differs from te default port for HTTP(S).
  * 
- * Returns the absolute URI as string.
+ * Returns the absolute URI as string on success or false on failure.
  * 
  * Examples:
  * <pre>
@@ -90,7 +90,7 @@ PHP_FUNCTION(http_date)
  */
 PHP_FUNCTION(http_build_uri)
 {
-	char *url = NULL, *proto = NULL, *host = NULL;
+	char *url = NULL, *proto = NULL, *host = NULL, *built = NULL;
 	int url_len = 0, proto_len = 0, host_len = 0;
 	long port = 0;
 
@@ -98,7 +98,10 @@ PHP_FUNCTION(http_build_uri)
 		RETURN_FALSE;
 	}
 
-	RETURN_STRING(http_absolute_uri_ex(url, url_len, proto, proto_len, host, host_len, port), 0);
+	if ((built = http_absolute_uri_ex(url, url_len, proto, proto_len, host, host_len, port))) {
+		RETURN_STRING(built, 0);
+	}
+	RETURN_FALSE;
 }
 /* }}} */
 
