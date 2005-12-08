@@ -17,11 +17,15 @@
 #endif
 
 #include "php_http.h"
+#include "php_http_api.h"
 #include "php_http_date_api.h"
 
-static int check_day(char *day, size_t len);
-static int check_month(char *month);
-static int check_tzone(char *tzone);
+ZEND_EXTERN_MODULE_GLOBALS(http);
+
+static inline int check_day(const char *day, size_t len);
+static inline int check_month(const char *month);
+static inline int check_tzone(const char *tzone);
+static inline time_t parse_date(const char *month);
 
 /* {{{ day/month names */
 static const char *days[] = {
@@ -96,7 +100,7 @@ static const struct time_zone {
 
 /* {{{ Day/Month/TZ checks for http_parse_date()
 	Originally by libcurl, Copyright (C) 1998 - 2004, Daniel Stenberg, <daniel@haxx.se>, et al. */
-static int check_day(char *day, size_t len)
+static inline int check_day(const char *day, size_t len)
 {
 	int i;
 	const char * const *check = (len > 3) ? &weekdays[0] : &wkdays[0];
@@ -109,7 +113,7 @@ static int check_day(char *day, size_t len)
 	return -1;
 }
 
-static int check_month(char *month)
+static inline int check_month(const char *month)
 {
 	int i;
 	const char * const *check = &months[0];
@@ -125,7 +129,7 @@ static int check_month(char *month)
 /* return the time zone offset between GMT and the input one, in number
    of seconds or -1 if the timezone wasn't found/legal */
 
-static int check_tzone(char *tzone)
+static inline int check_tzone(const char *tzone)
 {
 	unsigned i;
 	const struct time_zone *check = time_zones;
@@ -159,9 +163,39 @@ PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ time_t http_parse_date(char *)
+/* {{{ time_t http_parse_date(char *) */
+PHP_HTTP_API time_t _http_parse_date(const char *date TSRMLS_DC)
+{
+	time_t t = -1;
+	
+#ifdef PHP_WIN32
+	/* fix odd offsets with Win32 */ 
+	char tzput[64] = "TZ=";
+	const char *tzget = NULL;
+	
+	if ((tzget = getenv("TZ"))) {
+		strlcat(tzput, tzget, 63);
+	}
+	putenv("TZ=GMT");
+#endif
+	
+	t = parse_date(date);
+	
+#ifdef PHP_WIN32
+	putenv(tzput);
+#endif
+
+	if (-1 == t) {
+		http_error_ex(HE_NOTICE, HTTP_E_RUNTIME, "Could not parse date: %s", date);
+	}
+	
+	return t;
+}
+/* }}} */
+
+/*	time_t parse_date(char *)
 	Originally by libcurl, Copyright (C) 1998 - 2004, Daniel Stenberg, <daniel@haxx.se>, et al. */
-PHP_HTTP_API time_t _http_parse_date(const char *date)
+static inline time_t parse_date(const char *date)
 {
 	time_t t = 0;
 	int tz_offset = -1, year = -1, month = -1, monthday = -1, weekday = -1,

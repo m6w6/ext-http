@@ -18,8 +18,8 @@
 #define http_date(t) _http_date((t) TSRMLS_CC)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC);
 
-#define http_parse_date(d) _http_parse_date((d))
-PHP_HTTP_API time_t _http_parse_date(const char *date);
+#define http_parse_date(d) _http_parse_date((d) TSRMLS_CC)
+PHP_HTTP_API time_t _http_parse_date(const char *date TSRMLS_DC);
 
 #endif
 
