@@ -1037,7 +1037,7 @@ PHP_METHOD(HttpRequest, getUrl)
  * Set the request method.
  * 
  * Expects an int as parameter specifying the request method to use.
- * In PHP 5.1+ HttpRequest::METH, otherwise the HTTP_METH constants can be used.
+ * In PHP 5.1+ HttpRequest::METH_*, otherwise the HTTP_METH_* constants can be used.
  * 
  * Returns TRUE on success, or FALSE on failure.
  */
@@ -1959,7 +1959,7 @@ PHP_METHOD(HttpRequest, clearHistory)
  * GET example:
  * <pre>
  * <?php
- * $r = new HttpRequest('http://example.com/feed.rss', HTTP_GET);
+ * $r = new HttpRequest('http://example.com/feed.rss', HttpRequest::METH_GET);
  * $r->setOptions(array('lastmodified' => filemtime('local.rss')));
  * $r->addQueryData(array('category' => 3));
  * try {
@@ -1976,7 +1976,7 @@ PHP_METHOD(HttpRequest, clearHistory)
  * POST example:
  * <pre>
  * <?php
- * $r = new HttpRequest('http://example.com/form.php', HTTP_POST);
+ * $r = new HttpRequest('http://example.com/form.php', HttpRequest::METH_POST);
  * $r->setOptions(array('cookies' => array('lang' => 'de')));
  * $r->addPostFields(array('user' => 'mike', 'pass' => 's3c|r3t'));
  * $r->addPostFile('image', 'profile.jpg', 'image/jpeg');
