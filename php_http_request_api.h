@@ -80,7 +80,7 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC);
 
 #define http_request_body_free(b) _http_request_body_free((b) TSRMLS_CC)
-PHP_HTTP_API void _http_request_body_free(http_request_body *body TSRMLS_DC);
+PHP_HTTP_API void _http_request_body_free(http_request_body **body TSRMLS_DC);
 
 #define http_request_init(ch, meth, url, body, options) _http_request_init((ch), (meth), (url), (body), (options) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char *url, http_request_body *body, HashTable *options TSRMLS_DC);

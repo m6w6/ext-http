@@ -384,8 +384,9 @@ void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception 
 static void http_request_pool_freebody(http_request_callback_ctx **body)
 {
 	HTTP_REQUEST_CALLBACK_DATA(*body, http_request_body *, b);
-	http_request_body_free(b);
+	http_request_body_free(&b);
 	efree(*body);
+	*body = NULL;
 }
 /* }}} */
 

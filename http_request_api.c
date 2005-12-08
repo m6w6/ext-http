@@ -374,11 +374,12 @@ PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC)
 /* }}} */
 
 /* {{{ void http_request_body_free(http_request_body *) */
-PHP_HTTP_API void _http_request_body_free(http_request_body *body TSRMLS_DC)
+PHP_HTTP_API void _http_request_body_free(http_request_body **body TSRMLS_DC)
 {
-	if (body) {
-		http_request_body_dtor(body);
-		efree(body);
+	if (*body) {
+		http_request_body_dtor(*body);
+		efree(*body);
+		*body = NULL;
 	}
 }
 /* }}} */
