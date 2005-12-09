@@ -472,6 +472,11 @@ PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, ch
 					*decoded_len = http_finish_buffer(Z.total_out, decoded);
 					return SUCCESS;
 				}
+			} else {
+				inflateEnd(&Z);
+				if (status == Z_OK) {
+					status = Z_BUF_ERROR;
+				}
 			}
 		}
 	} while (++max < HTTP_ENCODING_MAXTRY && status == Z_BUF_ERROR);
