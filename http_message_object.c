@@ -476,7 +476,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		char *m_prop_name; \
 		int m_prop_len; \
 		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 0); \
-		add_assoc_ ##ptype## _ex(&array, m_prop_name, sizeof(name)+4, val); \
+		add_assoc_ ##ptype## _ex(&array, m_prop_name, sizeof(name)+3, val); \
 		efree(m_prop_name); \
 	}
 #define ASSOC_STRING(array, name, val) ASSOC_STRINGL(array, name, val, strlen(val))
@@ -485,7 +485,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		char *m_prop_name; \
 		int m_prop_len; \
 		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 0); \
-		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+4, val, len, 1); \
+		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+3, val, len, 1); \
 		efree(m_prop_name); \
 	}
 
