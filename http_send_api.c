@@ -32,7 +32,7 @@
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-#define http_flush(d, l) _http_flush((d), (l) SRMLS_CC)
+#define http_flush(d, l) _http_flush((d), (l) TSRMLS_CC)
 /* {{{ static inline void http_flush() */
 static inline void _http_flush(const char *data, size_t data_len TSRMLS_DC)
 {
