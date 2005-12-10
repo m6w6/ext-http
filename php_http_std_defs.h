@@ -210,7 +210,6 @@ typedef int STATUS;
 		name## _ce = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
 		name## _ce->ce_flags |= flags;  \
 		memcpy(& name## _handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers)); \
-		zend_hash_init(& name## _ce->constants_table, 0, NULL, ZVAL_INTERNAL_PTR_DTOR, 1); \
 		name## _declare_default_properties(); \
 	}
 
