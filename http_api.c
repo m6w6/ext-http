@@ -283,7 +283,7 @@ STATUS _http_check_method_ex(const char *method, const char *methods)
 
 	if (	(found = strstr(methods, method)) &&
 			(found == method || !isalpha(found[-1])) &&
-			(!isalpha(found[strlen(method) + 1]))) {
+			(strlen(found) >= strlen(method) && !isalpha(found[strlen(method)]))) {
 		return SUCCESS;
 	}
 	return FAILURE;

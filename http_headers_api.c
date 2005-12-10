@@ -357,8 +357,8 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 		header_len = strlen(header) + 1;
 	}
 	line = header;
-
-	while (header_len >= (size_t) (line - begin)) {
+	
+	if (header_len) do {
 		int value_len = 0;
 		/* note: valgrind may choke on that -- should be safe though */
 		switch (*line++)
@@ -372,7 +372,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 			case 0:
 				--value_len; /* we don't have CR so value length is one char less */
 			case '\n':
-				if ((!(*line - 1)) || ((*line != ' ') && (*line != '\t'))) {
+				if ((!*(line - 1)) || ((*line != ' ') && (*line != '\t'))) {
 					http_info i;
 					
 					/* response/request line */
@@ -429,7 +429,8 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 				}
 			break;
 		}
-	}
+	} while (header_len > (size_t) (line - begin));
+
 	return SUCCESS;
 }
 /* }}} */

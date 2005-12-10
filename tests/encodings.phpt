@@ -9,6 +9,7 @@ skipif(!function_exists('http_gzencode'), 'need zlib');
 <?php
 echo "-TEST\n";
 
+set_time_limit(0);
 error_reporting(E_ALL);
 
 $s = '';
