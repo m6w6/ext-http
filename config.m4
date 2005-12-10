@@ -172,23 +172,21 @@ dnl ----
 			fi
 			old_CPPFLAGS=$CPPFLAGS
 			CPPFLAGS=$INCLUDES
-			AC_CHECK_HEADER([php_hash.h], [
-				AC_MSG_RESULT(enabled)
-				AC_DEFINE([HTTP_HAVE_EXT_HASH], [1], [Have ext/hash support])
+			AC_MSG_RESULT([looking for php_hash.h])
+			AC_CHECK_HEADER([ext/hash/php_hash.h], [
+				AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
 			], [ 
 				AC_CHECK_HEADER([hash/php_hash.h], [
-					AC_MSG_RESULT(enabled)
 					AC_DEFINE([HTTP_HAVE_HASH_EXT_HASH], [1], [Have ext/hash support])
 				], [ 
-					AC_CHECK_HEADER([ext/hash/php_hash.h], [
-					 AC_MSG_RESULT(enabled)
-						AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
-					], [
-						AC_MSG_RESULT(disabled)
+  			AC_CHECK_HEADER([php_hash.h], [
+  				AC_DEFINE([HTTP_HAVE_EXT_HASH], [1], [Have ext/hash support])
 					])
 				])
 			])
 			CPPFLAGS=$old_CPPFLAGS;
+		else
+			AC_MSG_RESULT(disabled)
 		fi
 	elif test "$PHP_HASH" != "no" && test "x$PHP_HASH" != "x"; then
 		AC_MSG_RESULT(enabled)
