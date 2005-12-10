@@ -397,11 +397,14 @@ PHP_HTTP_API STATUS _http_encoding_gzencode(int level, const char *data, size_t 
 	
 	http_init_gzencode_buffer(&Z, data, data_len, encoded);
 	
-	if (	(Z_OK == (status = deflateInit2(&Z, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) &&
-			(Z_STREAM_END == (status = deflate(&Z, Z_FINISH))) &&
-			(Z_OK == (status = deflateEnd(&Z)))) {
-		*encoded_len = http_finish_gzencode_buffer(&Z, data, data_len, encoded);
-		return SUCCESS;
+	if (Z_OK == (status = deflateInit2(&Z, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) {
+		status = deflate(&Z, Z_FINISH);
+		deflateEnd(&Z);
+		
+		if (Z_STREAM_END == status) {
+			*encoded_len = http_finish_gzencode_buffer(&Z, data, data_len, encoded);
+			return SUCCESS;
+		}
 	}
 	
 	efree(*encoded);
@@ -416,11 +419,14 @@ PHP_HTTP_API STATUS _http_encoding_deflate(int level, const char *data, size_t d
 	
 	http_init_deflate_buffer(&Z, data, data_len, encoded);
 	
-	if (	(Z_OK == (status = deflateInit2(&Z, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) &&
-			(Z_STREAM_END == (status = deflate(&Z, Z_FINISH))) &&
-			(Z_OK == (status = deflateEnd(&Z)))) {
-		*encoded_len = http_finish_buffer(Z.total_out, encoded);
-		return SUCCESS;
+	if (Z_OK == (status = deflateInit2(&Z, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) {
+		status = deflate(&Z, Z_FINISH);
+		deflateEnd(&Z);
+		
+		if (Z_STREAM_END == status) {
+			*encoded_len = http_finish_buffer(Z.total_out, encoded);
+			return SUCCESS;
+		}
 	}
 	
 	efree(encoded);
@@ -467,16 +473,12 @@ PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, ch
 	do {
 		http_init_inflate_buffer(&Z, data, data_len, decoded, decoded_len, &max);
 		if (Z_OK == (status = inflateInit2(&Z, -MAX_WBITS))) {
-			if (Z_STREAM_END == (status = inflate(&Z, Z_FINISH))) {
-				if (Z_OK == (status = inflateEnd(&Z))) {
-					*decoded_len = http_finish_buffer(Z.total_out, decoded);
-					return SUCCESS;
-				}
-			} else {
-				inflateEnd(&Z);
-				if (status == Z_OK) {
-					status = Z_BUF_ERROR;
-				}
+			status = inflate(&Z, Z_FINISH);
+			inflateEnd(&Z);
+			
+			if (Z_STREAM_END == status) {
+				*decoded_len = http_finish_buffer(Z.total_out, decoded);
+				return SUCCESS;
 			}
 		}
 	} while (++max < HTTP_ENCODING_MAXTRY && status == Z_BUF_ERROR);
