@@ -79,6 +79,11 @@ dnl ----
 		
 		CURL_LIBS=`$CURL_CONFIG --libs`
 		
+		CURL_ZLIB= `$CURL_CONFIG --features | $EGREP libz`
+		if test "$CURL_ZLIB" = "libz"; then
+			AC_DEFINE([HTTP_HAVE_CURL_ZLIB], [1], [ ])
+		fi
+		
 		AC_MSG_CHECKING([for SSL support in libcurl])
 		CURL_SSL=`$CURL_CONFIG --features | $EGREP SSL`
 		if test "$CURL_SSL" = "SSL"; then
