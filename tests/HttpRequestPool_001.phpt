@@ -14,16 +14,17 @@ checkurl('dev.iworks.at');
 --FILE--
 <?php
 echo "-TEST\n";
+$post = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_METH_POST);
+$post->addPostFields(array('a'=>1,'b'=>2)) ;
 
 $pool = new HttpRequestPool(
     new HttpRequest('http://www.php.net/', HTTP_METH_HEAD),
     new HttpRequest('http://at.php.net/', HTTP_METH_HEAD),
     new HttpRequest('http://de.php.net/', HTTP_METH_HEAD),
     new HttpRequest('http://ch.php.net/', HTTP_METH_HEAD),
-    $post = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_METH_POST)
+    $post
 );
 
-$post->addPostFields(array('a'=>1,'b'=>2)) ;
 $pool->send();
 
 foreach ($pool as $req) {

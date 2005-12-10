@@ -11,6 +11,7 @@ skipif(!@include 'PHPUnit2/Framework/TestCase.php', 'need PHPUnit2');
 echo "-TEST\n";
 
 error_reporting(E_ALL);
+ini_set('html_errors', 0);
 
 require_once 'PHPUnit2/Framework/TestSuite.php';
 require_once 'PHPUnit2/Framework/TestCase.php';

@@ -1,5 +1,5 @@
 --TEST--
-crc32 etag
+crc32 etag (may fail because PHPs crc32 is actually crc32b)
 --SKIPIF--
 <?php
 include 'skip.inc';

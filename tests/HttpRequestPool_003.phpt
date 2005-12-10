@@ -13,6 +13,7 @@ echo "-TEST\n";
 
 set_time_limit(0);
 ini_set('error_reporting', E_ALL);
+ini_set('html_errors', 0);
 
 class Pool extends HttpRequestPool
 {
