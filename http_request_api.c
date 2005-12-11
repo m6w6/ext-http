@@ -137,6 +137,24 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 			} \
 		} \
 		break; \
+\
+		case CURLINFO_SLIST: \
+		{ \
+			struct curl_slist *l, *p; \
+			if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_ ##I, &l)) { \
+				zval *subarray; \
+				MAKE_STD_ZVAL(subarray); \
+				array_init(subarray); \
+				for (p = l; p; p = p->next) { \
+					zval *entry; \
+					MAKE_STD_ZVAL(entry); \
+					ZVAL_STRING(entry, p->data, 1); \
+					add_next_index_zval(subarray, entry); \
+				} \
+				add_assoc_zval(&array, pretty_key(http_request_data_copy(COPY_STRING, #X), sizeof(#X)-1, 0, 0), subarray); \
+				curl_slist_free_all(l); \
+			} \
+		} \
 	}
 
 #define HTTP_CURL_OPT(OPTION, p) curl_easy_setopt(ch, CURLOPT_##OPTION, (p))
@@ -721,8 +739,7 @@ PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
 
 	HTTP_CURL_INFO(EFFECTIVE_URL);
 	HTTP_CURL_INFO(RESPONSE_CODE);
-	HTTP_CURL_INFO_EX(HTTP_CODE, RESPONSE_CODE);
-	HTTP_CURL_INFO(HTTP_CONNECTCODE);
+	HTTP_CURL_INFO_EX(HTTP_CONNECTCODE, connect_code);
 	HTTP_CURL_INFO(FILETIME);
 	HTTP_CURL_INFO(TOTAL_TIME);
 	HTTP_CURL_INFO(NAMELOOKUP_TIME);
@@ -738,7 +755,7 @@ PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
 	HTTP_CURL_INFO(HEADER_SIZE);
 	HTTP_CURL_INFO(REQUEST_SIZE);
 	HTTP_CURL_INFO(SSL_VERIFYRESULT);
-	/*HTTP_CURL_INFO(SSL_ENGINES); todo: CURLINFO_SLIST */
+	HTTP_CURL_INFO(SSL_ENGINES);
 	HTTP_CURL_INFO(CONTENT_LENGTH_DOWNLOAD);
 	HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
 	HTTP_CURL_INFO(CONTENT_TYPE);
@@ -747,6 +764,9 @@ PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
 	HTTP_CURL_INFO(PROXYAUTH_AVAIL);
 	/*HTTP_CURL_INFO(OS_ERRNO);*/
 	HTTP_CURL_INFO(NUM_CONNECTS);
+#if LIBCURL_VERSION_NUM >= 0x070e01
+	HTTP_CURL_INFO_EX(COOKIELIST, cookies);
+#endif
 }
 /* }}} */
 
