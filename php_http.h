@@ -85,15 +85,6 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 			char *allowed;
 			HashTable custom;
 		} methods;
-
-#ifdef HTTP_HAVE_CURL
-		struct _http_globals_request_copies {
-			zend_llist strings;
-			zend_llist slists;
-			zend_llist contexts;
-			zend_llist convs;
-		} copies;
-#endif /* HTTP_HAVE_CURL */
 	} request;
 
 #ifdef ZEND_ENGINE_2

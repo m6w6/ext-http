@@ -215,7 +215,7 @@ dnl ----
 		http_api.c http_cache_api.c http_request_api.c http_date_api.c \
 		http_headers_api.c http_message_api.c http_send_api.c http_url_api.c \
 		http_info_api.c http_request_method_api.c http_encoding_api.c \
-		http_filter_api.c"
+		http_filter_api.c http_request_body_api.c"
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, $ext_shared)
 	PHP_ADD_BUILD_DIR($ext_builddir/phpstr, 1)
 	PHP_SUBST([HTTP_SHARED_LIBADD])
@@ -223,7 +223,7 @@ dnl ----
 	PHP_HTTP_HEADERS="php_http_std_defs.h php_http.h php_http_api.h php_http_cache_api.h \
 		php_http_date_api.h php_http_headers_api.h php_http_info_api.h php_http_message_api.h \
 		php_http_request_api.h php_http_request_method_api.h php_http_send_api.h php_http_url_api.h \
-		php_http_encoding_api.h phpstr/phpstr.h missing.h"
+		php_http_encoding_api.h phpstr/phpstr.h missing.h php_http_request_body_api.h"
 
 	ifdef([PHP_INSTALL_HEADERS], [
 		PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)

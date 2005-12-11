@@ -21,10 +21,8 @@
 
 typedef struct {
 	zend_object zo;
-	CURL *ch;
+	http_request request;
 	http_request_pool *pool;
-	phpstr response;
-	phpstr request;
 	phpstr history;
 } http_request_object;
 
@@ -42,8 +40,8 @@ extern zend_object_value _http_request_object_clone_obj(zval *zobject TSRMLS_DC)
 #define http_request_object_free(o) _http_request_object_free((o) TSRMLS_CC)
 extern void _http_request_object_free(zend_object *object TSRMLS_DC);
 
-#define http_request_object_requesthandler(req, this, body) _http_request_object_requesthandler((req), (this), (body) TSRMLS_CC)
-extern STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr, http_request_body *body TSRMLS_DC);
+#define http_request_object_requesthandler(req, this) _http_request_object_requesthandler((req), (this) TSRMLS_CC)
+extern STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr TSRMLS_DC);
 #define http_request_object_responsehandler(req, this) _http_request_object_responsehandler((req), (this) TSRMLS_CC)
 extern STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr TSRMLS_DC);
 

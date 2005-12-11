@@ -162,12 +162,6 @@ static inline void http_globals_init(zend_http_globals *G)
 {
 	G->send.buffer_size = HTTP_SENDBUF_SIZE;
 	zend_hash_init(&G->request.methods.custom, 0, NULL, ZVAL_PTR_DTOR, 0);
-#ifdef HTTP_HAVE_CURL
-	zend_llist_init(&G->request.copies.strings, sizeof(char *), http_request_data_free_string, 0);
-	zend_llist_init(&G->request.copies.slists, sizeof(struct curl_slist *), http_request_data_free_slist, 0);
-	zend_llist_init(&G->request.copies.contexts, sizeof(http_request_callback_ctx *), http_request_data_free_context, 0);
-	zend_llist_init(&G->request.copies.convs, sizeof(http_request_conv *), http_request_data_free_conv, 0);
-#endif
 }
 
 static inline void http_globals_free(zend_http_globals *G)
@@ -175,12 +169,6 @@ static inline void http_globals_free(zend_http_globals *G)
 	STR_SET(G->send.content_type, NULL);
 	STR_SET(G->send.unquoted_etag, NULL);
 	zend_hash_destroy(&G->request.methods.custom);
-#ifdef HTTP_HAVE_CURL
-	zend_llist_clean(&G->request.copies.strings);
-	zend_llist_clean(&G->request.copies.slists);
-	zend_llist_clean(&G->request.copies.contexts);
-	zend_llist_clean(&G->request.copies.convs);
-#endif
 }
 /* }}} */
 

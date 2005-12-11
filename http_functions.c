@@ -977,22 +977,20 @@ PHP_FUNCTION(http_match_request_header)
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL
 
-#define RETURN_RESPONSE_OR_BODY(response) \
+#define RETVAL_RESPONSE_OR_BODY(request) \
 	{ \
 		zval **bodyonly; \
 		 \
 		/* check if only the body should be returned */ \
 		if (options && (SUCCESS == zend_hash_find(Z_ARRVAL_P(options), "bodyonly", sizeof("bodyonly"), (void **) &bodyonly)) && zval_is_true(*bodyonly)) { \
-			http_message *msg = http_message_parse(PHPSTR_VAL(&response), PHPSTR_LEN(&response)); \
+			http_message *msg = http_message_parse(PHPSTR_VAL(&request.conv.response), PHPSTR_LEN(&request.conv.response)); \
 			 \
 			if (msg) { \
 				RETVAL_STRINGL(PHPSTR_VAL(&msg->body), PHPSTR_LEN(&msg->body), 1); \
 				http_message_free(&msg); \
-				phpstr_dtor(&response); \
-				return; \
 			} \
 		} else { \
-			RETURN_PHPSTR_VAL(&response); \
+			RETVAL_STRINGL(request.conv.response.data, request.conv.response.used, 1); \
 		} \
 	}
 
@@ -1072,7 +1070,7 @@ PHP_FUNCTION(http_get)
 	zval *options = NULL, *info = NULL;
 	char *URL;
 	int URL_len;
-	phpstr response;
+	http_request request;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a/!z", &URL, &URL_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
@@ -1083,12 +1081,17 @@ PHP_FUNCTION(http_get)
 		array_init(info);
 	}
 
-	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
-	if (SUCCESS == http_get(URL, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETURN_RESPONSE_OR_BODY(response);
+	RETVAL_FALSE;
+
+	http_request_init_ex(&request, NULL, HTTP_GET, URL);
+	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
+		http_request_exec(&request);
+		if (info) {
+			http_request_info(&request, Z_ARRVAL_P(info));
+		}
+		RETVAL_RESPONSE_OR_BODY(request);
 	}
-	phpstr_dtor(&response);
-	RETURN_FALSE;
+	http_request_dtor(&request);
 }
 /* }}} */
 
@@ -1105,7 +1108,7 @@ PHP_FUNCTION(http_head)
 	zval *options = NULL, *info = NULL;
 	char *URL;
 	int URL_len;
-	phpstr response;
+	http_request request;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a/!z", &URL, &URL_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
@@ -1116,12 +1119,17 @@ PHP_FUNCTION(http_head)
 		array_init(info);
 	}
 
-	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
-	if (SUCCESS == http_head(URL, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETURN_RESPONSE_OR_BODY(response);
+	RETVAL_FALSE;
+
+	http_request_init_ex(&request, NULL, HTTP_HEAD, URL);
+	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
+		http_request_exec(&request);
+		if (info) {
+			http_request_info(&request, Z_ARRVAL_P(info));
+		}
+		RETVAL_RESPONSE_OR_BODY(request);
 	}
-	phpstr_dtor(&response);
-	RETURN_FALSE;
+	http_request_dtor(&request);
 }
 /* }}} */
 
@@ -1139,8 +1147,8 @@ PHP_FUNCTION(http_post_data)
 	zval *options = NULL, *info = NULL;
 	char *URL, *postdata;
 	int postdata_len, URL_len;
-	phpstr response;
 	http_request_body body;
+	http_request request;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|a/!z", &URL, &URL_len, &postdata, &postdata_len, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
@@ -1151,16 +1159,23 @@ PHP_FUNCTION(http_post_data)
 		array_init(info);
 	}
 
+	RETVAL_FALSE;
+
 	body.type = HTTP_REQUEST_BODY_CSTRING;
 	body.data = postdata;
 	body.size = postdata_len;
 
-	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
-	if (SUCCESS == http_post(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETURN_RESPONSE_OR_BODY(response);
+	http_request_init_ex(&request, NULL, HTTP_POST, URL);
+	request.body = &body;
+	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
+		request.body = NULL;
+		http_request_exec(&request);
+		if (info) {
+			http_request_info(&request, Z_ARRVAL_P(info));
+		}
+		RETVAL_RESPONSE_OR_BODY(request);
 	}
-	phpstr_dtor(&response);
-	RETVAL_FALSE;
+	http_request_dtor(&request);
 }
 /* }}} */
 
@@ -1178,8 +1193,8 @@ PHP_FUNCTION(http_post_fields)
 	zval *options = NULL, *info = NULL, *fields, *files = NULL;
 	char *URL;
 	int URL_len;
-	phpstr response;
 	http_request_body body;
+	http_request request;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa|aa/!z", &URL, &URL_len, &fields, &files, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
@@ -1194,14 +1209,21 @@ PHP_FUNCTION(http_post_fields)
 		array_init(info);
 	}
 
-	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
-	if (SUCCESS == http_post(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
+	RETVAL_FALSE;
+
+	http_request_init_ex(&request, NULL, HTTP_POST, URL);
+	request.body = &body;
+	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
+		request.body = NULL;
+		http_request_exec(&request);
 		http_request_body_dtor(&body);
-		RETURN_RESPONSE_OR_BODY(response);
+		if (info) {
+			http_request_info(&request, Z_ARRVAL_P(info));
+		}
+		RETVAL_RESPONSE_OR_BODY(request);
 	}
 	http_request_body_dtor(&body);
-	phpstr_dtor(&response);
-	RETURN_FALSE;
+	http_request_dtor(&request);
 }
 /* }}} */
 
@@ -1219,10 +1241,10 @@ PHP_FUNCTION(http_put_file)
 	char *URL, *file;
 	int URL_len, f_len;
 	zval *options = NULL, *info = NULL;
-	phpstr response;
 	php_stream *stream;
 	php_stream_statbuf ssb;
 	http_request_body body;
+	http_request request;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|a/!z", &URL, &URL_len, &file, &f_len, &options, &info)) {
 		RETURN_FALSE;
@@ -1241,18 +1263,25 @@ PHP_FUNCTION(http_put_file)
 		array_init(info);
 	}
 
+	RETVAL_FALSE;
+
 	body.type = HTTP_REQUEST_BODY_UPLOADFILE;
 	body.data = stream;
 	body.size = ssb.sb.st_size;
 
-	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
-	if (SUCCESS == http_put(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
+	http_request_init_ex(&request, NULL, HTTP_PUT, URL);
+	request.body = &body;
+	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
+		request.body = NULL;
+		http_request_exec(&request);
 		http_request_body_dtor(&body);
-		RETURN_RESPONSE_OR_BODY(response);
+		if (info) {
+			http_request_info(&request, Z_ARRVAL_P(info));
+		}
+		RETVAL_RESPONSE_OR_BODY(request);
 	}
 	http_request_body_dtor(&body);
-	phpstr_dtor(&response);
-	RETURN_FALSE;
+	http_request_dtor(&request);
 }
 /* }}} */
 
@@ -1271,10 +1300,10 @@ PHP_FUNCTION(http_put_stream)
 	zval *resource, *options = NULL, *info = NULL;
 	char *URL;
 	int URL_len;
-	phpstr response;
 	php_stream *stream;
 	php_stream_statbuf ssb;
 	http_request_body body;
+	http_request request;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sr|a/!z", &URL, &URL_len, &resource, &options, &info)) {
 		RETURN_FALSE;
@@ -1290,16 +1319,23 @@ PHP_FUNCTION(http_put_stream)
 		array_init(info);
 	}
 
+	RETVAL_FALSE;
+
 	body.type = HTTP_REQUEST_BODY_UPLOADFILE;
 	body.data = stream;
 	body.size = ssb.sb.st_size;
 
-	phpstr_init_ex(&response, HTTP_CURLBUF_SIZE, 0);
-	if (SUCCESS == http_put(URL, &body, options ? Z_ARRVAL_P(options) : NULL, info ? Z_ARRVAL_P(info) : NULL, &response)) {
-		RETURN_RESPONSE_OR_BODY(response);
+	http_request_init_ex(&request, NULL, HTTP_POST, URL);
+	request.body = &body;
+	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
+		request.body = NULL;
+		http_request_exec(&request);
+		if (info) {
+			http_request_info(&request, Z_ARRVAL_P(info));
+		}
+		RETVAL_RESPONSE_OR_BODY(request);
 	}
-	phpstr_dtor(&response);
-	RETURN_FALSE;
+	http_request_dtor(&request);
 }
 /* }}} */
 #endif /* HTTP_HAVE_CURL */

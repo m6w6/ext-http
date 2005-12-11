@@ -360,7 +360,6 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 	
 	if (header_len) do {
 		int value_len = 0;
-		/* note: valgrind may choke on that -- should be safe though */
 		switch (*line++)
 		{
 			case ':':

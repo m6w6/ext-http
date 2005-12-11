@@ -38,7 +38,6 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define curl_multi_strerror(dummy) "unknown error"
 #endif
 
-static void http_request_pool_freebody(http_request_callback_ctx **body);
 static int http_request_pool_compare_handles(void *h1, void *h2);
 
 /* {{{ http_request_pool *http_request_pool_init(http_request_pool *) */
@@ -66,7 +65,6 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 	pool->unfinished = 0;
 	zend_llist_init(&pool->finished, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	zend_llist_init(&pool->handles, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
-	zend_llist_init(&pool->bodies, sizeof(http_request_callback_ctx *), (llist_dtor_func_t) http_request_pool_freebody, 0);
 	
 #if HTTP_DEBUG_REQPOOLS
 	fprintf(stderr, "Initialized request pool %p\n", pool);
@@ -87,32 +85,24 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 	
 	if (req->pool) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "HttpRequest object(#%d) is already member of %s HttpRequestPool", Z_OBJ_HANDLE_P(request), req->pool == pool ? "this" : "another");
+	} else if (SUCCESS != http_request_object_requesthandler(req, request)) {
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
 	} else {
-		http_request_callback_ctx *body = http_request_callback_data_ex(http_request_body_new(), 0);
+		CURLMcode code = curl_multi_add_handle(pool->ch, req->request.ch);
 
-		if (SUCCESS != http_request_pool_requesthandler(request, body->data)) {
-			http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
+		if ((CURLM_OK != code) && (CURLM_CALL_MULTI_PERFORM != code)) {
+			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
 		} else {
-			CURLMcode code = curl_multi_add_handle(pool->ch, req->ch);
+			req->pool = pool;
 
-			if ((CURLM_OK != code) && (CURLM_CALL_MULTI_PERFORM != code)) {
-				http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
-			} else {
-				req->pool = pool;
-
-				zend_llist_add_element(&pool->handles, &request);
-				zend_llist_add_element(&pool->bodies, &body);
-
-				ZVAL_ADDREF(request);
+			ZVAL_ADDREF(request);
+			zend_llist_add_element(&pool->handles, &request);
 
 #if HTTP_DEBUG_REQPOOLS
-				fprintf(stderr, "> %d HttpRequests attached to pool %p\n", zend_llist_count(&pool->handles), pool);
+			fprintf(stderr, "> %d HttpRequests attached to pool %p\n", zend_llist_count(&pool->handles), pool);
 #endif
-				return SUCCESS;
-			}
+			return SUCCESS;
 		}
-		efree(body->data);
-		efree(body);
 	}
 	return FAILURE;
 }
@@ -135,7 +125,7 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 #endif
 	} else if (req->pool != pool) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "HttpRequest object(#%d) is not attached to this HttpRequestPool", Z_OBJ_HANDLE_P(request));
-	} else if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->ch))) {
+	} else if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->request.ch))) {
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
 	} else {
 		req->pool = NULL;
@@ -186,13 +176,6 @@ PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_D
 		}
 		efree(handles);
 	}
-	
-#if HTTP_DEBUG_REQPOOLS
-	fprintf(stderr, "Destroying %d request bodies of pool %p\n", zend_llist_count(&pool->bodies), pool);
-#endif
-	
-	/* free created bodies too */
-	zend_llist_clean(&pool->bodies);
 }
 
 /* {{{ STATUS http_request_pool_send(http_request_pool *) */
@@ -231,7 +214,6 @@ PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC)
 	pool->unfinished = 0;
 	zend_llist_clean(&pool->finished);
 	zend_llist_clean(&pool->handles);
-	zend_llist_clean(&pool->bodies);
 	curl_multi_cleanup(pool->ch);
 }
 /* }}} */
@@ -288,24 +270,12 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ STATUS http_request_pool_requesthandler(zval *, http_request_body *) */
-STATUS _http_request_pool_requesthandler(zval *request, http_request_body *body TSRMLS_DC)
-{
-	getObjectEx(http_request_object, req, request);
-	if (SUCCESS == http_request_object_requesthandler(req, request, body)) {
-		http_request_conv(req->ch, &req->response, &req->request);
-		return SUCCESS;
-	}
-	return FAILURE;
-}
-/* }}} */
-
 /* {{{ void http_request_pool_responsehandler(zval **) */
 void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC)
 {
 	getObjectEx(http_request_object, obj, *req);
 	
-	if (obj->ch == ch) {
+	if (obj->request.ch == ch) {
 		
 #if HTTP_DEBUG_REQPOOLS
 		fprintf(stderr, "Fetching data from HttpRequest(#%d) %p of pool %p\n", Z_OBJ_HANDLE_PP(req), obj, obj->pool);
@@ -379,16 +349,6 @@ void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception 
 /* }}} */
 
 /*#*/
-
-/* {{{ static void http_request_pool_freebody(http_request_ctx **) */
-static void http_request_pool_freebody(http_request_callback_ctx **body)
-{
-	HTTP_REQUEST_CALLBACK_DATA(*body, http_request_body *, b);
-	http_request_body_free(&b);
-	efree(*body);
-	*body = NULL;
-}
-/* }}} */
 
 /* {{{ static int http_request_pool_compare_handles(void *, void *) */
 static int http_request_pool_compare_handles(void *h1, void *h2)

@@ -164,6 +164,8 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				MAKE_STD_ZVAL(len);
 				ZVAL_STRINGL(len, tmp, tmp_len, 0);
 
+				ZVAL_ADDREF(c);
+				zend_hash_add(&msg->hdrs, "X-Original-Transfer-Encoding", sizeof("X-Original-Transfer-Encoding"), (void *) &c, sizeof(zval *), NULL);
 				zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
 				zend_hash_del(&msg->hdrs, "Content-Length", sizeof("Content-Length"));
 				zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
@@ -493,6 +495,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 		{
 #ifdef HTTP_HAVE_CURL
 			char *uri = NULL;
+			http_request request;
 			zval **zhost, options, headers;
 
 			INIT_PZVAL(&options);
@@ -523,21 +526,20 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 				uri = http_absolute_uri(message->http.info.request.URI);
 			}
 
-			if (!strcasecmp("POST", message->http.info.request.method)) {
+			if (request.meth = http_request_method_exists(1, 0, message->http.info.request.method)) {
 				http_request_body body = {HTTP_REQUEST_BODY_CSTRING, PHPSTR_VAL(message), PHPSTR_LEN(message)};
-				rs = http_post(uri, &body, Z_ARRVAL(options), NULL, NULL);
-			} else
-			if (!strcasecmp("GET", message->http.info.request.method)) {
-				rs = http_get(uri, Z_ARRVAL(options), NULL, NULL);
-			} else
-			if (!strcasecmp("HEAD", message->http.info.request.method)) {
-				rs = http_head(uri, Z_ARRVAL(options), NULL, NULL);
+				
+				http_request_init_ex(&request, NULL, request.meth, uri);
+				request.body = &body;
+				if (SUCCESS == (rs = http_request_prepare(&request, NULL))) {
+					http_request_exec(&request);
+				}
+				http_request_dtor(&request);
 			} else {
 				http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD,
 					"Cannot send HttpMessage. Request method %s not supported",
 					message->http.info.request.method);
 			}
-
 			efree(uri);
 #else
 			http_error(HE_WARNING, HTTP_E_RUNTIME, "HTTP requests not supported - ext/http was not linked against libcurl.");

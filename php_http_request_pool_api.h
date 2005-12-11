@@ -20,14 +20,11 @@ typedef struct {
 	CURLM *ch;
 	zend_llist finished;
 	zend_llist handles;
-	zend_llist bodies;
 	int unfinished;
 } http_request_pool;
 
 #define http_request_pool_responsehandler _http_request_pool_responsehandler
 extern void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC);
-#define http_request_pool_requesthandler(r, b) _http_request_pool_requesthandler((r), (b) TSRMLS_CC)
-extern STATUS _http_request_pool_requesthandler(zval *request, http_request_body *body TSRMLS_DC);
 
 #define http_request_pool_try \
 	{ \

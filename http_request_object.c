@@ -306,15 +306,12 @@ zend_object_value _http_request_object_new_ex(zend_class_entry *ce, CURL *ch, ht
 
 	o = ecalloc(1, sizeof(http_request_object));
 	o->zo.ce = ce;
-	o->ch = ch;
+	http_request_init_ex(&o->request, ch, 0, NULL);
+	phpstr_init(&o->history);
 	
 	if (ptr) {
 		*ptr = o;
 	}
-
-	phpstr_init(&o->history);
-	phpstr_init(&o->request);
-	phpstr_init_ex(&o->response, HTTP_CURLBUF_SIZE, 0);
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
@@ -334,12 +331,12 @@ zend_object_value _http_request_object_clone_obj(zval *this_ptr TSRMLS_DC)
 	getObject(http_request_object, old_obj);
 	
 	old_zo = zend_objects_get_address(this_ptr TSRMLS_CC);
-	new_ov = http_request_object_new_ex(old_zo->ce, curl_easy_duphandle(old_obj->ch), &new_obj);
+	new_ov = http_request_object_new_ex(old_zo->ce, curl_easy_duphandle(old_obj->request.ch), &new_obj);
 	
 	zend_objects_clone_members(&new_obj->zo, new_ov, old_zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
 	phpstr_append(&new_obj->history, old_obj->history.data, old_obj->history.used);
-	phpstr_append(&new_obj->request, old_obj->request.data, old_obj->request.used);
-	phpstr_append(&new_obj->response, old_obj->response.data, old_obj->response.used);
+	phpstr_append(&new_obj->request.conv.request, old_obj->request.conv.request.data, old_obj->request.conv.request.used);
+	phpstr_append(&new_obj->request.conv.response, old_obj->request.conv.response.data, old_obj->request.conv.response.used);
 	
 	return new_ov;
 }
@@ -420,50 +417,33 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 		zend_hash_destroy(OBJ_PROP(o));
 		FREE_HASHTABLE(OBJ_PROP(o));
 	}
-	if (o->ch) {
-		/* avoid nasty segfaults with already cleaned up callbacks */
-		curl_easy_setopt(o->ch, CURLOPT_NOPROGRESS, 1);
-		curl_easy_setopt(o->ch, CURLOPT_PROGRESSFUNCTION, NULL);
-		curl_easy_setopt(o->ch, CURLOPT_VERBOSE, 0);
-		curl_easy_setopt(o->ch, CURLOPT_DEBUGFUNCTION, NULL);
-		curl_easy_cleanup(o->ch);
-	}
-	phpstr_dtor(&o->response);
-	phpstr_dtor(&o->request);
+	http_request_dtor(&o->request);
 	phpstr_dtor(&o->history);
 	efree(o);
 }
 
-STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr, http_request_body *body TSRMLS_DC)
+STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr TSRMLS_DC)
 {
-	zval *meth, *URL, *meth_p, *URL_p;
-	char *request_uri;
+	zval *URL, *URL_p, *meth_p;
 	STATUS status = SUCCESS;
 
-	if (!body) {
-		return FAILURE;
-	}
-	HTTP_CHECK_CURL_INIT(obj->ch, curl_easy_init(), return FAILURE);
-
+	http_request_reset(&obj->request);
+	HTTP_CHECK_CURL_INIT(obj->request.ch, curl_easy_init(), return FAILURE);
+	
 	URL = convert_to_type_ex(IS_STRING, GET_PROP(obj, url), &URL_p);
-	// HTTP_URI_MAXLEN+1 long char *
-	if (!(request_uri = http_absolute_uri_ex(Z_STRVAL_P(URL), Z_STRLEN_P(URL), NULL, 0, NULL, 0, 0))) {
-		if (URL_p) {
-			zval_ptr_dtor(&URL_p);
-		}
-		return FAILURE;
-	}
+	obj->request.url = http_absolute_uri_ex(Z_STRVAL_P(URL), Z_STRLEN_P(URL), NULL, 0, NULL, 0, 0);
 	if (URL_p) {
 		zval_ptr_dtor(&URL_p);
 	}
 	
-	meth = convert_to_type_ex(IS_LONG, GET_PROP(obj, method), &meth_p);
-	switch (Z_LVAL_P(meth))
+	if (!obj->request.url) {
+		return FAILURE;
+	}
+	
+	switch (obj->request.meth = Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_PROP(obj, method), &meth_p)))
 	{
 		case HTTP_GET:
 		case HTTP_HEAD:
-			body->type = -1;
-			body = NULL;
 		break;
 
 		case HTTP_PUT:
@@ -472,9 +452,10 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			php_stream *stream = php_stream_open_wrapper(Z_STRVAL_P(GET_PROP(obj, putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL);
 			
 			if (stream && !php_stream_stat(stream, &ssb)) {
-				body->type = HTTP_REQUEST_BODY_UPLOADFILE;
-				body->data = stream;
-				body->size = ssb.sb.st_size;
+				obj->request.body = http_request_body_new();
+				obj->request.body->type = HTTP_REQUEST_BODY_UPLOADFILE;
+				obj->request.body->data = stream;
+				obj->request.body->size = ssb.sb.st_size;
 			} else {
 				status = FAILURE;
 			}
@@ -487,6 +468,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			/* check for raw post data */
 			zval *raw_data_p, *raw_data = convert_to_type_ex(IS_STRING, GET_PROP(obj, rawPostData), &raw_data_p);
 			
+			obj->request.body = http_request_body_new();
 			if (Z_STRLEN_P(raw_data)) {
 				zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, GET_PROP(obj, contentType), &ctype_p);
 				
@@ -517,11 +499,11 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 					zval_ptr_dtor(&ctype_p);
 				}
 				
-				body->type = HTTP_REQUEST_BODY_CSTRING;
-				body->data = estrndup(Z_STRVAL_P(raw_data), Z_STRLEN_P(raw_data));
-				body->size = Z_STRLEN_P(raw_data);
+				obj->request.body->type = HTTP_REQUEST_BODY_CSTRING;
+				obj->request.body->data = estrndup(Z_STRVAL_P(raw_data), Z_STRLEN_P(raw_data));
+				obj->request.body->size = Z_STRLEN_P(raw_data);
 			} else {
-				status = http_request_body_fill(body, Z_ARRVAL_P(GET_PROP(obj, postFields)), Z_ARRVAL_P(GET_PROP(obj, postFiles)));
+				status = http_request_body_fill(obj->request.body, Z_ARRVAL_P(GET_PROP(obj, postFields)), Z_ARRVAL_P(GET_PROP(obj, postFiles)));
 			}
 
 			if (raw_data_p) {
@@ -537,28 +519,26 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	
 	if (status == SUCCESS) {
 		zval *qdata_p, *qdata = convert_to_type_ex(IS_STRING, GET_PROP(obj, queryData), &qdata_p);
+		zval *opt_p, *options = convert_to_type_ex(IS_ARRAY, GET_PROP(obj, options), &opt_p);
 		
 		if (Z_STRLEN_P(qdata)) {
-			if (!strchr(request_uri, '?')) {
-				strlcat(request_uri, "?", HTTP_URI_MAXLEN);
+			if (!strchr(obj->request.url, '?')) {
+				strlcat(obj->request.url, "?", HTTP_URI_MAXLEN);
 			} else {
-				strlcat(request_uri, "&", HTTP_URI_MAXLEN);
+				strlcat(obj->request.url, "&", HTTP_URI_MAXLEN);
 			}
-			strlcat(request_uri, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN);
+			strlcat(obj->request.url, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN);
 		}
 		
+		http_request_prepare(&obj->request, Z_ARRVAL_P(options));
+		
+		if (opt_p) {
+			zval_ptr_dtor(&opt_p);
+		}
 		if (qdata_p) {
 			zval_ptr_dtor(&qdata_p);
 		}
-		
-		status = http_request_init(obj->ch, Z_LVAL_P(meth), request_uri, body, Z_ARRVAL_P(GET_PROP(obj, options)));
 	}
-	efree(request_uri);
-
-	/* clean previous response */
-	phpstr_dtor(&obj->response);
-	/* clean previous request */
-	phpstr_dtor(&obj->request);
 
 	return status;
 }
@@ -566,11 +546,11 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr TSRMLS_DC)
 {
 	http_message *msg;
-
-	phpstr_fix(&obj->request);
-	phpstr_fix(&obj->response);
 	
-	msg = http_message_parse(PHPSTR_VAL(&obj->response), PHPSTR_LEN(&obj->response));
+	phpstr_fix(&obj->request.conv.request);
+	phpstr_fix(&obj->request.conv.response);
+	
+	msg = http_message_parse(PHPSTR_VAL(&obj->request.conv.response), PHPSTR_LEN(&obj->request.conv.response));
 	
 	if (!msg) {
 		return FAILURE;
@@ -589,7 +569,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 			 * the requests and the responses in separate chains
 			 * for redirects
 			 */
-			http_message *response = msg, *request = http_message_parse(PHPSTR_VAL(&obj->request), PHPSTR_LEN(&obj->request));
+			http_message *response = msg, *request = http_message_parse(PHPSTR_VAL(&obj->request.conv.request), PHPSTR_LEN(&obj->request.conv.request));
 			http_message *free_msg = request;
 
 			do {
@@ -627,7 +607,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		SET_PROP(obj, responseMessage, message);
 		zval_ptr_dtor(&message);
 
-		http_request_info(obj->ch, Z_ARRVAL_P(info));
+		http_request_info(&obj->request, Z_ARRVAL_P(info));
 		SET_PROP(obj, responseInfo, info);
 
 		return SUCCESS;
@@ -1884,7 +1864,7 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 		getObject(http_request_object, obj);
 
 		SET_EH_THROW_HTTP();
-		if ((msg = http_message_parse(PHPSTR_VAL(&obj->request), PHPSTR_LEN(&obj->request)))) {
+		if ((msg = http_message_parse(PHPSTR_VAL(&obj->request.conv.request), PHPSTR_LEN(&obj->request.conv.request)))) {
 			ZVAL_OBJVAL(return_value, http_message_object_new_ex(http_message_object_ce, msg, NULL));
 		}
 		SET_EH_NORMAL();
@@ -1988,7 +1968,6 @@ PHP_METHOD(HttpRequest, clearHistory)
  */
 PHP_METHOD(HttpRequest, send)
 {
-	http_request_body body = {0, NULL, 0};
 	getObject(http_request_object, obj);
 
 	NO_ARGS;
@@ -2003,12 +1982,12 @@ PHP_METHOD(HttpRequest, send)
 
 	RETVAL_NULL();
 	
-	if (	(SUCCESS == http_request_object_requesthandler(obj, getThis(), &body)) &&
-			(SUCCESS == http_request_exec(obj->ch, NULL, &obj->response, &obj->request)) &&
-			(SUCCESS == http_request_object_responsehandler(obj, getThis()))) {
-		RETVAL_OBJECT(GET_PROP(obj, responseMessage));
+	if (SUCCESS == http_request_object_requesthandler(obj, getThis())) {
+		http_request_exec(&obj->request);
+		if (SUCCESS == http_request_object_responsehandler(obj, getThis())) {
+			RETVAL_OBJECT(GET_PROP(obj, responseMessage));
+		}
 	}
-	http_request_body_dtor(&body);
 
 	SET_EH_NORMAL();
 }

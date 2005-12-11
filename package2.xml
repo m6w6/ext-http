@@ -43,8 +43,10 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
  <license>BSD, revised</license>
  <notes><![CDATA[
 + Added 'bodyonly' request option
++ Added IOCTL callback for cURL
 
 * Fixed bug which caused GZIP encoded archives to be decoded
+* Fixed several memory leaks and inconspicuous access violations
 ]]></notes>
  <contents>
   <dir name="/">
