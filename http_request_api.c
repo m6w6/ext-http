@@ -146,10 +146,7 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 				MAKE_STD_ZVAL(subarray); \
 				array_init(subarray); \
 				for (p = l; p; p = p->next) { \
-					zval *entry; \
-					MAKE_STD_ZVAL(entry); \
-					ZVAL_STRING(entry, p->data, 1); \
-					add_next_index_zval(subarray, entry); \
+					add_next_index_string(subarray, p->data, 1); \
 				} \
 				add_assoc_zval(&array, pretty_key(http_request_data_copy(COPY_STRING, #X), sizeof(#X)-1, 0, 0), subarray); \
 				curl_slist_free_all(l); \
