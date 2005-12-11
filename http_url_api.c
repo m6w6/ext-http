@@ -51,12 +51,14 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 		return NULL;
 	}
 
-	URL = ecalloc(1, HTTP_URI_MAXLEN + 1);
 	uri = estrndup(url, url_len);
 	if (!(purl = php_url_parse(uri))) {
+		efree(uri);
 		http_error_ex(HE_WARNING, HTTP_E_URL, "Could not parse supplied URL: %s", url);
 		return NULL;
 	}
+
+	URL = ecalloc(1, HTTP_URI_MAXLEN + 1);
 
 	furl.user		= purl->user;
 	furl.pass		= purl->pass;
@@ -86,6 +88,7 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 			furl.port = ntohs(se->s_port);
 		}
 #endif
+		furl.port = 0;
 	} else {
 		furl.port = (furl.scheme[4] == 's') ? 443 : 80;
 	}
@@ -133,12 +136,12 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 
 	HTTP_URI_STRLCATL(URL, full_len, furl.host);
 
-	if (	(!strcmp(furl.scheme, "http") && (furl.port != 80)) ||
+	if ((	(!strcmp(furl.scheme, "http") && (furl.port != 80)) ||
 			(!strcmp(furl.scheme, "https") && (furl.port != 443))
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
 		||	((!(se = getservbyname(furl.scheme, "tcp"))) || (ntohs(se->s_port) != furl.port))
 #endif
-		) {
+		) && furl.port) {
 		char port_string[8] = {0};
 		snprintf(port_string, 7, ":%u", furl.port);
 		HTTP_URI_STRLCATL(URL, full_len, port_string);
