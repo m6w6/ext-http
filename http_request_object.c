@@ -405,12 +405,10 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	/*
 	 * Auth Constants
 	 */
-#	if LIBCURL_VERSION_NUM >= 0x070a05
 	DCL_CONST(long, "AUTH_BASIC", CURLAUTH_BASIC);
 	DCL_CONST(long, "AUTH_DIGEST", CURLAUTH_DIGEST);
 	DCL_CONST(long, "AUTH_NTLM", CURLAUTH_NTLM);
 	DCL_CONST(long, "AUTH_ANY", CURLAUTH_ANY);
-#	endif /* LIBCURL_VERSION_NUM */
 #endif /* WONKY */
 }
 

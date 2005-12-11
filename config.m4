@@ -46,7 +46,7 @@ dnl ----
 dnl CURL
 dnl ----
 	if test "$PHP_HTTP_CURL_REQUESTS" != "no"; then
-	
+
 		AC_MSG_CHECKING([for curl/curl.h])
 		CURL_DIR=
 		for i in "$PHP_HTTP_CURL_REQUESTS" /usr/local /usr /opt; do
@@ -75,6 +75,14 @@ dnl ----
 			AC_MSG_ERROR([could not find curl-config])
 		else
 			AC_MSG_RESULT([found: $CURL_CONFIG])
+		fi
+		
+		dnl Debian stable has currently 7.13.2 (this is not a typo)
+		AC_MSG_CHECKING([for curl version >= 7.12.3])
+		CURL_VERSION=`$CURL_CONFIG --version | $SED -e 's/[[^0-9\.]]//g'`
+		AC_MSG_RESULT([$CURL_VERSION])
+		if test `echo $CURL_VERSION | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71203; then
+			AC_MSG_ERROR([libcurl version greater or equal to 7.12.3 required])
 		fi
 		
 		CURL_LIBS=`$CURL_CONFIG --libs`

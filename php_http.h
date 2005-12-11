@@ -93,9 +93,6 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 			zend_llist contexts;
 			zend_llist convs;
 		} copies;
-#	ifndef HAVE_CURL_EASY_STRERROR
-		char error[CURL_ERROR_SIZE + 1];
-#	endif
 #endif /* HTTP_HAVE_CURL */
 	} request;
 

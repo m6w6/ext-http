@@ -86,12 +86,10 @@ PHP_MINIT_FUNCTION(http_request)
 		return FAILURE;
 	}
 	
-#if LIBCURL_VERSION_NUM >= 0x070a05
 	HTTP_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC);
 	HTTP_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST);
 	HTTP_LONG_CONSTANT("HTTP_AUTH_NTLM", CURLAUTH_NTLM);
 	HTTP_LONG_CONSTANT("HTTP_AUTH_ANY", CURLAUTH_ANY);
-#endif /* LIBCURL_VERSION_NUM */
 
 	return SUCCESS;
 }
@@ -106,7 +104,7 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 }
 
 #ifndef HAVE_CURL_EASY_STRERROR
-#	define curl_easy_strerror(code) HTTP_G(request).error
+#	define curl_easy_strerror(dummy) "unkown error"
 #endif
 
 #define HTTP_CURL_INFO(I) HTTP_CURL_INFO_EX(I, I)
@@ -412,11 +410,8 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	HTTP_CURL_OPT(VERBOSE, 1);
 	HTTP_CURL_OPT(DEBUGFUNCTION, http_curl_raw_callback);
 
-#if defined(ZTS) && (LIBCURL_VERSION_NUM >= 0x070a00)
+#if defined(ZTS)
 	HTTP_CURL_OPT(NOSIGNAL, 1);
-#endif
-#if LIBCURL_VERSION_NUM < 0x070c00
-	HTTP_CURL_OPT(ERRORBUFFER, HTTP_G(request).error);
 #endif
 
 	/* progress callback */
@@ -437,12 +432,10 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		if ((zoption = http_curl_getopt(options, "proxyauth", IS_STRING))) {
 			HTTP_CURL_OPT(PROXYUSERPWD, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 		}
-#if LIBCURL_VERSION_NUM >= 0x070a07
 		/* auth method */
 		if ((zoption = http_curl_getopt(options, "proxyauthtype", IS_LONG))) {
 			HTTP_CURL_OPT(PROXYAUTH, Z_LVAL_P(zoption));
 		}
-#endif
 	}
 
 	/* outgoing interface */
@@ -459,11 +452,9 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	if ((zoption = http_curl_getopt(options, "httpauth", IS_STRING))) {
 		HTTP_CURL_OPT(USERPWD, http_request_data_copy(COPY_STRING, Z_STRVAL_P(zoption)));
 	}
-#if LIBCURL_VERSION_NUM >= 0x070a06
 	if ((zoption = http_curl_getopt(options, "httpauthtype", IS_LONG))) {
 		HTTP_CURL_OPT(HTTPAUTH, Z_LVAL_P(zoption));
 	}
-#endif
 
 	/* compress, empty string enables all supported if libcurl was build with zlib support */
 	if ((zoption = http_curl_getopt(options, "compress", IS_BOOL)) && Z_LVAL_P(zoption)) {
@@ -607,9 +598,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 		FOREACH_KEYVAL(pos, zoption, key, idx, param) {
 			if (key) {
 				HTTP_CURL_OPT_SSL_STRING(CERT);
-#if LIBCURL_VERSION_NUM >= 0x070903
 				HTTP_CURL_OPT_SSL_STRING(CERTTYPE);
-#endif
 				HTTP_CURL_OPT_SSL_STRING(CERTPASSWD);
 
 				HTTP_CURL_OPT_SSL_STRING(KEY);
@@ -624,9 +613,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 				HTTP_CURL_OPT_SSL_STRING_(CIPHER_LIST);
 
 				HTTP_CURL_OPT_STRING(CAINFO);
-#if LIBCURL_VERSION_NUM >= 0x070908
 				HTTP_CURL_OPT_STRING(CAPATH);
-#endif
 				HTTP_CURL_OPT_STRING(RANDOM_FILE);
 				HTTP_CURL_OPT_STRING(EGDSOCKET);
 
@@ -733,24 +720,17 @@ PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
 	INIT_ZARR(array, info);
 
 	HTTP_CURL_INFO(EFFECTIVE_URL);
-#if LIBCURL_VERSION_NUM >= 0x070a07
 	HTTP_CURL_INFO(RESPONSE_CODE);
-#else
 	HTTP_CURL_INFO_EX(HTTP_CODE, RESPONSE_CODE);
-#endif
 	HTTP_CURL_INFO(HTTP_CONNECTCODE);
-#if LIBCURL_VERSION_NUM >= 0x070500
 	HTTP_CURL_INFO(FILETIME);
-#endif
 	HTTP_CURL_INFO(TOTAL_TIME);
 	HTTP_CURL_INFO(NAMELOOKUP_TIME);
 	HTTP_CURL_INFO(CONNECT_TIME);
 	HTTP_CURL_INFO(PRETRANSFER_TIME);
 	HTTP_CURL_INFO(STARTTRANSFER_TIME);
-#if LIBCURL_VERSION_NUM >= 0x070907
 	HTTP_CURL_INFO(REDIRECT_TIME);
 	HTTP_CURL_INFO(REDIRECT_COUNT);
-#endif
 	HTTP_CURL_INFO(SIZE_UPLOAD);
 	HTTP_CURL_INFO(SIZE_DOWNLOAD);
 	HTTP_CURL_INFO(SPEED_DOWNLOAD);
@@ -758,25 +738,15 @@ PHP_HTTP_API void _http_request_info(CURL *ch, HashTable *info TSRMLS_DC)
 	HTTP_CURL_INFO(HEADER_SIZE);
 	HTTP_CURL_INFO(REQUEST_SIZE);
 	HTTP_CURL_INFO(SSL_VERIFYRESULT);
-#if LIBCURL_VERSION_NUM >= 0x070c03
 	/*HTTP_CURL_INFO(SSL_ENGINES); todo: CURLINFO_SLIST */
-#endif
 	HTTP_CURL_INFO(CONTENT_LENGTH_DOWNLOAD);
 	HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
 	HTTP_CURL_INFO(CONTENT_TYPE);
-#if LIBCURL_VERSION_NUM >= 0x070a03
 	/*HTTP_CURL_INFO(PRIVATE);*/
-#endif
-#if LIBCURL_VERSION_NUM >= 0x070a08
 	HTTP_CURL_INFO(HTTPAUTH_AVAIL);
 	HTTP_CURL_INFO(PROXYAUTH_AVAIL);
-#endif
-#if LIBCURL_VERSION_NUM >= 0x070c02
 	/*HTTP_CURL_INFO(OS_ERRNO);*/
-#endif
-#if LIBCURL_VERSION_NUM >= 0x070c03
 	HTTP_CURL_INFO(NUM_CONNECTS);
-#endif
 }
 /* }}} */
 
@@ -1022,15 +992,11 @@ static inline void _http_curl_defaults(CURL *ch)
 	HTTP_CURL_OPT(PROXY, NULL);
 	HTTP_CURL_OPT(PROXYPORT, 0);
 	HTTP_CURL_OPT(PROXYUSERPWD, NULL);
-#if LIBCURL_VERSION_NUM >= 0x070a07
 	HTTP_CURL_OPT(PROXYAUTH, 0);
-#endif
 	HTTP_CURL_OPT(INTERFACE, NULL);
 	HTTP_CURL_OPT(PORT, 0);
 	HTTP_CURL_OPT(USERPWD, NULL);
-#if LIBCURL_VERSION_NUM >= 0x070a06
 	HTTP_CURL_OPT(HTTPAUTH, 0);
-#endif
 	HTTP_CURL_OPT(ENCODING, 0);
 	HTTP_CURL_OPT(FOLLOWLOCATION, 0);
 	HTTP_CURL_OPT(UNRESTRICTED_AUTH, 0);
@@ -1047,9 +1013,7 @@ static inline void _http_curl_defaults(CURL *ch)
 	HTTP_CURL_OPT(TIMEOUT, 0);
 	HTTP_CURL_OPT(CONNECTTIMEOUT, 3);
 	HTTP_CURL_OPT(SSLCERT, NULL);
-#if LIBCURL_VERSION_NUM >= 0x070903
 	HTTP_CURL_OPT(SSLCERTTYPE, NULL);
-#endif
 	HTTP_CURL_OPT(SSLCERTPASSWD, NULL);
 	HTTP_CURL_OPT(SSLKEY, NULL);
 	HTTP_CURL_OPT(SSLKEYTYPE, NULL);
@@ -1060,9 +1024,7 @@ static inline void _http_curl_defaults(CURL *ch)
 	HTTP_CURL_OPT(SSL_VERIFYHOST, 0);
 	HTTP_CURL_OPT(SSL_CIPHER_LIST, NULL);
 	HTTP_CURL_OPT(CAINFO, NULL);
-#if LIBCURL_VERSION_NUM >= 0x070908
 	HTTP_CURL_OPT(CAPATH, NULL);
-#endif
 	HTTP_CURL_OPT(RANDOM_FILE, NULL);
 	HTTP_CURL_OPT(EGDSOCKET, NULL);
 	HTTP_CURL_OPT(POSTFIELDS, NULL);
