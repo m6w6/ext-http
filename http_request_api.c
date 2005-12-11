@@ -185,6 +185,7 @@ static size_t http_curl_read_callback(void *, size_t, size_t, void *);
 static int http_curl_progress_callback(void *, double, double, double, double);
 static int http_curl_raw_callback(CURL *, curl_infotype, char *, size_t, void *);
 static int http_curl_dummy_callback(char *data, size_t n, size_t l, void *s) { return n*l; }
+static curlioerr http_curl_ioctl_callback(CURL *, curliocmd, void *);
 
 /* {{{ http_request_callback_ctx http_request_callback_data(void *) */
 http_request_callback_ctx *_http_request_callback_data_ex(void *data, zend_bool cpy TSRMLS_DC)
@@ -418,6 +419,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 	HTTP_CURL_OPT(FILETIME, 1);
 	HTTP_CURL_OPT(AUTOREFERER, 1);
 	HTTP_CURL_OPT(READFUNCTION, http_curl_read_callback);
+	HTTP_CURL_OPT(IOCTLFUNCTION, http_curl_ioctl_callback);
 	/* we'll get all data through the debug function */
 	HTTP_CURL_OPT(WRITEFUNCTION, http_curl_dummy_callback);
 	HTTP_CURL_OPT(HEADERFUNCTION, NULL);
@@ -681,6 +683,7 @@ PHP_HTTP_API STATUS _http_request_init(CURL *ch, http_request_method meth, char 
 			break;
 
 			case HTTP_REQUEST_BODY_UPLOADFILE:
+				curl_easy_setopt(ch, CURLOPT_IOCTLDATA, http_request_callback_data(body));
 				curl_easy_setopt(ch, CURLOPT_READDATA, http_request_callback_data(body));
 				curl_easy_setopt(ch, CURLOPT_INFILESIZE, body->size);
 			break;
@@ -818,6 +821,24 @@ static int http_curl_progress_callback(void *data, double dltotal, double dlnow,
 	ZVAL_DOUBLE(params_pass[3], ulnow);
 
 	return call_user_function(EG(function_table), NULL, func, &retval, 4, params_pass TSRMLS_CC);
+}
+/* }}} */
+
+/* {{{ static curlioerr http_curl_ioctl_callback(CURL *, curliocmd, void *) */
+static curlioerr http_curl_ioctl_callback(CURL *ch, curliocmd cmd, void *ctx)
+{
+	HTTP_REQUEST_CALLBACK_DATA(ctx, http_request_body *, body);
+	
+	if (cmd != CURLIOCMD_RESTARTREAD) {
+		return CURLIOE_UNKNOWNCMD;
+	}
+	if (body->type != HTTP_REQUEST_BODY_UPLOADFILE) {
+		return CURLIOE_FAILRESTART;
+	}
+	if (SUCCESS != php_stream_rewind((php_stream *) body->data)) {
+		return CURLIOE_FAILRESTART;
+	}
+	return CURLIOE_OK;
 }
 /* }}} */
 
@@ -1047,6 +1068,7 @@ static inline void _http_curl_defaults(CURL *ch)
 	HTTP_CURL_OPT(POSTFIELDS, NULL);
 	HTTP_CURL_OPT(POSTFIELDSIZE, 0);
 	HTTP_CURL_OPT(HTTPPOST, NULL);
+	HTTP_CURL_OPT(IOCTLDATA, NULL);
 	HTTP_CURL_OPT(READDATA, NULL);
 	HTTP_CURL_OPT(INFILESIZE, 0);
 }
