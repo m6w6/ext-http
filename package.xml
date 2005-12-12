@@ -26,20 +26,28 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
   </maintainer>
   </maintainers>
  <release>
-  <version>0.19.0</version>
-  <date>2005-11-26</date>
+  <version>0.20.0</version>
+  <date>2005-12-12</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>+ Added http_negotiate_content_type()
+  <notes>! Request functionality requires libcurl &gt;= 7.12.3 now
 
-* Fixed bug in http_negotiate_*() when client sends spaces within accept headers
++ Added &apos;bodyonly&apos; request option
++ Added IOCTL callback for cURL
++ Added ssl_engines array and cookies array to the request info array
 
-- Removed support for etag hashing through libmhash
-- Removed HTTP_ETAG_* and HttpResponse::ETAG_* constants
-- Changed http.etag_mode INI setting to acccept a string specifying the
-  hash algorithm to use for generating etags.
-  CRC32, MD5 and SHA1 are available out of the box with MD5 being the default. 
-  If pecl/hash is available, any algorithm this extension provides can be used.
+- Renamed http_connectcode to connect_code in the request info array
+- Rewrote internal request API
+- Enable &quot;original headers&quot; previously stripped off by the message parser:
+	o X-Original-Transfer-Encoding (Transfer-Encoding)
+	o X-Original-Content-Encoding (Content-Encoding)
+	o X-Original-Content-Length (Content-Length)
+- RequestExceptions thrown by HttpRequestPool::__construct() and send() are
+  now wrapped into the HttpRequestPoolException object&apos;s $exceptionStack property
+
+* Fixed bug which caused GZIP encoded archives to be decoded
+* Fixed several memory leaks and inconspicuous access violations
+* Fixed some logical errors in the uri builder
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -182,6 +190,7 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
    <file role="src" name="http_message_object.c"/>
    <file role="src" name="http_requestpool_object.c"/>
    <file role="src" name="http_request_api.c"/>
+   <file role="src" name="http_request_body_api.c"/>
    <file role="src" name="http_request_method_api.c"/>
    <file role="src" name="http_request_object.c"/>
    <file role="src" name="http_request_pool_api.c"/>
@@ -207,6 +216,7 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
    <file role="src" name="php_http_message_object.h"/>
    <file role="src" name="php_http_requestpool_object.h"/>
    <file role="src" name="php_http_request_api.h"/>
+   <file role="src" name="php_http_request_body_api.h"/>
    <file role="src" name="php_http_request_method_api.h"/>
    <file role="src" name="php_http_request_object.h"/>
    <file role="src" name="php_http_request_pool_api.h"/>

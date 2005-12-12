@@ -42,11 +42,24 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
+! Request functionality requires libcurl >= 7.12.3 now
+
 + Added 'bodyonly' request option
 + Added IOCTL callback for cURL
++ Added ssl_engines array and cookies array to the request info array
+
+- Renamed http_connectcode to connect_code in the request info array
+- Rewrote internal request API
+- Enable "original headers" previously stripped off by the message parser:
+	o X-Original-Transfer-Encoding (Transfer-Encoding)
+	o X-Original-Content-Encoding (Content-Encoding)
+	o X-Original-Content-Length (Content-Length)
+- RequestExceptions thrown by HttpRequestPool::__construct() and send() are
+  now wrapped into the HttpRequestPoolException object's $exceptionStack property
 
 * Fixed bug which caused GZIP encoded archives to be decoded
 * Fixed several memory leaks and inconspicuous access violations
+* Fixed some logical errors in the uri builder
 ]]></notes>
  <contents>
   <dir name="/">
@@ -82,6 +95,7 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
    <file role="src" name="php_http_info_api.h"/>
    <file role="src" name="php_http_message_api.h"/>
    <file role="src" name="php_http_request_api.h"/>
+   <file role="src" name="php_http_request_body_api.h"/>
    <file role="src" name="php_http_request_method_api.h"/>
    <file role="src" name="php_http_request_pool_api.h"/>
    <file role="src" name="php_http_send_api.h"/>
@@ -104,6 +118,7 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
    <file role="src" name="http_info_api.c"/>
    <file role="src" name="http_message_api.c"/>
    <file role="src" name="http_request_api.c"/>
+   <file role="src" name="http_request_body_api.c"/>
    <file role="src" name="http_request_method_api.c"/>
    <file role="src" name="http_request_pool_api.c"/>
    <file role="src" name="http_send_api.c"/>
@@ -230,9 +245,9 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
    </pearinstaller>
   </required>
   <optional>
-   <extension>
-    <name>session</name>
-   </extension>
+   <extension><name>session</name></extension>
+   <extension><name>hash</name></extension>
+   <extension><name>zlib</name></extension>
   </optional>
  </dependencies>
  <providesextension>http</providesextension>

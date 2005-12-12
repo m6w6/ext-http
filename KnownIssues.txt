@@ -13,10 +13,6 @@ Inflating compressed HttpRequest responses happens twice if libcurl
 was built with zlib support.
 
 Internals:
-	-	the request bodies created in http_request_pool_attach() are not 
-		destroyed in http_request_pool_detach() but on reset; 
-		may be a memory problem in long running scripts which reuse one
-		request pool several times
 	-	there's a memleak with sizeof(zval) for each thrown exception, 
 		which ends up in HttpRequestPoolExcepiont::$exceptionStack, in 
 		HttpRequestPool::__construct(); it doesn't happen with wrapped

@@ -528,7 +528,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 				uri = http_absolute_uri(message->http.info.request.URI);
 			}
 
-			if (request.meth = http_request_method_exists(1, 0, message->http.info.request.method)) {
+			if ((request.meth = http_request_method_exists(1, 0, message->http.info.request.method))) {
 				http_request_body body = {HTTP_REQUEST_BODY_CSTRING, PHPSTR_VAL(message), PHPSTR_LEN(message)};
 				
 				http_request_init_ex(&request, NULL, request.meth, uri);
@@ -536,6 +536,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 				if (SUCCESS == (rs = http_request_prepare(&request, NULL))) {
 					http_request_exec(&request);
 				}
+				request.body = NULL;
 				http_request_dtor(&request);
 			} else {
 				http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD,
