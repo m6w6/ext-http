@@ -1168,13 +1168,13 @@ PHP_FUNCTION(http_post_data)
 	http_request_init_ex(&request, NULL, HTTP_POST, URL);
 	request.body = &body;
 	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
-		request.body = NULL;
 		http_request_exec(&request);
 		if (info) {
 			http_request_info(&request, Z_ARRVAL_P(info));
 		}
 		RETVAL_RESPONSE_OR_BODY(request);
 	}
+	request.body = NULL;
 	http_request_dtor(&request);
 }
 /* }}} */
@@ -1214,7 +1214,6 @@ PHP_FUNCTION(http_post_fields)
 	http_request_init_ex(&request, NULL, HTTP_POST, URL);
 	request.body = &body;
 	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
-		request.body = NULL;
 		http_request_exec(&request);
 		http_request_body_dtor(&body);
 		if (info) {
@@ -1223,6 +1222,7 @@ PHP_FUNCTION(http_post_fields)
 		RETVAL_RESPONSE_OR_BODY(request);
 	}
 	http_request_body_dtor(&body);
+	request.body = NULL;
 	http_request_dtor(&request);
 }
 /* }}} */
@@ -1272,15 +1272,14 @@ PHP_FUNCTION(http_put_file)
 	http_request_init_ex(&request, NULL, HTTP_PUT, URL);
 	request.body = &body;
 	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
-		request.body = NULL;
 		http_request_exec(&request);
-		http_request_body_dtor(&body);
 		if (info) {
 			http_request_info(&request, Z_ARRVAL_P(info));
 		}
 		RETVAL_RESPONSE_OR_BODY(request);
 	}
 	http_request_body_dtor(&body);
+	request.body = NULL;
 	http_request_dtor(&request);
 }
 /* }}} */
@@ -1328,13 +1327,13 @@ PHP_FUNCTION(http_put_stream)
 	http_request_init_ex(&request, NULL, HTTP_POST, URL);
 	request.body = &body;
 	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
-		request.body = NULL;
 		http_request_exec(&request);
 		if (info) {
 			http_request_info(&request, Z_ARRVAL_P(info));
 		}
 		RETVAL_RESPONSE_OR_BODY(request);
 	}
+	request.body = NULL;
 	http_request_dtor(&request);
 }
 /* }}} */
