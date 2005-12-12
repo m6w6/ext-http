@@ -256,9 +256,9 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 		if (CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
 				http_request_pool_try {
-					char *url = NULL;
-					curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &url);
-					http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s (%s)", curl_easy_strerror(msg->data.result), url);
+					http_request *r = NULL;
+					curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &r);
+					http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(msg->data.result), r?r->_error:"", r?r->url:"");
 				} http_request_pool_catch();
 			}
 			http_request_pool_try {

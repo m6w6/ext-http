@@ -41,6 +41,7 @@ typedef struct {
 		struct curl_slist *headers;
 	} _cache;
 	
+	char _error[CURL_ERROR_SIZE];
 	zval *_progress_callback;
 
 #ifdef ZTS

@@ -292,6 +292,8 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 #if defined(ZTS)
 		HTTP_CURL_OPT(NOSIGNAL, 1);
 #endif
+		HTTP_CURL_OPT(PRIVATE, request);
+		HTTP_CURL_OPT(ERRORBUFFER, request->_error);
 		HTTP_CURL_OPT(HEADER, 0);
 		HTTP_CURL_OPT(FILETIME, 1);
 		HTTP_CURL_OPT(AUTOREFERER, 1);
@@ -380,7 +382,6 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	/* set options */
 	HTTP_CURL_OPT(DEBUGDATA, request);
 	HTTP_CURL_OPT(URL, request->url);
-	HTTP_CURL_OPT(PRIVATE, request->url);
 
 	/* progress callback */
 	if ((zoption = http_request_option(request, options, "onprogress", 0))) {
@@ -670,7 +671,7 @@ PHP_HTTP_API void _http_request_exec(http_request *request)
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
 	if (CURLE_OK != (result = curl_easy_perform(request->ch))) {
-		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s (%s)", curl_easy_strerror(result), request->url);
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(result), request->_error, request->url);
 	}
 }
 /* }}} */
