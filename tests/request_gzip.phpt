@@ -25,14 +25,18 @@ object(stdClass)#%d (%d) {
   ["responseStatus"]=>
   string(2) "OK"
   ["headers"]=>
-  array(6) {
+  array(8) {
     %s
     ["Vary"]=>
     string(15) "Accept-Encoding"
-    ["Content-Type"]=>
-    string(9) "text/html"
     ["Content-Length"]=>
     string(2) "27"
+    ["Content-Type"]=>
+    string(9) "text/html"
+    ["X-Original-Content-Encoding"]=>
+    string(4) "gzip"
+    ["X-Original-Content-Length"]=>
+    string(2) "52"
   }
   ["body"]=>
   string(27) "Array

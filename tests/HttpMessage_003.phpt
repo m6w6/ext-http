@@ -33,11 +33,12 @@ echo "Done\n";
 --EXPECTF--
 %sTEST
 int(3)
-string(109) "HTTP/1.1 301
+string(148) "HTTP/1.1 301
 Location: /anywhere
 HTTP/1.1 302
 Location: /somewhere
 HTTP/1.1 200
+X-Original-Transfer-Encoding: chunked
 Content-Length: 1
 
 X

@@ -28,9 +28,9 @@
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 /* {{{ http_request_body *http_request_body_new() */
-PHP_HTTP_API http_request_body *_http_request_body_new(TSRMLS_D)
+PHP_HTTP_API http_request_body *_http_request_body_new(TSRMLS_D ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
 {
-	return (http_request_body *) ecalloc(1, sizeof(http_request_body));
+	return (http_request_body *) ecalloc_rel(1, sizeof(http_request_body));
 }
 /* }}} */
 

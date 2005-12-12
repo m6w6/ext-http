@@ -29,6 +29,8 @@
 #	include "php_http_request_object.h"
 #endif
 
+ZEND_EXTERN_MODULE_GLOBALS(http);
+
 /* {{{ cruft for thread safe SSL crypto locks */
 #if defined(ZTS) && defined(HTTP_HAVE_SSL)
 #	ifdef PHP_WIN32
@@ -66,15 +68,14 @@
 #		endif /* HTTP_HAVE_OPENSSL || HTTP_HAVE_GNUTLS */
 #	endif /* PHP_WIN32 */
 #endif /* ZTS && HTTP_HAVE_SSL */
-/* }}} */
-
-ZEND_EXTERN_MODULE_GLOBALS(http);
 
 #ifdef HTTP_NEED_SSL_TSL
 static inline void http_ssl_init(void);
 static inline void http_ssl_cleanup(void);
 #endif
+/* }}} */
 
+/* {{{ MINIT */
 PHP_MINIT_FUNCTION(http_request)
 {
 #ifdef HTTP_NEED_SSL_TSL
@@ -92,7 +93,9 @@ PHP_MINIT_FUNCTION(http_request)
 
 	return SUCCESS;
 }
+/* }}} */
 
+/* {{{ MSHUTDOWN */
 PHP_MSHUTDOWN_FUNCTION(http_request)
 {
 	curl_global_cleanup();
@@ -101,7 +104,9 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 #endif
 	return SUCCESS;
 }
+/* }}} */
 
+/* {{{ MACROS */
 #ifndef HAVE_CURL_EASY_STRERROR
 #	define curl_easy_strerror(dummy) "unkown error"
 #endif
@@ -182,7 +187,9 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 		key = NULL; \
 		continue; \
 	}
+/* }}} */
 
+/* {{{ forward declarations */
 #define http_request_option(r, o, k, t) _http_request_option_ex((r), (o), (k), sizeof(k), (t) TSRMLS_CC)
 #define http_request_option_ex(r, o, k, l, t) _http_request_option_ex((r), (o), (k), (l), (t) TSRMLS_CC)
 static inline zval *_http_request_option_ex(http_request *request, HashTable *options, char *key, size_t keylen, int type TSRMLS_DC);
@@ -192,7 +199,9 @@ static int http_curl_progress_callback(void *, double, double, double, double);
 static int http_curl_raw_callback(CURL *, curl_infotype, char *, size_t, void *);
 static int http_curl_dummy_callback(char *data, size_t n, size_t l, void *s) { return n*l; }
 static curlioerr http_curl_ioctl_callback(CURL *, curliocmd, void *);
+/* }}} */
 
+/* {{{ http_request *http_request_init(http_request *) */
 PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch, http_request_method meth, const char *url TSRMLS_DC)
 {
 	http_request *r;
@@ -220,7 +229,9 @@ PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch
 	
 	return r;
 }
+/* }}} */
 
+/* {{{ void http_request_dtor(http_request *) */
 PHP_HTTP_API void _http_request_dtor(http_request *request)
 {
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
@@ -235,11 +246,7 @@ PHP_HTTP_API void _http_request_dtor(http_request *request)
 		request->ch = NULL;
 	}
 	
-	STR_SET(request->url, NULL);
-	
-	request->conv.last_type = 0;
-	phpstr_dtor(&request->conv.request);
-	phpstr_dtor(&request->conv.response);
+	http_request_reset(request);
 	
 	zend_hash_destroy(&request->info);
 	
@@ -250,7 +257,9 @@ PHP_HTTP_API void _http_request_dtor(http_request *request)
 		request->_cache.headers = NULL;
 	}
 }
+/* }}} */
 
+/* {{{ void http_request_free(http_request **) */
 PHP_HTTP_API void _http_request_free(http_request **request)
 {
 	if (*request) {
@@ -260,79 +269,90 @@ PHP_HTTP_API void _http_request_free(http_request **request)
 		*request = NULL;
 	}
 }
+/* }}} */
 
-/* {{{ http_request_reset(http_request *) */
+/* {{{ void http_request_reset(http_request *) */
 PHP_HTTP_API void _http_request_reset(http_request *request)
 {
-#ifdef HAVE_CURL_EASY_RESET
-	curl_easy_reset(request->ch);
-#endif
-
+	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	STR_SET(request->url, NULL);
+	request->conv.last_type = 0;
 	phpstr_dtor(&request->conv.request);
 	phpstr_dtor(&request->conv.response);
-
-#if defined(ZTS)
-	HTTP_CURL_OPT(NOSIGNAL, 1);
-#endif
-	HTTP_CURL_OPT(HEADER, 0);
-	HTTP_CURL_OPT(FILETIME, 1);
-	HTTP_CURL_OPT(AUTOREFERER, 1);
-	HTTP_CURL_OPT(VERBOSE, 1);
-	HTTP_CURL_OPT(HEADERFUNCTION, NULL);
-	HTTP_CURL_OPT(DEBUGFUNCTION, http_curl_raw_callback);
-	HTTP_CURL_OPT(READFUNCTION, http_curl_read_callback);
-	HTTP_CURL_OPT(IOCTLFUNCTION, http_curl_ioctl_callback);
-	HTTP_CURL_OPT(WRITEFUNCTION, http_curl_dummy_callback);
-	HTTP_CURL_OPT(URL, NULL);
-	HTTP_CURL_OPT(NOPROGRESS, 1);
-	HTTP_CURL_OPT(PROXY, NULL);
-	HTTP_CURL_OPT(PROXYPORT, 0);
-	HTTP_CURL_OPT(PROXYUSERPWD, NULL);
-	HTTP_CURL_OPT(PROXYAUTH, 0);
-	HTTP_CURL_OPT(INTERFACE, NULL);
-	HTTP_CURL_OPT(PORT, 0);
-	HTTP_CURL_OPT(USERPWD, NULL);
-	HTTP_CURL_OPT(HTTPAUTH, 0);
-	HTTP_CURL_OPT(ENCODING, 0);
-	HTTP_CURL_OPT(FOLLOWLOCATION, 0);
-	HTTP_CURL_OPT(UNRESTRICTED_AUTH, 0);
-	HTTP_CURL_OPT(REFERER, NULL);
-	HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
-	HTTP_CURL_OPT(HTTPHEADER, NULL);
-	HTTP_CURL_OPT(COOKIE, NULL);
-	HTTP_CURL_OPT(COOKIEFILE, NULL);
-	HTTP_CURL_OPT(COOKIEJAR, NULL);
-	HTTP_CURL_OPT(RESUME_FROM, 0);
-	HTTP_CURL_OPT(MAXFILESIZE, 0);
-	HTTP_CURL_OPT(TIMECONDITION, 0);
-	HTTP_CURL_OPT(TIMEVALUE, 0);
-	HTTP_CURL_OPT(TIMEOUT, 0);
-	HTTP_CURL_OPT(CONNECTTIMEOUT, 3);
-	HTTP_CURL_OPT(SSLCERT, NULL);
-	HTTP_CURL_OPT(SSLCERTTYPE, NULL);
-	HTTP_CURL_OPT(SSLCERTPASSWD, NULL);
-	HTTP_CURL_OPT(SSLKEY, NULL);
-	HTTP_CURL_OPT(SSLKEYTYPE, NULL);
-	HTTP_CURL_OPT(SSLKEYPASSWD, NULL);
-	HTTP_CURL_OPT(SSLENGINE, NULL);
-	HTTP_CURL_OPT(SSLVERSION, 0);
-	HTTP_CURL_OPT(SSL_VERIFYPEER, 0);
-	HTTP_CURL_OPT(SSL_VERIFYHOST, 0);
-	HTTP_CURL_OPT(SSL_CIPHER_LIST, NULL);
-	HTTP_CURL_OPT(CAINFO, NULL);
-	HTTP_CURL_OPT(CAPATH, NULL);
-	HTTP_CURL_OPT(RANDOM_FILE, NULL);
-	HTTP_CURL_OPT(EGDSOCKET, NULL);
-	HTTP_CURL_OPT(POSTFIELDS, NULL);
-	HTTP_CURL_OPT(POSTFIELDSIZE, 0);
-	HTTP_CURL_OPT(HTTPPOST, NULL);
-	HTTP_CURL_OPT(IOCTLDATA, NULL);
-	HTTP_CURL_OPT(READDATA, NULL);
-	HTTP_CURL_OPT(INFILESIZE, 0);
+	http_request_body_free(&request->body);
 }
 /* }}} */
 
+/* {{{ void http_request_defaults(http_request *) */
+PHP_HTTP_API void _http_request_defaults(http_request *request)
+{
+	if (request->ch) {
+#ifdef HAVE_CURL_EASY_RESET
+		curl_easy_reset(request->ch);
+#endif
+#if defined(ZTS)
+		HTTP_CURL_OPT(NOSIGNAL, 1);
+#endif
+		HTTP_CURL_OPT(HEADER, 0);
+		HTTP_CURL_OPT(FILETIME, 1);
+		HTTP_CURL_OPT(AUTOREFERER, 1);
+		HTTP_CURL_OPT(VERBOSE, 1);
+		HTTP_CURL_OPT(HEADERFUNCTION, NULL);
+		HTTP_CURL_OPT(DEBUGFUNCTION, http_curl_raw_callback);
+		HTTP_CURL_OPT(READFUNCTION, http_curl_read_callback);
+		HTTP_CURL_OPT(IOCTLFUNCTION, http_curl_ioctl_callback);
+		HTTP_CURL_OPT(WRITEFUNCTION, http_curl_dummy_callback);
+		HTTP_CURL_OPT(URL, NULL);
+		HTTP_CURL_OPT(NOPROGRESS, 1);
+		HTTP_CURL_OPT(PROXY, NULL);
+		HTTP_CURL_OPT(PROXYPORT, 0);
+		HTTP_CURL_OPT(PROXYUSERPWD, NULL);
+		HTTP_CURL_OPT(PROXYAUTH, 0);
+		HTTP_CURL_OPT(INTERFACE, NULL);
+		HTTP_CURL_OPT(PORT, 0);
+		HTTP_CURL_OPT(USERPWD, NULL);
+		HTTP_CURL_OPT(HTTPAUTH, 0);
+		HTTP_CURL_OPT(ENCODING, 0);
+		HTTP_CURL_OPT(FOLLOWLOCATION, 0);
+		HTTP_CURL_OPT(UNRESTRICTED_AUTH, 0);
+		HTTP_CURL_OPT(REFERER, NULL);
+		HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
+		HTTP_CURL_OPT(HTTPHEADER, NULL);
+		HTTP_CURL_OPT(COOKIE, NULL);
+		HTTP_CURL_OPT(COOKIEFILE, NULL);
+		HTTP_CURL_OPT(COOKIEJAR, NULL);
+		HTTP_CURL_OPT(RESUME_FROM, 0);
+		HTTP_CURL_OPT(MAXFILESIZE, 0);
+		HTTP_CURL_OPT(TIMECONDITION, 0);
+		HTTP_CURL_OPT(TIMEVALUE, 0);
+		HTTP_CURL_OPT(TIMEOUT, 0);
+		HTTP_CURL_OPT(CONNECTTIMEOUT, 3);
+		HTTP_CURL_OPT(SSLCERT, NULL);
+		HTTP_CURL_OPT(SSLCERTTYPE, NULL);
+		HTTP_CURL_OPT(SSLCERTPASSWD, NULL);
+		HTTP_CURL_OPT(SSLKEY, NULL);
+		HTTP_CURL_OPT(SSLKEYTYPE, NULL);
+		HTTP_CURL_OPT(SSLKEYPASSWD, NULL);
+		HTTP_CURL_OPT(SSLENGINE, NULL);
+		HTTP_CURL_OPT(SSLVERSION, 0);
+		HTTP_CURL_OPT(SSL_VERIFYPEER, 0);
+		HTTP_CURL_OPT(SSL_VERIFYHOST, 0);
+		HTTP_CURL_OPT(SSL_CIPHER_LIST, NULL);
+		HTTP_CURL_OPT(CAINFO, NULL);
+		HTTP_CURL_OPT(CAPATH, NULL);
+		HTTP_CURL_OPT(RANDOM_FILE, NULL);
+		HTTP_CURL_OPT(EGDSOCKET, NULL);
+		HTTP_CURL_OPT(POSTFIELDS, NULL);
+		HTTP_CURL_OPT(POSTFIELDSIZE, 0);
+		HTTP_CURL_OPT(HTTPPOST, NULL);
+		HTTP_CURL_OPT(IOCTLDATA, NULL);
+		HTTP_CURL_OPT(READDATA, NULL);
+		HTTP_CURL_OPT(INFILESIZE, 0);
+	}
+}
+/* }}} */
+
+/* {{{ STATUS http_request_prepare(http_request *, HashTable *) */
 PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *options)
 {
 	zval *zoption;
@@ -342,9 +362,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	
 	HTTP_CHECK_CURL_INIT(request->ch, curl_easy_init(), return FAILURE);
 	
+	http_request_defaults(request);
+	
 	/* set options */
 	HTTP_CURL_OPT(DEBUGDATA, request);
 	HTTP_CURL_OPT(URL, request->url);
+	HTTP_CURL_OPT(PRIVATE, request->url);
 
 	/* progress callback * /
 	if ((zoption = http_request_option(request, options, "onprogress", 0))) {
@@ -627,6 +650,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 }
 /* }}} */
 
+/* {{{ void http_request_exec(http_request *) */
 PHP_HTTP_API void _http_request_exec(http_request *request)
 {
 	CURLcode result;
@@ -636,8 +660,9 @@ PHP_HTTP_API void _http_request_exec(http_request *request)
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s (%s)", curl_easy_strerror(result), request->url);
 	}
 }
+/* }}} */
 
-/* {{{ void http_request_info(CURL *, HashTable *) */
+/* {{{ void http_request_info(http_request *, HashTable *) */
 PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 {
 	zval array;

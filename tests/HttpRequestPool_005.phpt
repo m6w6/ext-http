@@ -39,8 +39,8 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-int(1)
 int(2)
+int(4)
 int(1)
 int(2)
 Done

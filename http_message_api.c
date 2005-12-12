@@ -131,6 +131,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 	zend_bool free_msg = msg ? 0 : 1;
 
 	if ((!message) || (message_length < HTTP_MSG_MIN_SIZE)) {
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Empty or too short HTTP message: '%s'", message);
 		return NULL;
 	}
 
@@ -140,9 +141,10 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		if (free_msg) {
 			http_message_free(&msg);
 		}
+		http_error(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Failed to parse message headers");
 		return NULL;
 	}
-
+	
 	/* header parsing stops at (CR)LF (CR)LF */
 	if ((body = http_locate_body(message))) {
 		zval *c;

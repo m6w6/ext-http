@@ -33,7 +33,7 @@ Array
 (
     [effective_url] => http://www.google.com/
     [response_code] => %d
-    [http_connectcode] => %d
+    [connect_code] => %d
     [filetime] => %s
     [total_time] => %f
     [namelookup_time] => %f
@@ -49,11 +49,14 @@ Array
     [header_size] => %d
     [request_size] => %d
     [ssl_verifyresult] => %d
+    [ssl_engines] => Array%s
     [content_length_download] => %d
     [content_length_upload] => %d
     [content_type] => %s
     [httpauth_avail] => %d
     [proxyauth_avail] => %s
+    [num_connects] => %d
+    [cookies] => Array%s
 )
 Array
 (

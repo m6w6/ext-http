@@ -71,7 +71,7 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 	} else if (purl->scheme) {
 		furl.scheme = purl->scheme;
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
-	} else if (port && (se = getservbyport(htons(port), "tcp"))) {
+	} else if (port && (se = getservbyport(htons((short) port), "tcp"))) {
 		furl.scheme = (scheme = estrdup(se->s_name));
 #endif
 	} else {
@@ -136,12 +136,13 @@ PHP_HTTP_API char *_http_absolute_url_ex(
 
 	HTTP_URI_STRLCATL(URL, full_len, furl.host);
 
-	if ((	(!strcmp(furl.scheme, "http") && (furl.port != 80)) ||
+	if (furl.port && (
+			(!strcmp(furl.scheme, "http") && (furl.port != 80)) ||
 			(!strcmp(furl.scheme, "https") && (furl.port != 443))
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
-		||	((!(se = getservbyname(furl.scheme, "tcp"))) || (ntohs(se->s_port) != furl.port))
+			|| ((!(se = getservbyname(furl.scheme, "tcp"))) || (ntohs(se->s_port) != furl.port))
 #endif
-		) && furl.port) {
+	)) {
 		char port_string[8] = {0};
 		snprintf(port_string, 7, ":%u", furl.port);
 		HTTP_URI_STRLCATL(URL, full_len, port_string);

@@ -74,6 +74,8 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 		
 		/* reached the end */
 		if (!chunk_len) {
+			/* move over '0' chunked encoding terminator */
+			while (*e_ptr == '0') ++e_ptr;
 			break;
 		}
 

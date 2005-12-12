@@ -13,7 +13,7 @@ $message =
 "Transfer-Encoding: identity\n".
 "Content-Length: 3\n".
 "Content-Type: text/plain\n\n".
-"Hi!foo";
+"Hi!\n\n\n\n";
 
 print_r(http_parse_message($message));
 
