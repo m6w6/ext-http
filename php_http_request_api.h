@@ -35,13 +35,13 @@ typedef struct {
 		phpstr response;
 	} conv;
 	
-	HashTable info;
-	
 	struct {
 		phpstr cookies;
 		HashTable options;
 		struct curl_slist *headers;
 	} _cache;
+	
+	zval *_progress_callback;
 
 #ifdef ZTS
 	void ***tsrm_ls;
@@ -72,7 +72,10 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 PHP_HTTP_API void _http_request_exec(http_request *request);
 
 #define http_request_info(r, i) _http_request_info((r), (i))
-PHP_HTTP_API void _http_request_info(r, i);
+PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info);
+
+#define http_request_set_progress_callback(r, cb) _http_request_set_progress_callback((r), (cb))
+PHP_HTTP_API void _http_request_set_progress_callback(http_request *request, zval *cb);
 
 #endif
 #endif

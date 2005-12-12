@@ -219,9 +219,6 @@ PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch
 	
 	phpstr_init(&r->conv.request);
 	phpstr_init_ex(&r->conv.response, HTTP_CURLBUF_SIZE, 0);
-	
-	zend_hash_init(&r->info, 0, NULL, ZVAL_PTR_DTOR, 0);
-	
 	phpstr_init(&r->_cache.cookies);
 	zend_hash_init(&r->_cache.options, 0, NULL, ZVAL_PTR_DTOR, 0);
 	
@@ -248,13 +245,15 @@ PHP_HTTP_API void _http_request_dtor(http_request *request)
 	
 	http_request_reset(request);
 	
-	zend_hash_destroy(&request->info);
-	
 	phpstr_dtor(&request->_cache.cookies);
 	zend_hash_destroy(&request->_cache.options);
 	if (request->_cache.headers) {
 		curl_slist_free_all(request->_cache.headers);
 		request->_cache.headers = NULL;
+	}
+	if (request->_progress_callback) {
+		zval_ptr_dtor(&request->_progress_callback);
+		request->_progress_callback = NULL;
 	}
 }
 /* }}} */
@@ -302,6 +301,7 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(READFUNCTION, http_curl_read_callback);
 		HTTP_CURL_OPT(IOCTLFUNCTION, http_curl_ioctl_callback);
 		HTTP_CURL_OPT(WRITEFUNCTION, http_curl_dummy_callback);
+		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
 		HTTP_CURL_OPT(URL, NULL);
 		HTTP_CURL_OPT(NOPROGRESS, 1);
 		HTTP_CURL_OPT(PROXY, NULL);
@@ -352,6 +352,19 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 }
 /* }}} */
 
+PHP_HTTP_API void _http_request_set_progress_callback(http_request *request, zval *cb)
+{
+	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
+	
+	if (request->_progress_callback) {
+		zval_ptr_dtor(&request->_progress_callback);
+	}
+	if (cb) {
+		ZVAL_ADDREF(cb);
+	}
+	request->_progress_callback = cb;
+}
+
 /* {{{ STATUS http_request_prepare(http_request *, HashTable *) */
 PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *options)
 {
@@ -369,11 +382,11 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	HTTP_CURL_OPT(URL, request->url);
 	HTTP_CURL_OPT(PRIVATE, request->url);
 
-	/* progress callback * /
+	/* progress callback */
 	if ((zoption = http_request_option(request, options, "onprogress", 0))) {
 		HTTP_CURL_OPT(NOPROGRESS, 0);
-		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
-		HTTP_CURL_OPT(PROGRESSDATA,  http_request_callback_data(zoption));
+		HTTP_CURL_OPT(PROGRESSDATA, request);
+		http_request_set_progress_callback(request, zoption);
 	}
 
 	/* proxy */
@@ -666,7 +679,7 @@ PHP_HTTP_API void _http_request_exec(http_request *request)
 PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 {
 	zval array;
-	INIT_ZARR(array, &request->info);
+	INIT_ZARR(array, info);
 
 	HTTP_CURL_INFO(EFFECTIVE_URL);
 	HTTP_CURL_INFO(RESPONSE_CODE);
@@ -698,10 +711,6 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 #if LIBCURL_VERSION_NUM >= 0x070e01
 	HTTP_CURL_INFO_EX(COOKIELIST, cookies);
 #endif
-	
-	if (info) {
-		zend_hash_copy(info, &request->info, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-	}
 }
 /* }}} */
 
@@ -718,11 +727,13 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *ct
 }
 /* }}} */
 
-/* {{{ static int http_curl_progress_callback(void *, double, double, double, double) * /
-static int http_curl_progress_callback(void *data, double dltotal, double dlnow, double ultotal, double ulnow)
+/* {{{ static int http_curl_progress_callback(void *, double, double, double, double) */
+static int http_curl_progress_callback(void *ctx, double dltotal, double dlnow, double ultotal, double ulnow)
 {
+	int rc;
 	zval *params_pass[4], params_local[4], retval;
-	HTTP_REQUEST_CALLBACK_DATA(data, zval *, func);
+	http_request *request = (http_request *) ctx;
+	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 
 	params_pass[0] = &params_local[0];
 	params_pass[1] = &params_local[1];
@@ -738,7 +749,11 @@ static int http_curl_progress_callback(void *data, double dltotal, double dlnow,
 	ZVAL_DOUBLE(params_pass[2], ultotal);
 	ZVAL_DOUBLE(params_pass[3], ulnow);
 
-	return call_user_function(EG(function_table), NULL, func, &retval, 4, params_pass TSRMLS_CC);
+	INIT_PZVAL(&retval);
+	ZVAL_NULL(&retval);
+	rc = call_user_function(EG(function_table), NULL, request->_progress_callback, &retval, 4, params_pass TSRMLS_CC);
+	zval_dtor(&retval);
+	return rc;
 }
 /* }}} */
 
