@@ -26,8 +26,9 @@ typedef struct {
 	size_t size;
 } http_request_body;
 
-#define http_request_body_new() _http_request_body_new(TSRMLS_C ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
-PHP_HTTP_API http_request_body *_http_request_body_new(TSRMLS_D ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC);
+
+PHP_HTTP_API http_request_body *_http_request_body_new(ZEND_FILE_LINE_D ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
+#define http_request_body_new() _http_request_body_new(ZEND_FILE_LINE_C ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 
 #define http_request_body_fill(b, fields, files) _http_request_body_fill((b), (fields), (files) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files TSRMLS_DC);
