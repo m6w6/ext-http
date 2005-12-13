@@ -21,17 +21,20 @@
 #define HTTP_REQUEST_BODY_CURLPOST		2
 #define HTTP_REQUEST_BODY_UPLOADFILE	3
 typedef struct {
-	int type;
+	uint type:31;
+	uint free:1;
 	void *data;
 	size_t size;
 } http_request_body;
 
 
-PHP_HTTP_API http_request_body *_http_request_body_new(ZEND_FILE_LINE_D ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
-#define http_request_body_new() _http_request_body_new(ZEND_FILE_LINE_C ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+#define http_request_body_new() http_request_body_init(NULL)
+#define http_request_body_init(b) http_request_body_init_ex((b), 0, NULL, 0, 0)
+#define http_request_body_init_ex(b, t, d, l, f) _http_request_body_init_ex((b), (t), (d), (l), (f) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API http_request_body *_http_request_body_init_ex(http_request_body *body, int type, void *data, size_t len, zend_bool free ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
 
-#define http_request_body_fill(b, fields, files) _http_request_body_fill((b), (fields), (files) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files TSRMLS_DC);
+#define http_request_body_fill(b, fields, files) _http_request_body_fill((b), (fields), (files) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
 
 #define http_request_body_dtor(b) _http_request_body_dtor((b) TSRMLS_CC)
 PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC);

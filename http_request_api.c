@@ -202,14 +202,14 @@ static curlioerr http_curl_ioctl_callback(CURL *, curliocmd, void *);
 /* }}} */
 
 /* {{{ http_request *http_request_init(http_request *) */
-PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch, http_request_method meth, const char *url TSRMLS_DC)
+PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch, http_request_method meth, const char *url ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	http_request *r;
 	
 	if (request) {
 		r = request;
 	} else {
-		r = emalloc(sizeof(http_request));
+		r = emalloc_rel(sizeof(http_request));
 	}
 	memset(r, 0, sizeof(http_request));
 	
@@ -222,7 +222,7 @@ PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch
 	phpstr_init(&r->_cache.cookies);
 	zend_hash_init(&r->_cache.options, 0, NULL, ZVAL_PTR_DTOR, 0);
 	
-	TSRMLS_SET_CTX(request->tsrm_ls);
+	TSRMLS_SET_CTX(r->tsrm_ls);
 	
 	return r;
 }
@@ -263,6 +263,7 @@ PHP_HTTP_API void _http_request_free(http_request **request)
 {
 	if (*request) {
 		TSRMLS_FETCH_FROM_CTX((*request)->tsrm_ls);
+		http_request_body_free(&(*request)->body);
 		http_request_dtor(*request);
 		efree(*request);
 		*request = NULL;
@@ -278,7 +279,7 @@ PHP_HTTP_API void _http_request_reset(http_request *request)
 	request->conv.last_type = 0;
 	phpstr_dtor(&request->conv.request);
 	phpstr_dtor(&request->conv.response);
-	http_request_body_free(&request->body);
+	http_request_body_dtor(request->body);
 }
 /* }}} */
 

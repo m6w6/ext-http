@@ -84,10 +84,10 @@ static inline void _http_message_init_type(http_message *message, http_message_t
 	}
 }
 
-PHP_HTTP_API http_message *_http_message_init_ex(http_message *message, http_message_type type)
+PHP_HTTP_API http_message *_http_message_init_ex(http_message *message, http_message_type type ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
 {
 	if (!message) {
-		message = ecalloc(1, sizeof(http_message));
+		message = ecalloc_rel(1, sizeof(http_message));
 	}
 
 	http_message_init_type(message, type);
@@ -125,7 +125,7 @@ PHP_HTTP_API void _http_message_set_type(http_message *message, http_message_typ
 	}
 }
 
-PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char *message, size_t message_length TSRMLS_DC)
+PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char *message, size_t message_length ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	const char *body = NULL;
 	zend_bool free_msg = msg ? 0 : 1;
@@ -529,14 +529,13 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 			}
 
 			if ((request.meth = http_request_method_exists(1, 0, message->http.info.request.method))) {
-				http_request_body body = {HTTP_REQUEST_BODY_CSTRING, PHPSTR_VAL(message), PHPSTR_LEN(message)};
+				http_request_body body;
 				
 				http_request_init_ex(&request, NULL, request.meth, uri);
-				request.body = &body;
+				request.body = http_request_body_init_ex(&body, HTTP_REQUEST_BODY_CSTRING, PHPSTR_VAL(message), PHPSTR_LEN(message), 0);
 				if (SUCCESS == (rs = http_request_prepare(&request, NULL))) {
 					http_request_exec(&request);
 				}
-				request.body = NULL;
 				http_request_dtor(&request);
 			} else {
 				http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD,

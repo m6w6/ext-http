@@ -88,7 +88,7 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 	} else if (SUCCESS != http_request_object_requesthandler(req, request)) {
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
 	} else {
-		CURLMcode code = curl_multi_add_handle(pool->ch, req->request.ch);
+		CURLMcode code = curl_multi_add_handle(pool->ch, req->request->ch);
 
 		if ((CURLM_OK != code) && (CURLM_CALL_MULTI_PERFORM != code)) {
 			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
@@ -125,7 +125,7 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 #endif
 	} else if (req->pool != pool) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "HttpRequest object(#%d) is not attached to this HttpRequestPool", Z_OBJ_HANDLE_P(request));
-	} else if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->request.ch))) {
+	} else if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->request->ch))) {
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
 	} else {
 		req->pool = NULL;
@@ -277,7 +277,7 @@ void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC)
 {
 	getObjectEx(http_request_object, obj, *req);
 	
-	if (obj->request.ch == ch) {
+	if (obj->request->ch == ch) {
 		
 #if HTTP_DEBUG_REQPOOLS
 		fprintf(stderr, "Fetching data from HttpRequest(#%d) %p of pool %p\n", Z_OBJ_HANDLE_PP(req), obj, obj->pool);

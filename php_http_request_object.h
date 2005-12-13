@@ -21,7 +21,7 @@
 
 typedef struct {
 	zend_object zo;
-	http_request request;
+	http_request *request;
 	http_request_pool *pool;
 	phpstr history;
 } http_request_object;

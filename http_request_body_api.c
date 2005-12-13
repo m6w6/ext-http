@@ -28,14 +28,23 @@
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
 /* {{{ http_request_body *http_request_body_new() */
-PHP_HTTP_API http_request_body *_http_request_body_new(ZEND_FILE_LINE_D ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
+PHP_HTTP_API http_request_body *_http_request_body_init_ex(http_request_body *body, int type, void *data, size_t size, zend_bool free ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
-	return (http_request_body *) ecalloc_rel(1, sizeof(http_request_body));
+	if (!body) {
+		body = emalloc_rel(sizeof(http_request_body));
+	}
+	
+	body->type = type;
+	body->free = free;
+	body->data = data;
+	body->size = size;
+	
+	return body;
 }
 /* }}} */
 
-/* {{{ STATUS http_request_body_fill(http_request_body *body, HashTable *, HashTable *) */
-PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files TSRMLS_DC)
+/* {{{ http_request_body *http_request_body_fill(http_request_body *body, HashTable *, HashTable *) */
+PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	if (files && (zend_hash_num_elements(files) > 0)) {
 		char *key = NULL;
@@ -65,7 +74,7 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 				if (CURLE_OK != err) {
 					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post fields: %s", curl_easy_strerror(err));
 					curl_formfree(http_post_data[0]);
-					return FAILURE;
+					return NULL;
 				}
 
 				/* reset */
@@ -93,14 +102,12 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 				if (CURLE_OK != err) {
 					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post files: %s", curl_easy_strerror(err));
 					curl_formfree(http_post_data[0]);
-					return FAILURE;
+					return NULL;
 				}
 			}
 		}
-
-		body->type = HTTP_REQUEST_BODY_CURLPOST;
-		body->data = http_post_data[0];
-		body->size = 0;
+		
+		return http_request_body_init_ex(body, HTTP_REQUEST_BODY_CURLPOST, http_post_data[0], 0, 1);
 
 	} else {
 		char *encoded;
@@ -108,22 +115,18 @@ PHP_HTTP_API STATUS _http_request_body_fill(http_request_body *body, HashTable *
 
 		if (SUCCESS != http_urlencode_hash_ex(fields, 1, NULL, 0, &encoded, &encoded_len)) {
 			http_error(HE_WARNING, HTTP_E_ENCODING, "Could not encode post data");
-			return FAILURE;
+			return NULL;
 		}
-
-		body->type = HTTP_REQUEST_BODY_CSTRING;
-		body->data = encoded;
-		body->size = encoded_len;
+		
+		return http_request_body_init_ex(body, HTTP_REQUEST_BODY_CSTRING, encoded, encoded_len, 1);
 	}
-
-	return SUCCESS;
 }
 /* }}} */
 
 /* {{{ void http_request_body_dtor(http_request_body *) */
 PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC)
 {
-	if (body) {
+	if (body && body->free) {
 		switch (body->type)
 		{
 			case HTTP_REQUEST_BODY_CSTRING:

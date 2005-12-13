@@ -1161,12 +1161,8 @@ PHP_FUNCTION(http_post_data)
 
 	RETVAL_FALSE;
 
-	body.type = HTTP_REQUEST_BODY_CSTRING;
-	body.data = postdata;
-	body.size = postdata_len;
-
 	http_request_init_ex(&request, NULL, HTTP_POST, URL);
-	request.body = &body;
+	request.body = http_request_body_init_ex(&body, HTTP_REQUEST_BODY_CSTRING, postdata, postdata_len, 0);
 	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
 		http_request_exec(&request);
 		if (info) {
@@ -1174,7 +1170,6 @@ PHP_FUNCTION(http_post_data)
 		}
 		RETVAL_RESPONSE_OR_BODY(request);
 	}
-	request.body = NULL;
 	http_request_dtor(&request);
 }
 /* }}} */
@@ -1200,7 +1195,7 @@ PHP_FUNCTION(http_post_fields)
 		RETURN_FALSE;
 	}
 
-	if (SUCCESS != http_request_body_fill(&body, Z_ARRVAL_P(fields), files ? Z_ARRVAL_P(files) : NULL)) {
+	if (!http_request_body_fill(&body, Z_ARRVAL_P(fields), files ? Z_ARRVAL_P(files) : NULL)) {
 		RETURN_FALSE;
 	}
 
@@ -1215,14 +1210,11 @@ PHP_FUNCTION(http_post_fields)
 	request.body = &body;
 	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
 		http_request_exec(&request);
-		http_request_body_dtor(&body);
 		if (info) {
 			http_request_info(&request, Z_ARRVAL_P(info));
 		}
 		RETVAL_RESPONSE_OR_BODY(request);
 	}
-	http_request_body_dtor(&body);
-	request.body = NULL;
 	http_request_dtor(&request);
 }
 /* }}} */
