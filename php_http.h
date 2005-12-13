@@ -151,8 +151,6 @@ PHP_FUNCTION(http_gzencode);
 PHP_FUNCTION(http_gzdecode);
 PHP_FUNCTION(http_deflate);
 PHP_FUNCTION(http_inflate);
-PHP_FUNCTION(http_compress);
-PHP_FUNCTION(http_uncompress);
 #endif
 PHP_FUNCTION(http_support);
 

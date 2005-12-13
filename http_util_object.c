@@ -85,6 +85,7 @@ HTTP_END_ARGS;
 HTTP_BEGIN_ARGS(gzEncode, 1)
 	HTTP_ARG_VAL(plain, 0)
 	HTTP_ARG_VAL(level, 0)
+	HTTP_ARG_VAL(mtime, 0)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(gzDecode, 1)
@@ -94,18 +95,10 @@ HTTP_END_ARGS;
 HTTP_BEGIN_ARGS(deflate, 1)
 	HTTP_ARG_VAL(plain, 0)
 	HTTP_ARG_VAL(level, 0)
+	HTTP_ARG_VAL(zlib_header, 0)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(inflate, 1)
-	HTTP_ARG_VAL(encoded, 0)
-HTTP_END_ARGS;
-
-HTTP_BEGIN_ARGS(compress, 1)
-	HTTP_ARG_VAL(plain, 0)
-	HTTP_ARG_VAL(level, 0)
-HTTP_END_ARGS;
-
-HTTP_BEGIN_ARGS(uncompress, 1)
 	HTTP_ARG_VAL(encoded, 0)
 HTTP_END_ARGS;
 
@@ -131,8 +124,6 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(gzDecode, http_gzdecode)
 	HTTP_UTIL_ALIAS(deflate, http_deflate)
 	HTTP_UTIL_ALIAS(inflate, http_inflate)
-	HTTP_UTIL_ALIAS(compress, http_compress)
-	HTTP_UTIL_ALIAS(uncompress, http_uncompress)
 #endif /* HTTP_HAVE_ZLIB */
 	HTTP_UTIL_ALIAS(support, http_support)
 	

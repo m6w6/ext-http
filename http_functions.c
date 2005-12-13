@@ -1495,7 +1495,7 @@ PHP_FUNCTION(http_build_query)
 /* {{{ */
 #ifdef HTTP_HAVE_ZLIB
 
-/* {{{ proto string http_gzencode(string data[, int level = -1])
+/* {{{ proto string http_gzencode(string data[, int level = -1[, int mtime = 0]])
  *
  * Compress data with the HTTP compatible GZIP encoding.
  * 
@@ -1510,17 +1510,17 @@ PHP_FUNCTION(http_gzencode)
 {
 	char *data;
 	int data_len;
-	long level = -1;
+	long level = -1, mtime = 0;
 
 	RETVAL_NULL();
 	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &data, &data_len, &level)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ll", &data, &data_len, &level, &mtime)) {
 		HTTP_CHECK_GZIP_LEVEL(level, return);
 		{
 			char *encoded;
 			size_t encoded_len;
 			
-			if (SUCCESS == http_encoding_gzencode(level, data, data_len, &encoded, &encoded_len)) {
+			if (SUCCESS == http_encoding_gzencode(level, mtime, data, data_len, &encoded, &encoded_len)) {
 				RETURN_STRINGL(encoded, (int) encoded_len, 0);
 			}
 		}
@@ -1554,7 +1554,7 @@ PHP_FUNCTION(http_gzdecode)
 }
 /* }}} */
 
-/* {{{  proto string http_deflate(string data[, int level = -1])
+/* {{{  proto string http_deflate(string data[, int level = -1[, bool zlib_header = false]])
  *
  * Compress data with the HTTP compatible DEFLATE encoding.
  * 
@@ -1570,16 +1570,17 @@ PHP_FUNCTION(http_deflate)
 	char *data;
 	int data_len;
 	long level = -1;
+	zend_bool zhdr = 0;
 	
 	RETVAL_NULL();
 	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &data, &data_len, &level)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|lb", &data, &data_len, &level, &zhdr)) {
 		HTTP_CHECK_GZIP_LEVEL(level, return);
 		{
 			char *encoded;
 			size_t encoded_len;
 			
-			if (SUCCESS == http_encoding_deflate(level, data, data_len, &encoded, &encoded_len)) {
+			if (SUCCESS == http_encoding_deflate(level, zhdr, data, data_len, &encoded, &encoded_len)) {
 				RETURN_STRINGL(encoded, (int) encoded_len, 0);
 			}
 		}
@@ -1613,64 +1614,6 @@ PHP_FUNCTION(http_inflate)
 }
 /* }}} */
 
-/* {{{ proto string http_compress(string data[, int level = -1])
- *
- * Compress data with the HTTP compatible COMPRESS encoding.
- * 
- * Expects the first parameter to be a string containing the data which should
- * be encoded.  Additionally accepts an optional int parameter specifying the
- * compression level, where -1 is default, 0 is no compression and 9 is best
- * compression ratio.
- * 
- * Returns the encoded string on success, or NULL on failure.
- */
-PHP_FUNCTION(http_compress)
-{
-	char *data;
-	int data_len;
-	long level = -1;
-	
-	RETVAL_NULL();
-	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &data, &data_len, &level)) {
-		HTTP_CHECK_GZIP_LEVEL(level, return);
-		{
-			char *encoded;
-			size_t encoded_len;
-			
-			if (SUCCESS == http_encoding_compress(level, data, data_len, &encoded, &encoded_len)) {
-				RETURN_STRINGL(encoded, (int) encoded_len, 0);
-			}
-		}
-	}
-}
-/* }}} */
-
-/* {{{ proto string http_uncompress(string data)
- *
- * Uncompress data compressed with the HTTP compatible COMPRESS encoding.
- * 
- * Expects a string as parameter containing the compressed data.
- * 
- * Returns the decoded string on success, or NULL on failure.
- */
-PHP_FUNCTION(http_uncompress)
-{
-	char *data;
-	int data_len;
-	
-	RETVAL_NULL();
-	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &data, &data_len)) {
-		char *decoded;
-		size_t decoded_len;
-		
-		if (SUCCESS == http_encoding_uncompress(data, data_len, &decoded, &decoded_len)) {
-			RETURN_STRINGL(decoded, (int) decoded_len, 0);
-		}
-	}
-}
-/* }}} */
 #endif /* HTTP_HAVE_ZLIB */
 /* }}} */
 

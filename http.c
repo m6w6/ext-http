@@ -107,8 +107,6 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_gzdecode, NULL)
 	PHP_FE(http_deflate, NULL)
 	PHP_FE(http_inflate, NULL)
-	PHP_FE(http_compress, NULL)
-	PHP_FE(http_uncompress, NULL)
 #endif
 	PHP_FE(http_support, NULL)
 	

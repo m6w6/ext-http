@@ -61,18 +61,19 @@ PHP_HTTP_API STATUS _http_encoding_stream_update(http_encoding_stream *s, const 
 #define http_encoding_stream_finish(s, e, el) _http_encoding_stream_finish((s), (e), (el) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC);
 
-#define http_encoding_gzencode(l, d, dl, r, rl) _http_encoding_gzencode((l), (d), (dl), (r), (rl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_gzencode(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
+#define http_encoding_gzencode_verify(d, dl, e, el) _http_encoding_gzencode_verify((d), (dl), (e), (el), HE_NOTICE)
+PHP_HTTP_API STATUS _http_encoding_gzencode_verify(const char *data, size_t data_len, const char **encoded, size_t *encoded_len, int error_level TSRMLS_DC);
+#define http_encoding_gzdecode_verify(e, el, d, dl) _http_encoding_gzdecode_verify((e), (el), (d), (dl), HE_NOTICE)
+PHP_HTTP_API STATUS _http_encoding_gzdecode_verify(const char *data, size_t data_len, const char *decoded, size_t decoded_len, int error_level TSRMLS_DC);
+
+#define http_encoding_gzencode(l, m, d, dl, r, rl) _http_encoding_gzencode((l), (m), (d), (dl), (r), (rl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_gzencode(int level, int mtime, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
 #define http_encoding_gzdecode(d, dl, r, rl) _http_encoding_gzdecode((d), (dl), (r), (rl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_gzdecode(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
-#define http_encoding_deflate(l, d, dl, r, rl) _http_encoding_deflate((l), (d), (dl), (r), (rl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_deflate(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
+#define http_encoding_deflate(l, h, d, dl, r, rl) _http_encoding_deflate((l), (h), (d), (dl), (r), (rl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_deflate(int level, int zhdr, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
 #define http_encoding_inflate(d, dl, r, rl) _http_encoding_inflate((d), (dl), (r), (rl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
-#define http_encoding_compress(l, d, dl, r, rl) _http_encoding_compress((l), (d), (dl), (r), (rl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_compress(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
-#define http_encoding_uncompress(d, dl, r, rl) _http_encoding_uncompress((d), (dl), (r), (rl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_uncompress(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
 #endif /* HTTP_HAVE_ZLIB */
 

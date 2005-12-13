@@ -119,106 +119,185 @@ static const char http_encoding_gzip_header[] = {
 	(const char) 0x8b,			// fixed value
 	(const char) Z_DEFLATED,	// compression algorithm
 	(const char) 0,				// none of the possible flags defined by the GZIP "RFC"
-	(const char) 0,				// no MTIME available (4 bytes)
+	(const char) 0,				// MTIME
 	(const char) 0,				// =*=
 	(const char) 0,				// =*=
 	(const char) 0,				// =*=
 	(const char) 0,				// two possible flag values for 9 compression levels? o_O
-	(const char) 0x03			// assume *nix OS
+#ifdef PHP_WIN32
+	(const char) 0x0b			// OS_CODE
+#else
+	(const char) 0x03			// OS_CODE
+#endif
 };
 
-inline void http_init_gzencode_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr)
+PHP_HTTP_API STATUS _http_encoding_gzencode(int level, int mtime, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
 {
-	Z->zalloc = Z_NULL;
-	Z->zfree  = Z_NULL;
-	Z->opaque = Z_NULL;
+	z_stream Z;
+	STATUS status = Z_OK;
 	
-	Z->next_in   = (Bytef *) data;
-	Z->avail_in  = data_len;
-	Z->avail_out = HTTP_ENCODING_BUFLEN(data_len) + HTTP_ENCODING_SAFPAD - 1;
+	if (!(data && data_len)) {
+		return FAILURE;
+	}
 	
-	*buf_ptr = emalloc(HTTP_ENCODING_BUFLEN(data_len) + sizeof(http_encoding_gzip_header) + HTTP_ENCODING_SAFPAD);
-	memcpy(*buf_ptr, http_encoding_gzip_header, sizeof(http_encoding_gzip_header));
+	Z.zalloc = Z_NULL;
+	Z.zfree  = Z_NULL;
+	Z.opaque = Z_NULL;
+	Z.next_in   = (Bytef *) data;
+	Z.avail_in  = data_len;
+	Z.avail_out = HTTP_ENCODING_BUFLEN(data_len) + HTTP_ENCODING_SAFPAD - 1;
 	
-	Z->next_out = (Bytef *) *buf_ptr + sizeof(http_encoding_gzip_header);
-}
-
-inline void http_init_deflate_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr)
-{
-	Z->zalloc = Z_NULL;
-	Z->zfree  = Z_NULL;
-	Z->opaque = Z_NULL;
-
-	Z->data_type = Z_UNKNOWN;
-	Z->next_in   = (Bytef *) data;
-	Z->avail_in  = data_len;
-	Z->avail_out = HTTP_ENCODING_BUFLEN(data_len) - 1;
-	Z->next_out  = emalloc(HTTP_ENCODING_BUFLEN(data_len));
+	*encoded = emalloc(HTTP_ENCODING_BUFLEN(data_len) + sizeof(http_encoding_gzip_header) + HTTP_ENCODING_SAFPAD);
+	memcpy(*encoded, http_encoding_gzip_header, sizeof(http_encoding_gzip_header));
 	
-	*buf_ptr = (char *) Z->next_out;
-}
-
-inline void http_init_uncompress_buffer(size_t data_len, char **buf_ptr, size_t *buf_len, int *iteration)
-{
-	if (!*iteration) {
-		*buf_len = data_len * 2;
-		*buf_ptr = emalloc(*buf_len + 1);
-	} else {
-		size_t new_len = *buf_len << 2;
-		char *new_ptr = erealloc_recoverable(*buf_ptr, new_len + 1);
+	if (mtime) {
+		(*encoded)[4] = (char) (mtime & 0xFF);
+		(*encoded)[5] = (char) ((mtime >> 8) & 0xFF);
+		(*encoded)[6] = (char) ((mtime >> 16) & 0xFF);
+		(*encoded)[7] = (char) ((mtime >> 24) & 0xFF);
+	}
+	
+	Z.next_out = (Bytef *) *encoded + sizeof(http_encoding_gzip_header);
+	
+	if (Z_OK == (status = deflateInit2(&Z, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) {
+		status = deflate(&Z, Z_FINISH);
+		deflateEnd(&Z);
 		
-		if (new_ptr) {
-			*buf_ptr = new_ptr;
-			*buf_len = new_len;
-		} else {
-			*iteration = INT_MAX-1; /* avoid integer overflow on increment op */
+		if (Z_STREAM_END == status) {
+			ulong crc;
+			char *trailer;
+			
+			crc = crc32(0L, Z_NULL, 0);
+			crc = crc32(crc, (const Bytef *) data, data_len);
+			
+			trailer = *encoded + sizeof(http_encoding_gzip_header) + Z.total_out;
+			
+			/* LSB */
+			trailer[0] = (char) (crc & 0xFF);
+			trailer[1] = (char) ((crc >> 8) & 0xFF);
+			trailer[2] = (char) ((crc >> 16) & 0xFF);
+			trailer[3] = (char) ((crc >> 24) & 0xFF);
+			trailer[4] = (char) ((Z.total_in) & 0xFF);
+			trailer[5] = (char) ((Z.total_in >> 8) & 0xFF);
+			trailer[6] = (char) ((Z.total_in >> 16) & 0xFF);
+			trailer[7] = (char) ((Z.total_in >> 24) & 0xFF);
+			
+			*encoded_len = Z.total_out + sizeof(http_encoding_gzip_header) + 8;
+			(*encoded)[*encoded_len] = '\0';
+			return SUCCESS;
 		}
 	}
+	
+	efree(*encoded);
+	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not gzencode data: %s", zError(status));
+	return FAILURE;
 }
 
-inline void http_init_inflate_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr, size_t *buf_len, int *iteration)
+PHP_HTTP_API STATUS _http_encoding_gzdecode(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
-	Z->zalloc = Z_NULL;
-	Z->zfree  = Z_NULL;
+	const char *encoded;
+	size_t encoded_len;
 	
-	http_init_uncompress_buffer(data_len, buf_ptr, buf_len, iteration);
+	if (	(data && data_len) &&
+			(SUCCESS == http_encoding_gzencode_verify(data, data_len, &encoded, &encoded_len)) &&
+			(SUCCESS == http_encoding_inflate(encoded, encoded_len, decoded, decoded_len))) {
+		http_encoding_gzdecode_verify(data, data_len, *decoded, *decoded_len);
+		return SUCCESS;
+	}
 	
-	Z->next_in   = (Bytef *) data;
-	Z->avail_in  = data_len;
-	Z->avail_out = *buf_len;
-	Z->next_out  = (Bytef *) *buf_ptr;
+	return FAILURE;
 }
 
-inline size_t http_finish_buffer(size_t buf_len, char **buf_ptr)
+PHP_HTTP_API STATUS _http_encoding_deflate(int level, int zhdr, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
 {
-	(*buf_ptr)[buf_len] = '\0';
-	return buf_len;
+	z_stream Z;
+	STATUS status = Z_OK;
+	
+	Z.zalloc = Z_NULL;
+	Z.zfree  = Z_NULL;
+	Z.opaque = Z_NULL;
+	Z.data_type = Z_UNKNOWN;
+	Z.next_in   = (Bytef *) data;
+	Z.avail_in  = data_len;
+	Z.avail_out = HTTP_ENCODING_BUFLEN(data_len) - 1;
+	Z.next_out  = emalloc(HTTP_ENCODING_BUFLEN(data_len));
+	
+	*encoded = (char *) Z.next_out;
+	
+	if (Z_OK == (status = deflateInit2(&Z, level, Z_DEFLATED, zhdr ? MAX_WBITS : -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) {
+		status = deflate(&Z, Z_FINISH);
+		deflateEnd(&Z);
+		
+		if (Z_STREAM_END == status) {
+			(*encoded)[*encoded_len = Z.total_out] = '\0';
+			return SUCCESS;
+		}
+	}
+	
+	efree(encoded);
+	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not deflate data: %s", zError(status));
+	return FAILURE;
 }
 
-inline size_t http_finish_gzencode_buffer(z_stream *Z, const char *data, size_t data_len, char **buf_ptr)
+PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
-	ulong crc;
-	char *trailer;
+	int max = 0, wbits = -MAX_WBITS;
+	STATUS status;
+	z_stream Z;
 	
-	crc = crc32(0L, Z_NULL, 0);
-	crc = crc32(crc, (const Bytef *) data, data_len);
+	*decoded = NULL;
+	*decoded_len = 0;
 	
-	trailer = *buf_ptr + sizeof(http_encoding_gzip_header) + Z->total_out;
+retry_inflate: 
+	do {
+		Z.zalloc = Z_NULL;
+		Z.zfree  = Z_NULL;
+		
+		if (!max) {
+			if (!*decoded) {
+				*decoded_len = data_len * 2;
+				*decoded = emalloc(*decoded_len + 1);
+			}
+		} else {
+			size_t new_len = *decoded_len << 2;
+			char *new_ptr = erealloc_recoverable(*decoded, new_len + 1);
+			
+			if (new_ptr) {
+				*decoded = new_ptr;
+				*decoded_len = new_len;
+			} else {
+				max = INT_MAX-1; /* avoid integer overflow on increment op */
+			}
+		}
+		
+		Z.next_in   = (Bytef *) data;
+		Z.avail_in  = data_len;
+		Z.next_out  = (Bytef *) *decoded;
+		Z.avail_out = *decoded_len;
+		
+		if (Z_OK == (status = inflateInit2(&Z, wbits))) {
+			status = inflate(&Z, Z_FINISH);
+			inflateEnd(&Z);
+			
+			/* retry if it looks like we've got a zlib header */
+			if (wbits == -MAX_WBITS && status == Z_DATA_ERROR) {
+				wbits = MAX_WBITS;
+				goto retry_inflate;
+			}
+			
+			if (Z_STREAM_END == status) {
+				(*decoded)[*decoded_len = Z.total_out] = '\0';
+				return SUCCESS;
+			}
+		}
+	} while (status == Z_BUF_ERROR && ++max < HTTP_ENCODING_MAXTRY);
 	
-	/* LSB */
-	trailer[0] = (char) (crc & 0xFF);
-	trailer[1] = (char) ((crc >> 8) & 0xFF);
-	trailer[2] = (char) ((crc >> 16) & 0xFF);
-	trailer[3] = (char) ((crc >> 24) & 0xFF);
-	trailer[4] = (char) ((Z->total_in) & 0xFF);
-	trailer[5] = (char) ((Z->total_in >> 8) & 0xFF);
-	trailer[6] = (char) ((Z->total_in >> 16) & 0xFF);
-	trailer[7] = (char) ((Z->total_in >> 24) & 0xFF);
-	
-	return http_finish_buffer(Z->total_out + sizeof(http_encoding_gzip_header) + 8, buf_ptr);
+	efree(*decoded);
+	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s", zError(status));
+	return FAILURE;
 }
 
-inline STATUS http_verify_gzencode_buffer(const char *data, size_t data_len, const char **encoded, size_t *encoded_len, int error_level TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_gzencode_verify(const char *data, size_t data_len, const char **encoded, size_t *encoded_len, int error_level TSRMLS_DC)
 {
 	size_t offset = sizeof(http_encoding_gzip_header);
 	
@@ -299,7 +378,7 @@ really_bad_gzip_header:
 	return FAILURE;
 }
 
-inline STATUS http_verify_gzdecode_buffer(const char *data, size_t data_len, const char *decoded, size_t decoded_len, int error_level TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_gzdecode_verify(const char *data, size_t data_len, const char *decoded, size_t decoded_len, int error_level TSRMLS_DC)
 {
 	STATUS status = SUCCESS;
 	ulong len, cmp, crc;
@@ -325,187 +404,6 @@ inline STATUS http_verify_gzdecode_buffer(const char *data, size_t data_len, con
 		status = FAILURE;
 	}
 	return status;
-}
-
-PHP_HTTP_API STATUS _http_encode(http_encoding_type type, int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
-{
-	STATUS status = SUCCESS;
-	
-	switch (type)
-	{
-		case HTTP_ENCODING_ANY:
-		case HTTP_ENCODING_GZIP:
-			status = http_encoding_gzencode(level, data, data_len, encoded, encoded_len);
-		break;
-		
-		case HTTP_ENCODING_DEFLATE:
-			status = http_encoding_deflate(level, data, data_len, encoded, encoded_len);
-		break;
-		
-		case HTTP_ENCODING_COMPRESS:
-			status = http_encoding_compress(level, data, data_len, encoded, encoded_len);
-		break;
-		
-		case HTTP_ENCODING_NONE:
-		default:
-			*encoded = estrndup(data, data_len);
-			*encoded_len = data_len;
-		break;
-	}
-	
-	return status;
-}
-
-PHP_HTTP_API STATUS _http_decode(http_encoding_type type, const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
-{
-	STATUS status = SUCCESS;
-	
-	switch (type)
-	{
-		case HTTP_ENCODING_ANY:
-			if (	SUCCESS != http_encoding_gzdecode(data, data_len, decoded, decoded_len) &&
-					SUCCESS != http_encoding_inflate(data, data_len, decoded, decoded_len) &&
-					SUCCESS != http_encoding_uncompress(data, data_len, decoded, decoded_len)) {
-				status = FAILURE;
-			}
-		break;
-		
-		case HTTP_ENCODING_GZIP:
-			status = http_encoding_gzdecode(data, data_len, decoded, decoded_len);
-		break;
-		
-		case HTTP_ENCODING_DEFLATE:
-			status = http_encoding_inflate(data, data_len, decoded, decoded_len);
-		break;
-		
-		case HTTP_ENCODING_COMPRESS:
-			status = http_encoding_uncompress(data, data_len, decoded, decoded_len);
-		break;
-		
-		case HTTP_ENCODING_NONE:
-		default:
-			*decoded = estrndup(data, data_len);
-			*decoded_len = data_len;
-		break;
-	}
-	
-	return status;
-}
-
-PHP_HTTP_API STATUS _http_encoding_gzencode(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
-{
-	z_stream Z;
-	STATUS status = Z_OK;
-	
-	http_init_gzencode_buffer(&Z, data, data_len, encoded);
-	
-	if (Z_OK == (status = deflateInit2(&Z, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) {
-		status = deflate(&Z, Z_FINISH);
-		deflateEnd(&Z);
-		
-		if (Z_STREAM_END == status) {
-			*encoded_len = http_finish_gzencode_buffer(&Z, data, data_len, encoded);
-			return SUCCESS;
-		}
-	}
-	
-	efree(*encoded);
-	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not gzencode data: %s", zError(status));
-	return FAILURE;
-}
-
-PHP_HTTP_API STATUS _http_encoding_deflate(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
-{
-	z_stream Z;
-	STATUS status = Z_OK;
-	
-	http_init_deflate_buffer(&Z, data, data_len, encoded);
-	
-	if (Z_OK == (status = deflateInit2(&Z, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) {
-		status = deflate(&Z, Z_FINISH);
-		deflateEnd(&Z);
-		
-		if (Z_STREAM_END == status) {
-			*encoded_len = http_finish_buffer(Z.total_out, encoded);
-			return SUCCESS;
-		}
-	}
-	
-	efree(encoded);
-	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not deflate data: %s", zError(status));
-	return FAILURE;
-}
-
-PHP_HTTP_API STATUS _http_encoding_compress(int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
-{
-	STATUS status;
-	
-	*encoded = emalloc(*encoded_len = HTTP_ENCODING_BUFLEN(data_len));
-	
-	if (Z_OK == (status = compress2((Bytef *) *encoded, (uLongf *) encoded_len, (const Bytef *) data, data_len, level))) {
-		http_finish_buffer(*encoded_len, encoded);
-		return SUCCESS;
-	}
-	
-	efree(encoded);
-	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not compress data: %s", zError(status));
-	return FAILURE;
-}
-
-PHP_HTTP_API STATUS _http_encoding_gzdecode(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
-{
-	const char *encoded;
-	size_t encoded_len;
-	
-	if (	(SUCCESS == http_verify_gzencode_buffer(data, data_len, &encoded, &encoded_len, HE_NOTICE)) &&
-			(SUCCESS == http_encoding_inflate(encoded, encoded_len, decoded, decoded_len))) {
-		http_verify_gzdecode_buffer(data, data_len, *decoded, *decoded_len, HE_NOTICE);
-		return SUCCESS;
-	}
-	
-	return FAILURE;
-}
-
-PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
-{
-	int max = 0;
-	STATUS status;
-	z_stream Z;
-	
-	do {
-		http_init_inflate_buffer(&Z, data, data_len, decoded, decoded_len, &max);
-		if (Z_OK == (status = inflateInit2(&Z, -MAX_WBITS))) {
-			status = inflate(&Z, Z_FINISH);
-			inflateEnd(&Z);
-			
-			if (Z_STREAM_END == status) {
-				*decoded_len = http_finish_buffer(Z.total_out, decoded);
-				return SUCCESS;
-			}
-		}
-	} while (++max < HTTP_ENCODING_MAXTRY && status == Z_BUF_ERROR);
-	
-	efree(*decoded);
-	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s", zError(status));
-	return FAILURE;
-}
-
-PHP_HTTP_API STATUS _http_encoding_uncompress(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
-{
-	int max = 0;
-	STATUS status;
-	
-	do {
-		http_init_uncompress_buffer(data_len, decoded, decoded_len, &max);
-		if (Z_OK == (status = uncompress((Bytef *) *decoded, (uLongf *) decoded_len, (const Bytef *) data, data_len))) {
-			http_finish_buffer(*decoded_len, decoded);
-			return SUCCESS;
-		}
-	} while (++max < HTTP_ENCODING_MAXTRY && status == Z_BUF_ERROR);
-	
-	efree(*decoded);
-	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not uncompress data: %s", zError(status));
-	return FAILURE;
 }
 
 #define HTTP_ENCODING_STREAM_ERROR(status, tofree) \

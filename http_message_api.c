@@ -250,22 +250,12 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				}
 
 			if (!strcasecmp(Z_STRVAL_P(c), "gzip") || !strcasecmp(Z_STRVAL_P(c), "x-gzip")) {
-#	ifdef HTTP_HAVE_ZLIB
-				http_encoding_gzdecode(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
-#	else
+#	ifndef HTTP_HAVE_ZLIB
 				DECODE_WITH_EXT_ZLIB("gzinflate", PHPSTR_VAL(msg) + 10, PHPSTR_LEN(msg) - 18);
-#	endif /* HTTP_HAVE_ZLIB */
-			} else if (!strcasecmp(Z_STRVAL_P(c), "deflate")) {
-#	ifdef HTTP_HAVE_ZLIB
+#	else
+				http_encoding_gzdecode(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
+			} else if (!strcasecmp(Z_STRVAL_P(c), "deflate") || !strcasecmp(Z_STRVAL_P(c), "compress") || !strcasecmp(Z_STRVAL_P(c), "x-compress")) {
 				http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
-#	else
-				DECODE_WITH_EXT_ZLIB("gzinflate", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
-#	endif /* HTTP_HAVE_ZLIB */
-			} else if (!strcasecmp(Z_STRVAL_P(c), "compress") || !strcasecmp(Z_STRVAL_P(c), "x-compress")) {
-#	ifdef HTTP_HAVE_ZLIB
-				http_encoding_uncompress(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
-#	else
-				DECODE_WITH_EXT_ZLIB("gzuncompress", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
 #	endif /* HTTP_HAVE_ZLIB */
 			}
 			

@@ -35,8 +35,6 @@ PHP_METHOD(HttpUtil, gzEncode);
 PHP_METHOD(HttpUtil, gzDecode);
 PHP_METHOD(HttpUtil, deflate);
 PHP_METHOD(HttpUtil, inflate);
-PHP_METHOD(HttpUtil, compress);
-PHP_METHOD(HttpUtil, uncompress);
 PHP_METHOD(HttpUtil, support);
 
 #endif
