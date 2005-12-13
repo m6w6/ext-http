@@ -31,6 +31,7 @@ typedef struct {
 #define http_request_body_new() http_request_body_init(NULL)
 #define http_request_body_init(b) http_request_body_init_ex((b), 0, NULL, 0, 0)
 #define http_request_body_init_ex(b, t, d, l, f) _http_request_body_init_ex((b), (t), (d), (l), (f) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+#define http_request_body_init_rel(b, t, d, l, f) _http_request_body_init_ex((b), (t), (d), (l), (f) ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC TSRMLS_CC)
 PHP_HTTP_API http_request_body *_http_request_body_init_ex(http_request_body *body, int type, void *data, size_t len, zend_bool free ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
 
 #define http_request_body_fill(b, fields, files) _http_request_body_fill((b), (fields), (files) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)

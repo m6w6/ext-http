@@ -135,7 +135,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		return NULL;
 	}
 
-	msg = http_message_init(msg);
+	msg = http_message_init_rel(msg, 0);
 
 	if (SUCCESS != http_parse_headers_cb(message, &msg->hdrs, 1, (http_info_callback) http_message_info_callback, (void **) &msg)) {
 		if (free_msg) {
@@ -304,7 +304,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				http_message *next = NULL, *most = NULL;
 
 				/* set current message to parent of most parent following messages and return deepest */
-				if ((most = next = http_message_parse(continue_at, message + message_length - continue_at))) {
+				if ((most = next = http_message_parse_rel(NULL, continue_at, message + message_length - continue_at))) {
 					while (most->parent) most = most->parent;
 					most->parent = msg;
 					msg = next;

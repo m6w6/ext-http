@@ -107,7 +107,7 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 			}
 		}
 		
-		return http_request_body_init_ex(body, HTTP_REQUEST_BODY_CURLPOST, http_post_data[0], 0, 1);
+		return http_request_body_init_rel(body, HTTP_REQUEST_BODY_CURLPOST, http_post_data[0], 0, 1);
 
 	} else {
 		char *encoded;
@@ -118,7 +118,7 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 			return NULL;
 		}
 		
-		return http_request_body_init_ex(body, HTTP_REQUEST_BODY_CSTRING, encoded, encoded_len, 1);
+		return http_request_body_init_rel(body, HTTP_REQUEST_BODY_CSTRING, encoded, encoded_len, 1);
 	}
 }
 /* }}} */

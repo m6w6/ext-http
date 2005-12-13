@@ -42,6 +42,7 @@ struct _http_message {
 #define http_message_new() http_message_init_ex(NULL, 0)
 #define http_message_init(m) http_message_init_ex((m), 0)
 #define http_message_init_ex(m, t) _http_message_init_ex((m), (t) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+#define http_message_init_rel(m, t) _http_message_init_ex((m), (t) ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC)
 PHP_HTTP_API http_message *_http_message_init_ex(http_message *m, http_message_type t ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC);
 
 #define http_message_set_type(m, t) _http_message_set_type((m), (t))
@@ -60,6 +61,7 @@ static inline zval *_http_message_header_ex(http_message *msg, char *key_str, si
 
 #define http_message_parse(m, l) http_message_parse_ex(NULL, (m), (l))
 #define http_message_parse_ex(h, m, l) _http_message_parse_ex((h), (m), (l) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+#define http_message_parse_rel(h, m, l) _http_message_parse_ex((h), (m), (l) ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC TSRMLS_CC)
 PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char *message, size_t length ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
 
 #define http_message_tostring(m, s, l) _http_message_tostring((m), (s), (l))
