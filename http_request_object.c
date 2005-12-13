@@ -348,7 +348,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP_N(PROTECTED, options);
 	DCL_PROP_N(PROTECTED, responseInfo);
 	DCL_PROP_N(PROTECTED, responseData);
-	DCL_PROP_N(PROTECTED, responseCode);
+	DCL_PROP(PROTECTED, long, responseCode, 0);
 	DCL_PROP_N(PROTECTED, responseMessage);
 	DCL_PROP_N(PROTECTED, postFields);
 	DCL_PROP_N(PROTECTED, postFiles);
@@ -601,7 +601,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 
 		UPD_PROP(obj, long, responseCode, msg->http.info.response.code);
 
-		MAKE_STD_ZVAL(headers)
+		MAKE_STD_ZVAL(headers);
 		array_init(headers);
 
 		zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
