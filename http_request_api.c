@@ -831,9 +831,17 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 static inline zval *_http_request_option_ex(http_request *r, HashTable *options, char *key, size_t keylen, int type TSRMLS_DC)
 {
 	zval **zoption;
+#ifdef ZEND_ENGINE_2
 	ulong h = zend_get_hash_value(key, keylen);
-
-	if (!options || (SUCCESS != zend_hash_quick_find(options, key, keylen, h, (void **) &zoption))) {
+#endif
+	
+	if (!options || 
+#ifdef ZEND_ENGINE_2
+			(SUCCESS != zend_hash_quick_find(options, key, keylen, h, (void **) &zoption))
+#else
+			(SUCCESS != zend_hash_find(options, key, keylen, (void **) &zoption))
+#endif
+	) {
 		return NULL;
 	}
 
@@ -852,9 +860,14 @@ static inline zval *_http_request_option_ex(http_request *r, HashTable *options,
 	}
 	
 	ZVAL_ADDREF(*zoption);
+#ifdef ZEND_ENGINE_2
 	_zend_hash_quick_add_or_update(&r->_cache.options, key, keylen, h, zoption, sizeof(zval *), NULL, 
 		zend_hash_quick_exists(&r->_cache.options, key, keylen, h)?HASH_UPDATE:HASH_ADD ZEND_FILE_LINE_CC);
-
+#else
+	zend_hash_add_or_update(&r->_cache.options, key, keylen, zoption, sizeof(zval *), NULL,
+		zend_hash_exists(&r->_cache.options, key, keylen)?HASH_UPDATE:HASH_ADD);
+#endif
+	
 	return *zoption;
 }
 /* }}} */
