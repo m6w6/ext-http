@@ -315,7 +315,7 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(PORT, 0);
 		HTTP_CURL_OPT(USERPWD, NULL);
 		HTTP_CURL_OPT(HTTPAUTH, 0);
-		HTTP_CURL_OPT(ENCODING, 0);
+		HTTP_CURL_OPT(ENCODING, NULL);
 		HTTP_CURL_OPT(FOLLOWLOCATION, 0);
 		HTTP_CURL_OPT(UNRESTRICTED_AUTH, 0);
 		HTTP_CURL_OPT(REFERER, NULL);
@@ -351,9 +351,6 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(IOCTLDATA, NULL);
 		HTTP_CURL_OPT(READDATA, NULL);
 		HTTP_CURL_OPT(INFILESIZE, 0);
-#if 0
-		HTTP_CURL_OPT(IGNORE_CONTENT_ENCODING, 1);
-#endif
 	}
 }
 /* }}} */
@@ -430,15 +427,6 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		HTTP_CURL_OPT(HTTPAUTH, Z_LVAL_P(zoption));
 	}
 
-	/* compress, empty string enables all supported if libcurl was build with zlib support */
-	if ((zoption = http_request_option(request, options, "compress", IS_BOOL)) && Z_LVAL_P(zoption)) {
-#ifdef HTTP_HAVE_CURL_ZLIB
-		HTTP_CURL_OPT(ENCODING, "gzip, deflate");
-#else
-		HTTP_CURL_OPT(ENCODING, "gzip;q=1.0, deflate;q=0.5, *;q=0.1");
-#endif
-	}
-
 	/* redirects, defaults to 0 */
 	if ((zoption = http_request_option(request, options, "redirect", IS_LONG))) {
 		HTTP_CURL_OPT(FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
@@ -459,16 +447,15 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	}
 
 	/* additional headers, array('name' => 'value') */
+	if (request->_cache.headers) {
+		curl_slist_free_all(request->_cache.headers);
+		request->_cache.headers = NULL;
+	}
 	if ((zoption = http_request_option(request, options, "headers", IS_ARRAY))) {
 		char *header_key;
 		ulong header_idx;
 		HashPosition pos;
 
-		if (request->_cache.headers) {
-			curl_slist_free_all(request->_cache.headers);
-			request->_cache.headers = NULL;
-		}
-		
 		FOREACH_KEY(pos, zoption, header_key, header_idx) {
 			if (header_key) {
 				zval **header_val;
@@ -489,6 +476,10 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			}
 		}
 	}
+	if ((zoption = http_request_option(request, options, "compress", IS_BOOL)) && Z_LVAL_P(zoption)) {
+		request->_cache.headers = curl_slist_append(request->_cache.headers, "Accept-Encoding: gzip;q=1.0,deflate;q=0.5,*;q=0.1");
+	}
+	HTTP_CURL_OPT(HTTPHEADER, request->_cache.headers);
 
 	/* cookies, array('name' => 'value') */
 	if ((zoption = http_request_option(request, options, "cookies", IS_ARRAY))) {
@@ -863,14 +854,17 @@ static inline zval *_http_request_option_ex(http_request *r, HashTable *options,
 		}
 	}
 	
-	ZVAL_ADDREF(*zoption);
+	/* cache strings */
+	if (type == IS_STRING) {
+		ZVAL_ADDREF(*zoption);
 #ifdef ZEND_ENGINE_2
-	_zend_hash_quick_add_or_update(&r->_cache.options, key, keylen, h, zoption, sizeof(zval *), NULL, 
-		zend_hash_quick_exists(&r->_cache.options, key, keylen, h)?HASH_UPDATE:HASH_ADD ZEND_FILE_LINE_CC);
+		_zend_hash_quick_add_or_update(&r->_cache.options, key, keylen, h, zoption, sizeof(zval *), NULL, 
+			zend_hash_quick_exists(&r->_cache.options, key, keylen, h)?HASH_UPDATE:HASH_ADD ZEND_FILE_LINE_CC);
 #else
-	zend_hash_add_or_update(&r->_cache.options, key, keylen, zoption, sizeof(zval *), NULL,
-		zend_hash_exists(&r->_cache.options, key, keylen)?HASH_UPDATE:HASH_ADD);
+		zend_hash_add_or_update(&r->_cache.options, key, keylen, zoption, sizeof(zval *), NULL,
+			zend_hash_exists(&r->_cache.options, key, keylen)?HASH_UPDATE:HASH_ADD);
 #endif
+	}
 	
 	return *zoption;
 }

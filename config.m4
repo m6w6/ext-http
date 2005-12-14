@@ -16,7 +16,11 @@ PHP_ARG_WITH([http-zlib-compression], [whether to enable support for gzencoded/d
 
 if test "$PHP_HTTP" != "no"; then
 
-	AC_PROG_EGREP
+	ifdef([AC_PROG_EGREP], [
+		AC_PROG_EGREP
+	], [
+		AC_CHECK_PROG(EGREP, egrep, egrep)
+	])
 	ifdef([AC_PROG_SED], [
 		AC_PROG_SED
 	], [
@@ -97,11 +101,6 @@ dnl ----
 		fi
 		
 		CURL_LIBS=`$CURL_CONFIG --libs`
-		
-		CURL_ZLIB=`$CURL_CONFIG --features | $EGREP libz`
-		if test "$CURL_ZLIB" = "libz"; then
-			AC_DEFINE([HTTP_HAVE_CURL_ZLIB], [1], [ ])
-		fi
 		
 		AC_MSG_CHECKING([for SSL support in libcurl])
 		CURL_SSL=`$CURL_CONFIG --features | $EGREP SSL`
