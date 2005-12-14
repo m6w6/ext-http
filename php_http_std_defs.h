@@ -96,7 +96,7 @@ typedef int STATUS;
 #define HTTP_DEFAULT_CACHECONTROL "private, must-revalidate, max-age=0"
 
 /* max URL length */
-#define HTTP_URL_MAXLEN 2048
+#define HTTP_URL_MAXLEN 4096
 #define HTTP_URI_MAXLEN HTTP_URL_MAXLEN
 
 /* def URL arg separator */
