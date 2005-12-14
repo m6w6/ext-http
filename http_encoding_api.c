@@ -245,19 +245,13 @@ PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, ch
 	STATUS status;
 	z_stream Z;
 	
-	*decoded = NULL;
-	*decoded_len = 0;
-	
-retry_inflate: 
 	do {
 		Z.zalloc = Z_NULL;
 		Z.zfree  = Z_NULL;
 		
 		if (!max) {
-			if (!*decoded) {
-				*decoded_len = data_len * 2;
-				*decoded = emalloc(*decoded_len + 1);
-			}
+			*decoded_len = data_len * 2;
+			*decoded = emalloc(*decoded_len + 1);
 		} else {
 			size_t new_len = *decoded_len << 2;
 			char *new_ptr = erealloc_recoverable(*decoded, new_len + 1);
@@ -270,6 +264,7 @@ retry_inflate:
 			}
 		}
 		
+retry_inflate:
 		Z.next_in   = (Bytef *) data;
 		Z.avail_in  = data_len;
 		Z.next_out  = (Bytef *) *decoded;

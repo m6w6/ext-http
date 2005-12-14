@@ -36,16 +36,9 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 
 typedef enum {
 	HTTP_ENCODING_NONE = 0,
-	HTTP_ENCODING_ANY  = 1,
 	HTTP_ENCODING_GZIP,
 	HTTP_ENCODING_DEFLATE,
-	HTTP_ENCODING_COMPRESS
 } http_encoding_type;
-
-#define http_encode(t, l, d, dl, r, rl) _http_encode((t), (l), (d), (dl), (r), (rl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encode(http_encoding_type type, int level, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
-#define http_decode(t, d, dl, r, rl) _http_decode((t), (l), (d), (dl), (r), (rl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_decode(http_encoding_type type, const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
 typedef struct {
 	z_stream Z;
