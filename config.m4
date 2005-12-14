@@ -16,6 +16,17 @@ PHP_ARG_WITH([http-zlib-compression], [whether to enable support for gzencoded/d
 
 if test "$PHP_HTTP" != "no"; then
 
+	AC_PROG_EGREP
+	ifdef([AC_PROG_SED], [
+		AC_PROG_SED
+	], [
+		ifdef([LT_AC_PROG_SED], [
+			LT_AC_PROG_SED
+		], [
+			AC_CHECK_PROG(SED, sed, sed)
+		])
+	])
+
 dnl -------
 dnl NETDB.H
 dnl -------
