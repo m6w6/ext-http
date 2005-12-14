@@ -140,9 +140,10 @@ PHP_HTTP_API STATUS _http_encoding_gzencode(int level, int mtime, const char *da
 		return FAILURE;
 	}
 	
-	Z.zalloc = Z_NULL;
-	Z.zfree  = Z_NULL;
-	Z.opaque = Z_NULL;
+	*encoded = NULL;
+	*encoded_len = 0;
+	memset(&Z, 0, sizeof(z_stream));
+	
 	Z.next_in   = (Bytef *) data;
 	Z.avail_in  = data_len;
 	Z.avail_out = HTTP_ENCODING_BUFLEN(data_len) + HTTP_ENCODING_SAFPAD - 1;
@@ -188,7 +189,7 @@ PHP_HTTP_API STATUS _http_encoding_gzencode(int level, int mtime, const char *da
 		}
 	}
 	
-	efree(*encoded);
+	STR_SET(*encoded, NULL);
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not gzencode data: %s", zError(status));
 	return FAILURE;
 }
@@ -213,9 +214,10 @@ PHP_HTTP_API STATUS _http_encoding_deflate(int level, int zhdr, const char *data
 	z_stream Z;
 	STATUS status = Z_OK;
 	
-	Z.zalloc = Z_NULL;
-	Z.zfree  = Z_NULL;
-	Z.opaque = Z_NULL;
+	*encoded = NULL;
+	*encoded_len = 0;
+	memset(&Z, 0, sizeof(z_stream));
+	
 	Z.data_type = Z_UNKNOWN;
 	Z.next_in   = (Bytef *) data;
 	Z.avail_in  = data_len;
@@ -234,7 +236,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate(int level, int zhdr, const char *data
 		}
 	}
 	
-	efree(encoded);
+	STR_SET(*encoded, NULL);
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not deflate data: %s", zError(status));
 	return FAILURE;
 }
@@ -245,10 +247,11 @@ PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, ch
 	STATUS status;
 	z_stream Z;
 	
+	*decoded = NULL;
+	*decoded_len = 0;
+	memset(&Z, 0, sizeof(z_stream));
+	
 	do {
-		Z.zalloc = Z_NULL;
-		Z.zfree  = Z_NULL;
-		
 		if (!max) {
 			*decoded_len = data_len * 2;
 			*decoded = emalloc(*decoded_len + 1);
@@ -287,7 +290,7 @@ retry_inflate:
 		}
 	} while (status == Z_BUF_ERROR && ++max < HTTP_ENCODING_MAXTRY);
 	
-	efree(*decoded);
+	STR_SET(*decoded, NULL);
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s", zError(status));
 	return FAILURE;
 }
@@ -515,6 +518,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			INIT_PZVAL(&zsupported);
 			array_init(&zsupported);
 			add_next_index_stringl(&zsupported, "gzip", lenof("gzip"), 1);
+			add_next_index_stringl(&zsupported, "x-gzip", lenof("x-gzip"), 1);
 			add_next_index_stringl(&zsupported, "deflate", lenof("deflate"), 1);
 			
 			HTTP_G(send).gzip_encoding = 0;
@@ -525,7 +529,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 				ulong idx;
 				
 				if (HASH_KEY_IS_STRING == zend_hash_get_current_key(selected, &encoding, &idx, 0) && encoding) {
-					if (!strcmp(encoding, "gzip")) {
+					if (!strcmp(encoding, "gzip") || !strcmp(encoding, "x-gzip")) {
 						if (SUCCESS == (hs = http_send_header_string("Content-Encoding: gzip"))) {
 							HTTP_G(send).gzip_encoding = HTTP_ENCODING_GZIP;
 						}
