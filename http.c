@@ -83,6 +83,7 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_chunked_decode, NULL)
 	PHP_FE(http_parse_message, NULL)
 	PHP_FE(http_parse_headers, NULL)
+	PHP_FE(http_parse_cookie, NULL)
 	PHP_FE(http_get_request_headers, NULL)
 	PHP_FE(http_get_request_body, NULL)
 	PHP_FE(http_match_request_header, NULL)

@@ -30,6 +30,7 @@ PHP_METHOD(HttpUtil, matchModified);
 PHP_METHOD(HttpUtil, matchEtag);
 PHP_METHOD(HttpUtil, parseHeaders);
 PHP_METHOD(HttpUtil, parseMessage);
+PHP_METHOD(HttpUtil, parseCookie);
 PHP_METHOD(HttpUtil, chunkedDecode);
 PHP_METHOD(HttpUtil, gzEncode);
 PHP_METHOD(HttpUtil, gzDecode);

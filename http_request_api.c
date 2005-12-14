@@ -304,7 +304,7 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(READFUNCTION, http_curl_read_callback);
 		HTTP_CURL_OPT(IOCTLFUNCTION, http_curl_ioctl_callback);
 		HTTP_CURL_OPT(WRITEFUNCTION, http_curl_dummy_callback);
-		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
+		HTTP_CURL_OPT(PROGRESSFUNCTION, NULL);
 		HTTP_CURL_OPT(URL, NULL);
 		HTTP_CURL_OPT(NOPROGRESS, 1);
 		HTTP_CURL_OPT(PROXY, NULL);
@@ -351,6 +351,9 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(IOCTLDATA, NULL);
 		HTTP_CURL_OPT(READDATA, NULL);
 		HTTP_CURL_OPT(INFILESIZE, 0);
+#if 0
+		HTTP_CURL_OPT(IGNORE_CONTENT_ENCODING, 1);
+#endif
 	}
 }
 /* }}} */
@@ -388,6 +391,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	if ((zoption = http_request_option(request, options, "onprogress", 0))) {
 		HTTP_CURL_OPT(NOPROGRESS, 0);
 		HTTP_CURL_OPT(PROGRESSDATA, request);
+		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
 		http_request_set_progress_callback(request, zoption);
 	}
 

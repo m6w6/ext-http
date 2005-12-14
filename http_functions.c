@@ -894,6 +894,7 @@ PHP_FUNCTION(http_parse_message)
  *         )
  *     [Folded] => works
  *         too 
+ * ) 
  * ?>
  * </pre>
  */
@@ -913,6 +914,44 @@ PHP_FUNCTION(http_parse_headers)
 	}
 }
 /* }}}*/
+
+/* {{{ proto object http_parse_cookie(string cookie)
+ *
+ * Parses HTTP cookies like sent in a response into a struct.
+ * 
+ * Expects a string as parameter containing the value of a Set-Cookie response header.
+ * 
+ * Returns an stdClass object with the cookie params as properties on success or FALSE on failure.
+ * 
+ * Example:
+ * <pre>
+ * <?php
+ * print_r(http_parse_cookie("foo=bar; path=/"));
+ * 
+ * stdClass Object
+ * (
+ *     [name] => foo
+ *     [value] => bar
+ *     [path] => /
+ * )
+ * ?>
+ * </pre> 
+ */
+PHP_FUNCTION(http_parse_cookie)
+{
+	char *cookie;
+	int cookie_len;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &cookie, &cookie_len)) {
+		RETURN_FALSE;
+	}
+	
+	object_init(return_value);
+	if (SUCCESS != http_parse_cookie(cookie, HASH_OF(return_value))) {
+		zval_dtor(return_value);
+		RETURN_FALSE;
+	}
+}
 
 /* {{{ proto array http_get_request_headers(void)
  *

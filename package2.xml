@@ -47,6 +47,7 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
 + Added 'bodyonly' request option
 + Added IOCTL callback for cURL
 + Added ssl_engines array and cookies array to the request info array
++ Added http_parse_cookie() to parse Set-Cookie headers
 
 - Renamed http_connectcode to connect_code in the request info array
 - Enable "original headers" previously stripped off by the message parser:

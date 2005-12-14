@@ -253,7 +253,15 @@ several consecutive HTTP messages.</p>
 <p>Expects a string parameter containing HTTP headers.</p>
 <p>Returns an array on success, or FALSE on failure.</p>
 <p>Example:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />$headers&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #DD0000">"content-type:&nbsp;text/html;&nbsp;charset=UTF-8\r\n"</span><span style="color: #007700">.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"Server:&nbsp;Funky/1.0\r\n"</span><span style="color: #007700">.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"Set-Cookie:&nbsp;foo=bar\r\n"</span><span style="color: #007700">.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"Set-Cookie:&nbsp;baz=quux\r\n"</span><span style="color: #007700">.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"Folded:&nbsp;works\r\n\ttoo\r\n"</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">print_r</span><span style="color: #007700">(</span><span style="color: #0000BB">http_parse_headers</span><span style="color: #007700">(</span><span style="color: #0000BB">$headers</span><span style="color: #007700">));<br /><br />Array<br />(<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">Content</span><span style="color: #007700">-</span><span style="color: #0000BB">Type</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">text</span><span style="color: #007700">/</span><span style="color: #0000BB">html</span><span style="color: #007700">;&nbsp;</span><span style="color: #0000BB">chatset</span><span style="color: #007700">=</span><span style="color: #0000BB">UTF</span><span style="color: #007700">-</span><span style="color: #0000BB">8<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">Server</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">Funky</span><span style="color: #007700">/</span><span style="color: #0000BB">1.0<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">Set</span><span style="color: #007700">-</span><span style="color: #0000BB">Cookie</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;Array<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">0</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">foo</span><span style="color: #007700">=</span><span style="color: #0000BB">bar<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">1</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">baz</span><span style="color: #007700">=</span><span style="color: #0000BB">quux<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">)<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">Folded</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">works<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;too&nbsp;<br />?&gt;</span><br />
+<span style="color: #0000BB">&lt;?php<br />$headers&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #DD0000">"content-type:&nbsp;text/html;&nbsp;charset=UTF-8\r\n"</span><span style="color: #007700">.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"Server:&nbsp;Funky/1.0\r\n"</span><span style="color: #007700">.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"Set-Cookie:&nbsp;foo=bar\r\n"</span><span style="color: #007700">.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"Set-Cookie:&nbsp;baz=quux\r\n"</span><span style="color: #007700">.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"Folded:&nbsp;works\r\n\ttoo\r\n"</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">print_r</span><span style="color: #007700">(</span><span style="color: #0000BB">http_parse_headers</span><span style="color: #007700">(</span><span style="color: #0000BB">$headers</span><span style="color: #007700">));<br /><br />Array<br />(<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">Content</span><span style="color: #007700">-</span><span style="color: #0000BB">Type</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">text</span><span style="color: #007700">/</span><span style="color: #0000BB">html</span><span style="color: #007700">;&nbsp;</span><span style="color: #0000BB">chatset</span><span style="color: #007700">=</span><span style="color: #0000BB">UTF</span><span style="color: #007700">-</span><span style="color: #0000BB">8<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">Server</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">Funky</span><span style="color: #007700">/</span><span style="color: #0000BB">1.0<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">Set</span><span style="color: #007700">-</span><span style="color: #0000BB">Cookie</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;Array<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">0</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">foo</span><span style="color: #007700">=</span><span style="color: #0000BB">bar<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">1</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">baz</span><span style="color: #007700">=</span><span style="color: #0000BB">quux<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">)<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">Folded</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">works<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;too&nbsp;<br /></span><span style="color: #007700">)&nbsp;<br /></span><span style="color: #0000BB">?&gt;</span><br />
+</span></code></blockquote></p>
+<p></pre></p>
+<h2 id="http_parse_cookie">object http_parse_cookie(string cookie)</h2>
+<p>Parses HTTP cookies like sent in a response into a struct.</p>
+<p>Expects a string as parameter containing the value of a Set-Cookie response header.</p>
+<p>Returns an stdClass object with the cookie params as properties on success or FALSE on failure.</p>
+<p>Example:</p><pre><blockquote><code><span style="color: #000000"><br />
+<span style="color: #0000BB">&lt;?php<br />print_r</span><span style="color: #007700">(</span><span style="color: #0000BB">http_parse_cookie</span><span style="color: #007700">(</span><span style="color: #DD0000">"foo=bar;&nbsp;path=/"</span><span style="color: #007700">));<br /><br /></span><span style="color: #0000BB">stdClass&nbsp;Object<br /></span><span style="color: #007700">(<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">name</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">foo<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">value</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">bar<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">path</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;/<br />)<br /></span><span style="color: #0000BB">?&gt;</span><br />
 </span></code></blockquote></p>
 <p></pre></p>
 <h2 id="http_get_request_headers">array http_get_request_headers(void)</h2>
@@ -350,7 +358,7 @@ See http_get() for a full list of available options.</p>
 <p>Returns the request method name as string on success, or FALSE on failure.</p>
 <h2 id="http_build_query">string http_build_query(mixed formdata [, string prefix[, string arg_separator]])</h2>
 <p>Generates a form-encoded query string from an associative array or object.</p>
-<h2 id="http_gzencode">string http_gzencode(string data[, int level = -1])</h2>
+<h2 id="http_gzencode">string http_gzencode(string data[, int level = -1[, int mtime = 0]])</h2>
 <p>Compress data with the HTTP compatible GZIP encoding.</p>
 <p>Expects the first parameter to be a string which contains the data that<br />
 should be encoded.  Additionally accepts an optional in paramter specifying<br />
@@ -361,7 +369,7 @@ best compression ratio.</p>
 <p>Uncompress data compressed with the HTTP compatible GZIP encoding.</p>
 <p>Expects a string as parameter containing the compressed data.</p>
 <p>Returns the decoded string on success, or NULL on failure.</p>
-<h2 id="http_deflate">string http_deflate(string data[, int level = -1])</h2>
+<h2 id="http_deflate">string http_deflate(string data[, int level = -1[, bool zlib_header = false]])</h2>
 <p>Compress data with the HTTP compatible DEFLATE encoding.</p>
 <p>Expects the first parameter to be a string containing the data that should<br />
 be encoded.  Additionally accepts an optional int parameter specifying the<br />
@@ -370,17 +378,6 @@ compression ratio.</p>
 <p>Returns the encoded string on success, or NULL on failure.</p>
 <h2 id="http_inflate">string http_inflate(string data)</h2>
 <p>Uncompress data compressed with the HTTP compatible DEFLATE encoding.</p>
-<p>Expects a string as parameter containing the compressed data.</p>
-<p>Returns the decoded string on success, or NULL on failure.</p>
-<h2 id="http_compress">string http_compress(string data[, int level = -1])</h2>
-<p>Compress data with the HTTP compatible COMPRESS encoding.</p>
-<p>Expects the first parameter to be a string containing the data which should<br />
-be encoded.  Additionally accepts an optional int parameter specifying the<br />
-compression level, where -1 is default, 0 is no compression and 9 is best<br />
-compression ratio.</p>
-<p>Returns the encoded string on success, or NULL on failure.</p>
-<h2 id="http_uncompress">string http_uncompress(string data)</h2>
-<p>Uncompress data compressed with the HTTP compatible COMPRESS encoding.</p>
 <p>Expects a string as parameter containing the compressed data.</p>
 <p>Returns the decoded string on success, or NULL on failure.</p>
 <h2 id="http_support">int http_support([int feature = 0])</h2>
@@ -759,7 +756,7 @@ HttpMalformedHeaderException, HttpEncodingException.</p>
 <p>Instantiate a new HttpRequestPool object.  An HttpRequestPool is<br />
 able to send several HttpRequests in parallel.</p>
 <p>WARNING: Don't attach/detach HttpRequest objects to the HttpRequestPool<br />
-object while you're using the implemented Interator interface. </p>
+object while you're using the implemented Iterator interface. </p>
 <p>Accepts virtual infinite optional parameters each referencing an<br />
 HttpRequest object.</p>
 <p>Throws HttpRequestPoolException (HttpRequestException, HttpInvalidParamException).</p>
@@ -1022,6 +1019,8 @@ http.cache_log is set.</p>
 </li>
 <li><a href="#http_parse_headers">http_parse_headers</a>
 </li>
+<li><a href="#http_parse_cookie">http_parse_cookie</a>
+</li>
 <li><a href="#http_get_request_headers">http_get_request_headers</a>
 </li>
 <li><a href="#http_get_request_body">http_get_request_body</a>
@@ -1057,10 +1056,6 @@ http.cache_log is set.</p>
 <li><a href="#http_deflate">http_deflate</a>
 </li>
 <li><a href="#http_inflate">http_inflate</a>
-</li>
-<li><a href="#http_compress">http_compress</a>
-</li>
-<li><a href="#http_uncompress">http_uncompress</a>
 </li>
 <li><a href="#http_support">http_support</a>
 </li>
@@ -1200,7 +1195,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Fri, 09 Dec 2005 13:56:42 +0100</b></p>
+    <p><b>Generated at: Wed, 14 Dec 2005 16:25:48 +0100</b></p>
 </body>
 </html>
 
