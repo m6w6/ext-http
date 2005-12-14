@@ -288,7 +288,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 #endif /* HTTP_HAVE_ZLIB || HAVE_ZLIB */
 
 		/* check for following messages */
-		if (continue_at) {
+		if (continue_at && (continue_at < (message + message_length))) {
 			while (isspace(*continue_at)) ++continue_at;
 			if (continue_at < (message + message_length)) {
 				http_message *next = NULL, *most = NULL;
