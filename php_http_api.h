@@ -82,6 +82,22 @@ extern void _http_error_ex(long type TSRMLS_DC, long code, const char *format, .
 		action; \
 	}
 
+#define HTTP_CHECK_OPEN_BASEDIR(file, act) \
+	if ((PG(open_basedir) && *PG(open_basedir)) || PG(safe_mode)) \
+	{ \
+		const char *tmp = file; \
+ \
+		if (!strncasecmp(tmp, "file:", lenof("file:"))) { \
+			tmp += lenof("file:"); \
+			while (*tmp == '/' || *tmp == '\\') ++tmp; \
+		} \
+ \
+ 		if (!*tmp || php_check_open_basedir(tmp TSRMLS_CC) || \
+		 		(PG(safe_mode) && !php_checkuid(tmp, "rb+", CHECKUID_CHECK_MODE_PARAM))) { \
+		 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Permission denied: %s", file); \
+		 		act; \
+		} \
+	}
 
 #define http_log(f, i, m) _http_log_ex((f), (i), (m) TSRMLS_CC)
 extern void http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC);

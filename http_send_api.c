@@ -456,9 +456,13 @@ PHP_HTTP_API char *_http_guess_content_type(const char *magicfile, long magicmod
 	char *ct = NULL;
 
 #ifdef HTTP_HAVE_MAGIC
+	struct magic_set *magic;
+	
+	HTTP_CHECK_OPEN_BASEDIR(magicfile, return NULL);
+	
 	/*	magic_load() fails if MAGIC_MIME is set because it 
 		cowardly adds .mime to the file name */
-	struct magic_set *magic = magic_open(magicmode &~ MAGIC_MIME);
+	magic = magic_open(magicmode &~ MAGIC_MIME);
 	
 	if (!magic) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid magic mode: %ld", magicmode);
@@ -487,6 +491,7 @@ PHP_HTTP_API char *_http_guess_content_type(const char *magicfile, long magicmod
 			break;
 			
 			default:
+				HTTP_CHECK_OPEN_BASEDIR(data_ptr, magic_close(magic); return NULL);
 				ctype = magic_file(magic, data_ptr);
 			break;
 		}
