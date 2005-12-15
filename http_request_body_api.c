@@ -55,8 +55,8 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 
 		/* normal data */
 		FOREACH_HASH_KEYVAL(pos, fields, key, idx, data) {
-			CURLcode err;
 			if (key) {
+				CURLcode err;
 				zval *orig = *data;
 				
 				convert_to_string_ex(data);
@@ -94,15 +94,33 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Post file array entry misses either 'name', 'type' or 'file' entry");
 			} else {
 				CURLcode err;
+				const char *path;
+				zval *ofile = *file, *otype = *type, *oname = *name;
+				
+				convert_to_string_ex(file);
+				convert_to_string_ex(type);
+				convert_to_string_ex(name);
 				
 				HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_PP(file), curl_formfree(http_post_data[0]); return NULL);
 				
+				/* this is blatant but should be sufficient for most cases */
+				if (strncasecmp(Z_STRVAL_PP(file), "file://", lenof("file://"))) {
+					path = Z_STRVAL_PP(file);
+				} else {
+					path = Z_STRVAL_PP(file) + lenof("file://");
+				}
+				
 				err = curl_formadd(&http_post_data[0], &http_post_data[1],
 					CURLFORM_COPYNAME,		Z_STRVAL_PP(name),
-					CURLFORM_FILE,			Z_STRVAL_PP(file),
+					CURLFORM_FILE,			path,
 					CURLFORM_CONTENTTYPE,	Z_STRVAL_PP(type),
 					CURLFORM_END
 				);
+				
+				if (ofile != *file) zval_ptr_dtor(file);
+				if (otype != *type) zval_ptr_dtor(type);
+				if (oname != *name) zval_ptr_dtor(name);
+				
 				if (CURLE_OK != err) {
 					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post files: %s", curl_easy_strerror(err));
 					curl_formfree(http_post_data[0]);
@@ -130,23 +148,26 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 /* {{{ void http_request_body_dtor(http_request_body *) */
 PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC)
 {
-	if (body && body->free) {
-		switch (body->type)
-		{
-			case HTTP_REQUEST_BODY_CSTRING:
-				if (body->data) {
-					efree(body->data);
-				}
-			break;
-
-			case HTTP_REQUEST_BODY_CURLPOST:
-				curl_formfree(body->data);
-			break;
-
-			case HTTP_REQUEST_BODY_UPLOADFILE:
-				php_stream_close(body->data);
-			break;
+	if (body) {
+		if (body->free) {
+			switch (body->type)
+			{
+				case HTTP_REQUEST_BODY_CSTRING:
+					if (body->data) {
+						efree(body->data);
+					}
+				break;
+	
+				case HTTP_REQUEST_BODY_CURLPOST:
+					curl_formfree(body->data);
+				break;
+	
+				case HTTP_REQUEST_BODY_UPLOADFILE:
+					php_stream_close(body->data);
+				break;
+			}
 		}
+		memset(body, 0, sizeof(http_request_body));
 	}
 }
 /* }}} */
