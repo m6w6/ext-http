@@ -89,12 +89,12 @@ extern void _http_error_ex(long type TSRMLS_DC, long code, const char *format, .
  \
 		if (!strncasecmp(tmp, "file:", lenof("file:"))) { \
 			tmp += lenof("file:"); \
-			while (*tmp == '/' || *tmp == '\\') ++tmp; \
+			while ((tmp - (const char *)file < 7) && (*tmp == '/' || *tmp == '\\')) ++tmp; \
 		} \
  \
- 		if (!*tmp || php_check_open_basedir(tmp TSRMLS_CC) || \
-		 		(PG(safe_mode) && !php_checkuid(tmp, "rb+", CHECKUID_CHECK_MODE_PARAM))) { \
-		 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Permission denied: %s", file); \
+ 		if (	(tmp != file || !strstr(file, "://")) && \
+		 		(!*tmp || php_check_open_basedir(tmp TSRMLS_CC) || \
+		 		(PG(safe_mode) && !php_checkuid(tmp, "rb+", CHECKUID_CHECK_MODE_PARAM)))) { \
 		 		act; \
 		} \
 	}
