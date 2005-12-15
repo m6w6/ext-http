@@ -27,7 +27,7 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
   </maintainers>
  <release>
   <version>0.20.0</version>
-  <date>2005-12-12</date>
+  <date>2005-12-15</date>
   <license>BSD, revised</license>
   <state>beta</state>
   <notes>! Request functionality requires libcurl &gt;= 7.12.3 now
@@ -35,17 +35,19 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
 + Added &apos;bodyonly&apos; request option
 + Added IOCTL callback for cURL
 + Added ssl_engines array and cookies array to the request info array
++ Added http_parse_cookie() to parse Set-Cookie headers
 
 - Renamed http_connectcode to connect_code in the request info array
-- Rewrote internal request API
 - Enable &quot;original headers&quot; previously stripped off by the message parser:
 	o X-Original-Transfer-Encoding (Transfer-Encoding)
 	o X-Original-Content-Encoding (Content-Encoding)
 	o X-Original-Content-Length (Content-Length)
 - RequestExceptions thrown by HttpRequestPool::__construct() and send() are
   now wrapped into the HttpRequestPoolException object&apos;s $exceptionStack property
+- Removed http_compress() and http_uncompress() (http_deflate/inflate ambiguity)
 
 * Fixed bug which caused GZIP encoded archives to be decoded
+* Fixed bug with DEFLATE encoded response messages
 * Fixed several memory leaks and inconspicuous access violations
 * Fixed some logical errors in the uri builder
   </notes>
@@ -61,8 +63,8 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
   <filelist>
    <dir name="docs">
     <dir name="examples">
-     <file role="doc" name="extract.php"/>
-     <file role="doc" name="tutorial.txt"/>
+     <file role="doc" install-as="examples/extract.php" name="extract.php"/>
+     <file role="doc" install-as="examples/tutorial.txt" name="tutorial.txt"/>
     </dir> <!-- /docs/examples -->
     <file role="doc" install-as="functions.html" name="functions.html"/>
    </dir> <!-- /docs -->
