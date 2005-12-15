@@ -167,15 +167,25 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 	}
 
 #define HTTP_CURL_OPT(OPTION, p) curl_easy_setopt(request->ch, CURLOPT_##OPTION, (p))
-#define HTTP_CURL_OPT_STRING(keyname) HTTP_CURL_OPT_STRING_EX(keyname, keyname)
-#define HTTP_CURL_OPT_SSL_STRING(keyname) HTTP_CURL_OPT_STRING_EX(keyname, SSL##keyname)
-#define HTTP_CURL_OPT_SSL_STRING_(keyname) HTTP_CURL_OPT_STRING_EX(keyname, SSL_##keyname)
-#define HTTP_CURL_OPT_STRING_EX(keyname, optname) \
+#define HTTP_CURL_OPT_STRING(keyname, obdc) HTTP_CURL_OPT_STRING_EX(keyname, keyname, obdc)
+#define HTTP_CURL_OPT_SSL_STRING(keyname, obdc) HTTP_CURL_OPT_STRING_EX(keyname, SSL##keyname, obdc)
+#define HTTP_CURL_OPT_SSL_STRING_(keyname,obdc ) HTTP_CURL_OPT_STRING_EX(keyname, SSL_##keyname, obdc)
+#define HTTP_CURL_OPT_STRING_EX(keyname, optname, obdc) \
 	if (!strcasecmp(key, #keyname)) { \
-		convert_to_string(*param); \
-		HTTP_CURL_OPT(optname, Z_STRVAL_PP(param)); \
+		int ok = 1; \
+		zval *orig = *param; \
+		convert_to_string_ex(param); \
+		if (obdc) { \
+			HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_PP(param), ok = 0); \
+		} \
 		key = NULL; \
-		continue; \
+		if (ok) { \
+			HTTP_CURL_OPT(optname, Z_STRVAL_PP(param)); \
+			if (orig != *param) zval_ptr_dtor(param); \
+			continue; \
+		} \
+		if (orig != *param) zval_ptr_dtor(param); \
+		return FAILURE; \
 	}
 #define HTTP_CURL_OPT_LONG(keyname) HTTP_OPT_SSL_LONG_EX(keyname, keyname)
 #define HTTP_CURL_OPT_SSL_LONG(keyname) HTTP_CURL_OPT_LONG_EX(keyname, SSL##keyname)
@@ -526,6 +536,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* cookiestore, read initial cookies from that file and store cookies back into that file */
 	if ((zoption = http_request_option(request, options, "cookiestore", IS_STRING)) && Z_STRLEN_P(zoption)) {
+		HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(zoption), return FAILURE);
 		HTTP_CURL_OPT(COOKIEFILE, Z_STRVAL_P(zoption));
 		HTTP_CURL_OPT(COOKIEJAR, Z_STRVAL_P(zoption));
 	}
@@ -574,25 +585,25 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 		FOREACH_KEYVAL(pos, zoption, key, idx, param) {
 			if (key) {
-				HTTP_CURL_OPT_SSL_STRING(CERT);
-				HTTP_CURL_OPT_SSL_STRING(CERTTYPE);
-				HTTP_CURL_OPT_SSL_STRING(CERTPASSWD);
+				HTTP_CURL_OPT_SSL_STRING(CERT, 1);
+				HTTP_CURL_OPT_SSL_STRING(CERTTYPE, 0);
+				HTTP_CURL_OPT_SSL_STRING(CERTPASSWD, 0);
 
-				HTTP_CURL_OPT_SSL_STRING(KEY);
-				HTTP_CURL_OPT_SSL_STRING(KEYTYPE);
-				HTTP_CURL_OPT_SSL_STRING(KEYPASSWD);
+				HTTP_CURL_OPT_SSL_STRING(KEY, 0);
+				HTTP_CURL_OPT_SSL_STRING(KEYTYPE, 0);
+				HTTP_CURL_OPT_SSL_STRING(KEYPASSWD, 0);
 
-				HTTP_CURL_OPT_SSL_STRING(ENGINE);
+				HTTP_CURL_OPT_SSL_STRING(ENGINE, 0);
 				HTTP_CURL_OPT_SSL_LONG(VERSION);
 
 				HTTP_CURL_OPT_SSL_LONG_(VERIFYPEER);
 				HTTP_CURL_OPT_SSL_LONG_(VERIFYHOST);
-				HTTP_CURL_OPT_SSL_STRING_(CIPHER_LIST);
+				HTTP_CURL_OPT_SSL_STRING_(CIPHER_LIST, 0);
 
-				HTTP_CURL_OPT_STRING(CAINFO);
-				HTTP_CURL_OPT_STRING(CAPATH);
-				HTTP_CURL_OPT_STRING(RANDOM_FILE);
-				HTTP_CURL_OPT_STRING(EGDSOCKET);
+				HTTP_CURL_OPT_STRING(CAINFO, 1);
+				HTTP_CURL_OPT_STRING(CAPATH, 1);
+				HTTP_CURL_OPT_STRING(RANDOM_FILE, 1);
+				HTTP_CURL_OPT_STRING(EGDSOCKET, 1);
 
 				/* reset key */
 				key = NULL;
@@ -700,7 +711,6 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 	HTTP_CURL_INFO(CONTENT_LENGTH_DOWNLOAD);
 	HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
 	HTTP_CURL_INFO(CONTENT_TYPE);
-	/*HTTP_CURL_INFO(PRIVATE);*/
 	HTTP_CURL_INFO(HTTPAUTH_AVAIL);
 	HTTP_CURL_INFO(PROXYAUTH_AVAIL);
 	/*HTTP_CURL_INFO(OS_ERRNO);*/
