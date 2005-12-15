@@ -64,7 +64,7 @@ if (PHP_HTTP != "no") {
 		ADD_FLAG("CFLAGS_HTTP", "/W3");
 	}
 	
-	if (CHECK_HEADER_ADD_INCLUDE('zlib.h', 'CFLAGS_HTTP')) {
+	if (CHECK_HEADER_ADD_INCLUDE('zlib.h', 'CFLAGS_HTTP', '..\\zlib;' + php_usual_include_suspects)) {
 		AC_DEFINE('HTTP_HAVE_ZLIB', 1, "Have zlib library");
 		ADD_FLAG("LDFLAGS_HTTP", "/FORCE:MULTIPLE");
 	} else {
