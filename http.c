@@ -34,6 +34,9 @@
 #include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
+#	ifdef HTTP_HAVE_WRAPPER
+#		include "php_http_wrapper_api.h"
+#	endif
 #endif
 
 #ifdef ZEND_ENGINE_2
@@ -223,6 +226,9 @@ PHP_MINIT_FUNCTION(http)
 			(SUCCESS != PHP_MINIT_CALL(http_headers))	||
 #ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
+#	ifdef HTTP_HAVE_WRAPPER
+			(SUCCESS != PHP_MINIT_CALL(http_wrapper))	||
+#	endif
 #endif /* HTTP_HAVE_CURL */
 			(SUCCESS != PHP_MINIT_CALL(http_request_method))) {
 		return FAILURE;

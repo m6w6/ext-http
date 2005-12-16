@@ -50,6 +50,7 @@ typedef struct {
 
 } http_request;
 
+#define http_request_new() _http_request_init_ex(NULL, NULL, 0, NULL ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 #define http_request_init(r) _http_request_init_ex((r), NULL, 0, NULL ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 #define http_request_init_ex(r, c, m, u) _http_request_init_ex((r), (c), (m), (u) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch, http_request_method meth, const char *url ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
