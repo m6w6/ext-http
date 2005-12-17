@@ -2,7 +2,6 @@
 // $Id$
 
 ARG_ENABLE("http", "whether to enable extended HTTP support", "no");
-ARG_ENABLE("http-stream-wrapper", "whether to enable experimental stream wrapper", "no", "no");
 
 function check_for_main_ext(ext, header)
 {
@@ -60,10 +59,6 @@ if (PHP_HTTP != "no") {
 		"/I\"" + configure_module_dirname + "/phpstr\"");
 	ADD_SOURCES(configure_module_dirname + "/phpstr", "phpstr.c", "http");
 	AC_DEFINE("HAVE_HTTP", 1, "Have extended HTTP support");
-	
-	if (PHP_HTTP_STREAM_WRAPPER == "yes") {
-		AC_DEFINE("HTTP_HAVE_WRAPPER", 1, "Have experimental HTTP stream wrapper");
-	}
 	
 	if (PHP_DEBUG != "no") {
 		ADD_FLAG("CFLAGS_HTTP", "/W3");

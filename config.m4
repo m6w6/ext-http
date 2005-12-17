@@ -4,9 +4,6 @@ dnl vim: noet ts=1 sw=1
 
 PHP_ARG_ENABLE([http], [whether to enable extended HTTP support],
 [  --enable-http           Enable extended HTTP support])
-PHP_ARG_ENABLE([http-stream-wrapper], [whether to enable experimental stream wrapper],
-[  --enable-http-stream-wrapper
-                           Enable experimental stream wrapper support], no, no)
 PHP_ARG_WITH([http-curl-requests], [whether to enable cURL HTTP requests],
 [  --with-http-curl-requests[=CURLDIR]
                            With cURL HTTP request support])
@@ -228,7 +225,7 @@ dnl ----
 		http_api.c http_cache_api.c http_request_api.c http_date_api.c \
 		http_headers_api.c http_message_api.c http_send_api.c http_url_api.c \
 		http_info_api.c http_request_method_api.c http_encoding_api.c \
-		http_filter_api.c http_request_body_api.c http_wrapper_api.h"
+		http_filter_api.c http_request_body_api.c"
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, $ext_shared)
 	PHP_ADD_BUILD_DIR($ext_builddir/phpstr, 1)
 	PHP_SUBST([HTTP_SHARED_LIBADD])
@@ -238,8 +235,7 @@ dnl ----
 		php_http_request_api.h php_http_request_method_api.h php_http_send_api.h php_http_url_api.h \
 		php_http_encoding_api.h phpstr/phpstr.h missing.h php_http_request_body_api.h \
 		php_http_exception_object.h php_http_message_object.h php_http_request_object.h \
-		php_http_requestpool_object.h php_http_response_object.h php_http_util_object.h \
-		php_http_wrapper_api.h"
+		php_http_requestpool_object.h php_http_response_object.h php_http_util_object.h"
 	ifdef([PHP_INSTALL_HEADERS], [
 		PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)
 	], [
@@ -248,8 +244,4 @@ dnl ----
 	])
 
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
-	
-	if test "$PHP_HTTP_STREAM_WRAPPER" = "yes"; then
-		AC_DEFINE([HTTP_HAVE_WRAPPER], [1], [Have experimental HTTP stream wrapper])
-	fi
 fi
