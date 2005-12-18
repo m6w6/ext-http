@@ -31,7 +31,6 @@
 #endif
 
 #define PHPSTR(p) ((phpstr *) (p))
-#define PHPSTR_P(p) ((phpstr **) (&p))
 #define PHPSTR_VAL(p) (PHPSTR(p))->data
 #define PHPSTR_LEN(p) (PHPSTR(p))->used
 
