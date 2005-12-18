@@ -22,158 +22,167 @@
 #include "SAPI.h"
 #include "zend_ini.h"
 #include "php_output.h"
-#include "ext/standard/url.h"
 
 #include "php_http_api.h"
 #include "php_http_url_api.h"
 
 ZEND_EXTERN_MODULE_GLOBALS(http);
 
-/* {{{ char *http_absolute_url(char *) */
-PHP_HTTP_API char *_http_absolute_url_ex(
-	const char *url,	size_t url_len,
-	const char *proto,	size_t proto_len,
-	const char *host,	size_t host_len,
-	unsigned port TSRMLS_DC)
+PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
+{
+	char *abs = estrdup(url);
+	php_url *purl = php_url_parse(abs);
+	
+	STR_SET(abs, NULL);
+	
+	if (purl) {
+		http_build_url(purl, NULL, NULL, &abs, NULL);
+		php_url_free(purl);
+	}
+	
+	return abs;
+}
+
+/* {{{ void http_build_url(const php_url *, const php_url *, php_url **, char **, size_t *) */
+PHP_HTTP_API void _http_build_url(const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
 {
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
 	struct servent *se;
 #endif
-	php_url *purl = NULL, furl;
-	size_t full_len = 0;
-	zval *zhost = NULL;
-	char *scheme = NULL, *uri, *URL;
+	php_url *url = emalloc(sizeof(php_url));
 
-	if ((!url || !url_len) && (
-			(!(url = SG(request_info).request_uri)) ||
-			(!(url_len = strlen(SG(request_info).request_uri))))) {
-		http_error(HE_WARNING, HTTP_E_RUNTIME, "Cannot build an absolute URI if supplied URL and REQUEST_URI is empty");
-		return NULL;
-	}
+#define __URLCPY(n) \
+	url->n = (new_url&&new_url->n) ? estrdup(new_url->n) : ((old_url&&old_url->n) ? estrdup(old_url->n) : NULL)
+	url->port = (new_url&&new_url->port) ? new_url->port : ((old_url) ? old_url->port : 0);
+	__URLCPY(scheme);
+	__URLCPY(user);
+	__URLCPY(pass);
+	__URLCPY(host);
+	__URLCPY(path);
+	__URLCPY(path);
+	__URLCPY(query);
+	__URLCPY(fragment);
+	
+	if (!url->scheme) {
+		switch (url->port)
+		{
+			case 443:
+				url->scheme = estrndup("https", lenof("https"));
+			break;
 
-	uri = estrndup(url, url_len);
-	if (!(purl = php_url_parse(uri))) {
-		efree(uri);
-		http_error_ex(HE_WARNING, HTTP_E_URL, "Could not parse supplied URL: %s", url);
-		return NULL;
-	}
-
-	URL = ecalloc(1, HTTP_URI_MAXLEN + 1);
-
-	furl.user		= purl->user;
-	furl.pass		= purl->pass;
-	furl.path		= purl->path;
-	furl.query		= purl->query;
-	furl.fragment	= purl->fragment;
-
-	if (proto && proto_len) {
-		furl.scheme = scheme = estrdup(proto);
-	} else if (purl->scheme) {
-		furl.scheme = purl->scheme;
-#if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
-	} else if (port && (se = getservbyport(htons((short) port), "tcp"))) {
-		furl.scheme = (scheme = estrdup(se->s_name));
+#if !defined(PHP_WIN32) && !defined(HAVE_NETDB_H)
+			default:
 #endif
-	} else {
-		furl.scheme = "http";
-	}
-
-	if (port) {
-		furl.port = port;
-	} else if (purl->port) {
-		furl.port = purl->port;
-	} else if (strncmp(furl.scheme, "http", 4)) {
+			case 80:
+				url->scheme = estrndup("http", lenof("http"));
+			break;
+			
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
-		if ((se = getservbyname(furl.scheme, "tcp"))) {
-			furl.port = ntohs(se->s_port);
-		}
+			default:
+				if ((se = getservbyport(htons(url->port), "tcp")) && se->s_name) {
+					url->scheme = estrdup(se->s_name);
+				} else {
+					url->scheme = estrndup("http", lenof("http"));
+				}
+			break;
 #endif
-		furl.port = 0;
-	} else {
-		furl.port = (furl.scheme[4] == 's') ? 443 : 80;
-	}
-
-	if (host && host_len) {
-		furl.host = (char *) host;
-	} else if (purl->host) {
-		furl.host = purl->host;
-	} else if (	(zhost = http_get_server_var("HTTP_HOST")) ||
-				(zhost = http_get_server_var("SERVER_NAME"))) {
-		furl.host = Z_STRVAL_P(zhost);
-	} else {
-		furl.host = "localhost";
-	}
-
-#define HTTP_URI_STRLCATS(URL, full_len, add_string) HTTP_URI_STRLCAT(URL, full_len, add_string, sizeof(add_string)-1)
-#define HTTP_URI_STRLCATL(URL, full_len, add_string) HTTP_URI_STRLCAT(URL, full_len, add_string, strlen(add_string))
-#define HTTP_URI_STRLCAT(URL, full_len, add_string, add_len) \
-	if ((full_len += add_len) > HTTP_URI_MAXLEN) { \
-		http_error_ex(HE_NOTICE, HTTP_E_URL, \
-			"Absolute URI would have exceeded max URI length (%d bytes) - " \
-			"tried to add %d bytes ('%s')", \
-			HTTP_URI_MAXLEN, add_len, add_string); \
-		if (scheme) { \
-			efree(scheme); \
-		} \
-		php_url_free(purl); \
-		efree(uri); \
-		return URL; \
-	} else { \
-		strcat(URL, add_string); \
-	}
-
-	HTTP_URI_STRLCATL(URL, full_len, furl.scheme);
-	HTTP_URI_STRLCATS(URL, full_len, "://");
-
-	if (furl.user) {
-		HTTP_URI_STRLCATL(URL, full_len, furl.user);
-		if (furl.pass) {
-			HTTP_URI_STRLCATS(URL, full_len, ":");
-			HTTP_URI_STRLCATL(URL, full_len, furl.pass);
 		}
-		HTTP_URI_STRLCATS(URL, full_len, "@");
 	}
 
-	HTTP_URI_STRLCATL(URL, full_len, furl.host);
-
-	if (furl.port && (
-			(!strcmp(furl.scheme, "http") && (furl.port != 80)) ||
-			(!strcmp(furl.scheme, "https") && (furl.port != 443))
+	if (!url->host) {
+		zval *zhost;
+		
+		if ((((zhost = http_get_server_var("HTTP_HOST")) || 
+				(zhost = http_get_server_var("SERVER_NAME")))) && Z_STRLEN_P(zhost)) {
+			url->host = estrndup(Z_STRVAL_P(zhost), Z_STRLEN_P(zhost));
+		} else {
+			url->host = estrndup("localhost", lenof("localhost"));
+		}
+	}
+	
+	/* FIXXME: dirname(REQUEST_URI) if path is relative */
+	if (!url->path) {
+		if (SG(request_info).request_uri) {
+			const char *q = strchr(SG(request_info).request_uri, '?');
+			
+			if (q) {
+				url->path = estrndup(SG(request_info).request_uri, q - SG(request_info).request_uri);
+			} else {
+				url->path = estrdup(SG(request_info).request_uri);
+			}
+		} else {
+			url->path = ecalloc(1, 1);
+		}
+	}
+	
+	if (url->port) {
+		if (	((url->port == 80) && !strcmp(url->scheme, "http"))
+			||	((url->port ==443) && !strcmp(url->scheme, "https"))
 #if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
-			|| ((!(se = getservbyname(furl.scheme, "tcp"))) || (ntohs(se->s_port) != furl.port))
+			||	((se = getservbyname(url->scheme, "tcp")) && se->s_port && 
+					(url->port == ntohs(se->s_port)))
 #endif
-	)) {
-		char port_string[8] = {0};
-		snprintf(port_string, 7, ":%u", furl.port);
-		HTTP_URI_STRLCATL(URL, full_len, port_string);
-	}
-
-	if (furl.path) {
-		if (furl.path[0] != '/') {
-			HTTP_URI_STRLCATS(URL, full_len, "/");
+		) {
+			url->port = 0;
 		}
-		HTTP_URI_STRLCATL(URL, full_len, furl.path);
+	}
+	
+	if (url_str) {
+		size_t len;
+		
+		*url_str = emalloc(HTTP_URL_MAXLEN + 1);
+		
+		**url_str = '\0';
+		strlcat(*url_str, url->scheme, HTTP_URL_MAXLEN);
+		strlcat(*url_str, "://", HTTP_URL_MAXLEN);
+		
+		if (url->user && *url->user) {
+			strlcat(*url_str, url->user, HTTP_URL_MAXLEN);
+			if (url->pass && *url->pass) {
+				strlcat(*url_str, ":", HTTP_URL_MAXLEN);
+				strlcat(*url_str, url->pass, HTTP_URL_MAXLEN);
+			}
+			strlcat(*url_str, "@", HTTP_URL_MAXLEN);
+		}
+		
+		strlcat(*url_str, url->host, HTTP_URL_MAXLEN);
+		
+		if (url->port) {
+			char port_str[6] = {0};
+			
+			snprintf(port_str, 5, "%d", (int) url->port);
+			strlcat(*url_str, ":", HTTP_URL_MAXLEN);
+			strlcat(*url_str, port_str, HTTP_URL_MAXLEN);
+		}
+		
+		if (*url->path != '/') {
+			strlcat(*url_str, "/", HTTP_URL_MAXLEN);
+		}
+		strlcat(*url_str, url->path, HTTP_URL_MAXLEN);
+		
+		if (url->query && *url->query) {
+			strlcat(*url_str, "?", HTTP_URL_MAXLEN);
+			strlcat(*url_str, url->query, HTTP_URL_MAXLEN);
+		}
+		
+		if (url->fragment && *url->fragment) {
+			strlcat(*url_str, "#", HTTP_URL_MAXLEN);
+			strlcat(*url_str, url->fragment, HTTP_URL_MAXLEN);
+		}
+		
+		if (HTTP_URL_MAXLEN == (len = strlen(*url_str))) {
+			http_error(HE_NOTICE, HTTP_E_URL, "Length of URL exceeds HTTP_URL_MAXLEN");
+		}
+		if (url_len) {
+			*url_len = len;
+		}
+	}
+	
+	if (url_ptr) {
+		*url_ptr = url;
 	} else {
-		HTTP_URI_STRLCATS(URL, full_len, "/");
+		php_url_free(url);
 	}
-
-	if (furl.query) {
-		HTTP_URI_STRLCATS(URL, full_len, "?");
-		HTTP_URI_STRLCATL(URL, full_len, furl.query);
-	}
-
-	if (furl.fragment) {
-		HTTP_URI_STRLCATS(URL, full_len, "#");
-		HTTP_URI_STRLCATL(URL, full_len, furl.fragment);
-	}
-
-	if (scheme) {
-		efree(scheme);
-	}
-	php_url_free(purl);
-	efree(uri);
-
-	return URL;
 }
 /* }}} */
 

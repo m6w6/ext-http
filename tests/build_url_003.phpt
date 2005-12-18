@@ -1,5 +1,5 @@
 --TEST--
-http_build_uri()
+http_build_url()
 --SKIPIF--
 <?php
 include 'skip.inc';
@@ -9,10 +9,10 @@ include 'skip.inc';
 $_SERVER['HTTP_HOST'] = 'www.example.com';
 $url = '/path/?query#anchor';
 echo "-TEST\n";
-printf("-%s-\n", http_build_uri($url));
-printf("-%s-\n", http_build_uri($url, 'https'));
-printf("-%s-\n", http_build_uri($url, 'https', 'ssl.example.com'));
-printf("-%s-\n", http_build_uri($url, 'ftp', 'ftp.example.com', 21));
+printf("-%s-\n", http_build_url($url));
+printf("-%s-\n", http_build_url($url, array('scheme' => 'https')));
+printf("-%s-\n", http_build_url($url, array('scheme' => 'https', 'host' => 'ssl.example.com')));
+printf("-%s-\n", http_build_url($url, array('scheme' => 'ftp', 'host' => 'ftp.example.com', 'port' => 21)));
 echo "Done\n";
 ?>
 --EXPECTF--

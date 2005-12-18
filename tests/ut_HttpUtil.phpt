@@ -24,12 +24,12 @@ class HttpUtilTest extends PHPUnit2_Framework_TestCase
     	$this->assertEquals('Thu, 01 Jan 1970 00:00:01 GMT', HttpUtil::date(1));
     }
 
-    function test_buildUri()
+    function test_buildUrl()
     {
     	$_SERVER['SERVER_NAME'] = 'www.example.com';
-    	$this->assertEquals('http://www.example.com/test.php?foo=bar', HttpUtil::buildUri('/test.php?foo=bar', null, null, 80));
-    	$this->assertEquals('https://www.example.com/', HttpUtil::buildUri('/', 'https'));
-    	$this->assertEquals('ftp://ftp.example.com/pub', HttpUtil::buildUri('/pub', null, 'ftp.example.com', 21));
+    	$this->assertEquals('http://www.example.com/test.php?foo=bar', HttpUtil::buildUrl('/test.php?foo=bar', null, null, 80));
+    	$this->assertEquals('https://www.example.com/', HttpUtil::buildUrl('/', 'https'));
+    	$this->assertEquals('ftp://ftp.example.com/pub', HttpUtil::buildUrl('/pub', null, 'ftp.example.com', 21));
     }
 
     function test_negotiateLanguage()

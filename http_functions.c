@@ -68,41 +68,84 @@ PHP_FUNCTION(http_date)
 }
 /* }}} */
 
-/* {{{ proto string http_build_uri(string url[, string proto[, string host[, int port]]])
+/* {{{ proto string http_build_url(mixed url[, mixed parts[, array new_url]])
  *
- * Build a complete URI according to the supplied parameters.
- * 
- * If the url is already abolute but a different proto was supplied,
- * only the proto part of the URI will be updated.  If url has no
- * path specified, the path of the current REQUEST_URI will be taken.
- * The host will be taken either from the Host HTTP header of the client
- * the SERVER_NAME or just localhost if prior are not available.
- * If a port is pecified in either the url or as sperate parameter,
- * it will be added if it differs from te default port for HTTP(S).
- * 
- * Returns the absolute URI as string on success or false on failure.
- * 
- * Examples:
- * <pre>
- * <?php
- * $uri = http_build_uri("page.php", "https", NULL, 488);
- * ?>
- * </pre>
+ * Returns the new URL as string on success or FALSE on failure.
  */
-PHP_FUNCTION(http_build_uri)
+PHP_FUNCTION(http_build_url)
 {
-	char *url = NULL, *proto = NULL, *host = NULL, *built = NULL;
-	int url_len = 0, proto_len = 0, host_len = 0;
-	long port = 0;
+	char *url_str = NULL;
+	size_t url_len = 0;
+	zval *z_old_url = NULL, *z_new_url = NULL, *z_composed_url = NULL;
+	php_url *old_url = NULL, *new_url = NULL, *composed_url = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ssl", &url, &url_len, &proto, &proto_len, &host, &host_len, &port) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/|z/z", &z_old_url, &z_new_url, &z_composed_url) != SUCCESS) {
 		RETURN_FALSE;
 	}
-
-	if ((built = http_absolute_uri_ex(url, url_len, proto, proto_len, host, host_len, port))) {
-		RETURN_STRING(built, 0);
+	
+	if (z_new_url) {
+		if (Z_TYPE_P(z_new_url) == IS_ARRAY || Z_TYPE_P(z_new_url) == IS_OBJECT) {
+			new_url = array2url(HASH_OF(z_new_url));
+		} else {
+			convert_to_string(z_new_url);
+			if (!(new_url = php_url_parse_ex(Z_STRVAL_P(z_new_url), Z_STRLEN_P(z_new_url)))) {
+				RETURN_FALSE;
+			}
+		}
 	}
-	RETURN_FALSE;
+	
+	if (Z_TYPE_P(z_old_url) == IS_ARRAY || Z_TYPE_P(z_old_url) == IS_OBJECT) {
+		old_url = array2url(HASH_OF(z_old_url));
+	} else {
+		convert_to_string(z_old_url);
+		if (!(old_url = php_url_parse_ex(Z_STRVAL_P(z_old_url), Z_STRLEN_P(z_old_url)))) {
+			if (new_url) {
+				php_url_free(new_url);
+			}
+			RETURN_FALSE;
+		}
+	}
+	
+	if (z_composed_url) {
+		http_build_url(old_url, new_url, &composed_url, &url_str, &url_len);
+		
+		zval_dtor(z_composed_url);
+		array_init(z_composed_url);
+		if (composed_url->scheme) {
+			add_assoc_string(z_composed_url, "scheme", composed_url->scheme, 1);
+		}
+		if (composed_url->user) {
+			add_assoc_string(z_composed_url, "user", composed_url->user, 1);
+		}
+		if (composed_url->pass) {
+			add_assoc_string(z_composed_url, "pass", composed_url->pass, 1);
+		}
+		if (composed_url->host) {
+			add_assoc_string(z_composed_url, "host", composed_url->host, 1);
+		}
+		if (composed_url->port) {
+			add_assoc_long(z_composed_url, "port", composed_url->port);
+		}
+		if (composed_url->path) {
+			add_assoc_string(z_composed_url, "path", composed_url->path, 1);
+		}
+		if (composed_url->query) {
+			add_assoc_string(z_composed_url, "query", composed_url->query, 1);
+		}
+		if (composed_url->fragment) {
+			add_assoc_string(z_composed_url, "fragment", composed_url->fragment, 1);
+		}
+		php_url_free(composed_url);
+	} else {
+		http_build_url(old_url, new_url, NULL, &url_str, &url_len);
+	}
+	
+	if (new_url) {
+		php_url_free(new_url);
+	}
+	php_url_free(old_url);
+	
+	RETURN_STRINGL(url_str, url_len, 0);
 }
 /* }}} */
 
@@ -686,7 +729,7 @@ PHP_FUNCTION(http_redirect)
 		}
 	}
 
-	URI = http_absolute_uri(url);
+	URI = http_absolute_url(url);
 
 	if (query_len) {
 		spprintf(&LOC, 0, "Location: %s?%s", URI, query);

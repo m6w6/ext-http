@@ -500,23 +500,24 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 
 			/* check host header */
 			if (SUCCESS == zend_hash_find(&message->hdrs, "Host", sizeof("Host"), (void **) &zhost)) {
-				char *colon = NULL, *host = NULL;
-				size_t host_len = 0;
-				int port = 0;
+				char *colon = NULL;
+				php_url parts, *url = php_url_parse(message->http.info.request.URI);
+				
+				memset(&parts, 0, sizeof(php_url));
 
 				/* check for port */
 				if ((colon = strchr(Z_STRVAL_PP(zhost), ':'))) {
-					port = atoi(colon + 1);
-					host = estrndup(Z_STRVAL_PP(zhost), host_len = (Z_STRVAL_PP(zhost) - colon - 1));
+					parts.port = atoi(colon + 1);
+					parts.host = estrndup(Z_STRVAL_PP(zhost), (Z_STRVAL_PP(zhost) - colon - 1));
 				} else {
-					host = estrndup(Z_STRVAL_PP(zhost), host_len = Z_STRLEN_PP(zhost));
+					parts.host = estrndup(Z_STRVAL_PP(zhost), Z_STRLEN_PP(zhost));
 				}
-				uri = http_absolute_uri_ex(
-					message->http.info.request.URI, strlen(message->http.info.request.URI),
-					NULL, 0, host, host_len, port);
-				efree(host);
+				
+				http_build_url(url, &parts, NULL, &uri, NULL);
+				php_url_free(url);
+				efree(parts.host);
 			} else {
-				uri = http_absolute_uri(message->http.info.request.URI);
+				uri = http_absolute_url(message->http.info.request.URI);
 			}
 
 			if ((request.meth = http_request_method_exists(1, 0, message->http.info.request.method))) {

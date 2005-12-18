@@ -431,14 +431,8 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	HTTP_CHECK_CURL_INIT(obj->request->ch, curl_easy_init(), return FAILURE);
 	
 	URL = convert_to_type_ex(IS_STRING, GET_PROP(obj, url), &URL_p);
-	obj->request->url = http_absolute_uri_ex(Z_STRVAL_P(URL), Z_STRLEN_P(URL), NULL, 0, NULL, 0, 0);
-	if (URL_p) {
-		zval_ptr_dtor(&URL_p);
-	}
-	
-	if (!obj->request->url) {
-		return FAILURE;
-	}
+	obj->request->url = http_absolute_url(Z_STRVAL_P(URL));
+	if (URL_p) zval_ptr_dtor(&URL_p);
 	
 	switch (obj->request->meth = Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_PROP(obj, method), &meth_p)))
 	{
@@ -532,11 +526,11 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		
 		if (Z_STRLEN_P(qdata)) {
 			if (!strchr(obj->request->url, '?')) {
-				strlcat(obj->request->url, "?", HTTP_URI_MAXLEN);
+				strlcat(obj->request->url, "?", HTTP_URL_MAXLEN);
 			} else {
-				strlcat(obj->request->url, "&", HTTP_URI_MAXLEN);
+				strlcat(obj->request->url, "&", HTTP_URL_MAXLEN);
 			}
-			strlcat(obj->request->url, Z_STRVAL_P(qdata), HTTP_URI_MAXLEN);
+			strlcat(obj->request->url, Z_STRVAL_P(qdata), HTTP_URL_MAXLEN);
 		}
 		
 		http_request_prepare(obj->request, Z_ARRVAL_P(options));

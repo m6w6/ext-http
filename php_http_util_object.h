@@ -22,7 +22,7 @@ extern zend_function_entry http_util_object_fe[];
 extern PHP_MINIT_FUNCTION(http_util_object);
 
 PHP_METHOD(HttpUtil, date);
-PHP_METHOD(HttpUtil, absoluteUri);
+PHP_METHOD(HttpUtil, buildUrl);
 PHP_METHOD(HttpUtil, negotiateLanguage);
 PHP_METHOD(HttpUtil, negotiateCharset);
 PHP_METHOD(HttpUtil, negotiateContentType);

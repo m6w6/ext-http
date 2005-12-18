@@ -1,5 +1,5 @@
 --TEST--
-http_absolute_uri() with relative paths
+http_build_url() with relative paths
 --SKIPIF--
 <?php
 include 'skip.inc';
@@ -7,8 +7,8 @@ include 'skip.inc';
 --FILE--
 <?php
 echo "-TEST\n";
-echo http_absolute_uri('page'), "\n";
-echo http_absolute_uri('with/some/path/'), "\n";
+echo http_build_url('page'), "\n";
+echo http_build_url('with/some/path/'), "\n";
 ?>
 --EXPECTF--
 %sTEST

@@ -381,6 +381,7 @@ static HTTP_FILTER_OPS(deflate) = {
 
 static php_stream_filter *http_filter_create(const char *name, zval *params, int p TSRMLS_DC)
 {
+	zval **tmp = &params;
 	php_stream_filter *f = NULL;
 	
 	if (!strcasecmp(name, "http.chunked_decode")) {
@@ -407,6 +408,20 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 			if (p) {
 				b->flags |= HTTP_ENCODING_STREAM_PERSISTENT;
 			}
+			if (params) {
+				switch (Z_TYPE_P(params))
+				{
+					case IS_ARRAY:
+					case IS_OBJECT:
+						if (SUCCESS != zend_hash_find(HASH_OF(params), "zlib", sizeof("zlib"), (void **) &tmp)) {
+							break;
+						}
+					default:
+						if (zval_is_true(*tmp)) {
+							b->flags |= HTTP_ENCODING_STREAM_ZLIB_HEADER;
+						}
+				}
+			}
 			if (!(f = php_stream_filter_alloc(&HTTP_FILTER_OP(gzencode), b, p))) {
 				pefree(b, p);
 			}
@@ -419,6 +434,20 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		if ((b = pecalloc(1, sizeof(HTTP_FILTER_BUFFER(gzip)), p))) {
 			if (p) {
 				b->flags |= HTTP_ENCODING_STREAM_PERSISTENT;
+			}
+			if (params) {
+				switch (Z_TYPE_P(params))
+				{
+					case IS_ARRAY:
+					case IS_OBJECT:
+						if (SUCCESS != zend_hash_find(HASH_OF(params), "zlib", sizeof("zlib"), (void **) &tmp)) {
+							break;
+						}
+					default:
+						if (zval_is_true(*tmp)) {
+							b->flags |= HTTP_ENCODING_STREAM_ZLIB_HEADER;
+						}
+				}
 			}
 			if (!(f = php_stream_filter_alloc(&HTTP_FILTER_OP(deflate), b, p))) {
 				pefree(b, p);
