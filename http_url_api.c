@@ -59,7 +59,6 @@ PHP_HTTP_API void _http_build_url(const php_url *old_url, const php_url *new_url
 	__URLCPY(pass);
 	__URLCPY(host);
 	__URLCPY(path);
-	__URLCPY(path);
 	__URLCPY(query);
 	__URLCPY(fragment);
 	
