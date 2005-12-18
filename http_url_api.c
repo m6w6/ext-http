@@ -22,6 +22,7 @@
 #include "SAPI.h"
 #include "zend_ini.h"
 #include "php_output.h"
+#include "ext/standard/php_string.h"
 
 #include "php_http_api.h"
 #include "php_http_url_api.h"
@@ -99,9 +100,8 @@ PHP_HTTP_API void _http_build_url(const php_url *old_url, const php_url *new_url
 		}
 	}
 	
-	/* FIXXME: dirname(REQUEST_URI) if path is relative */
 	if (!url->path) {
-		if (SG(request_info).request_uri) {
+		if (SG(request_info).request_uri && *SG(request_info).request_uri) {
 			const char *q = strchr(SG(request_info).request_uri, '?');
 			
 			if (q) {
@@ -110,7 +110,29 @@ PHP_HTTP_API void _http_build_url(const php_url *old_url, const php_url *new_url
 				url->path = estrdup(SG(request_info).request_uri);
 			}
 		} else {
-			url->path = ecalloc(1, 1);
+			url->path = estrndup("/", 1);
+		}
+	} else if (*url->path != '/') {
+		if (SG(request_info).request_uri && *SG(request_info).request_uri) {
+			const char *q = strchr(SG(request_info).request_uri, '?');
+			char *uri, *path;
+			size_t len;
+			
+			if (q) {
+				uri = estrndup(SG(request_info).request_uri, len = q - SG(request_info).request_uri);
+			} else {
+				uri = estrndup(SG(request_info).request_uri, len = strlen(SG(request_info).request_uri));
+			}
+			
+			php_dirname(uri, len);
+			spprintf(&path, 0, "%s/%s", uri, url->path);
+			efree(uri);
+			STR_SET(url->path, path);
+		} else {
+			char *uri;
+			
+			spprintf(&uri, 0, "/%s", url->path);
+			STR_SET(url->path, uri);
 		}
 	}
 	
