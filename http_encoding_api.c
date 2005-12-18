@@ -15,6 +15,8 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #endif
+
+#define HTTP_WANT_ZLIB
 #include "php_http.h"
 
 #include "php_http_api.h"
@@ -411,19 +413,21 @@ PHP_HTTP_API STATUS _http_encoding_gzdecode_verify(const char *data, size_t data
 		return FAILURE; \
 	}
 
-PHP_HTTP_API STATUS _http_encoding_stream_init(http_encoding_stream *s, int gzip, int level, char **encoded, size_t *encoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_stream_init(http_encoding_stream *s, int flags, int level, char **encoded, size_t *encoded_len TSRMLS_DC)
 {
 	STATUS status;
+	int wbits = (flags & HTTP_ENCODING_STREAM_ZLIB_HEADER) ? MAX_WBITS : -MAX_WBITS;
 	
 	memset(s, 0, sizeof(http_encoding_stream));
-	if (Z_OK != (status = deflateInit2(&s->Z, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) {
+	if (Z_OK != (status = deflateInit2(&s->Z, level, Z_DEFLATED, wbits, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY))) {
 		HTTP_ENCODING_STREAM_ERROR(status, NULL);
 	}
 	
-	if ((s->gzip = gzip)) {
+	s->persistent = (flags & HTTP_ENCODING_STREAM_PERSISTENT);
+	if ((s->gzip = (flags & HTTP_ENCODING_STREAM_GZIP_HEADER))) {
 		s->crc = crc32(0L, Z_NULL, 0);
 		*encoded_len = sizeof(http_encoding_gzip_header);
-		*encoded = emalloc(*encoded_len);
+		*encoded = pemalloc(*encoded_len, s->persistent);
 		memcpy(*encoded, http_encoding_gzip_header, *encoded_len);
 	} else {
 		*encoded_len = 0;
@@ -438,7 +442,7 @@ PHP_HTTP_API STATUS _http_encoding_stream_update(http_encoding_stream *s, const 
 	STATUS status;
 	
 	*encoded_len = HTTP_ENCODING_BUFLEN(data_len);
-	*encoded = emalloc(*encoded_len);
+	*encoded = pemalloc(*encoded_len, s->persistent);
 	
 	s->Z.next_in = (Bytef *) data;
 	s->Z.avail_in = data_len;
@@ -464,7 +468,7 @@ PHP_HTTP_API STATUS _http_encoding_stream_finish(http_encoding_stream *s, char *
 	STATUS status;
 	
 	*encoded_len = 1024;
-	*encoded = emalloc(*encoded_len);
+	*encoded = pemalloc(*encoded_len, s->persistent);
 	
 	s->Z.next_out = (Bytef *) *encoded;
 	s->Z.avail_out = *encoded_len;
@@ -476,7 +480,7 @@ PHP_HTTP_API STATUS _http_encoding_stream_finish(http_encoding_stream *s, char *
 	*encoded_len -= s->Z.avail_out;
 	if (s->gzip) {
 		if (s->Z.avail_out < 8) {
-			*encoded = erealloc(*encoded, *encoded_len + 8);
+			*encoded = perealloc(*encoded, *encoded_len + 8, s->persistent);
 		}
 		(*encoded)[(*encoded_len)++] = (char) (s->crc & 0xFF);
 		(*encoded)[(*encoded_len)++] = (char) ((s->crc >> 8) & 0xFF);

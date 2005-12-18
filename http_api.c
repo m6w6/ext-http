@@ -21,7 +21,6 @@
 #include "SAPI.h"
 #include "php_output.h"
 #include "ext/standard/url.h"
-#include "ext/standard/head.h"
 
 #include "php_http_api.h"
 #include "php_http_send_api.h"
@@ -250,7 +249,7 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 	}
 	
 	php_end_ob_buffers(0 TSRMLS_CC);
-	if (php_header(TSRMLS_C) && body) {
+	if ((SUCCESS == sapi_send_headers(TSRMLS_C)) && body) {
 		PHPWRITE(body, strlen(body));
 	}
 	

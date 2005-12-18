@@ -17,6 +17,7 @@
 #endif
 
 #define HTTP_WANT_CURL
+#define HTTP_WANT_ZLIB
 #include "php_http.h"
 
 #include "SAPI.h"
