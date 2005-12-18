@@ -31,6 +31,8 @@ $deflated = file_get_contents($n);
 var_dump($d == http_gzdecode($gzencoded));
 var_dump($d == http_inflate($deflated));
 
+unlink($n);
+
 echo "Done\n";
 ?>
 --EXPECTF--
