@@ -41,7 +41,7 @@ if (http_support(HTTP_SUPPORT_REQUESTS)) {
 		printf("%s (%d)\n", $x->getMessage(), $x->getCode());
 	}
 } else {
-	echo "URL using bad/illegal format or missing URL;  ((null)) (8)\n";
+	echo "URL using bad/illegal format or missing URL; No URL set!\n ((null)) (8)\n";
 }
 echo "Done\n";
 ?>
@@ -59,5 +59,6 @@ echo "Done\n";
 10: HttpSocketException
 11: HttpResponseException
 12: HttpUrlException
-URL using bad/illegal format or missing URL;  ((null)) (8)
+URL using bad/illegal format or missing URL; No URL set!
+ ((null)) (8)
 Done
