@@ -227,37 +227,18 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 			continue_at = body;
 		}
 		
-#if defined(HTTP_HAVE_ZLIB) || defined(HAVE_ZLIB)
+#ifdef HTTP_HAVE_ZLIB
 		/* check for compressed data */
 		if (http_message_header(msg, "Vary") && (c = http_message_header(msg, "Content-Encoding"))) {
 			char *decoded = NULL;
 			size_t decoded_len = 0;
-#	if !defined(HTTP_HAVE_ZLIB)
-			zval func, retval, arg, *args[1];
-			INIT_PZVAL(&func);
-			INIT_PZVAL(&retval);
-			INIT_PZVAL(&arg);
-			args[0] = &arg;
-#	endif /* !HTTP_HAVE_ZLIB */
 
-#	define DECODE_WITH_EXT_ZLIB(function, S, L) \
-				ZVAL_STRINGL(&func, function, lenof(function), 0); \
-				ZVAL_STRINGL(&arg, (S), (L), 0); \
-				if (SUCCESS == call_user_function(EG(function_table), NULL, &func, &retval, 1, args TSRMLS_CC)) { \
-					if (Z_TYPE(retval) == IS_STRING) { \
-						decoded = Z_STRVAL(retval); \
-						decoded_len = Z_STRLEN(retval); \
-					} \
-				}
-
-			if (!strcasecmp(Z_STRVAL_P(c), "gzip") || !strcasecmp(Z_STRVAL_P(c), "x-gzip")) {
-#	ifndef HTTP_HAVE_ZLIB
-				DECODE_WITH_EXT_ZLIB("gzinflate", PHPSTR_VAL(msg) + 10, PHPSTR_LEN(msg) - 18);
-#	else
+			if (	!strcasecmp(Z_STRVAL_P(c), "gzip") || 
+					!strcasecmp(Z_STRVAL_P(c), "x-gzip") ||
+					!strcasecmp(Z_STRVAL_P(c), "deflate") ||
+					!strcasecmp(Z_STRVAL_P(c), "compress") ||
+					!strcasecmp(Z_STRVAL_P(c), "x-compress")) {
 				http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
-			} else if (!strcasecmp(Z_STRVAL_P(c), "deflate") || !strcasecmp(Z_STRVAL_P(c), "compress") || !strcasecmp(Z_STRVAL_P(c), "x-compress")) {
-				http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
-#	endif /* HTTP_HAVE_ZLIB */
 			}
 			
 			if (decoded) {
@@ -286,7 +267,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				PHPSTR(msg)->free = 1;
 			}
 		}
-#endif /* HTTP_HAVE_ZLIB || HAVE_ZLIB */
+#endif /* HTTP_HAVE_ZLIB */
 
 		/* check for following messages */
 		if (continue_at && (continue_at < (message + message_length))) {
