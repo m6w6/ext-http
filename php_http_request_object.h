@@ -85,7 +85,9 @@ PHP_METHOD(HttpRequest, getResponseCode);
 PHP_METHOD(HttpRequest, getResponseBody);
 PHP_METHOD(HttpRequest, getResponseInfo);
 PHP_METHOD(HttpRequest, getResponseMessage);
+PHP_METHOD(HttpRequest, getRawResponseMessage);
 PHP_METHOD(HttpRequest, getRequestMessage);
+PHP_METHOD(HttpRequest, getRawRequestMessage);
 PHP_METHOD(HttpRequest, getHistory);
 PHP_METHOD(HttpRequest, clearHistory);
 

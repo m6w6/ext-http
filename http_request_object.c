@@ -147,11 +147,13 @@ HTTP_BEGIN_ARGS(getResponseInfo, 0, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getResponseMessage, 1);
-HTTP_EMPTY_ARGS(getRequestMessage, 1);
-HTTP_EMPTY_ARGS(getHistory, 1);
+HTTP_EMPTY_ARGS(getResponseMessage, 0);
+HTTP_EMPTY_ARGS(getRawResponseMessage, 0);
+HTTP_EMPTY_ARGS(getRequestMessage, 0);
+HTTP_EMPTY_ARGS(getRawRequestMessage, 0);
+HTTP_EMPTY_ARGS(getHistory, 0);
 HTTP_EMPTY_ARGS(clearHistory, 0);
-HTTP_EMPTY_ARGS(send, 1);
+HTTP_EMPTY_ARGS(send, 0);
 
 HTTP_BEGIN_ARGS(get, 0, 1)
 	HTTP_ARG_VAL(url, 0)
@@ -267,7 +269,9 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(getResponseBody, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseInfo, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseMessage, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getRawResponseMessage, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getRequestMessage, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getRawRequestMessage, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getHistory, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(clearHistory, ZEND_ACC_PUBLIC)
 
@@ -1871,6 +1875,44 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 			ZVAL_OBJVAL(return_value, http_message_object_new_ex(http_message_object_ce, msg, NULL));
 		}
 		SET_EH_NORMAL();
+	}
+}
+/* }}} */
+
+/* {{{ proto string HttpRequest::getRawRequestMessage()
+ *
+ * Get sent HTTP message.
+ * 
+ * Returns an HttpMessage in a form of a string 
+ * 
+ */
+PHP_METHOD(HttpRequest, getRawRequestMessage)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_request_object, obj);
+
+		RETURN_PHPSTR_DUP(&obj->request->conv.request);
+	}
+}
+/* }}} */
+
+/* {{{ proto string HttpRequest::getRawResponseMessage()
+ *
+ * Get the entire HTTP response.
+ * 
+ * Returns the complete web server response, including the headers in a form of a string.
+ * 
+ */
+PHP_METHOD(HttpRequest, getRawResponseMessage)
+{
+	NO_ARGS;
+
+	IF_RETVAL_USED {
+		getObject(http_request_object, obj);
+
+		RETURN_PHPSTR_DUP(&obj->request->conv.response);
 	}
 }
 /* }}} */

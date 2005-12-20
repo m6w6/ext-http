@@ -523,6 +523,11 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		}
 	}
 
+	/* reset cookies */
+	if ((zoption = http_request_option(request, options, "resetcookies", IS_BOOL)) && Z_LVAL_P(zoption)) {
+		HTTP_CURL_OPT(COOKIELIST, "ALL");
+	}
+
 	/* session cookies */
 	if ((zoption = http_request_option(request, options, "cookiesession", IS_BOOL))) {
 		if (Z_LVAL_P(zoption)) {
