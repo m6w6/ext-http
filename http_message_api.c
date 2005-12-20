@@ -254,7 +254,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 #	ifndef HTTP_HAVE_ZLIB
 				DECODE_WITH_EXT_ZLIB("gzinflate", PHPSTR_VAL(msg) + 10, PHPSTR_LEN(msg) - 18);
 #	else
-				http_encoding_gzdecode(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
+				http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
 			} else if (!strcasecmp(Z_STRVAL_P(c), "deflate") || !strcasecmp(Z_STRVAL_P(c), "compress") || !strcasecmp(Z_STRVAL_P(c), "x-compress")) {
 				http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
 #	endif /* HTTP_HAVE_ZLIB */

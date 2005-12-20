@@ -148,8 +148,6 @@ PHP_FUNCTION(http_build_query);
 #endif /* ZEND_ENGINE_2 */
 PHP_FUNCTION(ob_etaghandler);
 #ifdef HTTP_HAVE_ZLIB
-PHP_FUNCTION(http_gzencode);
-PHP_FUNCTION(http_gzdecode);
 PHP_FUNCTION(http_deflate);
 PHP_FUNCTION(http_inflate);
 #endif

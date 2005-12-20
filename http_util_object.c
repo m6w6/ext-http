@@ -124,8 +124,6 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(parseCookie, http_parse_cookie)
 	HTTP_UTIL_ALIAS(chunkedDecode, http_chunked_decode)
 #ifdef HTTP_HAVE_ZLIB
-	HTTP_UTIL_ALIAS(gzEncode, http_gzencode)
-	HTTP_UTIL_ALIAS(gzDecode, http_gzdecode)
 	HTTP_UTIL_ALIAS(deflate, http_deflate)
 	HTTP_UTIL_ALIAS(inflate, http_inflate)
 #endif /* HTTP_HAVE_ZLIB */

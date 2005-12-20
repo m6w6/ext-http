@@ -71,17 +71,14 @@ static inline void _http_flush(const char *data, size_t data_len TSRMLS_DC)
 #define http_send_response_start(b, cl) _http_send_response_start((b), (cl) TSRMLS_CC)
 static inline void _http_send_response_start(void **buffer, size_t content_length TSRMLS_DC)
 {
-	if (http_encoding_response_start(content_length)) {
+	int encoding;
+	
+	if ((encoding = http_encoding_response_start(content_length))) {
+	//DebugBreak();
 #ifdef HTTP_HAVE_ZLIB
-		char *encoded;
-		size_t encoded_len;
-		int gzip = (HTTP_G(send).gzip_encoding == HTTP_ENCODING_GZIP);
-		http_encoding_stream *s = emalloc(sizeof(http_encoding_stream));
-		
-		http_encoding_stream_init(s, gzip?HTTP_ENCODING_STREAM_GZIP_HEADER:0, -1, &encoded, &encoded_len);
-		phpstr_chunked_output((phpstr **) &s->storage, encoded, encoded_len, HTTP_G(send).buffer_size, _http_flush TSRMLS_CC);
-		STR_FREE(encoded);
-		*buffer = s;
+		*buffer = http_encoding_deflate_stream_init(NULL, 
+			(encoding == HTTP_ENCODING_GZIP) ? 
+				HTTP_DEFLATE_TYPE_GZIP : HTTP_DEFLATE_TYPE_ZLIB);
 #endif
 	}
 }
@@ -97,7 +94,7 @@ static inline void _http_send_response_data_plain(void **buffer, const char *dat
 		size_t encoded_len;
 		http_encoding_stream *s = *((http_encoding_stream **) buffer);
 		
-		http_encoding_stream_update(s, data, data_len, &encoded, &encoded_len);
+		http_encoding_deflate_stream_update(s, data, data_len, &encoded, &encoded_len);
 		phpstr_chunked_output((phpstr **) &s->storage, encoded, encoded_len, HTTP_G(send).buffer_size, _http_flush TSRMLS_CC);
 		efree(encoded);
 #else
@@ -168,10 +165,10 @@ static inline void _http_send_response_finish(void **buffer TSRMLS_DC)
 		size_t encoded_len = 0;
 		http_encoding_stream *s = *((http_encoding_stream **) buffer);
 		
-		http_encoding_stream_finish(s, &encoded, &encoded_len);
+		http_encoding_deflate_stream_finish(s, &encoded, &encoded_len);
 		phpstr_chunked_output((phpstr **) &s->storage, encoded, encoded_len, 0, _http_flush TSRMLS_CC);
+		http_encoding_deflate_stream_free(&s);
 		STR_FREE(encoded);
-		efree(s);
 #else
 		http_error(HE_ERROR, HTTP_E_RESPONSE, "Attempt to send GZIP response despite being able to do so; please report this bug");
 #endif

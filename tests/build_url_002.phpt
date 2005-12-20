@@ -18,7 +18,7 @@ echo "Done\n";
 %sTEST
 https://www.example.com:9999/replaced?q=1#n
 https://www.example.com:9999/replaced?q=1#n
-Array 
+Array
 (
     [scheme] => https
     [host] => www.example.com

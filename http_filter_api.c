@@ -84,11 +84,8 @@ typedef struct {
 } HTTP_FILTER_BUFFER(chunked_decode);
 
 #ifdef HTTP_HAVE_ZLIB
-typedef struct {
-	int init;
-	int flags;
-	http_encoding_stream stream;
-} HTTP_FILTER_BUFFER(gzip);
+typedef http_encoding_stream HTTP_FILTER_BUFFER(deflate);
+typedef http_encoding_stream HTTP_FILTER_BUFFER(inflate);
 #endif /* HTTP_HAVE_ZLIB */
 
 
@@ -293,29 +290,15 @@ static HTTP_FILTER_OPS(chunked_encode) = {
 };
 
 #ifdef HTTP_HAVE_ZLIB
-static HTTP_FILTER_FUNCTION(gzip)
+
+static HTTP_FILTER_FUNCTION(deflate)
 {
 	int out_avail = 0;
 	php_stream_bucket *ptr, *nxt;
-	HTTP_FILTER_BUFFER(gzip) *buffer = (HTTP_FILTER_BUFFER(gzip) *) this->abstract;
+	HTTP_FILTER_BUFFER(inflate) *buffer = (HTTP_FILTER_BUFFER(deflate) *) this->abstract;
 	
 	if (bytes_consumed) {
 		*bytes_consumed = 0;
-	}
-	
-	/* first round */
-	if (!buffer->init) {
-		char *encoded = NULL;
-		size_t encoded_len = 0;
-		
-		buffer->init = 1;
-		http_encoding_stream_init(&buffer->stream, buffer->flags, -1, &encoded, &encoded_len);
-		
-		if (encoded) {
-			out_avail = 1;
-			NEW_BUCKET(encoded, encoded_len);
-			pefree(encoded, this->is_persistent);
-		}
 	}
 	
 	/* new data available? */
@@ -331,12 +314,13 @@ static HTTP_FILTER_FUNCTION(gzip)
 				*bytes_consumed += ptr->buflen;
 			}
 			
-			/* this is actually flushing implicitly */
-			http_encoding_stream_update(&buffer->stream, ptr->buf, ptr->buflen, &encoded, &encoded_len);
-			if (encoded) {
-				out_avail = 1;
-				NEW_BUCKET(encoded, encoded_len);
-				pefree(encoded, this->is_persistent);
+			if (ptr->buflen) {
+				http_encoding_deflate_stream_update(buffer, ptr->buf, ptr->buflen, &encoded, &encoded_len);
+				if (encoded) {
+					out_avail = 1;
+					NEW_BUCKET(encoded, encoded_len);
+					efree(encoded);
+				}
 			}
 			
 			php_stream_bucket_unlink(ptr TSRMLS_CC);
@@ -349,34 +333,94 @@ static HTTP_FILTER_FUNCTION(gzip)
 		char *encoded = NULL;
 		size_t encoded_len = 0;
 		
-		http_encoding_stream_finish(&buffer->stream, &encoded, &encoded_len);
+		http_encoding_deflate_stream_finish(buffer, &encoded, &encoded_len);
 		if (encoded) {
 			out_avail = 1;
 			NEW_BUCKET(encoded, encoded_len);
+			efree(encoded);
 		}
 	}
 	
 	return out_avail ? PSFS_PASS_ON : PSFS_FEED_ME;
 }
 
-static HTTP_FILTER_DESTRUCTOR(gzip)
+static HTTP_FILTER_FUNCTION(inflate)
 {
-	HTTP_FILTER_BUFFER(gzip) *buffer = (HTTP_FILTER_BUFFER(gzip) *) this->abstract;
+	int out_avail = 0;
+	php_stream_bucket *ptr, *nxt;
+	HTTP_FILTER_BUFFER(inflate) *buffer = (HTTP_FILTER_BUFFER(inflate) *) this->abstract;
 	
-	pefree(buffer, this->is_persistent);
+	if (bytes_consumed) {
+		*bytes_consumed = 0;
+	}
+	
+	/* new data available? */
+	if (buckets_in->head) {
+		
+		/* fetch available bucket data */
+		for (ptr = buckets_in->head; ptr; ptr = nxt) {
+			char *decoded = NULL;
+			size_t decoded_len = 0;
+			
+			nxt = ptr->next;
+			if (bytes_consumed) {
+				*bytes_consumed += ptr->buflen;
+			}
+			
+			if (ptr->buflen) {
+				http_encoding_inflate_stream_update(buffer, ptr->buf, ptr->buflen, &decoded, &decoded_len);
+				if (decoded) {
+					out_avail = 1;
+					NEW_BUCKET(decoded, decoded_len);
+					efree(decoded);
+				}
+			}
+			
+			php_stream_bucket_unlink(ptr TSRMLS_CC);
+			php_stream_bucket_delref(ptr TSRMLS_CC);
+		}
+	}
+	
+	/* flush & close */
+	if (flags == PSFS_FLAG_FLUSH_CLOSE) {
+		char *decoded = NULL;
+		size_t decoded_len = 0;
+		
+		http_encoding_inflate_stream_finish(buffer, &decoded, &decoded_len);
+		if (decoded) {
+			out_avail = 1;
+			NEW_BUCKET(decoded, decoded_len);
+			efree(decoded);
+		}
+	}
+	
+	return out_avail ? PSFS_PASS_ON : PSFS_FEED_ME;
 }
 
-static HTTP_FILTER_OPS(gzencode) = {
-	HTTP_FILTER_FUNC(gzip),
-	HTTP_FILTER_DTOR(gzip),
-	"http.gzencode"
-};
+static HTTP_FILTER_DESTRUCTOR(deflate)
+{
+	HTTP_FILTER_BUFFER(deflate) *buffer = (HTTP_FILTER_BUFFER(deflate) *) this->abstract;
+	http_encoding_deflate_stream_free(&buffer);
+}
+
+static HTTP_FILTER_DESTRUCTOR(inflate)
+{
+	HTTP_FILTER_BUFFER(inflate) *buffer = (HTTP_FILTER_BUFFER(inflate) *) this->abstract;
+	http_encoding_inflate_stream_free(&buffer);
+}
 
 static HTTP_FILTER_OPS(deflate) = {
-	HTTP_FILTER_FUNC(gzip),
-	HTTP_FILTER_DTOR(gzip),
+	HTTP_FILTER_FUNC(deflate),
+	HTTP_FILTER_DTOR(deflate),
 	"http.deflate"
 };
+
+static HTTP_FILTER_OPS(inflate) = {
+	HTTP_FILTER_FUNC(inflate),
+	HTTP_FILTER_DTOR(inflate),
+	"http.inflate"
+};
+
 #endif /* HTTP_HAVE_ZLIB */
 
 static php_stream_filter *http_filter_create(const char *name, zval *params, int p TSRMLS_DC)
@@ -400,57 +444,42 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 #ifdef HTTP_HAVE_ZLIB
 	} else
 	
-	if (!strcasecmp(name, "http.gzencode")) {
-		HTTP_FILTER_BUFFER(gzip) *b = NULL;
+	if (!strcasecmp(name, "http.inflate")) {
+		int flags = p ? HTTP_ENCODING_STREAM_PERSISTENT : 0;
+		HTTP_FILTER_BUFFER(inflate) *b = NULL;
 		
-		if ((b = pecalloc(1, sizeof(HTTP_FILTER_BUFFER(gzip)), p))) {
-			b->flags = HTTP_ENCODING_STREAM_GZIP_HEADER;
-			if (p) {
-				b->flags |= HTTP_ENCODING_STREAM_PERSISTENT;
-			}
-			if (params) {
-				switch (Z_TYPE_P(params))
-				{
-					case IS_ARRAY:
-					case IS_OBJECT:
-						if (SUCCESS != zend_hash_find(HASH_OF(params), "zlib", sizeof("zlib"), (void **) &tmp)) {
-							break;
-						}
-					default:
-						if (zval_is_true(*tmp)) {
-							b->flags |= HTTP_ENCODING_STREAM_ZLIB_HEADER;
-						}
-				}
-			}
-			if (!(f = php_stream_filter_alloc(&HTTP_FILTER_OP(gzencode), b, p))) {
-				pefree(b, p);
+		if ((b = http_encoding_inflate_stream_init(NULL, flags))) {
+			if (!(f = php_stream_filter_alloc(&HTTP_FILTER_OP(inflate), b, p))) {
+				http_encoding_inflate_stream_free(&b);
 			}
 		}
 	} else
 	
 	if (!strcasecmp(name, "http.deflate")) {
-		HTTP_FILTER_BUFFER(gzip) *b = NULL;
+		int flags = p ? HTTP_ENCODING_STREAM_PERSISTENT : 0;
+		HTTP_FILTER_BUFFER(deflate) *b = NULL;
 		
-		if ((b = pecalloc(1, sizeof(HTTP_FILTER_BUFFER(gzip)), p))) {
-			if (p) {
-				b->flags |= HTTP_ENCODING_STREAM_PERSISTENT;
-			}
-			if (params) {
-				switch (Z_TYPE_P(params))
+		if (params) {
+			switch (Z_TYPE_P(params))
+			{
+				case IS_ARRAY:
+				case IS_OBJECT:
+					if (SUCCESS != zend_hash_find(HASH_OF(params), "flags", sizeof("flags"), (void **) &tmp)) {
+						break;
+					}
+				default:
 				{
-					case IS_ARRAY:
-					case IS_OBJECT:
-						if (SUCCESS != zend_hash_find(HASH_OF(params), "zlib", sizeof("zlib"), (void **) &tmp)) {
-							break;
-						}
-					default:
-						if (zval_is_true(*tmp)) {
-							b->flags |= HTTP_ENCODING_STREAM_ZLIB_HEADER;
-						}
+					zval *orig = *tmp;
+					
+					convert_to_long_ex(tmp);
+					flags |= (Z_LVAL_PP(tmp) & 0x0fffffff);
+					if (orig != *tmp) zval_ptr_dtor(tmp);
 				}
 			}
+		}
+		if ((b = http_encoding_deflate_stream_init(NULL, flags))) {
 			if (!(f = php_stream_filter_alloc(&HTTP_FILTER_OP(deflate), b, p))) {
-				pefree(b, p);
+				http_encoding_deflate_stream_free(&b);
 			}
 		}
 #endif /* HTTP_HAVE_ZLIB */

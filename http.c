@@ -35,6 +35,9 @@
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
 #endif
+#ifdef HTTP_HAVE_ZLIB
+#	include "php_http_encoding_api.h"
+#endif
 
 #ifdef ZEND_ENGINE_2
 #	include "php_http_filter_api.h"
@@ -103,8 +106,6 @@ zend_function_entry http_functions[] = {
 #endif
 	PHP_FE(ob_etaghandler, NULL)
 #ifdef HTTP_HAVE_ZLIB
-	PHP_FE(http_gzencode, NULL)
-	PHP_FE(http_gzdecode, NULL)
 	PHP_FE(http_deflate, NULL)
 	PHP_FE(http_inflate, NULL)
 #endif
@@ -223,6 +224,9 @@ PHP_MINIT_FUNCTION(http)
 #ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #endif /* HTTP_HAVE_CURL */
+#ifdef HTTP_HAVE_ZLIB
+			(SUCCESS != PHP_MINIT_CALL(http_encoding))	||
+#endif
 			(SUCCESS != PHP_MINIT_CALL(http_request_method))) {
 		return FAILURE;
 	}

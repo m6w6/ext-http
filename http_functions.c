@@ -1578,73 +1578,12 @@ PHP_FUNCTION(http_build_query)
 /* {{{ */
 #ifdef HTTP_HAVE_ZLIB
 
-/* {{{ proto string http_gzencode(string data[, int level = -1[, int mtime = 0]])
+/* {{{  proto string http_deflate(string data[, int flags = 0])
  *
- * Compress data with the HTTP compatible GZIP encoding.
- * 
- * Expects the first parameter to be a string which contains the data that
- * should be encoded.  Additionally accepts an optional in paramter specifying
- * the compression level, where -1 is default, 0 is no compression and 9 is
- * best compression ratio.
- * 
- * Returns the encoded string on success, or NULL on failure.
- */
-PHP_FUNCTION(http_gzencode)
-{
-	char *data;
-	int data_len;
-	long level = -1, mtime = 0;
-
-	RETVAL_NULL();
-	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ll", &data, &data_len, &level, &mtime)) {
-		HTTP_CHECK_GZIP_LEVEL(level, return);
-		{
-			char *encoded;
-			size_t encoded_len;
-			
-			if (SUCCESS == http_encoding_gzencode(level, mtime, data, data_len, &encoded, &encoded_len)) {
-				RETURN_STRINGL(encoded, (int) encoded_len, 0);
-			}
-		}
-	}
-}
-/* }}} */
-
-/* {{{ proto string http_gzdecode(string data)
- *
- * Uncompress data compressed with the HTTP compatible GZIP encoding.
- * 
- * Expects a string as parameter containing the compressed data.
- * 
- * Returns the decoded string on success, or NULL on failure.
- */
-PHP_FUNCTION(http_gzdecode)
-{
-	char *data;
-	int data_len;
-	
-	RETVAL_NULL();
-	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &data, &data_len)) {
-		char *decoded;
-		size_t decoded_len;
-		
-		if (SUCCESS == http_encoding_gzdecode(data, data_len, &decoded, &decoded_len)) {
-			RETURN_STRINGL(decoded, (int) decoded_len, 0);
-		}
-	}
-}
-/* }}} */
-
-/* {{{  proto string http_deflate(string data[, int level = -1[, bool zlib_header = false]])
- *
- * Compress data with the HTTP compatible DEFLATE encoding.
+ * Compress data with gzip, zlib AKA deflate or raw deflate encoding.
  * 
  * Expects the first parameter to be a string containing the data that should
- * be encoded.  Additionally accepts an optional int parameter specifying the
- * compression level, where -1 is default, 0 is no compression and 9 is best
- * compression ratio.
+ * be encoded.
  * 
  * Returns the encoded string on success, or NULL on failure.
  */
@@ -1652,18 +1591,16 @@ PHP_FUNCTION(http_deflate)
 {
 	char *data;
 	int data_len;
-	long level = -1;
-	zend_bool zhdr = 0;
+	long flags = 0;
 	
 	RETVAL_NULL();
 	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|lb", &data, &data_len, &level, &zhdr)) {
-		HTTP_CHECK_GZIP_LEVEL(level, return);
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &data, &data_len, &flags)) {
 		{
 			char *encoded;
 			size_t encoded_len;
 			
-			if (SUCCESS == http_encoding_deflate(level, zhdr, data, data_len, &encoded, &encoded_len)) {
+			if (SUCCESS == http_encoding_deflate(flags, data, data_len, &encoded, &encoded_len)) {
 				RETURN_STRINGL(encoded, (int) encoded_len, 0);
 			}
 		}
@@ -1673,7 +1610,8 @@ PHP_FUNCTION(http_deflate)
 
 /* {{{ proto string http_inflate(string data)
  *
- * Uncompress data compressed with the HTTP compatible DEFLATE encoding.
+ * Uncompress data compressed with either gzip, deflate AKA zlib or raw
+ * deflate encoding.
  * 
  * Expects a string as parameter containing the compressed data.
  * 
