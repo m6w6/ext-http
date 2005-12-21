@@ -429,7 +429,6 @@ retry_raw_inflate:
 				}
 			break;
 		}
-		if (Z_BUF_ERROR == status) DebugBreak();
 	} while (Z_BUF_ERROR == status && ++max < HTTP_ENCODING_MAXTRY);
 	
 	STR_SET(*decoded, NULL);
