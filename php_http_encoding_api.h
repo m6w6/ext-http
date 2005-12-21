@@ -25,8 +25,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 
 extern PHP_MINIT_FUNCTION(http_encoding);
 
-/* max count of uncompress trials, alloc_size <<= 2 for each try */
-#define HTTP_ENCODING_MAXTRY 10
+#define HTTP_ENCODING_MAXTRY 100
 /* safe padding */
 #define HTTP_ENCODING_SAFPAD 28
 /* add 1% extra space in case we need to encode widely differing (binary) data */

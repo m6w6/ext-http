@@ -217,11 +217,12 @@ STATUS _http_encoding_deflate(int flags, const char *data, size_t data_len, char
 		Z.avail_out = *encoded_len;
 		
 		status = deflate(&Z, Z_FINISH);
+		deflateEnd(&Z);
+		
 		if (Z_STREAM_END == status) {
 			/* size buffer down to actual length */
 			*encoded = erealloc(*encoded, Z.total_out + 1);
 			(*encoded)[*encoded_len = Z.total_out] = '\0';
-			deflateEnd(&Z);
 			return SUCCESS;
 		} else {
 			STR_SET(*encoded, NULL);
@@ -229,8 +230,7 @@ STATUS _http_encoding_deflate(int flags, const char *data, size_t data_len, char
 		}
 	}
 	
-	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not deflate data: %s (%s)", zError(status), Z.msg);
-	deflateEnd(&Z);
+	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not deflate data: %s (%s)", zError(status));
 	return FAILURE;
 }
 
@@ -254,14 +254,13 @@ retry_inflate:
 		Z.avail_in = data_len;
 		
 		do {
-			phpstr_resize(&buffer, data_len);
+			phpstr_resize(&buffer, data_len << 2);
 
 			do {
-				Z.next_out = buffer.data + (buffer.used += Z.total_out);
-				Z.avail_out = (buffer.free -= Z.total_out);
+				Z.avail_out = (buffer.free -= Z.total_out - buffer.used);
+				Z.next_out = buffer.data + (buffer.used = Z.total_out);
 				status = inflate(&Z, Z_NO_FLUSH);
 			} while (Z_OK == status);
-			
 		} while (Z_BUF_ERROR == status && ++max < HTTP_ENCODING_MAXTRY);
 		
 		if (Z_DATA_ERROR == status && HTTP_WINDOW_BITS_ANY == wbits) {
@@ -271,18 +270,19 @@ retry_inflate:
 			goto retry_inflate;
 		}
 		
+		inflateEnd(&Z);
+		
 		if (Z_STREAM_END == status) {
-			*decoded = erealloc(buffer.data, (buffer.used += Z.total_out) + 1);
-			(*decoded)[*decoded_len = buffer.used] = '\0';
-			inflateEnd(&Z);
+			*decoded_len = Z.total_out;
+			*decoded = erealloc(buffer.data, *decoded_len + 1);
+			(*decoded)[*decoded_len] = '\0';
 			return SUCCESS;
 		} else {
 			phpstr_dtor(&buffer);
 		}
 	}
 	
-	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s (%s)", zError(status), Z.msg);
-	inflateEnd(&Z);
+	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s", zError(status));
 	return FAILURE;
 }
 
