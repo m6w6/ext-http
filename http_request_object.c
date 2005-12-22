@@ -1196,7 +1196,7 @@ PHP_METHOD(HttpRequest, setPostFields)
 
 	MAKE_STD_ZVAL(post);
 	array_init(post);
-	if (post_data && (Z_TYPE_P(post_data) == IS_ARRAY)) {
+	if (post_data && zend_hash_num_elements(Z_ARRVAL_P(post_data))) {
 		array_copy(post_data, post);
 	}
 	SET_PROP(obj, postFields, post);
