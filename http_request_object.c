@@ -1359,6 +1359,7 @@ PHP_METHOD(HttpRequest, addPostFile)
 	}
 	add_next_index_zval(new_post, entry);
 	SET_PROP(obj, postFiles, new_post);
+	zval_ptr_dtor(&new_post);
 
 	RETURN_TRUE;
 }
