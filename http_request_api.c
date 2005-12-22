@@ -512,7 +512,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 					zval_copy_ctor(&val);
 					convert_to_string(&val);
 					
-					phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key, Z_STRVAL_P(val));
+					phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key, Z_STRVAL(val));
 					
 					zval_dtor(&val);
 				}
