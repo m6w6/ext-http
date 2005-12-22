@@ -46,7 +46,6 @@ extern STATUS _http_request_object_requesthandler(http_request_object *obj, zval
 extern STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr TSRMLS_DC);
 
 PHP_METHOD(HttpRequest, __construct);
-PHP_METHOD(HttpRequest, __destruct);
 PHP_METHOD(HttpRequest, setOptions);
 PHP_METHOD(HttpRequest, getOptions);
 PHP_METHOD(HttpRequest, setSslOptions);

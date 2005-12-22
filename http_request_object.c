@@ -39,7 +39,6 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #define HTTP_REQUEST_ME(method, visibility)			PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)
 #define HTTP_REQUEST_ALIAS(method, func)			HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpRequest, method))
 
-HTTP_EMPTY_ARGS(__destruct, 0);
 HTTP_BEGIN_ARGS(__construct, 0, 0)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(method, 0)
@@ -217,7 +216,6 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D);
 zend_class_entry *http_request_object_ce;
 zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	HTTP_REQUEST_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
 
 	HTTP_REQUEST_ME(setOptions, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getOptions, ZEND_ACC_PUBLIC)
@@ -684,18 +682,6 @@ PHP_METHOD(HttpRequest, __construct)
 		}
 	}
 	SET_EH_NORMAL();
-}
-/* }}} */
-
-/* {{{ proto void HttpRequest::__destruct()
- *
- * Destroys the HttpRequest object.
- */
-PHP_METHOD(HttpRequest, __destruct)
-{
-	getObject(http_request_object, obj);
-
-	NO_ARGS;
 }
 /* }}} */
 
@@ -1293,6 +1279,7 @@ PHP_METHOD(HttpRequest, addRawPostData)
 		zval *zdata = GET_PROP(obj, rawPostData);
 		
 		SEPARATE_ZVAL(&zdata);
+		convert_to_string(zdata);
 		Z_STRVAL_P(zdata) = erealloc(Z_STRVAL_P(zdata), (Z_STRLEN_P(zdata) += data_len) + 1);
 		Z_STRVAL_P(zdata)[Z_STRLEN_P(zdata)] = '\0';
 		memcpy(Z_STRVAL_P(zdata) + Z_STRLEN_P(zdata) - data_len, raw_data, data_len);
@@ -1396,7 +1383,7 @@ PHP_METHOD(HttpRequest, setPostFiles)
 	MAKE_STD_ZVAL(post);
 	array_init(post);
 	if (files && (Z_TYPE_P(files) == IS_ARRAY)) {
-		array_copy(files, post)
+		array_copy(files, post);
 	}
 	SET_PROP(obj, postFiles, post);
 
