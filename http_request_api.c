@@ -471,14 +471,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				zval **header_val;
 				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void **) &header_val, &pos)) {
 					char header[1024] = {0};
-					zval *cpy, *val = convert_to_type_ex(IS_STRING, *header_val, &cpy);
 					
-					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_P(val));
+					SEPARATE_ZVAL(header_val);
+					convert_to_string(*header_val);
+					
+					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
 					request->_cache.headers = curl_slist_append(request->_cache.headers, header);
-					
-					if (cpy) {
-						zval_ptr_dtor(&cpy);
-					}
 				}
 
 				/* reset */

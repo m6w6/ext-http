@@ -433,7 +433,7 @@ retry_raw_inflate:
 	
 	STR_SET(*decoded, NULL);
 	*decoded_len = 0;
-	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not update inflate stream: %s", zError(status));
+	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Failed to update inflate stream: %s", zError(status));
 	return FAILURE;
 }
 
