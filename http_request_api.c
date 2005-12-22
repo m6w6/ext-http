@@ -495,34 +495,8 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* cookies, array('name' => 'value') */
 	if ((zoption = http_request_option(request, options, "cookies", IS_ARRAY))) {
-		char *cookie_key = NULL;
-		ulong cookie_idx = 0;
-		HashPosition pos;
-		
 		phpstr_dtor(&request->_cache.cookies);
-
-		FOREACH_KEY(pos, zoption, cookie_key, cookie_idx) {
-			if (cookie_key) {
-				zval **cookie_val;
-				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void **) &cookie_val, &pos)) {
-					zval val;
-					
-					val = **cookie_val;
-					INIT_PZVAL(&val);
-					zval_copy_ctor(&val);
-					convert_to_string(&val);
-					
-					phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key, Z_STRVAL(val));
-					
-					zval_dtor(&val);
-				}
-
-				/* reset */
-				cookie_key = NULL;
-			}
-		}
-
-		if (request->_cache.cookies.used) {
+		if (SUCCESS == http_urlencode_hash_recursive(HASH_OF(zoption), &request->_cache.cookies, "; ", sizeof("; ")-1, NULL, 0)) {
 			phpstr_fix(&request->_cache.cookies);
 			HTTP_CURL_OPT(COOKIE, request->_cache.cookies.data);
 		}
