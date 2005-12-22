@@ -25,6 +25,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 
 extern PHP_MINIT_FUNCTION(http_encoding);
 
+/* 100% compression should be fairly good */
 #define HTTP_ENCODING_MAXTRY 100
 /* safe padding */
 #define HTTP_ENCODING_SAFPAD 28
@@ -70,6 +71,8 @@ PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, ch
 PHP_HTTP_API http_encoding_stream *_http_encoding_deflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC);
 #define http_encoding_deflate_stream_update(s, d, dl, e, el) _http_encoding_deflate_stream_update((s), (d), (dl), (e), (el) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
+#define http_encoding_deflate_stream_flush(s, e, el) _http_encoding_deflate_stream_flush((s), (e), (el) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC);
 #define http_encoding_deflate_stream_finish(s, e, el) _http_encoding_deflate_stream_finish((s), (e), (el) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC);
 #define http_encoding_deflate_stream_dtor(s) _http_encoding_deflate_stream_dtor((s) TSRMLS_CC)
@@ -81,6 +84,8 @@ PHP_HTTP_API void _http_encoding_deflate_stream_free(http_encoding_stream **s TS
 PHP_HTTP_API http_encoding_stream *_http_encoding_inflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC);
 #define http_encoding_inflate_stream_update(s, d, dl, e, el) _http_encoding_inflate_stream_update((s), (d), (dl), (e), (el) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_inflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
+#define http_encoding_inflate_stream_flush(s, d, dl) _http_encoding_inflate_stream_flush((s), (d), (dl) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s, char **decoded, size_t *decoded_len TSRMLS_DC);
 #define http_encoding_inflate_stream_finish(s, e, el) _http_encoding_inflate_stream_finish((s), (e), (el) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s, char **decoded, size_t *decoded_len TSRMLS_DC);
 #define http_encoding_inflate_stream_dtor(s) _http_encoding_inflate_stream_dtor((s) TSRMLS_CC)

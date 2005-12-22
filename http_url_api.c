@@ -301,7 +301,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 		} else {
 			zval *val;
 			
-			MAKE_STD_ZVAL(val);
+			ALLOC_ZVAL(val);
 			*val = **data;
 			INIT_PZVAL(val);
 			zval_copy_ctor(val);

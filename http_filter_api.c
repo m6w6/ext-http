@@ -131,7 +131,7 @@ static HTTP_FILTER_FUNCTION(chunked_decode)
 			if (PHPSTR_LEN(buffer) < buffer->hexlen) {
 			
 				/* flush anyway? */
-				if (flags == PSFS_FLAG_FLUSH_INC) {
+				if (flags & PSFS_FLAG_FLUSH_INC) {
 				
 					/* flush all data (should only be chunk data) */
 					out_avail = 1;
@@ -210,7 +210,7 @@ static HTTP_FILTER_FUNCTION(chunked_decode)
 	}
 	
 	/* flush before close, but only if we are already waiting for more data */
-	if (flags == PSFS_FLAG_FLUSH_CLOSE && buffer->hexlen && PHPSTR_LEN(buffer)) {
+	if ((flags & PSFS_FLAG_FLUSH_CLOSE) && buffer->hexlen && PHPSTR_LEN(buffer)) {
 		out_avail = 1;
 		NEW_BUCKET(PHPSTR_VAL(buffer), PHPSTR_LEN(buffer));
 		phpstr_reset(PHPSTR(buffer));
@@ -269,7 +269,7 @@ static HTTP_FILTER_FUNCTION(chunked_encode)
 	}
 	
 	/* terminate with "0" */
-	if (flags == PSFS_FLAG_FLUSH_CLOSE) {
+	if (flags & PSFS_FLAG_FLUSH_CLOSE) {
 		out_avail = 1;
 		NEW_BUCKET("0" HTTP_CRLF, lenof("0" HTTP_CRLF));
 	}
@@ -329,7 +329,19 @@ static HTTP_FILTER_FUNCTION(deflate)
 	}
 	
 	/* flush & close */
-	if (flags == PSFS_FLAG_FLUSH_CLOSE) {
+	if (flags & PSFS_FLAG_FLUSH_INC) {
+		char *encoded = NULL;
+		size_t encoded_len = 0;
+		
+		http_encoding_deflate_stream_flush(buffer, &encoded, &encoded_len);
+		if (encoded) {
+			out_avail = 1;
+			NEW_BUCKET(encoded, encoded_len);
+			efree(encoded);
+		}
+	}
+	
+	if (flags & PSFS_FLAG_FLUSH_CLOSE) {
 		char *encoded = NULL;
 		size_t encoded_len = 0;
 		
@@ -382,7 +394,19 @@ static HTTP_FILTER_FUNCTION(inflate)
 	}
 	
 	/* flush & close */
-	if (flags == PSFS_FLAG_FLUSH_CLOSE) {
+	if (flags & PSFS_FLAG_FLUSH_INC) {
+		char *decoded = NULL;
+		size_t decoded_len = 0;
+		
+		http_encoding_inflate_stream_flush(buffer, &decoded, &decoded_len);
+		if (decoded) {
+			out_avail = 1;
+			NEW_BUCKET(decoded, decoded_len);
+			efree(decoded);
+		}
+	}
+	
+	if (flags & PSFS_FLAG_FLUSH_CLOSE) {
 		char *decoded = NULL;
 		size_t decoded_len = 0;
 		

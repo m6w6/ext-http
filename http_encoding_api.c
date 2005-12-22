@@ -193,7 +193,7 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 #define HTTP_WINDOW_BITS_ANY	0x0000002f
 #define HTTP_WINDOW_BITS_RAW	-0x000000f
 
-STATUS _http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
 {
 	int status, level, wbits, strategy;
 	z_stream Z;
@@ -234,7 +234,7 @@ STATUS _http_encoding_deflate(int flags, const char *data, size_t data_len, char
 	return FAILURE;
 }
 
-STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
 	int status, max = 0, wbits = HTTP_WINDOW_BITS_ANY;
 	z_stream Z;
@@ -287,7 +287,7 @@ retry_inflate:
 }
 
 
-http_encoding_stream *_http_encoding_deflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC)
+PHP_HTTP_API http_encoding_stream *_http_encoding_deflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC)
 {
 	int status, level, wbits, strategy, free_stream;
 	
@@ -318,7 +318,7 @@ http_encoding_stream *_http_encoding_deflate_stream_init(http_encoding_stream *s
 	return NULL;
 }
 
-http_encoding_stream *_http_encoding_inflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC)
+PHP_HTTP_API http_encoding_stream *_http_encoding_inflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC)
 {
 	int status, wbits, free_stream;
 	
@@ -347,7 +347,7 @@ http_encoding_stream *_http_encoding_inflate_stream_init(http_encoding_stream *s
 	return NULL;
 }
 
-STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
 {
 	int status;
 	
@@ -382,7 +382,7 @@ STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s, const char 
 	return FAILURE;
 }
 
-STATUS _http_encoding_inflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
 	int status, max = 0;
 	
@@ -437,7 +437,59 @@ retry_raw_inflate:
 	return FAILURE;
 }
 
-STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC)
+{
+	int status;
+	
+	s->stream.avail_in = 0;
+	s->stream.next_in = NULL;
+	s->stream.avail_out = *encoded_len = 0x800;
+	s->stream.next_out = *encoded = emalloc(*encoded_len);
+	
+	switch (status = deflate(&s->stream, Z_SYNC_FLUSH))
+	{
+		case Z_OK:
+		case Z_STREAM_END:
+			*encoded_len = 0x800 - s->stream.avail_out;
+			*encoded = erealloc(*encoded, *encoded_len + 1);
+			(*encoded)[*encoded_len] = '\0';
+			return SUCCESS;
+		break;
+	}
+	
+	STR_SET(*encoded, NULL);
+	*encoded_len = 0;
+	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Failed to flush deflate stream: %s", zError(status));
+	return FAILURE;
+}
+
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s, char **decoded, size_t *decoded_len TSRMLS_DC)
+{
+	int status;
+	
+	s->stream.avail_in = 0;
+	s->stream.next_in = NULL;
+	s->stream.avail_out = *decoded_len = 0x800;
+	s->stream.next_out = *decoded = emalloc(*decoded_len);
+	
+	switch (status = inflate(&s->stream, Z_SYNC_FLUSH))
+	{
+		case Z_OK:
+		case Z_STREAM_END:
+			*decoded_len = 0x800 - s->stream.avail_out;
+			*decoded = erealloc(*decoded, *decoded_len + 1);
+			(*decoded)[*decoded_len] = '\0';
+			return SUCCESS;
+		break;
+	}
+	
+	STR_SET(*decoded, NULL);
+	*decoded_len = 0;
+	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Failed to flush inflate stream: %s", zError(status));
+	return FAILURE;
+}
+
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC)
 {
 	int status;
 	
@@ -469,7 +521,7 @@ STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s, char **enco
 	return FAILURE;
 }
 
-STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s, char **decoded, size_t *decoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
 	int status;
 	
@@ -497,7 +549,7 @@ STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s, char **deco
 	return FAILURE;
 }
 
-void _http_encoding_deflate_stream_dtor(http_encoding_stream *s TSRMLS_DC)
+PHP_HTTP_API void _http_encoding_deflate_stream_dtor(http_encoding_stream *s TSRMLS_DC)
 {
 	if (s) {
 		if (s->stream.opaque) {
@@ -507,7 +559,7 @@ void _http_encoding_deflate_stream_dtor(http_encoding_stream *s TSRMLS_DC)
 	}
 }
 
-void _http_encoding_inflate_stream_dtor(http_encoding_stream *s TSRMLS_DC)
+PHP_HTTP_API void _http_encoding_inflate_stream_dtor(http_encoding_stream *s TSRMLS_DC)
 {
 	if (s) {
 		if (s->stream.opaque) {
@@ -517,7 +569,7 @@ void _http_encoding_inflate_stream_dtor(http_encoding_stream *s TSRMLS_DC)
 	}
 }
 
-void _http_encoding_deflate_stream_free(http_encoding_stream **s TSRMLS_DC)
+PHP_HTTP_API void _http_encoding_deflate_stream_free(http_encoding_stream **s TSRMLS_DC)
 {
 	if (s) {
 		http_encoding_deflate_stream_dtor(*s);
@@ -528,7 +580,7 @@ void _http_encoding_deflate_stream_free(http_encoding_stream **s TSRMLS_DC)
 	}
 }
 
-void _http_encoding_inflate_stream_free(http_encoding_stream **s TSRMLS_DC)
+PHP_HTTP_API void _http_encoding_inflate_stream_free(http_encoding_stream **s TSRMLS_DC)
 {
 	if (s) {
 		http_encoding_inflate_stream_dtor(*s);
