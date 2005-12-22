@@ -1276,14 +1276,18 @@ PHP_METHOD(HttpRequest, addRawPostData)
 	}
 	
 	if (data_len) {
-		zval *zdata = GET_PROP(obj, rawPostData);
+		zval *data, *zdata = GET_PROP(obj, rawPostData);
 		
-		SEPARATE_ZVAL(&zdata);
-		convert_to_string(zdata);
-		Z_STRVAL_P(zdata) = erealloc(Z_STRVAL_P(zdata), (Z_STRLEN_P(zdata) += data_len) + 1);
-		Z_STRVAL_P(zdata)[Z_STRLEN_P(zdata)] = '\0';
-		memcpy(Z_STRVAL_P(zdata) + Z_STRLEN_P(zdata) - data_len, raw_data, data_len);
-		SET_PROP(obj, rawPostData, zdata);
+		ALLOC_ZVAL(data);
+		*data = *zdata;
+		zval_copy_ctor(data);
+		INIT_PZVAL(data);
+		convert_to_string(data);
+		Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
+		Z_STRVAL_P(data)[Z_STRLEN_P(data)] = '\0';
+		memcpy(Z_STRVAL_P(data) + Z_STRLEN_P(data) - data_len, raw_data, data_len);
+		SET_PROP(obj, rawPostData, data);
+		zval_ptr_dtor(&data);
 	}
 	
 	RETURN_TRUE;
