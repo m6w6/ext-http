@@ -505,13 +505,16 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			if (cookie_key) {
 				zval **cookie_val;
 				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void **) &cookie_val, &pos)) {
-					zval *cpy, *val = convert_to_type_ex(IS_STRING, *cookie_val, &cpy);
+					zval val;
+					
+					val = **cookie_val;
+					INIT_PZVAL(&val);
+					zval_copy_ctor(&val);
+					convert_to_string(&val);
 					
 					phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key, Z_STRVAL_P(val));
 					
-					if (cpy) {
-						zval_ptr_dtor(&cpy);
-					}
+					zval_dtor(&val);
 				}
 
 				/* reset */
