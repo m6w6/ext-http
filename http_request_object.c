@@ -1190,7 +1190,7 @@ PHP_METHOD(HttpRequest, setPostFields)
 	zval *post, *post_data = NULL;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!", &post_data)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/!", &post_data)) {
 		RETURN_FALSE;
 	}
 
