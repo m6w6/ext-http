@@ -181,11 +181,12 @@ typedef int STATUS;
 					if (Z_TYPE_PP(tmp) != IS_ARRAY) { \
 						convert_to_array_ex(tmp); \
 					} \
+					ZVAL_ADDREF(*data); \
 					add_next_index_zval(*tmp, *data); \
 				} else { \
+					ZVAL_ADDREF(*data); \
 					add_assoc_zval(dst, key, *data); \
 				} \
-				ZVAL_ADDREF(*data); \
 				key = NULL; \
 			} \
 		} \
@@ -260,34 +261,6 @@ typedef int STATUS;
 #	define ACC_PROP_PROTECTED(ce, flags)	((flags & ZEND_ACC_PROTECTED) && (zend_check_protected(ce, EG(scope))))
 #	define ACC_PROP_PUBLIC(flags)			(flags & ZEND_ACC_PUBLIC)
 #	define ACC_PROP(ce, flags)				(ACC_PROP_PUBLIC(flags) || ACC_PROP_PRIVATE(ce, flags) || ACC_PROP_PROTECTED(ce, flags))
-
-#	define INIT_PARR(o, n) \
-	{ \
-		zval *__tmp; \
-		MAKE_STD_ZVAL(__tmp); \
-		array_init(__tmp); \
-		SET_PROP(o, n, __tmp); \
-	}
-
-#	define FREE_PARR(o, p) \
-	{ \
-		zval *__tmp = GET_PROP(o, p); \
-		if (__tmp) { \
-			zval_ptr_dtor(&__tmp); \
-		} \
-	}
-
-/*
- * the property *MUST* be updated after SEP_PROP()
- */ 
-#	define SEP_PROP(zpp) \
-	{ \
-		zval **op = zpp; \
-		SEPARATE_ZVAL_IF_NOT_REF(zpp); \
-		if (op != zpp) { \
-			zval_ptr_dtor(op); \
-		} \
-	}
 
 #	define SET_EH_THROW() SET_EH_THROW_EX(zend_exception_get_default())
 #	define SET_EH_THROW_HTTP() SET_EH_THROW_EX(http_exception_get_default())

@@ -317,14 +317,17 @@ void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception 
 	/*	if old_exception is already an HttpRequestPoolException append the new one, 
 		else create a new HttpRequestPoolException and append the old and new exceptions */
 	if (old_exception && Z_OBJCE_P(old_exception) == ce) {
-		zval *exprop;
+		zval *old_exprop, *new_exprop;
 		
-		exprop = zend_read_property(ce, old_exception, "exceptionStack", lenof("exceptionStack"), 0 TSRMLS_CC);
-		SEP_PROP(&exprop);
-		convert_to_array(exprop);
-		
-		add_next_index_zval(exprop, new_exception);
-		zend_update_property(ce, old_exception, "exceptionStack", lenof("exceptionStack"), exprop TSRMLS_CC);
+		MAKE_STD_ZVAL(new_exprop);
+		array_init(new_exprop);
+		old_exprop = zend_read_property(ce, old_exception, "exceptionStack", lenof("exceptionStack"), 0 TSRMLS_CC);
+		if (Z_TYPE_P(old_exprop) == IS_ARRAY) {
+			array_copy(old_exprop, new_exprop);
+		}
+		add_next_index_zval(new_exprop, new_exception);
+		zend_update_property(ce, old_exception, "exceptionStack", lenof("exceptionStack"), new_exprop TSRMLS_CC);
+		zval_ptr_dtor(&new_exprop);
 		
 		EG(exception) = old_exception;
 	} else if (new_exception && Z_OBJCE_P(new_exception) != ce){
