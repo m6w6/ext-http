@@ -1386,24 +1386,17 @@ PHP_METHOD(HttpRequest, addPostFile)
  */
 PHP_METHOD(HttpRequest, setPostFiles)
 {
-	zval *files, *post;
+	zval *files = NULL, *post;
 	getObject(http_request_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &files)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!/", &files)) {
 		RETURN_FALSE;
 	}
 
-	post = GET_PROP(obj, postFiles);
-	if (Z_TYPE_P(post) == IS_NULL) {
-		MAKE_STD_ZVAL(post);
-		array_init(post);
-	} else {
-		SEPARATE_ZVAL(&post);
-	}
-	
-	zend_hash_clean(Z_ARRVAL_P(post));
-	if (files && zend_hash_num_elements(Z_ARRVAL_P(files))) {
-		array_copy(files, post);
+	MAKE_STD_ZVAL(post);
+	array_init(post);
+	if (files && (Z_TYPE_P(files) == IS_ARRAY)) {
+		array_copy(files, post)
 	}
 	SET_PROP(obj, postFiles, post);
 
