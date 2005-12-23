@@ -107,6 +107,9 @@ PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t
 #define phpstr_resize(b, s) phpstr_resize_ex((b), (s), 0)
 PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size);
 
+/* shrink memory chunk to actually used size (+1) */
+PHPSTR_API size_t phpstr_shrink(phpstr *buf);
+
 /* append data to the phpstr */
 #define phpstr_appends(b, a) phpstr_append((b), (a), sizeof(a)-1)
 #define phpstr_appendl(b, a) phpstr_append((b), (a), strlen(a))

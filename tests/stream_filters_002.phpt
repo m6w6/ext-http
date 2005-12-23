@@ -17,20 +17,26 @@ $n = tempnam(dirname(__FILE__), 'hsf');
 $f = fopen($n, 'wb');
 stream_filter_append($f, 'http.deflate', STREAM_FILTER_WRITE, HTTP_DEFLATE_TYPE_GZIP);
 fwrite($f, $d);
+fflush($f);
+fwrite($f, $d);
 fclose($f);
-var_dump($d == http_inflate(file_get_contents($n)));
+var_dump($d.$d == http_inflate(file_get_contents($n)));
 
 $f = fopen($n, 'wb');
 stream_filter_append($f, 'http.deflate', STREAM_FILTER_WRITE);
 fwrite($f, $d);
+fflush($f);
+fwrite($f, $d);
 fclose($f);
-var_dump($d == http_inflate(file_get_contents($n)));
+var_dump($d.$d == http_inflate(file_get_contents($n)));
 
 $f = fopen($n, 'wb');
 stream_filter_append($f, 'http.deflate', STREAM_FILTER_WRITE, HTTP_DEFLATE_TYPE_RAW);
 fwrite($f, $d);
+fflush($f);
+fwrite($f, $d);
 fclose($f);
-var_dump($d == http_inflate(file_get_contents($n)));
+var_dump($d.$d == http_inflate(file_get_contents($n)));
 
 unlink($n);
 

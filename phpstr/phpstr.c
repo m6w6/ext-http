@@ -36,6 +36,9 @@ PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t
 
 PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size)
 {
+#if 0
+	fprintf(stderr, "RESIZE: size=%lu, used=%lu, free=%lu\n", buf->size, buf->used, buf->free);
+#endif
 	if (buf->free < len) {
 		size_t size = override_size ? override_size : buf->size;
 		
@@ -61,6 +64,22 @@ PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size
 		return size;
 	}
 	return 0;
+}
+
+PHPSTR_API size_t phpstr_shrink(phpstr *buf)
+{
+	/* avoid another realloc on fixation */
+	if (buf->free > 1) {
+		char *ptr = perealloc(buf->data, buf->used + 1, buf->pmem);
+		
+		if (ptr) {
+			buf->data = ptr;
+		} else {
+			return NOMEM;
+		}
+		buf->free = 1;
+	}
+	return buf->used;
 }
 
 PHPSTR_API size_t phpstr_append(phpstr *buf, const char *append, size_t append_len)

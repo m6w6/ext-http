@@ -85,20 +85,9 @@ HTTP_BEGIN_ARGS(chunkedDecode, 1)
 	HTTP_ARG_VAL(encoded_string, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(gzEncode, 1)
-	HTTP_ARG_VAL(plain, 0)
-	HTTP_ARG_VAL(level, 0)
-	HTTP_ARG_VAL(mtime, 0)
-HTTP_END_ARGS;
-
-HTTP_BEGIN_ARGS(gzDecode, 1)
-	HTTP_ARG_VAL(encoded, 0)
-HTTP_END_ARGS;
-
 HTTP_BEGIN_ARGS(deflate, 1)
 	HTTP_ARG_VAL(plain, 0)
-	HTTP_ARG_VAL(level, 0)
-	HTTP_ARG_VAL(zlib_header, 0)
+	HTTP_ARG_VAL(flags, 0)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(inflate, 1)
