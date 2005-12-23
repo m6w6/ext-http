@@ -358,8 +358,10 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 	s->stream.avail_in = PHPSTR_LEN(s->stream.opaque);
 	
 	/* deflate */
-	s->stream.avail_out = *encoded_len = HTTP_ENCODING_BUFLEN(data_len);
-	s->stream.next_out = (Bytef *) *encoded = emalloc(*encoded_len);
+	*encoded_len = HTTP_ENCODING_BUFLEN(data_len);
+	*encoded = emalloc(*encoded_len);
+	s->stream.avail_out = *encoded_len;
+	s->stream.next_out = (Bytef *) *encoded;
 	
 	switch (status = deflate(&s->stream, Z_NO_FLUSH))
 	{
@@ -441,10 +443,13 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s,
 {
 	int status;
 	
+	*encoded_len = 0x800;
+	*encoded = emalloc(*encoded_len);
+	
 	s->stream.avail_in = 0;
 	s->stream.next_in = NULL;
-	s->stream.avail_out = *encoded_len = 0x800;
-	s->stream.next_out = (Bytef *) *encoded = emalloc(*encoded_len);
+	s->stream.avail_out = *encoded_len;
+	s->stream.next_out = (Bytef *) *encoded;
 	
 	switch (status = deflate(&s->stream, Z_SYNC_FLUSH))
 	{
@@ -467,10 +472,13 @@ PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s,
 {
 	int status;
 	
+	*decoded_len = 0x800;
+	*decoded = emalloc(*decoded_len);
+	
 	s->stream.avail_in = 0;
 	s->stream.next_in = NULL;
-	s->stream.avail_out = *decoded_len = 0x800;
-	s->stream.next_out = (Bytef *) *decoded = emalloc(*decoded_len);
+	s->stream.avail_out = *decoded_len;
+	s->stream.next_out = (Bytef *) *decoded;
 	
 	switch (status = inflate(&s->stream, Z_SYNC_FLUSH))
 	{
@@ -493,12 +501,15 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s
 {
 	int status;
 	
+	*encoded_len = 0x800;
+	*encoded = emalloc(*encoded_len);
+	
 	/* deflate remaining input */
 	s->stream.next_in = (Bytef *) PHPSTR_VAL(s->stream.opaque);
 	s->stream.avail_in = PHPSTR_LEN(s->stream.opaque);
 	
-	s->stream.avail_out = *encoded_len = 0x800;
-	s->stream.next_out = (Bytef *) *encoded = emalloc(*encoded_len);
+	s->stream.avail_out = *encoded_len;
+	s->stream.next_out = (Bytef *) *encoded;
 	
 	do {
 		status = deflate(&s->stream, Z_FINISH);
@@ -525,12 +536,15 @@ PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s
 {
 	int status;
 	
+	*decoded_len = s->stream.avail_in << 2;
+	*decoded = emalloc(*decoded_len);
+	
 	/* inflate remaining input */
 	s->stream.next_in = (Bytef *) PHPSTR_VAL(s->stream.opaque);
 	s->stream.avail_in = PHPSTR_LEN(s->stream.opaque);
 	
-	s->stream.avail_out = *decoded_len = s->stream.avail_in << 2;
-	s->stream.next_out = (Bytef *) *decoded = emalloc(*decoded_len);
+	s->stream.avail_out = *decoded_len;
+	s->stream.next_out = (Bytef *) *decoded;
 	
 	if (Z_STREAM_END == (status = inflate(&s->stream, Z_FINISH))) {
 		/* cut processed input off */
