@@ -204,8 +204,8 @@ dnl ----
 				AC_CHECK_HEADER([hash/php_hash.h], [
 					AC_DEFINE([HTTP_HAVE_HASH_EXT_HASH], [1], [Have ext/hash support])
 				], [ 
-  			AC_CHECK_HEADER([php_hash.h], [
-  				AC_DEFINE([HTTP_HAVE_EXT_HASH], [1], [Have ext/hash support])
+					AC_CHECK_HEADER([php_hash.h], [
+						AC_DEFINE([HTTP_HAVE_EXT_HASH], [1], [Have ext/hash support])
 					])
 				])
 			])
