@@ -56,8 +56,6 @@ extern zend_module_entry http_module_entry;
 
 extern int http_module_number;
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 ZEND_BEGIN_MODULE_GLOBALS(http)
 
 	struct _http_globals_etag {
@@ -106,6 +104,8 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	zend_bool force_exit;
 
 ZEND_END_MODULE_GLOBALS(http)
+
+ZEND_EXTERN_MODULE_GLOBALS(http);
 
 #ifdef ZTS
 #	include "TSRM.h"
