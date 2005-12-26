@@ -318,29 +318,8 @@ PHP_MINFO_FUNCTION(http)
 {
 	php_info_print_table_start();
 	{
-		php_info_print_table_row(2, "Extended HTTP support", "enabled");
+		php_info_print_table_row(2, "HTTP Support", "enabled");
 		php_info_print_table_row(2, "Extension Version", PHP_EXT_HTTP_VERSION);
-#ifdef HTTP_HAVE_CURL
-		php_info_print_table_row(2, "cURL HTTP Requests", curl_version());
-#else
-		php_info_print_table_row(2, "cURL HTTP Requests", "disabled");
-#endif
-#ifdef HTTP_HAVE_ZLIB
-		{
-			char my_zlib_version[64] = {0};
-			
-			strlcat(my_zlib_version, "zlib/", 63);
-			strlcat(my_zlib_version, zlibVersion(), 63);
-			php_info_print_table_row(2, "zlib GZIP Encodings", my_zlib_version);
-		}
-#else
-		php_info_print_table_row(2, "zlib GZIP Encodings", "disabled");
-#endif
-#if defined(HTTP_HAVE_MAGIC) && !defined(WONKY)
-		php_info_print_table_row(2, "magic MIME Guessing", "libmagic/unknown");
-#else
-		php_info_print_table_row(2, "magic MIME Guessing", "disabled");
-#endif
 		php_info_print_table_row(2, "Registered Classes",
 #ifndef ZEND_ENGINE_2
 			"none"
@@ -356,6 +335,28 @@ PHP_MINFO_FUNCTION(http)
 #	endif
 #endif
 		);
+	}
+	php_info_print_table_end();
+	
+	php_info_print_table_start();
+	php_info_print_table_header(3, "Used Library", "Compiled", "Linked");
+	{
+#ifdef HTTP_HAVE_CURL
+		curl_version_info_data *cv = curl_version_info(CURLVERSION_NOW);
+		php_info_print_table_row(3, "libcurl", LIBCURL_VERSION, cv->version);
+#else
+		php_info_print_table_row(2, "libcurl", "disabled", "disabled");
+#endif
+#ifdef HTTP_HAVE_ZLIB
+		php_info_print_table_row(3, "libz", ZLIB_VERSION, zlibVersion());
+#else
+		php_info_print_table_row(3, "libz", "disabled", "disabled");
+#endif
+#if defined(HTTP_HAVE_MAGIC) && !defined(WONKY)
+		php_info_print_table_row(3, "libmagic", "unknown", "unknown");
+#else
+		php_info_print_table_row(3, "libmagic", "disabled", "disabled");
+#endif
 	}
 	php_info_print_table_end();
 	

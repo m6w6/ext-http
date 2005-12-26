@@ -43,10 +43,12 @@ PHP_MINIT_FUNCTION(http_encoding)
 
 PHP_RINIT_FUNCTION(http_encoding)
 {
-	if (HTTP_G(send).inflate.start_auto) {
+	getGlobals(G);
+	
+	if (G->send.inflate.start_auto) {
 		php_ob_set_internal_handler(_http_ob_inflatehandler, 0x1000, "http inflate", 0 TSRMLS_CC);
 	}
-	if (HTTP_G(send).deflate.start_auto) {
+	if (G->send.deflate.start_auto) {
 		php_ob_set_internal_handler(_http_ob_deflatehandler, 0x8000, "http deflate", 0 TSRMLS_CC);
 	}
 	return SUCCESS;
@@ -54,6 +56,8 @@ PHP_RINIT_FUNCTION(http_encoding)
 
 PHP_RSHUTDOWN_FUNCTION(http_encoding)
 {
+	getGlobals(G);
+	
 	if (G->send.deflate.stream) {
 		http_encoding_deflate_stream_free((http_encoding_stream **) &G->send.deflate.stream);
 	}
