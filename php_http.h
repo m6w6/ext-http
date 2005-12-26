@@ -56,6 +56,8 @@ extern zend_module_entry http_module_entry;
 
 extern int http_module_number;
 
+ZEND_EXTERN_MODULE_GLOBALS(http);
+
 ZEND_BEGIN_MODULE_GLOBALS(http)
 
 	struct _http_globals_etag {
@@ -77,7 +79,17 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		char *content_type;
 		char *unquoted_etag;
 		time_t last_modified;
-		int gzip_encoding;
+		struct _http_globals_send_deflate {
+			zend_bool start_auto;
+			long start_flags;
+			int encoding;
+			void *stream;
+		} deflate;
+		struct _http_globals_send_inflate {
+			zend_bool start_auto;
+			long start_flags;
+			void *stream;
+		} inflate;
 	} send;
 
 	struct _http_globals_request {
@@ -150,6 +162,8 @@ PHP_FUNCTION(ob_etaghandler);
 #ifdef HTTP_HAVE_ZLIB
 PHP_FUNCTION(http_deflate);
 PHP_FUNCTION(http_inflate);
+PHP_FUNCTION(ob_deflatehandler);
+PHP_FUNCTION(ob_inflatehandler);
 #endif
 PHP_FUNCTION(http_support);
 

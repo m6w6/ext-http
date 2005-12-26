@@ -19,11 +19,13 @@
 PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
 #define http_encoding_response_start(cl) _http_encoding_response_start((cl) TSRMLS_CC)
-PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRMLS_DC);
+PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC);
 
 #ifdef HTTP_HAVE_ZLIB
 
 extern PHP_MINIT_FUNCTION(http_encoding);
+extern PHP_RINIT_FUNCTION(http_encoding);
+extern PHP_RSHUTDOWN_FUNCTION(http_encoding);
 
 /* 100% compression should be fairly good */
 #define HTTP_ENCODING_MAXTRY 100
@@ -62,37 +64,42 @@ typedef struct {
 	void *storage;
 } http_encoding_stream;
 
-#define http_encoding_deflate(f, d, dl, r, rl) _http_encoding_deflate((f), (d), (dl), (r), (rl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
-#define http_encoding_inflate(d, dl, r, rl) _http_encoding_inflate((d), (dl), (r), (rl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
+#define http_encoding_deflate(f, d, dl, r, rl) _http_encoding_deflate((f), (d), (dl), (r), (rl) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
+#define http_encoding_inflate(d, dl, r, rl) _http_encoding_inflate((d), (dl), (r), (rl) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
 
-#define http_encoding_deflate_stream_init(s, f) _http_encoding_deflate_stream_init((s), (f) TSRMLS_CC)
-PHP_HTTP_API http_encoding_stream *_http_encoding_deflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC);
-#define http_encoding_deflate_stream_update(s, d, dl, e, el) _http_encoding_deflate_stream_update((s), (d), (dl), (e), (el) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
-#define http_encoding_deflate_stream_flush(s, e, el) _http_encoding_deflate_stream_flush((s), (e), (el) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC);
-#define http_encoding_deflate_stream_finish(s, e, el) _http_encoding_deflate_stream_finish((s), (e), (el) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC);
+#define http_encoding_deflate_stream_init(s, f) _http_encoding_deflate_stream_init((s), (f) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API http_encoding_stream *_http_encoding_deflate_stream_init(http_encoding_stream *s, int flags ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
+#define http_encoding_deflate_stream_update(s, d, dl, e, el) _http_encoding_deflate_stream_update((s), (d), (dl), (e), (el) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
+#define http_encoding_deflate_stream_flush(s, e, el) _http_encoding_deflate_stream_flush((s), (e), (el) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s, char **encoded, size_t *encoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
+#define http_encoding_deflate_stream_finish(s, e, el) _http_encoding_deflate_stream_finish((s), (e), (el) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
 #define http_encoding_deflate_stream_dtor(s) _http_encoding_deflate_stream_dtor((s) TSRMLS_CC)
 PHP_HTTP_API void _http_encoding_deflate_stream_dtor(http_encoding_stream *s TSRMLS_DC);
 #define http_encoding_deflate_stream_free(s) _http_encoding_deflate_stream_free((s) TSRMLS_CC)
 PHP_HTTP_API void _http_encoding_deflate_stream_free(http_encoding_stream **s TSRMLS_DC);
 
-#define http_encoding_inflate_stream_init(s, f) _http_encoding_inflate_stream_init((s), (f) TSRMLS_CC)
-PHP_HTTP_API http_encoding_stream *_http_encoding_inflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC);
-#define http_encoding_inflate_stream_update(s, d, dl, e, el) _http_encoding_inflate_stream_update((s), (d), (dl), (e), (el) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_inflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
-#define http_encoding_inflate_stream_flush(s, d, dl) _http_encoding_inflate_stream_flush((s), (d), (dl) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s, char **decoded, size_t *decoded_len TSRMLS_DC);
-#define http_encoding_inflate_stream_finish(s, e, el) _http_encoding_inflate_stream_finish((s), (e), (el) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s, char **decoded, size_t *decoded_len TSRMLS_DC);
+#define http_encoding_inflate_stream_init(s, f) _http_encoding_inflate_stream_init((s), (f) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API http_encoding_stream *_http_encoding_inflate_stream_init(http_encoding_stream *s, int flags ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
+#define http_encoding_inflate_stream_update(s, d, dl, e, el) _http_encoding_inflate_stream_update((s), (d), (dl), (e), (el) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
+#define http_encoding_inflate_stream_flush(s, d, dl) _http_encoding_inflate_stream_flush((s), (d), (dl) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
+#define http_encoding_inflate_stream_finish(s, e, el) _http_encoding_inflate_stream_finish((s), (e), (el) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
 #define http_encoding_inflate_stream_dtor(s) _http_encoding_inflate_stream_dtor((s) TSRMLS_CC)
 PHP_HTTP_API void _http_encoding_inflate_stream_dtor(http_encoding_stream *s TSRMLS_DC);
 #define http_encoding_inflate_stream_free(s) _http_encoding_inflate_stream_free((s) TSRMLS_CC)
 PHP_HTTP_API void _http_encoding_inflate_stream_free(http_encoding_stream **s TSRMLS_DC);
 
+#define http_ob_deflatehandler(o, ol, h, hl, m) _http_ob_deflatehandler((o), (ol), (h), (hl), (m) TSRMLS_CC)
+void _http_ob_deflatehandler(char *, uint, char **, uint *, int TSRMLS_DC);
+
+#define http_ob_inflatehandler(o, ol, h, hl, m) _http_ob_inflatehandler((o), (ol), (h), (hl), (m) TSRMLS_CC)
+void _http_ob_inflatehandler(char *, uint, char **, uint *, int TSRMLS_DC);
 #endif /* HTTP_HAVE_ZLIB */
 
 #endif

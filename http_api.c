@@ -29,8 +29,6 @@
 #	include "php_http_exception_object.h"
 #endif
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 PHP_MINIT_FUNCTION(http_support)
 {
 	HTTP_LONG_CONSTANT("HTTP_SUPPORT", HTTP_SUPPORT);

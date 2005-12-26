@@ -33,9 +33,6 @@
 #include "php_http_response_object.h"
 #include "php_http_send_api.h"
 
-
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #define GET_STATIC_PROP(n)			*GET_STATIC_PROP_EX(http_response_object_ce, n)
 #define UPD_STATIC_PROP(t, n, v)	UPD_STATIC_PROP_EX(http_response_object_ce, t, n, v)
 #define SET_STATIC_PROP(n, v)		SET_STATIC_PROP_EX(http_response_object_ce, n, v)
@@ -1158,7 +1155,7 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* gzip */
-	HTTP_G(send).gzip_encoding = zval_is_true(GET_STATIC_PROP(gzip));
+	HTTP_G(send).deflate.encoding = zval_is_true(GET_STATIC_PROP(gzip));
 	
 	/* start ob */
 	php_start_ob_buffer(NULL, HTTP_G(send).buffer_size, 0 TSRMLS_CC);

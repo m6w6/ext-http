@@ -27,8 +27,6 @@
 #include "php_http_date_api.h"
 #include "php_http_send_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 /* {{{ char *http_etag(void *, size_t, http_send_mode) */
 PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_mode data_mode TSRMLS_DC)
 {

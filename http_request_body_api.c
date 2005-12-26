@@ -25,8 +25,6 @@
 #include "php_http_url_api.h"
 #include "php_http_request_body_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 /* {{{ http_request_body *http_request_body_new() */
 PHP_HTTP_API http_request_body *_http_request_body_init_ex(http_request_body *body, int type, void *data, size_t size, zend_bool free ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {

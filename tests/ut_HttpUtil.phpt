@@ -27,9 +27,9 @@ class HttpUtilTest extends PHPUnit2_Framework_TestCase
     function test_buildUrl()
     {
     	$_SERVER['SERVER_NAME'] = 'www.example.com';
-    	$this->assertEquals('http://www.example.com/test.php?foo=bar', HttpUtil::buildUrl('/test.php?foo=bar', null, null, 80));
-    	$this->assertEquals('https://www.example.com/', HttpUtil::buildUrl('/', 'https'));
-    	$this->assertEquals('ftp://ftp.example.com/pub', HttpUtil::buildUrl('/pub', null, 'ftp.example.com', 21));
+    	$this->assertEquals('http://www.example.com/test.php?foo=bar', HttpUtil::buildUrl('/test.php?foo=bar', array('port' => 80)));
+    	$this->assertEquals('https://www.example.com/', HttpUtil::buildUrl('/', array('scheme' => 'https')));
+    	$this->assertEquals('ftp://ftp.example.com/pub', HttpUtil::buildUrl('/pub', array('host' => 'ftp.example.com', 'port' => 21)));
     }
 
     function test_negotiateLanguage()

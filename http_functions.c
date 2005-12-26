@@ -41,8 +41,6 @@
 #include "php_http_send_api.h"
 #include "php_http_url_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http)
-
 /* {{{ proto string http_date([int timestamp])
  *
  * Compose a valid HTTP date regarding RFC 822/1123
@@ -1596,13 +1594,11 @@ PHP_FUNCTION(http_deflate)
 	RETVAL_NULL();
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &data, &data_len, &flags)) {
-		{
-			char *encoded;
-			size_t encoded_len;
-			
-			if (SUCCESS == http_encoding_deflate(flags, data, data_len, &encoded, &encoded_len)) {
-				RETURN_STRINGL(encoded, (int) encoded_len, 0);
-			}
+		char *encoded;
+		size_t encoded_len;
+		
+		if (SUCCESS == http_encoding_deflate(flags, data, data_len, &encoded, &encoded_len)) {
+			RETURN_STRINGL(encoded, (int) encoded_len, 0);
 		}
 	}
 }
@@ -1632,6 +1628,47 @@ PHP_FUNCTION(http_inflate)
 			RETURN_STRINGL(decoded, (int) decoded_len, 0);
 		}
 	}
+}
+/* }}} */
+
+/* {{{ proto string ob_deflatehandler(string data, int mode)
+ *
+ * For use with ob_start(). The deflate output buffer handler can only be used once.
+ * It conflicts with ob_gzhanlder and zlib.output_compression as well and should
+ * not be used after ext/mbstrings mb_output_handler and ext/sessions URL-Rewriter (AKA
+ * session.use_trans_sid).
+ */
+PHP_FUNCTION(ob_deflatehandler)
+{
+	char *data;
+	int data_len;
+	long mode;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &data, &data_len, &mode)) {
+		RETURN_FALSE;
+	}
+
+	http_ob_deflatehandler(data, data_len, &Z_STRVAL_P(return_value), (uint *) &Z_STRLEN_P(return_value), mode);
+	Z_TYPE_P(return_value) = Z_STRVAL_P(return_value) ? IS_STRING : IS_NULL;
+}
+/* }}} */
+
+/* {{{ proto string ob_inflatehandler(string data, int mode)
+ *
+ * For use with ob_start().  Same restrictions as with ob_deflatehandler apply.
+ */
+PHP_FUNCTION(ob_inflatehandler)
+{
+	char *data;
+	int data_len;
+	long mode;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &data, &data_len, &mode)) {
+		RETURN_FALSE;
+	}
+	
+	http_ob_inflatehandler(data, data_len, &Z_STRVAL_P(return_value), (uint *) &Z_STRLEN_P(return_value), mode);
+	Z_TYPE_P(return_value) = Z_STRVAL_P(return_value) ? IS_STRING : IS_NULL;
 }
 /* }}} */
 

@@ -32,8 +32,6 @@
 #	define HTTP_DEBUG_REQPOOLS 0
 #endif
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #ifndef HAVE_CURL_MULTI_STRERROR
 #	define curl_multi_strerror(dummy) "unknown error"
 #endif

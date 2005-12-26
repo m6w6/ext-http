@@ -32,8 +32,6 @@
 #include "php_http_request_pool_api.h"
 #include "php_http_url_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpRequest, method, ret_ref, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpRequest, method, ret_ref)
 #define HTTP_REQUEST_ME(method, visibility)			PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)

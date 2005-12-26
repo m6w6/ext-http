@@ -20,8 +20,6 @@
 #include "php_http_api.h"
 #include "php_http_date_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 static inline int check_day(const char *day, size_t len);
 static inline int check_month(const char *month);
 static inline int check_tzone(const char *tzone);

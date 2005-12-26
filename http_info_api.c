@@ -21,8 +21,6 @@
 #include "php_http_api.h"
 #include "php_http_info_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 PHP_HTTP_API void _http_info_default_callback(void **nothing, HashTable **headers, http_info *info TSRMLS_DC)
 {
 	zval array;

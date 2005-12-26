@@ -24,8 +24,6 @@
 #include "php_http_send_api.h"
 #include "php_http_headers_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #ifdef HTTP_HAVE_ZLIB
 PHP_MINIT_FUNCTION(http_encoding)
 {
@@ -40,6 +38,28 @@ PHP_MINIT_FUNCTION(http_encoding)
 	HTTP_LONG_CONSTANT("HTTP_DEFLATE_STRATEGY_HUFF", HTTP_DEFLATE_STRATEGY_HUFF);
 	HTTP_LONG_CONSTANT("HTTP_DEFLATE_STRATEGY_RLE", HTTP_DEFLATE_STRATEGY_RLE);
 	HTTP_LONG_CONSTANT("HTTP_DEFLATE_STRATEGY_FIXED", HTTP_DEFLATE_STRATEGY_FIXED);
+	return SUCCESS;
+}
+
+PHP_RINIT_FUNCTION(http_encoding)
+{
+	if (HTTP_G(send).inflate.start_auto) {
+		php_ob_set_internal_handler(_http_ob_inflatehandler, 0x1000, "http inflate", 0 TSRMLS_CC);
+	}
+	if (HTTP_G(send).deflate.start_auto) {
+		php_ob_set_internal_handler(_http_ob_deflatehandler, 0x8000, "http deflate", 0 TSRMLS_CC);
+	}
+	return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION(http_encoding)
+{
+	if (G->send.deflate.stream) {
+		http_encoding_deflate_stream_free((http_encoding_stream **) &G->send.deflate.stream);
+	}
+	if (G->send.inflate.stream) {
+		http_encoding_inflate_stream_free((http_encoding_stream **) &G->send.inflate.stream);
+	}
 	return SUCCESS;
 }
 #endif
@@ -193,7 +213,7 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 #define HTTP_WINDOW_BITS_ANY	0x0000002f
 #define HTTP_WINDOW_BITS_RAW	-0x000000f
 
-PHP_HTTP_API STATUS _http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status, level, wbits, strategy;
 	z_stream Z;
@@ -209,7 +229,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate(int flags, const char *data, size_t d
 	status = deflateInit2(&Z, level, Z_DEFLATED, wbits, MAX_MEM_LEVEL, strategy);
 	if (Z_OK == status) {
 		*encoded_len = HTTP_ENCODING_BUFLEN(data_len);
-		*encoded = emalloc(*encoded_len);
+		*encoded = emalloc_rel(*encoded_len);
 		
 		Z.next_in = (Bytef *) data;
 		Z.next_out = (Bytef *) *encoded;
@@ -221,7 +241,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate(int flags, const char *data, size_t d
 		
 		if (Z_STREAM_END == status) {
 			/* size buffer down to actual length */
-			*encoded = erealloc(*encoded, Z.total_out + 1);
+			*encoded = erealloc_rel(*encoded, Z.total_out + 1);
 			(*encoded)[*encoded_len = Z.total_out] = '\0';
 			return SUCCESS;
 		} else {
@@ -234,7 +254,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate(int flags, const char *data, size_t d
 	return FAILURE;
 }
 
-PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status, max = 0, wbits = HTTP_WINDOW_BITS_ANY;
 	z_stream Z;
@@ -274,7 +294,7 @@ retry_inflate:
 		
 		if (Z_STREAM_END == status) {
 			*decoded_len = Z.total_out;
-			*decoded = erealloc(buffer.data, *decoded_len + 1);
+			*decoded = erealloc_rel(buffer.data, *decoded_len + 1);
 			(*decoded)[*decoded_len] = '\0';
 			return SUCCESS;
 		} else {
@@ -287,12 +307,12 @@ retry_inflate:
 }
 
 
-PHP_HTTP_API http_encoding_stream *_http_encoding_deflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC)
+PHP_HTTP_API http_encoding_stream *_http_encoding_deflate_stream_init(http_encoding_stream *s, int flags ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status, level, wbits, strategy, free_stream;
 	
 	if ((free_stream = !s)) {
-		s = pemalloc(sizeof(http_encoding_stream), (flags & HTTP_ENCODING_STREAM_PERSISTENT));
+		s = pemalloc_rel(sizeof(http_encoding_stream), (flags & HTTP_ENCODING_STREAM_PERSISTENT));
 	}
 	memset(s, 0, sizeof(http_encoding_stream));
 	s->flags = flags;
@@ -318,12 +338,12 @@ PHP_HTTP_API http_encoding_stream *_http_encoding_deflate_stream_init(http_encod
 	return NULL;
 }
 
-PHP_HTTP_API http_encoding_stream *_http_encoding_inflate_stream_init(http_encoding_stream *s, int flags TSRMLS_DC)
+PHP_HTTP_API http_encoding_stream *_http_encoding_inflate_stream_init(http_encoding_stream *s, int flags ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status, wbits, free_stream;
 	
 	if ((free_stream = !s)) {
-		s = emalloc(sizeof(http_encoding_stream));
+		s = pemalloc_rel(sizeof(http_encoding_stream), (flags & HTTP_ENCODING_STREAM_PERSISTENT));
 	}
 	memset(s, 0, sizeof(http_encoding_stream));
 	s->flags = flags;
@@ -347,7 +367,7 @@ PHP_HTTP_API http_encoding_stream *_http_encoding_inflate_stream_init(http_encod
 	return NULL;
 }
 
-PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status;
 	
@@ -359,7 +379,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 	
 	/* deflate */
 	*encoded_len = HTTP_ENCODING_BUFLEN(data_len);
-	*encoded = emalloc(*encoded_len);
+	*encoded = emalloc_rel(*encoded_len);
 	s->stream.avail_out = *encoded_len;
 	s->stream.next_out = (Bytef *) *encoded;
 	
@@ -372,7 +392,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 			
 			/* size buffer down to actual size */
 			*encoded_len -= s->stream.avail_out;
-			*encoded = erealloc(*encoded, *encoded_len + 1);
+			*encoded = erealloc_rel(*encoded, *encoded_len + 1);
 			(*encoded)[*encoded_len] = '\0';
 			return SUCCESS;
 		break;
@@ -384,7 +404,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 	return FAILURE;
 }
 
-PHP_HTTP_API STATUS _http_encoding_inflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status, max = 0;
 	
@@ -398,7 +418,7 @@ PHP_HTTP_API STATUS _http_encoding_inflate_stream_update(http_encoding_stream *s
 	/* inflate */
 	do {
 		*decoded_len <<= 1;
-		*decoded = erealloc(*decoded, *decoded_len);
+		*decoded = erealloc_rel(*decoded, *decoded_len);
 		
 retry_raw_inflate:
 		s->stream.next_in = (Bytef *) PHPSTR_VAL(s->stream.opaque);
@@ -416,7 +436,7 @@ retry_raw_inflate:
 				
 				/* size down */
 				*decoded_len -= s->stream.avail_out;
-				*decoded = erealloc(*decoded, *decoded_len + 1);
+				*decoded = erealloc_rel(*decoded, *decoded_len + 1);
 				(*decoded)[*decoded_len] = '\0';
 				return SUCCESS;
 			break;
@@ -439,12 +459,12 @@ retry_raw_inflate:
 	return FAILURE;
 }
 
-PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s, char **encoded, size_t *encoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status;
 	
 	*encoded_len = 0x800;
-	*encoded = emalloc(*encoded_len);
+	*encoded = emalloc_rel(*encoded_len);
 	
 	s->stream.avail_in = 0;
 	s->stream.next_in = NULL;
@@ -456,7 +476,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s,
 		case Z_OK:
 		case Z_STREAM_END:
 			*encoded_len = 0x800 - s->stream.avail_out;
-			*encoded = erealloc(*encoded, *encoded_len + 1);
+			*encoded = erealloc_rel(*encoded, *encoded_len + 1);
 			(*encoded)[*encoded_len] = '\0';
 			return SUCCESS;
 		break;
@@ -468,12 +488,12 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s,
 	return FAILURE;
 }
 
-PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s, char **decoded, size_t *decoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status;
 	
 	*decoded_len = 0x800;
-	*decoded = emalloc(*decoded_len);
+	*decoded = emalloc_rel(*decoded_len);
 	
 	s->stream.avail_in = 0;
 	s->stream.next_in = NULL;
@@ -485,7 +505,7 @@ PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s,
 		case Z_OK:
 		case Z_STREAM_END:
 			*decoded_len = 0x800 - s->stream.avail_out;
-			*decoded = erealloc(*decoded, *decoded_len + 1);
+			*decoded = erealloc_rel(*decoded, *decoded_len + 1);
 			(*decoded)[*decoded_len] = '\0';
 			return SUCCESS;
 		break;
@@ -497,12 +517,12 @@ PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s,
 	return FAILURE;
 }
 
-PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status;
 	
 	*encoded_len = 0x800;
-	*encoded = emalloc(*encoded_len);
+	*encoded = emalloc_rel(*encoded_len);
 	
 	/* deflate remaining input */
 	s->stream.next_in = (Bytef *) PHPSTR_VAL(s->stream.opaque);
@@ -521,7 +541,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s
 		
 		/* size down */
 		*encoded_len -= s->stream.avail_out;
-		*encoded = erealloc(*encoded, *encoded_len + 1);
+		*encoded = erealloc_rel(*encoded, *encoded_len + 1);
 		(*encoded)[*encoded_len] = '\0';
 		return SUCCESS;
 	}
@@ -532,12 +552,12 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s
 	return FAILURE;
 }
 
-PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s, char **decoded, size_t *decoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	int status;
 	
 	*decoded_len = s->stream.avail_in << 2;
-	*decoded = emalloc(*decoded_len);
+	*decoded = emalloc_rel(*decoded_len);
 	
 	/* inflate remaining input */
 	s->stream.next_in = (Bytef *) PHPSTR_VAL(s->stream.opaque);
@@ -552,7 +572,7 @@ PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s
 		
 		/* size down */
 		*decoded_len -= s->stream.avail_out;
-		*decoded = erealloc(*decoded, *decoded_len + 1);
+		*decoded = erealloc_rel(*decoded, *decoded_len + 1);
 		(*decoded)[*decoded_len] = '\0';
 		return SUCCESS;
 	}
@@ -602,6 +622,100 @@ PHP_HTTP_API void _http_encoding_inflate_stream_free(http_encoding_stream **s TS
 			pefree(*s, (*s)->flags & HTTP_ENCODING_STREAM_PERSISTENT);
 		}
 		*s = NULL;
+	}
+}
+
+void _http_ob_deflatehandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
+{
+	getGlobals(G);
+	
+	*handled_output = NULL;
+	*handled_output_len = 0;
+	
+	if (mode & PHP_OUTPUT_HANDLER_START) {
+		int flags;
+		
+		if (G->send.deflate.stream) {
+			zend_error(E_ERROR, "ob_deflatehandler() can only be used once");
+			return;
+		}
+		
+		G->send.deflate.encoding = !0;
+		
+		switch (http_encoding_response_start(0))
+		{
+			case HTTP_ENCODING_GZIP:
+				flags = HTTP_DEFLATE_TYPE_GZIP;
+			break;
+			
+			case HTTP_ENCODING_DEFLATE:
+				flags = HTTP_DEFLATE_TYPE_ZLIB;
+			break;
+			
+			default:
+				goto deflate_passthru_plain;
+			break;
+		}
+		
+		flags |= (G->send.deflate.start_flags &~ 0xf);
+		G->send.deflate.stream = http_encoding_deflate_stream_init(NULL, flags);
+	}
+	
+	if (G->send.deflate.stream) {
+		http_encoding_deflate_stream_update((http_encoding_stream *) G->send.deflate.stream, output, output_len, handled_output, handled_output_len);
+		
+		if (mode & PHP_OUTPUT_HANDLER_END) {
+			char *remaining = NULL;
+			size_t remaining_len = 0;
+			
+			http_encoding_deflate_stream_finish((http_encoding_stream *) G->send.deflate.stream, &remaining, &remaining_len);
+			http_encoding_deflate_stream_free((http_encoding_stream **) &G->send.deflate.stream);
+			if (remaining) {
+				*handled_output = erealloc(*handled_output, *handled_output_len + remaining_len + 1);
+				memcpy(*handled_output + *handled_output_len, remaining, remaining_len);
+				(*handled_output)[*handled_output_len += remaining_len] = '\0';
+				efree(remaining);
+			}
+		}
+	} else {
+deflate_passthru_plain:
+		*handled_output = estrndup(output, *handled_output_len = output_len);
+	}
+}
+
+void _http_ob_inflatehandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
+{
+	getGlobals(G);
+	
+	*handled_output = NULL;
+	*handled_output_len = 0;
+	
+	if (mode & PHP_OUTPUT_HANDLER_START) {
+		if (G->send.inflate.stream) {
+			zend_error(E_ERROR, "ob_inflatehandler() can only be used once");
+			return;
+		}
+		G->send.inflate.stream = http_encoding_inflate_stream_init(NULL, (HTTP_G(send).inflate.start_flags &~ 0xf));
+	}
+	
+	if (G->send.inflate.stream) {
+		http_encoding_inflate_stream_update((http_encoding_stream *) G->send.inflate.stream, output, output_len, handled_output, handled_output_len);
+		
+		if (mode & PHP_OUTPUT_HANDLER_END) {
+			char *remaining = NULL;
+			size_t remaining_len = 0;
+			
+			http_encoding_inflate_stream_finish((http_encoding_stream *) G->send.inflate.stream, &remaining, &remaining_len);
+			http_encoding_inflate_stream_free((http_encoding_stream **) &G->send.inflate.stream);
+			if (remaining) {
+				*handled_output = erealloc(*handled_output, *handled_output_len + remaining_len + 1);
+				memcpy(*handled_output + *handled_output_len, remaining, remaining_len);
+				(*handled_output)[*handled_output_len += remaining_len] = '\0';
+				efree(remaining);
+			}
+		}
+	} else {
+		*handled_output = estrndup(output, *handled_output_len = output_len);
 	}
 }
 
@@ -733,13 +847,13 @@ PHP_HTTP_API STATUS _http_encoding_gzdecode_verify(const char *data, size_t data
 
 #endif /* HTTP_HAVE_ZLIB */
 
-PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRMLS_DC)
+PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 {
 	if (	php_ob_handler_used("ob_gzhandler" TSRMLS_CC) ||
 			php_ob_handler_used("zlib output compression" TSRMLS_CC)) {
-		HTTP_G(send).gzip_encoding = 0;
+		HTTP_G(send).deflate.encoding = 0;
 	} else {
-		if (!HTTP_G(send).gzip_encoding) {
+		if (!HTTP_G(send).deflate.encoding) {
 			/* emit a content-length header */
 			if (content_length) {
 				char cl_header_str[128];
@@ -749,7 +863,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			}
 		} else {
 #ifndef HTTP_HAVE_ZLIB
-			HTTP_G(send).gzip_encoding = 0;
+			HTTP_G(send).deflate.encoding = 0;
 			php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
 #else
 			HashTable *selected;
@@ -761,7 +875,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			add_next_index_stringl(&zsupported, "x-gzip", lenof("x-gzip"), 1);
 			add_next_index_stringl(&zsupported, "deflate", lenof("deflate"), 1);
 			
-			HTTP_G(send).gzip_encoding = 0;
+			HTTP_G(send).deflate.encoding = 0;
 			
 			if ((selected = http_negotiate_encoding(&zsupported))) {
 				STATUS hs = FAILURE;
@@ -771,11 +885,11 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 				if (HASH_KEY_IS_STRING == zend_hash_get_current_key(selected, &encoding, &idx, 0) && encoding) {
 					if (!strcmp(encoding, "gzip") || !strcmp(encoding, "x-gzip")) {
 						if (SUCCESS == (hs = http_send_header_string("Content-Encoding: gzip"))) {
-							HTTP_G(send).gzip_encoding = HTTP_ENCODING_GZIP;
+							HTTP_G(send).deflate.encoding = HTTP_ENCODING_GZIP;
 						}
 					} else if (!strcmp(encoding, "deflate")) {
 						if (SUCCESS == (hs = http_send_header_string("Content-Encoding: deflate"))) {
-							HTTP_G(send).gzip_encoding = HTTP_ENCODING_DEFLATE;
+							HTTP_G(send).deflate.encoding = HTTP_ENCODING_DEFLATE;
 						}
 					}
 					if (SUCCESS == hs) {
@@ -788,7 +902,7 @@ PHP_HTTP_API zend_bool _http_encoding_response_start(size_t content_length TSRML
 			}
 			
 			zval_dtor(&zsupported);
-			return HTTP_G(send).gzip_encoding;
+			return HTTP_G(send).deflate.encoding;
 #endif
 		}
 	}

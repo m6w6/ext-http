@@ -31,8 +31,6 @@
 #include "php_http_headers_api.h"
 #include "php_http_send_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #define http_flush(d, l) _http_flush((d), (l) TSRMLS_CC)
 /* {{{ static inline void http_flush() */
 static inline void _http_flush(const char *data, size_t data_len TSRMLS_DC)
@@ -74,7 +72,6 @@ static inline void _http_send_response_start(void **buffer, size_t content_lengt
 	int encoding;
 	
 	if ((encoding = http_encoding_response_start(content_length))) {
-	//DebugBreak();
 #ifdef HTTP_HAVE_ZLIB
 		*buffer = http_encoding_deflate_stream_init(NULL, 
 			(encoding == HTTP_ENCODING_GZIP) ? 
@@ -88,7 +85,7 @@ static inline void _http_send_response_start(void **buffer, size_t content_lengt
 #define http_send_response_data_plain(b, d, dl) _http_send_response_data_plain((b), (d), (dl) TSRMLS_CC)
 static inline void _http_send_response_data_plain(void **buffer, const char *data, size_t data_len TSRMLS_DC)
 {
-	if (HTTP_G(send).gzip_encoding) {
+	if (HTTP_G(send).deflate.encoding) {
 #ifdef HTTP_HAVE_ZLIB
 		char *encoded;
 		size_t encoded_len;
@@ -159,7 +156,7 @@ static inline void _http_send_response_data_fetch(void **buffer, const void *dat
 #define http_send_response_finish(b) _http_send_response_finish((b) TSRMLS_CC)
 static inline void _http_send_response_finish(void **buffer TSRMLS_DC)
 {
-	if (HTTP_G(send).gzip_encoding) {
+	if (HTTP_G(send).deflate.encoding) {
 #ifdef HTTP_HAVE_ZLIB
 		char *encoded = NULL;
 		size_t encoded_len = 0;

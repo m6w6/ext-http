@@ -24,8 +24,6 @@
 #include "php_http_api.h"
 #include "php_http_headers_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #ifndef HTTP_DBG_NEG
 #	define HTTP_DBG_NEG 0
 #endif

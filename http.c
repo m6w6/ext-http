@@ -108,6 +108,8 @@ zend_function_entry http_functions[] = {
 #ifdef HTTP_HAVE_ZLIB
 	PHP_FE(http_deflate, NULL)
 	PHP_FE(http_inflate, NULL)
+	PHP_FE(ob_deflatehandler, NULL)
+	PHP_FE(ob_inflatehandler, NULL)
 #endif
 	PHP_FE(http_support, NULL)
 	
@@ -157,13 +159,15 @@ static void http_globals_init_once(zend_http_globals *G)
 	memset(G, 0, sizeof(zend_http_globals));
 }
 
-static inline void http_globals_init(zend_http_globals *G)
+#define http_globals_init(g) _http_globals_init((g) TSRMLS_CC)
+static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 {
 	G->send.buffer_size = HTTP_SENDBUF_SIZE;
 	zend_hash_init(&G->request.methods.custom, 0, NULL, ZVAL_PTR_DTOR, 0);
 }
 
-static inline void http_globals_free(zend_http_globals *G)
+#define http_globals_free(g) _http_globals_free((g) TSRMLS_CC)
+static inline void _http_globals_free(zend_http_globals *G TSRMLS_DC)
 {
 	STR_SET(G->send.content_type, NULL);
 	STR_SET(G->send.unquoted_etag, NULL);
@@ -207,6 +211,12 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.only_exceptions", "0", PHP_INI_ALL, OnUpdateBool, only_exceptions)
 #endif
 	HTTP_PHP_INI_ENTRY("http.force_exit", "1", PHP_INI_ALL, OnUpdateBool, force_exit)
+#ifdef HTTP_HAVE_ZLIB
+	HTTP_PHP_INI_ENTRY("http.ob_inflate_auto", "0", PHP_INI_PERDIR, OnUpdateBool, send.inflate.start_auto)
+	HTTP_PHP_INI_ENTRY("http.ob_inflate_flags", "0", PHP_INI_ALL, OnUpdateLong, send.inflate.start_flags)
+	HTTP_PHP_INI_ENTRY("http.ob_deflate_auto", "0", PHP_INI_PERDIR, OnUpdateBool, send.deflate.start_auto)
+	HTTP_PHP_INI_ENTRY("http.ob_deflate_flags", "0", PHP_INI_ALL, OnUpdateLong, send.deflate.start_flags)
+#endif
 PHP_INI_END()
 /* }}} */
 
@@ -271,6 +281,13 @@ PHP_RINIT_FUNCTION(http)
 	}
 
 	http_globals_init(HTTP_GLOBALS);
+
+#ifdef HTTP_HAVE_ZLIB	
+	if (SUCCESS != PHP_RINIT_CALL(http_encoding)) {
+		return FAILURE;
+	}
+#endif
+	
 	return SUCCESS;
 }
 /* }}} */
@@ -280,9 +297,16 @@ PHP_RSHUTDOWN_FUNCTION(http)
 {
 	STATUS status = SUCCESS;
 	
-#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
-	status = PHP_RSHUTDOWN_CALL(http_request_method);
+	if (
+#ifdef HTTP_HAVE_ZLIB
+		(SUCCESS != PHP_RSHUTDOWN_CALL(http_encoding)) ||
 #endif
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
+		(SUCCESS != PHP_RSHUTDOWN_CALL(http_request_method)) ||
+#endif
+	0) {
+		status = FAILURE;
+	}
 	
 	http_globals_free(HTTP_GLOBALS);
 	return status;

@@ -29,8 +29,6 @@
 #	include "php_http_request_object.h"
 #endif
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 /* {{{ cruft for thread safe SSL crypto locks */
 #if defined(ZTS) && defined(HTTP_HAVE_SSL)
 #	ifdef PHP_WIN32

@@ -30,8 +30,6 @@
 #include "php_http_send_api.h"
 #include "php_http_url_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #define http_message_info_callback _http_message_info_callback
 static void _http_message_info_callback(http_message **message, HashTable **headers, http_info *info TSRMLS_DC)
 {

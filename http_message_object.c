@@ -34,8 +34,6 @@ extern PHPAPI zend_class_entry *spl_ce_Countable;
 #	endif
 #endif
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpMessage, method, ret_ref, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpMessage, method, ret_ref)
 #define HTTP_MESSAGE_ME(method, visibility)			PHP_ME(HttpMessage, method, HTTP_ARGS(HttpMessage, method), visibility)

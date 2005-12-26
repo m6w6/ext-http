@@ -27,8 +27,6 @@
 #	include "php_http_request_object.h"
 #endif
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 /* {{{ char *http_request_methods[] */
 static const char *const http_request_methods[] = {
 	"UNKNOWN",

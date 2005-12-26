@@ -27,8 +27,6 @@
 #include "php_http_api.h"
 #include "php_http_url_api.h"
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
 {
 	char *abs = estrdup(url);

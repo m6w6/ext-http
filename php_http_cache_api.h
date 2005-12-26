@@ -30,8 +30,6 @@
 #	include "ext/hash/php_hash.h"
 #endif
 
-ZEND_EXTERN_MODULE_GLOBALS(http);
-
 #define http_etag_digest(d, l) _http_etag_digest((d), (l))
 static inline char *_http_etag_digest(const unsigned char *digest, int len)
 {
