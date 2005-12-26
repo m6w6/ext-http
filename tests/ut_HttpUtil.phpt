@@ -100,7 +100,7 @@ class HttpUtilTest extends PHPUnit2_Framework_TestCase
     function test_zlib()
     {
     	if ($support = http_support(HTTP_SUPPORT_ENCODINGS)) {
-    		$this->assertEquals(file_get_contents(__FILE__), http_gzdecode(http_gzencode(file_get_contents(__FILE__))));
+    		$this->assertEquals(file_get_contents(__FILE__), http_inflate(http_deflate(file_get_contents(__FILE__), HTTP_DEFLATE_TYPE_GZIP)));
     		$this->assertEquals(file_get_contents(__FILE__), http_inflate(http_deflate(file_get_contents(__FILE__))));
 		} else {
 			$this->assertFalse($support);

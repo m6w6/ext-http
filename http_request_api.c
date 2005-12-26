@@ -222,7 +222,7 @@ PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch
 	memset(r, 0, sizeof(http_request));
 	
 	r->ch = ch;
-	r->url = (url && *url) ? estrdup(url) : NULL;
+	r->url = (url) ? http_absolute_url(url) : NULL;
 	r->meth = (meth > 0) ? meth : HTTP_GET;
 	
 	phpstr_init(&r->conv.request);

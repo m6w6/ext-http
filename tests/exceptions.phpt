@@ -34,15 +34,6 @@ foreach ($e as $i => $c) {
 		printf("%2d: %s\n", $i, get_class($x));
 	}
 }
-if (http_support(HTTP_SUPPORT_REQUESTS)) {
-	try {
-		$tmp = http_get(null);
-	} catch (HttpRequestException $x) {
-		printf("%s (%d)\n", $x->getMessage(), $x->getCode());
-	}
-} else {
-	echo "URL using bad/illegal format or missing URL; No URL set!\n ((null)) (8)\n";
-}
 echo "Done\n";
 ?>
 --EXPECTF--
@@ -59,6 +50,4 @@ echo "Done\n";
 10: HttpSocketException
 11: HttpResponseException
 12: HttpUrlException
-URL using bad/illegal format or missing URL; No URL set!
- ((null)) (8)
 Done
