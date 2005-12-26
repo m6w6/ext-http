@@ -50,6 +50,10 @@
 #		include "php_http_request_object.h"
 #		include "php_http_requestpool_object.h"
 #	endif
+#	ifdef HTTP_HAVE_ZLIB
+#		include "php_http_deflatestream_object.h"
+#		include "php_http_inflatestream_object.h"
+#	endif
 #	include "php_http_exception_object.h"
 #endif
 
@@ -212,9 +216,9 @@ PHP_INI_BEGIN()
 #endif
 	HTTP_PHP_INI_ENTRY("http.force_exit", "1", PHP_INI_ALL, OnUpdateBool, force_exit)
 #ifdef HTTP_HAVE_ZLIB
-	HTTP_PHP_INI_ENTRY("http.ob_inflate_auto", "0", PHP_INI_PERDIR, OnUpdateBool, send.inflate.start_auto)
+	HTTP_PHP_INI_ENTRY("http.ob_inflate_auto", "0", PHP_INI_ALL, OnUpdateBool, send.inflate.start_auto)
 	HTTP_PHP_INI_ENTRY("http.ob_inflate_flags", "0", PHP_INI_ALL, OnUpdateLong, send.inflate.start_flags)
-	HTTP_PHP_INI_ENTRY("http.ob_deflate_auto", "0", PHP_INI_PERDIR, OnUpdateBool, send.deflate.start_auto)
+	HTTP_PHP_INI_ENTRY("http.ob_deflate_auto", "0", PHP_INI_ALL, OnUpdateBool, send.deflate.start_auto)
 	HTTP_PHP_INI_ENTRY("http.ob_deflate_flags", "0", PHP_INI_ALL, OnUpdateLong, send.deflate.start_flags)
 #endif
 PHP_INI_END()
@@ -252,6 +256,10 @@ PHP_MINIT_FUNCTION(http)
 			(SUCCESS != PHP_MINIT_CALL(http_request_object))	||
 			(SUCCESS != PHP_MINIT_CALL(http_requestpool_object))||
 #	endif /* HTTP_HAVE_CURL */
+#	ifdef HTTP_HAVE_ZLIB
+			(SUCCESS != PHP_MINIT_CALL(http_deflatestream_object))	||
+			(SUCCESS != PHP_MINIT_CALL(http_inflatestream_object))	||
+#	endif /* HTTP_HAVE_ZLIB */
 			(SUCCESS != PHP_MINIT_CALL(http_exception_object))) {
 		return FAILURE;
 	}
