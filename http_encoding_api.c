@@ -657,7 +657,7 @@ void _http_ob_deflatehandler(char *output, uint output_len, char **handled_outpu
 			break;
 		}
 		
-		flags |= (G->send.deflate.start_flags &~ 0xf);
+		flags |= (G->send.deflate.start_flags &~ 0xf0);
 		G->send.deflate.stream = http_encoding_deflate_stream_init(NULL, flags);
 	}
 	
@@ -695,7 +695,7 @@ void _http_ob_inflatehandler(char *output, uint output_len, char **handled_outpu
 			zend_error(E_ERROR, "ob_inflatehandler() can only be used once");
 			return;
 		}
-		G->send.inflate.stream = http_encoding_inflate_stream_init(NULL, (HTTP_G(send).inflate.start_flags &~ 0xf));
+		G->send.inflate.stream = http_encoding_inflate_stream_init(NULL, (HTTP_G(send).inflate.start_flags &~ 0xf0));
 	}
 	
 	if (G->send.inflate.stream) {
