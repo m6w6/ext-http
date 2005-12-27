@@ -66,7 +66,7 @@ PHP_FUNCTION(http_date)
 }
 /* }}} */
 
-/* {{{ proto string http_build_url(mixed url[, mixed parts[, array new_url]])
+/* {{{ proto string http_build_url(mixed url[, mixed parts[, array &new_url]])
  *
  * Returns the new URL as string on success or FALSE on failure.
  */
@@ -87,6 +87,7 @@ PHP_FUNCTION(http_build_url)
 		} else {
 			convert_to_string(z_new_url);
 			if (!(new_url = php_url_parse_ex(Z_STRVAL_P(z_new_url), Z_STRLEN_P(z_new_url)))) {
+				http_error_ex(HE_WARNING, HTTP_E_URL, "Could not parse URL (%s)", Z_STRVAL_P(z_new_url));
 				RETURN_FALSE;
 			}
 		}
@@ -100,6 +101,7 @@ PHP_FUNCTION(http_build_url)
 			if (new_url) {
 				php_url_free(new_url);
 			}
+			http_error_ex(HE_WARNING, HTTP_E_URL, "Could not parse URL (%s)", Z_STRVAL_P(z_old_url));
 			RETURN_FALSE;
 		}
 	}
@@ -601,8 +603,6 @@ PHP_FUNCTION(ob_etaghandler)
  * Provides a basic throttling mechanism, which will yield the current process
  * resp. thread until the entity has been completely sent, though.
  * 
- * Note: This doesn't really work with the FastCGI SAPI.
- *
  * Expects a double parameter specifying the seconds too sleep() after
  * each chunk sent.  Additionally accepts an optional int parameter
  * representing the chunk size in bytes.

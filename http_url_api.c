@@ -37,6 +37,8 @@ PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
 	if (purl) {
 		http_build_url(purl, NULL, NULL, &abs, NULL);
 		php_url_free(purl);
+	} else {
+		http_error_ex(HE_WARNING, HTTP_E_URL, "Could not parse URL (%s)", url);
 	}
 	
 	return abs;
