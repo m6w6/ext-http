@@ -31,10 +31,6 @@
 #define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpInflateStream, method, ret_ref)
 #define HTTP_INFLATE_ME(method, visibility)			PHP_ME(HttpInflateStream, method, HTTP_ARGS(HttpInflateStream, method), visibility)
 
-HTTP_BEGIN_ARGS(__construct, 0, 0)
-	HTTP_ARG_VAL(flags, 0)
-HTTP_END_ARGS;
-
 HTTP_BEGIN_ARGS(update, 0, 1)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
@@ -171,7 +167,9 @@ PHP_METHOD(HttpInflateStream, flush)
 	char *decoded = NULL, *data = NULL;
 	getObject(http_inflatestream_object, obj);
 	
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &data, &data_len));
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &data, &data_len)) {
+		RETURN_FALSE;
+	}
 	
 	if (!obj->stream && !(obj->stream = http_encoding_inflate_stream_init(NULL, 0))) {
 		RETURN_FALSE;
