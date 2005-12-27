@@ -216,9 +216,9 @@ PHP_INI_BEGIN()
 #endif
 	HTTP_PHP_INI_ENTRY("http.force_exit", "1", PHP_INI_ALL, OnUpdateBool, force_exit)
 #ifdef HTTP_HAVE_ZLIB
-	HTTP_PHP_INI_ENTRY("http.ob_inflate_auto", "0", PHP_INI_ALL, OnUpdateBool, send.inflate.start_auto)
+	HTTP_PHP_INI_ENTRY("http.ob_inflate_auto", "0", PHP_INI_PERDIR, OnUpdateBool, send.inflate.start_auto)
 	HTTP_PHP_INI_ENTRY("http.ob_inflate_flags", "0", PHP_INI_ALL, OnUpdateLong, send.inflate.start_flags)
-	HTTP_PHP_INI_ENTRY("http.ob_deflate_auto", "0", PHP_INI_ALL, OnUpdateBool, send.deflate.start_auto)
+	HTTP_PHP_INI_ENTRY("http.ob_deflate_auto", "0", PHP_INI_PERDIR, OnUpdateBool, send.deflate.start_auto)
 	HTTP_PHP_INI_ENTRY("http.ob_deflate_flags", "0", PHP_INI_ALL, OnUpdateLong, send.deflate.start_flags)
 #endif
 PHP_INI_END()
@@ -337,6 +337,10 @@ PHP_MINFO_FUNCTION(http)
 #	ifdef HTTP_HAVE_CURL
 			"HttpRequest, "
 			"HttpRequestPool, "
+#	endif
+#	ifdef HTTP_HAVE_ZLIB
+			"HttpDeflateStream, "
+			"HttpInflateStream, "
 #	endif
 #	ifndef WONKY
 			"HttpResponse"

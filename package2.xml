@@ -23,7 +23,11 @@ It provides powerful request functionality, if built with CURL
 support. Parallel requests are available for PHP-5 and greater.
 
 PHP-5 classes:
-HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
+HttpUtil, HttpMessage, HttpRequest, HttpRequestPool, 
+HttpDeflateStream, HttpInflateStream
+
+PHP-5.1 classes:
+HttpResponse
 ]]></description>
  <lead>
   <name>Michael Wallner</name>
@@ -33,8 +37,8 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
  </lead>
  <date>2005-00-00</date>
  <version>
-  <release>0.20.0</release>
-  <api>0.20.0</api>
+  <release>0.21.0</release>
+  <api>0.21.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -42,26 +46,18 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-! Request functionality requires libcurl >= 7.12.3 now
+! Encodings functionality requires libz version 1.2.0.4 or greater
 
-+ Added 'bodyonly' request option
-+ Added IOCTL callback for cURL
-+ Added ssl_engines array and cookies array to the request info array
-+ Added http_parse_cookie() to parse Set-Cookie headers
++ Added HttpDeflateStream and HttpInflateStream classes
++ Added ob_deflatehandler and ob_inflatehandler
++ Added HttpRequest::getRawRequestMessage and ::getRawResponseMessage
++ Added 'resetcookies' request option (libcurl > 7.15)
 
-- Renamed http_connectcode to connect_code in the request info array
-- Enable "original headers" previously stripped off by the message parser:
-	o X-Original-Transfer-Encoding (Transfer-Encoding)
-	o X-Original-Content-Encoding (Content-Encoding)
-	o X-Original-Content-Length (Content-Length)
-- RequestExceptions thrown by HttpRequestPool::__construct() and send() are
-  now wrapped into the HttpRequestPoolException object's $exceptionStack property
-- Removed http_compress() and http_uncompress() (http_deflate/inflate ambiguity)
+- Changed HttpRequest properties to be private
 
-* Fixed bug which caused GZIP encoded archives to be decoded
-* Fixed bug with DEFLATE encoded response messages
-* Fixed several memory leaks and inconspicuous access violations
-* Fixed some logical errors in the uri builder
+* Fixed a lot of memory corruptions within HttpRequest
+
+Special thanks for this release go to Ilia Alshanetsky.
 ]]></notes>
  <contents>
   <dir name="/">
@@ -103,6 +99,8 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
    <file role="src" name="php_http_send_api.h"/>
    <file role="src" name="php_http_url_api.h"/>
    <file role="src" name="php_http_util_object.h"/>
+   <file role="src" name="php_http_deflatestream_object.h"/>
+   <file role="src" name="php_http_inflatestream_object.h"/>
    <file role="src" name="php_http_message_object.h"/>
    <file role="src" name="php_http_request_object.h"/>
    <file role="src" name="php_http_requestpool_object.h"/>
@@ -126,6 +124,8 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
    <file role="src" name="http_send_api.c"/>
    <file role="src" name="http_url_api.c"/>
    <file role="src" name="http_util_object.c"/>
+   <file role="src" name="http_deflatestream_object.c"/>
+   <file role="src" name="http_inflatestream_object.c"/>
    <file role="src" name="http_message_object.c"/>
    <file role="src" name="http_request_object.c"/>
    <file role="src" name="http_requestpool_object.c"/>
@@ -137,13 +137,13 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
     <file role="test" name="urls.txt"/>
     <file role="test" name="skip.inc"/>
     <file role="test" name="log.inc"/>
-    <file role="test" name="abs_uri_001.phpt"/>
-    <file role="test" name="abs_uri_002.phpt"/>
     <file role="test" name="allowed_methods_001.phpt"/>
     <file role="test" name="allowed_methods_001_logging.phpt"/>
     <file role="test" name="allowed_methods_002.phpt"/>
     <file role="test" name="allowed_methods_002_logging.phpt"/>
-    <file role="test" name="build_uri_001.phpt"/>
+    <file role="test" name="build_url_001.phpt"/>
+    <file role="test" name="build_url_002.phpt"/>
+    <file role="test" name="build_url_003.phpt"/>
     <file role="test" name="chunked_decode_001.phpt"/>
     <file role="test" name="chunked_decode_002.phpt"/>
     <file role="test" name="chunked_decode_003.phpt"/>
@@ -151,6 +151,7 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
     <file role="test" name="cloning_001.phpt"/>
     <file role="test" name="date_001.phpt"/>
     <file role="test" name="date_002.phpt"/>
+    <file role="test" name="encoding_objects_001.phpt"/>
     <file role="test" name="encodings.phpt"/>
     <file role="test" name="etag_mode_001.phpt"/>
     <file role="test" name="etag_mode_002.phpt"/>
@@ -176,10 +177,12 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
     <file role="test" name="HttpRequest_001.phpt"/>
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>
+    <file role="test" name="HttpRequest_004.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
     <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequestPool_003.phpt"/>
     <file role="test" name="HttpRequestPool_004.phpt"/>
+    <file role="test" name="HttpRequestPool_005.phpt"/>
     <file role="test" name="HttpResponse_001.phpt"/>
     <file role="test" name="HttpResponse_002.phpt"/>
     <file role="test" name="HttpResponse_003.phpt"/>
@@ -187,6 +190,8 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
     <file role="test" name="INI_001.phpt"/>
     <file role="test" name="match_request_header_001.phpt"/>
     <file role="test" name="negotiation_001.phpt"/>
+    <file role="test" name="ob_deflatehandler_001.phpt"/>
+    <file role="test" name="ob_inflatehandler_002.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
     <file role="test" name="parse_message_001.phpt"/>
     <file role="test" name="parse_message_002.phpt"/>
@@ -249,7 +254,6 @@ HttpUtil, HttpMessage, HttpRequest, HttpRequestPool; HttpResponse (PHP-5.1)
   <optional>
    <extension><name>session</name></extension>
    <extension><name>hash</name></extension>
-   <extension><name>zlib</name></extension>
   </optional>
  </dependencies>
  <providesextension>http</providesextension>
