@@ -392,7 +392,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 		case Z_OK:
 		case Z_STREAM_END:
 			/* cut processed chunk off the buffer */
-			phpstr_cut(PHPSTR(s->stream.opaque), 0, data_len - s->stream.avail_in);
+			phpstr_cut(PHPSTR(s->stream.opaque), 0, PHPSTR_LEN(s->stream.opaque) - s->stream.avail_in);
 			
 			/* size buffer down to actual size */
 			*encoded_len -= s->stream.avail_out;
@@ -436,7 +436,7 @@ retry_raw_inflate:
 			case Z_OK:
 			case Z_STREAM_END:
 				/* cut off */
-				phpstr_cut(PHPSTR(s->stream.opaque), 0, data_len - s->stream.avail_in);
+				phpstr_cut(PHPSTR(s->stream.opaque), 0, PHPSTR_LEN(s->stream.opaque) - s->stream.avail_in);
 				
 				/* size down */
 				*decoded_len -= s->stream.avail_out;
@@ -494,31 +494,9 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s,
 
 PHP_HTTP_API STATUS _http_encoding_inflate_stream_flush(http_encoding_stream *s, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
-	int status;
-	
-	*decoded_len = 0x800;
-	*decoded = emalloc_rel(*decoded_len);
-	
-	s->stream.avail_in = 0;
-	s->stream.next_in = NULL;
-	s->stream.avail_out = *decoded_len;
-	s->stream.next_out = (Bytef *) *decoded;
-	
-	switch (status = inflate(&s->stream, Z_SYNC_FLUSH))
-	{
-		case Z_OK:
-		case Z_STREAM_END:
-			*decoded_len = 0x800 - s->stream.avail_out;
-			*decoded = erealloc_rel(*decoded, *decoded_len + 1);
-			(*decoded)[*decoded_len] = '\0';
-			return SUCCESS;
-		break;
-	}
-	
-	STR_SET(*decoded, NULL);
-	*decoded_len = 0;
-	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Failed to flush inflate stream: %s", zError(status));
-	return FAILURE;
+	/* noop */
+	*decoded = estrndup("", *decoded_len = 0);
+	return SUCCESS;
 }
 
 PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s, char **encoded, size_t *encoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)

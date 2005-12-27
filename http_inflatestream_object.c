@@ -39,11 +39,18 @@ HTTP_BEGIN_ARGS(update, 0, 1)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(finish, 0);
+HTTP_BEGIN_ARGS(flush, 0, 0)
+	HTTP_ARG_VAL(data, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(finish, 0, 0)
+	HTTP_ARG_VAL(data, 0)
+HTTP_END_ARGS;
 
 zend_class_entry *http_inflatestream_object_ce;
 zend_function_entry http_inflatestream_object_fe[] = {
 	HTTP_INFLATE_ME(update, ZEND_ACC_PUBLIC)
+	HTTP_INFLATE_ME(flush, ZEND_ACC_PUBLIC)
 	HTTP_INFLATE_ME(finish, ZEND_ACC_PUBLIC)
 	
 	EMPTY_FUNCTION_ENTRY
@@ -139,11 +146,10 @@ PHP_METHOD(HttpInflateStream, update)
 		RETURN_STRING("", 1);
 	}
 	
-	if (!obj->stream) {
-		if (!(obj->stream = http_encoding_inflate_stream_init(NULL, 0))) {
-			RETURN_FALSE;
-		}
+	if (!obj->stream && !(obj->stream = http_encoding_inflate_stream_init(NULL, 0))) {
+		RETURN_FALSE;
 	}
+	
 	if (SUCCESS == http_encoding_inflate_stream_update(obj->stream, data, data_len, &decoded, &decoded_len)) {
 		RETURN_STRINGL(decoded, decoded_len, 0);
 	} else {
@@ -152,7 +158,37 @@ PHP_METHOD(HttpInflateStream, update)
 }
 /* }}} */
 
-/* {{{ proto string HttpInflateStream::finish()
+/* {{{ proto string HttpInflateStream::flush([string data])
+ *
+ * Flush the inflate stream.
+ * 
+ * Returns some inflated data as string on success or FALSE on failure.
+ */
+PHP_METHOD(HttpInflateStream, flush)
+{
+	int data_len = 0;
+	size_t decoded_len = 0;
+	char *decoded = NULL, *data = NULL;
+	getObject(http_inflatestream_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &data, &data_len));
+	
+	if (!obj->stream && !(obj->stream = http_encoding_inflate_stream_init(NULL, 0))) {
+		RETURN_FALSE;
+	}
+	
+	/* flushing the inflate stream is a no-op */
+	if (!data_len) {
+		RETURN_STRINGL("", 0, 1);
+	} else if (SUCCESS == http_encoding_inflate_stream_update(obj->stream, data, data_len, &decoded, &decoded_len)) {
+		RETURN_STRINGL(decoded, decoded_len, 0);
+	} else {
+		RETURN_FALSE;
+	}
+}
+/* }}} */
+
+/* {{{ proto string HttpInflateStream::finish([string data])
  *
  * Finalizes the inflate stream.  The inflate stream can be reused after finalizing.
  * 
@@ -160,18 +196,37 @@ PHP_METHOD(HttpInflateStream, update)
  */ 
 PHP_METHOD(HttpInflateStream, finish)
 {
-	size_t decoded_len = 0;
-	char *decoded = NULL;
+	int data_len = 0;
+	size_t updated_len = 0, decoded_len = 0;
+	char *updated = NULL, *decoded = NULL, *data = NULL;
 	getObject(http_inflatestream_object, obj);
 	
-	NO_ARGS;
-	
-	if (!obj->stream) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &data, &data_len)) {
 		RETURN_FALSE;
 	}
 	
+	if (!obj->stream && !(obj->stream = http_encoding_inflate_stream_init(NULL, 0))) {
+		RETURN_FALSE;
+	}
+	
+	if (data_len) {
+		if (SUCCESS != http_encoding_inflate_stream_update(obj->stream, data, data_len, &updated, &updated_len)) {
+			RETURN_FALSE;
+		}
+	}
+	
 	if (SUCCESS == http_encoding_inflate_stream_finish(obj->stream, &decoded, &decoded_len)) {
-		RETVAL_STRINGL(decoded, decoded_len, 0);
+		if (updated_len) {
+			updated = erealloc(updated, updated_len + decoded_len + 1);
+			updated[updated_len + decoded_len] = '\0';
+			memcpy(updated + updated_len, decoded, decoded_len);
+			updated_len += decoded_len;
+			RETVAL_STRINGL(updated, updated_len, 0);
+			STR_FREE(decoded);
+		} else {
+			RETVAL_STRINGL(decoded, decoded_len, 0);
+			STR_FREE(updated);
+		}
 	} else {
 		RETVAL_FALSE;
 	}

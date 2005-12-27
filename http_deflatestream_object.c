@@ -39,7 +39,13 @@ HTTP_BEGIN_ARGS(update, 0, 1)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(finish, 0);
+HTTP_BEGIN_ARGS(flush, 0, 0)
+	HTTP_ARG_VAL(data, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(finish, 0, 0)
+	HTTP_ARG_VAL(data, 0)
+HTTP_END_ARGS;
 
 #define http_deflatestream_object_declare_default_properties() _http_deflatestream_object_declare_default_properties(TSRMLS_C)
 static inline void _http_deflatestream_object_declare_default_properties(TSRMLS_D);
@@ -48,6 +54,7 @@ zend_class_entry *http_deflatestream_object_ce;
 zend_function_entry http_deflatestream_object_fe[] = {
 	HTTP_DEFLATE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	HTTP_DEFLATE_ME(update, ZEND_ACC_PUBLIC)
+	HTTP_DEFLATE_ME(flush, ZEND_ACC_PUBLIC)
 	HTTP_DEFLATE_ME(finish, ZEND_ACC_PUBLIC)
 	
 	EMPTY_FUNCTION_ENTRY
@@ -175,10 +182,8 @@ PHP_METHOD(HttpDeflateStream, update)
 		RETURN_FALSE;
 	}
 	
-	if (!obj->stream) {
-		if (!(obj->stream = http_encoding_deflate_stream_init(NULL, 0))) {
-			RETURN_FALSE;
-		}
+	if (!obj->stream && !(obj->stream = http_encoding_deflate_stream_init(NULL, 0))) {
+		RETURN_FALSE;
 	}
 	
 	if (SUCCESS == http_encoding_deflate_stream_update(obj->stream, data, data_len, &encoded, &encoded_len)) {
@@ -189,7 +194,52 @@ PHP_METHOD(HttpDeflateStream, update)
 }
 /* }}} */
 
-/* {{{ proto string HttpDeflateStream::finish()
+/* {{{ proto string HttpDeflateStream::flush([string data])
+ *
+ * Flushes the deflate stream.
+ * 
+ * Returns some deflated data as string on success or FALSE on failure.
+ */ 
+PHP_METHOD(HttpDeflateStream, flush)
+{
+	int data_len = 0;
+	size_t updated_len = 0, encoded_len = 0;
+	char *updated = NULL, *encoded = NULL, *data = NULL;
+	getObject(http_deflatestream_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &data, &data_len)) {
+		RETURN_FALSE;
+	}
+	
+	if (!obj->stream && !(obj->stream = http_encoding_deflate_stream_init(NULL, 0))) {
+		RETURN_FALSE;
+	}
+	
+	if (data_len) {
+		if (SUCCESS != http_encoding_deflate_stream_update(obj->stream, data, data_len, &updated, &updated_len)) {
+			RETURN_FALSE;
+		}
+	}
+	
+	if (SUCCESS == http_encoding_deflate_stream_flush(obj->stream, &encoded, &encoded_len)) {
+		if (updated_len) {
+			updated = erealloc(updated, updated_len + encoded_len + 1);
+			updated[updated_len + encoded_len] = '\0';
+			memcpy(updated + updated_len, encoded, encoded_len);
+			STR_FREE(encoded);
+			updated_len += encoded_len;
+			RETURN_STRINGL(updated, updated_len, 0);
+		} else {
+			RETVAL_STRINGL(encoded, encoded_len, 0);
+		}
+	} else {
+		RETVAL_FALSE;
+	}
+	STR_FREE(updated);
+}
+/* }}} */
+
+/* {{{ proto string HttpDeflateStream::finish([string data])
  *
  * Finalizes the deflate stream.  The deflate stream can be reused after finalizing.
  * 
@@ -197,19 +247,39 @@ PHP_METHOD(HttpDeflateStream, update)
  */ 
 PHP_METHOD(HttpDeflateStream, finish)
 {
-	size_t encoded_len = 0;
-	char *encoded = NULL;
+	int data_len = 0;
+	size_t updated_len = 0, encoded_len = 0;
+	char *updated = NULL, *encoded = NULL, *data = NULL;
 	getObject(http_deflatestream_object, obj);
 	
-	NO_ARGS;
-	
-	if (!obj->stream) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &data, &data_len)) {
 		RETURN_FALSE;
 	}
 	
+	if (!obj->stream && !(obj->stream = http_encoding_deflate_stream_init(NULL, 0))) {
+		RETURN_FALSE;
+	}
+	
+	if (data_len) {
+		if (SUCCESS != http_encoding_deflate_stream_update(obj->stream, data, data_len, &updated, &updated_len)) {
+			RETURN_FALSE;
+		}
+	}
+	
 	if (SUCCESS == http_encoding_deflate_stream_finish(obj->stream, &encoded, &encoded_len)) {
-		RETVAL_STRINGL(encoded, encoded_len, 0);
+		if (updated_len) {
+			updated = erealloc(updated, updated_len + encoded_len + 1);
+			updated[updated_len + encoded_len] = '\0';
+			memcpy(updated + updated_len, encoded, encoded_len);
+			STR_FREE(encoded);
+			updated_len += encoded_len;
+			RETVAL_STRINGL(updated, updated_len, 0);
+		} else {
+			STR_FREE(updated);
+			RETVAL_STRINGL(encoded, encoded_len, 0);
+		}
 	} else {
+		STR_FREE(updated);
 		RETVAL_FALSE;
 	}
 	
