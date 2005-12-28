@@ -446,7 +446,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			php_stream *stream = php_stream_open_wrapper(Z_STRVAL_P(GET_PROP(obj, putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL);
 			
 			if (stream && !php_stream_stat(stream, &ssb)) {
-				http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 1);
+				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 1);
 			} else {
 				status = FAILURE;
 			}
