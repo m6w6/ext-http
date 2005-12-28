@@ -465,7 +465,9 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 				if (Z_STRLEN_P(ctype)) {
 					zval **headers, *opts = GET_PROP(obj, options);
 					
-					if ((SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) && (Z_TYPE_PP(headers) == IS_ARRAY)) {
+					if (	(Z_TYPE_P(opts) == IS_ARRAY) &&
+							(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) && 
+							(Z_TYPE_PP(headers) == IS_ARRAY)) {
 						zval **ct_header;
 						
 						/* only override if not already set */
@@ -478,7 +480,8 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 						MAKE_STD_ZVAL(headers);
 						array_init(headers);
 						add_assoc_stringl(headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
-						add_assoc_zval(opts, "headers", headers);
+						zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "addheaders", NULL, headers);
+						zval_ptr_dtor(&headers);
 					}
 				}
 
