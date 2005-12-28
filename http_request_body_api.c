@@ -52,31 +52,33 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 		struct curl_httppost *http_post_data[2] = {NULL, NULL};
 
 		/* normal data */
-		FOREACH_HASH_KEYVAL(pos, fields, key, idx, data) {
-			if (key) {
-				CURLcode err;
-				zval *orig = *data;
-				
-				convert_to_string_ex(data);
-				err = curl_formadd(&http_post_data[0], &http_post_data[1],
-					CURLFORM_COPYNAME,			key,
-					CURLFORM_COPYCONTENTS,		Z_STRVAL_PP(data),
-					CURLFORM_CONTENTSLENGTH,	(long) Z_STRLEN_PP(data),
-					CURLFORM_END
-				);
-				
-				if (orig != *data) {
-					zval_ptr_dtor(data);
+		if (fields) {
+			FOREACH_HASH_KEYVAL(pos, fields, key, idx, data) {
+				if (key) {
+					CURLcode err;
+					zval *orig = *data;
+					
+					convert_to_string_ex(data);
+					err = curl_formadd(&http_post_data[0], &http_post_data[1],
+						CURLFORM_COPYNAME,			key,
+						CURLFORM_COPYCONTENTS,		Z_STRVAL_PP(data),
+						CURLFORM_CONTENTSLENGTH,	(long) Z_STRLEN_PP(data),
+						CURLFORM_END
+					);
+					
+					if (orig != *data) {
+						zval_ptr_dtor(data);
+					}
+					
+					if (CURLE_OK != err) {
+						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post fields: %s", curl_easy_strerror(err));
+						curl_formfree(http_post_data[0]);
+						return NULL;
+					}
+	
+					/* reset */
+					key = NULL;
 				}
-				
-				if (CURLE_OK != err) {
-					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post fields: %s", curl_easy_strerror(err));
-					curl_formfree(http_post_data[0]);
-					return NULL;
-				}
-
-				/* reset */
-				key = NULL;
 			}
 		}
 
@@ -129,7 +131,7 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 		
 		return http_request_body_init_rel(body, HTTP_REQUEST_BODY_CURLPOST, http_post_data[0], 0, 1);
 
-	} else {
+	} else if (fields) {
 		char *encoded;
 		size_t encoded_len;
 
@@ -139,6 +141,8 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 		}
 		
 		return http_request_body_init_rel(body, HTTP_REQUEST_BODY_CSTRING, encoded, encoded_len, 1);
+	} else {
+		return http_request_body_init_rel(body, HTTP_REQUEST_BODY_CSTRING, estrndup("", 0), 0, 1);
 	}
 }
 

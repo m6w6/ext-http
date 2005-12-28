@@ -643,7 +643,8 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 
 		array_init(return_value);
 
-		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), key, len, (void **) &options)) {
+		if (	(Z_TYPE_P(opts) == IS_ARRAY) && 
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), key, len, (void **) &options))) {
 			convert_to_array(*options);
 			array_copy(*options, return_value);
 		}
@@ -715,6 +716,7 @@ PHP_METHOD(HttpRequest, setOptions)
 		
 	if (!opts || !zend_hash_num_elements(Z_ARRVAL_P(opts))) {
 		SET_PROP(obj, options, new_opts);
+		zval_ptr_dtor(&new_opts);
 		RETURN_TRUE;
 	}
 	
@@ -1369,6 +1371,7 @@ PHP_METHOD(HttpRequest, setPostFiles)
 		array_copy(files, post);
 	}
 	SET_PROP(obj, postFiles, post);
+	zval_ptr_dtor(&post);
 
 	RETURN_TRUE;
 }
@@ -1386,9 +1389,9 @@ PHP_METHOD(HttpRequest, getPostFiles)
 
 	IF_RETVAL_USED {
 		getObject(http_request_object, obj);
-
-		array_init(return_value);
-		array_copy(GET_PROP(obj, postFiles), return_value);
+		zval *files = GET_PROP(obj, postFiles);
+		
+		RETURN_ZVAL(files, 1, 0);
 	}
 }
 /* }}} */
@@ -1453,9 +1456,9 @@ PHP_METHOD(HttpRequest, getResponseData)
 
 	IF_RETVAL_USED {
 		getObject(http_request_object, obj);
+		zval *data = GET_PROP(obj, responseData);
 		
-		array_init(return_value);
-		array_copy(GET_PROP(obj, responseData), return_value);
+		RETURN_ZVAL(data, 1, 0);
 	}
 }
 /* }}} */
