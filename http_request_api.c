@@ -170,28 +170,21 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 #define HTTP_CURL_OPT_SSL_STRING_(keyname,obdc ) HTTP_CURL_OPT_STRING_EX(keyname, SSL_##keyname, obdc)
 #define HTTP_CURL_OPT_STRING_EX(keyname, optname, obdc) \
 	if (!strcasecmp(key, #keyname)) { \
-		int ok = 1; \
-		zval *orig = *param; \
-		convert_to_string_ex(param); \
+		zval *copy = http_request_option_cache(request, #keyname, zval_copy(IS_STRING, *param)); \
 		if (obdc) { \
-			HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_PP(param), ok = 0); \
+			HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(copy), return FAILURE); \
 		} \
+		HTTP_CURL_OPT(optname, Z_STRVAL_P(copy)); \
 		key = NULL; \
-		if (ok) { \
-			HTTP_CURL_OPT(optname, Z_STRVAL_PP(param)); \
-			if (orig != *param) zval_ptr_dtor(param); \
-			continue; \
-		} \
-		if (orig != *param) zval_ptr_dtor(param); \
-		return FAILURE; \
+		continue; \
 	}
 #define HTTP_CURL_OPT_LONG(keyname) HTTP_OPT_SSL_LONG_EX(keyname, keyname)
 #define HTTP_CURL_OPT_SSL_LONG(keyname) HTTP_CURL_OPT_LONG_EX(keyname, SSL##keyname)
 #define HTTP_CURL_OPT_SSL_LONG_(keyname) HTTP_CURL_OPT_LONG_EX(keyname, SSL_##keyname)
 #define HTTP_CURL_OPT_LONG_EX(keyname, optname) \
 	if (!strcasecmp(key, #keyname)) { \
-		convert_to_long(*param); \
-		HTTP_CURL_OPT(optname, Z_LVAL_PP(param)); \
+		zval *copy = http_request_option_cache(request, #keyname, zval_copy(IS_LONG, *param)); \
+		HTTP_CURL_OPT(optname, Z_LVAL_P(copy)); \
 		key = NULL; \
 		continue; \
 	}
@@ -201,6 +194,9 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 #define http_request_option(r, o, k, t) _http_request_option_ex((r), (o), (k), sizeof(k), (t) TSRMLS_CC)
 #define http_request_option_ex(r, o, k, l, t) _http_request_option_ex((r), (o), (k), (l), (t) TSRMLS_CC)
 static inline zval *_http_request_option_ex(http_request *request, HashTable *options, char *key, size_t keylen, int type TSRMLS_DC);
+#define http_request_option_cache(r, k, z) _http_request_option_cache_ex((r), (k), sizeof(k), 0, (z) TSRMLS_CC)
+#define http_request_option_cache_ex(r, k, kl, h, z) _http_request_option_cache_ex((r), (k), (kl), (h), (z) TSRMLS_CC)
+static inline zval *_http_request_option_cache_ex(http_request *r, char *key, size_t keylen, ulong h, zval *opt TSRMLS_DC);
 
 static size_t http_curl_read_callback(void *, size_t, size_t, void *);
 static int http_curl_progress_callback(void *, double, double, double, double);
@@ -469,16 +465,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				zval **header_val;
 				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void **) &header_val, &pos)) {
 					char header[1024] = {0};
-					zval val;
 					
-					val = **header_val;
-					zval_copy_ctor(&val);
-					INIT_PZVAL(&val);
-					convert_to_string(&val);
-					
-					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL(val));
+					ZVAL_ADDREF(*header_val);
+					convert_to_string_ex(header_val);
+					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
 					request->_cache.headers = curl_slist_append(request->_cache.headers, header);
-					zval_dtor(&val);
+					zval_ptr_dtor(header_val);
 				}
 
 				/* reset */
@@ -822,6 +814,8 @@ static inline zval *_http_request_option_ex(http_request *r, HashTable *options,
 	zval **zoption;
 #ifdef ZEND_ENGINE_2
 	ulong h = zend_get_hash_value(key, keylen);
+#else
+	ulong h = 0;
 #endif
 	
 	if (!options || 
@@ -833,34 +827,32 @@ static inline zval *_http_request_option_ex(http_request *r, HashTable *options,
 	) {
 		return NULL;
 	}
+	
+	return http_request_option_cache_ex(r, key, keylen, h, zval_copy(type, *zoption));
+}
+/* }}} */
 
-	if (Z_TYPE_PP(zoption) != type) {
-		switch (type)
-		{
-			case IS_BOOL:	convert_to_boolean_ex(zoption);	break;
-			case IS_LONG:	convert_to_long_ex(zoption);	break;
-			case IS_DOUBLE:	convert_to_double_ex(zoption);	break;
-			case IS_STRING:	convert_to_string_ex(zoption);	break;
-			case IS_ARRAY:	convert_to_array_ex(zoption);	break;
-			case IS_OBJECT:	convert_to_object_ex(zoption);	break;
-			default:
-			break;
+/* {{{ static inline zval *http_request_option_cache(http_request *, char *key, zval *) */
+static inline zval *_http_request_option_cache_ex(http_request *r, char *key, size_t keylen, ulong h, zval *opt TSRMLS_DC)
+{
+	ZVAL_ADDREF(opt);
+	
+#ifdef ZEND_ENGINE_2
+	if (h) {
+		_zend_hash_quick_add_or_update(&r->_cache.options, key, keylen, h, &opt, sizeof(zval *), NULL, 
+			zend_hash_quick_exists(&r->_cache.options, key, keylen, h)?HASH_UPDATE:HASH_ADD ZEND_FILE_LINE_CC);
+	}
+	else
+#endif
+	{
+		if (zend_hash_exists(&r->_cache.options, key, keylen)) {
+			zend_hash_update(&r->_cache.options, key, keylen, &opt, sizeof(zval *), NULL);
+		} else {
+			zend_hash_add(&r->_cache.options, key, keylen, &opt, sizeof(zval *), NULL);
 		}
 	}
 	
-	/* cache strings */
-	if (type == IS_STRING) {
-		ZVAL_ADDREF(*zoption);
-#ifdef ZEND_ENGINE_2
-		_zend_hash_quick_add_or_update(&r->_cache.options, key, keylen, h, zoption, sizeof(zval *), NULL, 
-			zend_hash_quick_exists(&r->_cache.options, key, keylen, h)?HASH_UPDATE:HASH_ADD ZEND_FILE_LINE_CC);
-#else
-		zend_hash_add_or_update(&r->_cache.options, key, keylen, zoption, sizeof(zval *), NULL,
-			zend_hash_exists(&r->_cache.options, key, keylen)?HASH_UPDATE:HASH_ADD);
-#endif
-	}
-	
-	return *zoption;
+	return opt;
 }
 /* }}} */
 

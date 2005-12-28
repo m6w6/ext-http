@@ -368,10 +368,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	}
 #endif
 	
-	ALLOC_ZVAL(cpy);
-	*cpy = *value;
-	zval_copy_ctor(cpy);
-	INIT_PZVAL(cpy);
+	cpy = zval_copy(Z_TYPE_P(value), value);
 	
 #ifdef WONKY
 	switch (h)
@@ -456,7 +453,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 #endif
 		break;
 	}
-	zval_ptr_dtor(&cpy);
+	zval_free(&cpy);
 }
 
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)

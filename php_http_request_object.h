@@ -48,6 +48,7 @@ extern STATUS _http_request_object_responsehandler(http_request_object *obj, zva
 PHP_METHOD(HttpRequest, __construct);
 PHP_METHOD(HttpRequest, setOptions);
 PHP_METHOD(HttpRequest, getOptions);
+PHP_METHOD(HttpRequest, addSslOptions);
 PHP_METHOD(HttpRequest, setSslOptions);
 PHP_METHOD(HttpRequest, getSslOptions);
 PHP_METHOD(HttpRequest, addHeaders);

@@ -27,24 +27,24 @@ Array
 (
     [0] => Array
         (
-            [redirect] => 11
             [headers] => Array
                 (
                     [X-Foo] => Bar
                     [X-Bar] => Foo
                 )
 
+            [redirect] => 11
         )
 
     [1] => Array
         (
-            [redirect] => 99
             [headers] => Array
                 (
                     [X-Bar] => Foo
                     [X-Foo] => Bar
                 )
 
+            [redirect] => 99
         )
 
 )

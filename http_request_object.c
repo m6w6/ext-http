@@ -53,6 +53,10 @@ HTTP_BEGIN_ARGS(setSslOptions, 0, 0)
 	HTTP_ARG_VAL(ssl_options, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(addSslOptions, 0, 0)
+	HTTP_ARG_VAL(ssl_optins, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getHeaders, 0);
 HTTP_BEGIN_ARGS(setHeaders, 0, 0)
 	HTTP_ARG_VAL(headers, 0)
@@ -219,6 +223,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(getOptions, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(setSslOptions, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getSslOptions, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(addSslOptions, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(addHeaders, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getHeaders, ZEND_ACC_PUBLIC)
@@ -698,7 +703,7 @@ PHP_METHOD(HttpRequest, setOptions)
 	char *key = NULL;
 	ulong idx = 0;
 	HashPosition pos;
-	zval *opts = NULL, *old_opts, *new_opts, **opt;
+	zval *opts = NULL, *old_opts, *new_opts, *add_opts, **opt;
 	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
@@ -712,59 +717,39 @@ PHP_METHOD(HttpRequest, setOptions)
 		SET_PROP(obj, options, new_opts);
 		RETURN_TRUE;
 	}
-
-	old_opts = GET_PROP(obj, options);
-	if (Z_TYPE_P(old_opts) == IS_ARRAY) {
-		array_copy(old_opts, new_opts);
-	}
 	
+	MAKE_STD_ZVAL(add_opts);
+	array_init(add_opts);
 	/* some options need extra attention -- thus cannot use array_merge() directly */
 	FOREACH_KEYVAL(pos, opts, key, idx, opt) {
 		if (key) {
 			if (!strcmp(key, "headers")) {
-				zval **headers;
-				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(new_opts), "headers", sizeof("headers"), (void **) &headers)) {
-					convert_to_array_ex(opt);
-					convert_to_array(*headers);
-					array_merge(*opt, *headers);
-					continue;
-				}
+				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "addheaders", NULL, *opt);
 			} else if (!strcmp(key, "cookies")) {
-				zval **cookies;
-				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(new_opts), "cookies", sizeof("cookies"), (void **) &cookies)) {
-					convert_to_array_ex(opt);
-					convert_to_array(*cookies);
-					array_merge(*opt, *cookies);
-					continue;
-				}
+				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "addcookies", NULL, *opt);
 			} else if (!strcmp(key, "ssl")) {
-				zval **ssl;
-				if (SUCCESS == zend_hash_find(Z_ARRVAL_P(new_opts), "ssl", sizeof("ssl"), (void **) &ssl)) {
-					convert_to_array_ex(opt);
-					convert_to_array(*ssl);
-					array_merge(*opt, *ssl);
-					continue;
-				}
-			} else if ((Z_TYPE_PP(opt) == IS_STRING) && ((!strcasecmp(key, "url")) || (!strcasecmp(key, "uri")))) {
-				UPD_STRL(obj, url, Z_STRVAL_PP(opt), Z_STRLEN_PP(opt));
-				continue;
+				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "addssloptions", NULL, *opt);
+			} else if ((!strcasecmp(key, "url")) || (!strcasecmp(key, "uri"))) {
+				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "seturl", NULL, *opt);
 			} else if (!strcmp(key, "method")) {
-				if (Z_TYPE_PP(opt) != IS_LONG) {
-					convert_to_long_ex(opt);
-				}
-				UPD_PROP(obj, long, method, Z_LVAL_PP(opt));
-				continue;
+				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setmethod", NULL, *opt);
+			} else {
+				ZVAL_ADDREF(*opt);
+				add_assoc_zval(add_opts, key, *opt);
 			}
-			
-			ZVAL_ADDREF(*opt);
-			add_assoc_zval(new_opts, key, *opt);
-
 			/* reset */
 			key = NULL;
 		}
 	}
+	
+	old_opts = GET_PROP(obj, options);
+	if (Z_TYPE_P(old_opts) == IS_ARRAY) {
+		array_copy(old_opts, new_opts);
+	}
+	array_merge(add_opts, new_opts);
 	SET_PROP(obj, options, new_opts);
 	zval_ptr_dtor(&new_opts);
+	zval_ptr_dtor(&add_opts);
 	
 	RETURN_TRUE;
 }
@@ -1274,18 +1259,13 @@ PHP_METHOD(HttpRequest, addRawPostData)
 	}
 	
 	if (data_len) {
-		zval *data, *zdata = GET_PROP(obj, rawPostData);
+		zval *data = zval_copy(IS_STRING, GET_PROP(obj, rawPostData));
 		
-		ALLOC_ZVAL(data);
-		*data = *zdata;
-		zval_copy_ctor(data);
-		INIT_PZVAL(data);
-		convert_to_string(data);
 		Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
 		Z_STRVAL_P(data)[Z_STRLEN_P(data)] = '\0';
 		memcpy(Z_STRVAL_P(data) + Z_STRLEN_P(data) - data_len, raw_data, data_len);
 		SET_PROP(obj, rawPostData, data);
-		zval_ptr_dtor(&data);
+		zval_free(&data);
 	}
 	
 	RETURN_TRUE;
@@ -1506,8 +1486,9 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 		}
 
 		data = GET_PROP(obj, responseData);
-		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) {
-			convert_to_array(*headers);
+		if (	(Z_TYPE_P(data) == IS_ARRAY) && 
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) &&
+				(Z_TYPE_PP(headers) == IS_ARRAY)) {
 			if (!header_len || !header_name) {
 				RETVAL_ZVAL(*headers, 1, 0);
 			} else if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(headers), pretty_key(header_name, header_len, 1, 1), header_len + 1, (void **) &header)) {
@@ -1552,7 +1533,9 @@ PHP_METHOD(HttpRequest, getResponseCookie)
 		array_init(return_value);
 
 		data = GET_PROP(obj, responseData);
-		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) {
+		if (	(Z_TYPE_P(data) == IS_ARRAY) &&
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) &&
+				(Z_TYPE_PP(headers) == IS_ARRAY)) {
 			ulong idx = 0;
 			char *key = NULL;
 			zval **header = NULL;
@@ -1645,7 +1628,8 @@ PHP_METHOD(HttpRequest, getResponseBody)
 		getObject(http_request_object, obj);
 		zval *data = GET_PROP(obj, responseData);
 		
-		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "body", sizeof("body"), (void **) &body)) {
+		if (	(Z_TYPE_P(data) == IS_ARRAY) && 
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "body", sizeof("body"), (void **) &body))) {
 			RETURN_ZVAL(*body, 1, 0);
 		} else {
 			RETURN_FALSE;
@@ -1705,6 +1689,10 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 		}
 
 		info = GET_PROP(obj, responseInfo);
+		
+		if (Z_TYPE_P(info) != IS_ARRAY) {
+			RETURN_FALSE;
+		}
 
 		if (info_len && info_name) {
 			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), pretty_key(info_name, info_len, 0, 0), info_len + 1, (void **) &infop)) {

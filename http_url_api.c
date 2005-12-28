@@ -299,13 +299,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 				return FAILURE;
 			}
 		} else {
-			zval *val;
-			
-			ALLOC_ZVAL(val);
-			*val = **data;
-			INIT_PZVAL(val);
-			zval_copy_ctor(val);
-			convert_to_string(val);
+			zval *val = zval_copy(IS_STRING, *data);
 			
 			if (PHPSTR_LEN(str)) {
 				phpstr_append(str, arg_sep, arg_sep_len);
@@ -322,7 +316,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 				efree(encoded_val);
 			}
 			
-			zval_ptr_dtor(&val);
+			zval_free(&val);
 		}
 		phpstr_dtor(&new_prefix);
 	}

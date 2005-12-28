@@ -192,6 +192,29 @@ static inline zval *_convert_to_type_ex(int type, zval *z, zval **p)
 	return z;
 }
 
+#define zval_copy(t, z) _zval_copy((t), (z) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+static inline zval *_zval_copy(int type, zval *z ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
+{
+	zval *copy;
+	
+	copy = emalloc_rel(sizeof(zval));
+	*copy = *z;
+	zval_copy_ctor(copy);
+	convert_to_type(type, copy);
+	copy->refcount = 0;
+	copy->is_ref = 0;
+	
+	return copy;
+}
+
+#define zval_free(z) _zval_free(z)
+static inline void _zval_free(zval **z)
+{
+	zval_dtor(*z);
+	FREE_ZVAL(*z);
+	*z = NULL;
+}
+
 #endif
 
 /*
