@@ -467,7 +467,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s,
 {
 	int status;
 	
-	*encoded_len = 0x800;
+	*encoded_len = 0x8000;
 	*encoded = emalloc_rel(*encoded_len);
 	
 	s->stream.avail_in = 0;
@@ -503,7 +503,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_finish(http_encoding_stream *s
 {
 	int status;
 	
-	*encoded_len = 0x800;
+	*encoded_len = 0x8000;
 	*encoded = emalloc_rel(*encoded_len);
 	
 	/* deflate remaining input */
