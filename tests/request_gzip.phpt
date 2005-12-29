@@ -30,20 +30,19 @@ object(stdClass)#%d (%d) {
     ["Vary"]=>
     string(15) "Accept-Encoding"
     ["Content-Length"]=>
-    string(2) "27"
+    string(2) "26"
     ["Content-Type"]=>
     string(9) "text/html"
     ["X-Original-Content-Encoding"]=>
     string(4) "gzip"
     ["X-Original-Content-Length"]=>
-    string(2) "52"
+    string(2) "51"
   }
   ["body"]=>
-  string(27) "Array
+  string(26) "Array
 (
     [gzip] => 1
 )
-
 "
   ["parentMessage"]=>
   NULL

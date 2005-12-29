@@ -93,7 +93,10 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	struct _http_globals_request {
 		struct _http_globals_request_methods {
 			char *allowed;
-			HashTable custom;
+			struct {
+				int count;
+				void *entries;
+			} custom;
 		} methods;
 	} request;
 
@@ -115,7 +118,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define HTTP_G(v) (http_globals.v)
 #	define HTTP_GLOBALS (&http_globals)
 #endif
-#define getGlobals(G) zend_http_globals *G = HTTP_GLOBALS;
+#define getGlobals(G) zend_http_globals *G = HTTP_GLOBALS
 
 PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);

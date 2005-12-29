@@ -42,7 +42,7 @@ echo "Done\n";
 %sTEST
 
 First Request
-string(150) "Array
+string(149) "Array
 (
     [int] => 1
     [dbl] => 3.1415926535898
@@ -50,7 +50,6 @@ string(150) "Array
     [nil] => 
 )
 string(44) "int=1&dbl=3.1415926535898&str=something&nil="
-
 "
 array(2) {
   [0]=>
@@ -70,7 +69,7 @@ array(2) {
 }
 
 Second Request
-string(270) "Array
+string(269) "Array
 (
     [0] => Array
         (
@@ -86,7 +85,6 @@ string(270) "Array
 
 )
 string(56) "0[int]=1&0[dbl]=3.1415926535898&1[str]=something&1[nil]="
-
 "
 array(2) {
   [0]=>
@@ -106,7 +104,7 @@ array(2) {
 }
 
 Third Request
-string(287) "Array
+string(286) "Array
 (
     [0] => Array
         (
@@ -123,7 +121,6 @@ string(287) "Array
     [x] => X
 )
 string(60) "0[int]=1&0[dbl]=3.1415926535898&1[str]=something&1[nil]=&x=X"
-
 "
 array(2) {
   [0]=>
@@ -143,8 +140,7 @@ array(2) {
 }
 
 Fourth Request
-string(14) "string(0) ""
-
+string(13) "string(0) ""
 "
 array(2) {
   [0]=>

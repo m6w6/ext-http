@@ -167,7 +167,6 @@ static void http_globals_init_once(zend_http_globals *G)
 static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 {
 	G->send.buffer_size = HTTP_SENDBUF_SIZE;
-	zend_hash_init(&G->request.methods.custom, 0, NULL, ZVAL_PTR_DTOR, 0);
 }
 
 #define http_globals_free(g) _http_globals_free((g) TSRMLS_CC)
@@ -175,7 +174,6 @@ static inline void _http_globals_free(zend_http_globals *G TSRMLS_DC)
 {
 	STR_SET(G->send.content_type, NULL);
 	STR_SET(G->send.unquoted_etag, NULL);
-	zend_hash_destroy(&G->request.methods.custom);
 }
 /* }}} */
 
@@ -290,11 +288,13 @@ PHP_RINIT_FUNCTION(http)
 
 	http_globals_init(HTTP_GLOBALS);
 
+	if (	(SUCCESS != PHP_RINIT_CALL(http_request_method))
 #ifdef HTTP_HAVE_ZLIB	
-	if (SUCCESS != PHP_RINIT_CALL(http_encoding)) {
+		||	(SUCCESS != PHP_RINIT_CALL(http_encoding))
+#endif
+	) {
 		return FAILURE;
 	}
-#endif
 	
 	return SUCCESS;
 }
@@ -305,14 +305,11 @@ PHP_RSHUTDOWN_FUNCTION(http)
 {
 	STATUS status = SUCCESS;
 	
-	if (
+	if (	(SUCCESS != PHP_RSHUTDOWN_CALL(http_request_method))
 #ifdef HTTP_HAVE_ZLIB
-		(SUCCESS != PHP_RSHUTDOWN_CALL(http_encoding)) ||
+		||	(SUCCESS != PHP_RSHUTDOWN_CALL(http_encoding))
 #endif
-#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
-		(SUCCESS != PHP_RSHUTDOWN_CALL(http_request_method)) ||
-#endif
-	0) {
+	) {
 		status = FAILURE;
 	}
 	
@@ -375,19 +372,20 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_start();
 	php_info_print_table_colspan_header(2, "Request Methods");
 	{
-		unsigned i;
-		HashPosition pos;
-		zval **custom_method;
+		int i;
+		getGlobals(G);
+		struct _entry {char *name; char *cnst;} *entry;
 		phpstr *known_request_methods = phpstr_new();
 		phpstr *custom_request_methods = phpstr_new();
 
-		for (i = HTTP_NO_REQUEST_METHOD+1; i < HTTP_MAX_REQUEST_METHOD; ++i) {
+		for (i = HTTP_MIN_REQUEST_METHOD; i < HTTP_MAX_REQUEST_METHOD; ++i) {
 			phpstr_appendl(known_request_methods, http_request_method_name(i));
 			phpstr_appends(known_request_methods, ", ");
 		}
-		FOREACH_HASH_VAL(pos, &HTTP_G(request).methods.custom, custom_method) {
-			phpstr_append(custom_request_methods, Z_STRVAL_PP(custom_method), Z_STRLEN_PP(custom_method));
-			phpstr_appends(custom_request_methods, ", ");
+		for (i = 0; i < G->request.methods.custom.count; ++i) {
+			if ((entry = ((struct _entry **) G->request.methods.custom.entries)[i])) {
+				phpstr_appendf(custom_request_methods, "%s, ", entry->name);
+			}
 		}
 
 		phpstr_append(known_request_methods, PHPSTR_VAL(custom_request_methods), PHPSTR_LEN(custom_request_methods));

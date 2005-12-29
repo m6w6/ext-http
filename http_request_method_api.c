@@ -102,13 +102,25 @@ PHP_MINIT_FUNCTION(http_request_method)
 	return SUCCESS;
 }
 
+PHP_RINIT_FUNCTION(http_request_method)
+{
+	HTTP_G(request).methods.custom.entries = ecalloc(1, sizeof(http_request_method_entry *));
+	
+	return SUCCESS;
+}
+
 PHP_RSHUTDOWN_FUNCTION(http_request_method)
 {
-	int i, c = zend_hash_num_elements(&HTTP_G(request).methods.custom);
+	int i;
+	getGlobals(G);
+	http_request_method_entry **ptr = G->request.methods.custom.entries;
 	
-	for (i = 0; i < c; ++i) {
-		http_request_method_unregister(HTTP_MAX_REQUEST_METHOD + i);
+	for (i = 0; i < G->request.methods.custom.count; ++i) {
+		if (ptr[i]) {
+			http_request_method_unregister(HTTP_CUSTOM_REQUEST_METHOD_START + i);
+		}
 	}
+	efree(G->request.methods.custom.entries);
 	
 	return SUCCESS;
 }
@@ -116,95 +128,139 @@ PHP_RSHUTDOWN_FUNCTION(http_request_method)
 /* {{{ char *http_request_method_name(http_request_method) */
 PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC)
 {
-	zval **meth;
+	getGlobals(G);
+	http_request_method_entry **ptr = G->request.methods.custom.entries;
 
 	if (HTTP_STD_REQUEST_METHOD(m)) {
 		return http_request_methods[m];
 	}
 
-	if (SUCCESS == zend_hash_index_find(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(m), (void **) &meth)) {
-		return Z_STRVAL_PP(meth);
+	if (	(HTTP_CUSTOM_REQUEST_METHOD(m) >= 0) && 
+			(HTTP_CUSTOM_REQUEST_METHOD(m) < G->request.methods.custom.count) &&
+			(ptr[HTTP_CUSTOM_REQUEST_METHOD(m)])) {
+		return ptr[HTTP_CUSTOM_REQUEST_METHOD(m)]->name;
 	}
 
 	return http_request_methods[0];
 }
 /* }}} */
 
-/* {{{ ulong http_request_method_exists(zend_bool, ulong, char *) */
-PHP_HTTP_API ulong _http_request_method_exists(zend_bool by_name, ulong id, const char *name TSRMLS_DC)
+/* {{{ int http_request_method_exists(zend_bool, ulong, char *) */
+PHP_HTTP_API int _http_request_method_exists(zend_bool by_name, http_request_method id, const char *name TSRMLS_DC)
 {
+	int i;
+	getGlobals(G);
+	http_request_method_entry **ptr = G->request.methods.custom.entries;
+	
 	if (by_name) {
-		unsigned i;
-
-		for (i = HTTP_NO_REQUEST_METHOD + 1; i < HTTP_MAX_REQUEST_METHOD; ++i) {
-			if (!strcmp(name, http_request_methods[i])) {
+		for (i = HTTP_MIN_REQUEST_METHOD; i < HTTP_MAX_REQUEST_METHOD; ++i) {
+			if (!strcasecmp(name, http_request_methods[i])) {
 				return i;
 			}
 		}
-		{
-			zval **data;
-			char *key;
-			ulong idx;
-			HashPosition pos;
-
-			FOREACH_HASH_KEYVAL(pos, &HTTP_G(request).methods.custom, key, idx, data) {
-				if (!strcmp(name, Z_STRVAL_PP(data))) {
-					return idx + HTTP_MAX_REQUEST_METHOD;
-				}
+		for (i = 0; i < G->request.methods.custom.count; ++i) {
+			if (ptr[i] && !strcasecmp(name, ptr[i]->name)) {
+				return HTTP_CUSTOM_REQUEST_METHOD_START + i;
 			}
 		}
-		return 0;
-	} else {
-		return HTTP_STD_REQUEST_METHOD(id) || zend_hash_index_exists(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(id)) ? id : 0;
+	} else if (HTTP_STD_REQUEST_METHOD(id)) {
+		return id;
+	} else if (	(HTTP_CUSTOM_REQUEST_METHOD(id) >= 0) && 
+				(HTTP_CUSTOM_REQUEST_METHOD(id) < G->request.methods.custom.count) && 
+				(ptr[HTTP_CUSTOM_REQUEST_METHOD(id)])) {
+		return id;
 	}
+	
+	return 0;
 }
 /* }}} */
 
-/* {{{ ulong http_request_method_register(char *) */
-PHP_HTTP_API ulong _http_request_method_register(const char *method_name, size_t method_name_len TSRMLS_DC)
+/* {{{ int http_request_method_register(char *) */
+PHP_HTTP_API int _http_request_method_register(const char *method_name, int method_name_len TSRMLS_DC)
 {
-	zval array;
-	char *http_method, *method;
-	ulong i, meth_num = HTTP_G(request).methods.custom.nNextFreeElement + HTTP_MAX_REQUEST_METHOD;
-
+	int i, meth_num;
+	char *http_method, *method, *mconst;
+	getGlobals(G);
+	http_request_method_entry **ptr = G->request.methods.custom.entries;
+	
+	if (!isalpha(*method_name)) {
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Request method does not start with a character (%s)", method_name);
+		return 0;
+	}
+	
+	if (http_request_method_exists(1, 0, method_name)) {
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Request method does already exist (%s)", method_name);
+		return 0;
+	}
+	
 	method = emalloc(method_name_len + 1);
+	mconst = emalloc(method_name_len + 1);
 	for (i = 0; i < method_name_len; ++i) {
-		method[i] = toupper(method_name[i]);
+		switch (method_name[i])
+		{
+			case '-':
+				method[i] = '-';
+				mconst[i] = '_';
+			break;
+			
+			default:
+				if (!isalnum(method_name[i])) {
+					efree(method);
+					efree(mconst);
+					http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Request method contains illegal characters (%s)", method_name);
+					return 0;
+				}
+				mconst[i] = method[i] = toupper(method_name[i]);
+			break;
+		}
 	}
 	method[method_name_len] = '\0';
+	mconst[method_name_len] = '\0';
 	
-	INIT_ZARR(array, &HTTP_G(request).methods.custom);
-	add_next_index_stringl(&array, method, method_name_len, 0);
+	ptr = erealloc(ptr, sizeof(http_request_method_entry *) * (G->request.methods.custom.count + 1));
+	G->request.methods.custom.entries = ptr;
+	ptr[G->request.methods.custom.count] = emalloc(sizeof(http_request_method_entry));
+	ptr[G->request.methods.custom.count]->name = method;
+	ptr[G->request.methods.custom.count]->cnst = mconst;
+	meth_num = HTTP_CUSTOM_REQUEST_METHOD_START + G->request.methods.custom.count++;
 
-	method_name_len = spprintf(&http_method, 0, "HTTP_METH_%s", method);
+	method_name_len = spprintf(&http_method, 0, "HTTP_METH_%s", mconst);
 	zend_register_long_constant(http_method, method_name_len + 1, meth_num, CONST_CS, http_module_number TSRMLS_CC);
 	efree(http_method);
 	
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL) && !defined(WONKY)
-	method_name_len = spprintf(&http_method, 0, "METH_%s", method);
+	method_name_len = spprintf(&http_method, 0, "METH_%s", mconst);
 	zend_declare_class_constant_long(http_request_object_ce, http_method, method_name_len, meth_num TSRMLS_CC);
 	efree(http_method);
 #endif
-
+	
 	return meth_num;
 }
 /* }}} */
 
-/* {{{ STATUS http_request_method_unregister(usngigned long) */
-PHP_HTTP_API STATUS _http_request_method_unregister(ulong method TSRMLS_DC)
+/* {{{ STATUS http_request_method_unregister(int) */
+PHP_HTTP_API STATUS _http_request_method_unregister(int method TSRMLS_DC)
 {
-	zval **zmethod;
 	char *http_method;
 	int method_len;
-
-	if (SUCCESS != zend_hash_index_find(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(method), (void **) &zmethod)) {
-		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Request method with id %lu does not exist", method);
+	getGlobals(G);
+	http_request_method_entry **ptr = G->request.methods.custom.entries;
+	
+	if (HTTP_STD_REQUEST_METHOD(method)) {
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Standard request methods cannot be unregistered");
 		return FAILURE;
 	}
 
+	if (	(HTTP_CUSTOM_REQUEST_METHOD(method) < 0) ||
+			(HTTP_CUSTOM_REQUEST_METHOD(method) > G->request.methods.custom.count) ||
+			(!ptr[HTTP_CUSTOM_REQUEST_METHOD(method)])) {
+		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Custom request method with id %lu does not exist", method);
+		return FAILURE;
+	}
+	
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL) && !defined(WONKY)
-	method_len = spprintf(&http_method, 0, "METH_%s", Z_STRVAL_PP(zmethod));
-	if ((SUCCESS != zend_hash_del(&http_request_object_ce->constants_table, http_method, method_len + 1))) {
+	method_len = spprintf(&http_method, 0, "METH_%s", ptr[HTTP_CUSTOM_REQUEST_METHOD(method)]->cnst);
+	if (SUCCESS != zend_hash_del(&http_request_object_ce->constants_table, http_method, method_len + 1)) {
 		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Could not unregister request method: HttpRequest::%s", http_method);
 		efree(http_method);
 		return FAILURE;
@@ -212,14 +268,17 @@ PHP_HTTP_API STATUS _http_request_method_unregister(ulong method TSRMLS_DC)
 	efree(http_method);
 #endif
 	
-	method_len = spprintf(&http_method, 0, "HTTP_METH_%s", Z_STRVAL_PP(zmethod));
-	if (	(SUCCESS != zend_hash_index_del(&HTTP_G(request).methods.custom, HTTP_CUSTOM_REQUEST_METHOD(method)))
-		||	(SUCCESS != zend_hash_del(EG(zend_constants), http_method, method_len + 1))) {
+	method_len = spprintf(&http_method, 0, "HTTP_METH_%s", ptr[HTTP_CUSTOM_REQUEST_METHOD(method)]->cnst);
+	if (SUCCESS != zend_hash_del(EG(zend_constants), http_method, method_len + 1)) {
 		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Could not unregister request method: %s", http_method);
 		efree(http_method);
 		return FAILURE;
 	}
 	efree(http_method);
+	
+	efree(ptr[HTTP_CUSTOM_REQUEST_METHOD(method)]->name);
+	efree(ptr[HTTP_CUSTOM_REQUEST_METHOD(method)]->cnst);
+	STR_SET(ptr[HTTP_CUSTOM_REQUEST_METHOD(method)], NULL);
 	
 	return SUCCESS;
 }

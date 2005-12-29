@@ -1462,7 +1462,7 @@ PHP_FUNCTION(http_request_method_unregister)
 			if (is_numeric_string(Z_STRVAL_P(method), Z_STRLEN_P(method), NULL, NULL, 1)) {
 				convert_to_long(method);
 			} else {
-				ulong mn;
+				int mn;
 				if (!(mn = http_request_method_exists(1, 0, Z_STRVAL_P(method)))) {
 					RETURN_FALSE;
 				}
@@ -1505,7 +1505,7 @@ PHP_FUNCTION(http_request_method_exists)
 					RETURN_LONG((long) http_request_method_exists(1, 0, Z_STRVAL_P(method)));
 				}
 			case IS_LONG:
-				RETURN_LONG((long) http_request_method_exists(0, Z_LVAL_P(method), NULL));
+				RETURN_LONG((long) http_request_method_exists(0, (int) Z_LVAL_P(method), NULL));
 			default:
 				RETURN_FALSE;
 		}
@@ -1530,7 +1530,7 @@ PHP_FUNCTION(http_request_method_name)
 			RETURN_FALSE;
 		}
 
-		RETURN_STRING(estrdup(http_request_method_name((ulong) method)), 0);
+		RETURN_STRING(estrdup(http_request_method_name((int) method)), 0);
 	}
 }
 /* }}} */

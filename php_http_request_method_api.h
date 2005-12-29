@@ -51,23 +51,32 @@ typedef enum {
 	HTTP_MAX_REQUEST_METHOD	= 28
 } http_request_method;
 
+#define HTTP_MIN_REQUEST_METHOD (HTTP_NO_REQUEST_METHOD + 1)
+#define HTTP_CUSTOM_REQUEST_METHOD_START HTTP_MAX_REQUEST_METHOD
+
+typedef struct {
+	char *name;
+	char *cnst;
+} http_request_method_entry;
+
 #define HTTP_STD_REQUEST_METHOD(m) ((m > HTTP_NO_REQUEST_METHOD) && (m < HTTP_MAX_REQUEST_METHOD))
 #define HTTP_CUSTOM_REQUEST_METHOD(m) (m - HTTP_MAX_REQUEST_METHOD)
 
 extern PHP_MINIT_FUNCTION(http_request_method);
+extern PHP_RINIT_FUNCTION(http_request_method);
 extern PHP_RSHUTDOWN_FUNCTION(http_request_method);
 
 #define http_request_method_name(m) _http_request_method_name((m) TSRMLS_CC)
 PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC);
 
 #define http_request_method_exists(u, l, c) _http_request_method_exists((u), (l), (c) TSRMLS_CC)
-PHP_HTTP_API ulong _http_request_method_exists(zend_bool by_name, ulong id, const char *name TSRMLS_DC);
+PHP_HTTP_API int _http_request_method_exists(zend_bool by_name, http_request_method id, const char *name TSRMLS_DC);
 
 #define http_request_method_register(m, l) _http_request_method_register((m), (l) TSRMLS_CC)
-PHP_HTTP_API ulong _http_request_method_register(const char *method, size_t method_name_len TSRMLS_DC);
+PHP_HTTP_API int _http_request_method_register(const char *method, int method_name_len TSRMLS_DC);
 
 #define http_request_method_unregister(mn) _http_request_method_unregister((mn) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_request_method_unregister(ulong method TSRMLS_DC);
+PHP_HTTP_API STATUS _http_request_method_unregister(int method TSRMLS_DC);
 
 #endif
 
