@@ -479,7 +479,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s,
 	{
 		case Z_OK:
 		case Z_STREAM_END:
-			*encoded_len = 0x800 - s->stream.avail_out;
+			*encoded_len = 0x8000 - s->stream.avail_out;
 			*encoded = erealloc_rel(*encoded, *encoded_len + 1);
 			(*encoded)[*encoded_len] = '\0';
 			return SUCCESS;
