@@ -252,6 +252,7 @@ Special thanks for this release go to Ilia Alshanetsky.
    </pearinstaller>
   </required>
   <optional>
+   <extension><name>spl</name></extension>
    <extension><name>session</name></extension>
    <extension><name>hash</name></extension>
   </optional>

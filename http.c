@@ -130,6 +130,9 @@ static zend_module_dep http_module_dep[] = {
 #	ifdef HTTP_HAVE_EXT_HASH
 	ZEND_MOD_REQUIRED("hash")
 #	endif
+#	ifdef HAVE_PHP_SESSION
+	ZEND_MOD_REQUIRED("session")
+#	endif
 	{NULL, NULL, NULL, 0}
 };
 #endif

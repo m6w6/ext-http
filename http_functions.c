@@ -26,7 +26,7 @@
 #include "ext/standard/php_string.h"
 #include "zend_operators.h"
 
-#if defined(HAVE_PHP_SESSION) && !defined(COMPILE_DL_SESSION)
+#ifdef HAVE_PHP_SESSION
 #	include "ext/session/php_session.h"
 #endif
 
@@ -672,6 +672,7 @@ PHP_FUNCTION(http_redirect)
 		RETURN_FALSE;
 	}
 
+#ifdef HAVE_PHP_SESSION
 	/* append session info */
 	if (session) {
 		if (!params) {
@@ -679,39 +680,13 @@ PHP_FUNCTION(http_redirect)
 			MAKE_STD_ZVAL(params);
 			array_init(params);
 		}
-#ifdef HAVE_PHP_SESSION
-#	ifdef COMPILE_DL_SESSION
-		if (SUCCESS == zend_get_module_started("session")) {
-			zval nm_retval, id_retval, func;
-			
-			INIT_PZVAL(&func);
-			INIT_PZVAL(&nm_retval);
-			INIT_PZVAL(&id_retval);
-			ZVAL_NULL(&nm_retval);
-			ZVAL_NULL(&id_retval);
-			
-			ZVAL_STRINGL(&func, "session_id", lenof("session_id"), 0);
-			call_user_function(EG(function_table), NULL, &func, &id_retval, 0, NULL TSRMLS_CC);
-			ZVAL_STRINGL(&func, "session_name", lenof("session_name"), 0);
-			call_user_function(EG(function_table), NULL, &func, &nm_retval, 0, NULL TSRMLS_CC);
-			
-			if (	Z_TYPE(nm_retval) == IS_STRING && Z_STRLEN(nm_retval) &&
-					Z_TYPE(id_retval) == IS_STRING && Z_STRLEN(id_retval)) {
-				if (add_assoc_stringl_ex(params, Z_STRVAL(nm_retval), Z_STRLEN(nm_retval)+1, 
-						Z_STRVAL(id_retval), Z_STRLEN(id_retval), 0) != SUCCESS) {
-					http_error(HE_WARNING, HTTP_E_RUNTIME, "Could not append session information");
-				}
-			}
-		}
-#	else
 		if (PS(session_status) == php_session_active) {
 			if (add_assoc_string(params, PS(session_name), PS(id), 1) != SUCCESS) {
 				http_error(HE_WARNING, HTTP_E_RUNTIME, "Could not append session information");
 			}
 		}
-#	endif
-#endif
 	}
+#endif
 
 	/* treat params array with http_build_query() */
 	if (params) {
