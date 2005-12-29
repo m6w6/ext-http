@@ -538,7 +538,7 @@ PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s
 {
 	int status;
 	
-	*decoded_len = s->stream.avail_in << 2;
+	*decoded_len = PHPSTR_LEN(s->stream.opaque) << 2;
 	*decoded = emalloc_rel(*decoded_len);
 	
 	/* inflate remaining input */
