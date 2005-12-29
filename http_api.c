@@ -319,6 +319,33 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 		*body = (char *) (dup ? estrndup(SG(request_info).raw_post_data, *length) : SG(request_info).raw_post_data);
 		return SUCCESS;
 	}
+	
+	/* PHP only reads POST */
+	if (sapi_module.read_post) {
+		char buf[4096];
+		int len;
+		
+		while (0 < (len = sapi_module.read_post(buf, sizeof(buf) TSRMLS_CC))) {
+			*body = erealloc(*body, *length + len + 1);
+			memcpy(*body + *length, buf, len);
+			*length += len;
+			(*body)[*length] = '\0';
+		}
+		
+		/* check for error */
+		if (len >= 0) {
+			/* connect to sapi module so it'll be freed */
+			if (!dup) {
+				SG(request_info).raw_post_data = *body;
+				SG(request_info).raw_post_data_length = *length;
+			}
+			return SUCCESS;
+		} else {
+			STR_FREE(*body);
+			*length = 0;
+		}
+	}
+	
 	return FAILURE;
 }
 /* }}} */
