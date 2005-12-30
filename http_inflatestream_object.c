@@ -218,14 +218,15 @@ PHP_METHOD(HttpInflateStream, finish)
 			updated = erealloc(updated, updated_len + decoded_len + 1);
 			updated[updated_len + decoded_len] = '\0';
 			memcpy(updated + updated_len, decoded, decoded_len);
+			STR_FREE(decoded);
 			updated_len += decoded_len;
 			RETVAL_STRINGL(updated, updated_len, 0);
-			STR_FREE(decoded);
 		} else {
-			RETVAL_STRINGL(decoded, decoded_len, 0);
 			STR_FREE(updated);
+			RETVAL_STRINGL(decoded, decoded_len, 0);
 		}
 	} else {
+		STR_FREE(updated);
 		RETVAL_FALSE;
 	}
 	

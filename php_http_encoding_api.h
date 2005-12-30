@@ -27,18 +27,19 @@ extern PHP_MINIT_FUNCTION(http_encoding);
 extern PHP_RINIT_FUNCTION(http_encoding);
 extern PHP_RSHUTDOWN_FUNCTION(http_encoding);
 
-/* 100% compression should be fairly good */
-#define HTTP_ENCODING_MAXTRY 100
-/* safe padding */
-#define HTTP_ENCODING_SAFPAD 28
-/* add 1% extra space in case we need to encode widely differing (binary) data */
-#define HTTP_ENCODING_BUFLEN(l) (l + (l / 100) + HTTP_ENCODING_SAFPAD)
-
 typedef enum {
 	HTTP_ENCODING_NONE,
 	HTTP_ENCODING_GZIP,
 	HTTP_ENCODING_DEFLATE,
 } http_encoding_type;
+
+#define HTTP_INFLATE_ROUNDS 100
+
+#define HTTP_DEFLATE_BUFFER_SIZE_GUESS(S) \
+	(((size_t) ((double) S * (double) 1.015)) + 10 + 8 + 4 + 1)
+
+#define HTTP_DEFLATE_BUFFER_SIZE		0x8000
+#define HTTP_INFLATE_BUFFER_SIZE		0x1000
 
 #define HTTP_DEFLATE_LEVEL_DEF			0x00000000
 #define HTTP_DEFLATE_LEVEL_MIN			0x00000001
@@ -96,10 +97,11 @@ PHP_HTTP_API void _http_encoding_inflate_stream_dtor(http_encoding_stream *s TSR
 PHP_HTTP_API void _http_encoding_inflate_stream_free(http_encoding_stream **s TSRMLS_DC);
 
 #define http_ob_deflatehandler(o, ol, h, hl, m) _http_ob_deflatehandler((o), (ol), (h), (hl), (m) TSRMLS_CC)
-void _http_ob_deflatehandler(char *, uint, char **, uint *, int TSRMLS_DC);
+extern void _http_ob_deflatehandler(char *, uint, char **, uint *, int TSRMLS_DC);
 
 #define http_ob_inflatehandler(o, ol, h, hl, m) _http_ob_inflatehandler((o), (ol), (h), (hl), (m) TSRMLS_CC)
-void _http_ob_inflatehandler(char *, uint, char **, uint *, int TSRMLS_DC);
+extern void _http_ob_inflatehandler(char *, uint, char **, uint *, int TSRMLS_DC);
+
 #endif /* HTTP_HAVE_ZLIB */
 
 #endif
