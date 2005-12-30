@@ -22,7 +22,7 @@
 
 typedef struct {
 	char *method;
-	char *URI;
+	char *url;
 } http_request_info;
 
 typedef struct {

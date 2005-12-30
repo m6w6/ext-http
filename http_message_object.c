@@ -76,9 +76,9 @@ HTTP_BEGIN_ARGS(setRequestMethod, 0, 1)
 	HTTP_ARG_VAL(request_method, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getRequestUri, 0);
-HTTP_BEGIN_ARGS(setRequestUri, 0, 1)
-	HTTP_ARG_VAL(uri, 0)
+HTTP_EMPTY_ARGS(getRequestUrl, 0);
+HTTP_BEGIN_ARGS(setRequestUrl, 0, 1)
+	HTTP_ARG_VAL(url, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getHttpVersion, 0);
@@ -86,7 +86,7 @@ HTTP_BEGIN_ARGS(setHttpVersion, 0, 1)
 	HTTP_ARG_VAL(http_version, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getParentMessage, 1);
+HTTP_EMPTY_ARGS(getParentMessage, 0);
 HTTP_EMPTY_ARGS(send, 0);
 HTTP_BEGIN_ARGS(toString, 0, 0)
 	HTTP_ARG_VAL(include_parent, 0)
@@ -122,8 +122,8 @@ zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(setResponseCode, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getRequestMethod, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setRequestMethod, ZEND_ACC_PUBLIC)
-	HTTP_MESSAGE_ME(getRequestUri, ZEND_ACC_PUBLIC)
-	HTTP_MESSAGE_ME(setRequestUri, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getRequestUrl, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setRequestUrl, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getHttpVersion, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setHttpVersion, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getParentMessage, ZEND_ACC_PUBLIC)
@@ -221,7 +221,7 @@ static inline void _http_message_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
 	DCL_PROP(PROTECTED, string, body, "");
 	DCL_PROP(PROTECTED, string, requestMethod, "");
-	DCL_PROP(PROTECTED, string, requestUri, "");
+	DCL_PROP(PROTECTED, string, requestUrl, "");
 	DCL_PROP(PROTECTED, long, responseCode, 0);
 	DCL_PROP_N(PROTECTED, httpVersion);
 	DCL_PROP_N(PROTECTED, headers);
@@ -313,10 +313,10 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 			}
 		break;
 
-		case HTTP_MSG_PROPHASH_REQUEST_URI:
-		case HTTP_MSG_CHILD_PROPHASH_REQUEST_URI:
-			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->http.info.request.URI) {
-				RETVAL_STRING(msg->http.info.request.URI, 1);
+		case HTTP_MSG_PROPHASH_REQUEST_URL:
+		case HTTP_MSG_CHILD_PROPHASH_REQUEST_URL:
+			if (HTTP_MSG_TYPE(REQUEST, msg) && msg->http.info.request.url) {
+				RETVAL_STRING(msg->http.info.request.url, 1);
 			} else {
 				RETVAL_NULL();
 			}
@@ -423,11 +423,11 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 			}
 		break;
 
-		case HTTP_MSG_PROPHASH_REQUEST_URI:
-		case HTTP_MSG_CHILD_PROPHASH_REQUEST_URI:
+		case HTTP_MSG_PROPHASH_REQUEST_URL:
+		case HTTP_MSG_CHILD_PROPHASH_REQUEST_URL:
 			if (HTTP_MSG_TYPE(REQUEST, msg)) {
 				convert_to_string(cpy);
-				STR_SET(msg->http.info.request.URI, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
+				STR_SET(msg->http.info.request.url, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
 			}
 		break;
 
@@ -493,14 +493,14 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 			ASSOC_PROP(array, long, "responseCode", 0);
 			ASSOC_STRINGL(array, "responseStatus", "", 0);
 			ASSOC_STRING(array, "requestMethod", msg->http.info.request.method);
-			ASSOC_STRING(array, "requestUri", msg->http.info.request.URI);
+			ASSOC_STRING(array, "requestUrl", msg->http.info.request.url);
 		break;
 
 		case HTTP_MSG_RESPONSE:
 			ASSOC_PROP(array, long, "responseCode", msg->http.info.response.code);
 			ASSOC_STRING(array, "responseStatus", msg->http.info.response.status);
 			ASSOC_STRINGL(array, "requestMethod", "", 0);
-			ASSOC_STRINGL(array, "requestUri", "", 0);
+			ASSOC_STRINGL(array, "requestUrl", "", 0);
 		break;
 
 		case HTTP_MSG_NONE:
@@ -508,7 +508,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 			ASSOC_PROP(array, long, "responseCode", 0);
 			ASSOC_STRINGL(array, "responseStatus", "", 0);
 			ASSOC_STRINGL(array, "requestMethod", "", 0);
-			ASSOC_STRINGL(array, "requestUri", "", 0);
+			ASSOC_STRINGL(array, "requestUrl", "", 0);
 		break;
 	}
 
@@ -835,35 +835,35 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 }
 /* }}} */
 
-/* {{{ proto string HttpMessage::getRequestUri()
+/* {{{ proto string HttpMessage::getRequestUrl()
  *
- * Get the Request URI of the Message.
+ * Get the Request URL of the Message.
  * 
- * Returns the request uri as string on success, or FALSE if the message
+ * Returns the request url as string on success, or FALSE if the message
  * is not of type HttpMessage::TYPE_REQUEST. 
  */
-PHP_METHOD(HttpMessage, getRequestUri)
+PHP_METHOD(HttpMessage, getRequestUrl)
 {
 	NO_ARGS;
 
 	IF_RETVAL_USED {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
-		RETURN_STRING(obj->message->http.info.request.URI, 1);
+		RETURN_STRING(obj->message->http.info.request.url, 1);
 	}
 }
 /* }}} */
 
-/* {{{ proto bool HttpMessage::setRequestUri(string URI)
+/* {{{ proto bool HttpMessage::setRequestUrl(string url)
  *
- * Set the Request URI of the HTTP Message.
+ * Set the Request URL of the HTTP Message.
  * 
- * Expects a string parameters containing the request uri.
+ * Expects a string parameters containing the request url.
  * 
  * Returns TRUE on success, or FALSE if the message is not of type
- * HttpMessage::TYPE_REQUEST or supplied URI was empty.
+ * HttpMessage::TYPE_REQUEST or supplied URL was empty.
  */
-PHP_METHOD(HttpMessage, setRequestUri)
+PHP_METHOD(HttpMessage, setRequestUrl)
 {
 	char *URI;
 	int URIlen;
@@ -874,11 +874,11 @@ PHP_METHOD(HttpMessage, setRequestUri)
 	}
 	HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
 	if (URIlen < 1) {
-		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Cannot set HttpMessage::requestUri to an empty string");
+		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Cannot set HttpMessage::requestUrl to an empty string");
 		RETURN_FALSE;
 	}
 
-	STR_SET(obj->message->http.info.request.URI, estrndup(URI, URIlen));
+	STR_SET(obj->message->http.info.request.url, estrndup(URI, URIlen));
 	RETURN_TRUE;
 }
 /* }}} */

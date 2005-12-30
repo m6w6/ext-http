@@ -54,7 +54,7 @@ object(HttpMessage)#%d (%d) {
   string(2) "Ok"
   ["requestMethod:protected"]=>
   string(0) ""
-  ["requestUri:protected"]=>
+  ["requestUrl:protected"]=>
   string(0) ""
   ["headers:protected"]=>
   array(1) {

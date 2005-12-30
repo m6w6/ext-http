@@ -42,7 +42,7 @@ extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 #define HTTP_MSG_PROPHASH_HEADERS              3199929089LU
 #define HTTP_MSG_PROPHASH_PARENT_MESSAGE       2105714836LU
 #define HTTP_MSG_PROPHASH_REQUEST_METHOD       1669022159LU
-#define HTTP_MSG_PROPHASH_REQUEST_URI          3208695486LU
+#define HTTP_MSG_PROPHASH_REQUEST_URL          3208695585LU
 #define HTTP_MSG_PROPHASH_RESPONSE_STATUS      3857097400LU
 #define HTTP_MSG_PROPHASH_RESPONSE_CODE        1305615119LU
 
@@ -52,7 +52,7 @@ extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 #define HTTP_MSG_CHILD_PROPHASH_HEADERS        3626850379LU
 #define HTTP_MSG_CHILD_PROPHASH_PARENT_MESSAGE 3910157662LU
 #define HTTP_MSG_CHILD_PROPHASH_REQUEST_METHOD 3473464985LU
-#define HTTP_MSG_CHILD_PROPHASH_REQUEST_URI    3855912904LU
+#define HTTP_MSG_CHILD_PROPHASH_REQUEST_URL    3855913003LU
 #define HTTP_MSG_CHILD_PROPHASH_RESPONSE_STATUS 3274168514LU
 #define HTTP_MSG_CHILD_PROPHASH_RESPONSE_CODE  1750746777LU
 
@@ -81,8 +81,8 @@ PHP_METHOD(HttpMessage, getResponseCode);
 PHP_METHOD(HttpMessage, setResponseCode);
 PHP_METHOD(HttpMessage, getRequestMethod);
 PHP_METHOD(HttpMessage, setRequestMethod);
-PHP_METHOD(HttpMessage, getRequestUri);
-PHP_METHOD(HttpMessage, setRequestUri);
+PHP_METHOD(HttpMessage, getRequestUrl);
+PHP_METHOD(HttpMessage, setRequestUrl);
 PHP_METHOD(HttpMessage, getHttpVersion);
 PHP_METHOD(HttpMessage, setHttpVersion);
 PHP_METHOD(HttpMessage, getParentMessage);

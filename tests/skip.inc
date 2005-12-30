@@ -7,5 +7,6 @@ function checkmin($ver) { skipif(round($ver,1) > round((double) PHP_VERSION,1), 
 function checkmax($ver) { skipif(round($ver,1) < round((double) PHP_VERSION,1), sprintf("need PHP <= v%0.1f",$ver)); }
 function checkurl($url) { skipif(!@fsockopen($url, 80), "$url not responsive"); }
 function checkcls($cls) { skipif(!class_exists($cls), "need class $cls"); }
+function checkver($ver) { checkmin($ver); }
 checkext('http');
 ?>

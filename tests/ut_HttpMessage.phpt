@@ -128,21 +128,21 @@ class HttpMessageTest extends PHPUnit2_Framework_TestCase
         $this->assertEquals('POST', $this->requestMessage->getRequestMethod());
     }
 
-    function test_getRequestUri()
+    function test_getRequestUrl()
     {
-        $this->assertFalse($this->emptyMessage->getRequestUri());
-        $this->assertFalse($this->responseMessage->getRequestUri());
-        $this->assertEquals('/foo', $this->requestMessage->getRequestUri());
+        $this->assertFalse($this->emptyMessage->getRequestUrl());
+        $this->assertFalse($this->responseMessage->getRequestUrl());
+        $this->assertEquals('/foo', $this->requestMessage->getRequestUrl());
     }
 
-    function test_setRequestUri()
+    function test_setRequestUrl()
     {
-        $this->assertFalse($this->emptyMessage->setRequestUri('/bla'));
-        $this->assertFalse($this->responseMessage->setRequestUri('/bla'));
-        $this->assertTrue($this->requestMessage->setRequestUri('/bla'));
-        $this->assertFalse($this->emptyMessage->getRequestUri());
-        $this->assertFalse($this->responseMessage->getRequestUri());
-        $this->assertEquals('/bla', $this->requestMessage->getRequestUri());
+        $this->assertFalse($this->emptyMessage->setRequestUrl('/bla'));
+        $this->assertFalse($this->responseMessage->setRequestUrl('/bla'));
+        $this->assertTrue($this->requestMessage->setRequestUrl('/bla'));
+        $this->assertFalse($this->emptyMessage->getRequestUrl());
+        $this->assertFalse($this->responseMessage->getRequestUrl());
+        $this->assertEquals('/bla', $this->requestMessage->getRequestUrl());
     }
 
     function test_getHttpVersion()
@@ -250,17 +250,17 @@ Notice: HttpMessage::getRequestMethod(): HttpMessage is not of type HTTP_MSG_REQ
 
 Notice: HttpMessage::getRequestMethod(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
 
-Notice: HttpMessage::getRequestUri(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
+Notice: HttpMessage::getRequestUrl(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
 
-Notice: HttpMessage::getRequestUri(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
+Notice: HttpMessage::getRequestUrl(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
 
-Notice: HttpMessage::setRequestUri(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
+Notice: HttpMessage::setRequestUrl(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
 
-Notice: HttpMessage::setRequestUri(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
+Notice: HttpMessage::setRequestUrl(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
 
-Notice: HttpMessage::getRequestUri(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
+Notice: HttpMessage::getRequestUrl(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
 
-Notice: HttpMessage::getRequestUri(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
+Notice: HttpMessage::getRequestUrl(): HttpMessage is not of type HTTP_MSG_REQUEST in %sut_HttpMessage.php on line %d
 
 
 Time: 0

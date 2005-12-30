@@ -31,7 +31,7 @@ PHP_HTTP_API void _http_info_default_callback(void **nothing, HashTable **header
 	{
 		case IS_HTTP_REQUEST:
 			add_assoc_string(&array, "Request Method", HTTP_INFO(info).request.method, 1);
-			add_assoc_string(&array, "Request Uri", HTTP_INFO(info).request.URI, 1);
+			add_assoc_string(&array, "Request Url", HTTP_INFO(info).request.url, 1);
 		break;
 		
 		case IS_HTTP_RESPONSE:
@@ -49,7 +49,7 @@ PHP_HTTP_API void _http_info_dtor(http_info *info)
 	{
 		case IS_HTTP_REQUEST:
 			STR_SET(i->request.method, NULL);
-			STR_SET(i->request.URI, NULL);
+			STR_SET(i->request.url, NULL);
 		break;
 		
 		case IS_HTTP_RESPONSE:
@@ -120,10 +120,10 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 		info->type = IS_HTTP_REQUEST;
 		if (url && http > url) {
 			HTTP_INFO(info).request.method = estrndup(pre_header, url - pre_header);
-			HTTP_INFO(info).request.URI = estrndup(url + 1, http - url - 2);
+			HTTP_INFO(info).request.url = estrndup(url + 1, http - url - 2);
 		} else {
 			HTTP_INFO(info).request.method = ecalloc(1,1);
-			HTTP_INFO(info).request.URI = ecalloc(1,1);
+			HTTP_INFO(info).request.url = ecalloc(1,1);
 		}
 		
 		return SUCCESS;

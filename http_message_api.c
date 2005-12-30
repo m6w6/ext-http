@@ -48,7 +48,7 @@ static void _http_message_info_callback(http_message **message, HashTable **head
 	{
 		case IS_HTTP_REQUEST:
 			(*message)->type = HTTP_MSG_REQUEST;
-			HTTP_INFO(*message).request.URI = estrdup(HTTP_INFO(info).request.URI);
+			HTTP_INFO(*message).request.url = estrdup(HTTP_INFO(info).request.url);
 			HTTP_INFO(*message).request.method = estrdup(HTTP_INFO(info).request.method);
 		break;
 		
@@ -74,7 +74,7 @@ static inline void _http_message_init_type(http_message *message, http_message_t
 
 		case HTTP_MSG_REQUEST:
 			message->http.info.request.method = NULL;
-			message->http.info.request.URI = NULL;
+			message->http.info.request.url = NULL;
 		break;
 
 		case HTTP_MSG_NONE:
@@ -108,7 +108,7 @@ PHP_HTTP_API void _http_message_set_type(http_message *message, http_message_typ
 		{
 			case HTTP_MSG_REQUEST:
 				STR_FREE(message->http.info.request.method);
-				STR_FREE(message->http.info.request.URI);
+				STR_FREE(message->http.info.request.url);
 			break;
 			
 			case HTTP_MSG_RESPONSE:
@@ -301,7 +301,7 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 		case HTTP_MSG_REQUEST:
 			phpstr_appendf(&str, "%s %s HTTP/%1.1f" HTTP_CRLF,
 				msg->http.info.request.method,
-				msg->http.info.request.URI,
+				msg->http.info.request.url,
 				msg->http.version);
 		break;
 
@@ -396,7 +396,7 @@ PHP_HTTP_API void _http_message_tostruct_recursive(http_message *msg, zval *obj 
 		
 		case HTTP_MSG_REQUEST:
 			add_assoc_string(&strct, "requestMethod", msg->http.info.request.method, 1);
-			add_assoc_string(&strct, "requestUri", msg->http.info.request.URI, 1);
+			add_assoc_string(&strct, "requestUrl", msg->http.info.request.url, 1);
 		break;
 		
 		case HTTP_MSG_NONE:
@@ -480,7 +480,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 			/* check host header */
 			if (SUCCESS == zend_hash_find(&message->hdrs, "Host", sizeof("Host"), (void **) &zhost)) {
 				char *colon = NULL;
-				php_url parts, *url = php_url_parse(message->http.info.request.URI);
+				php_url parts, *url = php_url_parse(message->http.info.request.url);
 				
 				memset(&parts, 0, sizeof(php_url));
 
@@ -496,7 +496,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 				php_url_free(url);
 				efree(parts.host);
 			} else {
-				uri = http_absolute_url(message->http.info.request.URI);
+				uri = http_absolute_url(message->http.info.request.url);
 			}
 
 			if ((request.meth = http_request_method_exists(1, 0, message->http.info.request.method))) {
@@ -554,7 +554,7 @@ PHP_HTTP_API void _http_message_dtor(http_message *message)
 		{
 			case HTTP_MSG_REQUEST:
 				STR_SET(message->http.info.request.method, NULL);
-				STR_SET(message->http.info.request.URI, NULL);
+				STR_SET(message->http.info.request.url, NULL);
 			break;
 			
 			case HTTP_MSG_RESPONSE:

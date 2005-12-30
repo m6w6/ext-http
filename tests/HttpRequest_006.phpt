@@ -32,7 +32,7 @@ object(HttpMessage)#%d (%d) {
   string(2) "OK"
   ["requestMethod:protected"]=>
   string(0) ""
-  ["requestUri:protected"]=>
+  ["requestUrl:protected"]=>
   string(0) ""
   ["headers:protected"]=>
   array(6) {
@@ -71,7 +71,7 @@ object(HttpMessage)#%d (%d) {
   string(2) "OK"
   ["requestMethod:protected"]=>
   string(0) ""
-  ["requestUri:protected"]=>
+  ["requestUrl:protected"]=>
   string(0) ""
   ["headers:protected"]=>
   array(6) {
@@ -110,7 +110,7 @@ object(HttpMessage)#%d (%d) {
   string(2) "OK"
   ["requestMethod:protected"]=>
   string(0) ""
-  ["requestUri:protected"]=>
+  ["requestUrl:protected"]=>
   string(0) ""
   ["headers:protected"]=>
   array(6) {

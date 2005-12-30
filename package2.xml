@@ -53,6 +53,7 @@ HttpResponse
 + Added HttpRequest::getRawRequestMessage and ::getRawResponseMessage
 + Added 'resetcookies' request option (libcurl > 7.15)
 
+- Changed all methods and properties with "URI" in their name to "URL"
 - Changed HttpRequest properties to be private
 
 * Fixed a lot of memory corruptions within HttpRequest

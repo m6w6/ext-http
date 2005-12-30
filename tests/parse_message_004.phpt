@@ -57,7 +57,7 @@ object(stdClass)#1 (7) {
     float(1.1)
     ["requestMethod"]=>
     string(3) "GET"
-    ["requestUri"]=>
+    ["requestUrl"]=>
     string(1) "/"
     ["headers"]=>
     array(2) {
@@ -95,7 +95,7 @@ object(stdClass)#1 (7) {
         float(1.1)
         ["requestMethod"]=>
         string(4) "HEAD"
-        ["requestUri"]=>
+        ["requestUrl"]=>
         string(1) "/"
         ["headers"]=>
         array(2) {

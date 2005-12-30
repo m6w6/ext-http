@@ -636,7 +636,7 @@ PHP_FUNCTION(http_throttle)
  *
  * Redirect to the given url.
  *  
- * The supplied url will be expanded with http_build_uri(), the params array will
+ * The supplied url will be expanded with http_build_url(), the params array will
  * be treated with http_build_query() and the session identification will be appended
  * if session is true.
  *
@@ -650,7 +650,7 @@ PHP_FUNCTION(http_throttle)
  * Please see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3
  * for which redirect response code to use in which situation.
  *
- * To be RFC compliant, "Redirecting to <a>URI</a>." will be displayed,
+ * To be RFC compliant, "Redirecting to <a>URL</a>." will be displayed,
  * if the client doesn't redirect immediatly, and the request method was
  * another one than HEAD.
  * 
@@ -706,14 +706,10 @@ PHP_FUNCTION(http_redirect)
 
 	if (query_len) {
 		spprintf(&LOC, 0, "Location: %s?%s", URI, query);
-		if (SG(request_info).request_method && strcmp(SG(request_info).request_method, "HEAD")) {
-			spprintf(&RED, 0, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);
-		}
+		spprintf(&RED, 0, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);
 	} else {
 		spprintf(&LOC, 0, "Location: %s", URI);
-		if (SG(request_info).request_method && strcmp(SG(request_info).request_method, "HEAD")) {
-			spprintf(&RED, 0, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
-		}
+		spprintf(&RED, 0, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
 	}
 	
 	efree(URI);
