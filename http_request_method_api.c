@@ -65,6 +65,7 @@ static const char *const http_request_methods[] = {
 };
 /* }}} */
 
+/* {{{ */
 PHP_MINIT_FUNCTION(http_request_method)
 {
 	/* HTTP/1.1 */
@@ -124,6 +125,7 @@ PHP_RSHUTDOWN_FUNCTION(http_request_method)
 	
 	return SUCCESS;
 }
+/* }}} */
 
 /* {{{ char *http_request_method_name(http_request_method) */
 PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC)

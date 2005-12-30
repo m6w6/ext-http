@@ -4,15 +4,15 @@ dnl vim: noet ts=1 sw=1
 
 PHP_ARG_ENABLE([http], [whether to enable extended HTTP support],
 [  --enable-http           Enable extended HTTP support])
-PHP_ARG_WITH([http-curl-requests], [whether to enable cURL HTTP requests],
-[  --with-http-curl-requests[=CURLDIR]
-                           With cURL HTTP request support])
+PHP_ARG_WITH([http-curl-requests], [whether to enable cURL HTTP request support],
+[  --with-http-curl-requests[=LIBCURLDIR]
+                           HTTP: with cURL request support], "yes")
+PHP_ARG_WITH([http-zlib-compression], [whether to enable zlib encodings support],
+[  --with-http-zlib-compression[=LIBZDIR]
+                           HTTP: with zlib encodings support])
 PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
-[  --with-http-magic-mime[=MAGICDIR]
-                           With magic mime response content type guessing])
-PHP_ARG_WITH([http-zlib-compression], [whether to enable support for gzencoded/deflated message bodies],
-[  --with-http-zlib-compression[=ZLIBDIR]
-                           With zlib gzdecode and inflate support])
+[  --with-http-magic-mime[=LIBMAGICDIR]
+                           HTTP: with magic mime response content type guessing])
 
 if test "$PHP_HTTP" != "no"; then
 
@@ -39,28 +39,30 @@ dnl -------
 dnl ----
 dnl ZLIB
 dnl ----
-	AC_MSG_CHECKING([for zlib.h])
-	ZLIB_DIR=
-	for i in "$PHP_HTTP_ZLIB_COMPRESSION" "$PHP_ZLIB_DIR" "$PHP_ZLIB" /user/local /usr /opt; do
-		if test -f "$i/include/zlib.h"; then
-			ZLIB_DIR=$i
-			break;
-		fi
-	done
-	if test -z "$ZLIB_DIR"; then
-		AC_MSG_RESULT([not found])
-		AC_MSG_WARN([gzip support not enabled; zlib.h not found])
-	else
-		AC_MSG_RESULT([found in $ZLIB_DIR])
-		AC_MSG_CHECKING([for zlib version >= 1.2.0.4])
-		ZLIB_VERSION=`$EGREP "define ZLIB_VERSION" $ZLIB_DIR/include/zlib.h | $SED -e 's/[[^0-9\.]]//g'`
-		AC_MSG_RESULT([$ZLIB_VERSION])
-		if test `echo $ZLIB_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*1000000 + $2*10000 + $3*100 + $4}'` -lt 1020004; then
-			AC_MSG_WARN([gzip support not enabled; libz version greater or equal to 1.2.0.4 required])
+	if test "$PHP_HTTP_ZLIB_ENCODINGS" != "no"; then
+		AC_MSG_CHECKING([for zlib.h])
+		ZLIB_DIR=
+		for i in "$PHP_HTTP_ZLIB_COMPRESSION" "$PHP_ZLIB_DIR" "$PHP_ZLIB" /user/local /usr /opt; do
+			if test -f "$i/include/zlib.h"; then
+				ZLIB_DIR=$i
+				break;
+			fi
+		done
+		if test -z "$ZLIB_DIR"; then
+			AC_MSG_RESULT([not found])
+			AC_MSG_WARN([could not find zlib.h])
 		else
-			PHP_ADD_INCLUDE($ZLIB_DIR/include)
-			PHP_ADD_LIBRARY_WITH_PATH(z, $ZLIB_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-			AC_DEFINE([HTTP_HAVE_ZLIB], [1], [Have zlib support])
+			AC_MSG_RESULT([found in $ZLIB_DIR])
+			AC_MSG_CHECKING([for zlib version >= 1.2.0.4])
+			ZLIB_VERSION=`$EGREP "define ZLIB_VERSION" $ZLIB_DIR/include/zlib.h | $SED -e 's/[[^0-9\.]]//g'`
+			AC_MSG_RESULT([$ZLIB_VERSION])
+			if test `echo $ZLIB_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*1000000 + $2*10000 + $3*100 + $4}'` -lt 1020004; then
+				AC_MSG_ERROR([libz version greater or equal to 1.2.0.4 required])
+			else
+				PHP_ADD_INCLUDE($ZLIB_DIR/include)
+				PHP_ADD_LIBRARY_WITH_PATH(z, $ZLIB_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+				AC_DEFINE([HTTP_HAVE_ZLIB], [1], [Have zlib support])
+			fi
 		fi
 	fi
 	
@@ -68,7 +70,6 @@ dnl ----
 dnl CURL
 dnl ----
 	if test "$PHP_HTTP_CURL_REQUESTS" != "no"; then
-
 		AC_MSG_CHECKING([for curl/curl.h])
 		CURL_DIR=
 		for i in "$PHP_HTTP_CURL_REQUESTS" /usr/local /usr /opt; do
@@ -164,7 +165,6 @@ dnl ----
 dnl MAGIC
 dnl ----
 	if test "$PHP_HTTP_MAGIC_MIME" != "no"; then
-	
 		AC_MSG_CHECKING([for magic.h])
 		MAGIC_DIR=
 		for i in "$PHP_HTTP_MAGIC_MIME" /usr/local /usr /opt; do
@@ -188,7 +188,6 @@ dnl ----
 dnl ----
 dnl HASH
 dnl ----
-
 	AC_MSG_CHECKING(for ext/hash support)
 	if test -x "$PHP_EXECUTABLE"; then
 		if test "`$PHP_EXECUTABLE -m | $EGREP '^hash$'`" = "hash"; then
