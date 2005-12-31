@@ -76,7 +76,20 @@ typedef int STATUS;
 #define ZVAL_OBJVAL(zv, ov) \
 	(zv)->type = IS_OBJECT; \
 	(zv)->value.obj = (ov);
-	
+/* return property */
+#define RETVAL_PROP(n) RETVAL_PROP_EX(getThis(), n)
+#define RETURN_PROP(n) RETURN_PROP_EX(getThis(), n)
+#define RETVAL_PROP_EX(this, n) \
+	{ \
+		zval *__prop = GET_PROP_EX(this, n); \
+		RETVAL_ZVAL(__prop, 1, 0); \
+	}
+#define RETURN_PROP_EX(this, n) \
+	{ \
+		zval *__prop = GET_PROP_EX(this, n); \
+		RETURN_ZVAL(__prop, 1, 0); \
+	}
+
 /* function accepts no args */
 #define NO_ARGS \
 	if (ZEND_NUM_ARGS()) { \
@@ -247,13 +260,13 @@ typedef int STATUS;
 #	define DCL_PROP(a, t, n, v)				zend_declare_property_ ##t(ce, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define DCL_PROP_Z(a, n, v)				zend_declare_property(ce, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a) TSRMLS_CC)
 #	define DCL_PROP_N(a, n)					zend_declare_property_null(ce, (#n), sizeof(#n)-1, (ZEND_ACC_ ##a) TSRMLS_CC)
-#	define UPD_PROP(o, t, n, v)				UPD_PROP_EX(o, getThis(), t, n, v)
-#	define UPD_PROP_EX(o, this, t, n, v)	zend_update_property_ ##t(OBJ_PROP_CE, this, (#n), sizeof(#n)-1, (v) TSRMLS_CC)
-#	define UPD_STRL(o, n, v, l)				zend_update_property_stringl(OBJ_PROP_CE, getThis(), (#n), sizeof(#n)-1, (v), (l) TSRMLS_CC)
-#	define SET_PROP(o, n, z) 				SET_PROP_EX(o, getThis(), n, z)
-#	define SET_PROP_EX(o, this, n, z) 		zend_update_property(OBJ_PROP_CE, this, (#n), sizeof(#n)-1, (z) TSRMLS_CC)
-#	define GET_PROP(o, n) 					GET_PROP_EX(o, getThis(), n)
-#	define GET_PROP_EX(o, this, n) 			zend_read_property(OBJ_PROP_CE, this, (#n), sizeof(#n)-1, 0 TSRMLS_CC)
+#	define UPD_PROP(t, n, v)				UPD_PROP_EX(getThis(), t, n, v)
+#	define UPD_PROP_EX(this, t, n, v)		zend_update_property_ ##t(OBJ_PROP_CE, this, (#n), sizeof(#n)-1, (v) TSRMLS_CC)
+#	define UPD_STRL(n, v, l)				zend_update_property_stringl(OBJ_PROP_CE, getThis(), (#n), sizeof(#n)-1, (v), (l) TSRMLS_CC)
+#	define SET_PROP(n, z) 					SET_PROP_EX(getThis(), n, z)
+#	define SET_PROP_EX(this, n, z) 			zend_update_property(OBJ_PROP_CE, this, (#n), sizeof(#n)-1, (z) TSRMLS_CC)
+#	define GET_PROP(n) 						GET_PROP_EX(getThis(), n)
+#	define GET_PROP_EX(this, n) 			zend_read_property(OBJ_PROP_CE, this, (#n), sizeof(#n)-1, 0 TSRMLS_CC)
 
 #	define DCL_CONST(t, n, v) zend_declare_class_constant_ ##t(ce, (n), sizeof(n)-1, (v) TSRMLS_CC)
 

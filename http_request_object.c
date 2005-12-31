@@ -433,9 +433,9 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	http_request_reset(obj->request);
 	HTTP_CHECK_CURL_INIT(obj->request->ch, curl_easy_init(), return FAILURE);
 	
-	obj->request->url = http_absolute_url(Z_STRVAL_P(GET_PROP(obj, url)));
+	obj->request->url = http_absolute_url(Z_STRVAL_P(GET_PROP(url)));
 	
-	switch (obj->request->meth = Z_LVAL_P(GET_PROP(obj, method)))
+	switch (obj->request->meth = Z_LVAL_P(GET_PROP(method)))
 	{
 		case HTTP_GET:
 		case HTTP_HEAD:
@@ -444,7 +444,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		case HTTP_PUT:
 		{
 			php_stream_statbuf ssb;
-			php_stream *stream = php_stream_open_wrapper(Z_STRVAL_P(GET_PROP(obj, putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL);
+			php_stream *stream = php_stream_open_wrapper(Z_STRVAL_P(GET_PROP(putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL);
 			
 			if (stream && !php_stream_stat(stream, &ssb)) {
 				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 1);
@@ -458,13 +458,13 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		default:
 		{
 			/* check for raw post data */
-			zval *raw_data = GET_PROP(obj, rawPostData);
+			zval *raw_data = GET_PROP(rawPostData);
 			
 			if (Z_STRLEN_P(raw_data)) {
-				zval *ctype = GET_PROP(obj, contentType);
+				zval *ctype = GET_PROP(contentType);
 				
 				if (Z_STRLEN_P(ctype)) {
-					zval **headers, *opts = GET_PROP(obj, options);
+					zval **headers, *opts = GET_PROP(options);
 					
 					if (	(Z_TYPE_P(opts) == IS_ARRAY) &&
 							(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) && 
@@ -490,7 +490,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 					estrndup(Z_STRVAL_P(raw_data), Z_STRLEN_P(raw_data)), Z_STRLEN_P(raw_data), 1);
 				
 			} else {
-				zval *zfields = GET_PROP(obj, postFields), *zfiles = GET_PROP(obj, postFiles);
+				zval *zfields = GET_PROP(postFields), *zfiles = GET_PROP(postFiles);
 				HashTable *fields;
 				HashTable *files;
 				
@@ -506,8 +506,8 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	}
 
 	if (status == SUCCESS) {
-		zval *qdata = GET_PROP(obj, queryData);
-		zval *options = GET_PROP(obj, options);
+		zval *qdata = GET_PROP(queryData);
+		zval *options = GET_PROP(options);
 		
 		if (Z_STRLEN_P(qdata)) {
 			if (!strchr(obj->request->url, '?')) {
@@ -557,7 +557,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		size_t body_len;
 		zval *headers, *message, *resp, *info;
 
-		if (zval_is_true(GET_PROP(obj, recordHistory))) {
+		if (zval_is_true(GET_PROP(recordHistory))) {
 			/* we need to act like a zipper, as we'll receive
 			 * the requests and the responses in separate chains
 			 * for redirects
@@ -583,7 +583,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 			phpstr_fix(&obj->history);
 		}
 
-		UPD_PROP(obj, long, responseCode, msg->http.info.response.code);
+		UPD_PROP(long, responseCode, msg->http.info.response.code);
 
 		MAKE_STD_ZVAL(resp);
 		array_init(resp);
@@ -593,18 +593,18 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		add_assoc_zval(resp, "headers", headers);
 		phpstr_data(PHPSTR(msg), &body, &body_len);
 		add_assoc_stringl(resp, "body", body, body_len, 0);
-		SET_PROP(obj, responseData, resp);
+		SET_PROP(responseData, resp);
 		zval_ptr_dtor(&resp);
 
 		MAKE_STD_ZVAL(message);
 		ZVAL_OBJVAL(message, http_message_object_new_ex(http_message_object_ce, msg, NULL));
-		SET_PROP(obj, responseMessage, message);
+		SET_PROP(responseMessage, message);
 		zval_ptr_dtor(&message);
 
 		MAKE_STD_ZVAL(info);
 		array_init(info);
 		http_request_info(obj->request, Z_ARRVAL_P(info));
-		SET_PROP(obj, responseInfo, info);
+		SET_PROP(responseInfo, info);
 		zval_ptr_dtor(&info);
 
 		return SUCCESS;
@@ -624,7 +624,7 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 
 	MAKE_STD_ZVAL(new_opts);
 	array_init(new_opts);
-	old_opts = GET_PROP(obj, options);
+	old_opts = GET_PROP(options);
 	if (Z_TYPE_P(old_opts) == IS_ARRAY) {
 		array_copy(old_opts, new_opts);
 	}
@@ -644,7 +644,7 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 		ZVAL_ADDREF(opts);
 		add_assoc_zval(new_opts, key, opts);
 	}
-	SET_PROP(obj, options, new_opts);
+	SET_PROP(options, new_opts);
 	zval_ptr_dtor(&new_opts);
 
 	RETURN_TRUE;
@@ -660,7 +660,7 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 		zval *opts, **options;
 		getObject(http_request_object, obj);
 
-		opts = GET_PROP(obj, options);
+		opts = GET_PROP(options);
 
 		array_init(return_value);
 
@@ -697,10 +697,10 @@ PHP_METHOD(HttpRequest, __construct)
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sla", &URL, &URL_len, &meth, &options)) {
 		if (URL) {
-			UPD_STRL(obj, url, URL, URL_len);
+			UPD_STRL(url, URL, URL_len);
 		}
 		if (meth > -1) {
-			UPD_PROP(obj, long, method, meth);
+			UPD_PROP(long, method, meth);
 		}
 		if (options) {
 			zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setoptions", NULL, options);
@@ -736,7 +736,7 @@ PHP_METHOD(HttpRequest, setOptions)
 	array_init(new_opts);
 		
 	if (!opts || !zend_hash_num_elements(Z_ARRVAL_P(opts))) {
-		SET_PROP(obj, options, new_opts);
+		SET_PROP(options, new_opts);
 		zval_ptr_dtor(&new_opts);
 		RETURN_TRUE;
 	}
@@ -765,12 +765,12 @@ PHP_METHOD(HttpRequest, setOptions)
 		}
 	}
 	
-	old_opts = GET_PROP(obj, options);
+	old_opts = GET_PROP(options);
 	if (Z_TYPE_P(old_opts) == IS_ARRAY) {
 		array_copy(old_opts, new_opts);
 	}
 	array_merge(add_opts, new_opts);
-	SET_PROP(obj, options, new_opts);
+	SET_PROP(options, new_opts);
 	zval_ptr_dtor(&new_opts);
 	zval_ptr_dtor(&add_opts);
 	
@@ -789,10 +789,7 @@ PHP_METHOD(HttpRequest, getOptions)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *options = GET_PROP(obj, options);
-		
-		RETURN_ZVAL(options, 1, 0);
+		RETURN_PROP(options);
 	}
 }
 /* }}} */
@@ -939,7 +936,7 @@ PHP_METHOD(HttpRequest, setUrl)
 		RETURN_FALSE;
 	}
 
-	UPD_STRL(obj, url, URL, URL_len);
+	UPD_STRL(url, URL, URL_len);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -955,10 +952,7 @@ PHP_METHOD(HttpRequest, getUrl)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *url = GET_PROP(obj, url);
-		
-		RETURN_ZVAL(url, 1, 0);
+		RETURN_PROP(url);
 	}
 }
 /* }}} */
@@ -981,7 +975,7 @@ PHP_METHOD(HttpRequest, setMethod)
 		RETURN_FALSE;
 	}
 
-	UPD_PROP(obj, long, method, meth);
+	UPD_PROP(long, method, meth);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -997,10 +991,7 @@ PHP_METHOD(HttpRequest, getMethod)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *method = GET_PROP(obj, method);
-		
-		RETURN_ZVAL(method, 1, 0);
+		RETURN_PROP(method);
 	}
 }
 /* }}} */
@@ -1026,7 +1017,7 @@ PHP_METHOD(HttpRequest, setContentType)
 	}
 
 	HTTP_CHECK_CONTENT_TYPE(ctype, RETURN_FALSE);
-	UPD_STRL(obj, contentType, ctype, ct_len);
+	UPD_STRL(contentType, ctype, ct_len);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1042,10 +1033,7 @@ PHP_METHOD(HttpRequest, getContentType)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *ctype = GET_PROP(obj, contentType);
-		
-		RETURN_ZVAL(ctype, 1, 0);
+		RETURN_PROP(contentType);
 	}
 }
 /* }}} */
@@ -1071,7 +1059,7 @@ PHP_METHOD(HttpRequest, setQueryData)
 	}
 
 	if ((!qdata) || Z_TYPE_P(qdata) == IS_NULL) {
-		UPD_STRL(obj, queryData, "", 0);
+		UPD_STRL(queryData, "", 0);
 	} else if ((Z_TYPE_P(qdata) == IS_ARRAY) || (Z_TYPE_P(qdata) == IS_OBJECT)) {
 		char *query_data = NULL;
 		
@@ -1079,13 +1067,13 @@ PHP_METHOD(HttpRequest, setQueryData)
 			RETURN_FALSE;
 		}
 		
-		UPD_PROP(obj, string, queryData, query_data);
+		UPD_PROP(string, queryData, query_data);
 		efree(query_data);
 	} else {
 		zval *orig = qdata;
 		
 		convert_to_string_ex(&qdata);
-		UPD_STRL(obj, queryData, Z_STRVAL_P(qdata), Z_STRLEN_P(qdata));
+		UPD_STRL(queryData, Z_STRVAL_P(qdata), Z_STRLEN_P(qdata));
 		if (orig != qdata) {
 			zval_ptr_dtor(&qdata);
 		}
@@ -1105,10 +1093,7 @@ PHP_METHOD(HttpRequest, getQueryData)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *qdata = GET_PROP(obj, queryData);
-		
-		RETURN_ZVAL(qdata, 1, 0);
+		RETURN_PROP(queryData);
 	}
 }
 /* }}} */
@@ -1133,13 +1118,13 @@ PHP_METHOD(HttpRequest, addQueryData)
 		RETURN_FALSE;
 	}
 
-	old_qdata = GET_PROP(obj, queryData);
+	old_qdata = GET_PROP(queryData);
 
 	if (SUCCESS != http_urlencode_hash_ex(HASH_OF(qdata), 1, Z_STRVAL_P(old_qdata), Z_STRLEN_P(old_qdata), &query_data, &query_data_len)) {
 		RETURN_FALSE;
 	}
 
-	UPD_STRL(obj, queryData, query_data, query_data_len);
+	UPD_STRL(queryData, query_data, query_data_len);
 	efree(query_data);
 
 	RETURN_TRUE;
@@ -1168,12 +1153,12 @@ PHP_METHOD(HttpRequest, addPostFields)
 	if (zend_hash_num_elements(Z_ARRVAL_P(post_data))) {
 		MAKE_STD_ZVAL(new_post);
 		array_init(new_post);
-		old_post = GET_PROP(obj, postFields);
+		old_post = GET_PROP(postFields);
 		if (Z_TYPE_P(old_post) == IS_ARRAY) {
 			array_copy(old_post, new_post);
 		}
 		array_merge(post_data, new_post);
-		SET_PROP(obj, postFields, new_post);
+		SET_PROP(postFields, new_post);
 		zval_ptr_dtor(&new_post);
 	}
 	
@@ -1205,7 +1190,7 @@ PHP_METHOD(HttpRequest, setPostFields)
 	if (post_data && zend_hash_num_elements(Z_ARRVAL_P(post_data))) {
 		array_copy(post_data, post);
 	}
-	SET_PROP(obj, postFields, post);
+	SET_PROP(postFields, post);
 	zval_ptr_dtor(&post);
 
 	RETURN_TRUE;
@@ -1223,10 +1208,7 @@ PHP_METHOD(HttpRequest, getPostFields)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *post = GET_PROP(obj, postFields);
-		
-		RETURN_ZVAL(post, 1, 0);
+		RETURN_PROP(postFields);
 	}
 }
 /* }}} */
@@ -1257,7 +1239,7 @@ PHP_METHOD(HttpRequest, setRawPostData)
 		raw_data = "";
 	}
 	
-	UPD_STRL(obj, rawPostData, raw_data, data_len);
+	UPD_STRL(rawPostData, raw_data, data_len);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1282,12 +1264,12 @@ PHP_METHOD(HttpRequest, addRawPostData)
 	}
 	
 	if (data_len) {
-		zval *data = zval_copy(IS_STRING, GET_PROP(obj, rawPostData));
+		zval *data = zval_copy(IS_STRING, GET_PROP(rawPostData));
 		
 		Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
 		Z_STRVAL_P(data)[Z_STRLEN_P(data)] = '\0';
 		memcpy(Z_STRVAL_P(data) + Z_STRLEN_P(data) - data_len, raw_data, data_len);
-		SET_PROP(obj, rawPostData, data);
+		SET_PROP(rawPostData, data);
 		zval_free(&data);
 	}
 	
@@ -1306,10 +1288,7 @@ PHP_METHOD(HttpRequest, getRawPostData)
 	NO_ARGS;
 	
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *post = GET_PROP(obj, rawPostData);
-		
-		RETURN_ZVAL(post, 1, 0);
+		RETURN_PROP(rawPostData);
 	}
 }
 /* }}} */
@@ -1354,12 +1333,12 @@ PHP_METHOD(HttpRequest, addPostFile)
 
 	MAKE_STD_ZVAL(new_post);
 	array_init(new_post);
-	old_post = GET_PROP(obj, postFiles);
+	old_post = GET_PROP(postFiles);
 	if (Z_TYPE_P(old_post) == IS_ARRAY) {
 		array_copy(old_post, new_post);
 	}
 	add_next_index_zval(new_post, entry);
-	SET_PROP(obj, postFiles, new_post);
+	SET_PROP(postFiles, new_post);
 	zval_ptr_dtor(&new_post);
 
 	RETURN_TRUE;
@@ -1391,7 +1370,7 @@ PHP_METHOD(HttpRequest, setPostFiles)
 	if (files && (Z_TYPE_P(files) == IS_ARRAY)) {
 		array_copy(files, post);
 	}
-	SET_PROP(obj, postFiles, post);
+	SET_PROP(postFiles, post);
 	zval_ptr_dtor(&post);
 
 	RETURN_TRUE;
@@ -1409,10 +1388,7 @@ PHP_METHOD(HttpRequest, getPostFiles)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *files = GET_PROP(obj, postFiles);
-		
-		RETURN_ZVAL(files, 1, 0);
+		RETURN_PROP(postFiles);
 	}
 }
 /* }}} */
@@ -1436,7 +1412,7 @@ PHP_METHOD(HttpRequest, setPutFile)
 		RETURN_FALSE;
 	}
 
-	UPD_STRL(obj, putFile, file, file_len);
+	UPD_STRL(putFile, file, file_len);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1452,10 +1428,7 @@ PHP_METHOD(HttpRequest, getPutFile)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *file = GET_PROP(obj, putFile);
-		
-		RETVAL_ZVAL(file, 1, 0);
+		RETURN_PROP(putFile);
 	}
 }
 /* }}} */
@@ -1476,10 +1449,7 @@ PHP_METHOD(HttpRequest, getResponseData)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *data = GET_PROP(obj, responseData);
-		
-		RETURN_ZVAL(data, 1, 0);
+		RETURN_PROP(responseData);
 	}
 }
 /* }}} */
@@ -1509,7 +1479,7 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 			RETURN_FALSE;
 		}
 
-		data = GET_PROP(obj, responseData);
+		data = GET_PROP(responseData);
 		if (	(Z_TYPE_P(data) == IS_ARRAY) && 
 				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) &&
 				(Z_TYPE_PP(headers) == IS_ARRAY)) {
@@ -1556,7 +1526,7 @@ PHP_METHOD(HttpRequest, getResponseCookie)
 
 		array_init(return_value);
 
-		data = GET_PROP(obj, responseData);
+		data = GET_PROP(responseData);
 		if (	(Z_TYPE_P(data) == IS_ARRAY) &&
 				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) &&
 				(Z_TYPE_PP(headers) == IS_ARRAY)) {
@@ -1650,7 +1620,7 @@ PHP_METHOD(HttpRequest, getResponseBody)
 	IF_RETVAL_USED {
 		zval **body;
 		getObject(http_request_object, obj);
-		zval *data = GET_PROP(obj, responseData);
+		zval *data = GET_PROP(responseData);
 		
 		if (	(Z_TYPE_P(data) == IS_ARRAY) && 
 				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "body", sizeof("body"), (void **) &body))) {
@@ -1676,10 +1646,7 @@ PHP_METHOD(HttpRequest, getResponseCode)
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		getObject(http_request_object, obj);
-		zval *code = GET_PROP(obj, responseCode);
-		
-		RETVAL_ZVAL(code, 1, 0);
+		RETURN_PROP(responseCode);
 	}
 }
 /* }}} */
@@ -1712,7 +1679,7 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 			RETURN_FALSE;
 		}
 
-		info = GET_PROP(obj, responseInfo);
+		info = GET_PROP(responseInfo);
 		
 		if (Z_TYPE_P(info) != IS_ARRAY) {
 			RETURN_FALSE;
@@ -1754,7 +1721,7 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 		getObject(http_request_object, obj);
 
 		SET_EH_THROW_HTTP();
-		message = GET_PROP(obj, responseMessage);
+		message = GET_PROP(responseMessage);
 		if (Z_TYPE_P(message) == IS_OBJECT) {
 			RETVAL_OBJECT(message);
 		} else {
@@ -1947,7 +1914,7 @@ PHP_METHOD(HttpRequest, send)
 	} else if (SUCCESS == http_request_object_requesthandler(obj, getThis())) {
 		http_request_exec(obj->request);
 		if (SUCCESS == http_request_object_responsehandler(obj, getThis())) {
-			RETVAL_OBJECT(GET_PROP(obj, responseMessage));
+			RETVAL_OBJECT(GET_PROP(responseMessage));
 		}
 	}
 
