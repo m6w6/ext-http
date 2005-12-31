@@ -215,6 +215,7 @@ HTTP_END_ARGS;
 #define http_request_object_declare_default_properties() _http_request_object_declare_default_properties(TSRMLS_C)
 static inline void _http_request_object_declare_default_properties(TSRMLS_D);
 
+#define OBJ_PROP_CE http_request_object_ce
 zend_class_entry *http_request_object_ce;
 zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -518,6 +519,23 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		}
 		
 		http_request_prepare(obj->request, Z_ARRVAL_P(options));
+		
+		/* check if there's a onProgress method and add it as progress callback if one isn't already set */
+		if (zend_hash_exists(&Z_OBJCE_P(getThis())->function_table, "onprogress", sizeof("onprogress"))) {
+			zval **entry, *pcb;
+			
+			if (	(Z_TYPE_P(options) != IS_ARRAY)
+				||	(SUCCESS != zend_hash_find(Z_ARRVAL_P(options), "onprogress", sizeof("onprogress"), (void **) &entry)
+				||	(!zval_is_true(*entry)))) {
+				MAKE_STD_ZVAL(pcb);
+				array_init(pcb);
+				ZVAL_ADDREF(getThis());
+				add_next_index_zval(pcb, getThis());
+				add_next_index_stringl(pcb, "onprogress", lenof("onprogress"), 1);
+				http_request_set_progress_callback(obj->request, pcb);
+				zval_ptr_dtor(&pcb);
+			}
+		}
 	}
 
 	return status;

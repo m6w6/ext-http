@@ -366,10 +366,16 @@ PHP_HTTP_API void _http_request_set_progress_callback(http_request *request, zva
 	if (request->_progress_callback) {
 		zval_ptr_dtor(&request->_progress_callback);
 	}
-	if (cb) {
+	if ((request->_progress_callback = cb)) {
 		ZVAL_ADDREF(cb);
+		HTTP_CURL_OPT(NOPROGRESS, 0);
+		HTTP_CURL_OPT(PROGRESSDATA, request);
+		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
+	} else {
+		HTTP_CURL_OPT(NOPROGRESS, 1);
+		HTTP_CURL_OPT(PROGRESSDATA, NULL);
+		HTTP_CURL_OPT(PROGRESSFUNCTION, NULL);
 	}
-	request->_progress_callback = cb;
 }
 
 /* {{{ STATUS http_request_prepare(http_request *, HashTable *) */
@@ -389,10 +395,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	HTTP_CURL_OPT(URL, request->url);
 
 	/* progress callback */
-	if ((zoption = http_request_option(request, options, "onprogress", 0))) {
-		HTTP_CURL_OPT(NOPROGRESS, 0);
-		HTTP_CURL_OPT(PROGRESSDATA, request);
-		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
+	if ((zoption = http_request_option(request, options, "onprogress", -1))) {
 		http_request_set_progress_callback(request, zoption);
 	}
 
@@ -713,30 +716,26 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *ct
 /* {{{ static int http_curl_progress_callback(void *, double, double, double, double) */
 static int http_curl_progress_callback(void *ctx, double dltotal, double dlnow, double ultotal, double ulnow)
 {
-	int rc;
-	zval *params_pass[4], params_local[4], retval;
+	zval *param, retval;
 	http_request *request = (http_request *) ctx;
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 
-	params_pass[0] = &params_local[0];
-	params_pass[1] = &params_local[1];
-	params_pass[2] = &params_local[2];
-	params_pass[3] = &params_local[3];
-
-	INIT_PZVAL(params_pass[0]);
-	INIT_PZVAL(params_pass[1]);
-	INIT_PZVAL(params_pass[2]);
-	INIT_PZVAL(params_pass[3]);
-	ZVAL_DOUBLE(params_pass[0], dltotal);
-	ZVAL_DOUBLE(params_pass[1], dlnow);
-	ZVAL_DOUBLE(params_pass[2], ultotal);
-	ZVAL_DOUBLE(params_pass[3], ulnow);
-
 	INIT_PZVAL(&retval);
 	ZVAL_NULL(&retval);
-	rc = call_user_function(EG(function_table), NULL, request->_progress_callback, &retval, 4, params_pass TSRMLS_CC);
+
+	MAKE_STD_ZVAL(param);
+	array_init(param);
+	add_assoc_double(param, "dltotal", dltotal);
+	add_assoc_double(param, "dlnow", dlnow);
+	add_assoc_double(param, "ultotal", ultotal);
+	add_assoc_double(param, "ulnow", ulnow);
+	
+	call_user_function(EG(function_table), NULL, request->_progress_callback, &retval, 1, &param TSRMLS_CC);
+	
+	zval_ptr_dtor(&param);
 	zval_dtor(&retval);
-	return rc;
+	
+	return 0;
 }
 /* }}} */
 
