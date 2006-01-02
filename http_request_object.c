@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2005, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2006, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -606,7 +606,11 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		http_request_info(obj->request, Z_ARRVAL_P(info));
 		SET_PROP(responseInfo, info);
 		zval_ptr_dtor(&info);
-
+		
+		if (zend_hash_exists(&Z_OBJCE_P(getThis())->function_table, "onfinish", sizeof("onfinish"))) {
+			zend_call_method_with_0_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "onfinish", NULL);
+		}
+		
 		return SUCCESS;
 	}
 }
