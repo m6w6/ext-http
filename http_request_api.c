@@ -326,6 +326,9 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
 		HTTP_CURL_OPT(HTTPHEADER, NULL);
 		HTTP_CURL_OPT(COOKIE, NULL);
+#if LIBCURL_VERSION_NUM >= 0x070e01
+		HTTP_CURL_OPT(COOKIELIST, NULL);
+#endif
 		HTTP_CURL_OPT(COOKIEFILE, NULL);
 		HTTP_CURL_OPT(COOKIEJAR, NULL);
 		HTTP_CURL_OPT(RESUME_FROM, 0);
@@ -495,7 +498,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		}
 	}
 
-#if LIBCURL_VERSION_NUM >= 0x070f01
+#if LIBCURL_VERSION_NUM >= 0x070e01
 	/* reset cookies */
 	if ((zoption = http_request_option(request, options, "resetcookies", IS_BOOL)) && Z_LVAL_P(zoption)) {
 		HTTP_CURL_OPT(COOKIELIST, "ALL");
