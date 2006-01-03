@@ -31,17 +31,22 @@ HttpResponse
   </maintainers>
  <release>
   <version>0.21.0</version>
-  <date>2005-12-27</date>
+  <date>2006-01-03</date>
   <license>BSD, revised</license>
   <state>beta</state>
   <notes>! Encodings functionality requires libz version 1.2.0.4 or greater
 
 + Added HttpDeflateStream and HttpInflateStream classes
 + Added ob_deflatehandler and ob_inflatehandler
++ Added HttpRequest::getRawRequestMessage and ::getRawResponseMessage
++ Added &apos;resetcookies&apos; request option (libcurl &gt; 7.14.1)
 
+- Changed all methods and properties with &quot;URI&quot; in their name to &quot;URL&quot;
 - Changed HttpRequest properties to be private
 
 * Fixed a lot of memory corruptions within HttpRequest
+
+Special thanks for this release go to Ilia Alshanetsky.
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -112,6 +117,11 @@ HttpResponse
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>
     <file role="test" name="HttpRequest_004.phpt"/>
+    <file role="test" name="HttpRequest_005.phpt"/>
+    <file role="test" name="HttpRequest_006.phpt"/>
+    <file role="test" name="HttpRequest_007.phpt"/>
+    <file role="test" name="HttpRequest_008.phpt"/>
+    <file role="test" name="HttpRequest_009.phpt"/>
     <file role="test" name="HttpResponse_001.phpt"/>
     <file role="test" name="HttpResponse_002.phpt"/>
     <file role="test" name="HttpResponse_003.phpt"/>
@@ -120,6 +130,8 @@ HttpResponse
     <file role="test" name="log.inc"/>
     <file role="test" name="match_request_header_001.phpt"/>
     <file role="test" name="negotiation_001.phpt"/>
+    <file role="test" name="ob_deflatehandler_001.phpt"/>
+    <file role="test" name="ob_inflatehandler_001.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
     <file role="test" name="parse_message_001.phpt"/>
     <file role="test" name="parse_message_002.phpt"/>
@@ -166,7 +178,11 @@ HttpResponse
     <file role="test" name="send_file_013.phpt"/>
     <file role="test" name="skip.inc"/>
     <file role="test" name="stream_filters_001.phpt"/>
+    <file role="test" name="stream_filters_002.phpt"/>
+    <file role="test" name="stream_filters_003.phpt"/>
     <file role="test" name="urls.txt"/>
+    <file role="test" name="ut_HttpMessage.phpt"/>
+    <file role="test" name="ut_HttpUtil.phpt"/>
    </dir> <!-- /tests -->
    <file role="src" name="config.m4"/>
    <file role="src" name="config.w32"/>

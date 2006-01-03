@@ -113,9 +113,14 @@ $TOC = array();
 
 printf($preface, basename(getcwd()));
 
+$seen = array();
 foreach (array_slice($_SERVER['argv'], 1) as $fp) {
     foreach (glob($fp) as $f) {
-        
+        if (isset($seen[$f])) {
+      	    continue;
+        } else {
+           $seen[$f] = true;
+        }
         if (mf($f, $m)) {
             e("\nAnalyzing %s\n", basename($f));
             printf("<h1 id=\"%s\">%s</h1>\n", basename($f), basename($f));

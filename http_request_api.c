@@ -239,10 +239,10 @@ PHP_HTTP_API void _http_request_dtor(http_request *request)
 	
 	if (request->ch) {
 		/* avoid nasty segfaults with already cleaned up callbacks */
-		curl_easy_setopt(request->ch, CURLOPT_NOPROGRESS, 1);
-		curl_easy_setopt(request->ch, CURLOPT_PROGRESSFUNCTION, NULL);
-		curl_easy_setopt(request->ch, CURLOPT_VERBOSE, 0);
-		curl_easy_setopt(request->ch, CURLOPT_DEBUGFUNCTION, NULL);
+		HTTP_CURL_OPT(NOPROGRESS, 1);
+		HTTP_CURL_OPT(PROGRESSFUNCTION, NULL);
+		HTTP_CURL_OPT(VERBOSE, 0);
+		HTTP_CURL_OPT(DEBUGFUNCTION, NULL);
 		curl_easy_cleanup(request->ch);
 		request->ch = NULL;
 	}
@@ -597,24 +597,24 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	switch (request->meth)
 	{
 		case HTTP_GET:
-			curl_easy_setopt(request->ch, CURLOPT_HTTPGET, 1);
+			HTTP_CURL_OPT(HTTPGET, 1);
 		break;
 
 		case HTTP_HEAD:
-			curl_easy_setopt(request->ch, CURLOPT_NOBODY, 1);
+			HTTP_CURL_OPT(NOBODY, 1);
 		break;
 
 		case HTTP_POST:
-			curl_easy_setopt(request->ch, CURLOPT_POST, 1);
+			HTTP_CURL_OPT(POST, 1);
 		break;
 
 		case HTTP_PUT:
-			curl_easy_setopt(request->ch, CURLOPT_UPLOAD, 1);
+			HTTP_CURL_OPT(UPLOAD, 1);
 		break;
 
 		default:
 			if (http_request_method_exists(0, request->meth, NULL)) {
-				curl_easy_setopt(request->ch, CURLOPT_CUSTOMREQUEST, http_request_method_name(request->meth));
+				HTTP_CURL_OPT(CUSTOMREQUEST, http_request_method_name(request->meth));
 			} else {
 				http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Unsupported request method: %d (%s)", request->meth, request->url);
 				return FAILURE;
@@ -627,18 +627,18 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		switch (request->body->type)
 		{
 			case HTTP_REQUEST_BODY_CSTRING:
-				curl_easy_setopt(request->ch, CURLOPT_POSTFIELDS, request->body->data);
-				curl_easy_setopt(request->ch, CURLOPT_POSTFIELDSIZE, request->body->size);
+				HTTP_CURL_OPT(POSTFIELDS, request->body->data);
+				HTTP_CURL_OPT(POSTFIELDSIZE, request->body->size);
 			break;
 
 			case HTTP_REQUEST_BODY_CURLPOST:
-				curl_easy_setopt(request->ch, CURLOPT_HTTPPOST, (struct curl_httppost *) request->body->data);
+				HTTP_CURL_OPT(HTTPPOST, (struct curl_httppost *) request->body->data);
 			break;
 
 			case HTTP_REQUEST_BODY_UPLOADFILE:
-				curl_easy_setopt(request->ch, CURLOPT_IOCTLDATA, request);
-				curl_easy_setopt(request->ch, CURLOPT_READDATA, request);
-				curl_easy_setopt(request->ch, CURLOPT_INFILESIZE, request->body->size);
+				HTTP_CURL_OPT(IOCTLDATA, request);
+				HTTP_CURL_OPT(READDATA, request);
+				HTTP_CURL_OPT(INFILESIZE, request->body->size);
 			break;
 
 			default:

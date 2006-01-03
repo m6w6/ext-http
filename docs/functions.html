@@ -72,20 +72,8 @@ looking like: "Wed, 22 Dec 2004 11:34:47 GMT"</p>
 <p>Takes an optional unix timestamp as parameter.<br />
  <br />
 Returns the HTTP date as string.</p>
-<h2 id="http_build_uri">string http_build_uri(string url[, string proto[, string host[, int port]]])</h2>
-<p>Build a complete URI according to the supplied parameters.</p>
-<p>If the url is already abolute but a different proto was supplied,<br />
-only the proto part of the URI will be updated.  If url has no<br />
-path specified, the path of the current REQUEST_URI will be taken.<br />
-The host will be taken either from the Host HTTP header of the client<br />
-the SERVER_NAME or just localhost if prior are not available.<br />
-If a port is pecified in either the url or as sperate parameter,<br />
-it will be added if it differs from te default port for HTTP(S).</p>
-<p>Returns the absolute URI as string on success or false on failure.</p>
-<p>Examples:</p><pre><blockquote><code><span style="color: #000000"><br />
-<span style="color: #0000BB">&lt;?php<br />$uri&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #0000BB">http_build_uri</span><span style="color: #007700">(</span><span style="color: #DD0000">"page.php"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"https"</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">NULL</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">488</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">?&gt;</span><br />
-</span></code></blockquote></p>
-<p></pre></p>
+<h2 id="http_build_url">string http_build_url(mixed url[, mixed parts[, array &new_url]])</h2>
+<p>Returns the new URL as string on success or FALSE on failure.</p>
 <h2 id="http_negotiate_language">string http_negotiate_language(array supported[, array &result])</h2>
 <p>This function negotiates the clients preferred language based on its<br />
 Accept-Language HTTP header.  The qualifier is recognized and languages <br />
@@ -196,7 +184,6 @@ the hash algorythm specified with the INI setting "http.etag_mode".</p>
 <p>Sets the throttle delay and send buffer size for use with http_send() API.<br />
 Provides a basic throttling mechanism, which will yield the current process<br />
 resp. thread until the entity has been completely sent, though.</p>
-<p>Note: This doesn't really work with the FastCGI SAPI.</p>
 <p>Expects a double parameter specifying the seconds too sleep() after<br />
 each chunk sent.  Additionally accepts an optional int parameter<br />
 representing the chunk size in bytes.</p>
@@ -207,7 +194,7 @@ representing the chunk size in bytes.</p>
 <h2 id="http_redirect">void http_redirect([string url[, array params[, bool session = false[, int status = 302]]]])</h2>
 <p>Redirect to the given url.<br />
  <br />
-The supplied url will be expanded with http_build_uri(), the params array will<br />
+The supplied url will be expanded with http_build_url(), the params array will<br />
 be treated with http_build_query() and the session identification will be appended<br />
 if session is true.</p>
 <p>The HTTP response code will be set according to status.<br />
@@ -218,7 +205,7 @@ You can use one of the following constants for convenience:<br />
  - HTTP_REDIRECT_TEMP	307 Temporary Redirect</p>
 <p>Please see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3<br />
 for which redirect response code to use in which situation.</p>
-<p>To be RFC compliant, "Redirecting to <a>URI</a>." will be displayed,<br />
+<p>To be RFC compliant, "Redirecting to <a>URL</a>." will be displayed,<br />
 if the client doesn't redirect immediatly, and the request method was<br />
 another one than HEAD.</p>
 <p>Returns FALSE on failure, or *exits* on success.</p>
@@ -358,28 +345,23 @@ See http_get() for a full list of available options.</p>
 <p>Returns the request method name as string on success, or FALSE on failure.</p>
 <h2 id="http_build_query">string http_build_query(mixed formdata [, string prefix[, string arg_separator]])</h2>
 <p>Generates a form-encoded query string from an associative array or object.</p>
-<h2 id="http_gzencode">string http_gzencode(string data[, int level = -1[, int mtime = 0]])</h2>
-<p>Compress data with the HTTP compatible GZIP encoding.</p>
-<p>Expects the first parameter to be a string which contains the data that<br />
-should be encoded.  Additionally accepts an optional in paramter specifying<br />
-the compression level, where -1 is default, 0 is no compression and 9 is<br />
-best compression ratio.</p>
-<p>Returns the encoded string on success, or NULL on failure.</p>
-<h2 id="http_gzdecode">string http_gzdecode(string data)</h2>
-<p>Uncompress data compressed with the HTTP compatible GZIP encoding.</p>
-<p>Expects a string as parameter containing the compressed data.</p>
-<p>Returns the decoded string on success, or NULL on failure.</p>
-<h2 id="http_deflate">string http_deflate(string data[, int level = -1[, bool zlib_header = false]])</h2>
-<p>Compress data with the HTTP compatible DEFLATE encoding.</p>
+<h2 id="http_deflate">string http_deflate(string data[, int flags = 0])</h2>
+<p>Compress data with gzip, zlib AKA deflate or raw deflate encoding.</p>
 <p>Expects the first parameter to be a string containing the data that should<br />
-be encoded.  Additionally accepts an optional int parameter specifying the<br />
-compression level, where -1 is default, 0 is no compression and 9 is best<br />
-compression ratio.</p>
+be encoded.</p>
 <p>Returns the encoded string on success, or NULL on failure.</p>
 <h2 id="http_inflate">string http_inflate(string data)</h2>
-<p>Uncompress data compressed with the HTTP compatible DEFLATE encoding.</p>
+<p>Uncompress data compressed with either gzip, deflate AKA zlib or raw<br />
+deflate encoding.</p>
 <p>Expects a string as parameter containing the compressed data.</p>
 <p>Returns the decoded string on success, or NULL on failure.</p>
+<h2 id="ob_deflatehandler">string ob_deflatehandler(string data, int mode)</h2>
+<p>For use with ob_start(). The deflate output buffer handler can only be used once.<br />
+It conflicts with ob_gzhanlder and zlib.output_compression as well and should<br />
+not be used after ext/mbstrings mb_output_handler and ext/sessions URL-Rewriter (AKA<br />
+session.use_trans_sid).</p>
+<h2 id="ob_inflatehandler">string ob_inflatehandler(string data, int mode)</h2>
+<p>For use with ob_start().  Same restrictions as with ob_deflatehandler apply.</p>
 <h2 id="http_support">int http_support([int feature = 0])</h2>
 <p>Check for feature that require external libraries.</p>
 <p>Accpepts an optional in parameter specifying which feature to probe for.<br />
@@ -399,6 +381,34 @@ all supported features that depend on external libraries.</p>
 </ul></p>
 <p>Returns int, whether requested feature is supported, or a bitmask with<br />
 all supported features.</p>
+<hr noshade>
+<h1 id="http_deflatestream_object.c">http_deflatestream_object.c</h1>
+<h2 id="HttpDeflateStream" class="o">HttpDeflateStream</h2>
+<h3 id="HttpDeflateStream___construct">void HttpDeflateStream::__construct([int flags = 0])</h3>
+<p>Creates a new HttpDeflateStream object instance.</p>
+<p>Accepts an optional int parameter specifying how to initialize the deflate stream.</p>
+<h3 id="HttpDeflateStream_update">string HttpDeflateStream::update(string data)</h3>
+<p>Passes more data through the deflate stream.</p>
+<p>Expects a string parameter containing (a part of) the data to deflate.</p>
+<p>Returns deflated data on success or FALSE on failure.</p>
+<h3 id="HttpDeflateStream_flush">string HttpDeflateStream::flush([string data])</h3>
+<p>Flushes the deflate stream.</p>
+<p>Returns some deflated data as string on success or FALSE on failure.</p>
+<h3 id="HttpDeflateStream_finish">string HttpDeflateStream::finish([string data])</h3>
+<p>Finalizes the deflate stream.  The deflate stream can be reused after finalizing.</p>
+<p>Returns the final part of deflated data.</p>
+<hr noshade>
+<h1 id="http_inflatestream_object.c">http_inflatestream_object.c</h1>
+<h3 id="HttpInflateStream_update">string HttpInflateStream::update(string data)</h3>
+<p>Passes more data through the inflate stream.</p>
+<p>Expects a string parameter containing (a part of) the data to inflate.</p>
+<p>Returns inflated data on success or FALSE on failure.</p>
+<h3 id="HttpInflateStream_flush">string HttpInflateStream::flush([string data])</h3>
+<p>Flush the inflate stream.</p>
+<p>Returns some inflated data as string on success or FALSE on failure.</p>
+<h3 id="HttpInflateStream_finish">string HttpInflateStream::finish([string data])</h3>
+<p>Finalizes the inflate stream.  The inflate stream can be reused after finalizing.</p>
+<p>Returns the final part of inflated data.</p>
 <hr noshade>
 <h1 id="http_message_object.c">http_message_object.c</h1>
 <h2 id="HttpMessage" class="o">HttpMessage</h2>
@@ -460,15 +470,15 @@ not of type HttpMessage::TYPE_REQUEST.</p>
 <p>Expects a string parameter containing the request method name.</p>
 <p>Returns TRUE on success, or FALSE if the message is not of type<br />
 HttpMessage::TYPE_REQUEST or an invalid request method was supplied.</p>
-<h3 id="HttpMessage_getRequestUri">string HttpMessage::getRequestUri()</h3>
-<p>Get the Request URI of the Message.</p>
-<p>Returns the request uri as string on success, or FALSE if the message<br />
+<h3 id="HttpMessage_getRequestUrl">string HttpMessage::getRequestUrl()</h3>
+<p>Get the Request URL of the Message.</p>
+<p>Returns the request url as string on success, or FALSE if the message<br />
 is not of type HttpMessage::TYPE_REQUEST.</p>
-<h3 id="HttpMessage_setRequestUri">bool HttpMessage::setRequestUri(string URI)</h3>
-<p>Set the Request URI of the HTTP Message.</p>
-<p>Expects a string parameters containing the request uri.</p>
+<h3 id="HttpMessage_setRequestUrl">bool HttpMessage::setRequestUrl(string url)</h3>
+<p>Set the Request URL of the HTTP Message.</p>
+<p>Expects a string parameters containing the request url.</p>
 <p>Returns TRUE on success, or FALSE if the message is not of type<br />
-HttpMessage::TYPE_REQUEST or supplied URI was empty.</p>
+HttpMessage::TYPE_REQUEST or supplied URL was empty.</p>
 <h3 id="HttpMessage_getHttpVersion">string HttpMessage::getHttpVersion()</h3>
 <p>Get the HTTP Protocol Version of the Message.</p>
 <p>Returns the HTTP protocol version as string.</p>
@@ -507,8 +517,6 @@ Additianally accepts an optional int parameter specifying the request method<br 
 to use and an associative array as optional third parameter which will be<br />
 passed to HttpRequest::setOptions(). </p>
 <p>Throws HttpException.</p>
-<h3 id="HttpRequest___destruct">void HttpRequest::__destruct()</h3>
-<p>Destroys the HttpRequest object.</p>
 <h3 id="HttpRequest_setOptions">bool HttpRequest::setOptions([array options])</h3>
 <p>Set the request options to use.  See http_get() for a full list of available options.</p>
 <p>Accepts an array as optional parameters, wich values will overwrite the <br />
@@ -719,6 +727,12 @@ request message received through HttpRequest::getRequestMessage() will<br />
 always look the same for the same request, regardless of any changes you<br />
 may have made to the returned object.</p>
 <p>Throws HttpMalformedHeadersException, HttpEncodingException.</p>
+<h3 id="HttpRequest_getRawRequestMessage">string HttpRequest::getRawRequestMessage()</h3>
+<p>Get sent HTTP message.</p>
+<p>Returns an HttpMessage in a form of a string</p>
+<h3 id="HttpRequest_getRawResponseMessage">string HttpRequest::getRawResponseMessage()</h3>
+<p>Get the entire HTTP response.</p>
+<p>Returns the complete web server response, including the headers in a form of a string.</p>
 <h3 id="HttpRequest_getHistory">HttpMessage HttpRequest::getHistory()</h3>
 <p>Get all sent requests and received responses as an HttpMessage object.</p>
 <p>If you don't want to record history at all, set the instance variable<br />
@@ -977,7 +991,7 @@ http.cache_log is set.</p>
 <ul>
 <li><a href="#http_date">http_date</a>
 </li>
-<li><a href="#http_build_uri">http_build_uri</a>
+<li><a href="#http_build_url">http_build_url</a>
 </li>
 <li><a href="#http_negotiate_language">http_negotiate_language</a>
 </li>
@@ -1049,15 +1063,32 @@ http.cache_log is set.</p>
 </li>
 <li><a href="#http_build_query">http_build_query</a>
 </li>
-<li><a href="#http_gzencode">http_gzencode</a>
-</li>
-<li><a href="#http_gzdecode">http_gzdecode</a>
-</li>
 <li><a href="#http_deflate">http_deflate</a>
 </li>
 <li><a href="#http_inflate">http_inflate</a>
 </li>
+<li><a href="#ob_deflatehandler">ob_deflatehandler</a>
+</li>
+<li><a href="#ob_inflatehandler">ob_inflatehandler</a>
+</li>
 <li><a href="#http_support">http_support</a>
+</li>
+</ul>
+</li>
+<li><a href="#http_deflatestream_object.c">http_deflatestream_object.c
+<ul>
+<li><a href="#HttpDeflateStream___construct">HttpDeflateStream::__construct()</a></li>
+<li><a href="#HttpDeflateStream_update">HttpDeflateStream::update()</a></li>
+<li><a href="#HttpDeflateStream_flush">HttpDeflateStream::flush()</a></li>
+<li><a href="#HttpDeflateStream_finish">HttpDeflateStream::finish()</a></li>
+</li>
+</ul>
+</li>
+<li><a href="#http_inflatestream_object.c">http_inflatestream_object.c
+<ul>
+<li><a href="#HttpInflateStream_update">HttpInflateStream::update()</a></li>
+<li><a href="#HttpInflateStream_flush">HttpInflateStream::flush()</a></li>
+<li><a href="#HttpInflateStream_finish">HttpInflateStream::finish()</a></li>
 </li>
 </ul>
 </li>
@@ -1076,8 +1107,8 @@ http.cache_log is set.</p>
 <li><a href="#HttpMessage_setResponseCode">HttpMessage::setResponseCode()</a></li>
 <li><a href="#HttpMessage_getRequestMethod">HttpMessage::getRequestMethod()</a></li>
 <li><a href="#HttpMessage_setRequestMethod">HttpMessage::setRequestMethod()</a></li>
-<li><a href="#HttpMessage_getRequestUri">HttpMessage::getRequestUri()</a></li>
-<li><a href="#HttpMessage_setRequestUri">HttpMessage::setRequestUri()</a></li>
+<li><a href="#HttpMessage_getRequestUrl">HttpMessage::getRequestUrl()</a></li>
+<li><a href="#HttpMessage_setRequestUrl">HttpMessage::setRequestUrl()</a></li>
 <li><a href="#HttpMessage_getHttpVersion">HttpMessage::getHttpVersion()</a></li>
 <li><a href="#HttpMessage_setHttpVersion">HttpMessage::setHttpVersion()</a></li>
 <li><a href="#HttpMessage_getParentMessage">HttpMessage::getParentMessage()</a></li>
@@ -1092,7 +1123,6 @@ http.cache_log is set.</p>
 <li><a href="#http_request_object.c">http_request_object.c
 <ul>
 <li><a href="#HttpRequest___construct">HttpRequest::__construct()</a></li>
-<li><a href="#HttpRequest___destruct">HttpRequest::__destruct()</a></li>
 <li><a href="#HttpRequest_setOptions">HttpRequest::setOptions()</a></li>
 <li><a href="#HttpRequest_getOptions">HttpRequest::getOptions()</a></li>
 <li><a href="#HttpRequest_setSslOptions">HttpRequest::setSslOptions()</a></li>
@@ -1132,6 +1162,8 @@ http.cache_log is set.</p>
 <li><a href="#HttpRequest_getResponseInfo">HttpRequest::getResponseInfo()</a></li>
 <li><a href="#HttpRequest_getResponseMessage">HttpRequest::getResponseMessage()</a></li>
 <li><a href="#HttpRequest_getRequestMessage">HttpRequest::getRequestMessage()</a></li>
+<li><a href="#HttpRequest_getRawRequestMessage">HttpRequest::getRawRequestMessage()</a></li>
+<li><a href="#HttpRequest_getRawResponseMessage">HttpRequest::getRawResponseMessage()</a></li>
 <li><a href="#HttpRequest_getHistory">HttpRequest::getHistory()</a></li>
 <li><a href="#HttpRequest_clearHistory">HttpRequest::clearHistory()</a></li>
 <li><a href="#HttpRequest_send">HttpRequest::send()</a></li>
@@ -1195,7 +1227,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Wed, 14 Dec 2005 16:25:48 +0100</b></p>
+    <p><b>Generated at: Tue, 03 Jan 2006 20:04:51 +0100</b></p>
 </body>
 </html>
 

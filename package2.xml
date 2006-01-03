@@ -35,7 +35,7 @@ HttpResponse
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2005-00-00</date>
+ <date>2006-00-00</date>
  <version>
   <release>0.21.0</release>
   <api>0.21.0</api>
@@ -179,6 +179,11 @@ Special thanks for this release go to Ilia Alshanetsky.
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>
     <file role="test" name="HttpRequest_004.phpt"/>
+    <file role="test" name="HttpRequest_005.phpt"/>
+    <file role="test" name="HttpRequest_006.phpt"/>
+    <file role="test" name="HttpRequest_007.phpt"/>
+    <file role="test" name="HttpRequest_008.phpt"/>
+    <file role="test" name="HttpRequest_009.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
     <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequestPool_003.phpt"/>
@@ -192,7 +197,7 @@ Special thanks for this release go to Ilia Alshanetsky.
     <file role="test" name="match_request_header_001.phpt"/>
     <file role="test" name="negotiation_001.phpt"/>
     <file role="test" name="ob_deflatehandler_001.phpt"/>
-    <file role="test" name="ob_inflatehandler_002.phpt"/>
+    <file role="test" name="ob_inflatehandler_001.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
     <file role="test" name="parse_message_001.phpt"/>
     <file role="test" name="parse_message_002.phpt"/>
@@ -213,7 +218,6 @@ Special thanks for this release go to Ilia Alshanetsky.
     <file role="test" name="redirect_013_logging.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="request_methods.phpt"/>
-    <file role="test" name="stream_filters_001.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
     <file role="test" name="send_data_002.phpt"/>
     <file role="test" name="send_data_003.phpt"/>
@@ -238,6 +242,11 @@ Special thanks for this release go to Ilia Alshanetsky.
     <file role="test" name="send_file_011.phpt"/>
     <file role="test" name="send_file_012.phpt"/>
     <file role="test" name="send_file_013.phpt"/>
+    <file role="test" name="stream_filters_001.phpt"/>
+    <file role="test" name="stream_filters_002.phpt"/>
+    <file role="test" name="stream_filters_003.phpt"/>
+    <file role="test" name="ut_HttpMessage.phpt"/>
+    <file role="test" name="ut_HttpUtil.phpt"/>
    </dir>
   </dir>
  </contents>
