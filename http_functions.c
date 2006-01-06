@@ -666,7 +666,7 @@ PHP_FUNCTION(http_redirect)
 	size_t query_len = 0;
 	zend_bool session = 0, free_params = 0;
 	zval *params = NULL;
-	long status = 0;
+	long status = HTTP_REDIRECT_AUTO;
 	char *query = NULL, *url = NULL, *URI, *LOC, *RED = NULL;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sa!/bl", &url, &url_len, &params, &session, &status) != SUCCESS) {
@@ -721,7 +721,13 @@ PHP_FUNCTION(http_redirect)
 		zval_dtor(params);
 		FREE_ZVAL(params);
 	}
-
+	
+#ifndef ZEND_ENGINE_2
+	if (!status && SG(request_info).request_method && !strcasecmp(SG(request_info).request_method, "POST")) {
+		status = HTTP_REDIRECT_POST;
+	}
+#endif
+	
 	RETURN_SUCCESS(http_exit_ex(status, LOC, RED, 1));
 }
 /* }}} */
