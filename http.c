@@ -29,7 +29,7 @@
 #include "php_http_api.h"
 #include "php_http_send_api.h"
 #include "php_http_cache_api.h"
-#include "php_http_headers_api.h"
+#include "php_http_send_api.h"
 #include "php_http_message_api.h"
 #include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
@@ -235,7 +235,7 @@ PHP_MINIT_FUNCTION(http)
 	REGISTER_INI_ENTRIES();
 	
 	if (	(SUCCESS != PHP_MINIT_CALL(http_support))	||
-			(SUCCESS != PHP_MINIT_CALL(http_headers))	||
+			(SUCCESS != PHP_MINIT_CALL(http_send))		||
 #ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #endif /* HTTP_HAVE_CURL */

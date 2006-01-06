@@ -20,6 +20,14 @@ typedef enum {
 	SEND_RSRC
 } http_send_mode;
 
+#define HTTP_REDIRECT		302L
+#define HTTP_REDIRECT_AUTO	  0L
+#define HTTP_REDIRECT_PERM	301L
+#define HTTP_REDIRECT_POST	303L
+#define HTTP_REDIRECT_TEMP	307L
+
+extern PHP_MINIT_FUNCTION(http_send);
+
 #define http_send_status(s) sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) (s) TSRMLS_CC)
 #define http_send_header(n, v, r) _http_send_header_ex((n), strlen(n), (v), strlen(v), (r) TSRMLS_CC)
 #define http_send_header_ex(n, nl, v, vl, r, s) _http_send_header_ex((n), (nl), (v), (vl), (r), (s) TSRMLS_CC)

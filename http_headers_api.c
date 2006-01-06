@@ -28,18 +28,6 @@
 #	define HTTP_DBG_NEG 0
 #endif
 
-/* {{{ */
-PHP_MINIT_FUNCTION(http_headers)
-{
-	HTTP_LONG_CONSTANT("HTTP_REDIRECT", HTTP_REDIRECT);
-	HTTP_LONG_CONSTANT("HTTP_REDIRECT_PERM", HTTP_REDIRECT_PERM);
-	HTTP_LONG_CONSTANT("HTTP_REDIRECT_POST", HTTP_REDIRECT_POST);
-	HTTP_LONG_CONSTANT("HTTP_REDIRECT_TEMP", HTTP_REDIRECT_TEMP);
-	
-	return SUCCESS;
-}
-/* }}} */
-
 /* {{{ static int http_sort_q(const void *, const void *) */
 static int http_sort_q(const void *a, const void *b TSRMLS_DC)
 {

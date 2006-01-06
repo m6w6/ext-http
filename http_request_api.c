@@ -88,6 +88,10 @@ PHP_MINIT_FUNCTION(http_request)
 	HTTP_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST);
 	HTTP_LONG_CONSTANT("HTTP_AUTH_NTLM", CURLAUTH_NTLM);
 	HTTP_LONG_CONSTANT("HTTP_AUTH_ANY", CURLAUTH_ANY);
+	
+	HTTP_LONG_CONSTANT("HTTP_VERSION_NONE", CURL_HTTP_VERSION_NONE);
+	HTTP_LONG_CONSTANT("HTTP_VERSION_1_0", CURL_HTTP_VERSION_1_0);
+	HTTP_LONG_CONSTANT("HTTP_VERSION_1_1", CURL_HTTP_VERSION_1_1);
 
 	return SUCCESS;
 }
@@ -405,14 +409,17 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* proxy */
 	if ((zoption = http_request_option(request, options, "proxyhost", IS_STRING))) {
-		HTTP_CURL_OPT(PROXY, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
+		if (Z_STRLEN_P(zoption)) {
+			HTTP_CURL_OPT(PROXY, Z_STRVAL_P(zoption));
+		}
+
 		/* port */
 		if ((zoption = http_request_option(request, options, "proxyport", IS_LONG))) {
 			HTTP_CURL_OPT(PROXYPORT, Z_LVAL_P(zoption));
 		}
 		/* user:pass */
-		if ((zoption = http_request_option(request, options, "proxyauth", IS_STRING))) {
-			HTTP_CURL_OPT(PROXYUSERPWD, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
+		if ((zoption = http_request_option(request, options, "proxyauth", IS_STRING)) && Z_STRLEN_P(zoption)) {
+			HTTP_CURL_OPT(PROXYUSERPWD, Z_STRVAL_P(zoption));
 		}
 		/* auth method */
 		if ((zoption = http_request_option(request, options, "proxyauthtype", IS_LONG))) {
@@ -431,8 +438,8 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	}
 
 	/* auth */
-	if ((zoption = http_request_option(request, options, "httpauth", IS_STRING))) {
-		HTTP_CURL_OPT(USERPWD, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
+	if ((zoption = http_request_option(request, options, "httpauth", IS_STRING)) && Z_STRLEN_P(zoption)) {
+		HTTP_CURL_OPT(USERPWD, Z_STRVAL_P(zoption));
 	}
 	if ((zoption = http_request_option(request, options, "httpauthtype", IS_LONG))) {
 		HTTP_CURL_OPT(HTTPAUTH, Z_LVAL_P(zoption));
@@ -448,13 +455,13 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	}
 
 	/* referer */
-	if ((zoption = http_request_option(request, options, "referer", IS_STRING))) {
-		HTTP_CURL_OPT(REFERER, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
+	if ((zoption = http_request_option(request, options, "referer", IS_STRING)) && Z_STRLEN_P(zoption)) {
+		HTTP_CURL_OPT(REFERER, Z_STRVAL_P(zoption));
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
-	if ((zoption = http_request_option(request, options, "useragent", IS_STRING))) {
-		HTTP_CURL_OPT(USERAGENT, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
+	if ((zoption = http_request_option(request, options, "useragent", IS_STRING)) && Z_STRLEN_P(zoption)) {
+		HTTP_CURL_OPT(USERAGENT, Z_STRVAL_P(zoption));
 	}
 
 	/* additional headers, array('name' => 'value') */
@@ -498,8 +505,6 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				phpstr_fix(&request->_cache.cookies);
 				HTTP_CURL_OPT(COOKIE, request->_cache.cookies.data);
 			}
-		} else {
-			HTTP_CURL_OPT(COOKIE, NULL);
 		}
 	}
 

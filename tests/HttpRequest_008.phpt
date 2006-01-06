@@ -21,7 +21,7 @@ echo "Done\n";
 --EXPECTF--
 %sTEST
 int(200)
-string(189) "FOOBAR /.print_request.php HTTP/1.1
+string(%d) "FOOBAR /.print_request.php HTTP/1.1
 User-Agent: %s
 Host: dev.iworks.at
 Accept: */*

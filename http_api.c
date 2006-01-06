@@ -206,9 +206,7 @@ void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)
 {
 	time_t now;
 	struct tm nowtm;
-	char datetime[128];
-	
-	HTTP_CHECK_OPEN_BASEDIR(file, return);
+	char datetime[20] = {0};
 	
 	time(&now);
 	strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", php_localtime_r(&now, &nowtm));

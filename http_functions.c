@@ -643,6 +643,7 @@ PHP_FUNCTION(http_throttle)
  * The HTTP response code will be set according to status.
  * You can use one of the following constants for convenience:
  *  - HTTP_REDIRECT			302 Found
+ *  - HTTP_REDIRECT_AUTO	303 See Other for POST, else 302 Found
  *  - HTTP_REDIRECT_PERM	301 Moved Permanently
  *  - HTTP_REDIRECT_POST	303 See Other
  *  - HTTP_REDIRECT_TEMP	307 Temporary Redirect
@@ -665,7 +666,7 @@ PHP_FUNCTION(http_redirect)
 	size_t query_len = 0;
 	zend_bool session = 0, free_params = 0;
 	zval *params = NULL;
-	long status = 302;
+	long status = 0;
 	char *query = NULL, *url = NULL, *URI, *LOC, *RED = NULL;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sa!/bl", &url, &url_len, &params, &session, &status) != SUCCESS) {

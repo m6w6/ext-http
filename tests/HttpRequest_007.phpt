@@ -19,8 +19,8 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-string(467) "PUT /.print_request.php HTTP/1.1
-User-Agent: PECL::HTTP/0.21.0dev (PHP/5.1.2-dev)
+string(%d) "PUT /.print_request.php HTTP/1.1
+User-Agent: %s
 Host: dev.iworks.at
 Accept: */*
 content-type: text/plain

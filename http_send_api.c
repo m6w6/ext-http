@@ -175,6 +175,19 @@ static inline void _http_send_response_finish(void **buffer TSRMLS_DC)
 }
 /* }}} */
 
+/* {{{ */
+PHP_MINIT_FUNCTION(http_send)
+{
+	HTTP_LONG_CONSTANT("HTTP_REDIRECT", HTTP_REDIRECT);
+	HTTP_LONG_CONSTANT("HTTP_REDIRECT_AUTO", HTTP_REDIRECT_AUTO);
+	HTTP_LONG_CONSTANT("HTTP_REDIRECT_PERM", HTTP_REDIRECT_PERM);
+	HTTP_LONG_CONSTANT("HTTP_REDIRECT_POST", HTTP_REDIRECT_POST);
+	HTTP_LONG_CONSTANT("HTTP_REDIRECT_TEMP", HTTP_REDIRECT_TEMP);
+	
+	return SUCCESS;
+}
+/* }}} */
+
 
 /* {{{ STATUS http_send_header(char *, char *, zend_bool) */
 PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace, char **sent_header TSRMLS_DC)
