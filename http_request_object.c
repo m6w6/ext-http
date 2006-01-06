@@ -403,6 +403,11 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	/* WebDAV Access Control - RFC 3744 */
 	DCL_CONST(long, "METH_ACL", HTTP_ACL);
 
+	/* cURL HTTP protocol versions */
+	DCL_CONST(long, "VERSION_1_0", CURL_HTTP_VERSION_1_0);
+	DCL_CONST(long, "VERSION_1_1", CURL_HTTP_VERSION_1_1);
+	DCL_CONST(long, "VERSION_NONE", CURL_HTTP_VERSION_NONE);
+
 	/*
 	 * Auth Constants
 	 */

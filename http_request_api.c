@@ -358,6 +358,7 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(IOCTLDATA, NULL);
 		HTTP_CURL_OPT(READDATA, NULL);
 		HTTP_CURL_OPT(INFILESIZE, 0);
+		HTTP_CURL_OPT(HTTP_VERSION, CURL_HTTP_VERSION_NONE);
 	}
 }
 /* }}} */
@@ -534,6 +535,11 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		HTTP_CURL_OPT(MAXFILESIZE, Z_LVAL_P(zoption));
 	}
 
+	/* http protocol */
+	if ((zoption = http_request_option(request, options, "protocol", IS_LONG))) {
+		HTTP_CURL_OPT(HTTP_VERSION, Z_LVAL_P(zoption));
+	}
+
 	/* lastmodified */
 	if ((zoption = http_request_option(request, options, "lastmodified", IS_LONG))) {
 		if (Z_LVAL_P(zoption)) {
@@ -623,7 +629,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	}
 
 	/* attach request body */
-	if (request->body && (request->meth != HTTP_GET) && (request->meth != HTTP_HEAD)) {
+	if (request->body && (request->meth != HTTP_GET) && (request->meth != HTTP_HEAD) && (request->meth != HTTP_OPTIONS)) {
 		switch (request->body->type)
 		{
 			case HTTP_REQUEST_BODY_CSTRING:
