@@ -405,14 +405,14 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* proxy */
 	if ((zoption = http_request_option(request, options, "proxyhost", IS_STRING))) {
-		HTTP_CURL_OPT(PROXY, Z_STRVAL_P(zoption));
+		HTTP_CURL_OPT(PROXY, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
 		/* port */
 		if ((zoption = http_request_option(request, options, "proxyport", IS_LONG))) {
 			HTTP_CURL_OPT(PROXYPORT, Z_LVAL_P(zoption));
 		}
 		/* user:pass */
 		if ((zoption = http_request_option(request, options, "proxyauth", IS_STRING))) {
-			HTTP_CURL_OPT(PROXYUSERPWD, Z_STRVAL_P(zoption));
+			HTTP_CURL_OPT(PROXYUSERPWD, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
 		}
 		/* auth method */
 		if ((zoption = http_request_option(request, options, "proxyauthtype", IS_LONG))) {
@@ -432,7 +432,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* auth */
 	if ((zoption = http_request_option(request, options, "httpauth", IS_STRING))) {
-		HTTP_CURL_OPT(USERPWD, Z_STRVAL_P(zoption));
+		HTTP_CURL_OPT(USERPWD, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
 	}
 	if ((zoption = http_request_option(request, options, "httpauthtype", IS_LONG))) {
 		HTTP_CURL_OPT(HTTPAUTH, Z_LVAL_P(zoption));
@@ -449,12 +449,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* referer */
 	if ((zoption = http_request_option(request, options, "referer", IS_STRING))) {
-		HTTP_CURL_OPT(REFERER, Z_STRVAL_P(zoption));
+		HTTP_CURL_OPT(REFERER, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
 	if ((zoption = http_request_option(request, options, "useragent", IS_STRING))) {
-		HTTP_CURL_OPT(USERAGENT, Z_STRVAL_P(zoption));
+		HTTP_CURL_OPT(USERAGENT, (Z_STRLEN_P(zoption) ? Z_STRVAL_P(zoption) : NULL));
 	}
 
 	/* additional headers, array('name' => 'value') */
@@ -493,9 +493,13 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	/* cookies, array('name' => 'value') */
 	if ((zoption = http_request_option(request, options, "cookies", IS_ARRAY))) {
 		phpstr_dtor(&request->_cache.cookies);
-		if (SUCCESS == http_urlencode_hash_recursive(HASH_OF(zoption), &request->_cache.cookies, "; ", sizeof("; ")-1, NULL, 0)) {
-			phpstr_fix(&request->_cache.cookies);
-			HTTP_CURL_OPT(COOKIE, request->_cache.cookies.data);
+		if (zend_hash_num_elements(Z_ARRVAL_P(zoption))) {
+			if (SUCCESS == http_urlencode_hash_recursive(HASH_OF(zoption), &request->_cache.cookies, "; ", sizeof("; ")-1, NULL, 0)) {
+				phpstr_fix(&request->_cache.cookies);
+				HTTP_CURL_OPT(COOKIE, request->_cache.cookies.data);
+			}
+		} else {
+			HTTP_CURL_OPT(COOKIE, NULL);
 		}
 	}
 
