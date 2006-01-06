@@ -937,7 +937,7 @@ static int http_ssl_mutex_unlock(void **m)
 }
 
 static struct gcry_thread_cbs http_gnutls_tsl = {
-	GCRY_THREAD_OPTIONS_USER,
+	GCRY_THREAD_OPTION_USER,
 	NULL,
 	http_ssl_mutex_create,
 	http_ssl_mutex_destroy,
