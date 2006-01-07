@@ -629,22 +629,38 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	switch (request->meth)
 	{
 		case HTTP_GET:
+			HTTP_CURL_OPT(NOBODY, 0);
+			HTTP_CURL_OPT(POST, 0);
+			HTTP_CURL_OPT(UPLOAD, 0);
 			HTTP_CURL_OPT(HTTPGET, 1);
 		break;
 
 		case HTTP_HEAD:
+			HTTP_CURL_OPT(POST, 0);
+			HTTP_CURL_OPT(UPLOAD, 0);
+			HTTP_CURL_OPT(HTTPGET, 0);
 			HTTP_CURL_OPT(NOBODY, 1);
 		break;
 
 		case HTTP_POST:
+			HTTP_CURL_OPT(UPLOAD, 0);
+			HTTP_CURL_OPT(HTTPGET, 0);
+			HTTP_CURL_OPT(NOBODY, 0);
 			HTTP_CURL_OPT(POST, 1);
 		break;
 
 		case HTTP_PUT:
+			HTTP_CURL_OPT(HTTPGET, 0);
+			HTTP_CURL_OPT(NOBODY, 0);
+			HTTP_CURL_OPT(POST, 0);
 			HTTP_CURL_OPT(UPLOAD, 1);
 		break;
 
 		default:
+			HTTP_CURL_OPT(HTTPGET, 0);
+			HTTP_CURL_OPT(NOBODY, 0);
+			HTTP_CURL_OPT(POST, 0);
+			HTTP_CURL_OPT(UPLOAD, 0);
 			if (http_request_method_exists(0, request->meth, NULL)) {
 				HTTP_CURL_OPT(CUSTOMREQUEST, http_request_method_name(request->meth));
 			} else {
