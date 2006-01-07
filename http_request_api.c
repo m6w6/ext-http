@@ -658,6 +658,10 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	if (request->body && (request->meth != HTTP_GET) && (request->meth != HTTP_HEAD) && (request->meth != HTTP_OPTIONS)) {
 		switch (request->body->type)
 		{
+			case HTTP_REQUEST_BODY_EMPTY:
+				/* nothing */
+			break;
+			
 			case HTTP_REQUEST_BODY_CSTRING:
 				HTTP_CURL_OPT(POSTFIELDS, request->body->data);
 				HTTP_CURL_OPT(POSTFIELDSIZE, request->body->size);
