@@ -337,8 +337,10 @@ zend_object_value _http_request_object_clone_obj(zval *this_ptr TSRMLS_DC)
 	getObject(http_request_object, old_obj);
 	
 	old_zo = zend_objects_get_address(this_ptr TSRMLS_CC);
-	new_ov = http_request_object_new_ex(old_zo->ce, curl_easy_duphandle(old_obj->request->ch), &new_obj);
-	http_curl_init_ex(new_obj->request->ch, new_obj->request, new_obj->request->_error);
+	new_ov = http_request_object_new_ex(old_zo->ce, NULL, &new_obj);
+	if (old_obj->request->ch) {
+		new_obj->request->ch = http_curl_init_ex(curl_easy_duphandle(old_obj->request->ch), new_obj->request, new_obj->request->_error);
+	}
 	
 	zend_objects_clone_members(&new_obj->zo, new_ov, old_zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
 	phpstr_append(&new_obj->history, old_obj->history.data, old_obj->history.used);
