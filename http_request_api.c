@@ -477,8 +477,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
-	if ((zoption = http_request_option(request, options, "useragent", IS_STRING)) && Z_STRLEN_P(zoption)) {
-		HTTP_CURL_OPT(USERAGENT, Z_STRVAL_P(zoption));
+	if ((zoption = http_request_option(request, options, "useragent", IS_STRING))) {
+		if (Z_STRLEN_P(zoption)) {
+			HTTP_CURL_OPT(USERAGENT, Z_STRVAL_P(zoption));
+		} else {
+			HTTP_CURL_OPT(USERAGENT, NULL);
+		}
 	}
 
 	/* additional headers, array('name' => 'value') */
