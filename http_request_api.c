@@ -168,7 +168,8 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 		} \
 	}
 
-#define HTTP_CURL_OPT(OPTION, p) curl_easy_setopt(request->ch, CURLOPT_##OPTION, (p))
+#define HTTP_CURL_OPT(OPTION, p) HTTP_CURL_OPT_EX(request->ch, OPTION, (p))
+#define HTTP_CURL_OPT_EX(ch, OPTION, p) curl_easy_setopt((ch), CURLOPT_##OPTION, (p))
 #define HTTP_CURL_OPT_STRING(keyname, obdc) HTTP_CURL_OPT_STRING_EX(keyname, keyname, obdc)
 #define HTTP_CURL_OPT_SSL_STRING(keyname, obdc) HTTP_CURL_OPT_STRING_EX(keyname, SSL##keyname, obdc)
 #define HTTP_CURL_OPT_SSL_STRING_(keyname,obdc ) HTTP_CURL_OPT_STRING_EX(keyname, SSL_##keyname, obdc)
@@ -209,6 +210,46 @@ static int http_curl_dummy_callback(char *data, size_t n, size_t l, void *s) { r
 static curlioerr http_curl_ioctl_callback(CURL *, curliocmd, void *);
 /* }}} */
 
+/* {{{ CURL *http_curl_init(http_request *) */
+PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, void *context, char *error_buffer)
+{
+	if (ch || (ch = curl_easy_init())) {
+#if defined(ZTS)
+		HTTP_CURL_OPT_EX(ch, NOSIGNAL, 1);
+#endif
+		HTTP_CURL_OPT_EX(ch, HEADER, 0);
+		HTTP_CURL_OPT_EX(ch, FILETIME, 1);
+		HTTP_CURL_OPT_EX(ch, AUTOREFERER, 1);
+		HTTP_CURL_OPT_EX(ch, VERBOSE, 1);
+		HTTP_CURL_OPT_EX(ch, HEADERFUNCTION, NULL);
+		HTTP_CURL_OPT_EX(ch, DEBUGFUNCTION, http_curl_raw_callback);
+		HTTP_CURL_OPT_EX(ch, READFUNCTION, http_curl_read_callback);
+		HTTP_CURL_OPT_EX(ch, IOCTLFUNCTION, http_curl_ioctl_callback);
+		HTTP_CURL_OPT_EX(ch, WRITEFUNCTION, http_curl_dummy_callback);
+		HTTP_CURL_OPT_EX(ch, DEBUGDATA, context);
+		HTTP_CURL_OPT_EX(ch, PRIVATE, context);
+		HTTP_CURL_OPT_EX(ch, ERRORBUFFER, error_buffer);
+	}
+	
+	return ch;
+}
+/* }}} */
+
+/* {{{ void http_curl_free(CURL **) */
+PHP_HTTP_API void _http_curl_free(CURL **ch)
+{
+	if (*ch) {
+		/* avoid nasty segfaults with already cleaned up callbacks */
+		HTTP_CURL_OPT_EX(*ch, NOPROGRESS, 1);
+		HTTP_CURL_OPT_EX(*ch, PROGRESSFUNCTION, NULL);
+		HTTP_CURL_OPT_EX(*ch, VERBOSE, 0);
+		HTTP_CURL_OPT_EX(*ch, DEBUGFUNCTION, NULL);
+		curl_easy_cleanup(*ch);
+		*ch = NULL;
+	}
+}
+/* }}} */
+
 /* {{{ http_request *http_request_init(http_request *) */
 PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch, http_request_method meth, const char *url ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
@@ -241,16 +282,7 @@ PHP_HTTP_API void _http_request_dtor(http_request *request)
 {
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
-	if (request->ch) {
-		/* avoid nasty segfaults with already cleaned up callbacks */
-		HTTP_CURL_OPT(NOPROGRESS, 1);
-		HTTP_CURL_OPT(PROGRESSFUNCTION, NULL);
-		HTTP_CURL_OPT(VERBOSE, 0);
-		HTTP_CURL_OPT(DEBUGFUNCTION, NULL);
-		curl_easy_cleanup(request->ch);
-		request->ch = NULL;
-	}
-	
+	http_curl_free(&request->ch);
 	http_request_reset(request);
 	
 	phpstr_dtor(&request->_cache.cookies);
@@ -288,6 +320,10 @@ PHP_HTTP_API void _http_request_reset(http_request *request)
 	phpstr_dtor(&request->conv.request);
 	phpstr_dtor(&request->conv.response);
 	http_request_body_dtor(request->body);
+	
+	if (request->ch) {
+		http_request_defaults(request);
+	}
 }
 /* }}} */
 
@@ -295,23 +331,6 @@ PHP_HTTP_API void _http_request_reset(http_request *request)
 PHP_HTTP_API void _http_request_defaults(http_request *request)
 {
 	if (request->ch) {
-#ifdef HAVE_CURL_EASY_RESET
-		curl_easy_reset(request->ch);
-#endif
-#if defined(ZTS)
-		HTTP_CURL_OPT(NOSIGNAL, 1);
-#endif
-		HTTP_CURL_OPT(PRIVATE, request);
-		HTTP_CURL_OPT(ERRORBUFFER, request->_error);
-		HTTP_CURL_OPT(HEADER, 0);
-		HTTP_CURL_OPT(FILETIME, 1);
-		HTTP_CURL_OPT(AUTOREFERER, 1);
-		HTTP_CURL_OPT(VERBOSE, 1);
-		HTTP_CURL_OPT(HEADERFUNCTION, NULL);
-		HTTP_CURL_OPT(DEBUGFUNCTION, http_curl_raw_callback);
-		HTTP_CURL_OPT(READFUNCTION, http_curl_read_callback);
-		HTTP_CURL_OPT(IOCTLFUNCTION, http_curl_ioctl_callback);
-		HTTP_CURL_OPT(WRITEFUNCTION, http_curl_dummy_callback);
 		HTTP_CURL_OPT(PROGRESSFUNCTION, NULL);
 		HTTP_CURL_OPT(URL, NULL);
 		HTTP_CURL_OPT(NOPROGRESS, 1);
@@ -394,12 +413,10 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
-	HTTP_CHECK_CURL_INIT(request->ch, curl_easy_init(), return FAILURE);
-	
+	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init(request), return FAILURE);
 	http_request_defaults(request);
 	
 	/* set options */
-	HTTP_CURL_OPT(DEBUGDATA, request);
 	HTTP_CURL_OPT(URL, request->url);
 
 	/* progress callback */

@@ -50,6 +50,13 @@ typedef struct {
 
 } http_request;
 
+#define http_curl_init(r) http_curl_init_ex(NULL, (r), (r)->_error)
+#define http_curl_init_ex(c, r, e) _http_curl_init_ex((c), (r), (e))
+PHP_HTTP_API CURL *_http_curl_init_ex(CURL *ch, void *context, char *error_buffer);
+
+#define http_curl_free(c) _http_curl_free(c)
+PHP_HTTP_API void _http_curl_free(CURL **ch);
+
 #define http_request_new() _http_request_init_ex(NULL, NULL, 0, NULL ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 #define http_request_init(r) _http_request_init_ex((r), NULL, 0, NULL ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 #define http_request_init_ex(r, c, m, u) _http_request_init_ex((r), (c), (m), (u) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
