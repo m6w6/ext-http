@@ -503,8 +503,10 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 				fields = (Z_TYPE_P(zfields) == IS_ARRAY) ? Z_ARRVAL_P(zfields) : NULL;
 				files = (Z_TYPE_P(zfiles) == IS_ARRAY) ? Z_ARRVAL_P(zfiles) : NULL;
 				
-				if (!(obj->request->body = http_request_body_fill(obj->request->body, fields, files))) {
-					status = FAILURE;
+				if ((fields && zend_hash_num_elements(fields)) || (files && zend_hash_num_elements(files))) {
+					if (!(obj->request->body = http_request_body_fill(obj->request->body, fields, files))) {
+						status = FAILURE;
+					}
 				}
 			}
 		}
