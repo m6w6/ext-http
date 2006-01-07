@@ -20,10 +20,11 @@ typedef enum {
 	SEND_RSRC
 } http_send_mode;
 
-#define HTTP_REDIRECT		302L
-#define HTTP_REDIRECT_AUTO	  0L
+#define HTTP_REDIRECT		  0L
 #define HTTP_REDIRECT_PERM	301L
+#define HTTP_REDIRECT_FOUND	302L
 #define HTTP_REDIRECT_POST	303L
+#define HTTP_REDIRECT_PROXY	305L
 #define HTTP_REDIRECT_TEMP	307L
 
 extern PHP_MINIT_FUNCTION(http_send);

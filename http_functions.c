@@ -642,10 +642,11 @@ PHP_FUNCTION(http_throttle)
  *
  * The HTTP response code will be set according to status.
  * You can use one of the following constants for convenience:
- *  - HTTP_REDIRECT			302 Found
- *  - HTTP_REDIRECT_AUTO	303 See Other for POST, else 302 Found
+ *  - HTTP_REDIRECT			302 Found for GET/HEAD, else 303 See Other
  *  - HTTP_REDIRECT_PERM	301 Moved Permanently
+ *  - HTTP_REDIRECT_FOUND	302 Found
  *  - HTTP_REDIRECT_POST	303 See Other
+ *  - HTTP_REDIRECT_PROXY	305 Use Proxy
  *  - HTTP_REDIRECT_TEMP	307 Temporary Redirect
  *
  * Please see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3
@@ -666,7 +667,7 @@ PHP_FUNCTION(http_redirect)
 	size_t query_len = 0;
 	zend_bool session = 0, free_params = 0;
 	zval *params = NULL;
-	long status = HTTP_REDIRECT_AUTO;
+	long status = HTTP_REDIRECT;
 	char *query = NULL, *url = NULL, *URI, *LOC, *RED = NULL;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sa!/bl", &url, &url_len, &params, &session, &status) != SUCCESS) {
@@ -707,10 +708,14 @@ PHP_FUNCTION(http_redirect)
 
 	if (query_len) {
 		spprintf(&LOC, 0, "Location: %s?%s", URI, query);
-		spprintf(&RED, 0, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);
+		if (status != 300) {
+			spprintf(&RED, 0, "Redirecting to <a href=\"%s?%s\">%s?%s</a>.\n", URI, query, URI, query);
+		}
 	} else {
 		spprintf(&LOC, 0, "Location: %s", URI);
-		spprintf(&RED, 0, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
+		if (status != 300) {
+			spprintf(&RED, 0, "Redirecting to <a href=\"%s\">%s</a>.\n", URI, URI);
+		}
 	}
 	
 	efree(URI);
@@ -722,11 +727,34 @@ PHP_FUNCTION(http_redirect)
 		FREE_ZVAL(params);
 	}
 	
-#ifndef ZEND_ENGINE_2
-	if (!status && SG(request_info).request_method && !strcasecmp(SG(request_info).request_method, "POST")) {
-		status = HTTP_REDIRECT_POST;
+	switch (status)
+	{
+		case 300:
+			RETVAL_SUCCESS(http_send_status_header(status, LOC));
+			efree(LOC);
+			return;
+		break;
+		
+		case HTTP_REDIRECT_PERM:
+		case HTTP_REDIRECT_FOUND:
+		case HTTP_REDIRECT_POST:
+		case HTTP_REDIRECT_PROXY:
+		case HTTP_REDIRECT_TEMP:
+		break;
+		
+		case 306:
+		default:
+			http_error_ex(HE_NOTICE, HTTP_E_RUNTIME, "Unsupported redirection status code: %ld", status);
+		case HTTP_REDIRECT:
+			if (	SG(request_info).request_method && 
+					strcasecmp(SG(request_info).request_method, "HEAD") &&
+					strcasecmp(SG(request_info).request_method, "GET")) {
+				status = HTTP_REDIRECT_POST;
+			} else {
+				status = HTTP_REDIRECT_FOUND;
+			}
+		break;
 	}
-#endif
 	
 	RETURN_SUCCESS(http_exit_ex(status, LOC, RED, 1));
 }

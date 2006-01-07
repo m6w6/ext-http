@@ -254,6 +254,7 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		case 301:	http_log(HTTP_G(log).redirect, "301-REDIRECT", header);			break;
 		case 302:	http_log(HTTP_G(log).redirect, "302-REDIRECT", header);			break;
 		case 303:	http_log(HTTP_G(log).redirect, "303-REDIRECT", header);			break;
+		case 305:	http_log(HTTP_G(log).redirect, "305-REDIRECT", header);			break;
 		case 307:	http_log(HTTP_G(log).redirect, "307-REDIRECT", header);			break;
 		case 304:	http_log(HTTP_G(log).cache, "304-CACHE", header);				break;
 		case 405:	http_log(HTTP_G(log).allowed_methods, "405-ALLOWED", header);	break;
