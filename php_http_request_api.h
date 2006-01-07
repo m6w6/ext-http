@@ -50,9 +50,9 @@ typedef struct {
 
 } http_request;
 
-#define http_curl_init(r) http_curl_init_ex(NULL, (r), (r)->_error)
-#define http_curl_init_ex(c, r, e) _http_curl_init_ex((c), (r), (e))
-PHP_HTTP_API CURL *_http_curl_init_ex(CURL *ch, void *context, char *error_buffer);
+#define http_curl_init(r) http_curl_init_ex(NULL, (r))
+#define http_curl_init_ex(c, r) _http_curl_init_ex((c), (r))
+PHP_HTTP_API CURL *_http_curl_init_ex(CURL *ch, http_request *request);
 
 #define http_curl_free(c) _http_curl_free(c)
 PHP_HTTP_API void _http_curl_free(CURL **ch);

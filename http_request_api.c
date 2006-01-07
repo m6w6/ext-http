@@ -211,7 +211,7 @@ static curlioerr http_curl_ioctl_callback(CURL *, curliocmd, void *);
 /* }}} */
 
 /* {{{ CURL *http_curl_init(http_request *) */
-PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, void *context, char *error_buffer)
+PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request)
 {
 	if (ch || (ch = curl_easy_init())) {
 #if defined(ZTS)
@@ -226,9 +226,18 @@ PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, void *context, char *error_buff
 		HTTP_CURL_OPT_EX(ch, READFUNCTION, http_curl_read_callback);
 		HTTP_CURL_OPT_EX(ch, IOCTLFUNCTION, http_curl_ioctl_callback);
 		HTTP_CURL_OPT_EX(ch, WRITEFUNCTION, http_curl_dummy_callback);
-		HTTP_CURL_OPT_EX(ch, DEBUGDATA, context);
-		HTTP_CURL_OPT_EX(ch, PRIVATE, context);
-		HTTP_CURL_OPT_EX(ch, ERRORBUFFER, error_buffer);
+		
+		/* set context */
+		if (request) {
+			HTTP_CURL_OPT_EX(ch, PRIVATE, request);
+			HTTP_CURL_OPT_EX(ch, DEBUGDATA, request);
+			HTTP_CURL_OPT_EX(ch, ERRORBUFFER, request->_error);
+			
+			/* attach curl handle */
+			request->ch = ch;
+			/* set defaults (also in http_request_reset()) */
+			http_request_defaults(request);
+		}
 	}
 	
 	return ch;
@@ -414,7 +423,6 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
 	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init(request), return FAILURE);
-	http_request_defaults(request);
 	
 	/* set options */
 	HTTP_CURL_OPT(URL, request->url);
@@ -478,6 +486,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
 	if ((zoption = http_request_option(request, options, "useragent", IS_STRING))) {
+		/* allow to send no user agent, not even default one */
 		if (Z_STRLEN_P(zoption)) {
 			HTTP_CURL_OPT(USERAGENT, Z_STRVAL_P(zoption));
 		} else {
