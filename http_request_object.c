@@ -629,7 +629,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	_http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM_PASSTHRU, (key), sizeof(key), (ow))
 static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAMETERS, char *key, size_t len, int overwrite)
 {
-	zval *old_opts, *new_opts, *opts, **entry;
+	zval *old_opts, *new_opts, *opts = NULL, **entry;
 	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a/!", &opts)) {
