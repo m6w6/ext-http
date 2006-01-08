@@ -37,8 +37,8 @@ HttpResponse
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>0.21.0</release>
-  <api>0.21.0</api>
+  <release>0.22.0-dev</release>
+  <api>0.22.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -46,19 +46,14 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-! Encodings functionality requires libz version 1.2.0.4 or greater
++ Added HTTP 'protocol' version request option. (Ilia)
 
-+ Added HttpDeflateStream and HttpInflateStream classes
-+ Added ob_deflatehandler and ob_inflatehandler
-+ Added HttpRequest::getRawRequestMessage and ::getRawResponseMessage
-+ Added 'resetcookies' request option (libcurl > 7.14.1)
+- Don't pretend anylonger to understand 'compress' Content-Encoding.
+- Changed http_redirect() to PHPs behaviour by default.
+- Sending an User-Agent can now prevented by setting 'useragent' to NULL or empty string. (Ilia)
 
-- Changed all methods and properties with "URI" in their name to "URL"
-- Changed HttpRequest properties to be private
-
-* Fixed a lot of memory corruptions within HttpRequest
-
-Special thanks for this release go to Ilia Alshanetsky.
+* Decreased the per-request calls to curl_easy_setopt()
+* Fixed ZTS + gnutls build
 ]]></notes>
  <contents>
   <dir name="/">
