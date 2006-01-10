@@ -9,6 +9,7 @@ checkcgi();
 HTTP_RANGE=bytes=0-3, 4-5,9-11
 --FILE--
 <?php
+$_SERVER['HTTP_RANGE'] = 'bytes=0-3, 4-5,9-11';
 http_send_content_type('text/plain');
 http_send_data(str_repeat('123abc', 1000));
 ?>

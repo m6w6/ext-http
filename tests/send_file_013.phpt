@@ -6,10 +6,9 @@ include 'skip.inc';
 checkcgi();
 checkmin(5.1);
 ?>
---ENV--
-HTTP_RANGE=bytes=-1111
 --FILE--
 <?php
+$_SERVER['HTTP_RANGE'] = 'bytes=-1111';
 http_send_file('data.txt');
 ?>
 --EXPECTF--

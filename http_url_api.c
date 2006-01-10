@@ -47,7 +47,7 @@ PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
 /* {{{ void http_build_url(const php_url *, const php_url *, php_url **, char **, size_t *) */
 PHP_HTTP_API void _http_build_url(const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
 {
-#if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
+#ifdef HTTP_HAVE_NETDB
 	struct servent *se;
 #endif
 	php_url *url = emalloc(sizeof(php_url));
@@ -70,14 +70,14 @@ PHP_HTTP_API void _http_build_url(const php_url *old_url, const php_url *new_url
 				url->scheme = estrndup("https", lenof("https"));
 			break;
 
-#if !defined(PHP_WIN32) && !defined(HAVE_NETDB_H)
+#ifndef HTTP_HAVE_NETDB
 			default:
 #endif
 			case 80:
 				url->scheme = estrndup("http", lenof("http"));
 			break;
 			
-#if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
+#ifdef HTTP_HAVE_NETDB
 			default:
 				if ((se = getservbyport(htons(url->port), "tcp")) && se->s_name) {
 					url->scheme = estrdup(se->s_name);
@@ -139,7 +139,7 @@ PHP_HTTP_API void _http_build_url(const php_url *old_url, const php_url *new_url
 	if (url->port) {
 		if (	((url->port == 80) && !strcmp(url->scheme, "http"))
 			||	((url->port ==443) && !strcmp(url->scheme, "https"))
-#if defined(PHP_WIN32) || defined(HAVE_NETDB_H)
+#ifdef HTTP_HAVE_NETDB
 			||	((se = getservbyname(url->scheme, "tcp")) && se->s_port && 
 					(url->port == ntohs(se->s_port)))
 #endif

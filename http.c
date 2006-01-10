@@ -347,6 +347,14 @@ PHP_MINFO_FUNCTION(http)
 #	endif
 #endif
 		);
+		php_info_print_table_row(2, "Output Handlers", "ob_deflatehandler, ob_inflatehandler, ob_etaghandler");
+		php_info_print_table_row(2, "Stream Filters", 
+#ifndef ZEND_ENGINE_2
+			"none"
+#else
+			"http.chunked_decode, http.chunked_encode, http.deflate, http.inflate"
+#endif
+		);
 	}
 	php_info_print_table_end();
 	
@@ -377,17 +385,13 @@ PHP_MINFO_FUNCTION(http)
 	{
 		int i;
 		getGlobals(G);
-		struct _entry {char *name; char *cnst;} *entry;
-		phpstr *known_request_methods = phpstr_new();
 		phpstr *custom_request_methods = phpstr_new();
+		phpstr *known_request_methods = phpstr_from_string(HTTP_KNOWN_METHODS, lenof(HTTP_KNOWN_METHODS));
+		http_request_method_entry **ptr = G->request.methods.custom.entries;
 
-		for (i = HTTP_MIN_REQUEST_METHOD; i < HTTP_MAX_REQUEST_METHOD; ++i) {
-			phpstr_appendl(known_request_methods, http_request_method_name(i));
-			phpstr_appends(known_request_methods, ", ");
-		}
 		for (i = 0; i < G->request.methods.custom.count; ++i) {
-			if ((entry = ((struct _entry **) G->request.methods.custom.entries)[i])) {
-				phpstr_appendf(custom_request_methods, "%s, ", entry->name);
+			if (ptr[i]) {
+				phpstr_appendf(custom_request_methods, "%s, ", ptr[i]->name);
 			}
 		}
 
@@ -398,7 +402,7 @@ PHP_MINFO_FUNCTION(http)
 		php_info_print_table_row(2, "Known", PHPSTR_VAL(known_request_methods));
 		php_info_print_table_row(2, "Custom",
 			PHPSTR_LEN(custom_request_methods) ? PHPSTR_VAL(custom_request_methods) : "none registered");
-		php_info_print_table_row(2, "Allowed", strlen(HTTP_G(request).methods.allowed) ? HTTP_G(request).methods.allowed : "(ANY)");
+		php_info_print_table_row(2, "Allowed", strlen(G->request.methods.allowed) ? G->request.methods.allowed : "(ANY)");
 		
 		phpstr_free(&known_request_methods);
 		phpstr_free(&custom_request_methods);

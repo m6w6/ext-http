@@ -24,8 +24,10 @@
 
 #ifdef HTTP_WANT_NETDB
 #	ifdef PHP_WIN32
+#		define HTTP_HAVE_NETDB
 #		include <winsock2.h>
 #	elif defined(HAVE_NETDB_H)
+#		define HTTP_HAVE_NETDB
 #		include <netdb.h>
 #	endif
 #endif
@@ -93,7 +95,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	struct _http_globals_request {
 		struct _http_globals_request_methods {
 			char *allowed;
-			struct {
+			struct _http_globals_request_methods_custom {
 				int count;
 				void *entries;
 			} custom;

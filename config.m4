@@ -9,7 +9,7 @@ PHP_ARG_WITH([http-curl-requests], [whether to enable cURL HTTP request support]
                            HTTP: with cURL request support], "yes")
 PHP_ARG_WITH([http-zlib-compression], [whether to enable zlib encodings support],
 [  --with-http-zlib-compression[=LIBZDIR]
-                           HTTP: with zlib encodings support])
+                           HTTP: with zlib encodings support], "yes")
 PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
 [  --with-http-magic-mime[=LIBMAGICDIR]
                            HTTP: with magic mime response content type guessing])

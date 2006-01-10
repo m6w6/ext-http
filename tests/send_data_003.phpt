@@ -5,10 +5,9 @@ http_send_data() NUM-NIL range
 include 'skip.inc';
 checkcgi();
 ?>
---ENV--
-HTTP_RANGE=bytes=5981-
 --FILE--
 <?php
+$_SERVER['HTTP_RANGE'] = 'bytes=5981-';
 http_send_content_type('text/plain');
 http_send_data(str_repeat('123abc', 1000));
 ?>
