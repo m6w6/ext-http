@@ -630,7 +630,6 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAMETERS, char *key, size_t len, int overwrite)
 {
 	zval *old_opts, *new_opts, *opts = NULL, **entry;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a/!", &opts)) {
 		RETURN_FALSE;
@@ -672,10 +671,8 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 
 	IF_RETVAL_USED {
 		zval *opts, **options;
-		getObject(http_request_object, obj);
 
 		opts = GET_PROP(options);
-
 		array_init(return_value);
 
 		if (	(Z_TYPE_P(opts) == IS_ARRAY) && 
@@ -706,7 +703,6 @@ PHP_METHOD(HttpRequest, __construct)
 	int URL_len;
 	long meth = -1;
 	zval *options = NULL;
-	getObject(http_request_object, obj);
 
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sla", &URL, &URL_len, &meth, &options)) {
@@ -740,7 +736,6 @@ PHP_METHOD(HttpRequest, setOptions)
 	ulong idx = 0;
 	HashPosition pos;
 	zval *opts = NULL, *old_opts, *new_opts, *add_opts, **opt;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
 		RETURN_FALSE;
@@ -944,7 +939,6 @@ PHP_METHOD(HttpRequest, setUrl)
 {
 	char *URL = NULL;
 	int URL_len;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &URL, &URL_len)) {
 		RETURN_FALSE;
@@ -983,7 +977,6 @@ PHP_METHOD(HttpRequest, getUrl)
 PHP_METHOD(HttpRequest, setMethod)
 {
 	long meth;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &meth)) {
 		RETURN_FALSE;
@@ -1126,7 +1119,6 @@ PHP_METHOD(HttpRequest, addQueryData)
 	zval *qdata, *old_qdata;
 	char *query_data = NULL;
 	size_t query_data_len = 0;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &qdata)) {
 		RETURN_FALSE;
@@ -1158,7 +1150,6 @@ PHP_METHOD(HttpRequest, addQueryData)
 PHP_METHOD(HttpRequest, addPostFields)
 {
 	zval *post_data, *old_post, *new_post;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &post_data)) {
 		RETURN_FALSE;
@@ -1193,7 +1184,6 @@ PHP_METHOD(HttpRequest, addPostFields)
 PHP_METHOD(HttpRequest, setPostFields)
 {
 	zval *post, *post_data = NULL;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/!", &post_data)) {
 		RETURN_FALSE;
@@ -1243,7 +1233,6 @@ PHP_METHOD(HttpRequest, setRawPostData)
 {
 	char *raw_data = NULL;
 	int data_len = 0;
-	getObject(http_request_object, obj);
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &raw_data, &data_len)) {
 		RETURN_FALSE;
@@ -1271,7 +1260,6 @@ PHP_METHOD(HttpRequest, addRawPostData)
 {
 	char *raw_data;
 	int data_len;
-	getObject(http_request_object, obj);
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &raw_data, &data_len)) {
 		RETURN_FALSE;
@@ -1325,7 +1313,6 @@ PHP_METHOD(HttpRequest, addPostFile)
 	zval *entry, *old_post, *new_post;
 	char *name, *file, *type = NULL;
 	int name_len, file_len, type_len = 0;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|s", &name, &name_len, &file, &file_len, &type, &type_len)) {
 		RETURN_FALSE;
@@ -1373,7 +1360,6 @@ PHP_METHOD(HttpRequest, addPostFile)
 PHP_METHOD(HttpRequest, setPostFiles)
 {
 	zval *files = NULL, *post;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!/", &files)) {
 		RETURN_FALSE;
@@ -1420,7 +1406,6 @@ PHP_METHOD(HttpRequest, setPutFile)
 {
 	char *file = "";
 	int file_len = 0;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &file, &file_len)) {
 		RETURN_FALSE;
@@ -1487,7 +1472,6 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 		zval *data, **headers, **header;
 		char *header_name = NULL;
 		int header_len = 0;
-		getObject(http_request_object, obj);
 
 		if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &header_name, &header_len)) {
 			RETURN_FALSE;
@@ -1532,7 +1516,6 @@ PHP_METHOD(HttpRequest, getResponseCookie)
 		zval *data, **headers;
 		char *cookie_name = NULL;
 		int cookie_len = 0;
-		getObject(http_request_object, obj);
 
 		if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &cookie_name, &cookie_len)) {
 			RETURN_FALSE;
@@ -1633,7 +1616,6 @@ PHP_METHOD(HttpRequest, getResponseBody)
 
 	IF_RETVAL_USED {
 		zval **body;
-		getObject(http_request_object, obj);
 		zval *data = GET_PROP(responseData);
 		
 		if (	(Z_TYPE_P(data) == IS_ARRAY) && 
@@ -1687,7 +1669,6 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 		zval *info, **infop;
 		char *info_name = NULL;
 		int info_len = 0;
-		getObject(http_request_object, obj);
 
 		if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &info_name, &info_len)) {
 			RETURN_FALSE;
@@ -1732,7 +1713,6 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 
 	IF_RETVAL_USED {
 		zval *message;
-		getObject(http_request_object, obj);
 
 		SET_EH_THROW_HTTP();
 		message = GET_PROP(responseMessage);
