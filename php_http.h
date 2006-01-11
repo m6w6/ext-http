@@ -107,6 +107,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 #endif
 
 	zend_bool force_exit;
+	zend_bool read_post_data;
 
 ZEND_END_MODULE_GLOBALS(http)
 
@@ -147,6 +148,7 @@ PHP_FUNCTION(http_parse_headers);
 PHP_FUNCTION(http_parse_cookie);
 PHP_FUNCTION(http_get_request_headers);
 PHP_FUNCTION(http_get_request_body);
+PHP_FUNCTION(http_get_request_body_stream);
 PHP_FUNCTION(http_match_request_header);
 #ifdef HTTP_HAVE_CURL
 PHP_FUNCTION(http_get);

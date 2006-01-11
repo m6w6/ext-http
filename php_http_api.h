@@ -124,6 +124,8 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 #define http_get_request_body_ex(b, l, d) _http_get_request_body_ex((b), (l), (d) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_bool dup TSRMLS_DC);
 
+#define http_get_request_body_stream() _http_get_request_body_stream(TSRMLS_C)
+PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D);
 
 #define http_locate_body _http_locate_body
 static inline const char *_http_locate_body(const char *message)

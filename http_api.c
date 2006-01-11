@@ -312,17 +312,20 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 {
 	*length = 0;
 	*body = NULL;
-
+	
 	if (SG(request_info).raw_post_data) {
 		*length = SG(request_info).raw_post_data_length;
-		*body = (char *) (dup ? estrndup(SG(request_info).raw_post_data, *length) : SG(request_info).raw_post_data);
+		*body = SG(request_info).raw_post_data;
+		
+		if (dup) {
+			*body = estrndup(*body, *length);
+		}
 		return SUCCESS;
-	}
-	
-	/* PHP only reads POST */
-	if (sapi_module.read_post) {
+	} else if (sapi_module.read_post && !HTTP_G(read_post_data)) {
 		char buf[4096];
 		int len;
+		
+		HTTP_G(read_post_data) = 1;
 		
 		while (0 < (len = sapi_module.read_post(buf, sizeof(buf) TSRMLS_CC))) {
 			*body = erealloc(*body, *length + len + 1);
@@ -332,23 +335,55 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 		}
 		
 		/* check for error */
-		if (len >= 0) {
-			/* connect to sapi module so it'll be freed */
-			if (!dup) {
-				SG(request_info).raw_post_data = *body;
-				SG(request_info).raw_post_data_length = *length;
-			}
-			return SUCCESS;
-		} else {
+		if (len < 0) {
 			STR_FREE(*body);
 			*length = 0;
+			return FAILURE;
 		}
+		
+		SG(request_info).raw_post_data = *body;
+		SG(request_info).raw_post_data_length = *length;
+		
+		if (dup) {
+			*body = estrndup(*body, *length);
+		}
+		return SUCCESS;
 	}
 	
 	return FAILURE;
 }
 /* }}} */
 
+/* {{{ php_stream *_http_get_request_body_stream(void) */
+PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D)
+{
+	php_stream *s = NULL;
+	
+	if (SG(request_info).raw_post_data) {
+		s = php_stream_open_wrapper("php://input", "rb", 0, NULL);
+	} else if (sapi_module.read_post && !HTTP_G(read_post_data)) {
+		HTTP_G(read_post_data) = 1;
+		
+		if ((s = php_stream_temp_new())) {
+			char buf[4096];
+			int len;
+			
+			while (0 < (len = sapi_module.read_post(buf, sizeof(buf) TSRMLS_CC))) {
+				php_stream_write(s, buf, len);
+			}
+			
+			if (len < 0) {
+				php_stream_close(s);
+				s = NULL;
+			} else {
+				php_stream_rewind(s);
+			}
+		}
+	}
+	
+	return s;
+}
+/* }}} */
 
 /*
  * Local variables:

@@ -4,25 +4,26 @@ get request data
 <?php
 include 'skip.inc';
 ?>
---ENV--
-HTTP_ACCEPT_CHARSET=iso-8859-1, *
-HTTP_ACCEPT_ENCODING=none
-HTTP_USER_AGENT=Mozilla/5.0
-HTTP_HOST=localhost
 --POST--
 a=b&c=d
 --FILE--
 <?php
 echo "-TEST\n";
+
+$_SERVER['HTTP_ACCEPT_CHARSET'] = 'iso-8859-1, *';
+$_SERVER['HTTP_ACCEPT_ENCODING'] = 'none';
+$_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0';
+$_SERVER['HTTP_HOST'] = 'localhost';
+
 $h = http_get_request_headers();
 ksort($h);
 print_r($h);
-$b = http_get_request_body();
-if (php_sapi_name() == 'cli' || $b == 'a=b&c=d') {
-	echo "OK\n";
-}
+var_dump(http_get_request_body());
+var_dump(http_get_request_body());
+var_dump(http_get_request_body());
+var_dump(fread(http_get_request_body_stream(), 4096));
+echo "Done\n";
 ?>
-===DONE===
 --EXPECTF--
 %sTEST
 Array
@@ -32,5 +33,8 @@ Array
     [Host] => localhost
     [User-Agent] => Mozilla/5.0
 )
-OK
-===DONE===
+string(7) "a=b&c=d"
+string(7) "a=b&c=d"
+string(7) "a=b&c=d"
+string(7) "a=b&c=d"
+Done

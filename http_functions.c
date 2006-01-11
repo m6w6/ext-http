@@ -1020,7 +1020,10 @@ PHP_FUNCTION(http_get_request_headers)
  *
  * Get the raw request body (e.g. POST or PUT data).
  * 
- * Returns NULL when using the CLI SAPI.
+ * This function can not be used after http_get_request_body_stream() 
+ * if the request method was another than POST.
+ * 
+ * Returns the raw request body as string on success or NULL on failure.
  */
 PHP_FUNCTION(http_get_request_body)
 {
@@ -1032,6 +1035,29 @@ PHP_FUNCTION(http_get_request_body)
 	if (SUCCESS == http_get_request_body(&body, &length)) {
 		RETURN_STRINGL(body, (int) length, 0);
 	} else {
+		RETURN_NULL();
+	}
+}
+/* }}} */
+
+/* {{{ proto resource http_get_request_body_stream(void)
+ *
+ * Create a stream to read the raw request body (e.g. POST or PUT data).
+ * 
+ * This function can only be used once if the request method was another than POST.
+ * 
+ * Returns the raw request body as stream on success or NULL on failure.
+ */
+PHP_FUNCTION(http_get_request_body_stream)
+{
+	php_stream *s;
+	
+	NO_ARGS;
+	
+	if ((s = http_get_request_body_stream())) {
+		php_stream_to_zval(s, return_value);
+	} else {
+		http_error(HE_WARNING, HTTP_E_RUNTIME, "Failed to create request body stream");
 		RETURN_NULL();
 	}
 }
