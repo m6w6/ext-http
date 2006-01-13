@@ -391,6 +391,7 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(READDATA, NULL);
 		HTTP_CURL_OPT(INFILESIZE, 0);
 		HTTP_CURL_OPT(HTTP_VERSION, CURL_HTTP_VERSION_NONE);
+		HTTP_CURL_OPT(CUSTOMREQUEST, NULL);
 	}
 }
 /* }}} */
