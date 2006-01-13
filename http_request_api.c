@@ -643,6 +643,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	switch (request->meth)
 	{
 		case HTTP_GET:
+			HTTP_CURL_OPT(CUSTOMREQUEST, NULL);
 			HTTP_CURL_OPT(NOBODY, 0);
 			HTTP_CURL_OPT(POST, 0);
 			HTTP_CURL_OPT(UPLOAD, 0);
@@ -650,6 +651,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		break;
 
 		case HTTP_HEAD:
+			HTTP_CURL_OPT(CUSTOMREQUEST, NULL);
 			HTTP_CURL_OPT(POST, 0);
 			HTTP_CURL_OPT(UPLOAD, 0);
 			HTTP_CURL_OPT(HTTPGET, 0);
@@ -657,6 +659,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		break;
 
 		case HTTP_POST:
+			HTTP_CURL_OPT(CUSTOMREQUEST, NULL);
 			HTTP_CURL_OPT(UPLOAD, 0);
 			HTTP_CURL_OPT(HTTPGET, 0);
 			HTTP_CURL_OPT(NOBODY, 0);
@@ -664,6 +667,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		break;
 
 		case HTTP_PUT:
+			HTTP_CURL_OPT(CUSTOMREQUEST, NULL);
 			HTTP_CURL_OPT(HTTPGET, 0);
 			HTTP_CURL_OPT(NOBODY, 0);
 			HTTP_CURL_OPT(POST, 0);

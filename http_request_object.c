@@ -982,11 +982,6 @@ PHP_METHOD(HttpRequest, setMethod)
 		RETURN_FALSE;
 	}
 
-	if (meth >= HTTP_GET && meth <= HTTP_PUT) {
-		getObject(http_request_object, obj);
-		curl_easy_setopt(obj->request->ch, CURLOPT_CUSTOMREQUEST, NULL);
-	}
-
 	UPD_PROP(long, method, meth);
 	RETURN_TRUE;
 }
