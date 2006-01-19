@@ -6,13 +6,13 @@ PHP_ARG_ENABLE([http], [whether to enable extended HTTP support],
 [  --enable-http           Enable extended HTTP support])
 PHP_ARG_WITH([http-curl-requests], [whether to enable cURL HTTP request support],
 [  --with-http-curl-requests[=LIBCURLDIR]
-                           HTTP: with cURL request support], "yes")
+                           HTTP: with cURL request support], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-zlib-compression], [whether to enable zlib encodings support],
 [  --with-http-zlib-compression[=LIBZDIR]
-                           HTTP: with zlib encodings support], "yes")
+                           HTTP: with zlib encodings support], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
 [  --with-http-magic-mime[=LIBMAGICDIR]
-                           HTTP: with magic mime response content type guessing])
+                           HTTP: with magic mime response content type guessing], "no", "no")
 
 if test "$PHP_HTTP" != "no"; then
 
