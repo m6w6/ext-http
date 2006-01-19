@@ -94,6 +94,12 @@ HTTP_BEGIN_ARGS(unserialize, 0, 1)
 	HTTP_ARG_VAL(serialized, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(detach, 0);
+
+HTTP_BEGIN_ARGS(prepend, 0, 1)
+	HTTP_ARG_OBJ(HttpMessage, message, 0)
+HTTP_END_ARGS;
+
 #define http_message_object_declare_default_properties() _http_message_object_declare_default_properties(TSRMLS_C)
 static inline void _http_message_object_declare_default_properties(TSRMLS_D);
 #define http_message_object_read_prop _http_message_object_read_prop
@@ -135,6 +141,10 @@ zend_function_entry http_message_object_fe[] = {
 	ZEND_MALIAS(HttpMessage, __toString, toString, HTTP_ARGS(HttpMessage, toString), ZEND_ACC_PUBLIC)
 
 	HTTP_MESSAGE_ME(fromString, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	
+	HTTP_MESSAGE_ME(detach, ZEND_ACC_PUBLIC)
+	
+	HTTP_MESSAGE_ME(prepend, ZEND_ACC_PUBLIC)
 	
 	EMPTY_FUNCTION_ENTRY
 };
@@ -234,6 +244,14 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 	if (o->message) {
 		http_message_dtor(o->message);
 		efree(o->message);
+	}
+	if (o->parent.handle) {
+		zval p;
+		
+		INIT_PZVAL(&p);
+		p.type = IS_OBJECT;
+		p.value.obj = o->parent;
+		zend_objects_store_del_ref(&p TSRMLS_CC);
 	}
 	efree(o);
 }
@@ -1053,6 +1071,83 @@ PHP_METHOD(HttpMessage, unserialize)
 		if (!http_message_parse_ex(obj->message, serialized, (size_t) length)) {
 			http_error(HE_ERROR, HTTP_E_RUNTIME, "Could not unserialize HttpMessage");
 			http_message_init(obj->message);
+		}
+	}
+}
+/* }}} */
+
+/* {{{ proto HttpMessage HttpMessage::detach(void)
+ *
+ * Returns a clone of an HttpMessage object detached from any parent messages.
+ */
+PHP_METHOD(HttpMessage, detach)
+{
+	http_info info;
+	http_message *msg;
+	getObject(http_message_object, obj);
+	
+	NO_ARGS;
+	
+	info.type = obj->message->type;
+	memcpy(&HTTP_INFO(&info), &HTTP_INFO(obj->message), sizeof(struct http_info));
+	
+	msg = http_message_new();
+	http_message_set_info(msg, &info);
+	
+	zend_hash_copy(&msg->hdrs, &obj->message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	phpstr_append(&msg->body, PHPSTR_VAL(obj->message), PHPSTR_LEN(obj->message));
+	
+	RETURN_OBJVAL(http_message_object_new_ex(http_message_object_ce, msg, NULL));
+}
+/* }}} */
+
+/* {{{ proto void HttpMessage::prepend(HttpMessage message)
+ *
+ * Prepends message(s) to the HTTP message.
+ *
+ * Expects an HttpMessage object as parameter.
+ */
+PHP_METHOD(HttpMessage, prepend)
+{
+	zval *prepend;
+	zend_bool top = 1;
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|b", &prepend, http_message_object_ce, &top)) {
+		zval m;
+		http_message *save_parent_msg;
+		zend_object_value save_parent_obj;
+		getObject(http_message_object, obj);
+		getObjectEx(http_message_object, prepend_obj, prepend);
+		
+		INIT_PZVAL(&m);
+		m.type = IS_OBJECT;
+		
+		if (!top) {
+			save_parent_obj = obj->parent;
+			save_parent_msg = obj->message->parent;
+		} else {
+			/* iterate to the most parent object */
+			while (obj->parent.handle) {
+				m.value.obj = obj->parent;
+				obj = zend_object_store_get_object(&m TSRMLS_CC);
+			}
+		}
+		
+		/* prepend */
+		obj->parent = prepend->value.obj;
+		obj->message->parent = prepend_obj->message;
+		
+		/* add ref */
+		zend_objects_store_add_ref(prepend TSRMLS_CC);
+		while (prepend_obj->parent.handle) {
+			m.value.obj = prepend_obj->parent;
+			zend_objects_store_add_ref(&m TSRMLS_CC);
+			prepend_obj = zend_object_store_get_object(&m TSRMLS_CC);
+		}
+		
+		if (!top) {
+			prepend_obj->parent = save_parent_obj;
+			prepend_obj->message->parent = save_parent_msg;
 		}
 	}
 }

@@ -95,6 +95,9 @@ PHP_METHOD(HttpMessage, unserialize);
 
 PHP_METHOD(HttpMessage, fromString);
 
+PHP_METHOD(HttpMessage, detach);
+PHP_METHOD(HttpMessage, prepend);
+
 #endif
 #endif
 

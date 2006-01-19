@@ -41,8 +41,8 @@
  * Compose a valid HTTP date regarding RFC 822/1123
  * looking like: "Wed, 22 Dec 2004 11:34:47 GMT"
  *
- * Takes an optional unix timestamp as parameter.
- *  
+ * Accepts an optional unix timestamp as parameter.
+ *
  * Returns the HTTP date as string.
  */
 PHP_FUNCTION(http_date)

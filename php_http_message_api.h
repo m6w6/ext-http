@@ -48,6 +48,9 @@ PHP_HTTP_API http_message *_http_message_init_ex(http_message *m, http_message_t
 #define http_message_set_type(m, t) _http_message_set_type((m), (t))
 PHP_HTTP_API void _http_message_set_type(http_message *m, http_message_type t);
 
+#define http_message_set_info(m, i) _http_message_set_info((m), (i))
+PHP_HTTP_API void _http_message_set_info(http_message *message, http_info *info);
+
 #define http_message_header(m, h) _http_message_header_ex((m), (h), sizeof(h))
 #define http_message_header_ex _http_message_header_ex
 static inline zval *_http_message_header_ex(http_message *msg, char *key_str, size_t key_len)

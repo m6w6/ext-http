@@ -37,22 +37,7 @@ static void _http_message_info_callback(http_message **message, HashTable **head
 		(*headers) = &((*message)->hdrs);
 	}
 	
-	(*message)->http.version = info->http.version;
-	
-	switch (info->type)
-	{
-		case IS_HTTP_REQUEST:
-			(*message)->type = HTTP_MSG_REQUEST;
-			HTTP_INFO(*message).request.url = estrdup(HTTP_INFO(info).request.url);
-			HTTP_INFO(*message).request.method = estrdup(HTTP_INFO(info).request.method);
-		break;
-		
-		case IS_HTTP_RESPONSE:
-			(*message)->type = HTTP_MSG_RESPONSE;
-			HTTP_INFO(*message).response.code = HTTP_INFO(info).response.code;
-			HTTP_INFO(*message).response.status = estrdup(HTTP_INFO(info).response.status);
-		break;
-	}
+	http_message_set_info(*message, info);
 }
 
 #define http_message_init_type _http_message_init_type
@@ -116,6 +101,26 @@ PHP_HTTP_API void _http_message_set_type(http_message *message, http_message_typ
 
 		/* init */
 		http_message_init_type(message, type);
+	}
+}
+
+PHP_HTTP_API void _http_message_set_info(http_message *message, http_info *info)
+{
+	message->http.version = info->http.version;
+	
+	switch (info->type)
+	{
+		case IS_HTTP_REQUEST:
+			message->type = HTTP_MSG_REQUEST;
+			HTTP_INFO(message).request.url = estrdup(HTTP_INFO(info).request.url);
+			STR_SET(HTTP_INFO(message).request.method, estrdup(HTTP_INFO(info).request.method));
+			break;
+		
+		case IS_HTTP_RESPONSE:
+			message->type = HTTP_MSG_RESPONSE;
+			HTTP_INFO(message).response.code = HTTP_INFO(info).response.code;
+			STR_SET(HTTP_INFO(message).response.status, estrdup(HTTP_INFO(info).response.status));
+			break;
 	}
 }
 
