@@ -12,17 +12,12 @@
 
 /* $Id$ */
 
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
+#define HTTP_WANT_SAPI
 #define HTTP_WANT_CURL
 #define HTTP_WANT_ZLIB
 #include "php_http.h"
 
-#include "SAPI.h"
 #include "php_ini.h"
-#include "ext/standard/info.h"
 #include "ext/standard/php_string.h"
 #include "zend_operators.h"
 
@@ -59,7 +54,7 @@ PHP_FUNCTION(http_date)
 	}
 
 	if (t == -1) {
-		t = (long) time(NULL);
+		t = (long) HTTP_GET_REQUEST_TIME();
 	}
 
 	RETURN_STRING(http_date(t), 0);
@@ -376,7 +371,7 @@ PHP_FUNCTION(http_send_last_modified)
 	}
 
 	if (t == -1) {
-		t = (long) time(NULL);
+		t = (long) HTTP_GET_REQUEST_TIME();
 	}
 
 	RETURN_SUCCESS(http_send_last_modified(t));
@@ -456,7 +451,7 @@ PHP_FUNCTION(http_match_modified)
 
 	// current time if not supplied (senseless though)
 	if (t == -1) {
-		t = (long) time(NULL);
+		t = (long) HTTP_GET_REQUEST_TIME();
 	}
 
 	if (for_range) {
@@ -524,7 +519,7 @@ PHP_FUNCTION(http_cache_last_modified)
 	
 	HTTP_CHECK_HEADERS_SENT(RETURN_FALSE);
 
-	t = (long) time(NULL);
+	t = (long) HTTP_GET_REQUEST_TIME();
 
 	/* 0 or omitted */
 	if (!last_modified) {

@@ -12,11 +12,6 @@
 
 /* $Id$ */
 
-
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
 #define HTTP_WANT_ZLIB
 #include "php_http.h"
 

@@ -12,15 +12,10 @@
 
 /* $Id$ */
 
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
+#define HTTP_WANT_SAPI
 #define HTTP_WANT_CURL
 #define HTTP_WANT_ZLIB
 #include "php_http.h"
-
-#include "SAPI.h"
 
 #include "php_http_api.h"
 #include "php_http_encoding_api.h"

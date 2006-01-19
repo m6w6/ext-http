@@ -12,16 +12,12 @@
 
 /* $Id$ */
 
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
+#define HTTP_WANT_SAPI
 #define HTTP_WANT_CURL
 #define HTTP_WANT_ZLIB
 #define HTTP_WANT_MAGIC
 #include "php_http.h"
 
-#include "SAPI.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
 #include "zend_extensions.h"
@@ -171,6 +167,9 @@ static void http_globals_init_once(zend_http_globals *G)
 static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 {
 	G->send.buffer_size = HTTP_SENDBUF_SIZE;
+#ifndef HTTP_HAVE_SAPI_RTIME
+	G->request_time = time(NULL);
+#endif
 }
 
 #define http_globals_free(g) _http_globals_free((g) TSRMLS_CC)
@@ -285,12 +284,12 @@ PHP_MSHUTDOWN_FUNCTION(http)
 /* {{{ PHP_RINIT_FUNCTION */
 PHP_RINIT_FUNCTION(http)
 {
+	http_globals_init(HTTP_GLOBALS);
+
 	if (HTTP_G(request).methods.allowed) {
 		http_check_allowed_methods(HTTP_G(request).methods.allowed, 
 			strlen(HTTP_G(request).methods.allowed));
 	}
-
-	http_globals_init(HTTP_GLOBALS);
 
 	if (	(SUCCESS != PHP_RINIT_CALL(http_request_method))
 #ifdef HTTP_HAVE_ZLIB	

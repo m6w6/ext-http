@@ -12,14 +12,10 @@
 
 /* $Id$ */
 
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
+#define HTTP_WANT_SAPI
 #define HTTP_WANT_NETDB
 #include "php_http.h"
 
-#include "SAPI.h"
 #include "zend_ini.h"
 #include "php_output.h"
 #include "ext/standard/php_string.h"

@@ -12,13 +12,9 @@
 
 /* $Id$ */
 
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
+#define HTTP_WANT_SAPI
 #include "php_http.h"
 
-#include "SAPI.h"
 #include "php_output.h"
 #include "php_streams.h"
 
@@ -69,7 +65,7 @@ PHP_HTTP_API time_t _http_last_modified(const void *data_ptr, http_send_mode dat
 
 	switch (data_mode)
 	{
-		case SEND_DATA:	return time(NULL);
+		case SEND_DATA:	return HTTP_GET_REQUEST_TIME();
 		case SEND_RSRC:	return php_stream_stat((php_stream *) data_ptr, &ssb) ? 0 : ssb.sb.st_mtime;
 		default:		return php_stream_stat_path((char *) data_ptr, &ssb) ? 0 : ssb.sb.st_mtime;
 	}

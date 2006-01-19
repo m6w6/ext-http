@@ -33,7 +33,7 @@
 #define http_etag_digest(d, l) _http_etag_digest((d), (l))
 static inline char *_http_etag_digest(const unsigned char *digest, int len)
 {
-	static const char hexdigits[16] = "0123456789abcdef";
+	static const char hexdigits[17] = "0123456789abcdef";
 	int i;
 	char *hex = emalloc(len * 2 + 1);
 	char *ptr = hex;

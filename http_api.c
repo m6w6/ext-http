@@ -12,13 +12,9 @@
 
 /* $Id$ */
 
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
+#define HTTP_WANT_SAPI
 #include "php_http.h"
 
-#include "SAPI.h"
 #include "php_output.h"
 #include "ext/standard/url.h"
 
@@ -208,7 +204,7 @@ void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)
 	struct tm nowtm;
 	char datetime[20] = {0};
 	
-	time(&now);
+	now = HTTP_GET_REQUEST_TIME();
 	strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", php_localtime_r(&now, &nowtm));
 
 #define HTTP_LOG_WRITE(file, type, msg) \

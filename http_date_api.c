@@ -12,11 +12,8 @@
 
 /* $Id$ */
 
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
 #include "php_http.h"
+
 #include "php_http_api.h"
 #include "php_http_date_api.h"
 

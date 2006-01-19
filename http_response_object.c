@@ -12,18 +12,13 @@
 
 /* $Id$ */
 
-
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
+#define HTTP_WANT_SAPI
 #define HTTP_WANT_MAGIC
 #include "php_http.h"
 
 /* broken static properties in PHP 5.0 */
 #if defined(ZEND_ENGINE_2) && !defined(WONKY)
 
-#include "SAPI.h"
 #include "php_ini.h"
 
 #include "php_http_api.h"
@@ -1104,7 +1099,7 @@ PHP_METHOD(HttpResponse, send)
 		cctl = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl), &cctl_p);
 
 		http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
-		http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : time(NULL), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
+		http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : HTTP_GET_REQUEST_TIME(), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
 
 		if (etag_p) zval_ptr_dtor(&etag_p);
 		if (lmod_p) zval_ptr_dtor(&lmod_p);

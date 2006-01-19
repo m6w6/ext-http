@@ -12,6 +12,12 @@
 
 /* $Id$ */
 
+#ifdef HAVE_CONFIG_H
+#	include "config.h"
+#else
+#	include "php_config.h"
+#endif
+
 #include "php.h"
 #include "missing.h"
 

@@ -12,10 +12,7 @@
 
 /* $Id$ */
 
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
+#define HTTP_WANT_SAPI
 #define HTTP_WANT_CURL
 #include "php_http.h"
 
@@ -590,7 +587,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			if (Z_LVAL_P(zoption) > 0) {
 				HTTP_CURL_OPT(TIMEVALUE, Z_LVAL_P(zoption));
 			} else {
-				HTTP_CURL_OPT(TIMEVALUE, time(NULL) + Z_LVAL_P(zoption));
+				HTTP_CURL_OPT(TIMEVALUE, HTTP_GET_REQUEST_TIME() + Z_LVAL_P(zoption));
 			}
 			HTTP_CURL_OPT(TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
 		} else {

@@ -12,11 +12,6 @@
 
 /* $Id$ */
 
-
-#ifdef HAVE_CONFIG_H
-#	include "config.h"
-#endif
-
 #include "php_http.h"
 
 #ifdef ZEND_ENGINE_2
