@@ -600,6 +600,10 @@ PHP_METHOD(HttpMessage, fromString)
 			
 			if (class_name && *class_name) {
 				ce = zend_fetch_class(class_name, class_length, ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
+				if (ce && !instanceof_function(ce, http_request_object_ce TSRMLS_CC)) {
+					http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Class %s does not extend HttpMessage", class_name);
+					ce = NULL;
+				}
 			}
 			if (ce) {
 				ZVAL_OBJVAL(return_value, http_message_object_new_ex(ce, msg, NULL));
