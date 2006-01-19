@@ -574,12 +574,12 @@ PHP_METHOD(HttpMessage, __construct)
 }
 /* }}} */
 
-/* {{{ proto static HttpMessage HttpMessage::fromString(string raw_message)
+/* {{{ proto static HttpMessage HttpMessage::fromString(string raw_message[, string class_name = "HttpMessage"])
  *
  * Create an HttpMessage object from a string. Kind of a static constructor.
  * 
  * Expects a string parameter containing a sinlge or several consecutive
- * HTTP messages.
+ * HTTP messages.  Accepts an optionsl string parameter specifying the class to use.
  * 
  * Returns an HttpMessage object on success or NULL on failure.
  * 
@@ -587,16 +587,23 @@ PHP_METHOD(HttpMessage, __construct)
  */
 PHP_METHOD(HttpMessage, fromString)
 {
-	char *string = NULL;
-	int length = 0;
+	char *string = NULL, *class_name = NULL;
+	int length = 0, class_length = 0;
 	http_message *msg = NULL;
 
 	RETVAL_NULL();
 	
 	SET_EH_THROW_HTTP();
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &string, &length)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s", &string, &length, &class_name, &class_length)) {
 		if ((msg = http_message_parse(string, length))) {
-			ZVAL_OBJVAL(return_value, http_message_object_new_ex(http_message_object_ce, msg, NULL));
+			zend_class_entry *ce = http_message_object_ce;
+			
+			if (class_name && *class_name) {
+				ce = zend_fetch_class(class_name, class_length, ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
+			}
+			if (ce) {
+				ZVAL_OBJVAL(return_value, http_message_object_new_ex(ce, msg, NULL));
+			}
 		}
 	}
 	SET_EH_NORMAL();
@@ -1097,7 +1104,7 @@ PHP_METHOD(HttpMessage, detach)
 	zend_hash_copy(&msg->hdrs, &obj->message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	phpstr_append(&msg->body, PHPSTR_VAL(obj->message), PHPSTR_LEN(obj->message));
 	
-	RETURN_OBJVAL(http_message_object_new_ex(http_message_object_ce, msg, NULL));
+	RETURN_OBJVAL(http_message_object_new_ex(Z_OBJCE_P(getThis()), msg, NULL));
 }
 /* }}} */
 
