@@ -600,7 +600,7 @@ PHP_METHOD(HttpMessage, fromString)
 			
 			if (class_name && *class_name) {
 				ce = zend_fetch_class(class_name, class_length, ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
-				if (ce && !instanceof_function(ce, http_request_object_ce TSRMLS_CC)) {
+				if (ce && !instanceof_function(ce, http_message_object_ce TSRMLS_CC)) {
 					http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Class %s does not extend HttpMessage", class_name);
 					ce = NULL;
 				}
@@ -1108,7 +1108,7 @@ PHP_METHOD(HttpMessage, detach)
 	zend_hash_copy(&msg->hdrs, &obj->message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	phpstr_append(&msg->body, PHPSTR_VAL(obj->message), PHPSTR_LEN(obj->message));
 	
-	RETURN_OBJVAL(http_message_object_new_ex(Z_OBJCE_P(getThis()), msg, NULL));
+	ZVAL_OBJVAL(return_value, http_message_object_new_ex(Z_OBJCE_P(getThis()), msg, NULL));
 }
 /* }}} */
 
