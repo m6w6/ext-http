@@ -22,6 +22,10 @@ $m = new HttpMessage(
 	"00"
 );
 
+$x = $m->getParentMessage();
+$x = $m->getParentMessage();
+$x = $m->getParentMessage();
+
 var_dump($m->getBody());
 var_dump(HttpMessage::fromString($m->toString(true))->toString(true));
 do {

@@ -20,6 +20,7 @@ typedef struct {
 	zend_object zo;
 	http_message *message;
 	zend_object_value parent;
+	zval *iterator;
 } http_message_object;
 
 extern zend_class_entry *http_message_object_ce;
@@ -88,10 +89,16 @@ PHP_METHOD(HttpMessage, setHttpVersion);
 PHP_METHOD(HttpMessage, getParentMessage);
 PHP_METHOD(HttpMessage, send);
 PHP_METHOD(HttpMessage, toString);
+PHP_METHOD(HttpMessage, toMessageTypeObject);
 
 PHP_METHOD(HttpMessage, count);
 PHP_METHOD(HttpMessage, serialize);
 PHP_METHOD(HttpMessage, unserialize);
+PHP_METHOD(HttpMessage, rewind);
+PHP_METHOD(HttpMessage, valid);
+PHP_METHOD(HttpMessage, current);
+PHP_METHOD(HttpMessage, key);
+PHP_METHOD(HttpMessage, next);
 
 PHP_METHOD(HttpMessage, fromString);
 

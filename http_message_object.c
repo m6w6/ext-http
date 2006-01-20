@@ -12,18 +12,28 @@
 
 /* $Id$ */
 
+#define HTTP_WANT_SAPI
+#define HTTP_WANT_CURL
 #include "php_http.h"
 
 #ifdef ZEND_ENGINE_2
 
+#include "ext/standard/url.h"
+
 #include "php_http_api.h"
+#include "php_http_send_api.h"
+#include "php_http_url_api.h"
 #include "php_http_message_api.h"
 #include "php_http_message_object.h"
 #include "php_http_exception_object.h"
+#include "php_http_response_object.h"
+#include "php_http_request_method_api.h"
+#include "php_http_request_api.h"
+#include "php_http_request_object.h"
 
 #ifndef WONKY
 #	include "zend_interfaces.h"
-#	if defined(HAVE_SPL)
+#	ifdef HAVE_SPL
 /* SPL doesn't install its headers */
 extern PHPAPI zend_class_entry *spl_ce_Countable;
 #	endif
@@ -87,6 +97,8 @@ HTTP_BEGIN_ARGS(toString, 0, 0)
 	HTTP_ARG_VAL(include_parent, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(toMessageTypeObject, 0);
+
 HTTP_EMPTY_ARGS(count, 0);
 
 HTTP_EMPTY_ARGS(serialize, 0);
@@ -94,8 +106,13 @@ HTTP_BEGIN_ARGS(unserialize, 0, 1)
 	HTTP_ARG_VAL(serialized, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(detach, 0);
+HTTP_EMPTY_ARGS(rewind, 0);
+HTTP_EMPTY_ARGS(valid, 0);
+HTTP_EMPTY_ARGS(key, 0);
+HTTP_EMPTY_ARGS(current, 0);
+HTTP_EMPTY_ARGS(next, 0);
 
+HTTP_EMPTY_ARGS(detach, 0);
 HTTP_BEGIN_ARGS(prepend, 0, 1)
 	HTTP_ARG_OBJ(HttpMessage, message, 0)
 HTTP_END_ARGS;
@@ -130,6 +147,7 @@ zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(getParentMessage, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(send, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(toString, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(toMessageTypeObject, ZEND_ACC_PUBLIC)
 
 	/* implements Countable */
 	HTTP_MESSAGE_ME(count, ZEND_ACC_PUBLIC)
@@ -138,14 +156,20 @@ zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(serialize, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(unserialize, ZEND_ACC_PUBLIC)
 	
+	/* implements Iterator */
+	HTTP_MESSAGE_ME(rewind, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(valid, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(current, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(key, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(next, ZEND_ACC_PUBLIC)
+
 	ZEND_MALIAS(HttpMessage, __toString, toString, HTTP_ARGS(HttpMessage, toString), ZEND_ACC_PUBLIC)
 
 	HTTP_MESSAGE_ME(fromString, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	
 	HTTP_MESSAGE_ME(detach, ZEND_ACC_PUBLIC)
-	
 	HTTP_MESSAGE_ME(prepend, ZEND_ACC_PUBLIC)
-	
+
 	EMPTY_FUNCTION_ENTRY
 };
 static zend_object_handlers http_message_object_handlers;
@@ -155,10 +179,12 @@ PHP_MINIT_FUNCTION(http_message_object)
 	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message_object, NULL, 0);
 #ifndef WONKY
 #	ifdef HAVE_SPL
-	zend_class_implements(http_message_object_ce TSRMLS_CC, 2, spl_ce_Countable, zend_ce_serializable);
+	zend_class_implements(http_message_object_ce TSRMLS_CC, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
 #	else
-	zend_class_implements(http_message_object_ce TSRMLS_CC, 1, zend_ce_serializable);
+	zend_class_implements(http_message_object_ce TSRMLS_CC, 2, zend_ce_serializable, zend_ce_iterator);
 #	endif
+#else
+	zend_class_implements(http_message_object_ce TSRMLS_CC, 1, zend_ce_iterator);
 #endif
 
 	HTTP_LONG_CONSTANT("HTTP_MSG_NONE", HTTP_MSG_NONE);
@@ -1027,6 +1053,132 @@ PHP_METHOD(HttpMessage, toString)
 }
 /* }}} */
 
+/* {{{ proto HttpRequest|HttpResponse HttpMessage::toMessageTypeObject(void)
+ *
+ * Creates an object regarding to the type of the message.
+ *
+ * Returns either an HttpRequest or HttpResponse object on success, or NULL on failure.
+ *
+ * Throws HttpRuntimeException, HttpMessageTypeException, HttpHeaderException.
+ */
+PHP_METHOD(HttpMessage, toMessageTypeObject)
+{
+	SET_EH_THROW_HTTP();
+	
+	NO_ARGS;
+	
+	IF_RETVAL_USED {
+		getObject(http_message_object, obj);
+		
+		switch (obj->message->type)
+		{
+			case HTTP_MSG_REQUEST:
+			{
+#ifdef HTTP_HAVE_CURL
+				int method;
+				char *url;
+				zval tmp, body, *array, *headers, *host = http_message_header(obj->message, "Host");
+				php_url hurl, *purl = php_url_parse(obj->message->http.info.request.url);
+				
+				MAKE_STD_ZVAL(array);
+				array_init(array);
+				
+				memset(&hurl, 0, sizeof(php_url));
+				hurl.host = host ? Z_STRVAL_P(host) : NULL;
+				http_build_url(purl, &hurl, NULL, &url, NULL);
+				php_url_free(purl);
+				add_assoc_string(array, "url", url, 0);
+				
+				if (	(method = http_request_method_exists(1, 0, obj->message->http.info.request.method)) ||
+						(method = http_request_method_register(obj->message->http.info.request.method, strlen(obj->message->http.info.request.method)))) {
+					add_assoc_long(array, "method", method);
+				}
+				
+				if (10 == (int) (obj->message->http.version * 10)) {
+					add_assoc_long(array, "protocol", CURL_HTTP_VERSION_1_0);
+				}
+				
+				MAKE_STD_ZVAL(headers);
+				array_init(headers);
+				INIT_ZARR(tmp, &obj->message->hdrs);
+				array_copy(&tmp, headers);
+				add_assoc_zval(array, "headers", headers);
+				
+				object_init_ex(return_value, http_request_object_ce);
+				zend_call_method_with_1_params(&return_value, http_request_object_ce, NULL, "setoptions", NULL, array);
+				zval_ptr_dtor(&array);
+				
+				INIT_PZVAL(&body);
+				ZVAL_STRINGL(&body, PHPSTR_VAL(obj->message), PHPSTR_LEN(obj->message), 0);
+				zend_call_method_with_1_params(&return_value, http_request_object_ce, NULL, "setrawpostdata", NULL, &body);
+#else
+				http_error(HE_WARNING, HTTP_E_RUNTIME, "Cannot transform HttpMessage to HttpRequest (missing curl support)");
+#endif
+			}
+			break;
+			
+			case HTTP_MSG_RESPONSE:
+			{
+#ifndef WONKY
+				HashPosition pos1, pos2;
+				ulong idx;
+				uint key_len;
+				char *key = NULL;
+				zval **header, **h, *body;
+				
+				if (obj->message->http.info.response.code) {
+					http_send_status(obj->message->http.info.response.code);
+				}
+				
+				object_init_ex(return_value, http_response_object_ce);
+				
+				FOREACH_HASH_KEYLENVAL(pos1, &obj->message->hdrs, key, key_len, idx, header) {
+					if (key) {
+						zval zkey;
+						
+						INIT_PZVAL(&zkey);
+						ZVAL_STRINGL(&zkey, key, key_len, 0);
+						
+						switch (Z_TYPE_PP(header))
+						{
+							case IS_ARRAY:
+							case IS_OBJECT:
+								FOREACH_HASH_VAL(pos2, HASH_OF(*header), h) {
+									ZVAL_ADDREF(*h);
+									zend_call_method_with_2_params(&return_value, http_response_object_ce, NULL, "setheader", NULL, &zkey, *h);
+									zval_ptr_dtor(h);
+								}
+							break;
+							
+							default:
+								ZVAL_ADDREF(*header);
+								zend_call_method_with_2_params(&return_value, http_response_object_ce, NULL, "setheader", NULL, &zkey, *header);
+								zval_ptr_dtor(header);
+							break;
+						}
+						key = NULL;
+					}
+				}
+				
+				MAKE_STD_ZVAL(body);
+				ZVAL_STRINGL(body, PHPSTR_VAL(obj->message), PHPSTR_LEN(obj->message), 1);
+				zend_call_method_with_1_params(&return_value, http_response_object_ce, NULL, "setdata", NULL, body);
+				zval_ptr_dtor(&body);
+#else
+				http_error(HE_WARNING, HTTP_E_RUNTIME, "Cannot transform HttpMessage to HttpResponse (need PHP 5.1+)");
+#endif
+			}
+			break;
+			
+			default:
+				http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is neither of type HttpMessage::TYPE_REQUEST nor HttpMessage::TYPE_RESPONSE");
+			break;
+		}
+	}
+	SET_EH_NORMAL();
+}
+/* }}} */
+
 /* {{{ proto int HttpMessage::count()
  *
  * Implements Countable.
@@ -1159,6 +1311,92 @@ PHP_METHOD(HttpMessage, prepend)
 		if (!top) {
 			prepend_obj->parent = save_parent_obj;
 			prepend_obj->message->parent = save_parent_msg;
+		}
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpMessage::rewind(void)
+ *
+ * Implements Iterator.
+ */
+PHP_METHOD(HttpMessage, rewind)
+{
+	NO_ARGS {
+		getObject(http_message_object, obj);
+		
+		if (obj->iterator) {
+			zval_ptr_dtor(&obj->iterator);
+		}
+		ZVAL_ADDREF(getThis());
+		obj->iterator = getThis();
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpMessage::valid(void)
+ *
+ * Implements Iterator.
+ */
+PHP_METHOD(HttpMessage, valid)
+{
+	NO_ARGS {
+		getObject(http_message_object, obj);
+		
+		RETURN_BOOL(obj->iterator != NULL);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpMessage::next(void)
+ *
+ * Implements Iterator.
+ */
+PHP_METHOD(HttpMessage, next)
+{
+	NO_ARGS {
+		getObject(http_message_object, obj);
+		getObjectEx(http_message_object, itr, obj->iterator);
+		
+		if (itr && itr->parent.handle) {
+			zval *old = obj->iterator;
+			MAKE_STD_ZVAL(obj->iterator);
+			ZVAL_OBJVAL(obj->iterator, itr->parent);
+			Z_OBJ_ADDREF_P(obj->iterator);
+			zval_ptr_dtor(&old);
+		} else {
+			zval_ptr_dtor(&obj->iterator);
+			obj->iterator = NULL;
+		}
+	}
+}
+/* }}} */
+
+/* {{{ proto int HttpMessage::key(void)
+ *
+ * Implements Iterator.
+ */
+PHP_METHOD(HttpMessage, key)
+{
+	NO_ARGS {
+		getObject(http_message_object, obj);
+		
+		RETURN_LONG(obj->iterator ? obj->iterator->value.obj.handle:0);
+	}
+}
+/* }}} */
+
+/* {{{ proto HttpMessage HttpMessage::current(void)
+ *
+ * Implements Iterator.
+ */
+PHP_METHOD(HttpMessage, current)
+{
+	NO_ARGS {
+		getObject(http_message_object, obj);
+		
+		if (obj->iterator) {
+			RETURN_ZVAL(obj->iterator, 1, 0);
 		}
 	}
 }

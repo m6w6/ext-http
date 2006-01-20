@@ -108,19 +108,20 @@ PHP_HTTP_API void _http_message_set_info(http_message *message, http_info *info)
 {
 	message->http.version = info->http.version;
 	
-	switch (info->type)
+	switch (message->type = info->type)
 	{
 		case IS_HTTP_REQUEST:
-			message->type = HTTP_MSG_REQUEST;
 			HTTP_INFO(message).request.url = estrdup(HTTP_INFO(info).request.url);
 			STR_SET(HTTP_INFO(message).request.method, estrdup(HTTP_INFO(info).request.method));
-			break;
+		break;
 		
 		case IS_HTTP_RESPONSE:
-			message->type = HTTP_MSG_RESPONSE;
 			HTTP_INFO(message).response.code = HTTP_INFO(info).response.code;
 			STR_SET(HTTP_INFO(message).response.status, estrdup(HTTP_INFO(info).response.status));
-			break;
+		break;
+		
+		default:
+		break;
 	}
 }
 
