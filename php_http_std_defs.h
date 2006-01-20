@@ -60,22 +60,22 @@ typedef int STATUS;
 #define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
 /* return object(values) */
-#define RETVAL_OBJECT(o) \
-	RETVAL_OBJVAL((o)->value.obj)
-#define RETURN_OBJECT(o) \
-	RETVAL_OBJECT(o); \
+#define RETVAL_OBJECT(o, addref) \
+	RETVAL_OBJVAL((o)->value.obj, addref)
+#define RETURN_OBJECT(o, addref) \
+	RETVAL_OBJECT(o, addref); \
 	return
-#define RETVAL_OBJVAL(ov) \
-	ZVAL_OBJVAL(return_value, ov) \
-	if (Z_OBJ_HT_P(return_value)->add_ref) { \
-		Z_OBJ_HT_P(return_value)->add_ref(return_value TSRMLS_CC); \
-	}
-#define RETURN_OBJVAL(ov) \
-	RETVAL_OBJVAL(ov); \
+#define RETVAL_OBJVAL(ov, addref) \
+	ZVAL_OBJVAL(return_value, ov, addref)
+#define RETURN_OBJVAL(ov, addref) \
+	RETVAL_OBJVAL(ov, addref); \
 	return
-#define ZVAL_OBJVAL(zv, ov) \
+#define ZVAL_OBJVAL(zv, ov, addref) \
 	(zv)->type = IS_OBJECT; \
-	(zv)->value.obj = (ov);
+	(zv)->value.obj = (ov);\
+	if (addref && Z_OBJ_HT_P(zv)->add_ref) { \
+		Z_OBJ_HT_P(zv)->add_ref((zv) TSRMLS_CC); \
+	}
 /* return property */
 #define RETVAL_PROP(n) RETVAL_PROP_EX(getThis(), n)
 #define RETURN_PROP(n) RETURN_PROP_EX(getThis(), n)

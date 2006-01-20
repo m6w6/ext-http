@@ -603,7 +603,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		zval_ptr_dtor(&resp);
 
 		MAKE_STD_ZVAL(message);
-		ZVAL_OBJVAL(message, http_message_object_new_ex(http_message_object_ce, msg, NULL));
+		ZVAL_OBJVAL(message, http_message_object_new_ex(http_message_object_ce, msg, NULL), 0);
 		SET_PROP(responseMessage, message);
 		zval_ptr_dtor(&message);
 
@@ -1713,7 +1713,7 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 		SET_EH_THROW_HTTP();
 		message = GET_PROP(responseMessage);
 		if (Z_TYPE_P(message) == IS_OBJECT) {
-			RETVAL_OBJECT(message);
+			RETVAL_OBJECT(message, 1);
 		} else {
 			RETVAL_NULL();
 		}
@@ -1750,7 +1750,7 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 
 		SET_EH_THROW_HTTP();
 		if ((msg = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request)))) {
-			ZVAL_OBJVAL(return_value, http_message_object_new_ex(http_message_object_ce, msg, NULL));
+			RETVAL_OBJVAL(http_message_object_new_ex(http_message_object_ce, msg, NULL), 0);
 		}
 		SET_EH_NORMAL();
 	}
@@ -1824,7 +1824,7 @@ PHP_METHOD(HttpRequest, getHistory)
 
 		SET_EH_THROW_HTTP();
 		if ((msg = http_message_parse(PHPSTR_VAL(&obj->history), PHPSTR_LEN(&obj->history)))) {
-			ZVAL_OBJVAL(return_value, http_message_object_new_ex(http_message_object_ce, msg, NULL));
+			RETVAL_OBJVAL(http_message_object_new_ex(http_message_object_ce, msg, NULL), 0);
 		}
 		SET_EH_NORMAL();
 	}
@@ -1904,7 +1904,7 @@ PHP_METHOD(HttpRequest, send)
 	} else if (SUCCESS == http_request_object_requesthandler(obj, getThis())) {
 		http_request_exec(obj->request);
 		if (SUCCESS == http_request_object_responsehandler(obj, getThis())) {
-			RETVAL_OBJECT(GET_PROP(responseMessage));
+			RETVAL_OBJECT(GET_PROP(responseMessage), 1);
 		}
 	}
 

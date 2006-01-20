@@ -426,7 +426,7 @@ PHP_METHOD(HttpRequestPool, current)
 					current && obj->iterator.pos != pos++;
 					current = zend_llist_get_next_ex(&obj->pool.handles, &lpos));
 			if (current) {
-				RETURN_OBJECT(*current);
+				RETURN_OBJECT(*current, 1);
 			}
 		}
 		RETURN_NULL();

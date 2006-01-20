@@ -337,7 +337,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		case HTTP_MSG_PROPHASH_PARENT_MESSAGE:
 		case HTTP_MSG_CHILD_PROPHASH_PARENT_MESSAGE:
 			if (msg->parent) {
-				RETVAL_OBJVAL(obj->parent);
+				RETVAL_OBJVAL(obj->parent, 1);
 			} else {
 				RETVAL_NULL();
 			}
@@ -632,7 +632,7 @@ PHP_METHOD(HttpMessage, fromString)
 				}
 			}
 			if (ce) {
-				ZVAL_OBJVAL(return_value, http_message_object_new_ex(ce, msg, NULL));
+				RETVAL_OBJVAL(http_message_object_new_ex(ce, msg, NULL), 0);
 			}
 		}
 	}
@@ -997,7 +997,7 @@ PHP_METHOD(HttpMessage, getParentMessage)
 		getObject(http_message_object, obj);
 
 		if (obj->message->parent) {
-			RETVAL_OBJVAL(obj->parent);
+			RETVAL_OBJVAL(obj->parent, 1);
 		} else {
 			RETVAL_NULL();
 		}
@@ -1260,7 +1260,7 @@ PHP_METHOD(HttpMessage, detach)
 	zend_hash_copy(&msg->hdrs, &obj->message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	phpstr_append(&msg->body, PHPSTR_VAL(obj->message), PHPSTR_LEN(obj->message));
 	
-	ZVAL_OBJVAL(return_value, http_message_object_new_ex(Z_OBJCE_P(getThis()), msg, NULL));
+	RETVAL_OBJVAL(http_message_object_new_ex(Z_OBJCE_P(getThis()), msg, NULL), 0);
 }
 /* }}} */
 
@@ -1361,8 +1361,7 @@ PHP_METHOD(HttpMessage, next)
 		if (itr && itr->parent.handle) {
 			zval *old = obj->iterator;
 			MAKE_STD_ZVAL(obj->iterator);
-			ZVAL_OBJVAL(obj->iterator, itr->parent);
-			Z_OBJ_ADDREF_P(obj->iterator);
+			ZVAL_OBJVAL(obj->iterator, itr->parent, 1);
 			zval_ptr_dtor(&old);
 		} else {
 			zval_ptr_dtor(&obj->iterator);
