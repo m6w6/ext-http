@@ -10,7 +10,7 @@ echo "-TEST\n";
 echo http_build_url(parse_url("http://example.org/orig?q=1#f"), 
 	parse_url("https://www.example.com:9999/replaced#n")), "\n";
 echo http_build_url(("http://example.org/orig?q=1#f"), 
-	("https://www.example.com:9999/replaced#n"), $u), "\n";
+	("https://www.example.com:9999/replaced#n"), 0, $u), "\n";
 print_r($u);
 echo "Done\n";
 ?>
