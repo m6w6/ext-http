@@ -16,6 +16,8 @@
 
 #ifdef ZEND_ENGINE_2
 
+#include "ext/standard/php_http.h"
+
 #include "php_http_util_object.h"
 
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpUtil, method, 0, req_args)
@@ -27,9 +29,14 @@ HTTP_BEGIN_ARGS(date, 0)
 	HTTP_ARG_VAL(timestamp, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(buildQuery, 1)
+	HTTP_ARG_VAL(query, 0)
+HTTP_END_ARGS;
+
 HTTP_BEGIN_ARGS(buildUrl, 1)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(parts, 0)
+	HTTP_ARG_VAL(flags, 0)
 	HTTP_ARG_VAL(composed, 1)
 HTTP_END_ARGS;
 
@@ -97,6 +104,7 @@ zend_class_entry *http_util_object_ce;
 zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(date, http_date)
 	HTTP_UTIL_ALIAS(buildUrl, http_build_url)
+	HTTP_UTIL_ALIAS(buildQuery, http_build_query)
 	HTTP_UTIL_ALIAS(negotiateLanguage, http_negotiate_language)
 	HTTP_UTIL_ALIAS(negotiateCharset, http_negotiate_charset)
 	HTTP_UTIL_ALIAS(negotiateContentType, http_negotiate_content_type)

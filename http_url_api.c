@@ -23,6 +23,21 @@
 #include "php_http_api.h"
 #include "php_http_url_api.h"
 
+PHP_MINIT_FUNCTION(http_url)
+{
+	HTTP_LONG_CONSTANT("HTTP_URL_REPLACE", HTTP_URL_REPLACE);
+	HTTP_LONG_CONSTANT("HTTP_URL_JOIN_PATH", HTTP_URL_JOIN_PATH);
+	HTTP_LONG_CONSTANT("HTTP_URL_JOIN_QUERY", HTTP_URL_JOIN_QUERY);
+	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_USER", HTTP_URL_STRIP_USER);
+	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_PASS", HTTP_URL_STRIP_PASS);
+	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_AUTH", HTTP_URL_STRIP_AUTH);
+	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_PORT", HTTP_URL_STRIP_PORT);
+	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_PATH", HTTP_URL_STRIP_PATH);
+	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_QUERY", HTTP_URL_STRIP_QUERY);
+	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_FRAGMENT", HTTP_URL_STRIP_FRAGMENT);
+	return SUCCESS;
+}
+
 PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
 {
 	char *abs = estrdup(url);
@@ -31,7 +46,7 @@ PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
 	STR_SET(abs, NULL);
 	
 	if (purl) {
-		http_build_url(purl, NULL, NULL, &abs, NULL);
+		http_build_url(0, purl, NULL, NULL, &abs, NULL);
 		php_url_free(purl);
 	} else {
 		http_error_ex(HE_WARNING, HTTP_E_URL, "Could not parse URL (%s)", url);
@@ -40,24 +55,61 @@ PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
 	return abs;
 }
 
-/* {{{ void http_build_url(const php_url *, const php_url *, php_url **, char **, size_t *) */
-PHP_HTTP_API void _http_build_url(const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
+/* {{{ void http_build_url(int flags, const php_url *, const php_url *, php_url **, char **, size_t *) */
+PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
 {
 #ifdef HTTP_HAVE_NETDB
 	struct servent *se;
 #endif
-	php_url *url = emalloc(sizeof(php_url));
+	php_url *url = ecalloc(1, sizeof(php_url));
 
+#define __URLSET(u,n) \
+	((u)&&(u)->n)
 #define __URLCPY(n) \
-	url->n = (new_url&&new_url->n) ? estrdup(new_url->n) : ((old_url&&old_url->n) ? estrdup(old_url->n) : NULL)
-	url->port = (new_url&&new_url->port) ? new_url->port : ((old_url) ? old_url->port : 0);
+	url->n = __URLSET(new_url,n) ? estrdup(new_url->n) : (__URLSET(old_url,n) ? estrdup(old_url->n) : NULL)
+	
+	if (!(flags & HTTP_URL_STRIP_PORT)) {
+		url->port = (new_url&&new_url->port) ? new_url->port : ((old_url) ? old_url->port : 0);
+	}
+	if ((!(flags & HTTP_URL_STRIP_AUTH)) && (!(flags & HTTP_URL_STRIP_USER))) {
+		__URLCPY(user);
+	}
+	if ((!(flags & HTTP_URL_STRIP_AUTH)) && (!(flags & HTTP_URL_STRIP_PASS))) {
+		__URLCPY(pass);
+	}
+	
 	__URLCPY(scheme);
-	__URLCPY(user);
-	__URLCPY(pass);
 	__URLCPY(host);
-	__URLCPY(path);
-	__URLCPY(query);
-	__URLCPY(fragment);
+	
+	if (!(flags & HTTP_URL_STRIP_PATH)) {
+		if ((flags & HTTP_URL_JOIN_PATH) && __URLSET(old_url, path) && __URLSET(new_url, path) && *new_url->path != '/') {
+			size_t old_path_len = strlen(old_url->path), new_path_len = strlen(new_url->path);
+			
+			url->path = ecalloc(1, old_path_len + new_path_len + 1 + 1);
+			
+			strcat(url->path, old_url->path);
+			if (url->path[old_path_len - 1] != '/') {
+				php_dirname(url->path, old_path_len);
+				strcat(url->path, "/");
+			}
+			strcat(url->path, new_url->path);
+		} else {
+			__URLCPY(path);
+		}
+	}
+	if (!(flags & HTTP_URL_STRIP_QUERY)) {
+		if ((flags & HTTP_URL_JOIN_QUERY) && __URLSET(new_url, query) && __URLSET(old_url, query)) {
+			url->query = ecalloc(1, strlen(new_url->query) + strlen(old_url->query) + 1 + 1);
+			strcat(url->query, old_url->query);
+			strcat(url->query, "&");
+			strcat(url->query, new_url->query);
+		} else {
+			__URLCPY(query);
+		}
+	}
+	if (!(flags & HTTP_URL_STRIP_FRAGMENT)) {
+		__URLCPY(fragment);
+	}
 	
 	if (!url->scheme) {
 		switch (url->port)
@@ -129,6 +181,34 @@ PHP_HTTP_API void _http_build_url(const php_url *old_url, const php_url *new_url
 			
 			spprintf(&uri, 0, "/%s", url->path);
 			STR_SET(url->path, uri);
+		}
+	}
+	if (url->path) {
+		char *ptr, *end = url->path + strlen(url->path) + 1;
+			
+		for (ptr = strstr(url->path, "/."); ptr; ptr = strstr(ptr, "/.")) {
+			switch (ptr[2])
+			{
+				case '\0':
+					ptr[1] = '\0';
+				break;
+				
+				case '/':
+					memmove(&ptr[1], &ptr[3], end - &ptr[3]);
+				break;
+					
+				case '.':
+					if (ptr[3] == '/') {
+						char *pos = &ptr[4];
+						while (ptr != url->path) {
+							if (*--ptr == '/') {
+								break;
+							}
+						}
+						memmove(&ptr[1], pos, end - pos);
+					}
+				break;
+			}
 		}
 	}
 	

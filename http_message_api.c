@@ -491,7 +491,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 					parts.host = estrndup(Z_STRVAL_PP(zhost), Z_STRLEN_PP(zhost));
 				}
 				
-				http_build_url(url, &parts, NULL, &uri, NULL);
+				http_build_url(HTTP_URL_REPLACE, url, &parts, NULL, &uri, NULL);
 				php_url_free(url);
 				efree(parts.host);
 			} else {

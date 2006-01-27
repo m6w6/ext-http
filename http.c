@@ -65,7 +65,7 @@ ZEND_GET_MODULE(http)
 zend_function_entry http_functions[] = {
 	PHP_FE(http_test, NULL)
 	PHP_FE(http_date, NULL)
-	PHP_FE(http_build_url, http_arg_pass_ref_3)
+	PHP_FE(http_build_url, http_arg_pass_ref_4)
 	PHP_FE(http_negotiate_language, http_arg_pass_ref_2)
 	PHP_FE(http_negotiate_charset, http_arg_pass_ref_2)
 	PHP_FE(http_negotiate_content_type, http_arg_pass_ref_2)
@@ -236,6 +236,7 @@ PHP_MINIT_FUNCTION(http)
 	
 	if (	(SUCCESS != PHP_MINIT_CALL(http_support))	||
 			(SUCCESS != PHP_MINIT_CALL(http_send))		||
+			(SUCCESS != PHP_MINIT_CALL(http_url))		||
 #ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #endif /* HTTP_HAVE_CURL */

@@ -61,7 +61,7 @@ PHP_FUNCTION(http_date)
 }
 /* }}} */
 
-/* {{{ proto string http_build_url(mixed url[, mixed parts[, array &new_url]])
+/* {{{ proto string http_build_url(mixed url[, mixed parts[, int flags = HTTP_URL_REPLACE[, array &new_url]]])
  *
  * Returns the new URL as string on success or FALSE on failure.
  */
@@ -69,10 +69,11 @@ PHP_FUNCTION(http_build_url)
 {
 	char *url_str = NULL;
 	size_t url_len = 0;
+	long flags = HTTP_URL_REPLACE;
 	zval *z_old_url = NULL, *z_new_url = NULL, *z_composed_url = NULL;
 	php_url *old_url = NULL, *new_url = NULL, *composed_url = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/|z/z", &z_old_url, &z_new_url, &z_composed_url) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/|z/lz", &z_old_url, &z_new_url, &flags, &z_composed_url) != SUCCESS) {
 		RETURN_FALSE;
 	}
 	
@@ -102,7 +103,7 @@ PHP_FUNCTION(http_build_url)
 	}
 	
 	if (z_composed_url) {
-		http_build_url(old_url, new_url, &composed_url, &url_str, &url_len);
+		http_build_url(flags, old_url, new_url, &composed_url, &url_str, &url_len);
 		
 		zval_dtor(z_composed_url);
 		array_init(z_composed_url);
@@ -132,7 +133,7 @@ PHP_FUNCTION(http_build_url)
 		}
 		php_url_free(composed_url);
 	} else {
-		http_build_url(old_url, new_url, NULL, &url_str, &url_len);
+		http_build_url(flags, old_url, new_url, NULL, &url_str, &url_len);
 	}
 	
 	if (new_url) {

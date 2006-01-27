@@ -1085,7 +1085,7 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 				
 				memset(&hurl, 0, sizeof(php_url));
 				hurl.host = host ? Z_STRVAL_P(host) : NULL;
-				http_build_url(purl, &hurl, NULL, &url, NULL);
+				http_build_url(HTTP_URL_REPLACE, purl, &hurl, NULL, &url, NULL);
 				php_url_free(purl);
 				add_assoc_string(array, "url", url, 0);
 				
