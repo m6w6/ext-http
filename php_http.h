@@ -20,7 +20,9 @@
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
 #else
-#	include "php_config.h"
+#	ifndef PHP_WIN32
+#		include "php_config.h"
+#	endif
 #endif
 
 #include "php.h"
