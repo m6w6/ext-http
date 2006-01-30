@@ -275,7 +275,7 @@ PHP_METHOD(HttpQueryString, get)
 		if (name && name_len) {
 			zval **arrval, *qarray = GET_PROP(queryArray);
 			
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void **) &arrval)) {
+			if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void **) &arrval))) {
 				RETVAL_ZVAL(*arrval, 1, 0);
 				
 				if (ztype) {
@@ -357,25 +357,27 @@ PHP_METHOD(HttpQueryString, del)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &params)) {
 		zval *qarray = GET_PROP(queryArray);
 		
-		if (Z_TYPE_P(params) == IS_ARRAY) {
-			HashPosition pos;
-			zval **name;
-			
-			FOREACH_VAL(pos, params, name) {
-				ZVAL_ADDREF(*name);
-				convert_to_string_ex(name);
-				zend_hash_del(Z_ARRVAL_P(qarray), Z_STRVAL_PP(name), Z_STRLEN_PP(name) + 1);
-				zval_ptr_dtor(name);
-			}
-			
-			http_querystring_update(qarray, GET_PROP(queryString));
-		} else {
-			ZVAL_ADDREF(params);
-			convert_to_string_ex(&params);
-			if (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarray), Z_STRVAL_P(params), Z_STRLEN_P(params) + 1)) {
+		if (Z_TYPE_P(qarray) == IS_ARRAY) {
+			if (Z_TYPE_P(params) == IS_ARRAY) {
+				HashPosition pos;
+				zval **name;
+				
+				FOREACH_VAL(pos, params, name) {
+					ZVAL_ADDREF(*name);
+					convert_to_string_ex(name);
+					zend_hash_del(Z_ARRVAL_P(qarray), Z_STRVAL_PP(name), Z_STRLEN_PP(name) + 1);
+					zval_ptr_dtor(name);
+				}
+				
 				http_querystring_update(qarray, GET_PROP(queryString));
+			} else {
+				ZVAL_ADDREF(params);
+				convert_to_string_ex(&params);
+				if (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarray), Z_STRVAL_P(params), Z_STRLEN_P(params) + 1)) {
+					http_querystring_update(qarray, GET_PROP(queryString));
+				}
+				zval_ptr_dtor(&params);
 			}
-			zval_ptr_dtor(&params);
 		}
 	}
 	IF_RETVAL_USED {
