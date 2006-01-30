@@ -314,24 +314,12 @@ PHP_METHOD(HttpQueryString, get)
 				} else if(Z_TYPE_P(ztype) == IS_STRING) {
 					switch (tolower(Z_STRVAL_P(ztype)[0]))
 					{
-						case 'b':
-							type = HTTP_QUERYSTRING_TYPE_BOOL;
-							break;
-						case 'i':
-							type = HTTP_QUERYSTRING_TYPE_INT;
-							break;
-						case 'f':
-							type = HTTP_QUERYSTRING_TYPE_FLOAT;
-							break;	
-						case 's':
-							type = HTTP_QUERYSTRING_TYPE_STRING;
-							break;
-						case 'a':
-							type = HTTP_QUERYSTRING_TYPE_ARRAY;
-							break;
-						case 'o':
-							type = HTTP_QUERYSTRING_TYPE_OBJECT;
-							break;
+						case 'b':	type = HTTP_QUERYSTRING_TYPE_BOOL;		break;
+						case 'i':	type = HTTP_QUERYSTRING_TYPE_INT;		break;
+						case 'f':	type = HTTP_QUERYSTRING_TYPE_FLOAT;		break;	
+						case 's':	type = HTTP_QUERYSTRING_TYPE_STRING;	break;
+						case 'a':	type = HTTP_QUERYSTRING_TYPE_ARRAY;		break;
+						case 'o':	type = HTTP_QUERYSTRING_TYPE_OBJECT;	break;
 					}
 				}
 			}
@@ -489,7 +477,7 @@ PHP_METHOD(HttpQueryString, method) \
 	zend_bool del = 0; \
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|zb", &name, &name_len, &defval, &del)) { \
 		http_querystring_get(getThis(), TYPE, name, name_len, defval, del, return_value); \
-} \
+	} \
 }
 HTTP_QUERYSTRING_GETTER(getBool, IS_BOOL);
 HTTP_QUERYSTRING_GETTER(getInt, IS_LONG);
