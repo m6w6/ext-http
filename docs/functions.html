@@ -44,35 +44,37 @@
             display: block; 
         } 
         .toc {
-        	position: absolute;
-        	top: 10px;
-        	right: 10px;
-        	width: 300px;
-        	height: 95%;
-        	overflow: scroll;
-        	font-size: .9em;
-		}
-		body>div.toc {
-			position: fixed;
-		}
-		.toc ul {
-			padding-left: 15px;
-			margin-left: 0;
-		}
-		.toc li {
-			padding: 0;
-			margin: 0;
-		}
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            height: 95%;
+            overflow: scroll;
+            font-size: .9em;
+        }
+        body>div.toc {
+            position: fixed;
+        }
+        .toc ul {
+            padding-left: 15px;
+            margin-left: 0;
+        }
+        .toc li {
+            padding: 0;
+            margin: 0;
+        }
+        .tocfile {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body><h1 id="http_functions.c">http_functions.c</h1>
 <h2 id="http_date">string http_date([int timestamp])</h2>
 <p>Compose a valid HTTP date regarding RFC 822/1123<br />
 looking like: "Wed, 22 Dec 2004 11:34:47 GMT"</p>
-<p>Takes an optional unix timestamp as parameter.<br />
- <br />
-Returns the HTTP date as string.</p>
-<h2 id="http_build_url">string http_build_url(mixed url[, mixed parts[, array &new_url]])</h2>
+<p>Accepts an optional unix timestamp as parameter.</p>
+<p>Returns the HTTP date as string.</p>
+<h2 id="http_build_url">string http_build_url(mixed url[, mixed parts[, int flags = HTTP_URL_REPLACE[, array &new_url]]])</h2>
 <p>Returns the new URL as string on success or FALSE on failure.</p>
 <h2 id="http_negotiate_language">string http_negotiate_language(array supported[, array &result])</h2>
 <p>This function negotiates the clients preferred language based on its<br />
@@ -199,9 +201,11 @@ be treated with http_build_query() and the session identification will be append
 if session is true.</p>
 <p>The HTTP response code will be set according to status.<br />
 You can use one of the following constants for convenience:<br />
- - HTTP_REDIRECT			302 Found<br />
+ - HTTP_REDIRECT			302 Found for GET/HEAD, else 303 See Other<br />
  - HTTP_REDIRECT_PERM	301 Moved Permanently<br />
+ - HTTP_REDIRECT_FOUND	302 Found<br />
  - HTTP_REDIRECT_POST	303 See Other<br />
+ - HTTP_REDIRECT_PROXY	305 Use Proxy<br />
  - HTTP_REDIRECT_TEMP	307 Temporary Redirect</p>
 <p>Please see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3<br />
 for which redirect response code to use in which situation.</p>
@@ -256,7 +260,13 @@ several consecutive HTTP messages.</p>
 <p>Returns an associative array of incoming request headers.</p>
 <h2 id="http_get_request_body">string http_get_request_body(void)</h2>
 <p>Get the raw request body (e.g. POST or PUT data).</p>
-<p>Returns NULL when using the CLI SAPI.</p>
+<p>This function can not be used after http_get_request_body_stream() <br />
+if the request method was another than POST.</p>
+<p>Returns the raw request body as string on success or NULL on failure.</p>
+<h2 id="http_get_request_body_stream">resource http_get_request_body_stream(void)</h2>
+<p>Create a stream to read the raw request body (e.g. POST or PUT data).</p>
+<p>This function can only be used once if the request method was another than POST.</p>
+<p>Returns the raw request body as stream on success or NULL on failure.</p>
 <h2 id="http_match_request_header">bool http_match_request_header(string header, string value[, bool match_case = false])</h2>
 <p>Match an incoming HTTP header.</p>
 <p>Expects two string parameters representing the header name (case-insensitive)<br />
@@ -399,6 +409,7 @@ all supported features.</p>
 <p>Returns the final part of deflated data.</p>
 <hr noshade>
 <h1 id="http_inflatestream_object.c">http_inflatestream_object.c</h1>
+<h2 id="HttpInflateStream" class="o">HttpInflateStream</h2>
 <h3 id="HttpInflateStream_update">string HttpInflateStream::update(string data)</h3>
 <p>Passes more data through the inflate stream.</p>
 <p>Expects a string parameter containing (a part of) the data to inflate.</p>
@@ -419,10 +430,10 @@ consecutive HTTP messages.  The constructed object will actually <br />
 represent the *last* message of the passed string.  If there were<br />
 prior messages, those can be accessed by HttpMessage::getParentMessage().</p>
 <p>Throws HttpMalformedHeaderException.</p>
-<h3 id="HttpMessage_fromString">static HttpMessage HttpMessage::fromString(string raw_message)</h3>
+<h3 id="HttpMessage_fromString">static HttpMessage HttpMessage::fromString(string raw_message[, string class_name = "HttpMessage"])</h3>
 <p>Create an HttpMessage object from a string. Kind of a static constructor.</p>
 <p>Expects a string parameter containing a sinlge or several consecutive<br />
-HTTP messages.</p>
+HTTP messages.  Accepts an optionsl string parameter specifying the class to use.</p>
 <p>Returns an HttpMessage object on success or NULL on failure.</p>
 <p>Throws HttpMalformedHeadersException.</p>
 <h3 id="HttpMessage_getBody">string HttpMessage::getBody()</h3>
@@ -498,6 +509,10 @@ This provides limited functionality compared to HttpRequest and HttpResponse.</p
 <p>Accepts a bool parameter which specifies whether the returned string<br />
 should also contain any parent messages.</p>
 <p>Returns the full message as string.</p>
+<h3 id="HttpMessage_toMessageTypeObject">HttpRequest|HttpResponse HttpMessage::toMessageTypeObject(void)</h3>
+<p>Creates an object regarding to the type of the message.</p>
+<p>Returns either an HttpRequest or HttpResponse object on success, or NULL on failure.</p>
+<p>Throws HttpRuntimeException, HttpMessageTypeException, HttpHeaderException.</p>
 <h3 id="HttpMessage_count">int HttpMessage::count()</h3>
 <p>Implements Countable.</p>
 <p>Returns the number of parent messages + 1.</p>
@@ -507,6 +522,41 @@ should also contain any parent messages.</p>
 <h3 id="HttpMessage_unserialize">void HttpMessage::unserialize(string serialized)</h3>
 <p>Implements Serializable.</p>
 <p>Re-constructs the HttpMessage based upon the serialized string.</p>
+<h3 id="HttpMessage_detach">HttpMessage HttpMessage::detach(void)</h3>
+<p>Returns a clone of an HttpMessage object detached from any parent messages.</p>
+<h3 id="HttpMessage_prepend">void HttpMessage::prepend(HttpMessage message)</h3>
+<p>Prepends message(s) to the HTTP message.</p>
+<p>Expects an HttpMessage object as parameter.</p>
+<h3 id="HttpMessage_rewind">void HttpMessage::rewind(void)</h3>
+<p>Implements Iterator.</p>
+<h3 id="HttpMessage_valid">bool HttpMessage::valid(void)</h3>
+<p>Implements Iterator.</p>
+<h3 id="HttpMessage_next">void HttpMessage::next(void)</h3>
+<p>Implements Iterator.</p>
+<h3 id="HttpMessage_key">int HttpMessage::key(void)</h3>
+<p>Implements Iterator.</p>
+<h3 id="HttpMessage_current">HttpMessage HttpMessage::current(void)</h3>
+<p>Implements Iterator.</p>
+<hr noshade>
+<h1 id="http_querystring_object.c">http_querystring_object.c</h1>
+<h2 id="HttpQueryString" class="o">HttpQueryString</h2>
+<h3 id="HttpQueryString___construct">void HttpQueryString::__construct([bool global = true])</h3>
+<p>Creates a new HttpQueryString object instance.<br />
+Operates on and modifies $_GET and $_SERVER['QUERY_STRING'] if global is TRUE.</p>
+<h3 id="HttpQueryString___toString">string HttpQueryString::__toString()</h3>
+<p>Returns the string representation.</p>
+<h3 id="HttpQueryString_get">mixed HttpQueryString::get([string key[, mixed type = 0[, mixed defval = NULL[, bool delete = false]]]])</h3>
+<p>Get (part of) the query string.</p>
+<p>The type parameter is either one of the HttpQueryString::TYPE_* constants or a type abbreviation like<br />
+"b" for bool, "i" for int, "f" for float, "s" for string, "a" for array and "o" for a stdClass object.</p>
+<h3 id="HttpQueryString_set">string HttpQueryString::set(string name, mixed value)</h3>
+<p>Set a query string entry.</p>
+<h3 id="HttpQueryString_del">string HttpQueryString::del(mixed param)</h3>
+<p>Deletes entry/entries from the query string.</p>
+<h3 id="HttpQueryString_mod">string HttpQueryString::mod(array params)</h3>
+<p>Modifies the query string according to params. NULL values will unset the variable.</p>
+<h3 id="HttpQueryString_getInstance">HttpQueryString HttpQueryString::getInstance([bool global = true])</h3>
+<p>Get a single instance (differentiates between the global setting).</p>
 <hr noshade>
 <h1 id="http_request_object.c">http_request_object.c</h1>
 <h2 id="HttpRequest" class="o">HttpRequest</h2>
@@ -831,6 +881,7 @@ HttpRequestPool object.</p>
 already have finished their work.</p>
 <hr noshade>
 <h1 id="http_response_object.c">http_response_object.c</h1>
+<h2 id="HttpResponse" class="o">HttpResponse</h2>
 <h3 id="HttpResponse_setHeader">static bool HttpResponse::setHeader(string name, mixed value[, bool replace = true])</h3>
 <p>Send an HTTP header.</p>
 <p>Expects a string parameter containing the name of the header and a mixed<br />
@@ -987,7 +1038,7 @@ http.cache_log is set.</p>
 <hr noshade>
 <div class="toc"><strong>Table of Contents</strong>
 <ul>
-<li><a href="#http_functions.c">http_functions.c
+<li><a class="tocfile" href="#http_functions.c">http_functions.c</a>
 <ul>
 <li><a href="#http_date">http_date</a>
 </li>
@@ -1039,6 +1090,8 @@ http.cache_log is set.</p>
 </li>
 <li><a href="#http_get_request_body">http_get_request_body</a>
 </li>
+<li><a href="#http_get_request_body_stream">http_get_request_body_stream</a>
+</li>
 <li><a href="#http_match_request_header">http_match_request_header</a>
 </li>
 <li><a href="#http_get">http_get</a>
@@ -1075,7 +1128,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </li>
-<li><a href="#http_deflatestream_object.c">http_deflatestream_object.c
+<li><a class="tocfile" href="#http_deflatestream_object.c">http_deflatestream_object.c</a>
 <ul>
 <li><a href="#HttpDeflateStream___construct">HttpDeflateStream::__construct()</a></li>
 <li><a href="#HttpDeflateStream_update">HttpDeflateStream::update()</a></li>
@@ -1084,7 +1137,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </li>
-<li><a href="#http_inflatestream_object.c">http_inflatestream_object.c
+<li><a class="tocfile" href="#http_inflatestream_object.c">http_inflatestream_object.c</a>
 <ul>
 <li><a href="#HttpInflateStream_update">HttpInflateStream::update()</a></li>
 <li><a href="#HttpInflateStream_flush">HttpInflateStream::flush()</a></li>
@@ -1092,7 +1145,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </li>
-<li><a href="#http_message_object.c">http_message_object.c
+<li><a class="tocfile" href="#http_message_object.c">http_message_object.c</a>
 <ul>
 <li><a href="#HttpMessage___construct">HttpMessage::__construct()</a></li>
 <li><a href="#HttpMessage_fromString">HttpMessage::fromString()</a></li>
@@ -1114,13 +1167,33 @@ http.cache_log is set.</p>
 <li><a href="#HttpMessage_getParentMessage">HttpMessage::getParentMessage()</a></li>
 <li><a href="#HttpMessage_send">HttpMessage::send()</a></li>
 <li><a href="#HttpMessage_toString">HttpMessage::toString()</a></li>
+<li><a href="#HttpMessage_toMessageTypeObject">HttpMessage::toMessageTypeObject()</a></li>
 <li><a href="#HttpMessage_count">HttpMessage::count()</a></li>
 <li><a href="#HttpMessage_serialize">HttpMessage::serialize()</a></li>
 <li><a href="#HttpMessage_unserialize">HttpMessage::unserialize()</a></li>
+<li><a href="#HttpMessage_detach">HttpMessage::detach()</a></li>
+<li><a href="#HttpMessage_prepend">HttpMessage::prepend()</a></li>
+<li><a href="#HttpMessage_rewind">HttpMessage::rewind()</a></li>
+<li><a href="#HttpMessage_valid">HttpMessage::valid()</a></li>
+<li><a href="#HttpMessage_next">HttpMessage::next()</a></li>
+<li><a href="#HttpMessage_key">HttpMessage::key()</a></li>
+<li><a href="#HttpMessage_current">HttpMessage::current()</a></li>
 </li>
 </ul>
 </li>
-<li><a href="#http_request_object.c">http_request_object.c
+<li><a class="tocfile" href="#http_querystring_object.c">http_querystring_object.c</a>
+<ul>
+<li><a href="#HttpQueryString___construct">HttpQueryString::__construct()</a></li>
+<li><a href="#HttpQueryString___toString">HttpQueryString::__toString()</a></li>
+<li><a href="#HttpQueryString_get">HttpQueryString::get()</a></li>
+<li><a href="#HttpQueryString_set">HttpQueryString::set()</a></li>
+<li><a href="#HttpQueryString_del">HttpQueryString::del()</a></li>
+<li><a href="#HttpQueryString_mod">HttpQueryString::mod()</a></li>
+<li><a href="#HttpQueryString_getInstance">HttpQueryString::getInstance()</a></li>
+</li>
+</ul>
+</li>
+<li><a class="tocfile" href="#http_request_object.c">http_request_object.c</a>
 <ul>
 <li><a href="#HttpRequest___construct">HttpRequest::__construct()</a></li>
 <li><a href="#HttpRequest_setOptions">HttpRequest::setOptions()</a></li>
@@ -1170,7 +1243,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </li>
-<li><a href="#http_requestpool_object.c">http_requestpool_object.c
+<li><a class="tocfile" href="#http_requestpool_object.c">http_requestpool_object.c</a>
 <ul>
 <li><a href="#HttpRequestPool___construct">HttpRequestPool::__construct()</a></li>
 <li><a href="#HttpRequestPool___destruct">HttpRequestPool::__destruct()</a></li>
@@ -1191,7 +1264,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </li>
-<li><a href="#http_response_object.c">http_response_object.c
+<li><a class="tocfile" href="#http_response_object.c">http_response_object.c</a>
 <ul>
 <li><a href="#HttpResponse_setHeader">HttpResponse::setHeader()</a></li>
 <li><a href="#HttpResponse_getHeader">HttpResponse::getHeader()</a></li>
@@ -1227,7 +1300,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Tue, 03 Jan 2006 20:04:51 +0100</b></p>
+    <p><b>Generated at: Mon, 30 Jan 2006 18:56:09 +0100</b></p>
 </body>
 </html>
 
