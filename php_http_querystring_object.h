@@ -40,11 +40,10 @@ extern zend_object_value _http_querystring_object_new_ex(zend_class_entry *ce, h
 extern void _http_querystring_object_free(zend_object *object TSRMLS_DC);
 
 PHP_METHOD(HttpQueryString, __construct);
-PHP_METHOD(HttpQueryString, __toString);
+PHP_METHOD(HttpQueryString, toString);
+PHP_METHOD(HttpQueryString, toArray);
 PHP_METHOD(HttpQueryString, get);
 PHP_METHOD(HttpQueryString, set);
-PHP_METHOD(HttpQueryString, del);
-PHP_METHOD(HttpQueryString, mod);
 PHP_METHOD(HttpQueryString, getInstance);
 PHP_METHOD(HttpQueryString, getBool);
 PHP_METHOD(HttpQueryString, getInt);

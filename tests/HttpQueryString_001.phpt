@@ -25,10 +25,10 @@ var_dump(HttpQueryString::getInstance()->get('r'));
 var_dump(HttpQueryString::getInstance()->get('r', HttpQueryString::TYPE_ARRAY));
 var_dump(HttpQueryString::getInstance()->get('r', HttpQueryString::TYPE_OBJECT));
 
-HttpQueryString::getInstance()->set('z', array(2));
+HttpQueryString::getInstance()->set('z[0]=2');
 
-HttpQueryString::getInstance()->mod(array('a'=>'b', 'c'=> "3.4"));
-HttpQueryString::getInstance()->del('a');
+HttpQueryString::getInstance()->set(array('a'=>'b', 'c'=> "3.4"));
+HttpQueryString::getInstance()->set(array('a' => NULL));
 
 var_dump(HttpQueryString::getInstance());
 var_dump($_GET);
@@ -88,7 +88,7 @@ object(HttpQueryString)#1 (2) {
     ["z"]=>
     array(1) {
       [0]=>
-      int(2)
+      string(1) "2"
     }
   }
   ["queryString:private"]=>
@@ -109,7 +109,7 @@ array(3) {
   ["z"]=>
   array(1) {
     [0]=>
-    int(2)
+    string(1) "2"
   }
 }
 string(33) "c=3.4&r[0]=1&r[1]=2&r[2]=3&z[0]=2"
