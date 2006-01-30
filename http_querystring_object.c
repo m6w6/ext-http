@@ -26,6 +26,7 @@
 #define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpQueryString, method, ret_ref, req_args)
 #define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpQueryString, method, ret_ref)
 #define HTTP_QUERYSTRING_ME(method, visibility)		PHP_ME(HttpQueryString, method, HTTP_ARGS(HttpQueryString, method), visibility)
+#define HTTP_QUERYSTRING_GME(method, visibility)	PHP_ME(HttpQueryString, method, HTTP_ARGS(HttpQueryString, __getter), visibility)
 
 HTTP_BEGIN_ARGS(__construct, 0, 0)
 	HTTP_ARG_VAL(global, 0)
@@ -41,6 +42,7 @@ HTTP_BEGIN_ARGS(get, 0, 0)
 	HTTP_ARG_VAL(name, 0)
 	HTTP_ARG_VAL(type, 0)
 	HTTP_ARG_VAL(defval, 0)
+	HTTP_ARG_VAL(delete, 0)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(set, 0, 2)
@@ -54,6 +56,12 @@ HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(mod, 0, 1)
 	HTTP_ARG_VAL(params, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(__getter, 0, 1)
+	HTTP_ARG_VAL(name, 0)
+	HTTP_ARG_VAL(defval, 0)
+	HTTP_ARG_VAL(delete, 0)
 HTTP_END_ARGS;
 
 #define http_querystring_object_declare_default_properties() _http_querystring_object_declare_default_properties(TSRMLS_C)
@@ -71,6 +79,13 @@ zend_function_entry http_querystring_object_fe[] = {
 	HTTP_QUERYSTRING_ME(del, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_ME(mod, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_ME(getInstance, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	
+	HTTP_QUERYSTRING_GME(getBool, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_GME(getInt, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_GME(getFloat, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_GME(getString, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_GME(getArray, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_GME(getObject, ZEND_ACC_PUBLIC)
 	
 	EMPTY_FUNCTION_ENTRY
 };
@@ -196,6 +211,26 @@ static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
 	return zobj;
 }
 
+#define http_querystring_get(o, t, n, l, def, del, r) _http_querystring_get((o), (t), (n), (l), (def), (del), (r) TSRMLS_CC)
+static inline void _http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC)
+{
+	zval **arrval, *qarray = GET_PROP(queryArray);
+		
+	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void **) &arrval))) {
+		RETVAL_ZVAL(*arrval, 1, 0);
+		
+		if (type) {
+			convert_to_type(type, return_value);
+		}
+			
+		if (del && (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarray), name, name_len + 1))) {
+			http_querystring_update(qarray, GET_PROP(queryString));
+		}
+	} else if(defval) {
+		RETURN_ZVAL(defval, 1, 0);
+	}
+}
+
 /* {{{ proto void HttpQueryString::__construct([bool global = true])
  *
  * Creates a new HttpQueryString object instance.
@@ -273,48 +308,34 @@ PHP_METHOD(HttpQueryString, get)
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|szzb", &name, &name_len, &ztype, &defval, &del)) {
 		if (name && name_len) {
-			zval **arrval, *qarray = GET_PROP(queryArray);
-			
-			if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void **) &arrval))) {
-				RETVAL_ZVAL(*arrval, 1, 0);
-				
-				if (ztype) {
-					if (Z_TYPE_P(ztype) == IS_LONG) {
-						type = Z_LVAL_P(ztype);
-					} else if(Z_TYPE_P(ztype) == IS_STRING) {
-						switch (tolower(Z_STRVAL_P(ztype)[0]))
-						{
-							case 'b':
-								type = HTTP_QUERYSTRING_TYPE_BOOL;
+			if (ztype) {
+				if (Z_TYPE_P(ztype) == IS_LONG) {
+					type = Z_LVAL_P(ztype);
+				} else if(Z_TYPE_P(ztype) == IS_STRING) {
+					switch (tolower(Z_STRVAL_P(ztype)[0]))
+					{
+						case 'b':
+							type = HTTP_QUERYSTRING_TYPE_BOOL;
 							break;
-							case 'i':
-								type = HTTP_QUERYSTRING_TYPE_INT;
+						case 'i':
+							type = HTTP_QUERYSTRING_TYPE_INT;
 							break;
-							case 'f':
-								type = HTTP_QUERYSTRING_TYPE_FLOAT;
+						case 'f':
+							type = HTTP_QUERYSTRING_TYPE_FLOAT;
 							break;	
-							case 's':
-								type = HTTP_QUERYSTRING_TYPE_STRING;
+						case 's':
+							type = HTTP_QUERYSTRING_TYPE_STRING;
 							break;
-							case 'a':
-								type = HTTP_QUERYSTRING_TYPE_ARRAY;
+						case 'a':
+							type = HTTP_QUERYSTRING_TYPE_ARRAY;
 							break;
-							case 'o':
-								type = HTTP_QUERYSTRING_TYPE_OBJECT;
+						case 'o':
+							type = HTTP_QUERYSTRING_TYPE_OBJECT;
 							break;
-						}
-					}
-					if (type) {
-						convert_to_type(type, return_value);
 					}
 				}
-				
-				if (del && (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarray), name, name_len + 1))) {
-					http_querystring_update(qarray, GET_PROP(queryString));
-				}
-			} else if(defval) {
-				RETURN_ZVAL(defval, 1, 0);
 			}
+			http_querystring_get(getThis(), type, name, name_len, defval, del, return_value);
 		} else {
 			RETURN_PROP(queryString);
 		}
@@ -456,6 +477,26 @@ PHP_METHOD(HttpQueryString, getInstance)
 	}
 	SET_EH_NORMAL();
 }
+/* }}} */
+
+/* {{{ Getters by type */
+#define HTTP_QUERYSTRING_GETTER(method, TYPE) \
+PHP_METHOD(HttpQueryString, method) \
+{ \
+	char *name; \
+	int name_len; \
+	zval *defval = NULL; \
+	zend_bool del = 0; \
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|zb", &name, &name_len, &defval, &del)) { \
+		http_querystring_get(getThis(), TYPE, name, name_len, defval, del, return_value); \
+} \
+}
+HTTP_QUERYSTRING_GETTER(getBool, IS_BOOL);
+HTTP_QUERYSTRING_GETTER(getInt, IS_LONG);
+HTTP_QUERYSTRING_GETTER(getFloat, IS_DOUBLE);
+HTTP_QUERYSTRING_GETTER(getString, IS_STRING);
+HTTP_QUERYSTRING_GETTER(getArray, IS_ARRAY);
+HTTP_QUERYSTRING_GETTER(getObject, IS_OBJECT);
 /* }}} */
 
 #endif /* ZEND_ENGINE_2 */

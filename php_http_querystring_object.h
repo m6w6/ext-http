@@ -46,6 +46,12 @@ PHP_METHOD(HttpQueryString, set);
 PHP_METHOD(HttpQueryString, del);
 PHP_METHOD(HttpQueryString, mod);
 PHP_METHOD(HttpQueryString, getInstance);
+PHP_METHOD(HttpQueryString, getBool);
+PHP_METHOD(HttpQueryString, getInt);
+PHP_METHOD(HttpQueryString, getFloat);
+PHP_METHOD(HttpQueryString, getString);
+PHP_METHOD(HttpQueryString, getArray);
+PHP_METHOD(HttpQueryString, getObject);
 
 #endif
 #endif
