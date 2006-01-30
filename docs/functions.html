@@ -540,21 +540,19 @@ should also contain any parent messages.</p>
 <hr noshade>
 <h1 id="http_querystring_object.c">http_querystring_object.c</h1>
 <h2 id="HttpQueryString" class="o">HttpQueryString</h2>
-<h3 id="HttpQueryString___construct">void HttpQueryString::__construct([bool global = true])</h3>
+<h3 id="HttpQueryString___construct">void HttpQueryString::__construct([bool global = true[, mixed add])</h3>
 <p>Creates a new HttpQueryString object instance.<br />
 Operates on and modifies $_GET and $_SERVER['QUERY_STRING'] if global is TRUE.</p>
-<h3 id="HttpQueryString___toString">string HttpQueryString::__toString()</h3>
+<h3 id="HttpQueryString_toString">string HttpQueryString::toString()</h3>
 <p>Returns the string representation.</p>
+<h3 id="HttpQueryString_toArray">array HttpQueryString::toArray()</h3>
+<p>Returns the array representation.</p>
 <h3 id="HttpQueryString_get">mixed HttpQueryString::get([string key[, mixed type = 0[, mixed defval = NULL[, bool delete = false]]]])</h3>
 <p>Get (part of) the query string.</p>
 <p>The type parameter is either one of the HttpQueryString::TYPE_* constants or a type abbreviation like<br />
 "b" for bool, "i" for int, "f" for float, "s" for string, "a" for array and "o" for a stdClass object.</p>
-<h3 id="HttpQueryString_set">string HttpQueryString::set(string name, mixed value)</h3>
-<p>Set a query string entry.</p>
-<h3 id="HttpQueryString_del">string HttpQueryString::del(mixed param)</h3>
-<p>Deletes entry/entries from the query string.</p>
-<h3 id="HttpQueryString_mod">string HttpQueryString::mod(array params)</h3>
-<p>Modifies the query string according to params. NULL values will unset the variable.</p>
+<h3 id="HttpQueryString_set">string HttpQueryString::set(mixed params)</h3>
+<p>Set query string entry/entries. NULL values will unset the variable.</p>
 <h3 id="HttpQueryString_getInstance">HttpQueryString HttpQueryString::getInstance([bool global = true])</h3>
 <p>Get a single instance (differentiates between the global setting).</p>
 <hr noshade>
@@ -1184,11 +1182,10 @@ http.cache_log is set.</p>
 <li><a class="tocfile" href="#http_querystring_object.c">http_querystring_object.c</a>
 <ul>
 <li><a href="#HttpQueryString___construct">HttpQueryString::__construct()</a></li>
-<li><a href="#HttpQueryString___toString">HttpQueryString::__toString()</a></li>
+<li><a href="#HttpQueryString_toString">HttpQueryString::toString()</a></li>
+<li><a href="#HttpQueryString_toArray">HttpQueryString::toArray()</a></li>
 <li><a href="#HttpQueryString_get">HttpQueryString::get()</a></li>
 <li><a href="#HttpQueryString_set">HttpQueryString::set()</a></li>
-<li><a href="#HttpQueryString_del">HttpQueryString::del()</a></li>
-<li><a href="#HttpQueryString_mod">HttpQueryString::mod()</a></li>
 <li><a href="#HttpQueryString_getInstance">HttpQueryString::getInstance()</a></li>
 </li>
 </ul>
@@ -1300,7 +1297,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Mon, 30 Jan 2006 18:56:09 +0100</b></p>
+    <p><b>Generated at: Mon, 30 Jan 2006 21:47:53 +0100</b></p>
 </body>
 </html>
 
