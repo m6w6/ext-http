@@ -39,6 +39,7 @@
 #	include "php_http_filter_api.h"
 #	include "php_http_util_object.h"
 #	include "php_http_message_object.h"
+#	include "php_http_querystring_object.h"
 #	ifndef WONKY
 #		include "php_http_response_object.h"
 #	endif
@@ -251,6 +252,7 @@ PHP_MINIT_FUNCTION(http)
 	if (	(SUCCESS != PHP_MINIT_CALL(http_filter))			||
 			(SUCCESS != PHP_MINIT_CALL(http_util_object))		||
 			(SUCCESS != PHP_MINIT_CALL(http_message_object))	||
+			(SUCCESS != PHP_MINIT_CALL(http_querystring_object))||
 #	ifndef WONKY
 			(SUCCESS != PHP_MINIT_CALL(http_response_object))	||
 #	endif /* WONKY */

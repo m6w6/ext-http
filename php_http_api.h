@@ -162,7 +162,7 @@ static inline zval *_convert_to_type(int type, zval *z)
 			case IS_NULL:	convert_to_null(z);		break;
 			case IS_BOOL:	convert_to_boolean(z);	break;
 			case IS_LONG:	convert_to_long(z);		break;
-			case IS_DOUBLE:	convert_to_array(z);	break;
+			case IS_DOUBLE:	convert_to_double(z);	break;
 			case IS_STRING:	convert_to_string(z);	break;
 			case IS_ARRAY:	convert_to_array(z);	break;
 			case IS_OBJECT:	convert_to_object(z);	break;
@@ -180,7 +180,7 @@ static inline zval *_convert_to_type_ex(int type, zval *z, zval **p)
 			case IS_NULL:	convert_to_null_ex(&z);		break;
 			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
 			case IS_LONG:	convert_to_long_ex(&z);		break;
-			case IS_DOUBLE:	convert_to_array_ex(&z);	break;
+			case IS_DOUBLE:	convert_to_double_ex(&z);	break;
 			case IS_STRING:	convert_to_string_ex(&z);	break;
 			case IS_ARRAY:	convert_to_array_ex(&z);	break;
 			case IS_OBJECT:	convert_to_object_ex(&z);	break;

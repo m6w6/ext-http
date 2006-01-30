@@ -31,6 +31,7 @@ zend_class_entry *HTTP_EX_CE(request_pool);
 zend_class_entry *HTTP_EX_CE(socket);
 zend_class_entry *HTTP_EX_CE(response);
 zend_class_entry *HTTP_EX_CE(url);
+zend_class_entry *HTTP_EX_CE(querystring);
 
 PHP_MINIT_FUNCTION(http_exception_object)
 {
@@ -47,6 +48,7 @@ PHP_MINIT_FUNCTION(http_exception_object)
 	HTTP_REGISTER_EXCEPTION(HttpSocketException, HTTP_EX_CE(socket), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpResponseException, HTTP_EX_CE(response), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpUrlException, HTTP_EX_CE(url), HTTP_EX_DEF_CE);
+	HTTP_REGISTER_EXCEPTION(HttpQueryStringException, HTTP_EX_CE(querystring), HTTP_EX_DEF_CE);
 	
 	zend_declare_property_null(HTTP_EX_CE(request_pool), "exceptionStack", lenof("exceptionStack"), ZEND_ACC_PUBLIC TSRMLS_CC);
 
@@ -62,6 +64,7 @@ PHP_MINIT_FUNCTION(http_exception_object)
 	HTTP_LONG_CONSTANT("HTTP_E_SOCKET", HTTP_E_SOCKET);
 	HTTP_LONG_CONSTANT("HTTP_E_RESPONSE", HTTP_E_RESPONSE);
 	HTTP_LONG_CONSTANT("HTTP_E_URL", HTTP_E_URL);
+	HTTP_LONG_CONSTANT("HTTP_E_QUERYSTRING", HTTP_E_QUERYSTRING);
 	
 	return SUCCESS;
 }
@@ -89,6 +92,7 @@ zend_class_entry *_http_exception_get_for_code(long code)
 		case HTTP_E_SOCKET:						ex = HTTP_EX_CE(socket);					break;
 		case HTTP_E_RESPONSE:					ex = HTTP_EX_CE(response);					break;
 		case HTTP_E_URL:						ex = HTTP_EX_CE(url);						break;
+		case HTTP_E_QUERYSTRING:				ex = HTTP_EX_CE(querystring);				break;
 	}
 
 	return ex;

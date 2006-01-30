@@ -165,7 +165,7 @@ typedef int STATUS;
 			zend_hash_get_current_data_ex(hash, (void **) &val, &pos) == SUCCESS; \
 			zend_hash_move_forward_ex(hash, &pos))
 
-#define FOREACH_KEYLENVAL(pos, array, strkey, keylen, numkey, val) FOREACH_HASH_KEYVAL(pos, Z_ARRVAL_P(array), strkey, keylen, numkey, val)
+#define FOREACH_KEYLENVAL(pos, array, strkey, keylen, numkey, val) FOREACH_HASH_KEYLENVAL(pos, Z_ARRVAL_P(array), strkey, keylen, numkey, val)
 #define FOREACH_HASH_KEYLENVAL(pos, hash, strkey, keylen, numkey, val) \
 	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
 			zend_hash_get_current_key_ex(hash, &strkey, &keylen, &numkey, 0, &pos) != HASH_KEY_NON_EXISTANT && \
@@ -310,6 +310,7 @@ typedef int STATUS;
 #define HTTP_E_SOCKET				10L
 #define HTTP_E_RESPONSE				11L
 #define HTTP_E_URL					12L
+#define HTTP_E_QUERYSTRING			13L
 
 #ifdef ZEND_ENGINE_2
 #	define HTTP_BEGIN_ARGS_EX(class, method, ret_ref, req_args)	static ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 0, ret_ref, req_args)
