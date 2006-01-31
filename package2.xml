@@ -24,7 +24,7 @@ support. Parallel requests are available for PHP-5 and greater.
 
 PHP-5 classes:
 HttpUtil, HttpMessage, HttpRequest, HttpRequestPool, 
-HttpDeflateStream, HttpInflateStream
+HttpDeflateStream, HttpInflateStream, HttpQueryString
 
 PHP-5.1 classes:
 HttpResponse
@@ -51,15 +51,19 @@ HttpResponse
 + Added HttpMessage::toMessageTypeObject(), HttpMessage::detach(), HttpMessage::prepend()
 + Added Iterator interface to HttpMessage
 + Added http_get_request_body_stream()
++ Added HttpQueryString class
 
 - Don't pretend anylonger to understand 'compress' Content-Encoding.
 - Changed http_redirect() to PHPs behaviour by default.
 - Sending an User-Agent can now be prevented by setting 'useragent' to NULL or empty string. (Ilia)
 - Enable curl and zlib functionality by default in configure
+- Changed http_build_url() to accept a flag that defines what parts and how they are replaced/merged
 
 * Decreased the per-request calls to curl_easy_setopt()
 * Fixed gnutls ZTS build
+* Fixed openssl ZTS issues with other libraries using openssl
 * Fixed some issues with http_get_request_body()
+* Fixed bug #6645 - doesn't compile with zlib 1.2.2 (undefined Z_FIXED)
 ]]></notes>
  <contents>
   <dir name="/">
@@ -104,6 +108,7 @@ HttpResponse
    <file role="src" name="php_http_deflatestream_object.h"/>
    <file role="src" name="php_http_inflatestream_object.h"/>
    <file role="src" name="php_http_message_object.h"/>
+   <file role="src" name="php_http_querystring_object.h"/>
    <file role="src" name="php_http_request_object.h"/>
    <file role="src" name="php_http_requestpool_object.h"/>
    <file role="src" name="php_http_response_object.h"/>
@@ -129,6 +134,7 @@ HttpResponse
    <file role="src" name="http_deflatestream_object.c"/>
    <file role="src" name="http_inflatestream_object.c"/>
    <file role="src" name="http_message_object.c"/>
+   <file role="src" name="http_querystring_object.c"/>
    <file role="src" name="http_request_object.c"/>
    <file role="src" name="http_requestpool_object.c"/>
    <file role="src" name="http_response_object.c"/>
@@ -179,6 +185,8 @@ HttpResponse
     <file role="test" name="HttpMessage_004.phpt"/>
     <file role="test" name="HttpMessage_005.phpt"/>
     <file role="test" name="HttpMessage_006.phpt"/>
+    <file role="test" name="HttpQueryString_001.phpt"/>
+    <file role="test" name="HttpQueryString_002.phpt"/>
     <file role="test" name="HttpRequest_001.phpt"/>
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>
