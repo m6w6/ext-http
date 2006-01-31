@@ -53,6 +53,11 @@ typedef enum {
 #define HTTP_DEFLATE_STRATEGY_RLE		0x00000300
 #define HTTP_DEFLATE_STRATEGY_FIXED		0x00000400
 
+#ifndef Z_FIXED
+/* Z_FIXED does not exist prior 1.2.2.2 */
+#	define Z_FIXED 0
+#endif
+
 #define HTTP_INFLATE_TYPE_ZLIB			0x00000000
 #define HTTP_INFLATE_TYPE_GZIP			0x00000000
 #define HTTP_INFLATE_TYPE_RAW			0x00000001
