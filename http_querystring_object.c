@@ -49,9 +49,8 @@ HTTP_BEGIN_ARGS(get, 0, 0)
 	HTTP_ARG_VAL(delete, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(set, 0, 2)
-	HTTP_ARG_VAL(name, 0)
-	HTTP_ARG_VAL(value, 0)
+HTTP_BEGIN_ARGS(set, 0, 1)
+	HTTP_ARG_VAL(params, 0)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(__getter, 0, 1)
