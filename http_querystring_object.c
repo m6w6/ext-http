@@ -222,7 +222,9 @@ static inline int _http_querystring_modify_array(zval *qarray, zval *array TSRML
 #define http_querystring_modify(q, p) _http_querystring_modify((q), (p) TSRMLS_CC)
 static inline int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC)
 {
-	if (Z_TYPE_P(params) == IS_ARRAY) {
+	if ((Z_TYPE_P(params) == IS_OBJECT) && instanceof_function(Z_OBJCE_P(params), http_querystring_object_ce TSRMLS_CC)) {
+		return http_querystring_modify_array(qarray, GET_PROP_EX(params, queryArray));
+	} else if (Z_TYPE_P(params) == IS_ARRAY) {
 		return http_querystring_modify_array(qarray, params);
 	} else {
 		int rv;

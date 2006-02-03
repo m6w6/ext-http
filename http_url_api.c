@@ -208,6 +208,11 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 						memmove(&ptr[1], pos, end - pos);
 					}
 				break;
+				
+				default:
+					/* something else */
+					++ptr;
+				break;
 			}
 		}
 	}

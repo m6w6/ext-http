@@ -1013,7 +1013,6 @@ PHP_METHOD(HttpRequest, setContentType)
 {
 	char *ctype;
 	int ct_len;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ctype, &ct_len)) {
 		RETURN_FALSE;
@@ -1055,7 +1054,6 @@ PHP_METHOD(HttpRequest, getContentType)
 PHP_METHOD(HttpRequest, setQueryData)
 {
 	zval *qdata = NULL;
-	getObject(http_request_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!", &qdata)) {
 		RETURN_FALSE;

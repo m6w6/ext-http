@@ -171,6 +171,7 @@ static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 #ifndef HTTP_HAVE_SAPI_RTIME
 	G->request_time = time(NULL);
 #endif
+	G->read_post_data = 0;
 }
 
 #define http_globals_free(g) _http_globals_free((g) TSRMLS_CC)

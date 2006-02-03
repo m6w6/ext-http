@@ -25,7 +25,7 @@ var_dump(HttpQueryString::getInstance()->get('r'));
 var_dump(HttpQueryString::getInstance()->get('r', HttpQueryString::TYPE_ARRAY));
 var_dump(HttpQueryString::getInstance()->get('r', HttpQueryString::TYPE_OBJECT));
 
-HttpQueryString::getInstance()->set('z[0]=2');
+HttpQueryString::getInstance()->set(new HttpQueryString(false, 'z[0]=2'));
 
 HttpQueryString::getInstance()->set(array('a'=>'b', 'c'=> "3.4"));
 HttpQueryString::getInstance()->set(array('a' => NULL));
