@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package version="1.0" packagerversion="1.4.3">
+<package version="1.0" packagerversion="1.4.6">
  <name>pecl_http</name>
  <summary>Extended HTTP Support</summary>
  <description>This HTTP extension aims to provide a convenient and powerful 
@@ -16,7 +16,7 @@ support. Parallel requests are available for PHP-5 and greater.
 
 PHP-5 classes:
 HttpUtil, HttpMessage, HttpRequest, HttpRequestPool, 
-HttpDeflateStream, HttpInflateStream
+HttpDeflateStream, HttpInflateStream, HttpQueryString
 
 PHP-5.1 classes:
 HttpResponse
@@ -30,23 +30,28 @@ HttpResponse
   </maintainer>
   </maintainers>
  <release>
-  <version>0.21.0</version>
-  <date>2006-01-03</date>
+  <version>0.22.0</version>
+  <date>2006-02-03</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>! Encodings functionality requires libz version 1.2.0.4 or greater
+  <notes>+ Added HTTP &apos;protocol&apos; version request option. (Ilia)
++ Added optional class_name param to HttpMessage::fromString()
++ Added HttpMessage::toMessageTypeObject(), HttpMessage::detach(), HttpMessage::prepend()
++ Added Iterator interface to HttpMessage
++ Added http_get_request_body_stream()
++ Added HttpQueryString class
 
-+ Added HttpDeflateStream and HttpInflateStream classes
-+ Added ob_deflatehandler and ob_inflatehandler
-+ Added HttpRequest::getRawRequestMessage and ::getRawResponseMessage
-+ Added &apos;resetcookies&apos; request option (libcurl &gt; 7.14.1)
+- Don&apos;t pretend anylonger to understand &apos;compress&apos; Content-Encoding
+- Sending an User-Agent can now be prevented by setting &apos;useragent&apos; to NULL or empty string. (Ilia)
+- Changed http_redirect() to PHPs behaviour by default
+- Changed configure to enable curl and zlib functionality by default
+- Changed http_build_url() to accept a flag that defines what parts and how they are replaced/merged
 
-- Changed all methods and properties with &quot;URI&quot; in their name to &quot;URL&quot;
-- Changed HttpRequest properties to be private
-
-* Fixed a lot of memory corruptions within HttpRequest
-
-Special thanks for this release go to Ilia Alshanetsky.
+* Decreased the per-request calls to curl_easy_setopt()
+* Fixed gnutls ZTS build
+* Fixed openssl ZTS issues with other libraries using openssl
+* Fixed some issues with http_get_request_body()
+* Fixed bug #6645 - doesn&apos;t compile with zlib 1.2.2 (undefined Z_FIXED)
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -108,6 +113,11 @@ Special thanks for this release go to Ilia Alshanetsky.
     <file role="test" name="HttpMessage_001.phpt"/>
     <file role="test" name="HttpMessage_002.phpt"/>
     <file role="test" name="HttpMessage_003.phpt"/>
+    <file role="test" name="HttpMessage_004.phpt"/>
+    <file role="test" name="HttpMessage_005.phpt"/>
+    <file role="test" name="HttpMessage_006.phpt"/>
+    <file role="test" name="HttpQueryString_001.phpt"/>
+    <file role="test" name="HttpQueryString_002.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
     <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequestPool_003.phpt"/>
@@ -203,6 +213,7 @@ Special thanks for this release go to Ilia Alshanetsky.
    <file role="src" name="http_info_api.c"/>
    <file role="src" name="http_message_api.c"/>
    <file role="src" name="http_message_object.c"/>
+   <file role="src" name="http_querystring_object.c"/>
    <file role="src" name="http_requestpool_object.c"/>
    <file role="src" name="http_request_api.c"/>
    <file role="src" name="http_request_body_api.c"/>
@@ -231,6 +242,7 @@ Special thanks for this release go to Ilia Alshanetsky.
    <file role="src" name="php_http_info_api.h"/>
    <file role="src" name="php_http_message_api.h"/>
    <file role="src" name="php_http_message_object.h"/>
+   <file role="src" name="php_http_querystring_object.h"/>
    <file role="src" name="php_http_requestpool_object.h"/>
    <file role="src" name="php_http_request_api.h"/>
    <file role="src" name="php_http_request_body_api.h"/>

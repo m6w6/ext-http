@@ -37,7 +37,7 @@ HttpResponse
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>0.22.0-dev</release>
+  <release>0.22.0</release>
   <api>0.22.0</api>
  </version>
  <stability>
@@ -53,10 +53,10 @@ HttpResponse
 + Added http_get_request_body_stream()
 + Added HttpQueryString class
 
-- Don't pretend anylonger to understand 'compress' Content-Encoding.
-- Changed http_redirect() to PHPs behaviour by default.
+- Don't pretend anylonger to understand 'compress' Content-Encoding
 - Sending an User-Agent can now be prevented by setting 'useragent' to NULL or empty string. (Ilia)
-- Enable curl and zlib functionality by default in configure
+- Changed http_redirect() to PHPs behaviour by default
+- Changed configure to enable curl and zlib functionality by default
 - Changed http_build_url() to accept a flag that defines what parts and how they are replaced/merged
 
 * Decreased the per-request calls to curl_easy_setopt()
