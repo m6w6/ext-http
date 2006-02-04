@@ -85,6 +85,8 @@ if (PHP_HTTP != "no") {
 	if (PHP_SESSION != "no") {
 		ADD_EXTENSION_DEP("http", "session", true);
 	}
+	// for http_build_query()
+	ADD_EXTENSION_DEP("http", "standard");
 
 	CURL_LIB = PHP_DEBUG != "no" ? "libcurld.lib":"libcurl.lib";
     if (CHECK_HEADER_ADD_INCLUDE("curl/curl.h", "CFLAGS_HTTP") &&
