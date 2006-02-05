@@ -18,6 +18,7 @@
 
 #ifdef ZEND_ENGINE_2
 
+#include "zend_interfaces.h"
 #include "ext/standard/url.h"
 
 #include "php_http_api.h"
@@ -32,7 +33,6 @@
 #include "php_http_request_object.h"
 
 #ifndef WONKY
-#	include "zend_interfaces.h"
 #	ifdef HAVE_SPL
 /* SPL doesn't install its headers */
 extern PHPAPI zend_class_entry *spl_ce_Countable;

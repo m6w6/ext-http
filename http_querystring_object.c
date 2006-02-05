@@ -35,9 +35,11 @@ HTTP_BEGIN_ARGS(__construct, 0, 0)
 	HTTP_ARG_VAL(params, 0)
 HTTP_END_ARGS;
 
+#ifndef WONKY
 HTTP_BEGIN_ARGS(getInstance, 0, 0)
 	HTTP_ARG_VAL(global, 0)
 HTTP_END_ARGS;
+#endif
 
 HTTP_EMPTY_ARGS(toArray, 0);
 HTTP_EMPTY_ARGS(toString, 0);
@@ -76,7 +78,9 @@ zend_function_entry http_querystring_object_fe[] = {
 	HTTP_QUERYSTRING_ME(get, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_ME(set, ZEND_ACC_PUBLIC)
 	
+#ifndef WONKY
 	HTTP_QUERYSTRING_ME(getInstance, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+#endif
 	
 	HTTP_QUERYSTRING_GME(getBool, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_GME(getInt, ZEND_ACC_PUBLIC)
@@ -243,6 +247,7 @@ static inline int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC)
 	}
 }
 
+#ifndef WONKY
 #define http_querystring_instantiate(g) _http_querystring_instantiate((g) TSRMLS_CC)
 static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
 {
@@ -260,6 +265,7 @@ static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
 	
 	return zobj;
 }
+#endif
 
 #define http_querystring_get(o, t, n, l, def, del, r) _http_querystring_get((o), (t), (n), (l), (def), (del), (r) TSRMLS_CC)
 static inline void _http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC)
@@ -422,6 +428,7 @@ PHP_METHOD(HttpQueryString, set)
 }
 /* }}} */
 
+#ifndef WONKY
 /* {{{ proto HttpQueryString HttpQueryString::getInstance([bool global = true])
  *
  * Get a single instance (differentiates between the global setting).
@@ -458,6 +465,7 @@ PHP_METHOD(HttpQueryString, getInstance)
 	SET_EH_NORMAL();
 }
 /* }}} */
+#endif
 
 /* {{{ Getters by type */
 #define HTTP_QUERYSTRING_GETTER(method, TYPE) \

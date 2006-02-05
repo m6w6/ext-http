@@ -34,6 +34,7 @@
 #ifdef HTTP_HAVE_ZLIB
 #	include "php_http_encoding_api.h"
 #endif
+#include "php_http_url_api.h"
 
 #ifdef ZEND_ENGINE_2
 #	include "php_http_filter_api.h"
