@@ -67,6 +67,10 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_test, NULL)
 	PHP_FE(http_date, NULL)
 	PHP_FE(http_build_url, http_arg_pass_ref_4)
+	PHP_FE(http_build_str, NULL)
+#ifndef ZEND_ENGINE_2
+	PHP_FALIAS(http_build_query, http_build_str)
+#endif
 	PHP_FE(http_negotiate_language, http_arg_pass_ref_2)
 	PHP_FE(http_negotiate_charset, http_arg_pass_ref_2)
 	PHP_FE(http_negotiate_content_type, http_arg_pass_ref_2)
@@ -103,9 +107,6 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_request_method_unregister, NULL)
 	PHP_FE(http_request_method_exists, NULL)
 	PHP_FE(http_request_method_name, NULL)
-#ifndef ZEND_ENGINE_2
-	PHP_FE(http_build_query, NULL)
-#endif
 	PHP_FE(ob_etaghandler, NULL)
 #ifdef HTTP_HAVE_ZLIB
 	PHP_FE(http_deflate, NULL)

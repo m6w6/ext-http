@@ -23,9 +23,7 @@ extern PHP_MINIT_FUNCTION(http_util_object);
 
 PHP_METHOD(HttpUtil, date);
 PHP_METHOD(HttpUtil, buildUrl);
-#ifndef PHP_WIN32
 PHP_METHOD(HttpUtil, buildQuery);
-#endif
 PHP_METHOD(HttpUtil, negotiateLanguage);
 PHP_METHOD(HttpUtil, negotiateCharset);
 PHP_METHOD(HttpUtil, negotiateContentType);

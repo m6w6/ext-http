@@ -15,7 +15,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "0.22.0"
+#define PHP_EXT_HTTP_VERSION "0.23.0dev"
 
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
@@ -147,6 +147,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);
 PHP_FUNCTION(http_build_url);
+PHP_FUNCTION(http_build_str);
 PHP_FUNCTION(http_negotiate_language);
 PHP_FUNCTION(http_negotiate_charset);
 PHP_FUNCTION(http_negotiate_content_type);
@@ -183,9 +184,6 @@ PHP_FUNCTION(http_request_method_register);
 PHP_FUNCTION(http_request_method_unregister);
 PHP_FUNCTION(http_request_method_exists);
 PHP_FUNCTION(http_request_method_name);
-#ifndef ZEND_ENGINE_2
-PHP_FUNCTION(http_build_query);
-#endif /* ZEND_ENGINE_2 */
 PHP_FUNCTION(ob_etaghandler);
 #ifdef HTTP_HAVE_ZLIB
 PHP_FUNCTION(http_deflate);

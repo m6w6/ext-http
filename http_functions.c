@@ -145,6 +145,40 @@ PHP_FUNCTION(http_build_url)
 }
 /* }}} */
 
+/* {{{ proto string http_build_str(array query [, string prefix[, string arg_separator]])
+ *
+ * Opponent to parse_str().
+ */
+PHP_FUNCTION(http_build_str)
+{
+	zval *formdata;
+	char *prefix = NULL, *arg_sep = INI_STR("arg_separator.output");
+	int prefix_len = 0, arg_sep_len = strlen(arg_sep);
+	phpstr formstr;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|ss", &formdata, &prefix, &prefix_len, &arg_sep, &arg_sep_len) != SUCCESS) {
+		RETURN_FALSE;
+	}
+
+	if (!arg_sep_len) {
+		arg_sep = HTTP_URL_ARGSEP;
+		arg_sep_len = lenof(HTTP_URL_ARGSEP);
+	}
+
+	phpstr_init(&formstr);
+	if (SUCCESS != http_urlencode_hash_recursive(HASH_OF(formdata), &formstr, arg_sep, arg_sep_len, prefix, prefix_len)) {
+		RETURN_FALSE;
+	}
+
+	if (!formstr.used) {
+		phpstr_dtor(&formstr);
+		RETURN_NULL();
+	}
+
+	RETURN_PHPSTR_VAL(&formstr);
+}
+/* }}} */
+
 #define HTTP_DO_NEGOTIATE(type, supported, rs_array) \
 { \
 	HashTable *result; \
@@ -1561,44 +1595,6 @@ PHP_FUNCTION(http_request_method_name)
 		RETURN_STRING(estrdup(http_request_method_name((int) method)), 0);
 	}
 }
-/* }}} */
-
-/* {{{ Sara Golemons http_build_query() */
-#ifndef ZEND_ENGINE_2
-
-/* {{{ proto string http_build_query(mixed formdata [, string prefix[, string arg_separator]])
-   Generates a form-encoded query string from an associative array or object. */
-PHP_FUNCTION(http_build_query)
-{
-	zval *formdata;
-	char *prefix = NULL, *arg_sep = INI_STR("arg_separator.output");
-	int prefix_len = 0, arg_sep_len = strlen(arg_sep);
-	phpstr *formstr;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|ss", &formdata, &prefix, &prefix_len, &arg_sep, &arg_sep_len) != SUCCESS) {
-		RETURN_FALSE;
-	}
-
-	if (!arg_sep_len) {
-		arg_sep = HTTP_URL_ARGSEP;
-		arg_sep_len = lenof(HTTP_URL_ARGSEP);
-	}
-
-	formstr = phpstr_new();
-	if (SUCCESS != http_urlencode_hash_recursive(HASH_OF(formdata), formstr, arg_sep, arg_sep_len, prefix, prefix_len)) {
-		phpstr_free(&formstr);
-		RETURN_FALSE;
-	}
-
-	if (!formstr->used) {
-		phpstr_free(&formstr);
-		RETURN_NULL();
-	}
-
-	RETURN_PHPSTR_PTR(formstr);
-}
-/* }}} */
-#endif /* !ZEND_ENGINE_2 */
 /* }}} */
 
 /* {{{ */
