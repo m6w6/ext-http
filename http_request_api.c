@@ -180,19 +180,23 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 
 /* {{{ MACROS */
 #ifndef HAVE_CURL_EASY_STRERROR
-#	define curl_easy_strerror(dummy) "unkown error"
+#	define curl_easy_strerror(dummy) "unknown error"
 #endif
 
-#define HTTP_CURL_INFO(I) HTTP_CURL_INFO_EX(I, I)
+#define HTTP_CURL_INFO(I) \
+	{ \
+		char *N = #I; \
+		HTTP_CURL_INFO_EX(I, N+lenof("CURLINFO_")); \
+	}
 #define HTTP_CURL_INFO_EX(I, X) \
-	switch (CURLINFO_ ##I & ~CURLINFO_MASK) \
+	switch (I & ~CURLINFO_MASK) \
 	{ \
 		case CURLINFO_STRING: \
 		{ \
 			char *c; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_ ##I, &c)) { \
-				char *key = estrndup(#X, lenof(#X)); \
-				add_assoc_string(&array, pretty_key(key, lenof(#X), 0, 0), c ? c : "", 1); \
+			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &c)) { \
+				char *key = estrndup(X, strlen(X)); \
+				add_assoc_string(&array, pretty_key(key, strlen(X), 0, 0), c ? c : "", 1); \
 				efree(key); \
 			} \
 		} \
@@ -201,9 +205,9 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 		case CURLINFO_DOUBLE: \
 		{ \
 			double d; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_ ##I, &d)) { \
-				char *key = estrndup(#X, lenof(#X)); \
-				add_assoc_double(&array, pretty_key(key, lenof(#X), 0, 0), d); \
+			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &d)) { \
+				char *key = estrndup(X, strlen(X)); \
+				add_assoc_double(&array, pretty_key(key, strlen(X), 0, 0), d); \
 				efree(key); \
 			} \
 		} \
@@ -212,9 +216,9 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 		case CURLINFO_LONG: \
 		{ \
 			long l; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_ ##I, &l)) { \
-				char *key = estrndup(#X, lenof(#X)); \
-				add_assoc_long(&array, pretty_key(key, lenof(#X), 0, 0), l); \
+			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &l)) { \
+				char *key = estrndup(X, strlen(X)); \
+				add_assoc_long(&array, pretty_key(key, strlen(X), 0, 0), l); \
 				efree(key); \
 			} \
 		} \
@@ -223,15 +227,15 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 		case CURLINFO_SLIST: \
 		{ \
 			struct curl_slist *l, *p; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_ ##I, &l)) { \
+			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &l)) { \
 				zval *subarray; \
-				char *key = estrndup(#X, lenof(#X)); \
+				char *key = estrndup(X, strlen(X)); \
 				MAKE_STD_ZVAL(subarray); \
 				array_init(subarray); \
 				for (p = l; p; p = p->next) { \
 					add_next_index_string(subarray, p->data, 1); \
 				} \
-				add_assoc_zval(&array, pretty_key(key, lenof(#X), 0, 0), subarray); \
+				add_assoc_zval(&array, pretty_key(key, strlen(X), 0, 0), subarray); \
 				curl_slist_free_all(l); \
 				efree(key); \
 			} \
@@ -239,10 +243,8 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 	}
 
 #define HTTP_CURL_OPT(OPTION, p) HTTP_CURL_OPT_EX(request->ch, OPTION, (p))
-#define HTTP_CURL_OPT_EX(ch, OPTION, p) curl_easy_setopt((ch), CURLOPT_##OPTION, (p))
+#define HTTP_CURL_OPT_EX(ch, OPTION, p) curl_easy_setopt((ch), OPTION, (p))
 #define HTTP_CURL_OPT_STRING(keyname, obdc) HTTP_CURL_OPT_STRING_EX(keyname, keyname, obdc)
-#define HTTP_CURL_OPT_SSL_STRING(keyname, obdc) HTTP_CURL_OPT_STRING_EX(keyname, SSL##keyname, obdc)
-#define HTTP_CURL_OPT_SSL_STRING_(keyname,obdc ) HTTP_CURL_OPT_STRING_EX(keyname, SSL_##keyname, obdc)
 #define HTTP_CURL_OPT_STRING_EX(keyname, optname, obdc) \
 	if (!strcasecmp(key, #keyname)) { \
 		zval *copy = http_request_option_cache(request, #keyname, zval_copy(IS_STRING, *param)); \
@@ -253,9 +255,7 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 		key = NULL; \
 		continue; \
 	}
-#define HTTP_CURL_OPT_LONG(keyname) HTTP_OPT_SSL_LONG_EX(keyname, keyname)
-#define HTTP_CURL_OPT_SSL_LONG(keyname) HTTP_CURL_OPT_LONG_EX(keyname, SSL##keyname)
-#define HTTP_CURL_OPT_SSL_LONG_(keyname) HTTP_CURL_OPT_LONG_EX(keyname, SSL_##keyname)
+#define HTTP_CURL_OPT_LONG(keyname) HTTP_CURL_OPT_LONG_EX(keyname, keyname)
 #define HTTP_CURL_OPT_LONG_EX(keyname, optname) \
 	if (!strcasecmp(key, #keyname)) { \
 		zval *copy = http_request_option_cache(request, #keyname, zval_copy(IS_LONG, *param)); \
@@ -285,23 +285,23 @@ PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request)
 {
 	if (ch || (ch = curl_easy_init())) {
 #if defined(ZTS)
-		HTTP_CURL_OPT_EX(ch, NOSIGNAL, 1);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_NOSIGNAL, 1);
 #endif
-		HTTP_CURL_OPT_EX(ch, HEADER, 0);
-		HTTP_CURL_OPT_EX(ch, FILETIME, 1);
-		HTTP_CURL_OPT_EX(ch, AUTOREFERER, 1);
-		HTTP_CURL_OPT_EX(ch, VERBOSE, 1);
-		HTTP_CURL_OPT_EX(ch, HEADERFUNCTION, NULL);
-		HTTP_CURL_OPT_EX(ch, DEBUGFUNCTION, http_curl_raw_callback);
-		HTTP_CURL_OPT_EX(ch, READFUNCTION, http_curl_read_callback);
-		HTTP_CURL_OPT_EX(ch, IOCTLFUNCTION, http_curl_ioctl_callback);
-		HTTP_CURL_OPT_EX(ch, WRITEFUNCTION, http_curl_dummy_callback);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_HEADER, 0);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_FILETIME, 1);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_AUTOREFERER, 1);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_VERBOSE, 1);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_HEADERFUNCTION, NULL);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_DEBUGFUNCTION, http_curl_raw_callback);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_READFUNCTION, http_curl_read_callback);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_IOCTLFUNCTION, http_curl_ioctl_callback);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_WRITEFUNCTION, http_curl_dummy_callback);
 		
 		/* set context */
 		if (request) {
-			HTTP_CURL_OPT_EX(ch, PRIVATE, request);
-			HTTP_CURL_OPT_EX(ch, DEBUGDATA, request);
-			HTTP_CURL_OPT_EX(ch, ERRORBUFFER, request->_error);
+			HTTP_CURL_OPT_EX(ch, CURLOPT_PRIVATE, request);
+			HTTP_CURL_OPT_EX(ch, CURLOPT_DEBUGDATA, request);
+			HTTP_CURL_OPT_EX(ch, CURLOPT_ERRORBUFFER, request->_error);
 			
 			/* attach curl handle */
 			request->ch = ch;
@@ -319,10 +319,10 @@ PHP_HTTP_API void _http_curl_free(CURL **ch)
 {
 	if (*ch) {
 		/* avoid nasty segfaults with already cleaned up callbacks */
-		HTTP_CURL_OPT_EX(*ch, NOPROGRESS, 1);
-		HTTP_CURL_OPT_EX(*ch, PROGRESSFUNCTION, NULL);
-		HTTP_CURL_OPT_EX(*ch, VERBOSE, 0);
-		HTTP_CURL_OPT_EX(*ch, DEBUGFUNCTION, NULL);
+		HTTP_CURL_OPT_EX(*ch, CURLOPT_NOPROGRESS, 1);
+		HTTP_CURL_OPT_EX(*ch, CURLOPT_PROGRESSFUNCTION, NULL);
+		HTTP_CURL_OPT_EX(*ch, CURLOPT_VERBOSE, 0);
+		HTTP_CURL_OPT_EX(*ch, CURLOPT_DEBUGFUNCTION, NULL);
 		curl_easy_cleanup(*ch);
 		*ch = NULL;
 	}
@@ -410,62 +410,62 @@ PHP_HTTP_API void _http_request_reset(http_request *request)
 PHP_HTTP_API void _http_request_defaults(http_request *request)
 {
 	if (request->ch) {
-		HTTP_CURL_OPT(PROGRESSFUNCTION, NULL);
-		HTTP_CURL_OPT(URL, NULL);
-		HTTP_CURL_OPT(NOPROGRESS, 1);
-		HTTP_CURL_OPT(PROXY, NULL);
-		HTTP_CURL_OPT(PROXYPORT, 0);
-		HTTP_CURL_OPT(PROXYUSERPWD, NULL);
-		HTTP_CURL_OPT(PROXYAUTH, 0);
-		HTTP_CURL_OPT(INTERFACE, NULL);
-		HTTP_CURL_OPT(PORT, 0);
-		HTTP_CURL_OPT(USERPWD, NULL);
-		HTTP_CURL_OPT(HTTPAUTH, 0);
-		HTTP_CURL_OPT(ENCODING, NULL);
-		HTTP_CURL_OPT(FOLLOWLOCATION, 0);
-		HTTP_CURL_OPT(UNRESTRICTED_AUTH, 0);
-		HTTP_CURL_OPT(REFERER, NULL);
-		HTTP_CURL_OPT(USERAGENT, "PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
-		HTTP_CURL_OPT(HTTPHEADER, NULL);
-		HTTP_CURL_OPT(COOKIE, NULL);
+		HTTP_CURL_OPT(CURLOPT_PROGRESSFUNCTION, NULL);
+		HTTP_CURL_OPT(CURLOPT_URL, NULL);
+		HTTP_CURL_OPT(CURLOPT_NOPROGRESS, 1);
+		HTTP_CURL_OPT(CURLOPT_PROXY, NULL);
+		HTTP_CURL_OPT(CURLOPT_PROXYPORT, 0);
+		HTTP_CURL_OPT(CURLOPT_PROXYUSERPWD, NULL);
+		HTTP_CURL_OPT(CURLOPT_PROXYAUTH, 0);
+		HTTP_CURL_OPT(CURLOPT_INTERFACE, NULL);
+		HTTP_CURL_OPT(CURLOPT_PORT, 0);
+		HTTP_CURL_OPT(CURLOPT_USERPWD, NULL);
+		HTTP_CURL_OPT(CURLOPT_HTTPAUTH, 0);
+		HTTP_CURL_OPT(CURLOPT_ENCODING, NULL);
+		HTTP_CURL_OPT(CURLOPT_FOLLOWLOCATION, 0);
+		HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, 0);
+		HTTP_CURL_OPT(CURLOPT_REFERER, NULL);
+		HTTP_CURL_OPT(CURLOPT_USERAGENT, "PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
+		HTTP_CURL_OPT(CURLOPT_HTTPHEADER, NULL);
+		HTTP_CURL_OPT(CURLOPT_COOKIE, NULL);
 #if LIBCURL_VERSION_NUM >= 0x070e01
-		HTTP_CURL_OPT(COOKIELIST, NULL);
+		HTTP_CURL_OPT(CURLOPT_COOKIELIST, NULL);
 #endif
-		HTTP_CURL_OPT(COOKIEFILE, NULL);
-		HTTP_CURL_OPT(COOKIEJAR, NULL);
-		HTTP_CURL_OPT(RESUME_FROM, 0);
-		HTTP_CURL_OPT(MAXFILESIZE, 0);
-		HTTP_CURL_OPT(TIMECONDITION, 0);
-		HTTP_CURL_OPT(TIMEVALUE, 0);
-		HTTP_CURL_OPT(TIMEOUT, 0);
-		HTTP_CURL_OPT(CONNECTTIMEOUT, 3);
-		HTTP_CURL_OPT(SSLCERT, NULL);
-		HTTP_CURL_OPT(SSLCERTTYPE, NULL);
-		HTTP_CURL_OPT(SSLCERTPASSWD, NULL);
-		HTTP_CURL_OPT(SSLKEY, NULL);
-		HTTP_CURL_OPT(SSLKEYTYPE, NULL);
-		HTTP_CURL_OPT(SSLKEYPASSWD, NULL);
-		HTTP_CURL_OPT(SSLENGINE, NULL);
-		HTTP_CURL_OPT(SSLVERSION, 0);
-		HTTP_CURL_OPT(SSL_VERIFYPEER, 0);
-		HTTP_CURL_OPT(SSL_VERIFYHOST, 0);
-		HTTP_CURL_OPT(SSL_CIPHER_LIST, NULL);
-		HTTP_CURL_OPT(CAINFO, NULL);
-		HTTP_CURL_OPT(CAPATH, NULL);
-		HTTP_CURL_OPT(RANDOM_FILE, NULL);
-		HTTP_CURL_OPT(EGDSOCKET, NULL);
-		HTTP_CURL_OPT(POSTFIELDS, NULL);
-		HTTP_CURL_OPT(POSTFIELDSIZE, 0);
-		HTTP_CURL_OPT(HTTPPOST, NULL);
-		HTTP_CURL_OPT(IOCTLDATA, NULL);
-		HTTP_CURL_OPT(READDATA, NULL);
-		HTTP_CURL_OPT(INFILESIZE, 0);
-		HTTP_CURL_OPT(HTTP_VERSION, CURL_HTTP_VERSION_NONE);
-		HTTP_CURL_OPT(CUSTOMREQUEST, NULL);
-		HTTP_CURL_OPT(NOBODY, 0);
-		HTTP_CURL_OPT(POST, 0);
-		HTTP_CURL_OPT(UPLOAD, 0);
-		HTTP_CURL_OPT(HTTPGET, 1);
+		HTTP_CURL_OPT(CURLOPT_COOKIEFILE, NULL);
+		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, NULL);
+		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, 0);
+		HTTP_CURL_OPT(CURLOPT_MAXFILESIZE, 0);
+		HTTP_CURL_OPT(CURLOPT_TIMECONDITION, 0);
+		HTTP_CURL_OPT(CURLOPT_TIMEVALUE, 0);
+		HTTP_CURL_OPT(CURLOPT_TIMEOUT, 0);
+		HTTP_CURL_OPT(CURLOPT_CONNECTTIMEOUT, 3);
+		HTTP_CURL_OPT(CURLOPT_SSLCERT, NULL);
+		HTTP_CURL_OPT(CURLOPT_SSLCERTTYPE, NULL);
+		HTTP_CURL_OPT(CURLOPT_SSLCERTPASSWD, NULL);
+		HTTP_CURL_OPT(CURLOPT_SSLKEY, NULL);
+		HTTP_CURL_OPT(CURLOPT_SSLKEYTYPE, NULL);
+		HTTP_CURL_OPT(CURLOPT_SSLKEYPASSWD, NULL);
+		HTTP_CURL_OPT(CURLOPT_SSLENGINE, NULL);
+		HTTP_CURL_OPT(CURLOPT_SSLVERSION, 0);
+		HTTP_CURL_OPT(CURLOPT_SSL_VERIFYPEER, 0);
+		HTTP_CURL_OPT(CURLOPT_SSL_VERIFYHOST, 0);
+		HTTP_CURL_OPT(CURLOPT_SSL_CIPHER_LIST, NULL);
+		HTTP_CURL_OPT(CURLOPT_CAINFO, NULL);
+		HTTP_CURL_OPT(CURLOPT_CAPATH, NULL);
+		HTTP_CURL_OPT(CURLOPT_RANDOM_FILE, NULL);
+		HTTP_CURL_OPT(CURLOPT_EGDSOCKET, NULL);
+		HTTP_CURL_OPT(CURLOPT_POSTFIELDS, NULL);
+		HTTP_CURL_OPT(CURLOPT_POSTFIELDSIZE, 0);
+		HTTP_CURL_OPT(CURLOPT_HTTPPOST, NULL);
+		HTTP_CURL_OPT(CURLOPT_IOCTLDATA, NULL);
+		HTTP_CURL_OPT(CURLOPT_READDATA, NULL);
+		HTTP_CURL_OPT(CURLOPT_INFILESIZE, 0);
+		HTTP_CURL_OPT(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE);
+		HTTP_CURL_OPT(CURLOPT_CUSTOMREQUEST, NULL);
+		HTTP_CURL_OPT(CURLOPT_NOBODY, 0);
+		HTTP_CURL_OPT(CURLOPT_POST, 0);
+		HTTP_CURL_OPT(CURLOPT_UPLOAD, 0);
+		HTTP_CURL_OPT(CURLOPT_HTTPGET, 1);
 	}
 }
 /* }}} */
@@ -479,13 +479,13 @@ PHP_HTTP_API void _http_request_set_progress_callback(http_request *request, zva
 	}
 	if ((request->_progress_callback = cb)) {
 		ZVAL_ADDREF(cb);
-		HTTP_CURL_OPT(NOPROGRESS, 0);
-		HTTP_CURL_OPT(PROGRESSDATA, request);
-		HTTP_CURL_OPT(PROGRESSFUNCTION, http_curl_progress_callback);
+		HTTP_CURL_OPT(CURLOPT_NOPROGRESS, 0);
+		HTTP_CURL_OPT(CURLOPT_PROGRESSDATA, request);
+		HTTP_CURL_OPT(CURLOPT_PROGRESSFUNCTION, http_curl_progress_callback);
 	} else {
-		HTTP_CURL_OPT(NOPROGRESS, 1);
-		HTTP_CURL_OPT(PROGRESSDATA, NULL);
-		HTTP_CURL_OPT(PROGRESSFUNCTION, NULL);
+		HTTP_CURL_OPT(CURLOPT_NOPROGRESS, 1);
+		HTTP_CURL_OPT(CURLOPT_PROGRESSDATA, NULL);
+		HTTP_CURL_OPT(CURLOPT_PROGRESSFUNCTION, NULL);
 	}
 }
 
@@ -500,7 +500,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init(request), return FAILURE);
 	
 	/* set options */
-	HTTP_CURL_OPT(URL, request->url);
+	HTTP_CURL_OPT(CURLOPT_URL, request->url);
 
 	/* progress callback */
 	if ((zoption = http_request_option(request, options, "onprogress", -1))) {
@@ -510,62 +510,62 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	/* proxy */
 	if ((zoption = http_request_option(request, options, "proxyhost", IS_STRING))) {
 		if (Z_STRLEN_P(zoption)) {
-			HTTP_CURL_OPT(PROXY, Z_STRVAL_P(zoption));
+			HTTP_CURL_OPT(CURLOPT_PROXY, Z_STRVAL_P(zoption));
 		}
 
 		/* port */
 		if ((zoption = http_request_option(request, options, "proxyport", IS_LONG))) {
-			HTTP_CURL_OPT(PROXYPORT, Z_LVAL_P(zoption));
+			HTTP_CURL_OPT(CURLOPT_PROXYPORT, Z_LVAL_P(zoption));
 		}
 		/* user:pass */
 		if ((zoption = http_request_option(request, options, "proxyauth", IS_STRING)) && Z_STRLEN_P(zoption)) {
-			HTTP_CURL_OPT(PROXYUSERPWD, Z_STRVAL_P(zoption));
+			HTTP_CURL_OPT(CURLOPT_PROXYUSERPWD, Z_STRVAL_P(zoption));
 		}
 		/* auth method */
 		if ((zoption = http_request_option(request, options, "proxyauthtype", IS_LONG))) {
-			HTTP_CURL_OPT(PROXYAUTH, Z_LVAL_P(zoption));
+			HTTP_CURL_OPT(CURLOPT_PROXYAUTH, Z_LVAL_P(zoption));
 		}
 	}
 
 	/* outgoing interface */
 	if ((zoption = http_request_option(request, options, "interface", IS_STRING))) {
-		HTTP_CURL_OPT(INTERFACE, Z_STRVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_INTERFACE, Z_STRVAL_P(zoption));
 	}
 
 	/* another port */
 	if ((zoption = http_request_option(request, options, "port", IS_LONG))) {
-		HTTP_CURL_OPT(PORT, Z_LVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_PORT, Z_LVAL_P(zoption));
 	}
 
 	/* auth */
 	if ((zoption = http_request_option(request, options, "httpauth", IS_STRING)) && Z_STRLEN_P(zoption)) {
-		HTTP_CURL_OPT(USERPWD, Z_STRVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_USERPWD, Z_STRVAL_P(zoption));
 	}
 	if ((zoption = http_request_option(request, options, "httpauthtype", IS_LONG))) {
-		HTTP_CURL_OPT(HTTPAUTH, Z_LVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_HTTPAUTH, Z_LVAL_P(zoption));
 	}
 
 	/* redirects, defaults to 0 */
 	if ((zoption = http_request_option(request, options, "redirect", IS_LONG))) {
-		HTTP_CURL_OPT(FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
-		HTTP_CURL_OPT(MAXREDIRS, Z_LVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
+		HTTP_CURL_OPT(CURLOPT_MAXREDIRS, Z_LVAL_P(zoption));
 		if ((zoption = http_request_option(request, options, "unrestrictedauth", IS_BOOL))) {
-			HTTP_CURL_OPT(UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
+			HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
 		}
 	}
 
 	/* referer */
 	if ((zoption = http_request_option(request, options, "referer", IS_STRING)) && Z_STRLEN_P(zoption)) {
-		HTTP_CURL_OPT(REFERER, Z_STRVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_REFERER, Z_STRVAL_P(zoption));
 	}
 
 	/* useragent, default "PECL::HTTP/version (PHP/version)" */
 	if ((zoption = http_request_option(request, options, "useragent", IS_STRING))) {
 		/* allow to send no user agent, not even default one */
 		if (Z_STRLEN_P(zoption)) {
-			HTTP_CURL_OPT(USERAGENT, Z_STRVAL_P(zoption));
+			HTTP_CURL_OPT(CURLOPT_USERAGENT, Z_STRVAL_P(zoption));
 		} else {
-			HTTP_CURL_OPT(USERAGENT, NULL);
+			HTTP_CURL_OPT(CURLOPT_USERAGENT, NULL);
 		}
 	}
 
@@ -600,7 +600,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	if ((zoption = http_request_option(request, options, "compress", IS_BOOL)) && Z_LVAL_P(zoption)) {
 		request->_cache.headers = curl_slist_append(request->_cache.headers, "Accept-Encoding: gzip;q=1.0,deflate;q=0.5");
 	}
-	HTTP_CURL_OPT(HTTPHEADER, request->_cache.headers);
+	HTTP_CURL_OPT(CURLOPT_HTTPHEADER, request->_cache.headers);
 
 	/* cookies, array('name' => 'value') */
 	if ((zoption = http_request_option(request, options, "cookies", IS_ARRAY))) {
@@ -608,7 +608,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		if (zend_hash_num_elements(Z_ARRVAL_P(zoption))) {
 			if (SUCCESS == http_urlencode_hash_recursive(HASH_OF(zoption), &request->_cache.cookies, "; ", sizeof("; ")-1, NULL, 0)) {
 				phpstr_fix(&request->_cache.cookies);
-				HTTP_CURL_OPT(COOKIE, request->_cache.cookies.data);
+				HTTP_CURL_OPT(CURLOPT_COOKIE, request->_cache.cookies.data);
 			}
 		}
 	}
@@ -616,7 +616,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 #if LIBCURL_VERSION_NUM >= 0x070e01
 	/* reset cookies */
 	if ((zoption = http_request_option(request, options, "resetcookies", IS_BOOL)) && Z_LVAL_P(zoption)) {
-		HTTP_CURL_OPT(COOKIELIST, "ALL");
+		HTTP_CURL_OPT(CURLOPT_COOKIELIST, "ALL");
 	}
 #endif
 	
@@ -624,58 +624,58 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	if ((zoption = http_request_option(request, options, "cookiesession", IS_BOOL))) {
 		if (Z_LVAL_P(zoption)) {
 			/* accept cookies for this session */
-			HTTP_CURL_OPT(COOKIEFILE, "");
+			HTTP_CURL_OPT(CURLOPT_COOKIEFILE, "");
 		} else {
 			/* reset session cookies */
-			HTTP_CURL_OPT(COOKIESESSION, 1);
+			HTTP_CURL_OPT(CURLOPT_COOKIESESSION, 1);
 		}
 	}
 
 	/* cookiestore, read initial cookies from that file and store cookies back into that file */
 	if ((zoption = http_request_option(request, options, "cookiestore", IS_STRING)) && Z_STRLEN_P(zoption)) {
 		HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(zoption), return FAILURE);
-		HTTP_CURL_OPT(COOKIEFILE, Z_STRVAL_P(zoption));
-		HTTP_CURL_OPT(COOKIEJAR, Z_STRVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_COOKIEFILE, Z_STRVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, Z_STRVAL_P(zoption));
 	}
 
 	/* resume */
 	if ((zoption = http_request_option(request, options, "resume", IS_LONG)) && (Z_LVAL_P(zoption) != 0)) {
 		range_req = 1;
-		HTTP_CURL_OPT(RESUME_FROM, Z_LVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, Z_LVAL_P(zoption));
 	}
 
 	/* maxfilesize */
 	if ((zoption = http_request_option(request, options, "maxfilesize", IS_LONG))) {
-		HTTP_CURL_OPT(MAXFILESIZE, Z_LVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_MAXFILESIZE, Z_LVAL_P(zoption));
 	}
 
 	/* http protocol */
 	if ((zoption = http_request_option(request, options, "protocol", IS_LONG))) {
-		HTTP_CURL_OPT(HTTP_VERSION, Z_LVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_HTTP_VERSION, Z_LVAL_P(zoption));
 	}
 
 	/* lastmodified */
 	if ((zoption = http_request_option(request, options, "lastmodified", IS_LONG))) {
 		if (Z_LVAL_P(zoption)) {
 			if (Z_LVAL_P(zoption) > 0) {
-				HTTP_CURL_OPT(TIMEVALUE, Z_LVAL_P(zoption));
+				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, Z_LVAL_P(zoption));
 			} else {
-				HTTP_CURL_OPT(TIMEVALUE, HTTP_GET_REQUEST_TIME() + Z_LVAL_P(zoption));
+				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, HTTP_GET_REQUEST_TIME() + Z_LVAL_P(zoption));
 			}
-			HTTP_CURL_OPT(TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
+			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
 		} else {
-			HTTP_CURL_OPT(TIMECONDITION, CURL_TIMECOND_NONE);
+			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, CURL_TIMECOND_NONE);
 		}
 	}
 
 	/* timeout, defaults to 0 */
 	if ((zoption = http_request_option(request, options, "timeout", IS_LONG))) {
-		HTTP_CURL_OPT(TIMEOUT, Z_LVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_TIMEOUT, Z_LVAL_P(zoption));
 	}
 
 	/* connecttimeout, defaults to 3 */
 	if ((zoption = http_request_option(request, options, "connecttimeout", IS_LONG))) {
-		HTTP_CURL_OPT(CONNECTTIMEOUT, Z_LVAL_P(zoption));
+		HTTP_CURL_OPT(CURLOPT_CONNECTTIMEOUT, Z_LVAL_P(zoption));
 	}
 
 	/* ssl */
@@ -687,25 +687,25 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 		FOREACH_KEYVAL(pos, zoption, key, idx, param) {
 			if (key) {
-				HTTP_CURL_OPT_SSL_STRING(CERT, 1);
-				HTTP_CURL_OPT_SSL_STRING(CERTTYPE, 0);
-				HTTP_CURL_OPT_SSL_STRING(CERTPASSWD, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERT, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERTTYPE, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERTPASSWD, 0);
 
-				HTTP_CURL_OPT_SSL_STRING(KEY, 0);
-				HTTP_CURL_OPT_SSL_STRING(KEYTYPE, 0);
-				HTTP_CURL_OPT_SSL_STRING(KEYPASSWD, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLKEY, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLKEYTYPE, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLKEYPASSWD, 0);
 
-				HTTP_CURL_OPT_SSL_STRING(ENGINE, 0);
-				HTTP_CURL_OPT_SSL_LONG(VERSION);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLENGINE, 0);
+				HTTP_CURL_OPT_LONG(CURLOPT_SSLVERSION);
 
-				HTTP_CURL_OPT_SSL_LONG_(VERIFYPEER);
-				HTTP_CURL_OPT_SSL_LONG_(VERIFYHOST);
-				HTTP_CURL_OPT_SSL_STRING_(CIPHER_LIST, 0);
+				HTTP_CURL_OPT_LONG(CURLOPT_SSL_VERIFYPEER);
+				HTTP_CURL_OPT_LONG(CURLOPT_SSL_VERIFYHOST);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSL_CIPHER_LIST, 0);
 
-				HTTP_CURL_OPT_STRING(CAINFO, 1);
-				HTTP_CURL_OPT_STRING(CAPATH, 1);
-				HTTP_CURL_OPT_STRING(RANDOM_FILE, 1);
-				HTTP_CURL_OPT_STRING(EGDSOCKET, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_CAINFO, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_CAPATH, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_RANDOM_FILE, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_EGDSOCKET, 1);
 
 				/* reset key */
 				key = NULL;
@@ -717,24 +717,24 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	switch (request->meth)
 	{
 		case HTTP_GET:
-			HTTP_CURL_OPT(HTTPGET, 1);
+			HTTP_CURL_OPT(CURLOPT_HTTPGET, 1);
 		break;
 
 		case HTTP_HEAD:
-			HTTP_CURL_OPT(NOBODY, 1);
+			HTTP_CURL_OPT(CURLOPT_NOBODY, 1);
 		break;
 
 		case HTTP_POST:
-			HTTP_CURL_OPT(POST, 1);
+			HTTP_CURL_OPT(CURLOPT_POST, 1);
 		break;
 
 		case HTTP_PUT:
-			HTTP_CURL_OPT(UPLOAD, 1);
+			HTTP_CURL_OPT(CURLOPT_UPLOAD, 1);
 		break;
 
 		default:
 			if (http_request_method_exists(0, request->meth, NULL)) {
-				HTTP_CURL_OPT(CUSTOMREQUEST, http_request_method_name(request->meth));
+				HTTP_CURL_OPT(CURLOPT_CUSTOMREQUEST, http_request_method_name(request->meth));
 			} else {
 				http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Unsupported request method: %d (%s)", request->meth, request->url);
 				return FAILURE;
@@ -751,18 +751,18 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			break;
 			
 			case HTTP_REQUEST_BODY_CSTRING:
-				HTTP_CURL_OPT(POSTFIELDS, request->body->data);
-				HTTP_CURL_OPT(POSTFIELDSIZE, request->body->size);
+				HTTP_CURL_OPT(CURLOPT_POSTFIELDS, request->body->data);
+				HTTP_CURL_OPT(CURLOPT_POSTFIELDSIZE, request->body->size);
 			break;
 
 			case HTTP_REQUEST_BODY_CURLPOST:
-				HTTP_CURL_OPT(HTTPPOST, (struct curl_httppost *) request->body->data);
+				HTTP_CURL_OPT(CURLOPT_HTTPPOST, (struct curl_httppost *) request->body->data);
 			break;
 
 			case HTTP_REQUEST_BODY_UPLOADFILE:
-				HTTP_CURL_OPT(IOCTLDATA, request);
-				HTTP_CURL_OPT(READDATA, request);
-				HTTP_CURL_OPT(INFILESIZE, request->body->size);
+				HTTP_CURL_OPT(CURLOPT_IOCTLDATA, request);
+				HTTP_CURL_OPT(CURLOPT_READDATA, request);
+				HTTP_CURL_OPT(CURLOPT_INFILESIZE, request->body->size);
 			break;
 
 			default:
@@ -795,34 +795,34 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 	zval array;
 	INIT_ZARR(array, info);
 
-	HTTP_CURL_INFO(EFFECTIVE_URL);
-	HTTP_CURL_INFO(RESPONSE_CODE);
-	HTTP_CURL_INFO_EX(HTTP_CONNECTCODE, connect_code);
-	HTTP_CURL_INFO(FILETIME);
-	HTTP_CURL_INFO(TOTAL_TIME);
-	HTTP_CURL_INFO(NAMELOOKUP_TIME);
-	HTTP_CURL_INFO(CONNECT_TIME);
-	HTTP_CURL_INFO(PRETRANSFER_TIME);
-	HTTP_CURL_INFO(STARTTRANSFER_TIME);
-	HTTP_CURL_INFO(REDIRECT_TIME);
-	HTTP_CURL_INFO(REDIRECT_COUNT);
-	HTTP_CURL_INFO(SIZE_UPLOAD);
-	HTTP_CURL_INFO(SIZE_DOWNLOAD);
-	HTTP_CURL_INFO(SPEED_DOWNLOAD);
-	HTTP_CURL_INFO(SPEED_UPLOAD);
-	HTTP_CURL_INFO(HEADER_SIZE);
-	HTTP_CURL_INFO(REQUEST_SIZE);
-	HTTP_CURL_INFO(SSL_VERIFYRESULT);
-	HTTP_CURL_INFO(SSL_ENGINES);
-	HTTP_CURL_INFO(CONTENT_LENGTH_DOWNLOAD);
-	HTTP_CURL_INFO(CONTENT_LENGTH_UPLOAD);
-	HTTP_CURL_INFO(CONTENT_TYPE);
-	HTTP_CURL_INFO(HTTPAUTH_AVAIL);
-	HTTP_CURL_INFO(PROXYAUTH_AVAIL);
+	HTTP_CURL_INFO(CURLINFO_EFFECTIVE_URL);
+	HTTP_CURL_INFO(CURLINFO_RESPONSE_CODE);
+	HTTP_CURL_INFO_EX(CURLINFO_HTTP_CONNECTCODE, "connect_code");
+	HTTP_CURL_INFO(CURLINFO_FILETIME);
+	HTTP_CURL_INFO(CURLINFO_TOTAL_TIME);
+	HTTP_CURL_INFO(CURLINFO_NAMELOOKUP_TIME);
+	HTTP_CURL_INFO(CURLINFO_CONNECT_TIME);
+	HTTP_CURL_INFO(CURLINFO_PRETRANSFER_TIME);
+	HTTP_CURL_INFO(CURLINFO_STARTTRANSFER_TIME);
+	HTTP_CURL_INFO(CURLINFO_REDIRECT_TIME);
+	HTTP_CURL_INFO(CURLINFO_REDIRECT_COUNT);
+	HTTP_CURL_INFO(CURLINFO_SIZE_UPLOAD);
+	HTTP_CURL_INFO(CURLINFO_SIZE_DOWNLOAD);
+	HTTP_CURL_INFO(CURLINFO_SPEED_DOWNLOAD);
+	HTTP_CURL_INFO(CURLINFO_SPEED_UPLOAD);
+	HTTP_CURL_INFO(CURLINFO_HEADER_SIZE);
+	HTTP_CURL_INFO(CURLINFO_REQUEST_SIZE);
+	HTTP_CURL_INFO(CURLINFO_SSL_VERIFYRESULT);
+	HTTP_CURL_INFO(CURLINFO_SSL_ENGINES);
+	HTTP_CURL_INFO(CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+	HTTP_CURL_INFO(CURLINFO_CONTENT_LENGTH_UPLOAD);
+	HTTP_CURL_INFO(CURLINFO_CONTENT_TYPE);
+	HTTP_CURL_INFO(CURLINFO_HTTPAUTH_AVAIL);
+	HTTP_CURL_INFO(CURLINFO_PROXYAUTH_AVAIL);
 	/*HTTP_CURL_INFO(OS_ERRNO);*/
-	HTTP_CURL_INFO(NUM_CONNECTS);
+	HTTP_CURL_INFO(CURLINFO_NUM_CONNECTS);
 #if LIBCURL_VERSION_NUM >= 0x070e01
-	HTTP_CURL_INFO_EX(COOKIELIST, cookies);
+	HTTP_CURL_INFO_EX(CURLINFO_COOKIELIST, "cookies");
 #endif
 }
 /* }}} */
