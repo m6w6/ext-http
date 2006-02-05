@@ -29,7 +29,7 @@ HTTP_BEGIN_ARGS(date, 0)
 	HTTP_ARG_VAL(timestamp, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(buildQuery, 1)
+HTTP_BEGIN_ARGS(buildStr, 1)
 	HTTP_ARG_VAL(query, 0)
 	HTTP_ARG_VAL(prefix, 0)
 	HTTP_ARG_VAL(arg_sep, 0)
@@ -106,7 +106,7 @@ zend_class_entry *http_util_object_ce;
 zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(date, http_date)
 	HTTP_UTIL_ALIAS(buildUrl, http_build_url)
-	HTTP_UTIL_ALIAS(buildQuery, http_build_str)
+	HTTP_UTIL_ALIAS(buildStr, http_build_str)
 	HTTP_UTIL_ALIAS(negotiateLanguage, http_negotiate_language)
 	HTTP_UTIL_ALIAS(negotiateCharset, http_negotiate_charset)
 	HTTP_UTIL_ALIAS(negotiateContentType, http_negotiate_content_type)
