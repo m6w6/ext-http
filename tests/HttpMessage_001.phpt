@@ -13,7 +13,7 @@ $m = new HttpMessage(
 	"Location: /anywhere\r\n".
 	"HTTP/1.1 302\r\n".
 	"Location: /somewhere\r\n".
-	"HTTP/1.1 206\r\n".
+	"HTTP/1.1 206 Partial content\r\n".
 	"Content-Range: bytes=2-3\r\n".
 	"Transfer-Encoding: chunked\r\n".
 	"\r\n".
@@ -21,6 +21,8 @@ $m = new HttpMessage(
 	"X\r\n".
 	"00"
 );
+
+var_dump($m->getResponseStatus());
 
 $x = $m->getParentMessage();
 $x = $m->getParentMessage();
@@ -36,19 +38,20 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
+string(15) "Partial content"
 string(1) "X"
-string(174) "HTTP/1.1 301
+string(190) "HTTP/1.1 301
 Location: /anywhere
 HTTP/1.1 302
 Location: /somewhere
-HTTP/1.1 206
+HTTP/1.1 206 Partial content
 Content-Range: bytes=2-3
 X-Original-Transfer-Encoding: chunked
 Content-Length: 1
 
 X
 "
-string(103) "HTTP/1.1 206
+string(119) "HTTP/1.1 206 Partial content
 Content-Range: bytes=2-3
 X-Original-Transfer-Encoding: chunked
 Content-Length: 1

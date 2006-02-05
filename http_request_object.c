@@ -140,6 +140,7 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getResponseBody, 0);
 HTTP_EMPTY_ARGS(getResponseCode, 0);
+HTTP_EMPTY_ARGS(getResponseStatus, 0);
 HTTP_BEGIN_ARGS(getResponseInfo, 0, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
@@ -264,6 +265,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(getResponseHeader, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseCookie, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseCode, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getResponseStatus, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseBody, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseInfo, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseMessage, ZEND_ACC_PUBLIC)
@@ -357,6 +359,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP_N(PRIVATE, responseData);
 	DCL_PROP_N(PRIVATE, responseMessage);
 	DCL_PROP(PRIVATE, long, responseCode, 0);
+	DCL_PROP(PRIVATE, string, responseStatus, "");
 	DCL_PROP(PRIVATE, long, method, HTTP_GET);
 	DCL_PROP(PRIVATE, string, url, "");
 	DCL_PROP(PRIVATE, string, contentType, "");
@@ -590,6 +593,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		}
 
 		UPD_PROP(long, responseCode, msg->http.info.response.code);
+		UPD_PROP(string, responseStatus, msg->http.info.response.status);
 
 		MAKE_STD_ZVAL(resp);
 		array_init(resp);
@@ -1637,6 +1641,22 @@ PHP_METHOD(HttpRequest, getResponseCode)
 
 	IF_RETVAL_USED {
 		RETURN_PROP(responseCode);
+	}
+}
+/* }}} */
+
+/* {{{ proto string HttpRequest::getResponseStatus()
+ *
+ * Get the response status (i.e. the string after the response code) after the message has been sent.
+ *
+ * Returns a string containing the response status text.
+ */
+PHP_METHOD(HttpRequest, getResponseStatus)
+{
+	NO_ARGS;
+	
+	IF_RETVAL_USED {
+		RETURN_PROP(responseStatus);
 	}
 }
 /* }}} */

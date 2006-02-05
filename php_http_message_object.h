@@ -80,6 +80,8 @@ PHP_METHOD(HttpMessage, getType);
 PHP_METHOD(HttpMessage, setType);
 PHP_METHOD(HttpMessage, getResponseCode);
 PHP_METHOD(HttpMessage, setResponseCode);
+PHP_METHOD(HttpMessage, getResponseStatus);
+PHP_METHOD(HttpMessage, setResponseStatus);
 PHP_METHOD(HttpMessage, getRequestMethod);
 PHP_METHOD(HttpMessage, setRequestMethod);
 PHP_METHOD(HttpMessage, getRequestUrl);

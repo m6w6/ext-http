@@ -76,6 +76,11 @@ HTTP_BEGIN_ARGS(setResponseCode, 0, 1)
 	HTTP_ARG_VAL(response_code, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(getResponseStatus, 0);
+HTTP_BEGIN_ARGS(setResponseStatus, 0, 1)
+	HTTP_ARG_VAL(response_status, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getRequestMethod, 0);
 HTTP_BEGIN_ARGS(setRequestMethod, 0, 1)
 	HTTP_ARG_VAL(request_method, 0)
@@ -138,6 +143,8 @@ zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(setType, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getResponseCode, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setResponseCode, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getResponseStatus, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setResponseStatus, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getRequestMethod, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setRequestMethod, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getRequestUrl, ZEND_ACC_PUBLIC)
@@ -253,6 +260,7 @@ static inline void _http_message_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PROTECTED, string, body, "");
 	DCL_PROP(PROTECTED, string, requestMethod, "");
 	DCL_PROP(PROTECTED, string, requestUrl, "");
+	DCL_PROP(PROTECTED, string, responseStatus, "");
 	DCL_PROP(PROTECTED, long, responseCode, 0);
 	DCL_PROP_N(PROTECTED, httpVersion);
 	DCL_PROP_N(PROTECTED, headers);
@@ -828,6 +836,50 @@ PHP_METHOD(HttpMessage, setResponseCode)
 	}
 
 	obj->message->http.info.response.code = code;
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::getResponseStatus()
+ *
+ * Get the Response Status of the message (i.e. the string following the response code).
+ *
+ * Returns the HTTP response status string if the message is of type 
+ * HttpMessage::TYPE_RESPONSE, else FALSE.
+ */
+PHP_METHOD(HttpMessage, getResponseStatus)
+{
+	NO_ARGS;
+	
+	IF_RETVAL_USED {
+		getObject(http_message_object, obj);
+		HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
+		RETURN_STRING(obj->message->http.info.response.status, 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpMessage::setResponseStatus(string status)
+ *
+ * Set the Response Status of the HTTP message (i.e. the string following the response code).
+ *
+ * Expects a string parameter containing the response status text.
+ *
+ * Returns TRUE on success or FALSE if the message is not of type
+ * HttpMessage::TYPE_RESPONSE.
+ */
+PHP_METHOD(HttpMessage, setResponseStatus)
+{
+	char *status;
+	int status_len;
+	getObject(http_message_object, obj);
+	
+	HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &status, &status_len)) {
+		RETURN_FALSE;
+	}
+	STR_SET(obj->message->http.info.response.status, estrdup(status));
 	RETURN_TRUE;
 }
 /* }}} */

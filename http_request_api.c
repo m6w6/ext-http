@@ -569,6 +569,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		}
 	}
 
+	/* resume */
+	if ((zoption = http_request_option(request, options, "resume", IS_LONG)) && (Z_LVAL_P(zoption) != 0)) {
+		range_req = 1;
+		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, Z_LVAL_P(zoption));
+	}
+
 	/* additional headers, array('name' => 'value') */
 	if (request->_cache.headers) {
 		curl_slist_free_all(request->_cache.headers);
@@ -587,7 +593,10 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 					
 					ZVAL_ADDREF(*header_val);
 					convert_to_string_ex(header_val);
-					snprintf(header, 1023, "%s: %s", header_key, Z_STRVAL_PP(header_val));
+					if (!strcasecmp(header_key, "range")) {
+						range_req = 1;
+					}
+					snprintf(header, lenof(header), "%s: %s", header_key, Z_STRVAL_PP(header_val));
 					request->_cache.headers = curl_slist_append(request->_cache.headers, header);
 					zval_ptr_dtor(header_val);
 				}
@@ -597,10 +606,36 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			}
 		}
 	}
+	/* etag */
+	if ((zoption = http_request_option(request, options, "etag", IS_STRING)) && Z_STRLEN_P(zoption)) {
+		char match_header[1024] = {0}, *quoted_etag = NULL;
+		
+		if ((Z_STRVAL_P(zoption)[0] != '"') || (Z_STRVAL_P(zoption)[Z_STRLEN_P(zoption)-1] != '"')) {
+			spprintf(&quoted_etag, 0, "\"%s\"", Z_STRVAL_P(zoption));
+		}
+		snprintf(match_header, lenof(match_header), "%s: %s", range_req?"If-Match":"If-None-Match", quoted_etag?quoted_etag:Z_STRVAL_P(zoption));
+		request->_cache.headers = curl_slist_append(request->_cache.headers, match_header);
+		STR_FREE(quoted_etag);
+	}
+	/* compression */
 	if ((zoption = http_request_option(request, options, "compress", IS_BOOL)) && Z_LVAL_P(zoption)) {
 		request->_cache.headers = curl_slist_append(request->_cache.headers, "Accept-Encoding: gzip;q=1.0,deflate;q=0.5");
 	}
 	HTTP_CURL_OPT(CURLOPT_HTTPHEADER, request->_cache.headers);
+
+	/* lastmodified */
+	if ((zoption = http_request_option(request, options, "lastmodified", IS_LONG))) {
+		if (Z_LVAL_P(zoption)) {
+			if (Z_LVAL_P(zoption) > 0) {
+				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, Z_LVAL_P(zoption));
+			} else {
+				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, HTTP_GET_REQUEST_TIME() + Z_LVAL_P(zoption));
+			}
+			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
+		} else {
+			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, CURL_TIMECOND_NONE);
+		}
+	}
 
 	/* cookies, array('name' => 'value') */
 	if ((zoption = http_request_option(request, options, "cookies", IS_ARRAY))) {
@@ -638,12 +673,6 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, Z_STRVAL_P(zoption));
 	}
 
-	/* resume */
-	if ((zoption = http_request_option(request, options, "resume", IS_LONG)) && (Z_LVAL_P(zoption) != 0)) {
-		range_req = 1;
-		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, Z_LVAL_P(zoption));
-	}
-
 	/* maxfilesize */
 	if ((zoption = http_request_option(request, options, "maxfilesize", IS_LONG))) {
 		HTTP_CURL_OPT(CURLOPT_MAXFILESIZE, Z_LVAL_P(zoption));
@@ -652,20 +681,6 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	/* http protocol */
 	if ((zoption = http_request_option(request, options, "protocol", IS_LONG))) {
 		HTTP_CURL_OPT(CURLOPT_HTTP_VERSION, Z_LVAL_P(zoption));
-	}
-
-	/* lastmodified */
-	if ((zoption = http_request_option(request, options, "lastmodified", IS_LONG))) {
-		if (Z_LVAL_P(zoption)) {
-			if (Z_LVAL_P(zoption) > 0) {
-				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, Z_LVAL_P(zoption));
-			} else {
-				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, HTTP_GET_REQUEST_TIME() + Z_LVAL_P(zoption));
-			}
-			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
-		} else {
-			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, CURL_TIMECOND_NONE);
-		}
 	}
 
 	/* timeout, defaults to 0 */
