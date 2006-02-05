@@ -18,8 +18,14 @@ generate any compressed data (gzip, deflate AKA zlib and raw deflate);
 just use the flag for the data format you want to generate:
 	HTTP_DEFLATE_TYPE_GZIP, HTTP_DEFLATE_TYPE_ZLIB or HTTP_DEFLATE_TYPE_RAW.
 
+Windows:
+	There's no HttpUtil alias for http_build_query() due to missing export.
+
 Internals:
 	-	there's a memleak with sizeof(zval) for each thrown exception, 
 		which ends up in HttpRequestPoolExcepiont::$exceptionStack, in 
 		HttpRequestPool::__construct(); it doesn't happen with wrapped
 		exceptions in HttpRequestPool::send().
+
+	-	our http_urlencode_hash() only handles arrays and does not
+		differentiate between prefixes for numeric or string keys.

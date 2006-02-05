@@ -85,12 +85,10 @@ if (PHP_HTTP != "no") {
 	if (PHP_SESSION != "no") {
 		ADD_EXTENSION_DEP("http", "session", true);
 	}
-	// for http_build_query()
-	ADD_EXTENSION_DEP("http", "standard");
 
 	CURL_LIB = PHP_DEBUG != "no" ? "libcurld.lib":"libcurl.lib";
-    if (CHECK_HEADER_ADD_INCLUDE("curl/curl.h", "CFLAGS_HTTP") &&
-    		CHECK_HEADER_ADD_INCLUDE("openssl/crypto.h", "CFLAGS_HTTP") &&
+	if (CHECK_HEADER_ADD_INCLUDE("curl/curl.h", "CFLAGS_HTTP") &&
+			CHECK_HEADER_ADD_INCLUDE("openssl/crypto.h", "CFLAGS_HTTP") &&
 			CHECK_LIB(CURL_LIB, "http", PHP_HTTP) &&
 			CHECK_LIB("ssleay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("libeay32.lib", "http", PHP_HTTP) &&
