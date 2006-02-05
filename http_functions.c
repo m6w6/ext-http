@@ -1154,7 +1154,6 @@ PHP_FUNCTION(http_match_request_header)
  *  - httpauth:         string, http credentials in "user:pass" format
  *  - httpauthtype:     int, HTTP_AUTH_BASIC, DIGEST and/or NTLM
  *  - compress:         bool, whether to allow gzip/deflate content encoding
- *                      (defaults to true)
  *  - port:             int, use another port as specified in the url
  *  - referer:          string, the referer to send
  *  - useragent:        string, the user agent to send
@@ -1169,9 +1168,26 @@ PHP_FUNCTION(http_match_request_header)
  *  - maxfilesize:      int, maximum file size that should be downloaded;
  *                      has no effect, if the size of the requested entity is not known
  *  - lastmodified:     int, timestamp for If-(Un)Modified-Since header
+ *  - etag:             string, quoted etag for If-(None-)Match header
  *  - timeout:          int, seconds the request may take
  *  - connecttimeout:   int, seconds the connect may take
  *  - onprogress:       mixed, progress callback
+ *  - ssl:              array, with the following options:
+ *                      cert:        string, path to certificate
+ *                      certtype:    string, type of certificate
+ *                      certpasswd:  string, password for certificate
+ *                      key:         string, path to key
+ *                      keytype:     string, type of key
+ *                      keypasswd:   string, pasword for key
+ *                      engine:      string, ssl engine to use
+ *                      version:     int, ssl version to use
+ *                      verifypeer:  bool, whether to verify the peer
+ *                      verifyhost:  bool whether to verify the host
+ *                      cipher_list: string, list of allowed ciphers
+ *                      cainfo:      string
+ *                      capath:      string
+ *                      random_file: string
+ *                      egdsocket:   string
  * </pre>
  *
  * The optional third parameter will be filled with some additional information

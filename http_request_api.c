@@ -244,10 +244,15 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 
 #define HTTP_CURL_OPT(OPTION, p) HTTP_CURL_OPT_EX(request->ch, OPTION, (p))
 #define HTTP_CURL_OPT_EX(ch, OPTION, p) curl_easy_setopt((ch), OPTION, (p))
-#define HTTP_CURL_OPT_STRING(keyname, obdc) HTTP_CURL_OPT_STRING_EX(keyname, keyname, obdc)
+
+#define HTTP_CURL_OPT_STRING(OPTION, ldiff, obdc) \
+	{ \
+		char *K = #OPTION; \
+		HTTP_CURL_OPT_STRING_EX(K+lenof("CURLOPT_KEY")+ldiff, OPTION, obdc); \
+	}
 #define HTTP_CURL_OPT_STRING_EX(keyname, optname, obdc) \
-	if (!strcasecmp(key, #keyname)) { \
-		zval *copy = http_request_option_cache(request, #keyname, zval_copy(IS_STRING, *param)); \
+	if (!strcasecmp(key, keyname)) { \
+		zval *copy = http_request_option_cache(request, keyname, zval_copy(IS_STRING, *param)); \
 		if (obdc) { \
 			HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(copy), return FAILURE); \
 		} \
@@ -255,10 +260,14 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 		key = NULL; \
 		continue; \
 	}
-#define HTTP_CURL_OPT_LONG(keyname) HTTP_CURL_OPT_LONG_EX(keyname, keyname)
+#define HTTP_CURL_OPT_LONG(OPTION, ldiff) \
+	{ \
+		char *K = #OPTION; \
+		HTTP_CURL_OPT_LONG_EX(K+lenof("CURLOPT_KEY")+ldiff, OPTION); \
+	}
 #define HTTP_CURL_OPT_LONG_EX(keyname, optname) \
-	if (!strcasecmp(key, #keyname)) { \
-		zval *copy = http_request_option_cache(request, #keyname, zval_copy(IS_LONG, *param)); \
+	if (!strcasecmp(key, keyname)) { \
+		zval *copy = http_request_option_cache(request, keyname, zval_copy(IS_LONG, *param)); \
 		HTTP_CURL_OPT(optname, Z_LVAL_P(copy)); \
 		key = NULL; \
 		continue; \
@@ -688,7 +697,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		HTTP_CURL_OPT(CURLOPT_TIMEOUT, Z_LVAL_P(zoption));
 	}
 
-	/* connecttimeout, defaults to 3 */
+	/* connecttimeout, defaults to 0 */
 	if ((zoption = http_request_option(request, options, "connecttimeout", IS_LONG))) {
 		HTTP_CURL_OPT(CURLOPT_CONNECTTIMEOUT, Z_LVAL_P(zoption));
 	}
@@ -702,25 +711,25 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 		FOREACH_KEYVAL(pos, zoption, key, idx, param) {
 			if (key) {
-				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERT, 1);
-				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERTTYPE, 0);
-				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERTPASSWD, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERT, 0, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERTTYPE, 0, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERTPASSWD, 0, 0);
 
-				HTTP_CURL_OPT_STRING(CURLOPT_SSLKEY, 0);
-				HTTP_CURL_OPT_STRING(CURLOPT_SSLKEYTYPE, 0);
-				HTTP_CURL_OPT_STRING(CURLOPT_SSLKEYPASSWD, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLKEY, 0, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLKEYTYPE, 0, 0);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLKEYPASSWD, 0, 0);
 
-				HTTP_CURL_OPT_STRING(CURLOPT_SSLENGINE, 0);
-				HTTP_CURL_OPT_LONG(CURLOPT_SSLVERSION);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSLENGINE, 0, 0);
+				HTTP_CURL_OPT_LONG(CURLOPT_SSLVERSION, 0);
 
-				HTTP_CURL_OPT_LONG(CURLOPT_SSL_VERIFYPEER);
-				HTTP_CURL_OPT_LONG(CURLOPT_SSL_VERIFYHOST);
-				HTTP_CURL_OPT_STRING(CURLOPT_SSL_CIPHER_LIST, 0);
+				HTTP_CURL_OPT_LONG(CURLOPT_SSL_VERIFYPEER, 1);
+				HTTP_CURL_OPT_LONG(CURLOPT_SSL_VERIFYHOST, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_SSL_CIPHER_LIST, 1, 0);
 
-				HTTP_CURL_OPT_STRING(CURLOPT_CAINFO, 1);
-				HTTP_CURL_OPT_STRING(CURLOPT_CAPATH, 1);
-				HTTP_CURL_OPT_STRING(CURLOPT_RANDOM_FILE, 1);
-				HTTP_CURL_OPT_STRING(CURLOPT_EGDSOCKET, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_CAINFO, -3, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_CAPATH, -3, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_RANDOM_FILE, -3, 1);
+				HTTP_CURL_OPT_STRING(CURLOPT_EGDSOCKET, -3, 1);
 
 				/* reset key */
 				key = NULL;
