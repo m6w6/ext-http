@@ -356,17 +356,17 @@ PHP_METHOD(HttpResponse, getHeader)
 
 /* {{{ proto static bool HttpResponse::setCache(bool cache)
  *
- * Whether it sould be attempted to cache the entitity.
+ * Whether it should be attempted to cache the entity.
  * This will result in necessary caching headers and checks of clients
  * "If-Modified-Since" and "If-None-Match" headers.  If one of those headers
  * matches a "304 Not Modified" status code will be issued.
  *
- * NOTE: If you're using sessions, be shure that you set session.cache_limiter
+ * NOTE: If you're using sessions, be sure that you set session.cache_limiter
  * to something more appropriate than "no-cache"!
  * 
  * Expects a boolean as parameter specifying whether caching should be attempted.
  * 
- * Returns TRUE ons success, or FALSE on failure.
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpResponse, setCache)
 {
@@ -450,7 +450,7 @@ PHP_METHOD(HttpResponse, getGzip)
  * The max_age parameter controls how long the cache entry is valid on the client side.
  * 
  * Expects a string parameter containing the primary cache control setting.
- * Addtitionally accepts an int parameter specifying the max-age setting.
+ * Additionally accepts an int parameter specifying the max-age setting.
  * 
  * Returns TRUE on success, or FALSE if control does not match one of
  * "public" , "private" or "no-cache".
@@ -614,7 +614,7 @@ PHP_METHOD(HttpResponse, guessContentType)
  * if the data actually sent came from a file or something similar, that should
  * be "saved" by the client/user (i.e. by browsers "Save as..." popup window).
  *
- * Expects a string parameter specifying the file name the "Save as..." dialogue
+ * Expects a string parameter specifying the file name the "Save as..." dialog
  * should display.  Optionally accepts a bool parameter, which, if set to true
  * and the user agent knows how to handle the content type, will probably not
  * cause the popup window to be shown.
@@ -1019,14 +1019,14 @@ PHP_METHOD(HttpResponse, getFile)
  *
  * Finally send the entity.
  * 
- * Accepts an optional boolean parameter, specifying wheter the ouput
+ * Accepts an optional boolean parameter, specifying whether the output
  * buffers should be discarded prior sending.  A successful caching attempt
  * will cause a script termination, and write a log entry if the INI setting
  * http.cache_log is set.
  * 
  * Returns TRUE on success, or FALSE on failure.
  * 
- * Throws HttpHeaderException, HttpResponseException if http.onyl_excpetions is TRUE.
+ * Throws HttpHeaderException, HttpResponseException if http.only_exceptions is TRUE.
  *
  * Example:
  * <pre>

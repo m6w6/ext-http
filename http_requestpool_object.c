@@ -252,7 +252,7 @@ PHP_METHOD(HttpRequestPool, reset)
  * Attach an HttpRequest object to this HttpRequestPool.
  * WARNING: set all options prior attaching!
  * 
- * Expects the parameter to be an HttpRequest object not alread attached to
+ * Expects the parameter to be an HttpRequest object not already attached to
  * antother HttpRequestPool object.
  * 
  * Returns TRUE on success, or FALSE on failure.

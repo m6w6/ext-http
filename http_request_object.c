@@ -691,7 +691,7 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
  * Instantiate a new HttpRequest object.
  * 
  * Accepts a string as optional parameter containing the target request url.
- * Additianally accepts an optional int parameter specifying the request method
+ * Additionally accepts an optional int parameter specifying the request method
  * to use and an associative array as optional third parameter which will be
  * passed to HttpRequest::setOptions(). 
  * 
@@ -724,9 +724,9 @@ PHP_METHOD(HttpRequest, __construct)
  *
  * Set the request options to use.  See http_get() for a full list of available options.
  * 
- * Accepts an array as optional parameters, wich values will overwrite the 
- * currently set request options.  If the parameter is empty or mitted,
- * the optoions of the HttpRequest object will be reset.
+ * Accepts an array as optional parameters, which values will overwrite the 
+ * currently set request options.  If the parameter is empty or omitted,
+ * the options of the HttpRequest object will be reset.
  * 
  * Returns TRUE on success, or FALSE on failure.
  */
@@ -848,7 +848,7 @@ PHP_METHOD(HttpRequest, getSslOptions)
  *
  * Add request header name/value pairs.
  * 
- * Expects an ssociative array as parameter containing additional header
+ * Expects an associative array as parameter containing additional header
  * name/value pairs.
  * 
  * Returns TRUE on success, or FALSE on failure.
@@ -1295,12 +1295,12 @@ PHP_METHOD(HttpRequest, getRawPostData)
 
 /* {{{ proto bool HttpRequest::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])
  *
- * Add a file to the POST request, leaving prefiously set files unchanged.
+ * Add a file to the POST request, leaving previously set files unchanged.
  * Affects only POST and custom requests. Cannot be used with raw post data.
  * 
  * Expects a string parameter containing the form element name, and a string
  * paremeter containing the path to the file which should be uploaded.
- * Additionally accepts an optional string parameter which chould contain
+ * Additionally accepts an optional string parameter which should contain
  * the content type of the file.
  * 
  * Returns TRUE on success, or FALSE if the content type seems not to contain a 
@@ -1435,7 +1435,7 @@ PHP_METHOD(HttpRequest, getPutFile)
  * Get all response data after the request has been sent.
  * 
  * Returns an associative array with the key "headers" containing an associative
- * array holding all response headers, as well as the ley "body" containing a
+ * array holding all response headers, as well as the key "body" containing a
  * string with the response body.  
  * 
  * If redirects were allowed and several responses were received, the data 
@@ -1459,7 +1459,7 @@ PHP_METHOD(HttpRequest, getResponseData)
  * If the parameter is empty or omitted all response headers will be returned.
  * 
  * Returns either a string with the value of the header matching name if requested, 
- * FALSE on failure, or an associative array containing all reponse headers.
+ * FALSE on failure, or an associative array containing all response headers.
  * 
  * If redirects were allowed and several responses were received, the data 
  * references the last received response.
@@ -1716,7 +1716,7 @@ PHP_METHOD(HttpRequest, getResponseInfo)
  * 
  * If redirects were allowed and several responses were received, the data 
  * references the last received response.  Use HttpMessage::getParentMessage()
- * to access the data of previously received responses whithin this request
+ * to access the data of previously received responses within this request
  * cycle.
  * 
  * Throws HttpException.
@@ -1748,7 +1748,7 @@ PHP_METHOD(HttpRequest, getResponseMessage)
  * 
  * If redirects were allowed and several responses were received, the data 
  * references the last received response.  Use HttpMessage::getParentMessage()
- * to access the data of previously sent requests whithin this request
+ * to access the data of previously sent requests within this request
  * cycle.
  * 
  * Note that the internal request message is immutable, that means that the
@@ -1818,7 +1818,7 @@ PHP_METHOD(HttpRequest, getRawResponseMessage)
  * Get all sent requests and received responses as an HttpMessage object.
  * 
  * If you don't want to record history at all, set the instance variable
- * HttpRequest::$recoedHistory to FALSE. 
+ * HttpRequest::$recordHistory to FALSE. 
  * 
  * Returns an HttpMessage object representing the complete request/response
  * history.

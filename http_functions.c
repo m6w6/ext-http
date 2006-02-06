@@ -230,7 +230,7 @@ PHP_FUNCTION(http_build_str)
  * without qualifier are rated highest.  The qualifier will be decreased by
  * 10% for partial matches (i.e. matching primary language).
  * 
- * Expects an array as parameter cotaining the supported languages as values.
+ * Expects an array as parameter containing the supported languages as values.
  * If the optional second parameter is supplied, it will be filled with an
  * array containing the negotiation results.
  * 
@@ -279,7 +279,7 @@ PHP_FUNCTION(http_negotiate_language)
  * Accept-Charset HTTP header.  The qualifier is recognized and charsets 
  * without qualifier are rated highest.
  * 
- * Expects an array as parameter cotaining the supported charsets as values.
+ * Expects an array as parameter containing the supported charsets as values.
  * If the optional second parameter is supplied, it will be filled with an
  * array containing the negotiation results.
  * 
@@ -331,7 +331,7 @@ PHP_FUNCTION(http_negotiate_charset)
  * Accept HTTP header.  The qualifier is recognized and content types 
  * without qualifier are rated highest.
  * 
- * Expects an array as parameter cotaining the supported content types as values.
+ * Expects an array as parameter containing the supported content types as values.
  * If the optional second parameter is supplied, it will be filled with an
  * array containing the negotiation results.
  * 
@@ -442,7 +442,7 @@ PHP_FUNCTION(http_send_content_type)
  * if the data actually sent came from a file or something similar, that should
  * be "saved" by the client/user (i.e. by browsers "Save as..." popup window).
  *
- * Expects a string parameter specifying the file name the "Save as..." dialogue
+ * Expects a string parameter specifying the file name the "Save as..." dialog
  * should display.  Optionally accepts a bool parameter, which, if set to true
  * and the user agent knows how to handle the content type, will probably not
  * cause the popup window to be shown.
@@ -505,7 +505,7 @@ PHP_FUNCTION(http_match_modified)
  * accepts a bool parameter, which, if set to true, will check the header
  * usually used to validate HTTP ranges.
  * 
- * Retuns TRUE if ETag matches or the header contained the asterisk ("*"),
+ * Returns TRUE if ETag matches or the header contained the asterisk ("*"),
  * else FALSE.
  */
 PHP_FUNCTION(http_match_etag)
@@ -581,7 +581,7 @@ PHP_FUNCTION(http_cache_last_modified)
 /* {{{ proto bool http_cache_etag([string etag])
  *
  * Attempts to cache the sent entity by its ETag, either supplied or generated 
- * by the hash algorythm specified by the INI setting "http.etag_mode".
+ * by the hash algorithm specified by the INI setting "http.etag_mode".
  *
  * If the clients "If-None-Match" header matches the supplied/calculated
  * ETag, the body is considered cached on the clients side and
@@ -610,7 +610,7 @@ PHP_FUNCTION(http_cache_etag)
 /* {{{ proto string ob_etaghandler(string data, int mode)
  *
  * For use with ob_start().  Output buffer handler generating an ETag with
- * the hash algorythm specified with the INI setting "http.etag_mode".
+ * the hash algorithm specified with the INI setting "http.etag_mode".
  */
 PHP_FUNCTION(ob_etaghandler)
 {
@@ -683,7 +683,7 @@ PHP_FUNCTION(http_throttle)
  * for which redirect response code to use in which situation.
  *
  * To be RFC compliant, "Redirecting to <a>URL</a>." will be displayed,
- * if the client doesn't redirect immediatly, and the request method was
+ * if the client doesn't redirect immediately, and the request method was
  * another one than HEAD.
  * 
  * Returns FALSE on failure, or *exits* on success.
@@ -794,7 +794,7 @@ PHP_FUNCTION(http_redirect)
  *
  * Sends raw data with support for (multiple) range requests.
  *
- * Retursn TRUE on success, or FALSE on failure.
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_FUNCTION(http_send_data)
 {
@@ -837,7 +837,7 @@ PHP_FUNCTION(http_send_file)
  *
  * Sends an already opened stream with support for (multiple) range requests.
  *
- * Expects a resource parameter referncing the stream to read from.
+ * Expects a resource parameter referencing the stream to read from.
  * 
  * Returns TRUE on success, or FALSE on failure.
  */
@@ -888,7 +888,7 @@ PHP_FUNCTION(http_chunked_decode)
  * Expects a string parameter containing a single HTTP message or
  * several consecutive HTTP messages.
  * 
- * Returns an hierachical object structure of the parsed messages.
+ * Returns an hierarchical object structure of the parsed messages.
  *
  * Example:
  * <pre>
@@ -1191,7 +1191,7 @@ PHP_FUNCTION(http_match_request_header)
  * </pre>
  *
  * The optional third parameter will be filled with some additional information
- * in form af an associative array, if supplied, like the following example:
+ * in form of an associative array, if supplied, like the following example:
  * <pre>
  * <?php
  * array (
@@ -1294,7 +1294,7 @@ PHP_FUNCTION(http_head)
 
 /* {{{ proto string http_post_data(string url, string data[, array options[, array &info]])
  *
- * Performs an HTTP POST requeston the supplied url.
+ * Performs an HTTP POST request on the supplied url.
  * 
  * Expects a string as second parameter containing the pre-encoded post data.
  * See http_get() for a full list of available parameters and options.
@@ -1337,7 +1337,7 @@ PHP_FUNCTION(http_post_data)
  *
  * Performs an HTTP POST request on the supplied url.
  * 
- * Expecrs an associative array as second parameter, which will be
+ * Expects an associative array as second parameter, which will be
  * www-form-urlencoded. See http_get() for a full list of available options.
  * 
  * Returns the HTTP response(s) as string on success, or FALSE on failure.
@@ -1382,7 +1382,7 @@ PHP_FUNCTION(http_post_fields)
  *
  * Performs an HTTP PUT request on the supplied url.
  * 
- * Expects the second parameter to be a string referncing the file to upload.
+ * Expects the second parameter to be a string referencing the file to upload.
  * See http_get() for a full list of available options.
  * 
  * Returns the HTTP response(s) as string on success, or FALSE on failure.
@@ -1646,7 +1646,7 @@ PHP_FUNCTION(http_deflate)
 
 /* {{{ proto string http_inflate(string data)
  *
- * Uncompress data compressed with either gzip, deflate AKA zlib or raw
+ * Decompress data compressed with either gzip, deflate AKA zlib or raw
  * deflate encoding.
  * 
  * Expects a string as parameter containing the compressed data.
@@ -1674,7 +1674,7 @@ PHP_FUNCTION(http_inflate)
 /* {{{ proto string ob_deflatehandler(string data, int mode)
  *
  * For use with ob_start(). The deflate output buffer handler can only be used once.
- * It conflicts with ob_gzhanlder and zlib.output_compression as well and should
+ * It conflicts with ob_gzhandler and zlib.output_compression as well and should
  * not be used after ext/mbstrings mb_output_handler and ext/sessions URL-Rewriter (AKA
  * session.use_trans_sid).
  */
@@ -1719,7 +1719,7 @@ PHP_FUNCTION(ob_inflatehandler)
  *
  * Check for feature that require external libraries.
  * 
- * Accpepts an optional in parameter specifying which feature to probe for.
+ * Accepts an optional in parameter specifying which feature to probe for.
  * If the parameter is 0 or omitted, the return value contains a bitmask of 
  * all supported features that depend on external libraries.
  * 

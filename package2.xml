@@ -57,7 +57,7 @@ HttpResponse
    <file role="doc" name="CREDITS"/>
    <file role="doc" name="EXPERIMENTAL"/>
    <file role="doc" name="KnownIssues.txt"/>
-   <file role="doc" name="http.ini"/>
+   <file role="doc" name="docs/http.ini"/>
    <file role="doc" name="docs/functions.html"/>
    <file role="doc" name="docs/examples/extract.php"/>
    <file role="doc" name="docs/examples/tutorial.txt"/>

@@ -612,8 +612,8 @@ PHP_METHOD(HttpMessage, __construct)
  *
  * Create an HttpMessage object from a string. Kind of a static constructor.
  * 
- * Expects a string parameter containing a sinlge or several consecutive
- * HTTP messages.  Accepts an optionsl string parameter specifying the class to use.
+ * Expects a string parameter containing a single or several consecutive
+ * HTTP messages.  Accepts an optional string parameter specifying the class to use.
  * 
  * Returns an HttpMessage object on success or NULL on failure.
  * 
@@ -778,7 +778,7 @@ PHP_METHOD(HttpMessage, getType)
  *
  * Set Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)
  * 
- * Exptects an int parameter, the HttpMessage::TYPE.
+ * Expects an int parameter, the HttpMessage::TYPE.
  */
 PHP_METHOD(HttpMessage, setType)
 {

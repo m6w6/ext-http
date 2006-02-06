@@ -76,12 +76,14 @@ looking like: "Wed, 22 Dec 2004 11:34:47 GMT"</p>
 <p>Returns the HTTP date as string.</p>
 <h2 id="http_build_url">string http_build_url(mixed url[, mixed parts[, int flags = HTTP_URL_REPLACE[, array &new_url]]])</h2>
 <p>Returns the new URL as string on success or FALSE on failure.</p>
+<h2 id="http_build_str">string http_build_str(array query [, string prefix[, string arg_separator]])</h2>
+<p>Opponent to parse_str().</p>
 <h2 id="http_negotiate_language">string http_negotiate_language(array supported[, array &result])</h2>
 <p>This function negotiates the clients preferred language based on its<br />
 Accept-Language HTTP header.  The qualifier is recognized and languages <br />
 without qualifier are rated highest.  The qualifier will be decreased by<br />
 10% for partial matches (i.e. matching primary language).</p>
-<p>Expects an array as parameter cotaining the supported languages as values.<br />
+<p>Expects an array as parameter containing the supported languages as values.<br />
 If the optional second parameter is supplied, it will be filled with an<br />
 array containing the negotiation results.</p>
 <p>Returns the negotiated language or the default language (i.e. first array entry) <br />
@@ -94,7 +96,7 @@ if none match.</p>
 <p>This function negotiates the clients preferred charset based on its<br />
 Accept-Charset HTTP header.  The qualifier is recognized and charsets <br />
 without qualifier are rated highest.</p>
-<p>Expects an array as parameter cotaining the supported charsets as values.<br />
+<p>Expects an array as parameter containing the supported charsets as values.<br />
 If the optional second parameter is supplied, it will be filled with an<br />
 array containing the negotiation results.</p>
 <p>Returns the negotiated charset or the default charset (i.e. first array entry) <br />
@@ -107,7 +109,7 @@ if none match.</p>
 <p>This function negotiates the clients preferred content type based on its<br />
 Accept HTTP header.  The qualifier is recognized and content types <br />
 without qualifier are rated highest.</p>
-<p>Expects an array as parameter cotaining the supported content types as values.<br />
+<p>Expects an array as parameter containing the supported content types as values.<br />
 If the optional second parameter is supplied, it will be filled with an<br />
 array containing the negotiation results.</p>
 <p>Returns the negotiated content type or the default content type <br />
@@ -136,7 +138,7 @@ if you use the http_send() API.</p>
 <p>Send the Content-Disposition.  The Content-Disposition header is very useful<br />
 if the data actually sent came from a file or something similar, that should<br />
 be "saved" by the client/user (i.e. by browsers "Save as..." popup window).</p>
-<p>Expects a string parameter specifying the file name the "Save as..." dialogue<br />
+<p>Expects a string parameter specifying the file name the "Save as..." dialog<br />
 should display.  Optionally accepts a bool parameter, which, if set to true<br />
 and the user agent knows how to handle the content type, will probably not<br />
 cause the popup window to be shown.</p>
@@ -156,7 +158,7 @@ else FALSE.</p>
 <p>Expects a string parameter containing the ETag to compare.  Optionally<br />
 accepts a bool parameter, which, if set to true, will check the header<br />
 usually used to validate HTTP ranges.</p>
-<p>Retuns TRUE if ETag matches or the header contained the asterisk ("*"),<br />
+<p>Returns TRUE if ETag matches or the header contained the asterisk ("*"),<br />
 else FALSE.</p>
 <h2 id="http_cache_last_modified">bool http_cache_last_modified([int timestamp_or_expires]])</h2>
 <p>Attempts to cache the sent entity by its last modification date.</p>
@@ -172,7 +174,7 @@ the Last-Modified header is updated and the actual body will be sent.</p>
 http.cache_log is set and the cache attempt was successful.</p>
 <h2 id="http_cache_etag">bool http_cache_etag([string etag])</h2>
 <p>Attempts to cache the sent entity by its ETag, either supplied or generated <br />
-by the hash algorythm specified by the INI setting "http.etag_mode".</p>
+by the hash algorithm specified by the INI setting "http.etag_mode".</p>
 <p>If the clients "If-None-Match" header matches the supplied/calculated<br />
 ETag, the body is considered cached on the clients side and<br />
 a "304 Not Modified" status code is issued.</p>
@@ -181,7 +183,7 @@ a "304 Not Modified" status code is issued.</p>
 "http.cache_log" is set and the cache attempt was successful.</p>
 <h2 id="ob_etaghandler">string ob_etaghandler(string data, int mode)</h2>
 <p>For use with ob_start().  Output buffer handler generating an ETag with<br />
-the hash algorythm specified with the INI setting "http.etag_mode".</p>
+the hash algorithm specified with the INI setting "http.etag_mode".</p>
 <h2 id="http_throttle">void http_throttle(double sec[, int bytes = 40960])</h2>
 <p>Sets the throttle delay and send buffer size for use with http_send() API.<br />
 Provides a basic throttling mechanism, which will yield the current process<br />
@@ -210,21 +212,21 @@ You can use one of the following constants for convenience:<br />
 <p>Please see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3<br />
 for which redirect response code to use in which situation.</p>
 <p>To be RFC compliant, "Redirecting to <a>URL</a>." will be displayed,<br />
-if the client doesn't redirect immediatly, and the request method was<br />
+if the client doesn't redirect immediately, and the request method was<br />
 another one than HEAD.</p>
 <p>Returns FALSE on failure, or *exits* on success.</p>
 <p>A log entry will be written to the redirect log, if the INI entry<br />
 "http.redirect_log" is set and the redirect attempt was successful.</p>
 <h2 id="http_send_data">bool http_send_data(string data)</h2>
 <p>Sends raw data with support for (multiple) range requests.</p>
-<p>Retursn TRUE on success, or FALSE on failure.</p>
+<p>Returns TRUE on success, or FALSE on failure.</p>
 <h2 id="http_send_file">bool http_send_file(string file)</h2>
 <p>Sends a file with support for (multiple) range requests.</p>
 <p>Expects a string parameter referencing the file to send.</p>
 <p>Returns TRUE on success, or FALSE on failure.</p>
 <h2 id="http_send_stream">bool http_send_stream(resource stream)</h2>
 <p>Sends an already opened stream with support for (multiple) range requests.</p>
-<p>Expects a resource parameter referncing the stream to read from.</p>
+<p>Expects a resource parameter referencing the stream to read from.</p>
 <p>Returns TRUE on success, or FALSE on failure.</p>
 <h2 id="http_chunked_decode">string http_chunked_decode(string encoded)</h2>
 <p>Decodes a string that was HTTP-chunked encoded.</p>
@@ -234,7 +236,7 @@ another one than HEAD.</p>
 <p>Parses (a) http_message(s) into a simple recursive object structure.</p>
 <p>Expects a string parameter containing a single HTTP message or<br />
 several consecutive HTTP messages.</p>
-<p>Returns an hierachical object structure of the parsed messages.</p>
+<p>Returns an hierarchical object structure of the parsed messages.</p>
 <p>Example:</p><pre><blockquote><code><span style="color: #000000"><br />
 <span style="color: #0000BB">&lt;?php<br />print_r</span><span style="color: #007700">(</span><span style="color: #0000BB">http_parse_message</span><span style="color: #007700">(</span><span style="color: #0000BB">http_get</span><span style="color: #007700">(</span><span style="color: #0000BB">URL</span><span style="color: #007700">,&nbsp;array(</span><span style="color: #DD0000">'redirect'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">3</span><span style="color: #007700">)));<br /><br /></span><span style="color: #0000BB">stdClass&nbsp;object<br /></span><span style="color: #007700">(<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">type</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">2<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">httpVersion</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">1.1<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">responseCode</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">200<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">headers</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;Array&nbsp;<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">Content</span><span style="color: #007700">-</span><span style="color: #0000BB">Length</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">3<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">Server</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">Apache<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">)<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">body</span><span style="color: #007700">]&nbsp;&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">Hi</span><span style="color: #007700">!<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">parentMessage</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">stdClass&nbsp;object<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">type</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">2<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">httpVersion</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">1.1<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">responseCode</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">302<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">headers</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;Array&nbsp;<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">Content</span><span style="color: #007700">-</span><span style="color: #0000BB">Length</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">0<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">Location</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;...<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">body</span><span style="color: #007700">]&nbsp;&nbsp;=&gt;&nbsp;<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">parentMessage</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;...<br />&nbsp;&nbsp;&nbsp;&nbsp;)<br />)<br /></span><span style="color: #0000BB">?&gt;</span><br />
 </span></code></blockquote></p>
@@ -286,7 +288,6 @@ array where the following keys will be recognized:</p><pre> - redirect:         
  - httpauth:         string, http credentials in "user:pass" format<br />
  - httpauthtype:     int, HTTP_AUTH_BASIC, DIGEST and/or NTLM<br />
  - compress:         bool, whether to allow gzip/deflate content encoding<br />
-                     (defaults to true)<br />
  - port:             int, use another port as specified in the url<br />
  - referer:          string, the referer to send<br />
  - useragent:        string, the user agent to send<br />
@@ -301,12 +302,29 @@ array where the following keys will be recognized:</p><pre> - redirect:         
  - maxfilesize:      int, maximum file size that should be downloaded;<br />
                      has no effect, if the size of the requested entity is not known<br />
  - lastmodified:     int, timestamp for If-(Un)Modified-Since header<br />
+ - etag:             string, quoted etag for If-(None-)Match header<br />
  - timeout:          int, seconds the request may take<br />
  - connecttimeout:   int, seconds the connect may take<br />
  - onprogress:       mixed, progress callback<br />
+ - ssl:              array, with the following options:<br />
+                     cert:        string, path to certificate<br />
+                     certtype:    string, type of certificate<br />
+                     certpasswd:  string, password for certificate<br />
+                     key:         string, path to key<br />
+                     keytype:     string, type of key<br />
+                     keypasswd:   string, pasword for key<br />
+                     engine:      string, ssl engine to use<br />
+                     version:     int, ssl version to use<br />
+                     verifypeer:  bool, whether to verify the peer<br />
+                     verifyhost:  bool whether to verify the host<br />
+                     cipher_list: string, list of allowed ciphers<br />
+                     cainfo:      string<br />
+                     capath:      string<br />
+                     random_file: string<br />
+                     egdsocket:   string<br />
 </pre></p>
 <p>The optional third parameter will be filled with some additional information<br />
-in form af an associative array, if supplied, like the following example:</p><pre><blockquote><code><span style="color: #000000"><br />
+in form of an associative array, if supplied, like the following example:</p><pre><blockquote><code><span style="color: #000000"><br />
 <span style="color: #0000BB">&lt;?php<br /></span><span style="color: #007700">array&nbsp;(<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'effective_url'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #DD0000">'http://localhost'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'response_code'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">403</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'total_time'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0.017</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'namelookup_time'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0.013</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'connect_time'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0.014</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'pretransfer_time'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0.014</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'size_upload'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'size_download'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">202</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'speed_download'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">11882</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'speed_upload'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'header_size'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">145</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'request_size'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">62</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'ssl_verifyresult'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'filetime'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;-</span><span style="color: #0000BB">1</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'content_length_download'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">202</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'content_length_upload'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'starttransfer_time'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0.017</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'content_type'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #DD0000">'text/html;&nbsp;charset=iso-8859-1'</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'redirect_time'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'redirect_count'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'http_connectcode'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'httpauth_avail'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">'proxyauth_avail'&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,<br />)<br /></span><span style="color: #0000BB">?&gt;</span><br />
 </span></code></blockquote></p>
 <p></pre></p>
@@ -316,19 +334,19 @@ in form af an associative array, if supplied, like the following example:</p><pr
 <p>See http_get() for a full list of available parameters and options.</p>
 <p>Returns the HTTP response as string on success, or FALSE on failure.</p>
 <h2 id="http_post_data">string http_post_data(string url, string data[, array options[, array &info]])</h2>
-<p>Performs an HTTP POST requeston the supplied url.</p>
+<p>Performs an HTTP POST request on the supplied url.</p>
 <p>Expects a string as second parameter containing the pre-encoded post data.<br />
 See http_get() for a full list of available parameters and options.<br />
  <br />
 Returns the HTTP response(s) as string on success, or FALSE on failure.</p>
 <h2 id="http_post_fields">string http_post_fields(string url, array data[, array files[, array options[, array &info]]])</h2>
 <p>Performs an HTTP POST request on the supplied url.</p>
-<p>Expecrs an associative array as second parameter, which will be<br />
+<p>Expects an associative array as second parameter, which will be<br />
 www-form-urlencoded. See http_get() for a full list of available options.</p>
 <p>Returns the HTTP response(s) as string on success, or FALSE on failure.</p>
 <h2 id="http_put_file">string http_put_file(string url, string file[, array options[, array &info]])</h2>
 <p>Performs an HTTP PUT request on the supplied url.</p>
-<p>Expects the second parameter to be a string referncing the file to upload.<br />
+<p>Expects the second parameter to be a string referencing the file to upload.<br />
 See http_get() for a full list of available options.</p>
 <p>Returns the HTTP response(s) as string on success, or FALSE on failure.</p>
 <h2 id="http_put_stream">string http_put_stream(string url, resource stream[, array options[, array &info]])</h2>
@@ -353,28 +371,26 @@ See http_get() for a full list of available options.</p>
 <p>Get the literal string representation of a standard or registered request method.</p>
 <p>Expects the request method ID as parameter.</p>
 <p>Returns the request method name as string on success, or FALSE on failure.</p>
-<h2 id="http_build_query">string http_build_query(mixed formdata [, string prefix[, string arg_separator]])</h2>
-<p>Generates a form-encoded query string from an associative array or object.</p>
 <h2 id="http_deflate">string http_deflate(string data[, int flags = 0])</h2>
 <p>Compress data with gzip, zlib AKA deflate or raw deflate encoding.</p>
 <p>Expects the first parameter to be a string containing the data that should<br />
 be encoded.</p>
 <p>Returns the encoded string on success, or NULL on failure.</p>
 <h2 id="http_inflate">string http_inflate(string data)</h2>
-<p>Uncompress data compressed with either gzip, deflate AKA zlib or raw<br />
+<p>Decompress data compressed with either gzip, deflate AKA zlib or raw<br />
 deflate encoding.</p>
 <p>Expects a string as parameter containing the compressed data.</p>
 <p>Returns the decoded string on success, or NULL on failure.</p>
 <h2 id="ob_deflatehandler">string ob_deflatehandler(string data, int mode)</h2>
 <p>For use with ob_start(). The deflate output buffer handler can only be used once.<br />
-It conflicts with ob_gzhanlder and zlib.output_compression as well and should<br />
+It conflicts with ob_gzhandler and zlib.output_compression as well and should<br />
 not be used after ext/mbstrings mb_output_handler and ext/sessions URL-Rewriter (AKA<br />
 session.use_trans_sid).</p>
 <h2 id="ob_inflatehandler">string ob_inflatehandler(string data, int mode)</h2>
 <p>For use with ob_start().  Same restrictions as with ob_deflatehandler apply.</p>
 <h2 id="http_support">int http_support([int feature = 0])</h2>
 <p>Check for feature that require external libraries.</p>
-<p>Accpepts an optional in parameter specifying which feature to probe for.<br />
+<p>Accepts an optional in parameter specifying which feature to probe for.<br />
 If the parameter is 0 or omitted, the return value contains a bitmask of <br />
 all supported features that depend on external libraries.</p>
 <p>Available features to probe for are:<br />
@@ -432,8 +448,8 @@ prior messages, those can be accessed by HttpMessage::getParentMessage().</p>
 <p>Throws HttpMalformedHeaderException.</p>
 <h3 id="HttpMessage_fromString">static HttpMessage HttpMessage::fromString(string raw_message[, string class_name = "HttpMessage"])</h3>
 <p>Create an HttpMessage object from a string. Kind of a static constructor.</p>
-<p>Expects a string parameter containing a sinlge or several consecutive<br />
-HTTP messages.  Accepts an optionsl string parameter specifying the class to use.</p>
+<p>Expects a string parameter containing a single or several consecutive<br />
+HTTP messages.  Accepts an optional string parameter specifying the class to use.</p>
 <p>Returns an HttpMessage object on success or NULL on failure.</p>
 <p>Throws HttpMalformedHeadersException.</p>
 <h3 id="HttpMessage_getBody">string HttpMessage::getBody()</h3>
@@ -462,7 +478,7 @@ it will be overwritten with the new header value.</p>
 <p>Returns the HttpMessage::TYPE.</p>
 <h3 id="HttpMessage_setType">void HttpMessage::setType(int type)</h3>
 <p>Set Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)</p>
-<p>Exptects an int parameter, the HttpMessage::TYPE.</p>
+<p>Expects an int parameter, the HttpMessage::TYPE.</p>
 <h3 id="HttpMessage_getResponseCode">int HttpMessage::getResponseCode()</h3>
 <p>Get the Response Code of the Message.</p>
 <p>Returns the HTTP response code if the message is of type <br />
@@ -472,6 +488,15 @@ HttpMessage::TYPE_RESPONSE, else FALSE.</p>
 <p>Expects an int parameter with the HTTP response code.</p>
 <p>Returns TRUE on success, or FALSE if the message is not of type<br />
 HttpMessage::TYPE_RESPONSE or the response code is out of range (100-510).</p>
+<h3 id="HttpMessage_getResponseStatus">string HttpMessage::getResponseStatus()</h3>
+<p>Get the Response Status of the message (i.e. the string following the response code).</p>
+<p>Returns the HTTP response status string if the message is of type <br />
+HttpMessage::TYPE_RESPONSE, else FALSE.</p>
+<h3 id="HttpMessage_setResponseStatus">bool HttpMessage::setResponseStatus(string status)</h3>
+<p>Set the Response Status of the HTTP message (i.e. the string following the response code).</p>
+<p>Expects a string parameter containing the response status text.</p>
+<p>Returns TRUE on success or FALSE if the message is not of type<br />
+HttpMessage::TYPE_RESPONSE.</p>
 <h3 id="HttpMessage_getRequestMethod">string HttpMessage::getRequestMethod()</h3>
 <p>Get the Request Method of the Message.</p>
 <p>Returns the request method name on success, or FALSE if the message is<br />
@@ -561,15 +586,15 @@ Operates on and modifies $_GET and $_SERVER['QUERY_STRING'] if global is TRUE.</
 <h3 id="HttpRequest___construct">void HttpRequest::__construct([string url[, int request_method = HTTP_METH_GET[, array options]]])</h3>
 <p>Instantiate a new HttpRequest object.</p>
 <p>Accepts a string as optional parameter containing the target request url.<br />
-Additianally accepts an optional int parameter specifying the request method<br />
+Additionally accepts an optional int parameter specifying the request method<br />
 to use and an associative array as optional third parameter which will be<br />
 passed to HttpRequest::setOptions(). </p>
 <p>Throws HttpException.</p>
 <h3 id="HttpRequest_setOptions">bool HttpRequest::setOptions([array options])</h3>
 <p>Set the request options to use.  See http_get() for a full list of available options.</p>
-<p>Accepts an array as optional parameters, wich values will overwrite the <br />
-currently set request options.  If the parameter is empty or mitted,<br />
-the optoions of the HttpRequest object will be reset.</p>
+<p>Accepts an array as optional parameters, which values will overwrite the <br />
+currently set request options.  If the parameter is empty or omitted,<br />
+the options of the HttpRequest object will be reset.</p>
 <p>Returns TRUE on success, or FALSE on failure.</p>
 <h3 id="HttpRequest_getOptions">array HttpRequest::getOptions()</h3>
 <p>Get currently set options.</p>
@@ -588,7 +613,7 @@ If the parameter is empty or omitted, the SSL options will be reset.</p>
 <p>Returns an associative array containing any previously set SSL options.</p>
 <h3 id="HttpRequest_addHeaders">bool HttpRequest::addHeaders(array headers)</h3>
 <p>Add request header name/value pairs.</p>
-<p>Expects an ssociative array as parameter containing additional header<br />
+<p>Expects an associative array as parameter containing additional header<br />
 name/value pairs.</p>
 <p>Returns TRUE on success, or FALSE on failure.</p>
 <h3 id="HttpRequest_setHeaders">bool HttpRequest::setHeaders([array headers])</h3>
@@ -683,11 +708,11 @@ Affects only POST and custom requests.</p>
 <p>Get previously set raw post data.</p>
 <p>Returns a string containing the currently set raw post data.</p>
 <h3 id="HttpRequest_addPostFile">bool HttpRequest::addPostFile(string name, string file[, string content_type = "application/x-octetstream"])</h3>
-<p>Add a file to the POST request, leaving prefiously set files unchanged.<br />
+<p>Add a file to the POST request, leaving previously set files unchanged.<br />
 Affects only POST and custom requests. Cannot be used with raw post data.</p>
 <p>Expects a string parameter containing the form element name, and a string<br />
 paremeter containing the path to the file which should be uploaded.<br />
-Additionally accepts an optional string parameter which chould contain<br />
+Additionally accepts an optional string parameter which should contain<br />
 the content type of the file.</p>
 <p>Returns TRUE on success, or FALSE if the content type seems not to contain a <br />
 primary and a secondary content type part.</p>
@@ -712,7 +737,7 @@ If the parameter is empty or omitted the put file will be unset.</p>
 <h3 id="HttpRequest_getResponseData">array HttpRequest::getResponseData()</h3>
 <p>Get all response data after the request has been sent.</p>
 <p>Returns an associative array with the key "headers" containing an associative<br />
-array holding all response headers, as well as the ley "body" containing a<br />
+array holding all response headers, as well as the key "body" containing a<br />
 string with the response body.  </p>
 <p>If redirects were allowed and several responses were received, the data <br />
 references the last received response.</p>
@@ -721,7 +746,7 @@ references the last received response.</p>
 <p>Accepts an string as optional parameter specifying a certain header to read.<br />
 If the parameter is empty or omitted all response headers will be returned.</p>
 <p>Returns either a string with the value of the header matching name if requested, <br />
-FALSE on failure, or an associative array containing all reponse headers.</p>
+FALSE on failure, or an associative array containing all response headers.</p>
 <p>If redirects were allowed and several responses were received, the data <br />
 references the last received response.</p>
 <h3 id="HttpRequest_getResponseCookie">array HttpRequest::getResponseCookie([string name])</h3>
@@ -744,6 +769,9 @@ references the last received response.</p>
 <p>Returns an int representing the response code.</p>
 <p>If redirects were allowed and several responses were received, the data <br />
 references the last received response.</p>
+<h3 id="HttpRequest_getResponseStatus">string HttpRequest::getResponseStatus()</h3>
+<p>Get the response status (i.e. the string after the response code) after the message has been sent.</p>
+<p>Returns a string containing the response status text.</p>
 <h3 id="HttpRequest_getResponseInfo">mixed HttpRequest::getResponseInfo([string name])</h3>
 <p>Get response info after the request has been sent.<br />
 See http_get() for a full list of returned info.</p>
@@ -760,7 +788,7 @@ references the last received response.</p>
 <p>Returns an HttpMessage object of the response.</p>
 <p>If redirects were allowed and several responses were received, the data <br />
 references the last received response.  Use HttpMessage::getParentMessage()<br />
-to access the data of previously received responses whithin this request<br />
+to access the data of previously received responses within this request<br />
 cycle.</p>
 <p>Throws HttpException.</p>
 <h3 id="HttpRequest_getRequestMessage">HttpMessage HttpRequest::getRequestMessage()</h3>
@@ -768,7 +796,7 @@ cycle.</p>
 <p>Returns an HttpMessage object representing the sent request.</p>
 <p>If redirects were allowed and several responses were received, the data <br />
 references the last received response.  Use HttpMessage::getParentMessage()<br />
-to access the data of previously sent requests whithin this request<br />
+to access the data of previously sent requests within this request<br />
 cycle.</p>
 <p>Note that the internal request message is immutable, that means that the<br />
 request message received through HttpRequest::getRequestMessage() will<br />
@@ -784,7 +812,7 @@ may have made to the returned object.</p>
 <h3 id="HttpRequest_getHistory">HttpMessage HttpRequest::getHistory()</h3>
 <p>Get all sent requests and received responses as an HttpMessage object.</p>
 <p>If you don't want to record history at all, set the instance variable<br />
-HttpRequest::$recoedHistory to FALSE. </p>
+HttpRequest::$recordHistory to FALSE. </p>
 <p>Returns an HttpMessage object representing the complete request/response<br />
 history.</p>
 <p>The object references the last received response, use HttpMessage::getParentMessage() <br />
@@ -833,7 +861,7 @@ HttpRequest object.</p>
 <h3 id="HttpRequestPool_attach">bool HttpRequestPool::attach(HttpRequest request)</h3>
 <p>Attach an HttpRequest object to this HttpRequestPool.<br />
 WARNING: set all options prior attaching!</p>
-<p>Expects the parameter to be an HttpRequest object not alread attached to<br />
+<p>Expects the parameter to be an HttpRequest object not already attached to<br />
 antother HttpRequestPool object.</p>
 <p>Returns TRUE on success, or FALSE on failure.</p>
 <p>Throws HttpInvalidParamException, HttpRequestException, <br />
@@ -897,14 +925,14 @@ with all headers will be returned.</p>
 <p>Returns either a string containing the value of the header matching name,<br />
 FALSE on failure, or an associative array with all headers.</p>
 <h3 id="HttpResponse_setCache">static bool HttpResponse::setCache(bool cache)</h3>
-<p>Whether it sould be attempted to cache the entitity.<br />
+<p>Whether it should be attempted to cache the entity.<br />
 This will result in necessary caching headers and checks of clients<br />
 "If-Modified-Since" and "If-None-Match" headers.  If one of those headers<br />
 matches a "304 Not Modified" status code will be issued.</p>
-<p>NOTE: If you're using sessions, be shure that you set session.cache_limiter<br />
+<p>NOTE: If you're using sessions, be sure that you set session.cache_limiter<br />
 to something more appropriate than "no-cache"!</p>
 <p>Expects a boolean as parameter specifying whether caching should be attempted.</p>
-<p>Returns TRUE ons success, or FALSE on failure.</p>
+<p>Returns TRUE on success, or FALSE on failure.</p>
 <h3 id="HttpResponse_getCache">static bool HttpResponse::getCache()</h3>
 <p>Get current caching setting.</p>
 <p>Returns TRUE if caching should be attempted, else FALSE.</p>
@@ -919,7 +947,7 @@ to something more appropriate than "no-cache"!</p>
 <p>Set a custom cache-control header, usually being "private" or "public";<br />
 The max_age parameter controls how long the cache entry is valid on the client side.</p>
 <p>Expects a string parameter containing the primary cache control setting.<br />
-Addtitionally accepts an int parameter specifying the max-age setting.</p>
+Additionally accepts an int parameter specifying the max-age setting.</p>
 <p>Returns TRUE on success, or FALSE if control does not match one of<br />
 "public" , "private" or "no-cache".</p>
 <p>Throws HttpInvalidParamException if http.only_exceptions is TRUE.</p>
@@ -948,7 +976,7 @@ if http.only_exceptions is TRUE.</p>
 <p>Set the Content-Disposition.  The Content-Disposition header is very useful<br />
 if the data actually sent came from a file or something similar, that should<br />
 be "saved" by the client/user (i.e. by browsers "Save as..." popup window).</p>
-<p>Expects a string parameter specifying the file name the "Save as..." dialogue<br />
+<p>Expects a string parameter specifying the file name the "Save as..." dialog<br />
 should display.  Optionally accepts a bool parameter, which, if set to true<br />
 and the user agent knows how to handle the content type, will probably not<br />
 cause the popup window to be shown.</p>
@@ -1017,12 +1045,12 @@ which the data to send will be read.</p>
 <p>Returns the previously set path to the file to send as string.</p>
 <h3 id="HttpResponse_send">static bool HttpResponse::send([bool clean_ob = true])</h3>
 <p>Finally send the entity.</p>
-<p>Accepts an optional boolean parameter, specifying wheter the ouput<br />
+<p>Accepts an optional boolean parameter, specifying whether the output<br />
 buffers should be discarded prior sending.  A successful caching attempt<br />
 will cause a script termination, and write a log entry if the INI setting<br />
 http.cache_log is set.</p>
 <p>Returns TRUE on success, or FALSE on failure.</p>
-<p>Throws HttpHeaderException, HttpResponseException if http.onyl_excpetions is TRUE.</p>
+<p>Throws HttpHeaderException, HttpResponseException if http.only_exceptions is TRUE.</p>
 <p>Example:</p><pre><blockquote><code><span style="color: #000000"><br />
 <span style="color: #0000BB">&lt;?php<br />HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">setCache</span><span style="color: #007700">(</span><span style="color: #0000BB">true</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">setContentType</span><span style="color: #007700">(</span><span style="color: #DD0000">'application/pdf'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">setContentDisposition</span><span style="color: #007700">(</span><span style="color: #DD0000">"$user.pdf"</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">false</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">setFile</span><span style="color: #007700">(</span><span style="color: #DD0000">'sheet.pdf'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">HttpResponse</span><span style="color: #007700">::</span><span style="color: #0000BB">send</span><span style="color: #007700">();<br /></span><span style="color: #0000BB">?&gt;</span><br />
 </span></code></blockquote></p>
@@ -1041,6 +1069,8 @@ http.cache_log is set.</p>
 <li><a href="#http_date">http_date</a>
 </li>
 <li><a href="#http_build_url">http_build_url</a>
+</li>
+<li><a href="#http_build_str">http_build_str</a>
 </li>
 <li><a href="#http_negotiate_language">http_negotiate_language</a>
 </li>
@@ -1112,8 +1142,6 @@ http.cache_log is set.</p>
 </li>
 <li><a href="#http_request_method_name">http_request_method_name</a>
 </li>
-<li><a href="#http_build_query">http_build_query</a>
-</li>
 <li><a href="#http_deflate">http_deflate</a>
 </li>
 <li><a href="#http_inflate">http_inflate</a>
@@ -1156,6 +1184,8 @@ http.cache_log is set.</p>
 <li><a href="#HttpMessage_setType">HttpMessage::setType()</a></li>
 <li><a href="#HttpMessage_getResponseCode">HttpMessage::getResponseCode()</a></li>
 <li><a href="#HttpMessage_setResponseCode">HttpMessage::setResponseCode()</a></li>
+<li><a href="#HttpMessage_getResponseStatus">HttpMessage::getResponseStatus()</a></li>
+<li><a href="#HttpMessage_setResponseStatus">HttpMessage::setResponseStatus()</a></li>
 <li><a href="#HttpMessage_getRequestMethod">HttpMessage::getRequestMethod()</a></li>
 <li><a href="#HttpMessage_setRequestMethod">HttpMessage::setRequestMethod()</a></li>
 <li><a href="#HttpMessage_getRequestUrl">HttpMessage::getRequestUrl()</a></li>
@@ -1229,6 +1259,7 @@ http.cache_log is set.</p>
 <li><a href="#HttpRequest_getResponseCookie">HttpRequest::getResponseCookie()</a></li>
 <li><a href="#HttpRequest_getResponseBody">HttpRequest::getResponseBody()</a></li>
 <li><a href="#HttpRequest_getResponseCode">HttpRequest::getResponseCode()</a></li>
+<li><a href="#HttpRequest_getResponseStatus">HttpRequest::getResponseStatus()</a></li>
 <li><a href="#HttpRequest_getResponseInfo">HttpRequest::getResponseInfo()</a></li>
 <li><a href="#HttpRequest_getResponseMessage">HttpRequest::getResponseMessage()</a></li>
 <li><a href="#HttpRequest_getRequestMessage">HttpRequest::getRequestMessage()</a></li>
@@ -1297,7 +1328,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Fri, 03 Feb 2006 10:38:18 +0100</b></p>
+    <p><b>Generated at: Mon, 06 Feb 2006 13:45:38 +0100</b></p>
 </body>
 </html>
 

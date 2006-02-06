@@ -30,28 +30,14 @@ HttpResponse
   </maintainer>
   </maintainers>
  <release>
-  <version>0.22.0</version>
-  <date>2006-02-03</date>
+  <version>0.23.0</version>
+  <date>2006-02-06</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>+ Added HTTP &apos;protocol&apos; version request option. (Ilia)
-+ Added optional class_name param to HttpMessage::fromString()
-+ Added HttpMessage::toMessageTypeObject(), HttpMessage::detach(), HttpMessage::prepend()
-+ Added Iterator interface to HttpMessage
-+ Added http_get_request_body_stream()
-+ Added HttpQueryString class
+  <notes>+ Added &apos;etag&apos; request option.
++ Added missing accessors to response status text to HttpMessage and HttpRequest classes.
 
-- Don&apos;t pretend anylonger to understand &apos;compress&apos; Content-Encoding
-- Sending an User-Agent can now be prevented by setting &apos;useragent&apos; to NULL or empty string. (Ilia)
-- Changed http_redirect() to PHPs behaviour by default
-- Changed configure to enable curl and zlib functionality by default
-- Changed http_build_url() to accept a flag that defines what parts and how they are replaced/merged
-
-* Decreased the per-request calls to curl_easy_setopt()
-* Fixed gnutls ZTS build
-* Fixed openssl ZTS issues with other libraries using openssl
-* Fixed some issues with http_get_request_body()
-* Fixed bug #6645 - doesn&apos;t compile with zlib 1.2.2 (undefined Z_FIXED)
+* Fixed PHP-4.4 and PHP-5.0 build.
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -69,6 +55,7 @@ HttpResponse
      <file role="doc" install-as="examples/tutorial.txt" name="tutorial.txt"/>
     </dir> <!-- /docs/examples -->
     <file role="doc" install-as="functions.html" name="functions.html"/>
+    <file role="doc" install-as="http.ini" name="http.ini"/>
    </dir> <!-- /docs -->
    <dir name="phpstr">
     <file role="src" name="phpstr.c"/>
@@ -79,6 +66,7 @@ HttpResponse
     <file role="test" name="allowed_methods_001_logging.phpt"/>
     <file role="test" name="allowed_methods_002.phpt"/>
     <file role="test" name="allowed_methods_002_logging.phpt"/>
+    <file role="test" name="build_str_001.phpt"/>
     <file role="test" name="build_url_001.phpt"/>
     <file role="test" name="build_url_002.phpt"/>
     <file role="test" name="build_url_003.phpt"/>
@@ -160,6 +148,7 @@ HttpResponse
     <file role="test" name="redirect_012_logging.phpt"/>
     <file role="test" name="redirect_013.phpt"/>
     <file role="test" name="redirect_013_logging.phpt"/>
+    <file role="test" name="request_etag.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="request_methods.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
