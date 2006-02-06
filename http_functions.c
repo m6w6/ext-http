@@ -38,7 +38,7 @@
 
 /* {{{ proto string http_date([int timestamp])
  *
- * Compose a valid HTTP date regarding RFC 822/1123
+ * Compose a valid HTTP date regarding RFC 1123
  * looking like: "Wed, 22 Dec 2004 11:34:47 GMT"
  *
  * Accepts an optional unix timestamp as parameter.
@@ -63,6 +63,44 @@ PHP_FUNCTION(http_date)
 
 /* {{{ proto string http_build_url(mixed url[, mixed parts[, int flags = HTTP_URL_REPLACE[, array &new_url]]])
  *
+ * Build an URL.
+ *
+ * Expexts (part(s) of) an URL as first parameter in form of a string or assoziative array
+ * like parse_url() returns.  Accepts an optional second parameter in the same way as the
+ * first argument.  Accepts an optional third integer parameter, which is a bitmask of
+ * binary or'ed HTTP_URL_* constants.  The optional fourth parameter will be filled
+ * with the results as associative array like parse_url() would return.
+ *
+ * The parts of the second URL will be merged into the first according to the flags argument.
+ * The following flags are recognized:
+ * <pre>
+ *	- HTTP_URL_REPLACE:        (default) set parts of the second url will replace the parts in the first
+ *	- HTTP_URL_JOIN_PATH:      the path of the second url will be merged into the one of the first
+ *	- HTTP_URL_JOIN_QUERY:     the two querystrings will be merged naivly; no replacements are done
+ *	- HTTP_URL_STRIP_USER:     the user part will not appear in the result
+ *	- HTTP_URL_STRIP_PASS:     the password part will not appear in the result
+ *	- HTTP_URL_STRIP_AUTH:     neither the user nor the password part will appear in the result
+ *	- HTTP_URL_STRIP_PORT:     no explicit port will be set in the result
+ *	- HTTP_URL_STRIP_PATH:     the path part will not appear in the result
+ *	- HTTP_URL_STRIP_QUERY:    no query string will be present in the result
+ *	- HTTP_URL_STRIP_FRAGMENT: no fragment will be present in the result
+ * </pre>
+ *
+ * Example:
+ * <pre>
+ * <?php
+ * 		// ftp://ftp.example.com/pub/files/current/?a=b&a=c
+ * 		echo http_build_url("http://user@www.example.com/pub/index.php?a=b#files",
+ * 			array(
+ * 				"scheme" => "ftp",
+ * 				"host"   => "ftp.example.com",
+ * 				"path"   => "files/current/",
+ * 				"query"  => "a=c"
+ * 			),
+ * 			HTTP_URL_STRIP_AUTH | HTTP_URL_JOIN_PATH | HTTP_URL_JOIN_QUERY | HTTP_URL_STRIP_FRAGMENT
+ * 		);
+ * ?>
+ * </pre>
  * Returns the new URL as string on success or FALSE on failure.
  */
 PHP_FUNCTION(http_build_url)
@@ -148,6 +186,13 @@ PHP_FUNCTION(http_build_url)
 /* {{{ proto string http_build_str(array query [, string prefix[, string arg_separator]])
  *
  * Opponent to parse_str().
+ *
+ * Expects an array as first argument which represents the parts of the query string to build.
+ * Accepts a string as optional second parameter containing a top-level prefix to use.
+ * The optional third parameter should specify an argument separator to use (by default the
+ * INI setting arg_separator.output will be used, or "&" if neither is set).
+ *
+ * Returns the built query as string on success or FALSE on failure.
  */
 PHP_FUNCTION(http_build_str)
 {

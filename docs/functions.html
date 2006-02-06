@@ -70,14 +70,41 @@
 </head>
 <body><h1 id="http_functions.c">http_functions.c</h1>
 <h2 id="http_date">string http_date([int timestamp])</h2>
-<p>Compose a valid HTTP date regarding RFC 822/1123<br />
+<p>Compose a valid HTTP date regarding RFC 1123<br />
 looking like: "Wed, 22 Dec 2004 11:34:47 GMT"</p>
 <p>Accepts an optional unix timestamp as parameter.</p>
 <p>Returns the HTTP date as string.</p>
 <h2 id="http_build_url">string http_build_url(mixed url[, mixed parts[, int flags = HTTP_URL_REPLACE[, array &new_url]]])</h2>
-<p>Returns the new URL as string on success or FALSE on failure.</p>
+<p>Build an URL.</p>
+<p>Expexts (part(s) of) an URL as first parameter in form of a string or assoziative array<br />
+like parse_url() returns.  Accepts an optional second parameter in the same way as the<br />
+first argument.  Accepts an optional third integer parameter, which is a bitmask of<br />
+binary or'ed HTTP_URL_* constants.  The optional fourth parameter will be filled<br />
+with the results as associative array like parse_url() would return.</p>
+<p>The parts of the second URL will be merged into the first according to the flags argument.<br />
+The following flags are recognized:</p><pre>	- HTTP_URL_REPLACE:        (default) set parts of the second url will replace the parts in the first<br />
+	- HTTP_URL_JOIN_PATH:      the path of the second url will be merged into the one of the first<br />
+	- HTTP_URL_JOIN_QUERY:     the two querystrings will be merged naivly; no replacements are done<br />
+	- HTTP_URL_STRIP_USER:     the user part will not appear in the result<br />
+	- HTTP_URL_STRIP_PASS:     the password part will not appear in the result<br />
+	- HTTP_URL_STRIP_AUTH:     neither the user nor the password part will appear in the result<br />
+	- HTTP_URL_STRIP_PORT:     no explicit port will be set in the result<br />
+	- HTTP_URL_STRIP_PATH:     the path part will not appear in the result<br />
+	- HTTP_URL_STRIP_QUERY:    no query string will be present in the result<br />
+	- HTTP_URL_STRIP_FRAGMENT: no fragment will be present in the result<br />
+</pre></p>
+<p>Example:</p><pre><blockquote><code><span style="color: #000000"><br />
+<span style="color: #0000BB">&lt;?php<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #FF8000">//&nbsp;ftp://ftp.example.com/pub/files/current/?a=b&amp;a=c<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">echo&nbsp;</span><span style="color: #0000BB">http_build_url</span><span style="color: #007700">(</span><span style="color: #DD0000">"http://user@www.example.com/pub/index.php?a=b#files"</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;array(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"scheme"&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #DD0000">"ftp"</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"host"&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #DD0000">"ftp.example.com"</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"path"&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #DD0000">"files/current/"</span><span style="color: #007700">,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #DD0000">"query"&nbsp;&nbsp;</span><span style="color: #007700">=&gt;&nbsp;</span><span style="color: #DD0000">"a=c"<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">),<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #0000BB">HTTP_URL_STRIP_AUTH&nbsp;</span><span style="color: #007700">|&nbsp;</span><span style="color: #0000BB">HTTP_URL_JOIN_PATH&nbsp;</span><span style="color: #007700">|&nbsp;</span><span style="color: #0000BB">HTTP_URL_JOIN_QUERY&nbsp;</span><span style="color: #007700">|&nbsp;</span><span style="color: #0000BB">HTTP_URL_STRIP_FRAGMENT<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">?&gt;</span><br />
+</span></code></blockquote></p>
+<p></pre><br />
+Returns the new URL as string on success or FALSE on failure.</p>
 <h2 id="http_build_str">string http_build_str(array query [, string prefix[, string arg_separator]])</h2>
 <p>Opponent to parse_str().</p>
+<p>Expects an array as first argument which represents the parts of the query string to build.<br />
+Accepts a string as optional second parameter containing a top-level prefix to use.<br />
+The optional third parameter should specify an argument separator to use (by default the<br />
+INI setting arg_separator.output will be used, or "&" if neither is set).</p>
+<p>Returns the built query as string on success or FALSE on failure.</p>
 <h2 id="http_negotiate_language">string http_negotiate_language(array supported[, array &result])</h2>
 <p>This function negotiates the clients preferred language based on its<br />
 Accept-Language HTTP header.  The qualifier is recognized and languages <br />
@@ -1328,7 +1355,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Mon, 06 Feb 2006 13:45:38 +0100</b></p>
+    <p><b>Generated at: Mon, 06 Feb 2006 16:10:01 +0100</b></p>
 </body>
 </html>
 
