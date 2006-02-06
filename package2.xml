@@ -37,8 +37,8 @@ HttpResponse
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>0.22.0</release>
-  <api>0.22.0</api>
+  <release>0.23.0</release>
+  <api>0.23.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -46,12 +46,10 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added HTTP 'protocol' version request option. (Ilia)
-+ Added optional class_name param to HttpMessage::fromString()
-+ Added HttpMessage::toMessageTypeObject(), HttpMessage::detach(), HttpMessage::prepend()
-+ Added Iterator interface to HttpMessage
-+ Added http_get_request_body_stream()
-+ Added HttpQueryString class
++ Added 'etag' request option.
++ Added missing accessors to response status text to HttpMessage and HttpRequest classes.
+
+* Fixed PHP-4.4 and PHP-5.0 build.
 
 - Don't pretend anylonger to understand 'compress' Content-Encoding
 - Sending an User-Agent can now be prevented by setting 'useragent' to NULL or empty string. (Ilia)
@@ -71,6 +69,7 @@ HttpResponse
    <file role="doc" name="CREDITS"/>
    <file role="doc" name="EXPERIMENTAL"/>
    <file role="doc" name="KnownIssues.txt"/>
+   <file role="doc" name="http.ini"/>
    <file role="doc" name="docs/functions.html"/>
    <file role="doc" name="docs/examples/extract.php"/>
    <file role="doc" name="docs/examples/tutorial.txt"/>
@@ -149,6 +148,7 @@ HttpResponse
     <file role="test" name="allowed_methods_001_logging.phpt"/>
     <file role="test" name="allowed_methods_002.phpt"/>
     <file role="test" name="allowed_methods_002_logging.phpt"/>
+    <file role="test" name="build_str_001.phpt"/>
     <file role="test" name="build_url_001.phpt"/>
     <file role="test" name="build_url_002.phpt"/>
     <file role="test" name="build_url_003.phpt"/>
@@ -228,6 +228,7 @@ HttpResponse
     <file role="test" name="redirect_012_logging.phpt"/>
     <file role="test" name="redirect_013.phpt"/>
     <file role="test" name="redirect_013_logging.phpt"/>
+    <file role="test" name="request_etag.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="request_methods.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
@@ -297,6 +298,7 @@ HttpResponse
    default="yes"
   />
   <filelist>
+   <install as="http.ini" name="docs/http.ini"/>
    <install as="functions.html" name="docs/functions.html"/>
    <install as="examples/extract.php" name="docs/examples/extract.php"/>
    <install as="examples/tutorial.txt" name="docs/examples/tutorial.txt"/>
