@@ -349,8 +349,9 @@ PHP_MINFO_FUNCTION(http)
 			"HttpInflateStream, "
 #	endif
 #	ifndef WONKY
-			"HttpResponse"
+			"HttpResponse, "
 #	endif
+			"HttpQueryString"
 #endif
 		);
 		php_info_print_table_row(2, "Output Handlers", "ob_deflatehandler, ob_inflatehandler, ob_etaghandler");

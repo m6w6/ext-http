@@ -47,7 +47,7 @@ HttpResponse
  <license>BSD, revised</license>
  <notes><![CDATA[
 + Added 'etag' request option.
-+ Added missing accessors to response status text to HttpMessage and HttpRequest classes.
++ Added missing accessors for response status text to HttpMessage and HttpRequest classes.
 
 * Fixed PHP-4.4 and PHP-5.0 build.
 ]]></notes>

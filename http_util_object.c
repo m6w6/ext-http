@@ -20,10 +20,10 @@
 
 #include "php_http_util_object.h"
 
-#define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpUtil, method, 0, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpUtil, method, ret_ref)
+#define HTTP_BEGIN_ARGS(method, req_args)	HTTP_BEGIN_ARGS_EX(HttpUtil, method, 0, req_args)
+#define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpUtil, method, 0)
 
-#define HTTP_UTIL_ALIAS(method, func)			HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpUtil, method))
+#define HTTP_UTIL_ALIAS(method, func)		HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpUtil, method))
 
 HTTP_BEGIN_ARGS(date, 0)
 	HTTP_ARG_VAL(timestamp, 0)

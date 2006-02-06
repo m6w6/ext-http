@@ -25,37 +25,37 @@
 #include "php_http_querystring_object.h"
 #include "php_http_exception_object.h"
 
-#define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpQueryString, method, ret_ref, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpQueryString, method, ret_ref)
+#define HTTP_BEGIN_ARGS(method, req_args) 			HTTP_BEGIN_ARGS_EX(HttpQueryString, method, 0, req_args)
+#define HTTP_EMPTY_ARGS(method)						HTTP_EMPTY_ARGS_EX(HttpQueryString, method, 0)
 #define HTTP_QUERYSTRING_ME(method, visibility)		PHP_ME(HttpQueryString, method, HTTP_ARGS(HttpQueryString, method), visibility)
 #define HTTP_QUERYSTRING_GME(method, visibility)	PHP_ME(HttpQueryString, method, HTTP_ARGS(HttpQueryString, __getter), visibility)
 
-HTTP_BEGIN_ARGS(__construct, 0, 0)
+HTTP_BEGIN_ARGS(__construct, 0)
 	HTTP_ARG_VAL(global, 0)
 	HTTP_ARG_VAL(params, 0)
 HTTP_END_ARGS;
 
 #ifndef WONKY
-HTTP_BEGIN_ARGS(getInstance, 0, 0)
+HTTP_BEGIN_ARGS(getInstance, 0)
 	HTTP_ARG_VAL(global, 0)
 HTTP_END_ARGS;
 #endif
 
-HTTP_EMPTY_ARGS(toArray, 0);
-HTTP_EMPTY_ARGS(toString, 0);
+HTTP_EMPTY_ARGS(toArray);
+HTTP_EMPTY_ARGS(toString);
 
-HTTP_BEGIN_ARGS(get, 0, 0)
+HTTP_BEGIN_ARGS(get, 0)
 	HTTP_ARG_VAL(name, 0)
 	HTTP_ARG_VAL(type, 0)
 	HTTP_ARG_VAL(defval, 0)
 	HTTP_ARG_VAL(delete, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(set, 0, 1)
+HTTP_BEGIN_ARGS(set, 1)
 	HTTP_ARG_VAL(params, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(__getter, 0, 1)
+HTTP_BEGIN_ARGS(__getter, 1)
 	HTTP_ARG_VAL(name, 0)
 	HTTP_ARG_VAL(defval, 0)
 	HTTP_ARG_VAL(delete, 0)

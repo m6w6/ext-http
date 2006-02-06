@@ -39,86 +39,86 @@ extern PHPAPI zend_class_entry *spl_ce_Countable;
 #	endif
 #endif
 
-#define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpMessage, method, ret_ref, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpMessage, method, ret_ref)
-#define HTTP_MESSAGE_ME(method, visibility)			PHP_ME(HttpMessage, method, HTTP_ARGS(HttpMessage, method), visibility)
+#define HTTP_BEGIN_ARGS(method, req_args) 	HTTP_BEGIN_ARGS_EX(HttpMessage, method, 0, req_args)
+#define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpMessage, method, 0)
+#define HTTP_MESSAGE_ME(method, visibility)	PHP_ME(HttpMessage, method, HTTP_ARGS(HttpMessage, method), visibility)
 
-HTTP_BEGIN_ARGS(__construct, 0, 0)
+HTTP_BEGIN_ARGS(__construct, 0)
 	HTTP_ARG_VAL(message, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(fromString, 1, 1)
+HTTP_BEGIN_ARGS(fromString, 1)
 	HTTP_ARG_VAL(message, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getBody, 0);
-HTTP_BEGIN_ARGS(setBody, 0, 1)
+HTTP_EMPTY_ARGS(getBody);
+HTTP_BEGIN_ARGS(setBody, 1)
 	HTTP_ARG_VAL(body, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getHeaders, 0);
-HTTP_BEGIN_ARGS(setHeaders, 0, 1)
+HTTP_EMPTY_ARGS(getHeaders);
+HTTP_BEGIN_ARGS(setHeaders, 1)
 	HTTP_ARG_VAL(headers, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addHeaders, 0, 1)
+HTTP_BEGIN_ARGS(addHeaders, 1)
 	HTTP_ARG_VAL(headers, 0)
 	HTTP_ARG_VAL(append, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getType, 0);
-HTTP_BEGIN_ARGS(setType, 0, 1)
+HTTP_EMPTY_ARGS(getType);
+HTTP_BEGIN_ARGS(setType, 1)
 	HTTP_ARG_VAL(type, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getResponseCode, 0);
-HTTP_BEGIN_ARGS(setResponseCode, 0, 1)
+HTTP_EMPTY_ARGS(getResponseCode);
+HTTP_BEGIN_ARGS(setResponseCode, 1)
 	HTTP_ARG_VAL(response_code, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getResponseStatus, 0);
-HTTP_BEGIN_ARGS(setResponseStatus, 0, 1)
+HTTP_EMPTY_ARGS(getResponseStatus);
+HTTP_BEGIN_ARGS(setResponseStatus, 1)
 	HTTP_ARG_VAL(response_status, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getRequestMethod, 0);
-HTTP_BEGIN_ARGS(setRequestMethod, 0, 1)
+HTTP_EMPTY_ARGS(getRequestMethod);
+HTTP_BEGIN_ARGS(setRequestMethod, 1)
 	HTTP_ARG_VAL(request_method, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getRequestUrl, 0);
-HTTP_BEGIN_ARGS(setRequestUrl, 0, 1)
+HTTP_EMPTY_ARGS(getRequestUrl);
+HTTP_BEGIN_ARGS(setRequestUrl, 1)
 	HTTP_ARG_VAL(url, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getHttpVersion, 0);
-HTTP_BEGIN_ARGS(setHttpVersion, 0, 1)
+HTTP_EMPTY_ARGS(getHttpVersion);
+HTTP_BEGIN_ARGS(setHttpVersion, 1)
 	HTTP_ARG_VAL(http_version, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getParentMessage, 0);
-HTTP_EMPTY_ARGS(send, 0);
-HTTP_BEGIN_ARGS(toString, 0, 0)
+HTTP_EMPTY_ARGS(getParentMessage);
+HTTP_EMPTY_ARGS(send);
+HTTP_BEGIN_ARGS(toString, 0)
 	HTTP_ARG_VAL(include_parent, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(toMessageTypeObject, 0);
+HTTP_EMPTY_ARGS(toMessageTypeObject);
 
-HTTP_EMPTY_ARGS(count, 0);
+HTTP_EMPTY_ARGS(count);
 
-HTTP_EMPTY_ARGS(serialize, 0);
-HTTP_BEGIN_ARGS(unserialize, 0, 1)
+HTTP_EMPTY_ARGS(serialize);
+HTTP_BEGIN_ARGS(unserialize, 1)
 	HTTP_ARG_VAL(serialized, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(rewind, 0);
-HTTP_EMPTY_ARGS(valid, 0);
-HTTP_EMPTY_ARGS(key, 0);
-HTTP_EMPTY_ARGS(current, 0);
-HTTP_EMPTY_ARGS(next, 0);
+HTTP_EMPTY_ARGS(rewind);
+HTTP_EMPTY_ARGS(valid);
+HTTP_EMPTY_ARGS(key);
+HTTP_EMPTY_ARGS(current);
+HTTP_EMPTY_ARGS(next);
 
-HTTP_EMPTY_ARGS(detach, 0);
-HTTP_BEGIN_ARGS(prepend, 0, 1)
+HTTP_EMPTY_ARGS(detach);
+HTTP_BEGIN_ARGS(prepend, 1)
 	HTTP_ARG_OBJ(HttpMessage, message, 0)
 HTTP_END_ARGS;
 

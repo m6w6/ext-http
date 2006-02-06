@@ -34,7 +34,7 @@
 #define UPD_STATIC_STRL(n, v, l)	UPD_STATIC_STRL_EX(http_response_object_ce, n, v, l)
 
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpResponse, method, 0, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)		HTTP_EMPTY_ARGS_EX(HttpResponse, method, ret_ref)
+#define HTTP_EMPTY_ARGS(method)					HTTP_EMPTY_ARGS_EX(HttpResponse, method, 0)
 #define HTTP_RESPONSE_ME(method, visibility)	PHP_ME(HttpResponse, method, HTTP_ARGS(HttpResponse, method), visibility|ZEND_ACC_STATIC)
 #define HTTP_RESPONSE_ALIAS(method, func)		HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpResponse, method))
 
@@ -48,33 +48,33 @@ HTTP_BEGIN_ARGS(getHeader, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getETag, 0);
+HTTP_EMPTY_ARGS(getETag);
 HTTP_BEGIN_ARGS(setETag, 1)
 	HTTP_ARG_VAL(etag, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getLastModified, 0);
+HTTP_EMPTY_ARGS(getLastModified);
 HTTP_BEGIN_ARGS(setLastModified, 1)
 	HTTP_ARG_VAL(timestamp, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getCache, 0);
+HTTP_EMPTY_ARGS(getCache);
 HTTP_BEGIN_ARGS(setCache, 1)
 	HTTP_ARG_VAL(cache, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getGzip, 0);
+HTTP_EMPTY_ARGS(getGzip);
 HTTP_BEGIN_ARGS(setGzip, 1)
 	HTTP_ARG_VAL(gzip, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getCacheControl, 0);
+HTTP_EMPTY_ARGS(getCacheControl);
 HTTP_BEGIN_ARGS(setCacheControl, 1)
 	HTTP_ARG_VAL(cache_control, 0)
 	HTTP_ARG_VAL(max_age, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getContentType, 0);
+HTTP_EMPTY_ARGS(getContentType);
 HTTP_BEGIN_ARGS(setContentType, 1)
 	HTTP_ARG_VAL(content_type, 0)
 HTTP_END_ARGS;
@@ -84,33 +84,33 @@ HTTP_BEGIN_ARGS(guessContentType, 1)
 	HTTP_ARG_VAL(magic_mode, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getContentDisposition, 0);
+HTTP_EMPTY_ARGS(getContentDisposition);
 HTTP_BEGIN_ARGS(setContentDisposition, 1)
 	HTTP_ARG_VAL(filename, 0)
 	HTTP_ARG_VAL(send_inline, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getThrottleDelay, 0);
+HTTP_EMPTY_ARGS(getThrottleDelay);
 HTTP_BEGIN_ARGS(setThrottleDelay, 1)
 	HTTP_ARG_VAL(seconds, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getBufferSize, 0);
+HTTP_EMPTY_ARGS(getBufferSize);
 HTTP_BEGIN_ARGS(setBufferSize, 1)
 	HTTP_ARG_VAL(bytes, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getData, 0);
+HTTP_EMPTY_ARGS(getData);
 HTTP_BEGIN_ARGS(setData, 1)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getStream, 0);
+HTTP_EMPTY_ARGS(getStream);
 HTTP_BEGIN_ARGS(setStream, 1)
 	HTTP_ARG_VAL(stream, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getFile, 0);
+HTTP_EMPTY_ARGS(getFile);
 HTTP_BEGIN_ARGS(setFile, 1)
 	HTTP_ARG_VAL(filepath, 0)
 HTTP_END_ARGS;
@@ -119,7 +119,7 @@ HTTP_BEGIN_ARGS(send, 0)
 	HTTP_ARG_VAL(clean_ob, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(capture, 0);
+HTTP_EMPTY_ARGS(capture);
 
 HTTP_BEGIN_ARGS(redirect, 0)
 	HTTP_ARG_VAL(url, 0)
@@ -132,8 +132,8 @@ HTTP_BEGIN_ARGS(status, 1)
 	HTTP_ARG_VAL(code, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getRequestHeaders, 0);
-HTTP_EMPTY_ARGS(getRequestBody, 0);
+HTTP_EMPTY_ARGS(getRequestHeaders);
+HTTP_EMPTY_ARGS(getRequestBody);
 
 #define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
 static inline void _http_response_object_declare_default_properties(TSRMLS_D);

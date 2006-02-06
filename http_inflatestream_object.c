@@ -22,19 +22,19 @@
 #include "php_http_exception_object.h"
 #include "php_http_inflatestream_object.h"
 
-#define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpInflateStream, method, ret_ref, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpInflateStream, method, ret_ref)
-#define HTTP_INFLATE_ME(method, visibility)			PHP_ME(HttpInflateStream, method, HTTP_ARGS(HttpInflateStream, method), visibility)
+#define HTTP_BEGIN_ARGS(method, req_args) 	HTTP_BEGIN_ARGS_EX(HttpInflateStream, method, 0, req_args)
+#define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpInflateStream, method, 0)
+#define HTTP_INFLATE_ME(method, visibility)	PHP_ME(HttpInflateStream, method, HTTP_ARGS(HttpInflateStream, method), visibility)
 
-HTTP_BEGIN_ARGS(update, 0, 1)
+HTTP_BEGIN_ARGS(update, 1)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(flush, 0, 0)
+HTTP_BEGIN_ARGS(flush, 0)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(finish, 0, 0)
+HTTP_BEGIN_ARGS(finish, 0)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 

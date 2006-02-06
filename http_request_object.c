@@ -28,184 +28,184 @@
 #include "php_http_request_pool_api.h"
 #include "php_http_url_api.h"
 
-#define HTTP_BEGIN_ARGS(method, ret_ref, req_args) 	HTTP_BEGIN_ARGS_EX(HttpRequest, method, ret_ref, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)			HTTP_EMPTY_ARGS_EX(HttpRequest, method, ret_ref)
-#define HTTP_REQUEST_ME(method, visibility)			PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)
-#define HTTP_REQUEST_ALIAS(method, func)			HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpRequest, method))
+#define HTTP_BEGIN_ARGS(method, req_args) 	HTTP_BEGIN_ARGS_EX(HttpRequest, method, 0, req_args)
+#define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpRequest, method, 0)
+#define HTTP_REQUEST_ME(method, visibility)	PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)
+#define HTTP_REQUEST_ALIAS(method, func)	HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpRequest, method))
 
-HTTP_BEGIN_ARGS(__construct, 0, 0)
+HTTP_BEGIN_ARGS(__construct, 0)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(method, 0)
 	HTTP_ARG_VAL(options, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getOptions, 0);
-HTTP_BEGIN_ARGS(setOptions, 0, 0)
+HTTP_EMPTY_ARGS(getOptions);
+HTTP_BEGIN_ARGS(setOptions, 0)
 	HTTP_ARG_VAL(options, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getSslOptions, 0);
-HTTP_BEGIN_ARGS(setSslOptions, 0, 0)
+HTTP_EMPTY_ARGS(getSslOptions);
+HTTP_BEGIN_ARGS(setSslOptions, 0)
 	HTTP_ARG_VAL(ssl_options, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addSslOptions, 0, 0)
+HTTP_BEGIN_ARGS(addSslOptions, 0)
 	HTTP_ARG_VAL(ssl_optins, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getHeaders, 0);
-HTTP_BEGIN_ARGS(setHeaders, 0, 0)
+HTTP_EMPTY_ARGS(getHeaders);
+HTTP_BEGIN_ARGS(setHeaders, 0)
 	HTTP_ARG_VAL(headers, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addHeaders, 0, 1)
+HTTP_BEGIN_ARGS(addHeaders, 1)
 	HTTP_ARG_VAL(headers, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getCookies, 0);
-HTTP_BEGIN_ARGS(setCookies, 0, 0)
+HTTP_EMPTY_ARGS(getCookies);
+HTTP_BEGIN_ARGS(setCookies, 0)
 	HTTP_ARG_VAL(cookies, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addCookies, 0, 1)
+HTTP_BEGIN_ARGS(addCookies, 1)
 	HTTP_ARG_VAL(cookies, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getUrl, 0);
-HTTP_BEGIN_ARGS(setUrl, 0, 1)
+HTTP_EMPTY_ARGS(getUrl);
+HTTP_BEGIN_ARGS(setUrl, 1)
 	HTTP_ARG_VAL(url, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getMethod, 0);
-HTTP_BEGIN_ARGS(setMethod, 0, 1)
+HTTP_EMPTY_ARGS(getMethod);
+HTTP_BEGIN_ARGS(setMethod, 1)
 	HTTP_ARG_VAL(request_method, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getContentType, 0);
-HTTP_BEGIN_ARGS(setContentType, 0, 1)
+HTTP_EMPTY_ARGS(getContentType);
+HTTP_BEGIN_ARGS(setContentType, 1)
 	HTTP_ARG_VAL(content_type, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getQueryData, 0);
-HTTP_BEGIN_ARGS(setQueryData, 0, 0)
+HTTP_EMPTY_ARGS(getQueryData);
+HTTP_BEGIN_ARGS(setQueryData, 0)
 	HTTP_ARG_VAL(query_data, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addQueryData, 0, 1)
+HTTP_BEGIN_ARGS(addQueryData, 1)
 	HTTP_ARG_VAL(query_data, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getPostFields, 0);
-HTTP_BEGIN_ARGS(setPostFields, 0, 0)
+HTTP_EMPTY_ARGS(getPostFields);
+HTTP_BEGIN_ARGS(setPostFields, 0)
 	HTTP_ARG_VAL(post_fields, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addPostFields, 0, 1)
+HTTP_BEGIN_ARGS(addPostFields, 1)
 	HTTP_ARG_VAL(post_fields, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getPostFiles, 0);
-HTTP_BEGIN_ARGS(setPostFiles, 0, 0)
+HTTP_EMPTY_ARGS(getPostFiles);
+HTTP_BEGIN_ARGS(setPostFiles, 0)
 	HTTP_ARG_VAL(post_files, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addPostFile, 0, 2)
+HTTP_BEGIN_ARGS(addPostFile, 2)
 	HTTP_ARG_VAL(formname, 0)
 	HTTP_ARG_VAL(filename, 0)
 	HTTP_ARG_VAL(content_type, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getRawPostData, 0);
-HTTP_BEGIN_ARGS(setRawPostData, 0, 0)
+HTTP_EMPTY_ARGS(getRawPostData);
+HTTP_BEGIN_ARGS(setRawPostData, 0)
 	HTTP_ARG_VAL(raw_post_data, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addRawPostData, 0, 1)
+HTTP_BEGIN_ARGS(addRawPostData, 1)
 	HTTP_ARG_VAL(raw_post_data, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getPutFile, 0);
-HTTP_BEGIN_ARGS(setPutFile, 0, 0)
+HTTP_EMPTY_ARGS(getPutFile);
+HTTP_BEGIN_ARGS(setPutFile, 0)
 	HTTP_ARG_VAL(filename, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getResponseData, 0);
-HTTP_BEGIN_ARGS(getResponseHeader, 0, 0)
+HTTP_EMPTY_ARGS(getResponseData);
+HTTP_BEGIN_ARGS(getResponseHeader, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(getResponseCookie, 0, 0)
+HTTP_BEGIN_ARGS(getResponseCookie, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getResponseBody, 0);
-HTTP_EMPTY_ARGS(getResponseCode, 0);
-HTTP_EMPTY_ARGS(getResponseStatus, 0);
-HTTP_BEGIN_ARGS(getResponseInfo, 0, 0)
+HTTP_EMPTY_ARGS(getResponseBody);
+HTTP_EMPTY_ARGS(getResponseCode);
+HTTP_EMPTY_ARGS(getResponseStatus);
+HTTP_BEGIN_ARGS(getResponseInfo, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getResponseMessage, 0);
-HTTP_EMPTY_ARGS(getRawResponseMessage, 0);
-HTTP_EMPTY_ARGS(getRequestMessage, 0);
-HTTP_EMPTY_ARGS(getRawRequestMessage, 0);
-HTTP_EMPTY_ARGS(getHistory, 0);
-HTTP_EMPTY_ARGS(clearHistory, 0);
-HTTP_EMPTY_ARGS(send, 0);
+HTTP_EMPTY_ARGS(getResponseMessage);
+HTTP_EMPTY_ARGS(getRawResponseMessage);
+HTTP_EMPTY_ARGS(getRequestMessage);
+HTTP_EMPTY_ARGS(getRawRequestMessage);
+HTTP_EMPTY_ARGS(getHistory);
+HTTP_EMPTY_ARGS(clearHistory);
+HTTP_EMPTY_ARGS(send);
 
-HTTP_BEGIN_ARGS(get, 0, 1)
+HTTP_BEGIN_ARGS(get, 1)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(head, 0, 1)
+HTTP_BEGIN_ARGS(head, 1)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(postData, 0, 2)
+HTTP_BEGIN_ARGS(postData, 2)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(data, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(postFields, 0, 2)
+HTTP_BEGIN_ARGS(postFields, 2)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(data, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(putFile, 0, 2)
+HTTP_BEGIN_ARGS(putFile, 2)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(file, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(putStream, 0, 2)
+HTTP_BEGIN_ARGS(putStream, 2)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(stream, 0)
 	HTTP_ARG_VAL(options, 0)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(methodRegister, 0, 1)
+HTTP_BEGIN_ARGS(methodRegister, 1)
 	HTTP_ARG_VAL(method_name, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(methodUnregister, 0, 1)
+HTTP_BEGIN_ARGS(methodUnregister, 1)
 	HTTP_ARG_VAL(method, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(methodName, 0, 1)
+HTTP_BEGIN_ARGS(methodName, 1)
 	HTTP_ARG_VAL(method_id, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(methodExists, 0, 1)
+HTTP_BEGIN_ARGS(methodExists, 1)
 	HTTP_ARG_VAL(method, 0)
 HTTP_END_ARGS;
 

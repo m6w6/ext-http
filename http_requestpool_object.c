@@ -32,7 +32,7 @@ extern PHPAPI zend_class_entry *spl_ce_Countable;
 #endif
 
 #define HTTP_BEGIN_ARGS(method, req_args) 	HTTP_BEGIN_ARGS_EX(HttpRequestPool, method, 0, req_args)
-#define HTTP_EMPTY_ARGS(method, ret_ref)	HTTP_EMPTY_ARGS_EX(HttpRequestPool, method, ret_ref)
+#define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpRequestPool, method, 0)
 #define HTTP_REQPOOL_ME(method, visibility)	PHP_ME(HttpRequestPool, method, HTTP_ARGS(HttpRequestPool, method), visibility)
 
 HTTP_BEGIN_ARGS(__construct, 0)
@@ -41,8 +41,8 @@ HTTP_BEGIN_ARGS(__construct, 0)
 	HTTP_ARG_OBJ(HttpRequest, requestN, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(__destruct, 0);
-HTTP_EMPTY_ARGS(reset, 0);
+HTTP_EMPTY_ARGS(__destruct);
+HTTP_EMPTY_ARGS(reset);
 
 HTTP_BEGIN_ARGS(attach, 1)
 	HTTP_ARG_OBJ(HttpRequest, request, 0)
@@ -52,20 +52,20 @@ HTTP_BEGIN_ARGS(detach, 1)
 	HTTP_ARG_OBJ(HttpRequest, request, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(send, 0);
-HTTP_EMPTY_ARGS(socketPerform, 0);
-HTTP_EMPTY_ARGS(socketSelect, 0);
+HTTP_EMPTY_ARGS(send);
+HTTP_EMPTY_ARGS(socketPerform);
+HTTP_EMPTY_ARGS(socketSelect);
 
-HTTP_EMPTY_ARGS(valid, 0);
-HTTP_EMPTY_ARGS(current, 1);
-HTTP_EMPTY_ARGS(key, 0);
-HTTP_EMPTY_ARGS(next, 0);
-HTTP_EMPTY_ARGS(rewind, 0);
+HTTP_EMPTY_ARGS(valid);
+HTTP_EMPTY_ARGS(current);
+HTTP_EMPTY_ARGS(key);
+HTTP_EMPTY_ARGS(next);
+HTTP_EMPTY_ARGS(rewind);
 
-HTTP_EMPTY_ARGS(count, 0);
+HTTP_EMPTY_ARGS(count);
 
-HTTP_EMPTY_ARGS(getAttachedRequests, 0);
-HTTP_EMPTY_ARGS(getFinishedRequests, 0);
+HTTP_EMPTY_ARGS(getAttachedRequests);
+HTTP_EMPTY_ARGS(getFinishedRequests);
 
 #define http_requestpool_object_declare_default_properties() _http_requestpool_object_declare_default_properties(TSRMLS_C)
 static inline void _http_requestpool_object_declare_default_properties(TSRMLS_D);
