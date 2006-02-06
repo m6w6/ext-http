@@ -50,18 +50,6 @@ HttpResponse
 + Added missing accessors to response status text to HttpMessage and HttpRequest classes.
 
 * Fixed PHP-4.4 and PHP-5.0 build.
-
-- Don't pretend anylonger to understand 'compress' Content-Encoding
-- Sending an User-Agent can now be prevented by setting 'useragent' to NULL or empty string. (Ilia)
-- Changed http_redirect() to PHPs behaviour by default
-- Changed configure to enable curl and zlib functionality by default
-- Changed http_build_url() to accept a flag that defines what parts and how they are replaced/merged
-
-* Decreased the per-request calls to curl_easy_setopt()
-* Fixed gnutls ZTS build
-* Fixed openssl ZTS issues with other libraries using openssl
-* Fixed some issues with http_get_request_body()
-* Fixed bug #6645 - doesn't compile with zlib 1.2.2 (undefined Z_FIXED)
 ]]></notes>
  <contents>
   <dir name="/">
