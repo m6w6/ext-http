@@ -101,7 +101,7 @@ PHP_MINIT_FUNCTION(http_request_method)
 
 PHP_RINIT_FUNCTION(http_request_method)
 {
-	HTTP_G(request).methods.custom.entries = ecalloc(1, sizeof(http_request_method_entry *));
+	HTTP_G->request.methods.custom.entries = ecalloc(1, sizeof(http_request_method_entry *));
 	
 	return SUCCESS;
 }
@@ -109,15 +109,14 @@ PHP_RINIT_FUNCTION(http_request_method)
 PHP_RSHUTDOWN_FUNCTION(http_request_method)
 {
 	int i;
-	getGlobals(G);
-	http_request_method_entry **ptr = G->request.methods.custom.entries;
+	http_request_method_entry **ptr = HTTP_G->request.methods.custom.entries;
 	
-	for (i = 0; i < G->request.methods.custom.count; ++i) {
+	for (i = 0; i < HTTP_G->request.methods.custom.count; ++i) {
 		if (ptr[i]) {
 			http_request_method_unregister(HTTP_CUSTOM_REQUEST_METHOD_START + i);
 		}
 	}
-	efree(G->request.methods.custom.entries);
+	efree(HTTP_G->request.methods.custom.entries);
 	
 	return SUCCESS;
 }
@@ -126,15 +125,14 @@ PHP_RSHUTDOWN_FUNCTION(http_request_method)
 /* {{{ char *http_request_method_name(http_request_method) */
 PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_DC)
 {
-	getGlobals(G);
-	http_request_method_entry **ptr = G->request.methods.custom.entries;
+	http_request_method_entry **ptr = HTTP_G->request.methods.custom.entries;
 
 	if (HTTP_STD_REQUEST_METHOD(m)) {
 		return http_request_methods[m];
 	}
 
 	if (	(HTTP_CUSTOM_REQUEST_METHOD(m) >= 0) && 
-			(HTTP_CUSTOM_REQUEST_METHOD(m) < G->request.methods.custom.count) &&
+			(HTTP_CUSTOM_REQUEST_METHOD(m) < HTTP_G->request.methods.custom.count) &&
 			(ptr[HTTP_CUSTOM_REQUEST_METHOD(m)])) {
 		return ptr[HTTP_CUSTOM_REQUEST_METHOD(m)]->name;
 	}
@@ -147,8 +145,7 @@ PHP_HTTP_API const char *_http_request_method_name(http_request_method m TSRMLS_
 PHP_HTTP_API int _http_request_method_exists(zend_bool by_name, http_request_method id, const char *name TSRMLS_DC)
 {
 	int i;
-	getGlobals(G);
-	http_request_method_entry **ptr = G->request.methods.custom.entries;
+	http_request_method_entry **ptr = HTTP_G->request.methods.custom.entries;
 	
 	if (by_name) {
 		for (i = HTTP_MIN_REQUEST_METHOD; i < HTTP_MAX_REQUEST_METHOD; ++i) {
@@ -156,7 +153,7 @@ PHP_HTTP_API int _http_request_method_exists(zend_bool by_name, http_request_met
 				return i;
 			}
 		}
-		for (i = 0; i < G->request.methods.custom.count; ++i) {
+		for (i = 0; i < HTTP_G->request.methods.custom.count; ++i) {
 			if (ptr[i] && !strcasecmp(name, ptr[i]->name)) {
 				return HTTP_CUSTOM_REQUEST_METHOD_START + i;
 			}
@@ -164,7 +161,7 @@ PHP_HTTP_API int _http_request_method_exists(zend_bool by_name, http_request_met
 	} else if (HTTP_STD_REQUEST_METHOD(id)) {
 		return id;
 	} else if (	(HTTP_CUSTOM_REQUEST_METHOD(id) >= 0) && 
-				(HTTP_CUSTOM_REQUEST_METHOD(id) < G->request.methods.custom.count) && 
+				(HTTP_CUSTOM_REQUEST_METHOD(id) < HTTP_G->request.methods.custom.count) && 
 				(ptr[HTTP_CUSTOM_REQUEST_METHOD(id)])) {
 		return id;
 	}
@@ -178,8 +175,7 @@ PHP_HTTP_API int _http_request_method_register(const char *method_name, int meth
 {
 	int i, meth_num;
 	char *http_method, *method, *mconst;
-	getGlobals(G);
-	http_request_method_entry **ptr = G->request.methods.custom.entries;
+	http_request_method_entry **ptr = HTTP_G->request.methods.custom.entries;
 	
 	if (!isalpha(*method_name)) {
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Request method does not start with a character (%s)", method_name);
@@ -215,12 +211,12 @@ PHP_HTTP_API int _http_request_method_register(const char *method_name, int meth
 	method[method_name_len] = '\0';
 	mconst[method_name_len] = '\0';
 	
-	ptr = erealloc(ptr, sizeof(http_request_method_entry *) * (G->request.methods.custom.count + 1));
-	G->request.methods.custom.entries = ptr;
-	ptr[G->request.methods.custom.count] = emalloc(sizeof(http_request_method_entry));
-	ptr[G->request.methods.custom.count]->name = method;
-	ptr[G->request.methods.custom.count]->cnst = mconst;
-	meth_num = HTTP_CUSTOM_REQUEST_METHOD_START + G->request.methods.custom.count++;
+	ptr = erealloc(ptr, sizeof(http_request_method_entry *) * (HTTP_G->request.methods.custom.count + 1));
+	HTTP_G->request.methods.custom.entries = ptr;
+	ptr[HTTP_G->request.methods.custom.count] = emalloc(sizeof(http_request_method_entry));
+	ptr[HTTP_G->request.methods.custom.count]->name = method;
+	ptr[HTTP_G->request.methods.custom.count]->cnst = mconst;
+	meth_num = HTTP_CUSTOM_REQUEST_METHOD_START + HTTP_G->request.methods.custom.count++;
 
 	method_name_len = spprintf(&http_method, 0, "HTTP_METH_%s", mconst);
 	zend_register_long_constant(http_method, method_name_len + 1, meth_num, CONST_CS, http_module_number TSRMLS_CC);
@@ -241,8 +237,7 @@ PHP_HTTP_API STATUS _http_request_method_unregister(int method TSRMLS_DC)
 {
 	char *http_method;
 	int method_len;
-	getGlobals(G);
-	http_request_method_entry **ptr = G->request.methods.custom.entries;
+	http_request_method_entry **ptr = HTTP_G->request.methods.custom.entries;
 	
 	if (HTTP_STD_REQUEST_METHOD(method)) {
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Standard request methods cannot be unregistered");
@@ -250,7 +245,7 @@ PHP_HTTP_API STATUS _http_request_method_unregister(int method TSRMLS_DC)
 	}
 
 	if (	(HTTP_CUSTOM_REQUEST_METHOD(method) < 0) ||
-			(HTTP_CUSTOM_REQUEST_METHOD(method) > G->request.methods.custom.count) ||
+			(HTTP_CUSTOM_REQUEST_METHOD(method) > HTTP_G->request.methods.custom.count) ||
 			(!ptr[HTTP_CUSTOM_REQUEST_METHOD(method)])) {
 		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Custom request method with id %lu does not exist", method);
 		return FAILURE;
@@ -276,7 +271,8 @@ PHP_HTTP_API STATUS _http_request_method_unregister(int method TSRMLS_DC)
 	
 	efree(ptr[HTTP_CUSTOM_REQUEST_METHOD(method)]->name);
 	efree(ptr[HTTP_CUSTOM_REQUEST_METHOD(method)]->cnst);
-	STR_SET(ptr[HTTP_CUSTOM_REQUEST_METHOD(method)], NULL);
+	efree(ptr[HTTP_CUSTOM_REQUEST_METHOD(method)]);
+	ptr[HTTP_CUSTOM_REQUEST_METHOD(method)] = NULL;
 	
 	return SUCCESS;
 }

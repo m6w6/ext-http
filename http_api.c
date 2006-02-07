@@ -219,7 +219,7 @@ void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)
 	}
 	
 	HTTP_LOG_WRITE(file, ident, message);
-	HTTP_LOG_WRITE(HTTP_G(log).composite, ident, message);
+	HTTP_LOG_WRITE(HTTP_G->log.composite, ident, message);
 }
 /* }}} */
 
@@ -247,20 +247,20 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 	
 	switch (status)
 	{
-		case 301:	http_log(HTTP_G(log).redirect, "301-REDIRECT", header);			break;
-		case 302:	http_log(HTTP_G(log).redirect, "302-REDIRECT", header);			break;
-		case 303:	http_log(HTTP_G(log).redirect, "303-REDIRECT", header);			break;
-		case 305:	http_log(HTTP_G(log).redirect, "305-REDIRECT", header);			break;
-		case 307:	http_log(HTTP_G(log).redirect, "307-REDIRECT", header);			break;
-		case 304:	http_log(HTTP_G(log).cache, "304-CACHE", header);				break;
-		case 405:	http_log(HTTP_G(log).allowed_methods, "405-ALLOWED", header);	break;
+		case 301:	http_log(HTTP_G->log.redirect, "301-REDIRECT", header);			break;
+		case 302:	http_log(HTTP_G->log.redirect, "302-REDIRECT", header);			break;
+		case 303:	http_log(HTTP_G->log.redirect, "303-REDIRECT", header);			break;
+		case 305:	http_log(HTTP_G->log.redirect, "305-REDIRECT", header);			break;
+		case 307:	http_log(HTTP_G->log.redirect, "307-REDIRECT", header);			break;
+		case 304:	http_log(HTTP_G->log.cache, "304-CACHE", header);				break;
+		case 405:	http_log(HTTP_G->log.allowed_methods, "405-ALLOWED", header);	break;
 		default:	http_log(NULL, header, body);									break;
 	}
 	
 	STR_FREE(header);
 	STR_FREE(body);
 	
-	if (HTTP_G(force_exit)) {
+	if (HTTP_G->force_exit) {
 		zend_bailout();
 	} else {
 		php_ob_set_internal_handler(http_ob_blackhole, 4096, "blackhole", 0 TSRMLS_CC);
@@ -317,11 +317,11 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 			*body = estrndup(*body, *length);
 		}
 		return SUCCESS;
-	} else if (sapi_module.read_post && !HTTP_G(read_post_data)) {
+	} else if (sapi_module.read_post && !HTTP_G->read_post_data) {
 		char buf[4096];
 		int len;
 		
-		HTTP_G(read_post_data) = 1;
+		HTTP_G->read_post_data = 1;
 		
 		while (0 < (len = sapi_module.read_post(buf, sizeof(buf) TSRMLS_CC))) {
 			*body = erealloc(*body, *length + len + 1);
@@ -357,8 +357,8 @@ PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D)
 	
 	if (SG(request_info).raw_post_data) {
 		s = php_stream_open_wrapper("php://input", "rb", 0, NULL);
-	} else if (sapi_module.read_post && !HTTP_G(read_post_data)) {
-		HTTP_G(read_post_data) = 1;
+	} else if (sapi_module.read_post && !HTTP_G->read_post_data) {
+		HTTP_G->read_post_data = 1;
 		
 		if ((s = php_stream_temp_new())) {
 			char buf[4096];

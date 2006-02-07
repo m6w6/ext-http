@@ -40,12 +40,10 @@ PHP_MINIT_FUNCTION(http_encoding)
 
 PHP_RINIT_FUNCTION(http_encoding)
 {
-	getGlobals(G);
-	
-	if (G->send.inflate.start_auto) {
+	if (HTTP_G->send.inflate.start_auto) {
 		php_ob_set_internal_handler(_http_ob_inflatehandler, HTTP_INFLATE_BUFFER_SIZE, "http inflate", 0 TSRMLS_CC);
 	}
-	if (G->send.deflate.start_auto) {
+	if (HTTP_G->send.deflate.start_auto) {
 		php_ob_set_internal_handler(_http_ob_deflatehandler, HTTP_DEFLATE_BUFFER_SIZE, "http deflate", 0 TSRMLS_CC);
 	}
 	return SUCCESS;
@@ -53,13 +51,11 @@ PHP_RINIT_FUNCTION(http_encoding)
 
 PHP_RSHUTDOWN_FUNCTION(http_encoding)
 {
-	getGlobals(G);
-	
-	if (G->send.deflate.stream) {
-		http_encoding_deflate_stream_free((http_encoding_stream **) &G->send.deflate.stream);
+	if (HTTP_G->send.deflate.stream) {
+		http_encoding_deflate_stream_free((http_encoding_stream **) &HTTP_G->send.deflate.stream);
 	}
-	if (G->send.inflate.stream) {
-		http_encoding_inflate_stream_free((http_encoding_stream **) &G->send.inflate.stream);
+	if (HTTP_G->send.inflate.stream) {
+		http_encoding_inflate_stream_free((http_encoding_stream **) &HTTP_G->send.inflate.stream);
 	}
 	return SUCCESS;
 }
@@ -161,9 +157,9 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 {
 	if (	php_ob_handler_used("ob_gzhandler" TSRMLS_CC) ||
 			php_ob_handler_used("zlib output compression" TSRMLS_CC)) {
-		HTTP_G(send).deflate.encoding = 0;
+		HTTP_G->send.deflate.encoding = 0;
 	} else {
-		if (!HTTP_G(send).deflate.encoding) {
+		if (!HTTP_G->send.deflate.encoding) {
 			/* emit a content-length header */
 			if (content_length) {
 				char cl_header_str[128];
@@ -173,7 +169,7 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 			}
 		} else {
 #ifndef HTTP_HAVE_ZLIB
-			HTTP_G(send).deflate.encoding = 0;
+			HTTP_G->send.deflate.encoding = 0;
 			php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
 #else
 			HashTable *selected;
@@ -185,7 +181,7 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 			add_next_index_stringl(&zsupported, "x-gzip", lenof("x-gzip"), 1);
 			add_next_index_stringl(&zsupported, "deflate", lenof("deflate"), 1);
 			
-			HTTP_G(send).deflate.encoding = 0;
+			HTTP_G->send.deflate.encoding = 0;
 			
 			if ((selected = http_negotiate_encoding(&zsupported))) {
 				STATUS hs = FAILURE;
@@ -195,11 +191,11 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 				if (HASH_KEY_IS_STRING == zend_hash_get_current_key(selected, &encoding, &idx, 0) && encoding) {
 					if (!strcmp(encoding, "gzip") || !strcmp(encoding, "x-gzip")) {
 						if (SUCCESS == (hs = http_send_header_string("Content-Encoding: gzip"))) {
-							HTTP_G(send).deflate.encoding = HTTP_ENCODING_GZIP;
+							HTTP_G->send.deflate.encoding = HTTP_ENCODING_GZIP;
 						}
 					} else if (!strcmp(encoding, "deflate")) {
 						if (SUCCESS == (hs = http_send_header_string("Content-Encoding: deflate"))) {
-							HTTP_G(send).deflate.encoding = HTTP_ENCODING_DEFLATE;
+							HTTP_G->send.deflate.encoding = HTTP_ENCODING_DEFLATE;
 						}
 					}
 					if (SUCCESS == hs) {
@@ -212,7 +208,7 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 			}
 			
 			zval_dtor(&zsupported);
-			return HTTP_G(send).deflate.encoding;
+			return HTTP_G->send.deflate.encoding;
 #endif
 		}
 	}
@@ -703,20 +699,18 @@ PHP_HTTP_API void _http_encoding_inflate_stream_free(http_encoding_stream **s TS
 /* {{{ void http_ob_deflatehandler(char *, uint, char **, uint *, int) */
 void _http_ob_deflatehandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
 {
-	getGlobals(G);
-	
 	*handled_output = NULL;
 	*handled_output_len = 0;
 	
 	if (mode & PHP_OUTPUT_HANDLER_START) {
 		int flags;
 		
-		if (G->send.deflate.stream) {
+		if (HTTP_G->send.deflate.stream) {
 			zend_error(E_ERROR, "ob_deflatehandler() can only be used once");
 			return;
 		}
 		
-		G->send.deflate.encoding = !0;
+		HTTP_G->send.deflate.encoding = !0;
 		
 		switch (http_encoding_response_start(0))
 		{
@@ -733,19 +727,19 @@ void _http_ob_deflatehandler(char *output, uint output_len, char **handled_outpu
 			break;
 		}
 		
-		flags |= (G->send.deflate.start_flags &~ 0xf0);
-		G->send.deflate.stream = http_encoding_deflate_stream_init(NULL, flags);
+		flags |= (HTTP_G->send.deflate.start_flags &~ 0xf0);
+		HTTP_G->send.deflate.stream = http_encoding_deflate_stream_init(NULL, flags);
 	}
 	
-	if (G->send.deflate.stream) {
-		http_encoding_deflate_stream_update((http_encoding_stream *) G->send.deflate.stream, output, output_len, handled_output, handled_output_len);
+	if (HTTP_G->send.deflate.stream) {
+		http_encoding_deflate_stream_update((http_encoding_stream *) HTTP_G->send.deflate.stream, output, output_len, handled_output, handled_output_len);
 		
 		if (mode & PHP_OUTPUT_HANDLER_END) {
 			char *remaining = NULL;
 			size_t remaining_len = 0;
 			
-			http_encoding_deflate_stream_finish((http_encoding_stream *) G->send.deflate.stream, &remaining, &remaining_len);
-			http_encoding_deflate_stream_free((http_encoding_stream **) &G->send.deflate.stream);
+			http_encoding_deflate_stream_finish((http_encoding_stream *) HTTP_G->send.deflate.stream, &remaining, &remaining_len);
+			http_encoding_deflate_stream_free((http_encoding_stream **) &HTTP_G->send.deflate.stream);
 			if (remaining) {
 				*handled_output = erealloc(*handled_output, *handled_output_len + remaining_len + 1);
 				memcpy(*handled_output + *handled_output_len, remaining, remaining_len);
@@ -763,28 +757,26 @@ deflate_passthru_plain:
 /* {{{ void http_ob_inflatehandler(char *, uint, char **, uint *, int) */
 void _http_ob_inflatehandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
 {
-	getGlobals(G);
-	
 	*handled_output = NULL;
 	*handled_output_len = 0;
 	
 	if (mode & PHP_OUTPUT_HANDLER_START) {
-		if (G->send.inflate.stream) {
+		if (HTTP_G->send.inflate.stream) {
 			zend_error(E_ERROR, "ob_inflatehandler() can only be used once");
 			return;
 		}
-		G->send.inflate.stream = http_encoding_inflate_stream_init(NULL, (HTTP_G(send).inflate.start_flags &~ 0xf0));
+		HTTP_G->send.inflate.stream = http_encoding_inflate_stream_init(NULL, (HTTP_G->send.inflate.start_flags &~ 0xf0));
 	}
 	
-	if (G->send.inflate.stream) {
-		http_encoding_inflate_stream_update((http_encoding_stream *) G->send.inflate.stream, output, output_len, handled_output, handled_output_len);
+	if (HTTP_G->send.inflate.stream) {
+		http_encoding_inflate_stream_update((http_encoding_stream *) HTTP_G->send.inflate.stream, output, output_len, handled_output, handled_output_len);
 		
 		if (mode & PHP_OUTPUT_HANDLER_END) {
 			char *remaining = NULL;
 			size_t remaining_len = 0;
 			
-			http_encoding_inflate_stream_finish((http_encoding_stream *) G->send.inflate.stream, &remaining, &remaining_len);
-			http_encoding_inflate_stream_free((http_encoding_stream **) &G->send.inflate.stream);
+			http_encoding_inflate_stream_finish((http_encoding_stream *) HTTP_G->send.inflate.stream, &remaining, &remaining_len);
+			http_encoding_inflate_stream_free((http_encoding_stream **) &HTTP_G->send.inflate.stream);
 			if (remaining) {
 				*handled_output = erealloc(*handled_output, *handled_output_len + remaining_len + 1);
 				memcpy(*handled_output + *handled_output_len, remaining, remaining_len);

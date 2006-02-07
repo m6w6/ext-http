@@ -702,8 +702,8 @@ PHP_FUNCTION(http_throttle)
 		return;
 	}
 
-	HTTP_G(send).throttle_delay = interval;
-	HTTP_G(send).buffer_size = chunk_size;
+	HTTP_G->send.throttle_delay = interval;
+	HTTP_G->send.buffer_size = chunk_size;
 }
 /* }}} */
 

@@ -288,9 +288,9 @@ typedef int STATUS;
 #endif
 #ifdef ZEND_ENGINE_2
 #	define HE_THROW		E_THROW TSRMLS_CC
-#	define HE_NOTICE	(HTTP_G(only_exceptions) ? E_THROW : E_NOTICE) TSRMLS_CC
-#	define HE_WARNING	(HTTP_G(only_exceptions) ? E_THROW : E_WARNING) TSRMLS_CC
-#	define HE_ERROR		(HTTP_G(only_exceptions) ? E_THROW : E_ERROR) TSRMLS_CC
+#	define HE_NOTICE	(HTTP_G->only_exceptions ? E_THROW : E_NOTICE) TSRMLS_CC
+#	define HE_WARNING	(HTTP_G->only_exceptions ? E_THROW : E_WARNING) TSRMLS_CC
+#	define HE_ERROR		(HTTP_G->only_exceptions ? E_THROW : E_ERROR) TSRMLS_CC
 #else
 #	define HE_THROW		E_WARNING TSRMLS_CC
 #	define HE_NOTICE	E_NOTICE TSRMLS_CC

@@ -183,17 +183,17 @@ PHP_HTTP_API STATUS _http_start_ob_etaghandler(TSRMLS_D)
 		return FAILURE;
 	}
 	
-	HTTP_G(etag).started = 1;
-	return php_start_ob_buffer_named("ob_etaghandler", HTTP_G(send).buffer_size, 1 TSRMLS_CC);
+	HTTP_G->etag.started = 1;
+	return php_start_ob_buffer_named("ob_etaghandler", HTTP_G->send.buffer_size, 1 TSRMLS_CC);
 }
 
 PHP_HTTP_API zend_bool _http_interrupt_ob_etaghandler(TSRMLS_D)
 {
-	if (HTTP_G(etag).started) {
-		HTTP_G(etag).started = 0;
-		if (HTTP_G(etag).ctx) {
-			efree(HTTP_G(etag).ctx);
-			HTTP_G(etag).ctx = NULL;
+	if (HTTP_G->etag.started) {
+		HTTP_G->etag.started = 0;
+		if (HTTP_G->etag.ctx) {
+			efree(HTTP_G->etag.ctx);
+			HTTP_G->etag.ctx = NULL;
 		}
 		return 1;
 	}
@@ -209,21 +209,21 @@ void _http_ob_etaghandler(char *output, uint output_len,
 	*handled_output = estrndup(output, output_len);
 	
 	/* are we supposed to run? */
-	if (HTTP_G(etag).started) {
+	if (HTTP_G->etag.started) {
 		/* initialize the etag context */
 		if (mode & PHP_OUTPUT_HANDLER_START) {
-			HTTP_G(etag).ctx = http_etag_init();
+			HTTP_G->etag.ctx = http_etag_init();
 		}
 		
 		/* update */
-		http_etag_update(HTTP_G(etag).ctx, output, output_len);
+		http_etag_update(HTTP_G->etag.ctx, output, output_len);
 		
 		/* finish */
 		if (mode & PHP_OUTPUT_HANDLER_END) {
 			char *sent_header = NULL;
-			char *etag = http_etag_finish(HTTP_G(etag).ctx);
+			char *etag = http_etag_finish(HTTP_G->etag.ctx);
 			
-			HTTP_G(etag).ctx = NULL;
+			HTTP_G->etag.ctx = NULL;
 			
 			http_send_cache_control(HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL));
 			http_send_etag_ex(etag, strlen(etag), &sent_header);

@@ -35,7 +35,7 @@
 #		define HTTP_HAVE_SAPI_RTIME
 #		define HTTP_GET_REQUEST_TIME() sapi_get_request_time(TSRMLS_C)
 #	else
-#		define HTTP_GET_REQUEST_TIME() HTTP_G(request_time)
+#		define HTTP_GET_REQUEST_TIME() HTTP_G->request_time
 #	endif
 #	include "SAPI.h"
 #endif
@@ -139,13 +139,10 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 
 #ifdef ZTS
 #	include "TSRM.h"
-#	define HTTP_G(v) TSRMG(http_globals_id, zend_http_globals *, v)
-#	define HTTP_GLOBALS ((zend_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(http_globals_id)])
+#	define HTTP_G ((zend_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(http_globals_id)])
 #else
-#	define HTTP_G(v) (http_globals.v)
-#	define HTTP_GLOBALS (&http_globals)
+#	define HTTP_G (&http_globals)
 #endif
-#define getGlobals(G) zend_http_globals *G = HTTP_GLOBALS
 
 PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);

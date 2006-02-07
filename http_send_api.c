@@ -41,16 +41,16 @@ static inline void _http_flush(const char *data, size_t data_len TSRMLS_DC)
 #define HTTP_NANOSEC (1000 * 1000 * 1000)
 #define HTTP_DIFFSEC (0.001)
 
-	if (HTTP_G(send).throttle_delay >= HTTP_DIFFSEC) {
+	if (HTTP_G->send.throttle_delay >= HTTP_DIFFSEC) {
 #if defined(PHP_WIN32)
-		Sleep((DWORD) HTTP_MSEC(HTTP_G(send).throttle_delay));
+		Sleep((DWORD) HTTP_MSEC(HTTP_G->send.throttle_delay));
 #elif defined(HAVE_USLEEP)
-		usleep(HTTP_USEC(HTTP_G(send).throttle_delay));
+		usleep(HTTP_USEC(HTTP_G->send.throttle_delay));
 #elif defined(HAVE_NANOSLEEP)
 		struct timespec req, rem;
 
-		req.tv_sec = (time_t) HTTP_G(send).throttle_delay;
-		req.tv_nsec = HTTP_NSEC(HTTP_G(send).throttle_delay) % HTTP_NANOSEC;
+		req.tv_sec = (time_t) HTTP_G->send.throttle_delay;
+		req.tv_nsec = HTTP_NSEC(HTTP_G->send.throttle_delay) % HTTP_NANOSEC;
 
 		while (nanosleep(&req, &rem) && (errno == EINTR) && (HTTP_NSEC(rem.tv_sec) + rem.tv_nsec) > HTTP_NSEC(HTTP_DIFFSEC))) {
 			req.tv_sec = rem.tv_sec;
@@ -81,20 +81,20 @@ static inline void _http_send_response_start(void **buffer, size_t content_lengt
 #define http_send_response_data_plain(b, d, dl) _http_send_response_data_plain((b), (d), (dl) TSRMLS_CC)
 static inline void _http_send_response_data_plain(void **buffer, const char *data, size_t data_len TSRMLS_DC)
 {
-	if (HTTP_G(send).deflate.encoding) {
+	if (HTTP_G->send.deflate.encoding) {
 #ifdef HTTP_HAVE_ZLIB
 		char *encoded;
 		size_t encoded_len;
 		http_encoding_stream *s = *((http_encoding_stream **) buffer);
 		
 		http_encoding_deflate_stream_update(s, data, data_len, &encoded, &encoded_len);
-		phpstr_chunked_output((phpstr **) &s->storage, encoded, encoded_len, HTTP_G(send).buffer_size, _http_flush TSRMLS_CC);
+		phpstr_chunked_output((phpstr **) &s->storage, encoded, encoded_len, HTTP_G->send.buffer_size, _http_flush TSRMLS_CC);
 		efree(encoded);
 #else
 		http_error(HE_ERROR, HTTP_E_RESPONSE, "Attempt to send GZIP response despite being able to do so; please report this bug");
 #endif
 	} else {
-		phpstr_chunked_output((phpstr **) buffer, data, data_len, HTTP_G(send).buffer_size, _http_flush TSRMLS_CC);
+		phpstr_chunked_output((phpstr **) buffer, data, data_len, HTTP_G->send.buffer_size, _http_flush TSRMLS_CC);
 	}
 }
 /* }}} */
@@ -152,7 +152,7 @@ static inline void _http_send_response_data_fetch(void **buffer, const void *dat
 #define http_send_response_finish(b) _http_send_response_finish((b) TSRMLS_CC)
 static inline void _http_send_response_finish(void **buffer TSRMLS_DC)
 {
-	if (HTTP_G(send).deflate.encoding) {
+	if (HTTP_G->send.deflate.encoding) {
 #ifdef HTTP_HAVE_ZLIB
 		char *encoded = NULL;
 		size_t encoded_len = 0;
@@ -231,7 +231,7 @@ PHP_HTTP_API STATUS _http_send_last_modified_ex(time_t t, char **sent_header TSR
 	efree(date);
 
 	/* remember */
-	HTTP_G(send).last_modified = t;
+	HTTP_G->send.last_modified = t;
 
 	return ret;
 }
@@ -244,12 +244,12 @@ PHP_HTTP_API STATUS _http_send_etag_ex(const char *etag, size_t etag_len, char *
 	char *etag_header;
 
 	if (!etag_len){
-		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Attempt to send empty ETag (previous: %s)\n", HTTP_G(send).unquoted_etag);
+		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Attempt to send empty ETag (previous: %s)\n", HTTP_G->send.unquoted_etag);
 		return FAILURE;
 	}
 
 	/* remember */
-	STR_SET(HTTP_G(send).unquoted_etag, estrndup(etag, etag_len));
+	STR_SET(HTTP_G->send.unquoted_etag, estrndup(etag, etag_len));
 
 	etag_len = spprintf(&etag_header, 0, "ETag: \"%s\"", etag);
 	status = http_send_header_string_ex(etag_header, etag_len, 1);
@@ -270,8 +270,8 @@ PHP_HTTP_API STATUS _http_send_content_type(const char *content_type, size_t ct_
 	HTTP_CHECK_CONTENT_TYPE(content_type, return FAILURE);
 
 	/* remember for multiple ranges */
-	STR_FREE(HTTP_G(send).content_type);
-	HTTP_G(send).content_type = estrndup(content_type, ct_len);
+	STR_FREE(HTTP_G->send.content_type);
+	HTTP_G->send.content_type = estrndup(content_type, ct_len);
 
 	return http_send_header_ex("Content-Type", lenof("Content-Type"), content_type, ct_len, 1, NULL);
 }
@@ -329,9 +329,9 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 		case RANGE_OK:
 		{
 			/* Range Request - only send ranges if entity hasn't changed */
-			if (	http_match_etag_ex("HTTP_IF_MATCH", HTTP_G(send).unquoted_etag, 0) &&
-					http_match_last_modified_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G(send).last_modified, 0) &&
-					http_match_last_modified_ex("HTTP_UNLESS_MODIFIED_SINCE", HTTP_G(send).last_modified, 0)) {
+			if (	http_match_etag_ex("HTTP_IF_MATCH", HTTP_G->send.unquoted_etag, 0) &&
+					http_match_last_modified_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G->send.last_modified, 0) &&
+					http_match_last_modified_ex("HTTP_UNLESS_MODIFIED_SINCE", HTTP_G->send.last_modified, 0)) {
 				
 				if (zend_hash_num_elements(&ranges) == 1) {
 					/* single range */
@@ -355,7 +355,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 					/* multi range */
 					HashPosition pos;
 					zval **range, **begin, **end;
-					const char *content_type = HTTP_G(send).content_type;
+					const char *content_type = HTTP_G->send.content_type;
 					char boundary_str[32], range_header_str[256];
 					size_t boundary_len, range_header_len;
 					
@@ -419,9 +419,9 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 			}
 		
 			/* send 304 Not Modified if last modified matches */
-			if (!no_cache && http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G(send).last_modified)) {
+			if (!no_cache && http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G->send.last_modified)) {
 				char *sent_header = NULL;
-				http_send_last_modified_ex(HTTP_G(send).last_modified, &sent_header);
+				http_send_last_modified_ex(HTTP_G->send.last_modified, &sent_header);
 				return http_exit_ex(304, sent_header, NULL, 0);
 			}
 			

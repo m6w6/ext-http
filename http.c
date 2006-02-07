@@ -290,11 +290,11 @@ PHP_MSHUTDOWN_FUNCTION(http)
 /* {{{ PHP_RINIT_FUNCTION */
 PHP_RINIT_FUNCTION(http)
 {
-	http_globals_init(HTTP_GLOBALS);
+	http_globals_init(HTTP_G);
 
-	if (HTTP_G(request).methods.allowed) {
-		http_check_allowed_methods(HTTP_G(request).methods.allowed, 
-			strlen(HTTP_G(request).methods.allowed));
+	if (HTTP_G->request.methods.allowed) {
+		http_check_allowed_methods(HTTP_G->request.methods.allowed, 
+			strlen(HTTP_G->request.methods.allowed));
 	}
 
 	if (	(SUCCESS != PHP_RINIT_CALL(http_request_method))
@@ -322,7 +322,7 @@ PHP_RSHUTDOWN_FUNCTION(http)
 		status = FAILURE;
 	}
 	
-	http_globals_free(HTTP_GLOBALS);
+	http_globals_free(HTTP_G);
 	return status;
 }
 /* }}} */
@@ -391,12 +391,11 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_colspan_header(2, "Request Methods");
 	{
 		int i;
-		getGlobals(G);
 		phpstr *custom_request_methods = phpstr_new();
 		phpstr *known_request_methods = phpstr_from_string(HTTP_KNOWN_METHODS, lenof(HTTP_KNOWN_METHODS));
-		http_request_method_entry **ptr = G->request.methods.custom.entries;
+		http_request_method_entry **ptr = HTTP_G->request.methods.custom.entries;
 
-		for (i = 0; i < G->request.methods.custom.count; ++i) {
+		for (i = 0; i < HTTP_G->request.methods.custom.count; ++i) {
 			if (ptr[i]) {
 				phpstr_appendf(custom_request_methods, "%s, ", ptr[i]->name);
 			}
@@ -409,7 +408,7 @@ PHP_MINFO_FUNCTION(http)
 		php_info_print_table_row(2, "Known", PHPSTR_VAL(known_request_methods));
 		php_info_print_table_row(2, "Custom",
 			PHPSTR_LEN(custom_request_methods) ? PHPSTR_VAL(custom_request_methods) : "none registered");
-		php_info_print_table_row(2, "Allowed", strlen(G->request.methods.allowed) ? G->request.methods.allowed : "(ANY)");
+		php_info_print_table_row(2, "Allowed", strlen(HTTP_G->request.methods.allowed) ? HTTP_G->request.methods.allowed : "(ANY)");
 		
 		phpstr_free(&known_request_methods);
 		phpstr_free(&custom_request_methods);

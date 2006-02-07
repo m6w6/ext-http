@@ -51,7 +51,7 @@ static inline char *_http_etag_digest(const unsigned char *digest, int len)
 static inline void *_http_etag_init(TSRMLS_D)
 {
 	void *ctx = NULL;
-	char *mode = HTTP_G(etag).mode;
+	char *mode = HTTP_G->etag.mode;
 	
 #ifdef HTTP_HAVE_EXT_HASH
 	php_hash_ops *eho = NULL;
@@ -77,7 +77,7 @@ static inline void *_http_etag_init(TSRMLS_D)
 static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
 {
 	unsigned char digest[128] = {0};
-	char *etag = NULL, *mode = HTTP_G(etag).mode;
+	char *etag = NULL, *mode = HTTP_G->etag.mode;
 	
 #ifdef HTTP_HAVE_EXT_HASH
 	php_hash_ops *eho = NULL;
@@ -105,7 +105,7 @@ static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
 #define http_etag_update(c, d, l) _http_etag_update((c), (d), (l) TSRMLS_CC)
 static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t data_len TSRMLS_DC)
 {
-	char *mode = HTTP_G(etag).mode;
+	char *mode = HTTP_G->etag.mode;
 #ifdef HTTP_HAVE_EXT_HASH
 	php_hash_ops *eho = NULL;
 	

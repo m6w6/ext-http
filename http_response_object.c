@@ -1085,7 +1085,7 @@ PHP_METHOD(HttpResponse, send)
 
 	if (clean_ob) {
 		/* interrupt on-the-fly etag generation */
-		HTTP_G(etag).started = 0;
+		HTTP_G->etag.started = 0;
 		/* discard previous output buffers */
 		php_end_ob_buffers(0 TSRMLS_CC);
 	}
@@ -1145,17 +1145,17 @@ PHP_METHOD(HttpResponse, send)
 	{
 		zval *bsize_p, *bsize = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize), &bsize_p);
 		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay), &delay_p);
-		HTTP_G(send).buffer_size    = Z_LVAL_P(bsize);
-		HTTP_G(send).throttle_delay = Z_DVAL_P(delay);
+		HTTP_G->send.buffer_size    = Z_LVAL_P(bsize);
+		HTTP_G->send.throttle_delay = Z_DVAL_P(delay);
 		if (bsize_p) zval_ptr_dtor(&bsize_p);
 		if (delay_p) zval_ptr_dtor(&delay_p);
 	}
 
 	/* gzip */
-	HTTP_G(send).deflate.encoding = zval_is_true(GET_STATIC_PROP(gzip));
+	HTTP_G->send.deflate.encoding = zval_is_true(GET_STATIC_PROP(gzip));
 	
 	/* start ob */
-	php_start_ob_buffer(NULL, HTTP_G(send).buffer_size, 0 TSRMLS_CC);
+	php_start_ob_buffer(NULL, HTTP_G->send.buffer_size, 0 TSRMLS_CC);
 
 	/* send */
 	switch (Z_LVAL_P(GET_STATIC_PROP(mode)))
