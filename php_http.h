@@ -47,6 +47,9 @@
 #	elif defined(HAVE_NETDB_H)
 #		define HTTP_HAVE_NETDB
 #		include <netdb.h>
+#		ifdef HAVE_UNISTD_H
+#			include <unistd.h>
+#		endif
 #	endif
 #endif
 

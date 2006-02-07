@@ -23,6 +23,32 @@
 #include "php_http_api.h"
 #include "php_http_url_api.h"
 
+static inline char *localhostname(void)
+{
+	char hostname[1024] = {0};
+	
+#ifdef PHP_WIN32
+	if (SUCCESS == gethostname(hostname, lenof(hostname))) {
+		return estrdup(hostname);
+	}
+#elif defined(HAVE_UNISTD_H)
+	if (SUCCESS == gethostname(hostname, lenof(hostname))) {
+		size_t hlen = strlen(hostname);
+		
+		if (hlen <= lenof(hostname) - lenof("(none)")) {
+			hostname[hlen++] = '.';
+			if (SUCCESS == getdomainname(&hostname[hlen], lenof(hostname) - hlen)) {
+				if (!strcmp(&hostname[hlen], "(none)")) {
+					hostname[hlen - 1] = '\0';
+				}
+				return estrdup(hostname);
+			}
+		}
+	}
+#endif
+	return estrdup("localhost");
+}
+
 PHP_MINIT_FUNCTION(http_url)
 {
 	HTTP_LONG_CONSTANT("HTTP_URL_REPLACE", HTTP_URL_REPLACE);
@@ -144,7 +170,7 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 				(zhost = http_get_server_var("SERVER_NAME")))) && Z_STRLEN_P(zhost)) {
 			url->host = estrndup(Z_STRVAL_P(zhost), Z_STRLEN_P(zhost));
 		} else {
-			url->host = estrndup("localhost", lenof("localhost"));
+			url->host = localhostname();
 		}
 	}
 	
@@ -341,6 +367,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 		phpstr new_prefix;
 		
 		if (!data || !*data) {
+			phpstr_dtor(str);
 			return FAILURE;
 		}
 		
@@ -377,6 +404,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 			--ht->nApplyCount;
 			if (SUCCESS != status) {
 				phpstr_dtor(&new_prefix);
+				phpstr_dtor(str);
 				return FAILURE;
 			}
 		} else {

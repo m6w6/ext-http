@@ -32,9 +32,9 @@ if test "$PHP_HTTP" != "no"; then
 	])
 
 dnl -------
-dnl NETDB.H
+dnl HEADERS
 dnl -------
-	AC_CHECK_HEADERS([netdb.h])
+	AC_CHECK_HEADERS([netdb.h unistd.h])
 
 dnl ----
 dnl ZLIB
