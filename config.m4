@@ -42,7 +42,7 @@ dnl ----
 	if test "$PHP_HTTP_ZLIB_ENCODINGS" != "no"; then
 		AC_MSG_CHECKING([for zlib.h])
 		ZLIB_DIR=
-		for i in "$PHP_HTTP_ZLIB_COMPRESSION" "$PHP_ZLIB_DIR" "$PHP_ZLIB" /user/local /usr /opt; do
+		for i in "$PHP_HTTP_ZLIB_COMPRESSION" "$PHP_ZLIB_DIR" "$PHP_ZLIB" /usr/local /usr /opt; do
 			if test -f "$i/include/zlib.h"; then
 				ZLIB_DIR=$i
 				break;
