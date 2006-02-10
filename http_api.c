@@ -95,13 +95,14 @@ void _http_key_list_default_decoder(const char *encoded, size_t encoded_len, cha
 /* {{{ */
 STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, http_key_list_decode_t decode, zend_bool first_entry_is_name_value_pair TSRMLS_DC)
 {
-	const char *key = list, *val = NULL;
+	char *str = estrdup(list), *key = str, *val = NULL;
 	int vallen = 0, keylen = 0, done = 0;
 	zval array;
 
 	INIT_ZARR(array, items);
 
-	if (!(val = strchr(list, '='))) {
+	if (!(val = strchr(str, '='))) {
+		efree(str);
 		return FAILURE;
 	}
 
@@ -119,16 +120,27 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 	}
 #define HTTP_KEYLIST_FIXKEY() \
 	{ \
-			while (isspace(*key)) ++key; \
-			keylen = val - key; \
-			while (isspace(key[keylen - 1])) --keylen; \
+		while (isspace(*key)) ++key; \
+		keylen = val - key; \
+		while (isspace(key[keylen - 1])) --keylen; \
 	}
 #define HTTP_KEYLIST_FIXVAL() \
 	{ \
+		++val; \
+		while (isspace(*val)) ++val; \
+		vallen = key - val; \
+		while (isspace(val[vallen - 1])) --vallen; \
+		if (val[0] == '"' && val[vallen - 1] == '"') { \
+			int i; \
 			++val; \
-			while (isspace(*val)) ++val; \
-			vallen = key - val; \
-			while (isspace(val[vallen - 1])) --vallen; \
+			vallen -= 2; \
+			for (i = 0; i < vallen; ++i) { \
+				if (val[i] == '\\' && val[i+1] == '"' && (!i || val[i-1] != '\\')) { \
+					memmove(&val[i], &val[i+1], vallen - i); \
+					--vallen; \
+				} \
+			} \
+		} \
 	}
 
 	HTTP_KEYLIST_FIXKEY();
@@ -141,6 +153,7 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 			key = val + strlen(val);
 			HTTP_KEYLIST_FIXVAL();
 			HTTP_KEYLIST_VAL(&array, "value", val, vallen);
+			efree(str);
 			return SUCCESS;
 		}
 		/* additional info appended */
@@ -173,6 +186,7 @@ STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, 
 		efree(keydup);
 	} while (!done);
 
+	efree(str);
 	return SUCCESS;
 }
 /* }}} */
