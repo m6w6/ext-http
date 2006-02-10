@@ -650,9 +650,37 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	if ((zoption = http_request_option(request, options, "cookies", IS_ARRAY))) {
 		phpstr_dtor(&request->_cache.cookies);
 		if (zend_hash_num_elements(Z_ARRVAL_P(zoption))) {
-			if (SUCCESS == http_urlencode_hash_recursive(HASH_OF(zoption), &request->_cache.cookies, "; ", sizeof("; ")-1, NULL, 0)) {
+			zval *urlenc_cookies = NULL;
+			/* check whether cookies should not be urlencoded; default is to urlencode them */
+			if ((!(urlenc_cookies = http_request_option(request, options, "encodecookies", IS_BOOL))) || Z_BVAL_P(urlenc_cookies)) {
+				if (SUCCESS == http_urlencode_hash_recursive(HASH_OF(zoption), &request->_cache.cookies, "; ", lenof("; "), NULL, 0)) {
+					phpstr_fix(&request->_cache.cookies);
+					HTTP_CURL_OPT(CURLOPT_COOKIE, request->_cache.cookies.data);
+				}
+			} else {
+				HashPosition pos;
+				zval *cookie_val = NULL;
+				char *cookie_key = NULL;
+				ulong cookie_idx;
+				
+				FOREACH_KEY(pos, zoption, cookie_key, cookie_idx) {
+					if (cookie_key) {
+						zval **cookie_val;
+						if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void **) &cookie_val, &pos)) {
+							zval *val = zval_copy(IS_STRING, *cookie_val);
+							phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key, Z_STRVAL_P(val));
+							zval_free(&val);
+						}
+
+						/* reset */
+						cookie_key = NULL;
+					}
+				}
+				
 				phpstr_fix(&request->_cache.cookies);
-				HTTP_CURL_OPT(CURLOPT_COOKIE, request->_cache.cookies.data);
+				if (PHPSTR_LEN(&request->_cache.cookies)) {
+					HTTP_CURL_OPT(CURLOPT_COOKIE, PHPSTR_VAL(&request->_cache.cookies));
+				}
 			}
 		}
 	}

@@ -62,6 +62,12 @@ static inline zval *_http_message_header_ex(http_message *msg, char *key_str, si
 	return NULL;
 }
 
+#define http_message_count(c, m) \
+{ \
+	http_message *__tmp_msg = (m); \
+	for (c = 0; __tmp_msg; __tmp_msg = __tmp_msg->parent, ++(c)); \
+}
+
 #define http_message_parse(m, l) http_message_parse_ex(NULL, (m), (l))
 #define http_message_parse_ex(h, m, l) _http_message_parse_ex((h), (m), (l) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 #define http_message_parse_rel(h, m, l) _http_message_parse_ex((h), (m), (l) ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC TSRMLS_CC)

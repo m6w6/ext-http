@@ -106,6 +106,7 @@ PHP_METHOD(HttpMessage, fromString);
 
 PHP_METHOD(HttpMessage, detach);
 PHP_METHOD(HttpMessage, prepend);
+PHP_METHOD(HttpMessage, reverse);
 
 #endif
 #endif

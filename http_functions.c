@@ -1207,6 +1207,8 @@ PHP_FUNCTION(http_match_request_header)
  *                      like array("header" => "value")
  *  - cookies:          array, list of cookies as associative array
  *                      like array("cookie" => "value")
+ *  - encodecookies:    bool, whether to urlencode the cookies (default: true)
+ *  - resetcookies:     bool, wheter to reset the cookies
  *  - cookiestore:      string, path to a file where cookies are/will be stored
  *  - resume:           int, byte offset to start the download from;
  *                      if the server supports ranges
