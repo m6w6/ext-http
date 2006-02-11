@@ -47,7 +47,13 @@ HttpResponse
  <license>BSD, revised</license>
  <notes><![CDATA[
 + Added 'etag' request option.
++ Added 'encodecookies' request option (defaults to true).
 + Added missing accessors for response status text to HttpMessage and HttpRequest classes.
++ Added HttpMessage::reverse().
+
+- Reimplemented http_parse_cookie().
+- http_build_url() now tries to "resolve" public hostname prior fallback to localhost
+  if neither HTTP_HOST nor SERVER_NAME are set.
 
 * Fixed PHP-4.4 and PHP-5.0 build.
 ]]></notes>

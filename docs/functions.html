@@ -323,6 +323,8 @@ array where the following keys will be recognized:</p><pre> - redirect:         
                      like array("header" => "value")<br />
  - cookies:          array, list of cookies as associative array<br />
                      like array("cookie" => "value")<br />
+ - encodecookies:    bool, whether to urlencode the cookies (default: true)<br />
+ - resetcookies:     bool, wheter to reset the cookies<br />
  - cookiestore:      string, path to a file where cookies are/will be stored<br />
  - resume:           int, byte offset to start the download from;<br />
                      if the server supports ranges<br />
@@ -579,6 +581,9 @@ should also contain any parent messages.</p>
 <h3 id="HttpMessage_prepend">void HttpMessage::prepend(HttpMessage message)</h3>
 <p>Prepends message(s) to the HTTP message.</p>
 <p>Expects an HttpMessage object as parameter.</p>
+<h3 id="HttpMessage_reverse">HttpMessage HttpMessage::reverse()</h3>
+<p>Reorders the message chain in reverse order.</p>
+<p>Returns the most parent HttpMessage object.</p>
 <h3 id="HttpMessage_rewind">void HttpMessage::rewind(void)</h3>
 <p>Implements Iterator.</p>
 <h3 id="HttpMessage_valid">bool HttpMessage::valid(void)</h3>
@@ -1228,6 +1233,7 @@ http.cache_log is set.</p>
 <li><a href="#HttpMessage_unserialize">HttpMessage::unserialize()</a></li>
 <li><a href="#HttpMessage_detach">HttpMessage::detach()</a></li>
 <li><a href="#HttpMessage_prepend">HttpMessage::prepend()</a></li>
+<li><a href="#HttpMessage_reverse">HttpMessage::reverse()</a></li>
 <li><a href="#HttpMessage_rewind">HttpMessage::rewind()</a></li>
 <li><a href="#HttpMessage_valid">HttpMessage::valid()</a></li>
 <li><a href="#HttpMessage_next">HttpMessage::next()</a></li>
@@ -1355,7 +1361,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Mon, 06 Feb 2006 16:10:01 +0100</b></p>
+    <p><b>Generated at: Sat, 11 Feb 2006 15:09:37 +0100</b></p>
 </body>
 </html>
 
