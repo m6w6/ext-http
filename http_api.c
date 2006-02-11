@@ -185,24 +185,13 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 			case ST_KEY:
 				switch (*c)
 				{
-					default:
-						if (!isalnum(*c)) {
-							goto failure;
-						}
-					case '.':
-					case '_':
-					case '$':
-					case '@':
-						if (!key) {
-							key = c;
-						}
-					break;
-					
-					case ' ':
-						if (key) {
-							keylen = c - key;
-							st = ST_ASSIGN;
-						}
+					case ',':
+					case '\r':
+					case '\n':
+					case '\t':
+					case '\013':
+					case '\014':
+						goto failure;
 					break;
 					
 					case '=':
@@ -214,10 +203,23 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 						}
 					break;
 					
+					case ' ':
+						if (key) {
+							keylen = c - key;
+							st = ST_ASSIGN;
+						}
+					break;
+					
 					case '\0':
 						if (key) {
 							keylen = c - key;
 							st = ST_ADD;
+						}
+					break;
+					
+					default:
+						if (!key) {
+							key = c;
 						}
 					break;
 				}
@@ -226,7 +228,7 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 			case ST_ASSIGN:
 				if (*c == '=') {
 					st = ST_VALUE;
-				} else if (*c == ';') {
+				} else if (!*c || *c == ';') {
 					st = ST_ADD;
 				} else if (*c != ' ') {
 					goto failure;
