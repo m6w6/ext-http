@@ -137,21 +137,16 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 		switch (st)
 		{
 			case ST_QUOTE:
-				switch (*c)
-				{
-					case '"':
-						if (*(c-1) != '\\') {
-							st = ST_ADD;
-						} else {
-							memmove(c-1, c, strlen(c)+1);
-						}
-					break;
-					
-					default:
-						if (!val) {
-							val = c;
-						}
-					break;
+				if (*c == '"') {
+					if (*(c-1) != '\\') {
+						st = ST_ADD;
+					} else {
+						memmove(c-1, c, strlen(c)+1);
+					}
+				} else {
+					if (!val) {
+						val = c;
+					}
 				}
 			break;
 				
@@ -190,6 +185,7 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 					case '.':
 					case '_':
 					case '$':
+					case '@':
 						if (!key) {
 							key = c;
 						}
@@ -264,6 +260,7 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 	return SUCCESS;
 	
 failure:
+	http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Unexpected character (%c) at pos %tu of %zu", *c, c-s, strlen(s));
 	efree(s);
 	return FAILURE;
 }
