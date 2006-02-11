@@ -101,7 +101,7 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 	
 	c = s = estrdup(list);
 	for(;;) {
-#if 
+#if 0
 		char *tk = NULL, *tv = NULL;
 		
 		if (key) {
