@@ -84,110 +84,188 @@ char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool x
 }
 /* }}} */
 
-/* {{{ */
-void _http_key_list_default_decoder(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+/* {{{ STATUS http_parse_cookie(char *, HashTable *) */
+PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS_DC)
 {
-	*decoded = estrndup(encoded, encoded_len);
-	*decoded_len = (size_t) php_url_decode(*decoded, encoded_len);
-}
-/* }}} */
+#define ST_QUOTE	1
+#define ST_VALUE	2
+#define ST_KEY		3
+#define ST_ASSIGN	4
+#define ST_ADD		5
 
-/* {{{ */
-STATUS _http_parse_key_list(const char *list, HashTable *items, char separator, http_key_list_decode_t decode, zend_bool first_entry_is_name_value_pair TSRMLS_DC)
-{
-	char *str = estrdup(list), *key = str, *val = NULL;
-	int vallen = 0, keylen = 0, done = 0;
 	zval array;
-
+	int first = 1, st = ST_KEY, keylen = 0, vallen = 0;
+	char *s, *c, *key = NULL, *val = NULL;
+	
 	INIT_ZARR(array, items);
-
-	if (!(val = strchr(str, '='))) {
-		efree(str);
-		return FAILURE;
-	}
-
-#define HTTP_KEYLIST_VAL(array, k, str, len) \
-	{ \
-		char *decoded; \
-		size_t decoded_len; \
-		if (decode) { \
-			decode(str, len, &decoded, &decoded_len TSRMLS_CC); \
-		} else { \
-			decoded_len = len; \
-			decoded = estrndup(str, decoded_len); \
-		} \
-		add_assoc_stringl(array, k, decoded, decoded_len, 0); \
-	}
-#define HTTP_KEYLIST_FIXKEY() \
-	{ \
-		while (isspace(*key)) ++key; \
-		keylen = val - key; \
-		while (isspace(key[keylen - 1])) --keylen; \
-	}
-#define HTTP_KEYLIST_FIXVAL() \
-	{ \
-		++val; \
-		while (isspace(*val)) ++val; \
-		vallen = key - val; \
-		while (isspace(val[vallen - 1])) --vallen; \
-		if (val[0] == '"' && val[vallen - 1] == '"') { \
-			int i; \
-			++val; \
-			vallen -= 2; \
-			for (i = 0; i < vallen; ++i) { \
-				if (val[i] == '\\' && val[i+1] == '"' && (!i || val[i-1] != '\\')) { \
-					memmove(&val[i], &val[i+1], vallen - i); \
-					--vallen; \
-				} \
-			} \
-		} \
-	}
-
-	HTTP_KEYLIST_FIXKEY();
-
-	if (first_entry_is_name_value_pair) {
-		HTTP_KEYLIST_VAL(&array, "name", key, keylen);
-
-		/* just one name=value */
-		if (!(key = strchr(val, separator))) {
-			key = val + strlen(val);
-			HTTP_KEYLIST_FIXVAL();
-			HTTP_KEYLIST_VAL(&array, "value", val, vallen);
-			efree(str);
-			return SUCCESS;
+	
+	c = s = estrdup(list);
+	for(;;) {
+#if 0
+		char *tk = NULL, *tv = NULL;
+		
+		if (key) {
+			if (keylen) {
+				tk= estrndup(key, keylen);
+			} else {
+				tk = ecalloc(1, 7);
+				memcpy(tk, key, 3);
+				tk[3]='.'; tk[4]='.'; tk[5]='.';
+			}
 		}
-		/* additional info appended */
-		else {
-			HTTP_KEYLIST_FIXVAL();
-			HTTP_KEYLIST_VAL(&array, "value", val, vallen);
+		if (val) {
+			if (vallen) {
+				tv = estrndup(val, vallen);
+			} else {
+				tv = ecalloc(1, 7);
+				memcpy(tv, val, 3);
+				tv[3]='.'; tv[4]='.'; tv[5]='.';
+			}
 		}
-	}
-
-	do {
-		char *keydup = NULL;
-
-		if (!(val = strchr(key, '='))) {
+		fprintf(stderr, "[%6s] %c \"%s=%s\"\n",
+				(
+						st == ST_QUOTE ? "QUOTE" :
+						st == ST_VALUE ? "VALUE" :
+						st == ST_KEY ? "KEY" :
+						st == ST_ASSIGN ? "ASSIGN" :
+						st == ST_ADD ? "ADD":
+						"HUH?"
+				), *c, tk, tv
+		);
+		STR_FREE(tk); STR_FREE(tv);
+#endif
+		switch (st)
+		{
+			case ST_QUOTE:
+				switch (*c)
+				{
+					case '"':
+						if (*(c-1) != '\\') {
+							st = ST_ADD;
+						} else {
+							memmove(c-1, c, strlen(c)+1);
+						}
+					break;
+					
+					default:
+						if (!val) {
+							val = c;
+						}
+					break;
+				}
+			break;
+				
+			case ST_VALUE:
+				switch (*c)
+				{
+					case '"':
+						if (!val) {
+							st = ST_QUOTE;
+						}
+					break;
+					
+					case ' ':
+					break;
+					
+					case '\0':
+					case ';':
+						st = ST_ADD;
+					break;
+					
+					default:
+						if (!val) {
+							val = c;
+						}
+					break;
+				}
+			break;
+				
+			case ST_KEY:
+				switch (*c)
+				{
+					default:
+						if (!isalnum(*c)) {
+							goto failure;
+						}
+					case '.':
+					case '_':
+					case '$':
+						if (!key) {
+							key = c;
+						}
+					break;
+					
+					case ' ':
+						if (key) {
+							keylen = c - key;
+							st = ST_ASSIGN;
+						}
+					break;
+					
+					case '=':
+						if (key) {
+							keylen = c - key;
+							st = ST_VALUE;
+						} else {
+							goto failure;
+						}
+					break;
+					
+					case '\0':
+						keylen = c - key;
+						st = ST_ADD;
+					break;
+				}
+			break;
+				
+			case ST_ASSIGN:
+				if (*c == '=') {
+					st = ST_VALUE;
+				} else if (*c == ';') {
+					st = ST_ADD;
+				} else if (*c != ' ') {
+					goto failure;
+				}
+			break;
+				
+			case ST_ADD:
+			add:
+				if (val) {
+					vallen = c - val - (*c?1:0);
+				} else {
+					val = "";
+					vallen = 0;
+				}
+				if (first) {
+					first = 0;
+					add_assoc_stringl(&array, "name", key, keylen, 1);
+					add_assoc_stringl(&array, "value", val, vallen, 1);
+				} else  {
+					key = estrndup(key, keylen);
+					add_assoc_stringl_ex(&array, key, keylen+1, val, vallen, 1);
+					efree(key);
+				}
+				st = ST_KEY;
+				key = val = NULL;
+				keylen = vallen = 0;
 			break;
 		}
-
-		/* start at 0 if first_entry_is_name_value_pair==0 */
-		if (zend_hash_num_elements(items)) {
-			++key;
+		
+		if (*c) {
+			++c;
+		} else if (st == ST_ADD) {
+			goto add;
+		} else {
+			break;
 		}
-
-		HTTP_KEYLIST_FIXKEY();
-		keydup = estrndup(key, keylen);
-		if (!(key = strchr(val, separator))) {
-			done = 1;
-			key = val + strlen(val);
-		}
-		HTTP_KEYLIST_FIXVAL();
-		HTTP_KEYLIST_VAL(&array, keydup, val, vallen);
-		efree(keydup);
-	} while (!done);
-
-	efree(str);
+	}
+	
+	efree(s);
 	return SUCCESS;
+	
+failure:
+	efree(s);
+	return FAILURE;
 }
 /* }}} */
 
