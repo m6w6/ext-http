@@ -101,7 +101,7 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 	
 	c = s = estrdup(list);
 	for(;;) {
-#if 0
+#if 
 		char *tk = NULL, *tv = NULL;
 		
 		if (key) {
@@ -147,6 +147,10 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 					if (!val) {
 						val = c;
 					}
+					if (!*c) {
+						--val;
+						st = ST_ADD;
+					}
 				}
 			break;
 				
@@ -162,8 +166,11 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 					case ' ':
 					break;
 					
-					case '\0':
 					case ';':
+						goto add;
+					break;
+				
+					case '\0':
 						st = ST_ADD;
 					break;
 					
@@ -208,8 +215,10 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 					break;
 					
 					case '\0':
-						keylen = c - key;
-						st = ST_ADD;
+						if (key) {
+							keylen = c - key;
+							st = ST_ADD;
+						}
 					break;
 				}
 			break;
@@ -228,6 +237,7 @@ PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS
 			add:
 				if (val) {
 					vallen = c - val - (*c?1:0);
+					while (val[vallen-1] == ' ') --vallen;
 				} else {
 					val = "";
 					vallen = 0;
