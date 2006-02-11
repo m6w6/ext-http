@@ -20,6 +20,7 @@
 #include "zend_interfaces.h"
 
 #include "php_http_api.h"
+#include "php_http_cookie_api.h"
 #include "php_http_exception_object.h"
 #include "php_http_message_api.h"
 #include "php_http_message_object.h"
@@ -134,8 +135,9 @@ HTTP_BEGIN_ARGS(getResponseHeader, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(getResponseCookie, 0)
-	HTTP_ARG_VAL(name, 0)
+HTTP_BEGIN_ARGS(getResponseCookies, 0)
+	HTTP_ARG_VAL(flags, 0)
+	HTTP_ARG_VAL(allowed_extras, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getResponseBody);
@@ -263,7 +265,7 @@ zend_function_entry http_request_object_fe[] = {
 
 	HTTP_REQUEST_ME(getResponseData, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseHeader, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(getResponseCookie, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getResponseCookies, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseCode, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseStatus, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getResponseBody, ZEND_ACC_PUBLIC)
@@ -1493,107 +1495,97 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 }
 /* }}} */
 
-/* {{{ proto array HttpRequest::getResponseCookie([string name])
+/* {{{ proto array HttpRequest::getResponseCookies([int flags[, array allowed_extras]])
  *
  * Get response cookie(s) after the request has been sent.
  * 
- * Accepts a string as optional parameter specifying the name of the cookie to read.
- * If the parameter is empty or omitted, an associative array with all received
- * cookies will be returned.
- * 
- * Returns either an associative array with the cookie's name, value and any
- * additional params of the cookie matching name if requested, FALSE on failure,
- * or an array containing all received cookies as arrays.
+ * Returns an array of stdClass objects like http_parse_cookie would return.
  * 
  * If redirects were allowed and several responses were received, the data 
  * references the last received response.
  */
-PHP_METHOD(HttpRequest, getResponseCookie)
+PHP_METHOD(HttpRequest, getResponseCookies)
 {
 	IF_RETVAL_USED {
-		zval *data, **headers;
-		char *cookie_name = NULL;
-		int cookie_len = 0;
+		long flags = 0;
+		zval *allowed_extras_array = NULL, *data, **headers;
 
-		if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &cookie_name, &cookie_len)) {
+		if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|la", &flags, &allowed_extras_array)) {
 			RETURN_FALSE;
 		}
-
-		array_init(return_value);
 
 		data = GET_PROP(responseData);
 		if (	(Z_TYPE_P(data) == IS_ARRAY) &&
 				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) &&
 				(Z_TYPE_PP(headers) == IS_ARRAY)) {
+			int i = 0;
 			ulong idx = 0;
-			char *key = NULL;
-			zval **header = NULL;
-			HashPosition pos1;
+			char *key = NULL, **allowed_extras = NULL;
+			zval **header = NULL, **entry = NULL;
+			HashPosition pos, pos1, pos2;
+			
+			array_init(return_value);
 
+			if (allowed_extras_array) {
+				allowed_extras = ecalloc(zend_hash_num_elements(Z_ARRVAL_P(allowed_extras_array)) + 1, sizeof(char *));
+				FOREACH_VAL(pos, allowed_extras_array, entry) {
+					ZVAL_ADDREF(*entry);
+					convert_to_string_ex(entry);
+					allowed_extras[i++] = estrndup(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry));
+					zval_ptr_dtor(entry);
+				}
+			}
+			
 			convert_to_array(*headers);
 			FOREACH_HASH_KEYVAL(pos1, Z_ARRVAL_PP(headers), key, idx, header) {
 				if (key && !strcasecmp(key, "Set-Cookie")) {
-					/* several cookies? */
+					http_cookie_list list;
+					
 					if (Z_TYPE_PP(header) == IS_ARRAY) {
-						zval **cookie;
-						HashPosition pos2;
-
-						FOREACH_HASH_VAL(pos2, Z_ARRVAL_PP(header), cookie) {
-							zval *cookie_hash;
-							MAKE_STD_ZVAL(cookie_hash);
-							array_init(cookie_hash);
-
-							if (SUCCESS == http_parse_cookie(Z_STRVAL_PP(cookie), Z_ARRVAL_P(cookie_hash))) {
-								if (!cookie_len) {
-									add_next_index_zval(return_value, cookie_hash);
-								} else {
-									zval **name;
-
-									if (	(SUCCESS == zend_hash_find(Z_ARRVAL_P(cookie_hash), "name", sizeof("name"), (void **) &name)) &&
-											(!strcmp(Z_STRVAL_PP(name), cookie_name))) {
-										add_next_index_zval(return_value, cookie_hash);
-										return; /* <<< FOUND >>> */
-									} else {
-										zval_dtor(cookie_hash);
-										efree(cookie_hash);
-									}
-								}
-							} else {
-								zval_dtor(cookie_hash);
-								efree(cookie_hash);
+						zval **single_header;
+						HashPosition pos;
+						
+						FOREACH_VAL(pos2, *header, single_header) {
+							ZVAL_ADDREF(*single_header);
+							convert_to_string_ex(single_header);
+							if (http_parse_cookie_ex(&list, Z_STRVAL_PP(single_header), flags, allowed_extras)) {
+								zval *cookie;
+								
+								MAKE_STD_ZVAL(cookie);
+								object_init(cookie);
+								http_cookie_list_tostruct(&list, cookie);
+								add_next_index_zval(return_value, cookie);
+								zval_ptr_dtor(&cookie);
 							}
+							zval_ptr_dtor(single_header);
 						}
 					} else {
-						zval *cookie_hash;
-						
-						MAKE_STD_ZVAL(cookie_hash);
-						array_init(cookie_hash);
+						ZVAL_ADDREF(*header);
 						convert_to_string_ex(header);
-						
-						if (SUCCESS == http_parse_cookie(Z_STRVAL_PP(header), Z_ARRVAL_P(cookie_hash))) {
-							if (!cookie_len) {
-								add_next_index_zval(return_value, cookie_hash);
-							} else {
-								zval **name;
-
-								if (	(SUCCESS == zend_hash_find(Z_ARRVAL_P(cookie_hash), "name", sizeof("name"), (void **) &name)) &&
-										(!strcmp(Z_STRVAL_PP(name), cookie_name))) {
-									add_next_index_zval(return_value, cookie_hash);
-								} else {
-									zval_dtor(cookie_hash);
-									efree(cookie_hash);
-								}
-							}
-						} else {
-							zval_dtor(cookie_hash);
-							efree(cookie_hash);
+						if (http_parse_cookie_ex(&list, Z_STRVAL_PP(header), flags, allowed_extras)) {
+							zval *cookie;
+								
+							MAKE_STD_ZVAL(cookie);
+							object_init(cookie);
+							http_cookie_list_tostruct(&list, cookie);
+							add_next_index_zval(return_value, cookie);
+							zval_ptr_dtor(&cookie);
 						}
+						zval_ptr_dtor(header);
 					}
-					break;
 				}
 				/* reset key */
 				key = NULL;
 			}
+	
+			if (allowed_extras) {
+				for (i = 0; allowed_extras[i]; ++i) {
+					efree(allowed_extras[i]);
+				}
+				efree(allowed_extras);
+			}
+		} else {
+			RETURN_FALSE;
 		}
 	}
 }

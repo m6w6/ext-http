@@ -27,6 +27,7 @@
 
 #include "php_http_api.h"
 #include "php_http_cache_api.h"
+#include "php_http_cookie_api.h"
 #include "php_http_date_api.h"
 #include "php_http_encoding_api.h"
 #include "php_http_headers_api.h"
@@ -1038,41 +1039,76 @@ PHP_FUNCTION(http_parse_headers)
 }
 /* }}}*/
 
-/* {{{ proto object http_parse_cookie(string cookie)
+/* {{{ proto object http_parse_cookie(string cookie[, int flags[, array allowed_extras]])
  *
  * Parses HTTP cookies like sent in a response into a struct.
  * 
  * Expects a string as parameter containing the value of a Set-Cookie response header.
  * 
- * Returns an stdClass object with the cookie params as properties on success or FALSE on failure.
+ * Returns an stdClass olike shown in the example on success or FALSE on failure.
  * 
  * Example:
  * <pre>
  * <?php
- * print_r(http_parse_cookie("foo=bar; path=/"));
+ * print_r(http_parse_cookie("foo=bar; bar=baz; path=/; domain=example.com; comment=; secure", 0, array("comment")));
  * 
  * stdClass Object
  * (
- *     [name] => foo
- *     [value] => bar
+ *     [cookies] => Array
+ *         (
+ *             [foo] => bar
+ *             [bar] => baz
+ *         )
+ * 
+ *     [extras] => Array
+ *         (
+ *             [comment] =>
+ *         )
+ * 
+ *     [flags] => 16
+ *     [expires] => 0
  *     [path] => /
+ *     [domain] => example.com
  * )
  * ?>
  * </pre> 
  */
 PHP_FUNCTION(http_parse_cookie)
 {
-	char *cookie;
-	int cookie_len;
+	char *cookie, **allowed_extras = NULL;
+	int i = 0, cookie_len;
+	long flags = 0;
+	zval *allowed_extras_array = NULL, **entry = NULL;
+	HashPosition pos;
+	http_cookie_list list;
 	
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &cookie, &cookie_len)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|la", &cookie, &cookie_len, &flags, &allowed_extras_array)) {
 		RETURN_FALSE;
 	}
 	
-	object_init(return_value);
-	if (SUCCESS != http_parse_cookie(cookie, HASH_OF(return_value))) {
-		zval_dtor(return_value);
-		RETURN_FALSE;
+	if (allowed_extras_array) {
+		allowed_extras = ecalloc(zend_hash_num_elements(Z_ARRVAL_P(allowed_extras_array)) + 1, sizeof(char *));
+		FOREACH_VAL(pos, allowed_extras_array, entry) {
+			ZVAL_ADDREF(*entry);
+			convert_to_string_ex(entry);
+			allowed_extras[i] = estrndup(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry));
+			zval_ptr_dtor(entry);
+		}
+	}
+	
+	if (http_parse_cookie_ex(&list, cookie, flags, allowed_extras)) {
+		object_init(return_value);
+		http_cookie_list_tostruct(&list, return_value);
+		http_cookie_list_dtor(&list);
+	} else {
+		RETVAL_FALSE;
+	}
+	
+	if (allowed_extras) {
+		for (i = 0; allowed_extras[i]; ++i) {
+			efree(allowed_extras[i]);
+		}
+		efree(allowed_extras);
 	}
 }
 

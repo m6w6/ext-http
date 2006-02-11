@@ -80,7 +80,7 @@ PHP_METHOD(HttpRequest, getPutFile);
 PHP_METHOD(HttpRequest, send);
 PHP_METHOD(HttpRequest, getResponseData);
 PHP_METHOD(HttpRequest, getResponseHeader);
-PHP_METHOD(HttpRequest, getResponseCookie);
+PHP_METHOD(HttpRequest, getResponseCookies);
 PHP_METHOD(HttpRequest, getResponseCode);
 PHP_METHOD(HttpRequest, getResponseStatus);
 PHP_METHOD(HttpRequest, getResponseBody);

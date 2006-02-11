@@ -29,9 +29,6 @@ PHP_HTTP_API long _http_support(long feature);
 #define pretty_key(key, key_len, uctitle, xhyphen) _http_pretty_key(key, key_len, uctitle, xhyphen)
 extern char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
 
-#define http_parse_cookie(l, i) _http_parse_cookie((l), (i) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_parse_cookie(const char *list, HashTable *items TSRMLS_DC);
-
 #define http_error(type, code, string) _http_error_ex(type, code, "%s", string)
 #define http_error_ex _http_error_ex
 extern void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...);

@@ -52,8 +52,10 @@ HttpResponse
 + Added HttpMessage::reverse().
 
 - Reimplemented http_parse_cookie().
-- http_build_url() now tries to "resolve" public hostname prior fallback to localhost
-  if neither HTTP_HOST nor SERVER_NAME are set.
+- Changed HttpRequest::getResponseCookie() to HttpRequest::getResponseCookies(), 
+  compliant to http_parse_cookie().
+- http_build_url() now tries to "resolve" public hostname prior falling back 
+  to localhost if neither HTTP_HOST nor SERVER_NAME is set.
 
 * Fixed PHP-4.4 and PHP-5.0 build.
 ]]></notes>
@@ -85,6 +87,7 @@ HttpResponse
    <file role="src" name="php_http_std_defs.h"/>
    <file role="src" name="php_http_api.h"/>
    <file role="src" name="php_http_cache_api.h"/>
+   <file role="src" name="php_http_cookie_api.h"/>
    <file role="src" name="php_http_date_api.h"/>
    <file role="src" name="php_http_encoding_api.h"/>
    <file role="src" name="php_http_filter_api.h"/>
@@ -111,6 +114,7 @@ HttpResponse
    <file role="src" name="http_functions.c"/>
    <file role="src" name="http_api.c"/>
    <file role="src" name="http_cache_api.c"/>
+   <file role="src" name="http_cookie_api.c"/>
    <file role="src" name="http_date_api.c"/>
    <file role="src" name="http_encoding_api.c"/>
    <file role="src" name="http_filter_api.c"/>
@@ -146,6 +150,7 @@ HttpResponse
     <file role="test" name="build_url_001.phpt"/>
     <file role="test" name="build_url_002.phpt"/>
     <file role="test" name="build_url_003.phpt"/>
+    <file role="test" name="build_url_004.phpt"/>
     <file role="test" name="chunked_decode_001.phpt"/>
     <file role="test" name="chunked_decode_002.phpt"/>
     <file role="test" name="chunked_decode_003.phpt"/>
@@ -179,6 +184,7 @@ HttpResponse
     <file role="test" name="HttpMessage_004.phpt"/>
     <file role="test" name="HttpMessage_005.phpt"/>
     <file role="test" name="HttpMessage_006.phpt"/>
+    <file role="test" name="HttpMessage_007.phpt"/>
     <file role="test" name="HttpQueryString_001.phpt"/>
     <file role="test" name="HttpQueryString_002.phpt"/>
     <file role="test" name="HttpRequest_001.phpt"/>
@@ -204,6 +210,7 @@ HttpResponse
     <file role="test" name="negotiation_001.phpt"/>
     <file role="test" name="ob_deflatehandler_001.phpt"/>
     <file role="test" name="ob_inflatehandler_001.phpt"/>
+    <file role="test" name="parse_cookie_001.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
     <file role="test" name="parse_message_001.phpt"/>
     <file role="test" name="parse_message_002.phpt"/>
@@ -222,6 +229,7 @@ HttpResponse
     <file role="test" name="redirect_012_logging.phpt"/>
     <file role="test" name="redirect_013.phpt"/>
     <file role="test" name="redirect_013_logging.phpt"/>
+    <file role="test" name="request_cookies.phpt"/>
     <file role="test" name="request_etag.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="request_methods.phpt"/>
