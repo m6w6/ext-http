@@ -1536,7 +1536,6 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 				}
 			}
 			
-			convert_to_array(*headers);
 			FOREACH_HASH_KEYVAL(pos1, Z_ARRVAL_PP(headers), key, idx, header) {
 				if (key && !strcasecmp(key, "Set-Cookie")) {
 					http_cookie_list list;
