@@ -36,9 +36,9 @@ typedef struct {
 	time_t expires;
 } http_cookie_list;
 
-#define http_cookie_list_new() _http_cookie_list_init(NULL TSRMLS_CC)
-#define http_cookie_list_init(l) _http_cookie_list_init((l) TSRMLS_CC)
-PHP_HTTP_API http_cookie_list *_http_cookie_list_init(http_cookie_list *list TSRMLS_DC);
+#define http_cookie_list_new() _http_cookie_list_init(NULL ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+#define http_cookie_list_init(l) _http_cookie_list_init((l) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
+PHP_HTTP_API http_cookie_list *_http_cookie_list_init(http_cookie_list *list ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
 
 #define http_cookie_list_dtor(l) _http_cookie_list_dtor((l) TSRMLS_CC)
 PHP_HTTP_API void _http_cookie_list_dtor(http_cookie_list *list TSRMLS_DC);

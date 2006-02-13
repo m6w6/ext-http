@@ -26,10 +26,10 @@ PHP_MINIT_FUNCTION(http_cookie)
 	return SUCCESS;
 }
 
-PHP_HTTP_API http_cookie_list *_http_cookie_list_init(http_cookie_list *list TSRMLS_DC)
+PHP_HTTP_API http_cookie_list *_http_cookie_list_init(http_cookie_list *list ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	if (!list) {
-		list = emalloc(sizeof(http_cookie_list));
+		list = emalloc_rel(sizeof(http_cookie_list));
 	}
 	
 	zend_hash_init(&list->cookies, 0, NULL, ZVAL_PTR_DTOR, 0);

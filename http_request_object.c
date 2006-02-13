@@ -1555,7 +1555,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 								object_init(cookie);
 								http_cookie_list_tostruct(&list, cookie);
 								add_next_index_zval(return_value, cookie);
-								zval_ptr_dtor(&cookie);
+								http_cookie_list_dtor(&list);
 							}
 							zval_ptr_dtor(single_header);
 						}
@@ -1569,7 +1569,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 							object_init(cookie);
 							http_cookie_list_tostruct(&list, cookie);
 							add_next_index_zval(return_value, cookie);
-							zval_ptr_dtor(&cookie);
+							http_cookie_list_dtor(&list);
 						}
 						zval_ptr_dtor(header);
 					}
