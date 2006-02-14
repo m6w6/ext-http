@@ -50,12 +50,14 @@ HttpResponse
 + Added 'encodecookies' request option (defaults to true).
 + Added missing accessors for response status text to HttpMessage and HttpRequest classes.
 + Added HttpMessage::reverse().
++ Added bool must_revalidate parameter to HttpResponse::setCacheControl()
 
 - Reimplemented http_parse_cookie().
 - Changed HttpRequest::getResponseCookie() to HttpRequest::getResponseCookies(), 
   compliant to http_parse_cookie().
 - http_build_url() now tries to "resolve" public hostname prior falling back 
   to localhost if neither HTTP_HOST nor SERVER_NAME is set.
+- Changed HttpRequest::getHistory() to return a real property.
 
 * Fixed PHP-4.4 and PHP-5.0 build.
 ]]></notes>

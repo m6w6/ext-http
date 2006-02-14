@@ -28,6 +28,10 @@ extern zend_function_entry http_message_object_fe[];
 
 extern PHP_MINIT_FUNCTION(http_message_object);
 
+#define http_message_object_prepend(o, p) http_message_object_prepend_ex((o), (p), 1)
+#define http_message_object_prepend_ex(o, p, t) _http_message_object_prepend_ex((o), (p), (t) TSRMLS_CC)
+extern void _http_message_object_prepend_ex(zval *this_ptr, zval *prepend, zend_bool top TSRMLS_DC);
+
 #define http_message_object_new(ce) _http_message_object_new((ce) TSRMLS_CC)
 extern zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC);
 #define http_message_object_new_ex(ce, msg, ptr) _http_message_object_new_ex((ce), (msg), (ptr) TSRMLS_CC)

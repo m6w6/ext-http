@@ -209,6 +209,46 @@ PHP_MINIT_FUNCTION(http_message_object)
 	return SUCCESS;
 }
 
+void _http_message_object_prepend_ex(zval *this_ptr, zval *prepend, zend_bool top TSRMLS_DC)
+{
+	zval m;
+	http_message *save_parent_msg;
+	zend_object_value save_parent_obj;
+	getObject(http_message_object, obj);
+	getObjectEx(http_message_object, prepend_obj, prepend);
+		
+	INIT_PZVAL(&m);
+	m.type = IS_OBJECT;
+		
+	if (!top) {
+		save_parent_obj = obj->parent;
+		save_parent_msg = obj->message->parent;
+	} else {
+		/* iterate to the most parent object */
+		while (obj->parent.handle) {
+			m.value.obj = obj->parent;
+			obj = zend_object_store_get_object(&m TSRMLS_CC);
+		}
+	}
+		
+	/* prepend */
+	obj->parent = prepend->value.obj;
+	obj->message->parent = prepend_obj->message;
+		
+	/* add ref */
+	zend_objects_store_add_ref(prepend TSRMLS_CC);
+	while (prepend_obj->parent.handle) {
+		m.value.obj = prepend_obj->parent;
+		zend_objects_store_add_ref(&m TSRMLS_CC);
+		prepend_obj = zend_object_store_get_object(&m TSRMLS_CC);
+	}
+		
+	if (!top) {
+		prepend_obj->parent = save_parent_obj;
+		prepend_obj->message->parent = save_parent_msg;
+	}
+}
+
 zend_object_value _http_message_object_new(zend_class_entry *ce TSRMLS_DC)
 {
 	return http_message_object_new_ex(ce, NULL, NULL);
@@ -1329,42 +1369,7 @@ PHP_METHOD(HttpMessage, prepend)
 	zend_bool top = 1;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|b", &prepend, http_message_object_ce, &top)) {
-		zval m;
-		http_message *save_parent_msg;
-		zend_object_value save_parent_obj;
-		getObject(http_message_object, obj);
-		getObjectEx(http_message_object, prepend_obj, prepend);
-		
-		INIT_PZVAL(&m);
-		m.type = IS_OBJECT;
-		
-		if (!top) {
-			save_parent_obj = obj->parent;
-			save_parent_msg = obj->message->parent;
-		} else {
-			/* iterate to the most parent object */
-			while (obj->parent.handle) {
-				m.value.obj = obj->parent;
-				obj = zend_object_store_get_object(&m TSRMLS_CC);
-			}
-		}
-		
-		/* prepend */
-		obj->parent = prepend->value.obj;
-		obj->message->parent = prepend_obj->message;
-		
-		/* add ref */
-		zend_objects_store_add_ref(prepend TSRMLS_CC);
-		while (prepend_obj->parent.handle) {
-			m.value.obj = prepend_obj->parent;
-			zend_objects_store_add_ref(&m TSRMLS_CC);
-			prepend_obj = zend_object_store_get_object(&m TSRMLS_CC);
-		}
-		
-		if (!top) {
-			prepend_obj->parent = save_parent_obj;
-			prepend_obj->message->parent = save_parent_msg;
-		}
+		http_message_object_prepend_ex(getThis(), prepend, top);
 	}
 }
 /* }}} */

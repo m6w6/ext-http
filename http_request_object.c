@@ -313,7 +313,6 @@ zend_object_value _http_request_object_new_ex(zend_class_entry *ce, CURL *ch, ht
 	o = ecalloc(1, sizeof(http_request_object));
 	o->zo.ce = ce;
 	o->request = http_request_init_ex(NULL, ch, 0, NULL);
-	phpstr_init(&o->history);
 	
 	if (ptr) {
 		*ptr = o;
@@ -343,7 +342,6 @@ zend_object_value _http_request_object_clone_obj(zval *this_ptr TSRMLS_DC)
 	}
 	
 	zend_objects_clone_members(&new_obj->zo, new_ov, old_zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
-	phpstr_append(&new_obj->history, old_obj->history.data, old_obj->history.used);
 	phpstr_append(&new_obj->request->conv.request, old_obj->request->conv.request.data, old_obj->request->conv.request.used);
 	phpstr_append(&new_obj->request->conv.response, old_obj->request->conv.response.data, old_obj->request->conv.response.used);
 	
@@ -368,7 +366,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PRIVATE, string, rawPostData, "");
 	DCL_PROP(PRIVATE, string, queryData, "");
 	DCL_PROP(PRIVATE, string, putFile, "");
-
+	DCL_PROP_N(PRIVATE, history);
 	DCL_PROP(PUBLIC, bool, recordHistory, 0);
 
 #ifndef WONKY
@@ -431,7 +429,6 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 		FREE_HASHTABLE(OBJ_PROP(o));
 	}
 	http_request_free(&o->request);
-	phpstr_dtor(&o->history);
 	efree(o);
 }
 
@@ -573,25 +570,57 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 			 * the requests and the responses in separate chains
 			 * for redirects
 			 */
-			http_message *response = msg, *request = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request));
-			http_message *free_msg = request;
-
-			do {
-				char *message;
-				size_t msglen;
-
-				http_message_tostring(response, &message, &msglen);
-				phpstr_append(&obj->history, message, msglen);
-				efree(message);
-
-				http_message_tostring(request, &message, &msglen);
-				phpstr_append(&obj->history, message, msglen);
-				efree(message);
-
-			} while ((response = response->parent) && (request = request->parent));
-
-			http_message_free(&free_msg);
-			phpstr_fix(&obj->history);
+			http_message *response = http_message_dup(msg);
+			http_message *request = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request));
+			
+			if (request && response) {
+				int num_req, num_resp;
+				
+				http_message_count(num_req, request);
+				http_message_count(num_resp, response);
+				
+				/*
+					stuck request messages in between response messages
+				
+					response   request
+					   v          v
+					response   request
+					   v          v
+					response   request
+					==================
+					response > request
+				           ,---'
+					response > request
+				           ,---'
+					response > request
+				*/
+				if (num_req == num_resp) {
+					int i;
+					zval *hist, *history = GET_PROP(history);
+					http_message *res_tmp = response, *req_tmp = request, *req_par, *res_par;
+					
+					for (i = 0; i < num_req; ++i) {
+						res_par = res_tmp->parent;
+						req_par = req_tmp->parent;
+						res_tmp->parent = req_tmp;
+						req_tmp->parent = res_par;
+						res_tmp = res_par;
+						req_tmp = req_par;
+					}
+					
+					MAKE_STD_ZVAL(hist);
+					ZVAL_OBJVAL(hist, http_message_object_new_ex(http_message_object_ce, response, NULL), 0);
+					if (Z_TYPE_P(history) == IS_OBJECT) {
+						http_message_object_prepend(hist, history);
+					}
+					SET_PROP(history, hist);
+					zval_ptr_dtor(&hist);
+				}
+				/* TODO: error? */
+			} else {
+				http_message_free(&response);
+				http_message_free(&request);
+			}
 		}
 
 		UPD_PROP(long, responseCode, msg->http.info.response.code);
@@ -1808,8 +1837,8 @@ PHP_METHOD(HttpRequest, getRawResponseMessage)
  *
  * Get all sent requests and received responses as an HttpMessage object.
  * 
- * If you don't want to record history at all, set the instance variable
- * HttpRequest::$recordHistory to FALSE. 
+ * If you want to record history, set the instance variable
+ * HttpRequest::$recordHistory to TRUE.
  * 
  * Returns an HttpMessage object representing the complete request/response
  * history.
@@ -1817,23 +1846,21 @@ PHP_METHOD(HttpRequest, getRawResponseMessage)
  * The object references the last received response, use HttpMessage::getParentMessage() 
  * to access the data of previously sent requests and received responses.
  * 
- * Note that the internal history is immutable, that means that any changes
- * you make the the message list won't affect a history message list newly 
- * created by another call to HttpRequest::getHistory().
- * 
- * Throws HttpMalformedHeaderException, HttpEncodingException.
+ * Throws HttpRuntimeException.
  */
 PHP_METHOD(HttpRequest, getHistory)
 {
 	NO_ARGS;
 
 	IF_RETVAL_USED {
-		http_message *msg;
-		getObject(http_request_object, obj);
-
+		zval *hist;
+		
 		SET_EH_THROW_HTTP();
-		if ((msg = http_message_parse(PHPSTR_VAL(&obj->history), PHPSTR_LEN(&obj->history)))) {
-			RETVAL_OBJVAL(http_message_object_new_ex(http_message_object_ce, msg, NULL), 0);
+		hist = GET_PROP(history);
+		if (Z_TYPE_P(hist) == IS_OBJECT) {
+			RETVAL_OBJECT(hist, 1);
+		} else {
+			http_error(HE_WARNING, HTTP_E_RUNTIME, "The history is empty");
 		}
 		SET_EH_NORMAL();
 	}
@@ -1847,8 +1874,12 @@ PHP_METHOD(HttpRequest, getHistory)
 PHP_METHOD(HttpRequest, clearHistory)
 {
 	NO_ARGS {
-		getObject(http_request_object, obj);
-		phpstr_dtor(&obj->history);
+		zval *hist;
+		
+		MAKE_STD_ZVAL(hist);
+		ZVAL_NULL(hist);
+		SET_PROP(history, hist);
+		zval_ptr_dtor(hist);
 	}
 }
 /* }}} */
