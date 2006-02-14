@@ -107,7 +107,7 @@ static inline void _http_cookie_list_set_item_ex(http_cookie_list *list, const c
 	} else if (!strcasecmp(key, "domain")) {
 		STR_SET(list->domain, estrndup(value, value_len));
 	} else if (!strcasecmp(key, "expires")) {
-		const char *date = estrndup(value, value_len);
+		char *date = estrndup(value, value_len);
 		list->expires = http_parse_date(date);
 		efree(date);
 	} else if (!strcasecmp(key, "secure")) {
@@ -321,7 +321,7 @@ failure:
 		http_cookie_list_dtor(list);
 	}
 	efree(s);
-	return FAILURE;
+	return NULL;
 }
 /* }}} */
 
