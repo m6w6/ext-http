@@ -551,19 +551,25 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 
 STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this_ptr TSRMLS_DC)
 {
+	STATUS ret;
+	zval *info;
 	http_message *msg;
 	
+	/* always fetch info */
+	MAKE_STD_ZVAL(info);
+	array_init(info);
+	http_request_info(obj->request, Z_ARRVAL_P(info));
+	SET_PROP(responseInfo, info);
+	zval_ptr_dtor(&info);
+	
+	/* parse response message */
 	phpstr_fix(&obj->request->conv.request);
 	phpstr_fix(&obj->request->conv.response);
 	
-	msg = http_message_parse(PHPSTR_VAL(&obj->request->conv.response), PHPSTR_LEN(&obj->request->conv.response));
-	
-	if (!msg) {
-		return FAILURE;
-	} else {
+	if ((msg = http_message_parse(PHPSTR_VAL(&obj->request->conv.response), PHPSTR_LEN(&obj->request->conv.response)))) {
 		char *body;
 		size_t body_len;
-		zval *headers, *message, *resp, *info;
+		zval *headers, *message, *resp;
 
 		if (zval_is_true(GET_PROP(recordHistory))) {
 			/* we need to act like a zipper, as we'll receive
@@ -642,18 +648,53 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		SET_PROP(responseMessage, message);
 		zval_ptr_dtor(&message);
 
-		MAKE_STD_ZVAL(info);
-		array_init(info);
-		http_request_info(obj->request, Z_ARRVAL_P(info));
-		SET_PROP(responseInfo, info);
-		zval_ptr_dtor(&info);
+		ret = SUCCESS;
+	} else {
+		/* update properties with empty values*/
+		zval *resp = GET_PROP(responseData), *znull;
 		
-		if (zend_hash_exists(&Z_OBJCE_P(getThis())->function_table, "onfinish", sizeof("onfinish"))) {
-			zend_call_method_with_0_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "onfinish", NULL);
+		MAKE_STD_ZVAL(znull);
+		ZVAL_NULL(znull);
+		SET_PROP(responseMessage, znull);
+		zval_ptr_dtor(&znull);
+		
+		if (Z_TYPE_P(resp) == IS_ARRAY) {
+			zend_hash_clean(Z_ARRVAL_P(resp));
 		}
 		
-		return SUCCESS;
+		UPD_PROP(long, responseCode, 0);
+		UPD_PROP(string, responseStatus, "");
+		
+		/* append request message to history */
+		if (zval_is_true(GET_PROP(recordHistory))) {
+			http_message *request;
+			
+			if ((request = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request)))) {
+				zval *hist, *history = GET_PROP(history);
+				
+				MAKE_STD_ZVAL(hist);
+				ZVAL_OBJVAL(hist, http_message_object_new_ex(http_message_object_ce, request, NULL), 0);
+				if (Z_TYPE_P(history) == IS_OBJECT) {
+					http_message_object_prepend(hist, history);
+				}
+				SET_PROP(history, hist);
+				zval_ptr_dtor(&hist);
+			}
+		}
+		
+		ret = FAILURE;
 	}
+	
+	if (zend_hash_exists(&Z_OBJCE_P(getThis())->function_table, "onfinish", sizeof("onfinish"))) {
+		zval *param;
+		
+		MAKE_STD_ZVAL(param);
+		ZVAL_BOOL(param, ret == SUCCESS);
+		zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "onfinish", NULL, param);
+		zval_ptr_dtor(&param);
+	}
+	
+	return ret;
 }
 
 #define http_request_object_set_options_subr(key, ow) \
@@ -1571,7 +1612,6 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 					
 					if (Z_TYPE_PP(header) == IS_ARRAY) {
 						zval **single_header;
-						HashPosition pos;
 						
 						FOREACH_VAL(pos2, *header, single_header) {
 							ZVAL_ADDREF(*single_header);

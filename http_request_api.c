@@ -412,6 +412,7 @@ PHP_HTTP_API void _http_request_reset(http_request *request)
 	if (request->ch) {
 		http_request_defaults(request);
 	}
+	request->_error[0] = '\0';
 }
 /* }}} */
 
@@ -872,6 +873,7 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 	HTTP_CURL_INFO(CURLINFO_HTTPAUTH_AVAIL);
 	HTTP_CURL_INFO(CURLINFO_PROXYAUTH_AVAIL);
 	HTTP_CURL_INFO(CURLINFO_OS_ERRNO);
+	add_assoc_string(&array, "error", request->_error, 1);
 	HTTP_CURL_INFO(CURLINFO_NUM_CONNECTS);
 #if LIBCURL_VERSION_NUM >= 0x070e01
 	HTTP_CURL_INFO_EX(CURLINFO_COOKIELIST, "cookies");
