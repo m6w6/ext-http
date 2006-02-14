@@ -125,6 +125,11 @@ SOURCE=.\http_functions.c
 SOURCE=.\http_cache_api.c
 # End Source File
 # Begin Source File
+# Begin Source File
+
+SOURCE=.\http_cookie_api.c
+# End Source File
+# Begin Source File
 
 SOURCE=.\http_date_api.c
 # End Source File
@@ -183,6 +188,10 @@ SOURCE=.\php_http_request_method_api.h
 # Begin Source File
 
 SOURCE=.\php_http_cache_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_cookie_api.h
 # End Source File
 # Begin Source File
 
