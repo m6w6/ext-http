@@ -125,7 +125,6 @@ SOURCE=.\http_functions.c
 SOURCE=.\http_cache_api.c
 # End Source File
 # Begin Source File
-# Begin Source File
 
 SOURCE=.\http_cookie_api.c
 # End Source File
