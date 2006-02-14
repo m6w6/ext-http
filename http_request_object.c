@@ -1879,7 +1879,7 @@ PHP_METHOD(HttpRequest, clearHistory)
 		MAKE_STD_ZVAL(hist);
 		ZVAL_NULL(hist);
 		SET_PROP(history, hist);
-		zval_ptr_dtor(hist);
+		zval_ptr_dtor(&hist);
 	}
 }
 /* }}} */
