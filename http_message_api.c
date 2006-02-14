@@ -377,6 +377,57 @@ PHP_HTTP_API void _http_message_serialize(http_message *message, char **string, 
 	phpstr_dtor(&str);
 }
 
+PHP_HTTP_API http_message *_http_message_reverse(http_message *msg)
+{
+	int i, c;
+	
+	http_message_count(c, msg);
+	
+	if (c > 1) {
+		http_message *tmp = msg, **arr = ecalloc(c, sizeof(http_message *));
+		
+		for (i = 0; i < c; ++i) {
+			arr[i] = tmp;
+			tmp = tmp->parent;
+		}
+		arr[0]->parent = NULL;
+		for (i = 0; i < c-1; ++i) {
+			arr[i+1]->parent = arr[i];
+		}
+		
+		msg = arr[c-1];
+		efree(arr);
+	}
+	
+	return msg;
+}
+
+PHP_HTTP_API http_message *_http_message_interconnect(http_message *m1, http_message *m2)
+{
+	if (!m1) {
+		return NULL;
+	} else if (m2) {
+		int i = 0, c1, c2;
+		http_message *t1 = m1, *t2 = m2, *p1, *p2;
+		
+		http_message_count(c1, m1);
+		http_message_count(c2, m2);
+		
+		while (i++ < (c1 - c2)) {
+			t1 = t1->parent;
+		}
+		while (i++ <= c1) {
+			p1 = t1->parent;
+			p2 = t2->parent;
+			t1->parent = t2;
+			t2->parent = p1;
+			t1 = p1;
+			t2 = p2;
+		}
+	}
+	return m1;
+}
+
 PHP_HTTP_API void _http_message_tostruct_recursive(http_message *msg, zval *obj TSRMLS_DC)
 {
 	zval strct;

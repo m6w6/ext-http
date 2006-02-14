@@ -79,6 +79,12 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 #define http_message_serialize(m, s, l) _http_message_serialize((m), (s), (l))
 PHP_HTTP_API void _http_message_serialize(http_message *message, char **string, size_t *length);
 
+#define http_message_reverse(m) _http_message_reverse(m)
+PHP_HTTP_API http_message *_http_message_reverse(http_message *msg);
+
+#define http_message_interconnect(m1, m2) _http_message_interconnect((m1), (m2))
+PHP_HTTP_API http_message *_http_message_interconnect(http_message *m1, http_message *m2);
+
 #define http_message_tostruct_recursive(m, s) _http_message_tostruct_recursive((m), (s) TSRMLS_CC)
 PHP_HTTP_API void _http_message_tostruct_recursive(http_message *msg, zval *strct TSRMLS_DC);
 
