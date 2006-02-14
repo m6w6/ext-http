@@ -72,6 +72,7 @@ HTTP_EMPTY_ARGS(getCacheControl);
 HTTP_BEGIN_ARGS(setCacheControl, 1)
 	HTTP_ARG_VAL(cache_control, 0)
 	HTTP_ARG_VAL(max_age, 0)
+	HTTP_ARG_VAL(must_revalidate, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getContentType);
@@ -444,13 +445,15 @@ PHP_METHOD(HttpResponse, getGzip)
 }
 /* }}} */
 
-/* {{{ proto static bool HttpResponse::setCacheControl(string control[, int max_age = 0])
+/* {{{ proto static bool HttpResponse::setCacheControl(string control[, int max_age = 0[, bool must_revalidate = true]])
  *
  * Set a custom cache-control header, usually being "private" or "public";
  * The max_age parameter controls how long the cache entry is valid on the client side.
  * 
  * Expects a string parameter containing the primary cache control setting.
  * Additionally accepts an int parameter specifying the max-age setting.
+ * Accepts an optional third bool parameter indicating whether the cache
+ * must be revalidated every request.
  * 
  * Returns TRUE on success, or FALSE if control does not match one of
  * "public" , "private" or "no-cache".
@@ -462,8 +465,9 @@ PHP_METHOD(HttpResponse, setCacheControl)
 	char *ccontrol, *cctl;
 	int cc_len;
 	long max_age = 0;
+	zend_bool must_revalidate = 1;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &ccontrol, &cc_len, &max_age)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|lb", &ccontrol, &cc_len, &max_age, &must_revalidate)) {
 		RETURN_FALSE;
 	}
 
@@ -471,7 +475,7 @@ PHP_METHOD(HttpResponse, setCacheControl)
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Cache-Control '%s' doesn't match public, private or no-cache", ccontrol);
 		RETURN_FALSE;
 	} else {
-		size_t cctl_len = spprintf(&cctl, 0, "%s, must-revalidate, max-age=%ld", ccontrol, max_age);
+		size_t cctl_len = spprintf(&cctl, 0, "%s,%s max-age=%ld", ccontrol, must_revalidate?" must-revalidate,":"", max_age);
 		RETVAL_SUCCESS(UPD_STATIC_STRL(cacheControl, cctl, cctl_len));
 		efree(cctl);
 	}
