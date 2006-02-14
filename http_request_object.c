@@ -587,7 +587,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 				
 				/*
 					stuck request messages in between response messages
-				
+					
 					response   request
 					   v          v
 					response   request
@@ -595,16 +595,22 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 					response   request
 					==================
 					response > request
-				           ,---'
+					       ,---'
 					response > request
-				           ,---'
+					       ,---'
 					response > request
+					
+					if there are more responses than requests (PUT etc),
+					begin add $diff response's parent message
 				*/
-				if (num_req == num_resp) {
+				if (num_req <= num_resp) {
 					int i;
-					zval *hist, *history = GET_PROP(history);
+					zval *prep, *hist, *history = GET_PROP(history);
 					http_message *res_tmp = response, *req_tmp = request, *req_par, *res_par;
 					
+					for (i = 0; i < (num_resp - num_req); ++i) {
+						res_tmp = res_tmp->parent;
+					}
 					for (i = 0; i < num_req; ++i) {
 						res_par = res_tmp->parent;
 						req_par = req_tmp->parent;
@@ -616,10 +622,13 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 					
 					MAKE_STD_ZVAL(hist);
 					ZVAL_OBJVAL(hist, http_message_object_new_ex(http_message_object_ce, response, NULL), 0);
+					MAKE_STD_ZVAL(prep);
+					http_message_object_reverse(hist, prep);
 					if (Z_TYPE_P(history) == IS_OBJECT) {
-						http_message_object_prepend(hist, history);
+						http_message_object_prepend(prep, history);
 					}
-					SET_PROP(history, hist);
+					SET_PROP(history, prep);
+					zval_ptr_dtor(&prep);
 					zval_ptr_dtor(&hist);
 				}
 				/* TODO: error? */

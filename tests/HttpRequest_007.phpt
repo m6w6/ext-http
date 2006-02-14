@@ -40,6 +40,7 @@ var_dump($r->getHistory()->toString(true));
 echo "Done\n";
 ?>
 
+HTTP/1.1 100 Continue
 PUT /.print_put.php5 HTTP/1.1
 User-Agent: PECL::HTTP/%s
 Host: dev.iworks.at

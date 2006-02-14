@@ -57,6 +57,8 @@ Array
     [proxyauth_avail] => %s
     [num_connects] => %d
     [cookies] => Array%s
+    [os_errno] => 0
+    [error] => 
 )
 Array
 (

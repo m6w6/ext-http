@@ -209,6 +209,56 @@ PHP_MINIT_FUNCTION(http_message_object)
 	return SUCCESS;
 }
 
+void _http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_DC)
+{
+	int i;
+	getObject(http_message_object, obj);
+	
+	/* count */
+	http_message_count(i, obj->message);
+	
+	if (i > 1) {
+		zval o;
+		zend_object_value *ovalues = NULL;
+		http_message_object **objects = NULL;
+		int last = i - 1;
+		
+		objects = ecalloc(i, sizeof(http_message_object *));
+		ovalues = ecalloc(i, sizeof(zend_object_value));
+	
+		/* we are the first message */
+		objects[0] = obj;
+		ovalues[0] = getThis()->value.obj;
+	
+		/* fetch parents */
+		INIT_PZVAL(&o);
+		o.type = IS_OBJECT;
+		for (i = 1; obj->parent.handle; ++i) {
+			o.value.obj = obj->parent;
+			ovalues[i] = o.value.obj;
+			objects[i] = obj = zend_object_store_get_object(&o TSRMLS_CC);
+		}
+		
+		/* reorder parents */
+		for (last = --i; i; --i) {
+			objects[i]->message->parent = objects[i-1]->message;
+			objects[i]->parent = ovalues[i-1];
+		}
+		objects[0]->message->parent = NULL;
+		objects[0]->parent.handle = 0;
+		objects[0]->parent.handlers = NULL;
+		
+		/* add ref (why?) */
+		Z_OBJ_ADDREF_P(getThis());
+		RETVAL_OBJVAL(ovalues[last], 1);
+		
+		efree(objects);
+		efree(ovalues);
+	} else {
+		RETURN_ZVAL(getThis(), 1, 0);
+	}
+}
+
 void _http_message_object_prepend_ex(zval *this_ptr, zval *prepend, zend_bool top TSRMLS_DC)
 {
 	zval m;
@@ -1382,53 +1432,8 @@ PHP_METHOD(HttpMessage, prepend)
  */
 PHP_METHOD(HttpMessage, reverse)
 {
-	int i;
-	getObject(http_message_object, obj);
-	
-	NO_ARGS;
-	
-	/* count */
-	http_message_count(i, obj->message);
-	
-	if (i > 1) {
-		zval o;
-		zend_object_value *ovalues = NULL;
-		http_message_object **objects = NULL;
-		int last = i - 1;
-		
-		objects = ecalloc(i, sizeof(http_message_object *));
-		ovalues = ecalloc(i, sizeof(zend_object_value));
-	
-		/* we are the first message */
-		objects[0] = obj;
-		ovalues[0] = getThis()->value.obj;
-	
-		/* fetch parents */
-		INIT_PZVAL(&o);
-		o.type = IS_OBJECT;
-		for (i = 1; obj->parent.handle; ++i) {
-			o.value.obj = obj->parent;
-			ovalues[i] = o.value.obj;
-			objects[i] = obj = zend_object_store_get_object(&o TSRMLS_CC);
-		}
-		
-		/* reorder parents */
-		for (last = --i; i; --i) {
-			objects[i]->message->parent = objects[i-1]->message;
-			objects[i]->parent = ovalues[i-1];
-		}
-		objects[0]->message->parent = NULL;
-		objects[0]->parent.handle = 0;
-		objects[0]->parent.handlers = NULL;
-		
-		/* add ref (why?) */
-		Z_OBJ_ADDREF_P(getThis());
-		RETVAL_OBJVAL(ovalues[last], 1);
-		
-		efree(objects);
-		efree(ovalues);
-	} else {
-		RETURN_ZVAL(getThis(), 1, 0);
+	NO_ARGS {
+		http_message_object_reverse(getThis(), return_value);
 	}
 }
 /* }}} */
