@@ -185,11 +185,13 @@ PHP_HTTP_API http_cookie_list *_http_parse_cookie_ex(http_cookie_list *list, con
 		switch (st)
 		{
 			case ST_QUOTE:
+			quote:
 				if (*c == '"') {
-					if (*(c-1) != '\\') {
-						st = ST_ADD;
-					} else {
+					if (*(c-1) == '\\') {
 						memmove(c-1, c, strlen(c)+1);
+						goto quote;
+					} else {
+						goto add;
 					}
 				} else {
 					if (!val) {
@@ -215,10 +217,8 @@ PHP_HTTP_API http_cookie_list *_http_parse_cookie_ex(http_cookie_list *list, con
 					break;
 					
 					case ';':
-						if (!*(c+1)) {
-							goto add;
-						} 
 					case '\0':
+						goto add;
 						st = ST_ADD;
 					break;
 					
@@ -288,8 +288,9 @@ PHP_HTTP_API http_cookie_list *_http_parse_cookie_ex(http_cookie_list *list, con
 			add:
 				if (val) {
 					vallen = c - val;
-					if (*c) --vallen;
-					while (val[vallen-1] == ' ') --vallen;
+					if (st != ST_QUOTE) {
+						while (val[vallen-1] == ' ') --vallen;
+					}
 				} else {
 					val = "";
 					vallen = 0;

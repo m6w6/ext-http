@@ -37,7 +37,7 @@ HttpResponse
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>0.23.0</release>
+  <release>0.23.1</release>
   <api>0.23.0</api>
  </version>
  <stability>
@@ -46,20 +46,7 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added 'etag' request option.
-+ Added 'encodecookies' request option (defaults to true).
-+ Added missing accessors for response status text to HttpMessage and HttpRequest classes.
-+ Added HttpMessage::reverse().
-+ Added bool must_revalidate parameter to HttpResponse::setCacheControl()
-
-- Reimplemented http_parse_cookie().
-- Changed HttpRequest::getResponseCookie() to HttpRequest::getResponseCookies(), 
-  compliant to http_parse_cookie().
-- http_build_url() now tries to "resolve" public hostname prior falling back 
-  to localhost if neither HTTP_HOST nor SERVER_NAME is set.
-- Changed HttpRequest::getHistory() to return a real property.
-
-* Fixed PHP-4.4 and PHP-5.0 build.
+* Fixed http_parse_cookie(), really.
 ]]></notes>
  <contents>
   <dir name="/">
@@ -213,6 +200,7 @@ HttpResponse
     <file role="test" name="ob_deflatehandler_001.phpt"/>
     <file role="test" name="ob_inflatehandler_001.phpt"/>
     <file role="test" name="parse_cookie_001.phpt"/>
+    <file role="test" name="parse_cookie_002.phpt"/>
     <file role="test" name="parse_headers_001.phpt"/>
     <file role="test" name="parse_message_001.phpt"/>
     <file role="test" name="parse_message_002.phpt"/>
