@@ -37,7 +37,7 @@ HttpResponse
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>0.23.2</release>
+  <release>0.24.0dev</release>
   <api>0.23.0</api>
  </version>
  <stability>
@@ -46,6 +46,9 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
++ Added If-Range header recognition.
+
+* Fixed cases where 412 Precondition failed should be sent.
 * Fixed message chain order in HttpRequest::getHistory().
 ]]></notes>
  <contents>

@@ -93,7 +93,7 @@ typedef enum {
 
 /* create a new phpstr */
 #define phpstr_new() phpstr_init(NULL)
-#define phpstr_init(b) phpstr_init_ex(b, 0, 0)
+#define phpstr_init(b) phpstr_init_ex(b, PHPSTR_DEFAULT_SIZE, 0)
 #define phpstr_clone(phpstr_pointer) phpstr_init_ex(NULL, (phpstr_pointer)->size, (phpstr_pointer)->pmem ? PHPSTR_INIT_PERSISTENT:0)
 PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int flags);
 
@@ -173,8 +173,10 @@ PHPSTR_API void phpstr_free(phpstr **buf);
 /* stores data in a phpstr until it reaches chunk_size */
 PHPSTR_API size_t phpstr_chunk_buffer(phpstr **s, const char *data, size_t data_len, char **chunk, size_t chunk_size);
 
+typedef void (*phpstr_passthru_func)(void *opaque, const char *, size_t TSRMLS_DC);
+
 /* wrapper around phpstr_chunk_buffer, which passes available chunks to passthru() */
-PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_len, size_t chunk_size, void (*passthru)(const char *, size_t TSRMLS_DC) TSRMLS_DC);
+PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_len, size_t chunk_size, phpstr_passthru_func passthru, void *opaque TSRMLS_DC);
 
 #endif
 

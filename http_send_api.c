@@ -27,9 +27,9 @@
 #include "php_http_headers_api.h"
 #include "php_http_send_api.h"
 
-#define http_flush(d, l) _http_flush((d), (l) TSRMLS_CC)
+#define http_flush(d, l) _http_flush(NULL, (d), (l) TSRMLS_CC)
 /* {{{ static inline void http_flush() */
-static inline void _http_flush(const char *data, size_t data_len TSRMLS_DC)
+static inline void _http_flush(void *nothing, const char *data, size_t data_len TSRMLS_DC)
 {
 	PHPWRITE(data, data_len);
 	php_end_ob_buffer(1, 1 TSRMLS_CC);
@@ -88,13 +88,13 @@ static inline void _http_send_response_data_plain(void **buffer, const char *dat
 		http_encoding_stream *s = *((http_encoding_stream **) buffer);
 		
 		http_encoding_deflate_stream_update(s, data, data_len, &encoded, &encoded_len);
-		phpstr_chunked_output((phpstr **) &s->storage, encoded, encoded_len, HTTP_G->send.buffer_size, _http_flush TSRMLS_CC);
+		phpstr_chunked_output((phpstr **) &s->storage, encoded, encoded_len, HTTP_G->send.buffer_size, _http_flush, NULL TSRMLS_CC);
 		efree(encoded);
 #else
 		http_error(HE_ERROR, HTTP_E_RESPONSE, "Attempt to send GZIP response despite being able to do so; please report this bug");
 #endif
 	} else {
-		phpstr_chunked_output((phpstr **) buffer, data, data_len, HTTP_G->send.buffer_size, _http_flush TSRMLS_CC);
+		phpstr_chunked_output((phpstr **) buffer, data, data_len, HTTP_G->send.buffer_size, _http_flush, NULL TSRMLS_CC);
 	}
 }
 /* }}} */
@@ -159,14 +159,14 @@ static inline void _http_send_response_finish(void **buffer TSRMLS_DC)
 		http_encoding_stream *s = *((http_encoding_stream **) buffer);
 		
 		http_encoding_deflate_stream_finish(s, &encoded, &encoded_len);
-		phpstr_chunked_output((phpstr **) &s->storage, encoded, encoded_len, 0, _http_flush TSRMLS_CC);
+		phpstr_chunked_output((phpstr **) &s->storage, encoded, encoded_len, 0, _http_flush, NULL TSRMLS_CC);
 		http_encoding_deflate_stream_free(&s);
 		STR_FREE(encoded);
 #else
 		http_error(HE_ERROR, HTTP_E_RESPONSE, "Attempt to send GZIP response despite being able to do so; please report this bug");
 #endif
 	} else {
-		phpstr_chunked_output((phpstr **) buffer, NULL, 0, 0, _http_flush TSRMLS_CC);
+		phpstr_chunked_output((phpstr **) buffer, NULL, 0, 0, _http_flush, NULL TSRMLS_CC);
 	}
 }
 /* }}} */
@@ -329,72 +329,84 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 		case RANGE_OK:
 		{
 			/* Range Request - only send ranges if entity hasn't changed */
-			if (	http_match_etag_ex("HTTP_IF_MATCH", HTTP_G->send.unquoted_etag, 0) &&
-					http_match_last_modified_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G->send.last_modified, 0) &&
-					http_match_last_modified_ex("HTTP_UNLESS_MODIFIED_SINCE", HTTP_G->send.last_modified, 0)) {
+			if (	http_got_server_var("HTTP_IF_RANGE") &&
+					!http_match_etag("HTTP_IF_RANGE", HTTP_G->send.unquoted_etag) &&
+					!http_match_last_modified("HTTP_IF_RANGE", HTTP_G->send.last_modified)) {
+				/* fallthrough to send full entity with 200 Ok */
+				no_cache = 1;
+			} else if (	!http_match_etag_ex("HTTP_IF_MATCH", HTTP_G->send.unquoted_etag, 0) ||
+						!http_match_last_modified_ex("HTTP_IF_UNMODIFIED_SINCE", HTTP_G->send.last_modified, 0) ||
+						!http_match_last_modified_ex("HTTP_UNLESS_MODIFIED_SINCE", HTTP_G->send.last_modified, 0)) {
+				/* 412 Precondition failed */
+				zend_hash_destroy(&ranges);
+				http_send_status(412);
+				return FAILURE;
+			} else if (zend_hash_num_elements(&ranges) == 1) {
+				/* single range */
+				zval **range, **begin, **end;
 				
-				if (zend_hash_num_elements(&ranges) == 1) {
-					/* single range */
-					zval **range, **begin, **end;
-					
-					if (	SUCCESS == zend_hash_index_find(&ranges, 0, (void **) &range) &&
-							SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void **) &begin) &&
-							SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void **) &end)) {
-						char range_header_str[256];
-						size_t range_header_len;
-						
-						range_header_len = snprintf(range_header_str, lenof(range_header_str), "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
-						http_send_status_header_ex(206, range_header_str, range_header_len, 1);
-						http_send_response_start(&s, Z_LVAL_PP(end)-Z_LVAL_PP(begin)+1);
-						http_send_response_data_fetch(&s, data_ptr, data_size, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
-						http_send_response_finish(&s);
-						zend_hash_destroy(&ranges);
-						return SUCCESS;
-					}
+				if (	SUCCESS != zend_hash_index_find(&ranges, 0, (void **) &range) ||
+						SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void **) &begin) ||
+						SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void **) &end)) {
+					/* this should never happen */
+					zend_hash_destroy(&ranges);
+					http_send_status(500);
+					return FAILURE;
 				} else {
-					/* multi range */
-					HashPosition pos;
-					zval **range, **begin, **end;
-					const char *content_type = HTTP_G->send.content_type;
-					char boundary_str[32], range_header_str[256];
-					size_t boundary_len, range_header_len;
+					char range_header_str[256];
+					size_t range_header_len;
 					
-					boundary_len = snprintf(boundary_str, lenof(boundary_str), "%lu%0.9f", (ulong) HTTP_GET_REQUEST_TIME(), (float) php_combined_lcg(TSRMLS_C));
-					range_header_len = snprintf(range_header_str, lenof(range_header_str), "Content-Type: multipart/byteranges; boundary=%s", boundary_str);
-					
+					range_header_len = snprintf(range_header_str, lenof(range_header_str), "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
 					http_send_status_header_ex(206, range_header_str, range_header_len, 1);
-					http_send_response_start(&s, 0);
-					
-					if (!content_type) {
-						content_type = "application/x-octetstream";
-					}
-					
-					FOREACH_HASH_VAL(pos, &ranges, range) {
-						if (	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void **) &begin) &&
-								SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void **) &end)) {
-							char preface_str[512];
-							size_t preface_len;
+					http_send_response_start(&s, Z_LVAL_PP(end)-Z_LVAL_PP(begin)+1);
+					http_send_response_data_fetch(&s, data_ptr, data_size, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
+					http_send_response_finish(&s);
+					zend_hash_destroy(&ranges);
+					return SUCCESS;
+				}
+			} else {
+				/* multi range */
+				HashPosition pos;
+				zval **range, **begin, **end;
+				const char *content_type = HTTP_G->send.content_type;
+				char boundary_str[32], range_header_str[256];
+				size_t boundary_len, range_header_len;
+				
+				boundary_len = snprintf(boundary_str, lenof(boundary_str), "%lu%0.9f", (ulong) HTTP_GET_REQUEST_TIME(), (float) php_combined_lcg(TSRMLS_C));
+				range_header_len = snprintf(range_header_str, lenof(range_header_str), "Content-Type: multipart/byteranges; boundary=%s", boundary_str);
+				
+				http_send_status_header_ex(206, range_header_str, range_header_len, 1);
+				http_send_response_start(&s, 0);
+				
+				if (!content_type) {
+					content_type = "application/x-octetstream";
+				}
+				
+				FOREACH_HASH_VAL(pos, &ranges, range) {
+					if (	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void **) &begin) &&
+							SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void **) &end)) {
+						char preface_str[512];
+						size_t preface_len;
 
 #define HTTP_RANGE_PREFACE \
 	HTTP_CRLF "--%s" \
 	HTTP_CRLF "Content-Type: %s" \
 	HTTP_CRLF "Content-Range: bytes %ld-%ld/%zu" \
 	HTTP_CRLF HTTP_CRLF
-							
-							preface_len = snprintf(preface_str, lenof(preface_str), HTTP_RANGE_PREFACE, boundary_str, content_type, Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
-							http_send_response_data_plain(&s, preface_str, preface_len);
-							http_send_response_data_fetch(&s, data_ptr, data_size, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
-						}
+						
+						preface_len = snprintf(preface_str, lenof(preface_str), HTTP_RANGE_PREFACE, boundary_str, content_type, Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
+						http_send_response_data_plain(&s, preface_str, preface_len);
+						http_send_response_data_fetch(&s, data_ptr, data_size, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
 					}
-					
-					http_send_response_data_plain(&s, HTTP_CRLF "--", lenof(HTTP_CRLF "--"));
-					http_send_response_data_plain(&s, boundary_str, boundary_len);
-					http_send_response_data_plain(&s, "--", lenof("--"));
-					
-					http_send_response_finish(&s);
-					zend_hash_destroy(&ranges);
-					return SUCCESS;
 				}
+				
+				http_send_response_data_plain(&s, HTTP_CRLF "--", lenof(HTTP_CRLF "--"));
+				http_send_response_data_plain(&s, boundary_str, boundary_len);
+				http_send_response_data_plain(&s, "--", lenof("--"));
+				
+				http_send_response_finish(&s);
+				zend_hash_destroy(&ranges);
+				return SUCCESS;
 			}
 		}
 		case RANGE_NO:

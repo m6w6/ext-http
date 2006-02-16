@@ -13,7 +13,7 @@ PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int flags)
 	}
 
 	if (buf) {
-		buf->size = (chunk_size > 0) ? chunk_size : PHPSTR_DEFAULT_SIZE;
+		buf->size = (chunk_size) ? chunk_size : PHPSTR_DEFAULT_SIZE;
 		buf->pmem = (flags & PHPSTR_INIT_PERSISTENT) ? 1 : 0;
 		buf->data = (flags & PHPSTR_INIT_PREALLOC) ? pemalloc(buf->size, buf->pmem) : NULL;
 		buf->free = (flags & PHPSTR_INIT_PREALLOC) ? buf->size : 0;
@@ -240,21 +240,15 @@ PHPSTR_API phpstr *phpstr_right(const phpstr *buf, size_t length)
 
 PHPSTR_API phpstr *phpstr_merge_va(phpstr *buf, unsigned argc, va_list argv)
 {
-	unsigned f = 0, i = 0;
+	unsigned i = 0;
 	buf = phpstr_init(buf);
 
 	if (buf) {
 		while (argc > i++) {
 			phpstr_free_t f = va_arg(argv, phpstr_free_t);
 			phpstr *current = va_arg(argv, phpstr *);
-			if (NOMEM == phpstr_append(buf, current->data, current->used)) {
-				f = 1;
-			}
+			phpstr_append(buf, current->data, current->used);
 			FREE_PHPSTR(f, current);
-		}
-		
-		if (f) {
-			phpstr_free(&buf);
 		}
 	}
 
@@ -360,13 +354,13 @@ PHPSTR_API size_t phpstr_chunk_buffer(phpstr **s, const char *data, size_t data_
 	return 0;
 }
 
-PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_len, size_t chunk_len, void (*passthru)(const char *, size_t TSRMLS_DC) TSRMLS_DC)
+PHPSTR_API void phpstr_chunked_output(phpstr **s, const char *data, size_t data_len, size_t chunk_len, phpstr_passthru_func passthru, void *opaque TSRMLS_DC)
 {
 	char *chunk = NULL;
 	size_t got = 0;
 	
 	while ((got = phpstr_chunk_buffer(s, data, data_len, &chunk, chunk_len))) {
-		passthru(chunk, got TSRMLS_CC);
+		passthru(opaque, chunk, got TSRMLS_CC);
 		if (!chunk_len) {
 			/* 	we already got the last chunk,
 				and freed all resources */
