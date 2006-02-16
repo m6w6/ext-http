@@ -572,28 +572,17 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		zval *headers, *message, *resp;
 
 		if (zval_is_true(GET_PROP(recordHistory))) {
-			/* we need to act like a zipper, as we'll receive
-			 * the requests and the responses in separate chains
-			 * for redirects
-			 */
+			zval *hist, *history = GET_PROP(history);
 			http_message *response = http_message_parse(PHPSTR_VAL(&obj->request->conv.response), PHPSTR_LEN(&obj->request->conv.response));
 			http_message *request = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request));
 			
-			if (response && request) {
-				zval *hist, *history = GET_PROP(history);
-				http_message *hist_msg = http_message_reverse(http_message_interconnect(response, request));
-				
-				MAKE_STD_ZVAL(hist);
-				ZVAL_OBJVAL(hist, http_message_object_new_ex(http_message_object_ce, hist_msg, NULL), 0);
-				if (Z_TYPE_P(history) == IS_OBJECT) {
-					http_message_object_prepend(hist, history);
-				}
-				SET_PROP(history, hist);
-				zval_ptr_dtor(&hist);
-			} else {
-				http_message_free(&response);
-				http_message_free(&request);
+			MAKE_STD_ZVAL(hist);
+			ZVAL_OBJVAL(hist, http_message_object_new_ex(http_message_object_ce, http_message_interconnect(response, request), NULL), 0);
+			if (Z_TYPE_P(history) == IS_OBJECT) {
+				http_message_object_prepend(hist, history);
 			}
+			SET_PROP(history, hist);
+			zval_ptr_dtor(&hist);
 		}
 
 		UPD_PROP(long, responseCode, msg->http.info.response.code);

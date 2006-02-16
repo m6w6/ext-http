@@ -404,9 +404,7 @@ PHP_HTTP_API http_message *_http_message_reverse(http_message *msg)
 
 PHP_HTTP_API http_message *_http_message_interconnect(http_message *m1, http_message *m2)
 {
-	if (!m1) {
-		return NULL;
-	} else if (m2) {
+	if (m1 && m2) {
 		int i = 0, c1, c2;
 		http_message *t1 = m1, *t2 = m2, *p1, *p2;
 		
@@ -424,6 +422,8 @@ PHP_HTTP_API http_message *_http_message_interconnect(http_message *m1, http_mes
 			t1 = p1;
 			t2 = p2;
 		}
+	} else if (!m1 && m2) {
+		m1 = m2;
 	}
 	return m1;
 }
