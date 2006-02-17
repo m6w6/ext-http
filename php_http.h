@@ -59,6 +59,7 @@
 #		define CURL_STATICLIB
 #	endif
 #	include <curl/curl.h>
+#	define HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
 #endif
 
 #if defined(HTTP_WANT_MAGIC) && defined(HTTP_HAVE_MAGIC)

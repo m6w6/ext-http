@@ -1246,6 +1246,7 @@ PHP_FUNCTION(http_match_request_header)
  *  - encodecookies:    bool, whether to urlencode the cookies (default: true)
  *  - resetcookies:     bool, wheter to reset the cookies
  *  - cookiestore:      string, path to a file where cookies are/will be stored
+ *  - cookiesession:    bool, accept (true) or reset (false) sessioncookies
  *  - resume:           int, byte offset to start the download from;
  *                      if the server supports ranges
  *  - maxfilesize:      int, maximum file size that should be downloaded;
@@ -1255,6 +1256,8 @@ PHP_FUNCTION(http_match_request_header)
  *  - timeout:          int, seconds the request may take
  *  - connecttimeout:   int, seconds the connect may take
  *  - onprogress:       mixed, progress callback
+ *  - interface:        string, outgoing network interface (ifname, ip or hostname)
+ *  - portrange:        array, 2 integers specifying outgoing portrange to try
  *  - ssl:              array, with the following options:
  *                      cert:        string, path to certificate
  *                      certtype:    string, type of certificate

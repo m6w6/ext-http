@@ -429,6 +429,10 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_PROXYAUTH, 0);
 		HTTP_CURL_OPT(CURLOPT_INTERFACE, NULL);
 		HTTP_CURL_OPT(CURLOPT_PORT, 0);
+#if HTTP_CURL_VERSION(7,15,2)
+		HTTP_CURL_OPT(CURLOPT_LOCALPORT, 0);
+		HTTP_CURL_OPT(CURLOPT_LOCALPORTRANGE, 0);
+#endif
 		HTTP_CURL_OPT(CURLOPT_USERPWD, NULL);
 		HTTP_CURL_OPT(CURLOPT_HTTPAUTH, 0);
 		HTTP_CURL_OPT(CURLOPT_ENCODING, NULL);
@@ -438,7 +442,7 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_USERAGENT, "PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
 		HTTP_CURL_OPT(CURLOPT_HTTPHEADER, NULL);
 		HTTP_CURL_OPT(CURLOPT_COOKIE, NULL);
-#if LIBCURL_VERSION_NUM >= 0x070e01
+#if HTTP_CURL_VERSION(7,14,1)
 		HTTP_CURL_OPT(CURLOPT_COOKIELIST, NULL);
 #endif
 		HTTP_CURL_OPT(CURLOPT_COOKIEFILE, NULL);
@@ -540,6 +544,27 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	/* outgoing interface */
 	if ((zoption = http_request_option(request, options, "interface", IS_STRING))) {
 		HTTP_CURL_OPT(CURLOPT_INTERFACE, Z_STRVAL_P(zoption));
+		
+#if HTTP_CURL_VERSION(7,15,2)
+		if ((zoption = http_request_option(request, options, "portrange", IS_ARRAY))) {
+			zval *prs, *pre;
+			
+			zend_hash_internal_pointer_reset(Z_ARRVAL_P(zoption));
+			if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &prs)) {
+				zend_hash_move_forward(Z_ARRVAL_P(zoption));
+				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &pre)) {
+					zval *prs_cpy = zval_copy(IS_LONG, *prs), *pre_cpy = zval_copy(IS_LONG, *pre);
+					
+					if (Z_LVAL_P(prs_cpy) && Z_LVAL_P(pre_cpy)) {
+						HTTP_CURL_OPT(CURLOPT_LOCALPORT, MIN(Z_LVAL_P(prs_cpy), Z_LVAL_P(pre_cpy)));
+						HTTP_CURL_OPT(CURLOPT_LOCALPORTRANGE, ABS(Z_LVAL_P(prs_cpy)-Z_LVAL_P(pre_cpy))+1L);
+					}
+					zval_free(&prs_cpy);
+					zval_free(&pre_cpy);
+				}
+			}
+		}
+#endif
 	}
 
 	/* another port */
@@ -660,7 +685,6 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				}
 			} else {
 				HashPosition pos;
-				zval *cookie_val = NULL;
 				char *cookie_key = NULL;
 				ulong cookie_idx;
 				
@@ -686,7 +710,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		}
 	}
 
-#if LIBCURL_VERSION_NUM >= 0x070e01
+#if HTTP_CURL_VERSION(7,14,1)
 	/* reset cookies */
 	if ((zoption = http_request_option(request, options, "resetcookies", IS_BOOL)) && Z_LVAL_P(zoption)) {
 		HTTP_CURL_OPT(CURLOPT_COOKIELIST, "ALL");
@@ -873,7 +897,7 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 	HTTP_CURL_INFO(CURLINFO_HTTPAUTH_AVAIL);
 	HTTP_CURL_INFO(CURLINFO_PROXYAUTH_AVAIL);
 	HTTP_CURL_INFO(CURLINFO_NUM_CONNECTS);
-#if LIBCURL_VERSION_NUM >= 0x070e01
+#if HTTP_CURL_VERSION(7,14,1)
 	HTTP_CURL_INFO_EX(CURLINFO_COOKIELIST, "cookies");
 #endif
 	HTTP_CURL_INFO(CURLINFO_OS_ERRNO);

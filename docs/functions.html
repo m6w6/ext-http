@@ -326,6 +326,7 @@ array where the following keys will be recognized:</p><pre> - redirect:         
  - encodecookies:    bool, whether to urlencode the cookies (default: true)<br />
  - resetcookies:     bool, wheter to reset the cookies<br />
  - cookiestore:      string, path to a file where cookies are/will be stored<br />
+ - cookiesession:    bool, accept (true) or reset (false) sessioncookies<br />
  - resume:           int, byte offset to start the download from;<br />
                      if the server supports ranges<br />
  - maxfilesize:      int, maximum file size that should be downloaded;<br />
@@ -335,6 +336,8 @@ array where the following keys will be recognized:</p><pre> - redirect:         
  - timeout:          int, seconds the request may take<br />
  - connecttimeout:   int, seconds the connect may take<br />
  - onprogress:       mixed, progress callback<br />
+ - interface:        string, outgoing network interface (ifname, ip or hostname)<br />
+ - portrange:        array, 2 integers specifying outgoing portrange to try<br />
  - ssl:              array, with the following options:<br />
                      cert:        string, path to certificate<br />
                      certtype:    string, type of certificate<br />
@@ -1355,7 +1358,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Wed, 15 Feb 2006 08:40:01 +0100</b></p>
+    <p><b>Generated at: Fri, 17 Feb 2006 17:34:44 +0100</b></p>
 </body>
 </html>
 
