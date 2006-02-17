@@ -48,6 +48,7 @@ HttpResponse
  <notes><![CDATA[
 + Added If-Range header recognition.
 
+* Fixed bug #6804 - configure does not recognize --without-http-zlib-compression.
 * Fixed cases where 412 Precondition failed should be sent.
 * Fixed message chain order in HttpRequest::getHistory().
 ]]></notes>
