@@ -53,6 +53,11 @@ PHP_METHOD(HttpQueryString, getFloat);
 PHP_METHOD(HttpQueryString, getString);
 PHP_METHOD(HttpQueryString, getArray);
 PHP_METHOD(HttpQueryString, getObject);
+#ifdef HAVE_ICONV
+PHP_METHOD(HttpQueryString, iconv);
+#endif
+PHP_METHOD(HttpQueryString, serialize);
+PHP_METHOD(HttpQueryString, unserialize);
 
 #endif
 #endif
