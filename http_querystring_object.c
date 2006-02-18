@@ -196,8 +196,6 @@ void _http_querystring_object_free(zend_object *object TSRMLS_DC)
 /* {{{ querystring helpers */
 #define http_querystring_update(qa, qs) _http_querystring_update((qa), (qs) TSRMLS_CC)
 static inline void _http_querystring_update(zval *qarray, zval *qstring TSRMLS_DC);
-#define http_querystring_modify_ex(a, k, l, v) _http_querystring_modify_ex((a), (k), (l), (v) TSRMLS_CC)
-static inline int _http_querystring_modify_ex(zval *qarray, char *key, uint keylen, zval *data TSRMLS_DC);
 #define http_querystring_modify_array_ex(q, k, kl, pe) _http_querystring_modify_array_ex((q), (k), (kl), (pe) TSRMLS_CC)
 static inline int _http_querystring_modify_array_ex(zval *qarray, char *key, int keylen, zval *params_entry TSRMLS_DC);
 #define http_querystring_modify_array(q, p) _http_querystring_modify_array((q), (p) TSRMLS_CC)
@@ -240,33 +238,33 @@ static inline void _http_querystring_update(zval *qarray, zval *qstring TSRMLS_D
 		http_error(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to update query string");
 	}
 }
-static inline int _http_querystring_modify_ex(zval *qarray, char *key, uint keylen, zval *data TSRMLS_DC)
-{
-	if (Z_TYPE_P(data) == IS_NULL) {
-		if (SUCCESS != zend_hash_del(Z_ARRVAL_P(qarray), key, keylen)) {
-			return 0;
-		}
-	} else {
-		ZVAL_ADDREF(data);
-		add_assoc_zval(qarray, key, data);
-	}
-	return 1;
-}
 static inline int _http_querystring_modify_array_ex(zval *qarray, char *key, int keylen, zval *params_entry TSRMLS_DC)
 {
 	zval **qarray_entry;
 	
-	if (	(Z_TYPE_P(params_entry) == IS_ARRAY) && 
-			(SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), key, keylen, (void**) &qarray_entry))) {
-		if (http_querystring_modify_array(*qarray_entry, params_entry)) {
-			return 1;
+	/* delete */
+	if (Z_TYPE_P(params_entry) == IS_NULL) {
+		return (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarray), key, keylen));
+	}
+	
+	/* update */
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), key, keylen, (void **) &qarray_entry)) {
+		zval equal;
+		
+		/* recursive */
+		if (Z_TYPE_P(params_entry) == IS_ARRAY) {
+			 return http_querystring_modify_array(*qarray_entry, params_entry);
 		}
-	} else {
-		if (http_querystring_modify_ex(qarray, key, keylen, params_entry)) {
-			return 1;
+		/* equal */
+		if ((SUCCESS == is_equal_function(&equal, *qarray_entry, params_entry TSRMLS_CC)) && Z_BVAL(equal)) {
+			return 0;
 		}
 	}
-	return 0;
+	
+	/* add */
+	ZVAL_ADDREF(params_entry);
+	add_assoc_zval_ex(qarray, key, keylen, params_entry);
+	return 1;
 }
 static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC)
 {
@@ -442,13 +440,19 @@ PHP_METHOD(HttpQueryString, get)
 				if (Z_TYPE_P(ztype) == IS_LONG) {
 					type = Z_LVAL_P(ztype);
 				} else if(Z_TYPE_P(ztype) == IS_STRING) {
-					switch (tolower(Z_STRVAL_P(ztype)[0]))
+					switch (Z_STRVAL_P(ztype)[0])
 					{
+						case 'B': 
 						case 'b':	type = HTTP_QUERYSTRING_TYPE_BOOL;		break;
+						case 'I':
 						case 'i':	type = HTTP_QUERYSTRING_TYPE_INT;		break;
+						case 'F':
 						case 'f':	type = HTTP_QUERYSTRING_TYPE_FLOAT;		break;	
+						case 'S':
 						case 's':	type = HTTP_QUERYSTRING_TYPE_STRING;	break;
+						case 'A':
 						case 'a':	type = HTTP_QUERYSTRING_TYPE_ARRAY;		break;
+						case 'O':
 						case 'o':	type = HTTP_QUERYSTRING_TYPE_OBJECT;	break;
 					}
 				}
