@@ -450,7 +450,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		case HTTP_PUT:
 		{
 			php_stream_statbuf ssb;
-			php_stream *stream = php_stream_open_wrapper(Z_STRVAL_P(GET_PROP(putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, HTTP_DEFAULT_STREAM_CONTEXT);
+			php_stream *stream = php_stream_open_wrapper_ex(Z_STRVAL_P(GET_PROP(putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL, HTTP_DEFAULT_STREAM_CONTEXT);
 			
 			if (stream && !php_stream_stat(stream, &ssb)) {
 				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 1);
