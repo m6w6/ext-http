@@ -1502,7 +1502,7 @@ PHP_FUNCTION(http_put_file)
 		RETURN_FALSE;
 	}
 
-	if (!(stream = php_stream_open_wrapper(file, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL))) {
+	if (!(stream = php_stream_open_wrapper(file, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, HTTP_DEFAULT_STREAM_CONTEXT))) {
 		RETURN_FALSE;
 	}
 	if (php_stream_stat(stream, &ssb)) {

@@ -133,6 +133,12 @@ typedef int STATUS;
 		"ACL, " \
 		/* END */
 
+#ifdef ZEND_ENGINE_2
+#	include "ext/standard/file.h"
+#	define HTTP_DEFAULT_STREAM_CONTEXT FG(default_context)
+#else
+#	define HTTP_DEFAULT_STREAM_CONTEXT NULL
+#endif
 
 #define HTTP_PHP_INI_ENTRY(entry, default, scope, updater, global) \
 	STD_PHP_INI_ENTRY(entry, default, scope, updater, global, zend_http_globals, http_globals)

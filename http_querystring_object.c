@@ -549,6 +549,7 @@ HTTP_QUERYSTRING_GETTER(getObject, IS_OBJECT);
 /* {{{ proto bool HttpQueryString::iconv(string ie, string oe)
  *
  * Converts the query string from the source encoding ie to the target encoding oe.
+ * WARNING: Don't use any character set that can contain NUL bytes like UTF-16.
  *
  * Returns TRUE on success or FALSE on failure.
  */

@@ -61,8 +61,8 @@ PHP_HTTP_API STATUS _http_send_content_disposition(const char *filename, size_t 
 #define http_send_ex(d, s, m, nc) _http_send_ex((d), (s), (m), (nc) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_ex(const void *data, size_t data_size, http_send_mode mode, zend_bool no_cache TSRMLS_DC);
 
-#define http_send_file(f) http_send_stream_ex(php_stream_open_wrapper(f, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL), 1, 0)
-#define http_send_file_ex(f, nc) http_send_stream_ex(php_stream_open_wrapper(f, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL), 1, (nc))
+#define http_send_file(f) http_send_stream_ex(php_stream_open_wrapper(f, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, HTTP_DEFAULT_STREAM_CONTEXT), 1, 0)
+#define http_send_file_ex(f, nc) http_send_stream_ex(php_stream_open_wrapper(f, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, HTTP_DEFAULT_STREAM_CONTEXT), 1, (nc))
 #define http_send_stream(s) http_send_stream_ex((s), 0, 0)
 #define http_send_stream_ex(s, c, nc) _http_send_stream_ex((s), (c), (nc) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *s, zend_bool close_stream, zend_bool no_cache TSRMLS_DC);
