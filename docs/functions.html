@@ -600,7 +600,7 @@ should also contain any parent messages.</p>
 <hr noshade>
 <h1 id="http_querystring_object.c">http_querystring_object.c</h1>
 <h2 id="HttpQueryString" class="o">HttpQueryString</h2>
-<h3 id="HttpQueryString___construct">void HttpQueryString::__construct([bool global = true[, mixed add])</h3>
+<h3 id="HttpQueryString___construct">final void HttpQueryString::__construct([bool global = true[, mixed add])</h3>
 <p>Creates a new HttpQueryString object instance.<br />
 Operates on and modifies $_GET and $_SERVER['QUERY_STRING'] if global is TRUE.</p>
 <h3 id="HttpQueryString_toString">string HttpQueryString::toString()</h3>
@@ -615,6 +615,14 @@ Operates on and modifies $_GET and $_SERVER['QUERY_STRING'] if global is TRUE.</
 <p>Set query string entry/entries. NULL values will unset the variable.</p>
 <h3 id="HttpQueryString_getInstance">HttpQueryString HttpQueryString::getInstance([bool global = true])</h3>
 <p>Get a single instance (differentiates between the global setting).</p>
+<h3 id="HttpQueryString_iconv">bool HttpQueryString::iconv(string ie, string oe)</h3>
+<p>Converts the query string from the source encoding ie to the target encoding oe.<br />
+WARNING: Don't use any character set that can contain NUL bytes like UTF-16.</p>
+<p>Returns TRUE on success or FALSE on failure.</p>
+<h3 id="HttpQueryString_serialize">string HttpQueryString::serialize()</h3>
+<p>Implements Serializable.</p>
+<h3 id="HttpQueryString_unserialize">void HttpQueryString::unserialize(string serialized)</h3>
+<p>Implements Serializable.</p>
 <hr noshade>
 <h1 id="http_request_object.c">http_request_object.c</h1>
 <h2 id="HttpRequest" class="o">HttpRequest</h2>
@@ -1247,6 +1255,9 @@ http.cache_log is set.</p>
 <li><a href="#HttpQueryString_get">HttpQueryString::get()</a></li>
 <li><a href="#HttpQueryString_set">HttpQueryString::set()</a></li>
 <li><a href="#HttpQueryString_getInstance">HttpQueryString::getInstance()</a></li>
+<li><a href="#HttpQueryString_iconv">HttpQueryString::iconv()</a></li>
+<li><a href="#HttpQueryString_serialize">HttpQueryString::serialize()</a></li>
+<li><a href="#HttpQueryString_unserialize">HttpQueryString::unserialize()</a></li>
 </li>
 </ul>
 </li>
@@ -1358,7 +1369,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Fri, 17 Feb 2006 17:34:44 +0100</b></p>
+    <p><b>Generated at: Mon, 20 Feb 2006 17:41:32 +0100</b></p>
 </body>
 </html>
 
