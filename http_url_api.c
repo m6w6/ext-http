@@ -276,9 +276,9 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 		strlcat(*url_str, url->host, HTTP_URL_MAXLEN);
 		
 		if (url->port) {
-			char port_str[6] = {0};
+			char port_str[8] = {0};
 			
-			snprintf(port_str, 5, "%d", (int) url->port);
+			snprintf(port_str, lenof(port_str), "%d", (int) url->port);
 			strlcat(*url_str, ":", HTTP_URL_MAXLEN);
 			strlcat(*url_str, port_str, HTTP_URL_MAXLEN);
 		}

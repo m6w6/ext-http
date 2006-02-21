@@ -37,7 +37,7 @@ HttpResponse
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>0.24.0</release>
+  <release>0.24.1</release>
   <api>0.24.0</api>
  </version>
  <stability>
@@ -46,14 +46,7 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added If-Range header recognition.
-+ Added "portrange" request option.
-+ Added HttpQueryString::iconv().
-+ HttpQueryString implements Serializable (PHP-5.1).
-
-* Fixed bug #6804 - configure does not recognize '--without-http-zlib-compression'.
-* Fixed cases where '412 Precondition failed' responses should be sent.
-* Fixed message chain order in HttpRequest::getHistory().
+* Fixed bug #6861 - 5 digit ports get truncated
 ]]></notes>
  <contents>
   <dir name="/">
