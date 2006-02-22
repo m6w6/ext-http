@@ -478,7 +478,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 						zval **ct_header;
 						
 						/* only override if not already set */
-						if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(headers), "Content-Type", sizeof("Content-Type"), (void **) &ct_header)) && (Z_TYPE_PP(ct_header) == IS_STRING)) {
+						if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(headers), "Content-Type", sizeof("Content-Type"), (void **) &ct_header))) {
 							add_assoc_stringl(*headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
 						}
 					} else {
