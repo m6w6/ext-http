@@ -47,6 +47,7 @@ HttpResponse
  <license>BSD, revised</license>
  <notes><![CDATA[
 * Fixed bug #6861 - 5 digit ports get truncated
+* Fixed bug with non-functional HttpRequest::setContentType()
 ]]></notes>
  <contents>
   <dir name="/">

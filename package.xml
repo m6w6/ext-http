@@ -30,18 +30,12 @@ HttpResponse
   </maintainer>
   </maintainers>
  <release>
-  <version>0.24.0</version>
-  <date>2006-02-20</date>
+  <version>0.24.1</version>
+  <date>2006-02-23</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>+ Added If-Range header recognition.
-+ Added &quot;portrange&quot; request option.
-+ Added HttpQueryString::iconv().
-+ HttpQueryString implements Serializable (PHP-5.1).
-
-* Fixed bug #6804 - configure does not recognize &apos;--without-http-zlib-compression&apos;.
-* Fixed cases where &apos;412 Precondition failed&apos; responses should be sent.
-* Fixed message chain order in HttpRequest::getHistory().
+  <notes>* Fixed bug #6861 - 5 digit ports get truncated
+* Fixed bug with non-functional HttpRequest::setContentType()
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
