@@ -130,6 +130,15 @@ HTTP_BEGIN_ARGS(setPutFile, 0)
 	HTTP_ARG_VAL(filename, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(getPutData);
+HTTP_BEGIN_ARGS(setPutData, 0)
+	HTTP_ARG_VAL(put_data, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(addPutData, 1)
+	HTTP_ARG_VAL(put_data, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getResponseData);
 HTTP_BEGIN_ARGS(getResponseHeader, 0)
 	HTTP_ARG_VAL(name, 0)
@@ -261,6 +270,10 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(setPutFile, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getPutFile, ZEND_ACC_PUBLIC)
 
+	HTTP_REQUEST_ME(setPutData, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getPutData, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(addPutData, ZEND_ACC_PUBLIC)
+
 	HTTP_REQUEST_ME(send, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(getResponseData, ZEND_ACC_PUBLIC)
@@ -366,6 +379,7 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_PROP(PRIVATE, string, rawPostData, "");
 	DCL_PROP(PRIVATE, string, queryData, "");
 	DCL_PROP(PRIVATE, string, putFile, "");
+	DCL_PROP(PRIVATE, string, putData, "");
 	DCL_PROP_N(PRIVATE, history);
 	DCL_PROP(PUBLIC, bool, recordHistory, 0);
 
@@ -432,6 +446,35 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 	efree(o);
 }
 
+#define http_request_object_check_request_content_type(t) _http_request_object_check_request_content_type((t) TSRMLS_CC)
+static inline void _http_request_object_check_request_content_type(zval *this_ptr TSRMLS_DC)
+{
+	zval *ctype = GET_PROP(contentType);
+				
+	if (Z_STRLEN_P(ctype)) {
+		zval **headers, *opts = GET_PROP(options);
+					
+		if (	(Z_TYPE_P(opts) == IS_ARRAY) &&
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) && 
+				(Z_TYPE_PP(headers) == IS_ARRAY)) {
+			zval **ct_header;
+						
+			/* only override if not already set */
+			if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(headers), "Content-Type", sizeof("Content-Type"), (void **) &ct_header))) {
+				add_assoc_stringl(*headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
+			}
+		} else {
+			zval *headers;
+		
+			MAKE_STD_ZVAL(headers);
+			array_init(headers);
+			add_assoc_stringl(headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
+			zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "addheaders", NULL, headers);
+			zval_ptr_dtor(&headers);
+		}
+	}
+}
+
 STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr TSRMLS_DC)
 {
 	STATUS status = SUCCESS;
@@ -449,13 +492,21 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 
 		case HTTP_PUT:
 		{
-			php_stream_statbuf ssb;
-			php_stream *stream = php_stream_open_wrapper_ex(Z_STRVAL_P(GET_PROP(putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL, HTTP_DEFAULT_STREAM_CONTEXT);
+			zval *put_data = GET_PROP(putData);
 			
-			if (stream && !php_stream_stat(stream, &ssb)) {
-				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 1);
+			http_request_object_check_request_content_type(getThis());
+			if (Z_STRLEN_P(put_data)) {
+				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_CSTRING,
+					estrndup(Z_STRVAL_P(put_data), Z_STRLEN_P(put_data)), Z_STRLEN_P(put_data), 1);
 			} else {
-				status = FAILURE;
+				php_stream_statbuf ssb;
+				php_stream *stream = php_stream_open_wrapper_ex(Z_STRVAL_P(GET_PROP(putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL, HTTP_DEFAULT_STREAM_CONTEXT);
+				
+				if (stream && !php_stream_stat(stream, &ssb)) {
+					obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 1);
+				} else {
+					status = FAILURE;
+				}
 			}
 		}
 		break;
@@ -467,34 +518,9 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			zval *raw_data = GET_PROP(rawPostData);
 			
 			if (Z_STRLEN_P(raw_data)) {
-				zval *ctype = GET_PROP(contentType);
-				
-				if (Z_STRLEN_P(ctype)) {
-					zval **headers, *opts = GET_PROP(options);
-					
-					if (	(Z_TYPE_P(opts) == IS_ARRAY) &&
-							(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) && 
-							(Z_TYPE_PP(headers) == IS_ARRAY)) {
-						zval **ct_header;
-						
-						/* only override if not already set */
-						if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(headers), "Content-Type", sizeof("Content-Type"), (void **) &ct_header))) {
-							add_assoc_stringl(*headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
-						}
-					} else {
-						zval *headers;
-						
-						MAKE_STD_ZVAL(headers);
-						array_init(headers);
-						add_assoc_stringl(headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
-						zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "addheaders", NULL, headers);
-						zval_ptr_dtor(&headers);
-					}
-				}
-
+				http_request_object_check_request_content_type(getThis());
 				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_CSTRING,
 					estrndup(Z_STRVAL_P(raw_data), Z_STRLEN_P(raw_data)), Z_STRLEN_P(raw_data), 1);
-				
 			} else {
 				zval *zfields = GET_PROP(postFields), *zfiles = GET_PROP(postFiles);
 				HashTable *fields;
@@ -1292,13 +1318,15 @@ PHP_METHOD(HttpRequest, addRawPostData)
 	}
 	
 	if (data_len) {
-		zval *data = zval_copy(IS_STRING, GET_PROP(rawPostData));
+		zval *data = GET_PROP(rawPostData);
 		
-		Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
-		Z_STRVAL_P(data)[Z_STRLEN_P(data)] = '\0';
-		memcpy(Z_STRVAL_P(data) + Z_STRLEN_P(data) - data_len, raw_data, data_len);
-		SET_PROP(rawPostData, data);
-		zval_free(&data);
+		if (Z_STRLEN_P(data)) {
+			Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
+			Z_STRVAL_P(data)[Z_STRLEN_P(data)] = '\0';
+			memcpy(Z_STRVAL_P(data) + Z_STRLEN_P(data) - data_len, raw_data, data_len);
+		} else {
+			UPD_STRL(putData, raw_data, data_len);
+		}
 	}
 	
 	RETURN_TRUE;
@@ -1454,6 +1482,88 @@ PHP_METHOD(HttpRequest, getPutFile)
 
 	IF_RETVAL_USED {
 		RETURN_PROP(putFile);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequest::setPutData([string put_data])
+ *
+ * Set PUT data to send, overwriting previously set PUT data.
+ * Affects only PUT requests.
+ * Only either PUT data or PUT file can be used for each request.
+ * PUT data has higher precedence and will be used even if a PUT
+ * file is set.  
+ * 
+ * Accepts a string as parameter containing the data to upload.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
+ */
+PHP_METHOD(HttpRequest, setPutData)
+{
+	char *put_data = NULL;
+	int data_len = 0;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &put_data, &data_len)) {
+		RETURN_FALSE;
+	}
+	
+	if (!put_data) {
+		put_data = "";
+	}
+	
+	UPD_STRL(putData, put_data, data_len);
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequest::addPutData(string put_data)
+ *
+ * Add PUT data, leaving previously set PUT data unchanged.
+ * Affects only PUT requests.
+ * 
+ * Expects a string as parameter containing the data to concatenate.
+ * 
+ * Returns TRUE on success, or FALSE on failure.
+ */
+PHP_METHOD(HttpRequest, addPutData)
+{
+	char *put_data;
+	int data_len;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &put_data, &data_len)) {
+		RETURN_FALSE;
+	}
+	
+	if (data_len) {
+		char *new_data;
+		size_t new_data_len;
+		zval *data = GET_PROP(putData);
+		
+		if (Z_STRLEN_P(data)) {
+			Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
+			Z_STRVAL_P(data)[Z_STRLEN_P(data)] = '\0';
+			memcpy(Z_STRVAL_P(data) + Z_STRLEN_P(data) - data_len, put_data, data_len);
+		} else {
+			UPD_STRL(putData, put_data, data_len);
+		}
+	}
+	
+	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpRequest::getPutData()
+ *
+ * Get previously set PUT data.
+ * 
+ * Returns a string containing the currently set raw post data.
+ */
+PHP_METHOD(HttpRequest, getPutData)
+{
+	NO_ARGS;
+	
+	IF_RETVAL_USED {
+		RETURN_PROP(putData);
 	}
 }
 /* }}} */

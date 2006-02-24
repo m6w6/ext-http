@@ -827,15 +827,17 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				/* nothing */
 			break;
 			
-			case HTTP_REQUEST_BODY_CSTRING:
-				HTTP_CURL_OPT(CURLOPT_POSTFIELDS, request->body->data);
-				HTTP_CURL_OPT(CURLOPT_POSTFIELDSIZE, request->body->size);
-			break;
-
 			case HTTP_REQUEST_BODY_CURLPOST:
 				HTTP_CURL_OPT(CURLOPT_HTTPPOST, (struct curl_httppost *) request->body->data);
 			break;
 
+			case HTTP_REQUEST_BODY_CSTRING:
+				if (request->meth != HTTP_PUT) {
+					HTTP_CURL_OPT(CURLOPT_POSTFIELDS, request->body->data);
+					HTTP_CURL_OPT(CURLOPT_POSTFIELDSIZE, request->body->size);
+					break;
+				}
+				/* fallthrough, PUT/UPLOAD _needs_ READDATA */
 			case HTTP_REQUEST_BODY_UPLOADFILE:
 				HTTP_CURL_OPT(CURLOPT_IOCTLDATA, request);
 				HTTP_CURL_OPT(CURLOPT_READDATA, request);
@@ -910,11 +912,28 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *ct
 {
 	http_request *request = (http_request *) ctx;
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
-
-	if (request->body == NULL || request->body->type != HTTP_REQUEST_BODY_UPLOADFILE) {
-		return 0;
+	
+	if (request->body) {
+		switch (request->body->type)
+		{
+			case HTTP_REQUEST_BODY_CSTRING:
+			{
+				size_t out = MIN(len * n, request->body->size - request->body->priv);
+				
+				if (out) {
+					memcpy(data, request->body->data + request->body->priv, out);
+					request->body->priv += out;
+					return out;
+				}
+			}
+			break;
+			
+			case HTTP_REQUEST_BODY_UPLOADFILE:
+				return php_stream_read((php_stream *) request->body->data, data, len * n);
+			break;
+		}
 	}
-	return php_stream_read((php_stream *) request->body->data, data, len * n);
+	return 0;
 }
 /* }}} */
 
@@ -953,12 +972,24 @@ static curlioerr http_curl_ioctl_callback(CURL *ch, curliocmd cmd, void *ctx)
 	if (cmd != CURLIOCMD_RESTARTREAD) {
 		return CURLIOE_UNKNOWNCMD;
 	}
-	if (	request->body == NULL || 
-			request->body->type != HTTP_REQUEST_BODY_UPLOADFILE ||
-			SUCCESS != php_stream_rewind((php_stream *) request->body->data)) {
-		return CURLIOE_FAILRESTART;
+	
+	if (request->body) {
+		switch (request->body->type)
+		{
+			case HTTP_REQUEST_BODY_CSTRING:
+				request->body->priv = 0;
+				return CURLIOE_OK;
+			break;
+				
+			case HTTP_REQUEST_BODY_UPLOADFILE:
+				if (SUCCESS == php_stream_rewind((php_stream *) request->body->data)) {
+					return CURLIOE_OK;
+				}
+			break;
+		}
 	}
-	return CURLIOE_OK;
+	
+	return CURLIOE_FAILRESTART;
 }
 /* }}} */
 

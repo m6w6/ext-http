@@ -1517,12 +1517,8 @@ PHP_FUNCTION(http_put_file)
 
 	RETVAL_FALSE;
 
-	body.type = HTTP_REQUEST_BODY_UPLOADFILE;
-	body.data = stream;
-	body.size = ssb.sb.st_size;
-
 	http_request_init_ex(&request, NULL, HTTP_PUT, URL);
-	request.body = &body;
+	request.body = http_request_body_init_ex(&body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 1);
 	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
 		http_request_exec(&request);
 		if (info) {
@@ -1530,8 +1526,6 @@ PHP_FUNCTION(http_put_file)
 		}
 		RETVAL_RESPONSE_OR_BODY(request);
 	}
-	http_request_body_dtor(&body);
-	request.body = NULL;
 	http_request_dtor(&request);
 }
 /* }}} */
@@ -1544,7 +1538,7 @@ PHP_FUNCTION(http_put_file)
  * opened stream, from which the data to upload should be read.
  * See http_get() for a full list of available options.
  * 
- * Returns the HTTP response(s) as string on success. or FALSE on failure.
+ * Returns the HTTP response(s) as string on success, or FALSE on failure.
  */
 PHP_FUNCTION(http_put_stream)
 {
@@ -1572,12 +1566,8 @@ PHP_FUNCTION(http_put_stream)
 
 	RETVAL_FALSE;
 
-	body.type = HTTP_REQUEST_BODY_UPLOADFILE;
-	body.data = stream;
-	body.size = ssb.sb.st_size;
-
-	http_request_init_ex(&request, NULL, HTTP_POST, URL);
-	request.body = &body;
+	http_request_init_ex(&request, NULL, HTTP_PUT, URL);
+	request.body = http_request_body_init_ex(&body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 0);
 	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
 		http_request_exec(&request);
 		if (info) {
@@ -1585,7 +1575,47 @@ PHP_FUNCTION(http_put_stream)
 		}
 		RETVAL_RESPONSE_OR_BODY(request);
 	}
-	request.body = NULL;
+	http_request_dtor(&request);
+}
+/* }}} */
+
+/* {{{ proto string http_put_data(string url, string data[, array options[, array &info]])
+ *
+ * Performs an HTTP PUT request on the supplied url.
+ * 
+ * Expects the second parameter to be a string containing the data to upload.
+ * See http_get() for a full list of available options.
+ * 
+ * Returns the HTTP response(s) as string on success, or FALSE on failure.
+ */
+PHP_FUNCTION(http_put_data)
+{
+	char *URL, *data;
+	int URL_len, data_len;
+	zval *options = NULL, *info = NULL;
+	http_request_body body;
+	http_request request;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|a/!z", &URL, &URL_len, &data, &data_len, &options, &info)) {
+		RETURN_FALSE;
+	}
+	
+	if (info) {
+		zval_dtor(info);
+		array_init(info);
+	}
+	
+	RETVAL_FALSE;
+	
+	http_request_init_ex(&request, NULL, HTTP_PUT, URL);
+	request.body = http_request_body_init_ex(&body, HTTP_REQUEST_BODY_CSTRING, data, data_len, 0);
+	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
+		http_request_exec(&request);
+		if (info) {
+			http_request_info(&request, Z_ARRVAL_P(info));
+		}
+		RETVAL_RESPONSE_OR_BODY(request);
+	}
 	http_request_dtor(&request);
 }
 /* }}} */

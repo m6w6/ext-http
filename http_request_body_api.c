@@ -30,6 +30,7 @@ PHP_HTTP_API http_request_body *_http_request_body_init_ex(http_request_body *bo
 	
 	body->type = type;
 	body->free = free;
+	body->priv = 0;
 	body->data = data;
 	body->size = size;
 	

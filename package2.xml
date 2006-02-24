@@ -37,8 +37,8 @@ HttpResponse
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>0.24.1</release>
-  <api>0.24.0</api>
+  <release>0.25.0</release>
+  <api>0.25.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -46,8 +46,10 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed bug #6861 - 5 digit ports get truncated
-* Fixed bug with non-functional HttpRequest::setContentType()
+* Fixed bug #6924 - Linking fails on Mac OSX
+* Fixed HttpRequest::addRawPostData().
+
++ Added feature request http_put_data() and HttpRequest::(set|get|add)PutData().
 ]]></notes>
  <contents>
   <dir name="/">
