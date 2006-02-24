@@ -226,6 +226,7 @@ HttpResponse
     <file role="test" name="request_etag.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="request_methods.phpt"/>
+    <file role="test" name="request_put_data.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
     <file role="test" name="send_data_002.phpt"/>
     <file role="test" name="send_data_003.phpt"/>
