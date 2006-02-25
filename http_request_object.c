@@ -453,15 +453,32 @@ static inline void _http_request_object_check_request_content_type(zval *this_pt
 				
 	if (Z_STRLEN_P(ctype)) {
 		zval **headers, *opts = GET_PROP(options);
-					
+		
 		if (	(Z_TYPE_P(opts) == IS_ARRAY) &&
 				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) && 
 				(Z_TYPE_PP(headers) == IS_ARRAY)) {
 			zval **ct_header;
-						
+			
 			/* only override if not already set */
 			if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(headers), "Content-Type", sizeof("Content-Type"), (void **) &ct_header))) {
 				add_assoc_stringl(*headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
+			} else
+			/* or not a string, zero length string or a string of spaces */
+			if ((Z_TYPE_PP(ct_header) != IS_STRING) || !Z_STRLEN_PP(ct_header)) {
+				add_assoc_stringl(*headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
+			} else {
+				int i, only_space = 1;
+				
+				/* check for spaces only */
+				for (i = 0; i < Z_STRLEN_PP(ct_header); ++i) {
+					if (!isspace(Z_STRVAL_PP(ct_header)[i])) {
+						only_space = 0;
+						break;
+					}
+				}
+				if (only_space) {
+					add_assoc_stringl(*headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
+				}
 			}
 		} else {
 			zval *headers;
@@ -679,11 +696,19 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	return ret;
 }
 
-#define http_request_object_set_options_subr(key, ow) \
-	_http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM_PASSTHRU, (key), sizeof(key), (ow))
-static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAMETERS, char *key, size_t len, int overwrite)
+static int apply_pretty_key(void *pDest, int num_args, va_list args, zend_hash_key *hash_key)
 {
-	zval *old_opts, *new_opts, *opts = NULL, **entry;
+	if (hash_key->nKeyLength > 1) {
+		hash_key->h = zend_get_hash_value(pretty_key(hash_key->arKey, hash_key->nKeyLength - 1, 1, 0), hash_key->nKeyLength);
+	}
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+#define http_request_object_set_options_subr(key, ow, pk) \
+	_http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM_PASSTHRU, (key), sizeof(key), (ow), (pk))
+static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAMETERS, char *key, size_t len, int overwrite, int prettify_keys)
+{
+	zval *old_opts, *new_opts, *opts = NULL, **entry = NULL;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a/!", &opts)) {
 		RETURN_FALSE;
@@ -696,6 +721,9 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 		array_copy(old_opts, new_opts);
 	}
 
+	if (prettify_keys && opts) {
+		zend_hash_apply_with_arguments(Z_ARRVAL_P(opts), apply_pretty_key, 0);
+	}
 	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(new_opts), key, len, (void **) &entry)) {
 		if (overwrite) {
 			zend_hash_clean(Z_ARRVAL_PP(entry));
@@ -868,7 +896,7 @@ PHP_METHOD(HttpRequest, getOptions)
  */
 PHP_METHOD(HttpRequest, setSslOptions)
 {
-	http_request_object_set_options_subr("ssl", 1);
+	http_request_object_set_options_subr("ssl", 1, 0);
 }
 /* }}} */
 
@@ -882,7 +910,7 @@ PHP_METHOD(HttpRequest, setSslOptions)
  */
 PHP_METHOD(HttpRequest, addSslOptions)
 {
-	http_request_object_set_options_subr("ssl", 0);
+	http_request_object_set_options_subr("ssl", 0, 0);
 }
 /* }}} */
 
@@ -909,7 +937,7 @@ PHP_METHOD(HttpRequest, getSslOptions)
  */
 PHP_METHOD(HttpRequest, addHeaders)
 {
-	http_request_object_set_options_subr("headers", 0);
+	http_request_object_set_options_subr("headers", 0, 1);
 }
 
 /* {{{ proto bool HttpRequest::setHeaders([array headers])
@@ -923,7 +951,7 @@ PHP_METHOD(HttpRequest, addHeaders)
  */
 PHP_METHOD(HttpRequest, setHeaders)
 {
-	http_request_object_set_options_subr("headers", 1);
+	http_request_object_set_options_subr("headers", 1, 1);
 }
 /* }}} */
 
@@ -950,7 +978,7 @@ PHP_METHOD(HttpRequest, getHeaders)
  */
 PHP_METHOD(HttpRequest, setCookies)
 {
-	http_request_object_set_options_subr("cookies", 1);
+	http_request_object_set_options_subr("cookies", 1, 0);
 }
 /* }}} */
 
@@ -965,7 +993,7 @@ PHP_METHOD(HttpRequest, setCookies)
  */
 PHP_METHOD(HttpRequest, addCookies)
 {
-	http_request_object_set_options_subr("cookies", 0);
+	http_request_object_set_options_subr("cookies", 0, 0);
 }
 /* }}} */
 
@@ -1076,7 +1104,9 @@ PHP_METHOD(HttpRequest, setContentType)
 		RETURN_FALSE;
 	}
 
-	HTTP_CHECK_CONTENT_TYPE(ctype, RETURN_FALSE);
+	if (ct_len) {
+		HTTP_CHECK_CONTENT_TYPE(ctype, RETURN_FALSE);
+	}
 	UPD_STRL(contentType, ctype, ct_len);
 	RETURN_TRUE;
 }
@@ -1535,8 +1565,6 @@ PHP_METHOD(HttpRequest, addPutData)
 	}
 	
 	if (data_len) {
-		char *new_data;
-		size_t new_data_len;
 		zval *data = GET_PROP(putData);
 		
 		if (Z_STRLEN_P(data)) {
