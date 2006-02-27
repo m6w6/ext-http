@@ -46,10 +46,13 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed bug #6924 - Linking fails on Mac OSX
+* Fixed bug #6924 (Linking fails on Mac OSX).
 * Fixed HttpRequest::addRawPostData().
 
 + Added feature request http_put_data() and HttpRequest::(set|get|add)PutData().
++ Added 'range' request option.
++ Added 'proxytype' request option.
++ Added HTTP_PROXY_HTTP, HTTP_PROXY_SOCKS4, HTTP_PROXY_SOCKS5 constants.
 ]]></notes>
  <contents>
   <dir name="/">

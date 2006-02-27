@@ -1230,6 +1230,7 @@ PHP_FUNCTION(http_match_request_header)
  *                      redirects to a different host
  *  - proxyhost:        string, proxy host in "host[:port]" format
  *  - proxyport:        int, use another proxy port as specified in proxyhost
+ *  - proxytype:        int, HTTP_PROXY_HTTP, SOCKS4 or SOCKS5
  *  - proxyauth:        string, proxy credentials in "user:pass" format
  *  - proxyauthtype:    int, HTTP_AUTH_BASIC and/or HTTP_AUTH_NTLM
  *  - httpauth:         string, http credentials in "user:pass" format
@@ -1249,6 +1250,9 @@ PHP_FUNCTION(http_match_request_header)
  *  - cookiesession:    bool, accept (true) or reset (false) sessioncookies
  *  - resume:           int, byte offset to start the download from;
  *                      if the server supports ranges
+ *  - range:            array, array of arrays, each containing two integers,
+ *                      specifying the ranges to download if server support is
+ *                      given; only recognized if the resume option is empty
  *  - maxfilesize:      int, maximum file size that should be downloaded;
  *                      has no effect, if the size of the requested entity is not known
  *  - lastmodified:     int, timestamp for If-(Un)Modified-Since header

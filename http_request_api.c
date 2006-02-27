@@ -147,6 +147,11 @@ PHP_MINIT_FUNCTION(http_request)
 	HTTP_LONG_CONSTANT("HTTP_VERSION_1_0", CURL_HTTP_VERSION_1_0);
 	HTTP_LONG_CONSTANT("HTTP_VERSION_1_1", CURL_HTTP_VERSION_1_1);
 
+#if HTTP_CURL_VERSION(7,15,2)
+	HTTP_LONG_CONSTANT("HTTP_PROXY_SOCKS4", CURLPROXY_SOCKS4);
+#endif
+	HTTP_LONG_CONSTANT("HTTP_PROXY_SOCKS5", CURLPROXY_SOCKS5);
+	HTTP_LONG_CONSTANT("HTTP_PROXY_HTTP", CURLPROXY_HTTP);
 	return SUCCESS;
 }
 /* }}} */
@@ -425,6 +430,7 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_NOPROGRESS, 1);
 		HTTP_CURL_OPT(CURLOPT_PROXY, NULL);
 		HTTP_CURL_OPT(CURLOPT_PROXYPORT, 0);
+		HTTP_CURL_OPT(CURLOPT_PROXYTYPE, 0);
 		HTTP_CURL_OPT(CURLOPT_PROXYUSERPWD, NULL);
 		HTTP_CURL_OPT(CURLOPT_PROXYAUTH, 0);
 		HTTP_CURL_OPT(CURLOPT_INTERFACE, NULL);
@@ -447,6 +453,7 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 #endif
 		HTTP_CURL_OPT(CURLOPT_COOKIEFILE, NULL);
 		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, NULL);
+		HTTP_CURL_OPT(CURLOPT_RANGE, NULL);
 		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, 0);
 		HTTP_CURL_OPT(CURLOPT_MAXFILESIZE, 0);
 		HTTP_CURL_OPT(CURLOPT_TIMECONDITION, 0);
@@ -526,7 +533,10 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		if (Z_STRLEN_P(zoption)) {
 			HTTP_CURL_OPT(CURLOPT_PROXY, Z_STRVAL_P(zoption));
 		}
-
+		/* type */
+		if ((zoption = http_request_option(request, options, "proxytype", IS_LONG))) {
+			HTTP_CURL_OPT(CURLOPT_PROXYTYPE, Z_LVAL_P(zoption));
+		}
 		/* port */
 		if ((zoption = http_request_option(request, options, "proxyport", IS_LONG))) {
 			HTTP_CURL_OPT(CURLOPT_PROXYPORT, Z_LVAL_P(zoption));
@@ -608,6 +618,46 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	if ((zoption = http_request_option(request, options, "resume", IS_LONG)) && (Z_LVAL_P(zoption) != 0)) {
 		range_req = 1;
 		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, Z_LVAL_P(zoption));
+	}
+	/* or range of kind array(array(0,499), array(100,1499)) */
+	else if ((zoption = http_request_option(request, options, "range", IS_ARRAY)) && zend_hash_num_elements(Z_ARRVAL_P(zoption))) {
+		HashPosition pos1, pos2;
+		zval **rr, **rb, **re;
+		phpstr rs;
+		
+		phpstr_init(&rs);
+		FOREACH_VAL(pos1, zoption, rr) {
+			if (Z_TYPE_PP(rr) == IS_ARRAY) {
+				zend_hash_internal_pointer_reset_ex(Z_ARRVAL_PP(rr), &pos2);
+				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_PP(rr), (void **) &rb, &pos2)) {
+					zend_hash_move_forward_ex(Z_ARRVAL_PP(rr), &pos2);
+					if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_PP(rr), (void **) &re, &pos2)) {
+						if (	((Z_TYPE_PP(rb) == IS_LONG) || ((Z_TYPE_PP(rb) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(rb), Z_STRLEN_PP(rb), NULL, NULL, 1))) &&
+								((Z_TYPE_PP(re) == IS_LONG) || ((Z_TYPE_PP(re) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(re), Z_STRLEN_PP(re), NULL, NULL, 1)))) {
+							zval *rbl = zval_copy(IS_LONG, *rb), *rel = zval_copy(IS_LONG, *re);
+							
+							if ((Z_LVAL_P(rbl) >= 0) && (Z_LVAL_P(rel) >= 0)) {
+								phpstr_appendf(&rs, "%ld-%ld,", Z_LVAL_P(rbl), Z_LVAL_P(rel));
+							}
+							zval_free(&rbl);
+							zval_free(&rel);
+						}
+					}
+				}
+			}
+		}
+		
+		if (PHPSTR_LEN(&rs)) {
+			zval *cached_range;
+			
+			/* ditch last comma */
+			PHPSTR_VAL(&rs)[PHPSTR_LEN(&rs)-- -1] = '\0';
+			/* cache string */
+			MAKE_STD_ZVAL(cached_range);
+			ZVAL_STRINGL(cached_range, PHPSTR_VAL(&rs), PHPSTR_LEN(&rs), 0);
+			HTTP_CURL_OPT(CURLOPT_RANGE, Z_STRVAL_P(http_request_option_cache(request, "range", cached_range)));
+			zval_ptr_dtor(&cached_range);
+		}
 	}
 
 	/* additional headers, array('name' => 'value') */

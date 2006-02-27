@@ -419,7 +419,9 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	/* WebDAV Access Control - RFC 3744 */
 	DCL_CONST(long, "METH_ACL", HTTP_ACL);
 
-	/* cURL HTTP protocol versions */
+	/*
+	 * HTTP Protocol Version Constants
+	 */
 	DCL_CONST(long, "VERSION_1_0", CURL_HTTP_VERSION_1_0);
 	DCL_CONST(long, "VERSION_1_1", CURL_HTTP_VERSION_1_1);
 	DCL_CONST(long, "VERSION_NONE", CURL_HTTP_VERSION_NONE);
@@ -431,6 +433,15 @@ static inline void _http_request_object_declare_default_properties(TSRMLS_D)
 	DCL_CONST(long, "AUTH_DIGEST", CURLAUTH_DIGEST);
 	DCL_CONST(long, "AUTH_NTLM", CURLAUTH_NTLM);
 	DCL_CONST(long, "AUTH_ANY", CURLAUTH_ANY);
+	
+	/*
+	 * Proxy Type Constants
+	 */
+#	if HTTP_CURL_VERSION(7,15,2)
+	DCL_CONST(long, "PROXY_SOCKS4", CURLPROXY_SOCKS4);
+#	endif
+	DCL_CONST(long, "PROXY_SOCKS5", CURLPROXY_SOCKS5);
+	DCL_CONST(long, "PROXY_HTTP", CURLPROXY_HTTP);
 #endif /* WONKY */
 }
 
