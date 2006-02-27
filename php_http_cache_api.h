@@ -116,7 +116,7 @@ static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t dat
 	if (mode && ((!strcasecmp(mode, "crc32")) || (!strcasecmp(mode, "crc32b")))) {
 		uint i, c = *((uint *) ctx);
 		for (i = 0; i < data_len; ++i) {
-			c = CRC32(c, data_ptr[i]);
+			CRC32(c, data_ptr[i]);
 		}
 		*((uint *)ctx) = c;
 	} else if (mode && (!strcasecmp(mode, "sha1"))) {

@@ -15,7 +15,9 @@
 #ifndef PHP_HTTP_REQUEST_METHOD_API_H
 #define PHP_HTTP_REQUEST_METHOD_API_H
 
-typedef enum {
+typedef enum _http_request_method_t {
+	/* force the enum to be signed */
+	HTTP_NEG_REQUEST_METHOD	=-1,
 	HTTP_NO_REQUEST_METHOD	= 0,
 	/* HTTP/1.1 */
 	HTTP_GET				= 1,
@@ -54,7 +56,7 @@ typedef enum {
 #define HTTP_MIN_REQUEST_METHOD (HTTP_NO_REQUEST_METHOD + 1)
 #define HTTP_CUSTOM_REQUEST_METHOD_START HTTP_MAX_REQUEST_METHOD
 
-typedef struct {
+typedef struct _http_request_method_entry_t {
 	char *name;
 	char *cnst;
 } http_request_method_entry;

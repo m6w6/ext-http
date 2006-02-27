@@ -567,15 +567,12 @@ PHP_METHOD(HttpResponse, getContentType)
  */
 PHP_METHOD(HttpResponse, guessContentType)
 {
+#ifdef HTTP_HAVE_MAGIC
 	char *magic_file, *ct = NULL;
 	int magic_file_len;
-	long magic_mode = 0;
+	long magic_mode = MAGIC_MIME;
 	
 	RETVAL_FALSE;
-	
-#ifdef HTTP_HAVE_MAGIC
-	magic_mode = MAGIC_MIME;
-	
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &magic_file, &magic_file_len, &magic_mode)) {
 		switch (Z_LVAL_P(GET_STATIC_PROP(mode))) {
@@ -608,6 +605,7 @@ PHP_METHOD(HttpResponse, guessContentType)
 	SET_EH_NORMAL();
 #else
 	http_error(HE_THROW, HTTP_E_RUNTIME, "Cannot guess Content-Type; libmagic not available");
+	RETURN_FALSE;
 #endif
 }
 /* }}} */

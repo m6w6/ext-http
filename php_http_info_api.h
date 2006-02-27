@@ -20,27 +20,27 @@
 
 #define HTTP_INFO(ptr) (ptr)->http.info
 
-typedef struct {
+typedef struct _http_request_info_t {
 	char *method;
 	char *url;
 } http_request_info;
 
-typedef struct {
+typedef struct _http_response_info_t {
 	int code;
 	char *status;
 } http_response_info;
 
-typedef union {
+typedef union _http_info_union_t {
 	http_request_info request;
 	http_response_info response;
-} http_info_t;
+} http_info_union;
 
 struct http_info {
-	http_info_t info;
+	http_info_union info;
 	double version;
 };
 
-typedef struct {
+typedef struct _http_info_t {
 	struct http_info http;
 	int type;
 } http_info;

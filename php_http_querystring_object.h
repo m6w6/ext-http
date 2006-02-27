@@ -16,7 +16,7 @@
 #define PHP_HTTP_QUERYSTRING_OBJECT_H
 #ifdef ZEND_ENGINE_2
 
-typedef struct {
+typedef struct _http_querystring_object_t {
 	zend_object zo;
 } http_querystring_object;
 

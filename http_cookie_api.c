@@ -66,7 +66,7 @@ PHP_HTTP_API void _http_cookie_list_free(http_cookie_list **list TSRMLS_DC)
 PHP_HTTP_API const char *_http_cookie_list_get_cookie(http_cookie_list *list, const char *name, size_t name_len TSRMLS_DC)
 {
 	zval **cookie = NULL;
-	if ((SUCCESS != zend_hash_find(&list->cookies, name, name_len + 1, (void **) &cookie)) || (Z_TYPE_PP(cookie) != IS_STRING)) {
+	if ((SUCCESS != zend_hash_find(&list->cookies, (char *) name, name_len + 1, (void **) &cookie)) || (Z_TYPE_PP(cookie) != IS_STRING)) {
 		return NULL;
 	}
 	return Z_STRVAL_PP(cookie);
@@ -75,7 +75,7 @@ PHP_HTTP_API const char *_http_cookie_list_get_cookie(http_cookie_list *list, co
 PHP_HTTP_API const char *_http_cookie_list_get_extra(http_cookie_list *list, const char *name, size_t name_len TSRMLS_DC)
 {
 	zval **extra = NULL;
-	if ((SUCCESS != zend_hash_find(&list->extras,name, name_len + 1, (void **) &extra)) || (Z_TYPE_PP(extra) != IS_STRING)) {
+	if ((SUCCESS != zend_hash_find(&list->extras, (char *) name, name_len + 1, (void **) &extra)) || (Z_TYPE_PP(extra) != IS_STRING)) {
 		return NULL;
 	}
 	return Z_STRVAL_PP(extra);
@@ -86,7 +86,7 @@ PHP_HTTP_API void _http_cookie_list_add_cookie(http_cookie_list *list, const cha
 	zval *cookie_value;
 	MAKE_STD_ZVAL(cookie_value);
 	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
-	zend_hash_update(&list->cookies, name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	zend_hash_update(&list->cookies, (char *) name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
 }
 
 PHP_HTTP_API void _http_cookie_list_add_extra(http_cookie_list *list, const char *name, size_t name_len, const char *value, size_t value_len TSRMLS_DC)
@@ -94,7 +94,7 @@ PHP_HTTP_API void _http_cookie_list_add_extra(http_cookie_list *list, const char
 	zval *cookie_value;
 	MAKE_STD_ZVAL(cookie_value);
 	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
-	zend_hash_update(&list->extras, name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	zend_hash_update(&list->extras, (char *) name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
 }
 
 #define http_cookie_list_set_item_ex(l, i, il, v, vl, f, a) _http_cookie_list_set_item_ex((l), (i), (il), (v), (vl), (f), (a) TSRMLS_CC)
@@ -219,7 +219,6 @@ PHP_HTTP_API http_cookie_list *_http_parse_cookie_ex(http_cookie_list *list, con
 					case ';':
 					case '\0':
 						goto add;
-						st = ST_ADD;
 					break;
 					
 					default:

@@ -74,7 +74,7 @@ PHP_MINIT_FUNCTION(http_filter)
 		php_stream_bucket_append(buckets_out, __buck TSRMLS_CC); \
 	}
 
-typedef struct {
+typedef struct _http_chunked_decode_filter_buffer_t {
 	phpstr	buffer;
 	ulong	hexlen;
 } HTTP_FILTER_BUFFER(chunked_decode);

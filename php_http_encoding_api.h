@@ -27,7 +27,7 @@ extern PHP_MINIT_FUNCTION(http_encoding);
 extern PHP_RINIT_FUNCTION(http_encoding);
 extern PHP_RSHUTDOWN_FUNCTION(http_encoding);
 
-typedef enum {
+typedef enum _http_encoding_type_t {
 	HTTP_ENCODING_NONE,
 	HTTP_ENCODING_GZIP,
 	HTTP_ENCODING_DEFLATE,
@@ -64,7 +64,7 @@ typedef enum {
 
 #define HTTP_ENCODING_STREAM_PERSISTENT	0x01000000
 
-typedef struct {
+typedef struct _http_encoding_stream_t {
 	z_stream stream;
 	int flags;
 	void *storage;

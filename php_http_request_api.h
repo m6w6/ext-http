@@ -23,7 +23,7 @@
 extern PHP_MINIT_FUNCTION(http_request);
 extern PHP_MSHUTDOWN_FUNCTION(http_request);
 
-typedef struct {
+typedef struct _http_request_t {
 	CURL *ch;
 	char *url;
 	http_request_method meth;

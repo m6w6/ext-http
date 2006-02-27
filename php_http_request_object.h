@@ -19,7 +19,7 @@
 
 #include "php_http_request_pool_api.h"
 
-typedef struct {
+typedef struct _http_request_object_t {
 	zend_object zo;
 	http_request *request;
 	http_request_pool *pool;

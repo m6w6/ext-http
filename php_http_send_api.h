@@ -15,7 +15,7 @@
 #ifndef PHP_HTTP_SEND_API_H
 #define PHP_HTTP_SEND_API_H
 
-typedef enum {
+typedef enum _http_send_mode_t {
 	SEND_DATA,
 	SEND_RSRC
 } http_send_mode;

@@ -21,7 +21,7 @@
 #define HTTP_REQUEST_BODY_CSTRING		1
 #define HTTP_REQUEST_BODY_CURLPOST		2
 #define HTTP_REQUEST_BODY_UPLOADFILE	3
-typedef struct {
+typedef struct _http_request_body_t {
 	uint type:3;
 	uint free:1;
 	uint priv:28;

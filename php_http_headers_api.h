@@ -17,7 +17,7 @@
 
 #include "php_http_info_api.h"
 
-typedef enum {
+typedef enum http_range_status_t {
 	RANGE_OK,
 	RANGE_NO,
 	RANGE_ERR

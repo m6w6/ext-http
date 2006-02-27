@@ -23,14 +23,6 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-HTTP/1.1 200 OK
-%s
-
-Array
-(
-    [name] => val=ue
-)
-
 GET /.print_request.php HTTP/1.1
 User-Agent: %s
 Host: dev.iworks.at
@@ -49,4 +41,12 @@ User-Agent: %s
 Host: dev.iworks.at
 Accept: */*
 Cookie: name=val=ue;
+HTTP/1.1 200 OK
+%s
+
+Array
+(
+    [name] => val=ue
+)
+
 Done

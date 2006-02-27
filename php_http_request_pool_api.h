@@ -16,7 +16,7 @@
 #define PHP_HTTP_REQUEST_POOL_API_H
 #ifdef HTTP_HAVE_CURL
 
-typedef struct {
+typedef struct _http_request_pool_t {
 	CURLM *ch;
 	zend_llist finished;
 	zend_llist handles;

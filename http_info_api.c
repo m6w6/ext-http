@@ -37,19 +37,17 @@ PHP_HTTP_API void _http_info_default_callback(void **nothing, HashTable **header
 	}
 }
 
-PHP_HTTP_API void _http_info_dtor(http_info *info)
+PHP_HTTP_API void _http_info_dtor(http_info *i)
 {
-	http_info_t *i = (http_info_t *) info;
-	
-	switch (info->type)
+	switch (i->type)
 	{
 		case IS_HTTP_REQUEST:
-			STR_SET(i->request.method, NULL);
-			STR_SET(i->request.url, NULL);
+			STR_SET(HTTP_INFO(i).request.method, NULL);
+			STR_SET(HTTP_INFO(i).request.url, NULL);
 		break;
 		
 		case IS_HTTP_RESPONSE:
-			STR_SET(i->response.status, NULL);
+			STR_SET(HTTP_INFO(i).response.status, NULL);
 		break;
 		
 		default:

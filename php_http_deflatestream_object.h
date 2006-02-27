@@ -16,7 +16,7 @@
 #define PHP_HTTP_DEFLATESTREAM_OBJECT_H
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_ZLIB)
 
-typedef struct {
+typedef struct _http_deflatestream_object_t {
 	zend_object zo;
 	http_encoding_stream *stream;
 } http_deflatestream_object;

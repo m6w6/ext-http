@@ -17,7 +17,7 @@
 #ifdef HTTP_HAVE_CURL
 #ifdef ZEND_ENGINE_2
 
-typedef struct {
+typedef struct _http_requestpool_object_t {
 	zend_object zo;
 	http_request_pool pool;
 	struct {

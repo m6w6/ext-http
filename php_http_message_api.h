@@ -17,15 +17,15 @@
 
 #include "php_http_info_api.h"
 
-typedef enum {
+typedef enum _http_message_type_t {
 	HTTP_MSG_NONE		= 0,
 	HTTP_MSG_REQUEST	= IS_HTTP_REQUEST,
 	HTTP_MSG_RESPONSE	= IS_HTTP_RESPONSE,
 } http_message_type;
 
-typedef struct _http_message http_message;
+typedef struct _http_message_t http_message;
 
-struct _http_message {
+struct _http_message_t {
 	phpstr body;
 	HashTable hdrs;
 	http_message_type type;

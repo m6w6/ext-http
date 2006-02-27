@@ -27,7 +27,7 @@ extern PHP_MINIT_FUNCTION(http_cookie);
 	cookie params like those from rfc2109 and rfc2965 are just put into extras, if
 	one specifies them in allowed extras, else they're treated like cookies themself
 */
-typedef struct {
+typedef struct _http_cookie_list_t {
 	HashTable cookies;
 	HashTable extras;
 	long flags;

@@ -68,7 +68,7 @@
 	RETVAL_STRINGL((STR)->data, (STR)->used, (dup)); \
 	FREE_PHPSTR((free), (STR));
 
-typedef struct {
+typedef struct _phpstr_t {
 	size_t size;
 	char  *data;
 	size_t used;
@@ -76,7 +76,7 @@ typedef struct {
 	int    pmem;
 } phpstr;
 
-typedef enum {
+typedef enum _phpstr_free_t {
 	PHPSTR_FREE_NOT = 0,
 	PHPSTR_FREE_PTR,	/* pefree() */
 	PHPSTR_FREE_VAL,	/* phpstr_dtor() */
