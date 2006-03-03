@@ -1127,20 +1127,22 @@ PHP_METHOD(HttpMessage, setHttpVersion)
  * Get parent Message.
  * 
  * Returns the parent HttpMessage on success, or NULL if there's none.
+ *
+ * Throws HttpMessageException.
  */
 PHP_METHOD(HttpMessage, getParentMessage)
 {
-	NO_ARGS;
-
-	IF_RETVAL_USED {
+	SET_EH_THROW_HTTP();
+	NO_ARGS {
 		getObject(http_message_object, obj);
 
 		if (obj->message->parent) {
 			RETVAL_OBJVAL(obj->parent, 1);
 		} else {
-			RETVAL_NULL();
+			http_error(HE_WARNING, HTTP_E_MESSAGE, "HttpMessage does not have a parent message");
 		}
 	}
+	SET_EH_NORMAL();
 }
 /* }}} */
 
