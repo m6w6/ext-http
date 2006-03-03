@@ -971,7 +971,7 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *ct
 				size_t out = MIN(len * n, request->body->size - request->body->priv);
 				
 				if (out) {
-					memcpy(data, request->body->data + request->body->priv, out);
+					memcpy(data, ((char *) request->body->data) + request->body->priv, out);
 					request->body->priv += out;
 					return out;
 				}
