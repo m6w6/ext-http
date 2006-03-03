@@ -42,9 +42,7 @@ HTTP_BEGIN_ARGS(finish, 0)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 
-#define http_deflatestream_object_declare_default_properties() _http_deflatestream_object_declare_default_properties(TSRMLS_C)
-static inline void _http_deflatestream_object_declare_default_properties(TSRMLS_D);
-
+#define OBJ_PROP_CE http_deflatestream_object_ce
 zend_class_entry *http_deflatestream_object_ce;
 zend_function_entry http_deflatestream_object_fe[] = {
 	HTTP_DEFLATE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -60,6 +58,21 @@ PHP_MINIT_FUNCTION(http_deflatestream_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpDeflateStream, http_deflatestream_object, NULL, 0);
 	http_deflatestream_object_handlers.clone_obj = _http_deflatestream_object_clone_obj;
+	
+#ifndef WONKY
+	DCL_CONST(long, "TYPE_GZIP", HTTP_DEFLATE_TYPE_GZIP);
+	DCL_CONST(long, "TYPE_ZLIB", HTTP_DEFLATE_TYPE_ZLIB);
+	DCL_CONST(long, "TYPE_RAW", HTTP_DEFLATE_TYPE_RAW);
+	DCL_CONST(long, "LEVEL_DEF", HTTP_DEFLATE_LEVEL_DEF);
+	DCL_CONST(long, "LEVEL_MIN", HTTP_DEFLATE_LEVEL_MIN);
+	DCL_CONST(long, "LEVEL_MAX", HTTP_DEFLATE_LEVEL_MAX);
+	DCL_CONST(long, "STRATEGY_DEF", HTTP_DEFLATE_STRATEGY_DEF);
+	DCL_CONST(long, "STRATEGY_FILT", HTTP_DEFLATE_STRATEGY_FILT);
+	DCL_CONST(long, "STRATEGY_HUFF", HTTP_DEFLATE_STRATEGY_HUFF);
+	DCL_CONST(long, "STRATEGY_RLE", HTTP_DEFLATE_STRATEGY_RLE);
+	DCL_CONST(long, "STRATEGY_FIXED", HTTP_DEFLATE_STRATEGY_FIXED);
+#endif
+	
 	return SUCCESS;
 }
 
@@ -104,25 +117,6 @@ zend_object_value _http_deflatestream_object_clone_obj(zval *this_ptr TSRMLS_DC)
 	s->stream.opaque = phpstr_dup(s->stream.opaque);
 	
 	return http_deflatestream_object_new_ex(Z_OBJCE_P(this_ptr), s, NULL);
-}
-
-static inline void _http_deflatestream_object_declare_default_properties(TSRMLS_D)
-{
-	zend_class_entry *ce = http_deflatestream_object_ce;
-
-#ifndef WONKY
-	DCL_CONST(long, "TYPE_GZIP", HTTP_DEFLATE_TYPE_GZIP);
-	DCL_CONST(long, "TYPE_ZLIB", HTTP_DEFLATE_TYPE_ZLIB);
-	DCL_CONST(long, "TYPE_RAW", HTTP_DEFLATE_TYPE_RAW);
-	DCL_CONST(long, "LEVEL_DEF", HTTP_DEFLATE_LEVEL_DEF);
-	DCL_CONST(long, "LEVEL_MIN", HTTP_DEFLATE_LEVEL_MIN);
-	DCL_CONST(long, "LEVEL_MAX", HTTP_DEFLATE_LEVEL_MAX);
-	DCL_CONST(long, "STRATEGY_DEF", HTTP_DEFLATE_STRATEGY_DEF);
-	DCL_CONST(long, "STRATEGY_FILT", HTTP_DEFLATE_STRATEGY_FILT);
-	DCL_CONST(long, "STRATEGY_HUFF", HTTP_DEFLATE_STRATEGY_HUFF);
-	DCL_CONST(long, "STRATEGY_RLE", HTTP_DEFLATE_STRATEGY_RLE);
-	DCL_CONST(long, "STRATEGY_FIXED", HTTP_DEFLATE_STRATEGY_FIXED);
-#endif
 }
 
 void _http_deflatestream_object_free(zend_object *object TSRMLS_DC)

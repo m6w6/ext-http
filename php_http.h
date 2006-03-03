@@ -195,12 +195,6 @@ PHP_FUNCTION(ob_inflatehandler);
 #endif
 PHP_FUNCTION(http_support);
 
-PHP_MINIT_FUNCTION(http);
-PHP_MSHUTDOWN_FUNCTION(http);
-PHP_RINIT_FUNCTION(http);
-PHP_RSHUTDOWN_FUNCTION(http);
-PHP_MINFO_FUNCTION(http);
-
 #endif	/* PHP_HTTP_H */
 
 /*

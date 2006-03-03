@@ -67,9 +67,6 @@ HTTP_EMPTY_ARGS(count);
 HTTP_EMPTY_ARGS(getAttachedRequests);
 HTTP_EMPTY_ARGS(getFinishedRequests);
 
-#define http_requestpool_object_declare_default_properties() _http_requestpool_object_declare_default_properties(TSRMLS_C)
-static inline void _http_requestpool_object_declare_default_properties(TSRMLS_D);
-
 zend_class_entry *http_requestpool_object_ce;
 zend_function_entry http_requestpool_object_fe[] = {
 	HTTP_REQPOOL_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -102,13 +99,14 @@ static zend_object_handlers http_requestpool_object_handlers;
 PHP_MINIT_FUNCTION(http_requestpool_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequestPool, http_requestpool_object, NULL, 0);
+	http_requestpool_object_handlers.clone_obj = NULL;
+	
 #if defined(HAVE_SPL) && !defined(WONKY)
 	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 2, spl_ce_Countable, zend_ce_iterator);
 #else
 	zend_class_implements(http_requestpool_object_ce TSRMLS_CC, 1, zend_ce_iterator);
 #endif
-
-	http_requestpool_object_handlers.clone_obj = NULL;
+	
 	return SUCCESS;
 }
 
@@ -130,13 +128,6 @@ zend_object_value _http_requestpool_object_new(zend_class_entry *ce TSRMLS_DC)
 	ov.handlers = &http_requestpool_object_handlers;
 
 	return ov;
-}
-
-static inline void _http_requestpool_object_declare_default_properties(TSRMLS_D)
-{
-	zend_class_entry *ce = http_requestpool_object_ce;
-
-	DCL_PROP_N(PROTECTED, pool);
 }
 
 void _http_requestpool_object_free(zend_object *object TSRMLS_DC)

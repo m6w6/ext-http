@@ -28,11 +28,6 @@
 #include "php_http_response_object.h"
 #include "php_http_send_api.h"
 
-#define GET_STATIC_PROP(n)			*GET_STATIC_PROP_EX(http_response_object_ce, n)
-#define UPD_STATIC_PROP(t, n, v)	UPD_STATIC_PROP_EX(http_response_object_ce, t, n, v)
-#define SET_STATIC_PROP(n, v)		SET_STATIC_PROP_EX(http_response_object_ce, n, v)
-#define UPD_STATIC_STRL(n, v, l)	UPD_STATIC_STRL_EX(http_response_object_ce, n, v, l)
-
 #define HTTP_BEGIN_ARGS(method, req_args) 		HTTP_BEGIN_ARGS_EX(HttpResponse, method, 0, req_args)
 #define HTTP_EMPTY_ARGS(method)					HTTP_EMPTY_ARGS_EX(HttpResponse, method, 0)
 #define HTTP_RESPONSE_ME(method, visibility)	PHP_ME(HttpResponse, method, HTTP_ARGS(HttpResponse, method), visibility|ZEND_ACC_STATIC)
@@ -136,11 +131,10 @@ HTTP_END_ARGS;
 HTTP_EMPTY_ARGS(getRequestHeaders);
 HTTP_EMPTY_ARGS(getRequestBody);
 
-#define http_response_object_declare_default_properties() _http_response_object_declare_default_properties(TSRMLS_C)
-static inline void _http_response_object_declare_default_properties(TSRMLS_D);
 #define http_grab_response_headers _http_grab_response_headers
 static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC);
 
+#define OBJ_PROP_CE http_response_object_ce
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
 
@@ -199,14 +193,7 @@ zend_function_entry http_response_object_fe[] = {
 PHP_MINIT_FUNCTION(http_response_object)
 {
 	HTTP_REGISTER_CLASS(HttpResponse, http_response_object, NULL, 0);
-	http_response_object_declare_default_properties();
-	return SUCCESS;
-}
-
-static inline void _http_response_object_declare_default_properties(TSRMLS_D)
-{
-	zend_class_entry *ce = http_response_object_ce;
-
+	
 	DCL_STATIC_PROP(PRIVATE, bool, sent, 0);
 	DCL_STATIC_PROP(PRIVATE, bool, catch, 0);
 	DCL_STATIC_PROP(PRIVATE, long, mode, -1);
@@ -231,6 +218,8 @@ static inline void _http_response_object_declare_default_properties(TSRMLS_D)
 	DCL_CONST(long, "REDIRECT_PROXY", HTTP_REDIRECT_PROXY);
 	DCL_CONST(long, "REDIRECT_TEMP", HTTP_REDIRECT_TEMP);
 #endif /* WONKY */
+	
+	return SUCCESS;
 }
 
 static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC)

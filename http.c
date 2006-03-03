@@ -123,6 +123,12 @@ zend_function_entry http_functions[] = {
 };
 /* }}} */
 
+PHP_MINIT_FUNCTION(http);
+PHP_MSHUTDOWN_FUNCTION(http);
+PHP_RINIT_FUNCTION(http);
+PHP_RSHUTDOWN_FUNCTION(http);
+PHP_MINFO_FUNCTION(http);
+
 /* {{{ http_module_dep */
 #if ZEND_EXTENSION_API_NO >= 220050617
 static zend_module_dep http_module_deps[] = {
@@ -135,9 +141,9 @@ static zend_module_dep http_module_deps[] = {
 #	ifdef HAVE_PHP_SESSION
 	ZEND_MOD_REQUIRED("session")
 #	endif
-#ifdef HAVE_ICONV
+#	ifdef HAVE_ICONV
 	ZEND_MOD_REQUIRED("iconv")
-#endif
+#	endif
 	{NULL, NULL, NULL, 0}
 };
 #endif

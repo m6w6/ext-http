@@ -38,6 +38,7 @@ HTTP_BEGIN_ARGS(finish, 0)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 
+#define OBJ_PROP_CE http_inflatestream_object_ce
 zend_class_entry *http_inflatestream_object_ce;
 zend_function_entry http_inflatestream_object_fe[] = {
 	HTTP_INFLATE_ME(update, ZEND_ACC_PUBLIC)
@@ -47,8 +48,6 @@ zend_function_entry http_inflatestream_object_fe[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 static zend_object_handlers http_inflatestream_object_handlers;
-
-static inline void http_inflatestream_object_declare_default_properties() { return; }
 
 PHP_MINIT_FUNCTION(http_inflatestream_object)
 {

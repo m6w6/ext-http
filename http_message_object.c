@@ -123,8 +123,6 @@ HTTP_BEGIN_ARGS(prepend, 1)
 HTTP_END_ARGS;
 HTTP_EMPTY_ARGS(reverse);
 
-#define http_message_object_declare_default_properties() _http_message_object_declare_default_properties(TSRMLS_C)
-static inline void _http_message_object_declare_default_properties(TSRMLS_D);
 #define http_message_object_read_prop _http_message_object_read_prop
 static zval *_http_message_object_read_prop(zval *object, zval *member, int type TSRMLS_DC);
 #define http_message_object_write_prop _http_message_object_write_prop
@@ -132,6 +130,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 #define http_message_object_get_props _http_message_object_get_props
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC);
 
+#define OBJ_PROP_CE http_message_object_ce
 zend_class_entry *http_message_object_ce;
 zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -186,6 +185,7 @@ static zend_object_handlers http_message_object_handlers;
 PHP_MINIT_FUNCTION(http_message_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message_object, NULL, 0);
+	
 #ifndef WONKY
 #	ifdef HAVE_SPL
 	zend_class_implements(http_message_object_ce TSRMLS_CC, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
@@ -195,16 +195,32 @@ PHP_MINIT_FUNCTION(http_message_object)
 #else
 	zend_class_implements(http_message_object_ce TSRMLS_CC, 1, zend_ce_iterator);
 #endif
-
-	HTTP_LONG_CONSTANT("HTTP_MSG_NONE", HTTP_MSG_NONE);
-	HTTP_LONG_CONSTANT("HTTP_MSG_REQUEST", HTTP_MSG_REQUEST);
-	HTTP_LONG_CONSTANT("HTTP_MSG_RESPONSE", HTTP_MSG_RESPONSE);
-
+	
 	http_message_object_handlers.clone_obj = _http_message_object_clone_obj;
 	http_message_object_handlers.read_property = http_message_object_read_prop;
 	http_message_object_handlers.write_property = http_message_object_write_prop;
 	http_message_object_handlers.get_properties = http_message_object_get_props;
 	http_message_object_handlers.get_property_ptr_ptr = NULL;
+	
+	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
+	DCL_PROP(PROTECTED, string, body, "");
+	DCL_PROP(PROTECTED, string, requestMethod, "");
+	DCL_PROP(PROTECTED, string, requestUrl, "");
+	DCL_PROP(PROTECTED, string, responseStatus, "");
+	DCL_PROP(PROTECTED, long, responseCode, 0);
+	DCL_PROP_N(PROTECTED, httpVersion);
+	DCL_PROP_N(PROTECTED, headers);
+	DCL_PROP_N(PROTECTED, parentMessage);
+	
+#ifndef WONKY
+	DCL_CONST(long, "TYPE_NONE", HTTP_MSG_NONE);
+	DCL_CONST(long, "TYPE_REQUEST", HTTP_MSG_REQUEST);
+	DCL_CONST(long, "TYPE_RESPONSE", HTTP_MSG_RESPONSE);
+#endif
+	
+	HTTP_LONG_CONSTANT("HTTP_MSG_NONE", HTTP_MSG_NONE);
+	HTTP_LONG_CONSTANT("HTTP_MSG_REQUEST", HTTP_MSG_REQUEST);
+	HTTP_LONG_CONSTANT("HTTP_MSG_RESPONSE", HTTP_MSG_RESPONSE);
 	
 	return SUCCESS;
 }
@@ -336,27 +352,6 @@ zend_object_value _http_message_object_clone_obj(zval *this_ptr TSRMLS_DC)
 {
 	getObject(http_message_object, obj);
 	return http_message_object_new_ex(Z_OBJCE_P(this_ptr), http_message_dup(obj->message), NULL);
-}
-
-static inline void _http_message_object_declare_default_properties(TSRMLS_D)
-{
-	zend_class_entry *ce = http_message_object_ce;
-
-#ifndef WONKY
-	DCL_CONST(long, "TYPE_NONE", HTTP_MSG_NONE);
-	DCL_CONST(long, "TYPE_REQUEST", HTTP_MSG_REQUEST);
-	DCL_CONST(long, "TYPE_RESPONSE", HTTP_MSG_RESPONSE);
-#endif
-
-	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
-	DCL_PROP(PROTECTED, string, body, "");
-	DCL_PROP(PROTECTED, string, requestMethod, "");
-	DCL_PROP(PROTECTED, string, requestUrl, "");
-	DCL_PROP(PROTECTED, string, responseStatus, "");
-	DCL_PROP(PROTECTED, long, responseCode, 0);
-	DCL_PROP_N(PROTECTED, httpVersion);
-	DCL_PROP_N(PROTECTED, headers);
-	DCL_PROP_N(PROTECTED, parentMessage);
 }
 
 void _http_message_object_free(zend_object *object TSRMLS_DC)

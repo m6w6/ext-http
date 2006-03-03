@@ -78,11 +78,6 @@ HTTP_BEGIN_ARGS(unserialize, 1)
 	HTTP_ARG_VAL(serialized, 0)
 HTTP_END_ARGS;
 
-#define http_querystring_object_declare_default_properties() _http_querystring_object_declare_default_properties(TSRMLS_C)
-static inline void _http_querystring_object_declare_default_properties(TSRMLS_D);
-
-#define GET_STATIC_PROP(n) *GET_STATIC_PROP_EX(http_querystring_object_ce, n)
-#define SET_STATIC_PROP(n, v) SET_STATIC_PROP_EX(http_querystring_object_ce, n, v)
 #define OBJ_PROP_CE http_querystring_object_ce
 zend_class_entry *http_querystring_object_ce;
 zend_function_entry http_querystring_object_fe[] = {
@@ -126,6 +121,19 @@ PHP_MINIT_FUNCTION(http_querystring_object)
 	zend_class_implements(http_querystring_object_ce TSRMLS_CC, 1, zend_ce_serializable);
 #endif
 	
+	DCL_STATIC_PROP_N(PRIVATE, instance);
+	DCL_PROP_N(PRIVATE, queryArray);
+	DCL_PROP(PRIVATE, string, queryString, "");
+	
+#ifndef WONKY
+	DCL_CONST(long, "TYPE_BOOL", HTTP_QUERYSTRING_TYPE_BOOL);
+	DCL_CONST(long, "TYPE_INT", HTTP_QUERYSTRING_TYPE_INT);
+	DCL_CONST(long, "TYPE_FLOAT", HTTP_QUERYSTRING_TYPE_FLOAT);
+	DCL_CONST(long, "TYPE_STRING", HTTP_QUERYSTRING_TYPE_STRING);
+	DCL_CONST(long, "TYPE_ARRAY", HTTP_QUERYSTRING_TYPE_ARRAY);
+	DCL_CONST(long, "TYPE_OBJECT", HTTP_QUERYSTRING_TYPE_OBJECT);
+#endif
+	
 	HTTP_LONG_CONSTANT("HTTP_QUERYSTRING_TYPE_BOOL", HTTP_QUERYSTRING_TYPE_BOOL);
 	HTTP_LONG_CONSTANT("HTTP_QUERYSTRING_TYPE_INT", HTTP_QUERYSTRING_TYPE_INT);
 	HTTP_LONG_CONSTANT("HTTP_QUERYSTRING_TYPE_FLOAT", HTTP_QUERYSTRING_TYPE_FLOAT);
@@ -161,25 +169,6 @@ zend_object_value _http_querystring_object_new_ex(zend_class_entry *ce, http_que
 	ov.handlers = &http_querystring_object_handlers;
 
 	return ov;
-}
-
-static inline void _http_querystring_object_declare_default_properties(TSRMLS_D)
-{
-	zend_class_entry *ce = http_querystring_object_ce;
-
-	DCL_STATIC_PROP_N(PRIVATE, instance);
-	
-	DCL_PROP_N(PRIVATE, queryArray);
-	DCL_PROP(PRIVATE, string, queryString, "");
-	
-#ifndef WONKY
-	DCL_CONST(long, "TYPE_BOOL", HTTP_QUERYSTRING_TYPE_BOOL);
-	DCL_CONST(long, "TYPE_INT", HTTP_QUERYSTRING_TYPE_INT);
-	DCL_CONST(long, "TYPE_FLOAT", HTTP_QUERYSTRING_TYPE_FLOAT);
-	DCL_CONST(long, "TYPE_STRING", HTTP_QUERYSTRING_TYPE_STRING);
-	DCL_CONST(long, "TYPE_ARRAY", HTTP_QUERYSTRING_TYPE_ARRAY);
-	DCL_CONST(long, "TYPE_OBJECT", HTTP_QUERYSTRING_TYPE_OBJECT);
-#endif
 }
 
 void _http_querystring_object_free(zend_object *object TSRMLS_DC)

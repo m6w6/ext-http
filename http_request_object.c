@@ -220,9 +220,6 @@ HTTP_BEGIN_ARGS(methodExists, 1)
 	HTTP_ARG_VAL(method, 0)
 HTTP_END_ARGS;
 
-#define http_request_object_declare_default_properties() _http_request_object_declare_default_properties(TSRMLS_C)
-static inline void _http_request_object_declare_default_properties(TSRMLS_D);
-
 #define OBJ_PROP_CE http_request_object_ce
 zend_class_entry *http_request_object_ce;
 zend_function_entry http_request_object_fe[] = {
@@ -310,6 +307,86 @@ PHP_MINIT_FUNCTION(http_request_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request_object, NULL, 0);
 	http_request_object_handlers.clone_obj = _http_request_object_clone_obj;
+
+	DCL_PROP_N(PRIVATE, options);
+	DCL_PROP_N(PRIVATE, postFields);
+	DCL_PROP_N(PRIVATE, postFiles);
+	DCL_PROP_N(PRIVATE, responseInfo);
+	DCL_PROP_N(PRIVATE, responseData);
+	DCL_PROP_N(PRIVATE, responseMessage);
+	DCL_PROP(PRIVATE, long, responseCode, 0);
+	DCL_PROP(PRIVATE, string, responseStatus, "");
+	DCL_PROP(PRIVATE, long, method, HTTP_GET);
+	DCL_PROP(PRIVATE, string, url, "");
+	DCL_PROP(PRIVATE, string, contentType, "");
+	DCL_PROP(PRIVATE, string, rawPostData, "");
+	DCL_PROP(PRIVATE, string, queryData, "");
+	DCL_PROP(PRIVATE, string, putFile, "");
+	DCL_PROP(PRIVATE, string, putData, "");
+	DCL_PROP_N(PRIVATE, history);
+	DCL_PROP(PUBLIC, bool, recordHistory, 0);
+
+#ifndef WONKY
+	/*
+	 * Request Method Constants
+	*/
+	/* HTTP/1.1 */
+	DCL_CONST(long, "METH_GET", HTTP_GET);
+	DCL_CONST(long, "METH_HEAD", HTTP_HEAD);
+	DCL_CONST(long, "METH_POST", HTTP_POST);
+	DCL_CONST(long, "METH_PUT", HTTP_PUT);
+	DCL_CONST(long, "METH_DELETE", HTTP_DELETE);
+	DCL_CONST(long, "METH_OPTIONS", HTTP_OPTIONS);
+	DCL_CONST(long, "METH_TRACE", HTTP_TRACE);
+	DCL_CONST(long, "METH_CONNECT", HTTP_CONNECT);
+	/* WebDAV - RFC 2518 */
+	DCL_CONST(long, "METH_PROPFIND", HTTP_PROPFIND);
+	DCL_CONST(long, "METH_PROPPATCH", HTTP_PROPPATCH);
+	DCL_CONST(long, "METH_MKCOL", HTTP_MKCOL);
+	DCL_CONST(long, "METH_COPY", HTTP_COPY);
+	DCL_CONST(long, "METH_MOVE", HTTP_MOVE);
+	DCL_CONST(long, "METH_LOCK", HTTP_LOCK);
+	DCL_CONST(long, "METH_UNLOCK", HTTP_UNLOCK);
+	/* WebDAV Versioning - RFC 3253 */
+	DCL_CONST(long, "METH_VERSION_CONTROL", HTTP_VERSION_CONTROL);
+	DCL_CONST(long, "METH_REPORT", HTTP_REPORT);
+	DCL_CONST(long, "METH_CHECKOUT", HTTP_CHECKOUT);
+	DCL_CONST(long, "METH_CHECKIN", HTTP_CHECKIN);
+	DCL_CONST(long, "METH_UNCHECKOUT", HTTP_UNCHECKOUT);
+	DCL_CONST(long, "METH_MKWORKSPACE", HTTP_MKWORKSPACE);
+	DCL_CONST(long, "METH_UPDATE", HTTP_UPDATE);
+	DCL_CONST(long, "METH_LABEL", HTTP_LABEL);
+	DCL_CONST(long, "METH_MERGE", HTTP_MERGE);
+	DCL_CONST(long, "METH_BASELINE_CONTROL", HTTP_BASELINE_CONTROL);
+	DCL_CONST(long, "METH_MKACTIVITY", HTTP_MKACTIVITY);
+	/* WebDAV Access Control - RFC 3744 */
+	DCL_CONST(long, "METH_ACL", HTTP_ACL);
+
+	/*
+	* HTTP Protocol Version Constants
+	*/
+	DCL_CONST(long, "VERSION_1_0", CURL_HTTP_VERSION_1_0);
+	DCL_CONST(long, "VERSION_1_1", CURL_HTTP_VERSION_1_1);
+	DCL_CONST(long, "VERSION_NONE", CURL_HTTP_VERSION_NONE);
+
+	/*
+	* Auth Constants
+	*/
+	DCL_CONST(long, "AUTH_BASIC", CURLAUTH_BASIC);
+	DCL_CONST(long, "AUTH_DIGEST", CURLAUTH_DIGEST);
+	DCL_CONST(long, "AUTH_NTLM", CURLAUTH_NTLM);
+	DCL_CONST(long, "AUTH_ANY", CURLAUTH_ANY);
+	
+	/*
+	* Proxy Type Constants
+	*/
+#	if HTTP_CURL_VERSION(7,15,2)
+	DCL_CONST(long, "PROXY_SOCKS4", CURLPROXY_SOCKS4);
+#	endif
+	DCL_CONST(long, "PROXY_SOCKS5", CURLPROXY_SOCKS5);
+	DCL_CONST(long, "PROXY_HTTP", CURLPROXY_HTTP);
+#endif /* WONKY */
+	
 	return SUCCESS;
 }
 
@@ -359,90 +436,6 @@ zend_object_value _http_request_object_clone_obj(zval *this_ptr TSRMLS_DC)
 	phpstr_append(&new_obj->request->conv.response, old_obj->request->conv.response.data, old_obj->request->conv.response.used);
 	
 	return new_ov;
-}
-
-static inline void _http_request_object_declare_default_properties(TSRMLS_D)
-{
-	zend_class_entry *ce = http_request_object_ce;
-
-	DCL_PROP_N(PRIVATE, options);
-	DCL_PROP_N(PRIVATE, postFields);
-	DCL_PROP_N(PRIVATE, postFiles);
-	DCL_PROP_N(PRIVATE, responseInfo);
-	DCL_PROP_N(PRIVATE, responseData);
-	DCL_PROP_N(PRIVATE, responseMessage);
-	DCL_PROP(PRIVATE, long, responseCode, 0);
-	DCL_PROP(PRIVATE, string, responseStatus, "");
-	DCL_PROP(PRIVATE, long, method, HTTP_GET);
-	DCL_PROP(PRIVATE, string, url, "");
-	DCL_PROP(PRIVATE, string, contentType, "");
-	DCL_PROP(PRIVATE, string, rawPostData, "");
-	DCL_PROP(PRIVATE, string, queryData, "");
-	DCL_PROP(PRIVATE, string, putFile, "");
-	DCL_PROP(PRIVATE, string, putData, "");
-	DCL_PROP_N(PRIVATE, history);
-	DCL_PROP(PUBLIC, bool, recordHistory, 0);
-
-#ifndef WONKY
-	/*
-	 * Request Method Constants
-	 */
-	/* HTTP/1.1 */
-	DCL_CONST(long, "METH_GET", HTTP_GET);
-	DCL_CONST(long, "METH_HEAD", HTTP_HEAD);
-	DCL_CONST(long, "METH_POST", HTTP_POST);
-	DCL_CONST(long, "METH_PUT", HTTP_PUT);
-	DCL_CONST(long, "METH_DELETE", HTTP_DELETE);
-	DCL_CONST(long, "METH_OPTIONS", HTTP_OPTIONS);
-	DCL_CONST(long, "METH_TRACE", HTTP_TRACE);
-	DCL_CONST(long, "METH_CONNECT", HTTP_CONNECT);
-	/* WebDAV - RFC 2518 */
-	DCL_CONST(long, "METH_PROPFIND", HTTP_PROPFIND);
-	DCL_CONST(long, "METH_PROPPATCH", HTTP_PROPPATCH);
-	DCL_CONST(long, "METH_MKCOL", HTTP_MKCOL);
-	DCL_CONST(long, "METH_COPY", HTTP_COPY);
-	DCL_CONST(long, "METH_MOVE", HTTP_MOVE);
-	DCL_CONST(long, "METH_LOCK", HTTP_LOCK);
-	DCL_CONST(long, "METH_UNLOCK", HTTP_UNLOCK);
-	/* WebDAV Versioning - RFC 3253 */
-	DCL_CONST(long, "METH_VERSION_CONTROL", HTTP_VERSION_CONTROL);
-	DCL_CONST(long, "METH_REPORT", HTTP_REPORT);
-	DCL_CONST(long, "METH_CHECKOUT", HTTP_CHECKOUT);
-	DCL_CONST(long, "METH_CHECKIN", HTTP_CHECKIN);
-	DCL_CONST(long, "METH_UNCHECKOUT", HTTP_UNCHECKOUT);
-	DCL_CONST(long, "METH_MKWORKSPACE", HTTP_MKWORKSPACE);
-	DCL_CONST(long, "METH_UPDATE", HTTP_UPDATE);
-	DCL_CONST(long, "METH_LABEL", HTTP_LABEL);
-	DCL_CONST(long, "METH_MERGE", HTTP_MERGE);
-	DCL_CONST(long, "METH_BASELINE_CONTROL", HTTP_BASELINE_CONTROL);
-	DCL_CONST(long, "METH_MKACTIVITY", HTTP_MKACTIVITY);
-	/* WebDAV Access Control - RFC 3744 */
-	DCL_CONST(long, "METH_ACL", HTTP_ACL);
-
-	/*
-	 * HTTP Protocol Version Constants
-	 */
-	DCL_CONST(long, "VERSION_1_0", CURL_HTTP_VERSION_1_0);
-	DCL_CONST(long, "VERSION_1_1", CURL_HTTP_VERSION_1_1);
-	DCL_CONST(long, "VERSION_NONE", CURL_HTTP_VERSION_NONE);
-
-	/*
-	 * Auth Constants
-	 */
-	DCL_CONST(long, "AUTH_BASIC", CURLAUTH_BASIC);
-	DCL_CONST(long, "AUTH_DIGEST", CURLAUTH_DIGEST);
-	DCL_CONST(long, "AUTH_NTLM", CURLAUTH_NTLM);
-	DCL_CONST(long, "AUTH_ANY", CURLAUTH_ANY);
-	
-	/*
-	 * Proxy Type Constants
-	 */
-#	if HTTP_CURL_VERSION(7,15,2)
-	DCL_CONST(long, "PROXY_SOCKS4", CURLPROXY_SOCKS4);
-#	endif
-	DCL_CONST(long, "PROXY_SOCKS5", CURLPROXY_SOCKS5);
-	DCL_CONST(long, "PROXY_HTTP", CURLPROXY_HTTP);
-#endif /* WONKY */
 }
 
 void _http_request_object_free(zend_object *object TSRMLS_DC)
