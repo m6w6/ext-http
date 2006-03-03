@@ -579,19 +579,35 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 	return rs;
 }
 
-PHP_HTTP_API http_message *_http_message_dup(http_message *msg TSRMLS_DC)
+PHP_HTTP_API http_message *_http_message_dup(http_message *orig TSRMLS_DC)
 {
-	/*
-	 * TODO: unroll
-	 */
-	http_message *new;
-	char *serialized_data;
-	size_t serialized_length;
-
-	http_message_serialize(msg, &serialized_data, &serialized_length);
-	new = http_message_parse(serialized_data, serialized_length);
-	efree(serialized_data);
-	return new;
+	http_message *temp, *copy = NULL;
+	http_info info;
+	
+	if (orig) {
+		info.type = orig->type;
+		info.http = orig->http;
+		
+		copy = temp = http_message_new();
+		http_message_set_info(temp, &info);
+		zend_hash_copy(&temp->hdrs, &orig->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+		phpstr_append(&temp->body, orig->body.data, orig->body.used);
+	
+		while (orig->parent) {
+			info.type = orig->parent->type;
+			info.http = orig->parent->http;
+		
+			temp->parent = http_message_new();
+			http_message_set_info(temp->parent, &info);
+			zend_hash_copy(&temp->parent->hdrs, &orig->parent->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+			phpstr_append(&temp->parent->body, orig->parent->body.data, orig->parent->body.used);
+		
+			temp = temp->parent;
+			orig = orig->parent;
+		}
+	}
+	
+	return copy;
 }
 
 PHP_HTTP_API void _http_message_dtor(http_message *message)
