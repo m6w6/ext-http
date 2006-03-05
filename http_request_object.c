@@ -1877,13 +1877,11 @@ PHP_METHOD(HttpRequest, getResponseInfo)
  * to access the data of previously received responses within this request
  * cycle.
  * 
- * Throws HttpException.
+ * Throws HttpException, HttpRuntimeException.
  */
 PHP_METHOD(HttpRequest, getResponseMessage)
 {
-	NO_ARGS;
-
-	IF_RETVAL_USED {
+	NO_ARGS {
 		zval *message;
 
 		SET_EH_THROW_HTTP();
@@ -1891,7 +1889,7 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 		if (Z_TYPE_P(message) == IS_OBJECT) {
 			RETVAL_OBJECT(message, 1);
 		} else {
-			RETVAL_NULL();
+			http_error(HE_WARNING, HTTP_E_RUNTIME, "HttpRequest does not contain a response message");
 		}
 		SET_EH_NORMAL();
 	}
@@ -1938,7 +1936,6 @@ PHP_METHOD(HttpRequest, getRequestMessage)
  * Get sent HTTP message.
  * 
  * Returns an HttpMessage in a form of a string 
- * 
  */
 PHP_METHOD(HttpRequest, getRawRequestMessage)
 {
@@ -1957,7 +1954,6 @@ PHP_METHOD(HttpRequest, getRawRequestMessage)
  * Get the entire HTTP response.
  * 
  * Returns the complete web server response, including the headers in a form of a string.
- * 
  */
 PHP_METHOD(HttpRequest, getRawResponseMessage)
 {

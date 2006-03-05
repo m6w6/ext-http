@@ -1139,7 +1139,7 @@ PHP_METHOD(HttpMessage, getParentMessage)
 		if (obj->message->parent) {
 			RETVAL_OBJVAL(obj->parent, 1);
 		} else {
-			http_error(HE_WARNING, HTTP_E_MESSAGE, "HttpMessage does not have a parent message");
+			http_error(HE_WARNING, HTTP_E_RUNTIME, "HttpMessage does not have a parent message");
 		}
 	}
 	SET_EH_NORMAL();
