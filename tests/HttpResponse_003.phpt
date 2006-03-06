@@ -5,7 +5,7 @@ HttpResponse - send gzipped file with caching headers
 include 'skip.inc';
 checkmin(5);
 checkcgi();
-checkext('zlib');
+skipif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib support");
 ?>
 --ENV--
 HTTP_ACCEPT_ENCODING=gzip

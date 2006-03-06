@@ -62,7 +62,6 @@ HttpResponse
    <file role="doc" name="KnownIssues.txt"/>
    <file role="doc" name="docs/http.ini"/>
    <file role="doc" name="docs/functions.html"/>
-   <file role="doc" name="docs/examples/extract.php"/>
    <file role="doc" name="docs/examples/tutorial.txt"/>
    
    <file role="src" name="http.dsp"/>
@@ -131,6 +130,13 @@ HttpResponse
    <file role="src" name="http_requestpool_object.c"/>
    <file role="src" name="http_response_object.c"/>
    <file role="src" name="http_exception_object.c"/>
+   
+   <dir name="lib">
+    <file role="php" name="BigGet.php"/>
+    <file role="php" name="FeedAggregator.php"/>
+    <file role="php" name="PgLobStream.php"/>
+    <file role="php" name="XmlRpcClient.php"/>
+   </dir>
    
    <dir name="tests">
     <file role="test" name="data.txt"/>
@@ -299,8 +305,11 @@ HttpResponse
   <filelist>
    <install as="http.ini" name="docs/http.ini"/>
    <install as="functions.html" name="docs/functions.html"/>
-   <install as="examples/extract.php" name="docs/examples/extract.php"/>
    <install as="examples/tutorial.txt" name="docs/examples/tutorial.txt"/>
+   <install as="pecl/http/BigGet.php" name="lib/BigGet.php"/>
+   <install as="pecl/http/FeedAggregator.php" name="lib/FeedAggregator.php"/>
+   <install as="pecl/http/PgLobStream.php" name="lib/PgLobStream.php"/>
+   <install as="pecl/http/XmlRpcClient.php" name="lib/XmlRpcClient.php"/>
   </filelist>
  </extsrcrelease>
  <changelog />

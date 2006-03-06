@@ -30,12 +30,17 @@ HttpResponse
   </maintainer>
   </maintainers>
  <release>
-  <version>0.24.1</version>
-  <date>2006-02-23</date>
+  <version>0.25.0</version>
+  <date>2006-03-06</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>* Fixed bug #6861 - 5 digit ports get truncated
-* Fixed bug with non-functional HttpRequest::setContentType()
+  <notes>* Fixed bug #6924 (Linking fails on Mac OSX).
+* Fixed HttpRequest::addRawPostData().
+
++ Added feature request http_put_data() and HttpRequest::(set|get|add)PutData().
++ Added &apos;range&apos; request option.
++ Added &apos;proxytype&apos; request option.
++ Added HTTP_PROXY_HTTP, HTTP_PROXY_SOCKS4, HTTP_PROXY_SOCKS5 constants.
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -49,12 +54,17 @@ HttpResponse
   <filelist>
    <dir name="docs">
     <dir name="examples">
-     <file role="doc" install-as="examples/extract.php" name="extract.php"/>
      <file role="doc" install-as="examples/tutorial.txt" name="tutorial.txt"/>
     </dir> <!-- /docs/examples -->
     <file role="doc" install-as="functions.html" name="functions.html"/>
     <file role="doc" install-as="http.ini" name="http.ini"/>
    </dir> <!-- /docs -->
+   <dir name="lib">
+    <file role="php" install-as="pecl/http/BigGet.php" name="BigGet.php"/>
+    <file role="php" install-as="pecl/http/FeedAggregator.php" name="FeedAggregator.php"/>
+    <file role="php" install-as="pecl/http/PgLobStream.php" name="PgLobStream.php"/>
+    <file role="php" install-as="pecl/http/XmlRpcClient.php" name="XmlRpcClient.php"/>
+   </dir> <!-- /lib -->
    <dir name="phpstr">
     <file role="src" name="phpstr.c"/>
     <file role="src" name="phpstr.h"/>
@@ -154,6 +164,7 @@ HttpResponse
     <file role="test" name="request_etag.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
     <file role="test" name="request_methods.phpt"/>
+    <file role="test" name="request_put_data.phpt"/>
     <file role="test" name="send_data_001.phpt"/>
     <file role="test" name="send_data_002.phpt"/>
     <file role="test" name="send_data_003.phpt"/>

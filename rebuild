@@ -4,7 +4,7 @@ rm -f warnings
 if test -d "$1"; then
     PREFIX=$1
 else
-    PREFIX=/opt
+    PREFIX=`dirname $(dirname $(which php-config))`
 fi
 
 echo "Using prefix '$PREFIX' for phpize and php-config!"

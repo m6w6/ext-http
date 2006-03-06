@@ -5,7 +5,7 @@ HttpResponse - send cached gzipped data
 include 'skip.inc';
 checkcgi();
 checkmin(5.1);
-checkext('zlib');
+skpif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib support");
 ?>
 --ENV--
 HTTP_ACCEPT_ENCODING=gzip
