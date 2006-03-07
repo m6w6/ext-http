@@ -475,7 +475,7 @@ PHP_METHOD(HttpQueryString, set)
 /* }}} */
 
 #ifndef WONKY
-/* {{{ proto HttpQueryString HttpQueryString::singleton([bool global = true])
+/* {{{ proto static HttpQueryString HttpQueryString::singleton([bool global = true])
  *
  * Get a single instance (differentiates between the global setting).
  */
