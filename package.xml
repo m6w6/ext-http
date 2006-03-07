@@ -31,11 +31,14 @@ HttpResponse
   </maintainers>
  <release>
   <version>0.25.0</version>
-  <date>2006-03-06</date>
+  <date>2006-03-07</date>
   <license>BSD, revised</license>
   <state>beta</state>
   <notes>* Fixed bug #6924 (Linking fails on Mac OSX).
 * Fixed HttpRequest::addRawPostData().
+
+- Renamed HttpQueryString::getInstance() to more commonly used ::singleton().
+- Renamed HttpQueryString::iconv() to more generic ::xlate().
 
 + Added feature request http_put_data() and HttpRequest::(set|get|add)PutData().
 + Added &apos;range&apos; request option.

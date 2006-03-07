@@ -49,6 +49,9 @@ HttpResponse
 * Fixed bug #6924 (Linking fails on Mac OSX).
 * Fixed HttpRequest::addRawPostData().
 
+- Renamed HttpQueryString::getInstance() to more commonly used ::singleton().
+- Renamed HttpQueryString::iconv() to more generic ::xlate().
+
 + Added feature request http_put_data() and HttpRequest::(set|get|add)PutData().
 + Added 'range' request option.
 + Added 'proxytype' request option.
@@ -283,6 +286,7 @@ HttpResponse
    <extension><name>spl</name></extension>
    <extension><name>session</name></extension>
    <extension><name>hash</name></extension>
+   <extension><name>iconv</name></extension>
   </optional>
  </dependencies>
  <providesextension>http</providesextension>

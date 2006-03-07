@@ -310,6 +310,7 @@ array where the following keys will be recognized:</p><pre> - redirect:         
                      redirects to a different host<br />
  - proxyhost:        string, proxy host in "host[:port]" format<br />
  - proxyport:        int, use another proxy port as specified in proxyhost<br />
+ - proxytype:        int, HTTP_PROXY_HTTP, SOCKS4 or SOCKS5<br />
  - proxyauth:        string, proxy credentials in "user:pass" format<br />
  - proxyauthtype:    int, HTTP_AUTH_BASIC and/or HTTP_AUTH_NTLM<br />
  - httpauth:         string, http credentials in "user:pass" format<br />
@@ -329,6 +330,9 @@ array where the following keys will be recognized:</p><pre> - redirect:         
  - cookiesession:    bool, accept (true) or reset (false) sessioncookies<br />
  - resume:           int, byte offset to start the download from;<br />
                      if the server supports ranges<br />
+ - range:            array, array of arrays, each containing two integers,<br />
+                     specifying the ranges to download if server support is<br />
+                     given; only recognized if the resume option is empty<br />
  - maxfilesize:      int, maximum file size that should be downloaded;<br />
                      has no effect, if the size of the requested entity is not known<br />
  - lastmodified:     int, timestamp for If-(Un)Modified-Since header<br />
@@ -562,6 +566,7 @@ HttpMessage::TYPE_REQUEST or supplied URL was empty.</p>
 <h3 id="HttpMessage_getParentMessage">HttpMessage HttpMessage::getParentMessage()</h3>
 <p>Get parent Message.</p>
 <p>Returns the parent HttpMessage on success, or NULL if there's none.</p>
+<p>Throws HttpMessageException.</p>
 <h3 id="HttpMessage_send">bool HttpMessage::send()</h3>
 <p>Send the Message according to its type as Response or Request.<br />
 This provides limited functionality compared to HttpRequest and HttpResponse.</p>
@@ -618,9 +623,9 @@ Operates on and modifies $_GET and $_SERVER['QUERY_STRING'] if global is TRUE.</
 "b" for bool, "i" for int, "f" for float, "s" for string, "a" for array and "o" for a stdClass object.</p>
 <h3 id="HttpQueryString_set">string HttpQueryString::set(mixed params)</h3>
 <p>Set query string entry/entries. NULL values will unset the variable.</p>
-<h3 id="HttpQueryString_getInstance">HttpQueryString HttpQueryString::getInstance([bool global = true])</h3>
+<h3 id="HttpQueryString_singleton">HttpQueryString HttpQueryString::singleton([bool global = true])</h3>
 <p>Get a single instance (differentiates between the global setting).</p>
-<h3 id="HttpQueryString_iconv">bool HttpQueryString::iconv(string ie, string oe)</h3>
+<h3 id="HttpQueryString_xlate">bool HttpQueryString::xlate(string ie, string oe)</h3>
 <p>Converts the query string from the source encoding ie to the target encoding oe.<br />
 WARNING: Don't use any character set that can contain NUL bytes like UTF-16.</p>
 <p>Returns TRUE on success or FALSE on failure.</p>
@@ -849,7 +854,7 @@ references the last received response.</p>
 references the last received response.  Use HttpMessage::getParentMessage()<br />
 to access the data of previously received responses within this request<br />
 cycle.</p>
-<p>Throws HttpException.</p>
+<p>Throws HttpException, HttpRuntimeException.</p>
 <h3 id="HttpRequest_getRequestMessage">HttpMessage HttpRequest::getRequestMessage()</h3>
 <p>Get sent HTTP message.</p>
 <p>Returns an HttpMessage object representing the sent request.</p>
@@ -1277,8 +1282,8 @@ http.cache_log is set.</p>
 <li><a href="#HttpQueryString_toArray">HttpQueryString::toArray()</a></li>
 <li><a href="#HttpQueryString_get">HttpQueryString::get()</a></li>
 <li><a href="#HttpQueryString_set">HttpQueryString::set()</a></li>
-<li><a href="#HttpQueryString_getInstance">HttpQueryString::getInstance()</a></li>
-<li><a href="#HttpQueryString_iconv">HttpQueryString::iconv()</a></li>
+<li><a href="#HttpQueryString_singleton">HttpQueryString::singleton()</a></li>
+<li><a href="#HttpQueryString_xlate">HttpQueryString::xlate()</a></li>
 <li><a href="#HttpQueryString_serialize">HttpQueryString::serialize()</a></li>
 <li><a href="#HttpQueryString_unserialize">HttpQueryString::unserialize()</a></li>
 </li>
@@ -1395,7 +1400,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Fri, 24 Feb 2006 21:29:29 +0100</b></p>
+    <p><b>Generated at: Tue, 07 Mar 2006 15:57:21 +0100</b></p>
 </body>
 </html>
 

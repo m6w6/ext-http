@@ -44,9 +44,6 @@ PHP_METHOD(HttpQueryString, toString);
 PHP_METHOD(HttpQueryString, toArray);
 PHP_METHOD(HttpQueryString, get);
 PHP_METHOD(HttpQueryString, set);
-#ifndef WONKY
-PHP_METHOD(HttpQueryString, getInstance);
-#endif
 PHP_METHOD(HttpQueryString, getBool);
 PHP_METHOD(HttpQueryString, getInt);
 PHP_METHOD(HttpQueryString, getFloat);
@@ -54,7 +51,10 @@ PHP_METHOD(HttpQueryString, getString);
 PHP_METHOD(HttpQueryString, getArray);
 PHP_METHOD(HttpQueryString, getObject);
 #ifdef HAVE_ICONV
-PHP_METHOD(HttpQueryString, iconv);
+PHP_METHOD(HttpQueryString, xlate);
+#endif
+#ifndef WONKY
+PHP_METHOD(HttpQueryString, singleton);
 #endif
 PHP_METHOD(HttpQueryString, serialize);
 PHP_METHOD(HttpQueryString, unserialize);

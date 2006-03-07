@@ -41,7 +41,7 @@ HTTP_BEGIN_ARGS(__construct, 0)
 HTTP_END_ARGS;
 
 #ifndef WONKY
-HTTP_BEGIN_ARGS(getInstance, 0)
+HTTP_BEGIN_ARGS(singleton, 0)
 	HTTP_ARG_VAL(global, 0)
 HTTP_END_ARGS;
 #endif
@@ -67,7 +67,7 @@ HTTP_BEGIN_ARGS(__getter, 1)
 HTTP_END_ARGS;
 
 #ifdef HAVE_ICONV
-HTTP_BEGIN_ARGS(iconv, 2)
+HTTP_BEGIN_ARGS(xlate, 2)
 	HTTP_ARG_VAL(from_encoding, 0)
 	HTTP_ARG_VAL(to_encoding, 0)
 HTTP_END_ARGS;
@@ -90,10 +90,6 @@ zend_function_entry http_querystring_object_fe[] = {
 	HTTP_QUERYSTRING_ME(get, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_ME(set, ZEND_ACC_PUBLIC)
 	
-#ifndef WONKY
-	HTTP_QUERYSTRING_ME(getInstance, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-#endif
-	
 	HTTP_QUERYSTRING_GME(getBool, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_GME(getInt, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_GME(getFloat, ZEND_ACC_PUBLIC)
@@ -101,8 +97,11 @@ zend_function_entry http_querystring_object_fe[] = {
 	HTTP_QUERYSTRING_GME(getArray, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_GME(getObject, ZEND_ACC_PUBLIC)
 	
+#ifndef WONKY
+	HTTP_QUERYSTRING_ME(singleton, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+#endif
 #ifdef HAVE_ICONV
-	HTTP_QUERYSTRING_ME(iconv, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_ME(xlate, ZEND_ACC_PUBLIC)
 #endif
 	
 	/* Implements Serializable */
@@ -476,11 +475,11 @@ PHP_METHOD(HttpQueryString, set)
 /* }}} */
 
 #ifndef WONKY
-/* {{{ proto HttpQueryString HttpQueryString::getInstance([bool global = true])
+/* {{{ proto HttpQueryString HttpQueryString::singleton([bool global = true])
  *
  * Get a single instance (differentiates between the global setting).
  */
-PHP_METHOD(HttpQueryString, getInstance)
+PHP_METHOD(HttpQueryString, singleton)
 {
 	zend_bool global = 1;
 	zval *instance = GET_STATIC_PROP(instance);
@@ -535,14 +534,14 @@ HTTP_QUERYSTRING_GETTER(getObject, IS_OBJECT);
 /* }}} */
 
 #ifdef HAVE_ICONV
-/* {{{ proto bool HttpQueryString::iconv(string ie, string oe)
+/* {{{ proto bool HttpQueryString::xlate(string ie, string oe)
  *
  * Converts the query string from the source encoding ie to the target encoding oe.
  * WARNING: Don't use any character set that can contain NUL bytes like UTF-16.
  *
  * Returns TRUE on success or FALSE on failure.
  */
-PHP_METHOD(HttpQueryString, iconv)
+PHP_METHOD(HttpQueryString, xlate)
 {
 	char *ie, *oe, *er = NULL;
 	int ie_len, oe_len;

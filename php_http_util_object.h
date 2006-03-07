@@ -21,22 +21,6 @@ extern zend_function_entry http_util_object_fe[];
 
 extern PHP_MINIT_FUNCTION(http_util_object);
 
-PHP_METHOD(HttpUtil, date);
-PHP_METHOD(HttpUtil, buildUrl);
-PHP_METHOD(HttpUtil, buildStr);
-PHP_METHOD(HttpUtil, negotiateLanguage);
-PHP_METHOD(HttpUtil, negotiateCharset);
-PHP_METHOD(HttpUtil, negotiateContentType);
-PHP_METHOD(HttpUtil, matchModified);
-PHP_METHOD(HttpUtil, matchEtag);
-PHP_METHOD(HttpUtil, parseHeaders);
-PHP_METHOD(HttpUtil, parseMessage);
-PHP_METHOD(HttpUtil, parseCookie);
-PHP_METHOD(HttpUtil, chunkedDecode);
-PHP_METHOD(HttpUtil, deflate);
-PHP_METHOD(HttpUtil, inflate);
-PHP_METHOD(HttpUtil, support);
-
 #endif
 #endif
 

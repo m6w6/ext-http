@@ -12,25 +12,25 @@ echo "-TEST\n";
 $_GET = array('a'=>'b','c'=>'3.4','r'=>array(1,2,3));
 $_SERVER['QUERY_STRING'] = 'a=b&c=3.4&r[0]=1&r[1]=2&r[2]=3';
 
-var_dump(HttpQueryString::getInstance()->get());
-var_dump(HttpQueryString::getInstance()->get('n'));
-var_dump(HttpQueryString::getInstance()->get('a'));
-var_dump(HttpQueryString::getInstance()->get('a', "i", 0, true));
-var_dump(HttpQueryString::getInstance()->get('a', "string", 'hi!'));
-var_dump(HttpQueryString::getInstance()->get('c'));
-var_dump(HttpQueryString::getInstance()->get('c', HttpQueryString::TYPE_INT));
-var_dump(HttpQueryString::getInstance()->get('c', HttpQueryString::TYPE_FLOAT));
-var_dump(HttpQueryString::getInstance()->get('c', HttpQueryString::TYPE_BOOL));
-var_dump(HttpQueryString::getInstance()->get('r'));
-var_dump(HttpQueryString::getInstance()->get('r', HttpQueryString::TYPE_ARRAY));
-var_dump(HttpQueryString::getInstance()->get('r', HttpQueryString::TYPE_OBJECT));
+var_dump(HttpQueryString::singleton()->get());
+var_dump(HttpQueryString::singleton()->get('n'));
+var_dump(HttpQueryString::singleton()->get('a'));
+var_dump(HttpQueryString::singleton()->get('a', "i", 0, true));
+var_dump(HttpQueryString::singleton()->get('a', "string", 'hi!'));
+var_dump(HttpQueryString::singleton()->get('c'));
+var_dump(HttpQueryString::singleton()->get('c', HttpQueryString::TYPE_INT));
+var_dump(HttpQueryString::singleton()->get('c', HttpQueryString::TYPE_FLOAT));
+var_dump(HttpQueryString::singleton()->get('c', HttpQueryString::TYPE_BOOL));
+var_dump(HttpQueryString::singleton()->get('r'));
+var_dump(HttpQueryString::singleton()->get('r', HttpQueryString::TYPE_ARRAY));
+var_dump(HttpQueryString::singleton()->get('r', HttpQueryString::TYPE_OBJECT));
 
-HttpQueryString::getInstance()->set(new HttpQueryString(false, 'z[0]=2'));
+HttpQueryString::singleton()->set(new HttpQueryString(false, 'z[0]=2'));
 
-HttpQueryString::getInstance()->set(array('a'=>'b', 'c'=> "3.4"));
-HttpQueryString::getInstance()->set(array('a' => NULL));
+HttpQueryString::singleton()->set(array('a'=>'b', 'c'=> "3.4"));
+HttpQueryString::singleton()->set(array('a' => NULL));
 
-var_dump(HttpQueryString::getInstance());
+var_dump(HttpQueryString::singleton());
 var_dump($_GET);
 var_dump($_SERVER['QUERY_STRING']);
 
