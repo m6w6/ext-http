@@ -385,14 +385,14 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 			phpstr_init(&new_prefix);
 			if (prefix && prefix_len) {
 				phpstr_append(&new_prefix, prefix, prefix_len);
-				phpstr_appends(&new_prefix, "[");
+				phpstr_appends(&new_prefix, "%5B");
 			}
 			
 			phpstr_append(&new_prefix, encoded_key, encoded_len);
 			efree(encoded_key);
 			
 			if (prefix && prefix_len) {
-				phpstr_appends(&new_prefix, "]");
+				phpstr_appends(&new_prefix, "%5D");
 			}
 			phpstr_fix(&new_prefix);
 		}

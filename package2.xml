@@ -47,6 +47,7 @@ HttpResponse
  <license>BSD, revised</license>
  <notes><![CDATA[
 * Fixed possible crash in HttpQueryString if the SAPI does not have a treat_data function registered.
+* Fixed http_build_str() to urlencode brackets ("[]").
 ]]></notes>
  <contents>
   <dir name="/">
