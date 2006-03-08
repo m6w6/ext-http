@@ -338,7 +338,9 @@ PHP_METHOD(HttpQueryString, __construct)
 	zval *params = NULL, *qarray = NULL, *qstring = NULL, **_GET, **_SERVER, **QUERY_STRING;
 	
 	SET_EH_THROW_HTTP();
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bz", &global, &params)) {
+	if (!sapi_module.treat_data) {
+		http_error(HE_ERROR, HTTP_E_QUERYSTRING, "The SAPI does not have a treat_data function registered");
+	} else if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bz", &global, &params)) {
 		if (global) {
 			if (	(SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &_SERVER)) &&
 					(Z_TYPE_PP(_SERVER) == IS_ARRAY) &&
