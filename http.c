@@ -71,7 +71,7 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_build_url, http_arg_pass_ref_4)
 	PHP_FE(http_build_str, NULL)
 #ifndef ZEND_ENGINE_2
-	PHP_FALIAS(http_build_query, http_build_str)
+	PHP_FALIAS(http_build_query, http_build_str, NULL)
 #endif
 	PHP_FE(http_negotiate_language, http_arg_pass_ref_2)
 	PHP_FE(http_negotiate_charset, http_arg_pass_ref_2)

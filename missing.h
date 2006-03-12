@@ -17,6 +17,10 @@
 
 #include "php_version.h"
 
+#ifndef pemalloc_rel
+#	define pemalloc_rel(size, persistent) ((persistent)?malloc(size):emalloc_rel(size))
+#endif
+
 #if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION == 0)
 #	define WONKY
 #endif
