@@ -165,8 +165,8 @@ static HTTP_FILTER_FUNCTION(chunked_decode)
 			
 			/* ignore preceeding CRLFs (too loose?) */
 			while (off < PHPSTR_LEN(buffer) && (
-					PHPSTR_VAL(buffer)[off] == 0xa || 
-					PHPSTR_VAL(buffer)[off] == 0xd)) {
+					PHPSTR_VAL(buffer)[off] == '\n' || 
+					PHPSTR_VAL(buffer)[off] == '\r')) {
 				++off;
 			}
 			if (off) {
