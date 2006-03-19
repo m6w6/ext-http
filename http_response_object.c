@@ -306,6 +306,8 @@ PHP_METHOD(HttpResponse, setHeader)
  * header to read.  If the parameter is empty or omitted, an associative array
  * with all headers will be returned.
  * 
+ * NOTE: In Apache2 this only works for PHP-5.1.3 and greater.
+ * 
  * Returns either a string containing the value of the header matching name,
  * FALSE on failure, or an associative array with all headers. 
  */

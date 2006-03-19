@@ -4,6 +4,9 @@ $Id$
 
 HttpResponse class is only available for PHP >= 5.1
 
+HttpResponse::getHeader() does not work in Apache2 with a PHP version
+lower than 5.1.3 (as mod_php).
+
 If you keep getting "SSL connect error" when trying to issue requests on
 Windows, try another (newer) libeay32.dll/ssleay32.dll pair.
 
