@@ -30,9 +30,12 @@ $x = $m->getParentMessage();
 
 var_dump($m->getBody());
 var_dump(HttpMessage::fromString($m->toString(true))->toString(true));
-do {
-	var_dump($m->toString());
-} while ($m = $m->getParentMessage());
+try {
+	do {
+		var_dump($m->toString());
+	} while ($m = $m->getParentMessage());
+} catch (HttpException $ex) {
+}
 
 echo "Done\n";
 ?>

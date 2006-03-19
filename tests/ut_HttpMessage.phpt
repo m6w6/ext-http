@@ -164,9 +164,12 @@ class HttpMessageTest extends PHPUnit2_Framework_TestCase
 
     function test_getParentMessage()
     {
-        $this->assertNull($this->emptyMessage->getParentMessage());
         $this->assertTrue($this->responseMessage->getParentMessage() instanceOf HttpMessage);
-        $this->assertNull($this->requestMessage->getParentMessage());
+        try {
+            $this->requestMessage->getParentMessage();
+            $this->assertTrue(false, "\$this->requestMessage->getParentMessage() did not throw an exception");
+        } catch (HttpRuntimeException $ex) {
+        }
     }
 
     function test_send()

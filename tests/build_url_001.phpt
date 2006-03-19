@@ -9,9 +9,10 @@ include 'skip.inc';
 echo "-TEST\n";
 echo http_build_url('page'), "\n";
 echo http_build_url('with/some/path/'), "\n";
+echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-http://localhost/page
-http://localhost/with/some/path/
-
+http://%s/page
+http://%s/with/some/path/
+Done

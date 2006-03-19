@@ -69,7 +69,7 @@ array(2) {
 }
 
 Second Request
-string(269) "Array
+string(285) "Array
 (
     [0] => Array
         (
@@ -84,7 +84,7 @@ string(269) "Array
         )
 
 )
-string(56) "0[int]=1&0[dbl]=3.1415926535898&1[str]=something&1[nil]="
+string(72) "0%5Bint%5D=1&0%5Bdbl%5D=3.1415926535898&1%5Bstr%5D=something&1%5Bnil%5D="
 "
 array(2) {
   [0]=>
@@ -104,7 +104,7 @@ array(2) {
 }
 
 Third Request
-string(286) "Array
+string(302) "Array
 (
     [0] => Array
         (
@@ -120,7 +120,7 @@ string(286) "Array
 
     [x] => X
 )
-string(60) "0[int]=1&0[dbl]=3.1415926535898&1[str]=something&1[nil]=&x=X"
+string(76) "0%5Bint%5D=1&0%5Bdbl%5D=3.1415926535898&1%5Bstr%5D=something&1%5Bnil%5D=&x=X"
 "
 array(2) {
   [0]=>
