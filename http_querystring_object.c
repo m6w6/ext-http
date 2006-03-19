@@ -193,6 +193,64 @@ static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRM
 static inline int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC);
 #define http_querystring_get(o, t, n, l, def, del, r) _http_querystring_get((o), (t), (n), (l), (def), (del), (r) TSRMLS_CC)
 static inline void _http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC);
+#ifdef HAVE_ICONV
+#define http_querystring_xlate(a, p, ie, oe) _http_querystring_xlate((a), (p), (ie), (oe) TSRMLS_CC)
+static inline int _http_querystring_xlate(zval *array, zval *param, const char *ie, const char *oe TSRMLS_DC)
+{
+	HashPosition pos;
+	zval **entry = NULL;
+	char *xlate_str = NULL, *xkey, *kstr = NULL;
+	size_t xlate_len = 0, xlen;
+	uint klen = 0;
+	ulong kidx = 0;
+	
+	FOREACH_KEYLENVAL(pos, param, kstr, klen, kidx, entry) {
+		if (kstr) {
+			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(kstr, klen-1, &xkey, &xlen, oe, ie)) {
+				http_error_ex(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", klen-1, kstr, ie, oe);
+				return FAILURE;
+			}
+		}
+		
+		if (Z_TYPE_PP(entry) == IS_STRING) {
+			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry), &xlate_str, &xlate_len, oe, ie)) {
+				if (kstr) {
+					efree(xkey);
+				}
+				http_error_ex(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", Z_STRLEN_PP(entry), Z_STRVAL_PP(entry), ie, oe);
+				return FAILURE;
+			}
+			if (kstr) {
+				add_assoc_stringl_ex(array, xkey, xlen+1, xlate_str, xlate_len, 0);
+			} else {
+				add_index_stringl(array, kidx, xlate_str, xlate_len, 0);
+			}
+		} else if (Z_TYPE_PP(entry) == IS_ARRAY) {
+			zval *subarray;
+			
+			MAKE_STD_ZVAL(subarray);
+			array_init(subarray);
+			if (kstr) {
+				add_assoc_zval_ex(array, xkey, xlen+1, subarray);
+			} else {
+				add_index_zval(array, kidx, subarray);
+			}
+			if (SUCCESS != http_querystring_xlate(subarray, *entry, ie, oe)) {
+				if (kstr) {
+					efree(xkey);
+				}
+				return FAILURE;
+			}
+		}
+		
+		if (kstr) {
+			kstr = NULL;
+			efree(xkey);
+		}
+	}
+	return SUCCESS;
+}
+#endif /* HAVE_ICONV */
 #ifndef WONKY
 #define http_querystring_instantiate(g) _http_querystring_instantiate((g) TSRMLS_CC)
 static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
@@ -368,9 +426,10 @@ PHP_METHOD(HttpQueryString, __construct)
 				GET_PROP(queryArray)->is_ref = 1;
 				GET_PROP(queryString)->is_ref = 1;
 				
-				if (params && http_querystring_modify(GET_PROP(queryArray), params)) {
-					http_querystring_update(GET_PROP(queryArray), GET_PROP(queryString));
+				if (params) {
+					http_querystring_modify(GET_PROP(queryArray), params);
 				}
+				http_querystring_update(GET_PROP(queryArray), GET_PROP(queryString));
 			}
 		} else {
 			qarray = ecalloc(1, sizeof(zval));
@@ -546,10 +605,10 @@ HTTP_QUERYSTRING_GETTER(getObject, IS_OBJECT);
  */
 PHP_METHOD(HttpQueryString, xlate)
 {
-	char *ie, *oe, *er = NULL;
+	char *ie, *oe;
 	int ie_len, oe_len;
-	size_t er_len = 0;
-	zval *qa, *qs;
+	zval xa, *qa, *qs;
+	STATUS rs;
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &ie, &ie_len, &oe, &oe_len)) {
 		RETURN_FALSE;
@@ -557,17 +616,17 @@ PHP_METHOD(HttpQueryString, xlate)
 	
 	qa = GET_PROP(queryArray);
 	qs = GET_PROP(queryString);
-	Z_STRLEN_P(qs) = php_url_decode(Z_STRVAL_P(qs), Z_STRLEN_P(qs));
-	if (PHP_ICONV_ERR_SUCCESS == php_iconv_string(Z_STRVAL_P(qs), (size_t) Z_STRLEN_P(qs), &er, &er_len, oe, ie)) {
-		efree(Z_STRVAL_P(qs));
-		ZVAL_STRINGL(qs, er, er_len, 0);
-		http_querystring_modify(qa, qs);
-		RETVAL_TRUE;
-	} else {
-		http_error_ex(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", Z_STRLEN_P(qs), Z_STRVAL_P(qs), ie, oe);
-		RETVAL_FALSE;
+	INIT_PZVAL(&xa);
+	array_init(&xa);
+	
+	if (SUCCESS == (rs = http_querystring_xlate(&xa, qa, ie, oe))) {
+		zend_hash_clean(Z_ARRVAL_P(qa));
+		zend_hash_copy(Z_ARRVAL_P(qa), Z_ARRVAL(xa), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+		http_querystring_update(qa, qs);
 	}
-	http_querystring_update(qa, qs);
+	zval_dtor(&xa);
+	
+	RETURN_SUCCESS(rs);
 }
 /* }}} */
 #endif /* HAVE_ICONV */

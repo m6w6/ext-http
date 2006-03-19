@@ -34,7 +34,7 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-string(30) "a=b&c=3.4&r[0]=1&r[1]=2&r[2]=3"
+string(42) "a=b&c=3.4&r%5B0%5D=1&r%5B1%5D=2&r%5B2%5D=3"
 NULL
 string(1) "b"
 int(0)
@@ -88,7 +88,7 @@ object(HttpQueryString)#1 (2) {
     }
   }
   ["queryString:private"]=>
-  string(33) "c=3.4&r[0]=1&r[1]=2&r[2]=3&z[0]=2"
+  string(49) "c=3.4&r%5B0%5D=1&r%5B1%5D=2&r%5B2%5D=3&z%5B0%5D=2"
 }
 array(3) {
   ["a"]=>
