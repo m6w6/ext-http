@@ -48,6 +48,7 @@ HttpResponse
  <notes><![CDATA[
 * Fixed possible crash in HttpQueryString if the SAPI does not have a treat_data function registered.
 * Fixed http_build_str() to urlencode brackets ("[]").
+* Fixed builds where include/php/ext/iconv does not have php_have_*.h files
 * Fixed PHP-4 build.
 ]]></notes>
  <contents>

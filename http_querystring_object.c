@@ -21,8 +21,9 @@
 #include "zend_interfaces.h"
 
 #ifdef HAVE_ICONV
-#	include "ext/standard/url.h"
+#	undef PHP_ATOM_INC
 #	include "ext/iconv/php_iconv.h"
+#	include "ext/standard/url.h"
 #endif
 
 #include "php_http_api.h"
