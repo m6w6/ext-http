@@ -30,20 +30,15 @@ HttpResponse
   </maintainer>
   </maintainers>
  <release>
-  <version>0.25.0</version>
-  <date>2006-03-07</date>
+  <version>1.0.0RC1</version>
+  <date>2006-03-19</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>* Fixed bug #6924 (Linking fails on Mac OSX).
-* Fixed HttpRequest::addRawPostData().
-
-- Renamed HttpQueryString::getInstance() to more commonly used ::singleton().
-- Renamed HttpQueryString::iconv() to more generic ::xlate().
-
-+ Added feature request http_put_data() and HttpRequest::(set|get|add)PutData().
-+ Added &apos;range&apos; request option.
-+ Added &apos;proxytype&apos; request option.
-+ Added HTTP_PROXY_HTTP, HTTP_PROXY_SOCKS4, HTTP_PROXY_SOCKS5 constants.
+  <notes>* Fixed possible crash in HttpQueryString if the SAPI does not have a treat_data function registered.
+* Fixed http_build_str() to urlencode square brackets (&quot;[]&quot;).
+* Fixed HttpQueryString::xlate()
+* Fixed builds where include/php/ext/iconv does not have php_have_*.h files
+* Fixed PHP-4 build.
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -119,6 +114,7 @@ HttpResponse
     <file role="test" name="HttpMessage_007.phpt"/>
     <file role="test" name="HttpQueryString_001.phpt"/>
     <file role="test" name="HttpQueryString_002.phpt"/>
+    <file role="test" name="HttpQueryString_003.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
     <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequestPool_003.phpt"/>
