@@ -557,7 +557,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		
 #if HTTP_CURL_VERSION(7,15,2)
 		if ((zoption = http_request_option(request, options, "portrange", IS_ARRAY))) {
-			zval *prs, *pre;
+			zval **prs, **pre;
 			
 			zend_hash_internal_pointer_reset(Z_ARRVAL_P(zoption));
 			if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &prs)) {
@@ -566,8 +566,9 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 					zval *prs_cpy = zval_copy(IS_LONG, *prs), *pre_cpy = zval_copy(IS_LONG, *pre);
 					
 					if (Z_LVAL_P(prs_cpy) && Z_LVAL_P(pre_cpy)) {
+						fprintf(stderr, "Using portrange: %ld-%ld\n", Z_LVAL_P(prs_cpy), Z_LVAL_P(pre_cpy));
 						HTTP_CURL_OPT(CURLOPT_LOCALPORT, MIN(Z_LVAL_P(prs_cpy), Z_LVAL_P(pre_cpy)));
-						HTTP_CURL_OPT(CURLOPT_LOCALPORTRANGE, ABS(Z_LVAL_P(prs_cpy)-Z_LVAL_P(pre_cpy))+1L);
+						HTTP_CURL_OPT(CURLOPT_LOCALPORTRANGE, labs(Z_LVAL_P(prs_cpy)-Z_LVAL_P(pre_cpy))+1L);
 					}
 					zval_free(&prs_cpy);
 					zval_free(&pre_cpy);

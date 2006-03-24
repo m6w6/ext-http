@@ -37,7 +37,7 @@ HttpResponse
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>1.0.0RC1</release>
+  <release>1.0.0RC2</release>
   <api>1.0.0</api>
  </version>
  <stability>
@@ -46,11 +46,7 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed possible crash in HttpQueryString if the SAPI does not have a treat_data function registered.
-* Fixed http_build_str() to urlencode square brackets ("[]").
-* Fixed HttpQueryString::xlate()
-* Fixed builds where include/php/ext/iconv does not have php_have_*.h files
-* Fixed PHP-4 build.
+* Fixed Bug #7192: Build against libcurl >= 7.15.2 fails
 ]]></notes>
  <contents>
   <dir name="/">
