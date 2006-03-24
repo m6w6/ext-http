@@ -566,7 +566,6 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 					zval *prs_cpy = zval_copy(IS_LONG, *prs), *pre_cpy = zval_copy(IS_LONG, *pre);
 					
 					if (Z_LVAL_P(prs_cpy) && Z_LVAL_P(pre_cpy)) {
-						fprintf(stderr, "Using portrange: %ld-%ld\n", Z_LVAL_P(prs_cpy), Z_LVAL_P(pre_cpy));
 						HTTP_CURL_OPT(CURLOPT_LOCALPORT, MIN(Z_LVAL_P(prs_cpy), Z_LVAL_P(pre_cpy)));
 						HTTP_CURL_OPT(CURLOPT_LOCALPORTRANGE, labs(Z_LVAL_P(prs_cpy)-Z_LVAL_P(pre_cpy))+1L);
 					}
