@@ -196,7 +196,9 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 {
 	zval **hsv;
 	zval **var;
-	
+#ifdef ZEND_ENGINE_2
+	zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
+#endif
 	if ((SUCCESS != zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
 		return NULL;
 	}

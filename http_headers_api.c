@@ -426,7 +426,9 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 	HashPosition pos;
 
 	Z_ARRVAL(array) = headers;
-
+#ifdef ZEND_ENGINE_2
+	zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
+#endif
 	if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &hsv)) {
 		FOREACH_KEYLEN(pos, *hsv, key, keylen, idx) {
 			if (key && keylen > 6 && !strncmp(key, "HTTP_", 5)) {

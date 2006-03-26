@@ -85,6 +85,7 @@ PHP_HTTP_API zend_bool _http_match_last_modified_ex(const char *entry, time_t t,
 	if ((chr_ptr = strrchr(modified, ';'))) {
 		chr_ptr = 0;
 	}
+	
 	retval = (t <= http_parse_date(modified));
 	efree(modified);
 	return retval;

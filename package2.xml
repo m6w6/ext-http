@@ -47,6 +47,7 @@ HttpResponse
  <license>BSD, revised</license>
  <notes><![CDATA[
 * Fixed Bug #7192: Build against libcurl >= 7.15.2 fails
+* Fixed access of super globals
 ]]></notes>
  <contents>
   <dir name="/">

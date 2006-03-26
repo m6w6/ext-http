@@ -401,12 +401,17 @@ PHP_METHOD(HttpQueryString, __construct)
 		http_error(HE_ERROR, HTTP_E_QUERYSTRING, "The SAPI does not have a treat_data function registered");
 	} else if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bz", &global, &params)) {
 		if (global) {
+#ifdef ZEND_ENGINE_2
+			zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
+#endif
 			if (	(SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &_SERVER)) &&
 					(Z_TYPE_PP(_SERVER) == IS_ARRAY) &&
 					(SUCCESS == zend_hash_find(Z_ARRVAL_PP(_SERVER), "QUERY_STRING", sizeof("QUERY_STRING"), (void **) &QUERY_STRING))) {
 				
 				qstring = *QUERY_STRING;
-				
+#ifdef ZEND_ENGINE_2
+				zend_is_auto_global("_GET", lenof("_GET") TSRMLS_CC);
+#endif
 				if ((SUCCESS == zend_hash_find(&EG(symbol_table), "_GET", sizeof("_GET"), (void **) &_GET)) && (Z_TYPE_PP(_GET) == IS_ARRAY)) {
 					qarray = *_GET;
 				} else {
