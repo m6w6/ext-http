@@ -99,12 +99,12 @@ static inline void _http_send_response_data_plain(void **buffer, const char *dat
 }
 /* }}} */
 
-#define HTTP_CHUNK_AVAIL(len, cs) ((len -= cs) >= 0)
 /* {{{ http_send_response_data_fetch */
 #define http_send_response_data_fetch(b, d, l, m, s, e) _http_send_response_data_fetch((b), (d), (l), (m), (s), (e) TSRMLS_CC)
 static inline void _http_send_response_data_fetch(void **buffer, const void *data, size_t data_len, http_send_mode mode, size_t begin, size_t end TSRMLS_DC)
 {
-	long len = end - begin, chunk_size = 40960;
+	char *buf;
+	long got, len = end - begin;
 	
 	switch (mode)
 	{
@@ -113,16 +113,14 @@ static inline void _http_send_response_data_fetch(void **buffer, const void *dat
 			php_stream *s = (php_stream *) data;
 
 			if (SUCCESS == php_stream_seek(s, begin, SEEK_SET)) {
-				char *buf = emalloc(chunk_size);
-
-				while (HTTP_CHUNK_AVAIL(len, chunk_size)) {
-					http_send_response_data_plain(buffer, buf, php_stream_read(s, buf, chunk_size));
+				buf = emalloc(HTTP_SENDBUF_SIZE);
+				
+				while (len > 0) {
+					got = php_stream_read(s, buf, MIN(len, HTTP_SENDBUF_SIZE));
+					http_send_response_data_plain(buffer, buf, got);
+					len -= got;
 				}
-				/* read & write left over */
-				if (len) {
-					http_send_response_data_plain(buffer, buf, php_stream_read(s, buf, chunk_size + len));
-				}
-	
+				
 				efree(buf);
 			}
 		}
@@ -130,15 +128,13 @@ static inline void _http_send_response_data_fetch(void **buffer, const void *dat
 
 		case SEND_DATA:
 		{
-			char *s = (char *) data + begin;
-
-			while (HTTP_CHUNK_AVAIL(len, chunk_size)) {
-				http_send_response_data_plain(buffer, s, chunk_size);
-				s += chunk_size;
-			}
-			/* write left over */
-			if (len) {
-				http_send_response_data_plain(buffer, s, chunk_size + len);
+			buf = (char *) data + begin;
+			
+			while (len > 0) {
+				got = MIN(len, HTTP_SENDBUF_SIZE);
+				http_send_response_data_plain(buffer, buf, got);
+				len -= got;
+				buf += got;
 			}
 		}
 		break;
