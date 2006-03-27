@@ -8,7 +8,7 @@
  * <code>
  * // GET /image.php?image=1234
  * if (PgLobStream::$loId = (int) $_GET['image']) {
- *     if ($lob = fopen('pglob: dbname=database user=mike', 'r')) {
+ *     if ($lob = fopen('pglob://dbname=database user=mike', 'r')) {
  *         HttpResponse::setContentType('image/jpeg');
  *         HttpResponse::setStream($lob);
  *         HttpResponse::send();
@@ -32,7 +32,7 @@ class PgLobStream
 
     function stream_open($path, $mode)
     {
-        $path = trim(parse_url($path, URL_PATH));
+        $path = trim(parse_url($path, PHP_URL_HOST));
         
         if ($path) {
             if ($this->dbh = pg_connect($path)) {
@@ -40,7 +40,7 @@ class PgLobStream
                     if (is_resource($this->loh = pg_lo_open($this->dbh, $this->lon = self::$loId, $mode))) {
                         pg_lo_seek($this->loh, 0, PGSQL_SEEK_END);
                         $this->size = (int) pg_lo_tell($this->loh);
-                        pg_lo_seek($this->loh, 0, PGSSQL_SEEK_SET);
+                        pg_lo_seek($this->loh, 0, PGSQL_SEEK_SET);
                         return true;
                     }
                 }
@@ -54,7 +54,7 @@ class PgLobStream
         return pg_lo_read($this->loh, $length);
     }
     
-    function stream_seek($offset, $whence = SEEK_SET)
+    function stream_seek($offset, $whence = PGSQL_SEEK_SET)
     {
         return pg_lo_seek($this->loh, $offset, $whence);
     }
