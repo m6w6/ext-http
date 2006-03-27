@@ -230,6 +230,8 @@ void _http_ob_etaghandler(char *output, uint output_len,
 			http_send_etag_ex(etag, strlen(etag), &sent_header);
 			
 			if (http_match_etag("HTTP_IF_NONE_MATCH", etag)) {
+				/* force exit; ob within ob does not work */
+				HTTP_G->force_exit = 1;
 				http_exit_ex(304, sent_header, etag, 0);
 			}
 			

@@ -147,7 +147,9 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		return FAILURE;
 	}
 	
-	php_end_ob_buffers(0 TSRMLS_CC);
+	if (!OG(ob_lock)) {
+		php_end_ob_buffers(0 TSRMLS_CC);
+	}
 	if ((SUCCESS == sapi_send_headers(TSRMLS_C)) && body) {
 		PHPWRITE(body, strlen(body));
 	}
