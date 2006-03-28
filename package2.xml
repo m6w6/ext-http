@@ -49,7 +49,7 @@ HttpResponse
 * Fixed Bug #7192: Build against libcurl >= 7.15.2 fails
 * Fixed access of super globals
 * Fixed sending userspace streams
-* Fixed too aggressive caching behavour of HttpResponse
+* Fixed too aggressive caching behaviour of HttpResponse
 ]]></notes>
  <contents>
   <dir name="/">

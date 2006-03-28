@@ -30,15 +30,14 @@ HttpResponse
   </maintainer>
   </maintainers>
  <release>
-  <version>1.0.0RC1</version>
-  <date>2006-03-19</date>
+  <version>1.0.0RC2</version>
+  <date>2006-03-28</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>* Fixed possible crash in HttpQueryString if the SAPI does not have a treat_data function registered.
-* Fixed http_build_str() to urlencode square brackets (&quot;[]&quot;).
-* Fixed HttpQueryString::xlate()
-* Fixed builds where include/php/ext/iconv does not have php_have_*.h files
-* Fixed PHP-4 build.
+  <notes>* Fixed Bug #7192: Build against libcurl &gt;= 7.15.2 fails
+* Fixed access of super globals
+* Fixed sending userspace streams
+* Fixed too aggressive caching behaviour of HttpResponse
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
