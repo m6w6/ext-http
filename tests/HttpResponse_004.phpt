@@ -5,22 +5,23 @@ HttpResponse - send cached gzipped data
 include 'skip.inc';
 checkcgi();
 checkmin(5.1);
-skpif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib support");
+skipif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib support");
 ?>
---ENV--
-HTTP_ACCEPT_ENCODING=gzip
-HTTP_IF_NONE_MATCH="80b285463881575891e86ba7bfecb4d0"
 --FILE--
 <?php
+$_SERVER["HTTP_IF_NONE_MATCH"] = '"900150983cd24fb0d6963f7d28e17f72"';
+$_SERVER["HTTP_ACCEPT_ENCODING"] = "gzip";
 HttpResponse::setGzip(true);
 HttpResponse::setCache(true);
 HttpResponse::setCacheControl('public', 3600);
-HttpResponse::setData(file_get_contents(__FILE__));
+HttpResponse::setData("abc");
 HttpResponse::send();
 ?>
 --EXPECTF--
 Status: 304
 X-Powered-By: PHP/%s
 Cache-Control: public, must-revalidate, max-age=3600
-ETag: "80b285463881575891e86ba7bfecb4d0"
-Content-type: %s
+Last-Modified: %s
+Content-Type: %s
+Accept-Ranges: bytes
+ETag: "900150983cd24fb0d6963f7d28e17f72"

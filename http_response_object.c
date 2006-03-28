@@ -1086,21 +1086,24 @@ PHP_METHOD(HttpResponse, send)
 	/* caching */
 	if (zval_is_true(GET_STATIC_PROP(cache))) {
 		zval *cctl, *cctl_p, *etag, *etag_p, *lmod, *lmod_p;
-
+		
 		etag = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag), &etag_p);
 		lmod = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified), &lmod_p);
 		cctl = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl), &cctl_p);
-
-		http_cache_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
-		http_cache_last_modified(Z_LVAL_P(lmod), Z_LVAL_P(lmod) ? Z_LVAL_P(lmod) : HTTP_GET_REQUEST_TIME(), Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
-
+		
+		if (Z_LVAL_P(lmod) || Z_STRLEN_P(etag)) {
+			http_send_cache_control(Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
+			if (Z_STRLEN_P(etag)) {
+				http_send_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag));
+			}
+			if (Z_LVAL_P(lmod)) {
+				http_send_last_modified(Z_LVAL_P(lmod));
+			}
+		}
+		
 		if (etag_p) zval_ptr_dtor(&etag_p);
 		if (lmod_p) zval_ptr_dtor(&lmod_p);
 		if (cctl_p) zval_ptr_dtor(&cctl_p);
-	
-		if (php_ob_handler_used("blackhole" TSRMLS_CC)) {
-			RETURN_TRUE;
-		}
 	}
 
 	/* content type */
@@ -1156,7 +1159,7 @@ PHP_METHOD(HttpResponse, send)
 		case SEND_DATA:
 		{
 			zval *zdata_p, *zdata = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(data), &zdata_p);
-			RETVAL_SUCCESS(http_send_data_ex(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata), 1));
+			RETVAL_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
 			if (zdata_p) zval_ptr_dtor(&zdata_p);
 			return;
 		}
@@ -1167,7 +1170,7 @@ PHP_METHOD(HttpResponse, send)
 			zval *the_stream_p, *the_stream = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream), &the_stream_p);
 			the_stream->type = IS_RESOURCE;
 			php_stream_from_zval(the_real_stream, &the_stream);
-			RETVAL_SUCCESS(http_send_stream_ex(the_real_stream, 0, 1));
+			RETVAL_SUCCESS(http_send_stream(the_real_stream));
 			if (the_stream_p) zval_ptr_dtor(&the_stream_p);
 			return;
 		}
@@ -1175,7 +1178,7 @@ PHP_METHOD(HttpResponse, send)
 		default:
 		{
 			zval *file_p;
-			RETVAL_SUCCESS(http_send_file_ex(Z_STRVAL_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file), &file_p)), 1));
+			RETVAL_SUCCESS(http_send_file(Z_STRVAL_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file), &file_p))));
 			if (file_p) zval_ptr_dtor(&file_p);
 			return;
 		}

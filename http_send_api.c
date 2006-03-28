@@ -238,18 +238,19 @@ PHP_HTTP_API STATUS _http_send_etag_ex(const char *etag, size_t etag_len, char *
 {
 	STATUS status;
 	char *etag_header;
+	size_t etag_header_len;
 
 	if (!etag_len){
 		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Attempt to send empty ETag (previous: %s)\n", HTTP_G->send.unquoted_etag);
 		return FAILURE;
 	}
 
+	etag_header_len = spprintf(&etag_header, 0, "ETag: \"%s\"", etag);
+	status = http_send_header_string_ex(etag_header, etag_header_len, 1);
+	
 	/* remember */
 	STR_SET(HTTP_G->send.unquoted_etag, estrndup(etag, etag_len));
 
-	etag_len = spprintf(&etag_header, 0, "ETag: \"%s\"", etag);
-	status = http_send_header_string_ex(etag_header, etag_len, 1);
-	
 	if (sent_header) {
 		*sent_header = etag_header;
 	} else {
@@ -299,7 +300,6 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 	void *s = NULL;
 	HashTable ranges;
 	http_range_status range_status;
-	int cache_etag = http_interrupt_ob_etaghandler();
 	
 	if (!data_ptr) {
 		return FAILURE;
@@ -408,12 +408,16 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 		case RANGE_NO:
 		{
 			zend_hash_destroy(&ranges);
-			
+
 			/* send 304 Not Modified if etag matches - DON'T return on ETag generation failure */
-			if (!no_cache && cache_etag) {
+			if (!no_cache && (http_interrupt_ob_etaghandler() || (HTTP_G->send.unquoted_etag != NULL))) {
 				char *etag = NULL;
 				
-				if ((etag = http_etag(data_ptr, data_size, data_mode))) {
+				if (HTTP_G->send.unquoted_etag) {
+					etag = estrdup(HTTP_G->send.unquoted_etag);
+				}
+				
+				if (etag || (etag = http_etag(data_ptr, data_size, data_mode))) {
 					char *sent_header = NULL;
 					
 					http_send_etag_ex(etag, strlen(etag), &sent_header);
@@ -421,6 +425,8 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 						return http_exit_ex(304, sent_header, NULL, 0);
 					} else {
 						STR_FREE(sent_header);
+						/* no caching for Last-Modified if ETags really don't match */
+						no_cache = http_got_server_var("HTTP_IF_NONE_MATCH");
 					}
 					efree(etag);
 				}

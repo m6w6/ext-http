@@ -15,11 +15,11 @@ HttpResponse::send();
 ?>
 --EXPECTF--
 X-Powered-By: PHP/%s
-ETag: "3858f62230ac3c915f300c664312c63f"
 Cache-Control: public, must-revalidate, max-age=3600
 Last-Modified: %s, %d %s 20%d %d:%d:%d GMT
 Content-Type: %s
 Accept-Ranges: bytes
+ETag: "3858f62230ac3c915f300c664312c63f"
 Content-Length: 6
 
 foobar

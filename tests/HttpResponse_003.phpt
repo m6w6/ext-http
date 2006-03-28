@@ -19,11 +19,11 @@ HttpResponse::send();
 ?>
 --EXPECTF--
 X-Powered-By: PHP/%s
-ETag: "%s"
 Cache-Control: public, must-revalidate, max-age=3600
 Last-Modified: %s, %d %s 20%d %d:%d:%d GMT
 Content-Type: %s
 Accept-Ranges: bytes
+ETag: "%s"
 Content-Encoding: gzip
 Vary: Accept-Encoding
 
