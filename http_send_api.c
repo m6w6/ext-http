@@ -341,9 +341,9 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 				/* single range */
 				zval **range, **begin, **end;
 				
-				if (	SUCCESS != zend_hash_index_find(&ranges, 0, (void **) &range) ||
-						SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void **) &begin) ||
-						SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void **) &end)) {
+				if (	SUCCESS != zend_hash_index_find(&ranges, 0, (void *) &range) ||
+						SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void *) &begin) ||
+						SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void *) &end)) {
 					/* this should never happen */
 					zend_hash_destroy(&ranges);
 					http_send_status(500);
@@ -379,8 +379,8 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 				}
 				
 				FOREACH_HASH_VAL(pos, &ranges, range) {
-					if (	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void **) &begin) &&
-							SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void **) &end)) {
+					if (	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void *) &begin) &&
+							SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void *) &end)) {
 						char preface_str[512];
 						size_t preface_len;
 

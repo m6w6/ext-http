@@ -250,7 +250,7 @@ PHP_FUNCTION(http_build_str)
 		zval **value; \
 		 \
 		zend_hash_internal_pointer_reset(Z_ARRVAL_P(supported)); \
-		if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(supported), (void **) &value)) { \
+		if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(supported), (void *) &value)) { \
 			RETVAL_ZVAL(*value, 1, 0); \
 		} else { \
 			RETVAL_NULL(); \
@@ -1206,7 +1206,7 @@ PHP_FUNCTION(http_match_request_header)
 		zval **bodyonly; \
 		 \
 		/* check if only the body should be returned */ \
-		if (options && (SUCCESS == zend_hash_find(Z_ARRVAL_P(options), "bodyonly", sizeof("bodyonly"), (void **) &bodyonly)) && zval_is_true(*bodyonly)) { \
+		if (options && (SUCCESS == zend_hash_find(Z_ARRVAL_P(options), "bodyonly", sizeof("bodyonly"), (void *) &bodyonly)) && zval_is_true(*bodyonly)) { \
 			http_message *msg = http_message_parse(PHPSTR_VAL(&request.conv.response), PHPSTR_LEN(&request.conv.response)); \
 			 \
 			if (msg) { \

@@ -137,7 +137,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 
 	msg = http_message_init_rel(msg, 0);
 
-	if (SUCCESS != http_parse_headers_cb(message, &msg->hdrs, 1, (http_info_callback) http_message_info_callback, (void **) &msg)) {
+	if (SUCCESS != http_parse_headers_cb(message, &msg->hdrs, 1, (http_info_callback) http_message_info_callback, (void *) &msg)) {
 		if (free_msg) {
 			http_message_free(&msg);
 		}
@@ -250,7 +250,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 				ZVAL_ADDREF(c);
 				zend_hash_add(&msg->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), (void *) &c, sizeof(zval *), NULL);
 				zend_hash_del(&msg->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
-				if (SUCCESS == zend_hash_find(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void **) &original_len)) {
+				if (SUCCESS == zend_hash_find(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &original_len)) {
 					ZVAL_ADDREF(*original_len);					
 					zend_hash_add(&msg->hdrs, "X-Original-Content-Length", sizeof("X-Original-Content-Length"), (void *) original_len, sizeof(zval *), NULL);
 					zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
@@ -528,7 +528,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 			add_assoc_zval(&options, "headers", &headers);
 
 			/* check host header */
-			if (SUCCESS == zend_hash_find(&message->hdrs, "Host", sizeof("Host"), (void **) &zhost)) {
+			if (SUCCESS == zend_hash_find(&message->hdrs, "Host", sizeof("Host"), (void *) &zhost)) {
 				char *colon = NULL;
 				php_url parts, *url = php_url_parse(message->http.info.request.url);
 				

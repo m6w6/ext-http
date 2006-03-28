@@ -49,35 +49,35 @@ static inline php_url *_array2url(HashTable *ht TSRMLS_DC)
 	zval **e;
 	php_url *url = ecalloc(1, sizeof(php_url));
 	
-	if ((SUCCESS == zend_hash_find(ht, "scheme", sizeof("scheme"), (void **) &e))
+	if ((SUCCESS == zend_hash_find(ht, "scheme", sizeof("scheme"), (void *) &e))
 			&& (Z_TYPE_PP(e) == IS_STRING) && Z_STRLEN_PP(e)) {
 		url->scheme = estrndup(Z_STRVAL_PP(e), Z_STRLEN_PP(e));
 	}
-	if ((SUCCESS == zend_hash_find(ht, "user", sizeof("user"), (void **) &e))
+	if ((SUCCESS == zend_hash_find(ht, "user", sizeof("user"), (void *) &e))
 			&& (Z_TYPE_PP(e) == IS_STRING) && Z_STRLEN_PP(e)) {
 		url->user = estrndup(Z_STRVAL_PP(e), Z_STRLEN_PP(e));
 	}
-	if ((SUCCESS == zend_hash_find(ht, "pass", sizeof("pass"), (void **) &e))
+	if ((SUCCESS == zend_hash_find(ht, "pass", sizeof("pass"), (void *) &e))
 			&& (Z_TYPE_PP(e) == IS_STRING) && Z_STRLEN_PP(e)) {
 		url->pass = estrndup(Z_STRVAL_PP(e), Z_STRLEN_PP(e));
 	}
-	if ((SUCCESS == zend_hash_find(ht, "host", sizeof("host"), (void **) &e))
+	if ((SUCCESS == zend_hash_find(ht, "host", sizeof("host"), (void *) &e))
 			&& (Z_TYPE_PP(e) == IS_STRING) && Z_STRLEN_PP(e)) {
 		url->host = estrndup(Z_STRVAL_PP(e), Z_STRLEN_PP(e));
 	}
-	if ((SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void **) &e))
+	if ((SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void *) &e))
 			&& (Z_TYPE_PP(e) == IS_STRING) && Z_STRLEN_PP(e)) {
 		url->path = estrndup(Z_STRVAL_PP(e), Z_STRLEN_PP(e));
 	}
-	if ((SUCCESS == zend_hash_find(ht, "query", sizeof("query"), (void **) &e))
+	if ((SUCCESS == zend_hash_find(ht, "query", sizeof("query"), (void *) &e))
 			&& (Z_TYPE_PP(e) == IS_STRING) && Z_STRLEN_PP(e)) {
 		url->query = estrndup(Z_STRVAL_PP(e), Z_STRLEN_PP(e));
 	}
-	if ((SUCCESS == zend_hash_find(ht, "fragment", sizeof("fragment"), (void **) &e))
+	if ((SUCCESS == zend_hash_find(ht, "fragment", sizeof("fragment"), (void *) &e))
 			&& (Z_TYPE_PP(e) == IS_STRING) && Z_STRLEN_PP(e)) {
 		url->fragment = estrndup(Z_STRVAL_PP(e), Z_STRLEN_PP(e));
 	}
-	if (SUCCESS == zend_hash_find(ht, "port", sizeof("port"), (void **) &e)) {
+	if (SUCCESS == zend_hash_find(ht, "port", sizeof("port"), (void *) &e)) {
 		if (Z_TYPE_PP(e) == IS_LONG) {
 			url->port = (unsigned short) Z_LVAL_PP(e);
 		} else {

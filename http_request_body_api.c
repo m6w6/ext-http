@@ -85,9 +85,9 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 			
 			if (Z_TYPE_PP(data) != IS_ARRAY) {
 				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Unrecognized type of post file array entry");
-			} else if (	SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "name", sizeof("name"), (void **) &name) ||
-						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "type", sizeof("type"), (void **) &type) ||
-						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "file", sizeof("file"), (void **) &file)) {
+			} else if (	SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "name", sizeof("name"), (void *) &name) ||
+						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "type", sizeof("type"), (void *) &type) ||
+						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "file", sizeof("file"), (void *) &file)) {
 				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Post file array entry misses either 'name', 'type' or 'file' entry");
 			} else {
 				CURLcode err;

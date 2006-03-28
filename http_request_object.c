@@ -459,12 +459,12 @@ static inline void _http_request_object_check_request_content_type(zval *this_pt
 		zval **headers, *opts = GET_PROP(options);
 		
 		if (	(Z_TYPE_P(opts) == IS_ARRAY) &&
-				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void **) &headers)) && 
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void *) &headers)) && 
 				(Z_TYPE_PP(headers) == IS_ARRAY)) {
 			zval **ct_header;
 			
 			/* only override if not already set */
-			if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(headers), "Content-Type", sizeof("Content-Type"), (void **) &ct_header))) {
+			if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(headers), "Content-Type", sizeof("Content-Type"), (void *) &ct_header))) {
 				add_assoc_stringl(*headers, "Content-Type", Z_STRVAL_P(ctype), Z_STRLEN_P(ctype), 1);
 			} else
 			/* or not a string, zero length string or a string of spaces */
@@ -580,7 +580,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			zval **entry, *pcb;
 			
 			if (	(Z_TYPE_P(options) != IS_ARRAY)
-				||	(SUCCESS != zend_hash_find(Z_ARRVAL_P(options), "onprogress", sizeof("onprogress"), (void **) &entry)
+				||	(SUCCESS != zend_hash_find(Z_ARRVAL_P(options), "onprogress", sizeof("onprogress"), (void *) &entry)
 				||	(!zval_is_true(*entry)))) {
 				MAKE_STD_ZVAL(pcb);
 				array_init(pcb);
@@ -728,7 +728,7 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 	if (prettify_keys && opts) {
 		zend_hash_apply_with_arguments(Z_ARRVAL_P(opts), apply_pretty_key, 0);
 	}
-	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(new_opts), key, len, (void **) &entry)) {
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(new_opts), key, len, (void *) &entry)) {
 		if (overwrite) {
 			zend_hash_clean(Z_ARRVAL_PP(entry));
 		}
@@ -762,7 +762,7 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 		array_init(return_value);
 
 		if (	(Z_TYPE_P(opts) == IS_ARRAY) && 
-				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), key, len, (void **) &options))) {
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), key, len, (void *) &options))) {
 			convert_to_array(*options);
 			array_copy(*options, return_value);
 		}
@@ -1647,11 +1647,11 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 
 		data = GET_PROP(responseData);
 		if (	(Z_TYPE_P(data) == IS_ARRAY) && 
-				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) &&
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void *) &headers)) &&
 				(Z_TYPE_PP(headers) == IS_ARRAY)) {
 			if (!header_len || !header_name) {
 				RETVAL_ZVAL(*headers, 1, 0);
-			} else if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(headers), pretty_key(header_name, header_len, 1, 1), header_len + 1, (void **) &header)) {
+			} else if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(headers), pretty_key(header_name, header_len, 1, 1), header_len + 1, (void *) &header)) {
 				RETVAL_ZVAL(*header, 1, 0);
 			} else {
 				RETVAL_FALSE;
@@ -1684,7 +1684,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 
 		data = GET_PROP(responseData);
 		if (	(Z_TYPE_P(data) == IS_ARRAY) &&
-				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void **) &headers)) &&
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "headers", sizeof("headers"), (void *) &headers)) &&
 				(Z_TYPE_PP(headers) == IS_ARRAY)) {
 			int i = 0;
 			ulong idx = 0;
@@ -1775,7 +1775,7 @@ PHP_METHOD(HttpRequest, getResponseBody)
 		zval *data = GET_PROP(responseData);
 		
 		if (	(Z_TYPE_P(data) == IS_ARRAY) && 
-				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "body", sizeof("body"), (void **) &body))) {
+				(SUCCESS == zend_hash_find(Z_ARRVAL_P(data), "body", sizeof("body"), (void *) &body))) {
 			RETURN_ZVAL(*body, 1, 0);
 		} else {
 			RETURN_FALSE;
@@ -1853,7 +1853,7 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 		}
 
 		if (info_len && info_name) {
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), pretty_key(info_name, info_len, 0, 0), info_len + 1, (void **) &infop)) {
+			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), pretty_key(info_name, info_len, 0, 0), info_len + 1, (void *) &infop)) {
 				RETURN_ZVAL(*infop, 1, 0);
 			} else {
 				http_error_ex(HE_NOTICE, HTTP_E_INVALID_PARAM, "Could not find response info named %s", info_name);

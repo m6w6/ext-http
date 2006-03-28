@@ -201,10 +201,10 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 #ifdef ZEND_ENGINE_2
 	zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
 #endif
-	if ((SUCCESS != zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
+	if ((SUCCESS != zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
 		return NULL;
 	}
-	if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), (char *) key, key_size, (void **) &var)) || (Z_TYPE_PP(var) != IS_STRING)) {
+	if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), (char *) key, key_size, (void *) &var)) || (Z_TYPE_PP(var) != IS_STRING)) {
 		return NULL;
 	}
 	if (check && !(Z_STRVAL_PP(var) && Z_STRLEN_PP(var))) {

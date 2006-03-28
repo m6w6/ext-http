@@ -295,7 +295,7 @@ static inline int _http_querystring_modify_array_ex(zval *qarray, char *key, int
 	}
 	
 	/* update */
-	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), key, keylen, (void **) &qarray_entry)) {
+	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), key, keylen, (void *) &qarray_entry)) {
 		zval equal;
 		
 		/* recursive */
@@ -370,7 +370,7 @@ static inline void _http_querystring_get(zval *this_ptr, int type, char *name, u
 {
 	zval **arrval, *qarray = GET_PROP(queryArray);
 		
-	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void **) &arrval))) {
+	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void *) &arrval))) {
 		RETVAL_ZVAL(*arrval, 1, 0);
 		
 		if (type) {
@@ -404,15 +404,15 @@ PHP_METHOD(HttpQueryString, __construct)
 #ifdef ZEND_ENGINE_2
 			zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
 #endif
-			if (	(SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &_SERVER)) &&
+			if (	(SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &_SERVER)) &&
 					(Z_TYPE_PP(_SERVER) == IS_ARRAY) &&
-					(SUCCESS == zend_hash_find(Z_ARRVAL_PP(_SERVER), "QUERY_STRING", sizeof("QUERY_STRING"), (void **) &QUERY_STRING))) {
+					(SUCCESS == zend_hash_find(Z_ARRVAL_PP(_SERVER), "QUERY_STRING", sizeof("QUERY_STRING"), (void *) &QUERY_STRING))) {
 				
 				qstring = *QUERY_STRING;
 #ifdef ZEND_ENGINE_2
 				zend_is_auto_global("_GET", lenof("_GET") TSRMLS_CC);
 #endif
-				if ((SUCCESS == zend_hash_find(&EG(symbol_table), "_GET", sizeof("_GET"), (void **) &_GET)) && (Z_TYPE_PP(_GET) == IS_ARRAY)) {
+				if ((SUCCESS == zend_hash_find(&EG(symbol_table), "_GET", sizeof("_GET"), (void *) &_GET)) && (Z_TYPE_PP(_GET) == IS_ARRAY)) {
 					qarray = *_GET;
 				} else {
 					http_error(HE_WARNING, HTTP_E_QUERYSTRING, "Could not acquire reference to superglobal GET array");
@@ -556,7 +556,7 @@ PHP_METHOD(HttpQueryString, singleton)
 		zval **zobj_ptr = NULL, *zobj = NULL;
 		
 		if (Z_TYPE_P(instance) == IS_ARRAY) {
-			if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(instance), global, (void **) &zobj_ptr)) {
+			if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(instance), global, (void *) &zobj_ptr)) {
 				RETVAL_ZVAL(*zobj_ptr, 1, 0);
 			} else {
 				zobj = http_querystring_instantiate(global);

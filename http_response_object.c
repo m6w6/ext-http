@@ -331,7 +331,7 @@ PHP_METHOD(HttpResponse, getHeader)
 		
 		zend_hash_init(&headers_ht, sizeof(zval *), NULL, ZVAL_PTR_DTOR, 0);
 		if (	(SUCCESS == http_parse_headers_ex(PHPSTR_VAL(&headers), &headers_ht, 1)) &&
-				(SUCCESS == zend_hash_find(&headers_ht, name, name_len + 1, (void **) &header))) {
+				(SUCCESS == zend_hash_find(&headers_ht, name, name_len + 1, (void *) &header))) {
 			RETVAL_ZVAL(*header, 1, 0);
 		} else {
 			RETVAL_NULL();

@@ -56,7 +56,7 @@ PHP_HTTP_API void _http_message_set_info(http_message *message, http_info *info)
 static inline zval *_http_message_header_ex(http_message *msg, char *key_str, size_t key_len)
 {
 	zval **header;
-	if (SUCCESS == zend_hash_find(&msg->hdrs, key_str, key_len, (void **) &header)) {
+	if (SUCCESS == zend_hash_find(&msg->hdrs, key_str, key_len, (void *) &header)) {
 		return *header;
 	}
 	return NULL;

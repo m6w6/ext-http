@@ -289,11 +289,11 @@ static void move_backtrace_args(zval *from, zval *to TSRMLS_DC)
 	zval **args, **trace_0, *old_trace_0, *trace = NULL;
 	
 	if ((trace = zend_read_property(zend_exception_get_default(), from, "trace", lenof("trace"), 0 TSRMLS_CC))) {
-		if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void **) &trace_0)) {
+		if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void *) &trace_0)) {
 			old_trace_0 = *trace_0;
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(trace_0), "args", sizeof("args"), (void **) &args)) {
+			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(trace_0), "args", sizeof("args"), (void *) &args)) {
 				if ((trace = zend_read_property(zend_exception_get_default(), to, "trace", lenof("trace"), 0 TSRMLS_CC))) {
-					if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void **) &trace_0)) {
+					if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void *) &trace_0)) {
 						ZVAL_ADDREF(*args);
 						add_assoc_zval(*trace_0, "args", *args);
 						zend_hash_del(Z_ARRVAL_P(old_trace_0), "args", sizeof("args"));

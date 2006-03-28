@@ -392,7 +392,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 							}
 
 							/* if we already have got such a header make an array of those */
-							if (SUCCESS == zend_hash_find(headers, key, keylen + 1, (void **) &previous)) {
+							if (SUCCESS == zend_hash_find(headers, key, keylen + 1, (void *) &previous)) {
 								/* convert to array */
 								if (Z_TYPE_PP(previous) != IS_ARRAY) {
 									convert_to_array(*previous);
@@ -429,7 +429,7 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 #ifdef ZEND_ENGINE_2
 	zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
 #endif
-	if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void **) &hsv)) {
+	if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv)) {
 		FOREACH_KEYLEN(pos, *hsv, key, keylen, idx) {
 			if (key && keylen > 6 && !strncmp(key, "HTTP_", 5)) {
 				zval **header, *orig;
@@ -440,7 +440,7 @@ PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool pre
 					key = pretty_key(estrndup(key, keylen), keylen, 1, 1);
 				}
 	
-				zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void **) &header, &pos);
+				zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void *) &header, &pos);
 				
 				orig = *header;
 				convert_to_string_ex(header);
@@ -474,7 +474,7 @@ PHP_HTTP_API zend_bool _http_match_request_header_ex(const char *header, const c
 	zend_hash_init(&headers, 0, NULL, ZVAL_PTR_DTOR, 0);
 	http_get_request_headers_ex(&headers, 1);
 
-	if (SUCCESS == zend_hash_find(&headers, name, name_len+1, (void **) &data)) {
+	if (SUCCESS == zend_hash_find(&headers, name, name_len+1, (void *) &data)) {
 		result = (match_case ? strcmp(Z_STRVAL_PP(data), value) : strcasecmp(Z_STRVAL_PP(data), value)) ? 0 : 1;
 	}
 	zend_hash_destroy(&headers);

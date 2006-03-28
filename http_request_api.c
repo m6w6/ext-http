@@ -560,9 +560,9 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			zval **prs, **pre;
 			
 			zend_hash_internal_pointer_reset(Z_ARRVAL_P(zoption));
-			if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &prs)) {
+			if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void *) &prs)) {
 				zend_hash_move_forward(Z_ARRVAL_P(zoption));
-				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void **) &pre)) {
+				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void *) &pre)) {
 					zval *prs_cpy = zval_copy(IS_LONG, *prs), *pre_cpy = zval_copy(IS_LONG, *pre);
 					
 					if (Z_LVAL_P(prs_cpy) && Z_LVAL_P(pre_cpy)) {
@@ -629,9 +629,9 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		FOREACH_VAL(pos1, zoption, rr) {
 			if (Z_TYPE_PP(rr) == IS_ARRAY) {
 				zend_hash_internal_pointer_reset_ex(Z_ARRVAL_PP(rr), &pos2);
-				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_PP(rr), (void **) &rb, &pos2)) {
+				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_PP(rr), (void *) &rb, &pos2)) {
 					zend_hash_move_forward_ex(Z_ARRVAL_PP(rr), &pos2);
-					if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_PP(rr), (void **) &re, &pos2)) {
+					if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_PP(rr), (void *) &re, &pos2)) {
 						if (	((Z_TYPE_PP(rb) == IS_LONG) || ((Z_TYPE_PP(rb) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(rb), Z_STRLEN_PP(rb), NULL, NULL, 1))) &&
 								((Z_TYPE_PP(re) == IS_LONG) || ((Z_TYPE_PP(re) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(re), Z_STRLEN_PP(re), NULL, NULL, 1)))) {
 							zval *rbl = zval_copy(IS_LONG, *rb), *rel = zval_copy(IS_LONG, *re);
@@ -673,7 +673,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		FOREACH_KEY(pos, zoption, header_key, header_idx) {
 			if (header_key) {
 				zval **header_val;
-				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void **) &header_val, &pos)) {
+				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void *) &header_val, &pos)) {
 					char header[1024] = {0};
 					
 					ZVAL_ADDREF(*header_val);
@@ -741,7 +741,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				FOREACH_KEY(pos, zoption, cookie_key, cookie_idx) {
 					if (cookie_key) {
 						zval **cookie_val;
-						if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void **) &cookie_val, &pos)) {
+						if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void *) &cookie_val, &pos)) {
 							zval *val = zval_copy(IS_STRING, *cookie_val);
 							phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key, Z_STRVAL_P(val));
 							zval_free(&val);
@@ -1105,9 +1105,9 @@ static inline zval *_http_request_option_ex(http_request *r, HashTable *options,
 	
 	if (!options || 
 #ifdef ZEND_ENGINE_2
-			(SUCCESS != zend_hash_quick_find(options, key, keylen, h, (void **) &zoption))
+			(SUCCESS != zend_hash_quick_find(options, key, keylen, h, (void *) &zoption))
 #else
-			(SUCCESS != zend_hash_find(options, key, keylen, (void **) &zoption))
+			(SUCCESS != zend_hash_find(options, key, keylen, (void *) &zoption))
 #endif
 	) {
 		return NULL;
