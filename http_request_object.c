@@ -409,7 +409,7 @@ zend_object_value _http_request_object_new_ex(zend_class_entry *ce, CURL *ch, ht
 	}
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
-	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 
 	ov.handle = putObject(http_request_object, o);
