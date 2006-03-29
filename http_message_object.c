@@ -278,8 +278,8 @@ void _http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_DC)
 void _http_message_object_prepend_ex(zval *this_ptr, zval *prepend, zend_bool top TSRMLS_DC)
 {
 	zval m;
-	http_message *save_parent_msg;
-	zend_object_value save_parent_obj;
+	http_message *save_parent_msg = NULL;
+	zend_object_value save_parent_obj = {0, NULL};
 	getObject(http_message_object, obj);
 	getObjectEx(http_message_object, prepend_obj, prepend);
 		
