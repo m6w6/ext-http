@@ -596,7 +596,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
 	HashTable *props = OBJ_PROP(obj);
-	zval array;
+	zval array, *parent;
 	
 	INIT_ZARR(array, props);
 
@@ -651,6 +651,14 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	ASSOC_PROP(array, zval, "headers", headers);
 	ASSOC_STRINGL(array, "body", PHPSTR_VAL(msg), PHPSTR_LEN(msg));
+	
+	MAKE_STD_ZVAL(parent);
+	if (msg->parent) {
+		ZVAL_OBJVAL(parent, obj->parent, 1);
+	} else {
+		ZVAL_NULL(parent);
+	}
+	ASSOC_PROP(array, zval, "parentMessage", parent);
 
 	return OBJ_PROP(obj);
 }
