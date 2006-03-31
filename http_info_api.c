@@ -75,7 +75,7 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 	/* there must be HTTP/1.x in the line
 	 * and nothing than SPACE or NUL after HTTP/1.x 
 	 */
-	if (	(!(http = strstr(pre_header, "HTTP/1."))) || 
+	if (	(!(http = php_memnstr((char *) pre_header, "HTTP/1.", lenof("HTTP/1."), (char *)end))) || 
 			(!(http < end)) ||
 			(!isdigit(http[lenof("HTTP/1.")])) ||
 			(http[lenof("HTTP/1.1")] && (!isspace(http[lenof("HTTP/1.1")])))) {

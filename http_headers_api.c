@@ -326,22 +326,14 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *headers, zend_bool prettify, 
 	http_info_callback callback_func, void **callback_data TSRMLS_DC)
 {
-	const char *colon = NULL, *line = NULL, *begin = header;
-	const char *body = http_locate_body(header);
-	size_t header_len;
+	const char *colon = NULL, *line = header;
 	zval array;
 
 	INIT_ZARR(array, headers);
 	
-	if (body) {
-		header_len = body - header;
-	} else {
-		header_len = strlen(header) + 1;
-	}
-	line = header;
-	
-	if (header_len) do {
+	do {
 		int value_len = 0;
+		
 		switch (*line++)
 		{
 			case ':':
@@ -403,6 +395,8 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 							}
 							efree(key);
 						}
+					} else {
+						return FAILURE;
 					}
 					colon = NULL;
 					value_len = 0;
@@ -410,7 +404,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 				}
 			break;
 		}
-	} while (header_len > (size_t) (line - begin));
+	} while (*(line-1) && !(*(line-1) == '\n' && (*line == '\n' || *line == '\r')));
 
 	return SUCCESS;
 }

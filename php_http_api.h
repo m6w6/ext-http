@@ -122,16 +122,21 @@ PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D);
 #define http_locate_body _http_locate_body
 static inline const char *_http_locate_body(const char *message)
 {
-	const char *cr = strstr(message, "\r\n\r\n");
-	const char *lf = strstr(message, "\n\n");
-
-	if (lf && cr) {
-		return MIN(lf + 2, cr + 4);
-	} else if (lf || cr) {
-		return MAX(lf + 2, cr + 4);
-	} else {
-		return NULL;
+	const char *body = NULL, *msg = message;
+	
+	while (*msg) {
+		if (*msg == '\n') {
+			if (*(msg+1) == '\n') {
+				body = msg + 2;
+				break;
+			} else if (*(msg+1) == '\r' && *(msg+2) == '\n' && msg != message && *(msg-1) == '\r') {
+				body = msg + 3;
+				break;
+			}
+		}
+		++msg;
 	}
+	return body;
 }
 
 #define http_locate_eol _http_locate_eol

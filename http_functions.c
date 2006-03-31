@@ -1034,6 +1034,7 @@ PHP_FUNCTION(http_parse_headers)
 	array_init(return_value);
 	if (SUCCESS != http_parse_headers(header, return_value)) {
 		zval_dtor(return_value);
+		http_error(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Failed to parse headers");
 		RETURN_FALSE;
 	}
 }

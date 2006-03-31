@@ -46,6 +46,8 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
+- Improved performance of the message and header parser
+* Fixed internal http_parse_headers() always returning success
 * Fixed missing "parentMessage" entry in print_r($HttpMessageObject)
 ]]></notes>
  <contents>
