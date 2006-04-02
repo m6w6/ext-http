@@ -1417,6 +1417,8 @@ PHP_METHOD(HttpMessage, detach)
  * Prepends message(s) to the HTTP message.
  *
  * Expects an HttpMessage object as parameter.
+ *
+ * Throws HttpInvalidParamException if the messages are located within the same message chain.
  */
 PHP_METHOD(HttpMessage, prepend)
 {
@@ -1424,6 +1426,20 @@ PHP_METHOD(HttpMessage, prepend)
 	zend_bool top = 1;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|b", &prepend, http_message_object_ce, &top)) {
+		http_message *msg[2];
+		getObject(http_message_object, obj);
+		getObjectEx(http_message_object, prepend_obj, prepend);
+		
+		/* safety check */
+		for (msg[0] = obj->message; msg[0]; msg[0] = msg[0]->parent) {
+			for (msg[1] = prepend_obj->message; msg[1]; msg[1] = msg[1]->parent) {
+				if (msg[0] == msg[1]) {
+					http_error(HE_THROW, HTTP_E_INVALID_PARAM, "Cannot prepend a message located within the same message chain");
+					return;
+				}
+			}
+		}
+		
 		http_message_object_prepend_ex(getThis(), prepend, top);
 	}
 }
