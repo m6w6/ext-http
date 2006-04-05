@@ -328,9 +328,10 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 {
 	const char *colon = NULL, *line = header;
 	zval array;
-
+	
 	INIT_ZARR(array, headers);
 	
+#define MORE_HEADERS (*(line-1) && !(*(line-1) == '\n' && (*line == '\n' || *line == '\r')))
 	do {
 		int value_len = 0;
 		
@@ -353,11 +354,8 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 						callback_func(callback_data, &headers, &i TSRMLS_CC);
 						http_info_dtor(&i);
 						Z_ARRVAL(array) = headers;
-					} else
-					
-					/* "header: value" pair */
-					if (colon) {
-
+					} else if (colon) {
+						/* "header: value" pair */
 						/* skip empty key */
 						if (header != colon) {
 							zval **previous = NULL;
@@ -395,7 +393,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 							}
 							efree(key);
 						}
-					} else {
+					} else if (MORE_HEADERS) {
 						return FAILURE;
 					}
 					colon = NULL;
@@ -404,7 +402,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 				}
 			break;
 		}
-	} while (*(line-1) && !(*(line-1) == '\n' && (*line == '\n' || *line == '\r')));
+	} while (MORE_HEADERS);
 
 	return SUCCESS;
 }
