@@ -326,10 +326,14 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *headers, zend_bool prettify, 
 	http_info_callback callback_func, void **callback_data TSRMLS_DC)
 {
-	const char *colon = NULL, *line = header;
+	const char *colon = NULL, *line = NULL;
 	zval array;
 	
 	INIT_ZARR(array, headers);
+	
+	/* skip leading ws */
+	while (isspace(*header)) ++header;
+	line = header;
 	
 #define MORE_HEADERS (*(line-1) && !(*(line-1) == '\n' && (*line == '\n' || *line == '\r')))
 	do {
