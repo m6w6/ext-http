@@ -14,11 +14,9 @@ print_r(http_parse_headers(
 "Muchspace:  there   \r\n".
 "Empty:\r\n".
 "Empty2: \r\n".
-": invalid\r\n".
-" : bogus\r\n".
 "Folded: one\r\n".
 "\ttwo\r\n".
-"  three\r\n".
+"  three\r\n\r\n".
 "stop\r\n"
 ));
 ?>
