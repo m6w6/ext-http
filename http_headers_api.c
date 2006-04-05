@@ -349,51 +349,66 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 				if ((!*(line - 1)) || ((*line != ' ') && (*line != '\t'))) {
 					http_info i;
 					
-					/* response/request line */
 					if (SUCCESS == http_info_parse(header, &i)) {
+						/* response/request line */
 						callback_func(callback_data, &headers, &i TSRMLS_CC);
 						http_info_dtor(&i);
 						Z_ARRVAL(array) = headers;
 					} else if (colon) {
 						/* "header: value" pair */
-						/* skip empty key */
 						if (header != colon) {
-							zval **previous = NULL;
-							char *value;
 							int keylen = colon - header;
-							char *key = estrndup(header, keylen);
-
-							if (prettify) {
-								key = pretty_key(key, keylen, 1, 1);
-							}
-
-							value_len += line - colon - 1;
-
+							const char *key = header;
+							
 							/* skip leading ws */
-							while (isspace(*(++colon))) --value_len;
+							while (keylen && isspace(*key)) --keylen && ++key;
 							/* skip trailing ws */
-							while (isspace(colon[value_len - 1])) --value_len;
-
-							if (value_len > 0) {
-								value = estrndup(colon, value_len);
-							} else {
-								value = estrdup("");
-								value_len = 0;
-							}
-
-							/* if we already have got such a header make an array of those */
-							if (SUCCESS == zend_hash_find(headers, key, keylen + 1, (void *) &previous)) {
-								/* convert to array */
-								if (Z_TYPE_PP(previous) != IS_ARRAY) {
-									convert_to_array(*previous);
+							while (keylen && isspace(key[keylen - 1])) --keylen;
+							
+							if (keylen > 0) {
+								zval **previous = NULL;
+								char *value;
+								char *keydup = estrndup(key, keylen);
+								
+								if (prettify) {
+									keydup = pretty_key(keydup, keylen, 1, 1);
 								}
-								add_next_index_stringl(*previous, value, value_len, 0);
-							} else {
-								add_assoc_stringl(&array, key, value, value_len, 0);
+								
+								value_len += line - colon - 1;
+								
+								/* skip leading ws */
+								while (isspace(*(++colon))) --value_len;
+								/* skip trailing ws */
+								while (isspace(colon[value_len - 1])) --value_len;
+								
+								if (value_len > 0) {
+									value = estrndup(colon, value_len);
+								} else {
+									value = estrdup("");
+									value_len = 0;
+								}
+								
+								/* if we already have got such a header make an array of those */
+								if (SUCCESS == zend_hash_find(headers, keydup, keylen + 1, (void *) &previous)) {
+									/* convert to array */
+									if (Z_TYPE_PP(previous) != IS_ARRAY) {
+										convert_to_array(*previous);
+									}
+									add_next_index_stringl(*previous, value, value_len, 0);
+								} else {
+									add_assoc_stringl(&array, keydup, value, value_len, 0);
+								}
+								efree(keydup);
+							} else   {
+								/* empty key ("   : ...") */
+								return FAILURE;
 							}
-							efree(key);
+						} else {
+							/* empty key (": ...") */
+							return FAILURE;
 						}
 					} else if (MORE_HEADERS) {
+						/* a line without a colon */
 						return FAILURE;
 					}
 					colon = NULL;
