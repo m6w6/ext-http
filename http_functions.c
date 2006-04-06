@@ -1668,7 +1668,12 @@ PHP_FUNCTION(http_request)
 }
 /* }}} */
 
-/* {{{ no-proto string http_request_body_encode(array fields, array files) */
+/* {{{ proto string http_request_body_encode(array fields, array files)
+ *
+ * Generate x-www-form-urlencoded resp. form-data encoded request body.
+ *
+ * Returns encoded string on success, or FALSE on failure.
+ */
 static char *file_get_contents(char *file, size_t *len TSRMLS_DC)
 {
 	php_stream *s = NULL;
@@ -1699,6 +1704,8 @@ PHP_FUNCTION(http_request_body_encode)
 	curl_off_t size;
 	char *fdata = NULL;
 	size_t fsize = 0;
+	CURLcode rc;
+	int fgc_error = 0;
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!a!", &fields, &files)) {
 		RETURN_FALSE;
@@ -1713,23 +1720,33 @@ PHP_FUNCTION(http_request_body_encode)
 	switch (body.type)
 	{
 		case HTTP_REQUEST_BODY_CURLPOST:
-			if (CURLE_OK != Curl_getFormData(&data, body.data, &size)) {
+			if (CURLE_OK != (rc = Curl_getFormData(&data, body.data, &size))) {
+				http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Could not encode request body: %s", curl_easy_strerror(rc));
 				RETVAL_FALSE;
 			} else {
-				phpstr_init_ex(&rbuf, size, PHPSTR_INIT_PREALLOC);
+				phpstr_init_ex(&rbuf, (size_t) size, PHPSTR_INIT_PREALLOC);
 				for (ptr = data; ptr; ptr = ptr->next) {
-					if (ptr->type) {
-						if ((fdata = file_get_contents(ptr->line, &fsize TSRMLS_CC))) {
-							phpstr_append(&rbuf, fdata, fsize);
-							efree(fdata);
+					if (!fgc_error) {
+						if (ptr->type) {
+							if ((fdata = file_get_contents(ptr->line, &fsize TSRMLS_CC))) {
+								phpstr_append(&rbuf, fdata, fsize);
+								efree(fdata);
+							} else {
+								fgc_error = 1;
+							}
+						} else {
+							phpstr_append(&rbuf, ptr->line, ptr->length);
 						}
-					} else {
-						phpstr_append(&rbuf, ptr->line, ptr->length);
 					}
 					curl_free(ptr->line);
 				}
 				curl_free(data);
-				RETVAL_PHPSTR_VAL(&rbuf);
+				if (fgc_error) {
+					phpstr_dtor(&rbuf);
+					RETVAL_FALSE;
+				} else {
+					RETVAL_PHPSTR_VAL(&rbuf);
+				}
 			}
 			http_request_body_dtor(&body);
 		break;
