@@ -60,7 +60,7 @@ inline char *php_memnstr(char *h, char *n, size_t n_len, char *e)
 {
 	char *p;
 	
-	if (e > h && b_len > 0) {
+	if (e > h && n_len > 0) {
 		while (h != e) {
 			if (*h == *n) {
 				for (p = n; *p == h[p-n]; ++p) {
