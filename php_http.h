@@ -182,6 +182,7 @@ PHP_FUNCTION(http_put_data);
 PHP_FUNCTION(http_put_file);
 PHP_FUNCTION(http_put_stream);
 PHP_FUNCTION(http_request);
+PHP_FUNCTION(http_request_body_encode);
 #endif /* HTTP_HAVE_CURL */
 PHP_FUNCTION(http_request_method_register);
 PHP_FUNCTION(http_request_method_unregister);
