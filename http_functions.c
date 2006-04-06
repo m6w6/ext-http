@@ -1624,6 +1624,49 @@ PHP_FUNCTION(http_put_data)
 	http_request_dtor(&request);
 }
 /* }}} */
+
+/* {{{ proto string http_request(int method, string url[, string body[, array options[, array &info]]])
+ *
+ * Performs a custom HTTP request on the supplied url.
+ *
+ * Expects the first parameter to be an integer specifying the request method to use.
+ * Accepts an optional third string parameter containing the raw request body.
+ * See http_get() for a full list of available options.
+ *
+ * Returns the HTTP response(s) as string on success, or FALSE on failure.
+ */
+PHP_FUNCTION(http_request)
+{
+	long meth;
+	char *URL, *data = NULL;
+	int URL_len, data_len = 0;
+	zval *options = NULL, *info = NULL;
+	http_request_body body;
+	http_request request;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ls|sa/!z", &meth, &URL, &URL_len, &data, &data_len, &options, &info)) {
+		RETURN_FALSE;
+	}
+	
+	if (info) {
+		zval_dtor(info);
+		array_init(info);
+	}
+	
+	RETVAL_FALSE;
+	
+	http_request_init_ex(&request, NULL, meth, URL);
+	request.body = http_request_body_init_ex(&body, HTTP_REQUEST_BODY_CSTRING, data, data_len, 0);
+	if (SUCCESS == http_request_prepare(&request, options?Z_ARRVAL_P(options):NULL)) {
+		http_request_exec(&request);
+		if (info) {
+			http_request_info(&request, Z_ARRVAL_P(info));
+		}
+		RETVAL_RESPONSE_OR_BODY(request);
+	}
+	http_request_dtor(&request);
+}
+/* }}} */
 #endif /* HTTP_HAVE_CURL */
 /* }}} HAVE_CURL */
 

@@ -105,6 +105,7 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_put_data, http_arg_pass_ref_4)
 	PHP_FE(http_put_file, http_arg_pass_ref_4)
 	PHP_FE(http_put_stream, http_arg_pass_ref_4)
+	PHP_FE(http_request, http_arg_pass_ref_5)
 #endif
 	PHP_FE(http_request_method_register, NULL)
 	PHP_FE(http_request_method_unregister, NULL)

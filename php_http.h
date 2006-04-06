@@ -181,6 +181,7 @@ PHP_FUNCTION(http_post_fields);
 PHP_FUNCTION(http_put_data);
 PHP_FUNCTION(http_put_file);
 PHP_FUNCTION(http_put_stream);
+PHP_FUNCTION(http_request);
 #endif /* HTTP_HAVE_CURL */
 PHP_FUNCTION(http_request_method_register);
 PHP_FUNCTION(http_request_method_unregister);
