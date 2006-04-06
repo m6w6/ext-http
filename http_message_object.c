@@ -1133,10 +1133,10 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 /* {{{ proto HttpMessage HttpMessage::getParentMessage()
  *
  * Get parent Message.
- * 
+ *
  * Returns the parent HttpMessage on success, or NULL if there's none.
  *
- * Throws HttpMessageException.
+ * Throws HttpRuntimeException.
  */
 PHP_METHOD(HttpMessage, getParentMessage)
 {
@@ -1412,13 +1412,13 @@ PHP_METHOD(HttpMessage, detach)
 }
 /* }}} */
 
-/* {{{ proto void HttpMessage::prepend(HttpMessage message)
+/* {{{ proto void HttpMessage::prepend(HttpMessage message[, bool top = true])
  *
  * Prepends message(s) to the HTTP message.
  *
  * Expects an HttpMessage object as parameter.
  *
- * Throws HttpInvalidParamException if the messages are located within the same message chain.
+ * Throws HttpInvalidParamException if the message is located within the same message chain.
  */
 PHP_METHOD(HttpMessage, prepend)
 {

@@ -396,6 +396,12 @@ See http_get() for a full list of available options.</p>
 <p>Expects the second parameter to be a string containing the data to upload.<br />
 See http_get() for a full list of available options.</p>
 <p>Returns the HTTP response(s) as string on success, or FALSE on failure.</p>
+<h2 id="http_request">string http_request(int method, string url[, string body[, array options[, array &info]]])</h2>
+<p>Performs a custom HTTP request on the supplied url.</p>
+<p>Expects the first parameter to be an integer specifying the request method to use.<br />
+Accepts an optional third string parameter containing the raw request body.<br />
+See http_get() for a full list of available options.</p>
+<p>Returns the HTTP response(s) as string on success, or FALSE on failure.</p>
 <h2 id="http_request_method_register">int http_request_method_register(string method)</h2>
 <p>Register a custom request method.</p>
 <p>Expects a string parameter containing the request method name to register.</p>
@@ -566,7 +572,7 @@ HttpMessage::TYPE_REQUEST or supplied URL was empty.</p>
 <h3 id="HttpMessage_getParentMessage">HttpMessage HttpMessage::getParentMessage()</h3>
 <p>Get parent Message.</p>
 <p>Returns the parent HttpMessage on success, or NULL if there's none.</p>
-<p>Throws HttpMessageException.</p>
+<p>Throws HttpRuntimeException.</p>
 <h3 id="HttpMessage_send">bool HttpMessage::send()</h3>
 <p>Send the Message according to its type as Response or Request.<br />
 This provides limited functionality compared to HttpRequest and HttpResponse.</p>
@@ -591,9 +597,10 @@ should also contain any parent messages.</p>
 <p>Re-constructs the HttpMessage based upon the serialized string.</p>
 <h3 id="HttpMessage_detach">HttpMessage HttpMessage::detach(void)</h3>
 <p>Returns a clone of an HttpMessage object detached from any parent messages.</p>
-<h3 id="HttpMessage_prepend">void HttpMessage::prepend(HttpMessage message)</h3>
+<h3 id="HttpMessage_prepend">void HttpMessage::prepend(HttpMessage message[, bool top = true])</h3>
 <p>Prepends message(s) to the HTTP message.</p>
 <p>Expects an HttpMessage object as parameter.</p>
+<p>Throws HttpInvalidParamException if the message is located within the same message chain.</p>
 <h3 id="HttpMessage_reverse">HttpMessage HttpMessage::reverse()</h3>
 <p>Reorders the message chain in reverse order.</p>
 <p>Returns the most parent HttpMessage object.</p>
@@ -1200,6 +1207,8 @@ http.cache_log is set.</p>
 </li>
 <li><a href="#http_put_data">http_put_data</a>
 </li>
+<li><a href="#http_request">http_request</a>
+</li>
 <li><a href="#http_request_method_register">http_request_method_register</a>
 </li>
 <li><a href="#http_request_method_unregister">http_request_method_unregister</a>
@@ -1401,7 +1410,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Sun, 19 Mar 2006 19:28:39 +0100</b></p>
+    <p><b>Generated at: Thu, 06 Apr 2006 15:55:09 +0200</b></p>
 </body>
 </html>
 
