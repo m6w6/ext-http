@@ -55,6 +55,28 @@ PHP_HTTP_API void _http_info_dtor(http_info *i)
 	}
 }
 
+#if !defined(ZEND_ENGINE_2)
+inline char *php_memnstr(char *h, char *n, size_t n_len, char *e)
+{
+	char *p;
+	
+	if (e > h && b_len > 0) {
+		while (h != e) {
+			if (*h == *n) {
+				for (p = n; *p == h[p-n]; ++p) {
+					if (p == n+n_len-1) {
+						return h;
+					}
+				}
+			}
+			++h;
+		}
+	}
+	
+	return NULL;
+}
+#endif
+
 PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info, zend_bool silent TSRMLS_DC)
 {
 	const char *end, *http;
