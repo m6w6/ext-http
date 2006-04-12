@@ -47,10 +47,12 @@ HttpResponse
  <license>BSD, revised</license>
  <notes><![CDATA[
 + Added missing http_request() function
++ Added missing http_request_body_encode() function
 - Improved performance of the message and header parser
 - Disallow $HttpMessage->prepend($HttpMessage) causing infinite recursion
 * Fixed internal http_parse_headers() always returning success
 * Fixed missing "parentMessage" entry in print_r($HttpMessageObject)
+* Fixed possible crash if the response does not contain a status message
 ]]></notes>
  <contents>
   <dir name="/">
