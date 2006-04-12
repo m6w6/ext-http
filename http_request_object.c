@@ -633,7 +633,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		}
 
 		UPD_PROP(long, responseCode, msg->http.info.response.code);
-		UPD_PROP(string, responseStatus, msg->http.info.response.status);
+		UPD_PROP(string, responseStatus, msg->http.info.response.status ? msg->http.info.response.status : "");
 
 		MAKE_STD_ZVAL(resp);
 		array_init(resp);
