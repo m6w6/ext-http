@@ -10,6 +10,7 @@
  * <code>
  * <?php
  * $rpc = new XmlRpcClient('http://mike:secret@example.com/cgi-bin/vpop-xmlrpc', 'vpop');
+ * $rpc->options = array(array('compress' => true));
  * try {
  *     print_r($rpc->listdomain(array('domain' => 'example.com')));
  * } catch (Exception $ex) {
@@ -37,7 +38,7 @@ class XmlRpcClient
      *
      * @var HttpRequest
      */
-    protected $request;
+    public $request;
 
     /**
      * Constructor
@@ -53,27 +54,6 @@ class XmlRpcClient
     }
 
     /**
-     * Proxy to HttpRequest::setOptions()
-     *
-     * @param array $options
-     * @return unknown
-     */
-    public function setOptions(array $options = null)
-    {
-        return $this->request->setOptions($options);
-    }
-    
-    /**
-     * Get associated HttpRequest instance
-     *
-     * @return HttpRequest
-     */
-    public function getRequest()
-    {
-        return $this->request;
-    }
-
-    /**
      * RPC method proxy
      *
      * @param string $method RPC method name
@@ -86,12 +66,42 @@ class XmlRpcClient
         if ($this->namespace) {
             $method = $this->namespace .'.'. $method;
         }
-        $this->request->setRawPostData(xmlrpc_encode_request($method, $params));
+        
+        $data = xmlrpc_encode_request($method, $params);
+        $this->request->setRawPostData($data);
+        
         $response = $this->request->send();
         if ($response->getResponseCode() != 200) {
-            throw new Exception($response->getBody(), $response->getResponseCode());
+            throw new Exception(
+                $response->getResponseStatus(), 
+                $response->getResponseCode()
+            );
         }
-        return xmlrpc_decode($response->getBody(), 'utf-8');
+        $data = xmlrpc_decode($response->getBody(), 'utf-8');
+        
+        if (isset($data['faultCode'], $data['faultString'])) {
+            throw new Exception(
+                $data['faultString'],
+                $data['faultCode']
+            );
+        }
+        
+        return $data;
+    }
+    
+    public function __set($what, $params)
+    {
+        return call_user_func_array(
+            array($this->request, "set$what"),
+            $params
+        );
+    }
+    
+    public function __get($what)
+    {
+        return call_user_func(
+            array($this->request, "get$what")
+        );
     }
 }
 
