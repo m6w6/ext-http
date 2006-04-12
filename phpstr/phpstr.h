@@ -69,11 +69,12 @@
 	FREE_PHPSTR((free), (STR));
 
 typedef struct _phpstr_t {
-	size_t size;
 	char  *data;
 	size_t used;
 	size_t free;
-	int    pmem;
+	size_t size;
+	unsigned pmem:1;
+	unsigned reserved:31;
 } phpstr;
 
 typedef enum _phpstr_free_t {
