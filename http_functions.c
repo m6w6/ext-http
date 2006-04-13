@@ -1668,12 +1668,6 @@ PHP_FUNCTION(http_request)
 }
 /* }}} */
 
-/* {{{ proto string http_request_body_encode(array fields, array files)
- *
- * Generate x-www-form-urlencoded resp. form-data encoded request body.
- *
- * Returns encoded string on success, or FALSE on failure.
- */
 static char *file_get_contents(char *file, size_t *len TSRMLS_DC)
 {
 	php_stream *s = NULL;
@@ -1694,6 +1688,13 @@ struct FormData {
 	size_t length;
 };
 CURLcode Curl_getFormData(struct FormData **, struct curl_httppost *post, curl_off_t *size);
+
+/* {{{ proto string http_request_body_encode(array fields, array files)
+ *
+ * Generate x-www-form-urlencoded resp. form-data encoded request body.
+ *
+ * Returns encoded string on success, or FALSE on failure.
+ */
 PHP_FUNCTION(http_request_body_encode)
 {
 	zval *fields = NULL, *files = NULL;

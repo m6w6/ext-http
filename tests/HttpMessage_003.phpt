@@ -1,5 +1,5 @@
 --TEST--
-HttpMessage implmenets Serializable, Countable
+HttpMessage implements Serializable, Countable
 --SKIPIF--
 <?php
 include 'skip.inc';
@@ -63,6 +63,8 @@ object(HttpMessage)#%d (%d) {
   }
   ["body:protected"]=>
   string(0) ""
+  ["parentMessage:protected"]=>
+  NULL
 }
 int(1)
 Done

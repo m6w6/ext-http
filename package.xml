@@ -30,14 +30,17 @@ HttpResponse
   </maintainer>
   </maintainers>
  <release>
-  <version>1.0.0RC2</version>
-  <date>2006-03-28</date>
+  <version>1.0.0RC3</version>
+  <date>2006-04-13</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>* Fixed Bug #7192: Build against libcurl &gt;= 7.15.2 fails
-* Fixed access of super globals
-* Fixed sending userspace streams
-* Fixed too aggressive caching behaviour of HttpResponse
+  <notes>+ Added missing http_request() function
++ Added missing http_request_body_encode() function
+- Improved performance of the message and header parser
+- Disallow $HttpMessage-&gt;prepend($HttpMessage) causing infinite recursion
+* Fixed internal http_parse_headers() always returning success
+* Fixed missing &quot;parentMessage&quot; entry in print_r($HttpMessageObject)
+* Fixed possible crash if the response does not contain a status message
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>

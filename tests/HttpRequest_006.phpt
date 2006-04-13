@@ -59,6 +59,8 @@ object(HttpMessage)#%d (%d) {
 </methodCall>
 "
 "
+  ["parentMessage:protected"]=>
+  NULL
 }
 object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
@@ -98,6 +100,8 @@ object(HttpMessage)#%d (%d) {
 </methodCall>
 "
 "
+  ["parentMessage:protected"]=>
+  NULL
 }
 object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
@@ -137,5 +141,7 @@ object(HttpMessage)#%d (%d) {
 </methodCall>
 "
 "
+  ["parentMessage:protected"]=>
+  NULL
 }
 Done
