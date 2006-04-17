@@ -185,7 +185,7 @@ PHP_HTTP_API STATUS _http_start_ob_etaghandler(TSRMLS_D)
 	}
 	
 	HTTP_G->etag.started = 1;
-	return php_start_ob_buffer_named("ob_etaghandler", HTTP_G->send.buffer_size, 1 TSRMLS_CC);
+	return php_start_ob_buffer_named("ob_etaghandler", HTTP_G->send.buffer_size, 0 TSRMLS_CC);
 }
 
 PHP_HTTP_API zend_bool _http_interrupt_ob_etaghandler(TSRMLS_D)
