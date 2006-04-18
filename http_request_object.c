@@ -688,7 +688,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		ret = FAILURE;
 	}
 	
-	if (zend_hash_exists(&Z_OBJCE_P(getThis())->function_table, "onfinish", sizeof("onfinish"))) {
+	if (!EG(exception) && zend_hash_exists(&Z_OBJCE_P(getThis())->function_table, "onfinish", sizeof("onfinish"))) {
 		zval *param;
 		
 		MAKE_STD_ZVAL(param);
