@@ -693,7 +693,9 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		
 		MAKE_STD_ZVAL(param);
 		ZVAL_BOOL(param, ret == SUCCESS);
-		zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "onfinish", NULL, param);
+		with_error_handling(EH_NORMAL, NULL) {
+			zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "onfinish", NULL, param);
+		} end_error_handling();
 		zval_ptr_dtor(&param);
 	}
 	

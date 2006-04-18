@@ -1004,7 +1004,9 @@ static int http_curl_progress_callback(void *ctx, double dltotal, double dlnow, 
 	add_assoc_double(param, "ultotal", ultotal);
 	add_assoc_double(param, "ulnow", ulnow);
 	
-	call_user_function(EG(function_table), NULL, request->_progress_callback, &retval, 1, &param TSRMLS_CC);
+	with_error_handling(EH_NORMAL, NULL) {
+		call_user_function(EG(function_table), NULL, request->_progress_callback, &retval, 1, &param TSRMLS_CC);
+	} end_error_handling();
 	
 	zval_ptr_dtor(&param);
 	zval_dtor(&retval);
