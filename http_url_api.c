@@ -72,15 +72,16 @@ PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
 	if (url) {
 		purl = php_url_parse(abs = estrdup(url));
 		STR_SET(abs, NULL);
-	} else {
-		purl = ecalloc(1, sizeof(php_url));
+		if (!purl) {
+			http_error_ex(HE_WARNING, HTTP_E_URL, "Could not parse URL (%s)", url);
+			return NULL;
+		}
 	}
 	
+	http_build_url(0, purl, NULL, NULL, &abs, NULL);
+	
 	if (purl) {
-		http_build_url(0, purl, NULL, NULL, &abs, NULL);
 		php_url_free(purl);
-	} else {
-		http_error_ex(HE_WARNING, HTTP_E_URL, "Could not parse URL (%s)", url);
 	}
 	
 	return abs;

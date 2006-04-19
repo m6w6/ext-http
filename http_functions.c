@@ -180,7 +180,9 @@ PHP_FUNCTION(http_build_url)
 	if (new_url) {
 		php_url_free(new_url);
 	}
-	php_url_free(old_url);
+	if (old_url) {
+		php_url_free(old_url);
+	}
 	
 	RETURN_STRINGL(url_str, url_len, 0);
 }
