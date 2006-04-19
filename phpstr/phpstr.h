@@ -105,8 +105,8 @@ PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int flags);
 PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t length);
 
 /* usually only called from within the internal functions */
-#define phpstr_resize(b, s) phpstr_resize_ex((b), (s), 0)
-PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size);
+#define phpstr_resize(b, s) phpstr_resize_ex((b), (s), 0, 0)
+PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size, int allow_error);
 
 /* shrink memory chunk to actually used size (+1) */
 PHPSTR_API size_t phpstr_shrink(phpstr *buf);

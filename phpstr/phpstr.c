@@ -34,7 +34,7 @@ PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t
 	return buf;
 }
 
-PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size)
+PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size, int allow_error)
 {
 #if 0
 	fprintf(stderr, "RESIZE: size=%lu, used=%lu, free=%lu\n", buf->size, buf->used, buf->free);
@@ -46,7 +46,13 @@ PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size
 			size *= 2;
 		}
 		if (buf->data) {
-			char *ptr = perealloc(buf->data, buf->used + buf->free + size, buf->pmem);
+			char *ptr;
+			
+			if (allow_error) {
+				ptr = perealloc_recoverable(buf->data, buf->used + buf->free + size, buf->pmem);
+			} else {
+				ptr = perealloc(buf->data, buf->used + buf->free + size, buf->pmem);
+			}
 			
 			if (ptr) {
 				buf->data = ptr;
@@ -279,7 +285,7 @@ PHPSTR_API phpstr *phpstr_merge(unsigned argc, ...)
 
 PHPSTR_API phpstr *phpstr_fix(phpstr *buf)
 {
-	if (NOMEM == phpstr_resize_ex(buf, 1, 1)) {
+	if (NOMEM == phpstr_resize_ex(buf, 1, 1, 0)) {
 		return NULL;
 	}
 	buf->data[buf->used] = '\0';

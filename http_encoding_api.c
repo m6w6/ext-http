@@ -343,9 +343,9 @@ retry_inflate:
 		Z.avail_in = data_len;
 		
 		do {
-			phpstr_resize(&buffer, data_len << 2);
-
-			do {
+			if (phpstr_resize_ex(&buffer, data_len << 2, 0, 1) == (size_t) -1) {
+				status = Z_MEM_ERROR;
+			} else do {
 				Z.avail_out = (buffer.free -= Z.total_out - buffer.used);
 				Z.next_out = (Bytef *) buffer.data + (buffer.used = Z.total_out);
 				status = inflate(&Z, Z_NO_FLUSH);
@@ -457,7 +457,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 	s->stream.avail_out = *encoded_len;
 	s->stream.next_out = (Bytef *) *encoded;
 	
-	switch (status = deflate(&s->stream, Z_NO_FLUSH))
+	switch (status = deflate(&s->stream, HTTP_ENCODING_STREAM_FLUSH_FLAG(s->flags)))
 	{
 		case Z_OK:
 		case Z_STREAM_END:
@@ -503,7 +503,7 @@ retry_raw_inflate:
 		s->stream.next_out = (Bytef *) *decoded;
 		s->stream.avail_out = *decoded_len;
 		
-		switch (status = inflate(&s->stream, Z_NO_FLUSH))
+		switch (status = inflate(&s->stream, HTTP_ENCODING_STREAM_FLUSH_FLAG(s->flags)))
 		{
 			case Z_OK:
 			case Z_STREAM_END:
@@ -549,7 +549,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s,
 	s->stream.avail_out = *encoded_len;
 	s->stream.next_out = (Bytef *) *encoded;
 	
-	switch (status = deflate(&s->stream, Z_SYNC_FLUSH))
+	switch (status = deflate(&s->stream, Z_FULL_FLUSH))
 	{
 		case Z_OK:
 		case Z_STREAM_END:

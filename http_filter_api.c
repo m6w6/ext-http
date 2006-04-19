@@ -313,8 +313,10 @@ static HTTP_FILTER_FUNCTION(deflate)
 			if (ptr->buflen) {
 				http_encoding_deflate_stream_update(buffer, ptr->buf, ptr->buflen, &encoded, &encoded_len);
 				if (encoded) {
-					out_avail = 1;
-					NEW_BUCKET(encoded, encoded_len);
+					if (encoded_len) {
+						out_avail = 1;
+						NEW_BUCKET(encoded, encoded_len);
+					}
 					efree(encoded);
 				}
 			}
@@ -331,8 +333,10 @@ static HTTP_FILTER_FUNCTION(deflate)
 		
 		http_encoding_deflate_stream_flush(buffer, &encoded, &encoded_len);
 		if (encoded) {
-			out_avail = 1;
-			NEW_BUCKET(encoded, encoded_len);
+			if (encoded_len) {
+				out_avail = 1;
+				NEW_BUCKET(encoded, encoded_len);
+			}
 			efree(encoded);
 		}
 	}
@@ -343,8 +347,10 @@ static HTTP_FILTER_FUNCTION(deflate)
 		
 		http_encoding_deflate_stream_finish(buffer, &encoded, &encoded_len);
 		if (encoded) {
-			out_avail = 1;
-			NEW_BUCKET(encoded, encoded_len);
+			if (encoded_len) {
+				out_avail = 1;
+				NEW_BUCKET(encoded, encoded_len);
+			}
 			efree(encoded);
 		}
 	}
@@ -378,8 +384,10 @@ static HTTP_FILTER_FUNCTION(inflate)
 			if (ptr->buflen) {
 				http_encoding_inflate_stream_update(buffer, ptr->buf, ptr->buflen, &decoded, &decoded_len);
 				if (decoded) {
-					out_avail = 1;
-					NEW_BUCKET(decoded, decoded_len);
+					if (decoded_len) {
+						out_avail = 1;
+						NEW_BUCKET(decoded, decoded_len);
+					}
 					efree(decoded);
 				}
 			}
@@ -396,8 +404,10 @@ static HTTP_FILTER_FUNCTION(inflate)
 		
 		http_encoding_inflate_stream_flush(buffer, &decoded, &decoded_len);
 		if (decoded) {
-			out_avail = 1;
-			NEW_BUCKET(decoded, decoded_len);
+			if (decoded_len) {
+				out_avail = 1;
+				NEW_BUCKET(decoded, decoded_len);
+			}
 			efree(decoded);
 		}
 	}
@@ -408,8 +418,10 @@ static HTTP_FILTER_FUNCTION(inflate)
 		
 		http_encoding_inflate_stream_finish(buffer, &decoded, &decoded_len);
 		if (decoded) {
-			out_avail = 1;
-			NEW_BUCKET(decoded, decoded_len);
+			if (decoded_len) {
+				out_avail = 1;
+				NEW_BUCKET(decoded, decoded_len);
+			}
 			efree(decoded);
 		}
 	}
@@ -465,7 +477,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	} else
 	
 	if (!strcasecmp(name, "http.inflate")) {
-		int flags = p ? HTTP_ENCODING_STREAM_PERSISTENT : 0;
+		int flags = HTTP_ENCODING_STREAM_FLUSH_SYNC | (p ? HTTP_ENCODING_STREAM_PERSISTENT : 0);
 		HTTP_FILTER_BUFFER(inflate) *b = NULL;
 		
 		if ((b = http_encoding_inflate_stream_init(NULL, flags))) {
@@ -476,7 +488,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	} else
 	
 	if (!strcasecmp(name, "http.deflate")) {
-		int flags = p ? HTTP_ENCODING_STREAM_PERSISTENT : 0;
+		int flags = HTTP_ENCODING_STREAM_FLUSH_SYNC | (p ? HTTP_ENCODING_STREAM_PERSISTENT : 0);
 		HTTP_FILTER_BUFFER(deflate) *b = NULL;
 		
 		if (params) {
@@ -492,7 +504,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 					zval *orig = *tmp;
 					
 					convert_to_long_ex(tmp);
-					flags |= (Z_LVAL_PP(tmp) & 0x0fffffff);
+					flags |= (Z_LVAL_PP(tmp) & 0x00ffffff);
 					if (orig != *tmp) zval_ptr_dtor(tmp);
 				}
 			}
