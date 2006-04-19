@@ -66,10 +66,15 @@ PHP_MINIT_FUNCTION(http_url)
 
 PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
 {
-	char *abs = estrdup(url);
-	php_url *purl = php_url_parse(abs);
+	char *abs = NULL;
+	php_url *purl = NULL;
 	
-	STR_SET(abs, NULL);
+	if (url) {
+		purl = php_url_parse(abs = estrdup(url));
+		STR_SET(abs, NULL);
+	} else {
+		purl = ecalloc(1, sizeof(php_url));
+	}
 	
 	if (purl) {
 		http_build_url(0, purl, NULL, NULL, &abs, NULL);
