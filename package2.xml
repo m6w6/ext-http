@@ -37,7 +37,7 @@ HttpResponse
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>1.0.0RC3</release>
+  <release>1.0.0RC4</release>
   <api>1.0.0</api>
  </version>
  <stability>
@@ -46,13 +46,9 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added missing http_request() function
-+ Added missing http_request_body_encode() function
-- Improved performance of the message and header parser
-- Disallow $HttpMessage->prepend($HttpMessage) causing infinite recursion
-* Fixed internal http_parse_headers() always returning success
-* Fixed missing "parentMessage" entry in print_r($HttpMessageObject)
-* Fixed possible crash if the response does not contain a status message
+* Fixed possible crash in progress/onfinish request callbacks
+* Fixed http_redirect() and http_build_url() without arguments
+* Fixed deflate streams flushing behaviour
 ]]></notes>
  <contents>
   <dir name="/">
