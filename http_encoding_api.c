@@ -35,6 +35,11 @@ PHP_MINIT_FUNCTION(http_encoding)
 	HTTP_LONG_CONSTANT("HTTP_DEFLATE_STRATEGY_HUFF", HTTP_DEFLATE_STRATEGY_HUFF);
 	HTTP_LONG_CONSTANT("HTTP_DEFLATE_STRATEGY_RLE", HTTP_DEFLATE_STRATEGY_RLE);
 	HTTP_LONG_CONSTANT("HTTP_DEFLATE_STRATEGY_FIXED", HTTP_DEFLATE_STRATEGY_FIXED);
+	
+	HTTP_LONG_CONSTANT("HTTP_ENCODING_STREAM_FLUSH_NONE", HTTP_ENCODING_STREAM_FLUSH_NONE);
+	HTTP_LONG_CONSTANT("HTTP_ENCODING_STREAM_FLUSH_SYNC", HTTP_ENCODING_STREAM_FLUSH_SYNC);
+	HTTP_LONG_CONSTANT("HTTP_ENCODING_STREAM_FLUSH_FULL", HTTP_ENCODING_STREAM_FLUSH_FULL);
+	
 	return SUCCESS;
 }
 
@@ -218,65 +223,51 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 
 #ifdef HTTP_HAVE_ZLIB
 
-/* {{{ */
-#define HTTP_DEFLATE_LEVEL_SET(flags, level) \
-	switch (flags & 0xf) \
-	{ \
-		default: \
-			if ((flags & 0xf) < 10) { \
-				level = flags & 0xf; \
-				break; \
-			} \
-		case HTTP_DEFLATE_LEVEL_DEF: \
-			level = Z_DEFAULT_COMPRESSION; \
-		break; \
+/* {{{ inline int http_inflate_rounds */
+static inline int http_inflate_rounds(z_stream *Z, int flush, char **buf, size_t *len)
+{
+	int status = 0, round = 0;
+	phpstr buffer;
+	
+	*buf = NULL;
+	*len = 0;
+	
+	phpstr_init_ex(&buffer, Z->avail_in, PHPSTR_INIT_PREALLOC);
+	
+	do {
+		if (phpstr_resize_ex(&buffer, buffer.size, 0, 1) == (size_t) -1) {
+			status = Z_MEM_ERROR;
+		} else {
+			do {
+				Z->avail_out = buffer.free;
+				Z->next_out = (Bytef *) buffer.data + buffer.used;
+#if 0
+				fprintf(stderr, "PRIOR: size=%lu, avail=%lu, used=%lu, (%d/%d)\n", buffer.size, Z->avail_out, buffer.used, status, round);
+#endif
+				status = inflate(Z, flush);
+			
+				buffer.used += buffer.free - Z->avail_out;
+				buffer.free = Z->avail_out;
+#if 0
+				fprintf(stderr, "AFTER: size=%lu, avail=%lu, used=%lu, (%d/%d)\n", buffer.size, Z->avail_out, buffer.used, status, round);
+#endif
+			} while (Z_OK == status && Z->avail_in);
+			
+			HTTP_INFLATE_BUFFER_SIZE_ALIGN(buffer.size);
+		}
+	} while (Z_BUF_ERROR == status && ++round < HTTP_INFLATE_ROUNDS);
+	
+	if (status == Z_OK || status == Z_STREAM_END) {
+		phpstr_shrink(&buffer);
+		phpstr_fix(&buffer);
+		*buf = buffer.data;
+		*len = buffer.used;
+	} else {
+		phpstr_dtor(&buffer);
 	}
 	
-#define HTTP_DEFLATE_WBITS_SET(flags, wbits) \
-	switch (flags & 0xf0) \
-	{ \
-		case HTTP_DEFLATE_TYPE_GZIP: \
-			wbits = HTTP_WINDOW_BITS_GZIP; \
-		break; \
-		case HTTP_DEFLATE_TYPE_RAW: \
-			wbits = HTTP_WINDOW_BITS_RAW; \
-		break; \
-		default: \
-			wbits = HTTP_WINDOW_BITS_ZLIB; \
-		break; \
-	}
-
-#define HTTP_INFLATE_WBITS_SET(flags, wbits) \
-	if (flags & HTTP_INFLATE_TYPE_RAW) { \
-		wbits = HTTP_WINDOW_BITS_RAW; \
-	} else { \
-		wbits = HTTP_WINDOW_BITS_ANY; \
-	}
-
-#define HTTP_DEFLATE_STRATEGY_SET(flags, strategy) \
-	switch (flags & 0xf00) \
-	{ \
-		case HTTP_DEFLATE_STRATEGY_FILT: \
-			strategy = Z_FILTERED; \
-		break; \
-		case HTTP_DEFLATE_STRATEGY_HUFF: \
-			strategy = Z_HUFFMAN_ONLY; \
-		break; \
-		case HTTP_DEFLATE_STRATEGY_RLE: \
-			strategy = Z_RLE; \
-		break; \
-		case HTTP_DEFLATE_STRATEGY_FIXED: \
-			strategy = Z_FIXED; \
-		break; \
-		default: \
-			strategy = Z_DEFAULT_STRATEGY; \
-		break; \
-	}
-
-#define HTTP_WINDOW_BITS_ZLIB	0x0000000f
-#define HTTP_WINDOW_BITS_GZIP	0x0000001f
-#define HTTP_WINDOW_BITS_ANY	0x0000002f
-#define HTTP_WINDOW_BITS_RAW	-0x000000f
+	return status;
+}
 /* }}} */
 
 /* {{{ STATUS http_encoding_deflate(int, char *, size_t, char **, size_t *) */
@@ -325,50 +316,34 @@ PHP_HTTP_API STATUS _http_encoding_deflate(int flags, const char *data, size_t d
 /* {{{ STATUS http_encoding_inflate(char *, size_t, char **, size_t) */
 PHP_HTTP_API STATUS _http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
-	int status, round = 0, wbits = HTTP_WINDOW_BITS_ANY;
 	z_stream Z;
-	phpstr buffer;
+	int status, wbits = HTTP_WINDOW_BITS_ANY;
 	
 	memset(&Z, 0, sizeof(z_stream));
-	*decoded = NULL;
-	*decoded_len = 0;
 	
-	phpstr_init_ex(&buffer, data_len << 2, PHPSTR_INIT_PREALLOC);
-	buffer.size = data_len;
-	
-retry_inflate:			
+retry_raw_inflate:
 	status = inflateInit2(&Z, wbits);
 	if (Z_OK == status) {
 		Z.next_in = (Bytef *) data;
 		Z.avail_in = data_len;
 		
-		do {
-			if (phpstr_resize_ex(&buffer, data_len << 2, 0, 1) == (size_t) -1) {
-				status = Z_MEM_ERROR;
-			} else do {
-				Z.avail_out = (buffer.free -= Z.total_out - buffer.used);
-				Z.next_out = (Bytef *) buffer.data + (buffer.used = Z.total_out);
-				status = inflate(&Z, Z_NO_FLUSH);
-			} while (Z_OK == status);
-		} while (Z_BUF_ERROR == status && ++round < HTTP_INFLATE_ROUNDS);
-		
-		if (Z_DATA_ERROR == status && HTTP_WINDOW_BITS_ANY == wbits) {
-			/* raw deflated data? */
-			inflateEnd(&Z);
-			wbits = HTTP_WINDOW_BITS_RAW;
-			goto retry_inflate;
+		switch (status = http_inflate_rounds(&Z, Z_NO_FLUSH, decoded, decoded_len))
+		{
+			case Z_OK:
+			case Z_STREAM_END:
+				return SUCCESS;
+			break;
+			
+			case Z_DATA_ERROR:
+				/* raw deflated data? */
+				if (HTTP_WINDOW_BITS_ANY == wbits) {
+					inflateEnd(&Z);
+					wbits = HTTP_WINDOW_BITS_RAW;
+					goto retry_raw_inflate;
+				}
+			break;
 		}
-		
 		inflateEnd(&Z);
-		
-		if (Z_STREAM_END == status) {
-			*decoded_len = Z.total_out;
-			*decoded = erealloc_rel(buffer.data, *decoded_len + 1);
-			(*decoded)[*decoded_len] = '\0';
-			return SUCCESS;
-		} else {
-			phpstr_dtor(&buffer);
-		}
 	}
 	
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s", zError(status));
@@ -462,7 +437,11 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 		case Z_OK:
 		case Z_STREAM_END:
 			/* cut processed chunk off the buffer */
-			phpstr_cut(PHPSTR(s->stream.opaque), 0, PHPSTR_LEN(s->stream.opaque) - s->stream.avail_in);
+			if (s->stream.avail_in) {
+				phpstr_cut(PHPSTR(s->stream.opaque), 0, PHPSTR_LEN(s->stream.opaque) - s->stream.avail_in);
+			} else {
+				phpstr_reset(PHPSTR(s->stream.opaque));
+			}
 			
 			/* size buffer down to actual size */
 			*encoded_len -= s->stream.avail_out;
@@ -482,55 +461,39 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 /* {{{ STATUS http_encoding_inflate_stream_update(http_encoding_stream *, char *, size_t, char **, size_t *) */
 PHP_HTTP_API STATUS _http_encoding_inflate_stream_update(http_encoding_stream *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
-	int status, round = 0;
+	int status;
 	
 	/* append input to buffer */
 	phpstr_append(PHPSTR(s->stream.opaque), data, data_len);
 	
-	/* for realloc() */
-	*decoded = NULL;
-	*decoded_len = data_len << 1;
-	
-	/* inflate */
-	do {
-		*decoded_len <<= 1;
-		*decoded = erealloc_rel(*decoded, *decoded_len);
-		
 retry_raw_inflate:
-		s->stream.next_in = (Bytef *) PHPSTR_VAL(s->stream.opaque);
-		s->stream.avail_in = PHPSTR_LEN(s->stream.opaque);
+	s->stream.next_in = (Bytef *) PHPSTR_VAL(s->stream.opaque);
+	s->stream.avail_in = PHPSTR_LEN(s->stream.opaque);
 	
-		s->stream.next_out = (Bytef *) *decoded;
-		s->stream.avail_out = *decoded_len;
-		
-		switch (status = inflate(&s->stream, HTTP_ENCODING_STREAM_FLUSH_FLAG(s->flags)))
-		{
-			case Z_OK:
-			case Z_STREAM_END:
-				/* cut off */
+	switch (status = http_inflate_rounds(&s->stream, HTTP_ENCODING_STREAM_FLUSH_FLAG(s->flags), decoded, decoded_len))
+	{
+		case Z_OK:
+		case Z_STREAM_END:
+			/* cut off */
+			if (s->stream.avail_in) {
 				phpstr_cut(PHPSTR(s->stream.opaque), 0, PHPSTR_LEN(s->stream.opaque) - s->stream.avail_in);
-				
-				/* size down */
-				*decoded_len -= s->stream.avail_out;
-				*decoded = erealloc_rel(*decoded, *decoded_len + 1);
-				(*decoded)[*decoded_len] = '\0';
-				return SUCCESS;
-			break;
-			
-			case Z_DATA_ERROR:
-				/* raw deflated data ? */
-				if (!(s->flags & HTTP_INFLATE_TYPE_RAW) && !s->stream.total_out) {
-					inflateEnd(&s->stream);
-					s->flags |= HTTP_INFLATE_TYPE_RAW;
-					inflateInit2(&s->stream, HTTP_WINDOW_BITS_RAW);
-					goto retry_raw_inflate;
-				}
-			break;
-		}
-	} while (Z_BUF_ERROR == status && ++round < HTTP_INFLATE_ROUNDS);
+			} else {
+				phpstr_reset(PHPSTR(s->stream.opaque));
+			}
+			return SUCCESS;
+		break;
+		
+		case Z_DATA_ERROR:
+			/* raw deflated data ? */
+			if (!(s->flags & HTTP_INFLATE_TYPE_RAW) && !s->stream.total_out) {
+				inflateEnd(&s->stream);
+				s->flags |= HTTP_INFLATE_TYPE_RAW;
+				inflateInit2(&s->stream, HTTP_WINDOW_BITS_RAW);
+				goto retry_raw_inflate;
+			}
+		break;
+	}
 	
-	STR_SET(*decoded, NULL);
-	*decoded_len = 0;
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Failed to update inflate stream: %s", zError(status));
 	return FAILURE;
 }

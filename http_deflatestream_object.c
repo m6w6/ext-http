@@ -71,6 +71,9 @@ PHP_MINIT_FUNCTION(http_deflatestream_object)
 	DCL_CONST(long, "STRATEGY_HUFF", HTTP_DEFLATE_STRATEGY_HUFF);
 	DCL_CONST(long, "STRATEGY_RLE", HTTP_DEFLATE_STRATEGY_RLE);
 	DCL_CONST(long, "STRATEGY_FIXED", HTTP_DEFLATE_STRATEGY_FIXED);
+	DCL_CONST(long, "FLUSH_NONE", HTTP_ENCODING_STREAM_FLUSH_NONE);
+	DCL_CONST(long, "FLUSH_SYNC", HTTP_ENCODING_STREAM_FLUSH_SYNC);
+	DCL_CONST(long, "FLUSH_FULL", HTTP_ENCODING_STREAM_FLUSH_FULL);
 #endif
 	
 	return SUCCESS;
@@ -148,7 +151,7 @@ PHP_METHOD(HttpDeflateStream, __construct)
 		getObject(http_deflatestream_object, obj);
 		
 		if (!obj->stream) {
-			obj->stream = http_encoding_deflate_stream_init(NULL, flags);
+			obj->stream = http_encoding_deflate_stream_init(NULL, flags & 0x0fffffff);
 		} else {
 			http_error_ex(HE_WARNING, HTTP_E_ENCODING, "HttpDeflateStream cannot be initialized twice");
 		}

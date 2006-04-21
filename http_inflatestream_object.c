@@ -26,6 +26,10 @@
 #define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpInflateStream, method, 0)
 #define HTTP_INFLATE_ME(method, visibility)	PHP_ME(HttpInflateStream, method, HTTP_ARGS(HttpInflateStream, method), visibility)
 
+HTTP_BEGIN_ARGS(__construct, 0)
+	HTTP_ARG_VAL(flags, 0)
+HTTP_END_ARGS;
+
 HTTP_BEGIN_ARGS(update, 1)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
@@ -41,6 +45,7 @@ HTTP_END_ARGS;
 #define OBJ_PROP_CE http_inflatestream_object_ce
 zend_class_entry *http_inflatestream_object_ce;
 zend_function_entry http_inflatestream_object_fe[] = {
+	HTTP_INFLATE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	HTTP_INFLATE_ME(update, ZEND_ACC_PUBLIC)
 	HTTP_INFLATE_ME(flush, ZEND_ACC_PUBLIC)
 	HTTP_INFLATE_ME(finish, ZEND_ACC_PUBLIC)
@@ -53,6 +58,13 @@ PHP_MINIT_FUNCTION(http_inflatestream_object)
 {
 	HTTP_REGISTER_CLASS_EX(HttpInflateStream, http_inflatestream_object, NULL, 0);
 	http_inflatestream_object_handlers.clone_obj = _http_inflatestream_object_clone_obj;
+	
+#ifndef WONKY
+	DCL_CONST(long, "FLUSH_NONE", HTTP_ENCODING_STREAM_FLUSH_NONE);
+	DCL_CONST(long, "FLUSH_SYNC", HTTP_ENCODING_STREAM_FLUSH_SYNC);
+	DCL_CONST(long, "FLUSH_FULL", HTTP_ENCODING_STREAM_FLUSH_FULL);
+#endif
+	
 	return SUCCESS;
 }
 
@@ -112,6 +124,30 @@ void _http_inflatestream_object_free(zend_object *object TSRMLS_DC)
 	}
 	efree(o);
 }
+
+/* {{{ proto void HttpInflateStream::__construct([int flags = 0])
+ *
+ * Creates a new HttpInflateStream object instance.
+ * 
+ * Accepts an optional int parameter specifying how to initialize the inflate stream.
+ */ 
+PHP_METHOD(HttpInflateStream, __construct)
+{
+	long flags = 0;
+	
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &flags)) {
+		getObject(http_inflatestream_object, obj);
+		
+		if (!obj->stream) {
+			obj->stream = http_encoding_inflate_stream_init(NULL, flags & 0x0fffffff);
+		} else {
+			http_error_ex(HE_WARNING, HTTP_E_ENCODING, "HttpInflateStream cannot be initialized twice");
+		}
+	}
+	SET_EH_NORMAL();
+}
+/* }}} */
 
 /* {{{ proto string HttpInflateStream::update(string data)
  *

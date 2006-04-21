@@ -37,6 +37,10 @@ typedef enum _http_encoding_type_t {
 
 #define HTTP_DEFLATE_BUFFER_SIZE_GUESS(S) \
 	(((size_t) ((double) S * (double) 1.015)) + 10 + 8 + 4 + 1)
+#define HTTP_INFLATE_BUFFER_SIZE_GUESS(S) \
+	(((S) + 1) << 3)
+#define HTTP_INFLATE_BUFFER_SIZE_ALIGN(S) \
+	((S) += (S) >> (3))
 
 #define HTTP_DEFLATE_BUFFER_SIZE		0x8000
 #define HTTP_INFLATE_BUFFER_SIZE		0x1000
@@ -53,6 +57,65 @@ typedef enum _http_encoding_type_t {
 #define HTTP_DEFLATE_STRATEGY_RLE		0x00000300
 #define HTTP_DEFLATE_STRATEGY_FIXED		0x00000400
 
+#define HTTP_DEFLATE_LEVEL_SET(flags, level) \
+	switch (flags & 0xf) \
+	{ \
+		default: \
+			if ((flags & 0xf) < 10) { \
+				level = flags & 0xf; \
+				break; \
+			} \
+		case HTTP_DEFLATE_LEVEL_DEF: \
+			level = Z_DEFAULT_COMPRESSION; \
+		break; \
+	}
+	
+#define HTTP_DEFLATE_WBITS_SET(flags, wbits) \
+	switch (flags & 0xf0) \
+	{ \
+		case HTTP_DEFLATE_TYPE_GZIP: \
+			wbits = HTTP_WINDOW_BITS_GZIP; \
+		break; \
+		case HTTP_DEFLATE_TYPE_RAW: \
+			wbits = HTTP_WINDOW_BITS_RAW; \
+		break; \
+		default: \
+			wbits = HTTP_WINDOW_BITS_ZLIB; \
+		break; \
+	}
+
+#define HTTP_INFLATE_WBITS_SET(flags, wbits) \
+	if (flags & HTTP_INFLATE_TYPE_RAW) { \
+		wbits = HTTP_WINDOW_BITS_RAW; \
+} else { \
+		wbits = HTTP_WINDOW_BITS_ANY; \
+}
+
+#define HTTP_DEFLATE_STRATEGY_SET(flags, strategy) \
+	switch (flags & 0xf00) \
+	{ \
+		case HTTP_DEFLATE_STRATEGY_FILT: \
+			strategy = Z_FILTERED; \
+		break; \
+		case HTTP_DEFLATE_STRATEGY_HUFF: \
+			strategy = Z_HUFFMAN_ONLY; \
+		break; \
+		case HTTP_DEFLATE_STRATEGY_RLE: \
+			strategy = Z_RLE; \
+		break; \
+		case HTTP_DEFLATE_STRATEGY_FIXED: \
+			strategy = Z_FIXED; \
+		break; \
+		default: \
+			strategy = Z_DEFAULT_STRATEGY; \
+		break; \
+	}
+
+#define HTTP_WINDOW_BITS_ZLIB	0x0000000f
+#define HTTP_WINDOW_BITS_GZIP	0x0000001f
+#define HTTP_WINDOW_BITS_ANY	0x0000002f
+#define HTTP_WINDOW_BITS_RAW	-0x000000f
+
 #ifndef Z_FIXED
 /* Z_FIXED does not exist prior 1.2.2.2 */
 #	define Z_FIXED 0
@@ -66,10 +129,9 @@ typedef enum _http_encoding_type_t {
 #define HTTP_ENCODING_STREAM_FLUSH_SYNC 0x00100000
 #define HTTP_ENCODING_STREAM_FLUSH_FULL 0x00200000
 
-#define HTTP_ENCODING_STREAM_FLUSH_FLAG(f) ( \
-	(f) & HTTP_ENCODING_STREAM_FLUSH_FULL ? Z_FULL_FLUSH : \
-	(f) & HTTP_ENCODING_STREAM_FLUSH_SYNC ? Z_SYNC_FLUSH : \
-	Z_NO_FLUSH)
+#define HTTP_ENCODING_STREAM_FLUSH_FLAG(f) \
+	(((f) & HTTP_ENCODING_STREAM_FLUSH_FULL) ? Z_FULL_FLUSH : \
+	(((f) & HTTP_ENCODING_STREAM_FLUSH_SYNC) ? Z_SYNC_FLUSH : Z_NO_FLUSH))
 
 #define HTTP_ENCODING_STREAM_PERSISTENT	0x01000000
 

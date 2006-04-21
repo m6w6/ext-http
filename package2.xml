@@ -48,7 +48,6 @@ HttpResponse
  <notes><![CDATA[
 * Fixed possible crash in progress/onfinish request callbacks
 * Fixed http_redirect() and http_build_url() without arguments
-* Fixed deflate streams flushing behaviour
 ]]></notes>
  <contents>
   <dir name="/">

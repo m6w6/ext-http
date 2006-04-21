@@ -477,7 +477,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	} else
 	
 	if (!strcasecmp(name, "http.inflate")) {
-		int flags = HTTP_ENCODING_STREAM_FLUSH_SYNC | (p ? HTTP_ENCODING_STREAM_PERSISTENT : 0);
+		int flags = p ? HTTP_ENCODING_STREAM_PERSISTENT : 0;
 		HTTP_FILTER_BUFFER(inflate) *b = NULL;
 		
 		if ((b = http_encoding_inflate_stream_init(NULL, flags))) {
@@ -488,7 +488,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	} else
 	
 	if (!strcasecmp(name, "http.deflate")) {
-		int flags = HTTP_ENCODING_STREAM_FLUSH_SYNC | (p ? HTTP_ENCODING_STREAM_PERSISTENT : 0);
+		int flags = p ? HTTP_ENCODING_STREAM_PERSISTENT : 0;
 		HTTP_FILTER_BUFFER(deflate) *b = NULL;
 		
 		if (params) {
@@ -504,7 +504,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 					zval *orig = *tmp;
 					
 					convert_to_long_ex(tmp);
-					flags |= (Z_LVAL_PP(tmp) & 0x00ffffff);
+					flags |= (Z_LVAL_PP(tmp) & 0x0fffffff);
 					if (orig != *tmp) zval_ptr_dtor(tmp);
 				}
 			}

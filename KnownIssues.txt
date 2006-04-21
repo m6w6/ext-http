@@ -20,9 +20,8 @@ to not check for zlib header bytes.  This is not preventable AFAICS.
 generate any compressed data (gzip, deflate AKA zlib and raw deflate);
 just use the flag for the data format you want to generate:
 HTTP_DEFLATE_TYPE_GZIP, HTTP_DEFLATE_TYPE_ZLIB or HTTP_DEFLATE_TYPE_RAW.
-	Using a deflate stream filter on a stream you read from, will
-not work as expected, because the filter does not know when to finish,
-thus the trailing bytes (GZIP and ZLIB, not RAW) won't ever be generated.
+	Using an encoding stream filter on a stream you read from, will
+not work as expected in a PHP version lower than 5.1.3.
 
 Internals:
 	-	there's a memleak with sizeof(zval) for each thrown exception, 

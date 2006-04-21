@@ -35,6 +35,7 @@ extern zend_object_value _http_inflatestream_object_clone_obj(zval *object TSRML
 #define http_inflatestream_object_free(o) _http_inflatestream_object_free((o) TSRMLS_CC)
 extern void _http_inflatestream_object_free(zend_object *object TSRMLS_DC);
 
+PHP_METHOD(HttpInflateStream, __construct);
 PHP_METHOD(HttpInflateStream, update);
 PHP_METHOD(HttpInflateStream, flush);
 PHP_METHOD(HttpInflateStream, finish);
