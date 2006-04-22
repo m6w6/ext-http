@@ -23,12 +23,6 @@ PHP_HTTP_API int _http_querystring_xlate(zval *array, zval *param, const char *i
 #define http_querystring_update(qa, qs) _http_querystring_update((qa), (qs) TSRMLS_CC)
 PHP_HTTP_API void _http_querystring_update(zval *qarray, zval *qstring TSRMLS_DC);
 
-#define http_querystring_modify_array_ex(q, t, k, kl, i, pe) _http_querystring_modify_array_ex((q), (t), (k), (kl), (i), (pe) TSRMLS_CC)
-PHP_HTTP_API int _http_querystring_modify_array_ex(zval *qarray, int key_type, char *key, int keylen, ulong idx, zval *params_entry TSRMLS_DC);
-
-#define http_querystring_modify_array(q, p) _http_querystring_modify_array((q), (p) TSRMLS_CC)
-PHP_HTTP_API int _http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC);
-
 #define http_querystring_modify(q, p) _http_querystring_modify((q), (p) TSRMLS_CC)
 PHP_HTTP_API int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC);
 

@@ -31,6 +31,13 @@
 extern zend_class_entry *http_querystring_object_ce;
 #endif
 
+
+#define http_querystring_modify_array_ex(q, t, k, kl, i, pe) _http_querystring_modify_array_ex((q), (t), (k), (kl), (i), (pe) TSRMLS_CC)
+static inline int _http_querystring_modify_array_ex(zval *qarray, int key_type, char *key, int keylen, ulong idx, zval *params_entry TSRMLS_DC);
+#define http_querystring_modify_array(q, p) _http_querystring_modify_array((q), (p) TSRMLS_CC)
+static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC);
+
+
 #ifdef HAVE_ICONV
 PHP_HTTP_API int _http_querystring_xlate(zval *array, zval *param, const char *ie, const char *oe TSRMLS_DC)
 {
@@ -105,7 +112,58 @@ PHP_HTTP_API void _http_querystring_update(zval *qarray, zval *qstring TSRMLS_DC
 	}
 }
 
-PHP_HTTP_API int _http_querystring_modify_array_ex(zval *qarray, int key_type, char *key, int keylen, ulong idx, zval *params_entry TSRMLS_DC)
+PHP_HTTP_API int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC)
+{
+	if (Z_TYPE_P(params) == IS_ARRAY) {
+		return http_querystring_modify_array(qarray, params);
+	} else if (Z_TYPE_P(params) == IS_OBJECT) {
+#ifdef ZEND_ENGINE_2
+		if (!instanceof_function(Z_OBJCE_P(params), http_querystring_object_ce TSRMLS_CC)) {
+#endif
+			zval temp_array;
+			INIT_ZARR(temp_array, HASH_OF(params));
+			return http_querystring_modify_array(qarray, &temp_array);
+#ifdef ZEND_ENGINE_2
+		}
+		return http_querystring_modify_array(qarray, GET_PROP_EX(params, queryArray));
+#endif
+	} else {
+		int rv;
+		zval array;
+		
+		INIT_PZVAL(&array);
+		array_init(&array);
+		
+		ZVAL_ADDREF(params);
+		convert_to_string_ex(&params);
+		sapi_module.treat_data(PARSE_STRING, estrdup(Z_STRVAL_P(params)), &array TSRMLS_CC);
+		zval_ptr_dtor(&params);
+		rv = http_querystring_modify_array(qarray, &array);
+		zval_dtor(&array);
+		return rv;
+	}
+}
+
+static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC)
+{
+	int rv = 0;
+	char *key = NULL;
+	uint keylen = 0;
+	ulong idx = 0;
+	HashPosition pos;
+	zval **params_entry = NULL;
+	
+	FOREACH_KEYLENVAL(pos, params, key, keylen, idx, params_entry) {
+		if (http_querystring_modify_array_ex(qarray, key ? HASH_KEY_IS_STRING : HASH_KEY_IS_LONG, key, keylen, idx, *params_entry)) {
+			rv = 1;
+		}
+		key = NULL;
+	}
+	
+	return rv;
+}
+
+static inline int _http_querystring_modify_array_ex(zval *qarray, int key_type, char *key, int keylen, ulong idx, zval *params_entry TSRMLS_DC)
 {
 	zval **qarray_entry;
 	
@@ -141,57 +199,6 @@ PHP_HTTP_API int _http_querystring_modify_array_ex(zval *qarray, int key_type, c
 		add_index_zval(qarray, idx, params_entry);
 	}
 	return 1;
-}
-
-PHP_HTTP_API int _http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC)
-{
-	int rv = 0;
-	char *key = NULL;
-	uint keylen = 0;
-	ulong idx = 0;
-	HashPosition pos;
-	zval **params_entry = NULL;
-	
-	FOREACH_KEYLENVAL(pos, params, key, keylen, idx, params_entry) {
-		if (http_querystring_modify_array_ex(qarray, key ? HASH_KEY_IS_STRING : HASH_KEY_IS_LONG, key, keylen, idx, *params_entry)) {
-			rv = 1;
-		}
-		key = NULL;
-	}
-	
-	return rv;
-}
-
-PHP_HTTP_API int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC)
-{
-	if (Z_TYPE_P(params) == IS_ARRAY) {
-		return http_querystring_modify_array(qarray, params);
-	} else if (Z_TYPE_P(params) == IS_OBJECT) {
-#ifdef ZEND_ENGINE_2
-		if (!instanceof_function(Z_OBJCE_P(params), http_querystring_object_ce TSRMLS_CC)) {
-#endif
-			zval temp_array;
-			INIT_ZARR(temp_array, HASH_OF(params));
-			return http_querystring_modify_array(qarray, &temp_array);
-#ifdef ZEND_ENGINE_2
-		}
-		return http_querystring_modify_array(qarray, GET_PROP_EX(params, queryArray));
-#endif
-	} else {
-		int rv;
-		zval array;
-		
-		INIT_PZVAL(&array);
-		array_init(&array);
-		
-		ZVAL_ADDREF(params);
-		convert_to_string_ex(&params);
-		sapi_module.treat_data(PARSE_STRING, estrdup(Z_STRVAL_P(params)), &array TSRMLS_CC);
-		zval_ptr_dtor(&params);
-		rv = http_querystring_modify_array(qarray, &array);
-		zval_dtor(&array);
-		return rv;
-	}
 }
 
 /*
