@@ -20,14 +20,8 @@
 #include "php_variables.h"
 #include "zend_interfaces.h"
 
-#ifdef HAVE_ICONV
-#	undef PHP_ATOM_INC
-#	include "ext/iconv/php_iconv.h"
-#	include "ext/standard/url.h"
-#endif
-
 #include "php_http_api.h"
-#include "php_http_url_api.h"
+#include "php_http_querystring_api.h"
 #include "php_http_querystring_object.h"
 #include "php_http_exception_object.h"
 
@@ -183,74 +177,6 @@ void _http_querystring_object_free(zend_object *object TSRMLS_DC)
 }
 
 /* {{{ querystring helpers */
-#define http_querystring_update(qa, qs) _http_querystring_update((qa), (qs) TSRMLS_CC)
-static inline void _http_querystring_update(zval *qarray, zval *qstring TSRMLS_DC);
-#define http_querystring_modify_array_ex(q, k, kl, pe) _http_querystring_modify_array_ex((q), (k), (kl), (pe) TSRMLS_CC)
-static inline int _http_querystring_modify_array_ex(zval *qarray, char *key, int keylen, zval *params_entry TSRMLS_DC);
-#define http_querystring_modify_array(q, p) _http_querystring_modify_array((q), (p) TSRMLS_CC)
-static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC);
-#define http_querystring_modify(q, p) _http_querystring_modify((q), (p) TSRMLS_CC)
-static inline int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC);
-#define http_querystring_get(o, t, n, l, def, del, r) _http_querystring_get((o), (t), (n), (l), (def), (del), (r) TSRMLS_CC)
-static inline void _http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC);
-#ifdef HAVE_ICONV
-#define http_querystring_xlate(a, p, ie, oe) _http_querystring_xlate((a), (p), (ie), (oe) TSRMLS_CC)
-static inline int _http_querystring_xlate(zval *array, zval *param, const char *ie, const char *oe TSRMLS_DC)
-{
-	HashPosition pos;
-	zval **entry = NULL;
-	char *xlate_str = NULL, *xkey, *kstr = NULL;
-	size_t xlate_len = 0, xlen;
-	uint klen = 0;
-	ulong kidx = 0;
-	
-	FOREACH_KEYLENVAL(pos, param, kstr, klen, kidx, entry) {
-		if (kstr) {
-			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(kstr, klen-1, &xkey, &xlen, oe, ie)) {
-				http_error_ex(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", klen-1, kstr, ie, oe);
-				return FAILURE;
-			}
-		}
-		
-		if (Z_TYPE_PP(entry) == IS_STRING) {
-			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry), &xlate_str, &xlate_len, oe, ie)) {
-				if (kstr) {
-					efree(xkey);
-				}
-				http_error_ex(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", Z_STRLEN_PP(entry), Z_STRVAL_PP(entry), ie, oe);
-				return FAILURE;
-			}
-			if (kstr) {
-				add_assoc_stringl_ex(array, xkey, xlen+1, xlate_str, xlate_len, 0);
-			} else {
-				add_index_stringl(array, kidx, xlate_str, xlate_len, 0);
-			}
-		} else if (Z_TYPE_PP(entry) == IS_ARRAY) {
-			zval *subarray;
-			
-			MAKE_STD_ZVAL(subarray);
-			array_init(subarray);
-			if (kstr) {
-				add_assoc_zval_ex(array, xkey, xlen+1, subarray);
-			} else {
-				add_index_zval(array, kidx, subarray);
-			}
-			if (SUCCESS != http_querystring_xlate(subarray, *entry, ie, oe)) {
-				if (kstr) {
-					efree(xkey);
-				}
-				return FAILURE;
-			}
-		}
-		
-		if (kstr) {
-			kstr = NULL;
-			efree(xkey);
-		}
-	}
-	return SUCCESS;
-}
-#endif /* HAVE_ICONV */
 #ifndef WONKY
 #define http_querystring_instantiate(g) _http_querystring_instantiate((g) TSRMLS_CC)
 static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
@@ -270,102 +196,8 @@ static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
 	return zobj;
 }
 #endif /* WONKY */
-static inline void _http_querystring_update(zval *qarray, zval *qstring TSRMLS_DC)
-{
-	char *s = NULL;
-	size_t l = 0;
-	
-	if (Z_TYPE_P(qarray) != IS_ARRAY) {
-		convert_to_array(qarray);
-	}
-	if (SUCCESS == http_urlencode_hash_ex(Z_ARRVAL_P(qarray), 0, NULL, 0, &s, &l)) {
-		zval_dtor(qstring);
-		ZVAL_STRINGL(qstring, s, l, 0);
-	} else {
-		http_error(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to update query string");
-	}
-}
-static inline int _http_querystring_modify_array_ex(zval *qarray, char *key, int keylen, zval *params_entry TSRMLS_DC)
-{
-	zval **qarray_entry;
-	
-	/* delete */
-	if (Z_TYPE_P(params_entry) == IS_NULL) {
-		return (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarray), key, keylen));
-	}
-	
-	/* update */
-	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), key, keylen, (void *) &qarray_entry)) {
-		zval equal;
-		
-		/* recursive */
-		if (Z_TYPE_P(params_entry) == IS_ARRAY) {
-			 return http_querystring_modify_array(*qarray_entry, params_entry);
-		}
-		/* equal */
-		if ((SUCCESS == is_equal_function(&equal, *qarray_entry, params_entry TSRMLS_CC)) && Z_BVAL(equal)) {
-			return 0;
-		}
-	}
-	
-	/* add */
-	ZVAL_ADDREF(params_entry);
-	add_assoc_zval_ex(qarray, key, keylen, params_entry);
-	return 1;
-}
-static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC)
-{
-	int rv = 0;
-	char *key;
-	uint keylen;
-	ulong idx;
-	HashPosition pos;
-	zval **params_entry;
-	
-	FOREACH_KEYLENVAL(pos, params, key, keylen, idx, params_entry) {
-		if (key) {
-			if (http_querystring_modify_array_ex(qarray, key, keylen, *params_entry)) {
-				rv = 1;
-			}
-		} else {
-			keylen = spprintf(&key, 0, "%lu", idx);
-			if (http_querystring_modify_array_ex(qarray, key, keylen, *params_entry)) {
-				rv = 1;
-			}
-			efree(key);
-		}
-		key = NULL;
-	}
-	
-	return rv;
-}
-static inline int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC)
-{
-	if (Z_TYPE_P(params) == IS_ARRAY) {
-		return http_querystring_modify_array(qarray, params);
-	} else if (Z_TYPE_P(params) == IS_OBJECT) {
-		if (!instanceof_function(Z_OBJCE_P(params), http_querystring_object_ce TSRMLS_CC)) {
-			zval temp_array;
-			INIT_ZARR(temp_array, HASH_OF(params));
-			return http_querystring_modify_array(qarray, &temp_array);
-		}
-		return http_querystring_modify_array(qarray, GET_PROP_EX(params, queryArray));
-	} else {
-		int rv;
-		zval array;
-		
-		INIT_PZVAL(&array);
-		array_init(&array);
-		
-		ZVAL_ADDREF(params);
-		convert_to_string_ex(&params);
-		sapi_module.treat_data(PARSE_STRING, estrdup(Z_STRVAL_P(params)), &array TSRMLS_CC);
-		zval_ptr_dtor(&params);
-		rv = http_querystring_modify_array(qarray, &array);
-		zval_dtor(&array);
-		return rv;
-	}
-}
+
+#define http_querystring_get(o, t, n, l, def, del, r) _http_querystring_get((o), (t), (n), (l), (def), (del), (r) TSRMLS_CC)
 static inline void _http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC)
 {
 	zval **arrval, *qarray = GET_PROP(queryArray);

@@ -21,6 +21,7 @@
 #include "ext/standard/php_string.h"
 
 #include "php_http_api.h"
+#include "php_http_querystring_api.h"
 #include "php_http_url_api.h"
 
 static inline char *localhostname(void)
@@ -131,10 +132,21 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 	}
 	if (!(flags & HTTP_URL_STRIP_QUERY)) {
 		if ((flags & HTTP_URL_JOIN_QUERY) && __URLSET(new_url, query) && __URLSET(old_url, query)) {
-			url->query = ecalloc(1, strlen(new_url->query) + strlen(old_url->query) + 1 + 1);
-			strcat(url->query, old_url->query);
-			strcat(url->query, "&");
-			strcat(url->query, new_url->query);
+			zval qarr, qstr;
+			
+			INIT_PZVAL(&qstr);
+			INIT_PZVAL(&qarr);
+			array_init(&qarr);
+			
+			ZVAL_STRING(&qstr, old_url->query, 0);
+			http_querystring_modify(&qarr, &qstr);
+			ZVAL_STRING(&qstr, new_url->query, 0);
+			http_querystring_modify(&qarr, &qstr);
+			
+			ZVAL_NULL(&qstr);
+			http_querystring_update(&qarr, &qstr);
+			url->query = Z_STRVAL(qstr);
+			zval_dtor(&qarr);
 		} else {
 			__URLCPY(query);
 		}

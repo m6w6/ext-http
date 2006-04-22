@@ -77,7 +77,7 @@ PHP_FUNCTION(http_date)
  * <pre>
  *	- HTTP_URL_REPLACE:        (default) set parts of the second url will replace the parts in the first
  *	- HTTP_URL_JOIN_PATH:      the path of the second url will be merged into the one of the first
- *	- HTTP_URL_JOIN_QUERY:     the two querystrings will be merged naivly; no replacements are done
+ *	- HTTP_URL_JOIN_QUERY:     the two querystrings will be merged recursively
  *	- HTTP_URL_STRIP_USER:     the user part will not appear in the result
  *	- HTTP_URL_STRIP_PASS:     the password part will not appear in the result
  *	- HTTP_URL_STRIP_AUTH:     neither the user nor the password part will appear in the result

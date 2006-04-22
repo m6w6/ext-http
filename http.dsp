@@ -150,6 +150,10 @@ SOURCE=.\http_url_api.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\http_querystring_api.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\http_info_api.c
 # End Source File
 # Begin Source File
@@ -211,6 +215,10 @@ SOURCE=.\php_http_headers_api.h
 # Begin Source File
 
 SOURCE=.\php_http_url_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_querystring_api.h
 # End Source File
 # Begin Source File
 
