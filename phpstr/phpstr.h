@@ -10,6 +10,8 @@
 #	define PHPSTR_DEFAULT_SIZE 256
 #endif
 
+#define PHPSTR_NOMEM ((size_t) -1)
+
 #ifndef STR_SET
 #	define STR_SET(STR, SET) \
 	{ \

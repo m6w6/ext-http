@@ -235,7 +235,7 @@ static inline int http_inflate_rounds(z_stream *Z, int flush, char **buf, size_t
 	phpstr_init_ex(&buffer, Z->avail_in, PHPSTR_INIT_PREALLOC);
 	
 	do {
-		if (phpstr_resize_ex(&buffer, buffer.size, 0, 1) == (size_t) -1) {
+		if (PHPSTR_NOMEM == phpstr_resize_ex(&buffer, buffer.size, 0, 1)) {
 			status = Z_MEM_ERROR;
 		} else {
 			do {

@@ -105,7 +105,7 @@ static HTTP_FILTER_FUNCTION(chunked_decode)
 				*bytes_consumed += ptr->buflen;
 			}
 		
-			if ((size_t) -1 == phpstr_append(PHPSTR(buffer), ptr->buf, ptr->buflen)) {
+			if (PHPSTR_NOMEM == phpstr_append(PHPSTR(buffer), ptr->buf, ptr->buflen)) {
 				return PSFS_ERR_FATAL;
 			}
 			

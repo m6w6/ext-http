@@ -4,8 +4,6 @@
 #include "php.h"
 #include "phpstr.h"
 
-#define NOMEM ((size_t) -1)
-
 PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int flags)
 {
 	if (!buf) {
@@ -26,7 +24,7 @@ PHPSTR_API phpstr *phpstr_init_ex(phpstr *buf, size_t chunk_size, int flags)
 PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t length)
 {
 	if ((buf = phpstr_init(buf))) {
-		if (NOMEM == phpstr_append(buf, string, length)) {
+		if (PHPSTR_NOMEM == phpstr_append(buf, string, length)) {
 			pefree(buf, buf->pmem);
 			buf = NULL;
 		}
@@ -36,6 +34,7 @@ PHPSTR_API phpstr *phpstr_from_string_ex(phpstr *buf, const char *string, size_t
 
 PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size, int allow_error)
 {
+	char *ptr = NULL;
 #if 0
 	fprintf(stderr, "RESIZE: size=%lu, used=%lu, free=%lu\n", buf->size, buf->used, buf->free);
 #endif
@@ -43,29 +42,21 @@ PHPSTR_API size_t phpstr_resize_ex(phpstr *buf, size_t len, size_t override_size
 		size_t size = override_size ? override_size : buf->size;
 		
 		while ((size + buf->free) < len) {
-			size *= 2;
+			size <<= 1;
 		}
-		if (buf->data) {
-			char *ptr;
-			
-			if (allow_error) {
-				ptr = perealloc_recoverable(buf->data, buf->used + buf->free + size, buf->pmem);
-			} else {
-				ptr = perealloc(buf->data, buf->used + buf->free + size, buf->pmem);
-			}
-			
-			if (ptr) {
-				buf->data = ptr;
-			} else {
-				return NOMEM;
-			}
+		
+		if (allow_error) {
+			ptr = perealloc_recoverable(buf->data, buf->used + buf->free + size, buf->pmem);
 		} else {
-			buf->data = pemalloc(size, buf->pmem);
-			
-			if (!buf->data) {
-				return NOMEM;
-			}
+			ptr = perealloc(buf->data, buf->used + buf->free + size, buf->pmem);
 		}
+		
+		if (ptr) {
+			buf->data = ptr;
+		} else {
+			return PHPSTR_NOMEM;
+		}
+		
 		buf->free += size;
 		return size;
 	}
@@ -81,7 +72,7 @@ PHPSTR_API size_t phpstr_shrink(phpstr *buf)
 		if (ptr) {
 			buf->data = ptr;
 		} else {
-			return NOMEM;
+			return PHPSTR_NOMEM;
 		}
 		buf->free = 1;
 	}
@@ -90,8 +81,8 @@ PHPSTR_API size_t phpstr_shrink(phpstr *buf)
 
 PHPSTR_API size_t phpstr_append(phpstr *buf, const char *append, size_t append_len)
 {
-	if (NOMEM == phpstr_resize(buf, append_len)) {
-		return NOMEM;
+	if (PHPSTR_NOMEM == phpstr_resize(buf, append_len)) {
+		return PHPSTR_NOMEM;
 	}
 	memcpy(buf->data + buf->used, append, append_len);
 	buf->used += append_len;
@@ -112,16 +103,16 @@ PHPSTR_API size_t phpstr_appendf(phpstr *buf, const char *format, ...)
 	alloc = phpstr_append(buf, append, append_len);
 	efree(append);
 
-	if (NOMEM == alloc) {
-		return NOMEM;
+	if (PHPSTR_NOMEM == alloc) {
+		return PHPSTR_NOMEM;
 	}
 	return append_len;
 }
 
 PHPSTR_API size_t phpstr_insert(phpstr *buf, const char *insert, size_t insert_len, size_t offset)
 {
-	if (NOMEM == phpstr_resize(buf, insert_len)) {
-		return NOMEM;
+	if (PHPSTR_NOMEM == phpstr_resize(buf, insert_len)) {
+		return PHPSTR_NOMEM;
 	}
 	memmove(buf->data + offset + insert_len, buf->data + offset, insert_len);
 	memcpy(buf->data + offset, insert, insert_len);
@@ -143,16 +134,16 @@ PHPSTR_API size_t phpstr_insertf(phpstr *buf, size_t offset, const char *format,
 	alloc = phpstr_insert(buf, insert, insert_len, offset);
 	efree(insert);
 
-	if (NOMEM == alloc) {
-		return NOMEM;
+	if (PHPSTR_NOMEM == alloc) {
+		return PHPSTR_NOMEM;
 	}
 	return insert_len;
 }
 
 PHPSTR_API size_t phpstr_prepend(phpstr *buf, const char *prepend, size_t prepend_len)
 {
-	if (NOMEM == phpstr_resize(buf, prepend_len)) {
-		return NOMEM;
+	if (PHPSTR_NOMEM == phpstr_resize(buf, prepend_len)) {
+		return PHPSTR_NOMEM;
 	}
 	memmove(buf->data + prepend_len, buf->data, buf->used);
 	memcpy(buf->data, prepend, prepend_len);
@@ -174,8 +165,8 @@ PHPSTR_API size_t phpstr_prependf(phpstr *buf, const char *format, ...)
 	alloc = phpstr_prepend(buf, prepend, prepend_len);
 	efree(prepend);
 
-	if (NOMEM == alloc) {
-		return NOMEM;
+	if (PHPSTR_NOMEM == alloc) {
+		return PHPSTR_NOMEM;
 	}
 	return prepend_len;
 }
@@ -196,7 +187,7 @@ PHPSTR_API char *phpstr_data(const phpstr *buf, char **into, size_t *len)
 PHPSTR_API phpstr *phpstr_dup(const phpstr *buf)
 {
 	phpstr *dup = phpstr_clone(buf);
-	if (NOMEM == phpstr_append(dup, buf->data, buf->used)) {
+	if (PHPSTR_NOMEM == phpstr_append(dup, buf->data, buf->used)) {
 		phpstr_free(&dup);
 	}
 	return dup;
@@ -224,7 +215,7 @@ PHPSTR_API phpstr *phpstr_sub(const phpstr *buf, size_t offset, size_t length)
 		size_t need = (length + offset) > buf->used ? (buf->used - offset) : (length - offset);
 		phpstr *sub = phpstr_init_ex(NULL, need, PHPSTR_INIT_PREALLOC | (buf->pmem ? PHPSTR_INIT_PERSISTENT:0));
 		if (sub) {
-			if (NOMEM == phpstr_append(sub, buf->data + offset, need)) {
+			if (PHPSTR_NOMEM == phpstr_append(sub, buf->data + offset, need)) {
 				phpstr_free(&sub);
 			} else {
 				sub->size = buf->size;
@@ -285,7 +276,7 @@ PHPSTR_API phpstr *phpstr_merge(unsigned argc, ...)
 
 PHPSTR_API phpstr *phpstr_fix(phpstr *buf)
 {
-	if (NOMEM == phpstr_resize_ex(buf, 1, 1, 0)) {
+	if (PHPSTR_NOMEM == phpstr_resize_ex(buf, 1, 1, 0)) {
 		return NULL;
 	}
 	buf->data[buf->used] = '\0';
