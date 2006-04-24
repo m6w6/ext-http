@@ -212,7 +212,7 @@ PHPSTR_API phpstr *phpstr_sub(const phpstr *buf, size_t offset, size_t length)
 	if (offset >= buf->used) {
 		return NULL;
 	} else {
-		size_t need = (length + offset) > buf->used ? (buf->used - offset) : (length - offset);
+		size_t need = 1 + ((length + offset) > buf->used ? (buf->used - offset) : (length - offset));
 		phpstr *sub = phpstr_init_ex(NULL, need, PHPSTR_INIT_PREALLOC | (buf->pmem ? PHPSTR_INIT_PERSISTENT:0));
 		if (sub) {
 			if (PHPSTR_NOMEM == phpstr_append(sub, buf->data + offset, need)) {
@@ -326,7 +326,7 @@ PHPSTR_API size_t phpstr_chunk_buffer(phpstr **s, const char *data, size_t data_
 	*chunk = NULL;
 	
 	if (!*s) {
-		*s = phpstr_init_ex(NULL, chunk_size * 2, chunk_size ? PHPSTR_INIT_PREALLOC : 0);
+		*s = phpstr_init_ex(NULL, chunk_size << 1, chunk_size ? PHPSTR_INIT_PREALLOC : 0);
 	}
 	storage = *s;
 	
@@ -340,12 +340,10 @@ PHPSTR_API size_t phpstr_chunk_buffer(phpstr **s, const char *data, size_t data_
 		return chunk_size;
 	}
 	
-	if (storage->used >= storage->size/2) {
-		phpstr *avail = phpstr_left(storage, storage->size/2);
-		*chunk = estrndup(PHPSTR_VAL(avail), PHPSTR_LEN(avail));
-		phpstr_free(&avail);
-		phpstr_cut(storage, 0, storage->size/2);
-		return storage->size/2;
+	if (storage->used >= (chunk_size = storage->size >> 1)) {
+		*chunk = estrndup(storage->data, chunk_size);
+		phpstr_cut(storage, 0, chunk_size);
+		return chunk_size;
 	}
 	
 	return 0;
