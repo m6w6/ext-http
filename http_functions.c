@@ -1117,6 +1117,27 @@ PHP_FUNCTION(http_parse_cookie)
 	}
 }
 
+/* {{{ proto object http_parse_params(string param)
+ *
+ * Parse parameter list.
+ */
+PHP_FUNCTION(http_parse_params)
+{
+	char *param;
+	int param_len;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &param, &param_len)) {
+		RETURN_FALSE;
+	}
+	
+	object_init(return_value);
+	if (SUCCESS != http_parse_params(param, HASH_OF(return_value))) {
+		zval_dtor(return_value);
+		RETURN_FALSE;
+	}
+}
+/* }}} */
+
 /* {{{ proto array http_get_request_headers(void)
  *
  * Get a list of incoming HTTP headers.

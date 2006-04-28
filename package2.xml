@@ -46,6 +46,7 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
++ Added http_parse_params() function
 * Fixed possible crash in progress/onfinish request callbacks
 * Fixed http_redirect() and http_build_url() without arguments
 * Enabled recursive query string merging in http_build_url() with HTTP_URL_JOIN_QUERY

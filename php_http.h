@@ -169,6 +169,7 @@ PHP_FUNCTION(http_chunked_decode);
 PHP_FUNCTION(http_parse_message);
 PHP_FUNCTION(http_parse_headers);
 PHP_FUNCTION(http_parse_cookie);
+PHP_FUNCTION(http_parse_params);
 PHP_FUNCTION(http_get_request_headers);
 PHP_FUNCTION(http_get_request_body);
 PHP_FUNCTION(http_get_request_body_stream);

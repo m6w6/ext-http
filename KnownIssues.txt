@@ -31,3 +31,6 @@ Internals:
 
 	-	our http_urlencode_hash() only handles arrays and does not
 		differentiate between prefixes for numeric or string keys.
+
+	-	check all places where hash table entries are created if
+		the keys are properly NUL terminated (prior 1.0!)

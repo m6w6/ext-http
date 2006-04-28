@@ -261,7 +261,7 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 }
 /* }}} */
 
-/* {{{ php_stream *_http_get_request_body_stream(void) */
+/* {{{ php_stream *http_get_request_body_stream(void) */
 PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D)
 {
 	php_stream *s = NULL;
@@ -289,6 +289,220 @@ PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D)
 	}
 	
 	return s;
+}
+/* }}} */
+
+/* {{{ void http_parse_params_default_callback(...) */
+PHP_HTTP_API void _http_parse_params_default_callback(void *arg, const char *key, int keylen, const char *val, int vallen TSRMLS_DC)
+{
+	char *kdup;
+	zval tmp, *entry;
+	HashTable *ht = (HashTable *) arg;
+	
+	if (ht) {
+		INIT_ZARR(tmp, ht);
+		
+		if (vallen) {
+			MAKE_STD_ZVAL(entry);
+			array_init(entry);
+			kdup = estrndup(key, keylen);
+			add_assoc_stringl_ex(entry, kdup, keylen + 1, (char *) val, vallen, 1);
+			efree(kdup);
+			add_next_index_zval(&tmp, entry);
+		} else {
+			add_next_index_stringl(&tmp, (char *) key, keylen, 1);
+		}
+	}
+}
+/* }}} */
+
+/* {{{ STATUS http_parse_params(const char *, HashTable *) */
+PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep, http_parse_params_callback cb, void *cb_arg TSRMLS_DC)
+{
+#define ST_QUOTE	1
+#define ST_VALUE	2
+#define ST_KEY		3
+#define ST_ASSIGN	4
+#define ST_ADD		5
+	
+	int st = ST_KEY, keylen = 0, vallen = 0;
+	char *s, *c, *key = NULL, *val = NULL;
+	
+	for(c = s = estrdup(param);;) {
+#if 0
+		char *tk = NULL, *tv = NULL;
+		
+		if (key) {
+			if (keylen) {
+				tk= estrndup(key, keylen);
+			} else {
+				tk = ecalloc(1, 7);
+				memcpy(tk, key, 3);
+				tk[3]='.'; tk[4]='.'; tk[5]='.';
+			}
+		}
+		if (val) {
+			if (vallen) {
+				tv = estrndup(val, vallen);
+			} else {
+				tv = ecalloc(1, 7);
+				memcpy(tv, val, 3);
+				tv[3]='.'; tv[4]='.'; tv[5]='.';
+			}
+		}
+		fprintf(stderr, "[%6s] %c \"%s=%s\"\n",
+				(
+						st == ST_QUOTE ? "QUOTE" :
+						st == ST_VALUE ? "VALUE" :
+						st == ST_KEY ? "KEY" :
+						st == ST_ASSIGN ? "ASSIGN" :
+						st == ST_ADD ? "ADD":
+						"HUH?"
+				), *c, tk, tv
+		);
+		STR_FREE(tk); STR_FREE(tv);
+#endif
+		switch (st)
+		{
+			case ST_QUOTE:
+			quote:
+				if (*c == '"') {
+					if (*(c-1) == '\\') {
+						memmove(c-1, c, strlen(c)+1);
+						goto quote;
+					} else {
+						goto add;
+					}
+				} else {
+					if (!val) {
+						val = c;
+					}
+					if (!*c) {
+						--val;
+						st = ST_ADD;
+					}
+				}
+			break;
+				
+			case ST_VALUE:
+				switch (*c)
+				{
+					case '"':
+						if (!val) {
+							st = ST_QUOTE;
+						}
+					break;
+					
+					case ' ':
+					break;
+					
+					case ';':
+					case '\0':
+						goto add;
+					break;
+					
+					default:
+						if (!val) {
+							val = c;
+						}
+					break;
+				}
+			break;
+				
+			case ST_KEY:
+				switch (*c)
+				{
+					case ',':
+						if (allow_comma_sep) {
+							goto allow_comma;
+						}
+					case '\r':
+					case '\n':
+					case '\t':
+					case '\013':
+					case '\014':
+						goto failure;
+					break;
+					
+					case '=':
+						if (key) {
+							keylen = c - key;
+							st = ST_VALUE;
+						} else {
+							goto failure;
+						}
+					break;
+					
+					case ' ':
+						if (key) {
+							keylen = c - key;
+							st = ST_ASSIGN;
+						}
+					break;
+					
+					case ';':
+					case '\0':
+					allow_comma:
+						if (key) {
+							keylen = c - key;
+							st = ST_ADD;
+						}
+					break;
+					
+					default:
+						if (!key) {
+							key = c;
+						}
+					break;
+				}
+			break;
+				
+			case ST_ASSIGN:
+				if (*c == '=') {
+					st = ST_VALUE;
+				} else if (!*c || *c == ';') {
+					st = ST_ADD;
+				} else if (*c != ' ') {
+					goto failure;
+				}
+			break;
+				
+			case ST_ADD:
+			add:
+				if (val) {
+					vallen = c - val;
+					if (st != ST_QUOTE) {
+						while (val[vallen-1] == ' ') --vallen;
+					}
+				} else {
+					val = "";
+					vallen = 0;
+				}
+				
+				cb(cb_arg, key, keylen, val, vallen TSRMLS_CC);
+				
+				st = ST_KEY;
+				key = val = NULL;
+				keylen = vallen = 0;
+			break;
+		}
+		
+		if (*c) {
+			++c;
+		} else if (st == ST_ADD) {
+			goto add;
+		} else {
+			break;
+		}
+	}
+	
+	efree(s);
+	return SUCCESS;
+	
+failure:
+	http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Unexpected character (%c) at pos %tu of %zu", *c, c-s, strlen(s));
+	efree(s);
+	return FAILURE;
 }
 /* }}} */
 

@@ -119,6 +119,17 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 #define http_get_request_body_stream() _http_get_request_body_stream(TSRMLS_C)
 PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D);
 
+
+typedef void (*http_parse_params_callback)(void *cb_arg, const char *key, int keylen, const char *val, int vallen TSRMLS_DC);
+
+#define http_parse_params_default_callback _http_parse_params_default_callback
+PHP_HTTP_API void _http_parse_params_default_callback(void *ht, const char *key, int keylen, const char *val, int vallen TSRMLS_DC);
+
+#define http_parse_params(s, ht) _http_parse_params_ex((s), 1, _http_parse_params_default_callback, (ht) TSRMLS_CC)
+#define http_parse_params_ex(s, comma, cb, a) _http_parse_params_ex((s), (comma), (cb), (a) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_parse_params_ex(const char *params, int alloc_comma_sep, http_parse_params_callback cb, void *cb_arg TSRMLS_DC);
+
+
 #define http_locate_body _http_locate_body
 static inline const char *_http_locate_body(const char *message)
 {

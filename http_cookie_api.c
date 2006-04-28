@@ -84,244 +84,85 @@ PHP_HTTP_API const char *_http_cookie_list_get_extra(http_cookie_list *list, con
 PHP_HTTP_API void _http_cookie_list_add_cookie(http_cookie_list *list, const char *name, size_t name_len, const char *value, size_t value_len TSRMLS_DC)
 {
 	zval *cookie_value;
+	char *key = estrndup(name, name_len);
 	MAKE_STD_ZVAL(cookie_value);
 	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
-	zend_hash_update(&list->cookies, (char *) name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	zend_hash_update(&list->cookies, key, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	efree(key);
 }
 
 PHP_HTTP_API void _http_cookie_list_add_extra(http_cookie_list *list, const char *name, size_t name_len, const char *value, size_t value_len TSRMLS_DC)
 {
 	zval *cookie_value;
+	char *key = estrndup(name, name_len);
 	MAKE_STD_ZVAL(cookie_value);
 	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
-	zend_hash_update(&list->extras, (char *) name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	zend_hash_update(&list->extras, key, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	efree(key);
 }
 
-#define http_cookie_list_set_item_ex(l, i, il, v, vl, f, a) _http_cookie_list_set_item_ex((l), (i), (il), (v), (vl), (f), (a) TSRMLS_CC)
-static inline void _http_cookie_list_set_item_ex(http_cookie_list *list, const char *item, int item_len, const char *value, int value_len, long flags, char **allowed_extras TSRMLS_DC)
+typedef struct _http_parse_param_cb_arg_t {
+	http_cookie_list *list;
+	long flags;
+	char **allowed_extras;
+} http_parse_param_cb_arg;
+
+static void http_parse_cookie_callback(void *ptr, const char *key, int keylen, const char *val, int vallen TSRMLS_DC)
 {
-	char *key = estrndup(item, item_len);
+	http_parse_param_cb_arg *arg = (http_parse_param_cb_arg *) ptr;
 	
-	if (!strcasecmp(key, "path")) {
-		STR_SET(list->path, estrndup(value, value_len));
-	} else if (!strcasecmp(key, "domain")) {
-		STR_SET(list->domain, estrndup(value, value_len));
-	} else if (!strcasecmp(key, "expires")) {
-		char *date = estrndup(value, value_len);
-		list->expires = http_parse_date(date);
+#define _KEY_IS(s) (keylen == lenof(s) && !strncasecmp(key, (s), keylen))
+	if _KEY_IS("path") {
+		STR_SET(arg->list->path, estrndup(val, vallen));
+	} else if _KEY_IS("domain") {
+		STR_SET(arg->list->domain, estrndup(val, vallen));
+	} else if _KEY_IS("expires") {
+		char *date = estrndup(val, vallen);
+		arg->list->expires = http_parse_date(date);
 		efree(date);
-	} else if (!strcasecmp(key, "secure")) {
-		list->flags |= HTTP_COOKIE_SECURE;
-	} else if (!strcasecmp(key, "httpOnly")) {
-		list->flags |= HTTP_COOKIE_HTTPONLY;
+	} else if _KEY_IS("secure") {
+		arg->list->flags |= HTTP_COOKIE_SECURE;
+	} else if _KEY_IS("httpOnly") {
+		arg->list->flags |= HTTP_COOKIE_HTTPONLY;
 	} else {
 		/* check for extra */
-		if (allowed_extras) {
-			for (; *allowed_extras; ++allowed_extras) {
-				if (!strcasecmp(key, *allowed_extras)) {
-					http_cookie_list_add_extra(list, key, item_len, value, value_len);
-					
-					efree(key);
+		if (arg->allowed_extras) {
+			char **ae = arg->allowed_extras;
+			
+			for (; *ae; ++ae) {
+				if ((size_t) keylen == strlen(*ae) && !strncasecmp(key, *ae, keylen)) {
+					http_cookie_list_add_extra(arg->list, key, keylen, val, vallen);
 					return;
 				}
 			}
 		}
 		/* new cookie */
-		http_cookie_list_add_cookie(list, key, item_len, value, value_len);
+		http_cookie_list_add_cookie(arg->list, key, keylen, val, vallen);
 	}
-	efree(key);
 }
-
-
-#define ST_QUOTE	1
-#define ST_VALUE	2
-#define ST_KEY		3
-#define ST_ASSIGN	4
-#define ST_ADD		5
 
 /* {{{ http_cookie_list *http_parse_cookie(char *, long) */
 PHP_HTTP_API http_cookie_list *_http_parse_cookie_ex(http_cookie_list *list, const char *string, long flags, char **allowed_extras TSRMLS_DC)
 {
-	int free_list = !list, st = ST_KEY, keylen = 0, vallen = 0;
-	char *s, *c, *key = NULL, *val = NULL;
+	int free_list = !list;
+	http_parse_param_cb_arg arg;
 	
 	list = http_cookie_list_init(list);
 	
-	c = s = estrdup(string);
-	for(;;) {
-#if 0
-		char *tk = NULL, *tv = NULL;
-		
-		if (key) {
-			if (keylen) {
-				tk= estrndup(key, keylen);
-			} else {
-				tk = ecalloc(1, 7);
-				memcpy(tk, key, 3);
-				tk[3]='.'; tk[4]='.'; tk[5]='.';
-			}
-		}
-		if (val) {
-			if (vallen) {
-				tv = estrndup(val, vallen);
-			} else {
-				tv = ecalloc(1, 7);
-				memcpy(tv, val, 3);
-				tv[3]='.'; tv[4]='.'; tv[5]='.';
-			}
-		}
-		fprintf(stderr, "[%6s] %c \"%s=%s\"\n",
-				(
-						st == ST_QUOTE ? "QUOTE" :
-						st == ST_VALUE ? "VALUE" :
-						st == ST_KEY ? "KEY" :
-						st == ST_ASSIGN ? "ASSIGN" :
-						st == ST_ADD ? "ADD":
-						"HUH?"
-				), *c, tk, tv
-		);
-		STR_FREE(tk); STR_FREE(tv);
-#endif
-		switch (st)
-		{
-			case ST_QUOTE:
-			quote:
-				if (*c == '"') {
-					if (*(c-1) == '\\') {
-						memmove(c-1, c, strlen(c)+1);
-						goto quote;
-					} else {
-						goto add;
-					}
-				} else {
-					if (!val) {
-						val = c;
-					}
-					if (!*c) {
-						--val;
-						st = ST_ADD;
-					}
-				}
-			break;
-				
-			case ST_VALUE:
-				switch (*c)
-				{
-					case '"':
-						if (!val) {
-							st = ST_QUOTE;
-						}
-					break;
-					
-					case ' ':
-					break;
-					
-					case ';':
-					case '\0':
-						goto add;
-					break;
-					
-					default:
-						if (!val) {
-							val = c;
-						}
-					break;
-				}
-			break;
-				
-			case ST_KEY:
-				switch (*c)
-				{
-					case ',':
-					case '\r':
-					case '\n':
-					case '\t':
-					case '\013':
-					case '\014':
-						goto failure;
-					break;
-					
-					case '=':
-						if (key) {
-							keylen = c - key;
-							st = ST_VALUE;
-						} else {
-							goto failure;
-						}
-					break;
-					
-					case ' ':
-						if (key) {
-							keylen = c - key;
-							st = ST_ASSIGN;
-						}
-					break;
-					
-					case ';':
-					case '\0':
-						if (key) {
-							keylen = c - key;
-							st = ST_ADD;
-						}
-					break;
-					
-					default:
-						if (!key) {
-							key = c;
-						}
-					break;
-				}
-			break;
-				
-			case ST_ASSIGN:
-				if (*c == '=') {
-					st = ST_VALUE;
-				} else if (!*c || *c == ';') {
-					st = ST_ADD;
-				} else if (*c != ' ') {
-					goto failure;
-				}
-			break;
-				
-			case ST_ADD:
-			add:
-				if (val) {
-					vallen = c - val;
-					if (st != ST_QUOTE) {
-						while (val[vallen-1] == ' ') --vallen;
-					}
-				} else {
-					val = "";
-					vallen = 0;
-				}
-				http_cookie_list_set_item_ex(list, key, keylen, val, vallen, flags, allowed_extras);
-				st = ST_KEY;
-				key = val = NULL;
-				keylen = vallen = 0;
-			break;
-		}
-		
-		if (*c) {
-			++c;
-		} else if (st == ST_ADD) {
-			goto add;
+	arg.list = list;
+	arg.flags = flags;
+	arg.allowed_extras = allowed_extras;
+	
+	if (SUCCESS != http_parse_params_ex(string, 0, http_parse_cookie_callback, &arg)) {
+		if (free_list) {
+			http_cookie_list_free(&list);
 		} else {
-			break;
+			http_cookie_list_dtor(list);
 		}
+		list = NULL;
 	}
 	
-	efree(s);
 	return list;
-	
-failure:
-	http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Unexpected character (%c) at pos %tu of %zu", *c, c-s, strlen(s));
-	if (free_list) {
-		http_cookie_list_free(&list);
-	} else {
-		http_cookie_list_dtor(list);
-	}
-	efree(s);
-	return NULL;
 }
 /* }}} */
 
@@ -330,17 +171,17 @@ PHP_HTTP_API void _http_cookie_list_tostruct(http_cookie_list *list, zval *strct
 	zval array, *cookies, *extras;
 	
 	INIT_ZARR(array, HASH_OF(strct));
-		
+	
 	MAKE_STD_ZVAL(cookies);
 	array_init(cookies);
 	zend_hash_copy(Z_ARRVAL_P(cookies), &list->cookies, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	add_assoc_zval(&array, "cookies", cookies);
-		
+	
 	MAKE_STD_ZVAL(extras);
 	array_init(extras);
 	zend_hash_copy(Z_ARRVAL_P(extras), &list->extras, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	add_assoc_zval(&array, "extras", extras);
-		
+	
 	add_assoc_long(&array, "flags", list->flags);
 	add_assoc_long(&array, "expires", (long) list->expires);
 	add_assoc_string(&array, "path", list->path?list->path:"", 1);
