@@ -257,7 +257,7 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 	}
 #define HTTP_CURL_OPT_STRING_EX(keyname, optname, obdc) \
 	if (!strcasecmp(key, keyname)) { \
-		zval *copy = http_request_option_cache(request, keyname, zval_copy(IS_STRING, *param)); \
+		zval *copy = http_request_option_cache_ex(request, keyname, strlen(keyname)+1, 0, zval_copy(IS_STRING, *param)); \
 		if (obdc) { \
 			HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(copy), return FAILURE); \
 		} \
@@ -272,7 +272,7 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 	}
 #define HTTP_CURL_OPT_LONG_EX(keyname, optname) \
 	if (!strcasecmp(key, keyname)) { \
-		zval *copy = http_request_option_cache(request, keyname, zval_copy(IS_LONG, *param)); \
+		zval *copy = http_request_option_cache_ex(request, keyname, strlen(keyname)+1, 0, zval_copy(IS_LONG, *param)); \
 		HTTP_CURL_OPT(optname, Z_LVAL_P(copy)); \
 		key = NULL; \
 		continue; \
