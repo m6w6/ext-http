@@ -130,6 +130,7 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getRequestHeaders);
 HTTP_EMPTY_ARGS(getRequestBody);
+HTTP_EMPTY_ARGS(getRequestBodyStream);
 
 #define http_grab_response_headers _http_grab_response_headers
 static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC);
@@ -186,6 +187,7 @@ zend_function_entry http_response_object_fe[] = {
 	HTTP_RESPONSE_ALIAS(status, http_send_status)
 	HTTP_RESPONSE_ALIAS(getRequestHeaders, http_get_request_headers)
 	HTTP_RESPONSE_ALIAS(getRequestBody, http_get_request_body)
+	HTTP_RESPONSE_ALIAS(getRequestBodyStream, http_get_request_body_stream)
 
 	EMPTY_FUNCTION_ENTRY
 };

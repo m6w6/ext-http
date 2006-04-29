@@ -22,11 +22,11 @@
 #define HTTP_REQUEST_BODY_CURLPOST		2
 #define HTTP_REQUEST_BODY_UPLOADFILE	3
 typedef struct _http_request_body_t {
+	void *data;
+	size_t size;
 	uint type:3;
 	uint free:1;
 	uint priv:28;
-	void *data;
-	size_t size;
 } http_request_body;
 
 

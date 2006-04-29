@@ -85,6 +85,10 @@ HTTP_BEGIN_ARGS(parseCookie, 1)
 	HTTP_ARG_VAL(cookie_string, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(parseParams, 1)
+	HTTP_ARG_VAL(param_string, 0)
+HTTP_END_ARGS;
+
 HTTP_BEGIN_ARGS(chunkedDecode, 1)
 	HTTP_ARG_VAL(encoded_string, 0)
 HTTP_END_ARGS;
@@ -116,6 +120,7 @@ zend_function_entry http_util_object_fe[] = {
 	HTTP_UTIL_ALIAS(parseMessage, http_parse_message)
 	HTTP_UTIL_ALIAS(parseHeaders, http_parse_headers)
 	HTTP_UTIL_ALIAS(parseCookie, http_parse_cookie)
+	HTTP_UTIL_ALIAS(parseParams, http_parse_params)
 	HTTP_UTIL_ALIAS(chunkedDecode, http_chunked_decode)
 #ifdef HTTP_HAVE_ZLIB
 	HTTP_UTIL_ALIAS(deflate, http_deflate)

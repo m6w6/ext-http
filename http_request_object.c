@@ -190,6 +190,13 @@ HTTP_BEGIN_ARGS(postFields, 2)
 	HTTP_ARG_VAL(info, 1)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(putData, 2)
+	HTTP_ARG_VAL(url, 0)
+	HTTP_ARG_VAL(data, 0)
+	HTTP_ARG_VAL(options, 0)
+	HTTP_ARG_VAL(info, 1)
+HTTP_END_ARGS;
+
 HTTP_BEGIN_ARGS(putFile, 2)
 	HTTP_ARG_VAL(url, 0)
 	HTTP_ARG_VAL(file, 0)
@@ -218,6 +225,11 @@ HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(methodExists, 1)
 	HTTP_ARG_VAL(method, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(encodeBody, 2)
+	HTTP_ARG_VAL(fields, 0)
+	HTTP_ARG_VAL(files, 0)
 HTTP_END_ARGS;
 
 #define OBJ_PROP_CE http_request_object_ce
@@ -291,6 +303,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ALIAS(head, http_head)
 	HTTP_REQUEST_ALIAS(postData, http_post_data)
 	HTTP_REQUEST_ALIAS(postFields, http_post_fields)
+	HTTP_REQUEST_ALIAS(putData, http_put_data)
 	HTTP_REQUEST_ALIAS(putFile, http_put_file)
 	HTTP_REQUEST_ALIAS(putStream, http_put_stream)
 
@@ -298,6 +311,8 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ALIAS(methodUnregister, http_request_method_unregister)
 	HTTP_REQUEST_ALIAS(methodName, http_request_method_name)
 	HTTP_REQUEST_ALIAS(methodExists, http_request_method_exists)
+	
+	HTTP_REQUEST_ALIAS(encodeBody, http_request_body_encode)
 
 	EMPTY_FUNCTION_ENTRY
 };
