@@ -112,13 +112,13 @@ PHP_FUNCTION(http_build_url)
 	zval *z_old_url = NULL, *z_new_url = NULL, *z_composed_url = NULL;
 	php_url *old_url = NULL, *new_url = NULL, *composed_url = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z/z/lz", &z_old_url, &z_new_url, &flags, &z_composed_url) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!/z!/lz", &z_old_url, &z_new_url, &flags, &z_composed_url) != SUCCESS) {
 		RETURN_FALSE;
 	}
 	
 	if (z_new_url) {
 		if (Z_TYPE_P(z_new_url) == IS_ARRAY || Z_TYPE_P(z_new_url) == IS_OBJECT) {
-			new_url = array2url(HASH_OF(z_new_url));
+			new_url = http_url_from_struct(NULL, HASH_OF(z_new_url));
 		} else {
 			convert_to_string(z_new_url);
 			if (!(new_url = php_url_parse_ex(Z_STRVAL_P(z_new_url), Z_STRLEN_P(z_new_url)))) {
@@ -130,7 +130,7 @@ PHP_FUNCTION(http_build_url)
 	
 	if (z_old_url) {
 		if (Z_TYPE_P(z_old_url) == IS_ARRAY || Z_TYPE_P(z_old_url) == IS_OBJECT) {
-			old_url = array2url(HASH_OF(z_old_url));
+			old_url = http_url_from_struct(NULL, HASH_OF(z_old_url));
 		} else {
 			convert_to_string(z_old_url);
 			if (!(old_url = php_url_parse_ex(Z_STRVAL_P(z_old_url), Z_STRLEN_P(z_old_url)))) {
@@ -145,33 +145,7 @@ PHP_FUNCTION(http_build_url)
 	
 	if (z_composed_url) {
 		http_build_url(flags, old_url, new_url, &composed_url, &url_str, &url_len);
-		
-		zval_dtor(z_composed_url);
-		array_init(z_composed_url);
-		if (composed_url->scheme) {
-			add_assoc_string(z_composed_url, "scheme", composed_url->scheme, 1);
-		}
-		if (composed_url->user) {
-			add_assoc_string(z_composed_url, "user", composed_url->user, 1);
-		}
-		if (composed_url->pass) {
-			add_assoc_string(z_composed_url, "pass", composed_url->pass, 1);
-		}
-		if (composed_url->host) {
-			add_assoc_string(z_composed_url, "host", composed_url->host, 1);
-		}
-		if (composed_url->port) {
-			add_assoc_long(z_composed_url, "port", composed_url->port);
-		}
-		if (composed_url->path) {
-			add_assoc_string(z_composed_url, "path", composed_url->path, 1);
-		}
-		if (composed_url->query) {
-			add_assoc_string(z_composed_url, "query", composed_url->query, 1);
-		}
-		if (composed_url->fragment) {
-			add_assoc_string(z_composed_url, "fragment", composed_url->fragment, 1);
-		}
+		http_url_tostruct(composed_url, z_composed_url);
 		php_url_free(composed_url);
 	} else {
 		http_build_url(flags, old_url, new_url, NULL, &url_str, &url_len);

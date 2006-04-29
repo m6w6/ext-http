@@ -43,11 +43,14 @@ PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, zend_bool override_
 #define http_urlencode_hash_recursive(ht, s, as, al, pr, pl) _http_urlencode_hash_recursive((ht), (s), (as), (al), (pr), (pl) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, const char *arg_sep, size_t arg_sep_len, const char *prefix, size_t prefix_len TSRMLS_DC);
 
-#define array2url(ht) _array2url((ht) TSRMLS_CC)
-static inline php_url *_array2url(HashTable *ht TSRMLS_DC)
+#define http_url_from_struct(u, ht) _http_url_from_struct((u), (ht) TSRMLS_CC)
+static inline php_url *_http_url_from_struct(php_url *url, HashTable *ht TSRMLS_DC)
 {
 	zval **e;
-	php_url *url = ecalloc(1, sizeof(php_url));
+	
+	if (!url) {
+		url = ecalloc(1, sizeof(php_url));
+	}
 	
 	if ((SUCCESS == zend_hash_find(ht, "scheme", sizeof("scheme"), (void *) &e))
 			&& (Z_TYPE_PP(e) == IS_STRING) && Z_STRLEN_PP(e)) {
@@ -90,6 +93,56 @@ static inline php_url *_array2url(HashTable *ht TSRMLS_DC)
 	}
 	
 	return url;
+}
+
+#define http_url_tostruct(u, strct) _http_url_tostruct((u), (strct) TSRMLS_CC)
+static inline HashTable *_http_url_tostruct(php_url *url, zval *strct TSRMLS_DC)
+{
+	zval arr;
+	
+	if (strct) {
+		switch (Z_TYPE_P(strct))
+		{
+			default:
+				zval_dtor(strct);
+				array_init(strct);
+			case IS_ARRAY:
+			case IS_OBJECT:
+				INIT_ZARR(arr, HASH_OF(strct));
+		}
+	} else {
+		INIT_PZVAL(&arr);
+		array_init(&arr);
+	}
+	
+	if (url) {
+		if (url->scheme) {
+			add_assoc_string(&arr, "scheme", url->scheme, 1);
+		}
+		if (url->user) {
+			add_assoc_string(&arr, "user", url->user, 1);
+		}
+		if (url->pass) {
+			add_assoc_string(&arr, "pass", url->pass, 1);
+		}
+		if (url->host) {
+			add_assoc_string(&arr, "host", url->host, 1);
+		}
+		if (url->port) {
+			add_assoc_long(&arr, "port", (long) url->port);
+		}
+		if (url->path) {
+			add_assoc_string(&arr, "path", url->path, 1);
+		}
+		if (url->query) {
+			add_assoc_string(&arr, "query", url->query, 1);
+		}
+		if (url->fragment) {
+			add_assoc_string(&arr, "fragment", url->fragment, 1);
+		}
+	}
+	
+	return Z_ARRVAL(arr);
 }
 
 #endif

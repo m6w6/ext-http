@@ -50,6 +50,7 @@ HttpResponse
 * Fixed possible crash in progress/onfinish request callbacks
 * Fixed http_redirect() and http_build_url() without arguments
 * Enabled recursive query string merging in http_build_url() with HTTP_URL_JOIN_QUERY
+* Fixed behaviour of http_build_url() when second parameter is NULL
 ]]></notes>
  <contents>
   <dir name="/">
