@@ -306,6 +306,12 @@ typedef int STATUS;
 #	define end_error_handling()
 #endif
 
+#if (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION >= 2) || PHP_MAJOR_VERSION > 5
+#	define	ZEND_EXCEPTION_GET_DEFAULT() zend_exception_get_default(TSRMLS_C)
+#else
+#	define	ZEND_EXCEPTION_GET_DEFAULT() zend_exception_get_default()
+#endif
+
 #ifndef E_THROW
 #	define E_THROW 0
 #endif

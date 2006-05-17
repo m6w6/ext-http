@@ -35,7 +35,7 @@ zend_class_entry *HTTP_EX_CE(querystring);
 
 PHP_MINIT_FUNCTION(http_exception_object)
 {
-	HTTP_REGISTER_EXCEPTION(HttpException, http_exception_object_ce, zend_exception_get_default());
+	HTTP_REGISTER_EXCEPTION(HttpException, http_exception_object_ce, ZEND_EXCEPTION_GET_DEFAULT());
 	HTTP_REGISTER_EXCEPTION(HttpRuntimeException, HTTP_EX_CE(runtime), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpInvalidParamException, HTTP_EX_CE(invalid_param), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpHeaderException, HTTP_EX_CE(header), HTTP_EX_DEF_CE);
