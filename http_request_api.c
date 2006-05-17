@@ -130,7 +130,7 @@ PHP_MINIT_FUNCTION(http_request)
 	CRYPTO_set_id_callback(http_openssl_thread_id);
 	CRYPTO_set_locking_callback(http_openssl_thread_lock);
 #endif
-#ifdef HTTP_NED_GNUTLS_TSL
+#ifdef HTTP_NEED_GNUTLS_TSL
 	gcry_control(GCRYCTL_SET_THREAD_CBS, &http_gnutls_tsl);
 #endif
 
@@ -272,9 +272,10 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 	}
 #define HTTP_CURL_OPT_LONG_EX(keyname, optname) \
 	if (!strcasecmp(key, keyname)) { \
-		zval *copy = http_request_option_cache_ex(request, keyname, strlen(keyname)+1, 0, zval_copy(IS_LONG, *param)); \
+		zval *copy = zval_copy(IS_LONG, *param); \
 		HTTP_CURL_OPT(optname, Z_LVAL_P(copy)); \
 		key = NULL; \
+		zval_free(&copy); \
 		continue; \
 	}
 /* }}} */
@@ -373,8 +374,6 @@ PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch
 /* {{{ void http_request_dtor(http_request *) */
 PHP_HTTP_API void _http_request_dtor(http_request *request)
 {
-	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
-	
 	http_curl_free(&request->ch);
 	http_request_reset(request);
 	
@@ -493,8 +492,6 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 
 PHP_HTTP_API void _http_request_set_progress_callback(http_request *request, zval *cb)
 {
-	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
-	
 	if (request->_progress_callback) {
 		zval_ptr_dtor(&request->_progress_callback);
 	}
