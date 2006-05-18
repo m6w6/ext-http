@@ -96,12 +96,6 @@ typedef int STATUS;
 		zend_error(E_NOTICE, "Wrong parameter count for %s()", get_active_function_name(TSRMLS_C)); \
 	}
 
-/* check if return value is used */
-#define IF_RETVAL_USED \
-	if (!return_value_used) { \
-		return; \
-	} else
-
 /* CR LF */
 #define HTTP_CRLF "\r\n"
 

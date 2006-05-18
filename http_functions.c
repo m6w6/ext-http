@@ -1838,7 +1838,7 @@ PHP_FUNCTION(http_request_method_unregister)
  */
 PHP_FUNCTION(http_request_method_exists)
 {
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *method;
 
 		if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &method)) {
@@ -1874,7 +1874,7 @@ PHP_FUNCTION(http_request_method_exists)
  */
 PHP_FUNCTION(http_request_method_name)
 {
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		long method;
 
 		if ((SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &method)) || (method < 0)) {

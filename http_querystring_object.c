@@ -367,7 +367,7 @@ PHP_METHOD(HttpQueryString, set)
 		}
 	}
 	
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(queryString);
 	}
 }

@@ -384,7 +384,7 @@ PHP_METHOD(HttpResponse, getCache)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *cache_p, *cache = convert_to_type_ex(IS_BOOL, GET_STATIC_PROP(cache), &cache_p);
 		
 		RETVAL_ZVAL(cache, 1, 0);
@@ -426,7 +426,7 @@ PHP_METHOD(HttpResponse, getGzip)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *gzip_p, *gzip = convert_to_type_ex(IS_BOOL, GET_STATIC_PROP(gzip), &gzip_p);
 		
 		RETVAL_ZVAL(gzip, 1, 0);
@@ -485,7 +485,7 @@ PHP_METHOD(HttpResponse, getCacheControl)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *ccontrol_p, *ccontrol = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl), &ccontrol_p);
 		
 		RETVAL_ZVAL(ccontrol, 1, 0);
@@ -532,7 +532,7 @@ PHP_METHOD(HttpResponse, getContentType)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentType), &ctype_p);
 		
 		RETVAL_ZVAL(ctype, 1, 0);
@@ -643,7 +643,7 @@ PHP_METHOD(HttpResponse, getContentDisposition)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *cd_p, *cd = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentDisposition), &cd_p);
 		
 		RETVAL_ZVAL(cd, 1, 0);
@@ -686,7 +686,7 @@ PHP_METHOD(HttpResponse, getETag)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *etag_p, *etag = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag), &etag_p);
 		
 		RETVAL_ZVAL(etag, 1, 0);
@@ -729,7 +729,7 @@ PHP_METHOD(HttpResponse, getLastModified)
 {
 	NO_ARGS;
 	
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *lm_p, *lm = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified), &lm_p);
 		
 		RETVAL_ZVAL(lm, 1, 0);
@@ -776,7 +776,7 @@ PHP_METHOD(HttpResponse, getThrottleDelay)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay), &delay_p);
 		
 		RETVAL_ZVAL(delay, 1, 0);
@@ -822,7 +822,7 @@ PHP_METHOD(HttpResponse, getBufferSize)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *size_p, *size = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize), &size_p);
 		
 		RETVAL_ZVAL(size, 1, 0);
@@ -880,7 +880,7 @@ PHP_METHOD(HttpResponse, getData)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *the_data = GET_STATIC_PROP(data);
 		
 		RETURN_ZVAL(the_data, 1, 0);
@@ -939,7 +939,7 @@ PHP_METHOD(HttpResponse, getStream)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *stream_p;
 		
 		RETVAL_RESOURCE(Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream), &stream_p)));
@@ -998,7 +998,7 @@ PHP_METHOD(HttpResponse, getFile)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *the_file_p, *the_file = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file), &the_file_p);
 		
 		RETVAL_ZVAL(the_file, 1, 0);

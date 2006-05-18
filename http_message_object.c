@@ -753,7 +753,7 @@ PHP_METHOD(HttpMessage, getBody)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_message_object, obj);
 		RETURN_PHPSTR(&obj->message->body, PHPSTR_FREE_NOT, 1);
 	}
@@ -790,7 +790,7 @@ PHP_METHOD(HttpMessage, getHeaders)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval headers;
 		getObject(http_message_object, obj);
 
@@ -862,7 +862,7 @@ PHP_METHOD(HttpMessage, getType)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_message_object, obj);
 		RETURN_LONG(obj->message->type);
 	}
@@ -898,7 +898,7 @@ PHP_METHOD(HttpMessage, getResponseCode)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
 		RETURN_LONG(obj->message->http.info.response.code);
@@ -946,7 +946,7 @@ PHP_METHOD(HttpMessage, getResponseStatus)
 {
 	NO_ARGS;
 	
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
 		RETURN_STRING(obj->message->http.info.response.status, 1);
@@ -990,7 +990,7 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
 		RETURN_STRING(obj->message->http.info.request.method, 1);
@@ -1043,7 +1043,7 @@ PHP_METHOD(HttpMessage, getRequestUrl)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
 		RETURN_STRING(obj->message->http.info.request.url, 1);
@@ -1090,7 +1090,7 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		char ver[4] = {0};
 		getObject(http_message_object, obj);
 
@@ -1182,7 +1182,7 @@ PHP_METHOD(HttpMessage, send)
  */
 PHP_METHOD(HttpMessage, toString)
 {
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		char *string;
 		size_t length;
 		zend_bool include_parent = 0;
@@ -1216,7 +1216,7 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 	
 	NO_ARGS;
 	
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_message_object, obj);
 		
 		switch (obj->message->type)

@@ -772,7 +772,7 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *opts, **options;
 
 		opts = GET_PROP(options);
@@ -900,7 +900,7 @@ PHP_METHOD(HttpRequest, getOptions)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(options);
 	}
 }
@@ -1062,7 +1062,7 @@ PHP_METHOD(HttpRequest, getUrl)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(url);
 	}
 }
@@ -1100,7 +1100,7 @@ PHP_METHOD(HttpRequest, getMethod)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(method);
 	}
 }
@@ -1143,7 +1143,7 @@ PHP_METHOD(HttpRequest, getContentType)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(contentType);
 	}
 }
@@ -1202,7 +1202,7 @@ PHP_METHOD(HttpRequest, getQueryData)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(queryData);
 	}
 }
@@ -1314,7 +1314,7 @@ PHP_METHOD(HttpRequest, getPostFields)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(postFields);
 	}
 }
@@ -1394,7 +1394,7 @@ PHP_METHOD(HttpRequest, getRawPostData)
 {
 	NO_ARGS;
 	
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(rawPostData);
 	}
 }
@@ -1492,7 +1492,7 @@ PHP_METHOD(HttpRequest, getPostFiles)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(postFiles);
 	}
 }
@@ -1531,7 +1531,7 @@ PHP_METHOD(HttpRequest, getPutFile)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(putFile);
 	}
 }
@@ -1611,7 +1611,7 @@ PHP_METHOD(HttpRequest, getPutData)
 {
 	NO_ARGS;
 	
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(putData);
 	}
 }
@@ -1632,7 +1632,7 @@ PHP_METHOD(HttpRequest, getResponseData)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(responseData);
 	}
 }
@@ -1653,7 +1653,7 @@ PHP_METHOD(HttpRequest, getResponseData)
  */
 PHP_METHOD(HttpRequest, getResponseHeader)
 {
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *data, **headers, **header;
 		char *header_name = NULL;
 		int header_len = 0;
@@ -1691,7 +1691,7 @@ PHP_METHOD(HttpRequest, getResponseHeader)
  */
 PHP_METHOD(HttpRequest, getResponseCookies)
 {
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		long flags = 0;
 		zval *allowed_extras_array = NULL, *data, **headers;
 
@@ -1787,7 +1787,7 @@ PHP_METHOD(HttpRequest, getResponseBody)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval **body;
 		zval *data = GET_PROP(responseData);
 		
@@ -1814,7 +1814,7 @@ PHP_METHOD(HttpRequest, getResponseCode)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(responseCode);
 	}
 }
@@ -1830,7 +1830,7 @@ PHP_METHOD(HttpRequest, getResponseStatus)
 {
 	NO_ARGS;
 	
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		RETURN_PROP(responseStatus);
 	}
 }
@@ -1854,7 +1854,7 @@ PHP_METHOD(HttpRequest, getResponseStatus)
  */
 PHP_METHOD(HttpRequest, getResponseInfo)
 {
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *info, **infop;
 		char *info_name = NULL;
 		int info_len = 0;
@@ -1935,7 +1935,7 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		http_message *msg;
 		getObject(http_request_object, obj);
 
@@ -1958,7 +1958,7 @@ PHP_METHOD(HttpRequest, getRawRequestMessage)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_request_object, obj);
 
 		RETURN_PHPSTR_DUP(&obj->request->conv.request);
@@ -1976,7 +1976,7 @@ PHP_METHOD(HttpRequest, getRawResponseMessage)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_request_object, obj);
 
 		RETURN_PHPSTR_DUP(&obj->request->conv.response);
@@ -2003,7 +2003,7 @@ PHP_METHOD(HttpRequest, getHistory)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		zval *hist;
 		
 		SET_EH_THROW_HTTP();

@@ -391,7 +391,7 @@ PHP_METHOD(HttpRequestPool, valid)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_requestpool_object, obj);
 		RETURN_BOOL(obj->iterator.pos >= 0 && obj->iterator.pos < zend_llist_count(&obj->pool.handles));
 	}
@@ -406,7 +406,7 @@ PHP_METHOD(HttpRequestPool, current)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		long pos = 0;
 		zval **current = NULL;
 		zend_llist_position lpos;
@@ -433,7 +433,7 @@ PHP_METHOD(HttpRequestPool, key)
 {
 	NO_ARGS;
 
-	IF_RETVAL_USED {
+	if (return_value_used) {
 		getObject(http_requestpool_object, obj);
 		RETURN_LONG(obj->iterator.pos);
 	}
