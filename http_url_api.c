@@ -105,10 +105,10 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 	if (!(flags & HTTP_URL_STRIP_PORT)) {
 		url->port = (new_url&&new_url->port) ? new_url->port : ((old_url) ? old_url->port : 0);
 	}
-	if ((!(flags & HTTP_URL_STRIP_AUTH)) && (!(flags & HTTP_URL_STRIP_USER))) {
+	if (!(flags & HTTP_URL_STRIP_USER)) {
 		__URLCPY(user);
 	}
-	if ((!(flags & HTTP_URL_STRIP_AUTH)) && (!(flags & HTTP_URL_STRIP_PASS))) {
+	if (!(flags & HTTP_URL_STRIP_PASS)) {
 		__URLCPY(pass);
 	}
 	
@@ -160,19 +160,17 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 		zval *https = http_get_server_var("HTTPS");
 		if (https && !strcasecmp(Z_STRVAL_P(https), "ON")) {
 			url->scheme = estrndup("https", lenof("https"));
-		} else
-		switch (url->port)
-		{
+		} else switch (url->port) {
 			case 443:
 				url->scheme = estrndup("https", lenof("https"));
-			break;
+				break;
 
 #ifndef HTTP_HAVE_NETDB
 			default:
 #endif
 			case 80:
 				url->scheme = estrndup("http", lenof("http"));
-			break;
+				break;
 			
 #ifdef HTTP_HAVE_NETDB
 			default:
@@ -181,7 +179,7 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 				} else {
 					url->scheme = estrndup("http", lenof("http"));
 				}
-			break;
+				break;
 #endif
 		}
 	}
@@ -229,15 +227,14 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 		char *ptr, *end = url->path + strlen(url->path) + 1;
 			
 		for (ptr = strstr(url->path, "/."); ptr; ptr = strstr(ptr, "/.")) {
-			switch (ptr[2])
-			{
+			switch (ptr[2]) {
 				case '\0':
 					ptr[1] = '\0';
-				break;
+					break;
 				
 				case '/':
 					memmove(&ptr[1], &ptr[3], end - &ptr[3]);
-				break;
+					break;
 					
 				case '.':
 					if (ptr[3] == '/') {
@@ -249,12 +246,12 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 						}
 						memmove(&ptr[1], pos, end - pos);
 					}
-				break;
+					break;
 				
 				default:
 					/* something else */
 					++ptr;
-				break;
+					break;
 			}
 		}
 	}

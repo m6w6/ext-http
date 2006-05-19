@@ -838,23 +838,22 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	}
 
 	/* request method */
-	switch (request->meth)
-	{
+	switch (request->meth) {
 		case HTTP_GET:
 			HTTP_CURL_OPT(CURLOPT_HTTPGET, 1);
-		break;
+			break;
 
 		case HTTP_HEAD:
 			HTTP_CURL_OPT(CURLOPT_NOBODY, 1);
-		break;
+			break;
 
 		case HTTP_POST:
 			HTTP_CURL_OPT(CURLOPT_POST, 1);
-		break;
+			break;
 
 		case HTTP_PUT:
 			HTTP_CURL_OPT(CURLOPT_UPLOAD, 1);
-		break;
+			break;
 
 		default:
 			if (http_request_method_exists(0, request->meth, NULL)) {
@@ -863,20 +862,19 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Unsupported request method: %d (%s)", request->meth, request->url);
 				return FAILURE;
 			}
-		break;
+			break;
 	}
 
 	/* attach request body */
 	if (request->body && (request->meth != HTTP_GET) && (request->meth != HTTP_HEAD) && (request->meth != HTTP_OPTIONS)) {
-		switch (request->body->type)
-		{
+		switch (request->body->type) {
 			case HTTP_REQUEST_BODY_EMPTY:
 				/* nothing */
-			break;
+				break;
 			
 			case HTTP_REQUEST_BODY_CURLPOST:
 				HTTP_CURL_OPT(CURLOPT_HTTPPOST, (struct curl_httppost *) request->body->data);
-			break;
+				break;
 
 			case HTTP_REQUEST_BODY_CSTRING:
 				if (request->meth != HTTP_PUT) {
@@ -889,13 +887,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				HTTP_CURL_OPT(CURLOPT_IOCTLDATA, request);
 				HTTP_CURL_OPT(CURLOPT_READDATA, request);
 				HTTP_CURL_OPT(CURLOPT_INFILESIZE, request->body->size);
-			break;
+				break;
 
 			default:
 				/* shouldn't ever happen */
 				http_error_ex(HE_ERROR, 0, "Unknown request body type: %d (%s)", request->body->type, request->url);
 				return FAILURE;
-			break;
 		}
 	}
 
@@ -961,8 +958,7 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *ct
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
 	if (request->body) {
-		switch (request->body->type)
-		{
+		switch (request->body->type) {
 			case HTTP_REQUEST_BODY_CSTRING:
 			{
 				size_t out = MIN(len * n, request->body->size - request->body->priv);
@@ -972,12 +968,11 @@ static size_t http_curl_read_callback(void *data, size_t len, size_t n, void *ct
 					request->body->priv += out;
 					return out;
 				}
+				break;
 			}
-			break;
 			
 			case HTTP_REQUEST_BODY_UPLOADFILE:
 				return php_stream_read((php_stream *) request->body->data, data, len * n);
-			break;
 		}
 	}
 	return 0;
@@ -1023,18 +1018,17 @@ static curlioerr http_curl_ioctl_callback(CURL *ch, curliocmd cmd, void *ctx)
 	}
 	
 	if (request->body) {
-		switch (request->body->type)
-		{
+		switch (request->body->type) {
 			case HTTP_REQUEST_BODY_CSTRING:
 				request->body->priv = 0;
 				return CURLIOE_OK;
-			break;
+				break;
 				
 			case HTTP_REQUEST_BODY_UPLOADFILE:
 				if (SUCCESS == php_stream_rewind((php_stream *) request->body->data)) {
 					return CURLIOE_OK;
 				}
-			break;
+				break;
 		}
 	}
 	
@@ -1047,22 +1041,21 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 {
 	http_request *request = (http_request *) ctx;
 
-	switch (type)
-	{
+	switch (type) {
 		case CURLINFO_DATA_IN:
 			if (request->conv.last_type == CURLINFO_HEADER_IN) {
 				phpstr_appends(&request->conv.response, HTTP_CRLF);
 			}
 		case CURLINFO_HEADER_IN:
 			phpstr_append(&request->conv.response, data, length);
-		break;
+			break;
 		case CURLINFO_DATA_OUT:
 			if (request->conv.last_type == CURLINFO_HEADER_OUT) {
 				phpstr_appends(&request->conv.request, HTTP_CRLF);
 			}
 		case CURLINFO_HEADER_OUT:
 			phpstr_append(&request->conv.request, data, length);
-		break;
+			break;
 		default:
 #if 0
 			fprintf(stderr, "## ", type);
@@ -1082,7 +1075,7 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 				fprintf(stderr, "\n");
 			}
 #endif
-		break;
+			break;
 	}
 
 	if (type) {

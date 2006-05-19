@@ -27,7 +27,7 @@ PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC);
 #define HTTP_URL_JOIN_QUERY		0x002
 #define HTTP_URL_STRIP_USER		0x004
 #define HTTP_URL_STRIP_PASS		0x008
-#define HTTP_URL_STRIP_AUTH		0x010
+#define HTTP_URL_STRIP_AUTH		(HTTP_URL_STRIP_USER|HTTP_URL_STRIP_PASS)
 #define HTTP_URL_STRIP_PORT		0x020
 #define HTTP_URL_STRIP_PATH		0x040
 #define HTTP_URL_STRIP_QUERY	0x080
@@ -108,8 +108,7 @@ static inline HashTable *_http_url_tostruct(php_url *url, zval *strct TSRMLS_DC)
 	zval arr;
 	
 	if (strct) {
-		switch (Z_TYPE_P(strct))
-		{
+		switch (Z_TYPE_P(strct)) {
 			default:
 				zval_dtor(strct);
 				array_init(strct);

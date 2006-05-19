@@ -781,20 +781,18 @@ PHP_FUNCTION(http_redirect)
 		FREE_ZVAL(params);
 	}
 	
-	switch (status)
-	{
+	switch (status) {
 		case 300:
 			RETVAL_SUCCESS(http_send_status_header(status, LOC));
 			efree(LOC);
 			return;
-		break;
 		
 		case HTTP_REDIRECT_PERM:
 		case HTTP_REDIRECT_FOUND:
 		case HTTP_REDIRECT_POST:
 		case HTTP_REDIRECT_PROXY:
 		case HTTP_REDIRECT_TEMP:
-		break;
+			break;
 		
 		case 306:
 		default:
@@ -807,7 +805,7 @@ PHP_FUNCTION(http_redirect)
 			} else {
 				status = HTTP_REDIRECT_FOUND;
 			}
-		break;
+			break;
 	}
 	
 	RETURN_SUCCESS(http_exit_ex(status, LOC, RED, 1));
@@ -1717,8 +1715,7 @@ PHP_FUNCTION(http_request_body_encode)
 		RETURN_FALSE;
 	}
 	
-	switch (body.type)
-	{
+	switch (body.type) {
 		case HTTP_REQUEST_BODY_CURLPOST:
 			if (CURLE_OK != (rc = Curl_getFormData(&data, body.data, &size))) {
 				http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Could not encode request body: %s", curl_easy_strerror(rc));
@@ -1749,16 +1746,16 @@ PHP_FUNCTION(http_request_body_encode)
 				}
 			}
 			http_request_body_dtor(&body);
-		break;
+			break;
 		
 		case HTTP_REQUEST_BODY_CSTRING:
 			RETVAL_STRINGL(body.data, body.size, 0);
-		break;
+			break;
 		
 		default:
 			http_request_body_dtor(&body);
 			RETVAL_FALSE;
-		break;
+			break;
 	}
 }
 #endif /* HTTP_HAVE_CURL */
@@ -1805,8 +1802,7 @@ PHP_FUNCTION(http_request_method_unregister)
 		RETURN_FALSE;
 	}
 
-	switch (Z_TYPE_P(method))
-	{
+	switch (Z_TYPE_P(method)) {
 		case IS_OBJECT:
 			convert_to_string(method);
 		case IS_STRING:
@@ -1845,8 +1841,7 @@ PHP_FUNCTION(http_request_method_exists)
 			RETURN_FALSE;
 		}
 
-		switch (Z_TYPE_P(method))
-		{
+		switch (Z_TYPE_P(method)) {
 			case IS_OBJECT:
 				convert_to_string(method);
 			case IS_STRING:

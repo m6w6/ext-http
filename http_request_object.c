@@ -524,7 +524,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	{
 		case HTTP_GET:
 		case HTTP_HEAD:
-		break;
+			break;
 
 		case HTTP_PUT:
 		{
@@ -544,8 +544,8 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 					status = FAILURE;
 				}
 			}
+			break;
 		}
-		break;
 
 		case HTTP_POST:
 		default:
@@ -571,8 +571,8 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 					}
 				}
 			}
+			break;
 		}
-		break;
 	}
 
 	if (status == SUCCESS) {

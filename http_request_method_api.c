@@ -190,12 +190,11 @@ PHP_HTTP_API int _http_request_method_register(const char *method_name, int meth
 	method = emalloc(method_name_len + 1);
 	mconst = emalloc(method_name_len + 1);
 	for (i = 0; i < method_name_len; ++i) {
-		switch (method_name[i])
-		{
+		switch (method_name[i]) {
 			case '-':
 				method[i] = '-';
 				mconst[i] = '_';
-			break;
+				break;
 			
 			default:
 				if (!isalnum(method_name[i])) {
@@ -205,7 +204,7 @@ PHP_HTTP_API int _http_request_method_register(const char *method_name, int meth
 					return 0;
 				}
 				mconst[i] = method[i] = toupper(method_name[i]);
-			break;
+				break;
 		}
 	}
 	method[method_name_len] = '\0';

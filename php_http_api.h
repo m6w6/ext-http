@@ -165,8 +165,7 @@ static inline const char *_http_locate_eol(const char *line, int *eol_len)
 static inline zval *_convert_to_type(int type, zval *z)
 {
 	if (Z_TYPE_P(z) != type) {
-		switch (type)
-		{
+		switch (type) {
 			case IS_NULL:	convert_to_null(z);		break;
 			case IS_BOOL:	convert_to_boolean(z);	break;
 			case IS_LONG:	convert_to_long(z);		break;
@@ -183,8 +182,7 @@ static inline zval *_convert_to_type_ex(int type, zval *z, zval **p)
 {
 	*p = z;
 	if (Z_TYPE_P(z) != type) {
-		switch (type)
-		{
+		switch (type) {
 			case IS_NULL:	convert_to_null_ex(&z);		break;
 			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
 			case IS_LONG:	convert_to_long_ex(&z);		break;

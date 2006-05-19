@@ -63,8 +63,7 @@ PHP_HTTP_API time_t _http_last_modified(const void *data_ptr, http_send_mode dat
 {
 	php_stream_statbuf ssb;
 
-	switch (data_mode)
-	{
+	switch (data_mode) {
 		case SEND_DATA:	return HTTP_GET_REQUEST_TIME();
 		case SEND_RSRC:	return php_stream_stat((php_stream *) data_ptr, &ssb) ? 0 : ssb.sb.st_mtime;
 		default:		return php_stream_stat_path((char *) data_ptr, &ssb) ? 0 : ssb.sb.st_mtime;

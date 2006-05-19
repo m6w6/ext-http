@@ -200,14 +200,13 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 	range += sizeof("bytes=") - 1;
 
 	do {
-		switch (c = *(range++))
-		{
+		switch (c = *(range++)) {
 			case '0':
 				/* allow 000... - shall we? */
 				if (*ptr != -10) {
 					*ptr *= 10;
 				}
-			break;
+				break;
 
 			case '1': case '2': case '3':
 			case '4': case '5': case '6':
@@ -229,23 +228,21 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 				} else {
 					*ptr = c - '0';
 				}
-			break;
+				break;
 
 			case '-':
 				ptr = &end;
-			break;
+				break;
 
 			case ' ':
-				/* IE - ignore for now */
-			break;
+				break;
 
 			case 0:
 			case ',':
 
 				if (length) {
 					/* validate ranges */
-					switch (begin)
-					{
+					switch (begin) {
 						/* "0-12345" */
 						case -10:
 							/* "0-" */
@@ -257,7 +254,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 								return RANGE_ERR;
 							}
 							begin = 0;
-						break;
+							break;
 
 						/* "-12345" */
 						case -1:
@@ -267,16 +264,14 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 							}
 							begin = length - end;
 							end = length - 1;
-						break;
+							break;
 
 						/* "12345-(xxx)" */
 						default:
-							switch (end)
-							{
+							switch (end) {
 								/* "12345-0" */
 								case -10:
 									return RANGE_ERR;
-								break;
 
 								/* "12345-" */
 								case -1:
@@ -284,7 +279,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 										return RANGE_ERR;
 									}
 									end = length - 1;
-								break;
+									break;
 
 								/* "12345-67890" */
 								default:
@@ -293,9 +288,9 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 											(end    <  begin)) {
 										return RANGE_ERR;
 									}
-								break;
+									break;
 							}
-						break;
+							break;
 					}
 				}
 				{
@@ -310,11 +305,10 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 					end = -1;
 					ptr = &begin;
 				}
-			break;
+				break;
 
 			default:
 				return RANGE_NO;
-			break;
 		}
 	} while (c != 0);
 
@@ -339,13 +333,12 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 	do {
 		int value_len = 0;
 		
-		switch (*line++)
-		{
+		switch (*line++) {
 			case ':':
 				if (!colon) {
 					colon = line - 1;
 				}
-			break;
+				break;
 			
 			case 0:
 				--value_len; /* we don't have CR so value length is one char less */
@@ -419,7 +412,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 					value_len = 0;
 					header += line - header;
 				}
-			break;
+				break;
 		}
 	} while (MORE_HEADERS);
 

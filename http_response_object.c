@@ -573,8 +573,8 @@ PHP_METHOD(HttpResponse, guessContentType)
 			{
 				zval *data = GET_STATIC_PROP(data);
 				ct = http_guess_content_type(magic_file, magic_mode, Z_STRVAL_P(data), Z_STRLEN_P(data), SEND_DATA);
+				break;
 			}
-			break;
 			
 			case SEND_RSRC:
 			{
@@ -583,12 +583,12 @@ PHP_METHOD(HttpResponse, guessContentType)
 				z->type = IS_RESOURCE;
 				php_stream_from_zval(s, &z);
 				ct = http_guess_content_type(magic_file, magic_mode, s, 0, SEND_RSRC);
+				break;
 			}
-			break;
 			
 			default:
 				ct = http_guess_content_type(magic_file, magic_mode, Z_STRVAL_P(GET_STATIC_PROP(file)), 0, -1);
-			break;
+				break;
 		}
 		if (ct) {
 			UPD_STATIC_PROP(string, contentType, ct);
@@ -1156,8 +1156,7 @@ PHP_METHOD(HttpResponse, send)
 	php_start_ob_buffer(NULL, HTTP_G->send.buffer_size, 0 TSRMLS_CC);
 
 	/* send */
-	switch (Z_LVAL_P(GET_STATIC_PROP(mode)))
-	{
+	switch (Z_LVAL_P(GET_STATIC_PROP(mode))) {
 		case SEND_DATA:
 		{
 			zval *zdata_p, *zdata = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(data), &zdata_p);

@@ -327,12 +327,10 @@ retry_raw_inflate:
 		Z.next_in = (Bytef *) data;
 		Z.avail_in = data_len;
 		
-		switch (status = http_inflate_rounds(&Z, Z_NO_FLUSH, decoded, decoded_len))
-		{
+		switch (status = http_inflate_rounds(&Z, Z_NO_FLUSH, decoded, decoded_len)) {
 			case Z_OK:
 			case Z_STREAM_END:
 				return SUCCESS;
-			break;
 			
 			case Z_DATA_ERROR:
 				/* raw deflated data? */
@@ -341,7 +339,6 @@ retry_raw_inflate:
 					wbits = HTTP_WINDOW_BITS_RAW;
 					goto retry_raw_inflate;
 				}
-			break;
 		}
 		inflateEnd(&Z);
 	}
@@ -432,8 +429,7 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 	s->stream.avail_out = *encoded_len;
 	s->stream.next_out = (Bytef *) *encoded;
 	
-	switch (status = deflate(&s->stream, HTTP_ENCODING_STREAM_FLUSH_FLAG(s->flags)))
-	{
+	switch (status = deflate(&s->stream, HTTP_ENCODING_STREAM_FLUSH_FLAG(s->flags))) {
 		case Z_OK:
 		case Z_STREAM_END:
 			/* cut processed chunk off the buffer */
@@ -448,7 +444,6 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_update(http_encoding_stream *s
 			*encoded = erealloc_rel(*encoded, *encoded_len + 1);
 			(*encoded)[*encoded_len] = '\0';
 			return SUCCESS;
-		break;
 	}
 	
 	STR_SET(*encoded, NULL);
@@ -470,8 +465,7 @@ retry_raw_inflate:
 	s->stream.next_in = (Bytef *) PHPSTR_VAL(s->stream.opaque);
 	s->stream.avail_in = PHPSTR_LEN(s->stream.opaque);
 	
-	switch (status = http_inflate_rounds(&s->stream, HTTP_ENCODING_STREAM_FLUSH_FLAG(s->flags), decoded, decoded_len))
-	{
+	switch (status = http_inflate_rounds(&s->stream, HTTP_ENCODING_STREAM_FLUSH_FLAG(s->flags), decoded, decoded_len)) {
 		case Z_OK:
 		case Z_STREAM_END:
 			/* cut off */
@@ -481,7 +475,6 @@ retry_raw_inflate:
 				phpstr_reset(PHPSTR(s->stream.opaque));
 			}
 			return SUCCESS;
-		break;
 		
 		case Z_DATA_ERROR:
 			/* raw deflated data ? */
@@ -491,7 +484,6 @@ retry_raw_inflate:
 				inflateInit2(&s->stream, HTTP_WINDOW_BITS_RAW);
 				goto retry_raw_inflate;
 			}
-		break;
 	}
 	
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Failed to update inflate stream: %s", zError(status));
@@ -512,15 +504,13 @@ PHP_HTTP_API STATUS _http_encoding_deflate_stream_flush(http_encoding_stream *s,
 	s->stream.avail_out = *encoded_len;
 	s->stream.next_out = (Bytef *) *encoded;
 	
-	switch (status = deflate(&s->stream, Z_FULL_FLUSH))
-	{
+	switch (status = deflate(&s->stream, Z_FULL_FLUSH)) {
 		case Z_OK:
 		case Z_STREAM_END:
 			*encoded_len = HTTP_DEFLATE_BUFFER_SIZE - s->stream.avail_out;
 			*encoded = erealloc_rel(*encoded, *encoded_len + 1);
 			(*encoded)[*encoded_len] = '\0';
 			return SUCCESS;
-		break;
 	}
 	
 	STR_SET(*encoded, NULL);
@@ -675,19 +665,17 @@ void _http_ob_deflatehandler(char *output, uint output_len, char **handled_outpu
 		
 		HTTP_G->send.deflate.encoding = !0;
 		
-		switch (http_encoding_response_start(0))
-		{
+		switch (http_encoding_response_start(0)) {
 			case HTTP_ENCODING_GZIP:
 				flags = HTTP_DEFLATE_TYPE_GZIP;
-			break;
+				break;
 			
 			case HTTP_ENCODING_DEFLATE:
 				flags = HTTP_DEFLATE_TYPE_ZLIB;
-			break;
+				break;
 			
 			default:
 				goto deflate_passthru_plain;
-			break;
 		}
 		
 		flags |= (HTTP_G->send.deflate.start_flags &~ 0xf0);

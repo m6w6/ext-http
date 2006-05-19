@@ -23,35 +23,33 @@ PHP_HTTP_API void _http_info_default_callback(void **nothing, HashTable **header
 	
 	INIT_ZARR(array, *headers);
 	
-	switch (info->type)
-	{
+	switch (info->type) {
 		case IS_HTTP_REQUEST:
 			add_assoc_string(&array, "Request Method", HTTP_INFO(info).request.method, 1);
 			add_assoc_string(&array, "Request Url", HTTP_INFO(info).request.url, 1);
-		break;
+			break;
 		
 		case IS_HTTP_RESPONSE:
 			add_assoc_long(&array, "Response Code", (long) HTTP_INFO(info).response.code);
 			add_assoc_string(&array, "Response Status", HTTP_INFO(info).response.status, 1);
-		break;
+			break;
 	}
 }
 
 PHP_HTTP_API void _http_info_dtor(http_info *i)
 {
-	switch (i->type)
-	{
+	switch (i->type) {
 		case IS_HTTP_REQUEST:
 			STR_SET(HTTP_INFO(i).request.method, NULL);
 			STR_SET(HTTP_INFO(i).request.url, NULL);
-		break;
+			break;
 		
 		case IS_HTTP_RESPONSE:
 			STR_SET(HTTP_INFO(i).response.status, NULL);
-		break;
+			break;
 		
 		default:
-		break;
+			break;
 	}
 }
 

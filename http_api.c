@@ -154,8 +154,7 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		PHPWRITE(body, strlen(body));
 	}
 	
-	switch (status)
-	{
+	switch (status) {
 		case 301:	http_log(HTTP_G->log.redirect, "301-REDIRECT", header);			break;
 		case 302:	http_log(HTTP_G->log.redirect, "302-REDIRECT", header);			break;
 		case 303:	http_log(HTTP_G->log.redirect, "303-REDIRECT", header);			break;
@@ -362,8 +361,7 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 		);
 		STR_FREE(tk); STR_FREE(tv);
 #endif
-		switch (st)
-		{
+		switch (st) {
 			case ST_QUOTE:
 			quote:
 				if (*c == '"') {
@@ -382,36 +380,34 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 						st = ST_ADD;
 					}
 				}
-			break;
+				break;
 				
 			case ST_VALUE:
-				switch (*c)
-				{
+				switch (*c) {
 					case '"':
 						if (!val) {
 							st = ST_QUOTE;
 						}
-					break;
+						break;
 					
 					case ' ':
-					break;
+						break;
 					
 					case ';':
 					case '\0':
 						goto add;
-					break;
+						break;
 					
 					default:
 						if (!val) {
 							val = c;
 						}
-					break;
+						break;
 				}
-			break;
+				break;
 				
 			case ST_KEY:
-				switch (*c)
-				{
+				switch (*c) {
 					case ',':
 						if (allow_comma_sep) {
 							goto allow_comma;
@@ -422,7 +418,7 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 					case '\013':
 					case '\014':
 						goto failure;
-					break;
+						break;
 					
 					case '=':
 						if (key) {
@@ -431,14 +427,14 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 						} else {
 							goto failure;
 						}
-					break;
+						break;
 					
 					case ' ':
 						if (key) {
 							keylen = c - key;
 							st = ST_ASSIGN;
 						}
-					break;
+						break;
 					
 					case ';':
 					case '\0':
@@ -447,15 +443,15 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 							keylen = c - key;
 							st = ST_ADD;
 						}
-					break;
+						break;
 					
 					default:
 						if (!key) {
 							key = c;
 						}
-					break;
+						break;
 				}
-			break;
+				break;
 				
 			case ST_ASSIGN:
 				if (*c == '=') {
@@ -465,7 +461,7 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 				} else if (*c != ' ') {
 					goto failure;
 				}
-			break;
+				break;
 				
 			case ST_ADD:
 			add:
@@ -484,7 +480,7 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 				st = ST_KEY;
 				key = val = NULL;
 				keylen = vallen = 0;
-			break;
+				break;
 		}
 		
 		if (*c) {

@@ -78,8 +78,7 @@ zend_class_entry *_http_exception_get_for_code(long code)
 {
 	zend_class_entry *ex = http_exception_object_ce;
 
-	switch (code)
-	{
+	switch (code) {
 		case HTTP_E_RUNTIME:					ex = HTTP_EX_CE(runtime);					break;
 		case HTTP_E_INVALID_PARAM:				ex = HTTP_EX_CE(invalid_param);				break;
 		case HTTP_E_HEADER:						ex = HTTP_EX_CE(header);					break;

@@ -45,21 +45,20 @@ static inline void _http_message_init_type(http_message *message, http_message_t
 {
 	message->http.version = .0;
 	
-	switch (message->type = type)
-	{
+	switch (message->type = type) {
 		case HTTP_MSG_RESPONSE:
 			message->http.info.response.code = 0;
 			message->http.info.response.status = NULL;
-		break;
+			break;
 
 		case HTTP_MSG_REQUEST:
 			message->http.info.request.method = NULL;
 			message->http.info.request.url = NULL;
-		break;
+			break;
 
 		case HTTP_MSG_NONE:
 		default:
-		break;
+			break;
 	}
 }
 
@@ -84,19 +83,18 @@ PHP_HTTP_API void _http_message_set_type(http_message *message, http_message_typ
 	if (type != message->type) {
 
 		/* free request info */
-		switch (message->type)
-		{
+		switch (message->type) {
 			case HTTP_MSG_REQUEST:
 				STR_FREE(message->http.info.request.method);
 				STR_FREE(message->http.info.request.url);
-			break;
+				break;
 			
 			case HTTP_MSG_RESPONSE:
 				STR_FREE(message->http.info.response.status);
-			break;
+				break;
 			
 			default:
-			break;
+				break;
 		}
 
 		/* init */
@@ -108,20 +106,19 @@ PHP_HTTP_API void _http_message_set_info(http_message *message, http_info *info)
 {
 	message->http.version = info->http.version;
 	
-	switch (message->type = info->type)
-	{
+	switch (message->type = info->type) {
 		case IS_HTTP_REQUEST:
 			HTTP_INFO(message).request.url = estrdup(HTTP_INFO(info).request.url);
 			STR_SET(HTTP_INFO(message).request.method, estrdup(HTTP_INFO(info).request.method));
-		break;
+			break;
 		
 		case IS_HTTP_RESPONSE:
 			HTTP_INFO(message).response.code = HTTP_INFO(info).response.code;
 			STR_SET(HTTP_INFO(message).response.status, estrdup(HTTP_INFO(info).response.status));
-		break;
+			break;
 		
 		default:
-		break;
+			break;
 	}
 }
 
@@ -295,14 +292,13 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 
 	phpstr_init_ex(&str, 4096, 0);
 
-	switch (msg->type)
-	{
+	switch (msg->type) {
 		case HTTP_MSG_REQUEST:
 			phpstr_appendf(&str, "%s %s HTTP/%1.1f" HTTP_CRLF,
 				msg->http.info.request.method,
 				msg->http.info.request.url,
 				msg->http.version);
-		break;
+			break;
 
 		case HTTP_MSG_RESPONSE:
 			phpstr_appendf(&str, "HTTP/%1.1f %d%s%s" HTTP_CRLF,
@@ -310,22 +306,21 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 				msg->http.info.response.code,
 				*msg->http.info.response.status ? " ":"",
 				msg->http.info.response.status);
-		break;
+			break;
 
 		case HTTP_MSG_NONE:
 		default:
-		break;
+			break;
 	}
 
 	FOREACH_HASH_KEYVAL(pos1, &msg->hdrs, key, idx, header) {
 		if (key) {
 			zval **single_header;
 
-			switch (Z_TYPE_PP(header))
-			{
+			switch (Z_TYPE_PP(header)) {
 				case IS_STRING:
 					phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(header));
-				break;
+					break;
 
 				case IS_ARRAY:
 				{
@@ -333,8 +328,8 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 					FOREACH_VAL(pos2, *header, single_header) {
 						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(single_header));
 					}
+					break;
 				}
-				break;
 			}
 
 			key = NULL;
@@ -481,8 +476,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 {
 	STATUS rs = FAILURE;
 
-	switch (message->type)
-	{
+	switch (message->type) {
 		case HTTP_MSG_RESPONSE:
 		{
 			char *key;
@@ -510,8 +504,8 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 			rs =	SUCCESS == http_send_status(message->http.info.response.code) &&
 					SUCCESS == http_send_data(PHPSTR_VAL(message), PHPSTR_LEN(message)) ?
 					SUCCESS : FAILURE;
+			break;
 		}
-		break;
 
 		case HTTP_MSG_REQUEST:
 		{
@@ -567,13 +561,13 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 #else
 			http_error(HE_WARNING, HTTP_E_RUNTIME, "HTTP requests not supported - ext/http was not linked against libcurl.");
 #endif
-		}
 		break;
+		}
 
 		case HTTP_MSG_NONE:
 		default:
 			http_error(HE_WARNING, HTTP_E_MESSAGE_TYPE, "HttpMessage is neither of type HTTP_MSG_REQUEST nor HTTP_MSG_RESPONSE");
-		break;
+			break;
 	}
 
 	return rs;
@@ -616,19 +610,18 @@ PHP_HTTP_API void _http_message_dtor(http_message *message)
 		zend_hash_destroy(&message->hdrs);
 		phpstr_dtor(PHPSTR(message));
 		
-		switch (message->type)
-		{
+		switch (message->type) {
 			case HTTP_MSG_REQUEST:
 				STR_SET(message->http.info.request.method, NULL);
 				STR_SET(message->http.info.request.url, NULL);
-			break;
+				break;
 			
 			case HTTP_MSG_RESPONSE:
 				STR_SET(message->http.info.response.status, NULL);
-			break;
+				break;
 			
 			default:
-			break;
+				break;
 		}
 	}
 }

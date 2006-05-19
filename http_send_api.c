@@ -106,8 +106,7 @@ static inline void _http_send_response_data_fetch(void **buffer, const void *dat
 	char *buf;
 	long got, len = end - begin;
 	
-	switch (mode)
-	{
+	switch (mode) {
 		case SEND_RSRC:
 		{
 			php_stream *s = (php_stream *) data;
@@ -123,8 +122,8 @@ static inline void _http_send_response_data_fetch(void **buffer, const void *dat
 				
 				efree(buf);
 			}
+			break;
 		}
-		break;
 
 		case SEND_DATA:
 		{
@@ -136,8 +135,8 @@ static inline void _http_send_response_data_fetch(void **buffer, const void *dat
 				len -= got;
 				buf += got;
 			}
+			break;
 		}
-		break;
 
 		EMPTY_SWITCH_DEFAULT_CASE();
 	}
@@ -314,8 +313,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 	zend_hash_init(&ranges, 0, NULL, ZVAL_PTR_DTOR, 0);
 	range_status = http_get_request_ranges(&ranges, data_size);
 
-	switch (range_status)
-	{
+	switch (range_status) {
 		case RANGE_ERR:
 		{
 			zend_hash_destroy(&ranges);
@@ -493,8 +491,7 @@ PHP_HTTP_API char *_http_guess_content_type(const char *magicfile, long magicmod
 		
 		magic_setflags(magic, magicmode);
 		
-		switch (data_mode)
-		{
+		switch (data_mode) {
 			case SEND_RSRC:
 			{
 				char *buffer;
@@ -503,17 +500,17 @@ PHP_HTTP_API char *_http_guess_content_type(const char *magicfile, long magicmod
 				b_len = php_stream_copy_to_mem(data_ptr, &buffer, 65536, 0);
 				ctype = magic_buffer(magic, buffer, b_len);
 				efree(buffer);
+				break;
 			}
-			break;
 			
 			case SEND_DATA:
 				ctype = magic_buffer(magic, data_ptr, data_len);
-			break;
+				break;
 			
 			default:
 				HTTP_CHECK_OPEN_BASEDIR(data_ptr, magic_close(magic); return NULL);
 				ctype = magic_file(magic, data_ptr);
-			break;
+				break;
 		}
 		
 		if (ctype) {

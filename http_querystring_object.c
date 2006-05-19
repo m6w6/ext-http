@@ -327,8 +327,7 @@ PHP_METHOD(HttpQueryString, get)
 				if (Z_TYPE_P(ztype) == IS_LONG) {
 					type = Z_LVAL_P(ztype);
 				} else if(Z_TYPE_P(ztype) == IS_STRING) {
-					switch (Z_STRVAL_P(ztype)[0])
-					{
+					switch (Z_STRVAL_P(ztype)[0]) {
 						case 'B': 
 						case 'b':	type = HTTP_QUERYSTRING_TYPE_BOOL;		break;
 						case 'I':

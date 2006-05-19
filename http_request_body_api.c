@@ -149,21 +149,20 @@ PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC)
 {
 	if (body) {
 		if (body->free) {
-			switch (body->type)
-			{
+			switch (body->type) {
 				case HTTP_REQUEST_BODY_CSTRING:
 					if (body->data) {
 						efree(body->data);
 					}
-				break;
+					break;
 	
 				case HTTP_REQUEST_BODY_CURLPOST:
 					curl_formfree(body->data);
-				break;
+					break;
 	
 				case HTTP_REQUEST_BODY_UPLOADFILE:
 					php_stream_close(body->data);
-				break;
+					break;
 			}
 		}
 		memset(body, 0, sizeof(http_request_body));
