@@ -62,6 +62,7 @@ PHP_MINIT_FUNCTION(http_url)
 	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_PATH", HTTP_URL_STRIP_PATH);
 	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_QUERY", HTTP_URL_STRIP_QUERY);
 	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_FRAGMENT", HTTP_URL_STRIP_FRAGMENT);
+	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_ALL", HTTP_URL_STRIP_ALL);
 	return SUCCESS;
 }
 
@@ -156,6 +157,10 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 	}
 	
 	if (!url->scheme) {
+		zval *https = http_get_server_var("HTTPS");
+		if (https && !strcasecmp(Z_STRVAL_P(https), "ON")) {
+			url->scheme = estrndup("https", lenof("https"));
+		} else
 		switch (url->port)
 		{
 			case 443:
@@ -193,7 +198,7 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 	}
 	
 	if (!url->path) {
-		if (SG(request_info).request_uri && *SG(request_info).request_uri) {
+		if (SG(request_info).request_uri && SG(request_info).request_uri[0]) {
 			const char *q = strchr(SG(request_info).request_uri, '?');
 			
 			if (q) {
@@ -204,30 +209,23 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 		} else {
 			url->path = estrndup("/", 1);
 		}
-	} else if (*url->path != '/') {
-		if (SG(request_info).request_uri && *SG(request_info).request_uri) {
-			const char *q = strchr(SG(request_info).request_uri, '?');
-			char *uri, *path;
-			size_t len;
-			
-			if (q) {
-				uri = estrndup(SG(request_info).request_uri, len = q - SG(request_info).request_uri);
-			} else {
-				uri = estrndup(SG(request_info).request_uri, len = strlen(SG(request_info).request_uri));
-			}
-			
-			php_dirname(uri, len);
-			spprintf(&path, 0, "%s/%s", uri, url->path);
-			efree(uri);
-			STR_SET(url->path, path);
-		} else {
-			char *uri;
-			
-			spprintf(&uri, 0, "/%s", url->path);
-			STR_SET(url->path, uri);
+	} else if (url->path[0] != '/' && SG(request_info).request_uri && SG(request_info).request_uri[0]) {
+		size_t ulen = strlen(SG(request_info).request_uri);
+		size_t plen = strlen(url->path);
+		char *path;
+		
+		if (SG(request_info).request_uri[ulen-1] != '/') {
+			for (--ulen; ulen && SG(request_info).request_uri[ulen - 1] != '/'; --ulen);
 		}
+		
+		path = emalloc(ulen + plen + 1);
+		memcpy(path, SG(request_info).request_uri, ulen);
+		memcpy(path + ulen, url->path, plen);
+		path[ulen + plen] = '\0';
+		STR_SET(url->path, path);
 	}
-	if (url->path) {
+	/* replace directory references if path is not a single slash */
+	if (url->path[0] && (url->path[0] != '/' || url->path[1])) {
 		char *ptr, *end = url->path + strlen(url->path) + 1;
 			
 		for (ptr = strstr(url->path, "/."); ptr; ptr = strstr(ptr, "/.")) {

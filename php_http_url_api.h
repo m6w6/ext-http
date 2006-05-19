@@ -32,6 +32,13 @@ PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC);
 #define HTTP_URL_STRIP_PATH		0x040
 #define HTTP_URL_STRIP_QUERY	0x080
 #define HTTP_URL_STRIP_FRAGMENT	0x100
+#define HTTP_URL_STRIP_ALL ( \
+	HTTP_URL_STRIP_AUTH | \
+	HTTP_URL_STRIP_PORT | \
+	HTTP_URL_STRIP_PATH | \
+	HTTP_URL_STRIP_QUERY | \
+	HTTP_URL_STRIP_FRAGMENT \
+)
 
 #define http_build_url(f, o, n, p, s, l) _http_build_url((f), (o), (n), (p), (s), (l) TSRMLS_CC)
 PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC);
