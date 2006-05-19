@@ -284,6 +284,8 @@ several consecutive HTTP messages.</p>
 <span style="color: #0000BB">&lt;?php<br />print_r</span><span style="color: #007700">(</span><span style="color: #0000BB">http_parse_cookie</span><span style="color: #007700">(</span><span style="color: #DD0000">"foo=bar;&nbsp;bar=baz;&nbsp;path=/;&nbsp;domain=example.com;&nbsp;comment=;&nbsp;secure"</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,&nbsp;array(</span><span style="color: #DD0000">"comment"</span><span style="color: #007700">)));<br /><br /></span><span style="color: #0000BB">stdClass&nbsp;Object<br /></span><span style="color: #007700">(<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">cookies</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;Array<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">foo</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">bar<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">bar</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">baz<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">)<br /><br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">extras</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;Array<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">comment</span><span style="color: #007700">]&nbsp;=&gt;<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br /><br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">flags</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">16<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">expires</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">0<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">path</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;/<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">domain</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">example</span><span style="color: #007700">.</span><span style="color: #0000BB">com<br /></span><span style="color: #007700">)<br /></span><span style="color: #0000BB">?&gt;</span><br />
 </span></code></blockquote></p>
 <p></pre></p>
+<h2 id="http_parse_params">object http_parse_params(string param)</h2>
+<p>Parse parameter list.</p>
 <h2 id="http_get_request_headers">array http_get_request_headers(void)</h2>
 <p>Get a list of incoming HTTP headers.</p>
 <p>Returns an associative array of incoming request headers.</p>
@@ -1191,6 +1193,8 @@ http.cache_log is set.</p>
 </li>
 <li><a href="#http_parse_cookie">http_parse_cookie</a>
 </li>
+<li><a href="#http_parse_params">http_parse_params</a>
+</li>
 <li><a href="#http_get_request_headers">http_get_request_headers</a>
 </li>
 <li><a href="#http_get_request_body">http_get_request_body</a>
@@ -1419,7 +1423,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Sat, 22 Apr 2006 23:03:59 +0200</b></p>
+    <p><b>Generated at: Fri, 19 May 2006 16:55:19 +0200</b></p>
 </body>
 </html>
 

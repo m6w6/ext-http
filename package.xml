@@ -30,17 +30,16 @@ HttpResponse
   </maintainer>
   </maintainers>
  <release>
-  <version>1.0.0RC3</version>
-  <date>2006-04-13</date>
+  <version>1.0.0RC4</version>
+  <date>2006-05-19</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>+ Added missing http_request() function
-+ Added missing http_request_body_encode() function
-- Improved performance of the message and header parser
-- Disallow $HttpMessage-&gt;prepend($HttpMessage) causing infinite recursion
-* Fixed internal http_parse_headers() always returning success
-* Fixed missing &quot;parentMessage&quot; entry in print_r($HttpMessageObject)
-* Fixed possible crash if the response does not contain a status message
+  <notes>+ Added http_parse_params() function
++ Added HTTP_URL_STRIP_ALL constant
+* Fixed possible crash in progress/onfinish request callbacks
+* Fixed http_redirect() and http_build_url() without arguments
+* Fixed behaviour of http_build_url() when second parameter is NULL
+* Enabled recursive query string merging in http_build_url() with HTTP_URL_JOIN_QUERY
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -218,6 +217,7 @@ HttpResponse
    <file role="src" name="http_info_api.c"/>
    <file role="src" name="http_message_api.c"/>
    <file role="src" name="http_message_object.c"/>
+   <file role="src" name="http_querystring_api.c"/>
    <file role="src" name="http_querystring_object.c"/>
    <file role="src" name="http_requestpool_object.c"/>
    <file role="src" name="http_request_api.c"/>
@@ -248,6 +248,7 @@ HttpResponse
    <file role="src" name="php_http_info_api.h"/>
    <file role="src" name="php_http_message_api.h"/>
    <file role="src" name="php_http_message_object.h"/>
+   <file role="src" name="php_http_querystring_api.h"/>
    <file role="src" name="php_http_querystring_object.h"/>
    <file role="src" name="php_http_requestpool_object.h"/>
    <file role="src" name="php_http_request_api.h"/>

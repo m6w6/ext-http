@@ -47,10 +47,11 @@ HttpResponse
  <license>BSD, revised</license>
  <notes><![CDATA[
 + Added http_parse_params() function
++ Added HTTP_URL_STRIP_ALL constant
 * Fixed possible crash in progress/onfinish request callbacks
 * Fixed http_redirect() and http_build_url() without arguments
-* Enabled recursive query string merging in http_build_url() with HTTP_URL_JOIN_QUERY
 * Fixed behaviour of http_build_url() when second parameter is NULL
+* Enabled recursive query string merging in http_build_url() with HTTP_URL_JOIN_QUERY
 ]]></notes>
  <contents>
   <dir name="/">
@@ -86,6 +87,7 @@ HttpResponse
    <file role="src" name="php_http_headers_api.h"/>
    <file role="src" name="php_http_info_api.h"/>
    <file role="src" name="php_http_message_api.h"/>
+   <file role="src" name="php_http_querystring_api.h"/>
    <file role="src" name="php_http_request_api.h"/>
    <file role="src" name="php_http_request_body_api.h"/>
    <file role="src" name="php_http_request_method_api.h"/>
@@ -113,6 +115,7 @@ HttpResponse
    <file role="src" name="http_headers_api.c"/>
    <file role="src" name="http_info_api.c"/>
    <file role="src" name="http_message_api.c"/>
+   <file role="src" name="http_querystring_api.c"/>
    <file role="src" name="http_request_api.c"/>
    <file role="src" name="http_request_body_api.c"/>
    <file role="src" name="http_request_method_api.c"/>
