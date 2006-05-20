@@ -207,20 +207,29 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 		} else {
 			url->path = estrndup("/", 1);
 		}
-	} else if (url->path[0] != '/' && SG(request_info).request_uri && SG(request_info).request_uri[0]) {
-		size_t ulen = strlen(SG(request_info).request_uri);
-		size_t plen = strlen(url->path);
-		char *path;
-		
-		if (SG(request_info).request_uri[ulen-1] != '/') {
-			for (--ulen; ulen && SG(request_info).request_uri[ulen - 1] != '/'; --ulen);
+	} else if (url->path[0] != '/') {
+		if (SG(request_info).request_uri && SG(request_info).request_uri[0]) {
+			size_t ulen = strlen(SG(request_info).request_uri);
+			size_t plen = strlen(url->path);
+			char *path;
+			
+			if (SG(request_info).request_uri[ulen-1] != '/') {
+				for (--ulen; ulen && SG(request_info).request_uri[ulen - 1] != '/'; --ulen);
+			}
+			
+			path = emalloc(ulen + plen + 1);
+			memcpy(path, SG(request_info).request_uri, ulen);
+			memcpy(path + ulen, url->path, plen);
+			path[ulen + plen] = '\0';
+			STR_SET(url->path, path);
+		} else {
+			size_t plen = strlen(url->path);
+			char *path = emalloc(plen + 1 + 1);
+			
+			path[0] = '/';
+			memcpy(&path[1], url->path, plen + 1);
+			STR_SET(url->path, path);
 		}
-		
-		path = emalloc(ulen + plen + 1);
-		memcpy(path, SG(request_info).request_uri, ulen);
-		memcpy(path + ulen, url->path, plen);
-		path[ulen + plen] = '\0';
-		STR_SET(url->path, path);
 	}
 	/* replace directory references if path is not a single slash */
 	if (url->path[0] && (url->path[0] != '/' || url->path[1])) {
@@ -296,9 +305,6 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 			strlcat(*url_str, port_str, HTTP_URL_MAXLEN);
 		}
 		
-		if (*url->path != '/') {
-			strlcat(*url_str, "/", HTTP_URL_MAXLEN);
-		}
 		strlcat(*url_str, url->path, HTTP_URL_MAXLEN);
 		
 		if (url->query && *url->query) {
