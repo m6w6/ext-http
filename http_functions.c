@@ -1097,16 +1097,21 @@ PHP_FUNCTION(http_parse_params)
 {
 	char *param;
 	int param_len;
+	zval *params;
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &param, &param_len)) {
 		RETURN_FALSE;
 	}
 	
-	object_init(return_value);
-	if (SUCCESS != http_parse_params(param, HASH_OF(return_value))) {
-		zval_dtor(return_value);
+	params = ecalloc(1, sizeof(zval));
+	array_init(params);
+	if (SUCCESS != http_parse_params(param, Z_ARRVAL_P(params))) {
+		zval_dtor(params);
+		FREE_ZVAL(params);
 		RETURN_FALSE;
 	}
+	object_init(return_value);
+	add_property_zval(return_value, "params", params);
 }
 /* }}} */
 
