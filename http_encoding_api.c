@@ -571,6 +571,12 @@ PHP_HTTP_API STATUS _http_encoding_inflate_stream_finish(http_encoding_stream *s
 {
 	int status;
 	
+	if (!PHPSTR_LEN(s->stream.opaque)) {
+		*decoded = NULL;
+		*decoded_len = 0;
+		return SUCCESS;
+	}
+	
 	*decoded_len = (PHPSTR_LEN(s->stream.opaque) + 1) * HTTP_INFLATE_ROUNDS;
 	*decoded = emalloc_rel(*decoded_len);
 	
