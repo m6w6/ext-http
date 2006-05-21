@@ -72,6 +72,10 @@ HTTP_BEGIN_ARGS(addCookies, 1)
 	HTTP_ARG_VAL(cookies, 0)
 HTTP_END_ARGS;
 
+#if HTTP_CURL_VERSION(7,14,1)
+HTTP_EMPTY_ARGS(resetCookies);
+#endif
+
 HTTP_EMPTY_ARGS(getUrl);
 HTTP_BEGIN_ARGS(setUrl, 1)
 	HTTP_ARG_VAL(url, 0)
@@ -250,6 +254,9 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(addCookies, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getCookies, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(setCookies, ZEND_ACC_PUBLIC)
+#if HTTP_CURL_VERSION(7,14,1)
+	HTTP_REQUEST_ME(resetCookies, ZEND_ACC_PUBLIC)
+#endif
 
 	HTTP_REQUEST_ME(setMethod, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getMethod, ZEND_ACC_PUBLIC)
@@ -463,6 +470,13 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 	}
 	http_request_free(&o->request);
 	efree(o);
+}
+
+#define http_request_object_resetcookies(o) _http_request_object_resetcookies((o) TSRMLS_CC)
+static inline STATUS _http_request_object_resetcookies(zval *this_ptr TSRMLS_DC)
+{
+	getObject(http_request_object, obj);
+	return curl_easy_setopt(obj->request->ch, CURLOPT_COOKIELIST, "ALL");
 }
 
 #define http_request_object_check_request_content_type(t) _http_request_object_check_request_content_type((t) TSRMLS_CC)
@@ -868,6 +882,8 @@ PHP_METHOD(HttpRequest, setOptions)
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "seturl", NULL, *opt);
 			} else if (!strcmp(key, "method")) {
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setmethod", NULL, *opt);
+			} else if (!strcmp(key, "resetcookies")) {
+				http_request_object_resetcookies(getThis());
 			} else {
 				ZVAL_ADDREF(*opt);
 				add_assoc_zval(add_opts, key, *opt);
@@ -1029,6 +1045,19 @@ PHP_METHOD(HttpRequest, getCookies)
 	http_request_object_get_options_subr("cookies");
 }
 /* }}} */
+
+#if HTTP_CURL_VERSION(7,14,1)
+/* {{{ proto bool HttpRequest::resetCookies()
+ *
+ * Reset all cookies. Note that customly set cookies are not affected.
+ */
+PHP_METHOD(HttpRequest, resetCookies)
+{
+	NO_ARGS;
+	RETURN_SUCCESS(http_request_object_resetcookies(getThis()));
+}
+/* }}} */
+#endif
 
 /* {{{ proto bool HttpRequest::setUrl(string url)
  *

@@ -450,8 +450,6 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 #if HTTP_CURL_VERSION(7,14,1)
 		HTTP_CURL_OPT(CURLOPT_COOKIELIST, NULL);
 #endif
-		HTTP_CURL_OPT(CURLOPT_COOKIEFILE, NULL);
-		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, NULL);
 		HTTP_CURL_OPT(CURLOPT_RANGE, NULL);
 		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, 0);
 		HTTP_CURL_OPT(CURLOPT_MAXFILESIZE, 0);
@@ -757,27 +755,22 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		}
 	}
 
-#if HTTP_CURL_VERSION(7,14,1)
-	/* reset cookies */
-	if ((zoption = http_request_option(request, options, "resetcookies", IS_BOOL)) && Z_LVAL_P(zoption)) {
-		HTTP_CURL_OPT(CURLOPT_COOKIELIST, "ALL");
-	}
-#endif
-	
 	/* session cookies */
 	if ((zoption = http_request_option(request, options, "cookiesession", IS_BOOL))) {
-		if (Z_LVAL_P(zoption)) {
+		if (Z_BVAL_P(zoption)) {
 			/* accept cookies for this session */
 			HTTP_CURL_OPT(CURLOPT_COOKIEFILE, "");
 		} else {
-			/* reset session cookies */
+			/* don't load session cookies from cookiestore */
 			HTTP_CURL_OPT(CURLOPT_COOKIESESSION, 1);
 		}
 	}
 
 	/* cookiestore, read initial cookies from that file and store cookies back into that file */
-	if ((zoption = http_request_option(request, options, "cookiestore", IS_STRING)) && Z_STRLEN_P(zoption)) {
-		HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(zoption), return FAILURE);
+	if ((zoption = http_request_option(request, options, "cookiestore", IS_STRING))) {
+		if (Z_STRLEN_P(zoption)) {
+			HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(zoption), return FAILURE);
+		}
 		HTTP_CURL_OPT(CURLOPT_COOKIEFILE, Z_STRVAL_P(zoption));
 		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, Z_STRVAL_P(zoption));
 	}
