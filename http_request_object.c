@@ -472,12 +472,14 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 	efree(o);
 }
 
+#if HTTP_CURL_VERSION(7,14,1)
 #define http_request_object_resetcookies(o) _http_request_object_resetcookies((o) TSRMLS_CC)
 static inline STATUS _http_request_object_resetcookies(zval *this_ptr TSRMLS_DC)
 {
 	getObject(http_request_object, obj);
 	return curl_easy_setopt(obj->request->ch, CURLOPT_COOKIELIST, "ALL");
 }
+#endif
 
 #define http_request_object_check_request_content_type(t) _http_request_object_check_request_content_type((t) TSRMLS_CC)
 static inline void _http_request_object_check_request_content_type(zval *this_ptr TSRMLS_DC)
@@ -882,8 +884,10 @@ PHP_METHOD(HttpRequest, setOptions)
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "seturl", NULL, *opt);
 			} else if (!strcmp(key, "method")) {
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setmethod", NULL, *opt);
+#if HTTP_CURL_VERSION(7,14,1)
 			} else if (!strcmp(key, "resetcookies")) {
 				http_request_object_resetcookies(getThis());
+#endif
 			} else {
 				ZVAL_ADDREF(*opt);
 				add_assoc_zval(add_opts, key, *opt);
