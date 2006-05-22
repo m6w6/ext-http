@@ -56,9 +56,8 @@ PHP_METHOD(HttpRequest, setHeaders);
 PHP_METHOD(HttpRequest, addCookies);
 PHP_METHOD(HttpRequest, getCookies);
 PHP_METHOD(HttpRequest, setCookies);
-#if HTTP_CURL_VERSION(7,14,1)
+PHP_METHOD(HttpRequest, enableCookies);
 PHP_METHOD(HttpRequest, resetCookies);
-#endif
 PHP_METHOD(HttpRequest, setMethod);
 PHP_METHOD(HttpRequest, getMethod);
 PHP_METHOD(HttpRequest, setUrl);

@@ -72,6 +72,7 @@ HTTP_BEGIN_ARGS(addCookies, 1)
 	HTTP_ARG_VAL(cookies, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(enableCookies);
 #if HTTP_CURL_VERSION(7,14,1)
 HTTP_EMPTY_ARGS(resetCookies);
 #endif
@@ -254,6 +255,8 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(addCookies, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getCookies, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(setCookies, ZEND_ACC_PUBLIC)
+
+	HTTP_REQUEST_ME(enableCookies, ZEND_ACC_PUBLIC)
 #if HTTP_CURL_VERSION(7,14,1)
 	HTTP_REQUEST_ME(resetCookies, ZEND_ACC_PUBLIC)
 #endif
@@ -471,15 +474,6 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 	http_request_free(&o->request);
 	efree(o);
 }
-
-#if HTTP_CURL_VERSION(7,14,1)
-#define http_request_object_resetcookies(o) _http_request_object_resetcookies((o) TSRMLS_CC)
-static inline STATUS _http_request_object_resetcookies(zval *this_ptr TSRMLS_DC)
-{
-	getObject(http_request_object, obj);
-	return curl_easy_setopt(obj->request->ch, CURLOPT_COOKIELIST, "ALL");
-}
-#endif
 
 #define http_request_object_check_request_content_type(t) _http_request_object_check_request_content_type((t) TSRMLS_CC)
 static inline void _http_request_object_check_request_content_type(zval *this_ptr TSRMLS_DC)
@@ -886,7 +880,8 @@ PHP_METHOD(HttpRequest, setOptions)
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setmethod", NULL, *opt);
 #if HTTP_CURL_VERSION(7,14,1)
 			} else if (!strcmp(key, "resetcookies")) {
-				http_request_object_resetcookies(getThis());
+				getObject(http_request_object, obj);
+				http_request_reset_cookies(obj->request);
 #endif
 			} else {
 				ZVAL_ADDREF(*opt);
@@ -1050,18 +1045,34 @@ PHP_METHOD(HttpRequest, getCookies)
 }
 /* }}} */
 
-#if HTTP_CURL_VERSION(7,14,1)
+/* {{{ proto bool HttpRequest::enableCookies()
+ *
+ * Enable automatic sending of received cookies.
+ * Note that cuutomly set cookies will be sent anyway.
+ */
+PHP_METHOD(HttpRequest, enableCookies)
+{
+	NO_ARGS {
+		getObject(http_request_object, obj);
+		RETURN_SUCCESS(http_request_enable_cookies(obj->request));
+	}
+	
+}
+/* }}} */
+
 /* {{{ proto bool HttpRequest::resetCookies()
  *
- * Reset all cookies. Note that customly set cookies are not affected.
+ * Reset all automatically received/sent cookies.
+ * Note that customly set cookies are not affected.
  */
 PHP_METHOD(HttpRequest, resetCookies)
 {
-	NO_ARGS;
-	RETURN_SUCCESS(http_request_object_resetcookies(getThis()));
+	NO_ARGS {
+		getObject(http_request_object, obj);
+		RETURN_SUCCESS(http_request_reset_cookies(obj->request));
+	}
 }
 /* }}} */
-#endif
 
 /* {{{ proto bool HttpRequest::setUrl(string url)
  *

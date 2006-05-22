@@ -327,9 +327,8 @@ array where the following keys will be recognized:</p><pre> - redirect:         
  - cookies:          array, list of cookies as associative array<br />
                      like array("cookie" => "value")<br />
  - encodecookies:    bool, whether to urlencode the cookies (default: true)<br />
- - resetcookies:     bool, wheter to reset the cookies<br />
  - cookiestore:      string, path to a file where cookies are/will be stored<br />
- - cookiesession:    bool, accept (true) or reset (false) sessioncookies<br />
+ - cookiesession:    bool, don't load session cookies from cookiestore if TRUE<br />
  - resume:           int, byte offset to start the download from;<br />
                      if the server supports ranges<br />
  - range:            array, array of arrays, each containing two integers,<br />
@@ -705,6 +704,12 @@ pairs to add.</p>
 <h3 id="HttpRequest_getCookies">array HttpRequest::getCookies()</h3>
 <p>Get previously set cookies.</p>
 <p>Returns an associative array containing any previously set cookies.</p>
+<h3 id="HttpRequest_enableCookies">bool HttpRequest::enableCookies()</h3>
+<p>Enable automatic sending of received cookies.<br />
+Note that cuutomly set cookies will be sent anyway.</p>
+<h3 id="HttpRequest_resetCookies">bool HttpRequest::resetCookies()</h3>
+<p>Reset all automatically received/sent cookies.<br />
+Note that customly set cookies are not affected.</p>
 <h3 id="HttpRequest_setUrl">bool HttpRequest::setUrl(string url)</h3>
 <p>Set the request URL.</p>
 <p>Expects a string as parameter specifying the request url.</p>
@@ -1326,6 +1331,8 @@ http.cache_log is set.</p>
 <li><a href="#HttpRequest_setCookies">HttpRequest::setCookies()</a></li>
 <li><a href="#HttpRequest_addCookies">HttpRequest::addCookies()</a></li>
 <li><a href="#HttpRequest_getCookies">HttpRequest::getCookies()</a></li>
+<li><a href="#HttpRequest_enableCookies">HttpRequest::enableCookies()</a></li>
+<li><a href="#HttpRequest_resetCookies">HttpRequest::resetCookies()</a></li>
 <li><a href="#HttpRequest_setUrl">HttpRequest::setUrl()</a></li>
 <li><a href="#HttpRequest_getUrl">HttpRequest::getUrl()</a></li>
 <li><a href="#HttpRequest_setMethod">HttpRequest::setMethod()</a></li>
@@ -1423,7 +1430,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Fri, 19 May 2006 16:55:19 +0200</b></p>
+    <p><b>Generated at: Mon, 22 May 2006 11:19:25 +0200</b></p>
 </body>
 </html>
 

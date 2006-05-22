@@ -420,6 +420,32 @@ PHP_HTTP_API void _http_request_reset(http_request *request)
 }
 /* }}} */
 
+/* {{{ STATUS http_request_enable_cookies(http_request *) */
+PHP_HTTP_API STATUS _http_request_enable_cookies(http_request *request)
+{
+	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
+	if (CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIEFILE, "")) {
+		return SUCCESS;
+	}
+	http_error(HE_WARNING, HTTP_E_REQUEST, "Could not enable cookies for this session");
+	return FAILURE;
+}
+/* }}} */
+
+/* {{{ STATUS http_request_reset_cookies(http_request *) */
+PHP_HTTP_API STATUS _http_request_reset_cookies(http_request *request)
+{
+	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
+#if HTTP_CURL_VERSION(7,14,1)
+	if (CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL")) {
+		return SUCCESS;
+	}
+#endif
+	http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset cookies");
+	return FAILURE;
+}
+/* }}} */
+
 /* {{{ void http_request_defaults(http_request *) */
 PHP_HTTP_API void _http_request_defaults(http_request *request)
 {
@@ -755,15 +781,9 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		}
 	}
 
-	/* session cookies */
-	if ((zoption = http_request_option(request, options, "cookiesession", IS_BOOL))) {
-		if (Z_BVAL_P(zoption)) {
-			/* accept cookies for this session */
-			HTTP_CURL_OPT(CURLOPT_COOKIEFILE, "");
-		} else {
-			/* don't load session cookies from cookiestore */
-			HTTP_CURL_OPT(CURLOPT_COOKIESESSION, 1);
-		}
+	/* don't load session cookies from cookiestore */
+	if ((zoption = http_request_option(request, options, "cookiesession", IS_BOOL)) && Z_BVAL_P(zoption)) {
+		HTTP_CURL_OPT(CURLOPT_COOKIESESSION, 1);
 	}
 
 	/* cookiestore, read initial cookies from that file and store cookies back into that file */

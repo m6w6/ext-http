@@ -1248,9 +1248,8 @@ PHP_FUNCTION(http_match_request_header)
  *  - cookies:          array, list of cookies as associative array
  *                      like array("cookie" => "value")
  *  - encodecookies:    bool, whether to urlencode the cookies (default: true)
- *  - resetcookies:     bool, wheter to reset the cookies
  *  - cookiestore:      string, path to a file where cookies are/will be stored
- *  - cookiesession:    bool, accept (true) or reset (false) sessioncookies
+ *  - cookiesession:    bool, don't load session cookies from cookiestore if TRUE
  *  - resume:           int, byte offset to start the download from;
  *                      if the server supports ranges
  *  - range:            array, array of arrays, each containing two integers,

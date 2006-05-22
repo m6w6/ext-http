@@ -10,14 +10,12 @@ checkmin(5);
 echo "-TEST\n";
 
 $r = new HttpRequest("http://dev.iworks.at/.cookie.php");
-$r->recordHistory = true;
 
 $r->send();
 $c[0] = $r->getResponseInfo("cookies");
 var_dump(empty($c[0]));
 
-$r->setOptions(array("cookiesession" => true));
-
+$r->enableCookies();
 $r->send();
 $c[1] = $r->getResponseInfo("cookies");
 var_dump(empty($c[1]));
