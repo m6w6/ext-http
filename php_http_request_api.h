@@ -74,8 +74,8 @@ PHP_HTTP_API void _http_request_reset(http_request *r);
 #define http_request_enable_cookies(r) _http_request_enable_cookies(r)
 PHP_HTTP_API STATUS _http_request_enable_cookies(http_request *request);
 
-#define http_request_reset_cookies(r) _http_request_reset_cookies(r)
-PHP_HTTP_API STATUS _http_request_reset_cookies(http_request *request);
+#define http_request_reset_cookies(r, s) _http_request_reset_cookies((r), (s))
+PHP_HTTP_API STATUS _http_request_reset_cookies(http_request *request, int session_only);
 
 #define http_request_defaults(r) _http_request_defaults(r)
 PHP_HTTP_API void _http_request_defaults(http_request *request);

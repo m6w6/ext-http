@@ -707,9 +707,13 @@ pairs to add.</p>
 <h3 id="HttpRequest_enableCookies">bool HttpRequest::enableCookies()</h3>
 <p>Enable automatic sending of received cookies.<br />
 Note that cuutomly set cookies will be sent anyway.</p>
-<h3 id="HttpRequest_resetCookies">bool HttpRequest::resetCookies()</h3>
+<h3 id="HttpRequest_resetCookies">bool HttpRequest::resetCookies([bool session_only = FALSE])</h3>
 <p>Reset all automatically received/sent cookies.<br />
 Note that customly set cookies are not affected.</p>
+<p>Accepts an optional bool parameter specifying<br />
+whether only session cookies should be reset<br />
+(needs libcurl >= v7.15.4, else libcurl >= v7.14.1).</p>
+<p>Returns TRUE on success, or FALSE on failure.</p>
 <h3 id="HttpRequest_setUrl">bool HttpRequest::setUrl(string url)</h3>
 <p>Set the request URL.</p>
 <p>Expects a string as parameter specifying the request url.</p>
@@ -1430,7 +1434,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Mon, 22 May 2006 11:19:25 +0200</b></p>
+    <p><b>Generated at: Thu, 25 May 2006 10:46:03 +0200</b></p>
 </body>
 </html>
 

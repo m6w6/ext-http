@@ -300,12 +300,12 @@ PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request)
 {
 	if (ch || (ch = curl_easy_init())) {
 #if defined(ZTS)
-		HTTP_CURL_OPT_EX(ch, CURLOPT_NOSIGNAL, 1);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_NOSIGNAL, 1L);
 #endif
-		HTTP_CURL_OPT_EX(ch, CURLOPT_HEADER, 0);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_FILETIME, 1);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_AUTOREFERER, 1);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_VERBOSE, 1);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_HEADER, 0L);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_FILETIME, 1L);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_AUTOREFERER, 1L);
+		HTTP_CURL_OPT_EX(ch, CURLOPT_VERBOSE, 1L);
 		HTTP_CURL_OPT_EX(ch, CURLOPT_HEADERFUNCTION, NULL);
 		HTTP_CURL_OPT_EX(ch, CURLOPT_DEBUGFUNCTION, http_curl_raw_callback);
 		HTTP_CURL_OPT_EX(ch, CURLOPT_READFUNCTION, http_curl_read_callback);
@@ -334,9 +334,9 @@ PHP_HTTP_API void _http_curl_free(CURL **ch)
 {
 	if (*ch) {
 		/* avoid nasty segfaults with already cleaned up callbacks */
-		HTTP_CURL_OPT_EX(*ch, CURLOPT_NOPROGRESS, 1);
+		HTTP_CURL_OPT_EX(*ch, CURLOPT_NOPROGRESS, 1L);
 		HTTP_CURL_OPT_EX(*ch, CURLOPT_PROGRESSFUNCTION, NULL);
-		HTTP_CURL_OPT_EX(*ch, CURLOPT_VERBOSE, 0);
+		HTTP_CURL_OPT_EX(*ch, CURLOPT_VERBOSE, 0L);
 		HTTP_CURL_OPT_EX(*ch, CURLOPT_DEBUGFUNCTION, NULL);
 		curl_easy_cleanup(*ch);
 		*ch = NULL;
@@ -432,16 +432,26 @@ PHP_HTTP_API STATUS _http_request_enable_cookies(http_request *request)
 }
 /* }}} */
 
-/* {{{ STATUS http_request_reset_cookies(http_request *) */
-PHP_HTTP_API STATUS _http_request_reset_cookies(http_request *request)
+/* {{{ STATUS http_request_reset_cookies(http_request *, int) */
+PHP_HTTP_API STATUS _http_request_reset_cookies(http_request *request, int session_only)
 {
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
-#if HTTP_CURL_VERSION(7,14,1)
-	if (CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL")) {
+	
+	if (session_only) {
+#if HTTP_CURL_VERSION(7,15,4)
+		curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "SESS");
 		return SUCCESS;
-	}
+#else
+		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset session cookies (need libcurl >= v7.15.4)");
 #endif
-	http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset cookies");
+	} else {
+#if HTTP_CURL_VERSION(7,14,1)
+		curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL");
+		return SUCCESS;
+#else
+		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset cookies (need libcurl >= v7.14.1)");
+#endif
+	}
 	return FAILURE;
 }
 /* }}} */
@@ -452,23 +462,23 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 	if (request->ch) {
 		HTTP_CURL_OPT(CURLOPT_PROGRESSFUNCTION, NULL);
 		HTTP_CURL_OPT(CURLOPT_URL, NULL);
-		HTTP_CURL_OPT(CURLOPT_NOPROGRESS, 1);
+		HTTP_CURL_OPT(CURLOPT_NOPROGRESS, 1L);
 		HTTP_CURL_OPT(CURLOPT_PROXY, NULL);
-		HTTP_CURL_OPT(CURLOPT_PROXYPORT, 0);
-		HTTP_CURL_OPT(CURLOPT_PROXYTYPE, 0);
+		HTTP_CURL_OPT(CURLOPT_PROXYPORT, 0L);
+		HTTP_CURL_OPT(CURLOPT_PROXYTYPE, 0L);
 		HTTP_CURL_OPT(CURLOPT_PROXYUSERPWD, NULL);
-		HTTP_CURL_OPT(CURLOPT_PROXYAUTH, 0);
+		HTTP_CURL_OPT(CURLOPT_PROXYAUTH, 0L);
 		HTTP_CURL_OPT(CURLOPT_INTERFACE, NULL);
-		HTTP_CURL_OPT(CURLOPT_PORT, 0);
+		HTTP_CURL_OPT(CURLOPT_PORT, 0L);
 #if HTTP_CURL_VERSION(7,15,2)
-		HTTP_CURL_OPT(CURLOPT_LOCALPORT, 0);
-		HTTP_CURL_OPT(CURLOPT_LOCALPORTRANGE, 0);
+		HTTP_CURL_OPT(CURLOPT_LOCALPORT, 0L);
+		HTTP_CURL_OPT(CURLOPT_LOCALPORTRANGE, 0L);
 #endif
 		HTTP_CURL_OPT(CURLOPT_USERPWD, NULL);
-		HTTP_CURL_OPT(CURLOPT_HTTPAUTH, 0);
+		HTTP_CURL_OPT(CURLOPT_HTTPAUTH, 0L);
 		HTTP_CURL_OPT(CURLOPT_ENCODING, NULL);
-		HTTP_CURL_OPT(CURLOPT_FOLLOWLOCATION, 0);
-		HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, 0);
+		HTTP_CURL_OPT(CURLOPT_FOLLOWLOCATION, 0L);
+		HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, 0L);
 		HTTP_CURL_OPT(CURLOPT_REFERER, NULL);
 		HTTP_CURL_OPT(CURLOPT_USERAGENT, "PECL::HTTP/" PHP_EXT_HTTP_VERSION " (PHP/" PHP_VERSION ")");
 		HTTP_CURL_OPT(CURLOPT_HTTPHEADER, NULL);
@@ -477,11 +487,11 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_COOKIELIST, NULL);
 #endif
 		HTTP_CURL_OPT(CURLOPT_RANGE, NULL);
-		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, 0);
-		HTTP_CURL_OPT(CURLOPT_MAXFILESIZE, 0);
-		HTTP_CURL_OPT(CURLOPT_TIMECONDITION, 0);
-		HTTP_CURL_OPT(CURLOPT_TIMEVALUE, 0);
-		HTTP_CURL_OPT(CURLOPT_TIMEOUT, 0);
+		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, 0L);
+		HTTP_CURL_OPT(CURLOPT_MAXFILESIZE, 0L);
+		HTTP_CURL_OPT(CURLOPT_TIMECONDITION, 0L);
+		HTTP_CURL_OPT(CURLOPT_TIMEVALUE, 0L);
+		HTTP_CURL_OPT(CURLOPT_TIMEOUT, 0L);
 		HTTP_CURL_OPT(CURLOPT_CONNECTTIMEOUT, 3);
 		HTTP_CURL_OPT(CURLOPT_SSLCERT, NULL);
 		HTTP_CURL_OPT(CURLOPT_SSLCERTTYPE, NULL);
@@ -490,26 +500,26 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_SSLKEYTYPE, NULL);
 		HTTP_CURL_OPT(CURLOPT_SSLKEYPASSWD, NULL);
 		HTTP_CURL_OPT(CURLOPT_SSLENGINE, NULL);
-		HTTP_CURL_OPT(CURLOPT_SSLVERSION, 0);
-		HTTP_CURL_OPT(CURLOPT_SSL_VERIFYPEER, 0);
-		HTTP_CURL_OPT(CURLOPT_SSL_VERIFYHOST, 0);
+		HTTP_CURL_OPT(CURLOPT_SSLVERSION, 0L);
+		HTTP_CURL_OPT(CURLOPT_SSL_VERIFYPEER, 0L);
+		HTTP_CURL_OPT(CURLOPT_SSL_VERIFYHOST, 0L);
 		HTTP_CURL_OPT(CURLOPT_SSL_CIPHER_LIST, NULL);
 		HTTP_CURL_OPT(CURLOPT_CAINFO, NULL);
 		HTTP_CURL_OPT(CURLOPT_CAPATH, NULL);
 		HTTP_CURL_OPT(CURLOPT_RANDOM_FILE, NULL);
 		HTTP_CURL_OPT(CURLOPT_EGDSOCKET, NULL);
 		HTTP_CURL_OPT(CURLOPT_POSTFIELDS, NULL);
-		HTTP_CURL_OPT(CURLOPT_POSTFIELDSIZE, 0);
+		HTTP_CURL_OPT(CURLOPT_POSTFIELDSIZE, 0L);
 		HTTP_CURL_OPT(CURLOPT_HTTPPOST, NULL);
 		HTTP_CURL_OPT(CURLOPT_IOCTLDATA, NULL);
 		HTTP_CURL_OPT(CURLOPT_READDATA, NULL);
-		HTTP_CURL_OPT(CURLOPT_INFILESIZE, 0);
+		HTTP_CURL_OPT(CURLOPT_INFILESIZE, 0L);
 		HTTP_CURL_OPT(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE);
 		HTTP_CURL_OPT(CURLOPT_CUSTOMREQUEST, NULL);
-		HTTP_CURL_OPT(CURLOPT_NOBODY, 0);
-		HTTP_CURL_OPT(CURLOPT_POST, 0);
-		HTTP_CURL_OPT(CURLOPT_UPLOAD, 0);
-		HTTP_CURL_OPT(CURLOPT_HTTPGET, 1);
+		HTTP_CURL_OPT(CURLOPT_NOBODY, 0L);
+		HTTP_CURL_OPT(CURLOPT_POST, 0L);
+		HTTP_CURL_OPT(CURLOPT_UPLOAD, 0L);
+		HTTP_CURL_OPT(CURLOPT_HTTPGET, 1L);
 	}
 }
 /* }}} */
@@ -613,7 +623,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* redirects, defaults to 0 */
 	if ((zoption = http_request_option(request, options, "redirect", IS_LONG))) {
-		HTTP_CURL_OPT(CURLOPT_FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1 : 0);
+		HTTP_CURL_OPT(CURLOPT_FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1L : 0L);
 		HTTP_CURL_OPT(CURLOPT_MAXREDIRS, Z_LVAL_P(zoption));
 		if ((zoption = http_request_option(request, options, "unrestrictedauth", IS_BOOL))) {
 			HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
@@ -636,7 +646,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	}
 
 	/* resume */
-	if ((zoption = http_request_option(request, options, "resume", IS_LONG)) && (Z_LVAL_P(zoption) != 0)) {
+	if ((zoption = http_request_option(request, options, "resume", IS_LONG)) && (Z_LVAL_P(zoption) > 0)) {
 		range_req = 1;
 		HTTP_CURL_OPT(CURLOPT_RESUME_FROM, Z_LVAL_P(zoption));
 	}
@@ -735,9 +745,9 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			if (Z_LVAL_P(zoption) > 0) {
 				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, Z_LVAL_P(zoption));
 			} else {
-				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, HTTP_GET_REQUEST_TIME() + Z_LVAL_P(zoption));
+				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, (long) HTTP_GET_REQUEST_TIME() + Z_LVAL_P(zoption));
 			}
-			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE);
+			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, (long) (range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE));
 		} else {
 			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, CURL_TIMECOND_NONE);
 		}
@@ -783,7 +793,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* don't load session cookies from cookiestore */
 	if ((zoption = http_request_option(request, options, "cookiesession", IS_BOOL)) && Z_BVAL_P(zoption)) {
-		HTTP_CURL_OPT(CURLOPT_COOKIESESSION, 1);
+		HTTP_CURL_OPT(CURLOPT_COOKIESESSION, 1L);
 	}
 
 	/* cookiestore, read initial cookies from that file and store cookies back into that file */
@@ -853,19 +863,19 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	/* request method */
 	switch (request->meth) {
 		case HTTP_GET:
-			HTTP_CURL_OPT(CURLOPT_HTTPGET, 1);
+			HTTP_CURL_OPT(CURLOPT_HTTPGET, 1L);
 			break;
 
 		case HTTP_HEAD:
-			HTTP_CURL_OPT(CURLOPT_NOBODY, 1);
+			HTTP_CURL_OPT(CURLOPT_NOBODY, 1L);
 			break;
 
 		case HTTP_POST:
-			HTTP_CURL_OPT(CURLOPT_POST, 1);
+			HTTP_CURL_OPT(CURLOPT_POST, 1L);
 			break;
 
 		case HTTP_PUT:
-			HTTP_CURL_OPT(CURLOPT_UPLOAD, 1);
+			HTTP_CURL_OPT(CURLOPT_UPLOAD, 1L);
 			break;
 
 		default:

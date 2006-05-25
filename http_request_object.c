@@ -74,7 +74,9 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(enableCookies);
 #if HTTP_CURL_VERSION(7,14,1)
-HTTP_EMPTY_ARGS(resetCookies);
+HTTP_BEGIN_ARGS(resetCookies, 0)
+	HTTP_ARG_VAL(session_only, 0)
+HTTP_END_ARGS;
 #endif
 
 HTTP_EMPTY_ARGS(getUrl);
@@ -881,8 +883,13 @@ PHP_METHOD(HttpRequest, setOptions)
 #if HTTP_CURL_VERSION(7,14,1)
 			} else if (!strcmp(key, "resetcookies")) {
 				getObject(http_request_object, obj);
-				http_request_reset_cookies(obj->request);
+				http_request_reset_cookies(obj->request, 0);
 #endif
+			} else if (!strcmp(key, "enablecookies")) {
+				getObject(http_request_object, obj);
+				http_request_enable_cookies(obj->request);
+			} else if (!strcasecmp(key, "recordHistory")) {
+				UPD_PROP(bool, recordHistory, 1);
 			} else {
 				ZVAL_ADDREF(*opt);
 				add_assoc_zval(add_opts, key, *opt);
@@ -1060,17 +1067,26 @@ PHP_METHOD(HttpRequest, enableCookies)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::resetCookies()
+/* {{{ proto bool HttpRequest::resetCookies([bool session_only = FALSE])
  *
  * Reset all automatically received/sent cookies.
  * Note that customly set cookies are not affected.
+ *
+ * Accepts an optional bool parameter specifying
+ * whether only session cookies should be reset
+ * (needs libcurl >= v7.15.4, else libcurl >= v7.14.1).
+ *
+ * Returns TRUE on success, or FALSE on failure.
  */
 PHP_METHOD(HttpRequest, resetCookies)
 {
-	NO_ARGS {
-		getObject(http_request_object, obj);
-		RETURN_SUCCESS(http_request_reset_cookies(obj->request));
+	zend_bool session_only = 0;
+	getObject(http_request_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &session_only)) {
+		RETURN_FALSE;
 	}
+	RETURN_SUCCESS(http_request_reset_cookies(obj->request, session_only));
 }
 /* }}} */
 
