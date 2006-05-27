@@ -1020,8 +1020,8 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 		http_error(HE_WARNING, HTTP_E_INVALID_PARAM, "Cannot set HttpMessage::requestMethod to an empty string");
 		RETURN_FALSE;
 	}
-	if (SUCCESS != http_check_method(method)) {
-		http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Unkown request method: %s", method);
+	if (!http_request_method_exists(1, 0, method)) {
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Unknown request method: %s", method);
 		RETURN_FALSE;
 	}
 
