@@ -238,24 +238,21 @@ static inline int http_inflate_rounds(z_stream *Z, int flush, char **buf, size_t
 		if (PHPSTR_NOMEM == phpstr_resize_ex(&buffer, buffer.size, 0, 1)) {
 			status = Z_MEM_ERROR;
 		} else {
-			do {
-				Z->avail_out = buffer.free;
-				Z->next_out = (Bytef *) buffer.data + buffer.used;
+			Z->avail_out = buffer.free;
+			Z->next_out = (Bytef *) buffer.data + buffer.used;
 #if 0
-				fprintf(stderr, "PRIOR: size=%lu, avail=%lu, used=%lu, (%d/%d)\n", buffer.size, Z->avail_out, buffer.used, status, round);
+			fprintf(stderr, "\n%3d: %3d PRIOR: size=%7lu,\tfree=%7lu,\tused=%7lu,\tavail_in=%7lu,\tavail_out=%7lu\n", round, status, buffer.size, buffer.free, buffer.used, Z->avail_in, Z->avail_out);
 #endif
-				status = inflate(Z, flush);
+			status = inflate(Z, flush);
 			
-				buffer.used += buffer.free - Z->avail_out;
-				buffer.free = Z->avail_out;
+			buffer.used += buffer.free - Z->avail_out;
+			buffer.free = Z->avail_out;
 #if 0
-				fprintf(stderr, "AFTER: size=%lu, avail=%lu, used=%lu, (%d/%d)\n", buffer.size, Z->avail_out, buffer.used, status, round);
+			fprintf(stderr, "%3d: %3d AFTER: size=%7lu,\tfree=%7lu,\tused=%7lu,\tavail_in=%7lu,\tavail_out=%7lu\n", round, status, buffer.size, buffer.free, buffer.used, Z->avail_in, Z->avail_out);
 #endif
-			} while (Z_OK == status && Z->avail_in);
-			
 			HTTP_INFLATE_BUFFER_SIZE_ALIGN(buffer.size);
 		}
-	} while (Z_BUF_ERROR == status && ++round < HTTP_INFLATE_ROUNDS);
+	} while ((Z_BUF_ERROR == status || (Z_OK == status && Z->avail_in)) && ++round < HTTP_INFLATE_ROUNDS);
 	
 	if (status == Z_OK || status == Z_STREAM_END) {
 		phpstr_shrink(&buffer);
