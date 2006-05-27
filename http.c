@@ -183,10 +183,12 @@ static void http_globals_init_once(zend_http_globals *G)
 #define http_globals_init(g) _http_globals_init((g) TSRMLS_CC)
 static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 {
-	G->send.buffer_size = HTTP_SENDBUF_SIZE;
-#ifndef HTTP_HAVE_SAPI_RTIME
-	G->request_time = time(NULL);
+#ifdef HTTP_HAVE_SAPI_RTIME
+	G->request.time = Z_LVAL_P(http_get_server_var("REQUEST_TIME"));
+#else
+	G->request.time = time(NULL);
 #endif
+	G->send.buffer_size = HTTP_SENDBUF_SIZE;
 	G->read_post_data = 0;
 }
 

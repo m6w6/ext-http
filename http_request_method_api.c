@@ -109,7 +109,7 @@ PHP_RINIT_FUNCTION(http_request_method)
 		zval **data;
 	
 		zend_hash_init(&methods, 0, NULL, ZVAL_PTR_DTOR, 0);
-		http_parse_params(HTTP_G->request.methods.custom.ini, &methods);
+		http_parse_params(HTTP_G->request.methods.custom.ini, HTTP_PARAMS_DEFAULT, &methods);
 		FOREACH_HASH_VAL(pos, &methods, data) {
 			if (Z_TYPE_PP(data) == IS_STRING) {
 				http_request_method_register(Z_STRVAL_PP(data), Z_STRLEN_PP(data));

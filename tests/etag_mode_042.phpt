@@ -8,7 +8,7 @@ checkmin(5.1);
 ?>
 --FILE--
 <?php
-ini_set('http.etag_mode', 'SHA1');
+ini_set('http.etag.mode', 'SHA1');
 http_cache_etag();
 print("abc\n");
 ?>

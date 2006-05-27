@@ -8,7 +8,7 @@ checkmin(5.1);
 ?>
 --FILE--
 <?php
-ini_set('http.etag_mode', 'MD5');
+ini_set('http.etag.mode', 'MD5');
 http_cache_etag();
 http_send_data("abc\n");
 ?>

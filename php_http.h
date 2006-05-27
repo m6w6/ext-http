@@ -33,9 +33,7 @@
 #ifdef HTTP_WANT_SAPI
 #	if PHP_API_VERSION > 20041225
 #		define HTTP_HAVE_SAPI_RTIME
-#		define HTTP_GET_REQUEST_TIME() sapi_get_request_time(TSRMLS_C)
 #	else
-#		define HTTP_GET_REQUEST_TIME() HTTP_G->request_time
 #	endif
 #	include "SAPI.h"
 #endif
@@ -115,6 +113,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	} send;
 
 	struct _http_globals_request {
+		time_t time;
 		struct _http_globals_request_methods {
 			char *allowed;
 			struct _http_globals_request_methods_custom {
@@ -125,9 +124,6 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		} methods;
 	} request;
 
-#ifndef HTTP_HAVE_SAPI_RTIME
-	time_t request_time;
-#endif
 #ifdef ZEND_ENGINE_2
 	zend_bool only_exceptions;
 #endif

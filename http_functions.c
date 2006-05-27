@@ -55,7 +55,7 @@ PHP_FUNCTION(http_date)
 	}
 
 	if (t == -1) {
-		t = (long) HTTP_GET_REQUEST_TIME();
+		t = HTTP_G->request.time;
 	}
 
 	RETURN_STRING(http_date(t), 0);
@@ -430,7 +430,7 @@ PHP_FUNCTION(http_send_last_modified)
 	}
 
 	if (t == -1) {
-		t = (long) HTTP_GET_REQUEST_TIME();
+		t = HTTP_G->request.time;
 	}
 
 	RETURN_SUCCESS(http_send_last_modified(t));
@@ -510,7 +510,7 @@ PHP_FUNCTION(http_match_modified)
 
 	// current time if not supplied (senseless though)
 	if (t == -1) {
-		t = (long) HTTP_GET_REQUEST_TIME();
+		t = HTTP_G->request.time;
 	}
 
 	if (for_range) {
@@ -578,7 +578,7 @@ PHP_FUNCTION(http_cache_last_modified)
 	
 	HTTP_CHECK_HEADERS_SENT(RETURN_FALSE);
 
-	t = (long) HTTP_GET_REQUEST_TIME();
+	t = HTTP_G->request.time;
 
 	/* 0 or omitted */
 	if (!last_modified) {
@@ -605,7 +605,7 @@ PHP_FUNCTION(http_cache_last_modified)
 /* {{{ proto bool http_cache_etag([string etag])
  *
  * Attempts to cache the sent entity by its ETag, either supplied or generated 
- * by the hash algorithm specified by the INI setting "http.etag_mode".
+ * by the hash algorithm specified by the INI setting "http.etag.mode".
  *
  * If the clients "If-None-Match" header matches the supplied/calculated
  * ETag, the body is considered cached on the clients side and
@@ -634,7 +634,7 @@ PHP_FUNCTION(http_cache_etag)
 /* {{{ proto string ob_etaghandler(string data, int mode)
  *
  * For use with ob_start().  Output buffer handler generating an ETag with
- * the hash algorithm specified with the INI setting "http.etag_mode".
+ * the hash algorithm specified with the INI setting "http.etag.mode".
  */
 PHP_FUNCTION(ob_etaghandler)
 {

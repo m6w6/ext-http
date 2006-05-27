@@ -10,7 +10,7 @@ checkmax(5.0);
 <?php
 include 'log.inc';
 log_prepare(_AMETH_LOG);
-ini_set('http.allowed_methods', 'POST');
+ini_set('http.request.methods.allowed', 'POST');
 echo "Done\n";
 ?>
 --EXPECTF--

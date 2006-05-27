@@ -8,7 +8,7 @@ checkmax(5.0);
 ?>
 --FILE--
 <?php
-ini_set('http.etag_mode', 'crc32');
+ini_set('http.etag.mode', 'crc32');
 http_cache_etag();
 print("abc\n");
 ?>

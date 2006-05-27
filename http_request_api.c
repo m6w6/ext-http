@@ -745,7 +745,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			if (Z_LVAL_P(zoption) > 0) {
 				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, Z_LVAL_P(zoption));
 			} else {
-				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, (long) HTTP_GET_REQUEST_TIME() + Z_LVAL_P(zoption));
+				HTTP_CURL_OPT(CURLOPT_TIMEVALUE, (long) HTTP_G->request.time + Z_LVAL_P(zoption));
 			}
 			HTTP_CURL_OPT(CURLOPT_TIMECONDITION, (long) (range_req ? CURL_TIMECOND_IFUNMODSINCE : CURL_TIMECOND_IFMODSINCE));
 		} else {

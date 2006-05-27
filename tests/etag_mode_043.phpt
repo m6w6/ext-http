@@ -8,7 +8,7 @@ checkmin(5.1);
 ?>
 --FILE--
 <?php
-ini_set('http.etag_mode', 'bogus');
+ini_set('http.etag.mode', 'bogus');
 http_cache_etag();
 print("abc\n");
 ?>

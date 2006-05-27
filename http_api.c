@@ -116,7 +116,7 @@ void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)
 	struct tm nowtm;
 	char datetime[20] = {0};
 	
-	now = HTTP_GET_REQUEST_TIME();
+	now = HTTP_G->request.time;
 	strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", php_localtime_r(&now, &nowtm));
 
 #define HTTP_LOG_WRITE(file, type, msg) \
@@ -208,10 +208,10 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 	if ((SUCCESS != zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
 		return NULL;
 	}
-	if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), (char *) key, key_size, (void *) &var)) || (Z_TYPE_PP(var) != IS_STRING)) {
+	if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), (char *) key, key_size, (void *) &var))) {
 		return NULL;
 	}
-	if (check && !(Z_STRVAL_PP(var) && Z_STRLEN_PP(var))) {
+	if (check && !((Z_TYPE_PP(var) == IS_STRING) && Z_STRVAL_PP(var) && Z_STRLEN_PP(var))) {
 		return NULL;
 	}
 	return *var;

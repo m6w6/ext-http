@@ -9,7 +9,7 @@ skipif(!extension_loaded('hash'), 'need ext/hash support');
 ?>
 --FILE--
 <?php
-ini_set('http.etag_mode', 'sha256');
+ini_set('http.etag.mode', 'sha256');
 http_cache_etag();
 print("abc\n");
 ?>
