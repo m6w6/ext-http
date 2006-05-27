@@ -1089,7 +1089,7 @@ PHP_FUNCTION(http_parse_cookie)
 	}
 }
 
-/* {{{ proto object http_parse_params(string param)
+/* {{{ proto object http_parse_params(string param[, int flags = HTTP_PARAMS_DEFAULT])
  *
  * Parse parameter list.
  */
@@ -1098,14 +1098,15 @@ PHP_FUNCTION(http_parse_params)
 	char *param;
 	int param_len;
 	zval *params;
+	long flags = HTTP_PARAMS_DEFAULT;
 	
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &param, &param_len)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &param, &param_len, &flags)) {
 		RETURN_FALSE;
 	}
 	
 	params = ecalloc(1, sizeof(zval));
 	array_init(params);
-	if (SUCCESS != http_parse_params(param, Z_ARRVAL_P(params))) {
+	if (SUCCESS != http_parse_params(param, flags, Z_ARRVAL_P(params))) {
 		zval_dtor(params);
 		FREE_ZVAL(params);
 		RETURN_FALSE;

@@ -153,7 +153,7 @@ PHP_HTTP_API http_cookie_list *_http_parse_cookie_ex(http_cookie_list *list, con
 	arg.flags = flags;
 	arg.allowed_extras = allowed_extras;
 	
-	if (SUCCESS != http_parse_params_ex(string, 0, http_parse_cookie_callback, &arg)) {
+	if (SUCCESS != http_parse_params_ex(string, HTTP_PARAMS_RAISE_ERROR, http_parse_cookie_callback, &arg)) {
 		if (free_list) {
 			http_cookie_list_free(&list);
 		} else {

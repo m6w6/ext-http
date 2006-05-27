@@ -118,6 +118,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		struct _http_globals_request_methods {
 			char *allowed;
 			struct _http_globals_request_methods_custom {
+				char *ini;
 				int count;
 				void *entries;
 			} custom;

@@ -33,6 +33,11 @@ PHP_MINIT_FUNCTION(http_support)
 	HTTP_LONG_CONSTANT("HTTP_SUPPORT_ENCODINGS", HTTP_SUPPORT_ENCODINGS);
 	HTTP_LONG_CONSTANT("HTTP_SUPPORT_SSLREQUESTS", HTTP_SUPPORT_SSLREQUESTS);
 	
+	HTTP_LONG_CONSTANT("HTTP_PARAMS_ALLOW_COMMA", HTTP_PARAMS_ALLOW_COMMA);
+	HTTP_LONG_CONSTANT("HTTP_PARAMS_ALLOW_FAILURE", HTTP_PARAMS_ALLOW_FAILURE);
+	HTTP_LONG_CONSTANT("HTTP_PARAMS_RAISE_ERROR", HTTP_PARAMS_RAISE_ERROR);
+	HTTP_LONG_CONSTANT("HTTP_PARAMS_DEFAULT", HTTP_PARAMS_DEFAULT);
+	
 	return SUCCESS;
 }
 
@@ -316,7 +321,7 @@ PHP_HTTP_API void _http_parse_params_default_callback(void *arg, const char *key
 /* }}} */
 
 /* {{{ STATUS http_parse_params(const char *, HashTable *) */
-PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep, http_parse_params_callback cb, void *cb_arg TSRMLS_DC)
+PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int flags, http_parse_params_callback cb, void *cb_arg TSRMLS_DC)
 {
 #define ST_QUOTE	1
 #define ST_VALUE	2
@@ -357,10 +362,11 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 						st == ST_ASSIGN ? "ASSIGN" :
 						st == ST_ADD ? "ADD":
 						"HUH?"
-				), *c, tk, tv
+				), *c?*c:'0', tk, tv
 		);
 		STR_FREE(tk); STR_FREE(tv);
 #endif
+	continued:
 		switch (st) {
 			case ST_QUOTE:
 			quote:
@@ -397,7 +403,10 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 					case '\0':
 						goto add;
 						break;
-					
+					case ',':
+						if (flags & HTTP_PARAMS_ALLOW_COMMA) {
+							goto add;
+						}
 					default:
 						if (!val) {
 							val = c;
@@ -409,7 +418,7 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 			case ST_KEY:
 				switch (*c) {
 					case ',':
-						if (allow_comma_sep) {
+						if (flags & HTTP_PARAMS_ALLOW_COMMA) {
 							goto allow_comma;
 						}
 					case '\r':
@@ -440,7 +449,7 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 					case '\0':
 					allow_comma:
 						if (key) {
-							keylen = c - key;
+							keylen = c-- - key;
 							st = ST_ADD;
 						}
 						break;
@@ -456,7 +465,7 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 			case ST_ASSIGN:
 				if (*c == '=') {
 					st = ST_VALUE;
-				} else if (!*c || *c == ';') {
+				} else if (!*c || *c == ';' || ((flags & HTTP_PARAMS_ALLOW_COMMA) && *c == ',')) {
 					st = ST_ADD;
 				} else if (*c != ' ') {
 					goto failure;
@@ -482,7 +491,6 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 				keylen = vallen = 0;
 				break;
 		}
-		
 		if (*c) {
 			++c;
 		} else if (st == ST_ADD) {
@@ -496,7 +504,14 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int allow_comma_sep
 	return SUCCESS;
 	
 failure:
-	http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Unexpected character (%c) at pos %tu of %zu", *c, c-s, strlen(s));
+	if (flags & HTTP_PARAMS_RAISE_ERROR) {
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Unexpected character (%c) at pos %tu of %zu", *c, c-s, strlen(s));
+	}
+	if (flags & HTTP_PARAMS_ALLOW_FAILURE) {
+		--c;
+		st = ST_ADD;
+		goto continued;
+	}
 	efree(s);
 	return FAILURE;
 }

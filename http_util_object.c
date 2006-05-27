@@ -87,6 +87,7 @@ HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(parseParams, 1)
 	HTTP_ARG_VAL(param_string, 0)
+	HTTP_ARG_VAL(flags, 0)
 HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(chunkedDecode, 1)

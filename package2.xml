@@ -21,13 +21,6 @@ arbitrary data with caching and resuming capabilities.
 
 It provides powerful request functionality, if built with CURL 
 support. Parallel requests are available for PHP-5 and greater.
-
-PHP-5 classes:
-HttpUtil, HttpMessage, HttpRequest, HttpRequestPool, 
-HttpDeflateStream, HttpInflateStream, HttpQueryString
-
-PHP-5.1 classes:
-HttpResponse
 ]]></description>
  <lead>
   <name>Michael Wallner</name>
@@ -46,7 +39,13 @@ HttpResponse
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
++ Added HttpRequest::enableCookies() and HttpRequest::resetCookies([bool session_only=FALSE])
++ Added optional flags argument to http_parse_params()
++ Added HTTP_PARAMS_ALLOW_COMMA, HTTP_PARAMS_ALLOW_FAILURE, HTTP_PARAMS_RAISE_ERROR constants
 * Fixed http_build_url("./path") if REQUEST_URI is empty
+* Fixed http_parse_params("foo;bar") returning "foo" and "ar"
+* Fixed return value of http_parse_params() Object{"params"=>Array("value", Array("name"=>"value"), ...)}
+* Fixed HttpMessage::setRequestMethod() errenously issuing a warning about an unknown request method
 ]]></notes>
  <contents>
   <dir name="/">
@@ -194,6 +193,7 @@ HttpResponse
     <file role="test" name="HttpRequest_007.phpt"/>
     <file role="test" name="HttpRequest_008.phpt"/>
     <file role="test" name="HttpRequest_009.phpt"/>
+    <file role="test" name="HttpRequest_010.phpt"/>
     <file role="test" name="HttpRequestPool_001.phpt"/>
     <file role="test" name="HttpRequestPool_002.phpt"/>
     <file role="test" name="HttpRequestPool_003.phpt"/>
@@ -216,6 +216,7 @@ HttpResponse
     <file role="test" name="parse_message_003.phpt"/>
     <file role="test" name="parse_message_004.phpt"/>
     <file role="test" name="parse_message_005.phpt"/>
+    <file role="test" name="parse_params_001.phpt"/>
     <file role="test" name="redirect_001.phpt"/>
     <file role="test" name="redirect_001_logging.phpt"/>
     <file role="test" name="redirect_002.phpt"/>

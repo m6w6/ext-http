@@ -21,6 +21,11 @@
 #define HTTP_SUPPORT_ENCODINGS		0x08L
 #define HTTP_SUPPORT_SSLREQUESTS	0x20L
 
+#define HTTP_PARAMS_ALLOW_COMMA		0x01
+#define HTTP_PARAMS_ALLOW_FAILURE	0x02
+#define HTTP_PARAMS_RAISE_ERROR		0x04
+#define HTTP_PARAMS_DEFAULT	(HTTP_PARAMS_ALLOW_COMMA|HTTP_PARAMS_ALLOW_FAILURE|HTTP_PARAMS_RAISE_ERROR)
+
 extern PHP_MINIT_FUNCTION(http_support);
 
 #define http_support(f) _http_support(f)
@@ -125,9 +130,9 @@ typedef void (*http_parse_params_callback)(void *cb_arg, const char *key, int ke
 #define http_parse_params_default_callback _http_parse_params_default_callback
 PHP_HTTP_API void _http_parse_params_default_callback(void *ht, const char *key, int keylen, const char *val, int vallen TSRMLS_DC);
 
-#define http_parse_params(s, ht) _http_parse_params_ex((s), 1, _http_parse_params_default_callback, (ht) TSRMLS_CC)
-#define http_parse_params_ex(s, comma, cb, a) _http_parse_params_ex((s), (comma), (cb), (a) TSRMLS_CC)
-PHP_HTTP_API STATUS _http_parse_params_ex(const char *params, int alloc_comma_sep, http_parse_params_callback cb, void *cb_arg TSRMLS_DC);
+#define http_parse_params(s, f, ht) _http_parse_params_ex((s), (f), _http_parse_params_default_callback, (ht) TSRMLS_CC)
+#define http_parse_params_ex(s, f, cb, a) _http_parse_params_ex((s), (f), (cb), (a) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_parse_params_ex(const char *params, int flags, http_parse_params_callback cb, void *cb_arg TSRMLS_DC);
 
 
 #define http_locate_body _http_locate_body
