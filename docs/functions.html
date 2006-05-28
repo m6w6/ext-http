@@ -201,7 +201,7 @@ the Last-Modified header is updated and the actual body will be sent.</p>
 http.cache_log is set and the cache attempt was successful.</p>
 <h2 id="http_cache_etag">bool http_cache_etag([string etag])</h2>
 <p>Attempts to cache the sent entity by its ETag, either supplied or generated <br />
-by the hash algorithm specified by the INI setting "http.etag_mode".</p>
+by the hash algorithm specified by the INI setting "http.etag.mode".</p>
 <p>If the clients "If-None-Match" header matches the supplied/calculated<br />
 ETag, the body is considered cached on the clients side and<br />
 a "304 Not Modified" status code is issued.</p>
@@ -210,7 +210,7 @@ a "304 Not Modified" status code is issued.</p>
 "http.cache_log" is set and the cache attempt was successful.</p>
 <h2 id="ob_etaghandler">string ob_etaghandler(string data, int mode)</h2>
 <p>For use with ob_start().  Output buffer handler generating an ETag with<br />
-the hash algorithm specified with the INI setting "http.etag_mode".</p>
+the hash algorithm specified with the INI setting "http.etag.mode".</p>
 <h2 id="http_throttle">void http_throttle(double sec[, int bytes = 40960])</h2>
 <p>Sets the throttle delay and send buffer size for use with http_send() API.<br />
 Provides a basic throttling mechanism, which will yield the current process<br />
@@ -284,7 +284,7 @@ several consecutive HTTP messages.</p>
 <span style="color: #0000BB">&lt;?php<br />print_r</span><span style="color: #007700">(</span><span style="color: #0000BB">http_parse_cookie</span><span style="color: #007700">(</span><span style="color: #DD0000">"foo=bar;&nbsp;bar=baz;&nbsp;path=/;&nbsp;domain=example.com;&nbsp;comment=;&nbsp;secure"</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">0</span><span style="color: #007700">,&nbsp;array(</span><span style="color: #DD0000">"comment"</span><span style="color: #007700">)));<br /><br /></span><span style="color: #0000BB">stdClass&nbsp;Object<br /></span><span style="color: #007700">(<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">cookies</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;Array<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">foo</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">bar<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">bar</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">baz<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">)<br /><br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">extras</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;Array<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">comment</span><span style="color: #007700">]&nbsp;=&gt;<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br /><br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">flags</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">16<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">expires</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">0<br />&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">[</span><span style="color: #0000BB">path</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;/<br />&nbsp;&nbsp;&nbsp;&nbsp;[</span><span style="color: #0000BB">domain</span><span style="color: #007700">]&nbsp;=&gt;&nbsp;</span><span style="color: #0000BB">example</span><span style="color: #007700">.</span><span style="color: #0000BB">com<br /></span><span style="color: #007700">)<br /></span><span style="color: #0000BB">?&gt;</span><br />
 </span></code></blockquote></p>
 <p></pre></p>
-<h2 id="http_parse_params">object http_parse_params(string param)</h2>
+<h2 id="http_parse_params">object http_parse_params(string param[, int flags = HTTP_PARAMS_DEFAULT])</h2>
 <p>Parse parameter list.</p>
 <h2 id="http_get_request_headers">array http_get_request_headers(void)</h2>
 <p>Get a list of incoming HTTP headers.</p>
@@ -1434,7 +1434,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Thu, 25 May 2006 10:46:03 +0200</b></p>
+    <p><b>Generated at: Sun, 28 May 2006 17:34:52 +0200</b></p>
 </body>
 </html>
 

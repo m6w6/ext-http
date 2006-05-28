@@ -11,26 +11,12 @@ Windows:
 requests, try another (newer) libeay32.dll/ssleay32.dll pair.
 
 Deflate/Inflate:
-	http_inflate() resp. the HttpInflateStream should be able to inflate
-any compressed data (gzip, deflate AKA zlib and raw deflate).  However,
-inflating raw deflated data causes a re-initialization of the inflate
-stream where the corresponding window bits are modified to tell libz
-to not check for zlib header bytes.  This is not preventable AFAICS.
-	http_deflate() resp. the HttpDeflateStream should be able to
-generate any compressed data (gzip, deflate AKA zlib and raw deflate);
-just use the flag for the data format you want to generate:
-HTTP_DEFLATE_TYPE_GZIP, HTTP_DEFLATE_TYPE_ZLIB or HTTP_DEFLATE_TYPE_RAW.
+	Inflating raw deflated data causes a re-initialization of the inflate
+stream where the corresponding window bits are modified to tell libz to 
+not check for zlib header bytes.  This is not preventable AFAICS.
 	Using an encoding stream filter on a stream you read from, will
 not work as expected in a PHP version lower than 5.1.3.
 
 Internals:
-	-	there's a memleak with sizeof(zval) for each thrown exception, 
-		which ends up in HttpRequestPoolExcepiont::$exceptionStack, in 
-		HttpRequestPool::__construct(); it doesn't happen with wrapped
-		exceptions in HttpRequestPool::send().
-
 	-	our http_urlencode_hash() only handles arrays and does not
 		differentiate between prefixes for numeric or string keys.
-
-	-	check all places where hash table entries are created if
-		the keys are properly NUL terminated (prior 1.0!)

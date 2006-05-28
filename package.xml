@@ -12,14 +12,7 @@ language and charset, as well as a convenient way to send any
 arbitrary data with caching and resuming capabilities.
 
 It provides powerful request functionality, if built with CURL 
-support. Parallel requests are available for PHP-5 and greater.
-
-PHP-5 classes:
-HttpUtil, HttpMessage, HttpRequest, HttpRequestPool, 
-HttpDeflateStream, HttpInflateStream, HttpQueryString
-
-PHP-5.1 classes:
-HttpResponse
+support. Parallel requests are available for PHP 5 and greater.
  </description>
  <maintainers>
   <maintainer>
@@ -30,16 +23,19 @@ HttpResponse
   </maintainer>
   </maintainers>
  <release>
-  <version>1.0.0RC4</version>
-  <date>2006-05-19</date>
+  <version>1.0.0RC5</version>
+  <date>2006-05-28</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>+ Added http_parse_params() function
-+ Added HTTP_URL_STRIP_ALL constant
-* Fixed possible crash in progress/onfinish request callbacks
-* Fixed http_redirect() and http_build_url() without arguments
-* Fixed behaviour of http_build_url() when second parameter is NULL
-* Enabled recursive query string merging in http_build_url() with HTTP_URL_JOIN_QUERY
+  <notes>+ Added HttpRequest::enableCookies() and HttpRequest::resetCookies([bool session_only=FALSE])
++ Added optional flags argument to http_parse_params()
++ Added HTTP_PARAMS_ALLOW_COMMA, HTTP_PARAMS_ALLOW_FAILURE, HTTP_PARAMS_RAISE_ERROR constants
+* Fixed http_build_url(&quot;./path&quot;) if REQUEST_URI is empty
+* Fixed http_parse_params(&quot;foo;bar&quot;) returning &quot;foo&quot; and &quot;ar&quot;
+* Fixed return value of http_parse_params() Object{&quot;params&quot;=&gt;Array(&quot;value&quot;, Array(&quot;name&quot;=&gt;&quot;value&quot;), ...)}
+* Fixed HttpMessage::setRequestMethod() errenously issuing a warning about an unknown request method
+* Fixed bugs introduced by using the new REQUEST_TIME server variable
+! NOTE: Many INI settings have been renamed to comply with the internal structure
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -130,11 +126,11 @@ HttpResponse
     <file role="test" name="HttpRequest_007.phpt"/>
     <file role="test" name="HttpRequest_008.phpt"/>
     <file role="test" name="HttpRequest_009.phpt"/>
+    <file role="test" name="HttpRequest_010.phpt"/>
     <file role="test" name="HttpResponse_001.phpt"/>
     <file role="test" name="HttpResponse_002.phpt"/>
     <file role="test" name="HttpResponse_003.phpt"/>
     <file role="test" name="HttpResponse_004.phpt"/>
-    <file role="test" name="INI_001.phpt"/>
     <file role="test" name="log.inc"/>
     <file role="test" name="match_request_header_001.phpt"/>
     <file role="test" name="negotiation_001.phpt"/>
@@ -148,6 +144,7 @@ HttpResponse
     <file role="test" name="parse_message_003.phpt"/>
     <file role="test" name="parse_message_004.phpt"/>
     <file role="test" name="parse_message_005.phpt"/>
+    <file role="test" name="parse_params_001.phpt"/>
     <file role="test" name="redirect_001.phpt"/>
     <file role="test" name="redirect_001_logging.phpt"/>
     <file role="test" name="redirect_002.phpt"/>
