@@ -565,7 +565,7 @@ PHP_FUNCTION(http_match_etag)
  * Returns FALSE on failure, or *exits* with "304 Not Modified" if the entity is cached.
  * 
  * A log entry will be written to the cache log if the INI entry
- * http.cache_log is set and the cache attempt was successful.
+ * http.log.cache is set and the cache attempt was successful.
  */
 PHP_FUNCTION(http_cache_last_modified)
 {
@@ -614,7 +614,7 @@ PHP_FUNCTION(http_cache_last_modified)
  * Returns FALSE on failure, or *exits* with "304 Not Modified" if the entity is cached.
  * 
  * A log entry is written to the cache log if the INI entry
- * "http.cache_log" is set and the cache attempt was successful.
+ * "http.log.cache" is set and the cache attempt was successful.
  */
 PHP_FUNCTION(http_cache_etag)
 {
@@ -713,7 +713,7 @@ PHP_FUNCTION(http_throttle)
  * Returns FALSE on failure, or *exits* on success.
  * 
  * A log entry will be written to the redirect log, if the INI entry
- * "http.redirect_log" is set and the redirect attempt was successful.
+ * "http.log.redirect" is set and the redirect attempt was successful.
  */
 PHP_FUNCTION(http_redirect)
 {

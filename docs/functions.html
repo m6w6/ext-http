@@ -198,7 +198,7 @@ requested last modification date is not between the calculated timespan,<br />
 the Last-Modified header is updated and the actual body will be sent.</p>
 <p>Returns FALSE on failure, or *exits* with "304 Not Modified" if the entity is cached.</p>
 <p>A log entry will be written to the cache log if the INI entry<br />
-http.cache_log is set and the cache attempt was successful.</p>
+http.log.cache is set and the cache attempt was successful.</p>
 <h2 id="http_cache_etag">bool http_cache_etag([string etag])</h2>
 <p>Attempts to cache the sent entity by its ETag, either supplied or generated <br />
 by the hash algorithm specified by the INI setting "http.etag.mode".</p>
@@ -207,7 +207,7 @@ ETag, the body is considered cached on the clients side and<br />
 a "304 Not Modified" status code is issued.</p>
 <p>Returns FALSE on failure, or *exits* with "304 Not Modified" if the entity is cached.</p>
 <p>A log entry is written to the cache log if the INI entry<br />
-"http.cache_log" is set and the cache attempt was successful.</p>
+"http.log.cache" is set and the cache attempt was successful.</p>
 <h2 id="ob_etaghandler">string ob_etaghandler(string data, int mode)</h2>
 <p>For use with ob_start().  Output buffer handler generating an ETag with<br />
 the hash algorithm specified with the INI setting "http.etag.mode".</p>
@@ -243,7 +243,7 @@ if the client doesn't redirect immediately, and the request method was<br />
 another one than HEAD.</p>
 <p>Returns FALSE on failure, or *exits* on success.</p>
 <p>A log entry will be written to the redirect log, if the INI entry<br />
-"http.redirect_log" is set and the redirect attempt was successful.</p>
+"http.log.redirect" is set and the redirect attempt was successful.</p>
 <h2 id="http_send_data">bool http_send_data(string data)</h2>
 <p>Sends raw data with support for (multiple) range requests.</p>
 <p>Returns TRUE on success, or FALSE on failure.</p>
@@ -1434,7 +1434,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Sun, 28 May 2006 17:34:52 +0200</b></p>
+    <p><b>Generated at: Sun, 28 May 2006 17:55:39 +0200</b></p>
 </body>
 </html>
 
