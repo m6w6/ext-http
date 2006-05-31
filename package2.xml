@@ -30,7 +30,7 @@ support. Parallel requests are available for PHP 5 and greater.
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>1.0.0RC5</release>
+  <release>1.0.0-dev</release>
   <api>1.0.0</api>
  </version>
  <stability>
@@ -39,15 +39,7 @@ support. Parallel requests are available for PHP 5 and greater.
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added HttpRequest::enableCookies() and HttpRequest::resetCookies([bool session_only=FALSE])
-+ Added optional flags argument to http_parse_params()
-+ Added HTTP_PARAMS_ALLOW_COMMA, HTTP_PARAMS_ALLOW_FAILURE, HTTP_PARAMS_RAISE_ERROR constants
-* Fixed http_build_url("./path") if REQUEST_URI is empty
-* Fixed http_parse_params("foo;bar") returning "foo" and "ar"
-* Fixed return value of http_parse_params() Object{"params"=>Array("value", Array("name"=>"value"), ...)}
-* Fixed HttpMessage::setRequestMethod() errenously issuing a warning about an unknown request method
-* Fixed bugs introduced by using the new REQUEST_TIME server variable
-! NOTE: Many INI settings have been renamed to comply with the internal structure
+* Fixed build on Debian systems where access to Curl_* functions is prohibited
 ]]></notes>
  <contents>
   <dir name="/">

@@ -15,7 +15,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "1.0.0RC5"
+#define PHP_EXT_HTTP_VERSION "1.0.0-dev"
 
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
@@ -180,7 +180,9 @@ PHP_FUNCTION(http_put_data);
 PHP_FUNCTION(http_put_file);
 PHP_FUNCTION(http_put_stream);
 PHP_FUNCTION(http_request);
+#ifdef HAVE_CURL_GETFORMDATA
 PHP_FUNCTION(http_request_body_encode);
+#endif /* HAVE_CURL_GETFORMDATA */
 #endif /* HTTP_HAVE_CURL */
 PHP_FUNCTION(http_request_method_register);
 PHP_FUNCTION(http_request_method_unregister);

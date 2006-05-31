@@ -104,6 +104,7 @@ if (PHP_HTTP != "no") {
 		AC_DEFINE("HAVE_CURL_MULTI_STRERROR", 1, "");
 		AC_DEFINE("HAVE_CURL_EASY_STRERROR", 1, "");
 		AC_DEFINE("HAVE_CURL_EASY_RESET", 1, "");
+		AC_DEFINE("HAVE_CURL_GETFORMDATA", 1, "");
 	} else {
 		WARNING("curl convenience functions not enabled; libraries and headers not found");
 	}

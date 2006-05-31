@@ -1670,6 +1670,7 @@ PHP_FUNCTION(http_request)
 }
 /* }}} */
 
+#ifdef HAVE_CURL_GETFORMDATA
 static char *file_get_contents(char *file, size_t *len TSRMLS_DC)
 {
 	php_stream *s = NULL;
@@ -1763,6 +1764,7 @@ PHP_FUNCTION(http_request_body_encode)
 			break;
 	}
 }
+#endif /* HAVE_CURL_GETFORMDATA */
 #endif /* HTTP_HAVE_CURL */
 /* }}} HAVE_CURL */
 

@@ -159,6 +159,11 @@ dnl ----
 			[AC_DEFINE([HAVE_CURL_EASY_RESET], [1], [ ])], [ ],
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
 		)
+		dnl Debian suddenly (>=7.14.1-2) hides all symbols not starting with "curl"
+		PHP_CHECK_LIBRARY(curl, Curl_getFormData,
+			[AC_DEFINE([HAVE_CURL_GETFORMDATA], [1], [ ])], [ ],
+			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
+		)
 	fi
 
 dnl ----
