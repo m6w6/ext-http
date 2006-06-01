@@ -89,6 +89,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 	struct _http_globals_log {
 		char *cache;
 		char *redirect;
+		char *not_found;
 		char *allowed_methods;
 		char *composite;
 	} log;
@@ -110,6 +111,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 			long start_flags;
 			void *stream;
 		} inflate;
+		zend_bool not_found_404;
 	} send;
 
 	struct _http_globals_request {

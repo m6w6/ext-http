@@ -145,7 +145,7 @@ static void http_ob_blackhole(char *output, uint output_len, char **handled_outp
 STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header TSRMLS_DC)
 {
 	if (	(send_header && (SUCCESS != http_send_status_header(status, header))) ||
-			(!send_header && status && (SUCCESS != http_send_status(status)))) {
+			(status && (SUCCESS != http_send_status(status)))) {
 		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
 		STR_FREE(header);
 		STR_FREE(body);
@@ -166,6 +166,7 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		case 305:	http_log(HTTP_G->log.redirect, "305-REDIRECT", header);			break;
 		case 307:	http_log(HTTP_G->log.redirect, "307-REDIRECT", header);			break;
 		case 304:	http_log(HTTP_G->log.cache, "304-CACHE", header);				break;
+		case 404:	http_log(HTTP_G->log.not_found, "404-NOTFOUND", NULL);			break;
 		case 405:	http_log(HTTP_G->log.allowed_methods, "405-ALLOWED", header);	break;
 		default:	http_log(NULL, header, body);									break;
 	}

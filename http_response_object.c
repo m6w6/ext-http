@@ -1094,7 +1094,11 @@ PHP_METHOD(HttpResponse, send)
 		cctl = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl), &cctl_p);
 		
 		if (Z_LVAL_P(lmod) || Z_STRLEN_P(etag)) {
-			http_send_cache_control(Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
+			if (Z_STRLEN_P(cctl)) {
+				http_send_cache_control(Z_STRVAL_P(cctl), Z_STRLEN_P(cctl));
+			} else {
+				http_send_cache_control(HTTP_DEFAULT_CACHECONTROL, lenof(HTTP_DEFAULT_CACHECONTROL));
+			}
 			if (Z_STRLEN_P(etag)) {
 				http_send_etag(Z_STRVAL_P(etag), Z_STRLEN_P(etag));
 			}

@@ -455,6 +455,16 @@ PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file, zend_bool close_strea
 	php_stream_statbuf ssb;
 
 	if ((!file) || php_stream_stat(file, &ssb)) {
+		char *defct = sapi_get_default_content_type(TSRMLS_C);
+		
+		http_send_content_type(defct, strlen(defct));
+		http_send_header_string("Content-Disposition:");
+		http_error(HE_WARNING, HTTP_E_RESPONSE, "File not found; stat failed");
+		STR_FREE(defct);
+		
+		if (HTTP_G->send.not_found_404) {
+			http_exit_ex(404, NULL, estrdup("File not found\n"), 0);
+		}
 		return FAILURE;
 	}
 

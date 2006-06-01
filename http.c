@@ -191,6 +191,7 @@ static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 	G->request.time = time(NULL);
 #endif
 	G->send.buffer_size = HTTP_SENDBUF_SIZE;
+	G->send.not_found_404 = 1;
 	G->read_post_data = 0;
 }
 
@@ -231,6 +232,7 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.etag.mode", "MD5", PHP_INI_ALL, OnUpdateString, etag.mode)
 	HTTP_PHP_INI_ENTRY("http.log.cache", "", PHP_INI_ALL, OnUpdateString, log.cache)
 	HTTP_PHP_INI_ENTRY("http.log.redirect", "", PHP_INI_ALL, OnUpdateString, log.redirect)
+	HTTP_PHP_INI_ENTRY("http.log.not_found", "", PHP_INI_ALL, OnUpdateString, log.not_found)
 	HTTP_PHP_INI_ENTRY("http.log.allowed_methods", "", PHP_INI_ALL, OnUpdateString, log.allowed_methods)
 	HTTP_PHP_INI_ENTRY("http.log.composite", "", PHP_INI_ALL, OnUpdateString, log.composite)
 	HTTP_PHP_INI_ENTRY("http.request.methods.allowed", "", PHP_INI_ALL, http_update_allowed_methods, request.methods.allowed)
@@ -241,6 +243,7 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.send.deflate.start_auto", "0", PHP_INI_PERDIR|PHP_INI_SYSTEM, OnUpdateBool, send.deflate.start_auto)
 	HTTP_PHP_INI_ENTRY("http.send.deflate.start_flags", "0", PHP_INI_ALL, OnUpdateLong, send.deflate.start_flags)
 #endif
+	HTTP_PHP_INI_ENTRY("http.send.not_found_404", "1", PHP_INI_ALL, OnUpdateBool, send.not_found_404)
 #ifdef ZEND_ENGINE_2
 	HTTP_PHP_INI_ENTRY("http.only_exceptions", "0", PHP_INI_ALL, OnUpdateBool, only_exceptions)
 #endif
