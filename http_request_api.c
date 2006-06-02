@@ -26,41 +26,9 @@
 #	include "php_http_request_object.h"
 #endif
 
-/* {{{ cruft for thread safe SSL crypto locks */
-#if defined(ZTS) && defined(HTTP_HAVE_SSL)
-#	ifdef PHP_WIN32
-#		define HTTP_NEED_OPENSSL_TSL
-#		include <openssl/crypto.h>
-#	else /* !PHP_WIN32 */
-#		if defined(HTTP_HAVE_OPENSSL)
-#			if defined(HAVE_OPENSSL_CRYPTO_H)
-#				define HTTP_NEED_OPENSSL_TSL
-#				include <openssl/crypto.h>
-#			else
-#				warning \
-					"libcurl was compiled with OpenSSL support, but configure could not find " \
-					"openssl/crypto.h; thus no SSL crypto locking callbacks will be set, which may " \
-					"cause random crashes on SSL requests"
-#			endif
-#		elif defined(HTTP_HAVE_GNUTLS)
-#			if defined(HAVE_GCRYPT_H)
-#				define HTTP_NEED_GNUTLS_TSL
-#				include <gcrypt.h>
-#			else
-#				warning \
-					"libcurl was compiled with GnuTLS support, but configure could not find " \
-					"gcrypt.h; thus no SSL crypto locking callbacks will be set, which may " \
-					"cause random crashes on SSL requests"
-#			endif
-#		else
-#			warning \
-				"libcurl was compiled with SSL support, but configure could not determine which" \
-				"library was used; thus no SSL crypto locking callbacks will be set, which may " \
-				"cause random crashes on SSL requests"
-#		endif /* HTTP_HAVE_OPENSSL || HTTP_HAVE_GNUTLS */
-#	endif /* PHP_WIN32 */
-#endif /* ZTS && HTTP_HAVE_SSL */
+#include "php_http_request_int.h"
 
+/* {{{ cruft for thread safe SSL crypto locks */
 #ifdef HTTP_NEED_OPENSSL_TSL
 static MUTEX_T *http_openssl_tsl = NULL;
 
@@ -181,103 +149,6 @@ PHP_MSHUTDOWN_FUNCTION(http_request)
 #endif
 	return SUCCESS;
 }
-/* }}} */
-
-/* {{{ MACROS */
-#ifndef HAVE_CURL_EASY_STRERROR
-#	define curl_easy_strerror(dummy) "unknown error"
-#endif
-
-#define HTTP_CURL_INFO(I) \
-	{ \
-		char *N = #I; \
-		HTTP_CURL_INFO_EX(I, N+lenof("CURLINFO_")); \
-	}
-#define HTTP_CURL_INFO_EX(I, X) \
-	switch (I & ~CURLINFO_MASK) \
-	{ \
-		case CURLINFO_STRING: \
-		{ \
-			char *c; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &c)) { \
-				char *key = estrndup(X, strlen(X)); \
-				add_assoc_string(&array, pretty_key(key, strlen(X), 0, 0), c ? c : "", 1); \
-				efree(key); \
-			} \
-		} \
-		break; \
-\
-		case CURLINFO_DOUBLE: \
-		{ \
-			double d; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &d)) { \
-				char *key = estrndup(X, strlen(X)); \
-				add_assoc_double(&array, pretty_key(key, strlen(X), 0, 0), d); \
-				efree(key); \
-			} \
-		} \
-		break; \
-\
-		case CURLINFO_LONG: \
-		{ \
-			long l; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &l)) { \
-				char *key = estrndup(X, strlen(X)); \
-				add_assoc_long(&array, pretty_key(key, strlen(X), 0, 0), l); \
-				efree(key); \
-			} \
-		} \
-		break; \
-\
-		case CURLINFO_SLIST: \
-		{ \
-			struct curl_slist *l, *p; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &l)) { \
-				zval *subarray; \
-				char *key = estrndup(X, strlen(X)); \
-				MAKE_STD_ZVAL(subarray); \
-				array_init(subarray); \
-				for (p = l; p; p = p->next) { \
-					add_next_index_string(subarray, p->data, 1); \
-				} \
-				add_assoc_zval(&array, pretty_key(key, strlen(X), 0, 0), subarray); \
-				curl_slist_free_all(l); \
-				efree(key); \
-			} \
-		} \
-	}
-
-#define HTTP_CURL_OPT(OPTION, p) HTTP_CURL_OPT_EX(request->ch, OPTION, (p))
-#define HTTP_CURL_OPT_EX(ch, OPTION, p) curl_easy_setopt((ch), OPTION, (p))
-
-#define HTTP_CURL_OPT_STRING(OPTION, ldiff, obdc) \
-	{ \
-		char *K = #OPTION; \
-		HTTP_CURL_OPT_STRING_EX(K+lenof("CURLOPT_KEY")+ldiff, OPTION, obdc); \
-	}
-#define HTTP_CURL_OPT_STRING_EX(keyname, optname, obdc) \
-	if (!strcasecmp(key, keyname)) { \
-		zval *copy = http_request_option_cache_ex(request, keyname, strlen(keyname)+1, 0, zval_copy(IS_STRING, *param)); \
-		if (obdc) { \
-			HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(copy), return FAILURE); \
-		} \
-		HTTP_CURL_OPT(optname, Z_STRVAL_P(copy)); \
-		key = NULL; \
-		continue; \
-	}
-#define HTTP_CURL_OPT_LONG(OPTION, ldiff) \
-	{ \
-		char *K = #OPTION; \
-		HTTP_CURL_OPT_LONG_EX(K+lenof("CURLOPT_KEY")+ldiff, OPTION); \
-	}
-#define HTTP_CURL_OPT_LONG_EX(keyname, optname) \
-	if (!strcasecmp(key, keyname)) { \
-		zval *copy = zval_copy(IS_LONG, *param); \
-		HTTP_CURL_OPT(optname, Z_LVAL_P(copy)); \
-		key = NULL; \
-		zval_free(&copy); \
-		continue; \
-	}
 /* }}} */
 
 /* {{{ forward declarations */
@@ -423,8 +294,12 @@ PHP_HTTP_API void _http_request_reset(http_request *request)
 /* {{{ STATUS http_request_enable_cookies(http_request *) */
 PHP_HTTP_API STATUS _http_request_enable_cookies(http_request *request)
 {
+	int initialized = 1;
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
-	if (CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIEFILE, "")) {
+	
+	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init_ex(request->ch, request), initialized = 0);
+	if (initialized) {
+		curl_easy_setopt(request->ch, CURLOPT_COOKIEFILE, "");
 		return SUCCESS;
 	}
 	http_error(HE_WARNING, HTTP_E_REQUEST, "Could not enable cookies for this session");
@@ -435,22 +310,26 @@ PHP_HTTP_API STATUS _http_request_enable_cookies(http_request *request)
 /* {{{ STATUS http_request_reset_cookies(http_request *, int) */
 PHP_HTTP_API STATUS _http_request_reset_cookies(http_request *request, int session_only)
 {
+	int initialized = 1;
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
+	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init_ex(request->ch, request), initialized = 0);
 	if (session_only) {
 #if HTTP_CURL_VERSION(7,15,4)
-		curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "SESS");
-		return SUCCESS;
-#else
-		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset session cookies (need libcurl >= v7.15.4)");
+		if (initialized) {
+			curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "SESS");
+			return SUCCESS;
+		}
 #endif
+		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset session cookies (need libcurl >= v7.15.4)");
 	} else {
 #if HTTP_CURL_VERSION(7,14,1)
-		curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL");
-		return SUCCESS;
-#else
-		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset cookies (need libcurl >= v7.14.1)");
+		if (initialized) {
+			curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL");
+			return SUCCESS;
+		}
 #endif
+		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset cookies (need libcurl >= v7.14.1)");
 	}
 	return FAILURE;
 }

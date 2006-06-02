@@ -14,19 +14,33 @@ $p = new HttpRequestPool(new HttpRequest('http://_____'));
 try {
 	$p->send();
 } catch (HttpRequestPoolException $x) {
-	var_dump(count($x->exceptionStack));
+	for ($i=0; $x; ++$i, $x = @$x->innerException) {
+		printf("%s%s: %s\n", str_repeat("\t", $i), get_class($x), $x->getMessage());
+	}
+	var_dump($i);
 }
 $p = new HttpRequestPool(new HttpRequest('http://_____'), new HttpRequest('http://_____'));
 try {
 	$p->send();
 } catch (HttpRequestPoolException $x) {
-	var_dump(count($x->exceptionStack));
+	for ($i=0; $x; ++$i, $x = @$x->innerException) {
+		printf("%s%s: %s\n", str_repeat("\t", $i), get_class($x),  $x->getMessage());
+	}
+	var_dump($i);
 }
 echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-int(2)
-int(4)
+HttpRequestPoolException: Exception caused by inner exception(s)
+	HttpInvalidParamException: Empty or too short HTTP message: ''
+		HttpRequestException: couldn't resolve host name; Couldn't resolve host '_____' (http://_____/)
+int(3)
+HttpRequestPoolException: Exception caused by inner exception(s)
+	HttpInvalidParamException: Empty or too short HTTP message: ''
+		HttpRequestException: couldn't resolve host name; Couldn't resolve host '_____' (http://_____/)
+			HttpInvalidParamException: Empty or too short HTTP message: ''
+				HttpRequestException: couldn't resolve host name; Couldn't resolve host '_____' (http://_____/)
+int(5)
 Done
 

@@ -36,6 +36,9 @@ zend_class_entry *HTTP_EX_CE(querystring);
 PHP_MINIT_FUNCTION(http_exception_object)
 {
 	HTTP_REGISTER_EXCEPTION(HttpException, http_exception_object_ce, ZEND_EXCEPTION_GET_DEFAULT());
+	
+	zend_declare_property_null(HTTP_EX_DEF_CE, "innerException", lenof("innerException"), ZEND_ACC_PUBLIC TSRMLS_CC);
+	
 	HTTP_REGISTER_EXCEPTION(HttpRuntimeException, HTTP_EX_CE(runtime), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpInvalidParamException, HTTP_EX_CE(invalid_param), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpHeaderException, HTTP_EX_CE(header), HTTP_EX_DEF_CE);
@@ -50,8 +53,6 @@ PHP_MINIT_FUNCTION(http_exception_object)
 	HTTP_REGISTER_EXCEPTION(HttpUrlException, HTTP_EX_CE(url), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpQueryStringException, HTTP_EX_CE(querystring), HTTP_EX_DEF_CE);
 	
-	zend_declare_property_null(HTTP_EX_CE(request_pool), "exceptionStack", lenof("exceptionStack"), ZEND_ACC_PUBLIC TSRMLS_CC);
-
 	HTTP_LONG_CONSTANT("HTTP_E_RUNTIME", HTTP_E_RUNTIME);
 	HTTP_LONG_CONSTANT("HTTP_E_INVALID_PARAM", HTTP_E_INVALID_PARAM);
 	HTTP_LONG_CONSTANT("HTTP_E_HEADER", HTTP_E_HEADER);

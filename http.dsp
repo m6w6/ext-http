@@ -182,6 +182,10 @@ SOURCE=.\php_http_request_api.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\php_http_request_int.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\php_http_request_body_api.h
 # End Source File
 # Begin Source File

@@ -284,69 +284,6 @@ void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC)
 }
 /* }}} */
 
-static void move_backtrace_args(zval *from, zval *to TSRMLS_DC)
-{
-	zval **args, **trace_0, *old_trace_0, *trace = NULL;
-	
-	if ((trace = zend_read_property(ZEND_EXCEPTION_GET_DEFAULT(), from, "trace", lenof("trace"), 0 TSRMLS_CC))) {
-		if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void *) &trace_0)) {
-			old_trace_0 = *trace_0;
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(trace_0), "args", sizeof("args"), (void *) &args)) {
-				if ((trace = zend_read_property(ZEND_EXCEPTION_GET_DEFAULT(), to, "trace", lenof("trace"), 0 TSRMLS_CC))) {
-					if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void *) &trace_0)) {
-						ZVAL_ADDREF(*args);
-						add_assoc_zval(*trace_0, "args", *args);
-						zend_hash_del(Z_ARRVAL_P(old_trace_0), "args", sizeof("args"));
-					}
-				}
-			}
-		}
-	}
-}
-/* {{{ void http_request_pool_wrap_exception(zval *, zval *) */
-void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception TSRMLS_DC)
-{
-	zend_class_entry *ce = HTTP_EX_CE(request_pool);
-	
-	/*	if old_exception is already an HttpRequestPoolException append the new one, 
-		else create a new HttpRequestPoolException and append the old and new exceptions */
-	if (old_exception && Z_OBJCE_P(old_exception) == ce) {
-		zval *old_exprop, *new_exprop;
-		
-		MAKE_STD_ZVAL(new_exprop);
-		array_init(new_exprop);
-		old_exprop = zend_read_property(ce, old_exception, "exceptionStack", lenof("exceptionStack"), 0 TSRMLS_CC);
-		if (Z_TYPE_P(old_exprop) == IS_ARRAY) {
-			array_copy(old_exprop, new_exprop);
-		}
-		add_next_index_zval(new_exprop, new_exception);
-		zend_update_property(ce, old_exception, "exceptionStack", lenof("exceptionStack"), new_exprop TSRMLS_CC);
-		zval_ptr_dtor(&new_exprop);
-		
-		EG(exception) = old_exception;
-	} else if (new_exception && Z_OBJCE_P(new_exception) != ce){
-		zval *exval, *exprop;
-		
-		MAKE_STD_ZVAL(exval);
-		object_init_ex(exval, ce);
-		MAKE_STD_ZVAL(exprop);
-		array_init(exprop);
-		
-		if (old_exception) {
-			add_next_index_zval(exprop, old_exception);
-		}
-		move_backtrace_args(new_exception, exval TSRMLS_CC);
-		zend_update_property_long(ce, exval, "code", lenof("code"), HTTP_E_REQUEST_POOL TSRMLS_CC);
-		zend_update_property_string(ce, exval, "message", lenof("message"), "See exceptionStack property" TSRMLS_CC);
-		add_next_index_zval(exprop, new_exception);
-		zend_update_property(ce, exval, "exceptionStack", lenof("exceptionStack"), exprop TSRMLS_CC);
-		zval_ptr_dtor(&exprop);
-		
-		EG(exception) = exval;
-	}
-}
-/* }}} */
-
 /*#*/
 
 /* {{{ static int http_request_pool_compare_handles(void *, void *) */

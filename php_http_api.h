@@ -38,6 +38,29 @@ extern char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend
 #define http_error_ex _http_error_ex
 extern void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...);
 
+
+#ifdef ZEND_ENGINE_2
+#define http_exception_wrap(o, n, ce) _http_exception_wrap((o), (n), (ce) TSRMLS_CC)
+extern zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend_class_entry *ce TSRMLS_DC);
+
+#define http_try \
+{ \
+		zval *old_exception = EG(exception); \
+		EG(exception) = NULL;
+#define http_catch(ex_ce) \
+		if (EG(exception) && old_exception) { \
+			EG(exception) = http_exception_wrap(old_exception, EG(exception), ex_ce); \
+		} \
+}
+#define http_final(ex_ce) \
+	if (EG(exception)) { \
+		zval *exception = http_exception_wrap(EG(exception), NULL, ex_ce); \
+		EG(exception) = NULL; \
+		zend_throw_exception_object(exception TSRMLS_CC); \
+	}
+#endif /* ZEND_ENGINE_2 */
+
+
 #define HTTP_CHECK_CURL_INIT(ch, init, action) \
 	if ((!(ch)) && (!((ch) = init))) { \
 		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not initialize curl"); \

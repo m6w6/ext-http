@@ -325,7 +325,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ALIAS(methodUnregister, http_request_method_unregister)
 	HTTP_REQUEST_ALIAS(methodName, http_request_method_name)
 	HTTP_REQUEST_ALIAS(methodExists, http_request_method_exists)
-#if HAVE_CURL_GETFORMDATA
+#ifdef HAVE_CURL_GETFORMDATA
 	HTTP_REQUEST_ALIAS(encodeBody, http_request_body_encode)
 #endif
 	EMPTY_FUNCTION_ENTRY

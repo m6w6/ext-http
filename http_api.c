@@ -96,18 +96,56 @@ void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...)
 	
 	va_start(args, format);
 #ifdef ZEND_ENGINE_2
-	if ((type == E_THROW) || (PG(error_handling) == EH_THROW)) {
-		char *message;
-		
-		vspprintf(&message, 0, format, args);
-		zend_throw_exception(http_exception_get_for_code(code), message, code TSRMLS_CC);
-		efree(message);
+		if ((type == E_THROW) || (PG(error_handling) == EH_THROW)) {
+			char *message;
+			zend_class_entry *ce = http_exception_get_for_code(code);
+			
+			http_try {
+				vspprintf(&message, 0, format, args);
+				zend_throw_exception(ce, message, code TSRMLS_CC);
+				efree(message);
+			} http_catch(ce);
 	} else
 #endif
 	php_verror(NULL, "", type, format, args TSRMLS_CC);
 	va_end(args);
 }
 /* }}} */
+
+#ifdef ZEND_ENGINE_2
+/* {{{ zval *http_exception_wrap(zval *, zval *, zend_class_entry *) */
+zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend_class_entry *ce TSRMLS_DC)
+{
+	zval **args, **trace_0, *old_trace_0, *trace = NULL;
+	
+	/* create wrapping exception if requested */
+	if (!new_exception) {
+		MAKE_STD_ZVAL(new_exception);
+		object_init_ex(new_exception, ce);
+		zend_update_property_string(ce, new_exception, "message", lenof("message"), "Exception caused by inner exception(s)" TSRMLS_CC);
+	}
+	
+	/* copy bt arguments */
+	if ((trace = zend_read_property(ZEND_EXCEPTION_GET_DEFAULT(), old_exception, "trace", lenof("trace"), 0 TSRMLS_CC))) {
+		if (Z_TYPE_P(trace) == IS_ARRAY && SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void *) &trace_0)) {
+			old_trace_0 = *trace_0;
+			if (Z_TYPE_PP(trace_0) == IS_ARRAY && SUCCESS == zend_hash_find(Z_ARRVAL_PP(trace_0), "args", sizeof("args"), (void *) &args)) {
+				if ((trace = zend_read_property(ZEND_EXCEPTION_GET_DEFAULT(), new_exception, "trace", lenof("trace"), 0 TSRMLS_CC))) {
+					if (Z_TYPE_P(trace) == IS_ARRAY && SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void *) &trace_0)) {
+						ZVAL_ADDREF(*args);
+						add_assoc_zval(*trace_0, "args", *args);
+					}
+				}
+			}
+		}
+	}
+	
+	zend_update_property(Z_OBJCE_P(new_exception), new_exception, "innerException", lenof("innerException"), old_exception TSRMLS_CC);
+	zval_ptr_dtor(&old_exception);
+	return new_exception;
+}
+/* }}} */
+#endif /* ZEND_ENGINE_2 */
 
 /* {{{ void http_log(char *, char *, char *) */
 void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC)

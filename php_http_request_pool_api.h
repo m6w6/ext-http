@@ -26,29 +26,9 @@ typedef struct _http_request_pool_t {
 #define http_request_pool_responsehandler _http_request_pool_responsehandler
 extern void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC);
 
-#define http_request_pool_try \
-	{ \
-		zval *old_exception = EG(exception); \
-		EG(exception) = NULL;
-#define http_request_pool_catch() \
-		if (EG(exception)) { \
-			http_request_pool_wrap_exception(old_exception, EG(exception)); \
-		} else { \
-			EG(exception) = old_exception; \
-		} \
-	}
-#define http_request_pool_final() \
-	if (EG(exception)) { \
-		zval *exception; \
-		http_request_pool_wrap_exception(NULL, EG(exception)); \
-		exception = EG(exception); \
-		EG(exception) = NULL; \
-		zend_throw_exception_object(exception TSRMLS_CC); \
-	}
-
-#define http_request_pool_wrap_exception(o, n) _http_request_pool_wrap_exception((o), (n) TSRMLS_CC)
-extern void _http_request_pool_wrap_exception(zval *old_exception, zval *new_exception TSRMLS_DC);
-
+#define http_request_pool_try http_try
+#define http_request_pool_catch() http_catch(HTTP_EX_CE(request_pool))
+#define http_request_pool_final() http_final(HTTP_EX_CE(request_pool))
 
 #define http_request_pool_init(p) _http_request_pool_init((p) TSRMLS_CC)
 PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool TSRMLS_DC);
