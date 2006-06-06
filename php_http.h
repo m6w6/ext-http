@@ -144,6 +144,8 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define HTTP_G (&http_globals)
 #endif
 
+#define HTTP_SHARED_EXT(EXT) (COMPILE_DL_##EXT && !HTTP_SHARED_DEPS)
+
 PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);
 PHP_FUNCTION(http_build_url);

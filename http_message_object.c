@@ -32,11 +32,9 @@
 #include "php_http_request_api.h"
 #include "php_http_request_object.h"
 
-#ifndef WONKY
-#	ifdef HAVE_SPL
+#if defined(HAVE_SPL) && !HTTP_SHARED_EXT(SPL) && !defined(WONKY)
 /* SPL doesn't install its headers */
 extern PHPAPI zend_class_entry *spl_ce_Countable;
-#	endif
 #endif
 
 #define HTTP_BEGIN_ARGS(method, req_args) 	HTTP_BEGIN_ARGS_EX(HttpMessage, method, 0, req_args)
@@ -187,7 +185,7 @@ PHP_MINIT_FUNCTION(http_message_object)
 	HTTP_REGISTER_CLASS_EX(HttpMessage, http_message_object, NULL, 0);
 	
 #ifndef WONKY
-#	ifdef HAVE_SPL
+#	if defined(HAVE_SPL) && !HTTP_SHARED_EXT(SPL)
 	zend_class_implements(http_message_object_ce TSRMLS_CC, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
 #	else
 	zend_class_implements(http_message_object_ce TSRMLS_CC, 2, zend_ce_serializable, zend_ce_iterator);

@@ -13,6 +13,9 @@ PHP_ARG_WITH([http-zlib-compression], [whether to enable zlib encodings support]
 PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
 [  --with-http-magic-mime[=LIBMAGICDIR]
                            HTTP: with magic mime response content type guessing], "no", "no")
+PHP_ARG_WITH([http-shared-deps], [whether to depend on shared extensions],
+[  --with-http-shared-deps HTTP: disable to not depend on shared extensions
+                           like SPL, hash, iconv and session], $PHP_HTTP, $PHP_HTTP)
 
 if test "$PHP_HTTP" != "no"; then
 
@@ -30,6 +33,12 @@ if test "$PHP_HTTP" != "no"; then
 			AC_CHECK_PROG(SED, sed, sed)
 		])
 	])
+
+	if test "PHP_HTTP_SHARED_DEPS" != "no"; then
+		AC_DEFINE([HTTP_SHARED_DEPS], [1], [ ])
+	else
+		AC_DEFINE([HTTP_SHARED_DEPS], [0], [ ])
+	endif
 
 dnl -------
 dnl HEADERS
