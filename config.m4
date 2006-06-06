@@ -38,7 +38,7 @@ if test "$PHP_HTTP" != "no"; then
 		AC_DEFINE([HTTP_SHARED_DEPS], [1], [ ])
 	else
 		AC_DEFINE([HTTP_SHARED_DEPS], [0], [ ])
-	endif
+	fi
 
 dnl -------
 dnl HEADERS
