@@ -13,9 +13,9 @@ PHP_ARG_WITH([http-zlib-compression], [whether to enable zlib encodings support]
 PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
 [  --with-http-magic-mime[=LIBMAGICDIR]
                            HTTP: with magic mime response content type guessing], "no", "no")
-PHP_ARG_WITH([http-shared-deps], [whether to depend on shared extensions],
-[  --with-http-shared-deps HTTP: disable to not depend on shared extensions
-                           like SPL, hash, iconv and session], $PHP_HTTP, $PHP_HTTP)
+PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
+[  --with-http-shared-deps HTTP: disable to not depend on extensions like hash,
+                                 iconv and session (when built shared)], $PHP_HTTP, $PHP_HTTP)
 
 if test "$PHP_HTTP" != "no"; then
 
@@ -72,7 +72,7 @@ if test "$PHP_HTTP" != "no"; then
 		
 		AC_MSG_CHECKING([for ext/$extname support])
 		if test -x "$PHP_EXECUTABLE"; then
-			if test "`$PHP_EXECUTABLE -m | $EGREP '^$extname$'`" = "$extname"; then
+			if test "`$PHP_EXECUTABLE -m | $EGREP ^$extname\$`" = "$extname"; then
 				[HTTP_HAVE_EXT_]translit($1,a-z_-,A-Z__)=1
 				AC_MSG_RESULT([yes])
 				$2
@@ -285,11 +285,6 @@ dnl ----
 	HTTP_HAVE_PHP_EXT([session])
 
 dnl ----
-dnl SPL
-dnl ----
-	HTTP_HAVE_PHP_EXT([spl])
-
-dnl ----
 dnl DONE
 dnl ----
 	PHP_HTTP_SOURCES="missing.c http.c http_functions.c phpstr/phpstr.c \
@@ -308,7 +303,6 @@ dnl ----
 	HTTP_SHARED_DEP([hash])
 	HTTP_SHARED_DEP([iconv])
 	HTTP_SHARED_DEP([session])
-	HTTP_SHARED_DEP([spl])
 	
 	PHP_ADD_BUILD_DIR($ext_builddir/phpstr, 1)
 	PHP_SUBST([HTTP_SHARED_LIBADD])
