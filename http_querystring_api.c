@@ -16,7 +16,7 @@
 #include "php_http.h"
 
 #include "php_variables.h"
-#ifdef HAVE_ICONV && !HTTP_SHARED_EXT(ICONV)
+#if HTTP_HAVE_EXT(ICONV)
 #	undef PHP_ATOM_INC
 #	include "ext/iconv/php_iconv.h"
 #	include "ext/standard/url.h"
@@ -38,7 +38,7 @@ static inline int _http_querystring_modify_array_ex(zval *qarray, int key_type, 
 static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC);
 
 
-#ifdef HAVE_ICONV && !HTTP_SHARED_EXT(ICONV)
+#if HTTP_HAVE_EXT(ICONV)
 PHP_HTTP_API int _http_querystring_xlate(zval *array, zval *param, const char *ie, const char *oe TSRMLS_DC)
 {
 	HashPosition pos;

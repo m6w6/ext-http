@@ -137,16 +137,16 @@ PHP_MINFO_FUNCTION(http);
 /* {{{ http_module_dep */
 #if ZEND_EXTENSION_API_NO >= 220050617
 static zend_module_dep http_module_deps[] = {
-#	if defined(HAVE_SPL) && !HTTP_SHARED_EXT(SPL)
+#	if HTTP_HAVE_EXT(SPL)
 	ZEND_MOD_REQUIRED("spl")
 #	endif
-#	if defined(HTTP_HAVE_EXT_HASH) && !HTTP_SHARED_EXT(HASH)
+#	if HTTP_HAVE_EXT(HASH)
 	ZEND_MOD_REQUIRED("hash")
 #	endif
-#	if defined(HAVE_PHP_SESSION) && !HTTP_SHARED_EXT(PHP_SESSION)
+#	if HTTP_HAVE_EXT(SESSION)
 	ZEND_MOD_REQUIRED("session")
 #	endif
-#	if defined(HAVE_ICONV) && !HTTP_SHARED_EXT(ICONV)
+#	if HTTP_HAVE_EXT(ICONV)
 	ZEND_MOD_REQUIRED("iconv")
 #	endif
 	{NULL, NULL, NULL, 0}

@@ -33,12 +33,64 @@ if test "$PHP_HTTP" != "no"; then
 			AC_CHECK_PROG(SED, sed, sed)
 		])
 	])
-
-	if test "PHP_HTTP_SHARED_DEPS" != "no"; then
+	
+	if test "$PHP_HTTP_SHARED_DEPS" != "no"; then
 		AC_DEFINE([HTTP_SHARED_DEPS], [1], [ ])
 	else
 		AC_DEFINE([HTTP_SHARED_DEPS], [0], [ ])
 	fi
+	
+	dnl
+	dnl HTTP_SHARED_DEP(name[, code-if-yes[, code-if-not]])
+	dnl
+	AC_DEFUN([HTTP_SHARED_DEP], [
+		extname=$1
+		haveext=$[HTTP_HAVE_EXT_]translit($1,a-z_-,A-Z__)
+		
+		AC_MSG_CHECKING([whether to add a dependency on ext/$extname])
+		if test "$PHP_HTTP_SHARED_DEPS" = "no"; then
+			AC_MSG_RESULT([no])
+			$3
+		elif test "$haveext"; then
+			AC_MSG_RESULT([yes])
+			ifdef([PHP_ADD_EXTENSION_DEP], [
+				PHP_ADD_EXTENSION_DEP([http], $1, 0)
+			])
+			$2
+		else
+			AC_MSG_RESULT([no])
+			$3
+		fi
+	])
+	
+	dnl
+	dnl HTTP_HAVE_PHP_EXT(name[, code-if-yes[, code-if-not]])
+	dnl
+	AC_DEFUN([HTTP_HAVE_PHP_EXT], [
+		extname=$1
+		haveext=$[PHP_]translit($1,a-z_-,A-Z__)
+		
+		AC_MSG_CHECKING([for ext/$extname support])
+		if test -x "$PHP_EXECUTABLE"; then
+			if test "`$PHP_EXECUTABLE -m | $EGREP '^$extname$'`" = "$extname"; then
+				[HTTP_HAVE_EXT_]translit($1,a-z_-,A-Z__)=1
+				AC_MSG_RESULT([yes])
+				$2
+			else
+				[HTTP_HAVE_EXT_]translit($1,a-z_-,A-Z__)=
+				AC_MSG_RESULT([no])
+				$3
+			fi
+		elif test "$haveext" != "no" && test "x$haveext" != "x"; then
+			[HTTP_HAVE_EXT_]translit($1,a-z_-,A-Z__)=1
+			AC_MSG_RESULT([yes])
+			$2
+		else
+			[HTTP_HAVE_EXT_]translit($1,a-z_-,A-Z__)=
+			AC_MSG_RESULT([no])
+			$3
+		fi
+	])
 
 dnl -------
 dnl HEADERS
@@ -202,39 +254,40 @@ dnl ----
 dnl ----
 dnl HASH
 dnl ----
-	AC_MSG_CHECKING(for ext/hash support)
-	if test -x "$PHP_EXECUTABLE"; then
-		if test "`$PHP_EXECUTABLE -m | $EGREP '^hash$'`" = "hash"; then
-			if test -d ../hash; then
-				PHP_ADD_INCLUDE([../hash])
-			fi
-			old_CPPFLAGS=$CPPFLAGS
-			CPPFLAGS=$INCLUDES
-			AC_MSG_RESULT([looking for php_hash.h])
-			AC_CHECK_HEADER([ext/hash/php_hash.h], [
-				AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
+	HTTP_HAVE_PHP_EXT([hash], [
+		if test -d ../hash; then
+			PHP_ADD_INCLUDE([../hash])
+		fi
+		old_CPPFLAGS=$CPPFLAGS
+		CPPFLAGS=$INCLUDES
+		AC_CHECK_HEADER([ext/hash/php_hash.h], [
+			AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
+		], [ 
+			AC_CHECK_HEADER([hash/php_hash.h], [
+				AC_DEFINE([HTTP_HAVE_HASH_EXT_HASH], [1], [Have ext/hash support])
 			], [ 
-				AC_CHECK_HEADER([hash/php_hash.h], [
-					AC_DEFINE([HTTP_HAVE_HASH_EXT_HASH], [1], [Have ext/hash support])
-				], [ 
-					AC_CHECK_HEADER([php_hash.h], [
-						AC_DEFINE([HTTP_HAVE_EXT_HASH], [1], [Have ext/hash support])
-					])
+				AC_CHECK_HEADER([php_hash.h], [
+					AC_DEFINE([HTTP_HAVE_EXT_HASH], [1], [Have ext/hash support])
 				])
 			])
-			CPPFLAGS=$old_CPPFLAGS;
-		else
-			AC_MSG_RESULT(disabled)
-		fi
-	elif test "$PHP_HASH" != "no" && test "x$PHP_HASH" != "x"; then
-		AC_MSG_RESULT(enabled)
-		ifdef([PHP_ADD_EXTENSION_DEP], [
-			PHP_ADD_EXTENSION_DEP([http], [hash], 0)
-			AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
 		])
-	else
-		AC_MSG_RESULT(disabled)
-	fi
+		CPPFLAGS=$old_CPPFLAGS
+	])
+
+dnl ----
+dnl ICONV
+dnl ----
+	HTTP_HAVE_PHP_EXT([iconv])
+
+dnl ----
+dnl SESSION
+dnl ----
+	HTTP_HAVE_PHP_EXT([session])
+
+dnl ----
+dnl SPL
+dnl ----
+	HTTP_HAVE_PHP_EXT([spl])
 
 dnl ----
 dnl DONE
@@ -248,7 +301,15 @@ dnl ----
 		http_filter_api.c http_request_body_api.c http_querystring_object.c \
 		http_deflatestream_object.c http_inflatestream_object.c http_cookie_api.c \
 		http_querystring_api.c"
+	
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, $ext_shared)
+	
+	dnl shared extension deps
+	HTTP_SHARED_DEP([hash])
+	HTTP_SHARED_DEP([iconv])
+	HTTP_SHARED_DEP([session])
+	HTTP_SHARED_DEP([spl])
+	
 	PHP_ADD_BUILD_DIR($ext_builddir/phpstr, 1)
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 

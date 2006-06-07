@@ -21,7 +21,7 @@
 #include "ext/standard/php_string.h"
 #include "zend_operators.h"
 
-#ifdef HAVE_PHP_SESSION && !HTTP_SHARED_EXT(PHP_SESSION)
+#if HTTP_HAVE_EXT(SESSION)
 #	include "ext/session/php_session.h"
 #endif
 
@@ -728,7 +728,7 @@ PHP_FUNCTION(http_redirect)
 		RETURN_FALSE;
 	}
 
-#ifdef HAVE_PHP_SESSION && !HTTP_SHARED_EXT(PHP_SESSION)
+#if 0 && HTTP_HAVE_EXT(SESSION)
 	/* append session info */
 	if (session) {
 		if (!params) {
