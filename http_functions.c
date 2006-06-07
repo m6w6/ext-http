@@ -728,7 +728,7 @@ PHP_FUNCTION(http_redirect)
 		RETURN_FALSE;
 	}
 
-#if 0 && HTTP_HAVE_EXT(SESSION)
+#if HTTP_HAVE_EXT(SESSION)
 	/* append session info */
 	if (session) {
 		if (!params) {
