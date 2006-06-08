@@ -140,7 +140,7 @@ static zend_module_dep http_module_deps[] = {
 #	if HTTP_HAVE_EXT(SPL)
 	ZEND_MOD_REQUIRED("spl")
 #	endif
-#	if HTTP_HAVE_EXT(HASH)
+#	if HTTP_HAVE_EXT_HASH
 	ZEND_MOD_REQUIRED("hash")
 #	endif
 #	if HTTP_HAVE_EXT(SESSION)

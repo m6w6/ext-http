@@ -20,16 +20,12 @@
 #include "ext/standard/crc32.h"
 #include "ext/standard/sha1.h"
 #include "ext/standard/md5.h"
-#if HTTP_HAVE_EXT(HASH)
-#	if defined(HTTP_HAVE_EXT_HASH)
-#		include "php_hash.h"
-#	elif defined(HTTP_HAVE_HASH_EXT_HASH)
-#		define HTTP_HAVE_EXT_HASH
-#		include "hash/php_hash.h"
-#	elif defined(HTTP_HAVE_EXT_HASH_EXT_HASH)
-#		define HTTP_HAVE_EXT_HASH
-#		include "ext/hash/php_hash.h"
-#	endif
+
+#if defined(HTTP_HAVE_PHP_HASH_H) && HTTP_HAVE_EXT(HASH)
+#	define HTTP_HAVE_EXT_HASH 1
+#	include "php_hash.h"
+#else
+#	define HTTP_HAVE_EXT_HASH 0
 #endif
 
 #define http_etag_digest(d, l) _http_etag_digest((d), (l))
@@ -55,7 +51,7 @@ static inline void *_http_etag_init(TSRMLS_D)
 	void *ctx = NULL;
 	char *mode = HTTP_G->etag.mode;
 	
-#if HTTP_HAVE_EXT(HASH)
+#if HTTP_HAVE_EXT_HASH
 	php_hash_ops *eho = NULL;
 	
 	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
@@ -81,7 +77,7 @@ static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
 	unsigned char digest[128] = {0};
 	char *etag = NULL, *mode = HTTP_G->etag.mode;
 	
-#if HTTP_HAVE_EXT(HASH)
+#if HTTP_HAVE_EXT_HASH
 	php_hash_ops *eho = NULL;
 	
 	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
@@ -108,7 +104,7 @@ static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
 static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t data_len TSRMLS_DC)
 {
 	char *mode = HTTP_G->etag.mode;
-#if HTTP_HAVE_EXT(HASH)
+#if HTTP_HAVE_EXT_HASH
 	php_hash_ops *eho = NULL;
 	
 	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {

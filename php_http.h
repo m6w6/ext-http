@@ -144,7 +144,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define HTTP_G (&http_globals)
 #endif
 
-#define HTTP_HAVE_EXT(EXT) ((defined(HAVE_##EXT) || defined(HAVE_PHP_##EXT)) && (HTTP_SHARED_DEPS || !defined(COMPILE_DL_##EXT)))
+#define HTTP_HAVE_EXT(EXT) ((defined(HAVE_##EXT) || defined(HAVE_PHP_##EXT) || defined(HAVE_##EXT##_EXT)) && (HTTP_SHARED_DEPS || !defined(COMPILE_DL_##EXT)))
 
 PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);

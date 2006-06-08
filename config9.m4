@@ -14,7 +14,7 @@ PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessin
 [  --with-http-magic-mime[=LIBMAGICDIR]
                            HTTP: with magic mime response content type guessing], "no", "no")
 PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
-[  --with-http-shared-deps HTTP: disable to not depend on extensions like hash,
+[  --with-http-shared-deps  HTTP: disable to not depend on extensions like hash,
                                  iconv and session (when built shared)], $PHP_HTTP, $PHP_HTTP)
 
 if test "$PHP_HTTP" != "no"; then
@@ -69,6 +69,7 @@ if test "$PHP_HTTP" != "no"; then
 	AC_DEFUN([HTTP_HAVE_PHP_EXT], [
 		extname=$1
 		haveext=$[PHP_]translit($1,a-z_-,A-Z__)
+		ishared=$[PHP_]translit($1,a-z_-,A-Z__)_SHARED
 		
 		AC_MSG_CHECKING([for ext/$extname support])
 		if test -x "$PHP_EXECUTABLE"; then
@@ -255,23 +256,26 @@ dnl ----
 dnl HASH
 dnl ----
 	HTTP_HAVE_PHP_EXT([hash], [
-		if test -d ../hash; then
-			PHP_ADD_INCLUDE([../hash])
+		AC_MSG_CHECKING([for php_hash.h])
+		HTTP_EXT_HASH_INCDIR=
+		for i in `echo $INCLUDES | $SED -e's/-I//g'` $abs_srcdir ../hash; do
+			if test -d $i; then
+				if test -f $i/php_hash.h; then
+					HTTP_EXT_HASH_INCDIR=$i
+					break
+				elif test -f $i/ext/hash/php_hash.h; then
+					HTTP_EXT_HASH_INCDIR=$i/ext/hash
+					break
+				fi
+			fi
+		done
+		if test -z "$HTTP_EXT_HASH_INCDIR"; then
+			AC_MSG_RESULT([not found])
+		else
+			AC_MSG_RESULT([$HTTP_EXT_HASH_INCDIR])
+			AC_DEFINE([HTTP_HAVE_PHP_HASH_H], [1], [Have ext/hash support])
+			PHP_ADD_INCLUDE([$HTTP_EXT_HASH_INCDIR])
 		fi
-		old_CPPFLAGS=$CPPFLAGS
-		CPPFLAGS=$INCLUDES
-		AC_CHECK_HEADER([ext/hash/php_hash.h], [
-			AC_DEFINE([HTTP_HAVE_EXT_HASH_EXT_HASH], [1], [Have ext/hash support])
-		], [ 
-			AC_CHECK_HEADER([hash/php_hash.h], [
-				AC_DEFINE([HTTP_HAVE_HASH_EXT_HASH], [1], [Have ext/hash support])
-			], [ 
-				AC_CHECK_HEADER([php_hash.h], [
-					AC_DEFINE([HTTP_HAVE_EXT_HASH], [1], [Have ext/hash support])
-				])
-			])
-		])
-		CPPFLAGS=$old_CPPFLAGS
 	])
 
 dnl ----

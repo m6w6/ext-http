@@ -79,7 +79,7 @@ if (PHP_HTTP != "no") {
 		
 		if ((f = check_for_pecl_ext("hash")) || (f = check_for_main_ext("hash"))) {
 			ADD_FLAG("CFLAGS_HTTP", "/I"+ f);
-			AC_DEFINE("HTTP_HAVE_EXT_HASH", 1, "");
+			AC_DEFINE("HTTP_HAVE_PHP_HASH_H", 1, "");
 			ADD_EXTENSION_DEP("http", "hash", true);
 		}
 	}
