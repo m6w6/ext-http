@@ -30,17 +30,18 @@ support. Parallel requests are available for PHP 5 and greater.
  </lead>
  <date>2006-00-00</date>
  <version>
-  <release>1.0.0dev</release>
+  <release>1.0.0</release>
   <api>1.0.0</api>
  </version>
  <stability>
-  <release>beta</release>
-  <api>beta</api>
+  <release>stable</release>
+  <api>stable</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
 + Added --with[out]-http-shared-deps configure option (dependencies on shared extensions)
 + Added INI entries: http.log.not_found, http.send.not_found_404
++ Added HttpMessage::guessContentType()
 * Fixed build on Debian systems where access to Curl_* functions is prohibited
 * Fixed empty Cache-Control header if not customly set with HttpResponse
 * Reset Content-Disposition and Content-Type if file is not found by http_send_file() etc
@@ -131,6 +132,7 @@ support. Parallel requests are available for PHP 5 and greater.
     <file role="php" name="FeedAggregator.php"/>
     <file role="php" name="PgLobStream.php"/>
     <file role="php" name="XmlRpcClient.php"/>
+    <file role="php" name="XmlRpcServer.php"/>
    </dir>
    
    <dir name="tests">
@@ -314,6 +316,7 @@ support. Parallel requests are available for PHP 5 and greater.
    <install as="pecl/http/FeedAggregator.php" name="lib/FeedAggregator.php"/>
    <install as="pecl/http/PgLobStream.php" name="lib/PgLobStream.php"/>
    <install as="pecl/http/XmlRpcClient.php" name="lib/XmlRpcClient.php"/>
+   <install as="pecl/http/XmlRpcServer.php" name="lib/XmlRpcServer.php"/>
   </filelist>
  </extsrcrelease>
  <changelog />

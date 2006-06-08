@@ -23,19 +23,16 @@ support. Parallel requests are available for PHP 5 and greater.
   </maintainer>
   </maintainers>
  <release>
-  <version>1.0.0RC5</version>
-  <date>2006-05-28</date>
+  <version>1.0.0</version>
+  <date>2006-06-09</date>
   <license>BSD, revised</license>
-  <state>beta</state>
-  <notes>+ Added HttpRequest::enableCookies() and HttpRequest::resetCookies([bool session_only=FALSE])
-+ Added optional flags argument to http_parse_params()
-+ Added HTTP_PARAMS_ALLOW_COMMA, HTTP_PARAMS_ALLOW_FAILURE, HTTP_PARAMS_RAISE_ERROR constants
-* Fixed http_build_url(&quot;./path&quot;) if REQUEST_URI is empty
-* Fixed http_parse_params(&quot;foo;bar&quot;) returning &quot;foo&quot; and &quot;ar&quot;
-* Fixed return value of http_parse_params() Object{&quot;params&quot;=&gt;Array(&quot;value&quot;, Array(&quot;name&quot;=&gt;&quot;value&quot;), ...)}
-* Fixed HttpMessage::setRequestMethod() errenously issuing a warning about an unknown request method
-* Fixed bugs introduced by using the new REQUEST_TIME server variable
-! NOTE: Many INI settings have been renamed to comply with the internal structure
+  <state>stable</state>
+  <notes>+ Added --with[out]-http-shared-deps configure option (dependencies on shared extensions)
++ Added INI entries: http.log.not_found, http.send.not_found_404
++ Added HttpMessage::guessContentType()
+* Fixed build on Debian systems where access to Curl_* functions is prohibited
+* Fixed empty Cache-Control header if not customly set with HttpResponse
+* Reset Content-Disposition and Content-Type if file is not found by http_send_file() etc
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -43,8 +40,9 @@ support. Parallel requests are available for PHP 5 and greater.
   </deps>
   <configureoptions>
    <configureoption name="with-http-curl-requests" default="yes" prompt="whether to enable cURL HTTP requests; specify libcurl directory"/>
-   <configureoption name="with-http-magic-mime" default="no" prompt="whether to enable response content type guessing; specify libmagic directory"/>
    <configureoption name="with-http-zlib-compression" default="yes" prompt="whether to enable support for gzencoded/deflated message bodies; specify zlib directory"/>
+   <configureoption name="with-http-magic-mime" default="no" prompt="whether to enable response content type guessing; specify libmagic directory"/>
+   <configureoption name="with-http-shared-deps" default="yes" prompt="whether to depend on extensions which have been built shared"/>
   </configureoptions>
   <filelist>
    <dir name="docs">
@@ -59,6 +57,7 @@ support. Parallel requests are available for PHP 5 and greater.
     <file role="php" install-as="pecl/http/FeedAggregator.php" name="FeedAggregator.php"/>
     <file role="php" install-as="pecl/http/PgLobStream.php" name="PgLobStream.php"/>
     <file role="php" install-as="pecl/http/XmlRpcClient.php" name="XmlRpcClient.php"/>
+    <file role="php" install-as="pecl/http/XmlRpcServer.php" name="XmlRpcServer.php"/>
    </dir> <!-- /lib -->
    <dir name="phpstr">
     <file role="src" name="phpstr.c"/>
@@ -131,6 +130,7 @@ support. Parallel requests are available for PHP 5 and greater.
     <file role="test" name="HttpResponse_002.phpt"/>
     <file role="test" name="HttpResponse_003.phpt"/>
     <file role="test" name="HttpResponse_004.phpt"/>
+    <file role="test" name="HttpResponse_005.phpt"/>
     <file role="test" name="log.inc"/>
     <file role="test" name="match_request_header_001.phpt"/>
     <file role="test" name="negotiation_001.phpt"/>
@@ -196,6 +196,7 @@ support. Parallel requests are available for PHP 5 and greater.
    </dir> <!-- /tests -->
    <file role="src" name="config.m4"/>
    <file role="src" name="config.w32"/>
+   <file role="src" name="config9.m4"/>
    <file role="doc" name="CREDITS"/>
    <file role="doc" name="EXPERIMENTAL"/>
    <file role="src" name="http.c"/>
@@ -250,6 +251,7 @@ support. Parallel requests are available for PHP 5 and greater.
    <file role="src" name="php_http_requestpool_object.h"/>
    <file role="src" name="php_http_request_api.h"/>
    <file role="src" name="php_http_request_body_api.h"/>
+   <file role="src" name="php_http_request_int.h"/>
    <file role="src" name="php_http_request_method_api.h"/>
    <file role="src" name="php_http_request_object.h"/>
    <file role="src" name="php_http_request_pool_api.h"/>

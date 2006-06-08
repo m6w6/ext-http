@@ -4,6 +4,7 @@ HttpRequest cookie API
 <?php
 include 'skip.inc';
 checkmin(5);
+checkcls("HttpRequest");
 ?>
 --FILE--
 <?php

@@ -95,6 +95,7 @@ PHP_METHOD(HttpMessage, getRequestUrl);
 PHP_METHOD(HttpMessage, setRequestUrl);
 PHP_METHOD(HttpMessage, getHttpVersion);
 PHP_METHOD(HttpMessage, setHttpVersion);
+PHP_METHOD(HttpMessage, guessContentType);
 PHP_METHOD(HttpMessage, getParentMessage);
 PHP_METHOD(HttpMessage, send);
 PHP_METHOD(HttpMessage, toString);

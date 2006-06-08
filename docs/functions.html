@@ -576,6 +576,13 @@ HttpMessage::TYPE_REQUEST or supplied URL was empty.</p>
 <p>Set the HTTP Protocol version of the Message.</p>
 <p>Expects a string parameter containing the HTTP protocol version.</p>
 <p>Returns TRUE on success, or FALSE if supplied version is out of range (1.0/1.1).</p>
+<h3 id="HttpMessage_guessContentType">string HttpMessage::guessContentType(string magic_file[, int magic_mode = MAGIC_MIME])</h3>
+<p>Attempts to guess the content type of supplied payload through libmagic.</p>
+<p>Expects a string parameter specifying the magic.mime database to use.<br />
+Additionally accepts an optional int parameter, being flags for libmagic.</p>
+<p>Returns the guessed content type on success, or FALSE on failure.</p>
+<p>Throws HttpRuntimeException, HttpInvalidParamException <br />
+if http.only_exceptions is TRUE.</p>
 <h3 id="HttpMessage_getParentMessage">HttpMessage HttpMessage::getParentMessage()</h3>
 <p>Get parent Message.</p>
 <p>Returns the parent HttpMessage on success, or NULL if there's none.</p>
@@ -1289,6 +1296,7 @@ http.cache_log is set.</p>
 <li><a href="#HttpMessage_setRequestUrl">HttpMessage::setRequestUrl()</a></li>
 <li><a href="#HttpMessage_getHttpVersion">HttpMessage::getHttpVersion()</a></li>
 <li><a href="#HttpMessage_setHttpVersion">HttpMessage::setHttpVersion()</a></li>
+<li><a href="#HttpMessage_guessContentType">HttpMessage::guessContentType()</a></li>
 <li><a href="#HttpMessage_getParentMessage">HttpMessage::getParentMessage()</a></li>
 <li><a href="#HttpMessage_send">HttpMessage::send()</a></li>
 <li><a href="#HttpMessage_toString">HttpMessage::toString()</a></li>
@@ -1434,7 +1442,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Sun, 28 May 2006 17:55:39 +0200</b></p>
+    <p><b>Generated at: Thu, 08 Jun 2006 23:59:56 +0200</b></p>
 </body>
 </html>
 

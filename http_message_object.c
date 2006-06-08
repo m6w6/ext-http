@@ -14,6 +14,7 @@
 
 #define HTTP_WANT_SAPI
 #define HTTP_WANT_CURL
+#define HTTP_WANT_MAGIC
 #include "php_http.h"
 
 #ifdef ZEND_ENGINE_2
@@ -94,6 +95,11 @@ HTTP_BEGIN_ARGS(setHttpVersion, 1)
 	HTTP_ARG_VAL(http_version, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(guessContentType, 1)
+	HTTP_ARG_VAL(magic_file, 0)
+	HTTP_ARG_VAL(magic_mode, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getParentMessage);
 HTTP_EMPTY_ARGS(send);
 HTTP_BEGIN_ARGS(toString, 0)
@@ -149,6 +155,7 @@ zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(setRequestUrl, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getHttpVersion, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setHttpVersion, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(guessContentType, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getParentMessage, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(send, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(toString, ZEND_ACC_PUBLIC)
@@ -1123,6 +1130,41 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 
 	obj->message->http.version = Z_DVAL_P(zv);
 	RETURN_TRUE;
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::guessContentType(string magic_file[, int magic_mode = MAGIC_MIME])
+ *
+ * Attempts to guess the content type of supplied payload through libmagic.
+ * 
+ * Expects a string parameter specifying the magic.mime database to use.
+ * Additionally accepts an optional int parameter, being flags for libmagic.
+ * 
+ * Returns the guessed content type on success, or FALSE on failure.
+ * 
+ * Throws HttpRuntimeException, HttpInvalidParamException 
+ * if http.only_exceptions is TRUE.
+ */
+PHP_METHOD(HttpMessage, guessContentType)
+{
+#ifdef HTTP_HAVE_MAGIC
+	char *magic_file, *ct = NULL;
+	int magic_file_len;
+	long magic_mode = MAGIC_MIME;
+	
+	RETVAL_FALSE;
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &magic_file, &magic_file_len, &magic_mode)) {
+		getObject(http_message_object, obj);
+		if ((ct = http_guess_content_type(magic_file, magic_mode, PHPSTR_VAL(&obj->message->body), PHPSTR_LEN(&obj->message->body), SEND_DATA))) {
+			RETVAL_STRING(ct, 0);
+		}
+	}
+	SET_EH_NORMAL();
+#else
+	http_error(HE_THROW, HTTP_E_RUNTIME, "Cannot guess Content-Type; libmagic not available");
+	RETURN_FALSE;
+#endif
 }
 /* }}} */
 
