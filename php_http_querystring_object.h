@@ -50,7 +50,7 @@ PHP_METHOD(HttpQueryString, getFloat);
 PHP_METHOD(HttpQueryString, getString);
 PHP_METHOD(HttpQueryString, getArray);
 PHP_METHOD(HttpQueryString, getObject);
-#if HTTP_HAVE_EXT(ICONV)
+#ifdef HTTP_HAVE_ICONV
 PHP_METHOD(HttpQueryString, xlate);
 #endif
 #ifndef WONKY

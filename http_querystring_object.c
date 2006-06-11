@@ -61,7 +61,7 @@ HTTP_BEGIN_ARGS(__getter, 1)
 	HTTP_ARG_VAL(delete, 0)
 HTTP_END_ARGS;
 
-#if HTTP_HAVE_EXT(ICONV)
+#ifdef HTTP_HAVE_ICONV
 HTTP_BEGIN_ARGS(xlate, 2)
 	HTTP_ARG_VAL(from_encoding, 0)
 	HTTP_ARG_VAL(to_encoding, 0)
@@ -95,7 +95,7 @@ zend_function_entry http_querystring_object_fe[] = {
 #ifndef WONKY
 	HTTP_QUERYSTRING_ME(singleton, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 #endif
-#if HTTP_HAVE_EXT(ICONV)
+#ifdef HTTP_HAVE_ICONV
 	HTTP_QUERYSTRING_ME(xlate, ZEND_ACC_PUBLIC)
 #endif
 	
@@ -431,7 +431,7 @@ HTTP_QUERYSTRING_GETTER(getArray, IS_ARRAY);
 HTTP_QUERYSTRING_GETTER(getObject, IS_OBJECT);
 /* }}} */
 
-#if HTTP_HAVE_EXT(ICONV)
+#ifdef HTTP_HAVE_ICONV
 /* {{{ proto bool HttpQueryString::xlate(string ie, string oe)
  *
  * Converts the query string from the source encoding ie to the target encoding oe.

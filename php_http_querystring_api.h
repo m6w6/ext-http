@@ -15,7 +15,7 @@
 #ifndef PHP_HTTP_QUERYSTRING_API_H
 #define PHP_HTTP_QUERYSTRING_API_H
 
-#if HTTP_HAVE_EXT(ICONV)
+#ifdef HTTP_HAVE_ICONV
 #define http_querystring_xlate(a, p, ie, oe) _http_querystring_xlate((a), (p), (ie), (oe) TSRMLS_CC)
 PHP_HTTP_API int _http_querystring_xlate(zval *array, zval *param, const char *ie, const char *oe TSRMLS_DC);
 #endif

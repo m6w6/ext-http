@@ -21,7 +21,7 @@
 #include "ext/standard/php_string.h"
 #include "zend_operators.h"
 
-#if HTTP_HAVE_EXT(SESSION)
+#ifdef HTTP_HAVE_SESSION
 #	include "ext/session/php_session.h"
 #endif
 
@@ -728,7 +728,7 @@ PHP_FUNCTION(http_redirect)
 		RETURN_FALSE;
 	}
 
-#if HTTP_HAVE_EXT(SESSION)
+#ifdef HTTP_HAVE_SESSION
 	/* append session info */
 	if (session) {
 		if (!params) {

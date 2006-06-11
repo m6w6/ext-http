@@ -15,7 +15,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "1.0.0"
+#define PHP_EXT_HTTP_VERSION "1.0.1dev"
 
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
@@ -144,7 +144,21 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define HTTP_G (&http_globals)
 #endif
 
-#define HTTP_HAVE_EXT(EXT) ((defined(HAVE_##EXT) || defined(HAVE_PHP_##EXT) || defined(HAVE_##EXT##_EXT)) && (HTTP_SHARED_DEPS || !defined(COMPILE_DL_##EXT)))
+#if defined(HAVE_ICONV) && (HTTP_SHARED_DEPS || !defined(COMPILE_DL_ICONV))
+#	define HTTP_HAVE_ICONV
+#endif
+
+#if defined(HAVE_PHP_SESSION) && (HTTP_SHARED_DEPS || !defined(COMPILE_DL_SESSION))
+#	define HTTP_HAVE_SESSION
+#endif
+
+#if defined(HAVE_HASH_EXT) && (HTTP_SHARED_DEPS || !defined(COMPILE_DL_HASH) && defined(HTTP_HAVE_PHP_HASH_H))
+#	define HTTP_HAVE_HASH
+#endif
+
+#if defined(HAVE_SPL)
+#	define HTTP_HAVE_SPL
+#endif
 
 PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);
