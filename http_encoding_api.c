@@ -327,6 +327,7 @@ retry_raw_inflate:
 		switch (status = http_inflate_rounds(&Z, Z_NO_FLUSH, decoded, decoded_len)) {
 			case Z_OK:
 			case Z_STREAM_END:
+				inflateEnd(&Z);
 				return SUCCESS;
 			
 			case Z_DATA_ERROR:
