@@ -39,6 +39,9 @@ PHP_HTTP_API http_request_body *_http_request_body_init_ex(http_request_body *bo
 #define http_request_body_fill(b, fields, files) _http_request_body_fill((b), (fields), (files) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC);
 
+#define http_request_body_encode(b, s, l) _http_request_body_encode((b), (s), (l) TSRMLS_CC)
+PHP_HTTP_API STATUS  _http_request_body_encode(http_request_body *body, char **buf, size_t *len TSRMLS_DC);
+
 #define http_request_body_dtor(b) _http_request_body_dtor((b) TSRMLS_CC)
 PHP_HTTP_API void _http_request_body_dtor(http_request_body *body TSRMLS_DC);
 

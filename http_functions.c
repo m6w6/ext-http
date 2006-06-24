@@ -1670,28 +1670,6 @@ PHP_FUNCTION(http_request)
 }
 /* }}} */
 
-#ifdef HAVE_CURL_GETFORMDATA
-static char *file_get_contents(char *file, size_t *len TSRMLS_DC)
-{
-	php_stream *s = NULL;
-	char *buf = NULL;
-	
-	if ((s = php_stream_open_wrapper_ex(file, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL, HTTP_DEFAULT_STREAM_CONTEXT))) {
-		*len = php_stream_copy_to_mem(s, &buf, (size_t) -1, 0);
-		php_stream_close(s);
-	} else {
-		*len = 0;
-	}
-	return buf;
-}
-struct FormData {
-	struct FormData *next;
-	int type;
-	char *line;
-	size_t length;
-};
-CURLcode Curl_getFormData(struct FormData **, struct curl_httppost *post, curl_off_t *size);
-
 /* {{{ proto string http_request_body_encode(array fields, array files)
  *
  * Generate x-www-form-urlencoded resp. form-data encoded request body.
@@ -1703,13 +1681,8 @@ PHP_FUNCTION(http_request_body_encode)
 	zval *fields = NULL, *files = NULL;
 	HashTable *fields_ht, *files_ht;
 	http_request_body body;
-	phpstr rbuf;
-	struct FormData *data, *ptr;
-	curl_off_t size;
-	char *fdata = NULL;
-	size_t fsize = 0;
-	CURLcode rc;
-	int fgc_error = 0;
+	char *buf;
+	size_t len;
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!a!", &fields, &files)) {
 		RETURN_FALSE;
@@ -1717,54 +1690,14 @@ PHP_FUNCTION(http_request_body_encode)
 	
 	fields_ht = (fields && Z_TYPE_P(fields) == IS_ARRAY) ? Z_ARRVAL_P(fields) : NULL;
 	files_ht = (files && Z_TYPE_P(files) == IS_ARRAY) ? Z_ARRVAL_P(files) : NULL;
-	if (!http_request_body_fill(&body, fields_ht, files_ht)) {
-		RETURN_FALSE;
+	if (http_request_body_fill(&body, fields_ht, files_ht) && (SUCCESS == http_request_body_encode(&body, &buf, &len))) {
+		RETVAL_STRINGL(buf, len, 0);
+	} else {
+		http_error(HE_WARNING, HTTP_E_RUNTIME, "Could not encode request body");
+		RETVAL_FALSE;
 	}
-	
-	switch (body.type) {
-		case HTTP_REQUEST_BODY_CURLPOST:
-			if (CURLE_OK != (rc = Curl_getFormData(&data, body.data, &size))) {
-				http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Could not encode request body: %s", curl_easy_strerror(rc));
-				RETVAL_FALSE;
-			} else {
-				phpstr_init_ex(&rbuf, (size_t) size, PHPSTR_INIT_PREALLOC);
-				for (ptr = data; ptr; ptr = ptr->next) {
-					if (!fgc_error) {
-						if (ptr->type) {
-							if ((fdata = file_get_contents(ptr->line, &fsize TSRMLS_CC))) {
-								phpstr_append(&rbuf, fdata, fsize);
-								efree(fdata);
-							} else {
-								fgc_error = 1;
-							}
-						} else {
-							phpstr_append(&rbuf, ptr->line, ptr->length);
-						}
-					}
-					curl_free(ptr->line);
-				}
-				curl_free(data);
-				if (fgc_error) {
-					phpstr_dtor(&rbuf);
-					RETVAL_FALSE;
-				} else {
-					RETVAL_PHPSTR_VAL(&rbuf);
-				}
-			}
-			http_request_body_dtor(&body);
-			break;
-		
-		case HTTP_REQUEST_BODY_CSTRING:
-			RETVAL_STRINGL(body.data, body.size, 0);
-			break;
-		
-		default:
-			http_request_body_dtor(&body);
-			RETVAL_FALSE;
-			break;
-	}
+	http_request_body_dtor(&body);
 }
-#endif /* HAVE_CURL_GETFORMDATA */
 #endif /* HTTP_HAVE_CURL */
 /* }}} HAVE_CURL */
 

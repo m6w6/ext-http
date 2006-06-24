@@ -226,6 +226,11 @@ dnl ----
 			[AC_DEFINE([HAVE_CURL_GETFORMDATA], [1], [ ])], [ ],
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
 		)
+		dnl New API function which obsoletes use of Curl_getFormData (>=7.15.5)
+		PHP_CHECK_LIBRARY(curl, curl_formget,
+			[AC_DEFINE([HAVE_CURL_FORMGET], [1], [ ])], [ ],
+			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
+		)
 	fi
 
 dnl ----
