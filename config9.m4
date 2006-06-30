@@ -181,7 +181,7 @@ dnl ----
 			AC_MSG_CHECKING([for SSL library used])
 			CURL_SSL_FLAVOUR=
 			for i in $CURL_LIBS; do
-				if test "$i" = "-lssl"; then
+				if test "$i" = "-lssl" -o "$i" = "-lssl_unversion"; then
 					CURL_SSL_FLAVOUR="openssl"
 					AC_MSG_RESULT([openssl])
 					AC_DEFINE([HTTP_HAVE_OPENSSL], [1], [ ])
