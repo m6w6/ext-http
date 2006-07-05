@@ -1213,7 +1213,7 @@ PHP_METHOD(HttpResponse, capture)
 	UPD_STATIC_PROP(long, catch, 1);
 
 	php_end_ob_buffers(0 TSRMLS_CC);
-	php_start_ob_buffer(NULL, 40960, 0 TSRMLS_CC);
+	php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
 
 	/* register shutdown function */
 	{

@@ -15,7 +15,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "1.0.1"
+#define PHP_EXT_HTTP_VERSION "1.0.2dev"
 
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
