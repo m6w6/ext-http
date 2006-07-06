@@ -644,6 +644,12 @@ Operates on and modifies $_GET and $_SERVER['QUERY_STRING'] if global is TRUE.</
 "b" for bool, "i" for int, "f" for float, "s" for string, "a" for array and "o" for a stdClass object.</p>
 <h3 id="HttpQueryString_set">string HttpQueryString::set(mixed params)</h3>
 <p>Set query string entry/entries. NULL values will unset the variable.</p>
+<h3 id="HttpQueryString_mod">HttpQueryString HttpQueryString::mod(mixed params)</h3>
+<p>Copies the query string object and sets provided params at the clone.<br />
+This is basically shorthand for:</p><pre><blockquote><code><span style="color: #000000"><br />
+<span style="color: #0000BB">&lt;?php<br />$newQS&nbsp;</span><span style="color: #007700">=&nbsp;new&nbsp;</span><span style="color: #0000BB">HttpQueryString</span><span style="color: #007700">(</span><span style="color: #0000BB">false</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$oldQS</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$newQS</span><span style="color: #007700">-&gt;</span><span style="color: #0000BB">set</span><span style="color: #007700">(</span><span style="color: #0000BB">$other_params</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">?&gt;</span><br />
+</span></code></blockquote></p>
+<p></pre></p>
 <h3 id="HttpQueryString_singleton">static HttpQueryString HttpQueryString::singleton([bool global = true])</h3>
 <p>Get a single instance (differentiates between the global setting).</p>
 <h3 id="HttpQueryString_xlate">bool HttpQueryString::xlate(string ie, string oe)</h3>
@@ -1322,6 +1328,7 @@ http.cache_log is set.</p>
 <li><a href="#HttpQueryString_toArray">HttpQueryString::toArray()</a></li>
 <li><a href="#HttpQueryString_get">HttpQueryString::get()</a></li>
 <li><a href="#HttpQueryString_set">HttpQueryString::set()</a></li>
+<li><a href="#HttpQueryString_mod">HttpQueryString::mod()</a></li>
 <li><a href="#HttpQueryString_singleton">HttpQueryString::singleton()</a></li>
 <li><a href="#HttpQueryString_xlate">HttpQueryString::xlate()</a></li>
 <li><a href="#HttpQueryString_serialize">HttpQueryString::serialize()</a></li>
@@ -1442,7 +1449,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Thu, 08 Jun 2006 23:59:56 +0200</b></p>
+    <p><b>Generated at: Thu, 06 Jul 2006 20:17:57 +0200</b></p>
 </body>
 </html>
 

@@ -44,6 +44,7 @@ PHP_METHOD(HttpQueryString, toString);
 PHP_METHOD(HttpQueryString, toArray);
 PHP_METHOD(HttpQueryString, get);
 PHP_METHOD(HttpQueryString, set);
+PHP_METHOD(HttpQueryString, mod);
 PHP_METHOD(HttpQueryString, getBool);
 PHP_METHOD(HttpQueryString, getInt);
 PHP_METHOD(HttpQueryString, getFloat);

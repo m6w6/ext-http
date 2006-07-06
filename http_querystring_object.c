@@ -55,6 +55,10 @@ HTTP_BEGIN_ARGS(set, 1)
 	HTTP_ARG_VAL(params, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(mod, 0)
+	HTTP_ARG_VAL(params, 0)
+HTTP_END_ARGS;
+
 HTTP_BEGIN_ARGS(__getter, 1)
 	HTTP_ARG_VAL(name, 0)
 	HTTP_ARG_VAL(defval, 0)
@@ -84,6 +88,7 @@ zend_function_entry http_querystring_object_fe[] = {
 	
 	HTTP_QUERYSTRING_ME(get, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_ME(set, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_ME(mod, ZEND_ACC_PUBLIC)
 	
 	HTTP_QUERYSTRING_GME(getBool, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_GME(getInt, ZEND_ACC_PUBLIC)
@@ -177,7 +182,6 @@ void _http_querystring_object_free(zend_object *object TSRMLS_DC)
 }
 
 /* {{{ querystring helpers */
-#ifndef WONKY
 #define http_querystring_instantiate(g) _http_querystring_instantiate((g) TSRMLS_CC)
 static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
 {
@@ -195,7 +199,6 @@ static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
 	
 	return zobj;
 }
-#endif /* WONKY */
 
 #define http_querystring_get(o, t, n, l, def, del, r) _http_querystring_get((o), (t), (n), (l), (def), (del), (r) TSRMLS_CC)
 static inline void _http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC)
@@ -368,6 +371,36 @@ PHP_METHOD(HttpQueryString, set)
 	
 	if (return_value_used) {
 		RETURN_PROP(queryString);
+	}
+}
+/* }}} */
+
+/* {{{ proto HttpQueryString HttpQueryString::mod(mixed params)
+ *
+ * Copies the query string object and sets provided params at the clone.
+ * This is basically shorthand for:
+ * <pre>
+ * <?php
+ * $newQS = new HttpQueryString(false, $oldQS);
+ * $newQS->set($other_params);
+ * ?>
+ * </pre>
+ */
+PHP_METHOD(HttpQueryString, mod)
+{
+	zval *orig, *zobj, *qarr, *qstr, *params;
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &params)) {
+		zobj = http_querystring_instantiate(0);
+		orig = GET_PROP(queryArray);
+		qarr = GET_PROP_EX(zobj, queryArray);
+		qstr = GET_PROP_EX(zobj, queryString);
+		
+		array_copy(orig, qarr);
+		http_querystring_modify(qarr, params);
+		http_querystring_update(qarr, qstr);
+	
+		RETURN_ZVAL(zobj, 1, 1);
 	}
 }
 /* }}} */
