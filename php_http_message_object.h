@@ -80,6 +80,7 @@ extern void _http_message_object_free(zend_object *object TSRMLS_DC);
 PHP_METHOD(HttpMessage, __construct);
 PHP_METHOD(HttpMessage, getBody);
 PHP_METHOD(HttpMessage, setBody);
+PHP_METHOD(HttpMessage, getHeader);
 PHP_METHOD(HttpMessage, getHeaders);
 PHP_METHOD(HttpMessage, setHeaders);
 PHP_METHOD(HttpMessage, addHeaders);

@@ -513,6 +513,9 @@ HTTP messages.  Accepts an optional string parameter specifying the class to use
 <p>Set the body of the HttpMessage.<br />
 NOTE: Don't forget to update any headers accordingly.</p>
 <p>Expects a string parameter containing the new body of the message.</p>
+<h3 id="HttpMessage_getHeader">string HttpMessage::getHeader(string header)</h3>
+<p>Get message header.</p>
+<p>Returns the header value on success or NULL if the header does not exist.</p>
 <h3 id="HttpMessage_getHeaders">array HttpMessage::getHeaders()</h3>
 <p>Get Message Headers.</p>
 <p>Returns an associative array containing the messages HTTP headers.</p>
@@ -1287,6 +1290,7 @@ http.cache_log is set.</p>
 <li><a href="#HttpMessage_fromString">HttpMessage::fromString()</a></li>
 <li><a href="#HttpMessage_getBody">HttpMessage::getBody()</a></li>
 <li><a href="#HttpMessage_setBody">HttpMessage::setBody()</a></li>
+<li><a href="#HttpMessage_getHeader">HttpMessage::getHeader()</a></li>
 <li><a href="#HttpMessage_getHeaders">HttpMessage::getHeaders()</a></li>
 <li><a href="#HttpMessage_setHeaders">HttpMessage::setHeaders()</a></li>
 <li><a href="#HttpMessage_addHeaders">HttpMessage::addHeaders()</a></li>
@@ -1449,7 +1453,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Thu, 06 Jul 2006 20:17:57 +0200</b></p>
+    <p><b>Generated at: Fri, 07 Jul 2006 13:48:43 +0200</b></p>
 </body>
 </html>
 

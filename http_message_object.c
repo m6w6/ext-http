@@ -55,6 +55,10 @@ HTTP_BEGIN_ARGS(setBody, 1)
 	HTTP_ARG_VAL(body, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(getHeader, 1)
+	HTTP_ARG_VAL(header, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getHeaders);
 HTTP_BEGIN_ARGS(setHeaders, 1)
 	HTTP_ARG_VAL(headers, 0)
@@ -140,6 +144,7 @@ zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	HTTP_MESSAGE_ME(getBody, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setBody, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getHeader, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getHeaders, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setHeaders, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(addHeaders, ZEND_ACC_PUBLIC)
@@ -780,6 +785,31 @@ PHP_METHOD(HttpMessage, setBody)
 		phpstr_dtor(PHPSTR(obj->message));
 		phpstr_from_string_ex(PHPSTR(obj->message), body, len);		
 	}
+}
+/* }}} */
+
+/* {{{ proto string HttpMessage::getHeader(string header)
+ *
+ * Get message header.
+ *
+ * Returns the header value on success or NULL if the header does not exist.
+ */
+PHP_METHOD(HttpMessage, getHeader)
+{
+	zval *header;
+	char *orig_header, *nice_header;
+	int header_len;
+	getObject(http_message_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &orig_header, &header_len)) {
+		RETURN_FALSE;
+	}
+	
+	nice_header = pretty_key(estrndup(orig_header, header_len), header_len, 1, 1);
+	if ((header = http_message_header_ex(obj->message, nice_header, header_len + 1))) {
+		RETVAL_ZVAL(header, 1, 0);
+	}
+	efree(nice_header);
 }
 /* }}} */
 
