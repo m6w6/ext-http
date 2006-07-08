@@ -59,7 +59,10 @@ PHP_METHOD(HttpQueryString, singleton);
 #endif
 PHP_METHOD(HttpQueryString, serialize);
 PHP_METHOD(HttpQueryString, unserialize);
-
+PHP_METHOD(HttpQueryString, offsetGet);
+PHP_METHOD(HttpQueryString, offsetSet);
+PHP_METHOD(HttpQueryString, offsetExists);
+PHP_METHOD(HttpQueryString, offsetUnset);
 #endif
 #endif
 

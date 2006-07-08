@@ -77,6 +77,24 @@ HTTP_BEGIN_ARGS(unserialize, 1)
 	HTTP_ARG_VAL(serialized, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(offsetGet, 1)
+	HTTP_ARG_VAL(offset, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(offsetSet, 2)
+	HTTP_ARG_VAL(offset, 0)
+	HTTP_ARG_VAL(value, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(offsetExists, 1)
+	HTTP_ARG_VAL(offset, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(offsetUnset, 1)
+	HTTP_ARG_VAL(offset, 0)
+HTTP_END_ARGS;
+
+
 #define OBJ_PROP_CE http_querystring_object_ce
 zend_class_entry *http_querystring_object_ce;
 zend_function_entry http_querystring_object_fe[] = {
@@ -108,6 +126,12 @@ zend_function_entry http_querystring_object_fe[] = {
 	HTTP_QUERYSTRING_ME(serialize, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_ME(unserialize, ZEND_ACC_PUBLIC)
 	
+	/* Implements ArrayAccess */
+	HTTP_QUERYSTRING_ME(offsetGet, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_ME(offsetSet, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_ME(offsetExists, ZEND_ACC_PUBLIC)
+	HTTP_QUERYSTRING_ME(offsetUnset, ZEND_ACC_PUBLIC)
+	
 	EMPTY_FUNCTION_ENTRY
 };
 static zend_object_handlers http_querystring_object_handlers;
@@ -117,7 +141,7 @@ PHP_MINIT_FUNCTION(http_querystring_object)
 	HTTP_REGISTER_CLASS_EX(HttpQueryString, http_querystring_object, NULL, 0);
 	
 #ifndef WONKY
-	zend_class_implements(http_querystring_object_ce TSRMLS_CC, 1, zend_ce_serializable);
+	zend_class_implements(http_querystring_object_ce TSRMLS_CC, 2, zend_ce_serializable, zend_ce_arrayaccess);
 #endif
 	
 	DCL_STATIC_PROP_N(PRIVATE, instance);
@@ -532,6 +556,78 @@ PHP_METHOD(HttpQueryString, unserialize)
 		}
 	}
 	SET_EH_NORMAL();
+}
+/* }}} */
+
+/* {{{ proto mixed HttpQueryString::offsetGet(string offset)
+ *
+ * Implements ArrayAccess.
+ */
+PHP_METHOD(HttpQueryString, offsetGet)
+{
+	char *offset_str;
+	int offset_len;
+	zval **value;
+	
+	if (	(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) &&
+			(SUCCESS == zend_hash_find(Z_ARRVAL_P(GET_PROP(queryArray)), offset_str, offset_len + 1, (void *) &value))) {
+		RETVAL_ZVAL(*value, 1, 0);
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpQueryString::offsetSet(string offset, mixed value)
+ *
+ * Implements ArrayAccess.
+ */
+PHP_METHOD(HttpQueryString, offsetSet)
+{
+	char *offset_str;
+	int offset_len;
+	zval *value;
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &offset_str, &offset_len, &value)) {
+		zval *qarr = GET_PROP(queryArray), *qstr = GET_PROP(queryString);
+		
+		ZVAL_ADDREF(value);
+		add_assoc_zval_ex(qarr, offset_str, offset_len + 1, value);
+		http_querystring_update(qarr, qstr);
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpQueryString::offsetExists(string offset)
+ *
+ * Implements ArrayAccess.
+ */
+PHP_METHOD(HttpQueryString, offsetExists)
+{
+	char *offset_str;
+	int offset_len;
+	zval **value;
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) {
+		RETURN_BOOL((SUCCESS == zend_hash_find(Z_ARRVAL_P(GET_PROP(queryArray)), offset_str, offset_len + 1, (void *) &value)) && (Z_TYPE_PP(value) != IS_NULL));
+	}
+}
+/* }}} */
+
+/* {{{ proto void HttpQueryString::offsetUnset(string offset)
+ *
+ * Implements ArrayAccess.
+ */
+PHP_METHOD(HttpQueryString, offsetUnset)
+{
+	char *offset_str;
+	int offset_len;
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) {
+		zval *qarr = GET_PROP(queryArray);
+		
+		if (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarr), offset_str, offset_len + 1)) {
+			http_querystring_update(qarr, GET_PROP(queryString));
+		}
+	}
 }
 /* }}} */
 

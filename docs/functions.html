@@ -663,6 +663,14 @@ WARNING: Don't use any character set that can contain NUL bytes like UTF-16.</p>
 <p>Implements Serializable.</p>
 <h3 id="HttpQueryString_unserialize">void HttpQueryString::unserialize(string serialized)</h3>
 <p>Implements Serializable.</p>
+<h3 id="HttpQueryString_offsetGet">mixed HttpQueryString::offsetGet(string offset)</h3>
+<p>Implements ArrayAccess.</p>
+<h3 id="HttpQueryString_offsetSet">void HttpQueryString::offsetSet(string offset, mixed value)</h3>
+<p>Implements ArrayAccess.</p>
+<h3 id="HttpQueryString_offsetExists">bool HttpQueryString::offsetExists(string offset)</h3>
+<p>Implements ArrayAccess.</p>
+<h3 id="HttpQueryString_offsetUnset">void HttpQueryString::offsetUnset(string offset)</h3>
+<p>Implements ArrayAccess.</p>
 <hr noshade>
 <h1 id="http_request_object.c">http_request_object.c</h1>
 <h2 id="HttpRequest" class="o">HttpRequest</h2>
@@ -1337,6 +1345,10 @@ http.cache_log is set.</p>
 <li><a href="#HttpQueryString_xlate">HttpQueryString::xlate()</a></li>
 <li><a href="#HttpQueryString_serialize">HttpQueryString::serialize()</a></li>
 <li><a href="#HttpQueryString_unserialize">HttpQueryString::unserialize()</a></li>
+<li><a href="#HttpQueryString_offsetGet">HttpQueryString::offsetGet()</a></li>
+<li><a href="#HttpQueryString_offsetSet">HttpQueryString::offsetSet()</a></li>
+<li><a href="#HttpQueryString_offsetExists">HttpQueryString::offsetExists()</a></li>
+<li><a href="#HttpQueryString_offsetUnset">HttpQueryString::offsetUnset()</a></li>
 </li>
 </ul>
 </li>
@@ -1453,7 +1465,7 @@ http.cache_log is set.</p>
 </li>
 </ul>
 </div>
-    <p><b>Generated at: Fri, 07 Jul 2006 13:48:43 +0200</b></p>
+    <p><b>Generated at: Fri, 07 Jul 2006 21:23:59 +0200</b></p>
 </body>
 </html>
 
