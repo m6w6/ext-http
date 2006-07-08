@@ -3,7 +3,7 @@ HttpQueryString global
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkver(5);
+checkmin(5.1);
 ?>
 --FILE--
 <?php

@@ -391,6 +391,10 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 		}
 		
 		if (key) {
+			if (!*key) {
+				/* only public properties */
+				continue;
+			}
 			if (len && key[len - 1] == '\0') {
 				--len;
 			}
@@ -416,10 +420,10 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 			phpstr_fix(&new_prefix);
 		}
 		
-		if (Z_TYPE_PP(data) == IS_ARRAY) {
+		if (Z_TYPE_PP(data) == IS_ARRAY || Z_TYPE_PP(data) == IS_OBJECT) {
 			STATUS status;
 			++ht->nApplyCount;
-			status = http_urlencode_hash_recursive(Z_ARRVAL_PP(data), str, arg_sep, arg_sep_len, PHPSTR_VAL(&new_prefix), PHPSTR_LEN(&new_prefix));
+			status = http_urlencode_hash_recursive(HASH_OF(*data), str, arg_sep, arg_sep_len, PHPSTR_VAL(&new_prefix), PHPSTR_LEN(&new_prefix));
 			--ht->nApplyCount;
 			if (SUCCESS != status) {
 				phpstr_dtor(&new_prefix);

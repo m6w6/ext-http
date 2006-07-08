@@ -154,7 +154,8 @@ static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRM
 	zval **params_entry = NULL;
 	
 	FOREACH_KEYLENVAL(pos, params, key, keylen, idx, params_entry) {
-		if (http_querystring_modify_array_ex(qarray, key ? HASH_KEY_IS_STRING : HASH_KEY_IS_LONG, key, keylen, idx, *params_entry)) {
+		/* only public properties */
+		if ((!key || *key) && http_querystring_modify_array_ex(qarray, key ? HASH_KEY_IS_STRING : HASH_KEY_IS_LONG, key, keylen, idx, *params_entry)) {
 			rv = 1;
 		}
 		key = NULL;
@@ -182,8 +183,8 @@ static inline int _http_querystring_modify_array_ex(zval *qarray, int key_type, 
 		zval equal;
 		
 		/* recursive */
-		if (Z_TYPE_P(params_entry) == IS_ARRAY) {
-			return http_querystring_modify_array(*qarray_entry, params_entry);
+		if (Z_TYPE_P(params_entry) == IS_ARRAY || Z_TYPE_P(params_entry) == IS_OBJECT) {
+			return http_querystring_modify(*qarray_entry, params_entry);
 		}
 		/* equal */
 		if ((SUCCESS == is_equal_function(&equal, *qarray_entry, params_entry TSRMLS_CC)) && Z_BVAL(equal)) {
@@ -193,6 +194,9 @@ static inline int _http_querystring_modify_array_ex(zval *qarray, int key_type, 
 	
 	/* add */
 	ZVAL_ADDREF(params_entry);
+	if (Z_TYPE_P(params_entry) == IS_OBJECT) {
+		convert_to_array_ex(&params_entry);
+	}
 	if (key_type == HASH_KEY_IS_STRING) {
 		add_assoc_zval_ex(qarray, key, keylen, params_entry);
 	} else {

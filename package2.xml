@@ -40,6 +40,7 @@ support. Parallel requests are available for PHP 5 and greater.
  <license>BSD, revised</license>
  <notes><![CDATA[
 * Fixed HttpResponse::capture() failure if buffered output exceeds 40k
+* Fixed HttpQueryString failures with objects as params
 * Added HttpQueryString::mod(array $params) method
 * Added ArrayAccess to interfaces implemented by HttpQueryString
 * Added HttpMessage::getHeader(string $name) method

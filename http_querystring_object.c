@@ -420,7 +420,7 @@ PHP_METHOD(HttpQueryString, mod)
 		qarr = GET_PROP_EX(zobj, queryArray);
 		qstr = GET_PROP_EX(zobj, queryString);
 		
-		array_copy(orig, qarr);
+		http_querystring_modify(qarr, orig);
 		http_querystring_modify(qarr, params);
 		http_querystring_update(qarr, qstr);
 	
