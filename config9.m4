@@ -93,10 +93,14 @@ if test "$PHP_HTTP" != "no"; then
 		fi
 	])
 
-dnl -------
-dnl HEADERS
-dnl -------
+dnl ----
+dnl STDC
+dnl ----
 	AC_CHECK_HEADERS([netdb.h unistd.h])
+	PHP_CHECK_FUNC(gethostname, nsl)
+	PHP_CHECK_FUNC(getdomainname, nsl)
+	PHP_CHECK_FUNC(getservbyport, nsl)
+	PHP_CHECK_FUNC(getservbyname, nsl)
 
 dnl ----
 dnl ZLIB
@@ -112,7 +116,7 @@ dnl ----
 		done
 		if test -z "$ZLIB_DIR"; then
 			AC_MSG_RESULT([not found])
-			AC_MSG_WARN([could not find zlib.h])
+			AC_MSG_ERROR([could not find zlib.h])
 		else
 			AC_MSG_RESULT([found in $ZLIB_DIR])
 			AC_MSG_CHECKING([for zlib version >= 1.2.0.4])
@@ -181,19 +185,22 @@ dnl ----
 			AC_MSG_CHECKING([for SSL library used])
 			CURL_SSL_FLAVOUR=
 			for i in $CURL_LIBS; do
-				if test "$i" = "-lssl" -o "$i" = "-lssl_unversion"; then
-					CURL_SSL_FLAVOUR="openssl"
-					AC_MSG_RESULT([openssl])
-					AC_DEFINE([HTTP_HAVE_OPENSSL], [1], [ ])
-					AC_CHECK_HEADERS([openssl/crypto.h])
-					break
-				elif test "$i" = "-lgnutls"; then
-					CURL_SSL_FLAVOUR="gnutls"
-					AC_MSG_RESULT([gnutls])
-					AC_DEFINE([HTTP_HAVE_GNUTLS], [1], [ ])
-					AC_CHECK_HEADERS([gcrypt.h])
-					break
-				fi
+				case $i in
+					-lssl* | -lyassl*)
+						CURL_SSL_FLAVOUR="openssl"
+						AC_MSG_RESULT([openssl])
+						AC_DEFINE([HTTP_HAVE_OPENSSL], [1], [ ])
+						AC_CHECK_HEADERS([openssl/crypto.h])
+						break
+					;;
+					-lgnutls*)
+						CURL_SSL_FLAVOUR="gnutls"
+						AC_MSG_RESULT([gnutls])
+						AC_DEFINE([HTTP_HAVE_GNUTLS], [1], [ ])
+						AC_CHECK_HEADERS([gcrypt.h])
+						break
+					;;
+				esac
 			done
 			if test -z "$CURL_SSL_FLAVOUR"; then
 				AC_MSG_RESULT([unknown!])
