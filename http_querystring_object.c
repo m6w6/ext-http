@@ -216,7 +216,7 @@ static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
 	
 	MAKE_STD_ZVAL(zobj);
 	Z_TYPE_P(zobj) = IS_OBJECT;
-	Z_OBJVAL_P(zobj) = http_querystring_object_new(http_querystring_object_ce);
+	zobj->value.obj = http_querystring_object_new(http_querystring_object_ce);
 	zend_call_method_with_1_params(&zobj, Z_OBJCE_P(zobj), NULL, "__construct", NULL, zglobal);
 	
 	zval_ptr_dtor(&zglobal);
