@@ -26,14 +26,13 @@
 #endif
 
 #include "php.h"
+#include "missing.h"
 #include "php_http_std_defs.h"
 #include "phpstr/phpstr.h"
-#include "missing.h"
 
 #ifdef HTTP_WANT_SAPI
 #	if PHP_API_VERSION > 20041225
 #		define HTTP_HAVE_SAPI_RTIME
-#	else
 #	endif
 #	include "SAPI.h"
 #endif
@@ -198,9 +197,7 @@ PHP_FUNCTION(http_put_data);
 PHP_FUNCTION(http_put_file);
 PHP_FUNCTION(http_put_stream);
 PHP_FUNCTION(http_request);
-#ifdef HAVE_CURL_GETFORMDATA
 PHP_FUNCTION(http_request_body_encode);
-#endif /* HAVE_CURL_GETFORMDATA */
 #endif /* HTTP_HAVE_CURL */
 PHP_FUNCTION(http_request_method_register);
 PHP_FUNCTION(http_request_method_unregister);

@@ -471,12 +471,8 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 {
 	http_request_object *o = (http_request_object *) object;
 
-	if (OBJ_PROP(o)) {
-		zend_hash_destroy(OBJ_PROP(o));
-		FREE_HASHTABLE(OBJ_PROP(o));
-	}
 	http_request_free(&o->request);
-	efree(o);
+	freeObject(o);
 }
 
 #define http_request_object_check_request_content_type(t) _http_request_object_check_request_content_type((t) TSRMLS_CC)

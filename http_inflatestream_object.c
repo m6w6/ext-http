@@ -115,14 +115,10 @@ void _http_inflatestream_object_free(zend_object *object TSRMLS_DC)
 {
 	http_inflatestream_object *o = (http_inflatestream_object *) object;
 
-	if (OBJ_PROP(o)) {
-		zend_hash_destroy(OBJ_PROP(o));
-		FREE_HASHTABLE(OBJ_PROP(o));
-	}
 	if (o->stream) {
 		http_encoding_inflate_stream_free(&o->stream);
 	}
-	efree(o);
+	freeObject(o);
 }
 
 /* {{{ proto void HttpInflateStream::__construct([int flags = 0])

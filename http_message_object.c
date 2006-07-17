@@ -368,10 +368,6 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 {
 	http_message_object *o = (http_message_object *) object;
 
-	if (OBJ_PROP(o)) {
-		zend_hash_destroy(OBJ_PROP(o));
-		FREE_HASHTABLE(OBJ_PROP(o));
-	}
 	if (o->message) {
 		http_message_dtor(o->message);
 		efree(o->message);
@@ -384,7 +380,7 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 		p.value.obj = o->parent;
 		zend_objects_store_del_ref(&p TSRMLS_CC);
 	}
-	efree(o);
+	freeObject(o);
 }
 
 static zval *_http_message_object_read_prop(zval *object, zval *member, int type TSRMLS_DC)

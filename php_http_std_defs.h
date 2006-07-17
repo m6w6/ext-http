@@ -246,7 +246,27 @@ typedef int STATUS;
 #	define getObject(t, o) getObjectEx(t, o, getThis())
 #	define getObjectEx(t, o, v) t * o = ((t *) zend_object_store_get_object(v TSRMLS_CC))
 #	define putObject(t, o) zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, (zend_objects_free_object_storage_t) _ ##t## _free, NULL TSRMLS_CC);
+#	ifndef WONKY
+#		define freeObject(o) \
+			if (OBJ_GUARDS(o)) { \
+				zend_hash_destroy(OBJ_GUARDS(o)); \
+				FREE_HASHTABLE(OBJ_GUARDS(o)); \
+			} \
+			if (OBJ_PROP(o)) { \
+				zend_hash_destroy(OBJ_PROP(o)); \
+				FREE_HASHTABLE(OBJ_PROP(o)); \
+			} \
+			efree(o);
+#	else
+#		define freeObject(o) \
+			if (OBJ_PROP(o)) { \
+				zend_hash_destroy(OBJ_PROP(o)); \
+				FREE_HASHTABLE(OBJ_PROP(o)); \
+			} \
+			efree(o);
+#	endif
 #	define OBJ_PROP(o) (o)->zo.properties
+#	define OBJ_GUARDS(o) (o)->zo.guards
 
 #	define DCL_STATIC_PROP(a, t, n, v)		zend_declare_property_ ##t(OBJ_PROP_CE, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
 #	define DCL_STATIC_PROP_Z(a, n, v)		zend_declare_property(OBJ_PROP_CE, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
