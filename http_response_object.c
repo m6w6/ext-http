@@ -209,7 +209,7 @@ PHP_MINIT_FUNCTION(http_response_object)
 	DCL_STATIC_PROP_N(PROTECTED, cacheControl);
 	DCL_STATIC_PROP_N(PROTECTED, contentType);
 	DCL_STATIC_PROP_N(PROTECTED, contentDisposition);
-	DCL_STATIC_PROP(PROTECTED, long, bufferSize, HTTP_SENDBUF_SIZE);
+	DCL_STATIC_PROP(PROTECTED, long, bufferSize, 0);
 	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
 
 #ifndef WONKY
