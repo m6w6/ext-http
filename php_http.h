@@ -15,7 +15,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "1.1.0"
+#define PHP_EXT_HTTP_VERSION "1.2.0dev"
 
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
@@ -183,6 +183,7 @@ PHP_FUNCTION(http_chunked_decode);
 PHP_FUNCTION(http_parse_message);
 PHP_FUNCTION(http_parse_headers);
 PHP_FUNCTION(http_parse_cookie);
+PHP_FUNCTION(http_build_cookie);
 PHP_FUNCTION(http_parse_params);
 PHP_FUNCTION(http_get_request_headers);
 PHP_FUNCTION(http_get_request_body);

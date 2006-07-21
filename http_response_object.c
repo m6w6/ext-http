@@ -1156,9 +1156,6 @@ PHP_METHOD(HttpResponse, send)
 	/* gzip */
 	HTTP_G->send.deflate.encoding = zval_is_true(GET_STATIC_PROP(gzip));
 	
-	/* start ob */
-	php_start_ob_buffer(NULL, HTTP_G->send.buffer_size, 0 TSRMLS_CC);
-
 	/* send */
 	switch (Z_LVAL_P(GET_STATIC_PROP(mode))) {
 		case SEND_DATA:

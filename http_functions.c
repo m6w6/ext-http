@@ -1068,7 +1068,7 @@ PHP_FUNCTION(http_parse_cookie)
 		FOREACH_VAL(pos, allowed_extras_array, entry) {
 			ZVAL_ADDREF(*entry);
 			convert_to_string_ex(entry);
-			allowed_extras[i] = estrndup(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry));
+			allowed_extras[i++] = estrndup(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry));
 			zval_ptr_dtor(entry);
 		}
 	}
@@ -1088,6 +1088,30 @@ PHP_FUNCTION(http_parse_cookie)
 		efree(allowed_extras);
 	}
 }
+/* }}} */
+
+/* {{{ proto string http_build_cookie(array cookie)
+ *
+ * Build a cookie string from an array/object like returned by http_parse_cookie().
+ */
+PHP_FUNCTION(http_build_cookie)
+{
+	char *str = NULL;
+	size_t len = 0;
+	zval *strct;
+	http_cookie_list list;
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &strct)) {
+		RETURN_FALSE;
+	}
+	
+	http_cookie_list_fromstruct(&list, strct);
+	http_cookie_list_tostring(&list, &str, &len);
+	http_cookie_list_dtor(&list);
+	
+	RETURN_STRINGL(str, len, 0);
+}
+/* }}} */
 
 /* {{{ proto object http_parse_params(string param[, int flags = HTTP_PARAMS_DEFAULT])
  *

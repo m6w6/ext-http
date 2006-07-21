@@ -68,6 +68,12 @@ PHP_HTTP_API http_cookie_list *_http_parse_cookie_ex(http_cookie_list * list, co
 #define http_cookie_list_tostruct(l, s) _http_cookie_list_tostruct((l), (s) TSRMLS_CC)
 PHP_HTTP_API void _http_cookie_list_tostruct(http_cookie_list *list, zval *strct TSRMLS_DC);
 
+#define http_cookie_list_fromstruct(l, s) _http_cookie_list_fromstruct((l), (s) TSRMLS_CC)
+PHP_HTTP_API http_cookie_list *_http_cookie_list_fromstruct(http_cookie_list *list, zval *strct TSRMLS_DC);
+
+#define http_cookie_list_tostring(l, str, len) _http_cookie_list_tostring((l), (str), (len) TSRMLS_CC)
+PHP_HTTP_API void _http_cookie_list_tostring(http_cookie_list *list, char **str, size_t *len TSRMLS_DC);
+
 #endif
 
 /*

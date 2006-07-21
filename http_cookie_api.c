@@ -17,6 +17,9 @@
 #include "php_http_date_api.h"
 #include "php_http_cookie_api.h"
 
+#include "ext/standard/url.h"
+
+/* {{{ PHP_MINIT_FUNCTION(http_cookie) */
 PHP_MINIT_FUNCTION(http_cookie)
 {
 	HTTP_LONG_CONSTANT("HTTP_COOKIE_PARSE_RAW", HTTP_COOKIE_PARSE_RAW);
@@ -25,7 +28,9 @@ PHP_MINIT_FUNCTION(http_cookie)
 	
 	return SUCCESS;
 }
+/* }}} */
 
+/* {{{ http_cookie_list *http_cookie_list_init(http_cookie_list *) */
 PHP_HTTP_API http_cookie_list *_http_cookie_list_init(http_cookie_list *list ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	if (!list) {
@@ -42,7 +47,9 @@ PHP_HTTP_API http_cookie_list *_http_cookie_list_init(http_cookie_list *list ZEN
 	
 	return list;
 }
+/* }}} */
 
+/* {{{ void http_cookie_list_dtor(http_cookie_list *) */
 PHP_HTTP_API void _http_cookie_list_dtor(http_cookie_list *list TSRMLS_DC)
 {
 	if (list) {
@@ -53,7 +60,9 @@ PHP_HTTP_API void _http_cookie_list_dtor(http_cookie_list *list TSRMLS_DC)
 		STR_SET(list->domain, NULL);
 	}
 }
+/* }}} */
 
+/* {{{ void http_cookie_list_free(http_cookie_list **) */
 PHP_HTTP_API void _http_cookie_list_free(http_cookie_list **list TSRMLS_DC)
 {
 	if (list) {
@@ -62,7 +71,9 @@ PHP_HTTP_API void _http_cookie_list_free(http_cookie_list **list TSRMLS_DC)
 		*list = NULL;
 	}
 }
+/* }}} */
 
+/* {{{ const char *http_cookie_list_get_cookie(http_cookie_list *, const char*, size_t) */
 PHP_HTTP_API const char *_http_cookie_list_get_cookie(http_cookie_list *list, const char *name, size_t name_len TSRMLS_DC)
 {
 	zval **cookie = NULL;
@@ -71,7 +82,9 @@ PHP_HTTP_API const char *_http_cookie_list_get_cookie(http_cookie_list *list, co
 	}
 	return Z_STRVAL_PP(cookie);
 }
+/* }}} */
 
+/* {{{ const char *http_cookie_list_get_extra(http_cookie_list *, const char *, size_t) */
 PHP_HTTP_API const char *_http_cookie_list_get_extra(http_cookie_list *list, const char *name, size_t name_len TSRMLS_DC)
 {
 	zval **extra = NULL;
@@ -80,7 +93,9 @@ PHP_HTTP_API const char *_http_cookie_list_get_extra(http_cookie_list *list, con
 	}
 	return Z_STRVAL_PP(extra);
 }
+/* }}} */
 
+/* {{{ void http_cookie_list_add_cookie(http_cookie_list *, const char *, size_t, const char *, size_t) */
 PHP_HTTP_API void _http_cookie_list_add_cookie(http_cookie_list *list, const char *name, size_t name_len, const char *value, size_t value_len TSRMLS_DC)
 {
 	zval *cookie_value;
@@ -90,7 +105,9 @@ PHP_HTTP_API void _http_cookie_list_add_cookie(http_cookie_list *list, const cha
 	zend_hash_update(&list->cookies, key, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
 	efree(key);
 }
+/* }}} */
 
+/* {{{ void http_cookie_list_add_extr(http_cookie_list *, const char *, size_t, const char *, size_t) */
 PHP_HTTP_API void _http_cookie_list_add_extra(http_cookie_list *list, const char *name, size_t name_len, const char *value, size_t value_len TSRMLS_DC)
 {
 	zval *cookie_value;
@@ -100,6 +117,7 @@ PHP_HTTP_API void _http_cookie_list_add_extra(http_cookie_list *list, const char
 	zend_hash_update(&list->extras, key, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
 	efree(key);
 }
+/* }}} */
 
 typedef struct _http_parse_param_cb_arg_t {
 	http_cookie_list *list;
@@ -107,6 +125,7 @@ typedef struct _http_parse_param_cb_arg_t {
 	char **allowed_extras;
 } http_parse_param_cb_arg;
 
+/* {{{ static void http_parse_cookie_callback */
 static void http_parse_cookie_callback(void *ptr, const char *key, int keylen, const char *val, int vallen TSRMLS_DC)
 {
 	http_parse_param_cb_arg *arg = (http_parse_param_cb_arg *) ptr;
@@ -131,15 +150,32 @@ static void http_parse_cookie_callback(void *ptr, const char *key, int keylen, c
 			
 			for (; *ae; ++ae) {
 				if ((size_t) keylen == strlen(*ae) && !strncasecmp(key, *ae, keylen)) {
-					http_cookie_list_add_extra(arg->list, key, keylen, val, vallen);
+					if (arg->flags & HTTP_COOKIE_PARSE_RAW) {
+						http_cookie_list_add_extra(arg->list, key, keylen, val, vallen);
+					} else {
+						char *dec = estrndup(val, vallen);
+						int declen = php_url_decode(dec, vallen);
+						
+						http_cookie_list_add_extra(arg->list, key, keylen, dec, declen);
+						efree(dec);
+					}
 					return;
 				}
 			}
 		}
 		/* new cookie */
-		http_cookie_list_add_cookie(arg->list, key, keylen, val, vallen);
+		if (arg->flags & HTTP_COOKIE_PARSE_RAW) {
+			http_cookie_list_add_cookie(arg->list, key, keylen, val, vallen);
+		} else {
+			char *dec = estrndup(val, vallen);
+			int declen = php_url_decode(dec, vallen);
+			
+			http_cookie_list_add_cookie(arg->list, key, keylen, dec, declen);
+			efree(dec);
+		}
 	}
 }
+/* }}} */
 
 /* {{{ http_cookie_list *http_parse_cookie(char *, long) */
 PHP_HTTP_API http_cookie_list *_http_parse_cookie_ex(http_cookie_list *list, const char *string, long flags, char **allowed_extras TSRMLS_DC)
@@ -166,6 +202,7 @@ PHP_HTTP_API http_cookie_list *_http_parse_cookie_ex(http_cookie_list *list, con
 }
 /* }}} */
 
+/* {{{ void http_cookie_list_tostruct(http_cookie_list *, zval *) */
 PHP_HTTP_API void _http_cookie_list_tostruct(http_cookie_list *list, zval *strct TSRMLS_DC)
 {
 	zval array, *cookies, *extras;
@@ -187,6 +224,143 @@ PHP_HTTP_API void _http_cookie_list_tostruct(http_cookie_list *list, zval *strct
 	add_assoc_string(&array, "path", list->path?list->path:"", 1);
 	add_assoc_string(&array, "domain", list->domain?list->domain:"", 1);
 }
+/* }}} */
+
+/* {{{ http_cookie_list *http_cookie_list_fromstruct(http_cookie_list *, zval *strct) */
+PHP_HTTP_API http_cookie_list *_http_cookie_list_fromstruct(http_cookie_list *list, zval *strct TSRMLS_DC)
+{
+	zval **tmp, *cpy;
+	HashTable *ht = HASH_OF(strct);
+	
+	list = http_cookie_list_init(list);
+	
+	if (SUCCESS == zend_hash_find(ht, "cookies", sizeof("cookies"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_ARRAY) {
+		zend_hash_copy(&list->cookies, Z_ARRVAL_PP(tmp), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	}
+	if (SUCCESS == zend_hash_find(ht, "extras", sizeof("extras"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_ARRAY) {
+		zend_hash_copy(&list->extras, Z_ARRVAL_PP(tmp), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	}
+	if (SUCCESS == zend_hash_find(ht, "flags", sizeof("flags"), (void *) &tmp)) {
+		switch (Z_TYPE_PP(tmp)) {
+			case IS_LONG:
+				list->flags = Z_LVAL_PP(tmp);
+				break;
+			case IS_DOUBLE:
+				list->flags = (long) Z_DVAL_PP(tmp);
+				break;
+			case IS_STRING:
+				cpy = zval_copy(IS_LONG, *tmp);
+				list->flags = Z_LVAL_P(cpy);
+				zval_free(&cpy);
+				break;
+			default:
+				break;
+		}
+	}
+	if (SUCCESS == zend_hash_find(ht, "expires", sizeof("expires"), (void *) &tmp)) {
+		switch (Z_TYPE_PP(tmp)) {
+			case IS_LONG:
+				list->expires = Z_LVAL_PP(tmp);
+				break;
+			case IS_DOUBLE:
+				list->expires = (long) Z_DVAL_PP(tmp);
+				break;
+			case IS_STRING:
+				cpy = zval_copy(IS_LONG, *tmp);
+				if (Z_LVAL_P(cpy)) {
+					list->expires = Z_LVAL_P(cpy);
+				} else {
+					time_t expires = http_parse_date(Z_STRVAL_PP(tmp));
+					if (expires > 0) {
+						list->expires = expires;
+					}
+				}
+				zval_free(&cpy);
+				break;
+			default:
+				break;
+		}
+	}
+	if (SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_STRING) {
+		list->path = estrndup(Z_STRVAL_PP(tmp), Z_STRLEN_PP(tmp));
+	}
+	if (SUCCESS == zend_hash_find(ht, "domain", sizeof("domain"), (void *) &tmp)) {
+		list->domain = estrndup(Z_STRVAL_PP(tmp), Z_STRLEN_PP(tmp));
+	}
+	
+	return list;
+}
+/* }}} */
+
+/* {{{ inline append_encoded */
+static inline void append_encoded(phpstr *buf, const char *key, size_t key_len, const char *val, size_t val_len)
+{
+	char *enc_str[2];
+	int enc_len[2];
+	
+	enc_str[0] = php_url_encode(key, key_len, &enc_len[0]);
+	enc_str[1] = php_url_encode(val, val_len, &enc_len[1]);
+	
+	phpstr_append(buf, enc_str[0], enc_len[0]);
+	phpstr_appends(buf, "=");
+	phpstr_append(buf, enc_str[1], enc_len[1]);
+	phpstr_appends(buf, "; ");
+	
+	efree(enc_str[0]);
+	efree(enc_str[1]);
+}
+/* }}} */
+
+/* {{{ void http_cookie_list_tostring(http_cookie_list *, char **, size_t *) */
+PHP_HTTP_API void _http_cookie_list_tostring(http_cookie_list *list, char **str, size_t *len TSRMLS_DC)
+{
+	phpstr buf;
+	zval **val;
+	ulong idx = 0;
+	uint keylen = 0;
+	char *key = NULL;
+	HashPosition pos;
+	
+	phpstr_init(&buf);
+	
+	FOREACH_HASH_KEYLENVAL(pos, &list->cookies, key, keylen, idx, val) {
+		if (key && keylen) {
+			append_encoded(&buf, key, keylen-1, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
+			key = NULL;
+		}
+	}
+	
+	if (list->domain && *list->domain) {
+		phpstr_appendf(&buf, "domain=%s; ", list->domain);
+	}
+	if (list->path && *list->path) {
+		phpstr_appendf(&buf, "path=%s; ", list->path);
+	}
+	if (list->expires) {
+		char *date = http_date(list->expires);
+		phpstr_appendf(&buf, "expires=%s; ", date);
+		efree(date);
+	}
+	
+	FOREACH_HASH_KEYLENVAL(pos, &list->extras, key, keylen, idx, val) {
+		if (key && keylen) {
+			append_encoded(&buf, key, keylen-1, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
+			key = NULL;
+		}
+	}
+	
+	if (list->flags & HTTP_COOKIE_SECURE) {
+		phpstr_appends(&buf, "secure; ");
+	}
+	if (list->flags & HTTP_COOKIE_HTTPONLY) {
+		phpstr_appends(&buf, "httpOnly; ");
+	}
+	
+	phpstr_fix(&buf);
+	*str = PHPSTR_VAL(&buf);
+	*len = PHPSTR_LEN(&buf);
+}
+/* }}} */
 
 /*
  * Local variables:

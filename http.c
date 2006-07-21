@@ -93,6 +93,7 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_parse_message, NULL)
 	PHP_FE(http_parse_headers, NULL)
 	PHP_FE(http_parse_cookie, NULL)
+	PHP_FE(http_build_cookie, NULL)
 	PHP_FE(http_parse_params, NULL)
 	PHP_FE(http_get_request_headers, NULL)
 	PHP_FE(http_get_request_body, NULL)
@@ -188,7 +189,7 @@ static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 #else
 	G->request.time = time(NULL);
 #endif
-	G->send.buffer_size = HTTP_SENDBUF_SIZE;
+	G->send.buffer_size = 0;
 	G->send.not_found_404 = 1;
 	G->read_post_data = 0;
 }
