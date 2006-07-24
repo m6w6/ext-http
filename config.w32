@@ -8,18 +8,17 @@ function check_for_main_ext(ext, header)
 	if (!header) {
 		header = "php_"+ ext +".h";
 	}
-	
-	var r = new RegExp(PHP_VERSION +"."+ PHP_MINOR_VERSION);
-	var g = glob(configure_module_dirname +"\\..\\..\\*\\ext\\"+ ext +"\\"+ header);
+
+	/* When in configure, we're always in the root of PHP source */
+	var ext_path = "ext\\" + ext;
 	
 	STDOUT.Write("Checking for ext/"+ ext +" ...  ");
-	for (i = 0; i < g.length; i++) {
-		if (g[i].match(r)) {
-			var f = g[i].substr(0, g[i].length - header.length - 1);
-			STDOUT.WriteLine(f);
-			return f;
-		}
+
+	if (FSO.FileExists(ext_path + "\\" + header)) {
+		STDOUT.WriteLine(ext_path);
+		return ext_path;
 	}
+
 	STDOUT.WriteLine("<not found>");
 	return false;
 }
@@ -82,8 +81,7 @@ if (PHP_HTTP != "no") {
 		var f;
 		
 		if ((f = check_for_pecl_ext("hash")) || (f = check_for_main_ext("hash"))) {
-			ADD_FLAG("CFLAGS_HTTP", "/I"+ f);
-			AC_DEFINE("HTTP_HAVE_PHP_HASH_H", 1, "");
+			ADD_FLAG("CFLAGS_HTTP", '/I "' + f + '" /DHTTP_HAVE_PHP_HASH_H=1');
 			ADD_EXTENSION_DEP("http", "hash", true);
 		}
 	}
