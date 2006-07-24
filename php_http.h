@@ -151,7 +151,7 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define HTTP_HAVE_SESSION
 #endif
 
-#if defined(HAVE_HASH_EXT) && (HTTP_SHARED_DEPS || !defined(COMPILE_DL_HASH) && defined(HTTP_HAVE_PHP_HASH_H))
+#if defined(HAVE_HASH_EXT) && (HTTP_SHARED_DEPS || !defined(COMPILE_DL_HASH)) && defined(HTTP_HAVE_PHP_HASH_H)
 #	define HTTP_HAVE_HASH
 #endif
 
