@@ -202,22 +202,67 @@ void _http_querystring_object_free(zend_object *object TSRMLS_DC)
 }
 
 /* {{{ querystring helpers */
-#define http_querystring_instantiate(g) _http_querystring_instantiate((g) TSRMLS_CC)
-static inline zval *_http_querystring_instantiate(zend_bool global TSRMLS_DC)
+#define http_querystring_instantiate(t, g, p, u) _http_querystring_instantiate((t), (g), (p), (u) TSRMLS_CC)
+static inline zval *_http_querystring_instantiate(zval *this_ptr, zend_bool global, zval *params, zend_bool defer_update TSRMLS_DC)
 {
-	zval *zobj, *zglobal;
+	zval *qarray, *qstring, **_SERVER = NULL, **_GET = NULL, **QUERY_STRING = NULL;;
 	
-	MAKE_STD_ZVAL(zglobal);
-	ZVAL_BOOL(zglobal, global);
+	if (!this_ptr) {
+		MAKE_STD_ZVAL(this_ptr);
+		Z_TYPE_P(this_ptr) = IS_OBJECT;
+		this_ptr->value.obj = http_querystring_object_new(http_querystring_object_ce);
+	}
+	if (global) {
+#ifdef ZEND_ENGINE_2
+		zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
+#endif
+		if (	(SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &_SERVER)) &&
+				(Z_TYPE_PP(_SERVER) == IS_ARRAY) &&
+				(SUCCESS == zend_hash_find(Z_ARRVAL_PP(_SERVER), "QUERY_STRING", sizeof("QUERY_STRING"), (void *) &QUERY_STRING))) {
+			
+			qstring = *QUERY_STRING;
+#ifdef ZEND_ENGINE_2
+			zend_is_auto_global("_GET", lenof("_GET") TSRMLS_CC);
+#endif
+			if ((SUCCESS == zend_hash_find(&EG(symbol_table), "_GET", sizeof("_GET"), (void *) &_GET)) && (Z_TYPE_PP(_GET) == IS_ARRAY)) {
+				qarray = *_GET;
+			} else {
+				http_error(HE_WARNING, HTTP_E_QUERYSTRING, "Could not acquire reference to superglobal GET array");
+			}
+		} else {
+			http_error(HE_WARNING, HTTP_E_QUERYSTRING, "Could not acquire reference to QUERY_STRING");
+		}
+		
+		if (qarray && qstring) {
+			if (Z_TYPE_P(qstring) != IS_STRING) {
+				convert_to_string(qstring);
+			}
+			
+			SET_PROP(queryArray, qarray);
+			SET_PROP(queryString, qstring);
+			GET_PROP(queryArray)->is_ref = 1;
+			GET_PROP(queryString)->is_ref = 1;
 	
-	MAKE_STD_ZVAL(zobj);
-	Z_TYPE_P(zobj) = IS_OBJECT;
-	zobj->value.obj = http_querystring_object_new(http_querystring_object_ce);
-	zend_call_method_with_1_params(&zobj, Z_OBJCE_P(zobj), NULL, "__construct", NULL, zglobal);
+			if (params) {
+				http_querystring_modify(GET_PROP(queryArray), params);
+			}
+			if (!defer_update) {
+				http_querystring_update(GET_PROP(queryArray), GET_PROP(queryString));
+			}
+		}
+	} else {
+		qarray = ecalloc(1, sizeof(zval));
+		array_init(qarray);
+		
+		SET_PROP(queryArray, qarray);
+		UPD_STRL(queryString, "", 0);
+		
+		if (params && http_querystring_modify(qarray, params) && !defer_update) {
+			http_querystring_update(qarray, GET_PROP(queryString));
+		}
+	}
 	
-	zval_ptr_dtor(&zglobal);
-	
-	return zobj;
+	return this_ptr;
 }
 
 #define http_querystring_get(o, t, n, l, def, del, r) _http_querystring_get((o), (t), (n), (l), (def), (del), (r) TSRMLS_CC)
@@ -249,59 +294,13 @@ static inline void _http_querystring_get(zval *this_ptr, int type, char *name, u
 PHP_METHOD(HttpQueryString, __construct)
 {
 	zend_bool global = 1;
-	zval *params = NULL, *qarray = NULL, *qstring = NULL, **_GET, **_SERVER, **QUERY_STRING;
+	zval *params = NULL;
 	
 	SET_EH_THROW_HTTP();
 	if (!sapi_module.treat_data) {
 		http_error(HE_ERROR, HTTP_E_QUERYSTRING, "The SAPI does not have a treat_data function registered");
 	} else if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bz", &global, &params)) {
-		if (global) {
-#ifdef ZEND_ENGINE_2
-			zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
-#endif
-			if (	(SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &_SERVER)) &&
-					(Z_TYPE_PP(_SERVER) == IS_ARRAY) &&
-					(SUCCESS == zend_hash_find(Z_ARRVAL_PP(_SERVER), "QUERY_STRING", sizeof("QUERY_STRING"), (void *) &QUERY_STRING))) {
-				
-				qstring = *QUERY_STRING;
-#ifdef ZEND_ENGINE_2
-				zend_is_auto_global("_GET", lenof("_GET") TSRMLS_CC);
-#endif
-				if ((SUCCESS == zend_hash_find(&EG(symbol_table), "_GET", sizeof("_GET"), (void *) &_GET)) && (Z_TYPE_PP(_GET) == IS_ARRAY)) {
-					qarray = *_GET;
-				} else {
-					http_error(HE_WARNING, HTTP_E_QUERYSTRING, "Could not acquire reference to superglobal GET array");
-				}
-			} else {
-				http_error(HE_WARNING, HTTP_E_QUERYSTRING, "Could not acquire reference to QUERY_STRING");
-			}
-			
-			if (qarray && qstring) {
-				if (Z_TYPE_P(qstring) != IS_STRING) {
-					convert_to_string(qstring);
-				}
-				
-				SET_PROP(queryArray, qarray);
-				SET_PROP(queryString, qstring);
-				GET_PROP(queryArray)->is_ref = 1;
-				GET_PROP(queryString)->is_ref = 1;
-				
-				if (params) {
-					http_querystring_modify(GET_PROP(queryArray), params);
-				}
-				http_querystring_update(GET_PROP(queryArray), GET_PROP(queryString));
-			}
-		} else {
-			qarray = ecalloc(1, sizeof(zval));
-			array_init(qarray);
-			
-			SET_PROP(queryArray, qarray);
-			UPD_STRL(queryString, "", 0);
-			
-			if (params && http_querystring_modify(qarray, params)) {
-				http_querystring_update(qarray, GET_PROP(queryString));
-			}
-		}
+		http_querystring_instantiate(getThis(), global, params, 0);
 	}
 	SET_EH_NORMAL();
 }
@@ -408,18 +407,16 @@ PHP_METHOD(HttpQueryString, set)
  */
 PHP_METHOD(HttpQueryString, mod)
 {
-	zval *orig, *zobj, *qarr, *qstr, *params;
+	zval *zobj, *qarr, *qstr, *params;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &params)) {
-		zobj = http_querystring_instantiate(0);
-		orig = GET_PROP(queryArray);
+		zobj = http_querystring_instantiate(NULL, 0, GET_PROP(queryArray), 1);
 		qarr = GET_PROP_EX(zobj, queryArray);
 		qstr = GET_PROP_EX(zobj, queryString);
 		
-		http_querystring_modify(qarr, orig);
 		http_querystring_modify(qarr, params);
 		http_querystring_update(qarr, qstr);
-	
+		
 		RETURN_ZVAL(zobj, 1, 1);
 	}
 }
@@ -443,7 +440,7 @@ PHP_METHOD(HttpQueryString, singleton)
 			if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(instance), global, (void *) &zobj_ptr)) {
 				RETVAL_ZVAL(*zobj_ptr, 1, 0);
 			} else {
-				zobj = http_querystring_instantiate(global);
+				zobj = http_querystring_instantiate(NULL, global, NULL, !global);
 				add_index_zval(instance, global, zobj);
 				RETVAL_OBJECT(zobj, 1);
 			}
@@ -451,7 +448,7 @@ PHP_METHOD(HttpQueryString, singleton)
 			MAKE_STD_ZVAL(instance);
 			array_init(instance);
 			
-			zobj = http_querystring_instantiate(global);
+			zobj = http_querystring_instantiate(NULL, global, NULL, !global);
 			add_index_zval(instance, global, zobj);
 			RETVAL_OBJECT(zobj, 1);
 			
@@ -542,11 +539,7 @@ PHP_METHOD(HttpQueryString, unserialize)
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &serialized)) {
 		if (Z_TYPE_P(serialized) == IS_STRING) {
-			zval *qa = GET_PROP(queryArray);
-			
-			zend_hash_clean(Z_ARRVAL_P(qa));
-			http_querystring_modify(qa, serialized);
-			http_querystring_update(qa, GET_PROP(queryString));
+			http_querystring_instantiate(getThis(), 0, serialized, 0);
 		} else {
 			http_error(HE_WARNING, HTTP_E_QUERYSTRING, "Expected a string as parameter");
 		}
