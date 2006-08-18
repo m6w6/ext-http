@@ -54,7 +54,7 @@ if test "$PHP_HTTP" != "no"; then
 		elif test "$haveext"; then
 			AC_MSG_RESULT([yes])
 			ifdef([PHP_ADD_EXTENSION_DEP], [
-				PHP_ADD_EXTENSION_DEP([http], $1, 0)
+				PHP_ADD_EXTENSION_DEP([http], $1, true)
 			])
 			$2
 		else
