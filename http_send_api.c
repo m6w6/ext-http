@@ -35,6 +35,10 @@ static inline void _http_flush(void *nothing, const char *data, size_t data_len 
 	php_end_ob_buffer(1, 1 TSRMLS_CC);
 	sapi_flush(TSRMLS_C);
 	
+#if 0
+	fprintf(stderr, "Flushing after writing %u bytes\n", (uint) data_len);
+#endif
+	
 #define HTTP_MSEC(s) (s * 1000)
 #define HTTP_USEC(s) (HTTP_MSEC(s) * 1000)
 #define HTTP_NSEC(s) (HTTP_USEC(s) * 1000)
