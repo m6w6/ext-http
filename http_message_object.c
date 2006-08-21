@@ -350,7 +350,8 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 	}
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
-	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 
 	ov.handle = putObject(http_message_object, o);
 	ov.handlers = &http_message_object_handlers;
@@ -360,8 +361,14 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 
 zend_object_value _http_message_object_clone_obj(zval *this_ptr TSRMLS_DC)
 {
-	getObject(http_message_object, obj);
-	return http_message_object_new_ex(Z_OBJCE_P(this_ptr), http_message_dup(obj->message), NULL);
+	zend_object_value new_ov;
+	http_message_object *new_obj = NULL;
+	getObject(http_message_object, old_obj);
+	
+	new_ov = http_message_object_new_ex(old_obj->zo.ce, http_message_dup(old_obj->message), &new_obj);
+	zend_objects_clone_members(&new_obj->zo, new_ov, &old_obj->zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
+	
+	return new_ov;
 }
 
 void _http_message_object_free(zend_object *object TSRMLS_DC)

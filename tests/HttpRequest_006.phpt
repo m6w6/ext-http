@@ -24,20 +24,6 @@ echo "Done\n";
 object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
   int(2)
-  ["httpVersion:protected"]=>
-  float(1.1)
-  ["responseCode:protected"]=>
-  int(200)
-  ["responseStatus:protected"]=>
-  string(2) "OK"
-  ["requestMethod:protected"]=>
-  string(0) ""
-  ["requestUrl:protected"]=>
-  string(0) ""
-  ["headers:protected"]=>
-  array(6) {
-    %s
-  }
   ["body:protected"]=>
   string(309) "string(294) "<?xml version="1.0" encoding="iso-8859-1"?>
 <methodCall>
@@ -59,26 +45,26 @@ object(HttpMessage)#%d (%d) {
 </methodCall>
 "
 "
+  ["requestMethod:protected"]=>
+  string(0) ""
+  ["requestUrl:protected"]=>
+  string(0) ""
+  ["responseStatus:protected"]=>
+  string(2) "OK"
+  ["responseCode:protected"]=>
+  int(200)
+  ["httpVersion:protected"]=>
+  float(1.1)
+  ["headers:protected"]=>
+  array(6) {
+    %s
+  }
   ["parentMessage:protected"]=>
   NULL
 }
 object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
   int(2)
-  ["httpVersion:protected"]=>
-  float(1.1)
-  ["responseCode:protected"]=>
-  int(200)
-  ["responseStatus:protected"]=>
-  string(2) "OK"
-  ["requestMethod:protected"]=>
-  string(0) ""
-  ["requestUrl:protected"]=>
-  string(0) ""
-  ["headers:protected"]=>
-  array(6) {
-    %s
-  }
   ["body:protected"]=>
   string(309) "string(294) "<?xml version="1.0" encoding="iso-8859-1"?>
 <methodCall>
@@ -100,26 +86,26 @@ object(HttpMessage)#%d (%d) {
 </methodCall>
 "
 "
+  ["requestMethod:protected"]=>
+  string(0) ""
+  ["requestUrl:protected"]=>
+  string(0) ""
+  ["responseStatus:protected"]=>
+  string(2) "OK"
+  ["responseCode:protected"]=>
+  int(200)
+  ["httpVersion:protected"]=>
+  float(1.1)
+  ["headers:protected"]=>
+  array(6) {
+    %s
+  }
   ["parentMessage:protected"]=>
   NULL
 }
 object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
   int(2)
-  ["httpVersion:protected"]=>
-  float(1.1)
-  ["responseCode:protected"]=>
-  int(200)
-  ["responseStatus:protected"]=>
-  string(2) "OK"
-  ["requestMethod:protected"]=>
-  string(0) ""
-  ["requestUrl:protected"]=>
-  string(0) ""
-  ["headers:protected"]=>
-  array(6) {
-    %s
-  }
   ["body:protected"]=>
   string(309) "string(294) "<?xml version="1.0" encoding="iso-8859-1"?>
 <methodCall>
@@ -141,6 +127,20 @@ object(HttpMessage)#%d (%d) {
 </methodCall>
 "
 "
+  ["requestMethod:protected"]=>
+  string(0) ""
+  ["requestUrl:protected"]=>
+  string(0) ""
+  ["responseStatus:protected"]=>
+  string(2) "OK"
+  ["responseCode:protected"]=>
+  int(200)
+  ["httpVersion:protected"]=>
+  float(1.1)
+  ["headers:protected"]=>
+  array(6) {
+    %s
+  }
   ["parentMessage:protected"]=>
   NULL
 }

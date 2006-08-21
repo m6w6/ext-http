@@ -449,18 +449,16 @@ zend_object_value _http_request_object_new_ex(zend_class_entry *ce, CURL *ch, ht
 
 zend_object_value _http_request_object_clone_obj(zval *this_ptr TSRMLS_DC)
 {
-	zend_object *old_zo;
 	zend_object_value new_ov;
 	http_request_object *new_obj;
 	getObject(http_request_object, old_obj);
 	
-	old_zo = zend_objects_get_address(this_ptr TSRMLS_CC);
-	new_ov = http_request_object_new_ex(old_zo->ce, NULL, &new_obj);
+	new_ov = http_request_object_new_ex(old_obj->zo.ce, NULL, &new_obj);
 	if (old_obj->request->ch) {
 		http_curl_init_ex(curl_easy_duphandle(old_obj->request->ch), new_obj->request);
 	}
 	
-	zend_objects_clone_members(&new_obj->zo, new_ov, old_zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
+	zend_objects_clone_members(&new_obj->zo, new_ov, &old_obj->zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
 	phpstr_append(&new_obj->request->conv.request, old_obj->request->conv.request.data, old_obj->request->conv.request.used);
 	phpstr_append(&new_obj->request->conv.response, old_obj->request->conv.response.data, old_obj->request->conv.response.used);
 	

@@ -46,23 +46,23 @@ X
 object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
   int(2)
-  ["httpVersion:protected"]=>
-  float(1.1)
-  ["responseCode:protected"]=>
-  int(200)
-  ["responseStatus:protected"]=>
-  string(2) "Ok"
+  ["body:protected"]=>
+  string(0) ""
   ["requestMethod:protected"]=>
   string(0) ""
   ["requestUrl:protected"]=>
   string(0) ""
+  ["responseStatus:protected"]=>
+  string(2) "Ok"
+  ["responseCode:protected"]=>
+  int(200)
+  ["httpVersion:protected"]=>
+  float(1.1)
   ["headers:protected"]=>
   array(1) {
     ["Server"]=>
     string(9) "Funky/1.0"
   }
-  ["body:protected"]=>
-  string(0) ""
   ["parentMessage:protected"]=>
   NULL
 }

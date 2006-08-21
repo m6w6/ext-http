@@ -4,6 +4,10 @@ extending HttpRequestPool
 <?php
 include 'skip.inc';
 checkcls('HttpRequestPool');
+checkurl('ch.php.net');
+checkurl('at.php.net');
+checkurl('de.php.net');
+checkurl('www.php.net');
 ?>
 --FILE--
 <?php

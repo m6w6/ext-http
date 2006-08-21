@@ -90,7 +90,8 @@ zend_object_value _http_inflatestream_object_new_ex(zend_class_entry *ce, http_e
 	}
 
 	ALLOC_HASHTABLE(OBJ_PROP(o));
-	zend_hash_init(OBJ_PROP(o), 0, NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 
 	ov.handle = putObject(http_inflatestream_object, o);
 	ov.handlers = &http_inflatestream_object_handlers;
@@ -101,14 +102,19 @@ zend_object_value _http_inflatestream_object_new_ex(zend_class_entry *ce, http_e
 zend_object_value _http_inflatestream_object_clone_obj(zval *this_ptr TSRMLS_DC)
 {
 	http_encoding_stream *s;
-	getObject(http_inflatestream_object, obj);
+	zend_object_value new_ov;
+	http_inflatestream_object *new_obj = NULL;
+	getObject(http_inflatestream_object, old_obj);
 	
 	s = ecalloc(1, sizeof(http_encoding_stream));
-	s->flags = obj->stream->flags;
-	inflateCopy(&s->stream, &obj->stream->stream);
+	s->flags = old_obj->stream->flags;
+	inflateCopy(&s->stream, &old_obj->stream->stream);
 	s->stream.opaque = phpstr_dup(s->stream.opaque);
 	
-	return http_inflatestream_object_new_ex(Z_OBJCE_P(this_ptr), s, NULL);
+	new_ov = http_inflatestream_object_new_ex(old_obj->zo.ce, s, &new_obj);
+	zend_objects_clone_members(&new_obj->zo, new_ov, &old_obj->zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
+	
+	return new_ov;
 }
 
 void _http_inflatestream_object_free(zend_object *object TSRMLS_DC)
