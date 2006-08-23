@@ -260,7 +260,7 @@ PHP_HTTP_API STATUS _http_request_method_unregister(int method TSRMLS_DC)
 	if (	(HTTP_CUSTOM_REQUEST_METHOD(method) < 0) ||
 			(HTTP_CUSTOM_REQUEST_METHOD(method) > HTTP_G->request.methods.custom.count) ||
 			(!ptr[HTTP_CUSTOM_REQUEST_METHOD(method)])) {
-		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Custom request method with id %lu does not exist", method);
+		http_error_ex(HE_NOTICE, HTTP_E_REQUEST_METHOD, "Custom request method with id %d does not exist", method);
 		return FAILURE;
 	}
 	

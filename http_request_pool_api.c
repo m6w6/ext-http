@@ -136,20 +136,11 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 }
 /* }}} */
 
-/* {{{ void http_request_pool_detach_all(http_request_pool *) */
-PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_DC)
+/* {{{ void http_request_pool_apply(http_request_pool *, http_request_pool_apply_func) */
+PHP_HTTP_API void _http_request_pool_apply(http_request_pool *pool, http_request_pool_apply_func cb TSRMLS_DC)
 {
 	int count = zend_llist_count(&pool->handles);
 	
-#if HTTP_DEBUG_REQPOOLS
-	fprintf(stderr, "Detaching %d requests from pool %p\n", count, pool);
-#endif
-	
-	/*
-	 * we cannot apply a function to the llist which actually detaches
-	 * the curl handle *and* removes the llist element --
-	 * so let's get our hands dirty
-	 */
 	if (count) {
 		int i = 0;
 		zend_llist_position pos;
@@ -166,11 +157,54 @@ PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_D
 		}
 		
 		for (i = 0; i < count; ++i) {
-			http_request_pool_detach(pool, handles[i]);
+			if (cb(pool, handles[i] TSRMLS_CC)) {
+				break;
+			}
 		}
 		efree(handles);
 	}
 }
+/* }}} */
+
+/* {{{ void http_request_pool_apply_with_arg(http_request_pool *, http_request_pool_apply_with_arg_func, void *) */
+PHP_HTTP_API void _http_request_pool_apply_with_arg(http_request_pool *pool, http_request_pool_apply_with_arg_func cb, void *arg TSRMLS_DC)
+{
+	int count = zend_llist_count(&pool->handles);
+	
+	if (count) {
+		int i = 0;
+		zend_llist_position pos;
+		zval **handle, **handles = emalloc(count * sizeof(zval *));
+
+		for (handle = zend_llist_get_first_ex(&pool->handles, &pos); handle; handle = zend_llist_get_next_ex(&pool->handles, &pos)) {
+			handles[i++] = *handle;
+		}
+		
+		/* should never happen */
+		if (i != count) {
+			zend_error(E_ERROR, "number of fetched request handles do not match overall count");
+			count = i;
+		}
+		
+		for (i = 0; i < count; ++i) {
+			if (cb(pool, handles[i], arg TSRMLS_CC)) {
+				break;
+			}
+		}
+		efree(handles);
+	}
+}
+/* }}} */
+
+/* {{{ void http_request_pool_detach_all(http_request_pool *) */
+PHP_HTTP_API void _http_request_pool_detach_all(http_request_pool *pool TSRMLS_DC)
+{
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "Detaching %d requests from pool %p\n", zend_llist_count(&pool->handles), pool);
+#endif
+	http_request_pool_apply(pool, _http_request_pool_detach);
+}
+/* }}} */
 
 /* {{{ STATUS http_request_pool_send(http_request_pool *) */
 PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
@@ -179,7 +213,7 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 	fprintf(stderr, "Attempt to send %d requests of pool %p\n", zend_llist_count(&pool->handles), pool);
 #endif
 	
-	while (http_request_pool_perform(pool)) {
+	while (http_request_pool_perform(pool, 0)) {
 		if (SUCCESS != http_request_pool_select(pool)) {
 #ifdef PHP_WIN32
 			http_error(HE_WARNING, HTTP_E_SOCKET, WSAGetLastError());
@@ -239,7 +273,7 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 /* }}} */
 
 /* {{{ int http_request_pool_perform(http_request_pool *) */
-PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
+PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool, int once TSRMLS_DC)
 {
 	CURLMsg *msg;
 	int remaining = 0;
@@ -248,39 +282,43 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 	
 	while ((msg = curl_multi_info_read(pool->ch, &remaining))) {
 		if (CURLMSG_DONE == msg->msg) {
-			if (CURLE_OK != msg->data.result) {
+				if (CURLE_OK != msg->data.result) {
+					http_request_pool_try {
+						http_request *r = NULL;
+						curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &r);
+						http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(msg->data.result), r?r->_error:"", r?r->url:"");
+					} http_request_pool_catch();
+				}
 				http_request_pool_try {
-					http_request *r = NULL;
-					curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &r);
-					http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(msg->data.result), r?r->_error:"", r?r->url:"");
+					http_request_pool_apply_with_arg(pool, _http_request_pool_responsehandler, msg->easy_handle);
 				} http_request_pool_catch();
-			}
-			http_request_pool_try {
-				zend_llist_apply_with_argument(&pool->handles, (llist_apply_with_arg_func_t) http_request_pool_responsehandler, msg->easy_handle TSRMLS_CC);
-			} http_request_pool_catch();
 		}
 	}
-	http_request_pool_final();
+	if (once || !pool->unfinished) {
+		http_request_pool_final();
+	}
 	
 	return pool->unfinished;
 }
 /* }}} */
 
-/* {{{ void http_request_pool_responsehandler(zval **) */
-void _http_request_pool_responsehandler(zval **req, CURL *ch TSRMLS_DC)
+/* {{{ void http_request_pool_responsehandler(http_request_pool *, zval *, void *) */
+int _http_request_pool_responsehandler(http_request_pool *pool, zval *req, void *ch TSRMLS_DC)
 {
-	getObjectEx(http_request_object, obj, *req);
+	getObjectEx(http_request_object, obj, req);
 	
-	if (obj->request->ch == ch) {
+	if ((!ch) || obj->request->ch == (CURL *) ch) {
 		
 #if HTTP_DEBUG_REQPOOLS
-		fprintf(stderr, "Fetching data from HttpRequest(#%d) %p of pool %p\n", Z_OBJ_HANDLE_PP(req), obj, obj->pool);
+		fprintf(stderr, "Fetching data from HttpRequest(#%d) %p of pool %p\n", Z_OBJ_HANDLE_P(req), obj, obj->pool);
 #endif
 		
-		ZVAL_ADDREF(*req);
-		zend_llist_add_element(&obj->pool->finished, req);
-		http_request_object_responsehandler(obj, *req);
+		ZVAL_ADDREF(req);
+		zend_llist_add_element(&obj->pool->finished, &req);
+		http_request_object_responsehandler(obj, req);
+		return 1;
 	}
+	return 0;
 }
 /* }}} */
 

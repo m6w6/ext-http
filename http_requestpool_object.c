@@ -353,7 +353,7 @@ PHP_METHOD(HttpRequestPool, socketPerform)
 
 	NO_ARGS;
 
-	if (0 < http_request_pool_perform(&obj->pool)) {
+	if (0 < http_request_pool_perform(&obj->pool, 1)) {
 		RETURN_TRUE;
 	} else {
 		RETURN_FALSE;

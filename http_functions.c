@@ -1983,8 +1983,22 @@ PHP_FUNCTION(http_support)
 }
 /* }}} */
 
+#include "zend_exceptions.h"
 PHP_FUNCTION(http_test)
 {
+	int i;
+	
+	for (i = 0; i < 3; ++i) {
+		http_try {
+			fprintf(stderr, "Throwing Ex %d\n", i);
+			http_error_ex(HE_THROW, HTTP_E_RUNTIME, "Ex %d", i);
+			http_try {
+				fprintf(stderr, "Throwing SubEx %d\n", i);
+				http_error_ex(HE_THROW, HTTP_E_RUNTIME, "SubEx %d", i);
+			} http_catch(ZEND_EXCEPTION_GET_DEFAULT());
+		} http_catch(ZEND_EXCEPTION_GET_DEFAULT());
+	}
+	http_final(ZEND_EXCEPTION_GET_DEFAULT());
 }
 
 /*
