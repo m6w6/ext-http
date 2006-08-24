@@ -113,34 +113,15 @@ void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...)
 /* }}} */
 
 #ifdef ZEND_ENGINE_2
-/* {{{ zval *http_exception_wrap(zval *, zval *, zend_class_entry *) */
-zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend_class_entry *ce TSRMLS_DC)
+static inline void copy_bt_args(zval *from, zval *to TSRMLS_DC)
 {
-	zval **args, **trace_0, *old_trace_0, *trace = NULL, *sub_exception, *tmp_exception;
+	zval **args, **trace_0, *old_trace_0, *trace = NULL;
 	
-	if (!new_exception) {
-		MAKE_STD_ZVAL(tmp_exception);
-		object_init_ex(tmp_exception, ce);
-		zend_update_property_string(ZEND_EXCEPTION_GET_DEFAULT(), tmp_exception, "message", lenof("message"), "Exception caused by inner exception(s)" TSRMLS_CC);
-		new_exception = tmp_exception;
-	} else {
-		sub_exception = new_exception;
-		tmp_exception = new_exception;
-		while ((tmp_exception = zend_read_property(Z_OBJCE_P(tmp_exception), tmp_exception, "innerException", lenof("innerException"), 0 TSRMLS_CC)) && Z_TYPE_P(tmp_exception) == IS_OBJECT) {
-			sub_exception = tmp_exception;
-		}
-		tmp_exception = new_exception;
-		new_exception = sub_exception;
-	}
-	
-	zend_update_property(Z_OBJCE_P(new_exception), new_exception, "innerException", lenof("innerException"), old_exception TSRMLS_CC);
-	
-	/* copy bt arguments */
-	if ((trace = zend_read_property(ZEND_EXCEPTION_GET_DEFAULT(), old_exception, "trace", lenof("trace"), 0 TSRMLS_CC))) {
+	if ((trace = zend_read_property(ZEND_EXCEPTION_GET_DEFAULT(), from, "trace", lenof("trace"), 0 TSRMLS_CC))) {
 		if (Z_TYPE_P(trace) == IS_ARRAY && SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void *) &trace_0)) {
 			old_trace_0 = *trace_0;
 			if (Z_TYPE_PP(trace_0) == IS_ARRAY && SUCCESS == zend_hash_find(Z_ARRVAL_PP(trace_0), "args", sizeof("args"), (void *) &args)) {
-				if ((trace = zend_read_property(ZEND_EXCEPTION_GET_DEFAULT(), new_exception, "trace", lenof("trace"), 0 TSRMLS_CC))) {
+				if ((trace = zend_read_property(ZEND_EXCEPTION_GET_DEFAULT(), to, "trace", lenof("trace"), 0 TSRMLS_CC))) {
 					if (Z_TYPE_P(trace) == IS_ARRAY && SUCCESS == zend_hash_index_find(Z_ARRVAL_P(trace), 0, (void *) &trace_0)) {
 						ZVAL_ADDREF(*args);
 						add_assoc_zval(*trace_0, "args", *args);
@@ -149,9 +130,46 @@ zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend_class_
 			}
 		}
 	}
+}
+
+/* {{{ zval *http_exception_wrap(zval *, zval *, zend_class_entry *) */
+zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend_class_entry *ce TSRMLS_DC)
+{
+	int inner = 1;
+	char *message;
+	zval *sub_exception, *tmp_exception;
+	
+	if (!new_exception) {
+		MAKE_STD_ZVAL(new_exception);
+		object_init_ex(new_exception, ce);
+		
+		zend_update_property(ce, new_exception, "innerException", lenof("innerException"), old_exception TSRMLS_CC);
+		copy_bt_args(old_exception, new_exception TSRMLS_CC);
+		
+		sub_exception = old_exception;
+		
+		while ((sub_exception = zend_read_property(Z_OBJCE_P(sub_exception), sub_exception, "innerException", lenof("innerException"), 0 TSRMLS_CC)) && Z_TYPE_P(sub_exception) == IS_OBJECT) {
+			++inner;
+		}
+		
+		spprintf(&message, 0, "Exception caused by %d inner exception(s)", inner);
+		zend_update_property_string(ZEND_EXCEPTION_GET_DEFAULT(), new_exception, "message", lenof("message"), message TSRMLS_CC);
+		efree(message);
+	} else {
+		sub_exception = new_exception;
+		tmp_exception = new_exception;
+		
+		while ((tmp_exception = zend_read_property(Z_OBJCE_P(tmp_exception), tmp_exception, "innerException", lenof("innerException"), 0 TSRMLS_CC)) && Z_TYPE_P(tmp_exception) == IS_OBJECT) {
+			sub_exception = tmp_exception;
+		}
+		
+		zend_update_property(Z_OBJCE_P(sub_exception), sub_exception, "innerException", lenof("innerException"), old_exception TSRMLS_CC);
+		copy_bt_args(old_exception, new_exception TSRMLS_CC);
+		copy_bt_args(old_exception, sub_exception TSRMLS_CC);
+	}
 	
 	zval_ptr_dtor(&old_exception);
-	return tmp_exception;
+	return new_exception;
 }
 /* }}} */
 #endif /* ZEND_ENGINE_2 */
