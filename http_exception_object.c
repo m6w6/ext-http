@@ -16,6 +16,7 @@
 
 #ifdef ZEND_ENGINE_2
 
+#include "zend_interfaces.h"
 #include "php_http_exception_object.h"
 
 zend_class_entry *http_exception_object_ce;
@@ -33,9 +34,21 @@ zend_class_entry *HTTP_EX_CE(response);
 zend_class_entry *HTTP_EX_CE(url);
 zend_class_entry *HTTP_EX_CE(querystring);
 
+#define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpException, method, 0)
+#define HTTP_EXCEPTION_ME(method, visibility)	PHP_ME(HttpException, method, HTTP_ARGS(HttpException, method), visibility)
+
+HTTP_EMPTY_ARGS(__toString);
+
+#define OBJ_PROP_CE http_deflatestream_object_ce
+zend_function_entry http_exception_object_fe[] = {
+	HTTP_EXCEPTION_ME(__toString, ZEND_ACC_PUBLIC)
+	
+	EMPTY_FUNCTION_ENTRY
+};
+
 PHP_MINIT_FUNCTION(http_exception_object)
 {
-	HTTP_REGISTER_EXCEPTION(HttpException, http_exception_object_ce, ZEND_EXCEPTION_GET_DEFAULT());
+	HTTP_REGISTER_CLASS(HttpException, http_exception_object, ZEND_EXCEPTION_GET_DEFAULT(), 0);
 	
 	zend_declare_property_null(HTTP_EX_DEF_CE, "innerException", lenof("innerException"), ZEND_ACC_PUBLIC TSRMLS_CC);
 	
@@ -98,6 +111,44 @@ zend_class_entry *_http_exception_get_for_code(long code)
 	return ex;
 }
 
+PHP_METHOD(HttpException, __toString)
+{
+	phpstr full_str;
+	zend_class_entry *ce;
+	zval *zobj = getThis(), *retval = NULL, *m, *f, *l;
+	
+	phpstr_init(&full_str);
+	
+	do {
+		ce = Z_OBJCE_P(zobj);
+		
+		if (zobj != getThis()) {
+			phpstr_appends(&full_str, " inner ");
+		}
+		
+		m = zend_read_property(ce, zobj, "message", lenof("message"), 0 TSRMLS_CC);
+		f = zend_read_property(ce, zobj, "file", lenof("file"), 0 TSRMLS_CC);
+		l = zend_read_property(ce, zobj, "line", lenof("line"), 0 TSRMLS_CC);
+		
+		if (m && f && l && Z_TYPE_P(m) == IS_STRING && Z_TYPE_P(f) == IS_STRING && Z_TYPE_P(l) == IS_LONG) {
+			phpstr_appendf(&full_str, "exception '%.*s' with message '%.*s' in %.*s:%ld" PHP_EOL,
+				ce->name_length, ce->name, Z_STRLEN_P(m), Z_STRVAL_P(m), Z_STRLEN_P(f), Z_STRVAL_P(f), Z_LVAL_P(l)
+			);
+		} else {
+			break;
+		}
+		
+		zobj = zend_read_property(ce, zobj, "innerException", lenof("innerException"), 0 TSRMLS_CC);
+	} while (Z_TYPE_P(zobj) == IS_OBJECT);
+	
+	if (zend_call_method_with_0_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "gettraceasstring", &retval) && Z_TYPE_P(retval) == IS_STRING) {
+		phpstr_appends(&full_str, "Stack trace:" PHP_EOL);
+		phpstr_append(&full_str, Z_STRVAL_P(retval), Z_STRLEN_P(retval));
+		zval_ptr_dtor(&retval);
+	}
+	
+	RETURN_PHPSTR_VAL(&full_str);
+}
 #endif
 
 /*

@@ -216,7 +216,8 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 	while (http_request_pool_perform(pool, 0)) {
 		if (SUCCESS != http_request_pool_select(pool)) {
 #ifdef PHP_WIN32
-			http_error(HE_WARNING, HTTP_E_SOCKET, WSAGetLastError());
+			/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
+			http_error_ex(HE_WARNING, HTTP_E_SOCKET, "WinSock error: %d", WSAGetLastError());
 #else
 			http_error(HE_WARNING, HTTP_E_SOCKET, strerror(errno));
 #endif

@@ -32,11 +32,11 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-HttpRequestPoolException: Exception caused by inner exception(s)
+HttpRequestPoolException: Exception caused by 2 inner exception(s)
 	HttpInvalidParamException: Empty or too short HTTP message: ''
 		HttpRequestException: couldn't resolve host name; Couldn't resolve host '_____' (http://_____/)
 int(3)
-HttpRequestPoolException: Exception caused by inner exception(s)
+HttpRequestPoolException: Exception caused by 4 inner exception(s)
 	HttpInvalidParamException: Empty or too short HTTP message: ''
 		HttpRequestException: couldn't resolve host name; Couldn't resolve host '_____' (http://_____/)
 			HttpInvalidParamException: Empty or too short HTTP message: ''

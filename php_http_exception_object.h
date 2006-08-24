@@ -44,6 +44,8 @@ extern zend_class_entry *_http_exception_get_default();
 #define http_exception_get_for_code(c) _http_exception_get_for_code(c)
 extern zend_class_entry *_http_exception_get_for_code(long code);
 
+PHP_METHOD(HttpException, __toString);
+
 #endif
 #endif
 
