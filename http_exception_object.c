@@ -16,7 +16,12 @@
 
 #ifdef ZEND_ENGINE_2
 
+#ifndef HTTP_DBG_EXCEPTIONS
+#	define HTTP_DBG_EXCEPTIONS 0
+#endif
+
 #include "zend_interfaces.h"
+#include "zend_exceptions.h"
 #include "php_http_exception_object.h"
 
 zend_class_entry *http_exception_object_ce;
@@ -34,17 +39,28 @@ zend_class_entry *HTTP_EX_CE(response);
 zend_class_entry *HTTP_EX_CE(url);
 zend_class_entry *HTTP_EX_CE(querystring);
 
-#define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpException, method, 0)
+#define HTTP_EMPTY_ARGS(method)					HTTP_EMPTY_ARGS_EX(HttpException, method, 0)
 #define HTTP_EXCEPTION_ME(method, visibility)	PHP_ME(HttpException, method, HTTP_ARGS(HttpException, method), visibility)
 
 HTTP_EMPTY_ARGS(__toString);
 
-#define OBJ_PROP_CE http_deflatestream_object_ce
 zend_function_entry http_exception_object_fe[] = {
 	HTTP_EXCEPTION_ME(__toString, ZEND_ACC_PUBLIC)
 	
 	EMPTY_FUNCTION_ENTRY
 };
+
+#if HTTP_DBG_EXCEPTIONS
+static void http_exception_hook(zval *ex TSRMLS_DC)
+{
+	if (ex) {
+		zval *m = zend_read_property(Z_OBJCE_P(ex), ex, "message", lenof("message"), 0 TSRMLS_CC);
+		fprintf(stderr, "*** Threw exception '%s'\n", Z_STRVAL_P(m));
+	} else {
+		fprintf(stderr, "*** Threw NULL exception\n");
+	}
+}
+#endif
 
 PHP_MINIT_FUNCTION(http_exception_object)
 {
@@ -79,6 +95,10 @@ PHP_MINIT_FUNCTION(http_exception_object)
 	HTTP_LONG_CONSTANT("HTTP_E_RESPONSE", HTTP_E_RESPONSE);
 	HTTP_LONG_CONSTANT("HTTP_E_URL", HTTP_E_URL);
 	HTTP_LONG_CONSTANT("HTTP_E_QUERYSTRING", HTTP_E_QUERYSTRING);
+	
+#if HTTP_DBG_EXCEPTIONS
+	zend_throw_exception_hook=http_exception_hook;
+#endif
 	
 	return SUCCESS;
 }
@@ -122,15 +142,15 @@ PHP_METHOD(HttpException, __toString)
 	do {
 		ce = Z_OBJCE_P(zobj);
 		
-		if (zobj != getThis()) {
-			phpstr_appends(&full_str, " inner ");
-		}
-		
 		m = zend_read_property(ce, zobj, "message", lenof("message"), 0 TSRMLS_CC);
 		f = zend_read_property(ce, zobj, "file", lenof("file"), 0 TSRMLS_CC);
 		l = zend_read_property(ce, zobj, "line", lenof("line"), 0 TSRMLS_CC);
 		
 		if (m && f && l && Z_TYPE_P(m) == IS_STRING && Z_TYPE_P(f) == IS_STRING && Z_TYPE_P(l) == IS_LONG) {
+			if (zobj != getThis()) {
+				phpstr_appends(&full_str, " inner ");
+			}
+		
 			phpstr_appendf(&full_str, "exception '%.*s' with message '%.*s' in %.*s:%ld" PHP_EOL,
 				ce->name_length, ce->name, Z_STRLEN_P(m), Z_STRVAL_P(m), Z_STRLEN_P(f), Z_STRVAL_P(f), Z_LVAL_P(l)
 			);
@@ -149,6 +169,7 @@ PHP_METHOD(HttpException, __toString)
 	
 	RETURN_PHPSTR_VAL(&full_str);
 }
+
 #endif
 
 /*

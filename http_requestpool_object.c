@@ -194,15 +194,13 @@ PHP_METHOD(HttpRequestPool, __construct)
 
 		for (i = 0; i < argc; ++i) {
 			if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), http_request_object_ce TSRMLS_CC)) {
-				http_request_pool_try {
-					http_request_pool_attach(&obj->pool, *(argv[i]));
-				} http_request_pool_catch();
+				http_request_pool_attach(&obj->pool, *(argv[i]));
 			}
 		}
-		http_request_pool_final();
 	}
 	efree(argv);
 	SET_EH_NORMAL();
+	http_final(HTTP_EX_CE(request_pool));
 }
 /* }}} */
 
@@ -311,6 +309,9 @@ PHP_METHOD(HttpRequestPool, send)
 	SET_EH_THROW_HTTP();
 	status = http_request_pool_send(&obj->pool);
 	SET_EH_NORMAL();
+	
+	/* rethrow as HttpRequestPoolException */
+	http_final(HTTP_EX_CE(request_pool));
 
 	RETURN_SUCCESS(status);
 }
@@ -353,7 +354,7 @@ PHP_METHOD(HttpRequestPool, socketPerform)
 
 	NO_ARGS;
 
-	if (0 < http_request_pool_perform(&obj->pool, 1)) {
+	if (0 < http_request_pool_perform(&obj->pool)) {
 		RETURN_TRUE;
 	} else {
 		RETURN_FALSE;

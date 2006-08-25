@@ -899,7 +899,9 @@ static int http_curl_progress_callback(void *ctx, double dltotal, double dlnow, 
 	add_assoc_double(param, "ulnow", ulnow);
 	
 	with_error_handling(EH_NORMAL, NULL) {
+		request->_in_progress_cb = 1;
 		call_user_function(EG(function_table), NULL, request->_progress_callback, &retval, 1, &param TSRMLS_CC);
+		request->_in_progress_cb = 0;
 	} end_error_handling();
 	
 	zval_ptr_dtor(&param);

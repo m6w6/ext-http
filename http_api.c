@@ -96,15 +96,15 @@ void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...)
 	
 	va_start(args, format);
 #ifdef ZEND_ENGINE_2
-		if ((type == E_THROW) || (PG(error_handling) == EH_THROW)) {
-			char *message;
-			zend_class_entry *ce = http_exception_get_for_code(code);
-			
-			http_try {
-				vspprintf(&message, 0, format, args);
-				zend_throw_exception(ce, message, code TSRMLS_CC);
-				efree(message);
-			} http_catch(ce);
+	if ((type == E_THROW) || (PG(error_handling) == EH_THROW)) {
+		char *message;
+		zend_class_entry *ce = http_exception_get_for_code(code);
+		
+		http_try {
+			vspprintf(&message, 0, format, args);
+			zend_throw_exception(ce, message, code TSRMLS_CC);
+			efree(message);
+		} http_catch(PG(exception_class) ? PG(exception_class) : HTTP_EX_DEF_CE);
 	} else
 #endif
 	php_verror(NULL, "", type, format, args TSRMLS_CC);

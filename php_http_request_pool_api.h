@@ -29,10 +29,6 @@ typedef int (*http_request_pool_apply_with_arg_func)(http_request_pool *pool, zv
 #define http_request_pool_responsehandler(p, r, c) _http_request_pool_responsehandler((p), (r), (c) TSRMLS_CC)
 extern int _http_request_pool_responsehandler(http_request_pool *pool, zval *req, void *ch TSRMLS_DC);
 
-#define http_request_pool_try http_try
-#define http_request_pool_catch() http_catch(HTTP_EX_CE(request_pool))
-#define http_request_pool_final() http_final(HTTP_EX_CE(request_pool))
-
 #define http_request_pool_init(p) _http_request_pool_init((p) TSRMLS_CC)
 PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool TSRMLS_DC);
 
@@ -57,8 +53,8 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC);
 #define http_request_pool_select _http_request_pool_select
 PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool);
 
-#define http_request_pool_perform(p, o) _http_request_pool_perform((p), (o) TSRMLS_CC)
-PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool, int once TSRMLS_DC);
+#define http_request_pool_perform(p) _http_request_pool_perform((p) TSRMLS_CC)
+PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC);
 
 #define http_request_pool_dtor(p) _http_request_pool_dtor((p) TSRMLS_CC)
 PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC);

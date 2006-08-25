@@ -80,12 +80,12 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 	if (req->pool) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "HttpRequest object(#%d) is already member of %s HttpRequestPool", Z_OBJ_HANDLE_P(request), req->pool == pool ? "this" : "another");
 	} else if (SUCCESS != http_request_object_requesthandler(req, request)) {
-		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not initialize HttpRequest object for attaching to the HttpRequestPool");
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not initialize HttpRequest object(#%d) for attaching to the HttpRequestPool", Z_OBJ_HANDLE_P(request));
 	} else {
 		CURLMcode code = curl_multi_add_handle(pool->ch, req->request->ch);
 
 		if ((CURLM_OK != code) && (CURLM_CALL_MULTI_PERFORM != code)) {
-			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not attach HttpRequest object to the HttpRequestPool: %s", curl_multi_strerror(code));
+			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not attach HttpRequest object(#%d) to the HttpRequestPool: %s", Z_OBJ_HANDLE_P(request), curl_multi_strerror(code));
 		} else {
 			req->pool = pool;
 
@@ -119,8 +119,10 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 #endif
 	} else if (req->pool != pool) {
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "HttpRequest object(#%d) is not attached to this HttpRequestPool", Z_OBJ_HANDLE_P(request));
+	} else if (req->request->_in_progress_cb) {
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "HttpRequest object(#%d) cannot be detached from the HttpRequestPool while executing the progress callback", Z_OBJ_HANDLE_P(request));
 	} else if (CURLM_OK != (code = curl_multi_remove_handle(pool->ch, req->request->ch))) {
-		http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not detach HttpRequest object from the HttpRequestPool: %s", curl_multi_strerror(code));
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not detach HttpRequest object(#%d) from the HttpRequestPool: %s", Z_OBJ_HANDLE_P(request), curl_multi_strerror(code));
 	} else {
 		req->pool = NULL;
 		zend_llist_del_element(&pool->finished, request, http_request_pool_compare_handles);
@@ -213,7 +215,7 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool TSRMLS_DC)
 	fprintf(stderr, "Attempt to send %d requests of pool %p\n", zend_llist_count(&pool->handles), pool);
 #endif
 	
-	while (http_request_pool_perform(pool, 0)) {
+	while (http_request_pool_perform(pool)) {
 		if (SUCCESS != http_request_pool_select(pool)) {
 #ifdef PHP_WIN32
 			/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
@@ -274,7 +276,7 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 /* }}} */
 
 /* {{{ int http_request_pool_perform(http_request_pool *) */
-PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool, int once TSRMLS_DC)
+PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool TSRMLS_DC)
 {
 	CURLMsg *msg;
 	int remaining = 0;
@@ -284,19 +286,12 @@ PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool, int once TS
 	while ((msg = curl_multi_info_read(pool->ch, &remaining))) {
 		if (CURLMSG_DONE == msg->msg) {
 				if (CURLE_OK != msg->data.result) {
-					http_request_pool_try {
-						http_request *r = NULL;
-						curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &r);
-						http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(msg->data.result), r?r->_error:"", r?r->url:"");
-					} http_request_pool_catch();
+					http_request *r = NULL;
+					curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &r);
+					http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(msg->data.result), r?r->_error:"", r?r->url:"");
 				}
-				http_request_pool_try {
-					http_request_pool_apply_with_arg(pool, _http_request_pool_responsehandler, msg->easy_handle);
-				} http_request_pool_catch();
+				http_request_pool_apply_with_arg(pool, _http_request_pool_responsehandler, msg->easy_handle);
 		}
-	}
-	if (once || !pool->unfinished) {
-		http_request_pool_final();
 	}
 	
 	return pool->unfinished;

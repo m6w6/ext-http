@@ -54,9 +54,7 @@ extern zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend
 }
 #define http_final(ex_ce) \
 	if (EG(exception)) { \
-		zval *exception = http_exception_wrap(EG(exception), NULL, ex_ce); \
-		EG(exception) = NULL; \
-		zend_throw_exception_object(exception TSRMLS_CC); \
+		EG(exception) = http_exception_wrap(EG(exception), NULL, ex_ce); \
 	}
 #endif /* ZEND_ENGINE_2 */
 

@@ -48,6 +48,8 @@ typedef struct _http_request_t {
 	void ***tsrm_ls;
 #endif
 
+	uint _in_progress_cb:1;
+
 } http_request;
 
 #define http_curl_init(r) http_curl_init_ex(NULL, (r))
