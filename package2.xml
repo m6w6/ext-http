@@ -28,7 +28,7 @@ support. Parallel requests are available for PHP 5 and greater.
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2006-08-24</date>
+ <date>2006-08-26</date>
  <version>
   <release>1.2.1</release>
   <api>1.2.0</api>
@@ -41,10 +41,10 @@ support. Parallel requests are available for PHP 5 and greater.
  <notes><![CDATA[
 + Added HttpException::__toString() which takes care about any inner exceptions
 - Disallowed detaching HttpRequest objects from HttpRequestPool while executing progress callback
+* Fixed crash on detaching requests from pool in request event callbacks
+* Fixed suppression of nested exceptions in e.g. HttpRequestPool::send() (fixes bug #8535)
 * Fixed issues with inheritance and cloning of HttpDeflateStream, HttpInflateStream and HttpMessage
   (Extending classes lose default properties on instantiation; Complex members ignored during cloning)
-* Fixed suppression of nested exceptions in e.g. HttpRequestPool::send() (fixes bug #8535)
-* Fixed crash on detaching requests from pool in request event callbacks
 ]]></notes>
  <contents>
   <dir name="/">
