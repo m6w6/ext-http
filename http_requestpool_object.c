@@ -67,6 +67,10 @@ HTTP_EMPTY_ARGS(count);
 HTTP_EMPTY_ARGS(getAttachedRequests);
 HTTP_EMPTY_ARGS(getFinishedRequests);
 
+HTTP_BEGIN_ARGS(enablePipelining, 0)
+	HTTP_ARG_VAL(enable, 0)
+HTTP_END_ARGS;
+
 zend_class_entry *http_requestpool_object_ce;
 zend_function_entry http_requestpool_object_fe[] = {
 	HTTP_REQPOOL_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -91,6 +95,8 @@ zend_function_entry http_requestpool_object_fe[] = {
 	
 	HTTP_REQPOOL_ME(getAttachedRequests, ZEND_ACC_PUBLIC)
 	HTTP_REQPOOL_ME(getFinishedRequests, ZEND_ACC_PUBLIC)
+	
+	HTTP_REQPOOL_ME(enablePipelining, ZEND_ACC_PUBLIC)
 
 	EMPTY_FUNCTION_ENTRY
 };
@@ -514,6 +520,29 @@ PHP_METHOD(HttpRequestPool, getFinishedRequests)
 	zend_llist_apply_with_argument(&obj->pool.finished,
 		(llist_apply_with_arg_func_t) http_requestpool_object_llist2array,
 		return_value TSRMLS_CC);
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequest::enablePiplelinig([bool enable = true])
+ *
+ * Enables pipelining support for all attached requests if support in libcurl is given.
+ *
+ * Returns TRUE on success, or FALSE on failure.
+ */
+PHP_METHOD(HttpRequestPool, enablePipelining)
+{
+	zend_bool enable = 1;
+	getObject(http_requestpool_object, obj);
+	
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &enable)) {
+		RETURN_FALSE;
+	}
+#if defined(HAVE_CURL_MULTI_SETOPT) && HTTP_CURL_VERSION(7,16,0)
+	if (CURLM_OK == curl_multi_setopt(obj->pool.ch, CURLMOPT_PIPELINING, (long) enable)) {
+		RETURN_TRUE;
+	}
+#endif
+	RETURN_FALSE;
 }
 /* }}} */
 

@@ -51,6 +51,7 @@ PHP_METHOD(HttpRequestPool, rewind);
 PHP_METHOD(HttpRequestPool, count);
 PHP_METHOD(HttpRequestPool, getAttachedRequests);
 PHP_METHOD(HttpRequestPool, getFinishedRequests);
+PHP_METHOD(HttpRequestPool, enablePipelining);
 
 #endif
 #endif
