@@ -39,28 +39,8 @@ static inline void _http_flush(void *nothing, const char *data, size_t data_len 
 	fprintf(stderr, "Flushing after writing %u bytes\n", (uint) data_len);
 #endif
 	
-#define HTTP_MSEC(s) (s * 1000)
-#define HTTP_USEC(s) (HTTP_MSEC(s) * 1000)
-#define HTTP_NSEC(s) (HTTP_USEC(s) * 1000)
-#define HTTP_NANOSEC (1000 * 1000 * 1000)
-#define HTTP_DIFFSEC (0.001)
-
 	if (HTTP_G->send.throttle_delay >= HTTP_DIFFSEC) {
-#if defined(PHP_WIN32)
-		Sleep((DWORD) HTTP_MSEC(HTTP_G->send.throttle_delay));
-#elif defined(HAVE_USLEEP)
-		usleep(HTTP_USEC(HTTP_G->send.throttle_delay));
-#elif defined(HAVE_NANOSLEEP)
-		struct timespec req, rem;
-
-		req.tv_sec = (time_t) HTTP_G->send.throttle_delay;
-		req.tv_nsec = HTTP_NSEC(HTTP_G->send.throttle_delay) % HTTP_NANOSEC;
-
-		while (nanosleep(&req, &rem) && (errno == EINTR) && (HTTP_NSEC(rem.tv_sec) + rem.tv_nsec) > HTTP_NSEC(HTTP_DIFFSEC))) {
-			req.tv_sec = rem.tv_sec;
-			req.tv_nsec = rem.tv_nsec;
-		}
-#endif
+		http_sleep(HTTP_G->send.throttle_delay);
 	}
 }
 /* }}} */

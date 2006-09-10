@@ -242,6 +242,10 @@ dnl ----
 			[AC_DEFINE([HAVE_CURL_MULTI_SETOPT], [1], [ ])], [ ], 
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
 		)
+		PHP_CHECK_LIBRARY(curl, curl_multi_timeout, 
+			[AC_DEFINE([HAVE_CURL_MULTI_TIMEOUT], [1], [ ])], [ ],
+			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
+		)
 	fi
 
 dnl ----

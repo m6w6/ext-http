@@ -347,6 +347,17 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_PROXYTYPE, 0L);
 		HTTP_CURL_OPT(CURLOPT_PROXYUSERPWD, NULL);
 		HTTP_CURL_OPT(CURLOPT_PROXYAUTH, 0L);
+		HTTP_CURL_OPT(CURLOPT_DNS_CACHE_TIMEOUT, 60L);
+		HTTP_CURL_OPT(CURLOPT_LOW_SPEED_LIMIT, 0L);
+		HTTP_CURL_OPT(CURLOPT_LOW_SPEED_TIME, 0L);
+#if HTTP_CURL_VERSION(7,15,5)
+		HTTP_CURL_OPT(CURLOPT_MAX_SEND_SPEED_LARGE, (curl_off_t) 0);
+		HTTP_CURL_OPT(CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t) 0);
+#endif
+		/* crashes
+		HTTP_CURL_OPT(CURLOPT_MAXCONNECTS, 5L); */
+		HTTP_CURL_OPT(CURLOPT_FRESH_CONNECT, 0L);
+		HTTP_CURL_OPT(CURLOPT_FORBID_REUSE, 0L);
 		HTTP_CURL_OPT(CURLOPT_INTERFACE, NULL);
 		HTTP_CURL_OPT(CURLOPT_PORT, 0L);
 #if HTTP_CURL_VERSION(7,15,2)
@@ -461,6 +472,37 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		}
 	}
 
+	/* dns */
+	if ((zoption = http_request_option(request, options, "dns_cache_timeout", IS_LONG))) {
+		HTTP_CURL_OPT(CURLOPT_DNS_CACHE_TIMEOUT, Z_LVAL_P(zoption));
+	}
+	
+	/* limits */
+	if ((zoption = http_request_option(request, options, "low_speed_limit", IS_LONG))) {
+		HTTP_CURL_OPT(CURLOPT_LOW_SPEED_LIMIT, Z_LVAL_P(zoption));
+	}
+	if ((zoption = http_request_option(request, options, "low_speed_time", IS_LONG))) {
+		HTTP_CURL_OPT(CURLOPT_LOW_SPEED_TIME, Z_LVAL_P(zoption));
+	}
+#if HTTP_CURL_VERSION(7,15,5)
+	if ((zoption = http_request_option(request, options, "max_send_speed", IS_LONG))) {
+		HTTP_CURL_OPT(CURLOPT_MAX_SEND_SPEED_LARGE, (curl_off_t) Z_LVAL_P(zoption));
+	}
+	if ((zoption = http_request_option(request, options, "max_recv_speed", IS_LONG))) {
+		HTTP_CURL_OPT(CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t) Z_LVAL_P(zoption));
+	}
+#endif
+	/* crashes
+	if ((zoption = http_request_option(request, options, "maxconnects", IS_LONG))) {
+		HTTP_CURL_OPT(CURLOPT_MAXCONNECTS, Z_LVAL_P(zoption));
+	} */
+	if ((zoption = http_request_option(request, options, "fresh_connect", IS_BOOL)) && Z_BVAL_P(zoption)) {
+		HTTP_CURL_OPT(CURLOPT_FRESH_CONNECT, 1L);
+	}
+	if ((zoption = http_request_option(request, options, "forbid_reuse", IS_BOOL)) && Z_BVAL_P(zoption)) {
+		HTTP_CURL_OPT(CURLOPT_FORBID_REUSE, 1L);
+	}
+	
 	/* outgoing interface */
 	if ((zoption = http_request_option(request, options, "interface", IS_STRING))) {
 		HTTP_CURL_OPT(CURLOPT_INTERFACE, Z_STRVAL_P(zoption));
@@ -978,6 +1020,9 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 			if (data[length-1] != 0xa) {
 				fprintf(stderr, "\n");
 			}
+#endif
+#if 0
+			fprintf(stderr, "%.*s%s", length, data, data[length-1]=='\n'?"":"\n");
 #endif
 			break;
 	}

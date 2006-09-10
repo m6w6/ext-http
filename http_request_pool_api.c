@@ -261,13 +261,24 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 	int MAX;
 	fd_set R, W, E;
 	struct timeval timeout = {1, 0};
+#ifdef HAVE_CURL_MULTI_TIMEOUT
+	long max_tout = 1000;
+	
+	if (CURLM_OK == curl_multi_timeout(pool->ch, &max_tout)) {
+		timeout.tv_sec = max_tout / 1000;
+		timeout.tv_usec = (max_tout % 1000) * 1000;
+	}
+#endif
 
 	FD_ZERO(&R);
 	FD_ZERO(&W);
 	FD_ZERO(&E);
 
 	if (CURLM_OK == curl_multi_fdset(pool->ch, &R, &W, &E, &MAX)) {
-		if (MAX == -1 || SELECT_ERROR != select(MAX + 1, &R, &W, &E, &timeout)) {
+		if (MAX == -1) {
+			http_sleep((double) timeout.tv_sec + (double) (timeout.tv_usec / HTTP_MCROSEC));
+			return SUCCESS;
+		} else if (SELECT_ERROR != select(MAX + 1, &R, &W, &E, &timeout)) {
 			return SUCCESS;
 		}
 	}
