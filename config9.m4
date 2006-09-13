@@ -216,6 +216,10 @@ dnl ----
 		PHP_EVAL_LIBLINE($CURL_LIBS, HTTP_SHARED_LIBADD)
 		AC_DEFINE([HTTP_HAVE_CURL], [1], [Have cURL support])
 		
+		PHP_CHECK_LIBRARY(curl, curl_share_strerror, 
+			[AC_DEFINE([HAVE_CURL_SHARE_STRERROR], [1], [ ])], [ ],
+			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
+		)
 		PHP_CHECK_LIBRARY(curl, curl_multi_strerror, 
 			[AC_DEFINE([HAVE_CURL_MULTI_STRERROR], [1], [ ])], [ ], 
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
@@ -319,7 +323,7 @@ dnl ----
 		http_info_api.c http_request_method_api.c http_encoding_api.c \
 		http_filter_api.c http_request_body_api.c http_querystring_object.c \
 		http_deflatestream_object.c http_inflatestream_object.c http_cookie_api.c \
-		http_querystring_api.c"
+		http_querystring_api.c http_request_datashare_api.c http_requestdatashare_object.c"
 	
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, $ext_shared)
 	
@@ -338,7 +342,7 @@ dnl ----
 		php_http_exception_object.h php_http_message_object.h php_http_request_object.h \
 		php_http_requestpool_object.h php_http_response_object.h php_http_util_object.h \
 		php_http_querystring_object.h php_http_deflatestream_object.h php_http_inflatestream_object.h \
-		php_http_cookie_api.h php_http_querystring_api.h"
+		php_http_cookie_api.h php_http_querystring_api.h php_http_request_datashare_api.h php_http_requestdatashare_object.h"
 	ifdef([PHP_INSTALL_HEADERS], [
 		PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)
 	], [

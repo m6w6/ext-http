@@ -18,11 +18,13 @@
 #ifdef ZEND_ENGINE_2
 
 #include "php_http_request_pool_api.h"
+#include "php_http_request_datashare_api.h"
 
 typedef struct _http_request_object_t {
 	zend_object zo;
 	http_request *request;
 	http_request_pool *pool;
+	http_request_datashare *share;
 } http_request_object;
 
 extern zend_class_entry *http_request_object_ce;

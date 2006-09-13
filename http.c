@@ -31,6 +31,7 @@
 #include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
+#	include "php_http_request_datashare_api.h"
 #endif
 #ifdef HTTP_HAVE_ZLIB
 #	include "php_http_encoding_api.h"
@@ -48,6 +49,7 @@
 #	ifdef HTTP_HAVE_CURL
 #		include "php_http_request_object.h"
 #		include "php_http_requestpool_object.h"
+#		include "php_http_requestdatashare_object.h"
 #	endif
 #	ifdef HTTP_HAVE_ZLIB
 #		include "php_http_deflatestream_object.h"
@@ -236,6 +238,12 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.log.composite", "", PHP_INI_ALL, OnUpdateString, log.composite)
 	HTTP_PHP_INI_ENTRY("http.request.methods.allowed", "", PHP_INI_ALL, http_update_allowed_methods, request.methods.allowed)
 	HTTP_PHP_INI_ENTRY("http.request.methods.custom", "", PHP_INI_PERDIR|PHP_INI_SYSTEM, OnUpdateString, request.methods.custom.ini)
+#ifdef ZEND_ENGINE_2
+	HTTP_PHP_INI_ENTRY("http.request.datashare.cookie", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.cookie)
+	HTTP_PHP_INI_ENTRY("http.request.datashare.dns", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.dns)
+	HTTP_PHP_INI_ENTRY("http.request.datashare.sll", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.ssl)
+	HTTP_PHP_INI_ENTRY("http.request.datashare.connect", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.connect)
+#endif
 #ifdef HTTP_HAVE_ZLIB
 	HTTP_PHP_INI_ENTRY("http.send.inflate.start_auto", "0", PHP_INI_PERDIR|PHP_INI_SYSTEM, OnUpdateBool, send.inflate.start_auto)
 	HTTP_PHP_INI_ENTRY("http.send.inflate.start_flags", "0", PHP_INI_ALL, OnUpdateLong, send.inflate.start_flags)
@@ -265,6 +273,7 @@ PHP_MINIT_FUNCTION(http)
 			(SUCCESS != PHP_MINIT_CALL(http_url))		||
 #ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
+			(SUCCESS != PHP_MINIT_CALL(http_request_datashare)) ||
 #endif /* HTTP_HAVE_CURL */
 #ifdef HTTP_HAVE_ZLIB
 			(SUCCESS != PHP_MINIT_CALL(http_encoding))	||
@@ -284,6 +293,7 @@ PHP_MINIT_FUNCTION(http)
 #	ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request_object))	||
 			(SUCCESS != PHP_MINIT_CALL(http_requestpool_object))||
+			(SUCCESS != PHP_MINIT_CALL(http_requestdatashare_object))||
 #	endif /* HTTP_HAVE_CURL */
 #	ifdef HTTP_HAVE_ZLIB
 			(SUCCESS != PHP_MINIT_CALL(http_deflatestream_object))	||
@@ -303,7 +313,10 @@ PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
-	return PHP_MSHUTDOWN_CALL(http_request);
+	if (	(SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)) ||
+			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request))) {
+		return FAILURE;
+	}
 #endif
 	return SUCCESS;
 }
@@ -365,6 +378,7 @@ PHP_MINFO_FUNCTION(http)
 #	ifdef HTTP_HAVE_CURL
 			"HttpRequest, "
 			"HttpRequestPool, "
+			"HttpRequestDataShare, "
 #	endif
 #	ifdef HTTP_HAVE_ZLIB
 			"HttpDeflateStream, "

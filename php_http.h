@@ -123,6 +123,14 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 				void *entries;
 			} custom;
 		} methods;
+#ifdef ZEND_ENGINE_2
+		struct _http_globals_request_datashare {
+			zend_bool cookie;
+			zend_bool dns;
+			zend_bool ssl;
+			zend_bool connect;
+		} datashare;
+#endif
 	} request;
 
 #ifdef ZEND_ENGINE_2
