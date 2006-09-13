@@ -123,8 +123,9 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 				void *entries;
 			} custom;
 		} methods;
-#ifdef ZEND_ENGINE_2
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 		struct _http_globals_request_datashare {
+			zend_llist handles;
 			zend_bool cookie;
 			zend_bool dns;
 			zend_bool ssl;

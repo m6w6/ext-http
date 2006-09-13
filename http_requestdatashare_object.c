@@ -193,7 +193,7 @@ PHP_METHOD(HttpRequestDataShare, count)
 	
 	NO_ARGS;
 	
-	RETURN_LONG(zend_llist_count(&obj->share->handles));
+	RETURN_LONG(zend_llist_count(HTTP_RSHARE_HANDLES(obj->share)));
 }
 /* }}} */
 

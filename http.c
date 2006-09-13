@@ -336,6 +336,9 @@ PHP_RINIT_FUNCTION(http)
 #ifdef HTTP_HAVE_ZLIB	
 		||	(SUCCESS != PHP_RINIT_CALL(http_encoding))
 #endif
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
+		||	(SUCCESS != PHP_RINIT_CALL(http_request_datashare))
+#endif
 	) {
 		return FAILURE;
 	}
@@ -353,7 +356,10 @@ PHP_RSHUTDOWN_FUNCTION(http)
 #ifdef HTTP_HAVE_ZLIB
 		||	(SUCCESS != PHP_RSHUTDOWN_CALL(http_encoding))
 #endif
-	) {
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
+		||	(SUCCESS != PHP_RSHUTDOWN_CALL(http_request_datashare))
+#endif
+	   ) {
 		status = FAILURE;
 	}
 	

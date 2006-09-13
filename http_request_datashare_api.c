@@ -29,8 +29,11 @@
 static HashTable http_request_datashare_options;
 static http_request_datashare http_request_datashare_global;
 static int http_request_datashare_compare_handles(void *h1, void *h2);
+static void http_request_datashare_destroy_handles(void *el);
+#ifdef ZTS
 static void http_request_datashare_lock_func(CURL *handle, curl_lock_data data, curl_lock_access locktype, void *userptr);
 static void http_request_datashare_unlock_func(CURL *handle, curl_lock_data data, void *userptr);
+#endif
 
 http_request_datashare *_http_request_datashare_global_get(void)
 {
@@ -63,9 +66,22 @@ PHP_MSHUTDOWN_FUNCTION(http_request_datashare)
 	return SUCCESS;
 }
 
+PHP_RINIT_FUNCTION(http_request_datashare)
+{
+	zend_llist_init(&HTTP_G->request.datashare.handles, sizeof(zval *), http_request_datashare_destroy_handles, 0);
+	
+	return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION(http_request_datashare)
+{
+	zend_llist_destroy(&HTTP_G->request.datashare.handles);
+	
+	return SUCCESS;
+}
+
 PHP_HTTP_API http_request_datashare *_http_request_datashare_init_ex(http_request_datashare *share, zend_bool persistent TSRMLS_DC)
 {
-	int i;
 	zend_bool free_share;
 	
 	if ((free_share = !share)) {
@@ -81,7 +97,13 @@ PHP_HTTP_API http_request_datashare *_http_request_datashare_init_ex(http_reques
 		return NULL;
 	}
 	
-	if ((share->persistent = persistent)) {
+	if (!(share->persistent = persistent)) {
+		share->handles = emalloc(sizeof(zend_llist));
+		zend_llist_init(share->handles, sizeof(zval *), ZVAL_PTR_DTOR, 0);
+#ifdef ZTS
+	} else {
+		int i;
+		
 		share->locks = pecalloc(CURL_LOCK_DATA_LAST, sizeof(http_request_datashare_lock), 1);
 		for (i = 0; i < CURL_LOCK_DATA_LAST; ++i) {
 			share->locks[i].mx = tsrm_mutex_alloc();
@@ -89,9 +111,8 @@ PHP_HTTP_API http_request_datashare *_http_request_datashare_init_ex(http_reques
 		curl_share_setopt(share->ch, CURLSHOPT_LOCKFUNC, http_request_datashare_lock_func);
 		curl_share_setopt(share->ch, CURLSHOPT_UNLOCKFUNC, http_request_datashare_unlock_func);
 		curl_share_setopt(share->ch, CURLSHOPT_USERDATA, share);
+#endif
 	}
-	
-	zend_llist_init(&share->handles, sizeof(zval *), ZVAL_PTR_DTOR, persistent);
 	
 	return share;
 }
@@ -116,7 +137,7 @@ PHP_HTTP_API STATUS _http_request_datashare_attach(http_request_datashare *share
 	
 	obj->share = share;
 	ZVAL_ADDREF(request);
-	zend_llist_add_element(&share->handles, (void *) &request);
+	zend_llist_add_element(HTTP_RSHARE_HANDLES(share), (void *) &request);
 	
 	return SUCCESS;
 }
@@ -134,7 +155,7 @@ PHP_HTTP_API STATUS _http_request_datashare_detach(http_request_datashare *share
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not detach HttpRequest object(#%d) from the HttpRequestDataShare: %s", Z_OBJ_HANDLE_P(request), curl_share_strerror(rc));
 	} else {
 		obj->share = NULL;
-		zend_llist_del_element(&share->handles, request, http_request_datashare_compare_handles);
+		zend_llist_del_element(HTTP_RSHARE_HANDLES(share), request, http_request_datashare_compare_handles);
 		return SUCCESS;
 	}
 	return FAILURE;
@@ -144,23 +165,28 @@ PHP_HTTP_API void _http_request_datashare_detach_all(http_request_datashare *sha
 {
 	zval **r;
 	
-	while ((r = zend_llist_get_first(&share->handles))) {
+	while ((r = zend_llist_get_first(HTTP_RSHARE_HANDLES(share)))) {
 		http_request_datashare_detach(share, *r);
 	}
 }
 
 PHP_HTTP_API void _http_request_datashare_dtor(http_request_datashare *share TSRMLS_DC)
 {
-	int i;
-	
-	zend_llist_destroy(&share->handles);
+	if (!share->persistent) {
+		zend_llist_destroy(share->handles);
+		efree(share->handles);
+	}
 	curl_share_cleanup(share->ch);
+#ifdef ZTS
 	if (share->persistent) {
+		int i;
+	
 		for (i = 0; i < CURL_LOCK_DATA_LAST; ++i) {
 			tsrm_mutex_free(share->locks[i].mx);
 		}
 		pefree(share->locks, 1);
 	}
+#endif
 }
 
 PHP_HTTP_API void _http_request_datashare_free(http_request_datashare **share TSRMLS_DC)
@@ -189,6 +215,17 @@ static int http_request_datashare_compare_handles(void *h1, void *h2)
 	return (Z_OBJ_HANDLE_PP((zval **) h1) == Z_OBJ_HANDLE_P((zval *) h2));
 }
 
+static void http_request_datashare_destroy_handles(void *el)
+{
+	zval **r = (zval **) el;
+	TSRMLS_FETCH();
+	getObjectEx(http_request_object, obj, *r);
+	
+	curl_easy_setopt(obj->request->ch, CURLOPT_SHARE, NULL);
+	zval_ptr_dtor(r);
+}
+
+#ifdef ZTS
 static void http_request_datashare_lock_func(CURL *handle, curl_lock_data data, curl_lock_access locktype, void *userptr)
 {
 	http_request_datashare *share = (http_request_datashare *) userptr;
@@ -206,6 +243,7 @@ static void http_request_datashare_unlock_func(CURL *handle, curl_lock_data data
 		tsrm_mutex_unlock(share->locks[data].mx);
 	}
 }
+#endif
 
 #endif /* ZEND_ENGINE_2 && HTTP_HAVE_CURL */
 

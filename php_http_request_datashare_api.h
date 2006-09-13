@@ -16,23 +16,31 @@
 #define PHP_HTTP_REQUEST_DATASHARE_API_H
 #ifdef HTTP_HAVE_CURL
 
+#ifdef ZTS
 typedef struct _http_request_datashare_lock_t {
 	CURL *ch;
 	MUTEX_T mx;
 } http_request_datashare_lock;
+#endif
 
 typedef struct _http_request_datashare_t {
 	CURLSH *ch;
-	zend_llist handles;
 	zend_bool persistent;
+	zend_llist *handles;
+#ifdef ZTS
 	http_request_datashare_lock *locks;
+#endif
 } http_request_datashare;
+
+#define HTTP_RSHARE_HANDLES(s) ((s)->persistent ? &HTTP_G->request.datashare.handles : (s)->handles)
 
 #define http_request_datashare_global_get _http_request_datashare_global_get
 extern http_request_datashare *_http_request_datashare_global_get(void);
 
 extern PHP_MINIT_FUNCTION(http_request_datashare);
 extern PHP_MSHUTDOWN_FUNCTION(http_request_datashare);
+extern PHP_RINIT_FUNCTION(http_request_datashare);
+extern PHP_RSHUTDOWN_FUNCTION(http_request_datashare);
 
 #define http_request_datashare_new() _http_request_datashare_init_ex(NULL, 0 TSRMLS_CC)
 #define http_request_datashare_init(s) _http_request_datashare_init_ex((s), 0 TSRMLS_CC)
@@ -52,7 +60,7 @@ PHP_HTTP_API void _http_request_datashare_detach_all(http_request_datashare *sha
 PHP_HTTP_API void _http_request_datashare_dtor(http_request_datashare *share TSRMLS_DC);
 
 #define http_request_datashare_free(s) _http_request_datashare_free((s) TSRMLS_CC)
-PHP_HTTP_API void _http_request_datashaere_free(http_request_datashare **share TSRMLS_DC);
+PHP_HTTP_API void _http_request_datashare_free(http_request_datashare **share TSRMLS_DC);
 
 #define http_request_datashare_set(s, o, l, e) _http_request_datashare_set((s), (o), (l), (e) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_request_datashare_set(http_request_datashare *share, const char *option, size_t option_len, zend_bool enable TSRMLS_DC);
