@@ -28,6 +28,9 @@ typedef struct _http_request_datashare_t {
 	http_request_datashare_lock *locks;
 } http_request_datashare;
 
+#define http_request_datashare_global_get _http_request_datashare_global_get
+extern http_request_datashare *_http_request_datashare_global_get(void);
+
 extern PHP_MINIT_FUNCTION(http_request_datashare);
 extern PHP_MSHUTDOWN_FUNCTION(http_request_datashare);
 

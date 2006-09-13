@@ -272,7 +272,7 @@ static inline zval *_http_requestdatashare_instantiate(zval *this_ptr, zend_bool
 	if (!this_ptr) {
 		MAKE_STD_ZVAL(this_ptr);
 		Z_TYPE_P(this_ptr) = IS_OBJECT;
-		this_ptr->value.obj = http_requestdatashare_object_new(http_requestdatashare_object_ce);
+		this_ptr->value.obj = http_requestdatashare_object_new_ex(http_requestdatashare_object_ce, global ? http_request_datashare_global_get() : NULL, NULL);
 	}
 	if (global) {
 		if (HTTP_G->request.datashare.cookie) {

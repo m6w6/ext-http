@@ -32,6 +32,11 @@ static int http_request_datashare_compare_handles(void *h1, void *h2);
 static void http_request_datashare_lock_func(CURL *handle, curl_lock_data data, curl_lock_access locktype, void *userptr);
 static void http_request_datashare_unlock_func(CURL *handle, curl_lock_data data, void *userptr);
 
+http_request_datashare *_http_request_datashare_global_get(void)
+{
+	return &http_request_datashare_global;
+}
+
 PHP_MINIT_FUNCTION(http_request_datashare)
 {
 	curl_lock_data val;

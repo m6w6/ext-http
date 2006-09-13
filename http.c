@@ -241,7 +241,7 @@ PHP_INI_BEGIN()
 #ifdef ZEND_ENGINE_2
 	HTTP_PHP_INI_ENTRY("http.request.datashare.cookie", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.cookie)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.dns", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.dns)
-	HTTP_PHP_INI_ENTRY("http.request.datashare.sll", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.ssl)
+	HTTP_PHP_INI_ENTRY("http.request.datashare.ssl", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.ssl)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.connect", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.connect)
 #endif
 #ifdef HTTP_HAVE_ZLIB
