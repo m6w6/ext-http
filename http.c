@@ -238,7 +238,7 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.log.composite", "", PHP_INI_ALL, OnUpdateString, log.composite)
 	HTTP_PHP_INI_ENTRY("http.request.methods.allowed", "", PHP_INI_ALL, http_update_allowed_methods, request.methods.allowed)
 	HTTP_PHP_INI_ENTRY("http.request.methods.custom", "", PHP_INI_PERDIR|PHP_INI_SYSTEM, OnUpdateString, request.methods.custom.ini)
-#ifdef ZEND_ENGINE_2
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.cookie", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.cookie)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.dns", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.dns)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.ssl", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.ssl)
@@ -273,7 +273,9 @@ PHP_MINIT_FUNCTION(http)
 			(SUCCESS != PHP_MINIT_CALL(http_url))		||
 #ifdef HTTP_HAVE_CURL
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
+#	ifdef ZEND_ENGINE_2
 			(SUCCESS != PHP_MINIT_CALL(http_request_datashare)) ||
+#	endif
 #endif /* HTTP_HAVE_CURL */
 #ifdef HTTP_HAVE_ZLIB
 			(SUCCESS != PHP_MINIT_CALL(http_encoding))	||
@@ -313,7 +315,10 @@ PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
 #ifdef HTTP_HAVE_CURL
-	if (	(SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)) ||
+	if (	
+#	ifdef ZEND_ENGINE_2
+			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)) ||
+#	endif
 			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request))) {
 		return FAILURE;
 	}
