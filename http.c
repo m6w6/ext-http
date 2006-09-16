@@ -240,7 +240,7 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.request.methods.custom", "", PHP_INI_PERDIR|PHP_INI_SYSTEM, OnUpdateString, request.methods.custom.ini)
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.cookie", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.cookie)
-	HTTP_PHP_INI_ENTRY("http.request.datashare.dns", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.dns)
+	HTTP_PHP_INI_ENTRY("http.request.datashare.dns", "1", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.dns)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.ssl", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.ssl)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.connect", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.connect)
 #endif

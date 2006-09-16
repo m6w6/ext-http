@@ -25,6 +25,9 @@
 #ifndef HAVE_CURL_SHARE_STRERROR
 #	define curl_share_strerror(dummy) "unknown error"
 #endif
+#ifndef HAVE_CURL_EASY_STRERROR
+#	define curl_easy_strerror(dummy) "unknown error"
+#endif
 
 static HashTable http_request_datashare_options;
 static http_request_datashare http_request_datashare_global;
@@ -130,8 +133,9 @@ PHP_HTTP_API STATUS _http_request_datashare_attach(http_request_datashare *share
 		}
 	}
 	
+	HTTP_CHECK_CURL_INIT(obj->request->ch, http_curl_init_ex(obj->request->ch, obj->request), return FAILURE);
 	if (CURLE_OK != (rc = curl_easy_setopt(obj->request->ch, CURLOPT_SHARE, share->ch))) {
-		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not attach HttpRequest object(#%d) to the HttpRequestDataShare: %s", Z_OBJ_HANDLE_P(request), curl_share_strerror(rc));
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not attach HttpRequest object(#%d) to the HttpRequestDataShare: %s", Z_OBJ_HANDLE_P(request), curl_easy_strerror(rc));
 		return FAILURE;
 	}
 	
