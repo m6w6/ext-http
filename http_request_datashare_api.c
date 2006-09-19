@@ -223,10 +223,13 @@ static void http_request_datashare_destroy_handles(void *el)
 {
 	zval **r = (zval **) el;
 	TSRMLS_FETCH();
-	getObjectEx(http_request_object, obj, *r);
 	
-	curl_easy_setopt(obj->request->ch, CURLOPT_SHARE, NULL);
-	zval_ptr_dtor(r);
+	{ /* gcc 2.95 needs these braces */
+		getObjectEx(http_request_object, obj, *r);
+		
+		curl_easy_setopt(obj->request->ch, CURLOPT_SHARE, NULL);
+		zval_ptr_dtor(r);
+	}
 }
 
 #ifdef ZTS
