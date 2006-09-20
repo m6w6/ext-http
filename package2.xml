@@ -30,7 +30,7 @@ support. Parallel requests are available for PHP 5 and greater.
  </lead>
  <date>2006-09-19</date>
  <version>
-  <release>1.3.0</release>
+  <release>1.3.1dev</release>
   <api>1.3.0</api>
  </version>
  <stability>
@@ -39,10 +39,7 @@ support. Parallel requests are available for PHP 5 and greater.
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added HttpRequestDataShare (interface to curl_share)
-+ Added "dns_cache_timeout", "low_speed_limit", "low_speed_time", "max_send_speed",
-  "max_recv_speed", "forbid_reuse" and "fresh_connect" request options
-+ Added HttpRequestPool::enablePipelining([bool enable = TRUE]) (libcurl >= 7.16.0, unstable)
++ Fixed build with gcc-2.95 (bug #8737)
 ]]></notes>
  <contents>
   <dir name="/">
