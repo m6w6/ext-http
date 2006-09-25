@@ -28,14 +28,6 @@ function file_re($file, $pattern, $all = true) {
 	failure();
 }
 
-function version($major, $minor, $pl) {
-	static $version;
-	
-	$version or $version = file_re('curlver.h', '/^#\s*define\s+LIBCURL_VERSION\s+"(\d+)\.(\d+)\.(\d+)(?:-\w+)?"\s*$/m', false);
-	
-	return $major <= $version[1] && $minor <= $version[2] && $pl <= $version[3];
-}
-
 $ifdefs = array(
 	'COOKIELIST' => '7,14,1'
 );
@@ -75,7 +67,6 @@ $templates = array(
 '
 );
 
-$types = file_re('curl.h', '/^#\s*define\s+CURLINFO_(STRING|LONG|DOUBLE|SLIST|MASK|TYPEMASK)\s+(0x[0-9a-fA-F]+)\s*$/m');
 $infos = file_re('curl.h', '/^\s*(CURLINFO_(\w+))\s*=\s*CURLINFO_(STRING|LONG|DOUBLE|SLIST)\s*\+\s*\d+\s*,?\s*$/m');
 
 ob_start();
