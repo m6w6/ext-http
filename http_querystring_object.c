@@ -440,7 +440,7 @@ PHP_METHOD(HttpQueryString, singleton)
 			if (SUCCESS == zend_hash_index_find(Z_ARRVAL_P(instance), global, (void *) &zobj_ptr)) {
 				RETVAL_ZVAL(*zobj_ptr, 1, 0);
 			} else {
-				zobj = http_querystring_instantiate(NULL, global, NULL, !global);
+				zobj = http_querystring_instantiate(NULL, global, NULL, (zend_bool) !global);
 				add_index_zval(instance, global, zobj);
 				RETVAL_OBJECT(zobj, 1);
 			}
@@ -448,7 +448,7 @@ PHP_METHOD(HttpQueryString, singleton)
 			MAKE_STD_ZVAL(instance);
 			array_init(instance);
 			
-			zobj = http_querystring_instantiate(NULL, global, NULL, !global);
+			zobj = http_querystring_instantiate(NULL, global, NULL, (zend_bool) !global);
 			add_index_zval(instance, global, zobj);
 			RETVAL_OBJECT(zobj, 1);
 			

@@ -160,11 +160,12 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 /* {{{ int http_encoding_response_start(size_t) */
 PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 {
-	if (	php_ob_handler_used("ob_gzhandler" TSRMLS_CC) ||
-			php_ob_handler_used("zlib output compression" TSRMLS_CC)) {
-		HTTP_G->send.deflate.encoding = 0;
-	} else if (HTTP_G->send.deflate.encoding) {
-		HTTP_G->send.deflate.encoding = 0;
+	int is_http = HTTP_G->send.deflate.encoding;
+	int is_zlib = php_ob_handler_used("ob_gzhandler" TSRMLS_CC) || php_ob_handler_used("zlib output compression" TSRMLS_CC);
+	
+	HTTP_G->send.deflate.encoding = 0;
+	
+	if (is_http && !is_zlib) {
 #ifdef HTTP_HAVE_ZLIB
 		HashTable *selected;
 		zval zsupported;
@@ -203,16 +204,14 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 #else
 		php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
 #endif /* HTTP_HAVE_ZLIB */
-	} else {
-		HTTP_G->send.deflate.encoding = 0;
-		if (content_length) {
-			/* emit a content-length header */
-			char cl_header_str[128];
-			size_t cl_header_len;
-			cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %zu", content_length);
-			http_send_header_string_ex(cl_header_str, cl_header_len, 1);
-		}
+	} else if (content_length && !is_zlib) {
+		/* emit a content-length header */
+		char cl_header_str[128];
+		size_t cl_header_len;
+		cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %zu", content_length);
+		http_send_header_string_ex(cl_header_str, cl_header_len, 1);
 	}
+	
 	return HTTP_G->send.deflate.encoding;
 }
 /* }}} */
