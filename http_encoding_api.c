@@ -163,61 +163,57 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 	if (	php_ob_handler_used("ob_gzhandler" TSRMLS_CC) ||
 			php_ob_handler_used("zlib output compression" TSRMLS_CC)) {
 		HTTP_G->send.deflate.encoding = 0;
-	} else {
-		if (!HTTP_G->send.deflate.encoding) {
-			/* emit a content-length header */
-			if (content_length) {
-				char cl_header_str[128];
-				size_t cl_header_len;
-				cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %zu", content_length);
-				http_send_header_string_ex(cl_header_str, cl_header_len, 1);
-			}
-		} else {
-#ifndef HTTP_HAVE_ZLIB
-			HTTP_G->send.deflate.encoding = 0;
-			php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
-#else
-			HashTable *selected;
-			zval zsupported;
+	} else if (HTTP_G->send.deflate.encoding) {
+		HTTP_G->send.deflate.encoding = 0;
+#ifdef HTTP_HAVE_ZLIB
+		HashTable *selected;
+		zval zsupported;
+		
+		INIT_PZVAL(&zsupported);
+		array_init(&zsupported);
+		add_next_index_stringl(&zsupported, "gzip", lenof("gzip"), 1);
+		add_next_index_stringl(&zsupported, "x-gzip", lenof("x-gzip"), 1);
+		add_next_index_stringl(&zsupported, "deflate", lenof("deflate"), 1);
+		
+		if ((selected = http_negotiate_encoding(&zsupported))) {
+			STATUS hs = FAILURE;
+			char *encoding = NULL;
+			ulong idx;
 			
-			INIT_PZVAL(&zsupported);
-			array_init(&zsupported);
-			add_next_index_stringl(&zsupported, "gzip", lenof("gzip"), 1);
-			add_next_index_stringl(&zsupported, "x-gzip", lenof("x-gzip"), 1);
-			add_next_index_stringl(&zsupported, "deflate", lenof("deflate"), 1);
-			
-			HTTP_G->send.deflate.encoding = 0;
-			
-			if ((selected = http_negotiate_encoding(&zsupported))) {
-				STATUS hs = FAILURE;
-				char *encoding = NULL;
-				ulong idx;
-				
-				if (HASH_KEY_IS_STRING == zend_hash_get_current_key(selected, &encoding, &idx, 0) && encoding) {
-					if (!strcmp(encoding, "gzip") || !strcmp(encoding, "x-gzip")) {
-						if (SUCCESS == (hs = http_send_header_string("Content-Encoding: gzip"))) {
-							HTTP_G->send.deflate.encoding = HTTP_ENCODING_GZIP;
-						}
-					} else if (!strcmp(encoding, "deflate")) {
-						if (SUCCESS == (hs = http_send_header_string("Content-Encoding: deflate"))) {
-							HTTP_G->send.deflate.encoding = HTTP_ENCODING_DEFLATE;
-						}
+			if (HASH_KEY_IS_STRING == zend_hash_get_current_key(selected, &encoding, &idx, 0) && encoding) {
+				if (!strcmp(encoding, "gzip") || !strcmp(encoding, "x-gzip")) {
+					if (SUCCESS == (hs = http_send_header_string("Content-Encoding: gzip"))) {
+						HTTP_G->send.deflate.encoding = HTTP_ENCODING_GZIP;
 					}
-					if (SUCCESS == hs) {
-						http_send_header_string("Vary: Accept-Encoding");
+				} else if (!strcmp(encoding, "deflate")) {
+					if (SUCCESS == (hs = http_send_header_string("Content-Encoding: deflate"))) {
+						HTTP_G->send.deflate.encoding = HTTP_ENCODING_DEFLATE;
 					}
 				}
-				
-				zend_hash_destroy(selected);
-				FREE_HASHTABLE(selected);
+				if (SUCCESS == hs) {
+					http_send_header_string("Vary: Accept-Encoding");
+				}
 			}
 			
-			zval_dtor(&zsupported);
-			return HTTP_G->send.deflate.encoding;
-#endif
+			zend_hash_destroy(selected);
+			FREE_HASHTABLE(selected);
+		}
+		
+		zval_dtor(&zsupported);
+#else
+		php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
+#endif /* HTTP_HAVE_ZLIB */
+	} else {
+		HTTP_G->send.deflate.encoding = 0;
+		if (content_length) {
+			/* emit a content-length header */
+			char cl_header_str[128];
+			size_t cl_header_len;
+			cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %zu", content_length);
+			http_send_header_string_ex(cl_header_str, cl_header_len, 1);
 		}
 	}
-	return 0;
+	return HTTP_G->send.deflate.encoding;
 }
 /* }}} */
 
@@ -687,7 +683,9 @@ void _http_ob_deflatehandler(char *output, uint output_len, char **handled_outpu
 	}
 	
 	if (HTTP_G->send.deflate.stream) {
-		http_encoding_deflate_stream_update((http_encoding_stream *) HTTP_G->send.deflate.stream, output, output_len, handled_output, handled_output_len);
+		if (output_len) {
+			http_encoding_deflate_stream_update((http_encoding_stream *) HTTP_G->send.deflate.stream, output, output_len, handled_output, handled_output_len);
+		}
 		
 		if (mode & PHP_OUTPUT_HANDLER_END) {
 			char *remaining = NULL;
@@ -724,7 +722,9 @@ void _http_ob_inflatehandler(char *output, uint output_len, char **handled_outpu
 	}
 	
 	if (HTTP_G->send.inflate.stream) {
-		http_encoding_inflate_stream_update((http_encoding_stream *) HTTP_G->send.inflate.stream, output, output_len, handled_output, handled_output_len);
+		if (output_len) {
+			http_encoding_inflate_stream_update((http_encoding_stream *) HTTP_G->send.inflate.stream, output, output_len, handled_output, handled_output_len);
+		}
 		
 		if (mode & PHP_OUTPUT_HANDLER_END) {
 			char *remaining = NULL;
