@@ -50,65 +50,6 @@
 #	define curl_easy_strerror(dummy) "unknown error"
 #endif
 
-#define HTTP_CURL_INFO(I) \
-	{ \
-		char *N = #I; \
-		HTTP_CURL_INFO_EX(I, N+lenof("CURLINFO_")); \
-	}
-#define HTTP_CURL_INFO_EX(I, X) \
-	switch (I & ~CURLINFO_MASK) \
-	{ \
-		case CURLINFO_STRING: \
-		{ \
-			char *c; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &c)) { \
-				char *key = estrndup(X, strlen(X)); \
-				add_assoc_string(&array, pretty_key(key, strlen(X), 0, 0), c ? c : "", 1); \
-				efree(key); \
-			} \
-		} \
-		break; \
-\
-		case CURLINFO_DOUBLE: \
-		{ \
-			double d; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &d)) { \
-				char *key = estrndup(X, strlen(X)); \
-				add_assoc_double(&array, pretty_key(key, strlen(X), 0, 0), d); \
-				efree(key); \
-			} \
-		} \
-		break; \
-\
-		case CURLINFO_LONG: \
-		{ \
-			long l; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &l)) { \
-				char *key = estrndup(X, strlen(X)); \
-				add_assoc_long(&array, pretty_key(key, strlen(X), 0, 0), l); \
-				efree(key); \
-			} \
-		} \
-		break; \
-\
-		case CURLINFO_SLIST: \
-		{ \
-			struct curl_slist *l, *p; \
-			if (CURLE_OK == curl_easy_getinfo(request->ch, I, &l)) { \
-				zval *subarray; \
-				char *key = estrndup(X, strlen(X)); \
-				MAKE_STD_ZVAL(subarray); \
-				array_init(subarray); \
-				for (p = l; p; p = p->next) { \
-					add_next_index_string(subarray, p->data, 1); \
-				} \
-				add_assoc_zval(&array, pretty_key(key, strlen(X), 0, 0), subarray); \
-				curl_slist_free_all(l); \
-				efree(key); \
-			} \
-		} \
-	}
-
 #define HTTP_CURL_OPT(OPTION, p) HTTP_CURL_OPT_EX(request->ch, OPTION, (p))
 #define HTTP_CURL_OPT_EX(ch, OPTION, p) curl_easy_setopt((ch), OPTION, (p))
 

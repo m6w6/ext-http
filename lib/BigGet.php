@@ -156,13 +156,7 @@ class BigGet extends HttpRequestPool
      */
     protected function socketPerform()
     {
-        try {
-            $rs = parent::socketPerform();
-        } catch (HttpRequestPoolException $x) {
-            foreach ($x->exceptionStack as $e) {
-                echo $e->getMessage(), "\n";
-            }
-        }
+        $rs = parent::socketPerform();
         
         foreach ($this->getFinishedRequests() as $r) {
             $this->detach($r);

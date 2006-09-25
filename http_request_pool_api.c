@@ -264,7 +264,7 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 #ifdef HAVE_CURL_MULTI_TIMEOUT
 	long max_tout = 1000;
 	
-	if (CURLM_OK == curl_multi_timeout(pool->ch, &max_tout)) {
+	if ((CURLM_OK == curl_multi_timeout(pool->ch, &max_tout)) && (max_tout != -1)) {
 		timeout.tv_sec = max_tout / 1000;
 		timeout.tv_usec = (max_tout % 1000) * 1000;
 	}

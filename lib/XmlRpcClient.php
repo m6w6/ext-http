@@ -22,7 +22,7 @@
  * @copyright   Michael Wallner, <mike@iworks.at>
  * @license     BSD, revised
  * @package     pecl/http
- * @version	 $Revision$
+ * @version	    $Revision$
  */
 class XmlRpcClient
 {
@@ -56,8 +56,7 @@ class XmlRpcClient
 	 */
 	public function __construct($url, $namespace = '', array $options = null)
 	{
-		$this->__request = new HttpRequest($url, HTTP_METH_POST);
-		$this->__request->setOptions($options);
+		$this->__request = new HttpRequest($url, HttpRequest::METH_POST, $options);
 		$this->__namespace = $namespace;
 	}
 	
@@ -75,8 +74,9 @@ class XmlRpcClient
 			$method = $this->__namespace .'.'. $method;
 		}
 		$this->__request->setContentType("text/xml; charset=". $this->__encoding);
-		$request = xmlrpc_encode_request($method, $params, array("encoding" => $this->__encoding));
-		$this->__request->setRawPostData($request);
+		$this->__request->setRawPostData(
+			xmlrpc_encode_request($method, $params, 
+				array("encoding" => $this->__encoding)));
 		$this->__request->send();
 		$response = $this->__request->getResponseMessage();
 		if ($response->getResponseCode() != 200) {

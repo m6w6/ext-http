@@ -318,7 +318,7 @@ dnl ----
 	PHP_HTTP_SOURCES="missing.c http.c http_functions.c phpstr/phpstr.c \
 		http_util_object.c http_message_object.c http_request_object.c http_request_pool_api.c \
 		http_response_object.c http_exception_object.c http_requestpool_object.c \
-		http_api.c http_cache_api.c http_request_api.c http_date_api.c \
+		http_api.c http_cache_api.c http_request_api.c http_request_info.c http_date_api.c \
 		http_headers_api.c http_message_api.c http_send_api.c http_url_api.c \
 		http_info_api.c http_request_method_api.c http_encoding_api.c \
 		http_filter_api.c http_request_body_api.c http_querystring_object.c \

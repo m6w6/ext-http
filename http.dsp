@@ -110,6 +110,10 @@ SOURCE=.\http_request_api.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\http_request_info.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\http_request_body_api.c
 # End Source File
 # Begin Source File
