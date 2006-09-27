@@ -265,7 +265,7 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 
 		/* check for following messages */
 		if (continue_at && (continue_at < (message + message_length))) {
-			while (isspace(*continue_at)) ++continue_at;
+			while (HTTP_IS_CTYPE(space, *continue_at)) ++continue_at;
 			if (continue_at < (message + message_length)) {
 				http_message *next = NULL, *most = NULL;
 

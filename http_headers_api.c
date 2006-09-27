@@ -143,7 +143,7 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 				if ((separator = strchr(Z_STRVAL_PP(entry), ';'))) {
 					const char *ptr = separator;
 					
-					while (*++ptr && !isdigit(*ptr) && '.' != *ptr);
+					while (*++ptr && !HTTP_IS_CTYPE(digit, *ptr) && '.' != *ptr);
 					
 					quality = atof(ptr);
 					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = separator - Z_STRVAL_PP(entry));
@@ -153,11 +153,11 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 				}
 				freeme = identifier;
 				
-				while (isspace(*identifier)) {
+				while (HTTP_IS_CTYPE(space, *identifier)) {
 					++identifier;
 					--ident_len;
 				}
-				while (ident_len && isspace(identifier[ident_len - 1])) {
+				while (ident_len && HTTP_IS_CTYPE(space, identifier[ident_len - 1])) {
 					identifier[--ident_len] = '\0';
 				}
 				
@@ -326,7 +326,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 	INIT_ZARR(array, headers);
 	
 	/* skip leading ws */
-	while (isspace(*header)) ++header;
+	while (HTTP_IS_CTYPE(space, *header)) ++header;
 	line = header;
 	
 #define MORE_HEADERS (*(line-1) && !(*(line-1) == '\n' && (*line == '\n' || *line == '\r')))
@@ -358,9 +358,9 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 							const char *key = header;
 							
 							/* skip leading ws */
-							while (keylen && isspace(*key)) --keylen && ++key;
+							while (keylen && HTTP_IS_CTYPE(space, *key)) --keylen && ++key;
 							/* skip trailing ws */
-							while (keylen && isspace(key[keylen - 1])) --keylen;
+							while (keylen && HTTP_IS_CTYPE(space, key[keylen - 1])) --keylen;
 							
 							if (keylen > 0) {
 								zval **previous = NULL;
@@ -374,9 +374,9 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 								value_len += line - colon - 1;
 								
 								/* skip leading ws */
-								while (isspace(*(++colon))) --value_len;
+								while (HTTP_IS_CTYPE(space, *(++colon))) --value_len;
 								/* skip trailing ws */
-								while (isspace(colon[value_len - 1])) --value_len;
+								while (HTTP_IS_CTYPE(space, colon[value_len - 1])) --value_len;
 								
 								if (value_len > 0) {
 									value = estrndup(colon, value_len);

@@ -67,15 +67,16 @@ PHP_HTTP_API long _http_support(long feature)
 /* char *pretty_key(char *, size_t, zend_bool, zend_bool) */
 char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
+	size_t i;
+	int wasalpha;
+	
 	if (key && key_len) {
-		size_t i;
-		int wasalpha;
-		if ((wasalpha = isalpha((int) key[0]))) {
-			key[0] = (char) (uctitle ? toupper((int) key[0]) : tolower((int) key[0]));
+		if ((wasalpha = HTTP_IS_CTYPE(alpha, key[0]))) {
+			key[0] = (char) (uctitle ? HTTP_TO_CTYPE(upper, key[0]) : HTTP_TO_CTYPE(lower, key[0]));
 		}
 		for (i = 1; i < key_len; i++) {
-			if (isalpha((int) key[i])) {
-				key[i] = (char) (((!wasalpha) && uctitle) ? toupper((int) key[i]) : tolower((int) key[i]));
+			if (HTTP_IS_CTYPE(alpha, key[i])) {
+				key[i] = (char) (((!wasalpha) && uctitle) ? HTTP_TO_CTYPE(upper, key[i]) : HTTP_TO_CTYPE(lower, key[i]));
 				wasalpha = 1;
 			} else {
 				if (xhyphen && (key[i] == '_')) {
@@ -255,8 +256,8 @@ STATUS _http_check_method_ex(const char *method, const char *methods)
 	const char *found;
 
 	if (	(found = strstr(methods, method)) &&
-			(found == method || !isalpha(found[-1])) &&
-			(strlen(found) >= strlen(method) && !isalpha(found[strlen(method)]))) {
+			(found == method || !HTTP_IS_CTYPE(alpha, found[-1])) &&
+			(strlen(found) >= strlen(method) && !HTTP_IS_CTYPE(alpha, found[strlen(method)]))) {
 		return SUCCESS;
 	}
 	return FAILURE;

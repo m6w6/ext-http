@@ -498,7 +498,7 @@ static inline void _http_request_object_check_request_content_type(zval *this_pt
 				
 				/* check for spaces only */
 				for (i = 0; i < Z_STRLEN_PP(ct_header); ++i) {
-					if (!isspace(Z_STRVAL_PP(ct_header)[i])) {
+					if (!HTTP_IS_CTYPE(space, Z_STRVAL_PP(ct_header)[i])) {
 						only_space = 0;
 						break;
 					}

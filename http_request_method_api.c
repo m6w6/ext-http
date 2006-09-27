@@ -191,7 +191,7 @@ PHP_HTTP_API int _http_request_method_register(const char *method_name, int meth
 	char *http_method, *method, *mconst;
 	http_request_method_entry **ptr = HTTP_G->request.methods.custom.entries;
 	
-	if (!isalpha(*method_name)) {
+	if (!HTTP_IS_CTYPE(alpha, *method_name)) {
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Request method does not start with a character (%s)", method_name);
 		return 0;
 	}
@@ -211,13 +211,13 @@ PHP_HTTP_API int _http_request_method_register(const char *method_name, int meth
 				break;
 			
 			default:
-				if (!isalnum(method_name[i])) {
+				if (!HTTP_IS_CTYPE(alnum, method_name[i])) {
 					efree(method);
 					efree(mconst);
 					http_error_ex(HE_WARNING, HTTP_E_REQUEST_METHOD, "Request method contains illegal characters (%s)", method_name);
 					return 0;
 				}
-				mconst[i] = method[i] = toupper(method_name[i]);
+				mconst[i] = method[i] = HTTP_TO_CTYPE(upper, method_name[i]);
 				break;
 		}
 	}

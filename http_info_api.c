@@ -97,8 +97,8 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 	 */
 	if (	(!(http = php_memnstr((char *) pre_header, "HTTP/1.", lenof("HTTP/1."), (char *)end))) || 
 			(!(http < end)) ||
-			(!isdigit(http[lenof("HTTP/1.")])) ||
-			(http[lenof("HTTP/1.1")] && (!isspace(http[lenof("HTTP/1.1")])))) {
+			(!HTTP_IS_CTYPE(digit, http[lenof("HTTP/1.")])) ||
+			(http[lenof("HTTP/1.1")] && (!HTTP_IS_CTYPE(space, http[lenof("HTTP/1.1")])))) {
 		if (!silent) {
 			http_error(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Invalid or missing HTTP/1.x protocol identification");
 		}

@@ -2,23 +2,17 @@ Known Issues
 ============
 $Id$
 
-HttpResponse (only in PHP-5.1+):
-	HttpResponse::getHeader() does not work in Apache2 with a 
-PHP version lower than 5.1.3 (as mod_php).
+PHP < 5.1.3:
+	HttpResponse::getHeader() does not work with Apache2 SAPIs.
+	Using an encoding stream filter on a stream you read from doesn't work.
 
 Windows:
 	If you keep getting "SSL connect error" when trying to issue 
-requests, try another (newer) libeay32.dll/ssleay32.dll pair.
-
-Deflate/Inflate:
-	Inflating raw deflated data causes a re-initialization of the inflate
-stream where the corresponding window bits are modified to tell libz to 
-not check for zlib header bytes.  This is not preventable AFAICS.
-	Using an encoding stream filter on a stream you read from, will
-not work as expected in a PHP version lower than 5.1.3.
+		requests, try another (newer) libeay32.dll/ssleay32.dll pair.
 
 Internals:
-	-	our http_urlencode_hash() does not differentiate between prefixes
+	Our http_urlencode_hash() does not differentiate between prefixes
 		for numeric or string keys.
-	-	detaching a request from a pool in its progress callback causes
-		all sorts of memory errors
+	Inflating raw deflated data causes a re-initialization of the inflate
+		stream where the corresponding window bits are modified to tell libz
+		to not check for zlib header bytes.  This is not preventable AFAICS.

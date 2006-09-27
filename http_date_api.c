@@ -204,11 +204,11 @@ static inline time_t parse_date(const char *date)
 	while (*date && (part < 6)) {
 		int found = 0;
 
-		while (*date && !isalnum(*date)) {
+		while (*date && !HTTP_IS_CTYPE(alnum, *date)) {
 			date++;
 		}
 
-		if (isalpha(*date)) {
+		if (HTTP_IS_CTYPE(alpha, *date)) {
 			/* a name coming up */
 			char buf[32] = "";
 			size_t len;
@@ -242,7 +242,7 @@ static inline time_t parse_date(const char *date)
 			}
 			date += len;
 		}
-		else if (isdigit(*date)) {
+		else if (HTTP_IS_CTYPE(digit, *date)) {
 			/* a digit */
 			int val;
 			char *end;

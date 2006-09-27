@@ -71,6 +71,8 @@
 #endif
 
 #include <ctype.h>
+#define HTTP_IS_CTYPE(type, c) is##type((int) (unsigned char) (c))
+#define HTTP_TO_CTYPE(type, c) to##type((int) (unsigned char) (c))
 
 extern zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
