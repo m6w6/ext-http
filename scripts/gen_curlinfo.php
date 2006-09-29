@@ -35,7 +35,8 @@ $exclude = array(
 	'PRIVATE', 'LASTSOCKET', 'FTP_ENTRY_PATH'
 );
 $translate = array(
-	'HTTP_CONNECTCODE' => "connect_code"
+	'HTTP_CONNECTCODE' => "connect_code",
+	'COOKIELIST' => 'cookies',
 );
 
 $templates = array(
@@ -74,8 +75,7 @@ foreach ($infos as $info) {
 	list(, $full, $short, $type) = $info;
 	if (in_array($short, $exclude)) continue;
 	if (isset($ifdefs[$short])) printf("#if HTTP_CURL_VERSION(%s)\n", $ifdefs[$short]);
-	if (isset($translate[$short])) $short = $translate[$short];
-	printf($templates[$type], $full, strtolower($short));
+	printf($templates[$type], $full, strtolower((isset($translate[$short])) ? $translate[$short] : $short));
 	if (isset($ifdefs[$short])) printf("#endif\n");
 }
 
