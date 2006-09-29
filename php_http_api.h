@@ -191,6 +191,27 @@ static inline void _http_sleep(double s)
 #endif
 }
 
+#define http_locate_str _http_locate_str
+static inline const char *_http_locate_str(const char *h, size_t h_len, const char *n, size_t n_len)
+{
+	const char *p, *e;
+	
+	if (n_len && h_len) {
+		e = h + h_len;
+		do {
+			if (*h == *n) {
+				for (p = n; *p == h[p-n]; ++p) {
+					if (p == n+n_len-1) {
+						return h;
+					}
+				}
+			}
+		} while (h++ != e);
+	}
+	
+	return NULL;
+}
+
 #define http_locate_body _http_locate_body
 static inline const char *_http_locate_body(const char *message)
 {

@@ -53,37 +53,12 @@ PHP_HTTP_API void _http_info_dtor(http_info *i)
 	}
 }
 
-#if !defined(ZEND_ENGINE_2)
-inline char *php_memnstr(char *h, char *n, size_t n_len, char *e)
-{
-	char *p;
-	
-	if (e > h && n_len > 0) {
-		while (h != e) {
-			if (*h == *n) {
-				for (p = n; *p == h[p-n]; ++p) {
-					if (p == n+n_len-1) {
-						return h;
-					}
-				}
-			}
-			++h;
-		}
-	}
-	
-	return NULL;
-}
-#endif
-
 PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info, zend_bool silent TSRMLS_DC)
 {
 	const char *end, *http;
 	
 	/* sane parameter */
 	if ((!pre_header) || (!*pre_header)) {
-		if (!silent) {
-			http_error(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Empty pre-header HTTP info");
-		}
 		return FAILURE;
 	}
 	
@@ -92,15 +67,16 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 		end = pre_header + strlen(pre_header);
 	}
 	
-	/* there must be HTTP/1.x in the line
-	 * and nothing than SPACE or NUL after HTTP/1.x 
-	 */
-	if (	(!(http = php_memnstr((char *) pre_header, "HTTP/1.", lenof("HTTP/1."), (char *)end))) || 
-			(!(http < end)) ||
-			(!HTTP_IS_CTYPE(digit, http[lenof("HTTP/1.")])) ||
+	/* there must be HTTP/1.x in the line */
+	if (!(http = http_locate_str(pre_header, end - pre_header, "HTTP/1.", lenof("HTTP/1.")))) {
+		return FAILURE;
+	}
+	
+	/* and nothing than SPACE or NUL after HTTP/1.x */
+	if (	(!HTTP_IS_CTYPE(digit, http[lenof("HTTP/1.")])) ||
 			(http[lenof("HTTP/1.1")] && (!HTTP_IS_CTYPE(space, http[lenof("HTTP/1.1")])))) {
 		if (!silent) {
-			http_error(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Invalid or missing HTTP/1.x protocol identification");
+			http_error(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Invalid HTTP/1.x protocol identification");
 		}
 		return FAILURE;
 	}
