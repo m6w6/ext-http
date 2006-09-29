@@ -119,7 +119,7 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 		for (p = s; p; p = p->next) {
 			add_next_index_string(subarray, p->data, 1);
 		}
-		add_assoc_zval_ex(&array, "cookielist", sizeof("cookielist"), subarray);
+		add_assoc_zval_ex(&array, "cookies", sizeof("cookies"), subarray);
 		curl_slist_free_all(s);
 	}
 #endif
