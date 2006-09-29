@@ -32,32 +32,34 @@ echo "Done";
 Array
 (
     [effective_url] => http://www.google.com/
-    [response_code] => %d
-    [connect_code] => %d
-    [filetime] => %s
+    [response_code] => 302
     [total_time] => %f
     [namelookup_time] => %f
     [connect_time] => %f
     [pretransfer_time] => %f
-    [starttransfer_time] => %f
-    [redirect_time] => %f
-    [redirect_count] => %f
-    [size_upload] => %f
+    [size_upload] => %d
     [size_download] => %d
     [speed_download] => %d
     [speed_upload] => %d
     [header_size] => %d
     [request_size] => %d
     [ssl_verifyresult] => %d
-    [ssl_engines] => Array%s
+    [filetime] => -1
     [content_length_download] => %d
     [content_length_upload] => %d
-    [content_type] => %s
+    [starttransfer_time] => %f
+    [content_type] => text/html
+    [redirect_time] => %d
+    [redirect_count] => %d
+    [connect_code] => %d
     [httpauth_avail] => %d
-    [proxyauth_avail] => %s
+    [proxyauth_avail] => %d
+    [os_errno] => %d
     [num_connects] => %d
+    [ssl_engines] => Array%s
+
     [cookies] => Array%s
-    [os_errno] => 0
+
     [error] => 
 )
 Array
