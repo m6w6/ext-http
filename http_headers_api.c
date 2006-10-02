@@ -466,13 +466,14 @@ PHP_HTTP_API zend_bool _http_match_request_header_ex(const char *header, const c
 	char *name;
 	uint name_len = strlen(header);
 	zend_bool result = 0;
-	zval **data;
+	zval **data, *zvalue;
 
 	http_get_request_headers(NULL);
 	name = pretty_key(estrndup(header, name_len), name_len, 1, 1);
 	if (SUCCESS == zend_hash_find(HTTP_G->request.headers, name, name_len+1, (void *) &data)) {
-		convert_to_string_ex(data);
-		result = (match_case ? strcmp(Z_STRVAL_PP(data), value) : strcasecmp(Z_STRVAL_PP(data), value)) ? 0 : 1;
+		zvalue = zval_copy(IS_STRING, *data);
+		result = (match_case ? strcmp(Z_STRVAL_P(zvalue), value) : strcasecmp(Z_STRVAL_P(zvalue), value)) ? 0 : 1;
+		zval_free(&zvalue);
 	}
 	efree(name);
 
