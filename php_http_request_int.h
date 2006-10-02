@@ -50,8 +50,7 @@
 #	define curl_easy_strerror(dummy) "unknown error"
 #endif
 
-#define HTTP_CURL_OPT(OPTION, p) HTTP_CURL_OPT_EX(request->ch, OPTION, (p))
-#define HTTP_CURL_OPT_EX(ch, OPTION, p) curl_easy_setopt((ch), OPTION, (p))
+#define HTTP_CURL_OPT(OPTION, p) curl_easy_setopt((request->ch), OPTION, (p))
 
 #define HTTP_CURL_OPT_STRING(OPTION, ldiff, obdc) \
 	{ \

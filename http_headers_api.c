@@ -420,47 +420,42 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 }
 /* }}} */
 
-/* {{{ void http_get_request_headers_ex(HashTable *, zend_bool) */
-PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool prettify TSRMLS_DC)
+/* {{{ void http_get_request_headers(HashTable *) */
+PHP_HTTP_API void _http_get_request_headers(HashTable *headers TSRMLS_DC)
 {
 	char *key = NULL;
 	ulong idx = 0;
 	uint keylen = 0;
-	zval array, **hsv;
+	zval **hsv, **header;
 	HashPosition pos;
-
-	Z_ARRVAL(array) = headers;
+	
+	if (!HTTP_G->request.headers) {
+		ALLOC_HASHTABLE(HTTP_G->request.headers);
+		zend_hash_init(HTTP_G->request.headers, 0, NULL, ZVAL_PTR_DTOR, 0);
+		
 #ifdef ZEND_ENGINE_2
-	zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
+		zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
 #endif
-	if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv)) {
-		FOREACH_KEYLEN(pos, *hsv, key, keylen, idx) {
-			if (key && keylen > 6 && !strncmp(key, "HTTP_", 5)) {
-				zval **header, *orig;
-	
-				key += 5;
-				keylen -= 6;
-				if (prettify) {
-					key = pretty_key(estrndup(key, keylen), keylen, 1, 1);
+		
+		if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv) && Z_TYPE_PP(hsv) == IS_ARRAY) {
+			FOREACH_KEYLEN(pos, *hsv, key, keylen, idx) {
+				if (key && keylen > 6 && !strncmp(key, "HTTP_", 5)) {
+					keylen -= 6;
+					key = pretty_key(estrndup(key + 5, keylen), keylen, 1, 1);
+					
+					zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void *) &header, &pos);
+					ZVAL_ADDREF(*header);
+					zend_hash_add(HTTP_G->request.headers, key, keylen + 1, (void *) header, sizeof(zval *), NULL);
+					
+					STR_SET(key, NULL)
+					keylen = 0;
 				}
-	
-				zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void *) &header, &pos);
-				
-				orig = *header;
-				convert_to_string_ex(header);
-				add_assoc_stringl(&array, key, Z_STRVAL_PP(header), Z_STRLEN_PP(header), 1);
-				if (orig != *header) {
-					zval_ptr_dtor(header);
-				}
-				
-				if (prettify) {
-					efree(key);
-				}
-				
-				key = NULL;
-				keylen = 0;
 			}
 		}
+	}
+	
+	if (headers) {
+		zend_hash_copy(headers, HTTP_G->request.headers, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	}
 }
 /* }}} */
@@ -471,17 +466,14 @@ PHP_HTTP_API zend_bool _http_match_request_header_ex(const char *header, const c
 	char *name;
 	uint name_len = strlen(header);
 	zend_bool result = 0;
-	HashTable headers;
 	zval **data;
 
+	http_get_request_headers(NULL);
 	name = pretty_key(estrndup(header, name_len), name_len, 1, 1);
-	zend_hash_init(&headers, 0, NULL, ZVAL_PTR_DTOR, 0);
-	http_get_request_headers_ex(&headers, 1);
-
-	if (SUCCESS == zend_hash_find(&headers, name, name_len+1, (void *) &data)) {
+	if (SUCCESS == zend_hash_find(HTTP_G->request.headers, name, name_len+1, (void *) &data)) {
+		convert_to_string_ex(data);
 		result = (match_case ? strcmp(Z_STRVAL_PP(data), value) : strcasecmp(Z_STRVAL_PP(data), value)) ? 0 : 1;
 	}
-	zend_hash_destroy(&headers);
 	efree(name);
 
 	return result;

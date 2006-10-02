@@ -1151,7 +1151,7 @@ PHP_FUNCTION(http_get_request_headers)
 	NO_ARGS;
 
 	array_init(return_value);
-	http_get_request_headers(return_value);
+	http_get_request_headers(Z_ARRVAL_P(return_value));
 }
 /* }}} */
 

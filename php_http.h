@@ -117,6 +117,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 
 	struct _http_globals_request {
 		time_t time;
+		HashTable *headers;
 		struct _http_globals_request_methods {
 			char *allowed;
 			struct _http_globals_request_methods_custom {

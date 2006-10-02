@@ -199,6 +199,11 @@ static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 #define http_globals_free(g) _http_globals_free((g) TSRMLS_CC)
 static inline void _http_globals_free(zend_http_globals *G TSRMLS_DC)
 {
+	if (G->request.headers) {
+		zend_hash_destroy(G->request.headers);
+		FREE_HASHTABLE(G->request.headers);
+		G->request.headers = NULL;
+	}
 	STR_SET(G->send.content_type, NULL);
 	STR_SET(G->send.unquoted_etag, NULL);
 }

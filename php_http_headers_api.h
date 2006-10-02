@@ -28,10 +28,6 @@ typedef enum http_range_status_t {
 #define http_parse_headers_cb(h, ht, p, f, d) _http_parse_headers_ex((h), (ht), (p), (f), (d) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *headers, zend_bool prettify, http_info_callback callback_func, void **callback_data TSRMLS_DC);
 
-#define http_get_request_headers(h) _http_get_request_headers_ex(Z_ARRVAL_P(h), 1 TSRMLS_CC)
-#define http_get_request_headers_ex(h, p) _http_get_request_headers_ex((h), (p) TSRMLS_CC)
-PHP_HTTP_API void _http_get_request_headers_ex(HashTable *headers, zend_bool prettify TSRMLS_DC);
-
 typedef char *(*negotiate_func_t)(const char *test, double *quality, HashTable *supported TSRMLS_DC);
 
 #define http_negotiate_language_func _http_negotiate_language_func
@@ -55,6 +51,9 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 
 #define http_get_request_ranges(r, l) _http_get_request_ranges((r), (l) TSRMLS_CC)
 PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_t length TSRMLS_DC);
+
+#define http_get_request_headers(h) _http_get_request_headers((h) TSRMLS_CC)
+PHP_HTTP_API void _http_get_request_headers(HashTable *headers TSRMLS_DC);
 
 #define http_match_request_header(h, v) http_match_request_header_ex((h), (v), 0)
 #define http_match_request_header_ex(h, v, c) _http_match_request_header_ex((h), (v), (c) TSRMLS_CC)

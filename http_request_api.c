@@ -171,23 +171,23 @@ PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request)
 {
 	if (ch || (ch = curl_easy_init())) {
 #if defined(ZTS)
-		HTTP_CURL_OPT_EX(ch, CURLOPT_NOSIGNAL, 1L);
+		curl_easy_setopt(ch, CURLOPT_NOSIGNAL, 1L);
 #endif
-		HTTP_CURL_OPT_EX(ch, CURLOPT_HEADER, 0L);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_FILETIME, 1L);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_AUTOREFERER, 1L);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_VERBOSE, 1L);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_HEADERFUNCTION, NULL);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_DEBUGFUNCTION, http_curl_raw_callback);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_READFUNCTION, http_curl_read_callback);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_IOCTLFUNCTION, http_curl_ioctl_callback);
-		HTTP_CURL_OPT_EX(ch, CURLOPT_WRITEFUNCTION, http_curl_dummy_callback);
+		curl_easy_setopt(ch, CURLOPT_HEADER, 0L);
+		curl_easy_setopt(ch, CURLOPT_FILETIME, 1L);
+		curl_easy_setopt(ch, CURLOPT_AUTOREFERER, 1L);
+		curl_easy_setopt(ch, CURLOPT_VERBOSE, 1L);
+		curl_easy_setopt(ch, CURLOPT_HEADERFUNCTION, NULL);
+		curl_easy_setopt(ch, CURLOPT_DEBUGFUNCTION, http_curl_raw_callback);
+		curl_easy_setopt(ch, CURLOPT_READFUNCTION, http_curl_read_callback);
+		curl_easy_setopt(ch, CURLOPT_IOCTLFUNCTION, http_curl_ioctl_callback);
+		curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, http_curl_dummy_callback);
 		
 		/* set context */
 		if (request) {
-			HTTP_CURL_OPT_EX(ch, CURLOPT_PRIVATE, request);
-			HTTP_CURL_OPT_EX(ch, CURLOPT_DEBUGDATA, request);
-			HTTP_CURL_OPT_EX(ch, CURLOPT_ERRORBUFFER, request->_error);
+			curl_easy_setopt(ch, CURLOPT_PRIVATE, request);
+			curl_easy_setopt(ch, CURLOPT_DEBUGDATA, request);
+			curl_easy_setopt(ch, CURLOPT_ERRORBUFFER, request->_error);
 			
 			/* attach curl handle */
 			request->ch = ch;
@@ -205,10 +205,10 @@ PHP_HTTP_API void _http_curl_free(CURL **ch)
 {
 	if (*ch) {
 		/* avoid nasty segfaults with already cleaned up callbacks */
-		HTTP_CURL_OPT_EX(*ch, CURLOPT_NOPROGRESS, 1L);
-		HTTP_CURL_OPT_EX(*ch, CURLOPT_PROGRESSFUNCTION, NULL);
-		HTTP_CURL_OPT_EX(*ch, CURLOPT_VERBOSE, 0L);
-		HTTP_CURL_OPT_EX(*ch, CURLOPT_DEBUGFUNCTION, NULL);
+		curl_easy_setopt(*ch, CURLOPT_NOPROGRESS, 1L);
+		curl_easy_setopt(*ch, CURLOPT_PROGRESSFUNCTION, NULL);
+		curl_easy_setopt(*ch, CURLOPT_VERBOSE, 0L);
+		curl_easy_setopt(*ch, CURLOPT_DEBUGFUNCTION, NULL);
 		curl_easy_cleanup(*ch);
 		*ch = NULL;
 	}
