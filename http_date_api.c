@@ -159,7 +159,7 @@ PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 /* }}} */
 
 /* {{{ time_t http_parse_date(char *) */
-PHP_HTTP_API time_t _http_parse_date(const char *date TSRMLS_DC)
+PHP_HTTP_API time_t _http_parse_date_ex(const char *date, zend_bool silent TSRMLS_DC)
 {
 	time_t t = -1;
 	
@@ -180,7 +180,7 @@ PHP_HTTP_API time_t _http_parse_date(const char *date TSRMLS_DC)
 	putenv(tzput);
 #endif
 
-	if (-1 == t) {
+	if (-1 == t && !silent) {
 		http_error_ex(HE_NOTICE, HTTP_E_RUNTIME, "Could not parse date: %s", date);
 	}
 	
