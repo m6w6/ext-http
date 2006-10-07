@@ -18,8 +18,8 @@
 #define http_encoding_dechunk(e, el, d, dl) _http_encoding_dechunk((e), (el), (d), (dl) TSRMLS_CC)
 PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
-#define http_encoding_response_start(cl) _http_encoding_response_start((cl) TSRMLS_CC)
-PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC);
+#define http_encoding_response_start(cl, i) _http_encoding_response_start((cl), (i) TSRMLS_CC)
+PHP_HTTP_API int _http_encoding_response_start(size_t content_length, zend_bool ignore_http_ohandler TSRMLS_DC);
 
 #ifdef HTTP_HAVE_ZLIB
 

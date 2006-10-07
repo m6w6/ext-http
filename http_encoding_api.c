@@ -158,17 +158,21 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 /* }}} */
 
 /* {{{ int http_encoding_response_start(size_t) */
-PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
+PHP_HTTP_API int _http_encoding_response_start(size_t content_length, zend_bool ignore_http_ohandler TSRMLS_DC)
 {
-	int is_http = HTTP_G->send.deflate.encoding;
-	int is_zlib = php_ob_handler_used("ob_gzhandler" TSRMLS_CC) || php_ob_handler_used("zlib output compression" TSRMLS_CC);
+	int response = HTTP_G->send.deflate.response;
+	int ohandler = php_ob_handler_used("ob_gzhandler" TSRMLS_CC) || php_ob_handler_used("zlib output compression" TSRMLS_CC);
 	
-	HTTP_G->send.deflate.encoding = 0;
+	if (!ohandler && !ignore_http_ohandler) {
+		ohandler = php_ob_handler_used("ob_deflatehandler" TSRMLS_CC) || php_ob_handler_used("http deflate" TSRMLS_CC);
+	}
 	
-	if (is_http && !is_zlib) {
+	if (response && !ohandler) {
 #ifdef HTTP_HAVE_ZLIB
 		HashTable *selected;
 		zval zsupported;
+		
+		HTTP_G->send.deflate.encoding = 0;
 		
 		INIT_PZVAL(&zsupported);
 		array_init(&zsupported);
@@ -202,14 +206,17 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length TSRMLS_DC)
 		
 		zval_dtor(&zsupported);
 #else
+		HTTP_G->send.deflate.encoding = 0;
 		php_start_ob_buffer_named("ob_gzhandler", 0, 0 TSRMLS_CC);
 #endif /* HTTP_HAVE_ZLIB */
-	} else if (content_length && !is_zlib) {
+	} else if (content_length && !ohandler) {
 		/* emit a content-length header */
 		char cl_header_str[128];
 		size_t cl_header_len;
 		cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %zu", content_length);
 		http_send_header_string_ex(cl_header_str, cl_header_len, 1);
+	} else {
+		HTTP_G->send.deflate.encoding = 0;
 	}
 	
 	return HTTP_G->send.deflate.encoding;
@@ -651,6 +658,8 @@ PHP_HTTP_API void _http_encoding_inflate_stream_free(http_encoding_stream **s TS
 /* {{{ void http_ob_deflatehandler(char *, uint, char **, uint *, int) */
 void _http_ob_deflatehandler(char *output, uint output_len, char **handled_output, uint *handled_output_len, int mode TSRMLS_DC)
 {
+	int encoding;
+	
 	*handled_output = NULL;
 	*handled_output_len = 0;
 	
@@ -662,9 +671,11 @@ void _http_ob_deflatehandler(char *output, uint output_len, char **handled_outpu
 			return;
 		}
 		
-		HTTP_G->send.deflate.encoding = !0;
+		HTTP_G->send.deflate.response = 1;
+		encoding = http_encoding_response_start(0, 1);
+		HTTP_G->send.deflate.response = 0;
 		
-		switch (http_encoding_response_start(0)) {
+		switch (encoding) {
 			case HTTP_ENCODING_GZIP:
 				flags = HTTP_DEFLATE_TYPE_GZIP;
 				break;

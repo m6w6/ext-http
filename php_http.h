@@ -15,7 +15,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "1.3.1"
+#define PHP_EXT_HTTP_VERSION "1.3.2"
 
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
@@ -102,6 +102,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		char *unquoted_etag;
 		time_t last_modified;
 		struct _http_globals_send_deflate {
+			zend_bool response;
 			zend_bool start_auto;
 			long start_flags;
 			int encoding;

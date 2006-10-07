@@ -1154,7 +1154,7 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* gzip */
-	HTTP_G->send.deflate.encoding = zval_is_true(GET_STATIC_PROP(gzip));
+	HTTP_G->send.deflate.response = zval_is_true(GET_STATIC_PROP(gzip));
 	
 	/* send */
 	switch (Z_LVAL_P(GET_STATIC_PROP(mode))) {
