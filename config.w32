@@ -78,7 +78,7 @@ if (PHP_HTTP != "no") {
 		WARNING("zlib encoding functions not enabled; libraries and headers not found");
 	}
 	
-	if (PHP_HASH != "no") {
+	if (typeof(PHP_HASH) != "undefined" && PHP_HASH != "no") {
 		var f;
 		
 		if ((f = check_for_pecl_ext("hash")) || (f = check_for_main_ext("hash"))) {
