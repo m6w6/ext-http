@@ -54,7 +54,7 @@ class XmlRpcClient
 	 * @param string $namespace RPC namespace
 	 * @param array  $options HttpRequest options
 	 */
-	public function __construct($url, $namespace = '', array $options = null)
+	public function __construct($url, $namespace = '', array $options = array())
 	{
 		$this->__request = new HttpRequest($url, HttpRequest::METH_POST, $options);
 		$this->__namespace = $namespace;
@@ -70,15 +70,14 @@ class XmlRpcClient
 	 */
 	public function __call($method, array $params)
 	{
-		if ($this->__namespace) {
+		if (strlen($this->__namespace)) {
 			$method = $this->__namespace .'.'. $method;
 		}
-		$this->__request->setContentType("text/xml; charset=". $this->__encoding);
+		$this->__request->setContentType("text/xml");
 		$this->__request->setRawPostData(
 			xmlrpc_encode_request($method, $params, 
 				array("encoding" => $this->__encoding)));
-		$this->__request->send();
-		$response = $this->__request->getResponseMessage();
+		$response = $this->__request->send();
 		if ($response->getResponseCode() != 200) {
 			throw new Exception(
 				$response->getResponseStatus(), 
