@@ -65,7 +65,8 @@ class XmlRpcServer extends HttpResponse
 	 * @param string $namespace
 	 * @param string $encoding
 	 */
-	public function __construct($namespace) {
+	public function __construct($namespace)
+	{
 		$this->namespace = $namespace;
 		self::initialize();
 	}
@@ -73,7 +74,8 @@ class XmlRpcServer extends HttpResponse
 	/**
 	 * Destructor
 	 */
-	public function __destruct() {
+	public function __destruct()
+	{
 		if (self::$refcnt && !--self::$refcnt) {
 			xmlrpc_server_destroy(self::$xmlrpc);
 		}
@@ -85,7 +87,8 @@ class XmlRpcServer extends HttpResponse
 	 * @param string $namespace
 	 * @return XmlRpcServer
 	 */
-	public static function factory($namespace) {
+	public static function factory($namespace)
+	{
 		return new XmlRpcServer($namespace);
 	}
 	
@@ -94,9 +97,10 @@ class XmlRpcServer extends HttpResponse
 	 *
 	 * @param array $options
 	 */
-	public static function run(array $options = null) {
+	public static function run(array $options = null)
+	{
 		self::initialize(false, true);
-		HttpResponse::setContentType("text/xml; charset=". self::$encoding);
+		self::setContentType("text/xml; charset=". self::$encoding);
 		echo xmlrpc_server_call_method(self::$xmlrpc, self::$xmlreq, null, 
 			array("encoding" => self::$encoding) + (array) $options);
 	}
@@ -108,7 +112,8 @@ class XmlRpcServer extends HttpResponse
 	 * @param array $params
 	 * @param array $options
 	 */
-	public static function test($method, array $params, array $options = null) {
+	public static function test($method, array $params, array $options = null)
+	{
 		self::$xmlreq = xmlrpc_encode_request($method, $params);
 		self::run();
 	}
@@ -119,7 +124,8 @@ class XmlRpcServer extends HttpResponse
 	 * @param int $code
 	 * @param string $msg
 	 */
-	public static function error($code, $msg) {
+	public static function error($code, $msg)
+	{
 		echo xmlrpc_encode(array("faultCode" => $code, "faultString" => $msg));
 	}
 	
@@ -131,7 +137,8 @@ class XmlRpcServer extends HttpResponse
 	 * @param mixed $dispatch
 	 * @param array $spec
 	 */
-	public function registerMethod($name, $callback, $dispatch = null, array $spec = null) {
+	public function registerMethod($name, $callback, $dispatch = null, array $spec = null)
+	{
 		if (!is_callable($callback, false, $cb_name)) {
 			throw new Exception("$cb_name is not a valid callback");
 		}
@@ -155,7 +162,8 @@ class XmlRpcServer extends HttpResponse
 	 *
 	 * @param XmlRpcRequestHandler $handler
 	 */
-	public function registerHandler(XmlRpcRequestHandler $handler) {
+	public function registerHandler(XmlRpcRequestHandler $handler)
+	{
 		$this->handler = $handler;
 		
 		foreach (get_class_methods($handler) as $method) {
@@ -172,21 +180,24 @@ class XmlRpcServer extends HttpResponse
 		}
 	}
 	
-	private function method($method, $namespace = null) {
+	private function method($method, $namespace = null)
+	{
 		if (!strlen($namespace)) {
 			$namespace = strlen($this->namespace) ? $this->namespace : "xmlrpc";
 		}
 		return $namespace .".". strtolower($method[6]) . substr($method, 7);
 	}
 	
-	private function dispatch($method, array $params = null) {
+	private function dispatch($method, array $params = null)
+	{
 		if (array_key_exists($method, self::$handle)) {
 			return call_user_func(self::$handle[$method], $params);
 		}
 		throw new Exception("Unknown XMLRPC method: $method");
 	}
 	
-	private static function initialize($server = true, $data = false) {
+	private static function initialize($server = true, $data = false)
+	{
 		if ($data) {
 			if (!self::$xmlreq && !(self::$xmlreq = http_get_request_body())) {
 				throw new Exception("Failed to fetch XMLRPC request body");
@@ -219,7 +230,8 @@ class XmlRpcServer extends HttpResponse
  * 	}
  * </code>
  */
-interface XmlRpcRequestHandler {
+interface XmlRpcRequestHandler
+{
 	public function getNamespace();
 	public function getIntrospectionData(array &$spec = null);
 }
@@ -227,10 +239,13 @@ interface XmlRpcRequestHandler {
 /**
  * XmlRpcRequestHandlerStub
  */
-abstract class XmlRpcRequestHandlerStub implements XmlRpcRequestHandler {
-	public function getNamespace() {
+abstract class XmlRpcRequestHandlerStub implements XmlRpcRequestHandler
+{
+	public function getNamespace()
+	{
 	}
-	public function getIntrospectionData(array &$spec = null) {
+	public function getIntrospectionData(array &$spec = null)
+	{
 	}
 }
 
