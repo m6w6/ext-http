@@ -39,6 +39,14 @@ PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, cons
 #define http_send_status_header_ex(s, h, l, r) _http_send_status_header_ex((s), (h), (l), (r) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_status_header_ex(int status, const char *header, size_t header_len, zend_bool replace TSRMLS_DC);
 
+#define http_send_header_zval(n, z, r) http_send_header_zval_ex((n), strlen(n), (z), (r))
+#define http_send_header_zval_ex(n, l, z, r) _http_send_header_zval_ex((n), (l), (z), (r) TSRMLS_CC)
+PHP_HTTP_API void _http_send_header_zval_ex(const char *name, size_t name_len, zval **val, zend_bool replace TSRMLS_DC);
+
+#define http_hide_header(h) http_hide_header_ex((h), strlen(h))
+#define http_hide_header_ex(h, l) _http_hide_header_ex((h), (l) TSRMLS_CC)
+PHP_HTTP_API void _http_hide_header_ex(const char *name, size_t name_len TSRMLS_DC);
+
 #define http_send_last_modified(t) _http_send_last_modified_ex((t), NULL TSRMLS_CC)
 #define http_send_last_modified_ex(t, s) _http_send_last_modified_ex((t), (s) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_last_modified_ex(time_t t, char **sent_header TSRMLS_DC);

@@ -637,13 +637,13 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		case HTTP_MSG_REQUEST:
 			ASSOC_PROP(array, long, "responseCode", 0);
 			ASSOC_STRINGL(array, "responseStatus", "", 0);
-			ASSOC_STRING(array, "requestMethod", msg->http.info.request.method);
-			ASSOC_STRING(array, "requestUrl", msg->http.info.request.url);
+			ASSOC_STRING(array, "requestMethod", msg->http.info.request.method?msg->http.info.request.method:"");
+			ASSOC_STRING(array, "requestUrl", msg->http.info.request.url?msg->http.info.request.url:"");
 			break;
 
 		case HTTP_MSG_RESPONSE:
 			ASSOC_PROP(array, long, "responseCode", msg->http.info.response.code);
-			ASSOC_STRING(array, "responseStatus", msg->http.info.response.status);
+			ASSOC_STRING(array, "responseStatus", msg->http.info.response.status?msg->http.info.response.status:"");
 			ASSOC_STRINGL(array, "requestMethod", "", 0);
 			ASSOC_STRINGL(array, "requestUrl", "", 0);
 			break;

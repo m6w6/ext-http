@@ -33,7 +33,7 @@
 #define HTTP_RESPONSE_ME(method, visibility)	PHP_ME(HttpResponse, method, HTTP_ARGS(HttpResponse, method), visibility|ZEND_ACC_STATIC)
 #define HTTP_RESPONSE_ALIAS(method, func)		HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpResponse, method))
 
-HTTP_BEGIN_ARGS(setHeader, 2)
+HTTP_BEGIN_ARGS(setHeader, 1)
 	HTTP_ARG_VAL(name, 0)
 	HTTP_ARG_VAL(value, 0)
 	HTTP_ARG_VAL(replace, 0)
@@ -232,7 +232,7 @@ static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC)
 
 /* ### USERLAND ### */
 
-/* {{{ proto static bool HttpResponse::setHeader(string name, mixed value[, bool replace = true])
+/* {{{ proto static bool HttpResponse::setHeader(string name[, mixed value[, bool replace = true]])
  *
  * Send an HTTP header.
  * 
@@ -251,9 +251,9 @@ PHP_METHOD(HttpResponse, setHeader)
 	zend_bool replace = 1;
 	char *name;
 	int name_len = 0;
-	zval *value = NULL, *orig = NULL;
+	zval *value = NULL;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz/!|b", &name, &name_len, &value, &replace)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|z/!b", &name, &name_len, &value, &replace)) {
 		RETURN_FALSE;
 	}
 	if (SG(headers_sent)) {
@@ -264,39 +264,8 @@ PHP_METHOD(HttpResponse, setHeader)
 		http_error(HE_WARNING, HTTP_E_HEADER, "Cannot send anonymous headers");
 		RETURN_FALSE;
 	}
-
-	/* delete header if value == null */
-	if (!value || Z_TYPE_P(value) == IS_NULL) {
-		RETURN_SUCCESS(http_send_header_ex(name, name_len, "", 0, replace, NULL));
-	}
-	/* send multiple header if replace is false and value is an array */
-	if (!replace && Z_TYPE_P(value) == IS_ARRAY) {
-		zval **data;
-		HashPosition pos;
-		
-		FOREACH_VAL(pos, value, data) {
-			zval *orig = *data;
-			
-			convert_to_string_ex(data);
-			if (SUCCESS != http_send_header_ex(name, name_len, Z_STRVAL_PP(data), Z_STRLEN_PP(data), 0, NULL)) {
-				if (orig != *data) {
-					zval_ptr_dtor(data);
-				}
-				RETURN_FALSE;
-			}
-			if (orig != *data) {
-				zval_ptr_dtor(data);
-			}
-		}
-		RETURN_TRUE;
-	}
-	/* send standard header */
-	orig = value;
-	convert_to_string_ex(&value);
-	RETVAL_SUCCESS(http_send_header_ex(name, name_len, Z_STRVAL_P(value), Z_STRLEN_P(value), replace, NULL));
-	if (orig != value) {
-		zval_ptr_dtor(&value);
-	}
+	http_send_header_zval_ex(name, name_len, &value, replace);
+	RETURN_TRUE;
 }
 /* }}} */
 

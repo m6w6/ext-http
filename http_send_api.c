@@ -174,21 +174,81 @@ PHP_MINIT_FUNCTION(http_send)
 }
 /* }}} */
 
+/* {{{ http_find_header */
+typedef struct {
+	const char *h;
+	size_t l;
+} http_response_header_t;
+
+static int http_find_header(void *data, void *arg)
+{
+	http_response_header_t *h = arg;
+	sapi_header_struct *s = data;
+	
+	return (!strncasecmp(s->header, h->h, h->l)) && s->header[h->l] == ':';
+}
+/* }}} */
+
+/* {{{ void http_hide_header(char *) */
+PHP_HTTP_API void _http_hide_header_ex(const char *name, size_t name_len TSRMLS_DC)
+{
+	http_response_header_t h = {name, name_len};
+	zend_llist_del_element(&SG(sapi_headers).headers, (void *) &h, http_find_header);
+}
+/* }}} */
+
+/* {{{ void http_send_header_zval(char*, zval **, zend_bool) */
+PHP_HTTP_API void _http_send_header_zval_ex(const char *name, size_t name_len, zval **val, zend_bool replace TSRMLS_DC)
+{
+	if (!val || Z_TYPE_PP(val) == IS_NULL || (Z_TYPE_PP(val) == IS_STRING && !Z_STRLEN_PP(val))) {
+		http_hide_header_ex(name, name_len);
+	} else if (Z_TYPE_PP(val) == IS_ARRAY || Z_TYPE_PP(val) == IS_OBJECT) {
+		zend_bool first = replace;
+		zval **data;
+		HashPosition pos;
+		
+		FOREACH_HASH_VAL(pos, HASH_OF(*val), data) {
+			zval *orig = *data;
+			
+			convert_to_string_ex(data);
+			http_send_header_ex(name, name_len, Z_STRVAL_PP(data), Z_STRLEN_PP(data), first, NULL);
+			if (orig != *data) {
+				zval_ptr_dtor(data);
+			}
+			first = 0;
+		}
+	} else {
+		zval *orig = *val;
+		
+		convert_to_string_ex(val);
+		http_send_header_ex(name, name_len, Z_STRVAL_PP(val), Z_STRLEN_PP(val), replace, NULL);
+		if (orig != *val) {
+			zval_ptr_dtor(val);
+		}
+	}
+}
+/* }}} */
 
 /* {{{ STATUS http_send_header(char *, char *, zend_bool) */
 PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace, char **sent_header TSRMLS_DC)
 {
 	STATUS ret;
-	size_t header_len = sizeof(": ") + name_len + value_len + 1;
-	char *header = emalloc(header_len + 1);
-
-	header[header_len] = '\0';
-	header_len = snprintf(header, header_len, "%s: %s", name, value);
-	ret = http_send_header_string_ex(header, header_len, replace);
-	if (sent_header) {
-		*sent_header = header;
+	
+	if (value && value_len) {
+		size_t header_len = sizeof(": ") + name_len + value_len + 1;
+		char *header = emalloc(header_len + 1);
+	
+		header[header_len] = '\0';
+		header_len = snprintf(header, header_len, "%s: %s", name, value);
+		ret = http_send_header_string_ex(header, header_len, replace);
+		if (sent_header) {
+			*sent_header = header;
+		} else {
+			efree(header);
+		}
 	} else {
-		efree(header);
+		http_hide_header_ex(name, name_len);
+		ret = SUCCESS;
 	}
 	return ret;
 }
@@ -451,8 +511,8 @@ PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file, zend_bool close_strea
 	if ((!file) || php_stream_stat(file, &ssb)) {
 		char *defct = sapi_get_default_content_type(TSRMLS_C);
 		
+		http_hide_header("Content-Disposition");
 		http_send_content_type(defct, strlen(defct));
-		http_send_header_string("Content-Disposition:");
 		http_error(HE_WARNING, HTTP_E_RESPONSE, "File not found; stat failed");
 		STR_FREE(defct);
 		

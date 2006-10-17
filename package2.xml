@@ -30,7 +30,7 @@ support. Parallel requests are available for PHP 5 and greater.
  </lead>
  <date>2006-10-10</date>
  <version>
-  <release>1.3.2</release>
+  <release>1.3.3dev</release>
   <api>1.3.0</api>
  </version>
  <stability>
@@ -39,8 +39,7 @@ support. Parallel requests are available for PHP 5 and greater.
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed invalid detection whether a deflated response should be started
-* Fixed build --without-http-zlib-compression (bug #8872)
+* Fixed HttpResponse::setHeader("name", {omitted|NULL|""}) not unsetting header
 ]]></notes>
  <contents>
   <dir name="/">

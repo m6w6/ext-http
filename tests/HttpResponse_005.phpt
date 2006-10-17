@@ -20,6 +20,5 @@ HttpResponse::send();
 Status: 404
 X-Powered-By: PHP/%s
 Content-Type: text/plain
-Content-Disposition:
 
 File not found

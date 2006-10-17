@@ -480,24 +480,14 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 		case HTTP_MSG_RESPONSE:
 		{
 			char *key;
+			uint len;
 			ulong idx;
 			zval **val;
-			HashPosition pos1;
+			HashPosition pos;
 
-			FOREACH_HASH_KEYVAL(pos1, &message->hdrs, key, idx, val) {
+			FOREACH_HASH_KEYLENVAL(pos, &message->hdrs, key, len, idx, val) {
 				if (key) {
-					if (Z_TYPE_PP(val) == IS_ARRAY) {
-						zend_bool first = 1;
-						zval **data;
-						HashPosition pos2;
-						
-						FOREACH_VAL(pos2, *val, data) {
-							http_send_header_ex(key, strlen(key), Z_STRVAL_PP(data), Z_STRLEN_PP(data), first, NULL);
-							first = 0;
-						}
-					} else {
-						http_send_header_ex(key, strlen(key), Z_STRVAL_PP(val), Z_STRLEN_PP(val), 1, NULL);
-					}
+					http_send_header_zval_ex(key, len-1, val, 1);
 					key = NULL;
 				}
 			}
