@@ -200,7 +200,7 @@ PHP_HTTP_API void _http_hide_header_ex(const char *name, size_t name_len TSRMLS_
 /* {{{ void http_send_header_zval(char*, zval **, zend_bool) */
 PHP_HTTP_API void _http_send_header_zval_ex(const char *name, size_t name_len, zval **val, zend_bool replace TSRMLS_DC)
 {
-	if (!val || Z_TYPE_PP(val) == IS_NULL || (Z_TYPE_PP(val) == IS_STRING && !Z_STRLEN_PP(val))) {
+	if (!val || !*val || Z_TYPE_PP(val) == IS_NULL || (Z_TYPE_PP(val) == IS_STRING && !Z_STRLEN_PP(val))) {
 		http_hide_header_ex(name, name_len);
 	} else if (Z_TYPE_PP(val) == IS_ARRAY || Z_TYPE_PP(val) == IS_OBJECT) {
 		zend_bool first = replace;
