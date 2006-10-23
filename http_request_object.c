@@ -798,7 +798,7 @@ PHP_METHOD(HttpRequest, __construct)
 	zval *options = NULL;
 
 	SET_EH_THROW_HTTP();
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sla", &URL, &URL_len, &meth, &options)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sla!", &URL, &URL_len, &meth, &options)) {
 		if (URL) {
 			UPD_STRL(url, URL, URL_len);
 		}
