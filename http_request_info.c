@@ -15,6 +15,7 @@
 #define HTTP_WANT_CURL
 #include "php_http.h"
 
+#ifdef HTTP_HAVE_CURL
 #include "php_http_request_api.h"
 
 /* {{{ void http_request_info(http_request *, HashTable *) */
@@ -127,6 +128,8 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 	add_assoc_string_ex(&array, "error", sizeof("error"), request->_error, 1);
 }
 /* }}} */
+
+#endif /* HTTP_HAVE_CURL */
 
 /*
  * Local variables:
