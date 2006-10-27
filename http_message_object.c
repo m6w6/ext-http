@@ -846,16 +846,18 @@ PHP_METHOD(HttpMessage, getHeaders)
  */
 PHP_METHOD(HttpMessage, setHeaders)
 {
-	zval *new_headers, old_headers;
+	zval *new_headers = NULL, old_headers;
 	getObject(http_message_object, obj);
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &new_headers)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/!", &new_headers)) {
 		return;
 	}
 
 	zend_hash_clean(&obj->message->hdrs);
-	INIT_ZARR(old_headers, &obj->message->hdrs);
-	array_copy(new_headers, &old_headers);
+	if (new_headers) {
+		INIT_ZARR(old_headers, &obj->message->hdrs);
+		array_copy(new_headers, &old_headers);
+	}
 }
 /* }}} */
 

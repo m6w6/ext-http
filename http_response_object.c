@@ -817,7 +817,7 @@ PHP_METHOD(HttpResponse, setData)
 	char *etag;
 	zval *the_data;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &the_data)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &the_data)) {
 		RETURN_FALSE;
 	}
 	if (Z_TYPE_P(the_data) != IS_STRING) {

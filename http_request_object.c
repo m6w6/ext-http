@@ -1749,7 +1749,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 		long flags = 0;
 		zval *allowed_extras_array = NULL;
 		
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|la", &flags, &allowed_extras_array)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|la!", &flags, &allowed_extras_array)) {
 			int i = 0;
 			ulong idx = 0;
 			char *key = NULL, **allowed_extras = NULL;
