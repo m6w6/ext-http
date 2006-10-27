@@ -824,14 +824,14 @@ PHP_FUNCTION(http_redirect)
  */
 PHP_FUNCTION(http_send_data)
 {
-	zval *zdata;
+	int data_len;
+	char *data_buf;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &zdata) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &data_buf, &data_len) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	convert_to_string_ex(&zdata);
-	RETURN_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
+	RETURN_SUCCESS(http_send_data(data_buf, data_len));
 }
 /* }}} */
 
@@ -1063,7 +1063,7 @@ PHP_FUNCTION(http_parse_cookie)
 	HashPosition pos;
 	http_cookie_list list;
 	
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|la", &cookie, &cookie_len, &flags, &allowed_extras_array)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|la!", &cookie, &cookie_len, &flags, &allowed_extras_array)) {
 		RETURN_FALSE;
 	}
 	
@@ -1480,17 +1480,17 @@ PHP_FUNCTION(http_post_data)
  */
 PHP_FUNCTION(http_post_fields)
 {
-	zval *options = NULL, *info = NULL, *fields, *files = NULL;
+	zval *options = NULL, *info = NULL, *fields = NULL, *files = NULL;
 	char *URL;
 	int URL_len;
 	http_request_body body;
 	http_request request;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa|aa/!z", &URL, &URL_len, &fields, &files, &options, &info) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa!|a!a/!z", &URL, &URL_len, &fields, &files, &options, &info) != SUCCESS) {
 		RETURN_FALSE;
 	}
 
-	if (!http_request_body_fill(&body, Z_ARRVAL_P(fields), files ? Z_ARRVAL_P(files) : NULL)) {
+	if (!http_request_body_fill(&body, fields ? Z_ARRVAL_P(fields) : NULL, files ? Z_ARRVAL_P(files) : NULL)) {
 		RETURN_FALSE;
 	}
 
