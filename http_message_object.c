@@ -637,13 +637,13 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 		case HTTP_MSG_REQUEST:
 			ASSOC_PROP(array, long, "responseCode", 0);
 			ASSOC_STRINGL(array, "responseStatus", "", 0);
-			ASSOC_STRING(array, "requestMethod", msg->http.info.request.method?msg->http.info.request.method:"");
-			ASSOC_STRING(array, "requestUrl", msg->http.info.request.url?msg->http.info.request.url:"");
+			ASSOC_STRING(array, "requestMethod", STR_PTR(msg->http.info.request.method));
+			ASSOC_STRING(array, "requestUrl", STR_PTR(msg->http.info.request.url));
 			break;
 
 		case HTTP_MSG_RESPONSE:
 			ASSOC_PROP(array, long, "responseCode", msg->http.info.response.code);
-			ASSOC_STRING(array, "responseStatus", msg->http.info.response.status?msg->http.info.response.status:"");
+			ASSOC_STRING(array, "responseStatus", STR_PTR(msg->http.info.response.status));
 			ASSOC_STRINGL(array, "requestMethod", "", 0);
 			ASSOC_STRINGL(array, "requestUrl", "", 0);
 			break;
@@ -809,8 +809,8 @@ PHP_METHOD(HttpMessage, getHeader)
 	}
 	
 	nice_header = pretty_key(estrndup(orig_header, header_len), header_len, 1, 1);
-	if ((header = http_message_header_ex(obj->message, nice_header, header_len + 1))) {
-		RETVAL_ZVAL(header, 1, 0);
+	if ((header = http_message_header_ex(obj->message, nice_header, header_len + 1, 0))) {
+		RETVAL_ZVAL(header, 1, 1);
 	}
 	efree(nice_header);
 }
@@ -1306,6 +1306,7 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 				
 				memset(&hurl, 0, sizeof(php_url));
 				hurl.host = host ? Z_STRVAL_P(host) : NULL;
+				zval_ptr_dtor(&host);
 				http_build_url(HTTP_URL_REPLACE, purl, &hurl, NULL, &url, NULL);
 				php_url_free(purl);
 				add_assoc_string(array, "url", url, 0);

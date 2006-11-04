@@ -212,7 +212,7 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 {
 	if (	(send_header && (SUCCESS != http_send_status_header(status, header))) ||
 			(status && (SUCCESS != http_send_status(status)))) {
-		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, header ? header : "");
+		http_error_ex(HE_WARNING, HTTP_E_HEADER, "Failed to exit with status/header: %d - %s", status, STR_PTR(header));
 		STR_FREE(header);
 		STR_FREE(body);
 		return FAILURE;

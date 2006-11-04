@@ -49,6 +49,8 @@ typedef int STATUS;
 	}
 #endif
 
+#define STR_PTR(s) (s?s:"")
+
 #define INIT_ZARR(zv, ht) \
 	{ \
 		INIT_PZVAL(&(zv)); \

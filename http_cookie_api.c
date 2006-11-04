@@ -221,8 +221,8 @@ PHP_HTTP_API void _http_cookie_list_tostruct(http_cookie_list *list, zval *strct
 	
 	add_assoc_long(&array, "flags", list->flags);
 	add_assoc_long(&array, "expires", (long) list->expires);
-	add_assoc_string(&array, "path", list->path?list->path:"", 1);
-	add_assoc_string(&array, "domain", list->domain?list->domain:"", 1);
+	add_assoc_string(&array, "path", STR_PTR(list->path), 1);
+	add_assoc_string(&array, "domain", STR_PTR(list->domain), 1);
 }
 /* }}} */
 

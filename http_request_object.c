@@ -653,7 +653,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		}
 
 		UPD_PROP(long, responseCode, msg->http.info.response.code);
-		UPD_PROP(string, responseStatus, msg->http.info.response.status ? msg->http.info.response.status : "");
+		UPD_PROP(string, responseStatus, STR_PTR(msg->http.info.response.status));
 
 		MAKE_STD_ZVAL(message);
 		ZVAL_OBJVAL(message, http_message_object_new_ex(http_message_object_ce, msg, NULL), 0);
@@ -1719,8 +1719,8 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 				getObjectEx(http_message_object, msg, message);
 				
 				if (header_len) {
-					if ((header = http_message_header_ex(msg->message, pretty_key(header_name, header_len, 1, 1), header_len + 1))) {
-						RETURN_ZVAL(header, 1, 0);
+					if ((header = http_message_header_ex(msg->message, pretty_key(header_name, header_len, 1, 1), header_len + 1, 0))) {
+						RETURN_ZVAL(header, 1, 1);
 					}
 				} else {
 					array_init(return_value);

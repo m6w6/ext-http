@@ -51,13 +51,29 @@ PHP_HTTP_API void _http_message_set_type(http_message *m, http_message_type t);
 #define http_message_set_info(m, i) _http_message_set_info((m), (i))
 PHP_HTTP_API void _http_message_set_info(http_message *message, http_info *info);
 
-#define http_message_header(m, h) _http_message_header_ex((m), (h), sizeof(h))
+#define http_message_header(m, h) _http_message_header_ex((m), (h), sizeof(h), 1)
 #define http_message_header_ex _http_message_header_ex
-static inline zval *_http_message_header_ex(http_message *msg, char *key_str, size_t key_len)
+static inline zval *_http_message_header_ex(http_message *msg, char *key_str, size_t key_len, int join)
 {
 	zval **header;
 	if (SUCCESS == zend_hash_find(&msg->hdrs, key_str, key_len, (void *) &header)) {
-		return *header;
+		if (join && Z_TYPE_PP(header) == IS_ARRAY) {
+			zval *header_str, **val;
+			HashPosition pos;
+			phpstr str;
+			
+			phpstr_init(&str);
+			MAKE_STD_ZVAL(header_str);
+			FOREACH_VAL(pos, *header, val) {
+				phpstr_appendf(&str, PHPSTR_LEN(&str) ? ", %s":"%s", Z_STRVAL_PP(val));
+			}
+			phpstr_fix(&str);
+			ZVAL_STRINGL(header_str, PHPSTR_VAL(&str), PHPSTR_LEN(&str), 0);
+			return header_str;
+		} else {
+			ZVAL_ADDREF(*header);
+			return *header;
+		}
 	}
 	return NULL;
 }

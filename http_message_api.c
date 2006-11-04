@@ -122,9 +122,152 @@ PHP_HTTP_API void _http_message_set_info(http_message *message, http_info *info)
 	}
 }
 
+#define http_message_body_parse(m, ms, ml, c) _http_message_body_parse((m), (ms), (ml), (c) TSRMLS_CC)
+static inline void _http_message_body_parse(http_message *msg, const char *message, size_t message_length, const char **continue_at TSRMLS_DC)
+{
+	zval *c;
+	size_t remaining;
+	const char *body;
+	
+	*continue_at = NULL;
+	if ((body = http_locate_body(message))) {
+		remaining = message + message_length - body;
+		
+		if ((c = http_message_header(msg, "Transfer-Encoding"))) {
+			if (strstr(Z_STRVAL_P(c), "chunked")) {
+				/* message has chunked transfer encoding */
+				char *decoded;
+				size_t decoded_len;
+				
+				/* decode and replace Transfer-Encoding with Content-Length header */
+				if ((*continue_at = http_encoding_dechunk(body, message + message_length - body, &decoded, &decoded_len))) {
+					zval *len;
+					char *tmp;
+					int tmp_len;
+					
+					tmp_len = (int) spprintf(&tmp, 0, "%zu", decoded_len);
+					MAKE_STD_ZVAL(len);
+					ZVAL_STRINGL(len, tmp, tmp_len, 0);
+					
+					ZVAL_ADDREF(c);
+					zend_hash_update(&msg->hdrs, "X-Original-Transfer-Encoding", sizeof("X-Original-Transfer-Encoding"), (void *) &c, sizeof(zval *), NULL);
+					zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
+					zend_hash_del(&msg->hdrs, "Content-Length", sizeof("Content-Length"));
+					zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
+					
+					phpstr_from_string_ex(PHPSTR(msg), decoded, decoded_len);
+					efree(decoded);
+				}
+			}
+			zval_ptr_dtor(&c);
+		}
+		
+		if (!*continue_at && (c = http_message_header(msg, "Content-Length"))) {
+			/* message has content-length header */
+			ulong len = strtoul(Z_STRVAL_P(c), NULL, 10);
+			if (len > remaining) {
+				http_error_ex(HE_NOTICE, HTTP_E_MALFORMED_HEADERS, "The Content-Length header pretends a larger body than actually received (expected %lu bytes; got %lu bytes)", len, remaining);
+				len = remaining;
+			}
+			phpstr_from_string_ex(PHPSTR(msg), body, len);
+			*continue_at = body + len;
+			zval_ptr_dtor(&c);
+		}
+		
+		if (!*continue_at && (c = http_message_header(msg, "Content-Range"))) {
+			/* message has content-range header */
+			ulong total = 0, start = 0, end = 0, len = 0;
+			
+			if (!strncasecmp(Z_STRVAL_P(c), "bytes", lenof("bytes")) && 
+					(	Z_STRVAL_P(c)[lenof("bytes")] == ':' ||
+						Z_STRVAL_P(c)[lenof("bytes")] == ' ' ||
+						Z_STRVAL_P(c)[lenof("bytes")] == '=')) {
+				char *total_at = NULL, *end_at = NULL;
+				char *start_at = Z_STRVAL_P(c) + sizeof("bytes");
+				
+				start = strtoul(start_at, &end_at, 10);
+				if (end_at) {
+					end = strtoul(end_at + 1, &total_at, 10);
+					if (total_at && strncmp(total_at + 1, "*", 1)) {
+						total = strtoul(total_at + 1, NULL, 10);
+					}
+					if ((len = (end + 1 - start)) > remaining) {
+						http_error_ex(HE_NOTICE, HTTP_E_MALFORMED_HEADERS, "The Content-Range header pretends a larger body than actually received (expected %lu bytes; got %lu bytes)", len, remaining);
+						len = remaining;
+					}
+					if (end >= start && (!total || end < total)) {
+						phpstr_from_string_ex(PHPSTR(msg), body, len);
+						*continue_at = body + len;
+					}
+				}
+			}
+			
+			if (!*continue_at) {
+				http_error_ex(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Invalid Content-Range header: %s", Z_STRVAL_P(c));
+			}
+			zval_ptr_dtor(&c);
+		}
+		
+		if (!*continue_at) {
+			/* no headers that indicate content length */
+			if (HTTP_MSG_TYPE(RESPONSE, msg)) {
+				phpstr_from_string_ex(PHPSTR(msg), body, remaining);
+			} else {
+				*continue_at = body;
+			}
+		}
+		
+#ifdef HTTP_HAVE_ZLIB
+		/* check for compressed data */
+		if ((c = http_message_header(msg, "Vary"))) {
+			zval_ptr_dtor(&c);
+			
+			if ((c = http_message_header(msg, "Content-Encoding"))) {
+				char *decoded = NULL;
+				size_t decoded_len = 0;
+				
+				if (	!strcasecmp(Z_STRVAL_P(c), "gzip") ||
+						!strcasecmp(Z_STRVAL_P(c), "x-gzip") ||
+						!strcasecmp(Z_STRVAL_P(c), "deflate")) {
+					http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
+				}
+				
+				if (decoded) {
+					zval *len, **original_len;
+					char *tmp;
+					int tmp_len;
+					
+					tmp_len = (int) spprintf(&tmp, 0, "%zu", decoded_len);
+					MAKE_STD_ZVAL(len);
+					ZVAL_STRINGL(len, tmp, tmp_len, 0);
+					
+					ZVAL_ADDREF(c);
+					zend_hash_update(&msg->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), (void *) &c, sizeof(zval *), NULL);
+					zend_hash_del(&msg->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
+					if (SUCCESS == zend_hash_find(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &original_len)) {
+						ZVAL_ADDREF(*original_len);
+						zend_hash_update(&msg->hdrs, "X-Original-Content-Length", sizeof("X-Original-Content-Length"), (void *) original_len, sizeof(zval *), NULL);
+						zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
+					} else {
+						zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
+					}
+					
+					phpstr_dtor(PHPSTR(msg));
+					PHPSTR(msg)->data = decoded;
+					PHPSTR(msg)->used = decoded_len;
+					PHPSTR(msg)->free = 1;
+				}
+				
+				zval_ptr_dtor(&c);
+			}
+		}
+#endif /* HTTP_HAVE_ZLIB */
+	}
+}
+
 PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char *message, size_t message_length ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
-	const char *body = NULL;
+	const char *continue_at;
 	zend_bool free_msg = msg ? 0 : 1;
 
 	if ((!message) || (message_length < HTTP_MSG_MIN_SIZE)) {
@@ -142,139 +285,19 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 		return NULL;
 	}
 	
-	/* header parsing stops at (CR)LF (CR)LF */
-	if ((body = http_locate_body(message))) {
-		zval *c;
-		const char *continue_at = NULL;
-		size_t remaining = message + message_length - body;
+	http_message_body_parse(msg, message, message_length, &continue_at);
+	
+	/* check for following messages */
+	if (continue_at && (continue_at < (message + message_length))) {
+		while (HTTP_IS_CTYPE(space, *continue_at)) ++continue_at;
+		if (continue_at < (message + message_length)) {
+			http_message *next = NULL, *most = NULL;
 
-		/* message has chunked transfer encoding */
-		if ((c = http_message_header(msg, "Transfer-Encoding")) && (!strcasecmp("chunked", Z_STRVAL_P(c)))) {
-			char *decoded;
-			size_t decoded_len;
-
-			/* decode and replace Transfer-Encoding with Content-Length header */
-			if ((continue_at = http_encoding_dechunk(body, message + message_length - body, &decoded, &decoded_len))) {
-				zval *len;
-				char *tmp;
-				int tmp_len;
-
-				tmp_len = (int) spprintf(&tmp, 0, "%zu", decoded_len);
-				MAKE_STD_ZVAL(len);
-				ZVAL_STRINGL(len, tmp, tmp_len, 0);
-
-				ZVAL_ADDREF(c);
-				zend_hash_add(&msg->hdrs, "X-Original-Transfer-Encoding", sizeof("X-Original-Transfer-Encoding"), (void *) &c, sizeof(zval *), NULL);
-				zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
-				zend_hash_del(&msg->hdrs, "Content-Length", sizeof("Content-Length"));
-				zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
-				
-				phpstr_from_string_ex(PHPSTR(msg), decoded, decoded_len);
-				efree(decoded);
-			}
-		} else
-
-		/* message has content-length header */
-		if ((c = http_message_header(msg, "Content-Length"))) {
-			ulong len = strtoul(Z_STRVAL_P(c), NULL, 10);
-			if (len > remaining) {
-				http_error_ex(HE_NOTICE, HTTP_E_MALFORMED_HEADERS, "The Content-Length header pretends a larger body than actually received (expected %lu bytes; got %lu bytes)", len, remaining);
-				len = remaining;
-			}
-			phpstr_from_string_ex(PHPSTR(msg), body, len);
-			continue_at = body + len;
-		} else
-
-		/* message has content-range header */
-		if ((c = http_message_header(msg, "Content-Range"))) {
-			ulong total = 0, start = 0, end = 0, len = 0;
-			
-			if (!strncasecmp(Z_STRVAL_P(c), "bytes", lenof("bytes")) && 
-					(Z_STRVAL_P(c)[lenof("bytes")] == ':' || Z_STRVAL_P(c)[lenof("bytes")] == ' ')) {
-				char *total_at = NULL, *end_at = NULL;
-				char *start_at = Z_STRVAL_P(c) + sizeof("bytes");
-				
-				start = strtoul(start_at, &end_at, 10);
-				if (end_at) {
-					end = strtoul(end_at + 1, &total_at, 10);
-					if (total_at && strncmp(total_at + 1, "*", 1)) {
-						total = strtoul(total_at + 1, NULL, 10);
-					}
-					if ((len = (end + 1 - start)) > remaining) {
-						http_error_ex(HE_NOTICE, HTTP_E_MALFORMED_HEADERS, "The Content-Range header pretends a larger body than actually received (expected %lu bytes; got %lu bytes)", len, remaining);
-						len = remaining;
-					}
-					if (end >= start && (!total || end < total)) {
-						phpstr_from_string_ex(PHPSTR(msg), body, len);
-						continue_at = body + len;
-					}
-				}
-			}
-
-			if (!continue_at) {
-				http_error_ex(HE_WARNING, HTTP_E_MALFORMED_HEADERS, "Invalid Content-Range header: %s", Z_STRVAL_P(c));
-			}
-		} else
-
-		/* no headers that indicate content length */
-		if (HTTP_MSG_TYPE(RESPONSE, msg)) {
-			phpstr_from_string_ex(PHPSTR(msg), body, remaining);
-		} else {
-			continue_at = body;
-		}
-		
-#ifdef HTTP_HAVE_ZLIB
-		/* check for compressed data */
-		if (http_message_header(msg, "Vary") && (c = http_message_header(msg, "Content-Encoding"))) {
-			char *decoded = NULL;
-			size_t decoded_len = 0;
-
-			if (	!strcasecmp(Z_STRVAL_P(c), "gzip") || 
-					!strcasecmp(Z_STRVAL_P(c), "x-gzip") ||
-					!strcasecmp(Z_STRVAL_P(c), "deflate")) {
-				http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
-			}
-			
-			if (decoded) {
-				zval *len, **original_len;
-				char *tmp;
-				int tmp_len;
-				
-				tmp_len = (int) spprintf(&tmp, 0, "%zu", decoded_len);
-				MAKE_STD_ZVAL(len);
-				ZVAL_STRINGL(len, tmp, tmp_len, 0);
-
-				ZVAL_ADDREF(c);
-				zend_hash_add(&msg->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), (void *) &c, sizeof(zval *), NULL);
-				zend_hash_del(&msg->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
-				if (SUCCESS == zend_hash_find(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &original_len)) {
-					ZVAL_ADDREF(*original_len);					
-					zend_hash_add(&msg->hdrs, "X-Original-Content-Length", sizeof("X-Original-Content-Length"), (void *) original_len, sizeof(zval *), NULL);
-					zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
-				} else {
-					zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
-				}
-
-				phpstr_dtor(PHPSTR(msg));
-				PHPSTR(msg)->data = decoded;
-				PHPSTR(msg)->used = decoded_len;
-				PHPSTR(msg)->free = 1;
-			}
-		}
-#endif /* HTTP_HAVE_ZLIB */
-
-		/* check for following messages */
-		if (continue_at && (continue_at < (message + message_length))) {
-			while (HTTP_IS_CTYPE(space, *continue_at)) ++continue_at;
-			if (continue_at < (message + message_length)) {
-				http_message *next = NULL, *most = NULL;
-
-				/* set current message to parent of most parent following messages and return deepest */
-				if ((most = next = http_message_parse_rel(NULL, continue_at, message + message_length - continue_at))) {
-					while (most->parent) most = most->parent;
-					most->parent = msg;
-					msg = next;
-				}
+			/* set current message to parent of most parent following messages and return deepest */
+			if ((most = next = http_message_parse_rel(NULL, continue_at, message + message_length - continue_at))) {
+				while (most->parent) most = most->parent;
+				most->parent = msg;
+				msg = next;
 			}
 		}
 	}
@@ -295,8 +318,8 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 	switch (msg->type) {
 		case HTTP_MSG_REQUEST:
 			phpstr_appendf(&str, "%s %s HTTP/%1.1f" HTTP_CRLF,
-				msg->http.info.request.method,
-				msg->http.info.request.url,
+				msg->http.info.request.method?msg->http.info.request.method:"UNKNOWN",
+				msg->http.info.request.url?msg->http.info.request.url:"/",
 				msg->http.version);
 			break;
 
@@ -304,8 +327,8 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 			phpstr_appendf(&str, "HTTP/%1.1f %d%s%s" HTTP_CRLF,
 				msg->http.version,
 				msg->http.info.response.code,
-				*msg->http.info.response.status ? " ":"",
-				msg->http.info.response.status);
+				msg->http.info.response.status&&*msg->http.info.response.status ? " ":"",
+				STR_PTR(msg->http.info.response.status));
 			break;
 
 		case HTTP_MSG_NONE:
@@ -315,6 +338,7 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 
 	FOREACH_HASH_KEYVAL(pos1, &msg->hdrs, key, idx, header) {
 		if (key) {
+			HashPosition pos2;
 			zval **single_header;
 
 			switch (Z_TYPE_PP(header)) {
@@ -323,13 +347,10 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 					break;
 
 				case IS_ARRAY:
-				{
-					HashPosition pos2;
 					FOREACH_VAL(pos2, *header, single_header) {
 						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(single_header));
 					}
 					break;
-				}
 			}
 
 			key = NULL;
