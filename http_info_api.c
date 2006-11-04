@@ -97,8 +97,18 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 		const char *code = http + sizeof("HTTP/1.1");
 		
 		info->type = IS_HTTP_RESPONSE;
-		HTTP_INFO(info).response.code = (code && (end > code)) ? strtol(code, &status, 10) : 0;
-		HTTP_INFO(info).response.status = (status && (end > ++status)) ? estrndup(status, end - status) : ecalloc(1,1);
+		while (' ' == *code) ++code;
+		if (code && end > code) {
+			HTTP_INFO(info).response.code = strtol(code, &status, 10);
+		} else {
+			HTTP_INFO(info).response.code = 0;
+		}
+		if (status && end > status) {
+			while (' ' == *status) ++status;
+			HTTP_INFO(info).response.status = estrndup(status, end - status);
+		} else {
+			HTTP_INFO(info).response.status = ecalloc(1, 1);
+		}
 		
 		return SUCCESS;
 	}
@@ -110,10 +120,17 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 		info->type = IS_HTTP_REQUEST;
 		if (url && http > url) {
 			HTTP_INFO(info).request.method = estrndup(pre_header, url - pre_header);
-			HTTP_INFO(info).request.url = estrndup(url + 1, http - url - 2);
+			while (' ' == *url) ++url;
+			while (' ' == *(http-1)) --http;
+			if (http > url) {
+				HTTP_INFO(info).request.url = estrndup(url, http - url);
+			} else {
+				efree(HTTP_INFO(info).request.method);
+				return FAILURE;
+			}
 		} else {
-			HTTP_INFO(info).request.method = ecalloc(1,1);
-			HTTP_INFO(info).request.url = ecalloc(1,1);
+			HTTP_INFO(info).request.method = ecalloc(1, 1);
+			HTTP_INFO(info).request.url = ecalloc(1, 1);
 		}
 		
 		return SUCCESS;
