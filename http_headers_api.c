@@ -358,7 +358,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 							const char *key = header;
 							
 							/* skip leading ws */
-							while (keylen && HTTP_IS_CTYPE(space, *key)) --keylen && ++key;
+							while (keylen && HTTP_IS_CTYPE(space, *key)) --keylen, ++key;
 							/* skip trailing ws */
 							while (keylen && HTTP_IS_CTYPE(space, key[keylen - 1])) --keylen;
 							
