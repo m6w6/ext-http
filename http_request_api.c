@@ -618,7 +618,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		request->_cache.headers = NULL;
 	}
 	if ((zoption = http_request_option(request, options, "headers", IS_ARRAY))) {
-		char *header_key;
+		char *header_key = NULL;
 		ulong header_idx;
 		HashPosition pos;
 
