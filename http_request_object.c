@@ -542,21 +542,23 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 
 		case HTTP_PUT:
 		{
-			zval *put_data = GET_PROP(putData);
+			zval *put_file = GET_PROP(putFile);
 			
 			http_request_object_check_request_content_type(getThis());
-			if (Z_STRLEN_P(put_data)) {
-				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_CSTRING,
-					estrndup(Z_STRVAL_P(put_data), Z_STRLEN_P(put_data)), Z_STRLEN_P(put_data), 1);
-			} else {
+			
+			if (Z_STRLEN_P(put_file)) {
 				php_stream_statbuf ssb;
-				php_stream *stream = php_stream_open_wrapper_ex(Z_STRVAL_P(GET_PROP(putFile)), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL, HTTP_DEFAULT_STREAM_CONTEXT);
+				php_stream *stream = php_stream_open_wrapper_ex(put_file, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL, HTTP_DEFAULT_STREAM_CONTEXT);
 				
-				if (stream && !php_stream_stat(stream, &ssb)) {
+				if (stream && SUCCESS == php_stream_stat(stream, &ssb)) {
 					obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 1);
 				} else {
 					status = FAILURE;
 				}
+			} else {
+				zval *put_data = GET_PROP(putData);
+				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_CSTRING,
+					estrndup(Z_STRVAL_P(put_data), Z_STRLEN_P(put_data)), Z_STRLEN_P(put_data), 1);
 			}
 			break;
 		}
