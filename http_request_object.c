@@ -395,7 +395,16 @@ PHP_MINIT_FUNCTION(http_request_object)
 	*/
 	DCL_CONST(long, "VERSION_1_0", CURL_HTTP_VERSION_1_0);
 	DCL_CONST(long, "VERSION_1_1", CURL_HTTP_VERSION_1_1);
-	DCL_CONST(long, "VERSION_NONE", CURL_HTTP_VERSION_NONE);
+	DCL_CONST(long, "VERSION_NONE", CURL_HTTP_VERSION_NONE); /* to be removed */
+	DCL_CONST(long, "VERSION_ANY", CURL_HTTP_VERSION_NONE);
+
+	/*
+	* SSL Version Constants
+	*/
+	DCL_CONST(long, "SSL_VERSION_TLSv1", CURL_SSLVERSION_TLSv1);
+	DCL_CONST(long, "SSL_VERSION_SSLv2", CURL_SSLVERSION_SSLv2);
+	DCL_CONST(long, "SSL_VERSION_SSLv3", CURL_SSLVERSION_SSLv3);
+	DCL_CONST(long, "SSL_VERSION_ANY", CURL_SSLVERSION_DEFAULT);
 
 	/*
 	* DNS IPvX resolving
@@ -410,6 +419,7 @@ PHP_MINIT_FUNCTION(http_request_object)
 	DCL_CONST(long, "AUTH_BASIC", CURLAUTH_BASIC);
 	DCL_CONST(long, "AUTH_DIGEST", CURLAUTH_DIGEST);
 	DCL_CONST(long, "AUTH_NTLM", CURLAUTH_NTLM);
+	DCL_CONST(long, "AUTH_GSSNEG", CURLAUTH_GSSNEGOTIATE);
 	DCL_CONST(long, "AUTH_ANY", CURLAUTH_ANY);
 	
 	/*
@@ -548,7 +558,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			
 			if (Z_STRLEN_P(put_file)) {
 				php_stream_statbuf ssb;
-				php_stream *stream = php_stream_open_wrapper_ex(put_file, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL, HTTP_DEFAULT_STREAM_CONTEXT);
+				php_stream *stream = php_stream_open_wrapper_ex(Z_STRVAL_P(put_file), "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL, HTTP_DEFAULT_STREAM_CONTEXT);
 				
 				if (stream && SUCCESS == php_stream_stat(stream, &ssb)) {
 					obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_UPLOADFILE, stream, ssb.sb.st_size, 1);
