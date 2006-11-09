@@ -170,7 +170,7 @@ dnl ----
 		AC_MSG_CHECKING([for curl version >= 7.12.3])
 		CURL_VERSION=`$CURL_CONFIG --version | $SED -e 's/[[^0-9\.]]//g'`
 		AC_MSG_RESULT([$CURL_VERSION])
-		if test `echo $CURL_VERSION | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71203; then
+		if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71203; then
 			AC_MSG_ERROR([libcurl version greater or equal to 7.12.3 required])
 		fi
 		
