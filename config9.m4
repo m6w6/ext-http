@@ -211,6 +211,21 @@ dnl ----
 			AC_MSG_RESULT([no])
 		fi
 		
+		AC_MSG_CHECKING([for bundled SSL CA info])
+		CURL_CAINFO=
+		for i in `$CURL_CONFIG --ca` "/etc/ssl/certs/ca-certificates.crt"; do
+			if test -f "$i"; then
+				CURL_CAINFO="$i"
+				break
+			fi
+		done
+		if test -z "$CURL_CAINFO"; then
+			AC_MSG_RESULT([not found])
+		else
+			AC_MSG_RESULT([$CURL_CAINFO])
+			AC_DEFINE_UNQUOTED([HTTP_CURL_CAINFO], ["$CURL_CAINFO"], [path to bundled SSL CA info])
+		fi
+		
 		PHP_ADD_INCLUDE($CURL_DIR/include)
 		PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 		PHP_EVAL_LIBLINE($CURL_LIBS, HTTP_SHARED_LIBADD)
