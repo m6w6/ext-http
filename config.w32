@@ -106,9 +106,13 @@ if (PHP_HTTP != "no") {
 		AC_DEFINE("HTTP_HAVE_CURL", 1, "Have CURL library");
 		AC_DEFINE("HTTP_HAVE_SSL", 1, "Have SSL");
 		AC_DEFINE("HAVE_CURL_MULTI_STRERROR", 1, "");
+		AC_DEFINE("HAVE_CURL_SHARE_STRERROR", 1, "");
 		AC_DEFINE("HAVE_CURL_EASY_STRERROR", 1, "");
 		AC_DEFINE("HAVE_CURL_EASY_RESET", 1, "");
 		AC_DEFINE("HAVE_CURL_GETFORMDATA", 1, "");
+		AC_DEFINE("HAVE_CURL_FORMGET", 1, "");
+		AC_DEFINE("HAVE_CURL_MULTI_SETOPT", 1, "");
+		AC_DEFINE("HAVE_CURL_MULTI_TIMEOUT", 1, "");
 	} else {
 		WARNING("curl convenience functions not enabled; libraries and headers not found");
 	}
