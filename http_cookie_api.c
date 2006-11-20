@@ -316,17 +316,14 @@ PHP_HTTP_API void _http_cookie_list_tostring(http_cookie_list *list, char **str,
 {
 	phpstr buf;
 	zval **val;
-	ulong idx = 0;
-	uint keylen = 0;
-	char *key = NULL;
+	HashKey key = initHashKey(0);
 	HashPosition pos;
 	
 	phpstr_init(&buf);
 	
-	FOREACH_HASH_KEYLENVAL(pos, &list->cookies, key, keylen, idx, val) {
-		if (key && keylen) {
-			append_encoded(&buf, key, keylen-1, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
-			key = NULL;
+	FOREACH_HASH_KEYVAL(pos, &list->cookies, key, val) {
+		if (key.type == HASH_KEY_IS_STRING && key.len) {
+			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
 		}
 	}
 	
@@ -342,10 +339,9 @@ PHP_HTTP_API void _http_cookie_list_tostring(http_cookie_list *list, char **str,
 		efree(date);
 	}
 	
-	FOREACH_HASH_KEYLENVAL(pos, &list->extras, key, keylen, idx, val) {
-		if (key && keylen) {
-			append_encoded(&buf, key, keylen-1, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
-			key = NULL;
+	FOREACH_HASH_KEYVAL(pos, &list->extras, key, val) {
+		if (key.type == HASH_KEY_IS_STRING && key.len) {
+			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
 		}
 	}
 	

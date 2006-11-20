@@ -584,6 +584,70 @@ failure:
 }
 /* }}} */
 
+/* {{{ array_join */
+int apply_array_append_func(void *pDest, int num_args, va_list args, zend_hash_key *hash_key)
+{
+	int flags;
+	char *key = NULL;
+	HashTable *dst;
+	zval **data = NULL, **value = (zval **) pDest;
+	
+	dst = va_arg(args, HashTable *);
+	flags = va_arg(args, int);
+	
+	if ((!(flags & ARRAY_JOIN_STRONLY)) || hash_key->nKeyLength) {
+		if ((flags & ARRAY_JOIN_PRETTIFY) && hash_key->nKeyLength) {
+			key = pretty_key(estrndup(hash_key->arKey, hash_key->nKeyLength - 1), hash_key->nKeyLength - 1, 1, 1);
+			zend_hash_find(dst, key, hash_key->nKeyLength, (void *) &data);
+		} else {
+			zend_hash_quick_find(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) &data);
+		}
+		
+		ZVAL_ADDREF(*value);
+		if (data) {
+			if (Z_TYPE_PP(data) != IS_ARRAY) {
+				convert_to_array(*data);
+			}
+			add_next_index_zval(*data, *value);
+		} else if (key) {
+			zend_hash_add(dst, key, hash_key->nKeyLength, value, sizeof(zval *), NULL);
+		} else {
+			zend_hash_quick_add(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, value, sizeof(zval *), NULL);
+		}
+		
+		if (key) {
+			efree(key);
+		}
+	}
+	
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+int apply_array_merge_func(void *pDest, int num_args, va_list args, zend_hash_key *hash_key)
+{
+	int flags;
+	char *key = NULL;
+	HashTable *dst;
+	zval **value = (zval **) pDest;
+	
+	dst = va_arg(args, HashTable *);
+	flags = va_arg(args, int);
+	
+	if ((!(flags & ARRAY_JOIN_STRONLY)) || hash_key->nKeyLength) {
+		ZVAL_ADDREF(*value);
+		if ((flags & ARRAY_JOIN_PRETTIFY) && hash_key->nKeyLength) {
+			key = pretty_key(estrndup(hash_key->arKey, hash_key->nKeyLength - 1), hash_key->nKeyLength - 1, 1, 1);
+			zend_hash_update(dst, key, hash_key->nKeyLength, (void *) value, sizeof(zval *), NULL);
+			efree(key);
+		} else {
+			zend_hash_quick_update(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) value, sizeof(zval *), NULL);
+		}
+	}
+	
+	return ZEND_HASH_APPLY_KEEP;
+}
+/* }}} */
+
 /*
  * Local variables:
  * tab-width: 4

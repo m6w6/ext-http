@@ -374,9 +374,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_ex(HashTable *hash, zend_bool override_
 /* {{{ http_urlencode_hash_recursive */
 PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, const char *arg_sep, size_t arg_sep_len, const char *prefix, size_t prefix_len TSRMLS_DC)
 {
-	char *key = NULL;
-	uint len = 0;
-	ulong idx = 0;
+	HashKey key = initHashKey(0);
 	zval **data = NULL;
 	HashPosition pos;
 
@@ -388,7 +386,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 		return SUCCESS;
 	}
 	
-	FOREACH_HASH_KEYLENVAL(pos, ht, key, len, idx, data) {
+	FOREACH_HASH_KEYVAL(pos, ht, key, data) {
 		char *encoded_key;
 		int encoded_len;
 		phpstr new_prefix;
@@ -398,18 +396,17 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 			return FAILURE;
 		}
 		
-		if (key) {
-			if (!*key) {
+		if (key.type == HASH_KEY_IS_STRING) {
+			if (!*key.str) {
 				/* only public properties */
 				continue;
 			}
-			if (len && key[len - 1] == '\0') {
-				--len;
+			if (key.len && key.str[key.len - 1] == '\0') {
+				--key.len;
 			}
-			encoded_key = php_url_encode(key, len, &encoded_len);
-			key = NULL;
+			encoded_key = php_url_encode(key.str, key.len, &encoded_len);
 		} else {
-			encoded_len = spprintf(&encoded_key, 0, "%ld", idx);
+			encoded_len = spprintf(&encoded_key, 0, "%ld", key.num);
 		}
 		
 		{

@@ -308,9 +308,9 @@ PHP_HTTP_API http_message *_http_message_parse_ex(http_message *msg, const char 
 PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_t *length)
 {
 	phpstr str;
-	char *key, *data;
-	ulong idx;
+	HashKey key = initHashKey(0);
 	zval **header;
+	char *data;
 	HashPosition pos1;
 
 	phpstr_init_ex(&str, 4096, 0);
@@ -336,24 +336,22 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 			break;
 	}
 
-	FOREACH_HASH_KEYVAL(pos1, &msg->hdrs, key, idx, header) {
-		if (key) {
+	FOREACH_HASH_KEYVAL(pos1, &msg->hdrs, key, header) {
+		if (key.type == HASH_KEY_IS_STRING) {
 			HashPosition pos2;
 			zval **single_header;
 
 			switch (Z_TYPE_PP(header)) {
 				case IS_STRING:
-					phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(header));
+					phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key.str, Z_STRVAL_PP(header));
 					break;
 
 				case IS_ARRAY:
 					FOREACH_VAL(pos2, *header, single_header) {
-						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key, Z_STRVAL_PP(single_header));
+						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key.str, Z_STRVAL_PP(single_header));
 					}
 					break;
 			}
-
-			key = NULL;
 		}
 	}
 
@@ -500,16 +498,13 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 	switch (message->type) {
 		case HTTP_MSG_RESPONSE:
 		{
-			char *key;
-			uint len;
-			ulong idx;
+			HashKey key = initHashKey(0);
 			zval **val;
 			HashPosition pos;
 
-			FOREACH_HASH_KEYLENVAL(pos, &message->hdrs, key, len, idx, val) {
-				if (key) {
-					http_send_header_zval_ex(key, len-1, val, 1);
-					key = NULL;
+			FOREACH_HASH_KEYVAL(pos, &message->hdrs, key, val) {
+				if (key.type == HASH_KEY_IS_STRING) {
+					http_send_header_zval_ex(key.str, key.len-1, val, 1);
 				}
 			}
 			rs =	SUCCESS == http_send_status(message->http.info.response.code) &&

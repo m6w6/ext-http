@@ -827,12 +827,10 @@ PHP_METHOD(HttpMessage, getHeaders)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval headers;
 		getObject(http_message_object, obj);
 
-		INIT_ZARR(headers, &obj->message->hdrs);
 		array_init(return_value);
-		array_copy(&headers, return_value);
+		array_copy(&obj->message->hdrs, Z_ARRVAL_P(return_value));
 	}
 }
 /* }}} */
@@ -846,7 +844,7 @@ PHP_METHOD(HttpMessage, getHeaders)
  */
 PHP_METHOD(HttpMessage, setHeaders)
 {
-	zval *new_headers = NULL, old_headers;
+	zval *new_headers = NULL;
 	getObject(http_message_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/!", &new_headers)) {
@@ -855,8 +853,7 @@ PHP_METHOD(HttpMessage, setHeaders)
 
 	zend_hash_clean(&obj->message->hdrs);
 	if (new_headers) {
-		INIT_ZARR(old_headers, &obj->message->hdrs);
-		array_copy(new_headers, &old_headers);
+		array_copy(Z_ARRVAL_P(new_headers), &obj->message->hdrs);
 	}
 }
 /* }}} */
@@ -873,7 +870,7 @@ PHP_METHOD(HttpMessage, setHeaders)
  */
 PHP_METHOD(HttpMessage, addHeaders)
 {
-	zval old_headers, *new_headers;
+	zval *new_headers;
 	zend_bool append = 0;
 	getObject(http_message_object, obj);
 
@@ -881,12 +878,7 @@ PHP_METHOD(HttpMessage, addHeaders)
 		return;
 	}
 
-	INIT_ZARR(old_headers, &obj->message->hdrs);
-	if (append) {
-		array_append(new_headers, &old_headers);
-	} else {
-		array_merge(new_headers, &old_headers);
-	}
+	array_join(Z_ARRVAL_P(new_headers), &obj->message->hdrs, append, ARRAY_JOIN_STRONLY|ARRAY_JOIN_PRETTIFY);
 }
 /* }}} */
 
@@ -1298,7 +1290,7 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 #ifdef HTTP_HAVE_CURL
 				int method;
 				char *url;
-				zval tmp, body, *array, *headers, *host = http_message_header(obj->message, "Host");
+				zval body, *array, *headers, *host = http_message_header(obj->message, "Host");
 				php_url hurl, *purl = php_url_parse(obj->message->http.info.request.url);
 				
 				MAKE_STD_ZVAL(array);
@@ -1322,8 +1314,7 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 				
 				MAKE_STD_ZVAL(headers);
 				array_init(headers);
-				INIT_ZARR(tmp, &obj->message->hdrs);
-				array_copy(&tmp, headers);
+				array_copy(&obj->message->hdrs, Z_ARRVAL_P(headers));
 				add_assoc_zval(array, "headers", headers);
 				
 				object_init_ex(return_value, http_request_object_ce);
@@ -1343,9 +1334,7 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 			{
 #ifndef WONKY
 				HashPosition pos1, pos2;
-				ulong idx;
-				uint key_len;
-				char *key = NULL;
+				HashKey key = initHashKey(0);
 				zval **header, **h, *body;
 				
 				if (obj->message->http.info.response.code) {
@@ -1354,30 +1343,30 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 				
 				object_init_ex(return_value, http_response_object_ce);
 				
-				FOREACH_HASH_KEYLENVAL(pos1, &obj->message->hdrs, key, key_len, idx, header) {
-					if (key) {
-						zval zkey;
+				FOREACH_HASH_KEYVAL(pos1, &obj->message->hdrs, key, header) {
+					if (key.type == HASH_KEY_IS_STRING) {
+						zval *zkey;
 						
-						INIT_PZVAL(&zkey);
-						ZVAL_STRINGL(&zkey, key, key_len, 0);
+						MAKE_STD_ZVAL(zkey);
+						ZVAL_STRINGL(zkey, key.str, key.len - 1, 1);
 						
 						switch (Z_TYPE_PP(header)) {
 							case IS_ARRAY:
 							case IS_OBJECT:
 								FOREACH_HASH_VAL(pos2, HASH_OF(*header), h) {
 									ZVAL_ADDREF(*h);
-									zend_call_method_with_2_params(&return_value, http_response_object_ce, NULL, "setheader", NULL, &zkey, *h);
+									zend_call_method_with_2_params(&return_value, http_response_object_ce, NULL, "setheader", NULL, zkey, *h);
 									zval_ptr_dtor(h);
 								}
 								break;
 							
 							default:
 								ZVAL_ADDREF(*header);
-								zend_call_method_with_2_params(&return_value, http_response_object_ce, NULL, "setheader", NULL, &zkey, *header);
+								zend_call_method_with_2_params(&return_value, http_response_object_ce, NULL, "setheader", NULL, zkey, *header);
 								zval_ptr_dtor(header);
 								break;
 						}
-						key = NULL;
+						zval_ptr_dtor(&zkey);
 					}
 				}
 				

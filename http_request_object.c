@@ -748,26 +748,26 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 	array_init(new_opts);
 	old_opts = GET_PROP(options);
 	if (Z_TYPE_P(old_opts) == IS_ARRAY) {
-		array_copy(old_opts, new_opts);
+		array_copy(Z_ARRVAL_P(old_opts), Z_ARRVAL_P(new_opts));
 	}
 
-	if (prettify_keys && opts) {
-		zend_hash_apply_with_arguments(Z_ARRVAL_P(opts), apply_pretty_key, 0);
-	}
 	if (SUCCESS == zend_hash_find(Z_ARRVAL_P(new_opts), key, len, (void *) &entry)) {
 		if (overwrite) {
 			zend_hash_clean(Z_ARRVAL_PP(entry));
 		}
 		if (opts && zend_hash_num_elements(Z_ARRVAL_P(opts))) {
 			if (overwrite) {
-				array_copy(opts, *entry);
+				array_copy(Z_ARRVAL_P(opts), Z_ARRVAL_PP(entry));
 			} else {
-				array_merge(opts, *entry);
+				array_join(Z_ARRVAL_P(opts), Z_ARRVAL_PP(entry), 0, prettify_keys ? ARRAY_JOIN_PRETTIFY : 0);
 			}
 		}
 	} else if (opts) {
+		if (prettify_keys) {
+			zend_hash_apply_with_arguments(Z_ARRVAL_P(opts), apply_pretty_key, 0);
+		}
 		ZVAL_ADDREF(opts);
-		add_assoc_zval(new_opts, key, opts);
+		add_assoc_zval_ex(new_opts, key, len, opts);
 	}
 	SET_PROP(options, new_opts);
 	zval_ptr_dtor(&new_opts);
@@ -790,7 +790,7 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 		if (	(Z_TYPE_P(opts) == IS_ARRAY) && 
 				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), key, len, (void *) &options))) {
 			convert_to_array(*options);
-			array_copy(*options, return_value);
+			array_copy(Z_ARRVAL_PP(options), Z_ARRVAL_P(return_value));
 		}
 	}
 }
@@ -844,8 +844,7 @@ PHP_METHOD(HttpRequest, __construct)
  */
 PHP_METHOD(HttpRequest, setOptions)
 {
-	char *key = NULL;
-	ulong idx = 0;
+	HashKey key = initHashKey(0);
 	HashPosition pos;
 	zval *opts = NULL, *old_opts, *new_opts, *add_opts, **opt;
 
@@ -865,42 +864,40 @@ PHP_METHOD(HttpRequest, setOptions)
 	MAKE_STD_ZVAL(add_opts);
 	array_init(add_opts);
 	/* some options need extra attention -- thus cannot use array_merge() directly */
-	FOREACH_KEYVAL(pos, opts, key, idx, opt) {
-		if (key) {
-			if (!strcmp(key, "headers")) {
+	FOREACH_KEYVAL(pos, opts, key, opt) {
+		if (key.type == HASH_KEY_IS_STRING) {
+			if (!strcmp(key.str, "headers")) {
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "addheaders", NULL, *opt);
-			} else if (!strcmp(key, "cookies")) {
+			} else if (!strcmp(key.str, "cookies")) {
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "addcookies", NULL, *opt);
-			} else if (!strcmp(key, "ssl")) {
+			} else if (!strcmp(key.str, "ssl")) {
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "addssloptions", NULL, *opt);
-			} else if ((!strcasecmp(key, "url")) || (!strcasecmp(key, "uri"))) {
+			} else if ((!strcasecmp(key.str, "url")) || (!strcasecmp(key.str, "uri"))) {
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "seturl", NULL, *opt);
-			} else if (!strcmp(key, "method")) {
+			} else if (!strcmp(key.str, "method")) {
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setmethod", NULL, *opt);
 #if HTTP_CURL_VERSION(7,14,1)
-			} else if (!strcmp(key, "resetcookies")) {
+			} else if (!strcmp(key.str, "resetcookies")) {
 				getObject(http_request_object, obj);
 				http_request_reset_cookies(obj->request, 0);
 #endif
-			} else if (!strcmp(key, "enablecookies")) {
+			} else if (!strcmp(key.str, "enablecookies")) {
 				getObject(http_request_object, obj);
 				http_request_enable_cookies(obj->request);
-			} else if (!strcasecmp(key, "recordHistory")) {
+			} else if (!strcasecmp(key.str, "recordHistory")) {
 				UPD_PROP(bool, recordHistory, 1);
 			} else {
 				ZVAL_ADDREF(*opt);
-				add_assoc_zval(add_opts, key, *opt);
+				add_assoc_zval_ex(add_opts, key.str, key.len, *opt);
 			}
-			/* reset */
-			key = NULL;
 		}
 	}
 	
 	old_opts = GET_PROP(options);
 	if (Z_TYPE_P(old_opts) == IS_ARRAY) {
-		array_copy(old_opts, new_opts);
+		array_copy(Z_ARRVAL_P(old_opts), Z_ARRVAL_P(new_opts));
 	}
-	array_merge(add_opts, new_opts);
+	array_join(Z_ARRVAL_P(add_opts), Z_ARRVAL_P(new_opts), 0, 0);
 	SET_PROP(options, new_opts);
 	zval_ptr_dtor(&new_opts);
 	zval_ptr_dtor(&add_opts);
@@ -1320,9 +1317,9 @@ PHP_METHOD(HttpRequest, addPostFields)
 		array_init(new_post);
 		old_post = GET_PROP(postFields);
 		if (Z_TYPE_P(old_post) == IS_ARRAY) {
-			array_copy(old_post, new_post);
+			array_copy(Z_ARRVAL_P(old_post), Z_ARRVAL_P(new_post));
 		}
-		array_merge(post_data, new_post);
+		array_join(Z_ARRVAL_P(post_data), Z_ARRVAL_P(new_post), 0, 0);
 		SET_PROP(postFields, new_post);
 		zval_ptr_dtor(&new_post);
 	}
@@ -1352,7 +1349,7 @@ PHP_METHOD(HttpRequest, setPostFields)
 	MAKE_STD_ZVAL(post);
 	array_init(post);
 	if (post_data && zend_hash_num_elements(Z_ARRVAL_P(post_data))) {
-		array_copy(post_data, post);
+		array_copy(Z_ARRVAL_P(post_data), Z_ARRVAL_P(post));
 	}
 	SET_PROP(postFields, post);
 	zval_ptr_dtor(&post);
@@ -1498,7 +1495,7 @@ PHP_METHOD(HttpRequest, addPostFile)
 	array_init(new_post);
 	old_post = GET_PROP(postFiles);
 	if (Z_TYPE_P(old_post) == IS_ARRAY) {
-		array_copy(old_post, new_post);
+		array_copy(Z_ARRVAL_P(old_post), Z_ARRVAL_P(new_post));
 	}
 	add_next_index_zval(new_post, entry);
 	SET_PROP(postFiles, new_post);
@@ -1530,7 +1527,7 @@ PHP_METHOD(HttpRequest, setPostFiles)
 	MAKE_STD_ZVAL(post);
 	array_init(post);
 	if (files && (Z_TYPE_P(files) == IS_ARRAY)) {
-		array_copy(files, post);
+		array_copy(Z_ARRVAL_P(files), Z_ARRVAL_P(post));
 	}
 	SET_PROP(postFiles, post);
 	zval_ptr_dtor(&post);
@@ -1770,8 +1767,8 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 		
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|la!", &flags, &allowed_extras_array)) {
 			int i = 0;
-			ulong idx = 0;
-			char *key = NULL, **allowed_extras = NULL;
+			HashKey key = initHashKey(0);
+			char **allowed_extras = NULL;
 			zval **header = NULL, **entry = NULL, *message = GET_PROP(responseMessage);
 			HashPosition pos, pos1, pos2;
 			
@@ -1790,8 +1787,8 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 					}
 				}
 				
-				FOREACH_HASH_KEYVAL(pos1, &msg->message->hdrs, key, idx, header) {
-					if (key && !strcasecmp(key, "Set-Cookie")) {
+				FOREACH_HASH_KEYVAL(pos1, &msg->message->hdrs, key, header) {
+					if (key.type == HASH_KEY_IS_STRING && !strcasecmp(key.str, "Set-Cookie")) {
 						http_cookie_list list;
 						
 						if (Z_TYPE_PP(header) == IS_ARRAY) {
@@ -1826,8 +1823,6 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 							zval_ptr_dtor(header);
 						}
 					}
-					/* reset key */
-					key = NULL;
 				}
 				
 				if (allowed_extras) {

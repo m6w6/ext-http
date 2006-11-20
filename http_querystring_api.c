@@ -43,52 +43,50 @@ PHP_HTTP_API int _http_querystring_xlate(zval *array, zval *param, const char *i
 {
 	HashPosition pos;
 	zval **entry = NULL;
-	char *xlate_str = NULL, *xkey, *kstr = NULL;
+	char *xlate_str = NULL, *xkey;
 	size_t xlate_len = 0, xlen;
-	uint klen = 0;
-	ulong kidx = 0;
+	HashKey key = initHashKey(0);
 	
-	FOREACH_KEYLENVAL(pos, param, kstr, klen, kidx, entry) {
-		if (kstr) {
-			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(kstr, klen-1, &xkey, &xlen, oe, ie)) {
-				http_error_ex(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", klen-1, kstr, ie, oe);
+	FOREACH_KEYVAL(pos, param, key, entry) {
+		if (key.type == HASH_KEY_IS_STRING) {
+			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(key.str, key.len-1, &xkey, &xlen, oe, ie)) {
+				http_error_ex(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", key.len-1, key.str, ie, oe);
 				return FAILURE;
 			}
 		}
 		
 		if (Z_TYPE_PP(entry) == IS_STRING) {
 			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry), &xlate_str, &xlate_len, oe, ie)) {
-				if (kstr) {
+				if (key.type == HASH_KEY_IS_STRING) {
 					efree(xkey);
 				}
 				http_error_ex(HE_WARNING, HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", Z_STRLEN_PP(entry), Z_STRVAL_PP(entry), ie, oe);
 				return FAILURE;
 			}
-			if (kstr) {
+			if (key.type == HASH_KEY_IS_STRING) {
 				add_assoc_stringl_ex(array, xkey, xlen+1, xlate_str, xlate_len, 0);
 			} else {
-				add_index_stringl(array, kidx, xlate_str, xlate_len, 0);
+				add_index_stringl(array, key.num, xlate_str, xlate_len, 0);
 			}
 		} else if (Z_TYPE_PP(entry) == IS_ARRAY) {
 			zval *subarray;
 			
 			MAKE_STD_ZVAL(subarray);
 			array_init(subarray);
-			if (kstr) {
+			if (key.type == HASH_KEY_IS_STRING) {
 				add_assoc_zval_ex(array, xkey, xlen+1, subarray);
 			} else {
-				add_index_zval(array, kidx, subarray);
+				add_index_zval(array, key.num, subarray);
 			}
 			if (SUCCESS != http_querystring_xlate(subarray, *entry, ie, oe)) {
-				if (kstr) {
+				if (key.type == HASH_KEY_IS_STRING) {
 					efree(xkey);
 				}
 				return FAILURE;
 			}
 		}
 		
-		if (kstr) {
-			kstr = NULL;
+		if (key.type == HASH_KEY_IS_STRING) {
 			efree(xkey);
 		}
 	}
@@ -147,18 +145,15 @@ PHP_HTTP_API int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC)
 static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC)
 {
 	int rv = 0;
-	char *key = NULL;
-	uint keylen = 0;
-	ulong idx = 0;
+	HashKey key = initHashKey(0);
 	HashPosition pos;
 	zval **params_entry = NULL;
 	
-	FOREACH_KEYLENVAL(pos, params, key, keylen, idx, params_entry) {
+	FOREACH_KEYVAL(pos, params, key, params_entry) {
 		/* only public properties */
-		if ((!key || *key) && http_querystring_modify_array_ex(qarray, key ? HASH_KEY_IS_STRING : HASH_KEY_IS_LONG, key, keylen, idx, *params_entry)) {
+		if ((key.type != HASH_KEY_IS_STRING || *key.str) && http_querystring_modify_array_ex(qarray, key.type, key.str, key.len, key.num, *params_entry)) {
 			rv = 1;
 		}
-		key = NULL;
 	}
 	
 	return rv;

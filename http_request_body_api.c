@@ -99,22 +99,21 @@ PHP_HTTP_API http_request_body *_http_request_body_init_ex(http_request_body *bo
 PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body, HashTable *fields, HashTable *files ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
 	if (files && (zend_hash_num_elements(files) > 0)) {
-		char *key = NULL;
-		ulong idx;
+		HashKey key = initHashKey(0);
 		zval **data;
 		HashPosition pos;
 		struct curl_httppost *http_post_data[2] = {NULL, NULL};
 
 		/* normal data */
 		if (fields) {
-			FOREACH_HASH_KEYVAL(pos, fields, key, idx, data) {
-				if (key) {
+			FOREACH_HASH_KEYVAL(pos, fields, key, data) {
+				if (key.type == HASH_KEY_IS_STRING) {
 					CURLcode err;
 					zval *orig = *data;
 					
 					convert_to_string_ex(data);
 					err = curl_formadd(&http_post_data[0], &http_post_data[1],
-						CURLFORM_COPYNAME,			key,
+						CURLFORM_COPYNAME,			key.str,
 						CURLFORM_COPYCONTENTS,		Z_STRVAL_PP(data),
 						CURLFORM_CONTENTSLENGTH,	(long) Z_STRLEN_PP(data),
 						CURLFORM_END
@@ -129,9 +128,6 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 						curl_formfree(http_post_data[0]);
 						return NULL;
 					}
-	
-					/* reset */
-					key = NULL;
 				}
 			}
 		}

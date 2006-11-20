@@ -309,8 +309,7 @@ PHP_HTTP_API STATUS _http_request_enable_cookies(http_request *request)
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
 	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init_ex(request->ch, request), initialized = 0);
-	if (initialized) {
-		curl_easy_setopt(request->ch, CURLOPT_COOKIEFILE, "");
+	if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIEFILE, "")) {
 		return SUCCESS;
 	}
 	http_error(HE_WARNING, HTTP_E_REQUEST, "Could not enable cookies for this session");
@@ -327,16 +326,14 @@ PHP_HTTP_API STATUS _http_request_reset_cookies(http_request *request, int sessi
 	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init_ex(request->ch, request), initialized = 0);
 	if (session_only) {
 #if HTTP_CURL_VERSION(7,15,4)
-		if (initialized) {
-			curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "SESS");
+		if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "SESS")) {
 			return SUCCESS;
 		}
 #endif
 		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset session cookies (need libcurl >= v7.15.4)");
 	} else {
 #if HTTP_CURL_VERSION(7,14,1)
-		if (initialized) {
-			curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL");
+		if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL")) {
 			return SUCCESS;
 		}
 #endif
@@ -637,28 +634,22 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		request->_cache.headers = NULL;
 	}
 	if ((zoption = http_request_option(request, options, "headers", IS_ARRAY))) {
-		char *header_key = NULL;
-		ulong header_idx;
+		HashKey header_key = initHashKey(0);
+		zval **header_val;
 		HashPosition pos;
 
-		FOREACH_KEY(pos, zoption, header_key, header_idx) {
-			if (header_key) {
-				zval **header_val;
-				if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void *) &header_val, &pos)) {
-					char header[1024] = {0};
-					
-					ZVAL_ADDREF(*header_val);
-					convert_to_string_ex(header_val);
-					if (!strcasecmp(header_key, "range")) {
-						range_req = 1;
-					}
-					snprintf(header, lenof(header), "%s: %s", header_key, Z_STRVAL_PP(header_val));
-					request->_cache.headers = curl_slist_append(request->_cache.headers, header);
-					zval_ptr_dtor(header_val);
+		FOREACH_KEYVAL(pos, zoption, header_key, header_val) {
+			if (header_key.type == HASH_KEY_IS_STRING) {
+				char header[1024] = {0};
+				
+				ZVAL_ADDREF(*header_val);
+				convert_to_string_ex(header_val);
+				if (!strcasecmp(header_key.str, "range")) {
+					range_req = 1;
 				}
-
-				/* reset */
-				header_key = NULL;
+				snprintf(header, lenof(header), "%s: %s", header_key.str, Z_STRVAL_PP(header_val));
+				request->_cache.headers = curl_slist_append(request->_cache.headers, header);
+				zval_ptr_dtor(header_val);
 			}
 		}
 	}
@@ -706,20 +697,14 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				}
 			} else {
 				HashPosition pos;
-				char *cookie_key = NULL;
-				ulong cookie_idx;
+				HashKey cookie_key = initHashKey(0);
+				zval **cookie_val;
 				
-				FOREACH_KEY(pos, zoption, cookie_key, cookie_idx) {
-					if (cookie_key) {
-						zval **cookie_val;
-						if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(zoption), (void *) &cookie_val, &pos)) {
-							zval *val = zval_copy(IS_STRING, *cookie_val);
-							phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key, Z_STRVAL_P(val));
-							zval_free(&val);
-						}
-
-						/* reset */
-						cookie_key = NULL;
+				FOREACH_KEYVAL(pos, zoption, cookie_key, cookie_val) {
+					if (cookie_key.type == HASH_KEY_IS_STRING) {
+						zval *val = zval_copy(IS_STRING, *cookie_val);
+						phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key.str, Z_STRVAL_P(val));
+						zval_free(&val);
 					}
 				}
 				
@@ -767,13 +752,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* ssl */
 	if ((zoption = http_request_option(request, options, "ssl", IS_ARRAY))) {
-		ulong idx;
-		char *key = NULL;
+		HashKey key = initHashKey(0);
 		zval **param;
 		HashPosition pos;
 
-		FOREACH_KEYVAL(pos, zoption, key, idx, param) {
-			if (key) {
+		FOREACH_KEYVAL(pos, zoption, key, param) {
+			if (key.type == HASH_KEY_IS_STRING) {
 				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERT, 0, 1);
 				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERTTYPE, 0, 0);
 				HTTP_CURL_OPT_STRING(CURLOPT_SSLCERTPASSWD, 0, 0);
@@ -793,9 +777,6 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				HTTP_CURL_OPT_STRING(CURLOPT_CAPATH, -3, 1);
 				HTTP_CURL_OPT_STRING(CURLOPT_RANDOM_FILE, -3, 1);
 				HTTP_CURL_OPT_STRING(CURLOPT_EGDSOCKET, -3, 1);
-
-				/* reset key */
-				key = NULL;
 			}
 		}
 	}

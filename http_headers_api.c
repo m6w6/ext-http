@@ -423,9 +423,7 @@ PHP_HTTP_API STATUS _http_parse_headers_ex(const char *header, HashTable *header
 /* {{{ void http_get_request_headers(HashTable *) */
 PHP_HTTP_API void _http_get_request_headers(HashTable *headers TSRMLS_DC)
 {
-	char *key = NULL;
-	ulong idx = 0;
-	uint keylen = 0;
+	HashKey key = initHashKey(0);
 	zval **hsv, **header;
 	HashPosition pos;
 	
@@ -438,17 +436,16 @@ PHP_HTTP_API void _http_get_request_headers(HashTable *headers TSRMLS_DC)
 #endif
 		
 		if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv) && Z_TYPE_PP(hsv) == IS_ARRAY) {
-			FOREACH_KEYLEN(pos, *hsv, key, keylen, idx) {
-				if (key && keylen > 6 && !strncmp(key, "HTTP_", 5)) {
-					keylen -= 6;
-					key = pretty_key(estrndup(key + 5, keylen), keylen, 1, 1);
+			FOREACH_KEY(pos, *hsv, key) {
+				if (key.type == HASH_KEY_IS_STRING && key.len > 6 && !strncmp(key.str, "HTTP_", 5)) {
+					key.len -= 5;
+					key.str = pretty_key(estrndup(key.str + 5, key.len - 1), key.len - 1, 1, 1);
 					
 					zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void *) &header, &pos);
 					ZVAL_ADDREF(*header);
-					zend_hash_add(HTTP_G->request.headers, key, keylen + 1, (void *) header, sizeof(zval *), NULL);
+					zend_hash_add(HTTP_G->request.headers, key.str, key.len, (void *) header, sizeof(zval *), NULL);
 					
-					STR_SET(key, NULL)
-					keylen = 0;
+					efree(key.str);
 				}
 			}
 		}

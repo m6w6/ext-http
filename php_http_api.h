@@ -305,6 +305,42 @@ static inline void _zval_free(zval **z)
 	*z = NULL;
 }
 
+typedef struct _HashKey {
+	int type;
+	int dup;
+	char *str;
+	uint len;
+	ulong num;
+} HashKey;
+#define initHashKey(dup) {0, (dup), NULL, 0, 0}
+
+#define FOREACH_VAL(pos, array, val) FOREACH_HASH_VAL(pos, Z_ARRVAL_P(array), val)
+#define FOREACH_HASH_VAL(pos, hash, val) \
+	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
+			zend_hash_get_current_data_ex(hash, (void *) &val, &pos) == SUCCESS; \
+			zend_hash_move_forward_ex(hash, &pos))
+
+#define FOREACH_KEY(pos, array, key) FOREACH_HASH_KEY(pos, Z_ARRVAL_P(array), key)
+#define FOREACH_HASH_KEY(pos, hash, _key) \
+	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
+			((_key).type = zend_hash_get_current_key_ex(hash, &(_key).str, &(_key).len, &(_key).num, (_key).dup, &pos)) != HASH_KEY_NON_EXISTANT; \
+			zend_hash_move_forward_ex(hash, &pos)) \
+
+#define FOREACH_KEYVAL(pos, array, key, val) FOREACH_HASH_KEYVAL(pos, Z_ARRVAL_P(array), key, val)
+#define FOREACH_HASH_KEYVAL(pos, hash, _key, val) \
+	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
+			((_key).type = zend_hash_get_current_key_ex(hash, &(_key).str, &(_key).len, &(_key).num, (_key).dup, &pos)) != HASH_KEY_NON_EXISTANT && \
+			zend_hash_get_current_data_ex(hash, (void *) &val, &pos) == SUCCESS; \
+			zend_hash_move_forward_ex(hash, &pos))
+
+#define array_copy(src, dst) zend_hash_copy(dst, src, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
+#define ARRAY_JOIN_STRONLY 1
+#define ARRAY_JOIN_PRETTIFY 2
+#define array_join(src, dst, append, flags) zend_hash_apply_with_arguments(src, (append)?apply_array_append_func:apply_array_merge_func, 2, dst, (int)flags)
+
+extern int apply_array_append_func(void *pDest, int num_args, va_list args, zend_hash_key *hash_key);
+extern int apply_array_merge_func(void *pDest, int num_args, va_list args, zend_hash_key *hash_key);
+
 #endif
 
 /*
