@@ -144,6 +144,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 
 	zend_bool force_exit;
 	zend_bool read_post_data;
+	zval *server_var;
 
 ZEND_END_MODULE_GLOBALS(http)
 

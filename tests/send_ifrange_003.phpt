@@ -5,10 +5,11 @@ http_send() If-Range
 include 'skip.inc';
 checkcgi();
 ?>
+--ENV--
+HTTP_RANGE=bytes=0-1
+HTTP_IF_RANGE="abcd"
 --FILE--
 <?php
-$_SERVER['HTTP_RANGE'] = 'bytes=0-1';
-$_SERVER['HTTP_IF_RANGE'] = '"abcd"';
 http_cache_etag('abc');
 http_send_file(__FILE__);
 ?>

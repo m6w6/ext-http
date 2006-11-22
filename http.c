@@ -206,6 +206,10 @@ static inline void _http_globals_free(zend_http_globals *G TSRMLS_DC)
 	}
 	STR_SET(G->send.content_type, NULL);
 	STR_SET(G->send.unquoted_etag, NULL);
+	if (G->server_var) {
+		zval_ptr_dtor(&G->server_var);
+		G->server_var = NULL;
+	}
 }
 /* }}} */
 

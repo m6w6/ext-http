@@ -5,9 +5,10 @@ http_send_file() multiple ranges
 include 'skip.inc';
 checkcgi();
 ?>
+--ENV--
+HTTP_RANGE=bytes=0-3, 4-5,9-11
 --FILE--
 <?php
-$_SERVER['HTTP_RANGE'] = 'bytes=0-3, 4-5,9-11';
 http_send_content_type('text/plain');
 http_send_file('data.txt');
 ?>

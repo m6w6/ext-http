@@ -4,9 +4,10 @@ http_build_url()
 <?php
 include 'skip.inc';
 ?>
+--ENV--
+HTTP_HOST=www.example.com
 --FILE--
 <?php
-$_SERVER['HTTP_HOST'] = 'www.example.com';
 $url = '/path/?query#anchor';
 echo "-TEST\n";
 printf("-%s-\n", http_build_url($url));

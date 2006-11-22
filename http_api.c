@@ -267,11 +267,26 @@ STATUS _http_check_method_ex(const char *method, const char *methods)
 /* {{{ zval *http_get_server_var_ex(char *, size_t) */
 PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zend_bool check TSRMLS_DC)
 {
-	zval **hsv;
-	zval **var;
+	zval **hsv, **var;
+	char *env;
+	
+	/* if available, this is a lot faster than accessing $_SERVER */
+	if (sapi_module.getenv) {
+		if ((!(env = sapi_module.getenv((char *) key, key_size TSRMLS_CC))) || (check && !*env)) {
+			return NULL;
+		}
+		if (HTTP_G->server_var) {
+			zval_ptr_dtor(&HTTP_G->server_var);
+		}
+		MAKE_STD_ZVAL(HTTP_G->server_var);
+		ZVAL_STRING(HTTP_G->server_var, env, 1);
+		return HTTP_G->server_var;
+	}
+	
 #ifdef ZEND_ENGINE_2
 	zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
 #endif
+	
 	if ((SUCCESS != zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
 		return NULL;
 	}

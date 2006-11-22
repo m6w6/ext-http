@@ -6,10 +6,11 @@ include 'skip.inc';
 checkcgi();
 checkver(5.1);
 ?>
+--ENV--
+HTTP_RANGE=bytes=0-1
+HTTP_IF_UNMODIFIED_SINCE=Thu, 01 Jan 1970 00:16:40 GMT
 --FILE--
 <?php
-$_SERVER['HTTP_RANGE'] = 'bytes=0-1';
-$_SERVER['HTTP_IF_UNMODIFIED_SINCE'] = http_date(10000);
 http_cache_last_modified();
 http_send_file(__FILE__);
 ?>

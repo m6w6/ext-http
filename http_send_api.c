@@ -27,19 +27,20 @@
 #include "php_http_headers_api.h"
 #include "php_http_send_api.h"
 
+/* {{{ http_flush() */
 #define http_flush(d, l) _http_flush(NULL, (d), (l) TSRMLS_CC)
-/* {{{ static inline void http_flush() */
 static inline void _http_flush(void *nothing, const char *data, size_t data_len TSRMLS_DC)
 {
 	PHPWRITE(data, data_len);
-	php_end_ob_buffer(1, 1 TSRMLS_CC);
-	sapi_flush(TSRMLS_C);
-	
-#if 0
-	fprintf(stderr, "Flushing after writing %u bytes\n", (uint) data_len);
-#endif
-	
+	/*	we really only need to flush when throttling is enabled,
+		because we push the data as fast as possible anyway if not */
 	if (HTTP_G->send.throttle_delay >= HTTP_DIFFSEC) {
+		if (OG(ob_nesting_level)) {
+			php_end_ob_buffer(1, 1 TSRMLS_CC);
+		}
+		if (!OG(implicit_flush)) {
+			sapi_flush(TSRMLS_C);
+		}
 		http_sleep(HTTP_G->send.throttle_delay);
 	}
 }
@@ -58,6 +59,8 @@ static inline void _http_send_response_start(void **buffer, size_t content_lengt
 				HTTP_DEFLATE_TYPE_GZIP : HTTP_DEFLATE_TYPE_ZLIB);
 #endif
 	}
+	/* flush headers */
+	sapi_flush(TSRMLS_C);
 }
 /* }}} */
 
@@ -93,19 +96,20 @@ static inline void _http_send_response_data_plain(void **buffer, const char *dat
 #define http_send_response_data_fetch(b, d, l, m, s, e) _http_send_response_data_fetch((b), (d), (l), (m), (s), (e) TSRMLS_CC)
 static inline void _http_send_response_data_fetch(void **buffer, const void *data, size_t data_len, http_send_mode mode, size_t begin, size_t end TSRMLS_DC)
 {
-	char *buf;
-	long got, len = end - begin;
+	long bsz, got, len = end - begin;
+	
+	if (!(bsz = HTTP_G->send.buffer_size)) {
+		bsz = HTTP_SENDBUF_SIZE;
+	}
 	
 	switch (mode) {
-		case SEND_RSRC:
-		{
+		case SEND_RSRC: {
 			php_stream *s = (php_stream *) data;
-
 			if (SUCCESS == php_stream_seek(s, begin, SEEK_SET)) {
-				buf = emalloc(HTTP_SENDBUF_SIZE);
+				char *buf = emalloc(bsz);
 				
 				while (len > 0) {
-					got = php_stream_read(s, buf, MIN(len, HTTP_SENDBUF_SIZE));
+					got = php_stream_read(s, buf, MIN(len, bsz));
 					http_send_response_data_plain(buffer, buf, got);
 					len -= got;
 				}
@@ -114,20 +118,16 @@ static inline void _http_send_response_data_fetch(void **buffer, const void *dat
 			}
 			break;
 		}
-
-		case SEND_DATA:
-		{
-			buf = (char *) data + begin;
-			
+		case SEND_DATA: {
+			const char *buf = data + begin;
 			while (len > 0) {
-				got = MIN(len, HTTP_SENDBUF_SIZE);
+				got = MIN(len, bsz);
 				http_send_response_data_plain(buffer, buf, got);
 				len -= got;
 				buf += got;
 			}
 			break;
 		}
-
 		EMPTY_SWITCH_DEFAULT_CASE();
 	}
 }
@@ -507,6 +507,7 @@ PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file, zend_bool close_strea
 {
 	STATUS status;
 	php_stream_statbuf ssb;
+	int orig_flags;
 
 	if ((!file) || php_stream_stat(file, &ssb)) {
 		char *defct = sapi_get_default_content_type(TSRMLS_C);
@@ -522,8 +523,11 @@ PHP_HTTP_API STATUS _http_send_stream_ex(php_stream *file, zend_bool close_strea
 		return FAILURE;
 	}
 
+	orig_flags = file->flags;
+	file->flags |= PHP_STREAM_FLAG_NO_BUFFER;
 	status = http_send_ex(file, ssb.sb.st_size, SEND_RSRC, no_cache);
-
+	file->flags = orig_flags;
+	
 	if (close_stream) {
 		php_stream_close(file);
 	}

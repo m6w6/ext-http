@@ -4,12 +4,13 @@ negotiation
 <?php
 include 'skip.inc';
 ?>
+--ENV--
+HTTP_ACCEPT=application/xml, application/xhtml+xml, text/html ; q = .8
+HTTP_ACCEPT_LANGUAGE=de-AT,de-DE;q=0.8,en-GB;q=0.3,en-US;q=0.2
+HTTP_ACCEPT_CHARSET=ISO-8859-1,utf-8;q=0.7,*;q=0.7
 --FILE--
 <?php
 echo "-TEST\n";
-$_SERVER['HTTP_ACCEPT'] = 'application/xml, application/xhtml+xml, text/html ; q = .8';
-$_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'de-AT,de-DE;q=0.8,en-GB;q=0.3,en-US;q=0.2';
-$_SERVER['HTTP_ACCEPT_CHARSET'] = 'ISO-8859-1,utf-8;q=0.7,*;q=0.7';
 $langs = array(
 	array('de', 'en', 'es'),
 );
