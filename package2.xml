@@ -142,14 +142,8 @@ support. Parallel requests are available for PHP 5 and greater.
    </dir>
    
    <dir name="tests">
-    <file role="test" name="data.txt"/>
-    <file role="test" name="urls.txt"/>
-    <file role="test" name="skip.inc"/>
-    <file role="test" name="log.inc"/>
-    <file role="test" name="allowed_methods_001.phpt"/>
-    <file role="test" name="allowed_methods_001_logging.phpt"/>
+        <file role="test" name="allowed_methods_002_logging.phpt"/>
     <file role="test" name="allowed_methods_002.phpt"/>
-    <file role="test" name="allowed_methods_002_logging.phpt"/>
     <file role="test" name="build_str_001.phpt"/>
     <file role="test" name="build_url_001.phpt"/>
     <file role="test" name="build_url_002.phpt"/>
@@ -164,14 +158,6 @@ support. Parallel requests are available for PHP 5 and greater.
     <file role="test" name="date_002.phpt"/>
     <file role="test" name="encoding_objects_001.phpt"/>
     <file role="test" name="encodings.phpt"/>
-    <file role="test" name="etag_mode_001.phpt"/>
-    <file role="test" name="etag_mode_002.phpt"/>
-    <file role="test" name="etag_mode_003.phpt"/>
-    <file role="test" name="etag_mode_004.phpt"/>
-    <file role="test" name="etag_mode_011.phpt"/>
-    <file role="test" name="etag_mode_012.phpt"/>
-    <file role="test" name="etag_mode_013.phpt"/>
-    <file role="test" name="etag_mode_014.phpt"/>
     <file role="test" name="etag_mode_031.phpt"/>
     <file role="test" name="etag_mode_032.phpt"/>
     <file role="test" name="etag_mode_033.phpt"/>
@@ -192,6 +178,7 @@ support. Parallel requests are available for PHP 5 and greater.
     <file role="test" name="HttpQueryString_001.phpt"/>
     <file role="test" name="HttpQueryString_002.phpt"/>
     <file role="test" name="HttpQueryString_003.phpt"/>
+    <file role="test" name="HttpQueryString_004.phpt"/>
     <file role="test" name="HttpRequest_001.phpt"/>
     <file role="test" name="HttpRequest_002.phpt"/>
     <file role="test" name="HttpRequest_003.phpt"/>
@@ -228,18 +215,12 @@ support. Parallel requests are available for PHP 5 and greater.
     <file role="test" name="parse_message_004.phpt"/>
     <file role="test" name="parse_message_005.phpt"/>
     <file role="test" name="parse_params_001.phpt"/>
-    <file role="test" name="redirect_001.phpt"/>
-    <file role="test" name="redirect_001_logging.phpt"/>
-    <file role="test" name="redirect_002.phpt"/>
-    <file role="test" name="redirect_002_logging.phpt"/>
-    <file role="test" name="redirect_003.phpt"/>
-    <file role="test" name="redirect_003_logging.phpt"/>
-    <file role="test" name="redirect_011.phpt"/>
     <file role="test" name="redirect_011_logging.phpt"/>
-    <file role="test" name="redirect_012.phpt"/>
+    <file role="test" name="redirect_011.phpt"/>
     <file role="test" name="redirect_012_logging.phpt"/>
-    <file role="test" name="redirect_013.phpt"/>
+    <file role="test" name="redirect_012.phpt"/>
     <file role="test" name="redirect_013_logging.phpt"/>
+    <file role="test" name="redirect_013.phpt"/>
     <file role="test" name="request_cookies.phpt"/>
     <file role="test" name="request_etag.phpt"/>
     <file role="test" name="request_gzip.phpt"/>
@@ -251,24 +232,18 @@ support. Parallel requests are available for PHP 5 and greater.
     <file role="test" name="send_data_004.phpt"/>
     <file role="test" name="send_data_005.phpt"/>
     <file role="test" name="send_data_006.phpt"/>
-    <file role="test" name="send_data_007_logging.phpt"/>
-    <file role="test" name="send_data_008.phpt"/>
-    <file role="test" name="send_data_009.phpt"/>
     <file role="test" name="send_data_010.phpt"/>
     <file role="test" name="send_data_011.phpt"/>
-    <file role="test" name="send_file_001.phpt"/>
-    <file role="test" name="send_file_002.phpt"/>
-    <file role="test" name="send_file_003.phpt"/>
-    <file role="test" name="send_file_004.phpt"/>
+    <file role="test" name="send_failed_precond_001.phpt"/>
     <file role="test" name="send_file_005.phpt"/>
-    <file role="test" name="send_file_006.phpt"/>
-    <file role="test" name="send_file_007.phpt"/>
     <file role="test" name="send_file_008.phpt"/>
     <file role="test" name="send_file_009.phpt"/>
     <file role="test" name="send_file_010.phpt"/>
     <file role="test" name="send_file_011.phpt"/>
     <file role="test" name="send_file_012.phpt"/>
     <file role="test" name="send_file_013.phpt"/>
+    <file role="test" name="send_ifrange_001.phpt"/>
+    <file role="test" name="send_ifrange_003.phpt"/>
     <file role="test" name="stream_filters_001.phpt"/>
     <file role="test" name="stream_filters_002.phpt"/>
     <file role="test" name="stream_filters_003.phpt"/>
