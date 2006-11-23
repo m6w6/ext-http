@@ -30,6 +30,11 @@ HTTP_BEGIN_ARGS(__construct, 0)
 	HTTP_ARG_VAL(flags, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(factory, 0)
+	HTTP_ARG_VAL(flags, 0)
+	HTTP_ARG_VAL(class_name, 0)
+HTTP_END_ARGS;
+
 HTTP_BEGIN_ARGS(update, 1)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
@@ -49,6 +54,8 @@ zend_function_entry http_inflatestream_object_fe[] = {
 	HTTP_INFLATE_ME(update, ZEND_ACC_PUBLIC)
 	HTTP_INFLATE_ME(flush, ZEND_ACC_PUBLIC)
 	HTTP_INFLATE_ME(finish, ZEND_ACC_PUBLIC)
+	
+	HTTP_INFLATE_ME(factory, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	
 	EMPTY_FUNCTION_ENTRY
 };
@@ -128,11 +135,7 @@ void _http_inflatestream_object_free(zend_object *object TSRMLS_DC)
 }
 
 /* {{{ proto void HttpInflateStream::__construct([int flags = 0])
- *
- * Creates a new HttpInflateStream object instance.
- * 
- * Accepts an optional int parameter specifying how to initialize the inflate stream.
- */ 
+	Creates a new HttpInflateStream object instance. */
 PHP_METHOD(HttpInflateStream, __construct)
 {
 	long flags = 0;
@@ -151,14 +154,29 @@ PHP_METHOD(HttpInflateStream, __construct)
 }
 /* }}} */
 
+/* {{{ proto HttpInflateStream HttpInflateStream::factory([int flags[, string class = "HttpInflateStream"]])
+	Creates a new HttpInflateStream object instance. */
+PHP_METHOD(HttpInflateStream, factory)
+{
+	long flags = 0;
+	char *cn = NULL;
+	int cl = 0;
+	
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ls", &flags, &cn, &cl)) {
+		zend_object_value ov;
+		http_encoding_stream *s = http_encoding_inflate_stream_init(NULL, flags & 0x0fffffff);
+		
+		if (SUCCESS == http_object_new(&ov, cn, cl, _http_inflatestream_object_new_ex, http_inflatestream_object_ce, s, NULL)) {
+			RETVAL_OBJVAL(ov, 0);
+		}
+	}
+	SET_EH_NORMAL();
+}
+/* }}} */
+
 /* {{{ proto string HttpInflateStream::update(string data)
- *
- * Passes more data through the inflate stream.
- * 
- * Expects a string parameter containing (a part of) the data to inflate.
- * 
- * Returns inflated data on success or FALSE on failure.
- */
+	Passes more data through the inflate stream. */
 PHP_METHOD(HttpInflateStream, update)
 {
 	int data_len;
@@ -187,11 +205,7 @@ PHP_METHOD(HttpInflateStream, update)
 /* }}} */
 
 /* {{{ proto string HttpInflateStream::flush([string data])
- *
- * Flush the inflate stream.
- * 
- * Returns some inflated data as string on success or FALSE on failure.
- */
+	Flush the inflate stream. */
 PHP_METHOD(HttpInflateStream, flush)
 {
 	int data_len = 0;
@@ -219,11 +233,7 @@ PHP_METHOD(HttpInflateStream, flush)
 /* }}} */
 
 /* {{{ proto string HttpInflateStream::finish([string data])
- *
- * Finalizes the inflate stream.  The inflate stream can be reused after finalizing.
- * 
- * Returns the final part of inflated data.
- */ 
+	Finalizes the inflate stream.  The inflate stream can be reused after finalizing. */
 PHP_METHOD(HttpInflateStream, finish)
 {
 	int data_len = 0;
@@ -266,7 +276,6 @@ PHP_METHOD(HttpInflateStream, finish)
 	http_encoding_inflate_stream_init(obj->stream, obj->stream->flags);
 }
 /* }}} */
-
 
 #endif /* ZEND_ENGINE_2 && HTTP_HAVE_ZLIB*/
 

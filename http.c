@@ -68,7 +68,6 @@ ZEND_GET_MODULE(http)
 
 /* {{{ http_functions[] */
 zend_function_entry http_functions[] = {
-	PHP_FE(http_test, NULL)
 	PHP_FE(http_date, NULL)
 	PHP_FE(http_build_url, http_arg_pass_ref_4)
 	PHP_FE(http_build_str, NULL)
@@ -187,7 +186,7 @@ static void http_globals_init_once(zend_http_globals *G)
 static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 {
 #ifdef HTTP_HAVE_SAPI_RTIME
-	G->request.time = Z_LVAL_P(http_get_server_var("REQUEST_TIME"));
+	G->request.time = sapi_get_request_time(TSRMLS_C);
 #else
 	G->request.time = time(NULL);
 #endif

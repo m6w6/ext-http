@@ -173,6 +173,26 @@ zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend_class_
 	return new_exception;
 }
 /* }}} */
+
+/* {{{ STATUS http_object_new(zend_object_value *, const char *, uint, http_object_new_t, zend_class_entry *, void *, void **) */
+STATUS _http_object_new(zend_object_value *ov, const char *cname_str, uint cname_len, http_object_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC)
+{
+	zend_class_entry *ce = parent_ce;
+	
+	if (cname_str && cname_len) {
+		if (!(ce = zend_fetch_class((char *) cname_str, cname_len, ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC))) {
+			return FAILURE;
+		}
+		if (!instanceof_function(ce, parent_ce TSRMLS_CC)) {
+			http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Class %s does not extend %s", cname_str, parent_ce->name);
+			return FAILURE;
+		}
+	}
+	
+	*ov = create(ce, intern_ptr, obj_ptr TSRMLS_CC);
+	return SUCCESS;
+}
+/* }}} */
 #endif /* ZEND_ENGINE_2 */
 
 /* {{{ void http_log(char *, char *, char *) */
@@ -265,14 +285,14 @@ STATUS _http_check_method_ex(const char *method, const char *methods)
 /* }}} */
 
 /* {{{ zval *http_get_server_var_ex(char *, size_t) */
-PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zend_bool check TSRMLS_DC)
+PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_len, zend_bool check TSRMLS_DC)
 {
 	zval **hsv, **var;
 	char *env;
 	
 	/* if available, this is a lot faster than accessing $_SERVER */
 	if (sapi_module.getenv) {
-		if ((!(env = sapi_module.getenv((char *) key, key_size TSRMLS_CC))) || (check && !*env)) {
+		if ((!(env = sapi_module.getenv((char *) key, key_len TSRMLS_CC))) || (check && !*env)) {
 			return NULL;
 		}
 		if (HTTP_G->server_var) {
@@ -290,7 +310,7 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zen
 	if ((SUCCESS != zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
 		return NULL;
 	}
-	if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), (char *) key, key_size, (void *) &var))) {
+	if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), (char *) key, key_len + 1, (void *) &var))) {
 		return NULL;
 	}
 	if (check && !((Z_TYPE_PP(var) == IS_STRING) && Z_STRVAL_PP(var) && Z_STRLEN_PP(var))) {

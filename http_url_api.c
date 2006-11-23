@@ -161,7 +161,7 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 	}
 	
 	if (!url->scheme) {
-		zval *https = http_get_server_var("HTTPS");
+		zval *https = http_get_server_var("HTTPS", 1);
 		if (https && !strcasecmp(Z_STRVAL_P(https), "ON")) {
 			url->scheme = estrndup("https", lenof("https"));
 		} else switch (url->port) {
@@ -191,8 +191,8 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 	if (!url->host) {
 		zval *zhost;
 		
-		if ((((zhost = http_get_server_var("HTTP_HOST")) || 
-				(zhost = http_get_server_var("SERVER_NAME")))) && Z_STRLEN_P(zhost)) {
+		if ((((zhost = http_get_server_var("HTTP_HOST", 1)) || 
+				(zhost = http_get_server_var("SERVER_NAME", 1)))) && Z_STRLEN_P(zhost)) {
 			url->host = estrndup(Z_STRVAL_P(zhost), Z_STRLEN_P(zhost));
 		} else {
 			url->host = localhostname();

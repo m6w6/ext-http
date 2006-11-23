@@ -173,7 +173,6 @@ ZEND_EXTERN_MODULE_GLOBALS(http);
 #	define HTTP_HAVE_SPL
 #endif
 
-PHP_FUNCTION(http_test);
 PHP_FUNCTION(http_date);
 PHP_FUNCTION(http_build_url);
 PHP_FUNCTION(http_build_str);

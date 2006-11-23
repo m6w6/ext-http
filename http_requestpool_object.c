@@ -154,40 +154,7 @@ static void _http_requestpool_object_llist2array(zval **req, zval *array TSRMLS_
 /* ### USERLAND ### */
 
 /* {{{ proto void HttpRequestPool::__construct([HttpRequest request[, ...]])
- *
- * Instantiate a new HttpRequestPool object.  An HttpRequestPool is
- * able to send several HttpRequests in parallel.
- * 
- * WARNING: Don't attach/detach HttpRequest objects to the HttpRequestPool
- * object while you're using the implemented Iterator interface. 
- *
- * Accepts virtual infinite optional parameters each referencing an
- * HttpRequest object.
- * 
- * Throws HttpRequestPoolException (HttpRequestException, HttpInvalidParamException).
- * 
- * Example:
- * <pre>
- * <?php
- * try {
- *     $pool = new HttpRequestPool(
- *         new HttpRequest('http://www.google.com/', HttpRequest::METH_HEAD),
- *         new HttpRequest('http://www.php.net/', HttpRequest::METH_HEAD)
- *     );
- *     $pool->send();
- *     foreach($pool as $request) {
- *         printf("%s is %s (%d)\n",
- *             $request->getUrl(),
- *             $request->getResponseCode() ? 'alive' : 'not alive',
- *             $request->getResponseCode()
- *         );
- *     }
- * } catch (HttpException $e) {
- *     echo $e;
- * }
- * ?>
- * </pre>
- */
+	Creates a new HttpRequestPool object instance. */
 PHP_METHOD(HttpRequestPool, __construct)
 {
 	int argc = ZEND_NUM_ARGS();
@@ -211,9 +178,7 @@ PHP_METHOD(HttpRequestPool, __construct)
 /* }}} */
 
 /* {{{ proto void HttpRequestPool::__destruct()
- *
- * Clean up HttpRequestPool object.
- */
+	Clean up HttpRequestPool object. */
 PHP_METHOD(HttpRequestPool, __destruct)
 {
 	getObject(http_requestpool_object, obj);
@@ -225,9 +190,7 @@ PHP_METHOD(HttpRequestPool, __destruct)
 /* }}} */
 
 /* {{{ proto void HttpRequestPool::reset()
- *
- * Detach all attached HttpRequest objects.
- */
+	Detach all attached HttpRequest objects. */
 PHP_METHOD(HttpRequestPool, reset)
 {
 	getObject(http_requestpool_object, obj);
@@ -239,18 +202,7 @@ PHP_METHOD(HttpRequestPool, reset)
 }
 
 /* {{{ proto bool HttpRequestPool::attach(HttpRequest request)
- *
- * Attach an HttpRequest object to this HttpRequestPool.
- * WARNING: set all options prior attaching!
- * 
- * Expects the parameter to be an HttpRequest object not already attached to
- * antother HttpRequestPool object.
- * 
- * Returns TRUE on success, or FALSE on failure.
- * 
- * Throws HttpInvalidParamException, HttpRequestException, 
- * HttpRequestPoolException, HttpEncodingException.
- */
+	Attach an HttpRequest object to this HttpRequestPool. WARNING: set all options prior attaching! */
 PHP_METHOD(HttpRequestPool, attach)
 {
 	zval *request;
@@ -271,16 +223,7 @@ PHP_METHOD(HttpRequestPool, attach)
 /* }}} */
 
 /* {{{ proto bool HttpRequestPool::detach(HttpRequest request)
- *
- * Detach an HttpRequest object from this HttpRequestPool.
- * 
- * Expects the parameter to be an HttpRequest object attached to this
- * HttpRequestPool object.
- * 
- * Returns TRUE on success, or FALSE on failure.
- * 
- * Throws HttpInvalidParamException, HttpRequestPoolException.
- */
+	Detach an HttpRequest object from this HttpRequestPool. */
 PHP_METHOD(HttpRequestPool, detach)
 {
 	zval *request;
@@ -298,13 +241,7 @@ PHP_METHOD(HttpRequestPool, detach)
 /* }}} */
 
 /* {{{ proto bool HttpRequestPool::send()
- *
- * Send all attached HttpRequest objects in parallel.
- * 
- * Returns TRUE on success, or FALSE on failure.
- * 
- * Throws HttpRequestPoolException (HttpSocketException, HttpRequestException, HttpMalformedHeaderException).
- */
+	Send all attached HttpRequest objects in parallel. */
 PHP_METHOD(HttpRequestPool, send)
 {
 	STATUS status;
@@ -324,36 +261,7 @@ PHP_METHOD(HttpRequestPool, send)
 /* }}} */
 
 /* {{{ proto protected bool HttpRequestPool::socketPerform()
- *
- * Returns TRUE until each request has finished its transaction.
- * 
- * Usage:
- * <pre>
- * <?php
- * class MyPool extends HttpRequestPool
- * {
- *     public function send()
- *     {
- *         while ($this->socketPerform()) {
- *             if (!$this->socketSelect()) {
- *                 throw new HttpSocketExcpetion;
- *             }
- *         }
- *     }
- *     
- *     protected final function socketPerform()
- *     {
- *         $result = parent::socketPerform();
- *         foreach ($this->getFinishedRequests() as $r) {
- *             $this->detach($r);
- *             // handle response of finished request
- *         }
- *         return $result;
- *     }
- * } 
- * ?>
- * </pre>
- */
+	Returns TRUE until each request has finished its transaction. */
 PHP_METHOD(HttpRequestPool, socketPerform)
 {
 	getObject(http_requestpool_object, obj);
@@ -368,12 +276,7 @@ PHP_METHOD(HttpRequestPool, socketPerform)
 }
 /* }}} */
 
-/* {{{ proto protected bool HttpRequestPool::socketSelect()
- *
- * See HttpRequestPool::socketPerform().
- * 
- * Returns TRUE on success, or FALSE on failure.
- */
+/* {{{ proto protected bool HttpRequestPool::socketSelect() */
 PHP_METHOD(HttpRequestPool, socketSelect)
 {
 	getObject(http_requestpool_object, obj);
@@ -384,12 +287,8 @@ PHP_METHOD(HttpRequestPool, socketSelect)
 }
 /* }}} */
 
-/* implements Iterator */
-
 /* {{{ proto bool HttpRequestPool::valid()
- *
- * Implements Iterator::valid().
- */
+	Implements Iterator::valid(). */
 PHP_METHOD(HttpRequestPool, valid)
 {
 	NO_ARGS;
@@ -402,9 +301,7 @@ PHP_METHOD(HttpRequestPool, valid)
 /* }}} */
 
 /* {{{ proto HttpRequest HttpRequestPool::current()
- *
- * Implements Iterator::current().
- */
+	Implements Iterator::current(). */
 PHP_METHOD(HttpRequestPool, current)
 {
 	NO_ARGS;
@@ -429,9 +326,7 @@ PHP_METHOD(HttpRequestPool, current)
 /* }}} */
 
 /* {{{ proto int HttpRequestPool::key()
- *
- * Implements Iterator::key().
- */
+	Implements Iterator::key(). */
 PHP_METHOD(HttpRequestPool, key)
 {
 	NO_ARGS;
@@ -444,9 +339,7 @@ PHP_METHOD(HttpRequestPool, key)
 /* }}} */
 
 /* {{{ proto void HttpRequestPool::next()
- *
- * Implements Iterator::next().
- */
+	Implements Iterator::next(). */
 PHP_METHOD(HttpRequestPool, next)
 {
 	NO_ARGS {
@@ -457,9 +350,7 @@ PHP_METHOD(HttpRequestPool, next)
 /* }}} */
 
 /* {{{ proto void HttpRequestPool::rewind()
- *
- * Implements Iterator::rewind().
- */
+	Implements Iterator::rewind(). */
 PHP_METHOD(HttpRequestPool, rewind)
 {
 	NO_ARGS {
@@ -470,11 +361,7 @@ PHP_METHOD(HttpRequestPool, rewind)
 /* }}} */
 
 /* {{{ proto int HttpRequestPool::count()
- *
- * Implements Countable.
- * 
- * Returns the number of attached HttpRequest objects.
- */
+	Implements Countable::count(). */
 PHP_METHOD(HttpRequestPool, count)
 {
 	NO_ARGS {
@@ -485,11 +372,7 @@ PHP_METHOD(HttpRequestPool, count)
 /* }}} */
 
 /* {{{ proto array HttpRequestPool::getAttachedRequests()
- *
- * Get attached HttpRequest objects.
- * 
- * Returns an array containing all currently attached HttpRequest objects.
- */
+	Get attached HttpRequest objects. */
 PHP_METHOD(HttpRequestPool, getAttachedRequests)
 {
 	getObject(http_requestpool_object, obj);
@@ -504,12 +387,7 @@ PHP_METHOD(HttpRequestPool, getAttachedRequests)
 /* }}} */
 
 /* {{{ proto array HttpRequestPool::getFinishedRequests()
- *
- * Get attached HttpRequest objects that already have finished their work.
- * 
- * Returns an array containing all attached HttpRequest objects that
- * already have finished their work.
- */
+	Get attached HttpRequest objects that already have finished their work. */
 PHP_METHOD(HttpRequestPool, getFinishedRequests)
 {
 	getObject(http_requestpool_object, obj);
@@ -524,11 +402,7 @@ PHP_METHOD(HttpRequestPool, getFinishedRequests)
 /* }}} */
 
 /* {{{ proto bool HttpRequest::enablePiplelinig([bool enable = true])
- *
- * Enables pipelining support for all attached requests if support in libcurl is given.
- *
- * Returns TRUE on success, or FALSE on failure.
- */
+	Enables pipelining support for all attached requests if support in libcurl is given. */
 PHP_METHOD(HttpRequestPool, enablePipelining)
 {
 	zend_bool enable = 1;

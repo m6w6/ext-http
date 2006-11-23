@@ -107,7 +107,9 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 #if HTTP_DBG_NEG
 	fprintf(stderr, "Reading header %s: ", header);
 #endif
-	HTTP_GSC(accept, header, NULL);
+	if (!(accept = http_get_server_var(header, 1))) {
+		return NULL;
+	}
 #if HTTP_DBG_NEG
 	fprintf(stderr, "%s\n", Z_STRVAL_P(accept));
 #endif
@@ -189,15 +191,12 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 	char *range, c;
 	long begin = -1, end = -1, *ptr;
 
-	HTTP_GSC(zrange, "HTTP_RANGE", RANGE_NO);
-	range = Z_STRVAL_P(zrange);
-
-	if (strncmp(range, "bytes=", sizeof("bytes=") - 1)) {
+	if (	!(zrange = http_get_server_var("HTTP_RANGE", 1)) || 
+			Z_STRLEN_P(zrange) < lenof("bytes=") || strncmp(Z_STRVAL_P(zrange), "bytes=", lenof("bytes="))) {
 		return RANGE_NO;
 	}
-
+	range = Z_STRVAL_P(zrange) + lenof("bytes=");
 	ptr = &begin;
-	range += sizeof("bytes=") - 1;
 
 	do {
 		switch (c = *(range++)) {

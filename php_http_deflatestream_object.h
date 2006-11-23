@@ -36,6 +36,7 @@ extern zend_object_value _http_deflatestream_object_clone_obj(zval *object TSRML
 extern void _http_deflatestream_object_free(zend_object *object TSRMLS_DC);
 
 PHP_METHOD(HttpDeflateStream, __construct);
+PHP_METHOD(HttpDeflateStream, factory);
 PHP_METHOD(HttpDeflateStream, update);
 PHP_METHOD(HttpDeflateStream, flush);
 PHP_METHOD(HttpDeflateStream, finish);

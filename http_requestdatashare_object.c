@@ -47,6 +47,11 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(reset);
 
+HTTP_BEGIN_ARGS(factory, 0)
+	HTTP_ARG_VAL(global, 0)
+	HTTP_ARG_VAL(class_name, 0)
+HTTP_END_ARGS;
+
 #ifndef WONKY
 HTTP_BEGIN_ARGS(singleton, 0)
 	HTTP_ARG_VAL(global, 0)
@@ -69,6 +74,7 @@ zend_function_entry http_requestdatashare_object_fe[] = {
 	HTTP_RSHARE_ME(attach, ZEND_ACC_PUBLIC)
 	HTTP_RSHARE_ME(detach, ZEND_ACC_PUBLIC)
 	HTTP_RSHARE_ME(reset, ZEND_ACC_PUBLIC)
+	HTTP_RSHARE_ME(factory, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 #ifndef WONKY
 	HTTP_RSHARE_ME(singleton, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 #endif
@@ -171,9 +177,7 @@ static void _http_requestdatashare_object_write_prop(zval *object, zval *member,
 }
 
 /* {{{ proto void HttpRequestDataShare::__destruct()
- *
- * Clean up HttpRequestDataShare object.
- */
+	Clean up HttpRequestDataShare object. */
 PHP_METHOD(HttpRequestDataShare, __destruct)
 {
 	NO_ARGS {
@@ -184,9 +188,7 @@ PHP_METHOD(HttpRequestDataShare, __destruct)
 /* }}} */
 
 /* {{{ proto int HttpRequestDataShare::count()
- *
- * Implements Countable::count().
- */
+	Implements Countable::count(). */
 PHP_METHOD(HttpRequestDataShare, count)
 {
 	getObject(http_requestdatashare_object, obj);
@@ -229,11 +231,25 @@ PHP_METHOD(HttpRequestDataShare, reset)
 	}
 }
 
+PHP_METHOD(HttpRequestDataShare, factory)
+{
+	zend_bool global = 0;
+	char *cn = NULL;
+	int cl = 0;
+	zend_object_value ov;
+	
+	SET_EH_THROW_HTTP();
+	if (	SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bs", &global, &cn, &cl) &&
+			SUCCESS == http_object_new(&ov, cn, cl, _http_requestdatashare_object_new_ex, http_requestdatashare_object_ce, NULL, NULL)) {
+		RETVAL_OBJVAL(ov, 0);
+		http_requestdatashare_instantiate(return_value, global);
+	}
+	SET_EH_NORMAL();
+}
+
 #ifndef WONKY
 /* {{{ proto static HttpRequestDataShare HttpRequestDataShare::singleton([bool global = false])
- *
- * Get a single instance (differentiates between the global setting).
- */
+	Get a single instance (differentiates between the global setting). */
 PHP_METHOD(HttpRequestDataShare, singleton)
 {
 	zend_bool global = 0;
@@ -290,9 +306,7 @@ static inline zval *_http_requestdatashare_instantiate(zval *this_ptr, zend_bool
 	}
 	return this_ptr;
 }
-#endif
-
-
+#endif /* !WONKY */
 
 #endif /* ZEND_ENGINE_2 && HTTP_HAVE_CURL */
 

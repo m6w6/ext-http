@@ -34,8 +34,8 @@ extern PHP_MINIT_FUNCTION(http_querystring_object);
 
 #define http_querystring_object_new(ce) _http_querystring_object_new((ce) TSRMLS_CC)
 extern zend_object_value _http_querystring_object_new(zend_class_entry *ce TSRMLS_DC);
-#define http_querystring_object_new_ex(ce, ptr) _http_querystring_object_new_ex((ce), (ptr) TSRMLS_CC)
-extern zend_object_value _http_querystring_object_new_ex(zend_class_entry *ce, http_querystring_object **ptr TSRMLS_DC);
+#define http_querystring_object_new_ex(ce, n, ptr) _http_querystring_object_new_ex((ce), (n), (ptr) TSRMLS_CC)
+extern zend_object_value _http_querystring_object_new_ex(zend_class_entry *ce, void *nothing, http_querystring_object **ptr TSRMLS_DC);
 #define http_querystring_object_free(o) _http_querystring_object_free((o) TSRMLS_CC)
 extern void _http_querystring_object_free(zend_object *object TSRMLS_DC);
 
@@ -54,6 +54,7 @@ PHP_METHOD(HttpQueryString, getObject);
 #ifdef HTTP_HAVE_ICONV
 PHP_METHOD(HttpQueryString, xlate);
 #endif
+PHP_METHOD(HttpQueryString, factory);
 #ifndef WONKY
 PHP_METHOD(HttpQueryString, singleton);
 #endif

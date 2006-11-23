@@ -38,14 +38,7 @@
 #include "php_http_url_api.h"
 
 /* {{{ proto string http_date([int timestamp])
- *
- * Compose a valid HTTP date regarding RFC 1123
- * looking like: "Wed, 22 Dec 2004 11:34:47 GMT"
- *
- * Accepts an optional unix timestamp as parameter.
- *
- * Returns the HTTP date as string.
- */
+	Compose a valid HTTP date regarding RFC 1123 looking like: "Wed, 22 Dec 2004 11:34:47 GMT" */
 PHP_FUNCTION(http_date)
 {
 	long t = -1;
@@ -67,47 +60,7 @@ PHP_FUNCTION(http_date)
 #endif
 
 /* {{{ proto string http_build_url([mixed url[, mixed parts[, int flags = HTTP_URL_REPLACE[, array &new_url]]]])
- *
- * Build an URL.
- *
- * Expexts (part(s) of) an URL as first parameter in form of a string or assoziative array
- * like parse_url() returns.  Accepts an optional second parameter in the same way as the
- * first argument.  Accepts an optional third integer parameter, which is a bitmask of
- * binary or'ed HTTP_URL_* constants.  The optional fourth parameter will be filled
- * with the results as associative array like parse_url() would return.
- *
- * The parts of the second URL will be merged into the first according to the flags argument.
- * The following flags are recognized:
- * <pre>
- *	- HTTP_URL_REPLACE:        (default) set parts of the second url will replace the parts in the first
- *	- HTTP_URL_JOIN_PATH:      the path of the second url will be merged into the one of the first
- *	- HTTP_URL_JOIN_QUERY:     the two querystrings will be merged recursively
- *	- HTTP_URL_STRIP_USER:     the user part will not appear in the result
- *	- HTTP_URL_STRIP_PASS:     the password part will not appear in the result
- *	- HTTP_URL_STRIP_AUTH:     neither the user nor the password part will appear in the result
- *	- HTTP_URL_STRIP_PORT:     no explicit port will be set in the result
- *	- HTTP_URL_STRIP_PATH:     the path part will not appear in the result
- *	- HTTP_URL_STRIP_QUERY:    no query string will be present in the result
- *	- HTTP_URL_STRIP_FRAGMENT: no fragment will be present in the result
- * </pre>
- *
- * Example:
- * <pre>
- * <?php
- * 		// ftp://ftp.example.com/pub/files/current/?a=b&a=c
- * 		echo http_build_url("http://user@www.example.com/pub/index.php?a=b#files",
- * 			array(
- * 				"scheme" => "ftp",
- * 				"host"   => "ftp.example.com",
- * 				"path"   => "files/current/",
- * 				"query"  => "a=c"
- * 			),
- * 			HTTP_URL_STRIP_AUTH | HTTP_URL_JOIN_PATH | HTTP_URL_JOIN_QUERY | HTTP_URL_STRIP_FRAGMENT
- * 		);
- * ?>
- * </pre>
- * Returns the new URL as string on success or FALSE on failure.
- */
+	Build an URL. */
 PHP_FUNCTION(http_build_url)
 {
 	char *url_str = NULL;
@@ -167,16 +120,7 @@ PHP_FUNCTION(http_build_url)
 /* }}} */
 
 /* {{{ proto string http_build_str(array query [, string prefix[, string arg_separator]])
- *
- * Opponent to parse_str().
- *
- * Expects an array as first argument which represents the parts of the query string to build.
- * Accepts a string as optional second parameter containing a top-level prefix to use.
- * The optional third parameter should specify an argument separator to use (by default the
- * INI setting arg_separator.output will be used, or "&" if neither is set).
- *
- * Returns the built query as string on success or FALSE on failure.
- */
+	Opponent to parse_str(). */
 PHP_FUNCTION(http_build_str)
 {
 	zval *formdata;
@@ -250,40 +194,8 @@ PHP_FUNCTION(http_build_str)
 	} \
 }
 
-
 /* {{{ proto string http_negotiate_language(array supported[, array &result])
- *
- * This function negotiates the clients preferred language based on its
- * Accept-Language HTTP header.  The qualifier is recognized and languages 
- * without qualifier are rated highest.  The qualifier will be decreased by
- * 10% for partial matches (i.e. matching primary language).
- * 
- * Expects an array as parameter containing the supported languages as values.
- * If the optional second parameter is supplied, it will be filled with an
- * array containing the negotiation results.
- * 
- * Returns the negotiated language or the default language (i.e. first array entry) 
- * if none match.
- * 
- * Example:
- * <pre>
- * <?php
- * $langs = array(
- * 		'en-US',// default
- * 		'fr',
- * 		'fr-FR',
- * 		'de',
- * 		'de-DE',
- * 		'de-AT',
- * 		'de-CH',
- * );
- * 
- * include './langs/'. http_negotiate_language($langs, $result) .'.php';
- * 
- * print_r($result);
- * ?>
- * </pre>
- */
+	Negotiate the clients preferred language. */
 PHP_FUNCTION(http_negotiate_language)
 {
 	zval *supported, *rs_array = NULL;
@@ -302,40 +214,7 @@ PHP_FUNCTION(http_negotiate_language)
 /* }}} */
 
 /* {{{ proto string http_negotiate_charset(array supported[, array &result])
- *
- * This function negotiates the clients preferred charset based on its
- * Accept-Charset HTTP header.  The qualifier is recognized and charsets 
- * without qualifier are rated highest.
- * 
- * Expects an array as parameter containing the supported charsets as values.
- * If the optional second parameter is supplied, it will be filled with an
- * array containing the negotiation results.
- * 
- * Returns the negotiated charset or the default charset (i.e. first array entry) 
- * if none match.
- * 
- * Example:
- * <pre>
- * <?php
- * $charsets = array(
- * 		'iso-8859-1', // default
- * 		'iso-8859-2',
- * 		'iso-8859-15',
- * 		'utf-8'
- * );
- * 
- * $pref = http_negotiate_charset($charsets, $result);
- * 
- * if (strcmp($pref, 'iso-8859-1')) {
- * 		iconv_set_encoding('internal_encoding', 'iso-8859-1');
- * 		iconv_set_encoding('output_encoding', $pref);
- * 		ob_start('ob_iconv_handler');
- * }
- * 
- * print_r($result);
- * ?>
- * </pre>
- */
+	Negotiate the clients preferred charset. */
 PHP_FUNCTION(http_negotiate_charset)
 {
 	zval *supported, *rs_array = NULL;
@@ -354,26 +233,7 @@ PHP_FUNCTION(http_negotiate_charset)
 /* }}} */
 
 /* {{{ proto string http_negotiate_ctype(array supported[, array &result])
- *
- * This function negotiates the clients preferred content type based on its
- * Accept HTTP header.  The qualifier is recognized and content types 
- * without qualifier are rated highest.
- * 
- * Expects an array as parameter containing the supported content types as values.
- * If the optional second parameter is supplied, it will be filled with an
- * array containing the negotiation results.
- * 
- * Returns the negotiated content type or the default content type 
- * (i.e. first array entry) if none match.
- * 
- * Example:
- * <pre>
- * <?php
- * $ctypes = array('application/xhtml+xml', 'text/html');
- * http_send_content_type(http_negotiate_content_type($ctypes));
- * ?>
- * </pre>
- */
+	Negotiate the clients preferred content type. */
 PHP_FUNCTION(http_negotiate_content_type)
 {
 	zval *supported, *rs_array = NULL;
@@ -392,13 +252,7 @@ PHP_FUNCTION(http_negotiate_content_type)
 /* }}} */
 
 /* {{{ proto bool http_send_status(int status)
- *
- * Send HTTP status code.
- *
- * Expects an HTTP status code as parameter.
- * 
- * Returns TRUE on success or FALSE on failure.
- */
+	Send HTTP status code. */
 PHP_FUNCTION(http_send_status)
 {
 	int status = 0;
@@ -416,15 +270,7 @@ PHP_FUNCTION(http_send_status)
 /* }}} */
 
 /* {{{ proto bool http_send_last_modified([int timestamp])
- *
- * Send a "Last-Modified" header with a valid HTTP date.
- * 
- * Accepts a unix timestamp, converts it to a valid HTTP date and
- * sends it as "Last-Modified" HTTP header.  If timestamp is
- * omitted, the current time will be sent.
- *
- * Returns TRUE on success or FALSE on failure.
- */
+	Send a "Last-Modified" header with a valid HTTP date. */
 PHP_FUNCTION(http_send_last_modified)
 {
 	long t = -1;
@@ -442,15 +288,7 @@ PHP_FUNCTION(http_send_last_modified)
 /* }}} */
 
 /* {{{ proto bool http_send_content_type([string content_type = 'application/x-octetstream'])
- *
- * Send the Content-Type of the sent entity.  This is particularly important
- * if you use the http_send() API.
- * 
- * Accepts an optional string parameter containing the desired content type 
- * (primary/secondary).
- *
- * Returns TRUE on success or FALSE on failure.
- */
+	Send the Content-Type of the sent entity.  This is particularly important if you use the http_send() API. */
 PHP_FUNCTION(http_send_content_type)
 {
 	char *ct = "application/x-octetstream";
@@ -465,18 +303,7 @@ PHP_FUNCTION(http_send_content_type)
 /* }}} */
 
 /* {{{ proto bool http_send_content_disposition(string filename[, bool inline = false])
- *
- * Send the Content-Disposition.  The Content-Disposition header is very useful
- * if the data actually sent came from a file or something similar, that should
- * be "saved" by the client/user (i.e. by browsers "Save as..." popup window).
- *
- * Expects a string parameter specifying the file name the "Save as..." dialog
- * should display.  Optionally accepts a bool parameter, which, if set to true
- * and the user agent knows how to handle the content type, will probably not
- * cause the popup window to be shown.
- * 
- * Returns TRUE on success or FALSE on failure.
- */
+	Send the Content-Disposition. */
 PHP_FUNCTION(http_send_content_disposition)
 {
 	char *filename;
@@ -491,18 +318,7 @@ PHP_FUNCTION(http_send_content_disposition)
 /* }}} */
 
 /* {{{ proto bool http_match_modified([int timestamp[, bool for_range = false]])
- *
- * Matches the given unix timestamp against the clients "If-Modified-Since" 
- * resp. "If-Unmodified-Since" HTTP headers.
- *
- * Accepts a unix timestamp which should be matched.  Optionally accepts an
- * additional bool parameter, which if set to true will check the header 
- * usually used to validate HTTP ranges.  If timestamp is omitted, the
- * current time will be used.
- * 
- * Returns TRUE if timestamp represents an earlier date than the header,
- * else FALSE.
- */
+	Matches the given unix timestamp against the clients "If-Modified-Since" resp. "If-Unmodified-Since" HTTP headers. */
 PHP_FUNCTION(http_match_modified)
 {
 	long t = -1;
@@ -525,17 +341,7 @@ PHP_FUNCTION(http_match_modified)
 /* }}} */
 
 /* {{{ proto bool http_match_etag(string etag[, bool for_range = false])
- *
- * Matches the given ETag against the clients "If-Match" resp. 
- * "If-None-Match" HTTP headers.
- *
- * Expects a string parameter containing the ETag to compare.  Optionally
- * accepts a bool parameter, which, if set to true, will check the header
- * usually used to validate HTTP ranges.
- * 
- * Returns TRUE if ETag matches or the header contained the asterisk ("*"),
- * else FALSE.
- */
+	Matches the given ETag against the clients "If-Match" resp. "If-None-Match" HTTP headers. */
 PHP_FUNCTION(http_match_etag)
 {
 	int etag_len;
@@ -554,23 +360,7 @@ PHP_FUNCTION(http_match_etag)
 /* }}} */
 
 /* {{{ proto bool http_cache_last_modified([int timestamp_or_expires]])
- *
- * Attempts to cache the sent entity by its last modification date.
- * 
- * Accepts a unix timestamp as parameter which is handled as follows:
- * 
- * If timestamp_or_expires is greater than 0, it is handled as timestamp
- * and will be sent as date of last modification.  If it is 0 or omitted,
- * the current time will be sent as Last-Modified date.  If it's negative,
- * it is handled as expiration time in seconds, which means that if the
- * requested last modification date is not between the calculated timespan,
- * the Last-Modified header is updated and the actual body will be sent.
- *
- * Returns FALSE on failure, or *exits* with "304 Not Modified" if the entity is cached.
- * 
- * A log entry will be written to the cache log if the INI entry
- * http.log.cache is set and the cache attempt was successful.
- */
+	Attempts to cache the sent entity by its last modification date. */
 PHP_FUNCTION(http_cache_last_modified)
 {
 	long last_modified = 0, send_modified = 0, t;
@@ -587,7 +377,7 @@ PHP_FUNCTION(http_cache_last_modified)
 	/* 0 or omitted */
 	if (!last_modified) {
 		/* does the client have? (att: caching "forever") */
-		if ((zlm = http_get_server_var("HTTP_IF_MODIFIED_SINCE"))) {
+		if ((zlm = http_get_server_var("HTTP_IF_MODIFIED_SINCE", 1))) {
 			last_modified = send_modified = http_parse_date(Z_STRVAL_P(zlm));
 		/* send current time */
 		} else {
@@ -607,19 +397,7 @@ PHP_FUNCTION(http_cache_last_modified)
 /* }}} */
 
 /* {{{ proto bool http_cache_etag([string etag])
- *
- * Attempts to cache the sent entity by its ETag, either supplied or generated 
- * by the hash algorithm specified by the INI setting "http.etag.mode".
- *
- * If the clients "If-None-Match" header matches the supplied/calculated
- * ETag, the body is considered cached on the clients side and
- * a "304 Not Modified" status code is issued.
- *
- * Returns FALSE on failure, or *exits* with "304 Not Modified" if the entity is cached.
- * 
- * A log entry is written to the cache log if the INI entry
- * "http.log.cache" is set and the cache attempt was successful.
- */
+	Attempts to cache the sent entity by its ETag, either supplied or generated by the hash algorithm specified by the INI setting "http.etag.mode". */
 PHP_FUNCTION(http_cache_etag)
 {
 	char *etag = NULL;
@@ -636,10 +414,7 @@ PHP_FUNCTION(http_cache_etag)
 /* }}} */
 
 /* {{{ proto string ob_etaghandler(string data, int mode)
- *
- * For use with ob_start().  Output buffer handler generating an ETag with
- * the hash algorithm specified with the INI setting "http.etag.mode".
- */
+	For use with ob_start().  Output buffer handler generating an ETag with the hash algorithm specified with the INI setting "http.etag.mode". */
 PHP_FUNCTION(ob_etaghandler)
 {
 	char *data;
@@ -656,26 +431,7 @@ PHP_FUNCTION(ob_etaghandler)
 /* }}} */
 
 /* {{{ proto void http_throttle(double sec[, int bytes = 40960])
- *
- * Sets the throttle delay and send buffer size for use with http_send() API.
- * Provides a basic throttling mechanism, which will yield the current process
- * resp. thread until the entity has been completely sent, though.
- * 
- * Expects a double parameter specifying the seconds too sleep() after
- * each chunk sent.  Additionally accepts an optional int parameter
- * representing the chunk size in bytes.
- * 
- * Example:
- * <pre>
- * <?php
- * // ~ 20 kbyte/s
- * # http_throttle(1, 20000);
- * # http_throttle(0.5, 10000);
- * # http_throttle(0.1, 2000);
- * http_send_file('document.pdf');
- * ?>
- * </pre>
- */
+	Sets the throttle delay and send buffer size for use with http_send() API. */
 PHP_FUNCTION(http_throttle)
 {
 	long chunk_size = HTTP_SENDBUF_SIZE;
@@ -691,34 +447,7 @@ PHP_FUNCTION(http_throttle)
 /* }}} */
 
 /* {{{ proto void http_redirect([string url[, array params[, bool session = false[, int status = 302]]]])
- *
- * Redirect to the given url.
- *  
- * The supplied url will be expanded with http_build_url(), the params array will
- * be treated with http_build_query() and the session identification will be appended
- * if session is true.
- *
- * The HTTP response code will be set according to status.
- * You can use one of the following constants for convenience:
- *  - HTTP_REDIRECT			302 Found for GET/HEAD, else 303 See Other
- *  - HTTP_REDIRECT_PERM	301 Moved Permanently
- *  - HTTP_REDIRECT_FOUND	302 Found
- *  - HTTP_REDIRECT_POST	303 See Other
- *  - HTTP_REDIRECT_PROXY	305 Use Proxy
- *  - HTTP_REDIRECT_TEMP	307 Temporary Redirect
- *
- * Please see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3
- * for which redirect response code to use in which situation.
- *
- * To be RFC compliant, "Redirecting to <a>URL</a>." will be displayed,
- * if the client doesn't redirect immediately, and the request method was
- * another one than HEAD.
- * 
- * Returns FALSE on failure, or *exits* on success.
- * 
- * A log entry will be written to the redirect log, if the INI entry
- * "http.log.redirect" is set and the redirect attempt was successful.
- */
+	Redirect to the given url. */
 PHP_FUNCTION(http_redirect)
 {
 	int url_len = 0;
@@ -817,11 +546,7 @@ PHP_FUNCTION(http_redirect)
 /* }}} */
 
 /* {{{ proto bool http_send_data(string data)
- *
- * Sends raw data with support for (multiple) range requests.
- *
- * Returns TRUE on success, or FALSE on failure.
- */
+	Sends raw data with support for (multiple) range requests. */
 PHP_FUNCTION(http_send_data)
 {
 	int data_len;
@@ -836,13 +561,7 @@ PHP_FUNCTION(http_send_data)
 /* }}} */
 
 /* {{{ proto bool http_send_file(string file)
- *
- * Sends a file with support for (multiple) range requests.
- *
- * Expects a string parameter referencing the file to send.
- * 
- * Returns TRUE on success, or FALSE on failure.
- */
+	Sends a file with support for (multiple) range requests. */
 PHP_FUNCTION(http_send_file)
 {
 	char *file;
@@ -860,13 +579,7 @@ PHP_FUNCTION(http_send_file)
 /* }}} */
 
 /* {{{ proto bool http_send_stream(resource stream)
- *
- * Sends an already opened stream with support for (multiple) range requests.
- *
- * Expects a resource parameter referencing the stream to read from.
- * 
- * Returns TRUE on success, or FALSE on failure.
- */
+	Sends an already opened stream with support for (multiple) range requests. */
 PHP_FUNCTION(http_send_stream)
 {
 	zval *zstream;
@@ -882,13 +595,7 @@ PHP_FUNCTION(http_send_stream)
 /* }}} */
 
 /* {{{ proto string http_chunked_decode(string encoded)
- *
- * Decodes a string that was HTTP-chunked encoded.
- * 
- * Expects a chunked encoded string as parameter.
- * 
- * Returns the decoded string on success or FALSE on failure.
- */
+	Decodes a string that was HTTP-chunked encoded. */
 PHP_FUNCTION(http_chunked_decode)
 {
 	char *encoded = NULL, *decoded = NULL;
@@ -908,47 +615,7 @@ PHP_FUNCTION(http_chunked_decode)
 /* }}} */
 
 /* {{{ proto object http_parse_message(string message)
- *
- * Parses (a) http_message(s) into a simple recursive object structure.
- * 
- * Expects a string parameter containing a single HTTP message or
- * several consecutive HTTP messages.
- * 
- * Returns an hierarchical object structure of the parsed messages.
- *
- * Example:
- * <pre>
- * <?php
- * print_r(http_parse_message(http_get(URL, array('redirect' => 3)));
- * 
- * stdClass object
- * (
- *     [type] => 2
- *     [httpVersion] => 1.1
- *     [responseCode] => 200
- *     [headers] => Array 
- *         (
- *             [Content-Length] => 3
- *             [Server] => Apache
- *         )
- *     [body]  => Hi!
- *     [parentMessage] => stdClass object
- *     (
- *         [type] => 2
- *         [httpVersion] => 1.1
- *         [responseCode] => 302
- *         [headers] => Array 
- *             (
- *                 [Content-Length] => 0
- *                 [Location] => ...
- *             )
- *         [body]  => 
- *         [parentMessage] => ...
- *     )
- * )
- * ?>
- * </pre>
- */
+	Parses (a) http_message(s) into a simple recursive object structure. */
 PHP_FUNCTION(http_parse_message)
 {
 	char *message;
@@ -970,38 +637,7 @@ PHP_FUNCTION(http_parse_message)
 /* }}} */
 
 /* {{{ proto array http_parse_headers(string header)
- *
- * Parses HTTP headers into an associative array.
- * 
- * Expects a string parameter containing HTTP headers.
- * 
- * Returns an array on success, or FALSE on failure.
- * 
- * Example:
- * <pre>
- * <?php
- * $headers = "content-type: text/html; charset=UTF-8\r\n".
- *            "Server: Funky/1.0\r\n".
- *            "Set-Cookie: foo=bar\r\n".
- *            "Set-Cookie: baz=quux\r\n".
- *            "Folded: works\r\n\ttoo\r\n";
- * print_r(http_parse_headers($headers));
- * 
- * Array
- * (
- *     [Content-Type] => text/html; chatset=UTF-8
- *     [Server] => Funky/1.0
- *     [Set-Cookie] => Array
- *         (
- *             [0] => foo=bar
- *             [1] => baz=quux
- *         )
- *     [Folded] => works
- *         too 
- * ) 
- * ?>
- * </pre>
- */
+	Parses HTTP headers into an associative array. */
 PHP_FUNCTION(http_parse_headers)
 {
 	char *header;
@@ -1021,39 +657,7 @@ PHP_FUNCTION(http_parse_headers)
 /* }}}*/
 
 /* {{{ proto object http_parse_cookie(string cookie[, int flags[, array allowed_extras]])
- *
- * Parses HTTP cookies like sent in a response into a struct.
- * 
- * Expects a string as parameter containing the value of a Set-Cookie response header.
- * 
- * Returns an stdClass olike shown in the example on success or FALSE on failure.
- * 
- * Example:
- * <pre>
- * <?php
- * print_r(http_parse_cookie("foo=bar; bar=baz; path=/; domain=example.com; comment=; secure", 0, array("comment")));
- * 
- * stdClass Object
- * (
- *     [cookies] => Array
- *         (
- *             [foo] => bar
- *             [bar] => baz
- *         )
- * 
- *     [extras] => Array
- *         (
- *             [comment] =>
- *         )
- * 
- *     [flags] => 16
- *     [expires] => 0
- *     [path] => /
- *     [domain] => example.com
- * )
- * ?>
- * </pre> 
- */
+	Parses HTTP cookies like sent in a response into a struct. */
 PHP_FUNCTION(http_parse_cookie)
 {
 	char *cookie, **allowed_extras = NULL;
@@ -1095,9 +699,7 @@ PHP_FUNCTION(http_parse_cookie)
 /* }}} */
 
 /* {{{ proto string http_build_cookie(array cookie)
- *
- * Build a cookie string from an array/object like returned by http_parse_cookie().
- */
+	Build a cookie string from an array/object like returned by http_parse_cookie(). */
 PHP_FUNCTION(http_build_cookie)
 {
 	char *str = NULL;
@@ -1118,9 +720,7 @@ PHP_FUNCTION(http_build_cookie)
 /* }}} */
 
 /* {{{ proto object http_parse_params(string param[, int flags = HTTP_PARAMS_DEFAULT])
- *
- * Parse parameter list.
- */
+ Parse parameter list. */
 PHP_FUNCTION(http_parse_params)
 {
 	char *param;
@@ -1145,11 +745,7 @@ PHP_FUNCTION(http_parse_params)
 /* }}} */
 
 /* {{{ proto array http_get_request_headers(void)
- *
- * Get a list of incoming HTTP headers.
- * 
- * Returns an associative array of incoming request headers.
- */
+	Get a list of incoming HTTP headers. */
 PHP_FUNCTION(http_get_request_headers)
 {
 	NO_ARGS;
@@ -1160,14 +756,7 @@ PHP_FUNCTION(http_get_request_headers)
 /* }}} */
 
 /* {{{ proto string http_get_request_body(void)
- *
- * Get the raw request body (e.g. POST or PUT data).
- * 
- * This function can not be used after http_get_request_body_stream() 
- * if the request method was another than POST.
- * 
- * Returns the raw request body as string on success or NULL on failure.
- */
+	Get the raw request body (e.g. POST or PUT data). */
 PHP_FUNCTION(http_get_request_body)
 {
 	char *body;
@@ -1184,13 +773,7 @@ PHP_FUNCTION(http_get_request_body)
 /* }}} */
 
 /* {{{ proto resource http_get_request_body_stream(void)
- *
- * Create a stream to read the raw request body (e.g. POST or PUT data).
- * 
- * This function can only be used once if the request method was another than POST.
- * 
- * Returns the raw request body as stream on success or NULL on failure.
- */
+	Create a stream to read the raw request body (e.g. POST or PUT data). This function can only be used once if the request method was another than POST. */
 PHP_FUNCTION(http_get_request_body_stream)
 {
 	php_stream *s;
@@ -1207,15 +790,7 @@ PHP_FUNCTION(http_get_request_body_stream)
 /* }}} */
 
 /* {{{ proto bool http_match_request_header(string header, string value[, bool match_case = false])
- *
- * Match an incoming HTTP header.
- * 
- * Expects two string parameters representing the header name (case-insensitive)
- * and the header value that should be compared.  The case sensitivity of the
- * header value depends on the additional optional bool parameter accepted.
- * 
- * Returns TRUE if header value matches, else FALSE.
- */
+	Match an incoming HTTP header. */
 PHP_FUNCTION(http_match_request_header)
 {
 	char *header, *value;
@@ -1251,115 +826,7 @@ PHP_FUNCTION(http_match_request_header)
 	}
 
 /* {{{ proto string http_get(string url[, array options[, array &info]])
- *
- * Performs an HTTP GET request on the supplied url.
- *
- * The second parameter, if set, is expected to be an associative
- * array where the following keys will be recognized:
- * <pre>
- *  - redirect:         int, whether and how many redirects to follow
- *  - unrestrictedauth: bool, whether to continue sending credentials on
- *                      redirects to a different host
- *  - proxyhost:        string, proxy host in "host[:port]" format
- *  - proxyport:        int, use another proxy port as specified in proxyhost
- *  - proxytype:        int, HTTP_PROXY_HTTP, SOCKS4 or SOCKS5
- *  - proxyauth:        string, proxy credentials in "user:pass" format
- *  - proxyauthtype:    int, HTTP_AUTH_BASIC and/or HTTP_AUTH_NTLM
- *  - httpauth:         string, http credentials in "user:pass" format
- *  - httpauthtype:     int, HTTP_AUTH_BASIC, DIGEST and/or NTLM
- *  - compress:         bool, whether to allow gzip/deflate content encoding
- *  - port:             int, use another port as specified in the url
- *  - referer:          string, the referer to send
- *  - useragent:        string, the user agent to send
- *                      (defaults to PECL::HTTP/version (PHP/version)))
- *  - headers:          array, list of custom headers as associative array
- *                      like array("header" => "value")
- *  - cookies:          array, list of cookies as associative array
- *                      like array("cookie" => "value")
- *  - encodecookies:    bool, whether to urlencode the cookies (default: true)
- *  - cookiestore:      string, path to a file where cookies are/will be stored
- *  - cookiesession:    bool, don't load session cookies from cookiestore if TRUE
- *  - resume:           int, byte offset to start the download from;
- *                      if the server supports ranges
- *  - range:            array, array of arrays, each containing two integers,
- *                      specifying the ranges to download if server support is
- *                      given; only recognized if the resume option is empty
- *  - maxfilesize:      int, maximum file size that should be downloaded;
- *                      has no effect, if the size of the requested entity is not known
- *  - lastmodified:     int, timestamp for If-(Un)Modified-Since header
- *  - etag:             string, quoted etag for If-(None-)Match header
- *  - timeout:          int, seconds the request may take
- *  - connecttimeout:   int, seconds the connect may take
- *  - onprogress:       mixed, progress callback
- *  - interface:        string, outgoing network interface (ifname, ip or hostname)
- *  - portrange:        array, 2 integers specifying outgoing portrange to try
- *  - ssl:              array, with the following options:
- *                      cert:        string, path to certificate
- *                      certtype:    string, type of certificate
- *                      certpasswd:  string, password for certificate
- *                      key:         string, path to key
- *                      keytype:     string, type of key
- *                      keypasswd:   string, pasword for key
- *                      engine:      string, ssl engine to use
- *                      version:     int, ssl version to use
- *                      verifypeer:  bool, whether to verify the peer
- *                      verifyhost:  bool whether to verify the host
- *                      cipher_list: string, list of allowed ciphers
- *                      cainfo:      string
- *                      capath:      string
- *                      random_file: string
- *                      egdsocket:   string
- * </pre>
- *
- * The optional third parameter will be filled with some additional information
- * in form of an associative array, if supplied, like the following example:
- * <pre>
- * <?php
- * array (
- *    'effective_url' => 'http://www.example.com/',
- *    'response_code' => 302,
- *    'connect_code' => 0,
- *    'filetime' => -1,
- *    'total_time' => 0.212348,
- *    'namelookup_time' => 0.038296,
- *    'connect_time' => 0.104144,
- *    'pretransfer_time' => 0.104307,
- *    'starttransfer_time' => 0.212077,
- *    'redirect_time' => 0,
- *    'redirect_count' => 0,
- *    'size_upload' => 0,
- *    'size_download' => 218,
- *    'speed_download' => 1026,
- *    'speed_upload' => 0,
- *    'header_size' => 307,
- *    'request_size' => 103,
- *    'ssl_verifyresult' => 0,
- *    'ssl_engines' =>
- *    array (
- *      0 => 'dynamic',
- *      1 => 'cswift',
- *      2 => 'chil',
- *      3 => 'atalla',
- *      4 => 'nuron',
- *      5 => 'ubsec',
- *      6 => 'aep',
- *      7 => 'sureware',
- *      8 => '4758cca',
- *    ),
- *    'content_length_download' => 218,
- *    'content_length_upload' => 0,
- *    'content_type' => 'text/html',
- *    'httpauth_avail' => 0,
- *    'proxyauth_avail' => 0,
- *    'num_connects' => 1,
- *    'os_errno' => 0,
- *    'error' => '',
- *  )
- * ?>
- * </pre>
- * 
- * Returns the HTTP response(s) as string on success, or FALSE on failure.
- */
+	Performs an HTTP GET request on the supplied url. */
 PHP_FUNCTION(http_get)
 {
 	zval *options = NULL, *info = NULL;
@@ -1391,13 +858,7 @@ PHP_FUNCTION(http_get)
 /* }}} */
 
 /* {{{ proto string http_head(string url[, array options[, array &info]])
- *
- * Performs an HTTP HEAD request on the supplied url.
- * 
- * See http_get() for a full list of available parameters and options.
- * 
- * Returns the HTTP response as string on success, or FALSE on failure.
- */
+	Performs an HTTP HEAD request on the supplied url. */
 PHP_FUNCTION(http_head)
 {
 	zval *options = NULL, *info = NULL;
@@ -1429,14 +890,7 @@ PHP_FUNCTION(http_head)
 /* }}} */
 
 /* {{{ proto string http_post_data(string url, string data[, array options[, array &info]])
- *
- * Performs an HTTP POST request on the supplied url.
- * 
- * Expects a string as second parameter containing the pre-encoded post data.
- * See http_get() for a full list of available parameters and options.
- *  
- * Returns the HTTP response(s) as string on success, or FALSE on failure.
- */
+	Performs an HTTP POST request on the supplied url. */
 PHP_FUNCTION(http_post_data)
 {
 	zval *options = NULL, *info = NULL;
@@ -1470,14 +924,7 @@ PHP_FUNCTION(http_post_data)
 /* }}} */
 
 /* {{{ proto string http_post_fields(string url, array data[, array files[, array options[, array &info]]])
- *
- * Performs an HTTP POST request on the supplied url.
- * 
- * Expects an associative array as second parameter, which will be
- * www-form-urlencoded. See http_get() for a full list of available options.
- * 
- * Returns the HTTP response(s) as string on success, or FALSE on failure.
- */
+	Performs an HTTP POST request on the supplied url. */
 PHP_FUNCTION(http_post_fields)
 {
 	zval *options = NULL, *info = NULL, *fields = NULL, *files = NULL;
@@ -1515,14 +962,7 @@ PHP_FUNCTION(http_post_fields)
 /* }}} */
 
 /* {{{ proto string http_put_file(string url, string file[, array options[, array &info]])
- *
- * Performs an HTTP PUT request on the supplied url.
- * 
- * Expects the second parameter to be a string referencing the file to upload.
- * See http_get() for a full list of available options.
- * 
- * Returns the HTTP response(s) as string on success, or FALSE on failure.
- */
+	Performs an HTTP PUT request on the supplied url. */
 PHP_FUNCTION(http_put_file)
 {
 	char *URL, *file;
@@ -1566,15 +1006,7 @@ PHP_FUNCTION(http_put_file)
 /* }}} */
 
 /* {{{ proto string http_put_stream(string url, resource stream[, array options[, array &info]])
- *
- * Performs an HTTP PUT request on the supplied url.
- * 
- * Expects the second parameter to be a resource referencing an already 
- * opened stream, from which the data to upload should be read.
- * See http_get() for a full list of available options.
- * 
- * Returns the HTTP response(s) as string on success, or FALSE on failure.
- */
+	Performs an HTTP PUT request on the supplied url. */
 PHP_FUNCTION(http_put_stream)
 {
 	zval *resource, *options = NULL, *info = NULL;
@@ -1615,14 +1047,7 @@ PHP_FUNCTION(http_put_stream)
 /* }}} */
 
 /* {{{ proto string http_put_data(string url, string data[, array options[, array &info]])
- *
- * Performs an HTTP PUT request on the supplied url.
- * 
- * Expects the second parameter to be a string containing the data to upload.
- * See http_get() for a full list of available options.
- * 
- * Returns the HTTP response(s) as string on success, or FALSE on failure.
- */
+	Performs an HTTP PUT request on the supplied url. */
 PHP_FUNCTION(http_put_data)
 {
 	char *URL, *data;
@@ -1656,15 +1081,7 @@ PHP_FUNCTION(http_put_data)
 /* }}} */
 
 /* {{{ proto string http_request(int method, string url[, string body[, array options[, array &info]]])
- *
- * Performs a custom HTTP request on the supplied url.
- *
- * Expects the first parameter to be an integer specifying the request method to use.
- * Accepts an optional third string parameter containing the raw request body.
- * See http_get() for a full list of available options.
- *
- * Returns the HTTP response(s) as string on success, or FALSE on failure.
- */
+	Performs a custom HTTP request on the supplied url. */
 PHP_FUNCTION(http_request)
 {
 	long meth;
@@ -1699,11 +1116,7 @@ PHP_FUNCTION(http_request)
 /* }}} */
 
 /* {{{ proto string http_request_body_encode(array fields, array files)
- *
- * Generate x-www-form-urlencoded resp. form-data encoded request body.
- *
- * Returns encoded string on success, or FALSE on failure.
- */
+	Generate x-www-form-urlencoded resp. form-data encoded request body. */
 PHP_FUNCTION(http_request_body_encode)
 {
 	zval *fields = NULL, *files = NULL;
@@ -1730,13 +1143,7 @@ PHP_FUNCTION(http_request_body_encode)
 /* }}} HAVE_CURL */
 
 /* {{{ proto int http_request_method_register(string method)
- *
- * Register a custom request method.
- * 
- * Expects a string parameter containing the request method name to register.
- * 
- * Returns the ID of the request method on success, or FALSE on failure.
- */
+	Register a custom request method. */
 PHP_FUNCTION(http_request_method_register)
 {
 	char *method;
@@ -1755,13 +1162,7 @@ PHP_FUNCTION(http_request_method_register)
 /* }}} */
 
 /* {{{ proto bool http_request_method_unregister(mixed method)
- *
- * Unregister a previously registered custom request method.
- * 
- * Expects either the request method name or ID.
- * 
- * Returns TRUE on success, or FALSE on failure.
- */
+	Unregister a previously registered custom request method. */
 PHP_FUNCTION(http_request_method_unregister)
 {
 	zval *method;
@@ -1793,13 +1194,7 @@ PHP_FUNCTION(http_request_method_unregister)
 /* }}} */
 
 /* {{{ proto int http_request_method_exists(mixed method)
- *
- * Check if a request method is registered (or available by default).
- * 
- * Expects either the request method name or ID as parameter.
- * 
- * Returns TRUE if the request method is known, else FALSE.
- */
+	Check if a request method is registered (or available by default). */
 PHP_FUNCTION(http_request_method_exists)
 {
 	if (return_value_used) {
@@ -1828,13 +1223,7 @@ PHP_FUNCTION(http_request_method_exists)
 /* }}} */
 
 /* {{{ proto string http_request_method_name(int method)
- *
- * Get the literal string representation of a standard or registered request method.
- * 
- * Expects the request method ID as parameter.
- * 
- * Returns the request method name as string on success, or FALSE on failure.
- */
+	Get the literal string representation of a standard or registered request method. */
 PHP_FUNCTION(http_request_method_name)
 {
 	if (return_value_used) {
@@ -1853,14 +1242,7 @@ PHP_FUNCTION(http_request_method_name)
 #ifdef HTTP_HAVE_ZLIB
 
 /* {{{  proto string http_deflate(string data[, int flags = 0])
- *
- * Compress data with gzip, zlib AKA deflate or raw deflate encoding.
- * 
- * Expects the first parameter to be a string containing the data that should
- * be encoded.
- * 
- * Returns the encoded string on success, or NULL on failure.
- */
+	Compress data with gzip, zlib AKA deflate or raw deflate encoding. */
 PHP_FUNCTION(http_deflate)
 {
 	char *data;
@@ -1881,14 +1263,7 @@ PHP_FUNCTION(http_deflate)
 /* }}} */
 
 /* {{{ proto string http_inflate(string data)
- *
- * Decompress data compressed with either gzip, deflate AKA zlib or raw
- * deflate encoding.
- * 
- * Expects a string as parameter containing the compressed data.
- * 
- * Returns the decoded string on success, or NULL on failure.
- */
+	Decompress data compressed with either gzip, deflate AKA zlib or raw deflate encoding. */
 PHP_FUNCTION(http_inflate)
 {
 	char *data;
@@ -1908,12 +1283,7 @@ PHP_FUNCTION(http_inflate)
 /* }}} */
 
 /* {{{ proto string ob_deflatehandler(string data, int mode)
- *
- * For use with ob_start(). The deflate output buffer handler can only be used once.
- * It conflicts with ob_gzhandler and zlib.output_compression as well and should
- * not be used after ext/mbstrings mb_output_handler and ext/sessions URL-Rewriter (AKA
- * session.use_trans_sid).
- */
+	For use with ob_start(). The deflate output buffer handler can only be used once. */
 PHP_FUNCTION(ob_deflatehandler)
 {
 	char *data;
@@ -1930,9 +1300,7 @@ PHP_FUNCTION(ob_deflatehandler)
 /* }}} */
 
 /* {{{ proto string ob_inflatehandler(string data, int mode)
- *
- * For use with ob_start().  Same restrictions as with ob_deflatehandler apply.
- */
+	For use with ob_start().  Same restrictions as with ob_deflatehandler apply. */
 PHP_FUNCTION(ob_inflatehandler)
 {
 	char *data;
@@ -1952,29 +1320,7 @@ PHP_FUNCTION(ob_inflatehandler)
 /* }}} */
 
 /* {{{ proto int http_support([int feature = 0])
- *
- * Check for feature that require external libraries.
- * 
- * Accepts an optional in parameter specifying which feature to probe for.
- * If the parameter is 0 or omitted, the return value contains a bitmask of 
- * all supported features that depend on external libraries.
- * 
- * Available features to probe for are:
- * <ul> 
- *  <li> HTTP_SUPPORT: always set
- *  <li> HTTP_SUPPORT_REQUESTS: whether ext/http was linked against libcurl,
- *       and HTTP requests can be issued
- *  <li> HTTP_SUPPORT_SSLREQUESTS: whether libcurl was linked against openssl,
- *       and SSL requests can be issued 
- *  <li> HTTP_SUPPORT_ENCODINGS: whether ext/http was linked against zlib,
- *       and compressed HTTP responses can be decoded
- *  <li> HTTP_SUPPORT_MAGICMIME: whether ext/http was linked against libmagic,
- *       and the HttpResponse::guessContentType() method is usable
- * </ul>
- * 
- * Returns int, whether requested feature is supported, or a bitmask with
- * all supported features.
- */
+	Check for feature that require external libraries. */
 PHP_FUNCTION(http_support)
 {
 	long feature = 0;
@@ -1986,10 +1332,6 @@ PHP_FUNCTION(http_support)
 	}
 }
 /* }}} */
-
-PHP_FUNCTION(http_test)
-{
-}
 
 /*
  * Local variables:

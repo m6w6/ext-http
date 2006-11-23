@@ -56,6 +56,11 @@ extern zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend
 	if (EG(exception)) { \
 		EG(exception) = http_exception_wrap(EG(exception), NULL, ex_ce); \
 	}
+
+typedef zend_object_value (*http_object_new_t)(zend_class_entry *ce, void *, void ** TSRMLS_DC);
+
+#define http_object_new(ov, cn, cl, co, ce, i, pp) _http_object_new((ov), (cn), (cl), (http_object_new_t) (co), (ce), (i), (void *) (pp) TSRMLS_CC)
+extern STATUS _http_object_new(zend_object_value *ov, const char *cname_str, uint cname_len, http_object_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC);
 #endif /* ZEND_ENGINE_2 */
 
 
@@ -118,7 +123,7 @@ extern zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend
 	}
 
 #define http_log(f, i, m) _http_log_ex((f), (i), (m) TSRMLS_CC)
-extern void http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC);
+extern void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC);
 
 #define http_exit(s, h) http_exit_ex((s), (h), NULL, 1)
 #define http_exit_ex(s, h, b, e) _http_exit_ex((s), (h), (b), (e) TSRMLS_CC)
@@ -128,15 +133,10 @@ extern STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send
 #define http_check_method_ex(m, a) _http_check_method_ex((m), (a))
 extern STATUS _http_check_method_ex(const char *method, const char *methods);
 
-#define HTTP_GSC(var, name, ret)  HTTP_GSP(var, name, return ret)
-#define HTTP_GSP(var, name, ret) \
-		if (!(var = _http_get_server_var_ex(name, strlen(name)+1, 1 TSRMLS_CC))) { \
-			ret; \
-		}
-#define http_got_server_var(v) (NULL != _http_get_server_var_ex((v), sizeof(v), 1 TSRMLS_CC))
-#define http_get_server_var(v) http_get_server_var_ex((v), sizeof(v))
-#define http_get_server_var_ex(v, s) _http_get_server_var_ex((v), (s), 0 TSRMLS_CC)
-PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_size, zend_bool check TSRMLS_DC);
+#define http_got_server_var(v) (NULL != http_get_server_var_ex((v), strlen(v), 1))
+#define http_get_server_var(v, c) http_get_server_var_ex((v), strlen(v), (c))
+#define http_get_server_var_ex(v, l, c) _http_get_server_var_ex((v), (l), (c) TSRMLS_CC)
+PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_len, zend_bool check TSRMLS_DC);
 
 #define http_get_request_body(b, l) _http_get_request_body_ex((b), (l), 1 TSRMLS_CC)
 #define http_get_request_body_ex(b, l, d) _http_get_request_body_ex((b), (l), (d) TSRMLS_CC)

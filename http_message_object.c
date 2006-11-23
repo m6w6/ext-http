@@ -46,8 +46,9 @@ HTTP_BEGIN_ARGS(__construct, 0)
 	HTTP_ARG_VAL(message, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(fromString, 1)
+HTTP_BEGIN_ARGS(factory, 0)
 	HTTP_ARG_VAL(message, 0)
+	HTTP_ARG_VAL(class_name, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getBody);
@@ -182,7 +183,8 @@ zend_function_entry http_message_object_fe[] = {
 
 	ZEND_MALIAS(HttpMessage, __toString, toString, HTTP_ARGS(HttpMessage, toString), ZEND_ACC_PUBLIC)
 
-	HTTP_MESSAGE_ME(fromString, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	HTTP_MESSAGE_ME(factory, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	ZEND_MALIAS(HttpMessage, fromString, factory, HTTP_ARGS(HttpMessage, factory), ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	
 	HTTP_MESSAGE_ME(detach, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(prepend, ZEND_ACC_PUBLIC)
@@ -677,16 +679,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 /* ### USERLAND ### */
 
 /* {{{ proto void HttpMessage::__construct([string message])
- *
- * Instantiate a new HttpMessage object.
- * 
- * Accepts an optional string parameter containing a single or several 
- * consecutive HTTP messages.  The constructed object will actually 
- * represent the *last* message of the passed string.  If there were
- * prior messages, those can be accessed by HttpMessage::getParentMessage().
- * 
- * Throws HttpMalformedHeaderException.
- */
+	Create a new HttpMessage object instance. */
 PHP_METHOD(HttpMessage, __construct)
 {
 	int length = 0;
@@ -714,40 +707,28 @@ PHP_METHOD(HttpMessage, __construct)
 }
 /* }}} */
 
-/* {{{ proto static HttpMessage HttpMessage::fromString(string raw_message[, string class_name = "HttpMessage"])
- *
- * Create an HttpMessage object from a string. Kind of a static constructor.
- * 
- * Expects a string parameter containing a single or several consecutive
- * HTTP messages.  Accepts an optional string parameter specifying the class to use.
- * 
- * Returns an HttpMessage object on success or NULL on failure.
- * 
- * Throws HttpMalformedHeadersException.
- */
-PHP_METHOD(HttpMessage, fromString)
+/* {{{ proto static HttpMessage HttpMessage::factory([string raw_message[, string class_name = "HttpMessage"]])
+	Create a new HttpMessage object instance. */
+PHP_METHOD(HttpMessage, factory)
 {
-	char *string = NULL, *class_name = NULL;
-	int length = 0, class_length = 0;
+	char *string = NULL, *cn = NULL;
+	int length = 0, cl = 0;
 	http_message *msg = NULL;
+	zend_object_value ov;
+	http_message_object *obj = NULL;
 
 	RETVAL_NULL();
 	
 	SET_EH_THROW_HTTP();
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s", &string, &length, &class_name, &class_length)) {
-		if ((msg = http_message_parse(string, length))) {
-			zend_class_entry *ce = http_message_object_ce;
-			
-			if (class_name && *class_name) {
-				ce = zend_fetch_class(class_name, class_length, ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC);
-				if (ce && !instanceof_function(ce, http_message_object_ce TSRMLS_CC)) {
-					http_error_ex(HE_WARNING, HTTP_E_RUNTIME, "Class %s does not extend HttpMessage", class_name);
-					ce = NULL;
-				}
-			}
-			if (ce) {
-				RETVAL_OBJVAL(http_message_object_new_ex(ce, msg, NULL), 0);
-			}
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss", &string, &length, &cn, &cl)) {
+		if (length) {
+			msg = http_message_parse(string, length);
+		}
+		if ((msg || !length) && SUCCESS == http_object_new(&ov, cn, cl, _http_message_object_new_ex, http_message_object_ce, msg, &obj)) {
+			RETVAL_OBJVAL(ov, 0);
+		}
+		if (obj && !obj->message) {
+			obj->message = http_message_new();
 		}
 	}
 	SET_EH_NORMAL();
@@ -755,11 +736,7 @@ PHP_METHOD(HttpMessage, fromString)
 /* }}} */
 
 /* {{{ proto string HttpMessage::getBody()
- *
- * Get the body of the parsed HttpMessage.
- * 
- * Returns the message body as string.
- */
+	Get the body of the parsed HttpMessage. */
 PHP_METHOD(HttpMessage, getBody)
 {
 	NO_ARGS;
@@ -772,12 +749,7 @@ PHP_METHOD(HttpMessage, getBody)
 /* }}} */
 
 /* {{{ proto void HttpMessage::setBody(string body)
- *
- * Set the body of the HttpMessage.
- * NOTE: Don't forget to update any headers accordingly.
- * 
- * Expects a string parameter containing the new body of the message.
- */
+	Set the body of the HttpMessage. NOTE: Don't forget to update any headers accordingly. */
 PHP_METHOD(HttpMessage, setBody)
 {
 	char *body;
@@ -792,11 +764,7 @@ PHP_METHOD(HttpMessage, setBody)
 /* }}} */
 
 /* {{{ proto string HttpMessage::getHeader(string header)
- *
- * Get message header.
- *
- * Returns the header value on success or NULL if the header does not exist.
- */
+	Get message header. */
 PHP_METHOD(HttpMessage, getHeader)
 {
 	zval *header;
@@ -817,11 +785,7 @@ PHP_METHOD(HttpMessage, getHeader)
 /* }}} */
 
 /* {{{ proto array HttpMessage::getHeaders()
- *
- * Get Message Headers.
- * 
- * Returns an associative array containing the messages HTTP headers.
- */
+	Get Message Headers. */
 PHP_METHOD(HttpMessage, getHeaders)
 {
 	NO_ARGS;
@@ -836,12 +800,7 @@ PHP_METHOD(HttpMessage, getHeaders)
 /* }}} */
 
 /* {{{ proto void HttpMessage::setHeaders(array headers)
- *
- * Sets new headers.
- * 
- * Expects an associative array as parameter containing the new HTTP headers,
- * which will replace *all* previous HTTP headers of the message.
- */
+	Sets new headers. */
 PHP_METHOD(HttpMessage, setHeaders)
 {
 	zval *new_headers = NULL;
@@ -859,15 +818,7 @@ PHP_METHOD(HttpMessage, setHeaders)
 /* }}} */
 
 /* {{{ proto void HttpMessage::addHeaders(array headers[, bool append = false])
- *
- * Add headers. If append is true, headers with the same name will be separated, else overwritten.
- * 
- * Expects an associative array as parameter containing the additional HTTP headers
- * to add to the messages existing headers.  If the optional bool parameter is true,
- * and a header with the same name of one to add exists already, this respective
- * header will be converted to an array containing both header values, otherwise
- * it will be overwritten with the new header value.
- */
+	Add headers. If append is true, headers with the same name will be separated, else overwritten. */
 PHP_METHOD(HttpMessage, addHeaders)
 {
 	zval *new_headers;
@@ -883,11 +834,7 @@ PHP_METHOD(HttpMessage, addHeaders)
 /* }}} */
 
 /* {{{ proto int HttpMessage::getType()
- *
- * Get Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)
- * 
- * Returns the HttpMessage::TYPE.
- */
+	Get Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE) */
 PHP_METHOD(HttpMessage, getType)
 {
 	NO_ARGS;
@@ -900,11 +847,7 @@ PHP_METHOD(HttpMessage, getType)
 /* }}} */
 
 /* {{{ proto void HttpMessage::setType(int type)
- *
- * Set Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE)
- * 
- * Expects an int parameter, the HttpMessage::TYPE.
- */
+	Set Message Type. (HTTP_MSG_NONE|HTTP_MSG_REQUEST|HTTP_MSG_RESPONSE) */
 PHP_METHOD(HttpMessage, setType)
 {
 	long type;
@@ -918,12 +861,7 @@ PHP_METHOD(HttpMessage, setType)
 /* }}} */
 
 /* {{{ proto int HttpMessage::getResponseCode()
- *
- * Get the Response Code of the Message.
- * 
- * Returns the HTTP response code if the message is of type 
- * HttpMessage::TYPE_RESPONSE, else FALSE.
- */
+	Get the Response Code of the Message. */
 PHP_METHOD(HttpMessage, getResponseCode)
 {
 	NO_ARGS;
@@ -937,14 +875,7 @@ PHP_METHOD(HttpMessage, getResponseCode)
 /* }}} */
 
 /* {{{ proto bool HttpMessage::setResponseCode(int code)
- *
- * Set the response code of an HTTP Response Message.
- * 
- * Expects an int parameter with the HTTP response code.
- * 
- * Returns TRUE on success, or FALSE if the message is not of type
- * HttpMessage::TYPE_RESPONSE or the response code is out of range (100-510).
- */
+	Set the response code of an HTTP Response Message. */
 PHP_METHOD(HttpMessage, setResponseCode)
 {
 	long code;
@@ -966,12 +897,7 @@ PHP_METHOD(HttpMessage, setResponseCode)
 /* }}} */
 
 /* {{{ proto string HttpMessage::getResponseStatus()
- *
- * Get the Response Status of the message (i.e. the string following the response code).
- *
- * Returns the HTTP response status string if the message is of type 
- * HttpMessage::TYPE_RESPONSE, else FALSE.
- */
+	Get the Response Status of the message (i.e. the string following the response code). */
 PHP_METHOD(HttpMessage, getResponseStatus)
 {
 	NO_ARGS;
@@ -985,14 +911,7 @@ PHP_METHOD(HttpMessage, getResponseStatus)
 /* }}} */
 
 /* {{{ proto bool HttpMessage::setResponseStatus(string status)
- *
- * Set the Response Status of the HTTP message (i.e. the string following the response code).
- *
- * Expects a string parameter containing the response status text.
- *
- * Returns TRUE on success or FALSE if the message is not of type
- * HttpMessage::TYPE_RESPONSE.
- */
+	Set the Response Status of the HTTP message (i.e. the string following the response code). */
 PHP_METHOD(HttpMessage, setResponseStatus)
 {
 	char *status;
@@ -1010,12 +929,7 @@ PHP_METHOD(HttpMessage, setResponseStatus)
 /* }}} */
 
 /* {{{ proto string HttpMessage::getRequestMethod()
- *
- * Get the Request Method of the Message.
- * 
- * Returns the request method name on success, or FALSE if the message is
- * not of type HttpMessage::TYPE_REQUEST.
- */
+	Get the Request Method of the Message. */
 PHP_METHOD(HttpMessage, getRequestMethod)
 {
 	NO_ARGS;
@@ -1029,14 +943,7 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 /* }}} */
 
 /* {{{ proto bool HttpMessage::setRequestMethod(string method)
- *
- * Set the Request Method of the HTTP Message.
- * 
- * Expects a string parameter containing the request method name.
- * 
- * Returns TRUE on success, or FALSE if the message is not of type
- * HttpMessage::TYPE_REQUEST or an invalid request method was supplied. 
- */
+	Set the Request Method of the HTTP Message. */
 PHP_METHOD(HttpMessage, setRequestMethod)
 {
 	char *method;
@@ -1063,12 +970,7 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 /* }}} */
 
 /* {{{ proto string HttpMessage::getRequestUrl()
- *
- * Get the Request URL of the Message.
- * 
- * Returns the request url as string on success, or FALSE if the message
- * is not of type HttpMessage::TYPE_REQUEST. 
- */
+	Get the Request URL of the Message. */
 PHP_METHOD(HttpMessage, getRequestUrl)
 {
 	NO_ARGS;
@@ -1082,14 +984,7 @@ PHP_METHOD(HttpMessage, getRequestUrl)
 /* }}} */
 
 /* {{{ proto bool HttpMessage::setRequestUrl(string url)
- *
- * Set the Request URL of the HTTP Message.
- * 
- * Expects a string parameters containing the request url.
- * 
- * Returns TRUE on success, or FALSE if the message is not of type
- * HttpMessage::TYPE_REQUEST or supplied URL was empty.
- */
+	Set the Request URL of the HTTP Message. */
 PHP_METHOD(HttpMessage, setRequestUrl)
 {
 	char *URI;
@@ -1111,11 +1006,7 @@ PHP_METHOD(HttpMessage, setRequestUrl)
 /* }}} */
 
 /* {{{ proto string HttpMessage::getHttpVersion()
- *
- * Get the HTTP Protocol Version of the Message.
- * 
- * Returns the HTTP protocol version as string.
- */
+	Get the HTTP Protocol Version of the Message. */
 PHP_METHOD(HttpMessage, getHttpVersion)
 {
 	NO_ARGS;
@@ -1131,13 +1022,7 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 /* }}} */
 
 /* {{{ proto bool HttpMessage::setHttpVersion(string version)
- *
- * Set the HTTP Protocol version of the Message.
- * 
- * Expects a string parameter containing the HTTP protocol version.
- * 
- * Returns TRUE on success, or FALSE if supplied version is out of range (1.0/1.1).
- */
+	Set the HTTP Protocol version of the Message. */
 PHP_METHOD(HttpMessage, setHttpVersion)
 {
 	char v[4];
@@ -1161,17 +1046,7 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 /* }}} */
 
 /* {{{ proto string HttpMessage::guessContentType(string magic_file[, int magic_mode = MAGIC_MIME])
- *
- * Attempts to guess the content type of supplied payload through libmagic.
- * 
- * Expects a string parameter specifying the magic.mime database to use.
- * Additionally accepts an optional int parameter, being flags for libmagic.
- * 
- * Returns the guessed content type on success, or FALSE on failure.
- * 
- * Throws HttpRuntimeException, HttpInvalidParamException 
- * if http.only_exceptions is TRUE.
- */
+	Attempts to guess the content type of supplied payload through libmagic. */
 PHP_METHOD(HttpMessage, guessContentType)
 {
 #ifdef HTTP_HAVE_MAGIC
@@ -1196,13 +1071,7 @@ PHP_METHOD(HttpMessage, guessContentType)
 /* }}} */
 
 /* {{{ proto HttpMessage HttpMessage::getParentMessage()
- *
- * Get parent Message.
- *
- * Returns the parent HttpMessage on success, or NULL if there's none.
- *
- * Throws HttpRuntimeException.
- */
+	Get parent Message. */
 PHP_METHOD(HttpMessage, getParentMessage)
 {
 	SET_EH_THROW_HTTP();
@@ -1220,12 +1089,7 @@ PHP_METHOD(HttpMessage, getParentMessage)
 /* }}} */
 
 /* {{{ proto bool HttpMessage::send()
- *
- * Send the Message according to its type as Response or Request.
- * This provides limited functionality compared to HttpRequest and HttpResponse.
- * 
- * Returns TRUE on success, or FALSE on failure.
- */
+	Send the Message according to its type as Response or Request. */
 PHP_METHOD(HttpMessage, send)
 {
 	getObject(http_message_object, obj);
@@ -1237,14 +1101,7 @@ PHP_METHOD(HttpMessage, send)
 /* }}} */
 
 /* {{{ proto string HttpMessage::toString([bool include_parent = false])
- *
- * Get the string representation of the Message.
- * 
- * Accepts a bool parameter which specifies whether the returned string
- * should also contain any parent messages.
- * 
- * Returns the full message as string.
- */
+	Get the string representation of the Message. */
 PHP_METHOD(HttpMessage, toString)
 {
 	if (return_value_used) {
@@ -1268,13 +1125,7 @@ PHP_METHOD(HttpMessage, toString)
 /* }}} */
 
 /* {{{ proto HttpRequest|HttpResponse HttpMessage::toMessageTypeObject(void)
- *
- * Creates an object regarding to the type of the message.
- *
- * Returns either an HttpRequest or HttpResponse object on success, or NULL on failure.
- *
- * Throws HttpRuntimeException, HttpMessageTypeException, HttpHeaderException.
- */
+	Creates an object regarding to the type of the message. Returns either an HttpRequest or HttpResponse object on success, or NULL on failure. */
 PHP_METHOD(HttpMessage, toMessageTypeObject)
 {
 	SET_EH_THROW_HTTP();
@@ -1390,11 +1241,7 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 /* }}} */
 
 /* {{{ proto int HttpMessage::count()
- *
- * Implements Countable.
- * 
- * Returns the number of parent messages + 1.
- */
+	Implements Countable::count(). Returns the number of parent messages + 1. */
 PHP_METHOD(HttpMessage, count)
 {
 	NO_ARGS {
@@ -1408,11 +1255,7 @@ PHP_METHOD(HttpMessage, count)
 /* }}} */
 
 /* {{{ proto string HttpMessage::serialize()
- *
- * Implements Serializable.
- * 
- * Returns the serialized representation of the HttpMessage.
- */
+	Implements Serializable::serialize(). Returns the serialized representation of the HttpMessage. */
 PHP_METHOD(HttpMessage, serialize)
 {
 	NO_ARGS {
@@ -1427,11 +1270,7 @@ PHP_METHOD(HttpMessage, serialize)
 /* }}} */
 
 /* {{{ proto void HttpMessage::unserialize(string serialized)
- *
- * Implements Serializable.
- * 
- * Re-constructs the HttpMessage based upon the serialized string.
- */
+	Implements Serializable::unserialize(). Re-constructs the HttpMessage based upon the serialized string. */
 PHP_METHOD(HttpMessage, unserialize)
 {
 	int length;
@@ -1449,9 +1288,7 @@ PHP_METHOD(HttpMessage, unserialize)
 /* }}} */
 
 /* {{{ proto HttpMessage HttpMessage::detach(void)
- *
- * Returns a clone of an HttpMessage object detached from any parent messages.
- */
+	Returns a clone of an HttpMessage object detached from any parent messages. */
 PHP_METHOD(HttpMessage, detach)
 {
 	http_info info;
@@ -1474,13 +1311,7 @@ PHP_METHOD(HttpMessage, detach)
 /* }}} */
 
 /* {{{ proto void HttpMessage::prepend(HttpMessage message[, bool top = true])
- *
- * Prepends message(s) to the HTTP message.
- *
- * Expects an HttpMessage object as parameter.
- *
- * Throws HttpInvalidParamException if the message is located within the same message chain.
- */
+	Prepends message(s) to the HTTP message. Throws HttpInvalidParamException if the message is located within the same message chain. */
 PHP_METHOD(HttpMessage, prepend)
 {
 	zval *prepend;
@@ -1507,11 +1338,7 @@ PHP_METHOD(HttpMessage, prepend)
 /* }}} */
 
 /* {{{ proto HttpMessage HttpMessage::reverse()
- *
- * Reorders the message chain in reverse order.
- *
- * Returns the most parent HttpMessage object.
- */
+	Reorders the message chain in reverse order. Returns the most parent HttpMessage object. */
 PHP_METHOD(HttpMessage, reverse)
 {
 	NO_ARGS {
@@ -1521,9 +1348,7 @@ PHP_METHOD(HttpMessage, reverse)
 /* }}} */
 
 /* {{{ proto void HttpMessage::rewind(void)
- *
- * Implements Iterator.
- */
+	Implements Iterator::rewind(). */
 PHP_METHOD(HttpMessage, rewind)
 {
 	NO_ARGS {
@@ -1539,9 +1364,7 @@ PHP_METHOD(HttpMessage, rewind)
 /* }}} */
 
 /* {{{ proto bool HttpMessage::valid(void)
- *
- * Implements Iterator.
- */
+	Implements Iterator::valid(). */
 PHP_METHOD(HttpMessage, valid)
 {
 	NO_ARGS {
@@ -1553,9 +1376,7 @@ PHP_METHOD(HttpMessage, valid)
 /* }}} */
 
 /* {{{ proto void HttpMessage::next(void)
- *
- * Implements Iterator.
- */
+	Implements Iterator::next(). */
 PHP_METHOD(HttpMessage, next)
 {
 	NO_ARGS {
@@ -1576,9 +1397,7 @@ PHP_METHOD(HttpMessage, next)
 /* }}} */
 
 /* {{{ proto int HttpMessage::key(void)
- *
- * Implements Iterator.
- */
+	Implements Iterator::key(). */
 PHP_METHOD(HttpMessage, key)
 {
 	NO_ARGS {
@@ -1590,9 +1409,7 @@ PHP_METHOD(HttpMessage, key)
 /* }}} */
 
 /* {{{ proto HttpMessage HttpMessage::current(void)
- *
- * Implements Iterator.
- */
+	Implements Iterator::current(). */
 PHP_METHOD(HttpMessage, current)
 {
 	NO_ARGS {

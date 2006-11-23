@@ -41,6 +41,12 @@ HTTP_BEGIN_ARGS(singleton, 0)
 HTTP_END_ARGS;
 #endif
 
+HTTP_BEGIN_ARGS(factory, 0)
+	HTTP_ARG_VAL(global, 0)
+	HTTP_ARG_VAL(params, 0)
+	HTTP_ARG_VAL(class_name, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(toArray);
 HTTP_EMPTY_ARGS(toString);
 
@@ -115,6 +121,7 @@ zend_function_entry http_querystring_object_fe[] = {
 	HTTP_QUERYSTRING_GME(getArray, ZEND_ACC_PUBLIC)
 	HTTP_QUERYSTRING_GME(getObject, ZEND_ACC_PUBLIC)
 	
+	HTTP_QUERYSTRING_ME(factory, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 #ifndef WONKY
 	HTTP_QUERYSTRING_ME(singleton, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 #endif
@@ -169,10 +176,10 @@ PHP_MINIT_FUNCTION(http_querystring_object)
 
 zend_object_value _http_querystring_object_new(zend_class_entry *ce TSRMLS_DC)
 {
-	return http_querystring_object_new_ex(ce, NULL);
+	return http_querystring_object_new_ex(ce, NULL, NULL);
 }
 
-zend_object_value _http_querystring_object_new_ex(zend_class_entry *ce, http_querystring_object **ptr TSRMLS_DC)
+zend_object_value _http_querystring_object_new_ex(zend_class_entry *ce, void *nothing, http_querystring_object **ptr TSRMLS_DC)
 {
 	zend_object_value ov;
 	http_querystring_object *o;
@@ -205,7 +212,7 @@ void _http_querystring_object_free(zend_object *object TSRMLS_DC)
 #define http_querystring_instantiate(t, g, p, u) _http_querystring_instantiate((t), (g), (p), (u) TSRMLS_CC)
 static inline zval *_http_querystring_instantiate(zval *this_ptr, zend_bool global, zval *params, zend_bool defer_update TSRMLS_DC)
 {
-	zval *qarray, *qstring, **_SERVER = NULL, **_GET = NULL, **QUERY_STRING = NULL;;
+	zval *qarray = NULL, *qstring = NULL, **_SERVER = NULL, **_GET = NULL, **QUERY_STRING = NULL;;
 	
 	if (!this_ptr) {
 		MAKE_STD_ZVAL(this_ptr);
@@ -287,10 +294,7 @@ static inline void _http_querystring_get(zval *this_ptr, int type, char *name, u
 /* }}} */
 
 /* {{{ proto final void HttpQueryString::__construct([bool global = true[, mixed add])
- *
- * Creates a new HttpQueryString object instance.
- * Operates on and modifies $_GET and $_SERVER['QUERY_STRING'] if global is TRUE.
- */
+	Creates a new HttpQueryString object instance. Operates on and modifies $_GET and $_SERVER['QUERY_STRING'] if global is TRUE. */
 PHP_METHOD(HttpQueryString, __construct)
 {
 	zend_bool global = 1;
@@ -306,10 +310,30 @@ PHP_METHOD(HttpQueryString, __construct)
 }
 /* }}} */
 
+/* {{{ proto HttpQueryString HttpQueryString::factory([bool global = TRUE[, mixed params[, string class_name = "HttpQueryString"])
+	Creates a new HttpQueryString object instance. */
+PHP_METHOD(HttpQueryString, factory)
+{
+	zend_bool global = 1;
+	zval *params = NULL;
+	char *cn = NULL;
+	int cl = 0;
+	zend_object_value ov;
+	
+	SET_EH_THROW_HTTP();
+	if (!sapi_module.treat_data) {
+		http_error(HE_ERROR, HTTP_E_QUERYSTRING, "The SAPI does not have a treat_data function registered");
+	} else if (	SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|bzs", &global, &params, &cn, &cl) &&
+				SUCCESS == http_object_new(&ov, cn, cl, _http_querystring_object_new_ex, http_querystring_object_ce, NULL, NULL)) {
+		RETVAL_OBJVAL(ov, 0);
+		http_querystring_instantiate(return_value, global, params, 0);
+	}
+	SET_EH_NORMAL();
+}
+/* }}} */
+
 /* {{{ proto string HttpQueryString::toString()
- *
- * Returns the string representation.
- */
+	Returns the string representation. */
 PHP_METHOD(HttpQueryString, toString)
 {
 	NO_ARGS;
@@ -318,9 +342,7 @@ PHP_METHOD(HttpQueryString, toString)
 /* }}} */
 
 /* {{{ proto array HttpQueryString::toArray()
- *
- * Returns the array representation.
- */
+	Returns the array representation. */
 PHP_METHOD(HttpQueryString, toArray)
 {
 	NO_ARGS;
@@ -329,12 +351,7 @@ PHP_METHOD(HttpQueryString, toArray)
 /* }}} */
 
 /* {{{ proto mixed HttpQueryString::get([string key[, mixed type = 0[, mixed defval = NULL[, bool delete = false]]]])
- *
- * Get (part of) the query string.
- *
- * The type parameter is either one of the HttpQueryString::TYPE_* constants or a type abbreviation like
- * "b" for bool, "i" for int, "f" for float, "s" for string, "a" for array and "o" for a stdClass object.
- */
+	Get (part of) the query string. The type parameter is either one of the HttpQueryString::TYPE_* constants or a type abbreviation like "b" for bool, "i" for int, "f" for float, "s" for string, "a" for array and "o" for a stdClass object. */
 PHP_METHOD(HttpQueryString, get)
 {
 	char *name = NULL;
@@ -374,9 +391,7 @@ PHP_METHOD(HttpQueryString, get)
 /* }}} */
 
 /* {{{ proto string HttpQueryString::set(mixed params)
- *
- * Set query string entry/entries. NULL values will unset the variable.
- */
+	Set query string entry/entries. NULL values will unset the variable. */
 PHP_METHOD(HttpQueryString, set)
 {
 	zval *params;
@@ -395,16 +410,7 @@ PHP_METHOD(HttpQueryString, set)
 /* }}} */
 
 /* {{{ proto HttpQueryString HttpQueryString::mod(mixed params)
- *
- * Copies the query string object and sets provided params at the clone.
- * This is basically shorthand for:
- * <pre>
- * <?php
- * $newQS = new HttpQueryString(false, $oldQS);
- * $newQS->set($other_params);
- * ?>
- * </pre>
- */
+	Copies the query string object and sets provided params at the clone. */
 PHP_METHOD(HttpQueryString, mod)
 {
 	zval *zobj, *qarr, *qstr, *params;
@@ -424,9 +430,7 @@ PHP_METHOD(HttpQueryString, mod)
 
 #ifndef WONKY
 /* {{{ proto static HttpQueryString HttpQueryString::singleton([bool global = true])
- *
- * Get a single instance (differentiates between the global setting).
- */
+	Get a single instance (differentiates between the global setting). */
 PHP_METHOD(HttpQueryString, singleton)
 {
 	zend_bool global = 1;
@@ -483,12 +487,7 @@ HTTP_QUERYSTRING_GETTER(getObject, IS_OBJECT);
 
 #ifdef HTTP_HAVE_ICONV
 /* {{{ proto bool HttpQueryString::xlate(string ie, string oe)
- *
- * Converts the query string from the source encoding ie to the target encoding oe.
- * WARNING: Don't use any character set that can contain NUL bytes like UTF-16.
- *
- * Returns TRUE on success or FALSE on failure.
- */
+	Converts the query string from the source encoding ie to the target encoding oe. WARNING: Don't use any character set that can contain NUL bytes like UTF-16. */
 PHP_METHOD(HttpQueryString, xlate)
 {
 	char *ie, *oe;
@@ -518,9 +517,7 @@ PHP_METHOD(HttpQueryString, xlate)
 #endif /* HAVE_ICONV */
 
 /* {{{ proto string HttpQueryString::serialize()
- *
- * Implements Serializable.
- */
+	Implements Serializable::serialize(). */
 PHP_METHOD(HttpQueryString, serialize)
 {
 	NO_ARGS;
@@ -529,9 +526,7 @@ PHP_METHOD(HttpQueryString, serialize)
 /* }}} */
 
 /* {{{ proto void HttpQueryString::unserialize(string serialized)
- *
- * Implements Serializable.
- */
+	Implements Serializable::unserialize(). */
 PHP_METHOD(HttpQueryString, unserialize)
 {
 	zval *serialized;
@@ -549,9 +544,7 @@ PHP_METHOD(HttpQueryString, unserialize)
 /* }}} */
 
 /* {{{ proto mixed HttpQueryString::offsetGet(string offset)
- *
- * Implements ArrayAccess.
- */
+	Implements ArrayAccess::offsetGet(). */
 PHP_METHOD(HttpQueryString, offsetGet)
 {
 	char *offset_str;
@@ -566,9 +559,7 @@ PHP_METHOD(HttpQueryString, offsetGet)
 /* }}} */
 
 /* {{{ proto void HttpQueryString::offsetSet(string offset, mixed value)
- *
- * Implements ArrayAccess.
- */
+	Implements ArrayAccess::offsetGet(). */
 PHP_METHOD(HttpQueryString, offsetSet)
 {
 	char *offset_str;
@@ -586,9 +577,7 @@ PHP_METHOD(HttpQueryString, offsetSet)
 /* }}} */
 
 /* {{{ proto bool HttpQueryString::offsetExists(string offset)
- *
- * Implements ArrayAccess.
- */
+	Implements ArrayAccess::offsetExists(). */
 PHP_METHOD(HttpQueryString, offsetExists)
 {
 	char *offset_str;
@@ -602,9 +591,7 @@ PHP_METHOD(HttpQueryString, offsetExists)
 /* }}} */
 
 /* {{{ proto void HttpQueryString::offsetUnset(string offset)
- *
- * Implements ArrayAccess.
- */
+	Implements ArrayAccess::offsetUnset(). */
 PHP_METHOD(HttpQueryString, offsetUnset)
 {
 	char *offset_str;

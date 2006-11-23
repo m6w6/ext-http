@@ -38,6 +38,7 @@ PHP_METHOD(HttpRequestDataShare, count);
 PHP_METHOD(HttpRequestDataShare, attach);
 PHP_METHOD(HttpRequestDataShare, detach);
 PHP_METHOD(HttpRequestDataShare, reset);
+PHP_METHOD(HttpRequestDataShare, factory);
 #ifndef WONKY
 PHP_METHOD(HttpRequestDataShare, singleton);
 #endif

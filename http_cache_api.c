@@ -78,7 +78,9 @@ PHP_HTTP_API zend_bool _http_match_last_modified_ex(const char *entry, time_t t,
 	zval *zmodified;
 	char *modified, *chr_ptr;
 
-	HTTP_GSC(zmodified, entry, !enforce_presence);
+	if (!(zmodified = http_get_server_var(entry, 1))) {
+		return !enforce_presence;
+	}
 
 	modified = estrndup(Z_STRVAL_P(zmodified), Z_STRLEN_P(zmodified));
 	if ((chr_ptr = strrchr(modified, ';'))) {
@@ -98,7 +100,9 @@ PHP_HTTP_API zend_bool _http_match_etag_ex(const char *entry, const char *etag, 
 	char *quoted_etag;
 	zend_bool result;
 
-	HTTP_GSC(zetag, entry, !enforce_presence);
+	if (!(zetag = http_get_server_var_ex(entry, strlen(entry)+1, 1))) {
+		return !enforce_presence;
+	}
 
 	if (NULL != strchr(Z_STRVAL_P(zetag), '*')) {
 		return 1;
