@@ -54,7 +54,7 @@ static inline void _http_send_response_start(void **buffer, size_t content_lengt
 	
 	if ((encoding = http_encoding_response_start(content_length, 0))) {
 #ifdef HTTP_HAVE_ZLIB
-		*buffer = http_encoding_deflate_stream_init(NULL, 
+		*((http_encoding_stream **) buffer) = http_encoding_deflate_stream_init(NULL, 
 			(encoding == HTTP_ENCODING_GZIP) ? 
 				HTTP_DEFLATE_TYPE_GZIP : HTTP_DEFLATE_TYPE_ZLIB);
 #endif
