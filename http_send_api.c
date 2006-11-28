@@ -119,7 +119,7 @@ static inline void _http_send_response_data_fetch(void **buffer, const void *dat
 			break;
 		}
 		case SEND_DATA: {
-			const char *buf = data + begin;
+			const char *buf = ((const char *) data) + begin;
 			while (len > 0) {
 				got = MIN(len, bsz);
 				http_send_response_data_plain(buffer, buf, got);
