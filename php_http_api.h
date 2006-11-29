@@ -306,13 +306,13 @@ static inline void _zval_free(zval **z)
 }
 
 typedef struct _HashKey {
-	int type;
-	int dup;
 	char *str;
 	uint len;
 	ulong num;
+	uint dup:1;
+	uint type:31;
 } HashKey;
-#define initHashKey(dup) {0, (dup), NULL, 0, 0}
+#define initHashKey(dup) {NULL, 0, 0, (dup), 0}
 
 #define FOREACH_VAL(pos, array, val) FOREACH_HASH_VAL(pos, Z_ARRVAL_P(array), val)
 #define FOREACH_HASH_VAL(pos, hash, val) \
@@ -323,13 +323,13 @@ typedef struct _HashKey {
 #define FOREACH_KEY(pos, array, key) FOREACH_HASH_KEY(pos, Z_ARRVAL_P(array), key)
 #define FOREACH_HASH_KEY(pos, hash, _key) \
 	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
-			((_key).type = zend_hash_get_current_key_ex(hash, &(_key).str, &(_key).len, &(_key).num, (_key).dup, &pos)) != HASH_KEY_NON_EXISTANT; \
+			((_key).type = zend_hash_get_current_key_ex(hash, &(_key).str, &(_key).len, &(_key).num, (zend_bool) (_key).dup, &pos)) != HASH_KEY_NON_EXISTANT; \
 			zend_hash_move_forward_ex(hash, &pos)) \
 
 #define FOREACH_KEYVAL(pos, array, key, val) FOREACH_HASH_KEYVAL(pos, Z_ARRVAL_P(array), key, val)
 #define FOREACH_HASH_KEYVAL(pos, hash, _key, val) \
 	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
-			((_key).type = zend_hash_get_current_key_ex(hash, &(_key).str, &(_key).len, &(_key).num, (_key).dup, &pos)) != HASH_KEY_NON_EXISTANT && \
+			((_key).type = zend_hash_get_current_key_ex(hash, &(_key).str, &(_key).len, &(_key).num, (zend_bool) (_key).dup, &pos)) != HASH_KEY_NON_EXISTANT && \
 			zend_hash_get_current_data_ex(hash, (void *) &val, &pos) == SUCCESS; \
 			zend_hash_move_forward_ex(hash, &pos))
 

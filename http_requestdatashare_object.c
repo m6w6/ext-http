@@ -282,6 +282,7 @@ PHP_METHOD(HttpRequestDataShare, singleton)
 	SET_EH_NORMAL();
 }
 /* }}} */
+#endif /* !WONKY */
 
 static inline zval *_http_requestdatashare_instantiate(zval *this_ptr, zend_bool global TSRMLS_DC)
 {
@@ -306,7 +307,6 @@ static inline zval *_http_requestdatashare_instantiate(zval *this_ptr, zend_bool
 	}
 	return this_ptr;
 }
-#endif /* !WONKY */
 
 #endif /* ZEND_ENGINE_2 && HTTP_HAVE_CURL */
 
