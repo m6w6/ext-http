@@ -1278,8 +1278,12 @@ PHP_METHOD(HttpMessage, unserialize)
 	getObject(http_message_object, obj);
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &serialized, &length)) {
+		http_message *msg;
+		
 		http_message_dtor(obj->message);
-		if (!http_message_parse_ex(obj->message, serialized, (size_t) length)) {
+		if ((msg = http_message_parse_ex(obj->message, serialized, (size_t) length))) {
+			obj->message = msg;
+		} else {
 			http_error(HE_ERROR, HTTP_E_RUNTIME, "Could not unserialize HttpMessage");
 			http_message_init(obj->message);
 		}
