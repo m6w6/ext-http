@@ -241,7 +241,7 @@ HTTP_BEGIN_ARGS(methodExists, 1)
 	HTTP_ARG_VAL(method, 0)
 HTTP_END_ARGS;
 
-#ifdef HAVE_CURL_GETFORMDATA
+#if defined(HAVE_CURL_GETFORMDATA) || defined(HAVE_CURL_FORMGET)
 HTTP_BEGIN_ARGS(encodeBody, 2)
 	HTTP_ARG_VAL(fields, 0)
 	HTTP_ARG_VAL(files, 0)
