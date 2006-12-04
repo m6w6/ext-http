@@ -732,6 +732,8 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		zval_ptr_dtor(&param);
 	}
 	
+	http_request_set_progress_callback(obj->request, NULL);
+	
 	return ret;
 }
 
