@@ -721,6 +721,8 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		ret = FAILURE;
 	}
 	
+	http_request_set_progress_callback(obj->request, NULL);
+	
 	if (!EG(exception) && zend_hash_exists(&Z_OBJCE_P(getThis())->function_table, "onfinish", sizeof("onfinish"))) {
 		zval *param;
 		
@@ -731,8 +733,6 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		} end_error_handling();
 		zval_ptr_dtor(&param);
 	}
-	
-	http_request_set_progress_callback(obj->request, NULL);
 	
 	return ret;
 }
