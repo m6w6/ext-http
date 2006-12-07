@@ -161,25 +161,8 @@ PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 /* {{{ time_t http_parse_date(char *) */
 PHP_HTTP_API time_t _http_parse_date_ex(const char *date, zend_bool silent TSRMLS_DC)
 {
-	time_t t = -1;
+	time_t t = parse_date(date);
 	
-#ifdef PHP_WIN32
-	/* fix odd offsets with Win32 */ 
-	char tzput[64] = "TZ=";
-	const char *tzget = NULL;
-	
-	if ((tzget = getenv("TZ"))) {
-		strlcat(tzput, tzget, 63);
-	}
-	putenv("TZ=GMT");
-#endif
-	
-	t = parse_date(date);
-	
-#ifdef PHP_WIN32
-	putenv(tzput);
-#endif
-
 	if (-1 == t && !silent) {
 		http_error_ex(HE_NOTICE, HTTP_E_RUNTIME, "Could not parse date: %s", date);
 	}
@@ -339,11 +322,13 @@ static inline time_t parse_date(const char *date)
 		long delta;
 		time_t t2;
 
-		if(!(gmt = php_gmtime_r(&t, &keeptime2))) {
+		if((gmt = php_gmtime_r(&t, &keeptime2))) {
+			tm = *gmt; /* MSVC quirks */
+		} else {
 			return -1; /* illegal date/time */
 		}
 
-		t2 = mktime(gmt);
+		t2 = mktime(&tm);
 
 		/* Add the time zone diff (between the given timezone and GMT) and the
 		diff between the local time zone and GMT. */
