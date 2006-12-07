@@ -87,16 +87,19 @@ static struct gcry_thread_cbs http_gnutls_tsl = {
 PHP_MINIT_FUNCTION(http_request)
 {
 #ifdef HTTP_NEED_OPENSSL_TSL
-	int i, c = CRYPTO_num_locks();
-	
-	http_openssl_tsl = malloc(c * sizeof(MUTEX_T));
-	
-	for (i = 0; i < c; ++i) {
-		http_openssl_tsl[i] = tsrm_mutex_alloc();
+	/* mod_ssl, libpq or ext/curl might already have set thread lock callbacks */
+	if (!CRYPTO_get_id_callback()) {
+		int i, c = CRYPTO_num_locks();
+		
+		http_openssl_tsl = malloc(c * sizeof(MUTEX_T));
+		
+		for (i = 0; i < c; ++i) {
+			http_openssl_tsl[i] = tsrm_mutex_alloc();
+		}
+		
+		CRYPTO_set_id_callback(http_openssl_thread_id);
+		CRYPTO_set_locking_callback(http_openssl_thread_lock);
 	}
-	
-	CRYPTO_set_id_callback(http_openssl_thread_id);
-	CRYPTO_set_locking_callback(http_openssl_thread_lock);
 #endif
 #ifdef HTTP_NEED_GNUTLS_TSL
 	gcry_control(GCRYCTL_SET_THREAD_CBS, &http_gnutls_tsl);
@@ -138,10 +141,6 @@ PHP_MINIT_FUNCTION(http_request)
 /* {{{ MSHUTDOWN */
 PHP_MSHUTDOWN_FUNCTION(http_request)
 {
-#ifdef HTTP_NEED_OPENSSL_TSL
-	CRYPTO_set_id_callback(http_openssl_thread_id);
-	CRYPTO_set_locking_callback(http_openssl_thread_lock);
-#endif
 	curl_global_cleanup();
 #ifdef HTTP_NEED_OPENSSL_TSL
 	if (http_openssl_tsl) {
