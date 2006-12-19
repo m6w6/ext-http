@@ -411,9 +411,13 @@ PHP_HTTP_API void _http_parse_params_default_callback(void *arg, const char *key
 		if (vallen) {
 			MAKE_STD_ZVAL(entry);
 			array_init(entry);
-			kdup = estrndup(key, keylen);
-			add_assoc_stringl_ex(entry, kdup, keylen + 1, (char *) val, vallen, 1);
-			efree(kdup);
+			if (keylen) {
+				kdup = estrndup(key, keylen);
+				add_assoc_stringl_ex(entry, kdup, keylen + 1, (char *) val, vallen, 1);
+				efree(kdup);
+			} else {
+				add_next_index_stringl(entry, (char *) val, vallen, 1);
+			}
 			add_next_index_zval(&tmp, entry);
 		} else {
 			add_next_index_stringl(&tmp, (char *) key, keylen, 1);
@@ -435,7 +439,9 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int flags, http_par
 	char *s, *c, *key = NULL, *val = NULL;
 	
 	for(c = s = estrdup(param);;) {
+	continued:
 #if 0
+	{
 		char *tk = NULL, *tv = NULL;
 		
 		if (key) {
@@ -467,8 +473,8 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int flags, http_par
 				), *c?*c:'0', tk, tv
 		);
 		STR_FREE(tk); STR_FREE(tv);
+	}
 #endif
-	continued:
 		switch (st) {
 			case ST_QUOTE:
 			quote:
@@ -610,7 +616,15 @@ failure:
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Unexpected character (%c) at pos %tu of %zu", *c, c-s, strlen(s));
 	}
 	if (flags & HTTP_PARAMS_ALLOW_FAILURE) {
-		--c;
+		if (st == ST_KEY) {
+			if (key) {
+				keylen = c - key;
+			} else {
+				key = c;
+			}
+		} else {
+			--c;
+		}
 		st = ST_ADD;
 		goto continued;
 	}
