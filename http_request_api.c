@@ -961,15 +961,8 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 			}
 			break;
 		case CURLINFO_DATA_OUT:
-			if (request->conv.last_type == CURLINFO_HEADER_OUT) {
-				phpstr_appends(&request->conv.request, HTTP_CRLF);
-			}
-			phpstr_append(&request->conv.request, data, length);
-			break;
 		case CURLINFO_HEADER_OUT:
-			if (!EMPTY_HEADER(data, length)) {
-				phpstr_append(&request->conv.request, data, length);
-			}
+			phpstr_append(&request->conv.request, data, length);
 			break;
 		default:
 #if 0
@@ -993,7 +986,7 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 			break;
 	}
 
-#if 0
+#if 1
 	fprintf(stderr, "DEBUG: %3d (%5zu) %.*s%s", type, length, length, data, data[length-1]=='\n'?"":"\n");
 #endif
 	

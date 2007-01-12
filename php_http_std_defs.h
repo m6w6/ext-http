@@ -93,7 +93,7 @@ typedef int STATUS;
 	}
 
 /* function accepts no args */
-#define NO_ARGS zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "")
+#define NO_ARGS zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "");
 
 /* CR LF */
 #define HTTP_CRLF "\r\n"
