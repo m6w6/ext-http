@@ -93,10 +93,7 @@ typedef int STATUS;
 	}
 
 /* function accepts no args */
-#define NO_ARGS \
-	if (ZEND_NUM_ARGS()) { \
-		zend_error(E_NOTICE, "Wrong parameter count for %s()", get_active_function_name(TSRMLS_C)); \
-	}
+#define NO_ARGS zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "")
 
 /* CR LF */
 #define HTTP_CRLF "\r\n"

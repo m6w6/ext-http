@@ -947,20 +947,29 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 {
 	http_request *request = (http_request *) ctx;
 
+#define EMPTY_HEADER(d, l) ((l == 1 && d[0] == '\n') || (l == 2 && d[0] == '\r' && d[1] == '\n'))
 	switch (type) {
 		case CURLINFO_DATA_IN:
 			if (request->conv.last_type == CURLINFO_HEADER_IN) {
 				phpstr_appends(&request->conv.response, HTTP_CRLF);
 			}
-		case CURLINFO_HEADER_IN:
 			phpstr_append(&request->conv.response, data, length);
+			break;
+		case CURLINFO_HEADER_IN:
+			if (!EMPTY_HEADER(data, length)) {
+				phpstr_append(&request->conv.response, data, length);
+			}
 			break;
 		case CURLINFO_DATA_OUT:
 			if (request->conv.last_type == CURLINFO_HEADER_OUT) {
 				phpstr_appends(&request->conv.request, HTTP_CRLF);
 			}
-		case CURLINFO_HEADER_OUT:
 			phpstr_append(&request->conv.request, data, length);
+			break;
+		case CURLINFO_HEADER_OUT:
+			if (!EMPTY_HEADER(data, length)) {
+				phpstr_append(&request->conv.request, data, length);
+			}
 			break;
 		default:
 #if 0
@@ -981,12 +990,13 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 				fprintf(stderr, "\n");
 			}
 #endif
-#if 0
-			fprintf(stderr, "%.*s%s", length, data, data[length-1]=='\n'?"":"\n");
-#endif
 			break;
 	}
 
+#if 0
+	fprintf(stderr, "DEBUG: %3d (%5zu) %.*s%s", type, length, length, data, data[length-1]=='\n'?"":"\n");
+#endif
+	
 	if (type) {
 		request->conv.last_type = type;
 	}
