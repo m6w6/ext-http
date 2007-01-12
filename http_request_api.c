@@ -986,7 +986,7 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 			break;
 	}
 
-#if 1
+#if 0
 	fprintf(stderr, "DEBUG: %3d (%5zu) %.*s%s", type, length, length, data, data[length-1]=='\n'?"":"\n");
 #endif
 	
