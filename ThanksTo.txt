@@ -1,0 +1,17 @@
+Thanks To
+=========
+$Id$
+
+People who repeatedly reported issues with this extension in a manner
+so they could be fixed in a reasonable way, or suggested useful features
+to implement, in alphabetical order:
+
+	Ilia Alshanetsky (ilia at php dot net)
+	Petr Czaderna (petr at hroch dot info)
+	Thomas Landro Johnsen (thomas dot l dot johnsen at gmail dot com)
+	David Sklar (sklar at sklar dot com)
+	Travis Swicegood (travis at mashery dot com)
+	Alexey Zakhlestin (indeyets at gmail dot com)
+	Alexander Zhuravlev (zaa at zaa dot pp dot ru)
+
+Thanks a lot!
