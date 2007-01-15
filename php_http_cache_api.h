@@ -49,7 +49,7 @@ static inline void *_http_etag_init(TSRMLS_D)
 	char *mode = HTTP_G->etag.mode;
 	
 #ifdef HTTP_HAVE_HASH
-	php_hash_ops *eho = NULL;
+	const php_hash_ops *eho = NULL;
 	
 	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
 		ctx = emalloc(eho->context_size);
@@ -75,7 +75,7 @@ static inline char *_http_etag_finish(void *ctx TSRMLS_DC)
 	char *etag = NULL, *mode = HTTP_G->etag.mode;
 	
 #ifdef HTTP_HAVE_HASH
-	php_hash_ops *eho = NULL;
+	const php_hash_ops *eho = NULL;
 	
 	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
 		eho->hash_final(digest, ctx);
@@ -102,7 +102,7 @@ static inline void _http_etag_update(void *ctx, const char *data_ptr, size_t dat
 {
 	char *mode = HTTP_G->etag.mode;
 #ifdef HTTP_HAVE_HASH
-	php_hash_ops *eho = NULL;
+	const php_hash_ops *eho = NULL;
 	
 	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
 		eho->hash_update(ctx, (const unsigned char *) data_ptr, data_len);
