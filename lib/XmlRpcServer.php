@@ -110,12 +110,13 @@ class XmlRpcServer extends HttpResponse
 	 *
 	 * @param string $method
 	 * @param array $params
-	 * @param array $options
+	 * @param array $request_options
+	 * @param array $response_options
 	 */
-	public static function test($method, array $params, array $options = null)
+	public static function test($method, array $params, array $request_options = null, array $response_options = null)
 	{
-		self::$xmlreq = xmlrpc_encode_request($method, $params);
-		self::run();
+		self::$xmlreq = xmlrpc_encode_request($method, $params, $request_options);
+		self::run($response_options);
 	}
 	
 	/**
@@ -124,9 +125,10 @@ class XmlRpcServer extends HttpResponse
 	 * @param int $code
 	 * @param string $msg
 	 */
-	public static function error($code, $msg)
+	public static function error($code, $msg, array $options = null)
 	{
-		echo xmlrpc_encode(array("faultCode" => $code, "faultString" => $msg));
+		echo xmlrpc_encode(array("faultCode" => $code, "faultString" => $msg),
+			array("encoding" => self::$encoding) + (array) $options);
 	}
 	
 	/**
