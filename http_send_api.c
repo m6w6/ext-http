@@ -404,7 +404,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 					char range_header_str[256];
 					size_t range_header_len;
 					
-					range_header_len = snprintf(range_header_str, lenof(range_header_str), "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
+					range_header_len = snprintf(range_header_str, sizeof(range_header_str), "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
 					http_send_status_header_ex(206, range_header_str, range_header_len, 1);
 					http_send_response_start(&s, Z_LVAL_PP(end)-Z_LVAL_PP(begin)+1);
 					http_send_response_data_fetch(&s, data_ptr, data_size, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
@@ -420,8 +420,8 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 				char boundary_str[32], range_header_str[256];
 				size_t boundary_len, range_header_len;
 				
-				boundary_len = snprintf(boundary_str, lenof(boundary_str), "%lu%0.9f", (ulong) HTTP_G->request.time, (float) php_combined_lcg(TSRMLS_C));
-				range_header_len = snprintf(range_header_str, lenof(range_header_str), "Content-Type: multipart/byteranges; boundary=%s", boundary_str);
+				boundary_len = snprintf(boundary_str, sizeof(boundary_str), "%lu%0.9f", (ulong) HTTP_G->request.time, (float) php_combined_lcg(TSRMLS_C));
+				range_header_len = snprintf(range_header_str, sizeof(range_header_str), "Content-Type: multipart/byteranges; boundary=%s", boundary_str);
 				
 				http_send_status_header_ex(206, range_header_str, range_header_len, 1);
 				http_send_response_start(&s, 0);
@@ -442,7 +442,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 	HTTP_CRLF "Content-Range: bytes %ld-%ld/%zu" \
 	HTTP_CRLF HTTP_CRLF
 						
-						preface_len = snprintf(preface_str, lenof(preface_str), HTTP_RANGE_PREFACE, boundary_str, content_type, Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
+						preface_len = snprintf(preface_str, sizeof(preface_str), HTTP_RANGE_PREFACE, boundary_str, content_type, Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
 						http_send_response_data_plain(&s, preface_str, preface_len);
 						http_send_response_data_fetch(&s, data_ptr, data_size, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
 					}

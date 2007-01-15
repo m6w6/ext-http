@@ -213,7 +213,7 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length, zend_bool 
 		/* emit a content-length header */
 		char cl_header_str[128];
 		size_t cl_header_len;
-		cl_header_len = snprintf(cl_header_str, lenof(cl_header_str), "Content-Length: %zu", content_length);
+		cl_header_len = snprintf(cl_header_str, sizeof(cl_header_str), "Content-Length: %zu", content_length);
 		http_send_header_string_ex(cl_header_str, cl_header_len, 1);
 	} else {
 		HTTP_G->send.deflate.encoding = 0;

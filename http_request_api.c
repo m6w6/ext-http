@@ -639,14 +639,14 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 		FOREACH_KEYVAL(pos, zoption, header_key, header_val) {
 			if (header_key.type == HASH_KEY_IS_STRING) {
-				char header[1024] = {0};
+				char header[1024];
 				
 				ZVAL_ADDREF(*header_val);
 				convert_to_string_ex(header_val);
 				if (!strcasecmp(header_key.str, "range")) {
 					range_req = 1;
 				}
-				snprintf(header, lenof(header), "%s: %s", header_key.str, Z_STRVAL_PP(header_val));
+				snprintf(header, sizeof(header), "%s: %s", header_key.str, Z_STRVAL_PP(header_val));
 				request->_cache.headers = curl_slist_append(request->_cache.headers, header);
 				zval_ptr_dtor(header_val);
 			}
@@ -654,12 +654,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	}
 	/* etag */
 	if ((zoption = http_request_option(request, options, "etag", IS_STRING)) && Z_STRLEN_P(zoption)) {
-		char match_header[1024] = {0}, *quoted_etag = NULL;
+		char match_header[1024], *quoted_etag = NULL;
 		
 		if ((Z_STRVAL_P(zoption)[0] != '"') || (Z_STRVAL_P(zoption)[Z_STRLEN_P(zoption)-1] != '"')) {
 			spprintf(&quoted_etag, 0, "\"%s\"", Z_STRVAL_P(zoption));
 		}
-		snprintf(match_header, lenof(match_header), "%s: %s", range_req?"If-Match":"If-None-Match", quoted_etag?quoted_etag:Z_STRVAL_P(zoption));
+		snprintf(match_header, sizeof(match_header), "%s: %s", range_req?"If-Match":"If-None-Match", quoted_etag?quoted_etag:Z_STRVAL_P(zoption));
 		request->_cache.headers = curl_slist_append(request->_cache.headers, match_header);
 		STR_FREE(quoted_etag);
 	}

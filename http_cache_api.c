@@ -45,9 +45,9 @@ PHP_HTTP_API char *_http_etag(const void *data_ptr, size_t data_len, http_send_m
 			return NULL;
 		} else {
 			size_t ssb_len;
-			char ssb_buf[128] = {0};
+			char ssb_buf[128];
 			
-			ssb_len = snprintf(ssb_buf, 127, "%ld=%ld=%ld", (long) ssb.sb.st_mtime, 
+			ssb_len = snprintf(ssb_buf, sizeof(ssb_buf), "%ld=%ld=%ld", (long) ssb.sb.st_mtime, 
 															(long) ssb.sb.st_ino, 
 															(long) ssb.sb.st_size);
 			http_etag_update(ctx, ssb_buf, ssb_len);

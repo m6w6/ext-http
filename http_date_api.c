@@ -141,20 +141,19 @@ static inline int check_tzone(const char *tzone)
 /* {{{ char *http_date(time_t) */
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 {
+	char *date = NULL;
 	struct tm *gmtime, tmbuf;
 
 	if ((gmtime = php_gmtime_r(&t, &tmbuf))) {
-		char *date = ecalloc(1, 31);
-		snprintf(date, 30,
+		spprintf(&date, 0,
 			"%s, %02d %s %04d %02d:%02d:%02d GMT",
 			days[gmtime->tm_wday], gmtime->tm_mday,
 			months[gmtime->tm_mon], gmtime->tm_year + 1900,
 			gmtime->tm_hour, gmtime->tm_min, gmtime->tm_sec
 		);
-		return date;
 	}
 
-	return NULL;
+	return date;
 }
 /* }}} */
 
