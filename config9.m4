@@ -177,7 +177,7 @@ dnl ----
 		CURL_LIBS=`$CURL_CONFIG --libs`
 		
 		AC_MSG_CHECKING([for SSL support in libcurl])
-		CURL_SSL=`$CURL_CONFIG --features | $EGREP SSL`
+		CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
 		if test "$CURL_SSL" = "SSL"; then
 			AC_MSG_RESULT([yes])
 			AC_DEFINE([HTTP_HAVE_SSL], [1], [ ])
