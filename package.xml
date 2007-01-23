@@ -23,12 +23,11 @@ support. Parallel requests are available for PHP 5 and greater.
   </maintainer>
   </maintainers>
  <release>
-  <version>1.4.0RC2</version>
-  <date>2007-01-19</date>
+  <version>1.4.0</version>
+  <date>2007-01-23</date>
   <license>BSD, revised</license>
-  <state>beta</state>
-  <notes>* Fixed infinite loop with http_parse_params(&quot;=&quot;)
-* Fixed greedy response message parsing with proxy CONNECT requests (petr at hroch dot info)
+  <state>stable</state>
+  <notes>* Allow response codes up to 599 in HttpMessage::setResponseCode()
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>

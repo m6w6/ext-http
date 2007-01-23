@@ -886,8 +886,8 @@ PHP_METHOD(HttpMessage, setResponseCode)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
 		RETURN_FALSE;
 	}
-	if (code < 100 || code > 510) {
-		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid response code (100-510): %ld", code);
+	if (code < 100 || code > 599) {
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid response code (100-599): %ld", code);
 		RETURN_FALSE;
 	}
 
