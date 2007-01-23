@@ -32,6 +32,7 @@
 #include "php_http_request_method_api.h"
 #include "php_http_request_api.h"
 #include "php_http_request_object.h"
+#include "php_http_headers_api.h"
 
 #if defined(HTTP_HAVE_SPL) && !defined(WONKY)
 /* SPL doesn't install its headers */
@@ -48,6 +49,11 @@ HTTP_END_ARGS;
 
 HTTP_BEGIN_ARGS(factory, 0)
 	HTTP_ARG_VAL(message, 0)
+	HTTP_ARG_VAL(class_name, 0)
+HTTP_END_ARGS;
+
+HTTP_BEGIN_ARGS(fromEnv, 1)
+	HTTP_ARG_VAL(type, 0)
 	HTTP_ARG_VAL(class_name, 0)
 HTTP_END_ARGS;
 
@@ -185,6 +191,7 @@ zend_function_entry http_message_object_fe[] = {
 
 	HTTP_MESSAGE_ME(factory, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	ZEND_MALIAS(HttpMessage, fromString, factory, HTTP_ARGS(HttpMessage, factory), ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	HTTP_MESSAGE_ME(fromEnv, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	
 	HTTP_MESSAGE_ME(detach, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(prepend, ZEND_ACC_PUBLIC)
@@ -725,6 +732,30 @@ PHP_METHOD(HttpMessage, factory)
 			msg = http_message_parse(string, length);
 		}
 		if ((msg || !length) && SUCCESS == http_object_new(&ov, cn, cl, _http_message_object_new_ex, http_message_object_ce, msg, &obj)) {
+			RETVAL_OBJVAL(ov, 0);
+		}
+		if (obj && !obj->message) {
+			obj->message = http_message_new();
+		}
+	}
+	SET_EH_NORMAL();
+}
+/* }}} */
+
+/* {{{ proto static HttpMessage HttpMessage::fromEnv(int type[, string class_name = "HttpMessage"])
+	Create a new HttpMessage object from environment representing either current request or response */
+PHP_METHOD(HttpMessage, fromEnv)
+{
+	char *cn = NULL;
+	int cl = 0;
+	long type;
+	http_message_object *obj = NULL;
+	zend_object_value ov;
+	
+	RETVAL_NULL();
+	SET_EH_THROW_HTTP();
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|s", &type, &cn, &cl)) {
+		if (SUCCESS == http_object_new(&ov, cn, cl, _http_message_object_new_ex, http_message_object_ce, http_message_init_env(NULL, type), &obj)) {
 			RETVAL_OBJVAL(ov, 0);
 		}
 		if (obj && !obj->message) {

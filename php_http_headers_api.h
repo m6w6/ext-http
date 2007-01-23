@@ -55,6 +55,9 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 #define http_get_request_headers(h) _http_get_request_headers((h) TSRMLS_CC)
 PHP_HTTP_API void _http_get_request_headers(HashTable *headers TSRMLS_DC);
 
+#define http_get_response_headers(h) _http_get_response_headers((h) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_get_response_headers(HashTable *headers_ht TSRMLS_DC);
+
 #define http_match_request_header(h, v) http_match_request_header_ex((h), (v), 0)
 #define http_match_request_header_ex(h, v, c) _http_match_request_header_ex((h), (v), (c) TSRMLS_CC)
 PHP_HTTP_API zend_bool _http_match_request_header_ex(const char *header, const char *value, zend_bool match_case TSRMLS_DC);

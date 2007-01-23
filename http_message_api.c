@@ -76,6 +76,72 @@ PHP_HTTP_API http_message *_http_message_init_ex(http_message *message, http_mes
 	return message;
 }
 
+PHP_HTTP_API http_message *_http_message_init_env(http_message *message, http_message_type type TSRMLS_DC ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
+{
+	int free_msg;
+	http_info inf;
+	zval *sval, tval;
+	char *body_str;
+	size_t body_len;
+	
+	if ((free_msg = !message)) {
+		message = http_message_init_rel(NULL, HTTP_MSG_NONE);
+	}
+	
+	memset(&inf, 0, sizeof(http_info));
+	switch (inf.type = type) {
+		case HTTP_MSG_REQUEST:
+			if ((sval = http_get_server_var("SERVER_PROTOCOL", 1)) && !strncmp(Z_STRVAL_P(sval), ZEND_STRL("HTTP/"))) {
+				inf.http.version = atof(Z_STRVAL_P(sval) + lenof("HTTP/"));
+			} else {
+				inf.http.version = 1.1;
+			}
+			if ((sval = http_get_server_var("REQUEST_METHOD", 1))) {
+				inf.http.info.request.method = estrdup(Z_STRVAL_P(sval));
+			} else {
+				inf.http.info.request.method = ecalloc(1, 1);
+			}
+			if ((sval = http_get_server_var("REQUEST_URI", 1))) {
+				inf.http.info.request.url = estrdup(Z_STRVAL_P(sval));
+			} else {
+				inf.http.info.request.url = ecalloc(1, 1);
+			}
+			
+			http_message_set_info(message, &inf);
+			http_get_request_headers(&message->hdrs);
+			if (SUCCESS == http_get_request_body_ex(&body_str, &body_len, 0)) {
+				phpstr_from_string_ex(&message->body, body_str, body_len);
+			}
+			break;
+			
+		case HTTP_MSG_RESPONSE:
+			if (!SG(sapi_headers).http_status_line || SUCCESS != http_info_parse_ex(SG(sapi_headers).http_status_line, &inf, 0)) {
+				inf.http.version = 1.1;
+				inf.http.info.response.code = 200;
+				inf.http.info.response.status = estrdup("Ok");
+			}
+			
+			http_message_set_info(message, &inf);
+			http_get_response_headers(&message->hdrs);
+			if (SUCCESS == php_ob_get_buffer(&tval TSRMLS_CC)) {
+				message->body.data = Z_STRVAL(tval);
+				message->body.used = Z_STRLEN(tval);
+				message->body.free = 1; /* "\0" */
+			}
+			break;
+			
+		default:
+			if (free_msg) {
+				http_message_free(&message);
+			} else {
+				message = NULL;
+			}
+			break;
+	}
+	http_info_dtor(&inf);
+	
+	return message;
+}
 
 PHP_HTTP_API void _http_message_set_type(http_message *message, http_message_type type)
 {

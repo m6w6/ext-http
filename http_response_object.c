@@ -132,9 +132,6 @@ HTTP_EMPTY_ARGS(getRequestHeaders);
 HTTP_EMPTY_ARGS(getRequestBody);
 HTTP_EMPTY_ARGS(getRequestBodyStream);
 
-#define http_grab_response_headers _http_grab_response_headers
-static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC);
-
 #define OBJ_PROP_CE http_response_object_ce
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
@@ -224,12 +221,6 @@ PHP_MINIT_FUNCTION(http_response_object)
 	return SUCCESS;
 }
 
-static void _http_grab_response_headers(void *data, void *arg TSRMLS_DC)
-{
-	phpstr_appendl(PHPSTR(arg), ((sapi_header_struct *)data)->header);
-	phpstr_appends(PHPSTR(arg), HTTP_CRLF);
-}
-
 /* ### USERLAND ### */
 
 /* {{{ proto static bool HttpResponse::setHeader(string name[, mixed value[, bool replace = true]])
@@ -263,22 +254,17 @@ PHP_METHOD(HttpResponse, getHeader)
 {
 	char *name = NULL;
 	int name_len = 0;
-	phpstr headers;
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &name, &name_len)) {
 		RETURN_FALSE;
 	}
-	
-	phpstr_init(&headers);
-	zend_llist_apply_with_argument(&SG(sapi_headers).headers, http_grab_response_headers, &headers TSRMLS_CC);
-	phpstr_fix(&headers);
 	
 	if (name && name_len) {
 		zval **header;
 		HashTable headers_ht;
 		
 		zend_hash_init(&headers_ht, sizeof(zval *), NULL, ZVAL_PTR_DTOR, 0);
-		if (	(SUCCESS == http_parse_headers_ex(PHPSTR_VAL(&headers), &headers_ht, 1)) &&
+		if (	(SUCCESS == http_get_response_headers(&headers_ht)) &&
 				(SUCCESS == zend_hash_find(&headers_ht, name, name_len + 1, (void *) &header))) {
 			RETVAL_ZVAL(*header, 1, 0);
 		} else {
@@ -287,10 +273,8 @@ PHP_METHOD(HttpResponse, getHeader)
 		zend_hash_destroy(&headers_ht);
 	} else {
 		array_init(return_value);
-		http_parse_headers_ex(PHPSTR_VAL(&headers), Z_ARRVAL_P(return_value), 1);
+		http_get_response_headers(Z_ARRVAL_P(return_value));
 	}
-	
-	phpstr_dtor(&headers);
 }
 /* }}} */
 

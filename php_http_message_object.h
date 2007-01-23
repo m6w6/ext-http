@@ -112,6 +112,7 @@ PHP_METHOD(HttpMessage, key);
 PHP_METHOD(HttpMessage, next);
 
 PHP_METHOD(HttpMessage, factory);
+PHP_METHOD(HttpMessage, fromEnv);
 
 PHP_METHOD(HttpMessage, detach);
 PHP_METHOD(HttpMessage, prepend);

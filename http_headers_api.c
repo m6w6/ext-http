@@ -12,6 +12,7 @@
 
 /* $Id$ */
 
+#define HTTP_WANT_SAPI
 #include "php_http.h"
 
 #include "ext/standard/url.h"
@@ -23,6 +24,14 @@
 #ifndef HTTP_DBG_NEG
 #	define HTTP_DBG_NEG 0
 #endif
+
+/* {{{ static void http_grab_response_headers(void *, void *) */
+static void http_grab_response_headers(void *data, void *arg TSRMLS_DC)
+{
+	phpstr_appendl(PHPSTR(arg), ((sapi_header_struct *)data)->header);
+	phpstr_appends(PHPSTR(arg), HTTP_CRLF);
+}
+/* }}} */
 
 /* {{{ static int http_sort_q(const void *, const void *) */
 static int http_sort_q(const void *a, const void *b TSRMLS_DC)
@@ -453,6 +462,23 @@ PHP_HTTP_API void _http_get_request_headers(HashTable *headers TSRMLS_DC)
 	if (headers) {
 		zend_hash_copy(headers, HTTP_G->request.headers, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	}
+}
+/* }}} */
+
+/* {{{ STATUS http_get_response_headers(HashTable *) */
+PHP_HTTP_API STATUS _http_get_response_headers(HashTable *headers_ht TSRMLS_DC)
+{
+	STATUS status;
+	phpstr headers;
+	
+	phpstr_init(&headers);
+	zend_llist_apply_with_argument(&SG(sapi_headers).headers, http_grab_response_headers, &headers TSRMLS_CC);
+	phpstr_fix(&headers);
+	
+	status = http_parse_headers_ex(PHPSTR_VAL(&headers), headers_ht, 1);
+	phpstr_dtor(&headers);
+	
+	return status;
 }
 /* }}} */
 

@@ -44,6 +44,8 @@ struct _http_message_t {
 #define http_message_init_ex(m, t) _http_message_init_ex((m), (t) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
 #define http_message_init_rel(m, t) _http_message_init_ex((m), (t) ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_ORIG_RELAY_CC)
 PHP_HTTP_API http_message *_http_message_init_ex(http_message *m, http_message_type t ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC);
+#define http_message_init_env(m, t) _http_message_init_env((m), (t) TSRMLS_CC ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+PHP_HTTP_API http_message *_http_message_init_env(http_message *m, http_message_type t TSRMLS_DC ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC);
 
 #define http_message_set_type(m, t) _http_message_set_type((m), (t))
 PHP_HTTP_API void _http_message_set_type(http_message *m, http_message_type t);
