@@ -7,7 +7,6 @@ checkmin(5);
 checkcls('HttpRequestPool');
 checkurl('www.php.net');
 checkurl('de.php.net');
-checkurl('ch.php.net');
 checkurl('at.php.net');
 checkurl('dev.iworks.at');
 ?>
@@ -21,7 +20,6 @@ $pool = new HttpRequestPool(
     new HttpRequest('http://www.php.net/', HTTP_METH_HEAD),
     new HttpRequest('http://at.php.net/', HTTP_METH_HEAD),
     new HttpRequest('http://de.php.net/', HTTP_METH_HEAD),
-    new HttpRequest('http://ch.php.net/', HTTP_METH_HEAD),
     $post
 );
 
@@ -53,9 +51,7 @@ echo "Done\n";
 http://www.php.net/=200:200
 http://at.php.net/=200:200
 http://de.php.net/=200:200
-http://ch.php.net/=200:200
 http://dev.iworks.at/.print_request.php=200:200
-.
 .
 .
 .

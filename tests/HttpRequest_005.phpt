@@ -14,8 +14,6 @@ foreach (get_class_methods('HttpRequest') as $method) {
 	try {
 	 	if (strlen($method) > 3 && substr($method, 0, 3) == 'get')
 			$x = $r->$method();
-		else
-			$x = $r->$method(null, null);
 	} catch (HttpException $e) {
 	}
 }

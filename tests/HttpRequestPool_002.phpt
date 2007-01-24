@@ -4,7 +4,6 @@ extending HttpRequestPool
 <?php
 include 'skip.inc';
 checkcls('HttpRequestPool');
-checkurl('ch.php.net');
 checkurl('at.php.net');
 checkurl('de.php.net');
 checkurl('www.php.net');
@@ -41,8 +40,7 @@ class MyPool extends HttpRequestPool
 $pool = new MyPool(
     new HttpRequest('http://www.php.net/', HTTP_METH_HEAD),
     new HttpRequest('http://at.php.net/', HTTP_METH_HEAD),
-    new HttpRequest('http://de.php.net/', HTTP_METH_HEAD),
-    new HttpRequest('http://ch.php.net/', HTTP_METH_HEAD)
+    new HttpRequest('http://de.php.net/', HTTP_METH_HEAD)
 );
 
 $pool->send();
@@ -51,5 +49,5 @@ echo "\nDone\n";
 ?>
 --EXPECTREGEX--
 .+TEST
-\.*=200=\.*=200=\.*=200=\.*=200=
+\.*=200=\.*=200=\.*=200=
 Done

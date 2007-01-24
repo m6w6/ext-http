@@ -98,13 +98,9 @@ PHP_HTTP_API http_message *_http_message_init_env(http_message *message, http_me
 			}
 			if ((sval = http_get_server_var("REQUEST_METHOD", 1))) {
 				inf.http.info.request.method = estrdup(Z_STRVAL_P(sval));
-			} else {
-				inf.http.info.request.method = ecalloc(1, 1);
 			}
 			if ((sval = http_get_server_var("REQUEST_URI", 1))) {
 				inf.http.info.request.url = estrdup(Z_STRVAL_P(sval));
-			} else {
-				inf.http.info.request.url = ecalloc(1, 1);
 			}
 			
 			http_message_set_info(message, &inf);
@@ -170,17 +166,17 @@ PHP_HTTP_API void _http_message_set_type(http_message *message, http_message_typ
 
 PHP_HTTP_API void _http_message_set_info(http_message *message, http_info *info)
 {
-	message->http.version = info->http.version;
 	http_message_set_type(message, info->type);
+	message->http.version = info->http.version;
 	switch (message->type) {
 		case IS_HTTP_REQUEST:
-			HTTP_INFO(message).request.url = estrdup(HTTP_INFO(info).request.url);
-			STR_SET(HTTP_INFO(message).request.method, estrdup(HTTP_INFO(info).request.method));
+			STR_SET(HTTP_INFO(message).request.url, HTTP_INFO(info).request.url ? estrdup(HTTP_INFO(info).request.url) : NULL);
+			STR_SET(HTTP_INFO(message).request.method, HTTP_INFO(info).request.method ? estrdup(HTTP_INFO(info).request.method) : NULL);
 			break;
 		
 		case IS_HTTP_RESPONSE:
 			HTTP_INFO(message).response.code = HTTP_INFO(info).response.code;
-			STR_SET(HTTP_INFO(message).response.status, estrdup(HTTP_INFO(info).response.status));
+			STR_SET(HTTP_INFO(message).response.status, HTTP_INFO(info).response.status ? estrdup(HTTP_INFO(info).response.status) : NULL);
 			break;
 		
 		default:
@@ -383,18 +379,11 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 
 	switch (msg->type) {
 		case HTTP_MSG_REQUEST:
-			phpstr_appendf(&str, "%s %s HTTP/%1.1f" HTTP_CRLF,
-				msg->http.info.request.method?msg->http.info.request.method:"UNKNOWN",
-				msg->http.info.request.url?msg->http.info.request.url:"/",
-				msg->http.version);
+			phpstr_appendf(&str, HTTP_INFO_REQUEST_FMT_ARGS(&msg->http, HTTP_CRLF));
 			break;
 
 		case HTTP_MSG_RESPONSE:
-			phpstr_appendf(&str, "HTTP/%1.1f %d%s%s" HTTP_CRLF,
-				msg->http.version,
-				msg->http.info.response.code,
-				msg->http.info.response.status&&*msg->http.info.response.status ? " ":"",
-				STR_PTR(msg->http.info.response.status));
+			phpstr_appendf(&str, HTTP_INFO_RESPONSE_FMT_ARGS(&msg->http, HTTP_CRLF));
 			break;
 
 		case HTTP_MSG_NONE:
@@ -521,12 +510,12 @@ PHP_HTTP_API void _http_message_tostruct_recursive(http_message *msg, zval *obj 
 	{
 		case HTTP_MSG_RESPONSE:
 			add_assoc_long(&strct, "responseCode", msg->http.info.response.code);
-			add_assoc_string(&strct, "responseStatus", msg->http.info.response.status, 1);
+			add_assoc_string(&strct, "responseStatus", STR_PTR(msg->http.info.response.status), 1);
 		break;
 		
 		case HTTP_MSG_REQUEST:
-			add_assoc_string(&strct, "requestMethod", msg->http.info.request.method, 1);
-			add_assoc_string(&strct, "requestUrl", msg->http.info.request.url, 1);
+			add_assoc_string(&strct, "requestMethod", STR_PTR(msg->http.info.request.method), 1);
+			add_assoc_string(&strct, "requestUrl", STR_PTR(msg->http.info.request.url), 1);
 		break;
 		
 		case HTTP_MSG_NONE:

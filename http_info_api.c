@@ -107,7 +107,7 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 			while (' ' == *status) ++status;
 			HTTP_INFO(info).response.status = estrndup(status, end - status);
 		} else {
-			HTTP_INFO(info).response.status = ecalloc(1, 1);
+			HTTP_INFO(info).response.status = NULL;
 		}
 		
 		return SUCCESS;
@@ -129,8 +129,8 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 				return FAILURE;
 			}
 		} else {
-			HTTP_INFO(info).request.method = ecalloc(1, 1);
-			HTTP_INFO(info).request.url = ecalloc(1, 1);
+			HTTP_INFO(info).request.method = NULL;
+			HTTP_INFO(info).request.url = NULL;
 		}
 		
 		return SUCCESS;

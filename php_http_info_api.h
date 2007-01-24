@@ -20,6 +20,17 @@
 
 #define HTTP_INFO(ptr) (ptr)->http.info
 
+#define HTTP_INFO_REQUEST_FMT_ARGS(_http_ptr, _EOL) "%s %s HTTP/%1.1f" _EOL, \
+				(_http_ptr)->info.request.method?(_http_ptr)->info.request.method:"UNKNOWN", \
+				(_http_ptr)->info.request.url?(_http_ptr)->info.request.url:"/", \
+				(_http_ptr)->version>0.0?(_http_ptr)->version:1.1
+
+#define HTTP_INFO_RESPONSE_FMT_ARGS(_http_ptr, _EOL) "HTTP/%1.1f %d%s%s" _EOL, \
+				(_http_ptr)->version>0.0?(_http_ptr)->version:1.1, \
+				(_http_ptr)->info.response.code?(_http_ptr)->info.response.code:200, \
+				(_http_ptr)->info.response.status&&*(_http_ptr)->info.response.status ? " ":"", \
+				STR_PTR((_http_ptr)->info.response.status)
+
 typedef struct _http_request_info_t {
 	char *method;
 	char *url;

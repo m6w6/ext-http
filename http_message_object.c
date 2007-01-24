@@ -909,10 +909,10 @@ PHP_METHOD(HttpMessage, getInfo)
 		
 		switch (obj->message->type) {
 			case HTTP_MSG_REQUEST:
-				Z_STRLEN_P(return_value) = spprintf(&Z_STRVAL_P(return_value), 0, "%s %s HTTP/%0.1f", obj->message->http.info.request.method, obj->message->http.info.request.url, obj->message->http.version);
+				Z_STRLEN_P(return_value) = spprintf(&Z_STRVAL_P(return_value), 0, HTTP_INFO_REQUEST_FMT_ARGS(&obj->message->http, ""));
 				break;
 			case HTTP_MSG_RESPONSE:
-				Z_STRLEN_P(return_value) = spprintf(&Z_STRVAL_P(return_value), 0, "HTTP/%0.1f %d %s", obj->message->http.version, obj->message->http.info.response.code, obj->message->http.info.response.status);
+				Z_STRLEN_P(return_value) = spprintf(&Z_STRVAL_P(return_value), 0, HTTP_INFO_RESPONSE_FMT_ARGS(&obj->message->http, ""));
 				break;
 			default:
 				RETURN_NULL();
