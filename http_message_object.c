@@ -905,7 +905,11 @@ PHP_METHOD(HttpMessage, getResponseStatus)
 	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
-		RETURN_STRING(obj->message->http.info.response.status, 1);
+		if (obj->message->http.info.response.status) {
+			RETURN_STRING(obj->message->http.info.response.status, 1);
+		} else {
+			RETURN_EMPTY_STRING();
+		}
 	}
 }
 /* }}} */
@@ -923,7 +927,7 @@ PHP_METHOD(HttpMessage, setResponseStatus)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &status, &status_len)) {
 		RETURN_FALSE;
 	}
-	STR_SET(obj->message->http.info.response.status, estrdup(status));
+	STR_SET(obj->message->http.info.response.status, estrndup(status, status_len));
 	RETURN_TRUE;
 }
 /* }}} */
@@ -937,7 +941,11 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
-		RETURN_STRING(obj->message->http.info.request.method, 1);
+		if (obj->message->http.info.request.method) {
+			RETURN_STRING(obj->message->http.info.request.method, 1);
+		} else {
+			RETURN_EMPTY_STRING();
+		}
 	}
 }
 /* }}} */
@@ -978,7 +986,11 @@ PHP_METHOD(HttpMessage, getRequestUrl)
 	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
-		RETURN_STRING(obj->message->http.info.request.url, 1);
+		if (obj->message->http.info.request.url) {
+			RETURN_STRING(obj->message->http.info.request.url, 1);
+		} else {
+			RETURN_EMPTY_STRING();
+		}
 	}
 }
 /* }}} */
