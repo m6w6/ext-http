@@ -81,6 +81,11 @@ HTTP_BEGIN_ARGS(setType, 1)
 	HTTP_ARG_VAL(type, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(getInfo);
+HTTP_BEGIN_ARGS(setInfo, 1)
+	HTTP_ARG_VAL(http_info, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getResponseCode);
 HTTP_BEGIN_ARGS(setResponseCode, 1)
 	HTTP_ARG_VAL(response_code, 0)
@@ -157,6 +162,8 @@ zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(addHeaders, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getType, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setType, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(getInfo, ZEND_ACC_PUBLIC)
+	HTTP_MESSAGE_ME(setInfo, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getResponseCode, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(setResponseCode, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(getResponseStatus, ZEND_ACC_PUBLIC)
@@ -891,6 +898,50 @@ PHP_METHOD(HttpMessage, setType)
 }
 /* }}} */
 
+/* {{{ proto string HttpMessage::getInfo(void)
+	Get the HTTP request/response line */
+PHP_METHOD(HttpMessage, getInfo)
+{
+	NO_ARGS;
+	
+	if (return_value_used) {
+		getObject(http_message_object, obj);
+		
+		switch (obj->message->type) {
+			case HTTP_MSG_REQUEST:
+				Z_STRLEN_P(return_value) = spprintf(&Z_STRVAL_P(return_value), 0, "%s %s HTTP/%0.1f", obj->message->http.info.request.method, obj->message->http.info.request.url, obj->message->http.version);
+				break;
+			case HTTP_MSG_RESPONSE:
+				Z_STRLEN_P(return_value) = spprintf(&Z_STRVAL_P(return_value), 0, "HTTP/%0.1f %d %s", obj->message->http.version, obj->message->http.info.response.code, obj->message->http.info.response.status);
+				break;
+			default:
+				RETURN_NULL();
+				break;
+		}
+		Z_TYPE_P(return_value) = IS_STRING;
+	}
+}
+/* }}} */
+
+/* {{{ proto bool HttpMessage::setInfo(string http_info)
+	Set type and request or response info with a standard HTTP request or response line */
+PHP_METHOD(HttpMessage, setInfo)
+{
+	char *str;
+	int len;
+	http_info inf;
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &str, &len) && SUCCESS == http_info_parse_ex(str, &inf, 0)) {
+		getObject(http_message_object, obj);
+		
+		http_message_set_info(obj->message, &inf);
+		http_info_dtor(&inf);
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+/* }}} */
+
 /* {{{ proto int HttpMessage::getResponseCode()
 	Get the Response Code of the Message. */
 PHP_METHOD(HttpMessage, getResponseCode)
@@ -936,7 +987,11 @@ PHP_METHOD(HttpMessage, getResponseStatus)
 	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
-		RETURN_STRING(obj->message->http.info.response.status, 1);
+		if (obj->message->http.info.response.status) {
+			RETURN_STRING(obj->message->http.info.response.status, 1);
+		} else {
+			RETURN_EMPTY_STRING();
+		}
 	}
 }
 /* }}} */
@@ -954,7 +1009,7 @@ PHP_METHOD(HttpMessage, setResponseStatus)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &status, &status_len)) {
 		RETURN_FALSE;
 	}
-	STR_SET(obj->message->http.info.response.status, estrdup(status));
+	STR_SET(obj->message->http.info.response.status, estrndup(status, status_len));
 	RETURN_TRUE;
 }
 /* }}} */
@@ -968,7 +1023,11 @@ PHP_METHOD(HttpMessage, getRequestMethod)
 	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
-		RETURN_STRING(obj->message->http.info.request.method, 1);
+		if (obj->message->http.info.request.method) {
+			RETURN_STRING(obj->message->http.info.request.method, 1);
+		} else {
+			RETURN_EMPTY_STRING();
+		}
 	}
 }
 /* }}} */
@@ -1009,7 +1068,11 @@ PHP_METHOD(HttpMessage, getRequestUrl)
 	if (return_value_used) {
 		getObject(http_message_object, obj);
 		HTTP_CHECK_MESSAGE_TYPE_REQUEST(obj->message, RETURN_FALSE);
-		RETURN_STRING(obj->message->http.info.request.url, 1);
+		if (obj->message->http.info.request.url) {
+			RETURN_STRING(obj->message->http.info.request.url, 1);
+		} else {
+			RETURN_EMPTY_STRING();
+		}
 	}
 }
 /* }}} */

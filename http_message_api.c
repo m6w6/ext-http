@@ -171,8 +171,8 @@ PHP_HTTP_API void _http_message_set_type(http_message *message, http_message_typ
 PHP_HTTP_API void _http_message_set_info(http_message *message, http_info *info)
 {
 	message->http.version = info->http.version;
-	
-	switch (message->type = info->type) {
+	http_message_set_type(message, info->type);
+	switch (message->type) {
 		case IS_HTTP_REQUEST:
 			HTTP_INFO(message).request.url = estrdup(HTTP_INFO(info).request.url);
 			STR_SET(HTTP_INFO(message).request.method, estrdup(HTTP_INFO(info).request.method));

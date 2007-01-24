@@ -142,7 +142,6 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 	}
 }
 
-
 /*
  * Local variables:
  * tab-width: 4

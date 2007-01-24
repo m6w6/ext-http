@@ -86,6 +86,8 @@ PHP_METHOD(HttpMessage, setHeaders);
 PHP_METHOD(HttpMessage, addHeaders);
 PHP_METHOD(HttpMessage, getType);
 PHP_METHOD(HttpMessage, setType);
+PHP_METHOD(HttpMessage, getInfo);
+PHP_METHOD(HttpMessage, setInfo);
 PHP_METHOD(HttpMessage, getResponseCode);
 PHP_METHOD(HttpMessage, setResponseCode);
 PHP_METHOD(HttpMessage, getResponseStatus);
