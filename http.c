@@ -32,6 +32,9 @@
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
 #	include "php_http_request_datashare_api.h"
+#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
+#		include "php_http_persistent_handle_api.h"
+#	endif
 #endif
 #ifdef HTTP_HAVE_ZLIB
 #	include "php_http_encoding_api.h"
@@ -101,6 +104,10 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_get_request_body_stream, NULL)
 	PHP_FE(http_match_request_header, NULL)
 #ifdef HTTP_HAVE_CURL
+#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
+	PHP_FE(http_persistent_handles_count, NULL)
+	PHP_FE(http_persistent_handles_clean, NULL)
+#	endif
 	PHP_FE(http_get, http_arg_pass_ref_3)
 	PHP_FE(http_head, http_arg_pass_ref_3)
 	PHP_FE(http_post_data, http_arg_pass_ref_4)
@@ -280,6 +287,9 @@ PHP_MINIT_FUNCTION(http)
 			(SUCCESS != PHP_MINIT_CALL(http_send))		||
 			(SUCCESS != PHP_MINIT_CALL(http_url))		||
 #ifdef HTTP_HAVE_CURL
+#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
+			(SUCCESS != PHP_MINIT_CALL(http_persistent_handle)) ||
+#	endif
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #	ifdef ZEND_ENGINE_2
 			(SUCCESS != PHP_MINIT_CALL(http_request_datashare)) ||
@@ -327,7 +337,11 @@ PHP_MSHUTDOWN_FUNCTION(http)
 #	ifdef ZEND_ENGINE_2
 			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)) ||
 #	endif
-			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request))) {
+			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request))
+#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
+			|| (SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle))
+#	endif
+	) {
 		return FAILURE;
 	}
 #endif

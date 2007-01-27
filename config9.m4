@@ -4,6 +4,13 @@ dnl vim: noet ts=1 sw=1
 
 PHP_ARG_ENABLE([http], [whether to enable extended HTTP support],
 [  --enable-http           Enable extended HTTP support])
+PHP_ARG_ENABLE([http-persistent-handles], [whether to enable per-process persistent cURL handles],
+[  --enable-http-persistent-handles
+                           HTTP: enable per-process persistent cURL handles], "no", "no")
+PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
+[  --with-http-shared-deps
+                           HTTP: disable to not depend on extensions like hash,
+                                 iconv and session (when built shared)], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-curl-requests], [whether to enable cURL HTTP request support],
 [  --with-http-curl-requests[=LIBCURLDIR]
                            HTTP: with cURL request support], $PHP_HTTP, $PHP_HTTP)
@@ -13,9 +20,6 @@ PHP_ARG_WITH([http-zlib-compression], [whether to enable zlib encodings support]
 PHP_ARG_WITH([http-magic-mime], [whether to enable response content type guessing],
 [  --with-http-magic-mime[=LIBMAGICDIR]
                            HTTP: with magic mime response content type guessing], "no", "no")
-PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
-[  --with-http-shared-deps  HTTP: disable to not depend on extensions like hash,
-                                 iconv and session (when built shared)], $PHP_HTTP, $PHP_HTTP)
 
 if test "$PHP_HTTP" != "no"; then
 
@@ -265,6 +269,15 @@ dnl ----
 			[AC_DEFINE([HAVE_CURL_MULTI_TIMEOUT], [1], [ ])], [ ],
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
 		)
+		
+		dnl persistent cURL handles
+		AC_MSG_CHECKING([whether to enable per-process persistent cURL handles])
+		if test "$PHP_HTTP_PERSISTENT_HANDLES" != "no"; then
+			AC_DEFINE([HTTP_HAVE_PERSISTENT_HANDLES], [1], [Have per-process persistent cURL handles])
+			AC_MSG_RESULT([yes])
+		else
+			AC_MSG_RESULT([no])
+		fi
 	fi
 
 dnl ----
@@ -338,7 +351,8 @@ dnl ----
 		http_info_api.c http_request_method_api.c http_encoding_api.c \
 		http_filter_api.c http_request_body_api.c http_querystring_object.c \
 		http_deflatestream_object.c http_inflatestream_object.c http_cookie_api.c \
-		http_querystring_api.c http_request_datashare_api.c http_requestdatashare_object.c"
+		http_querystring_api.c http_request_datashare_api.c http_requestdatashare_object.c \
+		http_persistent_handle_api.c"
 	
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, $ext_shared)
 	
@@ -357,7 +371,8 @@ dnl ----
 		php_http_exception_object.h php_http_message_object.h php_http_request_object.h \
 		php_http_requestpool_object.h php_http_response_object.h php_http_util_object.h \
 		php_http_querystring_object.h php_http_deflatestream_object.h php_http_inflatestream_object.h \
-		php_http_cookie_api.h php_http_querystring_api.h php_http_request_datashare_api.h php_http_requestdatashare_object.h"
+		php_http_cookie_api.h php_http_querystring_api.h php_http_request_datashare_api.h php_http_requestdatashare_object.h \
+		php_http_persistent_handle_api.h"
 	ifdef([PHP_INSTALL_HEADERS], [
 		PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)
 	], [

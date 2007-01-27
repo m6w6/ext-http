@@ -203,6 +203,10 @@ PHP_FUNCTION(http_get_request_body);
 PHP_FUNCTION(http_get_request_body_stream);
 PHP_FUNCTION(http_match_request_header);
 #ifdef HTTP_HAVE_CURL
+#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
+PHP_FUNCTION(http_persistent_handles_count);
+PHP_FUNCTION(http_persistent_handles_clean);
+#	endif
 PHP_FUNCTION(http_get);
 PHP_FUNCTION(http_head);
 PHP_FUNCTION(http_post_data);

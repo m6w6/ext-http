@@ -31,7 +31,7 @@ support. Parallel requests are available for PHP 5 and greater.
  <date>2007-01-23</date>
  <version>
   <release>1.5.0dev</release>
-  <api>1.4.0</api>
+  <api>1.5.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -39,7 +39,8 @@ support. Parallel requests are available for PHP 5 and greater.
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Add HttpMessage::fromEnv(int type[, string class_name = "HttpMessage"]) (Clay Loveless)
++ Added HttpMessage::fromEnv(int type[, string class_name = "HttpMessage"]) (Clay Loveless)
++ Added --enable-http-persistent-handles (Clay Loveless)
 ]]></notes>
  <contents>
   <dir name="/">
@@ -75,6 +76,7 @@ support. Parallel requests are available for PHP 5 and greater.
    <file role="src" name="php_http_headers_api.h"/>
    <file role="src" name="php_http_info_api.h"/>
    <file role="src" name="php_http_message_api.h"/>
+   <file role="src" name="php_http_persistent_handles_api.h"/>
    <file role="src" name="php_http_querystring_api.h"/>
    <file role="src" name="php_http_request_api.h"/>
    <file role="src" name="php_http_request_int.h"/>
@@ -106,6 +108,7 @@ support. Parallel requests are available for PHP 5 and greater.
    <file role="src" name="http_headers_api.c"/>
    <file role="src" name="http_info_api.c"/>
    <file role="src" name="http_message_api.c"/>
+   <file role="src" name="http_persistent_handles_api.c"/>
    <file role="src" name="http_querystring_api.c"/>
    <file role="src" name="http_request_api.c"/>
    <file role="src" name="http_request_info.c"/>
@@ -286,6 +289,11 @@ support. Parallel requests are available for PHP 5 and greater.
    name="with-http-shared-deps"
    prompt="whether to depend on extensions which have been built shared"
    default="yes"
+  />
+  <configureoption
+   name="enable-http-persistent-handles"
+   prompt="whether to enable per-process persistent cURL handles"
+   default="no"
   />
   <filelist>
    <install as="http.ini" name="docs/http.ini"/>

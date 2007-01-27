@@ -34,6 +34,7 @@
 #include "php_http_message_api.h"
 #include "php_http_request_api.h"
 #include "php_http_request_method_api.h"
+#include "php_http_persistent_handle_api.h"
 #include "php_http_send_api.h"
 #include "php_http_url_api.h"
 
@@ -807,6 +808,42 @@ PHP_FUNCTION(http_match_request_header)
 
 /* {{{ HAVE_CURL */
 #ifdef HTTP_HAVE_CURL
+#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+
+/* {{{ proto object http_persistent_handles_count() */
+PHP_FUNCTION(http_persistent_handles_count)
+{
+	char **names;
+	int *counts;
+	int i, n;
+	
+	NO_ARGS;
+	
+	if ((n = http_persistent_handle_statall(&names, &counts))) {
+		object_init(return_value);
+		for (i = 0; i < n; ++i) {
+			add_property_long(return_value, names[i], counts[i]);
+			efree(names[i]);
+		}
+		efree(names);
+		efree(counts);
+	}
+}
+/* }}} */
+
+/* {{{ proto void http_persistent_handles_clean([string name]) */
+PHP_FUNCTION(http_persistent_handles_clean)
+{
+	char *name_str = NULL;
+	int name_len = 0;
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &name_str, &name_len)) {
+		http_persistent_handle_cleanup_ex(name_str, name_len);
+	}
+}
+/* }}} */
+
+#endif /* HTTP_HAVE_PERSISTENT_HANDLES */
 
 #define RETVAL_RESPONSE_OR_BODY(request) \
 	{ \
