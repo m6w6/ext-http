@@ -21,12 +21,23 @@
 #include "php_http_request_datashare_api.h"
 #include "php_http_request_api.h"
 #include "php_http_request_object.h"
+#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+#	include "php_http_persistent_handle_api.h"
+#endif
 
 #ifndef HAVE_CURL_SHARE_STRERROR
 #	define curl_share_strerror(dummy) "unknown error"
 #endif
 #ifndef HAVE_CURL_EASY_STRERROR
 #	define curl_easy_strerror(dummy) "unknown error"
+#endif
+
+#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+#	define HTTP_CURL_SHARE_CTOR(ch) (SUCCESS == http_persistent_handle_acquire("http_request_datashare", &(ch)))
+#	define HTTP_CURL_SHARE_DTOR(chp) http_persistent_handle_release("http_request_datashare", (chp))
+#else
+#	define HTTP_CURL_SHARE_CTOR(ch) ((ch) = curl_share_init())
+#	define HTTP_CURL_SHARE_DTOR(chp) curl_share_cleanup(*(chp)); *(chp) = NULL
 #endif
 
 static HashTable http_request_datashare_options;
@@ -47,6 +58,16 @@ PHP_MINIT_FUNCTION(http_request_datashare)
 {
 	curl_lock_data val;
 	
+#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+	if (SUCCESS != http_persistent_handle_provide("http_request_datashare", curl_share_init, (http_persistent_handle_dtor) curl_share_cleanup)) {
+		return FAILURE;
+	}
+#endif
+	
+	if (!http_request_datashare_init_ex(&http_request_datashare_global, 1)) {
+		return FAILURE;
+	}
+	
 	zend_hash_init(&http_request_datashare_options, 4, NULL, NULL, 1);
 #define ADD_DATASHARE_OPT(name, opt) \
 	val = opt; \
@@ -55,8 +76,6 @@ PHP_MINIT_FUNCTION(http_request_datashare)
 	ADD_DATASHARE_OPT("dns", CURL_LOCK_DATA_DNS);
 	ADD_DATASHARE_OPT("ssl", CURL_LOCK_DATA_SSL_SESSION);
 	ADD_DATASHARE_OPT("connect", CURL_LOCK_DATA_CONNECT);
-	
-	http_request_datashare_init_ex(&http_request_datashare_global, 1);
 	
 	return SUCCESS;
 }
@@ -92,8 +111,7 @@ PHP_HTTP_API http_request_datashare *_http_request_datashare_init_ex(http_reques
 	}
 	memset(share, 0, sizeof(http_request_datashare));
 	
-	HTTP_CHECK_CURL_INIT(share->ch, curl_share_init(), ;);
-	if (!share->ch) {
+	if (!HTTP_CURL_SHARE_CTOR(share->ch)) {
 		if (free_share) {
 			pefree(share, persistent);
 		}
@@ -180,7 +198,7 @@ PHP_HTTP_API void _http_request_datashare_dtor(http_request_datashare *share TSR
 		zend_llist_destroy(share->handles);
 		efree(share->handles);
 	}
-	curl_share_cleanup(share->ch);
+	HTTP_CURL_SHARE_DTOR(&share->ch);
 #ifdef ZTS
 	if (share->persistent) {
 		int i;

@@ -23,6 +23,7 @@
 #include "php_http_request_object.h"
 #include "php_http_request_pool_api.h"
 #include "php_http_requestpool_object.h"
+#include "php_http_persistent_handle_api.h"
 
 #ifndef HTTP_DEBUG_REQPOOLS
 #	define HTTP_DEBUG_REQPOOLS 0
@@ -32,7 +33,25 @@
 #	define curl_multi_strerror(dummy) "unknown error"
 #endif
 
+#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+#	define HTTP_CURL_MULTI_CTOR(ch) (SUCCESS == http_persistent_handle_acquire("http_request_pool", &(ch)))
+#	define HTTP_CURL_MULTI_DTOR(chp) http_persistent_handle_release("http_request_pool", (chp))
+#else
+#	define HTTP_CURL_MULTI_CTOR(ch) ((ch) = curl_multi_init())
+#	define HTTP_CURL_MULTI_DTOR(chp) curl_multi_cleanup(*(chp)); *(chp) = NULL
+#endif
+
 static int http_request_pool_compare_handles(void *h1, void *h2);
+
+#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+PHP_MINIT_FUNCTION(http_request_pool)
+{
+	if (SUCCESS != http_persistent_handle_provide("http_request_pool", curl_multi_init, (http_persistent_handle_dtor) curl_multi_cleanup)) {
+		return FAILURE;
+	}
+	return SUCCESS;
+}
+#endif
 
 /* {{{ http_request_pool *http_request_pool_init(http_request_pool *) */
 PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool TSRMLS_DC)
@@ -48,8 +67,7 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 		pool->ch = NULL;
 	}
 
-	HTTP_CHECK_CURL_INIT(pool->ch, curl_multi_init(), ;);
-	if (!pool->ch) {
+	if (!HTTP_CURL_MULTI_CTOR(pool->ch)) {
 		if (free_pool) {
 			efree(pool);
 		}
@@ -245,7 +263,7 @@ PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool TSRMLS_DC)
 	pool->unfinished = 0;
 	zend_llist_clean(&pool->finished);
 	zend_llist_clean(&pool->handles);
-	curl_multi_cleanup(pool->ch);
+	HTTP_CURL_MULTI_DTOR(&pool->ch);
 }
 /* }}} */
 

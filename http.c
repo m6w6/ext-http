@@ -31,6 +31,7 @@
 #include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
+#	include "php_http_request_pool_api.h"
 #	include "php_http_request_datashare_api.h"
 #	ifdef HTTP_HAVE_PERSISTENT_HANDLES
 #		include "php_http_persistent_handle_api.h"
@@ -289,6 +290,7 @@ PHP_MINIT_FUNCTION(http)
 #ifdef HTTP_HAVE_CURL
 #	ifdef HTTP_HAVE_PERSISTENT_HANDLES
 			(SUCCESS != PHP_MINIT_CALL(http_persistent_handle)) ||
+			(SUCCESS != PHP_MINIT_CALL(http_request_pool)) ||
 #	endif
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #	ifdef ZEND_ENGINE_2
