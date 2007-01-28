@@ -201,7 +201,7 @@ PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_
 	long begin = -1, end = -1, *ptr;
 
 	if (	!(zrange = http_get_server_var("HTTP_RANGE", 1)) || 
-			Z_STRLEN_P(zrange) < lenof("bytes=") || strncmp(Z_STRVAL_P(zrange), "bytes=", lenof("bytes="))) {
+			(size_t) Z_STRLEN_P(zrange) < lenof("bytes=") || strncmp(Z_STRVAL_P(zrange), "bytes=", lenof("bytes="))) {
 		return RANGE_NO;
 	}
 	range = Z_STRVAL_P(zrange) + lenof("bytes=");
