@@ -46,10 +46,6 @@
 #	endif /* PHP_WIN32 */
 #endif /* ZTS && HTTP_HAVE_SSL */
 
-#ifndef HAVE_CURL_EASY_STRERROR
-#	define curl_easy_strerror(dummy) "unknown error"
-#endif
-
 #define HTTP_CURL_OPT(OPTION, p) curl_easy_setopt((request->ch), OPTION, (p))
 
 #define HTTP_CURL_OPT_STRING(OPTION, ldiff, obdc) \

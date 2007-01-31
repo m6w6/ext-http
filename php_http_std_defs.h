@@ -231,7 +231,6 @@ typedef int STATUS;
 #	define ACC_PROP_PUBLIC(flags)			(flags & ZEND_ACC_PUBLIC)
 #	define ACC_PROP(ce, flags)				(ACC_PROP_PUBLIC(flags) || ACC_PROP_PRIVATE(ce, flags) || ACC_PROP_PROTECTED(ce, flags))
 
-#	define SET_EH_THROW() SET_EH_THROW_EX(zend_exception_get_default())
 #	define SET_EH_THROW_HTTP() SET_EH_THROW_EX(http_exception_get_default())
 #	define SET_EH_THROW_EX(ex) php_set_error_handling(EH_THROW, ex TSRMLS_CC)
 #	define SET_EH_NORMAL() php_set_error_handling(EH_NORMAL, NULL TSRMLS_CC)
@@ -257,6 +256,10 @@ typedef int STATUS;
 #	define	ZEND_EXCEPTION_GET_DEFAULT() zend_exception_get_default(TSRMLS_C)
 #else
 #	define	ZEND_EXCEPTION_GET_DEFAULT() zend_exception_get_default()
+#endif
+
+#if PHP_MAJOR_VERSION == 4 && PHP_MINOR_VERSION == 3 && PHP_RELEASE_VERSION < 10
+#	define php_url_parse_ex(u, l) php_url_parse(u)
 #endif
 
 #ifndef E_THROW
@@ -367,6 +370,16 @@ typedef int STATUS;
 #	endif /* ZEND_ENGINE_2 */
 #endif /* HTTP_HAVE_CURL */
 
+
+#ifndef HAVE_CURL_SHARE_STRERROR
+#	define curl_share_strerror(dummy) "unknown error"
+#endif
+#ifndef HAVE_CURL_EASY_STRERROR
+#	define curl_easy_strerror(dummy) "unknown error"
+#endif
+#ifndef HAVE_CURL_MULTI_STRERROR
+#	define curl_multi_strerror(dummy) "unknown error"
+#endif
 
 #ifndef TSRMLS_FETCH_FROM_CTX
 #	ifdef ZTS

@@ -25,13 +25,6 @@
 #	include "php_http_persistent_handle_api.h"
 #endif
 
-#ifndef HAVE_CURL_SHARE_STRERROR
-#	define curl_share_strerror(dummy) "unknown error"
-#endif
-#ifndef HAVE_CURL_EASY_STRERROR
-#	define curl_easy_strerror(dummy) "unknown error"
-#endif
-
 #ifdef HTTP_HAVE_PERSISTENT_HANDLES
 #	define HTTP_CURL_SHARE_CTOR(ch) (SUCCESS == http_persistent_handle_acquire("http_request_datashare", &(ch)))
 #	define HTTP_CURL_SHARE_DTOR(chp) http_persistent_handle_release("http_request_datashare", (chp))

@@ -29,10 +29,6 @@
 #	define HTTP_DEBUG_REQPOOLS 0
 #endif
 
-#ifndef HAVE_CURL_MULTI_STRERROR
-#	define curl_multi_strerror(dummy) "unknown error"
-#endif
-
 #ifdef HTTP_HAVE_PERSISTENT_HANDLES
 #	define HTTP_CURL_MULTI_CTOR(ch) (SUCCESS == http_persistent_handle_acquire("http_request_pool", &(ch)))
 #	define HTTP_CURL_MULTI_DTOR(chp) http_persistent_handle_release("http_request_pool", (chp))

@@ -56,10 +56,6 @@ PHP_FUNCTION(http_date)
 }
 /* }}} */
 
-#if PHP_MAJOR_VERSION == 4 && PHP_MINOR_VERSION == 3 && PHP_RELEASE_VERSION < 10
-#	define php_url_parse_ex(u, l) php_url_parse(u)
-#endif
-
 /* {{{ proto string http_build_url([mixed url[, mixed parts[, int flags = HTTP_URL_REPLACE[, array &new_url]]]])
 	Build an URL. */
 PHP_FUNCTION(http_build_url)
