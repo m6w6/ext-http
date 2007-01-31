@@ -755,15 +755,25 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		HTTP_CURL_OPT(CURLOPT_HTTP_VERSION, Z_LVAL_P(zoption));
 	}
 
+#if HTTP_CURL_VERSION(7,16,2)
+	/* timeout, defaults to 0 */
+	if ((zoption = http_request_option(request, options, "timeout", IS_DOUBLE))) {
+		HTTP_CURL_OPT(CURLOPT_TIMEOUT_MS, (long)(Z_DVAL_P(zoption)*1000));
+	}
+	/* connecttimeout, defaults to 0 */
+	if ((zoption = http_request_option(request, options, "connecttimeout", IS_DOUBLE))) {
+		HTTP_CURL_OPT(CURLOPT_CONNECTTIMEOUT_MS, (long)(Z_DVAL_P(zoption)*1000));
+	}
+#else
 	/* timeout, defaults to 0 */
 	if ((zoption = http_request_option(request, options, "timeout", IS_LONG))) {
 		HTTP_CURL_OPT(CURLOPT_TIMEOUT, Z_LVAL_P(zoption));
 	}
-
 	/* connecttimeout, defaults to 0 */
 	if ((zoption = http_request_option(request, options, "connecttimeout", IS_LONG))) {
 		HTTP_CURL_OPT(CURLOPT_CONNECTTIMEOUT, Z_LVAL_P(zoption));
 	}
+#endif
 
 	/* ssl */
 	if ((zoption = http_request_option(request, options, "ssl", IS_ARRAY))) {
@@ -963,7 +973,7 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 {
 	http_request *request = (http_request *) ctx;
 
-#define EMPTY_HEADER(d, l) ((l == 1 && d[0] == '\n') || (l == 2 && d[0] == '\r' && d[1] == '\n'))
+#define EMPTY_HEADER(d, l) (!l || (l == 1 && d[0] == '\n') || (l == 2 && d[0] == '\r' && d[1] == '\n'))
 	switch (type) {
 		case CURLINFO_DATA_IN:
 			if (request->conv.last_type == CURLINFO_HEADER_IN) {
@@ -981,29 +991,24 @@ static int http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size
 			phpstr_append(&request->conv.request, data, length);
 			break;
 		default:
-#if 0
-			fprintf(stderr, "## ", type);
-			if (!type) {
-				fprintf(stderr, "%s", data);
-			} else {
-				ulong i;
-				for (i = 1; i <= length; ++i) {
-					fprintf(stderr, "%02X ", data[i-1] & 0xFF);
-					if (!(i % 20)) {
-						fprintf(stderr, "\n## ");
-					}
-				}
-				fprintf(stderr, "\n");
-			}
-			if (data[length-1] != 0xa) {
-				fprintf(stderr, "\n");
-			}
-#endif
 			break;
 	}
 
 #if 0
-	fprintf(stderr, "DEBUG: %3d (%5zu) %.*s%s", type, length, length, data, data[length-1]=='\n'?"":"\n");
+	{
+		const char _sym[] = "><><><";
+		if (type) {
+			for (fprintf(stderr, "%c ", _sym[type-1]); length--; data++) {
+				fprintf(stderr, HTTP_IS_CTYPE(print, *data)?"%c":"\\x%02X", (int) *data);
+				if (*data == '\n' && length) {
+					fprintf(stderr, "\n%c ", _sym[type-1]);
+				}
+			}
+			fprintf(stderr, "\n");
+		} else {
+			fprintf(stderr, "# %s", data);
+		}
+	}
 #endif
 	
 	if (type) {
