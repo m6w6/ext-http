@@ -809,20 +809,12 @@ PHP_FUNCTION(http_match_request_header)
 /* {{{ proto object http_persistent_handles_count() */
 PHP_FUNCTION(http_persistent_handles_count)
 {
-	char **names;
-	int *counts;
-	int i, n;
-	
 	NO_ARGS;
 	
-	if ((n = http_persistent_handle_statall(&names, &counts))) {
-		object_init(return_value);
-		for (i = 0; i < n; ++i) {
-			add_property_long(return_value, names[i], counts[i]);
-			efree(names[i]);
-		}
-		efree(names);
-		efree(counts);
+	object_init(return_value);
+	if (!http_persistent_handle_statall_ex(HASH_OF(return_value))) {
+		zval_dtor(return_value);
+		RETURN_NULL();
 	}
 }
 /* }}} */

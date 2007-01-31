@@ -433,6 +433,35 @@ PHP_MINFO_FUNCTION(http)
 			"http.chunked_decode, http.chunked_encode, http.deflate, http.inflate"
 #endif
 		);
+#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+		{
+			phpstr s;
+			HashTable *ht;
+			HashPosition pos;
+			HashKey key = initHashKey(0);
+			zval **val;
+			
+			if ((ht = http_persistent_handle_statall())) {
+				phpstr_init(&s);
+				
+				FOREACH_HASH_KEYVAL(pos, ht, key, val) {
+					phpstr_appendf(&s, "%s (%d), ", key.str, Z_LVAL_PP(val));
+				}
+				zend_hash_destroy(ht);
+				FREE_HASHTABLE(ht);
+				
+				PHPSTR_LEN(&s) -= 2; /* get rid of last ", " */
+				phpstr_fix(&s);
+				
+				php_info_print_table_row(2, "Persistent Handles", PHPSTR_VAL(&s));
+				phpstr_dtor(&s);
+			} else {
+				php_info_print_table_row(2, "Persistent Handles", "none");
+			}
+		}
+#else
+		php_info_print_table_row(2, "Persistent Handles", "disabled");
+#endif
 	}
 	php_info_print_table_end();
 	

@@ -30,9 +30,9 @@ PHP_HTTP_API STATUS _http_persistent_handle_provide_ex(const char *name_str, siz
 #define http_persistent_handle_cleanup_ex(n, l) _http_persistent_handle_cleanup_ex((n), (l))
 PHP_HTTP_API void _http_persistent_handle_cleanup_ex(const char *name_str, size_t name_len);
 
-#define http_persistent_handle_statall(n, c) _http_persistent_handle_statall_ex((n), (c), 0)
-#define http_persistent_handle_statall_ex(n, c, p) _http_persistent_handle_statall_ex((n), (c), (p))
-PHP_HTTP_API int _http_persistent_handle_statall_ex(char ***names, int **counts, int persistent);
+#define http_persistent_handle_statall() _http_persistent_handle_statall_ex(NULL)
+#define http_persistent_handle_statall_ex(ht) _http_persistent_handle_statall_ex((ht))
+PHP_HTTP_API HashTable *_http_persistent_handle_statall_ex(HashTable *ht);
 
 #define http_persistent_handle_acquire(n, h) _http_persistent_handle_acquire_ex((n), strlen(n), (h))
 #define http_persistent_handle_acquire_ex(n, l, h) _http_persistent_handle_acquire_ex((n), (l), (h))

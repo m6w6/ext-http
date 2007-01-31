@@ -13,9 +13,9 @@
 /* $Id$ */
 
 #include "php_http.h"
+#include "php_http_api.h"
 
 #ifdef HTTP_HAVE_PERSISTENT_HANDLES
-
 #include "php_http_persistent_handle_api.h"
 
 static HashTable http_persistent_handles_hash;
@@ -114,28 +114,31 @@ PHP_HTTP_API void _http_persistent_handle_cleanup_ex(const char *name_str, size_
 	UNLOCK();
 }
 
-PHP_HTTP_API int _http_persistent_handle_statall_ex(char ***names, int **counts, int persistent)
+PHP_HTTP_API HashTable *_http_persistent_handle_statall_ex(HashTable *ht)
 {
-	int i, n;
-	char *key;
+	zval *tmp;
+	HashPosition pos;
+	HashKey key = initHashKey(0);
 	http_persistent_handles_hash_entry *hentry;
 	
 	LOCK();
-	if ((n = zend_hash_num_elements(&http_persistent_handles_hash))) {
-		*names = safe_pemalloc(n, sizeof(char **), 0, persistent);
-		*counts = safe_pemalloc(n, sizeof(int), 0, persistent);
-		
-		for (	i = 0, zend_hash_internal_pointer_reset(&http_persistent_handles_hash);
-				HASH_KEY_NON_EXISTANT != zend_hash_get_current_key(&http_persistent_handles_hash, &key, NULL, 0) &&
-				SUCCESS == zend_hash_get_current_data(&http_persistent_handles_hash, (void *) &hentry);
-				++i, zend_hash_move_forward(&http_persistent_handles_hash)) {
-			(*names)[i] = pestrdup(key, persistent);
-			(*counts)[i] = zend_hash_num_elements(&hentry->list);
+	if (zend_hash_num_elements(&http_persistent_handles_hash)) {
+		if (!ht) {
+			ALLOC_HASHTABLE(ht);
+			zend_hash_init(ht, 0, NULL, ZVAL_PTR_DTOR, 0);
 		}
+		
+		FOREACH_HASH_KEYVAL(pos, &http_persistent_handles_hash, key, hentry) {
+			MAKE_STD_ZVAL(tmp);
+			ZVAL_LONG(tmp, zend_hash_num_elements(&hentry->list));
+			zend_hash_add(ht, key.str, key.len, (void *) &tmp, sizeof(zval *), NULL);
+		}
+	} else if (ht) {
+		ht = NULL;
 	}
 	UNLOCK();
 	
-	return n;
+	return ht;
 }
 
 PHP_HTTP_API STATUS _http_persistent_handle_acquire_ex(const char *name_str, size_t name_len, void **handle)
