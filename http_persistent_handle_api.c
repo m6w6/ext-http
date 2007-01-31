@@ -147,7 +147,7 @@ PHP_HTTP_API STATUS _http_persistent_handle_acquire_ex(const char *name_str, siz
 	
 	LOCK();
 	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &hentry)) {
-		zend_hash_internal_pointer_reset(&hentry->list);
+		zend_hash_internal_pointer_end(&hentry->list);
 		if (	HASH_KEY_NON_EXISTANT != zend_hash_get_current_key(&hentry->list, NULL, &index, 0) &&
 				SUCCESS == zend_hash_get_current_data(&hentry->list, (void *) &lentry)) {
 			*handle = lentry->handle;
