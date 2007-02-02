@@ -445,7 +445,7 @@ PHP_MINFO_FUNCTION(http)
 				phpstr_init(&s);
 				
 				FOREACH_HASH_KEYVAL(pos, ht, key, val) {
-					phpstr_appendf(&s, "%s (%d), ", key.str, Z_LVAL_PP(val));
+					phpstr_appendf(&s, "%s (%ld), ", key.str, Z_LVAL_PP(val));
 				}
 				zend_hash_destroy(ht);
 				FREE_HASHTABLE(ht);

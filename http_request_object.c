@@ -33,6 +33,7 @@
 #define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpRequest, method, 0)
 #define HTTP_REQUEST_ME(method, visibility)	PHP_ME(HttpRequest, method, HTTP_ARGS(HttpRequest, method), visibility)
 #define HTTP_REQUEST_ALIAS(method, func)	HTTP_STATIC_ME_ALIAS(method, func, HTTP_ARGS(HttpRequest, method))
+#define HTTP_REQUEST_MALIAS(me, al, vis)	ZEND_FENTRY(me, ZEND_MN(HttpRequest_##al), HTTP_ARGS(HttpRequest, al), vis)
 
 HTTP_BEGIN_ARGS(__construct, 0)
 	HTTP_ARG_VAL(url, 0)
@@ -130,13 +131,13 @@ HTTP_BEGIN_ARGS(addPostFile, 2)
 	HTTP_ARG_VAL(content_type, 0)
 HTTP_END_ARGS;
 
-HTTP_EMPTY_ARGS(getRawPostData);
-HTTP_BEGIN_ARGS(setRawPostData, 0)
-	HTTP_ARG_VAL(raw_post_data, 0)
+HTTP_EMPTY_ARGS(getBody);
+HTTP_BEGIN_ARGS(setBody, 0)
+	HTTP_ARG_VAL(request_body_data, 0)
 HTTP_END_ARGS;
 
-HTTP_BEGIN_ARGS(addRawPostData, 1)
-	HTTP_ARG_VAL(raw_post_data, 0)
+HTTP_BEGIN_ARGS(addBody, 1)
+	HTTP_ARG_VAL(request_body_data, 0)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getPutFile);
@@ -289,9 +290,12 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(getPostFields, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(addPostFields, ZEND_ACC_PUBLIC)
 	
-	HTTP_REQUEST_ME(setRawPostData, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(getRawPostData, ZEND_ACC_PUBLIC)
-	HTTP_REQUEST_ME(addRawPostData, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setBody, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(getBody, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(addBody, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_MALIAS(setRawPostData, setBody, ZEND_ACC_PUBLIC|ZEND_ACC_DEPRECATED)
+	HTTP_REQUEST_MALIAS(getRawPostData, getBody, ZEND_ACC_PUBLIC|ZEND_ACC_DEPRECATED)
+	HTTP_REQUEST_MALIAS(addRawPostData, addBody, ZEND_ACC_PUBLIC|ZEND_ACC_DEPRECATED)
 
 	HTTP_REQUEST_ME(setPostFiles, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(addPostFile, ZEND_ACC_PUBLIC)
@@ -356,7 +360,7 @@ PHP_MINIT_FUNCTION(http_request_object)
 	DCL_PROP(PRIVATE, long, method, HTTP_GET);
 	DCL_PROP(PRIVATE, string, url, "");
 	DCL_PROP(PRIVATE, string, contentType, "");
-	DCL_PROP(PRIVATE, string, rawPostData, "");
+	DCL_PROP(PRIVATE, string, requestBody, "");
 	DCL_PROP(PRIVATE, string, queryData, "");
 	DCL_PROP(PRIVATE, string, putFile, "");
 	DCL_PROP(PRIVATE, string, putData, "");
@@ -585,8 +589,8 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		case HTTP_POST:
 		default:
 		{
-			/* check for raw post data */
-			zval *raw_data = GET_PROP(rawPostData);
+			/* check for raw request body */
+			zval *raw_data = GET_PROP(requestBody);
 			
 			if (Z_STRLEN_P(raw_data)) {
 				http_request_object_check_request_content_type(getThis());
@@ -1255,9 +1259,9 @@ PHP_METHOD(HttpRequest, getPostFields)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::setRawPostData([string raw_post_data])
-	Set raw post data to send, overwriting previously set raw post data. Don't forget to specify a content type. */
-PHP_METHOD(HttpRequest, setRawPostData)
+/* {{{ proto bool HttpRequest::setBody([string request_body_data])
+	Set request body to send, overwriting previously set request body. Don't forget to specify a content type. */
+PHP_METHOD(HttpRequest, setBody)
 {
 	char *raw_data = NULL;
 	int data_len = 0;
@@ -1270,14 +1274,14 @@ PHP_METHOD(HttpRequest, setRawPostData)
 		raw_data = "";
 	}
 	
-	UPD_STRL(rawPostData, raw_data, data_len);
+	UPD_STRL(requestBody, raw_data, data_len);
 	RETURN_TRUE;
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::addRawPostData(string raw_post_data)
-	Add raw post data, leaving previously set raw post data unchanged. */
-PHP_METHOD(HttpRequest, addRawPostData)
+/* {{{ proto bool HttpRequest::addBody(string request_body_data)
+	Add request body data, leaving previously set request body data unchanged. */
+PHP_METHOD(HttpRequest, addBody)
 {
 	char *raw_data;
 	int data_len;
@@ -1287,7 +1291,7 @@ PHP_METHOD(HttpRequest, addRawPostData)
 	}
 	
 	if (data_len) {
-		zval *data = GET_PROP(rawPostData);
+		zval *data = GET_PROP(rrequestBody);
 		
 		if (Z_STRLEN_P(data)) {
 			Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
@@ -1302,14 +1306,14 @@ PHP_METHOD(HttpRequest, addRawPostData)
 }
 /* }}} */
 
-/* {{{ proto string HttpRequest::getRawPostData()
-	Get previously set raw post data. */
-PHP_METHOD(HttpRequest, getRawPostData)
+/* {{{ proto string HttpRequest::getBody()
+	Get previously set request body data. */
+PHP_METHOD(HttpRequest, getBody)
 {
 	NO_ARGS;
 	
 	if (return_value_used) {
-		RETURN_PROP(rawPostData);
+		RETURN_PROP(requestBody);
 	}
 }
 /* }}} */

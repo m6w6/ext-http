@@ -12,7 +12,7 @@ echo "-TEST\n";
 HttpRequest::methodRegister('foobar');
 $r = new HttpRequest('http://dev.iworks.at/.print_request.php', HttpRequest::METH_FOOBAR);
 $r->setContentType('text/plain');
-$r->setRawPostData('Yep, this is FOOBAR!');
+$r->setBody('Yep, this is FOOBAR!');
 var_dump($r->send()->getResponseCode());
 var_dump($r->getRawRequestMessage());
 

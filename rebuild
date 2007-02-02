@@ -3,6 +3,7 @@ rm -f warnings
 
 if test -d "$1"; then
     PREFIX=$1
+    shift
 else
     PREFIX=`dirname $(dirname $(which php-config))`
 fi
@@ -19,7 +20,7 @@ echo "DONE"
 
 echo -n "configuring... "
 CFLAGS="-Wall -Wextra -Wno-unused-parameter -Wfloat-equal -Wdeclaration-after-statement -Wundef -Wbad-function-cast -Wcast-align -Wmissing-field-initializers -Wnested-externs" \
-    ./configure --with-php-config=${PREFIX}/bin/php-config $2 >/dev/null
+    ./configure --with-php-config=${PREFIX}/bin/php-config $@ >/dev/null
 if test $? -ne 0 ; then
     echo "FAILED!"
     exit 1

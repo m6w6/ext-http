@@ -258,10 +258,6 @@ typedef int STATUS;
 #	define	ZEND_EXCEPTION_GET_DEFAULT() zend_exception_get_default()
 #endif
 
-#if PHP_MAJOR_VERSION == 4 && PHP_MINOR_VERSION == 3 && PHP_RELEASE_VERSION < 10
-#	define php_url_parse_ex(u, l) php_url_parse(u)
-#endif
-
 #ifndef E_THROW
 #	define E_THROW 0
 #endif
@@ -379,48 +375,6 @@ typedef int STATUS;
 #endif
 #ifndef HAVE_CURL_MULTI_STRERROR
 #	define curl_multi_strerror(dummy) "unknown error"
-#endif
-
-#ifndef TSRMLS_FETCH_FROM_CTX
-#	ifdef ZTS
-#		define TSRMLS_FETCH_FROM_CTX(ctx)	void ***tsrm_ls = (void ***) ctx
-#	else
-#		define TSRMLS_FETCH_FROM_CTX(ctx)
-#	endif
-#endif
-
-#ifndef TSRMLS_SET_CTX
-#	ifdef ZTS
-#		define TSRMLS_SET_CTX(ctx)	ctx = (void ***) tsrm_ls
-#	else
-#		define TSRMLS_SET_CTX(ctx)
-#	endif
-#endif
-
-#ifndef ZVAL_ZVAL
-#define ZVAL_ZVAL(z, zv, copy, dtor) {  \
-		int is_ref, refcount;           \
-		is_ref = (z)->is_ref;           \
-		refcount = (z)->refcount;       \
-		*(z) = *(zv);                   \
-		if (copy) {                     \
-			zval_copy_ctor(z);          \
-	    }                               \
-		if (dtor) {                     \
-			if (!copy) {                \
-				ZVAL_NULL(zv);          \
-			}                           \
-			zval_ptr_dtor(&zv);         \
-	    }                               \
-		(z)->is_ref = is_ref;           \
-		(z)->refcount = refcount;       \
-	}
-#endif
-#ifndef RETVAL_ZVAL
-#define RETVAL_ZVAL(zv, copy, dtor)		ZVAL_ZVAL(return_value, zv, copy, dtor)
-#endif
-#ifndef RETURN_ZVAL
-#define RETURN_ZVAL(zv, copy, dtor)		{ RETVAL_ZVAL(zv, copy, dtor); return; }
 #endif
 
 #define PHP_MINIT_CALL(func) PHP_MINIT(func)(INIT_FUNC_ARGS_PASSTHRU)
