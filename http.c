@@ -108,6 +108,7 @@ zend_function_entry http_functions[] = {
 #	ifdef HTTP_HAVE_PERSISTENT_HANDLES
 	PHP_FE(http_persistent_handles_count, NULL)
 	PHP_FE(http_persistent_handles_clean, NULL)
+	PHP_FE(http_persistent_handles_ident, NULL)
 #	endif
 	PHP_FE(http_get, http_arg_pass_ref_3)
 	PHP_FE(http_head, http_arg_pass_ref_3)
@@ -199,7 +200,6 @@ static inline void _http_globals_init(zend_http_globals *G TSRMLS_DC)
 	G->request.time = time(NULL);
 #endif
 	G->send.buffer_size = 0;
-	G->send.not_found_404 = 1;
 	G->read_post_data = 0;
 }
 
@@ -240,6 +240,13 @@ PHP_INI_MH(http_update_allowed_methods)
 	http_check_allowed_methods(new_value, new_value_length);
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
+#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+PHP_INI_MH(http_update_persistent_handle_ident)
+{
+	HTTP_G->persistent.handles.ident.h = zend_get_hash_value(new_value, HTTP_G->persistent.handles.ident.l = new_value_length+1);
+	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
+}
+#endif
 
 #ifndef ZEND_ENGINE_2
 #	define OnUpdateLong OnUpdateInt
@@ -265,6 +272,9 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.send.inflate.start_flags", "0", PHP_INI_ALL, OnUpdateLong, send.inflate.start_flags)
 	HTTP_PHP_INI_ENTRY("http.send.deflate.start_auto", "0", PHP_INI_PERDIR|PHP_INI_SYSTEM, OnUpdateBool, send.deflate.start_auto)
 	HTTP_PHP_INI_ENTRY("http.send.deflate.start_flags", "0", PHP_INI_ALL, OnUpdateLong, send.deflate.start_flags)
+#endif
+#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+	HTTP_PHP_INI_ENTRY("http.persistent.handles.ident", "GLOBAL", PHP_INI_ALL, http_update_persistent_handle_ident, persistent.handles.ident.s)
 #endif
 	HTTP_PHP_INI_ENTRY("http.send.not_found_404", "1", PHP_INI_ALL, OnUpdateBool, send.not_found_404)
 #ifdef ZEND_ENGINE_2
@@ -479,7 +489,7 @@ PHP_MINFO_FUNCTION(http)
 #else
 		php_info_print_table_row(3, "libz", "disabled", "disabled");
 #endif
-#if defined(HTTP_HAVE_MAGIC) && !defined(WONKY)
+#if defined(HTTP_HAVE_MAGIC)
 		php_info_print_table_row(3, "libmagic", "unknown", "unknown");
 #else
 		php_info_print_table_row(3, "libmagic", "disabled", "disabled");

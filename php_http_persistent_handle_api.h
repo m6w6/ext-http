@@ -26,21 +26,21 @@ PHP_MSHUTDOWN_FUNCTION(http_persistent_handle);
 #define http_persistent_handle_provide_ex(n, l, c, d) _http_persistent_handle_provide_ex((n), (l), (c), (d))
 PHP_HTTP_API STATUS _http_persistent_handle_provide_ex(const char *name_str, size_t name_len, http_persistent_handle_ctor ctor, http_persistent_handle_dtor dtor);
 
-#define http_persistent_handle_cleanup(n) _http_persistent_handle_cleanup_ex((n), strlen(n))
-#define http_persistent_handle_cleanup_ex(n, l) _http_persistent_handle_cleanup_ex((n), (l))
-PHP_HTTP_API void _http_persistent_handle_cleanup_ex(const char *name_str, size_t name_len);
+#define http_persistent_handle_cleanup(n, c) _http_persistent_handle_cleanup_ex((n), strlen(n), (c) TSRMLS_CC)
+#define http_persistent_handle_cleanup_ex(n, l,c ) _http_persistent_handle_cleanup_ex((n), (l), (c) TSRMLS_CC)
+PHP_HTTP_API void _http_persistent_handle_cleanup_ex(const char *name_str, size_t name_len, int current_ident_only TSRMLS_DC);
 
 #define http_persistent_handle_statall() _http_persistent_handle_statall_ex(NULL)
 #define http_persistent_handle_statall_ex(ht) _http_persistent_handle_statall_ex((ht))
 PHP_HTTP_API HashTable *_http_persistent_handle_statall_ex(HashTable *ht);
 
-#define http_persistent_handle_acquire(n, h) _http_persistent_handle_acquire_ex((n), strlen(n), (h))
-#define http_persistent_handle_acquire_ex(n, l, h) _http_persistent_handle_acquire_ex((n), (l), (h))
-PHP_HTTP_API STATUS _http_persistent_handle_acquire_ex(const char *name_str, size_t name_len, void **handle);
+#define http_persistent_handle_acquire(n, h) _http_persistent_handle_acquire_ex((n), strlen(n), (h) TSRMLS_CC)
+#define http_persistent_handle_acquire_ex(n, l, h) _http_persistent_handle_acquire_ex((n), (l), (h) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_persistent_handle_acquire_ex(const char *name_str, size_t name_len, void **handle TSRMLS_DC);
 
-#define http_persistent_handle_release(n, h) _http_persistent_handle_release_ex((n), strlen(n), (h))
-#define http_persistent_handle_release_ex(n, l, h) _http_persistent_handle_release_ex((n), (l), (h))
-PHP_HTTP_API STATUS _http_persistent_handle_release_ex(const char *name_str, size_t name_len, void **handle);
+#define http_persistent_handle_release(n, h) _http_persistent_handle_release_ex((n), strlen(n), (h) TSRMLS_CC)
+#define http_persistent_handle_release_ex(n, l, h) _http_persistent_handle_release_ex((n), (l), (h) TSRMLS_CC)
+PHP_HTTP_API STATUS _http_persistent_handle_release_ex(const char *name_str, size_t name_len, void **handle TSRMLS_DC);
 
 #endif /* HTTP_HAVE_PERSISTENT_HANDLES */
 #endif /* HTTP_PERSISTENT_HANDLE_H */

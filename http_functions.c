@@ -810,7 +810,6 @@ PHP_FUNCTION(http_match_request_header)
 PHP_FUNCTION(http_persistent_handles_count)
 {
 	NO_ARGS;
-	
 	object_init(return_value);
 	if (!http_persistent_handle_statall_ex(HASH_OF(return_value))) {
 		zval_dtor(return_value);
@@ -826,7 +825,20 @@ PHP_FUNCTION(http_persistent_handles_clean)
 	int name_len = 0;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &name_str, &name_len)) {
-		http_persistent_handle_cleanup_ex(name_str, name_len);
+		http_persistent_handle_cleanup_ex(name_str, name_len, 1);
+	}
+}
+/* }}} */
+
+/* {{{ proto string http_persistent_handles_ident(string ident) */
+PHP_FUNCTION(http_persistent_handles_ident)
+{
+	char *ident_str = "";
+	int ident_len = 0;
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &ident_str, &ident_len)) {
+		RETVAL_STRING(zend_ini_string(ZEND_STRS("http.persistent.handles.ident"), 0), 1);
+		zend_alter_ini_entry(ZEND_STRS("http.persistent.handles.ident"), ident_str, ident_len, ZEND_INI_USER, PHP_INI_STAGE_RUNTIME);
 	}
 }
 /* }}} */

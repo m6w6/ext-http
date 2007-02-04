@@ -194,7 +194,7 @@ static curlioerr http_curl_ioctl_callback(CURL *, curliocmd, void *);
 #endif
 
 /* {{{ CURL *http_curl_init(http_request *) */
-PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request)
+PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request TSRMLS_DC)
 {
 	if (ch || HTTP_CURL_HANDLE_CTOR(ch)) {
 #if defined(ZTS)
@@ -228,7 +228,7 @@ PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request)
 /* }}} */
 
 /* {{{ void http_curl_free(CURL **) */
-PHP_HTTP_API void _http_curl_free(CURL **ch)
+PHP_HTTP_API void _http_curl_free(CURL **ch TSRMLS_DC)
 {
 	if (*ch) {
 		curl_easy_setopt(*ch, CURLOPT_NOPROGRESS, 1L);
@@ -271,6 +271,8 @@ PHP_HTTP_API http_request *_http_request_init_ex(http_request *request, CURL *ch
 /* {{{ void http_request_dtor(http_request *) */
 PHP_HTTP_API void _http_request_dtor(http_request *request)
 {
+	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
+	
 	http_curl_free(&request->ch);
 	http_request_reset(request);
 	
