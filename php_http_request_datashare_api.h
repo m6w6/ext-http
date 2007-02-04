@@ -26,13 +26,19 @@ typedef struct _http_request_datashare_lock_t {
 typedef struct _http_request_datashare_t {
 	CURLSH *ch;
 	zend_bool persistent;
-	zend_llist *handles;
 #ifdef ZTS
-	http_request_datashare_lock *locks;
+	union {
+		zend_llist *list;
+		http_request_datashare_lock *locks;
+	} handle;
+#else
+	struct {
+		zend_llist *list;
+	} handle;
 #endif
 } http_request_datashare;
 
-#define HTTP_RSHARE_HANDLES(s) ((s)->persistent ? &HTTP_G->request.datashare.handles : (s)->handles)
+#define HTTP_RSHARE_HANDLES(s) ((s)->persistent ? &HTTP_G->request.datashare.handles : (s)->handle.list)
 
 #define http_request_datashare_global_get _http_request_datashare_global_get
 extern http_request_datashare *_http_request_datashare_global_get(void);
