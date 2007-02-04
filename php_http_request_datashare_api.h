@@ -21,21 +21,21 @@ typedef struct _http_request_datashare_lock_t {
 	CURL *ch;
 	MUTEX_T mx;
 } http_request_datashare_lock;
+
+typedef union _http_request_datashare_handle_t {
+	zend_llist *list;
+	http_request_datashare_lock *locks;
+} http_request_datashare_handle;
+#else
+typedef struct _http_request_datashare_handle_t {
+	zend_llist *list;
+} http_request_datashare_handle;
 #endif
 
 typedef struct _http_request_datashare_t {
 	CURLSH *ch;
 	zend_bool persistent;
-#ifdef ZTS
-	union {
-		zend_llist *list;
-		http_request_datashare_lock *locks;
-	} handle;
-#else
-	struct {
-		zend_llist *list;
-	} handle;
-#endif
+	http_request_datashare_handle handle;
 } http_request_datashare;
 
 #define HTTP_RSHARE_HANDLES(s) ((s)->persistent ? &HTTP_G->request.datashare.handles : (s)->handle.list)
