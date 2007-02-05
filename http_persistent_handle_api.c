@@ -18,6 +18,10 @@
 #ifdef HTTP_HAVE_PERSISTENT_HANDLES
 #include "php_http_persistent_handle_api.h"
 
+#ifndef HTTP_DEBUG_PHANDLES
+#	define HTTP_DEBUG_PHANDLES 0
+#endif
+
 static HashTable http_persistent_handles_hash;
 #ifdef ZTS
 #	define LOCK() tsrm_mutex_lock(http_persistent_handles_lock)
@@ -46,6 +50,10 @@ static void http_persistent_handles_hash_dtor(void *p)
 	http_persistent_handle_list *list;
 	http_persistent_handle *handle;
 	HashPosition pos1, pos2;
+	
+#if HTTP_DEBUG_PHANDLES
+	fprintf(stderr, "DESTROY: %p\n", provider->list);
+#endif
 	
 	FOREACH_HASH_VAL(pos1, provider->list, list) {
 		FOREACH_HASH_VAL(pos2, *list, handle) {
@@ -87,6 +95,11 @@ PHP_HTTP_API STATUS _http_persistent_handle_provide_ex(const char *name_str, siz
 		provider.ctor = ctor;
 		provider.dtor = dtor;
 		zend_hash_init(provider.list, 0, NULL, NULL, 1);
+		
+#if HTTP_DEBUG_PHANDLES
+		fprintf(stderr, "PROVIDE: %p (%s)\n", provider.list, name_str);
+#endif
+		
 		if (SUCCESS == zend_hash_add(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider, sizeof(http_persistent_handle_provider), NULL)) {
 			status = SUCCESS;
 		} else {
@@ -122,6 +135,10 @@ PHP_HTTP_API STATUS _http_persistent_handle_acquire_ex(const char *name_str, siz
 	}
 	UNLOCK();
 	
+#if HTTP_DEBUG_PHANDLES
+	fprintf(stderr, "ACQUIRE: %p (%s)\n", *handle_ptr, name_str);
+#endif
+	
 	return status;
 }
 
@@ -139,14 +156,19 @@ PHP_HTTP_API STATUS _http_persistent_handle_release_ex(const char *name_str, siz
 		} else if ((new_list = pemalloc(sizeof(HashTable), 1))) {
 			zend_hash_init(new_list, 0, NULL, NULL, 1);
 			if (	SUCCESS == zend_hash_next_index_insert(new_list, (void *) &handle, sizeof(http_persistent_handle), NULL) &&
-					SUCCESS == zend_hash_quick_add(provider->list, HTTP_G->persistent.handles.ident.s, HTTP_G->persistent.handles.ident.l, HTTP_G->persistent.handles.ident.h, (void *) &new_list, sizeof(http_persistent_handle_list *), NULL)) {
+					SUCCESS == zend_hash_quick_add(provider->list, HTTP_G->persistent.handles.ident.s, HTTP_G->persistent.handles.ident.l, HTTP_G->persistent.handles.ident.h, (void *) &new_list, sizeof(http_persistent_handle_list), NULL)) {
 				status = SUCCESS;
 			} else {
+				zend_hash_destroy(new_list);
 				pefree(new_list, 1);
 			}
 		}
 	}
 	UNLOCK();
+	
+#if HTTP_DEBUG_PHANDLES
+	fprintf(stderr, "RELEASE: %p (%s)\n", *handle_ptr, name_str);
+#endif
 	
 	return status;
 }
