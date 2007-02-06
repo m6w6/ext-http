@@ -35,11 +35,7 @@ extern PHPAPI zend_class_entry *spl_ce_Countable;
 #define HTTP_EMPTY_ARGS(method)				HTTP_EMPTY_ARGS_EX(HttpRequestPool, method, 0)
 #define HTTP_REQPOOL_ME(method, visibility)	PHP_ME(HttpRequestPool, method, HTTP_ARGS(HttpRequestPool, method), visibility)
 
-HTTP_BEGIN_ARGS(__construct, 0)
-	HTTP_ARG_OBJ(HttpRequest, request0, 0)
-	HTTP_ARG_OBJ(HttpRequest, request1, 0)
-	HTTP_ARG_OBJ(HttpRequest, requestN, 0)
-HTTP_END_ARGS;
+HTTP_EMPTY_ARGS(__construct);
 
 HTTP_EMPTY_ARGS(__destruct);
 HTTP_EMPTY_ARGS(reset);
