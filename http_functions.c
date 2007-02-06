@@ -833,12 +833,14 @@ PHP_FUNCTION(http_persistent_handles_clean)
 /* {{{ proto string http_persistent_handles_ident(string ident) */
 PHP_FUNCTION(http_persistent_handles_ident)
 {
-	char *ident_str = "";
+	char *ident_str = NULL;
 	int ident_len = 0;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &ident_str, &ident_len)) {
 		RETVAL_STRING(zend_ini_string(ZEND_STRS("http.persistent.handles.ident"), 0), 1);
-		zend_alter_ini_entry(ZEND_STRS("http.persistent.handles.ident"), ident_str, ident_len, ZEND_INI_USER, PHP_INI_STAGE_RUNTIME);
+		if (ident_str && ident_len) {
+			zend_alter_ini_entry(ZEND_STRS("http.persistent.handles.ident"), ident_str, ident_len, ZEND_INI_USER, PHP_INI_STAGE_RUNTIME);
+		}
 	}
 }
 /* }}} */
