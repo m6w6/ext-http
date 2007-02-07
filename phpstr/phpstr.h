@@ -12,12 +12,37 @@
 
 #define PHPSTR_NOMEM ((size_t) -1)
 
+#ifndef STR_FREE
+#	define STR_FREE(STR) \
+	{ \
+		if (STR) { \
+			efree(STR); \
+		} \
+	}
+#endif
 #ifndef STR_SET
 #	define STR_SET(STR, SET) \
 	{ \
 		STR_FREE(STR); \
 		STR = SET; \
 	}
+#endif
+#ifndef TSRMLS_D
+#	define TSRMLS_D
+#	define TSRMLS_DC
+#	define TSRMLS_CC
+#	define TSRMLS_C
+#endif
+#ifdef PHP_ATTRIBUTE_FORMAT
+#	define PHPSTR_ATTRIBUTE_FORMAT(f, a, b) PHP_ATTRIBUTE_FORMAT(f, a, b)
+#else
+#	define PHPSTR_ATTRIBUTE_FORMAT(f, a, b)
+#endif
+#ifndef pemalloc
+#	define pemalloc(s,p)	malloc(s)
+#	define pefree(x,p)		free(x)
+#	define perealloc(x,s,p)	erealloc(x,s)
+#	define perealloc_recoverable perealloc
 #endif
 
 #if defined(PHP_WIN32)
@@ -117,19 +142,19 @@ PHPSTR_API size_t phpstr_shrink(phpstr *buf);
 #define phpstr_appends(b, a) phpstr_append((b), (a), sizeof(a)-1)
 #define phpstr_appendl(b, a) phpstr_append((b), (a), strlen(a))
 PHPSTR_API size_t phpstr_append(phpstr *buf, const char *append, size_t append_len);
-PHPSTR_API size_t phpstr_appendf(phpstr *buf, const char *format, ...) PHP_ATTRIBUTE_FORMAT(printf, 2, 3);
+PHPSTR_API size_t phpstr_appendf(phpstr *buf, const char *format, ...) PHPSTR_ATTRIBUTE_FORMAT(printf, 2, 3);
 
 /* insert data at a specific position of the phpstr */
 #define phpstr_inserts(b, i, o) phpstr_insert((b), (i), sizeof(i)-1, (o))
 #define phpstr_insertl(b, i, o) phpstr_insert((b), (i), strlen(i), (o))
 PHPSTR_API size_t phpstr_insert(phpstr *buf, const char *insert, size_t insert_len, size_t offset);
-PHPSTR_API size_t phpstr_insertf(phpstr *buf, size_t offset, const char *format, ...) PHP_ATTRIBUTE_FORMAT(printf, 3, 4);
+PHPSTR_API size_t phpstr_insertf(phpstr *buf, size_t offset, const char *format, ...) PHPSTR_ATTRIBUTE_FORMAT(printf, 3, 4);
 
 /* prepend data */
 #define phpstr_prepends(b, p) phpstr_prepend((b), (p), sizeof(p)-1)
 #define phpstr_prependl(b, p) phpstr_prepend((b), (p), strlen(p))
 PHPSTR_API size_t phpstr_prepend(phpstr *buf, const char *prepend, size_t prepend_len);
-PHPSTR_API size_t phpstr_prependf(phpstr *buf, const char *format, ...) PHP_ATTRIBUTE_FORMAT(printf, 2, 3);
+PHPSTR_API size_t phpstr_prependf(phpstr *buf, const char *format, ...) PHPSTR_ATTRIBUTE_FORMAT(printf, 2, 3);
 
 /* get a zero-terminated string */
 PHPSTR_API char *phpstr_data(const phpstr *buf, char **into, size_t *len);

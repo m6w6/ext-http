@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2006, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2007, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
