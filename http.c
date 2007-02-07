@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2006, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2007, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -447,15 +447,26 @@ PHP_MINFO_FUNCTION(http)
 		{
 			phpstr s;
 			HashTable *ht;
-			HashPosition pos;
-			HashKey key = initHashKey(0);
-			zval **val;
+			HashPosition pos1, pos2;
+			HashKey key1 = initHashKey(0), key2 = initHashKey(0);
+			zval **val1, **val2;
 			
-			if ((ht = http_persistent_handle_statall())) {
+			if ((ht = http_persistent_handle_statall()) && zend_hash_num_elements(ht)) {
 				phpstr_init(&s);
 				
-				FOREACH_HASH_KEYVAL(pos, ht, key, val) {
-					phpstr_appendf(&s, "%s (%ld), ", key.str, Z_LVAL_PP(val));
+				FOREACH_HASH_KEYVAL(pos1, ht, key1, val1) {
+					phpstr_append(&s, key1.str, key1.len-1);
+					phpstr_appends(&s, " (");
+					if (zend_hash_num_elements(Z_ARRVAL_PP(val1))) {
+						FOREACH_KEYVAL(pos2, *val1, key2, val2) {
+							phpstr_append(&s, key2.str, key2.len-1);
+							phpstr_appendf(&s, ":%ld, ", Z_LVAL_PP(val2));
+						}
+						PHPSTR_LEN(&s) -= 2;
+					} else {
+						phpstr_appends(&s, "0");
+					}
+					phpstr_appends(&s, "), ");
 				}
 				zend_hash_destroy(ht);
 				FREE_HASHTABLE(ht);
