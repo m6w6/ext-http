@@ -4,8 +4,6 @@
 #ifndef _PHPSTR_H_
 #define _PHPSTR_H_
 
-#include "php.h"
-
 #ifndef PHPSTR_DEFAULT_SIZE
 #	define PHPSTR_DEFAULT_SIZE 256
 #endif
@@ -41,8 +39,15 @@
 #ifndef pemalloc
 #	define pemalloc(s,p)	malloc(s)
 #	define pefree(x,p)		free(x)
-#	define perealloc(x,s,p)	erealloc(x,s)
+#	define perealloc(x,s,p)	realloc(x,s)
 #	define perealloc_recoverable perealloc
+#	define ecalloc calloc
+static inline void *estrndup(void *p, size_t s)
+{
+	char *r = (char *) malloc(s+1);
+	if (r) memcpy((void *) r, p, s), r[s] = '\0';
+	return (void *) r;
+}
 #endif
 
 #if defined(PHP_WIN32)

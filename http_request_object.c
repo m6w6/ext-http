@@ -744,7 +744,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 static int apply_pretty_key(void *pDest, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	if (hash_key->nKeyLength > 1) {
-		hash_key->h = zend_get_hash_value(pretty_key(hash_key->arKey, hash_key->nKeyLength - 1, 1, 0), hash_key->nKeyLength);
+		hash_key->h = zend_hash_func(pretty_key(hash_key->arKey, hash_key->nKeyLength - 1, 1, 0), hash_key->nKeyLength);
 	}
 	return ZEND_HASH_APPLY_KEEP;
 }

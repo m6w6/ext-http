@@ -243,7 +243,7 @@ PHP_INI_MH(http_update_allowed_methods)
 #ifdef HTTP_HAVE_PERSISTENT_HANDLES
 PHP_INI_MH(http_update_persistent_handle_ident)
 {
-	HTTP_G->persistent.handles.ident.h = zend_get_hash_value(new_value, HTTP_G->persistent.handles.ident.l = new_value_length+1);
+	HTTP_G->persistent.handles.ident.h = zend_hash_func(new_value, HTTP_G->persistent.handles.ident.l = new_value_length+1);
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
 #endif
@@ -300,7 +300,9 @@ PHP_MINIT_FUNCTION(http)
 #ifdef HTTP_HAVE_CURL
 #	ifdef HTTP_HAVE_PERSISTENT_HANDLES
 			(SUCCESS != PHP_MINIT_CALL(http_persistent_handle)) ||
+#		ifdef ZEND_ENGINE_2
 			(SUCCESS != PHP_MINIT_CALL(http_request_pool)) ||
+#		endif
 #	endif
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #	ifdef ZEND_ENGINE_2
