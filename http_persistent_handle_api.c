@@ -253,9 +253,9 @@ PHP_HTTP_API HashTable *_http_persistent_handle_statall_ex(HashTable *ht)
 			FOREACH_HASH_KEYVAL(pos2, provider->list, key2, list) {
 				MAKE_STD_ZVAL(zentry);
 				ZVAL_LONG(zentry, zend_hash_num_elements(*list));
-				zend_hash_quick_add(Z_ARRVAL_P(zlist), key2.str, key2.len, key2.num, (void *) &zentry, sizeof(zval *), NULL);
+				zend_hash_add(Z_ARRVAL_P(zlist), key2.str, key2.len, (void *) &zentry, sizeof(zval *), NULL);
 			}
-			zend_hash_quick_add(ht, key1.str, key1.len, key1.num, (void *) &zlist, sizeof(zval *), NULL);
+			zend_hash_add(ht, key1.str, key1.len, (void *) &zlist, sizeof(zval *), NULL);
 		}
 	} else if (ht) {
 		ht = NULL;
