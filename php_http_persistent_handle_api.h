@@ -44,3 +44,12 @@ PHP_HTTP_API STATUS _http_persistent_handle_release_ex(const char *name_str, siz
 
 #endif /* HTTP_HAVE_PERSISTENT_HANDLES */
 #endif /* HTTP_PERSISTENT_HANDLE_H */
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */

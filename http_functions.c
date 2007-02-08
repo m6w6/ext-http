@@ -830,7 +830,7 @@ PHP_FUNCTION(http_persistent_handles_clean)
 }
 /* }}} */
 
-/* {{{ proto string http_persistent_handles_ident(string ident) */
+/* {{{ proto string http_persistent_handles_ident([string ident]) */
 PHP_FUNCTION(http_persistent_handles_ident)
 {
 	char *ident_str = NULL;
