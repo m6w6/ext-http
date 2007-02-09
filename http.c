@@ -460,7 +460,7 @@ PHP_MINFO_FUNCTION(http)
 	
 	php_info_print_table_start();
 	php_info_print_table_colspan_header(4, "Persistent Handles");
-	php_info_print_table_header(4, "Provider", "Ident", "used", "free");
+	php_info_print_table_header(4, "Provider", "Ident", "Used", "Free");
 	{
 		HashTable *ht;
 		HashPosition pos1, pos2;
