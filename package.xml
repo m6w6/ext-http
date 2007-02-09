@@ -23,15 +23,16 @@ support. Parallel requests are available for PHP 5 and greater.
   </maintainer>
   </maintainers>
  <release>
-  <version>1.5.0RC1</version>
-  <date>2007-02-08</date>
+  <version>1.5.0RC2</version>
+  <date>2007-02-09</date>
   <license>BSD, revised</license>
   <state>beta</state>
-  <notes>+ Added HttpMessage::fromEnv(int type[, string class_name = &quot;HttpMessage&quot;]) (Clay Loveless)
-+ Added support for per process persistent cURL handles (requested by Clay Loveless):
-  o Added --enable-http-persistent-handles configure option
-  o Added http_persistent_handles_count(), http_persistent_handles_clean([string name]), http_persistent_handles_ident([string ident])
-  o Added http.persistent.handles.ident INI setting
+  <notes>o Improved new persistent handles functionality
+  - Removed --enable-http-persistent-handles
+  + Added http.persistent.handles.limit system INI option which controls
+    the maximum amount of idle persistent handles kept around;
+      0 means every handle is destroyed after usage (i.e. disabled),
+      -1 means virtually unlimited maximum amount of idle handles (default)
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -42,7 +43,6 @@ support. Parallel requests are available for PHP 5 and greater.
    <configureoption name="with-http-zlib-compression" default="yes" prompt="whether to enable support for gzencoded/deflated message bodies; specify zlib directory"/>
    <configureoption name="with-http-magic-mime" default="no" prompt="whether to enable response content type guessing; specify libmagic directory"/>
    <configureoption name="with-http-shared-deps" default="yes" prompt="whether to depend on extensions which have been built shared"/>
-   <configureoption name="enable-http-persistent-handles" default="no" prompt="whether to enable per-process persistent cURL handles"/>
   </configureoptions>
   <filelist>
    <dir name="docs">

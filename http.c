@@ -23,43 +23,29 @@
 #include "zend_extensions.h"
 
 #include "php_http_api.h"
-#include "php_http_send_api.h"
-#include "php_http_cookie_api.h"
 #include "php_http_cache_api.h"
-#include "php_http_send_api.h"
+#include "php_http_cookie_api.h"
+#include "php_http_encoding_api.h"
+#include "php_http_filter_api.h"
 #include "php_http_message_api.h"
 #include "php_http_persistent_handle_api.h"
+#include "php_http_request_api.h"
+#include "php_http_request_datashare_api.h"
 #include "php_http_request_method_api.h"
-#ifdef HTTP_HAVE_CURL
-#	include "php_http_request_api.h"
-#	include "php_http_request_pool_api.h"
-#	include "php_http_request_datashare_api.h"
-#endif
-#ifdef HTTP_HAVE_ZLIB
-#	include "php_http_encoding_api.h"
-#endif
+#include "php_http_request_pool_api.h"
+#include "php_http_send_api.h"
 #include "php_http_url_api.h"
 
-#ifdef ZEND_ENGINE_2
-#	include "php_http_filter_api.h"
-#	include "php_http_util_object.h"
-#	include "php_http_message_object.h"
-#	include "php_http_querystring_object.h"
-#	ifndef WONKY
-#		include "php_http_response_object.h"
-#	endif
-#	ifdef HTTP_HAVE_CURL
-#		include "php_http_request_object.h"
-#		include "php_http_requestpool_object.h"
-#		include "php_http_requestdatashare_object.h"
-#	endif
-#	ifdef HTTP_HAVE_ZLIB
-#		include "php_http_deflatestream_object.h"
-#		include "php_http_inflatestream_object.h"
-#	endif
-#	include "php_http_exception_object.h"
-#endif
-
+#include "php_http_deflatestream_object.h"
+#include "php_http_exception_object.h"
+#include "php_http_inflatestream_object.h"
+#include "php_http_message_object.h"
+#include "php_http_querystring_object.h"
+#include "php_http_request_object.h"
+#include "php_http_requestdatashare_object.h"
+#include "php_http_requestpool_object.h"
+#include "php_http_response_object.h"
+#include "php_http_util_object.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(http);
 HTTP_DECLARE_ARG_PASS_INFO();
@@ -216,14 +202,14 @@ static inline void _http_globals_free(zend_http_globals *G TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ static inline void http_check_allowed_methods(char *, int) */
-#define http_check_allowed_methods(m, l) _http_check_allowed_methods((m), (l) TSRMLS_CC)
-static inline void _http_check_allowed_methods(char *methods, int length TSRMLS_DC)
+/* {{{ static inline void http_check_allowed_methods(char *) */
+#define http_check_allowed_methods(m) _http_check_allowed_methods((m) TSRMLS_CC)
+static inline void _http_check_allowed_methods(const char *methods TSRMLS_DC)
 {
-	if (length && SG(request_info).request_method) {
+	if (*methods && SG(request_info).request_method) {
 		if (SUCCESS != http_check_method_ex(SG(request_info).request_method, methods)) {
-			char *header = emalloc(length + sizeof("Allow: "));
-			sprintf(header, "Allow: %s", methods);
+			char *header;
+			spprintf(&header, 0, "Allow: %s", methods);
 			http_exit(405, header);
 		}
 	}
@@ -233,7 +219,9 @@ static inline void _http_check_allowed_methods(char *methods, int length TSRMLS_
 /* {{{ PHP_INI */
 PHP_INI_MH(http_update_allowed_methods)
 {
-	http_check_allowed_methods(new_value, new_value_length);
+	if (*new_value) {
+		http_check_allowed_methods(new_value);
+	}
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
 PHP_INI_MH(http_update_persistent_handle_ident)
@@ -281,53 +269,50 @@ PHP_INI_END()
 PHP_MINIT_FUNCTION(http)
 {
 	http_module_number = module_number;
-
-	ZEND_INIT_MODULE_GLOBALS(http, http_globals_init_once, NULL)
-
+	ZEND_INIT_MODULE_GLOBALS(http, http_globals_init_once, NULL);
 	REGISTER_INI_ENTRIES();
 	
-	if (	(SUCCESS != PHP_MINIT_CALL(http_persistent_handle)) || /* first */
-			(SUCCESS != PHP_MINIT_CALL(http_support))	||
-			(SUCCESS != PHP_MINIT_CALL(http_cookie))	||
-			(SUCCESS != PHP_MINIT_CALL(http_send))		||
-			(SUCCESS != PHP_MINIT_CALL(http_url))		||
-			
-#ifdef HTTP_HAVE_CURL
-			(SUCCESS != PHP_MINIT_CALL(http_request))	||
-#	ifdef ZEND_ENGINE_2
-			(SUCCESS != PHP_MINIT_CALL(http_request_pool)) ||
-			(SUCCESS != PHP_MINIT_CALL(http_request_datashare)) ||
-#	endif
-#endif /* HTTP_HAVE_CURL */
+	if (0
+		|| SUCCESS != PHP_MINIT_CALL(http_persistent_handle) /* first */
+		|| SUCCESS != PHP_MINIT_CALL(http_cookie)
 #ifdef HTTP_HAVE_ZLIB
-			(SUCCESS != PHP_MINIT_CALL(http_encoding))	||
+		|| SUCCESS != PHP_MINIT_CALL(http_encoding)
 #endif
-			(SUCCESS != PHP_MINIT_CALL(http_request_method))) {
-		return FAILURE;
-	}
-
+#ifdef HTTP_HAVE_CURL
+		|| SUCCESS != PHP_MINIT_CALL(http_request)
+#	ifdef ZEND_ENGINE_2
+#	endif
+#endif
+		|| SUCCESS != PHP_MINIT_CALL(http_request_method)
+		|| SUCCESS != PHP_MINIT_CALL(http_send)
+		|| SUCCESS != PHP_MINIT_CALL(http_support)
+		|| SUCCESS != PHP_MINIT_CALL(http_url)
+		
 #ifdef ZEND_ENGINE_2
-	if (	(SUCCESS != PHP_MINIT_CALL(http_filter))			||
-			(SUCCESS != PHP_MINIT_CALL(http_util_object))		||
-			(SUCCESS != PHP_MINIT_CALL(http_message_object))	||
-			(SUCCESS != PHP_MINIT_CALL(http_querystring_object))||
-#	ifndef WONKY
-			(SUCCESS != PHP_MINIT_CALL(http_response_object))	||
-#	endif /* WONKY */
-#	ifdef HTTP_HAVE_CURL
-			(SUCCESS != PHP_MINIT_CALL(http_request_object))	||
-			(SUCCESS != PHP_MINIT_CALL(http_requestpool_object))||
-			(SUCCESS != PHP_MINIT_CALL(http_requestdatashare_object))||
-#	endif /* HTTP_HAVE_CURL */
+		|| SUCCESS != PHP_MINIT_CALL(http_filter)
+		|| SUCCESS != PHP_MINIT_CALL(http_exception_object)
 #	ifdef HTTP_HAVE_ZLIB
-			(SUCCESS != PHP_MINIT_CALL(http_deflatestream_object))	||
-			(SUCCESS != PHP_MINIT_CALL(http_inflatestream_object))	||
-#	endif /* HTTP_HAVE_ZLIB */
-			(SUCCESS != PHP_MINIT_CALL(http_exception_object))) {
+		|| SUCCESS != PHP_MINIT_CALL(http_deflatestream_object)
+		|| SUCCESS != PHP_MINIT_CALL(http_inflatestream_object)
+#	endif
+		|| SUCCESS != PHP_MINIT_CALL(http_message_object)
+		|| SUCCESS != PHP_MINIT_CALL(http_querystring_object)
+#	ifdef HTTP_HAVE_CURL
+		|| SUCCESS != PHP_MINIT_CALL(http_request_datashare)
+		|| SUCCESS != PHP_MINIT_CALL(http_request_pool)
+		|| SUCCESS != PHP_MINIT_CALL(http_request_object)
+		|| SUCCESS != PHP_MINIT_CALL(http_requestdatashare_object)
+		|| SUCCESS != PHP_MINIT_CALL(http_requestpool_object)
+#	endif
+#	ifndef WONKY
+		|| SUCCESS != PHP_MINIT_CALL(http_response_object)
+#	endif
+		|| SUCCESS != PHP_MINIT_CALL(http_util_object)
+#endif
+	) {
 		return FAILURE;
 	}
-#endif /* ZEND_ENGINE_2 */
-
+	
 	return SUCCESS;
 }
 /* }}} */
@@ -336,17 +321,19 @@ PHP_MINIT_FUNCTION(http)
 PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
-	if (	
+	
+	if (0
 #ifdef HTTP_HAVE_CURL
+		|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request)
 #	ifdef ZEND_ENGINE_2
-			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)) ||
+		|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)
 #	endif
-			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request)) ||
 #endif
-			(SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)) /* last */
+		|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle) /* last */
 	) {
 		return FAILURE;
 	}
+	
 	return SUCCESS;
 }
 /* }}} */
@@ -355,19 +342,21 @@ PHP_MSHUTDOWN_FUNCTION(http)
 PHP_RINIT_FUNCTION(http)
 {
 	http_globals_init(HTTP_G);
-
-	if (HTTP_G->request.methods.allowed) {
-		http_check_allowed_methods(HTTP_G->request.methods.allowed, 
-			strlen(HTTP_G->request.methods.allowed));
+	
+	if (HTTP_G->request.methods.allowed && *HTTP_G->request.methods.allowed) {
+		http_check_allowed_methods(HTTP_G->request.methods.allowed);
 	}
-
-	if (	(SUCCESS != PHP_RINIT_CALL(http_request_method))
-#ifdef HTTP_HAVE_ZLIB	
-		||	(SUCCESS != PHP_RINIT_CALL(http_encoding))
+	
+	if (0
+#ifdef HTTP_HAVE_ZLIB
+		|| SUCCESS != PHP_RINIT_CALL(http_encoding)
 #endif
-#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
-		||	(SUCCESS != PHP_RINIT_CALL(http_request_datashare))
+#ifdef HTTP_HAVE_CURL
+#	ifdef ZEND_ENGINE_2
+		|| SUCCESS != PHP_RINIT_CALL(http_request_datashare)
+#	endif
 #endif
+		|| SUCCESS != PHP_RINIT_CALL(http_request_method)
 	) {
 		return FAILURE;
 	}
@@ -381,14 +370,17 @@ PHP_RSHUTDOWN_FUNCTION(http)
 {
 	STATUS status = SUCCESS;
 	
-	if (	(SUCCESS != PHP_RSHUTDOWN_CALL(http_request_method))
+	if (0
 #ifdef HTTP_HAVE_ZLIB
-		||	(SUCCESS != PHP_RSHUTDOWN_CALL(http_encoding))
+		|| SUCCESS != PHP_RSHUTDOWN_CALL(http_encoding)
 #endif
-#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
-		||	(SUCCESS != PHP_RSHUTDOWN_CALL(http_request_datashare))
+#ifdef HTTP_HAVE_CURL
+#	ifdef ZEND_ENGINE_2
+		|| SUCCESS != PHP_RSHUTDOWN_CALL(http_request_datashare)
+#	endif
 #endif
-	   ) {
+		|| SUCCESS != PHP_RSHUTDOWN_CALL(http_request_method)
+	) {
 		status = FAILURE;
 	}
 	

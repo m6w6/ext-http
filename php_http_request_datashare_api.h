@@ -15,6 +15,7 @@
 #ifndef PHP_HTTP_REQUEST_DATASHARE_API_H
 #define PHP_HTTP_REQUEST_DATASHARE_API_H
 #ifdef HTTP_HAVE_CURL
+#ifdef ZEND_ENGINE_2
 
 #ifdef ZTS
 typedef struct _http_request_datashare_lock_t {
@@ -72,6 +73,7 @@ PHP_HTTP_API void _http_request_datashare_free(http_request_datashare **share TS
 PHP_HTTP_API STATUS _http_request_datashare_set(http_request_datashare *share, const char *option, size_t option_len, zend_bool enable TSRMLS_DC);
 
 
+#endif
 #endif
 #endif
 

@@ -17,6 +17,7 @@
 #ifdef HTTP_HAVE_CURL
 #ifdef ZEND_ENGINE_2
 
+#include "php_http_request_api.h"
 #include "php_http_request_pool_api.h"
 #include "php_http_request_datashare_api.h"
 

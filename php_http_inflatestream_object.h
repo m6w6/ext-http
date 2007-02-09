@@ -14,7 +14,8 @@
 
 #ifndef PHP_HTTP_INFLATESTREAM_OBJECT_H
 #define PHP_HTTP_INFLATESTREAM_OBJECT_H
-#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_ZLIB)
+#ifdef HTTP_HAVE_ZLIB
+#ifdef ZEND_ENGINE_2
 
 typedef struct _http_inflatestream_object_t {
 	zend_object zo;
@@ -41,6 +42,7 @@ PHP_METHOD(HttpInflateStream, update);
 PHP_METHOD(HttpInflateStream, flush);
 PHP_METHOD(HttpInflateStream, finish);
 
+#endif
 #endif
 #endif
 

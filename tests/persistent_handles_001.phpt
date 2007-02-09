@@ -56,16 +56,6 @@ stdClass Object
 
         )
 
-    [http_request_pool] => Array
-        (
-            [GLOBAL] => Array
-                (
-                    [used] => 0
-                    [free] => 0
-                )
-
-        )
-
     [http_request_datashare] => Array
         (
             [GLOBAL] => Array
@@ -77,6 +67,16 @@ stdClass Object
         )
 
     [http_request_datashare_lock] => Array
+        (
+            [GLOBAL] => Array
+                (
+                    [used] => 0
+                    [free] => 0
+                )
+
+        )
+
+    [http_request_pool] => Array
         (
             [GLOBAL] => Array
                 (

@@ -14,12 +14,12 @@
 
 #ifndef PHP_HTTP_FILTER_API_H
 #define PHP_HTTP_FILTER_API_H
-
 #ifdef ZEND_ENGINE_2
+
 extern php_stream_filter_factory http_filter_factory;
 PHP_MINIT_FUNCTION(http_filter);
-#endif
 
+#endif
 #endif
 
 /*

@@ -14,6 +14,7 @@
 
 #ifndef PHP_HTTP_REQUEST_DATASHARE_OBJECT_H
 #define PHP_HTTP_REQUEST_DATASHARE_OBJECT_H
+#ifdef HTTP_HAVE_CURL
 #ifdef ZEND_ENGINE_2
 
 typedef struct _http_requestdatashare_object_t {
@@ -43,6 +44,7 @@ PHP_METHOD(HttpRequestDataShare, factory);
 PHP_METHOD(HttpRequestDataShare, singleton);
 #endif
 
+#endif
 #endif
 #endif
 
