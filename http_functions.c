@@ -802,10 +802,6 @@ PHP_FUNCTION(http_match_request_header)
 }
 /* }}} */
 
-/* {{{ HAVE_CURL */
-#ifdef HTTP_HAVE_CURL
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
-
 /* {{{ proto object http_persistent_handles_count() */
 PHP_FUNCTION(http_persistent_handles_count)
 {
@@ -845,7 +841,8 @@ PHP_FUNCTION(http_persistent_handles_ident)
 }
 /* }}} */
 
-#endif /* HTTP_HAVE_PERSISTENT_HANDLES */
+/* {{{ HAVE_CURL */
+#ifdef HTTP_HAVE_CURL
 
 #define RETVAL_RESPONSE_OR_BODY(request) \
 	{ \

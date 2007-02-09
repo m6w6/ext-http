@@ -484,7 +484,7 @@ zend_object_value _http_request_object_clone_obj(zval *this_ptr TSRMLS_DC)
 	
 	new_ov = http_request_object_new_ex(old_obj->zo.ce, NULL, &new_obj);
 	if (old_obj->request->ch) {
-		http_curl_init_ex(curl_easy_duphandle(old_obj->request->ch), new_obj->request);
+		http_curl_init_ex(http_curl_copy(old_obj->request->ch), new_obj->request);
 	}
 	
 	zend_objects_clone_members(&new_obj->zo, new_ov, &old_obj->zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);

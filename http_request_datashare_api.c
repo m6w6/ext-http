@@ -18,24 +18,10 @@
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 
 #include "php_http_api.h"
+#include "php_http_persistent_handle_api.h"
 #include "php_http_request_datashare_api.h"
 #include "php_http_request_api.h"
 #include "php_http_request_object.h"
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
-#	include "php_http_persistent_handle_api.h"
-#endif
-
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
-#	define HTTP_CURL_SHARE_CTOR(ch) (SUCCESS == http_persistent_handle_acquire("http_request_datashare", &(ch)))
-#	define HTTP_CURL_SHARE_DTOR(chp) http_persistent_handle_release("http_request_datashare", (chp))
-#	define HTTP_CURL_SLOCK_CTOR(l) (SUCCESS == http_persistent_handle_acquire("http_request_datashare_lock", (void *) &(l)))
-#	define HTTP_CURL_SLOCK_DTOR(lp) http_persistent_handle_release("http_request_datashare_lock", (void *) (lp))
-#else
-#	define HTTP_CURL_SHARE_CTOR(ch) ((ch) = curl_share_init())
-#	define HTTP_CURL_SHARE_DTOR(chp) curl_share_cleanup(*(chp)); *(chp) = NULL
-#	define HTTP_CURL_SLOCK_CTOR(l) ((l) = http_request_datashare_locks_init())
-#	define HTTP_CURL_SLOCK_DTOR(lp) http_request_datashare_locks_dtor(*(lp)); *(lp) = NULL
-#endif
 
 static HashTable http_request_datashare_options;
 static http_request_datashare http_request_datashare_global;
@@ -57,15 +43,13 @@ PHP_MINIT_FUNCTION(http_request_datashare)
 {
 	curl_lock_data val;
 	
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
-	if (SUCCESS != http_persistent_handle_provide("http_request_datashare", curl_share_init, (http_persistent_handle_dtor) curl_share_cleanup)) {
+	if (SUCCESS != http_persistent_handle_provide("http_request_datashare", curl_share_init, (http_persistent_handle_dtor) curl_share_cleanup, NULL)) {
 		return FAILURE;
 	}
-#	ifdef ZTS
-	if (SUCCESS != http_persistent_handle_provide("http_request_datashare_lock", http_request_datashare_locks_init, http_request_datashare_locks_dtor)) {
+#ifdef ZTS
+	if (SUCCESS != http_persistent_handle_provide("http_request_datashare_lock", http_request_datashare_locks_init, http_request_datashare_locks_dtor, NULL)) {
 		return FAILURE;
 	}
-#	endif
 #endif
 	
 	if (!http_request_datashare_init_ex(&http_request_datashare_global, 1)) {
@@ -115,7 +99,7 @@ PHP_HTTP_API http_request_datashare *_http_request_datashare_init_ex(http_reques
 	}
 	memset(share, 0, sizeof(http_request_datashare));
 	
-	if (!HTTP_CURL_SHARE_CTOR(share->ch)) {
+	if (SUCCESS != http_persistent_handle_acquire("http_request_datashare", &share->ch)) {
 		if (free_share) {
 			pefree(share, persistent);
 		}
@@ -127,10 +111,10 @@ PHP_HTTP_API http_request_datashare *_http_request_datashare_init_ex(http_reques
 		zend_llist_init(share->handle.list, sizeof(zval *), ZVAL_PTR_DTOR, 0);
 #ifdef ZTS
 	} else {
-		if (HTTP_CURL_SLOCK_CTOR(share->handle.locks)) {
+		if (SUCCESS == http_persistent_handle_acquire("http_request_datashare_lock", (void *) &share->handle.locks)) {
 			curl_share_setopt(share->ch, CURLSHOPT_LOCKFUNC, http_request_datashare_lock_func);
 			curl_share_setopt(share->ch, CURLSHOPT_UNLOCKFUNC, http_request_datashare_unlock_func);
-			curl_share_setopt(share->ch, CURLSHOPT_USERDATA, share);
+			curl_share_setopt(share->ch, CURLSHOPT_USERDATA, share->handle.locks);
 		}
 #endif
 	}
@@ -198,10 +182,10 @@ PHP_HTTP_API void _http_request_datashare_dtor(http_request_datashare *share TSR
 		zend_llist_destroy(share->handle.list);
 		efree(share->handle.list);
 	}
-	HTTP_CURL_SHARE_DTOR(&share->ch);
+	http_persistent_handle_release("http_request_datashare", &share->ch);
 #ifdef ZTS
 	if (share->persistent) {
-		HTTP_CURL_SLOCK_DTOR(&share->handle.locks);
+		http_persistent_handle_release("http_request_datashare_lock", (void *) &share->handle.locks);
 	}
 #endif
 }
@@ -273,19 +257,19 @@ static void http_request_datashare_locks_dtor(void *l)
 
 static void http_request_datashare_lock_func(CURL *handle, curl_lock_data data, curl_lock_access locktype, void *userptr)
 {
-	http_request_datashare *share = (http_request_datashare *) userptr;
+	http_request_datashare_lock *locks = (http_request_datashare_lock *) userptr;
 	
 	/* TSRM can't distinguish shared/exclusive locks */
-	tsrm_mutex_lock(share->handle.locks[data].mx);
-	share->handle.locks[data].ch = handle;
+	tsrm_mutex_lock(locks[data].mx);
+	locks[data].ch = handle;
 }
 
 static void http_request_datashare_unlock_func(CURL *handle, curl_lock_data data, void *userptr)
 {
-	http_request_datashare *share = (http_request_datashare *) userptr;
+	http_request_datashare_lock *locks = (http_request_datashare_lock *) userptr;
 	
-	if (share->handle.locks[data].ch == handle) {
-		tsrm_mutex_unlock(share->handle.locks[data].mx);
+	if (locks[data].ch == handle) {
+		tsrm_mutex_unlock(locks[data].mx);
 	}
 }
 #endif

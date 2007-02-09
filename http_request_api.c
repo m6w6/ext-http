@@ -19,11 +19,9 @@
 #ifdef HTTP_HAVE_CURL
 
 #include "php_http_api.h"
+#include "php_http_persistent_handle_api.h"
 #include "php_http_request_api.h"
 #include "php_http_url_api.h"
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
-#	include "php_http_persistent_handle_api.h"
-#endif
 
 #ifdef ZEND_ENGINE_2
 #	include "php_http_request_object.h"
@@ -112,11 +110,9 @@ PHP_MINIT_FUNCTION(http_request)
 		return FAILURE;
 	}
 	
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
-	if (SUCCESS != http_persistent_handle_provide("http_request", curl_easy_init, curl_easy_cleanup)) {
+	if (SUCCESS != http_persistent_handle_provide("http_request", curl_easy_init, curl_easy_cleanup, curl_easy_duphandle)) {
 		return FAILURE;
 	}
-#endif
 	
 	HTTP_LONG_CONSTANT("HTTP_AUTH_BASIC", CURLAUTH_BASIC);
 	HTTP_LONG_CONSTANT("HTTP_AUTH_DIGEST", CURLAUTH_DIGEST);
@@ -185,18 +181,10 @@ static int http_curl_dummy_callback(char *data, size_t n, size_t l, void *s) { r
 static curlioerr http_curl_ioctl_callback(CURL *, curliocmd, void *);
 /* }}} */
 
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
-#	define HTTP_CURL_HANDLE_CTOR(ch) (SUCCESS == http_persistent_handle_acquire("http_request", &(ch)))
-#	define HTTP_CURL_HANDLE_DTOR(chp) http_persistent_handle_release("http_request", (chp))
-#else
-#	define HTTP_CURL_HANDLE_CTOR(ch) ((ch) = curl_easy_init())
-#	define HTTP_CURL_HANDLE_DTOR(chp) curl_easy_cleanup(*(chp)); *(chp) = NULL
-#endif
-
 /* {{{ CURL *http_curl_init(http_request *) */
 PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request TSRMLS_DC)
 {
-	if (ch || HTTP_CURL_HANDLE_CTOR(ch)) {
+	if (ch || (SUCCESS == http_persistent_handle_acquire("http_request", &ch))) {
 #if defined(ZTS)
 		curl_easy_setopt(ch, CURLOPT_NOSIGNAL, 1L);
 #endif
@@ -227,6 +215,18 @@ PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request TSRMLS_DC
 }
 /* }}} */
 
+/* {{{ CURL *http_curl_copy(CURL *) */
+PHP_HTTP_API CURL *_http_curl_copy(CURL *ch TSRMLS_DC)
+{
+	CURL *copy;
+	
+	if (SUCCESS == http_persistent_handle_accrete("http_request", ch, &copy)) {
+		return copy;
+	}
+	return NULL;
+}
+/* }}} */
+
 /* {{{ void http_curl_free(CURL **) */
 PHP_HTTP_API void _http_curl_free(CURL **ch TSRMLS_DC)
 {
@@ -236,7 +236,7 @@ PHP_HTTP_API void _http_curl_free(CURL **ch TSRMLS_DC)
 		curl_easy_setopt(*ch, CURLOPT_VERBOSE, 0L);
 		curl_easy_setopt(*ch, CURLOPT_DEBUGFUNCTION, NULL);
 		
-		HTTP_CURL_HANDLE_DTOR(ch);
+		http_persistent_handle_release("http_request", ch);
 	}
 }
 /* }}} */

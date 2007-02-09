@@ -4,9 +4,6 @@ dnl vim: noet ts=1 sw=1
 
 PHP_ARG_ENABLE([http], [whether to enable extended HTTP support],
 [  --enable-http           Enable extended HTTP support])
-PHP_ARG_ENABLE([http-persistent-handles], [whether to enable per-process persistent cURL handles],
-[  --enable-http-persistent-handles
-                           HTTP: enable per-process persistent cURL handles], "no", "no")
 PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
 [  --with-http-shared-deps
                            HTTP: disable to not depend on extensions like hash,
@@ -270,14 +267,6 @@ dnl ----
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
 		)
 		
-		dnl persistent cURL handles
-		AC_MSG_CHECKING([whether to enable per-process persistent cURL handles])
-		if test "$PHP_HTTP_PERSISTENT_HANDLES" != "no"; then
-			AC_DEFINE([HTTP_HAVE_PERSISTENT_HANDLES], [1], [Have per-process persistent cURL handles])
-			AC_MSG_RESULT([yes])
-		else
-			AC_MSG_RESULT([no])
-		fi
 	fi
 
 dnl ----

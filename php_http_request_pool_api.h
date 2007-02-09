@@ -26,9 +26,7 @@ typedef struct _http_request_pool_t {
 typedef int (*http_request_pool_apply_func)(http_request_pool *pool, zval *request TSRMLS_DC);
 typedef int (*http_request_pool_apply_with_arg_func)(http_request_pool *pool, zval *request, void *arg TSRMLS_DC);
 
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
 PHP_MINIT_FUNCTION(http_request_pool);
-#endif
 
 #define http_request_pool_responsehandler(p, r, c) _http_request_pool_responsehandler((p), (r), (c) TSRMLS_CC)
 extern int _http_request_pool_responsehandler(http_request_pool *pool, zval *req, void *ch TSRMLS_DC);

@@ -138,9 +138,9 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 #endif
 	} request;
 
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
 	struct _http_globals_persistent {
 		struct _http_globals_persistent_handles {
+			ulong limit;
 			struct _http_globals_persistent_handles_ident {
 				ulong h;
 				char *s;
@@ -148,7 +148,7 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 			} ident;
 		} handles;
 	} persistent;
-#endif
+
 #ifdef ZEND_ENGINE_2
 	zend_bool only_exceptions;
 #endif
@@ -213,12 +213,10 @@ PHP_FUNCTION(http_get_request_headers);
 PHP_FUNCTION(http_get_request_body);
 PHP_FUNCTION(http_get_request_body_stream);
 PHP_FUNCTION(http_match_request_header);
-#ifdef HTTP_HAVE_CURL
-#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
 PHP_FUNCTION(http_persistent_handles_count);
 PHP_FUNCTION(http_persistent_handles_clean);
 PHP_FUNCTION(http_persistent_handles_ident);
-#	endif
+#ifdef HTTP_HAVE_CURL
 PHP_FUNCTION(http_get);
 PHP_FUNCTION(http_head);
 PHP_FUNCTION(http_post_data);

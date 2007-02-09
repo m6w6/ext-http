@@ -59,6 +59,9 @@ PHP_HTTP_API CURL *_http_curl_init_ex(CURL *ch, http_request *request TSRMLS_DC)
 #define http_curl_free(c) _http_curl_free((c) TSRMLS_CC)
 PHP_HTTP_API void _http_curl_free(CURL **ch TSRMLS_DC);
 
+#define http_curl_copy(c) _http_curl_copy((c) TSRMLS_CC)
+PHP_HTTP_API CURL *_http_curl_copy(CURL *ch TSRMLS_DC);
+
 #define http_request_new() _http_request_init_ex(NULL, NULL, 0, NULL ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 #define http_request_init(r) _http_request_init_ex((r), NULL, 0, NULL ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)
 #define http_request_init_ex(r, c, m, u) _http_request_init_ex((r), (c), (m), (u) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC TSRMLS_CC)

@@ -28,14 +28,12 @@
 #include "php_http_cache_api.h"
 #include "php_http_send_api.h"
 #include "php_http_message_api.h"
+#include "php_http_persistent_handle_api.h"
 #include "php_http_request_method_api.h"
 #ifdef HTTP_HAVE_CURL
 #	include "php_http_request_api.h"
 #	include "php_http_request_pool_api.h"
 #	include "php_http_request_datashare_api.h"
-#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
-#		include "php_http_persistent_handle_api.h"
-#	endif
 #endif
 #ifdef HTTP_HAVE_ZLIB
 #	include "php_http_encoding_api.h"
@@ -104,12 +102,10 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_get_request_body, NULL)
 	PHP_FE(http_get_request_body_stream, NULL)
 	PHP_FE(http_match_request_header, NULL)
-#ifdef HTTP_HAVE_CURL
-#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
 	PHP_FE(http_persistent_handles_count, NULL)
 	PHP_FE(http_persistent_handles_clean, NULL)
 	PHP_FE(http_persistent_handles_ident, NULL)
-#	endif
+#ifdef HTTP_HAVE_CURL
 	PHP_FE(http_get, http_arg_pass_ref_3)
 	PHP_FE(http_head, http_arg_pass_ref_3)
 	PHP_FE(http_post_data, http_arg_pass_ref_4)
@@ -240,13 +236,11 @@ PHP_INI_MH(http_update_allowed_methods)
 	http_check_allowed_methods(new_value, new_value_length);
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
 PHP_INI_MH(http_update_persistent_handle_ident)
 {
 	HTTP_G->persistent.handles.ident.h = zend_hash_func(new_value, HTTP_G->persistent.handles.ident.l = new_value_length+1);
 	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
 }
-#endif
 
 #ifndef ZEND_ENGINE_2
 #	define OnUpdateLong OnUpdateInt
@@ -273,9 +267,8 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.send.deflate.start_auto", "0", PHP_INI_PERDIR|PHP_INI_SYSTEM, OnUpdateBool, send.deflate.start_auto)
 	HTTP_PHP_INI_ENTRY("http.send.deflate.start_flags", "0", PHP_INI_ALL, OnUpdateLong, send.deflate.start_flags)
 #endif
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
+	HTTP_PHP_INI_ENTRY("http.persistent.handles.limit", "-1", PHP_INI_SYSTEM, OnUpdateLong, persistent.handles.limit)
 	HTTP_PHP_INI_ENTRY("http.persistent.handles.ident", "GLOBAL", PHP_INI_ALL, http_update_persistent_handle_ident, persistent.handles.ident.s)
-#endif
 	HTTP_PHP_INI_ENTRY("http.send.not_found_404", "1", PHP_INI_ALL, OnUpdateBool, send.not_found_404)
 #ifdef ZEND_ENGINE_2
 	HTTP_PHP_INI_ENTRY("http.only_exceptions", "0", PHP_INI_ALL, OnUpdateBool, only_exceptions)
@@ -293,19 +286,16 @@ PHP_MINIT_FUNCTION(http)
 
 	REGISTER_INI_ENTRIES();
 	
-	if (	(SUCCESS != PHP_MINIT_CALL(http_support))	||
+	if (	(SUCCESS != PHP_MINIT_CALL(http_persistent_handle)) || /* first */
+			(SUCCESS != PHP_MINIT_CALL(http_support))	||
 			(SUCCESS != PHP_MINIT_CALL(http_cookie))	||
 			(SUCCESS != PHP_MINIT_CALL(http_send))		||
 			(SUCCESS != PHP_MINIT_CALL(http_url))		||
+			
 #ifdef HTTP_HAVE_CURL
-#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
-			(SUCCESS != PHP_MINIT_CALL(http_persistent_handle)) ||
-#		ifdef ZEND_ENGINE_2
-			(SUCCESS != PHP_MINIT_CALL(http_request_pool)) ||
-#		endif
-#	endif
 			(SUCCESS != PHP_MINIT_CALL(http_request))	||
 #	ifdef ZEND_ENGINE_2
+			(SUCCESS != PHP_MINIT_CALL(http_request_pool)) ||
 			(SUCCESS != PHP_MINIT_CALL(http_request_datashare)) ||
 #	endif
 #endif /* HTTP_HAVE_CURL */
@@ -346,19 +336,17 @@ PHP_MINIT_FUNCTION(http)
 PHP_MSHUTDOWN_FUNCTION(http)
 {
 	UNREGISTER_INI_ENTRIES();
-#ifdef HTTP_HAVE_CURL
 	if (	
+#ifdef HTTP_HAVE_CURL
 #	ifdef ZEND_ENGINE_2
 			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)) ||
 #	endif
-			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request))
-#	ifdef HTTP_HAVE_PERSISTENT_HANDLES
-			|| (SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle))
-#	endif
+			(SUCCESS != PHP_MSHUTDOWN_CALL(http_request)) ||
+#endif
+			(SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)) /* last */
 	) {
 		return FAILURE;
 	}
-#endif
 	return SUCCESS;
 }
 /* }}} */
@@ -445,46 +433,6 @@ PHP_MINFO_FUNCTION(http)
 			"http.chunked_decode, http.chunked_encode, http.deflate, http.inflate"
 #endif
 		);
-#ifdef HTTP_HAVE_PERSISTENT_HANDLES
-		{
-			phpstr s;
-			HashTable *ht;
-			HashPosition pos1, pos2;
-			HashKey key1 = initHashKey(0), key2 = initHashKey(0);
-			zval **val1, **val2;
-			
-			if ((ht = http_persistent_handle_statall()) && zend_hash_num_elements(ht)) {
-				phpstr_init(&s);
-				
-				FOREACH_HASH_KEYVAL(pos1, ht, key1, val1) {
-					phpstr_append(&s, key1.str, key1.len-1);
-					phpstr_appends(&s, " (");
-					if (zend_hash_num_elements(Z_ARRVAL_PP(val1))) {
-						FOREACH_KEYVAL(pos2, *val1, key2, val2) {
-							phpstr_append(&s, key2.str, key2.len-1);
-							phpstr_appendf(&s, ":%ld, ", Z_LVAL_PP(val2));
-						}
-						PHPSTR_LEN(&s) -= 2;
-					} else {
-						phpstr_appends(&s, "0");
-					}
-					phpstr_appends(&s, "), ");
-				}
-				zend_hash_destroy(ht);
-				FREE_HASHTABLE(ht);
-				
-				PHPSTR_LEN(&s) -= 2; /* get rid of last ", " */
-				phpstr_fix(&s);
-				
-				php_info_print_table_row(2, "Persistent Handles", PHPSTR_VAL(&s));
-				phpstr_dtor(&s);
-			} else {
-				php_info_print_table_row(2, "Persistent Handles", "none");
-			}
-		}
-#else
-		php_info_print_table_row(2, "Persistent Handles", "disabled");
-#endif
 	}
 	php_info_print_table_end();
 	
@@ -507,6 +455,42 @@ PHP_MINFO_FUNCTION(http)
 #else
 		php_info_print_table_row(3, "libmagic", "disabled", "disabled");
 #endif
+	}
+	php_info_print_table_end();
+	
+	php_info_print_table_start();
+	php_info_print_table_colspan_header(4, "Persistent Handles");
+	php_info_print_table_header(4, "Provider", "Ident", "used", "free");
+	{
+		HashTable *ht;
+		HashPosition pos1, pos2;
+		HashKey provider = initHashKey(0), ident = initHashKey(0);
+		zval **val, **sub, **zused, **zfree;
+		
+		if ((ht = http_persistent_handle_statall()) && zend_hash_num_elements(ht)) {
+			FOREACH_HASH_KEYVAL(pos1, ht, provider, val) {
+				if (zend_hash_num_elements(Z_ARRVAL_PP(val))) {
+					FOREACH_KEYVAL(pos2, *val, ident, sub) {
+						if (	SUCCESS == zend_hash_find(Z_ARRVAL_PP(sub), ZEND_STRS("used"), (void *) &zused) &&
+								SUCCESS == zend_hash_find(Z_ARRVAL_PP(sub), ZEND_STRS("free"), (void *) &zfree)) {
+							convert_to_string(*zused);
+							convert_to_string(*zfree);
+							php_info_print_table_row(4, provider.str, ident.str, Z_STRVAL_PP(zused), Z_STRVAL_PP(zfree));
+						} else {
+							php_info_print_table_row(4, provider.str, ident.str, "0", "0");
+						}
+					}
+				} else {
+					php_info_print_table_row(4, provider.str, "N/A", "0", "0");
+				}
+			}
+		} else {
+			php_info_print_table_row(4, "N/A", "N/A", "0", "0");
+		}
+		if (ht) {
+			zend_hash_destroy(ht);
+			FREE_HASHTABLE(ht);
+		}
 	}
 	php_info_print_table_end();
 	
