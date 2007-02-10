@@ -284,7 +284,7 @@ PHP_HTTP_API http_cookie_list *_http_cookie_list_fromstruct(http_cookie_list *li
 	if (SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_STRING) {
 		list->path = estrndup(Z_STRVAL_PP(tmp), Z_STRLEN_PP(tmp));
 	}
-	if (SUCCESS == zend_hash_find(ht, "domain", sizeof("domain"), (void *) &tmp)) {
+	if (SUCCESS == zend_hash_find(ht, "domain", sizeof("domain"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_STRING) {
 		list->domain = estrndup(Z_STRVAL_PP(tmp), Z_STRLEN_PP(tmp));
 	}
 	
