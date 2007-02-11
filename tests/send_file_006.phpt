@@ -1,16 +1,16 @@
 --TEST--
-http_send_data() multiple ranges
+http_send_file() first/last byte range
 --SKIPIF--
 <?php 
 include 'skip.inc';
 checkcgi();
 ?>
 --ENV--
-HTTP_RANGE=bytes=0-3, 4-5,9-11
+HTTP_RANGE=bytes=0-0,-1
 --FILE--
 <?php
-http_send_content_type('text/plain');
-http_send_data(str_repeat('123abc', 1000));
+http_send_content_type("text/plain");
+http_send_file('data.txt');
 ?>
 --EXPECTF--
 Status: 206
@@ -21,17 +21,13 @@ Content-Type: multipart/byteranges; boundary=%d.%d
 
 --%d.%d
 Content-Type: text/plain
-Content-Range: bytes 0-3/6000
+Content-Range: bytes 0-0/1010
 
-123a
+0
 --%d.%d
 Content-Type: text/plain
-Content-Range: bytes 4-5/6000
+Content-Range: bytes 1009-1009/1010
 
-bc
---%d.%d
-Content-Type: text/plain
-Content-Range: bytes 9-11/6000
 
-abc
+
 --%d.%d--
