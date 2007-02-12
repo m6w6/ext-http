@@ -56,7 +56,7 @@ if (PHP_HTTP != "no") {
 		"http_filter_api.c http_request_body_api.c http_querystring_object.c "+
 		"http_deflatestream_object.c http_inflatestream_object.c "+
 		"http_cookie_api.c http_querystring_api.c http_request_datashare_api.c "+
-		"http_requestdatashare_object.c http_request_info.c",
+		"http_requestdatashare_object.c http_request_info.c http_persistent_handle_api.c",
 		null,
 		"/I\"" + configure_module_dirname + "/phpstr\"");
 	ADD_SOURCES(configure_module_dirname + "/phpstr", "phpstr.c", "http");
