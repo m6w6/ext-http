@@ -69,10 +69,14 @@
 	}
 #endif
 #ifndef RETVAL_ZVAL
-#define RETVAL_ZVAL(zv, copy, dtor)		ZVAL_ZVAL(return_value, zv, copy, dtor)
+#	define RETVAL_ZVAL(zv, copy, dtor)		ZVAL_ZVAL(return_value, zv, copy, dtor)
 #endif
 #ifndef RETURN_ZVAL
-#define RETURN_ZVAL(zv, copy, dtor)		{ RETVAL_ZVAL(zv, copy, dtor); return; }
+#	define RETURN_ZVAL(zv, copy, dtor)		{ RETVAL_ZVAL(zv, copy, dtor); return; }
+#endif
+
+#ifndef ZEND_MN
+#	define ZEND_MN(name) zim_##name
 #endif
 
 #ifdef WONKY
