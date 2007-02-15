@@ -126,6 +126,10 @@ SOURCE=.\http_functions.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\http_persistent_handle_api.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\http_cache_api.c
 # End Source File
 # Begin Source File
@@ -195,6 +199,10 @@ SOURCE=.\php_http_request_body_api.h
 # Begin Source File
 
 SOURCE=.\php_http_request_method_api.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\php_http_persistent_handle_api.h
 # End Source File
 # Begin Source File
 
