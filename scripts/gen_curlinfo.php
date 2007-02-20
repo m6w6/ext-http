@@ -4,7 +4,9 @@
 error_reporting(0);
 
 function failure() {
-	fprintf(STDERR, "FAILURE: %s\n", error_get_last());
+	// this is why error_get_last() should return a stdClass object
+	$error = error_get_last();
+	fprintf(STDERR, "FAILURE: %s\n", $error["message"]);
 	exit(-1);
 }
 
