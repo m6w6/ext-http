@@ -76,7 +76,7 @@
 #endif
 
 #ifndef ZEND_MN
-#	define ZEND_MN(name) zim_##name
+#	define ZEND_MN(name) ZEND_FN(name)
 #endif
 
 #ifdef WONKY

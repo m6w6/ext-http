@@ -23,12 +23,11 @@ support. Parallel requests are available for PHP 5 and greater.
   </maintainer>
   </maintainers>
  <release>
-  <version>1.5.0</version>
-  <date>2007-02-20</date>
+  <version>1.5.1</version>
+  <date>2007-02-21</date>
   <license>BSD, revised</license>
   <state>stable</state>
-  <notes>* Fixed responses to range requests which asked for the first byte (0-0)
-* Fixed Win32 build
+  <notes>* Fixed build with PHP-5 &lt; v5.2
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
