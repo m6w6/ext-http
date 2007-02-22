@@ -132,7 +132,7 @@ HTTP_EMPTY_ARGS(getRequestHeaders);
 HTTP_EMPTY_ARGS(getRequestBody);
 HTTP_EMPTY_ARGS(getRequestBodyStream);
 
-#define OBJ_PROP_CE http_response_object_ce
+#define THIS_CE http_response_object_ce
 zend_class_entry *http_response_object_ce;
 zend_function_entry http_response_object_fe[] = {
 
@@ -193,29 +193,29 @@ PHP_MINIT_FUNCTION(http_response_object)
 {
 	HTTP_REGISTER_CLASS(HttpResponse, http_response_object, NULL, 0);
 	
-	DCL_STATIC_PROP(PRIVATE, bool, sent, 0);
-	DCL_STATIC_PROP(PRIVATE, bool, catch, 0);
-	DCL_STATIC_PROP(PRIVATE, long, mode, -1);
-	DCL_STATIC_PROP(PRIVATE, long, stream, 0);
-	DCL_STATIC_PROP_N(PRIVATE, file);
-	DCL_STATIC_PROP_N(PRIVATE, data);
-	DCL_STATIC_PROP(PROTECTED, bool, cache, 0);
-	DCL_STATIC_PROP(PROTECTED, bool, gzip, 0);
-	DCL_STATIC_PROP_N(PROTECTED, eTag);
-	DCL_STATIC_PROP(PROTECTED, long, lastModified, 0);
-	DCL_STATIC_PROP_N(PROTECTED, cacheControl);
-	DCL_STATIC_PROP_N(PROTECTED, contentType);
-	DCL_STATIC_PROP_N(PROTECTED, contentDisposition);
-	DCL_STATIC_PROP(PROTECTED, long, bufferSize, 0);
-	DCL_STATIC_PROP(PROTECTED, double, throttleDelay, 0.0);
+	zend_declare_property_bool(THIS_CE, ZEND_STRS("sent")-1, 0, (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
+	zend_declare_property_bool(THIS_CE, ZEND_STRS("catch")-1, 0, (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
+	zend_declare_property_long(THIS_CE, ZEND_STRS("mode")-1, -1, (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
+	zend_declare_property_long(THIS_CE, ZEND_STRS("stream")-1, 0, (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("file")-1, (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("data")-1, (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
+	zend_declare_property_bool(THIS_CE, ZEND_STRS("cache")-1, 0, (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
+	zend_declare_property_bool(THIS_CE, ZEND_STRS("gzip")-1, 0, (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("eTag")-1, (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
+	zend_declare_property_long(THIS_CE, ZEND_STRS("lastModified")-1, 0, (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("cacheControl")-1, (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("contentType")-1, (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("contentDisposition")-1, (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
+	zend_declare_property_long(THIS_CE, ZEND_STRS("bufferSize")-1, 0, (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
+	zend_declare_property_double(THIS_CE, ZEND_STRS("throttleDelay")-1, 0.0, (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
 
 #ifndef WONKY
-	DCL_CONST(long, "REDIRECT", HTTP_REDIRECT);
-	DCL_CONST(long, "REDIRECT_PERM", HTTP_REDIRECT_PERM);
-	DCL_CONST(long, "REDIRECT_FOUND", HTTP_REDIRECT_FOUND);
-	DCL_CONST(long, "REDIRECT_POST", HTTP_REDIRECT_POST);
-	DCL_CONST(long, "REDIRECT_PROXY", HTTP_REDIRECT_PROXY);
-	DCL_CONST(long, "REDIRECT_TEMP", HTTP_REDIRECT_TEMP);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("REDIRECT")-1, HTTP_REDIRECT TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("REDIRECT_PERM")-1, HTTP_REDIRECT_PERM TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("REDIRECT_FOUND")-1, HTTP_REDIRECT_FOUND TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("REDIRECT_POST")-1, HTTP_REDIRECT_POST TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("REDIRECT_PROXY")-1, HTTP_REDIRECT_PROXY TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("REDIRECT_TEMP")-1, HTTP_REDIRECT_TEMP TSRMLS_CC);
 #endif /* WONKY */
 	
 	return SUCCESS;
@@ -288,7 +288,7 @@ PHP_METHOD(HttpResponse, setCache)
 		RETURN_FALSE;
 	}
 
-	RETURN_SUCCESS(UPD_STATIC_PROP(bool, cache, do_cache));
+	RETURN_SUCCESS(zend_update_static_property_bool(THIS_CE, ZEND_STRS("cache")-1, do_cache TSRMLS_CC));
 }
 /* }}} */
 
@@ -299,7 +299,7 @@ PHP_METHOD(HttpResponse, getCache)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *cache_p, *cache = convert_to_type_ex(IS_BOOL, GET_STATIC_PROP(cache), &cache_p);
+		zval *cache_p, *cache = convert_to_type_ex(IS_BOOL, *zend_std_get_static_property(THIS_CE, ZEND_STRS("cache")-1, 0 TSRMLS_CC), &cache_p);
 		
 		RETVAL_ZVAL(cache, 1, 0);
 
@@ -320,7 +320,7 @@ PHP_METHOD(HttpResponse, setGzip)
 		RETURN_FALSE;
 	}
 
-	RETURN_SUCCESS(UPD_STATIC_PROP(bool, gzip, do_gzip));
+	RETURN_SUCCESS(zend_update_static_property_bool(THIS_CE, ZEND_STRS("gzip")-1, do_gzip TSRMLS_CC));
 }
 /* }}} */
 
@@ -331,7 +331,7 @@ PHP_METHOD(HttpResponse, getGzip)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *gzip_p, *gzip = convert_to_type_ex(IS_BOOL, GET_STATIC_PROP(gzip), &gzip_p);
+		zval *gzip_p, *gzip = convert_to_type_ex(IS_BOOL, *zend_std_get_static_property(THIS_CE, ZEND_STRS("gzip")-1, 0 TSRMLS_CC), &gzip_p);
 		
 		RETVAL_ZVAL(gzip, 1, 0);
 
@@ -360,7 +360,7 @@ PHP_METHOD(HttpResponse, setCacheControl)
 		RETURN_FALSE;
 	} else {
 		size_t cctl_len = spprintf(&cctl, 0, "%s,%s max-age=%ld", ccontrol, must_revalidate?" must-revalidate,":"", max_age);
-		RETVAL_SUCCESS(UPD_STATIC_STRL(cacheControl, cctl, cctl_len));
+		RETVAL_SUCCESS(zend_update_static_property_stringl(THIS_CE, ZEND_STRS("cacheControl")-1, cctl, cctl_len TSRMLS_CC));
 		efree(cctl);
 	}
 }
@@ -373,7 +373,7 @@ PHP_METHOD(HttpResponse, getCacheControl)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *ccontrol_p, *ccontrol = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl), &ccontrol_p);
+		zval *ccontrol_p, *ccontrol = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("cacheControl")-1, 0 TSRMLS_CC), &ccontrol_p);
 		
 		RETVAL_ZVAL(ccontrol, 1, 0);
 
@@ -396,7 +396,7 @@ PHP_METHOD(HttpResponse, setContentType)
 	}
 
 	HTTP_CHECK_CONTENT_TYPE(ctype, RETURN_FALSE);
-	RETURN_SUCCESS(UPD_STATIC_STRL(contentType, ctype, ctype_len));
+	RETURN_SUCCESS(zend_update_static_property_stringl(THIS_CE, ZEND_STRS("contentType")-1, ctype, ctype_len TSRMLS_CC));
 }
 /* }}} */
 
@@ -407,7 +407,7 @@ PHP_METHOD(HttpResponse, getContentType)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentType), &ctype_p);
+		zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("contentType")-1, 0 TSRMLS_CC), &ctype_p);
 		
 		RETVAL_ZVAL(ctype, 1, 0);
 
@@ -430,10 +430,10 @@ PHP_METHOD(HttpResponse, guessContentType)
 	RETVAL_FALSE;
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &magic_file, &magic_file_len, &magic_mode)) {
-		switch (Z_LVAL_P(GET_STATIC_PROP(mode))) {
+		switch (Z_LVAL_P(*zend_std_get_static_property(THIS_CE, ZEND_STRS("mode")-1, 0 TSRMLS_CC))) {
 			case SEND_DATA:
 			{
-				zval *data = GET_STATIC_PROP(data);
+				zval *data = *zend_std_get_static_property(THIS_CE, ZEND_STRS("data")-1, 0 TSRMLS_CC);
 				ct = http_guess_content_type(magic_file, magic_mode, Z_STRVAL_P(data), Z_STRLEN_P(data), SEND_DATA);
 				break;
 			}
@@ -441,7 +441,7 @@ PHP_METHOD(HttpResponse, guessContentType)
 			case SEND_RSRC:
 			{
 				php_stream *s;
-				zval *z = GET_STATIC_PROP(stream);
+				zval *z = *zend_std_get_static_property(THIS_CE, ZEND_STRS("stream")-1, 0 TSRMLS_CC);
 				z->type = IS_RESOURCE;
 				php_stream_from_zval(s, &z);
 				ct = http_guess_content_type(magic_file, magic_mode, s, 0, SEND_RSRC);
@@ -449,11 +449,11 @@ PHP_METHOD(HttpResponse, guessContentType)
 			}
 			
 			default:
-				ct = http_guess_content_type(magic_file, magic_mode, Z_STRVAL_P(GET_STATIC_PROP(file)), 0, -1);
+				ct = http_guess_content_type(magic_file, magic_mode, Z_STRVAL_P(*zend_std_get_static_property(THIS_CE, ZEND_STRS("file")-1, 0 TSRMLS_CC)), 0, -1);
 				break;
 		}
 		if (ct) {
-			UPD_STATIC_PROP(string, contentType, ct);
+			zend_update_static_property_string(THIS_CE, ZEND_STRS("contentType")-1, ct TSRMLS_CC);
 			RETVAL_STRING(ct, 0);
 		}
 	}
@@ -479,7 +479,7 @@ PHP_METHOD(HttpResponse, setContentDisposition)
 	}
 
 	cd_len = spprintf(&cd, 0, "%s; filename=\"%s\"", send_inline ? "inline" : "attachment", file);
-	RETVAL_SUCCESS(UPD_STATIC_STRL(contentDisposition, cd, cd_len));
+	RETVAL_SUCCESS(zend_update_static_property_stringl(THIS_CE, ZEND_STRS("contentDisposition")-1, cd, cd_len TSRMLS_CC));
 	efree(cd);
 }
 /* }}} */
@@ -491,7 +491,7 @@ PHP_METHOD(HttpResponse, getContentDisposition)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *cd_p, *cd = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentDisposition), &cd_p);
+		zval *cd_p, *cd = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("contentDisposition")-1, 0 TSRMLS_CC), &cd_p);
 		
 		RETVAL_ZVAL(cd, 1, 0);
 
@@ -513,7 +513,7 @@ PHP_METHOD(HttpResponse, setETag)
 		RETURN_FALSE;
 	}
 
-	RETURN_SUCCESS(UPD_STATIC_STRL(eTag, etag, etag_len));
+	RETURN_SUCCESS(zend_update_static_property_stringl(THIS_CE, ZEND_STRS("eTag")-1, etag, etag_len TSRMLS_CC));
 }
 /* }}} */
 
@@ -524,7 +524,7 @@ PHP_METHOD(HttpResponse, getETag)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *etag_p, *etag = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag), &etag_p);
+		zval *etag_p, *etag = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC), &etag_p);
 		
 		RETVAL_ZVAL(etag, 1, 0);
 
@@ -545,7 +545,7 @@ PHP_METHOD(HttpResponse, setLastModified)
 		RETURN_FALSE;
 	}
 	
-	RETURN_SUCCESS(UPD_STATIC_PROP(long, lastModified, lm));
+	RETURN_SUCCESS(zend_update_static_property_long(THIS_CE, ZEND_STRS("lastModified")-1, lm TSRMLS_CC));
 }
 /* }}} */
 
@@ -556,7 +556,7 @@ PHP_METHOD(HttpResponse, getLastModified)
 	NO_ARGS;
 	
 	if (return_value_used) {
-		zval *lm_p, *lm = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified), &lm_p);
+		zval *lm_p, *lm = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("lastModified")-1, 0 TSRMLS_CC), &lm_p);
 		
 		RETVAL_ZVAL(lm, 1, 0);
 
@@ -576,7 +576,7 @@ PHP_METHOD(HttpResponse, setThrottleDelay)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "d", &seconds)) {
 		RETURN_FALSE;
 	}
-	RETURN_SUCCESS(UPD_STATIC_PROP(double, throttleDelay, seconds));
+	RETURN_SUCCESS(zend_update_static_property_double(THIS_CE, ZEND_STRS("throttleDelay")-1, seconds TSRMLS_CC));
 }
 /* }}} */
 
@@ -587,7 +587,7 @@ PHP_METHOD(HttpResponse, getThrottleDelay)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay), &delay_p);
+		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, *zend_std_get_static_property(THIS_CE, ZEND_STRS("throttleDelay")-1, 0 TSRMLS_CC), &delay_p);
 		
 		RETVAL_ZVAL(delay, 1, 0);
 
@@ -607,7 +607,7 @@ PHP_METHOD(HttpResponse, setBufferSize)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &bytes)) {
 		RETURN_FALSE;
 	}
-	RETURN_SUCCESS(UPD_STATIC_PROP(long, bufferSize, bytes));
+	RETURN_SUCCESS(zend_update_static_property_long(THIS_CE, ZEND_STRS("bufferSize")-1, bytes TSRMLS_CC));
 }
 /* }}} */
 
@@ -618,7 +618,7 @@ PHP_METHOD(HttpResponse, getBufferSize)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *size_p, *size = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize), &size_p);
+		zval *size_p, *size = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("bufferSize")-1, 0 TSRMLS_CC), &size_p);
 		
 		RETVAL_ZVAL(size, 1, 0);
 
@@ -643,14 +643,14 @@ PHP_METHOD(HttpResponse, setData)
 		convert_to_string_ex(&the_data);
 	}
 
-	if (	(SUCCESS != SET_STATIC_PROP(data, the_data)) ||
-			(SUCCESS != UPD_STATIC_PROP(long, mode, SEND_DATA))) {
+	if (	(SUCCESS != zend_update_static_property(THIS_CE, ZEND_STRS("data")-1, the_data TSRMLS_CC)) ||
+			(SUCCESS != zend_update_static_property_long(THIS_CE, ZEND_STRS("mode")-1, SEND_DATA TSRMLS_CC))) {
 		RETURN_FALSE;
 	}
 	
-	UPD_STATIC_PROP(long, lastModified, http_last_modified(the_data, SEND_DATA));
+	zend_update_static_property_long(THIS_CE, ZEND_STRS("lastModified")-1, http_last_modified(the_data, SEND_DATA) TSRMLS_CC);
 	if ((etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA))) {
-		UPD_STATIC_PROP(string, eTag, etag);
+		zend_update_static_property_string(THIS_CE, ZEND_STRS("eTag")-1, etag TSRMLS_CC);
 		efree(etag);
 	}
 
@@ -665,7 +665,7 @@ PHP_METHOD(HttpResponse, getData)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *the_data = GET_STATIC_PROP(data);
+		zval *the_data = *zend_std_get_static_property(THIS_CE, ZEND_STRS("data")-1, 0 TSRMLS_CC);
 		
 		RETURN_ZVAL(the_data, 1, 0);
 	}
@@ -690,15 +690,15 @@ PHP_METHOD(HttpResponse, setStream)
 		RETURN_FALSE;
 	}
 
-	if (	(SUCCESS != UPD_STATIC_PROP(long, stream, Z_LVAL_P(the_stream))) ||
-			(SUCCESS != UPD_STATIC_PROP(long, mode, SEND_RSRC))) {
+	if (	(SUCCESS != zend_update_static_property_long(THIS_CE, ZEND_STRS("stream")-1, Z_LVAL_P(the_stream) TSRMLS_CC)) ||
+			(SUCCESS != zend_update_static_property_long(THIS_CE, ZEND_STRS("mode")-1, SEND_RSRC TSRMLS_CC))) {
 		RETURN_FALSE;
 	}
 	zend_list_addref(Z_LVAL_P(the_stream));
 	
-	UPD_STATIC_PROP(long, lastModified, http_last_modified(the_real_stream, SEND_RSRC));
+	zend_update_static_property_long(THIS_CE, ZEND_STRS("lastModified")-1, http_last_modified(the_real_stream, SEND_RSRC) TSRMLS_CC);
 	if ((etag = http_etag(the_real_stream, 0, SEND_RSRC))) {
-		UPD_STATIC_PROP(string, eTag, etag);
+		zend_update_static_property_string(THIS_CE, ZEND_STRS("eTag")-1, etag TSRMLS_CC);
 		efree(etag);
 	}
 
@@ -715,7 +715,7 @@ PHP_METHOD(HttpResponse, getStream)
 	if (return_value_used) {
 		zval *stream_p;
 		
-		RETVAL_RESOURCE(Z_LVAL_P(convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream), &stream_p)));
+		RETVAL_RESOURCE(Z_LVAL_P(convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("stream")-1, 0 TSRMLS_CC), &stream_p)));
 
 		if (stream_p) {
 			zval_ptr_dtor(&stream_p);
@@ -740,14 +740,14 @@ PHP_METHOD(HttpResponse, setFile)
 		RETURN_FALSE;
 	}
 	
-	if (	(SUCCESS != UPD_STATIC_STRL(file, the_file, file_len)) ||
-			(SUCCESS != UPD_STATIC_PROP(long, mode, -1))) {
+	if (	(SUCCESS != zend_update_static_property_stringl(THIS_CE, ZEND_STRS("file")-1, the_file, file_len TSRMLS_CC)) ||
+			(SUCCESS != zend_update_static_property_long(THIS_CE, ZEND_STRS("mode")-1, -1 TSRMLS_CC))) {
 		RETURN_FALSE;
 	}
 
-	UPD_STATIC_PROP(long, lastModified, http_last_modified(the_file, -1));
+	zend_update_static_property_long(THIS_CE, ZEND_STRS("lastModified")-1, http_last_modified(the_file, -1) TSRMLS_CC);
 	if ((etag = http_etag(the_file, 0, -1))) {
-		UPD_STATIC_PROP(string, eTag, etag);
+		zend_update_static_property_string(THIS_CE, ZEND_STRS("eTag")-1, etag TSRMLS_CC);
 		efree(etag);
 	}
 
@@ -762,7 +762,7 @@ PHP_METHOD(HttpResponse, getFile)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *the_file_p, *the_file = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file), &the_file_p);
+		zval *the_file_p, *the_file = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("file")-1, 0 TSRMLS_CC), &the_file_p);
 		
 		RETVAL_ZVAL(the_file, 1, 0);
 
@@ -786,7 +786,7 @@ PHP_METHOD(HttpResponse, send)
 	
 	HTTP_CHECK_HEADERS_SENT(RETURN_FALSE);
 
-	sent = GET_STATIC_PROP(sent);
+	sent = *zend_std_get_static_property(THIS_CE, ZEND_STRS("sent")-1, 0 TSRMLS_CC);
 	if (Z_LVAL_P(sent)) {
 		http_error(HE_WARNING, HTTP_E_RESPONSE, "Cannot send HttpResponse, response has already been sent");
 		RETURN_FALSE;
@@ -795,18 +795,18 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* capture mode */
-	if (zval_is_true(GET_STATIC_PROP(catch))) {
+	if (zval_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("catch")-1, 0 TSRMLS_CC))) {
 		zval *etag_p, *the_data;
 
 		MAKE_STD_ZVAL(the_data);
 		php_ob_get_buffer(the_data TSRMLS_CC);
-		SET_STATIC_PROP(data, the_data);
-		ZVAL_LONG(GET_STATIC_PROP(mode), SEND_DATA);
+		zend_update_static_property(THIS_CE, ZEND_STRS("data")-1, the_data TSRMLS_CC);
+		ZVAL_LONG(*zend_std_get_static_property(THIS_CE, ZEND_STRS("mode")-1, 0 TSRMLS_CC), SEND_DATA);
 
-		if (!Z_STRLEN_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag), &etag_p))) {
+		if (!Z_STRLEN_P(convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC), &etag_p))) {
 			char *etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
 			if (etag) {
-				UPD_STATIC_PROP(string, eTag, etag);
+				zend_update_static_property_string(THIS_CE, ZEND_STRS("eTag")-1, etag TSRMLS_CC);
 				efree(etag);
 			}
 		}
@@ -827,12 +827,12 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* caching */
-	if (zval_is_true(GET_STATIC_PROP(cache))) {
+	if (zval_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("cache")-1, 0 TSRMLS_CC))) {
 		zval *cctl, *cctl_p, *etag, *etag_p, *lmod, *lmod_p;
 		
-		etag = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(eTag), &etag_p);
-		lmod = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(lastModified), &lmod_p);
-		cctl = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(cacheControl), &cctl_p);
+		etag = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC), &etag_p);
+		lmod = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("lastModified")-1, 0 TSRMLS_CC), &lmod_p);
+		cctl = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("cacheControl")-1, 0 TSRMLS_CC), &cctl_p);
 		
 		if (Z_LVAL_P(lmod) || Z_STRLEN_P(etag)) {
 			if (Z_STRLEN_P(cctl)) {
@@ -855,7 +855,7 @@ PHP_METHOD(HttpResponse, send)
 
 	/* content type */
 	{
-		zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentType), &ctype_p);
+		zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("contentType")-1, 0 TSRMLS_CC), &ctype_p);
 		if (Z_STRLEN_P(ctype)) {
 			http_send_content_type(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
 		} else {
@@ -875,7 +875,7 @@ PHP_METHOD(HttpResponse, send)
 
 	/* content disposition */
 	{
-		zval *cd_p, *cd = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(contentDisposition), &cd_p);
+		zval *cd_p, *cd = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("contentDisposition")-1, 0 TSRMLS_CC), &cd_p);
 		if (Z_STRLEN_P(cd)) {
 			http_send_header_ex("Content-Disposition", lenof("Content-Disposition"), Z_STRVAL_P(cd), Z_STRLEN_P(cd), 1, NULL);
 		}
@@ -886,8 +886,8 @@ PHP_METHOD(HttpResponse, send)
 
 	/* throttling */
 	{
-		zval *bsize_p, *bsize = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(bufferSize), &bsize_p);
-		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, GET_STATIC_PROP(throttleDelay), &delay_p);
+		zval *bsize_p, *bsize = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("bufferSize")-1, 0 TSRMLS_CC), &bsize_p);
+		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, *zend_std_get_static_property(THIS_CE, ZEND_STRS("throttleDelay")-1, 0 TSRMLS_CC), &delay_p);
 		HTTP_G->send.buffer_size    = Z_LVAL_P(bsize);
 		HTTP_G->send.throttle_delay = Z_DVAL_P(delay);
 		if (bsize_p) zval_ptr_dtor(&bsize_p);
@@ -895,13 +895,13 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* gzip */
-	HTTP_G->send.deflate.response = zval_is_true(GET_STATIC_PROP(gzip));
+	HTTP_G->send.deflate.response = zval_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("gzip")-1, 0 TSRMLS_CC));
 	
 	/* send */
-	switch (Z_LVAL_P(GET_STATIC_PROP(mode))) {
+	switch (Z_LVAL_P(*zend_std_get_static_property(THIS_CE, ZEND_STRS("mode")-1, 0 TSRMLS_CC))) {
 		case SEND_DATA:
 		{
-			zval *zdata_p, *zdata = convert_to_type_ex(IS_STRING, GET_STATIC_PROP(data), &zdata_p);
+			zval *zdata_p, *zdata = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("data")-1, 0 TSRMLS_CC), &zdata_p);
 			RETVAL_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
 			if (zdata_p) zval_ptr_dtor(&zdata_p);
 			return;
@@ -910,7 +910,7 @@ PHP_METHOD(HttpResponse, send)
 		case SEND_RSRC:
 		{
 			php_stream *the_real_stream;
-			zval *the_stream_p, *the_stream = convert_to_type_ex(IS_LONG, GET_STATIC_PROP(stream), &the_stream_p);
+			zval *the_stream_p, *the_stream = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("stream")-1, 0 TSRMLS_CC), &the_stream_p);
 			the_stream->type = IS_RESOURCE;
 			php_stream_from_zval(the_real_stream, &the_stream);
 			RETVAL_SUCCESS(http_send_stream(the_real_stream));
@@ -921,7 +921,7 @@ PHP_METHOD(HttpResponse, send)
 		default:
 		{
 			zval *file_p;
-			RETVAL_SUCCESS(http_send_file(Z_STRVAL_P(convert_to_type_ex(IS_STRING, GET_STATIC_PROP(file), &file_p))));
+			RETVAL_SUCCESS(http_send_file(Z_STRVAL_P(convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("file")-1, 0 TSRMLS_CC), &file_p))));
 			if (file_p) zval_ptr_dtor(&file_p);
 			return;
 		}
@@ -938,7 +938,7 @@ PHP_METHOD(HttpResponse, capture)
 	
 	HTTP_CHECK_HEADERS_SENT(RETURN_FALSE);
 
-	UPD_STATIC_PROP(long, catch, 1);
+	zend_update_static_property_long(THIS_CE, ZEND_STRS("catch")-1, 1 TSRMLS_CC);
 
 	php_end_ob_buffers(0 TSRMLS_CC);
 	php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);

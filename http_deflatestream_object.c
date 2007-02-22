@@ -47,7 +47,7 @@ HTTP_BEGIN_ARGS(finish, 0)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 
-#define OBJ_PROP_CE http_deflatestream_object_ce
+#define THIS_CE http_deflatestream_object_ce
 zend_class_entry *http_deflatestream_object_ce;
 zend_function_entry http_deflatestream_object_fe[] = {
 	HTTP_DEFLATE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -67,20 +67,20 @@ PHP_MINIT_FUNCTION(http_deflatestream_object)
 	http_deflatestream_object_handlers.clone_obj = _http_deflatestream_object_clone_obj;
 	
 #ifndef WONKY
-	DCL_CONST(long, "TYPE_GZIP", HTTP_DEFLATE_TYPE_GZIP);
-	DCL_CONST(long, "TYPE_ZLIB", HTTP_DEFLATE_TYPE_ZLIB);
-	DCL_CONST(long, "TYPE_RAW", HTTP_DEFLATE_TYPE_RAW);
-	DCL_CONST(long, "LEVEL_DEF", HTTP_DEFLATE_LEVEL_DEF);
-	DCL_CONST(long, "LEVEL_MIN", HTTP_DEFLATE_LEVEL_MIN);
-	DCL_CONST(long, "LEVEL_MAX", HTTP_DEFLATE_LEVEL_MAX);
-	DCL_CONST(long, "STRATEGY_DEF", HTTP_DEFLATE_STRATEGY_DEF);
-	DCL_CONST(long, "STRATEGY_FILT", HTTP_DEFLATE_STRATEGY_FILT);
-	DCL_CONST(long, "STRATEGY_HUFF", HTTP_DEFLATE_STRATEGY_HUFF);
-	DCL_CONST(long, "STRATEGY_RLE", HTTP_DEFLATE_STRATEGY_RLE);
-	DCL_CONST(long, "STRATEGY_FIXED", HTTP_DEFLATE_STRATEGY_FIXED);
-	DCL_CONST(long, "FLUSH_NONE", HTTP_ENCODING_STREAM_FLUSH_NONE);
-	DCL_CONST(long, "FLUSH_SYNC", HTTP_ENCODING_STREAM_FLUSH_SYNC);
-	DCL_CONST(long, "FLUSH_FULL", HTTP_ENCODING_STREAM_FLUSH_FULL);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_GZIP")-1, HTTP_DEFLATE_TYPE_GZIP TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_ZLIB")-1, HTTP_DEFLATE_TYPE_ZLIB TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_RAW")-1, HTTP_DEFLATE_TYPE_RAW TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("LEVEL_DEF")-1, HTTP_DEFLATE_LEVEL_DEF TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("LEVEL_MIN")-1, HTTP_DEFLATE_LEVEL_MIN TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("LEVEL_MAX")-1, HTTP_DEFLATE_LEVEL_MAX TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("STRATEGY_DEF")-1, HTTP_DEFLATE_STRATEGY_DEF TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("STRATEGY_FILT")-1, HTTP_DEFLATE_STRATEGY_FILT TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("STRATEGY_HUFF")-1, HTTP_DEFLATE_STRATEGY_HUFF TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("STRATEGY_RLE")-1, HTTP_DEFLATE_STRATEGY_RLE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("STRATEGY_FIXED")-1, HTTP_DEFLATE_STRATEGY_FIXED TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("FLUSH_NONE")-1, HTTP_ENCODING_STREAM_FLUSH_NONE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("FLUSH_SYNC")-1, HTTP_ENCODING_STREAM_FLUSH_SYNC TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("FLUSH_FULL")-1, HTTP_ENCODING_STREAM_FLUSH_FULL TSRMLS_CC);
 #endif
 	
 	return SUCCESS;

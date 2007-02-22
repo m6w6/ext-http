@@ -83,12 +83,12 @@ typedef int STATUS;
 #define RETURN_PROP(n) RETURN_PROP_EX(getThis(), n)
 #define RETVAL_PROP_EX(this, n) \
 	{ \
-		zval *__prop = GET_PROP_EX(this, n); \
+		zval *__prop = zend_read_property(THIS_CE, this, ZEND_STRS(#n)-1, 0 TSRMLS_CC); \
 		RETVAL_ZVAL(__prop, 1, 0); \
 	}
 #define RETURN_PROP_EX(this, n) \
 	{ \
-		zval *__prop = GET_PROP_EX(this, n); \
+		zval *__prop = zend_read_property(THIS_CE, this, ZEND_STRS(#n)-1, 0 TSRMLS_CC); \
 		RETURN_ZVAL(__prop, 1, 0); \
 	}
 
@@ -200,31 +200,6 @@ typedef int STATUS;
 #	endif
 #	define OBJ_PROP(o) (o)->zo.properties
 #	define OBJ_GUARDS(o) (o)->zo.guards
-
-#	define DCL_STATIC_PROP(a, t, n, v)		zend_declare_property_ ##t(OBJ_PROP_CE, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
-#	define DCL_STATIC_PROP_Z(a, n, v)		zend_declare_property(OBJ_PROP_CE, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
-#	define DCL_STATIC_PROP_N(a, n)			zend_declare_property_null(OBJ_PROP_CE, (#n), sizeof(#n)-1, (ZEND_ACC_ ##a | ZEND_ACC_STATIC) TSRMLS_CC)
-#	define GET_STATIC_PROP_EX(ce, n)		zend_std_get_static_property(ce, (#n), sizeof(#n)-1, 0 TSRMLS_CC)
-#	define UPD_STATIC_PROP_EX(ce, t, n, v)	zend_update_static_property_ ##t(ce, #n, sizeof(#n)-1, (v) TSRMLS_CC)
-#	define UPD_STATIC_STRL_EX(ce, n, v, l)	zend_update_static_property_stringl(ce, #n, sizeof(#n)-1, (v), (l) TSRMLS_CC)
-#	define SET_STATIC_PROP_EX(ce, n, v)		zend_update_static_property(ce, #n, sizeof(#n)-1, v TSRMLS_CC)
-#	define GET_STATIC_PROP(n)				*GET_STATIC_PROP_EX(OBJ_PROP_CE, n)
-#	define UPD_STATIC_PROP(t, n, v)			UPD_STATIC_PROP_EX(OBJ_PROP_CE, t, n, v)
-#	define SET_STATIC_PROP(n, v)			SET_STATIC_PROP_EX(OBJ_PROP_CE, n, v)
-#	define UPD_STATIC_STRL(n, v, l)			UPD_STATIC_STRL_EX(OBJ_PROP_CE, n, v, l)
-
-#	define DCL_PROP(a, t, n, v)				zend_declare_property_ ##t(OBJ_PROP_CE, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a) TSRMLS_CC)
-#	define DCL_PROP_Z(a, n, v)				zend_declare_property(OBJ_PROP_CE, (#n), sizeof(#n)-1, (v), (ZEND_ACC_ ##a) TSRMLS_CC)
-#	define DCL_PROP_N(a, n)					zend_declare_property_null(OBJ_PROP_CE, (#n), sizeof(#n)-1, (ZEND_ACC_ ##a) TSRMLS_CC)
-#	define UPD_PROP(t, n, v)				UPD_PROP_EX(getThis(), t, n, v)
-#	define UPD_PROP_EX(this, t, n, v)		zend_update_property_ ##t(OBJ_PROP_CE, this, (#n), sizeof(#n)-1, (v) TSRMLS_CC)
-#	define UPD_STRL(n, v, l)				zend_update_property_stringl(OBJ_PROP_CE, getThis(), (#n), sizeof(#n)-1, (v), (l) TSRMLS_CC)
-#	define SET_PROP(n, z) 					SET_PROP_EX(getThis(), n, z)
-#	define SET_PROP_EX(this, n, z) 			zend_update_property(OBJ_PROP_CE, this, (#n), sizeof(#n)-1, (z) TSRMLS_CC)
-#	define GET_PROP(n) 						GET_PROP_EX(getThis(), n)
-#	define GET_PROP_EX(this, n) 			zend_read_property(OBJ_PROP_CE, this, (#n), sizeof(#n)-1, 0 TSRMLS_CC)
-
-#	define DCL_CONST(t, n, v) zend_declare_class_constant_ ##t(OBJ_PROP_CE, (n), sizeof(n)-1, (v) TSRMLS_CC)
 
 #	define ACC_PROP_PRIVATE(ce, flags)		((flags & ZEND_ACC_PRIVATE) && (EG(scope) && ce == EG(scope))
 #	define ACC_PROP_PROTECTED(ce, flags)	((flags & ZEND_ACC_PROTECTED) && (zend_check_protected(ce, EG(scope))))

@@ -150,7 +150,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 #define http_message_object_get_props _http_message_object_get_props
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC);
 
-#define OBJ_PROP_CE http_message_object_ce
+#define THIS_CE http_message_object_ce
 zend_class_entry *http_message_object_ce;
 zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -228,20 +228,20 @@ PHP_MINIT_FUNCTION(http_message_object)
 	http_message_object_handlers.get_properties = http_message_object_get_props;
 	http_message_object_handlers.get_property_ptr_ptr = NULL;
 	
-	DCL_PROP(PROTECTED, long, type, HTTP_MSG_NONE);
-	DCL_PROP(PROTECTED, string, body, "");
-	DCL_PROP(PROTECTED, string, requestMethod, "");
-	DCL_PROP(PROTECTED, string, requestUrl, "");
-	DCL_PROP(PROTECTED, string, responseStatus, "");
-	DCL_PROP(PROTECTED, long, responseCode, 0);
-	DCL_PROP_N(PROTECTED, httpVersion);
-	DCL_PROP_N(PROTECTED, headers);
-	DCL_PROP_N(PROTECTED, parentMessage);
+	zend_declare_property_long(THIS_CE, ZEND_STRS("type")-1, HTTP_MSG_NONE, ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("body")-1, "", ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("requestMethod")-1, "", ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("requestUrl")-1, "", ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("responseStatus")-1, "", ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_long(THIS_CE, ZEND_STRS("responseCode")-1, 0, ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("httpVersion")-1, ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("headers")-1, ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("parentMessage")-1, ZEND_ACC_PROTECTED TSRMLS_CC);
 	
 #ifndef WONKY
-	DCL_CONST(long, "TYPE_NONE", HTTP_MSG_NONE);
-	DCL_CONST(long, "TYPE_REQUEST", HTTP_MSG_REQUEST);
-	DCL_CONST(long, "TYPE_RESPONSE", HTTP_MSG_RESPONSE);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_NONE")-1, HTTP_MSG_NONE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_REQUEST")-1, HTTP_MSG_REQUEST TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_RESPONSE")-1, HTTP_MSG_RESPONSE TSRMLS_CC);
 #endif
 	
 	HTTP_LONG_CONSTANT("HTTP_MSG_NONE", HTTP_MSG_NONE);

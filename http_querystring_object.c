@@ -101,7 +101,7 @@ HTTP_BEGIN_ARGS(offsetUnset, 1)
 HTTP_END_ARGS;
 
 
-#define OBJ_PROP_CE http_querystring_object_ce
+#define THIS_CE http_querystring_object_ce
 zend_class_entry *http_querystring_object_ce;
 zend_function_entry http_querystring_object_fe[] = {
 	HTTP_QUERYSTRING_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR|ZEND_ACC_FINAL)
@@ -151,17 +151,17 @@ PHP_MINIT_FUNCTION(http_querystring_object)
 	zend_class_implements(http_querystring_object_ce TSRMLS_CC, 2, zend_ce_serializable, zend_ce_arrayaccess);
 #endif
 	
-	DCL_STATIC_PROP_N(PRIVATE, instance);
-	DCL_PROP_N(PRIVATE, queryArray);
-	DCL_PROP(PRIVATE, string, queryString, "");
+	zend_declare_property_null(THIS_CE, ZEND_STRS("instance")-1, (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("queryArray")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("queryString")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
 	
 #ifndef WONKY
-	DCL_CONST(long, "TYPE_BOOL", HTTP_QUERYSTRING_TYPE_BOOL);
-	DCL_CONST(long, "TYPE_INT", HTTP_QUERYSTRING_TYPE_INT);
-	DCL_CONST(long, "TYPE_FLOAT", HTTP_QUERYSTRING_TYPE_FLOAT);
-	DCL_CONST(long, "TYPE_STRING", HTTP_QUERYSTRING_TYPE_STRING);
-	DCL_CONST(long, "TYPE_ARRAY", HTTP_QUERYSTRING_TYPE_ARRAY);
-	DCL_CONST(long, "TYPE_OBJECT", HTTP_QUERYSTRING_TYPE_OBJECT);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_BOOL")-1, HTTP_QUERYSTRING_TYPE_BOOL TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_INT")-1, HTTP_QUERYSTRING_TYPE_INT TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_FLOAT")-1, HTTP_QUERYSTRING_TYPE_FLOAT TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_STRING")-1, HTTP_QUERYSTRING_TYPE_STRING TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_ARRAY")-1, HTTP_QUERYSTRING_TYPE_ARRAY TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("TYPE_OBJECT")-1, HTTP_QUERYSTRING_TYPE_OBJECT TSRMLS_CC);
 #endif
 	
 	HTTP_LONG_CONSTANT("HTTP_QUERYSTRING_TYPE_BOOL", HTTP_QUERYSTRING_TYPE_BOOL);
@@ -245,27 +245,27 @@ static inline zval *_http_querystring_instantiate(zval *this_ptr, zend_bool glob
 				convert_to_string(qstring);
 			}
 			
-			SET_PROP(queryArray, qarray);
-			SET_PROP(queryString, qstring);
-			GET_PROP(queryArray)->is_ref = 1;
-			GET_PROP(queryString)->is_ref = 1;
+			zend_update_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, qarray TSRMLS_CC);
+			zend_update_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, qstring TSRMLS_CC);
+			zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC)->is_ref = 1;
+			zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC)->is_ref = 1;
 	
 			if (params) {
-				http_querystring_modify(GET_PROP(queryArray), params);
+				http_querystring_modify(zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC), params);
 			}
 			if (!defer_update) {
-				http_querystring_update(GET_PROP(queryArray), GET_PROP(queryString));
+				http_querystring_update(zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC), zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC));
 			}
 		}
 	} else {
 		qarray = ecalloc(1, sizeof(zval));
 		array_init(qarray);
 		
-		SET_PROP(queryArray, qarray);
-		UPD_STRL(queryString, "", 0);
+		zend_update_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, qarray TSRMLS_CC);
+		zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("queryString")-1, "", 0 TSRMLS_CC);
 		
 		if (params && http_querystring_modify(qarray, params) && !defer_update) {
-			http_querystring_update(qarray, GET_PROP(queryString));
+			http_querystring_update(qarray, zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC));
 		}
 	}
 	
@@ -275,7 +275,7 @@ static inline zval *_http_querystring_instantiate(zval *this_ptr, zend_bool glob
 #define http_querystring_get(o, t, n, l, def, del, r) _http_querystring_get((o), (t), (n), (l), (def), (del), (r) TSRMLS_CC)
 static inline void _http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC)
 {
-	zval **arrval, *qarray = GET_PROP(queryArray);
+	zval **arrval, *qarray = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC);
 		
 	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void *) &arrval))) {
 		RETVAL_ZVAL(*arrval, 1, 0);
@@ -285,7 +285,7 @@ static inline void _http_querystring_get(zval *this_ptr, int type, char *name, u
 		}
 			
 		if (del && (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarray), name, name_len + 1))) {
-			http_querystring_update(qarray, GET_PROP(queryString));
+			http_querystring_update(qarray, zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC));
 		}
 	} else if(defval) {
 		RETURN_ZVAL(defval, 1, 0);
@@ -397,9 +397,9 @@ PHP_METHOD(HttpQueryString, set)
 	zval *params;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &params)) {
-		zval *qarray = GET_PROP(queryArray);
+		zval *qarray = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC);
 		if (http_querystring_modify(qarray, params)) {
-			http_querystring_update(qarray, GET_PROP(queryString));
+			http_querystring_update(qarray, zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC));
 		}
 	}
 	
@@ -416,9 +416,9 @@ PHP_METHOD(HttpQueryString, mod)
 	zval *zobj, *qarr, *qstr, *params;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &params)) {
-		zobj = http_querystring_instantiate(NULL, 0, GET_PROP(queryArray), 1);
-		qarr = GET_PROP_EX(zobj, queryArray);
-		qstr = GET_PROP_EX(zobj, queryString);
+		zobj = http_querystring_instantiate(NULL, 0, zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC), 1);
+		qarr = zend_read_property(THIS_CE, zobj, ZEND_STRS("queryArray")-1, 0 TSRMLS_CC);
+		qstr = zend_read_property(THIS_CE, zobj, ZEND_STRS("queryString")-1, 0 TSRMLS_CC);
 		
 		http_querystring_modify(qarr, params);
 		http_querystring_update(qarr, qstr);
@@ -434,7 +434,7 @@ PHP_METHOD(HttpQueryString, mod)
 PHP_METHOD(HttpQueryString, singleton)
 {
 	zend_bool global = 1;
-	zval *instance = GET_STATIC_PROP(instance);
+	zval *instance = *zend_std_get_static_property(THIS_CE, ZEND_STRS("instance")-1, 0 TSRMLS_CC);
 	
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &global)) {
@@ -456,7 +456,7 @@ PHP_METHOD(HttpQueryString, singleton)
 			add_index_zval(instance, global, zobj);
 			RETVAL_OBJECT(zobj, 1);
 			
-			SET_STATIC_PROP(instance, instance);
+			zend_update_static_property(THIS_CE, ZEND_STRS("instance")-1, instance TSRMLS_CC);
 			zval_ptr_dtor(&instance);
 		}
 	}
@@ -499,8 +499,8 @@ PHP_METHOD(HttpQueryString, xlate)
 		RETURN_FALSE;
 	}
 	
-	qa = GET_PROP(queryArray);
-	qs = GET_PROP(queryString);
+	qa = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC);
+	qs = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC);
 	INIT_PZVAL(&xa);
 	array_init(&xa);
 	
@@ -552,7 +552,7 @@ PHP_METHOD(HttpQueryString, offsetGet)
 	zval **value;
 	
 	if (	(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) &&
-			(SUCCESS == zend_hash_find(Z_ARRVAL_P(GET_PROP(queryArray)), offset_str, offset_len + 1, (void *) &value))) {
+			(SUCCESS == zend_hash_find(Z_ARRVAL_P(zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC)), offset_str, offset_len + 1, (void *) &value))) {
 		RETVAL_ZVAL(*value, 1, 0);
 	}
 }
@@ -567,7 +567,7 @@ PHP_METHOD(HttpQueryString, offsetSet)
 	zval *value;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &offset_str, &offset_len, &value)) {
-		zval *qarr = GET_PROP(queryArray), *qstr = GET_PROP(queryString);
+		zval *qarr = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC), *qstr = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC);
 		
 		ZVAL_ADDREF(value);
 		add_assoc_zval_ex(qarr, offset_str, offset_len + 1, value);
@@ -585,7 +585,7 @@ PHP_METHOD(HttpQueryString, offsetExists)
 	zval **value;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) {
-		RETURN_BOOL((SUCCESS == zend_hash_find(Z_ARRVAL_P(GET_PROP(queryArray)), offset_str, offset_len + 1, (void *) &value)) && (Z_TYPE_PP(value) != IS_NULL));
+		RETURN_BOOL((SUCCESS == zend_hash_find(Z_ARRVAL_P(zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC)), offset_str, offset_len + 1, (void *) &value)) && (Z_TYPE_PP(value) != IS_NULL));
 	}
 }
 /* }}} */
@@ -598,10 +598,10 @@ PHP_METHOD(HttpQueryString, offsetUnset)
 	int offset_len;
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) {
-		zval *qarr = GET_PROP(queryArray);
+		zval *qarr = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC);
 		
 		if (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarr), offset_str, offset_len + 1)) {
-			http_querystring_update(qarr, GET_PROP(queryString));
+			http_querystring_update(qarr, zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC));
 		}
 	}
 }

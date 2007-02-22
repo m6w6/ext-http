@@ -249,7 +249,7 @@ HTTP_BEGIN_ARGS(encodeBody, 2)
 HTTP_END_ARGS;
 #endif
 
-#define OBJ_PROP_CE http_request_object_ce
+#define THIS_CE http_request_object_ce
 zend_class_entry *http_request_object_ce;
 zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -350,99 +350,99 @@ PHP_MINIT_FUNCTION(http_request_object)
 	HTTP_REGISTER_CLASS_EX(HttpRequest, http_request_object, NULL, 0);
 	http_request_object_handlers.clone_obj = _http_request_object_clone_obj;
 
-	DCL_PROP_N(PRIVATE, options);
-	DCL_PROP_N(PRIVATE, postFields);
-	DCL_PROP_N(PRIVATE, postFiles);
-	DCL_PROP_N(PRIVATE, responseInfo);
-	DCL_PROP_N(PRIVATE, responseMessage);
-	DCL_PROP(PRIVATE, long, responseCode, 0);
-	DCL_PROP(PRIVATE, string, responseStatus, "");
-	DCL_PROP(PRIVATE, long, method, HTTP_GET);
-	DCL_PROP(PRIVATE, string, url, "");
-	DCL_PROP(PRIVATE, string, contentType, "");
-	DCL_PROP(PRIVATE, string, requestBody, "");
-	DCL_PROP(PRIVATE, string, queryData, "");
-	DCL_PROP(PRIVATE, string, putFile, "");
-	DCL_PROP(PRIVATE, string, putData, "");
-	DCL_PROP_N(PRIVATE, history);
-	DCL_PROP(PUBLIC, bool, recordHistory, 0);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("options")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("postFields")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("postFiles")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("responseInfo")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("responseMessage")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_long(THIS_CE, ZEND_STRS("responseCode")-1, 0, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("responseStatus")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_long(THIS_CE, ZEND_STRS("method")-1, HTTP_GET, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("url")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("contentType")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("requestBody")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("queryData")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("putFile")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("putData")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("history")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_bool(THIS_CE, ZEND_STRS("recordHistory")-1, 0, ZEND_ACC_PUBLIC TSRMLS_CC);
 
 #ifndef WONKY
 	/*
 	 * Request Method Constants
 	*/
 	/* HTTP/1.1 */
-	DCL_CONST(long, "METH_GET", HTTP_GET);
-	DCL_CONST(long, "METH_HEAD", HTTP_HEAD);
-	DCL_CONST(long, "METH_POST", HTTP_POST);
-	DCL_CONST(long, "METH_PUT", HTTP_PUT);
-	DCL_CONST(long, "METH_DELETE", HTTP_DELETE);
-	DCL_CONST(long, "METH_OPTIONS", HTTP_OPTIONS);
-	DCL_CONST(long, "METH_TRACE", HTTP_TRACE);
-	DCL_CONST(long, "METH_CONNECT", HTTP_CONNECT);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_GET")-1, HTTP_GET TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_HEAD")-1, HTTP_HEAD TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_POST")-1, HTTP_POST TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_PUT")-1, HTTP_PUT TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_DELETE")-1, HTTP_DELETE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_OPTIONS")-1, HTTP_OPTIONS TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_TRACE")-1, HTTP_TRACE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_CONNECT")-1, HTTP_CONNECT TSRMLS_CC);
 	/* WebDAV - RFC 2518 */
-	DCL_CONST(long, "METH_PROPFIND", HTTP_PROPFIND);
-	DCL_CONST(long, "METH_PROPPATCH", HTTP_PROPPATCH);
-	DCL_CONST(long, "METH_MKCOL", HTTP_MKCOL);
-	DCL_CONST(long, "METH_COPY", HTTP_COPY);
-	DCL_CONST(long, "METH_MOVE", HTTP_MOVE);
-	DCL_CONST(long, "METH_LOCK", HTTP_LOCK);
-	DCL_CONST(long, "METH_UNLOCK", HTTP_UNLOCK);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_PROPFIND")-1, HTTP_PROPFIND TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_PROPPATCH")-1, HTTP_PROPPATCH TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_MKCOL")-1, HTTP_MKCOL TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_COPY")-1, HTTP_COPY TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_MOVE")-1, HTTP_MOVE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_LOCK")-1, HTTP_LOCK TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_UNLOCK")-1, HTTP_UNLOCK TSRMLS_CC);
 	/* WebDAV Versioning - RFC 3253 */
-	DCL_CONST(long, "METH_VERSION_CONTROL", HTTP_VERSION_CONTROL);
-	DCL_CONST(long, "METH_REPORT", HTTP_REPORT);
-	DCL_CONST(long, "METH_CHECKOUT", HTTP_CHECKOUT);
-	DCL_CONST(long, "METH_CHECKIN", HTTP_CHECKIN);
-	DCL_CONST(long, "METH_UNCHECKOUT", HTTP_UNCHECKOUT);
-	DCL_CONST(long, "METH_MKWORKSPACE", HTTP_MKWORKSPACE);
-	DCL_CONST(long, "METH_UPDATE", HTTP_UPDATE);
-	DCL_CONST(long, "METH_LABEL", HTTP_LABEL);
-	DCL_CONST(long, "METH_MERGE", HTTP_MERGE);
-	DCL_CONST(long, "METH_BASELINE_CONTROL", HTTP_BASELINE_CONTROL);
-	DCL_CONST(long, "METH_MKACTIVITY", HTTP_MKACTIVITY);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_VERSION_CONTROL")-1, HTTP_VERSION_CONTROL TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_REPORT")-1, HTTP_REPORT TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_CHECKOUT")-1, HTTP_CHECKOUT TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_CHECKIN")-1, HTTP_CHECKIN TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_UNCHECKOUT")-1, HTTP_UNCHECKOUT TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_MKWORKSPACE")-1, HTTP_MKWORKSPACE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_UPDATE")-1, HTTP_UPDATE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_LABEL")-1, HTTP_LABEL TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_MERGE")-1, HTTP_MERGE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_BASELINE_CONTROL")-1, HTTP_BASELINE_CONTROL TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_MKACTIVITY")-1, HTTP_MKACTIVITY TSRMLS_CC);
 	/* WebDAV Access Control - RFC 3744 */
-	DCL_CONST(long, "METH_ACL", HTTP_ACL);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("METH_ACL")-1, HTTP_ACL TSRMLS_CC);
 
 	/*
 	* HTTP Protocol Version Constants
 	*/
-	DCL_CONST(long, "VERSION_1_0", CURL_HTTP_VERSION_1_0);
-	DCL_CONST(long, "VERSION_1_1", CURL_HTTP_VERSION_1_1);
-	DCL_CONST(long, "VERSION_NONE", CURL_HTTP_VERSION_NONE); /* to be removed */
-	DCL_CONST(long, "VERSION_ANY", CURL_HTTP_VERSION_NONE);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("VERSION_1_0")-1, CURL_HTTP_VERSION_1_0 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("VERSION_1_1")-1, CURL_HTTP_VERSION_1_1 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("VERSION_NONE")-1, CURL_HTTP_VERSION_NONE TSRMLS_CC); /* to be removed */
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("VERSION_ANY")-1, CURL_HTTP_VERSION_NONE TSRMLS_CC);
 
 	/*
 	* SSL Version Constants
 	*/
-	DCL_CONST(long, "SSL_VERSION_TLSv1", CURL_SSLVERSION_TLSv1);
-	DCL_CONST(long, "SSL_VERSION_SSLv2", CURL_SSLVERSION_SSLv2);
-	DCL_CONST(long, "SSL_VERSION_SSLv3", CURL_SSLVERSION_SSLv3);
-	DCL_CONST(long, "SSL_VERSION_ANY", CURL_SSLVERSION_DEFAULT);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("SSL_VERSION_TLSv1")-1, CURL_SSLVERSION_TLSv1 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("SSL_VERSION_SSLv2")-1, CURL_SSLVERSION_SSLv2 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("SSL_VERSION_SSLv3")-1, CURL_SSLVERSION_SSLv3 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("SSL_VERSION_ANY")-1, CURL_SSLVERSION_DEFAULT TSRMLS_CC);
 
 	/*
 	* DNS IPvX resolving
 	*/
-	DCL_CONST(long, "IPRESOLVE_V4", CURL_IPRESOLVE_V4);
-	DCL_CONST(long, "IPRESOLVE_V6", CURL_IPRESOLVE_V6);
-	DCL_CONST(long, "IPRESOLVE_ANY", CURL_IPRESOLVE_WHATEVER);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("IPRESOLVE_V4")-1, CURL_IPRESOLVE_V4 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("IPRESOLVE_V6")-1, CURL_IPRESOLVE_V6 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("IPRESOLVE_ANY")-1, CURL_IPRESOLVE_WHATEVER TSRMLS_CC);
 
 	/*
 	* Auth Constants
 	*/
-	DCL_CONST(long, "AUTH_BASIC", CURLAUTH_BASIC);
-	DCL_CONST(long, "AUTH_DIGEST", CURLAUTH_DIGEST);
-	DCL_CONST(long, "AUTH_NTLM", CURLAUTH_NTLM);
-	DCL_CONST(long, "AUTH_GSSNEG", CURLAUTH_GSSNEGOTIATE);
-	DCL_CONST(long, "AUTH_ANY", CURLAUTH_ANY);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_BASIC")-1, CURLAUTH_BASIC TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_DIGEST")-1, CURLAUTH_DIGEST TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_NTLM")-1, CURLAUTH_NTLM TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_GSSNEG")-1, CURLAUTH_GSSNEGOTIATE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_ANY")-1, CURLAUTH_ANY TSRMLS_CC);
 	
 	/*
 	* Proxy Type Constants
 	*/
 #	if HTTP_CURL_VERSION(7,15,2)
-	DCL_CONST(long, "PROXY_SOCKS4", CURLPROXY_SOCKS4);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_SOCKS4")-1, CURLPROXY_SOCKS4 TSRMLS_CC);
 #	endif
-	DCL_CONST(long, "PROXY_SOCKS5", CURLPROXY_SOCKS5);
-	DCL_CONST(long, "PROXY_HTTP", CURLPROXY_HTTP);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_SOCKS5")-1, CURLPROXY_SOCKS5 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_HTTP")-1, CURLPROXY_HTTP TSRMLS_CC);
 #endif /* WONKY */
 	
 	return SUCCESS;
@@ -505,10 +505,10 @@ void _http_request_object_free(zend_object *object TSRMLS_DC)
 #define http_request_object_check_request_content_type(t) _http_request_object_check_request_content_type((t) TSRMLS_CC)
 static inline void _http_request_object_check_request_content_type(zval *this_ptr TSRMLS_DC)
 {
-	zval *ctype = GET_PROP(contentType);
+	zval *ctype = zend_read_property(THIS_CE, getThis(), ZEND_STRS("contentType")-1, 0 TSRMLS_CC);
 				
 	if (Z_STRLEN_P(ctype)) {
-		zval **headers, *opts = GET_PROP(options);
+		zval **headers, *opts = zend_read_property(THIS_CE, getThis(), ZEND_STRS("options")-1, 0 TSRMLS_CC);
 		
 		if (	(Z_TYPE_P(opts) == IS_ARRAY) &&
 				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), "headers", sizeof("headers"), (void *) &headers)) && 
@@ -555,9 +555,9 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	http_request_reset(obj->request);
 	HTTP_CHECK_CURL_INIT(obj->request->ch, http_curl_init(obj->request), return FAILURE);
 	
-	obj->request->url = http_absolute_url(Z_STRVAL_P(GET_PROP(url)));
+	obj->request->url = http_absolute_url(Z_STRVAL_P(zend_read_property(THIS_CE, getThis(), ZEND_STRS("url")-1, 0 TSRMLS_CC)));
 	
-	switch (obj->request->meth = Z_LVAL_P(GET_PROP(method)))
+	switch (obj->request->meth = Z_LVAL_P(zend_read_property(THIS_CE, getThis(), ZEND_STRS("method")-1, 0 TSRMLS_CC)))
 	{
 		case HTTP_GET:
 		case HTTP_HEAD:
@@ -565,7 +565,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 
 		case HTTP_PUT:
 		{
-			zval *put_file = GET_PROP(putFile);
+			zval *put_file = zend_read_property(THIS_CE, getThis(), ZEND_STRS("putFile")-1, 0 TSRMLS_CC);
 			
 			http_request_object_check_request_content_type(getThis());
 			
@@ -579,7 +579,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 					status = FAILURE;
 				}
 			} else {
-				zval *put_data = GET_PROP(putData);
+				zval *put_data = zend_read_property(THIS_CE, getThis(), ZEND_STRS("putData")-1, 0 TSRMLS_CC);
 				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_CSTRING,
 					estrndup(Z_STRVAL_P(put_data), Z_STRLEN_P(put_data)), Z_STRLEN_P(put_data), 1);
 			}
@@ -590,14 +590,14 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 		default:
 		{
 			/* check for raw request body */
-			zval *raw_data = GET_PROP(requestBody);
+			zval *raw_data = zend_read_property(THIS_CE, getThis(), ZEND_STRS("requestBody")-1, 0 TSRMLS_CC);
 			
 			if (Z_STRLEN_P(raw_data)) {
 				http_request_object_check_request_content_type(getThis());
 				obj->request->body = http_request_body_init_ex(obj->request->body, HTTP_REQUEST_BODY_CSTRING,
 					estrndup(Z_STRVAL_P(raw_data), Z_STRLEN_P(raw_data)), Z_STRLEN_P(raw_data), 1);
 			} else {
-				zval *zfields = GET_PROP(postFields), *zfiles = GET_PROP(postFiles);
+				zval *zfields = zend_read_property(THIS_CE, getThis(), ZEND_STRS("postFields")-1, 0 TSRMLS_CC), *zfiles = zend_read_property(THIS_CE, getThis(), ZEND_STRS("postFiles")-1, 0 TSRMLS_CC);
 				HashTable *fields;
 				HashTable *files;
 				
@@ -615,8 +615,8 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 	}
 
 	if (status == SUCCESS) {
-		zval *qdata = GET_PROP(queryData);
-		zval *options = GET_PROP(options);
+		zval *qdata = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryData")-1, 0 TSRMLS_CC);
+		zval *options = zend_read_property(THIS_CE, getThis(), ZEND_STRS("options")-1, 0 TSRMLS_CC);
 		
 		if (Z_STRLEN_P(qdata)) {
 			if (!strchr(obj->request->url, '?')) {
@@ -660,7 +660,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	MAKE_STD_ZVAL(info);
 	array_init(info);
 	http_request_info(obj->request, Z_ARRVAL_P(info));
-	SET_PROP(responseInfo, info);
+	zend_update_property(THIS_CE, getThis(), ZEND_STRS("responseInfo")-1, info TSRMLS_CC);
 	zval_ptr_dtor(&info);
 	
 	/* parse response message */
@@ -670,8 +670,8 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	if ((msg = http_message_parse(PHPSTR_VAL(&obj->request->conv.response), PHPSTR_LEN(&obj->request->conv.response)))) {
 		zval *message;
 
-		if (zval_is_true(GET_PROP(recordHistory))) {
-			zval *hist, *history = GET_PROP(history);
+		if (zval_is_true(zend_read_property(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, 0 TSRMLS_CC))) {
+			zval *hist, *history = zend_read_property(THIS_CE, getThis(), ZEND_STRS("history")-1, 0 TSRMLS_CC);
 			http_message *response = http_message_parse(PHPSTR_VAL(&obj->request->conv.response), PHPSTR_LEN(&obj->request->conv.response));
 			http_message *request = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request));
 			
@@ -680,16 +680,16 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 			if (Z_TYPE_P(history) == IS_OBJECT) {
 				http_message_object_prepend(hist, history);
 			}
-			SET_PROP(history, hist);
+			zend_update_property(THIS_CE, getThis(), ZEND_STRS("history")-1, hist TSRMLS_CC);
 			zval_ptr_dtor(&hist);
 		}
 
-		UPD_PROP(long, responseCode, msg->http.info.response.code);
-		UPD_PROP(string, responseStatus, STR_PTR(msg->http.info.response.status));
+		zend_update_property_long(THIS_CE, getThis(), ZEND_STRS("responseCode")-1, msg->http.info.response.code TSRMLS_CC);
+		zend_update_property_string(THIS_CE, getThis(), ZEND_STRS("responseStatus")-1, STR_PTR(msg->http.info.response.status) TSRMLS_CC);
 
 		MAKE_STD_ZVAL(message);
 		ZVAL_OBJVAL(message, http_message_object_new_ex(http_message_object_ce, msg, NULL), 0);
-		SET_PROP(responseMessage, message);
+		zend_update_property(THIS_CE, getThis(), ZEND_STRS("responseMessage")-1, message TSRMLS_CC);
 		zval_ptr_dtor(&message);
 
 		ret = SUCCESS;
@@ -699,25 +699,25 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		
 		MAKE_STD_ZVAL(znull);
 		ZVAL_NULL(znull);
-		SET_PROP(responseMessage, znull);
+		zend_update_property(THIS_CE, getThis(), ZEND_STRS("responseMessage")-1, znull TSRMLS_CC);
 		zval_ptr_dtor(&znull);
 		
-		UPD_PROP(long, responseCode, 0);
-		UPD_PROP(string, responseStatus, "");
+		zend_update_property_long(THIS_CE, getThis(), ZEND_STRS("responseCode")-1, 0 TSRMLS_CC);
+		zend_update_property_string(THIS_CE, getThis(), ZEND_STRS("responseStatus")-1, "" TSRMLS_CC);
 		
 		/* append request message to history */
-		if (zval_is_true(GET_PROP(recordHistory))) {
+		if (zval_is_true(zend_read_property(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, 0 TSRMLS_CC))) {
 			http_message *request;
 			
 			if ((request = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request)))) {
-				zval *hist, *history = GET_PROP(history);
+				zval *hist, *history = zend_read_property(THIS_CE, getThis(), ZEND_STRS("history")-1, 0 TSRMLS_CC);
 				
 				MAKE_STD_ZVAL(hist);
 				ZVAL_OBJVAL(hist, http_message_object_new_ex(http_message_object_ce, request, NULL), 0);
 				if (Z_TYPE_P(history) == IS_OBJECT) {
 					http_message_object_prepend(hist, history);
 				}
-				SET_PROP(history, hist);
+				zend_update_property(THIS_CE, getThis(), ZEND_STRS("history")-1, hist TSRMLS_CC);
 				zval_ptr_dtor(&hist);
 			}
 		}
@@ -761,7 +761,7 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 
 	MAKE_STD_ZVAL(new_opts);
 	array_init(new_opts);
-	old_opts = GET_PROP(options);
+	old_opts = zend_read_property(THIS_CE, getThis(), ZEND_STRS("options")-1, 0 TSRMLS_CC);
 	if (Z_TYPE_P(old_opts) == IS_ARRAY) {
 		array_copy(Z_ARRVAL_P(old_opts), Z_ARRVAL_P(new_opts));
 	}
@@ -784,7 +784,7 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 		ZVAL_ADDREF(opts);
 		add_assoc_zval_ex(new_opts, key, len, opts);
 	}
-	SET_PROP(options, new_opts);
+	zend_update_property(THIS_CE, getThis(), ZEND_STRS("options")-1, new_opts TSRMLS_CC);
 	zval_ptr_dtor(&new_opts);
 
 	RETURN_TRUE;
@@ -799,7 +799,7 @@ static inline void _http_request_get_options_subr(INTERNAL_FUNCTION_PARAMETERS, 
 	if (return_value_used) {
 		zval *opts, **options;
 
-		opts = GET_PROP(options);
+		opts = zend_read_property(THIS_CE, getThis(), ZEND_STRS("options")-1, 0 TSRMLS_CC);
 		array_init(return_value);
 
 		if (	(Z_TYPE_P(opts) == IS_ARRAY) && 
@@ -825,10 +825,10 @@ PHP_METHOD(HttpRequest, __construct)
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sla!", &URL, &URL_len, &meth, &options)) {
 		if (URL) {
-			UPD_STRL(url, URL, URL_len);
+			zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("url")-1, URL, URL_len TSRMLS_CC);
 		}
 		if (meth > -1) {
-			UPD_PROP(long, method, meth);
+			zend_update_property_long(THIS_CE, getThis(), ZEND_STRS("method")-1, meth TSRMLS_CC);
 		}
 		if (options) {
 			zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setoptions", NULL, options);
@@ -854,10 +854,10 @@ PHP_METHOD(HttpRequest, factory)
 		RETVAL_OBJVAL(ov, 0);
 		getThis() = return_value;
 		if (URL) {
-			UPD_STRL(url, URL, URL_len);
+			zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("url")-1, URL, URL_len TSRMLS_CC);
 		}
 		if (meth > -1) {
-			UPD_PROP(long, method, meth);
+			zend_update_property_long(THIS_CE, getThis(), ZEND_STRS("method")-1, meth TSRMLS_CC);
 		}
 		if (options) {
 			zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setoptions", NULL, options);
@@ -883,7 +883,7 @@ PHP_METHOD(HttpRequest, setOptions)
 	array_init(new_opts);
 		
 	if (!opts || !zend_hash_num_elements(Z_ARRVAL_P(opts))) {
-		SET_PROP(options, new_opts);
+		zend_update_property(THIS_CE, getThis(), ZEND_STRS("options")-1, new_opts TSRMLS_CC);
 		zval_ptr_dtor(&new_opts);
 		RETURN_TRUE;
 	}
@@ -912,7 +912,7 @@ PHP_METHOD(HttpRequest, setOptions)
 				getObject(http_request_object, obj);
 				http_request_enable_cookies(obj->request);
 			} else if (!strcasecmp(key.str, "recordHistory")) {
-				UPD_PROP(bool, recordHistory, 1);
+				zend_update_property_bool(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, 1 TSRMLS_CC);
 			} else {
 				ZVAL_ADDREF(*opt);
 				add_assoc_zval_ex(add_opts, key.str, key.len, *opt);
@@ -920,12 +920,12 @@ PHP_METHOD(HttpRequest, setOptions)
 		}
 	}
 	
-	old_opts = GET_PROP(options);
+	old_opts = zend_read_property(THIS_CE, getThis(), ZEND_STRS("options")-1, 0 TSRMLS_CC);
 	if (Z_TYPE_P(old_opts) == IS_ARRAY) {
 		array_copy(Z_ARRVAL_P(old_opts), Z_ARRVAL_P(new_opts));
 	}
 	array_join(Z_ARRVAL_P(add_opts), Z_ARRVAL_P(new_opts), 0, 0);
-	SET_PROP(options, new_opts);
+	zend_update_property(THIS_CE, getThis(), ZEND_STRS("options")-1, new_opts TSRMLS_CC);
 	zval_ptr_dtor(&new_opts);
 	zval_ptr_dtor(&add_opts);
 	
@@ -1053,7 +1053,7 @@ PHP_METHOD(HttpRequest, setUrl)
 		RETURN_FALSE;
 	}
 
-	UPD_STRL(url, URL, URL_len);
+	zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("url")-1, URL, URL_len TSRMLS_CC);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1080,7 +1080,7 @@ PHP_METHOD(HttpRequest, setMethod)
 		RETURN_FALSE;
 	}
 
-	UPD_PROP(long, method, meth);
+	zend_update_property_long(THIS_CE, getThis(), ZEND_STRS("method")-1, meth TSRMLS_CC);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1111,7 +1111,7 @@ PHP_METHOD(HttpRequest, setContentType)
 	if (ct_len) {
 		HTTP_CHECK_CONTENT_TYPE(ctype, RETURN_FALSE);
 	}
-	UPD_STRL(contentType, ctype, ct_len);
+	zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("contentType")-1, ctype, ct_len TSRMLS_CC);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1139,7 +1139,7 @@ PHP_METHOD(HttpRequest, setQueryData)
 	}
 
 	if ((!qdata) || Z_TYPE_P(qdata) == IS_NULL) {
-		UPD_STRL(queryData, "", 0);
+		zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("queryData")-1, "", 0 TSRMLS_CC);
 	} else if ((Z_TYPE_P(qdata) == IS_ARRAY) || (Z_TYPE_P(qdata) == IS_OBJECT)) {
 		char *query_data = NULL;
 		
@@ -1147,13 +1147,13 @@ PHP_METHOD(HttpRequest, setQueryData)
 			RETURN_FALSE;
 		}
 		
-		UPD_PROP(string, queryData, query_data);
+		zend_update_property_string(THIS_CE, getThis(), ZEND_STRS("queryData")-1, query_data TSRMLS_CC);
 		efree(query_data);
 	} else {
 		zval *orig = qdata;
 		
 		convert_to_string_ex(&qdata);
-		UPD_STRL(queryData, Z_STRVAL_P(qdata), Z_STRLEN_P(qdata));
+		zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("queryData")-1, Z_STRVAL_P(qdata), Z_STRLEN_P(qdata) TSRMLS_CC);
 		if (orig != qdata) {
 			zval_ptr_dtor(&qdata);
 		}
@@ -1186,13 +1186,13 @@ PHP_METHOD(HttpRequest, addQueryData)
 		RETURN_FALSE;
 	}
 
-	old_qdata = GET_PROP(queryData);
+	old_qdata = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryData")-1, 0 TSRMLS_CC);
 
 	if (SUCCESS != http_urlencode_hash_ex(HASH_OF(qdata), 1, Z_STRVAL_P(old_qdata), Z_STRLEN_P(old_qdata), &query_data, &query_data_len)) {
 		RETURN_FALSE;
 	}
 
-	UPD_STRL(queryData, query_data, query_data_len);
+	zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("queryData")-1, query_data, query_data_len TSRMLS_CC);
 	efree(query_data);
 
 	RETURN_TRUE;
@@ -1212,12 +1212,12 @@ PHP_METHOD(HttpRequest, addPostFields)
 	if (zend_hash_num_elements(Z_ARRVAL_P(post_data))) {
 		MAKE_STD_ZVAL(new_post);
 		array_init(new_post);
-		old_post = GET_PROP(postFields);
+		old_post = zend_read_property(THIS_CE, getThis(), ZEND_STRS("postFields")-1, 0 TSRMLS_CC);
 		if (Z_TYPE_P(old_post) == IS_ARRAY) {
 			array_copy(Z_ARRVAL_P(old_post), Z_ARRVAL_P(new_post));
 		}
 		array_join(Z_ARRVAL_P(post_data), Z_ARRVAL_P(new_post), 0, 0);
-		SET_PROP(postFields, new_post);
+		zend_update_property(THIS_CE, getThis(), ZEND_STRS("postFields")-1, new_post TSRMLS_CC);
 		zval_ptr_dtor(&new_post);
 	}
 	
@@ -1240,7 +1240,7 @@ PHP_METHOD(HttpRequest, setPostFields)
 	if (post_data && zend_hash_num_elements(Z_ARRVAL_P(post_data))) {
 		array_copy(Z_ARRVAL_P(post_data), Z_ARRVAL_P(post));
 	}
-	SET_PROP(postFields, post);
+	zend_update_property(THIS_CE, getThis(), ZEND_STRS("postFields")-1, post TSRMLS_CC);
 	zval_ptr_dtor(&post);
 
 	RETURN_TRUE;
@@ -1274,7 +1274,7 @@ PHP_METHOD(HttpRequest, setBody)
 		raw_data = "";
 	}
 	
-	UPD_STRL(requestBody, raw_data, data_len);
+	zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("requestBody")-1, raw_data, data_len TSRMLS_CC);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1291,14 +1291,14 @@ PHP_METHOD(HttpRequest, addBody)
 	}
 	
 	if (data_len) {
-		zval *data = GET_PROP(rrequestBody);
+		zval *data = zend_read_property(THIS_CE, getThis(), ZEND_STRS("rrequestBody")-1, 0 TSRMLS_CC);
 		
 		if (Z_STRLEN_P(data)) {
 			Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
 			Z_STRVAL_P(data)[Z_STRLEN_P(data)] = '\0';
 			memcpy(Z_STRVAL_P(data) + Z_STRLEN_P(data) - data_len, raw_data, data_len);
 		} else {
-			UPD_STRL(putData, raw_data, data_len);
+			zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("putData")-1, raw_data, data_len TSRMLS_CC);
 		}
 	}
 	
@@ -1346,12 +1346,12 @@ PHP_METHOD(HttpRequest, addPostFile)
 
 	MAKE_STD_ZVAL(new_post);
 	array_init(new_post);
-	old_post = GET_PROP(postFiles);
+	old_post = zend_read_property(THIS_CE, getThis(), ZEND_STRS("postFiles")-1, 0 TSRMLS_CC);
 	if (Z_TYPE_P(old_post) == IS_ARRAY) {
 		array_copy(Z_ARRVAL_P(old_post), Z_ARRVAL_P(new_post));
 	}
 	add_next_index_zval(new_post, entry);
-	SET_PROP(postFiles, new_post);
+	zend_update_property(THIS_CE, getThis(), ZEND_STRS("postFiles")-1, new_post TSRMLS_CC);
 	zval_ptr_dtor(&new_post);
 
 	RETURN_TRUE;
@@ -1373,7 +1373,7 @@ PHP_METHOD(HttpRequest, setPostFiles)
 	if (files && (Z_TYPE_P(files) == IS_ARRAY)) {
 		array_copy(Z_ARRVAL_P(files), Z_ARRVAL_P(post));
 	}
-	SET_PROP(postFiles, post);
+	zend_update_property(THIS_CE, getThis(), ZEND_STRS("postFiles")-1, post TSRMLS_CC);
 	zval_ptr_dtor(&post);
 
 	RETURN_TRUE;
@@ -1403,7 +1403,7 @@ PHP_METHOD(HttpRequest, setPutFile)
 		RETURN_FALSE;
 	}
 
-	UPD_STRL(putFile, file, file_len);
+	zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("putFile")-1, file, file_len TSRMLS_CC);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1435,7 +1435,7 @@ PHP_METHOD(HttpRequest, setPutData)
 		put_data = "";
 	}
 	
-	UPD_STRL(putData, put_data, data_len);
+	zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("putData")-1, put_data, data_len TSRMLS_CC);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -1452,14 +1452,14 @@ PHP_METHOD(HttpRequest, addPutData)
 	}
 	
 	if (data_len) {
-		zval *data = GET_PROP(putData);
+		zval *data = zend_read_property(THIS_CE, getThis(), ZEND_STRS("putData")-1, 0 TSRMLS_CC);
 		
 		if (Z_STRLEN_P(data)) {
 			Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
 			Z_STRVAL_P(data)[Z_STRLEN_P(data)] = '\0';
 			memcpy(Z_STRVAL_P(data) + Z_STRLEN_P(data) - data_len, put_data, data_len);
 		} else {
-			UPD_STRL(putData, put_data, data_len);
+			zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("putData")-1, put_data, data_len TSRMLS_CC);
 		}
 	}
 	
@@ -1488,7 +1488,7 @@ PHP_METHOD(HttpRequest, getResponseData)
 	if (return_value_used) {
 		char *body;
 		size_t body_len;
-		zval *headers, *message = GET_PROP(responseMessage);
+		zval *headers, *message = zend_read_property(THIS_CE, getThis(), ZEND_STRS("responseMessage")-1, 0 TSRMLS_CC);
 		
 		if (Z_TYPE_P(message) == IS_OBJECT) {
 			getObjectEx(http_message_object, msg, message);
@@ -1517,7 +1517,7 @@ PHP_METHOD(HttpRequest, getResponseHeader)
 		int header_len = 0;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &header_name, &header_len)) {
-			zval *message = GET_PROP(responseMessage);
+			zval *message = zend_read_property(THIS_CE, getThis(), ZEND_STRS("responseMessage")-1, 0 TSRMLS_CC);
 			
 			if (Z_TYPE_P(message) == IS_OBJECT) {
 				getObjectEx(http_message_object, msg, message);
@@ -1550,7 +1550,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 			int i = 0;
 			HashKey key = initHashKey(0);
 			char **allowed_extras = NULL;
-			zval **header = NULL, **entry = NULL, *message = GET_PROP(responseMessage);
+			zval **header = NULL, **entry = NULL, *message = zend_read_property(THIS_CE, getThis(), ZEND_STRS("responseMessage")-1, 0 TSRMLS_CC);
 			HashPosition pos, pos1, pos2;
 			
 			if (Z_TYPE_P(message) == IS_OBJECT) {
@@ -1628,7 +1628,7 @@ PHP_METHOD(HttpRequest, getResponseBody)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *message = GET_PROP(responseMessage);
+		zval *message = zend_read_property(THIS_CE, getThis(), ZEND_STRS("responseMessage")-1, 0 TSRMLS_CC);
 		
 		if (Z_TYPE_P(message) == IS_OBJECT) {
 			getObjectEx(http_message_object, msg, message);
@@ -1677,7 +1677,7 @@ PHP_METHOD(HttpRequest, getResponseInfo)
 			RETURN_FALSE;
 		}
 
-		info = GET_PROP(responseInfo);
+		info = zend_read_property(THIS_CE, getThis(), ZEND_STRS("responseInfo")-1, 0 TSRMLS_CC);
 		
 		if (Z_TYPE_P(info) != IS_ARRAY) {
 			RETURN_FALSE;
@@ -1705,7 +1705,7 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 		zval *message;
 
 		SET_EH_THROW_HTTP();
-		message = GET_PROP(responseMessage);
+		message = zend_read_property(THIS_CE, getThis(), ZEND_STRS("responseMessage")-1, 0 TSRMLS_CC);
 		if (Z_TYPE_P(message) == IS_OBJECT) {
 			RETVAL_OBJECT(message, 1);
 		} else {
@@ -1773,7 +1773,7 @@ PHP_METHOD(HttpRequest, getHistory)
 		zval *hist;
 		
 		SET_EH_THROW_HTTP();
-		hist = GET_PROP(history);
+		hist = zend_read_property(THIS_CE, getThis(), ZEND_STRS("history")-1, 0 TSRMLS_CC);
 		if (Z_TYPE_P(hist) == IS_OBJECT) {
 			RETVAL_OBJECT(hist, 1);
 		} else {
@@ -1793,7 +1793,7 @@ PHP_METHOD(HttpRequest, clearHistory)
 		
 		MAKE_STD_ZVAL(hist);
 		ZVAL_NULL(hist);
-		SET_PROP(history, hist);
+		zend_update_property(THIS_CE, getThis(), ZEND_STRS("history")-1, hist TSRMLS_CC);
 		zval_ptr_dtor(&hist);
 	}
 }
@@ -1816,7 +1816,7 @@ PHP_METHOD(HttpRequest, send)
 	} else if (SUCCESS == http_request_object_requesthandler(obj, getThis())) {
 		http_request_exec(obj->request);
 		if (SUCCESS == http_request_object_responsehandler(obj, getThis())) {
-			RETVAL_OBJECT(GET_PROP(responseMessage), 1);
+			RETVAL_OBJECT(zend_read_property(THIS_CE, getThis(), ZEND_STRS("responseMessage")-1, 0 TSRMLS_CC), 1);
 		}
 	}
 

@@ -66,7 +66,7 @@ static void _http_requestdatashare_object_write_prop(zval *object, zval *member,
 #define http_requestdatashare_instantiate(t, g) _http_requestdatashare_instantiate((t), (g) TSRMLS_CC)
 static inline zval *_http_requestdatashare_instantiate(zval *this_ptr, zend_bool global TSRMLS_DC);
 
-#define OBJ_PROP_CE http_requestdatashare_object_ce
+#define THIS_CE http_requestdatashare_object_ce
 zend_class_entry *http_requestdatashare_object_ce;
 zend_function_entry http_requestdatashare_object_fe[] = {
 	HTTP_RSHARE_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
@@ -93,11 +93,11 @@ PHP_MINIT_FUNCTION(http_requestdatashare_object)
 	zend_class_implements(http_requestdatashare_object_ce TSRMLS_CC, 1, spl_ce_Countable);
 #endif
 	
-	DCL_STATIC_PROP_N(PRIVATE, instance);
-	DCL_PROP(PUBLIC, bool, cookie, 0);
-	DCL_PROP(PUBLIC, bool, dns, 0);
-	DCL_PROP(PUBLIC, bool, ssl, 0);
-	DCL_PROP(PUBLIC, bool, connect, 0);
+	zend_declare_property_null(THIS_CE, ZEND_STRS("instance")-1, (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
+	zend_declare_property_bool(THIS_CE, ZEND_STRS("cookie")-1, 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_bool(THIS_CE, ZEND_STRS("dns")-1, 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_bool(THIS_CE, ZEND_STRS("ssl")-1, 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_bool(THIS_CE, ZEND_STRS("connect")-1, 0, ZEND_ACC_PUBLIC TSRMLS_CC);
 	
 	return SUCCESS;
 }
@@ -147,7 +147,7 @@ void _http_requestdatashare_object_free(zend_object *object TSRMLS_DC)
 
 static zval *_http_requestdatashare_object_read_prop(zval *object, zval *member, int type TSRMLS_DC)
 {
-	if (type == BP_VAR_W && zend_hash_exists(&OBJ_PROP_CE->default_properties, Z_STRVAL_P(member), Z_STRLEN_P(member)+1)) {
+	if (type == BP_VAR_W && zend_hash_exists(&THIS_CE->default_properties, Z_STRVAL_P(member), Z_STRLEN_P(member)+1)) {
 		zend_error(E_ERROR, "Cannot access HttpRequestDataShare default properties by reference or array key/index");
 		return NULL;
 	}
@@ -157,7 +157,7 @@ static zval *_http_requestdatashare_object_read_prop(zval *object, zval *member,
 
 static void _http_requestdatashare_object_write_prop(zval *object, zval *member, zval *value TSRMLS_DC)
 {
-	if (zend_hash_exists(&OBJ_PROP_CE->default_properties, Z_STRVAL_P(member), Z_STRLEN_P(member)+1)) {
+	if (zend_hash_exists(&THIS_CE->default_properties, Z_STRVAL_P(member), Z_STRLEN_P(member)+1)) {
 		int status;
 		zval *orig = value;
 		getObjectEx(http_requestdatashare_object, obj, object);
@@ -253,7 +253,7 @@ PHP_METHOD(HttpRequestDataShare, factory)
 PHP_METHOD(HttpRequestDataShare, singleton)
 {
 	zend_bool global = 0;
-	zval *instance = GET_STATIC_PROP(instance);
+	zval *instance = *zend_std_get_static_property(THIS_CE, ZEND_STRS("instance")-1, 0 TSRMLS_CC);
 	
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &global)) {
@@ -275,7 +275,7 @@ PHP_METHOD(HttpRequestDataShare, singleton)
 			add_index_zval(instance, global, zobj);
 			RETVAL_OBJECT(zobj, 1);
 			
-			SET_STATIC_PROP(instance, instance);
+			zend_update_static_property(THIS_CE, ZEND_STRS("instance")-1, instance TSRMLS_CC);
 			zval_ptr_dtor(&instance);
 		}
 	}
@@ -293,16 +293,16 @@ static inline zval *_http_requestdatashare_instantiate(zval *this_ptr, zend_bool
 	}
 	if (global) {
 		if (HTTP_G->request.datashare.cookie) {
-			UPD_PROP(bool, cookie, HTTP_G->request.datashare.cookie);
+			zend_update_property_bool(THIS_CE, getThis(), ZEND_STRS("cookie")-1, HTTP_G->request.datashare.cookie TSRMLS_CC);
 		}
 		if (HTTP_G->request.datashare.dns) {
-			UPD_PROP(bool, dns, HTTP_G->request.datashare.dns);
+			zend_update_property_bool(THIS_CE, getThis(), ZEND_STRS("dns")-1, HTTP_G->request.datashare.dns TSRMLS_CC);
 		}
 		if (HTTP_G->request.datashare.ssl) {
-			UPD_PROP(bool, ssl, HTTP_G->request.datashare.ssl);
+			zend_update_property_bool(THIS_CE, getThis(), ZEND_STRS("ssl")-1, HTTP_G->request.datashare.ssl TSRMLS_CC);
 		}
 		if (HTTP_G->request.datashare.connect) {
-			UPD_PROP(bool, connect, HTTP_G->request.datashare.connect);
+			zend_update_property_bool(THIS_CE, getThis(), ZEND_STRS("connect")-1, HTTP_G->request.datashare.connect TSRMLS_CC);
 		}
 	}
 	return this_ptr;

@@ -47,7 +47,7 @@ HTTP_BEGIN_ARGS(finish, 0)
 	HTTP_ARG_VAL(data, 0)
 HTTP_END_ARGS;
 
-#define OBJ_PROP_CE http_inflatestream_object_ce
+#define THIS_CE http_inflatestream_object_ce
 zend_class_entry *http_inflatestream_object_ce;
 zend_function_entry http_inflatestream_object_fe[] = {
 	HTTP_INFLATE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -67,9 +67,9 @@ PHP_MINIT_FUNCTION(http_inflatestream_object)
 	http_inflatestream_object_handlers.clone_obj = _http_inflatestream_object_clone_obj;
 	
 #ifndef WONKY
-	DCL_CONST(long, "FLUSH_NONE", HTTP_ENCODING_STREAM_FLUSH_NONE);
-	DCL_CONST(long, "FLUSH_SYNC", HTTP_ENCODING_STREAM_FLUSH_SYNC);
-	DCL_CONST(long, "FLUSH_FULL", HTTP_ENCODING_STREAM_FLUSH_FULL);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("FLUSH_NONE")-1, HTTP_ENCODING_STREAM_FLUSH_NONE TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("FLUSH_SYNC")-1, HTTP_ENCODING_STREAM_FLUSH_SYNC TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("FLUSH_FULL")-1, HTTP_ENCODING_STREAM_FLUSH_FULL TSRMLS_CC);
 #endif
 	
 	return SUCCESS;

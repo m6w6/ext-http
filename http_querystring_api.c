@@ -27,7 +27,7 @@
 #include "php_http_querystring_api.h"
 
 #ifdef ZEND_ENGINE_2
-#define OBJ_PROP_CE http_querystring_object_ce
+#define THIS_CE http_querystring_object_ce
 extern zend_class_entry *http_querystring_object_ce;
 #endif
 
@@ -123,7 +123,7 @@ PHP_HTTP_API int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC)
 			return http_querystring_modify_array(qarray, &temp_array);
 #ifdef ZEND_ENGINE_2
 		}
-		return http_querystring_modify_array(qarray, GET_PROP_EX(params, queryArray));
+		return http_querystring_modify_array(qarray, zend_read_property(THIS_CE, params, ZEND_STRS("queryArray")-1, 0 TSRMLS_CC));
 #endif
 	} else {
 		int rv;
