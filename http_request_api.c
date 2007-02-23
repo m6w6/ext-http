@@ -481,9 +481,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 
 	/* proxy */
 	if ((zoption = http_request_option(request, options, "proxyhost", IS_STRING))) {
-		if (Z_STRLEN_P(zoption)) {
-			HTTP_CURL_OPT(CURLOPT_PROXY, Z_STRVAL_P(zoption));
-		}
+		HTTP_CURL_OPT(CURLOPT_PROXY, Z_STRVAL_P(zoption));
 		/* type */
 		if ((zoption = http_request_option(request, options, "proxytype", IS_LONG))) {
 			HTTP_CURL_OPT(CURLOPT_PROXYTYPE, Z_LVAL_P(zoption));
