@@ -14,8 +14,7 @@ error_reporting(E_ALL);
 
 $s = '';
 
-srand(time());
-for ($i = 0; $i < 1000000; $i++) {
+for ($i = 0; $i < 5000; ++$i) {
 	$s .= chr(rand(0,255));
 }
 
