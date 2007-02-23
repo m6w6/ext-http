@@ -888,6 +888,8 @@ PHP_METHOD(HttpRequest, setOptions)
 		RETURN_TRUE;
 	}
 	
+	old_opts = zend_read_property(THIS_CE, getThis(), ZEND_STRS("options")-1, 0 TSRMLS_CC);
+	
 	MAKE_STD_ZVAL(add_opts);
 	array_init(add_opts);
 	/* some options need extra attention -- thus cannot use array_merge() directly */
@@ -913,6 +915,10 @@ PHP_METHOD(HttpRequest, setOptions)
 				http_request_enable_cookies(obj->request);
 			} else if (!strcasecmp(key.str, "recordHistory")) {
 				zend_update_property_bool(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, 1 TSRMLS_CC);
+			} else if (Z_TYPE_PP(opt) == IS_NULL) {
+				if (Z_TYPE_P(old_opts) == IS_ARRAY) {
+					zend_hash_del(Z_ARRVAL_P(old_opts), key.str, key.len);
+				}
 			} else {
 				ZVAL_ADDREF(*opt);
 				add_assoc_zval_ex(add_opts, key.str, key.len, *opt);
@@ -920,7 +926,6 @@ PHP_METHOD(HttpRequest, setOptions)
 		}
 	}
 	
-	old_opts = zend_read_property(THIS_CE, getThis(), ZEND_STRS("options")-1, 0 TSRMLS_CC);
 	if (Z_TYPE_P(old_opts) == IS_ARRAY) {
 		array_copy(Z_ARRVAL_P(old_opts), Z_ARRVAL_P(new_opts));
 	}
