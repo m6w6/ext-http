@@ -229,7 +229,7 @@ PHP_FUNCTION(http_negotiate_charset)
 }
 /* }}} */
 
-/* {{{ proto string http_negotiate_ctype(array supported[, array &result])
+/* {{{ proto string http_negotiate_content_type(array supported[, array &result])
 	Negotiate the clients preferred content type. */
 PHP_FUNCTION(http_negotiate_content_type)
 {
