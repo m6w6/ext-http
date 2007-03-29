@@ -52,7 +52,13 @@ foreach ($ext->getClasses() as $class) {
 	}
 	foreach ($class->getMethods() as $meth) {
 		/* @var $meth ReflectionMethod */
-		fg(sprintf("%s/%s.xml", $class->getName(), strtr(trim($meth->getName(),'_'),'_','-'))) or printf("\t%s::%s()\n", $class->getName(), $meth->getName());
+		try {
+			$meth->getPrototype();
+		} catch (Exception $ex) {
+			// if getPrototype throws an exception it's definitely not a method declared in an interface
+			fg(sprintf("%s/%s.xml", $class->getName(), strtr(trim($meth->getName(),'_'),'_','-'))) or printf("\t%s::%s()\n", $class->getName(), $meth->getName());
+		}
+		
 	}
 	printf("\n");
 }
