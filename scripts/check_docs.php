@@ -47,8 +47,8 @@ foreach ($ext->getClasses() as $class) {
 		re($class->getName().".xml", "#>$name<#") or printf("\t%s::%s (%s)\n", $class->getName(), $name, $tmp);
 	}
 	foreach ($class->getProperties() as $prop) {
-		// blatant guess
-		re($class->getName().".xml", "#>{$prop->getName()}<#") or printf("\t%s::$%s\n", $class->getName(), $prop->getName());
+		/* @var $prop ReflectionProperty */
+		$prop->isPrivate() or re($class->getName().".xml", "#>{$prop->getName()}<#") or printf("\t%s::$%s\n", $class->getName(), $prop->getName());
 	}
 	foreach ($class->getMethods() as $meth) {
 		/* @var $meth ReflectionMethod */
