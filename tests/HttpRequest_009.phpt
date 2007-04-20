@@ -22,7 +22,7 @@ class _R extends HttpRequest
 	}
 }
 
-$r = new _R('http://dev.iworks.at/.print_request.php', HTTP_METH_POST);
+$r = new _R('http://dev.iworks.at/ext-http/.print_request.php', HTTP_METH_POST);
 $r->addPostFile('upload', __FILE__, 'text/plain');
 $r->send();
 

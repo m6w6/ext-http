@@ -15,7 +15,7 @@ $fields = array(
 );
 
 echo "\nFirst Request\n";
-$r = new HttpRequest('http://dev.iworks.at/.print_request.php', HttpRequest::METH_POST);
+$r = new HttpRequest('http://dev.iworks.at/ext-http/.print_request.php', HttpRequest::METH_POST);
 $r->setPostFields($fields[0]);
 $r->addPostFields($fields[1]);
 var_dump($r->send()->getBody());

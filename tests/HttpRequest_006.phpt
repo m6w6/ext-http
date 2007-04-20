@@ -10,7 +10,7 @@ checkcls('HttpRequest');
 <?php
 echo "-TEST\n";
 
-$r = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_METH_POST);
+$r = new HttpRequest('http://dev.iworks.at/ext-http/.print_request.php', HTTP_METH_POST);
 $r->setContentType('text/xml');
 $r->setBody(xmlrpc_encode_request('testMethod', array('foo' => 'bar')));
 var_dump($r->send());

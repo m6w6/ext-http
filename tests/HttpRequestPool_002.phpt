@@ -4,8 +4,6 @@ extending HttpRequestPool
 <?php
 include 'skip.inc';
 checkcls('HttpRequestPool');
-checkurl('at.php.net');
-checkurl('de.php.net');
 checkurl('www.php.net');
 ?>
 --FILE--
@@ -39,8 +37,8 @@ class MyPool extends HttpRequestPool
 
 $pool = new MyPool(
     new HttpRequest('http://www.php.net/', HTTP_METH_HEAD),
-    new HttpRequest('http://at.php.net/', HTTP_METH_HEAD),
-    new HttpRequest('http://de.php.net/', HTTP_METH_HEAD)
+    new HttpRequest('http://www.php.net/', HTTP_METH_HEAD),
+    new HttpRequest('http://www.php.net/', HTTP_METH_HEAD)
 );
 
 $pool->send();

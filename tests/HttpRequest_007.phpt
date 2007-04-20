@@ -9,7 +9,7 @@ checkcls('HttpRequest');
 <?php
 echo "-TEST\n";
 
-$r = new HttpRequest('http://dev.iworks.at/.print_put.php5', HTTP_METH_PUT);
+$r = new HttpRequest('http://dev.iworks.at/ext-http/.print_put.php5', HTTP_METH_PUT);
 $r->recordHistory = true;
 $r->addHeaders(array('content-type' => 'text/plain'));
 $r->setPutFile(__FILE__);
@@ -19,18 +19,18 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-string(%d) "PUT /.print_put.php5 HTTP/1.1
+string(%d) "PUT /ext-http/.print_put.php5 HTTP/1.1
 User-Agent: PECL::HTTP/%s
 Host: dev.iworks.at
 Accept: */*
 Content-Type: text/plain
-Content-Length: 281
+Content-Length: %d
 Expect: 100-continue
 
 <?php
 echo "-TEST\n";
 
-$r = new HttpRequest('http://dev.iworks.at/.print_put.php5', HTTP_METH_PUT);
+$r = new HttpRequest('http://dev.iworks.at/ext-http/.print_put.php5', HTTP_METH_PUT);
 $r->recordHistory = true;
 $r->addHeaders(array('content-type' => 'text/plain'));
 $r->setPutFile(__FILE__);
@@ -45,14 +45,13 @@ Date: %s
 Server: %s
 X-Powered-By: %s
 Vary: Accept-Encoding
+Content-Length: %d
 Content-Type: text/html
-X-Original-Transfer-Encoding: chunked
-Content-Length: 281
 
 <?php
 echo "-TEST\n";
 
-$r = new HttpRequest('http://dev.iworks.at/.print_put.php5', HTTP_METH_PUT);
+$r = new HttpRequest('http://dev.iworks.at/ext-http/.print_put.php5', HTTP_METH_PUT);
 $r->recordHistory = true;
 $r->addHeaders(array('content-type' => 'text/plain'));
 $r->setPutFile(__FILE__);

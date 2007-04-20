@@ -3,6 +3,7 @@ HttpRequestDataShare
 --SKIPIF--
 <?php
 include "skip.inc";
+checkurl("www.google.com");
 checkcls("HttpRequestDataShare");
 ?>
 --FILE--

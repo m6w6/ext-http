@@ -12,7 +12,7 @@ echo "-TEST\n";
 
 $cookies = array("name" => "val=ue");
 
-$r = new HttpRequest("http://dev.iworks.at/.print_request.php", HTTP_METH_GET, array("cookies" => $cookies));
+$r = new HttpRequest("http://dev.iworks.at/ext-http/.print_request.php", HTTP_METH_GET, array("cookies" => $cookies));
 $r->recordHistory = true;
 $r->send();
 $r->setOptions(array('encodecookies' => false));
@@ -23,7 +23,7 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-GET /.print_request.php HTTP/1.1
+GET /ext-http/.print_request.php HTTP/1.1
 User-Agent: %s
 Host: dev.iworks.at
 Accept: */*
@@ -36,7 +36,7 @@ Array
     [name] => val=ue
 )
 
-GET /.print_request.php HTTP/1.1
+GET /ext-http/.print_request.php HTTP/1.1
 User-Agent: %s
 Host: dev.iworks.at
 Accept: */*

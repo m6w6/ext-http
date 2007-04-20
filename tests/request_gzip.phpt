@@ -10,7 +10,7 @@ skipif(!http_support(HTTP_SUPPORT_REQUESTS), 'need curl support');
 <?php
 echo "-TEST\n";
 
-var_dump(http_parse_message(http_get('http://dev.iworks.at/.print_request.php?gzip=1', array('compress' => true))));
+var_dump(http_parse_message(http_get('http://dev.iworks.at/ext-http/.print_request.php?gzip=1', array('compress' => true))));
 
 echo "Done\n";
 --EXPECTF--

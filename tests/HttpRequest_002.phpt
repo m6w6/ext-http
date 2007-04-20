@@ -16,7 +16,7 @@ $r = new HttpRequest('http://www.google.com', HttpRequest::METH_GET);
 $r->send();
 print_r($r->getResponseInfo());
 
-$r = new HttpRequest('http://dev.iworks.at/.print_request.php', HTTP_METH_POST);
+$r = new HttpRequest('http://dev.iworks.at/ext-http/.print_request.php', HTTP_METH_POST);
 $r->addCookies(array('MyCookie' => 'foobar'));
 $r->addQueryData(array('gq'=>'foobar','gi'=>10));
 $r->addPostFields(array('pq'=>'foobar','pi'=>10));

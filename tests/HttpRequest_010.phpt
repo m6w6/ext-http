@@ -10,7 +10,7 @@ checkcls("HttpRequest");
 <?php
 echo "-TEST\n";
 
-$r = new HttpRequest("http://dev.iworks.at/.cookie.php");
+$r = new HttpRequest("http://dev.iworks.at/ext-http/.cookie.php");
 
 $r->send();
 $c[0] = $r->getResponseInfo("cookies");
