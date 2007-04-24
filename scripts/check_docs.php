@@ -15,31 +15,39 @@ function fg($path, &$g=NULL) {
 	return count($g = glob("$doc/$path"));
 }
 
-$doc = "/home/mike/cvs/phpdoc/en/reference/http";
-$ext = new ReflectionExtension("http");
+
+$ext = "http";
+$doc = "/home/mike/cvs/phpdoc/en/reference/$ext";
+$ref = new ReflectionExtension($ext);
 
 printf("Undocumented INI options:\n");
-foreach ($ext->getINIEntries() as $name => $tmp) {
+foreach ($ref->getINIEntries() as $name => $tmp) {
 	re("configuration.xml", "#<entry>$name</entry>#") or printf("\t%s (%s)\n", $name, $tmp);
 }
 printf("\n");
 
+printf("Undocumented stream filters:\n");
+foreach (preg_grep("/^$ext\./", stream_get_filters()) as $filter) {
+	fe(sprintf("streamfilters/%s.xml", substr($filter, 5))) or printf("\t%s\n", $filter);
+}
+printf("\n");
+
 printf("Undocumented constants:\n");
-foreach ($ext->getConstants() as $name => $tmp) {
+foreach ($ref->getConstants() as $name => $tmp) {
 	re("constants.xml", "#<constant>$name</constant>#") or printf("\t%s (%s)\n", $name, $tmp);
 }
 printf("\n");
 
 
 printf("Undocumented functions:\n");
-foreach ($ext->getFunctions() as $func) {
+foreach ($ref->getFunctions() as $func) {
 	/* @var $func ReflectionFunction */
 	fg(sprintf("functions/*/%s.xml", strtr($func->getName(),'_','-'))) or printf("\t%s()\n", $func->getName());
 }
 printf("\n");
 
 printf("Undocumented classes/members:\n");
-foreach ($ext->getClasses() as $class) {
+foreach ($ref->getClasses() as $class) {
 	 if (substr($class->getName(), -strlen("Exception")) === "Exception") continue;
 	/* @var $class ReflectionClass */
 	fg(sprintf("%s.xml", $class->getName())) or printf(" %s\n", $class->getName());
@@ -56,7 +64,7 @@ foreach ($ext->getClasses() as $class) {
 			$meth->getPrototype();
 		} catch (Exception $ex) {
 			// if getPrototype throws an exception it's definitely not a method declared in an interface
-			fg(sprintf("%s/%s.xml", $class->getName(), strtr(trim($meth->getName(),'_'),'_','-'))) or printf("\t%s::%s()\n", $class->getName(), $meth->getName());
+			$meth->isPrivate() or fg(sprintf("%s/%s.xml", $class->getName(), strtr(trim($meth->getName(),'_'),'_','-'))) or printf("\t%s::%s()\n", $class->getName(), $meth->getName());
 		}
 		
 	}
