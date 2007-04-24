@@ -201,12 +201,14 @@ static inline void _http_globals_free(zend_http_globals *G TSRMLS_DC)
 	}
 }
 
-#if PHP_DEBUG
+#if defined(ZTS) && defined(PHP_DEBUG)
+#if ZTS && PHP_DEBUG
 zend_http_globals *http_globals(void)
 {
 	TSRMLS_FETCH();
 	return HTTP_G;
 }
+#endif
 #endif
 /* }}} */
 
