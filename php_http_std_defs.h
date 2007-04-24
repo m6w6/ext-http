@@ -104,6 +104,9 @@ typedef int STATUS;
 /* max URL length */
 #define HTTP_URL_MAXLEN 4096
 
+/* max request method length */
+#define HTTP_REQUEST_METHOD_MAXLEN 31
+
 /* def URL arg separator */
 #define HTTP_URL_ARGSEP "&"
 

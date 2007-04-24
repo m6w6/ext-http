@@ -15,7 +15,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_EXT_HTTP_VERSION "1.5.2"
+#define PHP_EXT_HTTP_VERSION "1.5.3dev"
 
 #ifdef HAVE_CONFIG_H
 #	include "config.h"
@@ -120,12 +120,9 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 		time_t time;
 		HashTable *headers;
 		struct _http_globals_request_methods {
+			HashTable registered;
 			char *allowed;
-			struct _http_globals_request_methods_custom {
-				char *ini;
-				int count;
-				void *entries;
-			} custom;
+			char *custom;
 		} methods;
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 		struct _http_globals_request_datashare {

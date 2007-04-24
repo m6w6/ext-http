@@ -200,6 +200,14 @@ static inline void _http_globals_free(zend_http_globals *G TSRMLS_DC)
 		G->server_var = NULL;
 	}
 }
+
+#if PHP_DEBUG
+zend_http_globals *http_globals(void)
+{
+	TSRMLS_FETCH();
+	return HTTP_G;
+}
+#endif
 /* }}} */
 
 /* {{{ static inline void http_check_allowed_methods(char *) */
@@ -242,7 +250,7 @@ PHP_INI_BEGIN()
 	HTTP_PHP_INI_ENTRY("http.log.allowed_methods", "", PHP_INI_ALL, OnUpdateString, log.allowed_methods)
 	HTTP_PHP_INI_ENTRY("http.log.composite", "", PHP_INI_ALL, OnUpdateString, log.composite)
 	HTTP_PHP_INI_ENTRY("http.request.methods.allowed", "", PHP_INI_ALL, http_update_allowed_methods, request.methods.allowed)
-	HTTP_PHP_INI_ENTRY("http.request.methods.custom", "", PHP_INI_PERDIR|PHP_INI_SYSTEM, OnUpdateString, request.methods.custom.ini)
+	HTTP_PHP_INI_ENTRY("http.request.methods.custom", "", PHP_INI_PERDIR|PHP_INI_SYSTEM, OnUpdateString, request.methods.custom)
 #if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_CURL)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.cookie", "0", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.cookie)
 	HTTP_PHP_INI_ENTRY("http.request.datashare.dns", "1", PHP_INI_SYSTEM, OnUpdateBool, request.datashare.dns)
@@ -489,31 +497,22 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_start();
 	php_info_print_table_colspan_header(2, "Request Methods");
 	{
-		int i;
-		phpstr *custom_request_methods = phpstr_new();
-		phpstr *known_request_methods = phpstr_from_string(HTTP_KNOWN_METHODS, lenof(HTTP_KNOWN_METHODS));
-		http_request_method_entry **ptr = HTTP_G->request.methods.custom.entries;
-
-		for (i = 0; i < HTTP_G->request.methods.custom.count; ++i) {
-			if (ptr[i]) {
-				phpstr_appendf(custom_request_methods, "%s, ", ptr[i]->name);
+		HashPosition pos;
+		phpstr *methods = phpstr_new();
+		char **name;
+		
+		FOREACH_HASH_VAL(pos, &HTTP_G->request.methods.registered, name) {
+			if (pos->h) {
+				phpstr_appendf(methods, "%s, ", *name);
 			}
 		}
-
-		phpstr_append(known_request_methods, PHPSTR_VAL(custom_request_methods), PHPSTR_LEN(custom_request_methods));
-		phpstr_fix(known_request_methods);
-		phpstr_fix(custom_request_methods);
-
-		php_info_print_table_row(2, "Known", PHPSTR_VAL(known_request_methods));
-		php_info_print_table_row(2, "Custom",
-			PHPSTR_LEN(custom_request_methods) ? PHPSTR_VAL(custom_request_methods) : "none registered");
-		php_info_print_table_row(2, "Allowed", strlen(HTTP_G->request.methods.allowed) ? HTTP_G->request.methods.allowed : "(ANY)");
-		
-		phpstr_free(&known_request_methods);
-		phpstr_free(&custom_request_methods);
+		phpstr_fix(methods);
+		php_info_print_table_row(2, "Registered", PHPSTR_VAL(methods));
+		php_info_print_table_row(2, "Allowed", *HTTP_G->request.methods.allowed ? HTTP_G->request.methods.allowed : "(ANY)");
+		phpstr_free(&methods);
 	}
 	php_info_print_table_end();
-
+	
 	DISPLAY_INI_ENTRIES();
 }
 /* }}} */
