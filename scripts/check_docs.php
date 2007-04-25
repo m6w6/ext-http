@@ -20,23 +20,20 @@ $ext = "http";
 $doc = "/home/mike/cvs/phpdoc/en/reference/$ext";
 $ref = new ReflectionExtension($ext);
 
-$ini = $ref->getINIEntries();
-printf("Undocumented INI options (%d):\n", count($ini));
-foreach ($ini as $name => $tmp) {
+printf("Undocumented INI options:\n");
+foreach ($ref->getINIEntries() as $name => $tmp) {
 	re("configuration.xml", "#<entry>$name</entry>#") or printf("\t%s (%s)\n", $name, $tmp);
 }
 printf("\n");
 
-$flt = preg_grep("/^$ext\./", stream_get_filters());
-printf("Undocumented stream filters (%d):\n", count($flt));
-foreach ($flt as $filter) {
+printf("Undocumented stream filters:\n");
+foreach (preg_grep("/^$ext\./", stream_get_filters()) as $filter) {
 	fe(sprintf("streamfilters/%s.xml", substr($filter, 5))) or printf("\t%s\n", $filter);
 }
 printf("\n");
 
-$con = $ref->getConstants();
-printf("Undocumented constants (%d):\n", count($con));
-foreach ($con as $name => $tmp) {
+printf("Undocumented constants:\n");
+foreach ($ref->getConstants() as $name => $tmp) {
 	re("constants.xml", "#<constant>$name</constant>#") or printf("\t%s (%s)\n", $name, $tmp);
 }
 printf("\n");
