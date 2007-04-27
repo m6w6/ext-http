@@ -581,6 +581,18 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
 		}
 	}
+	
+	/* retries, defaults to 0 */
+	if ((zoption = http_request_option(request, options, "retrycount", IS_LONG))) {
+		request->_retry.count = Z_LVAL_P(zoption);
+		if ((zoption = http_request_option(request, options, "retrydelay", IS_DOUBLE))) {
+			request->_retry.delay = Z_DVAL_P(zoption);
+		} else {
+			request->_retry.delay = 0;
+		}
+	} else {
+		request->_retry.count = 0;
+	}
 
 	/* referer */
 	if ((zoption = http_request_option(request, options, "referer", IS_STRING)) && Z_STRLEN_P(zoption)) {
@@ -872,11 +884,37 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 /* {{{ void http_request_exec(http_request *) */
 PHP_HTTP_API void _http_request_exec(http_request *request)
 {
+	uint tries = 0;
 	CURLcode result;
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
+retry:
 	if (CURLE_OK != (result = curl_easy_perform(request->ch))) {
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(result), request->_error, request->url);
+		
+		if (request->_retry.count > tries++) {
+			switch (result) {
+				case CURLE_COULDNT_RESOLVE_PROXY:
+				case CURLE_COULDNT_RESOLVE_HOST:
+				case CURLE_COULDNT_CONNECT:
+				case CURLE_WRITE_ERROR:
+				case CURLE_READ_ERROR:
+				case CURLE_OPERATION_TIMEDOUT:
+				case CURLE_SSL_CONNECT_ERROR:
+				case CURLE_GOT_NOTHING:
+				case CURLE_SSL_ENGINE_SETFAILED:
+				case CURLE_SEND_ERROR:
+				case CURLE_RECV_ERROR:
+				case CURLE_SSL_ENGINE_INITFAILED:
+				case CURLE_LOGIN_DENIED:
+					if (request->_retry.delay) {
+						http_sleep(request->_retry.delay);
+					}
+					goto retry;
+				default:
+					break;
+			}
+		}
 	}
 }
 /* }}} */
