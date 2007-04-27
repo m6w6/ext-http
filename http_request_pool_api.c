@@ -291,10 +291,13 @@ PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool)
 	fprintf(stderr, "Destructing request pool %p\n", pool);
 #endif
 	
+#if HTTP_HAVE_EVENT
+	efree(pool->timeout);
+#endif
+	
 	pool->unfinished = 0;
 	zend_llist_clean(&pool->finished);
 	zend_llist_clean(&pool->handles);
-	efree(pool->timeout);
 	http_persistent_handle_release("http_request_pool", &pool->ch);
 }
 /* }}} */

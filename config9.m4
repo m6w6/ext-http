@@ -11,8 +11,8 @@ PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have bee
 PHP_ARG_WITH([http-curl-requests], [whether to enable cURL HTTP request support],
 [  --with-http-curl-requests[=LIBCURLDIR]
                            HTTP: with cURL request support], $PHP_HTTP, $PHP_HTTP)
-PHP_ARG_WITH([http-libevent-dir], [whether to enable libevent support fur cURL],
-[  --with-http-libevent-dir[=LIBEVENTDIR]
+PHP_ARG_WITH([http-curl-libevent], [whether to enable libevent support fur cURL],
+[  --with-http-curl-libevent[=LIBEVENTDIR]
                            HTTP: libevent install directory], $PHP_HTTP_CURL_REQUESTS, "")
 PHP_ARG_WITH([http-zlib-compression], [whether to enable zlib encodings support],
 [  --with-http-zlib-compression[=LIBZDIR]
@@ -274,34 +274,35 @@ dnl ----
 		dnl EVENT
 		dnl ----
 		
-		AC_MSG_CHECKING([for event.h])
-		EVENT_DIR=
-		for i in "$PHP_HTTP_LIBEVENT_DIR" /usr/local /usr /opt; do
-			if test -f "$i/include/event.h"; then
-				EVENT_DIR=$i
-				break
-			fi
-		done
-		if test -z "$EVENT_DIR"; then
-			AC_MSG_RESULT([not found])
-			AC_MSG_WARN([continuing without libevent support])
-		else
-			AC_MSG_RESULT([found in $EVENT_DIR])
-			AC_MSG_CHECKING([for libcurl version >= 7.16.0])
-			AC_MSG_RESULT([$CURL_VERSION])
-			if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71600; then
-				AC_MSG_WARN([libcurl version greater or equal to 7.16.0 required; continuing without libevent support])
+		if test "$PHP_HTTP_CURL_LIBEVENT" != "no"; then
+			AC_MSG_CHECKING([for event.h])
+			EVENT_DIR=
+			for i in "$PHP_HTTP_LIBEVENT_DIR" /usr/local /usr /opt; do
+				if test -f "$i/include/event.h"; then
+					EVENT_DIR=$i
+					break
+				fi
+			done
+			if test -z "$EVENT_DIR"; then
+				AC_MSG_RESULT([not found])
+				AC_MSG_WARN([continuing without libevent support])
 			else
-				PHP_ADD_INCLUDE($EVENT_DIR/include)
-				PHP_ADD_LIBRARY_WITH_PATH(event, $EVENT_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-				AC_DEFINE([HTTP_HAVE_EVENT], [1], [Have libevent support for cURL])
-				PHP_CHECK_LIBRARY(curl, curl_multi_socket_action, 
-					[AC_DEFINE([HAVE_CURL_MULTI_SOCKET_ACTION], [1], [ ])], [ ],
-					[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
-				)
+				AC_MSG_RESULT([found in $EVENT_DIR])
+				AC_MSG_CHECKING([for libcurl version >= 7.16.0])
+				AC_MSG_RESULT([$CURL_VERSION])
+				if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71600; then
+					AC_MSG_WARN([libcurl version greater or equal to 7.16.0 required; continuing without libevent support])
+				else
+					PHP_ADD_INCLUDE($EVENT_DIR/include)
+					PHP_ADD_LIBRARY_WITH_PATH(event, $EVENT_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+					AC_DEFINE([HTTP_HAVE_EVENT], [1], [Have libevent support for cURL])
+					PHP_CHECK_LIBRARY(curl, curl_multi_socket_action, 
+						[AC_DEFINE([HAVE_CURL_MULTI_SOCKET_ACTION], [1], [ ])], [ ],
+						[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
+					)
+				fi
 			fi
 		fi
-		
 	fi
 
 dnl ----
