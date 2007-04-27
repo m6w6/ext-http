@@ -277,7 +277,7 @@ dnl ----
 		if test "$PHP_HTTP_CURL_LIBEVENT" != "no"; then
 			AC_MSG_CHECKING([for event.h])
 			EVENT_DIR=
-			for i in "$PHP_HTTP_LIBEVENT_DIR" /usr/local /usr /opt; do
+			for i in "$PHP_HTTP_CURL_LIBEVENT" /usr/local /usr /opt; do
 				if test -f "$i/include/event.h"; then
 					EVENT_DIR=$i
 					break
