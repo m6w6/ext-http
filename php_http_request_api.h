@@ -41,6 +41,11 @@ typedef struct _http_request_t {
 		struct curl_slist *headers;
 	} _cache;
 	
+	struct {
+		uint count;
+		double delay;
+	} _retry;
+	
 	char _error[CURL_ERROR_SIZE+1];
 	zval *_progress_callback;
 

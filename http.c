@@ -363,6 +363,9 @@ PHP_RINIT_FUNCTION(http)
 #endif
 #ifdef HTTP_HAVE_CURL
 #	ifdef ZEND_ENGINE_2
+#		ifdef HTTP_HAVE_EVENT
+		|| SUCCESS != PHP_RINIT_CALL(http_request_pool)
+#		endif
 		|| SUCCESS != PHP_RINIT_CALL(http_request_datashare)
 #	endif
 #endif

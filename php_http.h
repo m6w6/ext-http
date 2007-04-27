@@ -57,6 +57,10 @@
 #	endif
 #	include <curl/curl.h>
 #	define HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
+#
+#	if defined(HTTP_WANT_EVENT) && defined(HTTP_HAVE_EVENT)
+#		include <event.h>
+#	endif
 #endif
 
 #if defined(HTTP_WANT_MAGIC) && defined(HTTP_HAVE_MAGIC)
@@ -132,6 +136,13 @@ ZEND_BEGIN_MODULE_GLOBALS(http)
 			zend_bool ssl;
 			zend_bool connect;
 		} datashare;
+#endif
+#if defined(ZEND_ENGINE_2) && defined(HTTP_HAVE_EVENT)
+		struct _http_globals_request_pool {
+			struct _http_globals_request_pool_event {
+				void *base;
+			} event;
+		} pool;
 #endif
 	} request;
 
