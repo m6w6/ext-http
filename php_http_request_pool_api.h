@@ -25,6 +25,9 @@ typedef struct _http_request_pool_t {
 #ifdef ZTS
 	void ***tsrm_ls;
 #endif
+#ifdef HTTP_HAVE_EVENT
+	struct event *timeout;
+#endif
 } http_request_pool;
 
 typedef int (*http_request_pool_apply_func)(http_request_pool *pool, zval *request);
@@ -35,8 +38,14 @@ PHP_MINIT_FUNCTION(http_request_pool);
 PHP_RINIT_FUNCTION(http_request_pool);
 #endif
 
-#define http_request_pool_responsehandler(p, r, c) _http_request_pool_responsehandler((p), (r), (c))
-extern int _http_request_pool_responsehandler(http_request_pool *pool, zval *req, void *ch);
+#define http_request_pool_timeout _http_request_pool_timeout
+extern struct timeval *_http_request_pool_timeout(http_request_pool *pool, struct timeval *timeout);
+
+#define http_request_pool_responsehandler _http_request_pool_responsehandler
+extern void _http_request_pool_response_handler(http_request_pool *pool);
+
+#define http_request_pool_apply_responsehandler _http_request_pool_responsehandler
+extern int _http_request_pool_apply_responsehandler(http_request_pool *pool, zval *req, void *ch);
 
 #define http_request_pool_init(p) _http_request_pool_init((p) TSRMLS_CC)
 PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool TSRMLS_DC);

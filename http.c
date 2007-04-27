@@ -14,6 +14,7 @@
 
 #define HTTP_WANT_SAPI
 #define HTTP_WANT_CURL
+#define HTTP_WANT_EVENT
 #define HTTP_WANT_ZLIB
 #define HTTP_WANT_MAGIC
 #include "php_http.h"
@@ -140,6 +141,9 @@ static zend_module_dep http_module_deps[] = {
 #	ifdef HTTP_HAVE_ICONV
 	ZEND_MOD_REQUIRED("iconv")
 #	endif
+#	ifdef HTTP_HAVE_EVENT
+	ZEND_MOD_CONFLICTS("event")
+#endif
 	{NULL, NULL, NULL, 0}
 };
 #endif
