@@ -120,8 +120,19 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "Could not initialize HttpRequest object(#%d) for attaching to the HttpRequestPool", Z_OBJ_HANDLE_P(request));
 	} else {
 		CURLMcode code = curl_multi_add_handle(pool->ch, req->request->ch);
-
-		if ((CURLM_OK != code) && (CURLM_CALL_MULTI_PERFORM != code)) {
+		
+		while (CURLM_CALL_MULTI_PERFORM == code) {
+#ifdef HTTP_HAVE_EVENT
+			if (pool->useevents) {
+				code = curl_multi_socket_all(pool->ch, &pool->unfinished);
+			} else {
+#endif
+				code = curl_multi_perform(pool->ch, &pool->unfinished);
+#ifdef HTTP_HAVE_EVENT
+			}
+#endif
+		}
+		if (CURLM_OK != code) {
 			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not attach HttpRequest object(#%d) to the HttpRequestPool: %s", Z_OBJ_HANDLE_P(request), curl_multi_strerror(code));
 		} else {
 			req->pool = pool;
@@ -256,23 +267,26 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool)
 #endif
 	
 #ifdef HTTP_HAVE_EVENT
-	while (CURLM_CALL_MULTI_PERFORM == curl_multi_socket_all(pool->ch, &pool->unfinished));
-	http_request_pool_update_timeout(pool);
-	
-	event_base_dispatch(HTTP_G->request.pool.event.base);
+	if (pool->useevents) {
+		while (CURLM_CALL_MULTI_PERFORM == curl_multi_socket_all(pool->ch, &pool->unfinished));
+		http_request_pool_update_timeout(pool);
+		
+		event_base_dispatch(HTTP_G->request.pool.event.base);
+	} else
+#endif
+	{
+		while (http_request_pool_perform(pool)) {
+			if (SUCCESS != http_request_pool_select(pool)) {
+#ifdef PHP_WIN32
+				/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
+				http_error_ex(HE_WARNING, HTTP_E_SOCKET, "WinSock error: %d", WSAGetLastError());
 #else
-	while (http_request_pool_perform(pool)) {
-		if (SUCCESS != http_request_pool_select(pool)) {
-#	ifdef PHP_WIN32
-			/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
-			http_error_ex(HE_WARNING, HTTP_E_SOCKET, "WinSock error: %d", WSAGetLastError());
-#	else
-			http_error(HE_WARNING, HTTP_E_SOCKET, strerror(errno));
-#	endif
-			return FAILURE;
+				http_error(HE_WARNING, HTTP_E_SOCKET, strerror(errno));
+#endif
+				return FAILURE;
+			}
 		}
 	}
-#endif
 	
 #if HTTP_DEBUG_REQPOOLS
 	fprintf(stderr, "Finished sending %d HttpRequests of pool %p (still unfinished: %d)\n", zend_llist_count(&pool->handles), pool, pool->unfinished);
@@ -311,15 +325,18 @@ PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool)
 /* {{{ STATUS http_request_pool_select(http_request_pool *) */
 PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 {
-#ifdef HTTP_HAVE_EVENT
-	TSRMLS_FETCH_FROM_CTX(pool->tsrm_ls);
-	http_error(HE_WARNING, HTTP_E_RUNTIME, "not implemented; use HttpRequest::onProgress callback");
-	return FAILURE;
-#else
 	int MAX;
 	fd_set R, W, E;
 	struct timeval timeout;
 
+#ifdef HTTP_HAVE_EVENT
+	if (pool->useevents) {
+		TSRMLS_FETCH_FROM_CTX(pool->tsrm_ls);
+		http_error(HE_WARNING, HTTP_E_RUNTIME, "not implemented; use HttpRequest callbacks");
+		return FAILURE;
+	}
+#endif
+	
 	http_request_pool_timeout(pool, &timeout);
 	
 	FD_ZERO(&R);
@@ -335,7 +352,6 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 		}
 	}
 	return FAILURE;
-#endif
 }
 /* }}} */
 
@@ -343,19 +359,23 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool)
 {
 	TSRMLS_FETCH_FROM_CTX(pool->tsrm_ls);
+	
 #ifdef HTTP_HAVE_EVENT
-	http_error(HE_WARNING, HTTP_E_RUNTIME, "not implemented; use HttpRequest::onProgress callback");
-	return FAILURE;
-#else
-	CURLMsg *msg;
-	int remaining = 0;
+	if (pool->useevents) {
+		http_error(HE_WARNING, HTTP_E_RUNTIME, "not implemented; use HttpRequest callbacks");
+		return FAILURE;
+	}
+#endif
 	
 	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(pool->ch, &pool->unfinished));
 	
-	http_request_pool_response_handler(pool);
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "%u unfinished requests of pool %p remaining\n", pool->unfinished, pool);
+#endif
+	
+	http_request_pool_responsehandler(pool);
 	
 	return pool->unfinished;
-#endif
 }
 /* }}} */
 
@@ -519,15 +539,16 @@ static void http_request_pool_event_callback(int socket, short action, void *eve
 #endif
 	} while (CURLM_CALL_MULTI_PERFORM == rc);
 	
+#if HTTP_DEBUG_REQPOOLS
+	fprintf(stderr, "%u unfinished requests of pool %p remaining\n", pool->unfinished, pool);
+#endif
+	
 	if (CURLM_OK != rc) {
 		http_error(HE_WARNING, HTTP_E_SOCKET, curl_multi_strerror(rc));
 	}
 	
 	http_request_pool_responsehandler(pool);
-	
-	if (!pool->unfinished) {
-		http_request_pool_update_timeout(pool);
-	}
+	http_request_pool_update_timeout(pool);
 }
 /* }}} */
 
@@ -543,14 +564,18 @@ static int http_request_pool_socket_callback(CURL *easy, curl_socket_t sock, int
 		ev = ecalloc(1, sizeof(http_request_pool_event));
 		ev->pool = pool;
 		curl_multi_assign(pool->ch, sock, ev);
+		fprintf(stderr, "+%2d\n", sock);
 	} else {
 		event_del(&ev->evnt);
+		fprintf(stderr, "-%2d\n", sock);
 	}
 	
 #if HTTP_DEBUG_REQPOOLS
 	{
 		static const char action_strings[][8] = {"NONE", "IN", "OUT", "INOUT", "REMOVE"};
-		fprintf(stderr, "Callback on socket %d (%s) event %p of pool %p\n", (int) sock, action_strings[action], ev, pool);
+		http_request *r;
+		curl_easy_getinfo(easy, CURLINFO_PRIVATE, &r);
+		fprintf(stderr, "Callback on socket %d (%s) event %p of pool %p (%s)\n", (int) sock, action_strings[action], ev, pool, r->url);
 	}
 #endif
 	

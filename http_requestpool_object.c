@@ -67,6 +67,10 @@ HTTP_BEGIN_ARGS(enablePipelining, 0)
 	HTTP_ARG_VAL(enable, 0)
 HTTP_END_ARGS;
 
+HTTP_BEGIN_ARGS(enableEvents, 0)
+	HTTP_ARG_VAL(enable, 0)
+HTTP_END_ARGS;
+
 zend_class_entry *http_requestpool_object_ce;
 zend_function_entry http_requestpool_object_fe[] = {
 	HTTP_REQPOOL_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -93,6 +97,7 @@ zend_function_entry http_requestpool_object_fe[] = {
 	HTTP_REQPOOL_ME(getFinishedRequests, ZEND_ACC_PUBLIC)
 	
 	HTTP_REQPOOL_ME(enablePipelining, ZEND_ACC_PUBLIC)
+	HTTP_REQPOOL_ME(enableEvents, ZEND_ACC_PUBLIC)
 
 	EMPTY_FUNCTION_ENTRY
 };
@@ -397,7 +402,7 @@ PHP_METHOD(HttpRequestPool, getFinishedRequests)
 }
 /* }}} */
 
-/* {{{ proto bool HttpRequest::enablePiplelinig([bool enable = true])
+/* {{{ proto bool HttpRequestPool::enablePipelining([bool enable = true])
 	Enables pipelining support for all attached requests if support in libcurl is given. */
 PHP_METHOD(HttpRequestPool, enablePipelining)
 {
@@ -412,6 +417,23 @@ PHP_METHOD(HttpRequestPool, enablePipelining)
 		RETURN_TRUE;
 	}
 #endif
+	RETURN_FALSE;
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequestPool::enableEvents([bool enable = true])
+	Enables event-driven I/O if support in libcurl is given. */
+PHP_METHOD(HttpRequestPool, enableEvents)
+{
+	zend_bool enable = 1;
+	getObject(http_requestpool_object, obj);
+	
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &enable)) {
+#if defined(HTTP_HAVE_EVENT)
+		obj->pool.useevents = enable;
+		RETURN_TRUE;
+#endif
+	}
 	RETURN_FALSE;
 }
 /* }}} */

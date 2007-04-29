@@ -27,6 +27,7 @@ typedef struct _http_request_pool_t {
 #endif
 #ifdef HTTP_HAVE_EVENT
 	struct event *timeout;
+	unsigned useevents:1;
 #endif
 } http_request_pool;
 
@@ -42,7 +43,7 @@ PHP_RINIT_FUNCTION(http_request_pool);
 extern struct timeval *_http_request_pool_timeout(http_request_pool *pool, struct timeval *timeout);
 
 #define http_request_pool_responsehandler _http_request_pool_responsehandler
-extern void _http_request_pool_response_handler(http_request_pool *pool);
+extern void _http_request_pool_responsehandler(http_request_pool *pool);
 
 #define http_request_pool_apply_responsehandler _http_request_pool_responsehandler
 extern int _http_request_pool_apply_responsehandler(http_request_pool *pool, zval *req, void *ch);
