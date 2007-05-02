@@ -36,10 +36,10 @@ typedef struct _http_request_pool_event_t {
 	http_request_pool *pool;
 } http_request_pool_event;
 
-static inline void http_request_pool_update_timeout(http_request_pool *pool);
 static void http_request_pool_timeout_callback(int socket, short action, void *event_data);
 static void http_request_pool_event_callback(int socket, short action, void *event_data);
 static int http_request_pool_socket_callback(CURL *easy, curl_socket_t s, int action, void *, void *);
+static void http_request_pool_timer_callback(CURLM *multi, long timeout_ms, void *timer_data);
 #endif
 
 static int http_request_pool_compare_handles(void *h1, void *h2);
@@ -90,6 +90,8 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 	pool->timeout = ecalloc(1, sizeof(struct event));
 	curl_multi_setopt(pool->ch, CURLMOPT_SOCKETDATA, pool);
 	curl_multi_setopt(pool->ch, CURLMOPT_SOCKETFUNCTION, http_request_pool_socket_callback);
+	curl_multi_setopt(pool->ch, CURLMOPT_TIMERDATA, pool);
+	curl_multi_setopt(pool->ch, CURLMOPT_TIMERFUNCTION, http_request_pool_timer_callback);
 #endif
 	
 	pool->unfinished = 0;
@@ -269,8 +271,6 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool)
 #ifdef HTTP_HAVE_EVENT
 	if (pool->useevents) {
 		while (CURLM_CALL_MULTI_PERFORM == curl_multi_socket_all(pool->ch, &pool->unfinished));
-		http_request_pool_update_timeout(pool);
-		
 		event_base_dispatch(HTTP_G->request.pool.event.base);
 	} else
 #endif
@@ -456,31 +456,6 @@ static int http_request_pool_compare_handles(void *h1, void *h2)
 /* }}} */
 
 #ifdef HTTP_HAVE_EVENT
-/* {{{ static void http_request_pool_update_timeout(http_request_pool *) */
-static inline void http_request_pool_update_timeout(http_request_pool *pool)
-{
-	struct timeval timeout;
-	TSRMLS_FETCH_FROM_CTX(pool->tsrm_ls);
-	
-	if (event_initialized(pool->timeout)) {
-		event_del(pool->timeout);
-	}
-	
-	if (pool->unfinished) {
-		event_set(pool->timeout, -1, 0, http_request_pool_timeout_callback, pool);
-		event_base_set(HTTP_G->request.pool.event.base, pool->timeout);
-		event_add(pool->timeout, http_request_pool_timeout(pool, &timeout));
-	
-#if HTTP_DEBUG_REQPOOLS
-		fprintf(stderr, "Updating timeout (%lu, %lu) of pool %p\n", (ulong) timeout.tv_sec, (ulong) timeout.tv_usec, pool);
-#endif
-	}
-#if HTTP_DEBUG_REQPOOLS
-		else fprintf(stderr, "Removed timeout of pool %p\n", pool);
-#endif
-}
-/* }}} */
-
 /* {{{ static void http_request_pool_timeout_callback(int, short, void *) */
 static void http_request_pool_timeout_callback(int socket, short action, void *event_data)
 {
@@ -497,8 +472,6 @@ static void http_request_pool_timeout_callback(int socket, short action, void *e
 	if (CURLM_OK != rc) {
 		http_error(HE_WARNING, HTTP_E_SOCKET, curl_multi_strerror(rc));
 	}
-	
-	http_request_pool_update_timeout(pool);
 }
 /* }}} */
 
@@ -539,16 +512,19 @@ static void http_request_pool_event_callback(int socket, short action, void *eve
 #endif
 	} while (CURLM_CALL_MULTI_PERFORM == rc);
 	
-#if HTTP_DEBUG_REQPOOLS
-	fprintf(stderr, "%u unfinished requests of pool %p remaining\n", pool->unfinished, pool);
-#endif
-	
 	if (CURLM_OK != rc) {
 		http_error(HE_WARNING, HTTP_E_SOCKET, curl_multi_strerror(rc));
 	}
 	
 	http_request_pool_responsehandler(pool);
-	http_request_pool_update_timeout(pool);
+	
+	/* remove timeout if there are no transfers left */
+	if (!pool->unfinished && event_initialized(pool->timeout) && event_pending(pool->timeout, EV_TIMEOUT, NULL)) {
+		event_del(pool->timeout);
+#if HTTP_DEBUG_REQPOOLS
+		fprintf(stderr, "Removed timeout of pool %p\n", pool);
+#endif
+	}
 }
 /* }}} */
 
@@ -564,10 +540,8 @@ static int http_request_pool_socket_callback(CURL *easy, curl_socket_t sock, int
 		ev = ecalloc(1, sizeof(http_request_pool_event));
 		ev->pool = pool;
 		curl_multi_assign(pool->ch, sock, ev);
-		fprintf(stderr, "+%2d\n", sock);
 	} else {
 		event_del(&ev->evnt);
-		fprintf(stderr, "-%2d\n", sock);
 	}
 	
 #if HTTP_DEBUG_REQPOOLS
@@ -605,6 +579,32 @@ static int http_request_pool_socket_callback(CURL *easy, curl_socket_t sock, int
 	event_add(&ev->evnt, NULL);
 	
 	return 0;
+}
+/* }}} */
+
+/* {{{ static void http_request_pool_timer_callback(CURLM *, long, void*) */
+static void http_request_pool_timer_callback(CURLM *multi, long timeout_ms, void *timer_data)
+{
+	http_request_pool *pool = timer_data;
+	TSRMLS_FETCH_FROM_CTX(pool->tsrm_ls);
+	struct timeval timeout = {timeout_ms / 1000, (timeout_ms % 1000) * 1000};
+	
+	if (event_initialized(pool->timeout) && event_pending(pool->timeout, EV_TIMEOUT, NULL)) {
+		event_del(pool->timeout);
+	}
+	
+	if (pool->unfinished) {
+		event_set(pool->timeout, -1, 0, http_request_pool_timeout_callback, pool);
+		event_base_set(HTTP_G->request.pool.event.base, pool->timeout);
+		event_add(pool->timeout, &timeout);
+	
+#if HTTP_DEBUG_REQPOOLS
+		fprintf(stderr, "Updating timeout (%lu, %lu) of pool %p\n", (ulong) timeout.tv_sec, (ulong) timeout.tv_usec, pool);
+#endif
+	}
+#if HTTP_DEBUG_REQPOOLS
+		else fprintf(stderr, "Removed timeout of pool %p\n", pool);
+#endif
 }
 /* }}} */
 #endif /* HTTP_HAVE_EVENT */
