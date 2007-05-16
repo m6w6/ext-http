@@ -123,17 +123,6 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 	} else {
 		CURLMcode code = curl_multi_add_handle(pool->ch, req->request->ch);
 		
-		while (CURLM_CALL_MULTI_PERFORM == code) {
-#ifdef HTTP_HAVE_EVENT
-			if (pool->useevents) {
-				code = curl_multi_socket_all(pool->ch, &pool->unfinished);
-			} else {
-#endif
-				code = curl_multi_perform(pool->ch, &pool->unfinished);
-#ifdef HTTP_HAVE_EVENT
-			}
-#endif
-		}
 		if (CURLM_OK != code) {
 			http_error_ex(HE_WARNING, HTTP_E_REQUEST_POOL, "Could not attach HttpRequest object(#%d) to the HttpRequestPool: %s", Z_OBJ_HANDLE_P(request), curl_multi_strerror(code));
 		} else {
@@ -141,7 +130,13 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 
 			ZVAL_ADDREF(request);
 			zend_llist_add_element(&pool->handles, &request);
+			++pool->unfinished;
 
+#ifdef HTTP_HAVE_EVENT
+			if (pool->runsocket) {
+				while (CURLM_CALL_MULTI_PERFORM == curl_multi_socket_all(pool->ch, &pool->unfinished));
+			}
+#endif
 #if HTTP_DEBUG_REQPOOLS
 			fprintf(stderr, "> %d HttpRequests attached to pool %p\n", zend_llist_count(&pool->handles), pool);
 #endif
@@ -270,8 +265,12 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool)
 	
 #ifdef HTTP_HAVE_EVENT
 	if (pool->useevents) {
-		while (CURLM_CALL_MULTI_PERFORM == curl_multi_socket_all(pool->ch, &pool->unfinished));
-		event_base_dispatch(HTTP_G->request.pool.event.base);
+		/* run socket action */
+		pool->runsocket = 1;
+		do {
+			while (CURLM_CALL_MULTI_PERFORM == curl_multi_socket_all(pool->ch, &pool->unfinished));
+			event_base_dispatch(HTTP_G->request.pool.event.base);
+		} while (pool->unfinished);
 	} else
 #endif
 	{
@@ -472,6 +471,8 @@ static void http_request_pool_timeout_callback(int socket, short action, void *e
 	if (CURLM_OK != rc) {
 		http_error(HE_WARNING, HTTP_E_SOCKET, curl_multi_strerror(rc));
 	}
+	
+	http_request_pool_timer_callback(pool->ch, 1000, pool);
 }
 /* }}} */
 
@@ -501,10 +502,10 @@ static void http_request_pool_event_callback(int socket, short action, void *eve
 				rc = curl_multi_socket_action(pool->ch, socket, CURL_CSELECT_OUT, &pool->unfinished);
 				break;
 			case EV_READ|EV_WRITE:
-				rc = curl_multi_socket_action(pool->chm socket, CURL_CSELECT_IN|CURL_CSELECT_OUT, &pool->unfinished);
+				rc = curl_multi_socket_action(pool->ch, socket, CURL_CSELECT_IN|CURL_CSELECT_OUT, &pool->unfinished);
 				break;
 			default:
-				http_error(HE_WARNING, HTTP_E_SOCKET, "Unknown event %d", (int) action);
+				http_error_ex(HE_WARNING, HTTP_E_SOCKET, "Unknown event %d", (int) action);
 				return;
 		}
 #else
@@ -593,17 +594,12 @@ static void http_request_pool_timer_callback(CURLM *multi, long timeout_ms, void
 		event_del(pool->timeout);
 	}
 	
-	if (pool->unfinished) {
-		event_set(pool->timeout, -1, 0, http_request_pool_timeout_callback, pool);
-		event_base_set(HTTP_G->request.pool.event.base, pool->timeout);
-		event_add(pool->timeout, &timeout);
+	event_set(pool->timeout, -1, 0, http_request_pool_timeout_callback, pool);
+	event_base_set(HTTP_G->request.pool.event.base, pool->timeout);
+	event_add(pool->timeout, &timeout);
 	
 #if HTTP_DEBUG_REQPOOLS
-		fprintf(stderr, "Updating timeout (%lu, %lu) of pool %p\n", (ulong) timeout.tv_sec, (ulong) timeout.tv_usec, pool);
-#endif
-	}
-#if HTTP_DEBUG_REQPOOLS
-		else fprintf(stderr, "Removed timeout of pool %p\n", pool);
+	fprintf(stderr, "Updating timeout (%lu, %lu) of pool %p\n", (ulong) timeout.tv_sec, (ulong) timeout.tv_usec, pool);
 #endif
 }
 /* }}} */

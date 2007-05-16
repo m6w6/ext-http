@@ -28,6 +28,7 @@ typedef struct _http_request_pool_t {
 #ifdef HTTP_HAVE_EVENT
 	struct event *timeout;
 	unsigned useevents:1;
+	unsigned runsocket:1;
 #endif
 } http_request_pool;
 
