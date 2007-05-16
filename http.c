@@ -454,6 +454,11 @@ PHP_MINFO_FUNCTION(http)
 #else
 		php_info_print_table_row(2, "libcurl", "disabled", "disabled");
 #endif
+#ifdef HTTP_HAVE_EVENT
+		php_info_print_table_row(3, "libevent", HTTP_EVENT_VERSION, event_get_version());
+#else
+		php_info_print_table_row(3, "libevent", "disabled", "disabled");
+#endif
 #ifdef HTTP_HAVE_ZLIB
 		php_info_print_table_row(3, "libz", ZLIB_VERSION, zlibVersion());
 #else

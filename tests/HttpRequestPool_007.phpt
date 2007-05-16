@@ -5,8 +5,7 @@ HttpRequestPool chain with libevent
 include 'skip.inc';
 checkcls('HttpRequest');
 checkcls('HttpRequestPool');
-$pool = new RequestPool;
-skipif(!@$pool->enableEvents(), "need libevent support");
+skipif(!http_support(HTTP_SUPPORT_EVENTS), "need libevent support");
 ?>
 --FILE--
 <?php

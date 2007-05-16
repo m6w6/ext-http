@@ -288,6 +288,19 @@ dnl ----
 				AC_MSG_WARN([continuing without libevent support])
 			else
 				AC_MSG_RESULT([found in $EVENT_DIR])
+				
+				AC_MSG_CHECKING([for libevent version, roughly])
+				EVENT_VER="1.1b or lower"
+				if test -f "$EVENT_DIR/include/evhttp.h" && test -f "$EVENT_DIR/include/evdns.h"; then
+					if test -f "$EVENT_DIR/include/evrpc.h"; then
+						EVENT_VER="1.4 or greater"
+					else
+						EVENT_VER="1.2 or greater"
+					fi
+				fi
+				AC_DEFINE_UNQUOTED([HTTP_EVENT_VERSION], ["$EVENT_VER"], [ ])
+				AC_MSG_RESULT([$EVENT_VER])
+				
 				AC_MSG_CHECKING([for libcurl version >= 7.16.0])
 				AC_MSG_RESULT([$CURL_VERSION])
 				if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71600; then
