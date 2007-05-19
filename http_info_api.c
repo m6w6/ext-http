@@ -89,7 +89,7 @@ PHP_HTTP_API STATUS _http_info_parse_ex(const char *pre_header, http_info *info,
 	}
 #endif
 
-	info->http.version = atof(http + lenof("HTTP/"));
+	info->http.version = zend_strtod(http + lenof("HTTP/"), NULL);
 	
 	/* is response */
 	if (pre_header == http) {

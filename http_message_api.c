@@ -92,7 +92,7 @@ PHP_HTTP_API http_message *_http_message_init_env(http_message *message, http_me
 	switch (inf.type = type) {
 		case HTTP_MSG_REQUEST:
 			if ((sval = http_get_server_var("SERVER_PROTOCOL", 1)) && !strncmp(Z_STRVAL_P(sval), "HTTP/", lenof("HTTP/"))) {
-				inf.http.version = atof(Z_STRVAL_P(sval) + lenof("HTTP/"));
+				inf.http.version = zend_strtod(Z_STRVAL_P(sval) + lenof("HTTP/"), NULL);
 			} else {
 				inf.http.version = 1.1;
 			}
