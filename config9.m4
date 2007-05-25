@@ -187,7 +187,7 @@ dnl ----
 			
 			save_CFLAGS="$CFLAGS"
 			CFLAGS="`$CURL_CONFIG --cflags`"
-			save_LDFLAGS="$LDFALGS"
+			save_LDFLAGS="$LDFLAGS"
 			LDFLAGS="`$CURL_CONFIG --libs` $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
 			
 			AC_MSG_CHECKING([for openssl support in libcurl])
