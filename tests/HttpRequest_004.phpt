@@ -42,7 +42,7 @@ echo "Done\n";
 %sTEST
 
 First Request
-string(149) "Array
+string(%d) "Array
 (
     [int] => 1
     [dbl] => 3.1415926535898
@@ -69,7 +69,7 @@ array(2) {
 }
 
 Second Request
-string(285) "Array
+string(%d) "Array
 (
     [0] => Array
         (
@@ -104,7 +104,7 @@ array(2) {
 }
 
 Third Request
-string(302) "Array
+string(%d) "Array
 (
     [0] => Array
         (
