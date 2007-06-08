@@ -21,63 +21,6 @@
 #include "php_http_url_api.h"
 #include "php_http_request_body_api.h"
 
-#if defined(HAVE_CURL_GETFORMDATA) && !defined(HAVE_CURL_FORMGET)
-struct FormData {
-	struct FormData *next;
-	int type;
-	char *line;
-	size_t length;
-};
-
-CURLcode Curl_getFormData(struct FormData **, struct curl_httppost *post, curl_off_t *size);
-
-static char *file_get_contents(char *file, size_t *len TSRMLS_DC)
-{
-	php_stream *s = NULL;
-	char *buf = NULL;
-	
-	if ((s = php_stream_open_wrapper_ex(file, "rb", REPORT_ERRORS|ENFORCE_SAFE_MODE, NULL, HTTP_DEFAULT_STREAM_CONTEXT))) {
-		*len = php_stream_copy_to_mem(s, &buf, (size_t) -1, 0);
-		php_stream_close(s);
-	} else {
-		*len = 0;
-	}
-	return buf;
-}
-
-static int curl_formget(struct FormData *post, phpstr *str TSRMLS_DC)
-{
-	int fgc_error = 0;
-	char *fdata;
-	size_t fsize;
-	struct FormData *next, *pptr = post;
-	
-	while (pptr) {
-		next = pptr->next;
-		
-		if (!fgc_error) {
-			if (pptr->type) {
-				if ((fdata = file_get_contents(pptr->line, &fsize TSRMLS_CC))) {
-					phpstr_append(str, fdata, fsize);
-					efree(fdata);
-				} else {
-					fgc_error = 1;
-				}
-			} else {
-				phpstr_append(str, pptr->line, pptr->length);
-			}
-		}
-		
-		curl_free(pptr->line);
-		curl_free(pptr);
-		pptr = next;
-	}
-	
-	return fgc_error;
-}
-#endif
-
-
 /* {{{ http_request_body *http_request_body_new() */
 PHP_HTTP_API http_request_body *_http_request_body_init_ex(http_request_body *body, int type, void *data, size_t size, zend_bool free ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC TSRMLS_DC)
 {
@@ -213,23 +156,6 @@ PHP_HTTP_API STATUS _http_request_body_encode(http_request_body *body, char **bu
 				*buf = PHPSTR_VAL(&str);
 				*len = PHPSTR_LEN(&str);
 				return SUCCESS;
-			}
-#elif defined(HAVE_CURL_GETFORMDATA)
-			struct FormData *data;
-			curl_off_t size;
-			
-			if (!Curl_getFormData(&data, body->data, &size)) {
-				phpstr str;
-				
-				phpstr_init_ex(&str, (size_t) size, 0);
-				if (curl_formget(data, &str TSRMLS_CC)) {
-					phpstr_dtor(&str);
-				} else {
-					phpstr_fix(&str);
-					*buf = PHPSTR_VAL(&str);
-					*len = PHPSTR_LEN(&len);
-					return SUCCESS;
-				}
 			}
 #endif
 			break;

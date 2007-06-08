@@ -377,8 +377,10 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_LOW_SPEED_LIMIT, 0L);
 		HTTP_CURL_OPT(CURLOPT_LOW_SPEED_TIME, 0L);
 #if HTTP_CURL_VERSION(7,15,5)
+		/* LFS weirdance
 		HTTP_CURL_OPT(CURLOPT_MAX_SEND_SPEED_LARGE, (curl_off_t) 0);
 		HTTP_CURL_OPT(CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t) 0);
+		*/
 #endif
 		/* crashes
 		HTTP_CURL_OPT(CURLOPT_MAXCONNECTS, 5L); */
@@ -516,12 +518,14 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		HTTP_CURL_OPT(CURLOPT_LOW_SPEED_TIME, Z_LVAL_P(zoption));
 	}
 #if HTTP_CURL_VERSION(7,15,5)
+	/* LSF weirdance
 	if ((zoption = http_request_option(request, options, "max_send_speed", IS_LONG))) {
 		HTTP_CURL_OPT(CURLOPT_MAX_SEND_SPEED_LARGE, (curl_off_t) Z_LVAL_P(zoption));
 	}
 	if ((zoption = http_request_option(request, options, "max_recv_speed", IS_LONG))) {
 		HTTP_CURL_OPT(CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t) Z_LVAL_P(zoption));
 	}
+	*/
 #endif
 	/* crashes
 	if ((zoption = http_request_option(request, options, "maxconnects", IS_LONG))) {

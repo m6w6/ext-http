@@ -38,6 +38,8 @@ if test "$PHP_HTTP" != "no"; then
 		])
 	])
 	
+	AC_PROG_CPP
+	
 	if test "$PHP_HTTP_SHARED_DEPS" != "no"; then
 		AC_DEFINE([HTTP_SHARED_DEPS], [1], [ ])
 	else
@@ -178,17 +180,20 @@ dnl ----
 			AC_MSG_ERROR([libcurl version greater or equal to 7.12.3 required])
 		fi
 		
-		AC_PROG_CPP
+		dnl
+		dnl compile tests
+		dnl
+		
+		save_CFLAGS="$CFLAGS"
+		CFLAGS="`$CURL_CONFIG --cflags`"
+		save_LDFLAGS="$LDFLAGS"
+		LDFLAGS="`$CURL_CONFIG --libs` $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
+		
 		AC_MSG_CHECKING([for SSL support in libcurl])
 		CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
 		if test "$CURL_SSL" = "SSL"; then
 			AC_MSG_RESULT([yes])
 			AC_DEFINE([HTTP_HAVE_SSL], [1], [ ])
-			
-			save_CFLAGS="$CFLAGS"
-			CFLAGS="`$CURL_CONFIG --cflags`"
-			save_LDFLAGS="$LDFLAGS"
-			LDFLAGS="`$CURL_CONFIG --libs` $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
 			
 			AC_MSG_CHECKING([for openssl support in libcurl])
 			AC_TRY_RUN([
@@ -235,12 +240,14 @@ dnl ----
 			], [
 				AC_MSG_RESULT([no])
 			])
-			
-			CFLAGS="$save_CFLAGS"
-			LDFLAGS="$save_LDFLAGS"
 		else
 			AC_MSG_RESULT([no])
 		fi
+		
+		CFLAGS="$save_CFLAGS"
+		LDFLAGS="$save_LDFLAGS"
+		
+		dnl end compile tests
 		
 		AC_MSG_CHECKING([for bundled SSL CA info])
 		CURL_CAINFO=
@@ -278,12 +285,6 @@ dnl ----
 			[AC_DEFINE([HAVE_CURL_EASY_RESET], [1], [ ])], [ ],
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
 		)
-		dnl Debian suddenly (>=7.14.1-2) hides all symbols not starting with "curl"
-		PHP_CHECK_LIBRARY(curl, Curl_getFormData,
-			[AC_DEFINE([HAVE_CURL_GETFORMDATA], [1], [ ])], [ ],
-			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
-		)
-		dnl New API function which obsoletes use of Curl_getFormData (>=7.15.5)
 		PHP_CHECK_LIBRARY(curl, curl_formget,
 			[AC_DEFINE([HAVE_CURL_FORMGET], [1], [ ])], [ ],
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
