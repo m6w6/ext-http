@@ -21,6 +21,7 @@
 
 #include "zend_interfaces.h"
 #include "ext/standard/url.h"
+#include "php_variables.h"
 
 #include "php_http_api.h"
 #include "php_http_send_api.h"
@@ -1235,21 +1236,24 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 #ifdef HTTP_HAVE_CURL
 				int method;
 				char *url;
-				zval body, *array, *headers, *host = http_message_header(obj->message, "Host");
-				php_url hurl, *purl = php_url_parse(obj->message->http.info.request.url);
+				zval post, body, *array, *headers, *host = http_message_header(obj->message, "Host");
+				php_url hurl, *purl = php_url_parse(STR_PTR(obj->message->http.info.request.url));
 				
 				MAKE_STD_ZVAL(array);
 				array_init(array);
 				
 				memset(&hurl, 0, sizeof(php_url));
-				hurl.host = host ? Z_STRVAL_P(host) : NULL;
-				zval_ptr_dtor(&host);
+				if (host) {
+					hurl.host = Z_STRVAL_P(host);
+					zval_ptr_dtor(&host);
+				}
 				http_build_url(HTTP_URL_REPLACE, purl, &hurl, NULL, &url, NULL);
 				php_url_free(purl);
 				add_assoc_string(array, "url", url, 0);
 				
-				if (	(method = http_request_method_exists(1, 0, obj->message->http.info.request.method)) ||
-						(method = http_request_method_register(obj->message->http.info.request.method, strlen(obj->message->http.info.request.method)))) {
+				if (	obj->message->http.info.request.method &&
+							((method = http_request_method_exists(1, 0, obj->message->http.info.request.method)) ||
+							(method = http_request_method_register(obj->message->http.info.request.method, strlen(obj->message->http.info.request.method))))) {
 					add_assoc_long(array, "method", method);
 				}
 				
@@ -1266,9 +1270,21 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 				zend_call_method_with_1_params(&return_value, http_request_object_ce, NULL, "setoptions", NULL, array);
 				zval_ptr_dtor(&array);
 				
-				INIT_PZVAL(&body);
-				ZVAL_STRINGL(&body, PHPSTR_VAL(obj->message), PHPSTR_LEN(obj->message), 0);
-				zend_call_method_with_1_params(&return_value, http_request_object_ce, NULL, "setrawpostdata", NULL, &body);
+				if (PHPSTR_VAL(obj->message) && PHPSTR_LEN(obj->message)) {
+					INIT_PZVAL(&body);
+					ZVAL_STRINGL(&body, PHPSTR_VAL(obj->message), PHPSTR_LEN(obj->message), 0);
+					if (method != HTTP_POST) {
+						zend_call_method_with_1_params(&return_value, http_request_object_ce, NULL, "setbody", NULL, &body);
+					} else {
+						INIT_PZVAL(&post);
+						array_init(&post);
+						
+						zval_copy_ctor(&body);
+						sapi_module.treat_data(PARSE_STRING, Z_STRVAL(body), &post TSRMLS_CC);
+						zend_call_method_with_1_params(&return_value, http_request_object_ce, NULL, "setpostfields", NULL, &post);
+						zval_dtor(&body);
+					}
+				}
 #else
 				http_error(HE_WARNING, HTTP_E_RUNTIME, "Cannot transform HttpMessage to HttpRequest (missing curl support)");
 #endif
