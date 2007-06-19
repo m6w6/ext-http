@@ -1282,7 +1282,6 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 						zval_copy_ctor(&body);
 						sapi_module.treat_data(PARSE_STRING, Z_STRVAL(body), &post TSRMLS_CC);
 						zend_call_method_with_1_params(&return_value, http_request_object_ce, NULL, "setpostfields", NULL, &post);
-						zval_dtor(&body);
 					}
 				}
 #else
