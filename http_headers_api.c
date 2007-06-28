@@ -156,7 +156,7 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 					
 					while (*++ptr && !HTTP_IS_CTYPE(digit, *ptr) && '.' != *ptr);
 					
-					quality = atof(ptr);
+					quality = zend_strtod(ptr, NULL);
 					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = separator - Z_STRVAL_PP(entry));
 				} else {
 					quality = 1000.0 - i++;
