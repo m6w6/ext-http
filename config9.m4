@@ -184,6 +184,10 @@ dnl ----
 		dnl compile tests
 		dnl
 		
+		save_INCLUDES="$INCLUDES"
+		INCLUDES=
+		save_LIBS="$LIBS"
+		LIBS=
 		save_CFLAGS="$CFLAGS"
 		CFLAGS="`$CURL_CONFIG --cflags`"
 		save_LDFLAGS="$LDFLAGS"
@@ -244,6 +248,8 @@ dnl ----
 			AC_MSG_RESULT([no])
 		fi
 		
+		INCLUDES="$save_INCLUDES"
+		LIBS="$save_LIBS"
 		CFLAGS="$save_CFLAGS"
 		LDFLAGS="$save_LDFLAGS"
 		
