@@ -309,46 +309,50 @@ dnl ----
 		dnl ----
 		
 		if test "$PHP_HTTP_CURL_LIBEVENT" != "no"; then
-			AC_MSG_CHECKING([for event.h])
-			EVENT_DIR=
-			for i in "$PHP_HTTP_CURL_LIBEVENT" /usr/local /usr /opt; do
-				if test -f "$i/include/event.h"; then
-					EVENT_DIR=$i
-					break
-				fi
-			done
-			if test -z "$EVENT_DIR"; then
-				AC_MSG_RESULT([not found])
-				AC_MSG_WARN([continuing without libevent support])
-			else
-				AC_MSG_RESULT([found in $EVENT_DIR])
-				
-				AC_MSG_CHECKING([for libevent version, roughly])
-				EVENT_VER="1.1b or lower"
-				if test -f "$EVENT_DIR/include/evhttp.h" && test -f "$EVENT_DIR/include/evdns.h"; then
-					if test -f "$EVENT_DIR/include/evrpc.h"; then
-						EVENT_VER="1.4 or greater"
+			HTTP_HAVE_PHP_EXT([event], [
+				AC_MSG_WARN([event support is incompatible with pecl/event; continuing without libevent support])
+			], [
+				AC_MSG_CHECKING([for event.h])
+				EVENT_DIR=
+				for i in "$PHP_HTTP_CURL_LIBEVENT" /usr/local /usr /opt; do
+					if test -f "$i/include/event.h"; then
+						EVENT_DIR=$i
+						break
+					fi
+				done
+				if test -z "$EVENT_DIR"; then
+					AC_MSG_RESULT([not found])
+					AC_MSG_WARN([continuing without libevent support])
+				else
+					AC_MSG_RESULT([found in $EVENT_DIR])
+					
+					AC_MSG_CHECKING([for libevent version, roughly])
+					EVENT_VER="1.1b or lower"
+					if test -f "$EVENT_DIR/include/evhttp.h" && test -f "$EVENT_DIR/include/evdns.h"; then
+						if test -f "$EVENT_DIR/include/evrpc.h"; then
+							EVENT_VER="1.4 or greater"
+						else
+							EVENT_VER="1.2 or greater"
+						fi
+					fi
+					AC_DEFINE_UNQUOTED([HTTP_EVENT_VERSION], ["$EVENT_VER"], [ ])
+					AC_MSG_RESULT([$EVENT_VER])
+					
+					AC_MSG_CHECKING([for libcurl version >= 7.16.0])
+					AC_MSG_RESULT([$CURL_VERSION])
+					if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71600; then
+						AC_MSG_WARN([libcurl version greater or equal to 7.16.0 required; continuing without libevent support])
 					else
-						EVENT_VER="1.2 or greater"
+						PHP_ADD_INCLUDE($EVENT_DIR/include)
+						PHP_ADD_LIBRARY_WITH_PATH(event, $EVENT_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+						AC_DEFINE([HTTP_HAVE_EVENT], [1], [Have libevent support for cURL])
+						PHP_CHECK_LIBRARY(curl, curl_multi_socket_action, 
+							[AC_DEFINE([HAVE_CURL_MULTI_SOCKET_ACTION], [1], [ ])], [ ],
+							[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
+						)
 					fi
 				fi
-				AC_DEFINE_UNQUOTED([HTTP_EVENT_VERSION], ["$EVENT_VER"], [ ])
-				AC_MSG_RESULT([$EVENT_VER])
-				
-				AC_MSG_CHECKING([for libcurl version >= 7.16.0])
-				AC_MSG_RESULT([$CURL_VERSION])
-				if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71600; then
-					AC_MSG_WARN([libcurl version greater or equal to 7.16.0 required; continuing without libevent support])
-				else
-					PHP_ADD_INCLUDE($EVENT_DIR/include)
-					PHP_ADD_LIBRARY_WITH_PATH(event, $EVENT_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-					AC_DEFINE([HTTP_HAVE_EVENT], [1], [Have libevent support for cURL])
-					PHP_CHECK_LIBRARY(curl, curl_multi_socket_action, 
-						[AC_DEFINE([HAVE_CURL_MULTI_SOCKET_ACTION], [1], [ ])], [ ],
-						[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
-					)
-				fi
-			fi
+			])
 		fi
 	fi
 
