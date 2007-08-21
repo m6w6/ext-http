@@ -4,7 +4,7 @@ persistent handles
 <?php
 include 'skip.inc';
 skipif(!http_support(HTTP_SUPPORT_REQUESTS), "need request support");
-skipif(!function_exists('zend_thread_id'), "need ZTS build");
+skipif(function_exists('zend_thread_id'), "need non-ZTS build");
 ?>
 --INI--
 http.persistent.handles.limit=-1
@@ -58,16 +58,6 @@ stdClass Object
         )
 
     [http_request_datashare] => Array
-        (
-            [GLOBAL] => Array
-                (
-                    [used] => 0
-                    [free] => 0
-                )
-
-        )
-
-    [http_request_datashare_lock] => Array
         (
             [GLOBAL] => Array
                 (
