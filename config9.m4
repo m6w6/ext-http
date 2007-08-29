@@ -175,7 +175,18 @@ dnl ----
 			AC_MSG_ERROR([libcurl version greater or equal to 7.12.3 required])
 		fi
 		
-		CURL_LIBS=`$CURL_CONFIG --libs`
+		dnl
+		dnl compile tests
+		dnl
+		
+		save_INCLUDES="$INCLUDES"
+		INCLUDES=
+		save_LIBS="$LIBS"
+		LIBS=
+		save_CFLAGS="$CFLAGS"
+		CFLAGS="`$CURL_CONFIG --cflags`"
+		save_LDFLAGS="$LDFLAGS"
+		LDFLAGS="`$CURL_CONFIG --libs` $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
 		
 		AC_MSG_CHECKING([for SSL support in libcurl])
 		CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
@@ -183,34 +194,61 @@ dnl ----
 			AC_MSG_RESULT([yes])
 			AC_DEFINE([HTTP_HAVE_SSL], [1], [ ])
 			
-			AC_MSG_CHECKING([for SSL library used])
-			CURL_SSL_FLAVOUR=
-			for i in $CURL_LIBS; do
-				case $i in
-					-lssl* | -lyassl*)
-						CURL_SSL_FLAVOUR="openssl"
-						AC_MSG_RESULT([openssl])
-						AC_DEFINE([HTTP_HAVE_OPENSSL], [1], [ ])
-						AC_CHECK_HEADERS([openssl/crypto.h])
-						break
-					;;
-					-lgnutls*)
-						CURL_SSL_FLAVOUR="gnutls"
-						AC_MSG_RESULT([gnutls])
-						AC_DEFINE([HTTP_HAVE_GNUTLS], [1], [ ])
-						AC_CHECK_HEADERS([gcrypt.h])
-						break
-					;;
-				esac
-			done
-			if test -z "$CURL_SSL_FLAVOUR"; then
-				AC_MSG_RESULT([unknown!])
-				AC_MSG_WARN([Could not determine the type of SSL library used!])
-				AC_MSG_WARN([Building will fail in ZTS mode!])
-			fi
+			AC_MSG_CHECKING([for openssl support in libcurl])
+			AC_TRY_RUN([
+				#include <curl/curl.h>
+				int main(int argc, char *argv[]) {
+					curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
+					if (data && data->ssl_version && *data->ssl_version) {
+						const char *ptr = data->ssl_version;
+						while(*ptr == ' ') ++ptr;
+						return strncasecmp(ptr, "OpenSSL", sizeof("OpenSSL")-1);
+					}
+					return 1;
+				}
+			], [
+				AC_MSG_RESULT([yes])
+				AC_CHECK_HEADER([openssl/crypto.h], [
+					AC_DEFINE([HTTP_HAVE_OPENSSL], [1], [ ])
+				])
+			], [
+				AC_MSG_RESULT([no])
+			], [
+				AC_MSG_RESULT([no])
+			])
+			
+			AC_MSG_CHECKING([for gnutls support in libcurl])
+			AC_TRY_RUN([
+				#include <curl/curl.h>
+				int main(int argc, char *argv[]) {
+					curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
+					if (data && data->ssl_version && *data->ssl_version) {
+						const char *ptr = data->ssl_version;
+						while(*ptr == ' ') ++ptr;
+						return strncasecmp(ptr, "GnuTLS", sizeof("GnuTLS")-1);
+					}
+					return 1;
+				}
+			], [
+				AC_MSG_RESULT([yes])
+				AC_CHECK_HEADER([gcrypt.h], [
+					AC_DEFINE([HTTP_HAVE_GNUTLS], [1], [ ])
+				])
+			], [
+				AC_MSG_RESULT([no])
+			], [
+				AC_MSG_RESULT([no])
+			])
 		else
 			AC_MSG_RESULT([no])
 		fi
+		
+		INCLUDES="$save_INCLUDES"
+		LIBS="$save_LIBS"
+		CFLAGS="$save_CFLAGS"
+		LDFLAGS="$save_LDFLAGS"
+		
+		dnl end compile tests
 		
 		AC_MSG_CHECKING([for bundled SSL CA info])
 		CURL_CAINFO=
@@ -229,7 +267,7 @@ dnl ----
 		
 		PHP_ADD_INCLUDE($CURL_DIR/include)
 		PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-		PHP_EVAL_LIBLINE($CURL_LIBS, HTTP_SHARED_LIBADD)
+		PHP_EVAL_LIBLINE(`$CURL_CONFIG --libs`, HTTP_SHARED_LIBADD)
 		AC_DEFINE([HTTP_HAVE_CURL], [1], [Have cURL support])
 		
 		PHP_CHECK_LIBRARY(curl, curl_share_strerror, 
@@ -248,12 +286,6 @@ dnl ----
 			[AC_DEFINE([HAVE_CURL_EASY_RESET], [1], [ ])], [ ],
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
 		)
-		dnl Debian suddenly (>=7.14.1-2) hides all symbols not starting with "curl"
-		PHP_CHECK_LIBRARY(curl, Curl_getFormData,
-			[AC_DEFINE([HAVE_CURL_GETFORMDATA], [1], [ ])], [ ],
-			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
-		)
-		dnl New API function which obsoletes use of Curl_getFormData (>=7.15.5)
 		PHP_CHECK_LIBRARY(curl, curl_formget,
 			[AC_DEFINE([HAVE_CURL_FORMGET], [1], [ ])], [ ],
 			[$CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR]
