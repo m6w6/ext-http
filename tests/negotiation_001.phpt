@@ -26,10 +26,14 @@ var_dump(http_negotiate_charset($csets[0]));
 var_dump(http_negotiate_charset($csets[0], $cresult));
 var_dump(http_negotiate_content_type($ctype[0]));
 var_dump(http_negotiate_content_type($ctype[0], $tresult));
+var_dump(http_negotiate_language(array("unknown")));
+var_dump(http_negotiate_charset(array("unknown")));
+var_dump(http_negotiate_content_type(array("unknown")));
 print_r($lresult);
 print_r($cresult);
 print_r($tresult);
 echo "Done\n";
+?>
 --EXPECTF--
 %sTEST
 string(2) "de"
@@ -38,6 +42,9 @@ string(10) "iso-8859-1"
 string(10) "iso-8859-1"
 string(21) "application/xhtml+xml"
 string(21) "application/xhtml+xml"
+string(7) "unknown"
+string(7) "unknown"
+string(7) "unknown"
 Array
 (
     [de] => 900

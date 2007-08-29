@@ -148,6 +148,17 @@ PHP_FUNCTION(http_build_str)
 }
 /* }}} */
 
+#define HTTP_DO_NEGOTIATE_DEFAULT(supported) \
+	{ \
+		zval **value; \
+		 \
+		zend_hash_internal_pointer_reset(Z_ARRVAL_P(supported)); \
+		if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(supported), (void *) &value)) { \
+			RETVAL_ZVAL(*value, 1, 0); \
+		} else { \
+			RETVAL_NULL(); \
+		} \
+	}
 #define HTTP_DO_NEGOTIATE(type, supported, rs_array) \
 { \
 	HashTable *result; \
@@ -156,10 +167,10 @@ PHP_FUNCTION(http_build_str)
 		uint key_len; \
 		ulong idx; \
 		 \
-		if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(result, &key, &key_len, &idx, 1, NULL)) { \
+		if (zend_hash_num_elements(result) && HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(result, &key, &key_len, &idx, 1, NULL)) { \
 			RETVAL_STRINGL(key, key_len-1, 0); \
 		} else { \
-			RETVAL_NULL(); \
+			HTTP_DO_NEGOTIATE_DEFAULT(supported); \
 		} \
 		\
 		if (rs_array) { \
@@ -170,14 +181,7 @@ PHP_FUNCTION(http_build_str)
 		FREE_HASHTABLE(result); \
 		\
 	} else { \
-		zval **value; \
-		 \
-		zend_hash_internal_pointer_reset(Z_ARRVAL_P(supported)); \
-		if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(supported), (void *) &value)) { \
-			RETVAL_ZVAL(*value, 1, 0); \
-		} else { \
-			RETVAL_NULL(); \
-		} \
+		HTTP_DO_NEGOTIATE_DEFAULT(supported); \
 		\
 		if (rs_array) { \
 			HashPosition pos; \
