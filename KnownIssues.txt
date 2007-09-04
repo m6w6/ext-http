@@ -16,3 +16,5 @@ Internals:
 	Inflating raw deflated data causes a re-initialization of the inflate
 		stream where the corresponding window bits are modified to tell libz
 		to not check for zlib header bytes.  This is not preventable AFAICS.
+	LFS dependant parts of libcurl are left out because of off_t,
+		respectively off64_t confusion.

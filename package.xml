@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package version="1.0" packagerversion="1.5.1">
+<package version="1.0" packagerversion="1.6.1">
  <name>pecl_http</name>
  <summary>Extended HTTP Support</summary>
  <description>This HTTP extension aims to provide a convenient and powerful 
@@ -23,11 +23,14 @@ support. Parallel requests are available for PHP 5 and greater.
   </maintainer>
   </maintainers>
  <release>
-  <version>1.5.4</version>
-  <date>2007-06-28</date>
+  <version>1.5.5</version>
+  <date>2007-09-04</date>
   <license>BSD, revised</license>
   <state>stable</state>
-  <notes>* Fixed bug #11359 HttpMessage::toMessageTypeObject() does not populate POST fields
+  <notes>* Fixed Bug #11929 (http_negotiate does not return default value on non-match)
+* Fixed SSL library detection for libcurl &gt;= 7.16.2
+- Removed max_recv_speed and max_send_speed request options
+  again, due to LFS dependence
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
