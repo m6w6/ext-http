@@ -911,7 +911,7 @@ retry:
 				case CURLE_RECV_ERROR:
 				case CURLE_SSL_ENGINE_INITFAILED:
 				case CURLE_LOGIN_DENIED:
-					if (request->_retry.delay) {
+					if (request->_retry.delay >= HTTP_DIFFSEC) {
 						http_sleep(request->_retry.delay);
 					}
 					goto retry;

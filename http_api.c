@@ -17,6 +17,7 @@
 
 #include "php_output.h"
 #include "ext/standard/url.h"
+#include "ext/standard/php_lcg.h"
 
 #include "php_http_api.h"
 #include "php_http_send_api.h"

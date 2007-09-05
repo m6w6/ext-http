@@ -86,7 +86,7 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 	
 	TSRMLS_SET_CTX(pool->tsrm_ls);
 	
-#if HTTP_HAVE_EVENT
+#ifdef HTTP_HAVE_EVENT
 	pool->timeout = ecalloc(1, sizeof(struct event));
 	curl_multi_setopt(pool->ch, CURLMOPT_SOCKETDATA, pool);
 	curl_multi_setopt(pool->ch, CURLMOPT_SOCKETFUNCTION, http_request_pool_socket_callback);
@@ -297,7 +297,7 @@ PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool)
 	fprintf(stderr, "Destructing request pool %p\n", pool);
 #endif
 	
-#if HTTP_HAVE_EVENT
+#ifdef HTTP_HAVE_EVENT
 	efree(pool->timeout);
 #endif
 	

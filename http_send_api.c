@@ -18,7 +18,6 @@
 #include "php_http.h"
 
 #include "php_streams.h"
-#include "ext/standard/php_lcg.h"
 
 #include "php_http_api.h"
 #include "php_http_cache_api.h"
