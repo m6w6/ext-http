@@ -132,11 +132,6 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 			zend_llist_add_element(&pool->handles, &request);
 			++pool->unfinished;
 
-#ifdef HTTP_HAVE_EVENT
-			if (pool->runsocket) {
-				while (CURLM_CALL_MULTI_PERFORM == curl_multi_socket_all(pool->ch, &pool->unfinished));
-			}
-#endif
 #if HTTP_DEBUG_REQPOOLS
 			fprintf(stderr, "> %d HttpRequests attached to pool %p\n", zend_llist_count(&pool->handles), pool);
 #endif
@@ -177,7 +172,7 @@ PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *req
 #if HTTP_DEBUG_REQPOOLS
 		fprintf(stderr, "> %d HttpRequests remaining in pool %p\n", zend_llist_count(&pool->handles), pool);
 #endif
-	
+		
 		return SUCCESS;
 	}
 	return FAILURE;
@@ -265,8 +260,6 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool)
 	
 #ifdef HTTP_HAVE_EVENT
 	if (pool->useevents) {
-		/* run socket action */
-		pool->runsocket = 1;
 		do {
 			while (CURLM_CALL_MULTI_PERFORM == curl_multi_socket_all(pool->ch, &pool->unfinished));
 			event_base_dispatch(HTTP_G->request.pool.event.base);
@@ -473,8 +466,9 @@ static void http_request_pool_timeout_callback(int socket, short action, void *e
 		if (CURLM_OK != rc) {
 			http_error(HE_WARNING, HTTP_E_SOCKET, curl_multi_strerror(rc));
 		}
-		
+#if 0
 		http_request_pool_timer_callback(pool->ch, 1000, pool);
+#endif
 	}
 }
 /* }}} */
@@ -518,8 +512,16 @@ static void http_request_pool_event_callback(int socket, short action, void *eve
 #endif
 		} while (CURLM_CALL_MULTI_PERFORM == rc);
 		
-		if (CURLM_OK != rc) {
-			http_error(HE_WARNING, HTTP_E_SOCKET, curl_multi_strerror(rc));
+		switch (rc) {
+			case CURLM_BAD_SOCKET:
+#if 0
+				fprintf(stderr, "!!! Bad socket: %d (%d)\n", socket, (int) action);
+#endif
+			case CURLM_OK:
+				break;
+			default:
+				http_error(HE_WARNING, HTTP_E_SOCKET, curl_multi_strerror(rc));
+				break;
 		}
 		
 		http_request_pool_responsehandler(pool);

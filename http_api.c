@@ -94,6 +94,13 @@ char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool x
 }
 /* }}} */
 
+/* {{{ http_boundary(char *, size_t) */
+size_t _http_boundary(char *buf, size_t buf_len TSRMLS_DC)
+{
+	return snprintf(buf, buf_len, "%lu%0.9f", (ulong) HTTP_G->request.time, (float) php_combined_lcg(TSRMLS_C));
+}
+/* }}} */
+
 /* {{{ void http_error(long, long, char*) */
 void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...)
 {

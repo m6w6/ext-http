@@ -36,6 +36,9 @@ PHP_HTTP_API long _http_support(long feature);
 #define pretty_key(key, key_len, uctitle, xhyphen) _http_pretty_key(key, key_len, uctitle, xhyphen)
 extern char *_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
 
+#define http_boundary(b, l) _http_boundary((b), (l) TSRMLS_CC)
+extern size_t _http_boundary(char *buf, size_t len TSRMLS_DC);
+
 #define http_error(type, code, string) _http_error_ex(type, code, "%s", string)
 #define http_error_ex _http_error_ex
 extern void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...);
