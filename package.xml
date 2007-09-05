@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package version="1.0" packagerversion="1.4.11">
+<package version="1.0" packagerversion="1.6.1">
  <name>pecl_http</name>
  <summary>Extended HTTP Support</summary>
  <description>This HTTP extension aims to provide a convenient and powerful 
@@ -23,15 +23,14 @@ support. Parallel requests are available for PHP 5 and greater.
   </maintainer>
   </maintainers>
  <release>
-  <version>1.5.2</version>
-  <date>2007-02-25</date>
+  <version>1.6.0b1</version>
+  <date>2007-09-05</date>
   <license>BSD, revised</license>
-  <state>stable</state>
-  <notes>* Fixed bug #10151 (build fails dynamic linking on Mac OS X)
-* Allow setting the &quot;proxyhost&quot; request option to an empty string,
-  which lets curl ignore any environment settings
-* Allow unsetting request options by passing NULL:
-  $request-&gt;setOptions(array(&quot;option&quot; =&gt; NULL));
+  <state>beta</state>
+  <notes>+ Added &apos;retrycount&apos; and &apos;retrydelay&apos; request options
++ Added libevent support for libcurl (&gt;= 7.16.0):
+  o added --with-http-curl-libevent configure option
+  o added HttpRequestPool::enableEvents()
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
