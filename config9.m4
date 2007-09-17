@@ -75,11 +75,11 @@ if test "$PHP_HTTP" != "no"; then
 	AC_DEFUN([HTTP_HAVE_PHP_EXT], [
 		extname=$1
 		haveext=$[PHP_]translit($1,a-z_-,A-Z__)
-		ishared=$[PHP_]translit($1,a-z_-,A-Z__)_SHARED
 		
 		AC_MSG_CHECKING([for ext/$extname support])
 		if test -x "$PHP_EXECUTABLE"; then
-			if test "`$PHP_EXECUTABLE -m | $EGREP ^$extname\$`" = "$extname"; then
+			grepext=`$PHP_EXECUTABLE -m | $EGREP ^$extname\$`
+			if test "$grepext" = "$extname"; then
 				[HTTP_HAVE_EXT_]translit($1,a-z_-,A-Z__)=1
 				AC_MSG_RESULT([yes])
 				$2
@@ -120,7 +120,7 @@ dnl ----
 				break;
 			fi
 		done
-		if test -z "$ZLIB_DIR"; then
+		if test "x$ZLIB_DIR" = "x"; then
 			AC_MSG_RESULT([not found])
 			AC_MSG_ERROR([could not find zlib.h])
 		else
@@ -150,7 +150,7 @@ dnl ----
 				break
 			fi
 		done
-		if test -z "$CURL_DIR"; then
+		if test "x$CURL_DIR" = "x"; then
 			AC_MSG_RESULT([not found])
 			AC_MSG_ERROR([could not find curl/curl.h])
 		else
@@ -165,7 +165,7 @@ dnl ----
 				break
 			fi
 		done
-		if test -z "$CURL_CONFIG"; then
+		if test "x$CURL_CONFIG" = "x"; then
 			AC_MSG_RESULT([not found])
 			AC_MSG_ERROR([could not find curl-config])
 		else
@@ -189,9 +189,10 @@ dnl ----
 		save_LIBS="$LIBS"
 		LIBS=
 		save_CFLAGS="$CFLAGS"
-		CFLAGS="`$CURL_CONFIG --cflags`"
+		CFLAGS=`$CURL_CONFIG --cflags`
 		save_LDFLAGS="$LDFLAGS"
-		LDFLAGS="`$CURL_CONFIG --libs` $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
+		LDFLAGS=`$CURL_CONFIG --libs`
+		LDFLAGS="$LDFLAGS $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
 		
 		AC_MSG_CHECKING([for SSL support in libcurl])
 		CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
@@ -263,7 +264,7 @@ dnl ----
 				break
 			fi
 		done
-		if test -z "$CURL_CAINFO"; then
+		if test "x$CURL_CAINFO" = "x"; then
 			AC_MSG_RESULT([not found])
 		else
 			AC_MSG_RESULT([$CURL_CAINFO])
@@ -320,7 +321,7 @@ dnl ----
 						break
 					fi
 				done
-				if test -z "$EVENT_DIR"; then
+				if test "x$EVENT_DIR" = "x"; then
 					AC_MSG_RESULT([not found])
 					AC_MSG_WARN([continuing without libevent support])
 				else
@@ -368,7 +369,7 @@ dnl ----
 				break
 			fi
 		done
-		if test -z "$MAGIC_DIR"; then
+		if test "x$MAGIC_DIR" = "x"; then
 			AC_MSG_RESULT([not found])
 			AC_MSG_ERROR([could not find magic.h])
 		else
@@ -397,7 +398,7 @@ dnl ----
 				fi
 			fi
 		done
-		if test -z "$HTTP_EXT_HASH_INCDIR"; then
+		if test "x$HTTP_EXT_HASH_INCDIR" = "x"; then
 			AC_MSG_RESULT([not found])
 		else
 			AC_MSG_RESULT([$HTTP_EXT_HASH_INCDIR])
