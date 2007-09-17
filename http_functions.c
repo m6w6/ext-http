@@ -56,13 +56,13 @@ PHP_FUNCTION(http_date)
 }
 /* }}} */
 
-/* {{{ proto string http_build_url([mixed url[, mixed parts[, int flags = HTTP_URL_REPLACE[, array &new_url]]]])
+/* {{{ proto string http_build_url([mixed url[, mixed parts[, int flags = HTTP_URL_REPLACE|HTTP_URL_FROM_ENV[, array &new_url]]]])
 	Build an URL. */
 PHP_FUNCTION(http_build_url)
 {
 	char *url_str = NULL;
 	size_t url_len = 0;
-	long flags = HTTP_URL_REPLACE;
+	long flags = HTTP_URL_REPLACE|HTTP_URL_FROM_ENV;
 	zval *z_old_url = NULL, *z_new_url = NULL, *z_composed_url = NULL;
 	php_url *old_url = NULL, *new_url = NULL, *composed_url = NULL;
 
@@ -492,7 +492,7 @@ PHP_FUNCTION(http_redirect)
 		}
 	}
 
-	URI = http_absolute_url(url);
+	URI = http_absolute_url_ex(url, HTTP_URL_FROM_ENV);
 
 	if (query_len) {
 		spprintf(&LOC, 0, "Location: %s?%s", URI, query);

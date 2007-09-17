@@ -51,7 +51,7 @@ static inline char *localhostname(void)
 		}
 	}
 #endif
-	return estrdup("localhost");
+	return estrndup("localhost", lenof("localhost"));
 }
 
 PHP_MINIT_FUNCTION(http_url)
@@ -67,10 +67,11 @@ PHP_MINIT_FUNCTION(http_url)
 	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_QUERY", HTTP_URL_STRIP_QUERY);
 	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_FRAGMENT", HTTP_URL_STRIP_FRAGMENT);
 	HTTP_LONG_CONSTANT("HTTP_URL_STRIP_ALL", HTTP_URL_STRIP_ALL);
+	HTTP_LONG_CONSTANT("HTTP_URL_FROM_ENV", HTTP_URL_FROM_ENV);
 	return SUCCESS;
 }
 
-PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
+PHP_HTTP_API char *_http_absolute_url_ex(const char *url, int flags TSRMLS_DC)
 {
 	char *abs = NULL;
 	php_url *purl = NULL;
@@ -84,7 +85,7 @@ PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC)
 		}
 	}
 	
-	http_build_url(0, purl, NULL, NULL, &abs, NULL);
+	http_build_url(flags, purl, NULL, NULL, &abs, NULL);
 	
 	if (purl) {
 		php_url_free(purl);
@@ -107,7 +108,7 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 	url->n = __URLSET(new_url,n) ? estrdup(new_url->n) : (__URLSET(old_url,n) ? estrdup(old_url->n) : NULL)
 	
 	if (!(flags & HTTP_URL_STRIP_PORT)) {
-		url->port = (new_url&&new_url->port) ? new_url->port : ((old_url) ? old_url->port : 0);
+		url->port = __URLSET(new_url, port) ? new_url->port : ((old_url) ? old_url->port : 0);
 	}
 	if (!(flags & HTTP_URL_STRIP_USER)) {
 		__URLCPY(user);
@@ -161,46 +162,54 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 	}
 	
 	if (!url->scheme) {
-		zval *https = http_get_server_var("HTTPS", 1);
-		if (https && !strcasecmp(Z_STRVAL_P(https), "ON")) {
-			url->scheme = estrndup("https", lenof("https"));
-		} else switch (url->port) {
-			case 443:
+		if (flags & HTTP_URL_FROM_ENV) {
+			zval *https = http_get_server_var("HTTPS", 1);
+			if (https && !strcasecmp(Z_STRVAL_P(https), "ON")) {
 				url->scheme = estrndup("https", lenof("https"));
-				break;
+			} else switch (url->port) {
+				case 443:
+					url->scheme = estrndup("https", lenof("https"));
+					break;
 
 #ifndef HAVE_GETSERVBYPORT
-			default:
+				default:
 #endif
-			case 80:
-				url->scheme = estrndup("http", lenof("http"));
-				break;
+				case 80:
+					url->scheme = estrndup("http", lenof("http"));
+					break;
 			
 #ifdef HAVE_GETSERVBYPORT
-			default:
-				if ((se = getservbyport(htons(url->port), "tcp")) && se->s_name) {
-					url->scheme = estrdup(se->s_name);
-				} else {
-					url->scheme = estrndup("http", lenof("http"));
-				}
-				break;
+				default:
+					if ((se = getservbyport(htons(url->port), "tcp")) && se->s_name) {
+						url->scheme = estrdup(se->s_name);
+					} else {
+						url->scheme = estrndup("http", lenof("http"));
+					}
+					break;
 #endif
+			}
+		} else {
+			url->scheme = estrndup("http", lenof("http"));
 		}
 	}
 
 	if (!url->host) {
-		zval *zhost;
-		
-		if ((((zhost = http_get_server_var("HTTP_HOST", 1)) || 
-				(zhost = http_get_server_var("SERVER_NAME", 1)))) && Z_STRLEN_P(zhost)) {
-			url->host = estrndup(Z_STRVAL_P(zhost), Z_STRLEN_P(zhost));
+		if (flags & HTTP_URL_FROM_ENV) {
+			zval *zhost;
+			
+			if ((((zhost = http_get_server_var("HTTP_HOST", 1)) || 
+					(zhost = http_get_server_var("SERVER_NAME", 1)))) && Z_STRLEN_P(zhost)) {
+				url->host = estrndup(Z_STRVAL_P(zhost), Z_STRLEN_P(zhost));
+			} else {
+				url->host = localhostname();
+			}
 		} else {
-			url->host = localhostname();
+			url->host = estrndup("localhost", lenof("localhost"));
 		}
 	}
 	
 	if (!url->path) {
-		if (SG(request_info).request_uri && SG(request_info).request_uri[0]) {
+		if ((flags & HTTP_URL_FROM_ENV) && SG(request_info).request_uri && SG(request_info).request_uri[0]) {
 			const char *q = strchr(SG(request_info).request_uri, '?');
 			
 			if (q) {
@@ -212,7 +221,7 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 			url->path = estrndup("/", 1);
 		}
 	} else if (url->path[0] != '/') {
-		if (SG(request_info).request_uri && SG(request_info).request_uri[0]) {
+		if ((flags & HTTP_URL_FROM_ENV) && SG(request_info).request_uri && SG(request_info).request_uri[0]) {
 			size_t ulen = strlen(SG(request_info).request_uri);
 			size_t plen = strlen(url->path);
 			char *path;

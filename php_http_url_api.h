@@ -19,8 +19,9 @@
 
 extern PHP_MINIT_FUNCTION(http_url);
 
-#define http_absolute_url(u) _http_absolute_url((u) TSRMLS_CC)
-PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC);
+#define http_absolute_url(u) _http_absolute_url_ex((u), HTTP_URL_REPLACE TSRMLS_CC)
+#define http_absolute_url_ex(u, f) _http_absolute_url_ex((u), (f) TSRMLS_CC)
+PHP_HTTP_API char *_http_absolute_url_ex(const char *url, int flags TSRMLS_DC);
 
 #define HTTP_URL_REPLACE		0x000
 #define HTTP_URL_JOIN_PATH		0x001
@@ -39,6 +40,7 @@ PHP_HTTP_API char *_http_absolute_url(const char *url TSRMLS_DC);
 	HTTP_URL_STRIP_QUERY | \
 	HTTP_URL_STRIP_FRAGMENT \
 )
+#define HTTP_URL_FROM_ENV		0x1000
 
 #define http_build_url(f, o, n, p, s, l) _http_build_url((f), (o), (n), (p), (s), (l) TSRMLS_CC)
 PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC);
