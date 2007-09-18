@@ -34,13 +34,13 @@ echo "Done\n";
 %sTEST
 HttpRequestPoolException: Exception caused by 2 inner exception(s)
 	HttpInvalidParamException: Empty or too short HTTP message: ''
-		HttpRequestException: couldn't resolve host name; %s (http://_____/)
+		HttpRequestException: %souldn't resolve host name; %s (http://_____/)
 int(3)
 HttpRequestPoolException: Exception caused by 4 inner exception(s)
 	HttpInvalidParamException: Empty or too short HTTP message: ''
-		HttpRequestException: couldn't resolve host name; %s (http://_____/)
+		HttpRequestException: %souldn't resolve host name; %s (http://_____/)
 			HttpInvalidParamException: Empty or too short HTTP message: ''
-				HttpRequestException: couldn't resolve host name; %s (http://_____/)
+				HttpRequestException: %souldn't resolve host name; %s (http://_____/)
 int(5)
 Done
 
