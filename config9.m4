@@ -98,6 +98,13 @@ if test "$PHP_HTTP" != "no"; then
 			$3
 		fi
 	])
+	
+	dnl
+	dnl odd PHP4 fix
+	dnl
+	if test "x$PHP_LIBDIR" = "x"; then
+		PHP_LIBDIR=lib
+	fi
 
 dnl ----
 dnl STDC
