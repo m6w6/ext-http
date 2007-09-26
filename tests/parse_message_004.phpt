@@ -31,7 +31,7 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-object(stdClass)#1 (7) {
+object(stdClass)%s {
   ["type"]=>
   int(2)
   ["httpVersion"]=>
@@ -50,7 +50,7 @@ object(stdClass)#1 (7) {
   ["body"]=>
   string(10) "1234567890"
   ["parentMessage"]=>
-  object(stdClass)#2 (7) {
+  object(stdClass)%s {
     ["type"]=>
     int(1)
     ["httpVersion"]=>
@@ -69,7 +69,7 @@ object(stdClass)#1 (7) {
     ["body"]=>
     string(0) ""
     ["parentMessage"]=>
-    object(stdClass)#3 (7) {
+    object(stdClass)%s {
       ["type"]=>
       int(2)
       ["httpVersion"]=>
@@ -88,7 +88,7 @@ object(stdClass)#1 (7) {
       ["body"]=>
       string(0) ""
       ["parentMessage"]=>
-      object(stdClass)#4 (7) {
+      object(stdClass)%s {
         ["type"]=>
         int(1)
         ["httpVersion"]=>

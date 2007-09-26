@@ -14,7 +14,7 @@ echo "Done\n";
 ?>
 --EXPECTF--
 %sTEST
-object(stdClass)#%d (%d) {
+object(stdClass)%s {
   ["cookies"]=>
   array(3) {
     ["name"]=>

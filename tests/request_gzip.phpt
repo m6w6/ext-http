@@ -15,7 +15,7 @@ var_dump(http_parse_message(http_get('http://dev.iworks.at/ext-http/.print_reque
 echo "Done\n";
 --EXPECTF--
 %sTEST
-object(stdClass)#%d (%d) {
+object(stdClass)%s {
   ["type"]=>
   int(2)
   ["httpVersion"]=>

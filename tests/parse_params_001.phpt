@@ -11,12 +11,12 @@ var_dump(http_parse_params('text/html; charset=iso-8859-1'));
 var_dump(http_parse_params('text/html; charset="iso-8859-1"'));
 var_dump(http_parse_params('attachment; filename="gol;got,a.ext"'));
 var_dump(http_parse_params('public, must-revalidate, max-age=0'));
-var_dump(http_parse_params('a')->params[0]);
-var_dump(http_parse_params('a=b')->params[0]);
+$p = http_parse_params('a'); var_dump($p->params[0]);
+$p = http_parse_params('a=b'); var_dump($p->params[0]);
 echo "Done\n";
 --EXPECTF--
 %sTEST
-object(stdClass)#%d (%d) {
+object(stdClass)%s {
   ["params"]=>
   array(2) {
     [0]=>
@@ -28,7 +28,7 @@ object(stdClass)#%d (%d) {
     }
   }
 }
-object(stdClass)#%d (%d) {
+object(stdClass)%s {
   ["params"]=>
   array(2) {
     [0]=>
@@ -40,7 +40,7 @@ object(stdClass)#%d (%d) {
     }
   }
 }
-object(stdClass)#%d (%d) {
+object(stdClass)%s {
   ["params"]=>
   array(2) {
     [0]=>
@@ -52,7 +52,7 @@ object(stdClass)#%d (%d) {
     }
   }
 }
-object(stdClass)#%d (%d) {
+object(stdClass)%s {
   ["params"]=>
   array(3) {
     [0]=>

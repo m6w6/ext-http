@@ -1,5 +1,8 @@
 <?php
 defined('STDOUT') or define('STDOUT', fopen('php://stdout', 'w'));
+if (!function_exists('fprintf')) {
+	function fprintf(){ $a=func_get_args(); $s=array_shift($a); return fwrite($s, call_user_func_array('sprintf',$a)); }
+}
 function skipif($if, $skip) { if ($if) { fprintf(STDOUT, "skip $skip"); exit(); }}
 function checkcgi() { skipif(!strncasecmp('CLI', PHP_SAPI, 3), 'need CGI SAPI'); }
 function checkext($ext) { skipif(!extension_loaded($ext), "need ext/$ext"); }
