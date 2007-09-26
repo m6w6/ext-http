@@ -4,6 +4,7 @@ persistent handles
 <?php
 include 'skip.inc';
 skipif(!http_support(HTTP_SUPPORT_REQUESTS), "need request support");
+skipif(!function_exists('zend_thread_id'), "need ZTS build");
 ?>
 --INI--
 http.persistent.handles.limit=-1
