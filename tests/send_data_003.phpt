@@ -4,6 +4,7 @@ http_send_data() NUM-NIL range
 <?php 
 include 'skip.inc';
 checkcgi();
+checkmin(5);
 ?>
 --ENV--
 HTTP_RANGE=bytes=5981-

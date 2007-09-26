@@ -3,6 +3,7 @@ stream filters
 --SKIPIF--
 <?php
 include 'skip.inc';
+checkmin(5);
 ?>
 --FILE--
 <?php

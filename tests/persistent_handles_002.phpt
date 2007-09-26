@@ -3,6 +3,7 @@ persistent handles
 --SKIPIF--
 <?php
 include 'skip.inc';
+checkmin(5);
 skipif(!http_support(HTTP_SUPPORT_REQUESTS), "need request support");
 skipif(function_exists('zend_thread_id'), "need non-ZTS build");
 ?>
@@ -25,7 +26,8 @@ foreach (http_persistent_handles_count() as $provider => $idents) {
 http_get("http://www.google.com/", null, $info[]);
 
 echo "One free request handle within GLOBAL: ";
-var_dump(http_persistent_handles_count()->http_request["GLOBAL"]["free"]);
+$h = http_persistent_handles_count();
+var_dump($h->http_request["GLOBAL"]["free"]);
 
 echo "Reusing request handle: ";
 http_get("http://www.google.com/", null, $info[]);

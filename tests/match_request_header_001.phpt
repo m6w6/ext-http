@@ -3,6 +3,7 @@ http_match_request_header()
 --SKIPIF--
 <?php
 include 'skip.inc';
+checkmin(5);
 ?>
 --ENV--
 HTTP_FOO=bar

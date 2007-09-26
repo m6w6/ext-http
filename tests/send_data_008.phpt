@@ -4,6 +4,7 @@ http_send_data() multiple ranges
 <?php 
 include 'skip.inc';
 checkcgi();
+checkmin(5);
 ?>
 --ENV--
 HTTP_RANGE=bytes=0-0,-1
