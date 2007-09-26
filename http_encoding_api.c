@@ -694,7 +694,10 @@ void _http_ob_deflatehandler(char *output, uint output_len, char **handled_outpu
 	
 	if (HTTP_G->send.deflate.stream) {
 		if (output_len) {
-			http_encoding_deflate_stream_update((http_encoding_stream *) HTTP_G->send.deflate.stream, output, output_len, handled_output, handled_output_len);
+			size_t tmp_len;
+			
+			http_encoding_deflate_stream_update((http_encoding_stream *) HTTP_G->send.deflate.stream, output, output_len, handled_output, &tmp_len);
+			*handled_output_len = tmp_len;
 		}
 		
 		if (mode & PHP_OUTPUT_HANDLER_END) {
@@ -733,7 +736,10 @@ void _http_ob_inflatehandler(char *output, uint output_len, char **handled_outpu
 	
 	if (HTTP_G->send.inflate.stream) {
 		if (output_len) {
-			http_encoding_inflate_stream_update((http_encoding_stream *) HTTP_G->send.inflate.stream, output, output_len, handled_output, handled_output_len);
+			size_t tmp_len;
+			
+			http_encoding_inflate_stream_update((http_encoding_stream *) HTTP_G->send.inflate.stream, output, output_len, handled_output, &tmp_len);
+			*handled_output_len = tmp_len;
 		}
 		
 		if (mode & PHP_OUTPUT_HANDLER_END) {

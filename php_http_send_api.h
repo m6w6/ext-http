@@ -29,7 +29,7 @@ typedef enum _http_send_mode_t {
 
 extern PHP_MINIT_FUNCTION(http_send);
 
-#define http_send_status(s) sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) (s) TSRMLS_CC)
+#define http_send_status(s) sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) (long) (s) TSRMLS_CC)
 #define http_send_header(n, v, r) _http_send_header_ex((n), strlen(n), (v), strlen(v), (r), NULL TSRMLS_CC)
 #define http_send_header_ex(n, nl, v, vl, r, s) _http_send_header_ex((n), (nl), (v), (vl), (r), (s) TSRMLS_CC)
 PHP_HTTP_API STATUS _http_send_header_ex(const char *name, size_t name_len, const char *value, size_t value_len, zend_bool replace, char **sent_header TSRMLS_DC);
