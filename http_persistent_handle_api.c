@@ -35,10 +35,6 @@ static MUTEX_T http_persistent_handles_lock;
 #	define UNLOCK()
 #endif
 
-typedef struct _http_persistent_handle_t {
-	void *ptr;
-} http_persistent_handle;
-
 typedef struct _http_persistent_handle_list_t {
 	HashTable free;
 	ulong used;
@@ -74,14 +70,17 @@ static inline http_persistent_handle_list *http_persistent_handle_list_init(http
 static inline void http_persistent_handle_list_dtor(http_persistent_handle_list *list, http_persistent_handle_dtor dtor)
 {
 	HashPosition pos;
-	http_persistent_handle *handle;
+	void **handle;
 	
+#if HTTP_DEBUG_PHANDLES
+	fprintf(stderr, "LSTDTOR: %p\n", list);
+#endif
 	FOREACH_HASH_VAL(pos, &list->free, handle) {
 #if HTTP_DEBUG_PHANDLES
-		fprintf(stderr, "DESTROY: %p\n", handle->ptr);
+		fprintf(stderr, "DESTROY: %p\n", *handle);
 #endif
 		
-		dtor(handle->ptr);
+		dtor(*handle);
 	}
 	zend_hash_destroy(&list->free);
 }
@@ -89,6 +88,9 @@ static inline void http_persistent_handle_list_dtor(http_persistent_handle_list 
 static inline void http_persistent_handle_list_free(http_persistent_handle_list **list, http_persistent_handle_dtor dtor)
 {
 	http_persistent_handle_list_dtor(*list, dtor);
+#if HTTP_DEBUG_PHANDLES
+	fprintf(stderr, "LSTFREE: %p\n", *list);
+#endif
 	pefree(*list, 1);
 	*list = NULL;
 }
@@ -98,11 +100,17 @@ static inline http_persistent_handle_list *http_persistent_handle_list_find(http
 	http_persistent_handle_list **list, *new_list;
 	
 	if (SUCCESS == zend_hash_quick_find(&provider->list.free, HTTP_G->persistent.handles.ident.s, HTTP_G->persistent.handles.ident.l, HTTP_G->persistent.handles.ident.h, (void *) &list)) {
+#if HTTP_DEBUG_PHANDLES
+		fprintf(stderr, "LSTFIND: %p\n", *list);
+#endif
 		return *list;
 	}
 	
 	if ((new_list = http_persistent_handle_list_init(NULL))) {
-		if (SUCCESS == zend_hash_quick_add(&provider->list.free, HTTP_G->persistent.handles.ident.s, HTTP_G->persistent.handles.ident.l, HTTP_G->persistent.handles.ident.h, (void *) &new_list, sizeof(http_persistent_handle_list), (void *) &list)) {
+		if (SUCCESS == zend_hash_quick_add(&provider->list.free, HTTP_G->persistent.handles.ident.s, HTTP_G->persistent.handles.ident.l, HTTP_G->persistent.handles.ident.h, (void *) &new_list, sizeof(http_persistent_handle_list *), (void *) &list)) {
+#if HTTP_DEBUG_PHANDLES
+			fprintf(stderr, "LSTFIND: %p (new)\n", *list);
+#endif
 			return *list;
 		}
 		http_persistent_handle_list_free(&new_list, provider->dtor);
@@ -111,47 +119,47 @@ static inline http_persistent_handle_list *http_persistent_handle_list_find(http
 	return NULL;
 }
 
-static inline STATUS http_persistent_handle_do_acquire(http_persistent_handle_provider *provider, void **handle_ptr TSRMLS_DC)
+static inline STATUS http_persistent_handle_do_acquire(http_persistent_handle_provider *provider, void **handle TSRMLS_DC)
 {
 	ulong index;
-	http_persistent_handle *handle;
+	void **handle_ptr;
 	http_persistent_handle_list *list;
 	
 	if ((list = http_persistent_handle_list_find(provider TSRMLS_CC))) {
 		zend_hash_internal_pointer_end(&list->free);
-		if (HASH_KEY_NON_EXISTANT != zend_hash_get_current_key(&list->free, NULL, &index, 0) && SUCCESS == zend_hash_get_current_data(&list->free, (void *) &handle)) {
-			*handle_ptr = handle->ptr;
+		if (HASH_KEY_NON_EXISTANT != zend_hash_get_current_key(&list->free, NULL, &index, 0) && SUCCESS == zend_hash_get_current_data(&list->free, (void *) &handle_ptr)) {
+			*handle = *handle_ptr;
 			zend_hash_index_del(&list->free, index);
 		} else {
-			*handle_ptr = provider->ctor();
+			*handle = provider->ctor();
 		}
 		
-		if (*handle_ptr) {
+		if (*handle) {
 			++provider->list.used;
 			++list->used;
 			return SUCCESS;
 		}
+	} else {
+		*handle = NULL;
 	}
 	
 	return FAILURE;
 }
 
-static inline STATUS http_persistent_handle_do_release(http_persistent_handle_provider *provider, void **handle_ptr TSRMLS_DC)
+static inline STATUS http_persistent_handle_do_release(http_persistent_handle_provider *provider, void **handle TSRMLS_DC)
 {
 	http_persistent_handle_list *list;
 	
 	if ((list = http_persistent_handle_list_find(provider TSRMLS_CC))) {
 		if (provider->list.used >= HTTP_G->persistent.handles.limit) {
-			provider->dtor(*handle_ptr);
+			provider->dtor(*handle);
 		} else {
-			http_persistent_handle handle = {*handle_ptr};
-			
-			if (SUCCESS != zend_hash_next_index_insert(&list->free, (void *) &handle, sizeof(http_persistent_handle), NULL)) {
+			if (SUCCESS != zend_hash_next_index_insert(&list->free, (void *) handle, sizeof(void *), NULL)) {
 				return FAILURE;
 			}
 		}
 		
-		*handle_ptr = NULL;
+		*handle = NULL;
 		--provider->list.used;
 		--list->used;
 		return SUCCESS;
@@ -177,11 +185,13 @@ static inline STATUS http_persistent_handle_do_accrete(http_persistent_handle_pr
 static void http_persistent_handles_hash_dtor(void *p)
 {
 	http_persistent_handle_provider *provider = (http_persistent_handle_provider *) p;
-	http_persistent_handle_list **list;
+	http_persistent_handle_list **list, *list_tmp;
 	HashPosition pos;
 	
 	FOREACH_HASH_VAL(pos, &provider->list.free, list) {
-		http_persistent_handle_list_free(list, provider->dtor);
+		/* fix shutdown crash in PHP4 */
+		list_tmp = *list;
+		http_persistent_handle_list_free(&list_tmp, provider->dtor);
 	}
 	
 	zend_hash_destroy(&provider->list.free);
@@ -222,8 +232,6 @@ PHP_HTTP_API STATUS _http_persistent_handle_provide_ex(const char *name_str, siz
 		
 		if (SUCCESS == zend_hash_add(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider, sizeof(http_persistent_handle_provider), NULL)) {
 			status = SUCCESS;
-		} else {
-			http_persistent_handle_list_dtor(&provider.list, dtor);
 		}
 	}
 	UNLOCK();
@@ -231,36 +239,36 @@ PHP_HTTP_API STATUS _http_persistent_handle_provide_ex(const char *name_str, siz
 	return status;
 }
 
-PHP_HTTP_API STATUS _http_persistent_handle_acquire_ex(const char *name_str, size_t name_len, void **handle_ptr TSRMLS_DC)
+PHP_HTTP_API STATUS _http_persistent_handle_acquire_ex(const char *name_str, size_t name_len, void **handle TSRMLS_DC)
 {
 	STATUS status = FAILURE;
 	http_persistent_handle_provider *provider;
 	
-	*handle_ptr = NULL;
+	*handle = NULL;
 	LOCK();
 	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider)) {
-		status = http_persistent_handle_do_acquire(provider, handle_ptr TSRMLS_CC);
+		status = http_persistent_handle_do_acquire(provider, handle TSRMLS_CC);
 	}
 	UNLOCK();
 	
 #if HTTP_DEBUG_PHANDLES
-	fprintf(stderr, "ACQUIRE: %p (%s)\n", *handle_ptr, name_str);
+	fprintf(stderr, "ACQUIRE: %p (%s)\n", *handle, name_str);
 #endif
 	
 	return status;
 }
 
-PHP_HTTP_API STATUS _http_persistent_handle_release_ex(const char *name_str, size_t name_len, void **handle_ptr TSRMLS_DC)
+PHP_HTTP_API STATUS _http_persistent_handle_release_ex(const char *name_str, size_t name_len, void **handle TSRMLS_DC)
 {
 	STATUS status = FAILURE;
 	http_persistent_handle_provider *provider;
 #if HTTP_DEBUG_PHANDLES
-	void *handle_tmp = *handle_ptr;
+	void *handle_tmp = *handle;
 #endif
 	
 	LOCK();
 	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider)) {
-		status = http_persistent_handle_do_release(provider, handle_ptr TSRMLS_CC);
+		status = http_persistent_handle_do_release(provider, handle TSRMLS_CC);
 	}
 	UNLOCK();
 	
