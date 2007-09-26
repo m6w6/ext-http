@@ -20,6 +20,10 @@
 #ifndef HTTP_DEBUG_PHANDLES
 #	define HTTP_DEBUG_PHANDLES 0
 #endif
+#if HTTP_DEBUG_PHANDLES
+#	undef inline
+#	define inline
+#endif
 
 static HashTable http_persistent_handles_hash;
 #ifdef ZTS
@@ -98,7 +102,7 @@ static inline http_persistent_handle_list *http_persistent_handle_list_find(http
 	}
 	
 	if ((new_list = http_persistent_handle_list_init(NULL))) {
-		if (SUCCESS == zend_hash_quick_add(&provider->list.free, HTTP_G->persistent.handles.ident.s, HTTP_G->persistent.handles.ident.l, HTTP_G->persistent.handles.ident.h, (void *) &new_list, sizeof(http_persistent_handle_list *), (void *) &list)) {
+		if (SUCCESS == zend_hash_quick_add(&provider->list.free, HTTP_G->persistent.handles.ident.s, HTTP_G->persistent.handles.ident.l, HTTP_G->persistent.handles.ident.h, (void *) &new_list, sizeof(http_persistent_handle_list), (void *) &list)) {
 			return *list;
 		}
 		http_persistent_handle_list_free(&new_list, provider->dtor);
@@ -250,6 +254,9 @@ PHP_HTTP_API STATUS _http_persistent_handle_release_ex(const char *name_str, siz
 {
 	STATUS status = FAILURE;
 	http_persistent_handle_provider *provider;
+#if HTTP_DEBUG_PHANDLES
+	void *handle_tmp = *handle_ptr;
+#endif
 	
 	LOCK();
 	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider)) {
@@ -258,7 +265,7 @@ PHP_HTTP_API STATUS _http_persistent_handle_release_ex(const char *name_str, siz
 	UNLOCK();
 	
 #if HTTP_DEBUG_PHANDLES
-	fprintf(stderr, "RELEASE: %p (%s)\n", *handle_ptr, name_str);
+	fprintf(stderr, "RELEASE: %p (%s)\n", handle_tmp, name_str);
 #endif
 	
 	return status;
