@@ -17,6 +17,12 @@
 
 #include "php_version.h"
 
+#if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION >= 3)
+#	define HTTP_ZAPI_CONST_CAST(t) (const t)
+#else
+#	define HTTP_ZAPI_CONST_CAST(t) (t)
+#endif
+
 #if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION == 0)
 #	define WONKY
 #endif

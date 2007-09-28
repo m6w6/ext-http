@@ -230,7 +230,7 @@ PHP_HTTP_API STATUS _http_persistent_handle_provide_ex(const char *name_str, siz
 		fprintf(stderr, "PROVIDE: %s\n", name_str);
 #endif
 		
-		if (SUCCESS == zend_hash_add(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider, sizeof(http_persistent_handle_provider), NULL)) {
+		if (SUCCESS == zend_hash_add(&http_persistent_handles_hash, HTTP_ZAPI_CONST_CAST(char *) name_str, name_len+1, (void *) &provider, sizeof(http_persistent_handle_provider), NULL)) {
 			status = SUCCESS;
 		}
 	}
@@ -246,7 +246,7 @@ PHP_HTTP_API STATUS _http_persistent_handle_acquire_ex(const char *name_str, siz
 	
 	*handle = NULL;
 	LOCK();
-	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider)) {
+	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, HTTP_ZAPI_CONST_CAST(char *) name_str, name_len+1, (void *) &provider)) {
 		status = http_persistent_handle_do_acquire(provider, handle TSRMLS_CC);
 	}
 	UNLOCK();
@@ -267,7 +267,7 @@ PHP_HTTP_API STATUS _http_persistent_handle_release_ex(const char *name_str, siz
 #endif
 	
 	LOCK();
-	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider)) {
+	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, HTTP_ZAPI_CONST_CAST(char *) name_str, name_len+1, (void *) &provider)) {
 		status = http_persistent_handle_do_release(provider, handle TSRMLS_CC);
 	}
 	UNLOCK();
@@ -286,7 +286,7 @@ PHP_HTTP_API STATUS _http_persistent_handle_accrete_ex(const char *name_str, siz
 	
 	*new_handle = NULL;
 	LOCK();
-	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider)) {
+	if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, HTTP_ZAPI_CONST_CAST(char *) name_str, name_len+1, (void *) &provider)) {
 		status = http_persistent_handle_do_accrete(provider, old_handle, new_handle TSRMLS_CC);
 	}
 	UNLOCK();
@@ -306,7 +306,7 @@ PHP_HTTP_API void _http_persistent_handle_cleanup_ex(const char *name_str, size_
 	
 	LOCK();
 	if (name_str && name_len) {
-		if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, (char *) name_str, name_len+1, (void *) &provider)) {
+		if (SUCCESS == zend_hash_find(&http_persistent_handles_hash, HTTP_ZAPI_CONST_CAST(char *) name_str, name_len+1, (void *) &provider)) {
 			if (current_ident_only) {
 				if ((list = http_persistent_handle_list_find(provider TSRMLS_CC))) {
 					http_persistent_handle_list_dtor(list, provider->dtor);

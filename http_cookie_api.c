@@ -77,7 +77,7 @@ PHP_HTTP_API void _http_cookie_list_free(http_cookie_list **list TSRMLS_DC)
 PHP_HTTP_API const char *_http_cookie_list_get_cookie(http_cookie_list *list, const char *name, size_t name_len TSRMLS_DC)
 {
 	zval **cookie = NULL;
-	if ((SUCCESS != zend_hash_find(&list->cookies, (char *) name, name_len + 1, (void *) &cookie)) || (Z_TYPE_PP(cookie) != IS_STRING)) {
+	if ((SUCCESS != zend_hash_find(&list->cookies, HTTP_ZAPI_CONST_CAST(char *) name, name_len + 1, (void *) &cookie)) || (Z_TYPE_PP(cookie) != IS_STRING)) {
 		return NULL;
 	}
 	return Z_STRVAL_PP(cookie);
@@ -88,7 +88,7 @@ PHP_HTTP_API const char *_http_cookie_list_get_cookie(http_cookie_list *list, co
 PHP_HTTP_API const char *_http_cookie_list_get_extra(http_cookie_list *list, const char *name, size_t name_len TSRMLS_DC)
 {
 	zval **extra = NULL;
-	if ((SUCCESS != zend_hash_find(&list->extras, (char *) name, name_len + 1, (void *) &extra)) || (Z_TYPE_PP(extra) != IS_STRING)) {
+	if ((SUCCESS != zend_hash_find(&list->extras, HTTP_ZAPI_CONST_CAST(char *) name, name_len + 1, (void *) &extra)) || (Z_TYPE_PP(extra) != IS_STRING)) {
 		return NULL;
 	}
 	return Z_STRVAL_PP(extra);

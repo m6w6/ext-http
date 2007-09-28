@@ -192,7 +192,7 @@ STATUS _http_object_new(zend_object_value *ov, const char *cname_str, uint cname
 	zend_class_entry *ce = parent_ce;
 	
 	if (cname_str && cname_len) {
-		if (!(ce = zend_fetch_class((char *) cname_str, cname_len, ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC))) {
+		if (!(ce = zend_fetch_class(HTTP_ZAPI_CONST_CAST(char *) cname_str, cname_len, ZEND_FETCH_CLASS_DEFAULT TSRMLS_CC))) {
 			return FAILURE;
 		}
 		if (!instanceof_function(ce, parent_ce TSRMLS_CC)) {
@@ -322,7 +322,7 @@ PHP_HTTP_API zval *_http_get_server_var_ex(const char *key, size_t key_len, zend
 	if ((SUCCESS != zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
 		return NULL;
 	}
-	if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), (char *) key, key_len + 1, (void *) &var))) {
+	if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), HTTP_ZAPI_CONST_CAST(char *) key, key_len + 1, (void *) &var))) {
 		return NULL;
 	}
 	if (check && !((Z_TYPE_PP(var) == IS_STRING) && Z_STRVAL_PP(var) && Z_STRLEN_PP(var))) {
