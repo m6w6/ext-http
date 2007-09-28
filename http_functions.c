@@ -733,15 +733,18 @@ PHP_FUNCTION(http_parse_params)
 		RETURN_FALSE;
 	}
 	
-	params = ecalloc(1, sizeof(zval));
+	MAKE_STD_ZVAL(params);
 	array_init(params);
 	if (SUCCESS != http_parse_params(param, flags, Z_ARRVAL_P(params))) {
-		zval_dtor(params);
-		FREE_ZVAL(params);
+		zval_ptr_dtor(&params);
 		RETURN_FALSE;
 	}
+	
 	object_init(return_value);
 	add_property_zval(return_value, "params", params);
+#ifdef ZEND_ENGINE_2
+	zval_ptr_dtor(&params);
+#endif
 }
 /* }}} */
 
