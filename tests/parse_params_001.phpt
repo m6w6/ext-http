@@ -14,6 +14,7 @@ var_dump(http_parse_params('public, must-revalidate, max-age=0'));
 $p = http_parse_params('a'); var_dump($p->params[0]);
 $p = http_parse_params('a=b'); var_dump($p->params[0]);
 echo "Done\n";
+?>
 --EXPECTF--
 %sTEST
 object(stdClass)%s {
