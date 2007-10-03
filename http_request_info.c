@@ -125,7 +125,7 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 	}
 #endif
 /* END */
-	add_assoc_string_ex(&array, "error", sizeof("error"), request->_error, 1);
+	add_assoc_string_ex(&array, "error", sizeof("error"), http_request_storage_get(request->ch)->errorbuffer, 1);
 }
 /* }}} */
 

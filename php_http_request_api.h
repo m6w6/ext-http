@@ -57,6 +57,31 @@ typedef struct _http_request_t {
 
 } http_request;
 
+#ifndef pestrndup
+#	define pestrndup(s,l,p) _pestrndup((s),(l),(p))
+static inline void *_pestrndup(const void *s, size_t l, int p)
+{
+	void *d = pemalloc(l+1, p);
+	memcpy(d, s, l);
+	((char *) d)[l] = '\0';
+	return d;
+}
+#endif
+
+/* CURLOPT_PRIVATE storage living as long as a CURL handle */
+typedef struct _http_request_storage_t {
+	char *url;
+	char *cookiestore;
+	char errorbuffer[CURL_ERROR_SIZE];
+} http_request_storage;
+
+static inline http_request_storage *http_request_storage_get(CURL *ch)
+{
+	http_request_storage *st = NULL;
+	curl_easy_getinfo(ch, CURLINFO_PRIVATE, &st);
+	return st;
+}
+
 #define http_curl_init(r) http_curl_init_ex(NULL, (r))
 #define http_curl_init_ex(c, r) _http_curl_init_ex((c), (r) TSRMLS_CC)
 PHP_HTTP_API CURL *_http_curl_init_ex(CURL *ch, http_request *request TSRMLS_DC);

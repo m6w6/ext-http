@@ -382,9 +382,8 @@ void _http_request_pool_responsehandler(http_request_pool *pool)
 		msg = curl_multi_info_read(pool->ch, &remaining);
 		if (msg && CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
-				http_request *r = NULL;
-				curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &r);
-				http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(msg->data.result), r?r->_error:"", r?r->url:"");
+				http_request_storage *st = http_request_storage_get(msg->easy_handle);
+				http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(msg->data.result), st?st->errorbuffer:"", st?st->url:"");
 			}
 			http_request_pool_apply_with_arg(pool, _http_request_pool_apply_responsehandler, msg->easy_handle);
 		}

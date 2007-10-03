@@ -84,6 +84,51 @@ static struct gcry_thread_cbs http_gnutls_tsl = {
 #endif
 /* }}} */
 
+/* safe curl wrappers */
+#define init_curl_storage(ch) \
+	{\
+		http_request_storage *st = pecalloc(1, sizeof(http_request_storage), 1); \
+		curl_easy_setopt(ch, CURLOPT_PRIVATE, st); \
+		curl_easy_setopt(ch, CURLOPT_ERRORBUFFER, st->errorbuffer); \
+	}
+
+static void *safe_curl_init(void)
+{
+	CURL *ch;
+	
+	if ((ch = curl_easy_init())) {
+		init_curl_storage(ch);
+		return ch;
+	}
+	return NULL;
+}
+static void *safe_curl_copy(void *p)
+{
+	CURL *ch;
+	
+	if ((ch = curl_easy_duphandle(p))) {
+		init_curl_storage(ch);
+		return ch;
+	}
+	return NULL;
+}
+static void safe_curl_dtor(void *p) {
+	http_request_storage *st = http_request_storage_get(p);
+	
+	curl_easy_cleanup(p);
+	
+	if (st) {
+		if (st->url) {
+			pefree(st->url, 1);
+		}
+		if (st->cookiestore) {
+			pefree(st->cookiestore, 1);
+		}
+		pefree(st, 1);
+	}
+}
+/* }}} */
+
 /* {{{ MINIT */
 PHP_MINIT_FUNCTION(http_request)
 {
@@ -110,7 +155,7 @@ PHP_MINIT_FUNCTION(http_request)
 		return FAILURE;
 	}
 	
-	if (SUCCESS != http_persistent_handle_provide("http_request", curl_easy_init, curl_easy_cleanup, curl_easy_duphandle)) {
+	if (SUCCESS != http_persistent_handle_provide("http_request", safe_curl_init, safe_curl_dtor, safe_curl_copy)) {
 		return FAILURE;
 	}
 	
@@ -200,9 +245,7 @@ PHP_HTTP_API CURL * _http_curl_init_ex(CURL *ch, http_request *request TSRMLS_DC
 		
 		/* set context */
 		if (request) {
-			curl_easy_setopt(ch, CURLOPT_PRIVATE, request);
 			curl_easy_setopt(ch, CURLOPT_DEBUGDATA, request);
-			curl_easy_setopt(ch, CURLOPT_ERRORBUFFER, request->_error);
 			
 			/* attach curl handle */
 			request->ch = ch;
@@ -311,11 +354,23 @@ PHP_HTTP_API void _http_request_reset(http_request *request)
 	phpstr_dtor(&request->conv.request);
 	phpstr_dtor(&request->conv.response);
 	http_request_body_dtor(request->body);
+	http_request_defaults(request);
 	
 	if (request->ch) {
-		http_request_defaults(request);
+		http_request_storage *st = http_request_storage_get(request->ch);
+		
+		if (st) {
+			if (st->url) {
+				pefree(st->url, 1);
+				st->url = NULL;
+			}
+			if (st->cookiestore) {
+				pefree(st->cookiestore, 1);
+				st->cookiestore = NULL;
+			}
+			st->errorbuffer[0] = '\0';
+		}
 	}
-	request->_error[0] = '\0';
 }
 /* }}} */
 
@@ -468,13 +523,22 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 {
 	zval *zoption;
 	zend_bool range_req = 0;
+	http_request_storage *storage;
 
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
 	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init(request), return FAILURE);
 	
+	if (!(storage = http_request_storage_get(request->ch))) {
+		return FAILURE;
+	}
+	
 	/* set options */
-	HTTP_CURL_OPT(CURLOPT_URL, request->url);
+	if (storage->url) {
+		pefree(storage->url, 1);
+	}
+	storage->url = pestrdup(request->url, 1);
+	HTTP_CURL_OPT(CURLOPT_URL, storage->url);
 
 	/* progress callback */
 	if ((zoption = http_request_option(request, options, "onprogress", -1))) {
@@ -757,8 +821,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		if (Z_STRLEN_P(zoption)) {
 			HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(zoption), return FAILURE);
 		}
-		HTTP_CURL_OPT(CURLOPT_COOKIEFILE, Z_STRVAL_P(zoption));
-		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, Z_STRVAL_P(zoption));
+		if (storage->cookiestore) {
+			pefree(storage->cookiestore, 1);
+		}
+		storage->cookiestore = pestrndup(Z_STRVAL_P(zoption), Z_STRLEN_P(zoption), 1);
+		HTTP_CURL_OPT(CURLOPT_COOKIEFILE, storage->cookiestore);
+		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, storage->cookiestore);
 	}
 
 	/* maxfilesize */
@@ -894,7 +962,7 @@ PHP_HTTP_API void _http_request_exec(http_request *request)
 	
 retry:
 	if (CURLE_OK != (result = curl_easy_perform(request->ch))) {
-		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(result), request->_error, request->url);
+		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(result), http_request_storage_get(request->ch)->errorbuffer, request->url);
 		
 		if (request->_retry.count > tries++) {
 			switch (result) {
