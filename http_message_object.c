@@ -1494,16 +1494,18 @@ PHP_METHOD(HttpMessage, next)
 {
 	NO_ARGS {
 		getObject(http_message_object, obj);
-		getObjectEx(http_message_object, itr, obj->iterator);
-		
-		if (itr && itr->parent.handle) {
-			zval *old = obj->iterator;
-			MAKE_STD_ZVAL(obj->iterator);
-			ZVAL_OBJVAL(obj->iterator, itr->parent, 1);
-			zval_ptr_dtor(&old);
-		} else {
-			zval_ptr_dtor(&obj->iterator);
-			obj->iterator = NULL;
+		if (obj->iterator) {
+			getObjectEx(http_message_object, itr, obj->iterator);
+			
+			if (itr && itr->parent.handle) {
+				zval *old = obj->iterator;
+				MAKE_STD_ZVAL(obj->iterator);
+				ZVAL_OBJVAL(obj->iterator, itr->parent, 1);
+				zval_ptr_dtor(&old);
+			} else {
+				zval_ptr_dtor(&obj->iterator);
+				obj->iterator = NULL;
+			}
 		}
 	}
 }
