@@ -163,7 +163,7 @@ static void _http_requestdatashare_object_write_prop(zval *object, zval *member,
 		getObjectEx(http_requestdatashare_object, obj, object);
 		
 		SEPARATE_ZVAL_IF_NOT_REF(&value);
-		status = http_request_datashare_set(obj->share, Z_STRVAL_P(member), Z_STRLEN_P(member), (zend_bool) zval_is_true(value));
+		status = http_request_datashare_set(obj->share, Z_STRVAL_P(member), Z_STRLEN_P(member), (zend_bool) i_zend_is_true(value));
 		if (orig != value) {
 			zval_ptr_dtor(&value);
 			value = orig;

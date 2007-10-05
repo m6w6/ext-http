@@ -81,11 +81,10 @@ HTTP_BEGIN_ARGS(addCookies, 1)
 HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(enableCookies);
-#if HTTP_CURL_VERSION(7,14,1)
 HTTP_BEGIN_ARGS(resetCookies, 0)
 	HTTP_ARG_VAL(session_only, 0)
 HTTP_END_ARGS;
-#endif
+HTTP_EMPTY_ARGS(flushCookies);
 
 HTTP_EMPTY_ARGS(getUrl);
 HTTP_BEGIN_ARGS(setUrl, 1)
@@ -242,7 +241,7 @@ HTTP_BEGIN_ARGS(methodExists, 1)
 	HTTP_ARG_VAL(method, 0)
 HTTP_END_ARGS;
 
-#if defined(HAVE_CURL_GETFORMDATA) || defined(HAVE_CURL_FORMGET)
+#ifdef HAVE_CURL_FORMGET
 HTTP_BEGIN_ARGS(encodeBody, 2)
 	HTTP_ARG_VAL(fields, 0)
 	HTTP_ARG_VAL(files, 0)
@@ -269,9 +268,8 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(setCookies, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(enableCookies, ZEND_ACC_PUBLIC)
-#if HTTP_CURL_VERSION(7,14,1)
 	HTTP_REQUEST_ME(resetCookies, ZEND_ACC_PUBLIC)
-#endif
+	HTTP_REQUEST_ME(flushCookies, ZEND_ACC_PUBLIC)
 
 	HTTP_REQUEST_ME(setMethod, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(getMethod, ZEND_ACC_PUBLIC)
@@ -338,7 +336,7 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ALIAS(methodUnregister, http_request_method_unregister)
 	HTTP_REQUEST_ALIAS(methodName, http_request_method_name)
 	HTTP_REQUEST_ALIAS(methodExists, http_request_method_exists)
-#if defined(HAVE_CURL_GETFORMDATA) || defined(HAVE_CURL_FORMGET)
+#ifdef HAVE_CURL_FORMGET
 	HTTP_REQUEST_ALIAS(encodeBody, http_request_body_encode)
 #endif
 	EMPTY_FUNCTION_ENTRY
@@ -635,7 +633,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			
 			if (	(Z_TYPE_P(options) != IS_ARRAY)
 				||	(SUCCESS != zend_hash_find(Z_ARRVAL_P(options), "onprogress", sizeof("onprogress"), (void *) &entry)
-				||	(!zval_is_true(*entry)))) {
+				||	(!zend_is_callable(*entry, 0, NULL)))) {
 				MAKE_STD_ZVAL(pcb);
 				array_init(pcb);
 				ZVAL_ADDREF(getThis());
@@ -670,7 +668,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	if ((msg = http_message_parse(PHPSTR_VAL(&obj->request->conv.response), PHPSTR_LEN(&obj->request->conv.response)))) {
 		zval *message;
 
-		if (zval_is_true(zend_read_property(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, 0 TSRMLS_CC))) {
+		if (i_zend_is_true(zend_read_property(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, 0 TSRMLS_CC))) {
 			zval *hist, *history = zend_read_property(THIS_CE, getThis(), ZEND_STRS("history")-1, 0 TSRMLS_CC);
 			http_message *response = http_message_parse(PHPSTR_VAL(&obj->request->conv.response), PHPSTR_LEN(&obj->request->conv.response));
 			http_message *request = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request));
@@ -706,7 +704,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		zend_update_property_string(THIS_CE, getThis(), ZEND_STRS("responseStatus")-1, "" TSRMLS_CC);
 		
 		/* append request message to history */
-		if (zval_is_true(zend_read_property(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, 0 TSRMLS_CC))) {
+		if (i_zend_is_true(zend_read_property(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, 0 TSRMLS_CC))) {
 			http_message *request;
 			
 			if ((request = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request)))) {
@@ -904,16 +902,19 @@ PHP_METHOD(HttpRequest, setOptions)
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "seturl", NULL, *opt);
 			} else if (KEYMATCH(key, "method")) {
 				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setmethod", NULL, *opt);
-#if HTTP_CURL_VERSION(7,14,1)
+			} else if (KEYMATCH(key, "flushcookies")) {
+				getObject(http_request_object, obj);
+				if (i_zend_is_true(*opt)) {
+					http_request_flush_cookies(obj->request);
+				}
 			} else if (KEYMATCH(key, "resetcookies")) {
 				getObject(http_request_object, obj);
-				http_request_reset_cookies(obj->request, 0);
-#endif
+				http_request_reset_cookies(obj->request, (zend_bool) i_zend_is_true(*opt));
 			} else if (KEYMATCH(key, "enablecookies")) {
 				getObject(http_request_object, obj);
 				http_request_enable_cookies(obj->request);
 			} else if (KEYMATCH(key, "recordHistory")) {
-				zend_update_property_bool(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, 1 TSRMLS_CC);
+				zend_update_property(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, *opt TSRMLS_CC);
 			} else if (Z_TYPE_PP(opt) == IS_NULL) {
 				old_opts = zend_read_property(THIS_CE, getThis(), ZEND_STRS("options")-1, 0 TSRMLS_CC);
 				if (Z_TYPE_P(old_opts) == IS_ARRAY) {
@@ -1045,6 +1046,17 @@ PHP_METHOD(HttpRequest, resetCookies)
 		RETURN_FALSE;
 	}
 	RETURN_SUCCESS(http_request_reset_cookies(obj->request, session_only));
+}
+/* }}} */
+
+/* {{{ proto bool HttpRequest::flushCookies()
+	Flush internal cookies to the cookiestore file */
+PHP_METHOD(HttpRequest, flushCookies)
+{
+	NO_ARGS {
+		getObject(http_request_object, obj);
+		RETURN_SUCCESS(http_request_flush_cookies(obj->request));
+	}
 }
 /* }}} */
 

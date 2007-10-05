@@ -145,7 +145,7 @@ PHP_HTTP_API STATUS _http_request_body_encode(http_request_body *body, char **bu
 	switch (body->type) {
 		case HTTP_REQUEST_BODY_CURLPOST:
 		{
-#if defined(HAVE_CURL_FORMGET)
+#ifdef HAVE_CURL_FORMGET
 			phpstr str;
 			
 			phpstr_init_ex(&str, 0x8000, 0);

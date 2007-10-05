@@ -401,19 +401,37 @@ PHP_HTTP_API STATUS _http_request_reset_cookies(http_request *request, int sessi
 		if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "SESS")) {
 			return SUCCESS;
 		}
-#endif
+#else
 		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset session cookies (need libcurl >= v7.15.4)");
+#endif
 	} else {
 #if HTTP_CURL_VERSION(7,14,1)
 		if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL")) {
 			return SUCCESS;
 		}
-#endif
+#else
 		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset cookies (need libcurl >= v7.14.1)");
+#endif
 	}
 	return FAILURE;
 }
 /* }}} */
+
+PHP_HTTP_API STATUS _http_request_flush_cookies(http_request *request)
+{
+	int initialized = 1;
+	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
+	
+	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init_ex(request->ch, request), initialized = 0);
+#if HTTP_CURL_VERSION(7,17,1)
+	if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "FLUSH")) {
+		return SUCCESS;
+	}
+#else
+	http_error(HE_WARNING, HTTP_E_REQUEST, "Could not flush cookies (need libcurl >= v7.17.1)");
+#endif
+	return FAILURE;
+}
 
 /* {{{ void http_request_defaults(http_request *) */
 PHP_HTTP_API void _http_request_defaults(http_request *request)
@@ -450,6 +468,11 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_USERPWD, NULL);
 		HTTP_CURL_OPT(CURLOPT_HTTPAUTH, 0L);
 		HTTP_CURL_OPT(CURLOPT_ENCODING, NULL);
+#if HTTP_CURL_VERSION(7,16,2)
+		/* we do this ourself anyway */
+		HTTP_CURL_OPT(CURLOPT_HTTP_CONTENT_DECODING, 0L);
+		HTTP_CURL_OPT(CURLOPT_HTTP_TRANSFER_DECODING, 0L);
+#endif
 		HTTP_CURL_OPT(CURLOPT_FOLLOWLOCATION, 0L);
 		HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, 0L);
 		HTTP_CURL_OPT(CURLOPT_REFERER, NULL);

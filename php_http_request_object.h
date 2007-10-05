@@ -61,6 +61,7 @@ PHP_METHOD(HttpRequest, getCookies);
 PHP_METHOD(HttpRequest, setCookies);
 PHP_METHOD(HttpRequest, enableCookies);
 PHP_METHOD(HttpRequest, resetCookies);
+PHP_METHOD(HttpRequest, flushCookies);
 PHP_METHOD(HttpRequest, setMethod);
 PHP_METHOD(HttpRequest, getMethod);
 PHP_METHOD(HttpRequest, setUrl);

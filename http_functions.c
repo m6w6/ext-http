@@ -856,7 +856,7 @@ PHP_FUNCTION(http_persistent_handles_ident)
 		zval **bodyonly; \
 		 \
 		/* check if only the body should be returned */ \
-		if (options && (SUCCESS == zend_hash_find(Z_ARRVAL_P(options), "bodyonly", sizeof("bodyonly"), (void *) &bodyonly)) && zval_is_true(*bodyonly)) { \
+		if (options && (SUCCESS == zend_hash_find(Z_ARRVAL_P(options), "bodyonly", sizeof("bodyonly"), (void *) &bodyonly)) && i_zend_is_true(*bodyonly)) { \
 			http_message *msg = http_message_parse(PHPSTR_VAL(&request.conv.response), PHPSTR_LEN(&request.conv.response)); \
 			 \
 			if (msg) { \

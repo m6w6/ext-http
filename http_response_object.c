@@ -795,7 +795,7 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* capture mode */
-	if (zval_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("catch")-1, 0 TSRMLS_CC))) {
+	if (i_zend_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("catch")-1, 0 TSRMLS_CC))) {
 		zval *etag_p, *the_data;
 
 		MAKE_STD_ZVAL(the_data);
@@ -827,7 +827,7 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* caching */
-	if (zval_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("cache")-1, 0 TSRMLS_CC))) {
+	if (i_zend_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("cache")-1, 0 TSRMLS_CC))) {
 		zval *cctl, *cctl_p, *etag, *etag_p, *lmod, *lmod_p;
 		
 		etag = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC), &etag_p);
@@ -895,7 +895,7 @@ PHP_METHOD(HttpResponse, send)
 	}
 
 	/* gzip */
-	HTTP_G->send.deflate.response = zval_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("gzip")-1, 0 TSRMLS_CC));
+	HTTP_G->send.deflate.response = i_zend_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("gzip")-1, 0 TSRMLS_CC));
 	
 	/* send */
 	switch (Z_LVAL_P(*zend_std_get_static_property(THIS_CE, ZEND_STRS("mode")-1, 0 TSRMLS_CC))) {
