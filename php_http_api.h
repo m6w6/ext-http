@@ -296,8 +296,13 @@ static inline zval *_zval_copy(int type, zval *z ZEND_FILE_LINE_DC ZEND_FILE_LIN
 	*copy = *z;
 	zval_copy_ctor(copy);
 	convert_to_type(type, copy);
+#ifdef Z_SET_REFCOUNT
+	Z_SET_REFCOUNT_P(copy, 0);
+	Z_UNSET_ISREF_P(copy);
+#else
 	copy->refcount = 0;
 	copy->is_ref = 0;
+#endif
 	
 	return copy;
 }

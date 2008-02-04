@@ -119,6 +119,7 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(getParentMessage);
 HTTP_EMPTY_ARGS(send);
+HTTP_EMPTY_ARGS(__toString);
 HTTP_BEGIN_ARGS(toString, 0)
 	HTTP_ARG_VAL(include_parent, 0)
 HTTP_END_ARGS;
@@ -195,7 +196,7 @@ zend_function_entry http_message_object_fe[] = {
 	HTTP_MESSAGE_ME(key, ZEND_ACC_PUBLIC)
 	HTTP_MESSAGE_ME(next, ZEND_ACC_PUBLIC)
 
-	ZEND_MALIAS(HttpMessage, __toString, toString, HTTP_ARGS(HttpMessage, toString), ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpMessage, __toString, toString, HTTP_ARGS(HttpMessage, __toString), ZEND_ACC_PUBLIC)
 
 	HTTP_MESSAGE_ME(factory, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	ZEND_MALIAS(HttpMessage, fromString, factory, HTTP_ARGS(HttpMessage, factory), ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
@@ -428,8 +429,13 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	}
 	
 	ALLOC_ZVAL(return_value);
+#ifdef Z_SET_REFCOUNT
+	Z_SET_REFCOUNT_P(return_value, 0);
+	Z_UNSET_ISREF_P(return_value);
+#else
 	return_value->refcount = 0;
 	return_value->is_ref = 0;
+#endif
 
 #ifdef WONKY
 	switch (h)

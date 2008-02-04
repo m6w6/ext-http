@@ -55,6 +55,10 @@
 #	endif
 #endif
 
+#ifndef ZVAL_ADDREF
+#	define ZVAL_ADDREF Z_ADDREF_P
+#endif
+
 #ifndef ZVAL_ZVAL
 #define ZVAL_ZVAL(z, zv, copy, dtor) {  \
 		int is_ref, refcount;           \

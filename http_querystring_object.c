@@ -247,8 +247,13 @@ static inline zval *_http_querystring_instantiate(zval *this_ptr, zend_bool glob
 			
 			zend_update_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, qarray TSRMLS_CC);
 			zend_update_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, qstring TSRMLS_CC);
+#ifdef Z_SET_ISREF
+			Z_SET_ISREF_P(zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC));
+			Z_SET_ISREF_P(zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC));
+#else
 			zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC)->is_ref = 1;
 			zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC)->is_ref = 1;
+#endif
 	
 			if (params) {
 				http_querystring_modify(zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC), params);
@@ -258,7 +263,7 @@ static inline zval *_http_querystring_instantiate(zval *this_ptr, zend_bool glob
 			}
 		}
 	} else {
-		qarray = ecalloc(1, sizeof(zval));
+		MAKE_STD_ZVAL(qarray);
 		array_init(qarray);
 		
 		zend_update_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, qarray TSRMLS_CC);
@@ -267,6 +272,8 @@ static inline zval *_http_querystring_instantiate(zval *this_ptr, zend_bool glob
 		if (params && http_querystring_modify(qarray, params) && !defer_update) {
 			http_querystring_update(qarray, zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryString")-1, 0 TSRMLS_CC));
 		}
+		
+		zval_ptr_dtor(&qarray);
 	}
 	
 	return this_ptr;
