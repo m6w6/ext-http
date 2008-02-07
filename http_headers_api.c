@@ -501,9 +501,12 @@ PHP_HTTP_API zend_bool _http_match_request_header_ex(const char *header, const c
 	http_get_request_headers(NULL);
 	name = pretty_key(estrndup(header, name_len), name_len, 1, 1);
 	if (SUCCESS == zend_hash_find(HTTP_G->request.headers, name, name_len+1, (void *) &data)) {
-		zvalue = zval_copy(IS_STRING, *data);
+		zvalue = *data;
+		convert_to_string_ex(&zvalue);
 		result = (match_case ? strcmp(Z_STRVAL_P(zvalue), value) : strcasecmp(Z_STRVAL_P(zvalue), value)) ? 0 : 1;
-		zval_free(&zvalue);
+		if (zvalue != *data) {
+			zval_ptr_dtor(&zvalue);
+		}
 	}
 	efree(name);
 

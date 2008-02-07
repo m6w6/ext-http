@@ -267,7 +267,9 @@ static inline zval *_convert_to_type(int type, zval *z)
 #define convert_to_type_ex(t, z, p) _convert_to_type_ex((t), (z), (p))
 static inline zval *_convert_to_type_ex(int type, zval *z, zval **p)
 {
-	*p = z;
+	if (p) {
+		*p = z;
+	}
 	if (Z_TYPE_P(z) != type) {
 		switch (type) {
 			case IS_NULL:	convert_to_null_ex(&z);		break;
@@ -279,40 +281,14 @@ static inline zval *_convert_to_type_ex(int type, zval *z, zval **p)
 			case IS_OBJECT:	convert_to_object_ex(&z);	break;
 		}
 	}
-	if (*p == z) {
-		*p = NULL;
-	} else {
-		*p = z;
+	if (p) {
+		if (*p == z) {
+			*p = NULL;
+		} else {
+			*p = z;
+		}
 	}
 	return z;
-}
-
-#define zval_copy(t, z) _zval_copy((t), (z) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
-static inline zval *_zval_copy(int type, zval *z ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
-{
-	zval *copy;
-	
-	copy = emalloc_rel(sizeof(zval));
-	*copy = *z;
-	zval_copy_ctor(copy);
-	convert_to_type(type, copy);
-#ifdef Z_SET_REFCOUNT
-	Z_SET_REFCOUNT_P(copy, 0);
-	Z_UNSET_ISREF_P(copy);
-#else
-	copy->refcount = 0;
-	copy->is_ref = 0;
-#endif
-	
-	return copy;
-}
-
-#define zval_free(z) _zval_free(z)
-static inline void _zval_free(zval **z)
-{
-	zval_dtor(*z);
-	FREE_ZVAL(*z);
-	*z = NULL;
 }
 
 typedef struct _HashKey {

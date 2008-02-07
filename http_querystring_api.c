@@ -116,14 +116,13 @@ PHP_HTTP_API int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC)
 		return http_querystring_modify_array(qarray, params);
 	} else if (Z_TYPE_P(params) == IS_OBJECT) {
 #ifdef ZEND_ENGINE_2
-		if (!instanceof_function(Z_OBJCE_P(params), http_querystring_object_ce TSRMLS_CC)) {
+		if (instanceof_function(Z_OBJCE_P(params), http_querystring_object_ce TSRMLS_CC)) {
+			return http_querystring_modify_array(qarray, zend_read_property(THIS_CE, params, ZEND_STRS("queryArray")-1, 0 TSRMLS_CC));
+		} else {
 #endif
-			zval temp_array;
-			INIT_ZARR(temp_array, HASH_OF(params));
-			return http_querystring_modify_array(qarray, &temp_array);
+		return  http_querystring_modify_array(qarray, params);
 #ifdef ZEND_ENGINE_2
 		}
-		return http_querystring_modify_array(qarray, zend_read_property(THIS_CE, params, ZEND_STRS("queryArray")-1, 0 TSRMLS_CC));
 #endif
 	} else {
 		int rv;
@@ -149,7 +148,7 @@ static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRM
 	HashPosition pos;
 	zval **params_entry = NULL;
 	
-	FOREACH_KEYVAL(pos, params, key, params_entry) {
+	FOREACH_HASH_KEYVAL(pos, HASH_OF(params), key, params_entry) {
 		/* only public properties */
 		if ((key.type != HASH_KEY_IS_STRING || *key.str) && http_querystring_modify_array_ex(qarray, key.type, key.str, key.len, key.num, *params_entry)) {
 			rv = 1;
@@ -188,9 +187,15 @@ static inline int _http_querystring_modify_array_ex(zval *qarray, int key_type, 
 	}
 	
 	/* add */
-	ZVAL_ADDREF(params_entry);
 	if (Z_TYPE_P(params_entry) == IS_OBJECT) {
-		convert_to_array_ex(&params_entry);
+		zval *new_array;
+		
+		MAKE_STD_ZVAL(new_array);
+		array_init(new_array);
+		http_querystring_modify_array(new_array, params_entry);
+		params_entry = new_array;
+	} else {
+		ZVAL_ADDREF(params_entry);
 	}
 	if (key_type == HASH_KEY_IS_STRING) {
 		add_assoc_zval_ex(qarray, key, keylen, params_entry);

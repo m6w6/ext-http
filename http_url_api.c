@@ -445,7 +445,9 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 				return FAILURE;
 			}
 		} else {
-			zval *val = zval_copy(IS_STRING, *data);
+			zval val;
+			ZVAL_ZVAL(&val, *data, 1, 0);
+			convert_to_string(&val);
 			
 			if (PHPSTR_LEN(str)) {
 				phpstr_append(str, arg_sep, arg_sep_len);
@@ -453,16 +455,16 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 			phpstr_append(str, PHPSTR_VAL(&new_prefix), PHPSTR_LEN(&new_prefix));
 			phpstr_appends(str, "=");
 			
-			if (Z_STRLEN_P(val) && Z_STRVAL_P(val)) {
+			if (Z_STRLEN(val) && Z_STRVAL(val)) {
 				char *encoded_val;
 				int encoded_len;
 				
-				encoded_val = php_url_encode(Z_STRVAL_P(val), Z_STRLEN_P(val), &encoded_len);
+				encoded_val = php_url_encode(Z_STRVAL(val), Z_STRLEN(val), &encoded_len);
 				phpstr_append(str, encoded_val, encoded_len);
 				efree(encoded_val);
 			}
 			
-			zval_free(&val);
+			zval_dtor(&val);
 		}
 		phpstr_dtor(&new_prefix);
 	}

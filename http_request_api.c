@@ -637,14 +637,20 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void *) &prs)) {
 				zend_hash_move_forward(Z_ARRVAL_P(zoption));
 				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void *) &pre)) {
-					zval *prs_cpy = zval_copy(IS_LONG, *prs), *pre_cpy = zval_copy(IS_LONG, *pre);
+					zval *prs_cpy = *prs, *pre_cpy = *pre;
 					
+					convert_to_long_ex(&prs_cpy);
+					convert_to_long_ex(&pre_cpy);
 					if (Z_LVAL_P(prs_cpy) && Z_LVAL_P(pre_cpy)) {
 						HTTP_CURL_OPT(CURLOPT_LOCALPORT, MIN(Z_LVAL_P(prs_cpy), Z_LVAL_P(pre_cpy)));
 						HTTP_CURL_OPT(CURLOPT_LOCALPORTRANGE, labs(Z_LVAL_P(prs_cpy)-Z_LVAL_P(pre_cpy))+1L);
 					}
-					zval_free(&prs_cpy);
-					zval_free(&pre_cpy);
+					if (prs_cpy != *prs) {
+						zval_ptr_dtor(&prs_cpy);
+					}
+					if (pre_cpy != *pre) {
+						zval_ptr_dtor(&pre_cpy);
+					}
 				}
 			}
 		}
@@ -720,13 +726,19 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 					if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_PP(rr), (void *) &re, &pos2)) {
 						if (	((Z_TYPE_PP(rb) == IS_LONG) || ((Z_TYPE_PP(rb) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(rb), Z_STRLEN_PP(rb), NULL, NULL, 1))) &&
 								((Z_TYPE_PP(re) == IS_LONG) || ((Z_TYPE_PP(re) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(re), Z_STRLEN_PP(re), NULL, NULL, 1)))) {
-							zval *rbl = zval_copy(IS_LONG, *rb), *rel = zval_copy(IS_LONG, *re);
+							zval *rbl = *rb, *rel = *re;
 							
+							convert_to_long_ex(&rbl);
+							convert_to_long_ex(&rel);
 							if ((Z_LVAL_P(rbl) >= 0) && (Z_LVAL_P(rel) >= 0)) {
 								phpstr_appendf(&rs, "%ld-%ld,", Z_LVAL_P(rbl), Z_LVAL_P(rel));
 							}
-							zval_free(&rbl);
-							zval_free(&rel);
+							if (rbl != *rb) {
+								zval_ptr_dtor(&rbl);
+							}
+							if (rel != *re) {
+								zval_ptr_dtor(&rel);
+							}
 						}
 					}
 				}
@@ -820,9 +832,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				
 				FOREACH_KEYVAL(pos, zoption, cookie_key, cookie_val) {
 					if (cookie_key.type == HASH_KEY_IS_STRING) {
-						zval *val = zval_copy(IS_STRING, *cookie_val);
+						zval *val = *cookie_val;
+						convert_to_string_ex(&val);
 						phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key.str, Z_STRVAL_P(val));
-						zval_free(&val);
+						if (val != *cookie_val) {
+							zval_ptr_dtor(&val);
+						}
 					}
 				}
 				
@@ -1159,7 +1174,15 @@ static inline zval *_http_request_option_ex(http_request *r, HashTable *options,
 		ulong h = zend_hash_func(key, keylen);
 		
 		if (SUCCESS == zend_hash_quick_find(options, key, keylen, h, (void *) &zoption)) {
-			return http_request_option_cache_ex(r, key, keylen, h, zval_copy(type, *zoption));
+			zval *copy;
+			
+			MAKE_STD_ZVAL(copy);
+			ZVAL_ZVAL(copy, *zoption, 1, 0);
+			
+			convert_to_type(type, copy);
+			http_request_option_cache_ex(r, key, keylen, h, copy);
+			zval_ptr_dtor(&copy);
+			return copy;
 		}
 	}
 	
