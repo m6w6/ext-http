@@ -14,7 +14,7 @@ echo http_build_url("http://www.example.com:8080/foo?a[0]=b#frag", "?a[0]=1&b=c&
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 http://www.example.com/foo/baz
 http://www.example.com/foo/baz
 http://mike@www.example.com/foo/baz

@@ -33,6 +33,6 @@ var_dump(current($r1->getResponseCookies())->cookies["PREF"] === HttpUtil::parse
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 bool(true)
 Done

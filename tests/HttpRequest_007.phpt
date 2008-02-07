@@ -18,9 +18,9 @@ var_dump($r->getHistory()->toString(true));
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 string(%d) "PUT /ext-http/.print_put.php5 HTTP/1.1
-User-Agent: PECL::HTTP/%s
+User-Agent: PECL::HTTP/%a
 Host: dev.iworks.at
 Accept: */*
 Content-Type: text/plain
@@ -41,9 +41,9 @@ echo "Done\n";
 
 HTTP/1.1 100 Continue
 HTTP/1.1 200 OK
-Date: %s
-Server: %s
-X-Powered-By: %s
+Date: %a
+Server: %a
+X-Powered-By: %a
 Vary: Accept-Encoding
 Content-Length: %d
 Content-Type: text/html

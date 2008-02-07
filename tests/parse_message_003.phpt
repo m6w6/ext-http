@@ -25,7 +25,7 @@ $msg = http_parse_message($message);
 
 echo "Done\n";
 --EXPECTF--
-%sTEST
+%aTEST
 string(2) "OK"
-%s Invalid Content-Range header: bytes 0-1/1 in%s
+%a Invalid Content-Range header: bytes 0-1/1 in%a
 Done

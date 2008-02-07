@@ -16,8 +16,8 @@ $p = http_parse_params('a=b'); var_dump($p->params[0]);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
-object(stdClass)%s {
+%aTEST
+object(stdClass)%a {
   ["params"]=>
   array(2) {
     [0]=>
@@ -29,7 +29,7 @@ object(stdClass)%s {
     }
   }
 }
-object(stdClass)%s {
+object(stdClass)%a {
   ["params"]=>
   array(2) {
     [0]=>
@@ -41,7 +41,7 @@ object(stdClass)%s {
     }
   }
 }
-object(stdClass)%s {
+object(stdClass)%a {
   ["params"]=>
   array(2) {
     [0]=>
@@ -53,7 +53,7 @@ object(stdClass)%s {
     }
   }
 }
-object(stdClass)%s {
+object(stdClass)%a {
   ["params"]=>
   array(3) {
     [0]=>

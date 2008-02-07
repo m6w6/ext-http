@@ -15,7 +15,7 @@ print_r($u);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 https://www.example.com:9999/replaced?q=1#n
 https://www.example.com:9999/replaced?q=1#n
 Array

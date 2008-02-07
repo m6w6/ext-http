@@ -20,7 +20,7 @@ var_dump($r->send());
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
   int(2)
@@ -57,7 +57,7 @@ object(HttpMessage)#%d (%d) {
   float(1.1)
   ["headers:protected"]=>
   array(6) {
-    %s
+    %a
   }
   ["parentMessage:protected"]=>
   NULL
@@ -98,7 +98,7 @@ object(HttpMessage)#%d (%d) {
   float(1.1)
   ["headers:protected"]=>
   array(6) {
-    %s
+    %a
   }
   ["parentMessage:protected"]=>
   NULL
@@ -139,7 +139,7 @@ object(HttpMessage)#%d (%d) {
   float(1.1)
   ["headers:protected"]=>
   array(6) {
-    %s
+    %a
   }
   ["parentMessage:protected"]=>
   NULL

@@ -3,7 +3,7 @@ stream filters
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --FILE--
 <?php
@@ -30,7 +30,7 @@ unlink(F);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 string(30) "5
 Here 
 2

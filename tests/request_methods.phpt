@@ -28,7 +28,7 @@ for ($i = 0; $i < 5; ++$i) {
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 int(0)
 UNKNOWN
 int(0)

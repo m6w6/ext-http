@@ -4,7 +4,7 @@ http_send_file() first/last byte range
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmin(5);
+checkmin(5.3);
 ?>
 --ENV--
 HTTP_RANGE=bytes=0-0,-1
@@ -14,7 +14,7 @@ http_send_content_type("text/plain");
 http_send_file('data.txt');
 ?>
 --EXPECTF--
-Status: 206
+Status: 206%s
 X-Powered-By: PHP/%s
 Accept-Ranges: bytes
 Content-Type: multipart/byteranges; boundary=%d.%d

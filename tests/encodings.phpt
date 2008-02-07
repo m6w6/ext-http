@@ -37,7 +37,7 @@ if (extension_loaded('zlib')) {
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 bool(true)
 bool(true)
 bool(true)

@@ -3,7 +3,7 @@ HttpResponse - send gzipped file
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcgi();
 skipif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib support");
 ?>
@@ -16,10 +16,10 @@ HttpResponse::setFile(__FILE__);
 HttpResponse::send();
 ?>
 --EXPECTF--
-X-Powered-By: PHP/%s
-Content-Type: %s
+X-Powered-By: PHP/%a
+Content-Type: %a
 Accept-Ranges: bytes
 Content-Encoding: gzip
 Vary: Accept-Encoding
 
-%s
+%a

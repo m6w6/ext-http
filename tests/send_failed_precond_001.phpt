@@ -15,7 +15,7 @@ http_cache_last_modified();
 http_send_file(__FILE__);
 ?>
 --EXPECTF--
-Status: 412
+Status: 412%s
 X-Powered-By: %s
 Cache-Control: private, must-revalidate, max-age=0
 Last-Modified: %s

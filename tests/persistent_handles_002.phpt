@@ -3,7 +3,7 @@ persistent handles
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 skipif(!http_support(HTTP_SUPPORT_REQUESTS), "need request support");
 skipif(function_exists('zend_thread_id'), "need non-ZTS build");
 ?>
@@ -18,7 +18,7 @@ echo "No free handles!\n";
 foreach (http_persistent_handles_count() as $provider => $idents) {
 	foreach ((array)$idents as $ident => $counts) {
 		if (!empty($counts["free"])) {
-			printf("%s, %s, %s\n", $provider, $ident, $counts["free"]);
+			printf("%a, %a, %a\n", $provider, $ident, $counts["free"]);
 		}
 	}
 }
@@ -40,7 +40,7 @@ print_r(http_persistent_handles_count());
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 No free handles!
 One free request handle within GLOBAL: int(1)
 Reusing request handle: bool(true)

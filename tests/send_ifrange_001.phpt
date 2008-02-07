@@ -4,7 +4,7 @@ http_send() If-Range
 <?php
 include 'skip.inc';
 checkcgi();
-checkmin(5);
+checkmin(5.3);
 ?>
 --ENV--
 HTTP_RANGE=bytes=0-1
@@ -15,7 +15,7 @@ http_cache_etag('abc');
 http_send_file(__FILE__);
 ?>
 --EXPECTF--
-Status: 206
+Status: 206%s
 X-Powered-By: %s
 Cache-Control: private, must-revalidate, max-age=0
 ETag: "abc"

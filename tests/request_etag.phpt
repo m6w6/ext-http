@@ -12,10 +12,10 @@ var_dump(http_get("http://dev.iworks.at/ext-http/etag", array("etag" => '"26ad3a
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 string(%d) "HTTP/1.1 304 Not Modified
-Date: %s
-Server: %s
+Date: %a
+Server: %a
 ETag: "26ad3a-5-95eb19c0"
 "
 Done

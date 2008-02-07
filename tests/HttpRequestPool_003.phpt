@@ -121,7 +121,7 @@ printf("Elapsed: %0.3fs\n", microtime(true)-$time);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 %d %s %d
 %d %s %d
 %d %s %d

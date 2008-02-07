@@ -14,8 +14,8 @@ var_dump($t > 1);
 echo "$t\n$d\nDone\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 bool(true)
 %d
-%s, %d %s %d %d:%d:%d GMT
+%a, %d %a %d %d:%d:%d GMT
 Done

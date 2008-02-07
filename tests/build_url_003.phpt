@@ -3,7 +3,7 @@ http_build_url()
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --ENV--
 HTTP_HOST=www.example.com
@@ -18,7 +18,7 @@ printf("-%s-\n", http_build_url($url, array('scheme' => 'ftp', 'host' => 'ftp.ex
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 -http://www.example.com/path/?query#anchor-
 -https://www.example.com/path/?query#anchor-
 -https://ssl.example.com/path/?query#anchor-

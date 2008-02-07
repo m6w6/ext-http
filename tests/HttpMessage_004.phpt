@@ -30,7 +30,7 @@ var_dump($d->getBody());
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 bool(false)
 string(3) "Hi!"
 Done

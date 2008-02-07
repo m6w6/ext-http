@@ -4,7 +4,7 @@ http_send_file() NIL-NIL range
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmin(5);
+checkmin(5.3);
 ?>
 --ENV--
 HTTP_RANGE=bytes=0-0
@@ -13,7 +13,7 @@ HTTP_RANGE=bytes=0-0
 http_send_file('data.txt');
 ?>
 --EXPECTF--
-Status: 206
+Status: 206%s
 X-Powered-By: PHP/%s
 Accept-Ranges: bytes
 Content-Range: bytes 0-0/1010

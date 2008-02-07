@@ -19,10 +19,10 @@ var_dump($r->getRawRequestMessage());
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 int(200)
 string(%d) "FOOBAR /ext-http/.print_request.php HTTP/1.1
-User-Agent: %s
+User-Agent: %a
 Host: dev.iworks.at
 Accept: */*
 Content-Type: text/plain

@@ -3,7 +3,7 @@ HttpRequestPool
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcls('HttpRequestPool');
 checkurl('www.php.net');
 checkurl('dev.iworks.at');
@@ -43,7 +43,7 @@ echo "Done\n";
 ?>
 
 --EXPECTF--
-%sTEST
+%aTEST
 http://www.php.net/=200:200
 http://dev.iworks.at/ext-http/.print_request.php=200:200
 .

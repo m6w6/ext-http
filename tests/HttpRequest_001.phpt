@@ -3,7 +3,7 @@ HttpRequest options
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcls('HttpRequest');
 ?>
 --FILE--
@@ -22,7 +22,7 @@ $r1 = null;
 $r2 = null;
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 Array
 (
     [0] => Array

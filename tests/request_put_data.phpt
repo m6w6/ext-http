@@ -17,6 +17,6 @@ var_dump($data === $mess->body);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 bool(true)
 Done

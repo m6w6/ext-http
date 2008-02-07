@@ -4,7 +4,7 @@ http_send_data() NIL-NUM range
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmin(5);
+checkmin(5.3);
 ?>
 --ENV--
 HTTP_RANGE=bytes=-5
@@ -14,7 +14,7 @@ http_send_content_type('text/plain');
 http_send_data(str_repeat('123abc', 1000));
 ?>
 --EXPECTF--
-Status: 206
+Status: 206%s
 X-Powered-By: PHP/%s
 Content-Type: text/plain
 Accept-Ranges: bytes

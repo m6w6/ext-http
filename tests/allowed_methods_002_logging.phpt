@@ -4,7 +4,7 @@ logging allowed methods
 <?php
 include 'skip.inc';
 checkcgi();
-checkmin(5.1);
+checkmin(5.3);
 ?>
 --ENV--
 HTTP_HOST=example.com
@@ -16,6 +16,6 @@ log_content(_AMETH_LOG);
 echo "Done";
 ?>
 --EXPECTF--
-%sTEST
-%d%d%d%d-%d%d-%d%d %d%d:%d%d:%d%d	[405-ALLOWED]	Allow: POST	<%s>
+%aTEST
+%d%d%d%d-%d%d-%d%d %d%d:%d%d:%d%d	[405-ALLOWED]	Allow: POST	<%a>
 Done

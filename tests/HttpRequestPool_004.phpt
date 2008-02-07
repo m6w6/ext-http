@@ -3,7 +3,7 @@ HttpRequestPool::__destruct() invalid curl handle
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcls('HttpRequest');
 checkcls('HttpRequestPool');
 ?>
@@ -15,5 +15,5 @@ $p = null;
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 Done

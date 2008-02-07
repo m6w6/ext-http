@@ -22,7 +22,7 @@ echo http_build_str(array(1,2,array(3)), "foo", "&"), "\n";
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 a=b
 a=b&c%5B0%5D=1
 a=b&c%5B0%5D=1&d%5Be%5D=f

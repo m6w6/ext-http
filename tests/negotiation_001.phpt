@@ -3,7 +3,7 @@ negotiation
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --ENV--
 HTTP_ACCEPT=application/xml, application/xhtml+xml, text/html ; q = .8
@@ -36,7 +36,7 @@ print_r($tresult);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 string(2) "de"
 string(2) "de"
 string(10) "iso-8859-1"

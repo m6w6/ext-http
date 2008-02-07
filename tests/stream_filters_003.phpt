@@ -3,7 +3,7 @@ stream filter fun
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 skipif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib");
 ?>
 --FILE--
@@ -36,7 +36,7 @@ foreach (str_split($text, 5) as $part) {
 }
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 This is some stream filter fun; we'll see if it bails out or not.
 The text should come out at the other end of the stream exactly like written to it.
 Go figure!

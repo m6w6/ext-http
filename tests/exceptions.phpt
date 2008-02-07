@@ -3,7 +3,7 @@ exceptions
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --FILE--
 <?php
@@ -37,7 +37,7 @@ foreach ($e as $i => $c) {
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
  1: HttpRuntimeException
  2: HttpInvalidParamException
  3: HttpHeaderException

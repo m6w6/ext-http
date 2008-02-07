@@ -3,7 +3,7 @@ HttpMessage implements Serializable, Countable
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --FILE--
 <?php
@@ -31,7 +31,7 @@ var_dump($m->count());
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 int(3)
 string(148) "HTTP/1.1 301
 Location: /anywhere
@@ -44,26 +44,26 @@ Content-Length: 1
 X
 "
 object(HttpMessage)#%d (%d) {
-  ["type:protected"]=>
+  ["type":protected]=>
   int(2)
-  ["body:protected"]=>
+  ["body":protected]=>
   string(0) ""
-  ["requestMethod:protected"]=>
+  ["requestMethod":protected]=>
   string(0) ""
-  ["requestUrl:protected"]=>
+  ["requestUrl":protected]=>
   string(0) ""
-  ["responseStatus:protected"]=>
+  ["responseStatus":protected]=>
   string(2) "Ok"
-  ["responseCode:protected"]=>
+  ["responseCode":protected]=>
   int(200)
-  ["httpVersion:protected"]=>
+  ["httpVersion":protected]=>
   float(1.1)
-  ["headers:protected"]=>
+  ["headers":protected]=>
   array(1) {
     ["Server"]=>
     string(9) "Funky/1.0"
   }
-  ["parentMessage:protected"]=>
+  ["parentMessage":protected]=>
   NULL
 }
 int(1)

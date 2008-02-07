@@ -3,7 +3,7 @@ cloning
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcls('HttpRequest');
 ?>
 --FILE--
@@ -22,7 +22,7 @@ var_dump($r1->getResponseInfo() == $r2->getResponseInfo());
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 bool(false)
 bool(false)
 bool(false)

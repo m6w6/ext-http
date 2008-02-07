@@ -20,5 +20,5 @@ foreach (get_class_methods('HttpRequest') as $method) {
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 Done

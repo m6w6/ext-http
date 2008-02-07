@@ -3,7 +3,7 @@ HttpQueryString local
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --FILE--
 <?php
@@ -33,7 +33,7 @@ var_dump($array);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 string(42) "a=b&c=3.4&r%5B0%5D=1&r%5B1%5D=2&r%5B2%5D=3"
 NULL
 string(1) "b"
@@ -68,7 +68,7 @@ object(stdClass)#%d (%d) {
   int(3)
 }
 object(HttpQueryString)#1 (2) {
-  ["queryArray:private"]=>
+  ["queryArray":"HttpQueryString":private]=>
   array(3) {
     ["c"]=>
     string(3) "3.4"
@@ -87,7 +87,7 @@ object(HttpQueryString)#1 (2) {
       string(1) "2"
     }
   }
-  ["queryString:private"]=>
+  ["queryString":"HttpQueryString":private]=>
   string(49) "c=3.4&r%5B0%5D=1&r%5B1%5D=2&r%5B2%5D=3&z%5B0%5D=2"
 }
 array(3) {

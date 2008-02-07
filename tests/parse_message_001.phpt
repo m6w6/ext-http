@@ -13,6 +13,6 @@ $m = http_parse_message(http_get('http://www.google.com'));
 echo $m->body;
 echo "Done\n";
 --EXPECTF--
-%sTEST
-<HTML>%sThe document has moved%s</HTML>
+%aTEST
+<HTML>%aThe document has moved%a</HTML>
 Done

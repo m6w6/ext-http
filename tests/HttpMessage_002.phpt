@@ -3,7 +3,7 @@ HttpMessage properties
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcls('HttpMessage');
 ?>
 --FILE--
@@ -25,8 +25,8 @@ $m->test();
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 Array
 (
 )
-%sFatal error%sCannot access HttpMessage properties by reference or array key/index in%s
+%aFatal error%aCannot access HttpMessage properties by reference or array key/index in%a

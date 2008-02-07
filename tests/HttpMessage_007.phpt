@@ -22,7 +22,7 @@ echo $r->toString(true);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 GET /first HTTP/1.1
 HTTP/1.1 200 Ok-first
 GET /second HTTP/1.1

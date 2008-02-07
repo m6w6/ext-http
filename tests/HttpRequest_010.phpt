@@ -3,7 +3,7 @@ HttpRequest cookie API
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcls("HttpRequest");
 ?>
 --FILE--
@@ -42,7 +42,7 @@ if ($c[2] !== $c[3]) {
 
 echo "Done\n";
 --EXPECTF--
-%sTEST
+%aTEST
 bool(true)
 bool(true)
 Done

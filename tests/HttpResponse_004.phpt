@@ -4,7 +4,7 @@ HttpResponse - send cached gzipped data
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmin(5.1);
+checkmin(5.3);
 skipif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib support");
 ?>
 --ENV--
@@ -19,7 +19,7 @@ HttpResponse::setData("abc");
 HttpResponse::send();
 ?>
 --EXPECTF--
-Status: 304
+Status: 304%s
 X-Powered-By: PHP/%s
 Cache-Control: public, must-revalidate, max-age=3600
 Last-Modified: %s

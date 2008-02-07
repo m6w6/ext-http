@@ -3,7 +3,7 @@ HttpRequestPool exception
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcls('HttpRequestPool');
 ?>
 --FILE--
@@ -31,7 +31,7 @@ try {
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 HttpRequestPoolException: Exception caused by 2 inner exception(s)
 	HttpInvalidParamException: Empty or too short HTTP message: ''
 		HttpRequestException: %souldn't resolve host name; %s (http://_____/)

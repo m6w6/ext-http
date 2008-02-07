@@ -14,8 +14,8 @@ var_dump(http_parse_message(http_get('http://dev.iworks.at/ext-http/.print_reque
 
 echo "Done\n";
 --EXPECTF--
-%sTEST
-object(stdClass)%s {
+%aTEST
+object(stdClass)%a {
   ["type"]=>
   int(2)
   ["httpVersion"]=>
@@ -26,7 +26,7 @@ object(stdClass)%s {
   string(2) "OK"
   ["headers"]=>
   array(8) {
-    %s
+    %a
     ["Vary"]=>
     string(15) "Accept-Encoding"
     ["Content-Length"]=>

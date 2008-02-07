@@ -22,14 +22,14 @@ echo $r->getHistory()->toString(true);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 GET /ext-http/.print_request.php HTTP/1.1
-User-Agent: %s
+User-Agent: %a
 Host: dev.iworks.at
 Accept: */*
 Cookie: name=val%3Due
 HTTP/1.1 200 OK
-%s
+%a
 
 Array
 (
@@ -37,12 +37,12 @@ Array
 )
 
 GET /ext-http/.print_request.php HTTP/1.1
-User-Agent: %s
+User-Agent: %a
 Host: dev.iworks.at
 Accept: */*
 Cookie: name=val=ue;
 HTTP/1.1 200 OK
-%s
+%a
 
 Array
 (

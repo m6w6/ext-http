@@ -32,18 +32,18 @@ var_dump($p->getAttachedRequests());
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
-exception 'HttpRequestPoolException' with message 'HttpRequest object(#%d) cannot be detached from the HttpRequestPool while executing the progress callback' in %sHttpRequestPool_006.php:%d
+%aTEST
+exception 'HttpRequestPoolException' with message 'HttpRequest object(#%d) cannot be detached from the HttpRequestPool while executing the progress callback' in %aHttpRequestPool_006.php:%d
 Stack trace:
-#0 %sHttpRequestPool_006.php(%d): HttpRequestPool->detach(Object(r))
+#0 %aHttpRequestPool_006.php(%d): HttpRequestPool->detach(Object(r))
 #1 [internal function]: r->onProgress(Array)
-#2 %sHttpRequestPool_006.php(%d): HttpRequestPool->send()
+#2 %aHttpRequestPool_006.php(%d): HttpRequestPool->send()
 #3 {main}
-exception 'HttpRequestPoolException' with message 'HttpRequest object(#%d) cannot be detached from the HttpRequestPool while executing the progress callback' in %sHttpRequestPool_006.php:%d
+exception 'HttpRequestPoolException' with message 'HttpRequest object(#%d) cannot be detached from the HttpRequestPool while executing the progress callback' in %aHttpRequestPool_006.php:%d
 Stack trace:
-#0 %sHttpRequestPool_006.php(%d): HttpRequestPool->detach(Object(r))
+#0 %aHttpRequestPool_006.php(%d): HttpRequestPool->detach(Object(r))
 #1 [internal function]: r->onProgress(Array)
-#2 %sHttpRequestPool_006.php(%d): HttpRequestPool->send()
+#2 %aHttpRequestPool_006.php(%d): HttpRequestPool->send()
 #3 {main}
 array(0) {
 }

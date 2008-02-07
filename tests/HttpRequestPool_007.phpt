@@ -28,7 +28,7 @@ class Request extends HttpRequest
 		$c = $this->getResponseCode();
 		$b = $this->getResponseBody();
 		
-		printf("%d %s %d\n", $c, $u, strlen($b));
+		printf("%d %a %d\n", $c, $u, strlen($b));
 		
 		if ($c == 200 && $this->pool->dir) {
 			file_put_contents($this->pool->all[$u], $b);
@@ -112,55 +112,55 @@ printf("Elapsed: %0.3fs\n", microtime(true)-$time);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
-%d %s %d
+%aTEST
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
+%d %a %d
 Elapsed: %fs
 Done

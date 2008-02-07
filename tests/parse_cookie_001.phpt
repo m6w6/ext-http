@@ -13,8 +13,8 @@ var_dump(http_parse_cookie('name="value"; foo="bar\"baz"; hey=got"it ; path=/   
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
-object(stdClass)%s {
+%aTEST
+object(stdClass)%a {
   ["cookies"]=>
   array(3) {
     ["name"]=>

@@ -4,7 +4,7 @@ allowed methods
 <?php
 include 'skip.inc';
 checkcgi();
-checkmin(5.1);
+checkmin(5.3);
 ?>
 --FILE--
 <?php
@@ -14,8 +14,8 @@ ini_set('http.request.methods.allowed', 'POST');
 echo "Done\n";
 ?>
 --EXPECTF--
-Status: 405
-X-Powered-By: PHP/%s
+Status: 405%s
+X-Powered-By: PHP/%a
 Allow: POST
-Content-type: %s
+Content-type: %a
 

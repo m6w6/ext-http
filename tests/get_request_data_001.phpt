@@ -25,7 +25,7 @@ var_dump(fread(http_get_request_body_stream(), 4096));
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 Array
 (
     [Accept-Charset] => iso-8859-1, *

@@ -3,7 +3,7 @@ HttpResponse - send gzipped file with caching headers
 --SKIPIF--
 <?php 
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcgi();
 skipif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib support");
 ?>
@@ -18,13 +18,13 @@ HttpResponse::setFile(__FILE__);
 HttpResponse::send();
 ?>
 --EXPECTF--
-X-Powered-By: PHP/%s
+X-Powered-By: PHP/%a
 Cache-Control: public, must-revalidate, max-age=3600
-Last-Modified: %s, %d %s 20%d %d:%d:%d GMT
-Content-Type: %s
+Last-Modified: %a, %d %a 20%d %d:%d:%d GMT
+Content-Type: %a
 Accept-Ranges: bytes
-ETag: "%s"
+ETag: "%a"
 Content-Encoding: gzip
 Vary: Accept-Encoding
 
-%s
+%a

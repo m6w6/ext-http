@@ -21,7 +21,7 @@ print_r(http_parse_headers(
 ));
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 Array
 (
     [Host] => Array

@@ -3,7 +3,7 @@ http_match_request_header()
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --ENV--
 HTTP_FOO=bar
@@ -16,7 +16,7 @@ var_dump(http_match_request_header("foo", "BAR", 1));
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 bool(true)
 bool(true)
 bool(false)

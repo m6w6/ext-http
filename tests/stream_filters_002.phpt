@@ -43,7 +43,7 @@ unlink($n);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 bool(true)
 bool(true)
 bool(true)

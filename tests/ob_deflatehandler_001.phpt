@@ -4,7 +4,7 @@ ob_deflatehandler
 <?php
 include 'skip.inc';
 checkcgi();
-checkmin(5);
+checkmin(5.3);
 skipif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib");
 ?>
 --ENV--
@@ -16,8 +16,8 @@ echo "-TEST\n";
 echo "Done\n";
 ?>
 --EXPECTF--
-%s
+%a
 Content-Encoding: gzip
 Vary: Accept-Encoding
-%s
+%a
 

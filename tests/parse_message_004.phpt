@@ -30,8 +30,8 @@ var_dump(http_parse_message($message));
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
-object(stdClass)%s {
+%aTEST
+object(stdClass)%a {
   ["type"]=>
   int(2)
   ["httpVersion"]=>
@@ -50,7 +50,7 @@ object(stdClass)%s {
   ["body"]=>
   string(10) "1234567890"
   ["parentMessage"]=>
-  object(stdClass)%s {
+  object(stdClass)%a {
     ["type"]=>
     int(1)
     ["httpVersion"]=>
@@ -69,7 +69,7 @@ object(stdClass)%s {
     ["body"]=>
     string(0) ""
     ["parentMessage"]=>
-    object(stdClass)%s {
+    object(stdClass)%a {
       ["type"]=>
       int(2)
       ["httpVersion"]=>
@@ -88,7 +88,7 @@ object(stdClass)%s {
       ["body"]=>
       string(0) ""
       ["parentMessage"]=>
-      object(stdClass)%s {
+      object(stdClass)%a {
         ["type"]=>
         int(1)
         ["httpVersion"]=>

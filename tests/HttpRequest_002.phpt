@@ -3,7 +3,7 @@ HttpRequest GET/POST
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkcls('HttpRequest');
 checkurl('www.google.com');
 checkurl('dev.iworks.at');
@@ -28,7 +28,7 @@ var_dump($r->getResponseMessage()->getResponseCode());
 echo "Done";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 Array
 (
     [effective_url] => http://www.google.com/
@@ -56,9 +56,9 @@ Array
     [proxyauth_avail] => %d
     [os_errno] => %d
     [num_connects] => %d
-    [ssl_engines] => Array%s
+    [ssl_engines] => Array%a
 
-    [cookies] => Array%s
+    [cookies] => Array%a
 
     [error] => 
 )
@@ -76,7 +76,7 @@ Array
         (
             [name] => data.txt
             [type] => text/plain
-            [tmp_name] => %s
+            [tmp_name] => %a
             [error] => 0
             [size] => 1010
         )

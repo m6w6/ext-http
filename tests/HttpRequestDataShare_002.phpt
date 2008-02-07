@@ -38,7 +38,7 @@ if (current($r1->getResponseCookies())->cookies["PREF"] !== HttpUtil::parseCooki
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 object(HttpRequestDataShare)#1 (4) {
   ["cookie"]=>
   bool(true)

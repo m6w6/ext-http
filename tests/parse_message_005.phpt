@@ -26,7 +26,7 @@ Content-Range: bytes 0-0/100
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 stdClass Object
 (
     [type] => 2

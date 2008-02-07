@@ -27,7 +27,7 @@ var_dump($id == $pd);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 Hi there!
 Yo...
 bool(true)

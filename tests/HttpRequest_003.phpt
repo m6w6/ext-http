@@ -3,7 +3,7 @@ HttpRequest SSL
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 checkurl('arweb.info');
 skipif(!http_support(HTTP_SUPPORT_SSLREQUESTS), 'need ssl-request support')
 ?>
@@ -24,7 +24,7 @@ $r->send();
 var_dump($o);
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 string(10) "1234567890"
 bool(true)
 bool(true)

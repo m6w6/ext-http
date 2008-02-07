@@ -3,22 +3,32 @@ HttpQueryString w/ objects
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --FILE--
 <?php
 echo "-TEST\n";
-$foo = (object) array("bar" => (object) array("baz" => 1), "\0*\0prop" => "dontshow");
-$foo->bar->baz = 1;
+class test_props {
+	public $bar;
+	public $baz;
+	protected $dont_show;
+	private $dont_show2;
+	function __construct() {
+		$this->bar = (object) array("baz"=>1);
+		$this->dont_show = 'xxx';
+		$this->dont_show2 = 'zzz';
+	}
+}
+$foo = new test_props;
 var_dump($q = new HttpQueryString(false, $foo));
 $foo->bar->baz = 0;
 var_dump($q->mod($foo));
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 object(HttpQueryString)#3 (2) {
-  ["queryArray:private"]=>
+  ["queryArray":"HttpQueryString":private]=>
   array(1) {
     ["bar"]=>
     array(1) {
@@ -26,11 +36,11 @@ object(HttpQueryString)#3 (2) {
       int(1)
     }
   }
-  ["queryString:private"]=>
+  ["queryString":"HttpQueryString":private]=>
   string(14) "bar%5Bbaz%5D=1"
 }
 object(HttpQueryString)#4 (2) {
-  ["queryArray:private"]=>
+  ["queryArray":"HttpQueryString":private]=>
   array(1) {
     ["bar"]=>
     array(1) {
@@ -38,7 +48,7 @@ object(HttpQueryString)#4 (2) {
       int(0)
     }
   }
-  ["queryString:private"]=>
+  ["queryString":"HttpQueryString":private]=>
   string(14) "bar%5Bbaz%5D=0"
 }
 Done

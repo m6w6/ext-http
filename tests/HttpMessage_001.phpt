@@ -3,7 +3,7 @@ HttpMessage
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --FILE--
 <?php
@@ -40,7 +40,7 @@ try {
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 string(15) "Partial content"
 string(1) "X"
 string(190) "HTTP/1.1 301

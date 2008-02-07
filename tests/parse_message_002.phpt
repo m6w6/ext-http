@@ -19,7 +19,7 @@ print_r(http_parse_message($message));
 
 echo "Done\n";
 --EXPECTF--
-%sTEST
+%aTEST
 stdClass Object
 (
     [type] => 2

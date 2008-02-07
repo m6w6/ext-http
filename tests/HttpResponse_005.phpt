@@ -4,7 +4,7 @@ HttpResponse file not found
 <?php
 include 'skip.inc';
 checkcgi();
-checkmin(5.1);
+checkmin(5.3);
 ?>
 --FILE--
 <?php
@@ -17,7 +17,7 @@ HttpResponse::setFile("__nonexistant__.pdf");
 HttpResponse::send();
 ?>
 --EXPECTF--
-Status: 404
+Status: 404%s
 X-Powered-By: PHP/%s
 Content-Type: text/plain
 

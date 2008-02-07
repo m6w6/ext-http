@@ -42,7 +42,7 @@ echo $m1->toString(true);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 GET http://example.com/ HTTP/1.0
 HTTP/1.1 200 ok
 Server: Funky/2.0

@@ -23,7 +23,7 @@ foreach ($m as $msg) {
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 ==
 HTTP/1.1 304 Not Modified
 ==

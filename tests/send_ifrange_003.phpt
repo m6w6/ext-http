@@ -4,7 +4,7 @@ http_send() If-Range
 <?php
 include 'skip.inc';
 checkcgi();
-checkmin(5);
+checkmin(5.3);
 ?>
 --ENV--
 HTTP_RANGE=bytes=0-1
@@ -22,4 +22,4 @@ Accept-Ranges: bytes
 Content-Length: %d
 Content-type: text/html
 
-%s
+%a

@@ -19,7 +19,7 @@ $data =
 var_dump(http_chunked_decode($data));
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 string(24) "abra
 cadabra
 all we got

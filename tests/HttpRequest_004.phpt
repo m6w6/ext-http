@@ -39,7 +39,7 @@ var_dump($fields);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 
 First Request
 string(%d) "Array

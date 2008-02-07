@@ -29,7 +29,7 @@ $r->send();
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 Array
 (
     [dltotal] => %f
@@ -37,7 +37,7 @@ Array
     [ultotal] => %f
     [ulnow] => %f
 )
-%srray
+%array
 (
     [dltotal] => %f
     [dlnow] => %f

@@ -12,5 +12,5 @@ ob_start('ob_inflatehandler');
 echo http_deflate("TEST\n");
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 

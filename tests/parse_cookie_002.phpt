@@ -3,7 +3,7 @@ parse cookie
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5);
+checkmin(5.3);
 ?>
 --FILE--
 <?php
@@ -46,7 +46,7 @@ var_dump(http_parse_cookie('foo= " ')->cookies['foo']);
 echo "Done\n";
 ?>
 --EXPECTF--
-%sTEST
+%aTEST
 string(0) ""
 string(0) ""
 string(0) ""
