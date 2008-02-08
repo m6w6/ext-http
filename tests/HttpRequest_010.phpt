@@ -3,7 +3,7 @@ HttpRequest cookie API
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5.3);
+checkmin("5.2.5");
 checkcls("HttpRequest");
 ?>
 --FILE--

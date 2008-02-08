@@ -3,7 +3,7 @@ HttpRequestPool::__destruct() invalid curl handle
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5.3);
+checkmin("5.2.5");
 checkcls('HttpRequest');
 checkcls('HttpRequestPool');
 ?>

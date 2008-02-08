@@ -3,7 +3,7 @@ HttpResponse - send gzipped file
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5.3);
+checkmin("5.2.5");
 checkcgi();
 skipif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib support");
 ?>

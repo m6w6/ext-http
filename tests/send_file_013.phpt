@@ -4,7 +4,7 @@ http_send_file() oversized range
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmin(5.3);
+checkmin("5.2.5");
 ?>
 --ENV--
 HTTP_RANGE=bytes=-1111

@@ -4,7 +4,7 @@ HttpResponse - send cached gzipped data
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmin(5.3);
+checkmin("5.2.5");
 skipif(!http_support(HTTP_SUPPORT_ENCODINGS), "need zlib support");
 ?>
 --ENV--

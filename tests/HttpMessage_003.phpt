@@ -3,7 +3,7 @@ HttpMessage implements Serializable, Countable
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5.3);
+checkmin("5.2.5");
 ?>
 --FILE--
 <?php
@@ -44,26 +44,26 @@ Content-Length: 1
 X
 "
 object(HttpMessage)#%d (%d) {
-  ["type":protected]=>
+  ["type%sprotected%s]=>
   int(2)
-  ["body":protected]=>
+  ["body%sprotected%s]=>
   string(0) ""
-  ["requestMethod":protected]=>
+  ["requestMethod%sprotected%s]=>
   string(0) ""
-  ["requestUrl":protected]=>
+  ["requestUrl%sprotected%s]=>
   string(0) ""
-  ["responseStatus":protected]=>
+  ["responseStatus%sprotected%s]=>
   string(2) "Ok"
-  ["responseCode":protected]=>
+  ["responseCode%sprotected%s]=>
   int(200)
-  ["httpVersion":protected]=>
+  ["httpVersion%sprotected%s]=>
   float(1.1)
-  ["headers":protected]=>
+  ["headers%sprotected%s]=>
   array(1) {
     ["Server"]=>
     string(9) "Funky/1.0"
   }
-  ["parentMessage":protected]=>
+  ["parentMessage%sprotected%s]=>
   NULL
 }
 int(1)

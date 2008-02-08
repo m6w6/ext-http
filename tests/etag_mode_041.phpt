@@ -4,7 +4,7 @@ ob crc32 etag (may fail because PHPs crc32 is actually crc32b)
 <?php
 include 'skip.inc';
 checkcgi();
-checkmin(5.3);
+checkmin("5.2.5");
 ?>
 --FILE--
 <?php

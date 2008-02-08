@@ -3,7 +3,7 @@ HttpQueryString w/ objects
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5.3);
+checkmin("5.2.5");
 ?>
 --FILE--
 <?php
@@ -28,7 +28,7 @@ echo "Done\n";
 --EXPECTF--
 %aTEST
 object(HttpQueryString)#3 (2) {
-  ["queryArray":"HttpQueryString":private]=>
+  ["queryArray%sprivate%s]=>
   array(1) {
     ["bar"]=>
     array(1) {
@@ -36,11 +36,11 @@ object(HttpQueryString)#3 (2) {
       int(1)
     }
   }
-  ["queryString":"HttpQueryString":private]=>
+  ["queryString%sprivate%s]=>
   string(14) "bar%5Bbaz%5D=1"
 }
 object(HttpQueryString)#4 (2) {
-  ["queryArray":"HttpQueryString":private]=>
+  ["queryArray%sprivate%s]=>
   array(1) {
     ["bar"]=>
     array(1) {
@@ -48,7 +48,7 @@ object(HttpQueryString)#4 (2) {
       int(0)
     }
   }
-  ["queryString":"HttpQueryString":private]=>
+  ["queryString%sprivate%s]=>
   string(14) "bar%5Bbaz%5D=0"
 }
 Done

@@ -3,7 +3,7 @@ HttpResponse - send data with caching headers
 --SKIPIF--
 <?php 
 include 'skip.inc';
-checkmin(5.3);
+checkmin("5.2.5");
 checkcgi();
 ?>
 --FILE--

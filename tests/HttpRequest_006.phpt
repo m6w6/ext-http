@@ -25,7 +25,7 @@ object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
   int(2)
   ["body:protected"]=>
-  string(309) "string(294) "<?xml version="1.0" encoding="iso-8859-1"?>
+  string(309) "string(294) "<?xml version="1.0" encoding="iso-8859-1%s]>
 <methodCall>
 <methodName>testMethod</methodName>
 <params>
@@ -66,7 +66,7 @@ object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
   int(2)
   ["body:protected"]=>
-  string(309) "string(294) "<?xml version="1.0" encoding="iso-8859-1"?>
+  string(309) "string(294) "<?xml version="1.0" encoding="iso-8859-1%s]>
 <methodCall>
 <methodName>testMethod</methodName>
 <params>
@@ -107,7 +107,7 @@ object(HttpMessage)#%d (%d) {
   ["type:protected"]=>
   int(2)
   ["body:protected"]=>
-  string(309) "string(294) "<?xml version="1.0" encoding="iso-8859-1"?>
+  string(309) "string(294) "<?xml version="1.0" encoding="iso-8859-1%s]>
 <methodCall>
 <methodName>testMethod</methodName>
 <params>

@@ -3,7 +3,7 @@ negotiation
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5.3);
+checkmin("5.2.5");
 ?>
 --ENV--
 HTTP_ACCEPT=application/xml, application/xhtml+xml, text/html ; q = .8

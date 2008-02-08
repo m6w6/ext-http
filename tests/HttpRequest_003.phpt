@@ -3,7 +3,7 @@ HttpRequest SSL
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5.3);
+checkmin("5.2.5");
 checkurl('arweb.info');
 skipif(!http_support(HTTP_SUPPORT_SSLREQUESTS), 'need ssl-request support')
 ?>

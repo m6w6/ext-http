@@ -3,7 +3,7 @@ http_build_url()
 --SKIPIF--
 <?php
 include 'skip.inc';
-checkmin(5.3);
+checkmin("5.2.5");
 ?>
 --ENV--
 HTTP_HOST=www.example.com

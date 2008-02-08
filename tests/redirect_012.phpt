@@ -4,7 +4,7 @@ http_redirect() with session
 <?php 
 include 'skip.inc';
 checkcgi();
-checkmin(5.3);
+checkmin("5.2.5");
 checkext('session');
 ?>
 --ENV--

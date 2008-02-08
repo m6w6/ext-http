@@ -4,7 +4,7 @@ md5 etag
 <?php
 include 'skip.inc';
 checkcgi();
-checkmin(5.3);
+checkmin("5.2.5");
 ?>
 --FILE--
 <?php
