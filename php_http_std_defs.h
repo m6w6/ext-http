@@ -219,8 +219,8 @@ typedef int STATUS;
 #ifdef ZEND_ENGINE_2
 #	define with_error_handling(eh, ec) \
 	{ \
-		error_handling_t __eh = PG(error_handling); \
-		zend_class_entry *__ec= PG(exception_class); \
+		error_handling_t __eh = GLOBAL_ERROR_HANDLING; \
+		zend_class_entry *__ec= GLOBAL_EXCEPTION_CLASS; \
 		php_set_error_handling(eh, ec TSRMLS_CC);
 #	define end_error_handling() \
 		php_set_error_handling(__eh, __ec TSRMLS_CC); \

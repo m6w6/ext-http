@@ -19,8 +19,12 @@
 
 #if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION >= 3)
 #	define HTTP_ZAPI_CONST_CAST(t) (const t)
+#	define GLOBAL_ERROR_HANDLING EG(error_handling)
+#	define GLOBAL_EXCEPTION_CLASS EG(exception_class)
 #else
 #	define HTTP_ZAPI_CONST_CAST(t) (t)
+#	define GLOBAL_ERROR_HANDLING PG(error_handling)
+#	define GLOBAL_EXCEPTION_CLASS PG(exception_class)
 #endif
 
 #if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION == 0)

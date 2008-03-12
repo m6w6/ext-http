@@ -109,7 +109,7 @@ void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...)
 	
 	va_start(args, format);
 #ifdef ZEND_ENGINE_2
-	if ((type == E_THROW) || (PG(error_handling) == EH_THROW)) {
+	if ((type == E_THROW) || (GLOBAL_ERROR_HANDLING == EH_THROW)) {
 		char *message;
 		zend_class_entry *ce = http_exception_get_for_code(code);
 		
@@ -117,7 +117,7 @@ void _http_error_ex(long type TSRMLS_DC, long code, const char *format, ...)
 			vspprintf(&message, 0, format, args);
 			zend_throw_exception(ce, message, code TSRMLS_CC);
 			efree(message);
-		} http_catch(PG(exception_class) ? PG(exception_class) : HTTP_EX_DEF_CE);
+		} http_catch(GLOBAL_EXCEPTION_CLASS ? GLOBAL_EXCEPTION_CLASS : HTTP_EX_DEF_CE);
 	} else
 #endif
 	php_verror(NULL, "", type, format, args TSRMLS_CC);
