@@ -549,11 +549,15 @@ static inline void _http_request_object_check_request_content_type(zval *this_pt
 STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr TSRMLS_DC)
 {
 	STATUS status = SUCCESS;
+	char *url = http_absolute_url(Z_STRVAL_P(zend_read_property(THIS_CE, getThis(), ZEND_STRS("url")-1, 0 TSRMLS_CC)));
 
-	http_request_reset(obj->request);
-	HTTP_CHECK_CURL_INIT(obj->request->ch, http_curl_init(obj->request), return FAILURE);
+	if (!url) {
+		return FAILURE;
+	}
 	
-	obj->request->url = http_absolute_url(Z_STRVAL_P(zend_read_property(THIS_CE, getThis(), ZEND_STRS("url")-1, 0 TSRMLS_CC)));
+	http_request_reset(obj->request);
+	obj->request->url = url;
+	HTTP_CHECK_CURL_INIT(obj->request->ch, http_curl_init(obj->request), return FAILURE);
 	
 	switch (obj->request->meth = Z_LVAL_P(zend_read_property(THIS_CE, getThis(), ZEND_STRS("method")-1, 0 TSRMLS_CC)))
 	{
