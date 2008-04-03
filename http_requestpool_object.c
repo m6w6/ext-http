@@ -173,8 +173,8 @@ PHP_METHOD(HttpRequestPool, __construct)
 		}
 	}
 	efree(argv);
-	SET_EH_NORMAL();
 	http_final(HTTP_EX_CE(request_pool));
+	SET_EH_NORMAL();
 }
 /* }}} */
 
