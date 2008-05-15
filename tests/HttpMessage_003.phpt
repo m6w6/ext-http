@@ -44,26 +44,26 @@ Content-Length: 1
 X
 "
 object(HttpMessage)#%d (%d) {
-  ["type%sprotected%s]=>
+  ["type%s]=>
   int(2)
-  ["body%sprotected%s]=>
+  ["body%s]=>
   string(0) ""
-  ["requestMethod%sprotected%s]=>
+  ["requestMethod%s]=>
   string(0) ""
-  ["requestUrl%sprotected%s]=>
+  ["requestUrl%s]=>
   string(0) ""
-  ["responseStatus%sprotected%s]=>
+  ["responseStatus%s]=>
   string(2) "Ok"
-  ["responseCode%sprotected%s]=>
+  ["responseCode%s]=>
   int(200)
-  ["httpVersion%sprotected%s]=>
+  ["httpVersion%s]=>
   float(1.1)
-  ["headers%sprotected%s]=>
+  ["headers%s]=>
   array(1) {
     ["Server"]=>
     string(9) "Funky/1.0"
   }
-  ["parentMessage%sprotected%s]=>
+  ["parentMessage%s]=>
   NULL
 }
 int(1)

@@ -48,7 +48,7 @@ Array
     [content_length_download] => %d
     [content_length_upload] => %d
     [starttransfer_time] => %f
-    [content_type] => text/html
+    [content_type] => %s
     [redirect_time] => %d
     [redirect_count] => %d
     [connect_code] => %d
@@ -56,10 +56,10 @@ Array
     [proxyauth_avail] => %d
     [os_errno] => %d
     [num_connects] => %d
-    [ssl_engines] => Array%a
-
-    [cookies] => Array%a
-
+    [ssl_engines] => Array
+    %a
+    [cookies] => Array
+    %a
     [error] => 
 )
 Array
