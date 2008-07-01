@@ -256,7 +256,7 @@ PHP_FUNCTION(http_negotiate_content_type)
 	Send HTTP status code. */
 PHP_FUNCTION(http_send_status)
 {
-	int status = 0;
+	long status = 0;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &status) != SUCCESS) {
 		RETURN_FALSE;
