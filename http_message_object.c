@@ -418,7 +418,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 #else
 	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
 	
-	if (!pinfo || ACC_PROP_PUBLIC(pinfo->flags)) {
+	if (!pinfo) {
 		return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
 	}
 #endif
@@ -511,11 +511,8 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 			break;
 		
 		default:
-#ifdef WONKY
+			FREE_ZVAL(return_value);
 			return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
-#else
-			RETVAL_NULL();
-#endif
 	}
 
 	return return_value;
@@ -531,7 +528,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 #else
 	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
 	
-	if (!pinfo || ACC_PROP_PUBLIC(pinfo->flags)) {
+	if (!pinfo) {
 		zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
 		return;
 	}
@@ -617,9 +614,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 			break;
 		
 		default:
-#ifdef WONKY
 			zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
-#endif
 			break;
 	}
 	if (cpy != value) {
