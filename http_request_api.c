@@ -555,7 +555,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	if (!(storage = http_request_storage_get(request->ch))) {
 		return FAILURE;
 	}
-	
+	storage->errorbuffer[0] = '\0';
 	/* set options */
 	if (storage->url) {
 		pefree(storage->url, 1);
