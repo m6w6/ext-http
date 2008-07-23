@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE package SYSTEM "http://pear.php.net/dtd/package-1.0">
-<package version="1.0" packagerversion="1.6.2">
+<package version="1.0" packagerversion="1.7.1">
  <name>pecl_http</name>
  <summary>Extended HTTP Support</summary>
  <description>This HTTP extension aims to provide a convenient and powerful 
@@ -23,24 +23,13 @@ support. Parallel requests are available for PHP 5 and greater.
   </maintainer>
   </maintainers>
  <release>
-  <version>1.6.0</version>
-  <date>2007-11-26</date>
+  <version>1.6.1</version>
+  <date>2008-07-23</date>
   <license>BSD, revised</license>
-  <state>beta</state>
-  <notes>+ Added HttpRequest::flushCookies() (libcurl &gt;= 7.17.1)
-+ Added constant HTTP_URL_FROM_ENV
-+ Added &apos;retrycount&apos; and &apos;retrydelay&apos; request options
-+ Added libevent support for libcurl (&gt;= 7.16.0):
-  o added --with-http-curl-libevent configure option
-  o added HttpRequestPool::enableEvents()
-* Fixed problems with cookiestore request option introduced with persistent handles
-* Fixed crash on prematurely called HttpMessage::next()
-* Fixed possible shutdown crash with http_parse_params() and PHP4
-* Fixed a possible crash at module shutdown in the persistent handle API
-  (probably fixing bug #11509)
-* Fixed test suite for PHP4
-* Fixed missing PHP_LIBDIR definition in config.m4 for PHP4
-* Fixed non-standard shell support in config.m4
+  <state>stable</state>
+  <notes>* Fixed bug #13362 (PHP-5.3 build)
+* Fixed bug #14168 (st-&gt;errorbuffer not cleared between uses of persistent handles)
+* Fixed bug #14218 (properties of class extending HttpMessage inaccessible)
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
