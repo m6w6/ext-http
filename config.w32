@@ -116,13 +116,14 @@ if (PHP_HTTP != "no") {
 	} else {
 		WARNING("curl convenience functions not enabled; libraries and headers not found");
 	}
-
-	MAGIC_LIB = PHP_DEBUG != "no" ? "libmagic-staticd.lib":"libmagic-static.lib";
-	if (CHECK_HEADER_ADD_INCLUDE("magic.h", "CFLAGS_HTTP") &&
-			CHECK_LIB(MAGIC_LIB, "http", PHP_HTTP)) {
-		AC_DEFINE("HTTP_HAVE_MAGIC", 1, "Have magic library");
-		AC_DEFINE("USE_MAGIC_STATIC", "", "");
-	} else {
-		WARNING("content type guessing not enabled; libraries and headers not found");
-	}
+/*
+//	MAGIC_LIB = PHP_DEBUG != "no" ? "libmagic-staticd.lib":"libmagic-static.lib";
+//	if (CHECK_HEADER_ADD_INCLUDE("magic.h", "CFLAGS_HTTP") &&
+//			CHECK_LIB(MAGIC_LIB, "http", PHP_HTTP)) {
+//		AC_DEFINE("HTTP_HAVE_MAGIC", 1, "Have magic library");
+//		AC_DEFINE("USE_MAGIC_STATIC", "", "");
+//	} else {
+//		WARNING("content type guessing not enabled; libraries and headers not found");
+//	}
+*/
 }
