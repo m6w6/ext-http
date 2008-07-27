@@ -445,7 +445,7 @@ PHP_HTTP_API STATUS _http_urlencode_hash_recursive(HashTable *ht, phpstr *str, c
 				return FAILURE;
 			}
 		} else {
-			zval val;
+			zval val = zval_used_for_init;
 			ZVAL_ZVAL(&val, *data, 1, 0);
 			convert_to_string(&val);
 			
