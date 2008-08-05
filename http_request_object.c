@@ -637,7 +637,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			
 			if (	(Z_TYPE_P(options) != IS_ARRAY)
 				||	(SUCCESS != zend_hash_find(Z_ARRVAL_P(options), "onprogress", sizeof("onprogress"), (void *) &entry)
-				||	(!zend_is_callable(*entry, 0, NULL)))) {
+				||	(!IS_CALLABLE(*entry, 0, NULL)))) {
 				MAKE_STD_ZVAL(pcb);
 				array_init(pcb);
 				ZVAL_ADDREF(getThis());

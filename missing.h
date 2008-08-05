@@ -21,10 +21,12 @@
 #	define HTTP_ZAPI_CONST_CAST(t) (const t)
 #	define GLOBAL_ERROR_HANDLING EG(error_handling)
 #	define GLOBAL_EXCEPTION_CLASS EG(exception_class)
+#	define IS_CALLABLE(cb_zv, flags, cb_sp) zend_is_callable((cb_zv), (flags), (cb_sp) TSRMLS_CC)
 #else
 #	define HTTP_ZAPI_CONST_CAST(t) (t)
 #	define GLOBAL_ERROR_HANDLING PG(error_handling)
 #	define GLOBAL_EXCEPTION_CLASS PG(exception_class)
+#	define IS_CALLABLE(cb_zv, flags, cb_sp) zend_is_callable((cb_zv), (flags), (cb_sp))
 #endif
 
 #if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION == 0)
