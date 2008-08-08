@@ -407,7 +407,9 @@ PHP_METHOD(HttpRequestPool, getFinishedRequests)
 PHP_METHOD(HttpRequestPool, enablePipelining)
 {
 	zend_bool enable = 1;
+#if defined(HAVE_CURL_MULTI_SETOPT) && HTTP_CURL_VERSION(7,16,0)
 	getObject(http_requestpool_object, obj);
+#endif
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &enable)) {
 		RETURN_FALSE;
@@ -426,7 +428,9 @@ PHP_METHOD(HttpRequestPool, enablePipelining)
 PHP_METHOD(HttpRequestPool, enableEvents)
 {
 	zend_bool enable = 1;
+#if defined(HTTP_HAVE_EVENT)
 	getObject(http_requestpool_object, obj);
+#endif
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &enable)) {
 #if defined(HTTP_HAVE_EVENT)
