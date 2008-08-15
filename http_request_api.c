@@ -772,14 +772,12 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			if (header_key.type == HASH_KEY_IS_STRING) {
 				char header[1024];
 				
-				ZVAL_ADDREF(*header_val);
 				convert_to_string_ex(header_val);
 				if (!strcasecmp(header_key.str, "range")) {
 					range_req = 1;
 				}
 				snprintf(header, sizeof(header), "%s: %s", header_key.str, Z_STRVAL_PP(header_val));
 				request->_cache.headers = curl_slist_append(request->_cache.headers, header);
-				zval_ptr_dtor(header_val);
 			}
 		}
 	}
