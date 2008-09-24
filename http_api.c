@@ -646,7 +646,7 @@ failure:
 /* }}} */
 
 /* {{{ array_join */
-int apply_array_append_func(void *pDest, int num_args, va_list args, zend_hash_key *hash_key)
+int apply_array_append_func(void *pDest HTTP_ZAPI_HASH_TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	int flags;
 	char *key = NULL;
@@ -684,7 +684,7 @@ int apply_array_append_func(void *pDest, int num_args, va_list args, zend_hash_k
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-int apply_array_merge_func(void *pDest, int num_args, va_list args, zend_hash_key *hash_key)
+int apply_array_merge_func(void *pDest HTTP_ZAPI_HASH_TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	int flags;
 	char *key = NULL;

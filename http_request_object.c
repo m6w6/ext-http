@@ -781,7 +781,7 @@ static inline void _http_request_object_set_options_subr(INTERNAL_FUNCTION_PARAM
 		}
 	} else if (opts) {
 		if (prettify_keys) {
-			zend_hash_apply_with_arguments(Z_ARRVAL_P(opts), apply_pretty_key, 0, NULL);
+			zend_hash_apply_with_arguments(Z_ARRVAL_P(opts) HTTP_ZAPI_HASH_TSRMLS_CC, apply_pretty_key, 0, NULL);
 		}
 		ZVAL_ADDREF(opts);
 		add_assoc_zval_ex(new_opts, key, len, opts);
