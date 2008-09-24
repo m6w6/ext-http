@@ -1396,8 +1396,8 @@ PHP_METHOD(HttpMessage, unserialize)
 		if ((msg = http_message_parse_ex(obj->message, serialized, (size_t) length))) {
 			obj->message = msg;
 		} else {
-			http_error(HE_ERROR, HTTP_E_RUNTIME, "Could not unserialize HttpMessage");
 			http_message_init(obj->message);
+			http_error(HE_ERROR, HTTP_E_RUNTIME, "Could not unserialize HttpMessage");
 		}
 	}
 }
