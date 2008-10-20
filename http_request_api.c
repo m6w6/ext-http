@@ -316,8 +316,8 @@ PHP_HTTP_API void _http_request_dtor(http_request *request)
 {
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
-	http_curl_free(&request->ch);
 	http_request_reset(request);
+	http_curl_free(&request->ch);
 	
 	phpstr_dtor(&request->_cache.cookies);
 	zend_hash_destroy(&request->_cache.options);
