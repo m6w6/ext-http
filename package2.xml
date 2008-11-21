@@ -28,9 +28,9 @@ support. Parallel requests are available for PHP 5 and greater.
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2008-07-23</date>
+ <date>2008-10-20</date>
  <version>
-  <release>1.6.1</release>
+  <release>1.6.2</release>
   <api>1.6.0</api>
  </version>
  <stability>
@@ -39,9 +39,10 @@ support. Parallel requests are available for PHP 5 and greater.
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed bug #13362 (PHP-5.3 build)
-* Fixed bug #14168 (st->errorbuffer not cleared between uses of persistent handles)
-* Fixed bug #14218 (properties of class extending HttpMessage inaccessible)
+* Fixed PHP-5.3 API incompatibilities (including bug #15065)
+* Fixed memory corruption with headers and HttpRequest
+* Fixed crash in HttpMessage::unserialize()
+* Fixed bug #14826 (race condition in http_request_dtor)
 ]]></notes>
  <contents>
   <dir name="/">

@@ -266,8 +266,8 @@ typedef int STATUS;
 #define HTTP_E_QUERYSTRING			13L
 
 #ifdef ZEND_ENGINE_2
-#	define HTTP_BEGIN_ARGS_EX(class, method, ret_ref, req_args)	static ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 0, ret_ref, req_args)
-#	define HTTP_BEGIN_ARGS_AR(class, method, ret_ref, req_args)	static ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 1, ret_ref, req_args)
+#	define HTTP_BEGIN_ARGS_EX(class, method, ret_ref, req_args)	HTTP_STATIC_ARG_INFO ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 0, ret_ref, req_args)
+#	define HTTP_BEGIN_ARGS_AR(class, method, ret_ref, req_args)	HTTP_STATIC_ARG_INFO ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 1, ret_ref, req_args)
 #	define HTTP_END_ARGS										}
 #	define HTTP_EMPTY_ARGS_EX(class, method, ret_ref)			HTTP_BEGIN_ARGS_EX(class, method, ret_ref, 0) HTTP_END_ARGS
 #	define HTTP_ARGS(class, method)								args_for_ ##class## _ ##method
@@ -284,20 +284,20 @@ typedef int STATUS;
 #ifdef HTTP_HAVE_CURL
 #	ifdef ZEND_ENGINE_2
 #		define HTTP_DECLARE_ARG_PASS_INFO() \
-			static \
+			HTTP_STATIC_ARG_INFO \
 			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_2, 0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(1) \
 			ZEND_END_ARG_INFO(); \
  \
-			static \
+			HTTP_STATIC_ARG_INFO \
 			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_3, 0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(1) \
 			ZEND_END_ARG_INFO(); \
  \
-			static \
+			HTTP_STATIC_ARG_INFO \
 			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_4, 0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(0) \
@@ -305,7 +305,7 @@ typedef int STATUS;
 				ZEND_ARG_PASS_INFO(1) \
 			ZEND_END_ARG_INFO(); \
  \
-			static \
+			HTTP_STATIC_ARG_INFO \
 			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_5, 0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(0) \
@@ -324,13 +324,13 @@ typedef int STATUS;
 #else
 #	ifdef ZEND_ENGINE_2
 #		define HTTP_DECLARE_ARG_PASS_INFO() \
-			static \
+			HTTP_STATIC_ARG_INFO \
 			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_2, 0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(1) \
 			ZEND_END_ARG_INFO(); \
 \
-			static \
+			HTTP_STATIC_ARG_INFO \
 			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_4, 0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(0) \
