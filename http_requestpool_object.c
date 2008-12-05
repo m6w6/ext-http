@@ -50,7 +50,9 @@ HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(send);
 HTTP_EMPTY_ARGS(socketPerform);
-HTTP_EMPTY_ARGS(socketSelect);
+HTTP_BEGIN_ARGS(socketSelect, 0)
+	HTTP_ARG_VAL(timeout, 0)
+HTTP_END_ARGS;
 
 HTTP_EMPTY_ARGS(valid);
 HTTP_EMPTY_ARGS(current);
@@ -277,14 +279,23 @@ PHP_METHOD(HttpRequestPool, socketPerform)
 }
 /* }}} */
 
-/* {{{ proto protected bool HttpRequestPool::socketSelect() */
+/* {{{ proto protected bool HttpRequestPool::socketSelect([double timeout]) */
 PHP_METHOD(HttpRequestPool, socketSelect)
 {
+	double timeout = 0;
+	struct timeval custom_timeout, *custom_timeout_ptr = NULL;
 	getObject(http_requestpool_object, obj);
 
-	NO_ARGS;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|d", &timeout)) {
+		RETURN_FALSE;
+	}
+	if (ZEND_NUM_ARGS() && timeout > 0) {
+		custom_timeout.tv_sec = (time_t) timeout;
+		custom_timeout.tv_usec = HTTP_USEC(timeout) % HTTP_MCROSEC;
+		custom_timeout_ptr = &custom_timeout;
+	}
 
-	RETURN_SUCCESS(http_request_pool_select(&obj->pool));
+	RETURN_SUCCESS(http_request_pool_select_ex(&obj->pool, custom_timeout_ptr));
 }
 /* }}} */
 

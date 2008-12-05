@@ -73,6 +73,9 @@ PHP_HTTP_API STATUS _http_request_pool_send(http_request_pool *pool);
 #define http_request_pool_select _http_request_pool_select
 PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool);
 
+#define http_request_pool_select_ex _http_request_pool_select_ex
+PHP_HTTP_API STATUS _http_request_pool_select_ex(http_request_pool *pool, struct timeval *custom_timeout);
+
 #define http_request_pool_perform(p) _http_request_pool_perform((p))
 PHP_HTTP_API int _http_request_pool_perform(http_request_pool *pool);
 

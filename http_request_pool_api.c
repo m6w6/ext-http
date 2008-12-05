@@ -317,6 +317,13 @@ PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool)
 /* {{{ STATUS http_request_pool_select(http_request_pool *) */
 PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 {
+	return http_request_pool_select_ex(pool, NULL);
+}
+/* }}} */
+
+/* {{{ STATUS http_request_pool_select_ex(http_request_pool *, struct timeval *) */
+PHP_HTTP_API STATUS _http_request_pool_select_ex(http_request_pool *pool, struct timeval *custom_timeout)
+{
 	int MAX;
 	fd_set R, W, E;
 	struct timeval timeout;
@@ -329,7 +336,11 @@ PHP_HTTP_API STATUS _http_request_pool_select(http_request_pool *pool)
 	}
 #endif
 	
-	http_request_pool_timeout(pool, &timeout);
+	if (custom_timeout && timerisset(custom_timeout)) {
+		timeout = *custom_timeout;
+	} else {
+		http_request_pool_timeout(pool, &timeout);
+	}
 	
 	FD_ZERO(&R);
 	FD_ZERO(&W);
