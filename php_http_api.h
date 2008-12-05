@@ -168,9 +168,9 @@ static inline void _http_sleep(double s)
 #define HTTP_MLLISEC (1000)
 #define HTTP_MCROSEC (1000 * 1000)
 #define HTTP_NANOSEC (1000 * 1000 * 1000)
-#define HTTP_MSEC(s) (s * HTTP_MLLISEC)
-#define HTTP_USEC(s) (s * HTTP_MCROSEC)
-#define HTTP_NSEC(s) (s * HTTP_NANOSEC)
+#define HTTP_MSEC(s) ((long)(s * HTTP_MLLISEC))
+#define HTTP_USEC(s) ((long)(s * HTTP_MCROSEC))
+#define HTTP_NSEC(s) ((long)(s * HTTP_NANOSEC))
 
 #if defined(PHP_WIN32)
 	Sleep((DWORD) HTTP_MSEC(s));
@@ -227,7 +227,7 @@ static inline const char *_http_locate_body(const char *message)
 			if (*(msg+1) == '\n') {
 				body = msg + 2;
 				break;
-			} else if (*(msg+1) == '\r' && *(msg+2) == '\n' && msg != message && *(msg-1) == '\r') {
+			} else if (*(msg+1) == '\r' && *(msg+2) == '\n') {
 				body = msg + 3;
 				break;
 			}
