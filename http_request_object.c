@@ -439,6 +439,10 @@ PHP_MINIT_FUNCTION(http_request_object)
 #	if HTTP_CURL_VERSION(7,15,2)
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_SOCKS4")-1, CURLPROXY_SOCKS4 TSRMLS_CC);
 #	endif
+#if HTTP_CURL_VERSION(7,18,0)
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_SOCKS4A")-1, CURLPROXY_SOCKS5 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_SOCKS5_HOSTNAME")-1, CURLPROXY_SOCKS5 TSRMLS_CC);
+#endif
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_SOCKS5")-1, CURLPROXY_SOCKS5 TSRMLS_CC);
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_HTTP")-1, CURLPROXY_HTTP TSRMLS_CC);
 #endif /* WONKY */
