@@ -32,7 +32,11 @@ function file_re($file, $pattern, $all = true) {
 }
 
 $ifdefs = array(
-	'COOKIELIST' => '7,14,1'
+	'COOKIELIST' => 'HTTP_CURL_VERSION(7,14,1)',
+	'PRIMARY_IP' => 'HTTP_CURL_VERSION(7,19,0)',
+	'APPCONNECT_TIME' => 'HTTP_CURL_VERSION(7,19,0)',
+	'REDIRECT_URL' => 'HTTP_CURL_VERSION(7,18,2)',
+	'CERTINFO' => 'HTTP_CURL_VERSION(7,19,1) && defined(HTTP_HAVE_OPENSSL)'
 );
 $exclude = array(
 	'PRIVATE', 'LASTSOCKET', 'FTP_ENTRY_PATH'
@@ -77,7 +81,7 @@ ob_start();
 foreach ($infos as $info) {
 	list(, $full, $short, $type) = $info;
 	if (in_array($short, $exclude)) continue;
-	if (isset($ifdefs[$short])) printf("#if HTTP_CURL_VERSION(%s)\n", $ifdefs[$short]);
+	if (isset($ifdefs[$short])) printf("#if %s\n", $ifdefs[$short]);
 	printf($templates[$type], $full, strtolower((isset($translate[$short])) ? $translate[$short] : $short));
 	if (isset($ifdefs[$short])) printf("#endif\n");
 }

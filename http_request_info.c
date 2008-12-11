@@ -124,6 +124,32 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 		curl_slist_free_all(s);
 	}
 #endif
+#if HTTP_CURL_VERSION(7,18,2)
+	if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_REDIRECT_URL, &c)) {
+		add_assoc_string_ex(&array, "redirect_url", sizeof("redirect_url"), c ? c : "", 1);
+	}
+#endif
+#if HTTP_CURL_VERSION(7,19,0)
+	if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_PRIMARY_IP, &c)) {
+		add_assoc_string_ex(&array, "primary_ip", sizeof("primary_ip"), c ? c : "", 1);
+	}
+#endif
+#if HTTP_CURL_VERSION(7,19,0)
+	if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_APPCONNECT_TIME, &d)) {
+		add_assoc_double_ex(&array, "appconnect_time", sizeof("appconnect_time"), d);
+	}
+#endif
+#if HTTP_CURL_VERSION(7,19,1) && defined(HTTP_HAVE_OPENSSL)
+	if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_CERTINFO, &s)) {
+		MAKE_STD_ZVAL(subarray);
+		array_init(subarray);
+		for (p = s; p; p = p->next) {
+			add_next_index_string(subarray, p->data, 1);
+		}
+		add_assoc_zval_ex(&array, "certinfo", sizeof("certinfo"), subarray);
+		curl_slist_free_all(s);
+	}
+#endif
 /* END */
 	add_assoc_string_ex(&array, "error", sizeof("error"), http_request_storage_get(request->ch)->errorbuffer, 1);
 }

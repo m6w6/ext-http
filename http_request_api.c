@@ -182,6 +182,10 @@ PHP_MINIT_FUNCTION(http_request)
 #if HTTP_CURL_VERSION(7,15,2)
 	HTTP_LONG_CONSTANT("HTTP_PROXY_SOCKS4", CURLPROXY_SOCKS4);
 #endif
+#if HTTP_CURL_VERSION(7,18,0)
+	HTTP_LONG_CONSTANT("HTTP_PROXY_SOCKS4A", CURLPROXY_SOCKS4A);
+	HTTP_LONG_CONSTANT("HTTP_PROXY_SOCKS5_HOSTNAME", CURLPROXY_SOCKS5_HOSTNAME);
+#endif
 	HTTP_LONG_CONSTANT("HTTP_PROXY_SOCKS5", CURLPROXY_SOCKS5);
 	HTTP_LONG_CONSTANT("HTTP_PROXY_HTTP", CURLPROXY_HTTP);
 	return SUCCESS;
@@ -474,6 +478,11 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_HTTP_TRANSFER_DECODING, 0L);
 #endif
 		HTTP_CURL_OPT(CURLOPT_FOLLOWLOCATION, 0L);
+#if HTTP_CURL_VERSION(7,19,1)
+		HTTP_CURL_OPT(CURLOPT_POSTREDIR, 0L);
+#elif HTTP_CURL_VERSION(7,17,1)
+		HTTP_CURL_OPT(CURLOPT_POST301, 0L);
+#endif
 		HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, 0L);
 		HTTP_CURL_OPT(CURLOPT_REFERER, NULL);
 		HTTP_CURL_OPT(CURLOPT_USERAGENT, "PECL::HTTP/" PHP_HTTP_VERSION " (PHP/" PHP_VERSION ")");
@@ -500,6 +509,15 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_SSL_VERIFYPEER, 0L);
 		HTTP_CURL_OPT(CURLOPT_SSL_VERIFYHOST, 0L);
 		HTTP_CURL_OPT(CURLOPT_SSL_CIPHER_LIST, NULL);
+#if HTTP_CURL_VERSION(7,19,0)
+		HTTP_CURL_OPT(CURLOPT_ISSUERCERT, NULL);
+	#if defined(HTTP_HAVE_OPENSSL)
+		HTTP_CURL_OPT(CURLOPT_CRLFILE, NULL);
+	#endif
+#endif
+#if HTTP_CURL_VERSION(7,19,1) && defined(HTTP_HAVE_OPENSSL)
+		HTTP_CURL_OPT(CURLOPT_CERTINFO, NULL);
+#endif
 #ifdef HTTP_CURL_CAINFO
 		HTTP_CURL_OPT(CURLOPT_CAINFO, HTTP_CURL_CAINFO);
 #else
@@ -661,6 +679,13 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	if ((zoption = http_request_option(request, options, "port", IS_LONG))) {
 		HTTP_CURL_OPT(CURLOPT_PORT, Z_LVAL_P(zoption));
 	}
+	
+	/* RFC4007 zone_id */
+#if HTTP_CURL_VERSION(7,19,0)
+	if ((zoption = http_request_option(request, options, "address_scope", IS_LONG))) {
+		HTTP_CURL_OPT(CURLOPT_ADDRESS_SCOPE, Z_LVAL_P(zoption));
+	}
+#endif
 
 	/* auth */
 	if ((zoption = http_request_option(request, options, "httpauth", IS_STRING)) && Z_STRLEN_P(zoption)) {
@@ -677,6 +702,15 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		if ((zoption = http_request_option(request, options, "unrestrictedauth", IS_BOOL))) {
 			HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
 		}
+#if HTTP_CURL_VERSION(7,17,1)
+		if ((zoption = http_request_option(request, options, "postredir", IS_BOOL))) {
+#	if HTTP_CURL_VERSION(7,19,1)
+			HTTP_CURL_OPT(CURLOPT_POSTREDIR, Z_BVAL_P(zoption) ? 1L : 0L);
+#	else
+			HTTP_CURL_OPT(CURLOPT_POST301, Z_BVAL_P(zoption) ? 1L : 0L);
+#	endif
+		}
+#endif
 	}
 	
 	/* retries, defaults to 0 */
@@ -922,6 +956,15 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				HTTP_CURL_OPT_STRING(CURLOPT_CAPATH, -3, 1);
 				HTTP_CURL_OPT_STRING(CURLOPT_RANDOM_FILE, -3, 1);
 				HTTP_CURL_OPT_STRING(CURLOPT_EGDSOCKET, -3, 1);
+#if HTTP_CURL_VERSION(7,19,0)
+				HTTP_CURL_OPT_STRING(CURLOPT_ISSUERCERT, -3, 1);
+	#if defined(HTTP_HAVE_OPENSSL)
+				HTTP_CURL_OPT_STRING(CURLOPT_CRLFILE, -3, 1);
+	#endif
+#endif
+#if HTTP_CURL_VERSION(7,19,1) && defined(HTTP_HAVE_OPENSSL)
+				HTTP_CURL_OPT_LONG(CURLOPT_CERTINFO, -3);
+#endif
 			}
 		}
 	}
