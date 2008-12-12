@@ -36,10 +36,9 @@ $ifdefs = array(
 	'PRIMARY_IP' => 'HTTP_CURL_VERSION(7,19,0)',
 	'APPCONNECT_TIME' => 'HTTP_CURL_VERSION(7,19,0)',
 	'REDIRECT_URL' => 'HTTP_CURL_VERSION(7,18,2)',
-	'CERTINFO' => 'HTTP_CURL_VERSION(7,19,1) && defined(HTTP_HAVE_OPENSSL)'
 );
 $exclude = array(
-	'PRIVATE', 'LASTSOCKET', 'FTP_ENTRY_PATH'
+	'PRIVATE', 'LASTSOCKET', 'FTP_ENTRY_PATH', 'CERTINFO',
 );
 $translate = array(
 	'HTTP_CONNECTCODE' => "connect_code",
@@ -62,17 +61,19 @@ $templates = array(
 		add_assoc_long_ex(&array, "%s", sizeof("%2$s"), l);
 	}
 ',
-'SLIST' => 
+'SLIST' =>
 '	if (CURLE_OK == curl_easy_getinfo(request->ch, %s, &s)) {
 		MAKE_STD_ZVAL(subarray);
 		array_init(subarray);
 		for (p = s; p; p = p->next) {
-			add_next_index_string(subarray, p->data, 1);
+			if (p->data) {
+				add_next_index_string(subarray, p->data, 1);
+			}
 		}
 		add_assoc_zval_ex(&array, "%s", sizeof("%2$s"), subarray);
 		curl_slist_free_all(s);
 	}
-'
+',
 );
 
 $infos = file_re('curl.h', '/^\s*(CURLINFO_(\w+))\s*=\s*CURLINFO_(STRING|LONG|DOUBLE|SLIST)\s*\+\s*\d+\s*,?\s*$/m');

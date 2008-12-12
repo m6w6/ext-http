@@ -108,7 +108,9 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 		MAKE_STD_ZVAL(subarray);
 		array_init(subarray);
 		for (p = s; p; p = p->next) {
-			add_next_index_string(subarray, p->data, 1);
+			if (p->data) {
+				add_next_index_string(subarray, p->data, 1);
+			}
 		}
 		add_assoc_zval_ex(&array, "ssl_engines", sizeof("ssl_engines"), subarray);
 		curl_slist_free_all(s);
@@ -118,7 +120,9 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 		MAKE_STD_ZVAL(subarray);
 		array_init(subarray);
 		for (p = s; p; p = p->next) {
-			add_next_index_string(subarray, p->data, 1);
+			if (p->data) {
+				add_next_index_string(subarray, p->data, 1);
+			}
 		}
 		add_assoc_zval_ex(&array, "cookies", sizeof("cookies"), subarray);
 		curl_slist_free_all(s);
@@ -139,18 +143,41 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 		add_assoc_double_ex(&array, "appconnect_time", sizeof("appconnect_time"), d);
 	}
 #endif
+/* END */
 #if HTTP_CURL_VERSION(7,19,1) && defined(HTTP_HAVE_OPENSSL)
-	if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_CERTINFO, &s)) {
-		MAKE_STD_ZVAL(subarray);
-		array_init(subarray);
-		for (p = s; p; p = p->next) {
-			add_next_index_string(subarray, p->data, 1);
+	{
+		int i;
+		zval *ci_array;
+		struct curl_certinfo *ci;
+		char *colon, *keyname;
+		
+		if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_CERTINFO, &ci)) {
+			MAKE_STD_ZVAL(ci_array);
+			array_init(ci_array);
+			
+			for (i = 0; i < ci->num_of_certs; ++i) {
+				s = ci->certinfo[i];
+				
+				MAKE_STD_ZVAL(subarray);
+				array_init(subarray);
+				for (p = s; p; p = p->next) {
+					if (p->data) {
+						if ((colon = strchr(p->data, ':'))) {
+							keyname = estrndup(p->data, colon - p->data);
+							add_assoc_string_ex(subarray, keyname, colon - p->data + 1, colon + 1, 1);
+							efree(keyname);
+						} else {
+							add_next_index_string(subarray, p->data, 1);
+						}
+					}
+				}
+				add_next_index_zval(ci_array, subarray);
+				curl_slist_free_all(s);
+			}
+			add_assoc_zval_ex(&array, "certinfo", sizeof("certinfo"), ci_array);
 		}
-		add_assoc_zval_ex(&array, "certinfo", sizeof("certinfo"), subarray);
-		curl_slist_free_all(s);
 	}
 #endif
-/* END */
 	add_assoc_string_ex(&array, "error", sizeof("error"), http_request_storage_get(request->ch)->errorbuffer, 1);
 }
 /* }}} */
