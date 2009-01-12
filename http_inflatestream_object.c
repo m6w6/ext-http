@@ -263,9 +263,11 @@ PHP_METHOD(HttpInflateStream, finish)
 			STR_FREE(decoded);
 			updated_len += decoded_len;
 			RETVAL_STRINGL(updated, updated_len, 0);
-		} else {
+		} else if (decoded) {
 			STR_FREE(updated);
 			RETVAL_STRINGL(decoded, decoded_len, 0);
+		} else {
+			RETVAL_NULL();
 		}
 	} else {
 		STR_FREE(updated);
