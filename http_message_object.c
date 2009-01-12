@@ -1132,9 +1132,9 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 	}
 
 	convert_to_double(zv);
-	sprintf(v, "%1.1lf", Z_DVAL_P(zv));
+	snprintf(v, sizeof(v), "%1.1f", Z_DVAL_P(zv));
 	if (strcmp(v, "1.0") && strcmp(v, "1.1")) {
-		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid HTTP protocol version (1.0 or 1.1): %s", v);
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid HTTP protocol version (1.0 or 1.1): %g", Z_DVAL_P(zv));
 		RETURN_FALSE;
 	}
 
