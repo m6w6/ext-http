@@ -393,6 +393,10 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 {
 	http_message_object *o = (http_message_object *) object;
 
+	if (o->iterator) {
+		zval_ptr_dtor(&o->iterator);
+		o->iterator = NULL;
+	}
 	if (o->message) {
 		http_message_dtor(o->message);
 		efree(o->message);
