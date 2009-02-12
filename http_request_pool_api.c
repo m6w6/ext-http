@@ -301,6 +301,8 @@ PHP_HTTP_API void _http_request_pool_dtor(http_request_pool *pool)
 	efree(pool->timeout);
 #endif
 	
+	http_request_pool_detach_all(pool);
+	
 	pool->unfinished = 0;
 	zend_llist_clean(&pool->finished);
 	zend_llist_clean(&pool->handles);
