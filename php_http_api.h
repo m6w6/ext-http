@@ -27,6 +27,7 @@
 #define HTTP_PARAMS_ALLOW_FAILURE	0x02
 #define HTTP_PARAMS_RAISE_ERROR		0x04
 #define HTTP_PARAMS_DEFAULT	(HTTP_PARAMS_ALLOW_COMMA|HTTP_PARAMS_ALLOW_FAILURE|HTTP_PARAMS_RAISE_ERROR)
+#define HTTP_PARAMS_COLON_SEPARATOR	0x10
 
 extern PHP_MINIT_FUNCTION(http_support);
 
@@ -248,8 +249,8 @@ static inline const char *_http_locate_eol(const char *line, int *eol_len)
 	return eol;
 }
 
-#define convert_to_type(t, z) _convert_to_type((t), (z))
-static inline zval *_convert_to_type(int type, zval *z)
+#define http_zset(t, z) _http_zset((t), (z))
+static inline zval *_http_zset(int type, zval *z)
 {
 	if (Z_TYPE_P(z) != type) {
 		switch (type) {
@@ -264,12 +265,10 @@ static inline zval *_convert_to_type(int type, zval *z)
 	}
 	return z;
 }
-#define convert_to_type_ex(t, z, p) _convert_to_type_ex((t), (z), (p))
-static inline zval *_convert_to_type_ex(int type, zval *z, zval **p)
-{
-	if (p) {
-		*p = z;
-	}
+#define http_zsep(t, z) _http_zsep_ex((t), (z), NULL)
+#define http_zsep_ex(t, z, p) _http_zsep_ex((t), (z), (p))
+static inline zval *_http_zsep_ex(int type, zval *z, zval **p) {
+	SEPARATE_ARG_IF_REF(z);
 	if (Z_TYPE_P(z) != type) {
 		switch (type) {
 			case IS_NULL:	convert_to_null_ex(&z);		break;
@@ -282,11 +281,7 @@ static inline zval *_convert_to_type_ex(int type, zval *z, zval **p)
 		}
 	}
 	if (p) {
-		if (*p == z) {
-			*p = NULL;
-		} else {
-			*p = z;
-		}
+		*p = z;
 	}
 	return z;
 }

@@ -299,13 +299,8 @@ PHP_METHOD(HttpResponse, getCache)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *cache_p, *cache = convert_to_type_ex(IS_BOOL, *zend_std_get_static_property(THIS_CE, ZEND_STRS("cache")-1, 0 TSRMLS_CC), &cache_p);
-		
-		RETVAL_ZVAL(cache, 1, 0);
-
-		if (cache_p) {
-			zval_ptr_dtor(&cache_p);
-		}
+		zval *cache = http_zsep(IS_BOOL, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("cache")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(cache, 1, 1);
 	}
 }
 /* }}}*/
@@ -331,13 +326,8 @@ PHP_METHOD(HttpResponse, getGzip)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *gzip_p, *gzip = convert_to_type_ex(IS_BOOL, *zend_std_get_static_property(THIS_CE, ZEND_STRS("gzip")-1, 0 TSRMLS_CC), &gzip_p);
-		
-		RETVAL_ZVAL(gzip, 1, 0);
-
-		if (gzip_p) {
-			zval_ptr_dtor(&gzip_p);
-		}
+		zval *gzip = http_zsep(IS_BOOL, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("gzip")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(gzip, 1, 1);
 	}
 }
 /* }}} */
@@ -373,13 +363,8 @@ PHP_METHOD(HttpResponse, getCacheControl)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *ccontrol_p, *ccontrol = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("cacheControl")-1, 0 TSRMLS_CC), &ccontrol_p);
-		
-		RETVAL_ZVAL(ccontrol, 1, 0);
-
-		if (ccontrol_p) {
-			zval_ptr_dtor(&ccontrol_p);
-		}
+		zval *cctl = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("cacheControl")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(cctl, 1, 1);
 	}
 }
 /* }}} */
@@ -407,13 +392,8 @@ PHP_METHOD(HttpResponse, getContentType)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("contentType")-1, 0 TSRMLS_CC), &ctype_p);
-		
-		RETVAL_ZVAL(ctype, 1, 0);
-
-		if (ctype_p) {
-			zval_ptr_dtor(&ctype_p);
-		}
+		zval *ctype = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("contentType")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(ctype, 1, 1);
 	}
 }
 /* }}} */
@@ -491,13 +471,8 @@ PHP_METHOD(HttpResponse, getContentDisposition)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *cd_p, *cd = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("contentDisposition")-1, 0 TSRMLS_CC), &cd_p);
-		
-		RETVAL_ZVAL(cd, 1, 0);
-
-		if (cd_p) {
-			zval_ptr_dtor(&cd_p);
-		}
+		zval *cdisp = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("contentDisposition")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(cdisp, 1, 1);
 	}
 }
 /* }}} */
@@ -524,13 +499,8 @@ PHP_METHOD(HttpResponse, getETag)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *etag_p, *etag = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC), &etag_p);
-		
-		RETVAL_ZVAL(etag, 1, 0);
-
-		if (etag_p) {
-			zval_ptr_dtor(&etag_p);
-		}
+		zval *etag = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(etag, 1, 1);
 	}
 }
 /* }}} */
@@ -556,13 +526,8 @@ PHP_METHOD(HttpResponse, getLastModified)
 	NO_ARGS;
 	
 	if (return_value_used) {
-		zval *lm_p, *lm = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("lastModified")-1, 0 TSRMLS_CC), &lm_p);
-		
-		RETVAL_ZVAL(lm, 1, 0);
-
-		if (lm_p) {
-			zval_ptr_dtor(&lm_p);
-		}
+		zval *lmod = http_zsep(IS_LONG, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("lastModified")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(lmod, 1, 1);
 	}
 }
 /* }}} */
@@ -587,13 +552,8 @@ PHP_METHOD(HttpResponse, getThrottleDelay)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, *zend_std_get_static_property(THIS_CE, ZEND_STRS("throttleDelay")-1, 0 TSRMLS_CC), &delay_p);
-		
-		RETVAL_ZVAL(delay, 1, 0);
-
-		if (delay_p) {
-			zval_ptr_dtor(&delay_p);
-		}
+		zval *tdel = http_zsep(IS_DOUBLE, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("throttleDelay")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(tdel, 1, 1);
 	}
 }
 /* }}} */
@@ -618,13 +578,8 @@ PHP_METHOD(HttpResponse, getBufferSize)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *size_p, *size = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("bufferSize")-1, 0 TSRMLS_CC), &size_p);
-		
-		RETVAL_ZVAL(size, 1, 0);
-
-		if (size_p) {
-			zval_ptr_dtor(&size_p);
-		}
+		zval *bsize = http_zsep(IS_LONG, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("bufferSize")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(bsize, 1, 1);
 	}
 }
 /* }}} */
@@ -640,7 +595,7 @@ PHP_METHOD(HttpResponse, setData)
 		RETURN_FALSE;
 	}
 	if (Z_TYPE_P(the_data) != IS_STRING) {
-		convert_to_string_ex(&the_data);
+		convert_to_string(the_data);
 	}
 
 	if (	(SUCCESS != zend_update_static_property(THIS_CE, ZEND_STRS("data")-1, the_data TSRMLS_CC)) ||
@@ -713,13 +668,8 @@ PHP_METHOD(HttpResponse, getStream)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *stream_p;
-		
-		RETVAL_RESOURCE(Z_LVAL_P(convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("stream")-1, 0 TSRMLS_CC), &stream_p)));
-
-		if (stream_p) {
-			zval_ptr_dtor(&stream_p);
-		}
+		zval *stream = http_zsep(IS_LONG, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("stream")-1, 0 TSRMLS_CC)));
+		RETVAL_RESOURCE(Z_LVAL_P(stream));
 	}
 }
 /* }}} */
@@ -762,13 +712,8 @@ PHP_METHOD(HttpResponse, getFile)
 	NO_ARGS;
 
 	if (return_value_used) {
-		zval *the_file_p, *the_file = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("file")-1, 0 TSRMLS_CC), &the_file_p);
-		
-		RETVAL_ZVAL(the_file, 1, 0);
-
-		if (the_file_p) {
-			zval_ptr_dtor(&the_file_p);
-		}
+		zval *file = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("file")-1, 0 TSRMLS_CC)));
+		RETVAL_ZVAL(file, 1, 1);
 	}
 }
 /* }}} */
@@ -796,14 +741,15 @@ PHP_METHOD(HttpResponse, send)
 
 	/* capture mode */
 	if (i_zend_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("catch")-1, 0 TSRMLS_CC))) {
-		zval *etag_p, *the_data;
+		zval *zetag, *the_data;
 
 		MAKE_STD_ZVAL(the_data);
 		php_ob_get_buffer(the_data TSRMLS_CC);
 		zend_update_static_property(THIS_CE, ZEND_STRS("data")-1, the_data TSRMLS_CC);
 		ZVAL_LONG(*zend_std_get_static_property(THIS_CE, ZEND_STRS("mode")-1, 0 TSRMLS_CC), SEND_DATA);
 
-		if (!Z_STRLEN_P(convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC), &etag_p))) {
+		zetag = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC)));
+		if (!Z_STRLEN_P(zetag)) {
 			char *etag = http_etag(Z_STRVAL_P(the_data), Z_STRLEN_P(the_data), SEND_DATA);
 			if (etag) {
 				zend_update_static_property_string(THIS_CE, ZEND_STRS("eTag")-1, etag TSRMLS_CC);
@@ -811,10 +757,7 @@ PHP_METHOD(HttpResponse, send)
 			}
 		}
 		zval_ptr_dtor(&the_data);
-		
-		if (etag_p) {
-			zval_ptr_dtor(&etag_p);
-		}
+		zval_ptr_dtor(&zetag);
 
 		clean_ob = 1;
 	}
@@ -828,11 +771,11 @@ PHP_METHOD(HttpResponse, send)
 
 	/* caching */
 	if (i_zend_is_true(*zend_std_get_static_property(THIS_CE, ZEND_STRS("cache")-1, 0 TSRMLS_CC))) {
-		zval *cctl, *cctl_p, *etag, *etag_p, *lmod, *lmod_p;
+		zval *cctl, *etag, *lmod;
 		
-		etag = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC), &etag_p);
-		lmod = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("lastModified")-1, 0 TSRMLS_CC), &lmod_p);
-		cctl = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("cacheControl")-1, 0 TSRMLS_CC), &cctl_p);
+		lmod = http_zsep(IS_LONG, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("lastModified")-1, 0 TSRMLS_CC)));
+		etag = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("eTag")-1, 0 TSRMLS_CC)));
+		cctl = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("cacheControl")-1, 0 TSRMLS_CC)));
 		
 		if (Z_LVAL_P(lmod) || Z_STRLEN_P(etag)) {
 			if (Z_STRLEN_P(cctl)) {
@@ -848,14 +791,14 @@ PHP_METHOD(HttpResponse, send)
 			}
 		}
 		
-		if (etag_p) zval_ptr_dtor(&etag_p);
-		if (lmod_p) zval_ptr_dtor(&lmod_p);
-		if (cctl_p) zval_ptr_dtor(&cctl_p);
+		zval_ptr_dtor(&etag);
+		zval_ptr_dtor(&lmod);
+		zval_ptr_dtor(&cctl);
 	}
 
 	/* content type */
 	{
-		zval *ctype_p, *ctype = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("contentType")-1, 0 TSRMLS_CC), &ctype_p);
+		zval *ctype = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("contentType")-1, 0 TSRMLS_CC)));
 		if (Z_STRLEN_P(ctype)) {
 			http_send_content_type(Z_STRVAL_P(ctype), Z_STRLEN_P(ctype));
 		} else {
@@ -868,30 +811,26 @@ PHP_METHOD(HttpResponse, send)
 				http_send_content_type("application/x-octetstream", lenof("application/x-octetstream"));
 			}
 		}
-		if (ctype_p) {
-			zval_ptr_dtor(&ctype_p);
-		}
+		zval_ptr_dtor(&ctype);
 	}
 
 	/* content disposition */
 	{
-		zval *cd_p, *cd = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("contentDisposition")-1, 0 TSRMLS_CC), &cd_p);
+		zval *cd = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("contentDisposition")-1, 0 TSRMLS_CC)));
 		if (Z_STRLEN_P(cd)) {
 			http_send_header_ex("Content-Disposition", lenof("Content-Disposition"), Z_STRVAL_P(cd), Z_STRLEN_P(cd), 1, NULL);
 		}
-		if (cd_p) {
-			zval_ptr_dtor(&cd_p);
-		}
+		zval_ptr_dtor(&cd);
 	}
 
 	/* throttling */
 	{
-		zval *bsize_p, *bsize = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("bufferSize")-1, 0 TSRMLS_CC), &bsize_p);
-		zval *delay_p, *delay = convert_to_type_ex(IS_DOUBLE, *zend_std_get_static_property(THIS_CE, ZEND_STRS("throttleDelay")-1, 0 TSRMLS_CC), &delay_p);
+		zval *bsize = http_zsep(IS_LONG, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("bufferSize")-1, 0 TSRMLS_CC)));
+		zval *delay = http_zsep(IS_DOUBLE, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("throttleDelay")-1, 0 TSRMLS_CC)));
 		HTTP_G->send.buffer_size    = Z_LVAL_P(bsize);
 		HTTP_G->send.throttle_delay = Z_DVAL_P(delay);
-		if (bsize_p) zval_ptr_dtor(&bsize_p);
-		if (delay_p) zval_ptr_dtor(&delay_p);
+		zval_ptr_dtor(&bsize);
+		zval_ptr_dtor(&delay);
 	}
 
 	/* gzip */
@@ -901,28 +840,28 @@ PHP_METHOD(HttpResponse, send)
 	switch (Z_LVAL_P(*zend_std_get_static_property(THIS_CE, ZEND_STRS("mode")-1, 0 TSRMLS_CC))) {
 		case SEND_DATA:
 		{
-			zval *zdata_p, *zdata = convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("data")-1, 0 TSRMLS_CC), &zdata_p);
+			zval *zdata = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("data")-1, 0 TSRMLS_CC)));
 			RETVAL_SUCCESS(http_send_data(Z_STRVAL_P(zdata), Z_STRLEN_P(zdata)));
-			if (zdata_p) zval_ptr_dtor(&zdata_p);
+			zval_ptr_dtor(&zdata);
 			return;
 		}
 
 		case SEND_RSRC:
 		{
 			php_stream *the_real_stream;
-			zval *the_stream_p, *the_stream = convert_to_type_ex(IS_LONG, *zend_std_get_static_property(THIS_CE, ZEND_STRS("stream")-1, 0 TSRMLS_CC), &the_stream_p);
+			zval *the_stream = http_zsep(IS_LONG, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("stream")-1, 0 TSRMLS_CC)));
 			the_stream->type = IS_RESOURCE;
 			php_stream_from_zval(the_real_stream, &the_stream);
 			RETVAL_SUCCESS(http_send_stream(the_real_stream));
-			if (the_stream_p) zval_ptr_dtor(&the_stream_p);
+			zval_ptr_dtor(&the_stream);
 			return;
 		}
 
 		default:
 		{
-			zval *file_p;
-			RETVAL_SUCCESS(http_send_file(Z_STRVAL_P(convert_to_type_ex(IS_STRING, *zend_std_get_static_property(THIS_CE, ZEND_STRS("file")-1, 0 TSRMLS_CC), &file_p))));
-			if (file_p) zval_ptr_dtor(&file_p);
+			zval *file = http_zsep(IS_STRING, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("file")-1, 0 TSRMLS_CC)));
+			RETVAL_SUCCESS(http_send_file(Z_STRVAL_P(file)));
+			zval_ptr_dtor(&file);
 			return;
 		}
 	}

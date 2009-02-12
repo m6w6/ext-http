@@ -487,9 +487,11 @@ PHP_MINFO_FUNCTION(http)
 					FOREACH_KEYVAL(pos2, *val, ident, sub) {
 						if (	SUCCESS == zend_hash_find(Z_ARRVAL_PP(sub), ZEND_STRS("used"), (void *) &zused) &&
 								SUCCESS == zend_hash_find(Z_ARRVAL_PP(sub), ZEND_STRS("free"), (void *) &zfree)) {
-							convert_to_string(*zused);
-							convert_to_string(*zfree);
-							php_info_print_table_row(4, provider.str, ident.str, Z_STRVAL_PP(zused), Z_STRVAL_PP(zfree));
+							zval *used = http_zsep(IS_STRING, *zused);
+							zval *free = http_zsep(IS_STRING, *zfree);
+							php_info_print_table_row(4, provider.str, ident.str, Z_STRVAL_P(used), Z_STRVAL_P(free));
+							zval_ptr_dtor(&used);
+							zval_ptr_dtor(&free);
 						} else {
 							php_info_print_table_row(4, provider.str, ident.str, "0", "0");
 						}

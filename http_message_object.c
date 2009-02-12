@@ -526,7 +526,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 {
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
-	zval *cpy;
+	zval *cpy = NULL;
 #ifdef WONKY
 	ulong h = zend_hash_func(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1);
 #else
@@ -538,8 +538,6 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	}
 #endif
 	
-	cpy = value;
-	
 #ifdef WONKY
 	switch (h)
 #else
@@ -548,26 +546,26 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
 		case HTTP_MSG_CHILD_PROPHASH_TYPE:
-			convert_to_long_ex(&cpy);
+			cpy = http_zsep(IS_LONG, value);
 			http_message_set_type(msg, Z_LVAL_P(cpy));
 			break;
 
 		case HTTP_MSG_PROPHASH_HTTP_VERSION:
 		case HTTP_MSG_CHILD_PROPHASH_HTTP_VERSION:
-			convert_to_double_ex(&cpy);
+			cpy = http_zsep(IS_DOUBLE, value);
 			msg->http.version = Z_DVAL_P(cpy);
 			break;
 
 		case HTTP_MSG_PROPHASH_BODY:
 		case HTTP_MSG_CHILD_PROPHASH_BODY:
-			convert_to_string_ex(&cpy);
+			cpy = http_zsep(IS_STRING, value);
 			phpstr_dtor(PHPSTR(msg));
 			phpstr_from_string_ex(PHPSTR(msg), Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 			break;
 
 		case HTTP_MSG_PROPHASH_HEADERS:
 		case HTTP_MSG_CHILD_PROPHASH_HEADERS:
-			convert_to_array_ex(&cpy);
+			cpy = http_zsep(IS_ARRAY, value);
 			zend_hash_clean(&msg->hdrs);
 			zend_hash_copy(&msg->hdrs, Z_ARRVAL_P(cpy), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 			break;
@@ -588,7 +586,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		case HTTP_MSG_PROPHASH_REQUEST_METHOD:
 		case HTTP_MSG_CHILD_PROPHASH_REQUEST_METHOD:
 			if (HTTP_MSG_TYPE(REQUEST, msg)) {
-				convert_to_string_ex(&cpy);
+				cpy = http_zsep(IS_STRING, value);
 				STR_SET(msg->http.info.request.method, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
 			}
 			break;
@@ -596,7 +594,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		case HTTP_MSG_PROPHASH_REQUEST_URL:
 		case HTTP_MSG_CHILD_PROPHASH_REQUEST_URL:
 			if (HTTP_MSG_TYPE(REQUEST, msg)) {
-				convert_to_string_ex(&cpy);
+				cpy = http_zsep(IS_STRING, value);
 				STR_SET(msg->http.info.request.url, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
 			}
 			break;
@@ -604,7 +602,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		case HTTP_MSG_PROPHASH_RESPONSE_CODE:
 		case HTTP_MSG_CHILD_PROPHASH_RESPONSE_CODE:
 			if (HTTP_MSG_TYPE(RESPONSE, msg)) {
-				convert_to_long_ex(&cpy);
+				cpy = http_zsep(IS_LONG, value);
 				msg->http.info.response.code = Z_LVAL_P(cpy);
 			}
 			break;
@@ -612,7 +610,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 		case HTTP_MSG_PROPHASH_RESPONSE_STATUS:
 		case HTTP_MSG_CHILD_PROPHASH_RESPONSE_STATUS:
 			if (HTTP_MSG_TYPE(RESPONSE, msg)) {
-				convert_to_string_ex(&cpy);
+				cpy = http_zsep(IS_STRING, value);
 				STR_SET(msg->http.info.response.status, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
 			}
 			break;
@@ -621,7 +619,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 			zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
 			break;
 	}
-	if (cpy != value) {
+	if (cpy) {
 		zval_ptr_dtor(&cpy);
 	}
 }

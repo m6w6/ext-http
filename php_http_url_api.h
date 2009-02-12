@@ -93,11 +93,10 @@ static inline php_url *_http_url_from_struct(php_url *url, HashTable *ht TSRMLS_
 		if (Z_TYPE_PP(e) == IS_LONG) {
 			url->port = (unsigned short) Z_LVAL_PP(e);
 		} else {
-			zval *o = *e;
+			zval *o = http_zsep(IS_LONG, *e);
 			
-			convert_to_long_ex(e);
-			url->port = (unsigned short) Z_LVAL_PP(e);
-			if (o != *e) zval_ptr_dtor(e);
+			url->port = (unsigned short) Z_LVAL_P(o);
+			zval_ptr_dtor(&o);
 		}
 	}
 	

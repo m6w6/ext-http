@@ -185,11 +185,12 @@ PHP_FUNCTION(http_build_str)
 		\
 		if (rs_array) { \
 			HashPosition pos; \
-			zval **value; \
+			zval **value_ptr; \
 			 \
-			FOREACH_VAL(pos, supported, value) { \
-				convert_to_string_ex(value); \
-				add_assoc_double(rs_array, Z_STRVAL_PP(value), 1.0); \
+			FOREACH_VAL(pos, supported, value_ptr) { \
+				zval *value = http_zsep(IS_STRING, *value_ptr); \
+				add_assoc_double(rs_array, Z_STRVAL_P(value), 1.0); \
+				zval_ptr_dtor(&value); \
 			} \
 		} \
 	} \
@@ -675,10 +676,9 @@ PHP_FUNCTION(http_parse_cookie)
 	if (allowed_extras_array) {
 		allowed_extras = ecalloc(zend_hash_num_elements(Z_ARRVAL_P(allowed_extras_array)) + 1, sizeof(char *));
 		FOREACH_VAL(pos, allowed_extras_array, entry) {
-			ZVAL_ADDREF(*entry);
-			convert_to_string_ex(entry);
-			allowed_extras[i++] = estrndup(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry));
-			zval_ptr_dtor(entry);
+			zval *data = http_zsep(IS_STRING, *entry);
+			allowed_extras[i++] = estrndup(Z_STRVAL_P(data), Z_STRLEN_P(data));
+			zval_ptr_dtor(&data);
 		}
 	}
 	
