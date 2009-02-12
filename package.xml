@@ -23,15 +23,16 @@ support. Parallel requests are available for PHP 5 and greater.
   </maintainer>
   </maintainers>
  <release>
-  <version>1.6.2</version>
-  <date>2008-12-05</date>
+  <version>1.6.3</version>
+  <date>2009-02-12</date>
   <license>BSD, revised</license>
   <state>stable</state>
-  <notes>* Fixed PHP-5.3 API incompatibilities (including bug #15065)
-* Fixed memory corruption with headers and HttpRequest
-* Fixed crash in HttpMessage::unserialize()
-* Fixed bug #14826 (race condition in http_request_dtor)
-* Fixed bug #15223 (http_parse_message cuts off more than headers)
+  <notes>* Fixed bug #15495 (HttpMessage::setHttpVersion segfault)
+* Fixed bug #15497 (HttpInflateStream::finish segfault)
+* Fixed bug #15499 (HttpRequest::addHeaders segfault)
+* Fixed bug #15509 (HttpMessage::rewind memory leaks)
+* Fixed bug #15800 (Double free when zval is separated in convert_to_*)
+* Fixed bug #15813 (Requests not removed from multi stack when fatal errors occur with fcgi)
   </notes>
   <deps>
    <dep type="php" rel="ge" version="4.3"/>
@@ -64,6 +65,7 @@ support. Parallel requests are available for PHP 5 and greater.
    <dir name="tests">
     <file role="test" name="allowed_methods_002.phpt"/>
     <file role="test" name="allowed_methods_002_logging.phpt"/>
+    <file role="test" name="bug_15800.phpt"/>
     <file role="test" name="build_str_001.phpt"/>
     <file role="test" name="build_url_001.phpt"/>
     <file role="test" name="build_url_002.phpt"/>
