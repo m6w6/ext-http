@@ -223,6 +223,9 @@ static inline zval *_http_request_option_ex(http_request *request, HashTable *op
 #define http_request_option_cache_ex(r, k, kl, h, z) _http_request_option_cache_ex((r), (k), (kl), (h), (z) TSRMLS_CC)
 static inline zval *_http_request_option_cache_ex(http_request *r, char *key, size_t keylen, ulong h, zval *opt TSRMLS_DC);
 
+#define http_request_cookies_enabled(r) _http_request_cookies_enabled((r))
+static inline int _http_request_cookies_enabled(http_request *r);
+
 static size_t http_curl_read_callback(void *, size_t, size_t, void *);
 static int http_curl_progress_callback(void *, double, double, double, double);
 static int http_curl_raw_callback(CURL *, curl_infotype, char *, size_t, void *);
@@ -385,7 +388,7 @@ PHP_HTTP_API STATUS _http_request_enable_cookies(http_request *request)
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
 	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init_ex(request->ch, request), initialized = 0);
-	if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIEFILE, "")) {
+	if (initialized && (http_request_cookies_enabled(request) || (CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIEFILE, "")))) {
 		return SUCCESS;
 	}
 	http_error(HE_WARNING, HTTP_E_REQUEST, "Could not enable cookies for this session");
@@ -400,22 +403,29 @@ PHP_HTTP_API STATUS _http_request_reset_cookies(http_request *request, int sessi
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
 	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init_ex(request->ch, request), initialized = 0);
-	if (session_only) {
+	if (initialized) {
+		if (!http_request_cookies_enabled(request)) {
+			if (SUCCESS != http_request_enable_cookies(request)) {
+				return FAILURE;
+			}
+		}
+		if (session_only) {
 #if HTTP_CURL_VERSION(7,15,4)
-		if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "SESS")) {
-			return SUCCESS;
-		}
+			if (CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "SESS")) {
+				return SUCCESS;
+			}
 #else
-		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset session cookies (need libcurl >= v7.15.4)");
+			http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset session cookies (need libcurl >= v7.15.4)");
 #endif
-	} else {
+		} else {
 #if HTTP_CURL_VERSION(7,14,1)
-		if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL")) {
-			return SUCCESS;
-		}
+			if (CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "ALL")) {
+				return SUCCESS;
+			}
 #else
-		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset cookies (need libcurl >= v7.14.1)");
+			http_error(HE_WARNING, HTTP_E_REQUEST, "Could not reset cookies (need libcurl >= v7.14.1)");
 #endif
+		}
 	}
 	return FAILURE;
 }
@@ -427,13 +437,18 @@ PHP_HTTP_API STATUS _http_request_flush_cookies(http_request *request)
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
 	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init_ex(request->ch, request), initialized = 0);
+	if (initialized) {
+		if (!http_request_cookies_enabled(request)) {
+			return FAILURE;
+		}
 #if HTTP_CURL_VERSION(7,17,1)
-	if (initialized && CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "FLUSH")) {
-		return SUCCESS;
-	}
+		if (CURLE_OK == curl_easy_setopt(request->ch, CURLOPT_COOKIELIST, "FLUSH")) {
+			return SUCCESS;
+		}
 #else
-	http_error(HE_WARNING, HTTP_E_REQUEST, "Could not flush cookies (need libcurl >= v7.17.1)");
+		http_error(HE_WARNING, HTTP_E_REQUEST, "Could not flush cookies (need libcurl >= v7.17.1)");
 #endif
+	}
 	return FAILURE;
 }
 
@@ -655,20 +670,15 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 			if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void *) &prs)) {
 				zend_hash_move_forward(Z_ARRVAL_P(zoption));
 				if (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(zoption), (void *) &pre)) {
-					zval *prs_cpy = *prs, *pre_cpy = *pre;
+					zval *prs_cpy = http_zsep(IS_LONG, *prs);
+					zval *pre_cpy = http_zsep(IS_LONG, *pre);
 					
-					convert_to_long_ex(&prs_cpy);
-					convert_to_long_ex(&pre_cpy);
 					if (Z_LVAL_P(prs_cpy) && Z_LVAL_P(pre_cpy)) {
 						HTTP_CURL_OPT(CURLOPT_LOCALPORT, MIN(Z_LVAL_P(prs_cpy), Z_LVAL_P(pre_cpy)));
 						HTTP_CURL_OPT(CURLOPT_LOCALPORTRANGE, labs(Z_LVAL_P(prs_cpy)-Z_LVAL_P(pre_cpy))+1L);
 					}
-					if (prs_cpy != *prs) {
-						zval_ptr_dtor(&prs_cpy);
-					}
-					if (pre_cpy != *pre) {
-						zval_ptr_dtor(&pre_cpy);
-					}
+					zval_ptr_dtor(&prs_cpy);
+					zval_ptr_dtor(&pre_cpy);
 				}
 			}
 		}
@@ -760,19 +770,14 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 					if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_PP(rr), (void *) &re, &pos2)) {
 						if (	((Z_TYPE_PP(rb) == IS_LONG) || ((Z_TYPE_PP(rb) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(rb), Z_STRLEN_PP(rb), NULL, NULL, 1))) &&
 								((Z_TYPE_PP(re) == IS_LONG) || ((Z_TYPE_PP(re) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(re), Z_STRLEN_PP(re), NULL, NULL, 1)))) {
-							zval *rbl = *rb, *rel = *re;
+							zval *rbl = http_zsep(IS_LONG, *rb);
+							zval *rel = http_zsep(IS_LONG, *re);
 							
-							convert_to_long_ex(&rbl);
-							convert_to_long_ex(&rel);
 							if ((Z_LVAL_P(rbl) >= 0) && (Z_LVAL_P(rel) >= 0)) {
 								phpstr_appendf(&rs, "%ld-%ld,", Z_LVAL_P(rbl), Z_LVAL_P(rel));
 							}
-							if (rbl != *rb) {
-								zval_ptr_dtor(&rbl);
-							}
-							if (rel != *re) {
-								zval_ptr_dtor(&rel);
-							}
+							zval_ptr_dtor(&rbl);
+							zval_ptr_dtor(&rel);
 						}
 					}
 				}
@@ -805,13 +810,14 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		FOREACH_KEYVAL(pos, zoption, header_key, header_val) {
 			if (header_key.type == HASH_KEY_IS_STRING) {
 				char header[1024];
+				zval *header_cpy = http_zsep(IS_STRING, *header_val);
 				
-				convert_to_string_ex(header_val);
 				if (!strcasecmp(header_key.str, "range")) {
 					range_req = 1;
 				}
-				snprintf(header, sizeof(header), "%s: %s", header_key.str, Z_STRVAL_PP(header_val));
+				snprintf(header, sizeof(header), "%s: %s", header_key.str, Z_STRVAL_P(header_cpy));
 				request->_cache.headers = curl_slist_append(request->_cache.headers, header);
+				zval_ptr_dtor(&header_cpy);
 			}
 		}
 	}
@@ -864,12 +870,9 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 				
 				FOREACH_KEYVAL(pos, zoption, cookie_key, cookie_val) {
 					if (cookie_key.type == HASH_KEY_IS_STRING) {
-						zval *val = *cookie_val;
-						convert_to_string_ex(&val);
+						zval *val = http_zsep(IS_STRING, *cookie_val);
 						phpstr_appendf(&request->_cache.cookies, "%s=%s; ", cookie_key.str, Z_STRVAL_P(val));
-						if (val != *cookie_val) {
-							zval_ptr_dtor(&val);
-						}
+						zval_ptr_dtor(&val);
 					}
 				}
 				
@@ -1215,15 +1218,13 @@ static inline zval *_http_request_option_ex(http_request *r, HashTable *options,
 		ulong h = zend_hash_func(key, keylen);
 		
 		if (SUCCESS == zend_hash_quick_find(options, key, keylen, h, (void *) &zoption)) {
-			zval *copy;
+			zval *option, *cached;
 			
-			MAKE_STD_ZVAL(copy);
-			ZVAL_ZVAL(copy, *zoption, 1, 0);
+			option = http_zsep(type, *zoption);
+			cached = http_request_option_cache_ex(r, key, keylen, h, option);
 			
-			convert_to_type(type, copy);
-			http_request_option_cache_ex(r, key, keylen, h, copy);
-			zval_ptr_dtor(&copy);
-			return copy;
+			zval_ptr_dtor(&option);
+			return cached;
 		}
 	}
 	
@@ -1243,6 +1244,18 @@ static inline zval *_http_request_option_cache_ex(http_request *r, char *key, si
 	}
 	
 	return opt;
+}
+/* }}} */
+
+/* {{{ static inline int http_request_cookies_enabled(http_request *) */
+static inline int _http_request_cookies_enabled(http_request *request) {
+	http_request_storage *st;
+	
+	if (request->ch && (st = http_request_storage_get(request->ch)) && st->cookiestore) {
+		/* cookies are enabled */
+		return 1;
+	}
+	return 0;
 }
 /* }}} */
 

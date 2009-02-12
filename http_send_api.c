@@ -203,27 +203,21 @@ PHP_HTTP_API void _http_send_header_zval_ex(const char *name, size_t name_len, z
 		http_hide_header_ex(name, name_len);
 	} else if (Z_TYPE_PP(val) == IS_ARRAY || Z_TYPE_PP(val) == IS_OBJECT) {
 		zend_bool first = replace;
-		zval **data;
+		zval **data_ptr;
 		HashPosition pos;
 		
-		FOREACH_HASH_VAL(pos, HASH_OF(*val), data) {
-			zval *orig = *data;
+		FOREACH_HASH_VAL(pos, HASH_OF(*val), data_ptr) {
+			zval *data = http_zsep(IS_STRING, *data_ptr);
 			
-			convert_to_string_ex(data);
-			http_send_header_ex(name, name_len, Z_STRVAL_PP(data), Z_STRLEN_PP(data), first, NULL);
-			if (orig != *data) {
-				zval_ptr_dtor(data);
-			}
+			http_send_header_ex(name, name_len, Z_STRVAL_P(data), Z_STRLEN_P(data), first, NULL);
+			zval_ptr_dtor(&data);
 			first = 0;
 		}
 	} else {
-		zval *orig = *val;
+		zval *data = http_zsep(IS_STRING, *val);
 		
-		convert_to_string_ex(val);
-		http_send_header_ex(name, name_len, Z_STRVAL_PP(val), Z_STRLEN_PP(val), replace, NULL);
-		if (orig != *val) {
-			zval_ptr_dtor(val);
-		}
+		http_send_header_ex(name, name_len, Z_STRVAL_P(data), Z_STRLEN_P(data), replace, NULL);
+		zval_ptr_dtor(&data);
 	}
 }
 /* }}} */

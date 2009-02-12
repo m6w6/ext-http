@@ -41,14 +41,12 @@
 	}
 #define HTTP_CURL_OPT_STRING_EX(keyname, optname, obdc) \
 	if (!strcasecmp(key.str, keyname)) { \
-		zval *copy_tmp, *copy = http_request_option_cache_ex(request, keyname, strlen(keyname)+1, 0, convert_to_type_ex(IS_STRING, *param, &copy_tmp)); \
+		zval *copy = http_request_option_cache_ex(request, keyname, strlen(keyname)+1, 0, http_zsep(IS_STRING, *param)); \
 		if (obdc) { \
 			HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(copy), return FAILURE); \
 		} \
 		HTTP_CURL_OPT(optname, Z_STRVAL_P(copy)); \
-		if (copy_tmp) { \
-			zval_ptr_dtor(&copy_tmp); \
-		} \
+		zval_ptr_dtor(&copy); \
 		continue; \
 	}
 #define HTTP_CURL_OPT_LONG(OPTION, ldiff) \
@@ -58,12 +56,9 @@
 	}
 #define HTTP_CURL_OPT_LONG_EX(keyname, optname) \
 	if (!strcasecmp(key.str, keyname)) { \
-		zval *copy = *param; \
-		convert_to_long_ex(&copy); \
+		zval *copy = http_zsep(IS_LONG, *param); \
 		HTTP_CURL_OPT(optname, Z_LVAL_P(copy)); \
-		if (copy != *param) { \
-			zval_ptr_dtor(&copy); \
-		} \
+		zval_ptr_dtor(&copy); \
 		continue; \
 	}
 

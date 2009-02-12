@@ -1176,13 +1176,10 @@ PHP_METHOD(HttpRequest, setQueryData)
 		zend_update_property_string(THIS_CE, getThis(), ZEND_STRS("queryData")-1, query_data TSRMLS_CC);
 		efree(query_data);
 	} else {
-		zval *orig = qdata;
+		zval *data = http_zsep(IS_STRING, qdata);
 		
-		convert_to_string_ex(&qdata);
-		zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("queryData")-1, Z_STRVAL_P(qdata), Z_STRLEN_P(qdata) TSRMLS_CC);
-		if (orig != qdata) {
-			zval_ptr_dtor(&qdata);
-		}
+		zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("queryData")-1, Z_STRVAL_P(data), Z_STRLEN_P(data) TSRMLS_CC);
+		zval_ptr_dtor(&data);
 	}
 	RETURN_TRUE;
 }
@@ -1587,10 +1584,9 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 				if (allowed_extras_array) {
 					allowed_extras = ecalloc(zend_hash_num_elements(Z_ARRVAL_P(allowed_extras_array)) + 1, sizeof(char *));
 					FOREACH_VAL(pos, allowed_extras_array, entry) {
-						ZVAL_ADDREF(*entry);
-						convert_to_string_ex(entry);
-						allowed_extras[i++] = estrndup(Z_STRVAL_PP(entry), Z_STRLEN_PP(entry));
-						zval_ptr_dtor(entry);
+						zval *data = http_zsep(IS_STRING, *entry);
+						allowed_extras[i++] = estrndup(Z_STRVAL_P(data), Z_STRLEN_P(data));
+						zval_ptr_dtor(&data);
 					}
 				}
 				
@@ -1602,9 +1598,9 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 							zval **single_header;
 							
 							FOREACH_VAL(pos2, *header, single_header) {
-								ZVAL_ADDREF(*single_header);
-								convert_to_string_ex(single_header);
-								if (http_parse_cookie_ex(&list, Z_STRVAL_PP(single_header), flags, allowed_extras)) {
+								zval *data = http_zsep(IS_STRING, *single_header);
+								
+								if (http_parse_cookie_ex(&list, Z_STRVAL_P(data), flags, allowed_extras)) {
 									zval *cookie;
 									
 									MAKE_STD_ZVAL(cookie);
@@ -1613,12 +1609,11 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 									add_next_index_zval(return_value, cookie);
 									http_cookie_list_dtor(&list);
 								}
-								zval_ptr_dtor(single_header);
+								zval_ptr_dtor(&data);
 							}
 						} else {
-							ZVAL_ADDREF(*header);
-							convert_to_string_ex(header);
-							if (http_parse_cookie_ex(&list, Z_STRVAL_PP(header), flags, allowed_extras)) {
+							zval *data = http_zsep(IS_STRING, *header);
+							if (http_parse_cookie_ex(&list, Z_STRVAL_P(data), flags, allowed_extras)) {
 								zval *cookie;
 								
 								MAKE_STD_ZVAL(cookie);
@@ -1627,7 +1622,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 								add_next_index_zval(return_value, cookie);
 								http_cookie_list_dtor(&list);
 							}
-							zval_ptr_dtor(header);
+							zval_ptr_dtor(&data);
 						}
 					}
 				}

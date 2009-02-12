@@ -549,15 +549,6 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int flags, http_par
 						goto failure;
 						break;
 					
-					case '=':
-						if (key) {
-							keylen = c - key;
-							st = ST_VALUE;
-						} else {
-							goto failure;
-						}
-						break;
-					
 					case ' ':
 						if (key) {
 							keylen = c - key;
@@ -574,7 +565,32 @@ PHP_HTTP_API STATUS _http_parse_params_ex(const char *param, int flags, http_par
 						}
 						break;
 					
+					case ':':
+						if (!(flags & HTTP_PARAMS_COLON_SEPARATOR)) {
+							goto not_separator;
+						}
+						if (key) {
+							keylen = c - key;
+							st = ST_VALUE;
+						} else {
+							goto failure;
+						}
+						break;
+						
+					case '=':
+						if (flags & HTTP_PARAMS_COLON_SEPARATOR) {
+							goto not_separator;
+						}
+						if (key) {
+							keylen = c - key;
+							st = ST_VALUE;
+						} else {
+							goto failure;
+						}
+						break;
+					
 					default:
+					not_separator:
 						if (!key) {
 							key = c;
 						}
@@ -666,10 +682,7 @@ int apply_array_append_func(void *pDest HTTP_ZAPI_HASH_TSRMLS_DC, int num_args, 
 		
 		ZVAL_ADDREF(*value);
 		if (data) {
-			if (Z_TYPE_PP(data) != IS_ARRAY) {
-				convert_to_array(*data);
-			}
-			add_next_index_zval(*data, *value);
+			add_next_index_zval(http_zset(IS_ARRAY, *data), *value);
 		} else if (key) {
 			zend_hash_add(dst, key, hash_key->nKeyLength, value, sizeof(zval *), NULL);
 		} else {

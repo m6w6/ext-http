@@ -127,14 +127,14 @@ PHP_HTTP_API int _http_querystring_modify(zval *qarray, zval *params TSRMLS_DC)
 	} else {
 		int rv;
 		zval array;
+		zval *qstring = http_zsep(IS_STRING, params);
 		
 		INIT_PZVAL(&array);
 		array_init(&array);
 		
-		ZVAL_ADDREF(params);
-		convert_to_string_ex(&params);
-		sapi_module.treat_data(PARSE_STRING, estrdup(Z_STRVAL_P(params)), &array TSRMLS_CC);
-		zval_ptr_dtor(&params);
+		sapi_module.treat_data(PARSE_STRING, estrdup(Z_STRVAL_P(qstring)), &array TSRMLS_CC);
+		zval_ptr_dtor(&qstring);
+		
 		rv = http_querystring_modify_array(qarray, &array);
 		zval_dtor(&array);
 		return rv;

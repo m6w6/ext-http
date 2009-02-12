@@ -249,12 +249,9 @@ PHP_HTTP_API http_cookie_list *_http_cookie_list_fromstruct(http_cookie_list *li
 				list->flags = (long) Z_DVAL_PP(tmp);
 				break;
 			case IS_STRING:
-				cpy = *tmp;
-				convert_to_long_ex(&cpy);
-				list->flags = Z_LVAL_PP(tmp);
-				if (cpy != *tmp) {
-					zval_ptr_dtor(&cpy);
-				}
+				cpy = http_zsep(IS_LONG, *tmp);
+				list->flags = Z_LVAL_P(cpy);
+				zval_ptr_dtor(&cpy);
 				break;
 			default:
 				break;
@@ -269,8 +266,7 @@ PHP_HTTP_API http_cookie_list *_http_cookie_list_fromstruct(http_cookie_list *li
 				list->expires = (long) Z_DVAL_PP(tmp);
 				break;
 			case IS_STRING:
-				cpy = *tmp;
-				convert_to_long_ex(&cpy);
+				cpy = http_zsep(IS_LONG, *tmp);
 				if (Z_LVAL_P(cpy)) {
 					list->expires = Z_LVAL_P(cpy);
 				} else {
@@ -279,9 +275,7 @@ PHP_HTTP_API http_cookie_list *_http_cookie_list_fromstruct(http_cookie_list *li
 						list->expires = expires;
 					}
 				}
-				if (cpy != *tmp) {
-					zval_ptr_dtor(&cpy);
-				}
+				zval_ptr_dtor(&cpy);
 				break;
 			default:
 				break;

@@ -43,28 +43,25 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 {
 	if (files && (zend_hash_num_elements(files) > 0)) {
 		HashKey key = initHashKey(0);
-		zval **data;
+		zval **data_ptr;
 		HashPosition pos;
 		struct curl_httppost *http_post_data[2] = {NULL, NULL};
 
 		/* normal data */
 		if (fields) {
-			FOREACH_HASH_KEYVAL(pos, fields, key, data) {
+			FOREACH_HASH_KEYVAL(pos, fields, key, data_ptr) {
 				if (key.type == HASH_KEY_IS_STRING) {
 					CURLcode err;
-					zval *orig = *data;
+					zval *data = http_zsep(IS_STRING, *data_ptr);
 					
-					convert_to_string_ex(data);
 					err = curl_formadd(&http_post_data[0], &http_post_data[1],
 						CURLFORM_COPYNAME,			key.str,
-						CURLFORM_COPYCONTENTS,		Z_STRVAL_PP(data),
-						CURLFORM_CONTENTSLENGTH,	(long) Z_STRLEN_PP(data),
+						CURLFORM_COPYCONTENTS,		Z_STRVAL_P(data),
+						CURLFORM_CONTENTSLENGTH,	(long) Z_STRLEN_P(data),
 						CURLFORM_END
 					);
 					
-					if (orig != *data) {
-						zval_ptr_dtor(data);
-					}
+					zval_ptr_dtor(&data);
 					
 					if (CURLE_OK != err) {
 						http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post fields: %s", curl_easy_strerror(err));
@@ -76,43 +73,41 @@ PHP_HTTP_API http_request_body *_http_request_body_fill(http_request_body *body,
 		}
 
 		/* file data */
-		FOREACH_HASH_VAL(pos, files, data) {
-			zval **file, **type, **name;
+		FOREACH_HASH_VAL(pos, files, data_ptr) {
+			zval **file_ptr, **type_ptr, **name_ptr;
 			
-			if (Z_TYPE_PP(data) != IS_ARRAY) {
+			if (Z_TYPE_PP(data_ptr) != IS_ARRAY) {
 				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Unrecognized type of post file array entry");
-			} else if (	SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "name", sizeof("name"), (void *) &name) ||
-						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "type", sizeof("type"), (void *) &type) ||
-						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data), "file", sizeof("file"), (void *) &file)) {
+			} else if (	SUCCESS != zend_hash_find(Z_ARRVAL_PP(data_ptr), "name", sizeof("name"), (void *) &name_ptr) ||
+						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data_ptr), "type", sizeof("type"), (void *) &type_ptr) ||
+						SUCCESS != zend_hash_find(Z_ARRVAL_PP(data_ptr), "file", sizeof("file"), (void *) &file_ptr)) {
 				http_error(HE_NOTICE, HTTP_E_INVALID_PARAM, "Post file array entry misses either 'name', 'type' or 'file' entry");
 			} else {
 				CURLcode err;
 				const char *path;
-				zval *ofile = *file, *otype = *type, *oname = *name;
+				zval *file = http_zsep(IS_STRING, *file_ptr);
+				zval *type = http_zsep(IS_STRING, *type_ptr);
+				zval *name = http_zsep(IS_STRING, *name_ptr);
 				
-				convert_to_string_ex(file);
-				convert_to_string_ex(type);
-				convert_to_string_ex(name);
-				
-				HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_PP(file), curl_formfree(http_post_data[0]); return NULL);
+				HTTP_CHECK_OPEN_BASEDIR(Z_STRVAL_P(file), curl_formfree(http_post_data[0]); return NULL);
 				
 				/* this is blatant but should be sufficient for most cases */
-				if (strncasecmp(Z_STRVAL_PP(file), "file://", lenof("file://"))) {
-					path = Z_STRVAL_PP(file);
+				if (strncasecmp(Z_STRVAL_P(file), "file://", lenof("file://"))) {
+					path = Z_STRVAL_P(file);
 				} else {
-					path = Z_STRVAL_PP(file) + lenof("file://");
+					path = Z_STRVAL_P(file) + lenof("file://");
 				}
 				
 				err = curl_formadd(&http_post_data[0], &http_post_data[1],
-					CURLFORM_COPYNAME,		Z_STRVAL_PP(name),
+					CURLFORM_COPYNAME,		Z_STRVAL_P(name),
 					CURLFORM_FILE,			path,
-					CURLFORM_CONTENTTYPE,	Z_STRVAL_PP(type),
+					CURLFORM_CONTENTTYPE,	Z_STRVAL_P(type),
 					CURLFORM_END
 				);
 				
-				if (ofile != *file) zval_ptr_dtor(file);
-				if (otype != *type) zval_ptr_dtor(type);
-				if (oname != *name) zval_ptr_dtor(name);
+				zval_ptr_dtor(&file);
+				zval_ptr_dtor(&type);
+				zval_ptr_dtor(&name);
 				
 				if (CURLE_OK != err) {
 					http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not encode post files: %s", curl_easy_strerror(err));

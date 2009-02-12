@@ -285,10 +285,11 @@ static inline void _http_querystring_get(zval *this_ptr, int type, char *name, u
 	zval **arrval, *qarray = zend_read_property(THIS_CE, getThis(), ZEND_STRS("queryArray")-1, 0 TSRMLS_CC);
 		
 	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void *) &arrval))) {
-		RETVAL_ZVAL(*arrval, 1, 0);
-		
 		if (type) {
-			convert_to_type(type, return_value);
+			zval *value = http_zsep(type, *arrval);
+			RETVAL_ZVAL(value, 1, 1);
+		} else {
+			RETVAL_ZVAL(*arrval, 1, 0);
 		}
 			
 		if (del && (SUCCESS == zend_hash_del(Z_ARRVAL_P(qarray), name, name_len + 1))) {
