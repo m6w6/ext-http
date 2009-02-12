@@ -242,8 +242,10 @@ PHP_METHOD(HttpDeflateStream, flush)
 			STR_FREE(encoded);
 			updated_len += encoded_len;
 			RETURN_STRINGL(updated, updated_len, 0);
-		} else {
+		} else if (encoded) {
 			RETVAL_STRINGL(encoded, encoded_len, 0);
+		} else {
+			RETVAL_NULL();
 		}
 	} else {
 		RETVAL_FALSE;
