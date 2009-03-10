@@ -71,6 +71,19 @@
 #	define ZVAL_ADDREF Z_ADDREF_P
 #endif
 
+#ifndef SEPARATE_ARG_IF_REF
+#define SEPARATE_ARG_IF_REF(zv) \
+	if (PZVAL_IS_REF(zv)) { \
+		zval *ov = zv; \
+		ALLOC_INIT_ZVAL(zv); \
+		Z_TYPE_P(zv) = Z_TYPE_P(ov); \
+		zv->value = ov->value; \
+		zval_copy_ctor(zv); \
+	} else { \
+		ZVAL_ADDREF(zv); \
+	}
+#endif
+
 #ifndef ZVAL_ZVAL
 #define ZVAL_ZVAL(z, zv, copy, dtor) {  \
 		int is_ref, refcount;           \
