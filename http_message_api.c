@@ -397,13 +397,41 @@ PHP_HTTP_API void _http_message_tostring(http_message *msg, char **string, size_
 			zval **single_header;
 
 			switch (Z_TYPE_PP(header)) {
+				case IS_BOOL:
+					phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key.str, Z_BVAL_PP(header)?"true":"false");
+					break;
+					
+				case IS_LONG:
+					phpstr_appendf(&str, "%s: %ld" HTTP_CRLF, key.str, Z_LVAL_PP(header));
+					break;
+					
+				case IS_DOUBLE:
+					phpstr_appendf(&str, "%s: %f" HTTP_CRLF, key.str, Z_DVAL_PP(header));
+					break;
+					
 				case IS_STRING:
 					phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key.str, Z_STRVAL_PP(header));
 					break;
 
 				case IS_ARRAY:
 					FOREACH_VAL(pos2, *header, single_header) {
-						phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key.str, Z_STRVAL_PP(single_header));
+						switch (Z_TYPE_PP(single_header)) {
+							case IS_BOOL:
+								phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key.str, Z_BVAL_PP(single_header)?"true":"false");
+								break;
+								
+							case IS_LONG:
+								phpstr_appendf(&str, "%s: %ld" HTTP_CRLF, key.str, Z_LVAL_PP(single_header));
+								break;
+								
+							case IS_DOUBLE:
+								phpstr_appendf(&str, "%s: %f" HTTP_CRLF, key.str, Z_DVAL_PP(single_header));
+								break;
+								
+							case IS_STRING:
+								phpstr_appendf(&str, "%s: %s" HTTP_CRLF, key.str, Z_STRVAL_PP(single_header));
+								break;
+						}
 					}
 					break;
 			}
