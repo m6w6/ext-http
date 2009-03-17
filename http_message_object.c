@@ -802,7 +802,8 @@ PHP_METHOD(HttpMessage, setBody)
 	
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &body, &len)) {
 		phpstr_dtor(PHPSTR(obj->message));
-		phpstr_from_string_ex(PHPSTR(obj->message), body, len);		
+		phpstr_from_string_ex(PHPSTR(obj->message), body, len);
+		phpstr_fix(PHPSTR(obj->message));
 	}
 }
 /* }}} */
@@ -1287,6 +1288,7 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 						zval_copy_ctor(&body);
 						sapi_module.treat_data(PARSE_STRING, Z_STRVAL(body), &post TSRMLS_CC);
 						zend_call_method_with_1_params(&return_value, http_request_object_ce, NULL, "setpostfields", NULL, &post);
+						zval_dtor(&post);
 					}
 				}
 #else
