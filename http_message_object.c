@@ -803,7 +803,6 @@ PHP_METHOD(HttpMessage, setBody)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &body, &len)) {
 		phpstr_dtor(PHPSTR(obj->message));
 		phpstr_from_string_ex(PHPSTR(obj->message), body, len);
-		phpstr_fix(PHPSTR(obj->message));
 	}
 }
 /* }}} */
@@ -1277,6 +1276,7 @@ PHP_METHOD(HttpMessage, toMessageTypeObject)
 				zval_ptr_dtor(&array);
 				
 				if (PHPSTR_VAL(obj->message) && PHPSTR_LEN(obj->message)) {
+					phpstr_fix(PHPSTR(obj->message));
 					INIT_PZVAL(&body);
 					ZVAL_STRINGL(&body, PHPSTR_VAL(obj->message), PHPSTR_LEN(obj->message), 0);
 					if (method != HTTP_POST) {
