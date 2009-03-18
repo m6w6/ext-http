@@ -601,17 +601,17 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 #ifdef HTTP_HAVE_CURL
 			char *uri = NULL;
 			http_request request;
-			zval **zhost, options, headers;
-
-			INIT_PZVAL(&options);
-			INIT_PZVAL(&headers);
-			array_init(&options);
-			array_init(&headers);
-			zend_hash_copy(Z_ARRVAL(headers), &message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-			add_assoc_zval(&options, "headers", &headers);
+			zval **zhost, *options, *headers;
+			
+			MAKE_STD_ZVAL(options);
+			MAKE_STD_ZVAL(headers);
+			array_init(options);
+			array_init(headers);
+			zend_hash_copy(Z_ARRVAL_P(headers), &message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+			add_assoc_zval(options, "headers", headers);
 
 			/* check host header */
-			if (SUCCESS == zend_hash_find(&message->hdrs, "Host", sizeof("Host"), (void *) &zhost)) {
+			if (SUCCESS == zend_hash_find(&message->hdrs, "Host", sizeof("Host"), (void *) &zhost) && Z_TYPE_PP(zhost) == IS_STRING) {
 				char *colon = NULL;
 				php_url parts, *url = php_url_parse(message->http.info.request.url);
 				
@@ -637,7 +637,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 				
 				http_request_init_ex(&request, NULL, request.meth, uri);
 				request.body = http_request_body_init_ex(&body, HTTP_REQUEST_BODY_CSTRING, PHPSTR_VAL(message), PHPSTR_LEN(message), 0);
-				if (SUCCESS == (rs = http_request_prepare(&request, NULL))) {
+				if (SUCCESS == (rs = http_request_prepare(&request, Z_ARRVAL_P(options)))) {
 					http_request_exec(&request);
 				}
 				http_request_dtor(&request);
@@ -647,6 +647,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 					message->http.info.request.method);
 			}
 			efree(uri);
+			zval_ptr_dtor(&options);
 #else
 			http_error(HE_WARNING, HTTP_E_RUNTIME, "HTTP requests not supported - ext/http was not linked against libcurl.");
 #endif
