@@ -131,7 +131,7 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 		ZVAL_STRINGL(&ex_del, ",", 1, 0);
 		array_init(&ex_arr);
 		
-		php_explode(&ex_del, accept, &ex_arr, -1);
+		php_explode(&ex_del, accept, &ex_arr, INT_MAX);
 		
 		if (zend_hash_num_elements(Z_ARRVAL(ex_arr)) > 0) {
 			int i = 0;
