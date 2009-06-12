@@ -1314,14 +1314,14 @@ PHP_METHOD(HttpRequest, addBody)
 	}
 	
 	if (data_len) {
-		zval *data = zend_read_property(THIS_CE, getThis(), ZEND_STRS("rrequestBody")-1, 0 TSRMLS_CC);
+		zval *data = zend_read_property(THIS_CE, getThis(), ZEND_STRS("requestBody")-1, 0 TSRMLS_CC);
 		
 		if (Z_STRLEN_P(data)) {
 			Z_STRVAL_P(data) = erealloc(Z_STRVAL_P(data), (Z_STRLEN_P(data) += data_len) + 1);
 			Z_STRVAL_P(data)[Z_STRLEN_P(data)] = '\0';
 			memcpy(Z_STRVAL_P(data) + Z_STRLEN_P(data) - data_len, raw_data, data_len);
 		} else {
-			zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("putData")-1, raw_data, data_len TSRMLS_CC);
+			zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("requestBody")-1, raw_data, data_len TSRMLS_CC);
 		}
 	}
 	
