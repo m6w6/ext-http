@@ -149,6 +149,8 @@ HTTP_EMPTY_ARGS(reverse);
 static zval *_http_message_object_read_prop(zval *object, zval *member, int type TSRMLS_DC);
 #define http_message_object_write_prop _http_message_object_write_prop
 static void _http_message_object_write_prop(zval *object, zval *member, zval *value TSRMLS_DC);
+#define http_message_object_get_prop_ptr _http_message_object_get_prop_ptr
+static zval **_http_message_object_get_prop_ptr(zval *object, zval *member TSRMLS_DC);
 #define http_message_object_get_props _http_message_object_get_props
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC);
 
@@ -228,7 +230,7 @@ PHP_MINIT_FUNCTION(http_message_object)
 	http_message_object_handlers.read_property = http_message_object_read_prop;
 	http_message_object_handlers.write_property = http_message_object_write_prop;
 	http_message_object_handlers.get_properties = http_message_object_get_props;
-	http_message_object_handlers.get_property_ptr_ptr = NULL;
+	http_message_object_handlers.get_property_ptr_ptr = http_message_object_get_prop_ptr;
 	
 	zend_declare_property_long(THIS_CE, ZEND_STRS("type")-1, HTTP_MSG_NONE, ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_string(THIS_CE, ZEND_STRS("body")-1, "", ZEND_ACC_PROTECTED TSRMLS_CC);
@@ -412,6 +414,17 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 	freeObject(o);
 }
 
+static zval **_http_message_object_get_prop_ptr(zval *object, zval *member TSRMLS_DC) {
+	getObjectEx(http_message_object, obj, object);
+	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
+	
+	if (!pinfo || pinfo->ce != http_message_object_ce) {
+		return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member TSRMLS_CC);
+	}
+	zend_error(E_ERROR, "Cannot access HttpMessage properties by reference or array key/index");
+	return NULL;
+}
+
 static zval *_http_message_object_read_prop(zval *object, zval *member, int type TSRMLS_DC)
 {
 	getObjectEx(http_message_object, obj, object);
@@ -422,7 +435,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 #else
 	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
 	
-	if (!pinfo) {
+	if (!pinfo || pinfo->ce != http_message_object_ce) {
 		return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
 	}
 #endif
@@ -532,7 +545,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 #else
 	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
 	
-	if (!pinfo) {
+	if (!pinfo || pinfo->ce != http_message_object_ce) {
 		zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
 		return;
 	}
