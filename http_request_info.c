@@ -143,6 +143,11 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 		add_assoc_double_ex(&array, "appconnect_time", sizeof("appconnect_time"), d);
 	}
 #endif
+#if HTTP_CURL_VERSION(7,19,4)
+	if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_CONDITION_UNMET, &l)) {
+		add_assoc_long_ex(&array, "condition_unmet", sizeof("condition_unmet"), l);
+	}
+#endif
 /* END */
 #if HTTP_CURL_VERSION(7,19,1) && defined(HTTP_HAVE_OPENSSL)
 	{

@@ -18,3 +18,14 @@ Internals:
 		to not check for zlib header bytes.  This is not preventable AFAICS.
 	LFS dependant parts of libcurl are left out because of off_t,
 		respectively off64_t confusion.
+	Persistent handles and "cookiestore" request option do interfere,
+		as libcurl safes the cookies to the file on curl_easy_destroy(),
+		cookies are not safed until the CURL handle will be recycled.
+			Thus one would either need to
+				* run PHP with http.persistent.handles.limit = 0
+				* call http_persistent_handles_clean() every request
+				* call $HttpRequest->flushCookies(), which is available
+				  since libcurl v7.17.1 and does not work with the
+				  procedural API
+			Anyway, none of these options is really perfect.
+		  

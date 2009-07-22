@@ -429,6 +429,9 @@ PHP_MINIT_FUNCTION(http_request_object)
 	*/
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_BASIC")-1, CURLAUTH_BASIC TSRMLS_CC);
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_DIGEST")-1, CURLAUTH_DIGEST TSRMLS_CC);
+#if HTTP_CURL_VERSION(7,19,3)
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_DIGEST_IE")-1, CURLAUTH_DIGEST_IE TSRMLS_CC);
+#endif
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_NTLM")-1, CURLAUTH_NTLM TSRMLS_CC);
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_GSSNEG")-1, CURLAUTH_GSSNEGOTIATE TSRMLS_CC);
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("AUTH_ANY")-1, CURLAUTH_ANY TSRMLS_CC);
@@ -445,6 +448,9 @@ PHP_MINIT_FUNCTION(http_request_object)
 #endif
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_SOCKS5")-1, CURLPROXY_SOCKS5 TSRMLS_CC);
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_HTTP")-1, CURLPROXY_HTTP TSRMLS_CC);
+#	if HTTP_CURL_VERSION(7,19,4)
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_HTTP_1_0")-1, CURLPROXY_HTTP_1_0 TSRMLS_CC);
+#	endif
 #endif /* WONKY */
 	
 	return SUCCESS;
