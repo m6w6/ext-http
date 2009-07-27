@@ -414,11 +414,15 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 	freeObject(o);
 }
 
-static zval **_http_message_object_get_prop_ptr(zval *object, zval *member TSRMLS_DC) {
-	getObjectEx(http_message_object, obj, object);
-	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
-	
-	if (!pinfo || pinfo->ce != http_message_object_ce) {
+static zval **_http_message_object_get_prop_ptr(zval *object, zval *member TSRMLS_DC)
+{
+	int member_len = Z_STRLEN_P(member);
+
+#ifndef WONKY
+	member_len += 1;
+#endif
+
+	if (!zend_hash_exists(&http_message_object_ce->properties_info, Z_STRVAL_P(member), member_len)) {
 		return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member TSRMLS_CC);
 	}
 	zend_error(E_ERROR, "Cannot access HttpMessage properties by reference or array key/index");
@@ -430,17 +434,16 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
 	zval *return_value;
-#ifdef WONKY
-	ulong h = zend_hash_func(Z_STRVAL_P(member), Z_STRLEN_P(member)+1);
-#else
-	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
-	
-	if (!pinfo || pinfo->ce != http_message_object_ce) {
-		return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
-	}
+	int member_len = Z_STRLEN_P(member);
+
+#ifndef WONKY
+	member_len += 1;
 #endif
 
-	if (type == BP_VAR_W) {
+	if (!zend_hash_exists(&http_message_object_ce->properties_info, Z_STRVAL_P(member), member_len)) {
+		return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
+	}
+	if (type != BP_VAR_R) {
 		zend_error(E_ERROR, "Cannot access HttpMessage properties by reference or array key/index");
 		return NULL;
 	}
@@ -454,11 +457,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 	return_value->is_ref = 0;
 #endif
 
-#ifdef WONKY
-	switch (h)
-#else
-	switch (pinfo->h)
-#endif
+	switch (zend_hash_func(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1))
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
 		case HTTP_MSG_CHILD_PROPHASH_TYPE:
@@ -529,6 +528,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		
 		default:
 			FREE_ZVAL(return_value);
+			zend_error(E_WARNING, "possible bug accessing HttpMessage property");
 			return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
 	}
 
@@ -540,22 +540,18 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
 	zval *cpy = NULL;
-#ifdef WONKY
-	ulong h = zend_hash_func(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1);
-#else
-	zend_property_info *pinfo = zend_get_property_info(obj->zo.ce, member, 1 TSRMLS_CC);
-	
-	if (!pinfo || pinfo->ce != http_message_object_ce) {
+	int member_len = Z_STRLEN_P(member);
+
+#ifndef WONKY
+	member_len += 1;
+#endif
+
+	if (!zend_hash_exists(&http_message_object_ce->properties_info, Z_STRVAL_P(member), member_len)) {
 		zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
 		return;
 	}
-#endif
 	
-#ifdef WONKY
-	switch (h)
-#else
-	switch (pinfo->h)
-#endif
+	switch (zend_hash_func(Z_STRVAL_P(member), Z_STRLEN_P(member) + 1))
 	{
 		case HTTP_MSG_PROPHASH_TYPE:
 		case HTTP_MSG_CHILD_PROPHASH_TYPE:
