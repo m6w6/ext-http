@@ -357,6 +357,9 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 			memcpy(*body + *length, buf, len);
 			*length += len;
 			(*body)[*length] = '\0';
+			if (len < (int) sizeof(buf)) {
+				break;
+			}
 		}
 		
 		/* check for error */
@@ -395,6 +398,9 @@ PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D)
 			
 			while (0 < (len = sapi_module.read_post(buf, sizeof(buf) TSRMLS_CC))) {
 				php_stream_write(s, buf, len);
+				if (len < (int) sizeof(buf)) {
+					break;
+				}
 			}
 			
 			if (len < 0) {
