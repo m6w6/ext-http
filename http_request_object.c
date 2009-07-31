@@ -452,6 +452,15 @@ PHP_MINIT_FUNCTION(http_request_object)
 	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("PROXY_HTTP_1_0")-1, CURLPROXY_HTTP_1_0 TSRMLS_CC);
 #	endif
 #endif /* WONKY */
+
+	/*
+	* Post Redirection Constants
+	*/
+#if HTTP_CURL_VERSION(7,19,1)
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("POSTREDIR_301")-1, CURL_REDIR_POST_301 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("POSTREDIR_302")-1, CURL_REDIR_POST_302 TSRMLS_CC);
+	zend_declare_class_constant_long(THIS_CE, ZEND_STRS("POSTREDIR_ALL")-1, CURL_REDIR_POST_ALL TSRMLS_CC);
+#endif
 	
 	return SUCCESS;
 }
