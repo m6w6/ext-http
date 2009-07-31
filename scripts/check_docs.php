@@ -15,9 +15,8 @@ function fg($path, &$g=NULL) {
 	return count($g = glob("$doc/$path"));
 }
 
-
 $ext = "http";
-$doc = "/home/mike/cvs/phpdoc/en/reference/$ext";
+$doc = "/home/mike/Development/src/php/phpdoc/en/trunk/reference/$ext";
 $ref = new ReflectionExtension($ext);
 
 printf("Undocumented INI options:\n");
@@ -64,11 +63,28 @@ foreach ($ref->getClasses() as $class) {
 			$meth->getPrototype();
 		} catch (Exception $ex) {
 			// if getPrototype throws an exception it's definitely not a method declared in an interface
-			$meth->isPrivate() or fg(sprintf("%s/%s.xml", $class->getName(), strtr(trim($meth->getName(),'_'),'_','-'))) or printf("\t%s::%s()\n", $class->getName(), $meth->getName());
+			$meth->isPrivate() or fg(sprintf("%s/%s.xml", $class->getName(), strtr(trim($meth->getName(),'_'),'_','-'))) or printf("\t%s%s::%s()\n", $meth->isStatic()?'static ':'', $class->getName(), $meth->getName());
 		}
 		
 	}
 	printf("\n");
+}
+printf("\n");
+
+printf("Undocumented request options:\n");
+if (is_file($file = dirname(__FILE__)."/../http_request_api.c")) {
+	if (preg_match_all("#(?:http_request_option\(request,\s*options,\s*\")(\w+)(?=\")#", file_get_contents($file), $match)) {
+		foreach ($match[1] as $opt) {
+			re("request-options.xml", "#<term>\s*$opt#") or printf("\t%s\n", $opt);
+		}
+		printf("\n");
+		printf("List of request option entities:\n");
+		foreach ($match[1] as $opt) {
+			printf("\t<!ENTITY link.http.request.option.%1\$s '<link linkend=\"http.request.option.%1\$s\"><literal>%1\$s</literal> request option</link>'>\n", $opt);
+		}
+	}
+} else {
+	printf("\thttp_request_api.c not found\n");
 }
 printf("\n");
 
