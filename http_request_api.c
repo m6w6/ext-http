@@ -642,7 +642,7 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		}
 	}
 #if HTTP_CURL_VERSION(7,19,4)
-	if ((zoption = http_request_option, request, options, "noproxy", IS_STRING))) {
+	if ((zoption = http_request_option(request, options, "noproxy", IS_STRING))) {
 		HTTP_CURL_OPT(CURLOPT_NOPROXY, Z_STRVAL_P(zoption));
 	}
 #endif
