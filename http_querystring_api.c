@@ -161,6 +161,11 @@ static inline int _http_querystring_modify_array(zval *qarray, zval *params TSRM
 static inline int _http_querystring_modify_array_ex(zval *qarray, int key_type, char *key, int keylen, ulong idx, zval *params_entry TSRMLS_DC)
 {
 	zval **qarray_entry;
+
+	/* ensure array type */
+	if (Z_TYPE_P(qarray) != IS_ARRAY) {
+		convert_to_array(qarray);
+	}
 	
 	/* delete */
 	if (Z_TYPE_P(params_entry) == IS_NULL) {
