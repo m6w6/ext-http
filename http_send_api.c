@@ -478,7 +478,7 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 			}
 		
 			/* send 304 Not Modified if last modified matches */
-			if (!no_cache && http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G->send.last_modified)) {
+			if (!no_cache && HTTP_G->send.last_modified && http_match_last_modified("HTTP_IF_MODIFIED_SINCE", HTTP_G->send.last_modified)) {
 				char *sent_header = NULL;
 				http_send_last_modified_ex(HTTP_G->send.last_modified, &sent_header);
 				return http_exit_ex(304, sent_header, NULL, 0);
