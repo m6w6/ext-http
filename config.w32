@@ -95,13 +95,13 @@ if (PHP_HTTP != "no") {
 		ADD_EXTENSION_DEP("http", "iconv", true);
 	}
 	
-	CURL_LIB = PHP_DEBUG != "no" ? "libcurld.lib":"libcurl.lib";
+	CURL_LIB="libcurl_a.lib;libcurl.lib;" + (PHP_DEBUG != "no" ? "libcurld.lib":"libcurl.lib");
 	if (CHECK_HEADER_ADD_INCLUDE("curl/curl.h", "CFLAGS_HTTP") &&
 			CHECK_HEADER_ADD_INCLUDE("openssl/crypto.h", "CFLAGS_HTTP") &&
 			CHECK_LIB(CURL_LIB, "http", PHP_HTTP) &&
 			CHECK_LIB("ssleay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("libeay32.lib", "http", PHP_HTTP) &&
-			CHECK_LIB("zlib.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("zlib.lib;zlib_a.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("winmm.lib", "http", PHP_HTTP)) {
 		AC_DEFINE("HTTP_HAVE_CURL", 1, "Have CURL library");
 		AC_DEFINE("HTTP_HAVE_SSL", 1, "Have SSL");
