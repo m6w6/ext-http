@@ -175,6 +175,7 @@ PHP_HTTP_API void _http_build_url(int flags, const php_url *old_url, const php_u
 				default:
 #endif
 				case 80:
+				case 0:
 					url->scheme = estrndup("http", lenof("http"));
 					break;
 			
