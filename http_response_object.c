@@ -670,6 +670,7 @@ PHP_METHOD(HttpResponse, getStream)
 	if (return_value_used) {
 		zval *stream = http_zsep(IS_LONG, *(zend_std_get_static_property(THIS_CE, ZEND_STRS("stream")-1, 0 TSRMLS_CC)));
 		RETVAL_RESOURCE(Z_LVAL_P(stream));
+		zval_ptr_dtor(&stream);
 	}
 }
 /* }}} */
