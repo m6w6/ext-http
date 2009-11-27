@@ -109,7 +109,9 @@ PHP_HTTP_API http_request_pool *_http_request_pool_init(http_request_pool *pool 
 /* {{{ STATUS http_request_pool_attach(http_request_pool *, zval *) */
 PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *request)
 {
+#ifdef ZTS
 	TSRMLS_FETCH_FROM_CTX(pool->tsrm_ls);
+#endif
 	getObjectEx(http_request_object, req, request);
 	
 #if HTTP_DEBUG_REQPOOLS
@@ -146,7 +148,9 @@ PHP_HTTP_API STATUS _http_request_pool_attach(http_request_pool *pool, zval *req
 PHP_HTTP_API STATUS _http_request_pool_detach(http_request_pool *pool, zval *request)
 {
 	CURLMcode code;
+#ifdef ZTS
 	TSRMLS_FETCH_FROM_CTX(pool->tsrm_ls);
+#endif
 	getObjectEx(http_request_object, req, request);
 	
 #if HTTP_DEBUG_REQPOOLS
@@ -409,7 +413,9 @@ void _http_request_pool_responsehandler(http_request_pool *pool)
 /* {{{ int http_request_pool_apply_responsehandler(http_request_pool *, zval *, void *) */
 int _http_request_pool_apply_responsehandler(http_request_pool *pool, zval *req, void *ch)
 {
+#ifdef ZTS
 	TSRMLS_FETCH_FROM_CTX(pool->tsrm_ls);
+#endif
 	getObjectEx(http_request_object, obj, req);
 	
 	if ((!ch) || obj->request->ch == (CURL *) ch) {
