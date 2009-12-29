@@ -5,6 +5,7 @@ logging redirects
 include 'skip.inc';
 checkcgi();
 checkmin("5.2.5");
+checkext("session");
 ?>
 --ENV--
 HTTP_HOST=example.com
