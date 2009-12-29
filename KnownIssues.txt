@@ -28,6 +28,6 @@ Internals:
 				  since libcurl v7.17.1 and does not work with the
 				  procedural API
 			Anyway, none of these options is really perfect.
-	HTTP and Proxy authentication inforamtion (username/password) can not be
-		unset with NULL prior libcurl v7.19.6 and separarte options for setting
-		username and password--wich work--are only available since v7.19.6.
+	HTTP and Proxy authentication information (username/password) can not be
+		unset with NULL prior libcurl v7.19.6 and separate options for setting
+		username and password--which work--are only available since v7.19.6.
