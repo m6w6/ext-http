@@ -531,8 +531,9 @@ PHP_HTTP_API void _http_request_defaults(http_request *request)
 		HTTP_CURL_OPT(CURLOPT_HTTPHEADER, NULL);
 		HTTP_CURL_OPT(CURLOPT_COOKIE, NULL);
 		HTTP_CURL_OPT(CURLOPT_COOKIESESSION, 0L);
+		/* these options would enable curl's cookie engine by default which we don't want
 		HTTP_CURL_OPT(CURLOPT_COOKIEFILE, NULL);
-		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, NULL);
+		HTTP_CURL_OPT(CURLOPT_COOKIEJAR, NULL); */
 #if HTTP_CURL_VERSION(7,14,1)
 		HTTP_CURL_OPT(CURLOPT_COOKIELIST, NULL);
 #endif
