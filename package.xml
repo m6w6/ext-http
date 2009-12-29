@@ -28,9 +28,9 @@ support. Parallel requests are available for PHP 5 and greater.
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2009-02-16</date>
+ <date>2009-12-29</date>
  <version>
-  <release>1.7.0-dev</release>
+  <release>1.7.0b2</release>
   <api>1.7.0</api>
  </version>
  <stability>
@@ -39,16 +39,9 @@ support. Parallel requests are available for PHP 5 and greater.
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Implement Request #14408 (Add a customizable timeout for HttpRequestPool::socketSelect)
-* Implement Request #15775 (recursive http_request_body_encode)
 * Added request options:
  - proxytunnel: enable tunelling through the HTTP proxy
- - postredir: enforcing RFC conformig POST after redirect (libcurl >= 7.17.1)
- - address_scope: RFC4007 zone_id (libcurl >= 7.19.0)
  - noproxy: comma separatet list of hosts (* means all hosts) not to use a proxy for (libcurl >= 7.19.4)
- - ssl->issuercert: validate peer certificate issuer (libcurl >= 7.19.0)
- - ssl->crlfile: require CRL check (libcurl >= 7.19.0 with openssl)
- - ssl->certinfo: enable the certinfo gatherer (libcurl >= 7.19.1 with openssl)
 * Added postredir request options constants:
  - HTTP_POSTREDIR_301
  - HTTP_POSTREDIR_302
@@ -56,14 +49,8 @@ support. Parallel requests are available for PHP 5 and greater.
 * Added authtype request option constant:
  - HTTP_AUTH_DIGEST_IE
 * Added proxytype request option constants:
- - HTTP_PROXY_SOCKS4A
- - HTTP_PROXY_SOCKS5_HOSTNAME
  - HTTP_PROXY_HTTP_1_0
 * Added request info members:
- - redirect_url (libcurl >= 7.18.2)
- - primary_ip (libcurl >= 7.19.0)
- - appconnect_time (libcurl >= 7.19.0)
- - certinfo (libcurl >= 7.19.1 with openssl)
  - condition_unmet (libcurl >= 7.19.4)
 ]]></notes>
  <contents>
