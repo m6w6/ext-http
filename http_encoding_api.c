@@ -327,10 +327,13 @@ retry_raw_inflate:
 		Z.avail_in = data_len;
 		
 		switch (status = http_inflate_rounds(&Z, Z_NO_FLUSH, decoded, decoded_len)) {
-			case Z_OK:
 			case Z_STREAM_END:
 				inflateEnd(&Z);
 				return SUCCESS;
+
+			case Z_OK:
+				status = Z_DATA_ERROR;
+				break;
 			
 			case Z_DATA_ERROR:
 				/* raw deflated data? */
