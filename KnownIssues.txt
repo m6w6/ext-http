@@ -19,8 +19,8 @@ Internals:
 	LFS dependant parts of libcurl are left out because of off_t,
 		respectively off64_t confusion.
 	Persistent handles and "cookiestore" request option do interfere,
-		as libcurl safes the cookies to the file on curl_easy_destroy(),
-		cookies are not safed until the CURL handle will be recycled.
+		as libcurl saves the cookies to the file on curl_easy_destroy(),
+		cookies are not saved until the CURL handle will be recycled.
 			Thus one would either need to
 				* run PHP with http.persistent.handles.limit = 0
 				* call http_persistent_handles_clean() every request
