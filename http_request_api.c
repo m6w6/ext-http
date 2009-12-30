@@ -1085,6 +1085,11 @@ PHP_HTTP_API void _http_request_exec(http_request *request)
 retry:
 	if (CURLE_OK != (result = curl_easy_perform(request->ch))) {
 		http_error_ex(HE_WARNING, HTTP_E_REQUEST, "%s; %s (%s)", curl_easy_strerror(result), http_request_storage_get(request->ch)->errorbuffer, request->url);
+#ifdef ZEND_ENGINE_2
+		if ((HTTP_G->only_exceptions || GLOBAL_ERROR_HANDLING == EH_THROW) && EG(exception)) {
+			add_property_long(EG(exception), "curlCode", result);
+		}
+#endif
 		
 		if (request->_retry.count > tries++) {
 			switch (result) {

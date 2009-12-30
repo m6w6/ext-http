@@ -76,6 +76,9 @@ PHP_MINIT_FUNCTION(http_exception_object)
 	HTTP_REGISTER_EXCEPTION(HttpMessageTypeException, HTTP_EX_CE(message_type), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpEncodingException, HTTP_EX_CE(encoding), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpRequestException, HTTP_EX_CE(request), HTTP_EX_DEF_CE);
+
+	zend_declare_property_long(HTTP_EX_CE(request), "curlCode", lenof("curlCode"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+
 	HTTP_REGISTER_EXCEPTION(HttpRequestPoolException, HTTP_EX_CE(request_pool), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpSocketException, HTTP_EX_CE(socket), HTTP_EX_DEF_CE);
 	HTTP_REGISTER_EXCEPTION(HttpResponseException, HTTP_EX_CE(response), HTTP_EX_DEF_CE);
