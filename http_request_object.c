@@ -170,6 +170,11 @@ HTTP_BEGIN_ARGS(getResponseInfo, 0)
 	HTTP_ARG_VAL(name, 0)
 HTTP_END_ARGS;
 
+HTTP_EMPTY_ARGS(getMessageClass);
+HTTP_BEGIN_ARGS(setMessageClass, 1)
+	HTTP_ARG_VAL(message_class_name, 0)
+HTTP_END_ARGS;
+
 HTTP_EMPTY_ARGS(getResponseMessage);
 HTTP_EMPTY_ARGS(getRawResponseMessage);
 HTTP_EMPTY_ARGS(getRequestMessage);
@@ -322,6 +327,9 @@ zend_function_entry http_request_object_fe[] = {
 	HTTP_REQUEST_ME(getHistory, ZEND_ACC_PUBLIC)
 	HTTP_REQUEST_ME(clearHistory, ZEND_ACC_PUBLIC)
 
+	HTTP_REQUEST_ME(getMessageClass, ZEND_ACC_PUBLIC)
+	HTTP_REQUEST_ME(setMessageClass, ZEND_ACC_PUBLIC)
+
 	HTTP_REQUEST_ME(factory, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 
 	HTTP_REQUEST_ALIAS(get, http_get)
@@ -364,6 +372,7 @@ PHP_MINIT_FUNCTION(http_request_object)
 	zend_declare_property_string(THIS_CE, ZEND_STRS("putData")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
 	zend_declare_property_null(THIS_CE, ZEND_STRS("history")-1, ZEND_ACC_PRIVATE TSRMLS_CC);
 	zend_declare_property_bool(THIS_CE, ZEND_STRS("recordHistory")-1, 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_string(THIS_CE, ZEND_STRS("messageClass")-1, "", ZEND_ACC_PRIVATE TSRMLS_CC);
 
 #ifndef WONKY
 	/*
@@ -565,6 +574,19 @@ static inline void _http_request_object_check_request_content_type(zval *this_pt
 	}
 }
 
+#define http_request_object_message(zo, msg) _http_request_object_message((zo), (msg) TSRMLS_CC)
+static inline zend_object_value _http_request_object_message(zval *this_ptr, http_message *msg TSRMLS_DC)
+{
+	zend_object_value ov;
+	zval *zcn = zend_read_property(THIS_CE, getThis(), ZEND_STRS("messageClass")-1, 0 TSRMLS_CC);
+
+	if (Z_STRLEN_P(zcn) && (SUCCESS == http_object_new(&ov, Z_STRVAL_P(zcn), Z_STRLEN_P(zcn), _http_message_object_new_ex, http_message_object_ce, msg, NULL))) {
+		return ov;
+	} else {
+		return http_message_object_new_ex(http_message_object_ce, msg, NULL);
+	}
+}
+
 STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_ptr TSRMLS_DC)
 {
 	STATUS status = SUCCESS;
@@ -697,7 +719,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 			http_message *request = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request));
 			
 			MAKE_STD_ZVAL(hist);
-			ZVAL_OBJVAL(hist, http_message_object_new_ex(http_message_object_ce, http_message_interconnect(response, request), NULL), 0);
+			ZVAL_OBJVAL(hist, http_request_object_message(getThis(), http_message_interconnect(response, request)), 0);
 			if (Z_TYPE_P(history) == IS_OBJECT) {
 				http_message_object_prepend(hist, history);
 			}
@@ -709,7 +731,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 		zend_update_property_string(THIS_CE, getThis(), ZEND_STRS("responseStatus")-1, STR_PTR(msg->http.info.response.status) TSRMLS_CC);
 
 		MAKE_STD_ZVAL(message);
-		ZVAL_OBJVAL(message, http_message_object_new_ex(http_message_object_ce, msg, NULL), 0);
+		ZVAL_OBJVAL(message, http_request_object_message(getThis(), msg), 0);
 		zend_update_property(THIS_CE, getThis(), ZEND_STRS("responseMessage")-1, message TSRMLS_CC);
 		zval_ptr_dtor(&message);
 
@@ -734,7 +756,7 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 				zval *hist, *history = zend_read_property(THIS_CE, getThis(), ZEND_STRS("history")-1, 0 TSRMLS_CC);
 				
 				MAKE_STD_ZVAL(hist);
-				ZVAL_OBJVAL(hist, http_message_object_new_ex(http_message_object_ce, request, NULL), 0);
+				ZVAL_OBJVAL(hist, http_request_object_message(getThis(), request), 0);
 				if (Z_TYPE_P(history) == IS_OBJECT) {
 					http_message_object_prepend(hist, history);
 				}
@@ -938,6 +960,8 @@ PHP_METHOD(HttpRequest, setOptions)
 				http_request_enable_cookies(obj->request);
 			} else if (KEYMATCH(key, "recordHistory")) {
 				zend_update_property(THIS_CE, getThis(), ZEND_STRS("recordHistory")-1, *opt TSRMLS_CC);
+			} else if (KEYMATCH(key, "messageClass")) {
+				zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "setmessageclass", NULL, *opt);
 			} else if (Z_TYPE_PP(opt) == IS_NULL) {
 				old_opts = zend_read_property(THIS_CE, getThis(), ZEND_STRS("options")-1, 0 TSRMLS_CC);
 				if (Z_TYPE_P(old_opts) == IS_ARRAY) {
@@ -1764,7 +1788,7 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 
 		SET_EH_THROW_HTTP();
 		if ((msg = http_message_parse(PHPSTR_VAL(&obj->request->conv.request), PHPSTR_LEN(&obj->request->conv.request)))) {
-			RETVAL_OBJVAL(http_message_object_new_ex(http_message_object_ce, msg, NULL), 0);
+			RETVAL_OBJVAL(http_request_object_message(getThis(), msg), 0);
 		}
 		SET_EH_NORMAL();
 	}
@@ -1831,6 +1855,31 @@ PHP_METHOD(HttpRequest, clearHistory)
 		ZVAL_NULL(hist);
 		zend_update_property(THIS_CE, getThis(), ZEND_STRS("history")-1, hist TSRMLS_CC);
 		zval_ptr_dtor(&hist);
+	}
+}
+/* }}} */
+
+/* {{{ proto string HttpRequest::getMessageClass()
+	Get the message class name. */
+PHP_METHOD(HttpRequest, getMessageClass)
+{
+	NO_ARGS;
+
+	if (return_value_used) {
+		RETURN_PROP("messageClass");
+	}
+}
+/* }}} */
+
+/* {{{ proto void setMessageClass(string class_name)
+	Set the message class name. */
+PHP_METHOD(HttpRequest, setMessageClass)
+{
+	char *cn;
+	int cl;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &cn, &cl)) {
+		zend_update_property_stringl(THIS_CE, getThis(), ZEND_STRS("messageClass")-1, cn, cl TSRMLS_CC);
 	}
 }
 /* }}} */

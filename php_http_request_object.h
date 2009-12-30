@@ -99,6 +99,8 @@ PHP_METHOD(HttpRequest, getRequestMessage);
 PHP_METHOD(HttpRequest, getRawRequestMessage);
 PHP_METHOD(HttpRequest, getHistory);
 PHP_METHOD(HttpRequest, clearHistory);
+PHP_METHOD(HttpRequest, getMessageClass);
+PHP_METHOD(HttpRequest, setMessageClass);
 PHP_METHOD(HttpRequest, factory);
 
 #endif
