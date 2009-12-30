@@ -142,8 +142,9 @@ static inline int check_tzone(const char *tzone)
 PHP_HTTP_API char *_http_date(time_t t TSRMLS_DC)
 {
 	char *date = NULL;
-	struct tm *gmtime, tmbuf;
+	struct tm *gmtime = NULL, tmbuf;
 
+	memset(&tmbuf, 0, sizeof(tmbuf));
 	if ((gmtime = php_gmtime_r(&t, &tmbuf))) {
 		spprintf(&date, 0,
 			"%s, %02d %s %04d %02d:%02d:%02d GMT",
