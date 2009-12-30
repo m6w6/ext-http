@@ -43,6 +43,7 @@
 PHP_FUNCTION(http_date)
 {
 	long t = -1;
+	char *date;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &t) != SUCCESS) {
 		RETURN_FALSE;
@@ -52,7 +53,12 @@ PHP_FUNCTION(http_date)
 		t = HTTP_G->request.time;
 	}
 
-	RETURN_STRING(http_date(t), 0);
+	if (!(date = http_date(t))) {
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Could not compose date of timestamp %ld", t);
+		RETURN_FALSE;
+	}
+	
+	RETURN_STRING(date, 0);
 }
 /* }}} */
 
