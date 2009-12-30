@@ -180,7 +180,10 @@ zval *_http_exception_wrap(zval *old_exception, zval *new_exception, zend_class_
 		copy_bt_args(old_exception, new_exception TSRMLS_CC);
 		copy_bt_args(old_exception, sub_exception TSRMLS_CC);
 	}
-	
+#if PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION >= 3
+	Z_ADDREF_P(old_exception);
+	zend_exception_set_previous(new_exception, old_exception);
+#endif
 	zval_ptr_dtor(&old_exception);
 	return new_exception;
 }
