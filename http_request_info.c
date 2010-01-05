@@ -177,7 +177,6 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 					}
 				}
 				add_next_index_zval(ci_array, subarray);
-				curl_slist_free_all(s);
 			}
 			add_assoc_zval_ex(&array, "certinfo", sizeof("certinfo"), ci_array);
 		}
