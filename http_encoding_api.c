@@ -211,10 +211,13 @@ PHP_HTTP_API int _http_encoding_response_start(size_t content_length, zend_bool 
 #endif /* HTTP_HAVE_ZLIB */
 	} else if (content_length && !ohandler) {
 		/* emit a content-length header */
-		char cl_header_str[128];
-		size_t cl_header_len;
-		cl_header_len = snprintf(cl_header_str, sizeof(cl_header_str), "Content-Length: %zu", content_length);
-		http_send_header_string_ex(cl_header_str, cl_header_len, 1);
+		phpstr header;
+
+		phpstr_init(&header);
+		phpstr_appendf(&header, "Content-Length: %zu", content_length);
+		phpstr_fix(&header);
+		http_send_header_string_ex(PHPSTR_VAL(&header), PHPSTR_LEN(&header), 1);
+		phpstr_dtor(&header);
 	} else {
 		HTTP_G->send.deflate.encoding = 0;
 	}

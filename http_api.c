@@ -350,12 +350,12 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 		}
 		return SUCCESS;
 	} else if (sapi_module.read_post && !HTTP_G->read_post_data) {
-		char buf[4096];
+		char *buf = emalloc(4096);
 		int len;
 		
 		HTTP_G->read_post_data = 1;
 		
-		while (0 < (len = sapi_module.read_post(buf, sizeof(buf) TSRMLS_CC))) {
+		while (0 < (len = sapi_module.read_post(buf, 4096 TSRMLS_CC))) {
 			*body = erealloc(*body, *length + len + 1);
 			memcpy(*body + *length, buf, len);
 			*length += len;
@@ -364,6 +364,7 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 				break;
 			}
 		}
+		efree(buf);
 		
 		/* check for error */
 		if (len < 0) {
@@ -396,15 +397,16 @@ PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D)
 		HTTP_G->read_post_data = 1;
 		
 		if ((s = php_stream_temp_new())) {
-			char buf[4096];
+			char *buf = emalloc(4096);
 			int len;
 			
-			while (0 < (len = sapi_module.read_post(buf, sizeof(buf) TSRMLS_CC))) {
+			while (0 < (len = sapi_module.read_post(buf, 4096 TSRMLS_CC))) {
 				php_stream_write(s, buf, len);
 				if (len < (int) sizeof(buf)) {
 					break;
 				}
 			}
+			efree(buf);
 			
 			if (len < 0) {
 				php_stream_close(s);

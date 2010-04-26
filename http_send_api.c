@@ -394,11 +394,13 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 					http_send_status(500);
 					return FAILURE;
 				} else {
-					char range_header_str[256];
-					size_t range_header_len;
-					
-					range_header_len = snprintf(range_header_str, sizeof(range_header_str), "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
-					http_send_status_header_ex(206, range_header_str, range_header_len, 1);
+					phpstr header;
+
+					phpstr_init(&header);
+					phpstr_appendf(&header, "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
+					phpstr_fix(&header);
+					http_send_status_header_ex(206, PHPSTR_VAL(&header), PHPSTR_LEN(&header), 1);
+					phpstr_dtor(&header);
 					http_send_response_start(&s, Z_LVAL_PP(end)-Z_LVAL_PP(begin)+1);
 					http_send_response_data_fetch(&s, data_ptr, data_size, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
 					http_send_response_finish(&s);
@@ -410,36 +412,41 @@ PHP_HTTP_API STATUS _http_send_ex(const void *data_ptr, size_t data_size, http_s
 				HashPosition pos;
 				zval **range, **begin, **end;
 				const char *content_type = HTTP_G->send.content_type;
-				char boundary_str[32], range_header_str[256];
-				size_t boundary_len, range_header_len;
+				char boundary_str[32];
+				size_t boundary_len;
+				phpstr header, preface;
 				
 				boundary_len = http_boundary(boundary_str, sizeof(boundary_str));
-				range_header_len = snprintf(range_header_str, sizeof(range_header_str), "Content-Type: multipart/byteranges; boundary=%s", boundary_str);
-				
-				http_send_status_header_ex(206, range_header_str, range_header_len, 1);
+				phpstr_init(&header);
+				phpstr_appendf(&header, "Content-Type: multipart/byteranges; boundary=%s", boundary_str);
+				phpstr_fix(&header);
+				http_send_status_header_ex(206, PHPSTR_VAL(&header), PHPSTR_LEN(&header), 1);
+				phpstr_dtor(&header);
 				http_send_response_start(&s, 0);
 				
 				if (!content_type) {
 					content_type = "application/x-octetstream";
 				}
-				
+
+				phpstr_init(&preface);
 				FOREACH_HASH_VAL(pos, &ranges, range) {
 					if (	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void *) &begin) &&
 							SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void *) &end)) {
-						char preface_str[512];
-						size_t preface_len;
-
+						
 #define HTTP_RANGE_PREFACE \
 	HTTP_CRLF "--%s" \
 	HTTP_CRLF "Content-Type: %s" \
 	HTTP_CRLF "Content-Range: bytes %ld-%ld/%zu" \
 	HTTP_CRLF HTTP_CRLF
-						
-						preface_len = snprintf(preface_str, sizeof(preface_str), HTTP_RANGE_PREFACE, boundary_str, content_type, Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
-						http_send_response_data_plain(&s, preface_str, preface_len);
+
+						phpstr_appendf(&preface, HTTP_RANGE_PREFACE, boundary_str, content_type, Z_LVAL_PP(begin), Z_LVAL_PP(end), data_size);
+						phpstr_fix(&preface);
+						http_send_response_data_plain(&s, PHPSTR_VAL(&preface), PHPSTR_LEN(&preface));
+						phpstr_reset(&preface);
 						http_send_response_data_fetch(&s, data_ptr, data_size, data_mode, Z_LVAL_PP(begin), Z_LVAL_PP(end) + 1);
 					}
 				}
+				phpstr_dtor(&preface);
 				
 				http_send_response_data_plain(&s, HTTP_CRLF "--", lenof(HTTP_CRLF "--"));
 				http_send_response_data_plain(&s, boundary_str, boundary_len);
