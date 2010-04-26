@@ -214,7 +214,7 @@ static zend_object_handlers http_message_object_handlers;
 
 static HashTable http_message_object_prophandlers;
 
-typedef void (*http_message_object_prophandler_func)(http_message_object *, zval *);
+typedef void (*http_message_object_prophandler_func)(http_message_object *o, zval *v TSRMLS_DC);
 
 typedef struct _http_message_object_prophandler {
 	http_message_object_prophandler_func read;
@@ -228,106 +228,106 @@ static STATUS http_message_object_add_prophandler(const char *prop_str, size_t p
 static STATUS http_message_object_get_prophandler(const char *prop_str, size_t prop_len, http_message_object_prophandler **handler) {
 	return zend_hash_find(&http_message_object_prophandlers, prop_str, prop_len, (void *) handler);
 }
-static void http_message_object_prophandler_get_type(http_message_object *obj, zval *return_value) {
+static void http_message_object_prophandler_get_type(http_message_object *obj, zval *return_value TSRMLS_DC) {
 	RETVAL_LONG(obj->message->type);
 }
-static void http_message_object_prophandler_set_type(http_message_object *obj, zval *value) {
+static void http_message_object_prophandler_set_type(http_message_object *obj, zval *value TSRMLS_DC) {
 	zval *cpy = http_zsep(IS_LONG, value);
 	http_message_set_type(obj->message, Z_LVAL_P(cpy));
 	zval_ptr_dtor(&cpy);
 }
-static void http_message_object_prophandler_get_body(http_message_object *obj, zval *return_value) {
+static void http_message_object_prophandler_get_body(http_message_object *obj, zval *return_value TSRMLS_DC) {
 	phpstr_fix(PHPSTR(obj->message));
 	RETVAL_PHPSTR(PHPSTR(obj->message), 0, 1);
 }
-static void http_message_object_prophandler_set_body(http_message_object *obj, zval *value) {
+static void http_message_object_prophandler_set_body(http_message_object *obj, zval *value TSRMLS_DC) {
 	zval *cpy = http_zsep(IS_STRING, value);
 	phpstr_dtor(PHPSTR(obj->message));
 	phpstr_from_string_ex(PHPSTR(obj->message), Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 	zval_ptr_dtor(&cpy);
 }
-static void http_message_object_prophandler_get_request_method(http_message_object *obj, zval *return_value) {
+static void http_message_object_prophandler_get_request_method(http_message_object *obj, zval *return_value TSRMLS_DC) {
 	if (HTTP_MSG_TYPE(REQUEST, obj->message) && obj->message->http.info.request.method) {
 		RETVAL_STRING(obj->message->http.info.request.method, 1);
 	} else {
 		RETVAL_NULL();
 	}
 }
-static void http_message_object_prophandler_set_request_method(http_message_object *obj, zval *value) {
+static void http_message_object_prophandler_set_request_method(http_message_object *obj, zval *value TSRMLS_DC) {
 	if (HTTP_MSG_TYPE(REQUEST, obj->message)) {
 		zval *cpy = http_zsep(IS_STRING, value);
 		STR_SET(obj->message->http.info.request.method, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
 		zval_ptr_dtor(&cpy);
 	}
 }
-static void http_message_object_prophandler_get_request_url(http_message_object *obj, zval *return_value) {
+static void http_message_object_prophandler_get_request_url(http_message_object *obj, zval *return_value TSRMLS_DC) {
 	if (HTTP_MSG_TYPE(REQUEST, obj->message) && obj->message->http.info.request.url) {
 		RETVAL_STRING(obj->message->http.info.request.url, 1);
 	} else {
 		RETVAL_NULL();
 	}
 }
-static void http_message_object_prophandler_set_request_url(http_message_object *obj, zval *value) {
+static void http_message_object_prophandler_set_request_url(http_message_object *obj, zval *value TSRMLS_DC) {
 	if (HTTP_MSG_TYPE(REQUEST, obj->message)) {
 		zval *cpy = http_zsep(IS_STRING, value);
 		STR_SET(obj->message->http.info.request.url, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
 		zval_ptr_dtor(&cpy);
 	}
 }
-static void http_message_object_prophandler_get_response_status(http_message_object *obj, zval *return_value) {
+static void http_message_object_prophandler_get_response_status(http_message_object *obj, zval *return_value TSRMLS_DC) {
 	if (HTTP_MSG_TYPE(RESPONSE, obj->message) && obj->message->http.info.response.status) {
 		RETVAL_STRING(obj->message->http.info.response.status, 1);
 	} else {
 		RETVAL_NULL();
 	}
 }
-static void http_message_object_prophandler_set_response_status(http_message_object *obj, zval *value) {
+static void http_message_object_prophandler_set_response_status(http_message_object *obj, zval *value TSRMLS_DC) {
 	if (HTTP_MSG_TYPE(RESPONSE, obj->message)) {
 		zval *cpy = http_zsep(IS_STRING, value);
 		STR_SET(obj->message->http.info.response.status, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
 		zval_ptr_dtor(&cpy);
 	}
 }
-static void http_message_object_prophandler_get_response_code(http_message_object *obj, zval *return_value) {
+static void http_message_object_prophandler_get_response_code(http_message_object *obj, zval *return_value TSRMLS_DC) {
 	if (HTTP_MSG_TYPE(RESPONSE, obj->message)) {
 		RETVAL_LONG(obj->message->http.info.response.code);
 	} else {
 		RETVAL_NULL();
 	}
 }
-static void http_message_object_prophandler_set_response_code(http_message_object *obj, zval *value) {
+static void http_message_object_prophandler_set_response_code(http_message_object *obj, zval *value TSRMLS_DC) {
 	if (HTTP_MSG_TYPE(RESPONSE, obj->message)) {
 		zval *cpy = http_zsep(IS_LONG, value);
 		obj->message->http.info.response.code = Z_LVAL_P(cpy);
 		zval_ptr_dtor(&cpy);
 	}
 }
-static void http_message_object_prophandler_get_http_version(http_message_object *obj, zval *return_value) {
+static void http_message_object_prophandler_get_http_version(http_message_object *obj, zval *return_value TSRMLS_DC) {
 	RETVAL_DOUBLE(obj->message->http.version);
 }
-static void http_message_object_prophandler_set_http_version(http_message_object *obj, zval *value) {
+static void http_message_object_prophandler_set_http_version(http_message_object *obj, zval *value TSRMLS_DC) {
 	zval *cpy = http_zsep(IS_DOUBLE, value);
 	obj->message->http.version = Z_DVAL_P(cpy);
 	zval_ptr_dtor(&cpy);
 }
-static void http_message_object_prophandler_get_headers(http_message_object *obj, zval *return_value) {
+static void http_message_object_prophandler_get_headers(http_message_object *obj, zval *return_value TSRMLS_DC) {
 	array_init(return_value);
 	zend_hash_copy(Z_ARRVAL_P(return_value), &obj->message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 }
-static void http_message_object_prophandler_set_headers(http_message_object *obj, zval *value) {
+static void http_message_object_prophandler_set_headers(http_message_object *obj, zval *value TSRMLS_DC) {
 	zval *cpy = http_zsep(IS_ARRAY, value);
 	zend_hash_clean(&obj->message->hdrs);
 	zend_hash_copy(&obj->message->hdrs, Z_ARRVAL_P(cpy), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	zval_ptr_dtor(&cpy);
 }
-static void http_message_object_prophandler_get_parent_message(http_message_object *obj, zval *return_value) {
+static void http_message_object_prophandler_get_parent_message(http_message_object *obj, zval *return_value TSRMLS_DC) {
 	if (obj->message->parent) {
 		RETVAL_OBJVAL(obj->parent, 1);
 	} else {
 		RETVAL_NULL();
 	}
 }
-static void http_message_object_prophandler_set_parent_message(http_message_object *obj, zval *value) {
+static void http_message_object_prophandler_set_parent_message(http_message_object *obj, zval *value TSRMLS_DC) {
 	if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), http_message_object_ce TSRMLS_CC)) {
 		if (obj->message->parent) {
 			zval tmp;
@@ -591,7 +591,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		return_value->is_ref = 0;
 #endif
 
-		handler->read(obj, return_value);
+		handler->read(obj, return_value TSRMLS_CC);
 
 	} else {
 		return_value = zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
@@ -606,7 +606,7 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 	http_message_object_prophandler *handler;
 	
 	if (SUCCESS == http_message_object_get_prophandler(Z_STRVAL_P(member), Z_STRLEN_P(member), &handler)) {
-		handler->write(obj, value);
+		handler->write(obj, value TSRMLS_CC);
 	} else {
 		zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
 	}
