@@ -343,6 +343,7 @@ PHP_MSHUTDOWN_FUNCTION(http)
 		|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)
 #	endif
 #endif
+		|| SUCCESS != PHP_MSHUTDOWN_CALL(http_message_object)
 		|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle) /* last */
 	) {
 		return FAILURE;

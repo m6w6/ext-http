@@ -27,6 +27,7 @@ extern zend_class_entry *http_message_object_ce;
 extern zend_function_entry http_message_object_fe[];
 
 extern PHP_MINIT_FUNCTION(http_message_object);
+extern PHP_MSHUTDOWN_FUNCTION(http_message_object);
 
 #define http_message_object_prepend(o, p) http_message_object_prepend_ex((o), (p), 1)
 #define http_message_object_prepend_ex(o, p, t) _http_message_object_prepend_ex((o), (p), (t) TSRMLS_CC)
@@ -43,26 +44,6 @@ extern zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_
 extern zend_object_value _http_message_object_clone_obj(zval *object TSRMLS_DC);
 #define http_message_object_free(o) _http_message_object_free((o) TSRMLS_CC)
 extern void _http_message_object_free(zend_object *object TSRMLS_DC);
-
-#define HTTP_MSG_PROPHASH_TYPE                  276192743LU
-#define HTTP_MSG_PROPHASH_HTTP_VERSION         1138628683LU
-#define HTTP_MSG_PROPHASH_BODY                  254474387LU
-#define HTTP_MSG_PROPHASH_HEADERS              3199929089LU
-#define HTTP_MSG_PROPHASH_PARENT_MESSAGE       2105714836LU
-#define HTTP_MSG_PROPHASH_REQUEST_METHOD       1669022159LU
-#define HTTP_MSG_PROPHASH_REQUEST_URL          3208695585LU
-#define HTTP_MSG_PROPHASH_RESPONSE_STATUS      3857097400LU
-#define HTTP_MSG_PROPHASH_RESPONSE_CODE        1305615119LU
-
-#define HTTP_MSG_CHILD_PROPHASH_TYPE            624467825LU
-#define HTTP_MSG_CHILD_PROPHASH_HTTP_VERSION   1021966997LU
-#define HTTP_MSG_CHILD_PROPHASH_BODY            602749469LU
-#define HTTP_MSG_CHILD_PROPHASH_HEADERS        3626850379LU
-#define HTTP_MSG_CHILD_PROPHASH_PARENT_MESSAGE 3910157662LU
-#define HTTP_MSG_CHILD_PROPHASH_REQUEST_METHOD 3473464985LU
-#define HTTP_MSG_CHILD_PROPHASH_REQUEST_URL    3855913003LU
-#define HTTP_MSG_CHILD_PROPHASH_RESPONSE_STATUS 3274168514LU
-#define HTTP_MSG_CHILD_PROPHASH_RESPONSE_CODE  1750746777LU
 
 #define HTTP_MSG_CHECK_OBJ(obj, dofail) \
 	if (!(obj)->message) { \
