@@ -846,31 +846,37 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 		HashKey header_key = initHashKey(0);
 		zval **header_val;
 		HashPosition pos;
-
+		phpstr header;
+		
+		phpstr_init(&header);
 		FOREACH_KEYVAL(pos, zoption, header_key, header_val) {
 			if (header_key.type == HASH_KEY_IS_STRING) {
-				char header[1024];
 				zval *header_cpy = http_zsep(IS_STRING, *header_val);
 				
 				if (!strcasecmp(header_key.str, "range")) {
 					range_req = 1;
 				}
-				snprintf(header, sizeof(header), "%s: %s", header_key.str, Z_STRVAL_P(header_cpy));
-				request->_cache.headers = curl_slist_append(request->_cache.headers, header);
+
+				phpstr_appendf(&header, "%s: %s", header_key.str, Z_STRVAL_P(header_cpy));
+				phpstr_fix(&header);
+				request->_cache.headers = curl_slist_append(request->_cache.headers, PHPSTR_VAL(&header));
+				phpstr_reset(&header);
+				
 				zval_ptr_dtor(&header_cpy);
 			}
 		}
+		phpstr_dtor(&header);
 	}
 	/* etag */
 	if ((zoption = http_request_option(request, options, "etag", IS_STRING)) && Z_STRLEN_P(zoption)) {
-		char match_header[1024], *quoted_etag = NULL;
+		zend_bool is_quoted = !((Z_STRVAL_P(zoption)[0] != '"') || (Z_STRVAL_P(zoption)[Z_STRLEN_P(zoption)-1] != '"'));
+		phpstr header;
 		
-		if ((Z_STRVAL_P(zoption)[0] != '"') || (Z_STRVAL_P(zoption)[Z_STRLEN_P(zoption)-1] != '"')) {
-			spprintf(&quoted_etag, 0, "\"%s\"", Z_STRVAL_P(zoption));
-		}
-		snprintf(match_header, sizeof(match_header), "%s: %s", range_req?"If-Match":"If-None-Match", quoted_etag?quoted_etag:Z_STRVAL_P(zoption));
-		request->_cache.headers = curl_slist_append(request->_cache.headers, match_header);
-		STR_FREE(quoted_etag);
+		phpstr_init(&header);
+		phpstr_appendf(&header, is_quoted?"%s: %s":"%s: \"%s\"", range_req?"If-Match":"If-None-Match", Z_STRVAL_P(zoption));
+		phpstr_fix(&header);
+		request->_cache.headers = curl_slist_append(request->_cache.headers, PHPSTR_VAL(&header));
+		phpstr_dtor(&header);
 	}
 	/* compression */
 	if ((zoption = http_request_option(request, options, "compress", IS_BOOL)) && Z_LVAL_P(zoption)) {
