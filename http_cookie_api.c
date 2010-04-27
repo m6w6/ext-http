@@ -323,7 +323,9 @@ PHP_HTTP_API void _http_cookie_list_tostring(http_cookie_list *list, char **str,
 	
 	FOREACH_HASH_KEYVAL(pos, &list->cookies, key, val) {
 		if (key.type == HASH_KEY_IS_STRING && key.len) {
-			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
+			zval *tmp = http_zsep(IS_STRING, *val);
+			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+			zval_ptr_dtor(&tmp);
 		}
 	}
 	
@@ -341,7 +343,8 @@ PHP_HTTP_API void _http_cookie_list_tostring(http_cookie_list *list, char **str,
 	
 	FOREACH_HASH_KEYVAL(pos, &list->extras, key, val) {
 		if (key.type == HASH_KEY_IS_STRING && key.len) {
-			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
+			zval *tmp = http_zsep(IS_STRING, *val);
+			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
 		}
 	}
 	
