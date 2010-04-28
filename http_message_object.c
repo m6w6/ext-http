@@ -1100,11 +1100,11 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 	NO_ARGS;
 
 	if (return_value_used) {
-		char ver[4] = {0};
+		char *version;
 		getObject(http_message_object, obj);
 
-		sprintf(ver, "%1.1lf", obj->message->http.version);
-		RETURN_STRINGL(ver, 3, 1);
+		spprintf(&version, 0, "%1.1F", obj->message->http.version);
+		RETURN_STRING(version, 0);
 	}
 }
 /* }}} */
@@ -1113,8 +1113,8 @@ PHP_METHOD(HttpMessage, getHttpVersion)
 	Set the HTTP Protocol version of the Message. */
 PHP_METHOD(HttpMessage, setHttpVersion)
 {
-	char v[4];
 	zval *zv;
+	char *version;
 	getObject(http_message_object, obj);
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/", &zv)) {
@@ -1122,9 +1122,9 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 	}
 
 	convert_to_double(zv);
-	snprintf(v, sizeof(v), "%1.1f", Z_DVAL_P(zv));
-	if (strcmp(v, "1.0") && strcmp(v, "1.1")) {
-		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid HTTP protocol version (1.0 or 1.1): %g", Z_DVAL_P(zv));
+	spprintf(&version, 0, "%1.1F", Z_DVAL_P(zv));
+	if (strcmp(version, "1.0") && strcmp(version, "1.1")) {
+		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid HTTP protocol version (1.0 or 1.1): %s", version);
 		RETURN_FALSE;
 	}
 
