@@ -281,47 +281,43 @@ static inline void _http_message_body_parse(http_message *msg, const char *messa
 		
 #ifdef HTTP_HAVE_ZLIB
 		/* check for compressed data */
-		if ((c = http_message_header(msg, "Vary"))) {
-			zval_ptr_dtor(&c);
-			
-			if ((c = http_message_header(msg, "Content-Encoding"))) {
-				char *decoded = NULL;
-				size_t decoded_len = 0;
-				
-				if (	!strcasecmp(Z_STRVAL_P(c), "gzip") ||
-						!strcasecmp(Z_STRVAL_P(c), "x-gzip") ||
-						!strcasecmp(Z_STRVAL_P(c), "deflate")) {
-					http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
-				}
-				
-				if (decoded) {
-					zval *len, **original_len;
-					char *tmp;
-					int tmp_len;
-					
-					tmp_len = (int) spprintf(&tmp, 0, "%zu", decoded_len);
-					MAKE_STD_ZVAL(len);
-					ZVAL_STRINGL(len, tmp, tmp_len, 0);
-					
-					ZVAL_ADDREF(c);
-					zend_hash_update(&msg->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), (void *) &c, sizeof(zval *), NULL);
-					zend_hash_del(&msg->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
-					if (SUCCESS == zend_hash_find(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &original_len)) {
-						ZVAL_ADDREF(*original_len);
-						zend_hash_update(&msg->hdrs, "X-Original-Content-Length", sizeof("X-Original-Content-Length"), (void *) original_len, sizeof(zval *), NULL);
-						zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
-					} else {
-						zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
-					}
-					
-					phpstr_dtor(PHPSTR(msg));
-					PHPSTR(msg)->data = decoded;
-					PHPSTR(msg)->used = decoded_len;
-					PHPSTR(msg)->free = 1;
-				}
-				
-				zval_ptr_dtor(&c);
+		if ((c = http_message_header(msg, "Content-Encoding"))) {
+			char *decoded = NULL;
+			size_t decoded_len = 0;
+
+			if (	!strcasecmp(Z_STRVAL_P(c), "gzip") ||
+					!strcasecmp(Z_STRVAL_P(c), "x-gzip") ||
+					!strcasecmp(Z_STRVAL_P(c), "deflate")) {
+				http_encoding_inflate(PHPSTR_VAL(msg), PHPSTR_LEN(msg), &decoded, &decoded_len);
 			}
+
+			if (decoded) {
+				zval *len, **original_len;
+				char *tmp;
+				int tmp_len;
+
+				tmp_len = (int) spprintf(&tmp, 0, "%zu", decoded_len);
+				MAKE_STD_ZVAL(len);
+				ZVAL_STRINGL(len, tmp, tmp_len, 0);
+
+				ZVAL_ADDREF(c);
+				zend_hash_update(&msg->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), (void *) &c, sizeof(zval *), NULL);
+				zend_hash_del(&msg->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
+				if (SUCCESS == zend_hash_find(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &original_len)) {
+					ZVAL_ADDREF(*original_len);
+					zend_hash_update(&msg->hdrs, "X-Original-Content-Length", sizeof("X-Original-Content-Length"), (void *) original_len, sizeof(zval *), NULL);
+					zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
+				} else {
+					zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &len, sizeof(zval *), NULL);
+				}
+
+				phpstr_dtor(PHPSTR(msg));
+				PHPSTR(msg)->data = decoded;
+				PHPSTR(msg)->used = decoded_len;
+				PHPSTR(msg)->free = 1;
+			}
+
+			zval_ptr_dtor(&c);
 		}
 #endif /* HTTP_HAVE_ZLIB */
 	}
