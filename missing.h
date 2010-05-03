@@ -40,6 +40,7 @@
 #else
 #	define ZEND_LITERAL_KEY_DC
 #	define ZEND_LITERAL_KEY_CC
+#	define ZEND_LITERAL_NIL_CC
 #	define HTTP_CHECK_OPEN_BASEDIR(file, act) \
 	if ((PG(open_basedir) && *PG(open_basedir)) || PG(safe_mode)) \
 	{ \
