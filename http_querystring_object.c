@@ -442,7 +442,7 @@ PHP_METHOD(HttpQueryString, mod)
 PHP_METHOD(HttpQueryString, singleton)
 {
 	zend_bool global = 1;
-	zval *instance = *zend_std_get_static_property(THIS_CE, ZEND_STRS("instance")-1, 0 TSRMLS_CC);
+	zval *instance = *zend_std_get_static_property(THIS_CE, ZEND_STRS("instance")-1, 0 ZEND_LITERAL_NIL_CC TSRMLS_CC);
 	
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &global)) {

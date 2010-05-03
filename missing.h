@@ -17,6 +17,48 @@
 
 #include "php_version.h"
 
+#if defined(PHP_VERSION_ID) && (PHP_VERSION_ID >= 50399)
+#	define ZEND_LITERAL_KEY_DC , const zend_literal *_zend_literal_key
+#	define ZEND_LITERAL_KEY_CC , _zend_literal_key
+#	define ZEND_LITERAL_NIL_CC , NULL
+#	define HTTP_CHECK_OPEN_BASEDIR(file, act) \
+	if ((PG(open_basedir) && *PG(open_basedir))) \
+	{ \
+		const char *tmp = file; \
+ \
+		if (!strncasecmp(tmp, "file:", lenof("file:"))) { \
+			tmp += lenof("file:"); \
+			while ((tmp - (const char *)file < 7) && (*tmp == '/' || *tmp == '\\')) ++tmp; \
+		} \
+ \
+ 		if (	(tmp != file || !strstr(file, "://")) && \
+		 		(!*tmp || php_check_open_basedir(tmp TSRMLS_CC))) { \
+		 		act; \
+		} \
+	}
+
+#else
+#	define ZEND_LITERAL_KEY_DC
+#	define ZEND_LITERAL_KEY_CC
+#	define HTTP_CHECK_OPEN_BASEDIR(file, act) \
+	if ((PG(open_basedir) && *PG(open_basedir)) || PG(safe_mode)) \
+	{ \
+		const char *tmp = file; \
+ \
+		if (!strncasecmp(tmp, "file:", lenof("file:"))) { \
+			tmp += lenof("file:"); \
+			while ((tmp - (const char *)file < 7) && (*tmp == '/' || *tmp == '\\')) ++tmp; \
+		} \
+ \
+ 		if (	(tmp != file || !strstr(file, "://")) && \
+		 		(!*tmp || php_check_open_basedir(tmp TSRMLS_CC) || \
+		 		(PG(safe_mode) && !php_checkuid(tmp, "rb+", CHECKUID_CHECK_MODE_PARAM)))) { \
+		 		act; \
+		} \
+	}
+
+#endif
+
 #if (PHP_MAJOR_VERSION == 5) && (PHP_MINOR_VERSION >= 3)
 #	define HTTP_ZAPI_HASH_TSRMLS_CC TSRMLS_CC
 #	define HTTP_ZAPI_HASH_TSRMLS_DC TSRMLS_DC

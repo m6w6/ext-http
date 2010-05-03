@@ -111,23 +111,6 @@ extern STATUS _http_object_new(zend_object_value *ov, const char *cname_str, uin
 		action; \
 	}
 
-#define HTTP_CHECK_OPEN_BASEDIR(file, act) \
-	if ((PG(open_basedir) && *PG(open_basedir)) || PG(safe_mode)) \
-	{ \
-		const char *tmp = file; \
- \
-		if (!strncasecmp(tmp, "file:", lenof("file:"))) { \
-			tmp += lenof("file:"); \
-			while ((tmp - (const char *)file < 7) && (*tmp == '/' || *tmp == '\\')) ++tmp; \
-		} \
- \
- 		if (	(tmp != file || !strstr(file, "://")) && \
-		 		(!*tmp || php_check_open_basedir(tmp TSRMLS_CC) || \
-		 		(PG(safe_mode) && !php_checkuid(tmp, "rb+", CHECKUID_CHECK_MODE_PARAM)))) { \
-		 		act; \
-		} \
-	}
-
 #define http_log(f, i, m) _http_log_ex((f), (i), (m) TSRMLS_CC)
 extern void _http_log_ex(char *file, const char *ident, const char *message TSRMLS_DC);
 

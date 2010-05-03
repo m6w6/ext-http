@@ -60,9 +60,9 @@ HTTP_END_ARGS;
 
 
 #define http_requestdatashare_object_read_prop _http_requestdatashare_object_read_prop
-static zval *_http_requestdatashare_object_read_prop(zval *object, zval *member, int type TSRMLS_DC);
+static zval *_http_requestdatashare_object_read_prop(zval *object, zval *member, int type ZEND_LITERAL_KEY_DC TSRMLS_DC);
 #define http_requestdatashare_object_write_prop _http_requestdatashare_object_write_prop
-static void _http_requestdatashare_object_write_prop(zval *object, zval *member, zval *value TSRMLS_DC);
+static void _http_requestdatashare_object_write_prop(zval *object, zval *member, zval *value ZEND_LITERAL_KEY_DC TSRMLS_DC);
 #define http_requestdatashare_instantiate(t, g) _http_requestdatashare_instantiate((t), (g) TSRMLS_CC)
 static inline zval *_http_requestdatashare_instantiate(zval *this_ptr, zend_bool global TSRMLS_DC);
 
@@ -145,17 +145,17 @@ void _http_requestdatashare_object_free(zend_object *object TSRMLS_DC)
 	freeObject(o);
 }
 
-static zval *_http_requestdatashare_object_read_prop(zval *object, zval *member, int type TSRMLS_DC)
+static zval *_http_requestdatashare_object_read_prop(zval *object, zval *member, int type ZEND_LITERAL_KEY_DC TSRMLS_DC)
 {
 	if (type == BP_VAR_W && zend_hash_exists(&THIS_CE->default_properties, Z_STRVAL_P(member), Z_STRLEN_P(member)+1)) {
 		zend_error(E_ERROR, "Cannot access HttpRequestDataShare default properties by reference or array key/index");
 		return NULL;
 	}
 	
-	return zend_get_std_object_handlers()->read_property(object, member, type TSRMLS_CC);
+	return zend_get_std_object_handlers()->read_property(object, member, type ZEND_LITERAL_KEY_CC TSRMLS_CC);
 }
 
-static void _http_requestdatashare_object_write_prop(zval *object, zval *member, zval *value TSRMLS_DC)
+static void _http_requestdatashare_object_write_prop(zval *object, zval *member, zval *value ZEND_LITERAL_KEY_DC TSRMLS_DC)
 {
 	if (zend_hash_exists(&THIS_CE->default_properties, Z_STRVAL_P(member), Z_STRLEN_P(member)+1)) {
 		int status;
@@ -167,7 +167,7 @@ static void _http_requestdatashare_object_write_prop(zval *object, zval *member,
 		}
 	}
 	
-	zend_get_std_object_handlers()->write_property(object, member, value TSRMLS_CC);
+	zend_get_std_object_handlers()->write_property(object, member, value ZEND_LITERAL_KEY_CC TSRMLS_CC);
 }
 
 /* {{{ proto void HttpRequestDataShare::__destruct()
@@ -247,7 +247,7 @@ PHP_METHOD(HttpRequestDataShare, factory)
 PHP_METHOD(HttpRequestDataShare, singleton)
 {
 	zend_bool global = 0;
-	zval *instance = *zend_std_get_static_property(THIS_CE, ZEND_STRS("instance")-1, 0 TSRMLS_CC);
+	zval *instance = *zend_std_get_static_property(THIS_CE, ZEND_STRS("instance")-1, 0 ZEND_LITERAL_NIL_CC TSRMLS_CC);
 	
 	SET_EH_THROW_HTTP();
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &global)) {
