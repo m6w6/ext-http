@@ -34,12 +34,24 @@ static inline void _http_flush(void *nothing, const char *data, size_t data_len 
 	/*	we really only need to flush when throttling is enabled,
 		because we push the data as fast as possible anyway if not */
 	if (HTTP_G->send.throttle_delay >= HTTP_DIFFSEC) {
+#if PHP_VERSION_ID < 50399
 		if (OG(ob_nesting_level)) {
 			php_end_ob_buffer(1, 1 TSRMLS_CC);
 		}
 		if (!OG(implicit_flush)) {
 			sapi_flush(TSRMLS_C);
 		}
+#else
+		int ob_level;
+		
+		if ((php_output_handler_hook(PHP_OUTPUT_HANDLER_HOOK_GET_LEVEL, &ob_level TSRMLS_CC) == SUCCESS) && ob_level > 0) {
+			php_output_discard(TSRMLS_C);
+		}
+		
+		if (php_output_get_status(TSRMLS_C) & PHP_OUTPUT_IMPLICITFLUSH) {
+			sapi_flush(TSRMLS_C);
+		}
+#endif
 		http_sleep(HTTP_G->send.throttle_delay);
 	}
 }

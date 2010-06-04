@@ -513,9 +513,14 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 		}
 	}
 
+#if PHP_VERSION_ID < 50399
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+#else
+	zend_object_std_init(&o->zo, ce TSRMLS_CC);
+	object_properties_init(&o->zo, ce);
+#endif
 
 	ov.handle = putObject(http_message_object, o);
 	ov.handlers = &http_message_object_handlers;
@@ -617,7 +622,11 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	zval *headers;
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
+#if PHP_VERSION_ID < 50399
 	HashTable *props = OBJ_PROP(obj);
+#else
+	HashTable *props = zend_std_get_properties(object TSRMLS_CC);
+#endif
 	zval array, *parent;
 	
 	INIT_ZARR(array, props);

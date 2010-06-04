@@ -125,9 +125,13 @@ zend_object_value _http_requestdatashare_object_new_ex(zend_class_entry *ce, htt
 		*ptr = o;
 	}
 
+#if PHP_VERSION_ID < 50399
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+#else
+	object_properties_init(&o->zo, ce);
+#endif
 
 	ov.handle = putObject(http_requestdatashare_object, o);
 	ov.handlers = &http_requestdatashare_object_handlers;
@@ -147,7 +151,13 @@ void _http_requestdatashare_object_free(zend_object *object TSRMLS_DC)
 
 static zval *_http_requestdatashare_object_read_prop(zval *object, zval *member, int type ZEND_LITERAL_KEY_DC TSRMLS_DC)
 {
-	if (type == BP_VAR_W && zend_hash_exists(&THIS_CE->default_properties, Z_STRVAL_P(member), Z_STRLEN_P(member)+1)) {
+	if (type == BP_VAR_W && 
+#if PHP_VERSION_ID < 50399
+	zend_hash_exists(&THIS_CE->default_properties, Z_STRVAL_P(member), Z_STRLEN_P(member)+1)
+#else
+	zend_get_property_info(THIS_CE, member, 1 TSRMLS_CC)
+#endif	
+	) {
 		zend_error(E_ERROR, "Cannot access HttpRequestDataShare default properties by reference or array key/index");
 		return NULL;
 	}
@@ -157,7 +167,11 @@ static zval *_http_requestdatashare_object_read_prop(zval *object, zval *member,
 
 static void _http_requestdatashare_object_write_prop(zval *object, zval *member, zval *value ZEND_LITERAL_KEY_DC TSRMLS_DC)
 {
+#if PHP_VERSION_ID < 50399
 	if (zend_hash_exists(&THIS_CE->default_properties, Z_STRVAL_P(member), Z_STRLEN_P(member)+1)) {
+#else
+	if (zend_get_property_info(THIS_CE, member, 1 TSRMLS_CC)) {
+#endif
 		int status;
 		getObjectEx(http_requestdatashare_object, obj, object);
 		
