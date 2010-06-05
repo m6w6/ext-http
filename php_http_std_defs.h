@@ -58,6 +58,13 @@ typedef int STATUS;
 		Z_ARRVAL(zv) = (ht); \
 	}
 
+#ifndef MAKE_COPY_ZVAL
+# define MAKE_COPY_ZVAL(ppzv, pzv) \
+	*(pzv) = **(ppzv);            \
+	zval_copy_ctor((pzv));        \
+	INIT_PZVAL((pzv));
+#endif
+    
 /* return bool (v == SUCCESS) */
 #define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
