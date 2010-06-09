@@ -179,9 +179,8 @@ PHP_FUNCTION(http_build_str)
 		} \
 	}
 
-#define HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array) \
+#define HTTP_DO_NEGOTIATE_HANDLE_RESULT(result, supported, rs_array) \
 	{ \
-		HashTable *result = rs; \
 		char *key; \
 		uint key_len; \
 		ulong idx; \
