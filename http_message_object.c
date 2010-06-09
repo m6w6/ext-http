@@ -513,14 +513,9 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 		}
 	}
 
-#if PHP_VERSION_ID < 50399
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-#else
-	zend_object_std_init(&o->zo, ce TSRMLS_CC);
-	object_properties_init(&o->zo, ce);
-#endif
 
 	ov.handle = putObject(http_message_object, o);
 	ov.handlers = &http_message_object_handlers;
@@ -579,24 +574,11 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 {
 	getObjectEx(http_message_object, obj, object);
 	http_message_object_prophandler *handler;
-	zval *return_value, *tmp_member = NULL;
-	
-	if (Z_TYPE_P(member) != IS_STRING) {
-		ALLOC_ZVAL(tmp_member);
-		MAKE_COPY_ZVAL(&member, tmp_member);
-		convert_to_string(tmp_member);
-		member = tmp_member;
-#if PHP_VERSION_ID >= 50399
-		_zend_literal_key = NULL;
-#endif
-	}
+	zval *return_value;
 
 	if (SUCCESS == http_message_object_get_prophandler(Z_STRVAL_P(member), Z_STRLEN_P(member), &handler)) {
 		if (type == BP_VAR_W) {
 			zend_error(E_ERROR, "Cannot access HttpMessage properties by reference or array key/index");
-			if (tmp_member) {
-				zval_ptr_dtor(&tmp_member);
-			}
 			return NULL;
 		}
 
@@ -615,9 +597,6 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 		return_value = zend_get_std_object_handlers()->read_property(object, member, type ZEND_LITERAL_KEY_CC TSRMLS_CC);
 	}
 	
-	if (tmp_member) {
-		zval_ptr_dtor(&tmp_member);
-	}
 	return return_value;
 }
 
@@ -625,25 +604,11 @@ static void _http_message_object_write_prop(zval *object, zval *member, zval *va
 {
 	getObjectEx(http_message_object, obj, object);
 	http_message_object_prophandler *handler;
-	zval *tmp_member = NULL;
-	
-	if (Z_TYPE_P(member) != IS_STRING) {
-		ALLOC_ZVAL(tmp_member);
-		MAKE_COPY_ZVAL(&member, tmp_member);
-		convert_to_string(tmp_member);
-		member = tmp_member;
-#if PHP_VERSION_ID >= 50399
-		_zend_literal_key = NULL;
-#endif
-	}
 	
 	if (SUCCESS == http_message_object_get_prophandler(Z_STRVAL_P(member), Z_STRLEN_P(member), &handler)) {
 		handler->write(obj, value TSRMLS_CC);
 	} else {
 		zend_get_std_object_handlers()->write_property(object, member, value ZEND_LITERAL_KEY_CC TSRMLS_CC);
-	}
-	if (tmp_member) {
-		zval_ptr_dtor(&tmp_member);
 	}
 }
 
@@ -652,11 +617,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	zval *headers;
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
-#if PHP_VERSION_ID < 50399
 	HashTable *props = OBJ_PROP(obj);
-#else
-	HashTable *props = zend_std_get_properties(object TSRMLS_CC);
-#endif
 	zval array, *parent;
 	
 	INIT_ZARR(array, props);

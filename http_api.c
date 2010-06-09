@@ -253,15 +253,9 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		return FAILURE;
 	}
 	
-#if PHP_VERSION_ID < 50399
 	if (!OG(ob_lock)) {
 		php_end_ob_buffers(0 TSRMLS_CC);
 	}
-#else
-	if (php_output_get_status(TSRMLS_C) & PHP_OUTPUT_LOCKED) {
-		php_output_end_all(TSRMLS_C);
-	}
-#endif
 	if ((SUCCESS == sapi_send_headers(TSRMLS_C)) && body) {
 		PHPWRITE(body, strlen(body));
 	}
