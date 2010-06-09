@@ -107,11 +107,88 @@ char *_http_negotiate_default_func(const char *test, double *quality, HashTable 
 }
 /* }}} */
 
+/* {{{ HashTable *http_negotiate_z(zval *, HashTable *, negotiate_func_t) */
+PHP_HTTP_API HashTable *_http_negotiate_z(zval *value, HashTable *supported, negotiate_func_t neg TSRMLS_DC)
+{
+	zval *accept = http_zsep(IS_STRING, value);
+	HashTable *result = NULL;
+
+	if (Z_STRLEN_P(accept)) {
+		zval ex_arr, ex_del;
+
+		INIT_PZVAL(&ex_del);
+		INIT_PZVAL(&ex_arr);
+		ZVAL_STRINGL(&ex_del, ",", 1, 0);
+		array_init(&ex_arr);
+
+		php_explode(&ex_del, accept, &ex_arr, INT_MAX);
+
+		if (zend_hash_num_elements(Z_ARRVAL(ex_arr)) > 0) {
+			int i = 0;
+			HashPosition pos;
+			zval **entry, array;
+
+			INIT_PZVAL(&array);
+			array_init(&array);
+
+			FOREACH_HASH_VAL(pos, Z_ARRVAL(ex_arr), entry) {
+				int ident_len;
+				double quality;
+				char *selected, *identifier, *freeme;
+				const char *separator;
+
+#if HTTP_DBG_NEG
+				fprintf(stderr, "Checking %s\n", Z_STRVAL_PP(entry));
+#endif
+
+				if ((separator = strchr(Z_STRVAL_PP(entry), ';'))) {
+					const char *ptr = separator;
+
+					while (*++ptr && !HTTP_IS_CTYPE(digit, *ptr) && '.' != *ptr);
+
+					quality = zend_strtod(ptr, NULL);
+					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = separator - Z_STRVAL_PP(entry));
+				} else {
+					quality = 1000.0 - i++;
+					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = Z_STRLEN_PP(entry));
+				}
+				freeme = identifier;
+
+				while (HTTP_IS_CTYPE(space, *identifier)) {
+					++identifier;
+					--ident_len;
+				}
+				while (ident_len && HTTP_IS_CTYPE(space, identifier[ident_len - 1])) {
+					identifier[--ident_len] = '\0';
+				}
+
+				if ((selected = neg(identifier, &quality, supported TSRMLS_CC))) {
+					/* don't overwrite previously set with higher quality */
+					if (!zend_hash_exists(Z_ARRVAL(array), selected, strlen(selected) + 1)) {
+						add_assoc_double(&array, selected, quality);
+					}
+				}
+
+				efree(freeme);
+			}
+
+			result = Z_ARRVAL(array);
+			zend_hash_sort(result, zend_qsort, http_sort_q, 0 TSRMLS_CC);
+		}
+
+		zval_dtor(&ex_arr);
+	}
+
+	zval_ptr_dtor(&accept);
+
+	return result;
+}
+/* }}} */
+
 /* {{{ HashTable *http_negotiate_q(const char *, HashTable *, negotiate_func_t) */
 PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *supported, negotiate_func_t neg TSRMLS_DC)
 {
 	zval *accept;
-	HashTable *result = NULL;
 	
 #if HTTP_DBG_NEG
 	fprintf(stderr, "Reading header %s: ", header);
@@ -123,73 +200,7 @@ PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *support
 	fprintf(stderr, "%s\n", Z_STRVAL_P(accept));
 #endif
 	
-	if (Z_STRLEN_P(accept)) {
-		zval ex_arr, ex_del;
-		
-		INIT_PZVAL(&ex_del);
-		INIT_PZVAL(&ex_arr);
-		ZVAL_STRINGL(&ex_del, ",", 1, 0);
-		array_init(&ex_arr);
-		
-		php_explode(&ex_del, accept, &ex_arr, INT_MAX);
-		
-		if (zend_hash_num_elements(Z_ARRVAL(ex_arr)) > 0) {
-			int i = 0;
-			HashPosition pos;
-			zval **entry, array;
-			
-			INIT_PZVAL(&array);
-			array_init(&array);
-			
-			FOREACH_HASH_VAL(pos, Z_ARRVAL(ex_arr), entry) {
-				int ident_len;
-				double quality;
-				char *selected, *identifier, *freeme;
-				const char *separator;
-				
-#if HTTP_DBG_NEG
-				fprintf(stderr, "Checking %s\n", Z_STRVAL_PP(entry));
-#endif
-				
-				if ((separator = strchr(Z_STRVAL_PP(entry), ';'))) {
-					const char *ptr = separator;
-					
-					while (*++ptr && !HTTP_IS_CTYPE(digit, *ptr) && '.' != *ptr);
-					
-					quality = zend_strtod(ptr, NULL);
-					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = separator - Z_STRVAL_PP(entry));
-				} else {
-					quality = 1000.0 - i++;
-					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = Z_STRLEN_PP(entry));
-				}
-				freeme = identifier;
-				
-				while (HTTP_IS_CTYPE(space, *identifier)) {
-					++identifier;
-					--ident_len;
-				}
-				while (ident_len && HTTP_IS_CTYPE(space, identifier[ident_len - 1])) {
-					identifier[--ident_len] = '\0';
-				}
-				
-				if ((selected = neg(identifier, &quality, supported TSRMLS_CC))) {
-					/* don't overwrite previously set with higher quality */
-					if (!zend_hash_exists(Z_ARRVAL(array), selected, strlen(selected) + 1)) {
-						add_assoc_double(&array, selected, quality);
-					}
-				}
-				
-				efree(freeme);
-			}
-			
-			result = Z_ARRVAL(array);
-			zend_hash_sort(result, zend_qsort, http_sort_q, 0 TSRMLS_CC);
-		}
-		
-		zval_dtor(&ex_arr);
-	}
-	
-	return result;
+	return http_negotiate_z(accept, supported, neg);
 }
 /* }}} */
 

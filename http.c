@@ -66,6 +66,7 @@ zend_function_entry http_functions[] = {
 	PHP_FE(http_negotiate_language, http_arg_pass_ref_2)
 	PHP_FE(http_negotiate_charset, http_arg_pass_ref_2)
 	PHP_FE(http_negotiate_content_type, http_arg_pass_ref_2)
+	PHP_FE(http_negotiate, http_arg_pass_ref_3)
 	PHP_FE(http_redirect, NULL)
 	PHP_FE(http_throttle, NULL)
 	PHP_FE(http_send_status, NULL)

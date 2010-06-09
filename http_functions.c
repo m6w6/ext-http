@@ -165,10 +165,23 @@ PHP_FUNCTION(http_build_str)
 			RETVAL_NULL(); \
 		} \
 	}
-#define HTTP_DO_NEGOTIATE(type, supported, rs_array) \
-{ \
-	HashTable *result; \
-	if ((result = http_negotiate_ ##type(supported))) { \
+
+#define HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array) \
+	HTTP_DO_NEGOTIATE_DEFAULT(supported); \
+	if (rs_array) { \
+		HashPosition pos; \
+		zval **value_ptr; \
+		 \
+		FOREACH_VAL(pos, supported, value_ptr) { \
+			zval *value = http_zsep(IS_STRING, *value_ptr); \
+			add_assoc_double(rs_array, Z_STRVAL_P(value), 1.0); \
+			zval_ptr_dtor(&value); \
+		} \
+	}
+
+#define HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array) \
+	{ \
+		HashTable *result = rs; \
 		char *key; \
 		uint key_len; \
 		ulong idx; \
@@ -185,22 +198,17 @@ PHP_FUNCTION(http_build_str)
 		\
 		zend_hash_destroy(result); \
 		FREE_HASHTABLE(result); \
-		\
-	} else { \
-		HTTP_DO_NEGOTIATE_DEFAULT(supported); \
-		\
-		if (rs_array) { \
-			HashPosition pos; \
-			zval **value_ptr; \
-			 \
-			FOREACH_VAL(pos, supported, value_ptr) { \
-				zval *value = http_zsep(IS_STRING, *value_ptr); \
-				add_assoc_double(rs_array, Z_STRVAL_P(value), 1.0); \
-				zval_ptr_dtor(&value); \
-			} \
+	}
+
+#define HTTP_DO_NEGOTIATE(type, supported, rs_array) \
+	{ \
+		HashTable *result; \
+		if ((result = http_negotiate_ ##type(supported))) { \
+			HTTP_DO_NEGOTIATE_HANDLE_RESULT(result, supported, rs_array); \
+		} else { \
+			HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array); \
 		} \
-	} \
-}
+	}
 
 /* {{{ proto string http_negotiate_language(array supported[, array &result])
 	Negotiate the clients preferred language. */
@@ -256,6 +264,30 @@ PHP_FUNCTION(http_negotiate_content_type)
 	}
 	
 	HTTP_DO_NEGOTIATE(content_type, supported, rs_array);
+}
+/* }}} */
+
+/* {{{ proto string http_negotiate(mixed value, array supported[, array &result])
+	Negotiate the user supplied value. */
+PHP_FUNCTION(http_negotiate)
+{
+	zval *value, *supported, *rs_array = NULL;
+	HashTable *rs;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "za|z", &value, &supported, &rs_array)) {
+		RETURN_FALSE;
+	}
+
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
+
+	if ((rs = http_negotiate_z(value, Z_ARRVAL_P(supported), http_negotiate_default_func))) {
+		HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array);
+	} else {
+		HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array);
+	}
 }
 /* }}} */
 

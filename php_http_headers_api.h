@@ -48,6 +48,8 @@ extern char *_http_negotiate_default_func(const char *test, double *quality, Has
 #define http_negotiate_content_type_ex(supported) http_negotiate_q("HTTP_ACCEPT", (supported), http_negotiate_content_type_func)
 #define http_negotiate_q(e, s, n) _http_negotiate_q((e), (s), (n) TSRMLS_CC)
 PHP_HTTP_API HashTable *_http_negotiate_q(const char *header, HashTable *supported, negotiate_func_t neg TSRMLS_DC);
+#define http_negotiate_z(z, s, n) _http_negotiate_z((z), (s), (n) TSRMLS_CC)
+PHP_HTTP_API HashTable *_http_negotiate_z(zval *value, HashTable *supported, negotiate_func_t neg TSRMLS_DC);
 
 #define http_get_request_ranges(r, l) _http_get_request_ranges((r), (l) TSRMLS_CC)
 PHP_HTTP_API http_range_status _http_get_request_ranges(HashTable *ranges, size_t length TSRMLS_DC);

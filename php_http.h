@@ -198,6 +198,7 @@ PHP_FUNCTION(http_build_str);
 PHP_FUNCTION(http_negotiate_language);
 PHP_FUNCTION(http_negotiate_charset);
 PHP_FUNCTION(http_negotiate_content_type);
+PHP_FUNCTION(http_negotiate);
 PHP_FUNCTION(http_redirect);
 PHP_FUNCTION(http_throttle);
 PHP_FUNCTION(http_send_status);
