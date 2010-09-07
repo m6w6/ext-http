@@ -1,0 +1,29 @@
+Known Issues
+============
+$Id: KnownIssues.txt 292753 2009-12-29 12:30:43Z mike $
+
+Windows:
+	If you keep getting "SSL connect error" when trying to issue 
+		requests, try another (newer) libeay32.dll/ssleay32.dll pair.
+
+Internals:
+	Inflating raw deflated data causes a re-initialization of the inflate
+		stream where the corresponding window bits are modified to tell libz
+		to not check for zlib header bytes.  This is not preventable AFAICS.
+	LFS dependant parts of libcurl are left out because of off_t,
+		respectively off64_t confusion.
+	Persistent handles and "cookiestore" request option do interfere,
+		as libcurl saves the cookies to the file on curl_easy_destroy(),
+		cookies are not saved until the CURL handle will be recycled.
+			Thus one would either need to
+				* run PHP with http.persistent.handles.limit = 0
+				* call http_persistent_handles_clean() every request
+				* call $HttpRequest->flushCookies(), which is available
+				  since libcurl v7.17.1 and does not work with the
+				  procedural API
+			Anyway, none of these options is really perfect, so using
+			HttpRequestDatashare with cookies enabled is probably the
+			best thing to do.
+	HTTP and Proxy authentication information (username/password) can not be
+		unset with NULL prior libcurl v7.19.6 and separate options for setting
+		username and password--which work--are only available since v7.19.6.

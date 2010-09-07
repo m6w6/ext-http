@@ -1,0 +1,890 @@
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2010, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
+*/
+
+/* $Id: http_cookie_api.c 298662 2010-04-27 13:42:32Z mike $ */
+
+#include "php_http.h"
+
+PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_init(php_http_cookie_list_t *list TSRMLS_DC)
+{
+	if (!list) {
+		list = emalloc(sizeof(*list));
+	}
+	
+	zend_hash_init(&list->cookies, 0, NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_init(&list->extras, 0, NULL, ZVAL_PTR_DTOR, 0);
+	
+	list->path = NULL;
+	list->domain = NULL;
+	list->expires = 0;
+	list->flags = 0;
+	
+	return list;
+}
+
+PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_copy(php_http_cookie_list_t *from, php_http_cookie_list_t *to TSRMLS_DC)
+{
+	to = php_http_cookie_list_init(to TSRMLS_CC);
+
+	array_copy(&from->cookies, &to->cookies);
+	array_copy(&from->extras, &to->extras);
+
+	STR_SET(to->path, from->path ? estrdup(from->path) : NULL);
+	STR_SET(to->domain, from->domain ? estrdup(from->domain) : NULL);
+	to->expires = from->expires;
+	to->flags = from->flags;
+
+	return to;
+}
+
+PHP_HTTP_API void php_http_cookie_list_dtor(php_http_cookie_list_t *list TSRMLS_DC)
+{
+	if (list) {
+		zend_hash_destroy(&list->cookies);
+		zend_hash_destroy(&list->extras);
+	
+		STR_SET(list->path, NULL);
+		STR_SET(list->domain, NULL);
+	}
+}
+
+
+
+PHP_HTTP_API void php_http_cookie_list_free(php_http_cookie_list_t **list TSRMLS_DC)
+{
+	if (*list) {
+		php_http_cookie_list_dtor(*list);
+		efree(*list);
+		*list = NULL;
+	}
+}
+
+
+
+PHP_HTTP_API const char *php_http_cookie_list_get_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len TSRMLS_DC)
+{
+	zval **cookie = NULL;
+	if ((SUCCESS != zend_hash_find(&list->cookies, name, name_len + 1, (void *) &cookie)) || (Z_TYPE_PP(cookie) != IS_STRING)) {
+		return NULL;
+	}
+	return Z_STRVAL_PP(cookie);
+}
+
+
+
+PHP_HTTP_API const char *php_http_cookie_list_get_extra(php_http_cookie_list_t *list, const char *name, size_t name_len TSRMLS_DC)
+{
+	zval **extra = NULL;
+	if ((SUCCESS != zend_hash_find(&list->extras, name, name_len + 1, (void *) &extra)) || (Z_TYPE_PP(extra) != IS_STRING)) {
+		return NULL;
+	}
+	return Z_STRVAL_PP(extra);
+}
+
+
+
+PHP_HTTP_API void php_http_cookie_list_add_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len, const char *value, size_t value_len TSRMLS_DC)
+{
+	zval *cookie_value;
+	char *key = estrndup(name, name_len);
+	MAKE_STD_ZVAL(cookie_value);
+	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
+	zend_hash_update(&list->cookies, key, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	efree(key);
+}
+
+
+
+PHP_HTTP_API void php_http_cookie_list_add_extra(php_http_cookie_list_t *list, const char *name, size_t name_len, const char *value, size_t value_len TSRMLS_DC)
+{
+	zval *cookie_value;
+	char *key = estrndup(name, name_len);
+	MAKE_STD_ZVAL(cookie_value);
+	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
+	zend_hash_update(&list->extras, key, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	efree(key);
+}
+
+
+typedef struct php_http_param_parse_cb_arg {
+	php_http_cookie_list_t *list;
+	long flags;
+	char **allowed_extras;
+} php_http_parse_param_cb_arg_t;
+
+
+static void php_http_cookie_parse_callback(void *ptr, const char *key, int keylen, const char *val, int vallen TSRMLS_DC)
+{
+	php_http_parse_param_cb_arg_t *arg = (php_http_parse_param_cb_arg_t *) ptr;
+	
+#define _KEY_IS(s) (keylen == lenof(s) && !strncasecmp(key, (s), keylen))
+	if _KEY_IS("path") {
+		STR_SET(arg->list->path, estrndup(val, vallen));
+	} else if _KEY_IS("domain") {
+		STR_SET(arg->list->domain, estrndup(val, vallen));
+	} else if _KEY_IS("expires") {
+		char *date = estrndup(val, vallen);
+		arg->list->expires = php_parse_date(date, NULL TSRMLS_CC);
+		efree(date);
+	} else if _KEY_IS("secure") {
+		arg->list->flags |= PHP_HTTP_COOKIE_SECURE;
+	} else if _KEY_IS("httpOnly") {
+		arg->list->flags |= PHP_HTTP_COOKIE_HTTPONLY;
+	} else {
+		/* check for extra */
+		if (arg->allowed_extras) {
+			char **ae = arg->allowed_extras;
+			
+			for (; *ae; ++ae) {
+				if ((size_t) keylen == strlen(*ae) && !strncasecmp(key, *ae, keylen)) {
+					if (arg->flags & PHP_HTTP_COOKIE_PARSE_RAW) {
+						php_http_cookie_list_add_extra(arg->list, key, keylen, val, vallen TSRMLS_CC);
+					} else {
+						char *dec = estrndup(val, vallen);
+						int declen = php_url_decode(dec, vallen);
+						
+						php_http_cookie_list_add_extra(arg->list, key, keylen, dec, declen TSRMLS_CC);
+						efree(dec);
+					}
+					return;
+				}
+			}
+		}
+		/* new cookie */
+		if (arg->flags & PHP_HTTP_COOKIE_PARSE_RAW) {
+			php_http_cookie_list_add_cookie(arg->list, key, keylen, val, vallen TSRMLS_CC);
+		} else {
+			char *dec = estrndup(val, vallen);
+			int declen = php_url_decode(dec, vallen);
+			
+			php_http_cookie_list_add_cookie(arg->list, key, keylen, dec, declen TSRMLS_CC);
+			efree(dec);
+		}
+	}
+}
+
+
+
+PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_list_t *list, const char *string, long flags, char **allowed_extras TSRMLS_DC)
+{
+	int free_list = !list;
+	php_http_parse_param_cb_arg_t arg;
+	
+	list = php_http_cookie_list_init(list TSRMLS_CC);
+	
+	arg.list = list;
+	arg.flags = flags;
+	arg.allowed_extras = allowed_extras;
+	
+	if (SUCCESS != php_http_params_parse(string, PHP_HTTP_PARAMS_RAISE_ERROR, php_http_cookie_parse_callback, &arg TSRMLS_CC)) {
+		if (free_list) {
+			php_http_cookie_list_free(&list TSRMLS_CC);
+		} else {
+			php_http_cookie_list_dtor(list TSRMLS_CC);
+		}
+		list = NULL;
+	}
+	
+	return list;
+}
+
+
+
+PHP_HTTP_API void php_http_cookie_list_to_struct(php_http_cookie_list_t *list, zval *strct TSRMLS_DC)
+{
+	zval array, *cookies, *extras;
+	
+	INIT_PZVAL_ARRAY(&array, HASH_OF(strct));
+	
+	MAKE_STD_ZVAL(cookies);
+	array_init(cookies);
+	zend_hash_copy(Z_ARRVAL_P(cookies), &list->cookies, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	add_assoc_zval(&array, "cookies", cookies);
+	
+	MAKE_STD_ZVAL(extras);
+	array_init(extras);
+	zend_hash_copy(Z_ARRVAL_P(extras), &list->extras, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	add_assoc_zval(&array, "extras", extras);
+	
+	add_assoc_long(&array, "flags", list->flags);
+	add_assoc_long(&array, "expires", (long) list->expires);
+	add_assoc_string(&array, "path", STR_PTR(list->path), 1);
+	add_assoc_string(&array, "domain", STR_PTR(list->domain), 1);
+}
+
+
+
+PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_cookie_list_t *list, zval *strct TSRMLS_DC)
+{
+	zval **tmp, *cpy;
+	HashTable *ht = HASH_OF(strct);
+	
+	list = php_http_cookie_list_init(list TSRMLS_CC);
+	
+	if (SUCCESS == zend_hash_find(ht, "cookies", sizeof("cookies"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_ARRAY) {
+		zend_hash_copy(&list->cookies, Z_ARRVAL_PP(tmp), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	}
+	if (SUCCESS == zend_hash_find(ht, "extras", sizeof("extras"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_ARRAY) {
+		zend_hash_copy(&list->extras, Z_ARRVAL_PP(tmp), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	}
+	if (SUCCESS == zend_hash_find(ht, "flags", sizeof("flags"), (void *) &tmp)) {
+		switch (Z_TYPE_PP(tmp)) {
+			case IS_LONG:
+				list->flags = Z_LVAL_PP(tmp);
+				break;
+			case IS_DOUBLE:
+				list->flags = (long) Z_DVAL_PP(tmp);
+				break;
+			case IS_STRING:
+				cpy = php_http_zsep(IS_LONG, *tmp);
+				list->flags = Z_LVAL_P(cpy);
+				zval_ptr_dtor(&cpy);
+				break;
+			default:
+				break;
+		}
+	}
+	if (SUCCESS == zend_hash_find(ht, "expires", sizeof("expires"), (void *) &tmp)) {
+		switch (Z_TYPE_PP(tmp)) {
+			case IS_LONG:
+				list->expires = Z_LVAL_PP(tmp);
+				break;
+			case IS_DOUBLE:
+				list->expires = (long) Z_DVAL_PP(tmp);
+				break;
+			case IS_STRING:
+				cpy = php_http_zsep(IS_LONG, *tmp);
+				if (Z_LVAL_P(cpy)) {
+					list->expires = Z_LVAL_P(cpy);
+				} else {
+					time_t expires = php_parse_date(Z_STRVAL_PP(tmp), NULL TSRMLS_CC);
+					if (expires > 0) {
+						list->expires = expires;
+					}
+				}
+				zval_ptr_dtor(&cpy);
+				break;
+			default:
+				break;
+		}
+	}
+	if (SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_STRING) {
+		list->path = estrndup(Z_STRVAL_PP(tmp), Z_STRLEN_PP(tmp));
+	}
+	if (SUCCESS == zend_hash_find(ht, "domain", sizeof("domain"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_STRING) {
+		list->domain = estrndup(Z_STRVAL_PP(tmp), Z_STRLEN_PP(tmp));
+	}
+	
+	return list;
+}
+
+
+
+static inline void append_encoded(php_http_buffer *buf, const char *key, size_t key_len, const char *val, size_t val_len)
+{
+	char *enc_str[2];
+	int enc_len[2];
+	
+	enc_str[0] = php_url_encode(key, key_len, &enc_len[0]);
+	enc_str[1] = php_url_encode(val, val_len, &enc_len[1]);
+	
+	php_http_buffer_append(buf, enc_str[0], enc_len[0]);
+	php_http_buffer_appends(buf, "=");
+	php_http_buffer_append(buf, enc_str[1], enc_len[1]);
+	php_http_buffer_appends(buf, "; ");
+	
+	efree(enc_str[0]);
+	efree(enc_str[1]);
+}
+
+
+
+PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, char **str, size_t *len TSRMLS_DC)
+{
+	php_http_buffer buf;
+	zval **val;
+	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+	HashPosition pos;
+	
+	php_http_buffer_init(&buf);
+	
+	FOREACH_HASH_KEYVAL(pos, &list->cookies, key, val) {
+		if (key.type == HASH_KEY_IS_STRING && key.len) {
+			zval *tmp = php_http_zsep(IS_STRING, *val);
+			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+			zval_ptr_dtor(&tmp);
+		}
+	}
+	
+	if (list->domain && *list->domain) {
+		php_http_buffer_appendf(&buf, "domain=%s; ", list->domain);
+	}
+	if (list->path && *list->path) {
+		php_http_buffer_appendf(&buf, "path=%s; ", list->path);
+	}
+	if (list->expires) {
+		char *date = php_format_date(ZEND_STRL(PHP_HTTP_DATE_FORMAT), list->expires, 0 TSRMLS_CC);
+		php_http_buffer_appendf(&buf, "expires=%s; ", date);
+		efree(date);
+	}
+	
+	FOREACH_HASH_KEYVAL(pos, &list->extras, key, val) {
+		if (key.type == HASH_KEY_IS_STRING && key.len) {
+			zval *tmp = php_http_zsep(IS_STRING, *val);
+			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+		}
+	}
+	
+	if (list->flags & PHP_HTTP_COOKIE_SECURE) {
+		php_http_buffer_appends(&buf, "secure; ");
+	}
+	if (list->flags & PHP_HTTP_COOKIE_HTTPONLY) {
+		php_http_buffer_appends(&buf, "httpOnly; ");
+	}
+	
+	php_http_buffer_fix(&buf);
+	*str = PHP_HTTP_BUFFER_VAL(&buf);
+	*len = PHP_HTTP_BUFFER_LEN(&buf);
+}
+
+#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpCookie, method, 0, req_args)
+#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpCookie, method, 0)
+#define PHP_HTTP_COOKIE_ME(method, visibility)	PHP_ME(HttpCookie, method, PHP_HTTP_ARGS(HttpCookie, method), visibility)
+
+PHP_HTTP_BEGIN_ARGS(__construct, 0)
+	PHP_HTTP_ARG_VAL(cookie_string, 0)
+	PHP_HTTP_ARG_VAL(parser_flags, 0)
+	PHP_HTTP_ARG_VAL(allowed_extras, 0)
+PHP_HTTP_END_ARGS;
+
+PHP_HTTP_EMPTY_ARGS(toArray);
+PHP_HTTP_EMPTY_ARGS(getCookies);
+PHP_HTTP_EMPTY_ARGS(getExtras);
+PHP_HTTP_EMPTY_ARGS(getDomain);
+PHP_HTTP_EMPTY_ARGS(getPath);
+PHP_HTTP_EMPTY_ARGS(getExpires);
+PHP_HTTP_EMPTY_ARGS(getFlags);
+PHP_HTTP_EMPTY_ARGS(toString);
+
+PHP_HTTP_BEGIN_ARGS(setDomain, 0)
+	PHP_HTTP_ARG_VAL(value, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(setPath, 0)
+	PHP_HTTP_ARG_VAL(value, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(setExpires, 0)
+	PHP_HTTP_ARG_VAL(value, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(setFlags, 0)
+	PHP_HTTP_ARG_VAL(value, 0)
+PHP_HTTP_END_ARGS;
+
+PHP_HTTP_BEGIN_ARGS(setCookies, 0)
+	PHP_HTTP_ARG_VAL(cookies, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(addCookies, 1)
+	PHP_HTTP_ARG_VAL(cookies, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(setExtras, 0)
+	PHP_HTTP_ARG_VAL(extras, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(addExtras, 1)
+	PHP_HTTP_ARG_VAL(extras, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(setCookie, 1)
+	PHP_HTTP_ARG_VAL(cookie_name, 0)
+	PHP_HTTP_ARG_VAL(cookie_value, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(addCookie, 1)
+	PHP_HTTP_ARG_VAL(cookie_name, 0)
+	PHP_HTTP_ARG_VAL(cookie_value, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(getCookie, 1)
+	PHP_HTTP_ARG_VAL(name, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(setExtra, 1)
+	PHP_HTTP_ARG_VAL(extra_name, 0)
+	PHP_HTTP_ARG_VAL(extra_value, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(addExtra, 1)
+	PHP_HTTP_ARG_VAL(extra_name, 0)
+	PHP_HTTP_ARG_VAL(extra_value, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(getExtra, 1)
+	PHP_HTTP_ARG_VAL(name, 0)
+PHP_HTTP_END_ARGS;
+
+zend_class_entry *php_http_cookie_class_entry;
+zend_function_entry php_http_cookie_method_entry[] = {
+	PHP_HTTP_COOKIE_ME(__construct, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(getCookies, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(setCookies, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(addCookies, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(getCookie, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(setCookie, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(addCookie, ZEND_ACC_PUBLIC)
+
+	PHP_HTTP_COOKIE_ME(getExtras, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(setExtras, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(addExtras, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(getExtra, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(setExtra, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(addExtra, ZEND_ACC_PUBLIC)
+
+	PHP_HTTP_COOKIE_ME(getDomain, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(setDomain, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(getPath, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(setPath, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(getExpires, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(setExpires, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(getFlags, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(setFlags, ZEND_ACC_PUBLIC)
+
+	PHP_HTTP_COOKIE_ME(toArray, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(toString, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpCookie, __toString, toString, PHP_HTTP_ARGS(HttpCookie, toString), ZEND_ACC_PUBLIC)
+
+	EMPTY_FUNCTION_ENTRY
+};
+static zend_object_handlers php_http_cookie_object_handlers;
+
+zend_object_value php_http_cookie_object_new(zend_class_entry *ce TSRMLS_DC)
+{
+	return php_http_cookie_object_new_ex(ce, NULL, NULL TSRMLS_CC);
+}
+
+zend_object_value php_http_cookie_object_new_ex(zend_class_entry *ce, php_http_cookie_list_t *list, php_http_cookie_object_t **ptr TSRMLS_DC)
+{
+	zend_object_value ov;
+	php_http_cookie_object_t *o;
+
+	o = ecalloc(sizeof(*o), 1);
+	zend_object_std_init((zend_object *) o, ce TSRMLS_CC);
+	object_properties_init((zend_object *) o, ce);
+
+	if (list) {
+		o->list = list;
+	}
+
+	if (ptr) {
+		*ptr = o;
+	}
+
+	ov.handle = zend_objects_store_put(o, NULL, php_http_cookie_object_free, NULL TSRMLS_CC);
+	ov.handlers = &php_http_cookie_object_handlers;
+
+	return ov;
+}
+
+zend_object_value php_http_cookie_object_clone(zval *this_ptr TSRMLS_CC)
+{
+	php_http_cookie_object_t *new_obj, *old_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	zend_object_value ov;
+
+	ov = php_http_cookie_object_new_ex(old_obj->o.ce, php_http_cookie_list_copy(old_obj->list, NULL TSRMLS_CC), &new_obj TSRMLS_CC);
+	zend_objects_clone_members((zend_object *) new_obj, ov, (zend_object *) old_obj, Z_OBJ_HANDLE_P(getThis()) TSRMLS_CC);
+
+	return ov;
+}
+
+void php_http_cookie_object_free(void *object TSRMLS_CC)
+{
+	php_http_cookie_object_t *obj = object;
+
+	php_http_cookie_list_free(&obj->list TSRMLS_CC);
+	zend_object_std_dtor((zend_object *) obj TSRMLS_CC);
+	efree(obj);
+}
+
+PHP_METHOD(HttpCookie, __construct)
+{
+	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+		zval *zcookie = NULL;
+		long flags = 0;
+		HashTable *allowed_extras = NULL;
+
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!lH", &zcookie, &flags, &allowed_extras)) {
+			if (zcookie) {
+				with_error_handling(EH_THROW, PHP_HTTP_EX_CE(cookie)) {
+					char **ae = NULL;
+					php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+					if (allowed_extras && zend_hash_num_elements(allowed_extras)) {
+						char **ae_ptr = safe_emalloc(zend_hash_num_elements(allowed_extras) + 1, sizeof(char *), 0);
+						HashPosition pos;
+						zval **val;
+
+						ae = ae_ptr;
+						FOREACH_HASH_VAL(pos, allowed_extras, val) {
+							zval *cpy = php_http_zsep(IS_STRING, *val);
+
+							*ae_ptr++ = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
+							zval_ptr_dtor(&cpy);
+						}
+						*ae_ptr = NULL;
+					}
+
+					switch (Z_TYPE_P(zcookie)) {
+						case IS_ARRAY:
+						case IS_OBJECT:
+							obj->list = php_http_cookie_list_from_struct(obj->list, zcookie TSRMLS_CC);
+							break;
+						default: {
+							zval *cpy = php_http_zsep(IS_STRING, zcookie);
+
+							obj->list = php_http_cookie_list_parse(obj->list, Z_STRVAL_P(cpy), flags, ae TSRMLS_CC);
+							zval_ptr_dtor(&cpy);
+							break;
+						}
+					}
+				} end_error_handling();
+			}
+		}
+	} end_error_handling();
+}
+
+PHP_METHOD(HttpCookie, getCookies)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		array_init(return_value);
+		array_copy(&obj->list->cookies, Z_ARRVAL_P(return_value));
+		return;
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, setCookies)
+{
+	HashTable *cookies = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|H", &cookies)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		zend_hash_clean(&obj->list->cookies);
+		if (cookies) {
+			array_copy(cookies, &obj->list->cookies);
+		}
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, addCookies)
+{
+	HashTable *cookies = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H", &cookies)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		array_join(cookies, &obj->list->cookies, 1, ARRAY_JOIN_STRONLY);
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+
+PHP_METHOD(HttpCookie, getExtras)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		array_init(return_value);
+		array_copy(&obj->list->extras, Z_ARRVAL_P(return_value));
+		return;
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, setExtras)
+{
+	HashTable *extras = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|H", &extras)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		zend_hash_clean(&obj->list->extras);
+		if (extras) {
+			array_copy(extras, &obj->list->extras);
+		}
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, addExtras)
+{
+	HashTable *extras = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H", &extras)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		array_join(extras, &obj->list->extras, 1, ARRAY_JOIN_STRONLY);
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, getCookie)
+{
+	char *name_str;
+	int name_len;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name_str, &name_len)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		zval **zvalue;
+
+		if (SUCCESS == zend_hash_find(&obj->list->cookies, name_str, name_len + 1, (void *) &zvalue)) {
+			RETURN_ZVAL(*zvalue, 1, 0);
+		}
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, setCookie)
+{
+	char *name_str, *value_str;
+	int name_len, value_len;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s!", &name_str, &name_len, &value_str, &value_len)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		if (!value_str) {
+			RETURN_SUCCESS(zend_hash_del(&obj->list->cookies, name_str, name_len + 1));
+		} else {
+			zval *zvalue;
+
+			MAKE_STD_ZVAL(zvalue);
+			ZVAL_STRINGL(zvalue, value_str, value_len, 1);
+			RETURN_SUCCESS(zend_hash_update(&obj->list->cookies, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL));
+		}
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, addCookie)
+{
+	char *name_str, *value_str;
+	int name_len, value_len;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s", &name_str, &name_len, &value_str, &value_len)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		zval *zvalue;
+
+		MAKE_STD_ZVAL(zvalue);
+		ZVAL_STRINGL(zvalue, value_str, value_len, 1);
+		RETURN_SUCCESS(zend_hash_add(&obj->list->cookies, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL));
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, getExtra)
+{
+	char *name_str;
+	int name_len;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name_str, &name_len)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		zval **zvalue;
+
+		if (SUCCESS == zend_hash_find(&obj->list->extras, name_str, name_len + 1, (void *) &zvalue)) {
+			RETURN_ZVAL(*zvalue, 1, 0);
+		}
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, setExtra)
+{
+	char *name_str, *value_str;
+	int name_len, value_len;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s!", &name_str, &name_len, &value_str, &value_len)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		if (!value_str) {
+			RETURN_SUCCESS(zend_hash_del(&obj->list->extras, name_str, name_len + 1));
+		} else {
+			zval *zvalue;
+
+			MAKE_STD_ZVAL(zvalue);
+			ZVAL_STRINGL(zvalue, value_str, value_len, 1);
+			RETURN_SUCCESS(zend_hash_update(&obj->list->extras, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL));
+		}
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, addExtra)
+{
+	char *name_str, *value_str;
+	int name_len, value_len;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s", &name_str, &name_len, &value_str, &value_len)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		zval *zvalue;
+
+		MAKE_STD_ZVAL(zvalue);
+		ZVAL_STRINGL(zvalue, value_str, value_len, 1);
+		RETURN_SUCCESS(zend_hash_add(&obj->list->extras, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL));
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, getDomain)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		if (obj->list->domain) {
+			RETURN_STRING(obj->list->domain, 1);
+		}
+		RETURN_NULL();
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, setDomain)
+{
+	char *domain_str = NULL;
+	int domain_len = 0;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &domain_str, &domain_len)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		STR_SET(obj->list->domain, domain_str ? estrndup(domain_str, domain_len) : NULL);
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, getPath)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		if (obj->list->path) {
+			RETURN_STRING(obj->list->path, 1);
+		}
+		RETURN_NULL();
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, setPath)
+{
+	char *path_str = NULL;
+	int path_len = 0;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &path_str, &path_len)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		STR_SET(obj->list->path, path_str ? estrndup(path_str, path_len) : NULL);
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, getExpires)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		RETURN_LONG(obj->list->expires);
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, setExpires)
+{
+	long ts = 0;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &ts)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		obj->list->expires = ts;
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, getFlags)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		RETURN_LONG(obj->list->flags);
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, setFlags)
+{
+	long flags = 0;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &flags)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		obj->list->flags = flags;
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, toString)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		char *str;
+		size_t len;
+
+		php_http_cookie_list_to_string(obj->list, &str, &len TSRMLS_CC);
+		RETURN_STRINGL(str, len, 0);
+	}
+	RETURN_EMPTY_STRING();
+}
+
+PHP_METHOD(HttpCookie, toArray)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		array_init(return_value);
+		php_http_cookie_list_to_struct(obj->list, return_value TSRMLS_CC);
+	}
+}
+
+PHP_MINIT_FUNCTION(http_cookie)
+{
+	PHP_HTTP_REGISTER_CLASS(http, Cookie, http_cookie, php_http_object_class_entry, 0);
+	php_http_cookie_class_entry->create_object = php_http_cookie_object_new;
+	memcpy(&php_http_cookie_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	php_http_cookie_object_handlers.clone_obj = php_http_cookie_object_clone;
+
+	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("PARSE_RAW"), PHP_HTTP_COOKIE_PARSE_RAW TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("SECURE"), PHP_HTTP_COOKIE_SECURE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("HTTPONLY"), PHP_HTTP_COOKIE_HTTPONLY TSRMLS_CC);
+
+	return SUCCESS;
+}
+
+
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
