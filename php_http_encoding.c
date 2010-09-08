@@ -295,6 +295,8 @@ PHP_HTTP_API STATUS php_http_encoding_stream_update(php_http_encoding_stream_t *
 PHP_HTTP_API STATUS php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
 {
 	if (!s->ops->flush) {
+		*out_str = NULL;
+		*out_len = 0;
 		return SUCCESS;
 	}
 	return s->ops->flush(s, out_str, out_len);
@@ -311,6 +313,8 @@ PHP_HTTP_API zend_bool php_http_encoding_stream_done(php_http_encoding_stream_t 
 PHP_HTTP_API STATUS php_http_encoding_stream_finish(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
 {
 	if (!s->ops->finish) {
+		*out_str = NULL;
+		*out_len = 0;
 		return SUCCESS;
 	}
 	return s->ops->finish(s, out_str, out_len);

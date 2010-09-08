@@ -221,8 +221,6 @@ PHP_HTTP_API void php_http_cookie_list_to_struct(php_http_cookie_list_t *list, z
 	add_assoc_string(&array, "domain", STR_PTR(list->domain), 1);
 }
 
-
-
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_cookie_list_t *list, zval *strct TSRMLS_DC)
 {
 	zval **tmp, *cpy;

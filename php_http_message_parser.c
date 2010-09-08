@@ -302,8 +302,8 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 				 * 		- body done
 				 * 	N:	- parse ahaed
 				 */
-				size_t dec_len;
 				char *dec_str = NULL;
+				size_t dec_len;
 
 				if (SUCCESS != php_http_encoding_stream_update(parser->dechunk, buffer->data, buffer->used, &dec_str, &dec_len TSRMLS_CC)) {
 					return FAILURE;
@@ -327,7 +327,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 				php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
 
 				if (parser->dechunk) {
-					char *dec_str;
+					char *dec_str = NULL;
 					size_t dec_len;
 
 					if (SUCCESS != php_http_encoding_stream_finish(parser->dechunk, &dec_str, &dec_len TSRMLS_CC)) {
