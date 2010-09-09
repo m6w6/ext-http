@@ -15,6 +15,8 @@
 #ifndef PHP_HTTP_REQUEST_H
 #define PHP_HTTP_REQUEST_H
 
+#include <curl/curl.h>
+
 #include "php_http_request_method.h"
 #include "php_http_request_pool.h"
 
@@ -46,6 +48,7 @@ typedef struct php_http_request {
 		php_http_buffer_t cookies;
 		HashTable options;
 		struct curl_slist *headers;
+		long redirects;
 	} _cache;
 	
 	struct {

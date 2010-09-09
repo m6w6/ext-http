@@ -597,7 +597,7 @@ PHP_HTTP_API STATUS php_http_request_prepare(php_http_request_t *request, HashTa
 	/* redirects, defaults to 0 */
 	if ((zoption = php_http_request_option(request, options, ZEND_STRS("redirect"), IS_LONG))) {
 		PHP_HTTP_CURL_OPT(CURLOPT_FOLLOWLOCATION, Z_LVAL_P(zoption) ? 1L : 0L);
-		PHP_HTTP_CURL_OPT(CURLOPT_MAXREDIRS, Z_LVAL_P(zoption));
+		PHP_HTTP_CURL_OPT(CURLOPT_MAXREDIRS, request->_cache.redirects = Z_LVAL_P(zoption));
 		if ((zoption = php_http_request_option(request, options, ZEND_STRS("unrestrictedauth"), IS_BOOL))) {
 			PHP_HTTP_CURL_OPT(CURLOPT_UNRESTRICTED_AUTH, Z_LVAL_P(zoption));
 		}
@@ -608,6 +608,8 @@ PHP_HTTP_API STATUS php_http_request_prepare(php_http_request_t *request, HashTa
 			PHP_HTTP_CURL_OPT(CURLOPT_POST301, Z_BVAL_P(zoption) ? 1L : 0L);
 #endif
 		}
+	} else {
+		request->_cache.redirects = 0;
 	}
 	
 	/* retries, defaults to 0 */
@@ -1019,7 +1021,7 @@ static int php_http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, 
 		case CURLINFO_HEADER_OUT:
 		case CURLINFO_DATA_OUT:
 			php_http_buffer_append(request->parser.buf, data, length);
-			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse(request->parser.ctx, request->parser.buf, 0, &request->parser.msg)) {
+			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse(request->parser.ctx, request->parser.buf, request->_cache.redirects?PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS:0, &request->parser.msg)) {
 				return -1;
 			}
 			break;
