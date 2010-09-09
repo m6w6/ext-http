@@ -260,7 +260,7 @@ PHP_HTTP_API void php_http_request_pool_dtor(php_http_request_pool_t *pool)
 	pool->unfinished = 0;
 	zend_llist_clean(&pool->finished);
 	zend_llist_clean(&pool->handles);
-	php_http_persistent_handle_release(ZEND_STRL("php_http_request_pool_t"), &pool->ch TSRMLS_CC);
+	php_http_persistent_handle_release(ZEND_STRL("http_request_pool"), &pool->ch TSRMLS_CC);
 }
 
 PHP_HTTP_API void php_http_request_pool_free(php_http_request_pool_t **pool) {
