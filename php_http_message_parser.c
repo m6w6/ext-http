@@ -91,7 +91,7 @@ PHP_HTTP_API void php_http_message_parser_free(php_http_message_parser_t **parse
 }
 
 
-PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer *buffer, unsigned flags, php_http_message_t **message)
+PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, php_http_message_t **message)
 {
 	TSRMLS_FETCH_FROM_CTX(parser->ts);
 	char *str = NULL;
@@ -101,8 +101,8 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 	while (buffer->used || !php_http_message_parser_states[php_http_message_parser_state_is(parser)].need_data) {
 #if 0
 		const char *state[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "DONE"};
-		fprintf(stderr, "#MP: %s (%d) %zu\n",
-				state[php_http_message_parser_state_is(parser)], (*message)->type, buffer->used);
+		fprintf(stderr, "#MP: %s (%d) %.*s…\n",
+				state[php_http_message_parser_state_is(parser)], (*message)->type, MIN(16, buffer->used), buffer->data);
 #endif
 
 		switch (php_http_message_parser_state_pop(parser))
@@ -236,34 +236,40 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY:
 			{
-				zval *zcl;
+				if (len) {
+					zval *zcl;
 
-				if (parser->inflate) {
-					char *dec_str = NULL;
-					size_t dec_len;
+					if (parser->inflate) {
+						char *dec_str = NULL;
+						size_t dec_len;
 
-					if (SUCCESS != php_http_encoding_stream_update(parser->inflate, str, len, &dec_str, &dec_len TSRMLS_CC)) {
-						return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
+						if (SUCCESS != php_http_encoding_stream_update(parser->inflate, str, len, &dec_str, &dec_len TSRMLS_CC)) {
+							return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
+						}
+
+						if (str != buffer->data) {
+							STR_FREE(str);
+						}
+						str = dec_str;
+						len = dec_len;
 					}
 
-					if (str != buffer->data) {
-						STR_FREE(str);
-					}
-					str = dec_str;
-					len = dec_len;
+					php_stream_write(php_http_message_body_stream(&(*message)->body), str, len);
+
+					/* keep track */
+					MAKE_STD_ZVAL(zcl);
+					ZVAL_LONG(zcl, php_http_message_body_size(&(*message)->body));
+					zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), &zcl, sizeof(zval *), NULL);
 				}
 
-				php_stream_write(php_http_message_body_stream(&(*message)->body), str, len);
-				php_http_buffer_cut(buffer, 0, cut);
-
-				/* keep track */
-				MAKE_STD_ZVAL(zcl);
-				ZVAL_LONG(zcl, php_http_message_body_size(&(*message)->body));
-				zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), &zcl, sizeof(zval *), NULL);
+				if (cut) {
+					php_http_buffer_cut(buffer, 0, cut);
+				}
 
 				if (str != buffer->data) {
 					STR_FREE(str);
 				}
+
 				str = NULL;
 				len = 0;
 				cut = 0;
