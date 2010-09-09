@@ -158,7 +158,9 @@ PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, char *key_st
 			php_http_buffer_init(&str);
 			MAKE_STD_ZVAL(header_str);
 			FOREACH_VAL(pos, *header, val) {
-				php_http_buffer_appendf(&str, PHP_HTTP_BUFFER_LEN(&str) ? ", %s":"%s", Z_STRVAL_PP(val));
+				zval *strval = php_http_zsep(IS_STRING, *val);
+				php_http_buffer_appendf(&str, PHP_HTTP_BUFFER_LEN(&str) ? ", %s":"%s", Z_STRVAL_P(strval));
+				zval_ptr_dtor(&strval);
 			}
 			php_http_buffer_fix(&str);
 			ZVAL_STRINGL(header_str, PHP_HTTP_BUFFER_VAL(&str), PHP_HTTP_BUFFER_LEN(&str), 0);
