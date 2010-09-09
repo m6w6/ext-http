@@ -51,7 +51,7 @@ PHP_HTTP_API void php_http_sleep(double s)
 
 int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 {
-	int result;
+	int result = 0;
 
 	if (flags & PHP_HTTP_MATCH_FULL) {
 		if (flags & PHP_HTTP_MATCH_CASE) {
