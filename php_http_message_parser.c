@@ -102,7 +102,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 #if 0
 		const char *state[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "DONE"};
 		fprintf(stderr, "#MP: %s (%d) %.*s…\n",
-				state[php_http_message_parser_state_is(parser)], (*message)->type, MIN(16, buffer->used), buffer->data);
+				state[php_http_message_parser_state_is(parser)], (*message)->type, MIN(32, buffer->used), buffer->data);
 #endif
 
 		switch (php_http_message_parser_state_pop(parser))
@@ -149,7 +149,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE:
 			{
-				zval *h, **h_cl = NULL, **h_cr = NULL, **h_te = NULL;
+				zval *h, *h_loc = NULL, *h_con = NULL, **h_cl = NULL, **h_cr = NULL, **h_te = NULL;
 
 				if ((h = php_http_message_header(*message, ZEND_STRL("Transfer-Encoding"), 1))) {
 					zend_hash_update(&(*message)->hdrs, "X-Original-Transfer-Encoding", sizeof("X-Original-Transfer-Encoding"), &h, sizeof(zval *), (void *) &h_te);
@@ -165,7 +165,11 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 
 				if ((h = php_http_message_header(*message, ZEND_STRL("Content-Encoding"), 1))) {
 					if (strstr(Z_STRVAL_P(h), "gzip") || strstr(Z_STRVAL_P(h), "x-gzip") || strstr(Z_STRVAL_P(h), "deflate")) {
-						parser->inflate = php_http_encoding_stream_init(parser->inflate, php_http_encoding_stream_get_inflate_ops(), 0 TSRMLS_CC);
+						if (parser->inflate) {
+							php_http_encoding_stream_reset(&parser->inflate);
+						} else {
+							parser->inflate = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), 0 TSRMLS_CC);
+						}
 						zend_hash_update(&(*message)->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), &h, sizeof(zval *), NULL);
 						zend_hash_del(&(*message)->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
 					} else {
@@ -177,6 +181,29 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 				MAKE_STD_ZVAL(h);
 				ZVAL_LONG(h, 0);
 				zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), &h, sizeof(zval *), NULL);
+
+				/* so, if curl sees a 3xx code, a Location header and a Connection:close header
+				 * it decides not to read the response body.
+				 */
+				if ((flags & PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS)
+				&&	(*message)->type == PHP_HTTP_RESPONSE
+				&&	(*message)->http.info.response.code/100 == 3
+				&&	(h_loc = php_http_message_header(*message, ZEND_STRL("Location"), 1))
+				&&	(h_con = php_http_message_header(*message, ZEND_STRL("Connection"), 1))
+				) {
+					if (php_http_match(Z_STRVAL_P(h_con), "close", PHP_HTTP_MATCH_WORD)) {
+						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
+						zval_ptr_dtor(&h_loc);
+						zval_ptr_dtor(&h_con);
+						break;
+					}
+				}
+				if (h_loc) {
+					zval_ptr_dtor(&h_loc);
+				}
+				if (h_con) {
+					zval_ptr_dtor(&h_con);
+				}
 
 				if (h_te) {
 					if (strstr(Z_STRVAL_PP(h_te), "chunked")) {
