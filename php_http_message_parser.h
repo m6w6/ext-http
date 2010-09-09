@@ -15,7 +15,8 @@ typedef enum php_http_message_parser_state {
 	PHP_HTTP_MESSAGE_PARSER_STATE_DONE
 } php_http_message_parser_state_t;
 
-#define PHP_HTTP_MESSAGE_PARSER_CLEANUP 0x1
+#define PHP_HTTP_MESSAGE_PARSER_CLEANUP			0x1
+#define PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS	0x2
 
 typedef struct php_http_message_parser {
 	php_http_header_parser_t header;

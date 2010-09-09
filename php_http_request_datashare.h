@@ -1,6 +1,8 @@
 #ifndef PHP_HTTP_REQUEST_DATASHARE_H
 #define PHP_HTTP_REQUEST_DATASHARE_H
 
+#include <curl/curl.h>
+
 #ifdef ZTS
 typedef struct php_http_request_datashare_lock {
 	CURL *ch;

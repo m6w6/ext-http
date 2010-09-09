@@ -64,11 +64,6 @@ typedef int STATUS;
 #	endif
 #endif
 
-#ifdef PHP_HTTP_HAVE_EVENT
-//#	include <event.h>
-#endif
-
-#include <curl/curl.h>
 #define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
 
 #include <ctype.h>

@@ -2,6 +2,8 @@
 #ifndef PHP_HTTP_REQUESTPOOL_H
 #define PHP_HTTP_REQUESTPOOL_H
 
+#include <curl/curl.h>
+
 struct php_http_request_pool_globals {
 	void *event_base;
 };
