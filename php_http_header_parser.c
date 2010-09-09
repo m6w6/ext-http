@@ -82,15 +82,16 @@ PHP_HTTP_API void php_http_header_parser_free(php_http_header_parser_t **parser)
 	}
 }
 
-PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
+PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
 {
 	TSRMLS_FETCH_FROM_CTX(parser->ts);
 
 	while (buffer->used || !php_http_header_parser_states[php_http_header_parser_state_is(parser)].need_data) {
 #if 0
 		const char *state[] = {"START", "KEY", "VALUE", "HEADER_DONE", "DONE"};
-		fprintf(stderr, "#HP: %s (%d) %zu\n",
-				state[php_http_header_parser_state_is(parser)], zend_hash_num_elements(headers), buffer->used);
+		fprintf(stderr, "#HP-%p: %s (%d) %.*s…\n", parser,
+				php_http_header_parser_state_is(parser)<0?"FAILURE":state[php_http_header_parser_state_is(parser)],
+						zend_hash_num_elements(headers), MIN(16,buffer->used), buffer->data);
 #endif
 		switch (php_http_header_parser_state_pop(parser)) {
 			case PHP_HTTP_HEADER_PARSER_STATE_FAILURE:
@@ -135,32 +136,6 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 				}
 				break;
-				/*
-				if (colon && (!eol_str || colon < eol_str)) {
-					parser->_key.str = estrndup(buffer->data, parser->_key.len = colon - buffer->data);
-					while (PHP_HTTP_IS_CTYPE(space, *++colon));
-					php_http_buffer_cut(buffer, 0, colon - buffer->data);
-					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
-				} else if (eol_str) {
-					if (eol_str == buffer->data) {
-						php_http_buffer_cut(buffer, 0, eol_len);
-						php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_DONE);
-					} else if (php_http_info_parse(&parser->info, php_http_buffer_fix(buffer)->data TSRMLS_CC)) {
-						if (callback_func) {
-							callback_func(callback_arg, &headers, &parser->info TSRMLS_CC);
-						}
-						php_http_info_dtor(&parser->info);
-						php_http_buffer_cut(buffer, 0, eol_str + eol_len - buffer->data);
-						php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
-					} else {
-						return PHP_HTTP_HEADER_PARSER_STATE_FAILURE;
-					}
-				} else {
-					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_KEY);
-					return PHP_HTTP_HEADER_PARSER_STATE_KEY;
-				}
-				break;
-				*/
 			}
 
 			case PHP_HTTP_HEADER_PARSER_STATE_VALUE: {

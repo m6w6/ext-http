@@ -1,6 +1,8 @@
 
 #include "php_http.h"
 
+#include <ext/spl/spl_iterators.h>
+
 static HashTable php_http_request_datashare_options;
 static php_http_request_datashare_t php_http_request_datashare_global;
 static int php_http_request_datashare_compare_handles(void *h1, void *h2);

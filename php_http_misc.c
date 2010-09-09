@@ -14,6 +14,10 @@
 
 #include "php_http.h"
 
+#include <ext/standard/php_lcg.h>
+#include <ext/standard/php_string.h>
+#include <Zend/zend_exceptions.h>
+
 /* SLEEP */
 
 PHP_HTTP_API void php_http_sleep(double s)
@@ -208,7 +212,7 @@ void php_http_error(long type TSRMLS_DC, long code, const char *format, ...)
 			char *message;
 			zend_class_entry *ce;
 
-			if (EG(exception_class) && instanceof_function(EG(exception_class), php_http_exception_class_entry)) {
+			if (0&& EG(exception_class) && instanceof_function(EG(exception_class), php_http_exception_class_entry)) {
 				ce = EG(exception_class);
 			} else {
 				ce = php_http_exception_get_for_code(code);

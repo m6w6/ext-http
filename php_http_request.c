@@ -14,6 +14,29 @@
 
 #include "php_http.h"
 
+#include <Zend/zend_interfaces.h>
+
+#if defined(ZTS) && defined(PHP_HTTP_HAVE_SSL)
+#	ifdef PHP_WIN32
+#		define PHP_HTTP_NEED_OPENSSL_TSL
+#		include <openssl/crypto.h>
+#	else /* !PHP_WIN32 */
+#		if defined(PHP_HTTP_HAVE_OPENSSL)
+#			define PHP_HTTP_NEED_OPENSSL_TSL
+#			include <openssl/crypto.h>
+#		elif defined(PHP_HTTP_HAVE_GNUTLS)
+#			define PHP_HTTP_NEED_GNUTLS_TSL
+#			include <gcrypt.h>
+#		else
+#			warning \
+				"libcurl was compiled with SSL support, but configure could not determine which" \
+				"library was used; thus no SSL crypto locking callbacks will be set, which may " \
+				"cause random crashes on SSL requests"
+#		endif /* PHP_HTTP_HAVE_OPENSSL || PHP_HTTP_HAVE_GNUTLS */
+#	endif /* PHP_WIN32 */
+#endif /* ZTS && PHP_HTTP_HAVE_SSL */
+
+
 #ifdef PHP_HTTP_NEED_OPENSSL_TSL
 static MUTEX_T *php_http_openssl_tsl = NULL;
 
@@ -623,7 +646,7 @@ PHP_HTTP_API STATUS php_http_request_prepare(php_http_request_t *request, HashTa
 	else if ((zoption = php_http_request_option(request, options, ZEND_STRS("range"), IS_ARRAY)) && zend_hash_num_elements(Z_ARRVAL_P(zoption))) {
 		HashPosition pos1, pos2;
 		zval **rr, **rb, **re;
-		php_http_buffer rs;
+		php_http_buffer_t rs;
 		
 		php_http_buffer_init(&rs);
 		FOREACH_VAL(pos1, zoption, rr) {
@@ -670,7 +693,7 @@ PHP_HTTP_API STATUS php_http_request_prepare(php_http_request_t *request, HashTa
 		php_http_array_hashkey_t header_key = php_http_array_hashkey_init(0);
 		zval **header_val;
 		HashPosition pos;
-		php_http_buffer header;
+		php_http_buffer_t header;
 		
 		php_http_buffer_init(&header);
 		FOREACH_KEYVAL(pos, zoption, header_key, header_val) {
@@ -694,7 +717,7 @@ PHP_HTTP_API STATUS php_http_request_prepare(php_http_request_t *request, HashTa
 	/* etag */
 	if ((zoption = php_http_request_option(request, options, ZEND_STRS("etag"), IS_STRING)) && Z_STRLEN_P(zoption)) {
 		zend_bool is_quoted = !((Z_STRVAL_P(zoption)[0] != '"') || (Z_STRVAL_P(zoption)[Z_STRLEN_P(zoption)-1] != '"'));
-		php_http_buffer header;
+		php_http_buffer_t header;
 		
 		php_http_buffer_init(&header);
 		php_http_buffer_appendf(&header, is_quoted?"%s: %s":"%s: \"%s\"", range_req?"If-Match":"If-None-Match", Z_STRVAL_P(zoption));
@@ -2077,9 +2100,8 @@ PHP_METHOD(HttpRequest, getResponseBody)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		zval *message = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("responseMessage"), 0 TSRMLS_CC);
-		zval *body = zend_read_property(php_http_message_class_entry, message, ZEND_STRL("body"), 0 TSRMLS_CC);
 
-		RETURN_ZVAL(body, 1, 0);
+		RETURN_OBJVAL(((php_http_message_object_t *)zend_object_store_get_object(message TSRMLS_CC))->body, 1);
 	}
 	RETURN_FALSE;
 }

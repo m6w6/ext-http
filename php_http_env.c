@@ -14,6 +14,10 @@
 
 #include "php_http.h"
 
+#include <main/SAPI.h>
+#include <ext/date/php_date.h>
+#include <ext/standard/php_string.h>
+
 PHP_RINIT_FUNCTION(http_env)
 {
 	PHP_HTTP_G->env.response.last_modified = 0;
@@ -338,7 +342,7 @@ static void grab_headers(void *data, void *arg TSRMLS_DC)
 PHP_HTTP_API STATUS php_http_env_get_response_headers(HashTable *headers_ht TSRMLS_DC)
 {
 	STATUS status;
-	php_http_buffer headers;
+	php_http_buffer_t headers;
 
 	php_http_buffer_init(&headers);
 	zend_llist_apply_with_argument(&SG(sapi_headers).headers, grab_headers, &headers TSRMLS_CC);
@@ -770,7 +774,7 @@ PHP_HTTP_API void php_http_env_set_response_body(zval *container, php_http_messa
 }
 
 struct output_ctx {
-	php_http_buffer *buf;
+	php_http_buffer_t *buf;
 	zval *container;
 };
 
@@ -959,7 +963,7 @@ PHP_HTTP_API STATUS php_http_env_send_response(zval *container TSRMLS_DC)
 				/* send multipart/byte-ranges message */
 				HashPosition pos;
 				zval **chunk, *zct;
-				php_http_buffer preface;
+				php_http_buffer_t preface;
 				int free_ct = 0;
 				char *content_type = "application/octet-stream";
 				char boundary[32], *ct_header_str = "Content-Type: multipart/byteranges; boundary=                                ";

@@ -1,6 +1,12 @@
 
 #include "php_http.h"
 
+#ifdef PHP_HTTP_HAVE_EVENT
+#	include <event.h>
+#endif
+
+#include <ext/spl/spl_iterators.h>
+#include <Zend/zend_interfaces.h>
 
 #ifndef PHP_HTTP_DEBUG_REQPOOLS
 #	define PHP_HTTP_DEBUG_REQPOOLS 0

@@ -14,6 +14,8 @@
 
 #include "php_http.h"
 
+#include <ext/date/php_date.h>
+
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_init(php_http_cookie_list_t *list TSRMLS_DC)
 {
 	if (!list) {
@@ -287,7 +289,7 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_c
 
 
 
-static inline void append_encoded(php_http_buffer *buf, const char *key, size_t key_len, const char *val, size_t val_len)
+static inline void append_encoded(php_http_buffer_t *buf, const char *key, size_t key_len, const char *val, size_t val_len)
 {
 	char *enc_str[2];
 	int enc_len[2];
@@ -308,7 +310,7 @@ static inline void append_encoded(php_http_buffer *buf, const char *key, size_t 
 
 PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, char **str, size_t *len TSRMLS_DC)
 {
-	php_http_buffer buf;
+	php_http_buffer_t buf;
 	zval **val;
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 	HashPosition pos;

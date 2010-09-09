@@ -39,11 +39,11 @@ typedef struct php_http_request {
 	struct {
 		php_http_message_parser_t *ctx;
 		php_http_message_t *msg;
-		php_http_buffer *buf;
+		php_http_buffer_t *buf;
 	} parser;
 	
 	struct {
-		php_http_buffer cookies;
+		php_http_buffer_t cookies;
 		HashTable options;
 		struct curl_slist *headers;
 	} _cache;

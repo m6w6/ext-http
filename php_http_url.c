@@ -14,6 +14,9 @@
 
 #include "php_http.h"
 
+#include <main/SAPI.h>
+#include <ext/standard/php_string.h>
+
 static inline char *localhostname(void)
 {
 	char hostname[1024] = {0};
@@ -326,7 +329,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, zend_bool override
 {
 	char *arg_sep;
 	size_t arg_sep_len;
-	php_http_buffer *qstr = php_http_buffer_new();
+	php_http_buffer_t *qstr = php_http_buffer_new();
 
 	if (override_argsep || !(arg_sep_len = strlen(arg_sep = INI_STR("arg_separator.output")))) {
 		arg_sep = PHP_HTTP_URL_ARGSEP;
@@ -348,7 +351,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, zend_bool override
 	return SUCCESS;
 }
 
-PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_buffer *str, const char *arg_sep, size_t arg_sep_len, const char *prefix, size_t prefix_len TSRMLS_DC)
+PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_buffer_t *str, const char *arg_sep, size_t arg_sep_len, const char *prefix, size_t prefix_len TSRMLS_DC)
 {
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 	zval **data = NULL;
@@ -365,7 +368,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_b
 	FOREACH_HASH_KEYVAL(pos, ht, key, data) {
 		char *encoded_key;
 		int encoded_len;
-		php_http_buffer new_prefix;
+		php_http_buffer_t new_prefix;
 		
 		if (!data || !*data) {
 			php_http_buffer_dtor(str);

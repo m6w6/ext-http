@@ -373,7 +373,7 @@ extern int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, 
 /* PASS CALLBACK */
 
 typedef size_t (*php_http_pass_callback_t)(void *cb_arg, const char *str, size_t len);
-typedef size_t (*php_http_pass_php_http_buffer_callback_t)(void *cb_arg, php_http_buffer *str);
+typedef size_t (*php_http_pass_php_http_buffer_callback_t)(void *cb_arg, php_http_buffer_t *str);
 
 typedef struct php_http_pass_callback_arg {
 	size_t (*cb_zts)(void *cb_arg, const char *str, size_t len TSRMLS_DC);

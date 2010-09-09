@@ -14,6 +14,12 @@
 
 #include "php_http.h"
 
+#include <zlib.h>
+#include <curl/curl.h>
+#ifdef PHP_HTTP_HAVE_EVENT
+#	include <event.h>
+#endif
+
 #include <main/php_ini.h>
 #include <ext/standard/info.h>
 #include <Zend/zend_extensions.h>
@@ -176,8 +182,6 @@ PHP_RSHUTDOWN_FUNCTION(http)
 	return SUCCESS;
 }
 
-
-
 PHP_MINFO_FUNCTION(http)
 {
 	php_info_print_table_start();
@@ -190,22 +194,15 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_start();
 	php_info_print_table_header(3, "Used Library", "Compiled", "Linked");
 	{
-#ifdef PHP_HTTP_HAVE_CURL
 		curl_version_info_data *cv = curl_version_info(CURLVERSION_NOW);
+		php_info_print_table_row(3, "libz", ZLIB_VERSION, zlibVersion());
 		php_info_print_table_row(3, "libcurl", LIBCURL_VERSION, cv->version);
-#else
-		php_info_print_table_row(3, "libcurl", "disabled", "disabled");
-#endif
 #ifdef PHP_HTTP_HAVE_EVENT
 		php_info_print_table_row(3, "libevent", PHP_HTTP_EVENT_VERSION, event_get_version());
 #else
 		php_info_print_table_row(3, "libevent", "disabled", "disabled");
 #endif
-#ifdef PHP_HTTP_HAVE_ZLIB
-		php_info_print_table_row(3, "libz", ZLIB_VERSION, zlibVersion());
-#else
 		php_info_print_table_row(3, "libz", "disabled", "disabled");
-#endif
 	}
 	php_info_print_table_end();
 	

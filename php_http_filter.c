@@ -63,7 +63,7 @@ PHP_MINIT_FUNCTION(http_filter)
 	}
 
 typedef struct _http_chunked_decode_filter_buffer_t {
-	php_http_buffer	buffer;
+	php_http_buffer_t	buffer;
 	ulong	hexlen;
 } PHP_HTTP_FILTER_BUFFER(chunked_decode);
 
@@ -223,7 +223,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 	
 	/* new data available? */
 	if (buckets_in->head) {
-		php_http_buffer buf;
+		php_http_buffer_t buf;
 		out_avail = 1;
 		
 		php_http_buffer_init(&buf);

@@ -15,6 +15,8 @@
 #ifndef PHP_HTTP_URL_H
 #define PHP_HTTP_URL_H
 
+#include <ext/standard/url.h>
+
 #define PHP_HTTP_URL_REPLACE		0x000
 #define PHP_HTTP_URL_JOIN_PATH		0x001
 #define PHP_HTTP_URL_JOIN_QUERY		0x002
@@ -38,7 +40,7 @@ PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url 
 PHP_HTTP_API char *php_http_url_absolute(const char *url, int flags TSRMLS_DC);
 
 PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, zend_bool override_argsep, char *pre_encoded_data, size_t pre_encoded_len, char **encoded_data, size_t *encoded_len TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_buffer *str, const char *arg_sep, size_t arg_sep_len, const char *prefix, size_t prefix_len TSRMLS_DC);
+PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_buffer_t *str, const char *arg_sep, size_t arg_sep_len, const char *prefix, size_t prefix_len TSRMLS_DC);
 
 static inline php_url *php_http_url_from_struct(php_url *url, HashTable *ht TSRMLS_DC)
 {

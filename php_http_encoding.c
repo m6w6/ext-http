@@ -14,6 +14,8 @@
 
 #include "php_http.h"
 
+#include <zlib.h>
+
 static inline int eol_match(char **line, int *eol_len)
 {
 	char *ptr = *line;
@@ -111,7 +113,7 @@ PHP_HTTP_API const char *php_http_encoding_dechunk(const char *encoded, size_t e
 static inline int php_http_inflate_rounds(z_stream *Z, int flush, char **buf, size_t *len)
 {
 	int status = 0, round = 0;
-	php_http_buffer buffer;
+	php_http_buffer_t buffer;
 	
 	*buf = NULL;
 	*len = 0;
@@ -339,7 +341,7 @@ PHP_HTTP_API void php_http_encoding_stream_free(php_http_encoding_stream_t **s)
 }
 
 struct dechunk_ctx {
-	php_http_buffer buffer;
+	php_http_buffer_t buffer;
 	ulong hexlen;
 	unsigned zeroed:1;
 };
@@ -516,17 +518,16 @@ retry_raw_inflate:
 
 static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
 {
-	php_http_buffer tmp;
+	php_http_buffer_t tmp;
 	struct dechunk_ctx *ctx = s->ctx;
 	TSRMLS_FETCH_FROM_CTX(s->ts);
 
 	if (ctx->zeroed) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_ENCODING, "Dechunk encoding stream has already reached the end of chunked input");
 		return FAILURE;
 	}
-	if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(&ctx->buffer, data, data_len)) {
-		return FAILURE;
-	}
-	if (!php_http_buffer_fix(&ctx->buffer)) {
+	if ((PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(&ctx->buffer, data, data_len)) || !php_http_buffer_fix(&ctx->buffer)) {
+		/* OOM */
 		return FAILURE;
 	}
 
@@ -602,6 +603,7 @@ static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, si
 					/*	if strtoul() stops at the beginning of the buffered data
 						there's domething oddly wrong, i.e. bad input */
 					if (stop == PHP_HTTP_BUFFER_VAL(&ctx->buffer)) {
+						php_http_error(HE_WARNING, PHP_HTTP_E_ENCODING, "Failed to parse chunk len from '%.*s'", MIN(16, ctx->buffer.used), ctx->buffer.data);
 						php_http_buffer_dtor(&tmp);
 						return FAILURE;
 					}
@@ -790,7 +792,7 @@ static void deflate_dtor(php_http_encoding_stream_t *s)
 		z_streamp ctx = s->ctx;
 
 		if (ctx->opaque) {
-			php_http_buffer_free((php_http_buffer **) &ctx->opaque);
+			php_http_buffer_free((php_http_buffer_t **) &ctx->opaque);
 		}
 		deflateEnd(ctx);
 		pefree(ctx, (s->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT));
@@ -804,7 +806,7 @@ static void inflate_dtor(php_http_encoding_stream_t *s)
 		z_streamp ctx = s->ctx;
 
 		if (ctx->opaque) {
-			php_http_buffer_free((php_http_buffer **) &ctx->opaque);
+			php_http_buffer_free((php_http_buffer_t **) &ctx->opaque);
 		}
 		inflateEnd(ctx);
 		pefree(ctx, (s->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT));

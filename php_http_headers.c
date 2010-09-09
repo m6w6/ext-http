@@ -17,7 +17,7 @@
 PHP_HTTP_API STATUS php_http_headers_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data TSRMLS_DC)
 {
 	php_http_header_parser_t ctx;
-	php_http_buffer buf;
+	php_http_buffer_t buf;
 	
 	php_http_buffer_from_string_ex(&buf, header, length);
 	php_http_header_parser_init(&ctx TSRMLS_CC);

@@ -35,6 +35,6 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_state_is(ph
 PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_state_pop(php_http_message_parser_t *parser);
 PHP_HTTP_API void php_http_message_parser_dtor(php_http_message_parser_t *parser);
 PHP_HTTP_API void php_http_message_parser_free(php_http_message_parser_t **parser);
-PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer *buffer, unsigned flags, php_http_message_t **message);
+PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, php_http_message_t **message);
 
 #endif

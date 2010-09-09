@@ -14,7 +14,14 @@
 
 #include "php_http.h"
 
-/** API **/
+#include <main/php_variables.h>
+#include <ext/spl/spl_array.h>
+#include <Zend/zend_interfaces.h>
+
+#ifdef PHP_HTTP_HAVE_ICONV
+#	undef PHP_ATOM_INC
+#	include <ext/iconv/php_iconv.h>
+#endif
 
 static inline int php_http_querystring_modify_array_ex(zval *qarray, int key_type, char *key, int keylen, ulong idx, zval *params_entry TSRMLS_DC);
 static inline int php_http_querystring_modify_array(zval *qarray, zval *params TSRMLS_DC);
@@ -187,8 +194,6 @@ static inline int php_http_querystring_modify_array_ex(zval *qarray, int key_typ
 	}
 	return 1;
 }
-
-/** PHP **/
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 			PHP_HTTP_BEGIN_ARGS_EX(HttpQueryString, method, 0, req_args)
 #define PHP_HTTP_EMPTY_ARGS(method)						PHP_HTTP_EMPTY_ARGS_EX(HttpQueryString, method, 0)

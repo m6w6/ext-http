@@ -14,7 +14,9 @@
 
 #include "php_http.h"
 
-/* API */
+#include <main/SAPI.h>
+#include <ext/spl/spl_iterators.h>
+#include <Zend/zend_interfaces.h>
 
 PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **message, HashTable **headers, php_http_info_t *info TSRMLS_DC)
 {
@@ -127,7 +129,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *str, size_t len TSRMLS_DC)
 {
 	php_http_message_parser_t p;
-	php_http_buffer buf;
+	php_http_buffer_t buf;
 
 	if (!msg) {
 		msg = php_http_message_init(NULL, 0 TSRMLS_CC);
@@ -151,7 +153,7 @@ PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, char *key_st
 		if (join && Z_TYPE_PP(header) == IS_ARRAY) {
 			zval *header_str, **val;
 			HashPosition pos;
-			php_http_buffer str;
+			php_http_buffer_t str;
 
 			php_http_buffer_init(&str);
 			MAKE_STD_ZVAL(header_str);
@@ -217,7 +219,7 @@ PHP_HTTP_API void php_http_message_set_info(php_http_message_t *message, php_htt
 	}
 }
 
-static inline void message_headers(php_http_message_t *msg, php_http_buffer *str)
+static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *str)
 {
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 	HashPosition pos1;
@@ -287,7 +289,7 @@ static inline void message_headers(php_http_message_t *msg, php_http_buffer *str
 
 PHP_HTTP_API void php_http_message_to_callback(php_http_message_t *msg, php_http_pass_callback_t cb, void *cb_arg)
 {
-	php_http_buffer str;
+	php_http_buffer_t str;
 	TSRMLS_FETCH_FROM_CTX(msg->ts);
 
 	php_http_buffer_init_ex(&str, 0x1000, 0);
@@ -304,7 +306,7 @@ PHP_HTTP_API void php_http_message_to_callback(php_http_message_t *msg, php_http
 
 PHP_HTTP_API void php_http_message_to_string(php_http_message_t *msg, char **string, size_t *length)
 {
-	php_http_buffer str;
+	php_http_buffer_t str;
 	char *data;
 
 	php_http_buffer_init_ex(&str, 0x1000, 0);
@@ -327,7 +329,7 @@ PHP_HTTP_API void php_http_message_serialize(php_http_message_t *message, char *
 {
 	char *buf;
 	size_t len;
-	php_http_buffer str;
+	php_http_buffer_t str;
 
 	php_http_buffer_init(&str);
 
@@ -600,9 +602,6 @@ PHP_HTTP_API void php_http_message_free(php_http_message_t **message)
 		*message = NULL;
 	}
 }
-
-
-/* PHP */
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpMessage, method, 0, req_args)
 #define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpMessage, method, 0)

@@ -1,5 +1,9 @@
 #include "php_http.h"
 
+#ifdef PHP_HTTP_HAVE_HASH
+#	include "php_hash.h"
+#endif
+
 #include <ext/standard/crc32.h>
 #include <ext/standard/sha1.h>
 #include <ext/standard/md5.h>

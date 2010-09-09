@@ -14,6 +14,8 @@
 
 #include "php_http.h"
 
+#include <ext/standard/php_string.h>
+
 #ifndef PHP_HTTP_DBG_NEG
 #	define PHP_HTTP_DBG_NEG 0
 #endif

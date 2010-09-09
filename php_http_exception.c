@@ -14,6 +14,7 @@
 
 #include "php_http.h"
 
+#include <Zend/zend_exceptions.h>
 
 #ifndef PHP_HTTP_DBG_EXCEPTIONS
 #	define PHP_HTTP_DBG_EXCEPTIONS 0
