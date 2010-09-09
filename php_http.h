@@ -38,19 +38,6 @@
 #	define PHP_HTTP_API
 #endif
 
-#include <main/SAPI.h>
-#include <main/fopen_wrappers.h>
-#include <main/php_streams.h>
-#include <main/php_variables.h>
-#include <Zend/zend_exceptions.h>
-#include <Zend/zend_interfaces.h>
-#include <ext/date/php_date.h>
-#include <ext/spl/spl_array.h>
-#include <ext/spl/spl_iterators.h>
-#include <ext/standard/php_lcg.h>
-#include <ext/standard/php_string.h>
-#include <ext/standard/url.h>
-
 /* make functions that return SUCCESS|FAILURE more obvious */
 typedef int STATUS;
 
@@ -59,13 +46,10 @@ typedef int STATUS;
 
 #if (defined(HAVE_ICONV) || defined(PHP_HTTP_HAVE_EXT_ICONV)) && (PHP_HTTP_SHARED_DEPS || !defined(COMPILE_DL_ICONV))
 #	define PHP_HTTP_HAVE_ICONV
-#	undef PHP_ATOM_INC
-#	include <ext/iconv/php_iconv.h>
 #endif
 
 #if (defined(HAVE_HASH_EXT) || defined(PHP_HTTP_HAVE_EXT_HASH)) && (PHP_HTTP_SHARED_DEPS || !defined(COMPILE_DL_HASH)) && defined(PHP_HTTP_HAVE_PHP_HASH_H)
 #	define PHP_HTTP_HAVE_HASH
-#	include "php_hash.h"
 #endif
 
 #ifdef PHP_WIN32
@@ -81,33 +65,12 @@ typedef int STATUS;
 #endif
 
 #ifdef PHP_HTTP_HAVE_EVENT
-#	include <event.h>
+//#	include <event.h>
 #endif
 
 #include <curl/curl.h>
 #define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
 
-#if defined(ZTS) && defined(PHP_HTTP_HAVE_SSL)
-#	ifdef PHP_WIN32
-#		define PHP_HTTP_NEED_OPENSSL_TSL
-#		include <openssl/crypto.h>
-#	else /* !PHP_WIN32 */
-#		if defined(PHP_HTTP_HAVE_OPENSSL)
-#			define PHP_HTTP_NEED_OPENSSL_TSL
-#			include <openssl/crypto.h>
-#		elif defined(PHP_HTTP_HAVE_GNUTLS)
-#			define PHP_HTTP_NEED_GNUTLS_TSL
-#			include <gcrypt.h>
-#		else
-#			warning \
-				"libcurl was compiled with SSL support, but configure could not determine which" \
-				"library was used; thus no SSL crypto locking callbacks will be set, which may " \
-				"cause random crashes on SSL requests"
-#		endif /* PHP_HTTP_HAVE_OPENSSL || PHP_HTTP_HAVE_GNUTLS */
-#	endif /* PHP_WIN32 */
-#endif /* ZTS && PHP_HTTP_HAVE_SSL */
-
-#include <zlib.h>
 #include <ctype.h>
 #define PHP_HTTP_IS_CTYPE(type, c) is##type((int) (unsigned char) (c))
 #define PHP_HTTP_TO_CTYPE(type, c) to##type((int) (unsigned char) (c))
