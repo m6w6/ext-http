@@ -225,7 +225,8 @@ static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *s
 {
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 	HashPosition pos1;
-	zval **header;
+	zval **header, *h;
+	size_t size;
 
 	switch (msg->type) {
 		case PHP_HTTP_REQUEST:
@@ -238,6 +239,30 @@ static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *s
 
 		default:
 			break;
+	}
+
+	if ((size = php_http_message_body_size(&msg->body))) {
+		MAKE_STD_ZVAL(h);
+		ZVAL_LONG(h, size);
+		zend_hash_add(&msg->hdrs, "Content-Length", sizeof("Content-Length"), &h, sizeof(zval *), NULL);
+
+		if (msg->body.boundary) {
+			char *str;
+			size_t len;
+
+			if (!(h = php_http_message_header(msg, ZEND_STRL("Content-Type"), 1))) {
+				len = spprintf(&str, 0, "multipart/form-data; boundary=\"%s\"", msg->body.boundary);
+				MAKE_STD_ZVAL(h);
+				ZVAL_STRINGL(h, str, len, 0);
+				zend_hash_update(&msg->hdrs, "Content-Type", sizeof("Content-Type"), &h, sizeof(zval *), NULL);
+			} else if (!php_http_match(Z_STRVAL_P(h), "boundary=", PHP_HTTP_MATCH_WORD)) {
+				zval_dtor(h);
+				Z_STRLEN_P(h) = spprintf(&Z_STRVAL_P(h), 0, "%s; boundary=\"%s\"", Z_STRVAL_P(h), msg->body.boundary);
+				zend_hash_update(&msg->hdrs, "Content-Type", sizeof("Content-Type"), &h, sizeof(zval *), NULL);
+			} else {
+				zval_ptr_dtor(&h);
+			}
+		}
 	}
 
 	FOREACH_HASH_KEYVAL(pos1, &msg->hdrs, key, header) {
@@ -916,7 +941,7 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_object_handlers.get_properties = php_http_message_object_get_props;
 	php_http_message_object_handlers.get_property_ptr_ptr = php_http_message_object_get_prop_ptr;
 
-	zend_class_implements(php_http_message_class_entry TSRMLS_CC, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
+	zend_class_implements(php_http_message_class_entry TSRMLS_CC, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator, php_http_fluently_callable_class_entry);
 
 	zend_hash_init(&php_http_message_object_prophandlers, 9, NULL, NULL, 1);
 	zend_declare_property_long(php_http_message_class_entry, ZEND_STRL("type"), PHP_HTTP_NONE, ZEND_ACC_PROTECTED TSRMLS_CC);
@@ -1111,7 +1136,8 @@ void php_http_message_object_free(void *object TSRMLS_DC)
 }
 
 
-static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member, const zend_literal *literal_key TSRMLS_DC) {
+static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member, const zend_literal *literal_key TSRMLS_DC)
+{
 	php_http_message_object_prophandler_t *handler;
 	zval *copy = php_http_zsep(IS_STRING, member);
 
@@ -1308,12 +1334,11 @@ PHP_METHOD(HttpMessage, setBody)
 		}
 
 		php_http_message_body_dtor(&obj->message->body);
-		php_http_message_body_init(&obj->message->body, php_http_message_body_stream(body_obj->body));
+		php_http_message_body_copy(body_obj->body, &obj->message->body, 0);
 		Z_OBJ_ADDREF_P(zbody);
 		obj->body = Z_OBJVAL_P(zbody);
-		RETURN_TRUE;
 	}
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, getHeader)
@@ -1365,15 +1390,14 @@ PHP_METHOD(HttpMessage, setHeader)
 		}
 
 		if (!zvalue) {
-			RETVAL_SUCCESS(zend_hash_del(&obj->message->hdrs, name, name_len + 1));
+			zend_hash_del(&obj->message->hdrs, name, name_len + 1);
 		} else {
 			Z_ADDREF_P(zvalue);
-			RETVAL_SUCCESS(zend_hash_update(&obj->message->hdrs, name, name_len + 1, &zvalue, sizeof(void *), NULL));
+			zend_hash_update(&obj->message->hdrs, name, name_len + 1, &zvalue, sizeof(void *), NULL);
 		}
 		efree(name);
-		return;
 	}
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, setHeaders)
@@ -1391,9 +1415,8 @@ PHP_METHOD(HttpMessage, setHeaders)
 		if (new_headers) {
 			array_join(Z_ARRVAL_P(new_headers), &obj->message->hdrs, 0, ARRAY_JOIN_PRETTIFY|ARRAY_JOIN_STRONLY);
 		}
-		RETURN_TRUE;
 	}
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, addHeader)
@@ -1414,14 +1437,13 @@ PHP_METHOD(HttpMessage, addHeader)
 		Z_ADDREF_P(zvalue);
 		if ((header = php_http_message_header(obj->message, name, name_len, 0))) {
 			convert_to_array(header);
-			RETVAL_SUCCESS(zend_hash_next_index_insert(Z_ARRVAL_P(header), &zvalue, sizeof(void *), NULL));
+			zend_hash_next_index_insert(Z_ARRVAL_P(header), &zvalue, sizeof(void *), NULL);
 		} else {
-			RETVAL_SUCCESS(zend_hash_update(&obj->message->hdrs, name, name_len + 1, &zvalue, sizeof(void *), NULL));
+			zend_hash_update(&obj->message->hdrs, name, name_len + 1, &zvalue, sizeof(void *), NULL);
 		}
 		efree(name);
-		return;
 	}
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, addHeaders)
@@ -1437,9 +1459,8 @@ PHP_METHOD(HttpMessage, addHeaders)
 		}
 
 		array_join(Z_ARRVAL_P(new_headers), &obj->message->hdrs, append, ARRAY_JOIN_STRONLY|ARRAY_JOIN_PRETTIFY);
-		RETURN_TRUE;
 	}
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, getType)
@@ -1467,9 +1488,8 @@ PHP_METHOD(HttpMessage, setType)
 		}
 
 		php_http_message_set_type(obj->message, type);
-		RETURN_TRUE;
 	}
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, getInfo)
@@ -1514,9 +1534,8 @@ PHP_METHOD(HttpMessage, setInfo)
 
 		php_http_message_set_info(obj->message, &inf);
 		php_http_info_dtor(&inf);
-		RETURN_TRUE;
 	}
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, getHttpVersion)
@@ -1552,10 +1571,9 @@ PHP_METHOD(HttpMessage, setHttpVersion)
 
 		if (php_http_version_parse(&version, v_str TSRMLS_CC)) {
 			obj->message->http.version = version;
-			RETURN_TRUE;
 		}
 	}
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, getResponseCode)
@@ -1592,10 +1610,8 @@ PHP_METHOD(HttpMessage, setResponseCode)
 		}
 
 		obj->message->http.info.response.code = code;
-		RETURN_TRUE;
 	}
-
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, getResponseStatus)
@@ -1632,10 +1648,8 @@ PHP_METHOD(HttpMessage, setResponseStatus)
 
 		PHP_HTTP_MESSAGE_TYPE_CHECK(RESPONSE, obj->message, RETURN_FALSE);
 		STR_SET(obj->message->http.info.response.status, estrndup(status, status_len));
-		RETURN_TRUE;
 	}
-
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, getRequestMethod)
@@ -1677,10 +1691,8 @@ PHP_METHOD(HttpMessage, setRequestMethod)
 		}
 
 		STR_SET(obj->message->http.info.request.method, estrndup(method, method_len));
-		RETURN_TRUE;
 	}
-
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpMessage, getRequestUrl)
@@ -1721,10 +1733,8 @@ PHP_METHOD(HttpMessage, setRequestUrl)
 			RETURN_FALSE;
 		}
 		STR_SET(obj->message->http.info.request.url, estrndup(url_str, url_len));
-		RETURN_TRUE;
 	}
-
-	RETURN_FALSE;
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 

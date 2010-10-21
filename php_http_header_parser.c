@@ -89,9 +89,8 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 	while (buffer->used || !php_http_header_parser_states[php_http_header_parser_state_is(parser)].need_data) {
 #if 0
 		const char *state[] = {"START", "KEY", "VALUE", "HEADER_DONE", "DONE"};
-		fprintf(stderr, "#HP-%p: %s (%d) %.*s…\n", parser,
-				php_http_header_parser_state_is(parser)<0?"FAILURE":state[php_http_header_parser_state_is(parser)],
-						zend_hash_num_elements(headers), MIN(16,buffer->used), buffer->data);
+		fprintf(stderr, "#HP: %s (%d)\n", php_http_header_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_header_parser_state_is(parser)], zend_hash_num_elements(headers));
+		_dpf(0, buffer->data, buffer->used);
 #endif
 		switch (php_http_header_parser_state_pop(parser)) {
 			case PHP_HTTP_HEADER_PARSER_STATE_FAILURE:

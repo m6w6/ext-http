@@ -18,6 +18,7 @@
 typedef struct php_http_message_body {
 	int stream_id;
 	php_stream_statbuf ssb;
+	char *boundary;
 #ifdef ZTS
 	void ***ts;
 #endif
@@ -38,6 +39,7 @@ PHP_HTTP_API php_stream_statbuf *php_http_message_body_stat(php_http_message_bod
 #define php_http_message_body_size(b) (php_http_message_body_stat((b))->sb.st_size)
 #define php_http_message_body_mtime(b) (php_http_message_body_stat((b))->sb.st_mtime)
 PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body);
+PHP_HTTP_API const char *php_http_message_body_boundary(php_http_message_body_t *body);
 
 static inline php_stream *php_http_message_body_stream(php_http_message_body_t *body)
 {

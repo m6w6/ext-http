@@ -56,9 +56,16 @@ PHP_HTTP_API void php_http_strlist_iterator_free(php_http_strlist_iterator_t **i
 
 PHP_HTTP_API const char *php_http_strlist_find(const char list[], unsigned factor, unsigned item)
 {
-	unsigned M = 0, m = 0, major = (item / factor) - 1, minor = (item % factor);
+	unsigned M = 0, m = 0, major, minor;
 	const char *p = &list[0];
 
+	if (factor) {
+		major = (item / factor) - 1;
+		minor = item % factor;
+	} else {
+		major = 0;
+		minor = item;
+	}
     while (*p && major != M++) {
         while (*p) {
             while (*p) {

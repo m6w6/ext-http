@@ -101,8 +101,8 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 	while (buffer->used || !php_http_message_parser_states[php_http_message_parser_state_is(parser)].need_data) {
 #if 0
 		const char *state[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "DONE"};
-		fprintf(stderr, "#MP: %s (%d) %.*s…\n",
-				state[php_http_message_parser_state_is(parser)], (*message)->type, MIN(32, buffer->used), buffer->data);
+		fprintf(stderr, "#MP: %s (%d)\n", php_http_message_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_message_parser_state_is(parser)], (*message)->type);
+		_dpf(0, buffer->data, buffer->used);
 #endif
 
 		switch (php_http_message_parser_state_pop(parser))
@@ -163,20 +163,6 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 					zend_hash_del(&(*message)->hdrs, "Content-Range", sizeof("Content-Range"));
 				}
 
-				if ((h = php_http_message_header(*message, ZEND_STRL("Content-Encoding"), 1))) {
-					if (strstr(Z_STRVAL_P(h), "gzip") || strstr(Z_STRVAL_P(h), "x-gzip") || strstr(Z_STRVAL_P(h), "deflate")) {
-						if (parser->inflate) {
-							php_http_encoding_stream_reset(&parser->inflate);
-						} else {
-							parser->inflate = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), 0 TSRMLS_CC);
-						}
-						zend_hash_update(&(*message)->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), &h, sizeof(zval *), NULL);
-						zend_hash_del(&(*message)->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
-					} else {
-						zval_ptr_dtor(&h);
-					}
-				}
-
 				/* default */
 				MAKE_STD_ZVAL(h);
 				ZVAL_LONG(h, 0);
@@ -205,58 +191,79 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 					zval_ptr_dtor(&h_con);
 				}
 
-				if (h_te) {
-					if (strstr(Z_STRVAL_PP(h_te), "chunked")) {
-						parser->dechunk = php_http_encoding_stream_init(parser->dechunk, php_http_encoding_stream_get_dechunk_ops(), 0 TSRMLS_CC);
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED);
-						break;
-					}
-				}
-
-				if (h_cl) {
-					char *stop;
-
-					parser->body_length = strtoul(Z_STRVAL_PP(h_cl), &stop, 10);
-
-					if (stop != Z_STRVAL_PP(h_cl)) {
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
-						break;
-					}
-				}
-
-				if (h_cr) {
-					ulong total = 0, start = 0, end = 0;
-
-					if (!strncasecmp(Z_STRVAL_PP(h_cr), "bytes", lenof("bytes"))
-					&& (	Z_STRVAL_P(h)[lenof("bytes")] == ':'
-						||	Z_STRVAL_P(h)[lenof("bytes")] == ' '
-						||	Z_STRVAL_P(h)[lenof("bytes")] == '='
-						)
+				if ((h = php_http_message_header(*message, ZEND_STRL("Content-Encoding"), 1))) {
+					if (php_http_match(Z_STRVAL_P(h), "gzip", PHP_HTTP_MATCH_WORD)
+					||	php_http_match(Z_STRVAL_P(h), "x-gzip", PHP_HTTP_MATCH_WORD)
+					||	php_http_match(Z_STRVAL_P(h), "deflate", PHP_HTTP_MATCH_WORD)
 					) {
-						char *total_at = NULL, *end_at = NULL;
-						char *start_at = Z_STRVAL_PP(h_cr) + sizeof("bytes");
+						if (parser->inflate) {
+							php_http_encoding_stream_reset(&parser->inflate);
+						} else {
+							parser->inflate = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), 0 TSRMLS_CC);
+						}
+						zend_hash_update(&(*message)->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), &h, sizeof(zval *), NULL);
+						zend_hash_del(&(*message)->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
+					} else {
+						zval_ptr_dtor(&h);
+					}
+				}
 
-						start = strtoul(start_at, &end_at, 10);
-						if (end_at) {
-							end = strtoul(end_at + 1, &total_at, 10);
-							if (total_at && strncmp(total_at + 1, "*", 1)) {
-								total = strtoul(total_at + 1, NULL, 10);
-							}
+				if ((flags & PHP_HTTP_MESSAGE_PARSER_DUMB_BODIES)) {
+					php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB);
+				} else {
+					if (h_te) {
+						if (strstr(Z_STRVAL_PP(h_te), "chunked")) {
+							parser->dechunk = php_http_encoding_stream_init(parser->dechunk, php_http_encoding_stream_get_dechunk_ops(), 0 TSRMLS_CC);
+							php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED);
+							break;
+						}
+					}
 
-							if (end >= start && (!total || end < total)) {
-								parser->body_length = end + 1 - start;
-								php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
-								break;
+					if (h_cl) {
+						char *stop;
+
+						parser->body_length = strtoul(Z_STRVAL_PP(h_cl), &stop, 10);
+
+						if (stop != Z_STRVAL_PP(h_cl)) {
+							php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+							break;
+						}
+					}
+
+					if (h_cr) {
+						ulong total = 0, start = 0, end = 0;
+
+						if (!strncasecmp(Z_STRVAL_PP(h_cr), "bytes", lenof("bytes"))
+						&& (	Z_STRVAL_P(h)[lenof("bytes")] == ':'
+							||	Z_STRVAL_P(h)[lenof("bytes")] == ' '
+							||	Z_STRVAL_P(h)[lenof("bytes")] == '='
+							)
+						) {
+							char *total_at = NULL, *end_at = NULL;
+							char *start_at = Z_STRVAL_PP(h_cr) + sizeof("bytes");
+
+							start = strtoul(start_at, &end_at, 10);
+							if (end_at) {
+								end = strtoul(end_at + 1, &total_at, 10);
+								if (total_at && strncmp(total_at + 1, "*", 1)) {
+									total = strtoul(total_at + 1, NULL, 10);
+								}
+
+								if (end >= start && (!total || end < total)) {
+									parser->body_length = end + 1 - start;
+									php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+									break;
+								}
 							}
 						}
 					}
-				}
 
 
-				if ((*message)->type == PHP_HTTP_REQUEST) {
-					php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
-				} else {
-					php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB);
+					if ((*message)->type == PHP_HTTP_REQUEST) {
+						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
+					} else {
+						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB);
+					}
 				}
 				break;
 			}

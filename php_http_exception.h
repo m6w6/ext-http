@@ -31,6 +31,8 @@ extern zend_class_entry *PHP_HTTP_EX_CE(invalid_param);
 extern zend_class_entry *PHP_HTTP_EX_CE(encoding);
 extern zend_class_entry *PHP_HTTP_EX_CE(request);
 extern zend_class_entry *PHP_HTTP_EX_CE(request_pool);
+extern zend_class_entry *PHP_HTTP_EX_CE(request_datashare);
+extern zend_class_entry *PHP_HTTP_EX_CE(request_factory);
 extern zend_class_entry *PHP_HTTP_EX_CE(socket);
 extern zend_class_entry *PHP_HTTP_EX_CE(response);
 extern zend_class_entry *PHP_HTTP_EX_CE(url);

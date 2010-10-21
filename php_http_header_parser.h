@@ -1,6 +1,8 @@
 #ifndef PHP_HTTP_HEADER_PARSER_H
 #define PHP_HTTP_HEADER_PARSER_H
 
+#include "php_http_info.h"
+
 typedef enum php_http_header_parser_state {
 	PHP_HTTP_HEADER_PARSER_STATE_FAILURE = FAILURE,
 	PHP_HTTP_HEADER_PARSER_STATE_START = 0,

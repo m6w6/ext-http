@@ -275,6 +275,15 @@ static inline zval *php_http_zsep(int type, zval *z)
 		php_ ##name## _class_entry->ce_flags |= flags;  \
 	}
 
+#define PHP_HTTP_REGISTER_INTERFACE(ns, ifacename, name, flags) \
+	{ \
+		zend_class_entry ce; \
+		memset(&ce, 0, sizeof(zend_class_entry)); \
+		INIT_NS_CLASS_ENTRY(ce, #ns, #ifacename, php_ ##name## _method_entry); \
+		php_ ##name## _class_entry = zend_register_internal_interface(&ce TSRMLS_CC); \
+		php_ ##name## _class_entry->ce_flags |= flags; \
+	}
+
 #define PHP_HTTP_REGISTER_EXCEPTION(classname, cename, parent) \
 	{ \
 		zend_class_entry ce; \
@@ -343,19 +352,19 @@ typedef struct php_http_array_hashkey {
 } php_http_array_hashkey_t;
 #define php_http_array_hashkey_init(dup) {NULL, 0, 0, (dup), 0}
 
-#define FOREACH_VAL(pos, array, val) FOREACH_HASH_VAL(pos, Z_ARRVAL_P(array), val)
+#define FOREACH_VAL(pos, array, val) FOREACH_HASH_VAL(pos, HASH_OF(array), val)
 #define FOREACH_HASH_VAL(pos, hash, val) \
 	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
 			zend_hash_get_current_data_ex(hash, (void *) &val, &pos) == SUCCESS; \
 			zend_hash_move_forward_ex(hash, &pos))
 
-#define FOREACH_KEY(pos, array, key) FOREACH_HASH_KEY(pos, Z_ARRVAL_P(array), key)
+#define FOREACH_KEY(pos, array, key) FOREACH_HASH_KEY(pos, HASH_OF(array), key)
 #define FOREACH_HASH_KEY(pos, hash, _key) \
 	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
 			((_key).type = zend_hash_get_current_key_ex(hash, &(_key).str, &(_key).len, &(_key).num, (zend_bool) (_key).dup, &pos)) != HASH_KEY_NON_EXISTANT; \
 			zend_hash_move_forward_ex(hash, &pos)) \
 
-#define FOREACH_KEYVAL(pos, array, key, val) FOREACH_HASH_KEYVAL(pos, Z_ARRVAL_P(array), key, val)
+#define FOREACH_KEYVAL(pos, array, key, val) FOREACH_HASH_KEYVAL(pos, HASH_OF(array), key, val)
 #define FOREACH_HASH_KEYVAL(pos, hash, _key, val) \
 	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
 			((_key).type = zend_hash_get_current_key_ex(hash, &(_key).str, &(_key).len, &(_key).num, (zend_bool) (_key).dup, &pos)) != HASH_KEY_NON_EXISTANT && \
@@ -411,9 +420,12 @@ typedef enum php_http_error {
 	PHP_HTTP_E_REQUEST_METHOD,
 	PHP_HTTP_E_MESSAGE,
 	PHP_HTTP_E_MESSAGE_TYPE,
+	PHP_HTTP_E_MESSAGE_BODY,
 	PHP_HTTP_E_ENCODING,
 	PHP_HTTP_E_REQUEST,
 	PHP_HTTP_E_REQUEST_POOL,
+	PHP_HTTP_E_REQUEST_DATASHARE,
+	PHP_HTTP_E_REQUEST_FACTORY,
 	PHP_HTTP_E_SOCKET,
 	PHP_HTTP_E_RESPONSE,
 	PHP_HTTP_E_URL,
@@ -421,42 +433,7 @@ typedef enum php_http_error {
 	PHP_HTTP_E_COOKIE,
 } php_http_error_t;
 
-/* CURL */
-
-#define PHP_HTTP_CURL_OPT(OPTION, p) curl_easy_setopt((request->ch), OPTION, (p))
-
-#define PHP_HTTP_CURL_OPT_STRING(OPTION, ldiff, obdc) \
-	{ \
-		char *K = #OPTION; \
-		PHP_HTTP_CURL_OPT_STRING_EX(K+lenof("CURLOPT_KEY")+ldiff, OPTION, obdc); \
-	}
-#define PHP_HTTP_CURL_OPT_STRING_EX(keyname, optname, obdc) \
-	if (!strcasecmp(key.str, keyname)) { \
-		zval *copy = php_http_request_option_cache(request, keyname, strlen(keyname)+1, 0, php_http_zsep(IS_STRING, *param)); \
-		if (obdc) { \
-			if (SUCCESS != php_check_open_basedir(Z_STRVAL_P(copy) TSRMLS_CC)) { \
-				return FAILURE; \
-			} \
-		} \
-		PHP_HTTP_CURL_OPT(optname, Z_STRVAL_P(copy)); \
-		zval_ptr_dtor(&copy); \
-		continue; \
-	}
-#define PHP_HTTP_CURL_OPT_LONG(OPTION, ldiff) \
-	{ \
-		char *K = #OPTION; \
-		PHP_HTTP_CURL_OPT_LONG_EX(K+lenof("CURLOPT_KEY")+ldiff, OPTION); \
-	}
-#define PHP_HTTP_CURL_OPT_LONG_EX(keyname, optname) \
-	if (!strcasecmp(key.str, keyname)) { \
-		zval *copy = php_http_zsep(IS_LONG, *param); \
-		PHP_HTTP_CURL_OPT(optname, Z_LVAL_P(copy)); \
-		zval_ptr_dtor(&copy); \
-		continue; \
-	}
-
 #endif
-
 /*
  * Local variables:
  * tab-width: 4

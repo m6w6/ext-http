@@ -15,9 +15,14 @@
 #include "php_http.h"
 
 #include <zlib.h>
-#include <curl/curl.h>
-#ifdef PHP_HTTP_HAVE_EVENT
-#	include <event.h>
+#ifdef PHP_HTTP_HAVE_CURL
+#	include <curl/curl.h>
+#	ifdef PHP_HTTP_HAVE_EVENT
+#		include <event.h>
+#	endif
+#endif
+#ifdef PHP_HTTP_HAVE_NEON
+#	include "neon/ne_utils.h"
 #endif
 
 #include <main/php_ini.h>
@@ -71,6 +76,27 @@ zend_module_entry http_module_entry = {
 
 int http_module_number;
 
+#if PHP_DEBUG
+void _dpf(int type, const char *data, size_t length)
+{
+	static const char _sym[] = "><><><";
+	if (type) {
+		int nwp = 0;
+		for (fprintf(stderr, "%c ", _sym[type-1]); length--; data++) {
+			int ip = PHP_HTTP_IS_CTYPE(print, *data);
+			if (!ip && *data != '\r' && *data != '\n') nwp = 1;
+			fprintf(stderr, ip?"%c":"\\x%02x", (int) (*data & 0xff));
+			if (!nwp && *data == '\n' && length) {
+				fprintf(stderr, "\n%c ", _sym[type-1]);
+			}
+		}
+		fprintf(stderr, "\n");
+	} else {
+		fprintf(stderr, "# %.*s\n", (long) length, data);
+	}
+}
+#endif
+
 static void php_http_globals_init_once(zend_php_http_globals *G)
 {
 	memset(G, 0, sizeof(*G));
@@ -116,17 +142,21 @@ PHP_MINIT_FUNCTION(http)
 	REGISTER_INI_ENTRIES();
 	
 	if (0
+	|| SUCCESS != PHP_MINIT_CALL(http_fluently_callable)
 	|| SUCCESS != PHP_MINIT_CALL(http_object)
 	|| SUCCESS != PHP_MINIT_CALL(http_exception)
+	|| SUCCESS != PHP_MINIT_CALL(http_persistent_handle)
 	|| SUCCESS != PHP_MINIT_CALL(http_cookie)
 	|| SUCCESS != PHP_MINIT_CALL(http_encoding)
 	|| SUCCESS != PHP_MINIT_CALL(http_filter)
 	|| SUCCESS != PHP_MINIT_CALL(http_message)
 	|| SUCCESS != PHP_MINIT_CALL(http_message_body)
-	|| SUCCESS != PHP_MINIT_CALL(http_persistent_handle)
 	|| SUCCESS != PHP_MINIT_CALL(http_property_proxy)
 	|| SUCCESS != PHP_MINIT_CALL(http_querystring)
+	|| SUCCESS != PHP_MINIT_CALL(http_request_factory)
 	|| SUCCESS != PHP_MINIT_CALL(http_request)
+	|| SUCCESS != PHP_MINIT_CALL(http_curl)
+	|| SUCCESS != PHP_MINIT_CALL(http_neon)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_datashare)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_method)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_pool)
@@ -147,9 +177,11 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	
 	if (0
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_message)
-	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request)
+	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
+	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_neon)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)
+	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_factory)
 	) {
 		return FAILURE;
 	}
@@ -162,7 +194,7 @@ PHP_RINIT_FUNCTION(http)
 	if (0
 	|| SUCCESS != PHP_RINIT_CALL(http_env)
 	|| SUCCESS != PHP_RINIT_CALL(http_request_datashare)
-	|| SUCCESS != PHP_RINIT_CALL(http_request_pool)
+	|| SUCCESS != PHP_RINIT_CALL(http_curl)
 	) {
 		return FAILURE;
 	}
@@ -185,25 +217,36 @@ PHP_RSHUTDOWN_FUNCTION(http)
 PHP_MINFO_FUNCTION(http)
 {
 	php_info_print_table_start();
-	{
-		php_info_print_table_header(2, "HTTP Support", "enabled");
-		php_info_print_table_row(2, "Extension Version", PHP_HTTP_EXT_VERSION);
-	}
+	php_info_print_table_header(2, "HTTP Support", "enabled");
+	php_info_print_table_row(2, "Extension Version", PHP_HTTP_EXT_VERSION);
 	php_info_print_table_end();
 	
 	php_info_print_table_start();
 	php_info_print_table_header(3, "Used Library", "Compiled", "Linked");
+	php_info_print_table_row(3, "libz", ZLIB_VERSION, zlibVersion());
+#ifdef PHP_HTTP_HAVE_CURL
 	{
 		curl_version_info_data *cv = curl_version_info(CURLVERSION_NOW);
-		php_info_print_table_row(3, "libz", ZLIB_VERSION, zlibVersion());
 		php_info_print_table_row(3, "libcurl", LIBCURL_VERSION, cv->version);
-#ifdef PHP_HTTP_HAVE_EVENT
-		php_info_print_table_row(3, "libevent", PHP_HTTP_EVENT_VERSION, event_get_version());
-#else
-		php_info_print_table_row(3, "libevent", "disabled", "disabled");
-#endif
-		php_info_print_table_row(3, "libz", "disabled", "disabled");
 	}
+#else
+	php_info_print_table_row(3, "libcurl", "disabled", "disabled");
+#endif
+#ifdef PHP_HTTP_HAVE_NEON
+	{
+		char ne_v[16] = {0};
+		sscanf(ne_version_string(), "neon %15[^ :]", &ne_v[0]);
+		php_info_print_table_row(3, "libneon", PHP_HTTP_NEON_VERSION, ne_v);
+	}
+#else
+	php_info_print_table_row(3, "libneon", "disabled", "disabled");
+#endif
+
+#ifdef PHP_HTTP_HAVE_EVENT
+	php_info_print_table_row(3, "libevent", PHP_HTTP_EVENT_VERSION, event_get_version());
+#else
+	php_info_print_table_row(3, "libevent", "disabled", "disabled");
+#endif
 	php_info_print_table_end();
 	
 	php_info_print_table_start();

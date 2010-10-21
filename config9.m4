@@ -1,6 +1,6 @@
 dnl config.m4 for pecl/http
 dnl $Id: config9.m4 242664 2007-09-18 19:13:37Z mike $
-dnl vim: noet ts=1 sw=4
+dnl vim: noet ts=4 sw=4
 
 PHP_ARG_WITH([http], [whether to enable extended HTTP support],
 [  --with-http             Enable extended HTTP support])
@@ -8,10 +8,16 @@ PHP_ARG_WITH([http-zlib-dir], [],
 [  --with-http-zlib-dir[=DIR]     HTTP: where to find zlib], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-libcurl-dir], [],
 [  --with-http-libcurl-dir[=DIR]  HTTP: where to find libcurl], $PHP_HTTP, $PHP_HTTP)
+PHP_ARG_WITH([http-libneon-dir], [],
+[  --with-http-libneon-dir[=DIR]  HTTP: where to find libneon], $PHP_HTTP, $PHP_HTTP)
+PHP_ARG_WITH([http-libserf-dir], [],
+[  --with-http-libserf-dir[=DIR]  HTTP: where to find libserf], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-libevent-dir], [],
 [  --with-http-libevent-dir[=DIR] HTTP: where to find libevent], $PHP_HTTP_LIBCURL_DIR, "")
 
 if test "$PHP_HTTP" != "no"; then
+
+	HTTP_HAVE_A_REQUEST_LIB=false
 
 	ifdef([AC_PROG_EGREP], [
 		AC_PROG_EGREP
@@ -128,6 +134,82 @@ dnl ----
 	fi
 	
 dnl ----
+dnl NEON
+dnl ----
+
+	AC_MSG_CHECKING([for neon/ne_session.h])
+	NEON_DIR=
+	for i in "$PHP_HTTP_LIBNEON_DIR" /usr/local /usr /opt; do
+		if test -f "$i/include/neon/ne_session.h"; then
+			NEON_DIR=$i
+			break
+		fi
+	done
+
+	if test "x$NEON_DIR" = "x"; then
+		AC_MSG_RESULT([not found])
+	else
+		AC_MSG_RESULT([found in $NEON_DIR])
+
+		AC_MSG_CHECKING([for neon-config])
+		NEON_CONFIG=
+		for i in "$NEON_DIR/bin/neon-config" "$NEON_DIR/neon-config" `which neon-config`; do
+			if test -x "$i"; then
+				NEON_CONFIG=$i
+				break
+			fi
+		done
+		if test "x$NEON_CONFIG" = "x"; then
+			AC_MSG_RESULT([not found])
+			AC_MSG_ERROR([could not find neon-config])
+		else
+			AC_MSG_RESULT([found: $NEON_CONFIG])
+		fi
+
+		AC_MSG_CHECKING([for libneon version])
+		PHP_HTTP_NEON_VERSION=`$NEON_CONFIG --version | $SED -re 's/^neon ([[^ :]]+).*/\1/g'`
+		if test "x$PHP_HTTP_NEON_VERSION" = "x"; then
+			AC_MSG_RESULT([unknown])
+			PHP_HTTP_NEON_VERSION="unknown"
+		else
+			AC_MSG_RESULT([$PHP_HTTP_NEON_VERSION])
+		fi
+		AC_DEFINE_UNQUOTED([PHP_HTTP_NEON_VERSION], ["$PHP_HTTP_NEON_VERSION"], [neon-config --version])
+		PHP_ADD_INCLUDE($NEON_DIR/include)
+		PHP_ADD_LIBRARY_WITH_PATH(neon, $NEON_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+		AC_DEFINE([PHP_HTTP_HAVE_NEON], [1], [Have libneon support])
+		HTTP_HAVE_A_REQUEST_LIB=true
+	fi
+	
+dnl ----
+dnl SERF
+dnl ----
+
+	AC_MSG_CHECKING([for serf-?/serf.h])
+	SERF_DIR=
+	for i in "$PHP_HTTP_LIBSERF_DIR" /usr/local /usr /opt; do
+		if test -f "$i/include/serf-0/serf.h"; then
+			SERF_DIR=$i
+			SERF_VER=0
+			break
+		elif test -f "$i/include/serf-1/serf.h"; then
+			SERF_DIR=$i
+			SERF_VER=1
+		fi
+	done
+
+	if test "x$SERF_DIR" = "x"; then
+		AC_MSG_RESULT([not found])
+	else
+		AC_MSG_RESULT([found in $SERF_DIR])
+
+		PHP_ADD_INCLUDE($SERF_DIR/include/serf-$SERV_VER)
+		PHP_ADD_LIBRARY_WITH_PATH(serf-$SERF_VER, $SERF_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+		AC_DEFINE([PHP_HTTP_HAVE_SERF], [1], [HAve libserf support])
+		HTTP_HAVE_A_REQUEST_LIB=true
+	fi
+	
+dnl ----
 dnl CURL
 dnl ----
 	AC_MSG_CHECKING([for curl/curl.h])
@@ -140,129 +222,130 @@ dnl ----
 	done
 	if test "x$CURL_DIR" = "x"; then
 		AC_MSG_RESULT([not found])
-		AC_MSG_ERROR([could not find curl/curl.h])
 	else
 		AC_MSG_RESULT([found in $CURL_DIR])
-	fi
-	
-	AC_MSG_CHECKING([for curl-config])
-	CURL_CONFIG=
-	for i in "$CURL_DIR/bin/curl-config" "$CURL_DIR/curl-config" `which curl-config`; do
-		if test -x "$i"; then
-			CURL_CONFIG=$i
-			break
-		fi
-	done
-	if test "x$CURL_CONFIG" = "x"; then
-		AC_MSG_RESULT([not found])
-		AC_MSG_ERROR([could not find curl-config])
-	else
-		AC_MSG_RESULT([found: $CURL_CONFIG])
-	fi
-	
-	dnl Debian stable has currently 7.18.2
-	AC_MSG_CHECKING([for curl version >= 7.18.2])
-	CURL_VERSION=`$CURL_CONFIG --version | $SED -e 's/[[^0-9\.]]//g'`
-	AC_MSG_RESULT([$CURL_VERSION])
-	if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71802; then
-		AC_MSG_ERROR([libcurl version greater or equal to 7.18.2 required])
-	fi
-	
-	dnl
-	dnl compile tests
-	dnl
-	
-	save_INCLUDES="$INCLUDES"
-	INCLUDES=
-	save_LIBS="$LIBS"
-	LIBS=
-	save_CFLAGS="$CFLAGS"
-	CFLAGS=`$CURL_CONFIG --cflags`
-	save_LDFLAGS="$LDFLAGS"
-	LDFLAGS=`$CURL_CONFIG --libs`
-	LDFLAGS="$LDFLAGS $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
-	
-	AC_MSG_CHECKING([for SSL support in libcurl])
-	CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
-	if test "$CURL_SSL" = "SSL"; then
-		AC_MSG_RESULT([yes])
-		AC_DEFINE([PHP_HTTP_HAVE_SSL], [1], [ ])
 		
-		AC_MSG_CHECKING([for openssl support in libcurl])
-		AC_TRY_RUN([
-			#include <curl/curl.h>
-			int main(int argc, char *argv[]) {
-				curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
-				if (data && data->ssl_version && *data->ssl_version) {
-					const char *ptr = data->ssl_version;
-					while(*ptr == ' ') ++ptr;
-					return strncasecmp(ptr, "OpenSSL", sizeof("OpenSSL")-1);
-				}
-				return 1;
-			}
-		], [
-			AC_MSG_RESULT([yes])
-			AC_CHECK_HEADER([openssl/crypto.h], [
-				AC_DEFINE([PHP_HTTP_HAVE_OPENSSL], [1], [ ])
-			])
-		], [
-			AC_MSG_RESULT([no])
-		], [
-			AC_MSG_RESULT([no])
-		])
-		
-		AC_MSG_CHECKING([for gnutls support in libcurl])
-		AC_TRY_RUN([
-			#include <curl/curl.h>
-			int main(int argc, char *argv[]) {
-				curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
-				if (data && data->ssl_version && *data->ssl_version) {
-					const char *ptr = data->ssl_version;
-					while(*ptr == ' ') ++ptr;
-					return strncasecmp(ptr, "GnuTLS", sizeof("GnuTLS")-1);
-				}
-				return 1;
-			}
-		], [
-			AC_MSG_RESULT([yes])
-			AC_CHECK_HEADER([gcrypt.h], [
-				AC_DEFINE([PHP_HTTP_HAVE_GNUTLS], [1], [ ])
-			])
-		], [
-			AC_MSG_RESULT([no])
-		], [
-			AC_MSG_RESULT([no])
-		])
-	else
-		AC_MSG_RESULT([no])
-	fi
-	
-	INCLUDES="$save_INCLUDES"
-	LIBS="$save_LIBS"
-	CFLAGS="$save_CFLAGS"
-	LDFLAGS="$save_LDFLAGS"
-	
-	dnl end compile tests
-	
-	AC_MSG_CHECKING([for bundled SSL CA info])
-	CURL_CAINFO=
-	for i in `$CURL_CONFIG --ca` "/etc/ssl/certs/ca-certificates.crt"; do
-		if test -f "$i"; then
-			CURL_CAINFO="$i"
-			break
+		AC_MSG_CHECKING([for curl-config])
+		CURL_CONFIG=
+		for i in "$CURL_DIR/bin/curl-config" "$CURL_DIR/curl-config" `which curl-config`; do
+			if test -x "$i"; then
+				CURL_CONFIG=$i
+				break
+			fi
+		done
+		if test "x$CURL_CONFIG" = "x"; then
+			AC_MSG_RESULT([not found])
+			AC_MSG_ERROR([could not find curl-config])
+		else
+			AC_MSG_RESULT([found: $CURL_CONFIG])
 		fi
-	done
-	if test "x$CURL_CAINFO" = "x"; then
-		AC_MSG_RESULT([not found])
-	else
-		AC_MSG_RESULT([$CURL_CAINFO])
-		AC_DEFINE_UNQUOTED([PHP_HTTP_CURL_CAINFO], ["$CURL_CAINFO"], [path to bundled SSL CA info])
+		
+		dnl Debian stable has currently 7.18.2
+		AC_MSG_CHECKING([for curl version >= 7.18.2])
+		CURL_VERSION=`$CURL_CONFIG --version | $SED -e 's/[[^0-9\.]]//g'`
+		AC_MSG_RESULT([$CURL_VERSION])
+		if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71802; then
+			AC_MSG_ERROR([libcurl version greater or equal to 7.18.2 required])
+		fi
+		
+		dnl
+		dnl compile tests
+		dnl
+		
+		save_INCLUDES="$INCLUDES"
+		INCLUDES=
+		save_LIBS="$LIBS"
+		LIBS=
+		save_CFLAGS="$CFLAGS"
+		CFLAGS=`$CURL_CONFIG --cflags`
+		save_LDFLAGS="$LDFLAGS"
+		LDFLAGS=`$CURL_CONFIG --libs`
+		LDFLAGS="$LDFLAGS $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
+		
+		AC_MSG_CHECKING([for SSL support in libcurl])
+		CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
+		if test "$CURL_SSL" = "SSL"; then
+			AC_MSG_RESULT([yes])
+			AC_DEFINE([PHP_HTTP_HAVE_SSL], [1], [ ])
+			
+			AC_MSG_CHECKING([for openssl support in libcurl])
+			AC_TRY_RUN([
+				#include <curl/curl.h>
+				int main(int argc, char *argv[]) {
+					curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
+					if (data && data->ssl_version && *data->ssl_version) {
+						const char *ptr = data->ssl_version;
+						while(*ptr == ' ') ++ptr;
+						return strncasecmp(ptr, "OpenSSL", sizeof("OpenSSL")-1);
+					}
+					return 1;
+				}
+			], [
+				AC_MSG_RESULT([yes])
+				AC_CHECK_HEADER([openssl/crypto.h], [
+					AC_DEFINE([PHP_HTTP_HAVE_OPENSSL], [1], [ ])
+				])
+			], [
+				AC_MSG_RESULT([no])
+			], [
+				AC_MSG_RESULT([no])
+			])
+			
+			AC_MSG_CHECKING([for gnutls support in libcurl])
+			AC_TRY_RUN([
+				#include <curl/curl.h>
+				int main(int argc, char *argv[]) {
+					curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
+					if (data && data->ssl_version && *data->ssl_version) {
+						const char *ptr = data->ssl_version;
+						while(*ptr == ' ') ++ptr;
+						return strncasecmp(ptr, "GnuTLS", sizeof("GnuTLS")-1);
+					}
+					return 1;
+				}
+			], [
+				AC_MSG_RESULT([yes])
+				AC_CHECK_HEADER([gcrypt.h], [
+					AC_DEFINE([PHP_HTTP_HAVE_GNUTLS], [1], [ ])
+				])
+			], [
+				AC_MSG_RESULT([no])
+			], [
+				AC_MSG_RESULT([no])
+			])
+		else
+			AC_MSG_RESULT([no])
+		fi
+		
+		INCLUDES="$save_INCLUDES"
+		LIBS="$save_LIBS"
+		CFLAGS="$save_CFLAGS"
+		LDFLAGS="$save_LDFLAGS"
+		
+		dnl end compile tests
+		
+		AC_MSG_CHECKING([for bundled SSL CA info])
+		CURL_CAINFO=
+		for i in `$CURL_CONFIG --ca` "/etc/ssl/certs/ca-certificates.crt"; do
+			if test -f "$i"; then
+				CURL_CAINFO="$i"
+				break
+			fi
+		done
+		if test "x$CURL_CAINFO" = "x"; then
+			AC_MSG_RESULT([not found])
+		else
+			AC_MSG_RESULT([$CURL_CAINFO])
+			AC_DEFINE_UNQUOTED([PHP_HTTP_CURL_CAINFO], ["$CURL_CAINFO"], [path to bundled SSL CA info])
+		fi
+		
+		PHP_ADD_INCLUDE($CURL_DIR/include)
+		PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+		PHP_EVAL_LIBLINE(`$CURL_CONFIG --libs`, HTTP_SHARED_LIBADD)
+		AC_DEFINE([PHP_HTTP_HAVE_CURL], [1], [Have libcurl support])
+		HTTP_HAVE_A_REQUEST_LIB=true
 	fi
-	
-	PHP_ADD_INCLUDE($CURL_DIR/include)
-	PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-	PHP_EVAL_LIBLINE(`$CURL_CONFIG --libs`, HTTP_SHARED_LIBADD)
-	
+
 	dnl ----
 	dnl EVENT
 	dnl ----
@@ -350,6 +433,7 @@ dnl ----
 		php_http_etag.c \
 		php_http_exception.c \
 		php_http_filter.c \
+		php_http_fluently_callable.c \
 		php_http_headers.c \
 		php_http_header_parser.c \
 		php_http_info.c \
@@ -364,10 +448,12 @@ dnl ----
 		php_http_property_proxy.c \
 		php_http_querystring.c \
 		php_http_request.c \
-		php_http_request_datashare.c \
-		php_http_request_info.c \
-		php_http_request_method.c \
+		php_http_request_factory.c \
+		php_http_curl.c \
+		php_http_neon.c \
 		php_http_request_pool.c \
+		php_http_request_datashare.c \
+		php_http_request_method.c \
 		php_http_strlist.c \
 		php_http_url.c \
 		php_http_version.c \
@@ -389,6 +475,7 @@ dnl ----
 		php_http_etag.h \
 		php_http_exception.h \
 		php_http_filter.h \
+		php_http_fluently_callable.h \
 		php_http_headers.h \
 		php_http_header_parser.h \
 		php_http_info.h \
@@ -404,6 +491,9 @@ dnl ----
 		php_http_querystring.h \
 		php_http_request_datashare.h \
 		php_http_request.h \
+		php_http_request_factory.h \
+		php_http_curl.h \
+		php_http_neon.h \
 		php_http_request_method.h \
 		php_http_request_pool.h \
 		php_http_strlist.h \

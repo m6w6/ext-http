@@ -55,7 +55,7 @@ static PHP_HTTP_STRLIST(php_http_request_methods) =
 PHP_HTTP_API const char *php_http_request_method_name(php_http_request_method_t meth)
 {
 	if (meth > PHP_HTTP_NO_REQUEST_METHOD && meth < PHP_HTTP_MAX_REQUEST_METHOD) {
-		return php_http_strlist_find(php_http_request_methods, 1, meth);
+		return php_http_strlist_find(php_http_request_methods, 0, meth);
 	} else {
 		zval **val, *cmp, res;
 		HashPosition pos;

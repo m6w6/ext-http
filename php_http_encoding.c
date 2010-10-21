@@ -486,7 +486,7 @@ static STATUS inflate_update(php_http_encoding_stream_t *s, const char *data, si
 	
 	/* append input to buffer */
 	php_http_buffer_append(PHP_HTTP_BUFFER(ctx->opaque), data, data_len);
-	
+
 retry_raw_inflate:
 	ctx->next_in = (Bytef *) PHP_HTTP_BUFFER_VAL(ctx->opaque);
 	ctx->avail_in = PHP_HTTP_BUFFER_LEN(ctx->opaque);

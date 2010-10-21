@@ -64,8 +64,6 @@ typedef int STATUS;
 #	endif
 #endif
 
-#define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
-
 #include <ctype.h>
 #define PHP_HTTP_IS_CTYPE(type, c) is##type((int) (unsigned char) (c))
 #define PHP_HTTP_TO_CTYPE(type, c) to##type((int) (unsigned char) (c))
@@ -75,6 +73,15 @@ extern zend_module_entry http_module_entry;
 
 extern int http_module_number;
 
+#if PHP_DEBUG
+#	define _DPF_STR	0
+#	define _DPF_IN	1
+#	define _DPF_OUT	2
+extern void _dpf(int type, const char *data, size_t length);
+#else
+#	define _dpf(t,s,l);
+#endif
+
 #include "php_http_misc.h"
 
 #include "php_http_cookie.h"
@@ -82,6 +89,7 @@ extern int http_module_number;
 #include "php_http_env.h"
 #include "php_http_etag.h"
 #include "php_http_exception.h"
+#include "php_http_fluently_callable.h"
 #include "php_http_filter.h"
 #include "php_http_headers.h"
 #include "php_http_info.h"
@@ -96,7 +104,10 @@ extern int http_module_number;
 #include "php_http_property_proxy.h"
 #include "php_http_querystring.h"
 #include "php_http_request_datashare.h"
+#include "php_http_request_factory.h"
 #include "php_http_request.h"
+#include "php_http_curl.h"
+#include "php_http_neon.h"
 #include "php_http_request_method.h"
 #include "php_http_request_pool.h"
 #include "php_http_url.h"
@@ -114,6 +125,8 @@ ZEND_EXTERN_MODULE_GLOBALS(php_http);
 #ifdef ZTS
 #	include "TSRM/TSRM.h"
 #	define PHP_HTTP_G ((zend_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(php_http_globals_id)])
+#	undef TSRMLS_FETCH_FROM_CTX
+#	define TSRMLS_FETCH_FROM_CTX(ctx) ((ctx)?(ctx):ts_resource_ex(0, NULL))
 #else
 #	define PHP_HTTP_G (&php_http_globals)
 #endif

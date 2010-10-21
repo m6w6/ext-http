@@ -2,6 +2,10 @@
 #ifndef PHP_HTTP_MESSAGE_PARSER_H
 #define PHP_HTTP_MESSAGE_PARSER_H
 
+#include "php_http_header_parser.h"
+#include "php_http_encoding.h"
+#include "php_http_message.h"
+
 typedef enum php_http_message_parser_state {
 	PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE = FAILURE,
 	PHP_HTTP_MESSAGE_PARSER_STATE_START = 0,
@@ -16,7 +20,8 @@ typedef enum php_http_message_parser_state {
 } php_http_message_parser_state_t;
 
 #define PHP_HTTP_MESSAGE_PARSER_CLEANUP			0x1
-#define PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS	0x2
+#define PHP_HTTP_MESSAGE_PARSER_DUMB_BODIES		0x2
+#define PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS	0x4
 
 typedef struct php_http_message_parser {
 	php_http_header_parser_t header;

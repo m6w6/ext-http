@@ -1,55 +1,67 @@
 #ifndef PHP_HTTP_REQUEST_DATASHARE_H
 #define PHP_HTTP_REQUEST_DATASHARE_H
 
-#include <curl/curl.h>
+#include "php_http_request.h"
 
-#ifdef ZTS
-typedef struct php_http_request_datashare_lock {
-	CURL *ch;
-	MUTEX_T mx;
-} php_http_request_datashare_lock_t;
-#endif
+typedef enum php_http_request_datashare_setopt_opt {
+	PHP_HTTP_REQUEST_DATASHARE_OPT_COOKIES,
+	PHP_HTTP_REQUEST_DATASHARE_OPT_RESOLVER,
+} php_http_request_datashare_setopt_opt_t;
 
-typedef union php_http_request_datashare_handle {
-	zend_llist *list;
-#ifdef ZTS
-	php_http_request_datashare_lock_t *locks;
-#endif
-} php_http_request_datashare_handle_t;
+typedef struct php_http_request_datashare php_http_request_datashare_t;
 
-typedef struct php_http_request_datashare_t {
-	CURLSH *ch;
-	php_http_request_datashare_handle_t handle;
+typedef php_http_request_datashare_t *(*php_http_request_datashare_init_func_t)(php_http_request_datashare_t *h, void *init_arg);
+typedef php_http_request_datashare_t *(*php_http_request_datashare_copy_func_t)(php_http_request_datashare_t *from, php_http_request_datashare_t *to);
+typedef void (*php_http_request_datashare_dtor_func_t)(php_http_request_datashare_t *h);
+typedef void (*php_http_request_datashare_reset_func_t)(php_http_request_datashare_t *h);
+typedef STATUS (*php_http_request_datashare_attach_func_t)(php_http_request_datashare_t *h, php_http_request_t *request);
+typedef STATUS (*php_http_request_datashare_detach_func_t)(php_http_request_datashare_t *h, php_http_request_t *request);
+typedef STATUS (*php_http_request_datashare_setopt_func_t)(php_http_request_datashare_t *h, php_http_request_datashare_setopt_opt_t opt, void *arg);
+
+typedef struct php_http_request_datashare_ops {
+	php_http_request_datashare_init_func_t init;
+	php_http_request_datashare_copy_func_t copy;
+	php_http_request_datashare_dtor_func_t dtor;
+	php_http_request_datashare_reset_func_t reset;
+	php_http_request_datashare_attach_func_t attach;
+	php_http_request_datashare_detach_func_t detach;
+	php_http_request_datashare_setopt_func_t setopt;
+} php_http_request_datashare_ops_t;
+
+#define PHP_HTTP_REQUEST_DATASHARE_REQUESTS(s) ((s)->persistent ? &PHP_HTTP_G->request_datashare.requests : (s)->requests)
+struct php_http_request_datashare {
+	void *ctx;
+	php_http_request_datashare_ops_t *ops;
+	zend_llist *requests; /* NULL if persistent, use PHP_HTTP_REQUEST_DATASHARE_REQUESTS */
 	unsigned persistent:1;
 #ifdef ZTS
 	void ***ts;
 #endif
-} php_http_request_datashare_t;
+};
 
 struct php_http_request_datashare_globals {
-	zend_llist handles;
+	zend_llist requests;
 	zend_bool cookie;
 	zend_bool dns;
 	zend_bool ssl;
 	zend_bool connect;
 };
 
-#define PHP_HTTP_RSHARE_HANDLES(s) ((s)->persistent ? &PHP_HTTP_G->request_datashare.handles : (s)->handle.list)
-
-extern php_http_request_datashare_t *php_http_request_datashare_global_get(void);
+extern php_http_request_datashare_t *php_http_request_datashare_global_get(const char *driver_str, size_t driver_len TSRMLS_DC);
 
 extern PHP_MINIT_FUNCTION(http_request_datashare);
 extern PHP_MSHUTDOWN_FUNCTION(http_request_datashare);
 extern PHP_RINIT_FUNCTION(http_request_datashare);
 extern PHP_RSHUTDOWN_FUNCTION(http_request_datashare);
 
-PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_http_request_datashare_t *share, zend_bool persistent TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_request_datashare_attach(php_http_request_datashare_t *share, zval *request);
-PHP_HTTP_API STATUS php_http_request_datashare_detach(php_http_request_datashare_t *share, zval *request);
-PHP_HTTP_API void php_http_request_datashare_detach_all(php_http_request_datashare_t *share);
-PHP_HTTP_API void php_http_request_datashare_dtor(php_http_request_datashare_t *share);
-PHP_HTTP_API void php_http_request_datashare_free(php_http_request_datashare_t **share);
-PHP_HTTP_API STATUS php_http_request_datashare_set(php_http_request_datashare_t *share, const char *option, size_t option_len, zend_bool enable);
+PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_http_request_datashare_t *h, php_http_request_datashare_ops_t *ops, void *init_arg, zend_bool persistent TSRMLS_DC);
+PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_copy(php_http_request_datashare_t *from, php_http_request_datashare_t *to);
+PHP_HTTP_API void php_http_request_datashare_dtor(php_http_request_datashare_t *h);
+PHP_HTTP_API void php_http_request_datashare_free(php_http_request_datashare_t **h);
+PHP_HTTP_API STATUS php_http_request_datashare_attach(php_http_request_datashare_t *h, zval *request);
+PHP_HTTP_API STATUS php_http_request_datashare_detach(php_http_request_datashare_t *h, zval *request);
+PHP_HTTP_API STATUS php_http_request_datashare_setopt(php_http_request_datashare_t *h, php_http_request_datashare_setopt_opt_t opt, void *arg);
+PHP_HTTP_API void php_http_request_datashare_reset(php_http_request_datashare_t *h);
 
 typedef struct php_http_request_datashare_object {
 	zend_object zo;
@@ -63,11 +75,11 @@ extern zend_object_value php_http_request_datashare_object_new(zend_class_entry 
 extern zend_object_value php_http_request_datashare_object_new_ex(zend_class_entry *ce, php_http_request_datashare_t *share, php_http_request_datashare_object_t **ptr TSRMLS_DC);
 extern void php_http_request_datashare_object_free(void *object TSRMLS_DC);
 
+PHP_METHOD(HttpRequestDataShare, __construct);
 PHP_METHOD(HttpRequestDataShare, __destruct);
 PHP_METHOD(HttpRequestDataShare, count);
 PHP_METHOD(HttpRequestDataShare, attach);
 PHP_METHOD(HttpRequestDataShare, detach);
 PHP_METHOD(HttpRequestDataShare, reset);
-PHP_METHOD(HttpRequestDataShare, getGlobalInstance);
 
 #endif /* PHP_HTTP_REQUEST_DATASHARE_H */

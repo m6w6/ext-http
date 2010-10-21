@@ -15,127 +15,147 @@
 #ifndef PHP_HTTP_REQUEST_H
 #define PHP_HTTP_REQUEST_H
 
-#include <curl/curl.h>
-
+#include "php_http_message_body.h"
+#include "php_http_message_parser.h"
 #include "php_http_request_method.h"
-#include "php_http_request_pool.h"
-
-extern PHP_MINIT_FUNCTION(http_request);
-extern PHP_MSHUTDOWN_FUNCTION(http_request);
-
-typedef struct php_http_request_progress_state_counter {
-	double now;
-	double total;
-} php_http_request_progress_state_counter_t;
 
 typedef struct php_http_request_progress_state {
-	php_http_request_progress_state_counter_t ul;
-	php_http_request_progress_state_counter_t dl;
+	struct {
+		double now;
+		double total;
+	} ul;
+	struct {
+		double now;
+		double total;
+	} dl;
+	unsigned started:1;
+	unsigned finished:1;
 } php_http_request_progress_state_t;
 
-typedef struct php_http_request {
-	CURL *ch;
-	char *url;
-	php_http_request_method_t meth;
-	php_http_message_body_t *body;
-	struct {
-		php_http_message_parser_t *ctx;
-		php_http_message_t *msg;
-		php_http_buffer_t *buf;
-	} parser;
-	
-	struct {
-		php_http_buffer_t cookies;
-		HashTable options;
-		struct curl_slist *headers;
-		long redirects;
-	} _cache;
-	
-	struct {
-		uint count;
-		double delay;
-	} _retry;
+typedef struct php_http_request_progress {
+	php_http_request_progress_state_t state;
+	zval *callback;
+	unsigned in_cb:1;
+	unsigned pass_state:1;
+} php_http_request_progress_t;
 
-	struct {
-		struct {
-			struct {
-				double now;
-				double total;
-			} ul;
-			struct {
-				double now;
-				double total;
-			} dl;
-		} state;
-		zval *callback;
-		unsigned in_cb:1;
-	} _progress;
+static inline void php_http_request_progress_notify(php_http_request_progress_t *progress TSRMLS_DC)
+{
+	if (progress->callback) {
+		zval retval;
 
+		INIT_PZVAL(&retval);
+		ZVAL_NULL(&retval);
+
+		with_error_handling(EH_NORMAL, NULL) {
+			if (progress->pass_state) {
+				zval *param;
+
+				MAKE_STD_ZVAL(param);
+				array_init(param);
+				add_assoc_bool(param, "started", progress->state.started);
+				add_assoc_bool(param, "finished", progress->state.finished);
+				add_assoc_double(param, "dltotal", progress->state.dl.total);
+				add_assoc_double(param, "dlnow", progress->state.dl.now);
+				add_assoc_double(param, "ultotal", progress->state.ul.total);
+				add_assoc_double(param, "ulnow", progress->state.ul.now);
+
+				progress->in_cb = 1;
+				call_user_function(EG(function_table), NULL, progress->callback, &retval, 1, &param TSRMLS_CC);
+				progress->in_cb = 0;
+
+				zval_ptr_dtor(&param);
+			} else {
+				progress->in_cb = 1;
+				call_user_function(EG(function_table), NULL, progress->callback, &retval, 0, NULL TSRMLS_CC);
+				progress->in_cb = 0;
+			}
+		} end_error_handling();
+
+		zval_dtor(&retval);
+	}
+}
+
+typedef enum php_http_request_setopt_opt {
+	PHP_HTTP_REQUEST_OPT_SETTINGS,						/* HashTable* */
+	PHP_HTTP_REQUEST_OPT_PROGRESS_CALLBACK,				/* zval* */
+	PHP_HTTP_REQUEST_OPT_PROGRESS_CALLBACK_WANTS_STATE,	/* int* */
+	PHP_HTTP_REQUEST_OPT_COOKIES_ENABLE,				/* - */
+	PHP_HTTP_REQUEST_OPT_COOKIES_RESET,					/* - */
+	PHP_HTTP_REQUEST_OPT_COOKIES_RESET_SESSION,			/* - */
+	PHP_HTTP_REQUEST_OPT_COOKIES_FLUSH,					/* - */
+} php_http_request_setopt_opt_t;
+
+typedef enum php_http_request_getopt_opt {
+	PHP_HTTP_REQUEST_OPT_PROGRESS_INFO,		/* php_http_request_progress_t** */
+	PHP_HTTP_REQUEST_OPT_TRANSFER_INFO,		/* HashTable* */
+} php_http_request_getopt_opt_t;
+
+typedef struct php_http_request php_http_request_t;
+
+typedef php_http_request_t *(*php_http_request_init_func_t)(php_http_request_t *h, void *arg);
+typedef php_http_request_t *(*php_http_request_copy_func_t)(php_http_request_t *from, php_http_request_t *to);
+typedef void (*php_http_request_dtor_func_t)(php_http_request_t *h);
+typedef STATUS (*php_http_request_exec_func_t)(php_http_request_t *h, php_http_request_method_t meth, const char *url, php_http_message_body_t *body);
+typedef STATUS (*php_http_request_reset_func_t)(php_http_request_t *h);
+typedef STATUS (*php_http_request_setopt_func_t)(php_http_request_t *h, php_http_request_setopt_opt_t opt, void *arg);
+typedef STATUS (*php_http_request_getopt_func_t)(php_http_request_t *h, php_http_request_getopt_opt_t opt, void *arg);
+
+typedef struct php_http_request_ops {
+	php_http_request_init_func_t init;
+	php_http_request_copy_func_t copy;
+	php_http_request_dtor_func_t dtor;
+	php_http_request_reset_func_t reset;
+	php_http_request_exec_func_t exec;
+	php_http_request_setopt_func_t setopt;
+	php_http_request_getopt_func_t getopt;
+} php_http_request_ops_t;
+
+PHP_HTTP_API php_http_request_ops_t *php_http_request_get_default_ops(TSRMLS_D);
+
+struct php_http_request {
+	void *ctx;
+	php_http_request_ops_t *ops;
+	php_http_message_parser_t *parser;
+	php_http_message_t *message;
+	php_http_buffer_t *buffer;
 #ifdef ZTS
 	void ***ts;
 #endif
-	
-} php_http_request_t;
+};
 
-/* CURLOPT_PRIVATE storage living as long as a CURL handle */
-typedef struct php_http_request_storage {
-	char *url;
-	char *cookiestore;
-	char errorbuffer[CURL_ERROR_SIZE];
-} php_http_request_storage_t;
-
-
-static inline php_http_request_storage_t *php_http_request_storage_get(CURL *ch)
-{
-	php_http_request_storage_t *st = NULL;
-	curl_easy_getinfo(ch, CURLINFO_PRIVATE, &st);
-	return st;
-}
-
-PHP_HTTP_API CURL *php_http_curl_init(CURL *ch, php_http_request_t *request TSRMLS_DC);
-PHP_HTTP_API void php_http_curl_free(CURL **ch TSRMLS_DC);
-PHP_HTTP_API CURL *php_http_curl_copy(CURL *ch TSRMLS_DC);
-
-#define PHP_HTTP_CHECK_CURL_INIT(ch, init, action) \
-	if ((!(ch)) && (!((ch) = init))) { \
-		php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST, "Could not initialize curl"); \
-		action; \
-	}
-
-
-PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *request, CURL *ch, php_http_request_method_t meth, const char *url TSRMLS_DC);
-PHP_HTTP_API void php_http_request_dtor(php_http_request_t *request);
-PHP_HTTP_API void php_http_request_free(php_http_request_t **request);
-PHP_HTTP_API void php_http_request_reset(php_http_request_t *r);
-PHP_HTTP_API STATUS php_http_request_enable_cookies(php_http_request_t *request);
-PHP_HTTP_API STATUS php_http_request_reset_cookies(php_http_request_t *request, int session_only);
-PHP_HTTP_API STATUS php_http_request_flush_cookies(php_http_request_t *request);
-PHP_HTTP_API void php_http_request_defaults(php_http_request_t *request);
-PHP_HTTP_API STATUS php_http_request_prepare(php_http_request_t *request, HashTable *options);
-PHP_HTTP_API void php_http_request_exec(php_http_request_t *request);
-PHP_HTTP_API void php_http_request_info(php_http_request_t *request, HashTable *info);
-PHP_HTTP_API void php_http_request_set_progress_callback(php_http_request_t *request, zval *cb);
-
+PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, php_http_request_ops_t *ops, void *init_arg TSRMLS_DC);
+PHP_HTTP_API php_http_request_t *php_http_request_copy(php_http_request_t *from, php_http_request_t *to);
+PHP_HTTP_API STATUS php_http_request_exec(php_http_request_t *h, php_http_request_method_t meth, const char *url, php_http_message_body_t *body);
+PHP_HTTP_API STATUS php_http_request_reset(php_http_request_t *h);
+PHP_HTTP_API STATUS php_http_request_setopt(php_http_request_t *h, php_http_request_setopt_opt_t opt, void *arg);
+PHP_HTTP_API STATUS php_http_request_getopt(php_http_request_t *h, php_http_request_getopt_opt_t opt, void *arg);
+PHP_HTTP_API void php_http_request_dtor(php_http_request_t *h);
+PHP_HTTP_API void php_http_request_free(php_http_request_t **h);
 
 typedef struct php_http_request_object {
 	zend_object zo;
 	php_http_request_t *request;
-	php_http_request_pool_t *pool;
-	php_http_request_datashare_t *share;
 } php_http_request_object_t;
 
 extern zend_class_entry *php_http_request_class_entry;
 extern zend_function_entry php_http_request_method_entry[];
 
 extern zend_object_value php_http_request_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_request_object_new_ex(zend_class_entry *ce, CURL *ch, php_http_request_object_t **ptr TSRMLS_DC);
+extern zend_object_value php_http_request_object_new_ex(zend_class_entry *ce, php_http_request_t *r, php_http_request_object_t **ptr TSRMLS_DC);
 extern zend_object_value php_http_request_object_clone(zval *zobject TSRMLS_DC);
 extern void php_http_request_object_free(void *object TSRMLS_DC);
 
-extern STATUS php_http_request_object_requesthandler(php_http_request_object_t *obj, zval *this_ptr TSRMLS_DC);
+extern STATUS php_http_request_object_requesthandler(php_http_request_object_t *obj, zval *this_ptr, php_http_request_method_t *meth, char **url, php_http_message_body_t **body TSRMLS_DC);
 extern STATUS php_http_request_object_responsehandler(php_http_request_object_t *obj, zval *this_ptr TSRMLS_DC);
 
 PHP_METHOD(HttpRequest, __construct);
+PHP_METHOD(HttpRequest, getObservers);
+PHP_METHOD(HttpRequest, notify);
+PHP_METHOD(HttpRequest, attach);
+PHP_METHOD(HttpRequest, detach);
+PHP_METHOD(HttpRequest, getProgress);
+PHP_METHOD(HttpRequest, getTransferInfo);
 PHP_METHOD(HttpRequest, setOptions);
 PHP_METHOD(HttpRequest, getOptions);
 PHP_METHOD(HttpRequest, addSslOptions);
@@ -169,7 +189,6 @@ PHP_METHOD(HttpRequest, getResponseCookies);
 PHP_METHOD(HttpRequest, getResponseCode);
 PHP_METHOD(HttpRequest, getResponseStatus);
 PHP_METHOD(HttpRequest, getResponseBody);
-PHP_METHOD(HttpRequest, getResponseInfo);
 PHP_METHOD(HttpRequest, getResponseMessage);
 PHP_METHOD(HttpRequest, getRawResponseMessage);
 PHP_METHOD(HttpRequest, getRequestMessage);
@@ -178,6 +197,8 @@ PHP_METHOD(HttpRequest, getHistory);
 PHP_METHOD(HttpRequest, clearHistory);
 PHP_METHOD(HttpRequest, getMessageClass);
 PHP_METHOD(HttpRequest, setMessageClass);
+
+extern PHP_MINIT_FUNCTION(http_request);
 
 #endif
 

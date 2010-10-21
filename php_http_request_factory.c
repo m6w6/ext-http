@@ -1,0 +1,344 @@
+
+#include "php_http.h"
+
+#include <ext/standard/php_string.h>
+#include <ext/spl/spl_observer.h>
+#include <Zend/zend_interfaces.h>
+
+/*
+ * array of name => php_http_request_factory_driver_t*
+ */
+static HashTable php_http_request_factory_drivers;
+
+PHP_HTTP_API STATUS php_http_request_factory_add_driver(const char *name_str, size_t name_len, php_http_request_factory_driver_t *driver)
+{
+	return zend_hash_add(&php_http_request_factory_drivers, name_str, name_len + 1, (void *) driver, sizeof(php_http_request_factory_driver_t), NULL);
+}
+
+PHP_HTTP_API STATUS php_http_request_factory_get_driver(const char *name_str, size_t name_len, php_http_request_factory_driver_t *driver)
+{
+	php_http_request_factory_driver_t *tmp;
+
+	if (SUCCESS == zend_hash_find(&php_http_request_factory_drivers, name_str, name_len + 1, (void *) &tmp)) {
+		*driver = *tmp;
+		return SUCCESS;
+	}
+	return FAILURE;
+}
+
+static zend_class_entry *php_http_request_factory_get_class_entry(zval *this_ptr, const char *for_str, size_t for_len TSRMLS_DC)
+{
+	/* stupid non-const api */
+	char *sc = estrndup(for_str, for_len);
+	zval *cn = zend_read_property(Z_OBJCE_P(getThis()), getThis(), sc, for_len, 0 TSRMLS_CC);
+
+	efree(sc);
+	if (Z_TYPE_P(cn) == IS_STRING && Z_STRLEN_P(cn)) {
+		return zend_fetch_class(Z_STRVAL_P(cn), Z_STRLEN_P(cn), 0 TSRMLS_CC);
+	}
+
+	return NULL;
+}
+
+#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpRequestFactory, method, 0, req_args)
+#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpRequestFactory, method, 0)
+#define PHP_HTTP_REQUEST_FACTORY_ME(method, visibility)	PHP_ME(HttpRequestFactory, method, PHP_HTTP_ARGS(HttpRequestFactory, method), visibility)
+#define PHP_HTTP_REQUEST_FACTORY_ALIAS(method, func)	PHP_HTTP_STATIC_ME_ALIAS(method, func, PHP_HTTP_ARGS(HttpRequestFactory, method))
+#define PHP_HTTP_REQUEST_FACTORY_MALIAS(me, al, vis)	ZEND_FENTRY(me, ZEND_MN(HttpRequestFactory_##al), PHP_HTTP_ARGS(HttpRequestFactory, al), vis)
+
+PHP_HTTP_BEGIN_ARGS(__construct, 1)
+	PHP_HTTP_ARG_VAL(driver, 0)
+	PHP_HTTP_ARG_VAL(options, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(createRequest, 0)
+	PHP_HTTP_ARG_VAL(persistentHandle, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(createPool, 0)
+	PHP_HTTP_ARG_VAL(persistentHandle, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(createDataShare, 0)
+	PHP_HTTP_ARG_VAL(persistentHandle, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_EMPTY_ARGS(getGlobalDataShareInstance);
+PHP_HTTP_EMPTY_ARGS(getDriver);
+PHP_HTTP_EMPTY_ARGS(getAvailableDrivers);
+
+zend_class_entry *php_http_request_factory_class_entry;
+zend_function_entry php_http_request_factory_method_entry[] = {
+	PHP_HTTP_REQUEST_FACTORY_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_HTTP_REQUEST_FACTORY_ME(createRequest, ZEND_ACC_PUBLIC)
+	PHP_HTTP_REQUEST_FACTORY_ME(createPool, ZEND_ACC_PUBLIC)
+	PHP_HTTP_REQUEST_FACTORY_ME(createDataShare, ZEND_ACC_PUBLIC)
+	PHP_HTTP_REQUEST_FACTORY_ME(getGlobalDataShareInstance, ZEND_ACC_PUBLIC)
+	PHP_HTTP_REQUEST_FACTORY_ME(getDriver, ZEND_ACC_PUBLIC)
+	PHP_HTTP_REQUEST_FACTORY_ME(getAvailableDrivers, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+
+	EMPTY_FUNCTION_ENTRY
+};
+
+PHP_METHOD(HttpRequestFactory, __construct)
+{
+	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+		char *driver_str;
+		int driver_len;
+		HashTable *options = NULL;
+
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|h", &driver_str, &driver_len, &options)) {
+			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(request_factory)) {
+				char *lower_str = php_strtolower(estrdup(driver_str), driver_len);
+
+				if (zend_hash_exists(&php_http_request_factory_drivers, lower_str, driver_len + 1)) {
+					zend_update_property_stringl(php_http_request_factory_class_entry, getThis(), ZEND_STRL("driver"), lower_str, driver_len TSRMLS_CC);
+
+					if (options) {
+						zval **val;
+						HashPosition pos;
+						php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+
+						FOREACH_HASH_KEYVAL(pos, options, key, val) {
+							if (key.type == HASH_KEY_IS_STRING) {
+								zend_update_property(php_http_request_factory_class_entry, getThis(), key.str, key.len - 1, *val);
+							}
+						}
+					}
+				} else {
+					php_http_error(HE_THROW, PHP_HTTP_E_REQUEST_FACTORY, "unknown request driver: '%s'", driver_str);
+				}
+				efree(lower_str);
+			} end_error_handling();
+		}
+	} end_error_handling();
+}
+
+PHP_METHOD(HttpRequestFactory, createRequest)
+{
+	char *url_str = NULL;
+	int url_len;
+	long meth = -1;
+	zval *options = NULL;
+
+	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!la!", &url_str, &url_len, &meth, &options)) {
+			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(request_factory)) {
+				zval *zdriver, *os;
+				zend_object_value ov;
+				zend_class_entry *class_entry = NULL;
+				php_http_request_t *req = NULL;
+				php_http_request_factory_driver_t driver;
+
+				if (!(class_entry = php_http_request_factory_get_class_entry(getThis(), ZEND_STRL("requestClass") TSRMLS_CC))) {
+					class_entry = php_http_request_class_entry;
+				}
+
+				if ((zdriver = zend_read_property(php_http_request_factory_class_entry, getThis(), ZEND_STRL("driver"), 0 TSRMLS_CC))
+				&&	(IS_STRING == Z_TYPE_P(zdriver))
+				&&	(SUCCESS == php_http_request_factory_get_driver(Z_STRVAL_P(zdriver), Z_STRLEN_P(zdriver), &driver))
+				&&	(driver.request_ops)
+				&&	(req = php_http_request_init(NULL, driver.request_ops, NULL TSRMLS_CC))
+				&&	(SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_request_object_new_ex, php_http_request_class_entry, req, NULL TSRMLS_CC))
+				) {
+					ZVAL_OBJVAL(return_value, ov, 0);
+
+					MAKE_STD_ZVAL(os);
+					object_init_ex(os, spl_ce_SplObjectStorage);
+					zend_update_property(php_http_request_class_entry, return_value, ZEND_STRL("observers"), os TSRMLS_CC);
+					zval_ptr_dtor(&os);
+
+					if (url_str) {
+						zend_update_property_stringl(php_http_request_class_entry, return_value, ZEND_STRL("url"), url_str, url_len TSRMLS_CC);
+					}
+					if (meth > 0) {
+						zend_update_property_long(php_http_request_class_entry, return_value, ZEND_STRL("method"), meth TSRMLS_CC);
+					}
+					if (options) {
+						zend_call_method_with_1_params(&return_value, Z_OBJCE_P(return_value), NULL, "setoptions", NULL, options);
+					}
+				} else {
+					if (req) {
+						php_http_request_free(&req);
+					} else {
+						php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_FACTORY, "requests are not supported by this driver");
+					}
+				}
+			} end_error_handling();
+		}
+	} end_error_handling();
+}
+
+PHP_METHOD(HttpRequestFactory, createPool)
+{
+	int argc = 0;
+	zval ***argv;
+
+	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|*", &argv, &argc)) {
+			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(request_factory)) {
+				int i;
+				zval *zdriver;
+				zend_object_value ov;
+				zend_class_entry *class_entry = NULL;
+				php_http_request_pool_t *pool = NULL;
+				php_http_request_pool_object_t *obj;
+				php_http_request_factory_driver_t driver;
+
+				if (!(class_entry = php_http_request_factory_get_class_entry(getThis(), ZEND_STRL("requestPoolClass") TSRMLS_CC))) {
+					class_entry = php_http_request_pool_class_entry;
+				}
+
+				if ((zdriver = zend_read_property(php_http_request_factory_class_entry, getThis(), ZEND_STRL("driver"), 0 TSRMLS_CC))
+				&&	(IS_STRING == Z_TYPE_P(zdriver))
+				&&	(SUCCESS == php_http_request_factory_get_driver(Z_STRVAL_P(zdriver), Z_STRLEN_P(zdriver), &driver))
+				&&	(driver.request_pool_ops)
+				&&	(pool = php_http_request_pool_init(NULL, driver.request_pool_ops, NULL TSRMLS_CC))
+				&&	(SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_request_pool_object_new_ex, php_http_request_pool_class_entry, pool, (void *) &obj TSRMLS_CC))
+				) {
+					ZVAL_OBJVAL(return_value, ov, 0);
+
+					for (i = 0; i < argc; ++i) {
+						if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_request_class_entry TSRMLS_CC)) {
+							php_http_request_pool_attach(obj->pool, *(argv[i]));
+						}
+					}
+				} else {
+					if (pool) {
+						php_http_request_pool_free(&pool);
+					} else {
+						php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_FACTORY, "pools are not supported by this driver");
+					}
+				}
+			} end_error_handling();
+		}
+	} end_error_handling();
+}
+
+PHP_METHOD(HttpRequestFactory, createDataShare)
+{
+	int argc = 0;
+	zval ***argv;
+
+	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|*", &argv, &argc)) {
+			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(request_factory)) {
+				int i;
+				zval *zdriver;
+				zend_object_value ov;
+				zend_class_entry *class_entry;
+				php_http_request_datashare_t *share = NULL;
+				php_http_request_datashare_object_t *obj;
+				php_http_request_factory_driver_t driver;
+
+				if (!(class_entry = php_http_request_factory_get_class_entry(getThis(), ZEND_STRL("requestDataShareClass") TSRMLS_CC))) {
+					class_entry = php_http_request_datashare_class_entry;
+				}
+
+				if ((zdriver = zend_read_property(php_http_request_factory_class_entry, getThis(), ZEND_STRL("driver"), 0 TSRMLS_CC))
+				&&	(IS_STRING == Z_TYPE_P(zdriver))
+				&&	(SUCCESS == php_http_request_factory_get_driver(Z_STRVAL_P(zdriver), Z_STRLEN_P(zdriver), &driver))
+				&&	(driver.request_datashare_ops)
+				&&	(share = php_http_request_datashare_init(NULL, driver.request_datashare_ops, NULL, 0 TSRMLS_CC))
+				&&	(SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_request_datashare_object_new_ex, php_http_request_datashare_class_entry, share, (void *) &obj TSRMLS_CC))
+				) {
+					ZVAL_OBJVAL(return_value, ov, 0);
+
+					for (i = 0; i < argc; ++i) {
+						if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_request_class_entry TSRMLS_CC)) {
+							php_http_request_datashare_attach(obj->share, *(argv[i]));
+						}
+					}
+				} else {
+					if (share) {
+						php_http_request_datashare_free(&share);
+					} else {
+						php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_FACTORY, "datashares are not supported by this driver");
+					}
+				}
+			} end_error_handling();
+		}
+	} end_error_handling();
+}
+
+PHP_METHOD(HttpRequestFactory, getGlobalDataShareInstance)
+{
+	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+		if (SUCCESS == zend_parse_parameters_none()) {
+			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(request_datashare)) {
+				zval *instance = *zend_std_get_static_property(php_http_request_datashare_class_entry, ZEND_STRL("instance"), 0, NULL TSRMLS_CC);
+
+				if (Z_TYPE_P(instance) != IS_OBJECT) {
+					zval *zdriver;
+					zend_object_value ov;
+					zend_class_entry *class_entry;
+					php_http_request_datashare_t *share;
+
+					if (!(class_entry = php_http_request_factory_get_class_entry(getThis(), ZEND_STRL("requestDataShareClass") TSRMLS_CC))) {
+						class_entry = php_http_request_datashare_class_entry;
+					}
+
+					if ((zdriver = zend_read_property(php_http_request_factory_class_entry, getThis(), ZEND_STRL("driver"), 0 TSRMLS_CC))
+					&&	(IS_STRING == Z_TYPE_P(zdriver))
+					&&	(share = php_http_request_datashare_global_get(Z_STRVAL_P(zdriver), Z_STRLEN_P(zdriver) TSRMLS_CC))
+					&&	(SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_request_datashare_object_new_ex, php_http_request_datashare_class_entry, share, NULL TSRMLS_CC))
+					) {
+						MAKE_STD_ZVAL(instance);
+						ZVAL_OBJVAL(instance, ov, 0);
+						zend_update_static_property(php_http_request_datashare_class_entry, ZEND_STRL("instance"), instance TSRMLS_CC);
+
+						if (PHP_HTTP_G->request_datashare.cookie) {
+							zend_update_property_bool(php_http_request_datashare_class_entry, instance, ZEND_STRL("cookie"), PHP_HTTP_G->request_datashare.cookie TSRMLS_CC);
+						}
+						if (PHP_HTTP_G->request_datashare.dns) {
+							zend_update_property_bool(php_http_request_datashare_class_entry, instance, ZEND_STRL("dns"), PHP_HTTP_G->request_datashare.dns TSRMLS_CC);
+						}
+					}
+				}
+
+				RETVAL_ZVAL(instance, 1, 0);
+			} end_error_handling();
+		}
+	} end_error_handling();
+}
+
+
+PHP_METHOD(HttpRequestFactory, getDriver)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		RETURN_PROP(php_http_request_factory_class_entry, "driver");
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpRequestFactory, getAvailableDrivers)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		HashPosition pos;
+		php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+
+		array_init(return_value);
+		FOREACH_HASH_KEY(pos, &php_http_request_factory_drivers, key) {
+			add_next_index_stringl(return_value, key.str, key.len - 1, 1);
+		}
+		return;
+	}
+	RETURN_FALSE;
+}
+
+PHP_MINIT_FUNCTION(http_request_factory)
+{
+	zend_hash_init(&php_http_request_factory_drivers, 0, NULL, NULL, 1);
+
+	PHP_HTTP_REGISTER_CLASS(http\\request, Factory, http_request_factory, php_http_object_class_entry, 0);
+	zend_declare_property_null(php_http_request_factory_class_entry, ZEND_STRL("driver"), ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_property_null(php_http_request_factory_class_entry, ZEND_STRL("requestClass"), ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_null(php_http_request_factory_class_entry, ZEND_STRL("requestPoolClass"), ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_null(php_http_request_factory_class_entry, ZEND_STRL("requestDataShareClass"), ZEND_ACC_PUBLIC TSRMLS_CC);
+
+	return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(http_request_factory)
+{
+	zend_hash_destroy(&php_http_request_factory_drivers);
+
+	return SUCCESS;
+}
+

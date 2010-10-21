@@ -144,24 +144,20 @@ PHP_METHOD(HttpObject, setErrorHandling)
 	long eh;
 	zval *old;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &eh)) {
-		RETURN_FALSE;
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &eh)) {
+		switch (eh) {
+			case EH_NORMAL:
+			case EH_SUPPRESS:
+			case EH_THROW:
+				zend_update_property_long(php_http_object_class_entry, getThis(), ZEND_STRL("errorHandling"), eh TSRMLS_CC);
+				break;
+
+			default:
+				php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "unknown error handling code (%ld)", eh);
+		}
 	}
 
-	switch (eh) {
-		case EH_NORMAL:
-		case EH_SUPPRESS:
-		case EH_THROW:
-			break;
-		default:
-			php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "unknown error handling code (%ld)", eh);
-			RETURN_FALSE;
-	}
-	
-	old = zend_read_property(php_http_object_class_entry, getThis(), ZEND_STRL("errorHandling"), 0 TSRMLS_CC);
-	Z_ADDREF_P(old);
-	zend_update_property_long(php_http_object_class_entry, getThis(), ZEND_STRL("errorHandling"), eh TSRMLS_CC);
-	RETURN_ZVAL(old, 0, 0);
+	RETURN_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(HttpObject, getDefaultErrorHandling)
@@ -174,25 +170,20 @@ PHP_METHOD(HttpObject, setDefaultErrorHandling)
 	long eh;
 	zval *old;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &eh)) {
-		RETURN_FALSE;
-	}
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &eh)) {
+		switch (eh) {
+			case EH_NORMAL:
+			case EH_SUPPRESS:
+			case EH_THROW:
+				zend_update_static_property_long(php_http_object_class_entry, ZEND_STRL("defaultErrorHandling"), eh TSRMLS_CC);
+				break;
 
-	switch (eh) {
-		case EH_NORMAL:
-		case EH_SUPPRESS:
-		case EH_THROW:
-			break;
-		default:
-			php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "unknown error handling code (%ld)", eh);
-			RETURN_FALSE;
+			default:
+				php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "unknown error handling code (%ld)", eh);
+		}
 	}
-
-	old = zend_read_static_property(php_http_object_class_entry, ZEND_STRL("defaultErrorHandling"), 0 TSRMLS_CC);
-	Z_ADDREF_P(old);
-	zend_update_static_property_long(php_http_object_class_entry, ZEND_STRL("defaultErrorHandling"), eh TSRMLS_CC);
-	RETURN_ZVAL(old, 0, 1);
 }
+
 PHP_MINIT_FUNCTION(http_object)
 {
 	PHP_HTTP_REGISTER_CLASS(http, Object, http_object, NULL, ZEND_ACC_ABSTRACT);
