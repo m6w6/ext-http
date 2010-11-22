@@ -347,10 +347,6 @@ retry_raw_inflate:
 				}
 		}
 		inflateEnd(&Z);
-
-		if (decoded_len && *decoded) {
-			efree(*decoded);
-		}
 	}
 	
 	http_error_ex(HE_WARNING, HTTP_E_ENCODING, "Could not inflate data: %s", zError(status));
