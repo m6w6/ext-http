@@ -1000,7 +1000,7 @@ PHP_METHOD(HttpMessage, setResponseStatus)
 	
 	HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
 	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &status, &status_len)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &status, &status_len)) {
 		RETURN_FALSE;
 	}
 	STR_SET(obj->message->http.info.response.status, estrndup(status, status_len));
