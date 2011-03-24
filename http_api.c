@@ -253,7 +253,7 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		return FAILURE;
 	}
 	
-	if (!OG(ob_lock)) {
+	if (!php_ob_handler_used("zlib output compression") && !php_ob_handler_used("ob_gzhandler") && !OG(ob_lock)) {
 		php_end_ob_buffers(0 TSRMLS_CC);
 	}
 	if ((SUCCESS == sapi_send_headers(TSRMLS_C)) && body) {
