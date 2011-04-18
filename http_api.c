@@ -356,6 +356,7 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 		HTTP_G->read_post_data = 1;
 		
 		while (0 < (len = sapi_module.read_post(buf, 4096 TSRMLS_CC))) {
+			SG(read_post_bytes) += len;
 			*body = erealloc(*body, *length + len + 1);
 			memcpy(*body + *length, buf, len);
 			*length += len;
