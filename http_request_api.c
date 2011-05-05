@@ -615,7 +615,10 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	TSRMLS_FETCH_FROM_CTX(request->tsrm_ls);
 	
 	HTTP_CHECK_CURL_INIT(request->ch, http_curl_init(request), return FAILURE);
-	
+
+	if (!request->url) {
+		return FAILURE;
+	}
 	if (!(storage = http_request_storage_get(request->ch))) {
 		return FAILURE;
 	}
