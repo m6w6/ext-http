@@ -331,6 +331,13 @@ typedef int STATUS;
 			ZEND_END_ARG_INFO(); \
 \
 			HTTP_STATIC_ARG_INFO \
+			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_3, 0) \
+				ZEND_ARG_PASS_INFO(0) \
+				ZEND_ARG_PASS_INFO(0) \
+				ZEND_ARG_PASS_INFO(1) \
+			ZEND_END_ARG_INFO(); \
+\
+			HTTP_STATIC_ARG_INFO \
 			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_4, 0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(0) \
@@ -340,6 +347,7 @@ typedef int STATUS;
 #	else
 #		define HTTP_DECLARE_ARG_PASS_INFO() \
 			static unsigned char http_arg_pass_ref_2[] = {2, BYREF_NONE, BYREF_FORCE}; \
+			static unsigned char http_arg_pass_ref_3[] = {3, BYREF_NONE, BYREF_NONE, BYREF_FORCE}; \
 			static unsigned char http_arg_pass_ref_4[] = {4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
 #	endif /* ZEND_ENGINE_2 */
 #endif /* HTTP_HAVE_CURL */
