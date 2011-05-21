@@ -52,42 +52,42 @@ static inline php_url *php_http_url_from_struct(php_url *url, HashTable *ht TSRM
 	memset(url, 0, sizeof(*url));
 	
 	if (SUCCESS == zend_hash_find(ht, "scheme", sizeof("scheme"), (void *) &e)) {
-		zval *cpy = php_http_zsep(IS_STRING, *e);
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url->scheme = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "user", sizeof("user"), (void *) &e)) {
-		zval *cpy = php_http_zsep(IS_STRING, *e);
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url->user = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "pass", sizeof("pass"), (void *) &e)) {
-		zval *cpy = php_http_zsep(IS_STRING, *e);
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url->pass = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "host", sizeof("host"), (void *) &e)) {
-		zval *cpy = php_http_zsep(IS_STRING, *e);
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url->host = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void *) &e)) {
-		zval *cpy = php_http_zsep(IS_STRING, *e);
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url->path = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "query", sizeof("query"), (void *) &e)) {
-		zval *cpy = php_http_zsep(IS_STRING, *e);
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url->query = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "fragment", sizeof("fragment"), (void *) &e)) {
-		zval *cpy = php_http_zsep(IS_STRING, *e);
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url->fragment = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "port", sizeof("port"), (void *) &e)) {
-		zval *cpy = php_http_zsep(IS_LONG, *e);
+		zval *cpy = php_http_ztyp(IS_LONG, *e);
 		url->port = (unsigned short) Z_LVAL_P(cpy);
 		zval_ptr_dtor(&cpy);
 	}

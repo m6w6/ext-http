@@ -18,10 +18,9 @@
 /* API */
 
 #ifdef PHP_HTTP_HAVE_ICONV
-PHP_HTTP_API int php_http_querystring_xlate(zval *array, zval *param, const char *ie, const char *oe TSRMLS_DC);
+PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe TSRMLS_DC);
 #endif /* PHP_HTTP_HAVE_ICONV */
-PHP_HTTP_API void php_http_querystring_update(zval *qarray, zval *qstring TSRMLS_DC);
-PHP_HTTP_API int php_http_querystring_modify(zval *qarray, zval *params TSRMLS_DC);
+PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval *qstring TSRMLS_DC);
 
 /* PHP */
 

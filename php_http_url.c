@@ -120,12 +120,12 @@ PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url 
 			array_init(&qarr);
 			
 			ZVAL_STRING(&qstr, old_url->query, 0);
-			php_http_querystring_modify(&qarr, &qstr TSRMLS_CC);
+			php_http_querystring_update(&qarr, &qstr, NULL TSRMLS_CC);
 			ZVAL_STRING(&qstr, new_url->query, 0);
-			php_http_querystring_modify(&qarr, &qstr TSRMLS_CC);
+			php_http_querystring_update(&qarr, &qstr, NULL TSRMLS_CC);
 			
 			ZVAL_NULL(&qstr);
-			php_http_querystring_update(&qarr, &qstr TSRMLS_CC);
+			php_http_querystring_update(&qarr, NULL, &qstr TSRMLS_CC);
 			url->query = Z_STRVAL(qstr);
 			zval_dtor(&qarr);
 		} else {
@@ -415,7 +415,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_b
 				return FAILURE;
 			}
 		} else {
-			zval *val = php_http_zsep(IS_STRING, *data);
+			zval *val = php_http_ztyp(IS_STRING, *data);
 			
 			if (PHP_HTTP_BUFFER_LEN(str)) {
 				php_http_buffer_append(str, arg_sep, arg_sep_len);
@@ -460,12 +460,12 @@ zend_function_entry php_http_url_method_entry[] = {
 
 PHP_METHOD(HttpUrl, __construct)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *new_url = NULL, *old_url = NULL;
 		long flags = PHP_HTTP_URL_FROM_ENV;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!z!l", &old_url, &new_url, &flags)) {
-			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(url)) {
+			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_url *res_purl, *new_purl = NULL, *old_purl = NULL;
 
 				if (new_url) {
@@ -475,7 +475,7 @@ PHP_METHOD(HttpUrl, __construct)
 							new_purl = php_http_url_from_struct(NULL, HASH_OF(new_url) TSRMLS_CC);
 							break;
 						default: {
-							zval *cpy = php_http_zsep(IS_STRING, new_url);
+							zval *cpy = php_http_ztyp(IS_STRING, new_url);
 
 							new_purl = php_url_parse(Z_STRVAL_P(new_url));
 							zval_ptr_dtor(&cpy);
@@ -493,7 +493,7 @@ PHP_METHOD(HttpUrl, __construct)
 							old_purl = php_http_url_from_struct(NULL, HASH_OF(old_url) TSRMLS_CC);
 							break;
 						default: {
-							zval *cpy = php_http_zsep(IS_STRING, old_url);
+							zval *cpy = php_http_ztyp(IS_STRING, old_url);
 
 							old_purl = php_url_parse(Z_STRVAL_P(old_url));
 							zval_ptr_dtor(&cpy);
