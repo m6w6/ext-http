@@ -444,6 +444,7 @@ dnl ----
 		php_http_negotiate.c \
 		php_http_object.c \
 		php_http_params.c \
+		php_http_resource_factory.c \
 		php_http_persistent_handle.c \
 		php_http_property_proxy.c \
 		php_http_querystring.c \
@@ -486,6 +487,7 @@ dnl ----
 		php_http_negotiate.h \
 		php_http_object.h \
 		php_http_params.h \
+		php_http_resource_factory.h \
 		php_http_persistent_handle.h \
 		php_http_property_proxy.h \
 		php_http_querystring.h \

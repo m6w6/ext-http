@@ -950,11 +950,11 @@ void php_http_encoding_stream_object_free(void *object TSRMLS_DC)
 
 PHP_METHOD(HttpEncodingStream, __construct)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		long flags = 0;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &flags)) {
-			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(encoding)) {
+			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_http_encoding_stream_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 				if (!obj->stream) {

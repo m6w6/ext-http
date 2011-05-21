@@ -4,7 +4,7 @@
 #include <Zend/zend_interfaces.h>
 #include <ext/spl/spl_iterators.h>
 
-PHP_HTTP_API php_http_request_pool_t *php_http_request_pool_init(php_http_request_pool_t *h, php_http_request_pool_ops_t *ops, void *init_arg TSRMLS_DC)
+PHP_HTTP_API php_http_request_pool_t *php_http_request_pool_init(php_http_request_pool_t *h, php_http_request_pool_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {
 	php_http_request_pool_t *free_h = NULL;
 
@@ -14,6 +14,7 @@ PHP_HTTP_API php_http_request_pool_t *php_http_request_pool_init(php_http_reques
 	memset(h, 0, sizeof(*h));
 
 	h->ops = ops;
+	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL TSRMLS_CC);
 	zend_llist_init(&h->requests.attached, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	zend_llist_init(&h->requests.finished, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	TSRMLS_SET_CTX(h->ts);
@@ -47,6 +48,10 @@ PHP_HTTP_API void php_http_request_pool_dtor(php_http_request_pool_t *h)
 
 	zend_llist_clean(&h->requests.finished);
 	zend_llist_clean(&h->requests.attached);
+
+	if (h->persistent_handle_id) {
+		zval_ptr_dtor(&h->persistent_handle_id);
+	}
 }
 
 PHP_HTTP_API void php_http_request_pool_free(php_http_request_pool_t **h) {
@@ -285,7 +290,7 @@ zend_object_value php_http_request_pool_object_new_ex(zend_class_entry *ce, php_
 	object_properties_init((zend_object *) o, ce);
 
 	if (!(o->pool = p)) {
-		o->pool = php_http_request_pool_init(NULL, NULL, NULL TSRMLS_CC);
+		o->pool = php_http_request_pool_init(NULL, NULL, NULL, NULL TSRMLS_CC);
 	}
 
 	if (ptr) {
@@ -316,7 +321,7 @@ static void php_http_request_pool_object_llist2array(zval **req, zval *array TSR
 
 PHP_METHOD(HttpRequestPool, __construct)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zend_parse_parameters_none();
 	} end_error_handling();
 }
@@ -345,11 +350,11 @@ PHP_METHOD(HttpRequestPool, reset)
 
 PHP_METHOD(HttpRequestPool, attach)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *request;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_request_class_entry)) {
-			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_http_request_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 				if (obj->iterator.pos > 0 && obj->iterator.pos < zend_llist_count(&obj->pool->requests.attached)) {
@@ -368,11 +373,11 @@ PHP_METHOD(HttpRequestPool, detach)
 {
 	RETVAL_FALSE;
 
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *request;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_request_class_entry)) {
-			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(request_pool)) {
+			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_http_request_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 				obj->iterator.pos = -1;
@@ -388,9 +393,9 @@ PHP_METHOD(HttpRequestPool, send)
 {
 	RETVAL_FALSE;
 
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters_none()) {
-			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(request_pool)) {
+			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_http_request_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 				php_http_request_pool_exec(obj->pool);

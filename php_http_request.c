@@ -19,7 +19,7 @@
 #include <Zend/zend_interfaces.h>
 
 
-PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, php_http_request_ops_t *ops, void *init_arg TSRMLS_DC)
+PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, php_http_request_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {
 	php_http_request_t *free_h = NULL;
 
@@ -29,6 +29,7 @@ PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, ph
 	memset(h, 0, sizeof(*h));
 
 	h->ops = ops;
+	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL TSRMLS_CC);
 	h->buffer = php_http_buffer_init(NULL TSRMLS_CC);
 	h->parser = php_http_message_parser_init(NULL TSRMLS_CC);
 	h->message = php_http_message_init(NULL, 0 TSRMLS_CC);
@@ -51,6 +52,12 @@ PHP_HTTP_API void php_http_request_dtor(php_http_request_t *h)
 {
 	if (h->ops->dtor) {
 		h->ops->dtor(h);
+	}
+
+	php_http_resource_factory_free(&h->rf);
+
+	if (h->persistent_handle_id) {
+		zval_ptr_dtor(&h->persistent_handle_id);
 	}
 
 	php_http_message_parser_free(&h->parser);
@@ -306,7 +313,7 @@ zend_object_value php_http_request_object_new_ex(zend_class_entry *ce, php_http_
 	object_properties_init((zend_object *) o, ce);
 
 	if (!(o->request = r)) {
-		o->request = php_http_request_init(NULL, NULL, NULL TSRMLS_CC);
+		o->request = php_http_request_init(NULL, NULL, NULL, NULL TSRMLS_CC);
 	}
 
 	if (ptr) {
@@ -439,19 +446,19 @@ STATUS php_http_request_object_requesthandler(php_http_request_object_t *obj, zv
 
 	if (SUCCESS == php_http_request_getopt(obj->request, PHP_HTTP_REQUEST_OPT_PROGRESS_INFO, &progress)) {
 		if (!progress->callback) {
-			zval *pcb;
-			int no = 0;
+			php_http_request_progress_callback_t *callback = emalloc(sizeof(*callback));
 
-			MAKE_STD_ZVAL(pcb);
-			array_init(pcb);
+			callback->type = PHP_HTTP_REQUEST_PROGRESS_CALLBACK_USER;
+			callback->pass_state = 0;
+			MAKE_STD_ZVAL(callback->func.user);
+			array_init(callback->func.user);
 			Z_ADDREF_P(getThis());
-			add_next_index_zval(pcb, getThis());
-			add_next_index_stringl(pcb, ZEND_STRL("notify"), 1);
+			add_next_index_zval(callback->func.user, getThis());
+			add_next_index_stringl(callback->func.user, ZEND_STRL("notify"), 1);
 
-			php_http_request_setopt(obj->request, PHP_HTTP_REQUEST_OPT_PROGRESS_CALLBACK, pcb);
-			php_http_request_setopt(obj->request, PHP_HTTP_REQUEST_OPT_PROGRESS_CALLBACK_WANTS_STATE, &no);
-			zval_ptr_dtor(&pcb);
+			php_http_request_setopt(obj->request, PHP_HTTP_REQUEST_OPT_PROGRESS_CALLBACK, callback);
 		}
+		progress->state.info = "start";
 		php_http_request_progress_notify(progress TSRMLS_CC);
 		progress->state.started = 1;
 	}
@@ -523,6 +530,7 @@ STATUS php_http_request_object_responsehandler(php_http_request_object_t *obj, z
 	}
 
 	if (SUCCESS == php_http_request_getopt(obj->request, PHP_HTTP_REQUEST_OPT_PROGRESS_INFO, &progress)) {
+		progress->state.info = "finished";
 		progress->state.finished = 1;
 		php_http_request_progress_notify(progress TSRMLS_CC);
 	}
@@ -595,14 +603,14 @@ static inline void php_http_request_object_get_options_subr(INTERNAL_FUNCTION_PA
 
 PHP_METHOD(HttpRequest, __construct)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zend_parse_parameters_none();
 	} end_error_handling();
 }
 
 PHP_METHOD(HttpRequest, getObservers)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			RETVAL_PROP(php_http_request_class_entry, "observers");
 		}
@@ -675,6 +683,7 @@ PHP_METHOD(HttpRequest, getProgress)
 		object_init(return_value);
 		add_property_bool(return_value, "started", progress->state.started);
 		add_property_bool(return_value, "finished", progress->state.finished);
+		add_property_string(return_value, "info", STR_PTR(progress->state.info), 1);
 		add_property_double(return_value, "dltotal", progress->state.dl.total);
 		add_property_double(return_value, "dlnow", progress->state.dl.now);
 		add_property_double(return_value, "ultotal", progress->state.ul.total);
@@ -965,7 +974,7 @@ PHP_METHOD(HttpRequest, setQueryData)
 				efree(query_data_str);
 			}
 		} else {
-			zval *data = php_http_zsep(IS_STRING, qdata);
+			zval *data = php_http_ztyp(IS_STRING, qdata);
 
 			zend_update_property_stringl(php_http_request_class_entry, getThis(), ZEND_STRL("queryData"), Z_STRVAL_P(data), Z_STRLEN_P(data) TSRMLS_CC);
 			zval_ptr_dtor(&data);
@@ -1087,7 +1096,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 			if (allowed_extras_array) {
 				allowed_extras = ecalloc(zend_hash_num_elements(Z_ARRVAL_P(allowed_extras_array)) + 1, sizeof(char *));
 				FOREACH_VAL(pos, allowed_extras_array, entry) {
-					zval *data = php_http_zsep(IS_STRING, *entry);
+					zval *data = php_http_ztyp(IS_STRING, *entry);
 					allowed_extras[i++] = estrndup(Z_STRVAL_P(data), Z_STRLEN_P(data));
 					zval_ptr_dtor(&data);
 				}
@@ -1101,7 +1110,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 						zval **single_header;
 
 						FOREACH_VAL(pos2, *header, single_header) {
-							zval *data = php_http_zsep(IS_STRING, *single_header);
+							zval *data = php_http_ztyp(IS_STRING, *single_header);
 
 							if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), flags, allowed_extras TSRMLS_CC))) {
 								zval *cookie;
@@ -1113,7 +1122,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 							zval_ptr_dtor(&data);
 						}
 					} else {
-						zval *data = php_http_zsep(IS_STRING, *header);
+						zval *data = php_http_ztyp(IS_STRING, *header);
 						if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), flags, allowed_extras TSRMLS_CC))) {
 							zval *cookie;
 
@@ -1167,7 +1176,7 @@ PHP_METHOD(HttpRequest, getResponseStatus)
 
 PHP_METHOD(HttpRequest, getResponseMessage)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			zval *message = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("responseMessage"), 0 TSRMLS_CC);
 
@@ -1182,7 +1191,7 @@ PHP_METHOD(HttpRequest, getResponseMessage)
 
 PHP_METHOD(HttpRequest, getRequestMessage)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			zval *message = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("requestMessage"), 0 TSRMLS_CC);
 
@@ -1197,7 +1206,7 @@ PHP_METHOD(HttpRequest, getRequestMessage)
 
 PHP_METHOD(HttpRequest, getHistory)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			zval *hist = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("history"), 0 TSRMLS_CC);
 
@@ -1241,7 +1250,7 @@ PHP_METHOD(HttpRequest, send)
 {
 	RETVAL_FALSE;
 
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			php_http_request_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			php_http_request_method_t meth = PHP_HTTP_NO_REQUEST_METHOD;

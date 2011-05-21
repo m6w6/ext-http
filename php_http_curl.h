@@ -15,4 +15,11 @@ struct php_http_request_pool_globals {
 };
 #endif
 
+extern zend_class_entry *php_http_curl_class_entry;
+extern zend_function_entry php_http_curl_method_entry[];
+
+#define php_http_curl_new php_http_object_new
+
+PHP_METHOD(HttpCURL, __construct);
+
 #endif

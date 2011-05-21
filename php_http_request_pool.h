@@ -23,6 +23,7 @@ typedef STATUS (*php_http_request_pool_detach_func_t)(php_http_request_pool_t *p
 typedef STATUS (*php_http_request_pool_setopt_func_t)(php_http_request_pool_t *p, php_http_request_pool_setopt_opt_t opt, void *arg);
 
 typedef struct php_http_request_pool_ops {
+	php_http_resource_factory_ops_t *rsrc;
 	php_http_request_pool_init_func_t init;
 	php_http_request_pool_copy_func_t copy;
 	php_http_request_pool_dtor_func_t dtor;
@@ -37,6 +38,7 @@ typedef struct php_http_request_pool_ops {
 
 struct php_http_request_pool {
 	void *ctx;
+	php_http_resource_factory_t *rf;
 	php_http_request_pool_ops_t *ops;
 
 	struct {
@@ -44,12 +46,14 @@ struct php_http_request_pool {
 		zend_llist finished;
 	} requests;
 
+	zval *persistent_handle_id;
+
 #ifdef ZTS
 	void ***ts;
 #endif
 };
 
-PHP_HTTP_API php_http_request_pool_t *php_http_request_pool_init(php_http_request_pool_t *pool, php_http_request_pool_ops_t *ops, void *init_arg TSRMLS_DC);
+PHP_HTTP_API php_http_request_pool_t *php_http_request_pool_init(php_http_request_pool_t *pool, php_http_request_pool_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC);
 PHP_HTTP_API php_http_request_pool_t *php_http_request_pool_copy(php_http_request_pool_t *from, php_http_request_pool_t *to);
 PHP_HTTP_API void php_http_request_pool_dtor(php_http_request_pool_t *pool);
 PHP_HTTP_API void php_http_request_pool_free(php_http_request_pool_t **pool);
@@ -65,6 +69,7 @@ PHP_HTTP_API void php_http_request_pool_requests(php_http_request_pool_t *h, zva
 typedef struct php_http_request_pool_object {
 	zend_object zo;
 	php_http_request_pool_t *pool;
+	zend_object_value factory;
 	struct {
 		long pos;
 	} iterator;

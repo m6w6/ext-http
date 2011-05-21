@@ -143,58 +143,34 @@ static void php_http_neon_progress_callback(void *ctx, ne_session_status status,
 {
 	php_http_request_t *h = ctx;
 	php_http_neon_request_t *neon = h->ctx;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	switch (status) {
 		case ne_status_lookup:
+			neon->progress.state.info = "resolve";
 			break;
 		case ne_status_connecting:
+			neon->progress.state.info = "connect";
 			break;
 		case ne_status_connected:
+			neon->progress.state.info = "connected";
 			break;
 		case ne_status_sending:
+			neon->progress.state.info = "send";
 			neon->progress.state.ul.total = info->sr.total;
 			neon->progress.state.ul.now = info->sr.progress;
 			break;
 		case ne_status_recving:
+			neon->progress.state.info = "receive";
 			neon->progress.state.dl.total = info->sr.total;
 			neon->progress.state.dl.now = info->sr.progress;
 			break;
 		case ne_status_disconnected:
+			neon->progress.state.info = "disconnected";
 			break;
 	}
 
-	if (neon->progress.callback) {
-		zval retval;
-		TSRMLS_FETCH_FROM_CTX(h->ts);
-
-		INIT_PZVAL(&retval);
-		ZVAL_NULL(&retval);
-
-		with_error_handling(EH_NORMAL, NULL) {
-			if (neon->progress.pass_state) {
-				zval *param;
-
-				MAKE_STD_ZVAL(param);
-				array_init(param);
-				add_assoc_double(param, "dltotal", neon->progress.state.dl.total);
-				add_assoc_double(param, "dlnow", neon->progress.state.dl.now);
-				add_assoc_double(param, "ultotal", neon->progress.state.ul.total);
-				add_assoc_double(param, "ulnow", neon->progress.state.ul.now);
-
-				neon->progress.in_cb = 1;
-				call_user_function(EG(function_table), NULL, neon->progress.callback, &retval, 1, &param TSRMLS_CC);
-				neon->progress.in_cb = 0;
-
-				zval_ptr_dtor(&param);
-			} else {
-				neon->progress.in_cb = 1;
-				call_user_function(EG(function_table), NULL, neon->progress.callback, &retval, 0, NULL TSRMLS_CC);
-				neon->progress.in_cb = 0;
-			}
-		} end_error_handling();
-
-		zval_dtor(&retval);
-	}
+	php_http_request_progress_notify(&neon->progress TSRMLS_CC);
 }
 
 /* helpers */
@@ -219,7 +195,7 @@ static inline zval *get_option(HashTable *cache, HashTable *options, char *key, 
 		ulong h = zend_hash_func(key, keylen);
 
 		if (SUCCESS == zend_hash_quick_find(options, key, keylen, h, (void *) &zoption)) {
-			zval *option = php_http_zsep(type, *zoption);
+			zval *option = php_http_ztyp(type, *zoption);
 
 			if (cache) {
 				zval *cached = cache_option(cache, key, keylen, h, option);
@@ -361,8 +337,8 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 					if (SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_PP(rr), (void *) &re, &pos2)) {
 						if (	((Z_TYPE_PP(rb) == IS_LONG) || ((Z_TYPE_PP(rb) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(rb), Z_STRLEN_PP(rb), NULL, NULL, 1))) &&
 								((Z_TYPE_PP(re) == IS_LONG) || ((Z_TYPE_PP(re) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(re), Z_STRLEN_PP(re), NULL, NULL, 1)))) {
-							zval *rbl = php_http_zsep(IS_LONG, *rb);
-							zval *rel = php_http_zsep(IS_LONG, *re);
+							zval *rbl = php_http_ztyp(IS_LONG, *rb);
+							zval *rel = php_http_ztyp(IS_LONG, *re);
 
 							if ((Z_LVAL_P(rbl) >= 0) && (Z_LVAL_P(rel) >= 0)) {
 								php_http_buffer_appendf(&rs, "%ld-%ld,", Z_LVAL_P(rbl), Z_LVAL_P(rel));
@@ -391,7 +367,7 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 
 		FOREACH_KEYVAL(pos, zoption, header_key, header_val) {
 			if (header_key.type == HASH_KEY_IS_STRING) {
-				zval *header_cpy = php_http_zsep(IS_STRING, *header_val);
+				zval *header_cpy = php_http_ztyp(IS_STRING, *header_val);
 
 				if (!strcasecmp(header_key.str, "range")) {
 					range_req = 1;
@@ -455,7 +431,7 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 
 				FOREACH_KEYVAL(pos, zoption, cookie_key, cookie_val) {
 					if (cookie_key.type == HASH_KEY_IS_STRING) {
-						zval *val = php_http_zsep(IS_STRING, *cookie_val);
+						zval *val = php_http_ztyp(IS_STRING, *cookie_val);
 						php_http_buffer_appendf(&neon->options.headers, "%s=%s; ", cookie_key.str, Z_STRVAL_P(val));
 						zval_ptr_dtor(&val);
 					}
@@ -494,13 +470,13 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 			}
 		}
 		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(zoption), ZEND_STRS("key"), (void *) &zssl)) {
-			zval *cpy = php_http_zsep(IS_STRING, *zssl);
+			zval *cpy = php_http_ztyp(IS_STRING, *zssl);
 			ne_ssl_client_cert *cc = ne_ssl_clicert_read(Z_STRVAL_P(cpy));
 
 			if (cc) {
 				if (ne_ssl_clicert_encrypted(cc)) {
 					if (SUCCESS == zend_hash_find(Z_ARRVAL_P(zoption), ZEND_STRS("keypasswd"), (void *) &zssl)) {
-						zval *cpy = php_http_zsep(IS_STRING, *zssl);
+						zval *cpy = php_http_ztyp(IS_STRING, *zssl);
 
 						if (NE_OK == ne_ssl_clicert_decrypt(cc, Z_STRVAL_P(cpy))) {
 							neon->options.ssl.clicert = cc;
@@ -517,7 +493,7 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 			zval_ptr_dtor(&cpy);
 		}
 		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(zoption), ZEND_STRS("cert"), (void *) &zssl)) {
-			zval *cpy = php_http_zsep(IS_STRING, *zssl);
+			zval *cpy = php_http_ztyp(IS_STRING, *zssl);
 			ne_ssl_certificate *tc = ne_ssl_cert_read(Z_STRVAL_P(cpy));
 
 			if (tc) {
@@ -553,7 +529,7 @@ static php_http_request_t *php_http_neon_request_copy(php_http_request_t *from, 
 	if (to) {
 		return php_http_neon_request_init(to, NULL);
 	} else {
-		return php_http_request_init(NULL, from->ops, NULL TSRMLS_CC);
+		return php_http_request_init(NULL, from->ops, from->rf, NULL TSRMLS_CC);
 	}
 }
 
@@ -564,6 +540,8 @@ static void php_http_neon_request_dtor(php_http_request_t *h)
 	php_http_neon_request_reset(h);
 	php_http_buffer_dtor(&ctx->options.headers);
 	zend_hash_destroy(&ctx->options.cache);
+
+	php_http_request_progress_dtor(&ctx->progress);
 
 	efree(ctx);
 	h->ctx = NULL;
@@ -607,15 +585,7 @@ static STATUS php_http_neon_request_reset(php_http_request_t *h)
 	neon->options.timeout.read = 0;
 	neon->options.timeout.connect = 0;
 
-	if (neon->progress.callback) {
-		zval_ptr_dtor(&neon->progress.callback);
-		neon->progress.callback = NULL;
-	}
-	neon->progress.pass_state = 0;
-	neon->progress.state.dl.now = 0;
-	neon->progress.state.dl.total = 0;
-	neon->progress.state.ul.now = 0;
-	neon->progress.state.ul.total = 0;
+	php_http_request_progress_dtor(&neon->progress);
 
 	return SUCCESS;
 }
@@ -645,20 +615,21 @@ static STATUS php_http_neon_request_exec(php_http_request_t *h, php_http_request
 	if (neon->options.port) {
 		purl->port = neon->options.port;
 	} else if (!purl->port) {
+		purl->port = 80;
+		if (strncascmp(purl->scheme, "http", 4)) {
 #ifdef HAVE_GETSERVBYNAME
-		struct servent *se;
+			struct servent *se;
 
-		if ((se = getservbyname(purl->scheme, "tcp")) && se->s_port) {
-			purl->port = ntohs(se->s_port);
-		} else
+			if ((se = getservbyname(purl->scheme, "tcp")) && se->s_port) {
+				purl->port = ntohs(se->s_port);
+			}
 #endif
-		if (!strcasecmp(purl->scheme, "https")) {
+		} else if (purl->scheme[4] == 's') {
 			purl->port = 443;
-		} else {
-			purl->port = 80;
 		}
 	}
 
+	/* never returns NULL */
 	session = ne_session_create(purl->scheme, purl->host, purl->port);
 	if (neon->options.proxy.host) {
 		switch (neon->options.proxy.type) {
@@ -793,16 +764,14 @@ static STATUS php_http_neon_request_setopt(php_http_request_t *h, php_http_reque
 			break;
 
 		case PHP_HTTP_REQUEST_OPT_PROGRESS_CALLBACK:
+			if (neon->progress.in_cb) {
+				php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST, "Cannot change progress callback while executing it");
+				return FAILURE;
+			}
 			if (neon->progress.callback) {
-				zval_ptr_dtor(&neon->progress.callback);
+				php_http_request_progress_dtor(&neon->progress TSRMLS_CC);
 			}
-			if ((neon->progress.callback = arg)) {
-				Z_ADDREF_P(neon->progress.callback);
-			}
-			break;
-
-		case PHP_HTTP_REQUEST_OPT_PROGRESS_CALLBACK_WANTS_STATE:
-			neon->progress.pass_state = *((int *)arg);
+			neon->progress.callback = arg;
 			break;
 
 		case PHP_HTTP_REQUEST_OPT_COOKIES_ENABLE:
@@ -825,7 +794,7 @@ static STATUS php_http_neon_request_getopt(php_http_request_t *h, php_http_reque
 
 	switch (opt) {
 		case PHP_HTTP_REQUEST_OPT_PROGRESS_INFO:
-			memcpy(arg, &neon->progress, sizeof(neon->progress));
+			*((php_http_request_progress_t **) arg) = &neon->progress;
 			break;
 
 		case PHP_HTTP_REQUEST_OPT_TRANSFER_INFO:
@@ -838,7 +807,14 @@ static STATUS php_http_neon_request_getopt(php_http_request_t *h, php_http_reque
 	return SUCCESS;
 }
 
+static php_http_resource_factory_ops_t php_http_neon_resource_factory_ops = {
+		NULL,
+		NULL,
+		NULL
+};
+
 static php_http_request_ops_t php_http_neon_request_ops = {
+	&php_http_neon_resource_factory_ops,
 	php_http_neon_request_init,
 	php_http_neon_request_copy,
 	php_http_neon_request_dtor,
@@ -853,6 +829,25 @@ PHP_HTTP_API php_http_request_ops_t *php_http_neon_get_request_ops(void)
 	return &php_http_neon_request_ops;
 }
 
+#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpNEON, method, 0, req_args)
+#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpNEON, method, 0)
+#define PHP_HTTP_NEON_ME(method, visibility)	PHP_ME(HttpNEON, method, PHP_HTTP_ARGS(HttpNEON, method), visibility)
+#define PHP_HTTP_NEON_ALIAS(method, func)	PHP_HTTP_STATIC_ME_ALIAS(method, func, PHP_HTTP_ARGS(HttpNEON, method))
+#define PHP_HTTP_NEON_MALIAS(me, al, vis)	ZEND_FENTRY(me, ZEND_MN(HttpNEON_##al), PHP_HTTP_ARGS(HttpNEON, al), vis)
+
+PHP_HTTP_EMPTY_ARGS(__construct);
+
+zend_class_entry *php_http_neon_class_entry;
+zend_function_entry php_http_neon_method_entry[] = {
+	PHP_HTTP_NEON_ME(__construct, ZEND_ACC_PRIVATE|ZEND_ACC_CTOR)
+
+	EMPTY_FUNCTION_ENTRY
+};
+
+PHP_METHOD(HttpNEON, __construct) {
+}
+
+
 PHP_MINIT_FUNCTION(http_neon)
 {
 	php_http_request_factory_driver_t driver = {
@@ -863,22 +858,25 @@ PHP_MINIT_FUNCTION(http_neon)
 		return FAILURE;
 	}
 
+	PHP_HTTP_REGISTER_CLASS(http, NEON, http_neon, php_http_neon_class_entry, 0);
+
 	/*
 	* Auth Constants
 	*/
-	zend_declare_class_constant_long(php_http_request_class_entry, ZEND_STRL("AUTH_BASIC"), NE_AUTH_BASIC TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_request_class_entry, ZEND_STRL("AUTH_DIGEST"), NE_AUTH_DIGEST TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_request_class_entry, ZEND_STRL("AUTH_NTLM"), NE_AUTH_NTLM TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_request_class_entry, ZEND_STRL("AUTH_GSSNEG"), NE_AUTH_GSSAPI TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_request_class_entry, ZEND_STRL("AUTH_ANY"), NE_AUTH_ALL TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("AUTH_BASIC"), NE_AUTH_BASIC TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("AUTH_DIGEST"), NE_AUTH_DIGEST TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("AUTH_NTLM"), NE_AUTH_NTLM TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("AUTH_GSSAPI"), NE_AUTH_GSSAPI TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("AUTH_GSSNEG"), NE_AUTH_NEGOTIATE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("AUTH_ANY"), NE_AUTH_ALL TSRMLS_CC);
 
 	/*
 	* Proxy Type Constants
 	*/
-	zend_declare_class_constant_long(php_http_request_class_entry, ZEND_STRL("PROXY_SOCKS4"), NE_SOCK_SOCKSV4 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_request_class_entry, ZEND_STRL("PROXY_SOCKS4A"), NE_SOCK_SOCKSV4A TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_request_class_entry, ZEND_STRL("PROXY_SOCKS5"), NE_SOCK_SOCKSV5 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_request_class_entry, ZEND_STRL("PROXY_HTTP"), -1 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("PROXY_SOCKS4"), NE_SOCK_SOCKSV4 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("PROXY_SOCKS4A"), NE_SOCK_SOCKSV4A TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("PROXY_SOCKS5"), NE_SOCK_SOCKSV5 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_neon_class_entry, ZEND_STRL("PROXY_HTTP"), -1 TSRMLS_CC);
 
 	if (NE_OK != ne_sock_init()) {
 		return FAILURE;

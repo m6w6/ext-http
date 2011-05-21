@@ -28,7 +28,7 @@ php_http_request_datashare_t *php_http_request_datashare_global_get(const char *
 		php_http_request_factory_driver_t driver;
 
 		if ((SUCCESS == php_http_request_factory_get_driver(driver_str, driver_len, &driver)) && driver.request_datashare_ops) {
-			s = php_http_request_datashare_init(NULL, driver.request_datashare_ops, NULL, 1 TSRMLS_CC);
+			s = php_http_request_datashare_init(NULL, driver.request_datashare_ops, NULL, NULL, 1 TSRMLS_CC);
 			zend_hash_add(&php_http_request_datashare_global_shares, lower_str, driver_len + 1, &s, sizeof(php_http_request_datashare_t *), NULL);
 		}
 	}
@@ -40,9 +40,9 @@ php_http_request_datashare_t *php_http_request_datashare_global_get(const char *
 	return s;
 }
 
-PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_http_request_datashare_t *h, php_http_request_datashare_ops_t *ops, void *init_arg, zend_bool persistent TSRMLS_DC)
+PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_http_request_datashare_t *h, php_http_request_datashare_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg, zend_bool persistent TSRMLS_DC)
 {
-	php_http_request_datashare_t *free_h;
+	php_http_request_datashare_t *free_h = NULL;
 
 	if (!h) {
 		free_h = h = pemalloc(sizeof(*h), persistent);
@@ -55,6 +55,7 @@ PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_h
 		TSRMLS_SET_CTX(h->ts);
 	}
 	h->ops = ops;
+	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL TSRMLS_CC);
 
 	if (h->ops->init) {
 		if (!(h = h->ops->init(h, init_arg))) {
@@ -85,6 +86,10 @@ PHP_HTTP_API void php_http_request_datashare_dtor(php_http_request_datashare_t *
 		zend_llist_destroy(h->requests);
 		pefree(h->requests, h->persistent);
 		h->requests = NULL;
+	}
+
+	if (h->persistent_handle_id) {
+		zval_ptr_dtor(&h->persistent_handle_id);
 	}
 }
 
@@ -212,7 +217,7 @@ zend_object_value php_http_request_datashare_object_new_ex(zend_class_entry *ce,
 	if (share) {
 		o->share = share;
 	} else {
-		o->share = php_http_request_datashare_init(NULL, NULL, NULL, 0 TSRMLS_CC);
+		o->share = php_http_request_datashare_init(NULL, NULL, NULL, NULL, 0 TSRMLS_CC);
 	}
 
 	if (ptr) {
@@ -275,7 +280,7 @@ static zval **php_http_request_datashare_object_get_prop_ptr(zval *object, zval 
 
 PHP_METHOD(HttpRequestDataShare, __construct)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zend_parse_parameters_none();
 	} end_error_handling();
 }
