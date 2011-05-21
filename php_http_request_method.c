@@ -127,12 +127,12 @@ zend_function_entry php_http_request_method_method_entry[] = {
 
 PHP_METHOD(HttpRequestMethod, __construct)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		char *meth_str;
 		int meth_len;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &meth_str, &meth_len)) {
-			with_error_handling(EH_THROW, PHP_HTTP_EX_CE(request_method)) {
+			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				zval *zarg, *zret;
 
 				if (SUCCESS == zend_get_parameters(ZEND_NUM_ARGS(), 1, &zarg)) {
@@ -153,9 +153,9 @@ PHP_METHOD(HttpRequestMethod, __construct)
 PHP_METHOD(HttpRequestMethod, __toString)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		zval *retval = php_http_zsep(IS_STRING, zend_read_property(php_http_request_method_class_entry, getThis(), ZEND_STRL("name"), 0 TSRMLS_CC));
+		zval *retval = php_http_ztyp(IS_STRING, zend_read_property(php_http_request_method_class_entry, getThis(), ZEND_STRL("name"), 0 TSRMLS_CC));
 
-		RETURN_ZVAL(retval, 0, 0);
+		RETURN_ZVAL(retval, 1, 1);
 	}
 	RETURN_EMPTY_STRING();
 }
@@ -163,7 +163,7 @@ PHP_METHOD(HttpRequestMethod, __toString)
 PHP_METHOD(HttpRequestMethod, getId)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		zval **data, *meth = php_http_zsep(IS_STRING, zend_read_property(php_http_request_method_class_entry, getThis(), ZEND_STRL("name"), 0 TSRMLS_CC));
+		zval **data, *meth = php_http_ztyp(IS_STRING, zend_read_property(php_http_request_method_class_entry, getThis(), ZEND_STRL("name"), 0 TSRMLS_CC));
 
 		if (SUCCESS == zend_hash_find(&php_http_request_method_class_entry->constants_table, Z_STRVAL_P(meth), Z_STRLEN_P(meth) + 1, (void *) &data)) {
 			zval_ptr_dtor(&meth);
@@ -195,7 +195,7 @@ PHP_METHOD(HttpRequestMethod, register)
 	int meth_len;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &meth_str, &meth_len)) {
-		RETURN_SUCCESS(zend_declare_class_constant_long(php_http_request_method_class_entry, meth_str, meth_len, zend_hash_num_elements(&php_http_request_class_entry->constants_table) TSRMLS_CC));
+		RETURN_SUCCESS(zend_declare_class_constant_long(php_http_request_method_class_entry, meth_str, meth_len, zend_hash_num_elements(&php_http_request_method_class_entry->constants_table) TSRMLS_CC));
 	}
 	RETURN_FALSE;
 }
