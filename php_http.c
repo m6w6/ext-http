@@ -92,7 +92,7 @@ void _dpf(int type, const char *data, size_t length)
 		}
 		fprintf(stderr, "\n");
 	} else {
-		fprintf(stderr, "# %.*s\n", (long) length, data);
+		fprintf(stderr, "# %.*s\n", (int) length, data);
 	}
 }
 #endif
@@ -112,7 +112,7 @@ static inline void php_http_globals_free(zend_php_http_globals *G TSRMLS_DC)
 
 #if defined(ZTS) && defined(PHP_DEBUG)
 #if ZTS && PHP_DEBUG
-zend_http_globals *php_http_globals(void)
+zend_php_http_globals *php_http_globals(void)
 {
 	TSRMLS_FETCH();
 	return PHP_HTTP_G;
@@ -180,8 +180,8 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_neon)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)
-	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_factory)
+	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)
 	) {
 		return FAILURE;
 	}
@@ -264,8 +264,8 @@ PHP_MINFO_FUNCTION(http)
 					FOREACH_KEYVAL(pos2, *val, ident, sub) {
 						if (	SUCCESS == zend_hash_find(Z_ARRVAL_PP(sub), ZEND_STRS("used"), (void *) &zused) &&
 								SUCCESS == zend_hash_find(Z_ARRVAL_PP(sub), ZEND_STRS("free"), (void *) &zfree)) {
-							zval *used = php_http_zsep(IS_STRING, *zused);
-							zval *free = php_http_zsep(IS_STRING, *zfree);
+							zval *used = php_http_ztyp(IS_STRING, *zused);
+							zval *free = php_http_ztyp(IS_STRING, *zfree);
 							php_info_print_table_row(4, provider.str, ident.str, Z_STRVAL_P(used), Z_STRVAL_P(free));
 							zval_ptr_dtor(&used);
 							zval_ptr_dtor(&free);

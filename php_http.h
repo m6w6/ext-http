@@ -100,6 +100,7 @@ extern void _dpf(int type, const char *data, size_t length);
 #include "php_http_negotiate.h"
 #include "php_http_object.h"
 #include "php_http_params.h"
+#include "php_http_resource_factory.h"
 #include "php_http_persistent_handle.h"
 #include "php_http_property_proxy.h"
 #include "php_http_querystring.h"
@@ -117,14 +118,16 @@ ZEND_BEGIN_MODULE_GLOBALS(php_http)
 	struct php_http_env_globals env;
 	struct php_http_persistent_handle_globals persistent_handle;
 	struct php_http_request_datashare_globals request_datashare;
+#ifdef PHP_HTTP_HAVE_EVENT
 	struct php_http_request_pool_globals request_pool;
+#endif
 ZEND_END_MODULE_GLOBALS(php_http)
 
 ZEND_EXTERN_MODULE_GLOBALS(php_http);
 
 #ifdef ZTS
 #	include "TSRM/TSRM.h"
-#	define PHP_HTTP_G ((zend_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(php_http_globals_id)])
+#	define PHP_HTTP_G ((php_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(php_http_globals_id)])
 #	undef TSRMLS_FETCH_FROM_CTX
 #	define TSRMLS_FETCH_FROM_CTX(ctx) ((ctx)?(ctx):ts_resource_ex(0, NULL))
 #else
