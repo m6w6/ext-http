@@ -35,14 +35,14 @@ PHP_HTTP_API zend_error_handling_t php_http_object_get_error_handling(zval *obje
 
 	zeh = zend_read_property(Z_OBJCE_P(object), object, ZEND_STRL("errorHandling"), 0 TSRMLS_CC);
 	if (Z_TYPE_P(zeh) != IS_NULL) {
-		lzeh = php_http_zsep(IS_LONG, zeh);
+		lzeh = php_http_ztyp(IS_LONG, zeh);
 		eh = Z_LVAL_P(lzeh);
 		zval_ptr_dtor(&lzeh);
 		return eh;
 	}
 	zeh = zend_read_static_property(php_http_object_class_entry, ZEND_STRL("defaultErrorHandling"), 0 TSRMLS_CC);
 	if (Z_TYPE_P(zeh) != IS_NULL) {
-		lzeh = php_http_zsep(IS_LONG, zeh);
+		lzeh = php_http_ztyp(IS_LONG, zeh);
 		eh = Z_LVAL_P(lzeh);
 		zval_ptr_dtor(&lzeh);
 		return eh;
@@ -94,7 +94,7 @@ zend_object_value php_http_object_new_ex(zend_class_entry *ce, void *nothing, ph
 	php_http_object_t *o;
 
 	o = ecalloc(1, sizeof(php_http_object_t));
-	zend_object_std_init((zend_object *)o, ce TSRMLS_CC);
+	zend_object_std_init((zend_object *) o, ce TSRMLS_CC);
 	object_properties_init((zend_object *) o, ce);
 
 	if (ptr) {
@@ -115,7 +115,7 @@ PHP_METHOD(HttpObject, factory)
 	zend_fcall_info fci;
 	zend_fcall_info_cache fcc;
 
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "C|a/!", &class_entry, &ctor_args)) {
 			object_init_ex(return_value, class_entry);
 
@@ -142,7 +142,6 @@ PHP_METHOD(HttpObject, getErrorHandling)
 PHP_METHOD(HttpObject, setErrorHandling)
 {
 	long eh;
-	zval *old;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &eh)) {
 		switch (eh) {
@@ -168,7 +167,6 @@ PHP_METHOD(HttpObject, getDefaultErrorHandling)
 PHP_METHOD(HttpObject, setDefaultErrorHandling)
 {
 	long eh;
-	zval *old;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &eh)) {
 		switch (eh) {
