@@ -13,7 +13,7 @@ php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_
 	ZVAL_OBJVAL(proxy->myself, php_http_property_proxy_object_new_ex(php_http_property_proxy_class_entry, proxy, NULL TSRMLS_CC), 0);
 	Z_ADDREF_P(object);
 	proxy->object = object;
-	proxy->member = php_http_zsep(IS_STRING, member);
+	proxy->member = php_http_ztyp(IS_STRING, member);
 
 	return proxy;
 }
@@ -103,7 +103,7 @@ static STATUS php_http_property_proxy_object_cast(zval *object, zval *return_val
 	zval *old_value, *new_value;
 
 	old_value = php_http_property_proxy_object_get(object TSRMLS_CC);
-	new_value = php_http_zsep(type, old_value);
+	new_value = php_http_ztyp(type, old_value);
 
 	if (old_value != new_value) {
 		zval_ptr_dtor(&old_value);
@@ -126,7 +126,7 @@ static zval *php_http_property_proxy_object_read_dimension(zval *object, zval *o
 				retval = *data;
 			}
 		} else {
-			offset = php_http_zsep(IS_STRING, offset);
+			offset = php_http_ztyp(IS_STRING, offset);
 			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(property), Z_STRVAL_P(offset), Z_STRLEN_P(offset), (void *) &data)) {
 				retval = *data;
 			}
@@ -156,7 +156,7 @@ static void php_http_property_proxy_object_write_dimension(zval *object, zval *o
 			} else if (Z_TYPE_P(offset) == IS_LONG) {
 				add_index_zval(property, Z_LVAL_P(offset), value);
 			} else {
-				offset = php_http_zsep(IS_STRING, offset);
+				offset = php_http_ztyp(IS_STRING, offset);
 				add_assoc_zval_ex(property, Z_STRVAL_P(offset), Z_STRLEN_P(offset) + 1, value);
 				zval_ptr_dtor(&offset);
 			}
