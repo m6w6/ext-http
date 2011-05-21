@@ -20,25 +20,7 @@
 #	define PHP_HTTP_DBG_EXCEPTIONS 0
 #endif
 
-zend_class_entry *PHP_HTTP_EX_DEF_CE;
-zend_class_entry *PHP_HTTP_EX_CE(runtime);
-zend_class_entry *PHP_HTTP_EX_CE(header);
-zend_class_entry *PHP_HTTP_EX_CE(malformed_headers);
-zend_class_entry *PHP_HTTP_EX_CE(request_method);
-zend_class_entry *PHP_HTTP_EX_CE(message);
-zend_class_entry *PHP_HTTP_EX_CE(message_type);
-zend_class_entry *PHP_HTTP_EX_CE(message_body);
-zend_class_entry *PHP_HTTP_EX_CE(invalid_param);
-zend_class_entry *PHP_HTTP_EX_CE(encoding);
-zend_class_entry *PHP_HTTP_EX_CE(request);
-zend_class_entry *PHP_HTTP_EX_CE(request_pool);
-zend_class_entry *PHP_HTTP_EX_CE(request_datashare);
-zend_class_entry *PHP_HTTP_EX_CE(request_factory);
-zend_class_entry *PHP_HTTP_EX_CE(socket);
-zend_class_entry *PHP_HTTP_EX_CE(response);
-zend_class_entry *PHP_HTTP_EX_CE(url);
-zend_class_entry *PHP_HTTP_EX_CE(querystring);
-zend_class_entry *PHP_HTTP_EX_CE(cookie);
+zend_class_entry *php_http_exception_class_entry;
 
 zend_function_entry php_http_exception_method_entry[] = {
 	EMPTY_FUNCTION_ENTRY
@@ -58,68 +40,33 @@ static void php_http_exception_hook(zval *ex TSRMLS_DC)
 
 PHP_MINIT_FUNCTION(http_exception)
 {
-	PHP_HTTP_REGISTER_EXCEPTION(Exception, PHP_HTTP_EX_DEF_CE, zend_exception_get_default(TSRMLS_C));
+	PHP_HTTP_REGISTER_EXCEPTION(Exception, php_http_exception_class_entry, zend_exception_get_default(TSRMLS_C));
 	
-	PHP_HTTP_REGISTER_EXCEPTION(RuntimeException, PHP_HTTP_EX_CE(runtime), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(InvalidParamException, PHP_HTTP_EX_CE(invalid_param), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(HeaderException, PHP_HTTP_EX_CE(header), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(MalformedHeadersException, PHP_HTTP_EX_CE(malformed_headers), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(RequestMethodException, PHP_HTTP_EX_CE(request_method), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(MessageException, PHP_HTTP_EX_CE(message), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(MessageTypeException, PHP_HTTP_EX_CE(message_type), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(MessageBodyException, PHP_HTTP_EX_CE(message_body), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(EncodingException, PHP_HTTP_EX_CE(encoding), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(RequestException, PHP_HTTP_EX_CE(request), PHP_HTTP_EX_DEF_CE);
-
-	zend_declare_property_long(PHP_HTTP_EX_CE(request), "curlCode", lenof("curlCode"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
-
-	PHP_HTTP_REGISTER_EXCEPTION(RequestPoolException, PHP_HTTP_EX_CE(request_pool), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(RequestDataShareException, PHP_HTTP_EX_CE(request_datashare), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(RequestFactoryException, PHP_HTTP_EX_CE(request_factory), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(SocketException, PHP_HTTP_EX_CE(socket), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(ResponseException, PHP_HTTP_EX_CE(response), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(UrlException, PHP_HTTP_EX_CE(url), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(QueryStringException, PHP_HTTP_EX_CE(querystring), PHP_HTTP_EX_DEF_CE);
-	PHP_HTTP_REGISTER_EXCEPTION(CookieException, PHP_HTTP_EX_CE(cookie), PHP_HTTP_EX_DEF_CE);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_UNKNOWN"), PHP_HTTP_E_UNKNOWN TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_RUNTIME"), PHP_HTTP_E_RUNTIME TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_INVALID_PARAM"), PHP_HTTP_E_INVALID_PARAM TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_HEADER"), PHP_HTTP_E_HEADER TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MALFORMED_HEADERS"), PHP_HTTP_E_MALFORMED_HEADERS TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MESSAGE"), PHP_HTTP_E_MESSAGE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MESSAGE_TYPE"), PHP_HTTP_E_MESSAGE_TYPE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MESSAGE_BODY"), PHP_HTTP_E_MESSAGE_BODY TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_ENCODING"), PHP_HTTP_E_ENCODING TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST"), PHP_HTTP_E_REQUEST TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST_POOL"), PHP_HTTP_E_REQUEST_POOL TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST_DATASHARE"), PHP_HTTP_E_REQUEST_DATASHARE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST_FACTORY"), PHP_HTTP_E_REQUEST_FACTORY TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST_METHOD"), PHP_HTTP_E_REQUEST_METHOD TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_SOCKET"), PHP_HTTP_E_SOCKET TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_RESPONSE"), PHP_HTTP_E_RESPONSE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_URL"), PHP_HTTP_E_URL TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_QUERYSTRING"), PHP_HTTP_E_QUERYSTRING TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_COOKIE"), PHP_HTTP_E_COOKIE TSRMLS_CC);
 	
 #if PHP_HTTP_DBG_EXCEPTIONS
 	zend_throw_exception_hook = php_http_exception_hook;
 #endif
 	
 	return SUCCESS;
-}
-
-zend_class_entry *php_http_exception_get_default(void)
-{
-	return PHP_HTTP_EX_DEF_CE;
-}
-
-zend_class_entry *php_http_exception_get_for_code(long code)
-{
-	zend_class_entry *ex = PHP_HTTP_EX_DEF_CE;
-
-	switch (code) {
-		case PHP_HTTP_E_RUNTIME:					ex = PHP_HTTP_EX_CE(runtime);					break;
-		case PHP_HTTP_E_INVALID_PARAM:				ex = PHP_HTTP_EX_CE(invalid_param);				break;
-		case PHP_HTTP_E_HEADER:						ex = PHP_HTTP_EX_CE(header);					break;
-		case PHP_HTTP_E_MALFORMED_HEADERS:			ex = PHP_HTTP_EX_CE(malformed_headers);			break;
-		case PHP_HTTP_E_REQUEST_METHOD:				ex = PHP_HTTP_EX_CE(request_method);			break;
-		case PHP_HTTP_E_MESSAGE:					ex = PHP_HTTP_EX_CE(message);					break;
-		case PHP_HTTP_E_MESSAGE_TYPE:				ex = PHP_HTTP_EX_CE(message_type);				break;
-		case PHP_HTTP_E_MESSAGE_BODY:				ex = PHP_HTTP_EX_CE(message_body);				break;
-		case PHP_HTTP_E_ENCODING:					ex = PHP_HTTP_EX_CE(encoding);					break;
-		case PHP_HTTP_E_REQUEST:					ex = PHP_HTTP_EX_CE(request);					break;
-		case PHP_HTTP_E_REQUEST_POOL:				ex = PHP_HTTP_EX_CE(request_pool);				break;
-		case PHP_HTTP_E_REQUEST_DATASHARE:			ex = PHP_HTTP_EX_CE(request_datashare);			break;
-		case PHP_HTTP_E_REQUEST_FACTORY:			ex = PHP_HTTP_EX_CE(request_factory);			break;
-		case PHP_HTTP_E_SOCKET:						ex = PHP_HTTP_EX_CE(socket);					break;
-		case PHP_HTTP_E_RESPONSE:					ex = PHP_HTTP_EX_CE(response);					break;
-		case PHP_HTTP_E_URL:						ex = PHP_HTTP_EX_CE(url);						break;
-		case PHP_HTTP_E_QUERYSTRING:				ex = PHP_HTTP_EX_CE(querystring);				break;
-		case PHP_HTTP_E_COOKIE:						ex = PHP_HTTP_EX_CE(cookie);					break;
-	}
-
-	return ex;
 }
 
 /*

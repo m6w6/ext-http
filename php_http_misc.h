@@ -158,7 +158,7 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 		Z_ARRVAL_P(zv) = (ht); \
 	}
 
-static inline zval *php_http_zsep(int type, zval *z)
+static inline zval *php_http_ztyp(int type, zval *z)
 {
 	SEPARATE_ARG_IF_REF(z);
 	if (Z_TYPE_P(z) != type) {
@@ -171,6 +171,26 @@ static inline zval *php_http_zsep(int type, zval *z)
 			case IS_ARRAY:	convert_to_array_ex(&z);	break;
 			case IS_OBJECT:	convert_to_object_ex(&z);	break;
 		}
+	}
+	return z;
+}
+
+static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z) {
+	if (add_ref) {
+		Z_ADDREF_P(z);
+	}
+	if (Z_TYPE_P(z) != type) {
+		switch (type) {
+			case IS_NULL:	convert_to_null_ex(&z);		break;
+			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
+			case IS_LONG:	convert_to_long_ex(&z);		break;
+			case IS_DOUBLE:	convert_to_double_ex(&z);	break;
+			case IS_STRING:	convert_to_string_ex(&z);	break;
+			case IS_ARRAY:	convert_to_array_ex(&z);	break;
+			case IS_OBJECT:	convert_to_object_ex(&z);	break;
+		}
+	} else {
+		SEPARATE_ZVAL_IF_NOT_REF(&z);
 	}
 	return z;
 }
@@ -333,6 +353,12 @@ static inline zval *php_http_zsep(int type, zval *z)
 				ZEND_ARG_PASS_INFO(1) \
 			ZEND_END_ARG_INFO(); \
 \
+			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_3, 0) \
+			ZEND_ARG_PASS_INFO(0) \
+			ZEND_ARG_PASS_INFO(0) \
+			ZEND_ARG_PASS_INFO(1) \
+			ZEND_END_ARG_INFO(); \
+\
 			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_4, 0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(0) \
@@ -413,6 +439,7 @@ extern void php_http_error(long type TSRMLS_DC, long code, const char *format, .
 #define HE_ERROR	E_ERROR TSRMLS_CC
 
 typedef enum php_http_error {
+	PHP_HTTP_E_UNKNOWN = 0,
 	PHP_HTTP_E_RUNTIME,
 	PHP_HTTP_E_INVALID_PARAM,
 	PHP_HTTP_E_HEADER,

@@ -210,12 +210,10 @@ void php_http_error(long type TSRMLS_DC, long code, const char *format, ...)
 	switch (scope_error_handling(type TSRMLS_CC)) {
 		case EH_THROW: {
 			char *message;
-			zend_class_entry *ce;
+			zend_class_entry *ce = php_http_exception_class_entry;
 
 			if (0&& EG(exception_class) && instanceof_function(EG(exception_class), php_http_exception_class_entry)) {
 				ce = EG(exception_class);
-			} else {
-				ce = php_http_exception_get_for_code(code);
 			}
 
 			vspprintf(&message, 0, format, args);
