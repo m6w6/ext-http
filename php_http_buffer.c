@@ -7,7 +7,7 @@
 PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_init_ex(php_http_buffer_t *buf, size_t chunk_size, int flags)
 {
 	if (!buf) {
-		buf = pemalloc(sizeof(php_http_buffer_t), flags & PHP_HTTP_BUFFER_INIT_PERSISTENT);
+		buf = pemalloc(sizeof(*buf), flags & PHP_HTTP_BUFFER_INIT_PERSISTENT);
 	}
 
 	if (buf) {
