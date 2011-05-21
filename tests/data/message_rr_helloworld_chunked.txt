@@ -1,0 +1,21 @@
+GET /cgi-bin/chunked.sh HTTP/1.1
+Host: localhost
+Connection: close
+
+HTTP/1.1 200 OK
+Date: Thu, 26 Aug 2010 12:51:28 GMT
+Server: Apache/2.2.16 (Unix) mod_ssl/2.2.16 OpenSSL/1.0.0a mod_fastcgi/2.4.6
+Vary: Accept-Encoding
+Connection: close
+Transfer-Encoding: chunked
+Content-Type: text/plain
+
+5
+Hello
+2
+, 
+7
+World!
+
+0
+
