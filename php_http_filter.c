@@ -235,7 +235,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 				*bytes_consumed += ptr->buflen;
 			}
 			
-			php_http_buffer_appendf(&buf, "%lx" PHP_HTTP_CRLF, ptr->buflen);
+			php_http_buffer_appendf(&buf, "%lx" PHP_HTTP_CRLF, (long unsigned int) ptr->buflen);
 			php_http_buffer_append(&buf, ptr->buf, ptr->buflen);
 			php_http_buffer_appends(&buf, PHP_HTTP_CRLF);
 			
@@ -405,7 +405,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 					}
 				default:
 				{
-					zval *num = php_http_zsep(IS_LONG, *tmp);
+					zval *num = php_http_ztyp(IS_LONG, *tmp);
 					
 					flags |= (Z_LVAL_P(num) & 0x0fffffff);
 					zval_ptr_dtor(&num);
