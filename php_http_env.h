@@ -72,6 +72,7 @@ PHP_HTTP_API STATUS php_http_env_set_response_code(long http_code TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_env_set_response_protocol_version(php_http_version_t *v TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace TSRMLS_DC);
+PHP_HTTP_API STATUS php_http_env_set_response_header_format(long http_code, zend_bool replace TSRMLS_DC, const char *fmt, ...);
 
 PHP_HTTP_API zval *php_http_env_get_server_var(const char *key_str, size_t key_len, zend_bool check TSRMLS_DC);
 #define php_http_env_got_server_var(v) (NULL != php_http_env_get_server_var((v), strlen(v), 1 TSRMLS_CC))
@@ -81,7 +82,7 @@ PHP_HTTP_API STATUS php_http_env_set_response_etag(zval *container, const char *
 PHP_HTTP_API STATUS php_http_env_set_response_content_type(zval *container, const char *ct_str, size_t ct_len, char **sent_header TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_env_set_response_content_disposition(zval *container, php_http_content_disposition_t d, const char *f_str, size_t f_len, char **sent_header TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_env_set_response_cache_control(zval *container, const char *cc_str, size_t cc_len, char **sent_header TSRMLS_DC);
-PHP_HTTP_API void php_http_env_set_response_throttle_rate(zval *container, size_t chunk_size, double delay TSRMLS_CC);
+PHP_HTTP_API void php_http_env_set_response_throttle_rate(zval *container, size_t chunk_size, double delay TSRMLS_DC);
 PHP_HTTP_API void php_http_env_set_response_body(zval *container, php_http_message_body_t *body);
 PHP_HTTP_API STATUS php_http_env_send_response(zval *container TSRMLS_DC);
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *container, const char *header_str, size_t header_len TSRMLS_DC);
