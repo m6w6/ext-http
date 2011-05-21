@@ -93,7 +93,7 @@ PHP_HTTP_API void php_http_message_body_free(php_http_message_body_t **body)
 	}
 }
 
-PHP_HTTP_API php_stream_statbuf *php_http_message_body_stat(php_http_message_body_t *body)
+PHP_HTTP_API const php_stream_statbuf *php_http_message_body_stat(php_http_message_body_t *body)
 {
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 	php_stream_stat(php_http_message_body_stream(body), &body->ssb);
@@ -159,6 +159,7 @@ PHP_HTTP_API void php_http_message_body_to_callback(php_http_message_body_t *bod
 {
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 	php_stream *s = php_http_message_body_stream(body);
+	char *buf = emalloc(0x1000);
 
 	php_stream_seek(s, offset, SEEK_SET);
 
@@ -166,8 +167,7 @@ PHP_HTTP_API void php_http_message_body_to_callback(php_http_message_body_t *bod
 		forlen = -1;
 	}
 	while (!php_stream_eof(s)) {
-		char buf[0x1000];
-		size_t read = php_stream_read(s, buf, MIN(forlen, sizeof(buf)));
+		size_t read = php_stream_read(s, buf, MIN(forlen, 0x1000));
 
 		if (read) {
 			cb(cb_arg, buf, read);
@@ -181,6 +181,7 @@ PHP_HTTP_API void php_http_message_body_to_callback(php_http_message_body_t *bod
 			break;
 		}
 	}
+	efree(buf);
 }
 
 PHP_HTTP_API size_t php_http_message_body_append(php_http_message_body_t *body, const char *buf, size_t len)
@@ -327,7 +328,7 @@ static STATUS add_recursive_fields(php_http_message_body_t *body, const char *na
 			--HASH_OF(value)->nApplyCount;
 		}
 	} else {
-		zval *cpy = php_http_zsep(IS_STRING, value);
+		zval *cpy = php_http_ztyp(IS_STRING, value);
 		php_http_message_body_add_field(body, name, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 		zval_ptr_dtor(&cpy);
 	}
@@ -344,7 +345,7 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 		&&	(SUCCESS == zend_hash_find(HASH_OF(value), ZEND_STRS("file"), (void *) &zfile))
 		&&	(SUCCESS == zend_hash_find(HASH_OF(value), ZEND_STRS("type"), (void *) &ztype))
 		) {
-			zval *zfc = php_http_zsep(IS_STRING, *zfile), *znc = php_http_zsep(IS_STRING, *zname), *ztc = php_http_zsep(IS_STRING, *ztype);
+			zval *zfc = php_http_ztyp(IS_STRING, *zfile), *znc = php_http_ztyp(IS_STRING, *zname), *ztc = php_http_ztyp(IS_STRING, *ztype);
 			char *str = format_key(HASH_KEY_IS_STRING, Z_STRVAL_P(znc), 0, name);
 			STATUS ret = php_http_message_body_add_file(body, str, Z_STRVAL_P(zfc), Z_STRVAL_P(ztc));
 
@@ -492,7 +493,7 @@ PHP_METHOD(HttpMessageBody, __construct)
 	zval *zstream = NULL;
 	php_stream *stream;
 
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|r!", &zstream)) {
 			if (zstream) {
 				php_stream_from_zval(stream, &zstream);
