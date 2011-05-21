@@ -245,7 +245,7 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_c
 				list->flags = (long) Z_DVAL_PP(tmp);
 				break;
 			case IS_STRING:
-				cpy = php_http_zsep(IS_LONG, *tmp);
+				cpy = php_http_ztyp(IS_LONG, *tmp);
 				list->flags = Z_LVAL_P(cpy);
 				zval_ptr_dtor(&cpy);
 				break;
@@ -262,7 +262,7 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_c
 				list->expires = (long) Z_DVAL_PP(tmp);
 				break;
 			case IS_STRING:
-				cpy = php_http_zsep(IS_LONG, *tmp);
+				cpy = php_http_ztyp(IS_LONG, *tmp);
 				if (Z_LVAL_P(cpy)) {
 					list->expires = Z_LVAL_P(cpy);
 				} else {
@@ -319,7 +319,7 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 	
 	FOREACH_HASH_KEYVAL(pos, &list->cookies, key, val) {
 		if (key.type == HASH_KEY_IS_STRING && key.len) {
-			zval *tmp = php_http_zsep(IS_STRING, *val);
+			zval *tmp = php_http_ztyp(IS_STRING, *val);
 			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
 			zval_ptr_dtor(&tmp);
 		}
@@ -339,7 +339,7 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 	
 	FOREACH_HASH_KEYVAL(pos, &list->extras, key, val) {
 		if (key.type == HASH_KEY_IS_STRING && key.len) {
-			zval *tmp = php_http_zsep(IS_STRING, *val);
+			zval *tmp = php_http_ztyp(IS_STRING, *val);
 			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
 			zval_ptr_dtor(&tmp);
 		}
@@ -508,14 +508,14 @@ void php_http_cookie_object_free(void *object TSRMLS_CC)
 
 PHP_METHOD(HttpCookie, __construct)
 {
-	with_error_handling(EH_THROW, PHP_HTTP_EX_CE(runtime)) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *zcookie = NULL;
 		long flags = 0;
 		HashTable *allowed_extras = NULL;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!lH", &zcookie, &flags, &allowed_extras)) {
 			if (zcookie) {
-				with_error_handling(EH_THROW, PHP_HTTP_EX_CE(cookie)) {
+				with_error_handling(EH_THROW, php_http_exception_class_entry) {
 					char **ae = NULL;
 					php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
@@ -526,7 +526,7 @@ PHP_METHOD(HttpCookie, __construct)
 
 						ae = ae_ptr;
 						FOREACH_HASH_VAL(pos, allowed_extras, val) {
-							zval *cpy = php_http_zsep(IS_STRING, *val);
+							zval *cpy = php_http_ztyp(IS_STRING, *val);
 
 							*ae_ptr++ = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 							zval_ptr_dtor(&cpy);
@@ -540,7 +540,7 @@ PHP_METHOD(HttpCookie, __construct)
 							obj->list = php_http_cookie_list_from_struct(obj->list, zcookie TSRMLS_CC);
 							break;
 						default: {
-							zval *cpy = php_http_zsep(IS_STRING, zcookie);
+							zval *cpy = php_http_ztyp(IS_STRING, zcookie);
 
 							obj->list = php_http_cookie_list_parse(obj->list, Z_STRVAL_P(cpy), flags, ae TSRMLS_CC);
 							zval_ptr_dtor(&cpy);
