@@ -616,7 +616,7 @@ static STATUS php_http_neon_request_exec(php_http_request_t *h, php_http_request
 		purl->port = neon->options.port;
 	} else if (!purl->port) {
 		purl->port = 80;
-		if (strncascmp(purl->scheme, "http", 4)) {
+		if (strncasecmp(purl->scheme, "http", 4)) {
 #ifdef HAVE_GETSERVBYNAME
 			struct servent *se;
 
