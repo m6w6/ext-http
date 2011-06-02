@@ -135,12 +135,12 @@ PHP_METHOD(HttpRequestFactory, createRequest)
 
 						if ((pf = php_http_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
 							php_http_resource_factory_ops_t ops = {
-									php_http_persistent_handle_acquire,
-									php_http_persistent_handle_accrete,
-									php_http_persistent_handle_release
+									(php_http_resource_factory_handle_ctor_t) php_http_persistent_handle_acquire,
+									(php_http_resource_factory_handle_copy_t) php_http_persistent_handle_accrete,
+									(php_http_resource_factory_handle_dtor_t) php_http_persistent_handle_release
 							};
 
-							rf = php_http_resource_factory_init(NULL, &ops, pf, php_http_persistent_handle_abandon TSRMLS_CC);
+							rf = php_http_resource_factory_init(NULL, &ops, pf, (void (*)(void *)) php_http_persistent_handle_abandon TSRMLS_CC);
 						}
 
 						efree(name_str);
@@ -212,12 +212,12 @@ PHP_METHOD(HttpRequestFactory, createPool)
 
 						if ((pf = php_http_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
 							php_http_resource_factory_ops_t ops = {
-									php_http_persistent_handle_acquire,
-									php_http_persistent_handle_accrete,
-									php_http_persistent_handle_release
+									(php_http_resource_factory_handle_ctor_t) php_http_persistent_handle_acquire,
+									(php_http_resource_factory_handle_copy_t) php_http_persistent_handle_accrete,
+									(php_http_resource_factory_handle_dtor_t) php_http_persistent_handle_release
 							};
 
-							rf = php_http_resource_factory_init(NULL, &ops, pf, php_http_persistent_handle_abandon TSRMLS_CC);
+							rf = php_http_resource_factory_init(NULL, &ops, pf, (void (*)(void *)) php_http_persistent_handle_abandon TSRMLS_CC);
 						}
 
 						efree(name_str);
@@ -279,12 +279,12 @@ PHP_METHOD(HttpRequestFactory, createDataShare)
 
 						if ((pf = php_http_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
 							php_http_resource_factory_ops_t ops = {
-									php_http_persistent_handle_acquire,
-									php_http_persistent_handle_accrete,
-									php_http_persistent_handle_release
+									(php_http_resource_factory_handle_ctor_t) php_http_persistent_handle_acquire,
+									(php_http_resource_factory_handle_copy_t) php_http_persistent_handle_accrete,
+									(php_http_resource_factory_handle_dtor_t) php_http_persistent_handle_release
 							};
 
-							rf = php_http_resource_factory_init(NULL, &ops, pf, php_http_persistent_handle_abandon TSRMLS_CC);
+							rf = php_http_resource_factory_init(NULL, &ops, pf, (void (*)(void *)) php_http_persistent_handle_abandon TSRMLS_CC);
 						}
 
 						efree(name_str);
