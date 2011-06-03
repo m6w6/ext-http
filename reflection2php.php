@@ -12,6 +12,21 @@ function t($p) {
 	if ($c = $p->getClass()) return $c->getName() . " ";
 	if ($p->isArray()) return "array ";
 }
+function c($n, $c) {
+    $_=$c;
+    while ($c = $c->getParentClass()) {
+        if (array_key_exists($n, $c->getConstants())) {
+            return false;
+        }
+    }
+    $c=$_;
+    foreach ((array) $c->getInterfaces() as $i) {
+        if (array_key_exists($n, $i->getConstants()) || !c($n, $i)) {
+            return false;
+        }
+    }
+    return true;
+}
 
 if (!strlen($ext = $argv[1]))
 	die(sprintf("Usage: %s <ext>\n", $argv[0]));
@@ -30,7 +45,7 @@ foreach ($ext->getClasses() as $class) {
 
 	$_=0;
 	foreach ($class->getConstants() as $n => $v) {
-		$_+=printf("\tconst %s = %s;\n", $n, var_export($v, true));
+		c($n, $class) and $_+=printf("\tconst %s = %s;\n", $n, var_export($v, true));
 	}
 	$_ and printf("\n");
 	$_=0;
@@ -46,19 +61,11 @@ foreach ($ext->getClasses() as $class) {
 			printf("\t%sfunction %s(", m($m->getModifiers()), $m->getName());
 			$ps = array();
 			foreach ($m->getParameters() as $p) {
-				$p1 = sprintf("%s%s", t($p), $p->isPassedByReference()?"&":"");
-				if ($p->isOptional()) {
-					$p1 .= sprintf("[\$%s", $p->getName());
-				} else {
-					$p1 .= sprintf("\$%s", $p->getName());
-				}
+				$p1 = sprintf("%s%s\$%s", t($p), $p->isPassedByReference()?"&":"", $p->getName());
 				if ($p->isDefaultValueAvailable()) {
 					$p1 .= sprintf(" = %s", var_export($p->getDefaultValue(), true));
-				} elseif ($p->allowsNull()) {
+				} elseif ($p->allowsNull() || $p->isOptional()) {
 					$p1 .= sprintf(" = NULL");
-				}
-				if ($p->isOptional()) {
-					$p1 .= sprintf("]");
 				}
 				$ps[] = $p1;
 			}
