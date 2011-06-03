@@ -177,7 +177,7 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 					php_http_pretty_key(parser->_key.str, parser->_key.len, 1, 1);
 					if (SUCCESS == zend_hash_find(headers, parser->_key.str, parser->_key.len + 1, (void *) &exist)) {
 						convert_to_array(*exist);
-						add_next_index_stringl(&array, parser->_val.str, parser->_val.len, 0);
+						add_next_index_stringl(*exist, parser->_val.str, parser->_val.len, 0);
 					} else {
 						add_assoc_stringl_ex(&array, parser->_key.str, parser->_key.len + 1, parser->_val.str, parser->_val.len, 0);
 					}
