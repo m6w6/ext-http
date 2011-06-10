@@ -255,7 +255,8 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 
 	if (
 #if defined(PHP_VERSION_ID) && (PHP_VERSION_ID >= 50399)
-		OG(active) && (OG(active)->flags & PHP_OUTPUT_HANDLER_FLUSHABLE) && 
+		(php_output_get_status(TSRMLS_C) & PHP_OUTPUT_ACTIVE) &&
+		(php_output_get_status(TSRMLS_C) & PHP_OUTPUT_HANDLER_FLUSHABLE) && 
 #else
 		!OG(ob_lock) &&
 #endif
