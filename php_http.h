@@ -87,6 +87,7 @@ extern void _dpf(int type, const char *data, size_t length);
 #include "php_http_cookie.h"
 #include "php_http_encoding.h"
 #include "php_http_env.h"
+#include "php_http_env_response.h"
 #include "php_http_etag.h"
 #include "php_http_exception.h"
 #include "php_http_fluently_callable.h"

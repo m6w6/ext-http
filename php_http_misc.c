@@ -112,7 +112,7 @@ char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_boo
 
 size_t php_http_boundary(char *buf, size_t buf_len TSRMLS_DC)
 {
-	return snprintf(buf, buf_len, "%lu%0.9f", (ulong) PHP_HTTP_G->env.request.time, (float) php_combined_lcg(TSRMLS_C));
+	return snprintf(buf, buf_len, "%15.15F", PHP_HTTP_G->env.request.time * php_combined_lcg(TSRMLS_C));
 }
 
 /* ARRAYS */

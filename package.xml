@@ -62,6 +62,8 @@ List of changes (TBD):
    <file role="src" name="php_http_encoding.h"/>
    <file role="src" name="php_http_env.c"/>
    <file role="src" name="php_http_env.h"/>
+   <file role="src" name="php_http_enc_response.c"/>
+   <file role="src" name="php_http_enc_response.h"/>
    <file role="src" name="php_http_etag.c"/>
    <file role="src" name="php_http_etag.h"/>
    <file role="src" name="php_http_exception.c"/>

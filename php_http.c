@@ -162,6 +162,7 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_pool)
 	|| SUCCESS != PHP_MINIT_CALL(http_url)
 	|| SUCCESS != PHP_MINIT_CALL(http_env)
+	|| SUCCESS != PHP_MINIT_CALL(http_env_response)
 	) {
 		return FAILURE;
 	}

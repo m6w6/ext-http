@@ -15,17 +15,9 @@
 #ifndef PHP_HTTP_ENCODING_H
 #define PHP_HTTP_ENCODING_H
 
-PHP_HTTP_API int php_http_encoding_response_start(size_t content_length, zend_bool ignore_http_ohandler TSRMLS_DC);
-
 extern PHP_MINIT_FUNCTION(http_encoding);
 extern PHP_RINIT_FUNCTION(http_encoding);
 extern PHP_RSHUTDOWN_FUNCTION(http_encoding);
-
-typedef enum php_http_encoding_type {
-	PHP_HTTP_ENCODING_NONE,
-	PHP_HTTP_ENCODING_GZIP,
-	PHP_HTTP_ENCODING_DEFLATE,
-} php_http_encoding_type_t;
 
 #define PHP_HTTP_INFLATE_ROUNDS 100
 

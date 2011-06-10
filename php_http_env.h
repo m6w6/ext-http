@@ -24,21 +24,16 @@ struct php_http_env_globals {
 	char *etag_mode;
 
 	struct {
-		char *content_type;
-		php_http_message_body_t *body;
-		char *etag;
-		time_t last_modified;
-		double throttle_delay;
-		size_t throttle_chunk;
-		php_http_encoding_stream_t *deflate;
-	} response;
-
-	struct {
 		time_t time;
 		HashTable *headers;
 		php_http_message_body_t *body;
 	} request;
 };
+
+typedef enum php_http_content_encoding {
+	PHP_HTTP_CONTENT_ENCODING_NONE,
+	PHP_HTTP_CONTENT_ENCODING_GZIP
+} php_http_content_encoding_t;
 
 typedef enum php_http_range_status {
 	PHP_HTTP_RANGE_NO,
@@ -77,17 +72,6 @@ PHP_HTTP_API STATUS php_http_env_set_response_header_format(long http_code, zend
 PHP_HTTP_API zval *php_http_env_get_server_var(const char *key_str, size_t key_len, zend_bool check TSRMLS_DC);
 #define php_http_env_got_server_var(v) (NULL != php_http_env_get_server_var((v), strlen(v), 1 TSRMLS_CC))
 
-PHP_HTTP_API STATUS php_http_env_set_response_last_modified(zval *container, time_t lm, char **sent_header TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_env_set_response_etag(zval *container, const char *etag_str, size_t etag_len, char **sent_header TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_env_set_response_content_type(zval *container, const char *ct_str, size_t ct_len, char **sent_header TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_env_set_response_content_disposition(zval *container, php_http_content_disposition_t d, const char *f_str, size_t f_len, char **sent_header TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_env_set_response_cache_control(zval *container, const char *cc_str, size_t cc_len, char **sent_header TSRMLS_DC);
-PHP_HTTP_API void php_http_env_set_response_throttle_rate(zval *container, size_t chunk_size, double delay TSRMLS_DC);
-PHP_HTTP_API void php_http_env_set_response_body(zval *container, php_http_message_body_t *body);
-PHP_HTTP_API STATUS php_http_env_send_response(zval *container TSRMLS_DC);
-PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *container, const char *header_str, size_t header_len TSRMLS_DC);
-PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *container, const char *header_str, size_t header_len TSRMLS_DC);
-
 extern zend_class_entry *php_http_env_class_entry;
 extern zend_function_entry php_http_env_method_entry[];
 
@@ -104,26 +88,11 @@ PHP_METHOD(HttpEnv, negotiateContentType);
 PHP_METHOD(HttpEnv, negotiate);
 PHP_METHOD(HttpEnv, persistentHandlesStat);
 PHP_METHOD(HttpEnv, persistentHandlesClean);
-PHP_METHOD(HttpEnv, persistentHandlesIdent);
 
 extern zend_class_entry *php_http_env_request_class_entry;
 extern zend_function_entry php_http_env_request_method_entry[];
 
 PHP_METHOD(HttpEnvRequest, __construct);
-
-extern zend_class_entry *php_http_env_response_class_entry;
-extern zend_function_entry php_http_env_response_method_entry[];
-
-PHP_METHOD(HttpEnvResponse, __construct);
-PHP_METHOD(HttpEnvResponse, setContentType);
-PHP_METHOD(HttpEnvResponse, setContentDisposition);
-PHP_METHOD(HttpEnvResponse, setCacheControl);
-PHP_METHOD(HttpEnvResponse, setLastModified);
-PHP_METHOD(HttpEnvResponse, isCachedByLastModified);
-PHP_METHOD(HttpEnvResponse, setEtag);
-PHP_METHOD(HttpEnvResponse, isCachedByEtag);
-PHP_METHOD(HttpEnvResponse, setThrottleRate);
-PHP_METHOD(HttpEnvResponse, send);
 
 PHP_MINIT_FUNCTION(http_env);
 PHP_RINIT_FUNCTION(http_env);
