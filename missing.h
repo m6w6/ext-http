@@ -17,6 +17,10 @@
 
 #include "php_version.h"
 
+#if ZEND_MODULE_API_NO >= 20100409
+#define ZEND_ENGINE_2_4
+#endif
+
 #if defined(PHP_VERSION_ID) && (PHP_VERSION_ID >= 50399)
 #	define ZEND_LITERAL_KEY_DC , const zend_literal *_zend_literal_key
 #	define ZEND_LITERAL_KEY_CC , _zend_literal_key

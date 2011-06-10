@@ -252,10 +252,17 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		STR_FREE(body);
 		return FAILURE;
 	}
-	
-	if (!php_ob_handler_used("zlib output compression" TSRMLS_CC) && !php_ob_handler_used("ob_gzhandler" TSRMLS_CC) && !OG(ob_lock)) {
+
+	if (
+#if defined(PHP_VERSION_ID) && (PHP_VERSION_ID >= 50399)
+		OG(active) && (OG(active)->flags & PHP_OUTPUT_HANDLER_FLUSHABLE) && 
+#else
+		!OG(ob_lock) &&
+#endif
+		!php_ob_handler_used("zlib output compression" TSRMLS_CC) && !php_ob_handler_used("ob_gzhandler" TSRMLS_CC)) {
 		php_end_ob_buffers(0 TSRMLS_CC);
 	}
+
 	if ((SUCCESS == sapi_send_headers(TSRMLS_C)) && body) {
 		PHPWRITE(body, strlen(body));
 	}
