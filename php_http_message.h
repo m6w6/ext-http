@@ -43,6 +43,7 @@ PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **messa
 PHP_HTTP_API php_http_message_t *php_http_message_init(php_http_message_t *m, php_http_message_type_t t TSRMLS_DC);
 PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m, php_http_message_type_t t TSRMLS_DC);
 PHP_HTTP_API php_http_message_t *php_http_message_copy(php_http_message_t *from, php_http_message_t *to);
+PHP_HTTP_API php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_message_t *to, zend_bool parents);
 PHP_HTTP_API void php_http_message_dtor(php_http_message_t *message);
 PHP_HTTP_API void php_http_message_free(php_http_message_t **message);
 

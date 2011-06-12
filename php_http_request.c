@@ -40,7 +40,8 @@ PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, ph
 		if (!(h = h->ops->init(h, init_arg))) {
 			php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST, "Could not initialize request");
 			if (free_h) {
-				efree(free_h);
+				h->ops->dtor = NULL;
+				php_http_request_free(&h);
 			}
 		}
 	}
@@ -465,6 +466,13 @@ STATUS php_http_request_object_requesthandler(php_http_request_object_t *obj, zv
 	return SUCCESS;
 }
 
+static inline void empty_response(zval *this_ptr TSRMLS_DC)
+{
+	zend_update_property_null(php_http_request_class_entry, getThis(), ZEND_STRL("responseMessage") TSRMLS_CC);
+	zend_update_property_long(php_http_request_class_entry, getThis(), ZEND_STRL("responseCode"), 0 TSRMLS_CC);
+	zend_update_property_string(php_http_request_class_entry, getThis(), ZEND_STRL("responseStatus"), "" TSRMLS_CC);
+}
+
 STATUS php_http_request_object_responsehandler(php_http_request_object_t *obj, zval *this_ptr TSRMLS_DC)
 {
 	STATUS ret = SUCCESS;
@@ -479,54 +487,55 @@ STATUS php_http_request_object_responsehandler(php_http_request_object_t *obj, z
 	zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("transferInfo"), info TSRMLS_CC);
 	zval_ptr_dtor(&info);
 
-	/* update history * /
-	if (i_zend_is_true(zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
-		zval *new_hist, *old_hist = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("history"), 0 TSRMLS_CC);
-		zend_object_value ov = php_http_request_object_message(getThis(), obj->request->message_parser.message TSRMLS_CC);
+	if ((msg = obj->request->message)) {
+		/* update history */
+		if (i_zend_is_true(zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
+			zval *new_hist, *old_hist = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("history"), 0 TSRMLS_CC);
+			zend_object_value ov = php_http_request_object_message(getThis(), php_http_message_copy(msg, NULL) TSRMLS_CC);
 
-		MAKE_STD_ZVAL(new_hist);
-		ZVAL_OBJVAL(new_hist, ov, 0);
+			MAKE_STD_ZVAL(new_hist);
+			ZVAL_OBJVAL(new_hist, ov, 0);
 
-		if (Z_TYPE_P(old_hist) == IS_OBJECT) {
-			php_http_message_object_prepend(new_hist, old_hist, 0 TSRMLS_CC);
+			if (Z_TYPE_P(old_hist) == IS_OBJECT) {
+				php_http_message_object_prepend(new_hist, old_hist, 0 TSRMLS_CC);
+			}
+
+			zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("history"), new_hist TSRMLS_CC);
+			zval_ptr_dtor(&new_hist);
 		}
 
-		zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("history"), new_hist TSRMLS_CC);
-		zval_ptr_dtor(&new_hist);
-	}
-*/
-//	if ((msg = obj->request->_current.request)) {
-//		/* update request message */
-//		zval *message;
-//
-//		MAKE_STD_ZVAL(message);
-//		ZVAL_OBJVAL(message, php_http_request_object_message(getThis(), msg TSRMLS_CC), 1);
-//		zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("requestMessage"), message TSRMLS_CC);
-//	}
-// fprintf(stderr, "RESPONSE MESSAGE: %p\n", obj->request->parser.msg);
-	if ((msg = obj->request->message)) {
-		/* update properties with response info */
-		zval *message;
+		/* update response info */
+		if (PHP_HTTP_MESSAGE_TYPE(RESPONSE, msg)) {
+			zval *message;
 
-		zend_update_property_long(php_http_request_class_entry, getThis(), ZEND_STRL("responseCode"), msg->http.info.response.code TSRMLS_CC);
-		zend_update_property_string(php_http_request_class_entry, getThis(), ZEND_STRL("responseStatus"), STR_PTR(msg->http.info.response.status) TSRMLS_CC);
+			zend_update_property_long(php_http_request_class_entry, getThis(), ZEND_STRL("responseCode"), msg->http.info.response.code TSRMLS_CC);
+			zend_update_property_string(php_http_request_class_entry, getThis(), ZEND_STRL("responseStatus"), STR_PTR(msg->http.info.response.status) TSRMLS_CC);
 
-		MAKE_STD_ZVAL(message);
-		ZVAL_OBJVAL(message, php_http_request_object_message(getThis(), msg TSRMLS_CC), 0);
-		zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("responseMessage"), message TSRMLS_CC);
-		zval_ptr_dtor(&message);
-		obj->request->message = php_http_message_init(NULL, 0 TSRMLS_CC);
+			MAKE_STD_ZVAL(message);
+			ZVAL_OBJVAL(message, php_http_request_object_message(getThis(), msg TSRMLS_CC), 0);
+			zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("responseMessage"), message TSRMLS_CC);
+			zval_ptr_dtor(&message);
+
+			obj->request->message = php_http_message_init(NULL, 0 TSRMLS_CC);
+			msg = msg->parent;
+		} else {
+			empty_response(getThis() TSRMLS_CC);
+		}
 	} else {
 		/* update properties with empty values */
-		zval *znull;
+		empty_response(getThis() TSRMLS_CC);
+	}
 
-		MAKE_STD_ZVAL(znull);
-		ZVAL_NULL(znull);
-		zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("responseMessage"), znull TSRMLS_CC);
-		zval_ptr_dtor(&znull);
+	while (msg && !PHP_HTTP_MESSAGE_TYPE(REQUEST, msg)) {
+		msg = msg->parent;
+	}
+	if (PHP_HTTP_MESSAGE_TYPE(REQUEST, msg)) {
+		zval *message;
 
-		zend_update_property_long(php_http_request_class_entry, getThis(), ZEND_STRL("responseCode"), 0 TSRMLS_CC);
-		zend_update_property_string(php_http_request_class_entry, getThis(), ZEND_STRL("responseStatus"), "" TSRMLS_CC);
+		MAKE_STD_ZVAL(message);
+		ZVAL_OBJVAL(message, php_http_request_object_message(getThis(), php_http_message_copy_ex(msg, NULL, 0) TSRMLS_CC), 0);
+		zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("requestMessage"), message TSRMLS_CC);
+		zval_ptr_dtor(&message);
 	}
 
 	if (SUCCESS == php_http_request_getopt(obj->request, PHP_HTTP_REQUEST_OPT_PROGRESS_INFO, &progress)) {

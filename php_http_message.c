@@ -566,7 +566,7 @@ PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
 }
 */
 
-PHP_HTTP_API php_http_message_t *php_http_message_copy(php_http_message_t *from, php_http_message_t *to)
+PHP_HTTP_API php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_message_t *to, zend_bool parents)
 {
 	php_http_message_t *temp, *copy = NULL;
 	php_http_info_t info;
@@ -581,7 +581,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_copy(php_http_message_t *from,
 		zend_hash_copy(&temp->hdrs, &from->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 		php_http_message_body_copy(&from->body, &temp->body, 1);
 	
-		while (from->parent) {
+		if (parents) while (from->parent) {
 			info.type = from->parent->type;
 			info.http = from->parent->http;
 		
@@ -596,6 +596,11 @@ PHP_HTTP_API php_http_message_t *php_http_message_copy(php_http_message_t *from,
 	}
 	
 	return copy;
+}
+
+PHP_HTTP_API php_http_message_t *php_http_message_copy(php_http_message_t *from, php_http_message_t *to)
+{
+	return php_http_message_copy_ex(from, to, 1);
 }
 
 PHP_HTTP_API void php_http_message_dtor(php_http_message_t *message)
