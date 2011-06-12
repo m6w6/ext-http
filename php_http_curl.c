@@ -227,6 +227,7 @@ static int php_http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, 
 	php_http_request_t *h = ctx;
 	php_http_curl_request_t *curl = h->ctx;
 	unsigned flags = 0;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	/* catch progress */
 	switch (type) {
@@ -322,7 +323,7 @@ static STATUS php_http_curl_request_prepare(php_http_request_t *h, php_http_requ
 			break;
 
 		default: {
-			const char *name = php_http_request_method_name(meth);
+			const char *name = php_http_request_method_name(meth TSRMLS_CC);
 
 			if (name) {
 				curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, name);
@@ -591,6 +592,7 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 	int range_req = 0;
 	php_http_curl_request_t *curl = h->ctx;
 	CURL *ch = curl->handle;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	/* proxy */
 	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("proxyhost"), IS_STRING))) {
@@ -1187,9 +1189,10 @@ static void php_http_curl_request_datashare_unlock_func(CURL *handle, curl_lock_
 
 /* request datashare handler ops */
 
-static php_http_request_datashare_t *php_http_curl_request_datashare_init(php_http_request_datashare_t *h, void *handle TSRMLS_DC)
+static php_http_request_datashare_t *php_http_curl_request_datashare_init(php_http_request_datashare_t *h, void *handle)
 {
 	php_http_curl_request_datashare_t *curl;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (!handle && !(handle = php_http_resource_factory_handle_ctor(h->rf TSRMLS_CC))) {
 		php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_DATASHARE, "could not initialize curl share handle");
@@ -1200,11 +1203,11 @@ static php_http_request_datashare_t *php_http_curl_request_datashare_init(php_ht
 	curl->handle = handle;
 #ifdef ZTS
 	if (h->persistent) {
-		curl->locks = php_http_request_datashare_locks_init();
+		curl->locks = php_http_curl_request_datashare_locks_init();
 		if (curl->locks) {
-			curl_share_setopt(share->ch, CURLSHOPT_LOCKFUNC, php_http_curl_request_datashare_lock_func);
-			curl_share_setopt(share->ch, CURLSHOPT_UNLOCKFUNC, php_http_curl_request_datashare_unlock_func);
-			curl_share_setopt(share->ch, CURLSHOPT_USERDATA, curl->locks);
+			curl_share_setopt(curl->handle, CURLSHOPT_LOCKFUNC, php_http_curl_request_datashare_lock_func);
+			curl_share_setopt(curl->handle, CURLSHOPT_UNLOCKFUNC, php_http_curl_request_datashare_unlock_func);
+			curl_share_setopt(curl->handle, CURLSHOPT_USERDATA, curl->locks);
 		}
 	}
 #endif
@@ -1222,7 +1225,7 @@ static void php_http_curl_request_datashare_dtor(php_http_request_datashare_t *h
 
 #ifdef ZTS
 	if (h->persistent) {
-		http_request_datashare_locks_dtor(curl->locks);
+		php_http_curl_request_datashare_locks_dtor(curl->locks);
 	}
 #endif
 
@@ -1314,9 +1317,10 @@ PHP_HTTP_API php_http_request_datashare_ops_t *php_http_curl_get_request_datasha
 
 /* request pool handler ops */
 
-static php_http_request_pool_t *php_http_curl_request_pool_init(php_http_request_pool_t *h, void *handle TSRMLS_DC)
+static php_http_request_pool_t *php_http_curl_request_pool_init(php_http_request_pool_t *h, void *handle)
 {
 	php_http_curl_request_pool_t *curl;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (!handle && !(handle = php_http_resource_factory_handle_ctor(h->rf TSRMLS_CC))) {
 		php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_POOL, "could not initialize curl pool handle");
@@ -1345,7 +1349,7 @@ static void php_http_curl_request_pool_dtor(php_http_request_pool_t *h)
 	curl->unfinished = 0;
 	php_http_request_pool_reset(h);
 
-	php_http_resource_factory_handle_dtor(h->rf, curl->handle);
+	php_http_resource_factory_handle_dtor(h->rf, curl->handle TSRMLS_CC);
 
 	efree(curl);
 	h->ctx = NULL;
@@ -1356,6 +1360,7 @@ static STATUS php_http_curl_request_pool_attach(php_http_request_pool_t *h, php_
 	php_http_curl_request_pool_t *curl = h->ctx;
 	php_http_curl_request_t *recurl = r->ctx;
 	CURLMcode rs;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (SUCCESS != php_http_curl_request_prepare(r, m, url, body)) {
 		return FAILURE;
@@ -1375,6 +1380,7 @@ static STATUS php_http_curl_request_pool_detach(php_http_request_pool_t *h, php_
 	php_http_curl_request_pool_t *curl = h->ctx;
 	php_http_curl_request_t *recurl = r->ctx;
 	CURLMcode rs = curl_multi_remove_handle(curl->handle, recurl->handle);
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (CURLM_OK == rs) {
 		return SUCCESS;
@@ -1399,7 +1405,7 @@ static STATUS php_http_curl_request_pool_wait(php_http_request_pool_t *h, struct
 
 #ifdef PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
-		TSRMLS_FETCH_FROM_CTX(pool->ts);
+		TSRMLS_FETCH_FROM_CTX(h->ts);
 
 		php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "not implemented");
 		return FAILURE;
@@ -1461,6 +1467,8 @@ static void dolog(int i, const char *m) {
 #endif
 static STATUS php_http_curl_request_pool_exec(php_http_request_pool_t *h)
 {
+	TSRMLS_FETCH_FROM_CTX(h->ts);
+
 #ifdef PHP_HTTP_HAVE_EVENT
 	php_http_curl_request_pool_t *curl = h->ctx;
 
@@ -1589,7 +1597,7 @@ static php_http_request_t *php_http_curl_request_init(php_http_request_t *h, voi
 	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, h);
 	curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, h);
 
-	php_http_curl_request_reset(h TSRMLS_CC);
+	php_http_curl_request_reset(h);
 
 	return h;
 }
@@ -1614,6 +1622,7 @@ static php_http_request_t *php_http_curl_request_copy(php_http_request_t *from, 
 static void php_http_curl_request_dtor(php_http_request_t *h)
 {
 	php_http_curl_request_t *ctx = h->ctx;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	curl_easy_setopt(ctx->handle, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(ctx->handle, CURLOPT_PROGRESSFUNCTION, NULL);
@@ -1629,7 +1638,7 @@ static void php_http_curl_request_dtor(php_http_request_t *h)
 		curl_slist_free_all(ctx->options.headers);
 		ctx->options.headers = NULL;
 	}
-	php_http_request_progress_dtor(&ctx->progress);
+	php_http_request_progress_dtor(&ctx->progress TSRMLS_CC);
 
 	efree(ctx);
 	h->ctx = NULL;
@@ -1814,6 +1823,7 @@ retry:
 static STATUS php_http_curl_request_setopt(php_http_request_t *h, php_http_request_setopt_opt_t opt, void *arg)
 {
 	php_http_curl_request_t *curl = h->ctx;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	switch (opt) {
 		case PHP_HTTP_REQUEST_OPT_SETTINGS:

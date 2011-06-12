@@ -32,7 +32,7 @@ typedef struct php_http_env_response {
 } php_http_env_response_t;
 
 PHP_HTTP_API php_http_env_response_t *php_http_env_response_init(php_http_env_response_t *r, zval *options TSRMLS_DC);
-PHP_HTTP_API STATUS php_Http_env_response_send(php_http_env_response_t *r);
+PHP_HTTP_API STATUS php_http_env_response_send(php_http_env_response_t *r);
 PHP_HTTP_API void php_http_env_response_dtor(php_http_env_response_t *r);
 PHP_HTTP_API void php_http_env_response_free(php_http_env_response_t **r);
 

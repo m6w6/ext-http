@@ -30,11 +30,15 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_init(php_http_cookie_l
 	list->expires = 0;
 	list->flags = 0;
 	
+	TSRMLS_SET_CTX(list->ts);
+
 	return list;
 }
 
-PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_copy(php_http_cookie_list_t *from, php_http_cookie_list_t *to TSRMLS_DC)
+PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_copy(php_http_cookie_list_t *from, php_http_cookie_list_t *to)
 {
+	TSRMLS_FETCH_FROM_CTX(from->ts);
+
 	to = php_http_cookie_list_init(to TSRMLS_CC);
 
 	array_copy(&from->cookies, &to->cookies);
@@ -48,7 +52,7 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_copy(php_http_cookie_l
 	return to;
 }
 
-PHP_HTTP_API void php_http_cookie_list_dtor(php_http_cookie_list_t *list TSRMLS_DC)
+PHP_HTTP_API void php_http_cookie_list_dtor(php_http_cookie_list_t *list)
 {
 	if (list) {
 		zend_hash_destroy(&list->cookies);
@@ -61,7 +65,7 @@ PHP_HTTP_API void php_http_cookie_list_dtor(php_http_cookie_list_t *list TSRMLS_
 
 
 
-PHP_HTTP_API void php_http_cookie_list_free(php_http_cookie_list_t **list TSRMLS_DC)
+PHP_HTTP_API void php_http_cookie_list_free(php_http_cookie_list_t **list)
 {
 	if (*list) {
 		php_http_cookie_list_dtor(*list);
@@ -72,7 +76,7 @@ PHP_HTTP_API void php_http_cookie_list_free(php_http_cookie_list_t **list TSRMLS
 
 
 
-PHP_HTTP_API const char *php_http_cookie_list_get_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len TSRMLS_DC)
+PHP_HTTP_API const char *php_http_cookie_list_get_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len)
 {
 	zval **cookie = NULL;
 	if ((SUCCESS != zend_hash_find(&list->cookies, name, name_len + 1, (void *) &cookie)) || (Z_TYPE_PP(cookie) != IS_STRING)) {
@@ -83,7 +87,7 @@ PHP_HTTP_API const char *php_http_cookie_list_get_cookie(php_http_cookie_list_t 
 
 
 
-PHP_HTTP_API const char *php_http_cookie_list_get_extra(php_http_cookie_list_t *list, const char *name, size_t name_len TSRMLS_DC)
+PHP_HTTP_API const char *php_http_cookie_list_get_extra(php_http_cookie_list_t *list, const char *name, size_t name_len)
 {
 	zval **extra = NULL;
 	if ((SUCCESS != zend_hash_find(&list->extras, name, name_len + 1, (void *) &extra)) || (Z_TYPE_PP(extra) != IS_STRING)) {
@@ -94,26 +98,24 @@ PHP_HTTP_API const char *php_http_cookie_list_get_extra(php_http_cookie_list_t *
 
 
 
-PHP_HTTP_API void php_http_cookie_list_add_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len, const char *value, size_t value_len TSRMLS_DC)
+PHP_HTTP_API void php_http_cookie_list_add_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len, const char *value, size_t value_len)
 {
 	zval *cookie_value;
-	char *key = estrndup(name, name_len);
+
 	MAKE_STD_ZVAL(cookie_value);
 	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
-	zend_hash_update(&list->cookies, key, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
-	efree(key);
+	zend_hash_update(&list->cookies, name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
 }
 
 
 
-PHP_HTTP_API void php_http_cookie_list_add_extra(php_http_cookie_list_t *list, const char *name, size_t name_len, const char *value, size_t value_len TSRMLS_DC)
+PHP_HTTP_API void php_http_cookie_list_add_extra(php_http_cookie_list_t *list, const char *name, size_t name_len, const char *value, size_t value_len)
 {
 	zval *cookie_value;
-	char *key = estrndup(name, name_len);
+
 	MAKE_STD_ZVAL(cookie_value);
 	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
-	zend_hash_update(&list->extras, key, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
-	efree(key);
+	zend_hash_update(&list->extras, name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
 }
 
 
@@ -135,7 +137,7 @@ static void php_http_cookie_parse_callback(void *ptr, const char *key, int keyle
 		STR_SET(arg->list->domain, estrndup(val, vallen));
 	} else if _KEY_IS("expires") {
 		char *date = estrndup(val, vallen);
-		arg->list->expires = php_parse_date(date, NULL TSRMLS_CC);
+		arg->list->expires = php_parse_date(date, NULL);
 		efree(date);
 	} else if _KEY_IS("secure") {
 		arg->list->flags |= PHP_HTTP_COOKIE_SECURE;
@@ -149,12 +151,12 @@ static void php_http_cookie_parse_callback(void *ptr, const char *key, int keyle
 			for (; *ae; ++ae) {
 				if ((size_t) keylen == strlen(*ae) && !strncasecmp(key, *ae, keylen)) {
 					if (arg->flags & PHP_HTTP_COOKIE_PARSE_RAW) {
-						php_http_cookie_list_add_extra(arg->list, key, keylen, val, vallen TSRMLS_CC);
+						php_http_cookie_list_add_extra(arg->list, key, keylen, val, vallen);
 					} else {
 						char *dec = estrndup(val, vallen);
 						int declen = php_url_decode(dec, vallen);
 						
-						php_http_cookie_list_add_extra(arg->list, key, keylen, dec, declen TSRMLS_CC);
+						php_http_cookie_list_add_extra(arg->list, key, keylen, dec, declen);
 						efree(dec);
 					}
 					return;
@@ -163,12 +165,12 @@ static void php_http_cookie_parse_callback(void *ptr, const char *key, int keyle
 		}
 		/* new cookie */
 		if (arg->flags & PHP_HTTP_COOKIE_PARSE_RAW) {
-			php_http_cookie_list_add_cookie(arg->list, key, keylen, val, vallen TSRMLS_CC);
+			php_http_cookie_list_add_cookie(arg->list, key, keylen, val, vallen);
 		} else {
 			char *dec = estrndup(val, vallen);
 			int declen = php_url_decode(dec, vallen);
 			
-			php_http_cookie_list_add_cookie(arg->list, key, keylen, dec, declen TSRMLS_CC);
+			php_http_cookie_list_add_cookie(arg->list, key, keylen, dec, declen);
 			efree(dec);
 		}
 	}
@@ -189,9 +191,9 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_
 	
 	if (SUCCESS != php_http_params_parse(string, PHP_HTTP_PARAMS_RAISE_ERROR, php_http_cookie_parse_callback, &arg TSRMLS_CC)) {
 		if (free_list) {
-			php_http_cookie_list_free(&list TSRMLS_CC);
+			php_http_cookie_list_free(&list);
 		} else {
-			php_http_cookie_list_dtor(list TSRMLS_CC);
+			php_http_cookie_list_dtor(list);
 		}
 		list = NULL;
 	}
@@ -201,9 +203,10 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_
 
 
 
-PHP_HTTP_API void php_http_cookie_list_to_struct(php_http_cookie_list_t *list, zval *strct TSRMLS_DC)
+PHP_HTTP_API void php_http_cookie_list_to_struct(php_http_cookie_list_t *list, zval *strct)
 {
 	zval array, *cookies, *extras;
+	TSRMLS_FETCH_FROM_CTX(list->ts);
 	
 	INIT_PZVAL_ARRAY(&array, HASH_OF(strct));
 	
@@ -266,7 +269,7 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_c
 				if (Z_LVAL_P(cpy)) {
 					list->expires = Z_LVAL_P(cpy);
 				} else {
-					time_t expires = php_parse_date(Z_STRVAL_PP(tmp), NULL TSRMLS_CC);
+					time_t expires = php_parse_date(Z_STRVAL_PP(tmp), NULL);
 					if (expires > 0) {
 						list->expires = expires;
 					}
@@ -308,12 +311,13 @@ static inline void append_encoded(php_http_buffer_t *buf, const char *key, size_
 
 
 
-PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, char **str, size_t *len TSRMLS_DC)
+PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, char **str, size_t *len)
 {
 	php_http_buffer_t buf;
 	zval **val;
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 	HashPosition pos;
+	TSRMLS_FETCH_FROM_CTX(list->ts);
 	
 	php_http_buffer_init(&buf);
 	
@@ -486,22 +490,25 @@ zend_object_value php_http_cookie_object_new_ex(zend_class_entry *ce, php_http_c
 	return ov;
 }
 
-zend_object_value php_http_cookie_object_clone(zval *this_ptr TSRMLS_CC)
+zend_object_value php_http_cookie_object_clone(zval *this_ptr TSRMLS_DC)
 {
 	php_http_cookie_object_t *new_obj, *old_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 	zend_object_value ov;
 
-	ov = php_http_cookie_object_new_ex(old_obj->o.ce, php_http_cookie_list_copy(old_obj->list, NULL TSRMLS_CC), &new_obj TSRMLS_CC);
+	if (!old_obj->list) {
+		old_obj->list = php_http_cookie_list_init(NULL TSRMLS_CC);
+	}
+	ov = php_http_cookie_object_new_ex(old_obj->o.ce, php_http_cookie_list_copy(old_obj->list, NULL), &new_obj TSRMLS_CC);
 	zend_objects_clone_members((zend_object *) new_obj, ov, (zend_object *) old_obj, Z_OBJ_HANDLE_P(getThis()) TSRMLS_CC);
 
 	return ov;
 }
 
-void php_http_cookie_object_free(void *object TSRMLS_CC)
+void php_http_cookie_object_free(void *object TSRMLS_DC)
 {
 	php_http_cookie_object_t *obj = object;
 
-	php_http_cookie_list_free(&obj->list TSRMLS_CC);
+	php_http_cookie_list_free(&obj->list);
 	zend_object_std_dtor((zend_object *) obj TSRMLS_CC);
 	efree(obj);
 }
@@ -904,7 +911,7 @@ PHP_METHOD(HttpCookie, toString)
 		if (!obj->list) {
 			obj->list = php_http_cookie_list_init(NULL TSRMLS_CC);
 		}
-		php_http_cookie_list_to_string(obj->list, &str, &len TSRMLS_CC);
+		php_http_cookie_list_to_string(obj->list, &str, &len);
 		RETURN_STRINGL(str, len, 0);
 	}
 	RETURN_EMPTY_STRING();
@@ -919,7 +926,7 @@ PHP_METHOD(HttpCookie, toArray)
 			obj->list = php_http_cookie_list_init(NULL TSRMLS_CC);
 		}
 		array_init(return_value);
-		php_http_cookie_list_to_struct(obj->list, return_value TSRMLS_CC);
+		php_http_cookie_list_to_struct(obj->list, return_value);
 	}
 }
 

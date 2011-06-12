@@ -29,8 +29,8 @@ PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, ph
 	memset(h, 0, sizeof(*h));
 
 	h->ops = ops;
-	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL TSRMLS_CC);
-	h->buffer = php_http_buffer_init(NULL TSRMLS_CC);
+	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL);
+	h->buffer = php_http_buffer_init(NULL);
 	h->parser = php_http_message_parser_init(NULL TSRMLS_CC);
 	h->message = php_http_message_init(NULL, 0 TSRMLS_CC);
 
@@ -539,7 +539,7 @@ STATUS php_http_request_object_responsehandler(php_http_request_object_t *obj, z
 	return ret;
 }
 
-static int apply_pretty_key(void *pDest, int num_args, va_list args, zend_hash_key *hash_key)
+static int apply_pretty_key(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	if (hash_key->arKey && hash_key->nKeyLength > 1) {
 		hash_key->h = zend_hash_func(php_http_pretty_key(hash_key->arKey, hash_key->nKeyLength - 1, 1, 0), hash_key->nKeyLength);

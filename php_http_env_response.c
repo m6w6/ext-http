@@ -61,7 +61,7 @@ static void set_option(zval *options, const char *name_str, size_t name_len, int
 		}
 	}
 }
-static zval *get_option(zval *options, const char *name_str, size_t name_len TSRMLS_CC)
+static zval *get_option(zval *options, const char *name_str, size_t name_len TSRMLS_DC)
 {
 	zval *val, **valptr;
 
@@ -167,7 +167,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_mod
 		zval_ptr_dtor(&zlm);
 	}
 
-	ums = php_parse_date(header, NULL TSRMLS_CC);
+	ums = php_parse_date(header, NULL);
 	efree(header);
 
 	if (ums > 0 && ums <= lm) {
@@ -180,7 +180,6 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_mod
 static size_t output(void *context, const char *buf, size_t len TSRMLS_DC)
 {
 	php_http_env_response_t *r = context;
-	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	PHPWRITE(buf, len);
 
@@ -363,7 +362,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 				ret = php_http_env_set_response_header_format(206, 1 TSRMLS_CC, "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_PP(begin), Z_LVAL_PP(end), r->content.length);
 			}
 		} else {
-			php_http_boundary(r->range.boundary, sizeof(r->range.boundary));
+			php_http_boundary(r->range.boundary, sizeof(r->range.boundary) TSRMLS_CC);
 			ret = php_http_env_set_response_header_format(206, 1 TSRMLS_CC, "Content-Type: multipart/byteranges; boundary=%s", r->range.boundary);
 		}
 	} else {
@@ -450,13 +449,13 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 						zend_hash_internal_pointer_reset(result);
 						if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(result, &key_str, &key_len, NULL, 0, NULL)) {
 							if (!strcmp(key_str, "gzip")) {
-								if (!(r->content.encoder = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), PHP_HTTP_DEFLATE_TYPE_GZIP))) {
+								if (!(r->content.encoder = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), PHP_HTTP_DEFLATE_TYPE_GZIP TSRMLS_CC))) {
 									ret = FAILURE;
 								} else if (SUCCESS == (ret = php_http_env_set_response_header(0, ZEND_STRL("Content-Encoding: gzip"), 1 TSRMLS_CC))) {
 									r->content.encoding = estrndup(key_str, key_len - 1);
 								}
 							} else if (!strcmp(key_str, "deflate")) {
-								if (!(r->content.encoder = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), PHP_HTTP_DEFLATE_TYPE_ZLIB))) {
+								if (!(r->content.encoder = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), PHP_HTTP_DEFLATE_TYPE_ZLIB TSRMLS_CC))) {
 									ret = FAILURE;
 								} else if (SUCCESS == (ret = php_http_env_set_response_header(0, ZEND_STRL("Content-Encoding: deflate"), 1 TSRMLS_CC))) {
 									r->content.encoding = estrndup(key_str, key_len - 1);
@@ -489,12 +488,12 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 			return ret;
 		}
 
-		switch (php_http_env_is_response_cached_by_etag(options, ZEND_STRL("If-None-Match"))) {
+		switch (php_http_env_is_response_cached_by_etag(options, ZEND_STRL("If-None-Match") TSRMLS_CC)) {
 			case PHP_HTTP_CACHE_MISS:
 				break;
 
 			case PHP_HTTP_CACHE_NO:
-				if (PHP_HTTP_CACHE_HIT != php_http_env_is_response_cached_by_last_modified(options, ZEND_STRL("If-Modified-Since"))) {
+				if (PHP_HTTP_CACHE_HIT != php_http_env_is_response_cached_by_last_modified(options, ZEND_STRL("If-Modified-Since") TSRMLS_CC)) {
 					break;
 				}
 
@@ -530,6 +529,7 @@ static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
 {
 	STATUS ret = SUCCESS;
 	zval *zbody;
+	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	if (r->done) {
 		return ret;
@@ -609,6 +609,7 @@ static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
 PHP_HTTP_API STATUS php_http_env_response_send(php_http_env_response_t *r)
 {
 	zval *zbody;
+	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	/* check for ranges */
 	if (	(zbody = get_option(r->options, ZEND_STRL("body") TSRMLS_CC))
@@ -787,7 +788,7 @@ PHP_METHOD(HttpEnvResponse, setContentDisposition)
 		if (file_len) {
 			add_assoc_stringl_ex(arr, ZEND_STRS("filename"), file_str, file_len, 1);
 		}
-		zend_update_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("contentDisposition"), arr);
+		zend_update_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("contentDisposition"), arr TSRMLS_CC);
 		zval_ptr_dtor(&arr);
 	}
 }
@@ -850,7 +851,7 @@ PHP_METHOD(HttpEnvResponse, isCachedByEtag)
 	char *header_name_str = NULL;
 	int header_name_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &header_name_str, &header_name_len)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
 		if (!header_name_str || !header_name_len) {
 			header_name_str = "If-None-Match";
 			header_name_len = lenof("If-None-Match");

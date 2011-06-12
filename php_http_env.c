@@ -766,7 +766,7 @@ PHP_METHOD(HttpEnv, setResponseCode)
 #define PHP_HTTP_DO_NEGOTIATE(type, supported, rs_array) \
 	{ \
 		HashTable *result; \
-		if ((result = php_http_negotiate_ ##type(supported))) { \
+		if ((result = php_http_negotiate_ ##type(supported TSRMLS_CC))) { \
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(result, supported, rs_array); \
 		} else { \
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array); \
@@ -834,7 +834,7 @@ PHP_METHOD(HttpEnv, negotiate)
 			array_init(rs_array);
 		}
 
-		if ((rs = php_http_negotiate(value_str, supported, php_http_negotiate_default_func))) {
+		if ((rs = php_http_negotiate(value_str, supported, php_http_negotiate_default_func TSRMLS_CC))) {
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array);
 		} else {
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array);
@@ -847,7 +847,7 @@ PHP_METHOD(HttpEnv, persistentHandlesStat)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		object_init(return_value);
-		if (php_http_persistent_handle_statall(HASH_OF(return_value))) {
+		if (php_http_persistent_handle_statall(HASH_OF(return_value) TSRMLS_CC)) {
 			return;
 		}
 		zval_dtor(return_value);

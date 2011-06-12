@@ -393,7 +393,6 @@ static php_http_encoding_stream_t *inflate_init(php_http_encoding_stream_t *s)
 static php_http_encoding_stream_t *dechunk_init(php_http_encoding_stream_t *s)
 {
 	struct dechunk_ctx *ctx = pecalloc(1, sizeof(*ctx), (s->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT));
-	TSRMLS_FETCH_FROM_CTX(s->ts);
 
 	if (!php_http_buffer_init_ex(&ctx->buffer, PHP_HTTP_BUFFER_DEFAULT_SIZE, (s->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT) ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0)) {
 		return NULL;
@@ -942,7 +941,7 @@ void php_http_encoding_stream_object_free(void *object TSRMLS_DC)
 	php_http_encoding_stream_object_t *o = (php_http_encoding_stream_object_t *) object;
 
 	if (o->stream) {
-		php_http_encoding_stream_free(&o->stream TSRMLS_CC);
+		php_http_encoding_stream_free(&o->stream);
 	}
 	zend_object_std_dtor((zend_object *) o TSRMLS_CC);
 	efree(o);
@@ -994,7 +993,7 @@ PHP_METHOD(HttpEncodingStream, update)
 			size_t encoded_len;
 			char *encoded_str;
 
-			if (SUCCESS == php_http_encoding_stream_update(obj->stream, data_str, data_len, &encoded_str, &encoded_len TSRMLS_CC)) {
+			if (SUCCESS == php_http_encoding_stream_update(obj->stream, data_str, data_len, &encoded_str, &encoded_len)) {
 				RETURN_STRINGL(encoded_str, encoded_len, 0);
 			}
 		}
@@ -1011,7 +1010,7 @@ PHP_METHOD(HttpEncodingStream, flush)
 			char *encoded_str;
 			size_t encoded_len;
 
-			if (SUCCESS == php_http_encoding_stream_flush(obj->stream, &encoded_str, &encoded_len TSRMLS_CC)) {
+			if (SUCCESS == php_http_encoding_stream_flush(obj->stream, &encoded_str, &encoded_len)) {
 				RETURN_STRINGL(encoded_str, encoded_len, 0);
 			}
 		}
@@ -1040,7 +1039,7 @@ PHP_METHOD(HttpEncodingStream, finish)
 			char *encoded_str;
 			size_t encoded_len;
 
-			if (SUCCESS == php_http_encoding_stream_finish(obj->stream, &encoded_str, &encoded_len TSRMLS_CC)) {
+			if (SUCCESS == php_http_encoding_stream_finish(obj->stream, &encoded_str, &encoded_len)) {
 				if (SUCCESS == php_http_encoding_stream_reset(&obj->stream)) {
 					RETURN_STRINGL(encoded_str, encoded_len, 0);
 				} else {

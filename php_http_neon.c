@@ -215,6 +215,7 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 	zval *zoption;
 	int range_req = 0;
 	php_http_neon_request_t *neon = h->ctx;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	/* proxy */
 	if ((zoption = get_option(&neon->options.cache, options, ZEND_STRS("proxyhost"), IS_STRING))) {
@@ -353,7 +354,8 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 
 		if (PHP_HTTP_BUFFER_LEN(&rs)) {
 			/* ignore last comma */
-			php_http_buffer_appendf(&neon->options.headers, "Range: bytes=%.*s" PHP_HTTP_CRLF, rs.used - 1, rs.data);
+			int used = rs.used > INT_MAX ? INT_MAX : rs.used;
+			php_http_buffer_appendf(&neon->options.headers, "Range: bytes=%.*s" PHP_HTTP_CRLF, used - 1, rs.data);
 			range_req = 1;
 		}
 		php_http_buffer_dtor(&rs);
@@ -536,12 +538,13 @@ static php_http_request_t *php_http_neon_request_copy(php_http_request_t *from, 
 static void php_http_neon_request_dtor(php_http_request_t *h)
 {
 	php_http_neon_request_t *ctx = h->ctx;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	php_http_neon_request_reset(h);
 	php_http_buffer_dtor(&ctx->options.headers);
 	zend_hash_destroy(&ctx->options.cache);
 
-	php_http_request_progress_dtor(&ctx->progress);
+	php_http_request_progress_dtor(&ctx->progress TSRMLS_CC);
 
 	efree(ctx);
 	h->ctx = NULL;
@@ -550,6 +553,7 @@ static void php_http_neon_request_dtor(php_http_request_t *h)
 static STATUS php_http_neon_request_reset(php_http_request_t *h)
 {
 	php_http_neon_request_t *neon = h->ctx;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	php_http_buffer_reset(&neon->options.headers);
 	STR_SET(neon->options.useragent, NULL);
@@ -585,7 +589,7 @@ static STATUS php_http_neon_request_reset(php_http_request_t *h)
 	neon->options.timeout.read = 0;
 	neon->options.timeout.connect = 0;
 
-	php_http_request_progress_dtor(&neon->progress);
+	php_http_request_progress_dtor(&neon->progress TSRMLS_CC);
 
 	return SUCCESS;
 }
@@ -602,7 +606,7 @@ static STATUS php_http_neon_request_exec(php_http_request_t *h, php_http_request
 	php_http_neon_request_t *neon = h->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-	if (!(meth = php_http_request_method_name(meth_id))) {
+	if (!(meth = php_http_request_method_name(meth_id TSRMLS_CC))) {
 		php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_METHOD, "Unsupported request method: %d (%s)", meth, url);
 		return FAILURE;
 	}
@@ -757,6 +761,7 @@ retry:
 static STATUS php_http_neon_request_setopt(php_http_request_t *h, php_http_request_setopt_opt_t opt, void *arg)
 {
 	php_http_neon_request_t *neon = h->ctx;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	switch (opt) {
 		case PHP_HTTP_REQUEST_OPT_SETTINGS:

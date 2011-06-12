@@ -74,10 +74,10 @@ PHP_HTTP_API void php_http_message_parser_dtor(php_http_message_parser_t *parser
 	php_http_header_parser_dtor(&parser->header);
 	zend_stack_destroy(&parser->stack);
 	if (parser->dechunk) {
-		php_http_encoding_stream_free(&parser->dechunk TSRMLS_CC);
+		php_http_encoding_stream_free(&parser->dechunk);
 	}
 	if (parser->inflate) {
-		php_http_encoding_stream_free(&parser->inflate TSRMLS_CC);
+		php_http_encoding_stream_free(&parser->inflate);
 	}
 }
 
@@ -277,7 +277,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 						char *dec_str = NULL;
 						size_t dec_len;
 
-						if (SUCCESS != php_http_encoding_stream_update(parser->inflate, str, len, &dec_str, &dec_len TSRMLS_CC)) {
+						if (SUCCESS != php_http_encoding_stream_update(parser->inflate, str, len, &dec_str, &dec_len)) {
 							return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
 						}
 
@@ -345,7 +345,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 				char *dec_str = NULL;
 				size_t dec_len;
 
-				if (SUCCESS != php_http_encoding_stream_update(parser->dechunk, buffer->data, buffer->used, &dec_str, &dec_len TSRMLS_CC)) {
+				if (SUCCESS != php_http_encoding_stream_update(parser->dechunk, buffer->data, buffer->used, &dec_str, &dec_len)) {
 					return FAILURE;
 				}
 
@@ -370,7 +370,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 					char *dec_str = NULL;
 					size_t dec_len;
 
-					if (SUCCESS != php_http_encoding_stream_finish(parser->dechunk, &dec_str, &dec_len TSRMLS_CC)) {
+					if (SUCCESS != php_http_encoding_stream_finish(parser->dechunk, &dec_str, &dec_len)) {
 						return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
 					}
 					php_http_encoding_stream_dtor(parser->dechunk);

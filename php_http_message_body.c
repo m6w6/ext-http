@@ -79,6 +79,7 @@ PHP_HTTP_API php_http_message_body_t *php_http_message_body_copy(php_http_messag
 
 PHP_HTTP_API void php_http_message_body_dtor(php_http_message_body_t *body)
 {
+	TSRMLS_FETCH_FROM_CTX(body->ts);
 	/* NO FIXME: shows leakinfo in DEBUG mode */
 	zend_list_delete(body->stream_id);
 	STR_FREE(body->boundary);
@@ -115,7 +116,7 @@ PHP_HTTP_API const char *php_http_message_body_boundary(php_http_message_body_t 
 PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body)
 {
 	TSRMLS_FETCH_FROM_CTX(body->ts);
-	php_stream_statbuf *ssb = php_http_message_body_stat(body);
+	const php_stream_statbuf *ssb = php_http_message_body_stat(body);
 
 	/* real file or temp buffer ? */
 	if (body->ssb.sb.st_mtime) {
@@ -124,10 +125,10 @@ PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body)
 		spprintf(&etag, 0, "%lx-%lx-%lx", ssb->sb.st_ino, ssb->sb.st_mtime, ssb->sb.st_size);
 		return etag;
 	} else {
-		void *ctx = php_http_etag_init(TSRMLS_C);
+		php_http_etag_t *etag = php_http_etag_init(PHP_HTTP_G->env.etag_mode TSRMLS_CC);
 
-		php_http_message_body_to_callback(body, php_http_etag_update, ctx, 0, 0);
-		return php_http_etag_finish(ctx TSRMLS_CC);
+		php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_etag_update, etag, 0, 0);
+		return php_http_etag_finish(etag);
 	}
 }
 
@@ -213,7 +214,6 @@ PHP_HTTP_API size_t php_http_message_body_appendf(php_http_message_body_t *body,
 PHP_HTTP_API STATUS php_http_message_body_add(php_http_message_body_t *body, HashTable *fields, HashTable *files)
 {
 	zval tmp;
-	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	if (fields) {
 		INIT_PZVAL_ARRAY(&tmp, fields);
@@ -234,7 +234,10 @@ PHP_HTTP_API STATUS php_http_message_body_add(php_http_message_body_t *body, Has
 
 PHP_HTTP_API STATUS php_http_message_body_add_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
 {
-	char *safe_name = php_addslashes(estrdup(name), strlen(name), NULL, 1 TSRMLS_CC);
+	char *safe_name;
+	TSRMLS_FETCH_FROM_CTX(body->ts);
+
+	safe_name = php_addslashes(estrdup(name), strlen(name), NULL, 1 TSRMLS_CC);
 
 	BOUNDARY_OPEN(body);
 	php_http_message_body_appendf(
@@ -313,6 +316,7 @@ static STATUS add_recursive_fields(php_http_message_body_t *body, const char *na
 		zval **val;
 		HashPosition pos;
 		php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+		TSRMLS_FETCH_FROM_CTX(body->ts);
 
 		if (!HASH_OF(value)->nApplyCount) {
 			++HASH_OF(value)->nApplyCount;
@@ -340,6 +344,7 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 {
 	if (Z_TYPE_P(value) == IS_ARRAY || Z_TYPE_P(value) == IS_OBJECT) {
 		zval **zfile, **zname, **ztype;
+		TSRMLS_FETCH_FROM_CTX(body->ts);
 
 		if ((SUCCESS == zend_hash_find(HASH_OF(value), ZEND_STRS("name"), (void *) &zname))
 		&&	(SUCCESS == zend_hash_find(HASH_OF(value), ZEND_STRS("file"), (void *) &zfile))
@@ -377,6 +382,7 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 			}
 		}
 	} else {
+		TSRMLS_FETCH_FROM_CTX(body->ts);
 		php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "Unrecognized array format for message body file to add");
 		return FAILURE;
 	}
@@ -471,7 +477,7 @@ zend_object_value php_http_message_body_object_clone(zval *object TSRMLS_DC)
 	php_http_message_body_object_t *new_obj = NULL;
 	php_http_message_body_object_t *old_obj = zend_object_store_get_object(object TSRMLS_CC);
 
-	new_ov = php_http_message_body_object_new_ex(old_obj->zo.ce, php_http_message_body_copy(old_obj->body, NULL, 1), &new_obj);
+	new_ov = php_http_message_body_object_new_ex(old_obj->zo.ce, php_http_message_body_copy(old_obj->body, NULL, 1), &new_obj TSRMLS_CC);
 	zend_objects_clone_members(&new_obj->zo, new_ov, &old_obj->zo, Z_OBJ_HANDLE_P(object) TSRMLS_CC);
 
 	return new_ov;
@@ -547,12 +553,16 @@ struct fcd {
 	zval *fcz;
 	zend_fcall_info *fci;
 	zend_fcall_info_cache *fcc;
+#ifdef ZTS
+	void ***ts;
+#endif
 };
 
-static size_t pass(void *cb_arg, const char *str, size_t len TSRMLS_DC)
+static size_t pass(void *cb_arg, const char *str, size_t len)
 {
 	struct fcd *fcd = cb_arg;
 	zval *zdata;
+	TSRMLS_FETCH_FROM_CTX(fcd->ts);
 
 	MAKE_STD_ZVAL(zdata);
 	ZVAL_STRINGL(zdata, str, len, 1);

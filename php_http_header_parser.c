@@ -15,7 +15,7 @@ static const php_http_header_parser_state_spec_t php_http_header_parser_states[]
 };
 
 
-PHP_HTTP_API php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser TSRMLS_CC)
+PHP_HTTP_API php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser TSRMLS_DC)
 {
 	if (!parser) {
 		parser = emalloc(sizeof(*parser));

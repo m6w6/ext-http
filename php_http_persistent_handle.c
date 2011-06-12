@@ -182,6 +182,7 @@ static void php_http_persistent_handles_hash_dtor(void *p)
 	php_http_persistent_handle_provider_t *provider = (php_http_persistent_handle_provider_t *) p;
 	php_http_persistent_handle_list_t **list, *list_tmp;
 	HashPosition pos;
+	TSRMLS_FETCH();
 	
 	FOREACH_HASH_VAL(pos, &provider->list.free, list) {
 		/* fix shutdown crash in PHP4 */
@@ -304,7 +305,7 @@ PHP_HTTP_API void *php_http_persistent_handle_accrete(php_http_persistent_handle
 PHP_HTTP_API void php_http_persistent_handle_release(php_http_persistent_handle_factory_t *a, void *handle TSRMLS_DC)
 {
 	LOCK();
-	php_http_persistent_handle_do_release(a->provider, a->ident.str, a->ident.len, &handle);
+	php_http_persistent_handle_do_release(a->provider, a->ident.str, a->ident.len, &handle TSRMLS_CC);
 	UNLOCK();
 }
 

@@ -297,7 +297,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 			}
 			
 			if (ptr->buflen) {
-				php_http_encoding_stream_update(buffer, ptr->buf, ptr->buflen, &encoded, &encoded_len TSRMLS_CC);
+				php_http_encoding_stream_update(buffer, ptr->buf, ptr->buflen, &encoded, &encoded_len);
 				if (encoded) {
 					if (encoded_len) {
 						out_avail = 1;
@@ -317,7 +317,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		char *encoded = NULL;
 		size_t encoded_len = 0;
 		
-		php_http_encoding_stream_flush(buffer, &encoded, &encoded_len TSRMLS_CC);
+		php_http_encoding_stream_flush(buffer, &encoded, &encoded_len);
 		if (encoded) {
 			if (encoded_len) {
 				out_avail = 1;
@@ -331,7 +331,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		char *encoded = NULL;
 		size_t encoded_len = 0;
 		
-		php_http_encoding_stream_finish(buffer, &encoded, &encoded_len TSRMLS_CC);
+		php_http_encoding_stream_finish(buffer, &encoded, &encoded_len);
 		if (encoded) {
 			if (encoded_len) {
 				out_avail = 1;
@@ -346,7 +346,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 static PHP_HTTP_FILTER_DESTRUCTOR(zlib)
 {
 	PHP_HTTP_FILTER_BUFFER(zlib) *buffer = (PHP_HTTP_FILTER_BUFFER(zlib) *) this->abstract;
-	php_http_encoding_stream_free(&buffer TSRMLS_CC);
+	php_http_encoding_stream_free(&buffer);
 }
 
 static PHP_HTTP_FILTER_OPS(deflate) = {
@@ -387,7 +387,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), flags TSRMLS_CC))) {
 			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(inflate), b, p))) {
-				php_http_encoding_stream_free(&b TSRMLS_CC);
+				php_http_encoding_stream_free(&b);
 			}
 		}
 	} else
@@ -414,7 +414,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		}
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), flags TSRMLS_CC))) {
 			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(deflate), b, p))) {
-				php_http_encoding_stream_free(&b TSRMLS_CC);
+				php_http_encoding_stream_free(&b);
 			}
 		}
 	}

@@ -14,7 +14,7 @@ PHP_HTTP_API php_http_request_pool_t *php_http_request_pool_init(php_http_reques
 	memset(h, 0, sizeof(*h));
 
 	h->ops = ops;
-	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL TSRMLS_CC);
+	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL);
 	zend_llist_init(&h->requests.attached, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	zend_llist_init(&h->requests.finished, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	TSRMLS_SET_CTX(h->ts);
@@ -72,7 +72,7 @@ PHP_HTTP_API STATUS php_http_request_pool_attach(php_http_request_pool_t *h, zva
 		php_http_message_body_t *body = NULL;
 		php_http_request_object_t *obj = zend_object_store_get_object(request TSRMLS_CC);
 
-		if (SUCCESS != php_http_request_object_requesthandler(obj, request, &m, &url, &body)) {
+		if (SUCCESS != php_http_request_object_requesthandler(obj, request, &m, &url, &body TSRMLS_CC)) {
 			return FAILURE;
 		}
 		if (SUCCESS == h->ops->attach(h, obj->request, m, url, body)) {
@@ -130,8 +130,6 @@ PHP_HTTP_API int php_http_request_pool_once(php_http_request_pool_t *h)
 
 PHP_HTTP_API STATUS php_http_request_pool_exec(php_http_request_pool_t *h)
 {
-	TSRMLS_FETCH_FROM_CTX(h->ts);
-
 	if (h->ops->exec) {
 		return h->ops->exec(h);
 	}

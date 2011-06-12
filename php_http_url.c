@@ -340,7 +340,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, zend_bool override
 		php_http_buffer_append(qstr, pre_encoded_data, pre_encoded_len);
 	}
 
-	if (SUCCESS != php_http_url_encode_hash_recursive(hash, qstr, arg_sep, arg_sep_len, NULL, 0)) {
+	if (SUCCESS != php_http_url_encode_hash_recursive(hash, qstr, arg_sep, arg_sep_len, NULL, 0 TSRMLS_CC)) {
 		php_http_buffer_free(&qstr);
 		return FAILURE;
 	}

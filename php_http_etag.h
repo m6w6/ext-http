@@ -1,9 +1,18 @@
 #ifndef PHP_HTTP_ETAG_H
 #define PHP_HTTP_ETAG_H
 
-PHP_HTTP_API void *php_http_etag_init(TSRMLS_D);
-PHP_HTTP_API size_t php_http_etag_update(void *ctx, const char *data_ptr, size_t data_len TSRMLS_DC);
-PHP_HTTP_API char *php_http_etag_finish(void *ctx TSRMLS_DC);
+typedef struct php_http_etag {
+	void *ctx;
+	char *mode;
+
+#ifdef ZTS
+	void ***ts;
+#endif
+} php_http_etag_t;
+
+PHP_HTTP_API php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC);
+PHP_HTTP_API size_t php_http_etag_update(php_http_etag_t *e, const char *data_ptr, size_t data_len);
+PHP_HTTP_API char *php_http_etag_finish(php_http_etag_t *e);
 
 static inline char *php_http_etag_digest(const unsigned char *digest, int len)
 {

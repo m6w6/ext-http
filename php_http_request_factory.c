@@ -89,7 +89,7 @@ PHP_METHOD(HttpRequestFactory, __construct)
 				FOREACH_HASH_KEYVAL(pos, options, key, val) {
 					if (key.type == HASH_KEY_IS_STRING) {
 						zval *newval = php_http_zsep(1, Z_TYPE_PP(val), *val);
-						zend_update_property(php_http_request_factory_class_entry, getThis(), key.str, key.len - 1, newval);
+						zend_update_property(php_http_request_factory_class_entry, getThis(), key.str, key.len - 1, newval TSRMLS_CC);
 						zval_ptr_dtor(&newval);
 					}
 				}
@@ -140,7 +140,7 @@ PHP_METHOD(HttpRequestFactory, createRequest)
 									(php_http_resource_factory_handle_dtor_t) php_http_persistent_handle_release
 							};
 
-							rf = php_http_resource_factory_init(NULL, &ops, pf, (void (*)(void *)) php_http_persistent_handle_abandon TSRMLS_CC);
+							rf = php_http_resource_factory_init(NULL, &ops, pf, (void (*)(void *)) php_http_persistent_handle_abandon);
 						}
 
 						efree(name_str);
@@ -217,7 +217,7 @@ PHP_METHOD(HttpRequestFactory, createPool)
 									(php_http_resource_factory_handle_dtor_t) php_http_persistent_handle_release
 							};
 
-							rf = php_http_resource_factory_init(NULL, &ops, pf, (void (*)(void *)) php_http_persistent_handle_abandon TSRMLS_CC);
+							rf = php_http_resource_factory_init(NULL, &ops, pf, (void (*)(void *)) php_http_persistent_handle_abandon);
 						}
 
 						efree(name_str);
@@ -284,7 +284,7 @@ PHP_METHOD(HttpRequestFactory, createDataShare)
 									(php_http_resource_factory_handle_dtor_t) php_http_persistent_handle_release
 							};
 
-							rf = php_http_resource_factory_init(NULL, &ops, pf, (void (*)(void *)) php_http_persistent_handle_abandon TSRMLS_CC);
+							rf = php_http_resource_factory_init(NULL, &ops, pf, (void (*)(void *)) php_http_persistent_handle_abandon);
 						}
 
 						efree(name_str);

@@ -128,9 +128,9 @@ ZEND_EXTERN_MODULE_GLOBALS(php_http);
 
 #ifdef ZTS
 #	include "TSRM/TSRM.h"
-#	define PHP_HTTP_G ((php_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(php_http_globals_id)])
+#	define PHP_HTTP_G ((zend_php_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(php_http_globals_id)])
 #	undef TSRMLS_FETCH_FROM_CTX
-#	define TSRMLS_FETCH_FROM_CTX(ctx) ((ctx)?(ctx):ts_resource_ex(0, NULL))
+#	define TSRMLS_FETCH_FROM_CTX(ctx) void ***tsrm_ls = ((ctx)?(ctx):ts_resource_ex(0, NULL))
 #else
 #	define PHP_HTTP_G (&php_http_globals)
 #endif

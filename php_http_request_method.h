@@ -53,7 +53,7 @@ typedef enum php_http_request_method {
 	PHP_HTTP_MAX_REQUEST_METHOD	= 28
 } php_http_request_method_t;
 
-PHP_HTTP_API const char *php_http_request_method_name(php_http_request_method_t meth);
+PHP_HTTP_API const char *php_http_request_method_name(php_http_request_method_t meth TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_request_method_register(const char *meth_str, size_t meth_len, long *id TSRMLS_DC);
 
 extern zend_class_entry *php_http_request_method_class_entry;

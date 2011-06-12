@@ -24,7 +24,7 @@ PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **messa
 
 	/* advance message */
 	if (old->type || zend_hash_num_elements(&old->hdrs) || PHP_HTTP_BUFFER_LEN(old)) {
-		(*message) = php_http_message_init(NULL, 0);
+		(*message) = php_http_message_init(NULL, 0 TSRMLS_CC);
 		(*message)->parent = old;
 		(*headers) = &((*message)->hdrs);
 	}
@@ -60,7 +60,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 	switch (type) {
 		case PHP_HTTP_REQUEST:
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("SERVER_PROTOCOL"), 1 TSRMLS_CC)) && !strncmp(Z_STRVAL_P(sval), "HTTP/", lenof("HTTP/"))) {
-				php_http_version_parse(&message->http.version, Z_STRVAL_P(sval));
+				php_http_version_parse(&message->http.version, Z_STRVAL_P(sval) TSRMLS_CC);
 			} else {
 				message->http.version.major = 1;
 				message->http.version.minor = 1;
@@ -76,7 +76,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 
 			if ((mbody = php_http_env_get_request_body(TSRMLS_C))) {
 				php_http_message_body_dtor(&message->body);
-				php_http_message_body_copy(mbody, &message->body, 0 TSRMLS_CC);
+				php_http_message_body_copy(mbody, &message->body, 0);
 			}
 			break;
 			
@@ -99,7 +99,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 			
 			php_http_env_get_response_headers(&message->hdrs TSRMLS_CC);
 
-			if (php_output_get_level()) {
+			if (php_output_get_level(TSRMLS_C)) {
 				if (php_output_get_status(TSRMLS_C) & PHP_OUTPUT_SENT) {
 					php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "Could not fetch response body, output has already been sent at %s:%d", php_output_get_start_filename(TSRMLS_C), php_output_get_start_lineno(TSRMLS_C));
 					goto error;
@@ -154,6 +154,7 @@ PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, char *key_st
 			zval *header_str, **val;
 			HashPosition pos;
 			php_http_buffer_t str;
+			TSRMLS_FETCH_FROM_CTX(msg->ts);
 
 			php_http_buffer_init(&str);
 			MAKE_STD_ZVAL(header_str);
@@ -227,6 +228,7 @@ static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *s
 	HashPosition pos1;
 	zval **header, *h;
 	size_t size;
+	TSRMLS_FETCH_FROM_CTX(msg->ts);
 
 	switch (msg->type) {
 		case PHP_HTTP_REQUEST:
@@ -317,7 +319,6 @@ static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *s
 PHP_HTTP_API void php_http_message_to_callback(php_http_message_t *msg, php_http_pass_callback_t cb, void *cb_arg)
 {
 	php_http_buffer_t str;
-	TSRMLS_FETCH_FROM_CTX(msg->ts);
 
 	php_http_buffer_init_ex(&str, 0x1000, 0);
 	message_headers(msg, &str);
@@ -325,9 +326,9 @@ PHP_HTTP_API void php_http_message_to_callback(php_http_message_t *msg, php_http
 	php_http_buffer_dtor(&str);
 
 	if (php_http_message_body_size(&msg->body)) {
-		cb(cb_arg, ZEND_STRL(PHP_HTTP_CRLF) TSRMLS_CC);
+		cb(cb_arg, ZEND_STRL(PHP_HTTP_CRLF));
 		php_http_message_body_to_callback(&msg->body, cb, cb_arg, 0, 0);
-		cb(cb_arg, ZEND_STRL(PHP_HTTP_CRLF) TSRMLS_CC);
+		cb(cb_arg, ZEND_STRL(PHP_HTTP_CRLF));
 	}
 }
 
@@ -425,11 +426,12 @@ PHP_HTTP_API php_http_message_t *php_http_message_interconnect(php_http_message_
 	return m1;
 }
 
-PHP_HTTP_API void php_http_message_to_struct(php_http_message_t *msg, zval *obj TSRMLS_DC)
+PHP_HTTP_API void php_http_message_to_struct(php_http_message_t *msg, zval *obj)
 {
 	zval strct;
 	zval *headers;
 	char *version;
+	TSRMLS_FETCH_FROM_CTX(msg->ts);
 	
 	INIT_PZVAL_ARRAY(&strct, HASH_OF(obj));
 	
@@ -574,7 +576,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_copy(php_http_message_t *from,
 		info.type = from->type;
 		info.http = from->http;
 		
-		copy = temp = php_http_message_init(to, 0);
+		copy = temp = php_http_message_init(to, 0 TSRMLS_CC);
 		php_http_message_set_info(temp, &info);
 		zend_hash_copy(&temp->hdrs, &from->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 		php_http_message_body_copy(&from->body, &temp->body, 1);
@@ -583,7 +585,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_copy(php_http_message_t *from,
 			info.type = from->parent->type;
 			info.http = from->parent->http;
 		
-			temp->parent = php_http_message_init(NULL, 0);
+			temp->parent = php_http_message_init(NULL, 0 TSRMLS_CC);
 			php_http_message_set_info(temp->parent, &info);
 			zend_hash_copy(&temp->parent->hdrs, &from->parent->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 			php_http_message_body_copy(&from->body, &temp->body, 1);
@@ -1105,7 +1107,7 @@ zend_object_value php_http_message_object_clone(zval *this_ptr TSRMLS_DC)
 	php_http_message_object_t *new_obj = NULL;
 	php_http_message_object_t *old_obj = zend_object_store_get_object(this_ptr TSRMLS_CC);
 
-	new_ov = php_http_message_object_new_ex(old_obj->zo.ce, php_http_message_copy(old_obj->message, NULL), &new_obj);
+	new_ov = php_http_message_object_new_ex(old_obj->zo.ce, php_http_message_copy(old_obj->message, NULL), &new_obj TSRMLS_CC);
 	zend_objects_clone_members(&new_obj->zo, new_ov, &old_obj->zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
 
 	return new_ov;
@@ -1288,7 +1290,7 @@ PHP_METHOD(HttpMessage, __construct)
 
 			php_http_message_dtor(msg);
 			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				if ((obj->message = php_http_message_parse(msg, message, length))) {
+				if ((obj->message = php_http_message_parse(msg, message, length TSRMLS_CC))) {
 					if (obj->message->parent) {
 						obj->parent = php_http_message_object_new_ex(Z_OBJCE_P(getThis()), obj->message->parent, NULL TSRMLS_CC);
 					}

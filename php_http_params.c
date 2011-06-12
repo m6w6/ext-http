@@ -16,7 +16,6 @@
 
 PHP_HTTP_API void php_http_params_parse_default_func(void *arg, const char *key, int keylen, const char *val, int vallen TSRMLS_DC)
 {
-	char *kdup;
 	zval tmp, *entry;
 	HashTable *ht = (HashTable *) arg;
 
@@ -27,15 +26,13 @@ PHP_HTTP_API void php_http_params_parse_default_func(void *arg, const char *key,
 			MAKE_STD_ZVAL(entry);
 			array_init(entry);
 			if (keylen) {
-				kdup = estrndup(key, keylen);
-				add_assoc_stringl_ex(entry, kdup, keylen + 1, (char *) val, vallen, 1);
-				efree(kdup);
+				add_assoc_stringl_ex(entry, key, keylen + 1, estrndup(val, vallen), vallen, 0);
 			} else {
-				add_next_index_stringl(entry, (char *) val, vallen, 1);
+				add_next_index_stringl(entry, val, vallen, 1);
 			}
 			add_next_index_zval(&tmp, entry);
 		} else {
-			add_next_index_stringl(&tmp, (char *) key, keylen, 1);
+			add_next_index_stringl(&tmp, key, keylen, 1);
 		}
 	}
 }

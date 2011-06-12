@@ -1,6 +1,7 @@
 
 #include "php_http.h"
 
+#include <curl/curl.h>
 #include <ext/standard/php_string.h>
 #include <ext/spl/spl_iterators.h>
 
@@ -55,7 +56,7 @@ PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_h
 		TSRMLS_SET_CTX(h->ts);
 	}
 	h->ops = ops;
-	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL TSRMLS_CC);
+	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL);
 
 	if (h->ops->init) {
 		if (!(h = h->ops->init(h, init_arg))) {
@@ -152,11 +153,11 @@ static void detach(void *r, void *h TSRMLS_DC)
 
 PHP_HTTP_API void php_http_request_datashare_reset(php_http_request_datashare_t *h)
 {
+	TSRMLS_FETCH_FROM_CTX(h->ts);
+
 	if (h->ops->reset) {
 		h->ops->reset(h);
 	} else if (h->ops->detach) {
-		TSRMLS_FETCH_FROM_CTX(h->ts);
-
 		zend_llist_apply_with_argument(PHP_HTTP_REQUEST_DATASHARE_REQUESTS(h), detach, h TSRMLS_CC);
 	}
 
@@ -237,7 +238,7 @@ void php_http_request_datashare_object_free(void *object TSRMLS_DC)
 	if (!o->share->persistent) {
 		php_http_request_datashare_free(&o->share);
 	}
-	zend_object_std_dtor((zend_object *) o);
+	zend_object_std_dtor((zend_object *) o TSRMLS_CC);
 	efree(o);
 }
 
