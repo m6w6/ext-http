@@ -19,9 +19,9 @@ Extended HTTP support. Again.
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2011-06-02</date>
+ <date>2011-06-14</date>
  <version>
-  <release>2.0.0dev1</release>
+  <release>2.0.0dev2</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -62,8 +62,8 @@ List of changes (TBD):
    <file role="src" name="php_http_encoding.h"/>
    <file role="src" name="php_http_env.c"/>
    <file role="src" name="php_http_env.h"/>
-   <file role="src" name="php_http_enc_response.c"/>
-   <file role="src" name="php_http_enc_response.h"/>
+   <file role="src" name="php_http_env_response.c"/>
+   <file role="src" name="php_http_env_response.h"/>
    <file role="src" name="php_http_etag.c"/>
    <file role="src" name="php_http_etag.h"/>
    <file role="src" name="php_http_exception.c"/>
