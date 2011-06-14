@@ -978,7 +978,7 @@ PHP_METHOD(HttpRequest, setQueryData)
 			char *query_data_str = NULL;
 			size_t query_data_len;
 
-			if (SUCCESS == php_http_url_encode_hash(HASH_OF(qdata), 0, NULL, 0, &query_data_str, &query_data_len TSRMLS_CC)) {
+			if (SUCCESS == php_http_url_encode_hash(HASH_OF(qdata), NULL, 0, &query_data_str, &query_data_len TSRMLS_CC)) {
 				zend_update_property_stringl(php_http_request_class_entry, getThis(), ZEND_STRL("queryData"), query_data_str, query_data_len TSRMLS_CC);
 				efree(query_data_str);
 			}
@@ -1009,7 +1009,7 @@ PHP_METHOD(HttpRequest, addQueryData)
 		size_t query_data_len = 0;
 		zval *old_qdata = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("queryData"), 0 TSRMLS_CC);
 
-		if (SUCCESS == php_http_url_encode_hash(HASH_OF(qdata), 1, Z_STRVAL_P(old_qdata), Z_STRLEN_P(old_qdata), &query_data_str, &query_data_len TSRMLS_CC)) {
+		if (SUCCESS == php_http_url_encode_hash(HASH_OF(qdata), Z_STRVAL_P(old_qdata), Z_STRLEN_P(old_qdata), &query_data_str, &query_data_len TSRMLS_CC)) {
 			zend_update_property_stringl(php_http_request_class_entry, getThis(), ZEND_STRL("queryData"), query_data_str, query_data_len TSRMLS_CC);
 			efree(query_data_str);
 		}

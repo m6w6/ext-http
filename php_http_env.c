@@ -593,6 +593,11 @@ PHP_HTTP_BEGIN_ARGS(persistentHandlesIdent, 0)
 	PHP_HTTP_ARG_VAL(name, 0)
 PHP_HTTP_END_ARGS;
 
+PHP_HTTP_BEGIN_ARGS(parseParams, 1)
+	PHP_HTTP_ARG_VAL(params, 0)
+	PHP_HTTP_ARG_VAL(flags, 0)
+PHP_HTTP_END_ARGS;
+
 zend_function_entry php_http_env_method_entry[] = {
 	PHP_HTTP_ENV_ME(getRequestHeader)
 	PHP_HTTP_ENV_ME(getRequestBody)
@@ -611,6 +616,8 @@ zend_function_entry php_http_env_method_entry[] = {
 
 	PHP_HTTP_ENV_ME(persistentHandlesStat)
 	PHP_HTTP_ENV_ME(persistentHandlesClean)
+
+	PHP_HTTP_ENV_ME(parseParams)
 
 	EMPTY_FUNCTION_ENTRY
 };
@@ -865,6 +872,23 @@ PHP_METHOD(HttpEnv, persistentHandlesClean)
 	}
 }
 
+PHP_METHOD(HttpEnv, parseParams)
+{
+	char *param_str;
+	int param_len;
+	long flags = PHP_HTTP_PARAMS_DEFAULT;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &param_str, &param_len, &flags)) {
+		RETURN_FALSE;
+	}
+
+	array_init(return_value);
+	if (SUCCESS != php_http_params_parse(param_str, flags, php_http_params_parse_default_func, Z_ARRVAL_P(return_value) TSRMLS_CC)) {
+		zval_dtor(return_value);
+		RETURN_FALSE;
+	}
+}
+
 zend_class_entry *php_http_env_request_class_entry;
 
 #undef PHP_HTTP_BEGIN_ARGS
@@ -897,6 +921,13 @@ PHP_METHOD(HttpEnvRequest, __construct)
 PHP_MINIT_FUNCTION(http_env)
 {
 	PHP_HTTP_REGISTER_CLASS(http, Env, http_env, NULL, 0);
+
+	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_ALLOW_COMMA"), PHP_HTTP_PARAMS_ALLOW_COMMA TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_ALLOW_FAILURE"), PHP_HTTP_PARAMS_ALLOW_FAILURE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_RAISE_ERROR"), PHP_HTTP_PARAMS_RAISE_ERROR TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_DEFAULT"), PHP_HTTP_PARAMS_DEFAULT TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_COLON_SEPARATOR"), PHP_HTTP_PARAMS_COLON_SEPARATOR TSRMLS_CC);
+
 	PHP_HTTP_REGISTER_CLASS(http\\env, Request, http_env_request, php_http_message_class_entry, 0);
 
 	return SUCCESS;

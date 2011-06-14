@@ -119,12 +119,6 @@ zend_php_http_globals *php_http_globals(void)
 }
 #endif
 #endif
-PHP_INI_MH(http_update_persistent_handle_ident)
-{
-	PHP_HTTP_G->persistent_handle.ident.h = zend_hash_func(new_value, PHP_HTTP_G->persistent_handle.ident.l = new_value_length+1);
-	return OnUpdateString(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
-}
-
 PHP_INI_BEGIN()
 	PHP_HTTP_INI_ENTRY("http.etag.mode", "md5", PHP_INI_ALL, OnUpdateString, env.etag_mode)
 	PHP_HTTP_INI_ENTRY("http.request_datashare.cookie", "0", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.cookie)
@@ -132,7 +126,6 @@ PHP_INI_BEGIN()
 	PHP_HTTP_INI_ENTRY("http.request_datashare.ssl", "0", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.ssl)
 	PHP_HTTP_INI_ENTRY("http.request_datashare.connect", "0", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.connect)
 	PHP_HTTP_INI_ENTRY("http.persistent_handle.limit", "-1", PHP_INI_SYSTEM, OnUpdateLong, persistent_handle.limit)
-	PHP_HTTP_INI_ENTRY("http.persistent_handle.ident", "GLOBAL", PHP_INI_ALL, http_update_persistent_handle_ident, persistent_handle.ident.s)
 PHP_INI_END()
 
 PHP_MINIT_FUNCTION(http)

@@ -325,33 +325,30 @@ PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url 
 	}
 }
 
-PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, zend_bool override_argsep,	char *pre_encoded_data, size_t pre_encoded_len,	char **encoded_data, size_t *encoded_len TSRMLS_DC)
+PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC)
 {
-	char *arg_sep;
+	const char *arg_sep_str;
 	size_t arg_sep_len;
 	php_http_buffer_t *qstr = php_http_buffer_new();
 
-	if (override_argsep || !(arg_sep_len = strlen(arg_sep = INI_STR("arg_separator.output")))) {
-		arg_sep = PHP_HTTP_URL_ARGSEP;
-		arg_sep_len = lenof(PHP_HTTP_URL_ARGSEP);
+	php_http_url_argsep(&arg_sep_str, &arg_sep_len TSRMLS_CC);
+
+	if (pre_encoded_len && pre_encoded_str) {
+		php_http_buffer_append(qstr, pre_encoded_str, pre_encoded_len);
 	}
 
-	if (pre_encoded_len && pre_encoded_data) {
-		php_http_buffer_append(qstr, pre_encoded_data, pre_encoded_len);
-	}
-
-	if (SUCCESS != php_http_url_encode_hash_recursive(hash, qstr, arg_sep, arg_sep_len, NULL, 0 TSRMLS_CC)) {
+	if (SUCCESS != php_http_url_encode_hash_ex(hash, qstr, arg_sep_str, arg_sep_len, ZEND_STRS("="), NULL, 0 TSRMLS_CC)) {
 		php_http_buffer_free(&qstr);
 		return FAILURE;
 	}
 
-	php_http_buffer_data(qstr, encoded_data, encoded_len);
+	php_http_buffer_data(qstr, encoded_str, encoded_len);
 	php_http_buffer_free(&qstr);
 
 	return SUCCESS;
 }
 
-PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_buffer_t *str, const char *arg_sep, size_t arg_sep_len, const char *prefix, size_t prefix_len TSRMLS_DC)
+PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *ht, php_http_buffer_t *str, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *prefix_str, size_t prefix_len TSRMLS_DC)
 {
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 	zval **data = NULL;
@@ -390,15 +387,15 @@ PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_b
 		
 		{
 			php_http_buffer_init(&new_prefix);
-			if (prefix && prefix_len) {
-				php_http_buffer_append(&new_prefix, prefix, prefix_len);
+			if (prefix_str && prefix_len) {
+				php_http_buffer_append(&new_prefix, prefix_str, prefix_len);
 				php_http_buffer_appends(&new_prefix, "%5B");
 			}
 			
 			php_http_buffer_append(&new_prefix, encoded_key, encoded_len);
 			efree(encoded_key);
 			
-			if (prefix && prefix_len) {
+			if (prefix_str && prefix_len) {
 				php_http_buffer_appends(&new_prefix, "%5D");
 			}
 			php_http_buffer_fix(&new_prefix);
@@ -407,7 +404,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_b
 		if (Z_TYPE_PP(data) == IS_ARRAY || Z_TYPE_PP(data) == IS_OBJECT) {
 			STATUS status;
 			++ht->nApplyCount;
-			status = php_http_url_encode_hash_recursive(HASH_OF(*data), str, arg_sep, arg_sep_len, PHP_HTTP_BUFFER_VAL(&new_prefix), PHP_HTTP_BUFFER_LEN(&new_prefix) TSRMLS_CC);
+			status = php_http_url_encode_hash_ex(HASH_OF(*data), str, arg_sep_str, arg_sep_len, val_sep_str, val_sep_len, PHP_HTTP_BUFFER_VAL(&new_prefix), PHP_HTTP_BUFFER_LEN(&new_prefix) TSRMLS_CC);
 			--ht->nApplyCount;
 			if (SUCCESS != status) {
 				php_http_buffer_dtor(&new_prefix);
@@ -418,10 +415,10 @@ PHP_HTTP_API STATUS php_http_url_encode_hash_recursive(HashTable *ht, php_http_b
 			zval *val = php_http_ztyp(IS_STRING, *data);
 			
 			if (PHP_HTTP_BUFFER_LEN(str)) {
-				php_http_buffer_append(str, arg_sep, arg_sep_len);
+				php_http_buffer_append(str, arg_sep_str, arg_sep_len);
 			}
 			php_http_buffer_append(str, PHP_HTTP_BUFFER_VAL(&new_prefix), PHP_HTTP_BUFFER_LEN(&new_prefix));
-			php_http_buffer_appends(str, "=");
+			php_http_buffer_append(str, val_sep_str, val_sep_len);
 			
 			if (Z_STRLEN_P(val) && Z_STRVAL_P(val)) {
 				char *encoded_val;

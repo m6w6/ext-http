@@ -863,7 +863,7 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 			zval *urlenc_cookies = NULL;
 			/* check whether cookies should not be urlencoded; default is to urlencode them */
 			if ((!(urlenc_cookies = get_option(&curl->options.cache, options, ZEND_STRS("encodecookies"), IS_BOOL))) || Z_BVAL_P(urlenc_cookies)) {
-				if (SUCCESS == php_http_url_encode_hash_recursive(HASH_OF(zoption), &curl->options.cookies, "; ", lenof("; "), NULL, 0 TSRMLS_CC)) {
+				if (SUCCESS == php_http_url_encode_hash_ex(HASH_OF(zoption), &curl->options.cookies, ZEND_STRS(";"), ZEND_STRS("="), NULL, 0 TSRMLS_CC)) {
 					php_http_buffer_fix(&curl->options.cookies);
 					curl_easy_setopt(ch, CURLOPT_COOKIE, curl->options.cookies.data);
 				}

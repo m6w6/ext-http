@@ -425,7 +425,7 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 
 			/* check whether cookies should not be urlencoded; default is to urlencode them */
 			if ((!(urlenc_cookies = get_option(&neon->options.cache, options, ZEND_STRS("encodecookies"), IS_BOOL))) || Z_BVAL_P(urlenc_cookies)) {
-				php_http_url_encode_hash_recursive(HASH_OF(zoption), &neon->options.headers, "; ", lenof("; "), NULL, 0 TSRMLS_CC);
+				php_http_url_encode_hash_ex(HASH_OF(zoption), &neon->options.headers, ZEND_STRS("; "), ZEND_STRS("="), NULL, 0 TSRMLS_CC);
 			} else {
 				HashPosition pos;
 				php_http_array_hashkey_t cookie_key = php_http_array_hashkey_init(0);

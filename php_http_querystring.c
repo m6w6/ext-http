@@ -181,7 +181,7 @@ PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval
 		char *s;
 		size_t l;
 
-		if (SUCCESS == php_http_url_encode_hash(Z_ARRVAL_P(qarray), 0, NULL, 0, &s, &l TSRMLS_CC)) {
+		if (SUCCESS == php_http_url_encode_hash(Z_ARRVAL_P(qarray), NULL, 0, &s, &l TSRMLS_CC)) {
 			zval_dtor(outstring);
 			ZVAL_STRINGL(outstring, s, l, 0);
 		} else {
