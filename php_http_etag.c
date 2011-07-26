@@ -1,5 +1,6 @@
 #include "php_http.h"
 
+
 #ifdef PHP_HTTP_HAVE_HASH
 #	include "php_hash.h"
 #endif
@@ -48,7 +49,7 @@ PHP_HTTP_API char *php_http_etag_finish(php_http_etag_t *e)
 #ifdef PHP_HTTP_HAVE_HASH
 	const php_hash_ops *eho = NULL;
 
-	if (mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
+	if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
 		eho->hash_final(digest, e->ctx);
 		etag = php_http_etag_digest(digest, eho->digest_size);
 	} else
