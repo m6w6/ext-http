@@ -76,7 +76,7 @@ PHP_HTTP_API size_t php_http_etag_update(php_http_etag_t *e, const char *data_pt
 #ifdef PHP_HTTP_HAVE_HASH
 	const php_hash_ops *eho = NULL;
 
-	if (mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
+	if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
 		eho->hash_update(e->ctx, (const unsigned char *) data_ptr, data_len);
 	} else
 #endif
