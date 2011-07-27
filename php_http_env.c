@@ -589,10 +589,6 @@ PHP_HTTP_BEGIN_ARGS(persistentHandlesClean, 0)
 	PHP_HTTP_ARG_VAL(ident, 0)
 PHP_HTTP_END_ARGS;
 
-PHP_HTTP_BEGIN_ARGS(persistentHandlesIdent, 0)
-	PHP_HTTP_ARG_VAL(name, 0)
-PHP_HTTP_END_ARGS;
-
 PHP_HTTP_BEGIN_ARGS(parseParams, 1)
 	PHP_HTTP_ARG_VAL(params, 0)
 	PHP_HTTP_ARG_VAL(flags, 0)

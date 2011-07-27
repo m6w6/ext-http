@@ -129,6 +129,7 @@ PHP_HTTP_API STATUS	php_http_params_parse(const char *param, int flags, php_http
 						if (flags & PHP_HTTP_PARAMS_ALLOW_COMMA) {
 							goto add;
 						}
+						/* fallthrough */
 					default:
 						if (!val) {
 							val = c;
@@ -143,6 +144,7 @@ PHP_HTTP_API STATUS	php_http_params_parse(const char *param, int flags, php_http
 						if (flags & PHP_HTTP_PARAMS_ALLOW_COMMA) {
 							goto allow_comma;
 						}
+						/* fallthrough */
 					case '\r':
 					case '\n':
 					case '\t':

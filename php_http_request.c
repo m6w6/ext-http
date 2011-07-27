@@ -213,9 +213,7 @@ PHP_HTTP_BEGIN_ARGS(setMessageClass, 1)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(getResponseMessage);
-PHP_HTTP_EMPTY_ARGS(getRawResponseMessage);
 PHP_HTTP_EMPTY_ARGS(getRequestMessage);
-PHP_HTTP_EMPTY_ARGS(getRawRequestMessage);
 PHP_HTTP_EMPTY_ARGS(getHistory);
 PHP_HTTP_EMPTY_ARGS(clearHistory);
 PHP_HTTP_EMPTY_ARGS(send);

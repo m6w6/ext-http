@@ -382,8 +382,9 @@ PHP_HTTP_API php_http_message_t *php_http_message_reverse(php_http_message_t *ms
 	php_http_message_count(c, msg);
 	
 	if (c > 1) {
-		php_http_message_t *tmp = msg, **arr = ecalloc(c, sizeof(**arr));
-		
+		php_http_message_t *tmp = msg, **arr;
+
+		arr = ecalloc(c, sizeof(**arr));
 		for (i = 0; i < c; ++i) {
 			arr[i] = tmp;
 			tmp = tmp->parent;
@@ -709,19 +710,11 @@ PHP_HTTP_BEGIN_ARGS(setHttpVersion, 1)
 	PHP_HTTP_ARG_VAL(http_version, 0)
 PHP_HTTP_END_ARGS;
 
-PHP_HTTP_BEGIN_ARGS(guessContentType, 1)
-	PHP_HTTP_ARG_VAL(magic_file, 0)
-	PHP_HTTP_ARG_VAL(magic_mode, 0)
-PHP_HTTP_END_ARGS;
-
 PHP_HTTP_EMPTY_ARGS(getParentMessage);
-PHP_HTTP_EMPTY_ARGS(send);
 PHP_HTTP_EMPTY_ARGS(__toString);
 PHP_HTTP_BEGIN_ARGS(toString, 0)
 	PHP_HTTP_ARG_VAL(include_parent, 0)
 PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(toMessageTypeObject);
 
 PHP_HTTP_EMPTY_ARGS(count);
 
@@ -811,9 +804,11 @@ static STATUS php_http_message_object_add_prophandler(const char *prop_str, size
 	php_http_message_object_prophandler_t h = { read, write };
 	return zend_hash_add(&php_http_message_object_prophandlers, prop_str, prop_len + 1, (void *) &h, sizeof(h), NULL);
 }
+/*
 static int php_http_message_object_has_prophandler(const char *prop_str, size_t prop_len) {
 	return zend_hash_exists(&php_http_message_object_prophandlers, prop_str, prop_len + 1);
 }
+*/
 static STATUS php_http_message_object_get_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_t **handler) {
 	return zend_hash_find(&php_http_message_object_prophandlers, prop_str, prop_len + 1, (void *) handler);
 }

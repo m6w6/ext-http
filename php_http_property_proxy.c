@@ -149,6 +149,7 @@ static void php_http_property_proxy_object_write_dimension(zval *object, zval *o
 	switch (Z_TYPE_P(property)) {
 		case IS_NULL:
 			array_init(property);
+			/* fallthrough */
 		case IS_ARRAY:
 			Z_ADDREF_P(value);
 			if (!offset) {

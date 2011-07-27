@@ -222,6 +222,7 @@ retry_raw_inflate:
 					wbits = PHP_HTTP_WINDOW_BITS_RAW;
 					goto retry_raw_inflate;
 				}
+				break;
 		}
 		inflateEnd(&Z);
 
@@ -509,6 +510,7 @@ retry_raw_inflate:
 				inflateInit2(ctx, PHP_HTTP_WINDOW_BITS_RAW);
 				goto retry_raw_inflate;
 			}
+			break;
 	}
 	
 	php_http_error(HE_WARNING, PHP_HTTP_E_ENCODING, "Failed to update inflate stream: %s", zError(status));

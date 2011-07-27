@@ -392,6 +392,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 				switch (Z_LVAL_P(zdisposition_copy)) {
 					case PHP_HTTP_CONTENT_DISPOSITION_NONE:
 						ret = php_http_env_set_response_header_value(0, ZEND_STRL("Content-Disposition"), NULL, 1 TSRMLS_CC);
+						break;
 					case PHP_HTTP_CONTENT_DISPOSITION_INLINE:
 						tmp = "inline";
 						break;
@@ -496,6 +497,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 				if (PHP_HTTP_CACHE_HIT != php_http_env_is_response_cached_by_last_modified(options, ZEND_STRL("If-Modified-Since") TSRMLS_CC)) {
 					break;
 				}
+				/*  fallthrough */
 
 			case PHP_HTTP_CACHE_HIT:
 				ret = php_http_env_set_response_code(304 TSRMLS_CC);
@@ -664,6 +666,8 @@ PHP_HTTP_API STATUS php_http_env_response_send(php_http_env_response_t *r)
 						}
 						break;
 					}
+
+					break;
 			}
 		}
 	} else if (zbody) {
