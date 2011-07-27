@@ -434,7 +434,6 @@ dnl ----
 		php_http_etag.c \
 		php_http_exception.c \
 		php_http_filter.c \
-		php_http_fluently_callable.c \
 		php_http_headers.c \
 		php_http_header_parser.c \
 		php_http_info.c \
@@ -478,7 +477,6 @@ dnl ----
 		php_http_etag.h \
 		php_http_exception.h \
 		php_http_filter.h \
-		php_http_fluently_callable.h \
 		php_http_headers.h \
 		php_http_header_parser.h \
 		php_http_info.h \

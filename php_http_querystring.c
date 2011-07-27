@@ -302,7 +302,7 @@ PHP_MINIT_FUNCTION(http_querystring)
 {
 	PHP_HTTP_REGISTER_CLASS(http, QueryString, http_querystring, php_http_object_class_entry, 0);
 	
-	zend_class_implements(php_http_querystring_class_entry TSRMLS_CC, 4, php_http_fluently_callable_class_entry, zend_ce_serializable, zend_ce_arrayaccess, zend_ce_aggregate);
+	zend_class_implements(php_http_querystring_class_entry TSRMLS_CC, 3, zend_ce_serializable, zend_ce_arrayaccess, zend_ce_aggregate);
 	
 	zend_declare_property_null(php_http_querystring_class_entry, ZEND_STRL("instance"), (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
 	zend_declare_property_null(php_http_querystring_class_entry, ZEND_STRL("queryArray"), ZEND_ACC_PRIVATE TSRMLS_CC);

@@ -948,7 +948,7 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_object_handlers.get_properties = php_http_message_object_get_props;
 	php_http_message_object_handlers.get_property_ptr_ptr = php_http_message_object_get_prop_ptr;
 
-	zend_class_implements(php_http_message_class_entry TSRMLS_CC, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator, php_http_fluently_callable_class_entry);
+	zend_class_implements(php_http_message_class_entry TSRMLS_CC, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
 
 	zend_hash_init(&php_http_message_object_prophandlers, 9, NULL, NULL, 1);
 	zend_declare_property_long(php_http_message_class_entry, ZEND_STRL("type"), PHP_HTTP_NONE, ZEND_ACC_PROTECTED TSRMLS_CC);

@@ -1289,7 +1289,7 @@ PHP_MINIT_FUNCTION(http_request)
 	memcpy(&php_http_request_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_request_object_handlers.clone_obj = php_http_request_object_clone;
 
-	zend_class_implements(php_http_request_class_entry TSRMLS_CC, 2, spl_ce_SplSubject, php_http_fluently_callable_class_entry);
+	zend_class_implements(php_http_request_class_entry TSRMLS_CC, 1, spl_ce_SplSubject);
 
 	zend_declare_property_null(php_http_request_class_entry, ZEND_STRL("observers"), ZEND_ACC_PRIVATE TSRMLS_CC);
 	zend_declare_property_null(php_http_request_class_entry, ZEND_STRL("options"), ZEND_ACC_PRIVATE TSRMLS_CC);

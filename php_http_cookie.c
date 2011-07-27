@@ -933,7 +933,6 @@ PHP_METHOD(HttpCookie, toArray)
 PHP_MINIT_FUNCTION(http_cookie)
 {
 	PHP_HTTP_REGISTER_CLASS(http, Cookie, http_cookie, php_http_object_class_entry, 0);
-	zend_class_implements(php_http_cookie_class_entry TSRMLS_CC, 1, php_http_fluently_callable_class_entry);
 	php_http_cookie_class_entry->create_object = php_http_cookie_object_new;
 	memcpy(&php_http_cookie_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_cookie_object_handlers.clone_obj = php_http_cookie_object_clone;
