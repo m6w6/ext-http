@@ -50,13 +50,19 @@ PHP_HTTP_BEGIN_ARGS(__construct, 1)
 	PHP_HTTP_ARG_VAL(options, 0)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_BEGIN_ARGS(createRequest, 0)
-	PHP_HTTP_ARG_VAL(persistentHandle, 0)
+	PHP_HTTP_ARG_VAL(url, 0)
+	PHP_HTTP_ARG_VAL(method, 0)
+	PHP_HTTP_ARG_VAL(options, 0)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_BEGIN_ARGS(createPool, 0)
-	PHP_HTTP_ARG_VAL(persistentHandle, 0)
+	PHP_HTTP_ARG_OBJ(http\\Request, request1, 1)
+	PHP_HTTP_ARG_OBJ(http\\Request, request2, 1)
+	PHP_HTTP_ARG_OBJ(http\\Request, requestN, 1)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_BEGIN_ARGS(createDataShare, 0)
-	PHP_HTTP_ARG_VAL(persistentHandle, 0)
+	PHP_HTTP_ARG_OBJ(http\\Request, request1, 1)
+	PHP_HTTP_ARG_OBJ(http\\Request, request2, 1)
+	PHP_HTTP_ARG_OBJ(http\\Request, requestN, 1)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_EMPTY_ARGS(getGlobalDataShareInstance);
 PHP_HTTP_EMPTY_ARGS(getDriver);
