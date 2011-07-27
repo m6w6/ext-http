@@ -346,7 +346,7 @@ PHP_METHOD(HttpRequestDataShare, reset)
 
 PHP_MINIT_FUNCTION(http_request_datashare)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\request, DataShare, http_request_datashare, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Request, DataShare, http_request_datashare, php_http_object_class_entry, 0);
 	php_http_request_datashare_class_entry->create_object = php_http_request_datashare_object_new;
 	memcpy(&php_http_request_datashare_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_request_datashare_object_handlers.clone_obj = NULL;

@@ -382,7 +382,7 @@ PHP_MINIT_FUNCTION(http_request_factory)
 {
 	zend_hash_init(&php_http_request_factory_drivers, 0, NULL, NULL, 1);
 
-	PHP_HTTP_REGISTER_CLASS(http\\request, Factory, http_request_factory, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Request, Factory, http_request_factory, php_http_object_class_entry, 0);
 	php_http_request_factory_class_entry->create_object = php_http_request_factory_new;
 
 	zend_declare_property_stringl(php_http_request_factory_class_entry, ZEND_STRL("driver"), ZEND_STRL("curl"), ZEND_ACC_PROTECTED TSRMLS_CC);

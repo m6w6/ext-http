@@ -188,11 +188,11 @@ PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(getBody);
 PHP_HTTP_BEGIN_ARGS(setBody, 0)
-	PHP_HTTP_ARG_OBJ(http\\message\\Body, body, 0)
+	PHP_HTTP_ARG_OBJ(http\\Message\\Body, body, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(addBody, 1)
-	PHP_HTTP_ARG_OBJ(http\\message\\Body, body, 0)
+	PHP_HTTP_ARG_OBJ(http\\Message\\Body, body, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(getResponseCookies, 0)

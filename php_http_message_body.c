@@ -435,7 +435,7 @@ static zend_object_handlers php_http_message_body_object_handlers;
 
 PHP_MINIT_FUNCTION(http_message_body)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\message, Body, http_message_body, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Message, Body, http_message_body, php_http_object_class_entry, 0);
 	php_http_message_body_class_entry->create_object = php_http_message_body_object_new;
 	memcpy(&php_http_message_body_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_message_body_object_handlers.clone_obj = php_http_message_body_object_clone;

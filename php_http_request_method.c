@@ -204,7 +204,7 @@ PHP_MINIT_FUNCTION(http_request_method)
 {
 	php_http_strlist_iterator_t std;
 
-	PHP_HTTP_REGISTER_CLASS(http\\request, Method, http_request_method, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Request, Method, http_request_method, php_http_object_class_entry, 0);
 
 	zend_declare_property_null(php_http_request_method_class_entry, ZEND_STRL("name"), ZEND_ACC_PROTECTED TSRMLS_CC);
 

@@ -893,7 +893,7 @@ PHP_METHOD(HttpEnvResponse, send)
 
 PHP_MINIT_FUNCTION(http_env_response)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\env, Response, http_env_response, php_http_message_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Env, Response, http_env_response, php_http_message_class_entry, 0);
 
 	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CONTENT_DISPOSITION_NONE"), PHP_HTTP_CONTENT_DISPOSITION_NONE TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CONTENT_DISPOSITION_INLINE"), PHP_HTTP_CONTENT_DISPOSITION_INLINE TSRMLS_CC);

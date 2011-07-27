@@ -928,7 +928,7 @@ PHP_MINIT_FUNCTION(http_env)
 	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_DEFAULT"), PHP_HTTP_PARAMS_DEFAULT TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_COLON_SEPARATOR"), PHP_HTTP_PARAMS_COLON_SEPARATOR TSRMLS_CC);
 
-	PHP_HTTP_REGISTER_CLASS(http\\env, Request, http_env_request, php_http_message_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Env, Request, http_env_request, php_http_message_class_entry, 0);
 
 	return SUCCESS;
 }

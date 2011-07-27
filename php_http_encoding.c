@@ -1161,7 +1161,7 @@ PHP_METHOD(HttpDechunkStream, decode)
 
 PHP_MINIT_FUNCTION(http_encoding)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\encoding, Stream, http_encoding_stream, php_http_object_class_entry, ZEND_ACC_EXPLICIT_ABSTRACT_CLASS);
+	PHP_HTTP_REGISTER_CLASS(http\\Encoding, Stream, http_encoding_stream, php_http_object_class_entry, ZEND_ACC_EXPLICIT_ABSTRACT_CLASS);
 	php_http_encoding_stream_class_entry->create_object = php_http_encoding_stream_object_new;
 	memcpy(&php_http_encoding_stream_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_encoding_stream_object_handlers.clone_obj = php_http_encoding_stream_object_clone;
@@ -1170,7 +1170,7 @@ PHP_MINIT_FUNCTION(http_encoding)
 	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_SYNC"), PHP_HTTP_ENCODING_STREAM_FLUSH_SYNC TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_FULL"), PHP_HTTP_ENCODING_STREAM_FLUSH_FULL TSRMLS_CC);
 
-	PHP_HTTP_REGISTER_CLASS(http\\encoding\\stream, Deflate, http_deflate_stream, php_http_encoding_stream_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Encoding\\Stream, Deflate, http_deflate_stream, php_http_encoding_stream_class_entry, 0);
 
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_GZIP"), PHP_HTTP_DEFLATE_TYPE_GZIP TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_ZLIB"), PHP_HTTP_DEFLATE_TYPE_ZLIB TSRMLS_CC);
@@ -1184,8 +1184,8 @@ PHP_MINIT_FUNCTION(http_encoding)
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_RLE"), PHP_HTTP_DEFLATE_STRATEGY_RLE TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_FIXED"), PHP_HTTP_DEFLATE_STRATEGY_FIXED TSRMLS_CC);
 
-	PHP_HTTP_REGISTER_CLASS(http\\encoding\\stream, Inflate, http_inflate_stream, php_http_encoding_stream_class_entry, 0);
-	PHP_HTTP_REGISTER_CLASS(http\\encoding\\stream, Dechunk, http_dechunk_stream, php_http_encoding_stream_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Encoding\\Stream, Inflate, http_inflate_stream, php_http_encoding_stream_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Encoding\\Stream, Dechunk, http_dechunk_stream, php_http_encoding_stream_class_entry, 0);
 
 	return SUCCESS;
 }
