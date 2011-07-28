@@ -1,3 +1,15 @@
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
+*/
+
 #ifndef PHP_HTTP_HEADER_PARSER_H
 #define PHP_HTTP_HEADER_PARSER_H
 
@@ -39,3 +51,13 @@ PHP_HTTP_API void php_http_header_parser_free(php_http_header_parser_t **parser)
 PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg);
 
 #endif /* PHP_HTTP_HEADER_PARSER_H */
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+

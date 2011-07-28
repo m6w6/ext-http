@@ -1,5 +1,19 @@
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
+*/
 
 #include "php_http.h"
+
+#if PHP_HTTP_HAVE_NEON
+
 #include "php_http_request.h"
 
 #include <ext/date/php_date.h>
@@ -894,3 +908,15 @@ PHP_MSHUTDOWN_FUNCTION(http_neon)
 	ne_sock_exit();
 	return SUCCESS;
 }
+
+#endif
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+

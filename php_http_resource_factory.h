@@ -6,11 +6,9 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2010, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef PHP_HTTP_RESOURCE_FACTORY_H
 #define PHP_HTTP_RESOURCE_FACTORY_H

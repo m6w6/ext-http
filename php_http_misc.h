@@ -6,11 +6,9 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2010, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
-
-/* $Id: php_http_api.h 298891 2010-05-03 08:26:38Z mike $ */
 
 #ifndef PHP_HTTP_MISC_H
 #define PHP_HTTP_MISC_H

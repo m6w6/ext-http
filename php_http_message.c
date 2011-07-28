@@ -6,11 +6,9 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2010, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
-
-/* $Id: http_message_api.c 298689 2010-04-28 06:50:06Z mike $ */
 
 #include "php_http.h"
 

@@ -6,23 +6,24 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2010, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
-
-/* $Id: http.c 300300 2010-06-09 07:29:35Z mike $ */
 
 #include "php_http.h"
 
 #include <zlib.h>
-#ifdef PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_CURL
 #	include <curl/curl.h>
-#	ifdef PHP_HTTP_HAVE_EVENT
+#	if PHP_HTTP_HAVE_EVENT
 #		include <event.h>
 #	endif
 #endif
-#ifdef PHP_HTTP_HAVE_NEON
+#if PHP_HTTP_HAVE_NEON
 #	include "neon/ne_utils.h"
+#endif
+#if PHP_HTTP_HAVE_SERF
+#	include "serf.h"
 #endif
 
 #include <main/php_ini.h>
@@ -47,13 +48,13 @@ PHP_MINFO_FUNCTION(http);
 
 static zend_module_dep http_module_deps[] = {
 	ZEND_MOD_REQUIRED("spl")
-#ifdef PHP_HTTP_HAVE_HASH
+#if PHP_HTTP_HAVE_HASH
 	ZEND_MOD_REQUIRED("hash")
 #endif
-#ifdef PHP_HTTP_HAVE_ICONV
+#if PHP_HTTP_HAVE_ICONV
 	ZEND_MOD_REQUIRED("iconv")
 #endif
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 	ZEND_MOD_CONFLICTS("event")
 #endif
 	{NULL, NULL, NULL, 0}
@@ -147,8 +148,12 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_querystring)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_factory)
 	|| SUCCESS != PHP_MINIT_CALL(http_request)
+#if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_MINIT_CALL(http_curl)
+#endif
+#if PHP_HTTP_HAVE_NEON
 	|| SUCCESS != PHP_MINIT_CALL(http_neon)
+#endif
 	|| SUCCESS != PHP_MINIT_CALL(http_request_datashare)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_method)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_pool)
@@ -170,8 +175,12 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	
 	if (0
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_message)
+#if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
+#endif
+#if PHP_HTTP_HAVE_NEON
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_neon)
+#endif
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_factory)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)
@@ -187,7 +196,9 @@ PHP_RINIT_FUNCTION(http)
 	if (0
 	|| SUCCESS != PHP_RINIT_CALL(http_env)
 	|| SUCCESS != PHP_RINIT_CALL(http_request_datashare)
+#if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_RINIT_CALL(http_curl)
+#endif
 	) {
 		return FAILURE;
 	}
@@ -217,7 +228,7 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_start();
 	php_info_print_table_header(3, "Used Library", "Compiled", "Linked");
 	php_info_print_table_row(3, "libz", ZLIB_VERSION, zlibVersion());
-#ifdef PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_CURL
 	{
 		curl_version_info_data *cv = curl_version_info(CURLVERSION_NOW);
 		php_info_print_table_row(3, "libcurl", LIBCURL_VERSION, cv->version);
@@ -225,7 +236,7 @@ PHP_MINFO_FUNCTION(http)
 #else
 	php_info_print_table_row(3, "libcurl", "disabled", "disabled");
 #endif
-#ifdef PHP_HTTP_HAVE_NEON
+#if PHP_HTTP_HAVE_NEON
 	{
 		char ne_v[16] = {0};
 		sscanf(ne_version_string(), "neon %15[^ :]", &ne_v[0]);
@@ -235,7 +246,7 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_row(3, "libneon", "disabled", "disabled");
 #endif
 
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 	php_info_print_table_row(3, "libevent", PHP_HTTP_EVENT_VERSION, event_get_version());
 #else
 	php_info_print_table_row(3, "libevent", "disabled", "disabled");

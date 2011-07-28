@@ -1,3 +1,14 @@
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
+*/
 
 #ifndef PHP_HTTP_MESSAGE_PARSER_H
 #define PHP_HTTP_MESSAGE_PARSER_H
@@ -44,3 +55,13 @@ PHP_HTTP_API void php_http_message_parser_free(php_http_message_parser_t **parse
 PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, php_http_message_t **message);
 
 #endif
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+

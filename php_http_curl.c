@@ -1,12 +1,26 @@
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
+*/
 
 #include "php_http.h"
+
+#if PHP_HTTP_HAVE_CURL
+
 #include "php_http_request.h"
 #include "php_http_request_pool.h"
 
 #include <curl/curl.h>
 #define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
 
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 #	include <event.h>
 #endif
 
@@ -47,7 +61,7 @@ typedef struct php_http_curl_request_pool {
 
 	int unfinished;  /* int because of curl_multi_perform() */
 
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 	struct event *timeout;
 	unsigned useevents:1;
 	unsigned runsocket:1;
@@ -395,7 +409,7 @@ static void php_http_curl_request_pool_responsehandler(php_http_request_pool_t *
 }
 
 
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 
 typedef struct php_http_request_pool_event {
 	struct event evnt;
@@ -1340,7 +1354,7 @@ static void php_http_curl_request_pool_dtor(php_http_request_pool_t *h)
 	php_http_curl_request_pool_t *curl = h->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 	if (curl->timeout) {
 		efree(curl->timeout);
 		curl->timeout = NULL;
@@ -1403,7 +1417,7 @@ static STATUS php_http_curl_request_pool_wait(php_http_request_pool_t *h, struct
 	struct timeval timeout;
 	php_http_curl_request_pool_t *curl = h->ctx;
 
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
 		TSRMLS_FETCH_FROM_CTX(h->ts);
 
@@ -1444,10 +1458,10 @@ static STATUS php_http_curl_request_pool_wait(php_http_request_pool_t *h, struct
 static int php_http_curl_request_pool_once(php_http_request_pool_t *h)
 {
 	php_http_curl_request_pool_t *curl = h->ctx;
-	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
+		TSRMLS_FETCH_FROM_CTX(h->ts);
 		php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "not implemented");
 		return FAILURE;
 	}
@@ -1460,7 +1474,7 @@ static int php_http_curl_request_pool_once(php_http_request_pool_t *h)
 	return curl->unfinished;
 
 }
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 static void dolog(int i, const char *m) {
 	fprintf(stderr, "%d: %s\n", i, m);
 }
@@ -1469,7 +1483,7 @@ static STATUS php_http_curl_request_pool_exec(php_http_request_pool_t *h)
 {
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-#ifdef PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_EVENT
 	php_http_curl_request_pool_t *curl = h->ctx;
 
 	if (curl->useevents) {
@@ -2140,11 +2154,23 @@ PHP_MSHUTDOWN_FUNCTION(http_curl)
 
 PHP_RINIT_FUNCTION(http_curl)
 {
-#ifdef PHP_HTTP_HAVE_EVENT
-	if (!PHP_HTTP_G->request_pool.event_base && !(PHP_HTTP_G->request_pool.event_base = event_init())) {
+#if PHP_HTTP_HAVE_EVENT
+	if (!PHP_HTTP_G->curl.event_base && !(PHP_HTTP_G->curl.event_base = event_init())) {
 		return FAILURE;
 	}
 #endif
 
 	return SUCCESS;
 }
+
+#endif /* PHP_HTTP_HAVE_CURL */
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+

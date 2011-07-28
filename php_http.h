@@ -6,11 +6,9 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2010, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
-
-/* $Id: php_http.h 300300 2010-06-09 07:29:35Z mike $ */
 
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
@@ -118,8 +116,8 @@ ZEND_BEGIN_MODULE_GLOBALS(php_http)
 	struct php_http_env_globals env;
 	struct php_http_persistent_handle_globals persistent_handle;
 	struct php_http_request_datashare_globals request_datashare;
-#ifdef PHP_HTTP_HAVE_EVENT
-	struct php_http_request_pool_globals request_pool;
+#if PHP_HTTP_HAVE_CURL && PHP_HTTP_HAVE_EVENT
+	struct php_http_curl_globals curl;
 #endif
 ZEND_END_MODULE_GLOBALS(php_http)
 

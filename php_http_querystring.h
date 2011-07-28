@@ -6,23 +6,17 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2010, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
-/* $Id: php_http_querystring_api.h 292841 2009-12-31 08:48:57Z mike $ */
-
 #ifndef PHP_HTTP_QUERYSTRING_H
 #define PHP_HTTP_QUERYSTRING_H
-
-/* API */
 
 #ifdef PHP_HTTP_HAVE_ICONV
 PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe TSRMLS_DC);
 #endif /* PHP_HTTP_HAVE_ICONV */
 PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval *qstring TSRMLS_DC);
-
-/* PHP */
 
 typedef struct php_http_querystring_object {
 	zend_object zo;

@@ -1,8 +1,17 @@
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
+*/
 
-/* $Id: php_http_buffer_t.h 229282 2007-02-07 15:31:50Z mike $ */
-
-#ifndef _PHP_HTTP_BUFFER_H
-#define _PHP_HTTP_BUFFER_H
+#ifndef PHP_HTTP_BUFFER_H
+#define PHP_HTTP_BUFFER_H
 
 #ifndef PHP_HTTP_BUFFER_DEFAULT_SIZE
 #	define PHP_HTTP_BUFFER_DEFAULT_SIZE 256

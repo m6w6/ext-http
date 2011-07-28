@@ -6,18 +6,15 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2010, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
-
-/* $Id: php_http_request_api.c 298591 2010-04-26 11:46:55Z mike $ */
 
 #include "php_http.h"
 
 #include <ext/spl/spl_observer.h>
 #include <ext/spl/spl_iterators.h>
 #include <Zend/zend_interfaces.h>
-
 
 PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, php_http_request_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {

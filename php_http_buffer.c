@@ -1,5 +1,14 @@
-
-/* $Id: php_http_buffer_t.c 211942 2006-04-24 17:17:09Z mike $ */
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
+*/
 
 #include "php.h"
 #include "php_http_buffer.h"
