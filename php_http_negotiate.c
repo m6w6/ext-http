@@ -149,7 +149,7 @@ PHP_HTTP_API HashTable *php_http_negotiate(const char *value, HashTable *support
 
 				if ((selected = neg(identifier, &quality, supported TSRMLS_CC))) {
 					/* don't overwrite previously set with higher quality */
-					if (!zend_hash_exists(Z_ARRVAL(array), selected, strlen(selected) + 1)) {
+					if (!zend_symtable_exists(Z_ARRVAL(array), selected, strlen(selected) + 1)) {
 						add_assoc_double(&array, selected, quality);
 					}
 				}

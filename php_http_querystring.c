@@ -350,7 +350,7 @@ static inline void php_http_querystring_get(zval *this_ptr, int type, char *name
 {
 	zval **arrval, *qarray = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
 		
-	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_hash_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void *) &arrval))) {
+	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_symtable_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void *) &arrval))) {
 		if (type) {
 			zval *value = php_http_ztyp(type, *arrval);
 			RETVAL_ZVAL(value, 1, 1);
@@ -599,7 +599,7 @@ PHP_METHOD(HttpQueryString, offsetGet)
 		zval *qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
 
 		if (Z_TYPE_P(qa) == IS_ARRAY
-		&&	SUCCESS == zend_hash_find(Z_ARRVAL_P(qa), offset_str, offset_len + 1, (void *) &value)
+		&&	SUCCESS == zend_symtable_find(Z_ARRVAL_P(qa), offset_str, offset_len + 1, (void *) &value)
 		) {
 			RETVAL_ZVAL(*value, 1, 0);
 		}
@@ -634,7 +634,7 @@ PHP_METHOD(HttpQueryString, offsetExists)
 		zval *qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
 
 		if (Z_TYPE_P(qa) == IS_ARRAY
-		&&	SUCCESS == zend_hash_find(Z_ARRVAL_P(qa), offset_str, offset_len + 1, (void *) &value)
+		&&	SUCCESS == zend_symtable_find(Z_ARRVAL_P(qa), offset_str, offset_len + 1, (void *) &value)
 		&&	Z_TYPE_PP(value) != IS_NULL
 		) {
 			RETURN_TRUE;

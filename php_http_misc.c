@@ -142,7 +142,7 @@ int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_lis
 			}
 			add_next_index_zval(*data, *value);
 		} else if (key) {
-			zend_hash_add(dst, key, hash_key->nKeyLength, value, sizeof(zval *), NULL);
+			zend_symtable_update(dst, key, hash_key->nKeyLength, value, sizeof(zval *), NULL);
 		} else {
 			zend_hash_quick_add(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, value, sizeof(zval *), NULL);
 		}

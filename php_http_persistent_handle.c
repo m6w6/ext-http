@@ -94,7 +94,7 @@ static inline php_http_persistent_handle_list_t *php_http_persistent_handle_list
 {
 	php_http_persistent_handle_list_t **list, *new_list;
 	
-	if (SUCCESS == zend_hash_find(&provider->list.free, ident_str, ident_len + 1, (void *) &list)) {
+	if (SUCCESS == zend_symtable_find(&provider->list.free, ident_str, ident_len + 1, (void *) &list)) {
 #if PHP_HTTP_DEBUG_PHANDLES
 		fprintf(stderr, "LSTFIND: %p\n", *list);
 #endif
@@ -102,7 +102,7 @@ static inline php_http_persistent_handle_list_t *php_http_persistent_handle_list
 	}
 	
 	if ((new_list = php_http_persistent_handle_list_init(NULL))) {
-		if (SUCCESS == zend_hash_add(&provider->list.free, ident_str, ident_len + 1, (void *) &new_list, sizeof(php_http_persistent_handle_list_t *), (void *) &list)) {
+		if (SUCCESS == zend_symtable_update(&provider->list.free, ident_str, ident_len + 1, (void *) &new_list, sizeof(php_http_persistent_handle_list_t *), (void *) &list)) {
 #if PHP_HTTP_DEBUG_PHANDLES
 			fprintf(stderr, "LSTFIND: %p (new)\n", *list);
 #endif
@@ -224,7 +224,7 @@ PHP_HTTP_API STATUS php_http_persistent_handle_provide(const char *name_str, siz
 			fprintf(stderr, "PROVIDE: %s\n", name_str);
 #endif
 		
-			if (SUCCESS == zend_hash_add(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider, sizeof(php_http_persistent_handle_provider_t), NULL)) {
+			if (SUCCESS == zend_symtable_update(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider, sizeof(php_http_persistent_handle_provider_t), NULL)) {
 				status = SUCCESS;
 			} else {
 				php_http_resource_factory_dtor(&provider.rf);
@@ -247,7 +247,7 @@ PHP_HTTP_API php_http_persistent_handle_factory_t *php_http_persistent_handle_co
 	memset(a, 0, sizeof(*a));
 
 	LOCK();
-	status = zend_hash_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &a->provider);
+	status = zend_symtable_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &a->provider);
 	UNLOCK();
 
 	if (SUCCESS == status) {
@@ -316,7 +316,7 @@ PHP_HTTP_API STATUS php_http_persistent_handle_acquire2(const char *name_str, si
 	
 	*handle = NULL;
 	LOCK();
-	if (SUCCESS == zend_hash_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
+	if (SUCCESS == zend_symtable_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
 		status = php_http_persistent_handle_do_acquire(provider, ident_str, ident_len, handle TSRMLS_CC);
 	}
 	UNLOCK();
@@ -337,7 +337,7 @@ PHP_HTTP_API STATUS php_http_persistent_handle_release2(const char *name_str, si
 #endif
 	
 	LOCK();
-	if (SUCCESS == zend_hash_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
+	if (SUCCESS == zend_symtable_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
 		status = php_http_persistent_handle_do_release(provider, ident_str, ident_len, handle TSRMLS_CC);
 	}
 	UNLOCK();
@@ -356,7 +356,7 @@ PHP_HTTP_API STATUS php_http_persistent_handle_accrete2(const char *name_str, si
 	
 	*new_handle = NULL;
 	LOCK();
-	if (SUCCESS == zend_hash_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
+	if (SUCCESS == zend_symtable_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
 		status = php_http_persistent_handle_do_accrete(provider, ident_str, ident_len, old_handle, new_handle TSRMLS_CC);
 	}
 	UNLOCK();
@@ -376,7 +376,7 @@ PHP_HTTP_API void php_http_persistent_handle_cleanup(const char *name_str, size_
 	
 	LOCK();
 	if (name_str && name_len) {
-		if (SUCCESS == zend_hash_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
+		if (SUCCESS == zend_symtable_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
 			if (ident_str && ident_len) {
 				if ((list = php_http_persistent_handle_list_find(provider, ident_str, ident_len TSRMLS_CC))) {
 					php_http_persistent_handle_list_dtor(list, provider TSRMLS_CC);
@@ -431,12 +431,10 @@ PHP_HTTP_API HashTable *php_http_persistent_handle_statall(HashTable *ht TSRMLS_
 				array_init(zentry[1]);
 				add_assoc_long_ex(zentry[1], ZEND_STRS("used"), (*list)->used);
 				add_assoc_long_ex(zentry[1], ZEND_STRS("free"), zend_hash_num_elements(&(*list)->free));
-				
-				/* use zend_hash_* not add_assoc_* (which is zend_symtable_*) as we want a string even for numbers */
-				zend_hash_add(Z_ARRVAL_P(zentry[0]), key2.str, key2.len, &zentry[1], sizeof(zval *), NULL);
+				add_assoc_zval_ex(zentry[0], key2.str, key2.len, zentry[1]);
 			}
 			
-			zend_hash_add(ht, key1.str, key1.len, &zentry[0], sizeof(zval *), NULL);
+			zend_symtable_update(ht, key1.str, key1.len, &zentry[0], sizeof(zval *), NULL);
 		}
 	} else if (ht) {
 		ht = NULL;

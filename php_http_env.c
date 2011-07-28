@@ -62,7 +62,7 @@ PHP_HTTP_API void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC)
 
 					zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void *) &header, &pos);
 					Z_ADDREF_P(*header);
-					zend_hash_add(PHP_HTTP_G->env.request.headers, key.str, key.len, (void *) header, sizeof(zval *), NULL);
+					zend_symtable_update(PHP_HTTP_G->env.request.headers, key.str, key.len, (void *) header, sizeof(zval *), NULL);
 
 					efree(key.str);
 				}
@@ -82,7 +82,7 @@ PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t 
 
 	php_http_env_get_request_headers(NULL TSRMLS_CC);
 
-	if (SUCCESS == zend_hash_find(PHP_HTTP_G->env.request.headers, key, name_len + 1, (void *) &zvalue)) {
+	if (SUCCESS == zend_symtable_find(PHP_HTTP_G->env.request.headers, key, name_len + 1, (void *) &zvalue)) {
 		zval *zcopy = php_http_ztyp(IS_STRING, *zvalue);
 
 		val = estrndup(Z_STRVAL_P(zcopy), Z_STRLEN_P(zcopy));
@@ -100,7 +100,7 @@ PHP_HTTP_API int php_http_env_got_request_header(const char *name_str, size_t na
 	int got;
 
 	php_http_env_get_request_headers(NULL TSRMLS_CC);
-	got = zend_hash_exists(PHP_HTTP_G->env.request.headers, key, name_len + 1);
+	got = zend_symtable_exists(PHP_HTTP_G->env.request.headers, key, name_len + 1);
 	efree(key);
 
 	return got;
@@ -129,7 +129,7 @@ PHP_HTTP_API zval *php_http_env_get_server_var(const char *key, size_t key_len, 
 	if ((SUCCESS != zend_hash_find(&EG(symbol_table), ZEND_STRS("_SERVER"), (void *) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
 		return NULL;
 	}
-	if ((SUCCESS != zend_hash_find(Z_ARRVAL_PP(hsv), key, key_len + 1, (void *) &var))) {
+	if ((SUCCESS != zend_symtable_find(Z_ARRVAL_PP(hsv), key, key_len + 1, (void *) &var))) {
 		return NULL;
 	}
 	if (check && !((Z_TYPE_PP(var) == IS_STRING) && Z_STRVAL_PP(var) && Z_STRLEN_PP(var))) {
@@ -355,7 +355,7 @@ PHP_HTTP_API char *php_http_env_get_response_header(const char *name_str, size_t
 		zval **zvalue;
 		char *key = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
 
-		if (SUCCESS == zend_hash_find(&headers, key, name_len + 1, (void *) &zvalue)) {
+		if (SUCCESS == zend_symtable_find(&headers, key, name_len + 1, (void *) &zvalue)) {
 			zval *zcopy = php_http_ztyp(IS_STRING, *zvalue);
 
 			val = estrndup(Z_STRVAL_P(zcopy), Z_STRLEN_P(zcopy));

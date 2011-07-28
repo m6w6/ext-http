@@ -70,7 +70,7 @@ static zval *get_option(zval *options, const char *name_str, size_t name_len TSR
 		val = zend_read_property(Z_OBJCE_P(options), options, name, name_len, 0 TSRMLS_CC);
 		efree(name);
 	} else {
-		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(options), name_str, name_len + 1, (void *) &valptr)) {
+		if (SUCCESS == zend_symtable_find(Z_ARRVAL_P(options), name_str, name_len + 1, (void *) &valptr)) {
 			val = *valptr;
 		} else {
 			val = NULL;

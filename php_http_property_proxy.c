@@ -127,7 +127,7 @@ static zval *php_http_property_proxy_object_read_dimension(zval *object, zval *o
 			}
 		} else {
 			offset = php_http_ztyp(IS_STRING, offset);
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(property), Z_STRVAL_P(offset), Z_STRLEN_P(offset), (void *) &data)) {
+			if (SUCCESS == zend_symtable_find(Z_ARRVAL_P(property), Z_STRVAL_P(offset), Z_STRLEN_P(offset), (void *) &data)) {
 				retval = *data;
 			}
 			zval_ptr_dtor(&offset);

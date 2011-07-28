@@ -79,7 +79,7 @@ PHP_HTTP_API void php_http_cookie_list_free(php_http_cookie_list_t **list)
 PHP_HTTP_API const char *php_http_cookie_list_get_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len)
 {
 	zval **cookie = NULL;
-	if ((SUCCESS != zend_hash_find(&list->cookies, name, name_len + 1, (void *) &cookie)) || (Z_TYPE_PP(cookie) != IS_STRING)) {
+	if ((SUCCESS != zend_symtable_find(&list->cookies, name, name_len + 1, (void *) &cookie)) || (Z_TYPE_PP(cookie) != IS_STRING)) {
 		return NULL;
 	}
 	return Z_STRVAL_PP(cookie);
@@ -90,7 +90,7 @@ PHP_HTTP_API const char *php_http_cookie_list_get_cookie(php_http_cookie_list_t 
 PHP_HTTP_API const char *php_http_cookie_list_get_extra(php_http_cookie_list_t *list, const char *name, size_t name_len)
 {
 	zval **extra = NULL;
-	if ((SUCCESS != zend_hash_find(&list->extras, name, name_len + 1, (void *) &extra)) || (Z_TYPE_PP(extra) != IS_STRING)) {
+	if ((SUCCESS != zend_symtable_find(&list->extras, name, name_len + 1, (void *) &extra)) || (Z_TYPE_PP(extra) != IS_STRING)) {
 		return NULL;
 	}
 	return Z_STRVAL_PP(extra);
@@ -104,7 +104,7 @@ PHP_HTTP_API void php_http_cookie_list_add_cookie(php_http_cookie_list_t *list, 
 
 	MAKE_STD_ZVAL(cookie_value);
 	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
-	zend_hash_update(&list->cookies, name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	zend_symtable_update(&list->cookies, name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
 }
 
 
@@ -115,7 +115,7 @@ PHP_HTTP_API void php_http_cookie_list_add_extra(php_http_cookie_list_t *list, c
 
 	MAKE_STD_ZVAL(cookie_value);
 	ZVAL_STRINGL(cookie_value, estrndup(value, value_len), value_len, 0);
-	zend_hash_update(&list->extras, name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
+	zend_symtable_update(&list->extras, name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
 }
 
 
@@ -669,7 +669,7 @@ PHP_METHOD(HttpCookie, getCookie)
 		if (!obj->list) {
 			obj->list = php_http_cookie_list_init(NULL TSRMLS_CC);
 		}
-		if (SUCCESS == zend_hash_find(&obj->list->cookies, name_str, name_len + 1, (void *) &zvalue)) {
+		if (SUCCESS == zend_symtable_find(&obj->list->cookies, name_str, name_len + 1, (void *) &zvalue)) {
 			RETURN_ZVAL(*zvalue, 1, 0);
 		}
 	}
@@ -688,13 +688,13 @@ PHP_METHOD(HttpCookie, setCookie)
 			obj->list = php_http_cookie_list_init(NULL TSRMLS_CC);
 		}
 		if (!value_str) {
-			zend_hash_del(&obj->list->cookies, name_str, name_len + 1);
+			zend_symtable_del(&obj->list->cookies, name_str, name_len + 1);
 		} else {
 			zval *zvalue;
 
 			MAKE_STD_ZVAL(zvalue);
 			ZVAL_STRINGL(zvalue, value_str, value_len, 1);
-			zend_hash_update(&obj->list->cookies, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL);
+			zend_symtable_update(&obj->list->cookies, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL);
 		}
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -714,7 +714,7 @@ PHP_METHOD(HttpCookie, addCookie)
 		}
 		MAKE_STD_ZVAL(zvalue);
 		ZVAL_STRINGL(zvalue, value_str, value_len, 1);
-		zend_hash_add(&obj->list->cookies, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL);
+		zend_symtable_update(&obj->list->cookies, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL);
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -731,7 +731,7 @@ PHP_METHOD(HttpCookie, getExtra)
 		if (!obj->list) {
 			obj->list = php_http_cookie_list_init(NULL TSRMLS_CC);
 		}
-		if (SUCCESS == zend_hash_find(&obj->list->extras, name_str, name_len + 1, (void *) &zvalue)) {
+		if (SUCCESS == zend_symtable_find(&obj->list->extras, name_str, name_len + 1, (void *) &zvalue)) {
 			RETURN_ZVAL(*zvalue, 1, 0);
 		}
 	}
@@ -750,13 +750,13 @@ PHP_METHOD(HttpCookie, setExtra)
 			obj->list = php_http_cookie_list_init(NULL TSRMLS_CC);
 		}
 		if (!value_str) {
-			zend_hash_del(&obj->list->extras, name_str, name_len + 1);
+			zend_symtable_del(&obj->list->extras, name_str, name_len + 1);
 		} else {
 			zval *zvalue;
 
 			MAKE_STD_ZVAL(zvalue);
 			ZVAL_STRINGL(zvalue, value_str, value_len, 1);
-			zend_hash_update(&obj->list->extras, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL);
+			zend_symtable_update(&obj->list->extras, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL);
 		}
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -776,7 +776,7 @@ PHP_METHOD(HttpCookie, addExtra)
 		}
 		MAKE_STD_ZVAL(zvalue);
 		ZVAL_STRINGL(zvalue, value_str, value_len, 1);
-		zend_hash_add(&obj->list->extras, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL);
+		zend_symtable_update(&obj->list->extras, name_str, name_len + 1, &zvalue, sizeof(zval *), NULL);
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
 }

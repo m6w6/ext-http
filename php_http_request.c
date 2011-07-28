@@ -566,7 +566,7 @@ static inline void php_http_request_object_set_options_subr(INTERNAL_FUNCTION_PA
 			array_copy(Z_ARRVAL_P(old_opts), Z_ARRVAL_P(new_opts));
 		}
 
-		if (SUCCESS == zend_hash_find(Z_ARRVAL_P(new_opts), key, len, (void *) &entry)) {
+		if (SUCCESS == zend_symtable_find(Z_ARRVAL_P(new_opts), key, len, (void *) &entry)) {
 			if (overwrite) {
 				zend_hash_clean(Z_ARRVAL_PP(entry));
 			}
@@ -600,7 +600,7 @@ static inline void php_http_request_object_get_options_subr(INTERNAL_FUNCTION_PA
 		array_init(return_value);
 
 		if (	(Z_TYPE_P(opts) == IS_ARRAY) &&
-				(SUCCESS == zend_hash_find(Z_ARRVAL_P(opts), key, len, (void *) &options))) {
+				(SUCCESS == zend_symtable_find(Z_ARRVAL_P(opts), key, len, (void *) &options))) {
 			convert_to_array(*options);
 			array_copy(Z_ARRVAL_PP(options), Z_ARRVAL_P(return_value));
 		}
@@ -717,7 +717,7 @@ PHP_METHOD(HttpRequest, getTransferInfo)
 		}
 
 		if (info_len && info_name) {
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(info), php_http_pretty_key(info_name, info_len, 0, 0), info_len + 1, (void *) &infop)) {
+			if (SUCCESS == zend_symtable_find(Z_ARRVAL_P(info), php_http_pretty_key(info_name, info_len, 0, 0), info_len + 1, (void *) &infop)) {
 				RETVAL_ZVAL(*infop, 1, 0);
 			} else {
 				php_http_error(HE_NOTICE, PHP_HTTP_E_INVALID_PARAM, "Could not find transfer info named %s", info_name);
@@ -789,7 +789,7 @@ PHP_METHOD(HttpRequest, setOptions)
 				} else if (Z_TYPE_PP(opt) == IS_NULL) {
 					old_opts = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("options"), 0 TSRMLS_CC);
 					if (Z_TYPE_P(old_opts) == IS_ARRAY) {
-						zend_hash_del(Z_ARRVAL_P(old_opts), key.str, key.len);
+						zend_symtable_del(Z_ARRVAL_P(old_opts), key.str, key.len);
 					}
 				} else {
 					Z_ADDREF_P(*opt);

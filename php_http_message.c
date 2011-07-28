@@ -149,7 +149,7 @@ PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, char *key_st
 	zval *ret = NULL, **header;
 	char *key = php_http_pretty_key(estrndup(key_str, key_len), key_len, 1, 1);
 
-	if (SUCCESS == zend_hash_find(&msg->hdrs, key, key_len + 1, (void *) &header)) {
+	if (SUCCESS == zend_symtable_find(&msg->hdrs, key, key_len + 1, (void *) &header)) {
 		if (join && Z_TYPE_PP(header) == IS_ARRAY) {
 			zval *header_str, **val;
 			HashPosition pos;
@@ -1392,10 +1392,10 @@ PHP_METHOD(HttpMessage, setHeader)
 		}
 
 		if (!zvalue) {
-			zend_hash_del(&obj->message->hdrs, name, name_len + 1);
+			zend_symtable_del(&obj->message->hdrs, name, name_len + 1);
 		} else {
 			Z_ADDREF_P(zvalue);
-			zend_hash_update(&obj->message->hdrs, name, name_len + 1, &zvalue, sizeof(void *), NULL);
+			zend_symtable_update(&obj->message->hdrs, name, name_len + 1, &zvalue, sizeof(void *), NULL);
 		}
 		efree(name);
 	}
@@ -1441,7 +1441,7 @@ PHP_METHOD(HttpMessage, addHeader)
 			convert_to_array(header);
 			zend_hash_next_index_insert(Z_ARRVAL_P(header), &zvalue, sizeof(void *), NULL);
 		} else {
-			zend_hash_update(&obj->message->hdrs, name, name_len + 1, &zvalue, sizeof(void *), NULL);
+			zend_symtable_update(&obj->message->hdrs, name, name_len + 1, &zvalue, sizeof(void *), NULL);
 		}
 		efree(name);
 	}
