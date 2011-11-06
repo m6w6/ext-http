@@ -86,7 +86,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zva
 	char *header, *etag;
 	zval *zetag, *zbody = NULL;
 
-	if (	!(header = php_http_env_get_request_header(header_str, header_len TSRMLS_CC))
+	if (	!(header = php_http_env_get_request_header(header_str, header_len, NULL TSRMLS_CC))
 	||		!(zbody = get_option(options, ZEND_STRL("body") TSRMLS_CC))
 	|| 		!(Z_TYPE_P(zbody) == IS_OBJECT)
 	||		!instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_class_entry TSRMLS_CC)
@@ -136,7 +136,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_mod
 	time_t ums, lm = 0;
 	zval *zbody = NULL, *zlm;
 
-	if (	!(header = php_http_env_get_request_header(header_str, header_len TSRMLS_CC))
+	if (	!(header = php_http_env_get_request_header(header_str, header_len, NULL TSRMLS_CC))
 	||		!(zbody = get_option(options, ZEND_STRL("body") TSRMLS_CC))
 	||		!(Z_TYPE_P(zbody) == IS_OBJECT)
 	||		!instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_class_entry TSRMLS_CC)
