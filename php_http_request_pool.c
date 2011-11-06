@@ -63,6 +63,8 @@ PHP_HTTP_API void php_http_request_pool_dtor(php_http_request_pool_t *h)
 	if (h->persistent_handle_id) {
 		zval_ptr_dtor(&h->persistent_handle_id);
 	}
+
+	php_http_resource_factory_free(&h->rf);
 }
 
 PHP_HTTP_API void php_http_request_pool_free(php_http_request_pool_t **h) {
