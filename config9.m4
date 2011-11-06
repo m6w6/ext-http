@@ -212,7 +212,7 @@ dnl ----
 		else
 			AC_MSG_RESULT([found in $SERF_DIR])
 
-			PHP_ADD_INCLUDE($SERF_DIR/include/serf-$SERV_VER)
+			PHP_ADD_INCLUDE($SERF_DIR/include/serf-$SERF_VER)
 			PHP_ADD_LIBRARY_WITH_PATH(serf-$SERF_VER, $SERF_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 			AC_DEFINE([PHP_HTTP_HAVE_SERF], [1], [Have libserf support])
 			HTTP_HAVE_A_REQUEST_LIB=true
