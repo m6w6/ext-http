@@ -1116,7 +1116,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 						FOREACH_VAL(pos2, *header, single_header) {
 							zval *data = php_http_ztyp(IS_STRING, *single_header);
 
-							if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), flags, allowed_extras TSRMLS_CC))) {
+							if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), Z_STRLEN_P(data), flags, allowed_extras TSRMLS_CC))) {
 								zval *cookie;
 
 								MAKE_STD_ZVAL(cookie);
@@ -1127,7 +1127,7 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 						}
 					} else {
 						zval *data = php_http_ztyp(IS_STRING, *header);
-						if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), flags, allowed_extras TSRMLS_CC))) {
+						if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), Z_STRLEN_P(data), flags, allowed_extras TSRMLS_CC))) {
 							zval *cookie;
 
 							MAKE_STD_ZVAL(cookie);
