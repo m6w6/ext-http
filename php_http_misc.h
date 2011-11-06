@@ -77,7 +77,7 @@ PHP_HTTP_API void php_http_sleep(double s);
 #define PHP_HTTP_MATCH_CASE		0x01
 #define PHP_HTTP_MATCH_WORD		0x10
 #define PHP_HTTP_MATCH_FULL		0x20
-#define PHP_HTTP_MATCH_STRICT	(PHP_HTTP_ENV_MATCH_CASE|PHP_HTTP_ENV_MATCH_FULL)
+#define PHP_HTTP_MATCH_STRICT	(PHP_HTTP_MATCH_CASE|PHP_HTTP_MATCH_FULL)
 
 extern int php_http_match(const char *haystack, const char *needle, int flags);
 
