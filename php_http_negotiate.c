@@ -14,64 +14,6 @@
 
 #include <ext/standard/php_string.h>
 
-#ifndef PHP_HTTP_DBG_NEG
-#	define PHP_HTTP_DBG_NEG 0
-#endif
-
-char *php_http_negotiate_language_func(const char *test, double *quality, HashTable *supported TSRMLS_DC)
-{
-	zval **value;
-	HashPosition pos;
-	const char *dash_test;
-
-	FOREACH_HASH_VAL(pos, supported, value) {
-#if PHP_HTTP_DBG_NEG
-		fprintf(stderr, "strcasecmp('%s', '%s')\n", Z_STRVAL_PP(value), test);
-#endif
-		if (!strcasecmp(Z_STRVAL_PP(value), test)) {
-			return Z_STRVAL_PP(value);
-		}
-	}
-
-	/* no distinct match found, so try primaries */
-	if ((dash_test = strchr(test, '-'))) {
-		FOREACH_HASH_VAL(pos, supported, value) {
-			int len = dash_test - test;
-#if PHP_HTTP_DBG_NEG
-			fprintf(stderr, "strncasecmp('%s', '%s', %d)\n", Z_STRVAL_PP(value), test, len);
-#endif
-			if (	(!strncasecmp(Z_STRVAL_PP(value), test, len)) &&
-					(	(Z_STRVAL_PP(value)[len] == '\0') ||
-						(Z_STRVAL_PP(value)[len] == '-'))) {
-				*quality *= .9;
-				return Z_STRVAL_PP(value);
-			}
-		}
-	}
-
-	return NULL;
-}
-
-
-char *php_http_negotiate_default_func(const char *test, double *quality, HashTable *supported TSRMLS_DC)
-{
-	zval **value;
-	HashPosition pos;
-	(void) quality;
-
-	FOREACH_HASH_VAL(pos, supported, value) {
-#if PHP_HTTP_DBG_NEG
-		fprintf(stderr, "strcasecmp('%s', '%s')\n", Z_STRVAL_PP(value), test);
-#endif
-		if (!strcasecmp(Z_STRVAL_PP(value), test)) {
-			return Z_STRVAL_PP(value);
-		}
-	}
-
-	return NULL;
-}
-
-
 static int php_http_negotiate_sort(const void *a, const void *b TSRMLS_DC)
 {
 	zval result, *first, *second;
@@ -85,82 +27,82 @@ static int php_http_negotiate_sort(const void *a, const void *b TSRMLS_DC)
 	return (Z_LVAL(result) > 0 ? -1 : (Z_LVAL(result) < 0 ? 1 : 0));
 }
 
+static int php_http_negotiate_reduce(void *p TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
+{
+	char *tmp;
+	zval **q, *supported = php_http_ztyp(IS_STRING, *(zval **)p);
+	HashTable *params = va_arg(args, HashTable *);
+	HashTable *result = va_arg(args, HashTable *);
 
-PHP_HTTP_API HashTable *php_http_negotiate(const char *value, HashTable *supported, php_http_negotiate_func_t neg TSRMLS_DC)
+	tmp = php_strtolower(estrndup(Z_STRVAL_P(supported), Z_STRLEN_P(supported)), Z_STRLEN_P(supported));
+	if (SUCCESS == zend_symtable_find(params, tmp, Z_STRLEN_P(supported) + 1, (void *) &q)) {
+		Z_ADDREF_PP(q);
+		zend_symtable_update(result, Z_STRVAL_P(supported), Z_STRLEN_P(supported) + 1, (void *) q, sizeof(zval *), NULL);
+	}
+	efree(tmp);
+	zval_ptr_dtor(&supported);
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+PHP_HTTP_API HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable *supported, const char *primary_sep_str, size_t primary_sep_len TSRMLS_DC)
 {
 	HashTable *result = NULL;
 
-	if (*value) {
-		zval ex_arr, ex_del, ex_val;
+	if (value_str && value_len) {
+		unsigned i = 0;
+		zval arr, **val, **arg, **zq;
+		HashPosition pos;
+		HashTable params;
+		php_http_array_hashkey_t key = php_http_array_hashkey_init(1);
+		php_http_params_opts_t opts;
 
-		INIT_PZVAL(&ex_del);
-		INIT_PZVAL(&ex_arr);
-		INIT_PZVAL(&ex_val);
-		ZVAL_STRINGL(&ex_del, ",", 1, 0);
-		ZVAL_STRING(&ex_val, value, 1);
-		array_init(&ex_arr);
+		zend_hash_init(&params, 10, NULL, ZVAL_PTR_DTOR, 0);
+		php_http_params_opts_default_get(&opts);
+		opts.input.str = estrndup(value_str, value_len);
+		opts.input.len = value_len;
+		php_http_params_parse(&params, &opts TSRMLS_CC);
+		efree(opts.input.str);
 
-		php_explode(&ex_del, &ex_val, &ex_arr, INT_MAX);
+		INIT_PZVAL(&arr);
+		array_init(&arr);
 
-		if (zend_hash_num_elements(Z_ARRVAL(ex_arr)) > 0) {
-			int i = 0;
-			HashPosition pos;
-			zval **entry, array;
+		FOREACH_HASH_KEYVAL(pos, &params, key, val) {
+			double q;
 
-			INIT_PZVAL(&array);
-			array_init(&array);
+			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(val), ZEND_STRS("arguments"), (void *) &arg)
+			&&	IS_ARRAY == Z_TYPE_PP(arg)
+			&&	SUCCESS == zend_hash_find(Z_ARRVAL_PP(arg), ZEND_STRS("q"), (void *) &zq)) {
+				zval *tmp = php_http_ztyp(IS_DOUBLE, *zq);
 
-			if (!neg) {
-				neg = php_http_negotiate_default_func;
+				q = Z_DVAL_P(tmp);
+				zval_ptr_dtor(&tmp);
+			} else {
+				q = 1.0 - ++i / 100.0;
 			}
 
-			FOREACH_HASH_VAL(pos, Z_ARRVAL(ex_arr), entry) {
-				int ident_len;
-				double quality;
-				char *selected, *identifier, *freeme;
-				const char *separator;
+			if (key.type == HASH_KEY_IS_STRING) {
+				const char *ptr;
 
-#if PHP_HTTP_DBG_NEG
-				fprintf(stderr, "Checking %s\n", Z_STRVAL_PP(entry));
-#endif
+				php_strtolower(key.str, key.len - 1);
+				add_assoc_double_ex(&arr, key.str, key.len, q);
 
-				if ((separator = strchr(Z_STRVAL_PP(entry), ';'))) {
-					const char *ptr = separator;
-
-					while (*++ptr && !PHP_HTTP_IS_CTYPE(digit, *ptr) && '.' != *ptr);
-
-					quality = zend_strtod(ptr, NULL);
-					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = separator - Z_STRVAL_PP(entry));
-				} else {
-					quality = 1000.0 - i++;
-					identifier = estrndup(Z_STRVAL_PP(entry), ident_len = Z_STRLEN_PP(entry));
+				if (primary_sep_str && primary_sep_len && (ptr = php_http_locate_str(key.str, key.len - 1, primary_sep_str, primary_sep_len))) {
+					key.str[ptr - key.str] = '\0';
+					add_assoc_double_ex(&arr, key.str, ptr - key.str + 1, q - i / 1000.0);
 				}
-				freeme = identifier;
-
-				while (PHP_HTTP_IS_CTYPE(space, *identifier)) {
-					++identifier;
-					--ident_len;
-				}
-				while (ident_len && PHP_HTTP_IS_CTYPE(space, identifier[ident_len - 1])) {
-					identifier[--ident_len] = '\0';
-				}
-
-				if ((selected = neg(identifier, &quality, supported TSRMLS_CC))) {
-					/* don't overwrite previously set with higher quality */
-					if (!zend_symtable_exists(Z_ARRVAL(array), selected, strlen(selected) + 1)) {
-						add_assoc_double(&array, selected, quality);
-					}
-				}
-
-				efree(freeme);
+			} else {
+				add_index_double(&arr, key.num, q);
 			}
 
-			result = Z_ARRVAL(array);
-			zend_hash_sort(result, zend_qsort, php_http_negotiate_sort, 0 TSRMLS_CC);
+			STR_FREE(key.str);
 		}
 
-		zval_dtor(&ex_arr);
-		zval_dtor(&ex_val);
+		ALLOC_HASHTABLE(result);
+		zend_hash_init(result, zend_hash_num_elements(supported), NULL, ZVAL_PTR_DTOR, 0);
+		zend_hash_apply_with_arguments(supported TSRMLS_CC, php_http_negotiate_reduce, 2, Z_ARRVAL(arr), result);
+		zend_hash_destroy(&params);
+		zval_dtor(&arr);
+		zend_hash_sort(result, zend_qsort, php_http_negotiate_sort, 0 TSRMLS_CC);
 	}
 	
 	return result;
