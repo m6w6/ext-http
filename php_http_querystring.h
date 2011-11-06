@@ -18,9 +18,7 @@ PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char 
 #endif /* PHP_HTTP_HAVE_ICONV */
 PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval *qstring TSRMLS_DC);
 
-typedef struct php_http_querystring_object {
-	zend_object zo;
-} php_http_querystring_object_t;
+typedef php_http_object_t php_http_querystring_object_t;
 
 #define PHP_HTTP_QUERYSTRING_TYPE_BOOL		IS_BOOL
 #define PHP_HTTP_QUERYSTRING_TYPE_INT		IS_LONG
