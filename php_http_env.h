@@ -41,7 +41,7 @@ typedef enum php_http_range_status {
 
 PHP_HTTP_API php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_t entity_length TSRMLS_DC);
 PHP_HTTP_API void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC);
-PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t name_len TSRMLS_DC);
+PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len TSRMLS_DC);
 PHP_HTTP_API int php_http_env_got_request_header(const char *name_str, size_t name_len TSRMLS_DC);
 PHP_HTTP_API php_http_message_body_t *php_http_env_get_request_body(TSRMLS_D);
 
@@ -86,7 +86,6 @@ PHP_METHOD(HttpEnv, negotiateContentType);
 PHP_METHOD(HttpEnv, negotiate);
 PHP_METHOD(HttpEnv, persistentHandlesStat);
 PHP_METHOD(HttpEnv, persistentHandlesClean);
-PHP_METHOD(HttpEnv, parseParams);
 
 extern zend_class_entry *php_http_env_request_class_entry;
 extern zend_function_entry php_http_env_request_method_entry[];

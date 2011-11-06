@@ -73,7 +73,7 @@ PHP_HTTP_API void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC)
 	}
 }
 
-PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t name_len TSRMLS_DC)
+PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len TSRMLS_DC)
 {
 	zval **zvalue;
 	char *val = NULL, *key = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
@@ -84,6 +84,9 @@ PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t 
 		zval *zcopy = php_http_ztyp(IS_STRING, *zvalue);
 
 		val = estrndup(Z_STRVAL_P(zcopy), Z_STRLEN_P(zcopy));
+		if (len) {
+			*len = Z_STRLEN_P(zcopy);
+		}
 		zval_ptr_dtor(&zcopy);
 	}
 
@@ -181,7 +184,7 @@ PHP_HTTP_API php_http_range_status_t php_http_env_get_request_ranges(HashTable *
 	char *range, *rp, c;
 	long begin = -1, end = -1, *ptr;
 
-	if (!(range = php_http_env_get_request_header(ZEND_STRL("Range") TSRMLS_CC))) {
+	if (!(range = php_http_env_get_request_header(ZEND_STRL("Range"), NULL TSRMLS_CC))) {
 		return PHP_HTTP_RANGE_NO;
 	}
 	if (strncmp(range, "bytes=", lenof("bytes="))) {
@@ -577,6 +580,7 @@ PHP_HTTP_END_ARGS;
 PHP_HTTP_BEGIN_ARGS(negotiate, 2)
 	PHP_HTTP_ARG_VAL(value, 0)
 	PHP_HTTP_ARG_VAL(supported, 0)
+	PHP_HTTP_ARG_VAL(primary_type_separator, 0)
 	PHP_HTTP_ARG_VAL(result_array, 1)
 PHP_HTTP_END_ARGS;
 
@@ -585,11 +589,6 @@ PHP_HTTP_EMPTY_ARGS(persistentHandlesStat);
 PHP_HTTP_BEGIN_ARGS(persistentHandlesClean, 0)
 	PHP_HTTP_ARG_VAL(name, 0)
 	PHP_HTTP_ARG_VAL(ident, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(parseParams, 1)
-	PHP_HTTP_ARG_VAL(params, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
 PHP_HTTP_END_ARGS;
 
 zend_function_entry php_http_env_method_entry[] = {
@@ -611,8 +610,6 @@ zend_function_entry php_http_env_method_entry[] = {
 	PHP_HTTP_ENV_ME(persistentHandlesStat)
 	PHP_HTTP_ENV_ME(persistentHandlesClean)
 
-	PHP_HTTP_ENV_ME(parseParams)
-
 	EMPTY_FUNCTION_ENTRY
 };
 
@@ -623,10 +620,11 @@ PHP_METHOD(HttpEnv, getRequestHeader)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
 		if (header_name_str && header_name_len) {
-			char *header_value = php_http_env_get_request_header(header_name_str, header_name_len TSRMLS_CC);
+			size_t header_length;
+			char *header_value = php_http_env_get_request_header(header_name_str, header_name_len, &header_length TSRMLS_CC);
 
 			if (header_value) {
-				RETURN_STRING(header_value, 0);
+				RETURN_STRINGL(header_value, header_length, 0);
 			}
 			RETURN_NULL();
 		} else {
@@ -786,8 +784,9 @@ PHP_METHOD(HttpEnv, negotiateLanguage)
 		}
 
 		PHP_HTTP_DO_NEGOTIATE(language, supported, rs_array);
+	} else {
+		RETURN_FALSE;
 	}
-	RETURN_FALSE;
 }
 
 PHP_METHOD(HttpEnv, negotiateCharset)
@@ -801,8 +800,9 @@ PHP_METHOD(HttpEnv, negotiateCharset)
 			array_init(rs_array);
 		}
 		PHP_HTTP_DO_NEGOTIATE(charset, supported, rs_array);
+	} else {
+		RETURN_FALSE;
 	}
-	RETURN_FALSE;
 }
 
 PHP_METHOD(HttpEnv, negotiateContentType)
@@ -816,18 +816,19 @@ PHP_METHOD(HttpEnv, negotiateContentType)
 			array_init(rs_array);
 		}
 		PHP_HTTP_DO_NEGOTIATE(content_type, supported, rs_array);
+	} else {
+		RETURN_FALSE;
 	}
-	RETURN_FALSE;
 }
 
 PHP_METHOD(HttpEnv, negotiate)
 {
 	HashTable *supported;
 	zval *rs_array = NULL;
-	char *value_str;
-	int value_len;
+	char *value_str, *sep_str = NULL;
+	int value_len, sep_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sH|z", &value_str, &value_len, &supported, &rs_array)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sH|s!z", &value_str, &value_len, &supported, &sep_str, &sep_len, &rs_array)) {
 		HashTable *rs;
 
 		if (rs_array) {
@@ -835,13 +836,14 @@ PHP_METHOD(HttpEnv, negotiate)
 			array_init(rs_array);
 		}
 
-		if ((rs = php_http_negotiate(value_str, supported, php_http_negotiate_default_func TSRMLS_CC))) {
+		if ((rs = php_http_negotiate(value_str, value_len, supported, sep_str, sep_len TSRMLS_CC))) {
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array);
 		} else {
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array);
 		}
+	} else {
+		RETURN_FALSE;
 	}
-	RETURN_FALSE;
 }
 
 PHP_METHOD(HttpEnv, persistentHandlesStat)
@@ -863,23 +865,6 @@ PHP_METHOD(HttpEnv, persistentHandlesClean)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss", &name_str, &name_len, &ident_str, &ident_len)) {
 		php_http_persistent_handle_cleanup(name_str, name_len, ident_str, ident_len TSRMLS_CC);
-	}
-}
-
-PHP_METHOD(HttpEnv, parseParams)
-{
-	char *param_str;
-	int param_len;
-	long flags = PHP_HTTP_PARAMS_DEFAULT;
-
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &param_str, &param_len, &flags)) {
-		RETURN_FALSE;
-	}
-
-	array_init(return_value);
-	if (SUCCESS != php_http_params_parse(param_str, flags, php_http_params_parse_default_func, Z_ARRVAL_P(return_value) TSRMLS_CC)) {
-		zval_dtor(return_value);
-		RETURN_FALSE;
 	}
 }
 
@@ -915,12 +900,6 @@ PHP_METHOD(HttpEnvRequest, __construct)
 PHP_MINIT_FUNCTION(http_env)
 {
 	PHP_HTTP_REGISTER_CLASS(http, Env, http_env, NULL, 0);
-
-	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_ALLOW_COMMA"), PHP_HTTP_PARAMS_ALLOW_COMMA TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_ALLOW_FAILURE"), PHP_HTTP_PARAMS_ALLOW_FAILURE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_RAISE_ERROR"), PHP_HTTP_PARAMS_RAISE_ERROR TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_DEFAULT"), PHP_HTTP_PARAMS_DEFAULT TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_env_class_entry, ZEND_STRL("PARAMS_COLON_SEPARATOR"), PHP_HTTP_PARAMS_COLON_SEPARATOR TSRMLS_CC);
 
 	PHP_HTTP_REGISTER_CLASS(http\\Env, Request, http_env_request, php_http_message_class_entry, 0);
 
