@@ -107,6 +107,7 @@ extern void _dpf(int type, const char *data, size_t length);
 #include "php_http_request.h"
 #include "php_http_curl.h"
 #include "php_http_neon.h"
+#include "php_http_serf.h"
 #include "php_http_request_method.h"
 #include "php_http_request_pool.h"
 #include "php_http_url.h"

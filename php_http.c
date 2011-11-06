@@ -142,6 +142,7 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_cookie)
 	|| SUCCESS != PHP_MINIT_CALL(http_encoding)
 	|| SUCCESS != PHP_MINIT_CALL(http_filter)
+	|| SUCCESS != PHP_MINIT_CALL(http_header)
 	|| SUCCESS != PHP_MINIT_CALL(http_message)
 	|| SUCCESS != PHP_MINIT_CALL(http_message_body)
 	|| SUCCESS != PHP_MINIT_CALL(http_property_proxy)
@@ -160,6 +161,7 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_url)
 	|| SUCCESS != PHP_MINIT_CALL(http_env)
 	|| SUCCESS != PHP_MINIT_CALL(http_env_response)
+	|| SUCCESS != PHP_MINIT_CALL(http_params)
 	) {
 		return FAILURE;
 	}
@@ -250,6 +252,19 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_row(3, "libevent", PHP_HTTP_EVENT_VERSION, event_get_version());
 #else
 	php_info_print_table_row(3, "libevent", "disabled", "disabled");
+#endif
+
+#if PHP_HTTP_HAVE_SERF
+	{
+		int v[3];
+		char sl_v[16] = {0};
+
+		serf_lib_version(&v[0], &v[1], &v[2]);
+		slprintf(sl_v, lenof(sl_v), "%d.%d.%d", v[0], v[1], v[2]);
+		php_info_print_table_row(3, "libserf", SERF_VERSION_STRING, sl_v);
+	}
+#else
+	php_info_print_table_row(3, "libserf", "disabled", "disabled");
 #endif
 	php_info_print_table_end();
 	
