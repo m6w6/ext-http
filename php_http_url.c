@@ -335,7 +335,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_en
 		php_http_buffer_append(qstr, pre_encoded_str, pre_encoded_len);
 	}
 
-	if (SUCCESS != php_http_url_encode_hash_ex(hash, qstr, arg_sep_str, arg_sep_len, ZEND_STRS("="), NULL, 0 TSRMLS_CC)) {
+	if (SUCCESS != php_http_url_encode_hash_ex(hash, qstr, arg_sep_str, arg_sep_len, ZEND_STRL("="), NULL, 0 TSRMLS_CC)) {
 		php_http_buffer_free(&qstr);
 		return FAILURE;
 	}
