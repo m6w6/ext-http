@@ -13,16 +13,38 @@
 #ifndef PHP_HTTP_PARAMS_H
 #define PHP_HTTP_PARAMS_H
 
-#define PHP_HTTP_PARAMS_ALLOW_COMMA			0x01
-#define PHP_HTTP_PARAMS_ALLOW_FAILURE		0x02
-#define PHP_HTTP_PARAMS_RAISE_ERROR			0x04
-#define PHP_HTTP_PARAMS_DEFAULT	(PHP_HTTP_PARAMS_ALLOW_COMMA|PHP_HTTP_PARAMS_ALLOW_FAILURE|PHP_HTTP_PARAMS_RAISE_ERROR)
-#define PHP_HTTP_PARAMS_COLON_SEPARATOR		0x10
+typedef struct php_http_params_token {
+	char *str;
+	size_t len;
+} php_http_params_token_t;
 
-typedef void (*php_http_params_parse_func_t)(void *cb_arg, const char *key, int keylen, const char *val, int vallen TSRMLS_DC);
+typedef struct php_http_params_opts {
+	php_http_params_token_t input;
+	php_http_params_token_t **param;
+	php_http_params_token_t **arg;
+	php_http_params_token_t **val;
+} php_http_params_opts_t;
 
-PHP_HTTP_API void php_http_params_parse_default_func(void *ht, const char *key, int keylen, const char *val, int vallen TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_params_parse(const char *params, int flags, php_http_params_parse_func_t cb, void *cb_arg TSRMLS_DC);
+PHP_HTTP_API php_http_params_opts_t *php_http_params_opts_default_get(php_http_params_opts_t *opts);
+PHP_HTTP_API HashTable *php_http_params_parse(HashTable *params, const php_http_params_opts_t *opts TSRMLS_DC);
+
+typedef php_http_object_t php_http_params_object_t;
+
+extern zend_class_entry *php_http_params_class_entry;
+extern zend_function_entry php_http_params_method_entry[];
+
+PHP_MINIT_FUNCTION(http_params);
+
+#define php_http_params_object_new php_http_object_new
+#define php_http_params_object_new_ex php_http_object_new_ex
+
+PHP_METHOD(HttpParams, __construct);
+PHP_METHOD(HttpParams, toString);
+PHP_METHOD(HttpParams, toArray);
+PHP_METHOD(HttpParams, offsetExists);
+PHP_METHOD(HttpParams, offsetUnset);
+PHP_METHOD(HttpParams, offsetSet);
+PHP_METHOD(HttpParams, offsetGet);
 
 #endif
 
