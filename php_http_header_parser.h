@@ -48,7 +48,7 @@ PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_is(php_
 PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_pop(php_http_header_parser_t *parser);
 PHP_HTTP_API void php_http_header_parser_dtor(php_http_header_parser_t *parser);
 PHP_HTTP_API void php_http_header_parser_free(php_http_header_parser_t **parser);
-PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg);
+PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg);
 
 #endif /* PHP_HTTP_HEADER_PARSER_H */
 
