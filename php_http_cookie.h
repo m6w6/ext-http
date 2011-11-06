@@ -37,7 +37,7 @@ typedef struct php_http_cookie_list {
 } php_http_cookie_list_t;
 
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_init(php_http_cookie_list_t *list TSRMLS_DC);
-PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_list_t *list, const char *string, long flags, char **allowed_extras TSRMLS_DC);
+PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_list_t *list, const char *str, size_t len, long flags, char **allowed_extras TSRMLS_DC);
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_copy(php_http_cookie_list_t *from, php_http_cookie_list_t *to);
 PHP_HTTP_API void php_http_cookie_list_dtor(php_http_cookie_list_t *list);
 PHP_HTTP_API void php_http_cookie_list_free(php_http_cookie_list_t **list);
