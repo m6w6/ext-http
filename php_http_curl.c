@@ -498,7 +498,7 @@ static int php_http_curl_request_pool_socket_callback(CURL *easy, curl_socket_t 
 			ev = ecalloc(1, sizeof(php_http_request_pool_event_t));
 			ev->pool = pool;
 			curl_multi_assign(curl->handle, sock, ev);
-			event_base_set(PHP_HTTP_G->request_pool.event_base, &ev->evnt);
+			event_base_set(PHP_HTTP_G->curl.event_base, &ev->evnt);
 		} else {
 			event_del(&ev->evnt);
 		}
@@ -549,7 +549,7 @@ static void php_http_curl_request_pool_timer_callback(CURLM *multi, long timeout
 
 			if (!event_initialized(curl->timeout)) {
 				event_set(curl->timeout, -1, 0, php_http_curl_request_pool_timeout_callback, pool);
-				event_base_set(PHP_HTTP_G->request_pool.event_base, curl->timeout);
+				event_base_set(PHP_HTTP_G->curl.event_base, curl->timeout);
 			} else if (event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
 				event_del(curl->timeout);
 			}
@@ -1492,7 +1492,7 @@ static STATUS php_http_curl_request_pool_exec(php_http_request_pool_t *h)
 #if DBG_EVENTS
 			fprintf(stderr, "X");
 #endif
-			event_base_dispatch(PHP_HTTP_G->request_pool.event_base);
+			event_base_dispatch(PHP_HTTP_G->curl.event_base);
 		} while (curl->unfinished);
 	} else
 #endif
