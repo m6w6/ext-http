@@ -10,7 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 PHP_HTTP_API void php_http_request_info(php_http_request_t *request, HashTable *info)
 {

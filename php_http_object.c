@@ -10,7 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 STATUS php_http_new(zend_object_value *ov, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC)
 {
@@ -150,6 +150,7 @@ PHP_METHOD(HttpObject, setErrorHandling)
 
 			default:
 				php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "unknown error handling code (%ld)", eh);
+				break;
 		}
 	}
 
@@ -175,6 +176,7 @@ PHP_METHOD(HttpObject, setDefaultErrorHandling)
 
 			default:
 				php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "unknown error handling code (%ld)", eh);
+				break;
 		}
 	}
 }

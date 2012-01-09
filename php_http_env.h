@@ -14,7 +14,6 @@
 #define PHP_HTTP_ENV_H
 
 #include "php_http_message_body.h"
-#include "php_http_encoding.h"
 #include "php_http_version.h"
 
 struct php_http_env_globals {

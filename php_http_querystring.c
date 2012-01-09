@@ -10,11 +10,11 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
-#include <main/php_variables.h>
+#include <php_variables.h>
 #include <ext/spl/spl_array.h>
-#include <Zend/zend_interfaces.h>
+#include <zend_interfaces.h>
 
 #ifdef PHP_HTTP_HAVE_ICONV
 #	undef PHP_ATOM_INC

@@ -10,7 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 #include <curl/curl.h>
 #include <ext/standard/php_string.h>

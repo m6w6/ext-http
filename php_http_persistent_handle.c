@@ -10,7 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 #ifndef PHP_HTTP_DEBUG_PHANDLES
 #	define PHP_HTTP_DEBUG_PHANDLES 0

@@ -10,7 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 #include <zlib.h>
 

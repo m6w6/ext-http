@@ -13,8 +13,6 @@
 #ifndef PHP_HTTP_REQUESTPOOL_H
 #define PHP_HTTP_REQUESTPOOL_H
 
-#include "php_http_request.h"
-
 typedef enum php_http_request_pool_setopt_opt {
 	PHP_HTTP_REQUEST_POOL_OPT_ENABLE_PIPELINING,
 	PHP_HTTP_REQUEST_POOL_OPT_USE_EVENTS,

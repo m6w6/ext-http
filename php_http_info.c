@@ -10,7 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 PHP_HTTP_API void php_http_info_default_callback(void **nothing, HashTable **headers, php_http_info_t *info TSRMLS_DC)
 {

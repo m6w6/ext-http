@@ -13,6 +13,8 @@
 #ifndef PHP_HTTP_MESSAGE_H
 #define PHP_HTTP_MESSAGE_H
 
+#include "php_http_message_body.h"
+
 /* required minimum length of an HTTP message "HTTP/1.1" */
 #define PHP_HTTP_MESSAGE_MIN_SIZE 8
 #define PHP_HTTP_MESSAGE_TYPE(TYPE, msg) ((msg) && ((msg)->type == PHP_HTTP_ ##TYPE))

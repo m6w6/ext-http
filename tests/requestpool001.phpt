@@ -122,7 +122,7 @@ define('RMAX', 10);
 chdir(__DIR__);
 
 $time = microtime(true);
-$factory = new HttpRequestFactory("curl", array("requestPoolClass" => "Pool"));
+$factory = new HttpRequestFactory(array("driver" => "curl", "requestPoolClass" => "Pool"));
 $factory->createPool()->run($factory);
 printf("Elapsed: %0.3fs\n", microtime(true)-$time);
 

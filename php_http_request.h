@@ -13,9 +13,9 @@
 #ifndef PHP_HTTP_REQUEST_H
 #define PHP_HTTP_REQUEST_H
 
+#include "php_http_request_method.h"
 #include "php_http_message_body.h"
 #include "php_http_message_parser.h"
-#include "php_http_request_method.h"
 
 typedef struct php_http_request_progress_state {
 	struct {

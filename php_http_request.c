@@ -10,11 +10,10 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 #include <ext/spl/spl_observer.h>
 #include <ext/spl/spl_iterators.h>
-#include <Zend/zend_interfaces.h>
 
 PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, php_http_request_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {
@@ -546,6 +545,7 @@ STATUS php_http_request_object_responsehandler(php_http_request_object_t *obj, z
 static int apply_pretty_key(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	if (hash_key->arKey && hash_key->nKeyLength > 1) {
+		/* FIXME: this seems evil */
 		hash_key->h = zend_hash_func(php_http_pretty_key(hash_key->arKey, hash_key->nKeyLength - 1, 1, 0), hash_key->nKeyLength);
 	}
 	return ZEND_HASH_APPLY_KEEP;

@@ -10,7 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 PHP_HTTP_API php_http_strlist_iterator_t *php_http_strlist_iterator_init(php_http_strlist_iterator_t *iter, const char list[], unsigned factor)
 {

@@ -10,8 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
-#include "php_http_resource_factory.h"
+#include "php_http_api.h"
 
 PHP_HTTP_API php_http_resource_factory_t *php_http_resource_factory_init(php_http_resource_factory_t *f, php_http_resource_factory_ops_t *fops, void *data, void (*dtor)(void *data))
 {

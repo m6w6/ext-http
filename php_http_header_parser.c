@@ -10,7 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 typedef struct php_http_header_parser_state_spec {
 	php_http_header_parser_state_t state;

@@ -10,9 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
-
-#include <Zend/zend_interfaces.h>
+#include "php_http_api.h"
 
 PHP_HTTP_API STATUS php_http_headers_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data TSRMLS_DC)
 {

@@ -10,7 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php.h"
+#include <php.h>
 #include "php_http_buffer.h"
 
 PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_init_ex(php_http_buffer_t *buf, size_t chunk_size, int flags)

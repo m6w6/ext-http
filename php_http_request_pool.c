@@ -10,9 +10,8 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
-#include <Zend/zend_interfaces.h>
 #include <ext/spl/spl_iterators.h>
 
 PHP_HTTP_API php_http_request_pool_t *php_http_request_pool_init(php_http_request_pool_t *h, php_http_request_pool_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)

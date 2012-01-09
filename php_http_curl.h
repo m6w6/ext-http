@@ -15,6 +15,10 @@
 
 #if PHP_HTTP_HAVE_CURL
 
+#include "php_http_request.h"
+#include "php_http_request_pool.h"
+#include "php_http_request_datashare.h"
+
 PHP_HTTP_API php_http_request_ops_t *php_http_curl_get_request_ops(void);
 PHP_HTTP_API php_http_request_pool_ops_t *php_http_curl_get_request_pool_ops(void);
 PHP_HTTP_API php_http_request_datashare_ops_t *php_http_curl_get_request_datashare_ops(void);

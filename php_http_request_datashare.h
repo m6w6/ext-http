@@ -13,8 +13,6 @@
 #ifndef PHP_HTTP_REQUEST_DATASHARE_H
 #define PHP_HTTP_REQUEST_DATASHARE_H
 
-#include "php_http_request.h"
-
 typedef enum php_http_request_datashare_setopt_opt {
 	PHP_HTTP_REQUEST_DATASHARE_OPT_COOKIES,
 	PHP_HTTP_REQUEST_DATASHARE_OPT_RESOLVER,

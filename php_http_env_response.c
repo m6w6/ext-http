@@ -10,9 +10,8 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
-#include <main/SAPI.h>
 #include <ext/date/php_date.h>
 #include <ext/standard/php_string.h>
 

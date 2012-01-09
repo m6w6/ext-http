@@ -10,9 +10,9 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
-#if PHP_HTTP_HAVE_HASH
+#ifdef PHP_HTTP_HAVE_HASH
 #	include "php_hash.h"
 #endif
 
@@ -25,7 +25,7 @@ PHP_HTTP_API php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC)
 	void *ctx;
 	php_http_etag_t *e;
 
-#if PHP_HTTP_HAVE_HASH
+#ifdef PHP_HTTP_HAVE_HASH
 	const php_hash_ops *eho = NULL;
 
 	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
@@ -57,7 +57,7 @@ PHP_HTTP_API char *php_http_etag_finish(php_http_etag_t *e)
 	unsigned char digest[128] = {0};
 	char *etag = NULL;
 
-#if PHP_HTTP_HAVE_HASH
+#ifdef PHP_HTTP_HAVE_HASH
 	const php_hash_ops *eho = NULL;
 
 	if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
@@ -84,7 +84,7 @@ PHP_HTTP_API char *php_http_etag_finish(php_http_etag_t *e)
 
 PHP_HTTP_API size_t php_http_etag_update(php_http_etag_t *e, const char *data_ptr, size_t data_len)
 {
-#if PHP_HTTP_HAVE_HASH
+#ifdef PHP_HTTP_HAVE_HASH
 	const php_hash_ops *eho = NULL;
 
 	if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {

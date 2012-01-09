@@ -10,9 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
-
-#include <Zend/zend_interfaces.h>
+#include "php_http_api.h"
 
 static PHP_HTTP_STRLIST(php_http_request_methods) =
 	PHP_HTTP_STRLIST_ITEM("UNKNOWN")

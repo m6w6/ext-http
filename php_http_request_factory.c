@@ -10,11 +10,10 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 #include <ext/standard/php_string.h>
 #include <ext/spl/spl_observer.h>
-#include <Zend/zend_interfaces.h>
 
 /*
  * array of name => php_http_request_factory_driver_t*

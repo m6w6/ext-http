@@ -13,8 +13,6 @@
 #ifndef PHP_HTTP_PERSISTENT_HANDLE_H
 #define PHP_HTTP_PERSISTENT_HANDLE_H
 
-#include "php_http_resource_factory.h"
-
 typedef struct php_http_persistent_handle_factory {
 	void *provider;
 

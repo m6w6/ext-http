@@ -10,10 +10,10 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 #include <ext/standard/php_string.h>
-#include <Zend/zend_interfaces.h>
+#include <zend_interfaces.h>
 
 static php_http_params_token_t def_param_sep = {",", 1}, *def_param_sep_ptr[] = {&def_param_sep, NULL};
 static php_http_params_token_t def_arg_sep = {";", 1}, *def_arg_sep_ptr[] = {&def_arg_sep, NULL};

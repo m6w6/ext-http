@@ -32,6 +32,31 @@ if (!strlen($ext = $argv[1]))
 	die(sprintf("Usage: %s <ext>\n", $argv[0]));
 
 $ext = new ReflectionExtension($ext);
+foreach ($ext->getConstants() as $constant => $value) {
+    printf("const %s = %s;\n", $constant, $value);
+}
+printf("\n");
+
+foreach ($ext->getFunctions() as $f) {
+    printf("function %s(", $f->getName());
+    $ps = array();
+    foreach ($f->getParameters() as $p) {
+        $p1 = sprintf("%s%s\$%s", t($p), $p->isPassedByReference()?"&":"", $p->getName());
+        if ($p->isOptional()) {
+            if ($p->isDefaultValueAvailable()) {
+                $p1 .= sprintf(" = %s", var_export($p->getDefaultValue(), true));
+            } elseif (!($p->isArray() || $p->getClass()) || $p->allowsNull()) {
+                $p1 .= " = NULL";
+            } elseif ($p->isArray()) {
+                $p1 .= " = array()";
+            }
+        }
+        $ps[] = $p1;
+    }
+    printf("%s) {\n}\n", implode(", ", $ps));
+}
+printf("\n");
+
 foreach ($ext->getClasses() as $class) {
 
 	printf("%s%s %s ", m($class->getModifiers()), $class->isInterface() ? "interface":"class" ,$class->getName());
@@ -62,11 +87,15 @@ foreach ($ext->getClasses() as $class) {
 			$ps = array();
 			foreach ($m->getParameters() as $p) {
 				$p1 = sprintf("%s%s\$%s", t($p), $p->isPassedByReference()?"&":"", $p->getName());
-				if ($p->isDefaultValueAvailable()) {
-					$p1 .= sprintf(" = %s", var_export($p->getDefaultValue(), true));
-				} elseif ($p->allowsNull() || $p->isOptional()) {
-					$p1 .= sprintf(" = NULL");
-				}
+                if ($p->isOptional()) {
+                    if ($p->isDefaultValueAvailable()) {
+                        $p1 .= sprintf(" = %s", var_export($p->getDefaultValue(), true));
+                    } elseif (!($p->isArray() || $p->getClass()) || $p->allowsNull()) {
+                        $p1 .= sprintf(" = NULL");
+                    } elseif ($p->isArray()) {
+                        $p1 .= " = array()";
+                    }
+                }
 				$ps[] = $p1;
 			}
 			printf("%s) {\n\t}\n", implode(", ", $ps));

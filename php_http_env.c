@@ -10,9 +10,7 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
-
-#include <main/SAPI.h>
+#include "php_http_api.h"
 
 PHP_RINIT_FUNCTION(http_env)
 {

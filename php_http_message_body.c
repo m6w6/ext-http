@@ -10,9 +10,8 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
-#include <libgen.h>
 #include <ext/standard/php_lcg.h>
 #include <ext/standard/php_string.h>
 

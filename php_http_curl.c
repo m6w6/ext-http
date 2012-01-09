@@ -10,12 +10,9 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 #if PHP_HTTP_HAVE_CURL
-
-#include "php_http_request.h"
-#include "php_http_request_pool.h"
 
 #include <curl/curl.h>
 #define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
@@ -25,7 +22,6 @@
 #endif
 
 #include <ext/spl/spl_iterators.h>
-#include <Zend/zend_interfaces.h>
 
 
 typedef struct php_http_curl_request {

@@ -15,6 +15,8 @@
 
 #if PHP_HTTP_HAVE_NEON
 
+#include "php_http_request.h"
+
 php_http_request_ops_t *php_http_neon_get_request_ops(void);
 
 PHP_MINIT_FUNCTION(http_neon);

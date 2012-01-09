@@ -10,11 +10,11 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
 #include <ext/standard/php_lcg.h>
 #include <ext/standard/php_string.h>
-#include <Zend/zend_exceptions.h>
+#include <zend_exceptions.h>
 
 /* SLEEP */
 
@@ -37,7 +37,7 @@ PHP_HTTP_API void php_http_sleep(double s)
 #else
 	struct timeval timeout;
 
-	timeout.tv.sec = (time_t) s;
+	timeout.tv_sec = (time_t) s;
 	timeout.tv_usec = PHP_HTTP_USEC(s) % PHP_HTTP_MCROSEC;
 
 	select(0, NULL, NULL, NULL, &timeout);

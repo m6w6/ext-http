@@ -10,9 +10,14 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
+
+#include <php_ini.h>
+#include <ext/standard/php_string.h>
+#include <ext/standard/info.h>
 
 #include <zlib.h>
+
 #if PHP_HTTP_HAVE_CURL
 #	include <curl/curl.h>
 #	if PHP_HTTP_HAVE_EVENT
@@ -20,15 +25,11 @@
 #	endif
 #endif
 #if PHP_HTTP_HAVE_NEON
-#	include "neon/ne_utils.h"
+#	include <neon/ne_utils.h>
 #endif
 #if PHP_HTTP_HAVE_SERF
-#	include "serf.h"
+#	include <serf.h>
 #endif
-
-#include <main/php_ini.h>
-#include <ext/standard/info.h>
-#include <Zend/zend_extensions.h>
 
 ZEND_DECLARE_MODULE_GLOBALS(php_http);
 
@@ -48,13 +49,13 @@ PHP_MINFO_FUNCTION(http);
 
 static zend_module_dep http_module_deps[] = {
 	ZEND_MOD_REQUIRED("spl")
-#if PHP_HTTP_HAVE_HASH
+#ifdef PHP_HTTP_HAVE_HASH
 	ZEND_MOD_REQUIRED("hash")
 #endif
-#if PHP_HTTP_HAVE_ICONV
+#ifdef PHP_HTTP_HAVE_ICONV
 	ZEND_MOD_REQUIRED("iconv")
 #endif
-#if PHP_HTTP_HAVE_EVENT
+#ifdef PHP_HTTP_HAVE_EVENT
 	ZEND_MOD_CONFLICTS("event")
 #endif
 	{NULL, NULL, NULL, 0}

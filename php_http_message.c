@@ -10,11 +10,11 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
-#include <main/SAPI.h>
+#include <SAPI.h>
 #include <ext/spl/spl_iterators.h>
-#include <Zend/zend_interfaces.h>
+#include <zend_interfaces.h>
 
 PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **message, HashTable **headers, php_http_info_t *info TSRMLS_DC)
 {

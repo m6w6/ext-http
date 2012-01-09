@@ -10,9 +10,9 @@
     +--------------------------------------------------------------------+
 */
 
-#include "php_http.h"
+#include "php_http_api.h"
 
-#include <Zend/zend_exceptions.h>
+#include <zend_exceptions.h>
 
 #ifndef PHP_HTTP_DBG_EXCEPTIONS
 #	define PHP_HTTP_DBG_EXCEPTIONS 0
