@@ -12,10 +12,6 @@
 
 #include "php_http_api.h"
 
-#include <ext/date/php_date.h>
-#include <ext/standard/php_string.h>
-
-
 static void set_option(zval *options, const char *name_str, size_t name_len, int type, const void *value_ptr, size_t value_len TSRMLS_DC)
 {
 	if (Z_TYPE_P(options) == IS_OBJECT) {

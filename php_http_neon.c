@@ -16,8 +16,6 @@
 
 #include "php_http_request.h"
 
-#include <ext/date/php_date.h>
-
 #include <neon/ne_auth.h>
 #include <neon/ne_compress.h>
 #include <neon/ne_session.h>

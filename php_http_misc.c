@@ -13,7 +13,6 @@
 #include "php_http_api.h"
 
 #include <ext/standard/php_lcg.h>
-#include <ext/standard/php_string.h>
 #include <zend_exceptions.h>
 
 /* SLEEP */

@@ -12,7 +12,6 @@
 
 #include "php_http_api.h"
 
-#include <ext/standard/php_string.h>
 #include <ext/spl/spl_observer.h>
 
 /*

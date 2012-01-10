@@ -12,9 +12,6 @@
 
 #include "php_http_api.h"
 
-#include <SAPI.h>
-#include <ext/standard/php_string.h>
-
 static inline char *localhostname(void)
 {
 	char hostname[1024] = {0};
@@ -246,7 +243,7 @@ PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url 
 						/* .. at the end */
 						ptr[1] = '\0';
 					}
-					/* fallthrough */
+					/* no break */
 				
 				default:
 					/* something else */

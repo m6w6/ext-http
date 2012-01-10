@@ -12,8 +12,6 @@
 
 #include "php_http_api.h"
 
-#include <ext/standard/php_string.h>
-
 static int php_http_negotiate_sort(const void *a, const void *b TSRMLS_DC)
 {
 	zval result, *first, *second;

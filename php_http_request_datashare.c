@@ -13,8 +13,6 @@
 #include "php_http_api.h"
 
 #include <curl/curl.h>
-#include <ext/standard/php_string.h>
-#include <ext/spl/spl_iterators.h>
 
 static int php_http_request_datashare_compare_handles(void *h1, void *h2);
 

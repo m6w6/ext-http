@@ -20,15 +20,6 @@ extern zend_module_entry http_module_entry;
 
 extern int http_module_number;
 
-#if PHP_DEBUG
-#	define _DPF_STR	0
-#	define _DPF_IN	1
-#	define _DPF_OUT	2
-extern void _dpf(int type, const char *data, size_t length);
-#else
-#	define _dpf(t,s,l);
-#endif
-
 #endif	/* PHP_EXT_HTTP_H */
 
 /*

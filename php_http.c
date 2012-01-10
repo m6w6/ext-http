@@ -13,7 +13,6 @@
 #include "php_http_api.h"
 
 #include <php_ini.h>
-#include <ext/standard/php_string.h>
 #include <ext/standard/info.h>
 
 #include <zlib.h>

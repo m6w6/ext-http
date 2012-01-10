@@ -113,9 +113,11 @@ static inline HashTable *php_http_url_to_struct(php_url *url, zval *strct TSRMLS
 			default:
 				zval_dtor(strct);
 				array_init(strct);
+				/* no break */
 			case IS_ARRAY:
 			case IS_OBJECT:
 				INIT_PZVAL_ARRAY((&arr), HASH_OF(strct));
+				break;
 		}
 	} else {
 		INIT_PZVAL(&arr);

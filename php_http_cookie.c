@@ -12,8 +12,6 @@
 
 #include "php_http_api.h"
 
-#include <ext/date/php_date.h>
-
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_init(php_http_cookie_list_t *list TSRMLS_DC)
 {
 	if (!list) {

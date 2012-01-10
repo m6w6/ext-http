@@ -21,9 +21,6 @@
 #	include <event.h>
 #endif
 
-#include <ext/spl/spl_iterators.h>
-
-
 typedef struct php_http_curl_request {
 	CURL *handle;
 
@@ -512,6 +509,7 @@ static int php_http_curl_request_pool_socket_callback(CURL *easy, curl_socket_t 
 
 			case CURL_POLL_REMOVE:
 				efree(ev);
+				/* no break */
 			case CURL_POLL_NONE:
 				return 0;
 

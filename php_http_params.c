@@ -12,9 +12,6 @@
 
 #include "php_http_api.h"
 
-#include <ext/standard/php_string.h>
-#include <zend_interfaces.h>
-
 static php_http_params_token_t def_param_sep = {",", 1}, *def_param_sep_ptr[] = {&def_param_sep, NULL};
 static php_http_params_token_t def_arg_sep = {";", 1}, *def_arg_sep_ptr[] = {&def_arg_sep, NULL};
 static php_http_params_token_t def_val_sep = {"=", 1}, *def_val_sep_ptr[] = {&def_val_sep, NULL};
@@ -288,10 +285,13 @@ PHP_METHOD(HttpParams, __construct)
 			switch (ZEND_NUM_ARGS()) {
 				case 4:
 					zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("param_sep"), param_sep TSRMLS_CC);
+					/* no break */
 				case 3:
 					zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("arg_sep"), arg_sep TSRMLS_CC);
+					/* no break */
 				case 2:
 					zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("val_sep"), val_sep TSRMLS_CC);
+					/* no break */
 			}
 
 			if (zparams) {

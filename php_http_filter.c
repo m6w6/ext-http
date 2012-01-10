@@ -401,13 +401,16 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 					if (SUCCESS != zend_hash_find(HASH_OF(params), "flags", sizeof("flags"), (void *) &tmp)) {
 						break;
 					}
+					/* no break */
 				default:
 				{
 					zval *num = php_http_ztyp(IS_LONG, *tmp);
 					
 					flags |= (Z_LVAL_P(num) & 0x0fffffff);
 					zval_ptr_dtor(&num);
+
 				}
+				break;
 			}
 		}
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), flags TSRMLS_CC))) {

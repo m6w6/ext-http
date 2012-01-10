@@ -17,9 +17,14 @@
 #include "config.h"
 #endif
 
-#include <php.h>
 #include <php_config.h>
+#include <php.h>
 #include <SAPI.h>
+
+#include <ext/standard/php_string.h>
+#include <ext/spl/spl_iterators.h>
+#include <ext/date/php_date.h>
+
 #include <zend_interfaces.h>
 
 #if defined(PHP_WIN32)
@@ -60,6 +65,8 @@ typedef int STATUS;
 #include <ctype.h>
 #define PHP_HTTP_IS_CTYPE(type, c) is##type((int) (unsigned char) (c))
 #define PHP_HTTP_TO_CTYPE(type, c) to##type((int) (unsigned char) (c))
+
+#include "php_http.h"
 
 #include "php_http_buffer.h"
 #include "php_http_strlist.h"
@@ -115,6 +122,15 @@ ZEND_EXTERN_MODULE_GLOBALS(php_http);
 #	define TSRMLS_FETCH_FROM_CTX(ctx) void ***tsrm_ls = ((ctx)?(ctx):ts_resource_ex(0, NULL))
 #else
 #	define PHP_HTTP_G (&php_http_globals)
+#endif
+
+#if PHP_DEBUG
+#	define _DPF_STR	0
+#	define _DPF_IN	1
+#	define _DPF_OUT	2
+extern void _dpf(int type, const char *data, size_t length);
+#else
+#	define _dpf(t,s,l);
 #endif
 
 #endif /* PHP_HTTP_API_H */

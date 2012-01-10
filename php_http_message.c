@@ -12,10 +12,6 @@
 
 #include "php_http_api.h"
 
-#include <SAPI.h>
-#include <ext/spl/spl_iterators.h>
-#include <zend_interfaces.h>
-
 PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **message, HashTable **headers, php_http_info_t *info TSRMLS_DC)
 {
 	php_http_message_t *old = *message;

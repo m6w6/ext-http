@@ -14,7 +14,6 @@
 
 #include <php_variables.h>
 #include <ext/spl/spl_array.h>
-#include <zend_interfaces.h>
 
 #ifdef PHP_HTTP_HAVE_ICONV
 #	undef PHP_ATOM_INC
