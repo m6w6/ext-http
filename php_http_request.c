@@ -24,7 +24,7 @@ PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, ph
 	memset(h, 0, sizeof(*h));
 
 	h->ops = ops;
-	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL);
+	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
 	h->buffer = php_http_buffer_init(NULL);
 	h->parser = php_http_message_parser_init(NULL TSRMLS_CC);
 	h->message = php_http_message_init(NULL, 0 TSRMLS_CC);

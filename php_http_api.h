@@ -89,7 +89,6 @@ typedef int STATUS;
 #include "php_http_message_body.h"
 #include "php_http_message_parser.h"
 #include "php_http_negotiate.h"
-#include "php_http_neon.h"
 #include "php_http_object.h"
 #include "php_http_params.h"
 #include "php_http_persistent_handle.h"

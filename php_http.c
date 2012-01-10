@@ -23,9 +23,6 @@
 #		include <event.h>
 #	endif
 #endif
-#if PHP_HTTP_HAVE_NEON
-#	include <neon/ne_utils.h>
-#endif
 #if PHP_HTTP_HAVE_SERF
 #	include <serf.h>
 #endif
@@ -152,9 +149,6 @@ PHP_MINIT_FUNCTION(http)
 #if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_MINIT_CALL(http_curl)
 #endif
-#if PHP_HTTP_HAVE_NEON
-	|| SUCCESS != PHP_MINIT_CALL(http_neon)
-#endif
 	|| SUCCESS != PHP_MINIT_CALL(http_request_datashare)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_method)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_pool)
@@ -179,9 +173,6 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_message)
 #if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
-#endif
-#if PHP_HTTP_HAVE_NEON
-	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_neon)
 #endif
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_factory)
@@ -237,15 +228,6 @@ PHP_MINFO_FUNCTION(http)
 	}
 #else
 	php_info_print_table_row(3, "libcurl", "disabled", "disabled");
-#endif
-#if PHP_HTTP_HAVE_NEON
-	{
-		char ne_v[16] = {0};
-		sscanf(ne_version_string(), "neon %15[^ :]", &ne_v[0]);
-		php_info_print_table_row(3, "libneon", PHP_HTTP_NEON_VERSION, ne_v);
-	}
-#else
-	php_info_print_table_row(3, "libneon", "disabled", "disabled");
 #endif
 
 #if PHP_HTTP_HAVE_EVENT

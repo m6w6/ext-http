@@ -8,8 +8,6 @@ PHP_ARG_WITH([http-zlib-dir], [],
 [  --with-http-zlib-dir[=DIR]     HTTP: where to find zlib], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-libcurl-dir], [],
 [  --with-http-libcurl-dir[=DIR]  HTTP: where to find libcurl], $PHP_HTTP, $PHP_HTTP)
-PHP_ARG_WITH([http-libneon-dir], [],
-[  --with-http-libneon-dir[=DIR]  HTTP: where to find libneon], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-libserf-dir], [],
 [  --with-http-libserf-dir[=DIR]  HTTP: where to find libserf], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-libevent-dir], [],
@@ -133,59 +131,6 @@ dnl ----
 		fi
 	fi
 	
-dnl ----
-dnl NEON
-dnl ----
-
-	if test "$PHP_HTTP_LIBNEON_DIR" = "no"; then
-		AC_DEFINE([PHP_HTTP_HAVE_NEON], [0], [ ])
-	else
-		AC_MSG_CHECKING([for neon/ne_session.h])
-		NEON_DIR=
-		for i in "$PHP_HTTP_LIBNEON_DIR" /usr/local /usr /opt; do
-			if test -f "$i/include/neon/ne_session.h"; then
-				NEON_DIR=$i
-				break
-			fi
-		done
-
-		if test "x$NEON_DIR" = "x"; then
-			AC_MSG_RESULT([not found])
-			AC_DEFINE([PHP_HTTP_HAVE_NEON], [0], [ ])
-		else
-			AC_MSG_RESULT([found in $NEON_DIR])
-
-			AC_MSG_CHECKING([for neon-config])
-			NEON_CONFIG=
-			for i in "$NEON_DIR/bin/neon-config" "$NEON_DIR/neon-config" `which neon-config`; do
-				if test -x "$i"; then
-					NEON_CONFIG=$i
-					break
-				fi
-			done
-			if test "x$NEON_CONFIG" = "x"; then
-				AC_MSG_RESULT([not found])
-				AC_DEFINE([PHP_HTTP_HAVE_NEON], [0], [ ])
-			else
-				AC_MSG_RESULT([found: $NEON_CONFIG])
-
-				AC_MSG_CHECKING([for libneon version])
-				PHP_HTTP_NEON_VERSION=`$NEON_CONFIG --version | $SED -re 's/^neon ([[^ :]]+).*/\1/g'`
-				if test "x$PHP_HTTP_NEON_VERSION" = "x"; then
-					AC_MSG_RESULT([unknown])
-					PHP_HTTP_NEON_VERSION="unknown"
-				else
-					AC_MSG_RESULT([$PHP_HTTP_NEON_VERSION])
-				fi
-				AC_DEFINE_UNQUOTED([PHP_HTTP_NEON_VERSION], ["$PHP_HTTP_NEON_VERSION"], [neon-config --version])
-				PHP_ADD_INCLUDE($NEON_DIR/include)
-				PHP_ADD_LIBRARY_WITH_PATH(neon, $NEON_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-				AC_DEFINE([PHP_HTTP_HAVE_NEON], [1], [Have libneon support])
-				HTTP_HAVE_A_REQUEST_LIB=true
-			fi
-		fi
-	fi
-
 dnl ----
 dnl SERF
 dnl ----
@@ -470,7 +415,6 @@ dnl ----
 		php_http_request.c \
 		php_http_request_factory.c \
 		php_http_curl.c \
-		php_http_neon.c \
 		php_http_request_pool.c \
 		php_http_request_datashare.c \
 		php_http_request_method.c \
@@ -514,7 +458,6 @@ dnl ----
 		php_http_request.h \
 		php_http_request_factory.h \
 		php_http_curl.h \
-		php_http_neon.h \
 		php_http_request_method.h \
 		php_http_request_pool.h \
 		php_http_strlist.h \
