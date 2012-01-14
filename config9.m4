@@ -243,6 +243,7 @@ dnl ----
 					AC_MSG_RESULT([yes])
 					AC_CHECK_HEADER([openssl/crypto.h], [
 						AC_DEFINE([PHP_HTTP_HAVE_OPENSSL], [1], [ ])
+						CURL_SSL="crypto"
 					])
 				], [
 					AC_MSG_RESULT([no])
@@ -266,6 +267,7 @@ dnl ----
 					AC_MSG_RESULT([yes])
 					AC_CHECK_HEADER([gcrypt.h], [
 						AC_DEFINE([PHP_HTTP_HAVE_GNUTLS], [1], [ ])
+						CURL_SSL="gcrypt"
 					])
 				], [
 					AC_MSG_RESULT([no])
@@ -301,6 +303,9 @@ dnl ----
 			PHP_ADD_INCLUDE($CURL_DIR/include)
 			PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 			PHP_EVAL_LIBLINE(`$CURL_CONFIG --libs`, HTTP_SHARED_LIBADD)
+			if test "x$CURL_SSL" != "x"; then
+				PHP_ADD_LIBRARY_WITH_PATH([$CURL_SSL], $CURL_DIR/$PHP_LIBDIR, PHP_HTTP_SHARED_LIBADD)
+			fi
 			AC_DEFINE([PHP_HTTP_HAVE_CURL], [1], [Have libcurl support])
 			HTTP_HAVE_A_REQUEST_LIB=true
 		fi
