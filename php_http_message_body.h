@@ -67,6 +67,8 @@ PHP_METHOD(HttpMessageBody, toStream);
 PHP_METHOD(HttpMessageBody, toCallback);
 PHP_METHOD(HttpMessageBody, append);
 PHP_METHOD(HttpMessageBody, add);
+PHP_METHOD(HttpMessageBody, etag);
+PHP_METHOD(HttpMessageBody, stat);
 
 #endif
 

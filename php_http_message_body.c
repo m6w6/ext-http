@@ -115,7 +115,7 @@ PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body)
 	const php_stream_statbuf *ssb = php_http_message_body_stat(body);
 
 	/* real file or temp buffer ? */
-	if (body->ssb.sb.st_mtime) {
+	if (ssb && ssb->sb.st_mtime) {
 		char *etag;
 
 		spprintf(&etag, 0, "%lx-%lx-%lx", ssb->sb.st_ino, ssb->sb.st_mtime, ssb->sb.st_size);
@@ -415,6 +415,11 @@ PHP_HTTP_BEGIN_ARGS(add, 0)
 	PHP_HTTP_ARG_VAL(files, 0)
 PHP_HTTP_END_ARGS;
 
+PHP_HTTP_EMPTY_ARGS(etag);
+
+PHP_HTTP_BEGIN_ARGS(stat, 0)
+	PHP_HTTP_ARG_VAL(what, 0)
+PHP_HTTP_END_ARGS;
 
 zend_class_entry *php_http_message_body_class_entry;
 zend_function_entry php_http_message_body_method_entry[] = {
@@ -425,6 +430,8 @@ zend_function_entry php_http_message_body_method_entry[] = {
 	PHP_HTTP_MESSAGE_BODY_ME(toCallback, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(append, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(add, ZEND_ACC_PUBLIC)
+	PHP_HTTP_MESSAGE_BODY_ME(etag, ZEND_ACC_PUBLIC)
+	PHP_HTTP_MESSAGE_BODY_ME(stat, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 static zend_object_handlers php_http_message_body_object_handlers;
@@ -610,6 +617,65 @@ PHP_METHOD(HttpMessageBody, add)
 	}
 	RETURN_FALSE;
 }
+
+PHP_METHOD(HttpMessageBody, etag)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		char *etag = php_http_message_body_etag(obj->body);
+
+		if (etag) {
+			RETURN_STRING(etag, 0);
+		}
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpMessageBody, stat)
+{
+	char *field_str = NULL;
+	int field_len = 0;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &field_str, &field_len)) {
+		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		const php_stream_statbuf *sb = php_http_message_body_stat(obj->body);
+
+		if (sb) {
+			if (field_str && field_len) {
+					switch (*field_str) {
+						case 's':
+						case 'S':
+							RETURN_LONG(sb->sb.st_size);
+							break;
+						case 'a':
+						case 'A':
+							RETURN_LONG(sb->sb.st_atime);
+							break;
+						case 'm':
+						case 'M':
+							RETURN_LONG(sb->sb.st_mtime);
+							break;
+						case 'c':
+						case 'C':
+							RETURN_LONG(sb->sb.st_ctime);
+							break;
+						default:
+							php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "unknown stat field: '%s' (should be one of [s]ize, [a]time, [m]time or [c]time)", field_str);
+							break;
+					}
+			} else {
+				array_init(return_value);
+				add_assoc_long_ex(return_value, ZEND_STRS("size"), sb->sb.st_size);
+				add_assoc_long_ex(return_value, ZEND_STRS("atime"), sb->sb.st_atime);
+				add_assoc_long_ex(return_value, ZEND_STRS("mtime"), sb->sb.st_mtime);
+				add_assoc_long_ex(return_value, ZEND_STRS("ctime"), sb->sb.st_ctime);
+				return;
+			}
+		}
+	}
+	RETURN_FALSE;
+}
+
 /*
  * Local variables:
  * tab-width: 4
