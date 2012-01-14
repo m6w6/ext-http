@@ -1153,18 +1153,16 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 	zval *return_value, *copy = php_http_ztyp(IS_STRING, member);
 
 	if (SUCCESS == php_http_message_object_get_prophandler(Z_STRVAL_P(copy), Z_STRLEN_P(copy), &handler)) {
-		if (type == BP_VAR_W) {
-			zval_ptr_dtor(&copy);
+		if (type == BP_VAR_R) {
+			ALLOC_ZVAL(return_value);
+			Z_SET_REFCOUNT_P(return_value, 0);
+			Z_UNSET_ISREF_P(return_value);
+
+			handler->read(obj, return_value TSRMLS_CC);
+		} else {
 			zend_error(E_ERROR, "Cannot access HttpMessage properties by reference or array key/index");
-			return NULL;
+			return_value = NULL;
 		}
-
-		ALLOC_ZVAL(return_value);
-		Z_SET_REFCOUNT_P(return_value, 0);
-		Z_UNSET_ISREF_P(return_value);
-
-		handler->read(obj, return_value TSRMLS_CC);
-
 	} else {
 		return_value = zend_get_std_object_handlers()->read_property(object, member, type, literal_key TSRMLS_CC);
 	}
