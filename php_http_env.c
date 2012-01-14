@@ -714,62 +714,6 @@ PHP_METHOD(HttpEnv, setResponseCode)
 	RETURN_FALSE;
 }
 
-
-#define PHP_HTTP_DO_NEGOTIATE_DEFAULT(supported) \
-	{ \
-		zval **value; \
-		 \
-		zend_hash_internal_pointer_reset((supported)); \
-		if (SUCCESS == zend_hash_get_current_data((supported), (void *) &value)) { \
-			RETVAL_ZVAL(*value, 1, 0); \
-		} else { \
-			RETVAL_NULL(); \
-		} \
-	}
-
-#define PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array) \
-	PHP_HTTP_DO_NEGOTIATE_DEFAULT(supported); \
-	if (rs_array) { \
-		HashPosition pos; \
-		zval **value_ptr; \
-		 \
-		FOREACH_HASH_VAL(pos, supported, value_ptr) { \
-			zval *value = php_http_ztyp(IS_STRING, *value_ptr); \
-			add_assoc_double(rs_array, Z_STRVAL_P(value), 1.0); \
-			zval_ptr_dtor(&value); \
-		} \
-	}
-
-#define PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(result, supported, rs_array) \
-	{ \
-		char *key; \
-		uint key_len; \
-		ulong idx; \
-		 \
-		if (zend_hash_num_elements(result) && HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(result, &key, &key_len, &idx, 1, NULL)) { \
-			RETVAL_STRINGL(key, key_len-1, 0); \
-		} else { \
-			PHP_HTTP_DO_NEGOTIATE_DEFAULT(supported); \
-		} \
-		\
-		if (rs_array) { \
-			zend_hash_copy(Z_ARRVAL_P(rs_array), result, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *)); \
-		} \
-		\
-		zend_hash_destroy(result); \
-		FREE_HASHTABLE(result); \
-	}
-
-#define PHP_HTTP_DO_NEGOTIATE(type, supported, rs_array) \
-	{ \
-		HashTable *result; \
-		if ((result = php_http_negotiate_ ##type(supported TSRMLS_CC))) { \
-			PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(result, supported, rs_array); \
-		} else { \
-			PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array); \
-		} \
-	}
-
 PHP_METHOD(HttpEnv, negotiateLanguage)
 {
 	HashTable *supported;
