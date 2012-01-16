@@ -147,7 +147,8 @@ PHP_METHOD(HttpHeader, match)
 	}
 
 	zvalue = php_http_ztyp(IS_STRING, zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("value"), 0 TSRMLS_CC));
-	RETURN_BOOL(php_http_match(Z_STRVAL_P(zvalue), val_str, flags))
+	RETVAL_BOOL(php_http_match(Z_STRVAL_P(zvalue), val_str, flags));
+	zval_ptr_dtor(&zvalue);
 }
 
 PHP_MINIT_FUNCTION(http_header)
