@@ -8,8 +8,6 @@ PHP_ARG_WITH([http-zlib-dir], [],
 [  --with-http-zlib-dir[=DIR]     HTTP: where to find zlib], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-libcurl-dir], [],
 [  --with-http-libcurl-dir[=DIR]  HTTP: where to find libcurl], $PHP_HTTP, $PHP_HTTP)
-PHP_ARG_WITH([http-libserf-dir], [],
-[  --with-http-libserf-dir[=DIR]  HTTP: where to find libserf], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-libevent-dir], [],
 [  --with-http-libevent-dir[=DIR] HTTP: where to find libevent], $PHP_HTTP_LIBCURL_DIR, "")
 
@@ -437,6 +435,7 @@ dnl ----
 
 	PHP_HTTP_HEADERS="
 		php_http.h \
+		php_http_api.h \
 		php_http_buffer.h \
 		php_http_cookie.h \
 		php_http_encoding.h \
