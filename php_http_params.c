@@ -176,7 +176,9 @@ PHP_HTTP_API HashTable *php_http_params_parse(HashTable *params, const php_http_
 
 PHP_HTTP_BEGIN_ARGS(__construct, 0)
 	PHP_HTTP_ARG_VAL(params, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
+	PHP_HTTP_ARG_VAL(param_sep, 0)
+	PHP_HTTP_ARG_VAL(arg_sep, 0)
+	PHP_HTTP_ARG_VAL(val_sep, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(toArray);
