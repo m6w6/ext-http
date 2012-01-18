@@ -281,7 +281,7 @@ static zval **php_http_request_datashare_object_get_prop_ptr(zval *object, zval 
 	zend_property_info *pi;
 
 	if ((pi = zend_get_property_info(php_http_request_datashare_class_entry, member, 1 TSRMLS_CC))) {
-		return &php_http_property_proxy_init(NULL, object, member TSRMLS_CC)->myself;
+		return &php_http_property_proxy_init(NULL, object, member, NULL TSRMLS_CC)->myself;
 	}
 
 	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member, literal_key TSRMLS_CC);

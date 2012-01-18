@@ -13,10 +13,10 @@
 #include "php_http_api.h"
 
 #ifndef PHP_HTTP_PPDBG
-#	define PHP_HTTP_PPDBG 1
+#	define PHP_HTTP_PPDBG 0
 #endif
 
-php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_t *proxy, zval *object, zval *member TSRMLS_DC)
+php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_t *proxy, zval *object, zval *member, zval *parent TSRMLS_DC)
 {
 	if (!proxy) {
 		proxy = emalloc(sizeof(*proxy));
@@ -28,6 +28,10 @@ php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_
 	Z_ADDREF_P(object);
 	proxy->object = object;
 	proxy->member = php_http_ztyp(IS_STRING, member);
+	if (parent) {
+		Z_ADDREF_P(parent);
+		proxy->parent = parent;
+	}
 
 #if PHP_HTTP_PPDBG
 	fprintf(stderr, "proxy_init: %s\n", Z_STRVAL_P(proxy->member));
@@ -40,6 +44,9 @@ void php_http_property_proxy_dtor(php_http_property_proxy_t *proxy)
 	zval_ptr_dtor(&proxy->object);
 	zval_ptr_dtor(&proxy->member);
 	zval_ptr_dtor(&proxy->myself);
+	if (proxy->parent) {
+		zval_ptr_dtor(&proxy->parent);
+	}
 }
 
 void php_http_property_proxy_free(php_http_property_proxy_t **proxy)
@@ -101,21 +108,6 @@ void php_http_property_proxy_object_free(void *object TSRMLS_DC)
 	efree(o);
 }
 
-static void php_http_property_proxy_object_set(zval **object, zval *value TSRMLS_DC)
-{
-	php_http_property_proxy_object_t *obj = zend_object_store_get_object(*object TSRMLS_CC);
-
-#if PHP_HTTP_PPDBG
-	fprintf(stderr, "proxy_set: %s\n", Z_STRVAL_P(obj->proxy->member));
-#endif
-	if (Z_TYPE_P(obj->proxy->object) == IS_OBJECT) {
-		zend_update_property(Z_OBJCE_P(obj->proxy->object), obj->proxy->object, Z_STRVAL_P(obj->proxy->member), Z_STRLEN_P(obj->proxy->member), value TSRMLS_CC);
-	} else {
-		Z_ADDREF_P(value);
-		zend_symtable_update(Z_ARRVAL_P(obj->proxy->object), Z_STRVAL_P(obj->proxy->member), Z_STRLEN_P(obj->proxy->member)+1, (void *) &value, sizeof(zval *), NULL);
-	}
-}
-
 static zval *php_http_property_proxy_object_get(zval *object TSRMLS_DC)
 {
 	php_http_property_proxy_object_t *obj = zend_object_store_get_object(object TSRMLS_CC);
@@ -144,6 +136,27 @@ static zval *php_http_property_proxy_object_get(zval *object TSRMLS_DC)
 	return NULL;
 }
 
+static void php_http_property_proxy_object_set(zval **object, zval *value TSRMLS_DC)
+{
+	php_http_property_proxy_object_t *obj = zend_object_store_get_object(*object TSRMLS_CC);
+	zval *target = obj->proxy->parent ? php_http_property_proxy_object_get(obj->proxy->parent TSRMLS_CC) : obj->proxy->object;
+
+#if PHP_HTTP_PPDBG
+	fprintf(stderr, "proxy_set: %s\n", Z_STRVAL_P(obj->proxy->member));
+#endif
+	if (Z_TYPE_P(target) == IS_OBJECT) {
+		zend_update_property(Z_OBJCE_P(target), target, Z_STRVAL_P(obj->proxy->member), Z_STRLEN_P(obj->proxy->member), value TSRMLS_CC);
+	} else {
+		Z_ADDREF_P(value);
+		zend_symtable_update(Z_ARRVAL_P(target), Z_STRVAL_P(obj->proxy->member), Z_STRLEN_P(obj->proxy->member)+1, (void *) &value, sizeof(zval *), NULL);
+	}
+	/* propagate */
+	if (obj->proxy->parent) {
+		php_http_property_proxy_object_set(&obj->proxy->parent, target TSRMLS_CC);
+		zval_ptr_dtor(&target);
+	}
+}
+
 static STATUS php_http_property_proxy_object_cast(zval *object, zval *return_value, int type TSRMLS_DC)
 {
 	zval *old_value, *new_value;
@@ -162,17 +175,19 @@ static STATUS php_http_property_proxy_object_cast(zval *object, zval *return_val
 
 static zval *php_http_property_proxy_object_read_dimension(zval *object, zval *offset, int type TSRMLS_DC)
 {
-	zval *retval = NULL, *property = php_http_property_proxy_object_get(object TSRMLS_CC);
+	php_http_property_proxy_object_t *obj = zend_object_store_get_object(object TSRMLS_CC);
+	zval *retval = NULL, *property;
 
 #if PHP_HTTP_PPDBG
-	php_http_property_proxy_object_t *obj = zend_object_store_get_object(object TSRMLS_CC);
 	zval *ocpy = php_http_ztyp(IS_STRING, offset);
 	fprintf(stderr, "read_dimension: %s.%s (%d)\n", Z_STRVAL_P(obj->proxy->member), Z_STRVAL_P(ocpy), type);
 	zval_ptr_dtor(&ocpy);
 #endif
+
+	property = php_http_property_proxy_object_get(object TSRMLS_CC);
 	if (type != BP_VAR_R) {
 		Z_ADDREF_P(property);
-		retval = php_http_property_proxy_init(NULL, property, offset TSRMLS_CC)->myself;
+		retval = php_http_property_proxy_init(NULL, property, offset, obj->proxy->myself TSRMLS_CC)->myself;
 	} else if (Z_TYPE_P(property) == IS_ARRAY) {
 		zval **data = NULL;
 
@@ -193,7 +208,7 @@ static zval *php_http_property_proxy_object_read_dimension(zval *object, zval *o
 		}
 	}
 	zval_ptr_dtor(&property);
-if(retval)Z_SET_ISREF_P(retval);
+
 	return retval;
 }
 
@@ -223,6 +238,7 @@ static void php_http_property_proxy_object_write_dimension(zval *object, zval *o
 				zval_ptr_dtor(&offset);
 			}
 			php_http_property_proxy_object_set(&object, property TSRMLS_CC);
+			zval_ptr_dtor(&property);
 			break;
 
 		default:

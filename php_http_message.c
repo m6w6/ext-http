@@ -1139,7 +1139,7 @@ static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member, c
 
 	if (SUCCESS == php_http_message_object_get_prophandler(Z_STRVAL_P(copy), Z_STRLEN_P(copy), &handler)) {
 		zval_ptr_dtor(&copy);
-		return &php_http_property_proxy_init(NULL, object, member TSRMLS_CC)->myself;
+		return &php_http_property_proxy_init(NULL, object, member, NULL TSRMLS_CC)->myself;
 	}
 	zval_ptr_dtor(&copy);
 

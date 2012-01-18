@@ -17,9 +17,10 @@ typedef struct php_http_property_proxy {
 	zval *myself;
 	zval *object;
 	zval *member;
+	zval *parent;
 } php_http_property_proxy_t;
 
-PHP_HTTP_API php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_t *proxy, zval *object, zval *member TSRMLS_DC);
+PHP_HTTP_API php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_t *proxy, zval *object, zval *member, zval *parent TSRMLS_DC);
 PHP_HTTP_API void php_http_property_proxy_dtor(php_http_property_proxy_t *proxy);
 PHP_HTTP_API void php_http_property_proxy_free(php_http_property_proxy_t **proxy);
 
