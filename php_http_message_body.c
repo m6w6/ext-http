@@ -286,7 +286,7 @@ static inline char *format_key(uint type, char *str, ulong num, const char *pref
 	} else if (type == HASH_KEY_IS_STRING) {
 		new_key = estrdup(str);
 	} else {
-		estrdup("");
+		new_key = estrdup("");
 	}
 
 	return new_key;
