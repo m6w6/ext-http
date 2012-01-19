@@ -251,8 +251,6 @@ PHP_HTTP_API STATUS php_http_message_body_add_field(php_http_message_body_t *bod
 
 PHP_HTTP_API STATUS php_http_message_body_add_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
 {
-	php_stream_statbuf ssb = {{0}};
-	php_stream_filter *tef = NULL;
 	char *safe_name, *path_dup = estrdup(path);
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 
@@ -262,37 +260,13 @@ PHP_HTTP_API STATUS php_http_message_body_add_file(php_http_message_body_t *body
 	php_http_message_body_appendf(
 		body,
 		"Content-Disposition: attachment; name=\"%s\"; filename=\"%s\""	PHP_HTTP_CRLF
-		"Content-Type: %s" PHP_HTTP_CRLF,
+		"Content-Transfer-Encoding: binary" PHP_HTTP_CRLF
+		"Content-Type: %s" PHP_HTTP_CRLF
+		PHP_HTTP_CRLF,
 		safe_name, basename(path_dup), ctype
 	);
-
-	if (SUCCESS == php_stream_stat(in, &ssb)) {
-		php_http_message_body_appendf(
-			body,
-			"Content-Length: %zu" PHP_HTTP_CRLF
-			"" PHP_HTTP_CRLF,
-			ssb.sb.st_size
-		);
-	} else {
-		php_http_message_body_append(
-			body,
-			ZEND_STRL(
-				"Transfer-Encoding: chunked" PHP_HTTP_CRLF
-				"" PHP_HTTP_CRLF
-			)
-		);
-
-		if ((tef = php_http_filter_factory.create_filter("http.chunked_encode", NULL, 0 TSRMLS_CC))) {
-			php_stream_filter_append(&in->readfilters, tef);
-		}
-	}
-
 	php_stream_copy_to_stream_ex(in, php_http_message_body_stream(body), PHP_STREAM_COPY_ALL, NULL);
 	BOUNDARY_CLOSE(body);
-
-	if (tef) {
-		php_stream_filter_remove(tef, 1 TSRMLS_CC);
-	}
 
 	efree(safe_name);
 	efree(path_dup);
