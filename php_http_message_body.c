@@ -238,9 +238,10 @@ PHP_HTTP_API STATUS php_http_message_body_add_field(php_http_message_body_t *bod
 	BOUNDARY_OPEN(body);
 	php_http_message_body_appendf(
 		body,
-			"Content-Disposition: form-data; name=\"%s\"" PHP_HTTP_CRLF
-			"" PHP_HTTP_CRLF,
-		safe_name);
+		"Content-Disposition: form-data; name=\"%s\"" PHP_HTTP_CRLF
+		"" PHP_HTTP_CRLF,
+		safe_name
+	);
 	php_http_message_body_append(body, value_str, value_len);
 	BOUNDARY_CLOSE(body);
 
@@ -291,7 +292,6 @@ PHP_HTTP_API STATUS php_http_message_body_add_file(php_http_message_body_t *body
 
 	if (tef) {
 		php_stream_filter_remove(tef, 1 TSRMLS_CC);
-		php_stream_filter_free(tef TSRMLS_CC);
 	}
 
 	efree(safe_name);
@@ -374,13 +374,16 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 		if (!ht->nApplyCount) {
 			++ht->nApplyCount;
 			FOREACH_HASH_KEYVAL(pos, ht, key, val) {
-				char *str = format_key(key.type, key.str, key.num, name);
-				if (SUCCESS != add_recursive_files(body, str, *val)) {
+				if (Z_TYPE_PP(val) == IS_ARRAY || Z_TYPE_PP(val) == IS_OBJECT) {
+					char *str = format_key(key.type, key.str, key.num, name);
+
+					if (SUCCESS != add_recursive_files(body, str, *val)) {
+						efree(str);
+						--ht->nApplyCount;
+						return FAILURE;
+					}
 					efree(str);
-					--ht->nApplyCount;
-					return FAILURE;
 				}
-				efree(str);
 			}
 			--ht->nApplyCount;
 		}
@@ -395,9 +398,7 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 			} else {
 				zval *tmp = php_http_ztyp(IS_STRING, *zdata);
 
-				if ((stream = php_stream_temp_new())) {
-					php_stream_write(stream, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-				}
+				stream = php_stream_memory_open(TEMP_STREAM_READONLY, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
 				zval_ptr_dtor(&tmp);
 			}
 		} else {
@@ -414,6 +415,7 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 
 			efree(key);
 			zval_ptr_dtor(&znc);
+			zval_ptr_dtor(&ztc);
 			zval_ptr_dtor(&zfc);
 			if (!zdata || Z_TYPE_PP(zdata) != IS_RESOURCE) {
 				php_stream_close(stream);
@@ -449,8 +451,8 @@ PHP_HTTP_BEGIN_ARGS(append, 1)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(add, 0)
-	PHP_HTTP_ARG_VAL(fields, 0)
-	PHP_HTTP_ARG_VAL(files, 0)
+	PHP_HTTP_ARG_ARR(fields, 1, 0)
+	PHP_HTTP_ARG_ARR(files, 1, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(etag);
@@ -653,7 +655,7 @@ PHP_METHOD(HttpMessageBody, add)
 {
 	HashTable *fields = NULL, *files = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|hh", &fields, &files)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|h!h!", &fields, &files)) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 		RETURN_SUCCESS(php_http_message_body_add(obj->body, fields, files));

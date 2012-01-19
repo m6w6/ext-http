@@ -270,6 +270,7 @@ static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z) {
 #define PHP_HTTP_ARGS(class, method)								args_for_ ##class## _ ##method
 #define PHP_HTTP_ARG_VAL(name, pass_ref)							ZEND_ARG_INFO(pass_ref, name)
 #define PHP_HTTP_ARG_OBJ(class, name, allow_null)					ZEND_ARG_OBJ_INFO(0, name, class, allow_null)
+#define PHP_HTTP_ARG_ARR(name, allow_null, pass_ref)				ZEND_ARG_ARRAY_INFO(pass_ref, name, allow_null)
 
 #define EMPTY_FUNCTION_ENTRY {NULL, NULL, NULL, 0, 0}
 
