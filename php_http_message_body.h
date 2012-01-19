@@ -22,12 +22,30 @@ typedef struct php_http_message_body {
 #endif
 } php_http_message_body_t;
 
+typedef enum php_http_message_body_file_is {
+	PHP_HTTP_MESSAGE_BODY_FILE_IS_EMPTY,
+	PHP_HTTP_MESSAGE_BODY_FILE_IS_DATA,
+	PHP_HTTP_MESSAGE_BODY_FILE_IS_PATH,
+	PHP_HTTP_MESSAGE_BODY_FILE_IS_STREAM
+} php_http_message_body_file_is_t;
+
+typedef struct php_http_message_body_file {
+	php_http_message_body_file_is_t type;
+	size_t length;
+	union {
+		char *data;
+		char *path;
+		php_stream *stream;
+	} file;
+} php_http_message_body_file_t;
+
 PHP_HTTP_API php_http_message_body_t *php_http_message_body_init(php_http_message_body_t *body, php_stream *stream TSRMLS_DC);
 PHP_HTTP_API php_http_message_body_t *php_http_message_body_copy(php_http_message_body_t *from, php_http_message_body_t *to, zend_bool dup_internal_stream_and_contents);
 PHP_HTTP_API STATUS php_http_message_body_add(php_http_message_body_t *body, HashTable *fields, HashTable *files);
 PHP_HTTP_API STATUS php_http_message_body_add_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len);
-PHP_HTTP_API STATUS php_http_message_body_add_file(php_http_message_body_t *body, const char *name, const char *path, const char *ctype);
+PHP_HTTP_API STATUS php_http_message_body_add_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *file, php_stream *stream);
 PHP_HTTP_API size_t php_http_message_body_append(php_http_message_body_t *body, const char *buf, size_t len);
+PHP_HTTP_API size_t php_http_message_body_appendf(php_http_message_body_t *body, const char *fmt, ...);
 PHP_HTTP_API void php_http_message_body_to_string(php_http_message_body_t *body, char **buf, size_t *len, off_t offset, size_t forlen);
 PHP_HTTP_API void php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *s, off_t offset, size_t forlen);
 PHP_HTTP_API void php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen);

@@ -248,44 +248,56 @@ PHP_HTTP_API STATUS php_http_message_body_add_field(php_http_message_body_t *bod
 	return SUCCESS;
 }
 
-PHP_HTTP_API STATUS php_http_message_body_add_file(php_http_message_body_t *body, const char *name, const char *path, const char *ctype)
+PHP_HTTP_API STATUS php_http_message_body_add_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
 {
-	php_stream *in;
-	char *path_dup = estrdup(path);
+	php_stream_statbuf ssb = {{0}};
+	php_stream_filter *tef = NULL;
+	char *safe_name, *path_dup = estrdup(path);
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 
-	if ((in = php_stream_open_wrapper(path_dup, "r", REPORT_ERRORS|USE_PATH|STREAM_MUST_SEEK, NULL))) {
-		php_stream_statbuf ssb = {{0}};
+	safe_name = php_addslashes(estrdup(name), strlen(name), NULL, 1 TSRMLS_CC);
 
-		if (SUCCESS == php_stream_stat(in, &ssb) && S_ISREG(ssb.sb.st_mode)) {
-			char *safe_name = php_addslashes(estrdup(name), strlen(name), NULL, 1 TSRMLS_CC);
+	BOUNDARY_OPEN(body);
+	php_http_message_body_appendf(
+		body,
+		"Content-Disposition: attachment; name=\"%s\"; filename=\"%s\""	PHP_HTTP_CRLF
+		"Content-Type: %s" PHP_HTTP_CRLF,
+		safe_name, basename(path_dup), ctype
+	);
 
-			BOUNDARY_OPEN(body);
-			php_http_message_body_appendf(
-				body,
-				"Content-Disposition: attachment; name=\"%s\"; filename=\"%s\""	PHP_HTTP_CRLF
-				"Content-Type: %s" PHP_HTTP_CRLF
-				"Content-Length: %zu" PHP_HTTP_CRLF
-				"" PHP_HTTP_CRLF,
-				safe_name, basename(path_dup), ctype, ssb.sb.st_size);
-			php_stream_copy_to_stream_ex(in, php_http_message_body_stream(body), PHP_STREAM_COPY_ALL, NULL);
-			BOUNDARY_CLOSE(body);
-
-			efree(safe_name);
-			efree(path_dup);
-			php_stream_close(in);
-			return SUCCESS;
-		} else {
-			efree(path_dup);
-			php_stream_close(in);
-			php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "Not a valid regular file: %s", path);
-			return FAILURE;
-		}
+	if (SUCCESS == php_stream_stat(in, &ssb)) {
+		php_http_message_body_appendf(
+			body,
+			"Content-Length: %zu" PHP_HTTP_CRLF
+			"" PHP_HTTP_CRLF,
+			ssb.sb.st_size
+		);
 	} else {
-		efree(path_dup);
-		return FAILURE;
+		php_http_message_body_append(
+			body,
+			ZEND_STRL(
+				"Transfer-Encoding: chunked" PHP_HTTP_CRLF
+				"" PHP_HTTP_CRLF
+			)
+		);
+
+		if ((tef = php_http_filter_factory.create_filter("http.chunked_encode", NULL, 0 TSRMLS_CC))) {
+			php_stream_filter_append(&in->readfilters, tef);
+		}
 	}
 
+	php_stream_copy_to_stream_ex(in, php_http_message_body_stream(body), PHP_STREAM_COPY_ALL, NULL);
+	BOUNDARY_CLOSE(body);
+
+	if (tef) {
+		php_stream_filter_remove(tef, 1 TSRMLS_CC);
+		php_stream_filter_free(tef TSRMLS_CC);
+	}
+
+	efree(safe_name);
+	efree(path_dup);
+
+	return SUCCESS;
 }
 
 static inline char *format_key(uint type, char *str, ulong num, const char *prefix) {
@@ -300,7 +312,7 @@ static inline char *format_key(uint type, char *str, ulong num, const char *pref
 	} else if (type == HASH_KEY_IS_STRING) {
 		new_key = estrdup(str);
 	} else {
-		spprintf(&new_key, 0, "%lu", num);
+		estrdup("");
 	}
 
 	return new_key;
@@ -310,22 +322,24 @@ static STATUS add_recursive_fields(php_http_message_body_t *body, const char *na
 {
 	if (Z_TYPE_P(value) == IS_ARRAY || Z_TYPE_P(value) == IS_OBJECT) {
 		zval **val;
+		HashTable *ht;
 		HashPosition pos;
 		php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 		TSRMLS_FETCH_FROM_CTX(body->ts);
 
-		if (!HASH_OF(value)->nApplyCount) {
-			++HASH_OF(value)->nApplyCount;
+		ht = HASH_OF(value);
+		if (!ht->nApplyCount) {
+			++ht->nApplyCount;
 			FOREACH_KEYVAL(pos, value, key, val) {
 				char *str = format_key(key.type, key.str, key.num, name);
 				if (SUCCESS != add_recursive_fields(body, str, *val)) {
 					efree(str);
-					HASH_OF(value)->nApplyCount--;
+					ht->nApplyCount--;
 					return FAILURE;
 				}
 				efree(str);
 			}
-			--HASH_OF(value)->nApplyCount;
+			--ht->nApplyCount;
 		}
 	} else {
 		zval *cpy = php_http_ztyp(IS_STRING, value);
@@ -338,52 +352,76 @@ static STATUS add_recursive_fields(php_http_message_body_t *body, const char *na
 
 static STATUS add_recursive_files(php_http_message_body_t *body, const char *name, zval *value)
 {
-	if (Z_TYPE_P(value) == IS_ARRAY || Z_TYPE_P(value) == IS_OBJECT) {
-		zval **zfile, **zname, **ztype;
-		TSRMLS_FETCH_FROM_CTX(body->ts);
+	zval **zdata = NULL, **zfile, **zname, **ztype;
+	HashTable *ht;
+	TSRMLS_FETCH_FROM_CTX(body->ts);
 
-		if ((SUCCESS == zend_hash_find(HASH_OF(value), ZEND_STRS("name"), (void *) &zname))
-		&&	(SUCCESS == zend_hash_find(HASH_OF(value), ZEND_STRS("file"), (void *) &zfile))
-		&&	(SUCCESS == zend_hash_find(HASH_OF(value), ZEND_STRS("type"), (void *) &ztype))
-		) {
-			zval *zfc = php_http_ztyp(IS_STRING, *zfile), *znc = php_http_ztyp(IS_STRING, *zname), *ztc = php_http_ztyp(IS_STRING, *ztype);
-			char *str = format_key(HASH_KEY_IS_STRING, Z_STRVAL_P(znc), 0, name);
-			STATUS ret = php_http_message_body_add_file(body, str, Z_STRVAL_P(zfc), Z_STRVAL_P(ztc));
-
-			efree(str);
-			zval_ptr_dtor(&znc);
-			zval_ptr_dtor(&zfc);
-			zval_ptr_dtor(&ztc);
-
-			if (ret != SUCCESS) {
-				return ret;
-			}
-		} else {
-			zval **val;
-			HashPosition pos;
-			php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
-
-			if (!HASH_OF(value)->nApplyCount) {
-				++HASH_OF(value)->nApplyCount;
-				FOREACH_KEYVAL(pos, value, key, val) {
-					char *str = format_key(key.type, key.str, key.num, name);
-					if (SUCCESS != add_recursive_files(body, str, *val)) {
-						efree(str);
-						--HASH_OF(value)->nApplyCount;
-						return FAILURE;
-					}
-					efree(str);
-				}
-				--HASH_OF(value)->nApplyCount;
-			}
-		}
-	} else {
-		TSRMLS_FETCH_FROM_CTX(body->ts);
-		php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "Unrecognized array format for message body file to add");
+	if (Z_TYPE_P(value) != IS_ARRAY && Z_TYPE_P(value) != IS_OBJECT) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "Expected array or object (name, type, file) for message body file to add");
 		return FAILURE;
 	}
 
-	return SUCCESS;
+	ht = HASH_OF(value);
+
+	if ((SUCCESS != zend_hash_find(ht, ZEND_STRS("name"), (void *) &zname))
+	||	(SUCCESS != zend_hash_find(ht, ZEND_STRS("type"), (void *) &ztype))
+	||	(SUCCESS != zend_hash_find(ht, ZEND_STRS("file"), (void *) &zfile))
+	) {
+		zval **val;
+		HashPosition pos;
+		php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+
+		if (!ht->nApplyCount) {
+			++ht->nApplyCount;
+			FOREACH_HASH_KEYVAL(pos, ht, key, val) {
+				char *str = format_key(key.type, key.str, key.num, name);
+				if (SUCCESS != add_recursive_files(body, str, *val)) {
+					efree(str);
+					--ht->nApplyCount;
+					return FAILURE;
+				}
+				efree(str);
+			}
+			--ht->nApplyCount;
+		}
+		return SUCCESS;
+	} else {
+		php_stream *stream;
+		zval *zfc = php_http_ztyp(IS_STRING, *zfile);
+
+		if (SUCCESS == zend_hash_find(ht, ZEND_STRS("data"), (void *) &zdata)) {
+			if (Z_TYPE_PP(zdata) == IS_RESOURCE) {
+				php_stream_from_zval_no_verify(stream, zdata);
+			} else {
+				zval *tmp = php_http_ztyp(IS_STRING, *zdata);
+
+				if ((stream = php_stream_temp_new())) {
+					php_stream_write(stream, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+				}
+				zval_ptr_dtor(&tmp);
+			}
+		} else {
+			stream = php_stream_open_wrapper(Z_STRVAL_P(zfc), "r", REPORT_ERRORS|USE_PATH, NULL);
+		}
+
+		if (!stream) {
+			zval_ptr_dtor(&zfc);
+			return FAILURE;
+		} else {
+			zval *znc = php_http_ztyp(IS_STRING, *zname), *ztc = php_http_ztyp(IS_STRING, *ztype);
+			char *key = format_key(HASH_KEY_IS_STRING, Z_STRVAL_P(znc), 0, name);
+			STATUS ret =  php_http_message_body_add_file(body, key, Z_STRVAL_P(ztc), Z_STRVAL_P(zfc), stream);
+
+			efree(key);
+			zval_ptr_dtor(&znc);
+			zval_ptr_dtor(&zfc);
+			if (!zdata || Z_TYPE_PP(zdata) != IS_RESOURCE) {
+				php_stream_close(stream);
+			}
+			return ret;
+		}
+
+	}
 }
 
 /* PHP */
