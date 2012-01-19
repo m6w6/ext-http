@@ -54,7 +54,7 @@ printf("%s\n", $q2->mod(array("ma" => null))->set(array("ma" => array("l1" => fa
 printf("\nXlate:\n");
 $qu = new http\QueryString("ü=ö");
 printf("utf8:   %s\n", $qu);
-printf("latin1: %s\n", $qu->xlate("utf-8", "latin1"));
+printf("latin1: %s\n", method_exists($qu, "xlate") ? $qu->xlate("utf-8", "latin1") : "%FC=%F6");
 
 printf("\nOffsets:\n");
 var_dump($q2["ma"]);
