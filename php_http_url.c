@@ -442,9 +442,15 @@ PHP_HTTP_BEGIN_ARGS(__construct, 0)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_EMPTY_ARGS(toString);
 
+PHP_HTTP_BEGIN_ARGS(mod, 1)
+	PHP_HTTP_ARG_VAL(more_url_parts, 0)
+	PHP_HTTP_ARG_VAL(flags, 0)
+PHP_HTTP_END_ARGS;
+
 zend_class_entry *php_http_url_class_entry;
 zend_function_entry php_http_url_method_entry[] = {
 	PHP_HTTP_URL_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_HTTP_URL_ME(mod, ZEND_ACC_PUBLIC)
 	PHP_HTTP_URL_ME(toString, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(HttpUrl, __toString, toString, PHP_HTTP_ARGS(HttpUrl, toString), ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
@@ -513,6 +519,48 @@ PHP_METHOD(HttpUrl, __construct)
 			} end_error_handling();
 		}
 	} end_error_handling();
+}
+
+PHP_METHOD(HttpUrl, mod)
+{
+	zval *new_url = NULL;
+	long flags = PHP_HTTP_URL_JOIN_PATH | PHP_HTTP_URL_JOIN_QUERY;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|l", &new_url, &flags)) {
+		php_url *res_purl, *new_purl = NULL, *old_purl = NULL;
+
+		if (new_url) {
+			switch (Z_TYPE_P(new_url)) {
+				case IS_OBJECT:
+				case IS_ARRAY:
+					new_purl = php_http_url_from_struct(NULL, HASH_OF(new_url) TSRMLS_CC);
+					break;
+				default: {
+					zval *cpy = php_http_ztyp(IS_STRING, new_url);
+
+					new_purl = php_url_parse(Z_STRVAL_P(new_url));
+					zval_ptr_dtor(&cpy);
+					break;
+				}
+			}
+			if (!new_purl) {
+				return;
+			}
+		}
+
+		if ((old_purl = php_http_url_from_struct(NULL, HASH_OF(getThis()) TSRMLS_CC))) {
+			php_http_url(flags, old_purl, new_purl, &res_purl, NULL, NULL TSRMLS_CC);
+
+			Z_OBJVAL_P(return_value) = zend_objects_clone_obj(getThis() TSRMLS_CC);
+			php_http_url_to_struct(res_purl, return_value TSRMLS_CC);
+
+			php_url_free(res_purl);
+			php_url_free(old_purl);
+		}
+		if (new_purl) {
+			php_url_free(new_purl);
+		}
+	}
 }
 
 PHP_METHOD(HttpUrl, toString)

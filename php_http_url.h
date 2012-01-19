@@ -161,6 +161,7 @@ extern zend_function_entry php_http_url_method_entry[];
 #define php_http_url_object_new_ex php_http_object_new_ex
 
 PHP_METHOD(HttpUrl, __construct);
+PHP_METHOD(HttpUrl, mod);
 PHP_METHOD(HttpUrl, toString);
 
 extern PHP_MINIT_FUNCTION(http_url);
