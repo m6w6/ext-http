@@ -42,35 +42,98 @@ static inline char *localhostname(void)
 	return estrndup("localhost", lenof("localhost"));
 }
 
-PHP_HTTP_API char *php_http_url_absolute(const char *url, int flags TSRMLS_DC)
+static php_url *php_http_url_from_env(php_url *url TSRMLS_DC)
 {
-	char *abs = NULL;
-	php_url *purl = NULL;
-	
-	if (url) {
-		purl = php_url_parse(abs = estrdup(url));
-		STR_SET(abs, NULL);
-		if (!purl) {
-			php_http_error(HE_WARNING, PHP_HTTP_E_URL, "Could not parse URL (%s)", url);
-			return NULL;
+	zval *https, *zhost, *zport;
+	long port;
+#ifdef HAVE_GETSERVBYPORT
+	struct servent *se;
+#endif
+
+	if (!url) {
+		url = ecalloc(1, sizeof(*url));
+	}
+
+	/* port */
+	zport = php_http_env_get_server_var(ZEND_STRL("SERVER_PORT"), 1 TSRMLS_CC);
+	if (zport && IS_LONG == is_numeric_string(Z_STRVAL_P(zport), Z_STRLEN_P(zport), &port, NULL, 0)) {
+		url->port = port;
+	}
+
+	/* scheme */
+	https = php_http_env_get_server_var(ZEND_STRL("HTTPS"), 1 TSRMLS_CC);
+	if (https && !strcasecmp(Z_STRVAL_P(https), "ON")) {
+		url->scheme = estrndup("https", lenof("https"));
+	} else switch (url->port) {
+		case 443:
+			url->scheme = estrndup("https", lenof("https"));
+			break;
+
+#ifndef HAVE_GETSERVBYPORT
+		default:
+#endif
+		case 80:
+		case 0:
+			url->scheme = estrndup("http", lenof("http"));
+			break;
+
+#ifdef HAVE_GETSERVBYPORT
+		default:
+			if ((se = getservbyport(htons(url->port), "tcp")) && se->s_name) {
+				url->scheme = estrdup(se->s_name);
+			} else {
+				url->scheme = estrndup("http", lenof("http"));
+			}
+			break;
+#endif
+	}
+
+	/* host */
+	if ((((zhost = php_http_env_get_server_var(ZEND_STRL("HTTP_HOST"), 1 TSRMLS_CC)) ||
+			(zhost = php_http_env_get_server_var(ZEND_STRL("SERVER_NAME"), 1 TSRMLS_CC)) ||
+			(zhost = php_http_env_get_server_var(ZEND_STRL("SERVER_ADDR"), 1 TSRMLS_CC)))) && Z_STRLEN_P(zhost)) {
+		url->host = estrndup(Z_STRVAL_P(zhost), Z_STRLEN_P(zhost));
+	} else {
+		url->host = localhostname();
+	}
+
+	/* path */
+	if (SG(request_info).request_uri && SG(request_info).request_uri[0]) {
+		const char *q = strchr(SG(request_info).request_uri, '?');
+
+		if (q) {
+			url->path = estrndup(SG(request_info).request_uri, q - SG(request_info).request_uri);
+		} else {
+			url->path = estrdup(SG(request_info).request_uri);
 		}
 	}
-	
-	php_http_url(flags, purl, NULL, NULL, &abs, NULL TSRMLS_CC);
-	
-	if (purl) {
-		php_url_free(purl);
+
+	/* query */
+	if (SG(request_info).query_string && SG(request_info).query_string[0]) {
+		url->query = estrdup(SG(request_info).query_string);
 	}
-	
-	return abs;
+
+	return url;
 }
 
 PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
 {
-#if defined(HAVE_GETSERVBYPORT) || defined(HAVE_GETSERVBYNAME)
+	php_url *url, *tmp_url = NULL;
+#ifdef HAVE_GETSERVBYNAME
 	struct servent *se;
 #endif
-	php_url *url = ecalloc(1, sizeof(php_url));
+
+	/* set from env if requested */
+	if (flags & PHP_HTTP_URL_FROM_ENV) {
+		php_url *env_url = php_http_url_from_env(NULL TSRMLS_CC);
+
+		php_http_url(flags ^ PHP_HTTP_URL_FROM_ENV, env_url, old_url, &tmp_url, NULL, NULL TSRMLS_CC);
+
+		php_url_free(env_url);
+		old_url = tmp_url;
+	}
+
+	url = ecalloc(1, sizeof(*url));
 
 #define __URLSET(u,n) \
 	((u)&&(u)->n)
@@ -131,128 +194,83 @@ PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url 
 		__URLCPY(fragment);
 	}
 	
-	if (!url->scheme) {
-		if (flags & PHP_HTTP_URL_FROM_ENV) {
-			zval *https = php_http_env_get_server_var(ZEND_STRL("HTTPS"), 1 TSRMLS_CC);
-			if (https && !strcasecmp(Z_STRVAL_P(https), "ON")) {
-				url->scheme = estrndup("https", lenof("https"));
-			} else switch (url->port) {
-				case 443:
-					url->scheme = estrndup("https", lenof("https"));
-					break;
+	/* done with copy & combine & strip */
 
-#ifndef HAVE_GETSERVBYPORT
-				default:
-#endif
-				case 80:
-				case 0:
-					url->scheme = estrndup("http", lenof("http"));
-					break;
-			
-#ifdef HAVE_GETSERVBYPORT
-				default:
-					if ((se = getservbyport(htons(url->port), "tcp")) && se->s_name) {
-						url->scheme = estrdup(se->s_name);
-					} else {
-						url->scheme = estrndup("http", lenof("http"));
-					}
-					break;
-#endif
-			}
-		} else {
-			url->scheme = estrndup("http", lenof("http"));
-		}
+	if (flags & PHP_HTTP_URL_FROM_ENV) {
+		/* free old_url we tainted above */
+		php_url_free(tmp_url);
+	}
+
+	/* set some sane defaults */
+
+	if (!url->scheme) {
+		url->scheme = estrndup("http", lenof("http"));
 	}
 
 	if (!url->host) {
-		if (flags & PHP_HTTP_URL_FROM_ENV) {
-			zval *zhost;
-			
-			if ((((zhost = php_http_env_get_server_var(ZEND_STRL("HTTP_HOST"), 1 TSRMLS_CC)) ||
-					(zhost = php_http_env_get_server_var(ZEND_STRL("SERVER_NAME"), 1 TSRMLS_CC)))) && Z_STRLEN_P(zhost)) {
-				url->host = estrndup(Z_STRVAL_P(zhost), Z_STRLEN_P(zhost));
-			} else {
-				url->host = localhostname();
-			}
-		} else {
-			url->host = estrndup("localhost", lenof("localhost"));
-		}
+		url->host = estrndup("localhost", lenof("localhost"));
 	}
 	
 	if (!url->path) {
-		if ((flags & PHP_HTTP_URL_FROM_ENV) && SG(request_info).request_uri && SG(request_info).request_uri[0]) {
-			const char *q = strchr(SG(request_info).request_uri, '?');
-			
-			if (q) {
-				url->path = estrndup(SG(request_info).request_uri, q - SG(request_info).request_uri);
-			} else {
-				url->path = estrdup(SG(request_info).request_uri);
-			}
-		} else {
-			url->path = estrndup("/", 1);
-		}
+		url->path = estrndup("/", 1);
 	} else if (url->path[0] != '/') {
-		if ((flags & PHP_HTTP_URL_FROM_ENV) && SG(request_info).request_uri && SG(request_info).request_uri[0]) {
-			size_t ulen = strlen(SG(request_info).request_uri);
-			size_t plen = strlen(url->path);
-			char *path;
-			
-			if (SG(request_info).request_uri[ulen-1] != '/') {
-				for (--ulen; ulen && SG(request_info).request_uri[ulen - 1] != '/'; --ulen);
-			}
-			
-			path = emalloc(ulen + plen + 1);
-			memcpy(path, SG(request_info).request_uri, ulen);
-			memcpy(path + ulen, url->path, plen);
-			path[ulen + plen] = '\0';
-			STR_SET(url->path, path);
-		} else {
-			size_t plen = strlen(url->path);
-			char *path = emalloc(plen + 1 + 1);
-			
-			path[0] = '/';
-			memcpy(&path[1], url->path, plen + 1);
-			STR_SET(url->path, path);
-		}
+		size_t plen = strlen(url->path);
+		char *path = emalloc(plen + 1 + 1);
+
+		path[0] = '/';
+		memcpy(&path[1], url->path, plen + 1);
+		STR_SET(url->path, path);
 	}
 	/* replace directory references if path is not a single slash */
 	if (url->path[0] && (url->path[0] != '/' || url->path[1])) {
 		char *ptr, *end = url->path + strlen(url->path) + 1;
 			
-		for (ptr = strstr(url->path, "/."); ptr; ptr = strstr(ptr, "/.")) {
-			switch (ptr[2]) {
-				case '\0':
-					ptr[1] = '\0';
-					break;
-				
+		for (ptr = strchr(url->path, '/'); ptr; ptr = strchr(ptr, '/')) {
+			switch (ptr[1]) {
 				case '/':
-					memmove(&ptr[1], &ptr[3], end - &ptr[3]);
+					memmove(&ptr[1], &ptr[2], end - &ptr[2]);
 					break;
 					
 				case '.':
-					if (ptr[3] == '/') {
-						char *pos = &ptr[4];
-						while (ptr != url->path) {
-							if (*--ptr == '/') {
+					switch (ptr[2]) {
+						case '\0':
+							ptr[1] = '\0';
+							break;
+
+						case '/':
+							memmove(&ptr[1], &ptr[3], end - &ptr[3]);
+							break;
+
+						case '.':
+							if (ptr[3] == '/') {
+								char *pos = &ptr[4];
+								while (ptr != url->path) {
+									if (*--ptr == '/') {
+										break;
+									}
+								}
+								memmove(&ptr[1], pos, end - pos);
 								break;
+							} else if (!ptr[3]) {
+								/* .. at the end */
+								ptr[1] = '\0';
 							}
-						}
-						memmove(&ptr[1], pos, end - pos);
-						break;
-					} else if (!ptr[3]) {
-						/* .. at the end */
-						ptr[1] = '\0';
+							/* no break */
+
+						default:
+							/* something else */
+							++ptr;
+							break;
 					}
-					/* no break */
-				
+					break;
+
 				default:
-					/* something else */
 					++ptr;
 					break;
 			}
 		}
 	}
-	
+	/* unset default ports */
 	if (url->port) {
 		if (	((url->port == 80) && !strcmp(url->scheme, "http"))
 			||	((url->port ==443) && !strcmp(url->scheme, "https"))
@@ -441,6 +459,7 @@ PHP_HTTP_BEGIN_ARGS(__construct, 0)
 	PHP_HTTP_ARG_VAL(flags, 0)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_EMPTY_ARGS(toString);
+PHP_HTTP_EMPTY_ARGS(toArray);
 
 PHP_HTTP_BEGIN_ARGS(mod, 1)
 	PHP_HTTP_ARG_VAL(more_url_parts, 0)
@@ -453,6 +472,7 @@ zend_function_entry php_http_url_method_entry[] = {
 	PHP_HTTP_URL_ME(mod, ZEND_ACC_PUBLIC)
 	PHP_HTTP_URL_ME(toString, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(HttpUrl, __toString, toString, PHP_HTTP_ARGS(HttpUrl, toString), ZEND_ACC_PUBLIC)
+	PHP_HTTP_URL_ME(toArray, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
@@ -527,7 +547,7 @@ PHP_METHOD(HttpUrl, mod)
 	long flags = PHP_HTTP_URL_JOIN_PATH | PHP_HTTP_URL_JOIN_QUERY;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|l", &new_url, &flags)) {
-		php_url *res_purl, *new_purl = NULL, *old_purl = NULL;
+		php_url *new_purl = NULL, *old_purl = NULL;
 
 		if (new_url) {
 			switch (Z_TYPE_P(new_url)) {
@@ -549,9 +569,11 @@ PHP_METHOD(HttpUrl, mod)
 		}
 
 		if ((old_purl = php_http_url_from_struct(NULL, HASH_OF(getThis()) TSRMLS_CC))) {
-			php_http_url(flags, old_purl, new_purl, &res_purl, NULL, NULL TSRMLS_CC);
+			php_url *res_purl;
 
-			Z_OBJVAL_P(return_value) = zend_objects_clone_obj(getThis() TSRMLS_CC);
+			ZVAL_OBJVAL(return_value, zend_objects_clone_obj(getThis() TSRMLS_CC), 0);
+
+			php_http_url(flags, old_purl, new_purl, &res_purl, NULL, NULL TSRMLS_CC);
 			php_http_url_to_struct(res_purl, return_value TSRMLS_CC);
 
 			php_url_free(res_purl);
@@ -578,6 +600,15 @@ PHP_METHOD(HttpUrl, toString)
 		}
 	}
 	RETURN_EMPTY_STRING();
+}
+
+PHP_METHOD(HttpUrl, toArray)
+{
+	if (SUCCESS != zend_parse_parameters_none()) {
+		RETURN_FALSE;
+	}
+	array_init(return_value);
+	array_copy(HASH_OF(getThis()), HASH_OF(return_value));
 }
 
 PHP_MINIT_FUNCTION(http_url)

@@ -116,7 +116,7 @@ PHP_METHOD(HttpHeader, unserialize)
 				zend_hash_internal_pointer_reset(&ht);
 				switch (zend_hash_get_current_key_ex(&ht, &str, &len, &idx, 0, NULL)) {
 					case HASH_KEY_IS_STRING:
-						zend_update_property_stringl(php_http_header_class_entry, getThis(), ZEND_STRL("name"), str, len TSRMLS_CC);
+						zend_update_property_stringl(php_http_header_class_entry, getThis(), ZEND_STRL("name"), str, len - 1 TSRMLS_CC);
 						break;
 					case HASH_KEY_IS_LONG:
 						zend_update_property_long(php_http_header_class_entry, getThis(), ZEND_STRL("name"), idx TSRMLS_CC);

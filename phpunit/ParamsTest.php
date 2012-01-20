@@ -17,6 +17,39 @@ class ParamsTest extends PHPUnit_Framework_TestCase {
         );
     }
 
+    function testEmpty() {
+        $p = new http\Params(NULL);
+        $this->assertEquals(array(), $p->params);
+    }
+
+    function testErrorOfToArrayWithArgs() {
+        $this->setExpectedException("PHPUnit_Framework_Error_Warning");
+        $p = new http\Params();
+        $p->toArray("dummy");
+    }
+
+    function testIntegerKeys() {
+        $p = new http\Params("0=nothing;1=yes");
+        $this->assertEquals(array("0" => array("value" => "nothing", "arguments" => array(1=>"yes"))), $p->params);
+        $this->assertEquals("0=nothing;1=yes", $p->toString());
+    }
+
+    function testBoolParamArguments() {
+        $p = new http\Params;
+        $container = array("value" => false, "arguments" => array("wrong" => false, "correct" => true));
+        $p["container"] = $container;
+        $this->assertEquals("container=0;wrong=0;correct", $p->toString());
+        $this->assertEquals(array("container" => $container), $p->toArray());
+    }
+
+    function testNoArgsForParam() {
+        $p = new http\Params;
+        $p["param"] = true;
+        $this->assertEquals("param", $p->toString());
+        $p["param"] = false;
+        $this->assertEquals("param=0", $p->toString());
+    }
+
     protected function runAssertions($p, $s) {
         $this->assertCount(3, $p->params);
         $this->assertArrayHasKey("foo", $p->params);
@@ -37,34 +70,35 @@ class ParamsTest extends PHPUnit_Framework_TestCase {
 
         $this->assertEquals($s, (string) $p);
 
-        $this->assertEquals(
+        $comp = array (
+            'foo' => 
             array (
-                'foo' => 
+                'value' => true,
+                'arguments' => 
                 array (
-                    'value' => true,
-                    'arguments' => 
-                    array (
-                    ),
-                ),
-                'bar' => 
-                array (
-                    'value' => true,
-                    'arguments' => 
-                    array (
-                        'arg' => '0',
-                        'bla' => true,
-                    ),
-                ),
-                'gotit' => 
-                array (
-                    'value' => '0',
-                    'arguments' => 
-                    array (
-                        'now' => true,
-                    ),
                 ),
             ),
-            $p->params
+            'bar' => 
+            array (
+                'value' => true,
+                'arguments' => 
+                array (
+                    'arg' => '0',
+                    'bla' => true,
+                ),
+            ),
+            'gotit' => 
+            array (
+                'value' => '0',
+                'arguments' => 
+                array (
+                    'now' => true,
+                ),
+            ),
         );
+
+        $this->assertEquals($comp, $p->params);
+        $a = new http\Params($p->params);
+        $this->assertEquals($comp, $a->toArray());
 	}
 }

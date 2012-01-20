@@ -35,7 +35,6 @@
 #define PHP_HTTP_URL_FROM_ENV		0x1000
 
 PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC);
-PHP_HTTP_API char *php_http_url_absolute(const char *url, int flags TSRMLS_DC);
 
 PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *ht, php_http_buffer_t *str, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *prefix_str, size_t prefix_len TSRMLS_DC);
@@ -163,6 +162,7 @@ extern zend_function_entry php_http_url_method_entry[];
 PHP_METHOD(HttpUrl, __construct);
 PHP_METHOD(HttpUrl, mod);
 PHP_METHOD(HttpUrl, toString);
+PHP_METHOD(HttpUrl, toArray);
 
 extern PHP_MINIT_FUNCTION(http_url);
 

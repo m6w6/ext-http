@@ -44,6 +44,6 @@ http://www.cbs.com
 http://www.nbc.com
 http://slashdot.org
 http://www.bloglines.com
-http://www.techweb.com
+http://www.freecode.org
 http://www.newslink.org
 http://www.un.org

@@ -662,8 +662,8 @@ PHP_METHOD(HttpEnv, getResponseStatusForCode)
 
 PHP_METHOD(HttpEnv, getResponseHeader)
 {
-	char *header_name_str;
-	int header_name_len;
+	char *header_name_str = NULL;
+	int header_name_len = 0;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
 		if (header_name_str && header_name_len) {

@@ -124,17 +124,25 @@ PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg,
 {
 	php_http_message_parser_t p;
 	php_http_buffer_t buf;
+	int free_msg;
 
-	if (!msg) {
-		msg = php_http_message_init(NULL, 0 TSRMLS_CC);
-	}
 	php_http_buffer_from_string_ex(&buf, str, len);
 	php_http_message_parser_init(&p TSRMLS_CC);
-	php_http_message_parser_parse(&p, &buf, PHP_HTTP_MESSAGE_PARSER_CLEANUP, &msg);
+
+	if ((free_msg = !msg)) {
+		msg = php_http_message_init(NULL, 0 TSRMLS_CC);
+	}
+
+	if (FAILURE == php_http_message_parser_parse(&p, &buf, PHP_HTTP_MESSAGE_PARSER_CLEANUP, &msg)) {
+		if (free_msg) {
+			php_http_message_free(&msg);
+		}
+		msg = NULL;
+	}
+
 	php_http_message_parser_dtor(&p);
 	php_http_buffer_dtor(&buf);
 
-	/* FIXME */
 	return msg;
 }
 
@@ -1278,16 +1286,17 @@ PHP_METHOD(HttpMessage, __construct)
 
 	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &message, &length) && message && length) {
-			php_http_message_t *msg = obj->message;
+			if (message && length) {
+				php_http_message_t *msg = php_http_message_parse(NULL, message, length TSRMLS_CC);
 
-			php_http_message_dtor(msg);
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				if ((obj->message = php_http_message_parse(msg, message, length TSRMLS_CC))) {
+				if (!msg) {
+					php_http_error(HE_THROW, PHP_HTTP_E_MESSAGE, "could not parse message: %.*s", 25, message);
+				} else {
+					php_http_message_dtor(obj->message);
+					obj->message = msg;{
 					if (obj->message->parent) {
 						obj->parent = php_http_message_object_new_ex(Z_OBJCE_P(getThis()), obj->message->parent, NULL TSRMLS_CC);
 					}
-				} else {
-					obj->message = php_http_message_init(msg, 0 TSRMLS_CC);
 				}
 			} end_error_handling();
 		}

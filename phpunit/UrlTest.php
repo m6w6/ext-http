@@ -5,7 +5,7 @@ class UrlTest extends PHPUnit_Framework_TestCase {
 	function setUp() {
 		$this->url = "http://user:pass@www.example.com:8080/path/file.ext".
 			"?foo=bar&more[]=1&more[]=2#hash";
-	}
+    }
 
 	function testStandard() {
 		$this->assertEquals($this->url, (string) new http\Url($this->url));
@@ -25,6 +25,24 @@ class UrlTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(8080, $url->port);
 		$this->assertEquals("/path/changed", $url->path);
 		$this->assertEquals("foo=&more%5B0%5D=1&more%5B1%5D=2&added=this", $url->query);
-		$this->assertEmpty($url->fragment);
-	}
+        $this->assertEmpty($url->fragment);
+    }
+
+    function testMod() {
+        $tmp = new http\Url($this->url);
+        $mod = $tmp->mod(array("query" => "set=1"), http\Url::REPLACE);
+        $this->assertNotEquals($tmp->toArray(), $mod->toArray());
+        $this->assertEquals("set=1", $mod->query);
+        $this->assertEquals("new_fragment", $tmp->mod("#new_fragment")->fragment);
+    }
+
+    function testStrings() {
+        $url = new http\Url($this->url);
+        $this->assertEquals((string) $url, (string) new http\Url((string) $url));
+    }
+
+    function testArrays() {
+        $url = new http\Url($this->url);
+        $this->assertEquals($url->toArray(), (new http\Url($url->toArray()))->toArray());
+    }
 }

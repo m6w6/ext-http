@@ -51,11 +51,6 @@ PHP_HTTP_API zend_error_handling_t php_http_object_get_error_handling(zval *obje
 #define PHP_HTTP_EMPTY_ARGS(method)						PHP_HTTP_EMPTY_ARGS_EX(HttpObject, method, 0)
 #define PHP_HTTP_OBJECT_ME(method, visibility)			PHP_ME(HttpObject, method, PHP_HTTP_ARGS(HttpObject, method), visibility)
 
-PHP_HTTP_BEGIN_ARGS(factory, 1)
-	PHP_HTTP_ARG_VAL(class_name, 0)
-	PHP_HTTP_ARG_VAL(ctor_args, 0)
-PHP_HTTP_END_ARGS;
-
 PHP_HTTP_BEGIN_ARGS(setErrorHandling, 1)
 	PHP_HTTP_ARG_VAL(eh, 0)
 PHP_HTTP_END_ARGS;
@@ -68,15 +63,20 @@ PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(getDefaultErrorHandling);
 
+PHP_HTTP_BEGIN_ARGS(triggerError, 3)
+	PHP_HTTP_ARG_VAL(error_type, 0)
+	PHP_HTTP_ARG_VAL(error_code, 0)
+	PHP_HTTP_ARG_VAL(error_message, 0)
+PHP_HTTP_END_ARGS;
+
 zend_class_entry *php_http_object_class_entry;
 zend_function_entry php_http_object_method_entry[] = {
-	PHP_HTTP_OBJECT_ME(factory, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-
 	PHP_HTTP_OBJECT_ME(setErrorHandling, ZEND_ACC_PUBLIC)
 	PHP_HTTP_OBJECT_ME(getErrorHandling, ZEND_ACC_PUBLIC)
 	PHP_HTTP_OBJECT_ME(setDefaultErrorHandling, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	PHP_HTTP_OBJECT_ME(getDefaultErrorHandling, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	
+	PHP_HTTP_OBJECT_ME(triggerError, ZEND_ACC_PUBLIC)
+
 	EMPTY_FUNCTION_ENTRY
 };
 
@@ -102,33 +102,6 @@ zend_object_value php_http_object_new_ex(zend_class_entry *ce, void *nothing, ph
 	ov.handlers = zend_get_std_object_handlers();
 
 	return ov;
-}
-
-PHP_METHOD(HttpObject, factory)
-{
-	zval *ctor_args = NULL;
-	zend_class_entry *class_entry = NULL;
-	zval *object_ctor;
-	zend_fcall_info fci;
-	zend_fcall_info_cache fcc;
-
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "C|a/!", &class_entry, &ctor_args)) {
-			object_init_ex(return_value, class_entry);
-
-			MAKE_STD_ZVAL(object_ctor);
-			array_init(object_ctor);
-
-			Z_ADDREF_P(return_value);
-			add_next_index_zval(object_ctor, return_value);
-			add_next_index_stringl(object_ctor, ZEND_STRL("__construct"), 1);
-
-			zend_fcall_info_init(object_ctor, 0, &fci, &fcc, NULL, NULL TSRMLS_CC);
-			zend_fcall_info_call(&fci, &fcc, NULL, ctor_args TSRMLS_CC);
-
-			zval_ptr_dtor(&object_ctor);
-		}
-	} end_error_handling();
 }
 
 PHP_METHOD(HttpObject, getErrorHandling)
@@ -178,6 +151,17 @@ PHP_METHOD(HttpObject, setDefaultErrorHandling)
 				php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "unknown error handling code (%ld)", eh);
 				break;
 		}
+	}
+}
+
+PHP_METHOD(HttpObject, triggerError)
+{
+	long eh, code;
+	char *msg_str;
+	int msg_len;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lls", &eh, &code, &msg_str, &msg_len)) {
+		php_http_error(eh TSRMLS_CC, code, "%.*s", msg_len, msg_str);
 	}
 }
 

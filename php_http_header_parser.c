@@ -152,14 +152,18 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 				const char *eol_str;
 				int eol_len;
 
-				do {
+				line_split: {
+					
 					if ((eol_str = php_http_locate_bin_eol(buffer->data, buffer->used, &eol_len))) {
 						if (eol_str + eol_len - buffer->data < buffer->used) {
-							char nextline = *(eol_str + eol_len);
+							char *nextline = eol_str + eol_len;
 
-							if (nextline == '\t' || nextline == ' ') {
-								php_http_buffer_cut(buffer, eol_str - buffer->data, eol_len);
-								continue;
+							if (*nextline == '\t' || *nextline == ' ') {
+								while (nextline < buffer->data + buffer->used && (*nextline == '\t' || *nextline == ' ')) {
+									++nextline;
+								}
+								php_http_buffer_cut(buffer, eol_str - buffer->data, nextline - eol_str);
+								goto line_split;
 							}
 						}
 
@@ -175,7 +179,7 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 					} else {
 						return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
 					}
-				} while (0);
+				}
 
 				break;
 			}

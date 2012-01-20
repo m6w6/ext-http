@@ -31,11 +31,11 @@ extern zend_object_value php_http_object_new_ex(zend_class_entry *ce, void *noth
 
 PHP_HTTP_API zend_error_handling_t php_http_object_get_error_handling(zval *object TSRMLS_DC);
 
-PHP_METHOD(HttpObject, factory);
 PHP_METHOD(HttpObject, setErrorHandling);
 PHP_METHOD(HttpObject, getErrorHandling);
 PHP_METHOD(HttpObject, setDefaultErrorHandling);
 PHP_METHOD(HttpObject, getDefaultErrorHandling);
+PHP_METHOD(HttpObject, triggerError);
 
 #endif
 

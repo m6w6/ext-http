@@ -10,6 +10,11 @@ echo "Test\n";
 
 use http\Message as HttpMessage;
 
+try {
+    echo new HttpMessage(" gosh\n nosh\n ");
+} catch (Exception $ignore) {
+}
+
 $m = new HttpMessage();
 echo $m;
 var_dump(
