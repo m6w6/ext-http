@@ -118,7 +118,7 @@ zend_php_http_globals *php_http_globals(void)
 #endif
 #endif
 PHP_INI_BEGIN()
-	PHP_HTTP_INI_ENTRY("http.etag.mode", "md5", PHP_INI_ALL, OnUpdateString, env.etag_mode)
+	PHP_HTTP_INI_ENTRY("http.etag.mode", "crc32b", PHP_INI_ALL, OnUpdateString, env.etag_mode)
 	PHP_HTTP_INI_ENTRY("http.request_datashare.cookie", "0", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.cookie)
 	PHP_HTTP_INI_ENTRY("http.request_datashare.dns", "1", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.dns)
 	PHP_HTTP_INI_ENTRY("http.request_datashare.ssl", "0", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.ssl)

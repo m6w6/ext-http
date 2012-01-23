@@ -77,7 +77,7 @@ static zval *get_option(zval *options, const char *name_str, size_t name_len TSR
 
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len TSRMLS_DC)
 {
-	int ret, free_etag = 0;
+	int ret = 0, free_etag = 0;
 	char *header, *etag;
 	zval *zetag, *zbody = NULL;
 
@@ -101,8 +101,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zva
 
 	if (zetag && Z_STRLEN_P(zetag)) {
 		etag = Z_STRVAL_P(zetag);
-	} else {
-		etag = php_http_message_body_etag(((php_http_message_body_object_t *) zend_object_store_get_object(zbody TSRMLS_CC))->body);
+	} else if ((etag = php_http_message_body_etag(((php_http_message_body_object_t *) zend_object_store_get_object(zbody TSRMLS_CC))->body))) {
 		set_option(options, ZEND_STRL("etag"), IS_STRING, etag, strlen(etag) TSRMLS_CC);
 		free_etag = 1;
 	}
@@ -115,7 +114,9 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zva
 		zval_ptr_dtor(&zetag);
 	}
 
-	ret = php_http_match(header, etag, PHP_HTTP_MATCH_WORD);
+	if (etag) {
+		ret = php_http_match(header, etag, PHP_HTTP_MATCH_WORD);
+	}
 
 	if (free_etag) {
 		efree(etag);

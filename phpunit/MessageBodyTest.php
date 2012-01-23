@@ -87,7 +87,7 @@ class MessageBodyTest extends PHPUnit_Framework_TestCase {
             ),
             $this->file->etag()
         );
-        $this->assertEquals(md5(""), $this->temp->etag());
+        $this->assertEquals(crc32(""), $this->temp->etag());
     }
 
     function testToStream() {

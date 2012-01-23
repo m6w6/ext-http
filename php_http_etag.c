@@ -25,15 +25,7 @@ PHP_HTTP_API php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC)
 	void *ctx;
 	php_http_etag_t *e;
 
-#ifdef PHP_HTTP_HAVE_HASH
-	const php_hash_ops *eho = NULL;
-
-	if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
-		ctx = emalloc(eho->context_size);
-		eho->hash_init(ctx);
-	} else
-#endif
-	if (mode && ((!strcasecmp(mode, "crc32")) || (!strcasecmp(mode, "crc32b")))) {
+	if (mode && (!strcasecmp(mode, "crc32b"))) {
 		ctx = emalloc(sizeof(uint));
 		*((uint *) ctx) = ~0;
 	} else if (mode && !strcasecmp(mode, "sha1")) {
@@ -41,6 +33,14 @@ PHP_HTTP_API php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC)
 	} else if (mode && !strcasecmp(mode, "md5")) {
 		PHP_MD5Init(ctx = emalloc(sizeof(PHP_MD5_CTX)));
 	} else {
+#ifdef PHP_HTTP_HAVE_HASH
+		const php_hash_ops *eho = NULL;
+
+		if (mode && (eho = php_hash_fetch_ops(mode, strlen(mode)))) {
+			ctx = emalloc(eho->context_size);
+			eho->hash_init(ctx);
+		} else
+#endif
 		return NULL;
 	}
 
@@ -57,24 +57,32 @@ PHP_HTTP_API char *php_http_etag_finish(php_http_etag_t *e)
 	unsigned char digest[128] = {0};
 	char *etag = NULL;
 
-#ifdef PHP_HTTP_HAVE_HASH
-	const php_hash_ops *eho = NULL;
+	if (!strcasecmp(e->mode, "crc32b")) {
+		unsigned char buf[4];
 
-	if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
-		eho->hash_final(digest, e->ctx);
-		etag = php_http_etag_digest(digest, eho->digest_size);
-	} else
-#endif
-	if (((!strcasecmp(e->mode, "crc32")) || (!strcasecmp(e->mode, "crc32b")))) {
 		*((uint *) e->ctx) = ~*((uint *) e->ctx);
-		etag = php_http_etag_digest((const unsigned char *) e->ctx, sizeof(uint));
+		buf[0] = ((unsigned char *) e->ctx)[3];
+		buf[1] = ((unsigned char *) e->ctx)[2];
+		buf[2] = ((unsigned char *) e->ctx)[1];
+		buf[3] = ((unsigned char *) e->ctx)[0];
+		etag = php_http_etag_digest(buf, 4);
 	} else if ((!strcasecmp(e->mode, "sha1"))) {
 		PHP_SHA1Final(digest, e->ctx);
 		etag = php_http_etag_digest(digest, 20);
-	} else {
+	} else if ((!strcasecmp(e->mode, "md5"))) {
 		PHP_MD5Final(digest, e->ctx);
 		etag = php_http_etag_digest(digest, 16);
+	} else {
+#ifdef PHP_HTTP_HAVE_HASH
+		const php_hash_ops *eho = NULL;
+
+		if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
+			eho->hash_final(digest, e->ctx);
+			etag = php_http_etag_digest(digest, eho->digest_size);
+		}
+#endif
 	}
+
 	efree(e->ctx);
 	efree(e->mode);
 	efree(e);
@@ -84,14 +92,7 @@ PHP_HTTP_API char *php_http_etag_finish(php_http_etag_t *e)
 
 PHP_HTTP_API size_t php_http_etag_update(php_http_etag_t *e, const char *data_ptr, size_t data_len)
 {
-#ifdef PHP_HTTP_HAVE_HASH
-	const php_hash_ops *eho = NULL;
-
-	if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
-		eho->hash_update(e->ctx, (const unsigned char *) data_ptr, data_len);
-	} else
-#endif
-	if (((!strcasecmp(e->mode, "crc32")) || (!strcasecmp(e->mode, "crc32b")))) {
+	if (!strcasecmp(e->mode, "crc32b")) {
 		uint i, c = *((uint *) e->ctx);
 		for (i = 0; i < data_len; ++i) {
 			CRC32(c, data_ptr[i]);
@@ -99,8 +100,16 @@ PHP_HTTP_API size_t php_http_etag_update(php_http_etag_t *e, const char *data_pt
 		*((uint *) e->ctx) = c;
 	} else if ((!strcasecmp(e->mode, "sha1"))) {
 		PHP_SHA1Update(e->ctx, (const unsigned char *) data_ptr, data_len);
-	} else {
+	} else if ((!strcasecmp(e->mode, "md5"))) {
 		PHP_MD5Update(e->ctx, (const unsigned char *) data_ptr, data_len);
+	} else {
+#ifdef PHP_HTTP_HAVE_HASH
+		const php_hash_ops *eho = NULL;
+
+		if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
+			eho->hash_update(e->ctx, (const unsigned char *) data_ptr, data_len);
+		}
+#endif
 	}
 
 	return data_len;

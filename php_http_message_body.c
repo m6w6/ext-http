@@ -123,8 +123,12 @@ PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body)
 	} else {
 		php_http_etag_t *etag = php_http_etag_init(PHP_HTTP_G->env.etag_mode TSRMLS_CC);
 
-		php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_etag_update, etag, 0, 0);
-		return php_http_etag_finish(etag);
+		if (etag) {
+			php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_etag_update, etag, 0, 0);
+			return php_http_etag_finish(etag);
+		} else {
+			return NULL;
+		}
 	}
 }
 
