@@ -363,7 +363,28 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 {
 	zval **tmp = &params;
 	php_stream_filter *f = NULL;
+	int flags = p ? PHP_HTTP_ENCODING_STREAM_PERSISTENT : 0;
 	
+	if (params) {
+		switch (Z_TYPE_P(params)) {
+			case IS_ARRAY:
+			case IS_OBJECT:
+				if (SUCCESS != zend_hash_find(HASH_OF(params), "flags", sizeof("flags"), (void *) &tmp)) {
+					break;
+				}
+				/* no break */
+			default:
+			{
+				zval *num = php_http_ztyp(IS_LONG, *tmp);
+				
+				flags |= (Z_LVAL_P(num) & 0x0fffffff);
+				zval_ptr_dtor(&num);
+
+			}
+			break;
+		}
+	}
+
 	if (!strcasecmp(name, "http.chunked_decode")) {
 		PHP_HTTP_FILTER_BUFFER(chunked_decode) *b = NULL;
 		
@@ -380,7 +401,6 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	} else
 	
 	if (!strcasecmp(name, "http.inflate")) {
-		int flags = p ? PHP_HTTP_ENCODING_STREAM_PERSISTENT : 0;
 		PHP_HTTP_FILTER_BUFFER(zlib) *b = NULL;
 		
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), flags TSRMLS_CC))) {
@@ -391,28 +411,8 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	} else
 	
 	if (!strcasecmp(name, "http.deflate")) {
-		int flags = p ? PHP_HTTP_ENCODING_STREAM_PERSISTENT : 0;
 		PHP_HTTP_FILTER_BUFFER(zlib) *b = NULL;
 		
-		if (params) {
-			switch (Z_TYPE_P(params)) {
-				case IS_ARRAY:
-				case IS_OBJECT:
-					if (SUCCESS != zend_hash_find(HASH_OF(params), "flags", sizeof("flags"), (void *) &tmp)) {
-						break;
-					}
-					/* no break */
-				default:
-				{
-					zval *num = php_http_ztyp(IS_LONG, *tmp);
-					
-					flags |= (Z_LVAL_P(num) & 0x0fffffff);
-					zval_ptr_dtor(&num);
-
-				}
-				break;
-			}
-		}
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), flags TSRMLS_CC))) {
 			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(deflate), b, p))) {
 				php_http_encoding_stream_free(&b);
