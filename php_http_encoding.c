@@ -35,7 +35,7 @@ PHP_HTTP_API const char *php_http_encoding_dechunk(const char *encoded, size_t e
 	const char *e_ptr = encoded;
 	
 	*decoded_len = 0;
-	*decoded = ecalloc(1, encoded_len);
+	*decoded = ecalloc(1, encoded_len + 1);
 
 	while ((encoded + encoded_len - e_ptr) > 0) {
 		ulong chunk_len = 0, rest;
@@ -53,6 +53,7 @@ PHP_HTTP_API const char *php_http_encoding_dechunk(const char *encoded, size_t e
 				php_http_error(HE_NOTICE, PHP_HTTP_E_ENCODING, "Data does not seem to be chunked encoded");
 				memcpy(*decoded, encoded, encoded_len);
 				*decoded_len = encoded_len;
+				decoded[*decoded_len] = '\0';
 				return encoded + encoded_len;
 			} else {
 				efree(*decoded);
@@ -265,11 +266,31 @@ PHP_HTTP_API php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_
 {
 	TSRMLS_FETCH_FROM_CTX(from->ts);
 
-	if (!from->ops->copy) {
-		return NULL;
+	if (from->ops->copy) {
+		int freeme;
+		php_http_encoding_stream_t *ns;
+
+		if ((freeme = !to)) {
+			to = pemalloc(sizeof(*to), (from->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT));
+		}
+		memset(to, 0, sizeof(*to));
+
+		to->flags = from->flags;
+		to->ops = from->ops;
+		TSRMLS_SET_CTX(to->ts);
+
+		if ((ns = to->ops->copy(from, to))) {
+			return ns;
+		} else {
+			return to;
+		}
+
+		if (freeme) {
+			pefree(to, (to->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT));
+		}
 	}
 
-	return from->ops->copy(from, php_http_encoding_stream_init(to, from->ops, from->flags TSRMLS_CC));
+	return NULL;
 }
 
 PHP_HTTP_API STATUS php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
@@ -406,33 +427,58 @@ static php_http_encoding_stream_t *dechunk_init(php_http_encoding_stream_t *s)
 
 static php_http_encoding_stream_t *deflate_copy(php_http_encoding_stream_t *from, php_http_encoding_stream_t *to)
 {
-	z_streamp from_ctx = from->ctx, to_ctx = to->ctx;
+	int status, p = to->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT;
+	z_streamp from_ctx = from->ctx, to_ctx = pecalloc(1, sizeof(*to_ctx), p);
+	TSRMLS_FETCH_FROM_CTX(from->ts);
 
-	deflateCopy(to_ctx, from_ctx);
-	php_http_buffer_append(to_ctx->opaque, PHP_HTTP_BUFFER_VAL(from_ctx->opaque), PHP_HTTP_BUFFER_LEN(from_ctx->opaque));
-
-	return to;
+	if (Z_OK == (status = deflateCopy(to_ctx, from_ctx))) {
+		if ((to_ctx->opaque = php_http_buffer_init_ex(NULL, PHP_HTTP_DEFLATE_BUFFER_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0))) {
+			php_http_buffer_append(to_ctx->opaque, PHP_HTTP_BUFFER_VAL(from_ctx->opaque), PHP_HTTP_BUFFER_LEN(from_ctx->opaque));
+			to->ctx = to_ctx;
+			return to;
+		}
+		deflateEnd(to_ctx);
+		status = Z_MEM_ERROR;
+	}
+	php_http_error(HE_WARNING, PHP_HTTP_E_ENCODING, "Failed to copy deflate encoding stream: %s", zError(status));
+	return NULL;
 }
 
 static php_http_encoding_stream_t *inflate_copy(php_http_encoding_stream_t *from, php_http_encoding_stream_t *to)
 {
-	z_streamp from_ctx = from->ctx, to_ctx = to->ctx;
+	int status, p = from->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT;
+	z_streamp from_ctx = from->ctx, to_ctx = pecalloc(1, sizeof(*to_ctx), p);
+	TSRMLS_FETCH_FROM_CTX(from->ts);
 
-	inflateCopy(to_ctx, from_ctx);
-	php_http_buffer_append(to_ctx->opaque, PHP_HTTP_BUFFER_VAL(from_ctx->opaque), PHP_HTTP_BUFFER_LEN(from_ctx->opaque));
-
-	return to;
+	if (Z_OK == (status = inflateCopy(to_ctx, from_ctx))) {
+		if ((to_ctx->opaque = php_http_buffer_init_ex(NULL, PHP_HTTP_DEFLATE_BUFFER_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0))) {
+			php_http_buffer_append(to_ctx->opaque, PHP_HTTP_BUFFER_VAL(from_ctx->opaque), PHP_HTTP_BUFFER_LEN(from_ctx->opaque));
+			to->ctx = to_ctx;
+			return to;
+		}
+		inflateEnd(to_ctx);
+		status = Z_MEM_ERROR;
+	}
+	php_http_error(HE_WARNING, PHP_HTTP_E_ENCODING, "Failed to copy inflate encoding stream: %s", zError(status));
+	return NULL;
 }
 
 static php_http_encoding_stream_t *dechunk_copy(php_http_encoding_stream_t *from, php_http_encoding_stream_t *to)
 {
-	struct dechunk_ctx *from_ctx = from->ctx, *to_ctx = to->ctx;
+	int p = from->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT;
+	struct dechunk_ctx *from_ctx = from->ctx, *to_ctx = pemalloc(sizeof(*to_ctx), p);
+	TSRMLS_FETCH_FROM_CTX(from->ts);
 
-	to_ctx->hexlen = from_ctx->hexlen;
-	to_ctx->zeroed = from_ctx->zeroed;
-	php_http_buffer_append(&to_ctx->buffer, PHP_HTTP_BUFFER_VAL(&from_ctx->buffer), PHP_HTTP_BUFFER_LEN(&from_ctx->buffer));
-
-	return to;
+	if (php_http_buffer_init_ex(&to_ctx->buffer, PHP_HTTP_BUFFER_DEFAULT_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0)) {
+		to_ctx->hexlen = from_ctx->hexlen;
+		to_ctx->zeroed = from_ctx->zeroed;
+		php_http_buffer_append(&to_ctx->buffer, PHP_HTTP_BUFFER_VAL(&from_ctx->buffer), PHP_HTTP_BUFFER_LEN(&from_ctx->buffer));
+		to->ctx = to_ctx;
+		return to;
+	}
+	pefree(to_ctx, p);
+	php_http_error(HE_WARNING, PHP_HTTP_E_ENCODING, "Failed to copy inflate encoding stream: out of memory");
+	return NULL;
 }
 
 static STATUS deflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
@@ -1041,7 +1087,11 @@ PHP_METHOD(HttpEncodingStream, finish)
 
 			if (SUCCESS == php_http_encoding_stream_finish(obj->stream, &encoded_str, &encoded_len)) {
 				if (SUCCESS == php_http_encoding_stream_reset(&obj->stream)) {
-					RETURN_STRINGL(encoded_str, encoded_len, 0);
+					if (encoded_str) {
+						RETURN_STRINGL(encoded_str, encoded_len, 0);
+					} else {
+						RETURN_EMPTY_STRING();
+					}
 				} else {
 					STR_FREE(encoded_str);
 				}
@@ -1141,7 +1191,7 @@ PHP_METHOD(HttpDechunkStream, decode)
 {
 	char *str;
 	int len;
-	zval *zlen;
+	zval *zlen = NULL;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|z!", &str, &len, &zlen)) {
 		const char *end_ptr;
