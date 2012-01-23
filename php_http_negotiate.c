@@ -74,6 +74,11 @@ PHP_HTTP_API HashTable *php_http_negotiate(const char *value_str, size_t value_l
 
 				q = Z_DVAL_P(tmp);
 				zval_ptr_dtor(&tmp);
+
+				if (!q) {
+					STR_FREE(key.str);
+					continue;
+				}
 			} else {
 				q = 1.0 - ++i / 100.0;
 			}

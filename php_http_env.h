@@ -81,6 +81,7 @@ PHP_METHOD(HttpEnv, setResponseHeader);
 PHP_METHOD(HttpEnv, setResponseCode);
 PHP_METHOD(HttpEnv, negotiateLanguage);
 PHP_METHOD(HttpEnv, negotiateCharset);
+PHP_METHOD(HttpEnv, negotiateEncoding);
 PHP_METHOD(HttpEnv, negotiateContentType);
 PHP_METHOD(HttpEnv, negotiate);
 PHP_METHOD(HttpEnv, persistentHandlesStat);

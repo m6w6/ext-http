@@ -575,6 +575,11 @@ PHP_HTTP_BEGIN_ARGS(negotiateCharset, 1)
 	PHP_HTTP_ARG_VAL(result_array, 1)
 PHP_HTTP_END_ARGS;
 
+PHP_HTTP_BEGIN_ARGS(negotiateEncoding, 1)
+	PHP_HTTP_ARG_VAL(supported, 0)
+	PHP_HTTP_ARG_VAL(result_array, 1)
+PHP_HTTP_END_ARGS;
+
 PHP_HTTP_BEGIN_ARGS(negotiate, 2)
 	PHP_HTTP_ARG_VAL(value, 0)
 	PHP_HTTP_ARG_VAL(supported, 0)
@@ -602,6 +607,7 @@ zend_function_entry php_http_env_method_entry[] = {
 
 	PHP_HTTP_ENV_ME(negotiateLanguage)
 	PHP_HTTP_ENV_ME(negotiateContentType)
+	PHP_HTTP_ENV_ME(negotiateEncoding)
 	PHP_HTTP_ENV_ME(negotiateCharset)
 	PHP_HTTP_ENV_ME(negotiate)
 
@@ -742,6 +748,22 @@ PHP_METHOD(HttpEnv, negotiateCharset)
 			array_init(rs_array);
 		}
 		PHP_HTTP_DO_NEGOTIATE(charset, supported, rs_array);
+	} else {
+		RETURN_FALSE;
+	}
+}
+
+PHP_METHOD(HttpEnv, negotiateEncoding)
+{
+	HashTable *supported;
+	zval *rs_array = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+		if (rs_array) {
+			zval_dtor(rs_array);
+			array_init(rs_array);
+		}
+		PHP_HTTP_DO_NEGOTIATE(encoding, supported, rs_array);
 	} else {
 		RETURN_FALSE;
 	}
