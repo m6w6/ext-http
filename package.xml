@@ -19,9 +19,9 @@ Extended HTTP support. Again.
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-01-16</date>
+ <date>2012-01-23</date>
  <version>
-  <release>2.0.0dev3</release>
+  <release>2.0.0dev4</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -110,6 +110,7 @@ List of changes (TBD):
    <file role="src" name="php_http_request_pool.h"/>
    <file role="src" name="php_http_resource_factory.c"/>
    <file role="src" name="php_http_resource_factory.h"/>
+   <file role="src" name="php_http_serf.h"/>
    <file role="src" name="php_http_strlist.c"/>
    <file role="src" name="php_http_strlist.h"/>
    <file role="src" name="php_http_url.c"/>
