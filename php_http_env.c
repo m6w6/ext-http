@@ -694,7 +694,7 @@ PHP_METHOD(HttpEnv, setResponseHeader)
 {
 	char *header_name_str;
 	int header_name_len;
-	zval *header_value;
+	zval *header_value = NULL;
 	long code = 0;
 	zend_bool replace_header = 1;
 
