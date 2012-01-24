@@ -23,7 +23,7 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_init(php_http_cookie_l
 	
 	list->path = NULL;
 	list->domain = NULL;
-	list->expires = 0;
+	list->expires = -1;
 	list->flags = 0;
 	
 	TSRMLS_SET_CTX(list->ts);
@@ -114,6 +114,63 @@ PHP_HTTP_API void php_http_cookie_list_add_extra(php_http_cookie_list_t *list, c
 	zend_symtable_update(&list->extras, name, name_len + 1, (void *) &cookie_value, sizeof(zval *), NULL);
 }
 
+#define _KEY_IS(s) (key->len == sizeof(s) && !strncasecmp(key->str, (s), key->len))
+static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long flags, php_http_array_hashkey_t *key, zval *val)
+{
+	zval *arg = php_http_zsep(1, IS_STRING, val);
+
+	if (!(flags & PHP_HTTP_COOKIE_PARSE_RAW)) {
+		Z_STRLEN_P(arg) = php_raw_url_decode(Z_STRVAL_P(arg), Z_STRLEN_P(arg));
+	}
+
+	if _KEY_IS("path") {
+		STR_SET(list->path, estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg)));
+	} else if _KEY_IS("domain") {
+		STR_SET(list->domain, estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg)));
+	} else if _KEY_IS("expires") {
+		char *date = estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg));
+		list->expires = php_parse_date(date, NULL);
+		efree(date);
+	} else if _KEY_IS("secure") {
+		list->flags |= PHP_HTTP_COOKIE_SECURE;
+	} else if _KEY_IS("httpOnly") {
+		list->flags |= PHP_HTTP_COOKIE_HTTPONLY;
+	} else {
+		char buf[0x20], *key_str;
+		int key_len;
+
+		if (key->type == HASH_KEY_IS_LONG) {
+			key_len = slprintf(buf, sizeof(buf) - 1, "%ld", key->num) + 1;
+			key_str = &buf[0];
+		} else {
+			key_len = key->len;
+			key_str = key->str;
+		}
+		/* check for extra */
+		if (allowed_extras) {
+			char **ae = allowed_extras;
+
+			for (; *ae; ++ae) {
+				if (!strncasecmp(key_str, *ae, key_len)) {
+					if (key->type == HASH_KEY_IS_LONG) {
+						zend_hash_index_update(&list->extras, key->num, (void *) &arg, sizeof(zval *), NULL);
+					} else {
+						zend_hash_update(&list->extras, key->str, key->len, (void *) &arg, sizeof(zval *), NULL);
+					}
+					return;
+				}
+			}
+		}
+
+		/* cookie */
+		if (key->type == HASH_KEY_IS_LONG) {
+			zend_hash_index_update(&list->cookies, key->num, (void *) &arg, sizeof(zval *), NULL);
+		} else {
+			zend_hash_update(&list->cookies, key->str, key->len, (void *) &arg, sizeof(zval *), NULL);
+		}
+	}
+}
+
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_list_t *list, const char *str, size_t len, long flags, char **allowed_extras TSRMLS_DC)
 {
 	php_http_params_opts_t opts;
@@ -134,65 +191,11 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_
 	FOREACH_HASH_KEYVAL(pos1, &params, key, param) {
 		if (Z_TYPE_PP(param) == IS_ARRAY) {
 			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(param), ZEND_STRS("value"), (void *) &val)) {
-				Z_ADDREF_PP(val);
-				if (key.type == HASH_KEY_IS_STRING) {
-					zend_hash_update(&list->cookies, key.str, key.len, (void *) val, sizeof(zval *), NULL);
-				} else {
-					zend_hash_index_update(&list->cookies, key.num, (void *) val, sizeof(zval *), NULL);
-				}
+				add_entry(list, NULL, flags, &key, *val);
 			}
 			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(param), ZEND_STRS("arguments"), (void *) &args) && Z_TYPE_PP(args) == IS_ARRAY) {
 				FOREACH_KEYVAL(pos2, *args, key, arg) {
-					if (key.type == HASH_KEY_IS_STRING) {
-						zval *tmp = php_http_ztyp(IS_STRING, *arg);
-						char *arg_str = Z_STRVAL_P(tmp);
-						size_t arg_len = Z_STRLEN_P(tmp);
-#define _KEY_IS(s) (key.len == sizeof(s) && !strncasecmp(key.str, (s), key.len))
-						if _KEY_IS("path") {
-							STR_SET(list->path, estrndup(arg_str, arg_len));
-						} else if _KEY_IS("domain") {
-							STR_SET(list->domain, estrndup(arg_str, arg_len));
-						} else if _KEY_IS("expires") {
-							char *date = estrndup(arg_str, arg_len);
-							list->expires = php_parse_date(date, NULL);
-							efree(date);
-						} else if _KEY_IS("secure") {
-							list->flags |= PHP_HTTP_COOKIE_SECURE;
-						} else if _KEY_IS("httpOnly") {
-							list->flags |= PHP_HTTP_COOKIE_HTTPONLY;
-						} else {
-							/* check for extra */
-							if (allowed_extras) {
-								char **ae = allowed_extras;
-
-								for (; *ae; ++ae) {
-									if (!strncasecmp(key.str, *ae, key.len)) {
-										if (flags & PHP_HTTP_COOKIE_PARSE_RAW) {
-											php_http_cookie_list_add_extra(list, key.str, key.len, arg_str, arg_len);
-										} else {
-											char *dec = estrndup(arg_str, arg_len);
-											int declen = php_url_decode(dec, arg_len);
-
-											php_http_cookie_list_add_extra(list, key.str, key.len, dec, declen);
-											efree(dec);
-										}
-										continue;
-									}
-								}
-							}
-							/* new cookie */
-							if (flags & PHP_HTTP_COOKIE_PARSE_RAW) {
-								php_http_cookie_list_add_cookie(list, key.str, key.len, arg_str, arg_len);
-							} else {
-								char *dec = estrndup(arg_str, arg_len);
-								int declen = php_url_decode(dec, arg_len);
-
-								php_http_cookie_list_add_cookie(list, key.str, key.len, dec, declen);
-								efree(dec);
-							}
-						}
-						zval_ptr_dtor(&tmp);
-					}
+					add_entry(list, allowed_extras, flags, &key, *arg);
 				}
 			}
 		}
@@ -240,44 +243,24 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_c
 		zend_hash_copy(&list->extras, Z_ARRVAL_PP(tmp), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	}
 	if (SUCCESS == zend_hash_find(ht, "flags", sizeof("flags"), (void *) &tmp)) {
-		switch (Z_TYPE_PP(tmp)) {
-			case IS_LONG:
-				list->flags = Z_LVAL_PP(tmp);
-				break;
-			case IS_DOUBLE:
-				list->flags = (long) Z_DVAL_PP(tmp);
-				break;
-			case IS_STRING:
-				cpy = php_http_ztyp(IS_LONG, *tmp);
-				list->flags = Z_LVAL_P(cpy);
-				zval_ptr_dtor(&cpy);
-				break;
-			default:
-				break;
-		}
+		cpy = php_http_ztyp(IS_LONG, *tmp);
+		list->flags = Z_LVAL_P(cpy);
+		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "expires", sizeof("expires"), (void *) &tmp)) {
-		switch (Z_TYPE_PP(tmp)) {
-			case IS_LONG:
-				list->expires = Z_LVAL_PP(tmp);
-				break;
-			case IS_DOUBLE:
-				list->expires = (long) Z_DVAL_PP(tmp);
-				break;
-			case IS_STRING:
-				cpy = php_http_ztyp(IS_LONG, *tmp);
-				if (Z_LVAL_P(cpy)) {
-					list->expires = Z_LVAL_P(cpy);
-				} else {
-					time_t expires = php_parse_date(Z_STRVAL_PP(tmp), NULL);
-					if (expires > 0) {
-						list->expires = expires;
-					}
-				}
-				zval_ptr_dtor(&cpy);
-				break;
-			default:
-				break;
+		if (Z_TYPE_PP(tmp) == IS_LONG) {
+			list->expires = Z_LVAL_PP(tmp);
+		} else {
+			long lval;
+
+			cpy = php_http_ztyp(IS_STRING, *tmp);
+			if (IS_LONG == is_numeric_string(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy), &lval, NULL, 0)) {
+				list->expires = lval;
+			} else {
+				list->expires = php_parse_date(Z_STRVAL_P(cpy), NULL);
+			}
+
+			zval_ptr_dtor(&cpy);
 		}
 	}
 	if (SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void *) &tmp) && Z_TYPE_PP(tmp) == IS_STRING) {
@@ -297,8 +280,8 @@ static inline void append_encoded(php_http_buffer_t *buf, const char *key, size_
 	char *enc_str[2];
 	int enc_len[2];
 	
-	enc_str[0] = php_url_encode(key, key_len, &enc_len[0]);
-	enc_str[1] = php_url_encode(val, val_len, &enc_len[1]);
+	enc_str[0] = php_raw_url_encode(key, key_len, &enc_len[0]);
+	enc_str[1] = php_raw_url_encode(val, val_len, &enc_len[1]);
 	
 	php_http_buffer_append(buf, enc_str[0], enc_len[0]);
 	php_http_buffer_appends(buf, "=");
@@ -322,11 +305,17 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 	php_http_buffer_init(&buf);
 	
 	FOREACH_HASH_KEYVAL(pos, &list->cookies, key, val) {
+		zval *tmp = php_http_ztyp(IS_STRING, *val);
 		if (key.type == HASH_KEY_IS_STRING && key.len) {
-			zval *tmp = php_http_ztyp(IS_STRING, *val);
 			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-			zval_ptr_dtor(&tmp);
+		} else if (key.type == HASH_KEY_IS_LONG) {
+			int enc_len;
+			char *enc_str = php_raw_url_encode(Z_STRVAL_P(tmp), Z_STRLEN_P(tmp), &enc_len);
+
+			php_http_buffer_appendf(&buf, "%ld=%.*s; ", key.num, enc_len, enc_str);
+			efree(enc_str);
 		}
+		zval_ptr_dtor(&tmp);
 	}
 	
 	if (list->domain && *list->domain) {
@@ -335,18 +324,24 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 	if (list->path && *list->path) {
 		php_http_buffer_appendf(&buf, "path=%s; ", list->path);
 	}
-	if (list->expires) {
+	if (list->expires >= 0) {
 		char *date = php_format_date(ZEND_STRL(PHP_HTTP_DATE_FORMAT), list->expires, 0 TSRMLS_CC);
 		php_http_buffer_appendf(&buf, "expires=%s; ", date);
 		efree(date);
 	}
 	
 	FOREACH_HASH_KEYVAL(pos, &list->extras, key, val) {
+		zval *tmp = php_http_ztyp(IS_STRING, *val);
 		if (key.type == HASH_KEY_IS_STRING && key.len) {
-			zval *tmp = php_http_ztyp(IS_STRING, *val);
 			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-			zval_ptr_dtor(&tmp);
+		} else if (key.type == HASH_KEY_IS_LONG) {
+			int enc_len;
+			char *enc_str = php_raw_url_encode(Z_STRVAL_P(tmp), Z_STRLEN_P(tmp), &enc_len);
+
+			php_http_buffer_appendf(&buf, "%ld=%.*s; ", key.num, enc_len, enc_str);
+			efree(enc_str);
 		}
+		zval_ptr_dtor(&tmp);
 	}
 	
 	if (list->flags & PHP_HTTP_COOKIE_SECURE) {
@@ -542,8 +537,17 @@ PHP_METHOD(HttpCookie, __construct)
 					}
 
 					switch (Z_TYPE_P(zcookie)) {
-						case IS_ARRAY:
 						case IS_OBJECT:
+							if (instanceof_function(Z_OBJCE_P(zcookie), php_http_cookie_class_entry TSRMLS_CC)) {
+								php_http_cookie_object_t *zco = zend_object_store_get_object(zcookie TSRMLS_CC);
+
+								if (zco->list) {
+									obj->list = php_http_cookie_list_copy(zco->list, NULL);
+								}
+								break;
+							}
+							/* no break */
+						case IS_ARRAY:
 							obj->list = php_http_cookie_list_from_struct(obj->list, zcookie TSRMLS_CC);
 							break;
 						default: {
@@ -678,8 +682,8 @@ PHP_METHOD(HttpCookie, getCookie)
 
 PHP_METHOD(HttpCookie, setCookie)
 {
-	char *name_str, *value_str;
-	int name_len, value_len;
+	char *name_str, *value_str = NULL;
+	int name_len, value_len = 0;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s!", &name_str, &name_len, &value_str, &value_len)) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -740,8 +744,8 @@ PHP_METHOD(HttpCookie, getExtra)
 
 PHP_METHOD(HttpCookie, setExtra)
 {
-	char *name_str, *value_str;
-	int name_len, value_len;
+	char *name_str, *value_str = NULL;
+	int name_len, value_len = 0;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s!", &name_str, &name_len, &value_str, &value_len)) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -860,7 +864,7 @@ PHP_METHOD(HttpCookie, getExpires)
 
 PHP_METHOD(HttpCookie, setExpires)
 {
-	long ts = 0;
+	long ts = -1;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &ts)) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);

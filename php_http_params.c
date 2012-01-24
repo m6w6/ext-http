@@ -56,30 +56,32 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 
 			INIT_PZVAL(&key);
 			php_trim(state->arg.str, state->arg.len, NULL, 0, &key, 3 TSRMLS_CC);
-			MAKE_STD_ZVAL(val);
-			ZVAL_TRUE(val);
-			zend_symtable_update(Z_ARRVAL_PP(state->current.args), Z_STRVAL(key), Z_STRLEN(key) + 1, (void *) &val, sizeof(zval *), (void *) &state->current.val);
-
+			if (Z_STRLEN(key)) {
+				MAKE_STD_ZVAL(val);
+				ZVAL_TRUE(val);
+				zend_symtable_update(Z_ARRVAL_PP(state->current.args), Z_STRVAL(key), Z_STRLEN(key) + 1, (void *) &val, sizeof(zval *), (void *) &state->current.val);
+			}
 			zval_dtor(&key);
 		}
 	} else if (state->param.str) {
 		if (0 < (state->param.len = state->input.str - state->param.str)) {
 			zval *prm, *arg, *val, key;
 
-			MAKE_STD_ZVAL(prm);
-			array_init(prm);
-			MAKE_STD_ZVAL(val);
-			ZVAL_TRUE(val);
-			zend_hash_update(Z_ARRVAL_P(prm), "value", sizeof("value"), (void *) &val, sizeof(zval *), (void *) &state->current.val);
-
-			MAKE_STD_ZVAL(arg);
-			array_init(arg);
-			zend_hash_update(Z_ARRVAL_P(prm), "arguments", sizeof("arguments"), (void *) &arg, sizeof(zval *), (void *) &state->current.args);
-
 			INIT_PZVAL(&key);
 			php_trim(state->param.str, state->param.len, NULL, 0, &key, 3 TSRMLS_CC);
-			zend_symtable_update(params, Z_STRVAL(key), Z_STRLEN(key) + 1, (void *) &prm, sizeof(zval *), (void *) &state->current.param);
+			if (Z_STRLEN(key)) {
+				MAKE_STD_ZVAL(prm);
+				array_init(prm);
+				MAKE_STD_ZVAL(val);
+				ZVAL_TRUE(val);
+				zend_hash_update(Z_ARRVAL_P(prm), "value", sizeof("value"), (void *) &val, sizeof(zval *), (void *) &state->current.val);
 
+				MAKE_STD_ZVAL(arg);
+				array_init(arg);
+				zend_hash_update(Z_ARRVAL_P(prm), "arguments", sizeof("arguments"), (void *) &arg, sizeof(zval *), (void *) &state->current.args);
+
+				zend_symtable_update(params, Z_STRVAL(key), Z_STRLEN(key) + 1, (void *) &prm, sizeof(zval *), (void *) &state->current.param);
+			}
 			zval_dtor(&key);
 		}
 	}
