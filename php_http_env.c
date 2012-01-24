@@ -619,8 +619,8 @@ zend_function_entry php_http_env_method_entry[] = {
 
 PHP_METHOD(HttpEnv, getRequestHeader)
 {
-	char *header_name_str;
-	int header_name_len;
+	char *header_name_str = NULL;
+	int header_name_len = 0;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
 		if (header_name_str && header_name_len) {
@@ -827,7 +827,7 @@ PHP_METHOD(HttpEnv, persistentHandlesClean)
 	char *name_str = NULL, *ident_str = NULL;
 	int name_len = 0, ident_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss", &name_str, &name_len, &ident_str, &ident_len)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!", &name_str, &name_len, &ident_str, &ident_len)) {
 		php_http_persistent_handle_cleanup(name_str, name_len, ident_str, ident_len TSRMLS_CC);
 	}
 }
