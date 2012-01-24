@@ -169,7 +169,8 @@ PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, char *key_st
 			ZVAL_STRINGL(header_str, PHP_HTTP_BUFFER_VAL(&str), PHP_HTTP_BUFFER_LEN(&str), 0);
 			ret = header_str;
 		} else {
-			ret = php_http_ztyp(IS_STRING, *header);
+			Z_ADDREF_PP(header);
+			ret = *header;
 		}
 	}
 
