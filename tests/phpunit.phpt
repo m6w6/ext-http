@@ -12,7 +12,7 @@ require_once "PHPUnit/Autoload.php";
 --EXPECTF--
 PHPUnit %s by Sebastian Bergmann.
 
-%s
+%a
 
 Time: %s, Memory: %s
 

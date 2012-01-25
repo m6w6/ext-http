@@ -145,23 +145,22 @@ PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval
 						}
 					}
 				} else {
+					zval *entry;
 					/*
 					 * add
 					 */
 					if (Z_TYPE_PP(params_entry) == IS_OBJECT) {
-						zval *new_array;
-
-						MAKE_STD_ZVAL(new_array);
-						array_init(new_array);
-						php_http_querystring_update(new_array, *params_entry, NULL TSRMLS_CC);
-						*params_entry = new_array;
+						MAKE_STD_ZVAL(entry);
+						array_init(entry);
+						php_http_querystring_update(entry, *params_entry, NULL TSRMLS_CC);
 					} else {
 						Z_ADDREF_PP(params_entry);
+						entry = *params_entry;
 					}
 					if (key.type == HASH_KEY_IS_STRING) {
-						add_assoc_zval_ex(qarray, key.str, key.len, *params_entry);
+						add_assoc_zval_ex(qarray, key.str, key.len, entry);
 					} else {
-						add_index_zval(qarray, key.num, *params_entry);
+						add_index_zval(qarray, key.num, entry);
 					}
 				}
 			}
