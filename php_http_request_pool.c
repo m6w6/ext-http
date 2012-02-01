@@ -57,10 +57,6 @@ PHP_HTTP_API void php_http_request_pool_dtor(php_http_request_pool_t *h)
 	zend_llist_clean(&h->requests.finished);
 	zend_llist_clean(&h->requests.attached);
 
-	if (h->persistent_handle_id) {
-		zval_ptr_dtor(&h->persistent_handle_id);
-	}
-
 	php_http_resource_factory_free(&h->rf);
 }
 

@@ -16,61 +16,24 @@
 
 static int php_http_request_datashare_compare_handles(void *h1, void *h2);
 
-#ifdef ZTS
-static void *php_http_request_datashare_locks_init(void);
-static void php_http_request_datashare_locks_dtor(void *l);
-static void php_http_request_datashare_lock_func(CURL *handle, curl_lock_data data, curl_lock_access locktype, void *userptr);
-static void php_http_request_datashare_unlock_func(CURL *handle, curl_lock_data data, void *userptr);
-static MUTEX_T php_http_request_datashare_global_shares_lock;
-#endif
-static HashTable php_http_request_datashare_global_shares;
-php_http_request_datashare_t *php_http_request_datashare_global_get(const char *driver_str, size_t driver_len TSRMLS_DC)
-{
-	php_http_request_datashare_t *s = NULL, **s_ptr;
-	char *lower_str = php_strtolower(estrndup(driver_str, driver_len), driver_len);
-
-#ifdef ZTS
-	tsrm_mutex_lock(php_http_request_datashare_global_shares_lock);
-#endif
-	if (zend_hash_find(&php_http_request_datashare_global_shares, lower_str, driver_len + 1, (void *) &s_ptr)) {
-		s = *s_ptr;
-	} else {
-		php_http_request_factory_driver_t driver;
-
-		if ((SUCCESS == php_http_request_factory_get_driver(driver_str, driver_len, &driver)) && driver.request_datashare_ops) {
-			s = php_http_request_datashare_init(NULL, driver.request_datashare_ops, NULL, NULL, 1 TSRMLS_CC);
-			zend_hash_add(&php_http_request_datashare_global_shares, lower_str, driver_len + 1, &s, sizeof(php_http_request_datashare_t *), NULL);
-		}
-	}
-#ifdef ZTS
-	tsrm_mutex_unlock(php_http_request_datashare_global_shares_lock);
-#endif
-
-	efree(lower_str);
-	return s;
-}
-
-PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_http_request_datashare_t *h, php_http_request_datashare_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg, zend_bool persistent TSRMLS_DC)
+PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_http_request_datashare_t *h, php_http_request_datashare_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {
 	php_http_request_datashare_t *free_h = NULL;
 
 	if (!h) {
-		free_h = h = pemalloc(sizeof(*h), persistent);
+		free_h = h = emalloc(sizeof(*h));
 	}
 	memset(h, sizeof(*h), 0);
 
-	if (!(h->persistent = persistent)) {
-		h->requests = emalloc(sizeof(*h->requests));
-		zend_llist_init(h->requests, sizeof(zval *), ZVAL_PTR_DTOR, 0);
-		TSRMLS_SET_CTX(h->ts);
-	}
+	zend_llist_init(&h->requests, sizeof(zval *), ZVAL_PTR_DTOR, 0);
 	h->ops = ops;
 	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL);
+	TSRMLS_SET_CTX(h->ts);
 
 	if (h->ops->init) {
 		if (!(h = h->ops->init(h, init_arg))) {
 			if (free_h) {
-				pefree(free_h, persistent);
+				efree(free_h);
 			}
 		}
 	}
@@ -92,21 +55,14 @@ PHP_HTTP_API void php_http_request_datashare_dtor(php_http_request_datashare_t *
 	if (h->ops->dtor) {
 		h->ops->dtor(h);
 	}
-	if (h->requests) {
-		zend_llist_destroy(h->requests);
-		pefree(h->requests, h->persistent);
-		h->requests = NULL;
-	}
-
-	if (h->persistent_handle_id) {
-		zval_ptr_dtor(&h->persistent_handle_id);
-	}
+	zend_llist_destroy(&h->requests);
+	php_http_resource_factory_free(&h->rf);
 }
 
 PHP_HTTP_API void php_http_request_datashare_free(php_http_request_datashare_t **h)
 {
 	php_http_request_datashare_dtor(*h);
-	pefree(*h, (*h)->persistent);
+	efree(*h);
 	*h = NULL;
 }
 
@@ -119,7 +75,7 @@ PHP_HTTP_API STATUS php_http_request_datashare_attach(php_http_request_datashare
 
 		if (SUCCESS == h->ops->attach(h, obj->request)) {
 			Z_ADDREF_P(request);
-			zend_llist_add_element(PHP_HTTP_REQUEST_DATASHARE_REQUESTS(h), &request);
+			zend_llist_add_element(&h->requests, &request);
 			return SUCCESS;
 		}
 	}
@@ -140,7 +96,7 @@ PHP_HTTP_API STATUS php_http_request_datashare_detach(php_http_request_datashare
 		php_http_request_object_t *obj = zend_object_store_get_object(request TSRMLS_CC);
 
 		if (SUCCESS == h->ops->detach(h, obj->request)) {
-			zend_llist_del_element(PHP_HTTP_REQUEST_DATASHARE_REQUESTS(h), request, php_http_request_datashare_compare_handles);
+			zend_llist_del_element(&h->requests, request, php_http_request_datashare_compare_handles);
 			return SUCCESS;
 		}
 	}
@@ -167,16 +123,10 @@ PHP_HTTP_API void php_http_request_datashare_reset(php_http_request_datashare_t 
 	if (h->ops->reset) {
 		h->ops->reset(h);
 	} else if (h->ops->detach) {
-		zend_llist_apply_with_argument(PHP_HTTP_REQUEST_DATASHARE_REQUESTS(h), detach, h TSRMLS_CC);
+		zend_llist_apply_with_argument(&h->requests, detach, h TSRMLS_CC);
 	}
 
-	zend_llist_clean(PHP_HTTP_REQUEST_DATASHARE_REQUESTS(h));
-}
-
-static void php_http_request_datashare_global_requests_dtor(void *el)
-{
-	//php_http_request_datashare_detach(php_http_request_datashare_global_get(), *((zval **) el));
-	zval_ptr_dtor(el);
+	zend_llist_clean(&h->requests);
 }
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpRequestDataShare, method, 0, req_args)
@@ -227,7 +177,7 @@ zend_object_value php_http_request_datashare_object_new_ex(zend_class_entry *ce,
 	if (share) {
 		o->share = share;
 	} else {
-		o->share = php_http_request_datashare_init(NULL, NULL, NULL, NULL, 0 TSRMLS_CC);
+		o->share = php_http_request_datashare_init(NULL, NULL, NULL, NULL TSRMLS_CC);
 	}
 
 	if (ptr) {
@@ -244,9 +194,7 @@ void php_http_request_datashare_object_free(void *object TSRMLS_DC)
 {
 	php_http_request_datashare_object_t *o = (php_http_request_datashare_object_t *) object;
 
-	if (!o->share->persistent) {
-		php_http_request_datashare_free(&o->share);
-	}
+	php_http_request_datashare_free(&o->share);
 	zend_object_std_dtor((zend_object *) o TSRMLS_CC);
 	efree(o);
 }
@@ -311,7 +259,7 @@ PHP_METHOD(HttpRequestDataShare, count)
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_request_datashare_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-		RETURN_LONG(zend_llist_count(PHP_HTTP_REQUEST_DATASHARE_REQUESTS(obj->share)));
+		RETURN_LONG(zend_llist_count(&obj->share->requests));
 	}
 	RETURN_FALSE;
 }
@@ -364,42 +312,11 @@ PHP_MINIT_FUNCTION(http_request_datashare)
 
 	zend_class_implements(php_http_request_datashare_class_entry TSRMLS_CC, 1, spl_ce_Countable);
 
-	zend_declare_property_null(php_http_request_datashare_class_entry, ZEND_STRL("instance"), (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);
 	zend_declare_property_bool(php_http_request_datashare_class_entry, ZEND_STRL("cookie"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
 	zend_declare_property_bool(php_http_request_datashare_class_entry, ZEND_STRL("dns"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
 
-#ifdef ZTS
-	php_http_request_datashare_global_shares_lock = tsrm_mutex_alloc();
-#endif
-	zend_hash_init(&php_http_request_datashare_global_shares, 0, NULL, (dtor_func_t) php_http_request_datashare_free, 1);
-
 	return SUCCESS;
 }
-
-PHP_MSHUTDOWN_FUNCTION(http_request_datashare)
-{
-	zend_hash_destroy(&php_http_request_datashare_global_shares);
-#ifdef ZTS
-	tsrm_mutex_free(php_http_request_datashare_global_shares_lock);
-#endif
-
-	return SUCCESS;
-}
-
-PHP_RINIT_FUNCTION(http_request_datashare)
-{
-	zend_llist_init(&PHP_HTTP_G->request_datashare.requests, sizeof(zval *), php_http_request_datashare_global_requests_dtor, 0);
-
-	return SUCCESS;
-}
-
-PHP_RSHUTDOWN_FUNCTION(http_request_datashare)
-{
-	zend_llist_destroy(&PHP_HTTP_G->request_datashare.requests);
-
-	return SUCCESS;
-}
-
 
 /*
  * Local variables:

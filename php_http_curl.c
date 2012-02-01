@@ -61,19 +61,8 @@ typedef struct php_http_curl_request_pool {
 #endif
 } php_http_curl_request_pool_t;
 
-#ifdef ZTS
-typedef struct php_http_curl_request_datashare_lock {
-	CURL *ch;
-	MUTEX_T mx;
-} php_http_curl_request_datashare_lock_t;
-#endif
-
 typedef struct php_http_curl_request_datashare {
 	CURLSH *handle;
-
-#ifdef ZTS
-	php_http_curl_request_datashare_lock_t *locks;
-#endif
 } php_http_curl_request_datashare_t;
 
 #define PHP_HTTP_CURL_OPT_STRING(OPTION, ldiff, obdc) \
@@ -1148,53 +1137,6 @@ static STATUS get_info(CURL *ch, HashTable *info)
 }
 
 
-#ifdef ZTS
-static void *php_http_curl_request_datashare_locks_init(void)
-{
-	int i;
-	php_http_curl_request_datashare_lock_t *locks = pecalloc(CURL_LOCK_DATA_LAST, sizeof(*locks), 1);
-
-	if (locks) {
-		for (i = 0; i < CURL_LOCK_DATA_LAST; ++i) {
-			locks[i].mx = tsrm_mutex_alloc();
-		}
-	}
-
-	return locks;
-}
-
-static void php_http_curl_request_datashare_locks_dtor(void *l)
-{
-	int i;
-	php_http_curl_request_datashare_lock_t *locks = l;
-
-	for (i = 0; i < CURL_LOCK_DATA_LAST; ++i) {
-		tsrm_mutex_free(locks[i].mx);
-	}
-	pefree(locks, 1);
-}
-
-static void php_http_curl_request_datashare_lock_func(CURL *handle, curl_lock_data data, curl_lock_access locktype, void *userptr)
-{
-	php_http_curl_request_datashare_lock_t *locks = userptr;
-
-	/* TSRM can't distinguish shared/exclusive locks */
-	tsrm_mutex_lock(locks[data].mx);
-	locks[data].ch = handle;
-}
-
-static void php_http_curl_request_datashare_unlock_func(CURL *handle, curl_lock_data data, void *userptr)
-{
-	php_http_curl_request_datashare_lock_t *locks = userptr;
-
-	if (locks[data].ch == handle) {
-		tsrm_mutex_unlock(locks[data].mx);
-	}
-}
-#endif
-
-
-
 /* request datashare handler ops */
 
 static php_http_request_datashare_t *php_http_curl_request_datashare_init(php_http_request_datashare_t *h, void *handle)
@@ -1207,18 +1149,8 @@ static php_http_request_datashare_t *php_http_curl_request_datashare_init(php_ht
 		return NULL;
 	}
 
-	curl = pecalloc(1, sizeof(*curl), h->persistent);
+	curl = ecalloc(1, sizeof(*curl));
 	curl->handle = handle;
-#ifdef ZTS
-	if (h->persistent) {
-		curl->locks = php_http_curl_request_datashare_locks_init();
-		if (curl->locks) {
-			curl_share_setopt(curl->handle, CURLSHOPT_LOCKFUNC, php_http_curl_request_datashare_lock_func);
-			curl_share_setopt(curl->handle, CURLSHOPT_UNLOCKFUNC, php_http_curl_request_datashare_unlock_func);
-			curl_share_setopt(curl->handle, CURLSHOPT_USERDATA, curl->locks);
-		}
-	}
-#endif
 	h->ctx = curl;
 
 	return h;
@@ -1231,13 +1163,7 @@ static void php_http_curl_request_datashare_dtor(php_http_request_datashare_t *h
 
 	php_http_resource_factory_handle_dtor(h->rf, curl->handle TSRMLS_CC);
 
-#ifdef ZTS
-	if (h->persistent) {
-		php_http_curl_request_datashare_locks_dtor(curl->locks);
-	}
-#endif
-
-	pefree(curl, h->persistent);
+	efree(curl);
 	h->ctx = NULL;
 }
 
@@ -1285,7 +1211,7 @@ static STATUS php_http_curl_request_datashare_setopt(php_http_request_datashare_
 			break;
 
 		case PHP_HTTP_REQUEST_DATASHARE_OPT_RESOLVER:
-			if (CURLSHE_OK != (rc = curl_share_setopt(curl->handle, *((zend_bool *) arg) ? CURLSHOPT_SHARE : CURLSHOPT_UNSHARE, CURL_LOCK_DATA_COOKIE))) {
+			if (CURLSHE_OK != (rc = curl_share_setopt(curl->handle, *((zend_bool *) arg) ? CURLSHOPT_SHARE : CURLSHOPT_UNSHARE, CURL_LOCK_DATA_DNS))) {
 				TSRMLS_FETCH_FROM_CTX(h->ts);
 
 				php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_DATASHARE, "Could not %s sharing of resolver data: %s",  *((zend_bool *) arg) ? "enable" : "disable", curl_share_strerror(rc));

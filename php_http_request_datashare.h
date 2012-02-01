@@ -39,35 +39,22 @@ typedef struct php_http_request_datashare_ops {
 	php_http_request_datashare_setopt_func_t setopt;
 } php_http_request_datashare_ops_t;
 
-#define PHP_HTTP_REQUEST_DATASHARE_REQUESTS(s) ((s)->persistent ? &PHP_HTTP_G->request_datashare.requests : (s)->requests)
 struct php_http_request_datashare {
 	void *ctx;
 	php_http_resource_factory_t *rf;
 	php_http_request_datashare_ops_t *ops;
-	zend_llist *requests; /* NULL if persistent, use PHP_HTTP_REQUEST_DATASHARE_REQUESTS */
-	unsigned persistent:1;
-	zval *persistent_handle_id;
+	zend_llist requests;
 #ifdef ZTS
 	void ***ts;
 #endif
 };
-
-struct php_http_request_datashare_globals {
-	zend_llist requests;
-	zend_bool cookie;
-	zend_bool dns;
-	zend_bool ssl;
-	zend_bool connect;
-};
-
-extern php_http_request_datashare_t *php_http_request_datashare_global_get(const char *driver_str, size_t driver_len TSRMLS_DC);
 
 extern PHP_MINIT_FUNCTION(http_request_datashare);
 extern PHP_MSHUTDOWN_FUNCTION(http_request_datashare);
 extern PHP_RINIT_FUNCTION(http_request_datashare);
 extern PHP_RSHUTDOWN_FUNCTION(http_request_datashare);
 
-PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_http_request_datashare_t *h, php_http_request_datashare_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg, zend_bool persistent TSRMLS_DC);
+PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_init(php_http_request_datashare_t *h, php_http_request_datashare_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC);
 PHP_HTTP_API php_http_request_datashare_t *php_http_request_datashare_copy(php_http_request_datashare_t *from, php_http_request_datashare_t *to);
 PHP_HTTP_API void php_http_request_datashare_dtor(php_http_request_datashare_t *h);
 PHP_HTTP_API void php_http_request_datashare_free(php_http_request_datashare_t **h);

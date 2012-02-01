@@ -55,8 +55,6 @@ struct php_http_request_pool {
 		zend_llist finished;
 	} requests;
 
-	zval *persistent_handle_id;
-
 #ifdef ZTS
 	void ***ts;
 #endif

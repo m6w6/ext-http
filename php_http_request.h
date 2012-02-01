@@ -150,7 +150,6 @@ struct php_http_request {
 	php_http_message_parser_t *parser;
 	php_http_message_t *message;
 	php_http_buffer_t *buffer;
-	zval *persistent_handle_id;
 #ifdef ZTS
 	void ***ts;
 #endif

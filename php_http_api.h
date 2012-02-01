@@ -106,7 +106,6 @@ typedef int STATUS;
 ZEND_BEGIN_MODULE_GLOBALS(php_http)
 	struct php_http_env_globals env;
 	struct php_http_persistent_handle_globals persistent_handle;
-	struct php_http_request_datashare_globals request_datashare;
 #if PHP_HTTP_HAVE_CURL && PHP_HTTP_HAVE_EVENT
 	struct php_http_curl_globals curl;
 #endif

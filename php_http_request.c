@@ -52,10 +52,6 @@ PHP_HTTP_API void php_http_request_dtor(php_http_request_t *h)
 
 	php_http_resource_factory_free(&h->rf);
 
-	if (h->persistent_handle_id) {
-		zval_ptr_dtor(&h->persistent_handle_id);
-	}
-
 	php_http_message_parser_free(&h->parser);
 	php_http_message_free(&h->message);
 	php_http_buffer_free(&h->buffer);

@@ -119,10 +119,6 @@ zend_php_http_globals *php_http_globals(void)
 #endif
 PHP_INI_BEGIN()
 	PHP_HTTP_INI_ENTRY("http.etag.mode", "crc32b", PHP_INI_ALL, OnUpdateString, env.etag_mode)
-	PHP_HTTP_INI_ENTRY("http.request_datashare.cookie", "0", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.cookie)
-	PHP_HTTP_INI_ENTRY("http.request_datashare.dns", "1", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.dns)
-	PHP_HTTP_INI_ENTRY("http.request_datashare.ssl", "0", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.ssl)
-	PHP_HTTP_INI_ENTRY("http.request_datashare.connect", "0", PHP_INI_SYSTEM, OnUpdateBool, request_datashare.connect)
 	PHP_HTTP_INI_ENTRY("http.persistent_handle.limit", "-1", PHP_INI_SYSTEM, OnUpdateLong, persistent_handle.limit)
 PHP_INI_END()
 
@@ -174,7 +170,6 @@ PHP_MSHUTDOWN_FUNCTION(http)
 #if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
 #endif
-	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_datashare)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_request_factory)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)
 	) {
@@ -188,7 +183,6 @@ PHP_RINIT_FUNCTION(http)
 {
 	if (0
 	|| SUCCESS != PHP_RINIT_CALL(http_env)
-	|| SUCCESS != PHP_RINIT_CALL(http_request_datashare)
 #if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_RINIT_CALL(http_curl)
 #endif
@@ -203,7 +197,6 @@ PHP_RSHUTDOWN_FUNCTION(http)
 {
 	if (0
 	|| SUCCESS != PHP_RSHUTDOWN_CALL(http_env)
-	|| SUCCESS != PHP_RSHUTDOWN_CALL(http_request_datashare)
 	) {
 		return FAILURE;
 	}
