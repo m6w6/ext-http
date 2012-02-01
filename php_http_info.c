@@ -12,29 +12,6 @@
 
 #include "php_http_api.h"
 
-PHP_HTTP_API void php_http_info_default_callback(void **nothing, HashTable **headers, php_http_info_t *info TSRMLS_DC)
-{
-	zval array;
-	(void) nothing;
-	
-	INIT_PZVAL_ARRAY(&array, *headers);
-	
-	switch (info->type) {
-		case PHP_HTTP_REQUEST:
-			add_assoc_string(&array, "Request Method", PHP_HTTP_INFO(info).request.method, 1);
-			add_assoc_string(&array, "Request Url", PHP_HTTP_INFO(info).request.url, 1);
-			break;
-		
-		case PHP_HTTP_RESPONSE:
-			add_assoc_long(&array, "Response Code", (long) PHP_HTTP_INFO(info).response.code);
-			add_assoc_string(&array, "Response Status", PHP_HTTP_INFO(info).response.status, 1);
-			break;
-
-		case PHP_HTTP_NONE:
-			break;
-	}
-}
-
 PHP_HTTP_API php_http_info_t *php_http_info_init(php_http_info_t *i TSRMLS_DC)
 {
 	if (!i) {
@@ -134,7 +111,7 @@ PHP_HTTP_API php_http_info_t *php_http_info_parse(php_http_info_t *info, const c
 	}
 	
 	/* is request */
-	else if (!http[lenof("HTTP/1.x")] || http[lenof("HTTP/1.x")] == '\r' || http[lenof("HTTP/1.x")] == '\n') {
+	else if (*(http - 1) == ' ' && !http[lenof("HTTP/1.x")] || http[lenof("HTTP/1.x")] == '\r' || http[lenof("HTTP/1.x")] == '\n') {
 		const char *url = strchr(pre_header, ' ');
 		
 		info->type = PHP_HTTP_REQUEST;
@@ -145,7 +122,7 @@ PHP_HTTP_API php_http_info_t *php_http_info_parse(php_http_info_t *info, const c
 			if (http > url) {
 				PHP_HTTP_INFO(info).request.url = estrndup(url, http - url);
 			} else {
-				efree(PHP_HTTP_INFO(info).request.method);
+				STR_SET(PHP_HTTP_INFO(info).request.method, NULL);
 				return NULL;
 			}
 		} else {

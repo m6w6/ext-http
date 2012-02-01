@@ -120,8 +120,8 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 			}
 
 			case PHP_HTTP_HEADER_PARSER_STATE_KEY: {
-				const char *colon, *eol_str;
-				int eol_len;
+				const char *colon, *eol_str = NULL;
+				int eol_len = 0;
 
 				if (buffer->data == (eol_str = php_http_locate_bin_eol(buffer->data, buffer->used, &eol_len))) {
 					/* end of headers */

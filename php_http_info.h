@@ -55,8 +55,6 @@ typedef struct php_http_info {
 
 typedef zend_bool (*php_http_info_callback_t)(void **callback_data, HashTable **headers, php_http_info_t *info TSRMLS_DC);
 
-PHP_HTTP_API void php_http_info_default_callback(void **nothing, HashTable **headers, php_http_info_t *info TSRMLS_DC);
-
 PHP_HTTP_API php_http_info_t *php_http_info_init(php_http_info_t *info TSRMLS_DC);
 PHP_HTTP_API php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header TSRMLS_DC);
 PHP_HTTP_API void php_http_info_dtor(php_http_info_t *info);
