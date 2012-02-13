@@ -81,8 +81,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zva
 	char *header, *etag;
 	zval *zetag, *zbody = NULL;
 
-	if (	!(header = php_http_env_get_request_header(header_str, header_len, NULL TSRMLS_CC))
-	||		!(zbody = get_option(options, ZEND_STRL("body") TSRMLS_CC))
+	if (	!(zbody = get_option(options, ZEND_STRL("body") TSRMLS_CC))
 	|| 		!(Z_TYPE_P(zbody) == IS_OBJECT)
 	||		!instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_class_entry TSRMLS_CC)
 	) {
@@ -114,14 +113,14 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zva
 		zval_ptr_dtor(&zetag);
 	}
 
-	if (etag) {
+	if (etag && (header = php_http_env_get_request_header(header_str, header_len, NULL TSRMLS_CC))) {
 		ret = php_http_match(header, etag, PHP_HTTP_MATCH_WORD);
 	}
 
 	if (free_etag) {
 		efree(etag);
 	}
-	efree(header);
+	STR_FREE(header);
 
 	return ret ? PHP_HTTP_CACHE_HIT : PHP_HTTP_CACHE_MISS;
 }
@@ -405,7 +404,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 							ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Content-Disposition: %s", tmp);
 						} else {
 							int new_f_len;
-							char *new_f_str = php_addslashes(estrndup(Z_STRVAL_P(zfilename_copy), Z_STRLEN_P(zfilename_copy)), Z_STRLEN_P(zfilename_copy), &new_f_len, 0 TSRMLS_CC);
+							char *new_f_str = php_addslashes(estrndup(Z_STRVAL_P(zfilename_copy), Z_STRLEN_P(zfilename_copy)), Z_STRLEN_P(zfilename_copy), &new_f_len, 1 TSRMLS_CC);
 
 							ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Content-Disposition: %s; filename=\"%.*s\"", tmp, new_f_len, new_f_str);
 							STR_FREE(new_f_str);
@@ -491,7 +490,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 				if (PHP_HTTP_CACHE_HIT != php_http_env_is_response_cached_by_last_modified(options, ZEND_STRL("If-Modified-Since") TSRMLS_CC)) {
 					break;
 				}
-				/*  fallthrough */
+				/*  no break */
 
 			case PHP_HTTP_CACHE_HIT:
 				ret = php_http_env_set_response_code(304 TSRMLS_CC);
@@ -500,8 +499,15 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 		}
 
 		if ((zoption = get_option(options, ZEND_STRL("etag") TSRMLS_CC))) {
-			ret = php_http_env_set_response_header_value(0, ZEND_STRL("ETag"), zoption, 1 TSRMLS_CC);
+			zval *zoption_copy = php_http_ztyp(IS_STRING, zoption);
+
 			zval_ptr_dtor(&zoption);
+			if (*Z_STRVAL_P(zoption_copy) != '"' &&	strncmp(Z_STRVAL_P(zoption_copy), "W/\"", 3)) {
+				ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "ETag: \"%s\"", Z_STRVAL_P(zoption_copy));
+			} else {
+				ret = php_http_env_set_response_header_value(0, ZEND_STRL("ETag"), zoption_copy, 1 TSRMLS_CC);
+			}
+			zval_ptr_dtor(&zoption_copy);
 		}
 		if ((zoption = get_option(options, ZEND_STRL("lastModified") TSRMLS_CC))) {
 			zval *zoption_copy = php_http_ztyp(IS_LONG, zoption);
