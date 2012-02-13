@@ -60,21 +60,33 @@ static inline php_http_persistent_handle_list_t *php_http_persistent_handle_list
 	return list;
 }
 
+static int php_http_persistent_handle_apply_cleanup_ex(void *pp, void *arg TSRMLS_DC)
+{
+	php_http_resource_factory_t *rf = arg;
+	void **handle = pp;
+
+#if PHP_HTTP_DEBUG_PHANDLES
+	fprintf(stderr, "DESTROY: %p\n", *handle);
+#endif
+	php_http_resource_factory_handle_dtor(rf, *handle TSRMLS_CC);
+	return ZEND_HASH_APPLY_REMOVE;
+}
+
+static int php_http_persistent_handle_apply_cleanup(void *pp, void *arg TSRMLS_DC)
+{
+	php_http_resource_factory_t *rf = arg;
+	php_http_persistent_handle_list_t **listp = pp;
+
+	zend_hash_apply_with_argument(&(*listp)->free, php_http_persistent_handle_apply_cleanup_ex, rf TSRMLS_CC);
+	return (*listp)->used ? ZEND_HASH_APPLY_KEEP : ZEND_HASH_APPLY_REMOVE;
+}
+
 static inline void php_http_persistent_handle_list_dtor(php_http_persistent_handle_list_t *list, php_http_persistent_handle_provider_t *provider TSRMLS_DC)
 {
-	HashPosition pos;
-	void **handle;
-	
 #if PHP_HTTP_DEBUG_PHANDLES
 	fprintf(stderr, "LSTDTOR: %p\n", list);
 #endif
-	FOREACH_HASH_VAL(pos, &list->free, handle) {
-#if PHP_HTTP_DEBUG_PHANDLES
-		fprintf(stderr, "DESTROY: %p\n", *handle);
-#endif
-		
-		provider->rf.fops.dtor(provider->rf.data, *handle TSRMLS_CC);
-	}
+	zend_hash_apply_with_argument(&list->free, php_http_persistent_handle_apply_cleanup_ex, &provider->rf TSRMLS_CC);
 	zend_hash_destroy(&list->free);
 }
 
@@ -86,6 +98,12 @@ static inline void php_http_persistent_handle_list_free(php_http_persistent_hand
 #endif
 	pefree(*list, 1);
 	*list = NULL;
+}
+
+static int php_http_persistent_handle_list_apply_dtor(void *listp, void *provider TSRMLS_DC)
+{
+	php_http_persistent_handle_list_free(listp, provider TSRMLS_CC);
+	return ZEND_HASH_APPLY_REMOVE;
 }
 
 static inline php_http_persistent_handle_list_t *php_http_persistent_handle_list_find(php_http_persistent_handle_provider_t *provider, const char *ident_str, size_t ident_len TSRMLS_DC)
@@ -124,7 +142,7 @@ static inline STATUS php_http_persistent_handle_do_acquire(php_http_persistent_h
 			*handle = *handle_ptr;
 			zend_hash_index_del(&list->free, index);
 		} else {
-			*handle = provider->rf.fops.ctor(provider->rf.data TSRMLS_CC);
+			*handle = php_http_resource_factory_handle_ctor(&provider->rf TSRMLS_CC);
 		}
 		
 		if (*handle) {
@@ -145,7 +163,7 @@ static inline STATUS php_http_persistent_handle_do_release(php_http_persistent_h
 	
 	if ((list = php_http_persistent_handle_list_find(provider, ident_str, ident_len TSRMLS_CC))) {
 		if (provider->list.used >= PHP_HTTP_G->persistent_handle.limit) {
-			provider->rf.fops.dtor(provider->rf.data, *handle TSRMLS_CC);
+			php_http_resource_factory_handle_dtor(&provider->rf, *handle TSRMLS_CC);
 		} else {
 			if (SUCCESS != zend_hash_next_index_insert(&list->free, (void *) handle, sizeof(void *), NULL)) {
 				return FAILURE;
@@ -165,7 +183,7 @@ static inline STATUS php_http_persistent_handle_do_accrete(php_http_persistent_h
 {
 	php_http_persistent_handle_list_t *list;
 	
-	if (provider->rf.fops.copy && (*new_handle = provider->rf.fops.copy(provider->rf.data, old_handle TSRMLS_CC))) {
+	if ((*new_handle = php_http_resource_factory_handle_copy(&provider->rf, old_handle TSRMLS_CC))) {
 		if ((list = php_http_persistent_handle_list_find(provider, ident_str, ident_len TSRMLS_CC))) {
 			++list->used;
 		}
@@ -178,16 +196,9 @@ static inline STATUS php_http_persistent_handle_do_accrete(php_http_persistent_h
 static void php_http_persistent_handles_hash_dtor(void *p)
 {
 	php_http_persistent_handle_provider_t *provider = (php_http_persistent_handle_provider_t *) p;
-	php_http_persistent_handle_list_t **list, *list_tmp;
-	HashPosition pos;
 	TSRMLS_FETCH();
 	
-	FOREACH_HASH_VAL(pos, &provider->list.free, list) {
-		/* fix shutdown crash in PHP4 */
-		list_tmp = *list;
-		php_http_persistent_handle_list_free(&list_tmp, provider TSRMLS_CC);
-	}
-	
+	zend_hash_apply_with_argument(&provider->list.free, php_http_persistent_handle_list_apply_dtor, provider TSRMLS_CC);
 	zend_hash_destroy(&provider->list.free);
 	php_http_resource_factory_dtor(&provider->rf);
 }
@@ -255,13 +266,13 @@ PHP_HTTP_API php_http_persistent_handle_factory_t *php_http_persistent_handle_co
 		}
 	} else {
 		if (free_a) {
-			efree(a);
+			efree(free_a);
 		}
 		a = NULL;
 	}
 
 #if PHP_HTTP_DEBUG_PHANDLES
-	fprintf(stderr, "CONCETE: %p (%s) (%s)\n", a ? a->provider : NULL, name_str, ident_str);
+	fprintf(stderr, "CONCEDE: %p (%s) (%s)\n", a ? a->provider : NULL, name_str, ident_str);
 #endif
 
 	return a;
@@ -291,7 +302,7 @@ PHP_HTTP_API void *php_http_persistent_handle_acquire(php_http_persistent_handle
 
 PHP_HTTP_API void *php_http_persistent_handle_accrete(php_http_persistent_handle_factory_t *a, void *handle TSRMLS_DC)
 {
-	void *new_handle;
+	void *new_handle = NULL;
 
 	LOCK();
 	php_http_persistent_handle_do_accrete(a->provider, a->ident.str, a->ident.len, handle, &new_handle TSRMLS_CC);
@@ -307,98 +318,32 @@ PHP_HTTP_API void php_http_persistent_handle_release(php_http_persistent_handle_
 	UNLOCK();
 }
 
-PHP_HTTP_API STATUS php_http_persistent_handle_acquire2(const char *name_str, size_t name_len, const char *ident_str, size_t ident_len, void **handle TSRMLS_DC)
-{
-	STATUS status = FAILURE;
-	php_http_persistent_handle_provider_t *provider;
-	
-	*handle = NULL;
-	LOCK();
-	if (SUCCESS == zend_symtable_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
-		status = php_http_persistent_handle_do_acquire(provider, ident_str, ident_len, handle TSRMLS_CC);
-	}
-	UNLOCK();
-	
-#if PHP_HTTP_DEBUG_PHANDLES
-	fprintf(stderr, "ACQUIRE: %p (%s)\n", *handle, name_str);
-#endif
-	
-	return status;
-}
-
-PHP_HTTP_API STATUS php_http_persistent_handle_release2(const char *name_str, size_t name_len, const char *ident_str, size_t ident_len, void **handle TSRMLS_DC)
-{
-	STATUS status = FAILURE;
-	php_http_persistent_handle_provider_t *provider;
-#if PHP_HTTP_DEBUG_PHANDLES
-	void *handle_tmp = *handle;
-#endif
-	
-	LOCK();
-	if (SUCCESS == zend_symtable_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
-		status = php_http_persistent_handle_do_release(provider, ident_str, ident_len, handle TSRMLS_CC);
-	}
-	UNLOCK();
-	
-#if PHP_HTTP_DEBUG_PHANDLES
-	fprintf(stderr, "RELEASE: %p (%s)\n", handle_tmp, name_str);
-#endif
-	
-	return status;
-}
-
-PHP_HTTP_API STATUS php_http_persistent_handle_accrete2(const char *name_str, size_t name_len, const char *ident_str, size_t ident_len, void *old_handle, void **new_handle TSRMLS_DC)
-{
-	STATUS status = FAILURE;
-	php_http_persistent_handle_provider_t *provider;
-	
-	*new_handle = NULL;
-	LOCK();
-	if (SUCCESS == zend_symtable_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
-		status = php_http_persistent_handle_do_accrete(provider, ident_str, ident_len, old_handle, new_handle TSRMLS_CC);
-	}
-	UNLOCK();
-	
-#if PHP_HTTP_DEBUG_PHANDLES
-	fprintf(stderr, "ACCRETE: %p > %p (%s)\n", old_handle, *new_handle, name_str);
-#endif
-	
-	return status;
-}
-
 PHP_HTTP_API void php_http_persistent_handle_cleanup(const char *name_str, size_t name_len, const char *ident_str, size_t ident_len TSRMLS_DC)
 {
 	php_http_persistent_handle_provider_t *provider;
-	php_http_persistent_handle_list_t *list, **listp;
-	HashPosition pos1, pos2;
+	php_http_persistent_handle_list_t *list;
 	
 	LOCK();
 	if (name_str && name_len) {
 		if (SUCCESS == zend_symtable_find(&php_http_persistent_handles_hash, name_str, name_len+1, (void *) &provider)) {
 			if (ident_str && ident_len) {
 				if ((list = php_http_persistent_handle_list_find(provider, ident_str, ident_len TSRMLS_CC))) {
-					php_http_persistent_handle_list_dtor(list, provider TSRMLS_CC);
-					php_http_persistent_handle_list_init(list);
+					zend_hash_apply_with_argument(&list->free, php_http_persistent_handle_apply_cleanup_ex, &provider->rf TSRMLS_CC);
 				}
 			} else {
-				FOREACH_HASH_VAL(pos1, &provider->list.free, listp) {
-					php_http_persistent_handle_list_dtor(*listp, provider TSRMLS_CC);
-					php_http_persistent_handle_list_init(*listp);
-				}
+				zend_hash_apply_with_argument(&provider->list.free, php_http_persistent_handle_apply_cleanup, &provider->list.free TSRMLS_CC);
 			}
 		}
 	} else {
-		FOREACH_HASH_VAL(pos1, &php_http_persistent_handles_hash, provider) {
+		HashPosition pos;
+
+		FOREACH_HASH_VAL(pos, &php_http_persistent_handles_hash, provider) {
 			if (ident_str && ident_len) {
 				if ((list = php_http_persistent_handle_list_find(provider, ident_str, ident_len TSRMLS_CC))) {
-					php_http_persistent_handle_list_dtor(list, provider TSRMLS_CC);
-					php_http_persistent_handle_list_init(list);
+					zend_hash_apply_with_argument(&list->free, php_http_persistent_handle_apply_cleanup_ex, &provider->rf TSRMLS_CC);
 				}
 			} else {
-				FOREACH_HASH_VAL(pos2, &provider->list.free, listp) {
-					php_http_persistent_handle_list_dtor(*listp, provider TSRMLS_CC);
-					php_http_persistent_handle_list_init(*listp);
-				}
+				zend_hash_apply_with_argument(&provider->list.free, php_http_persistent_handle_apply_cleanup, &provider->list.free TSRMLS_CC);
 			}
 		}
 	}
@@ -442,6 +387,16 @@ PHP_HTTP_API HashTable *php_http_persistent_handle_statall(HashTable *ht TSRMLS_
 	return ht;
 }
 
+static php_http_resource_factory_ops_t php_http_persistent_handle_rf_ops = {
+	(php_http_resource_factory_handle_ctor_t) php_http_persistent_handle_acquire,
+	(php_http_resource_factory_handle_copy_t) php_http_persistent_handle_accrete,
+	(php_http_resource_factory_handle_dtor_t) php_http_persistent_handle_release
+};
+
+PHP_HTTP_API php_http_resource_factory_ops_t *php_http_persistent_handle_resource_factory_ops(void)
+{
+	return &php_http_persistent_handle_rf_ops;
+}
 
 /*
  * Local variables:

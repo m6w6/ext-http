@@ -84,8 +84,8 @@ PHP_METHOD(HttpEnv, negotiateCharset);
 PHP_METHOD(HttpEnv, negotiateEncoding);
 PHP_METHOD(HttpEnv, negotiateContentType);
 PHP_METHOD(HttpEnv, negotiate);
-PHP_METHOD(HttpEnv, persistentHandlesStat);
-PHP_METHOD(HttpEnv, persistentHandlesClean);
+PHP_METHOD(HttpEnv, statPersistentHandles);
+PHP_METHOD(HttpEnv, cleanPersistentHandles);
 
 extern zend_class_entry *php_http_env_request_class_entry;
 extern zend_function_entry php_http_env_request_method_entry[];

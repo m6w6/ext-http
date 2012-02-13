@@ -587,9 +587,9 @@ PHP_HTTP_BEGIN_ARGS(negotiate, 2)
 	PHP_HTTP_ARG_VAL(result_array, 1)
 PHP_HTTP_END_ARGS;
 
-PHP_HTTP_EMPTY_ARGS(persistentHandlesStat);
+PHP_HTTP_EMPTY_ARGS(statPersistentHandles);
 
-PHP_HTTP_BEGIN_ARGS(persistentHandlesClean, 0)
+PHP_HTTP_BEGIN_ARGS(cleanPersistentHandles, 0)
 	PHP_HTTP_ARG_VAL(name, 0)
 	PHP_HTTP_ARG_VAL(ident, 0)
 PHP_HTTP_END_ARGS;
@@ -611,8 +611,8 @@ zend_function_entry php_http_env_method_entry[] = {
 	PHP_HTTP_ENV_ME(negotiateCharset)
 	PHP_HTTP_ENV_ME(negotiate)
 
-	PHP_HTTP_ENV_ME(persistentHandlesStat)
-	PHP_HTTP_ENV_ME(persistentHandlesClean)
+	PHP_HTTP_ENV_ME(statPersistentHandles)
+	PHP_HTTP_ENV_ME(cleanPersistentHandles)
 
 	EMPTY_FUNCTION_ENTRY
 };
@@ -810,7 +810,7 @@ PHP_METHOD(HttpEnv, negotiate)
 	}
 }
 
-PHP_METHOD(HttpEnv, persistentHandlesStat)
+PHP_METHOD(HttpEnv, statPersistentHandles)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		object_init(return_value);
@@ -822,7 +822,7 @@ PHP_METHOD(HttpEnv, persistentHandlesStat)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEnv, persistentHandlesClean)
+PHP_METHOD(HttpEnv, cleanPersistentHandles)
 {
 	char *name_str = NULL, *ident_str = NULL;
 	int name_len = 0, ident_len = 0;

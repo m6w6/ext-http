@@ -43,14 +43,10 @@ PHP_HTTP_API void *php_http_persistent_handle_acquire(php_http_persistent_handle
 PHP_HTTP_API void php_http_persistent_handle_release(php_http_persistent_handle_factory_t *a, void *handle TSRMLS_DC);
 PHP_HTTP_API void *php_http_persistent_handle_accrete(php_http_persistent_handle_factory_t *a, void *handle TSRMLS_DC);
 
-PHP_HTTP_API php_http_resource_factory_ops_t *php_http_persistnet_handle_factory_ops(void);
+PHP_HTTP_API php_http_resource_factory_ops_t *php_http_persistent_handle_resource_factory_ops(void);
 
 PHP_HTTP_API void php_http_persistent_handle_cleanup(const char *name_str, size_t name_len, const char *ident_str, size_t ident_len TSRMLS_DC);
 PHP_HTTP_API HashTable *php_http_persistent_handle_statall(HashTable *ht TSRMLS_DC);
-
-PHP_HTTP_API STATUS php_http_persistent_handle_acquire2(const char *name_str, size_t name_len, const char *ident_str, size_t ident_len, void **handle TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_persistent_handle_release2(const char *name_str, size_t name_len, const char *ident_str, size_t ident_len, void **handle TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_persistent_handle_accrete2(const char *name_str, size_t name_len, const char *ident_str, size_t ident_len, void *old_handle, void **new_handle TSRMLS_DC);
 
 #endif /* PHP_HTTP_PERSISTENT_HANDLE_H */
 
