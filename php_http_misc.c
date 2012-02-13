@@ -50,6 +50,10 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 {
 	int result = 0;
 
+	if (!haystack_str || !needle_str) {
+		return result;
+	}
+
 	if (flags & PHP_HTTP_MATCH_FULL) {
 		if (flags & PHP_HTTP_MATCH_CASE) {
 			result = !strcmp(haystack_str, needle_str);
