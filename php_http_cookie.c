@@ -168,7 +168,9 @@ static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long 
 		} else {
 			zend_hash_update(&list->cookies, key->str, key->len, (void *) &arg, sizeof(zval *), NULL);
 		}
+		return;
 	}
+	zval_ptr_dtor(&arg);
 }
 
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_list_t *list, const char *str, size_t len, long flags, char **allowed_extras TSRMLS_DC)
