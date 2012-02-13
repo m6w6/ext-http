@@ -127,6 +127,7 @@ static void *php_http_curl_copy(void *opaque, void *handle TSRMLS_DC)
 	void *ch;
 
 	if ((ch = curl_easy_duphandle(handle))) {
+		curl_easy_reset(ch);
 		get_storage(ch);
 		return ch;
 	}
