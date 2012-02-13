@@ -288,13 +288,13 @@ PHP_METHOD(HttpParams, __construct)
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!/z/z/z/", &zparams, &param_sep, &arg_sep, &val_sep)) {
 			switch (ZEND_NUM_ARGS()) {
 				case 4:
-					zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("param_sep"), param_sep TSRMLS_CC);
+					zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("val_sep"), val_sep TSRMLS_CC);
 					/* no break */
 				case 3:
 					zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("arg_sep"), arg_sep TSRMLS_CC);
 					/* no break */
 				case 2:
-					zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("val_sep"), val_sep TSRMLS_CC);
+					zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("param_sep"), param_sep TSRMLS_CC);
 					/* no break */
 			}
 
