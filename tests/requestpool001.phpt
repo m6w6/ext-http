@@ -10,8 +10,8 @@ include 'skipif.inc';
 use http\request\Factory as HttpRequestFactory;
 use http\request\Pool as HttpRequestPool;
 use http\request\Method as HttpRequestMethod;
-use http\RequestException as HttpRequestException;
-use http\SocketException as HttpSocketException;
+use http\Exception as HttpRequestException;
+use http\Exception as HttpSocketException;
 
 echo "-TEST\n";
 
@@ -87,7 +87,12 @@ class Pool extends HttpRequestPool
 			
 			$u = $r->getUrl();
 			$c = $r->getResponseCode();
-			$b = $r->getResponseBody();
+            try {
+    			$b = $r->getResponseBody();
+            } catch (\Exception $e) {
+                echo $e->getMessage(), "\n";
+                $b = "";
+            }
 			
 			printf("%d %s %d\n", $c, $u, strlen($b));
 			
@@ -117,7 +122,7 @@ class Pool extends HttpRequestPool
 }
 
 define('GZIP', true);
-define('TOUT', 50);
+define('TOUT', 300);
 define('RMAX', 10);
 chdir(__DIR__);
 
