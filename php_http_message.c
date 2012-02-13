@@ -187,7 +187,7 @@ PHP_HTTP_API void php_http_message_set_type(php_http_message_t *message, php_htt
 	if (type != message->type) {
 
 		/* free request info */
-		switch (message->type = type) {
+		switch (message->type) {
 			case PHP_HTTP_REQUEST:
 				STR_FREE(message->http.info.request.method);
 				STR_FREE(message->http.info.request.url);
@@ -201,6 +201,7 @@ PHP_HTTP_API void php_http_message_set_type(php_http_message_t *message, php_htt
 				break;
 		}
 
+		message->type = type;
 		memset(&message->http, 0, sizeof(message->http));
 	}
 }
@@ -592,7 +593,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_copy_ex(php_http_message_t *fr
 			temp->parent = php_http_message_init(NULL, 0 TSRMLS_CC);
 			php_http_message_set_info(temp->parent, &info);
 			zend_hash_copy(&temp->parent->hdrs, &from->parent->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-			php_http_message_body_copy(&from->body, &temp->body, 1);
+			php_http_message_body_copy(&from->parent->body, &temp->parent->body, 1);
 		
 			temp = temp->parent;
 			from = from->parent;
