@@ -36,7 +36,7 @@ PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, ph
 			php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST, "Could not initialize request");
 			if (free_h) {
 				h->ops->dtor = NULL;
-				php_http_request_free(&h);
+				php_http_request_free(&free_h);
 			}
 		}
 	}
@@ -68,10 +68,30 @@ PHP_HTTP_API void php_http_request_free(php_http_request_t **h)
 
 PHP_HTTP_API php_http_request_t *php_http_request_copy(php_http_request_t *from, php_http_request_t *to)
 {
-	if (from->ops->copy) {
-		return from->ops->copy(from, to);
+	if (!from->ops->copy) {
+		return NULL;
+	} else {
+		TSRMLS_FETCH_FROM_CTX(from->ts);
+
+		if (!to) {
+			to = ecalloc(1, sizeof(*to));
+		}
+
+		to->ops = from->ops;
+		if (from->rf) {
+			php_http_resource_factory_addref(from->rf);
+			to->rf = from->rf;
+		} else {
+			to->rf = php_http_resource_factory_init(NULL, to->ops->rsrc, to, NULL);
+		}
+		to->buffer = php_http_buffer_init(NULL);
+		to->parser = php_http_message_parser_init(NULL TSRMLS_CC);
+		to->message = php_http_message_init(NULL, 0 TSRMLS_CC);
+
+		TSRMLS_SET_CTX(to->ts);
+
+		return to->ops->copy(from, to);
 	}
-	return NULL;
 }
 
 PHP_HTTP_API STATUS php_http_request_exec(php_http_request_t *h, php_http_request_method_t meth, const char *url, php_http_message_body_t *body)
@@ -427,6 +447,9 @@ STATUS php_http_request_object_requesthandler(php_http_request_object_t *obj, zv
 
 		if (Z_TYPE_P(zbody) == IS_OBJECT) {
 			*body = ((php_http_message_body_object_t *)zend_object_store_get_object(zbody TSRMLS_CC))->body;
+			if (*body) {
+				php_stream_rewind(php_http_message_body_stream(*body));
+			}
 		}
 	}
 
@@ -486,7 +509,7 @@ STATUS php_http_request_object_responsehandler(php_http_request_object_t *obj, z
 			ZVAL_OBJVAL(new_hist, ov, 0);
 
 			if (Z_TYPE_P(old_hist) == IS_OBJECT) {
-				php_http_message_object_prepend(new_hist, old_hist, 0 TSRMLS_CC);
+				php_http_message_object_prepend(new_hist, old_hist, 1 TSRMLS_CC);
 			}
 
 			zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("history"), new_hist TSRMLS_CC);
@@ -1149,12 +1172,17 @@ PHP_METHOD(HttpRequest, getResponseCookies)
 
 PHP_METHOD(HttpRequest, getResponseBody)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
-		zval *message = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("responseMessage"), 0 TSRMLS_CC);
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+		if (SUCCESS == zend_parse_parameters_none()) {
+			zval *message = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("responseMessage"), 0 TSRMLS_CC);
 
-		RETURN_OBJVAL(((php_http_message_object_t *)zend_object_store_get_object(message TSRMLS_CC))->body, 1);
-	}
-	RETURN_FALSE;
+			if (Z_TYPE_P(message) == IS_OBJECT) {
+				RETURN_OBJVAL(((php_http_message_object_t *)zend_object_store_get_object(message TSRMLS_CC))->body, 1);
+			} else {
+				php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "HttpRequest does not contain a response message");
+			}
+		}
+	} end_error_handling();
 }
 
 PHP_METHOD(HttpRequest, getResponseCode)

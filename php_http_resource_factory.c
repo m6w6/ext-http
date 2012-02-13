@@ -24,21 +24,35 @@ PHP_HTTP_API php_http_resource_factory_t *php_http_resource_factory_init(php_htt
 	f->data = data;
 	f->dtor = dtor;
 
+	f->refcount = 1;
+
 	return f;
+}
+
+PHP_HTTP_API unsigned php_http_resource_factory_addref(php_http_resource_factory_t *rf)
+{
+	return ++rf->refcount;
 }
 
 PHP_HTTP_API void php_http_resource_factory_dtor(php_http_resource_factory_t *f)
 {
-	if (f->dtor) {
-		f->dtor(f->data);
+	--f->refcount;
+
+	if (!f->refcount) {
+		if (f->dtor) {
+			f->dtor(f->data);
+		}
 	}
 }
+
 PHP_HTTP_API void php_http_resource_factory_free(php_http_resource_factory_t **f)
 {
 	if (*f) {
 		php_http_resource_factory_dtor(*f);
-		efree(*f);
-		*f = NULL;
+		if (!(*f)->refcount) {
+			efree(*f);
+			*f = NULL;
+		}
 	}
 }
 

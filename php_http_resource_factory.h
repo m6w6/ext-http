@@ -29,9 +29,11 @@ typedef struct php_http_resource_factory {
 	void *data;
 	void (*dtor)(void *data);
 
+	unsigned refcount;
 } php_http_resource_factory_t;
 
 PHP_HTTP_API php_http_resource_factory_t *php_http_resource_factory_init(php_http_resource_factory_t *f, php_http_resource_factory_ops_t *fops, void *data, void (*dtor)(void *data));
+PHP_HTTP_API unsigned php_http_resource_factory_addref(php_http_resource_factory_t *rf);
 PHP_HTTP_API void php_http_resource_factory_dtor(php_http_resource_factory_t *f);
 PHP_HTTP_API void php_http_resource_factory_free(php_http_resource_factory_t **f);
 
