@@ -119,7 +119,11 @@ PHP_HTTP_API http_message *_http_message_init_env(http_message *message, http_me
 			
 			http_message_set_info(message, &inf);
 			http_get_response_headers(&message->hdrs);
+#ifdef PHP_OUTPUT_NEWAPI
+			if (SUCCESS == php_output_get_contents(&tval TSRMLS_CC)) {
+#else
 			if (SUCCESS == php_ob_get_buffer(&tval TSRMLS_CC)) {
+#endif
 				message->body.data = Z_STRVAL(tval);
 				message->body.used = Z_STRLEN(tval);
 				message->body.free = 1; /* "\0" */

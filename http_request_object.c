@@ -493,8 +493,8 @@ zend_object_value _http_request_object_new_ex(zend_class_entry *ce, CURL *ch, ht
 	}
 
 #ifdef ZEND_ENGINE_2_4
-	zend_object_std_init(OBJ_PROP(o), ce TSRMLS_CC);
-	object_properties_init(OBJ_PROP(o), ce);
+	zend_object_std_init(o, ce TSRMLS_CC);
+	object_properties_init(o, ce);
 #else
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
@@ -683,7 +683,7 @@ STATUS _http_request_object_requesthandler(http_request_object *obj, zval *this_
 			
 			if (	(Z_TYPE_P(options) != IS_ARRAY)
 				||	(SUCCESS != zend_hash_find(Z_ARRVAL_P(options), "onprogress", sizeof("onprogress"), (void *) &entry)
-				||	(!IS_CALLABLE(*entry, 0, NULL)))) {
+				||	(!HTTP_IS_CALLABLE(*entry, 0, NULL)))) {
 				MAKE_STD_ZVAL(pcb);
 				array_init(pcb);
 				ZVAL_ADDREF(getThis());
@@ -788,8 +788,12 @@ STATUS _http_request_object_responsehandler(http_request_object *obj, zval *this
 	
 	return ret;
 }
-
-static int apply_pretty_key(void *pDest, int num_args, va_list args, zend_hash_key *hash_key)
+#ifdef ZEND_ENGINE_2_4
+#	define APK_DC TSRMLS_DC
+#else
+#	define APK_DC
+#endif
+static int apply_pretty_key(void *pDest APK_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	if (hash_key->arKey && hash_key->nKeyLength > 1) {
 		hash_key->h = zend_hash_func(pretty_key(hash_key->arKey, hash_key->nKeyLength - 1, 1, 0), hash_key->nKeyLength);

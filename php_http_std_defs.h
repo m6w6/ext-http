@@ -182,7 +182,11 @@ typedef int STATUS;
 #	define getObject(t, o) getObjectEx(t, o, getThis())
 #	define getObjectEx(t, o, v) t * o = ((t *) zend_object_store_get_object(v TSRMLS_CC))
 #	define putObject(t, o) zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, (zend_objects_free_object_storage_t) _ ##t## _free, NULL TSRMLS_CC);
-#	ifndef WONKY
+#	if defined(ZEND_ENGINE_2_4)
+#		define freeObject(o) \
+			zend_object_std_dtor(o TSRMLS_CC); \
+			efree(o);
+#	elif !defined(WONKY)
 #		define freeObject(o) \
 			if (OBJ_GUARDS(o)) { \
 				zend_hash_destroy(OBJ_GUARDS(o)); \

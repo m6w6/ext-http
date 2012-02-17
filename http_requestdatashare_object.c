@@ -126,8 +126,8 @@ zend_object_value _http_requestdatashare_object_new_ex(zend_class_entry *ce, htt
 	}
 
 #ifdef ZEND_ENGINE_2_4
-	zend_object_std_init(OBJ_PROP(o), ce TSRMLS_CC);
-	object_properties_init(OBJ_PROP(o), ce);
+	zend_object_std_init(o, ce TSRMLS_CC);
+	object_properties_init(o, ce);
 #else
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);

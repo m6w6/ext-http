@@ -25,7 +25,7 @@ object(stdClass)%a {
   ["responseStatus"]=>
   string(2) "OK"
   ["headers"]=>
-  array(8) {
+  array(%d) {
     %a
     ["Vary"]=>
     string(15) "Accept-Encoding"

@@ -182,13 +182,24 @@ PHP_HTTP_API STATUS _http_cache_etag(const char *etag, size_t etag_len,
 PHP_HTTP_API STATUS _http_start_ob_etaghandler(TSRMLS_D)
 {
 	/* already running? */
+#ifdef PHP_OUTPUT_NEWAPI
+    STATUS rv;
+
+    if (php_output_handler_conflict(ZEND_STRL("ob_etaghandler"), ZEND_STRL("ob_etaghandler") TSRMLS_CC)) {
+        return FAILURE;
+    }
+#else
 	if (php_ob_handler_used("ob_etaghandler" TSRMLS_CC)) {
 		http_error(HE_WARNING, HTTP_E_RUNTIME, "ob_etaghandler can only be used once");
 		return FAILURE;
 	}
-	
+#endif
 	HTTP_G->etag.started = 1;
+#ifdef PHP_OUTPUT_NEWAPI
+    return php_output_start_internal(ZEND_STRL("ob_etaghandler"), _http_ob_etaghandler, HTTP_G->send.buffer_size, 0 TSRMLS_CC);
+#else
 	return php_start_ob_buffer_named("ob_etaghandler", HTTP_G->send.buffer_size, 0 TSRMLS_CC);
+#endif
 }
 
 PHP_HTTP_API zend_bool _http_interrupt_ob_etaghandler(TSRMLS_D)

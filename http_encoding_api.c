@@ -46,10 +46,18 @@ PHP_MINIT_FUNCTION(http_encoding)
 PHP_RINIT_FUNCTION(http_encoding)
 {
 	if (HTTP_G->send.inflate.start_auto) {
+#ifdef PHP_OUTPUT_NEWAPI
+		php_output_start_internal(ZEND_STRL("http inflate"), _http_ob_inflatehandler, HTTP_INFLATE_BUFFER_SIZE, 0 TSRMLS_CC);
+#else
 		php_ob_set_internal_handler(_http_ob_inflatehandler, HTTP_INFLATE_BUFFER_SIZE, "http inflate", 0 TSRMLS_CC);
+#endif
 	}
 	if (HTTP_G->send.deflate.start_auto) {
+#ifdef PHP_OUTPUT_NEWAPI
+		php_output_start_internal(ZEND_STRL("http deflate"), _http_ob_deflatehandler, HTTP_DEFLATE_BUFFER_SIZE, 0 TSRMLS_CC);
+#else
 		php_ob_set_internal_handler(_http_ob_deflatehandler, HTTP_DEFLATE_BUFFER_SIZE, "http deflate", 0 TSRMLS_CC);
+#endif
 	}
 	return SUCCESS;
 }
@@ -161,10 +169,18 @@ PHP_HTTP_API const char *_http_encoding_dechunk(const char *encoded, size_t enco
 PHP_HTTP_API int _http_encoding_response_start(size_t content_length, zend_bool ignore_http_ohandler TSRMLS_DC)
 {
 	int response = HTTP_G->send.deflate.response;
+#ifdef PHP_OUTPUT_NEWAPI
+	int ohandler = php_output_handler_started(ZEND_STRL("ob_gzhandler") TSRMLS_CC) || php_output_handler_started(ZEND_STRL("zlib output compression") TSRMLS_CC);
+#else
 	int ohandler = php_ob_handler_used("ob_gzhandler" TSRMLS_CC) || php_ob_handler_used("zlib output compression" TSRMLS_CC);
+#endif
 	
 	if (!ohandler && !ignore_http_ohandler) {
+#ifdef PHP_OUTPUT_NEWAPI
+		ohandler = php_output_handler_started(ZEND_STRL("ob_defaltehandler") TSRMLS_CC) || php_output_handler_started(ZEND_STRL("http deflate") TSRMLS_CC);
+#else
 		ohandler = php_ob_handler_used("ob_deflatehandler" TSRMLS_CC) || php_ob_handler_used("http deflate" TSRMLS_CC);
+#endif
 	}
 	
 	if (response && !ohandler) {

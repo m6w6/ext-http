@@ -96,12 +96,18 @@ extern STATUS _http_object_new(zend_object_value *ov, const char *cname_str, uin
 		http_error_ex(HE_WARNING, HTTP_E_INVALID_PARAM, "Invalid compression level (-1 to 9): %d", level); \
 		action; \
 	}
-
+#ifndef PHP_OUTPUT_NEWAPI
+#	define HTTP_GET_OUTPUT_START() \
+		char *output_start_filename = php_get_output_start_filename(TSRMLS_C); \
+		int output_start_lineno = php_get_output_start_lineno(TSRMLS_C)
+#else
+#	define HTTP_GET_OUTPUT_START() \
+		char *output_start_filename = php_output_get_start_filename(TSRMLS_C); \
+		int output_start_lineno = php_output_get_start_lineno(TSRMLS_C)
+#endif
 #define HTTP_CHECK_HEADERS_SENT(action) \
 	if (SG(headers_sent) && !SG(request_info).no_headers) { \
-		char *output_start_filename = php_get_output_start_filename(TSRMLS_C); \
-		int output_start_lineno = php_get_output_start_lineno(TSRMLS_C); \
-		 \
+		HTTP_GET_OUTPUT_START(); \
 		if (output_start_filename) { \
 			http_error_ex(HE_WARNING, HTTP_E_HEADER, "Cannot modify header information - headers already sent by (output started at %s:%d)", \
 				output_start_filename, output_start_lineno); \
@@ -251,7 +257,7 @@ static inline zval *_http_zset(int type, zval *z)
 #define http_zsep(t, z) _http_zsep_ex((t), (z), NULL)
 #define http_zsep_ex(t, z, p) _http_zsep_ex((t), (z), (p))
 static inline zval *_http_zsep_ex(int type, zval *z, zval **p) {
-	SEPARATE_ARG_IF_REF(z);
+	Z_ADDREF_P(z);
 	if (Z_TYPE_P(z) != type) {
 		switch (type) {
 			case IS_NULL:	convert_to_null_ex(&z);		break;
@@ -262,6 +268,8 @@ static inline zval *_http_zsep_ex(int type, zval *z, zval **p) {
 			case IS_ARRAY:	convert_to_array_ex(&z);	break;
 			case IS_OBJECT:	convert_to_object_ex(&z);	break;
 		}
+	} else {
+		SEPARATE_ZVAL_IF_NOT_REF(&z);
 	}
 	if (p) {
 		*p = z;

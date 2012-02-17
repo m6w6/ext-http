@@ -253,16 +253,12 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		return FAILURE;
 	}
 
-	if (
-#if defined(PHP_VERSION_ID) && (PHP_VERSION_ID >= 50399)
-		(php_output_get_status(TSRMLS_C) & PHP_OUTPUT_ACTIVE) &&
-		(php_output_get_status(TSRMLS_C) & PHP_OUTPUT_HANDLER_FLUSHABLE) && 
-#else
-		!OG(ob_lock) &&
-#endif
+#ifndef PHP_OUTPUT_NEWAPI
+	if (!OG(ob_lock) &&
 		!php_ob_handler_used("zlib output compression" TSRMLS_CC) && !php_ob_handler_used("ob_gzhandler" TSRMLS_CC)) {
 		php_end_ob_buffers(0 TSRMLS_CC);
 	}
+#endif
 
 	if ((SUCCESS == sapi_send_headers(TSRMLS_C)) && body) {
 		PHPWRITE(body, strlen(body));
@@ -286,7 +282,11 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 	if (HTTP_G->force_exit) {
 		zend_bailout();
 	} else {
+#ifdef PHP_OUTPUT_NEWAPI
+		php_output_start_devnull(TSRMLS_C);
+#else
 		php_ob_set_internal_handler(http_ob_blackhole, 4096, "blackhole", 0 TSRMLS_CC);
+#endif
 	}
 	
 	return SUCCESS;

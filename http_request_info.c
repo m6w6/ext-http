@@ -148,6 +148,21 @@ PHP_HTTP_API void _http_request_info(http_request *request, HashTable *info)
 		add_assoc_long_ex(&array, "condition_unmet", sizeof("condition_unmet"), l);
 	}
 #endif
+#if HTTP_CURL_VERSION(7,21,0)
+	if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_PRIMARY_PORT, &l)) {
+		add_assoc_long_ex(&array, "primary_port", sizeof("primary_port"), l);
+	}
+#endif
+#if HTTP_CURL_VERSION(7,21,0)
+	if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_LOCAL_IP, &c)) {
+		add_assoc_string_ex(&array, "local_ip", sizeof("local_ip"), c ? c : "", 1);
+	}
+#endif
+#if HTTP_CURL_VERSION(7,21,0)
+	if (CURLE_OK == curl_easy_getinfo(request->ch, CURLINFO_LOCAL_PORT, &l)) {
+		add_assoc_long_ex(&array, "local_port", sizeof("local_port"), l);
+	}
+#endif
 /* END */
 #if HTTP_CURL_VERSION(7,19,1) && defined(HTTP_HAVE_OPENSSL)
 	{

@@ -515,8 +515,8 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 
 	
 #ifdef ZEND_ENGINE_2_4
-	zend_object_std_init(OBJ_PROP(o), ce TSRMLS_CC);
-	object_properties_init(OBJ_PROP(o), ce);
+	zend_object_std_init(o, ce TSRMLS_CC);
+	object_properties_init(o, ce);
 #else
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
@@ -623,9 +623,12 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	zval *headers;
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
-	HashTable *props = OBJ_PROP(obj);
 	zval array, *parent;
-	
+#ifdef ZEND_ENGINE_2_4
+	HashTable *props = zend_get_std_object_handlers()->get_properties(object TSRMLS_CC);
+#else
+	HashTable *props = OBJ_PROP(obj);
+#endif
 	INIT_ZARR(array, props);
 
 #define ASSOC_PROP(array, ptype, name, val) \
@@ -687,7 +690,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	}
 	ASSOC_PROP(array, zval, "parentMessage", parent);
 
-	return OBJ_PROP(obj);
+	return props;
 }
 
 /* ### USERLAND ### */
