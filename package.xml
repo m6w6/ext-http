@@ -30,7 +30,7 @@ support. Parallel requests are available for PHP 5 and greater.
  </lead>
  <date>2011-05-05</date>
  <version>
-  <release>1.7.1</release>
+  <release>1.7.2</release>
   <api>1.7.0</api>
  </version>
  <stability>
@@ -39,13 +39,9 @@ support. Parallel requests are available for PHP 5 and greater.
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-     * Fixed a bug when the status component of the HTTP response is missing (fixes Bug #19390) (Ilia)
-     * Fixed double-free when auto-decompressing pages (Ilia)
-     * Fixed non-funtional HttpMessage::setResponseStatus()
-     * Fixed Bug #22177 (http_redirect breaks output with zlib.output_compression=on)
-     * Fixed Bug #17806 (Segmentation fault when passing invalid url to http_get())
-     * Fixed logic error and possible hang in sapi_deactivate when using http_get_request_body() with a request body longer than 4096 bytes (Rob)
-     * Fixed Bug #17896 (Make failed)
++ Added PHP-5.4 compatibility
+* Fixed bug #59974 methodRegister doesn't allow "_" to be in method name
+* Fixed SAPI hang if request body size is greater than 4k with http_get_request_body_stream()
 ]]></notes>
  <contents>
   <dir name="/">
@@ -266,8 +262,6 @@ support. Parallel requests are available for PHP 5 and greater.
   <required>
    <php>
     <min>4.3</min>
-    <max>6.0.0</max>
-    <exclude>6.0.0</exclude>
    </php>
    <pearinstaller>
     <min>1.4.1</min>
