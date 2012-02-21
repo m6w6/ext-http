@@ -36,7 +36,7 @@ array(1) refcount(2){
   ["ssl"]=>
   array(1) refcount(1){
     ["verifypeer"]=>
-    string(1) "1" refcount(2)
+    string(1) "1" refcount(3)
   }
 }
 array(1) refcount(2){
