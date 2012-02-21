@@ -410,6 +410,7 @@ PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D)
 			int len;
 			
 			while (0 < (len = sapi_module.read_post(buf, 4096 TSRMLS_CC))) {
+				SG(read_post_bytes) += len;
 				php_stream_write(s, buf, len);
 				if (len < 4096) {
 					break;
