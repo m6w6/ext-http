@@ -214,7 +214,8 @@ static STATUS _http_request_method_cncl_ex(const char *method_name, int method_n
 	for (i = 0; i < method_name_len; ++i) {
 		switch (method_name[i]) {
 			case '-':
-				cncl[i] = '-';
+			case '_':
+				cncl[i] = method_name[i];
 				break;
 			
 			default:
