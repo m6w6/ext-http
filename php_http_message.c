@@ -17,7 +17,7 @@ PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **messa
 	php_http_message_t *old = *message;
 
 	/* advance message */
-	if (old->type || zend_hash_num_elements(&old->hdrs) || PHP_HTTP_BUFFER_LEN(old)) {
+	if (!old || old->type || zend_hash_num_elements(&old->hdrs) || PHP_HTTP_BUFFER_LEN(old)) {
 		(*message) = php_http_message_init(NULL, 0 TSRMLS_CC);
 		(*message)->parent = old;
 		(*headers) = &((*message)->hdrs);
@@ -1282,25 +1282,36 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 
 PHP_METHOD(HttpMessage, __construct)
 {
-	int length = 0;
-	char *message = NULL;
+	zval *zmessage = NULL;
+	php_http_message_t *msg = NULL;
 	php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &message, &length) && message && length) {
-			if (message && length) {
-				php_http_message_t *msg = php_http_message_parse(NULL, message, length TSRMLS_CC);
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!", &zmessage) && zmessage) {
+			if (Z_TYPE_P(zmessage) == IS_RESOURCE) {
+				php_stream *s;
+				php_http_message_parser_t p;
 
-				if (!msg) {
-					php_http_error(HE_THROW, PHP_HTTP_E_MESSAGE, "could not parse message: %.*s", 25, message);
-				} else {
-					php_http_message_dtor(obj->message);
-					obj->message = msg;{
-					if (obj->message->parent) {
-						obj->parent = php_http_message_object_new_ex(Z_OBJCE_P(getThis()), obj->message->parent, NULL TSRMLS_CC);
-					}
+				php_stream_from_zval(s, &zmessage);
+				if (s && php_http_message_parser_init(&p TSRMLS_CC)) {
+					php_http_message_parser_parse_stream(&p, s, &msg);
+					php_http_message_parser_dtor(&p);
 				}
-			} end_error_handling();
+			} else {
+				zmessage = php_http_ztyp(IS_STRING, zmessage);
+				msg = php_http_message_parse(NULL, Z_STRVAL_P(zmessage), Z_STRLEN_P(zmessage) TSRMLS_CC);
+				zval_ptr_dtor(&zmessage);
+			}
+
+			if (msg) {
+				php_http_message_dtor(obj->message);
+				obj->message = msg;
+				if (obj->message->parent) {
+					obj->parent = php_http_message_object_new_ex(Z_OBJCE_P(getThis()), obj->message->parent, NULL TSRMLS_CC);
+				}
+			} else {
+				php_http_error(HE_THROW, PHP_HTTP_E_MESSAGE, "could not parse message: %.*s", 25, Z_STRVAL_P(zmessage));
+			}
 		}
 		if (!obj->message) {
 			obj->message = php_http_message_init(NULL, 0 TSRMLS_CC);

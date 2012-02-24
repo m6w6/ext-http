@@ -102,6 +102,77 @@ PHP_HTTP_API void php_http_message_parser_free(php_http_message_parser_t **parse
 	}
 }
 
+PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_message_parser_t *parser, php_stream *s, php_http_message_t **message)
+{
+	php_http_buffer_t buf;
+	TSRMLS_FETCH_FROM_CTX(parser->ts);
+
+	php_http_buffer_init_ex(&buf, 0x1000, PHP_HTTP_BUFFER_INIT_PREALLOC);
+
+	while (!php_stream_eof(s)) {
+		size_t len = 0;
+
+		switch (php_http_message_parser_state_is(parser)) {
+			case PHP_HTTP_MESSAGE_PARSER_STATE_START:
+			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER:
+			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE:
+				/* read line */
+				php_stream_get_line(s, buf.data, buf.free, &len);
+				buf.used += len;
+				buf.free -= len;
+				break;
+
+			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB:
+				/* read all */
+				len = php_stream_read(s, buf.data, buf.free);
+				buf.used += len;
+				buf.free -= len;
+				break;
+
+			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH:
+				/* read body_length */
+				len = php_stream_read(s, buf.data, MIN(buf.free, parser->body_length));
+				buf.used += len;
+				buf.free -= len;
+				break;
+
+			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED:
+				/* duh, this is very naive */
+				if (len) {
+					size_t read = php_stream_read(s, buf.data, MIN(len, buf.free));
+
+					buf.used += read;
+					buf.free -= read;
+
+					len -= read;
+				} else {
+					php_stream_get_line(s, buf.data, buf.free, &len);
+					buf.used += len;
+					buf.free -= len;
+
+					len = strtoul(buf.data - len, NULL, 16);
+				}
+				break;
+
+			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY:
+			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:
+				/* should not occur */
+				abort();
+				break;
+
+			case PHP_HTTP_MESSAGE_PARSER_STATE_DONE:
+			case PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE:
+				php_http_buffer_dtor(&buf);
+				return php_http_message_parser_state_is(parser);
+		}
+
+		php_http_message_parser_parse(parser, &buf, 0, message);
+	}
+
+	php_http_buffer_dtor(&buf);
+	return PHP_HTTP_MESSAGE_PARSER_STATE_DONE;
+}
+
 
 PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, php_http_message_t **message)
 {
@@ -113,7 +184,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 	while (buffer->used || !php_http_message_parser_states[php_http_message_parser_state_is(parser)].need_data) {
 #if 0
 		const char *state[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "DONE"};
-		fprintf(stderr, "#MP: %s (%d)\n", php_http_message_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_message_parser_state_is(parser)], (*message)->type);
+		fprintf(stderr, "#MP: %s (%d)\n", php_http_message_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_message_parser_state_is(parser)], message && *message ? (*message)->type : -1);
 		_dpf(0, buffer->data, buffer->used);
 #endif
 
