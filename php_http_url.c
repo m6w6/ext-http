@@ -495,7 +495,7 @@ PHP_METHOD(HttpUrl, __construct)
 						default: {
 							zval *cpy = php_http_ztyp(IS_STRING, new_url);
 
-							new_purl = php_url_parse(Z_STRVAL_P(new_url));
+							new_purl = php_url_parse(Z_STRVAL_P(cpy));
 							zval_ptr_dtor(&cpy);
 							break;
 						}
@@ -513,7 +513,7 @@ PHP_METHOD(HttpUrl, __construct)
 						default: {
 							zval *cpy = php_http_ztyp(IS_STRING, old_url);
 
-							old_purl = php_url_parse(Z_STRVAL_P(old_url));
+							old_purl = php_url_parse(Z_STRVAL_P(cpy));
 							zval_ptr_dtor(&cpy);
 							break;
 						}
