@@ -213,7 +213,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 			{
 				unsigned header_parser_flags = (flags & PHP_HTTP_MESSAGE_PARSER_CLEANUP) ? PHP_HTTP_HEADER_PARSER_CLEANUP : 0;
 
-				switch (php_http_header_parser_parse(&parser->header, buffer, header_parser_flags, &(*message)->hdrs, (php_http_info_callback_t) php_http_message_info_callback, message)) {
+				switch (php_http_header_parser_parse(&parser->header, buffer, header_parser_flags, *message ? &(*message)->hdrs : NULL, (php_http_info_callback_t) php_http_message_info_callback, message)) {
 					case PHP_HTTP_HEADER_PARSER_STATE_FAILURE:
 						return PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE;
 

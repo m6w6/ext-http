@@ -156,7 +156,7 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 					
 					if ((eol_str = php_http_locate_bin_eol(buffer->data, buffer->used, &eol_len))) {
 						if (eol_str + eol_len - buffer->data < buffer->used) {
-							char *nextline = eol_str + eol_len;
+							const char *nextline = eol_str + eol_len;
 
 							if (*nextline == '\t' || *nextline == ' ') {
 								while (nextline < buffer->data + buffer->used && (*nextline == '\t' || *nextline == ' ')) {
@@ -187,6 +187,10 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 			case PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE:
 				if (parser->_key.str && parser->_val.str) {
 					zval array, **exist;
+
+					if (!headers && callback_func) {
+						callback_func(callback_arg, &headers, NULL TSRMLS_CC);
+					}
 
 					INIT_PZVAL_ARRAY(&array, headers);
 					php_http_pretty_key(parser->_key.str, parser->_key.len, 1, 1);
