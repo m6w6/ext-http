@@ -9,7 +9,7 @@ function m($m) {
 	return $n;
 }
 function t($p) {
-	if ($c = $p->getClass()) return $c->getName() . " ";
+	if ($c = $p->getClass()) return "\\" . $c->getName() . " ";
 	if ($p->isArray()) return "array ";
 }
 function c($n, $c) {
@@ -59,12 +59,15 @@ printf("\n");
 
 foreach ($ext->getClasses() as $class) {
 
-	printf("%s%s %s ", m($class->getModifiers()), $class->isInterface() ? "interface":"class" ,$class->getName());
+    if ($class->inNamespace()) {
+        printf("namespace %s {\n", $class->getNamespaceName());
+    }
+	printf("%s%s %s ", m($class->getModifiers()), $class->isInterface() ? "interface":"class" ,$class->getShortName());
 	if ($p = $class->getParentClass()) {
-		printf("extends %s ", $p->getName());
+		printf("extends \\%s ", $p->getName());
 	}
 	if ($i = $class->getInterfaceNames()) {
-		printf("implements %s ", implode(", ", array_filter($i,function($v){return$v!="Traversable";})));
+		printf("implements \\%s ", implode(", \\", array_filter($i,function($v){return$v!="Traversable";})));
 	}
 	printf("\n{\n");
 
@@ -102,6 +105,10 @@ foreach ($ext->getClasses() as $class) {
 		}
 	}
 
-	printf("}\n\n");
+    printf("}\n");
+    if ($class->inNamespace()) {
+        printf("}\n");
+    }
+    printf("\n");
 }
 
