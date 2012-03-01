@@ -2,7 +2,7 @@
 http response cache negative
 --SKIPIF--
 <?php include "skipif.inc"; ?>
---POST--
+--GET--
 a=b
 --ENV--
 HTTP_IF_MODIFIED_SINCE=Fri, 13 Feb 2009 23:31:30 GMT

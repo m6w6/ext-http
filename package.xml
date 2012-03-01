@@ -27,9 +27,9 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-02-17</date>
+ <date>2012-03-01</date>
  <version>
-  <release>2.0.0dev5</release>
+  <release>2.0.0dev6</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -38,11 +38,10 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Improved test coverage [1] and fixed a lot of issues with the cookie, params, querystring,
-  persistent handles, request factory, etag, stream filters, encoding streams, negotiation
-  and HTTP message info code.
-
-[1] http://dev.iworks.at/ext-http/lcov/ext/http/index.html
++ Added stream parsing capability to http\Message
++ Added http\Env\Request methods: getQuery(), getPost(), getFiles()
+* Changed http\Env\Response to only cache responses to GET or HEAD requests without authorization
+* Fixed possible crash when http\Url was initialized with empty urls
 ]]></notes>
  <contents>
   <dir name="/">
@@ -65,6 +64,8 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="src" name="php_http_encoding.h"/>
    <file role="src" name="php_http_env.c"/>
    <file role="src" name="php_http_env.h"/>
+   <file role="src" name="php_http_env_request.c"/>
+   <file role="src" name="php_http_env_request.h"/>
    <file role="src" name="php_http_env_response.c"/>
    <file role="src" name="php_http_env_response.h"/>
    <file role="src" name="php_http_etag.c"/>

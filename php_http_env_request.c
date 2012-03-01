@@ -134,6 +134,7 @@ PHP_METHOD(HttpEnvRequest, __construct)
 				if (SUCCESS == php_http_querystring_ctor(zquery, zsg TSRMLS_CC)) {
 					zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), zquery TSRMLS_CC);
 				}
+				zval_ptr_dtor(&zquery);
 			}
 			if ((zsg = php_http_env_get_superglobal(ZEND_STRL("_POST") TSRMLS_CC))) {
 				zval *zpost;
@@ -143,6 +144,7 @@ PHP_METHOD(HttpEnvRequest, __construct)
 				if (SUCCESS == php_http_querystring_ctor(zpost, zsg TSRMLS_CC)) {
 					zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("post"), zpost TSRMLS_CC);
 				}
+				zval_ptr_dtor(&zpost);
 			}
 			if ((zsg = php_http_env_get_superglobal(ZEND_STRL("_FILES") TSRMLS_CC))) {
 				zval *zfiles;
@@ -152,6 +154,7 @@ PHP_METHOD(HttpEnvRequest, __construct)
 				zend_hash_apply_with_arguments(Z_ARRVAL_P(zsg) TSRMLS_CC, grab_files, 1, zfiles);
 
 				zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), zfiles TSRMLS_CC);
+				zval_ptr_dtor(&zfiles);
 			}
 		}
 	} end_error_handling();

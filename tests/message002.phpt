@@ -25,7 +25,7 @@ var_dump((string)$m->getBody());
 echo "Done\n";
 --EXPECTF--
 Test
-object(%s)#%d (10) {
+object(%s)#%d (13) {
   ["errorHandling":protected]=>
   NULL
   ["type":protected]=>
@@ -46,7 +46,11 @@ object(%s)#%d (10) {
   ["httpVersion":protected]=>
   string(3) "1.1"
   ["headers":protected]=>
-  array(2) {
+  array(4) {
+    ["Content-Type"]=>
+    string(14) "test/something"
+    ["Content-Length"]=>
+    string(1) "3"
     ["X-Test"]=>
     string(4) "test"
     ["Cookie"]=>
@@ -54,6 +58,25 @@ object(%s)#%d (10) {
   }
   ["parentMessage":protected]=>
   NULL
+  ["query":protected]=>
+  object(http\QueryString)#2 (2) {
+    ["errorHandling":protected]=>
+    NULL
+    ["queryArray":"http\QueryString":private]=>
+    array(0) {
+    }
+  }
+  ["post":protected]=>
+  object(http\QueryString)#3 (2) {
+    ["errorHandling":protected]=>
+    NULL
+    ["queryArray":"http\QueryString":private]=>
+    array(0) {
+    }
+  }
+  ["files":protected]=>
+  array(0) {
+  }
 }
 POST / HTTP/1.1%a
 X-Test: test%a
