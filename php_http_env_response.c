@@ -78,14 +78,13 @@ static zval *get_option(zval *options, const char *name_str, size_t name_len TSR
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len TSRMLS_DC)
 {
 	int ret = 0, free_etag = 0;
-	char *header, *etag;
+	char *header = NULL, *etag;
 	zval *zetag, *zbody = NULL;
 
 	if (	!(zbody = get_option(options, ZEND_STRL("body") TSRMLS_CC))
 	|| 		!(Z_TYPE_P(zbody) == IS_OBJECT)
 	||		!instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_class_entry TSRMLS_CC)
 	) {
-		STR_FREE(header);
 		if (zbody) {
 			zval_ptr_dtor(&zbody);
 		}
@@ -482,45 +481,52 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 			return ret;
 		}
 
-		switch (php_http_env_is_response_cached_by_etag(options, ZEND_STRL("If-None-Match") TSRMLS_CC)) {
-			case PHP_HTTP_CACHE_MISS:
-				break;
-
-			case PHP_HTTP_CACHE_NO:
-				if (PHP_HTTP_CACHE_HIT != php_http_env_is_response_cached_by_last_modified(options, ZEND_STRL("If-Modified-Since") TSRMLS_CC)) {
+		if (php_http_env_get_response_code(TSRMLS_C) < 400 && !php_http_env_got_request_header(ZEND_STRL("Authorization") TSRMLS_CC)
+		&&	(	!SG(request_info).request_method
+			||	!strcasecmp(SG(request_info).request_method, "GET")
+			||	!strcasecmp(SG(request_info).request_method, "HEAD")
+			)
+		) {
+			switch (php_http_env_is_response_cached_by_etag(options, ZEND_STRL("If-None-Match") TSRMLS_CC)) {
+				case PHP_HTTP_CACHE_MISS:
 					break;
-				}
-				/*  no break */
 
-			case PHP_HTTP_CACHE_HIT:
-				ret = php_http_env_set_response_code(304 TSRMLS_CC);
-				r->done = 1;
-				break;
-		}
+				case PHP_HTTP_CACHE_NO:
+					if (PHP_HTTP_CACHE_HIT != php_http_env_is_response_cached_by_last_modified(options, ZEND_STRL("If-Modified-Since") TSRMLS_CC)) {
+						break;
+					}
+					/*  no break */
 
-		if ((zoption = get_option(options, ZEND_STRL("etag") TSRMLS_CC))) {
-			zval *zoption_copy = php_http_ztyp(IS_STRING, zoption);
-
-			zval_ptr_dtor(&zoption);
-			if (*Z_STRVAL_P(zoption_copy) != '"' &&	strncmp(Z_STRVAL_P(zoption_copy), "W/\"", 3)) {
-				ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "ETag: \"%s\"", Z_STRVAL_P(zoption_copy));
-			} else {
-				ret = php_http_env_set_response_header_value(0, ZEND_STRL("ETag"), zoption_copy, 1 TSRMLS_CC);
+				case PHP_HTTP_CACHE_HIT:
+					ret = php_http_env_set_response_code(304 TSRMLS_CC);
+					r->done = 1;
+					break;
 			}
-			zval_ptr_dtor(&zoption_copy);
-		}
-		if ((zoption = get_option(options, ZEND_STRL("lastModified") TSRMLS_CC))) {
-			zval *zoption_copy = php_http_ztyp(IS_LONG, zoption);
 
-			zval_ptr_dtor(&zoption);
-			if (Z_LVAL_P(zoption_copy)) {
-				char *date = php_format_date(ZEND_STRL(PHP_HTTP_DATE_FORMAT), Z_LVAL_P(zoption_copy), 0 TSRMLS_CC);
-				if (date) {
-					ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Last-Modified: %s", date);
-					efree(date);
+			if ((zoption = get_option(options, ZEND_STRL("etag") TSRMLS_CC))) {
+				zval *zoption_copy = php_http_ztyp(IS_STRING, zoption);
+
+				zval_ptr_dtor(&zoption);
+				if (*Z_STRVAL_P(zoption_copy) != '"' &&	strncmp(Z_STRVAL_P(zoption_copy), "W/\"", 3)) {
+					ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "ETag: \"%s\"", Z_STRVAL_P(zoption_copy));
+				} else {
+					ret = php_http_env_set_response_header_value(0, ZEND_STRL("ETag"), zoption_copy, 1 TSRMLS_CC);
 				}
+				zval_ptr_dtor(&zoption_copy);
 			}
-			zval_ptr_dtor(&zoption_copy);
+			if ((zoption = get_option(options, ZEND_STRL("lastModified") TSRMLS_CC))) {
+				zval *zoption_copy = php_http_ztyp(IS_LONG, zoption);
+
+				zval_ptr_dtor(&zoption);
+				if (Z_LVAL_P(zoption_copy)) {
+					char *date = php_format_date(ZEND_STRL(PHP_HTTP_DATE_FORMAT), Z_LVAL_P(zoption_copy), 0 TSRMLS_CC);
+					if (date) {
+						ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Last-Modified: %s", date);
+						efree(date);
+					}
+				}
+				zval_ptr_dtor(&zoption_copy);
+			}
 		}
 	}
 
