@@ -20,6 +20,62 @@
 #	include <ext/iconv/php_iconv.h>
 #endif
 
+
+#define QS_MERGE 1
+
+static inline void php_http_querystring_set(zval *instance, zval *params, int flags TSRMLS_DC)
+{
+	zval *qa;
+
+	if (flags & QS_MERGE) {
+		qa = php_http_zsep(1, IS_ARRAY, zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0 TSRMLS_CC));
+	} else {
+		MAKE_STD_ZVAL(qa);
+		array_init(qa);
+	}
+
+	php_http_querystring_update(qa, params, NULL TSRMLS_CC);
+	zend_update_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), qa TSRMLS_CC);
+	zval_ptr_dtor(&qa);
+}
+
+static inline void php_http_querystring_str(zval *instance, zval *return_value TSRMLS_DC)
+{
+	zval *qa = zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+
+	if (Z_TYPE_P(qa) == IS_ARRAY) {
+		php_http_querystring_update(qa, NULL, return_value TSRMLS_CC);
+	} else {
+		RETURN_EMPTY_STRING();
+	}
+}
+
+static inline void php_http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC)
+{
+	zval **arrval, *qarray = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+
+	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_symtable_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void *) &arrval))) {
+		if (type) {
+			zval *value = php_http_ztyp(type, *arrval);
+			RETVAL_ZVAL(value, 1, 1);
+		} else {
+			RETVAL_ZVAL(*arrval, 1, 0);
+		}
+
+		if (del) {
+			zval *delarr;
+
+			MAKE_STD_ZVAL(delarr);
+			array_init(delarr);
+			add_assoc_null_ex(delarr, name, name_len + 1);
+			php_http_querystring_set(this_ptr, delarr, QS_MERGE TSRMLS_CC);
+			zval_ptr_dtor(&delarr);
+		}
+	} else if(defval) {
+		RETURN_ZVAL(defval, 1, 0);
+	}
+}
+
 #ifdef PHP_HTTP_HAVE_ICONV
 PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe TSRMLS_DC)
 {
@@ -75,6 +131,12 @@ PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char 
 	return SUCCESS;
 }
 #endif /* HAVE_ICONV */
+
+PHP_HTTP_API STATUS php_http_querystring_ctor(zval *instance, zval *params TSRMLS_DC)
+{
+	php_http_querystring_set(instance, params, 0 TSRMLS_CC);
+	return SUCCESS;
+}
 
 PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval *outstring TSRMLS_DC)
 {
@@ -313,60 +375,6 @@ PHP_MINIT_FUNCTION(http_querystring)
 	return SUCCESS;
 }
 
-#define QS_MERGE 1
-
-static inline void php_http_querystring_set(zval *instance, zval *params, int flags TSRMLS_DC)
-{
-	zval *qa;
-
-	if (flags & QS_MERGE) {
-		qa = php_http_zsep(1, IS_ARRAY, zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0 TSRMLS_CC));
-	} else {
-		MAKE_STD_ZVAL(qa);
-		array_init(qa);
-	}
-
-	php_http_querystring_update(qa, params, NULL TSRMLS_CC);
-	zend_update_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), qa TSRMLS_CC);
-	zval_ptr_dtor(&qa);
-}
-
-static inline void php_http_querystring_str(zval *instance, zval *return_value TSRMLS_DC)
-{
-	zval *qa = zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0 TSRMLS_CC);
-
-	if (Z_TYPE_P(qa) == IS_ARRAY) {
-		php_http_querystring_update(qa, NULL, return_value TSRMLS_CC);
-	} else {
-		RETURN_EMPTY_STRING();
-	}
-}
-
-static inline void php_http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC)
-{
-	zval **arrval, *qarray = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
-		
-	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_symtable_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void *) &arrval))) {
-		if (type) {
-			zval *value = php_http_ztyp(type, *arrval);
-			RETVAL_ZVAL(value, 1, 1);
-		} else {
-			RETVAL_ZVAL(*arrval, 1, 0);
-		}
-
-		if (del) {
-			zval *delarr;
-
-			MAKE_STD_ZVAL(delarr);
-			array_init(delarr);
-			add_assoc_null_ex(delarr, name, name_len + 1);
-			php_http_querystring_set(this_ptr, delarr, QS_MERGE TSRMLS_CC);
-			zval_ptr_dtor(&delarr);
-		}
-	} else if(defval) {
-		RETURN_ZVAL(defval, 1, 0);
-	}
-}
 PHP_METHOD(HttpQueryString, __construct)
 {
 	zval *params = NULL;

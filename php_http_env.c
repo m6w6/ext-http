@@ -105,9 +105,22 @@ PHP_HTTP_API int php_http_env_got_request_header(const char *name_str, size_t na
 	return got;
 }
 
+PHP_HTTP_API zval *php_http_env_get_superglobal(const char *key, size_t key_len TSRMLS_DC)
+{
+	zval **hsv;
+
+	zend_is_auto_global(key, key_len TSRMLS_CC);
+
+	if ((SUCCESS != zend_hash_find(&EG(symbol_table), key, key_len + 1, (void *) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
+		return NULL;
+	}
+
+	return *hsv;
+}
+
 PHP_HTTP_API zval *php_http_env_get_server_var(const char *key, size_t key_len, zend_bool check TSRMLS_DC)
 {
-	zval **hsv, **var;
+	zval *hsv, **var;
 	char *env;
 
 	/* if available, this is a lot faster than accessing $_SERVER */
@@ -123,12 +136,10 @@ PHP_HTTP_API zval *php_http_env_get_server_var(const char *key, size_t key_len, 
 		return PHP_HTTP_G->env.server_var;
 	}
 
-	zend_is_auto_global(ZEND_STRL("_SERVER") TSRMLS_CC);
-
-	if ((SUCCESS != zend_hash_find(&EG(symbol_table), ZEND_STRS("_SERVER"), (void *) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
+	if (!(hsv = php_http_env_get_superglobal(ZEND_STRL("_SERVER") TSRMLS_CC))) {
 		return NULL;
 	}
-	if ((SUCCESS != zend_symtable_find(Z_ARRVAL_PP(hsv), key, key_len + 1, (void *) &var))) {
+	if ((SUCCESS != zend_symtable_find(Z_ARRVAL_P(hsv), key, key_len + 1, (void *) &var))) {
 		return NULL;
 	}
 	if (check && !((Z_TYPE_PP(var) == IS_STRING) && Z_STRVAL_PP(var) && Z_STRLEN_PP(var))) {
@@ -832,40 +843,9 @@ PHP_METHOD(HttpEnv, cleanPersistentHandles)
 	}
 }
 
-zend_class_entry *php_http_env_request_class_entry;
-
-#undef PHP_HTTP_BEGIN_ARGS
-#undef PHP_HTTP_EMPTY_ARGS
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 		PHP_HTTP_BEGIN_ARGS_EX(HttpEnvRequest, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)					PHP_HTTP_EMPTY_ARGS_EX(HttpEnvRequest, method, 0)
-#define PHP_HTTP_ENV_REQUEST_ME(method, visibility)	PHP_ME(HttpEnvRequest, method, PHP_HTTP_ARGS(HttpEnvRequest, method), visibility)
-
-PHP_HTTP_EMPTY_ARGS(__construct);
-
-zend_function_entry php_http_env_request_method_entry[] = {
-	PHP_HTTP_ENV_REQUEST_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-
-	EMPTY_FUNCTION_ENTRY
-};
-
-PHP_METHOD(HttpEnvRequest, __construct)
-{
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters_none()) {
-			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				obj->message = php_http_message_init_env(obj->message, PHP_HTTP_REQUEST TSRMLS_CC);
-			} end_error_handling();
-		}
-	} end_error_handling();
-}
-
 PHP_MINIT_FUNCTION(http_env)
 {
 	PHP_HTTP_REGISTER_CLASS(http, Env, http_env, NULL, 0);
-
-	PHP_HTTP_REGISTER_CLASS(http\\Env, Request, http_env_request, php_http_message_class_entry, 0);
 
 	return SUCCESS;
 }

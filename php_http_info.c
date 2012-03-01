@@ -111,7 +111,7 @@ PHP_HTTP_API php_http_info_t *php_http_info_parse(php_http_info_t *info, const c
 	}
 	
 	/* is request */
-	else if (*(http - 1) == ' ' && !http[lenof("HTTP/1.x")] || http[lenof("HTTP/1.x")] == '\r' || http[lenof("HTTP/1.x")] == '\n') {
+	else if (*(http - 1) == ' ' && (!http[lenof("HTTP/1.x")] || http[lenof("HTTP/1.x")] == '\r' || http[lenof("HTTP/1.x")] == '\n')) {
 		const char *url = strchr(pre_header, ' ');
 		
 		info->type = PHP_HTTP_REQUEST;

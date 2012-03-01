@@ -68,6 +68,7 @@ PHP_HTTP_API STATUS php_http_env_set_response_header_format(long http_code, zend
 
 PHP_HTTP_API zval *php_http_env_get_server_var(const char *key_str, size_t key_len, zend_bool check TSRMLS_DC);
 #define php_http_env_got_server_var(v) (NULL != php_http_env_get_server_var((v), strlen(v), 1 TSRMLS_CC))
+PHP_HTTP_API zval *php_http_env_get_superglobal(const char *key, size_t key_len TSRMLS_DC);
 
 extern zend_class_entry *php_http_env_class_entry;
 extern zend_function_entry php_http_env_method_entry[];
@@ -86,11 +87,6 @@ PHP_METHOD(HttpEnv, negotiateContentType);
 PHP_METHOD(HttpEnv, negotiate);
 PHP_METHOD(HttpEnv, statPersistentHandles);
 PHP_METHOD(HttpEnv, cleanPersistentHandles);
-
-extern zend_class_entry *php_http_env_request_class_entry;
-extern zend_function_entry php_http_env_request_method_entry[];
-
-PHP_METHOD(HttpEnvRequest, __construct);
 
 PHP_MINIT_FUNCTION(http_env);
 PHP_RINIT_FUNCTION(http_env);

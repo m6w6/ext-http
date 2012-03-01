@@ -17,6 +17,7 @@
 PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe TSRMLS_DC);
 #endif /* PHP_HTTP_HAVE_ICONV */
 PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval *qstring TSRMLS_DC);
+PHP_HTTP_API STATUS php_http_querystring_ctor(zval *instance, zval *params TSRMLS_DC);
 
 typedef php_http_object_t php_http_querystring_object_t;
 

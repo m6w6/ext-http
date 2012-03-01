@@ -78,6 +78,7 @@ typedef int STATUS;
 #include "php_http_curl.h"
 #include "php_http_encoding.h"
 #include "php_http_env.h"
+#include "php_http_env_request.h"
 #include "php_http_env_response.h"
 #include "php_http_etag.h"
 #include "php_http_exception.h"

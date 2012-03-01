@@ -397,6 +397,7 @@ dnl ----
 		php_http_cookie.c \
 		php_http_encoding.c \
 		php_http_env.c \
+		php_http_env_request.c \
 		php_http_env_response.c \
 		php_http_etag.c \
 		php_http_exception.c \
@@ -440,6 +441,7 @@ dnl ----
 		php_http_cookie.h \
 		php_http_encoding.h \
 		php_http_env.h \
+		php_http_env_request.h \
 		php_http_env_response.h \
 		php_http_etag.h \
 		php_http_exception.h \
