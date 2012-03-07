@@ -217,7 +217,9 @@ PHP_HTTP_BUFFER_API void php_http_buffer_free(php_http_buffer_t **buf);
 /* stores data in a php_http_buffer_t until it reaches chunk_size */
 PHP_HTTP_BUFFER_API size_t php_http_buffer_chunk_buffer(php_http_buffer_t **s, const char *data, size_t data_len, char **chunk, size_t chunk_size);
 
-typedef size_t (*php_http_buffer_pass_func_t)(void *opaque, const char *, size_t TSRMLS_DC);
+typedef size_t (*php_http_buffer_pass_func_t)(void *opaque, char *, size_t TSRMLS_DC);
+
+PHP_HTTP_BUFFER_API ssize_t php_http_buffer_passthru(php_http_buffer_t **s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *passin_arg, php_http_buffer_pass_func_t passon, void *passon_arg TSRMLS_DC);
 
 /* wrapper around php_http_buffer_chunk_buffer, which passes available chunks to passthru() */
 PHP_HTTP_BUFFER_API void php_http_buffer_chunked_output(php_http_buffer_t **s, const char *data, size_t data_len, size_t chunk_size, php_http_buffer_pass_func_t passout, void *opaque TSRMLS_DC);

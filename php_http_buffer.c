@@ -384,22 +384,22 @@ PHP_HTTP_BUFFER_API void php_http_buffer_chunked_output(php_http_buffer_t **s, c
 	STR_FREE(chunk);
 }
 
-PHP_HTTP_BUFFER_API ssize_t php_http_buffer_passthru(php_http_buffer_t *s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *passin_arg, php_http_buffer_pass_func_t passon, void *passon_arg TSRMLS_DC)
+PHP_HTTP_BUFFER_API ssize_t php_http_buffer_passthru(php_http_buffer_t **s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *passin_arg, php_http_buffer_pass_func_t passon, void *passon_arg TSRMLS_DC)
 {
-	size_t passed_on = 0, passed_in = php_http_buffer_chunked_input(&s, chunk_size, passin, passin_arg TSRMLS_CC);
+	size_t passed_on = 0, passed_in = php_http_buffer_chunked_input(s, chunk_size, passin, passin_arg TSRMLS_CC);
 
 	if (passed_in == PHP_HTTP_BUFFER_PASS0) {
 		return passed_in;
 	}
-	if (passed_in) {
-		passed_on = passon(passon_arg, s->data, passed_in TSRMLS_CC);
+	if (passed_in || (*s)->used) {
+		passed_on = passon(passon_arg, (*s)->data, (*s)->used TSRMLS_CC);
 
 		if (passed_on == PHP_HTTP_BUFFER_PASS0) {
 			return passed_on;
 		}
 
 		if (passed_on) {
-			php_http_buffer_cut(s, 0, passed_on);
+			php_http_buffer_cut(*s, 0, passed_on);
 		}
 	}
 

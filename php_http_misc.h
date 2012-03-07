@@ -139,7 +139,9 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 
 	for (eol = bin; eol - bin < len; ++eol) {
 		if (*eol == '\r' || *eol == '\n') {
-			*eol_len = eol ? ((eol[0] == '\r' && eol[1] == '\n') ? 2 : 1) : 0;
+			if (eol_len) {
+				*eol_len = eol ? ((eol[0] == '\r' && eol[1] == '\n') ? 2 : 1) : 0;
+			}
 			return eol;
 		}
 	}

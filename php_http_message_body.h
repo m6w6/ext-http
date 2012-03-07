@@ -22,22 +22,7 @@ typedef struct php_http_message_body {
 #endif
 } php_http_message_body_t;
 
-typedef enum php_http_message_body_file_is {
-	PHP_HTTP_MESSAGE_BODY_FILE_IS_EMPTY,
-	PHP_HTTP_MESSAGE_BODY_FILE_IS_DATA,
-	PHP_HTTP_MESSAGE_BODY_FILE_IS_PATH,
-	PHP_HTTP_MESSAGE_BODY_FILE_IS_STREAM
-} php_http_message_body_file_is_t;
-
-typedef struct php_http_message_body_file {
-	php_http_message_body_file_is_t type;
-	size_t length;
-	union {
-		char *data;
-		char *path;
-		php_stream *stream;
-	} file;
-} php_http_message_body_file_t;
+typedef struct php_http_message php_http_message_t;
 
 PHP_HTTP_API php_http_message_body_t *php_http_message_body_init(php_http_message_body_t *body, php_stream *stream TSRMLS_DC);
 PHP_HTTP_API php_http_message_body_t *php_http_message_body_copy(php_http_message_body_t *from, php_http_message_body_t *to, zend_bool dup_internal_stream_and_contents);
@@ -56,6 +41,7 @@ PHP_HTTP_API const php_stream_statbuf *php_http_message_body_stat(php_http_messa
 #define php_http_message_body_mtime(b) (php_http_message_body_stat((b))->sb.st_mtime)
 PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body);
 PHP_HTTP_API const char *php_http_message_body_boundary(php_http_message_body_t *body);
+PHP_HTTP_API php_http_message_t *php_http_message_body_split(php_http_message_body_t *body, const char *boundary);
 
 static inline php_stream *php_http_message_body_stream(php_http_message_body_t *body)
 {

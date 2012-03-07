@@ -404,6 +404,110 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 	}
 }
 
+struct splitbody_arg {
+	php_http_buffer_t buf;
+	php_http_message_parser_t *parser;
+	char *boundary_str;
+	size_t boundary_len;
+	size_t consumed;
+};
+
+static size_t splitbody(void *opaque, char *buf, size_t len TSRMLS_DC)
+{
+	struct splitbody_arg *arg = opaque;
+	const char *boundary = NULL;
+	size_t consumed = 0;
+	int first_boundary;
+
+	do {
+		first_boundary = !(consumed || arg->consumed);
+
+		if ((boundary = php_http_locate_str(buf, len, arg->boundary_str + first_boundary, arg->boundary_len - first_boundary))) {
+			size_t real_boundary_len = arg->boundary_len - 1, cut;
+			const char *real_boundary = boundary + !first_boundary;
+
+			if (buf + len <= real_boundary + real_boundary_len) {
+				/* if we just have enough data for the boundary, it's just a byte too less */
+				arg->consumed += consumed;
+				return consumed;
+			}
+
+			if (!first_boundary) {
+				/* this is not the first boundary, read rest of this message */
+				php_http_buffer_append(&arg->buf, buf, real_boundary - buf);
+				php_http_message_parser_parse(arg->parser, &arg->buf, 0, &arg->parser->message);
+			}
+
+			/* move after the boundary */
+			cut = real_boundary - buf + real_boundary_len;
+			buf += cut;
+			len -= cut;
+			consumed += cut;
+
+			if (buf == php_http_locate_bin_eol(buf, len, NULL)) {
+				if (!first_boundary) {
+					/* advance messages */
+					php_http_message_t *msg;
+
+					msg = php_http_message_init(NULL, 0 TSRMLS_CC);
+					msg->parent = arg->parser->message;
+					arg->parser->message = msg;
+				}
+			} else {
+				/* is this the last boundary? */
+				if (*buf == '-') {
+					/* ignore the rest */
+					consumed += len;
+					len = 0;
+				} else {
+					/* let this be garbage */
+					php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "Malformed multipart boundary at pos %zu", consumed);
+					return -1;
+				}
+			}
+		}
+	} while (boundary && len);
+
+	/* let there be room for the next boundary */
+	if (len > arg->boundary_len) {
+		consumed += len - arg->boundary_len;
+		php_http_buffer_append(&arg->buf, buf, len - arg->boundary_len);
+		php_http_message_parser_parse(arg->parser, &arg->buf, 0, &arg->parser->message);
+	}
+
+	arg->consumed += consumed;
+	return consumed;
+}
+
+PHP_HTTP_API php_http_message_t *php_http_message_body_split(php_http_message_body_t *body, const char *boundary)
+{
+	php_stream *s = php_http_message_body_stream(body);
+	php_http_buffer_t *tmp = NULL;
+	php_http_message_t *msg = NULL;
+	struct splitbody_arg arg;
+	TSRMLS_FETCH_FROM_CTX(body->ts);
+
+	php_http_buffer_init(&arg.buf);
+	arg.parser = php_http_message_parser_init(NULL TSRMLS_CC);
+	arg.boundary_len = spprintf(&arg.boundary_str, 0, "\n--%s", boundary);
+	arg.consumed = 0;
+
+	php_stream_rewind(s);
+	while (!php_stream_eof(s)) {
+		php_http_buffer_passthru(&tmp, 0x1000, (php_http_buffer_pass_func_t) _php_stream_read, s, splitbody, &arg TSRMLS_CC);
+	}
+
+	msg = arg.parser->message;
+	arg.parser->message = NULL;
+
+	php_http_buffer_free(&tmp);
+	php_http_message_parser_free(&arg.parser);
+	php_http_buffer_dtor(&arg.buf);
+	STR_FREE(arg.boundary_str);
+
+	return msg;
+}
+
 /* PHP */
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 			PHP_HTTP_BEGIN_ARGS_EX(HttpMessageBody, method, 0, req_args)

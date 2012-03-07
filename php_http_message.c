@@ -20,7 +20,9 @@ PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **messa
 	if (!old || old->type || zend_hash_num_elements(&old->hdrs) || PHP_HTTP_BUFFER_LEN(old)) {
 		(*message) = php_http_message_init(NULL, 0 TSRMLS_CC);
 		(*message)->parent = old;
-		(*headers) = &((*message)->hdrs);
+		if (headers) {
+			(*headers) = &((*message)->hdrs);
+		}
 	}
 
 	if (info) {
@@ -189,6 +191,63 @@ PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, char *key_st
 	return ret;
 }
 
+PHP_HTTP_API zend_bool php_http_message_is_multipart(php_http_message_t *msg, char **boundary)
+{
+	zval *ct = php_http_message_header(msg, ZEND_STRL("Content-Type"), 1);
+	zend_bool is_multipart = 0;
+	TSRMLS_FETCH_FROM_CTX(msg->ts);
+
+	if (ct) {
+		php_http_params_opts_t popts;
+		HashTable params;
+
+		ZEND_INIT_SYMTABLE(&params);
+		php_http_params_opts_default_get(&popts);
+		popts.input.str = Z_STRVAL_P(ct);
+		popts.input.len = Z_STRLEN_P(ct);
+
+		if (php_http_params_parse(&params, &popts TSRMLS_CC)) {
+			zval **cur, **arg;
+			char *ct_str;
+
+			zend_hash_internal_pointer_reset(&params);
+
+			if (SUCCESS == zend_hash_get_current_data(&params, (void *) &cur)
+			&&	Z_TYPE_PP(cur) == IS_ARRAY
+			&&	HASH_KEY_IS_STRING == zend_hash_get_current_key(&params, &ct_str, NULL, 0)
+			) {
+				if (php_http_match(ct_str, "multipart", PHP_HTTP_MATCH_WORD)) {
+					is_multipart = 1;
+
+					/* get boundary */
+					if (boundary
+					&&	SUCCESS == zend_hash_find(Z_ARRVAL_PP(cur), ZEND_STRS("arguments"), (void *) &arg)
+					&&	Z_TYPE_PP(arg) == IS_ARRAY
+					) {
+						zval **val;
+						HashPosition pos;
+						php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+
+						FOREACH_KEYVAL(pos, *arg, key, val) {
+							if (key.type == HASH_KEY_IS_STRING && !strcasecmp(key.str, "boundary")) {
+								zval *bnd = php_http_ztyp(IS_STRING, *val);
+
+								if (Z_STRLEN_P(bnd)) {
+									*boundary = estrndup(Z_STRVAL_P(bnd), Z_STRLEN_P(bnd));
+								}
+								zval_ptr_dtor(&bnd);
+							}
+						}
+					}
+				}
+			}
+		}
+		zend_hash_destroy(&params);
+		zval_ptr_dtor(&ct);
+	}
+
+	return is_multipart;
+}
 
 /* */
 PHP_HTTP_API void php_http_message_set_type(php_http_message_t *message, php_http_message_type_t type)
@@ -749,6 +808,11 @@ PHP_HTTP_BEGIN_ARGS(prepend, 1)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_EMPTY_ARGS(reverse);
 
+PHP_HTTP_BEGIN_ARGS(isMultipart, 0)
+	PHP_HTTP_ARG_VAL(boundary, 1)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_EMPTY_ARGS(splitMultipartBody);
+
 static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, const zend_literal *literal_key TSRMLS_DC);
 static void php_http_message_object_write_prop(zval *object, zval *member, zval *value, const zend_literal *literal_key TSRMLS_DC);
 static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member, const zend_literal *literal_key TSRMLS_DC);
@@ -801,6 +865,9 @@ zend_function_entry php_http_message_method_entry[] = {
 	PHP_HTTP_MESSAGE_ME(detach, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_ME(prepend, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_ME(reverse, ZEND_ACC_PUBLIC)
+
+	PHP_HTTP_MESSAGE_ME(isMultipart, ZEND_ACC_PUBLIC)
+	PHP_HTTP_MESSAGE_ME(splitMultipartBody, ZEND_ACC_PUBLIC)
 
 	EMPTY_FUNCTION_ENTRY
 };
@@ -1897,6 +1964,40 @@ PHP_METHOD(HttpMessage, reverse)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_message_object_reverse(getThis(), return_value TSRMLS_CC);
+	}
+}
+
+PHP_METHOD(HttpMessage, isMultipart)
+{
+	zval *zboundary = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &zboundary)) {
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		char *boundary = NULL;
+
+		RETVAL_BOOL(php_http_message_is_multipart(obj->message, zboundary ? &boundary : NULL));
+
+		if (zboundary && boundary) {
+			zval_dtor(zboundary);
+			ZVAL_STRING(zboundary, boundary, 0);
+		}
+	}
+}
+
+PHP_METHOD(HttpMessage, splitMultipartBody)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		char *boundary = NULL;
+
+		if (php_http_message_is_multipart(obj->message, &boundary)) {
+			php_http_message_t *msg;
+
+			if ((msg = php_http_message_body_split(&obj->message->body, boundary))) {
+				RETVAL_OBJVAL(php_http_message_object_new_ex(php_http_message_class_entry, msg, NULL TSRMLS_CC), 0);
+			}
+		}
+		STR_FREE(boundary);
 	}
 }
 

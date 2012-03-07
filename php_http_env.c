@@ -660,7 +660,7 @@ PHP_METHOD(HttpEnv, getRequestBody)
 			zend_object_value ov;
 			php_http_message_body_t *body = php_http_env_get_request_body(TSRMLS_C);
 
-			if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, body, NULL TSRMLS_CC)) {
+			if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, php_http_message_body_copy(body, NULL, 0), NULL TSRMLS_CC)) {
 				RETURN_OBJVAL(ov, 0);
 			}
 		}

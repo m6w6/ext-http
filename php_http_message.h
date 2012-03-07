@@ -51,6 +51,7 @@ PHP_HTTP_API void php_http_message_set_type(php_http_message_t *m, php_http_mess
 PHP_HTTP_API void php_http_message_set_info(php_http_message_t *message, php_http_info_t *info);
 
 PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, char *key_str, size_t key_len, int join);
+PHP_HTTP_API zend_bool php_http_message_is_multipart(php_http_message_t *msg, char **boundary);
 
 PHP_HTTP_API void php_http_message_to_string(php_http_message_t *msg, char **string, size_t *length);
 PHP_HTTP_API void php_http_message_to_struct(php_http_message_t *msg, zval *strct);
@@ -135,6 +136,8 @@ PHP_METHOD(HttpMessage, detach);
 PHP_METHOD(HttpMessage, prepend);
 PHP_METHOD(HttpMessage, reverse);
 
+PHP_METHOD(HttpMessage, isMultipart);
+PHP_METHOD(HttpMessage, splitMultipartBody);
 #endif
 
 /*

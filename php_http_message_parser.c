@@ -399,7 +399,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 				len = buffer->used;
 				cut = len;
 
-				php_http_message_parser_state_push(parser, 2, !buffer->used?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
+				php_http_message_parser_state_push(parser, 2, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
 				break;
 			}
 
