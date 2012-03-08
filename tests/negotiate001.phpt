@@ -3,7 +3,7 @@ negotiate
 --SKIPIF--
 <?php include "skipif.inc"; ?>
 --ENV--
-HTTP_ACCEPT=text/html,text/plain,text/xml;q=0.1,*/*;q=0
+HTTP_ACCEPT=text/html,text/plain,text/xml;q=0.1,image/*;q=0.1,*/*;q=0
 HTTP_ACCEPT_CHARSET=utf-8,iso-8859-1;q=0.8,iso-8859-15;q=0
 HTTP_ACCEPT_ENCODING=gzip,deflate;q=0
 HTTP_ACCEPT_LANGUAGE=de-DE,de-AT;q=0.9,en;q=0.8,fr;q=0
@@ -95,7 +95,7 @@ LANGUAGE
 
 de: Array
 (
-    [de] => 0.899
+    [de] => 0.99
     [en] => 0.8
 )
 de-DE: Array

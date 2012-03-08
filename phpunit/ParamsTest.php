@@ -47,7 +47,7 @@ class ParamsTest extends PHPUnit_Framework_TestCase {
             ),
             $p->params
         );
-        $this->assertEquals("form-data;name=upload;filename=\"trick\\\"\0\\\"ed\"", (string) $p);
+        $this->assertEquals("form-data;name=upload;filename=\"trick\\\"\\0\\\"ed\"", (string) $p);
     }
 
     function testEmpty() {
