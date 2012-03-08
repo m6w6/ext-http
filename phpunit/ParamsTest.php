@@ -17,6 +17,39 @@ class ParamsTest extends PHPUnit_Framework_TestCase {
         );
     }
 
+    function testQuoted() {
+        $p = new http\Params("multipart/form-data; boundary=\"--123\"");
+        $this->assertEquals(
+            array(
+                "multipart/form-data" => array(
+                    "value" => true,
+                    "arguments" => array(
+                        "boundary" => "--123"
+                    )
+                )
+            ),
+            $p->params
+        );
+        $this->assertEquals("multipart/form-data;boundary=--123", (string) $p);
+    }
+
+    function testEscaped() {
+        $p = new http\Params("form-data; name=\"upload\"; filename=\"trick\\\"\0\\\"ed\"");
+        $this->assertEquals(
+            array(
+                "form-data" => array(
+                    "value" => true,
+                    "arguments" => array(
+                        "name" => "upload",
+                        "filename" => "trick\"\0\"ed"
+                    )
+                )
+            ),
+            $p->params
+        );
+        $this->assertEquals("form-data;name=upload;filename=\"trick\\\"\0\\\"ed\"", (string) $p);
+    }
+
     function testEmpty() {
         $p = new http\Params(NULL);
         $this->assertEquals(array(), $p->params);

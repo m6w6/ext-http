@@ -44,18 +44,36 @@ typedef struct php_http_params_state {
 	} current;
 } php_http_params_state_t;
 
+static inline void sanitize_string(char *str, size_t len, zval *zv TSRMLS_DC)
+{
+	/* trim whitespace */
+	php_trim(str, len, NULL, 0, zv, 3 TSRMLS_CC);
+
+	/* dequote */
+	if (Z_STRVAL_P(zv)[0] == '"' && Z_STRVAL_P(zv)[Z_STRLEN_P(zv) - 1] == '"') {
+		size_t deq_len = Z_STRLEN_P(zv) - 2;
+		char *deq = estrndup(Z_STRVAL_P(zv) + 1, deq_len);
+
+		zval_dtor(zv);
+		ZVAL_STRINGL(zv, deq, deq_len, 0);
+	}
+
+	/* strip slashes */
+	php_stripslashes(Z_STRVAL_P(zv), &Z_STRLEN_P(zv) TSRMLS_CC);
+}
+
 static void push_param(HashTable *params, php_http_params_state_t *state, const php_http_params_opts_t *opts TSRMLS_DC)
 {
 	if (state->val.str) {
 		if (0 < (state->val.len = state->input.str - state->val.str)) {
-			php_trim(state->val.str, state->val.len, NULL, 0, *(state->current.val), 3 TSRMLS_CC);
+			sanitize_string(state->val.str, state->val.len, *(state->current.val) TSRMLS_CC);
 		}
 	} else if (state->arg.str) {
 		if (0 < (state->arg.len = state->input.str - state->arg.str)) {
 			zval *val, key;
 
 			INIT_PZVAL(&key);
-			php_trim(state->arg.str, state->arg.len, NULL, 0, &key, 3 TSRMLS_CC);
+			sanitize_string(state->arg.str, state->arg.len, &key TSRMLS_CC);
 			if (Z_STRLEN(key)) {
 				MAKE_STD_ZVAL(val);
 				ZVAL_TRUE(val);
@@ -68,7 +86,7 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 			zval *prm, *arg, *val, key;
 
 			INIT_PZVAL(&key);
-			php_trim(state->param.str, state->param.len, NULL, 0, &key, 3 TSRMLS_CC);
+			sanitize_string(state->param.str, state->param.len, &key TSRMLS_CC);
 			if (Z_STRLEN(key)) {
 				MAKE_STD_ZVAL(prm);
 				array_init(prm);
@@ -407,9 +425,17 @@ PHP_METHOD(HttpParams, toString)
 						/* add value */
 						if (Z_TYPE_PP(zarg) != IS_BOOL) {
 							zval *tmp = php_http_ztyp(IS_STRING, *zarg);
+							int escaped_len;
 
+							Z_STRVAL_P(tmp) = php_addslashes(Z_STRVAL_P(tmp), Z_STRLEN_P(tmp), &escaped_len, 1 TSRMLS_CC);
 							php_http_buffer_append(&buf, Z_STRVAL_P(zvsep), Z_STRLEN_P(zvsep));
-							php_http_buffer_append(&buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+							if (escaped_len != Z_STRLEN_P(tmp)) {
+								php_http_buffer_appends(&buf, "\"");
+								php_http_buffer_append(&buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp) = escaped_len);
+								php_http_buffer_appends(&buf, "\"");
+							} else {
+								php_http_buffer_append(&buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+							}
 							zval_ptr_dtor(&tmp);
 						} else if (!Z_BVAL_PP(zarg)) {
 							php_http_buffer_append(&buf, Z_STRVAL_P(zvsep), Z_STRLEN_P(zvsep));
@@ -426,6 +452,7 @@ PHP_METHOD(HttpParams, toString)
 	zval_ptr_dtor(&zasep);
 	zval_ptr_dtor(&zvsep);
 
+	php_http_buffer_fix(&buf);
 	php_http_buffer_shrink(&buf);
 	RETVAL_PHP_HTTP_BUFFER_VAL(&buf);
 }
