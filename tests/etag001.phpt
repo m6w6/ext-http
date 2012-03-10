@@ -1,9 +1,7 @@
 --TEST--
 etags with hash
 --SKIPIF--
-<?php include "skipif.inc"; ?>
---EXTENSIONS--
-hash
+<?php include "skipif.inc"; _ext("hash"); ?>
 --FILE--
 <?php
 $body = new http\Message\Body;

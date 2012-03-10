@@ -77,7 +77,8 @@ static zval *get_option(zval *options, const char *name_str, size_t name_len TSR
 
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len TSRMLS_DC)
 {
-	int ret = 0, free_etag = 0;
+	php_http_cache_status_t ret = PHP_HTTP_CACHE_NO;
+	int free_etag = 0;
 	char *header = NULL, *etag;
 	zval *zetag, *zbody = NULL;
 
@@ -88,7 +89,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zva
 		if (zbody) {
 			zval_ptr_dtor(&zbody);
 		}
-		return PHP_HTTP_CACHE_NO;
+		return ret;
 	}
 
 	if ((zetag = get_option(options, ZEND_STRL("etag") TSRMLS_CC))) {
@@ -113,7 +114,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zva
 	}
 
 	if (etag && (header = php_http_env_get_request_header(header_str, header_len, NULL TSRMLS_CC))) {
-		ret = php_http_match(header, etag, PHP_HTTP_MATCH_WORD);
+		ret = php_http_match(header, etag, PHP_HTTP_MATCH_WORD)  ? PHP_HTTP_CACHE_HIT : PHP_HTTP_CACHE_MISS;
 	}
 
 	if (free_etag) {
@@ -121,7 +122,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zva
 	}
 	STR_FREE(header);
 
-	return ret ? PHP_HTTP_CACHE_HIT : PHP_HTTP_CACHE_MISS;
+	return ret;
 }
 
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *options, const char *header_str, size_t header_len TSRMLS_DC)
@@ -130,12 +131,10 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_mod
 	time_t ums, lm = 0;
 	zval *zbody = NULL, *zlm;
 
-	if (	!(header = php_http_env_get_request_header(header_str, header_len, NULL TSRMLS_CC))
-	||		!(zbody = get_option(options, ZEND_STRL("body") TSRMLS_CC))
+	if (	!(zbody = get_option(options, ZEND_STRL("body") TSRMLS_CC))
 	||		!(Z_TYPE_P(zbody) == IS_OBJECT)
 	||		!instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_class_entry TSRMLS_CC)
 	) {
-		STR_FREE(header);
 		if (zbody) {
 			zval_ptr_dtor(&zbody);
 		}
@@ -155,8 +154,13 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_mod
 		set_option(options, ZEND_STRL("lastModified"), IS_LONG, &lm, 0 TSRMLS_CC);
 	}
 
+	zval_ptr_dtor(&zbody);
 	if (zlm) {
 		zval_ptr_dtor(&zlm);
+	}
+
+	if (!(header = php_http_env_get_request_header(header_str, header_len, NULL TSRMLS_CC))) {
+		return PHP_HTTP_CACHE_NO;
 	}
 
 	ums = php_parse_date(header, NULL);
@@ -169,7 +173,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_mod
 	}
 }
 
-static size_t output(void *context, const char *buf, size_t len TSRMLS_DC)
+static size_t output(void *context, char *buf, size_t len TSRMLS_DC)
 {
 	php_http_env_response_t *r = context;
 

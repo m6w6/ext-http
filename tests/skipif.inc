@@ -1,2 +1,3 @@
 <?php
-extension_loaded("http") or die("skip HTTP extension needed\n");
+function _ext($ext) { extension_loaded($ext) or die("skip $ext extension needed\n"); }
+_ext("http");
