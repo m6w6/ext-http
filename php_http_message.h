@@ -25,6 +25,7 @@
 		}
 
 typedef php_http_info_type_t php_http_message_type_t;
+typedef struct php_http_message php_http_message_t;
 
 struct php_http_message {
 	PHP_HTTP_INFO_IMPL(http, type)
