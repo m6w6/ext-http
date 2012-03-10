@@ -117,38 +117,31 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_strea
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE:
 				/* read line */
-				php_stream_get_line(s, buf.data, buf.free, &len);
-				buf.used += len;
-				buf.free -= len;
+				php_stream_get_line(s, buf.data + buf.used, buf.free, &len);
+				php_http_buffer_account(&buf, len);
 				break;
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB:
 				/* read all */
-				len = php_stream_read(s, buf.data, buf.free);
-				buf.used += len;
-				buf.free -= len;
+				php_http_buffer_account(&buf, php_stream_read(s, buf.data + buf.used, buf.free));
 				break;
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH:
 				/* read body_length */
-				len = php_stream_read(s, buf.data, MIN(buf.free, parser->body_length));
-				buf.used += len;
-				buf.free -= len;
+				php_http_buffer_account(&buf, php_stream_read(s, buf.data + buf.used, MIN(buf.free, parser->body_length)));
 				break;
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED:
 				/* duh, this is very naive */
 				if (len) {
-					size_t read = php_stream_read(s, buf.data, MIN(len, buf.free));
+					size_t read = php_stream_read(s, buf.data + buf.used, MIN(len, buf.free));
 
-					buf.used += read;
-					buf.free -= read;
+					php_http_buffer_account(&buf, read);
 
 					len -= read;
 				} else {
 					php_stream_get_line(s, buf.data, buf.free, &len);
-					buf.used += len;
-					buf.free -= len;
+					php_http_buffer_account(&buf, len);
 
 					len = strtoul(buf.data - len, NULL, 16);
 				}

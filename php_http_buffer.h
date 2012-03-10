@@ -151,6 +151,8 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_from_string_ex(php_http_b
 #define php_http_buffer_resize(b, s) php_http_buffer_resize_ex((b), (s), 0, 0)
 PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(php_http_buffer_t *buf, size_t len, size_t override_size, int allow_error);
 
+PHP_HTTP_BUFFER_API char *php_http_buffer_account(php_http_buffer_t *buf, size_t to_account);
+
 /* shrink memory chunk to actually used size (+1) */
 PHP_HTTP_BUFFER_API size_t php_http_buffer_shrink(php_http_buffer_t *buf);
 

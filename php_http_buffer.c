@@ -72,6 +72,19 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(php_http_buffer_t *buf, siz
 	return 0;
 }
 
+PHP_HTTP_BUFFER_API char *php_http_buffer_account(php_http_buffer_t *buf, size_t to_account)
+{
+	/* it's probably already too late but check anyway */
+	if (to_account > buf->free) {
+		return NULL;
+	}
+
+	buf->free -= to_account;
+	buf->used += to_account;
+
+	return buf->data + buf->used;
+}
+
 PHP_HTTP_BUFFER_API size_t php_http_buffer_shrink(php_http_buffer_t *buf)
 {
 	/* avoid another realloc on fixation */

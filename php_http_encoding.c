@@ -129,9 +129,7 @@ static inline int php_http_inflate_rounds(z_stream *Z, int flush, char **buf, si
 			fprintf(stderr, "\n%3d: %3d PRIOR: size=%7lu,\tfree=%7lu,\tused=%7lu,\tavail_in=%7lu,\tavail_out=%7lu\n", round, status, buffer.size, buffer.free, buffer.used, Z->avail_in, Z->avail_out);
 #endif
 			status = inflate(Z, flush);
-			
-			buffer.used += buffer.free - Z->avail_out;
-			buffer.free = Z->avail_out;
+			php_http_buffer_account(&buffer, buffer.free - Z->avail_out);
 #if 0
 			fprintf(stderr, "%3d: %3d AFTER: size=%7lu,\tfree=%7lu,\tused=%7lu,\tavail_in=%7lu,\tavail_out=%7lu\n", round, status, buffer.size, buffer.free, buffer.used, Z->avail_in, Z->avail_out);
 #endif
@@ -203,7 +201,7 @@ retry_raw_inflate:
 	status = inflateInit2(&Z, wbits);
 	if (Z_OK == status) {
 		Z.next_in = (Bytef *) data;
-		Z.avail_in = data_len;
+		Z.avail_in = data_len + 1; /* include the terminating NULL, see #61287 */
 		
 		switch (status = php_http_inflate_rounds(&Z, Z_NO_FLUSH, decoded, decoded_len)) {
 			case Z_STREAM_END:
