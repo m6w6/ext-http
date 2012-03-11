@@ -67,7 +67,7 @@ class MessageBodyTest extends PHPUnit_Framework_TestCase {
             "\r\n".
             "fuz\r\n".
             "--%x.%x\r\n".
-            "Content-Disposition: attachment; name=\"upload\"; filename=\"MessageBodyTest.php\"\r\n".
+            "Content-Disposition: form-data; name=\"upload\"; filename=\"MessageBodyTest.php\"\r\n".
             "Content-Transfer-Encoding: binary\r\n".
             "Content-Type: text/plain\r\n".
             "\r\n".

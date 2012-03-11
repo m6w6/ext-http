@@ -124,16 +124,10 @@ static size_t check_sep(php_http_params_state_t *state, php_http_params_token_t 
 
 PHP_HTTP_API HashTable *php_http_params_parse(HashTable *params, const php_http_params_opts_t *opts TSRMLS_DC)
 {
-	php_http_params_state_t state = {
-		.input.str = opts->input.str,
-		.input.len = opts->input.len,
-		.param.str = NULL,
-		.param.len = 0,
-		.arg.str = NULL,
-		.arg.len = 0,
-		.val.str = NULL,
-		.val.len = 0
-	};
+	php_http_params_state_t state = {{NULL,0}, {NULL,0}, {NULL,0}, {NULL,0}, {NULL,NULL,NULL}};
+
+	state.input.str = opts->input.str;
+	state.input.len = opts->input.len;
 
 	if (!params) {
 		ALLOC_HASHTABLE(params);
@@ -328,8 +322,10 @@ PHP_METHOD(HttpParams, __construct)
 						zcopy = php_http_ztyp(IS_STRING, zparams);
 						if (Z_STRLEN_P(zcopy)) {
 							php_http_params_opts_t opts = {
-								.input.str = Z_STRVAL_P(zcopy),
-								.input.len = Z_STRLEN_P(zcopy),
+								.input = {
+									.str = Z_STRVAL_P(zcopy),
+									.len = Z_STRLEN_P(zcopy)
+								},
 								.param = parse_sep(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("param_sep"), 0 TSRMLS_CC) TSRMLS_CC),
 								.arg = parse_sep(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("arg_sep"), 0 TSRMLS_CC) TSRMLS_CC),
 								.val = parse_sep(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("val_sep"), 0 TSRMLS_CC) TSRMLS_CC)

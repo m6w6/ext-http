@@ -263,7 +263,7 @@ PHP_HTTP_API STATUS php_http_message_body_add_file(php_http_message_body_t *body
 	BOUNDARY_OPEN(body);
 	php_http_message_body_appendf(
 		body,
-		"Content-Disposition: attachment; name=\"%s\"; filename=\"%s\""	PHP_HTTP_CRLF
+		"Content-Disposition: form-data; name=\"%s\"; filename=\"%s\"" PHP_HTTP_CRLF
 		"Content-Transfer-Encoding: binary" PHP_HTTP_CRLF
 		"Content-Type: %s" PHP_HTTP_CRLF
 		PHP_HTTP_CRLF,
@@ -701,7 +701,7 @@ static size_t pass(void *cb_arg, const char *str, size_t len)
 
 PHP_METHOD(HttpMessageBody, toCallback)
 {
-	struct fcd fcd = {0};
+	struct fcd fcd;
 	long offset = 0, forlen = 0;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f|ll", &fcd.fci, &fcd.fcc, &offset, &forlen)) {

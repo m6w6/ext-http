@@ -46,11 +46,11 @@ PHP_HTTP_API php_http_message_parser_t *php_http_message_parser_init(php_http_me
 
 PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_state_push(php_http_message_parser_t *parser, unsigned argc, ...)
 {
+	php_http_message_parser_state_t state;
 	va_list va_args;
 	unsigned i;
-	va_start(va_args, argc);
-	php_http_message_parser_state_t state;
 
+	va_start(va_args, argc);
 	for (i = 0; i < argc; ++i) {
 		state  = va_arg(va_args, php_http_message_parser_state_t);
 		zend_stack_push(&parser->stack, &state, sizeof(state));

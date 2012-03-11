@@ -433,7 +433,7 @@ PHP_METHOD(HttpRequestPool, wait)
 		timeout_val.tv_sec = (time_t) timeout;
 		timeout_val.tv_usec = PHP_HTTP_USEC(timeout) % PHP_HTTP_MCROSEC;
 
-		RETURN_SUCCESS(php_http_request_pool_wait(obj->pool, timeout ? &timeout_val : NULL));
+		RETURN_SUCCESS(php_http_request_pool_wait(obj->pool, timeout > 0 ? &timeout_val : NULL));
 	}
 	RETURN_FALSE;
 }

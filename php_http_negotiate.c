@@ -90,7 +90,7 @@ static int php_http_negotiate_reduce(void *p TSRMLS_DC, int num_args, va_list ar
 		}
 	}
 
-	if (q && Z_DVAL_PP(q)) {
+	if (q && Z_DVAL_PP(q) > 0) {
 		Z_ADDREF_PP(q);
 		zend_hash_update(result, Z_STRVAL_P(supported), Z_STRLEN_P(supported) + 1, (void *) q, sizeof(zval *), NULL);
 	}
@@ -131,11 +131,6 @@ PHP_HTTP_API HashTable *php_http_negotiate(const char *value_str, size_t value_l
 
 				q = Z_DVAL_P(tmp);
 				zval_ptr_dtor(&tmp);
-
-				if (0&&!q) {
-					STR_FREE(key.str);
-					continue;
-				}
 			} else {
 				q = 1.0 - ++i / 100.0;
 			}

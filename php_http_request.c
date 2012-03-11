@@ -431,7 +431,7 @@ STATUS php_http_request_object_requesthandler(php_http_request_object_t *obj, zv
 	}
 
 	if (url) {
-		php_url *tmp, qdu = {0};
+		php_url *tmp, qdu = {NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL};
 		zval *zurl = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("url"), 0 TSRMLS_CC);
 		zval *zqdata = zend_read_property(php_http_request_class_entry, getThis(), ZEND_STRL("queryData"), 0 TSRMLS_CC);
 
@@ -562,9 +562,14 @@ STATUS php_http_request_object_responsehandler(php_http_request_object_t *obj, z
 
 static int apply_pretty_key(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
+	zval **zpp = pDest, *arr = va_arg(args, zval *);
+
 	if (hash_key->arKey && hash_key->nKeyLength > 1) {
-		/* FIXME: this seems evil */
-		hash_key->h = zend_hash_func(php_http_pretty_key(hash_key->arKey, hash_key->nKeyLength - 1, 1, 0), hash_key->nKeyLength);
+		char *tmp = php_http_pretty_key(estrndup(hash_key->arKey, hash_key->nKeyLength - 1), hash_key->nKeyLength - 1, 1, 0);
+
+		Z_ADDREF_PP(zpp);
+		add_assoc_zval_ex(arr, tmp, hash_key->nKeyLength, *zpp);
+		efree(tmp);
 	}
 	return ZEND_HASH_APPLY_KEEP;
 }
@@ -594,9 +599,15 @@ static inline void php_http_request_object_set_options_subr(INTERNAL_FUNCTION_PA
 			}
 		} else if (opts) {
 			if (prettify_keys) {
-				zend_hash_apply_with_arguments(Z_ARRVAL_P(opts) TSRMLS_CC, apply_pretty_key, 0, NULL);
+				zval *tmp;
+
+				MAKE_STD_ZVAL(tmp);
+				array_init_size(tmp, zend_hash_num_elements(Z_ARRVAL_P(opts)));
+				zend_hash_apply_with_arguments(Z_ARRVAL_P(opts) TSRMLS_CC, apply_pretty_key, 1, tmp);
+				opts = tmp;
+			} else {
+				Z_ADDREF_P(opts);
 			}
-			Z_ADDREF_P(opts);
 			add_assoc_zval_ex(new_opts, key, len, opts);
 		}
 		zend_update_property(php_http_request_class_entry, getThis(), ZEND_STRL("options"), new_opts TSRMLS_CC);

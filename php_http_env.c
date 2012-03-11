@@ -4,7 +4,7 @@
     +--------------------------------------------------------------------+
     | Redistribution and use in source and binary forms, with or without |
     | modification, are permitted provided that the conditions mentioned |
-    | in the accompanying LICENSE file are met.                          |
+    | in the accomp395anying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
     | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
@@ -392,7 +392,7 @@ PHP_HTTP_API STATUS php_http_env_set_response_code(long http_code TSRMLS_DC)
 
 PHP_HTTP_API STATUS php_http_env_set_response_status_line(long code, php_http_version_t *v TSRMLS_DC)
 {
-	sapi_header_line h = {0};
+	sapi_header_line h = {NULL, 0, 0};
 	STATUS ret;
 
 	h.line_len = spprintf(&h.line, 0, "HTTP/%u.%u %ld %s", v->major, v->minor, code, php_http_env_get_response_status_for_code(code));
