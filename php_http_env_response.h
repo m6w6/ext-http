@@ -55,6 +55,7 @@ extern zend_class_entry *php_http_env_response_class_entry;
 extern zend_function_entry php_http_env_response_method_entry[];
 
 PHP_METHOD(HttpEnvResponse, __construct);
+PHP_METHOD(HttpEnvResponse, __invoke);
 PHP_METHOD(HttpEnvResponse, setContentType);
 PHP_METHOD(HttpEnvResponse, setContentDisposition);
 PHP_METHOD(HttpEnvResponse, setContentEncoding);
