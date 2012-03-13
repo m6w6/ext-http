@@ -49,6 +49,14 @@ echo "$ln: "; print_r($lnr);
 $ln = http\Env::negotiateLanguage(array("nl", "fr", "en"), $lnr);
 echo "$ln: "; print_r($lnr);
 ?>
+
+CUSTOM
+
+<?
+$cc = http\Env::negotiate("a, a.b;q=0.9, c.d;q=0, *.* ; q=0.1",
+    array("a.x", "c.d", "c.e", "a.b"), ".", $ccr);
+echo "$cc: "; print_r($ccr);
+?>
 DONE
 --EXPECT--
 CONTENT TYPE
@@ -107,5 +115,14 @@ de-DE: Array
 en: Array
 (
     [en] => 0.8
+)
+
+CUSTOM
+
+a.b: Array
+(
+    [a.b] => 0.9
+    [c.e] => 0.1
+    [a.x] => 0.1
 )
 DONE

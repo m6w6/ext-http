@@ -69,14 +69,6 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("REQUEST_URI"), 1 TSRMLS_CC))) {
 				message->http.info.request.url = estrdup(Z_STRVAL_P(sval));
 			}
-			if ((sval = php_http_env_get_server_var(ZEND_STRL("CONTENT_TYPE"), 1 TSRMLS_CC))) {
-				Z_ADDREF_P(sval);
-				zend_hash_update(&message->hdrs, "Content-Type", sizeof("Content-Type"), (void *) &sval, sizeof(zval *), NULL);
-			}
-			if ((sval = php_http_env_get_server_var(ZEND_STRL("CONTENT_LENGTH"), 1 TSRMLS_CC))) {
-				Z_ADDREF_P(sval);
-				zend_hash_update(&message->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &sval, sizeof(zval *), NULL);
-			}
 			
 			php_http_env_get_request_headers(&message->hdrs TSRMLS_CC);
 

@@ -425,6 +425,7 @@ static size_t splitbody(void *opaque, char *buf, size_t len TSRMLS_DC)
 		if ((boundary = php_http_locate_str(buf, len, arg->boundary_str + first_boundary, arg->boundary_len - first_boundary))) {
 			size_t real_boundary_len = arg->boundary_len - 1, cut;
 			const char *real_boundary = boundary + !first_boundary;
+			int eol_len = 0;
 
 			if (buf + len <= real_boundary + real_boundary_len) {
 				/* if we just have enough data for the boundary, it's just a byte too less */
@@ -444,7 +445,12 @@ static size_t splitbody(void *opaque, char *buf, size_t len TSRMLS_DC)
 			len -= cut;
 			consumed += cut;
 
-			if (buf == php_http_locate_bin_eol(buf, len, NULL)) {
+			if (buf == php_http_locate_bin_eol(buf, len, &eol_len)) {
+				/* skip CRLF */
+				buf += eol_len;
+				len -= eol_len;
+				consumed += eol_len;
+
 				if (!first_boundary) {
 					/* advance messages */
 					php_http_message_t *msg;

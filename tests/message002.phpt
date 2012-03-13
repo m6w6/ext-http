@@ -47,12 +47,12 @@ object(%s)#%d (13) {
   string(3) "1.1"
   ["headers":protected]=>
   array(4) {
-    ["Content-Type"]=>
-    string(14) "test/something"
-    ["Content-Length"]=>
-    string(1) "3"
     ["X-Test"]=>
     string(4) "test"
+    ["Content-Length"]=>
+    string(1) "3"
+    ["Content-Type"]=>
+    string(14) "test/something"
     ["Cookie"]=>
     string(7) "foo=bar"
   }

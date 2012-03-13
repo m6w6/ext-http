@@ -52,9 +52,17 @@ PHP_HTTP_API void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC)
 
 		if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv) && Z_TYPE_PP(hsv) == IS_ARRAY) {
 			FOREACH_KEY(pos, *hsv, key) {
-				if (key.type == HASH_KEY_IS_STRING && key.len > 6 && !strncmp(key.str, "HTTP_", 5)) {
+				if (key.type == HASH_KEY_IS_STRING && key.len > 6 && *key.str == 'H' && !strncmp(key.str, "HTTP_", 5)) {
 					key.len -= 5;
 					key.str = php_http_pretty_key(estrndup(key.str + 5, key.len - 1), key.len - 1, 1, 1);
+
+					zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void *) &header, &pos);
+					Z_ADDREF_P(*header);
+					zend_symtable_update(PHP_HTTP_G->env.request.headers, key.str, key.len, (void *) header, sizeof(zval *), NULL);
+
+					efree(key.str);
+				} else if (key.type == HASH_KEY_IS_STRING && key.len > 9 && *key.str == 'C' && !strncmp(key.str, "CONTENT_", 8)) {
+					key.str = php_http_pretty_key(estrndup(key.str, key.len - 1), key.len - 1, 1, 1);
 
 					zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void *) &header, &pos);
 					Z_ADDREF_P(*header);
@@ -360,7 +368,7 @@ PHP_HTTP_API char *php_http_env_get_response_header(const char *name_str, size_t
 	char *val = NULL;
 	HashTable headers;
 
-	zend_hash_init(&headers, 0, NULL, NULL, 0);
+	zend_hash_init(&headers, 0, NULL, ZVAL_PTR_DTOR, 0);
 	if (SUCCESS == php_http_env_get_response_headers(&headers TSRMLS_CC)) {
 		zval **zvalue;
 		char *key = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
@@ -661,7 +669,7 @@ PHP_METHOD(HttpEnv, getRequestBody)
 			php_http_message_body_t *body = php_http_env_get_request_body(TSRMLS_C);
 
 			if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, php_http_message_body_copy(body, NULL, 0), NULL TSRMLS_CC)) {
-				RETURN_OBJVAL(ov, 0);
+				RETVAL_OBJVAL(ov, 0);
 			}
 		}
 	} end_error_handling();

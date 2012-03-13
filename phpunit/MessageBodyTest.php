@@ -106,4 +106,8 @@ class MessageBodyTest extends PHPUnit_Framework_TestCase {
         );
         $this->assertEquals($s, (string) $this->file);
     }
+
+    function testClone() {
+        $this->assertEquals((string) $this->file, (string) clone $this->file);
+    }
 }
