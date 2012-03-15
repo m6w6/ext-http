@@ -211,7 +211,7 @@ PHP_HTTP_API size_t php_http_message_body_appendf(php_http_message_body_t *body,
 	return print_len;
 }
 
-PHP_HTTP_API STATUS php_http_message_body_add(php_http_message_body_t *body, HashTable *fields, HashTable *files)
+PHP_HTTP_API STATUS php_http_message_body_add_form(php_http_message_body_t *body, HashTable *fields, HashTable *files)
 {
 	zval tmp;
 
@@ -231,8 +231,17 @@ PHP_HTTP_API STATUS php_http_message_body_add(php_http_message_body_t *body, Has
 	return SUCCESS;
 }
 
+PHP_HTTP_API void php_http_message_body_add_part(php_http_message_body_t *body, php_http_message_t *part)
+{
+	TSRMLS_FETCH_FROM_CTX(body->ts);
 
-PHP_HTTP_API STATUS php_http_message_body_add_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
+	BOUNDARY_OPEN(body);
+	php_http_message_to_callback(part, (php_http_pass_callback_t) php_http_message_body_append, body);
+	BOUNDARY_CLOSE(body);
+}
+
+
+PHP_HTTP_API STATUS php_http_message_body_add_form_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
 {
 	char *safe_name;
 	TSRMLS_FETCH_FROM_CTX(body->ts);
@@ -253,7 +262,7 @@ PHP_HTTP_API STATUS php_http_message_body_add_field(php_http_message_body_t *bod
 	return SUCCESS;
 }
 
-PHP_HTTP_API STATUS php_http_message_body_add_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
+PHP_HTTP_API STATUS php_http_message_body_add_form_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
 {
 	char *safe_name, *path_dup = estrdup(path);
 	TSRMLS_FETCH_FROM_CTX(body->ts);
@@ -321,7 +330,7 @@ static STATUS add_recursive_fields(php_http_message_body_t *body, const char *na
 		}
 	} else {
 		zval *cpy = php_http_ztyp(IS_STRING, value);
-		php_http_message_body_add_field(body, name, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
+		php_http_message_body_add_form_field(body, name, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
 		zval_ptr_dtor(&cpy);
 	}
 
@@ -389,7 +398,7 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 		} else {
 			zval *znc = php_http_ztyp(IS_STRING, *zname), *ztc = php_http_ztyp(IS_STRING, *ztype);
 			char *key = format_key(HASH_KEY_IS_STRING, Z_STRVAL_P(znc), 0, name);
-			STATUS ret =  php_http_message_body_add_file(body, key, Z_STRVAL_P(ztc), Z_STRVAL_P(zfc), stream);
+			STATUS ret =  php_http_message_body_add_form_file(body, key, Z_STRVAL_P(ztc), Z_STRVAL_P(zfc), stream);
 
 			efree(key);
 			zval_ptr_dtor(&znc);
@@ -538,9 +547,13 @@ PHP_HTTP_BEGIN_ARGS(append, 1)
 	PHP_HTTP_ARG_VAL(string, 0)
 PHP_HTTP_END_ARGS;
 
-PHP_HTTP_BEGIN_ARGS(add, 0)
+PHP_HTTP_BEGIN_ARGS(addForm, 0)
 	PHP_HTTP_ARG_ARR(fields, 1, 0)
 	PHP_HTTP_ARG_ARR(files, 1, 0)
+PHP_HTTP_END_ARGS;
+
+PHP_HTTP_BEGIN_ARGS(addPart, 1)
+	PHP_HTTP_ARG_OBJ("http\\Message", "message", 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(etag);
@@ -557,7 +570,8 @@ zend_function_entry php_http_message_body_method_entry[] = {
 	PHP_HTTP_MESSAGE_BODY_ME(toStream, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(toCallback, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(append, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(add, ZEND_ACC_PUBLIC)
+	PHP_HTTP_MESSAGE_BODY_ME(addForm, ZEND_ACC_PUBLIC)
+	PHP_HTTP_MESSAGE_BODY_ME(addPart, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(etag, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(stat, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
@@ -739,14 +753,27 @@ PHP_METHOD(HttpMessageBody, append)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpMessageBody, add)
+PHP_METHOD(HttpMessageBody, addForm)
 {
 	HashTable *fields = NULL, *files = NULL;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|h!h!", &fields, &files)) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-		RETURN_SUCCESS(php_http_message_body_add(obj->body, fields, files));
+		RETURN_SUCCESS(php_http_message_body_add_form(obj->body, fields, files));
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpMessageBody, addPart)
+{
+	php_http_message_object_t *mobj;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &mobj, php_http_message_class_entry)) {
+		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		php_http_message_body_add_part(obj->body, mobj->message);
+		RETURN_TRUE;
 	}
 	RETURN_FALSE;
 }

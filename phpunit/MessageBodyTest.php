@@ -29,9 +29,9 @@ class MessageBodyTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(3, $this->temp->append("yes"));
     }
 
-    function testAdd() {
+    function testAddForm() {
         $this->assertTrue( 
-            $this->temp->add(
+            $this->temp->addForm(
                 array(
                     "foo" => "bar",
                     "more" => array(
