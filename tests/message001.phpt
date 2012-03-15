@@ -239,7 +239,6 @@ X-Original-Transfer-Encoding: chunked
 Content-Length: 14
 
 Hello, World!
-
 string(3) "1.1"
 bool(true)
 int(200)

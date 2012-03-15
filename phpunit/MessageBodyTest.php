@@ -78,6 +78,20 @@ class MessageBodyTest extends PHPUnit_Framework_TestCase {
         );
     }
 
+    function testAddPart() {
+        $this->temp->addPart(new http\Message("This: is a header\n\nand this is the data\n"));
+        $this->assertStringMatchesFormat(
+            "--%x.%x\r\n".
+            "This: is a header\r\n".
+            "Content-Length: 21\r\n".
+            "\r\n".
+            "and this is the data\n\r\n".
+            "--%x.%x--\r\n".
+            "",
+            str_replace("\r", "", $this->temp)
+        );
+    }
+
     function testEtag() {
         $s = stat(__FILE__);
         $this->assertEquals(

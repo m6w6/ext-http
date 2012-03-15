@@ -393,7 +393,6 @@ PHP_HTTP_API void php_http_message_to_callback(php_http_message_t *msg, php_http
 	if (php_http_message_body_size(&msg->body)) {
 		cb(cb_arg, ZEND_STRL(PHP_HTTP_CRLF));
 		php_http_message_body_to_callback(&msg->body, cb, cb_arg, 0, 0);
-		cb(cb_arg, ZEND_STRL(PHP_HTTP_CRLF));
 	}
 }
 
@@ -407,7 +406,6 @@ PHP_HTTP_API void php_http_message_to_string(php_http_message_t *msg, char **str
 	if (php_http_message_body_size(&msg->body)) {
 		php_http_buffer_appends(&str, PHP_HTTP_CRLF);
 		php_http_message_body_to_callback(&msg->body, (php_http_pass_callback_t) php_http_buffer_append, &str, 0, 0);
-		php_http_buffer_appends(&str, PHP_HTTP_CRLF);
 	}
 
 	data = php_http_buffer_data(&str, string, length);
@@ -428,6 +426,7 @@ PHP_HTTP_API void php_http_message_serialize(php_http_message_t *message, char *
 
 	do {
 		php_http_message_to_string(message, &buf, &len);
+		php_http_buffer_prepends(&str, PHP_HTTP_CRLF);
 		php_http_buffer_prepend(&str, buf, len);
 		efree(buf);
 	} while ((message = message->parent));

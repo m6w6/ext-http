@@ -553,7 +553,7 @@ PHP_HTTP_BEGIN_ARGS(addForm, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(addPart, 1)
-	PHP_HTTP_ARG_OBJ("http\\Message", "message", 0)
+	PHP_HTTP_ARG_OBJ(http\\Message, "message", 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(etag);
@@ -767,10 +767,11 @@ PHP_METHOD(HttpMessageBody, addForm)
 
 PHP_METHOD(HttpMessageBody, addPart)
 {
-	php_http_message_object_t *mobj;
+	zval *zobj;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &mobj, php_http_message_class_entry)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zobj, php_http_message_class_entry)) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		php_http_message_object_t *mobj = zend_object_store_get_object(zobj TSRMLS_CC);
 
 		php_http_message_body_add_part(obj->body, mobj->message);
 		RETURN_TRUE;

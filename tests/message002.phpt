@@ -18,7 +18,7 @@ use http\env\Request as HttpEnvRequest;
 $m = new HttpEnvRequest();
 
 var_dump($m);
-echo $m;
+echo $m,"\n";
 
 var_dump((string)$m->getBody());
 
@@ -80,8 +80,10 @@ object(%s)#%d (13) {
 }
 POST / HTTP/1.1%a
 X-Test: test%a
+Content-Length: 3%a
+Content-Type: test/something%a
 Cookie: foo=bar%a
 %a
-b=c%a
+b=c
 string(3) "b=c"
 Done
