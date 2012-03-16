@@ -27,9 +27,9 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-03-09</date>
+ <date>2012-03-16</date>
  <version>
-  <release>2.0.0dev7</release>
+  <release>2.0.0dev8</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -38,10 +38,14 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added multipart support to http\Message, which can now splitMultipartBody() 
-  to a http\Message chain, f.e. of a ranges response or file upload request.
-+ Added primitive quoting/escaping capabilities to http\Params.
-+ Reworked and improved negotiation support, added asterisk (*) matching etc.
+* Fixed build failure and compiler warnings
+* Fixed logical errors in http\Env\Response::isCachedBy{Etag,LastModified}()
+* Fixed memory leaks in http\Env\Response::isCachedByLastModified()
+* Fixed memory leaks in http\Env::getResponseHeader()
+* Fixed erroneous trailing CRLF of http\Message strings
+- Renamed http\Message\Body::add() to ::addForm()
++ Added http\Message\Body::addPart(http\Message $part)
++ Added http\Env\Response::__invoke() output buffering handler
 ]]></notes>
  <contents>
   <dir name="/">
