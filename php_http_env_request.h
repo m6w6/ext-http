@@ -17,7 +17,7 @@ extern zend_class_entry *php_http_env_request_class_entry;
 extern zend_function_entry php_http_env_request_method_entry[];
 
 PHP_METHOD(HttpEnvRequest, __construct);
-PHP_METHOD(HttpEnvRequest, getPost);
+PHP_METHOD(HttpEnvRequest, getForm);
 PHP_METHOD(HttpEnvRequest, getQuery);
 PHP_METHOD(HttpEnvRequest, getFiles);
 

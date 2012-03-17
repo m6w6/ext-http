@@ -66,7 +66,7 @@ object(%s)#%d (13) {
     array(0) {
     }
   }
-  ["post":protected]=>
+  ["form":protected]=>
   object(http\QueryString)#3 (2) {
     ["errorHandling":protected]=>
     NULL
