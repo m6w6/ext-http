@@ -38,14 +38,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed build failure and compiler warnings
-* Fixed logical errors in http\Env\Response::isCachedBy{Etag,LastModified}()
-* Fixed memory leaks in http\Env\Response::isCachedByLastModified()
-* Fixed memory leaks in http\Env::getResponseHeader()
-* Fixed erroneous trailing CRLF of http\Message strings
-- Renamed http\Message\Body::add() to ::addForm()
-+ Added http\Message\Body::addPart(http\Message $part)
-+ Added http\Env\Response::__invoke() output buffering handler
+- Renamed http\Env\Request::getPost() to ::getForm()
 ]]></notes>
  <contents>
   <dir name="/">
