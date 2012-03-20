@@ -82,17 +82,10 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 			if (!SG(sapi_headers).http_status_line || !php_http_info_parse((php_http_info_t *) &message->http, SG(sapi_headers).http_status_line TSRMLS_CC)) {
 				message->http.version.major = 1;
 				message->http.version.minor = 1;
-				switch ((message->http.info.response.code = SG(sapi_headers).http_response_code)) {
-					case 0:
-						message->http.info.response.code = 200;
-					case 200:
-						message->http.info.response.status = estrdup("Ok");
-						break;
-					default:
-						message->http.info.response.status = estrdup("");
-						break;
+				if (!(message->http.info.response.code = SG(sapi_headers).http_response_code)) {
+					message->http.info.response.code = 200;
 				}
-
+				message->http.info.response.status = estrdup(php_http_env_get_response_status_for_code(message->http.info.response.code));
 			}
 			
 			php_http_env_get_response_headers(&message->hdrs TSRMLS_CC);
@@ -419,17 +412,17 @@ PHP_HTTP_API void php_http_message_to_string(php_http_message_t *msg, char **str
 PHP_HTTP_API void php_http_message_serialize(php_http_message_t *message, char **string, size_t *length)
 {
 	char *buf;
-	size_t len;
 	php_http_buffer_t str;
+	php_http_message_t *msg;
 
 	php_http_buffer_init(&str);
 
+	msg = message = php_http_message_reverse(message);
 	do {
-		php_http_message_to_string(message, &buf, &len);
-		php_http_buffer_prepends(&str, PHP_HTTP_CRLF);
-		php_http_buffer_prepend(&str, buf, len);
-		efree(buf);
+		php_http_message_to_callback(message, (php_http_pass_callback_t) php_http_buffer_append, &str);
+		php_http_buffer_appends(&str, PHP_HTTP_CRLF);
 	} while ((message = message->parent));
+	php_http_message_reverse(msg);
 
 	buf = php_http_buffer_data(&str, string, length);
 	if (!string) {
@@ -464,172 +457,6 @@ PHP_HTTP_API php_http_message_t *php_http_message_reverse(php_http_message_t *ms
 	
 	return msg;
 }
-
-PHP_HTTP_API php_http_message_t *php_http_message_interconnect(php_http_message_t *m1, php_http_message_t *m2)
-{
-	if (m1 && m2) {
-		int i = 0, c1 = 0, c2 = 0;
-		php_http_message_t *t1 = m1, *t2 = m2, *p1, *p2;
-		
-		php_http_message_count(c1, m1);
-		php_http_message_count(c2, m2);
-		
-		while (i++ < (c1 - c2)) {
-			t1 = t1->parent;
-		}
-		while (i++ <= c1) {
-			p1 = t1->parent;
-			p2 = t2->parent;
-			t1->parent = t2;
-			t2->parent = p1;
-			t1 = p1;
-			t2 = p2;
-		}
-	} else if (!m1 && m2) {
-		m1 = m2;
-	}
-	return m1;
-}
-
-PHP_HTTP_API void php_http_message_to_struct(php_http_message_t *msg, zval *obj)
-{
-	zval strct;
-	zval *headers;
-	char *version;
-	TSRMLS_FETCH_FROM_CTX(msg->ts);
-	
-	INIT_PZVAL_ARRAY(&strct, HASH_OF(obj));
-	
-	add_assoc_long(&strct, "type", msg->type);
-	spprintf(&version, 0 ,"%u.%u", msg->http.version.major, msg->http.version.minor);
-	add_assoc_string_ex(&strct, ZEND_STRL("httpVersion"), version, 0);
-	switch (msg->type)
-	{
-		case PHP_HTTP_RESPONSE:
-			add_assoc_long(&strct, "responseCode", msg->http.info.response.code);
-			add_assoc_string(&strct, "responseStatus", STR_PTR(msg->http.info.response.status), 1);
-		break;
-		
-		case PHP_HTTP_REQUEST:
-			add_assoc_string(&strct, "requestMethod", STR_PTR(msg->http.info.request.method), 1);
-			add_assoc_string(&strct, "requestUrl", STR_PTR(msg->http.info.request.url), 1);
-		break;
-		
-		case PHP_HTTP_NONE:
-			/* avoid compiler warning */
-		break;
-	}
-	
-	MAKE_STD_ZVAL(headers);
-	array_init(headers);
-	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-	add_assoc_zval(&strct, "headers", headers);
-	
-	add_assoc_stringl(&strct, "body", PHP_HTTP_BUFFER_VAL(msg), PHP_HTTP_BUFFER_LEN(msg), 1);
-	
-	if (msg->parent) {
-		zval *parent;
-		
-		MAKE_STD_ZVAL(parent);
-		if (Z_TYPE_P(obj) == IS_ARRAY) {
-			array_init(parent);
-		} else {
-			object_init(parent);
-		}
-		add_assoc_zval(&strct, "parentMessage", parent);
-		php_http_message_to_struct(msg->parent, parent);
-	} else {
-		add_assoc_null(&strct, "parentMessage");
-	}
-}
-/*
-PHP_HTTP_API STATUS _http_message_send(http_message *message TSRMLS_DC)
-{
-	STATUS rs = FAILURE;
-
-	switch (message->type) {
-		case PHP_HTTP_RESPONSE:
-		{
-			php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
-			zval **val;
-			HashPosition pos;
-
-			FOREACH_HASH_KEYVAL(pos, &message->hdrs, key, val) {
-				if (key.type == HASH_KEY_IS_STRING) {
-					http_send_header_zval_ex(key.str, key.len-1, val, 1);
-				}
-			}
-			rs =	SUCCESS == http_send_status(message->http.info.response.code) &&
-					SUCCESS == http_send_data(PHP_HTTP_BUFFER_VAL(message), PHP_HTTP_BUFFER_LEN(message)) ?
-					SUCCESS : FAILURE;
-			break;
-		}
-
-		case PHP_HTTP_REQUEST:
-		{
-#ifdef PHP_HTTP_HAVE_CURL
-			char *uri = NULL;
-			http_request request;
-			zval **zhost, *options, *headers;
-			
-			MAKE_STD_ZVAL(options);
-			MAKE_STD_ZVAL(headers);
-			array_init(options);
-			array_init(headers);
-			zend_hash_copy(Z_ARRVAL_P(headers), &message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-			add_assoc_zval(options, "headers", headers);
-
-			if (SUCCESS == zend_hash_find(&message->hdrs, "Host", sizeof("Host"), (void *) &zhost) && Z_TYPE_PP(zhost) == IS_STRING) {
-				char *colon = NULL;
-				php_url parts, *url = php_url_parse(message->http.info.request.url);
-				
-				memset(&parts, 0, sizeof(php_url));
-
-				if ((colon = strchr(Z_STRVAL_PP(zhost), ':'))) {
-					parts.port = atoi(colon + 1);
-					parts.host = estrndup(Z_STRVAL_PP(zhost), (Z_STRVAL_PP(zhost) - colon - 1));
-				} else {
-					parts.host = estrndup(Z_STRVAL_PP(zhost), Z_STRLEN_PP(zhost));
-				}
-				
-				http_build_url(PHP_HTTP_URL_REPLACE, url, &parts, NULL, &uri, NULL);
-				php_url_free(url);
-				efree(parts.host);
-			} else {
-				uri = http_absolute_url(message->http.info.request.url);
-			}
-
-			if ((request.meth = http_request_method_exists(1, 0, message->http.info.request.method))) {
-				http_request_body body;
-				
-				http_request_init_ex(&request, NULL, request.meth, uri);
-				request.body = http_request_body_init_ex(&body, PHP_HTTP_REQUEST_BODY_CSTRING, PHP_HTTP_BUFFER_VAL(message), PHP_HTTP_BUFFER_LEN(message), 0);
-				if (SUCCESS == (rs = http_request_prepare(&request, Z_ARRVAL_P(options)))) {
-					http_request_exec(&request);
-				}
-				http_request_dtor(&request);
-			} else {
-				http_error_ex(HE_WARNING, PHP_HTTP_E_REQUEST_METHOD,
-					"Cannot send HttpMessage. Request method %s not supported",
-					message->http.info.request.method);
-			}
-			efree(uri);
-			zval_ptr_dtor(&options);
-#else
-			http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "HTTP requests not supported - ext/http was not linked against libcurl.");
-#endif
-		break;
-		}
-
-		case PHP_HTTP_NONE:
-		default:
-			php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_TYPE, "HttpMessage is neither of type PHP_HTTP_REQUEST nor PHP_HTTP_RESPONSE");
-			break;
-	}
-
-	return rs;
-}
-*/
 
 PHP_HTTP_API php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_message_t *to, zend_bool parents)
 {
@@ -945,6 +772,7 @@ static void php_http_message_object_prophandler_set_response_code(php_http_messa
 	if (PHP_HTTP_MESSAGE_TYPE(RESPONSE, obj->message)) {
 		zval *cpy = php_http_ztyp(IS_LONG, value);
 		obj->message->http.info.response.code = Z_LVAL_P(cpy);
+		STR_SET(obj->message->http.info.response.status, estrdup(php_http_env_get_response_status_for_code(obj->message->http.info.response.code)));
 		zval_ptr_dtor(&cpy);
 	}
 }
@@ -1060,7 +888,6 @@ void php_http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_D
 	php_http_message_count(i, obj->message);
 
 	if (i > 1) {
-		zval o;
 		zend_object_value *ovalues = NULL;
 		php_http_message_object_t **objects = NULL;
 		int last = i - 1;
@@ -1073,12 +900,9 @@ void php_http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_D
 		ovalues[0] = getThis()->value.obj;
 
 		/* fetch parents */
-		INIT_PZVAL(&o);
-		o.type = IS_OBJECT;
 		for (i = 1; obj->parent.handle; ++i) {
-			o.value.obj = obj->parent;
-			ovalues[i] = o.value.obj;
-			objects[i] = obj = zend_object_store_get_object(&o TSRMLS_CC);
+			ovalues[i] = obj->parent;
+			objects[i] = obj = zend_object_store_get_object_by_handle(obj->parent.handle TSRMLS_CC);
 		}
 
 		/* reorder parents */
@@ -1086,11 +910,12 @@ void php_http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_D
 			objects[i]->message->parent = objects[i-1]->message;
 			objects[i]->parent = ovalues[i-1];
 		}
+
 		objects[0]->message->parent = NULL;
 		objects[0]->parent.handle = 0;
 		objects[0]->parent.handlers = NULL;
 
-		/* add ref (why?) */
+		/* add ref, because we previously have not been a parent message */
 		Z_OBJ_ADDREF_P(getThis());
 		RETVAL_OBJVAL(ovalues[last], 1);
 
@@ -1694,6 +1519,7 @@ PHP_METHOD(HttpMessage, setResponseCode)
 		}
 
 		obj->message->http.info.response.code = code;
+		STR_SET(obj->message->http.info.response.status, estrdup(php_http_env_get_response_status_for_code(code)));
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
