@@ -39,6 +39,8 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  <license>BSD, revised</license>
  <notes><![CDATA[
 - Renamed http\Env\Request::getPost() to ::getForm()
+- Changed http\Env\Response::setContentDisposition() to take an http\Params like array as argument
+- Removed http\Env\Response::CONTENT_DISPOSOTION_* constants
 ]]></notes>
  <contents>
   <dir name="/">
@@ -140,6 +142,8 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
     <file role="test" name="message001.phpt"/>
     <file role="test" name="message002.phpt"/>
     <file role="test" name="message003.phpt"/>
+    <file role="test" name="message004.phpt"/>
+    <file role="test" name="message005.phpt"/>
     <file role="test" name="negotiate001.phpt"/>
     <file role="test" name="params001.phpt"/>
     <file role="test" name="persistenthandles001.phpt"/>
