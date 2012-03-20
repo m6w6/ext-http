@@ -223,39 +223,46 @@ PHP_HTTP_API php_http_buffer_t *php_http_params_to_string(php_http_buffer_t *buf
 				}
 			}
 			/* add arguments */
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(zparam), ZEND_STRS("arguments"), (void *) &zargs)) {
-				if (Z_TYPE_PP(zargs) == IS_ARRAY) {
-					FOREACH_KEYVAL(pos2, *zargs, key2, zarg) {
-						/* new arg? */
-						if (PHP_HTTP_BUFFER_LEN(buf)) {
-							php_http_buffer_append(buf, ass, asl);
-						}
+			if (SUCCESS != zend_hash_find(Z_ARRVAL_PP(zparam), ZEND_STRS("arguments"), (void *) &zargs)) {
+				zargs = zparam;
+			}
 
-						/* add name */
-						if (key2.type == HASH_KEY_IS_STRING) {
-							php_http_buffer_append(buf, key2.str, key2.len - 1);
+			if (Z_TYPE_PP(zargs) == IS_ARRAY) {
+				FOREACH_KEYVAL(pos2, *zargs, key2, zarg) {
+					/* skip "value" if zargs == zparam */
+					if (zargs == zparam && key2.type == HASH_KEY_IS_STRING && !strcmp(key2.str, "value")) {
+						continue;
+					}
+
+					/* new arg? */
+					if (PHP_HTTP_BUFFER_LEN(buf)) {
+						php_http_buffer_append(buf, ass, asl);
+					}
+
+					/* add name */
+					if (key2.type == HASH_KEY_IS_STRING) {
+						php_http_buffer_append(buf, key2.str, key2.len - 1);
+					} else {
+						php_http_buffer_appendf(buf, "%lu", key2.num);
+					}
+					/* add value */
+					if (Z_TYPE_PP(zarg) != IS_BOOL) {
+						zval *tmp = php_http_ztyp(IS_STRING, *zarg);
+						int escaped_len;
+
+						Z_STRVAL_P(tmp) = php_addslashes(Z_STRVAL_P(tmp), Z_STRLEN_P(tmp), &escaped_len, 1 TSRMLS_CC);
+						php_http_buffer_append(buf, vss, vsl);
+						if (escaped_len != Z_STRLEN_P(tmp)) {
+							php_http_buffer_appends(buf, "\"");
+							php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp) = escaped_len);
+							php_http_buffer_appends(buf, "\"");
 						} else {
-							php_http_buffer_appendf(buf, "%lu", key2.num);
+							php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
 						}
-						/* add value */
-						if (Z_TYPE_PP(zarg) != IS_BOOL) {
-							zval *tmp = php_http_ztyp(IS_STRING, *zarg);
-							int escaped_len;
-
-							Z_STRVAL_P(tmp) = php_addslashes(Z_STRVAL_P(tmp), Z_STRLEN_P(tmp), &escaped_len, 1 TSRMLS_CC);
-							php_http_buffer_append(buf, vss, vsl);
-							if (escaped_len != Z_STRLEN_P(tmp)) {
-								php_http_buffer_appends(buf, "\"");
-								php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp) = escaped_len);
-								php_http_buffer_appends(buf, "\"");
-							} else {
-								php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-							}
-							zval_ptr_dtor(&tmp);
-						} else if (!Z_BVAL_PP(zarg)) {
-							php_http_buffer_append(buf, vss, vsl);
-							php_http_buffer_appends(buf, "0");
-						}
+						zval_ptr_dtor(&tmp);
+					} else if (!Z_BVAL_PP(zarg)) {
+						php_http_buffer_append(buf, vss, vsl);
+						php_http_buffer_appends(buf, "0");
 					}
 				}
 			}
