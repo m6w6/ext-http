@@ -378,46 +378,14 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 
 		if ((zoption = get_option(options, ZEND_STRL("contentDisposition") TSRMLS_CC))) {
 			zval *zoption_copy = php_http_ztyp(IS_ARRAY, zoption);
-			zval **zdisposition, **zfilename = NULL;
+			php_http_buffer_t buf;
 
-			zval_ptr_dtor(&zoption);
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_P(zoption_copy), ZEND_STRS("disposition"), (void *) &zdisposition)) {
-				zval *zdisposition_copy = php_http_ztyp(IS_LONG, *zdisposition);
-				char *tmp = NULL;
-
-				switch (Z_LVAL_P(zdisposition_copy)) {
-					case PHP_HTTP_CONTENT_DISPOSITION_NONE:
-						ret = php_http_env_set_response_header_value(0, ZEND_STRL("Content-Disposition"), NULL, 1 TSRMLS_CC);
-						break;
-					case PHP_HTTP_CONTENT_DISPOSITION_INLINE:
-						tmp = "inline";
-						break;
-					case PHP_HTTP_CONTENT_DISPOSITION_ATTACHMENT:
-						tmp = "attachment";
-						break;
-				}
-
-				if (tmp) {
-					if (SUCCESS != zend_hash_find(Z_ARRVAL_P(zoption_copy), ZEND_STRS("filename"), (void *) &zfilename)) {
-						ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Content-Disposition: %s", tmp);
-					} else {
-						zval *zfilename_copy = php_http_ztyp(IS_STRING, *zfilename);
-
-						if (!Z_STRLEN_P(zfilename_copy)) {
-							ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Content-Disposition: %s", tmp);
-						} else {
-							int new_f_len;
-							char *new_f_str = php_addslashes(estrndup(Z_STRVAL_P(zfilename_copy), Z_STRLEN_P(zfilename_copy)), Z_STRLEN_P(zfilename_copy), &new_f_len, 1 TSRMLS_CC);
-
-							ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Content-Disposition: %s; filename=\"%.*s\"", tmp, new_f_len, new_f_str);
-							STR_FREE(new_f_str);
-						}
-
-						zval_ptr_dtor(&zfilename_copy);
-					}
-				}
-				zval_ptr_dtor(&zdisposition_copy);
+			php_http_buffer_init(&buf);
+			if (php_http_params_to_string(&buf, Z_ARRVAL_P(zoption_copy), ZEND_STRL(","), ZEND_STRL(";"), ZEND_STRL("=") TSRMLS_CC)) {
+				ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Content-Disposition: %s", PHP_HTTP_BUFFER_VAL(&buf));
 			}
+
+			php_http_buffer_dtor(&buf);
 			zval_ptr_dtor(&zoption_copy);
 		}
 
@@ -718,8 +686,7 @@ PHP_HTTP_BEGIN_ARGS(setContentEncoding, 1)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(setContentDisposition, 1)
-	PHP_HTTP_ARG_VAL(content_disposition, 0)
-	PHP_HTTP_ARG_VAL(filename, 0)
+	PHP_HTTP_ARG_ARR(disposition_params, 1, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(setCacheControl, 1)
@@ -812,21 +779,10 @@ PHP_METHOD(HttpEnvResponse, setContentType)
 
 PHP_METHOD(HttpEnvResponse, setContentDisposition)
 {
-	long cd;
-	char *file_str = NULL;
-	int file_len = 0;
+	zval *zdisposition;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|s!", &cd, &file_str, &file_len)) {
-		zval *arr;
-
-		MAKE_STD_ZVAL(arr);
-		array_init(arr);
-		add_assoc_long_ex(arr, ZEND_STRS("disposition"), cd);
-		if (file_len) {
-			add_assoc_stringl_ex(arr, ZEND_STRS("filename"), file_str, file_len, 1);
-		}
-		zend_update_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("contentDisposition"), arr TSRMLS_CC);
-		zval_ptr_dtor(&arr);
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &zdisposition)) {
+		zend_update_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("contentDisposition"), zdisposition TSRMLS_CC);
 	}
 }
 
@@ -931,10 +887,6 @@ PHP_METHOD(HttpEnvResponse, send)
 PHP_MINIT_FUNCTION(http_env_response)
 {
 	PHP_HTTP_REGISTER_CLASS(http\\Env, Response, http_env_response, php_http_message_class_entry, 0);
-
-	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CONTENT_DISPOSITION_NONE"), PHP_HTTP_CONTENT_DISPOSITION_NONE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CONTENT_DISPOSITION_INLINE"), PHP_HTTP_CONTENT_DISPOSITION_INLINE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CONTENT_DISPOSITION_ATTACHMENT"), PHP_HTTP_CONTENT_DISPOSITION_ATTACHMENT TSRMLS_CC);
 
 	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CONTENT_ENCODING_NONE"), PHP_HTTP_CONTENT_ENCODING_NONE TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CONTENT_ENCODING_GZIP"), PHP_HTTP_CONTENT_ENCODING_GZIP TSRMLS_CC);
