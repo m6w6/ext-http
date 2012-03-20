@@ -117,52 +117,52 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="src" name="php_http_url.h"/>
    <file role="src" name="php_http_version.c"/>
    <file role="src" name="php_http_version.h"/>
-  </dir>
-  <dir name="tests">
-   <file role="test" name="skipif.inc"/>
-   <dir name="HttpRequestPool_cache" />
-   <dir name="data">
-    <file role="test" name="message_r_multipart_put.txt"/>
-    <file role="test" name="message_rr_empty.txt"/>
-    <file role="test" name="message_rr_empty_chunked.txt"/>
-    <file role="test" name="message_rr_empty_gzip.txt"/>
-    <file role="test" name="message_rr_helloworld_chunked.txt"/>
-    <file role="test" name="urls.txt"/>
+   <dir name="tests">
+    <file role="test" name="skipif.inc"/>
+    <dir name="HttpRequestPool_cache" />
+    <dir name="data">
+     <file role="test" name="message_r_multipart_put.txt"/>
+     <file role="test" name="message_rr_empty.txt"/>
+     <file role="test" name="message_rr_empty_chunked.txt"/>
+     <file role="test" name="message_rr_empty_gzip.txt"/>
+     <file role="test" name="message_rr_helloworld_chunked.txt"/>
+     <file role="test" name="urls.txt"/>
+    </dir>
+    <file role="test" name="envrequestbody001.phpt"/>
+    <file role="test" name="envrequestheader001.phpt"/>
+    <file role="test" name="envresponseheader001.phpt"/>
+    <file role="test" name="envresponseranges001.phpt"/>
+    <file role="test" name="etag001.phpt"/>
+    <file role="test" name="factory.phpt"/>
+    <file role="test" name="filterchunked.phpt"/>
+    <file role="test" name="filterzlib.phpt"/>
+    <file role="test" name="info_001.phpt"/>
+    <file role="test" name="message001.phpt"/>
+    <file role="test" name="message002.phpt"/>
+    <file role="test" name="message003.phpt"/>
+    <file role="test" name="negotiate001.phpt"/>
+    <file role="test" name="params001.phpt"/>
+    <file role="test" name="persistenthandles001.phpt"/>
+    <file role="test" name="phpunit.phpt"/>
+    <file role="test" name="propertyproxy001.phpt"/>
+    <file role="test" name="querystring_001.phpt"/>
+    <file role="test" name="requestpool001.phpt"/>
+    <file role="test" name="response001.phpt"/>
+    <file role="test" name="response002.phpt"/>
+    <file role="test" name="response003.phpt"/>
+    <file role="test" name="url001.phpt"/>
    </dir>
-   <file role="test" name="envrequestbody001.phpt"/>
-   <file role="test" name="envrequestheader001.phpt"/>
-   <file role="test" name="envresponseheader001.phpt"/>
-   <file role="test" name="envresponseranges001.phpt"/>
-   <file role="test" name="etag001.phpt"/>
-   <file role="test" name="factory.phpt"/>
-   <file role="test" name="filterchunked.phpt"/>
-   <file role="test" name="filterzlib.phpt"/>
-   <file role="test" name="info_001.phpt"/>
-   <file role="test" name="message001.phpt"/>
-   <file role="test" name="message002.phpt"/>
-   <file role="test" name="message003.phpt"/>
-   <file role="test" name="negotiate001.phpt"/>
-   <file role="test" name="params001.phpt"/>
-   <file role="test" name="persistenthandles001.phpt"/>
-   <file role="test" name="phpunit.phpt"/>
-   <file role="test" name="propertyproxy001.phpt"/>
-   <file role="test" name="querystring_001.phpt"/>
-   <file role="test" name="requestpool001.phpt"/>
-   <file role="test" name="response001.phpt"/>
-   <file role="test" name="response002.phpt"/>
-   <file role="test" name="response003.phpt"/>
-   <file role="test" name="url001.phpt"/>
-  </dir>
-  <dir name="phpunit">
-   <file role="test" name="CookieTest.php"/>
-   <file role="test" name="EncodingTest.php"/>
-   <file role="test" name="HeaderTest.php"/>
-   <file role="test" name="MessageBodyTest.php"/>
-   <file role="test" name="ObjectTest.php"/>
-   <file role="test" name="ParamsTest.php"/>
-   <file role="test" name="QueryStringTest.php"/>
-   <file role="test" name="RequestTest.php"/>
-   <file role="test" name="UrlTest.php"/>
+   <dir name="phpunit">
+    <file role="test" name="CookieTest.php"/>
+    <file role="test" name="EncodingTest.php"/>
+    <file role="test" name="HeaderTest.php"/>
+    <file role="test" name="MessageBodyTest.php"/>
+    <file role="test" name="ObjectTest.php"/>
+    <file role="test" name="ParamsTest.php"/>
+    <file role="test" name="QueryStringTest.php"/>
+    <file role="test" name="RequestTest.php"/>
+    <file role="test" name="UrlTest.php"/>
+   </dir>
   </dir>
  </contents>
  <dependencies>
