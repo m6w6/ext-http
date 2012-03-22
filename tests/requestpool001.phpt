@@ -9,7 +9,6 @@ include 'skipif.inc';
 
 use http\request\Factory as HttpRequestFactory;
 use http\request\Pool as HttpRequestPool;
-use http\request\Method as HttpRequestMethod;
 use http\Exception as HttpRequestException;
 use http\Exception as HttpSocketException;
 
@@ -53,7 +52,7 @@ class Pool extends HttpRequestPool
 			$this->attach(
 				$this->factory->createRequest(
 					$url,
-					HttpRequestMethod::GET,
+					"GET",
 					array(
 						'redirect'	=> 5,
 						'compress'  => GZIP,
@@ -105,7 +104,7 @@ class Pool extends HttpRequestPool
 				$this->attach(
 					$this->factory->createRequest(
 						$url,
-						HttpRequestMethod::GET,
+						"GET",
 						array(
 							'redirect'	=> 5,
 							'compress'	=> GZIP,

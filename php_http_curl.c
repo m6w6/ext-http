@@ -239,6 +239,8 @@ static int php_http_curl_raw_callback(CURL *ch, curl_infotype type, char *data, 
 				curl->progress.state.info = "not disconnected";
 			} else if (php_memnstr(data, ZEND_STRL("closed"), data + length)) {
 				curl->progress.state.info = "disconnected";
+			} else if (php_memnstr(data, ZEND_STRL("Issue another request"), data + length)) {
+				curl->progress.state.info = "redirect";
 			}
 			php_http_request_progress_notify(&curl->progress TSRMLS_CC);
 			break;
@@ -288,7 +290,7 @@ static int php_http_curl_dummy_callback(char *data, size_t n, size_t l, void *s)
 	return n*l;
 }
 
-static STATUS php_http_curl_request_prepare(php_http_request_t *h, php_http_request_method_t meth, const char *url, php_http_message_body_t *body)
+static STATUS php_http_curl_request_prepare(php_http_request_t *h, const char *meth, const char *url, php_http_message_body_t *body)
 {
 	php_http_curl_request_t *curl = h->ctx;
 	php_http_curl_request_storage_t *storage = get_storage(curl->handle);
@@ -302,30 +304,28 @@ static STATUS php_http_curl_request_prepare(php_http_request_t *h, php_http_requ
 	curl_easy_setopt(curl->handle, CURLOPT_URL, storage->url);
 
 	/* request method */
-	switch (meth) {
-		case PHP_HTTP_GET:
+	switch (php_http_request_method_is(meth, 4, "GET", "HEAD", "POST", "PUT")) {
+		case 0:
 			curl_easy_setopt(curl->handle, CURLOPT_HTTPGET, 1L);
 			break;
 
-		case PHP_HTTP_HEAD:
+		case 1:
 			curl_easy_setopt(curl->handle, CURLOPT_NOBODY, 1L);
 			break;
 
-		case PHP_HTTP_POST:
+		case 2:
 			curl_easy_setopt(curl->handle, CURLOPT_POST, 1L);
 			break;
 
-		case PHP_HTTP_PUT:
+		case 3:
 			curl_easy_setopt(curl->handle, CURLOPT_UPLOAD, 1L);
 			break;
 
 		default: {
-			const char *name = php_http_request_method_name(meth TSRMLS_CC);
-
-			if (name) {
-				curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, name);
+			if (meth) {
+				curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, meth);
 			} else {
-				php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_METHOD, "Unsupported request method: %d (%s)", meth, url);
+				php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_METHOD, "Unsupported request method: '%s' (%s)", meth, url);
 				return FAILURE;
 			}
 			break;
@@ -340,17 +340,12 @@ static STATUS php_http_curl_request_prepare(php_http_request_t *h, php_http_requ
 		 * same semantics as those specified in section 9« reveal that not any single defined HTTP/1.1 method
 		 * does not allow a request body.
 		 */
-		switch (meth) {
-			default: {
-				size_t body_size = php_http_message_body_size(body);
+		size_t body_size = php_http_message_body_size(body);
 
-				curl_easy_setopt(curl->handle, CURLOPT_IOCTLDATA, body);
-				curl_easy_setopt(curl->handle, CURLOPT_READDATA, body);
-				curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, body_size);
-				curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, body_size);
-				break;
-			}
-		}
+		curl_easy_setopt(curl->handle, CURLOPT_IOCTLDATA, body);
+		curl_easy_setopt(curl->handle, CURLOPT_READDATA, body);
+		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, body_size);
+		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, body_size);
 	}
 
 	return SUCCESS;
@@ -1290,7 +1285,7 @@ static void php_http_curl_request_pool_dtor(php_http_request_pool_t *h)
 	h->ctx = NULL;
 }
 
-static STATUS php_http_curl_request_pool_attach(php_http_request_pool_t *h, php_http_request_t *r, php_http_request_method_t m, const char *url, php_http_message_body_t *body)
+static STATUS php_http_curl_request_pool_attach(php_http_request_pool_t *h, php_http_request_t *r, const char *m, const char *url, php_http_message_body_t *body)
 {
 	php_http_curl_request_pool_t *curl = h->ctx;
 	php_http_curl_request_t *recurl = r->ctx;
@@ -1705,7 +1700,7 @@ static STATUS php_http_curl_request_reset(php_http_request_t *h)
 	return SUCCESS;
 }
 
-static STATUS php_http_curl_request_exec(php_http_request_t *h, php_http_request_method_t meth, const char *url, php_http_message_body_t *body)
+static STATUS php_http_curl_request_exec(php_http_request_t *h, const char *meth, const char *url, php_http_message_body_t *body)
 {
 	uint tries = 0;
 	CURLcode result;

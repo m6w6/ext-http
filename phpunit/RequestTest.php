@@ -102,7 +102,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
 
         $this->r->recordHistory = true;
 
-        $this->r->setMethod(http\Request\Method::POST);
+        $this->r->setMethod("POST");
         $this->r->setUrl("http://dev.iworks.at/ext-http/.print_request.php");
 
         $this->r->send();

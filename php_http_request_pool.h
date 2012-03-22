@@ -27,7 +27,7 @@ typedef void (*php_http_request_pool_reset_func_t)(php_http_request_pool_t *p);
 typedef STATUS (*php_http_request_pool_exec_func_t)(php_http_request_pool_t *p);
 typedef STATUS (*php_http_request_pool_wait_func_t)(php_http_request_pool_t *p, struct timeval *custom_timeout);
 typedef int (*php_http_request_pool_once_func_t)(php_http_request_pool_t *p);
-typedef STATUS (*php_http_request_pool_attach_func_t)(php_http_request_pool_t *p, php_http_request_t *r, php_http_request_method_t m, const char *url, php_http_message_body_t *body);
+typedef STATUS (*php_http_request_pool_attach_func_t)(php_http_request_pool_t *p, php_http_request_t *r, const char *m, const char *url, php_http_message_body_t *body);
 typedef STATUS (*php_http_request_pool_detach_func_t)(php_http_request_pool_t *p, php_http_request_t *r);
 typedef STATUS (*php_http_request_pool_setopt_func_t)(php_http_request_pool_t *p, php_http_request_pool_setopt_opt_t opt, void *arg);
 

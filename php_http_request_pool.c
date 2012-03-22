@@ -74,7 +74,7 @@ PHP_HTTP_API STATUS php_http_request_pool_attach(php_http_request_pool_t *h, zva
 
 	if (h->ops->attach) {
 		char *url = NULL;
-		php_http_request_method_t m = PHP_HTTP_NO_REQUEST_METHOD;
+		char *m = NULL;
 		php_http_message_body_t *body = NULL;
 		php_http_request_object_t *obj = zend_object_store_get_object(request TSRMLS_CC);
 

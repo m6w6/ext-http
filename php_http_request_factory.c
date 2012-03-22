@@ -113,13 +113,12 @@ PHP_METHOD(HttpRequestFactory, __construct)
 
 PHP_METHOD(HttpRequestFactory, createRequest)
 {
-	char *url_str = NULL;
-	int url_len;
-	long meth = -1;
+	char *meth_str = NULL, *url_str = NULL;
+	int meth_len, url_len;
 	zval *options = NULL;
 
 	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!la!", &url_str, &url_len, &meth, &options)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!a!", &url_str, &url_len, &meth_str, &meth_len, &options)) {
 			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				zval *zdriver, *os;
 				zend_object_value ov;
@@ -166,8 +165,8 @@ PHP_METHOD(HttpRequestFactory, createRequest)
 							if (url_str) {
 								zend_update_property_stringl(php_http_request_class_entry, return_value, ZEND_STRL("url"), url_str, url_len TSRMLS_CC);
 							}
-							if (meth > 0) {
-								zend_update_property_long(php_http_request_class_entry, return_value, ZEND_STRL("method"), meth TSRMLS_CC);
+							if (meth_str) {
+								zend_update_property_stringl(php_http_request_class_entry, return_value, ZEND_STRL("method"), meth_str, meth_len TSRMLS_CC);
 							}
 							if (options) {
 								zend_call_method_with_1_params(&return_value, Z_OBJCE_P(return_value), NULL, "setoptions", NULL, options);

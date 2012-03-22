@@ -125,7 +125,7 @@ typedef struct php_http_request php_http_request_t;
 typedef php_http_request_t *(*php_http_request_init_func_t)(php_http_request_t *h, void *arg);
 typedef php_http_request_t *(*php_http_request_copy_func_t)(php_http_request_t *from, php_http_request_t *to);
 typedef void (*php_http_request_dtor_func_t)(php_http_request_t *h);
-typedef STATUS (*php_http_request_exec_func_t)(php_http_request_t *h, php_http_request_method_t meth, const char *url, php_http_message_body_t *body);
+typedef STATUS (*php_http_request_exec_func_t)(php_http_request_t *h, const char *meth, const char *url, php_http_message_body_t *body);
 typedef STATUS (*php_http_request_reset_func_t)(php_http_request_t *h);
 typedef STATUS (*php_http_request_setopt_func_t)(php_http_request_t *h, php_http_request_setopt_opt_t opt, void *arg);
 typedef STATUS (*php_http_request_getopt_func_t)(php_http_request_t *h, php_http_request_getopt_opt_t opt, void *arg);
@@ -157,7 +157,7 @@ struct php_http_request {
 
 PHP_HTTP_API php_http_request_t *php_http_request_init(php_http_request_t *h, php_http_request_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC);
 PHP_HTTP_API php_http_request_t *php_http_request_copy(php_http_request_t *from, php_http_request_t *to);
-PHP_HTTP_API STATUS php_http_request_exec(php_http_request_t *h, php_http_request_method_t meth, const char *url, php_http_message_body_t *body);
+PHP_HTTP_API STATUS php_http_request_exec(php_http_request_t *h, const char *meth, const char *url, php_http_message_body_t *body);
 PHP_HTTP_API STATUS php_http_request_reset(php_http_request_t *h);
 PHP_HTTP_API STATUS php_http_request_setopt(php_http_request_t *h, php_http_request_setopt_opt_t opt, void *arg);
 PHP_HTTP_API STATUS php_http_request_getopt(php_http_request_t *h, php_http_request_getopt_opt_t opt, void *arg);
@@ -177,7 +177,7 @@ extern zend_object_value php_http_request_object_new_ex(zend_class_entry *ce, ph
 extern zend_object_value php_http_request_object_clone(zval *zobject TSRMLS_DC);
 extern void php_http_request_object_free(void *object TSRMLS_DC);
 
-extern STATUS php_http_request_object_requesthandler(php_http_request_object_t *obj, zval *this_ptr, php_http_request_method_t *meth, char **url, php_http_message_body_t **body TSRMLS_DC);
+extern STATUS php_http_request_object_requesthandler(php_http_request_object_t *obj, zval *this_ptr, char **meth, char **url, php_http_message_body_t **body TSRMLS_DC);
 extern STATUS php_http_request_object_responsehandler(php_http_request_object_t *obj, zval *this_ptr TSRMLS_DC);
 
 PHP_METHOD(HttpRequest, __construct);

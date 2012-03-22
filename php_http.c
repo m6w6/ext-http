@@ -146,7 +146,6 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_curl)
 #endif
 	|| SUCCESS != PHP_MINIT_CALL(http_request_datashare)
-	|| SUCCESS != PHP_MINIT_CALL(http_request_method)
 	|| SUCCESS != PHP_MINIT_CALL(http_request_pool)
 	|| SUCCESS != PHP_MINIT_CALL(http_url)
 	|| SUCCESS != PHP_MINIT_CALL(http_env)
