@@ -28,6 +28,7 @@ typedef struct php_http_curl_request {
 		HashTable cache;
 
 		struct curl_slist *headers;
+		struct curl_slist *resolve;
 		php_http_buffer_t cookies;
 
 		long redirects;
@@ -304,7 +305,7 @@ static STATUS php_http_curl_request_prepare(php_http_request_t *h, const char *m
 	curl_easy_setopt(curl->handle, CURLOPT_URL, storage->url);
 
 	/* request method */
-	switch (php_http_request_method_is(meth, 4, "GET", "HEAD", "POST", "PUT")) {
+	switch (php_http_select_str(meth, 4, "GET", "HEAD", "POST", "PUT")) {
 		case 0:
 			curl_easy_setopt(curl->handle, CURLOPT_HTTPGET, 1L);
 			break;
@@ -624,6 +625,30 @@ static STATUS set_options(php_http_request_t *h, HashTable *options)
 	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("ipresolve"), IS_LONG)) && Z_LVAL_P(zoption)) {
 		curl_easy_setopt(ch, CURLOPT_IPRESOLVE, Z_LVAL_P(zoption));
 	}
+#if PHP_HTTP_CURL_VERSION(7,21,3)
+	if (curl->options.resolve) {
+		curl_slist_free_all(curl->options.resolve);
+		curl->options.resolve = NULL;
+	}
+	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("resolve"), IS_ARRAY))) {
+		php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+		HashPosition pos;
+		zval **data;
+
+		FOREACH_KEYVAL(pos, zoption, key, data) {
+			zval *cpy = php_http_ztyp(IS_STRING, *data);
+
+			curl->options.resolve = curl_slist_append(curl->options.resolve, Z_STRVAL_P(cpy));
+
+			zval_ptr_dtor(&cpy);
+		}
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,24,0)
+	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("dns_servers"), IS_STRING)) && Z_STRLEN_P(zoption)) {
+		curl_easy_setopt(ch, CURLOPT_DNS_SERVERS, Z_STRVAL_P(zoption));
+	}
+#endif
 
 	/* limits */
 	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("low_speed_limit"), IS_LONG))) {
@@ -1215,6 +1240,17 @@ static STATUS php_http_curl_request_datashare_setopt(php_http_request_datashare_
 			}
 			break;
 
+#if PHP_HTTP_CURL_VERSION(7,23,0)
+		case PHP_HTTP_REQUEST_DATASHARE_OPT_SSLSESSIONS:
+			if (CURLSHE_OK != (rc = curl_share_setopt(curl->handle, *((zend_bool *) arg) ? CURLSHOPT_SHARE : CURLSHOPT_UNSHARE, CURL_LOCK_DATA_SSL_SESSION))) {
+				TSRMLS_FETCH_FROM_CTX(h->ts);
+
+				php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_DATASHARE, "Could not %s sharing of SSL session data: %s",  *((zend_bool *) arg) ? "enable" : "disable", curl_share_strerror(rc));
+				return FAILURE;
+			}
+			break;
+#endif
+
 		default:
 			return FAILURE;
 	}
@@ -1606,6 +1642,12 @@ static STATUS php_http_curl_request_reset(php_http_request_t *h)
 	curl_easy_setopt(ch, CURLOPT_HTTPPROXYTUNNEL, 0L);
 	curl_easy_setopt(ch, CURLOPT_DNS_CACHE_TIMEOUT, 60L);
 	curl_easy_setopt(ch, CURLOPT_IPRESOLVE, 0);
+#if PHP_HTTP_CURL_VERSION(7,21,3)
+	curl_easy_setopt(ch, CURLOPT_RESOLVE, NULL);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,24,0)
+	curl_easy_setopt(ch, CURLOPT_DNS_SERVERS, NULL);
+#endif
 	curl_easy_setopt(ch, CURLOPT_LOW_SPEED_LIMIT, 0L);
 	curl_easy_setopt(ch, CURLOPT_LOW_SPEED_TIME, 0L);
 	/* LFS weirdance

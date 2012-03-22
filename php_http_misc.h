@@ -80,9 +80,9 @@ PHP_HTTP_API void php_http_sleep(double s);
 #define PHP_HTTP_MATCH_STRICT	(PHP_HTTP_MATCH_CASE|PHP_HTTP_MATCH_FULL)
 
 extern int php_http_match(const char *haystack, const char *needle, int flags);
-
 extern char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
 extern size_t php_http_boundary(char *buf, size_t len TSRMLS_DC);
+extern int php_http_select_str(const char *cmp, int argc, ...);
 
 static inline const char *php_http_locate_str(const char *h, size_t h_len, const char *n, size_t n_len)
 {

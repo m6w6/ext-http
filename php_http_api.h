@@ -98,7 +98,6 @@ typedef int STATUS;
 #include "php_http_request.h"
 #include "php_http_request_datashare.h"
 #include "php_http_request_factory.h"
-#include "php_http_request_method.h"
 #include "php_http_request_pool.h"
 #include "php_http_serf.h"
 #include "php_http_url.h"

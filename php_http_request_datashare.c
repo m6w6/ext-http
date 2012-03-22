@@ -212,6 +212,8 @@ static void php_http_request_datashare_object_write_prop(zval *object, zval *mem
 			opt = PHP_HTTP_REQUEST_DATASHARE_OPT_COOKIES;
 		} else if (!strcmp(pi->name, "dns")) {
 			opt = PHP_HTTP_REQUEST_DATASHARE_OPT_RESOLVER;
+		} else if (!strcmp(pi->name, "ssl")) {
+			opt = PHP_HTTP_REQUEST_DATASHARE_OPT_SSLSESSIONS;
 		} else {
 			return;
 		}
@@ -314,6 +316,7 @@ PHP_MINIT_FUNCTION(http_request_datashare)
 
 	zend_declare_property_bool(php_http_request_datashare_class_entry, ZEND_STRL("cookie"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
 	zend_declare_property_bool(php_http_request_datashare_class_entry, ZEND_STRL("dns"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_bool(php_http_request_datashare_class_entry, ZEND_STRL("ssl"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
 
 	return SUCCESS;
 }

@@ -41,7 +41,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
 - Renamed http\Env\Request::getPost() to ::getForm()
 - Changed http\Env\Response::setContentDisposition() to take an http\Params like array as argument
 - Removed http\Env\Response::CONTENT_DISPOSOTION_* constants
-- Removed http\Env\Request\Method class; request methods are now used as simple strings
+- Removed http\Request\Method class; request methods are now used as simple strings
 ]]></notes>
  <contents>
   <dir name="/">
@@ -107,8 +107,6 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="src" name="php_http_request_factory.c"/>
    <file role="src" name="php_http_request_factory.h"/>
    <file role="src" name="php_http_request.h"/>
-   <file role="src" name="php_http_request_method.c"/>
-   <file role="src" name="php_http_request_method.h"/>
    <file role="src" name="php_http_request_pool.c"/>
    <file role="src" name="php_http_request_pool.h"/>
    <file role="src" name="php_http_resource_factory.c"/>

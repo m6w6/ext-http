@@ -421,7 +421,6 @@ dnl ----
 		php_http_curl.c \
 		php_http_request_pool.c \
 		php_http_request_datashare.c \
-		php_http_request_method.c \
 		php_http_strlist.c \
 		php_http_url.c \
 		php_http_version.c \
@@ -464,7 +463,6 @@ dnl ----
 		php_http_request.h \
 		php_http_request_factory.h \
 		php_http_curl.h \
-		php_http_request_method.h \
 		php_http_request_pool.h \
 		php_http_strlist.h \
 		php_http_url.h \

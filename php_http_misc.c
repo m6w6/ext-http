@@ -116,6 +116,30 @@ size_t php_http_boundary(char *buf, size_t buf_len TSRMLS_DC)
 	return snprintf(buf, buf_len, "%15.15F", PHP_HTTP_G->env.request.time * php_combined_lcg(TSRMLS_C));
 }
 
+int php_http_select_str(const char *cmp, int argc, ...)
+{
+	va_list argv;
+	int match = -1;
+
+	if (cmp && argc > 0) {
+		int i;
+
+		va_start(argv, argc);
+		for (i = 0; i < argc; ++i) {
+			const char *test = va_arg(argv, const char *);
+
+			if (!strcasecmp(cmp, test)) {
+				match = i;
+				break;
+			}
+		}
+		va_end(argv);
+	}
+
+	return match;
+}
+
+
 /* ARRAYS */
 
 int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)

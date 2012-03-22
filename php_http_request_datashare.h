@@ -16,6 +16,7 @@
 typedef enum php_http_request_datashare_setopt_opt {
 	PHP_HTTP_REQUEST_DATASHARE_OPT_COOKIES,
 	PHP_HTTP_REQUEST_DATASHARE_OPT_RESOLVER,
+	PHP_HTTP_REQUEST_DATASHARE_OPT_SSLSESSIONS,
 } php_http_request_datashare_setopt_opt_t;
 
 typedef struct php_http_request_datashare php_http_request_datashare_t;
