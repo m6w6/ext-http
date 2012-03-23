@@ -1085,7 +1085,6 @@ static STATUS get_info(CURL *ch, HashTable *info)
 		add_assoc_zval_ex(&array, "ssl_engines", sizeof("ssl_engines"), subarray);
 		curl_slist_free_all(s);
 	}
-#if PHP_HTTP_CURL_VERSION(7,14,1)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_COOKIELIST, &s)) {
 		MAKE_STD_ZVAL(subarray);
 		array_init(subarray);
@@ -1097,12 +1096,9 @@ static STATUS get_info(CURL *ch, HashTable *info)
 		add_assoc_zval_ex(&array, "cookies", sizeof("cookies"), subarray);
 		curl_slist_free_all(s);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,18,2)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_REDIRECT_URL, &c)) {
 		add_assoc_string_ex(&array, "redirect_url", sizeof("redirect_url"), c ? c : "", 1);
 	}
-#endif
 #if PHP_HTTP_CURL_VERSION(7,19,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PRIMARY_IP, &c)) {
 		add_assoc_string_ex(&array, "primary_ip", sizeof("primary_ip"), c ? c : "", 1);
@@ -1118,7 +1114,24 @@ static STATUS get_info(CURL *ch, HashTable *info)
 		add_assoc_long_ex(&array, "condition_unmet", sizeof("condition_unmet"), l);
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,21,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PRIMARY_PORT, &l)) {
+		add_assoc_long_ex(&array, "primary_port", sizeof("primary_port"), l);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,21,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_LOCAL_IP, &c)) {
+		add_assoc_string_ex(&array, "local_ip", sizeof("local_ip"), c ? c : "", 1);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,21,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_LOCAL_PORT, &l)) {
+		add_assoc_long_ex(&array, "local_port", sizeof("local_port"), l);
+	}
+#endif
+
 	/* END::CURLINFO */
+
 #if PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)
 	{
 		int i;
