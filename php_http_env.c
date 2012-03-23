@@ -11,10 +11,71 @@
 */
 
 #include "php_http_api.h"
+#include "php_variables.h"
 
 PHP_RINIT_FUNCTION(http_env)
 {
 	PHP_HTTP_G->env.request.time = sapi_get_request_time(TSRMLS_C);
+
+	/* populate form data on non-POST requests */
+	if (SG(request_info).request_method && strcasecmp(SG(request_info).request_method, "POST") && SG(request_info).content_type && *SG(request_info).content_type) {
+		uint ct_len = strlen(SG(request_info).content_type);
+		char *ct_str = estrndup(SG(request_info).content_type, ct_len);
+		php_http_params_opts_t opts;
+		HashTable params;
+
+		php_http_params_opts_default_get(&opts);
+		opts.input.str = ct_str;
+		opts.input.len = ct_len;
+
+		SG(request_info).content_type_dup = ct_str;
+
+		ZEND_INIT_SYMTABLE(&params);
+		if (php_http_params_parse(&params, &opts TSRMLS_CC)) {
+			zval **zct;
+			char *key_str;
+			uint key_len;
+			ulong key_num;
+
+			if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(&params, &key_str, &key_len, &key_num, 0, NULL)) {
+				sapi_post_entry *post_entry = NULL;
+
+				if (SUCCESS == zend_hash_find(&SG(known_post_content_types), key_str, key_len, (void *) &post_entry)) {
+					zval *files = PG(http_globals)[TRACK_VARS_FILES];
+
+					zend_is_auto_global(ZEND_STRL("_POST") TSRMLS_CC);
+
+					if (post_entry) {
+						SG(request_info).post_entry = post_entry;
+
+						if (post_entry->post_reader) {
+							post_entry->post_reader(TSRMLS_C);
+						}
+					}
+
+					if (sapi_module.default_post_reader) {
+						sapi_module.default_post_reader(TSRMLS_C);
+					}
+
+					sapi_handle_post(PG(http_globals)[TRACK_VARS_POST] TSRMLS_CC);
+
+					/*
+					 * the rfc1867 handler is an awkward buddy
+					 */
+					if (files != PG(http_globals)[TRACK_VARS_FILES] && PG(http_globals)[TRACK_VARS_FILES]) {
+						Z_ADDREF_P(PG(http_globals)[TRACK_VARS_FILES]);
+						zend_hash_update(&EG(symbol_table), "_FILES", sizeof("_FILES"), &PG(http_globals)[TRACK_VARS_FILES], sizeof(zval *), NULL);
+						if (files) {
+							zval_ptr_dtor(&files);
+						}
+					}
+				}
+			}
+			zend_hash_destroy(&params);
+		}
+	}
+
+	STR_SET(SG(request_info).content_type_dup, NULL);
 
 	return SUCCESS;
 }

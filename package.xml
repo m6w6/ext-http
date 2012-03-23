@@ -27,9 +27,9 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-03-16</date>
+ <date>2012-03-23</date>
  <version>
-  <release>2.0.0dev</release>
+  <release>2.0.0dev9</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -38,6 +38,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
++ Added population of $_POST and $_FILES for non-POST requests
 - Renamed http\Env\Request::getPost() to ::getForm()
 - Changed http\Env\Response::setContentDisposition() to take an http\Params like array as argument
 - Removed http\Env\Response::CONTENT_DISPOSOTION_* constants
