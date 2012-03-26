@@ -38,11 +38,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added population of $_POST and $_FILES for non-POST requests
-- Renamed http\Env\Request::getPost() to ::getForm()
-- Changed http\Env\Response::setContentDisposition() to take an http\Params like array as argument
-- Removed http\Env\Response::CONTENT_DISPOSOTION_* constants
-- Removed http\Request\Method class; request methods are now used as simple strings
++ 
 ]]></notes>
  <contents>
   <dir name="/">
@@ -131,6 +127,8 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
      <file role="test" name="urls.txt"/>
     </dir>
     <file role="test" name="envrequestbody001.phpt"/>
+    <file role="test" name="envrequestbody002.phpt"/>
+    <file role="test" name="envrequestbody003.phpt"/>
     <file role="test" name="envrequestheader001.phpt"/>
     <file role="test" name="envresponseheader001.phpt"/>
     <file role="test" name="envresponseranges001.phpt"/>
