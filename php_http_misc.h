@@ -418,6 +418,17 @@ typedef struct php_http_pass_callback_arg {
 
 PHP_HTTP_API size_t php_http_pass_wrapper(php_http_pass_callback_arg_t *cb_arg, const char *str, size_t len);
 
+typedef struct php_http_pass_fcall_arg {
+	zval *fcz;
+	zend_fcall_info fci;
+	zend_fcall_info_cache fcc;
+#ifdef ZTS
+	void ***ts;
+#endif
+} php_http_pass_fcall_arg_t;
+
+PHP_HTTP_API size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len);
+
 /* ERROR */
 
 extern void php_http_error(long type TSRMLS_DC, long code, const char *format, ...);

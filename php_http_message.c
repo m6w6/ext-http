@@ -606,6 +606,12 @@ PHP_HTTP_EMPTY_ARGS(__toString);
 PHP_HTTP_BEGIN_ARGS(toString, 0)
 	PHP_HTTP_ARG_VAL(include_parent, 0)
 PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(toCallback, 1)
+	PHP_HTTP_ARG_VAL(callback, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(toStream, 1)
+	HTTP_ARG_VAL(stream, 0)
+PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(count);
 
@@ -663,6 +669,8 @@ zend_function_entry php_http_message_method_entry[] = {
 	PHP_HTTP_MESSAGE_ME(setHttpVersion, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_ME(getParentMessage, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_ME(toString, ZEND_ACC_PUBLIC)
+	PHP_HTTP_MESSAGE_ME(toCallback, ZEND_ACC_PUBLIC)
+	PHP_HTTP_MESSAGE_ME(toStream, ZEND_ACC_PUBLIC)
 
 	/* implements Countable */
 	PHP_HTTP_MESSAGE_ME(count, ZEND_ACC_PUBLIC)
@@ -1690,6 +1698,46 @@ PHP_METHOD(HttpMessage, toString)
 		}
 	}
 	RETURN_EMPTY_STRING();
+}
+
+PHP_METHOD(HttpMessage, toStream)
+{
+	zval *zstream;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zstream)) {
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		php_stream *s;
+
+		php_stream_from_zval(s, &zstream);
+
+		if (!obj->message) {
+			obj->message = php_http_message_init(NULL, 0 TSRMLS_CC);
+		}
+
+		php_http_message_to_callback(obj->message, (php_http_pass_callback_t) _php_stream_write, s);
+	}
+}
+
+PHP_METHOD(HttpMessage, toCallback)
+{
+	zend_bool include_parent = 0;
+	php_http_pass_fcall_arg_t fcd;
+	long offset = 0, forlen = 0;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f", &fcd.fci, &fcd.fcc)) {
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		fcd.fcz = getThis();
+		Z_ADDREF_P(fcd.fcz);
+		TSRMLS_SET_CTX(fcd.ts);
+
+		php_http_message_to_callback(obj->message, php_http_pass_fcall_callback, &fcd);
+		zend_fcall_info_args_clear(&fcd.fci, 1);
+
+		zval_ptr_dtor(&fcd.fcz);
+		RETURN_TRUE;
+	}
+	RETURN_FALSE;
 }
 
 PHP_METHOD(HttpMessage, serialize)

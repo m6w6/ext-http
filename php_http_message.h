@@ -118,7 +118,8 @@ PHP_METHOD(HttpMessage, guessContentType);
 PHP_METHOD(HttpMessage, getParentMessage);
 PHP_METHOD(HttpMessage, send);
 PHP_METHOD(HttpMessage, toString);
-PHP_METHOD(HttpMessage, toMessageTypeObject);
+PHP_METHOD(HttpMessage, toStream);
+PHP_METHOD(HttpMessage, toCallback);
 
 PHP_METHOD(HttpMessage, count);
 PHP_METHOD(HttpMessage, serialize);
