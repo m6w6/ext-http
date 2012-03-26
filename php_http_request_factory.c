@@ -123,13 +123,13 @@ PHP_METHOD(HttpRequestFactory, createRequest)
 				zval *zdriver, *os;
 				zend_object_value ov;
 				zend_class_entry *class_entry = NULL;
-				php_http_request_t *req = NULL;
+				php_http_client_t *req = NULL;
 				php_http_request_factory_driver_t driver;
 
 				class_entry = php_http_request_factory_get_class_entry(getThis(), ZEND_STRL("requestClass") TSRMLS_CC);
 
 				if (!class_entry) {
-					class_entry = php_http_request_class_entry;
+					class_entry = php_http_client_class_entry;
 				}
 
 				zdriver = zend_read_property(php_http_request_factory_class_entry, getThis(), ZEND_STRL("driver"), 0 TSRMLS_CC);
@@ -152,27 +152,27 @@ PHP_METHOD(HttpRequestFactory, createRequest)
 						efree(name_str);
 					}
 
-					req = php_http_request_init(NULL, driver.request_ops, rf, NULL TSRMLS_CC);
+					req = php_http_client_init(NULL, driver.request_ops, rf, NULL TSRMLS_CC);
 					if (req) {
-						if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_request_object_new_ex, php_http_request_class_entry, req, NULL TSRMLS_CC)) {
+						if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_client_object_new_ex, php_http_client_class_entry, req, NULL TSRMLS_CC)) {
 							ZVAL_OBJVAL(return_value, ov, 0);
 
 							MAKE_STD_ZVAL(os);
 							object_init_ex(os, spl_ce_SplObjectStorage);
-							zend_update_property(php_http_request_class_entry, return_value, ZEND_STRL("observers"), os TSRMLS_CC);
+							zend_update_property(php_http_client_class_entry, return_value, ZEND_STRL("observers"), os TSRMLS_CC);
 							zval_ptr_dtor(&os);
 
 							if (url_str) {
-								zend_update_property_stringl(php_http_request_class_entry, return_value, ZEND_STRL("url"), url_str, url_len TSRMLS_CC);
+								zend_update_property_stringl(php_http_client_class_entry, return_value, ZEND_STRL("url"), url_str, url_len TSRMLS_CC);
 							}
 							if (meth_str) {
-								zend_update_property_stringl(php_http_request_class_entry, return_value, ZEND_STRL("method"), meth_str, meth_len TSRMLS_CC);
+								zend_update_property_stringl(php_http_client_class_entry, return_value, ZEND_STRL("method"), meth_str, meth_len TSRMLS_CC);
 							}
 							if (options) {
 								zend_call_method_with_1_params(&return_value, Z_OBJCE_P(return_value), NULL, "setoptions", NULL, options);
 							}
 						} else {
-							php_http_request_free(&req);
+							php_http_client_free(&req);
 						}
 					}
 
@@ -228,7 +228,7 @@ PHP_METHOD(HttpRequestFactory, createPool)
 						if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_request_pool_object_new_ex, php_http_request_pool_class_entry, pool, NULL TSRMLS_CC)) {
 							ZVAL_OBJVAL(return_value, ov, 0);
 							for (i = 0; i < argc; ++i) {
-								if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_request_class_entry TSRMLS_CC)) {
+								if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_client_class_entry TSRMLS_CC)) {
 									php_http_request_pool_attach(pool, *(argv[i]));
 								}
 							}
@@ -258,7 +258,7 @@ PHP_METHOD(HttpRequestFactory, createDataShare)
 				zval *zdriver;
 				zend_object_value ov;
 				zend_class_entry *class_entry;
-				php_http_request_datashare_t *share = NULL;
+				php_http_client_datashare_t *share = NULL;
 				php_http_request_factory_driver_t driver;
 
 				if (!(class_entry = php_http_request_factory_get_class_entry(getThis(), ZEND_STRL("requestDataShareClass") TSRMLS_CC))) {
@@ -284,12 +284,12 @@ PHP_METHOD(HttpRequestFactory, createDataShare)
 						efree(name_str);
 					}
 
-					share = php_http_request_datashare_init(NULL, driver.request_datashare_ops, rf, NULL TSRMLS_CC);
+					share = php_http_client_datashare_init(NULL, driver.request_datashare_ops, rf, NULL TSRMLS_CC);
 					if (share) {
 						if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_request_datashare_object_new_ex, php_http_request_datashare_class_entry, share, NULL TSRMLS_CC)) {
 							ZVAL_OBJVAL(return_value, ov, 0);
 							for (i = 0; i < argc; ++i) {
-								if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_request_class_entry TSRMLS_CC)) {
+								if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_client_class_entry TSRMLS_CC)) {
 									php_http_request_datashare_attach(share, *(argv[i]));
 								}
 							}

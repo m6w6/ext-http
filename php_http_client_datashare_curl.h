@@ -10,20 +10,21 @@
     +--------------------------------------------------------------------+
 */
 
-#ifndef PHP_HTTP_CURL_H
-#define PHP_HTTP_CURL_H
+#ifndef PHP_HTTP_CLIENT_DATASHARE_CURL_H
+#define PHP_HTTP_CLIENT_DATASHARE_CURL_H
 
 #if PHP_HTTP_HAVE_CURL
 
-#include <curl/curl.h>
-#define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
+PHP_HTTP_API php_http_client_datashare_ops_t *php_http_client_datashare_curl_get_ops(void);
 
-extern PHP_MINIT_FUNCTION(http_curl);
-extern PHP_MSHUTDOWN_FUNCTION(http_curl);
+extern zend_object_value php_http_client_datashare_curl_object_new(zend_class_entry *ce TSRMLS_DC);
+extern zend_object_value php_http_client_datashare_curl_object_new_ex(zend_class_entry *ce, php_http_client_datashare_t *share, php_http_client_datashare_object_t **ptr TSRMLS_DC);
+
+PHP_MINIT_FUNCTION(http_client_datashare_curl);
 
 #endif /* PHP_HTTP_HAVE_CURL */
 
-#endif /* PHP_HTTP_CURL_H */
+#endif /* PHP_HTTP_CLIENT_DATASHARE_CURL_H */
 
 /*
  * Local variables:

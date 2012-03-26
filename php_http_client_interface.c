@@ -10,20 +10,30 @@
     +--------------------------------------------------------------------+
 */
 
-#ifndef PHP_HTTP_CURL_H
-#define PHP_HTTP_CURL_H
+#include "php_http_api.h"
+#include "php_http_client.h"
 
-#if PHP_HTTP_HAVE_CURL
+#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpClient, method, 0, req_args)
+#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpClient, method, 0)
+#define PHP_HTTP_CLIENT_ME(method, visibility)	PHP_ME(HttpClient, method, PHP_HTTP_ARGS(HttpClient, method), visibility)
 
-#include <curl/curl.h>
-#define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
+PHP_HTTP_BEGIN_ARGS(send, 1)
+	PHP_HTTP_ARG_VAL(request, 0)
+PHP_HTTP_END_ARGS;
 
-extern PHP_MINIT_FUNCTION(http_curl);
-extern PHP_MSHUTDOWN_FUNCTION(http_curl);
+zend_class_entry *php_http_client_interface_class_entry;
 
-#endif /* PHP_HTTP_HAVE_CURL */
+zend_function_entry php_http_client_interface_method_entry[] = {
+	PHP_HTTP_CLIENT_ME(send, ZEND_ACC_PUBLIC|ZEND_ACC_ABSTRACT)
+	{NULL, NULL, NULL}
+};
 
-#endif /* PHP_HTTP_CURL_H */
+PHP_MINIT_FUNCTION(http_client_interface)
+{
+	PHP_HTTP_REGISTER_INTERFACE(http, Client, http_client_interface, ZEND_ACC_INTERFACE);
+
+	return SUCCESS;
+}
 
 /*
  * Local variables:

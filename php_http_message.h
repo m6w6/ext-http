@@ -94,6 +94,7 @@ extern void php_http_message_object_free(void *object TSRMLS_DC);
 PHP_METHOD(HttpMessage, __construct);
 PHP_METHOD(HttpMessage, getBody);
 PHP_METHOD(HttpMessage, setBody);
+PHP_METHOD(HttpMessage, addBody);
 PHP_METHOD(HttpMessage, getHeader);
 PHP_METHOD(HttpMessage, setHeader);
 PHP_METHOD(HttpMessage, addHeader);
@@ -118,7 +119,8 @@ PHP_METHOD(HttpMessage, guessContentType);
 PHP_METHOD(HttpMessage, getParentMessage);
 PHP_METHOD(HttpMessage, send);
 PHP_METHOD(HttpMessage, toString);
-PHP_METHOD(HttpMessage, toMessageTypeObject);
+PHP_METHOD(HttpMessage, toStream);
+PHP_METHOD(HttpMessage, toCallback);
 
 PHP_METHOD(HttpMessage, count);
 PHP_METHOD(HttpMessage, serialize);

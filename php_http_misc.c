@@ -212,6 +212,22 @@ PHP_HTTP_API size_t php_http_pass_wrapper(php_http_pass_callback_arg_t *cb, cons
 	return cb->cb_zts(cb->cb_arg, str, len TSRMLS_CC);
 }
 
+PHP_HTTP_API size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len)
+{
+	php_http_pass_fcall_arg_t *fcd = cb_arg;
+	zval *zdata;
+	TSRMLS_FETCH_FROM_CTX(fcd->ts);
+
+	MAKE_STD_ZVAL(zdata);
+	ZVAL_STRINGL(zdata, str, len, 1);
+	if (SUCCESS == zend_fcall_info_argn(&fcd->fci TSRMLS_CC, 2, &fcd->fcz, &zdata)) {
+		zend_fcall_info_call(&fcd->fci, &fcd->fcc, NULL, NULL TSRMLS_CC);
+		zend_fcall_info_args_clear(&fcd->fci, 0);
+	}
+	zval_ptr_dtor(&zdata);
+	return len;
+}
+
 /* ERROR */
 
 static inline int scope_error_handling(long type TSRMLS_DC)

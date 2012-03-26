@@ -416,11 +416,16 @@ dnl ----
 		php_http_persistent_handle.c \
 		php_http_property_proxy.c \
 		php_http_querystring.c \
-		php_http_request.c \
-		php_http_request_factory.c \
 		php_http_curl.c \
-		php_http_request_pool.c \
-		php_http_request_datashare.c \
+		php_http_client_interface.c \
+		php_http_client.c \
+		php_http_client_pool.c \
+		php_http_client_datashare.c \
+		php_http_client_curl.c \
+		php_http_client_pool_curl.c \
+		php_http_client_datashare_curl.c \
+		php_http_client_request.c \
+		php_http_client_response.c \
 		php_http_strlist.c \
 		php_http_url.c \
 		php_http_version.c \

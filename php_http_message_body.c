@@ -694,34 +694,10 @@ PHP_METHOD(HttpMessageBody, toStream)
 	RETURN_FALSE;
 }
 
-struct fcd {
-	zval *fcz;
-	zend_fcall_info fci;
-	zend_fcall_info_cache fcc;
-#ifdef ZTS
-	void ***ts;
-#endif
-};
-
-static size_t pass(void *cb_arg, const char *str, size_t len)
-{
-	struct fcd *fcd = cb_arg;
-	zval *zdata;
-	TSRMLS_FETCH_FROM_CTX(fcd->ts);
-
-	MAKE_STD_ZVAL(zdata);
-	ZVAL_STRINGL(zdata, str, len, 1);
-	if (SUCCESS == zend_fcall_info_argn(&fcd->fci TSRMLS_CC, 2, &fcd->fcz, &zdata)) {
-		zend_fcall_info_call(&fcd->fci, &fcd->fcc, NULL, NULL TSRMLS_CC);
-		zend_fcall_info_args_clear(&fcd->fci, 0);
-	}
-	zval_ptr_dtor(&zdata);
-	return len;
-}
 
 PHP_METHOD(HttpMessageBody, toCallback)
 {
-	struct fcd fcd;
+	php_http_pass_fcall_arg_t fcd;
 	long offset = 0, forlen = 0;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f|ll", &fcd.fci, &fcd.fcc, &offset, &forlen)) {
@@ -731,7 +707,7 @@ PHP_METHOD(HttpMessageBody, toCallback)
 		Z_ADDREF_P(fcd.fcz);
 		TSRMLS_SET_CTX(fcd.ts);
 
-		php_http_message_body_to_callback(obj->body, pass, &fcd, offset, forlen);
+		php_http_message_body_to_callback(obj->body, php_http_pass_fcall_callback, &fcd, offset, forlen);
 		zend_fcall_info_args_clear(&fcd.fci, 1);
 
 		zval_ptr_dtor(&fcd.fcz);

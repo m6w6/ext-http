@@ -418,6 +418,17 @@ typedef struct php_http_pass_callback_arg {
 
 PHP_HTTP_API size_t php_http_pass_wrapper(php_http_pass_callback_arg_t *cb_arg, const char *str, size_t len);
 
+typedef struct php_http_pass_fcall_arg {
+	zval *fcz;
+	zend_fcall_info fci;
+	zend_fcall_info_cache fcc;
+#ifdef ZTS
+	void ***ts;
+#endif
+} php_http_pass_fcall_arg_t;
+
+PHP_HTTP_API size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len);
+
 /* ERROR */
 
 extern void php_http_error(long type TSRMLS_DC, long code, const char *format, ...);
@@ -450,9 +461,9 @@ typedef enum php_http_error {
 	PHP_HTTP_E_MESSAGE_TYPE,
 	PHP_HTTP_E_MESSAGE_BODY,
 	PHP_HTTP_E_ENCODING,
-	PHP_HTTP_E_REQUEST,
-	PHP_HTTP_E_REQUEST_POOL,
-	PHP_HTTP_E_REQUEST_DATASHARE,
+	PHP_HTTP_E_CLIENT,
+	PHP_HTTP_E_CLIENT_POOL,
+	PHP_HTTP_E_CLIENT_DATASHARE,
 	PHP_HTTP_E_REQUEST_FACTORY,
 	PHP_HTTP_E_SOCKET,
 	PHP_HTTP_E_RESPONSE,

@@ -49,11 +49,9 @@ PHP_MINIT_FUNCTION(http_exception)
 	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MESSAGE_TYPE"), PHP_HTTP_E_MESSAGE_TYPE TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MESSAGE_BODY"), PHP_HTTP_E_MESSAGE_BODY TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_ENCODING"), PHP_HTTP_E_ENCODING TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST"), PHP_HTTP_E_REQUEST TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST_POOL"), PHP_HTTP_E_REQUEST_POOL TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST_DATASHARE"), PHP_HTTP_E_REQUEST_DATASHARE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST_FACTORY"), PHP_HTTP_E_REQUEST_FACTORY TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_REQUEST_METHOD"), PHP_HTTP_E_REQUEST_METHOD TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_CLIENT"), PHP_HTTP_E_CLIENT TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_CLIENT_POOL"), PHP_HTTP_E_CLIENT_POOL TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_CLIENT_DATASHARE"), PHP_HTTP_E_CLIENT_DATASHARE TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_SOCKET"), PHP_HTTP_E_SOCKET TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_RESPONSE"), PHP_HTTP_E_RESPONSE TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_URL"), PHP_HTTP_E_URL TSRMLS_CC);

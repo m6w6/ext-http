@@ -18,7 +18,7 @@
 #include "php_http_request_datashare.h"
 
 typedef struct php_http_request_factory_driver {
-	php_http_request_ops_t *request_ops;
+	php_http_client_ops_t *request_ops;
 	php_http_request_pool_ops_t *request_pool_ops;
 	php_http_request_datashare_ops_t *request_datashare_ops;
 } php_http_request_factory_driver_t;
