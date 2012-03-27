@@ -104,6 +104,7 @@ typedef int STATUS;
 #include "php_http_client_pool_curl.h"
 #include "php_http_client_datashare.h"
 #include "php_http_client_datashare_curl.h"
+#include "php_http_client_factory.h"
 #include "php_http_url.h"
 #include "php_http_version.h"
 

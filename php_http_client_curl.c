@@ -1243,6 +1243,11 @@ static php_http_resource_factory_ops_t php_http_client_curl_resource_factory_ops
 	php_http_curl_dtor
 };
 
+static zend_class_entry *get_class_entry(void)
+{
+	return php_http_client_curl_class_entry;
+}
+
 static php_http_client_ops_t php_http_client_curl_ops = {
 	&php_http_client_curl_resource_factory_ops,
 	php_http_client_curl_init,
@@ -1251,7 +1256,9 @@ static php_http_client_ops_t php_http_client_curl_ops = {
 	php_http_client_curl_reset,
 	php_http_client_curl_exec,
 	php_http_client_curl_setopt,
-	php_http_client_curl_getopt
+	php_http_client_curl_getopt,
+	(php_http_new_t) php_http_client_curl_object_new_ex,
+	get_class_entry
 };
 
 PHP_HTTP_API php_http_client_ops_t *php_http_client_curl_get_ops(void)

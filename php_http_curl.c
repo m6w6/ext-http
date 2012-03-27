@@ -90,6 +90,12 @@ static struct gcry_thread_cbs php_http_gnutls_tsl = {
 
 PHP_MINIT_FUNCTION(http_curl)
 {
+	php_http_client_factory_driver_t driver = {
+		php_http_client_curl_get_ops(),
+		php_http_client_pool_curl_get_ops(),
+		php_http_client_datashare_curl_get_ops()
+	};
+
 #ifdef PHP_HTTP_NEED_OPENSSL_TSL
 	/* mod_ssl, libpq or ext/curl might already have set thread lock callbacks */
 	if (!CRYPTO_get_id_callback()) {
@@ -110,6 +116,10 @@ PHP_MINIT_FUNCTION(http_curl)
 #endif
 
 	if (CURLE_OK != curl_global_init(CURL_GLOBAL_ALL)) {
+		return FAILURE;
+	}
+
+	if (SUCCESS != php_http_client_factory_add_driver(ZEND_STRL("curl"), &driver)) {
 		return FAILURE;
 	}
 

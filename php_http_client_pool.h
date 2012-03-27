@@ -41,6 +41,8 @@ typedef struct php_http_client_pool_ops {
 	php_http_client_pool_attach_func_t attach;
 	php_http_client_pool_detach_func_t detach;
 	php_http_client_pool_setopt_func_t setopt;
+	php_http_new_t create_object;
+	zend_class_entry *(*class_entry)(void);
 } php_http_client_pool_ops_t;
 
 typedef struct php_http_client_pool {

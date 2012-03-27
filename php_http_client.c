@@ -750,6 +750,13 @@ static inline void php_http_client_object_get_options_subr(INTERNAL_FUNCTION_PAR
 PHP_METHOD(HttpClient, __construct)
 {
 	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+		zval *os;
+
+		MAKE_STD_ZVAL(os);
+		object_init_ex(os, spl_ce_SplObjectStorage);
+		zend_update_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), os TSRMLS_CC);
+		zval_ptr_dtor(&os);
+
 		php_http_client_object_set_options(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 	} end_error_handling();
 }

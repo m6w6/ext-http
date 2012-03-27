@@ -146,6 +146,7 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_client_response)
 	|| SUCCESS != PHP_MINIT_CALL(http_client_datashare)
 	|| SUCCESS != PHP_MINIT_CALL(http_client_pool)
+	|| SUCCESS != PHP_MINIT_CALL(http_client_factory)
 #if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_MINIT_CALL(http_curl)
 #endif
@@ -176,6 +177,7 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
 #endif
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)
+	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_client_factory)
 	) {
 		return FAILURE;
 	}

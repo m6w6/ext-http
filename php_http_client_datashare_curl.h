@@ -17,6 +17,9 @@
 
 PHP_HTTP_API php_http_client_datashare_ops_t *php_http_client_datashare_curl_get_ops(void);
 
+extern zend_class_entry *php_http_client_datashare_curl_class_entry;
+extern zend_function_entry php_http_client_datashare_curl_method_entry[];
+
 extern zend_object_value php_http_client_datashare_curl_object_new(zend_class_entry *ce TSRMLS_DC);
 extern zend_object_value php_http_client_datashare_curl_object_new_ex(zend_class_entry *ce, php_http_client_datashare_t *share, php_http_client_datashare_object_t **ptr TSRMLS_DC);
 

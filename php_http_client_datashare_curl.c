@@ -136,15 +136,22 @@ static php_http_resource_factory_ops_t php_http_curlsh_resource_factory_ops = {
 	php_http_curlsh_dtor
 };
 
+static zend_class_entry *get_class_entry(void)
+{
+	return php_http_client_datashare_curl_class_entry;
+}
+
 static php_http_client_datashare_ops_t php_http_client_datashare_curl_ops = {
-		&php_http_curlsh_resource_factory_ops,
-		php_http_client_datashare_curl_init,
-		NULL /* copy */,
-		php_http_client_datashare_curl_dtor,
-		NULL /*reset */,
-		php_http_client_datashare_curl_attach,
-		php_http_client_datashare_curl_detach,
-		php_http_client_datashare_curl_setopt,
+	&php_http_curlsh_resource_factory_ops,
+	php_http_client_datashare_curl_init,
+	NULL /* copy */,
+	php_http_client_datashare_curl_dtor,
+	NULL /*reset */,
+	php_http_client_datashare_curl_attach,
+	php_http_client_datashare_curl_detach,
+	php_http_client_datashare_curl_setopt,
+	(php_http_new_t) php_http_client_datashare_curl_object_new_ex,
+	get_class_entry
 };
 
 PHP_HTTP_API php_http_client_datashare_ops_t *php_http_client_datashare_curl_get_ops(void)

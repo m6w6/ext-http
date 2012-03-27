@@ -36,6 +36,8 @@ typedef struct php_http_client_datashare_ops {
 	php_http_client_datashare_attach_func_t attach;
 	php_http_client_datashare_detach_func_t detach;
 	php_http_client_datashare_setopt_func_t setopt;
+	php_http_new_t create_object;
+	zend_class_entry *(*class_entry)(void);
 } php_http_client_datashare_ops_t;
 
 typedef struct php_http_client_datashare {

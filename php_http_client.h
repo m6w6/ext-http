@@ -136,6 +136,8 @@ typedef struct php_http_client_ops {
 	php_http_client_exec_func_t exec;
 	php_http_client_setopt_func_t setopt;
 	php_http_client_getopt_func_t getopt;
+	php_http_new_t create_object;
+	zend_class_entry *(*class_entry)(void);
 } php_http_client_ops_t;
 
 typedef struct php_http_client {
