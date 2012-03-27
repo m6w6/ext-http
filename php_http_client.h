@@ -108,7 +108,7 @@ static inline void php_http_client_progress_notify(php_http_client_progress_t *p
 typedef enum php_http_client_setopt_opt {
 	PHP_HTTP_CLIENT_OPT_SETTINGS,						/* HashTable* */
 	PHP_HTTP_CLIENT_OPT_PROGRESS_CALLBACK,				/* php_http_client_progress_callback_t* */
-	PHP_HTTP_CLIENT_OPT_COOKIES_ENABLE,				/* - */
+	PHP_HTTP_CLIENT_OPT_COOKIES_ENABLE,					/* - */
 	PHP_HTTP_CLIENT_OPT_COOKIES_RESET,					/* - */
 	PHP_HTTP_CLIENT_OPT_COOKIES_RESET_SESSION,			/* - */
 	PHP_HTTP_CLIENT_OPT_COOKIES_FLUSH,					/* - */
