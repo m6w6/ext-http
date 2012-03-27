@@ -1022,10 +1022,8 @@ static STATUS php_http_client_curl_reset(php_http_client_t *h)
 	return SUCCESS;
 }
 
-static STATUS php_http_client_curl_exec(php_http_client_t *h, php_http_message_t *msg)
+STATUS php_http_client_curl_prepare(php_http_client_t *h, php_http_message_t *msg)
 {
-	uint tries = 0;
-	CURLcode result;
 	php_http_client_curl_t *curl = h->ctx;
 	php_http_client_curl_storage_t *storage = get_storage(curl->handle);
 	TSRMLS_FETCH_FROM_CTX(h->ts);
@@ -1033,6 +1031,7 @@ static STATUS php_http_client_curl_exec(php_http_client_t *h, php_http_message_t
 	/* request url */
 	if (!PHP_HTTP_INFO(msg).request.url) {
 		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Cannot request empty URL");
+		return FAILURE;
 	}
 	storage->errorbuffer[0] = '\0';
 	if (storage->url) {
@@ -1108,6 +1107,21 @@ static STATUS php_http_client_curl_exec(php_http_client_t *h, php_http_message_t
 		curl_easy_setopt(curl->handle, CURLOPT_READDATA, &msg->body);
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, body_size);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, body_size);
+	}
+
+	return SUCCESS;
+}
+
+static STATUS php_http_client_curl_exec(php_http_client_t *h, php_http_message_t *msg)
+{
+	uint tries = 0;
+	CURLcode result;
+	php_http_client_curl_t *curl = h->ctx;
+	php_http_client_curl_storage_t *storage = get_storage(curl->handle);
+	TSRMLS_FETCH_FROM_CTX(h->ts);
+
+	if (SUCCESS != php_http_client_curl_prepare(h, msg)) {
+		return FAILURE;
 	}
 
 retry:

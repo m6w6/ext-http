@@ -73,21 +73,22 @@ PHP_HTTP_API STATUS php_http_client_pool_attach(php_http_client_pool_t *h, zval 
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (h->ops->attach) {
-		char *url = NULL;
-		char *m = NULL;
-		php_http_message_body_t *body = NULL;
-		php_http_client_object_t *obj = zend_object_store_get_object(client TSRMLS_CC);
+		zval *zreq = NULL;
+		php_http_client_object_t *obj;
+		php_http_message_object_t *msg_obj;
 
-		if (SUCCESS != php_http_client_object_requesthandler(obj, client, &m, &url, &body TSRMLS_CC)) {
+		if (SUCCESS != php_http_client_object_handle_request(client, &zreq TSRMLS_CC)) {
 			return FAILURE;
 		}
-		if (SUCCESS == h->ops->attach(h, obj->client, m, url, body)) {
-			STR_FREE(url);
+
+		obj = zend_object_store_get_object(client TSRMLS_CC);
+		msg_obj = zend_object_store_get_object(zreq TSRMLS_CC);
+
+		if (SUCCESS == h->ops->attach(h, obj->client, msg_obj->message)) {
 			Z_ADDREF_P(client);
 			zend_llist_add_element(&h->clients.attached, &client);
 			return SUCCESS;
 		}
-		STR_FREE(url);
 	}
 
 	return FAILURE;
@@ -207,17 +208,17 @@ PHP_HTTP_API void php_http_client_pool_requests(php_http_client_pool_t *h, zval 
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpClientPool, method, 0, req_args)
 #define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpClientPool, method, 0)
-#define PHP_HTTP_REQPOOL_ME(method, visibility)	PHP_ME(HttpClientPool, method, PHP_HTTP_ARGS(HttpClientPool, method), visibility)
+#define PHP_HTTP_CLIENT_POOL_ME(method, visibility)	PHP_ME(HttpClientPool, method, PHP_HTTP_ARGS(HttpClientPool, method), visibility)
 
 PHP_HTTP_EMPTY_ARGS(__destruct);
 PHP_HTTP_EMPTY_ARGS(reset);
 
 PHP_HTTP_BEGIN_ARGS(attach, 1)
-	PHP_HTTP_ARG_OBJ(http\\Client, client, 0)
+	PHP_HTTP_ARG_OBJ(http\\Client\\AbstractClient, request, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(detach, 1)
-	PHP_HTTP_ARG_OBJ(http\\Client, client, 0)
+	PHP_HTTP_ARG_OBJ(http\\Client\\AbstractClient, request, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(send);
@@ -234,8 +235,8 @@ PHP_HTTP_EMPTY_ARGS(rewind);
 
 PHP_HTTP_EMPTY_ARGS(count);
 
-PHP_HTTP_EMPTY_ARGS(getAttachedRequests);
-PHP_HTTP_EMPTY_ARGS(getFinishedRequests);
+PHP_HTTP_EMPTY_ARGS(getAttached);
+PHP_HTTP_EMPTY_ARGS(getFinished);
 
 PHP_HTTP_BEGIN_ARGS(enablePipelining, 0)
 	PHP_HTTP_ARG_VAL(enable, 0)
@@ -247,30 +248,30 @@ PHP_HTTP_END_ARGS;
 
 zend_class_entry *php_http_client_pool_class_entry;
 zend_function_entry php_http_client_pool_method_entry[] = {
-	PHP_HTTP_REQPOOL_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
-	PHP_HTTP_REQPOOL_ME(attach, ZEND_ACC_PUBLIC)
-	PHP_HTTP_REQPOOL_ME(detach, ZEND_ACC_PUBLIC)
-	PHP_HTTP_REQPOOL_ME(send, ZEND_ACC_PUBLIC)
-	PHP_HTTP_REQPOOL_ME(reset, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
+	PHP_HTTP_CLIENT_POOL_ME(attach, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(detach, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(send, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(reset, ZEND_ACC_PUBLIC)
 
-	PHP_HTTP_REQPOOL_ME(once, ZEND_ACC_PROTECTED)
-	PHP_HTTP_REQPOOL_ME(wait, ZEND_ACC_PROTECTED)
+	PHP_HTTP_CLIENT_POOL_ME(once, ZEND_ACC_PROTECTED)
+	PHP_HTTP_CLIENT_POOL_ME(wait, ZEND_ACC_PROTECTED)
 
 	/* implements Iterator */
-	PHP_HTTP_REQPOOL_ME(valid, ZEND_ACC_PUBLIC)
-	PHP_HTTP_REQPOOL_ME(current, ZEND_ACC_PUBLIC)
-	PHP_HTTP_REQPOOL_ME(key, ZEND_ACC_PUBLIC)
-	PHP_HTTP_REQPOOL_ME(next, ZEND_ACC_PUBLIC)
-	PHP_HTTP_REQPOOL_ME(rewind, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(valid, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(current, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(key, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(next, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(rewind, ZEND_ACC_PUBLIC)
 
 	/* implmenents Countable */
-	PHP_HTTP_REQPOOL_ME(count, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(count, ZEND_ACC_PUBLIC)
 
-	PHP_HTTP_REQPOOL_ME(getAttachedRequests, ZEND_ACC_PUBLIC)
-	PHP_HTTP_REQPOOL_ME(getFinishedRequests, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(getAttached, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(getFinished, ZEND_ACC_PUBLIC)
 
-	PHP_HTTP_REQPOOL_ME(enablePipelining, ZEND_ACC_PUBLIC)
-	PHP_HTTP_REQPOOL_ME(enableEvents, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(enablePipelining, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_POOL_ME(enableEvents, ZEND_ACC_PUBLIC)
 
 	EMPTY_FUNCTION_ENTRY
 };
@@ -501,7 +502,7 @@ PHP_METHOD(HttpClientPool, count)
 	}
 }
 
-PHP_METHOD(HttpClientPool, getAttachedRequests)
+PHP_METHOD(HttpClientPool, getAttached)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_client_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -515,7 +516,7 @@ PHP_METHOD(HttpClientPool, getAttachedRequests)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpClientPool, getFinishedRequests)
+PHP_METHOD(HttpClientPool, getFinished)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_client_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -560,6 +561,7 @@ PHP_MINIT_FUNCTION(http_client_pool)
 	memcpy(&php_http_client_pool_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_pool_object_handlers.clone_obj = NULL;
 
+	zend_declare_property_null(php_http_client_pool_class_entry, ZEND_STRL("client"), ZEND_ACC_PRIVATE TSRMLS_CC);
 	zend_class_implements(php_http_client_pool_class_entry TSRMLS_CC, 2, spl_ce_Countable, zend_ce_iterator);
 
 	return SUCCESS;

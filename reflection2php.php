@@ -57,36 +57,46 @@ foreach ($ext->getFunctions() as $f) {
 }
 printf("\n");
 
-foreach ($ext->getClasses() as $class) {
+$classes = $ext->getClasses();
+usort($classes, function($a,$b) {
+        $cmp = strcmp($a->getNamespaceName(), $b->getNamespaceName());
+        if (!$cmp) {
+            $cmp = strcmp($a->getShortName(), $b->getShortName());
+        }
+        return $cmp;
+    }
+);
+
+foreach ($classes as $class) {
 
     if ($class->inNamespace()) {
-        printf("namespace %s {\n", $class->getNamespaceName());
+        printf("namespace %s\n{\n", $class->getNamespaceName());
     }
-	printf("%s%s %s ", m($class->getModifiers()), $class->isInterface() ? "interface":"class" ,$class->getShortName());
+	printf("\t%s%s %s ", m($class->getModifiers()), $class->isInterface() ? "interface":"class" ,$class->getShortName());
 	if ($p = $class->getParentClass()) {
 		printf("extends \\%s ", $p->getName());
 	}
 	if ($i = $class->getInterfaceNames()) {
 		printf("implements \\%s ", implode(", \\", array_filter($i,function($v){return$v!="Traversable";})));
 	}
-	printf("\n{\n");
+	printf("\n\t{\n");
 
 	$_=0;
 	foreach ($class->getConstants() as $n => $v) {
-		c($n, $class) and $_+=printf("\tconst %s = %s;\n", $n, var_export($v, true));
+		c($n, $class) and $_+=printf("\t\tconst %s = %s;\n", $n, var_export($v, true));
 	}
 	$_ and printf("\n");
 	$_=0;
 	foreach ($class->getProperties() as $p) {
 		if ($p->getDeclaringClass()->getName() == $class->getName()) {
-			$_+=printf("\t%s\$%s;\n", m($p->getModifiers()), $p->getName());
+			$_+=printf("\t\t%s\$%s;\n", m($p->getModifiers()), $p->getName());
 		}
 	}
 	$_ and printf("\n");
 
 	foreach ($class->getMethods() as $m) {
 		if ($m->getDeclaringClass()->getName() == $class->getName()) {
-			printf("\t%sfunction %s(", m($m->getModifiers()), $m->getName());
+			printf("\t\t%sfunction %s(", m($m->getModifiers()), $m->getName());
 			$ps = array();
 			foreach ($m->getParameters() as $p) {
 				$p1 = sprintf("%s%s\$%s", t($p), $p->isPassedByReference()?"&":"", $p->getName());
@@ -101,11 +111,11 @@ foreach ($ext->getClasses() as $class) {
                 }
 				$ps[] = $p1;
 			}
-			printf("%s) {\n\t}\n", implode(", ", $ps));
+			printf("%s) {\n\t\t}\n", implode(", ", $ps));
 		}
 	}
 
-    printf("}\n");
+    printf("\t}\n");
     if ($class->inNamespace()) {
         printf("}\n");
     }

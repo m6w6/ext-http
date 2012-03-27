@@ -174,6 +174,9 @@ extern void php_http_client_object_free(void *object TSRMLS_DC);
 
 extern zend_object_handlers *php_http_client_get_object_handlers(void);
 
+extern STATUS php_http_client_object_handle_request(zval *zclient, zval **zreq TSRMLS_DC);
+extern STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC);
+
 extern STATUS php_http_client_object_requesthandler(php_http_client_object_t *obj, zval *this_ptr, char **meth, char **url, php_http_message_body_t **body TSRMLS_DC);
 extern STATUS php_http_client_object_responsehandler(php_http_client_object_t *obj, zval *this_ptr TSRMLS_DC);
 
@@ -195,15 +198,15 @@ PHP_METHOD(HttpClient, setCookies);
 PHP_METHOD(HttpClient, enableCookies);
 PHP_METHOD(HttpClient, resetCookies);
 PHP_METHOD(HttpClient, flushCookies);
+PHP_METHOD(HttpClient, setRequest);
+PHP_METHOD(HttpClient, getRequest);
 PHP_METHOD(HttpClient, send);
 PHP_METHOD(HttpClient, getResponseMessage);
-PHP_METHOD(HttpClient, getRawResponseMessage);
 PHP_METHOD(HttpClient, getRequestMessage);
-PHP_METHOD(HttpClient, getRawRequestMessage);
 PHP_METHOD(HttpClient, getHistory);
 PHP_METHOD(HttpClient, clearHistory);
-PHP_METHOD(HttpClient, getMessageClass);
-PHP_METHOD(HttpClient, setMessageClass);
+PHP_METHOD(HttpClient, getResponseMessageClass);
+PHP_METHOD(HttpClient, setResponseMessageClass);
 
 extern PHP_MINIT_FUNCTION(http_client);
 

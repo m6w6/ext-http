@@ -66,7 +66,7 @@ static void php_http_client_pool_curl_responsehandler(php_http_client_pool_t *po
 				if (msg->easy_handle == ((php_http_client_curl_t *) (obj->client->ctx))->handle) {
 					Z_ADDREF_PP(request);
 					zend_llist_add_element(&pool->clients.finished, request);
-					php_http_client_object_responsehandler(obj, *request TSRMLS_CC);
+					php_http_client_object_handle_response(*request TSRMLS_CC);
 				}
 
 				zval_ptr_dtor(request);
@@ -274,14 +274,14 @@ static void php_http_client_pool_curl_dtor(php_http_client_pool_t *h)
 	h->ctx = NULL;
 }
 
-static STATUS php_http_client_pool_curl_attach(php_http_client_pool_t *h, php_http_client_t *r, const char *m, const char *url, php_http_message_body_t *body)
+static STATUS php_http_client_pool_curl_attach(php_http_client_pool_t *h, php_http_client_t *r, php_http_message_t *m)
 {
 	php_http_client_pool_curl_t *curl = h->ctx;
 	php_http_client_curl_t *recurl = r->ctx;
 	CURLMcode rs;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-	if (SUCCESS != php_http_curl_request_prepare(r, m, url, body)) {
+	if (SUCCESS != php_http_client_curl_prepare(r, m)) {
 		return FAILURE;
 	}
 

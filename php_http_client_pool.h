@@ -25,7 +25,7 @@ typedef void (*php_http_client_pool_reset_func_t)(struct php_http_client_pool *p
 typedef STATUS (*php_http_client_pool_exec_func_t)(struct php_http_client_pool *p);
 typedef STATUS (*php_http_client_pool_wait_func_t)(struct php_http_client_pool *p, struct timeval *custom_timeout);
 typedef int (*php_http_client_pool_once_func_t)(struct php_http_client_pool *p);
-typedef STATUS (*php_http_client_pool_attach_func_t)(struct php_http_client_pool *p, php_http_client_t *r, const char *m, const char *url, php_http_message_body_t *body);
+typedef STATUS (*php_http_client_pool_attach_func_t)(struct php_http_client_pool *p, php_http_client_t *r, php_http_message_t *msg);
 typedef STATUS (*php_http_client_pool_detach_func_t)(struct php_http_client_pool *p, php_http_client_t *r);
 typedef STATUS (*php_http_client_pool_setopt_func_t)(struct php_http_client_pool *p, php_http_client_pool_setopt_opt_t opt, void *arg);
 
@@ -49,6 +49,7 @@ typedef struct php_http_client_pool {
 	php_http_client_pool_ops_t *ops;
 
 	struct {
+		php_http_client_t *master;
 		zend_llist attached;
 		zend_llist finished;
 	} clients;
@@ -74,7 +75,7 @@ PHP_HTTP_API void php_http_client_pool_requests(php_http_client_pool_t *h, zval 
 typedef struct php_http_client_pool_object {
 	zend_object zo;
 	php_http_client_pool_t *pool;
-	zend_object_value factory;
+	zend_object_value client;
 	struct {
 		long pos;
 	} iterator;
@@ -102,8 +103,8 @@ PHP_METHOD(HttpClientPool, key);
 PHP_METHOD(HttpClientPool, next);
 PHP_METHOD(HttpClientPool, rewind);
 PHP_METHOD(HttpClientPool, count);
-PHP_METHOD(HttpClientPool, getAttachedRequests);
-PHP_METHOD(HttpClientPool, getFinishedRequests);
+PHP_METHOD(HttpClientPool, getAttached);
+PHP_METHOD(HttpClientPool, getFinished);
 PHP_METHOD(HttpClientPool, enablePipelining);
 PHP_METHOD(HttpClientPool, enableEvents);
 
