@@ -80,18 +80,23 @@ PHP_METHOD(HttpClientRequest, __construct)
 
 PHP_METHOD(HttpClientRequest, setContentType)
 {
-	char *ctype;
+	char *ct_str;
 	int ct_len;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ctype, &ct_len)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ct_str, &ct_len)) {
 		int invalid = 0;
 
 		if (ct_len) {
-			PHP_HTTP_CHECK_CONTENT_TYPE(ctype, invalid = 1);
+			PHP_HTTP_CHECK_CONTENT_TYPE(ct_str, invalid = 1);
 		}
 
 		if (!invalid) {
-			zend_update_property_stringl(php_http_client_request_class_entry, getThis(), ZEND_STRL("contentType"), ctype, ct_len TSRMLS_CC);
+			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+			zval *zct;
+
+			MAKE_STD_ZVAL(zct);
+			ZVAL_STRINGL(zct, ct_str, ct_len, 1);
+			zend_hash_update(&obj->message->hdrs, "Content-Type", sizeof("Content-Type"), (void *) &zct, sizeof(void *), NULL);
 		}
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -100,7 +105,10 @@ PHP_METHOD(HttpClientRequest, setContentType)
 PHP_METHOD(HttpClientRequest, getContentType)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		RETURN_PROP(php_http_client_request_class_entry, "contentType");
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		zval *zct = php_http_message_header(obj->message, ZEND_STRL("Content-Type"), 1);
+
+		RETURN_ZVAL(zct, 0, 0);
 	}
 	RETURN_FALSE;
 }
@@ -175,7 +183,6 @@ PHP_MINIT_FUNCTION(http_client_request)
 	PHP_HTTP_REGISTER_CLASS(http\\Client, Request, http_client_request, php_http_message_class_entry, 0);
 
 	zend_declare_property_string(php_http_client_request_class_entry, ZEND_STRL("query"), "", ZEND_ACC_PROTECTED TSRMLS_CC);
-	zend_declare_property_string(php_http_client_request_class_entry, ZEND_STRL("contentType"), "", ZEND_ACC_PROTECTED TSRMLS_CC);
 
 	return SUCCESS;
 }
