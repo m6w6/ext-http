@@ -55,7 +55,7 @@ static zend_class_entry *php_http_client_factory_get_class_entry(zval *this_ptr,
 #define PHP_HTTP_REQUEST_FACTORY_ALIAS(method, func)	PHP_HTTP_STATIC_ME_ALIAS(method, func, PHP_HTTP_ARGS(HttpClientFactory, method))
 #define PHP_HTTP_REQUEST_FACTORY_MALIAS(me, al, vis)	ZEND_FENTRY(me, ZEND_MN(HttpClientFactory_##al), PHP_HTTP_ARGS(HttpClientFactory, al), vis)
 
-PHP_HTTP_BEGIN_ARGS(__construct, 1)
+PHP_HTTP_BEGIN_ARGS(__construct, 0)
 	PHP_HTTP_ARG_VAL(options, 0)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_BEGIN_ARGS(createClient, 0)
@@ -150,8 +150,7 @@ PHP_METHOD(HttpClientFactory, createClient)
 
 						if (SUCCESS == php_http_new(&ov, class_entry, driver.client_ops->create_object, driver.client_ops->class_entry(), req, NULL TSRMLS_CC)) {
 							ZVAL_OBJVAL(return_value, ov, 0);
-
-							zend_call_method_with_1_params(&return_value, Z_OBJCE_P(return_value), NULL, "__construct", NULL, options);
+							zend_call_method(&return_value, Z_OBJCE_P(return_value), NULL, ZEND_STRL("__construct"), NULL, !!options, options, NULL TSRMLS_CC);
 						} else {
 							php_http_client_free(&req);
 						}
