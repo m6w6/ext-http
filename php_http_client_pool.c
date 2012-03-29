@@ -22,7 +22,11 @@ PHP_HTTP_API php_http_client_pool_t *php_http_client_pool_init(php_http_client_p
 	memset(h, 0, sizeof(*h));
 
 	h->ops = ops;
-	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL);
+	if (rf) {
+		h->rf = rf;
+	} else if (ops->rsrc) {
+		h->rf = php_http_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
+	}
 	zend_llist_init(&h->clients.attached, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	zend_llist_init(&h->clients.finished, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	TSRMLS_SET_CTX(h->ts);
@@ -246,8 +250,14 @@ PHP_HTTP_BEGIN_ARGS(enableEvents, 0)
 	PHP_HTTP_ARG_VAL(enable, 0)
 PHP_HTTP_END_ARGS;
 
-zend_class_entry *php_http_client_pool_class_entry;
-zend_function_entry php_http_client_pool_method_entry[] = {
+static zend_class_entry *php_http_client_pool_class_entry;
+
+zend_class_entry *php_http_client_pool_get_class_entry(void)
+{
+	return php_http_client_pool_class_entry;
+}
+
+static zend_function_entry php_http_client_pool_method_entry[] = {
 	PHP_HTTP_CLIENT_POOL_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
 	PHP_HTTP_CLIENT_POOL_ME(attach, ZEND_ACC_PUBLIC)
 	PHP_HTTP_CLIENT_POOL_ME(detach, ZEND_ACC_PUBLIC)
@@ -283,6 +293,22 @@ extern zend_object_handlers *php_http_client_pool_get_object_handlers(void)
 	return &php_http_client_pool_object_handlers;
 }
 
+static php_http_client_pool_ops_t php_http_client_pool_user_ops = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	(php_http_new_t) php_http_client_pool_object_new_ex,
+	php_http_client_pool_get_class_entry
+};
+
 zend_object_value php_http_client_pool_object_new(zend_class_entry *ce TSRMLS_DC)
 {
 	return php_http_client_pool_object_new_ex(ce, NULL, NULL TSRMLS_CC);
@@ -298,7 +324,7 @@ zend_object_value php_http_client_pool_object_new_ex(zend_class_entry *ce, php_h
 	object_properties_init((zend_object *) o, ce);
 
 	if (!(o->pool = p)) {
-		o->pool = php_http_client_pool_init(NULL, NULL, NULL, NULL TSRMLS_CC);
+		o->pool = php_http_client_pool_init(NULL, &php_http_client_pool_user_ops, NULL, NULL TSRMLS_CC);
 	}
 
 	if (ptr) {
@@ -353,7 +379,7 @@ PHP_METHOD(HttpClientPool, attach)
 	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *request;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_class_entry)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_get_class_entry())) {
 			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_http_client_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
@@ -376,7 +402,7 @@ PHP_METHOD(HttpClientPool, detach)
 	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *request;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_class_entry)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_get_class_entry())) {
 			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_http_client_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
@@ -557,11 +583,10 @@ PHP_METHOD(HttpClientPool, enableEvents)
 PHP_MINIT_FUNCTION(http_client_pool)
 {
 	PHP_HTTP_REGISTER_CLASS(http\\Client\\Pool, AbstractPool, http_client_pool, php_http_object_class_entry, 0);
-	php_http_client_pool_class_entry->create_object = php_http_object_new; //php_http_client_pool_object_new;
+	php_http_client_pool_class_entry->create_object = php_http_client_pool_object_new;
 	memcpy(&php_http_client_pool_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_pool_object_handlers.clone_obj = NULL;
 
-	zend_declare_property_null(php_http_client_pool_class_entry, ZEND_STRL("client"), ZEND_ACC_PRIVATE TSRMLS_CC);
 	zend_class_implements(php_http_client_pool_class_entry TSRMLS_CC, 2, spl_ce_Countable, zend_ce_iterator);
 
 	return SUCCESS;

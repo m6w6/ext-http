@@ -532,7 +532,7 @@ PHP_MINIT_FUNCTION(http_client_pool_curl)
 		return FAILURE;
 	}
 
-	PHP_HTTP_REGISTER_CLASS(http\\Client\\Pool, CURL, http_client_pool_curl, php_http_client_pool_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Client\\Pool, CURL, http_client_pool_curl, php_http_client_pool_get_class_entry(), 0);
 	php_http_client_pool_curl_class_entry->create_object = php_http_client_pool_curl_object_new;
 
 	return SUCCESS;

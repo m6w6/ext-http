@@ -205,7 +205,7 @@ PHP_MINIT_FUNCTION(http_client_datashare_curl)
 		return FAILURE;
 	}
 
-	PHP_HTTP_REGISTER_CLASS(http\\Client\\DataShare, CURL, http_client_datashare_curl, php_http_client_datashare_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Client\\DataShare, CURL, http_client_datashare_curl, php_http_client_datashare_get_class_entry(), 0);
 	php_http_client_datashare_curl_class_entry->create_object = php_http_client_datashare_curl_object_new;
 	return SUCCESS;
 }

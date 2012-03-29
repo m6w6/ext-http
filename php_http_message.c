@@ -1739,9 +1739,7 @@ PHP_METHOD(HttpMessage, toStream)
 
 PHP_METHOD(HttpMessage, toCallback)
 {
-	zend_bool include_parent = 0;
 	php_http_pass_fcall_arg_t fcd;
-	long offset = 0, forlen = 0;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f", &fcd.fci, &fcd.fcc)) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);

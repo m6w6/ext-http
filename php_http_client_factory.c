@@ -116,7 +116,7 @@ PHP_METHOD(HttpClientFactory, createClient)
 	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!", &options)) {
 			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				zval *zdriver, *os;
+				zval *zdriver;
 				zend_object_value ov;
 				zend_class_entry *class_entry = NULL;
 				php_http_client_t *req = NULL;
@@ -208,7 +208,7 @@ PHP_METHOD(HttpClientFactory, createPool)
 						if (SUCCESS == php_http_new(&ov, class_entry, driver.client_pool_ops->create_object, driver.client_pool_ops->class_entry(), pool, NULL TSRMLS_CC)) {
 							ZVAL_OBJVAL(return_value, ov, 0);
 							for (i = 0; i < argc; ++i) {
-								if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_client_class_entry TSRMLS_CC)) {
+								if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_client_get_class_entry() TSRMLS_CC)) {
 									php_http_client_pool_attach(pool, *(argv[i]));
 								}
 							}
@@ -269,7 +269,7 @@ PHP_METHOD(HttpClientFactory, createDataShare)
 						if (SUCCESS == php_http_new(&ov, class_entry, driver.client_datashare_ops->create_object, driver.client_datashare_ops->class_entry(), share, NULL TSRMLS_CC)) {
 							ZVAL_OBJVAL(return_value, ov, 0);
 							for (i = 0; i < argc; ++i) {
-								if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_client_class_entry TSRMLS_CC)) {
+								if (Z_TYPE_PP(argv[i]) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(argv[i]), php_http_client_get_class_entry() TSRMLS_CC)) {
 									php_http_client_datashare_attach(share, *(argv[i]));
 								}
 							}

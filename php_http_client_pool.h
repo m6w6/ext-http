@@ -83,14 +83,12 @@ typedef struct php_http_client_pool_object {
 	} iterator;
 } php_http_client_pool_object_t;
 
-extern zend_class_entry *php_http_client_pool_class_entry;
-extern zend_function_entry php_http_client_pool_method_entry[];
+zend_object_value php_http_client_pool_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object_value php_http_client_pool_object_new_ex(zend_class_entry *ce, php_http_client_pool_t *p, php_http_client_pool_object_t **ptr TSRMLS_DC);
+void php_http_client_pool_object_free(void *object TSRMLS_DC);
 
-extern zend_object_value php_http_client_pool_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_client_pool_object_new_ex(zend_class_entry *ce, php_http_client_pool_t *p, php_http_client_pool_object_t **ptr TSRMLS_DC);
-extern void php_http_client_pool_object_free(void *object TSRMLS_DC);
-
-extern zend_object_handlers *php_http_client_pool_get_object_handlers(void);
+zend_class_entry *php_http_client_pool_get_class_entry(void);
+zend_object_handlers *php_http_client_pool_get_object_handlers(void);
 
 PHP_METHOD(HttpClientPool, __destruct);
 PHP_METHOD(HttpClientPool, attach);

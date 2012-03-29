@@ -166,21 +166,19 @@ typedef struct php_http_client_object {
 	php_http_client_t *client;
 } php_http_client_object_t;
 
-extern zend_class_entry *php_http_client_class_entry;
-extern zend_function_entry php_http_client_method_entry[];
+zend_object_value php_http_client_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object_value php_http_client_object_new_ex(zend_class_entry *ce, php_http_client_t *r, php_http_client_object_t **ptr TSRMLS_DC);
+zend_object_value php_http_client_object_clone(zval *zobject TSRMLS_DC);
+void php_http_client_object_free(void *object TSRMLS_DC);
 
-extern zend_object_value php_http_client_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_client_object_new_ex(zend_class_entry *ce, php_http_client_t *r, php_http_client_object_t **ptr TSRMLS_DC);
-extern zend_object_value php_http_client_object_clone(zval *zobject TSRMLS_DC);
-extern void php_http_client_object_free(void *object TSRMLS_DC);
+zend_class_entry *php_http_client_get_class_entry(void);
+zend_object_handlers *php_http_client_get_object_handlers(void);
 
-extern zend_object_handlers *php_http_client_get_object_handlers(void);
+STATUS php_http_client_object_handle_request(zval *zclient, zval **zreq TSRMLS_DC);
+STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC);
 
-extern STATUS php_http_client_object_handle_request(zval *zclient, zval **zreq TSRMLS_DC);
-extern STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC);
-
-extern STATUS php_http_client_object_requesthandler(php_http_client_object_t *obj, zval *this_ptr, char **meth, char **url, php_http_message_body_t **body TSRMLS_DC);
-extern STATUS php_http_client_object_responsehandler(php_http_client_object_t *obj, zval *this_ptr TSRMLS_DC);
+STATUS php_http_client_object_requesthandler(php_http_client_object_t *obj, zval *this_ptr, char **meth, char **url, php_http_message_body_t **body TSRMLS_DC);
+STATUS php_http_client_object_responsehandler(php_http_client_object_t *obj, zval *this_ptr TSRMLS_DC);
 
 PHP_METHOD(HttpClient, __construct);
 PHP_METHOD(HttpClient, getObservers);
@@ -210,7 +208,7 @@ PHP_METHOD(HttpClient, clearHistory);
 PHP_METHOD(HttpClient, getResponseMessageClass);
 PHP_METHOD(HttpClient, setResponseMessageClass);
 
-extern PHP_MINIT_FUNCTION(http_client);
+PHP_MINIT_FUNCTION(http_client);
 
 #endif
 

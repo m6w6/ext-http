@@ -1267,15 +1267,18 @@ PHP_HTTP_API php_http_client_ops_t *php_http_client_curl_get_ops(void)
 }
 
 
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpClientCURL, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpClientCURL, method, 0)
-#define PHP_HTTP_CURL_ME(method, visibility)	PHP_ME(HttpClientCURL, method, PHP_HTTP_ARGS(HttpClientCURL, method), visibility)
-#define PHP_HTTP_CURL_ALIAS(method, func)	PHP_HTTP_STATIC_ME_ALIAS(method, func, PHP_HTTP_ARGS(HttpClientCURL, method))
-#define PHP_HTTP_CURL_MALIAS(me, al, vis)	ZEND_FENTRY(me, ZEND_MN(HttpClientCURL_##al), PHP_HTTP_ARGS(HttpClientCURL, al), vis)
+#define PHP_HTTP_BEGIN_ARGS(method, req_args) 		PHP_HTTP_BEGIN_ARGS_EX(HttpClientCURL, method, 0, req_args)
+#define PHP_HTTP_EMPTY_ARGS(method)					PHP_HTTP_EMPTY_ARGS_EX(HttpClientCURL, method, 0)
+#define PHP_HTTP_CLIENT_CURL_ME(method, visibility)	PHP_ME(HttpClientCURL, method, PHP_HTTP_ARGS(HttpClientCURL, method), visibility)
+#define PHP_HTTP_CLIENT_CURL_CLIENT_MALIAS(me, vis)	ZEND_FENTRY(me, ZEND_MN(HttpClient_##me), PHP_HTTP_ARGS(HttpClientCURL, me), vis)
 
+PHP_HTTP_BEGIN_ARGS(send, 1)
+	PHP_HTTP_ARG_VAL(request, 0)
+PHP_HTTP_END_ARGS;
 
 zend_class_entry *php_http_client_curl_class_entry;
 zend_function_entry php_http_client_curl_method_entry[] = {
+	PHP_HTTP_CLIENT_CURL_CLIENT_MALIAS(send, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
@@ -1314,7 +1317,7 @@ PHP_MINIT_FUNCTION(http_client_curl)
 		return FAILURE;
 	}
 
-	PHP_HTTP_REGISTER_CLASS(http\\Client, CURL, http_client_curl, php_http_client_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Client, CURL, http_client_curl, php_http_client_get_class_entry(), 0);
 	php_http_client_curl_class_entry->create_object = php_http_client_curl_object_new;
 
 	/*

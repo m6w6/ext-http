@@ -50,7 +50,7 @@ typedef struct php_http_client_datashare {
 #endif
 } php_http_client_datashare_t;
 
-extern PHP_MINIT_FUNCTION(http_client_datashare);
+PHP_MINIT_FUNCTION(http_client_datashare);
 
 PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_init(php_http_client_datashare_t *h, php_http_client_datashare_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC);
 PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_copy(php_http_client_datashare_t *from, php_http_client_datashare_t *to);
@@ -66,14 +66,12 @@ typedef struct php_http_client_datashare_object {
 	php_http_client_datashare_t *share;
 } php_http_client_datashare_object_t;
 
-extern zend_class_entry *php_http_client_datashare_class_entry;
-extern zend_function_entry php_http_client_datashare_method_entry[];
+zend_object_value php_http_client_datashare_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object_value php_http_client_datashare_object_new_ex(zend_class_entry *ce, php_http_client_datashare_t *share, php_http_client_datashare_object_t **ptr TSRMLS_DC);
+void php_http_client_datashare_object_free(void *object TSRMLS_DC);
 
-extern zend_object_value php_http_client_datashare_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_client_datashare_object_new_ex(zend_class_entry *ce, php_http_client_datashare_t *share, php_http_client_datashare_object_t **ptr TSRMLS_DC);
-extern void php_http_client_datashare_object_free(void *object TSRMLS_DC);
-
-extern zend_object_handlers *php_http_client_datashare_get_object_handlers(void);
+zend_class_entry *php_http_client_datashare_get_class_entry();
+zend_object_handlers *php_http_client_datashare_get_object_handlers(void);
 
 PHP_METHOD(HttpClientDataShare, __destruct);
 PHP_METHOD(HttpClientDataShare, count);

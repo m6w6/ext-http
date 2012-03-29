@@ -26,7 +26,11 @@ PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_init(php_htt
 
 	zend_llist_init(&h->clients, sizeof(zval *), ZVAL_PTR_DTOR, 0);
 	h->ops = ops;
-	h->rf = rf ? rf : php_http_resource_factory_init(NULL, h->ops->rsrc, NULL, NULL);
+	if (rf) {
+		h->rf = rf;
+	} else if (ops->rsrc) {
+		h->rf = php_http_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
+	}
 	TSRMLS_SET_CTX(h->ts);
 
 	if (h->ops->init) {
@@ -145,8 +149,14 @@ PHP_HTTP_END_ARGS;
 
 static void php_http_client_datashare_object_write_prop(zval *object, zval *member, zval *value, const zend_literal *literal_key TSRMLS_DC);
 
-zend_class_entry *php_http_client_datashare_class_entry;
-zend_function_entry php_http_client_datashare_method_entry[] = {
+static zend_class_entry *php_http_client_datashare_class_entry;
+
+zend_class_entry *php_http_client_datashare_get_class_entry(void)
+{
+	return php_http_client_datashare_class_entry;
+}
+
+static zend_function_entry php_http_client_datashare_method_entry[] = {
 	PHP_HTTP_RSHARE_ME(__destruct, ZEND_ACC_PUBLIC|ZEND_ACC_DTOR)
 	PHP_HTTP_RSHARE_ME(count, ZEND_ACC_PUBLIC)
 	PHP_HTTP_RSHARE_ME(attach, ZEND_ACC_PUBLIC)
@@ -161,7 +171,24 @@ zend_object_handlers *php_http_client_datashare_get_object_handlers(void)
 {
 	return &php_http_client_datashare_object_handlers;
 }
+static STATUS setopt(struct php_http_client_datashare *h, php_http_client_datashare_setopt_opt_t opt, void *arg)
+{
+	return SUCCESS;
+}
 
+static php_http_client_datashare_ops_t php_http_client_datashare_user_ops = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	setopt,
+	(php_http_new_t) php_http_client_datashare_object_new_ex,
+	php_http_client_datashare_get_class_entry
+
+};
 zend_object_value php_http_client_datashare_object_new(zend_class_entry *ce TSRMLS_DC)
 {
 	return php_http_client_datashare_object_new_ex(ce, NULL, NULL TSRMLS_CC);
@@ -176,18 +203,16 @@ zend_object_value php_http_client_datashare_object_new_ex(zend_class_entry *ce, 
 	zend_object_std_init((zend_object *) o, ce TSRMLS_CC);
 	object_properties_init((zend_object *) o, ce);
 
-	if (share) {
-		o->share = share;
-	} else {
-		o->share = php_http_client_datashare_init(NULL, NULL, NULL, NULL TSRMLS_CC);
+	ov.handle = zend_objects_store_put(o, NULL, php_http_client_datashare_object_free, NULL TSRMLS_CC);
+	ov.handlers = &php_http_client_datashare_object_handlers;
+
+	if (!(o->share = share)) {
+		o->share = php_http_client_datashare_init(NULL, &php_http_client_datashare_user_ops, NULL, &ov TSRMLS_CC);
 	}
 
 	if (ptr) {
 		*ptr = o;
 	}
-
-	ov.handle = zend_objects_store_put(o, NULL, php_http_client_datashare_object_free, NULL TSRMLS_CC);
-	ov.handlers = &php_http_client_datashare_object_handlers;
 
 	return ov;
 }
@@ -266,7 +291,7 @@ PHP_METHOD(HttpClientDataShare, attach)
 {
 	zval *client;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &client, php_http_client_class_entry)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &client, php_http_client_get_class_entry())) {
 		php_http_client_datashare_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 		RETURN_SUCCESS(php_http_client_datashare_attach(obj->share, client));
@@ -279,7 +304,7 @@ PHP_METHOD(HttpClientDataShare, detach)
 {
 	zval *client;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &client, php_http_client_class_entry)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &client, php_http_client_get_class_entry())) {
 		php_http_client_datashare_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 		RETURN_SUCCESS(php_http_client_datashare_detach(obj->share, client));
@@ -301,7 +326,7 @@ PHP_METHOD(HttpClientDataShare, reset)
 PHP_MINIT_FUNCTION(http_client_datashare)
 {
 	PHP_HTTP_REGISTER_CLASS(http\\Client\\DataShare, AbstractDataShare, http_client_datashare, php_http_object_class_entry, 0);
-	php_http_client_datashare_class_entry->create_object = php_http_object_new;//php_http_client_datashare_object_new;
+	php_http_client_datashare_class_entry->create_object = php_http_client_datashare_object_new;
 	memcpy(&php_http_client_datashare_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_datashare_object_handlers.clone_obj = NULL;
 	php_http_client_datashare_object_handlers.write_property = php_http_client_datashare_object_write_prop;
