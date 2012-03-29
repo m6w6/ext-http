@@ -41,6 +41,8 @@ PHP_HTTP_API php_http_message_t *php_http_message_init(php_http_message_t *messa
 	TSRMLS_SET_CTX(message->ts);
 
 	php_http_message_set_type(message, type);
+	message->http.version.major = 1;
+	message->http.version.minor = 1;
 	zend_hash_init(&message->hdrs, 0, NULL, ZVAL_PTR_DTOR, 0);
 	php_http_message_body_init(&message->body, NULL TSRMLS_CC);
 
@@ -59,9 +61,6 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 		case PHP_HTTP_REQUEST:
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("SERVER_PROTOCOL"), 1 TSRMLS_CC)) && !strncmp(Z_STRVAL_P(sval), "HTTP/", lenof("HTTP/"))) {
 				php_http_version_parse(&message->http.version, Z_STRVAL_P(sval) TSRMLS_CC);
-			} else {
-				message->http.version.major = 1;
-				message->http.version.minor = 1;
 			}
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("REQUEST_METHOD"), 1 TSRMLS_CC))) {
 				message->http.info.request.method = estrdup(Z_STRVAL_P(sval));
@@ -80,8 +79,6 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 			
 		case PHP_HTTP_RESPONSE:
 			if (!SG(sapi_headers).http_status_line || !php_http_info_parse((php_http_info_t *) &message->http, SG(sapi_headers).http_status_line TSRMLS_CC)) {
-				message->http.version.major = 1;
-				message->http.version.minor = 1;
 				if (!(message->http.info.response.code = SG(sapi_headers).http_response_code)) {
 					message->http.info.response.code = 200;
 				}

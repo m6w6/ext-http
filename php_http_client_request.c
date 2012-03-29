@@ -118,21 +118,37 @@ PHP_METHOD(HttpClientRequest, setQuery)
 	zval *qdata = NULL;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!", &qdata)) {
-		if ((!qdata) || Z_TYPE_P(qdata) == IS_NULL) {
-			zend_update_property_stringl(php_http_client_request_class_entry, getThis(), ZEND_STRL("query"), "", 0 TSRMLS_CC);
-		} else if ((Z_TYPE_P(qdata) == IS_ARRAY) || (Z_TYPE_P(qdata) == IS_OBJECT)) {
-			char *query_data_str = NULL;
-			size_t query_data_len;
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		php_url *old_url = NULL, new_url = {NULL};
+		char empty[] = "";
 
-			if (SUCCESS == php_http_url_encode_hash(HASH_OF(qdata), NULL, 0, &query_data_str, &query_data_len TSRMLS_CC)) {
-				zend_update_property_stringl(php_http_client_request_class_entry, getThis(), ZEND_STRL("query"), query_data_str, query_data_len TSRMLS_CC);
-				efree(query_data_str);
-			}
+		if (qdata) {
+			zval arr, str;
+
+			INIT_PZVAL(&arr);
+			array_init(&arr);
+			INIT_PZVAL(&str);
+			ZVAL_NULL(&str);
+
+			php_http_querystring_update(&arr, qdata, &str TSRMLS_CC);
+			new_url.query = Z_STRVAL(str);
+			zval_dtor(&arr);
 		} else {
-			zval *data = php_http_ztyp(IS_STRING, qdata);
+			new_url.query = &empty[0];
+		}
 
-			zend_update_property_stringl(php_http_client_request_class_entry, getThis(), ZEND_STRL("query"), Z_STRVAL_P(data), Z_STRLEN_P(data) TSRMLS_CC);
-			zval_ptr_dtor(&data);
+		if (obj->message->http.info.request.url) {
+			old_url = php_url_parse(obj->message->http.info.request.url);
+			efree(obj->message->http.info.request.url);
+		}
+
+		php_http_url(PHP_HTTP_URL_REPLACE, old_url, &new_url, NULL, &obj->message->http.info.request.url, NULL TSRMLS_CC);
+
+		if (old_url) {
+			php_url_free(old_url);
+		}
+		if (new_url.query != &empty[0]) {
+			STR_FREE(new_url.query);
 		}
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -141,29 +157,55 @@ PHP_METHOD(HttpClientRequest, setQuery)
 PHP_METHOD(HttpClientRequest, getQuery)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		RETURN_PROP(php_http_client_request_class_entry, "query");
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		if (obj->message->http.info.request.url) {
+			php_url *purl = php_url_parse(obj->message->http.info.request.url);
+
+			if (purl) {
+				if (purl->query) {
+					RETVAL_STRING(purl->query, 0);
+					purl->query = NULL;
+				}
+				php_url_free(purl);
+			}
+		}
 	}
-	RETURN_FALSE;
 }
 
 PHP_METHOD(HttpClientRequest, addQuery)
 {
 	zval *qdata;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a/", &qdata)) {
-		char *query_data_str = NULL;
-		size_t query_data_len = 0;
-		zval *old_qdata = php_http_ztyp(IS_STRING, zend_read_property(php_http_client_request_class_entry, getThis(), ZEND_STRL("query"), 0 TSRMLS_CC));
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &qdata)) {
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		php_url *old_url = NULL, new_url = {NULL};
+		char empty[] = "";
 
-		if (SUCCESS == php_http_url_encode_hash(Z_ARRVAL_P(qdata), Z_STRVAL_P(old_qdata), Z_STRLEN_P(old_qdata), &query_data_str, &query_data_len TSRMLS_CC)) {
-			zend_update_property_stringl(php_http_client_request_class_entry, getThis(), ZEND_STRL("query"), query_data_str, query_data_len TSRMLS_CC);
-			efree(query_data_str);
+		zval arr, str;
+
+		INIT_PZVAL(&arr);
+		array_init(&arr);
+		INIT_PZVAL(&str);
+		ZVAL_NULL(&str);
+
+		php_http_querystring_update(&arr, qdata, &str TSRMLS_CC);
+		new_url.query = Z_STRVAL(str);
+		zval_dtor(&arr);
+
+		if (obj->message->http.info.request.url) {
+			old_url = php_url_parse(obj->message->http.info.request.url);
+			efree(obj->message->http.info.request.url);
 		}
 
-		zval_ptr_dtor(&old_qdata);
+		php_http_url(PHP_HTTP_URL_JOIN_QUERY, old_url, &new_url, NULL, &obj->message->http.info.request.url, NULL TSRMLS_CC);
+
+		if (old_url) {
+			php_url_free(old_url);
+		}
+		STR_FREE(new_url.query);
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
-
 }
 
 
@@ -181,8 +223,6 @@ zend_function_entry php_http_client_request_method_entry[] = {
 PHP_MINIT_FUNCTION(http_client_request)
 {
 	PHP_HTTP_REGISTER_CLASS(http\\Client, Request, http_client_request, php_http_message_class_entry, 0);
-
-	zend_declare_property_string(php_http_client_request_class_entry, ZEND_STRL("query"), "", ZEND_ACC_PROTECTED TSRMLS_CC);
 
 	return SUCCESS;
 }
