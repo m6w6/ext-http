@@ -41,6 +41,8 @@ PHP_HTTP_API php_http_message_t *php_http_message_init(php_http_message_t *messa
 	TSRMLS_SET_CTX(message->ts);
 
 	php_http_message_set_type(message, type);
+	message->http.version.major = 1;
+	message->http.version.minor = 1;
 	zend_hash_init(&message->hdrs, 0, NULL, ZVAL_PTR_DTOR, 0);
 	php_http_message_body_init(&message->body, NULL TSRMLS_CC);
 
@@ -59,9 +61,6 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 		case PHP_HTTP_REQUEST:
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("SERVER_PROTOCOL"), 1 TSRMLS_CC)) && !strncmp(Z_STRVAL_P(sval), "HTTP/", lenof("HTTP/"))) {
 				php_http_version_parse(&message->http.version, Z_STRVAL_P(sval) TSRMLS_CC);
-			} else {
-				message->http.version.major = 1;
-				message->http.version.minor = 1;
 			}
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("REQUEST_METHOD"), 1 TSRMLS_CC))) {
 				message->http.info.request.method = estrdup(Z_STRVAL_P(sval));
@@ -80,8 +79,6 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 			
 		case PHP_HTTP_RESPONSE:
 			if (!SG(sapi_headers).http_status_line || !php_http_info_parse((php_http_info_t *) &message->http, SG(sapi_headers).http_status_line TSRMLS_CC)) {
-				message->http.version.major = 1;
-				message->http.version.minor = 1;
 				if (!(message->http.info.response.code = SG(sapi_headers).http_response_code)) {
 					message->http.info.response.code = 200;
 				}
@@ -542,6 +539,10 @@ PHP_HTTP_BEGIN_ARGS(setBody, 1)
 	PHP_HTTP_ARG_VAL(body, 0)
 PHP_HTTP_END_ARGS;
 
+PHP_HTTP_BEGIN_ARGS(addBody, 1)
+	PHP_HTTP_ARG_VAL(body, 0)
+PHP_HTTP_END_ARGS;
+
 PHP_HTTP_BEGIN_ARGS(getHeader, 1)
 	PHP_HTTP_ARG_VAL(header, 0)
 PHP_HTTP_END_ARGS;
@@ -647,6 +648,7 @@ zend_function_entry php_http_message_method_entry[] = {
 	PHP_HTTP_MESSAGE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_HTTP_MESSAGE_ME(getBody, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_ME(setBody, ZEND_ACC_PUBLIC)
+	PHP_HTTP_MESSAGE_ME(addBody, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_ME(getHeader, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_ME(setHeader, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_ME(addHeader, ZEND_ACC_PUBLIC)
@@ -1258,6 +1260,20 @@ PHP_METHOD(HttpMessage, setBody)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(HttpMessage, addBody)
+{
+	zval *new_body;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &new_body, php_http_message_body_class_entry)) {
+		php_http_message_body_object_t *old_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		php_http_message_body_object_t *new_obj = zend_object_store_get_object(new_body TSRMLS_CC);
+
+		php_http_message_body_to_callback(old_obj->body, (php_http_pass_callback_t) php_http_message_body_append, new_obj->body, 0, 0);
+	}
+	RETVAL_ZVAL(getThis(), 1, 0);
+}
+
+
 PHP_METHOD(HttpMessage, getHeader)
 {
 	char *header_str;
@@ -1720,9 +1736,7 @@ PHP_METHOD(HttpMessage, toStream)
 
 PHP_METHOD(HttpMessage, toCallback)
 {
-	zend_bool include_parent = 0;
 	php_http_pass_fcall_arg_t fcd;
-	long offset = 0, forlen = 0;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f", &fcd.fci, &fcd.fcc)) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);

@@ -553,7 +553,7 @@ PHP_HTTP_BEGIN_ARGS(addForm, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(addPart, 1)
-	PHP_HTTP_ARG_OBJ(http\\Message, "message", 0)
+	PHP_HTTP_ARG_OBJ(http\\Message, message, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(etag);

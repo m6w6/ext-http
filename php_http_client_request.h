@@ -10,20 +10,26 @@
     +--------------------------------------------------------------------+
 */
 
-#ifndef PHP_HTTP_CURL_H
-#define PHP_HTTP_CURL_H
+#ifndef PHP_HTTP_CLIENT_REQUEST_H
+#define PHP_HTTP_CLIENT_REQUEST_H
 
-#if PHP_HTTP_HAVE_CURL
+zend_class_entry *php_http_client_request_get_class_entry(void);
 
-#include <curl/curl.h>
-#define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
+PHP_METHOD(HttpClientRequest, __construct);
+PHP_METHOD(HttpClientRequest, setContentType);
+PHP_METHOD(HttpClientRequest, getContentType);
+PHP_METHOD(HttpClientRequest, setQuery);
+PHP_METHOD(HttpClientRequest, getQuery);
+PHP_METHOD(HttpClientRequest, addQuery);
+PHP_METHOD(HttpClientRequest, setOptions);
+PHP_METHOD(HttpClientRequest, getOptions);
+PHP_METHOD(HttpClientRequest, addSslOptions);
+PHP_METHOD(HttpClientRequest, setSslOptions);
+PHP_METHOD(HttpClientRequest, getSslOptions);
 
-extern PHP_MINIT_FUNCTION(http_curl);
-extern PHP_MSHUTDOWN_FUNCTION(http_curl);
+PHP_MINIT_FUNCTION(http_client_request);
 
-#endif /* PHP_HTTP_HAVE_CURL */
-
-#endif /* PHP_HTTP_CURL_H */
+#endif /* PHP_HTTP_CLIENT_REQUEST_H */
 
 /*
  * Local variables:
@@ -33,4 +39,3 @@ extern PHP_MSHUTDOWN_FUNCTION(http_curl);
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

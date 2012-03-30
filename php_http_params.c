@@ -206,7 +206,13 @@ PHP_HTTP_API php_http_buffer_t *php_http_params_to_string(php_http_buffer_t *buf
 			php_http_buffer_appendf(buf, "%lu", key1.num);
 		}
 
-		if (Z_TYPE_PP(zparam) == IS_ARRAY) {
+		if (Z_TYPE_PP(zparam) != IS_ARRAY) {
+			zval *tmp = php_http_ztyp(IS_STRING, *zparam);
+
+			php_http_buffer_append(buf, vss, vsl);
+			php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+			zval_ptr_dtor(&tmp);
+		} else {
 			zval **zvalue, **zargs, **zarg;
 
 			/* got a value? */

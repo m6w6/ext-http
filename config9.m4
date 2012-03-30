@@ -392,9 +392,20 @@ dnl ----
 dnl DONE
 dnl ----
 	PHP_HTTP_SOURCES="\
-		php_http.c \
 		php_http_buffer.c \
+		php_http.c \
+		php_http_client.c \
+		php_http_curl_client.c \
+		php_http_client_datashare.c \
+		php_http_curl_client_datashare.c \
+		php_http_client_factory.c \
+		php_http_client_interface.c \
+		php_http_client_pool.c \
+		php_http_curl_client_pool.c \
+		php_http_client_request.c \
+		php_http_client_response.c \
 		php_http_cookie.c \
+		php_http_curl.c \
 		php_http_encoding.c \
 		php_http_env.c \
 		php_http_env_request.c \
@@ -402,8 +413,8 @@ dnl ----
 		php_http_etag.c \
 		php_http_exception.c \
 		php_http_filter.c \
-		php_http_headers.c \
 		php_http_header_parser.c \
+		php_http_headers.c \
 		php_http_info.c \
 		php_http_message_body.c \
 		php_http_message.c \
@@ -412,15 +423,10 @@ dnl ----
 		php_http_negotiate.c \
 		php_http_object.c \
 		php_http_params.c \
-		php_http_resource_factory.c \
 		php_http_persistent_handle.c \
 		php_http_property_proxy.c \
 		php_http_querystring.c \
-		php_http_request.c \
-		php_http_request_factory.c \
-		php_http_curl.c \
-		php_http_request_pool.c \
-		php_http_request_datashare.c \
+		php_http_resource_factory.c \
 		php_http_strlist.c \
 		php_http_url.c \
 		php_http_version.c \
@@ -434,10 +440,20 @@ dnl ----
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 
 	PHP_HTTP_HEADERS="
-		php_http.h \
 		php_http_api.h \
 		php_http_buffer.h \
+		php_http_curl_client.h \
+		php_http_curl_client_datashare.h \
+		php_http_client_datashare.h \
+		php_http_client_factory.h \
+		php_http_client.h \
+		php_http_client_interface.h \
+		php_http_curl_client_pool.h \
+		php_http_client_pool.h \
+		php_http_client_request.h \
+		php_http_client_response.h \
 		php_http_cookie.h \
+		php_http_curl.h \
 		php_http_encoding.h \
 		php_http_env.h \
 		php_http_env_request.h \
@@ -445,8 +461,9 @@ dnl ----
 		php_http_etag.h \
 		php_http_exception.h \
 		php_http_filter.h \
-		php_http_headers.h \
+		php_http.h \
 		php_http_header_parser.h \
+		php_http_headers.h \
 		php_http_info.h \
 		php_http_message_body.h \
 		php_http_message.h \
@@ -455,15 +472,10 @@ dnl ----
 		php_http_negotiate.h \
 		php_http_object.h \
 		php_http_params.h \
-		php_http_resource_factory.h \
 		php_http_persistent_handle.h \
 		php_http_property_proxy.h \
 		php_http_querystring.h \
-		php_http_request_datashare.h \
-		php_http_request.h \
-		php_http_request_factory.h \
-		php_http_curl.h \
-		php_http_request_pool.h \
+		php_http_resource_factory.h \
 		php_http_strlist.h \
 		php_http_url.h \
 		php_http_version.h \

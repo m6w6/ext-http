@@ -32,7 +32,6 @@ PHP_RINIT_FUNCTION(http_env)
 
 		ZEND_INIT_SYMTABLE(&params);
 		if (php_http_params_parse(&params, &opts TSRMLS_CC)) {
-			zval **zct;
 			char *key_str;
 			uint key_len;
 			ulong key_num;
