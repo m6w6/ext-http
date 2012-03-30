@@ -14,9 +14,9 @@
 
 #if PHP_HTTP_HAVE_CURL
 
-typedef struct php_http_client_datashare_curl {
+typedef struct php_http_curl_client_datashare {
 	CURLSH *handle;
-} php_http_client_datashare_curl_t;
+} php_http_curl_client_datashare_t;
 
 
 static void *php_http_curlsh_ctor(void *opaque TSRMLS_DC)
@@ -32,9 +32,9 @@ static void php_http_curlsh_dtor(void *opaque, void *handle TSRMLS_DC)
 
 /* datashare handler ops */
 
-static php_http_client_datashare_t *php_http_client_datashare_curl_init(php_http_client_datashare_t *h, void *handle)
+static php_http_client_datashare_t *php_http_curl_client_datashare_init(php_http_client_datashare_t *h, void *handle)
 {
-	php_http_client_datashare_curl_t *curl;
+	php_http_curl_client_datashare_t *curl;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (!handle && !(handle = php_http_resource_factory_handle_ctor(h->rf TSRMLS_CC))) {
@@ -49,9 +49,9 @@ static php_http_client_datashare_t *php_http_client_datashare_curl_init(php_http
 	return h;
 }
 
-static void php_http_client_datashare_curl_dtor(php_http_client_datashare_t *h)
+static void php_http_curl_client_datashare_dtor(php_http_client_datashare_t *h)
 {
-	php_http_client_datashare_curl_t *curl = h->ctx;
+	php_http_curl_client_datashare_t *curl = h->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	php_http_resource_factory_handle_dtor(h->rf, curl->handle TSRMLS_CC);
@@ -60,11 +60,11 @@ static void php_http_client_datashare_curl_dtor(php_http_client_datashare_t *h)
 	h->ctx = NULL;
 }
 
-static STATUS php_http_client_datashare_curl_attach(php_http_client_datashare_t *h, php_http_client_t *r)
+static STATUS php_http_curl_client_datashare_attach(php_http_client_datashare_t *h, php_http_client_t *r)
 {
 	CURLcode rc;
-	php_http_client_datashare_curl_t *curl = h->ctx;
-	php_http_client_curl_t *recurl = r->ctx;
+	php_http_curl_client_datashare_t *curl = h->ctx;
+	php_http_curl_client_t *recurl = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (CURLE_OK != (rc = curl_easy_setopt(recurl->handle, CURLOPT_SHARE, curl->handle))) {
@@ -74,10 +74,10 @@ static STATUS php_http_client_datashare_curl_attach(php_http_client_datashare_t 
 	return SUCCESS;
 }
 
-static STATUS php_http_client_datashare_curl_detach(php_http_client_datashare_t *h, php_http_client_t *r)
+static STATUS php_http_curl_client_datashare_detach(php_http_client_datashare_t *h, php_http_client_t *r)
 {
 	CURLcode rc;
-	php_http_client_curl_t *recurl = r->ctx;
+	php_http_curl_client_t *recurl = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 
@@ -88,10 +88,10 @@ static STATUS php_http_client_datashare_curl_detach(php_http_client_datashare_t 
 	return SUCCESS;
 }
 
-static STATUS php_http_client_datashare_curl_setopt(php_http_client_datashare_t *h, php_http_client_datashare_setopt_opt_t opt, void *arg)
+static STATUS php_http_curl_client_datashare_setopt(php_http_client_datashare_t *h, php_http_client_datashare_setopt_opt_t opt, void *arg)
 {
 	CURLSHcode rc;
-	php_http_client_datashare_curl_t *curl = h->ctx;
+	php_http_curl_client_datashare_t *curl = h->ctx;
 
 	switch (opt) {
 		case PHP_HTTP_CLIENT_DATASHARE_OPT_COOKIES:
@@ -138,42 +138,42 @@ static php_http_resource_factory_ops_t php_http_curlsh_resource_factory_ops = {
 
 static zend_class_entry *get_class_entry(void)
 {
-	return php_http_client_datashare_curl_class_entry;
+	return php_http_curl_client_datashare_class_entry;
 }
 
-static php_http_client_datashare_ops_t php_http_client_datashare_curl_ops = {
+static php_http_client_datashare_ops_t php_http_curl_client_datashare_ops = {
 	&php_http_curlsh_resource_factory_ops,
-	php_http_client_datashare_curl_init,
+	php_http_curl_client_datashare_init,
 	NULL /* copy */,
-	php_http_client_datashare_curl_dtor,
+	php_http_curl_client_datashare_dtor,
 	NULL /*reset */,
-	php_http_client_datashare_curl_attach,
-	php_http_client_datashare_curl_detach,
-	php_http_client_datashare_curl_setopt,
-	(php_http_new_t) php_http_client_datashare_curl_object_new_ex,
+	php_http_curl_client_datashare_attach,
+	php_http_curl_client_datashare_detach,
+	php_http_curl_client_datashare_setopt,
+	(php_http_new_t) php_http_curl_client_datashare_object_new_ex,
 	get_class_entry
 };
 
-PHP_HTTP_API php_http_client_datashare_ops_t *php_http_client_datashare_curl_get_ops(void)
+PHP_HTTP_API php_http_client_datashare_ops_t *php_http_curl_client_datashare_get_ops(void)
 {
-	return &php_http_client_datashare_curl_ops;
+	return &php_http_curl_client_datashare_ops;
 }
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpClientDataShare, method, 0, req_args)
 #define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpClientDataShare, method, 0)
 #define PHP_HTTP_RSHARE_ME(method, visibility)	PHP_ME(HttpClientDataShare, method, PHP_HTTP_ARGS(HttpClientDataShare, method), visibility)
 
-zend_class_entry *php_http_client_datashare_curl_class_entry;
-zend_function_entry php_http_client_datashare_curl_method_entry[] = {
+zend_class_entry *php_http_curl_client_datashare_class_entry;
+zend_function_entry php_http_curl_client_datashare_method_entry[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-zend_object_value php_http_client_datashare_curl_object_new(zend_class_entry *ce TSRMLS_DC)
+zend_object_value php_http_curl_client_datashare_object_new(zend_class_entry *ce TSRMLS_DC)
 {
-	return php_http_client_datashare_curl_object_new_ex(ce, NULL, NULL TSRMLS_CC);
+	return php_http_curl_client_datashare_object_new_ex(ce, NULL, NULL TSRMLS_CC);
 }
 
-zend_object_value php_http_client_datashare_curl_object_new_ex(zend_class_entry *ce, php_http_client_datashare_t *share, php_http_client_datashare_object_t **ptr TSRMLS_DC)
+zend_object_value php_http_curl_client_datashare_object_new_ex(zend_class_entry *ce, php_http_client_datashare_t *share, php_http_client_datashare_object_t **ptr TSRMLS_DC)
 {
 	zend_object_value ov;
 	php_http_client_datashare_object_t *o;
@@ -185,7 +185,7 @@ zend_object_value php_http_client_datashare_curl_object_new_ex(zend_class_entry 
 	if (share) {
 		o->share = share;
 	} else {
-		o->share = php_http_client_datashare_init(NULL, &php_http_client_datashare_curl_ops, NULL, NULL TSRMLS_CC);
+		o->share = php_http_client_datashare_init(NULL, &php_http_curl_client_datashare_ops, NULL, NULL TSRMLS_CC);
 	}
 
 	if (ptr) {
@@ -199,14 +199,14 @@ zend_object_value php_http_client_datashare_curl_object_new_ex(zend_class_entry 
 }
 
 
-PHP_MINIT_FUNCTION(http_client_datashare_curl)
+PHP_MINIT_FUNCTION(http_curl_client_datashare)
 {
 	if (SUCCESS != php_http_persistent_handle_provide(ZEND_STRL("http_client_datashare.curl"), &php_http_curlsh_resource_factory_ops, NULL, NULL)) {
 		return FAILURE;
 	}
 
-	PHP_HTTP_REGISTER_CLASS(http\\Client\\DataShare, CURL, http_client_datashare_curl, php_http_client_datashare_get_class_entry(), 0);
-	php_http_client_datashare_curl_class_entry->create_object = php_http_client_datashare_curl_object_new;
+	PHP_HTTP_REGISTER_CLASS(http\\Curl\\Client, DataShare, http_curl_client_datashare, php_http_client_datashare_get_class_entry(), 0);
+	php_http_curl_client_datashare_class_entry->create_object = php_http_curl_client_datashare_object_new;
 	return SUCCESS;
 }
 

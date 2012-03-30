@@ -18,7 +18,7 @@
 #	include <event.h>
 #endif
 
-typedef struct php_http_client_pool_curl {
+typedef struct php_http_curl_client_pool {
 	CURLM *handle;
 
 	int unfinished;  /* int because of curl_multi_perform() */
@@ -28,7 +28,7 @@ typedef struct php_http_client_pool_curl {
 	unsigned useevents:1;
 	unsigned runsocket:1;
 #endif
-} php_http_client_pool_curl_t;
+} php_http_curl_client_pool_t;
 
 static void *php_http_curlm_ctor(void *opaque TSRMLS_DC)
 {
@@ -41,11 +41,11 @@ static void php_http_curlm_dtor(void *opaque, void *handle TSRMLS_DC)
 }
 
 
-static void php_http_client_pool_curl_responsehandler(php_http_client_pool_t *pool)
+static void php_http_curl_client_pool_responsehandler(php_http_client_pool_t *pool)
 {
 	int remaining = 0;
 	zval **requests;
-	php_http_client_pool_curl_t *curl = pool->ctx;
+	php_http_curl_client_pool_t *curl = pool->ctx;
 	TSRMLS_FETCH_FROM_CTX(pool->ts);
 
 	do {
@@ -55,7 +55,7 @@ static void php_http_client_pool_curl_responsehandler(php_http_client_pool_t *po
 			zval **request;
 
 			if (CURLE_OK != msg->data.result) {
-				php_http_client_curl_storage_t *st = get_storage(msg->easy_handle);
+				php_http_curl_client_storage_t *st = get_storage(msg->easy_handle);
 				php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "%s; %s (%s)", curl_easy_strerror(msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
 			}
 
@@ -63,7 +63,7 @@ static void php_http_client_pool_curl_responsehandler(php_http_client_pool_t *po
 			for (request = requests; *request; ++request) {
 				php_http_client_object_t *obj = zend_object_store_get_object(*request TSRMLS_CC);
 
-				if (msg->easy_handle == ((php_http_client_curl_t *) (obj->client->ctx))->handle) {
+				if (msg->easy_handle == ((php_http_curl_client_t *) (obj->client->ctx))->handle) {
 					Z_ADDREF_PP(request);
 					zend_llist_add_element(&pool->clients.finished, request);
 					php_http_client_object_handle_response(*request TSRMLS_CC);
@@ -100,10 +100,10 @@ static inline int etoca(short action) {
 	}
 }
 
-static void php_http_client_pool_curl_timeout_callback(int socket, short action, void *event_data)
+static void php_http_curl_client_pool_timeout_callback(int socket, short action, void *event_data)
 {
 	php_http_client_pool_t *pool = event_data;
-	php_http_client_pool_curl_t *curl = pool->ctx;
+	php_http_curl_client_pool_t *curl = pool->ctx;
 
 #if DBG_EVENTS
 	fprintf(stderr, "T");
@@ -118,14 +118,14 @@ static void php_http_client_pool_curl_timeout_callback(int socket, short action,
 			php_http_error(HE_WARNING, PHP_HTTP_E_SOCKET, "%s",  curl_multi_strerror(rc));
 		}
 
-		php_http_client_pool_curl_responsehandler(pool);
+		php_http_curl_client_pool_responsehandler(pool);
 	}
 }
 
-static void php_http_client_pool_curl_event_callback(int socket, short action, void *event_data)
+static void php_http_curl_client_pool_event_callback(int socket, short action, void *event_data)
 {
 	php_http_client_pool_t *pool = event_data;
-	php_http_client_pool_curl_t *curl = pool->ctx;
+	php_http_curl_client_pool_t *curl = pool->ctx;
 
 #if DBG_EVENTS
 	fprintf(stderr, "E");
@@ -140,7 +140,7 @@ static void php_http_client_pool_curl_event_callback(int socket, short action, v
 			php_http_error(HE_WARNING, PHP_HTTP_E_SOCKET, "%s", curl_multi_strerror(rc));
 		}
 
-		php_http_client_pool_curl_responsehandler(pool);
+		php_http_curl_client_pool_responsehandler(pool);
 
 		/* remove timeout if there are no transfers left */
 		if (!curl->unfinished && event_initialized(curl->timeout) && event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
@@ -149,10 +149,10 @@ static void php_http_client_pool_curl_event_callback(int socket, short action, v
 	}
 }
 
-static int php_http_client_pool_curl_socket_callback(CURL *easy, curl_socket_t sock, int action, void *socket_data, void *assign_data)
+static int php_http_curl_client_pool_socket_callback(CURL *easy, curl_socket_t sock, int action, void *socket_data, void *assign_data)
 {
 	php_http_client_pool_t *pool = socket_data;
-	php_http_client_pool_curl_t *curl = pool->ctx;
+	php_http_curl_client_pool_t *curl = pool->ctx;
 
 #if DBG_EVENTS
 	fprintf(stderr, "S");
@@ -193,17 +193,17 @@ static int php_http_client_pool_curl_socket_callback(CURL *easy, curl_socket_t s
 				return -1;
 		}
 
-		event_set(&ev->evnt, sock, events, php_http_client_pool_curl_event_callback, pool);
+		event_set(&ev->evnt, sock, events, php_http_curl_client_pool_event_callback, pool);
 		event_add(&ev->evnt, NULL);
 	}
 
 	return 0;
 }
 
-static void php_http_client_pool_curl_timer_callback(CURLM *multi, long timeout_ms, void *timer_data)
+static void php_http_curl_client_pool_timer_callback(CURLM *multi, long timeout_ms, void *timer_data)
 {
 	php_http_client_pool_t *pool = timer_data;
-	php_http_client_pool_curl_t *curl = pool->ctx;
+	php_http_curl_client_pool_t *curl = pool->ctx;
 
 #if DBG_EVENTS
 	fprintf(stderr, "%ld", timeout_ms);
@@ -211,13 +211,13 @@ static void php_http_client_pool_curl_timer_callback(CURLM *multi, long timeout_
 	if (curl->useevents) {
 
 		if (timeout_ms < 0) {
-			php_http_client_pool_curl_timeout_callback(CURL_SOCKET_TIMEOUT, CURL_CSELECT_IN|CURL_CSELECT_OUT, pool);
+			php_http_curl_client_pool_timeout_callback(CURL_SOCKET_TIMEOUT, CURL_CSELECT_IN|CURL_CSELECT_OUT, pool);
 		} else if (timeout_ms > 0 || !event_initialized(curl->timeout) || !event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
 			struct timeval timeout;
 			TSRMLS_FETCH_FROM_CTX(pool->ts);
 
 			if (!event_initialized(curl->timeout)) {
-				event_set(curl->timeout, -1, 0, php_http_client_pool_curl_timeout_callback, pool);
+				event_set(curl->timeout, -1, 0, php_http_curl_client_pool_timeout_callback, pool);
 				event_base_set(PHP_HTTP_G->curl.event_base, curl->timeout);
 			} else if (event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
 				event_del(curl->timeout);
@@ -236,9 +236,9 @@ static void php_http_client_pool_curl_timer_callback(CURLM *multi, long timeout_
 
 /* pool handler ops */
 
-static php_http_client_pool_t *php_http_client_pool_curl_init(php_http_client_pool_t *h, void *handle)
+static php_http_client_pool_t *php_http_curl_client_pool_init(php_http_client_pool_t *h, void *handle)
 {
-	php_http_client_pool_curl_t *curl;
+	php_http_curl_client_pool_t *curl;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (!handle && !(handle = php_http_resource_factory_handle_ctor(h->rf TSRMLS_CC))) {
@@ -254,9 +254,9 @@ static php_http_client_pool_t *php_http_client_pool_curl_init(php_http_client_po
 	return h;
 }
 
-static void php_http_client_pool_curl_dtor(php_http_client_pool_t *h)
+static void php_http_curl_client_pool_dtor(php_http_client_pool_t *h)
 {
-	php_http_client_pool_curl_t *curl = h->ctx;
+	php_http_curl_client_pool_t *curl = h->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 #if PHP_HTTP_HAVE_EVENT
@@ -274,14 +274,14 @@ static void php_http_client_pool_curl_dtor(php_http_client_pool_t *h)
 	h->ctx = NULL;
 }
 
-static STATUS php_http_client_pool_curl_attach(php_http_client_pool_t *h, php_http_client_t *r, php_http_message_t *m)
+static STATUS php_http_curl_client_pool_attach(php_http_client_pool_t *h, php_http_client_t *r, php_http_message_t *m)
 {
-	php_http_client_pool_curl_t *curl = h->ctx;
-	php_http_client_curl_t *recurl = r->ctx;
+	php_http_curl_client_pool_t *curl = h->ctx;
+	php_http_curl_client_t *recurl = r->ctx;
 	CURLMcode rs;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-	if (SUCCESS != php_http_client_curl_prepare(r, m)) {
+	if (SUCCESS != php_http_curl_client_prepare(r, m)) {
 		return FAILURE;
 	}
 
@@ -294,10 +294,10 @@ static STATUS php_http_client_pool_curl_attach(php_http_client_pool_t *h, php_ht
 	}
 }
 
-static STATUS php_http_client_pool_curl_detach(php_http_client_pool_t *h, php_http_client_t *r)
+static STATUS php_http_curl_client_pool_detach(php_http_client_pool_t *h, php_http_client_t *r)
 {
-	php_http_client_pool_curl_t *curl = h->ctx;
-	php_http_client_curl_t *recurl = r->ctx;
+	php_http_curl_client_pool_t *curl = h->ctx;
+	php_http_curl_client_t *recurl = r->ctx;
 	CURLMcode rs = curl_multi_remove_handle(curl->handle, recurl->handle);
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
@@ -315,12 +315,12 @@ static STATUS php_http_client_pool_curl_detach(php_http_client_pool_t *h, php_ht
 #	define SELECT_ERROR -1
 #endif
 
-static STATUS php_http_client_pool_curl_wait(php_http_client_pool_t *h, struct timeval *custom_timeout)
+static STATUS php_http_curl_client_pool_wait(php_http_client_pool_t *h, struct timeval *custom_timeout)
 {
 	int MAX;
 	fd_set R, W, E;
 	struct timeval timeout;
-	php_http_client_pool_curl_t *curl = h->ctx;
+	php_http_curl_client_pool_t *curl = h->ctx;
 
 #if PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
@@ -360,9 +360,9 @@ static STATUS php_http_client_pool_curl_wait(php_http_client_pool_t *h, struct t
 	return FAILURE;
 }
 
-static int php_http_client_pool_curl_once(php_http_client_pool_t *h)
+static int php_http_curl_client_pool_once(php_http_client_pool_t *h)
 {
-	php_http_client_pool_curl_t *curl = h->ctx;
+	php_http_curl_client_pool_t *curl = h->ctx;
 
 #if PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
@@ -374,7 +374,7 @@ static int php_http_client_pool_curl_once(php_http_client_pool_t *h)
 
 	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle, &curl->unfinished));
 
-	php_http_client_pool_curl_responsehandler(h);
+	php_http_curl_client_pool_responsehandler(h);
 
 	return curl->unfinished;
 
@@ -384,12 +384,12 @@ static void dolog(int i, const char *m) {
 	fprintf(stderr, "%d: %s\n", i, m);
 }
 #endif
-static STATUS php_http_client_pool_curl_exec(php_http_client_pool_t *h)
+static STATUS php_http_curl_client_pool_exec(php_http_client_pool_t *h)
 {
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 #if PHP_HTTP_HAVE_EVENT
-	php_http_client_pool_curl_t *curl = h->ctx;
+	php_http_curl_client_pool_t *curl = h->ctx;
 
 	if (curl->useevents) {
 		event_set_log_callback(dolog);
@@ -402,8 +402,8 @@ static STATUS php_http_client_pool_curl_exec(php_http_client_pool_t *h)
 	} else
 #endif
 	{
-		while (php_http_client_pool_curl_once(h)) {
-			if (SUCCESS != php_http_client_pool_curl_wait(h, NULL)) {
+		while (php_http_curl_client_pool_once(h)) {
+			if (SUCCESS != php_http_curl_client_pool_wait(h, NULL)) {
 #ifdef PHP_WIN32
 				/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
 				php_http_error(HE_WARNING, PHP_HTTP_E_SOCKET, "WinSock error: %d", WSAGetLastError());
@@ -418,9 +418,9 @@ static STATUS php_http_client_pool_curl_exec(php_http_client_pool_t *h)
 	return SUCCESS;
 }
 
-static STATUS php_http_client_pool_curl_setopt(php_http_client_pool_t *h, php_http_client_pool_setopt_opt_t opt, void *arg)
+static STATUS php_http_curl_client_pool_setopt(php_http_client_pool_t *h, php_http_client_pool_setopt_opt_t opt, void *arg)
 {
-	php_http_client_pool_curl_t *curl = h->ctx;
+	php_http_curl_client_pool_t *curl = h->ctx;
 
 	switch (opt) {
 		case PHP_HTTP_CLIENT_POOL_OPT_ENABLE_PIPELINING:
@@ -436,9 +436,9 @@ static STATUS php_http_client_pool_curl_setopt(php_http_client_pool_t *h, php_ht
 					curl->timeout = ecalloc(1, sizeof(struct event));
 				}
 				curl_multi_setopt(curl->handle, CURLMOPT_SOCKETDATA, h);
-				curl_multi_setopt(curl->handle, CURLMOPT_SOCKETFUNCTION, php_http_client_pool_curl_socket_callback);
+				curl_multi_setopt(curl->handle, CURLMOPT_SOCKETFUNCTION, php_http_curl_client_pool_socket_callback);
 				curl_multi_setopt(curl->handle, CURLMOPT_TIMERDATA, h);
-				curl_multi_setopt(curl->handle, CURLMOPT_TIMERFUNCTION, php_http_client_pool_curl_timer_callback);
+				curl_multi_setopt(curl->handle, CURLMOPT_TIMERFUNCTION, php_http_curl_client_pool_timer_callback);
 			} else {
 				curl_multi_setopt(curl->handle, CURLMOPT_SOCKETDATA, NULL);
 				curl_multi_setopt(curl->handle, CURLMOPT_SOCKETFUNCTION, NULL);
@@ -462,28 +462,28 @@ static php_http_resource_factory_ops_t php_http_curlm_resource_factory_ops = {
 
 static zend_class_entry *get_class_entry(void)
 {
-	return php_http_client_pool_curl_class_entry;
+	return php_http_curl_client_pool_class_entry;
 }
 
-static php_http_client_pool_ops_t php_http_client_pool_curl_ops = {
+static php_http_client_pool_ops_t php_http_curl_client_pool_ops = {
 	&php_http_curlm_resource_factory_ops,
-	php_http_client_pool_curl_init,
+	php_http_curl_client_pool_init,
 	NULL /* copy */,
-	php_http_client_pool_curl_dtor,
+	php_http_curl_client_pool_dtor,
 	NULL /*reset */,
-	php_http_client_pool_curl_exec,
-	php_http_client_pool_curl_wait,
-	php_http_client_pool_curl_once,
-	php_http_client_pool_curl_attach,
-	php_http_client_pool_curl_detach,
-	php_http_client_pool_curl_setopt,
-	(php_http_new_t) php_http_client_pool_curl_object_new_ex,
+	php_http_curl_client_pool_exec,
+	php_http_curl_client_pool_wait,
+	php_http_curl_client_pool_once,
+	php_http_curl_client_pool_attach,
+	php_http_curl_client_pool_detach,
+	php_http_curl_client_pool_setopt,
+	(php_http_new_t) php_http_curl_client_pool_object_new_ex,
 	get_class_entry
 };
 
-PHP_HTTP_API php_http_client_pool_ops_t *php_http_client_pool_curl_get_ops(void)
+PHP_HTTP_API php_http_client_pool_ops_t *php_http_curl_client_pool_get_ops(void)
 {
-	return &php_http_client_pool_curl_ops;
+	return &php_http_curl_client_pool_ops;
 }
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpClientCURL, method, 0, req_args)
@@ -492,17 +492,17 @@ PHP_HTTP_API php_http_client_pool_ops_t *php_http_client_pool_curl_get_ops(void)
 #define PHP_HTTP_CURL_ALIAS(method, func)		PHP_HTTP_STATIC_ME_ALIAS(method, func, PHP_HTTP_ARGS(HttpClientCURL, method))
 #define PHP_HTTP_CURL_MALIAS(me, al, vis)		ZEND_FENTRY(me, ZEND_MN(HttpClientCURL_##al), PHP_HTTP_ARGS(HttpClientCURL, al), vis)
 
-zend_class_entry *php_http_client_pool_curl_class_entry;
-zend_function_entry php_http_client_pool_curl_method_entry[] = {
+zend_class_entry *php_http_curl_client_pool_class_entry;
+zend_function_entry php_http_curl_client_pool_method_entry[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-zend_object_value php_http_client_pool_curl_object_new(zend_class_entry *ce TSRMLS_DC)
+zend_object_value php_http_curl_client_pool_object_new(zend_class_entry *ce TSRMLS_DC)
 {
-	return php_http_client_pool_curl_object_new_ex(ce, NULL, NULL TSRMLS_CC);
+	return php_http_curl_client_pool_object_new_ex(ce, NULL, NULL TSRMLS_CC);
 }
 
-zend_object_value php_http_client_pool_curl_object_new_ex(zend_class_entry *ce, php_http_client_pool_t *p, php_http_client_pool_object_t **ptr TSRMLS_DC)
+zend_object_value php_http_curl_client_pool_object_new_ex(zend_class_entry *ce, php_http_client_pool_t *p, php_http_client_pool_object_t **ptr TSRMLS_DC)
 {
 	zend_object_value ov;
 	php_http_client_pool_object_t *o;
@@ -512,7 +512,7 @@ zend_object_value php_http_client_pool_curl_object_new_ex(zend_class_entry *ce, 
 	object_properties_init((zend_object *) o, ce);
 
 	if (!(o->pool = p)) {
-		o->pool = php_http_client_pool_init(NULL, &php_http_client_pool_curl_ops, NULL, NULL TSRMLS_CC);
+		o->pool = php_http_client_pool_init(NULL, &php_http_curl_client_pool_ops, NULL, NULL TSRMLS_CC);
 	}
 
 	if (ptr) {
@@ -526,19 +526,19 @@ zend_object_value php_http_client_pool_curl_object_new_ex(zend_class_entry *ce, 
 }
 
 
-PHP_MINIT_FUNCTION(http_client_pool_curl)
+PHP_MINIT_FUNCTION(http_curl_client_pool)
 {
 	if (SUCCESS != php_http_persistent_handle_provide(ZEND_STRL("http_client_pool.curl"), &php_http_curlm_resource_factory_ops, NULL, NULL)) {
 		return FAILURE;
 	}
 
-	PHP_HTTP_REGISTER_CLASS(http\\Client\\Pool, CURL, http_client_pool_curl, php_http_client_pool_get_class_entry(), 0);
-	php_http_client_pool_curl_class_entry->create_object = php_http_client_pool_curl_object_new;
+	PHP_HTTP_REGISTER_CLASS(http\\Curl\\Client, Pool, http_curl_client_pool, php_http_client_pool_get_class_entry(), 0);
+	php_http_curl_client_pool_class_entry->create_object = php_http_curl_client_pool_object_new;
 
 	return SUCCESS;
 }
 
-PHP_RINIT_FUNCTION(http_client_pool_curl)
+PHP_RINIT_FUNCTION(http_curl_client_pool)
 {
 #if PHP_HTTP_HAVE_EVENT
 	if (!PHP_HTTP_G->curl.event_base && !(PHP_HTTP_G->curl.event_base = event_init())) {

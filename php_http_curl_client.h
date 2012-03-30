@@ -10,14 +10,14 @@
     +--------------------------------------------------------------------+
 */
 
-#ifndef PHP_HTTP_CLIENT_CURL_H
-#define PHP_HTTP_CLIENT_CURL_H
+#ifndef PHP_HTTP_CURL_CLIENT_H
+#define PHP_HTTP_CURL_CLIENT_H
 
 #if PHP_HTTP_HAVE_CURL
 
-PHP_HTTP_API php_http_client_ops_t *php_http_client_curl_get_ops(void);
+PHP_HTTP_API php_http_client_ops_t *php_http_curl_client_get_ops(void);
 
-typedef struct php_http_client_curl {
+typedef struct php_http_curl_client {
 	CURL *handle;
 
 	struct {
@@ -39,16 +39,16 @@ typedef struct php_http_client_curl {
 
 	php_http_client_progress_t progress;
 
-} php_http_client_curl_t;
+} php_http_curl_client_t;
 
-typedef struct php_http_client_curl_storage {
+typedef struct php_http_curl_client_storage {
 	char *url;
 	char *cookiestore;
 	char errorbuffer[0x100];
-} php_http_client_curl_storage_t;
+} php_http_curl_client_storage_t;
 
-static inline php_http_client_curl_storage_t *get_storage(CURL *ch) {
-	php_http_client_curl_storage_t *st = NULL;
+static inline php_http_curl_client_storage_t *get_storage(CURL *ch) {
+	php_http_curl_client_storage_t *st = NULL;
 
 	curl_easy_getinfo(ch, CURLINFO_PRIVATE, &st);
 
@@ -61,18 +61,18 @@ static inline php_http_client_curl_storage_t *get_storage(CURL *ch) {
 	return st;
 }
 
-extern STATUS php_http_client_curl_prepare(php_http_client_t *h, php_http_message_t *msg);
+extern STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_message_t *msg);
 
-extern zend_class_entry *php_http_client_curl_class_entry;
-extern zend_function_entry php_http_client_curl_method_entry[];
+extern zend_class_entry *php_http_curl_client_class_entry;
+extern zend_function_entry php_http_curl_client_method_entry[];
 
-extern zend_object_value php_http_client_curl_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_client_curl_object_new_ex(zend_class_entry *ce, php_http_client_t *r, php_http_client_object_t **ptr TSRMLS_DC);
+extern zend_object_value php_http_curl_client_object_new(zend_class_entry *ce TSRMLS_DC);
+extern zend_object_value php_http_curl_client_object_new_ex(zend_class_entry *ce, php_http_client_t *r, php_http_client_object_t **ptr TSRMLS_DC);
 
-PHP_MINIT_FUNCTION(http_client_curl);
+PHP_MINIT_FUNCTION(http_curl_client);
 
 #endif /* PHP_HTTP_HAVE_CURL */
-#endif /* PHP_HTTP_CLIENT_CURL_H */
+#endif /* PHP_HTTP_CURL_CLIENT_H */
 
 
 /*

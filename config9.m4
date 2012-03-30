@@ -395,13 +395,13 @@ dnl ----
 		php_http_buffer.c \
 		php_http.c \
 		php_http_client.c \
-		php_http_client_curl.c \
+		php_http_curl_client.c \
 		php_http_client_datashare.c \
-		php_http_client_datashare_curl.c \
+		php_http_curl_client_datashare.c \
 		php_http_client_factory.c \
 		php_http_client_interface.c \
 		php_http_client_pool.c \
-		php_http_client_pool_curl.c \
+		php_http_curl_client_pool.c \
 		php_http_client_request.c \
 		php_http_client_response.c \
 		php_http_cookie.c \
@@ -442,13 +442,13 @@ dnl ----
 	PHP_HTTP_HEADERS="
 		php_http_api.h \
 		php_http_buffer.h \
-		php_http_client_curl.h \
-		php_http_client_datashare_curl.h \
+		php_http_curl_client.h \
+		php_http_curl_client_datashare.h \
 		php_http_client_datashare.h \
 		php_http_client_factory.h \
 		php_http_client.h \
 		php_http_client_interface.h \
-		php_http_client_pool_curl.h \
+		php_http_curl_client_pool.h \
 		php_http_client_pool.h \
 		php_http_client_request.h \
 		php_http_client_response.h \

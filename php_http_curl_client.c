@@ -70,7 +70,7 @@ static void *php_http_curl_copy(void *opaque, void *handle TSRMLS_DC)
 
 static void php_http_curl_dtor(void *opaque, void *handle TSRMLS_DC)
 {
-	php_http_client_curl_storage_t *st = get_storage(handle);
+	php_http_curl_client_storage_t *st = get_storage(handle);
 
 	curl_easy_cleanup(handle);
 
@@ -87,7 +87,7 @@ static void php_http_curl_dtor(void *opaque, void *handle TSRMLS_DC)
 
 /* callbacks */
 
-static size_t php_http_client_curl_read_callback(void *data, size_t len, size_t n, void *ctx)
+static size_t php_http_curl_client_read_callback(void *data, size_t len, size_t n, void *ctx)
 {
 	php_http_message_body_t *body = ctx;
 
@@ -98,10 +98,10 @@ static size_t php_http_client_curl_read_callback(void *data, size_t len, size_t 
 	return 0;
 }
 
-static int php_http_client_curl_progress_callback(void *ctx, double dltotal, double dlnow, double ultotal, double ulnow)
+static int php_http_curl_client_progress_callback(void *ctx, double dltotal, double dlnow, double ultotal, double ulnow)
 {
 	php_http_client_t *h = ctx;
-	php_http_client_curl_t *curl = h->ctx;
+	php_http_curl_client_t *curl = h->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	curl->progress.state.dl.total = dltotal;
@@ -114,7 +114,7 @@ static int php_http_client_curl_progress_callback(void *ctx, double dltotal, dou
 	return 0;
 }
 
-static curlioerr php_http_client_curl_ioctl_callback(CURL *ch, curliocmd cmd, void *ctx)
+static curlioerr php_http_curl_client_ioctl_callback(CURL *ch, curliocmd cmd, void *ctx)
 {
 	php_http_message_body_t *body = ctx;
 
@@ -133,10 +133,10 @@ static curlioerr php_http_client_curl_ioctl_callback(CURL *ch, curliocmd cmd, vo
 	return CURLIOE_FAILRESTART;
 }
 
-static int php_http_client_curl_raw_callback(CURL *ch, curl_infotype type, char *data, size_t length, void *ctx)
+static int php_http_curl_client_raw_callback(CURL *ch, curl_infotype type, char *data, size_t length, void *ctx)
 {
 	php_http_client_t *h = ctx;
-	php_http_client_curl_t *curl = h->ctx;
+	php_http_curl_client_t *curl = h->ctx;
 	unsigned flags = 0;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
@@ -199,7 +199,7 @@ static int php_http_client_curl_raw_callback(CURL *ch, curl_infotype type, char 
 	return 0;
 }
 
-static int php_http_client_curl_dummy_callback(char *data, size_t n, size_t l, void *s)
+static int php_http_curl_client_dummy_callback(char *data, size_t n, size_t l, void *s)
 {
 	return n*l;
 }
@@ -242,7 +242,7 @@ static inline zval *get_option(HashTable *cache, HashTable *options, char *key, 
 static STATUS set_options(php_http_client_t *h, HashTable *options)
 {
 	zval *zoption;
-	php_http_client_curl_t *curl = h->ctx;
+	php_http_curl_client_t *curl = h->ctx;
 	CURL *ch = curl->handle;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
@@ -532,7 +532,7 @@ static STATUS set_options(php_http_client_t *h, HashTable *options)
 
 	/* cookiestore, read initial cookies from that file and store cookies back into that file */
 	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("cookiestore"), IS_STRING))) {
-		php_http_client_curl_storage_t *storage = get_storage(curl->handle);
+		php_http_curl_client_storage_t *storage = get_storage(curl->handle);
 
 		if (Z_STRLEN_P(zoption)) {
 			if (SUCCESS != php_check_open_basedir(Z_STRVAL_P(zoption) TSRMLS_CC)) {
@@ -792,11 +792,11 @@ static STATUS get_info(CURL *ch, HashTable *info)
 
 /* request handler ops */
 
-static STATUS php_http_client_curl_reset(php_http_client_t *h);
+static STATUS php_http_curl_client_reset(php_http_client_t *h);
 
-static php_http_client_t *php_http_client_curl_init(php_http_client_t *h, void *handle)
+static php_http_client_t *php_http_curl_client_init(php_http_client_t *h, void *handle)
 {
-	php_http_client_curl_t *ctx;
+	php_http_curl_client_t *ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (!handle && !(handle = php_http_resource_factory_handle_ctor(h->rf TSRMLS_CC))) {
@@ -819,22 +819,22 @@ static php_http_client_t *php_http_client_curl_init(php_http_client_t *h, void *
 	curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
 	curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
 	curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, NULL);
-	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, php_http_client_curl_dummy_callback);
-	curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, php_http_client_curl_raw_callback);
-	curl_easy_setopt(handle, CURLOPT_READFUNCTION, php_http_client_curl_read_callback);
-	curl_easy_setopt(handle, CURLOPT_IOCTLFUNCTION, php_http_client_curl_ioctl_callback);
-	curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, php_http_client_curl_progress_callback);
+	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, php_http_curl_client_dummy_callback);
+	curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, php_http_curl_client_raw_callback);
+	curl_easy_setopt(handle, CURLOPT_READFUNCTION, php_http_curl_client_read_callback);
+	curl_easy_setopt(handle, CURLOPT_IOCTLFUNCTION, php_http_curl_client_ioctl_callback);
+	curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, php_http_curl_client_progress_callback);
 	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, h);
 	curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, h);
 
-	php_http_client_curl_reset(h);
+	php_http_curl_client_reset(h);
 
 	return h;
 }
 
-static php_http_client_t *php_http_client_curl_copy(php_http_client_t *from, php_http_client_t *to)
+static php_http_client_t *php_http_curl_client_copy(php_http_client_t *from, php_http_client_t *to)
 {
-	php_http_client_curl_t *ctx = from->ctx;
+	php_http_curl_client_t *ctx = from->ctx;
 	void *copy;
 	TSRMLS_FETCH_FROM_CTX(from->ts);
 
@@ -843,15 +843,15 @@ static php_http_client_t *php_http_client_curl_copy(php_http_client_t *from, php
 	}
 
 	if (to) {
-		return php_http_client_curl_init(to, copy);
+		return php_http_curl_client_init(to, copy);
 	} else {
 		return php_http_client_init(NULL, from->ops, from->rf, copy TSRMLS_CC);
 	}
 }
 
-static void php_http_client_curl_dtor(php_http_client_t *h)
+static void php_http_curl_client_dtor(php_http_client_t *h)
 {
-	php_http_client_curl_t *ctx = h->ctx;
+	php_http_curl_client_t *ctx = h->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	curl_easy_setopt(ctx->handle, CURLOPT_NOPROGRESS, 1L);
@@ -873,11 +873,11 @@ static void php_http_client_curl_dtor(php_http_client_t *h)
 	efree(ctx);
 	h->ctx = NULL;
 }
-static STATUS php_http_client_curl_reset(php_http_client_t *h)
+static STATUS php_http_curl_client_reset(php_http_client_t *h)
 {
-	php_http_client_curl_t *curl = h->ctx;
+	php_http_curl_client_t *curl = h->ctx;
 	CURL *ch = curl->handle;
-	php_http_client_curl_storage_t *st;
+	php_http_curl_client_storage_t *st;
 
 	if ((st = get_storage(ch))) {
 		if (st->url) {
@@ -1024,10 +1024,10 @@ static STATUS php_http_client_curl_reset(php_http_client_t *h)
 	return SUCCESS;
 }
 
-STATUS php_http_client_curl_prepare(php_http_client_t *h, php_http_message_t *msg)
+STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_message_t *msg)
 {
-	php_http_client_curl_t *curl = h->ctx;
-	php_http_client_curl_storage_t *storage = get_storage(curl->handle);
+	php_http_curl_client_t *curl = h->ctx;
+	php_http_curl_client_storage_t *storage = get_storage(curl->handle);
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	/* request url */
@@ -1114,15 +1114,15 @@ STATUS php_http_client_curl_prepare(php_http_client_t *h, php_http_message_t *ms
 	return SUCCESS;
 }
 
-static STATUS php_http_client_curl_exec(php_http_client_t *h, php_http_message_t *msg)
+static STATUS php_http_curl_client_exec(php_http_client_t *h, php_http_message_t *msg)
 {
 	uint tries = 0;
 	CURLcode result;
-	php_http_client_curl_t *curl = h->ctx;
-	php_http_client_curl_storage_t *storage = get_storage(curl->handle);
+	php_http_curl_client_t *curl = h->ctx;
+	php_http_curl_client_storage_t *storage = get_storage(curl->handle);
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-	if (SUCCESS != php_http_client_curl_prepare(h, msg)) {
+	if (SUCCESS != php_http_curl_client_prepare(h, msg)) {
 		return FAILURE;
 	}
 
@@ -1164,9 +1164,9 @@ retry:
 	return SUCCESS;
 }
 
-static STATUS php_http_client_curl_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
+static STATUS php_http_curl_client_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
 {
-	php_http_client_curl_t *curl = h->ctx;
+	php_http_curl_client_t *curl = h->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	switch (opt) {
@@ -1219,9 +1219,9 @@ static STATUS php_http_client_curl_setopt(php_http_client_t *h, php_http_client_
 	return SUCCESS;
 }
 
-static STATUS php_http_client_curl_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg)
+static STATUS php_http_curl_client_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg)
 {
-	php_http_client_curl_t *curl = h->ctx;
+	php_http_curl_client_t *curl = h->ctx;
 
 	switch (opt) {
 		case PHP_HTTP_CLIENT_OPT_PROGRESS_INFO:
@@ -1239,7 +1239,7 @@ static STATUS php_http_client_curl_getopt(php_http_client_t *h, php_http_client_
 	return SUCCESS;
 }
 
-static php_http_resource_factory_ops_t php_http_client_curl_resource_factory_ops = {
+static php_http_resource_factory_ops_t php_http_curl_client_resource_factory_ops = {
 	php_http_curl_ctor,
 	php_http_curl_copy,
 	php_http_curl_dtor
@@ -1247,49 +1247,49 @@ static php_http_resource_factory_ops_t php_http_client_curl_resource_factory_ops
 
 static zend_class_entry *get_class_entry(void)
 {
-	return php_http_client_curl_class_entry;
+	return php_http_curl_client_class_entry;
 }
 
-static php_http_client_ops_t php_http_client_curl_ops = {
-	&php_http_client_curl_resource_factory_ops,
-	php_http_client_curl_init,
-	php_http_client_curl_copy,
-	php_http_client_curl_dtor,
-	php_http_client_curl_reset,
-	php_http_client_curl_exec,
-	php_http_client_curl_setopt,
-	php_http_client_curl_getopt,
-	(php_http_new_t) php_http_client_curl_object_new_ex,
+static php_http_client_ops_t php_http_curl_client_ops = {
+	&php_http_curl_client_resource_factory_ops,
+	php_http_curl_client_init,
+	php_http_curl_client_copy,
+	php_http_curl_client_dtor,
+	php_http_curl_client_reset,
+	php_http_curl_client_exec,
+	php_http_curl_client_setopt,
+	php_http_curl_client_getopt,
+	(php_http_new_t) php_http_curl_client_object_new_ex,
 	get_class_entry
 };
 
-PHP_HTTP_API php_http_client_ops_t *php_http_client_curl_get_ops(void)
+PHP_HTTP_API php_http_client_ops_t *php_http_curl_client_get_ops(void)
 {
-	return &php_http_client_curl_ops;
+	return &php_http_curl_client_ops;
 }
 
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 		PHP_HTTP_BEGIN_ARGS_EX(HttpClientCURL, method, 0, req_args)
 #define PHP_HTTP_EMPTY_ARGS(method)					PHP_HTTP_EMPTY_ARGS_EX(HttpClientCURL, method, 0)
-#define PHP_HTTP_CLIENT_CURL_ME(method, visibility)	PHP_ME(HttpClientCURL, method, PHP_HTTP_ARGS(HttpClientCURL, method), visibility)
-#define PHP_HTTP_CLIENT_CURL_CLIENT_MALIAS(me, vis)	ZEND_FENTRY(me, ZEND_MN(HttpClient_##me), PHP_HTTP_ARGS(HttpClientCURL, me), vis)
+#define PHP_HTTP_CURL_CLIENT_ME(method, visibility)	PHP_ME(HttpClientCURL, method, PHP_HTTP_ARGS(HttpClientCURL, method), visibility)
+#define PHP_HTTP_CURL_CLIENT_CLIENT_MALIAS(me, vis)	ZEND_FENTRY(me, ZEND_MN(HttpClient_##me), PHP_HTTP_ARGS(HttpClientCURL, me), vis)
 
 PHP_HTTP_BEGIN_ARGS(send, 1)
 	PHP_HTTP_ARG_VAL(request, 0)
 PHP_HTTP_END_ARGS;
 
-zend_class_entry *php_http_client_curl_class_entry;
-zend_function_entry php_http_client_curl_method_entry[] = {
-	PHP_HTTP_CLIENT_CURL_CLIENT_MALIAS(send, ZEND_ACC_PUBLIC)
+zend_class_entry *php_http_curl_client_class_entry;
+zend_function_entry php_http_curl_client_method_entry[] = {
+	PHP_HTTP_CURL_CLIENT_CLIENT_MALIAS(send, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
-zend_object_value php_http_client_curl_object_new(zend_class_entry *ce TSRMLS_DC)
+zend_object_value php_http_curl_client_object_new(zend_class_entry *ce TSRMLS_DC)
 {
-	return php_http_client_curl_object_new_ex(ce, NULL, NULL TSRMLS_CC);
+	return php_http_curl_client_object_new_ex(ce, NULL, NULL TSRMLS_CC);
 }
 
-zend_object_value php_http_client_curl_object_new_ex(zend_class_entry *ce, php_http_client_t *r, php_http_client_object_t **ptr TSRMLS_DC)
+zend_object_value php_http_curl_client_object_new_ex(zend_class_entry *ce, php_http_client_t *r, php_http_client_object_t **ptr TSRMLS_DC)
 {
 	zend_object_value ov;
 	php_http_client_object_t *o;
@@ -1299,7 +1299,7 @@ zend_object_value php_http_client_curl_object_new_ex(zend_class_entry *ce, php_h
 	object_properties_init((zend_object *) o, ce);
 
 	if (!(o->client = r)) {
-		o->client = php_http_client_init(NULL, &php_http_client_curl_ops, NULL, NULL TSRMLS_CC);
+		o->client = php_http_client_init(NULL, &php_http_curl_client_ops, NULL, NULL TSRMLS_CC);
 	}
 
 	if (ptr) {
@@ -1313,69 +1313,69 @@ zend_object_value php_http_client_curl_object_new_ex(zend_class_entry *ce, php_h
 }
 
 
-PHP_MINIT_FUNCTION(http_client_curl)
+PHP_MINIT_FUNCTION(http_curl_client)
 {
-	if (SUCCESS != php_http_persistent_handle_provide(ZEND_STRL("http_client.curl"), &php_http_client_curl_resource_factory_ops, NULL, NULL)) {
+	if (SUCCESS != php_http_persistent_handle_provide(ZEND_STRL("http_client.curl"), &php_http_curl_client_resource_factory_ops, NULL, NULL)) {
 		return FAILURE;
 	}
 
-	PHP_HTTP_REGISTER_CLASS(http\\Client, CURL, http_client_curl, php_http_client_get_class_entry(), 0);
-	php_http_client_curl_class_entry->create_object = php_http_client_curl_object_new;
+	PHP_HTTP_REGISTER_CLASS(http\\Curl, Client, http_curl_client, php_http_client_get_class_entry(), 0);
+	php_http_curl_client_class_entry->create_object = php_http_curl_client_object_new;
 
 	/*
 	* HTTP Protocol Version Constants
 	*/
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("HTTP_VERSION_1_0"), CURL_HTTP_VERSION_1_0 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("HTTP_VERSION_1_1"), CURL_HTTP_VERSION_1_1 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("HTTP_VERSION_NONE"), CURL_HTTP_VERSION_NONE TSRMLS_CC); /* to be removed */
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("HTTP_VERSION_ANY"), CURL_HTTP_VERSION_NONE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("HTTP_VERSION_1_0"), CURL_HTTP_VERSION_1_0 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("HTTP_VERSION_1_1"), CURL_HTTP_VERSION_1_1 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("HTTP_VERSION_NONE"), CURL_HTTP_VERSION_NONE TSRMLS_CC); /* to be removed */
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("HTTP_VERSION_ANY"), CURL_HTTP_VERSION_NONE TSRMLS_CC);
 
 	/*
 	* SSL Version Constants
 	*/
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("SSL_VERSION_TLSv1"), CURL_SSLVERSION_TLSv1 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("SSL_VERSION_SSLv2"), CURL_SSLVERSION_SSLv2 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("SSL_VERSION_SSLv3"), CURL_SSLVERSION_SSLv3 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("SSL_VERSION_ANY"), CURL_SSLVERSION_DEFAULT TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("SSL_VERSION_TLSv1"), CURL_SSLVERSION_TLSv1 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("SSL_VERSION_SSLv2"), CURL_SSLVERSION_SSLv2 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("SSL_VERSION_SSLv3"), CURL_SSLVERSION_SSLv3 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("SSL_VERSION_ANY"), CURL_SSLVERSION_DEFAULT TSRMLS_CC);
 
 	/*
 	* DNS IPvX resolving
 	*/
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("IPRESOLVE_V4"), CURL_IPRESOLVE_V4 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("IPRESOLVE_V6"), CURL_IPRESOLVE_V6 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("IPRESOLVE_ANY"), CURL_IPRESOLVE_WHATEVER TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("IPRESOLVE_V4"), CURL_IPRESOLVE_V4 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("IPRESOLVE_V6"), CURL_IPRESOLVE_V6 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("IPRESOLVE_ANY"), CURL_IPRESOLVE_WHATEVER TSRMLS_CC);
 
 	/*
 	* Auth Constants
 	*/
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("AUTH_BASIC"), CURLAUTH_BASIC TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("AUTH_DIGEST"), CURLAUTH_DIGEST TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("AUTH_BASIC"), CURLAUTH_BASIC TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("AUTH_DIGEST"), CURLAUTH_DIGEST TSRMLS_CC);
 #if PHP_HTTP_CURL_VERSION(7,19,3)
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("AUTH_DIGEST_IE"), CURLAUTH_DIGEST_IE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("AUTH_DIGEST_IE"), CURLAUTH_DIGEST_IE TSRMLS_CC);
 #endif
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("AUTH_NTLM"), CURLAUTH_NTLM TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("AUTH_GSSNEG"), CURLAUTH_GSSNEGOTIATE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("AUTH_ANY"), CURLAUTH_ANY TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("AUTH_NTLM"), CURLAUTH_NTLM TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("AUTH_GSSNEG"), CURLAUTH_GSSNEGOTIATE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("AUTH_ANY"), CURLAUTH_ANY TSRMLS_CC);
 
 	/*
 	* Proxy Type Constants
 	*/
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("PROXY_SOCKS4"), CURLPROXY_SOCKS4 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("PROXY_SOCKS4A"), CURLPROXY_SOCKS5 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("PROXY_SOCKS5_HOSTNAME"), CURLPROXY_SOCKS5 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("PROXY_SOCKS5"), CURLPROXY_SOCKS5 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("PROXY_HTTP"), CURLPROXY_HTTP TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("PROXY_SOCKS4"), CURLPROXY_SOCKS4 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("PROXY_SOCKS4A"), CURLPROXY_SOCKS5 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("PROXY_SOCKS5_HOSTNAME"), CURLPROXY_SOCKS5 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("PROXY_SOCKS5"), CURLPROXY_SOCKS5 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("PROXY_HTTP"), CURLPROXY_HTTP TSRMLS_CC);
 #	if PHP_HTTP_CURL_VERSION(7,19,4)
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("PROXY_HTTP_1_0"), CURLPROXY_HTTP_1_0 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("PROXY_HTTP_1_0"), CURLPROXY_HTTP_1_0 TSRMLS_CC);
 #	endif
 
 	/*
 	* Post Redirection Constants
 	*/
 #if PHP_HTTP_CURL_VERSION(7,19,1)
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("POSTREDIR_301"), CURL_REDIR_POST_301 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("POSTREDIR_302"), CURL_REDIR_POST_302 TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_client_curl_class_entry, ZEND_STRL("POSTREDIR_ALL"), CURL_REDIR_POST_ALL TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("POSTREDIR_301"), CURL_REDIR_POST_301 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("POSTREDIR_302"), CURL_REDIR_POST_302 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_curl_client_class_entry, ZEND_STRL("POSTREDIR_ALL"), CURL_REDIR_POST_ALL TSRMLS_CC);
 #endif
 
 	return SUCCESS;
