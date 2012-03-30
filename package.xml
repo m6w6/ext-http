@@ -48,14 +48,34 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="doc" name="ThanksTo.txt"/>
    <file role="src" name="config.m4"/>
    <file role="src" name="config9.m4"/>
-  
+   
    <file role="src" name="php_http_api.h"/>
    <file role="src" name="php_http_buffer.c"/>
    <file role="src" name="php_http_buffer.h"/>
    <file role="src" name="php_http.c"/>
+   <file role="src" name="php_http_client.c"/>
+   <file role="src" name="php_http_client_datashare.c"/>
+   <file role="src" name="php_http_client_datashare.h"/>
+   <file role="src" name="php_http_client_factory.c"/>
+   <file role="src" name="php_http_client_factory.h"/>
+   <file role="src" name="php_http_client.h"/>
+   <file role="src" name="php_http_client_interface.c"/>
+   <file role="src" name="php_http_client_interface.h"/>
+   <file role="src" name="php_http_client_pool.c"/>
+   <file role="src" name="php_http_client_pool.h"/>
+   <file role="src" name="php_http_client_request.c"/>
+   <file role="src" name="php_http_client_request.h"/>
+   <file role="src" name="php_http_client_response.c"/>
+   <file role="src" name="php_http_client_response.h"/>
    <file role="src" name="php_http_cookie.c"/>
    <file role="src" name="php_http_cookie.h"/>
    <file role="src" name="php_http_curl.c"/>
+   <file role="src" name="php_http_curl_client.c"/>
+   <file role="src" name="php_http_curl_client_datashare.c"/>
+   <file role="src" name="php_http_curl_client_datashare.h"/>
+   <file role="src" name="php_http_curl_client.h"/>
+   <file role="src" name="php_http_curl_client_pool.c"/>
+   <file role="src" name="php_http_curl_client_pool.h"/>
    <file role="src" name="php_http_curl.h"/>
    <file role="src" name="php_http_encoding.c"/>
    <file role="src" name="php_http_encoding.h"/>
@@ -98,23 +118,15 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="src" name="php_http_property_proxy.h"/>
    <file role="src" name="php_http_querystring.c"/>
    <file role="src" name="php_http_querystring.h"/>
-   <file role="src" name="php_http_request.c"/>
-   <file role="src" name="php_http_request_datashare.c"/>
-   <file role="src" name="php_http_request_datashare.h"/>
-   <file role="src" name="php_http_request_factory.c"/>
-   <file role="src" name="php_http_request_factory.h"/>
-   <file role="src" name="php_http_request.h"/>
-   <file role="src" name="php_http_request_pool.c"/>
-   <file role="src" name="php_http_request_pool.h"/>
    <file role="src" name="php_http_resource_factory.c"/>
    <file role="src" name="php_http_resource_factory.h"/>
-   <file role="src" name="php_http_serf.h"/>
    <file role="src" name="php_http_strlist.c"/>
    <file role="src" name="php_http_strlist.h"/>
    <file role="src" name="php_http_url.c"/>
    <file role="src" name="php_http_url.h"/>
    <file role="src" name="php_http_version.c"/>
    <file role="src" name="php_http_version.h"/>
+
    <dir name="tests">
     <file role="test" name="skipif.inc"/>
     <dir name="HttpRequestPool_cache" />
