@@ -39,6 +39,43 @@ PHP_HTTP_BEGIN_ARGS(addQuery, 1)
 	PHP_HTTP_ARG_VAL(query_data, 0)
 PHP_HTTP_END_ARGS;
 
+PHP_HTTP_EMPTY_ARGS(getOptions);
+PHP_HTTP_BEGIN_ARGS(setOptions, 0)
+	PHP_HTTP_ARG_ARR(options, 1, 0)
+PHP_HTTP_END_ARGS;
+
+PHP_HTTP_EMPTY_ARGS(getSslOptions);
+PHP_HTTP_BEGIN_ARGS(setSslOptions, 0)
+	PHP_HTTP_ARG_ARR(ssl_options, 1, 0)
+PHP_HTTP_END_ARGS;
+
+PHP_HTTP_BEGIN_ARGS(addSslOptions, 0)
+	PHP_HTTP_ARG_ARR(ssl_options, 1, 0)
+PHP_HTTP_END_ARGS;
+
+
+static zend_class_entry *php_http_client_request_class_entry;
+
+zend_class_entry * php_http_client_request_get_class_entry(void)
+{
+	return php_http_client_request_class_entry;
+}
+
+static zend_function_entry php_http_client_request_method_entry[] = {
+	PHP_HTTP_CLIENT_REQUEST_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_HTTP_CLIENT_REQUEST_ME(getQuery, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_REQUEST_ME(setQuery, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_REQUEST_ME(addQuery, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_REQUEST_ME(getContentType, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_REQUEST_ME(setContentType, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_REQUEST_ME(setOptions, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_REQUEST_ME(getOptions, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_REQUEST_ME(setSslOptions, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_REQUEST_ME(getSslOptions, ZEND_ACC_PUBLIC)
+	PHP_HTTP_CLIENT_REQUEST_ME(addSslOptions, ZEND_ACC_PUBLIC)
+	EMPTY_FUNCTION_ENTRY
+};
+
 
 PHP_METHOD(HttpClientRequest, __construct)
 {
@@ -208,21 +245,59 @@ PHP_METHOD(HttpClientRequest, addQuery)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(HttpClientRequest, setOptions)
+{
+	zval *opts = NULL;
 
-zend_class_entry *php_http_client_request_class_entry;
-zend_function_entry php_http_client_request_method_entry[] = {
-	PHP_HTTP_CLIENT_REQUEST_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_HTTP_CLIENT_REQUEST_ME(getQuery, ZEND_ACC_PUBLIC)
-	PHP_HTTP_CLIENT_REQUEST_ME(setQuery, ZEND_ACC_PUBLIC)
-	PHP_HTTP_CLIENT_REQUEST_ME(addQuery, ZEND_ACC_PUBLIC)
-	PHP_HTTP_CLIENT_REQUEST_ME(getContentType, ZEND_ACC_PUBLIC)
-	PHP_HTTP_CLIENT_REQUEST_ME(setContentType, ZEND_ACC_PUBLIC)
-	EMPTY_FUNCTION_ENTRY
-};
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
+		php_http_client_options_set(getThis(), opts TSRMLS_CC);
+
+		RETVAL_ZVAL(getThis(), 1, 0);
+	}
+}
+
+PHP_METHOD(HttpClientRequest, getOptions)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		RETURN_PROP(php_http_client_request_class_entry, "options");
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpClientRequest, setSslOptions)
+{
+	zval *opts = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
+		php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 1 TSRMLS_CC);
+
+		RETVAL_ZVAL(getThis(), 1, 0);
+	}
+}
+
+PHP_METHOD(HttpClientRequest, addSslOptions)
+{
+	zval *opts = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
+		php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 0 TSRMLS_CC);
+
+		RETVAL_ZVAL(getThis(), 1, 0);
+	}
+}
+
+PHP_METHOD(HttpClientRequest, getSslOptions)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_client_options_get_subr(getThis(), ZEND_STRS("ssl"), return_value TSRMLS_CC);
+	}
+}
 
 PHP_MINIT_FUNCTION(http_client_request)
 {
 	PHP_HTTP_REGISTER_CLASS(http\\Client, Request, http_client_request, php_http_message_class_entry, 0);
+
+	zend_declare_property_null(php_http_client_request_class_entry, ZEND_STRL("options"), ZEND_ACC_PROTECTED TSRMLS_CC);
 
 	return SUCCESS;
 }

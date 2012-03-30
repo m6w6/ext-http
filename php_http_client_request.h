@@ -13,8 +13,7 @@
 #ifndef PHP_HTTP_CLIENT_REQUEST_H
 #define PHP_HTTP_CLIENT_REQUEST_H
 
-extern zend_class_entry *php_http_client_request_class_entry;
-extern zend_function_entry php_http_client_request_method_entry[];
+zend_class_entry *php_http_client_request_get_class_entry(void);
 
 PHP_METHOD(HttpClientRequest, __construct);
 PHP_METHOD(HttpClientRequest, setContentType);
@@ -22,6 +21,11 @@ PHP_METHOD(HttpClientRequest, getContentType);
 PHP_METHOD(HttpClientRequest, setQuery);
 PHP_METHOD(HttpClientRequest, getQuery);
 PHP_METHOD(HttpClientRequest, addQuery);
+PHP_METHOD(HttpClientRequest, setOptions);
+PHP_METHOD(HttpClientRequest, getOptions);
+PHP_METHOD(HttpClientRequest, addSslOptions);
+PHP_METHOD(HttpClientRequest, setSslOptions);
+PHP_METHOD(HttpClientRequest, getSslOptions);
 
 PHP_MINIT_FUNCTION(http_client_request);
 

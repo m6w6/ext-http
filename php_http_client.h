@@ -177,8 +177,9 @@ zend_object_handlers *php_http_client_get_object_handlers(void);
 STATUS php_http_client_object_handle_request(zval *zclient, zval **zreq TSRMLS_DC);
 STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC);
 
-STATUS php_http_client_object_requesthandler(php_http_client_object_t *obj, zval *this_ptr, char **meth, char **url, php_http_message_body_t **body TSRMLS_DC);
-STATUS php_http_client_object_responsehandler(php_http_client_object_t *obj, zval *this_ptr TSRMLS_DC);
+void php_http_client_options_set(zval *this_ptr, zval *opts TSRMLS_DC);
+void php_http_client_options_set_subr(zval *this_ptr, char *key, size_t len, zval *opts, int overwrite TSRMLS_DC);
+void php_http_client_options_get_subr(zval *this_ptr, char *key, size_t len, zval *return_value TSRMLS_DC);
 
 PHP_METHOD(HttpClient, __construct);
 PHP_METHOD(HttpClient, getObservers);

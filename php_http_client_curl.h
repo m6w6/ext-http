@@ -28,6 +28,7 @@ typedef struct php_http_client_curl {
 		php_http_buffer_t cookies;
 
 		long redirects;
+		unsigned range_request:1;
 
 		struct {
 			uint count;
