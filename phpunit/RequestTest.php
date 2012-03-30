@@ -28,7 +28,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
     protected $r;
 
     function setUp() {
-        $this->r = (new http\Request\Factory)->createRequest();
+        $this->r = (new http\Client\Factory)->createClient();
         $this->r->setOptions(
             array(
                 "connecttimeout"    => 30,
@@ -38,10 +38,8 @@ class RequestTest extends PHPUnit_Framework_TestCase
     }
 
     function testClone() {
-        $this->r->setUrl("http://dev.iworks.at/ext-http/.print_request.php");
         $c = clone $this->r;
-        $c->setUrl("http://dev.iworks.at/ext-http/.print_headers.php");
-        $this->assertNotEquals($this->r->send(), $c->send());
+        $this->assertNotSame($this->r, $c);
     }
 
     function testObserver() {
@@ -61,51 +59,52 @@ class RequestTest extends PHPUnit_Framework_TestCase
                 }
             )
         );
-        $this->r->setUrl("http://dev.iworks.at/ext-http/")->send();
+        $this->r->setRequest(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/"))->send(null);
         $this->assertRegexp("/(\.-)+/", $this->r->pi);
         $this->assertCount(3, $this->r->getObservers());
     }
 
     function testCookies() {
-        $this->r->setUrl("http://dev.iworks.at/ext-http/.cookie.php")->send();
+        $this->r->setRequest(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/.cookie.php"))->send(null);
         $this->assertNotContains("Cookie", (string) $this->r->getRequestMessage());
-        $this->r->send();
+        $this->r->send(null);
         $this->assertNotContains("Cookie", (string) $this->r->getRequestMessage());
-        $this->r->enableCookies()->send();
+        $this->r->enableCookies()->send(null);
         $this->assertNotContains("Cookie", (string) $this->r->getRequestMessage());
-        $this->r->send();
+        $this->r->send(null);
         $this->assertContains("Cookie", (string) $this->r->getRequestMessage());
-        $this->assertCount(2, $this->r->getResponseCookies());
+        $this->assertCount(2, $this->r->getResponseMessage()->getCookies());
     }
 
     function testResetCookies() {
-        $this->r->setUrl("http://dev.iworks.at/ext-http/.cookie.php");
+        $this->r->setRequest(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/.cookie.php"));
 
         $this->r->enableCookies();
-        $this->r->send();
+        $this->r->send(null);
 
         $f = function ($a) { return $a->getCookies(); };
-        $c = array_map($f, $this->r->getResponseCookies());
+        $c = array_map($f, $this->r->getResponseMessage()->getCookies());
 
-        $this->r->send();
-        $this->assertEquals($c, array_map($f, $this->r->getResponseCookies()));
+        $this->r->send(null);
+        $this->assertEquals($c, array_map($f, $this->r->getResponseMessage()->getCookies()));
         
         $this->r->resetCookies();
-        $this->r->send();
-        $this->assertNotEquals($c, array_map($f, $this->r->getResponseCookies()));
+        $this->r->send(null);
+        $this->assertNotEquals($c, array_map($f, $this->r->getResponseMessage()->getCookies()));
     }
 
     function testHistory() {
         $body = new http\Message\Body;
         $body->append("foobar");
-        $this->r->setBody($body);
+
+        $request = new http\Client\Request;
+        $request->setBody($body);
+        $request->setRequestMethod("POST");
+        $request->setRequestUrl("http://dev.iworks.at/ext-http/.print_request.php");
 
         $this->r->recordHistory = true;
+        $this->r->send($request);
 
-        $this->r->setMethod("POST");
-        $this->r->setUrl("http://dev.iworks.at/ext-http/.print_request.php");
-
-        $this->r->send();
         $this->assertStringMatchesFormat(<<<HTTP
 POST /ext-http/.print_request.php HTTP/1.1
 User-Agent: %s
@@ -130,7 +129,9 @@ HTTP
         , str_replace("\r", "", $this->r->getHistory()->toString(true))
         );
 
-        $this->r->send();
+
+        $this->r->send($request);
+
         $this->assertStringMatchesFormat(<<<HTTP
 POST /ext-http/.print_request.php HTTP/1.1
 User-Agent: %s

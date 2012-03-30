@@ -90,7 +90,7 @@ echo $m->getParentMessage();
 echo "Done\n";
 --EXPECTF--
 Test
-string(3) "0.0"
+string(3) "1.1"
 bool(true)
 array(0) {
 }

@@ -7,18 +7,13 @@ include 'skipif.inc';
 --FILE--
 <?php
 
-use http\request\Factory as HttpRequestFactory;
-use http\request\Pool as HttpRequestPool;
-use http\Exception as HttpRequestException;
-use http\Exception as HttpSocketException;
-
 echo "-TEST\n";
 
 set_time_limit(0);
 ini_set('error_reporting', E_ALL);
 ini_set('html_errors', 0);
 
-class Pool extends HttpRequestPool
+class Pool extends \http\Curl\Client\Pool
 {
 	private $all;
 	private $rem;
@@ -50,9 +45,7 @@ class Pool extends HttpRequestPool
 		
 		foreach ($now as $url => $file) {
 			$this->attach(
-				$this->factory->createRequest(
-					$url,
-					"GET",
+				$this->factory->createClient(
 					array(
 						'redirect'	=> 5,
 						'compress'  => GZIP,
@@ -60,13 +53,13 @@ class Pool extends HttpRequestPool
 						'connecttimeout' => TOUT,
 						'lastmodified' => is_file($file)?filemtime($file):0
 					)
-				)
+				)->setRequest(new http\Client\Request("GET", $url))
 			);
 		}
 		
 		while ($this->once()) {
 			if (!$this->wait()) {
-				throw new HttpSocketException;
+				throw new http\Exception;
 			}
 		}
 	}
@@ -75,19 +68,19 @@ class Pool extends HttpRequestPool
 	{
 		try {
 			$rc = parent::once();
-		} catch (HttpRequestException $x) {
+		} catch (http\Exception $x) {
 			// a request may have thrown an exception,
 			// but it is still save to continue
 			echo $x->getMessage(), "\n";
 		}
 		
-		foreach ($this->getFinishedRequests() as $r) {
+		foreach ($this->getFinished() as $r) {
 			$this->detach($r);
 			
-			$u = $r->getUrl();
-			$c = $r->getResponseCode();
+			$u = $r->getRequest()->getRequestUrl();
+			$c = $r->getResponseMessage()->getResponseCode();
             try {
-    			$b = $r->getResponseBody();
+    			$b = $r->getResponseMessage()->getBody();
             } catch (\Exception $e) {
                 echo $e->getMessage(), "\n";
                 $b = "";
@@ -102,9 +95,7 @@ class Pool extends HttpRequestPool
 			if ($a = each($this->rem)) {
 				list($url, $file) = $a;
 				$this->attach(
-					$this->factory->createRequest(
-						$url,
-						"GET",
+					$this->factory->createClient(
 						array(
 							'redirect'	=> 5,
 							'compress'	=> GZIP,
@@ -112,7 +103,7 @@ class Pool extends HttpRequestPool
 							'connecttimeout' => TOUT,
 							'lastmodified' => is_file($file)?filemtime($file):0
 						)
-					)
+					)->setRequest(new http\Client\Request("GET", $url))
 				);
 			}
 		}
@@ -126,7 +117,7 @@ define('RMAX', 10);
 chdir(__DIR__);
 
 $time = microtime(true);
-$factory = new HttpRequestFactory(array("driver" => "curl", "requestPoolClass" => "Pool"));
+$factory = new http\Client\Factory(array("driver" => "curl", "clientPoolClass" => "Pool"));
 $factory->createPool()->run($factory);
 printf("Elapsed: %0.3fs\n", microtime(true)-$time);
 

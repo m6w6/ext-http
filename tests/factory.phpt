@@ -3,28 +3,28 @@ factory
 --SKIPIF--
 <?php
 include "skipif.inc";
-in_array("curl", http\Request\Factory::getAvailableDrivers()) or die ("skip CURL support missing");
+in_array("curl", http\Client\Factory::getAvailableDrivers()) or die ("skip CURL support missing");
 ?>
 --FILE--
 <?php
 echo "Test\n";
 
-class MyRequest extends http\Request {}
-class MyPool extends http\Request\Pool {}
-class MyShare extends http\Request\DataShare {}
+class MyClient extends http\Curl\Client {}
+class MyPool extends http\Curl\Client\Pool {}
+class MyShare extends http\Curl\Client\DataShare {}
   
-class MyFactory extends http\Request\Factory {
+class MyFactory extends http\Client\Factory {
 	protected $driver = "curl";
 	protected $persistentHandleId = "My";
-	protected $requestClass = "MyRequest";
-	protected $requestPoolClass = "MyPool";
-	protected $requestDataShareClass = "MyShare";
+	protected $clientClass = "MyClient";
+	protected $clientPoolClass = "MyPool";
+	protected $clientDataShareClass = "MyShare";
 	
 	protected $dummy = "foo";
 }
 
 $f = new MyFactory(array("driver" => "curl"));
-$r = $f->createRequest();
+$r = $f->createClient();
 $p = $f->createPool();
 $s = $f->createDataShare();
 
@@ -33,9 +33,9 @@ var_dump(
 	$f->getDriver()
 );
 
-foreach (array("Request", "Pool", "DataShare") as $type) {
+foreach (array("Client", "Pool", "DataShare") as $type) {
 	try {
-		var_dump((new http\Request\Factory(array("driver" => "nonexistant")))->{"create$type"}());
+		var_dump((new http\Client\Factory(array("driver" => "nonexistant")))->{"create$type"}());
 	} catch (Exception $e) {
 		echo $e->getMessage(), "\n";
 	}
@@ -49,14 +49,14 @@ array(4) {
   [0]=>
   string(9) "MyFactory"
   [1]=>
-  string(9) "MyRequest"
+  string(8) "MyClient"
   [2]=>
   string(6) "MyPool"
   [3]=>
   string(7) "MyShare"
 }
 string(4) "curl"
-requests are not supported by this driver
+clients are not supported by this driver
 pools are not supported by this driver
 datashares are not supported by this driver
 Done

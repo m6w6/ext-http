@@ -18,8 +18,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
 * The utterly misunderstood HttpResponse class has been reimplemented as http\Env\Response inheriting http\Message.
 * Currently, there's only one Exception class left, http\Exception.
 * Errors triggered by the extension can be configured statically by http\Object::$defaultErrorHandling or inherited http\Object->errorHandling.
-* The request ecosystem has been modularized to support different libraries, though for the moment only libcurl is supported;
-  Nevertheless, you have to use the http\Request\Factory to create your request/pool/datashare objects.
+* The request ecosystem has been modularized to support different libraries, though for the moment only libcurl is supported.
 ]]></description>
  <lead>
   <name>Michael Wallner</name>
@@ -27,9 +26,9 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-03-23</date>
+ <date>2012-03-30</date>
  <version>
-  <release>2.0.0dev9</release>
+  <release>2.0.0dev10</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -38,7 +37,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ 
++ This release contains the http\Request to http\Client refactoring triggered by Benjamin Eberlei. Many thanks.
 ]]></notes>
  <contents>
   <dir name="/">

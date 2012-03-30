@@ -4,32 +4,26 @@ persistent handles
 <?php include "skipif.inc"; ?>
 --FILE--
 <?php
-(new http\Request\Factory(array("persistentHandleId" => "foo")))
-    ->createRequest("http://dev.iworks.at")
+(new http\Client\Factory(array("persistentHandleId" => "foo")))
+    ->createClient()->setRequest(new http\Client\Request("GET", "http://dev.iworks.at"))
     ->setOptions(array("connecttimeout"=> 90, "timeout" =>300))
-    ->send(); 
-$r = (new http\Request\Factory(array("persistentHandleId" => "bar")))
-    ->createRequest("http://dev.iworks.at")
+    ->send(null); 
+$r = (new http\Client\Factory(array("persistentHandleId" => "bar")))
+    ->createClient()->setRequest(new http\Client\Request("GET", "http://dev.iworks.at"))
     ->setOptions(array("connecttimeout"=> 90, "timeout" =>300));
     
 var_dump(http\Env::statPersistentHandles()); 
 http\Env::cleanPersistentHandles(); 
 var_dump(http\Env::statPersistentHandles());
 
-$r->send();
+$r->send(null);
 
 var_dump(http\Env::statPersistentHandles());
 ?>
 DONE
 --EXPECTF--
 object(stdClass)#%d (3) {
-  ["http_request_datashare.curl"]=>
-  array(0) {
-  }
-  ["http_request_pool.curl"]=>
-  array(0) {
-  }
-  ["http_request.curl"]=>
+  ["http_client.curl"]=>
   array(2) {
     ["foo"]=>
     array(2) {
@@ -46,15 +40,15 @@ object(stdClass)#%d (3) {
       int(0)
     }
   }
+  ["http_client_pool.curl"]=>
+  array(0) {
+  }
+  ["http_client_datashare.curl"]=>
+  array(0) {
+  }
 }
 object(stdClass)#%d (3) {
-  ["http_request_datashare.curl"]=>
-  array(0) {
-  }
-  ["http_request_pool.curl"]=>
-  array(0) {
-  }
-  ["http_request.curl"]=>
+  ["http_client.curl"]=>
   array(1) {
     ["bar"]=>
     array(2) {
@@ -64,15 +58,15 @@ object(stdClass)#%d (3) {
       int(0)
     }
   }
+  ["http_client_pool.curl"]=>
+  array(0) {
+  }
+  ["http_client_datashare.curl"]=>
+  array(0) {
+  }
 }
 object(stdClass)#%d (3) {
-  ["http_request_datashare.curl"]=>
-  array(0) {
-  }
-  ["http_request_pool.curl"]=>
-  array(0) {
-  }
-  ["http_request.curl"]=>
+  ["http_client.curl"]=>
   array(1) {
     ["bar"]=>
     array(2) {
@@ -81,6 +75,12 @@ object(stdClass)#%d (3) {
       ["free"]=>
       int(0)
     }
+  }
+  ["http_client_pool.curl"]=>
+  array(0) {
+  }
+  ["http_client_datashare.curl"]=>
+  array(0) {
   }
 }
 DONE
