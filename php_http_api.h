@@ -257,7 +257,7 @@ static inline zval *_http_zset(int type, zval *z)
 #define http_zsep(t, z) _http_zsep_ex((t), (z), NULL)
 #define http_zsep_ex(t, z, p) _http_zsep_ex((t), (z), (p))
 static inline zval *_http_zsep_ex(int type, zval *z, zval **p) {
-	Z_ADDREF_P(z);
+	ZVAL_ADDREF(z);
 	if (Z_TYPE_P(z) != type) {
 		switch (type) {
 			case IS_NULL:	convert_to_null_ex(&z);		break;

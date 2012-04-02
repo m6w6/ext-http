@@ -28,9 +28,9 @@ support. Parallel requests are available for PHP 5 and greater.
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-03-08</date>
+ <date>2012-04-02</date>
  <version>
-  <release>1.7.3</release>
+  <release>1.7.4</release>
   <api>1.7.0</api>
  </version>
  <stability>
@@ -39,7 +39,7 @@ support. Parallel requests are available for PHP 5 and greater.
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed Bug #61310: Bundled pecl_http-1.7.2.tgz is invalid 
+* Fixed Bug #61372 (build fails with "undefined symbol Z_ADDREF_P)
 ]]></notes>
  <contents>
   <dir name="/">
