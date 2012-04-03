@@ -460,11 +460,6 @@ static php_http_resource_factory_ops_t php_http_curlm_resource_factory_ops = {
 	php_http_curlm_dtor
 };
 
-static zend_class_entry *get_class_entry(void)
-{
-	return php_http_curl_client_pool_class_entry;
-}
-
 static php_http_client_pool_ops_t php_http_curl_client_pool_ops = {
 	&php_http_curlm_resource_factory_ops,
 	php_http_curl_client_pool_init,
@@ -478,7 +473,7 @@ static php_http_client_pool_ops_t php_http_curl_client_pool_ops = {
 	php_http_curl_client_pool_detach,
 	php_http_curl_client_pool_setopt,
 	(php_http_new_t) php_http_curl_client_pool_object_new_ex,
-	get_class_entry
+	php_http_curl_client_pool_get_class_entry
 };
 
 PHP_HTTP_API php_http_client_pool_ops_t *php_http_curl_client_pool_get_ops(void)
@@ -492,8 +487,14 @@ PHP_HTTP_API php_http_client_pool_ops_t *php_http_curl_client_pool_get_ops(void)
 #define PHP_HTTP_CURL_ALIAS(method, func)		PHP_HTTP_STATIC_ME_ALIAS(method, func, PHP_HTTP_ARGS(HttpClientCURL, method))
 #define PHP_HTTP_CURL_MALIAS(me, al, vis)		ZEND_FENTRY(me, ZEND_MN(HttpClientCURL_##al), PHP_HTTP_ARGS(HttpClientCURL, al), vis)
 
-zend_class_entry *php_http_curl_client_pool_class_entry;
-zend_function_entry php_http_curl_client_pool_method_entry[] = {
+static zend_class_entry *php_http_curl_client_pool_class_entry;
+
+zend_class_entry *php_http_curl_client_pool_get_class_entry(void)
+{
+	return php_http_curl_client_pool_class_entry;
+}
+
+static zend_function_entry php_http_curl_client_pool_method_entry[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 

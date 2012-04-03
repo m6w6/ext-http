@@ -604,7 +604,6 @@ PHP_HTTP_API const char *php_http_env_get_response_status_for_code(unsigned code
 	return php_http_strlist_find(php_http_env_response_status, 100, code);
 }
 
-zend_class_entry *php_http_env_class_entry;
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpEnv, method, 0, req_args)
 #define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpEnv, method, 0)
@@ -673,7 +672,14 @@ PHP_HTTP_BEGIN_ARGS(cleanPersistentHandles, 0)
 	PHP_HTTP_ARG_VAL(ident, 0)
 PHP_HTTP_END_ARGS;
 
-zend_function_entry php_http_env_method_entry[] = {
+static zend_class_entry *php_http_env_class_entry;
+
+zend_class_entry *php_http_env_get_class_entry(void)
+{
+	return php_http_env_class_entry;
+}
+
+static zend_function_entry php_http_env_method_entry[] = {
 	PHP_HTTP_ENV_ME(getRequestHeader)
 	PHP_HTTP_ENV_ME(getRequestBody)
 
@@ -721,14 +727,14 @@ PHP_METHOD(HttpEnv, getRequestHeader)
 
 PHP_METHOD(HttpEnv, getRequestBody)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		zend_class_entry *class_entry = php_http_message_body_class_entry;
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+		zend_class_entry *class_entry = php_http_message_body_get_class_entry();
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|C", &class_entry)) {
 			zend_object_value ov;
 			php_http_message_body_t *body = php_http_env_get_request_body(TSRMLS_C);
 
-			if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, php_http_message_body_copy(body, NULL, 0), NULL TSRMLS_CC)) {
+			if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_get_class_entry(), php_http_message_body_copy(body, NULL, 0), NULL TSRMLS_CC)) {
 				RETVAL_OBJVAL(ov, 0);
 			}
 		}

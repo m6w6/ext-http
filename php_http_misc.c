@@ -236,7 +236,7 @@ static inline int scope_error_handling(long type TSRMLS_DC)
 		return EH_THROW;
 	}
 
-	if (EG(This) && instanceof_function(Z_OBJCE_P(EG(This)), php_http_object_class_entry TSRMLS_CC)) {
+	if (EG(This) && instanceof_function(Z_OBJCE_P(EG(This)), php_http_object_get_class_entry() TSRMLS_CC)) {
 		return php_http_object_get_error_handling(EG(This) TSRMLS_CC);
 	}
 
@@ -251,9 +251,10 @@ void php_http_error(long type TSRMLS_DC, long code, const char *format, ...)
 	switch (scope_error_handling(type TSRMLS_CC)) {
 		case EH_THROW: {
 			char *message;
-			zend_class_entry *ce = php_http_exception_class_entry;
+			zend_class_entry *ce = php_http_exception_get_class_entry();
 
-			if (0&& EG(exception_class) && instanceof_function(EG(exception_class), php_http_exception_class_entry TSRMLS_CC)) {
+			/*  FIXME wat? */
+			if (0&& EG(exception_class) && instanceof_function(EG(exception_class), ce TSRMLS_CC)) {
 				ce = EG(exception_class);
 			}
 

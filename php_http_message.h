@@ -77,19 +77,18 @@ typedef struct php_http_message_object {
 	zval *iterator;
 } php_http_message_object_t;
 
-extern zend_class_entry *php_http_message_class_entry;
-extern zend_function_entry http_message_method_entry[];
+zend_class_entry *php_http_message_get_class_entry(void);
 
-extern PHP_MINIT_FUNCTION(http_message);
-extern PHP_MSHUTDOWN_FUNCTION(http_message);
+PHP_MINIT_FUNCTION(http_message);
+PHP_MSHUTDOWN_FUNCTION(http_message);
 
-extern void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool top /* = 1 */ TSRMLS_DC);
-extern void php_http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_DC);
+void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool top /* = 1 */ TSRMLS_DC);
+void php_http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_DC);
 
-extern zend_object_value php_http_message_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_message_object_new_ex(zend_class_entry *ce, php_http_message_t *msg, php_http_message_object_t **ptr TSRMLS_DC);
-extern zend_object_value php_http_message_object_clone(zval *object TSRMLS_DC);
-extern void php_http_message_object_free(void *object TSRMLS_DC);
+zend_object_value php_http_message_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object_value php_http_message_object_new_ex(zend_class_entry *ce, php_http_message_t *msg, php_http_message_object_t **ptr TSRMLS_DC);
+zend_object_value php_http_message_object_clone(zval *object TSRMLS_DC);
+void php_http_message_object_free(void *object TSRMLS_DC);
 
 PHP_METHOD(HttpMessage, __construct);
 PHP_METHOD(HttpMessage, getBody);

@@ -79,10 +79,10 @@ PHP_HTTP_API void php_http_sleep(double s);
 #define PHP_HTTP_MATCH_FULL		0x20
 #define PHP_HTTP_MATCH_STRICT	(PHP_HTTP_MATCH_CASE|PHP_HTTP_MATCH_FULL)
 
-extern int php_http_match(const char *haystack, const char *needle, int flags);
-extern char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
-extern size_t php_http_boundary(char *buf, size_t len TSRMLS_DC);
-extern int php_http_select_str(const char *cmp, int argc, ...);
+int php_http_match(const char *haystack, const char *needle, int flags);
+char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
+size_t php_http_boundary(char *buf, size_t len TSRMLS_DC);
+int php_http_select_str(const char *cmp, int argc, ...);
 
 static inline const char *php_http_locate_str(const char *h, size_t h_len, const char *n, size_t n_len)
 {
@@ -403,8 +403,8 @@ typedef struct php_http_array_hashkey {
 #define ARRAY_JOIN_PRETTIFY 2
 #define array_join(src, dst, append, flags) zend_hash_apply_with_arguments(src TSRMLS_CC, (append)?php_http_array_apply_append_func:php_http_array_apply_merge_func, 2, dst, (int)flags)
 
-extern int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
-extern int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
+int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
+int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
 
 /* PASS CALLBACK */
 

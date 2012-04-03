@@ -643,8 +643,14 @@ static void php_http_message_object_write_prop(zval *object, zval *member, zval 
 static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member, const zend_literal *literal_key TSRMLS_DC);
 static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC);
 
-zend_class_entry *php_http_message_class_entry;
-zend_function_entry php_http_message_method_entry[] = {
+static zend_class_entry *php_http_message_class_entry;
+
+zend_class_entry *php_http_message_get_class_entry(void)
+{
+	return php_http_message_class_entry;
+}
+
+static zend_function_entry php_http_message_method_entry[] = {
 	PHP_HTTP_MESSAGE_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_HTTP_MESSAGE_ME(getBody, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_ME(setBody, ZEND_ACC_PUBLIC)
@@ -817,7 +823,7 @@ static void php_http_message_object_prophandler_get_body(php_http_message_object
 	}
 }
 static void php_http_message_object_prophandler_set_body(php_http_message_object_t *obj, zval *value TSRMLS_DC) {
-	if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), php_http_message_body_class_entry TSRMLS_CC)) {
+	if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), php_http_message_body_get_class_entry() TSRMLS_CC)) {
 		if (obj->body.handle) {
 			zend_objects_store_del_ref_by_handle(obj->body.handle TSRMLS_CC);
 		}
@@ -844,7 +850,7 @@ static void php_http_message_object_prophandler_set_parent_message(php_http_mess
 
 PHP_MINIT_FUNCTION(http_message)
 {
-	PHP_HTTP_REGISTER_CLASS(http, Message, http_message, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http, Message, http_message, php_http_object_get_class_entry(), 0);
 	php_http_message_class_entry->create_object = php_http_message_object_new;
 	memcpy(&php_http_message_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_message_object_handlers.clone_obj = php_http_message_object_clone;
@@ -999,7 +1005,7 @@ zend_object_value php_http_message_object_new_ex(zend_class_entry *ce, php_http_
 		if (msg->parent) {
 			o->parent = php_http_message_object_new_ex(ce, msg->parent, NULL TSRMLS_CC);
 		}
-		o->body = php_http_message_body_object_new_ex(php_http_message_body_class_entry, php_http_message_body_copy(&msg->body, NULL, 0), NULL TSRMLS_CC);
+		o->body = php_http_message_body_object_new_ex(php_http_message_body_get_class_entry(), php_http_message_body_copy(&msg->body, NULL, 0), NULL TSRMLS_CC);
 	}
 
 	ov.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_message_object_free, NULL TSRMLS_CC);
@@ -1165,7 +1171,7 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 
 	MAKE_STD_ZVAL(body);
 	if (!obj->body.handle) {
-		php_http_new(&obj->body, php_http_message_body_class_entry, (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_copy(&obj->message->body, NULL, 0), NULL TSRMLS_CC);
+		php_http_new(&obj->body, php_http_message_body_get_class_entry(), (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_copy(&obj->message->body, NULL, 0), NULL TSRMLS_CC);
 	}
 	ZVAL_OBJVAL(body, obj->body, 1);
 	ASSOC_PROP(array, zval, "body", body);
@@ -1189,7 +1195,7 @@ PHP_METHOD(HttpMessage, __construct)
 	php_http_message_t *msg = NULL;
 	php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!", &zmessage) && zmessage) {
 			if (Z_TYPE_P(zmessage) == IS_RESOURCE) {
 				php_stream *s;
@@ -1225,7 +1231,7 @@ PHP_METHOD(HttpMessage, __construct)
 
 PHP_METHOD(HttpMessage, getBody)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
@@ -1233,7 +1239,7 @@ PHP_METHOD(HttpMessage, getBody)
 				obj->message = php_http_message_init(NULL, 0 TSRMLS_CC);
 			}
 
-			if (obj->body.handle || SUCCESS == php_http_new(&obj->body, php_http_message_body_class_entry, (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_copy(&obj->message->body, NULL, 0), NULL TSRMLS_CC)) {
+			if (obj->body.handle || SUCCESS == php_http_new(&obj->body, php_http_message_body_get_class_entry(), (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_copy(&obj->message->body, NULL, 0), NULL TSRMLS_CC)) {
 				RETVAL_OBJVAL(obj->body, 1);
 			}
 		}
@@ -1244,7 +1250,7 @@ PHP_METHOD(HttpMessage, setBody)
 {
 	zval *zbody;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zbody, php_http_message_body_class_entry)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zbody, php_http_message_body_get_class_entry())) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		php_http_message_body_object_t *body_obj = zend_object_store_get_object(zbody TSRMLS_CC);
 
@@ -1264,7 +1270,7 @@ PHP_METHOD(HttpMessage, addBody)
 {
 	zval *new_body;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &new_body, php_http_message_body_class_entry)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &new_body, php_http_message_body_get_class_entry())) {
 		php_http_message_body_object_t *old_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		php_http_message_body_object_t *new_obj = zend_object_store_get_object(new_body TSRMLS_CC);
 
@@ -1674,7 +1680,7 @@ PHP_METHOD(HttpMessage, setRequestUrl)
 
 PHP_METHOD(HttpMessage, getParentMessage)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
@@ -1795,7 +1801,7 @@ PHP_METHOD(HttpMessage, unserialize)
 
 PHP_METHOD(HttpMessage, detach)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 

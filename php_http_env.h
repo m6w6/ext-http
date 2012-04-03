@@ -70,8 +70,7 @@ PHP_HTTP_API zval *php_http_env_get_server_var(const char *key_str, size_t key_l
 #define php_http_env_got_server_var(v) (NULL != php_http_env_get_server_var((v), strlen(v), 1 TSRMLS_CC))
 PHP_HTTP_API zval *php_http_env_get_superglobal(const char *key, size_t key_len TSRMLS_DC);
 
-extern zend_class_entry *php_http_env_class_entry;
-extern zend_function_entry php_http_env_method_entry[];
+zend_class_entry *php_http_env_get_class_entry(void);
 
 PHP_METHOD(HttpEnv, getRequestHeader);
 PHP_METHOD(HttpEnv, getRequestBody);

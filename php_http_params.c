@@ -313,8 +313,14 @@ PHP_HTTP_BEGIN_ARGS(offsetSet, 2)
 	PHP_HTTP_ARG_VAL(value, 0)
 PHP_HTTP_END_ARGS;
 
-zend_class_entry *php_http_params_class_entry;
-zend_function_entry php_http_params_method_entry[] = {
+static zend_class_entry *php_http_params_class_entry;
+
+zend_class_entry *php_http_params_get_class_entry(void)
+{
+	return php_http_params_class_entry;
+}
+
+static zend_function_entry php_http_params_method_entry[] = {
 	PHP_HTTP_PARAMS_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR|ZEND_ACC_FINAL)
 
 	PHP_HTTP_PARAMS_ME(toArray, ZEND_ACC_PUBLIC)
@@ -331,7 +337,7 @@ zend_function_entry php_http_params_method_entry[] = {
 
 PHP_MINIT_FUNCTION(http_params)
 {
-	PHP_HTTP_REGISTER_CLASS(http, Params, http_params, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http, Params, http_params, php_http_object_get_class_entry(), 0);
 
 	zend_class_implements(php_http_params_class_entry TSRMLS_CC, 1, zend_ce_arrayaccess);
 
@@ -392,7 +398,7 @@ static void free_sep(php_http_params_token_t **separator) {
 
 PHP_METHOD(HttpParams, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		zval *zcopy, *zparams = NULL, *param_sep = NULL, *arg_sep = NULL, *val_sep = NULL;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!/z/z/z/", &zparams, &param_sep, &arg_sep, &val_sep)) {

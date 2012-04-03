@@ -61,13 +61,12 @@ static inline php_http_curl_client_storage_t *get_storage(CURL *ch) {
 	return st;
 }
 
-extern STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_message_t *msg);
+PHP_HTTP_API STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_message_t *msg);
 
-extern zend_class_entry *php_http_curl_client_class_entry;
-extern zend_function_entry php_http_curl_client_method_entry[];
+zend_class_entry *php_http_curl_client_get_class_entry(void);
 
-extern zend_object_value php_http_curl_client_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_curl_client_object_new_ex(zend_class_entry *ce, php_http_client_t *r, php_http_client_object_t **ptr TSRMLS_DC);
+zend_object_value php_http_curl_client_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object_value php_http_curl_client_object_new_ex(zend_class_entry *ce, php_http_client_t *r, php_http_client_object_t **ptr TSRMLS_DC);
 
 PHP_MINIT_FUNCTION(http_curl_client);
 

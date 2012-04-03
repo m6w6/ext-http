@@ -55,8 +55,7 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_c
 PHP_HTTP_API void php_http_cookie_list_to_struct(php_http_cookie_list_t *list, zval *strct);
 
 
-extern zend_class_entry *php_http_cookie_class_entry;
-extern zend_function_entry php_http_cookie_method_entry[];
+zend_class_entry *php_http_cookie_get_class_entry(void);
 
 typedef struct php_http_cookie_object {
 	zend_object o;

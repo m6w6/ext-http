@@ -136,11 +136,6 @@ static php_http_resource_factory_ops_t php_http_curlsh_resource_factory_ops = {
 	php_http_curlsh_dtor
 };
 
-static zend_class_entry *get_class_entry(void)
-{
-	return php_http_curl_client_datashare_class_entry;
-}
-
 static php_http_client_datashare_ops_t php_http_curl_client_datashare_ops = {
 	&php_http_curlsh_resource_factory_ops,
 	php_http_curl_client_datashare_init,
@@ -151,7 +146,7 @@ static php_http_client_datashare_ops_t php_http_curl_client_datashare_ops = {
 	php_http_curl_client_datashare_detach,
 	php_http_curl_client_datashare_setopt,
 	(php_http_new_t) php_http_curl_client_datashare_object_new_ex,
-	get_class_entry
+	php_http_curl_client_datashare_get_class_entry
 };
 
 PHP_HTTP_API php_http_client_datashare_ops_t *php_http_curl_client_datashare_get_ops(void)
@@ -163,8 +158,14 @@ PHP_HTTP_API php_http_client_datashare_ops_t *php_http_curl_client_datashare_get
 #define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpClientDataShare, method, 0)
 #define PHP_HTTP_RSHARE_ME(method, visibility)	PHP_ME(HttpClientDataShare, method, PHP_HTTP_ARGS(HttpClientDataShare, method), visibility)
 
-zend_class_entry *php_http_curl_client_datashare_class_entry;
-zend_function_entry php_http_curl_client_datashare_method_entry[] = {
+static zend_class_entry *php_http_curl_client_datashare_class_entry;
+
+zend_class_entry *php_http_curl_client_datashare_get_class_entry(void)
+{
+	return php_http_curl_client_datashare_class_entry;
+}
+
+static zend_function_entry php_http_curl_client_datashare_method_entry[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 

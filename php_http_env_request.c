@@ -13,8 +13,6 @@
 #include "php_http_api.h"
 
 
-zend_class_entry *php_http_env_request_class_entry;
-
 #undef PHP_HTTP_BEGIN_ARGS
 #undef PHP_HTTP_EMPTY_ARGS
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 		PHP_HTTP_BEGIN_ARGS_EX(HttpEnvRequest, method, 0, req_args)
@@ -25,6 +23,13 @@ PHP_HTTP_EMPTY_ARGS(__construct);
 PHP_HTTP_EMPTY_ARGS(getForm);
 PHP_HTTP_EMPTY_ARGS(getQuery);
 PHP_HTTP_EMPTY_ARGS(getFiles);
+
+static zend_class_entry *php_http_env_request_class_entry;
+
+zend_class_entry *php_http_env_request_get_class_entry(void)
+{
+	return php_http_env_request_class_entry;
+}
 
 zend_function_entry php_http_env_request_method_entry[] = {
 	PHP_HTTP_ENV_REQUEST_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
@@ -119,7 +124,7 @@ static int grab_files(void *zpp TSRMLS_DC, int argc, va_list argv, zend_hash_key
 
 PHP_METHOD(HttpEnvRequest, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			zval *zsg;
@@ -130,7 +135,7 @@ PHP_METHOD(HttpEnvRequest, __construct)
 				zval *zquery;
 
 				MAKE_STD_ZVAL(zquery);
-				object_init_ex(zquery, php_http_querystring_class_entry);
+				object_init_ex(zquery, php_http_querystring_get_class_entry());
 				if (SUCCESS == php_http_querystring_ctor(zquery, zsg TSRMLS_CC)) {
 					zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), zquery TSRMLS_CC);
 				}
@@ -140,7 +145,7 @@ PHP_METHOD(HttpEnvRequest, __construct)
 				zval *zpost;
 
 				MAKE_STD_ZVAL(zpost);
-				object_init_ex(zpost, php_http_querystring_class_entry);
+				object_init_ex(zpost, php_http_querystring_get_class_entry());
 				if (SUCCESS == php_http_querystring_ctor(zpost, zsg TSRMLS_CC)) {
 					zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), zpost TSRMLS_CC);
 				}
@@ -184,7 +189,7 @@ PHP_METHOD(HttpEnvRequest, getFiles)
 
 PHP_MINIT_FUNCTION(http_env_request)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Env, Request, http_env_request, php_http_message_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Env, Request, http_env_request, php_http_message_get_class_entry(), 0);
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("query"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("form"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("files"), ZEND_ACC_PROTECTED TSRMLS_CC);

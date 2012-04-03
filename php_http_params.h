@@ -31,8 +31,7 @@ PHP_HTTP_API php_http_buffer_t *php_http_params_to_string(php_http_buffer_t *buf
 
 typedef php_http_object_t php_http_params_object_t;
 
-extern zend_class_entry *php_http_params_class_entry;
-extern zend_function_entry php_http_params_method_entry[];
+zend_class_entry *php_http_params_get_class_entry(void);
 
 PHP_MINIT_FUNCTION(http_params);
 

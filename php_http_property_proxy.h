@@ -29,12 +29,11 @@ typedef struct php_http_property_proxy_object {
 	php_http_property_proxy_t *proxy;
 } php_http_property_proxy_object_t;
 
-extern zend_class_entry *php_http_property_proxy_class_entry;
-extern zend_function_entry php_http_property_proxy_method_entry[];
+zend_class_entry *php_http_property_proxy_get_class_entry(void);
 
-extern zend_object_value php_http_property_proxy_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_property_proxy_object_new_ex(zend_class_entry *ce, php_http_property_proxy_t *proxy, php_http_property_proxy_object_t **ptr TSRMLS_DC);
-extern void php_http_property_proxy_object_free(void *object TSRMLS_DC);
+zend_object_value php_http_property_proxy_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object_value php_http_property_proxy_object_new_ex(zend_class_entry *ce, php_http_property_proxy_t *proxy, php_http_property_proxy_object_t **ptr TSRMLS_DC);
+void php_http_property_proxy_object_free(void *object TSRMLS_DC);
 
 PHP_METHOD(HttpPropertyProxy, __construct);
 

@@ -13,10 +13,7 @@
 #ifndef PHP_HTTP_EXCEPTION_H
 #define PHP_HTTP_EXCEPTION_H
 
-PHP_MINIT_FUNCTION(http_exception_object);
-
-extern zend_class_entry *php_http_exception_class_entry;
-extern zend_function_entry php_http_exception_method_entry[];
+zend_class_entry *php_http_exception_get_class_entry(void);
 
 PHP_MINIT_FUNCTION(http_exception);
 

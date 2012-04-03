@@ -83,8 +83,8 @@ PHP_METHOD(HttpClientRequest, __construct)
 	int meth_len = 0, url_len = 0;
 	zval *zheaders = NULL, *zbody = NULL;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!a!O!", &meth_str, &meth_len, &url_str, &url_len, &zheaders, &zbody, php_http_message_body_class_entry)) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!a!O!", &meth_str, &meth_len, &url_str, &url_len, &zheaders, &zbody, php_http_message_body_get_class_entry())) {
 			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 			if (obj->message) {
@@ -217,7 +217,6 @@ PHP_METHOD(HttpClientRequest, addQuery)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &qdata)) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		php_url *old_url = NULL, new_url = {NULL};
-		char empty[] = "";
 
 		zval arr, str;
 
@@ -295,7 +294,7 @@ PHP_METHOD(HttpClientRequest, getSslOptions)
 
 PHP_MINIT_FUNCTION(http_client_request)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Client, Request, http_client_request, php_http_message_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Client, Request, http_client_request, php_http_message_get_class_entry(), 0);
 
 	zend_declare_property_null(php_http_client_request_class_entry, ZEND_STRL("options"), ZEND_ACC_PROTECTED TSRMLS_CC);
 

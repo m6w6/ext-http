@@ -562,8 +562,14 @@ PHP_HTTP_BEGIN_ARGS(stat, 0)
 	PHP_HTTP_ARG_VAL(what, 0)
 PHP_HTTP_END_ARGS;
 
-zend_class_entry *php_http_message_body_class_entry;
-zend_function_entry php_http_message_body_method_entry[] = {
+static zend_class_entry *php_http_message_body_class_entry;
+
+zend_class_entry *php_http_message_body_get_class_entry(void)
+{
+	return php_http_message_body_class_entry;
+}
+
+static zend_function_entry php_http_message_body_method_entry[] = {
 	PHP_HTTP_MESSAGE_BODY_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_HTTP_MESSAGE_BODY_ME(__toString, ZEND_ACC_PUBLIC)
 	PHP_MALIAS(HttpMessageBody, toString, __toString, args_for_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
@@ -580,7 +586,7 @@ static zend_object_handlers php_http_message_body_object_handlers;
 
 PHP_MINIT_FUNCTION(http_message_body)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Message, Body, http_message_body, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Message, Body, http_message_body, php_http_object_get_class_entry(), 0);
 	php_http_message_body_class_entry->create_object = php_http_message_body_object_new;
 	memcpy(&php_http_message_body_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_message_body_object_handlers.clone_obj = php_http_message_body_object_clone;
@@ -644,7 +650,7 @@ PHP_METHOD(HttpMessageBody, __construct)
 	zval *zstream = NULL;
 	php_stream *stream;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|r!", &zstream)) {
 			if (zstream) {
 				php_stream_from_zval(stream, &zstream);
@@ -745,7 +751,7 @@ PHP_METHOD(HttpMessageBody, addPart)
 {
 	zval *zobj;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zobj, php_http_message_class_entry)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zobj, php_http_message_get_class_entry())) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		php_http_message_object_t *mobj = zend_object_store_get_object(zobj TSRMLS_CC);
 

@@ -466,8 +466,14 @@ PHP_HTTP_BEGIN_ARGS(mod, 1)
 	PHP_HTTP_ARG_VAL(flags, 0)
 PHP_HTTP_END_ARGS;
 
-zend_class_entry *php_http_url_class_entry;
-zend_function_entry php_http_url_method_entry[] = {
+static zend_class_entry *php_http_url_class_entry;
+
+zend_class_entry *php_http_url_get_class_entry(void)
+{
+	return php_http_url_class_entry;
+}
+
+static zend_function_entry php_http_url_method_entry[] = {
 	PHP_HTTP_URL_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_HTTP_URL_ME(mod, ZEND_ACC_PUBLIC)
 	PHP_HTTP_URL_ME(toString, ZEND_ACC_PUBLIC)
@@ -478,12 +484,12 @@ zend_function_entry php_http_url_method_entry[] = {
 
 PHP_METHOD(HttpUrl, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		zval *new_url = NULL, *old_url = NULL;
 		long flags = PHP_HTTP_URL_FROM_ENV;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!z!l", &old_url, &new_url, &flags)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				php_url *res_purl, *new_purl = NULL, *old_purl = NULL;
 
 				if (new_url) {
@@ -613,7 +619,7 @@ PHP_METHOD(HttpUrl, toArray)
 
 PHP_MINIT_FUNCTION(http_url)
 {
-	PHP_HTTP_REGISTER_CLASS(http, Url, http_url, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http, Url, http_url, php_http_object_get_class_entry(), 0);
 
 	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("scheme"), ZEND_ACC_PUBLIC TSRMLS_CC);
 	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("user"), ZEND_ACC_PUBLIC TSRMLS_CC);

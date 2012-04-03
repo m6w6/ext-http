@@ -28,20 +28,20 @@ static inline void php_http_querystring_set(zval *instance, zval *params, int fl
 	zval *qa;
 
 	if (flags & QS_MERGE) {
-		qa = php_http_zsep(1, IS_ARRAY, zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0 TSRMLS_CC));
+		qa = php_http_zsep(1, IS_ARRAY, zend_read_property(php_http_querystring_get_class_entry(), instance, ZEND_STRL("queryArray"), 0 TSRMLS_CC));
 	} else {
 		MAKE_STD_ZVAL(qa);
 		array_init(qa);
 	}
 
 	php_http_querystring_update(qa, params, NULL TSRMLS_CC);
-	zend_update_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), qa TSRMLS_CC);
+	zend_update_property(php_http_querystring_get_class_entry(), instance, ZEND_STRL("queryArray"), qa TSRMLS_CC);
 	zval_ptr_dtor(&qa);
 }
 
 static inline void php_http_querystring_str(zval *instance, zval *return_value TSRMLS_DC)
 {
-	zval *qa = zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+	zval *qa = zend_read_property(php_http_querystring_get_class_entry(), instance, ZEND_STRL("queryArray"), 0 TSRMLS_CC);
 
 	if (Z_TYPE_P(qa) == IS_ARRAY) {
 		php_http_querystring_update(qa, NULL, return_value TSRMLS_CC);
@@ -52,7 +52,7 @@ static inline void php_http_querystring_str(zval *instance, zval *return_value T
 
 static inline void php_http_querystring_get(zval *this_ptr, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value TSRMLS_DC)
 {
-	zval **arrval, *qarray = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+	zval **arrval, *qarray = zend_read_property(php_http_querystring_get_class_entry(), getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
 
 	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (SUCCESS == zend_symtable_find(Z_ARRVAL_P(qarray), name, name_len + 1, (void *) &arrval))) {
 		if (type) {
@@ -157,8 +157,8 @@ PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval
 		ZVAL_NULL(&zv);
 
 		/* squeeze the hash out of the zval */
-		if (Z_TYPE_P(params) == IS_OBJECT && instanceof_function(Z_OBJCE_P(params), php_http_querystring_class_entry TSRMLS_CC)) {
-			zv_ptr = php_http_ztyp(IS_ARRAY, zend_read_property(php_http_querystring_class_entry, params, ZEND_STRL("queryArray"), 0 TSRMLS_CC));
+		if (Z_TYPE_P(params) == IS_OBJECT && instanceof_function(Z_OBJCE_P(params), php_http_querystring_get_class_entry() TSRMLS_CC)) {
+			zv_ptr = php_http_ztyp(IS_ARRAY, zend_read_property(php_http_querystring_get_class_entry(), params, ZEND_STRL("queryArray"), 0 TSRMLS_CC));
 			ptr = Z_ARRVAL_P(zv_ptr);
 		} else if (Z_TYPE_P(params) == IS_OBJECT || Z_TYPE_P(params) == IS_ARRAY) {
 			ptr = HASH_OF(params);
@@ -317,8 +317,14 @@ PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(getIterator);
 
-zend_class_entry *php_http_querystring_class_entry;
-zend_function_entry php_http_querystring_method_entry[] = {
+static zend_class_entry *php_http_querystring_class_entry;
+
+zend_class_entry *php_http_querystring_get_class_entry(void)
+{
+	return php_http_querystring_class_entry;
+}
+
+static zend_function_entry php_http_querystring_method_entry[] = {
 	PHP_HTTP_QUERYSTRING_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR|ZEND_ACC_FINAL)
 	
 	PHP_HTTP_QUERYSTRING_ME(toArray, ZEND_ACC_PUBLIC)
@@ -358,7 +364,7 @@ zend_function_entry php_http_querystring_method_entry[] = {
 
 PHP_MINIT_FUNCTION(http_querystring)
 {
-	PHP_HTTP_REGISTER_CLASS(http, QueryString, http_querystring, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http, QueryString, http_querystring, php_http_object_get_class_entry(), 0);
 	
 	zend_class_implements(php_http_querystring_class_entry TSRMLS_CC, 3, zend_ce_serializable, zend_ce_arrayaccess, zend_ce_aggregate);
 	
@@ -379,9 +385,9 @@ PHP_METHOD(HttpQueryString, __construct)
 {
 	zval *params = NULL;
 	
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &params)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				php_http_querystring_set(getThis(), params, 0 TSRMLS_CC);
 			} end_error_handling();
 		}
@@ -390,9 +396,9 @@ PHP_METHOD(HttpQueryString, __construct)
 
 PHP_METHOD(HttpQueryString, getGlobalInstance)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				zval *instance = *zend_std_get_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), 0, NULL TSRMLS_CC);
 
 				if (Z_TYPE_P(instance) != IS_OBJECT) {
@@ -424,9 +430,9 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 
 PHP_METHOD(HttpQueryString, getIterator)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				zval *retval = NULL, *qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
 
 				object_init_ex(return_value, spl_ce_RecursiveArrayIterator);
@@ -512,9 +518,9 @@ PHP_METHOD(HttpQueryString, mod)
 {
 	zval *params;
 	
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &params)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				ZVAL_OBJVAL(return_value, Z_OBJ_HT_P(getThis())->clone_obj(getThis() TSRMLS_CC), 0);
 				php_http_querystring_set(return_value, params, QS_MERGE TSRMLS_CC);
 			} end_error_handling();
@@ -543,12 +549,12 @@ PHP_HTTP_QUERYSTRING_GETTER(getObject, IS_OBJECT);
 #ifdef PHP_HTTP_HAVE_ICONV
 PHP_METHOD(HttpQueryString, xlate)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		char *ie, *oe;
 		int ie_len, oe_len;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &ie, &ie_len, &oe, &oe_len)) {
-			with_error_handling(EH_THROW,  php_http_exception_class_entry) {
+			with_error_handling(EH_THROW,  php_http_exception_get_class_entry()) {
 				zval *na, *qa = php_http_ztyp(IS_ARRAY, zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC));
 
 				MAKE_STD_ZVAL(na);
@@ -580,9 +586,9 @@ PHP_METHOD(HttpQueryString, unserialize)
 {
 	zval *serialized;
 	
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &serialized)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				if (Z_TYPE_P(serialized) == IS_STRING) {
 					php_http_querystring_set(getThis(), serialized, 0 TSRMLS_CC);
 				} else {

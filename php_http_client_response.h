@@ -13,8 +13,7 @@
 #ifndef PHP_HTTP_CLIENT_RESPONSE_H
 #define PHP_HTTP_CLIENT_RESPONSE_H
 
-extern zend_class_entry *php_http_client_response_class_entry;
-extern zend_function_entry php_http_client_response_method_entry[];
+zend_class_entry *php_http_client_response_get_class_entry(void);
 
 PHP_METHOD(HttpClientResponse, getCookies);
 

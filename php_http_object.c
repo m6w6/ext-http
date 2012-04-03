@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-STATUS php_http_new(zend_object_value *ov, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC)
+PHP_HTTP_API STATUS php_http_new(zend_object_value *ov, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC)
 {
 	if (!ce) {
 		ce = parent_ce;
@@ -37,7 +37,7 @@ PHP_HTTP_API zend_error_handling_t php_http_object_get_error_handling(zval *obje
 		zval_ptr_dtor(&lzeh);
 		return eh;
 	}
-	zeh = zend_read_static_property(php_http_object_class_entry, ZEND_STRL("defaultErrorHandling"), 0 TSRMLS_CC);
+	zeh = zend_read_static_property(php_http_object_get_class_entry(), ZEND_STRL("defaultErrorHandling"), 0 TSRMLS_CC);
 	if (Z_TYPE_P(zeh) != IS_NULL) {
 		lzeh = php_http_ztyp(IS_LONG, zeh);
 		eh = Z_LVAL_P(lzeh);
@@ -69,8 +69,14 @@ PHP_HTTP_BEGIN_ARGS(triggerError, 3)
 	PHP_HTTP_ARG_VAL(error_message, 0)
 PHP_HTTP_END_ARGS;
 
-zend_class_entry *php_http_object_class_entry;
-zend_function_entry php_http_object_method_entry[] = {
+static zend_class_entry *php_http_object_class_entry;
+
+zend_class_entry *php_http_object_get_class_entry(void)
+{
+	return php_http_object_class_entry;
+}
+
+static zend_function_entry php_http_object_method_entry[] = {
 	PHP_HTTP_OBJECT_ME(setErrorHandling, ZEND_ACC_PUBLIC)
 	PHP_HTTP_OBJECT_ME(getErrorHandling, ZEND_ACC_PUBLIC)
 	PHP_HTTP_OBJECT_ME(setDefaultErrorHandling, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
@@ -106,7 +112,7 @@ zend_object_value php_http_object_new_ex(zend_class_entry *ce, void *nothing, ph
 
 PHP_METHOD(HttpObject, getErrorHandling)
 {
-	RETURN_PROP(php_http_object_class_entry, "errorHandling");
+	RETURN_PROP(php_http_object_get_class_entry(), "errorHandling");
 }
 
 PHP_METHOD(HttpObject, setErrorHandling)
@@ -118,7 +124,7 @@ PHP_METHOD(HttpObject, setErrorHandling)
 			case EH_NORMAL:
 			case EH_SUPPRESS:
 			case EH_THROW:
-				zend_update_property_long(php_http_object_class_entry, getThis(), ZEND_STRL("errorHandling"), eh TSRMLS_CC);
+				zend_update_property_long(php_http_object_get_class_entry(), getThis(), ZEND_STRL("errorHandling"), eh TSRMLS_CC);
 				break;
 
 			default:
@@ -132,7 +138,7 @@ PHP_METHOD(HttpObject, setErrorHandling)
 
 PHP_METHOD(HttpObject, getDefaultErrorHandling)
 {
-	RETURN_SPROP(php_http_object_class_entry, "defaultErrorHandling");
+	RETURN_SPROP(php_http_object_get_class_entry(), "defaultErrorHandling");
 }
 
 PHP_METHOD(HttpObject, setDefaultErrorHandling)
@@ -144,7 +150,7 @@ PHP_METHOD(HttpObject, setDefaultErrorHandling)
 			case EH_NORMAL:
 			case EH_SUPPRESS:
 			case EH_THROW:
-				zend_update_static_property_long(php_http_object_class_entry, ZEND_STRL("defaultErrorHandling"), eh TSRMLS_CC);
+				zend_update_static_property_long(php_http_object_get_class_entry(), ZEND_STRL("defaultErrorHandling"), eh TSRMLS_CC);
 				break;
 
 			default:
@@ -168,14 +174,14 @@ PHP_METHOD(HttpObject, triggerError)
 PHP_MINIT_FUNCTION(http_object)
 {
 	PHP_HTTP_REGISTER_CLASS(http, Object, http_object, NULL, ZEND_ACC_ABSTRACT);
-	php_http_object_class_entry->create_object = php_http_object_new;
+	php_http_object_get_class_entry()->create_object = php_http_object_new;
 
-	zend_declare_property_null(php_http_object_class_entry, ZEND_STRL("defaultErrorHandling"), (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
-	zend_declare_property_null(php_http_object_class_entry, ZEND_STRL("errorHandling"), ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_null(php_http_object_get_class_entry(), ZEND_STRL("defaultErrorHandling"), (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
+	zend_declare_property_null(php_http_object_get_class_entry(), ZEND_STRL("errorHandling"), ZEND_ACC_PROTECTED TSRMLS_CC);
 
-	zend_declare_class_constant_long(php_http_object_class_entry, ZEND_STRL("EH_NORMAL"), EH_NORMAL TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_object_class_entry, ZEND_STRL("EH_SUPPRESS"), EH_SUPPRESS TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_object_class_entry, ZEND_STRL("EH_THROW"), EH_THROW TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_object_get_class_entry(), ZEND_STRL("EH_NORMAL"), EH_NORMAL TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_object_get_class_entry(), ZEND_STRL("EH_SUPPRESS"), EH_SUPPRESS TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_object_get_class_entry(), ZEND_STRL("EH_THROW"), EH_THROW TSRMLS_CC);
 
 	return SUCCESS;
 }

@@ -17,11 +17,10 @@
 
 PHP_HTTP_API STATUS php_http_headers_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data TSRMLS_DC);
 
-extern zend_class_entry *php_http_header_class_entry;
-extern zend_function_entry php_http_header_method_entry[];
+zend_class_entry *php_http_header_get_class_entry(void);
 
 PHP_METHOD(HttpHeader, __construct);
-PHP_METHOD(HttpHeader, toString);
+PHP_METHOD(HttpHeader, serialize);
 PHP_METHOD(HttpHeader, unserialize);
 PHP_METHOD(HttpHeader, match);
 

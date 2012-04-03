@@ -15,16 +15,21 @@
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpClient, method, 0, req_args)
 #define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpClient, method, 0)
-#define PHP_HTTP_CLIENT_ME(method, visibility)	PHP_ME(HttpClient, method, PHP_HTTP_ARGS(HttpClient, method), visibility)
+#define PHP_HTTP_CLIENT_ME(method)	PHP_ABSTRACT_ME(HttpClient, method, PHP_HTTP_ARGS(HttpClient, method))
 
 PHP_HTTP_BEGIN_ARGS(send, 1)
 	PHP_HTTP_ARG_VAL(request, 0)
 PHP_HTTP_END_ARGS;
 
-zend_class_entry *php_http_client_interface_class_entry;
+static zend_class_entry *php_http_client_interface_class_entry;
+
+zend_class_entry *php_http_client_interface_get_class_entry(void)
+{
+	return php_http_client_interface_class_entry;
+}
 
 zend_function_entry php_http_client_interface_method_entry[] = {
-	PHP_HTTP_CLIENT_ME(send, ZEND_ACC_PUBLIC|ZEND_ACC_ABSTRACT)
+	PHP_HTTP_CLIENT_ME(send)
 	{NULL, NULL, NULL}
 };
 

@@ -318,10 +318,10 @@ static inline zend_object_value php_http_client_object_message(zval *this_ptr, p
 
 	if (Z_STRLEN_P(zcn)
 	&&	(class_entry = zend_fetch_class(Z_STRVAL_P(zcn), Z_STRLEN_P(zcn), 0 TSRMLS_CC))
-	&&	(SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_object_new_ex, php_http_client_response_class_entry, msg, NULL TSRMLS_CC))) {
+	&&	(SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_object_new_ex, php_http_client_response_get_class_entry(), msg, NULL TSRMLS_CC))) {
 		return ov;
 	} else {
-		return php_http_message_object_new_ex(php_http_client_response_class_entry, msg, NULL TSRMLS_CC);
+		return php_http_message_object_new_ex(php_http_client_response_get_class_entry(), msg, NULL TSRMLS_CC);
 	}
 }
 
@@ -441,7 +441,7 @@ STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC)
 
 		/* update the actual request message */
 		MAKE_STD_ZVAL(message);
-		ZVAL_OBJVAL(message, php_http_message_object_new_ex(php_http_message_class_entry, php_http_message_copy_ex(msg, NULL, 0), NULL TSRMLS_CC), 0);
+		ZVAL_OBJVAL(message, php_http_message_object_new_ex(php_http_message_get_class_entry(), php_http_message_copy_ex(msg, NULL, 0), NULL TSRMLS_CC), 0);
 		zend_update_property(php_http_client_class_entry, zclient, ZEND_STRL("requestMessage"), message TSRMLS_CC);
 		zval_ptr_dtor(&message);
 	}
@@ -543,7 +543,7 @@ void php_http_client_options_set_subr(zval *this_ptr, char *key, size_t len, zva
 void php_http_client_options_get_subr(zval *this_ptr, char *key, size_t len, zval *return_value TSRMLS_DC)
 {
 	zend_class_entry *this_ce = Z_OBJCE_P(getThis());
-	zval **options, *opts = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("options"), 0 TSRMLS_CC);
+	zval **options, *opts = zend_read_property(this_ce, getThis(), ZEND_STRL("options"), 0 TSRMLS_CC);
 
 	if ((Z_TYPE_P(opts) == IS_ARRAY) && (SUCCESS == zend_symtable_find(Z_ARRVAL_P(opts), key, len, (void *) &options))) {
 		RETVAL_ZVAL(*options, 1, 0);
@@ -552,7 +552,7 @@ void php_http_client_options_get_subr(zval *this_ptr, char *key, size_t len, zva
 
 PHP_METHOD(HttpClient, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		zval *os, *opts = NULL;
 
 		MAKE_STD_ZVAL(os);
@@ -569,7 +569,7 @@ PHP_METHOD(HttpClient, __construct)
 
 PHP_METHOD(HttpClient, getObservers)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			RETVAL_PROP(php_http_client_class_entry, "observers");
 		}
@@ -802,7 +802,7 @@ PHP_METHOD(HttpClient, flushCookies)
 
 PHP_METHOD(HttpClient, getResponseMessage)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			zval *message = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("responseMessage"), 0 TSRMLS_CC);
 
@@ -817,7 +817,7 @@ PHP_METHOD(HttpClient, getResponseMessage)
 
 PHP_METHOD(HttpClient, getRequestMessage)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			zval *message = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("requestMessage"), 0 TSRMLS_CC);
 
@@ -832,7 +832,7 @@ PHP_METHOD(HttpClient, getRequestMessage)
 
 PHP_METHOD(HttpClient, getHistory)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			zval *hist = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("history"), 0 TSRMLS_CC);
 
@@ -895,7 +895,7 @@ PHP_METHOD(HttpClient, send)
 
 	RETVAL_FALSE;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O!", &zreq, php_http_client_request_get_class_entry())) {
 			if (SUCCESS == php_http_client_object_handle_request(getThis(), &zreq TSRMLS_CC)) {
 				php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -917,12 +917,12 @@ PHP_METHOD(HttpClient, send)
 
 PHP_MINIT_FUNCTION(http_client)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Client, AbstractClient, http_client, php_http_object_class_entry, ZEND_ACC_ABSTRACT);
+	PHP_HTTP_REGISTER_CLASS(http\\Client, AbstractClient, http_client, php_http_object_get_class_entry(), ZEND_ACC_ABSTRACT);
 	php_http_client_class_entry->create_object = php_http_client_object_new;
 	memcpy(&php_http_client_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_object_handlers.clone_obj = php_http_client_object_clone;
 
-	zend_class_implements(php_http_client_class_entry TSRMLS_CC, 2, spl_ce_SplSubject, php_http_client_interface_class_entry);
+	zend_class_implements(php_http_client_class_entry TSRMLS_CC, 2, spl_ce_SplSubject, php_http_client_interface_get_class_entry());
 
 	zend_declare_property_string(php_http_client_class_entry, ZEND_STRL("responseMessageClass"), "", ZEND_ACC_PRIVATE TSRMLS_CC);
 	zend_declare_property_null(php_http_client_class_entry, ZEND_STRL("observers"), ZEND_ACC_PRIVATE TSRMLS_CC);

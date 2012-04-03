@@ -35,7 +35,7 @@ PHP_HTTP_API STATUS php_http_client_factory_get_driver(const char *name_str, siz
 	return FAILURE;
 }
 
-static zend_class_entry *php_http_client_factory_get_class_entry(zval *this_ptr, const char *for_str, size_t for_len TSRMLS_DC)
+static zend_class_entry *php_http_client_factory_find_class_entry(zval *this_ptr, const char *for_str, size_t for_len TSRMLS_DC)
 {
 	/* stupid non-const api */
 	char *sc = estrndup(for_str, for_len);
@@ -74,8 +74,14 @@ PHP_HTTP_END_ARGS;
 PHP_HTTP_EMPTY_ARGS(getDriver);
 PHP_HTTP_EMPTY_ARGS(getAvailableDrivers);
 
-zend_class_entry *php_http_client_factory_class_entry;
-zend_function_entry php_http_client_factory_method_entry[] = {
+static zend_class_entry *php_http_client_factory_class_entry;
+
+zend_class_entry *php_http_client_factory_get_class_entry(void)
+{
+	return php_http_client_factory_class_entry;
+}
+
+static zend_function_entry php_http_client_factory_method_entry[] = {
 	PHP_HTTP_REQUEST_FACTORY_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_HTTP_REQUEST_FACTORY_ME(createClient, ZEND_ACC_PUBLIC)
 	PHP_HTTP_REQUEST_FACTORY_ME(createPool, ZEND_ACC_PUBLIC)
@@ -88,7 +94,7 @@ zend_function_entry php_http_client_factory_method_entry[] = {
 
 PHP_METHOD(HttpClientFactory, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		HashTable *options = NULL;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|h", &options)) {
@@ -113,9 +119,9 @@ PHP_METHOD(HttpClientFactory, createClient)
 {
 	zval *options = NULL;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!", &options)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				zval *zdriver;
 				zend_object_value ov;
 				zend_class_entry *class_entry = NULL;
@@ -144,7 +150,7 @@ PHP_METHOD(HttpClientFactory, createClient)
 
 					req = php_http_client_init(NULL, driver.client_ops, rf, NULL TSRMLS_CC);
 					if (req) {
-						if (!(class_entry = php_http_client_factory_get_class_entry(getThis(), ZEND_STRL("clientClass") TSRMLS_CC))) {
+						if (!(class_entry = php_http_client_factory_find_class_entry(getThis(), ZEND_STRL("clientClass") TSRMLS_CC))) {
 							class_entry = driver.client_ops->class_entry();
 						}
 
@@ -170,9 +176,9 @@ PHP_METHOD(HttpClientFactory, createPool)
 	int argc = 0;
 	zval ***argv;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|*", &argv, &argc)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				int i;
 				zval *zdriver;
 				zend_object_value ov;
@@ -201,7 +207,7 @@ PHP_METHOD(HttpClientFactory, createPool)
 
 					pool = php_http_client_pool_init(NULL, driver.client_pool_ops, rf, NULL TSRMLS_CC);
 					if (pool) {
-						if (!(class_entry = php_http_client_factory_get_class_entry(getThis(), ZEND_STRL("clientPoolClass") TSRMLS_CC))) {
+						if (!(class_entry = php_http_client_factory_find_class_entry(getThis(), ZEND_STRL("clientPoolClass") TSRMLS_CC))) {
 							class_entry = driver.client_pool_ops->class_entry();
 						}
 
@@ -231,9 +237,9 @@ PHP_METHOD(HttpClientFactory, createDataShare)
 	int argc = 0;
 	zval ***argv;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|*", &argv, &argc)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				int i;
 				zval *zdriver;
 				zend_object_value ov;
@@ -262,7 +268,7 @@ PHP_METHOD(HttpClientFactory, createDataShare)
 
 					share = php_http_client_datashare_init(NULL, driver.client_datashare_ops, rf, NULL TSRMLS_CC);
 					if (share) {
-						if (!(class_entry = php_http_client_factory_get_class_entry(getThis(), ZEND_STRL("clientDataShareClass") TSRMLS_CC))) {
+						if (!(class_entry = php_http_client_factory_find_class_entry(getThis(), ZEND_STRL("clientDataShareClass") TSRMLS_CC))) {
 							class_entry = driver.client_datashare_ops->class_entry();
 						}
 
@@ -314,7 +320,7 @@ PHP_MINIT_FUNCTION(http_client_factory)
 {
 	zend_hash_init(&php_http_client_factory_drivers, 0, NULL, NULL, 1);
 
-	PHP_HTTP_REGISTER_CLASS(http\\Client, Factory, http_client_factory, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Client, Factory, http_client_factory, php_http_object_get_class_entry(), 0);
 	php_http_client_factory_class_entry->create_object = php_http_client_factory_new;
 
 	zend_declare_property_stringl(php_http_client_factory_class_entry, ZEND_STRL("driver"), ZEND_STRL("curl"), ZEND_ACC_PROTECTED TSRMLS_CC);

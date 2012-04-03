@@ -16,7 +16,7 @@
 #	define PHP_HTTP_PPDBG 0
 #endif
 
-php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_t *proxy, zval *object, zval *member, zval *parent TSRMLS_DC)
+PHP_HTTP_API php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_t *proxy, zval *object, zval *member, zval *parent TSRMLS_DC)
 {
 	if (!proxy) {
 		proxy = emalloc(sizeof(*proxy));
@@ -24,7 +24,7 @@ php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_
 	memset(proxy, 0, sizeof(*proxy));
 
 	MAKE_STD_ZVAL(proxy->myself);
-	ZVAL_OBJVAL(proxy->myself, php_http_property_proxy_object_new_ex(php_http_property_proxy_class_entry, proxy, NULL TSRMLS_CC), 0);
+	ZVAL_OBJVAL(proxy->myself, php_http_property_proxy_object_new_ex(php_http_property_proxy_get_class_entry(), proxy, NULL TSRMLS_CC), 0);
 	Z_ADDREF_P(object);
 	proxy->object = object;
 	proxy->member = php_http_ztyp(IS_STRING, member);
@@ -39,7 +39,7 @@ php_http_property_proxy_t *php_http_property_proxy_init(php_http_property_proxy_
 	return proxy;
 }
 
-void php_http_property_proxy_dtor(php_http_property_proxy_t *proxy)
+PHP_HTTP_API void php_http_property_proxy_dtor(php_http_property_proxy_t *proxy)
 {
 	zval_ptr_dtor(&proxy->object);
 	zval_ptr_dtor(&proxy->member);
@@ -49,7 +49,7 @@ void php_http_property_proxy_dtor(php_http_property_proxy_t *proxy)
 	}
 }
 
-void php_http_property_proxy_free(php_http_property_proxy_t **proxy)
+PHP_HTTP_API void php_http_property_proxy_free(php_http_property_proxy_t **proxy)
 {
 	if (*proxy) {
 		php_http_property_proxy_dtor(*proxy);
@@ -65,11 +65,18 @@ void php_http_property_proxy_free(php_http_property_proxy_t **proxy)
 
 PHP_HTTP_EMPTY_ARGS(__construct);
 
-zend_class_entry *php_http_property_proxy_class_entry;
-zend_function_entry php_http_property_proxy_method_entry[] = {
+static zend_class_entry *php_http_property_proxy_class_entry;
+
+zend_class_entry *php_http_property_proxy_get_class_entry(void)
+{
+	return php_http_property_proxy_class_entry;
+}
+
+static zend_function_entry php_http_property_proxy_method_entry[] = {
 	PHP_HTTP_PP_ME(__construct, ZEND_ACC_FINAL|ZEND_ACC_PRIVATE)
 	EMPTY_FUNCTION_ENTRY
 };
+
 static zend_object_handlers php_http_property_proxy_object_handlers;
 
 zend_object_value php_http_property_proxy_object_new(zend_class_entry *ce TSRMLS_DC)

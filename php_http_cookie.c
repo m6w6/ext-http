@@ -425,8 +425,14 @@ PHP_HTTP_BEGIN_ARGS(getExtra, 1)
 	PHP_HTTP_ARG_VAL(name, 0)
 PHP_HTTP_END_ARGS;
 
-zend_class_entry *php_http_cookie_class_entry;
-zend_function_entry php_http_cookie_method_entry[] = {
+static zend_class_entry *php_http_cookie_class_entry;
+
+zend_class_entry *php_http_cookie_get_class_entry(void)
+{
+	return php_http_cookie_class_entry;
+}
+
+static zend_function_entry php_http_cookie_method_entry[] = {
 	PHP_HTTP_COOKIE_ME(__construct, ZEND_ACC_PUBLIC)
 	PHP_HTTP_COOKIE_ME(getCookies, ZEND_ACC_PUBLIC)
 	PHP_HTTP_COOKIE_ME(setCookies, ZEND_ACC_PUBLIC)
@@ -512,14 +518,14 @@ void php_http_cookie_object_free(void *object TSRMLS_DC)
 
 PHP_METHOD(HttpCookie, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		zval *zcookie = NULL;
 		long flags = 0;
 		HashTable *allowed_extras = NULL;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!lH", &zcookie, &flags, &allowed_extras)) {
 			if (zcookie) {
-				with_error_handling(EH_THROW, php_http_exception_class_entry) {
+				with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 					char **ae = NULL;
 					php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
@@ -938,7 +944,7 @@ PHP_METHOD(HttpCookie, toArray)
 
 PHP_MINIT_FUNCTION(http_cookie)
 {
-	PHP_HTTP_REGISTER_CLASS(http, Cookie, http_cookie, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http, Cookie, http_cookie, php_http_object_get_class_entry(), 0);
 	php_http_cookie_class_entry->create_object = php_http_cookie_object_new;
 	memcpy(&php_http_cookie_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_cookie_object_handlers.clone_obj = php_http_cookie_object_clone;

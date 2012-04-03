@@ -26,8 +26,7 @@ typedef struct php_http_client_factory_driver {
 PHP_HTTP_API STATUS php_http_client_factory_add_driver(const char *name_str, size_t name_len, php_http_client_factory_driver_t *driver);
 PHP_HTTP_API STATUS php_http_client_factory_get_driver(const char *name_str, size_t name_len, php_http_client_factory_driver_t *driver);
 
-extern zend_class_entry *php_http_client_factory_class_entry;
-extern zend_function_entry php_http_client_factory_method_entry[];
+zend_class_entry *php_http_client_factory_get_class_entry(void);
 
 #define php_http_client_factory_new php_http_object_new
 

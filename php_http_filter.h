@@ -13,7 +13,7 @@
 #ifndef PHP_HTTP_FILTER_H
 #define PHP_HTTP_FILTER_H
 
-extern php_stream_filter_factory php_http_filter_factory;
+PHP_HTTP_API php_stream_filter_factory php_http_filter_factory;
 PHP_MINIT_FUNCTION(http_filter);
 
 #endif

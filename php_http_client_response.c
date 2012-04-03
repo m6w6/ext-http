@@ -62,7 +62,7 @@ PHP_METHOD(HttpClientResponse, getCookies)
 							zval *cookie;
 
 							MAKE_STD_ZVAL(cookie);
-							ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
+							ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list, NULL TSRMLS_CC), 0);
 							add_next_index_zval(return_value, cookie);
 						}
 						zval_ptr_dtor(&data);
@@ -73,7 +73,7 @@ PHP_METHOD(HttpClientResponse, getCookies)
 						zval *cookie;
 
 						MAKE_STD_ZVAL(cookie);
-						ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
+						ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list, NULL TSRMLS_CC), 0);
 						add_next_index_zval(return_value, cookie);
 					}
 					zval_ptr_dtor(&data);
@@ -94,15 +94,21 @@ PHP_METHOD(HttpClientResponse, getCookies)
 }
 
 
-zend_class_entry *php_http_client_response_class_entry;
-zend_function_entry php_http_client_response_method_entry[] = {
+static zend_class_entry *php_http_client_response_class_entry;
+
+zend_class_entry *php_http_client_response_get_class_entry(void)
+{
+	return php_http_client_response_class_entry;
+}
+
+static zend_function_entry php_http_client_response_method_entry[] = {
 	PHP_HTTP_CLIENT_RESPONSE_ME(getCookies, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
 PHP_MINIT_FUNCTION(http_client_response)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Client, Response, http_client_response, php_http_message_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Client, Response, http_client_response, php_http_message_get_class_entry(), 0);
 
 	return SUCCESS;
 }

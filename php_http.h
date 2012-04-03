@@ -15,10 +15,10 @@
 
 #define PHP_HTTP_EXT_VERSION "2.0.0dev10"
 
-extern zend_module_entry http_module_entry;
+zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
 
-extern int http_module_number;
+int http_module_number;
 
 #endif	/* PHP_EXT_HTTP_H */
 

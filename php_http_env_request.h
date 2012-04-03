@@ -13,8 +13,7 @@
 #ifndef PHP_HTTP_ENV_REQUEST_H
 #define PHP_HTTP_ENV_REQUEST_H
 
-extern zend_class_entry *php_http_env_request_class_entry;
-extern zend_function_entry php_http_env_request_method_entry[];
+zend_class_entry *php_http_env_request_get_class_entry(void);
 
 PHP_METHOD(HttpEnvRequest, __construct);
 PHP_METHOD(HttpEnvRequest, getForm);

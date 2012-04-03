@@ -15,19 +15,18 @@
 
 typedef zend_object_value (*php_http_new_t)(zend_class_entry *ce, void *, void ** TSRMLS_DC);
 
-extern STATUS php_http_new(zend_object_value *ov, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC);
+PHP_HTTP_API STATUS php_http_new(zend_object_value *ov, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC);
 
 typedef struct php_http_object {
 	zend_object zo;
 } php_http_object_t;
 
-extern zend_class_entry *php_http_object_class_entry;
-extern zend_function_entry php_http_object_method_entry[];
+zend_class_entry *php_http_object_get_class_entry(void);
 
-extern PHP_MINIT_FUNCTION(http_object);
+PHP_MINIT_FUNCTION(http_object);
 
-extern zend_object_value php_http_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_object_new_ex(zend_class_entry *ce, void *nothing, php_http_object_t **ptr TSRMLS_DC);
+zend_object_value php_http_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object_value php_http_object_new_ex(zend_class_entry *ce, void *nothing, php_http_object_t **ptr TSRMLS_DC);
 
 PHP_HTTP_API zend_error_handling_t php_http_object_get_error_handling(zval *object TSRMLS_DC);
 

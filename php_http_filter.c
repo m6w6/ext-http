@@ -423,7 +423,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	return f;
 }
 
-php_stream_filter_factory php_http_filter_factory = {
+PHP_HTTP_API php_stream_filter_factory php_http_filter_factory = {
 	http_filter_create
 };
 

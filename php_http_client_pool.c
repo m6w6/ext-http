@@ -376,11 +376,11 @@ PHP_METHOD(HttpClientPool, reset)
 
 PHP_METHOD(HttpClientPool, attach)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		zval *request;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_get_class_entry())) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				php_http_client_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 				if (obj->iterator.pos > 0 && obj->iterator.pos < zend_llist_count(&obj->pool->clients.attached)) {
@@ -399,11 +399,11 @@ PHP_METHOD(HttpClientPool, detach)
 {
 	RETVAL_FALSE;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		zval *request;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_get_class_entry())) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				php_http_client_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 				obj->iterator.pos = -1;
@@ -419,9 +419,9 @@ PHP_METHOD(HttpClientPool, send)
 {
 	RETVAL_FALSE;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
+			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				php_http_client_pool_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 				php_http_client_pool_exec(obj->pool);
@@ -582,7 +582,7 @@ PHP_METHOD(HttpClientPool, enableEvents)
 
 PHP_MINIT_FUNCTION(http_client_pool)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Client\\Pool, AbstractPool, http_client_pool, php_http_object_class_entry, 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Client\\Pool, AbstractPool, http_client_pool, php_http_object_get_class_entry(), 0);
 	php_http_client_pool_class_entry->create_object = php_http_client_pool_object_new;
 	memcpy(&php_http_client_pool_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_pool_object_handlers.clone_obj = NULL;

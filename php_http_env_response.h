@@ -51,8 +51,7 @@ PHP_HTTP_API void php_http_env_response_free(php_http_env_response_t **r);
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len TSRMLS_DC);
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *options, const char *header_str, size_t header_len TSRMLS_DC);
 
-extern zend_class_entry *php_http_env_response_class_entry;
-extern zend_function_entry php_http_env_response_method_entry[];
+zend_class_entry *php_http_env_response_get_class_entry(void);
 
 PHP_METHOD(HttpEnvResponse, __construct);
 PHP_METHOD(HttpEnvResponse, __invoke);

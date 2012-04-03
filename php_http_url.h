@@ -153,8 +153,7 @@ static inline HashTable *php_http_url_to_struct(php_url *url, zval *strct TSRMLS
 	return Z_ARRVAL(arr);
 }
 
-extern zend_class_entry *php_http_url_class_entry;
-extern zend_function_entry php_http_url_method_entry[];
+zend_class_entry *php_http_url_get_class_entry(void);
 
 #define php_http_url_object_new php_http_object_new
 #define php_http_url_object_new_ex php_http_object_new_ex
@@ -164,7 +163,7 @@ PHP_METHOD(HttpUrl, mod);
 PHP_METHOD(HttpUrl, toString);
 PHP_METHOD(HttpUrl, toArray);
 
-extern PHP_MINIT_FUNCTION(http_url);
+PHP_MINIT_FUNCTION(http_url);
 
 #endif
 

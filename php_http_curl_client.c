@@ -1024,7 +1024,7 @@ static STATUS php_http_curl_client_reset(php_http_client_t *h)
 	return SUCCESS;
 }
 
-STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_message_t *msg)
+PHP_HTTP_API STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_message_t *msg)
 {
 	size_t body_size;
 	php_http_curl_client_t *curl = h->ctx;
@@ -1245,11 +1245,6 @@ static php_http_resource_factory_ops_t php_http_curl_client_resource_factory_ops
 	php_http_curl_dtor
 };
 
-static zend_class_entry *get_class_entry(void)
-{
-	return php_http_curl_client_class_entry;
-}
-
 static php_http_client_ops_t php_http_curl_client_ops = {
 	&php_http_curl_client_resource_factory_ops,
 	php_http_curl_client_init,
@@ -1260,7 +1255,7 @@ static php_http_client_ops_t php_http_curl_client_ops = {
 	php_http_curl_client_setopt,
 	php_http_curl_client_getopt,
 	(php_http_new_t) php_http_curl_client_object_new_ex,
-	get_class_entry
+	php_http_curl_client_get_class_entry
 };
 
 PHP_HTTP_API php_http_client_ops_t *php_http_curl_client_get_ops(void)
@@ -1278,8 +1273,14 @@ PHP_HTTP_BEGIN_ARGS(send, 1)
 	PHP_HTTP_ARG_VAL(request, 0)
 PHP_HTTP_END_ARGS;
 
-zend_class_entry *php_http_curl_client_class_entry;
-zend_function_entry php_http_curl_client_method_entry[] = {
+static zend_class_entry *php_http_curl_client_class_entry;
+
+zend_class_entry *php_http_curl_client_get_class_entry(void)
+{
+	return php_http_curl_client_class_entry;
+}
+
+static zend_function_entry php_http_curl_client_method_entry[] = {
 	PHP_HTTP_CURL_CLIENT_CLIENT_MALIAS(send, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };

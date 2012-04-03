@@ -148,9 +148,9 @@ struct php_http_encoding_stream {
 #endif
 };
 
-extern php_http_encoding_stream_ops_t *php_http_encoding_stream_get_deflate_ops(void);
-extern php_http_encoding_stream_ops_t *php_http_encoding_stream_get_inflate_ops(void);
-extern php_http_encoding_stream_ops_t *php_http_encoding_stream_get_dechunk_ops(void);
+PHP_HTTP_API php_http_encoding_stream_ops_t *php_http_encoding_stream_get_deflate_ops(void);
+PHP_HTTP_API php_http_encoding_stream_ops_t *php_http_encoding_stream_get_inflate_ops(void);
+PHP_HTTP_API php_http_encoding_stream_ops_t *php_http_encoding_stream_get_dechunk_ops(void);
 
 PHP_HTTP_API php_http_encoding_stream_t *php_http_encoding_stream_init(php_http_encoding_stream_t *s, php_http_encoding_stream_ops_t *ops, unsigned flags TSRMLS_DC);
 PHP_HTTP_API php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_encoding_stream_t *from, php_http_encoding_stream_t *to);
@@ -171,20 +171,16 @@ typedef struct php_http_encoding_stream_object {
 	php_http_encoding_stream_t *stream;
 } php_http_encoding_stream_object_t;
 
-extern zend_class_entry *php_http_encoding_stream_class_entry;
-extern zend_function_entry php_http_encoding_stream_method_entry[];
+zend_class_entry *php_http_encoding_stream_get_class_entry(void);
 
-extern zend_object_value php_http_encoding_stream_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_encoding_stream_object_new_ex(zend_class_entry *ce, php_http_encoding_stream_t *s, php_http_encoding_stream_object_t **ptr TSRMLS_DC);
-extern zend_object_value php_http_encoding_stream_object_clone(zval *object TSRMLS_DC);
-extern void php_http_encoding_stream_object_free(void *object TSRMLS_DC);
+zend_object_value php_http_encoding_stream_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object_value php_http_encoding_stream_object_new_ex(zend_class_entry *ce, php_http_encoding_stream_t *s, php_http_encoding_stream_object_t **ptr TSRMLS_DC);
+zend_object_value php_http_encoding_stream_object_clone(zval *object TSRMLS_DC);
+void php_http_encoding_stream_object_free(void *object TSRMLS_DC);
 
-extern zend_class_entry *php_http_deflate_stream_class_entry;
-extern zend_function_entry php_http_deflate_stream_method_entry[];
-extern zend_class_entry *php_http_inflate_stream_class_entry;
-extern zend_function_entry php_http_inflate_stream_method_entry[];
-extern zend_class_entry *php_http_dechunk_stream_class_entry;
-extern zend_function_entry php_http_dechunk_stream_method_entry[];
+zend_class_entry *php_http_deflate_stream_get_class_entry(void);
+zend_class_entry *php_http_inflate_stream_get_class_entry(void);
+zend_class_entry *php_http_dechunk_stream_get_class_entry(void);
 
 PHP_METHOD(HttpEncodingStream, __construct);
 PHP_METHOD(HttpEncodingStream, update);
