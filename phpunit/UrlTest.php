@@ -24,7 +24,7 @@ class UrlTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals("www.example.com", $url->host);
 		$this->assertEquals(8080, $url->port);
 		$this->assertEquals("/path/changed", $url->path);
-		$this->assertEquals("foo=&more%5B0%5D=1&more%5B1%5D=2&added=this", $url->query);
+		$this->assertEquals("more%5B0%5D=1&more%5B1%5D=2&added=this", $url->query);
         $this->assertEmpty($url->fragment);
     }
 

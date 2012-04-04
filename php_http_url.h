@@ -41,10 +41,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *ht, php_http_buffer_t
 
 static inline void php_http_url_argsep(const char **str, size_t *len TSRMLS_DC)
 {
-	*str = INI_STR("arg_separator.output");
-	*len = strlen(*str);
-
-	if (!*len) {
+	if (SUCCESS != php_http_ini_entry(ZEND_STRL("arg_separator.output"), str, len, 0 TSRMLS_CC) || !*len) {
 		*str = PHP_HTTP_URL_ARGSEP;
 		*len = lenof(PHP_HTTP_URL_ARGSEP);
 	}

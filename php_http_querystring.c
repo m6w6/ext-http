@@ -138,6 +138,75 @@ PHP_HTTP_API STATUS php_http_querystring_ctor(zval *instance, zval *params TSRML
 	return SUCCESS;
 }
 
+static int apply_querystring(void *pData TSRMLS_DC)
+{
+	zval **val = pData;
+
+	if (Z_TYPE_PP(val) == IS_ARRAY) {
+		zval **zvalue;
+
+		if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(val), ZEND_STRS("value"), (void *) &zvalue)) {
+			zval *tmp = *val;
+
+			Z_ADDREF_PP(zvalue);
+			*val = *zvalue;
+			zval_dtor(tmp);
+			Z_TYPE_P(tmp) = IS_NULL;
+			zval_ptr_dtor(&tmp);
+		}
+	}
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+PHP_HTTP_API STATUS php_http_querystring_parse(HashTable *ht, const char *str, size_t len TSRMLS_DC)
+{
+	STATUS rv = FAILURE;
+	php_http_params_opts_t opts;
+	php_http_params_token_t psep = { ZEND_STRL("&") }, *psepp[] = { &psep, NULL };
+	php_http_params_token_t vsep = { ZEND_STRL("=") }, *vsepp[] = { &vsep, NULL };
+	const char *asi_str = NULL;
+	size_t asi_len = 0;
+
+	opts.input.str = estrndup(str, len);
+	opts.input.len = len;
+	opts.param = psepp;
+	opts.arg = NULL;
+	opts.val = vsepp;
+	opts.flags = PHP_HTTP_PARAMS_QUERY;
+
+	if (SUCCESS == php_http_ini_entry(ZEND_STRL("arg_separator.input"), &asi_str, &asi_len, 0 TSRMLS_CC) && asi_len) {
+		zval *arr;
+
+		MAKE_STD_ZVAL(arr);
+		array_init_size(arr, asi_len);
+
+		do {
+			add_next_index_stringl(arr, asi_str++, 1, 1);
+		} while (*asi_str);
+
+		opts.param = php_http_params_separator_init(arr TSRMLS_CC);
+
+		zval_ptr_dtor(&arr);
+	}
+
+	MAKE_STD_ZVAL(opts.defval);
+	ZVAL_NULL(opts.defval);
+
+	if (php_http_params_parse(ht, &opts TSRMLS_CC)) {
+		zend_hash_apply(ht, apply_querystring TSRMLS_CC);
+		rv = SUCCESS;
+	}
+
+	if (asi_len) {
+		php_http_params_separator_free(opts.param);
+	}
+
+	zval_ptr_dtor(&opts.defval);
+	efree(opts.input.str);
+	return rv;
+}
+
 PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval *outstring TSRMLS_DC)
 {
 	/* enforce proper type */
@@ -165,7 +234,7 @@ PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval
 		} else {
 			zv_ptr = php_http_ztyp(IS_STRING, params);
 			array_init(&zv);
-			php_default_treat_data(PARSE_STRING, estrdup(Z_STRVAL_P(zv_ptr)), &zv TSRMLS_CC);
+			php_http_querystring_parse(Z_ARRVAL(zv), Z_STRVAL_P(zv_ptr), Z_STRLEN_P(zv_ptr) TSRMLS_CC);
 			zval_ptr_dtor(&zv_ptr);
 			zv_ptr = NULL;
 			ptr = Z_ARRVAL(zv);

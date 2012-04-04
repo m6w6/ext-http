@@ -28,7 +28,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </lead>
  <date>2012-03-30</date>
  <version>
-  <release>2.0.0dev10</release>
+  <release>2.0.0dev</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -37,7 +37,9 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ This release contains the http\Request to http\Client refactoring triggered by Benjamin Eberlei. Many thanks.
++ Added constants http\Params::PARSE_RAW, ::PARSE_DEFAULT, ::PARSE_URLENCODED, ::PARSE_DIMENSION, ::PARSE_QUERY
++ Added fourth parameter 'flags' to http\Params' constructor, which defaults to http\Params::PARSE_DEFAULT
+* Fixed bug #61444 (query string converts . to _ in param names)
 ]]></notes>
  <contents>
   <dir name="/">

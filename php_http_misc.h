@@ -175,7 +175,8 @@ static inline zval *php_http_ztyp(int type, zval *z)
 	return z;
 }
 
-static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z) {
+static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z)
+{
 	if (add_ref) {
 		Z_ADDREF_P(z);
 	}
@@ -195,6 +196,22 @@ static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z) {
 	return z;
 }
 
+static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, const char **value_str, size_t *value_len, zend_bool orig TSRMLS_DC)
+{
+	zend_ini_entry *ini_entry;
+
+	if (SUCCESS == zend_hash_find(EG(ini_directives), name_str, name_len + 1, (void *) &ini_entry)) {
+		if (orig && ini_entry->modified) {
+			*value_str = ini_entry->orig_value;
+			*value_len = (size_t) ini_entry->orig_value_length;
+		} else {
+			*value_str = ini_entry->value;
+			*value_len = (size_t) ini_entry->value_length;
+		}
+		return SUCCESS;
+	}
+	return FAILURE;
+}
 
 /* return bool (v == SUCCESS) */
 #define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
