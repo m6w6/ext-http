@@ -396,6 +396,20 @@ typedef struct php_http_array_hashkey {
 } php_http_array_hashkey_t;
 #define php_http_array_hashkey_init(dup) {NULL, 0, 0, (dup), 0}
 
+static inline void php_http_array_hashkey_stringify(php_http_array_hashkey_t *key)
+{
+	if (key->type != HASH_KEY_IS_STRING) {
+		key->len = spprintf(&key->str, 0, "%lu", key->num) + 1;
+	}
+}
+
+static inline void php_http_array_hashkey_stringfree(php_http_array_hashkey_t *key)
+{
+	if (key->type != HASH_KEY_IS_STRING || key->dup) {
+		STR_FREE(key->str);
+	}
+}
+
 #define FOREACH_VAL(pos, array, val) FOREACH_HASH_VAL(pos, HASH_OF(array), val)
 #define FOREACH_HASH_VAL(pos, hash, val) \
 	for (	zend_hash_internal_pointer_reset_ex(hash, &pos); \
