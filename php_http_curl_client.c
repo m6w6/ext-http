@@ -510,11 +510,13 @@ static STATUS set_options(php_http_client_t *h, HashTable *options)
 				zval **cookie_val;
 
 				FOREACH_KEYVAL(pos, zoption, cookie_key, cookie_val) {
-					if (cookie_key.type == HASH_KEY_IS_STRING) {
-						zval *val = php_http_ztyp(IS_STRING, *cookie_val);
-						php_http_buffer_appendf(&curl->options.cookies, "%s=%s; ", cookie_key.str, Z_STRVAL_P(val));
-						zval_ptr_dtor(&val);
-					}
+					zval *val = php_http_ztyp(IS_STRING, *cookie_val);
+
+					php_http_array_hashkey_stringify(&cookie_key);
+					php_http_buffer_appendf(&curl->options.cookies, "%s=%s; ", cookie_key.str, Z_STRVAL_P(val));
+					php_http_array_hashkey_stringfree(&cookie_key);
+
+					zval_ptr_dtor(&val);
 				}
 
 				php_http_buffer_fix(&curl->options.cookies);

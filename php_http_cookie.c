@@ -136,22 +136,15 @@ static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long 
 	} else if _KEY_IS("httpOnly") {
 		list->flags |= PHP_HTTP_COOKIE_HTTPONLY;
 	} else {
-		char buf[0x20], *key_str;
-		int key_len;
+		char buf[0x20];
 
-		if (key->type == HASH_KEY_IS_LONG) {
-			key_len = slprintf(buf, sizeof(buf) - 1, "%ld", key->num) + 1;
-			key_str = &buf[0];
-		} else {
-			key_len = key->len;
-			key_str = key->str;
-		}
+		php_http_array_hashkey_stringify(key);
 		/* check for extra */
 		if (allowed_extras) {
 			char **ae = allowed_extras;
 
 			for (; *ae; ++ae) {
-				if (!strncasecmp(key_str, *ae, key_len)) {
+				if (!strncasecmp(key->str, *ae, key->len)) {
 					if (key->type == HASH_KEY_IS_LONG) {
 						zend_hash_index_update(&list->extras, key->num, (void *) &arg, sizeof(zval *), NULL);
 					} else {
@@ -161,6 +154,7 @@ static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long 
 				}
 			}
 		}
+		php_http_array_hashkey_stringfree(key);
 
 		/* cookie */
 		if (key->type == HASH_KEY_IS_LONG) {
@@ -308,15 +302,11 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 	
 	FOREACH_HASH_KEYVAL(pos, &list->cookies, key, val) {
 		zval *tmp = php_http_ztyp(IS_STRING, *val);
-		if (key.type == HASH_KEY_IS_STRING && key.len) {
-			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-		} else if (key.type == HASH_KEY_IS_LONG) {
-			int enc_len;
-			char *enc_str = php_raw_url_encode(Z_STRVAL_P(tmp), Z_STRLEN_P(tmp), &enc_len);
 
-			php_http_buffer_appendf(&buf, "%ld=%.*s; ", key.num, enc_len, enc_str);
-			efree(enc_str);
-		}
+		php_http_array_hashkey_stringify(&key);
+		append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+		php_http_array_hashkey_stringfree(&key);
+
 		zval_ptr_dtor(&tmp);
 	}
 	
@@ -334,15 +324,11 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 	
 	FOREACH_HASH_KEYVAL(pos, &list->extras, key, val) {
 		zval *tmp = php_http_ztyp(IS_STRING, *val);
-		if (key.type == HASH_KEY_IS_STRING && key.len) {
-			append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-		} else if (key.type == HASH_KEY_IS_LONG) {
-			int enc_len;
-			char *enc_str = php_raw_url_encode(Z_STRVAL_P(tmp), Z_STRLEN_P(tmp), &enc_len);
 
-			php_http_buffer_appendf(&buf, "%ld=%.*s; ", key.num, enc_len, enc_str);
-			efree(enc_str);
-		}
+		php_http_array_hashkey_stringify(&key);
+		append_encoded(&buf, key.str, key.len-1, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+		php_http_array_hashkey_stringfree(&key);
+
 		zval_ptr_dtor(&tmp);
 	}
 	
