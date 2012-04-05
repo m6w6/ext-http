@@ -473,6 +473,9 @@ PHP_HTTP_API HashTable *php_http_params_parse(HashTable *params, const php_http_
 				state.arg.len = 0;
 				state.val.str = NULL;
 				state.val.len = 0;
+
+				continue;
+
 			} else
 			/* are we at an arg separator? */
 			if (0 < (sep_len = check_sep(&state, opts->arg))) {
@@ -485,6 +488,9 @@ PHP_HTTP_API HashTable *php_http_params_parse(HashTable *params, const php_http_
 				state.arg.len = 0;
 				state.val.str = NULL;
 				state.val.len = 0;
+
+				continue;
+
 			} else
 			/* are we at a val separator? */
 			if (0 < (sep_len = check_sep(&state, opts->val))) {
@@ -496,6 +502,8 @@ PHP_HTTP_API HashTable *php_http_params_parse(HashTable *params, const php_http_
 
 					state.val.str = state.input.str;
 					state.val.len = 0;
+
+					continue;
 				}
 			}
 		}
@@ -614,129 +622,7 @@ PHP_HTTP_API php_http_buffer_t *php_http_params_to_string(php_http_buffer_t *buf
 			php_http_array_hashkey_stringfree(&key1);
 		}
 	}
-/*
-	FOREACH_HASH_KEYVAL(pos1, params, key1, zparam) {
-		if (PHP_HTTP_BUFFER_LEN(buf)) {
-			php_http_buffer_append(buf, pss, psl);
-		}
 
-		if (key1.type == HASH_KEY_IS_STRING) {
-			char *key;
-			size_t len;
-
-			prepare_key(flags, key1.str, key1.len - 1, &key, &len TSRMLS_CC);
-			php_http_buffer_append(buf, key, len);
-			efree(key);
-		} else {
-			php_http_buffer_appendf(buf, "%lu", key1.num);
-		}
-
-		if (Z_TYPE_PP(zparam) != IS_ARRAY) {
-			zval *tmp = php_http_ztyp(IS_STRING, *zparam);
-
-			prepare_value(flags, tmp TSRMLS_CC);
-
-			php_http_buffer_append(buf, vss, vsl);
-			php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-			zval_ptr_dtor(&tmp);
-		} else {
-			zval **zvalue, **zargs, **zarg;
-
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(zparam), ZEND_STRS("value"), (void *) &zvalue)) {
-				if (Z_TYPE_PP(zvalue) != IS_BOOL) {
-					zval *tmp, *tmp2;
-
-					if (Z_TYPE_PP(zvalue) == IS_ARRAY) {
-						tmp = php_http_zsep(1, IS_ARRAY, *zvalue);
-						do {
-							if (key1.type == HASH_KEY_IS_STRING) {
-								char *key;
-								size_t len;
-
-								prepare_key(flags, key1.str, key1.len - 1, &key, &len TSRMLS_CC);
-								php_http_buffer_append(buf, key, len);
-								efree(key);
-							} else {
-								php_http_buffer_appendf(buf, "%lu", key1.num);
-							}
-
-							tmp2 = php_http_zsep(1, IS_ARRAY, tmp);
-							prepare_value(flags, tmp2 TSRMLS_CC);
-							php_http_buffer_append(buf, Z_STRVAL_P(tmp2), Z_STRLEN_P(tmp2));
-							zval_ptr_dtor(&tmp2);
-
-							while (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_P(tmp), (void *) &zvalue) && Z_TYPE_PP(zvalue) == IS_ARRAY);
-
-							tmp2 = php_http_ztyp(IS_STRING, *zvalue);
-							prepare_value(flags, tmp2 TSRMLS_CC);
-							php_http_buffer_append(buf, vss, vsl);
-							php_http_buffer_append(buf, Z_STRVAL_P(tmp2), Z_STRLEN_P(tmp2));
-							zval_ptr_dtor(&tmp2);
-						} while (SUCCESS == zend_hash_move_forward(Z_ARRVAL_P(tmp)));
-						zval_ptr_dtor(&tmp);
-					} else {
-
-						tmp = php_http_ztyp(IS_STRING, *zvalue);
-						prepare_value(flags, tmp TSRMLS_CC);
-						php_http_buffer_append(buf, vss, vsl);
-						php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-						zval_ptr_dtor(&tmp);
-					}
-				} else if (!Z_BVAL_PP(zvalue)) {
-					php_http_buffer_append(buf, vss, vsl);
-					php_http_buffer_appends(buf, "0");
-				}
-			}
-			if (SUCCESS != zend_hash_find(Z_ARRVAL_PP(zparam), ZEND_STRS("arguments"), (void *) &zargs)) {
-				zargs = zparam;
-			}
-
-			if (Z_TYPE_PP(zargs) == IS_ARRAY) {
-				FOREACH_KEYVAL(pos2, *zargs, key2, zarg) {
-					if (zargs == zparam && key2.type == HASH_KEY_IS_STRING && !strcmp(key2.str, "value")) {
-						continue;
-					}
-
-					if (PHP_HTTP_BUFFER_LEN(buf)) {
-						php_http_buffer_append(buf, ass, asl);
-					}
-
-					if (key2.type == HASH_KEY_IS_STRING) {
-						char *key;
-						size_t len;
-
-						prepare_key(flags, key2.str, key2.len - 1, &key, &len TSRMLS_CC);
-						php_http_buffer_append(buf, key, len);
-						efree(key);
-					} else {
-						php_http_buffer_appendf(buf, "%lu", key2.num);
-					}
-					if (Z_TYPE_PP(zarg) != IS_BOOL) {
-						zval *tmp;
-
-						if (Z_TYPE_PP(zarg) == IS_ARRAY) {
-							tmp = php_http_zsep(1, IS_ARRAY, *zarg);
-							prepare_value(flags, tmp TSRMLS_CC);
-							php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-							zval_ptr_dtor(&tmp);
-
-							while (SUCCESS == zend_hash_get_current_data(Z_ARRVAL_PP(zarg), (void *) &zarg) && Z_TYPE_PP(zarg) == IS_ARRAY);
-						}
-
-						tmp = php_http_ztyp(IS_STRING, *zarg);
-						prepare_value(flags, tmp TSRMLS_CC);
-						php_http_buffer_append(buf, vss, vsl);
-						php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
-						zval_ptr_dtor(&tmp);
-					} else if (!Z_BVAL_PP(zarg)) {
-						php_http_buffer_append(buf, vss, vsl);
-						php_http_buffer_appends(buf, "0");
-					}
-				}
-			}
-		}
-	}
-*/
 	php_http_buffer_shrink(buf);
 	php_http_buffer_fix(buf);
 
