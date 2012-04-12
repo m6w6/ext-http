@@ -84,6 +84,7 @@ PHP_MSHUTDOWN_FUNCTION(http_message);
 
 void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool top /* = 1 */ TSRMLS_DC);
 void php_http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_DC);
+STATUS php_http_message_object_set_body(php_http_message_object_t *obj, zval *zbody TSRMLS_DC);
 
 zend_object_value php_http_message_object_new(zend_class_entry *ce TSRMLS_DC);
 zend_object_value php_http_message_object_new_ex(zend_class_entry *ce, php_http_message_t *msg, php_http_message_object_t **ptr TSRMLS_DC);

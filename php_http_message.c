@@ -823,13 +823,7 @@ static void php_http_message_object_prophandler_get_body(php_http_message_object
 	}
 }
 static void php_http_message_object_prophandler_set_body(php_http_message_object_t *obj, zval *value TSRMLS_DC) {
-	if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), php_http_message_body_get_class_entry() TSRMLS_CC)) {
-		if (obj->body.handle) {
-			zend_objects_store_del_ref_by_handle(obj->body.handle TSRMLS_CC);
-		}
-		Z_OBJ_ADDREF_P(value);
-		obj->body = Z_OBJVAL_P(value);
-	}
+	php_http_message_object_set_body(obj, value TSRMLS_CC);
 }
 static void php_http_message_object_prophandler_get_parent_message(php_http_message_object_t *obj, zval *return_value TSRMLS_DC) {
 	if (obj->message->parent) {
@@ -980,6 +974,62 @@ void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool to
 		prepend_obj->parent = save_parent_obj;
 		prepend_obj->message->parent = save_parent_msg;
 	}
+}
+
+STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval *zbody TSRMLS_DC)
+{
+	zval *tmp;
+	php_stream *s;
+	zend_object_value ov;
+	php_http_message_body_t *body;
+	php_http_message_body_object_t *body_obj;
+
+	switch (Z_TYPE_P(zbody)) {
+		case IS_RESOURCE:
+			php_stream_from_zval_no_verify(s, &zbody);
+			if (!s) {
+				php_http_error(HE_THROW, PHP_HTTP_E_CLIENT, "not a valid stream resource");
+				return FAILURE;
+			}
+
+			is_resource:
+
+			body = php_http_message_body_init(NULL, s TSRMLS_CC);
+			if (SUCCESS != php_http_new(&ov, php_http_message_body_get_class_entry(), php_http_message_body_object_new_ex, NULL, body, NULL TSRMLS_CC)) {
+				php_http_message_body_free(&body);
+				return FAILURE;
+			}
+			MAKE_STD_ZVAL(zbody);
+			ZVAL_OBJVAL(zbody, ov, 0);
+			break;
+
+		case IS_OBJECT:
+			if (instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_get_class_entry() TSRMLS_CC)) {
+				Z_OBJ_ADDREF_P(zbody);
+				break;
+			}
+			/* no break */
+
+		default:
+			tmp = php_http_ztyp(IS_STRING, zbody);
+			s = php_stream_temp_new();
+			php_stream_write(s, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+			zval_ptr_dtor(&tmp);
+			goto is_resource;
+
+	}
+
+	body_obj = zend_object_store_get_object(zbody TSRMLS_CC);
+
+	if (msg_obj->body.handle) {
+		zend_objects_store_del_ref_by_handle(msg_obj->body.handle TSRMLS_CC);
+		php_http_message_body_dtor(&msg_obj->message->body);
+	}
+
+	php_http_message_body_copy(body_obj->body, &msg_obj->message->body, 0);
+	msg_obj->body = Z_OBJVAL_P(zbody);
+
+	return SUCCESS;
 }
 
 zend_object_value php_http_message_object_new(zend_class_entry *ce TSRMLS_DC)
@@ -1257,11 +1307,7 @@ PHP_METHOD(HttpMessage, setBody)
 		if (!obj->message) {
 			obj->message = php_http_message_init(NULL, 0 TSRMLS_CC);
 		}
-
-		php_http_message_body_dtor(&obj->message->body);
-		php_http_message_body_copy(body_obj->body, &obj->message->body, 0);
-		Z_OBJ_ADDREF_P(zbody);
-		obj->body = Z_OBJVAL_P(zbody);
+		php_http_message_object_prophandler_set_body(obj, zbody TSRMLS_CC);
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
 }

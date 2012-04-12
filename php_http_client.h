@@ -202,6 +202,7 @@ PHP_METHOD(HttpClient, flushCookies);
 PHP_METHOD(HttpClient, setRequest);
 PHP_METHOD(HttpClient, getRequest);
 PHP_METHOD(HttpClient, send);
+PHP_METHOD(HttpClient, request);
 PHP_METHOD(HttpClient, getResponseMessage);
 PHP_METHOD(HttpClient, getRequestMessage);
 PHP_METHOD(HttpClient, getHistory);

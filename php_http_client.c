@@ -197,6 +197,13 @@ PHP_HTTP_BEGIN_ARGS(getTransferInfo, 0)
 	PHP_HTTP_ARG_VAL(name, 0)
 PHP_HTTP_END_ARGS;
 
+PHP_HTTP_BEGIN_ARGS(request, 2)
+	PHP_HTTP_ARG_VAL(method, 0)
+	PHP_HTTP_ARG_VAL(url, 0)
+	PHP_HTTP_ARG_ARR(headers, 1, 0)
+	PHP_HTTP_ARG_VAL(body, 0)
+	PHP_HTTP_ARG_ARR(options, 1, 0)
+PHP_HTTP_END_ARGS;
 
 static zend_class_entry *php_http_client_class_entry;
 
@@ -238,6 +245,8 @@ static zend_function_entry php_http_client_method_entry[] = {
 
 	PHP_HTTP_CLIENT_ME(getResponseMessageClass, ZEND_ACC_PUBLIC)
 	PHP_HTTP_CLIENT_ME(setResponseMessageClass, ZEND_ACC_PUBLIC)
+
+	PHP_HTTP_CLIENT_ME(request, ZEND_ACC_PUBLIC)
 
 	EMPTY_FUNCTION_ENTRY
 };
@@ -887,6 +896,46 @@ PHP_METHOD(HttpClient, getRequest)
 	if (SUCCESS == zend_parse_parameters_none()) {
 		RETURN_PROP(php_http_client_class_entry, "request");
 	}
+}
+
+PHP_METHOD(HttpClient, request)
+{
+	char *meth_str, *url_str;
+	int meth_len, url_len;
+	zval *zheader, *zbody, *zoptions;
+
+	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|a!z!a!/", &meth_str, &meth_len, &url_str, &url_len, &zheader, &zbody, &zoptions)) {
+			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+			php_http_message_object_t *msg_obj;
+			zend_object_value ov;
+			zval *req, *res = NULL;
+
+			php_http_new(&ov, php_http_client_request_get_class_entry(), (php_http_new_t) php_http_message_object_new_ex, NULL, NULL, (void *) &msg_obj TSRMLS_CC);
+			MAKE_STD_ZVAL(req);
+			ZVAL_OBJVAL(req, ov, 0);
+
+			msg_obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST TSRMLS_CC);
+			PHP_HTTP_INFO(msg_obj->message).request.url = estrndup(url_str, url_len);
+			PHP_HTTP_INFO(msg_obj->message).request.method = estrndup(meth_str, meth_len);
+
+			if (zheader) {
+				array_copy(Z_ARRVAL_P(zheader), &msg_obj->message->hdrs);
+			}
+
+			if (zbody) {
+				php_http_message_object_set_body(msg_obj, zbody TSRMLS_CC);
+			}
+
+			if (zoptions) {
+				php_http_client_options_set(req, zoptions TSRMLS_CC);
+			}
+
+			zend_call_method_with_1_params(&getThis(), Z_OBJCE_P(getThis()), NULL, "send", &res, req);
+			RETVAL_ZVAL(res, 0, 1);
+			zval_ptr_dtor(&req);
+		}
+	} end_error_handling();
 }
 
 PHP_METHOD(HttpClient, send)
