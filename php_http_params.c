@@ -244,7 +244,7 @@ static void prepare_value(unsigned flags, zval *zv TSRMLS_DC)
 	}
 }
 
-static void merge_param(HashTable *params, zval *zdata, zval ***cur TSRMLS_DC)
+static void merge_param(HashTable *params, zval *zdata, zval ***current_param, zval ***current_args TSRMLS_DC)
 {
 	zval **ptr, **zdata_ptr;
 	php_http_array_hashkey_t hkey = php_http_array_hashkey_init(0);
@@ -264,7 +264,7 @@ static void merge_param(HashTable *params, zval *zdata, zval ***cur TSRMLS_DC)
 	if ((hkey.type == HASH_KEY_IS_STRING && !zend_hash_exists(params, hkey.str, hkey.len))
 	||	(hkey.type == HASH_KEY_IS_LONG && !zend_hash_index_exists(params, hkey.num))
 	) {
-		zval *tmp;
+		zval *tmp, *arg, **args;
 
 		/* create the entry if it doesn't exist */
 		zend_hash_get_current_data(Z_ARRVAL_P(zdata), (void *) &ptr);
@@ -272,6 +272,11 @@ static void merge_param(HashTable *params, zval *zdata, zval ***cur TSRMLS_DC)
 		MAKE_STD_ZVAL(tmp);
 		array_init(tmp);
 		add_assoc_zval_ex(tmp, ZEND_STRS("value"), *ptr);
+
+		MAKE_STD_ZVAL(arg);
+		array_init(arg);
+		zend_hash_update(Z_ARRVAL_P(tmp), "arguments", sizeof("arguments"), (void *) &arg, sizeof(zval *), (void *) &args);
+		*current_args = args;
 
 		if (hkey.type == HASH_KEY_IS_STRING) {
 			zend_hash_update(params, hkey.str, hkey.len, (void *) &tmp, sizeof(zval *), (void *) &ptr);
@@ -350,7 +355,7 @@ static void merge_param(HashTable *params, zval *zdata, zval ***cur TSRMLS_DC)
 
 	/* bubble up */
 	while (Z_TYPE_PP(ptr) == IS_ARRAY && SUCCESS == zend_hash_get_current_data(Z_ARRVAL_PP(ptr), (void *) &ptr));
-	*cur = ptr;
+	*current_param = ptr;
 }
 
 static void push_param(HashTable *params, php_http_params_state_t *state, const php_http_params_opts_t *opts TSRMLS_DC)
@@ -380,7 +385,7 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 			ZVAL_NULL(key);
 			sanitize_key(opts->flags, state->param.str, state->param.len, key TSRMLS_CC);
 			if (Z_TYPE_P(key) != IS_STRING) {
-				merge_param(params, key, &state->current.val TSRMLS_CC);
+				merge_param(params, key, &state->current.val, &state->current.args TSRMLS_CC);
 			} else if (Z_STRLEN_P(key)) {
 				MAKE_STD_ZVAL(prm);
 				array_init(prm);
@@ -609,17 +614,22 @@ PHP_HTTP_API php_http_buffer_t *php_http_params_to_string(php_http_buffer_t *buf
 		php_http_array_hashkey_stringfree(&key);
 
 		if (Z_TYPE_PP(zparam) == IS_ARRAY && SUCCESS != zend_hash_find(Z_ARRVAL_PP(zparam), ZEND_STRS("arguments"), (void *) &zvalue)) {
+			if (zvalue == zparam) {
+				continue;
+			}
 			zvalue = zparam;
 		}
 
-		FOREACH_KEYVAL(pos1, *zvalue, key1, zargs) {
-			if (zvalue == zparam && key1.type == HASH_KEY_IS_STRING && !strcmp(key1.str, "value")) {
-				continue;
-			}
+		if (Z_TYPE_PP(zvalue) == IS_ARRAY) {
+			FOREACH_KEYVAL(pos1, *zvalue, key1, zargs) {
+				if (zvalue == zparam && key1.type == HASH_KEY_IS_STRING && !strcmp(key1.str, "value")) {
+					continue;
+				}
 
-			php_http_array_hashkey_stringify(&key1);
-			shift_param(buf, key1.str, key1.len - 1, zargs, ass, asl, vss, vsl, flags TSRMLS_CC);
-			php_http_array_hashkey_stringfree(&key1);
+				php_http_array_hashkey_stringify(&key1);
+				shift_param(buf, key1.str, key1.len - 1, zargs, ass, asl, vss, vsl, flags TSRMLS_CC);
+				php_http_array_hashkey_stringfree(&key1);
+			}
 		}
 	}
 

@@ -50,6 +50,55 @@ class ParamsTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals("form-data;name=upload;filename=\"trick\\\"\\0\\\"ed\"", (string) $p);
     }
 
+    function testUrlencoded() {
+        $s = "foo=b%22r&bar=b%22z&a%5B%5D%5B%5D=1";
+        $p = new http\Params($s, "&", "", "=", http\Params::PARSE_URLENCODED);
+        $this->assertEquals(
+            array(
+                "foo" => array(
+                    "value" => "b\"r",
+                    "arguments" => array(),
+                ),
+                "bar" => array(
+                    "value" => "b\"z",
+                    "arguments" => array(),
+                ),
+                "a[][]" => array(
+                    "value" => "1",
+                    "arguments" => array(),
+                ),
+            ),
+            $p->params
+        );
+        $this->assertEquals("foo=b%22r&bar=b%22z&a%5B%5D%5B%5D=1", (string) $p);
+    }
+
+    function testQuery() {
+        $s = "foo=b%22r&bar=b%22z&a%5B%5D%5B%5D=1";
+        $p = new http\Params($s, "&", "", "=", http\Params::PARSE_QUERY);
+        $this->assertEquals(
+            array(
+                "foo" => array(
+                    "value" => "b\"r",
+                    "arguments" => array(),
+                ),
+                "bar" => array(
+                    "value" => "b\"z",
+                    "arguments" => array(),
+                ),
+                "a" => array(
+                    "value" => array(
+                        array("1")
+                    ),
+                    "arguments" => array(),
+                ),
+            ),
+            $p->params
+        );
+        $this->assertEquals("foo=b%22r&bar=b%22z&a%5B0%5D%5B0%5D=1", (string) $p);
+    }
+
+
     function testEmpty() {
         $p = new http\Params(NULL);
         $this->assertEquals(array(), $p->params);
