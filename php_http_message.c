@@ -978,7 +978,7 @@ void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool to
 
 STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval *zbody TSRMLS_DC)
 {
-	zval *tmp;
+	zval *tmp = NULL;
 	php_stream *s;
 	zend_object_value ov;
 	php_http_message_body_t *body;
@@ -995,12 +995,13 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 			is_resource:
 
 			body = php_http_message_body_init(NULL, s TSRMLS_CC);
-			if (SUCCESS != php_http_new(&ov, php_http_message_body_get_class_entry(), php_http_message_body_object_new_ex, NULL, body, NULL TSRMLS_CC)) {
+			if (SUCCESS != php_http_new(&ov, php_http_message_body_get_class_entry(), (php_http_new_t) php_http_message_body_object_new_ex, NULL, body, NULL TSRMLS_CC)) {
 				php_http_message_body_free(&body);
 				return FAILURE;
 			}
-			MAKE_STD_ZVAL(zbody);
-			ZVAL_OBJVAL(zbody, ov, 0);
+			MAKE_STD_ZVAL(tmp);
+			ZVAL_OBJVAL(tmp, ov, 0);
+			zbody = tmp;
 			break;
 
 		case IS_OBJECT:
@@ -1015,6 +1016,7 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 			s = php_stream_temp_new();
 			php_stream_write(s, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
 			zval_ptr_dtor(&tmp);
+			tmp = NULL;
 			goto is_resource;
 
 	}
@@ -1028,6 +1030,10 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 
 	php_http_message_body_copy(body_obj->body, &msg_obj->message->body, 0);
 	msg_obj->body = Z_OBJVAL_P(zbody);
+
+	if (tmp) {
+		zval_ptr_dtor(&tmp);
+	}
 
 	return SUCCESS;
 }
