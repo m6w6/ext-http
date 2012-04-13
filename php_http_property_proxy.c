@@ -135,6 +135,7 @@ static zval *php_http_property_proxy_object_get(zval *object TSRMLS_DC)
 			MAKE_STD_ZVAL(unset);
 			ZVAL_NULL(unset);
 			zend_symtable_update(Z_ARRVAL_P(obj->proxy->object), Z_STRVAL_P(obj->proxy->member), Z_STRLEN_P(obj->proxy->member)+1, (void *) &unset, sizeof(zval *), (void *) &data);
+			Z_ADDREF_PP(data);
 		}
 
 		return *data;
@@ -151,10 +152,10 @@ static void php_http_property_proxy_object_set(zval **object, zval *value TSRMLS
 #if PHP_HTTP_PPDBG
 	fprintf(stderr, "proxy_set: %s\n", Z_STRVAL_P(obj->proxy->member));
 #endif
+	Z_ADDREF_P(value);
 	if (Z_TYPE_P(target) == IS_OBJECT) {
 		zend_update_property(Z_OBJCE_P(target), target, Z_STRVAL_P(obj->proxy->member), Z_STRLEN_P(obj->proxy->member), value TSRMLS_CC);
 	} else {
-		Z_ADDREF_P(value);
 		zend_symtable_update(Z_ARRVAL_P(target), Z_STRVAL_P(obj->proxy->member), Z_STRLEN_P(obj->proxy->member)+1, (void *) &value, sizeof(zval *), NULL);
 	}
 	/* propagate */
