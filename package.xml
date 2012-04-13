@@ -26,17 +26,18 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-03-30</date>
+ <date>2012-04-13</date>
  <version>
-  <release>2.0.0dev</release>
+  <release>2.0.0alpha1</release>
   <api>2.0.0</api>
  </version>
  <stability>
-  <release>devel</release>
-  <api>devel</api>
+  <release>alpha</release>
+  <api>alpha</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
++ Added http\Client\AbstractClient::request(string method, string url[, array headers=null[, mixed body=null[, array options=null]]])
 + Added constants http\Params::PARSE_RAW, ::PARSE_DEFAULT, ::PARSE_URLENCODED, ::PARSE_DIMENSION, ::PARSE_QUERY
 + Added fourth parameter 'flags' to http\Params' constructor, which defaults to http\Params::PARSE_DEFAULT
 * Fixed bug #61444 (query string converts . to _ in param names)
@@ -190,7 +191,6 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    </pearinstaller>
   </required>
   <optional>
-   <extension><name>session</name></extension>
    <extension><name>hash</name></extension>
    <extension><name>iconv</name></extension>
   </optional>
