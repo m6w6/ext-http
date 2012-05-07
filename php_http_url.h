@@ -33,6 +33,7 @@
 	PHP_HTTP_URL_STRIP_FRAGMENT \
 )
 #define PHP_HTTP_URL_FROM_ENV		0x1000
+#define PHP_HTTP_URL_SANITIZE_PATH	0x2000
 
 PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC);
 

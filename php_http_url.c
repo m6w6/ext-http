@@ -222,7 +222,8 @@ PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url 
 		STR_SET(url->path, path);
 	}
 	/* replace directory references if path is not a single slash */
-	if (url->path[0] && (url->path[0] != '/' || url->path[1])) {
+	if ((flags & PHP_HTTP_URL_SANITIZE_PATH)
+	&&	url->path[0] && (url->path[0] != '/' || url->path[1])) {
 		char *ptr, *end = url->path + strlen(url->path) + 1;
 			
 		for (ptr = strchr(url->path, '/'); ptr; ptr = strchr(ptr, '/')) {
@@ -642,6 +643,7 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_FRAGMENT"), PHP_HTTP_URL_STRIP_FRAGMENT TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_ALL"), PHP_HTTP_URL_STRIP_ALL TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("FROM_ENV"), PHP_HTTP_URL_FROM_ENV TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("SANITIZE_PATH"), PHP_HTTP_URL_SANITIZE_PATH TSRMLS_CC);
 
 	return SUCCESS;
 }
