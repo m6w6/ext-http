@@ -917,8 +917,35 @@ PHP_METHOD(HttpEnv, cleanPersistentHandles)
 	}
 }
 
+#ifdef PHP_HTTP_HAVE_JSON
+#include "ext/json/php_json.h"
+
+static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
+{
+	if (SG(request_info).raw_post_data) {
+		php_json_decode_ex(arg, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length, PHP_JSON_OBJECT_AS_ARRAY, PG(max_input_nesting_level) TSRMLS_CC);
+	}
+}
+
+#endif
+
 PHP_MINIT_FUNCTION(http_env)
 {
+#ifdef PHP_HTTP_HAVE_JSON
+	sapi_post_entry entry = {NULL, 0, NULL, NULL};
+
+	entry.post_reader = sapi_read_standard_form_data;
+	entry.post_handler = php_http_json_post_handler;
+
+	entry.content_type = "text/json";
+	entry.content_type_len = lenof("text/json");
+	sapi_register_post_entry(&entry TSRMLS_CC);
+
+	entry.content_type = "application/json";
+	entry.content_type_len = lenof("application/json");
+	sapi_register_post_entry(&entry TSRMLS_CC);
+#endif
+
 	PHP_HTTP_REGISTER_CLASS(http, Env, http_env, NULL, 0);
 
 	return SUCCESS;

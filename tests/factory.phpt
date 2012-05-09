@@ -28,8 +28,12 @@ $r = $f->createClient();
 $p = $f->createPool();
 $s = $f->createDataShare();
 
+$r->setRequest(new http\Client\Request("GET", "http://localhost/"));
+$x = $f->createPool($r);
+$y = $f->createDatashare($r);
+
 var_dump(
-	array_map("get_class", array($f,$r,$p,$s)), 
+	array_map("get_class", array($f,$r,$p,$s,$x,$y)), 
 	$f->getDriver()
 );
 
@@ -45,7 +49,7 @@ echo "Done\n";
 ?>
 --EXPECTF--
 Test
-array(4) {
+array(6) {
   [0]=>
   string(9) "MyFactory"
   [1]=>
@@ -53,6 +57,10 @@ array(4) {
   [2]=>
   string(6) "MyPool"
   [3]=>
+  string(7) "MyShare"
+  [4]=>
+  string(6) "MyPool"
+  [5]=>
   string(7) "MyShare"
 }
 string(4) "curl"

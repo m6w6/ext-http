@@ -51,6 +51,9 @@ static zend_module_dep http_module_deps[] = {
 #ifdef PHP_HTTP_HAVE_ICONV
 	ZEND_MOD_REQUIRED("iconv")
 #endif
+#ifdef PHP_HTTP_HAVE_JSON
+	ZEND_MOD_REQUIRED("json")
+#endif
 #ifdef PHP_HTTP_HAVE_EVENT
 	ZEND_MOD_CONFLICTS("event")
 #endif

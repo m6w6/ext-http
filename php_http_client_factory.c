@@ -174,10 +174,10 @@ PHP_METHOD(HttpClientFactory, createClient)
 PHP_METHOD(HttpClientFactory, createPool)
 {
 	int argc = 0;
-	zval ***argv;
+	zval ***argv = NULL;
 
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|*", &argv, &argc)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "*", &argv, &argc)) {
 			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				int i;
 				zval *zdriver;
@@ -238,7 +238,7 @@ PHP_METHOD(HttpClientFactory, createDataShare)
 	zval ***argv;
 
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|*", &argv, &argc)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "*", &argv, &argc)) {
 			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				int i;
 				zval *zdriver;
