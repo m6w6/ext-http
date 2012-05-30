@@ -277,26 +277,11 @@ PHP_HTTP_API void php_http_message_set_info(php_http_message_t *message, php_htt
 	}
 }
 
-static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *str)
+PHP_HTTP_API void php_http_message_update_headers(php_http_message_t *msg)
 {
-	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
-	HashPosition pos1;
-	zval **header, *h;
+	zval *h;
 	size_t size;
 	TSRMLS_FETCH_FROM_CTX(msg->ts);
-
-	switch (msg->type) {
-		case PHP_HTTP_REQUEST:
-			php_http_buffer_appendf(str, PHP_HTTP_INFO_REQUEST_FMT_ARGS(&msg->http, PHP_HTTP_CRLF));
-			break;
-
-		case PHP_HTTP_RESPONSE:
-			php_http_buffer_appendf(str, PHP_HTTP_INFO_RESPONSE_FMT_ARGS(&msg->http, PHP_HTTP_CRLF));
-			break;
-
-		default:
-			break;
-	}
 
 	if ((size = php_http_message_body_size(&msg->body))) {
 		MAKE_STD_ZVAL(h);
@@ -321,6 +306,28 @@ static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *s
 			}
 		}
 	}
+}
+static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *str)
+{
+	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+	HashPosition pos1;
+	zval **header;
+	TSRMLS_FETCH_FROM_CTX(msg->ts);
+
+	switch (msg->type) {
+		case PHP_HTTP_REQUEST:
+			php_http_buffer_appendf(str, PHP_HTTP_INFO_REQUEST_FMT_ARGS(&msg->http, PHP_HTTP_CRLF));
+			break;
+
+		case PHP_HTTP_RESPONSE:
+			php_http_buffer_appendf(str, PHP_HTTP_INFO_RESPONSE_FMT_ARGS(&msg->http, PHP_HTTP_CRLF));
+			break;
+
+		default:
+			break;
+	}
+
+	php_http_message_update_headers(msg);
 
 	FOREACH_HASH_KEYVAL(pos1, &msg->hdrs, key, header) {
 		if (key.type == HASH_KEY_IS_STRING) {

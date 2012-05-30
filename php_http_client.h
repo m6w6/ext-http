@@ -144,9 +144,16 @@ typedef struct php_http_client {
 	void *ctx;
 	php_http_resource_factory_t *rf;
 	php_http_client_ops_t *ops;
-	php_http_message_parser_t *parser;
-	php_http_message_t *message;
-	php_http_buffer_t *buffer;
+	struct {
+		php_http_message_parser_t *parser;
+		php_http_message_t *message;
+		php_http_buffer_t *buffer;
+	} request;
+	struct {
+		php_http_message_parser_t *parser;
+		php_http_message_t *message;
+		php_http_buffer_t *buffer;
+	} response;
 #ifdef ZTS
 	void ***ts;
 #endif

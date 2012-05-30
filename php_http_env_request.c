@@ -130,6 +130,7 @@ PHP_METHOD(HttpEnvRequest, __construct)
 			zval *zsg;
 
 			obj->message = php_http_message_init_env(obj->message, PHP_HTTP_REQUEST TSRMLS_CC);
+			obj->body.handle = 0;
 
 			if ((zsg = php_http_env_get_superglobal(ZEND_STRL("_GET") TSRMLS_CC))) {
 				zval *zquery;

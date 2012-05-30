@@ -50,6 +50,8 @@ PHP_HTTP_API void php_http_message_free(php_http_message_t **message);
 PHP_HTTP_API void php_http_message_set_type(php_http_message_t *m, php_http_message_type_t t);
 PHP_HTTP_API void php_http_message_set_info(php_http_message_t *message, php_http_info_t *info);
 
+PHP_HTTP_API void php_http_message_update_headers(php_http_message_t *msg);
+
 PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, char *key_str, size_t key_len, int join);
 PHP_HTTP_API zend_bool php_http_message_is_multipart(php_http_message_t *msg, char **boundary);
 

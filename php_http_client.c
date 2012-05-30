@@ -29,9 +29,13 @@ PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_h
 	} else if (ops->rsrc) {
 		h->rf = php_http_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
 	}
-	h->buffer = php_http_buffer_init(NULL);
-	h->parser = php_http_message_parser_init(NULL TSRMLS_CC);
-	h->message = php_http_message_init(NULL, 0 TSRMLS_CC);
+	h->request.buffer = php_http_buffer_init(NULL);
+	h->request.parser = php_http_message_parser_init(NULL TSRMLS_CC);
+	h->request.message = php_http_message_init(NULL, 0 TSRMLS_CC);
+
+	h->response.buffer = php_http_buffer_init(NULL);
+	h->response.parser = php_http_message_parser_init(NULL TSRMLS_CC);
+	h->response.message = php_http_message_init(NULL, 0 TSRMLS_CC);
 
 	TSRMLS_SET_CTX(h->ts);
 
@@ -56,9 +60,13 @@ PHP_HTTP_API void php_http_client_dtor(php_http_client_t *h)
 
 	php_http_resource_factory_free(&h->rf);
 
-	php_http_message_parser_free(&h->parser);
-	php_http_message_free(&h->message);
-	php_http_buffer_free(&h->buffer);
+	php_http_message_parser_free(&h->request.parser);
+	php_http_message_free(&h->request.message);
+	php_http_buffer_free(&h->request.buffer);
+
+	php_http_message_parser_free(&h->response.parser);
+	php_http_message_free(&h->response.message);
+	php_http_buffer_free(&h->response.buffer);
 }
 
 PHP_HTTP_API void php_http_client_free(php_http_client_t **h)
@@ -88,9 +96,14 @@ PHP_HTTP_API php_http_client_t *php_http_client_copy(php_http_client_t *from, ph
 		} else if (to->ops->rsrc){
 			to->rf = php_http_resource_factory_init(NULL, to->ops->rsrc, to, NULL);
 		}
-		to->buffer = php_http_buffer_init(NULL);
-		to->parser = php_http_message_parser_init(NULL TSRMLS_CC);
-		to->message = php_http_message_init(NULL, 0 TSRMLS_CC);
+
+		to->request.buffer = php_http_buffer_init(NULL);
+		to->request.parser = php_http_message_parser_init(NULL TSRMLS_CC);
+		to->request.message = php_http_message_init(NULL, 0 TSRMLS_CC);
+
+		to->response.buffer = php_http_buffer_init(NULL);
+		to->response.parser = php_http_message_parser_init(NULL TSRMLS_CC);
+		to->response.message = php_http_message_init(NULL, 0 TSRMLS_CC);
 
 		TSRMLS_SET_CTX(to->ts);
 
@@ -358,7 +371,7 @@ STATUS php_http_client_object_handle_request(zval *zclient, zval **zreq TSRMLS_D
 	php_http_client_reset(obj->client);
 
 	/* reset transfer info */
-	zend_update_property_null(php_http_client_class_entry, zclient, ZEND_STRL("info") TSRMLS_CC);
+	zend_update_property_null(php_http_client_class_entry, zclient, ZEND_STRL("transferInfo") TSRMLS_CC);
 
 	/* set client options */
 	zoptions = zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("options"), 0 TSRMLS_CC);
@@ -405,8 +418,8 @@ STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC)
 	zend_update_property(php_http_client_class_entry, zclient, ZEND_STRL("transferInfo"), info TSRMLS_CC);
 	zval_ptr_dtor(&info);
 
-	if ((msg = obj->client->message)) {
-		/* update history */
+	if ((msg = obj->client->response.message)) {
+		/* FIXME: update history */
 		if (i_zend_is_true(zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
 			zval *new_hist, *old_hist = zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("history"), 0 TSRMLS_CC);
 			zend_object_value ov = php_http_client_object_message(zclient, php_http_message_copy(msg, NULL) TSRMLS_CC);
@@ -431,8 +444,7 @@ STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC)
 			zend_update_property(php_http_client_class_entry, zclient, ZEND_STRL("responseMessage"), message TSRMLS_CC);
 			zval_ptr_dtor(&message);
 
-			obj->client->message = php_http_message_init(NULL, 0 TSRMLS_CC);
-			msg = msg->parent;
+			obj->client->response.message = php_http_message_init(NULL, 0 TSRMLS_CC);
 		} else {
 			zend_update_property_null(php_http_client_class_entry, zclient, ZEND_STRL("responseMessage") TSRMLS_CC);
 		}
@@ -440,19 +452,17 @@ STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC)
 		zend_update_property_null(php_http_client_class_entry, zclient, ZEND_STRL("responseMessage") TSRMLS_CC);
 	}
 
-	/* there might be a 100-Continue response in between */
-	while (msg && !PHP_HTTP_MESSAGE_TYPE(REQUEST, msg)) {
-		msg = msg->parent;
-	}
+	if ((msg = obj->client->request.message)) {
+		if (PHP_HTTP_MESSAGE_TYPE(REQUEST, msg)) {
+			zval *message;
 
-	if (PHP_HTTP_MESSAGE_TYPE(REQUEST, msg)) {
-		zval *message;
-
-		/* update the actual request message */
-		MAKE_STD_ZVAL(message);
-		ZVAL_OBJVAL(message, php_http_message_object_new_ex(php_http_message_get_class_entry(), php_http_message_copy_ex(msg, NULL, 0), NULL TSRMLS_CC), 0);
-		zend_update_property(php_http_client_class_entry, zclient, ZEND_STRL("requestMessage"), message TSRMLS_CC);
-		zval_ptr_dtor(&message);
+			/* update the actual request message */
+			MAKE_STD_ZVAL(message);
+			ZVAL_OBJVAL(message, php_http_message_object_new_ex(php_http_message_get_class_entry(), php_http_message_copy_ex(msg, NULL, 0), NULL TSRMLS_CC), 0);
+			zend_update_property(php_http_client_class_entry, zclient, ZEND_STRL("requestMessage"), message TSRMLS_CC);
+			zval_ptr_dtor(&message);
+			obj->client->request.message = php_http_message_init(NULL, 0 TSRMLS_CC);
+		}
 	}
 
 	if (SUCCESS == php_http_client_getopt(obj->client, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, &progress)) {

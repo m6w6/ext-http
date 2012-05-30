@@ -543,6 +543,8 @@ PHP_HTTP_BEGIN_ARGS(toCallback, 1)
 	PHP_HTTP_ARG_VAL(callback, 0)
 PHP_HTTP_END_ARGS;
 
+PHP_HTTP_EMPTY_ARGS(getResource);
+
 PHP_HTTP_BEGIN_ARGS(append, 1)
 	PHP_HTTP_ARG_VAL(string, 0)
 PHP_HTTP_END_ARGS;
@@ -575,6 +577,7 @@ static zend_function_entry php_http_message_body_method_entry[] = {
 	PHP_MALIAS(HttpMessageBody, toString, __toString, args_for_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(toStream, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(toCallback, ZEND_ACC_PUBLIC)
+	PHP_HTTP_MESSAGE_BODY_ME(getResource, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(append, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(addForm, ZEND_ACC_PUBLIC)
 	PHP_HTTP_MESSAGE_BODY_ME(addPart, ZEND_ACC_PUBLIC)
@@ -720,6 +723,15 @@ PHP_METHOD(HttpMessageBody, toCallback)
 		RETURN_TRUE;
 	}
 	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpMessageBody, getResource)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		RETVAL_RESOURCE(obj->body->stream_id);
+	}
 }
 
 PHP_METHOD(HttpMessageBody, append)

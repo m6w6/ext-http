@@ -175,15 +175,22 @@ static int php_http_curl_client_raw_callback(CURL *ch, curl_infotype type, char 
 	switch (type) {
 		case CURLINFO_HEADER_IN:
 		case CURLINFO_DATA_IN:
-		case CURLINFO_HEADER_OUT:
-		case CURLINFO_DATA_OUT:
-			php_http_buffer_append(h->buffer, data, length);
+			php_http_buffer_append(h->response.buffer, data, length);
 
 			if (curl->options.redirects) {
 				flags |= PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS;
 			}
 
-			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse(h->parser, h->buffer, flags, &h->message)) {
+			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse(h->response.parser, h->response.buffer, flags, &h->response.message)) {
+				return -1;
+			}
+			break;
+
+		case CURLINFO_HEADER_OUT:
+		case CURLINFO_DATA_OUT:
+			php_http_buffer_append(h->request.buffer, data, length);
+
+			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse(h->request.parser, h->request.buffer, flags, &h->request.message)) {
 				return -1;
 			}
 			break;
@@ -1075,6 +1082,7 @@ PHP_HTTP_API STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_
 	}
 
 	/* request headers */
+	php_http_message_update_headers(msg);
 	if (zend_hash_num_elements(&msg->hdrs)) {
 		php_http_array_hashkey_t header_key = php_http_array_hashkey_init(0);
 		zval **header_val;

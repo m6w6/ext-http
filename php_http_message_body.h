@@ -67,6 +67,7 @@ void php_http_message_body_object_free(void *object TSRMLS_DC);
 
 PHP_METHOD(HttpMessageBody, __construct);
 PHP_METHOD(HttpMessageBody, __toString);
+PHP_METHOD(HttpMessageBody, getResource);
 PHP_METHOD(HttpMessageBody, toStream);
 PHP_METHOD(HttpMessageBody, toCallback);
 PHP_METHOD(HttpMessageBody, append);
