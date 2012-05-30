@@ -92,7 +92,9 @@ static php_url *php_http_url_from_env(php_url *url TSRMLS_DC)
 	if ((((zhost = php_http_env_get_server_var(ZEND_STRL("HTTP_HOST"), 1 TSRMLS_CC)) ||
 			(zhost = php_http_env_get_server_var(ZEND_STRL("SERVER_NAME"), 1 TSRMLS_CC)) ||
 			(zhost = php_http_env_get_server_var(ZEND_STRL("SERVER_ADDR"), 1 TSRMLS_CC)))) && Z_STRLEN_P(zhost)) {
-		url->host = estrndup(Z_STRVAL_P(zhost), Z_STRLEN_P(zhost));
+		size_t stop_at = strspn(Z_STRVAL_P(zhost), "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.");
+
+		url->host = estrndup(Z_STRVAL_P(zhost), stop_at);
 	} else {
 		url->host = localhostname();
 	}
