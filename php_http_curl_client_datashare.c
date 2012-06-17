@@ -181,7 +181,11 @@ zend_object_value php_http_curl_client_datashare_object_new_ex(zend_class_entry 
 
 	o = ecalloc(1, sizeof(*o));
 	zend_object_std_init((zend_object *) o, ce TSRMLS_CC);
+#if PHP_VERSION_ID < 50339
+	zend_hash_copy(((zend_object *) o)->properties, &(ce->default_properties), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval*));
+#else
 	object_properties_init((zend_object *) o, ce);
+#endif
 
 	if (share) {
 		o->share = share;

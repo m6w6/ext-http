@@ -182,12 +182,14 @@ static size_t output(void *context, char *buf, size_t len TSRMLS_DC)
 	/*	we really only need to flush when throttling is enabled,
 		because we push the data as fast as possible anyway if not */
 	if (r->throttle.delay >= PHP_HTTP_DIFFSEC) {
+#if PHP_VERSION_ID >= 50400
 		if (php_output_get_level(TSRMLS_C)) {
 			php_output_flush_all(TSRMLS_C);
 		}
 		if (!(php_output_get_status(TSRMLS_C) & PHP_OUTPUT_IMPLICITFLUSH)) {
 			sapi_flush(TSRMLS_C);
 		}
+#endif
 		php_http_sleep(r->throttle.delay);
 	}
 	return len;
@@ -196,8 +198,8 @@ static size_t output(void *context, char *buf, size_t len TSRMLS_DC)
 #define php_http_env_response_send_done(r) php_http_env_response_send_data((r), NULL, 0)
 static STATUS php_http_env_response_send_data(php_http_env_response_t *r, const char *buf, size_t len)
 {
-	TSRMLS_FETCH_FROM_CTX(r->ts);
 	size_t chunk = r->throttle.chunk ? r->throttle.chunk : PHP_HTTP_SENDBUF_SIZE;
+	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	if (r->content.encoder) {
 		char *enc_str = NULL;

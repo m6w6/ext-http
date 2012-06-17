@@ -147,7 +147,11 @@ PHP_HTTP_BEGIN_ARGS(detach, 1)
 	PHP_HTTP_ARG_OBJ(http\\Client, client, 0)
 PHP_HTTP_END_ARGS;
 
-static void php_http_client_datashare_object_write_prop(zval *object, zval *member, zval *value, const zend_literal *literal_key TSRMLS_DC);
+static void php_http_client_datashare_object_write_prop(zval *object, zval *member, zval *value
+#if PHP_VERSION_ID >= 50400
+, const zend_literal *literal_key 
+#endif
+TSRMLS_DC);
 
 static zend_class_entry *php_http_client_datashare_class_entry;
 
@@ -201,7 +205,11 @@ zend_object_value php_http_client_datashare_object_new_ex(zend_class_entry *ce, 
 
 	o = ecalloc(1, sizeof(*o));
 	zend_object_std_init((zend_object *) o, ce TSRMLS_CC);
+#if PHP_VERSION_ID < 50339
+	zend_hash_copy(((zend_object *) o)->properties, &(ce->default_properties), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval*));
+#else
 	object_properties_init((zend_object *) o, ce);
+#endif
 
 	ov.handle = zend_objects_store_put(o, NULL, php_http_client_datashare_object_free, NULL TSRMLS_CC);
 	ov.handlers = &php_http_client_datashare_object_handlers;
@@ -226,7 +234,11 @@ void php_http_client_datashare_object_free(void *object TSRMLS_DC)
 	efree(o);
 }
 
-static void php_http_client_datashare_object_write_prop(zval *object, zval *member, zval *value, const zend_literal *literal_key TSRMLS_DC)
+static void php_http_client_datashare_object_write_prop(zval *object, zval *member, zval *value
+#if PHP_VERSION_ID >= 50400
+, const zend_literal *literal_key 
+#endif
+TSRMLS_DC)
 {
 	zend_property_info *pi;
 
@@ -250,10 +262,18 @@ static void php_http_client_datashare_object_write_prop(zval *object, zval *memb
 		}
 	}
 
-	zend_get_std_object_handlers()->write_property(object, member, value, literal_key TSRMLS_CC);
+	zend_get_std_object_handlers()->write_property(object, member, value
+#if PHP_VERSION_ID >= 50400
+	, literal_key 
+#endif
+	TSRMLS_CC);
 }
 
-static zval **php_http_client_datashare_object_get_prop_ptr(zval *object, zval *member, const zend_literal *literal_key TSRMLS_DC)
+static zval **php_http_client_datashare_object_get_prop_ptr(zval *object, zval *member
+#if PHP_VERSION_ID >= 50400
+, const zend_literal *literal_key
+#endif
+TSRMLS_DC)
 {
 	zend_property_info *pi;
 
@@ -261,7 +281,11 @@ static zval **php_http_client_datashare_object_get_prop_ptr(zval *object, zval *
 		return &php_http_property_proxy_init(NULL, object, member, NULL TSRMLS_CC)->myself;
 	}
 
-	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member, literal_key TSRMLS_CC);
+	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member
+#if PHP_VERSION_ID >= 50400
+	, literal_key
+#endif
+	TSRMLS_CC);
 }
 
 

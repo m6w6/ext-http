@@ -13,6 +13,8 @@
 #ifndef PHP_HTTP_ENCODING_H
 #define PHP_HTTP_ENCODING_H
 
+#include <zlib.h>
+
 extern PHP_MINIT_FUNCTION(http_encoding);
 extern PHP_RINIT_FUNCTION(http_encoding);
 extern PHP_RSHUTDOWN_FUNCTION(http_encoding);

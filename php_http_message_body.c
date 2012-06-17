@@ -111,8 +111,8 @@ PHP_HTTP_API const char *php_http_message_body_boundary(php_http_message_body_t 
 
 PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body)
 {
-	TSRMLS_FETCH_FROM_CTX(body->ts);
 	const php_stream_statbuf *ssb = php_http_message_body_stat(body);
+	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	/* real file or temp buffer ? */
 	if (ssb && ssb->sb.st_mtime) {
@@ -134,8 +134,8 @@ PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body)
 
 PHP_HTTP_API void php_http_message_body_to_string(php_http_message_body_t *body, char **buf, size_t *len, off_t offset, size_t forlen)
 {
-	TSRMLS_FETCH_FROM_CTX(body->ts);
 	php_stream *s = php_http_message_body_stream(body);
+	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	php_stream_seek(s, offset, SEEK_SET);
 	if (!forlen) {
@@ -146,8 +146,8 @@ PHP_HTTP_API void php_http_message_body_to_string(php_http_message_body_t *body,
 
 PHP_HTTP_API void php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *dst, off_t offset, size_t forlen)
 {
-	TSRMLS_FETCH_FROM_CTX(body->ts);
 	php_stream *s = php_http_message_body_stream(body);
+	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	php_stream_seek(s, offset, SEEK_SET);
 	if (!forlen) {
@@ -158,9 +158,9 @@ PHP_HTTP_API void php_http_message_body_to_stream(php_http_message_body_t *body,
 
 PHP_HTTP_API void php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen)
 {
-	TSRMLS_FETCH_FROM_CTX(body->ts);
 	php_stream *s = php_http_message_body_stream(body);
 	char *buf = emalloc(0x1000);
+	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	php_stream_seek(s, offset, SEEK_SET);
 
@@ -264,10 +264,13 @@ PHP_HTTP_API STATUS php_http_message_body_add_form_field(php_http_message_body_t
 
 PHP_HTTP_API STATUS php_http_message_body_add_form_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
 {
-	char *safe_name, *path_dup = estrdup(path);
+	char *safe_name, *path_dup = estrdup(path), *bname;
+	size_t bname_len;
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	safe_name = php_addslashes(estrdup(name), strlen(name), NULL, 1 TSRMLS_CC);
+	
+	php_basename(path_dup, strlen(path_dup), NULL, 0, &bname, &bname_len TSRMLS_CC); 
 
 	BOUNDARY_OPEN(body);
 	php_http_message_body_appendf(
@@ -276,7 +279,7 @@ PHP_HTTP_API STATUS php_http_message_body_add_form_file(php_http_message_body_t 
 		"Content-Transfer-Encoding: binary" PHP_HTTP_CRLF
 		"Content-Type: %s" PHP_HTTP_CRLF
 		PHP_HTTP_CRLF,
-		safe_name, basename(path_dup), ctype
+		safe_name, bname, ctype
 	);
 	php_stream_copy_to_stream_ex(in, php_http_message_body_stream(body), PHP_STREAM_COPY_ALL, NULL);
 	BOUNDARY_CLOSE(body);
@@ -609,7 +612,11 @@ zend_object_value php_http_message_body_object_new_ex(zend_class_entry *ce, php_
 
 	o = ecalloc(1, sizeof(php_http_message_body_object_t));
 	zend_object_std_init((zend_object *) o, php_http_message_body_class_entry TSRMLS_CC);
+#if PHP_VERSION_ID < 50339
+	zend_hash_copy(((zend_object *) o)->properties, &(ce->default_properties), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval*));
+#else
 	object_properties_init((zend_object *) o, ce);
+#endif
 
 	if (ptr) {
 		*ptr = o;

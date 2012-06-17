@@ -169,10 +169,10 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_strea
 
 PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, php_http_message_t **message)
 {
-	TSRMLS_FETCH_FROM_CTX(parser->ts);
 	char *str = NULL;
 	size_t len = 0;
 	size_t cut = 0;
+	TSRMLS_FETCH_FROM_CTX(parser->ts);
 
 	while (buffer->used || !php_http_message_parser_states[php_http_message_parser_state_is(parser)].need_data) {
 #if 0

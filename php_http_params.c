@@ -16,11 +16,12 @@ static php_http_params_token_t def_param_sep = {",", 1}, *def_param_sep_ptr[] = 
 static php_http_params_token_t def_arg_sep = {";", 1}, *def_arg_sep_ptr[] = {&def_arg_sep, NULL};
 static php_http_params_token_t def_val_sep = {"=", 1}, *def_val_sep_ptr[] = {&def_val_sep, NULL};
 static php_http_params_opts_t def_opts = {
-	.param = def_param_sep_ptr,
-	.arg = def_arg_sep_ptr,
-	.val = def_val_sep_ptr,
-	.defval = NULL,
-	.flags = PHP_HTTP_PARAMS_DEFAULT
+	{{0},0},
+	def_param_sep_ptr,
+	def_arg_sep_ptr,
+	def_val_sep_ptr,
+	NULL,
+	PHP_HTTP_PARAMS_DEFAULT
 };
 
 PHP_HTTP_API php_http_params_opts_t *php_http_params_opts_default_get(php_http_params_opts_t *opts)
@@ -146,7 +147,12 @@ static void sanitize_dimension(zval *zv TSRMLS_DC)
 
 	if (zend_hash_num_elements(Z_ARRVAL_P(arr))) {
 		zval_dtor(zv);
+#if PHP_VERSION_ID >= 50400
 		ZVAL_COPY_VALUE(zv, arr);
+#else
+	zv->value = arr->value;
+	Z_TYPE_P(zv) = Z_TYPE_P(arr);
+#endif
 		FREE_ZVAL(arr);
 	} else {
 		zval_ptr_dtor(&arr);
@@ -392,7 +398,12 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 
 				MAKE_STD_ZVAL(val);
 				if (opts->defval) {
+#if PHP_VERSION_ID >= 50400
 					ZVAL_COPY_VALUE(val, opts->defval);
+#else
+					val->value = opts->defval->value;
+					Z_TYPE_P(val) = Z_TYPE_P(opts->defval);
+#endif
 					zval_copy_ctor(val);
 				} else {
 					ZVAL_TRUE(val);
@@ -797,14 +808,11 @@ PHP_METHOD(HttpParams, __construct)
 						zcopy = php_http_ztyp(IS_STRING, zparams);
 						if (Z_STRLEN_P(zcopy)) {
 							php_http_params_opts_t opts = {
-								.input = {
-									.str = Z_STRVAL_P(zcopy),
-									.len = Z_STRLEN_P(zcopy)
-								},
-								.param = php_http_params_separator_init(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("param_sep"), 0 TSRMLS_CC) TSRMLS_CC),
-								.arg = php_http_params_separator_init(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("arg_sep"), 0 TSRMLS_CC) TSRMLS_CC),
-								.val = php_http_params_separator_init(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("val_sep"), 0 TSRMLS_CC) TSRMLS_CC),
-								.flags = flags
+								{Z_STRVAL_P(zcopy), Z_STRLEN_P(zcopy)},
+								php_http_params_separator_init(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("param_sep"), 0 TSRMLS_CC) TSRMLS_CC),
+								php_http_params_separator_init(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("arg_sep"), 0 TSRMLS_CC) TSRMLS_CC),
+								php_http_params_separator_init(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("val_sep"), 0 TSRMLS_CC) TSRMLS_CC),
+								NULL, flags
 							};
 
 							MAKE_STD_ZVAL(zparams);
