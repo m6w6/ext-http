@@ -127,41 +127,35 @@ PHP_METHOD(HttpEnvRequest, __construct)
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-			zval *zsg;
+			zval *zsg, *zqs;
 
 			obj->message = php_http_message_init_env(obj->message, PHP_HTTP_REQUEST TSRMLS_CC);
 			obj->body.handle = 0;
 
-			if ((zsg = php_http_env_get_superglobal(ZEND_STRL("_GET") TSRMLS_CC))) {
-				zval *zquery;
-
-				MAKE_STD_ZVAL(zquery);
-				object_init_ex(zquery, php_http_querystring_get_class_entry());
-				if (SUCCESS == php_http_querystring_ctor(zquery, zsg TSRMLS_CC)) {
-					zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), zquery TSRMLS_CC);
-				}
-				zval_ptr_dtor(&zquery);
+			zsg = php_http_env_get_superglobal(ZEND_STRL("_GET") TSRMLS_CC);
+			MAKE_STD_ZVAL(zqs);
+			object_init_ex(zqs, php_http_querystring_get_class_entry());
+			if (SUCCESS == php_http_querystring_ctor(zqs, zsg TSRMLS_CC)) {
+				zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), zqs TSRMLS_CC);
 			}
-			if ((zsg = php_http_env_get_superglobal(ZEND_STRL("_POST") TSRMLS_CC))) {
-				zval *zpost;
+			zval_ptr_dtor(&zqs);
 
-				MAKE_STD_ZVAL(zpost);
-				object_init_ex(zpost, php_http_querystring_get_class_entry());
-				if (SUCCESS == php_http_querystring_ctor(zpost, zsg TSRMLS_CC)) {
-					zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), zpost TSRMLS_CC);
-				}
-				zval_ptr_dtor(&zpost);
+			zsg = php_http_env_get_superglobal(ZEND_STRL("_POST") TSRMLS_CC);
+			MAKE_STD_ZVAL(zqs);
+			object_init_ex(zqs, php_http_querystring_get_class_entry());
+			if (SUCCESS == php_http_querystring_ctor(zqs, zsg TSRMLS_CC)) {
+				zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), zqs TSRMLS_CC);
 			}
+			zval_ptr_dtor(&zqs);
+			
+			MAKE_STD_ZVAL(zqs);
+			array_init(zqs);
 			if ((zsg = php_http_env_get_superglobal(ZEND_STRL("_FILES") TSRMLS_CC))) {
-				zval *zfiles;
-
-				MAKE_STD_ZVAL(zfiles);
-				array_init(zfiles);
-				zend_hash_apply_with_arguments(Z_ARRVAL_P(zsg) TSRMLS_CC, grab_files, 1, zfiles);
-
-				zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), zfiles TSRMLS_CC);
-				zval_ptr_dtor(&zfiles);
+				zend_hash_apply_with_arguments(Z_ARRVAL_P(zsg) TSRMLS_CC, grab_files, 1, zqs);
 			}
+
+			zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), zqs TSRMLS_CC);
+			zval_ptr_dtor(&zqs);
 		}
 	} end_error_handling();
 }
