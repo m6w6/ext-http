@@ -67,6 +67,11 @@ static STATUS php_http_curl_client_datashare_attach(php_http_client_datashare_t 
 	php_http_curl_client_t *recurl = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
+	if (r->ops != php_http_curl_client_get_ops()) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_DATASHARE, "Cannot attach a non-curl client to this datashare");
+		return FAILURE;
+	}
+
 	if (CURLE_OK != (rc = curl_easy_setopt(recurl->handle, CURLOPT_SHARE, curl->handle))) {
 		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_DATASHARE, "Could not attach request to the datashare: %s", curl_easy_strerror(rc));
 		return FAILURE;
@@ -80,6 +85,11 @@ static STATUS php_http_curl_client_datashare_detach(php_http_client_datashare_t 
 	php_http_curl_client_t *recurl = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
+
+	if (r->ops != php_http_curl_client_get_ops()) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_DATASHARE, "Cannot attach a non-curl client to this datashare");
+		return FAILURE;
+	}
 
 	if (CURLE_OK != (rc = curl_easy_setopt(recurl->handle, CURLOPT_SHARE, NULL))) {
 		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_DATASHARE, "Could not detach request from the datashare: %s", curl_share_strerror(rc));
