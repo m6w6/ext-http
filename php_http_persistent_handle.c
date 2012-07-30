@@ -78,7 +78,16 @@ static int php_http_persistent_handle_apply_cleanup(void *pp, void *arg TSRMLS_D
 	php_http_persistent_handle_list_t **listp = pp;
 
 	zend_hash_apply_with_argument(&(*listp)->free, php_http_persistent_handle_apply_cleanup_ex, rf TSRMLS_CC);
-	return (*listp)->used ? ZEND_HASH_APPLY_KEEP : ZEND_HASH_APPLY_REMOVE;
+	if ((*listp)->used) {
+		return ZEND_HASH_APPLY_KEEP;
+	}
+	zend_hash_destroy(&(*listp)->free);
+#if PHP_HTTP_DEBUG_PHANDLES
+	fprintf(stderr, "LSTFREE: %p\n", *listp);
+#endif
+	pefree(*listp, 1);
+	*listp = NULL;
+	return ZEND_HASH_APPLY_REMOVE;
 }
 
 static inline void php_http_persistent_handle_list_dtor(php_http_persistent_handle_list_t *list, php_http_persistent_handle_provider_t *provider TSRMLS_DC)
@@ -144,7 +153,9 @@ static inline STATUS php_http_persistent_handle_do_acquire(php_http_persistent_h
 		} else {
 			*handle = php_http_resource_factory_handle_ctor(&provider->rf TSRMLS_CC);
 		}
-		
+#if PHP_HTTP_DEBUG_PHANDLES
+		fprintf(stderr, "CREATED: %p\n", *handle);
+#endif
 		if (*handle) {
 			++provider->list.used;
 			++list->used;
@@ -163,6 +174,9 @@ static inline STATUS php_http_persistent_handle_do_release(php_http_persistent_h
 	
 	if ((list = php_http_persistent_handle_list_find(provider, ident_str, ident_len TSRMLS_CC))) {
 		if (provider->list.used >= PHP_HTTP_G->persistent_handle.limit) {
+#if PHP_HTTP_DEBUG_PHANDLES
+			fprintf(stderr, "DESTROY: %p\n", *handle);
+#endif
 			php_http_resource_factory_handle_dtor(&provider->rf, *handle TSRMLS_CC);
 		} else {
 			if (SUCCESS != zend_hash_next_index_insert(&list->free, (void *) handle, sizeof(void *), NULL)) {
@@ -282,6 +296,10 @@ PHP_HTTP_API void php_http_persistent_handle_abandon(php_http_persistent_handle_
 {
 	zend_bool f = a->free_on_abandon;
 
+#if PHP_HTTP_DEBUG_PHANDLES
+	fprintf(stderr, "ABANDON: %p\n", a->provider);
+#endif
+
 	STR_FREE(a->ident.str);
 	memset(a, 0, sizeof(*a));
 	if (f) {
@@ -331,7 +349,7 @@ PHP_HTTP_API void php_http_persistent_handle_cleanup(const char *name_str, size_
 					zend_hash_apply_with_argument(&list->free, php_http_persistent_handle_apply_cleanup_ex, &provider->rf TSRMLS_CC);
 				}
 			} else {
-				zend_hash_apply_with_argument(&provider->list.free, php_http_persistent_handle_apply_cleanup, &provider->list.free TSRMLS_CC);
+				zend_hash_apply_with_argument(&provider->list.free, php_http_persistent_handle_apply_cleanup, &provider->rf TSRMLS_CC);
 			}
 		}
 	} else {
@@ -343,7 +361,7 @@ PHP_HTTP_API void php_http_persistent_handle_cleanup(const char *name_str, size_
 					zend_hash_apply_with_argument(&list->free, php_http_persistent_handle_apply_cleanup_ex, &provider->rf TSRMLS_CC);
 				}
 			} else {
-				zend_hash_apply_with_argument(&provider->list.free, php_http_persistent_handle_apply_cleanup, &provider->list.free TSRMLS_CC);
+				zend_hash_apply_with_argument(&provider->list.free, php_http_persistent_handle_apply_cleanup, &provider->rf TSRMLS_CC);
 			}
 		}
 	}
