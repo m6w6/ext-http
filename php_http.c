@@ -152,10 +152,10 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_client_factory)
 #if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_MINIT_CALL(http_curl)
-#endif
 	|| SUCCESS != PHP_MINIT_CALL(http_curl_client)
 	|| SUCCESS != PHP_MINIT_CALL(http_curl_client_pool)
 	|| SUCCESS != PHP_MINIT_CALL(http_curl_client_datashare)
+#endif
 	|| SUCCESS != PHP_MINIT_CALL(http_url)
 	|| SUCCESS != PHP_MINIT_CALL(http_env)
 	|| SUCCESS != PHP_MINIT_CALL(http_env_request)
