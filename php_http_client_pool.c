@@ -586,7 +586,7 @@ PHP_METHOD(HttpClientPool, enableEvents)
 
 PHP_MINIT_FUNCTION(http_client_pool)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Client\\Pool, AbstractPool, http_client_pool, php_http_object_get_class_entry(), 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Client\\Pool, AbstractPool, http_client_pool, php_http_object_get_class_entry(), ZEND_ACC_EXPLICIT_ABSTRACT_CLASS);
 	php_http_client_pool_class_entry->create_object = php_http_client_pool_object_new;
 	memcpy(&php_http_client_pool_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_pool_object_handlers.clone_obj = NULL;
