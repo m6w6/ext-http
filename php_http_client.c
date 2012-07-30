@@ -422,10 +422,10 @@ STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC)
 	zval_ptr_dtor(&info);
 
 	if ((msg = obj->client->response.message)) {
-		/* FIXME: update history */
 		if (i_zend_is_true(zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
 			zval *new_hist, *old_hist = zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("history"), 0 TSRMLS_CC);
-			zend_object_value ov = php_http_client_object_message(zclient, php_http_message_copy(msg, NULL) TSRMLS_CC);
+			php_http_message_t *zipped = php_http_message_zip(obj->client->response.message, obj->client->request.message);
+			zend_object_value ov = php_http_client_object_message(zclient, zipped TSRMLS_CC);
 
 			MAKE_STD_ZVAL(new_hist);
 			ZVAL_OBJVAL(new_hist, ov, 0);
@@ -461,7 +461,7 @@ STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC)
 
 			/* update the actual request message */
 			MAKE_STD_ZVAL(message);
-			ZVAL_OBJVAL(message, php_http_message_object_new_ex(php_http_message_get_class_entry(), php_http_message_copy_ex(msg, NULL, 0), NULL TSRMLS_CC), 0);
+			ZVAL_OBJVAL(message, php_http_message_object_new_ex(php_http_message_get_class_entry(), msg, NULL TSRMLS_CC), 0);
 			zend_update_property(php_http_client_class_entry, zclient, ZEND_STRL("requestMessage"), message TSRMLS_CC);
 			zval_ptr_dtor(&message);
 			obj->client->request.message = php_http_message_init(NULL, 0 TSRMLS_CC);
@@ -958,7 +958,7 @@ PHP_METHOD(HttpClient, send)
 	RETVAL_FALSE;
 
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O!", &zreq, php_http_client_request_get_class_entry())) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O!", &zreq, php_http_client_request_get_class_entry())) {
 			if (SUCCESS == php_http_client_object_handle_request(getThis(), &zreq TSRMLS_CC)) {
 				php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 				php_http_message_object_t *req = zend_object_store_get_object(zreq TSRMLS_CC);
