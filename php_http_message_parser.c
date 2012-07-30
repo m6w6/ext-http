@@ -140,10 +140,11 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_strea
 
 					len -= read;
 				} else {
+					php_http_buffer_resize(&buf, 24);
 					php_stream_get_line(s, buf.data, buf.free, &len);
 					php_http_buffer_account(&buf, len);
 
-					len = strtoul(buf.data - len, NULL, 16);
+					len = strtoul(buf.data + buf.used - len, NULL, 16);
 				}
 				break;
 
@@ -298,10 +299,16 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 					if (h_cl) {
 						char *stop;
 
-						parser->body_length = strtoul(Z_STRVAL_PP(h_cl), &stop, 10);
+						if (Z_TYPE_PP(h_cl) == IS_STRING) {
+							parser->body_length = strtoul(Z_STRVAL_PP(h_cl), &stop, 10);
 
-						if (stop != Z_STRVAL_PP(h_cl)) {
-							php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+							if (stop != Z_STRVAL_PP(h_cl)) {
+								php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+								break;
+							}
+						} else if (Z_TYPE_PP(h_cl) == IS_LONG) {
+							parser->body_length = Z_LVAL_PP(h_cl);
+							php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
 							break;
 						}
 					}
@@ -327,7 +334,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 
 								if (end >= start && (!total || end < total)) {
 									parser->body_length = end + 1 - start;
-									php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+									php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
 									break;
 								}
 							}
