@@ -20,8 +20,21 @@
 #define PHP_HTTP_ENV_REQUEST_ME(method, visibility)	PHP_ME(HttpEnvRequest, method, PHP_HTTP_ARGS(HttpEnvRequest, method), visibility)
 
 PHP_HTTP_EMPTY_ARGS(__construct);
-PHP_HTTP_EMPTY_ARGS(getForm);
-PHP_HTTP_EMPTY_ARGS(getQuery);
+
+PHP_HTTP_BEGIN_ARGS(getQuery, 0)
+	PHP_HTTP_ARG_VAL(name, 0)
+	PHP_HTTP_ARG_VAL(type, 0)
+	PHP_HTTP_ARG_VAL(defval, 0)
+	PHP_HTTP_ARG_VAL(delete, 0)
+PHP_HTTP_END_ARGS;
+
+PHP_HTTP_BEGIN_ARGS(getForm, 0)
+	PHP_HTTP_ARG_VAL(name, 0)
+	PHP_HTTP_ARG_VAL(type, 0)
+	PHP_HTTP_ARG_VAL(defval, 0)
+	PHP_HTTP_ARG_VAL(delete, 0)
+PHP_HTTP_END_ARGS;
+
 PHP_HTTP_EMPTY_ARGS(getFiles);
 
 static zend_class_entry *php_http_env_request_class_entry;
@@ -160,16 +173,42 @@ PHP_METHOD(HttpEnvRequest, __construct)
 	} end_error_handling();
 }
 
+#define call_querystring_get(prop) \
+	do {\
+		zend_fcall_info fci; \
+		zend_fcall_info_cache fcc; \
+		zval *rv, mn, ***args = ecalloc(sizeof(zval **), ZEND_NUM_ARGS()); \
+		zval *qs = zend_read_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL(prop), 0 TSRMLS_CC); \
+		 \
+		INIT_PZVAL(&mn); \
+		array_init(&mn); \
+		Z_ADDREF_P(qs); \
+		add_next_index_zval(&mn, qs); \
+		add_next_index_stringl(&mn, ZEND_STRL("get"), 1); \
+		zend_fcall_info_init(&mn, 0, &fci, &fcc, NULL, NULL TSRMLS_CC); \
+		zend_get_parameters_array_ex(ZEND_NUM_ARGS(), args); \
+		zend_fcall_info_argp(&fci TSRMLS_CC, ZEND_NUM_ARGS(), args); \
+		zend_fcall_info_call(&fci, &fcc, &rv, NULL TSRMLS_CC); \
+		zend_fcall_info_args_clear(&fci, 1); \
+		efree(args); \
+		zval_dtor(&mn); \
+		RETVAL_ZVAL(rv, 0, 1); \
+	} while(0);
+
 PHP_METHOD(HttpEnvRequest, getForm)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
+	if (ZEND_NUM_ARGS()) {
+		call_querystring_get("form");
+	} else {
 		RETURN_PROP(php_http_env_request_class_entry, "form");
 	}
 }
 
 PHP_METHOD(HttpEnvRequest, getQuery)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
+	if (ZEND_NUM_ARGS()) {
+		call_querystring_get("query");
+	} else {
 		RETURN_PROP(php_http_env_request_class_entry, "query");
 	}
 }
