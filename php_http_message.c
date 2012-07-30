@@ -462,6 +462,24 @@ PHP_HTTP_API php_http_message_t *php_http_message_reverse(php_http_message_t *ms
 	return msg;
 }
 
+PHP_HTTP_API php_http_message_t *php_http_message_zip(php_http_message_t *one, php_http_message_t *two)
+{
+	php_http_message_t *dst = php_http_message_copy(one, NULL), *src = php_http_message_copy(two, NULL), *tmp_dst, *tmp_src, *ret = dst;
+
+	while(dst && src) {
+		tmp_dst = dst->parent;
+		tmp_src = src->parent;
+		dst->parent = src;
+		if (tmp_dst) {
+			src->parent = tmp_dst;
+		}
+		src = tmp_src;
+		dst = tmp_dst;
+	}
+
+	return ret;
+}
+
 PHP_HTTP_API php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_message_t *to, zend_bool parents)
 {
 	php_http_message_t *temp, *copy = NULL;

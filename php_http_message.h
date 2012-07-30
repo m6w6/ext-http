@@ -61,6 +61,7 @@ PHP_HTTP_API void php_http_message_to_callback(php_http_message_t *msg, php_http
 
 PHP_HTTP_API void php_http_message_serialize(php_http_message_t *message, char **string, size_t *length);
 PHP_HTTP_API php_http_message_t *php_http_message_reverse(php_http_message_t *msg);
+PHP_HTTP_API php_http_message_t *php_http_message_zip(php_http_message_t *one, php_http_message_t *two);
 
 #define php_http_message_count(c, m) \
 { \
