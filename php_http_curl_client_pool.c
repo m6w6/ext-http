@@ -281,6 +281,11 @@ static STATUS php_http_curl_client_pool_attach(php_http_client_pool_t *h, php_ht
 	CURLMcode rs;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
+	if (r->ops != php_http_curl_client_get_ops()) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_POOL, "Cannot attach a non-curl client to this pool");
+		return FAILURE;
+	}
+
 	if (SUCCESS != php_http_curl_client_prepare(r, m)) {
 		return FAILURE;
 	}
@@ -298,10 +303,15 @@ static STATUS php_http_curl_client_pool_detach(php_http_client_pool_t *h, php_ht
 {
 	php_http_curl_client_pool_t *curl = h->ctx;
 	php_http_curl_client_t *recurl = r->ctx;
-	CURLMcode rs = curl_multi_remove_handle(curl->handle, recurl->handle);
+	CURLMcode rs;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-	if (CURLM_OK == rs) {
+	if (r->ops != php_http_curl_client_get_ops()) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_POOL, "Cannot attach a non-curl client to this pool");
+		return FAILURE;
+	}
+
+	if (CURLM_OK == (rs = curl_multi_remove_handle(curl->handle, recurl->handle))) {
 		return SUCCESS;
 	} else {
 		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_POOL, "Could not detach request from pool: %s", curl_multi_strerror(rs));
