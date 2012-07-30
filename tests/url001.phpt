@@ -12,7 +12,7 @@ s=b&i=0&e=&a[]=1&a[]=2
 printf("%s\n", new http\Url);
 printf("%s\n", new http\Url("other", "index"));
 printf("%s\n", new http\Url(array("scheme" => "https", "port" => 443)));
-printf("%s\n", new http\Url(array("path" => "/./up/../down/../././//index.php/.", "query" => null)));
+printf("%s\n", new http\Url(array("path" => "/./up/../down/../././//index.php/.", "query" => null), null, http\Url::SANITIZE_PATH|http\Url::FROM_ENV));
 printf("%s\n", new http\Url(null, null, 0));
 ?>
 DONE
