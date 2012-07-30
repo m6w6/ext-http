@@ -21,6 +21,7 @@ static const php_http_header_parser_state_spec_t php_http_header_parser_states[]
 		{PHP_HTTP_HEADER_PARSER_STATE_START,		1},
 		{PHP_HTTP_HEADER_PARSER_STATE_KEY,			1},
 		{PHP_HTTP_HEADER_PARSER_STATE_VALUE,		1},
+		{PHP_HTTP_HEADER_PARSER_STATE_VALUE_EX,		1},
 		{PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE,	0},
 		{PHP_HTTP_HEADER_PARSER_STATE_DONE,			0}
 };
@@ -100,7 +101,7 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 	while (buffer->used || !php_http_header_parser_states[php_http_header_parser_state_is(parser)].need_data) {
 #if 0
 		const char *state[] = {"START", "KEY", "VALUE", "HEADER_DONE", "DONE"};
-		fprintf(stderr, "#HP: %s (%d)\n", php_http_header_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_header_parser_state_is(parser)], zend_hash_num_elements(headers));
+		fprintf(stderr, "#HP: %s (avail:%zu, num:%d)\n", php_http_header_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_header_parser_state_is(parser)], buffer->used, headers?zend_hash_num_elements(headers):0);
 		_dpf(0, buffer->data, buffer->used);
 #endif
 		switch (php_http_header_parser_state_pop(parser)) {
@@ -138,7 +139,7 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 				} else if ((colon = memchr(buffer->data, ':', buffer->used)) && (!eol_str || eol_str > colon)) {
 					/* header: string */
 					parser->_key.str = estrndup(buffer->data, parser->_key.len = colon - buffer->data);
-					while (PHP_HTTP_IS_CTYPE(space, *++colon));
+					while (PHP_HTTP_IS_CTYPE(space, *++colon) && *colon != '\n' && *colon != '\r');
 					php_http_buffer_cut(buffer, 0, colon - buffer->data);
 					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
 				} else {
@@ -152,37 +153,66 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 				const char *eol_str;
 				int eol_len;
 
-				line_split: {
-					
-					if ((eol_str = php_http_locate_bin_eol(buffer->data, buffer->used, &eol_len))) {
-						if (eol_str + eol_len - buffer->data < buffer->used) {
-							const char *nextline = eol_str + eol_len;
+#define SET_ADD_VAL(slen, eol_len) \
+	do { \
+		char *ptr = buffer->data; \
+		size_t len = slen; \
+		 \
+		while (len > 0 && PHP_HTTP_IS_CTYPE(space, *ptr)) { \
+			++ptr; \
+			--len; \
+		} \
+		while (len > 0 && PHP_HTTP_IS_CTYPE(space, ptr[len - 1])) { \
+			--len; \
+		} \
+		 \
+		if (len > 0) { \
+			if (parser->_val.str) { \
+				parser->_val.str = erealloc(parser->_val.str, parser->_val.len + len + 2); \
+				parser->_val.str[parser->_val.len++] = ' '; \
+				memcpy(&parser->_val.str[parser->_val.len], ptr, len); \
+				parser->_val.len += len; \
+				parser->_val.str[parser->_val.len] = '\0'; \
+			} else { \
+				parser->_val.len = len; \
+				parser->_val.str = estrndup(ptr, len); \
+			} \
+		} \
+		php_http_buffer_cut(buffer, 0, slen + eol_len); \
+	} while (0)
 
-							if (*nextline == '\t' || *nextline == ' ') {
-								while (nextline < buffer->data + buffer->used && (*nextline == '\t' || *nextline == ' ')) {
-									++nextline;
-								}
-								php_http_buffer_cut(buffer, eol_str - buffer->data, nextline - eol_str);
-								goto line_split;
-							}
-						}
+				if ((eol_str = php_http_locate_bin_eol(buffer->data, buffer->used, &eol_len))) {
+					SET_ADD_VAL(eol_str - buffer->data, eol_len);
 
-						parser->_val.str = estrndup(buffer->data, parser->_val.len = eol_str - buffer->data);
-						php_http_buffer_cut(buffer, 0, eol_str + eol_len - buffer->data);
-						php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
-					} else if (flags & PHP_HTTP_HEADER_PARSER_CLEANUP) {
-						if (buffer->used) {
-							parser->_val.str = estrndup(buffer->data, parser->_val.len = buffer->used);
-							php_http_buffer_reset(buffer);
+					if (buffer->used) {
+						if (*buffer->data != '\t' && *buffer->data != ' ') {
+							php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
+							break;
+						} else {
+							php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
+							break;
 						}
-						php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
-					} else {
-						return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
 					}
 				}
 
+				if (flags & PHP_HTTP_HEADER_PARSER_CLEANUP) {
+					if (buffer->used) {
+						SET_ADD_VAL(buffer->used, 0);
+					}
+					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
+				} else {
+					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE_EX);
+				}
 				break;
 			}
+
+			case PHP_HTTP_HEADER_PARSER_STATE_VALUE_EX:
+				if (*buffer->data == ' ' || *buffer->data == '\t') {
+					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
+				} else {
+					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
+				}
+				break;
 
 			case PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE:
 				if (parser->_key.str && parser->_val.str) {
