@@ -1279,7 +1279,7 @@ PHP_HTTP_API php_http_client_ops_t *php_http_curl_client_get_ops(void)
 #define PHP_HTTP_CURL_CLIENT_ME(method, visibility)	PHP_ME(HttpClientCURL, method, PHP_HTTP_ARGS(HttpClientCURL, method), visibility)
 #define PHP_HTTP_CURL_CLIENT_CLIENT_MALIAS(me, vis)	ZEND_FENTRY(me, ZEND_MN(HttpClient_##me), PHP_HTTP_ARGS(HttpClientCURL, me), vis)
 
-PHP_HTTP_BEGIN_ARGS(send, 1)
+PHP_HTTP_BEGIN_ARGS(send, 0)
 	PHP_HTTP_ARG_VAL(request, 0)
 PHP_HTTP_END_ARGS;
 
