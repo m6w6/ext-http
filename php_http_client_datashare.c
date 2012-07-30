@@ -347,9 +347,14 @@ PHP_METHOD(HttpClientDataShare, reset)
 	RETURN_FALSE;
 }
 
+PHP_METHOD(HttpClientDataShare, __sleep)
+{
+	php_http_error(HE_THROW, PHP_HTTP_E_CLIENT_DATASHARE, "cannot serialize a client datashare");
+}
+
 PHP_MINIT_FUNCTION(http_client_datashare)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Client\\DataShare, AbstractDataShare, http_client_datashare, php_http_object_get_class_entry(), 0);
+	PHP_HTTP_REGISTER_CLASS(http\\Client\\DataShare, AbstractDataShare, http_client_datashare, php_http_object_get_class_entry(), ZEND_ACC_EXPLICIT_ABSTRACT_CLASS);
 	php_http_client_datashare_class_entry->create_object = php_http_client_datashare_object_new;
 	memcpy(&php_http_client_datashare_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_datashare_object_handlers.clone_obj = NULL;
