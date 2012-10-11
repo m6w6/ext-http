@@ -26,21 +26,29 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-04-13</date>
+ <date>2012-10-11</date>
  <version>
-  <release>2.0.0alpha1</release>
+  <release>2.0.0beta1</release>
   <api>2.0.0</api>
  </version>
  <stability>
-  <release>alpha</release>
-  <api>alpha</api>
+  <release>beta</release>
+  <api>beta</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added http\Client\AbstractClient::request(string method, string url[, array headers=null[, mixed body=null[, array options=null]]])
-+ Added constants http\Params::PARSE_RAW, ::PARSE_DEFAULT, ::PARSE_URLENCODED, ::PARSE_DIMENSION, ::PARSE_QUERY
-+ Added fourth parameter 'flags' to http\Params' constructor, which defaults to http\Params::PARSE_DEFAULT
-* Fixed bug #61444 (query string converts . to _ in param names)
+* PHP-5.3 compatibility by Anatoly Belsky
+* Fixed http\Client's history handling
+* Disallow serialization of non-serializable objects
+* Fixed parsing of folded headers
+* Fixed the parsing HTTP messages from streams
+* Fixed leak in persistent handles cleanup routine
++ Added http\Url::SANITIZE_PATH; URL paths are not sanitized by default anymore
++ Added JSON Content-Type handler for request body processing if ext/json is present
++ Added missing IANA HTTP response codes
++ Added http\Message\Body::getResource()
++ Added QueryString proxy methods to http\Env\Request
++ Added Serializable to http\Message\Body's interfaces
 ]]></notes>
  <contents>
   <dir name="/">
@@ -140,6 +148,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
      <file role="test" name="message_rr_helloworld_chunked.txt"/>
      <file role="test" name="urls.txt"/>
     </dir>
+    <file role="test" name="bug61444.phpt"/>
     <file role="test" name="envrequestbody001.phpt"/>
     <file role="test" name="envrequestbody002.phpt"/>
     <file role="test" name="envrequestbody003.phpt"/>
@@ -184,7 +193,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  <dependencies>
   <required>
    <php>
-    <min>5.3.99</min>
+    <min>5.3.0</min>
    </php>
    <pearinstaller>
     <min>1.4.1</min>

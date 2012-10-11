@@ -155,7 +155,7 @@ PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parse
 
 #define SET_ADD_VAL(slen, eol_len) \
 	do { \
-		char *ptr = buffer->data; \
+		const char *ptr = buffer->data; \
 		size_t len = slen; \
 		 \
 		while (len > 0 && PHP_HTTP_IS_CTYPE(space, *ptr)) { \

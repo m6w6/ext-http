@@ -356,7 +356,7 @@ dnl ----
 
 PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
 [  --without-http-shared-deps   HTTP: do not depend on extensions like hash
-                                     and iconv (when they're built shared)], $PHP_HTTP, $PHP_HTTP)
+                                     and iconv (when they are built shared)], $PHP_HTTP, $PHP_HTTP)
 dnl ----
 dnl HASH
 dnl ----

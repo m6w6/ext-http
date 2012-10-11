@@ -13,7 +13,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_HTTP_EXT_VERSION "2.0.0dev"
+#define PHP_HTTP_EXT_VERSION "2.0.0beta1"
 
 zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry

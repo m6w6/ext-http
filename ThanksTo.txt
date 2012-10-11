@@ -7,6 +7,7 @@ so they could be fixed in a reasonable way, or suggested useful features
 to implement, in alphabetical order:
 
 	Ilia Alshanetsky (ilia at php dot net)
+	Anatoly Belsky (ab at php dot net)
 	Petr Czaderna (petr at hroch dot info)
 	David James (james82 at gmail dot com)
 	Thomas Landro Johnsen (thomas dot l dot johnsen at gmail dot com)
