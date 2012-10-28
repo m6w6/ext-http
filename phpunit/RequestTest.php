@@ -35,6 +35,18 @@ class RequestTest extends PHPUnit_Framework_TestCase
                 "timeout"           => 300,
             )
         );
+        $this->r->setOptions(
+        	array(
+        		"timeout" => 600
+        	)
+        );
+        $this->assertEquals(
+        	array(
+        		"connecttimeout" => 30,
+        		"timeout" => 600,
+        	),
+        	$this->r->getOptions()
+        );
     }
 
     function testClone() {
@@ -43,10 +55,10 @@ class RequestTest extends PHPUnit_Framework_TestCase
     }
 
     function testObserver() {
-        $this->r->attach(new ProgressObserver1);
-        $this->r->attach(new ProgressObserver2);
+        $this->r->attach($o1 = new ProgressObserver1);
+        $this->r->attach($o2 = new ProgressObserver2);
         $this->r->attach(
-            new CallbackObserver(
+            $o3 = new CallbackObserver(
                 function ($r) {
                     $p = (array) $r->getProgress();
                     $this->assertArrayHasKey("started", $p);
@@ -62,6 +74,12 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $this->r->setRequest(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/"))->send(null);
         $this->assertRegexp("/(\.-)+/", $this->r->pi);
         $this->assertCount(3, $this->r->getObservers());
+        $this->r->detach($o1);
+        $this->assertCount(2, $this->r->getObservers());
+        $this->r->detach($o2);
+        $this->assertCount(1, $this->r->getObservers());
+        $this->r->detach($o3);
+        $this->assertCount(0, $this->r->getObservers());
     }
 
     function testCookies() {
@@ -91,6 +109,23 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $this->r->resetCookies();
         $this->r->send(null);
         $this->assertNotEquals($c, array_map($f, $this->r->getResponseMessage()->getCookies()));
+    }
+    
+    function testSsl() {
+    	$this->r->setRequest(new http\Client\Request("GET", "https://twitter.com/"));
+    	$this->r->setSslOptions(array("verify_peer" => true));
+    	$this->r->addSslOptions(array("verify_host" => 2));
+    	$this->assertEquals(
+    		array(
+    			"verify_peer" => true,
+    			"verify_host" => 2,
+    		),
+    		$this->r->getSslOptions()
+    	);
+    	$this->r->send();
+    	$ti = $this->r->getTransferInfo();
+    	$this->assertArrayHasKey("ssl_engines", $ti);
+    	$this->assertGreaterThan(0, count($ti["ssl_engines"]));	
     }
 
     function testHistory() {
