@@ -774,7 +774,7 @@ PHP_METHOD(HttpClient, addCookies)
 	zval *opts = NULL;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
-		php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 0 TSRMLS_CC);
+		php_http_client_options_set_subr(getThis(), ZEND_STRS("cookies"), opts, 0 TSRMLS_CC);
 
 		RETVAL_ZVAL(getThis(), 1, 0);
 	}
