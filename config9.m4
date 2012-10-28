@@ -320,7 +320,7 @@ dnl ----
 			AC_MSG_WARN([event support is incompatible with pecl/event; continuing without libevent support])
 			AC_DEFINE([PHP_HTTP_HAVE_EVENT], [0], [ ])
 		], [
-			AC_MSG_CHECKING([for event.h])
+			AC_MSG_CHECKING([for event2/event.h])
 			EVENT_DIR=
 			for i in "$PHP_HTTP_LIBEVENT_DIR" /usr/local /usr /opt; do
 				if test -f "$i/include/event.h"; then
@@ -336,12 +336,20 @@ dnl ----
 				AC_MSG_RESULT([found in $EVENT_DIR])
 				
 				AC_MSG_CHECKING([for libevent version, roughly])
-				EVENT_VER="1.1b or lower"
-				if test -f "$EVENT_DIR/include/evhttp.h" && test -f "$EVENT_DIR/include/evdns.h"; then
-					if test -f "$EVENT_DIR/include/evrpc.h"; then
-						EVENT_VER="1.4 or greater"
+				
+				if test -f "$EVENT_DIR/include/event2/event.h"; then
+					EVENT_VER="`$EGREP _EVENT_VERSION $EVENT_DIR/include/event2/event.h | $AWK '{print $3}'`"
+					AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [1], [ ])
+				else
+					AC_DEFFINE([PHP_HTTP_HAVE_EVENT2], [0], [ ])
+					if test -f "$EVENT_DIR/include/evhttp.h" && test -f "$EVENT_DIR/include/evdns.h"; then
+						if test -f "$EVENT_DIR/include/evrpc.h"; then
+							EVENT_VER="1.4 or greater"
+						else
+							EVENT_VER="1.2 or greater"
+						fi
 					else
-						EVENT_VER="1.2 or greater"
+						EVENT_VER="1.1b or lower"
 					fi
 				fi
 				AC_DEFINE_UNQUOTED([PHP_HTTP_EVENT_VERSION], ["$EVENT_VER"], [ ])

@@ -16,6 +16,13 @@
 
 #if PHP_HTTP_HAVE_EVENT
 #	include <event.h>
+#	if !PHP_HTTP_HAVE_EVENT2 && /* just be really sure */ !(LIBEVENT_VERSION_NUMBER >= 0x02000000)
+#		define event_base_new event_init
+#		define event_assign(e, b, s, a, cb, d) do {\
+			event_set(e, s, a, cb, d); \
+			event_base_set(b, e); \
+		} while(0)
+#	endif
 #endif
 
 typedef struct php_http_curl_client_pool {
@@ -166,7 +173,6 @@ static int php_http_curl_client_pool_socket_callback(CURL *easy, curl_socket_t s
 			ev = ecalloc(1, sizeof(php_http_client_pool_event_t));
 			ev->pool = pool;
 			curl_multi_assign(curl->handle, sock, ev);
-			event_base_set(PHP_HTTP_G->curl.event_base, &ev->evnt);
 		} else {
 			event_del(&ev->evnt);
 		}
@@ -193,7 +199,7 @@ static int php_http_curl_client_pool_socket_callback(CURL *easy, curl_socket_t s
 				return -1;
 		}
 
-		event_set(&ev->evnt, sock, events, php_http_curl_client_pool_event_callback, pool);
+		event_assign(&ev->evnt, PHP_HTTP_G->curl.event_base, sock, events, php_http_curl_client_pool_event_callback, pool);
 		event_add(&ev->evnt, NULL);
 	}
 
@@ -206,19 +212,18 @@ static void php_http_curl_client_pool_timer_callback(CURLM *multi, long timeout_
 	php_http_curl_client_pool_t *curl = pool->ctx;
 
 #if DBG_EVENTS
-	fprintf(stderr, "%ld", timeout_ms);
+	fprintf(stderr, "\ntimer <- timeout_ms: %ld\n", timeout_ms);
 #endif
 	if (curl->useevents) {
 
 		if (timeout_ms < 0) {
-			php_http_curl_client_pool_timeout_callback(CURL_SOCKET_TIMEOUT, CURL_CSELECT_IN|CURL_CSELECT_OUT, pool);
+			php_http_curl_client_pool_timeout_callback(CURL_SOCKET_TIMEOUT, EV_READ|EV_WRITE, pool);
 		} else if (timeout_ms > 0 || !event_initialized(curl->timeout) || !event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
 			struct timeval timeout;
 			TSRMLS_FETCH_FROM_CTX(pool->ts);
 
 			if (!event_initialized(curl->timeout)) {
-				event_set(curl->timeout, -1, 0, php_http_curl_client_pool_timeout_callback, pool);
-				event_base_set(PHP_HTTP_G->curl.event_base, curl->timeout);
+				event_assign(curl->timeout, PHP_HTTP_G->curl.event_base, CURL_SOCKET_TIMEOUT, 0, php_http_curl_client_pool_timeout_callback, pool);
 			} else if (event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
 				event_del(curl->timeout);
 			}
@@ -389,11 +394,7 @@ static int php_http_curl_client_pool_once(php_http_client_pool_t *h)
 	return curl->unfinished;
 
 }
-#if PHP_HTTP_HAVE_EVENT
-static void dolog(int i, const char *m) {
-	fprintf(stderr, "%d: %s\n", i, m);
-}
-#endif
+
 static STATUS php_http_curl_client_pool_exec(php_http_client_pool_t *h)
 {
 	TSRMLS_FETCH_FROM_CTX(h->ts);
@@ -402,12 +403,18 @@ static STATUS php_http_curl_client_pool_exec(php_http_client_pool_t *h)
 	php_http_curl_client_pool_t *curl = h->ctx;
 
 	if (curl->useevents) {
-		event_set_log_callback(dolog);
+		php_http_curl_client_pool_timeout_callback(CURL_SOCKET_TIMEOUT, EV_READ|EV_WRITE, h);
 		do {
+			int ev_rc = event_base_dispatch(PHP_HTTP_G->curl.event_base);
+
 #if DBG_EVENTS
-			fprintf(stderr, "X");
+			fprintf(stderr, "%c", "X.0"[ev_rc+1]);
 #endif
-			event_base_dispatch(PHP_HTTP_G->curl.event_base);
+
+			if (ev_rc < 0) {
+				php_http_error(HE_ERROR, PHP_HTTP_E_RUNTIME, "Error in event_base_dispatch()");
+				return FAILURE;
+			}
 		} while (curl->unfinished);
 	} else
 #endif
@@ -556,7 +563,7 @@ PHP_MINIT_FUNCTION(http_curl_client_pool)
 PHP_RINIT_FUNCTION(http_curl_client_pool)
 {
 #if PHP_HTTP_HAVE_EVENT
-	if (!PHP_HTTP_G->curl.event_base && !(PHP_HTTP_G->curl.event_base = event_init())) {
+	if (!PHP_HTTP_G->curl.event_base && !(PHP_HTTP_G->curl.event_base = event_base_new())) {
 		return FAILURE;
 	}
 #endif

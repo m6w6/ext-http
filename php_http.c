@@ -233,7 +233,13 @@ PHP_MINFO_FUNCTION(http)
 #endif
 
 #if PHP_HTTP_HAVE_EVENT
-	php_info_print_table_row(3, "libevent", PHP_HTTP_EVENT_VERSION, event_get_version());
+	php_info_print_table_row(3, "libevent",
+#	ifdef LIBEVENT_VERSION
+			LIBEVENT_VERSION,
+#	else
+			PHP_HTTP_EVENT_VERSION,
+#	endif
+			event_get_version());
 #else
 	php_info_print_table_row(3, "libevent", "disabled", "disabled");
 #endif
