@@ -70,7 +70,7 @@ static int grab_file(void *zpp TSRMLS_DC, int argc, va_list argv, zend_hash_key 
 	&&	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(type), key->h, (void *) &ztype)
 	&&	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(error), key->h, (void *) &zerror)
 	) {
-		zval *entry;
+		zval *entry, **array;
 
 		MAKE_STD_ZVAL(entry);
 		array_init(entry);
@@ -86,7 +86,16 @@ static int grab_file(void *zpp TSRMLS_DC, int argc, va_list argv, zend_hash_key 
 		Z_ADDREF_PP(zerror);
 		add_assoc_zval_ex(entry, ZEND_STRS("error"), *zerror);
 
-		zend_hash_quick_update(Z_ARRVAL_P(zfiles), file_key->arKey, file_key->nKeyLength, file_key->h, (void *) &entry, sizeof(zval *), NULL);
+		if (SUCCESS == zend_hash_quick_find(Z_ARRVAL_P(zfiles), file_key->arKey, file_key->nKeyLength, file_key->h, (void *) &array)) {
+			add_next_index_zval(*array, entry);
+		} else {
+			zval *tmp;
+
+			MAKE_STD_ZVAL(tmp);
+			array_init(tmp);
+			add_next_index_zval(tmp, entry);
+			zend_hash_quick_update(Z_ARRVAL_P(zfiles), file_key->arKey, file_key->nKeyLength, file_key->h, (void *) &tmp, sizeof(zval *), NULL);
+		}
 	}
 
 	return ZEND_HASH_APPLY_KEEP;
