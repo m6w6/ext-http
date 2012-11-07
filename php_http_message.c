@@ -12,6 +12,9 @@
 
 #include "php_http_api.h"
 
+static zval *message_header_strval(zval **header TSRMLS_DC);
+static void message_headers(php_http_message_t *msg, php_http_buffer_t *str);
+
 PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **message, HashTable **headers, php_http_info_t *info TSRMLS_DC)
 {
 	php_http_message_t *old = *message;
@@ -147,21 +150,9 @@ PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, char *key_st
 
 	if (SUCCESS == zend_symtable_find(&msg->hdrs, key, key_len + 1, (void *) &header)) {
 		if (join && Z_TYPE_PP(header) == IS_ARRAY) {
-			zval *header_str, **val;
-			HashPosition pos;
-			php_http_buffer_t str;
 			TSRMLS_FETCH_FROM_CTX(msg->ts);
 
-			php_http_buffer_init(&str);
-			MAKE_STD_ZVAL(header_str);
-			FOREACH_VAL(pos, *header, val) {
-				zval *strval = php_http_ztyp(IS_STRING, *val);
-				php_http_buffer_appendf(&str, PHP_HTTP_BUFFER_LEN(&str) ? ", %s":"%s", Z_STRVAL_P(strval));
-				zval_ptr_dtor(&strval);
-			}
-			php_http_buffer_fix(&str);
-			ZVAL_STRINGL(header_str, PHP_HTTP_BUFFER_VAL(&str), PHP_HTTP_BUFFER_LEN(&str), 0);
-			ret = header_str;
+			ret = message_header_strval(header TSRMLS_CC);
 		} else {
 			Z_ADDREF_PP(header);
 			ret = *header;
@@ -307,7 +298,37 @@ PHP_HTTP_API void php_http_message_update_headers(php_http_message_t *msg)
 		}
 	}
 }
-static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *str)
+
+static zval *message_header_strval(zval **header TSRMLS_DC)
+{
+	zval *ret;
+
+	if (Z_TYPE_PP(header) == IS_BOOL) {
+		MAKE_STD_ZVAL(ret);
+		ZVAL_STRING(ret, Z_BVAL_PP(header) ? "true" : "false", 1);
+	} else if (Z_TYPE_PP(header) == IS_ARRAY) {
+		zval **val;
+		HashPosition pos;
+		php_http_buffer_t str;
+
+		php_http_buffer_init(&str);
+		MAKE_STD_ZVAL(ret);
+		FOREACH_VAL(pos, *header, val) {
+			zval *strval = message_header_strval(val TSRMLS_CC);
+
+			php_http_buffer_appendf(&str, PHP_HTTP_BUFFER_LEN(&str) ? ", %s":"%s", Z_STRVAL_P(strval));
+			zval_ptr_dtor(&strval);
+		}
+		php_http_buffer_fix(&str);
+		ZVAL_STRINGL(ret, PHP_HTTP_BUFFER_VAL(&str), PHP_HTTP_BUFFER_LEN(&str), 0);
+	} else  {
+		ret = php_http_zsep(1, IS_STRING, *header);
+	}
+
+	return ret;
+}
+
+static void message_headers(php_http_message_t *msg, php_http_buffer_t *str)
 {
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 	HashPosition pos1;
@@ -331,48 +352,35 @@ static inline void message_headers(php_http_message_t *msg, php_http_buffer_t *s
 
 	FOREACH_HASH_KEYVAL(pos1, &msg->hdrs, key, header) {
 		if (key.type == HASH_KEY_IS_STRING) {
-			HashPosition pos2;
-			zval **single_header;
+			if (key.len == sizeof("Set-Cookie") && !strcasecmp(key.str, "Set-Cookie") && Z_TYPE_PP(header) == IS_ARRAY) {
+				HashPosition pos2;
+				zval **single_header;
 
-			switch (Z_TYPE_PP(header)) {
-				case IS_BOOL:
-					php_http_buffer_appendf(str, "%s: %s" PHP_HTTP_CRLF, key.str, Z_BVAL_PP(header)?"true":"false");
-					break;
-					
-				case IS_LONG:
-					php_http_buffer_appendf(str, "%s: %ld" PHP_HTTP_CRLF, key.str, Z_LVAL_PP(header));
-					break;
-					
-				case IS_DOUBLE:
-					php_http_buffer_appendf(str, "%s: %F" PHP_HTTP_CRLF, key.str, Z_DVAL_PP(header));
-					break;
-					
-				case IS_STRING:
-					if (Z_STRVAL_PP(header)[Z_STRLEN_PP(header)-1] == '\r') fprintf(stderr, "DOH!\n");
-					php_http_buffer_appendf(str, "%s: %s" PHP_HTTP_CRLF, key.str, Z_STRVAL_PP(header));
-					break;
+				FOREACH_VAL(pos2, *header, single_header) {
+					if (Z_TYPE_PP(single_header) == IS_ARRAY) {
+						php_http_cookie_list_t *cookie = php_http_cookie_list_from_struct(NULL, *single_header TSRMLS_CC);
 
-				case IS_ARRAY:
-					FOREACH_VAL(pos2, *header, single_header) {
-						switch (Z_TYPE_PP(single_header)) {
-							case IS_BOOL:
-								php_http_buffer_appendf(str, "%s: %s" PHP_HTTP_CRLF, key.str, Z_BVAL_PP(single_header)?"true":"false");
-								break;
-								
-							case IS_LONG:
-								php_http_buffer_appendf(str, "%s: %ld" PHP_HTTP_CRLF, key.str, Z_LVAL_PP(single_header));
-								break;
-								
-							case IS_DOUBLE:
-								php_http_buffer_appendf(str, "%s: %F" PHP_HTTP_CRLF, key.str, Z_DVAL_PP(single_header));
-								break;
-								
-							case IS_STRING:
-								php_http_buffer_appendf(str, "%s: %s" PHP_HTTP_CRLF, key.str, Z_STRVAL_PP(single_header));
-								break;
+						if (cookie) {
+							char *buf;
+							size_t len;
+
+							php_http_cookie_list_to_string(cookie, &buf, &len);
+							php_http_buffer_appendf(str, "Set-Cookie: %s" PHP_HTTP_CRLF, buf);
+							php_http_cookie_list_free(&cookie);
+							efree(buf);
 						}
+					} else {
+						zval *strval = message_header_strval(single_header TSRMLS_CC);
+
+						php_http_buffer_appendf(str, "Set-Cookie: %s" PHP_HTTP_CRLF, Z_STRVAL_P(strval));
+						zval_ptr_dtor(&strval);
 					}
-					break;
+				}
+			} else {
+				zval *strval = message_header_strval(header TSRMLS_CC);
+
+				php_http_buffer_appendf(str, "%s: %s" PHP_HTTP_CRLF, key.str, Z_STRVAL_P(strval));
+				zval_ptr_dtor(&strval);
 			}
 		}
 	}

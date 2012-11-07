@@ -27,8 +27,5 @@ String: foobar
 
 ===
 UNKNOWN / HTTP/1.1
-Numbers: 1
-Numbers: 2
-Numbers: 3
-Numbers: 4.5%d
+Numbers: 1, 2, 3, 4.5
 DONE

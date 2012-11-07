@@ -28,7 +28,7 @@ PHP_HTTP_API php_http_strlist_iterator_t *php_http_strlist_iterator_init(php_htt
 PHP_HTTP_API const char *php_http_strlist_iterator_this(php_http_strlist_iterator_t *iter, unsigned *id)
 {
 	if (id) {
-		*id = iter->major * iter->factor + iter->minor;
+		*id = (iter->major + 1) * iter->factor + iter->minor;
 	}
 
 	return iter->p;
@@ -46,6 +46,7 @@ PHP_HTTP_API const char *php_http_strlist_iterator_next(php_http_strlist_iterato
 		if (!*iter->p) {
 			++iter->p;
 			++iter->major;
+			iter->minor = 0;
 		}
 	}
 

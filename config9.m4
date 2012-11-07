@@ -341,7 +341,7 @@ dnl ----
 					EVENT_VER="`$EGREP _EVENT_VERSION $EVENT_DIR/include/event2/event.h | $AWK '{print $3}'`"
 					AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [1], [ ])
 				else
-					AC_DEFFINE([PHP_HTTP_HAVE_EVENT2], [0], [ ])
+					AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [0], [ ])
 					if test -f "$EVENT_DIR/include/evhttp.h" && test -f "$EVENT_DIR/include/evdns.h"; then
 						if test -f "$EVENT_DIR/include/evrpc.h"; then
 							EVENT_VER="1.4 or greater"

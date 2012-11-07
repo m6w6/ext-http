@@ -663,6 +663,8 @@ PHP_HTTP_BEGIN_ARGS(getResponseStatusForCode, 1)
 	PHP_HTTP_ARG_VAL(code, 0)
 PHP_HTTP_END_ARGS;
 
+PHP_HTTP_EMPTY_ARGS(getResponseStatusForAllCodes);
+
 PHP_HTTP_BEGIN_ARGS(getResponseHeader, 0)
 	PHP_HTTP_ARG_VAL(header_name, 0)
 PHP_HTTP_END_ARGS;
@@ -726,6 +728,7 @@ static zend_function_entry php_http_env_method_entry[] = {
 	PHP_HTTP_ENV_ME(getRequestBody)
 
 	PHP_HTTP_ENV_ME(getResponseStatusForCode)
+	PHP_HTTP_ENV_ME(getResponseStatusForAllCodes)
 
 	PHP_HTTP_ENV_ME(getResponseHeader)
 	PHP_HTTP_ENV_ME(getResponseCode)
@@ -791,6 +794,25 @@ PHP_METHOD(HttpEnv, getResponseStatusForCode)
 		RETURN_STRING(php_http_env_get_response_status_for_code(code), 1);
 	}
 	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpEnv, getResponseStatusForAllCodes)
+{
+	const char *s;
+	unsigned c;
+	php_http_strlist_iterator_t i;
+
+	if (SUCCESS != zend_parse_parameters_none()) {
+		RETURN_FALSE;
+	}
+
+	array_init(return_value);
+	for (	php_http_strlist_iterator_init(&i, php_http_env_response_status, 100);
+			*(s = php_http_strlist_iterator_this(&i, &c));
+			php_http_strlist_iterator_next(&i)
+	) {
+		add_index_string(return_value, c, s, 1);
+	}
 }
 
 PHP_METHOD(HttpEnv, getResponseHeader)

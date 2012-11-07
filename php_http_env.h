@@ -75,6 +75,7 @@ zend_class_entry *php_http_env_get_class_entry(void);
 PHP_METHOD(HttpEnv, getRequestHeader);
 PHP_METHOD(HttpEnv, getRequestBody);
 PHP_METHOD(HttpEnv, getResponseStatusForCode);
+PHP_METHOD(HttpEnv, getResponseStatusForAllCodes);
 PHP_METHOD(HttpEnv, getResponseHeader);
 PHP_METHOD(HttpEnv, getResponseCode);
 PHP_METHOD(HttpEnv, setResponseHeader);

@@ -86,9 +86,7 @@ bykey: 1
 by1ref: 2
 by2ref: 1
 byXref: 2
-bynext: 1
-bynext: 2
-bynext: 3
+bynext: 1, 2, 3
 
 DONE
 
