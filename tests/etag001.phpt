@@ -1,7 +1,11 @@
 --TEST--
 etags with hash
 --SKIPIF--
-<?php include "skipif.inc"; _ext("hash"); ?>
+<?php 
+include "skipif.inc"; 
+_ext("hash"); 
+version_compare(PHP_VERSION, "5.4.0", ">=") or die("skip PHP>=5.4 required");
+?>
 --FILE--
 <?php
 $body = new http\Message\Body;

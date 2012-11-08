@@ -189,6 +189,9 @@ static size_t output(void *context, char *buf, size_t len TSRMLS_DC)
 		if (!(php_output_get_status(TSRMLS_C) & PHP_OUTPUT_IMPLICITFLUSH)) {
 			sapi_flush(TSRMLS_C);
 		}
+#else
+		php_end_ob_buffer(1, 1 TSRMLS_CC);
+		sapi_flush(TSRMLS_C);
 #endif
 		php_http_sleep(r->throttle.delay);
 	}

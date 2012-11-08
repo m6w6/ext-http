@@ -28,7 +28,8 @@ class RequestTest extends PHPUnit_Framework_TestCase
     protected $r;
 
     function setUp() {
-        $this->r = (new http\Client\Factory)->createClient();
+		$f = new http\Client\Factory;
+        $this->r = $f->createClient();
         $this->r->setOptions(
             array(
                 "connecttimeout"    => 30,
@@ -55,19 +56,20 @@ class RequestTest extends PHPUnit_Framework_TestCase
     }
 
     function testObserver() {
+		$test = $this;
         $this->r->attach($o1 = new ProgressObserver1);
         $this->r->attach($o2 = new ProgressObserver2);
         $this->r->attach(
             $o3 = new CallbackObserver(
-                function ($r) {
+                function ($r) use ($test) {
                     $p = (array) $r->getProgress();
-                    $this->assertArrayHasKey("started", $p);
-                    $this->assertArrayHasKey("finished", $p);
-                    $this->assertArrayHasKey("dlnow", $p);
-                    $this->assertArrayHasKey("ulnow", $p);
-                    $this->assertArrayHasKey("dltotal", $p);
-                    $this->assertArrayHasKey("ultotal", $p);
-                    $this->assertArrayHasKey("info", $p);
+                    $test->assertArrayHasKey("started", $p);
+                    $test->assertArrayHasKey("finished", $p);
+                    $test->assertArrayHasKey("dlnow", $p);
+                    $test->assertArrayHasKey("ulnow", $p);
+                    $test->assertArrayHasKey("dltotal", $p);
+                    $test->assertArrayHasKey("ultotal", $p);
+                    $test->assertArrayHasKey("info", $p);
                 }
             )
         );

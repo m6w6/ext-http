@@ -468,7 +468,7 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
-				zval *instance = *zend_std_get_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), 0, NULL TSRMLS_CC);
+				zval *instance = *zend_std_get_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), 0 PHP_HTTP_ZEND_LITERAL_CCN TSRMLS_CC);
 
 				if (Z_TYPE_P(instance) != IS_OBJECT) {
 					zval **_GET = NULL;

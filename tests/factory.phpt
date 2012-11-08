@@ -39,7 +39,8 @@ var_dump(
 
 foreach (array("Client", "Pool", "DataShare") as $type) {
 	try {
-		var_dump((new http\Client\Factory(array("driver" => "nonexistant")))->{"create$type"}());
+		$f = new http\Client\Factory(array("driver" => "nonexistant"));
+		var_dump($f->{"create$type"}());
 	} catch (Exception $e) {
 		echo $e->getMessage(), "\n";
 	}

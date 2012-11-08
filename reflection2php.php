@@ -31,6 +31,8 @@ function c($n, $c) {
 if (!strlen($ext = $argv[1]))
 	die(sprintf("Usage: %s <ext>\n", $argv[0]));
 
+printf("<?php\n\n");
+
 $ext = new ReflectionExtension($ext);
 foreach ($ext->getConstants() as $constant => $value) {
     printf("const %s = %s;\n", $constant, $value);
@@ -111,7 +113,12 @@ foreach ($classes as $class) {
                 }
 				$ps[] = $p1;
 			}
-			printf("%s) {\n\t\t}\n", implode(", ", $ps));
+			printf("%s)", implode(", ", $ps));
+			if ($m->isAbstract()) {
+				printf(";\n\n");
+			} else {
+				printf(" {\n\t\t}\n\n");
+			}
 		}
 	}
 

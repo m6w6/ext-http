@@ -4,7 +4,7 @@
     +--------------------------------------------------------------------+
     | Redistribution and use in source and binary forms, with or without |
     | modification, are permitted provided that the conditions mentioned |
-    | in the accomp395anying LICENSE file are met.                          |
+    | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
     | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
@@ -987,7 +987,7 @@ PHP_METHOD(HttpEnv, cleanPersistentHandles)
 static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 {
 	if (SG(request_info).raw_post_data) {
-		php_json_decode_ex(arg, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length, PHP_JSON_OBJECT_AS_ARRAY, PG(max_input_nesting_level) TSRMLS_CC);
+		php_json_decode(arg, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length, 1, PG(max_input_nesting_level) TSRMLS_CC);
 	}
 }
 

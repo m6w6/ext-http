@@ -23,7 +23,7 @@ foreach ($ext->getClasses() as $class) {
 		$serialized = serialize($instance);
 		$unserialized = unserialize($serialized);
 		
-		foreach (["toString", "toArray"] as $m) {
+		foreach (array("toString", "toArray") as $m) {
 			if ($class->hasMethod($m)) {
 				#printf("%s#%s\n", $class->getName(), $m);
 				$unserialized->$m();
@@ -31,7 +31,9 @@ foreach ($ext->getClasses() as $class) {
 		}
 		if ($class->hasMethod("attach") && !$class->implementsInterface("\\SplSubject")) {
 			#printf("%s#%s\n", $class->getName(), "attach");
-			$unserialized->attach((new http\Curl\Client)->setRequest(new http\Client\Request("GET", "http://localhost")));
+			$c = new http\Curl\Client;
+			$c->setRequest(new http\Client\Request("GET", "http://localhost"));
+			$unserialized->attach($c);
 		}
 	}
 }

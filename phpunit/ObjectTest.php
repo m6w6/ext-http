@@ -19,19 +19,22 @@ class ObjectTest extends PHPUnit_Framework_TestCase {
 
     function testSuppress() {
         http\Object::setDefaultErrorHandling(http\Object::EH_SUPPRESS);
-        (new eh)->triggerError(E_USER_WARNING, http\Exception::E_UNKNOWN, "suppress");
+        $o = new eh;
+		$o->triggerError(E_USER_WARNING, http\Exception::E_UNKNOWN, "suppress");
     }
 
     function testException() {
         http\Object::setDefaultErrorHandling(http\Object::EH_THROW);
         $this->setExpectedException("http\\Exception");
-        (new eh)->triggerError(E_USER_WARNING, http\Exception::E_UNKNOWN, "exception");
+        $o = new eh;
+		$o->triggerError(E_USER_WARNING, http\Exception::E_UNKNOWN, "exception");
     }
 
     function testNormalError() {
         http\Object::setDefaultErrorHandling(http\Object::EH_NORMAL);
         $this->setExpectedException("PHPUnit_Framework_Error_Warning");
-        (new eh)->triggerError(E_USER_WARNING, http\Exception::E_UNKNOWN, "warning");
+        $o = new eh;
+		$o->triggerError(E_USER_WARNING, http\Exception::E_UNKNOWN, "warning");
     }
 
     function testSuppress2() {

@@ -151,6 +151,21 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 
 /* ZEND */
 
+#if PHP_VERSION_ID < 50400
+#	define object_properties_init(o, ce) zend_hash_copy(((zend_object *) o)->properties, &(ce->default_properties), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval*))
+#	define PHP_HTTP_ZEND_LITERAL_DC 
+#	define PHP_HTTP_ZEND_LITERAL_CC
+#	define PHP_HTTP_ZEND_LITERAL_CCN
+#	define ZVAL_COPY_VALUE(zv, arr) do { \
+		(zv)->value = (arr)->value; \
+		Z_TYPE_P(zv) = Z_TYPE_P(arr); \
+	} while (0)
+#else
+#	define PHP_HTTP_ZEND_LITERAL_DC , const zend_literal *literal_key
+#	define PHP_HTTP_ZEND_LITERAL_CC , (literal_key)
+#	define PHP_HTTP_ZEND_LITERAL_CCN , NULL
+#endif
+
 #define INIT_PZVAL_ARRAY(zv, ht) \
 	{ \
 		INIT_PZVAL((zv)); \

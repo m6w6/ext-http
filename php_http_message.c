@@ -89,7 +89,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 			}
 			
 			php_http_env_get_response_headers(&message->hdrs TSRMLS_CC);
-
+#if PHP_VERSION_ID >= 50400
 			if (php_output_get_level(TSRMLS_C)) {
 				if (php_output_get_status(TSRMLS_C) & PHP_OUTPUT_SENT) {
 					php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "Could not fetch response body, output has already been sent at %s:%d", php_output_get_start_filename(TSRMLS_C), php_output_get_start_lineno(TSRMLS_C));
@@ -102,6 +102,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 					zval_dtor(&tval);
 				}
 			}
+#endif
 			break;
 			
 		default:
@@ -671,9 +672,9 @@ PHP_HTTP_BEGIN_ARGS(isMultipart, 0)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_EMPTY_ARGS(splitMultipartBody);
 
-static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, const zend_literal *literal_key TSRMLS_DC);
-static void php_http_message_object_write_prop(zval *object, zval *member, zval *value, const zend_literal *literal_key TSRMLS_DC);
-static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member, const zend_literal *literal_key TSRMLS_DC);
+static zval *php_http_message_object_read_prop(zval *object, zval *member, int type PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC);
+static void php_http_message_object_write_prop(zval *object, zval *member, zval *value PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC);
+static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC);
 static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC);
 
 static zend_class_entry *php_http_message_class_entry;
@@ -1140,7 +1141,7 @@ void php_http_message_object_free(void *object TSRMLS_DC)
 }
 
 
-static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member, const zend_literal *literal_key TSRMLS_DC)
+static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC)
 {
 	php_http_message_object_prophandler_t *handler;
 	zval *copy = php_http_ztyp(IS_STRING, member);
@@ -1151,10 +1152,10 @@ static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member, c
 	}
 	zval_ptr_dtor(&copy);
 
-	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member, literal_key TSRMLS_CC);
+	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member PHP_HTTP_ZEND_LITERAL_CC TSRMLS_CC);
 }
 
-static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, const zend_literal *literal_key TSRMLS_DC)
+static zval *php_http_message_object_read_prop(zval *object, zval *member, int type PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC)
 {
 	php_http_message_object_t *obj = zend_object_store_get_object(object TSRMLS_CC);
 	php_http_message_object_prophandler_t *handler;
@@ -1172,7 +1173,7 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 			return_value = NULL;
 		}
 	} else {
-		return_value = zend_get_std_object_handlers()->read_property(object, member, type, literal_key TSRMLS_CC);
+		return_value = zend_get_std_object_handlers()->read_property(object, member, type PHP_HTTP_ZEND_LITERAL_CC TSRMLS_CC);
 	}
 
 	zval_ptr_dtor(&copy);
@@ -1180,7 +1181,7 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 	return return_value;
 }
 
-static void php_http_message_object_write_prop(zval *object, zval *member, zval *value, const zend_literal *literal_key TSRMLS_DC)
+static void php_http_message_object_write_prop(zval *object, zval *member, zval *value PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC)
 {
 	php_http_message_object_t *obj = zend_object_store_get_object(object TSRMLS_CC);
 	php_http_message_object_prophandler_t *handler;
@@ -1189,7 +1190,7 @@ static void php_http_message_object_write_prop(zval *object, zval *member, zval 
 	if (SUCCESS == php_http_message_object_get_prophandler(Z_STRVAL_P(copy), Z_STRLEN_P(copy), &handler)) {
 		handler->write(obj, value TSRMLS_CC);
 	} else {
-		zend_get_std_object_handlers()->write_property(object, member, value, literal_key TSRMLS_CC);
+		zend_get_std_object_handlers()->write_property(object, member, value PHP_HTTP_ZEND_LITERAL_CC TSRMLS_CC);
 	}
 
 	zval_ptr_dtor(&copy);

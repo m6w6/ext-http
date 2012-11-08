@@ -4,12 +4,12 @@ persistent handles
 <?php include "skipif.inc"; ?>
 --FILE--
 <?php
-(new http\Client\Factory(array("persistentHandleId" => "foo")))
-    ->createClient()->setRequest(new http\Client\Request("GET", "http://dev.iworks.at"))
+$f = new http\Client\Factory(array("persistentHandleId" => "foo"));
+$r = $f->createClient()->setRequest(new http\Client\Request("GET", "http://dev.iworks.at"))
     ->setOptions(array("connecttimeout"=> 90, "timeout" =>300))
-    ->send(null); 
-$r = (new http\Client\Factory(array("persistentHandleId" => "bar")))
-    ->createClient()->setRequest(new http\Client\Request("GET", "http://dev.iworks.at"))
+    ->send(null);
+$f = new http\Client\Factory(array("persistentHandleId" => "bar"));
+$r = $f->createClient()->setRequest(new http\Client\Request("GET", "http://dev.iworks.at"))
     ->setOptions(array("connecttimeout"=> 90, "timeout" =>300));
     
 var_dump(http\Env::statPersistentHandles()); 

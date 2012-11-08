@@ -8,12 +8,16 @@ include "skip.inc";
 
 use http\Message as HttpMessage;
 
-$s = "GET /first HTTP/1.1\nHTTP/1.1 200 Ok-first\nGET /second HTTP/1.1\nHTTP/1.1 200 Ok-second\nGET /third HTTP/1.1\nHTTP/1.1 200 Ok-third\n";
-echo (new HttpMessage($s))->toString(true);
-echo "===\n";
-echo (new HttpMessage($s))->reverse()->toString(true);
+function newHttpMessage($s) {
+	return new http\Message($s);
+}
 
-$m = new HttpMessage($s);
+$s = "GET /first HTTP/1.1\nHTTP/1.1 200 Ok-first\nGET /second HTTP/1.1\nHTTP/1.1 200 Ok-second\nGET /third HTTP/1.1\nHTTP/1.1 200 Ok-third\n";
+echo newHttpMessage($s)->toString(true);
+echo "===\n";
+echo newHttpMessage($s)->reverse()->toString(true);
+
+$m = newHttpMessage($s);
 $r = $m->reverse();
 unset($m);
 var_dump($r->count());

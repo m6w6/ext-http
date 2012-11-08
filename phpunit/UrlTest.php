@@ -43,6 +43,7 @@ class UrlTest extends PHPUnit_Framework_TestCase {
 
     function testArrays() {
         $url = new http\Url($this->url);
-        $this->assertEquals($url->toArray(), (new http\Url($url->toArray()))->toArray());
+		$url2 = new http\Url($url->toArray());
+        $this->assertEquals($url->toArray(), $url2->toArray());
     }
 }

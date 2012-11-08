@@ -1307,11 +1307,7 @@ zend_object_value php_http_curl_client_object_new_ex(zend_class_entry *ce, php_h
 
 	o = ecalloc(1, sizeof(php_http_client_object_t));
 	zend_object_std_init((zend_object *) o, ce TSRMLS_CC);
-#if PHP_VERSION_ID < 50339
-	zend_hash_copy(((zend_object *) o)->properties, &(ce->default_properties), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval*));
-#else
 	object_properties_init((zend_object *) o, ce);
-#endif
 
 	if (!(o->client = r)) {
 		o->client = php_http_client_init(NULL, &php_http_curl_client_ops, NULL, NULL TSRMLS_CC);
