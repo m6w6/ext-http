@@ -916,7 +916,6 @@ PHP_METHOD(HttpClient, request)
 
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|a!z!a!/", &meth_str, &meth_len, &url_str, &url_len, &zheader, &zbody, &zoptions)) {
-			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			php_http_message_object_t *msg_obj;
 			zend_object_value ov;
 			zval *req, *res = NULL;

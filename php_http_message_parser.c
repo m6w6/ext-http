@@ -12,6 +12,10 @@
 
 #include "php_http_api.h"
 
+#ifndef DBG_PARSER
+#	define DBG_PARSER 0
+#endif
+
 typedef struct php_http_message_parser_state_spec {
 	php_http_message_parser_state_t state;
 	unsigned need_data:1;
@@ -28,6 +32,17 @@ static const php_http_message_parser_state_spec_t php_http_message_parser_states
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE,		0},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_DONE,			0}
 };
+
+#if DBG_PARSER
+const char *php_http_message_parser_state_name(php_http_message_parser_state_t state) {
+	const char *states[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "DONE"};
+	
+	if (state < 0 || state > (sizeof(states)/sizeof(char*))-1) {
+		return "FAILURE";
+	}
+	return states[state];
+}
+#endif
 
 PHP_HTTP_API php_http_message_parser_t *php_http_message_parser_init(php_http_message_parser_t *parser TSRMLS_DC)
 {
@@ -102,17 +117,20 @@ PHP_HTTP_API void php_http_message_parser_free(php_http_message_parser_t **parse
 	}
 }
 
-PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_message_parser_t *parser, php_stream *s, php_http_message_t **message)
+PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_message_parser_t *parser, php_stream *s, unsigned flags, php_http_message_t **message)
 {
 	php_http_buffer_t buf;
+	php_http_message_parser_state_t state = PHP_HTTP_MESSAGE_PARSER_STATE_START;
 	TSRMLS_FETCH_FROM_CTX(parser->ts);
 
 	php_http_buffer_init_ex(&buf, 0x1000, PHP_HTTP_BUFFER_INIT_PREALLOC);
 
 	while (!php_stream_eof(s)) {
 		size_t len = 0;
-
-		switch (php_http_message_parser_state_is(parser)) {
+#if DBG_PARSER
+		fprintf(stderr, "#SP: %s (f:%u)\n", php_http_message_parser_state_name(state), flags);
+#endif
+		switch (state) {
 			case PHP_HTTP_MESSAGE_PARSER_STATE_START:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE:
@@ -160,7 +178,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_strea
 				return php_http_message_parser_state_is(parser);
 		}
 
-		php_http_message_parser_parse(parser, &buf, 0, message);
+		state = php_http_message_parser_parse(parser, &buf, flags, message);
 	}
 
 	php_http_buffer_dtor(&buf);
@@ -176,9 +194,13 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 	TSRMLS_FETCH_FROM_CTX(parser->ts);
 
 	while (buffer->used || !php_http_message_parser_states[php_http_message_parser_state_is(parser)].need_data) {
-#if 0
-		const char *state[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "DONE"};
-		fprintf(stderr, "#MP: %s (%d)\n", php_http_message_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_message_parser_state_is(parser)], message && *message ? (*message)->type : -1);
+#if DBG_PARSER
+		fprintf(stderr, "#MP: %s (f: %u, t:%d, l:%zu)\n", 
+			php_http_message_parser_state_name(php_http_message_parser_state_is(parser)),
+			flags, 
+			message && *message ? (*message)->type : -1, 
+			buffer->used
+		);
 		_dpf(0, buffer->data, buffer->used);
 #endif
 
@@ -477,6 +499,10 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 				}
 
 				php_http_buffer_cut(buffer, 0, ptr - buffer->data);
+				
+				if (!(flags & PHP_HTTP_MESSAGE_PARSER_GREEDY)) {
+					return PHP_HTTP_MESSAGE_PARSER_STATE_DONE;
+				}
 				break;
 			}
 		}

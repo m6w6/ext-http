@@ -574,6 +574,19 @@ static STATUS set_options(php_http_client_t *h, HashTable *options)
 	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("connecttimeout"), IS_DOUBLE))) {
 		curl_easy_setopt(ch, CURLOPT_CONNECTTIMEOUT_MS, (long)(Z_DVAL_P(zoption)*1000));
 	}
+	
+#if PHP_HTTP_CURL_VERSION(7,25,0)
+	/* tcp */
+	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("tcp_keepalive"), IS_BOOL))) {
+		curl_easy_setopt(ch, CURLOPT_TCP_KEEPALIVE, (long)Z_BVAL_P(zoption));
+	}
+	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("tcp_keepidle"), IS_LONG))) {
+		curl_easy_setopt(ch, CURLOPT_TCP_KEEPIDLE, Z_LVAL_P(zoption));
+	}
+	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("tcp_keepintvl"), IS_LONG))) {
+		curl_easy_setopt(ch, CURLOPT_TCP_KEEPINTVL, Z_LVAL_P(zoption));
+	}
+#endif
 
 	/* ssl */
 	if ((zoption = get_option(&curl->options.cache, options, ZEND_STRS("ssl"), IS_ARRAY))) {
@@ -971,7 +984,12 @@ static STATUS php_http_curl_client_reset(php_http_client_t *h)
 	curl_easy_setopt(ch, CURLOPT_TIMECONDITION, 0L);
 	curl_easy_setopt(ch, CURLOPT_TIMEVALUE, 0L);
 	curl_easy_setopt(ch, CURLOPT_TIMEOUT, 0L);
-	curl_easy_setopt(ch, CURLOPT_CONNECTTIMEOUT, 3);
+	curl_easy_setopt(ch, CURLOPT_CONNECTTIMEOUT, 3L);
+#if PHP_HTTP_CURL_VERSION(7,25,0)
+	curl_easy_setopt(ch, CURLOPT_TCP_KEEPALIVE, 0L);
+	curl_easy_setopt(ch, CURLOPT_TCP_KEEPIDLE, 60L);
+	curl_easy_setopt(ch, CURLOPT_TCP_KEEPINTVL, 60L);
+#endif
 	curl_easy_setopt(ch, CURLOPT_SSLCERT, NULL);
 	curl_easy_setopt(ch, CURLOPT_SSLCERTTYPE, NULL);
 	curl_easy_setopt(ch, CURLOPT_SSLCERTPASSWD, NULL);

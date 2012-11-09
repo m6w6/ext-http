@@ -69,7 +69,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_zip(php_http_message_t *one, p
 	for (c = 0; __tmp_msg; __tmp_msg = __tmp_msg->parent, ++(c)); \
 }
 
-PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *str, size_t len TSRMLS_DC);
+PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *str, size_t len, zend_bool greedy TSRMLS_DC);
 
 /* PHP */
 

@@ -91,8 +91,8 @@ foreach ($infos as $info) {
 	if (isset($ifdefs[$short])) printf("#endif\n");
 }
 
-file_put_contents("php_http_curl.c", 
+file_put_contents("php_http_curl_client.c", 
 	preg_replace('/(\/\* BEGIN::CURLINFO \*\/\n).*(\n\s*\/\* END::CURLINFO \*\/)/s', '$1'. ob_get_contents() .'$2',
-		file_get_contents("php_http_curl.c")));
+		file_get_contents("php_http_curl_client.c")));
 
 ?>

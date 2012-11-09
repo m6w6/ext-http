@@ -118,10 +118,11 @@ PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m
 	return message;
 }
 
-PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *str, size_t len TSRMLS_DC)
+PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *str, size_t len, zend_bool greedy TSRMLS_DC)
 {
 	php_http_message_parser_t p;
 	php_http_buffer_t buf;
+	unsigned flags = PHP_HTTP_MESSAGE_PARSER_CLEANUP;
 	int free_msg;
 
 	php_http_buffer_from_string_ex(&buf, str, len);
@@ -131,7 +132,10 @@ PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg,
 		msg = php_http_message_init(NULL, 0 TSRMLS_CC);
 	}
 
-	if (FAILURE == php_http_message_parser_parse(&p, &buf, PHP_HTTP_MESSAGE_PARSER_CLEANUP, &msg)) {
+	if (greedy) {
+		flags |= PHP_HTTP_MESSAGE_PARSER_GREEDY;
+	}
+	if (FAILURE == php_http_message_parser_parse(&p, &buf, flags, &msg)) {
 		if (free_msg) {
 			php_http_message_free(&msg);
 		}
@@ -566,6 +570,7 @@ PHP_HTTP_API void php_http_message_free(php_http_message_t **message)
 
 PHP_HTTP_BEGIN_ARGS(__construct, 0)
 	PHP_HTTP_ARG_VAL(message, 0)
+	PHP_HTTP_ARG_VAL(greedy, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_EMPTY_ARGS(getBody);
@@ -934,7 +939,7 @@ void php_http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_D
 	if (i > 1) {
 		zend_object_value *ovalues = NULL;
 		php_http_message_object_t **objects = NULL;
-		int last = i - 1;
+		int last;
 
 		objects = ecalloc(i, sizeof(**objects));
 		ovalues = ecalloc(i, sizeof(*ovalues));
@@ -1281,24 +1286,33 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 
 PHP_METHOD(HttpMessage, __construct)
 {
+	zend_bool greedy = 1;
 	zval *zmessage = NULL;
 	php_http_message_t *msg = NULL;
 	php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!", &zmessage) && zmessage) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!b", &zmessage, &greedy) && zmessage) {
 			if (Z_TYPE_P(zmessage) == IS_RESOURCE) {
 				php_stream *s;
 				php_http_message_parser_t p;
 
 				php_stream_from_zval(s, &zmessage);
 				if (s && php_http_message_parser_init(&p TSRMLS_CC)) {
-					php_http_message_parser_parse_stream(&p, s, &msg);
+					unsigned flags = (greedy ? PHP_HTTP_MESSAGE_PARSER_GREEDY : 0);
+					
+					php_http_message_parser_parse_stream(&p, s, flags, &msg);
 					php_http_message_parser_dtor(&p);
+				}
+				
+				if (!msg) {
+					php_http_error(HE_THROW, PHP_HTTP_E_MESSAGE, "could not parse message from stream");
 				}
 			} else {
 				zmessage = php_http_ztyp(IS_STRING, zmessage);
-				msg = php_http_message_parse(NULL, Z_STRVAL_P(zmessage), Z_STRLEN_P(zmessage) TSRMLS_CC);
+				if (!(msg = php_http_message_parse(NULL, Z_STRVAL_P(zmessage), Z_STRLEN_P(zmessage), greedy TSRMLS_CC))) {
+					php_http_error(HE_THROW, PHP_HTTP_E_MESSAGE, "could not parse message: %.*s", MIN(25, Z_STRLEN_P(zmessage)), Z_STRVAL_P(zmessage));
+				}
 				zval_ptr_dtor(&zmessage);
 			}
 
@@ -1308,8 +1322,6 @@ PHP_METHOD(HttpMessage, __construct)
 				if (obj->message->parent) {
 					obj->parent = php_http_message_object_new_ex(Z_OBJCE_P(getThis()), obj->message->parent, NULL TSRMLS_CC);
 				}
-			} else {
-				php_http_error(HE_THROW, PHP_HTTP_E_MESSAGE, "could not parse message: %.*s", 25, Z_STRVAL_P(zmessage));
 			}
 		}
 		if (!obj->message) {
@@ -1342,7 +1354,6 @@ PHP_METHOD(HttpMessage, setBody)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zbody, php_http_message_body_get_class_entry())) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-		php_http_message_body_object_t *body_obj = zend_object_store_get_object(zbody TSRMLS_CC);
 
 		if (!obj->message) {
 			obj->message = php_http_message_init(NULL, 0 TSRMLS_CC);
@@ -1876,7 +1887,7 @@ PHP_METHOD(HttpMessage, unserialize)
 			php_http_message_dtor(obj->message);
 			efree(obj->message);
 		}
-		if ((msg = php_http_message_parse(NULL, serialized, (size_t) length TSRMLS_CC))) {
+		if ((msg = php_http_message_parse(NULL, serialized, (size_t) length, 1 TSRMLS_CC))) {
 			obj->message = msg;
 		} else {
 			obj->message = php_http_message_init(NULL, 0 TSRMLS_CC);
