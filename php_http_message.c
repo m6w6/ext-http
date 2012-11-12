@@ -277,9 +277,12 @@ PHP_HTTP_API void php_http_message_update_headers(php_http_message_t *msg)
 {
 	zval *h;
 	size_t size;
+	php_stream *s;
 	TSRMLS_FETCH_FROM_CTX(msg->ts);
 
-	if ((size = php_http_message_body_size(&msg->body))) {
+	if (php_http_message_body_stream(&msg->body)->readfilters.head) {
+		/* if a read stream filter is attached to the body the caller must also care for the headers */
+	} else if ((size = php_http_message_body_size(&msg->body))) {
 		MAKE_STD_ZVAL(h);
 		ZVAL_LONG(h, size);
 		zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), &h, sizeof(zval *), NULL);
