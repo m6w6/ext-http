@@ -12,6 +12,10 @@
 
 #include "php_http_api.h"
 
+#ifndef DBG_FILTER
+#	define DBG_FILTER 0
+#endif
+
 PHP_MINIT_FUNCTION(http_filter)
 {
 	php_stream_filter_register_factory("http.*", &php_http_filter_factory TSRMLS_CC);
@@ -39,6 +43,12 @@ PHP_MINIT_FUNCTION(http_filter)
 	php_stream_filter_status_t PHP_HTTP_FILTER_FUNC(filter)(PHP_HTTP_FILTER_PARAMS)
 #define PHP_HTTP_FILTER_BUFFER(filter) \
 	http_filter_ ##filter## _buffer
+
+#define PHP_HTTP_FILTER_IS_CLOSING(stream, flags) \
+	(	(flags & PSFS_FLAG_FLUSH_CLOSE) \
+	||	php_stream_eof(stream) \
+	|| ((stream->ops == &php_stream_temp_ops || stream->ops == &php_stream_memory_ops) && stream->eof) \
+	)
 
 #define NEW_BUCKET(data, length) \
 	{ \
@@ -77,24 +87,21 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 		*bytes_consumed = 0;
 	}
 	
-	/* new data available? */
-	if (buckets_in->head) {
-		
-		/* fetch available bucket data */
-		for (ptr = buckets_in->head; ptr; ptr = nxt) {
-			nxt = ptr->next;
-			if (bytes_consumed) {
-				*bytes_consumed += ptr->buflen;
-			}
-		
-			if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(PHP_HTTP_BUFFER(buffer), ptr->buf, ptr->buflen)) {
-				return PSFS_ERR_FATAL;
-			}
-			
-			php_stream_bucket_unlink(ptr TSRMLS_CC);
-			php_stream_bucket_delref(ptr TSRMLS_CC);
+	/* fetch available bucket data */
+	for (ptr = buckets_in->head; ptr; ptr = nxt) {
+		if (bytes_consumed) {
+			*bytes_consumed += ptr->buflen;
 		}
+
+		if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(PHP_HTTP_BUFFER(buffer), ptr->buf, ptr->buflen)) {
+			return PSFS_ERR_FATAL;
+		}
+
+		nxt = ptr->next;
+		php_stream_bucket_unlink(ptr TSRMLS_CC);
+		php_stream_bucket_delref(ptr TSRMLS_CC);
 	}
+	
 	if (!php_http_buffer_fix(PHP_HTTP_BUFFER(buffer))) {
 		return PSFS_ERR_FATAL;
 	}
@@ -169,7 +176,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 					buffer->hexlen = strtoul(PHP_HTTP_BUFFER_VAL(buffer), &stop, 16);
 					
 					/*	if strtoul() stops at the beginning of the buffered data
-						there's domething oddly wrong, i.e. bad input */
+						there's something oddly wrong, i.e. bad input */
 					if (stop == PHP_HTTP_BUFFER_VAL(buffer)) {
 						return PSFS_ERR_FATAL;
 					}
@@ -192,7 +199,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 	}
 	
 	/* flush before close, but only if we are already waiting for more data */
-	if ((flags & PSFS_FLAG_FLUSH_CLOSE) && buffer->hexlen && PHP_HTTP_BUFFER_LEN(buffer)) {
+	if (PHP_HTTP_FILTER_IS_CLOSING(stream, flags) && buffer->hexlen && PHP_HTTP_BUFFER_LEN(buffer)) {
 		out_avail = 1;
 		NEW_BUCKET(PHP_HTTP_BUFFER_VAL(buffer), PHP_HTTP_BUFFER_LEN(buffer));
 		php_http_buffer_reset(PHP_HTTP_BUFFER(buffer));
@@ -212,7 +219,7 @@ static PHP_HTTP_FILTER_DESTRUCTOR(chunked_decode)
 
 static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 {
-	int out_avail = 0;
+	php_http_buffer_t buf;
 	php_stream_bucket *ptr, *nxt;
 	
 	if (bytes_consumed) {
@@ -220,43 +227,43 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 	}
 	
 	/* new data available? */
-	if (buckets_in->head) {
-		php_http_buffer_t buf;
-		out_avail = 1;
-		
-		php_http_buffer_init(&buf);
-		
-		/* fetch available bucket data */
-		for (ptr = buckets_in->head; ptr; ptr = nxt) {
-			nxt = ptr->next;
-			if (bytes_consumed) {
-				*bytes_consumed += ptr->buflen;
-			}
-			
-			php_http_buffer_appendf(&buf, "%lx" PHP_HTTP_CRLF, (long unsigned int) ptr->buflen);
-			php_http_buffer_append(&buf, ptr->buf, ptr->buflen);
-			php_http_buffer_appends(&buf, PHP_HTTP_CRLF);
-			
-			/* pass through */
-			NEW_BUCKET(PHP_HTTP_BUFFER_VAL(&buf), PHP_HTTP_BUFFER_LEN(&buf));
-			/* reset */
-			php_http_buffer_reset(&buf);
-			
-			php_stream_bucket_unlink(ptr TSRMLS_CC);
-			php_stream_bucket_delref(ptr TSRMLS_CC);
+	php_http_buffer_init(&buf);
+
+	/* fetch available bucket data */
+	for (ptr = buckets_in->head; ptr; ptr = nxt) {
+		if (bytes_consumed) {
+			*bytes_consumed += ptr->buflen;
 		}
+#if DBG_FILTER
+		fprintf(stderr, "update: chunked (-> %zu) (w: %zu, r: %zu)\n", ptr->buflen, stream->writepos, stream->readpos);
+#endif DBG_FILTER
 		
-		/* free buffer */
-		php_http_buffer_dtor(&buf);
+		nxt = ptr->next;
+		php_stream_bucket_unlink(ptr TSRMLS_CC);
+		php_http_buffer_appendf(&buf, "%lx" PHP_HTTP_CRLF, (long unsigned int) ptr->buflen);
+		php_http_buffer_append(&buf, ptr->buf, ptr->buflen);
+		php_http_buffer_appends(&buf, PHP_HTTP_CRLF);
+
+		/* pass through */
+		NEW_BUCKET(PHP_HTTP_BUFFER_VAL(&buf), PHP_HTTP_BUFFER_LEN(&buf));
+		/* reset */
+		php_http_buffer_reset(&buf);
+		php_stream_bucket_delref(ptr TSRMLS_CC);
 	}
+
+	/* free buffer */
+	php_http_buffer_dtor(&buf);
 	
 	/* terminate with "0" */
-	if (flags & PSFS_FLAG_FLUSH_CLOSE) {
-		out_avail = 1;
-		NEW_BUCKET("0" PHP_HTTP_CRLF, lenof("0" PHP_HTTP_CRLF));
+	if (PHP_HTTP_FILTER_IS_CLOSING(stream, flags)) {
+#if DBG_FILTER
+		fprintf(stderr, "finish: chunked\n");
+#endif DBG_FILTER
+		
+		NEW_BUCKET("0" PHP_HTTP_CRLF PHP_HTTP_CRLF, lenof("0" PHP_HTTP_CRLF PHP_HTTP_CRLF));
 	}
 	
-	return out_avail ? PSFS_PASS_ON : PSFS_FEED_ME;
+	return PSFS_PASS_ON;
 }
 
 static PHP_HTTP_FILTER_OPS(chunked_decode) = {
@@ -273,7 +280,6 @@ static PHP_HTTP_FILTER_OPS(chunked_encode) = {
 
 static PHP_HTTP_FILTER_FUNCTION(zlib)
 {
-	int out_avail = 0;
 	php_stream_bucket *ptr, *nxt;
 	PHP_HTTP_FILTER_BUFFER(zlib) *buffer = (PHP_HTTP_FILTER_BUFFER(zlib) *) this->abstract;
 	
@@ -281,65 +287,74 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		*bytes_consumed = 0;
 	}
 	
-	/* new data available? */
-	if (buckets_in->head) {
-		
-		/* fetch available bucket data */
-		for (ptr = buckets_in->head; ptr; ptr = nxt) {
-			char *encoded = NULL;
-			size_t encoded_len = 0;
-			
-			nxt = ptr->next;
-			if (bytes_consumed) {
-				*bytes_consumed += ptr->buflen;
-			}
-			
-			if (ptr->buflen) {
-				php_http_encoding_stream_update(buffer, ptr->buf, ptr->buflen, &encoded, &encoded_len);
-				if (encoded) {
-					if (encoded_len) {
-						out_avail = 1;
-						NEW_BUCKET(encoded, encoded_len);
-					}
-					efree(encoded);
-				}
-			}
-			
-			php_stream_bucket_unlink(ptr TSRMLS_CC);
-			php_stream_bucket_delref(ptr TSRMLS_CC);
+	/* fetch available bucket data */
+	for (ptr = buckets_in->head; ptr; ptr = nxt) {
+		char *encoded = NULL;
+		size_t encoded_len = 0;
+
+		if (bytes_consumed) {
+			*bytes_consumed += ptr->buflen;
 		}
+
+#if DBG_FILTER
+		fprintf(stderr, "bucket: b=%p p=%p p=%p\n", ptr->brigade, ptr->prev,  ptr->next);
+#endif DBG_FILTER
+		
+		nxt = ptr->next;
+		php_stream_bucket_unlink(ptr TSRMLS_CC);
+		php_http_encoding_stream_update(buffer, ptr->buf, ptr->buflen, &encoded, &encoded_len);
+		
+#if DBG_FILTER
+		fprintf(stderr, "update: deflate (-> %zu) (w: %zu, r: %zu)\n", encoded_len, stream->writepos, stream->readpos);
+#endif
+		
+		if (encoded) {
+			if (encoded_len) {
+				NEW_BUCKET(encoded, encoded_len);
+			}
+			efree(encoded);
+		}
+		php_stream_bucket_delref(ptr TSRMLS_CC);
 	}
-	
+
 	/* flush & close */
 	if (flags & PSFS_FLAG_FLUSH_INC) {
 		char *encoded = NULL;
 		size_t encoded_len = 0;
 		
 		php_http_encoding_stream_flush(buffer, &encoded, &encoded_len);
+		
+#if DBG_FILTER
+		fprintf(stderr, "flush: deflate (-> %zu)\n", encoded_len);
+#endif DBG_FILTER
+		
 		if (encoded) {
 			if (encoded_len) {
-				out_avail = 1;
 				NEW_BUCKET(encoded, encoded_len);
 			}
 			efree(encoded);
 		}
 	}
 	
-	if (flags & PSFS_FLAG_FLUSH_CLOSE) {
+	if (PHP_HTTP_FILTER_IS_CLOSING(stream, flags)) {
 		char *encoded = NULL;
 		size_t encoded_len = 0;
 		
 		php_http_encoding_stream_finish(buffer, &encoded, &encoded_len);
+		
+#if DBG_FILTER
+		fprintf(stderr, "finish: deflate (-> %zu)\n", encoded_len);
+#endif DBG_FILTER
+		
 		if (encoded) {
 			if (encoded_len) {
-				out_avail = 1;
 				NEW_BUCKET(encoded, encoded_len);
 			}
 			efree(encoded);
 		}
 	}
 	
-	return out_avail ? PSFS_PASS_ON : PSFS_FEED_ME;
+	return PSFS_PASS_ON;
 }
 static PHP_HTTP_FILTER_DESTRUCTOR(zlib)
 {
