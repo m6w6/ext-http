@@ -751,6 +751,7 @@ PHP_METHOD(HttpMessageBody, getResource)
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
+		zend_list_addref(obj->body->stream_id);
 		RETVAL_RESOURCE(obj->body->stream_id);
 	}
 }
