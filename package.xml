@@ -26,9 +26,9 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-10-11</date>
+ <date>2012-11-29</date>
  <version>
-  <release>2.0.0beta1</release>
+  <release>2.0.0beta2</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -37,18 +37,16 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* PHP-5.3 compatibility by Anatoly Belsky
-* Fixed http\Client's history handling
-* Disallow serialization of non-serializable objects
-* Fixed parsing of folded headers
-* Fixed the parsing HTTP messages from streams
-* Fixed leak in persistent handles cleanup routine
-+ Added http\Url::SANITIZE_PATH; URL paths are not sanitized by default anymore
-+ Added JSON Content-Type handler for request body processing if ext/json is present
-+ Added missing IANA HTTP response codes
-+ Added http\Message\Body::getResource()
-+ Added QueryString proxy methods to http\Env\Request
-+ Added Serializable to http\Message\Body's interfaces
+! >80% test coverage
+* Fixed http\Request\Pool with libevent2
+* Fixed http\Env\Request::getFiles() with multiple-file-uploads
+* Fixed PHP-5.3 compatibility
+* Fixed reference handling of http\Message\Body::getResource()
+* Fixed reading stream filters to correctly detect EOF of tmp and mem streams
+- Change: merge message headers with the same key
+- Change: the stream message parser can optionally return after each message
+- Change: you have to care yourself for Content headers if a message's body has a reading stream filter attached
++ Added http\Env::getResponseStatusForAllCodes()
 ]]></notes>
  <contents>
   <dir name="/">
@@ -152,7 +150,12 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
     <file role="test" name="envrequestbody001.phpt"/>
     <file role="test" name="envrequestbody002.phpt"/>
     <file role="test" name="envrequestbody003.phpt"/>
+    <file role="test" name="envrequestfiles001.phpt"/>
+    <file role="test" name="envrequestfiles002.phpt"/>
+    <file role="test" name="envrequestform.phpt"/>
     <file role="test" name="envrequestheader001.phpt"/>
+    <file role="test" name="envrequestquery.phpt"/>
+    <file role="test" name="envresponsecodes.phpt"/>
     <file role="test" name="envresponseheader001.phpt"/>
     <file role="test" name="envresponseranges001.phpt"/>
     <file role="test" name="etag001.phpt"/>
@@ -167,6 +170,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
     <file role="test" name="message005.phpt"/>
     <file role="test" name="negotiate001.phpt"/>
     <file role="test" name="params001.phpt"/>
+    <file role="test" name="params002.phpt"/>
     <file role="test" name="persistenthandles001.phpt"/>
     <file role="test" name="phpunit.phpt"/>
     <file role="test" name="propertyproxy001.phpt"/>
@@ -175,15 +179,19 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
     <file role="test" name="response001.phpt"/>
     <file role="test" name="response002.phpt"/>
     <file role="test" name="response003.phpt"/>
+    <file role="test" name="serialize001.phpt"/>
     <file role="test" name="url001.phpt"/>
    </dir>
    <dir name="phpunit">
+    <file role="test" name="ClientRequestTest.php"/>
     <file role="test" name="CookieTest.php"/>
+    <file role="test" name="DataShareTest.php"/>
     <file role="test" name="EncodingTest.php"/>
     <file role="test" name="HeaderTest.php"/>
     <file role="test" name="MessageBodyTest.php"/>
     <file role="test" name="ObjectTest.php"/>
     <file role="test" name="ParamsTest.php"/>
+    <file role="test" name="PoolTest.php"/>
     <file role="test" name="QueryStringTest.php"/>
     <file role="test" name="RequestTest.php"/>
     <file role="test" name="UrlTest.php"/>

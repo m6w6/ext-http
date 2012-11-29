@@ -1,6 +1,5 @@
 Known Issues
 ============
-$Id: KnownIssues.txt 292753 2009-12-29 12:30:43Z mike $
 
 Windows:
 	If you keep getting "SSL connect error" when trying to issue 

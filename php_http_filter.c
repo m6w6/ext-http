@@ -236,7 +236,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 		}
 #if DBG_FILTER
 		fprintf(stderr, "update: chunked (-> %zu) (w: %zu, r: %zu)\n", ptr->buflen, stream->writepos, stream->readpos);
-#endif DBG_FILTER
+#endif
 		
 		nxt = ptr->next;
 		php_stream_bucket_unlink(ptr TSRMLS_CC);
@@ -258,7 +258,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 	if (PHP_HTTP_FILTER_IS_CLOSING(stream, flags)) {
 #if DBG_FILTER
 		fprintf(stderr, "finish: chunked\n");
-#endif DBG_FILTER
+#endif
 		
 		NEW_BUCKET("0" PHP_HTTP_CRLF PHP_HTTP_CRLF, lenof("0" PHP_HTTP_CRLF PHP_HTTP_CRLF));
 	}
@@ -298,7 +298,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 
 #if DBG_FILTER
 		fprintf(stderr, "bucket: b=%p p=%p p=%p\n", ptr->brigade, ptr->prev,  ptr->next);
-#endif DBG_FILTER
+#endif
 		
 		nxt = ptr->next;
 		php_stream_bucket_unlink(ptr TSRMLS_CC);
@@ -326,7 +326,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		
 #if DBG_FILTER
 		fprintf(stderr, "flush: deflate (-> %zu)\n", encoded_len);
-#endif DBG_FILTER
+#endif
 		
 		if (encoded) {
 			if (encoded_len) {
@@ -344,7 +344,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		
 #if DBG_FILTER
 		fprintf(stderr, "finish: deflate (-> %zu)\n", encoded_len);
-#endif DBG_FILTER
+#endif
 		
 		if (encoded) {
 			if (encoded_len) {
