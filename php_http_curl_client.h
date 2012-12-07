@@ -26,9 +26,11 @@ typedef struct php_http_curl_client {
 		struct curl_slist *headers;
 		struct curl_slist *resolve;
 		php_http_buffer_t cookies;
+		php_http_buffer_t ranges;
 
 		long redirects;
 		unsigned range_request:1;
+		unsigned encode_cookies:1;
 
 		struct {
 			uint count;
@@ -69,6 +71,7 @@ zend_object_value php_http_curl_client_object_new(zend_class_entry *ce TSRMLS_DC
 zend_object_value php_http_curl_client_object_new_ex(zend_class_entry *ce, php_http_client_t *r, php_http_client_object_t **ptr TSRMLS_DC);
 
 PHP_MINIT_FUNCTION(http_curl_client);
+PHP_MSHUTDOWN_FUNCTION(http_curl_client);
 
 #endif /* PHP_HTTP_HAVE_CURL */
 #endif /* PHP_HTTP_CURL_CLIENT_H */

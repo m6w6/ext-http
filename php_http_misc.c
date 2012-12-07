@@ -142,6 +142,30 @@ int php_http_select_str(const char *cmp, int argc, ...)
 
 /* ARRAYS */
 
+PHP_HTTP_API unsigned php_http_array_list(zval *hash TSRMLS_DC, unsigned argc, ...)
+{
+	HashTable *ht = HASH_OF(hash);
+	HashPosition pos;
+	unsigned argl = 0;
+	va_list argv;
+
+	va_start(argv, argc);
+	for (	zend_hash_internal_pointer_reset_ex(ht, &pos);
+			zend_hash_has_more_elements_ex(ht, &pos) && (argl < argc);
+			zend_hash_move_forward_ex(ht, &pos))
+	{
+		zval **data, ***argp = (zval ***) va_arg(argv, zval ***);
+
+		if (SUCCESS == zend_hash_get_current_data_ex(ht, (void *) &data, &pos)) {
+			*argp = data;
+			++argl;
+		}
+	}
+	va_end(argv);
+
+	return argl;
+}
+
 int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	int flags;

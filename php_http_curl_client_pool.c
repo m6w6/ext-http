@@ -556,16 +556,25 @@ PHP_MINIT_FUNCTION(http_curl_client_pool)
 	return SUCCESS;
 }
 
+#if PHP_HTTP_HAVE_EVENT
 PHP_RINIT_FUNCTION(http_curl_client_pool)
 {
-#if PHP_HTTP_HAVE_EVENT
 	if (!PHP_HTTP_G->curl.event_base && !(PHP_HTTP_G->curl.event_base = event_base_new())) {
 		return FAILURE;
 	}
-#endif
-
 	return SUCCESS;
 }
+#endif
+
+#if PHP_HTTP_HAVE_EVENT
+PHP_RSHUTDOWN_FUNCTION(http_curl_client_pool)
+{
+	if (PHP_HTTP_G->curl.event_base) {
+		event_base_free(PHP_HTTP_G->curl.event_base);
+	}
+	return SUCCESS;
+}
+#endif
 
 #endif /* PHP_HTTP_HAVE_CURL */
 

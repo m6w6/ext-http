@@ -28,6 +28,7 @@ struct php_http_curl_globals {
 };
 
 PHP_RINIT_FUNCTION(http_curl_client_pool);
+PHP_RSHUTDOWN_FUNCTION(http_curl_client_pool);
 #endif
 
 PHP_MINIT_FUNCTION(http_curl_client_pool);

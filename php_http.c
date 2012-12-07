@@ -177,6 +177,7 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	if (0
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_message)
 #if PHP_HTTP_HAVE_CURL
+	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl_client)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
 #endif
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)
@@ -205,6 +206,9 @@ PHP_RINIT_FUNCTION(http)
 PHP_RSHUTDOWN_FUNCTION(http)
 {
 	if (0
+#if PHP_HTTP_HAVE_CURL && PHP_HTTP_HAVE_EVENT
+	|| SUCCESS != PHP_RSHUTDOWN_CALL(http_curl_client_pool)
+#endif
 	|| SUCCESS != PHP_RSHUTDOWN_CALL(http_env)
 	) {
 		return FAILURE;

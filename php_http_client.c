@@ -13,6 +13,7 @@
 #include "php_http_api.h"
 
 #include <ext/spl/spl_observer.h>
+#include <ext/standard/php_array.h>
 
 PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {
@@ -352,6 +353,7 @@ STATUS php_http_client_object_handle_request(zval *zclient, zval **zreq TSRMLS_D
 	php_http_client_object_t *obj = zend_object_store_get_object(zclient TSRMLS_CC);
 	php_http_client_progress_t *progress;
 	zval *zoptions;
+	HashTable options;
 
 	/* do we have a valid request? */
 	if (*zreq) {
@@ -373,12 +375,19 @@ STATUS php_http_client_object_handle_request(zval *zclient, zval **zreq TSRMLS_D
 	/* reset transfer info */
 	zend_update_property_null(php_http_client_class_entry, zclient, ZEND_STRL("transferInfo") TSRMLS_CC);
 
+
 	/* set client options */
+	zend_hash_init(&options, 0, NULL, ZVAL_PTR_DTOR, 0);
 	zoptions = zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("options"), 0 TSRMLS_CC);
-	php_http_client_setopt(obj->client, PHP_HTTP_CLIENT_OPT_SETTINGS, Z_ARRVAL_P(zoptions));
-	/* set request options */
+	if (Z_TYPE_P(zoptions) == IS_ARRAY && zend_hash_num_elements(Z_ARRVAL_P(zoptions))) {
+		php_array_merge(&options, Z_ARRVAL_P(zoptions), 1 TSRMLS_CC);
+	}
 	zoptions = zend_read_property(php_http_client_request_get_class_entry(), *zreq, ZEND_STRL("options"), 0 TSRMLS_CC);
-	php_http_client_setopt(obj->client, PHP_HTTP_CLIENT_OPT_SETTINGS, Z_ARRVAL_P(zoptions));
+	if (Z_TYPE_P(zoptions) == IS_ARRAY && zend_hash_num_elements(Z_ARRVAL_P(zoptions))) {
+		php_array_merge(&options, Z_ARRVAL_P(zoptions), 1 TSRMLS_CC);
+	}
+	php_http_client_setopt(obj->client, PHP_HTTP_CLIENT_OPT_SETTINGS, &options);
+	zend_hash_destroy(&options);
 
 	/* set progress callback */
 	if (SUCCESS == php_http_client_getopt(obj->client, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, &progress)) {

@@ -436,6 +436,7 @@ dnl ----
 		php_http_misc.c \
 		php_http_negotiate.c \
 		php_http_object.c \
+		php_http_options.c \
 		php_http_params.c \
 		php_http_persistent_handle.c \
 		php_http_property_proxy.c \
@@ -486,6 +487,7 @@ dnl ----
 		php_http_misc.h \
 		php_http_negotiate.h \
 		php_http_object.h \
+		php_http_options.h \
 		php_http_params.h \
 		php_http_persistent_handle.h \
 		php_http_property_proxy.h \

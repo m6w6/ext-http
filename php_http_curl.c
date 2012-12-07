@@ -88,6 +88,7 @@ static struct gcry_thread_cbs php_http_gnutls_tsl = {
 };
 #endif
 
+
 PHP_MINIT_FUNCTION(http_curl)
 {
 	php_http_client_factory_driver_t driver = {

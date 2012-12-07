@@ -402,6 +402,8 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 
 /* ARRAYS */
 
+PHP_HTTP_API unsigned php_http_array_list(zval *hash TSRMLS_DC, unsigned argc, ...);
+
 typedef struct php_http_array_hashkey {
 	char *str;
 	uint len;
