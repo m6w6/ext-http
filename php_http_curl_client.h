@@ -49,7 +49,7 @@ typedef struct php_http_curl_client_storage {
 	char errorbuffer[0x100];
 } php_http_curl_client_storage_t;
 
-static inline php_http_curl_client_storage_t *get_storage(CURL *ch) {
+static inline php_http_curl_client_storage_t *php_http_curl_client_get_storage(CURL *ch) {
 	php_http_curl_client_storage_t *st = NULL;
 
 	curl_easy_getinfo(ch, CURLINFO_PRIVATE, &st);

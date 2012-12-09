@@ -19,7 +19,7 @@ static void *php_http_curl_ctor(void *opaque TSRMLS_DC)
 	void *ch;
 
 	if ((ch = curl_easy_init())) {
-		get_storage(ch);
+		php_http_curl_client_get_storage(ch);
 		return ch;
 	}
 	return NULL;
@@ -31,7 +31,7 @@ static void *php_http_curl_copy(void *opaque, void *handle TSRMLS_DC)
 
 	if ((ch = curl_easy_duphandle(handle))) {
 		curl_easy_reset(ch);
-		get_storage(ch);
+		php_http_curl_client_get_storage(ch);
 		return ch;
 	}
 	return NULL;
@@ -39,7 +39,7 @@ static void *php_http_curl_copy(void *opaque, void *handle TSRMLS_DC)
 
 static void php_http_curl_dtor(void *opaque, void *handle TSRMLS_DC)
 {
-	php_http_curl_client_storage_t *st = get_storage(handle);
+	php_http_curl_client_storage_t *st = php_http_curl_client_get_storage(handle);
 
 	curl_easy_cleanup(handle);
 
@@ -356,7 +356,7 @@ static STATUS get_info(CURL *ch, HashTable *info)
 		}
 	}
 #endif
-	add_assoc_string_ex(&array, "error", sizeof("error"), get_storage(ch)->errorbuffer, 1);
+	add_assoc_string_ex(&array, "error", sizeof("error"), php_http_curl_client_get_storage(ch)->errorbuffer, 1);
 
 	return SUCCESS;
 }
@@ -388,7 +388,7 @@ static STATUS php_http_curl_client_option_set_cookiestore(php_http_option_t *opt
 	CURL *ch = curl->handle;
 
 	if (val) {
-		php_http_curl_client_storage_t *storage = get_storage(curl->handle);
+		php_http_curl_client_storage_t *storage = php_http_curl_client_get_storage(curl->handle);
 
 		if (storage->cookiestore) {
 			pefree(storage->cookiestore, 1);
@@ -1092,7 +1092,7 @@ static STATUS php_http_curl_client_reset(php_http_client_t *h)
 	CURL *ch = curl->handle;
 	php_http_curl_client_storage_t *st;
 
-	if ((st = get_storage(ch))) {
+	if ((st = php_http_curl_client_get_storage(ch))) {
 		if (st->url) {
 			pefree(st->url, 1);
 			st->url = NULL;
@@ -1139,7 +1139,7 @@ PHP_HTTP_API STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_
 {
 	size_t body_size;
 	php_http_curl_client_t *curl = h->ctx;
-	php_http_curl_client_storage_t *storage = get_storage(curl->handle);
+	php_http_curl_client_storage_t *storage = php_http_curl_client_get_storage(curl->handle);
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	/* request url */
@@ -1231,7 +1231,7 @@ static STATUS php_http_curl_client_exec(php_http_client_t *h, php_http_message_t
 	uint tries = 0;
 	CURLcode result;
 	php_http_curl_client_t *curl = h->ctx;
-	php_http_curl_client_storage_t *storage = get_storage(curl->handle);
+	php_http_curl_client_storage_t *storage = php_http_curl_client_get_storage(curl->handle);
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (SUCCESS != php_http_curl_client_prepare(h, msg)) {
@@ -1299,7 +1299,7 @@ static STATUS php_http_curl_client_setopt(php_http_client_t *h, php_http_client_
 
 		case PHP_HTTP_CLIENT_OPT_COOKIES_ENABLE:
 			/* are cookies already enabled anyway? */
-			if (!get_storage(curl->handle)->cookiestore) {
+			if (!php_http_curl_client_get_storage(curl->handle)->cookiestore) {
 				if (CURLE_OK != curl_easy_setopt(curl->handle, CURLOPT_COOKIEFILE, "")) {
 					return FAILURE;
 				}
