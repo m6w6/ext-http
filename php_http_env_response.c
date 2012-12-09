@@ -166,7 +166,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_mod
 	ums = php_parse_date(header, NULL);
 	efree(header);
 
-	if (ums > 0 && ums <= lm) {
+	if (ums > 0 && ums >= lm) {
 		return PHP_HTTP_CACHE_HIT;
 	} else {
 		return PHP_HTTP_CACHE_MISS;
@@ -392,6 +392,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 
 			php_http_buffer_dtor(&buf);
 			zval_ptr_dtor(&zoption_copy);
+			zval_ptr_dtor(&zoption);
 		}
 
 		if (ret != SUCCESS) {
@@ -513,7 +514,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
 {
 	STATUS ret = SUCCESS;
-	zval *zbody;
+	zval *zbody, *zoption;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	if (r->done) {
@@ -525,6 +526,19 @@ static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
 	&&		instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_get_class_entry() TSRMLS_CC)
 	) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(zbody TSRMLS_CC);
+
+		if ((zoption = get_option(r->options, ZEND_STRL("throttleDelay") TSRMLS_CC))) {
+			if (Z_TYPE_P(zoption) == IS_DOUBLE) {
+				r->throttle.delay =  Z_DVAL_P(zoption);
+			}
+			zval_ptr_dtor(&zoption);
+		}
+		if ((zoption = get_option(r->options, ZEND_STRL("throttleChunk") TSRMLS_CC))) {
+			if (Z_TYPE_P(zoption) == IS_LONG) {
+				r->throttle.chunk = Z_LVAL_P(zoption);
+			}
+			zval_ptr_dtor(&zoption);
+		}
 
 		if (r->range.status == PHP_HTTP_RANGE_OK) {
 			if (zend_hash_num_elements(&r->range.values) == 1) {
@@ -869,10 +883,8 @@ PHP_METHOD(HttpEnvResponse, setThrottleRate)
 	double delay = 1;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|d", &chunk_size, &delay)) {
-		long chunk_size_long = (long) chunk_size;
-
 		set_option(getThis(), ZEND_STRL("throttleDelay"), IS_DOUBLE, &delay, 0 TSRMLS_CC);
-		set_option(getThis(), ZEND_STRL("throttleChunk"), IS_LONG, &chunk_size_long, 0 TSRMLS_CC);
+		set_option(getThis(), ZEND_STRL("throttleChunk"), IS_LONG, &chunk_size, 0 TSRMLS_CC);
 		RETURN_TRUE;
 	}
 	RETURN_FALSE;
