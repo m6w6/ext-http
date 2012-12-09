@@ -136,13 +136,11 @@ static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long 
 	} else if _KEY_IS("httpOnly") {
 		list->flags |= PHP_HTTP_COOKIE_HTTPONLY;
 	} else {
-		char buf[0x20];
-
-		php_http_array_hashkey_stringify(key);
 		/* check for extra */
 		if (allowed_extras) {
 			char **ae = allowed_extras;
 
+			php_http_array_hashkey_stringify(key);
 			for (; *ae; ++ae) {
 				if (!strncasecmp(key->str, *ae, key->len)) {
 					if (key->type == HASH_KEY_IS_LONG) {
@@ -150,11 +148,12 @@ static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long 
 					} else {
 						zend_hash_update(&list->extras, key->str, key->len, (void *) &arg, sizeof(zval *), NULL);
 					}
+					php_http_array_hashkey_stringfree(key);
 					return;
 				}
 			}
+			php_http_array_hashkey_stringfree(key);
 		}
-		php_http_array_hashkey_stringfree(key);
 
 		/* cookie */
 		if (key->type == HASH_KEY_IS_LONG) {
@@ -551,6 +550,15 @@ PHP_METHOD(HttpCookie, __construct)
 							zval_ptr_dtor(&cpy);
 							break;
 						}
+					}
+
+					if (ae) {
+						char **ae_ptr;
+
+						for (ae_ptr = ae; *ae_ptr; ++ae_ptr) {
+							efree(*ae_ptr);
+						}
+						efree(ae);
 					}
 				} end_error_handling();
 			}
