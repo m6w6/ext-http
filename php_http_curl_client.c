@@ -10,9 +10,6 @@
     +--------------------------------------------------------------------+
 */
 
-#include <php/Zend/zend.h>
-#include <php/Zend/zend_API.h>
-
 #include "php_http_api.h"
 
 /* resource_factory ops */
