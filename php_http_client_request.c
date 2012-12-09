@@ -145,7 +145,7 @@ PHP_METHOD(HttpClientRequest, getContentType)
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		zval *zct = php_http_message_header(obj->message, ZEND_STRL("Content-Type"), 1);
 
-		RETURN_ZVAL(zct, 0, 0);
+		RETURN_ZVAL(zct, 0, 1);
 	}
 	RETURN_FALSE;
 }
