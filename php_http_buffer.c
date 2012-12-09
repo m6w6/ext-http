@@ -369,7 +369,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_chunk_buffer(php_http_buffer_t **s, c
 		return chunk_size;
 	}
 	
-	if (storage->used >= (chunk_size = storage->size >> 1)) {
+	if (storage->used >= chunk_size) {
 		*chunk = estrndup(storage->data, chunk_size);
 		php_http_buffer_cut(storage, 0, chunk_size);
 		return chunk_size;
@@ -382,7 +382,7 @@ PHP_HTTP_BUFFER_API void php_http_buffer_chunked_output(php_http_buffer_t **s, c
 {
 	char *chunk = NULL;
 	size_t got = 0;
-	
+
 	while ((got = php_http_buffer_chunk_buffer(s, data, data_len, &chunk, chunk_len))) {
 		passout(opaque, chunk, got TSRMLS_CC);
 		if (!chunk_len) {
