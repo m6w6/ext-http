@@ -30,10 +30,9 @@ PHP_METHOD(HttpClientResponse, getCookies)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|la!", &flags, &allowed_extras_array)) {
 		int i = 0;
-		php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 		char **allowed_extras = NULL;
-		zval **header = NULL, **entry = NULL;
-		HashPosition pos, pos1, pos2;
+		zval *header = NULL, **entry = NULL;
+		HashPosition pos;
 		php_http_message_object_t *msg = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 
@@ -48,27 +47,15 @@ PHP_METHOD(HttpClientResponse, getCookies)
 			}
 		}
 
-		FOREACH_HASH_KEYVAL(pos1, &msg->message->hdrs, key, header) {
-			if (key.type == HASH_KEY_IS_STRING && !strcasecmp(key.str, "Set-Cookie")) {
-				php_http_cookie_list_t *list;
+		if ((header = php_http_message_header(msg->message, ZEND_STRL("Set-Cookie"), 0))) {
+			php_http_cookie_list_t *list;
 
-				if (Z_TYPE_PP(header) == IS_ARRAY) {
-					zval **single_header;
+			if (Z_TYPE_P(header) == IS_ARRAY) {
+				zval **single_header;
 
-					FOREACH_VAL(pos2, *header, single_header) {
-						zval *data = php_http_ztyp(IS_STRING, *single_header);
+				FOREACH_VAL(pos, header, single_header) {
+					zval *data = php_http_ztyp(IS_STRING, *single_header);
 
-						if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), Z_STRLEN_P(data), flags, allowed_extras TSRMLS_CC))) {
-							zval *cookie;
-
-							MAKE_STD_ZVAL(cookie);
-							ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list, NULL TSRMLS_CC), 0);
-							add_next_index_zval(return_value, cookie);
-						}
-						zval_ptr_dtor(&data);
-					}
-				} else {
-					zval *data = php_http_ztyp(IS_STRING, *header);
 					if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), Z_STRLEN_P(data), flags, allowed_extras TSRMLS_CC))) {
 						zval *cookie;
 
@@ -78,7 +65,18 @@ PHP_METHOD(HttpClientResponse, getCookies)
 					}
 					zval_ptr_dtor(&data);
 				}
+			} else {
+				zval *data = php_http_ztyp(IS_STRING, header);
+				if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), Z_STRLEN_P(data), flags, allowed_extras TSRMLS_CC))) {
+					zval *cookie;
+
+					MAKE_STD_ZVAL(cookie);
+					ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list, NULL TSRMLS_CC), 0);
+					add_next_index_zval(return_value, cookie);
+				}
+				zval_ptr_dtor(&data);
 			}
+			zval_ptr_dtor(&header);
 		}
 
 		if (allowed_extras) {
