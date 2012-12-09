@@ -93,7 +93,27 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $this->assertNotContains("Cookie", (string) $this->r->getRequestMessage());
         $this->r->send(null);
         $this->assertContains("Cookie", (string) $this->r->getRequestMessage());
-        $this->assertCount(2, $this->r->getResponseMessage()->getCookies());
+        $cookies = $this->r->getResponseMessage()->getCookies(0, array("extra"));
+        $this->assertCount(2, $cookies);
+        foreach ($cookies as $cookie) {
+        	if ($cookie->getCookie("perm")) {
+        		$this->assertTrue(0 < $cookie->getExpires());
+        	}
+        	if ($cookie->getCookie("temp")) {
+        		$this->assertEquals(-1, $cookie->getExpires());
+        	}
+        }
+        $this->r->send(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/.cookie1.php"));
+        $cookies = $this->r->getResponseMessage()->getCookies(0, array("bar"));
+        $this->assertCount(1, $cookies);
+        $cookies = $cookies[0];
+        $this->assertEquals(array("bar"=>"foo"), $cookies->getExtras());
+        $this->assertEquals(array("foo"=>"bar"), $cookies->getCookies());
+        $cookies = $this->r->getResponseMessage()->getCookies(0, array("foo"));
+        $this->assertCount(1, $cookies);
+        $cookies = $cookies[0];
+        $this->assertEquals(array("foo"=>"bar","bar"=>"foo"), $cookies->getCookies());
+        $this->assertEquals(array(), $cookies->getExtras());
     }
 
     function testResetCookies() {

@@ -2,6 +2,7 @@
 unit tests
 --SKIPIF--
 <?php
+include "skipif.inc";
 if (!@include_once "PHPUnit/Autoload.php") die("skip need PHPUnit in include_path");
 ?>
 --FILE--

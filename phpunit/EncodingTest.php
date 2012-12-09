@@ -19,10 +19,11 @@ class EncodingStreamTest extends PHPUnit_Framework_TestCase {
     }
 
     function testChunkNotEncodedNotice() {
+	    error_reporting(E_ALL);
         $this->setExpectedException("PHPUnit_Framework_Error_Notice", 
             "Data does not seem to be chunked encoded");
         $s = "this is apparently not encodded\n";
-        http\Encoding\Stream\Dechunk::decode($s);
+        $this->assertEquals($s, http\Encoding\Stream\Dechunk::decode($s));
     }
 
     function testChunkNotEncodedFail() {

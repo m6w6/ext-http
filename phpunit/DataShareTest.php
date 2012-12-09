@@ -1,5 +1,11 @@
 <?php
 
+class UserClient extends http\Client\AbstractClient {
+	function send($request = null) {
+	}
+}
+    	
+
 class DataShareTest extends PHPUnit_Framework_TestCase
 {
     function testStandard() {
@@ -53,6 +59,17 @@ class DataShareTest extends PHPUnit_Framework_TestCase
     	
     	$share->detach($client);
     	$share->reset();
+    }
+    
+    function testCurlIncompatible() {
+    	$client = new UserClient;
+    	$client->setRequest(new http\Client\Request("GET", "https://twitter.com"));
+
+    	$share = new http\Curl\Client\DataShare;
+		$this->setExpectedException("PHPUnit_Framework_Error_Warning");
+    	$share->attach($client);
+		$this->setExpectedException("PHPUnit_Framework_Error_Warning");
+    	$share->detach($client);
     }
 }
 
