@@ -286,6 +286,7 @@ PHP_HTTP_API STATUS php_http_message_body_add_form_file(php_http_message_body_t 
 
 	efree(safe_name);
 	efree(path_dup);
+	efree(bname);
 
 	return SUCCESS;
 }
