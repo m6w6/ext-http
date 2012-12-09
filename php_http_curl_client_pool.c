@@ -62,7 +62,7 @@ static void php_http_curl_client_pool_responsehandler(php_http_client_pool_t *po
 			zval **request;
 
 			if (CURLE_OK != msg->data.result) {
-				php_http_curl_client_storage_t *st = get_storage(msg->easy_handle);
+				php_http_curl_client_storage_t *st = php_http_curl_client_get_storage(msg->easy_handle);
 				php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "%s; %s (%s)", curl_easy_strerror(msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
 			}
 
