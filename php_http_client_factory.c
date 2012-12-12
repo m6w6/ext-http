@@ -228,6 +228,10 @@ PHP_METHOD(HttpClientFactory, createPool)
 					php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_FACTORY, "pools are not supported by this driver");
 				}
 			} end_error_handling();
+			
+			if (argv) {
+				efree(argv);
+			}
 		}
 	} end_error_handling();
 }
@@ -235,7 +239,7 @@ PHP_METHOD(HttpClientFactory, createPool)
 PHP_METHOD(HttpClientFactory, createDataShare)
 {
 	int argc = 0;
-	zval ***argv;
+	zval ***argv = NULL;
 
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "*", &argv, &argc)) {
@@ -289,6 +293,9 @@ PHP_METHOD(HttpClientFactory, createDataShare)
 					php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_FACTORY, "datashares are not supported by this driver");
 				}
 			} end_error_handling();
+			if (argv) {
+				efree(argv);
+			}
 		}
 	} end_error_handling();
 }
