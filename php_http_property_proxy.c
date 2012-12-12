@@ -261,7 +261,7 @@ PHP_METHOD(HttpPropertyProxy, __construct)
 
 PHP_MINIT_FUNCTION(http_property_proxy)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Object, PropertyProxy, http_property_proxy, NULL, ZEND_ACC_FINAL);
+	PHP_HTTP_REGISTER_CLASS(http\\Object, PropertyProxy, http_property_proxy, NULL, ZEND_ACC_FINAL_CLASS);
 	php_http_property_proxy_class_entry->create_object = php_http_property_proxy_object_new;
 	memcpy(&php_http_property_proxy_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_property_proxy_object_handlers.set = php_http_property_proxy_object_set;
