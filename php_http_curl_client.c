@@ -526,7 +526,7 @@ static STATUS php_http_curl_client_option_set_range(php_http_option_t *opt, zval
 
 		FOREACH_VAL(pos, val, rr) {
 			if (Z_TYPE_PP(rr) == IS_ARRAY) {
-				if (2 == php_http_array_list(*rr TSRMLS_CC, 2, &rb, &re)) {
+				if (2 == php_http_array_list(Z_ARRVAL_PP(rr) TSRMLS_CC, 2, &rb, &re)) {
 					if (	((Z_TYPE_PP(rb) == IS_LONG) || ((Z_TYPE_PP(rb) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(rb), Z_STRLEN_PP(rb), NULL, NULL, 1))) &&
 							((Z_TYPE_PP(re) == IS_LONG) || ((Z_TYPE_PP(re) == IS_STRING) && is_numeric_string(Z_STRVAL_PP(re), Z_STRLEN_PP(re), NULL, NULL, 1)))) {
 						zval *rbl = php_http_ztyp(IS_LONG, *rb);
@@ -614,7 +614,7 @@ static STATUS php_http_curl_client_option_set_portrange(php_http_option_t *opt, 
 	if (val && Z_TYPE_P(val) != IS_NULL) {
 		zval **z_port_start, *zps_copy = NULL, **z_port_end, *zpe_copy = NULL;
 
-		switch (php_http_array_list(val TSRMLS_CC, 2, &z_port_start, &z_port_end)) {
+		switch (php_http_array_list(Z_ARRVAL_P(val) TSRMLS_CC, 2, &z_port_start, &z_port_end)) {
 		case 2:
 			zps_copy = php_http_ztyp(IS_LONG, *z_port_start);
 			zpe_copy = php_http_ztyp(IS_LONG, *z_port_end);

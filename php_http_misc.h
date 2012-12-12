@@ -326,6 +326,7 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 		INIT_NS_CLASS_ENTRY(ce, #ns, #classname, php_ ##name## _method_entry); \
 		php_ ##name## _class_entry = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
 		php_ ##name## _class_entry->ce_flags |= flags;  \
+		php_http_register_class(php_ ##name## _get_class_entry); \
 	}
 
 #define PHP_HTTP_REGISTER_INTERFACE(ns, ifacename, name, flags) \
@@ -335,6 +336,7 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 		INIT_NS_CLASS_ENTRY(ce, #ns, #ifacename, php_ ##name## _method_entry); \
 		php_ ##name## _class_entry = zend_register_internal_interface(&ce TSRMLS_CC); \
 		php_ ##name## _class_entry->ce_flags |= flags; \
+		php_http_register_class(php_ ##name## _get_class_entry); \
 	}
 
 #define PHP_HTTP_REGISTER_EXCEPTION(classname, cename, parent) \
@@ -401,8 +403,7 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 #endif /* PHP_HTTP_HAVE_CURL */
 
 /* ARRAYS */
-
-PHP_HTTP_API unsigned php_http_array_list(zval *hash TSRMLS_DC, unsigned argc, ...);
+PHP_HTTP_API unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...);
 
 typedef struct php_http_array_hashkey {
 	char *str;
@@ -426,6 +427,9 @@ static inline void php_http_array_hashkey_stringfree(php_http_array_hashkey_t *k
 		STR_FREE(key->str);
 	}
 }
+
+typedef void (*php_http_array_visitor_t)(void *visitor_arg, php_http_array_hashkey_t *key, zval **val TSRMLS_DC);
+PHP_HTTP_API void php_http_array_visit(HashTable *ht, php_http_array_visitor_t visitor_func, void *visitor_arg TSRMLS_DC);
 
 #define FOREACH_VAL(pos, array, val) FOREACH_HASH_VAL(pos, HASH_OF(array), val)
 #define FOREACH_HASH_VAL(pos, hash, val) \

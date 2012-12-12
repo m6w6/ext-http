@@ -142,16 +142,15 @@ int php_http_select_str(const char *cmp, int argc, ...)
 
 /* ARRAYS */
 
-PHP_HTTP_API unsigned php_http_array_list(zval *hash TSRMLS_DC, unsigned argc, ...)
+PHP_HTTP_API unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...)
 {
-	HashTable *ht = HASH_OF(hash);
 	HashPosition pos;
 	unsigned argl = 0;
 	va_list argv;
 
 	va_start(argv, argc);
 	for (	zend_hash_internal_pointer_reset_ex(ht, &pos);
-			zend_hash_has_more_elements_ex(ht, &pos) && (argl < argc);
+			SUCCESS == zend_hash_has_more_elements_ex(ht, &pos) && (argl < argc);
 			zend_hash_move_forward_ex(ht, &pos))
 	{
 		zval **data, ***argp = (zval ***) va_arg(argv, zval ***);
@@ -229,12 +228,6 @@ int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list
 }
 
 /* PASS CALLBACK */
-
-PHP_HTTP_API size_t php_http_pass_wrapper(php_http_pass_callback_arg_t *cb, const char *str, size_t len)
-{
-	TSRMLS_FETCH();
-	return cb->cb_zts(cb->cb_arg, str, len TSRMLS_CC);
-}
 
 PHP_HTTP_API size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len)
 {
