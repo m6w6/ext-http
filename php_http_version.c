@@ -47,15 +47,6 @@ PHP_HTTP_API void php_http_version_to_string(php_http_version_t *v, char **str, 
 	*len = spprintf(str, 0, "%s%u.%u%s", pre ? pre : "", v->major, v->minor, post ? post : "");
 }
 
-PHP_HTTP_API void php_http_version_to_struct(php_http_version_t *v, HashTable *strct TSRMLS_DC)
-{
-	zval tmp;
-
-	INIT_PZVAL_ARRAY(&tmp, strct);
-	add_assoc_long(&tmp, "major", v->major);
-	add_assoc_long(&tmp, "minor", v->minor);
-}
-
 PHP_HTTP_API void php_http_version_dtor(php_http_version_t *v)
 {
 	(void) v;
