@@ -173,7 +173,7 @@ PHP_METHOD(HttpObject, triggerError)
 
 PHP_MINIT_FUNCTION(http_object)
 {
-	PHP_HTTP_REGISTER_CLASS(http, Object, http_object, NULL, ZEND_ACC_ABSTRACT);
+	PHP_HTTP_REGISTER_CLASS(http, Object, http_object, NULL, ZEND_ACC_EXPLICIT_ABSTRACT_CLASS);
 	php_http_object_get_class_entry()->create_object = php_http_object_new;
 
 	zend_declare_property_null(php_http_object_get_class_entry(), ZEND_STRL("defaultErrorHandling"), (ZEND_ACC_STATIC|ZEND_ACC_PROTECTED) TSRMLS_CC);
