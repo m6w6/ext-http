@@ -395,7 +395,6 @@ STATUS php_http_client_object_handle_request(zval *zclient, zval **zreq TSRMLS_D
 			php_http_client_progress_callback_t *callback = emalloc(sizeof(*callback));
 
 			callback->type = PHP_HTTP_CLIENT_PROGRESS_CALLBACK_USER;
-			callback->pass_state = 0;
 			MAKE_STD_ZVAL(callback->func.user);
 			array_init(callback->func.user);
 			Z_ADDREF_P(zclient);
@@ -984,7 +983,7 @@ PHP_METHOD(HttpClient, send)
 
 PHP_MINIT_FUNCTION(http_client)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Client, AbstractClient, http_client, php_http_object_get_class_entry(), ZEND_ACC_ABSTRACT);
+	PHP_HTTP_REGISTER_CLASS(http\\Client, AbstractClient, http_client, php_http_object_get_class_entry(), ZEND_ACC_EXPLICIT_ABSTRACT_CLASS);
 	php_http_client_class_entry->create_object = php_http_client_object_new;
 	memcpy(&php_http_client_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_object_handlers.clone_obj = php_http_client_object_clone;

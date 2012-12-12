@@ -38,7 +38,6 @@ typedef struct php_http_client_progress_callback {
 		void (*intern)(php_http_client_progress_state_t* TSRMLS_DC);
 	} func;
 	unsigned type:1;
-	unsigned pass_state:1;
 } php_http_client_progress_callback_t;
 
 typedef struct php_http_client_progress {
@@ -69,32 +68,12 @@ static inline void php_http_client_progress_notify(php_http_client_progress_t *p
 		with_error_handling(EH_NORMAL, NULL) {
 			switch (progress->callback->type) {
 				case PHP_HTTP_CLIENT_PROGRESS_CALLBACK_USER:
-					if (progress->callback->pass_state) {
-						zval *param;
-
-						MAKE_STD_ZVAL(param);
-						array_init(param);
-						add_assoc_bool(param, "started", progress->state.started);
-						add_assoc_bool(param, "finished", progress->state.finished);
-						add_assoc_string(param, "info", estrdup(progress->state.info), 0);
-						add_assoc_double(param, "dltotal", progress->state.dl.total);
-						add_assoc_double(param, "dlnow", progress->state.dl.now);
-						add_assoc_double(param, "ultotal", progress->state.ul.total);
-						add_assoc_double(param, "ulnow", progress->state.ul.now);
-
-						progress->in_cb = 1;
-						call_user_function(EG(function_table), NULL, progress->callback->func.user, &retval, 1, &param TSRMLS_CC);
-						progress->in_cb = 0;
-
-						zval_ptr_dtor(&param);
-					} else {
-						progress->in_cb = 1;
-						call_user_function(EG(function_table), NULL, progress->callback->func.user, &retval, 0, NULL TSRMLS_CC);
-						progress->in_cb = 0;
-					}
+					progress->in_cb = 1;
+					call_user_function(EG(function_table), NULL, progress->callback->func.user, &retval, 0, NULL TSRMLS_CC);
+					progress->in_cb = 0;
 					break;
 				case PHP_HTTP_CLIENT_PROGRESS_CALLBACK_INTERN:
-					progress->callback->func.intern(progress->callback->pass_state ? &progress->state : NULL TSRMLS_CC);
+					progress->callback->func.intern(&progress->state TSRMLS_CC);
 					break;
 				default:
 					break;
