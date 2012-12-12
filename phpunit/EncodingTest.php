@@ -62,9 +62,12 @@ class EncodingStreamTest extends PHPUnit_Framework_TestCase {
                 $data .= $dech->update(sprintf("%lx\r\n%s\r\n", strlen($line), $line));
             } else {
                 $data .= $dech->update(sprintf("%lx\r\n", strlen($line)));
+                $data .= $dech->flush();
                 $data .= $dech->update($line);
+                $data .= $dech->flush();
                 $data .= $dech->update("\r\n");
             }
+            $dech->flush();
             $this->assertFalse($dech->done());
         }
         $data .= $dech->update("0\r\n");
@@ -141,11 +144,14 @@ class EncodingStreamTest extends PHPUnit_Framework_TestCase {
         $file = file(__FILE__);
         $data = "";
         foreach ($file as $line) {
+        	$data .= $infl->flush();
             if (strlen($temp = $defl->update($line))) {
                 $data .= $infl->update($temp);
+	        	$data .= $infl->flush();
             }
             if (strlen($temp = $defl->flush())) {
                 $data .= $infl->update($temp);
+	        	$data .= $infl->flush();
             }
             $this->assertTrue($defl->done());
         }

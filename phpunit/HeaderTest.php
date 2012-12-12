@@ -2,16 +2,24 @@
 
 class HeaderTest extends PHPUnit_Framework_TestCase {
     function setUp() {
-        $this->h = new http\Header("foo", "bar");
+        
     }
     function testString() {
-        $this->assertEquals("Foo: bar", (string) $this->h);
+    	$h = new http\Header("foo", "bar");
+        $this->assertEquals("Foo: bar", (string) $h);
     }
 
     function testSerialize() {
-        $this->assertEquals("Foo: bar", (string) unserialize(serialize($this->h)));
+		$h = new http\Header("foo", "bar");
+		$this->assertEquals("Foo: bar", (string) unserialize(serialize($h)));
     }
 
+	function testNumeric() {
+		$h = new http\Header(123, 456);
+        $this->assertEquals("123: 456", (string) $h);
+		$this->assertEquals("123: 456", (string) unserialize(serialize($h)));
+	}
+	
     function testMatch() {
         $ae = new http\Header("Accept-encoding", "gzip, deflate");
         $this->assertTrue($ae->match("gzip", http\Header::MATCH_WORD));
@@ -23,5 +31,30 @@ class HeaderTest extends PHPUnit_Framework_TestCase {
 
         $this->assertFalse($ae->match("zip", http\Header::MATCH_WORD));
         $this->assertFalse($ae->match("gzip", http\Header::MATCH_FULL));
+    }
+    
+    function testNegotiate() {
+    	$a = new http\Header("Accept", "text/html, text/plain;q=0.5, */*;q=0");
+    	$this->assertEquals("text/html", $a->negotiate(array("text/plain","text/html")));
+    	$this->assertEquals("text/html", $a->negotiate(array("text/plain","text/html"), $rs));
+    	$this->assertEquals(array("text/html"=>0.99, "text/plain"=>0.5), $rs);
+    	$this->assertEquals("text/plain", $a->negotiate(array("foo/bar", "text/plain"), $rs));
+    	$this->assertEquals(array("text/plain"=>0.5), $rs);
+    	$this->assertEquals("foo/bar", $a->negotiate(array("foo/bar"), $rs));
+    	$this->assertEquals(array(), $rs);
+    }
+    
+    function testParse() {
+    	$header = "Foo: bar\nBar: foo\n";
+    	$this->assertEquals(array("Foo"=>"bar","Bar"=>"foo"), http\Header::parse($header)); 
+    	$header = http\Header::parse($header, "http\\Header");
+    	$this->assertCount(2, $header);
+    	$this->assertContainsOnlyInstancesOf("http\\Header", $header); 
+    }
+    
+    function testParseError() {
+    	$header = "wass\nup";
+    	$this->setExpectedException("PHPUnit_Framework_Error_Warning", "Could not parse headers");
+    	$this->assertFalse(http\Header::parse($header));
     }
 }

@@ -12,7 +12,7 @@ a=b
 $r = new http\Env\Response;
 $r->setContentType("text/plain");
 $r->setContentDisposition(
-    array("attachment" => array("filename" => basename(__FILE__)))
+    array("attachment" => array(array("filename" => basename(__FILE__))))
 );
 $r->setBody(new http\Message\Body(fopen(__FILE__, "rb")));
 $r->send();
