@@ -118,6 +118,8 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="src" name="php_http_negotiate.h"/>
    <file role="src" name="php_http_object.c"/>
    <file role="src" name="php_http_object.h"/>
+   <file role="src" name="php_http_options.c"/>
+   <file role="src" name="php_http_options.h"/>
    <file role="src" name="php_http_params.c"/>
    <file role="src" name="php_http_params.h"/>
    <file role="src" name="php_http_persistent_handle.c"/>
