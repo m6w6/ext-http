@@ -349,11 +349,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_en
 
 	php_http_url_argsep(&arg_sep_str, &arg_sep_len TSRMLS_CC);
 
-	if (pre_encoded_len && pre_encoded_str) {
-		php_http_buffer_append(qstr, pre_encoded_str, pre_encoded_len);
-	}
-
-	if (SUCCESS != php_http_url_encode_hash_ex(hash, qstr, arg_sep_str, arg_sep_len, ZEND_STRL("="), NULL, 0 TSRMLS_CC)) {
+	if (SUCCESS != php_http_url_encode_hash_ex(hash, qstr, arg_sep_str, arg_sep_len, "=", 1, pre_encoded_str, pre_encoded_len TSRMLS_CC)) {
 		php_http_buffer_free(&qstr);
 		return FAILURE;
 	}
@@ -364,91 +360,16 @@ PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_en
 	return SUCCESS;
 }
 
-PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *ht, php_http_buffer_t *str, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *prefix_str, size_t prefix_len TSRMLS_DC)
+PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *pre_encoded_str, size_t pre_encoded_len TSRMLS_DC)
 {
-	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
-	zval **data = NULL;
-	HashPosition pos;
+	if (pre_encoded_len && pre_encoded_str) {
+		php_http_buffer_append(qstr, pre_encoded_str, pre_encoded_len);
+	}
 
-	if (!ht || !str) {
-		php_http_error(HE_WARNING, PHP_HTTP_E_INVALID_PARAM, "Invalid parameters");
+	if (!php_http_params_to_string(qstr, hash, arg_sep_str, arg_sep_len, "", 0, val_sep_str, val_sep_len, PHP_HTTP_PARAMS_QUERY TSRMLS_CC)) {
 		return FAILURE;
 	}
-	if (ht->nApplyCount > 0) {
-		return SUCCESS;
-	}
-	
-	FOREACH_HASH_KEYVAL(pos, ht, key, data) {
-		char *encoded_key;
-		int encoded_len;
-		php_http_buffer_t new_prefix;
-		
-		if (!data || !*data) {
-			php_http_buffer_dtor(str);
-			return FAILURE;
-		}
-		
-		if (key.type == HASH_KEY_IS_STRING) {
-			if (!*key.str) {
-				/* only public properties */
-				continue;
-			}
-			if (key.len && key.str[key.len - 1] == '\0') {
-				--key.len;
-			}
-			encoded_key = php_url_encode(key.str, key.len, &encoded_len);
-		} else {
-			encoded_len = spprintf(&encoded_key, 0, "%ld", key.num);
-		}
-		
-		{
-			php_http_buffer_init(&new_prefix);
-			if (prefix_str && prefix_len) {
-				php_http_buffer_append(&new_prefix, prefix_str, prefix_len);
-				php_http_buffer_appends(&new_prefix, "%5B");
-			}
-			
-			php_http_buffer_append(&new_prefix, encoded_key, encoded_len);
-			efree(encoded_key);
-			
-			if (prefix_str && prefix_len) {
-				php_http_buffer_appends(&new_prefix, "%5D");
-			}
-			php_http_buffer_fix(&new_prefix);
-		}
-		
-		if (Z_TYPE_PP(data) == IS_ARRAY || Z_TYPE_PP(data) == IS_OBJECT) {
-			STATUS status;
-			++ht->nApplyCount;
-			status = php_http_url_encode_hash_ex(HASH_OF(*data), str, arg_sep_str, arg_sep_len, val_sep_str, val_sep_len, PHP_HTTP_BUFFER_VAL(&new_prefix), PHP_HTTP_BUFFER_LEN(&new_prefix) TSRMLS_CC);
-			--ht->nApplyCount;
-			if (SUCCESS != status) {
-				php_http_buffer_dtor(&new_prefix);
-				php_http_buffer_dtor(str);
-				return FAILURE;
-			}
-		} else {
-			zval *val = php_http_ztyp(IS_STRING, *data);
-			
-			if (PHP_HTTP_BUFFER_LEN(str)) {
-				php_http_buffer_append(str, arg_sep_str, arg_sep_len);
-			}
-			php_http_buffer_append(str, PHP_HTTP_BUFFER_VAL(&new_prefix), PHP_HTTP_BUFFER_LEN(&new_prefix));
-			php_http_buffer_append(str, val_sep_str, val_sep_len);
-			
-			if (Z_STRLEN_P(val) && Z_STRVAL_P(val)) {
-				char *encoded_val;
-				int encoded_len;
-				
-				encoded_val = php_url_encode(Z_STRVAL_P(val), Z_STRLEN_P(val), &encoded_len);
-				php_http_buffer_append(str, encoded_val, encoded_len);
-				efree(encoded_val);
-			}
-			
-			zval_ptr_dtor(&val);
-		}
-		php_http_buffer_dtor(&new_prefix);
-	}
+
 	return SUCCESS;
 }
 
