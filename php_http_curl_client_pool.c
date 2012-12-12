@@ -571,6 +571,7 @@ PHP_RSHUTDOWN_FUNCTION(http_curl_client_pool)
 {
 	if (PHP_HTTP_G->curl.event_base) {
 		event_base_free(PHP_HTTP_G->curl.event_base);
+		PHP_HTTP_G->curl.event_base = NULL;
 	}
 	return SUCCESS;
 }
