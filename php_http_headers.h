@@ -23,6 +23,8 @@ PHP_METHOD(HttpHeader, __construct);
 PHP_METHOD(HttpHeader, serialize);
 PHP_METHOD(HttpHeader, unserialize);
 PHP_METHOD(HttpHeader, match);
+PHP_METHOD(HttpHeader, negotiate);
+PHP_METHOD(HttpHeader, parse);
 
 PHP_MINIT_FUNCTION(http_header);
 
