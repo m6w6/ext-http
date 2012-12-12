@@ -351,16 +351,15 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 		if (zend_hash_num_elements(&r->range.values) == 1) {
 			zval **range, **begin, **end;
 
-			if (SUCCESS != zend_hash_index_find(&r->range.values, 0, (void *) &range)
-			||	SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void *) &begin)
-			||	SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void *) &end)
+			if (	1 == php_http_array_list(&r->range.values TSRMLS_CC, 1, &range)
+				&&	2 == php_http_array_list(Z_ARRVAL_PP(range) TSRMLS_CC, 2, &begin, &end)
 			) {
+				ret = php_http_env_set_response_header_format(206, 1 TSRMLS_CC, "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_PP(begin), Z_LVAL_PP(end), r->content.length);
+			} else {
 				/* this should never happen */
 				zend_hash_destroy(&r->range.values);
 				php_http_env_set_response_code(500 TSRMLS_CC);
 				ret = FAILURE;
-			} else {
-				ret = php_http_env_set_response_header_format(206, 1 TSRMLS_CC, "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_PP(begin), Z_LVAL_PP(end), r->content.length);
 			}
 		} else {
 			php_http_boundary(r->range.boundary, sizeof(r->range.boundary) TSRMLS_CC);
@@ -545,21 +544,22 @@ static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
 				/* single range */
 				zval **range, **begin, **end;
 
-				if (SUCCESS != zend_hash_index_find(&r->range.values, 0, (void *) &range)
-				||	SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 0, (void *) &begin)
-				||	SUCCESS != zend_hash_index_find(Z_ARRVAL_PP(range), 1, (void *) &end)
+				if (	1 == php_http_array_list(&r->range.values TSRMLS_CC, 1, &range)
+					&&	2 == php_http_array_list(Z_ARRVAL_PP(range) TSRMLS_CC, 2, &begin, &end)
 				) {
-					/* this should never happen */
-					zend_hash_destroy(&r->range.values);
-					php_http_env_set_response_code(500 TSRMLS_CC);
-					ret = FAILURE;
-				} else {
 					/* send chunk */
 					php_http_message_body_to_callback(obj->body, (php_http_pass_callback_t) php_http_env_response_send_data, r, Z_LVAL_PP(begin), Z_LVAL_PP(end) - Z_LVAL_PP(begin) + 1);
 					php_http_env_response_send_done(r);
 					zend_hash_destroy(&r->range.values);
 					ret = SUCCESS;
+				} else {
+					fprintf(stderr, "wut?");
+					/* this should never happen */
+					zend_hash_destroy(&r->range.values);
+					php_http_env_set_response_code(500 TSRMLS_CC);
+					ret = FAILURE;
 				}
+
 			} else {
 				/* send multipart/byte-ranges message */
 				HashPosition pos;
@@ -568,12 +568,7 @@ static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
 				FOREACH_HASH_VAL(pos, &r->range.values, chunk) {
 					zval **begin, **end;
 
-					if (IS_ARRAY == Z_TYPE_PP(chunk)
-					&&	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(chunk), 0, (void *) &begin)
-					&&	IS_LONG == Z_TYPE_PP(begin)
-					&&	SUCCESS == zend_hash_index_find(Z_ARRVAL_PP(chunk), 1, (void *) &end)
-					&&	IS_LONG == Z_TYPE_PP(end)
-					) {
+					if (2 == php_http_array_list(Z_ARRVAL_PP(chunk) TSRMLS_CC, 2, &begin, &end)) {
 						php_http_buffer_appendf(r->buffer,
 								PHP_HTTP_CRLF
 								"--%s" PHP_HTTP_CRLF
