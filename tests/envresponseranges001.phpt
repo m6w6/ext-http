@@ -2,8 +2,6 @@
 ranges
 --SKIPIF--
 <? include "skipif.php";
---XFAIL--
-line endings
 --GET--
 a=b
 --ENV--
@@ -17,33 +15,33 @@ $r->send();
 
 ?>
 --EXPECTF--
---%s
-Content-Type: application/octet-stream
-Content-Range: bytes 107-109/110
-
+--%s%c
+Content-Type: application/octet-stream%c
+Content-Range: bytes 107-109/110%c
+%c
 ?>
-
---%s
-Content-Type: application/octet-stream
-Content-Range: bytes 0-1/110
-
-<?
---%s
-Content-Type: application/octet-stream
-Content-Range: bytes 1-1/110
-
-?
---%s
-Content-Type: application/octet-stream
-Content-Range: bytes 0-0/110
-
-<
---%s
-Content-Type: application/octet-stream
-Content-Range: bytes 100-109/110
-
+%c
+--%s%c
+Content-Type: application/octet-stream%c
+Content-Range: bytes 0-1/110%c
+%c
+<?%c
+--%s%c
+Content-Type: application/octet-stream%c
+Content-Range: bytes 1-1/110%c
+%c
+?%c
+--%s%c
+Content-Type: application/octet-stream%c
+Content-Range: bytes 0-0/110%c
+%c
+<%c
+--%s%c
+Content-Type: application/octet-stream%c
+Content-Range: bytes 100-109/110%c
+%c
 nd();
 
 ?>
-
+%c
 --%s--
