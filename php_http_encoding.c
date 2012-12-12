@@ -1061,7 +1061,11 @@ PHP_METHOD(HttpEncodingStream, flush)
 			size_t encoded_len;
 
 			if (SUCCESS == php_http_encoding_stream_flush(obj->stream, &encoded_str, &encoded_len)) {
-				RETURN_STRINGL(encoded_str, encoded_len, 0);
+				if (encoded_str) {
+					RETURN_STRINGL(encoded_str, encoded_len, 0);
+				} else {
+					RETURN_EMPTY_STRING();
+				}
 			}
 		}
 	}
