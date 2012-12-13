@@ -575,7 +575,7 @@ static inline void shift_key(php_http_buffer_t *buf, char *key_str, size_t key_l
 static inline void shift_val(php_http_buffer_t *buf, zval *zvalue, const char *vss, size_t vsl, unsigned flags TSRMLS_DC)
 {
 	if (Z_TYPE_P(zvalue) != IS_BOOL) {
-		zval *tmp = php_http_ztyp(IS_STRING, zvalue);
+		zval *tmp = php_http_zsep(1, IS_STRING, zvalue);
 
 		prepare_value(flags, tmp TSRMLS_CC);
 		php_http_buffer_append(buf, vss, vsl);
