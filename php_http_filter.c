@@ -107,23 +107,23 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 	}
 
 	/* we have data in our buffer */
-	while (PHP_HTTP_BUFFER_LEN(buffer)) {
+	while (PHP_HTTP_BUFFER(buffer)->used) {
 	
 		/* we already know the size of the chunk and are waiting for data */
 		if (buffer->hexlen) {
 		
 			/* not enough data buffered */
-			if (PHP_HTTP_BUFFER_LEN(buffer) < buffer->hexlen) {
+			if (PHP_HTTP_BUFFER(buffer)->used < buffer->hexlen) {
 			
 				/* flush anyway? */
 				if (flags & PSFS_FLAG_FLUSH_INC) {
 				
 					/* flush all data (should only be chunk data) */
 					out_avail = 1;
-					NEW_BUCKET(PHP_HTTP_BUFFER_VAL(buffer), PHP_HTTP_BUFFER_LEN(buffer));
+					NEW_BUCKET(PHP_HTTP_BUFFER(buffer)->data, PHP_HTTP_BUFFER(buffer)->used);
 					
 					/* waiting for less data now */
-					buffer->hexlen -= PHP_HTTP_BUFFER_LEN(buffer);
+					buffer->hexlen -= PHP_HTTP_BUFFER(buffer)->used;
 					/* no more buffered data */
 					php_http_buffer_reset(PHP_HTTP_BUFFER(buffer));
 					/* break */
@@ -138,7 +138,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 			/* we seem to have all data of the chunk */
 			else {
 				out_avail = 1;
-				NEW_BUCKET(PHP_HTTP_BUFFER_VAL(buffer), buffer->hexlen);
+				NEW_BUCKET(PHP_HTTP_BUFFER(buffer)->data, buffer->hexlen);
 				
 				/* remove outgoing data from the buffer */
 				php_http_buffer_cut(PHP_HTTP_BUFFER(buffer), 0, buffer->hexlen);
@@ -153,9 +153,9 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 			size_t off = 0;
 			
 			/* ignore preceeding CRLFs (too loose?) */
-			while (off < PHP_HTTP_BUFFER_LEN(buffer) && (
-					PHP_HTTP_BUFFER_VAL(buffer)[off] == '\n' || 
-					PHP_HTTP_BUFFER_VAL(buffer)[off] == '\r')) {
+			while (off < PHP_HTTP_BUFFER(buffer)->used && (
+					PHP_HTTP_BUFFER(buffer)->data[off] == '\n' || 
+					PHP_HTTP_BUFFER(buffer)->data[off] == '\r')) {
 				++off;
 			}
 			if (off) {
@@ -163,26 +163,26 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 			}
 			
 			/* still data there? */
-			if (PHP_HTTP_BUFFER_LEN(buffer)) {
+			if (PHP_HTTP_BUFFER(buffer)->used) {
 				int eollen;
 				const char *eolstr;
 				
 				/* we need eol, so we can be sure we have all hex digits */
 				php_http_buffer_fix(PHP_HTTP_BUFFER(buffer));
-				if ((eolstr = php_http_locate_bin_eol(PHP_HTTP_BUFFER_VAL(buffer), PHP_HTTP_BUFFER_LEN(buffer), &eollen))) {
+				if ((eolstr = php_http_locate_bin_eol(PHP_HTTP_BUFFER(buffer)->data, PHP_HTTP_BUFFER(buffer)->used, &eollen))) {
 					char *stop = NULL;
 					
 					/* read in chunk size */
-					buffer->hexlen = strtoul(PHP_HTTP_BUFFER_VAL(buffer), &stop, 16);
+					buffer->hexlen = strtoul(PHP_HTTP_BUFFER(buffer)->data, &stop, 16);
 					
 					/*	if strtoul() stops at the beginning of the buffered data
 						there's something oddly wrong, i.e. bad input */
-					if (stop == PHP_HTTP_BUFFER_VAL(buffer)) {
+					if (stop == PHP_HTTP_BUFFER(buffer)->data) {
 						return PSFS_ERR_FATAL;
 					}
 					
 					/* cut out <chunk size hex><chunk extension><eol> */
-					php_http_buffer_cut(PHP_HTTP_BUFFER(buffer), 0, eolstr + eollen - PHP_HTTP_BUFFER_VAL(buffer));
+					php_http_buffer_cut(PHP_HTTP_BUFFER(buffer), 0, eolstr + eollen - PHP_HTTP_BUFFER(buffer)->data);
 					/* buffer->hexlen is 0 now or contains the size of the next chunk */
 					if (!buffer->hexlen) {
 						php_stream_notify_info(stream->context, PHP_STREAM_NOTIFY_COMPLETED, NULL, 0);
@@ -199,9 +199,9 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 	}
 	
 	/* flush before close, but only if we are already waiting for more data */
-	if (PHP_HTTP_FILTER_IS_CLOSING(stream, flags) && buffer->hexlen && PHP_HTTP_BUFFER_LEN(buffer)) {
+	if (PHP_HTTP_FILTER_IS_CLOSING(stream, flags) && buffer->hexlen && PHP_HTTP_BUFFER(buffer)->used) {
 		out_avail = 1;
-		NEW_BUCKET(PHP_HTTP_BUFFER_VAL(buffer), PHP_HTTP_BUFFER_LEN(buffer));
+		NEW_BUCKET(PHP_HTTP_BUFFER(buffer)->data, PHP_HTTP_BUFFER(buffer)->used);
 		php_http_buffer_reset(PHP_HTTP_BUFFER(buffer));
 		buffer->hexlen = 0;
 	}
@@ -245,7 +245,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 		php_http_buffer_appends(&buf, PHP_HTTP_CRLF);
 
 		/* pass through */
-		NEW_BUCKET(PHP_HTTP_BUFFER_VAL(&buf), PHP_HTTP_BUFFER_LEN(&buf));
+		NEW_BUCKET(buf.data, buf.used);
 		/* reset */
 		php_http_buffer_reset(&buf);
 		php_stream_bucket_delref(ptr TSRMLS_CC);

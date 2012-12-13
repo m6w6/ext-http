@@ -431,7 +431,7 @@ static php_http_encoding_stream_t *deflate_copy(php_http_encoding_stream_t *from
 
 	if (Z_OK == (status = deflateCopy(to_ctx, from_ctx))) {
 		if ((to_ctx->opaque = php_http_buffer_init_ex(NULL, PHP_HTTP_DEFLATE_BUFFER_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0))) {
-			php_http_buffer_append(to_ctx->opaque, PHP_HTTP_BUFFER_VAL(from_ctx->opaque), PHP_HTTP_BUFFER_LEN(from_ctx->opaque));
+			php_http_buffer_append(to_ctx->opaque, PHP_HTTP_BUFFER(from_ctx->opaque)->data, PHP_HTTP_BUFFER(from_ctx->opaque)->used);
 			to->ctx = to_ctx;
 			return to;
 		}
@@ -450,7 +450,7 @@ static php_http_encoding_stream_t *inflate_copy(php_http_encoding_stream_t *from
 
 	if (Z_OK == (status = inflateCopy(to_ctx, from_ctx))) {
 		if ((to_ctx->opaque = php_http_buffer_init_ex(NULL, PHP_HTTP_DEFLATE_BUFFER_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0))) {
-			php_http_buffer_append(to_ctx->opaque, PHP_HTTP_BUFFER_VAL(from_ctx->opaque), PHP_HTTP_BUFFER_LEN(from_ctx->opaque));
+			php_http_buffer_append(to_ctx->opaque, PHP_HTTP_BUFFER(from_ctx->opaque)->data, PHP_HTTP_BUFFER(from_ctx->opaque)->used);
 			to->ctx = to_ctx;
 			return to;
 		}
@@ -470,7 +470,7 @@ static php_http_encoding_stream_t *dechunk_copy(php_http_encoding_stream_t *from
 	if (php_http_buffer_init_ex(&to_ctx->buffer, PHP_HTTP_BUFFER_DEFAULT_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0)) {
 		to_ctx->hexlen = from_ctx->hexlen;
 		to_ctx->zeroed = from_ctx->zeroed;
-		php_http_buffer_append(&to_ctx->buffer, PHP_HTTP_BUFFER_VAL(&from_ctx->buffer), PHP_HTTP_BUFFER_LEN(&from_ctx->buffer));
+		php_http_buffer_append(&to_ctx->buffer, from_ctx->buffer.data, from_ctx->buffer.used);
 		to->ctx = to_ctx;
 		return to;
 	}
@@ -488,8 +488,8 @@ static STATUS deflate_update(php_http_encoding_stream_t *s, const char *data, si
 	/* append input to our buffer */
 	php_http_buffer_append(PHP_HTTP_BUFFER(ctx->opaque), data, data_len);
 	
-	ctx->next_in = (Bytef *) PHP_HTTP_BUFFER_VAL(ctx->opaque);
-	ctx->avail_in = PHP_HTTP_BUFFER_LEN(ctx->opaque);
+	ctx->next_in = (Bytef *) PHP_HTTP_BUFFER(ctx->opaque)->data;
+	ctx->avail_in = PHP_HTTP_BUFFER(ctx->opaque)->used;
 	
 	/* deflate */
 	*encoded_len = PHP_HTTP_DEFLATE_BUFFER_SIZE_GUESS(data_len);
@@ -502,7 +502,7 @@ static STATUS deflate_update(php_http_encoding_stream_t *s, const char *data, si
 		case Z_STREAM_END:
 			/* cut processed chunk off the buffer */
 			if (ctx->avail_in) {
-				php_http_buffer_cut(PHP_HTTP_BUFFER(ctx->opaque), 0, PHP_HTTP_BUFFER_LEN(ctx->opaque) - ctx->avail_in);
+				php_http_buffer_cut(PHP_HTTP_BUFFER(ctx->opaque), 0, PHP_HTTP_BUFFER(ctx->opaque)->used - ctx->avail_in);
 			} else {
 				php_http_buffer_reset(PHP_HTTP_BUFFER(ctx->opaque));
 			}
@@ -530,15 +530,15 @@ static STATUS inflate_update(php_http_encoding_stream_t *s, const char *data, si
 	php_http_buffer_append(PHP_HTTP_BUFFER(ctx->opaque), data, data_len);
 
 retry_raw_inflate:
-	ctx->next_in = (Bytef *) PHP_HTTP_BUFFER_VAL(ctx->opaque);
-	ctx->avail_in = PHP_HTTP_BUFFER_LEN(ctx->opaque);
+	ctx->next_in = (Bytef *) PHP_HTTP_BUFFER(ctx->opaque)->data;
+	ctx->avail_in = PHP_HTTP_BUFFER(ctx->opaque)->used;
 	
 	switch (status = php_http_inflate_rounds(ctx, PHP_HTTP_ENCODING_STREAM_FLUSH_FLAG(s->flags), decoded, decoded_len)) {
 		case Z_OK:
 		case Z_STREAM_END:
 			/* cut off */
 			if (ctx->avail_in) {
-				php_http_buffer_cut(PHP_HTTP_BUFFER(ctx->opaque), 0, PHP_HTTP_BUFFER_LEN(ctx->opaque) - ctx->avail_in);
+				php_http_buffer_cut(PHP_HTTP_BUFFER(ctx->opaque), 0, PHP_HTTP_BUFFER(ctx->opaque)->used - ctx->avail_in);
 			} else {
 				php_http_buffer_reset(PHP_HTTP_BUFFER(ctx->opaque));
 			}
@@ -580,20 +580,20 @@ static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, si
 	php_http_buffer_init(&tmp);
 
 	/* we have data in our buffer */
-	while (PHP_HTTP_BUFFER_LEN(&ctx->buffer)) {
+	while (ctx->buffer.used) {
 
 		/* we already know the size of the chunk and are waiting for data */
 		if (ctx->hexlen) {
 
 			/* not enough data buffered */
-			if (PHP_HTTP_BUFFER_LEN(&ctx->buffer) < ctx->hexlen) {
+			if (ctx->buffer.used < ctx->hexlen) {
 
 				/* flush anyway? */
 				if (s->flags & PHP_HTTP_ENCODING_STREAM_FLUSH_FULL) {
 					/* flush all data (should only be chunk data) */
-					php_http_buffer_append(&tmp, PHP_HTTP_BUFFER_VAL(&ctx->buffer), PHP_HTTP_BUFFER_LEN(&ctx->buffer));
+					php_http_buffer_append(&tmp, ctx->buffer.data, ctx->buffer.used);
 					/* waiting for less data now */
-					ctx->hexlen -= PHP_HTTP_BUFFER_LEN(&ctx->buffer);
+					ctx->hexlen -= ctx->buffer.used;
 					/* no more buffered data */
 					php_http_buffer_reset(&ctx->buffer);
 					/* break */
@@ -607,9 +607,9 @@ static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, si
 
 			/* we seem to have all data of the chunk */
 			else {
-				php_http_buffer_append(&tmp, PHP_HTTP_BUFFER_VAL(&ctx->buffer), ctx->hexlen);
+				php_http_buffer_append(&tmp, ctx->buffer.data, ctx->hexlen);
 				/* remove outgoing data from the buffer */
-				php_http_buffer_cut(PHP_HTTP_BUFFER(&ctx->buffer), 0, ctx->hexlen);
+				php_http_buffer_cut(&ctx->buffer, 0, ctx->hexlen);
 				/* reset hexlen */
 				ctx->hexlen = 0;
 				/* continue */
@@ -621,50 +621,50 @@ static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, si
 			size_t off = 0;
 
 			/* ignore preceeding CRLFs (too loose?) */
-			while (off < PHP_HTTP_BUFFER_LEN(&ctx->buffer) && (
-					PHP_HTTP_BUFFER_VAL(&ctx->buffer)[off] == '\n' ||
-					PHP_HTTP_BUFFER_VAL(&ctx->buffer)[off] == '\r')) {
+			while (off < ctx->buffer.used && (
+					ctx->buffer.data[off] == '\n' ||
+					ctx->buffer.data[off] == '\r')) {
 				++off;
 			}
 			if (off) {
-				php_http_buffer_cut(PHP_HTTP_BUFFER(&ctx->buffer), 0, off);
+				php_http_buffer_cut(&ctx->buffer, 0, off);
 			}
 
 			/* still data there? */
-			if (PHP_HTTP_BUFFER_LEN(&ctx->buffer)) {
+			if (ctx->buffer.used) {
 				int eollen;
 				const char *eolstr;
 
 				/* we need eol, so we can be sure we have all hex digits */
 				php_http_buffer_fix(&ctx->buffer);
-				if ((eolstr = php_http_locate_bin_eol(PHP_HTTP_BUFFER_VAL(&ctx->buffer), PHP_HTTP_BUFFER_LEN(&ctx->buffer), &eollen))) {
+				if ((eolstr = php_http_locate_bin_eol(ctx->buffer.data, ctx->buffer.used, &eollen))) {
 					char *stop = NULL;
 
 					/* read in chunk size */
-					ctx->hexlen = strtoul(PHP_HTTP_BUFFER_VAL(&ctx->buffer), &stop, 16);
+					ctx->hexlen = strtoul(ctx->buffer.data, &stop, 16);
 
 					/*	if strtoul() stops at the beginning of the buffered data
-						there's domething oddly wrong, i.e. bad input */
-					if (stop == PHP_HTTP_BUFFER_VAL(&ctx->buffer)) {
+						there's something oddly wrong, i.e. bad input */
+					if (stop == ctx->buffer.data) {
 						php_http_error(HE_WARNING, PHP_HTTP_E_ENCODING, "Failed to parse chunk len from '%.*s'", MIN(16, ctx->buffer.used), ctx->buffer.data);
 						php_http_buffer_dtor(&tmp);
 						return FAILURE;
 					}
 
 					/* cut out <chunk size hex><chunk extension><eol> */
-					php_http_buffer_cut(PHP_HTTP_BUFFER(&ctx->buffer), 0, eolstr + eollen - PHP_HTTP_BUFFER_VAL(&ctx->buffer));
+					php_http_buffer_cut(&ctx->buffer, 0, eolstr + eollen - ctx->buffer.data);
 					/* buffer->hexlen is 0 now or contains the size of the next chunk */
 					if (!ctx->hexlen) {
 						size_t off = 0;
 
 						/* ignore following CRLFs (too loose?) */
-						while (off < PHP_HTTP_BUFFER_LEN(&ctx->buffer) && (
-								PHP_HTTP_BUFFER_VAL(&ctx->buffer)[off] == '\n' ||
-								PHP_HTTP_BUFFER_VAL(&ctx->buffer)[off] == '\r')) {
+						while (off < ctx->buffer.used && (
+								ctx->buffer.data[off] == '\n' ||
+								ctx->buffer.data[off] == '\r')) {
 							++off;
 						}
 						if (off) {
-							php_http_buffer_cut(PHP_HTTP_BUFFER(&ctx->buffer), 0, off);
+							php_http_buffer_cut(&ctx->buffer, 0, off);
 						}
 
 						ctx->zeroed = 1;
@@ -681,8 +681,8 @@ static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, si
 	}
 
 	php_http_buffer_fix(&tmp);
-	*decoded = PHP_HTTP_BUFFER_VAL(&tmp);
-	*decoded_len = PHP_HTTP_BUFFER_LEN(&tmp);
+	*decoded = tmp.data;
+	*decoded_len = tmp.used;
 
 	return SUCCESS;
 }
@@ -725,7 +725,7 @@ static STATUS dechunk_flush(php_http_encoding_stream_t *s, char **decoded, size_
 		php_http_buffer_fix(&ctx->buffer);
 		php_http_buffer_data(&ctx->buffer, decoded, decoded_len);
 		/* waiting for less data now */
-		ctx->hexlen -= PHP_HTTP_BUFFER_LEN(&ctx->buffer);
+		ctx->hexlen -= ctx->buffer.used;
 		/* no more buffered data */
 		php_http_buffer_reset(&ctx->buffer);
 	} else {
@@ -746,8 +746,8 @@ static STATUS deflate_finish(php_http_encoding_stream_t *s, char **encoded, size
 	*encoded = emalloc(*encoded_len);
 	
 	/* deflate remaining input */
-	ctx->next_in = (Bytef *) PHP_HTTP_BUFFER_VAL(ctx->opaque);
-	ctx->avail_in = PHP_HTTP_BUFFER_LEN(ctx->opaque);
+	ctx->next_in = (Bytef *) PHP_HTTP_BUFFER(ctx->opaque)->data;
+	ctx->avail_in = PHP_HTTP_BUFFER(ctx->opaque)->used;
 	
 	ctx->avail_out = *encoded_len;
 	ctx->next_out = (Bytef *) *encoded;
@@ -757,8 +757,8 @@ static STATUS deflate_finish(php_http_encoding_stream_t *s, char **encoded, size
 	} while (Z_OK == status);
 	
 	if (Z_STREAM_END == status) {
-		/* cut processed intp off */
-		php_http_buffer_cut(PHP_HTTP_BUFFER(ctx->opaque), 0, PHP_HTTP_BUFFER_LEN(ctx->opaque) - ctx->avail_in);
+		/* cut processed input off */
+		php_http_buffer_cut(PHP_HTTP_BUFFER(ctx->opaque), 0, PHP_HTTP_BUFFER(ctx->opaque)->used - ctx->avail_in);
 		
 		/* size down */
 		*encoded_len -= ctx->avail_out;
@@ -779,25 +779,25 @@ static STATUS inflate_finish(php_http_encoding_stream_t *s, char **decoded, size
 	z_streamp ctx = s->ctx;
 	TSRMLS_FETCH_FROM_CTX(s->ts);
 	
-	if (!PHP_HTTP_BUFFER_LEN(ctx->opaque)) {
+	if (!PHP_HTTP_BUFFER(ctx->opaque)->used) {
 		*decoded = NULL;
 		*decoded_len = 0;
 		return SUCCESS;
 	}
 	
-	*decoded_len = (PHP_HTTP_BUFFER_LEN(ctx->opaque) + 1) * PHP_HTTP_INFLATE_ROUNDS;
+	*decoded_len = (PHP_HTTP_BUFFER(ctx->opaque)->used + 1) * PHP_HTTP_INFLATE_ROUNDS;
 	*decoded = emalloc(*decoded_len);
 	
 	/* inflate remaining input */
-	ctx->next_in = (Bytef *) PHP_HTTP_BUFFER_VAL(ctx->opaque);
-	ctx->avail_in = PHP_HTTP_BUFFER_LEN(ctx->opaque);
+	ctx->next_in = (Bytef *) PHP_HTTP_BUFFER(ctx->opaque)->data;
+	ctx->avail_in = PHP_HTTP_BUFFER(ctx->opaque)->used;
 	
 	ctx->avail_out = *decoded_len;
 	ctx->next_out = (Bytef *) *decoded;
 	
 	if (Z_STREAM_END == (status = inflate(ctx, Z_FINISH))) {
 		/* cut processed input off */
-		php_http_buffer_cut(PHP_HTTP_BUFFER(ctx->opaque), 0, PHP_HTTP_BUFFER_LEN(ctx->opaque) - ctx->avail_in);
+		php_http_buffer_cut(PHP_HTTP_BUFFER(ctx->opaque), 0, PHP_HTTP_BUFFER(ctx->opaque)->used - ctx->avail_in);
 		
 		/* size down */
 		*decoded_len -= ctx->avail_out;
@@ -815,13 +815,13 @@ static STATUS inflate_finish(php_http_encoding_stream_t *s, char **decoded, size
 static zend_bool deflate_done(php_http_encoding_stream_t *s)
 {
 	z_streamp ctx = s->ctx;
-	return !ctx->avail_in && !PHP_HTTP_BUFFER_LEN(ctx->opaque);
+	return !ctx->avail_in && !PHP_HTTP_BUFFER(ctx->opaque)->used;
 }
 
 static zend_bool inflate_done(php_http_encoding_stream_t *s)
 {
 	z_streamp ctx = s->ctx;
-	return !ctx->avail_in && !PHP_HTTP_BUFFER_LEN(ctx->opaque);
+	return !ctx->avail_in && !PHP_HTTP_BUFFER(ctx->opaque)->used;
 }
 
 static zend_bool dechunk_done(php_http_encoding_stream_t *s)

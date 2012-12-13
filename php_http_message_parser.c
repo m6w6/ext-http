@@ -458,7 +458,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 				len = dec_len;
 
 				if (php_http_encoding_stream_done(parser->dechunk)) {
-					cut = buffer->used - PHP_HTTP_BUFFER_LEN(parser->dechunk->ctx);
+					cut = buffer->used - PHP_HTTP_BUFFER(parser->dechunk->ctx)->used;
 					php_http_message_parser_state_push(parser, 2, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
 				} else {
 					cut = buffer->used;

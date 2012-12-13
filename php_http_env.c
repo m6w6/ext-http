@@ -417,7 +417,7 @@ PHP_HTTP_API STATUS php_http_env_get_response_headers(HashTable *headers_ht TSRM
 	zend_llist_apply_with_argument(&SG(sapi_headers).headers, grab_headers, &headers TSRMLS_CC);
 	php_http_buffer_fix(&headers);
 
-	status = php_http_headers_parse(PHP_HTTP_BUFFER_VAL(&headers), PHP_HTTP_BUFFER_LEN(&headers), headers_ht, NULL, NULL TSRMLS_CC);
+	status = php_http_headers_parse(headers.data, headers.used, headers_ht, NULL, NULL TSRMLS_CC);
 	php_http_buffer_dtor(&headers);
 
 	return status;

@@ -436,8 +436,8 @@ static STATUS php_http_curl_client_option_set_cookies(php_http_option_t *opt, zv
 			}
 
 			php_http_buffer_fix(&curl->options.cookies);
-			if (PHP_HTTP_BUFFER_LEN(&curl->options.cookies)) {
-				if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIE, PHP_HTTP_BUFFER_VAL(&curl->options.cookies))) {
+			if (curl->options.cookies.used) {
+				if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIE, curl->options.cookies.data)) {
 					return FAILURE;
 				}
 			}
@@ -506,7 +506,7 @@ static STATUS php_http_curl_client_option_set_etag(php_http_option_t *opt, zval 
 	php_http_buffer_init(&header);
 	php_http_buffer_appendf(&header, is_quoted?"%s: %s":"%s: \"%s\"", curl->options.range_request?"If-Match":"If-None-Match", Z_STRVAL_P(val));
 	php_http_buffer_fix(&header);
-	curl->options.headers = curl_slist_append(curl->options.headers, PHP_HTTP_BUFFER_VAL(&header));
+	curl->options.headers = curl_slist_append(curl->options.headers, header.data);
 	php_http_buffer_dtor(&header);
 	return SUCCESS;
 }
@@ -543,14 +543,14 @@ static STATUS php_http_curl_client_option_set_range(php_http_option_t *opt, zval
 			}
 		}
 
-		if (PHP_HTTP_BUFFER_LEN(&curl->options.ranges)) {
+		if (curl->options.ranges.used) {
 			curl->options.range_request = 1;
 			/* ditch last comma */
-			PHP_HTTP_BUFFER_VAL(&curl->options.ranges)[PHP_HTTP_BUFFER_LEN(&curl->options.ranges)-- -1] = '\0';
+			curl->options.ranges.data[curl->options.ranges.used - 1] = '\0';
 		}
 	}
 
-	if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_RANGE, PHP_HTTP_BUFFER_VAL(&curl->options.ranges))) {
+	if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_RANGE, curl->options.ranges.data)) {
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -1198,7 +1198,7 @@ PHP_HTTP_API STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_
 
 				php_http_buffer_appendf(&header, "%s: %s", header_key.str, Z_STRVAL_P(header_cpy));
 				php_http_buffer_fix(&header);
-				curl->options.headers = curl_slist_append(curl->options.headers, PHP_HTTP_BUFFER_VAL(&header));
+				curl->options.headers = curl_slist_append(curl->options.headers, header.data);
 				php_http_buffer_reset(&header);
 
 				zval_ptr_dtor(&header_cpy);

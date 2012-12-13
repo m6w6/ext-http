@@ -339,8 +339,8 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 	}
 	
 	php_http_buffer_fix(&buf);
-	*str = PHP_HTTP_BUFFER_VAL(&buf);
-	*len = PHP_HTTP_BUFFER_LEN(&buf);
+	*str = buf.data;
+	*len = buf.used;
 }
 
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpCookie, method, 0, req_args)

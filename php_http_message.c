@@ -20,7 +20,7 @@ PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **messa
 	php_http_message_t *old = *message;
 
 	/* advance message */
-	if (!old || old->type || zend_hash_num_elements(&old->hdrs) || PHP_HTTP_BUFFER_LEN(old)) {
+	if (!old || old->type || zend_hash_num_elements(&old->hdrs)) {
 		(*message) = php_http_message_init(NULL, 0 TSRMLS_CC);
 		(*message)->parent = old;
 		if (headers) {
@@ -322,11 +322,11 @@ static zval *message_header_strval(zval **header TSRMLS_DC)
 		FOREACH_VAL(pos, *header, val) {
 			zval *strval = message_header_strval(val TSRMLS_CC);
 
-			php_http_buffer_appendf(&str, PHP_HTTP_BUFFER_LEN(&str) ? ", %s":"%s", Z_STRVAL_P(strval));
+			php_http_buffer_appendf(&str, str.used ? ", %s":"%s", Z_STRVAL_P(strval));
 			zval_ptr_dtor(&strval);
 		}
 		php_http_buffer_fix(&str);
-		ZVAL_STRINGL(ret, PHP_HTTP_BUFFER_VAL(&str), PHP_HTTP_BUFFER_LEN(&str), 0);
+		ZVAL_STRINGL(ret, str.data, str.used, 0);
 	} else  {
 		ret = php_http_zsep(1, IS_STRING, *header);
 	}
@@ -398,7 +398,7 @@ PHP_HTTP_API void php_http_message_to_callback(php_http_message_t *msg, php_http
 
 	php_http_buffer_init_ex(&str, 0x1000, 0);
 	message_headers(msg, &str);
-	cb(cb_arg, PHP_HTTP_BUFFER_VAL(&str), PHP_HTTP_BUFFER_LEN(&str));
+	cb(cb_arg, str.data, str.used);
 	php_http_buffer_dtor(&str);
 
 	if (php_http_message_body_size(&msg->body)) {

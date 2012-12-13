@@ -386,7 +386,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r)
 
 			php_http_buffer_init(&buf);
 			if (php_http_params_to_string(&buf, Z_ARRVAL_P(zoption_copy), ZEND_STRL(","), ZEND_STRL(";"), ZEND_STRL("="), PHP_HTTP_PARAMS_DEFAULT TSRMLS_CC)) {
-				ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Content-Disposition: %s", PHP_HTTP_BUFFER_VAL(&buf));
+				ret = php_http_env_set_response_header_format(0, 1 TSRMLS_CC, "Content-Disposition: %s", buf.data);
 			}
 
 			php_http_buffer_dtor(&buf);

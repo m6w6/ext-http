@@ -74,8 +74,6 @@ static inline void *estrndup(void *p, size_t s)
 #endif
 
 #define PHP_HTTP_BUFFER(p) ((php_http_buffer_t *) (p))
-#define PHP_HTTP_BUFFER_VAL(p) (PHP_HTTP_BUFFER(p))->data
-#define PHP_HTTP_BUFFER_LEN(p) (PHP_HTTP_BUFFER(p))->used
 
 #define FREE_PHP_HTTP_BUFFER_PTR(STR) pefree(STR, STR->pmem)
 #define FREE_PHP_HTTP_BUFFER_VAL(STR) php_http_buffer_dtor(STR)
@@ -83,16 +81,21 @@ static inline void *estrndup(void *p, size_t s)
 #define FREE_PHP_HTTP_BUFFER(free, STR) \
 	switch (free) \
 	{ \
-		case PHP_HTTP_BUFFER_FREE_NOT:							break; \
-		case PHP_HTTP_BUFFER_FREE_PTR:	pefree(STR, STR->pmem);	break; \
-		case PHP_HTTP_BUFFER_FREE_VAL:	php_http_buffer_dtor(STR);		break; \
-		case PHP_HTTP_BUFFER_FREE_ALL: \
-		{ \
-			php_http_buffer_t *PTR = (STR); \
-			php_http_buffer_free(&PTR); \
-		} \
+	case PHP_HTTP_BUFFER_FREE_NOT: \
 		break; \
-		default:										break; \
+	case PHP_HTTP_BUFFER_FREE_PTR: \
+		pefree(STR, STR->pmem);	break; \
+		break; \
+	case PHP_HTTP_BUFFER_FREE_VAL: \
+		php_http_buffer_dtor(STR); \
+		break; \
+	case PHP_HTTP_BUFFER_FREE_ALL: { \
+		php_http_buffer_t *PTR = (STR); \
+		php_http_buffer_free(&PTR); \
+		break; \
+	} \
+	default:\
+		break; \
 	}
 
 #define RETURN_PHP_HTTP_BUFFER_PTR(STR) RETURN_PHP_HTTP_BUFFER((STR), PHP_HTTP_BUFFER_FREE_PTR, 0)
