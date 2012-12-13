@@ -642,6 +642,7 @@ static STATUS php_http_curl_client_option_set_portrange(php_http_option_t *opt, 
 	return SUCCESS;
 }
 
+#if PHP_HTTP_CURL_VERSION(7,21,3)
 static STATUS php_http_curl_client_option_set_resolve(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_t *h = userdata;
@@ -670,6 +671,7 @@ static STATUS php_http_curl_client_option_set_resolve(php_http_option_t *opt, zv
 	}
 	return SUCCESS;
 }
+#endif
 
 static void php_http_curl_client_options_init(php_http_options_t *registry TSRMLS_DC)
 {
