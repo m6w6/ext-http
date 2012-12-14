@@ -57,4 +57,27 @@ class HeaderTest extends PHPUnit_Framework_TestCase {
     	$this->setExpectedException("PHPUnit_Framework_Error_Warning", "Could not parse headers");
     	$this->assertFalse(http\Header::parse($header));
     }
+	
+	function testParams() {
+		$header = new http\Header("Cache-control", "public, must-revalidate, max-age=0");
+		$this->assertEquals(
+			array(
+				"public" => array("value" => true, "arguments" => array()),
+				"must-revalidate" => array("value" => true, "arguments" => array()),
+				"max-age" => array("value" => 0, "arguments" => array()),
+			),
+			$header->getParams()->params
+		);
+	}
+	
+	function testParamsWithArgs() {
+		$header = new http\Header("Custom", '"foo" is "bar". "bar" is "bis" where "bis" is 3.');
+		$this->assertEquals(
+			array(
+				"foo" => array("value" => "bar", "arguments" => array()),
+				"bar" => array("value" => "baz", "arguments" => array("baz" => "3"))
+			),
+			$header->getParams(".", "where", "is")->params
+		);
+	}
 }

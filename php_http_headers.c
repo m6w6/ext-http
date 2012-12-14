@@ -16,13 +16,28 @@ PHP_HTTP_API STATUS php_http_headers_parse(const char *header, size_t length, Ha
 {
 	php_http_header_parser_t ctx;
 	php_http_buffer_t buf;
+	php_http_header_parser_state_t rs;
 	
-	php_http_buffer_from_string_ex(&buf, header, length);
-	php_http_header_parser_init(&ctx TSRMLS_CC);
-	php_http_header_parser_parse(&ctx, &buf, PHP_HTTP_HEADER_PARSER_CLEANUP, headers, callback_func, callback_data);
+	if (!php_http_buffer_from_string_ex(&buf, header, length)) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "Could not allocate buffer");
+		return FAILURE;
+	}
+	
+	if (!php_http_header_parser_init(&ctx TSRMLS_CC)) {
+		php_http_buffer_dtor(&buf);
+		php_http_error(HE_WARNING, PHP_HTTP_E_HEADER, "Could not initialize header parser");
+		return FAILURE;
+	}
+	
+	rs = php_http_header_parser_parse(&ctx, &buf, PHP_HTTP_HEADER_PARSER_CLEANUP, headers, callback_func, callback_data);
 	php_http_header_parser_dtor(&ctx);
 	php_http_buffer_dtor(&buf);
-	/* FIXME */
+
+	if (rs == PHP_HTTP_HEADER_PARSER_STATE_FAILURE) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_MALFORMED_HEADERS, "Could not parse headers");
+		return FAILURE;
+	}
+	
 	return SUCCESS;
 }
 
@@ -55,6 +70,13 @@ PHP_HTTP_BEGIN_ARGS(parse, 1)
 	PHP_HTTP_ARG_VAL(flags, 0)
 PHP_HTTP_END_ARGS;
 
+PHP_HTTP_BEGIN_ARGS(getParams, 0)
+	PHP_HTTP_ARG_VAL(param_sep, 0)
+	PHP_HTTP_ARG_VAL(arg_sep, 0)
+	PHP_HTTP_ARG_VAL(val_sep, 0)
+	PHP_HTTP_ARG_VAL(flags, 0)
+PHP_HTTP_END_ARGS;
+
 static zend_class_entry *php_http_header_class_entry;
 
 zend_class_entry *php_http_header_get_class_entry(void)
@@ -70,6 +92,7 @@ static zend_function_entry php_http_header_method_entry[] = {
 	PHP_HTTP_HEADER_ME(unserialize, ZEND_ACC_PUBLIC)
 	PHP_HTTP_HEADER_ME(match, ZEND_ACC_PUBLIC)
 	PHP_HTTP_HEADER_ME(negotiate, ZEND_ACC_PUBLIC)
+	PHP_HTTP_HEADER_ME(getParams, ZEND_ACC_PUBLIC)
 	PHP_HTTP_HEADER_ME(parse, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	EMPTY_FUNCTION_ENTRY
 };
@@ -203,6 +226,31 @@ PHP_METHOD(HttpHeader, negotiate)
 	}
 }
 
+PHP_METHOD(HttpHeader, getParams)
+{
+	zval zctor, *zparams_obj, **zargs = NULL;
+	
+	INIT_PZVAL(&zctor);
+	ZVAL_STRINGL(&zctor, "__construct", lenof("__construct"), 0);
+	
+	MAKE_STD_ZVAL(zparams_obj);
+	object_init_ex(zparams_obj, php_http_params_get_class_entry());
+	
+	zargs = (zval **) ecalloc(ZEND_NUM_ARGS()+1, sizeof(zval *));
+	zargs[0] = zend_read_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("value"), 0 TSRMLS_CC);
+	if (ZEND_NUM_ARGS()) {
+		zend_get_parameters_array(ZEND_NUM_ARGS(), ZEND_NUM_ARGS(), &zargs[1]);
+	}
+	
+	if (SUCCESS == call_user_function(NULL, &zparams_obj, &zctor, return_value, ZEND_NUM_ARGS()+1, zargs TSRMLS_CC)) {
+		RETVAL_ZVAL(zparams_obj, 0, 1);
+	}
+	
+	if (zargs) {
+		efree(zargs);
+	}
+}
+
 PHP_METHOD(HttpHeader, parse)
 {
 	char *header_str;
@@ -210,62 +258,45 @@ PHP_METHOD(HttpHeader, parse)
 	zend_class_entry *ce = NULL;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|C", &header_str, &header_len, &ce)) {
-		php_http_header_parser_t *parser = php_http_header_parser_init(NULL TSRMLS_CC);
-		php_http_buffer_t *buf = php_http_buffer_from_string(header_str, header_len);
+		array_init(return_value);
 
-		if (parser && buf) {
-			php_http_header_parser_state_t rs;
+		if (SUCCESS != php_http_headers_parse(header_str, header_len, Z_ARRVAL_P(return_value), NULL, NULL TSRMLS_CC)) {
+			php_http_error(HE_WARNING, PHP_HTTP_E_MALFORMED_HEADERS, "Could not parse headers");
+			zval_dtor(return_value);
+			RETVAL_NULL();
+		} else {
+			if (ce && instanceof_function(ce, php_http_header_class_entry TSRMLS_CC)) {
+				HashPosition pos;
+				php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+				zval **val;
 
-			array_init(return_value);
+				FOREACH_KEYVAL(pos, return_value, key, val) {
+					zval *zho, *zkey, *zvalue;
 
-			rs = php_http_header_parser_parse(parser, buf,
-					PHP_HTTP_HEADER_PARSER_CLEANUP, Z_ARRVAL_P(return_value), NULL, NULL);
+					Z_ADDREF_PP(val);
+					zvalue = *val;
 
-			if (rs == PHP_HTTP_HEADER_PARSER_STATE_FAILURE) {
-				php_http_error(HE_WARNING, PHP_HTTP_E_MALFORMED_HEADERS, "Could not parse headers");
-				zval_dtor(return_value);
-				RETVAL_NULL();
-			} else {
-				if (ce && instanceof_function(ce, php_http_header_class_entry TSRMLS_CC)) {
-					HashPosition pos;
-					php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
-					zval **val;
-
-					FOREACH_KEYVAL(pos, return_value, key, val) {
-						zval *zho, *zkey, *zvalue;
-
-						Z_ADDREF_PP(val);
-						zvalue = *val;
-
-						MAKE_STD_ZVAL(zkey);
-						if (key.type == HASH_KEY_IS_LONG) {
-							ZVAL_LONG(zkey, key.num);
-						} else {
-							ZVAL_STRINGL(zkey, key.str, key.len - 1, 1);
-						}
-
-						MAKE_STD_ZVAL(zho);
-						object_init_ex(zho, ce);
-						zend_call_method_with_2_params(&zho, ce, NULL, "__construct", NULL, zkey, zvalue);
-
-						if (key.type == HASH_KEY_IS_LONG) {
-							zend_hash_index_update(Z_ARRVAL_P(return_value), key.num, (void *) &zho, sizeof(zval *), NULL);
-						} else {
-							zend_hash_update(Z_ARRVAL_P(return_value), key.str, key.len, (void *) &zho, sizeof(zval *), NULL);
-						}
-
-						zval_ptr_dtor(&zvalue);
-						zval_ptr_dtor(&zkey);
+					MAKE_STD_ZVAL(zkey);
+					if (key.type == HASH_KEY_IS_LONG) {
+						ZVAL_LONG(zkey, key.num);
+					} else {
+						ZVAL_STRINGL(zkey, key.str, key.len - 1, 1);
 					}
+
+					MAKE_STD_ZVAL(zho);
+					object_init_ex(zho, ce);
+					zend_call_method_with_2_params(&zho, ce, NULL, "__construct", NULL, zkey, zvalue);
+
+					if (key.type == HASH_KEY_IS_LONG) {
+						zend_hash_index_update(Z_ARRVAL_P(return_value), key.num, (void *) &zho, sizeof(zval *), NULL);
+					} else {
+						zend_hash_update(Z_ARRVAL_P(return_value), key.str, key.len, (void *) &zho, sizeof(zval *), NULL);
+					}
+
+					zval_ptr_dtor(&zvalue);
+					zval_ptr_dtor(&zkey);
 				}
 			}
-		}
-
-		if (parser) {
-			php_http_header_parser_free(&parser);
-		}
-		if (buf) {
-			php_http_buffer_free(&buf);
 		}
 	}
 }
