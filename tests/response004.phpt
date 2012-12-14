@@ -3,6 +3,7 @@ reponse callback
 --SKIPIF--
 <?php
 include "skipif.inc";
+if (version_compare(PHP_VERSION, "5.4.0", "<")) die("SKIP 5.3 ob is broken");
 ?>
 --GET--
 dummy=1
