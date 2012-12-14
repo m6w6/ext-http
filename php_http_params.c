@@ -45,6 +45,8 @@ typedef struct php_http_params_state {
 		zval **args;
 		zval **val;
 	} current;
+	unsigned quotes:1;
+	unsigned escape:1;
 } php_http_params_state_t;
 
 static inline void sanitize_default(zval *zv TSRMLS_DC)
@@ -421,12 +423,7 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 
 				MAKE_STD_ZVAL(val);
 				if (opts->defval) {
-#if PHP_VERSION_ID >= 50400
 					ZVAL_COPY_VALUE(val, opts->defval);
-#else
-					val->value = opts->defval->value;
-					Z_TYPE_P(val) = Z_TYPE_P(opts->defval);
-#endif
 					zval_copy_ctor(val);
 				} else {
 					ZVAL_TRUE(val);
@@ -452,6 +449,10 @@ static size_t check_sep(php_http_params_state_t *state, php_http_params_token_t 
 {
 	php_http_params_token_t **sep = separators;
 
+	if (state->quotes || state->escape) {
+		return 0;
+	}
+	
 	if (sep) while (*sep) {
 		if (check_str(state->input.str, state->input.len, (*sep)->str, (*sep)->len)) {
 			return (*sep)->len;
@@ -479,7 +480,7 @@ static void skip_sep(size_t skip, php_http_params_state_t *state, php_http_param
 
 PHP_HTTP_API HashTable *php_http_params_parse(HashTable *params, const php_http_params_opts_t *opts TSRMLS_DC)
 {
-	php_http_params_state_t state = {{NULL,0}, {NULL,0}, {NULL,0}, {NULL,0}, {NULL,NULL,NULL}};
+	php_http_params_state_t state = {{NULL,0}, {NULL,0}, {NULL,0}, {NULL,0}, {NULL,NULL,NULL}, 0, 0};
 
 	state.input.str = opts->input.str;
 	state.input.len = opts->input.len;
@@ -490,10 +491,13 @@ PHP_HTTP_API HashTable *php_http_params_parse(HashTable *params, const php_http_
 	}
 
 	while (state.input.len) {
-		if (*state.input.str == '\\') {
-			++state.input.str;
-			--state.input.len;
-		} else if (!state.param.str) {
+		if (*state.input.str == '"' && !state.escape) {
+			state.quotes = !state.quotes;
+		} else {
+			state.escape = (*state.input.str == '\\');
+		}
+		
+		if (!state.param.str) {
 			/* initialize */
 			skip_sep(0, &state, opts->param, opts->arg, opts->val TSRMLS_CC);
 			state.param.str = state.input.str;
@@ -546,7 +550,7 @@ PHP_HTTP_API HashTable *php_http_params_parse(HashTable *params, const php_http_
 				}
 			}
 		}
-
+		
 		if (state.input.len) {
 			++state.input.str;
 			--state.input.len;

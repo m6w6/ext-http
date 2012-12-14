@@ -47,9 +47,9 @@ class HeaderTest extends PHPUnit_Framework_TestCase {
     function testParse() {
     	$header = "Foo: bar\nBar: foo\n";
     	$this->assertEquals(array("Foo"=>"bar","Bar"=>"foo"), http\Header::parse($header)); 
-    	$header = http\Header::parse($header, "http\\Header");
-    	$this->assertCount(2, $header);
-    	$this->assertContainsOnlyInstancesOf("http\\Header", $header); 
+    	$headers = http\Header::parse($header, "http\\Header");
+    	$this->assertCount(2, $headers);
+    	$this->assertContainsOnlyInstancesOf("http\\Header", $headers); 
     }
     
     function testParseError() {
@@ -71,11 +71,11 @@ class HeaderTest extends PHPUnit_Framework_TestCase {
 	}
 	
 	function testParamsWithArgs() {
-		$header = new http\Header("Custom", '"foo" is "bar". "bar" is "bis" where "bis" is 3.');
+		$header = new http\Header("Custom", '"foo" is "bar". "bar" is "bis" where "bis" is "where".');
 		$this->assertEquals(
 			array(
 				"foo" => array("value" => "bar", "arguments" => array()),
-				"bar" => array("value" => "baz", "arguments" => array("baz" => "3"))
+				"bar" => array("value" => "bis", "arguments" => array("bis" => "where"))
 			),
 			$header->getParams(".", "where", "is")->params
 		);
