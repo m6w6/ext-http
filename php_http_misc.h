@@ -21,23 +21,14 @@
 /* CR LF */
 #define PHP_HTTP_CRLF "\r\n"
 
-/* default cache control */
-#define PHP_HTTP_DEFAULT_CACHECONTROL "private, must-revalidate, max-age=0"
-
 /* max URL length */
 #define PHP_HTTP_URL_MAXLEN 4096
-
-/* max request method length */
-#define PHP_HTTP_REQUEST_METHOD_MAXLEN 31
 
 /* def URL arg separator */
 #define PHP_HTTP_URL_ARGSEP "&"
 
 /* send buffer size */
 #define PHP_HTTP_SENDBUF_SIZE 40960
-
-/* CURL buffer size */
-#define PHP_HTTP_CURLBUF_SIZE 16384
 
 /* SLEEP */
 
@@ -102,25 +93,6 @@ static inline const char *php_http_locate_str(const char *h, size_t h_len, const
 	}
 
 	return NULL;
-}
-
-static inline const char *php_http_locate_body(const char *message)
-{
-	const char *body = NULL, *msg = message;
-
-	while (*msg) {
-		if (*msg == '\n') {
-			if (*(msg+1) == '\n') {
-				body = msg + 2;
-				break;
-			} else if (*(msg+1) == '\r' && *(msg+2) == '\n') {
-				body = msg + 3;
-				break;
-			}
-		}
-		++msg;
-	}
-	return body;
 }
 
 static inline const char *php_http_locate_eol(const char *line, int *eol_len)
@@ -348,60 +320,6 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 		cename = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
 	}
 
-#define ACC_PROP_PRIVATE(ce, flags)		((flags & ZEND_ACC_PRIVATE) && (EG(scope) && ce == EG(scope))
-#define ACC_PROP_PROTECTED(ce, flags)	((flags & ZEND_ACC_PROTECTED) && (zend_check_protected(ce, EG(scope))))
-#define ACC_PROP_PUBLIC(flags)			(flags & ZEND_ACC_PUBLIC)
-#define ACC_PROP(ce, flags)				(ACC_PROP_PUBLIC(flags) || ACC_PROP_PRIVATE(ce, flags) || ACC_PROP_PROTECTED(ce, flags))
-
-#ifdef PHP_HTTP_HAVE_CURL
-#		define PHP_HTTP_DECLARE_ARG_PASS_INFO() \
-			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_2, 0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(1) \
-			ZEND_END_ARG_INFO(); \
- \
-			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_3, 0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(1) \
-			ZEND_END_ARG_INFO(); \
- \
-			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_4, 0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(1) \
-			ZEND_END_ARG_INFO(); \
- \
-			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_5, 0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(1) \
-			ZEND_END_ARG_INFO();
-
-#else
-#		define PHP_HTTP_DECLARE_ARG_PASS_INFO() \
-			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_2, 0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(1) \
-			ZEND_END_ARG_INFO(); \
-\
-			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_3, 0) \
-			ZEND_ARG_PASS_INFO(0) \
-			ZEND_ARG_PASS_INFO(0) \
-			ZEND_ARG_PASS_INFO(1) \
-			ZEND_END_ARG_INFO(); \
-\
-			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_4, 0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(0) \
-				ZEND_ARG_PASS_INFO(1) \
-			ZEND_END_ARG_INFO();
-#endif /* PHP_HTTP_HAVE_CURL */
-
 /* ARRAYS */
 PHP_HTTP_API unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...);
 
@@ -427,9 +345,6 @@ static inline void php_http_array_hashkey_stringfree(php_http_array_hashkey_t *k
 		STR_FREE(key->str);
 	}
 }
-
-typedef void (*php_http_array_visitor_t)(void *visitor_arg, php_http_array_hashkey_t *key, zval **val TSRMLS_DC);
-PHP_HTTP_API void php_http_array_visit(HashTable *ht, php_http_array_visitor_t visitor_func, void *visitor_arg TSRMLS_DC);
 
 #define FOREACH_VAL(pos, array, val) FOREACH_HASH_VAL(pos, HASH_OF(array), val)
 #define FOREACH_HASH_VAL(pos, hash, val) \
@@ -462,13 +377,6 @@ int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list
 
 typedef size_t (*php_http_pass_callback_t)(void *cb_arg, const char *str, size_t len);
 typedef size_t (*php_http_pass_php_http_buffer_callback_t)(void *cb_arg, php_http_buffer_t *str);
-
-typedef struct php_http_pass_callback_arg {
-	size_t (*cb_zts)(void *cb_arg, const char *str, size_t len TSRMLS_DC);
-	void *cb_arg;
-} php_http_pass_callback_arg_t;
-
-PHP_HTTP_API size_t php_http_pass_wrapper(php_http_pass_callback_arg_t *cb_arg, const char *str, size_t len);
 
 typedef struct php_http_pass_fcall_arg {
 	zval *fcz;
