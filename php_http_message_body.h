@@ -54,6 +54,7 @@ static inline php_stream *php_http_message_body_stream(php_http_message_body_t *
 typedef struct php_http_message_body_object {
 	zend_object zo;
 	php_http_message_body_t *body;
+	unsigned shared:1;
 } php_http_message_body_object_t;
 
 zend_class_entry *php_http_message_body_get_class_entry(void);

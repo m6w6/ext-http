@@ -650,8 +650,9 @@ void php_http_message_body_object_free(void *object TSRMLS_DC)
 {
 	php_http_message_body_object_t *obj = object;
 
-	php_http_message_body_free(&obj->body);
-
+	if (!obj->shared) {
+		php_http_message_body_free(&obj->body);
+	}
 	zend_object_std_dtor((zend_object *) obj TSRMLS_CC);
 	efree(obj);
 }
@@ -668,7 +669,7 @@ PHP_METHOD(HttpMessageBody, __construct)
 				php_stream_from_zval(stream, &zstream);
 
 				if (stream) {
-					if (obj->body) {
+					if (obj->body && !obj->shared) {
 						php_http_message_body_dtor(obj->body);
 					}
 					obj->body = php_http_message_body_init(obj->body, stream TSRMLS_CC);

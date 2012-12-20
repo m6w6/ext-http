@@ -38,11 +38,12 @@ typedef enum php_http_range_status {
 	PHP_HTTP_RANGE_ERR
 } php_http_range_status_t;
 
-PHP_HTTP_API php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_t entity_length TSRMLS_DC);
+PHP_HTTP_API php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_t entity_length, php_http_message_t *request TSRMLS_DC);
 PHP_HTTP_API void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC);
-PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len TSRMLS_DC);
-PHP_HTTP_API int php_http_env_got_request_header(const char *name_str, size_t name_len TSRMLS_DC);
+PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len, php_http_message_t *request TSRMLS_DC);
+PHP_HTTP_API int php_http_env_got_request_header(const char *name_str, size_t name_len, php_http_message_t *request TSRMLS_DC);
 PHP_HTTP_API php_http_message_body_t *php_http_env_get_request_body(TSRMLS_D);
+PHP_HTTP_API const char *php_http_env_get_request_method(php_http_message_t *request TSRMLS_DC);
 
 typedef enum php_http_content_disposition {
 	PHP_HTTP_CONTENT_DISPOSITION_NONE,
@@ -65,6 +66,7 @@ PHP_HTTP_API STATUS php_http_env_set_response_protocol_version(php_http_version_
 PHP_HTTP_API STATUS php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_env_set_response_header_format(long http_code, zend_bool replace TSRMLS_DC, const char *fmt, ...);
+PHP_HTTP_API STATUS php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv TSRMLS_DC);
 
 PHP_HTTP_API zval *php_http_env_get_server_var(const char *key_str, size_t key_len, zend_bool check TSRMLS_DC);
 #define php_http_env_got_server_var(v) (NULL != php_http_env_get_server_var((v), strlen(v), 1 TSRMLS_CC))

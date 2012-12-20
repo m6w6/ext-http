@@ -17,6 +17,11 @@
 
 PHP_HTTP_API STATUS php_http_headers_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data TSRMLS_DC);
 
+PHP_HTTP_API void php_http_headers_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg TSRMLS_DC);
+PHP_HTTP_API void php_http_headers_to_string(php_http_buffer_t *str, HashTable *headers TSRMLS_DC);
+
+PHP_HTTP_API zval *php_http_header_value_to_string(zval *header TSRMLS_DC);
+
 zend_class_entry *php_http_header_get_class_entry(void);
 
 PHP_METHOD(HttpHeader, __construct);
