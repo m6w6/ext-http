@@ -599,6 +599,7 @@ static void shift_arg(php_http_buffer_t *buf, char *key_str, size_t key_len, zva
 		php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 		zval **val;
 
+		shift_key(buf, key_str, key_len, ass, asl, flags TSRMLS_CC);
 		FOREACH_KEYVAL(pos, zvalue, key, val) {
 			/* did you mean recursion? */
 			php_http_array_hashkey_stringify(&key);

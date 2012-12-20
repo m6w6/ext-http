@@ -41,6 +41,79 @@ PHP_HTTP_API STATUS php_http_headers_parse(const char *header, size_t length, Ha
 	return SUCCESS;
 }
 
+PHP_HTTP_API void php_http_headers_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg TSRMLS_DC)
+{
+	HashPosition pos1, pos2;
+	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+	zval **header, **single_header;
+
+	FOREACH_HASH_KEYVAL(pos1, headers, key, header) {
+		if (key.type == HASH_KEY_IS_STRING) {
+			if (key.len == sizeof("Set-Cookie") && !strcasecmp(key.str, "Set-Cookie") && Z_TYPE_PP(header) == IS_ARRAY) {
+				FOREACH_VAL(pos2, *header, single_header) {
+					if (Z_TYPE_PP(single_header) == IS_ARRAY) {
+						php_http_cookie_list_t *cookie = php_http_cookie_list_from_struct(NULL, *single_header TSRMLS_CC);
+
+						if (cookie) {
+							char *buf;
+							size_t len;
+
+							php_http_cookie_list_to_string(cookie, &buf, &len);
+							cb(cb_arg, crlf ? "Set-Cookie: %s" PHP_HTTP_CRLF : "Set-Cookie: %s", buf);
+							php_http_cookie_list_free(&cookie);
+							efree(buf);
+						}
+					} else {
+						zval *strval = php_http_header_value_to_string(*single_header TSRMLS_CC);
+
+						cb(cb_arg, crlf ? "Set-Cookie: %s" PHP_HTTP_CRLF : "Set-Cookie: %s", Z_STRVAL_P(strval));
+						zval_ptr_dtor(&strval);
+					}
+				}
+			} else {
+				zval *strval = php_http_header_value_to_string(*header TSRMLS_CC);
+
+				cb(cb_arg, crlf ? "%s: %s" PHP_HTTP_CRLF : "%s: %s", key.str, Z_STRVAL_P(strval));
+				zval_ptr_dtor(&strval);
+			}
+		}
+	}
+}
+
+PHP_HTTP_API void php_http_headers_to_string(php_http_buffer_t *str, HashTable *headers TSRMLS_DC)
+{
+	php_http_headers_to_callback(headers, 1, php_http_buffer_appendf, str TSRMLS_CC);
+}
+
+PHP_HTTP_API zval *php_http_header_value_to_string(zval *header TSRMLS_DC)
+{
+	zval *ret;
+
+	if (Z_TYPE_P(header) == IS_BOOL) {
+		MAKE_STD_ZVAL(ret);
+		ZVAL_STRING(ret, Z_BVAL_P(header) ? "true" : "false", 1);
+	} else if (Z_TYPE_P(header) == IS_ARRAY) {
+		zval **val;
+		HashPosition pos;
+		php_http_buffer_t str;
+
+		php_http_buffer_init(&str);
+		MAKE_STD_ZVAL(ret);
+		FOREACH_VAL(pos,header, val) {
+			zval *strval = php_http_header_value_to_string(*val TSRMLS_CC);
+
+			php_http_buffer_appendf(&str, str.used ? ", %s":"%s", Z_STRVAL_P(strval));
+			zval_ptr_dtor(&strval);
+		}
+		php_http_buffer_fix(&str);
+		ZVAL_STRINGL(ret, str.data, str.used, 0);
+	} else  {
+		ret = php_http_zsep(1, IS_STRING, header);
+	}
+
+	return ret;
+}
+
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpHeader, method, 0, req_args)
 #define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpHeader, method, 0)
 #define PHP_HTTP_HEADER_ME(method, v)			PHP_ME(HttpHeader, method, PHP_HTTP_ARGS(HttpHeader, method), v)

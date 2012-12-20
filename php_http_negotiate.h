@@ -15,11 +15,11 @@
 
 PHP_HTTP_API HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable *supported, const char *primary_sep_str, size_t primary_sep_len TSRMLS_DC);
 
-static inline HashTable *php_http_negotiate_language(HashTable *supported TSRMLS_DC)
+static inline HashTable *php_http_negotiate_language(HashTable *supported, php_http_message_t *request TSRMLS_DC)
 {
 	HashTable *result = NULL;
 	size_t length;
-	char *value = php_http_env_get_request_header(ZEND_STRL("Accept-Language"), &length TSRMLS_CC);
+	char *value = php_http_env_get_request_header(ZEND_STRL("Accept-Language"), &length, request TSRMLS_CC);
 
 	if (value) {
 		result = php_http_negotiate(value, length, supported, "-", 1 TSRMLS_CC);
@@ -29,11 +29,11 @@ static inline HashTable *php_http_negotiate_language(HashTable *supported TSRMLS
 	return result;
 }
 
-static inline HashTable *php_http_negotiate_encoding(HashTable *supported TSRMLS_DC)
+static inline HashTable *php_http_negotiate_encoding(HashTable *supported, php_http_message_t *request TSRMLS_DC)
 {
 	HashTable *result = NULL;
 	size_t length;
-	char *value = php_http_env_get_request_header(ZEND_STRL("Accept-Encoding"), &length TSRMLS_CC);
+	char *value = php_http_env_get_request_header(ZEND_STRL("Accept-Encoding"), &length, request TSRMLS_CC);
 
 	if (value) {
 		result = php_http_negotiate(value, length, supported, NULL, 0 TSRMLS_CC);
@@ -43,11 +43,11 @@ static inline HashTable *php_http_negotiate_encoding(HashTable *supported TSRMLS
 	return result;
 }
 
-static inline HashTable *php_http_negotiate_charset(HashTable *supported TSRMLS_DC)
+static inline HashTable *php_http_negotiate_charset(HashTable *supported, php_http_message_t *request TSRMLS_DC)
 {
 	HashTable *result = NULL;
 	size_t length;
-	char *value = php_http_env_get_request_header(ZEND_STRL("Accept-Charset"), &length TSRMLS_CC);
+	char *value = php_http_env_get_request_header(ZEND_STRL("Accept-Charset"), &length, request TSRMLS_CC);
 
 	if (value) {
 		result = php_http_negotiate(value, length, supported, NULL, 0 TSRMLS_CC);
@@ -57,11 +57,11 @@ static inline HashTable *php_http_negotiate_charset(HashTable *supported TSRMLS_
 	return result;
 }
 
-static inline HashTable *php_http_negotiate_content_type(HashTable *supported TSRMLS_DC)
+static inline HashTable *php_http_negotiate_content_type(HashTable *supported, php_http_message_t *request TSRMLS_DC)
 {
 	HashTable *result = NULL;
 	size_t length;
-	char *value = php_http_env_get_request_header(ZEND_STRL("Accept"), &length TSRMLS_CC);
+	char *value = php_http_env_get_request_header(ZEND_STRL("Accept"), &length, request TSRMLS_CC);
 
 	if (value) {
 		result = php_http_negotiate(value, length, supported, "/", 1 TSRMLS_CC);
@@ -119,7 +119,7 @@ static inline HashTable *php_http_negotiate_content_type(HashTable *supported TS
 #define PHP_HTTP_DO_NEGOTIATE(type, supported, rs_array) \
 	{ \
 		HashTable *result; \
-		if ((result = php_http_negotiate_ ##type(supported TSRMLS_CC))) { \
+		if ((result = php_http_negotiate_ ##type(supported, NULL TSRMLS_CC))) { \
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(result, supported, rs_array); \
 		} else { \
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array); \

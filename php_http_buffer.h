@@ -165,50 +165,14 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_shrink(php_http_buffer_t *buf);
 PHP_HTTP_BUFFER_API size_t php_http_buffer_append(php_http_buffer_t *buf, const char *append, size_t append_len);
 PHP_HTTP_BUFFER_API size_t php_http_buffer_appendf(php_http_buffer_t *buf, const char *format, ...) PHP_HTTP_BUFFER_ATTRIBUTE_FORMAT(printf, 2, 3);
 
-/* insert data at a specific position of the php_http_buffer_t */
-#define php_http_buffer_inserts(b, i, o) php_http_buffer_insert((b), (i), sizeof(i)-1, (o))
-#define php_http_buffer_insertl(b, i, o) php_http_buffer_insert((b), (i), strlen(i), (o))
-PHP_HTTP_BUFFER_API size_t php_http_buffer_insert(php_http_buffer_t *buf, const char *insert, size_t insert_len, size_t offset);
-PHP_HTTP_BUFFER_API size_t php_http_buffer_insertf(php_http_buffer_t *buf, size_t offset, const char *format, ...) PHP_HTTP_BUFFER_ATTRIBUTE_FORMAT(printf, 3, 4);
-
-/* prepend data */
-#define php_http_buffer_prepends(b, p) php_http_buffer_prepend((b), (p), sizeof(p)-1)
-#define php_http_buffer_prependl(b, p) php_http_buffer_prepend((b), (p), strlen(p))
-PHP_HTTP_BUFFER_API size_t php_http_buffer_prepend(php_http_buffer_t *buf, const char *prepend, size_t prepend_len);
-PHP_HTTP_BUFFER_API size_t php_http_buffer_prependf(php_http_buffer_t *buf, const char *format, ...) PHP_HTTP_BUFFER_ATTRIBUTE_FORMAT(printf, 2, 3);
-
 /* get a zero-terminated string */
 PHP_HTTP_BUFFER_API char *php_http_buffer_data(const php_http_buffer_t *buf, char **into, size_t *len);
-
-/* get a part of the php_http_buffer_t */
-#define php_http_buffer_mid(b, o, l) php_http_buffer_sub((b), (o), (l))
-#define php_http_buffer_left(b, l) php_http_buffer_sub((b), 0, (l))
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_right(const php_http_buffer_t *buf, size_t length);
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_sub(const php_http_buffer_t *buf, size_t offset, size_t len);
 
 /* remove a substring */
 PHP_HTTP_BUFFER_API size_t php_http_buffer_cut(php_http_buffer_t *buf, size_t offset, size_t length);
 
-/* get a complete php_http_buffer_t duplicate */
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_copy(const php_http_buffer_t *from, php_http_buffer_t *to);
-
-/* merge several php_http_buffer_t objects
-   use like:
-
-	php_http_buffer_t *final = php_http_buffer_merge(3,
-		PHP_HTTP_BUFFER_NOT_FREE(&keep),
-		PHP_HTTP_BUFFER_ALL_FREE(middle_ptr),
-		PHP_HTTP_BUFFER_VAL_FREE(&local);
-*/
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge(unsigned argc, ...);
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge_ex(php_http_buffer_t *buf, unsigned argc, ...);
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge_va(php_http_buffer_t *buf, unsigned argc, va_list argv);
-
 /* sets a trailing NUL byte */
 PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_fix(php_http_buffer_t *buf);
-
-/* memcmp for php_http_buffer_t objects */
-PHP_HTTP_BUFFER_API int php_http_buffer_cmp(php_http_buffer_t *left, php_http_buffer_t *right);
 
 /* reset php_http_buffer_t object */
 PHP_HTTP_BUFFER_API void php_http_buffer_reset(php_http_buffer_t *buf);
@@ -232,7 +196,48 @@ PHP_HTTP_BUFFER_API void php_http_buffer_chunked_output(php_http_buffer_t **s, c
 /* write chunks directly into php_http_buffer_t buffer */
 PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_input(php_http_buffer_t **s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *opaque TSRMLS_DC);
 
-#endif
+
+#	ifdef PHP_HTTP_BUFFER_EXTENDED
+
+/* memcmp for php_http_buffer_t objects */
+PHP_HTTP_BUFFER_API int php_http_buffer_cmp(php_http_buffer_t *left, php_http_buffer_t *right);
+
+/* get a complete php_http_buffer_t duplicate */
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_copy(const php_http_buffer_t *from, php_http_buffer_t *to);
+
+/* merge several php_http_buffer_t objects
+   use like:
+
+	php_http_buffer_t *final = php_http_buffer_merge(3,
+		PHP_HTTP_BUFFER_NOT_FREE(&keep),
+		PHP_HTTP_BUFFER_ALL_FREE(middle_ptr),
+		PHP_HTTP_BUFFER_VAL_FREE(&local);
+*/
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge(unsigned argc, ...);
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge_ex(php_http_buffer_t *buf, unsigned argc, ...);
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge_va(php_http_buffer_t *buf, unsigned argc, va_list argv);
+
+/* insert data at a specific position of the php_http_buffer_t */
+#define php_http_buffer_inserts(b, i, o) php_http_buffer_insert((b), (i), sizeof(i)-1, (o))
+#define php_http_buffer_insertl(b, i, o) php_http_buffer_insert((b), (i), strlen(i), (o))
+PHP_HTTP_BUFFER_API size_t php_http_buffer_insert(php_http_buffer_t *buf, const char *insert, size_t insert_len, size_t offset);
+PHP_HTTP_BUFFER_API size_t php_http_buffer_insertf(php_http_buffer_t *buf, size_t offset, const char *format, ...) PHP_HTTP_BUFFER_ATTRIBUTE_FORMAT(printf, 3, 4);
+
+/* prepend data */
+#define php_http_buffer_prepends(b, p) php_http_buffer_prepend((b), (p), sizeof(p)-1)
+#define php_http_buffer_prependl(b, p) php_http_buffer_prepend((b), (p), strlen(p))
+PHP_HTTP_BUFFER_API size_t php_http_buffer_prepend(php_http_buffer_t *buf, const char *prepend, size_t prepend_len);
+PHP_HTTP_BUFFER_API size_t php_http_buffer_prependf(php_http_buffer_t *buf, const char *format, ...) PHP_HTTP_BUFFER_ATTRIBUTE_FORMAT(printf, 2, 3);
+
+/* get a part of the php_http_buffer_t */
+#define php_http_buffer_mid(b, o, l) php_http_buffer_sub((b), (o), (l))
+#define php_http_buffer_left(b, l) php_http_buffer_sub((b), 0, (l))
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_right(const php_http_buffer_t *buf, size_t length);
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_sub(const php_http_buffer_t *buf, size_t offset, size_t len);
+
+#	endif /* PHP_HTTP_BUFFER_EXTENDED */
+
+#endif /* PHP_HTTP_BUFFER_H */
 
 
 /*

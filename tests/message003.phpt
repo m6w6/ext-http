@@ -8,15 +8,15 @@ $m = new http\Message(fopen(__DIR__."/data/message_r_multipart_put.txt","rb"));
 if ($m->isMultipart($boundary)) {
     var_dump($boundary);
 
-    foreach ($m->splitMultipartBody() as $mm) {
-        echo "===\n",$mm,"===\n";
+    foreach ($m->splitMultipartBody() as $i => $mm) {
+        echo "==$i==\n",$mm,"===\n";
     }
 }
 ?>
 DONE
 --EXPECTF--
 string(40) "----------------------------6e182425881c"
-===
+==%d==
 Content-Disposition: form-data; name="composer"; filename="composer.json"
 Content-Type: application/octet-stream
 Content-Length: 567
@@ -46,7 +46,7 @@ Content-Length: 567
 }
 
 ===
-===
+==%d==
 Content-Disposition: form-data; name="LICENSE"; filename="LICENSE"
 Content-Type: application/octet-stream
 Content-Length: 1354

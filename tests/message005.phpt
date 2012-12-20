@@ -6,6 +6,7 @@ message cloning
 <?php
 
 $msg = new http\Message("
+HTTP/1.1 201 Created
 HTTP/1.1 200 Ok
 String: foobar
 ");

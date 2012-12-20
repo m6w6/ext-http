@@ -155,5 +155,103 @@ class MessageTest extends PHPUnit_Framework_TestCase
 			$m->toString()
 		);
 	}
+	
+	function testDetach() {
+		$m = new http\Message(
+			"HTTP/1.1 200 Ok\r\n".
+			"HTTP/1.1 201 Created\n".
+			"HTTP/1.1 302 Found\r\n"
+		);
+		
+		$this->assertCount(3, $m);
+		$d = $m->detach();
+		$this->assertCount(3, $m);
+		$this->assertCount(1, $d);
+		
+		$this->assertEquals("HTTP/1.1 302 Found\r\n\r\n", $d->toString(true));
+	}
+	
+	function testPrepend() {
+		for ($i=0; $i<9; ++$i) {
+			$a[] = new http\Message("HTTP/1.1 ".($i+200));
+		}
+		
+		foreach ($a as $m) {
+			if (isset($p)) $m->prepend($p);
+			$p = $m;
+		}
+		
+		$this->assertEquals(
+			"HTTP/1.1 200\r\n\r\n".
+			"HTTP/1.1 201\r\n\r\n".
+			"HTTP/1.1 202\r\n\r\n".
+			"HTTP/1.1 203\r\n\r\n".
+			"HTTP/1.1 204\r\n\r\n".
+			"HTTP/1.1 205\r\n\r\n".
+			"HTTP/1.1 206\r\n\r\n".
+			"HTTP/1.1 207\r\n\r\n".
+			"HTTP/1.1 208\r\n\r\n",
+			$m->toString(true)
+		);
+	}
+	
+	function testPrependError() {
+		$m = new http\Message("HTTP/1.1 200\r\nHTTP/1.1 201");
+		try {
+			$m->prepend($m->getParentMessage());
+			$this->assertFalse("this code should not be reached");
+		} catch (http\Exception $e) {
+			$this->assertEquals("Cannot prepend a message located within the same message chain", $e->getMessage());
+		}
+ 	}
+ 	
+ 	function testToCallback() {
+ 		$m = new http\Message("HTTP/1.1 200 Ok");
+ 		$m->addHeader("Content-Type", "text/plain");
+ 		$m->getBody()->append("this\nis\nthe\ntext");
+ 		
+ 		$d = new http\Encoding\Stream\Deflate;
+ 		$s = "";
+ 		$m->toCallback(function ($m, $data) use ($d) {
+ 			$s.=$d->update($data);
+ 		});
+ 		$s.=$d->finish();
+ 		$this->assertEquals($m->toString(), http\Encoding\Stream\Inflate::decode($s));
+ 	}
+ 	
+ 	function testToStream() {
+ 		$m = new http\Message("HTTP/1.1 200 Ok");
+ 		$m->addHeader("Content-Type", "text/plain");
+ 		$m->getBody()->append("this\nis\nthe\ntext");
+ 		
+ 		$f = tmpfile();
+ 		$m->toStream($f);
+ 		rewind($f);
+ 		$this->assertEquals((string) $m, stream_get_contents($f));
+ 		fclose($f);
+ 	}
+ 	
+ 	function testBoundary() {
+ 		$p = new http\Message;
+ 		$p->addHeader("Content-Type", "text/plain");
+ 		$p->getBody()->append("data");
+ 		
+ 		$m = new http\Message("HTTP/1.1 200");
+ 		$m->getBody()->addPart($p);
+ 		$this->assertStringMatchesFormat(
+ 			"HTTP/1.1 200\r\n".
+			"Content-Length: 97\r\n".
+			"Content-Type: multipart/form-data; boundary=\"%x.%x\"\r\n".
+			"\r\n".
+			"--%x.%x\r\n".
+			"Content-Type: text/plain\r\n".
+			"Content-Length: 4\r\n".
+			"\r\n".
+			"data\r\n".
+			"--%x.%x--\r\n".
+			"", 
+			str_replace("\r", "", $m->toString()) // phpunit replaces \r\n with \n
+		);
+ 	}
 }
 

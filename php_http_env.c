@@ -139,14 +139,20 @@ PHP_HTTP_API void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC)
 	}
 }
 
-PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len TSRMLS_DC)
+PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len, php_http_message_t *request TSRMLS_DC)
 {
-	zval **zvalue;
+	HashTable *request_headers;
+	zval **zvalue = NULL;
 	char *val = NULL, *key = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
 
-	php_http_env_get_request_headers(NULL TSRMLS_CC);
+	if (request) {
+		request_headers = &request->hdrs;
+	} else {
+		php_http_env_get_request_headers(NULL TSRMLS_CC);
+		request_headers = PHP_HTTP_G->env.request.headers;
+	}
 
-	if (SUCCESS == zend_symtable_find(PHP_HTTP_G->env.request.headers, key, name_len + 1, (void *) &zvalue)) {
+	if (SUCCESS == zend_symtable_find(request_headers, key, name_len + 1, (void *) &zvalue)) {
 		zval *zcopy = php_http_ztyp(IS_STRING, *zvalue);
 
 		val = estrndup(Z_STRVAL_P(zcopy), Z_STRLEN_P(zcopy));
@@ -161,13 +167,19 @@ PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t 
 	return val;
 }
 
-PHP_HTTP_API int php_http_env_got_request_header(const char *name_str, size_t name_len TSRMLS_DC)
+PHP_HTTP_API int php_http_env_got_request_header(const char *name_str, size_t name_len, php_http_message_t *request TSRMLS_DC)
 {
+	HashTable *request_headers;
 	char *key = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
 	int got;
 
-	php_http_env_get_request_headers(NULL TSRMLS_CC);
-	got = zend_symtable_exists(PHP_HTTP_G->env.request.headers, key, name_len + 1);
+	if (request) {
+		request_headers = &request->hdrs;
+	} else {
+		php_http_env_get_request_headers(NULL TSRMLS_CC);
+		request_headers = PHP_HTTP_G->env.request.headers;
+	}
+	got = zend_symtable_exists(request_headers, key, name_len + 1);
 	efree(key);
 
 	return got;
@@ -255,13 +267,26 @@ PHP_HTTP_API php_http_message_body_t *php_http_env_get_request_body(TSRMLS_D)
 	return PHP_HTTP_G->env.request.body;
 }
 
-PHP_HTTP_API php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_t length TSRMLS_DC)
+PHP_HTTP_API const char *php_http_env_get_request_method(php_http_message_t *request TSRMLS_DC)
+{
+	const char *m;
+
+	if (PHP_HTTP_MESSAGE_TYPE(REQUEST, request)) {
+		m = request->http.info.request.method;
+	} else {
+		m = SG(request_info).request_method;
+	}
+
+	return m ? m : "GET";
+}
+
+PHP_HTTP_API php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_t length, php_http_message_t *request TSRMLS_DC)
 {
 	zval *zentry;
 	char *range, *rp, c;
 	long begin = -1, end = -1, *ptr;
 
-	if (!(range = php_http_env_get_request_header(ZEND_STRL("Range"), NULL TSRMLS_CC))) {
+	if (!(range = php_http_env_get_request_header(ZEND_STRL("Range"), NULL, request TSRMLS_CC))) {
 		return PHP_HTTP_RANGE_NO;
 	}
 	if (strncmp(range, "bytes=", lenof("bytes="))) {
@@ -483,15 +508,12 @@ PHP_HTTP_API STATUS php_http_env_set_response_header(long http_code, const char 
 	return ret;
 }
 
-PHP_HTTP_API STATUS php_http_env_set_response_header_format(long http_code, zend_bool replace TSRMLS_DC, const char *fmt, ...)
+PHP_HTTP_API STATUS php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv TSRMLS_DC)
 {
-	va_list args;
 	STATUS ret = FAILURE;
 	sapi_header_line h = {NULL, 0, http_code};
 
-	va_start(args, fmt);
-	h.line_len = vspprintf(&h.line, 0, fmt, args);
-	va_end(args);
+	h.line_len = vspprintf(&h.line, 0, fmt, argv);
 
 	if (h.line) {
 		if (h.line_len) {
@@ -499,6 +521,18 @@ PHP_HTTP_API STATUS php_http_env_set_response_header_format(long http_code, zend
 		}
 		efree(h.line);
 	}
+	return ret;
+}
+
+PHP_HTTP_API STATUS php_http_env_set_response_header_format(long http_code, zend_bool replace TSRMLS_DC, const char *fmt, ...)
+{
+	STATUS ret;
+	va_list args;
+
+	va_start(args, fmt);
+	ret = php_http_env_set_response_header_va(http_code, replace, fmt, args TSRMLS_CC);
+	va_end(args);
+
 	return ret;
 }
 
@@ -755,7 +789,7 @@ PHP_METHOD(HttpEnv, getRequestHeader)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
 		if (header_name_str && header_name_len) {
 			size_t header_length;
-			char *header_value = php_http_env_get_request_header(header_name_str, header_name_len, &header_length TSRMLS_CC);
+			char *header_value = php_http_env_get_request_header(header_name_str, header_name_len, &header_length, NULL TSRMLS_CC);
 
 			if (header_value) {
 				RETURN_STRINGL(header_value, header_length, 0);

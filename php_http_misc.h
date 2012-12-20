@@ -377,6 +377,7 @@ int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list
 
 typedef size_t (*php_http_pass_callback_t)(void *cb_arg, const char *str, size_t len);
 typedef size_t (*php_http_pass_php_http_buffer_callback_t)(void *cb_arg, php_http_buffer_t *str);
+typedef size_t (*php_http_pass_format_callback_t)(void *cb_arg, const char *fmt, ...);
 
 typedef struct php_http_pass_fcall_arg {
 	zval *fcz;
