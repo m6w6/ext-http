@@ -82,7 +82,7 @@ PHP_HTTP_API void php_http_headers_to_callback(HashTable *headers, zend_bool crl
 
 PHP_HTTP_API void php_http_headers_to_string(php_http_buffer_t *str, HashTable *headers TSRMLS_DC)
 {
-	php_http_headers_to_callback(headers, 1, php_http_buffer_appendf, str TSRMLS_CC);
+	php_http_headers_to_callback(headers, 1, (php_http_pass_format_callback_t) php_http_buffer_appendf, str TSRMLS_CC);
 }
 
 PHP_HTTP_API zval *php_http_header_value_to_string(zval *header TSRMLS_DC)

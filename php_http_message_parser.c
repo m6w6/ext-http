@@ -393,11 +393,11 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 						len = dec_len;
 					}
 
-					php_stream_write(php_http_message_body_stream(&(*message)->body), str, len);
+					php_stream_write(php_http_message_body_stream((*message)->body), str, len);
 
 					/* keep track */
 					MAKE_STD_ZVAL(zcl);
-					ZVAL_LONG(zcl, php_http_message_body_size(&(*message)->body));
+					ZVAL_LONG(zcl, php_http_message_body_size((*message)->body));
 					zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), &zcl, sizeof(zval *), NULL);
 				}
 

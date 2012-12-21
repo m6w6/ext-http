@@ -363,7 +363,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r, php_ht
 
 	if ((zoption = get_option(options, ZEND_STRL("headers") TSRMLS_CC))) {
 		if (Z_TYPE_P(zoption) == IS_ARRAY) {
-			php_http_headers_to_callback(Z_ARRVAL_P(zoption), 0, r->ops->set_header, r TSRMLS_CC);
+			php_http_headers_to_callback(Z_ARRVAL_P(zoption), 0, (php_http_pass_format_callback_t) r->ops->set_header, r TSRMLS_CC);
 		}
 		zval_ptr_dtor(&zoption);
 	}
@@ -1158,8 +1158,8 @@ PHP_METHOD(HttpEnvResponse, __invoke)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &ob_str, &ob_len, &ob_flags)) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-		if (obj->body.handle || SUCCESS == php_http_new(&obj->body, php_http_message_body_get_class_entry(), (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_copy(&obj->message->body, NULL, 0), NULL TSRMLS_CC)) {
-			php_http_message_body_append(&obj->message->body, ob_str, ob_len);
+		if (obj->body.handle || SUCCESS == php_http_new(&obj->body, php_http_message_body_get_class_entry(), (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_init(&obj->message->body, NULL TSRMLS_CC), NULL TSRMLS_CC)) {
+			php_http_message_body_append(obj->message->body, ob_str, ob_len);
 			RETURN_TRUE;
 		}
 		RETURN_FALSE;

@@ -1211,16 +1211,16 @@ PHP_HTTP_API STATUS php_http_curl_client_prepare(php_http_client_t *h, php_http_
 	}
 
 	/* attach request body */
-	if ((body_size = php_http_message_body_size(&msg->body))) {
+	if ((body_size = php_http_message_body_size(msg->body))) {
 		/* RFC2616, section 4.3 (para. 4) states that »a message-body MUST NOT be included in a request if the
 		 * specification of the request method (section 5.1.1) does not allow sending an entity-body in request.«
 		 * Following the clause in section 5.1.1 (para. 2) that request methods »MUST be implemented with the
 		 * same semantics as those specified in section 9« reveal that not any single defined HTTP/1.1 method
 		 * does not allow a request body.
 		 */
-		php_stream_rewind(php_http_message_body_stream(&msg->body));
-		curl_easy_setopt(curl->handle, CURLOPT_IOCTLDATA, &msg->body);
-		curl_easy_setopt(curl->handle, CURLOPT_READDATA, &msg->body);
+		php_stream_rewind(php_http_message_body_stream(msg->body));
+		curl_easy_setopt(curl->handle, CURLOPT_IOCTLDATA, msg->body);
+		curl_easy_setopt(curl->handle, CURLOPT_READDATA, msg->body);
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, body_size);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, body_size);
 	}

@@ -32,11 +32,11 @@ PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_h
 	}
 	h->request.buffer = php_http_buffer_init(NULL);
 	h->request.parser = php_http_message_parser_init(NULL TSRMLS_CC);
-	h->request.message = php_http_message_init(NULL, 0 TSRMLS_CC);
+	h->request.message = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
 
 	h->response.buffer = php_http_buffer_init(NULL);
 	h->response.parser = php_http_message_parser_init(NULL TSRMLS_CC);
-	h->response.message = php_http_message_init(NULL, 0 TSRMLS_CC);
+	h->response.message = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
 
 	TSRMLS_SET_CTX(h->ts);
 
@@ -100,11 +100,11 @@ PHP_HTTP_API php_http_client_t *php_http_client_copy(php_http_client_t *from, ph
 
 		to->request.buffer = php_http_buffer_init(NULL);
 		to->request.parser = php_http_message_parser_init(NULL TSRMLS_CC);
-		to->request.message = php_http_message_init(NULL, 0 TSRMLS_CC);
+		to->request.message = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
 
 		to->response.buffer = php_http_buffer_init(NULL);
 		to->response.parser = php_http_message_parser_init(NULL TSRMLS_CC);
-		to->response.message = php_http_message_init(NULL, 0 TSRMLS_CC);
+		to->response.message = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
 
 		TSRMLS_SET_CTX(to->ts);
 
@@ -452,7 +452,7 @@ STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC)
 			zend_update_property(php_http_client_class_entry, zclient, ZEND_STRL("responseMessage"), message TSRMLS_CC);
 			zval_ptr_dtor(&message);
 
-			obj->client->response.message = php_http_message_init(NULL, 0 TSRMLS_CC);
+			obj->client->response.message = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
 		} else {
 			zend_update_property_null(php_http_client_class_entry, zclient, ZEND_STRL("responseMessage") TSRMLS_CC);
 		}
@@ -469,7 +469,7 @@ STATUS php_http_client_object_handle_response(zval *zclient TSRMLS_DC)
 			ZVAL_OBJVAL(message, php_http_message_object_new_ex(php_http_message_get_class_entry(), msg, NULL TSRMLS_CC), 0);
 			zend_update_property(php_http_client_class_entry, zclient, ZEND_STRL("requestMessage"), message TSRMLS_CC);
 			zval_ptr_dtor(&message);
-			obj->client->request.message = php_http_message_init(NULL, 0 TSRMLS_CC);
+			obj->client->request.message = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
 		}
 	}
 
@@ -932,7 +932,7 @@ PHP_METHOD(HttpClient, request)
 			MAKE_STD_ZVAL(req);
 			ZVAL_OBJVAL(req, ov, 0);
 
-			msg_obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST TSRMLS_CC);
+			msg_obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST, NULL TSRMLS_CC);
 			PHP_HTTP_INFO(msg_obj->message).request.url = estrndup(url_str, url_len);
 			PHP_HTTP_INFO(msg_obj->message).request.method = estrndup(meth_str, meth_len);
 
