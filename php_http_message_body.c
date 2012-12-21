@@ -30,13 +30,19 @@
 static STATUS add_recursive_fields(php_http_message_body_t *body, const char *name, zval *value);
 static STATUS add_recursive_files(php_http_message_body_t *body, const char *name, zval *value);
 
-PHP_HTTP_API php_http_message_body_t *php_http_message_body_init(php_http_message_body_t *body, php_stream *stream TSRMLS_DC)
+PHP_HTTP_API php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **body_ptr, php_stream *stream TSRMLS_DC)
 {
-	if (!body) {
-		body = emalloc(sizeof(php_http_message_body_t));
+	php_http_message_body_t *body;
+
+	if (body_ptr && *body_ptr) {
+		body = *body_ptr;
+		++body->refcount;
+		return body;
 	}
-	memset(body, 0, sizeof(*body));
 	
+	body = ecalloc(1, sizeof(php_http_message_body_t));
+	body->refcount = 1;
+
 	if (stream) {
 		php_stream_auto_cleanup(stream);
 		body->stream_id = php_stream_get_resource_id(stream);
@@ -51,42 +57,48 @@ PHP_HTTP_API php_http_message_body_t *php_http_message_body_init(php_http_messag
 	return body;
 }
 
-PHP_HTTP_API php_http_message_body_t *php_http_message_body_copy(php_http_message_body_t *from, php_http_message_body_t *to, zend_bool dup_internal_stream_and_contents)
+PHP_HTTP_API unsigned php_http_message_body_addref(php_http_message_body_t *body)
 {
-	if (!from) {
-		return NULL;
-	} else {
+	return ++body->refcount;
+}
+
+PHP_HTTP_API php_http_message_body_t *php_http_message_body_copy(php_http_message_body_t *from, php_http_message_body_t *to)
+{
+	if (from) {
 		TSRMLS_FETCH_FROM_CTX(from->ts);
 		
-		if (dup_internal_stream_and_contents) {
-			to = php_http_message_body_init(to, NULL TSRMLS_CC);
-			php_http_message_body_to_stream(from, php_http_message_body_stream(to), 0, 0);
+		if (to) {
+			php_stream_truncate_set_size(php_http_message_body_stream(to), 0);
 		} else {
-			to = php_http_message_body_init(to, php_http_message_body_stream(from) TSRMLS_CC);
+			to = php_http_message_body_init(NULL, NULL TSRMLS_CC);
 		}
+		php_http_message_body_to_stream(from, php_http_message_body_stream(to), 0, 0);
 
+		if (to->boundary) {
+			efree(to->boundary);
+		}
 		if (from->boundary) {
 			to->boundary = estrdup(from->boundary);
 		}
-
-		return to;
+	} else {
+		to = NULL;
 	}
+	return to;
 }
 
-PHP_HTTP_API void php_http_message_body_dtor(php_http_message_body_t *body)
+PHP_HTTP_API void php_http_message_body_free(php_http_message_body_t **body_ptr)
 {
-	TSRMLS_FETCH_FROM_CTX(body->ts);
-	/* NO FIXME: shows leakinfo in DEBUG mode */
-	zend_list_delete(body->stream_id);
-	STR_FREE(body->boundary);
-}
+	if (*body_ptr) {
+		php_http_message_body_t *body = *body_ptr;
 
-PHP_HTTP_API void php_http_message_body_free(php_http_message_body_t **body)
-{
-	if (*body) {
-		php_http_message_body_dtor(*body);
-		efree(*body);
-		*body = NULL;
+		if (!--body->refcount) {
+			TSRMLS_FETCH_FROM_CTX(body->ts);
+			/* NO FIXME: shows leakinfo in DEBUG mode */
+			zend_list_delete(body->stream_id);
+			STR_FREE(body->boundary);
+			efree(body);
+		}
+		*body_ptr = NULL;
 	}
 }
 
@@ -468,7 +480,7 @@ static size_t splitbody(void *opaque, char *buf, size_t len TSRMLS_DC)
 					/* advance messages */
 					php_http_message_t *msg;
 
-					msg = php_http_message_init(NULL, 0 TSRMLS_CC);
+					msg = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
 					msg->parent = arg->parser->message;
 					arg->parser->message = msg;
 				}
@@ -639,8 +651,9 @@ zend_object_value php_http_message_body_object_clone(zval *object TSRMLS_DC)
 	zend_object_value new_ov;
 	php_http_message_body_object_t *new_obj = NULL;
 	php_http_message_body_object_t *old_obj = zend_object_store_get_object(object TSRMLS_CC);
+	php_http_message_body_t *body = php_http_message_body_copy(old_obj->body, NULL);
 
-	new_ov = php_http_message_body_object_new_ex(old_obj->zo.ce, php_http_message_body_copy(old_obj->body, NULL, 1), &new_obj TSRMLS_CC);
+	new_ov = php_http_message_body_object_new_ex(old_obj->zo.ce, body, &new_obj TSRMLS_CC);
 	zend_objects_clone_members(&new_obj->zo, new_ov, &old_obj->zo, Z_OBJ_HANDLE_P(object) TSRMLS_CC);
 
 	return new_ov;
@@ -669,10 +682,10 @@ PHP_METHOD(HttpMessageBody, __construct)
 				php_stream_from_zval(stream, &zstream);
 
 				if (stream) {
-					if (obj->body && !obj->shared) {
-						php_http_message_body_dtor(obj->body);
+					if (obj->body) {
+						php_http_message_body_free(&obj->body);
 					}
-					obj->body = php_http_message_body_init(obj->body, stream TSRMLS_CC);
+					obj->body = php_http_message_body_init(NULL, stream TSRMLS_CC);
 				}
 			}
 			if (!obj->body) {

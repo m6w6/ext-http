@@ -46,6 +46,13 @@ class MessageTest extends PHPUnit_Framework_TestCase
 		$test->testSetBody($body);
 		$this->assertEquals($body, $test->testGetBody());
 		$this->assertEquals($body, $test->getBody());
+		$file = fopen(__FILE__,"r");
+		$test->testSetBody($file);
+		$this->assertEquals($file, $test->testGetBody()->getResource());
+		$this->assertEquals($file, $test->getBody()->getResource());
+		$test->testSetBody("data");
+		$this->assertEquals("data", (string) $test->testGetBody());
+		$this->assertEquals("data", (string) $test->getBody());
 		$test->testSetRequestMethod("HEAD");
 		$this->assertEquals("HEAD", $test->testGetRequestMethod());
 		$this->assertEquals("HEAD", $test->getRequestMethod());
@@ -195,6 +202,25 @@ class MessageTest extends PHPUnit_Framework_TestCase
 		);
 	}
 	
+	function testEmptyUrlWarning() {
+		$m = new http\Message;
+		$this->setExpectedException("PHPUnit_Framework_Error_Warning");
+		$m->setRequestUrl("/foo");
+		$m->setType(http\Message::TYPE_REQUEST);
+		$this->setExpectedException("PHPUnit_Framework_Error_Warning");
+		$m->setRequestUrl("");
+	}
+	
+	function testEmptyParentMessage() {
+		$m = new http\Message;
+		try {
+			$m->getParentMessage();
+			$this->assertFalse("this code should not be reached");
+		} catch (http\Exception $e) {
+			$this->assertEquals("HttpMessage does not have a parent message", $e->getMessage());
+		}
+	}
+	
 	function testPrependError() {
 		$m = new http\Message("HTTP/1.1 200\r\nHTTP/1.1 201");
 		try {
@@ -240,7 +266,7 @@ class MessageTest extends PHPUnit_Framework_TestCase
  		$m->getBody()->addPart($p);
  		$this->assertStringMatchesFormat(
  			"HTTP/1.1 200\r\n".
-			"Content-Length: 97\r\n".
+			"Content-Length: %d\r\n".
 			"Content-Type: multipart/form-data; boundary=\"%x.%x\"\r\n".
 			"\r\n".
 			"--%x.%x\r\n".

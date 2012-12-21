@@ -86,11 +86,23 @@ PHP_METHOD(HttpClientRequest, __construct)
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!a!O!", &meth_str, &meth_len, &url_str, &url_len, &zheaders, &zbody, php_http_message_body_get_class_entry())) {
 			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+			php_http_message_body_object_t *body_obj = NULL;
+
+			if (zbody) {
+				body_obj = zend_object_store_get_object(zbody TSRMLS_CC);
+				Z_OBJ_ADDREF_P(zbody);
+				obj->body = Z_OBJVAL_P(zbody);
+				php_http_message_body_addref(body_obj->body);
+			}
 
 			if (obj->message) {
 				php_http_message_set_type(obj->message, PHP_HTTP_REQUEST);
+				if (body_obj) {
+					php_http_message_body_free(&obj->message->body);
+					obj->message->body = body_obj->body;
+				}
 			} else {
-				obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST TSRMLS_CC);
+				obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST, body_obj ? body_obj->body : NULL TSRMLS_CC);
 			}
 
 			if (meth_str && meth_len) {
@@ -101,14 +113,6 @@ PHP_METHOD(HttpClientRequest, __construct)
 			}
 			if (zheaders) {
 				array_copy(Z_ARRVAL_P(zheaders), &obj->message->hdrs);
-			}
-			if (zbody) {
-				php_http_message_body_object_t *body_obj = zend_object_store_get_object(zbody TSRMLS_CC);
-
-				php_http_message_body_dtor(&obj->message->body);
-				php_http_message_body_copy(body_obj->body, &obj->message->body, 0);
-				Z_OBJ_ADDREF_P(zbody);
-				obj->body = Z_OBJVAL_P(zbody);
 			}
 		}
 	} end_error_handling();

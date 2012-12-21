@@ -30,7 +30,7 @@ typedef struct php_http_message php_http_message_t;
 struct php_http_message {
 	PHP_HTTP_INFO_IMPL(http, type)
 	HashTable hdrs;
-	php_http_message_body_t body;
+	php_http_message_body_t *body;
 	php_http_message_t *parent;
 	void *opaque;
 #ifdef ZTS
@@ -40,7 +40,7 @@ struct php_http_message {
 
 PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **message, HashTable **headers, php_http_info_t *info TSRMLS_DC);
 
-PHP_HTTP_API php_http_message_t *php_http_message_init(php_http_message_t *m, php_http_message_type_t t TSRMLS_DC);
+PHP_HTTP_API php_http_message_t *php_http_message_init(php_http_message_t *m, php_http_message_type_t t, php_http_message_body_t *body TSRMLS_DC);
 PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m, php_http_message_type_t t TSRMLS_DC);
 PHP_HTTP_API php_http_message_t *php_http_message_copy(php_http_message_t *from, php_http_message_t *to);
 PHP_HTTP_API php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_message_t *to, zend_bool parents);
