@@ -42,8 +42,6 @@ PHP_RINIT_FUNCTION(http_env)
 				if (SUCCESS == zend_hash_find(&SG(known_post_content_types), key_str, key_len, (void *) &post_entry)) {
 					zval *files = PG(http_globals)[TRACK_VARS_FILES];
 
-					zend_is_auto_global(ZEND_STRL("_POST") TSRMLS_CC);
-
 					if (post_entry) {
 						SG(request_info).post_entry = post_entry;
 
@@ -1021,6 +1019,8 @@ PHP_METHOD(HttpEnv, cleanPersistentHandles)
 static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 {
 	if (SG(request_info).raw_post_data) {
+		zval_dtor(arg);
+		((zval *) arg)->type = IS_NULL;
 		php_json_decode(arg, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length, 1, PG(max_input_nesting_level) TSRMLS_CC);
 	}
 }

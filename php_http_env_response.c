@@ -1134,17 +1134,24 @@ static zend_function_entry php_http_env_response_method_entry[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
+#define PHP_HTTP_ENV_RESPONSE_OBJECT_INIT(obj) \
+	do { \
+		if (!obj->message) { \
+			obj->message = php_http_message_init_env(NULL, PHP_HTTP_RESPONSE TSRMLS_CC); \
+		} \
+	} while (0)
 
 PHP_METHOD(HttpEnvResponse, __construct)
 {
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
-		if (SUCCESS == zend_parse_parameters_none()) {
-			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
+		if (SUCCESS == zend_parse_parameters_none()) {
 			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
 				obj->message = php_http_message_init_env(obj->message, PHP_HTTP_RESPONSE TSRMLS_CC);
 			} end_error_handling();
 		}
+		PHP_HTTP_ENV_RESPONSE_OBJECT_INIT(obj);
 	} end_error_handling();
 
 }
@@ -1157,6 +1164,8 @@ PHP_METHOD(HttpEnvResponse, __invoke)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &ob_str, &ob_len, &ob_flags)) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		PHP_HTTP_ENV_RESPONSE_OBJECT_INIT(obj);
 
 		if (obj->body.handle || SUCCESS == php_http_new(&obj->body, php_http_message_body_get_class_entry(), (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_init(&obj->message->body, NULL TSRMLS_CC), NULL TSRMLS_CC)) {
 			php_http_message_body_append(obj->message->body, ob_str, ob_len);

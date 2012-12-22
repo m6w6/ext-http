@@ -670,6 +670,13 @@ void php_http_message_body_object_free(void *object TSRMLS_DC)
 	efree(obj);
 }
 
+#define PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj) \
+	do { \
+		if (!obj->body) { \
+			obj->body = php_http_message_body_init(NULL, NULL TSRMLS_CC); \
+		} \
+	} while(0)
+
 PHP_METHOD(HttpMessageBody, __construct)
 {
 	php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -688,9 +695,7 @@ PHP_METHOD(HttpMessageBody, __construct)
 					obj->body = php_http_message_body_init(NULL, stream TSRMLS_CC);
 				}
 			}
-			if (!obj->body) {
-				obj->body = php_http_message_body_init(NULL, NULL TSRMLS_CC);
-			}
+			PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 		}
 	} end_error_handling();
 }
@@ -701,6 +706,8 @@ PHP_METHOD(HttpMessageBody, __toString)
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		char *str;
 		size_t len;
+
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 
 		php_http_message_body_to_string(obj->body, &str, &len, 0, 0);
 		if (str) {
@@ -732,6 +739,8 @@ PHP_METHOD(HttpMessageBody, toStream)
 		php_stream *stream;
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
 		php_stream_from_zval(stream, &zstream);
 		php_http_message_body_to_stream(obj->body, stream, offset, forlen);
 		RETURN_TRUE;
@@ -747,6 +756,8 @@ PHP_METHOD(HttpMessageBody, toCallback)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f|ll", &fcd.fci, &fcd.fcc, &offset, &forlen)) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 
 		fcd.fcz = getThis();
 		Z_ADDREF_P(fcd.fcz);
@@ -766,6 +777,8 @@ PHP_METHOD(HttpMessageBody, getResource)
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
 		zend_list_addref(obj->body->stream_id);
 		RETVAL_RESOURCE(obj->body->stream_id);
 	}
@@ -779,6 +792,8 @@ PHP_METHOD(HttpMessageBody, append)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &str, &len)) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
 		RETURN_LONG(php_http_message_body_append(obj->body, str, len));
 	}
 	RETURN_FALSE;
@@ -790,6 +805,8 @@ PHP_METHOD(HttpMessageBody, addForm)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|h!h!", &fields, &files)) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 
 		RETURN_SUCCESS(php_http_message_body_add_form(obj->body, fields, files));
 	}
@@ -804,6 +821,8 @@ PHP_METHOD(HttpMessageBody, addPart)
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		php_http_message_object_t *mobj = zend_object_store_get_object(zobj TSRMLS_CC);
 
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
 		php_http_message_body_add_part(obj->body, mobj->message);
 		RETURN_TRUE;
 	}
@@ -814,9 +833,11 @@ PHP_METHOD(HttpMessageBody, etag)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-		char *etag = php_http_message_body_etag(obj->body);
+		char *etag;
 
-		if (etag) {
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
+		if ((etag = php_http_message_body_etag(obj->body))) {
 			RETURN_STRING(etag, 0);
 		}
 	}
@@ -830,9 +851,11 @@ PHP_METHOD(HttpMessageBody, stat)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &field_str, &field_len)) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-		const php_stream_statbuf *sb = php_http_message_body_stat(obj->body);
+		const php_stream_statbuf *sb;
 
-		if (sb) {
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
+		if ((sb = php_http_message_body_stat(obj->body))) {
 			if (field_str && field_len) {
 					switch (*field_str) {
 						case 's':

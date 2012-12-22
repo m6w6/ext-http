@@ -144,11 +144,19 @@ static int grab_files(void *zpp TSRMLS_DC, int argc, va_list argv, zend_hash_key
 	return ZEND_HASH_APPLY_KEEP;
 }
 
+#define PHP_HTTP_ENV_REQUEST_OBJECT_INIT(obj) \
+	do { \
+		if (!obj->message) { \
+			obj->message = php_http_message_init_env(NULL, PHP_HTTP_REQUEST TSRMLS_CC); \
+		} \
+	} while(0)
+
 PHP_METHOD(HttpEnvRequest, __construct)
 {
 	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
 		if (SUCCESS == zend_parse_parameters_none()) {
-			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			zval *zsg, *zqs;
 
 			obj->message = php_http_message_init_env(obj->message, PHP_HTTP_REQUEST TSRMLS_CC);
@@ -179,6 +187,7 @@ PHP_METHOD(HttpEnvRequest, __construct)
 			zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), zqs TSRMLS_CC);
 			zval_ptr_dtor(&zqs);
 		}
+		PHP_HTTP_ENV_REQUEST_OBJECT_INIT(obj);
 	} end_error_handling();
 }
 

@@ -44,7 +44,7 @@ class DataShareTest extends PHPUnit_Framework_TestCase
     }
     
     function testCurl() {
-    	$client = new http\Curl\Client;
+    	$client = new http\Curl\Client(array("connecttimeout" => 10));
     	$client->setRequest(new http\Client\Request("GET", "https://twitter.com/"));
     	$share = new http\Curl\Client\DataShare;
     	$share->ssl = $share->dns = $share->cookie = true;

@@ -43,12 +43,14 @@ PHP_HTTP_API void php_http_cookie_list_dtor(php_http_cookie_list_t *list);
 PHP_HTTP_API void php_http_cookie_list_free(php_http_cookie_list_t **list);
 
 #define php_http_cookie_list_has_cookie(list, name, name_len) zend_symtable_exists(&(list)->cookies, (name), (name_len)+1)
+#define php_http_cookie_list_del_cookie(list, name, name_len) zend_symtable_del(&(list)->cookies, (name), (name_len)+1)
 PHP_HTTP_API void php_http_cookie_list_add_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len, const char *value, size_t value_len);
-PHP_HTTP_API const char *php_http_cookie_list_get_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len);
+PHP_HTTP_API const char *php_http_cookie_list_get_cookie(php_http_cookie_list_t *list, const char *name, size_t name_len, zval **cookie);
 
 #define php_http_cookie_list_has_extra(list, name, name_len) zend_symtable_exists(&(list)->extras, (name), (name_len)+1)
+#define php_http_cookie_list_del_extra(list, name, name_len) zend_symtable_del(&(list)->extras, (name), (name_len)+1)
 PHP_HTTP_API void php_http_cookie_list_add_extra(php_http_cookie_list_t *list, const char *name, size_t name_len, const char *value, size_t value_len);
-PHP_HTTP_API const char *php_http_cookie_list_get_extra(php_http_cookie_list_t *list, const char *name, size_t name_len);
+PHP_HTTP_API const char *php_http_cookie_list_get_extra(php_http_cookie_list_t *list, const char *name, size_t name_len, zval **extra);
 
 PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, char **str, size_t *len);
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_cookie_list_t *list, zval *strct TSRMLS_DC);
