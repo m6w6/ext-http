@@ -31,7 +31,7 @@ Done
 Test
 string(141) "HTTP/1.1 206 Partial Content%c
 Accept-Ranges: bytes%c
-X-Powered-By: PHP/5.4.11-dev%c
+X-Powered-By: %s%c
 Content-Type: text/plain%c
 Content-Range: bytes 2-4/9%c
 %c
