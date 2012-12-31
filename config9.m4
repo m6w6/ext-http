@@ -132,36 +132,37 @@ dnl ----
 dnl ----
 dnl SERF
 dnl ----
+dnl
+dnl	if test "$PHP_HTTP_LIBSERF_DIR" = "no"; then
+dnl		AC_DEFINE([PHP_HTTP_HAVE_SERF], [0], [ ])
+dnl	else
+dnl		AC_MSG_CHECKING([for serf-?/serf.h])
+dnl		SERF_DIR=
+dnl		for i in "$PHP_HTTP_LIBSERF_DIR" /usr/local /usr /opt; do
+dnl			if test -f "$i/include/serf-0/serf.h"; then
+dnl				SERF_DIR=$i
+dnl				SERF_VER=0
+dnl				break
+dnl			elif test -f "$i/include/serf-1/serf.h"; then
+dnl				SERF_DIR=$i
+dnl				SERF_VER=1
+dnl			fi
+dnl		done
 
-	if test "$PHP_HTTP_LIBSERF_DIR" = "no"; then
-		AC_DEFINE([PHP_HTTP_HAVE_SERF], [0], [ ])
-	else
-		AC_MSG_CHECKING([for serf-?/serf.h])
-		SERF_DIR=
-		for i in "$PHP_HTTP_LIBSERF_DIR" /usr/local /usr /opt; do
-			if test -f "$i/include/serf-0/serf.h"; then
-				SERF_DIR=$i
-				SERF_VER=0
-				break
-			elif test -f "$i/include/serf-1/serf.h"; then
-				SERF_DIR=$i
-				SERF_VER=1
-			fi
-		done
+dnl		if test "x$SERF_DIR" = "x"; then
+dnl			AC_MSG_RESULT([not found])
+dnl			AC_DEFINE([PHP_HTTP_HAVE_SERF], [0], [ ])
+dnl		else
+dnl			AC_MSG_RESULT([found in $SERF_DIR])
 
-		if test "x$SERF_DIR" = "x"; then
-			AC_MSG_RESULT([not found])
-			AC_DEFINE([PHP_HTTP_HAVE_SERF], [0], [ ])
-		else
-			AC_MSG_RESULT([found in $SERF_DIR])
+dnl			PHP_ADD_INCLUDE($SERF_DIR/include/serf-$SERF_VER)
+dnl			PHP_ADD_LIBRARY_WITH_PATH(serf-$SERF_VER, $SERF_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+dnl			AC_DEFINE([PHP_HTTP_HAVE_SERF], [1], [Have libserf support])
+dnl			HTTP_HAVE_A_REQUEST_LIB=true
+dnl		fi
+dnl	fi
+dnl	
 
-			PHP_ADD_INCLUDE($SERF_DIR/include/serf-$SERF_VER)
-			PHP_ADD_LIBRARY_WITH_PATH(serf-$SERF_VER, $SERF_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
-			AC_DEFINE([PHP_HTTP_HAVE_SERF], [1], [Have libserf support])
-			HTTP_HAVE_A_REQUEST_LIB=true
-		fi
-	fi
-	
 dnl ----
 dnl CURL
 dnl ----
