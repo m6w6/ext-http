@@ -31,7 +31,7 @@ object(c)#%d (10) {
   ["type":protected]=>
   int(0)
   ["body":protected]=>
-  object(http\Message\Body)#3 (1) {
+  object(http\Message\Body)#%d (1) {
     ["errorHandling":protected]=>
     NULL
   }
