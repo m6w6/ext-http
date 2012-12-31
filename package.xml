@@ -26,9 +26,9 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-12-13</date>
+ <date>2012-12-30</date>
  <version>
-  <release>2.0.0beta3</release>
+  <release>2.0.0beta4</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -149,7 +149,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
      <file role="test" name="urls.txt"/>
     </dir>
     <file role="test" name="bug61444.phpt"/>
-	<file role="test" name="clientpool002.phpt"/>
+    <file role="test" name="clientpool002.phpt"/>
     <file role="test" name="envrequestbody001.phpt"/>
     <file role="test" name="envrequestbody002.phpt"/>
     <file role="test" name="envrequestbody003.phpt"/>
@@ -165,13 +165,14 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
     <file role="test" name="factory.phpt"/>
     <file role="test" name="filterchunked.phpt"/>
     <file role="test" name="filterzlib.phpt"/>
-	<file role="test" name="info.phpt"/>
+    <file role="test" name="info.phpt"/>
     <file role="test" name="info_001.phpt"/>
     <file role="test" name="message001.phpt"/>
     <file role="test" name="message002.phpt"/>
     <file role="test" name="message003.phpt"/>
     <file role="test" name="message004.phpt"/>
     <file role="test" name="message005.phpt"/>
+    <file role="test" name="message006.phpt"/>
     <file role="test" name="negotiate001.phpt"/>
     <file role="test" name="params001.phpt"/>
     <file role="test" name="params002.phpt"/>
@@ -194,7 +195,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
     <file role="test" name="DataShareTest.php"/>
     <file role="test" name="EncodingTest.php"/>
     <file role="test" name="HeaderTest.php"/>
-	<file role="test" name="MessageTest.php"/>
+    <file role="test" name="MessageTest.php"/>
     <file role="test" name="MessageBodyTest.php"/>
     <file role="test" name="ObjectTest.php"/>
     <file role="test" name="ParamsTest.php"/>
