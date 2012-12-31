@@ -26,7 +26,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-12-30</date>
+ <date>2012-12-31</date>
  <version>
   <release>2.0.0beta4</release>
   <api>2.0.0</api>
@@ -37,16 +37,13 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-! >80% test coverage http://goo.gl/YCV74
-* Fixed http\Env\Response throttling
-* Fixed http\Env\Response caching by last-modified
-* Fixed http\Message::addBody()
-* Fixed http\Message::parentMessage write access
-* Fixed crash with freed but not nulled event_base pointer
-* Fixed crash with null pointer dereference on http\Encoding\Stream::flush()
-* Fixed some memory leaks
-+ Added http\Header::negotiate()
-+ Added http\Header::parse()
+! >80% test coverage http://goo.gl/VmyIW
+* Fixed build with libcurl <= 7.21.3
+* Fixed var_dump of http\Message with inherited userland properties with increased access level
++ Added http\Header::getParams()
++ Added simple support for escapes and quotes in the params parser
++ Added support for sending http\Env\Response over PHP streams
++ Added message body reference counting
 ]]></notes>
  <contents>
   <dir name="/">
