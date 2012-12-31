@@ -22,7 +22,7 @@ PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_init(php_htt
 	if (!h) {
 		free_h = h = emalloc(sizeof(*h));
 	}
-	memset(h, sizeof(*h), 0);
+	memset(h, 0, sizeof(*h));
 
 	zend_llist_init(&h->clients, sizeof(zval *), ZVAL_PTR_DTOR, 0);
 	h->ops = ops;
