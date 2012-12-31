@@ -133,7 +133,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg,
 	if (greedy) {
 		flags |= PHP_HTTP_MESSAGE_PARSER_GREEDY;
 	}
-	if (FAILURE == php_http_message_parser_parse(&p, &buf, flags, &msg)) {
+	if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse(&p, &buf, flags, &msg)) {
 		if (free_msg) {
 			php_http_message_free(&msg);
 		}
