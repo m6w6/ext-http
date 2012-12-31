@@ -689,11 +689,9 @@ static STATUS php_http_message_object_add_prophandler(const char *prop_str, size
 	php_http_message_object_prophandler_t h = { read, write };
 	return zend_hash_add(&php_http_message_object_prophandlers, prop_str, prop_len + 1, (void *) &h, sizeof(h), NULL);
 }
-/*
 static int php_http_message_object_has_prophandler(const char *prop_str, size_t prop_len) {
 	return zend_hash_exists(&php_http_message_object_prophandlers, prop_str, prop_len + 1);
 }
-*/
 static STATUS php_http_message_object_get_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_t **handler) {
 	return zend_hash_find(&php_http_message_object_prophandlers, prop_str, prop_len + 1, (void *) handler);
 }
@@ -1091,10 +1089,9 @@ void php_http_message_object_free(void *object TSRMLS_DC)
 
 static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC)
 {
-	php_http_message_object_prophandler_t *handler;
 	zval *copy = php_http_ztyp(IS_STRING, member);
 
-	if (SUCCESS == php_http_message_object_get_prophandler(Z_STRVAL_P(copy), Z_STRLEN_P(copy), &handler)) {
+	if (php_http_message_object_has_prophandler(Z_STRVAL_P(copy), Z_STRLEN_P(copy))) {
 		zval_ptr_dtor(&copy);
 		return &php_http_property_proxy_init(NULL, object, member, NULL TSRMLS_CC)->myself;
 	}
@@ -1148,7 +1145,6 @@ static void php_http_message_object_write_prop(zval *object, zval *member, zval 
 	zval_ptr_dtor(&copy);
 }
 
-
 static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 {
 	zval *headers;
@@ -1159,66 +1155,65 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 	char *version;
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
-
+	
 	INIT_PZVAL_ARRAY(&array, props);
+	
+#define ASSOC_PROP(ptype, n, val) \
+	do { \
+		zend_property_info *pi; \
+		if (SUCCESS == zend_hash_find(&obj->zo.ce->properties_info, n, sizeof(n), (void *) &pi)) { \
+			add_assoc_ ##ptype## _ex(&array, pi->name, pi->name_length + 1, val); \
+		} \
+	} while(0) \
 
-#define ASSOC_PROP(array, ptype, name, val) \
-	{ \
-		char *m_prop_name; \
-		int m_prop_len; \
-		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 0); \
-		add_assoc_ ##ptype## _ex(&array, m_prop_name, sizeof(name)+3, val); \
-		efree(m_prop_name); \
-	}
-#define ASSOC_STRING(array, name, val) ASSOC_STRINGL(array, name, val, strlen(val))
-#define ASSOC_STRINGL(array, name, val, len) ASSOC_STRINGL_EX(array, name, val, len, 1)
-#define ASSOC_STRINGL_EX(array, name, val, len, cpy) \
-	{ \
-		char *m_prop_name; \
-		int m_prop_len; \
-		zend_mangle_property_name(&m_prop_name, &m_prop_len, "*", 1, name, lenof(name), 0); \
-		add_assoc_stringl_ex(&array, m_prop_name, sizeof(name)+3, val, len, cpy); \
-		efree(m_prop_name); \
-	}
+#define ASSOC_STRING(name, val) ASSOC_STRINGL(name, val, strlen(val))
+#define ASSOC_STRINGL(name, val, len) ASSOC_STRINGL_EX(name, val, len, 1)
+#define ASSOC_STRINGL_EX(n, val, len, cpy) \
+	do { \
+		zend_property_info *pi; \
+		if (SUCCESS == zend_hash_find(&obj->zo.ce->properties_info, n, sizeof(n), (void *) &pi)) { \
+			add_assoc_stringl_ex(&array, pi->name, pi->name_length + 1, val, len, cpy); \
+		} \
+	} while(0)
 
-	ASSOC_PROP(array, long, "type", msg->type);
-	ASSOC_STRINGL_EX(array, "httpVersion", version, spprintf(&version, 0, "%u.%u", msg->http.version.major, msg->http.version.minor), 0);
+	ASSOC_PROP(long, "type", msg->type);
+	ASSOC_STRINGL_EX("httpVersion", version, spprintf(&version, 0, "%u.%u", msg->http.version.major, msg->http.version.minor), 0);
 
 	switch (msg->type) {
 		case PHP_HTTP_REQUEST:
-			ASSOC_PROP(array, long, "responseCode", 0);
-			ASSOC_STRINGL(array, "responseStatus", "", 0);
-			ASSOC_STRING(array, "requestMethod", STR_PTR(msg->http.info.request.method));
-			ASSOC_STRING(array, "requestUrl", STR_PTR(msg->http.info.request.url));
+			ASSOC_PROP(long, "responseCode", 0);
+			ASSOC_STRINGL("responseStatus", "", 0);
+			ASSOC_STRING("requestMethod", STR_PTR(msg->http.info.request.method));
+			ASSOC_STRING("requestUrl", STR_PTR(msg->http.info.request.url));
 			break;
 
 		case PHP_HTTP_RESPONSE:
-			ASSOC_PROP(array, long, "responseCode", msg->http.info.response.code);
-			ASSOC_STRING(array, "responseStatus", STR_PTR(msg->http.info.response.status));
-			ASSOC_STRINGL(array, "requestMethod", "", 0);
-			ASSOC_STRINGL(array, "requestUrl", "", 0);
+			ASSOC_PROP(long, "responseCode", msg->http.info.response.code);
+			ASSOC_STRING("responseStatus", STR_PTR(msg->http.info.response.status));
+			ASSOC_STRINGL("requestMethod", "", 0);
+			ASSOC_STRINGL("requestUrl", "", 0);
 			break;
 
 		case PHP_HTTP_NONE:
 		default:
-			ASSOC_PROP(array, long, "responseCode", 0);
-			ASSOC_STRINGL(array, "responseStatus", "", 0);
-			ASSOC_STRINGL(array, "requestMethod", "", 0);
-			ASSOC_STRINGL(array, "requestUrl", "", 0);
+			ASSOC_PROP(long, "responseCode", 0);
+			ASSOC_STRINGL("responseStatus", "", 0);
+			ASSOC_STRINGL("requestMethod", "", 0);
+			ASSOC_STRINGL("requestUrl", "", 0);
 			break;
 	}
 
 	MAKE_STD_ZVAL(headers);
 	array_init(headers);
 	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-	ASSOC_PROP(array, zval, "headers", headers);
+	ASSOC_PROP(zval, "headers", headers);
 
 	MAKE_STD_ZVAL(body);
 	if (!obj->body.handle) {
 		php_http_new(&obj->body, php_http_message_body_get_class_entry(), (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_init(&obj->message->body, NULL TSRMLS_CC), NULL TSRMLS_CC);
 	}
 	ZVAL_OBJVAL(body, obj->body, 1);
-	ASSOC_PROP(array, zval, "body", body);
+	ASSOC_PROP(zval, "body", body);
 
 	MAKE_STD_ZVAL(parent);
 	if (msg->parent) {
@@ -1226,7 +1221,7 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 	} else {
 		ZVAL_NULL(parent);
 	}
-	ASSOC_PROP(array, zval, "parentMessage", parent);
+	ASSOC_PROP(zval, "parentMessage", parent);
 
 	return props;
 }
