@@ -46,17 +46,17 @@ function check_for_pecl_ext(ext, header)
 if (PHP_HTTP != "no") {
 
 	EXTENSION("http",
-		"php_http_buffer.c php_http.c php_http_client.c php_http_curl_client.c php_http_client_datashare.c " +
-		"php_http_curl_client_datashare.c php_http_client_factory.c php_http_client_interface.c " +
-		"php_http_client_pool.c php_http_curl_client_pool.c php_http_client_request.c " +
-		"php_http_client_response.c php_http_cookie.c php_http_curl.c php_http_encoding.c " +
-		"php_http_env.c php_http_env_request.c php_http_env_response.c php_http_etag.c " +
-		"php_http_exception.c php_http_filter.c php_http_header_parser.c php_http_headers.c " +
-		"php_http_info.c php_http_message_body.c php_http_message.c php_http_message_parser.c " +
-		"php_http_misc.c php_http_negotiate.c php_http_object.c php_http_params.c " +
-		"php_http_persistent_handle.c php_http_property_proxy.c php_http_querystring.c " +
-		"php_http_resource_factory.c php_http_strlist.c php_http_url.c php_http_version.c");
-
+		"php_http.c php_http_buffer.c php_http_client.c php_http_client_datashare.c php_http_client_factory.c " +
+		"php_http_client_interface.c php_http_client_pool.c php_http_client_request.c php_http_client_response.c " +
+		"php_http_cookie.c php_http_curl.c php_http_curl_client.c php_http_curl_client_datashare.c " +
+		"php_http_curl_client_pool.c php_http_encoding.c php_http_env.c php_http_env_request.c " +
+		"php_http_env_response.c php_http_etag.c php_http_exception.c php_http_filter.c php_http_header_parser.c " +
+		"php_http_headers.c php_http_info.c php_http_message.c php_http_message_body.c php_http_message_parser.c " +
+		"php_http_misc.c php_http_negotiate.c php_http_object.c php_http_options.c php_http_params.c " +
+		"php_http_persistent_handle.c php_http_property_proxy.c php_http_querystring.c php_http_resource_factory.c " +
+		"php_http_strlist.c php_http_url.c php_http_version.c",
+		null,
+		null);
 	AC_DEFINE("HAVE_HTTP", 1, "Have extended HTTP support");
 	AC_DEFINE("HTTP_SHARED_DEPS", 1, "Depend on shared extensions");
 	
@@ -92,6 +92,10 @@ if (PHP_HTTP != "no") {
 		ADD_EXTENSION_DEP("http", "iconv", true);
 	}
 	
+	if (PHP_CURL != "no") {
+		ADD_EXTENSION_DEP("http", "curl", true);
+	}
+	
 	CURL_LIB="libcurl_a.lib;libcurl.lib;" + (PHP_DEBUG != "no" ? "libcurld.lib":"libcurl.lib");
 	if (CHECK_HEADER_ADD_INCLUDE("curl/curl.h", "CFLAGS_HTTP") &&
 			CHECK_HEADER_ADD_INCLUDE("openssl/crypto.h", "CFLAGS_HTTP") &&
@@ -99,6 +103,7 @@ if (PHP_HTTP != "no") {
 			CHECK_LIB("ssleay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("libeay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("zlib.lib;zlib_a.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("libcurl_a.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("winmm.lib", "http", PHP_HTTP)) {
 		AC_DEFINE("PHP_HTTP_HAVE_CURL", 1, "Have CURL library");
 		AC_DEFINE("PHP_HTTP_HAVE_SSL", 1, "Have SSL");
