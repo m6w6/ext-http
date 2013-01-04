@@ -287,51 +287,7 @@ PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url 
 	}
 	
 	if (url_str) {
-		size_t len;
-		
-		*url_str = emalloc(PHP_HTTP_URL_MAXLEN + 1);
-		
-		**url_str = '\0';
-		strlcat(*url_str, url->scheme, PHP_HTTP_URL_MAXLEN);
-		strlcat(*url_str, "://", PHP_HTTP_URL_MAXLEN);
-		
-		if (url->user && *url->user) {
-			strlcat(*url_str, url->user, PHP_HTTP_URL_MAXLEN);
-			if (url->pass && *url->pass) {
-				strlcat(*url_str, ":", PHP_HTTP_URL_MAXLEN);
-				strlcat(*url_str, url->pass, PHP_HTTP_URL_MAXLEN);
-			}
-			strlcat(*url_str, "@", PHP_HTTP_URL_MAXLEN);
-		}
-		
-		strlcat(*url_str, url->host, PHP_HTTP_URL_MAXLEN);
-		
-		if (url->port) {
-			char port_str[8];
-			
-			snprintf(port_str, sizeof(port_str), "%d", (int) url->port);
-			strlcat(*url_str, ":", PHP_HTTP_URL_MAXLEN);
-			strlcat(*url_str, port_str, PHP_HTTP_URL_MAXLEN);
-		}
-		
-		strlcat(*url_str, url->path, PHP_HTTP_URL_MAXLEN);
-		
-		if (url->query && *url->query) {
-			strlcat(*url_str, "?", PHP_HTTP_URL_MAXLEN);
-			strlcat(*url_str, url->query, PHP_HTTP_URL_MAXLEN);
-		}
-		
-		if (url->fragment && *url->fragment) {
-			strlcat(*url_str, "#", PHP_HTTP_URL_MAXLEN);
-			strlcat(*url_str, url->fragment, PHP_HTTP_URL_MAXLEN);
-		}
-		
-		if (PHP_HTTP_URL_MAXLEN == (len = strlen(*url_str))) {
-			php_http_error(HE_NOTICE, PHP_HTTP_E_URL, "Length of URL exceeds PHP_HTTP_URL_MAXLEN");
-		}
-		if (url_len) {
-			*url_len = len;
-		}
+		php_http_url_to_string(url, url_str, url_len TSRMLS_CC);
 	}
 	
 	if (url_ptr) {

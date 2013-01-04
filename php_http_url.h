@@ -48,6 +48,66 @@ static inline void php_http_url_argsep(const char **str, size_t *len TSRMLS_DC)
 	}
 }
 
+static inline void php_http_url_to_string(php_url *url, char **url_str, size_t *url_len TSRMLS_DC)
+{
+	php_http_buffer_t buf;
+
+	php_http_buffer_init(&buf);
+
+	if (url->scheme && *url->scheme) {
+		php_http_buffer_appendl(&buf, url->scheme);
+		php_http_buffer_appends(&buf, "://");
+	} else {
+		php_http_buffer_appends(&buf, "//");
+	}
+
+	if (url->user && *url->user) {
+		php_http_buffer_appendl(&buf, url->user);
+		if (url->pass && *url->pass) {
+			php_http_buffer_appends(&buf, ":");
+			php_http_buffer_appendl(&buf, url->pass);
+		}
+		php_http_buffer_appends(&buf, "@");
+	}
+
+	if (url->host && *url->host) {
+		php_http_buffer_appendl(&buf, url->host);
+	} else {
+		php_http_buffer_appends(&buf, "localhost");
+	}
+
+	if (url->port) {
+		php_http_buffer_appendf(&buf, ":%hu", url->port);
+	}
+
+	if (url->path && *url->path) {
+		php_http_buffer_appendl(&buf, url->path);
+	}
+
+	if (url->query && *url->query) {
+		php_http_buffer_appends(&buf, "?");
+		php_http_buffer_appendl(&buf, url->query);
+	}
+
+	if (url->fragment && *url->fragment) {
+		php_http_buffer_appends(&buf, "#");
+		php_http_buffer_appendl(&buf, url->fragment);
+	}
+
+	php_http_buffer_shrink(&buf);
+	php_http_buffer_fix(&buf);
+
+	if (url_len) {
+		*url_len = buf.used;
+	}
+
+	if (url_str) {
+		*url_str = buf.data;
+	} else {
+		php_http_buffer_dtor(&buf);
+	}
+}
+
 static inline php_url *php_http_url_from_struct(php_url *url, HashTable *ht TSRMLS_DC)
 {
 	zval **e;

@@ -15,27 +15,24 @@
 static void set_option(zval *options, const char *name_str, size_t name_len, int type, void *value_ptr, size_t value_len TSRMLS_DC)
 {
 	if (Z_TYPE_P(options) == IS_OBJECT) {
-		/* stupid non-const api */
-		char *name = estrndup(name_str, name_len);
 		if (value_ptr) {
 			switch (type) {
 				case IS_DOUBLE:
-					zend_update_property_double(Z_OBJCE_P(options), options, name, name_len, *(double *)value_ptr TSRMLS_CC);
+					zend_update_property_double(Z_OBJCE_P(options), options, name_str, name_len, *(double *)value_ptr TSRMLS_CC);
 					break;
 				case IS_LONG:
-					zend_update_property_long(Z_OBJCE_P(options), options, name, name_len, *(long *)value_ptr TSRMLS_CC);
+					zend_update_property_long(Z_OBJCE_P(options), options, name_str, name_len, *(long *)value_ptr TSRMLS_CC);
 					break;
 				case IS_STRING:
-					zend_update_property_stringl(Z_OBJCE_P(options), options, name, name_len, value_ptr, value_len TSRMLS_CC);
+					zend_update_property_stringl(Z_OBJCE_P(options), options, name_str, name_len, value_ptr, value_len TSRMLS_CC);
 					break;
 				case IS_OBJECT:
-					zend_update_property(Z_OBJCE_P(options), options, name, name_len, value_ptr TSRMLS_CC);
+					zend_update_property(Z_OBJCE_P(options), options, name_str, name_len, value_ptr TSRMLS_CC);
 					break;
 			}
 		} else {
-			zend_update_property_null(Z_OBJCE_P(options), options, name, name_len TSRMLS_CC);
+			zend_update_property_null(Z_OBJCE_P(options), options, name_str, name_len TSRMLS_CC);
 		}
-		efree(name);
 	} else {
 		convert_to_array(options);
 		if (value_ptr) {
@@ -66,9 +63,7 @@ static zval *get_option(zval *options, const char *name_str, size_t name_len TSR
 	zval *val, **valptr;
 
 	if (Z_TYPE_P(options) == IS_OBJECT) {
-		char *name = estrndup(name_str, name_len);
-		val = zend_read_property(Z_OBJCE_P(options), options, name, name_len, 0 TSRMLS_CC);
-		efree(name);
+		val = zend_read_property(Z_OBJCE_P(options), options, name_str, name_len, 0 TSRMLS_CC);
 	} else {
 		if (SUCCESS == zend_symtable_find(Z_ARRVAL_P(options), name_str, name_len + 1, (void *) &valptr)) {
 			val = *valptr;

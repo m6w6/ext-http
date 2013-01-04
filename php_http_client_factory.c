@@ -38,10 +38,8 @@ PHP_HTTP_API STATUS php_http_client_factory_get_driver(const char *name_str, siz
 static zend_class_entry *php_http_client_factory_find_class_entry(zval *this_ptr, const char *for_str, size_t for_len TSRMLS_DC)
 {
 	/* stupid non-const api */
-	char *sc = estrndup(for_str, for_len);
-	zval *cn = zend_read_property(Z_OBJCE_P(getThis()), getThis(), sc, for_len, 0 TSRMLS_CC);
+	zval *cn = zend_read_property(Z_OBJCE_P(getThis()), getThis(), for_str, for_len, 0 TSRMLS_CC);
 
-	efree(sc);
 	if (Z_TYPE_P(cn) == IS_STRING && Z_STRLEN_P(cn)) {
 		return zend_fetch_class(Z_STRVAL_P(cn), Z_STRLEN_P(cn), 0 TSRMLS_CC);
 	}
