@@ -6,5 +6,5 @@ php:
 
 before_script: phpize
 
-script: ./configure && make && make test NO_INTERACTION=1 REPORT_EXIT_STATUS=1
+script: ./configure && make && NO_INTERACTION=1 REPORT_EXIT_STATUS=1 TEST_PHP_DETAILED=1 make test
 
