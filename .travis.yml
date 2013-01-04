@@ -1,0 +1,10 @@
+language: php
+
+php:
+  - 5.3
+  - 5.4
+
+before_script: phpize
+
+script: ./configure && make && make test NO_INTERACTION=1 REPORT_EXIT_STATUS=1
+
