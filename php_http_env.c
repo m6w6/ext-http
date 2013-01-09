@@ -1019,9 +1019,13 @@ PHP_METHOD(HttpEnv, cleanPersistentHandles)
 static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 {
 	if (SG(request_info).raw_post_data) {
-		zval_dtor(arg);
-		((zval *) arg)->type = IS_NULL;
-		php_json_decode(arg, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length, 1, PG(max_input_nesting_level) TSRMLS_CC);
+		zval *zarg = arg;
+		zval_dtor(zarg);
+		ZVAL_NULL(zarg);
+		php_json_decode(zarg, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length, 1, PG(max_input_nesting_level) TSRMLS_CC);
+		if (Z_TYPE_P(zarg) == IS_NULL) {
+			array_init(zarg);
+		}
 	}
 }
 
