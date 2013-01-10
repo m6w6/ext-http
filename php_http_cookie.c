@@ -24,6 +24,7 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_init(php_http_cookie_l
 	list->path = NULL;
 	list->domain = NULL;
 	list->expires = -1;
+	list->max_age = -1;
 	list->flags = 0;
 	
 	TSRMLS_SET_CTX(list->ts);
@@ -43,6 +44,7 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_copy(php_http_cookie_l
 	STR_SET(to->path, from->path ? estrdup(from->path) : NULL);
 	STR_SET(to->domain, from->domain ? estrdup(from->domain) : NULL);
 	to->expires = from->expires;
+	to->max_age = from->max_age;
 	to->flags = from->flags;
 
 	return to;
@@ -130,6 +132,8 @@ static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long 
 		char *date = estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg));
 		list->expires = php_parse_date(date, NULL);
 		efree(date);
+	} else if _KEY_IS("max-age") {
+		list->max_age = strtol(Z_STRVAL_P(arg), NULL, 10);
 	} else if _KEY_IS("secure") {
 		list->flags |= PHP_HTTP_COOKIE_SECURE;
 	} else if _KEY_IS("httpOnly") {
@@ -218,6 +222,7 @@ PHP_HTTP_API void php_http_cookie_list_to_struct(php_http_cookie_list_t *list, z
 	
 	add_assoc_long(&array, "flags", list->flags);
 	add_assoc_long(&array, "expires", (long) list->expires);
+	add_assoc_long(&array, "max-age", (long) list->max_age);
 	add_assoc_string(&array, "path", STR_PTR(list->path), 1);
 	add_assoc_string(&array, "domain", STR_PTR(list->domain), 1);
 }
@@ -251,6 +256,20 @@ PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_c
 				list->expires = lval;
 			} else {
 				list->expires = php_parse_date(Z_STRVAL_P(cpy), NULL);
+			}
+
+			zval_ptr_dtor(&cpy);
+		}
+	}
+	if (SUCCESS == zend_hash_find(ht, "max-age", sizeof("max-age"), (void *) &tmp)) {
+		if (Z_TYPE_PP(tmp) == IS_LONG) {
+			list->max_age = Z_LVAL_PP(tmp);
+		} else {
+			long lval;
+
+			cpy = php_http_ztyp(IS_STRING, *tmp);
+			if (IS_LONG == is_numeric_string(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy), &lval, NULL, 0)) {
+				list->max_age = lval;
 			}
 
 			zval_ptr_dtor(&cpy);
@@ -314,6 +333,9 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 		php_http_buffer_appendf(&buf, "expires=%s; ", date);
 		efree(date);
 	}
+	if (list->max_age >= 0) {
+		php_http_buffer_appendf(&buf, "max-age=%ld; ", list->max_age);
+	}
 	
 	FOREACH_HASH_KEYVAL(pos, &list->extras, key, val) {
 		zval *tmp = php_http_ztyp(IS_STRING, *val);
@@ -353,6 +375,7 @@ PHP_HTTP_EMPTY_ARGS(getExtras);
 PHP_HTTP_EMPTY_ARGS(getDomain);
 PHP_HTTP_EMPTY_ARGS(getPath);
 PHP_HTTP_EMPTY_ARGS(getExpires);
+PHP_HTTP_EMPTY_ARGS(getMaxAge);
 PHP_HTTP_EMPTY_ARGS(getFlags);
 PHP_HTTP_EMPTY_ARGS(toString);
 
@@ -363,6 +386,9 @@ PHP_HTTP_BEGIN_ARGS(setPath, 0)
 	PHP_HTTP_ARG_VAL(value, 0)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_BEGIN_ARGS(setExpires, 0)
+	PHP_HTTP_ARG_VAL(value, 0)
+PHP_HTTP_END_ARGS;
+PHP_HTTP_BEGIN_ARGS(setMaxAge, 0)
 	PHP_HTTP_ARG_VAL(value, 0)
 PHP_HTTP_END_ARGS;
 PHP_HTTP_BEGIN_ARGS(setFlags, 0)
@@ -433,6 +459,8 @@ static zend_function_entry php_http_cookie_method_entry[] = {
 	PHP_HTTP_COOKIE_ME(setPath, ZEND_ACC_PUBLIC)
 	PHP_HTTP_COOKIE_ME(getExpires, ZEND_ACC_PUBLIC)
 	PHP_HTTP_COOKIE_ME(setExpires, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(getMaxAge, ZEND_ACC_PUBLIC)
+	PHP_HTTP_COOKIE_ME(setMaxAge, ZEND_ACC_PUBLIC)
 	PHP_HTTP_COOKIE_ME(getFlags, ZEND_ACC_PUBLIC)
 	PHP_HTTP_COOKIE_ME(setFlags, ZEND_ACC_PUBLIC)
 
@@ -845,6 +873,32 @@ PHP_METHOD(HttpCookie, setExpires)
 		PHP_HTTP_COOKIE_OBJECT_INIT(obj);
 
 		obj->list->expires = ts;
+	}
+	RETVAL_ZVAL(getThis(), 1, 0);
+}
+
+PHP_METHOD(HttpCookie, getMaxAge)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		PHP_HTTP_COOKIE_OBJECT_INIT(obj);
+
+		RETURN_LONG(obj->list->max_age);
+	}
+	RETURN_FALSE;
+}
+
+PHP_METHOD(HttpCookie, setMaxAge)
+{
+	long ts = -1;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &ts)) {
+		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		PHP_HTTP_COOKIE_OBJECT_INIT(obj);
+
+		obj->list->max_age = ts;
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
 }

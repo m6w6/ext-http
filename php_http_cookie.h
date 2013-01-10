@@ -30,6 +30,7 @@ typedef struct php_http_cookie_list {
 	char *path;
 	char *domain;
 	time_t expires;
+	time_t max_age;
 
 #ifdef ZTS
 	void ***ts;
@@ -88,6 +89,8 @@ PHP_METHOD(HttpCookie, getPath);
 PHP_METHOD(HttpCookie, setPath);
 PHP_METHOD(HttpCookie, getExpires);
 PHP_METHOD(HttpCookie, setExpires);
+PHP_METHOD(HttpCookie, getMaxAge);
+PHP_METHOD(HttpCookie, setMaxAge);
 PHP_METHOD(HttpCookie, getFlags);
 PHP_METHOD(HttpCookie, setFlags);
 PHP_METHOD(HttpCookie, toString);

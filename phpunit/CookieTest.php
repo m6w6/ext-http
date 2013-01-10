@@ -10,7 +10,8 @@ class CookieTest extends PHPUnit_Framework_TestCase {
             "flags" => 0,
             "expires" => -1,
             "path" => "",
-            "domain" => ""
+            "domain" => "",
+        	"max-age" => -1,
         );
         $this->assertEquals($a, $c->toArray());
         $this->assertEquals($a, $o->toArray());
@@ -40,6 +41,7 @@ class CookieTest extends PHPUnit_Framework_TestCase {
         foreach (array($orig, $copy) as $c) {
             $this->assertEquals("value", $c->getCookie("key"));
             $this->assertEquals(-1, $c->getExpires());
+            $this->assertEquals(-1, $c->getMaxAge());
             $this->assertEquals(0, $c->getFlags());
             $this->assertEquals(null, $c->getPath());
             $this->assertEquals(null, $c->getDomain());
@@ -59,6 +61,7 @@ class CookieTest extends PHPUnit_Framework_TestCase {
                     "expires" => -1,
                     "path" => "",
                     "domain" => "",
+                	"max-age" => -1,
                 ),
                 $c->toArray()
             );
@@ -82,6 +85,24 @@ class CookieTest extends PHPUnit_Framework_TestCase {
                 "this=expires; expires=%s; ", 
                 date_create("@$t")->format("D, d M Y H:i:s \\G\\M\\T")
             ), 
+            $o->toString()
+        );
+    }
+
+    function testMaxAge() {
+        $c = new http\Cookie("this=max-age; max-age=12345");
+        $this->assertEquals("max-age", $c->getCookie("this"));
+        $this->assertEquals(12345, $c->getMaxAge());
+        $o = clone $c;
+        $t = 54321;
+        $o->setMaxAge();
+        $this->assertEquals(-1, $o->getMaxAge());
+        $this->assertNotEquals(-1, $c->getMaxAge());
+        $o->setMaxAge($t);
+        $this->assertEquals($t, $o->getMaxAge());
+        $this->assertNotEquals($t, $c->getMaxAge());
+        $this->assertEquals(
+        	"this=max-age; max-age=$t; ",
             $o->toString()
         );
     }
