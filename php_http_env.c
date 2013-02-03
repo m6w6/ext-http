@@ -741,13 +741,6 @@ PHP_HTTP_BEGIN_ARGS(negotiate, 2)
 	PHP_HTTP_ARG_VAL(result_array, 1)
 PHP_HTTP_END_ARGS;
 
-PHP_HTTP_EMPTY_ARGS(statPersistentHandles);
-
-PHP_HTTP_BEGIN_ARGS(cleanPersistentHandles, 0)
-	PHP_HTTP_ARG_VAL(name, 0)
-	PHP_HTTP_ARG_VAL(ident, 0)
-PHP_HTTP_END_ARGS;
-
 static zend_class_entry *php_http_env_class_entry;
 
 zend_class_entry *php_http_env_get_class_entry(void)
@@ -772,9 +765,6 @@ static zend_function_entry php_http_env_method_entry[] = {
 	PHP_HTTP_ENV_ME(negotiateEncoding)
 	PHP_HTTP_ENV_ME(negotiateCharset)
 	PHP_HTTP_ENV_ME(negotiate)
-
-	PHP_HTTP_ENV_ME(statPersistentHandles)
-	PHP_HTTP_ENV_ME(cleanPersistentHandles)
 
 	EMPTY_FUNCTION_ENTRY
 };
@@ -988,28 +978,6 @@ PHP_METHOD(HttpEnv, negotiate)
 		}
 	} else {
 		RETURN_FALSE;
-	}
-}
-
-PHP_METHOD(HttpEnv, statPersistentHandles)
-{
-	if (SUCCESS == zend_parse_parameters_none()) {
-		object_init(return_value);
-		if (php_http_persistent_handle_statall(HASH_OF(return_value) TSRMLS_CC)) {
-			return;
-		}
-		zval_dtor(return_value);
-	}
-	RETURN_FALSE;
-}
-
-PHP_METHOD(HttpEnv, cleanPersistentHandles)
-{
-	char *name_str = NULL, *ident_str = NULL;
-	int name_len = 0, ident_len = 0;
-
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!", &name_str, &name_len, &ident_str, &ident_len)) {
-		php_http_persistent_handle_cleanup(name_str, name_len, ident_str, ident_len TSRMLS_CC);
 	}
 }
 

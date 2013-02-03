@@ -15,7 +15,7 @@
 #include <ext/spl/spl_observer.h>
 #include <ext/standard/php_array.h>
 
-PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)
+PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {
 	php_http_client_t *free_h = NULL;
 
@@ -28,7 +28,7 @@ PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_h
 	if (rf) {
 		h->rf = rf;
 	} else if (ops->rsrc) {
-		h->rf = php_http_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
+		h->rf = php_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
 	}
 	h->request.buffer = php_http_buffer_init(NULL);
 	h->request.parser = php_http_message_parser_init(NULL TSRMLS_CC);
@@ -59,7 +59,7 @@ PHP_HTTP_API void php_http_client_dtor(php_http_client_t *h)
 		h->ops->dtor(h);
 	}
 
-	php_http_resource_factory_free(&h->rf);
+	php_resource_factory_free(&h->rf);
 
 	php_http_message_parser_free(&h->request.parser);
 	php_http_message_free(&h->request.message);
@@ -92,10 +92,10 @@ PHP_HTTP_API php_http_client_t *php_http_client_copy(php_http_client_t *from, ph
 
 		to->ops = from->ops;
 		if (from->rf) {
-			php_http_resource_factory_addref(from->rf);
+			php_resource_factory_addref(from->rf);
 			to->rf = from->rf;
 		} else if (to->ops->rsrc){
-			to->rf = php_http_resource_factory_init(NULL, to->ops->rsrc, to, NULL);
+			to->rf = php_resource_factory_init(NULL, to->ops->rsrc, to, NULL);
 		}
 
 		to->request.buffer = php_http_buffer_init(NULL);

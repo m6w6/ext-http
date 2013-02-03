@@ -15,7 +15,7 @@
 
 static int php_http_client_datashare_compare_handles(void *h1, void *h2);
 
-PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_init(php_http_client_datashare_t *h, php_http_client_datashare_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)
+PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_init(php_http_client_datashare_t *h, php_http_client_datashare_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {
 	php_http_client_datashare_t *free_h = NULL;
 
@@ -29,7 +29,7 @@ PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_init(php_htt
 	if (rf) {
 		h->rf = rf;
 	} else if (ops->rsrc) {
-		h->rf = php_http_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
+		h->rf = php_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
 	}
 	TSRMLS_SET_CTX(h->ts);
 
@@ -59,7 +59,7 @@ PHP_HTTP_API void php_http_client_datashare_dtor(php_http_client_datashare_t *h)
 		h->ops->dtor(h);
 	}
 	zend_llist_destroy(&h->clients);
-	php_http_resource_factory_free(&h->rf);
+	php_resource_factory_free(&h->rf);
 }
 
 PHP_HTTP_API void php_http_client_datashare_free(php_http_client_datashare_t **h)

@@ -28,7 +28,7 @@ typedef STATUS (*php_http_client_datashare_detach_func_t)(struct php_http_client
 typedef STATUS (*php_http_client_datashare_setopt_func_t)(struct php_http_client_datashare *h, php_http_client_datashare_setopt_opt_t opt, void *arg);
 
 typedef struct php_http_client_datashare_ops {
-	php_http_resource_factory_ops_t *rsrc;
+	php_resource_factory_ops_t *rsrc;
 	php_http_client_datashare_init_func_t init;
 	php_http_client_datashare_copy_func_t copy;
 	php_http_client_datashare_dtor_func_t dtor;
@@ -42,7 +42,7 @@ typedef struct php_http_client_datashare_ops {
 
 typedef struct php_http_client_datashare {
 	void *ctx;
-	php_http_resource_factory_t *rf;
+	php_resource_factory_t *rf;
 	php_http_client_datashare_ops_t *ops;
 	zend_llist clients;
 #ifdef ZTS
@@ -52,7 +52,7 @@ typedef struct php_http_client_datashare {
 
 PHP_MINIT_FUNCTION(http_client_datashare);
 
-PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_init(php_http_client_datashare_t *h, php_http_client_datashare_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC);
+PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_init(php_http_client_datashare_t *h, php_http_client_datashare_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC);
 PHP_HTTP_API php_http_client_datashare_t *php_http_client_datashare_copy(php_http_client_datashare_t *from, php_http_client_datashare_t *to);
 PHP_HTTP_API void php_http_client_datashare_dtor(php_http_client_datashare_t *h);
 PHP_HTTP_API void php_http_client_datashare_free(php_http_client_datashare_t **h);

@@ -87,8 +87,6 @@ PHP_METHOD(HttpEnv, negotiateCharset);
 PHP_METHOD(HttpEnv, negotiateEncoding);
 PHP_METHOD(HttpEnv, negotiateContentType);
 PHP_METHOD(HttpEnv, negotiate);
-PHP_METHOD(HttpEnv, statPersistentHandles);
-PHP_METHOD(HttpEnv, cleanPersistentHandles);
 
 PHP_MINIT_FUNCTION(http_env);
 PHP_RINIT_FUNCTION(http_env);

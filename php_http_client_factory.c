@@ -130,17 +130,17 @@ PHP_METHOD(HttpClientFactory, createClient)
 
 				if ((IS_STRING == Z_TYPE_P(zdriver)) && (SUCCESS == php_http_client_factory_get_driver(Z_STRVAL_P(zdriver), Z_STRLEN_P(zdriver), &driver)) && driver.client_ops) {
 					zval *phi = php_http_zsep(1, IS_STRING, zend_read_property(php_http_client_factory_class_entry, getThis(), ZEND_STRL("persistentHandleId"), 0 TSRMLS_CC));
-					php_http_resource_factory_t *rf = NULL;
+					php_resource_factory_t *rf = NULL;
 
 					if (Z_STRLEN_P(phi)) {
 						char *name_str;
 						size_t name_len;
-						php_http_persistent_handle_factory_t *pf;
+						php_persistent_handle_factory_t *pf;
 
 						name_len = spprintf(&name_str, 0, "http_client.%s", Z_STRVAL_P(zdriver));
 
-						if ((pf = php_http_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
-							rf = php_http_resource_factory_init(NULL, php_http_persistent_handle_resource_factory_ops(), pf, (void (*)(void *)) php_http_persistent_handle_abandon);
+						if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
+							rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
 						}
 
 						efree(name_str);
@@ -187,17 +187,17 @@ PHP_METHOD(HttpClientFactory, createPool)
 				zdriver = zend_read_property(php_http_client_factory_class_entry, getThis(), ZEND_STRL("driver"), 0 TSRMLS_CC);
 				if ((IS_STRING == Z_TYPE_P(zdriver)) && (SUCCESS == php_http_client_factory_get_driver(Z_STRVAL_P(zdriver), Z_STRLEN_P(zdriver), &driver)) && driver.client_pool_ops) {
 					zval *phi = php_http_zsep(1, IS_STRING, zend_read_property(php_http_client_factory_class_entry, getThis(), ZEND_STRL("persistentHandleId"), 0 TSRMLS_CC));
-					php_http_resource_factory_t *rf = NULL;
+					php_resource_factory_t *rf = NULL;
 
 					if (Z_STRLEN_P(phi)) {
 						char *name_str;
 						size_t name_len;
-						php_http_persistent_handle_factory_t *pf;
+						php_persistent_handle_factory_t *pf;
 
 						name_len = spprintf(&name_str, 0, "http_client_pool.%s", Z_STRVAL_P(zdriver));
 
-						if ((pf = php_http_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
-							rf = php_http_resource_factory_init(NULL, php_http_persistent_handle_resource_factory_ops(), pf, (void (*)(void *)) php_http_persistent_handle_abandon);
+						if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
+							rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
 						}
 
 						efree(name_str);
@@ -252,17 +252,17 @@ PHP_METHOD(HttpClientFactory, createDataShare)
 				zdriver = zend_read_property(php_http_client_factory_class_entry, getThis(), ZEND_STRL("driver"), 0 TSRMLS_CC);
 				if ((IS_STRING == Z_TYPE_P(zdriver)) && (SUCCESS == php_http_client_factory_get_driver(Z_STRVAL_P(zdriver), Z_STRLEN_P(zdriver), &driver)) && driver.client_datashare_ops) {
 					zval *phi = php_http_zsep(1, IS_STRING, zend_read_property(php_http_client_factory_class_entry, getThis(), ZEND_STRL("persistentHandleId"), 0 TSRMLS_CC));
-					php_http_resource_factory_t *rf = NULL;
+					php_resource_factory_t *rf = NULL;
 
 					if (Z_STRLEN_P(phi)) {
 						char *name_str;
 						size_t name_len;
-						php_http_persistent_handle_factory_t *pf;
+						php_persistent_handle_factory_t *pf;
 
 						name_len = spprintf(&name_str, 0, "http_client_datashare.%s", Z_STRVAL_P(zdriver));
 
-						if ((pf = php_http_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
-							rf = php_http_resource_factory_init(NULL, php_http_persistent_handle_resource_factory_ops(), pf, (void (*)(void *)) php_http_persistent_handle_abandon);
+						if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
+							rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
 						}
 
 						efree(name_str);

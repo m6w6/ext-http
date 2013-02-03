@@ -107,7 +107,7 @@ typedef STATUS (*php_http_client_setopt_func_t)(struct php_http_client *h, php_h
 typedef STATUS (*php_http_client_getopt_func_t)(struct php_http_client *h, php_http_client_getopt_opt_t opt, void *arg);
 
 typedef struct php_http_client_ops {
-	php_http_resource_factory_ops_t *rsrc;
+	php_resource_factory_ops_t *rsrc;
 	php_http_client_init_func_t init;
 	php_http_client_copy_func_t copy;
 	php_http_client_dtor_func_t dtor;
@@ -121,7 +121,7 @@ typedef struct php_http_client_ops {
 
 typedef struct php_http_client {
 	void *ctx;
-	php_http_resource_factory_t *rf;
+	php_resource_factory_t *rf;
 	php_http_client_ops_t *ops;
 	struct {
 		php_http_message_parser_t *parser;
@@ -138,7 +138,7 @@ typedef struct php_http_client {
 #endif
 } php_http_client_t;
 
-PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC);
+PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC);
 PHP_HTTP_API php_http_client_t *php_http_client_copy(php_http_client_t *from, php_http_client_t *to);
 PHP_HTTP_API STATUS php_http_client_exec(php_http_client_t *h, php_http_message_t *msg);
 PHP_HTTP_API STATUS php_http_client_reset(php_http_client_t *h);
