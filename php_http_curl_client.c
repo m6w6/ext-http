@@ -14,7 +14,7 @@
 
 /* resource_factory ops */
 
-static void *php_http_curl_ctor(void *opaque TSRMLS_DC)
+static void *php_http_curl_ctor(void *opaque, void *init_arg TSRMLS_DC)
 {
 	void *ch;
 
@@ -1011,7 +1011,7 @@ static php_http_client_t *php_http_curl_client_init(php_http_client_t *h, void *
 	php_http_curl_client_t *ctx;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-	if (!handle && !(handle = php_http_resource_factory_handle_ctor(h->rf TSRMLS_CC))) {
+	if (!handle && !(handle = php_resource_factory_handle_ctor(h->rf, NULL TSRMLS_CC))) {
 		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "could not initialize curl handle");
 		return NULL;
 	}
@@ -1051,7 +1051,7 @@ static php_http_client_t *php_http_curl_client_copy(php_http_client_t *from, php
 	void *copy;
 	TSRMLS_FETCH_FROM_CTX(from->ts);
 
-	if (!(copy = php_http_resource_factory_handle_copy(from->rf, ctx->handle TSRMLS_CC))) {
+	if (!(copy = php_resource_factory_handle_copy(from->rf, ctx->handle TSRMLS_CC))) {
 		return NULL;
 	}
 
@@ -1072,7 +1072,7 @@ static void php_http_curl_client_dtor(php_http_client_t *h)
 	curl_easy_setopt(ctx->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(ctx->handle, CURLOPT_DEBUGFUNCTION, NULL);
 
-	php_http_resource_factory_handle_dtor(h->rf, ctx->handle TSRMLS_CC);
+	php_resource_factory_handle_dtor(h->rf, ctx->handle TSRMLS_CC);
 
 	php_http_buffer_dtor(&ctx->options.ranges);
 	php_http_buffer_dtor(&ctx->options.cookies);
@@ -1353,7 +1353,7 @@ static STATUS php_http_curl_client_getopt(php_http_client_t *h, php_http_client_
 	return SUCCESS;
 }
 
-static php_http_resource_factory_ops_t php_http_curl_client_resource_factory_ops = {
+static php_resource_factory_ops_t php_http_curl_client_resource_factory_ops = {
 	php_http_curl_ctor,
 	php_http_curl_copy,
 	php_http_curl_dtor
@@ -1432,7 +1432,7 @@ PHP_MINIT_FUNCTION(http_curl_client)
 {
 	php_http_options_t *options;
 
-	if (SUCCESS != php_http_persistent_handle_provide(ZEND_STRL("http_client.curl"), &php_http_curl_client_resource_factory_ops, NULL, NULL)) {
+	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http_client.curl"), &php_http_curl_client_resource_factory_ops, NULL, NULL)) {
 		return FAILURE;
 	}
 

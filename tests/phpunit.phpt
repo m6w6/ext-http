@@ -5,6 +5,8 @@ unit tests
 include "skipif.inc";
 if (!@include_once "PHPUnit/Autoload.php") die("skip need PHPUnit in include_path");
 ?>
+--INI--
+date.timezone=Europe/Vienna
 --FILE--
 <?php
 require_once "PHPUnit/Autoload.php";

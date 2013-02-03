@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-PHP_HTTP_API php_http_client_pool_t *php_http_client_pool_init(php_http_client_pool_t *h, php_http_client_pool_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC)
+PHP_HTTP_API php_http_client_pool_t *php_http_client_pool_init(php_http_client_pool_t *h, php_http_client_pool_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {
 	php_http_client_pool_t *free_h = NULL;
 
@@ -25,7 +25,7 @@ PHP_HTTP_API php_http_client_pool_t *php_http_client_pool_init(php_http_client_p
 	if (rf) {
 		h->rf = rf;
 	} else if (ops->rsrc) {
-		h->rf = php_http_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
+		h->rf = php_resource_factory_init(NULL, h->ops->rsrc, h, NULL);
 	}
 	zend_llist_init(&h->clients.attached, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
 	zend_llist_init(&h->clients.finished, sizeof(zval *), (llist_dtor_func_t) ZVAL_PTR_DTOR, 0);
@@ -61,7 +61,7 @@ PHP_HTTP_API void php_http_client_pool_dtor(php_http_client_pool_t *h)
 	zend_llist_clean(&h->clients.finished);
 	zend_llist_clean(&h->clients.attached);
 
-	php_http_resource_factory_free(&h->rf);
+	php_resource_factory_free(&h->rf);
 }
 
 PHP_HTTP_API void php_http_client_pool_free(php_http_client_pool_t **h) {

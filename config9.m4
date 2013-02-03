@@ -363,6 +363,32 @@ dnl ----
 		])
 	fi
 
+dnl ----
+dnl RAPHF
+dnl ----
+	HTTP_HAVE_PHP_EXT([raphf], [
+		AC_MSG_CHECKING([for php_raphf.h])
+		HTTP_EXT_RAPHF_INCDIR=
+		for i in `echo $INCLUDES | $SED -e's/-I//g'` $abs_srcdir ../raphf; do
+			if test -d $i; then
+				if test -f $i/php_raphf.h; then
+					HTTP_EXT_RAPHF_INCDIR=$i
+					break
+				elif test -f $i/ext/raphf/php_raphf.h; then
+					HTTP_EXT_RAPHF_INCDIR=$i/ext/raphf
+					break
+				fi
+			fi
+		done
+		if test "x$HTTP_EXT_RAPHF_INCDIR" = "x"; then
+			AC_MSG_FAILURE([not found])
+		else
+			AC_MSG_RESULT([$HTTP_EXT_RAPHF_INCDIR])
+			AC_DEFINE([PHP_HTTP_HAVE_PHP_RAPHF_H], [1], [Have ext/raphf support])
+			PHP_ADD_INCLUDE([$HTTP_EXT_RAPHF_INCDIR])
+		fi
+	])
+
 PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
 [  --without-http-shared-deps   HTTP: do not depend on extensions like hash
                                      and iconv (when they are built shared)], $PHP_HTTP, $PHP_HTTP)
@@ -439,10 +465,8 @@ dnl ----
 		php_http_object.c \
 		php_http_options.c \
 		php_http_params.c \
-		php_http_persistent_handle.c \
 		php_http_property_proxy.c \
 		php_http_querystring.c \
-		php_http_resource_factory.c \
 		php_http_strlist.c \
 		php_http_url.c \
 		php_http_version.c \
@@ -490,10 +514,8 @@ dnl ----
 		php_http_object.h \
 		php_http_options.h \
 		php_http_params.h \
-		php_http_persistent_handle.h \
 		php_http_property_proxy.h \
 		php_http_querystring.h \
-		php_http_resource_factory.h \
 		php_http_strlist.h \
 		php_http_url.h \
 		php_http_version.h \

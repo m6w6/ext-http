@@ -44,6 +44,7 @@ PHP_RSHUTDOWN_FUNCTION(http);
 PHP_MINFO_FUNCTION(http);
 
 static zend_module_dep http_module_deps[] = {
+	ZEND_MOD_REQUIRED("raphf")
 	ZEND_MOD_REQUIRED("spl")
 #ifdef PHP_HTTP_HAVE_HASH
 	ZEND_MOD_REQUIRED("hash")
@@ -145,7 +146,6 @@ zend_php_http_globals *php_http_globals(void)
 
 PHP_INI_BEGIN()
 	PHP_HTTP_INI_ENTRY("http.etag.mode", "crc32b", PHP_INI_ALL, OnUpdateString, env.etag_mode)
-	PHP_HTTP_INI_ENTRY("http.persistent_handle.limit", "-1", PHP_INI_SYSTEM, OnUpdateLong, persistent_handle.limit)
 PHP_INI_END()
 
 PHP_MINIT_FUNCTION(http)
@@ -159,7 +159,6 @@ PHP_MINIT_FUNCTION(http)
 	if (0
 	|| SUCCESS != PHP_MINIT_CALL(http_object)
 	|| SUCCESS != PHP_MINIT_CALL(http_exception)
-	|| SUCCESS != PHP_MINIT_CALL(http_persistent_handle)
 	|| SUCCESS != PHP_MINIT_CALL(http_cookie)
 	|| SUCCESS != PHP_MINIT_CALL(http_encoding)
 	|| SUCCESS != PHP_MINIT_CALL(http_filter)
@@ -205,7 +204,6 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl_client)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
 #endif
-	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_persistent_handle)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_client_factory)
 	) {
 		return FAILURE;
@@ -317,50 +315,11 @@ PHP_MINFO_FUNCTION(http)
 	php_http_buffer_reset(&buf);
 	php_http_registered_classes(&buf, ZEND_ACC_FINAL_CLASS);
 	php_info_print_table_row(2, "Final Classes", buf.data);
-	php_http_buffer_reset(&buf);
+	php_http_buffer_dtor(&buf);
 
 	php_info_print_table_row(2, "Stream Filters",  "http.chunked_encode, http.chunked_decode, http.inflate, http.deflate");
 	php_info_print_table_end();
 
-	php_info_print_table_start();
-	php_info_print_table_colspan_header(4, "Persistent Handles");
-	php_info_print_table_header(4, "Provider", "Ident", "Used", "Free");
-	{
-		HashTable *ht;
-		HashPosition pos1, pos2;
-		php_http_array_hashkey_t provider = php_http_array_hashkey_init(0), ident = php_http_array_hashkey_init(0);
-		zval **val, **sub, **zused, **zfree;
-		
-		if ((ht = php_http_persistent_handle_statall(NULL TSRMLS_CC)) && zend_hash_num_elements(ht)) {
-			FOREACH_HASH_KEYVAL(pos1, ht, provider, val) {
-				if (zend_hash_num_elements(Z_ARRVAL_PP(val))) {
-					FOREACH_KEYVAL(pos2, *val, ident, sub) {
-						if (	SUCCESS == zend_hash_find(Z_ARRVAL_PP(sub), ZEND_STRS("used"), (void *) &zused) &&
-								SUCCESS == zend_hash_find(Z_ARRVAL_PP(sub), ZEND_STRS("free"), (void *) &zfree)) {
-							zval *used = php_http_ztyp(IS_STRING, *zused);
-							zval *free = php_http_ztyp(IS_STRING, *zfree);
-							php_info_print_table_row(4, provider.str, ident.str, Z_STRVAL_P(used), Z_STRVAL_P(free));
-							zval_ptr_dtor(&used);
-							zval_ptr_dtor(&free);
-						} else {
-							php_info_print_table_row(4, provider.str, ident.str, "0", "0");
-						}
-					}
-				} else {
-					php_info_print_table_row(4, provider.str, "N/A", "0", "0");
-				}
-			}
-		} else {
-			php_info_print_table_row(4, "N/A", "N/A", "0", "0");
-		}
-		if (ht) {
-			zend_hash_destroy(ht);
-			FREE_HASHTABLE(ht);
-		}
-	}
-	php_info_print_table_end();
-	
-	php_http_buffer_dtor(&buf);
 
 	DISPLAY_INI_ENTRIES();
 }

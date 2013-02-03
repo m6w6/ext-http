@@ -30,7 +30,7 @@ typedef STATUS (*php_http_client_pool_detach_func_t)(struct php_http_client_pool
 typedef STATUS (*php_http_client_pool_setopt_func_t)(struct php_http_client_pool *p, php_http_client_pool_setopt_opt_t opt, void *arg);
 
 typedef struct php_http_client_pool_ops {
-	php_http_resource_factory_ops_t *rsrc;
+	php_resource_factory_ops_t *rsrc;
 	php_http_client_pool_init_func_t init;
 	php_http_client_pool_copy_func_t copy;
 	php_http_client_pool_dtor_func_t dtor;
@@ -47,7 +47,7 @@ typedef struct php_http_client_pool_ops {
 
 typedef struct php_http_client_pool {
 	void *ctx;
-	php_http_resource_factory_t *rf;
+	php_resource_factory_t *rf;
 	php_http_client_pool_ops_t *ops;
 
 	struct {
@@ -61,7 +61,7 @@ typedef struct php_http_client_pool {
 #endif
 } php_http_client_pool_t;
 
-PHP_HTTP_API php_http_client_pool_t *php_http_client_pool_init(php_http_client_pool_t *pool, php_http_client_pool_ops_t *ops, php_http_resource_factory_t *rf, void *init_arg TSRMLS_DC);
+PHP_HTTP_API php_http_client_pool_t *php_http_client_pool_init(php_http_client_pool_t *pool, php_http_client_pool_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC);
 PHP_HTTP_API php_http_client_pool_t *php_http_client_pool_copy(php_http_client_pool_t *from, php_http_client_pool_t *to);
 PHP_HTTP_API void php_http_client_pool_dtor(php_http_client_pool_t *pool);
 PHP_HTTP_API void php_http_client_pool_free(php_http_client_pool_t **pool);

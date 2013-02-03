@@ -37,7 +37,7 @@ typedef struct php_http_curl_client_pool {
 #endif
 } php_http_curl_client_pool_t;
 
-static void *php_http_curlm_ctor(void *opaque TSRMLS_DC)
+static void *php_http_curlm_ctor(void *opaque, void *init_arg TSRMLS_DC)
 {
 	return curl_multi_init();
 }
@@ -246,7 +246,7 @@ static php_http_client_pool_t *php_http_curl_client_pool_init(php_http_client_po
 	php_http_curl_client_pool_t *curl;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-	if (!handle && !(handle = php_http_resource_factory_handle_ctor(h->rf TSRMLS_CC))) {
+	if (!handle && !(handle = php_resource_factory_handle_ctor(h->rf, NULL TSRMLS_CC))) {
 		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_POOL, "could not initialize curl pool handle");
 		return NULL;
 	}
@@ -273,7 +273,7 @@ static void php_http_curl_client_pool_dtor(php_http_client_pool_t *h)
 	curl->unfinished = 0;
 	php_http_client_pool_reset(h);
 
-	php_http_resource_factory_handle_dtor(h->rf, curl->handle TSRMLS_CC);
+	php_resource_factory_handle_dtor(h->rf, curl->handle TSRMLS_CC);
 
 	efree(curl);
 	h->ctx = NULL;
@@ -471,7 +471,7 @@ static STATUS php_http_curl_client_pool_setopt(php_http_client_pool_t *h, php_ht
 	return SUCCESS;
 }
 
-static php_http_resource_factory_ops_t php_http_curlm_resource_factory_ops = {
+static php_resource_factory_ops_t php_http_curlm_resource_factory_ops = {
 	php_http_curlm_ctor,
 	NULL,
 	php_http_curlm_dtor
@@ -546,7 +546,7 @@ zend_object_value php_http_curl_client_pool_object_new_ex(zend_class_entry *ce, 
 
 PHP_MINIT_FUNCTION(http_curl_client_pool)
 {
-	if (SUCCESS != php_http_persistent_handle_provide(ZEND_STRL("http_client_pool.curl"), &php_http_curlm_resource_factory_ops, NULL, NULL)) {
+	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http_client_pool.curl"), &php_http_curlm_resource_factory_ops, NULL, NULL)) {
 		return FAILURE;
 	}
 
