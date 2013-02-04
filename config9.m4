@@ -389,6 +389,32 @@ dnl ----
 		fi
 	])
 
+dnl ----
+dnl PROPRO
+dnl ----
+	HTTP_HAVE_PHP_EXT([propro], [
+		AC_MSG_CHECKING([for php_propro.h])
+		HTTP_EXT_PROPRO_INCDIR=
+		for i in `echo $INCLUDES | $SED -e's/-I//g'` $abs_srcdir ../propro; do
+			if test -d $i; then
+				if test -f $i/php_propro.h; then
+					HTTP_EXT_PROPRO_INCDIR=$i
+					break
+				elif test -f $i/ext/propro/php_propro.h; then
+					HTTP_EXT_PROPRO_INCDIR=$i/ext/propro
+					break
+				fi
+			fi
+		done
+		if test "x$HTTP_EXT_PROPRO_INCDIR" = "x"; then
+			AC_MSG_FAILURE([not found])
+		else
+			AC_MSG_RESULT([$HTTP_EXT_PROPRO_INCDIR])
+			AC_DEFINE([PHP_HTTP_HAVE_PHP_PROPRO_H], [1], [Have ext/propro support])
+			PHP_ADD_INCLUDE([$HTTP_EXT_PROPRO_INCDIR])
+		fi
+	])
+
 PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
 [  --without-http-shared-deps   HTTP: do not depend on extensions like hash
                                      and iconv (when they are built shared)], $PHP_HTTP, $PHP_HTTP)
@@ -465,7 +491,6 @@ dnl ----
 		php_http_object.c \
 		php_http_options.c \
 		php_http_params.c \
-		php_http_property_proxy.c \
 		php_http_querystring.c \
 		php_http_strlist.c \
 		php_http_url.c \
@@ -514,7 +539,6 @@ dnl ----
 		php_http_object.h \
 		php_http_options.h \
 		php_http_params.h \
-		php_http_property_proxy.h \
 		php_http_querystring.h \
 		php_http_strlist.h \
 		php_http_url.h \
