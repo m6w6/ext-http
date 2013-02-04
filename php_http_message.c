@@ -610,7 +610,6 @@ PHP_HTTP_EMPTY_ARGS(splitMultipartBody);
 
 static zval *php_http_message_object_read_prop(zval *object, zval *member, int type PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC);
 static void php_http_message_object_write_prop(zval *object, zval *member, zval *value PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC);
-static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC);
 static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC);
 
 static zend_class_entry *php_http_message_class_entry;
@@ -688,9 +687,6 @@ typedef struct php_http_message_object_prophandler {
 static STATUS php_http_message_object_add_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_func_t read, php_http_message_object_prophandler_func_t write) {
 	php_http_message_object_prophandler_t h = { read, write };
 	return zend_hash_add(&php_http_message_object_prophandlers, prop_str, prop_len + 1, (void *) &h, sizeof(h), NULL);
-}
-static int php_http_message_object_has_prophandler(const char *prop_str, size_t prop_len) {
-	return zend_hash_exists(&php_http_message_object_prophandlers, prop_str, prop_len + 1);
 }
 static STATUS php_http_message_object_get_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_t **handler) {
 	return zend_hash_find(&php_http_message_object_prophandlers, prop_str, prop_len + 1, (void *) handler);
@@ -822,7 +818,7 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_object_handlers.read_property = php_http_message_object_read_prop;
 	php_http_message_object_handlers.write_property = php_http_message_object_write_prop;
 	php_http_message_object_handlers.get_properties = php_http_message_object_get_props;
-	php_http_message_object_handlers.get_property_ptr_ptr = php_http_message_object_get_prop_ptr;
+	php_http_message_object_handlers.get_property_ptr_ptr = NULL;
 
 	zend_class_implements(php_http_message_class_entry TSRMLS_CC, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
 
@@ -1086,20 +1082,6 @@ void php_http_message_object_free(void *object TSRMLS_DC)
 	efree(o);
 }
 
-
-static zval **php_http_message_object_get_prop_ptr(zval *object, zval *member PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC)
-{
-	zval *copy = php_http_ztyp(IS_STRING, member);
-
-	if (php_http_message_object_has_prophandler(Z_STRVAL_P(copy), Z_STRLEN_P(copy))) {
-		zval_ptr_dtor(&copy);
-		return &php_http_property_proxy_init(NULL, object, member, NULL TSRMLS_CC)->myself;
-	}
-	zval_ptr_dtor(&copy);
-
-	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member PHP_HTTP_ZEND_LITERAL_CC TSRMLS_CC);
-}
-
 static zval *php_http_message_object_read_prop(zval *object, zval *member, int type PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC)
 {
 	php_http_message_object_t *obj = zend_object_store_get_object(object TSRMLS_CC);
@@ -1109,15 +1091,15 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 	if (SUCCESS == php_http_message_object_get_prophandler(Z_STRVAL_P(copy), Z_STRLEN_P(copy), &handler)) {
-		if (type == BP_VAR_R) {
-			ALLOC_ZVAL(return_value);
-			Z_SET_REFCOUNT_P(return_value, 0);
-			Z_UNSET_ISREF_P(return_value);
+		ALLOC_ZVAL(return_value);
+		Z_SET_REFCOUNT_P(return_value, 0);
+		Z_UNSET_ISREF_P(return_value);
 
+		if (type == BP_VAR_R) {
 			handler->read(obj, return_value TSRMLS_CC);
 		} else {
-			zend_error(E_ERROR, "Cannot access HttpMessage properties by reference or array key/index");
-			return_value = NULL;
+			php_property_proxy_t *proxy = php_property_proxy_init(object, Z_STRVAL_P(copy), Z_STRLEN_P(copy) TSRMLS_CC);
+			RETVAL_OBJVAL(php_property_proxy_object_new_ex(php_property_proxy_get_class_entry(), proxy, NULL TSRMLS_CC), 0);
 		}
 	} else {
 		return_value = zend_get_std_object_handlers()->read_property(object, member, type PHP_HTTP_ZEND_LITERAL_CC TSRMLS_CC);

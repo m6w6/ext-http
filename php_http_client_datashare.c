@@ -226,6 +226,30 @@ void php_http_client_datashare_object_free(void *object TSRMLS_DC)
 	efree(o);
 }
 
+static zval *php_http_client_datashare_object_read_prop(zval *object, zval *member, int type PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC)
+{
+	zend_property_info *pi;
+
+	if ((pi = zend_get_property_info(php_http_client_datashare_class_entry, member, 1 TSRMLS_CC))) {
+		if (type != BP_VAR_R) {
+			zval *zproxy;
+			php_property_proxy_t *proxy;
+
+			proxy = php_property_proxy_init(object, pi->name, pi->name_length TSRMLS_CC);
+
+			MAKE_STD_ZVAL(zproxy);
+#ifdef Z_SET_REFCOUNT_P
+			Z_SET_REFCOUNT_P(zproxy, 0);
+#else
+			zproxy->refcount = 0;
+#endif
+			ZVAL_OBJVAL(zproxy, php_property_proxy_object_new_ex(php_property_proxy_get_class_entry(), proxy, NULL TSRMLS_CC), 0);
+			return zproxy;
+		}
+	}
+	return zend_get_std_object_handlers()->read_property(object, member, type PHP_HTTP_ZEND_LITERAL_CC TSRMLS_CC);
+}
+
 static void php_http_client_datashare_object_write_prop(zval *object, zval *member, zval *value PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC)
 {
 	zend_property_info *pi;
@@ -252,18 +276,6 @@ static void php_http_client_datashare_object_write_prop(zval *object, zval *memb
 
 	zend_get_std_object_handlers()->write_property(object, member, value PHP_HTTP_ZEND_LITERAL_CC TSRMLS_CC);
 }
-
-static zval **php_http_client_datashare_object_get_prop_ptr(zval *object, zval *member PHP_HTTP_ZEND_LITERAL_DC TSRMLS_DC)
-{
-	zend_property_info *pi;
-
-	if ((pi = zend_get_property_info(php_http_client_datashare_class_entry, member, 1 TSRMLS_CC))) {
-		return &php_http_property_proxy_init(NULL, object, member, NULL TSRMLS_CC)->myself;
-	}
-
-	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member PHP_HTTP_ZEND_LITERAL_CC TSRMLS_CC);
-}
-
 
 PHP_METHOD(HttpClientDataShare, __destruct)
 {
@@ -334,8 +346,9 @@ PHP_MINIT_FUNCTION(http_client_datashare)
 	php_http_client_datashare_class_entry->create_object = php_http_client_datashare_object_new;
 	memcpy(&php_http_client_datashare_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_datashare_object_handlers.clone_obj = NULL;
+	php_http_client_datashare_object_handlers.read_property = php_http_client_datashare_object_read_prop;
 	php_http_client_datashare_object_handlers.write_property = php_http_client_datashare_object_write_prop;
-	php_http_client_datashare_object_handlers.get_property_ptr_ptr = php_http_client_datashare_object_get_prop_ptr;
+	php_http_client_datashare_object_handlers.get_property_ptr_ptr = NULL;
 
 	zend_class_implements(php_http_client_datashare_class_entry TSRMLS_CC, 1, spl_ce_Countable);
 

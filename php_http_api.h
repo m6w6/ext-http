@@ -24,6 +24,7 @@
 #include <SAPI.h>
 
 #include <ext/raphf/php_raphf.h>
+#include <ext/propro/php_propro.h>
 #include <ext/standard/php_string.h>
 #include <ext/spl/spl_iterators.h>
 #include <ext/date/php_date.h>
@@ -94,7 +95,6 @@ typedef int STATUS;
 #include "php_http_negotiate.h"
 #include "php_http_object.h"
 #include "php_http_params.h"
-#include "php_http_property_proxy.h"
 #include "php_http_querystring.h"
 #include "php_http_client_interface.h"
 #include "php_http_client.h"
