@@ -212,7 +212,7 @@ zend_object_value php_http_curl_client_datashare_object_new_ex(zend_class_entry 
 
 PHP_MINIT_FUNCTION(http_curl_client_datashare)
 {
-	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http_client_datashare.curl"), &php_http_curlsh_resource_factory_ops, NULL, NULL)) {
+	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http_client_datashare.curl"), &php_http_curlsh_resource_factory_ops, NULL, NULL TSRMLS_CC)) {
 		return FAILURE;
 	}
 

@@ -139,7 +139,7 @@ PHP_METHOD(HttpClientFactory, createClient)
 
 						name_len = spprintf(&name_str, 0, "http_client.%s", Z_STRVAL_P(zdriver));
 
-						if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
+						if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi), NULL, NULL TSRMLS_CC))) {
 							rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
 						}
 
@@ -196,7 +196,7 @@ PHP_METHOD(HttpClientFactory, createPool)
 
 						name_len = spprintf(&name_str, 0, "http_client_pool.%s", Z_STRVAL_P(zdriver));
 
-						if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
+						if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi), NULL, NULL TSRMLS_CC))) {
 							rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
 						}
 
@@ -261,7 +261,7 @@ PHP_METHOD(HttpClientFactory, createDataShare)
 
 						name_len = spprintf(&name_str, 0, "http_client_datashare.%s", Z_STRVAL_P(zdriver));
 
-						if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi) TSRMLS_CC))) {
+						if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, Z_STRVAL_P(phi), Z_STRLEN_P(phi), NULL, NULL TSRMLS_CC))) {
 							rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
 						}
 

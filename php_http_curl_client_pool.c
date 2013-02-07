@@ -546,7 +546,7 @@ zend_object_value php_http_curl_client_pool_object_new_ex(zend_class_entry *ce, 
 
 PHP_MINIT_FUNCTION(http_curl_client_pool)
 {
-	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http_client_pool.curl"), &php_http_curlm_resource_factory_ops, NULL, NULL)) {
+	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http_client_pool.curl"), &php_http_curlm_resource_factory_ops, NULL, NULL TSRMLS_CC)) {
 		return FAILURE;
 	}
 

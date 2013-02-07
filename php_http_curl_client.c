@@ -1432,7 +1432,7 @@ PHP_MINIT_FUNCTION(http_curl_client)
 {
 	php_http_options_t *options;
 
-	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http_client.curl"), &php_http_curl_client_resource_factory_ops, NULL, NULL)) {
+	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http_client.curl"), &php_http_curl_client_resource_factory_ops, NULL, NULL TSRMLS_CC)) {
 		return FAILURE;
 	}
 
