@@ -872,12 +872,29 @@ PHP_HTTP_API STATUS _http_request_prepare(http_request *request, HashTable *opti
 	}
 	/* etag */
 	if ((zoption = http_request_option(request, options, "etag", IS_STRING)) && Z_STRLEN_P(zoption)) {
-		zend_bool is_quoted = !((Z_STRVAL_P(zoption)[0] != '"') || (Z_STRVAL_P(zoption)[Z_STRLEN_P(zoption)-1] != '"'));
+		zend_bool is_quoted;
 		phpstr header;
-		
+
 		phpstr_init(&header);
-		phpstr_appendf(&header, is_quoted?"%s: %s":"%s: \"%s\"", range_req?"If-Match":"If-None-Match", Z_STRVAL_P(zoption));
+		phpstr_appendf(&header, "%s: ", range_req?"If-Match":"If-None-Match");
+		if ((Z_STRVAL_P(zoption)[0] == '"') && (Z_STRVAL_P(zoption)[Z_STRLEN_P(zoption)-1] == '"')) {
+			/* properly quoted etag */
+			phpstr_append(&header, Z_STRVAL_P(zoption), Z_STRLEN_P(zoption));
+		} else if ((Z_STRVAL_P(zoption)[0] == 'W') && (Z_STRVAL_P(zoption)[1] == '/')) {
+			/* weak etag */
+			if ((Z_STRLEN_P(zoption) > 3) && (Z_STRVAL_P(zoption)[2] == '"') && (Z_STRVAL_P(zoption)[Z_STRLEN_P(zoption)-1] == '"')) {
+				/* quoted */
+				phpstr_append(&header, Z_STRVAL_P(zoption), Z_STRLEN_P(zoption));
+			} else {
+				/* unquoted */
+				phpstr_appendf(&header, "W/\"%s\"", Z_STRVAL_P(zoption) + 2);
+			}
+		} else {
+			/* assume unquoted etag */
+			phpstr_appendf(&header, "\"%s\"", Z_STRVAL_P(zoption));
+		}
 		phpstr_fix(&header);
+
 		request->_cache.headers = curl_slist_append(request->_cache.headers, PHPSTR_VAL(&header));
 		phpstr_dtor(&header);
 	}
