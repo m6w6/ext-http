@@ -19,7 +19,7 @@ rewind($f);
 var_dump(stream_get_contents($f));
 ?>
 --EXPECTF--
-string(355) "HTTP/1.1 200 OK%c
+string(%d) "HTTP/1.1 200 OK%c
 Accept-Ranges: bytes%c
 X-Powered-By: %s%c
 ETag: "abc"%c

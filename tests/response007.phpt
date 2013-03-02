@@ -29,7 +29,7 @@ var_dump(stream_get_contents($tmp));
 Done
 --EXPECTF--
 Test
-string(141) "HTTP/1.1 206 Partial Content%c
+string(%d) "HTTP/1.1 206 Partial Content%c
 Accept-Ranges: bytes%c
 X-Powered-By: %s%c
 Content-Type: text/plain%c
