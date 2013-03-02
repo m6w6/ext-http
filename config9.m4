@@ -381,7 +381,7 @@ dnl ----
 			fi
 		done
 		if test "x$HTTP_EXT_RAPHF_INCDIR" = "x"; then
-			AC_MSG_FAILURE([not found])
+			AC_MSG_ERROR([not found])
 		else
 			AC_MSG_RESULT([$HTTP_EXT_RAPHF_INCDIR])
 			AC_DEFINE([PHP_HTTP_HAVE_PHP_RAPHF_H], [1], [Have ext/raphf support])
@@ -407,7 +407,7 @@ dnl ----
 			fi
 		done
 		if test "x$HTTP_EXT_PROPRO_INCDIR" = "x"; then
-			AC_MSG_FAILURE([not found])
+			AC_MSG_ERROR([not found])
 		else
 			AC_MSG_RESULT([$HTTP_EXT_PROPRO_INCDIR])
 			AC_DEFINE([PHP_HTTP_HAVE_PHP_PROPRO_H], [1], [Have ext/propro support])
