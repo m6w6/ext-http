@@ -28,7 +28,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </lead>
  <date>2012-12-31</date>
  <version>
-  <release>2.0.0beta4</release>
+  <release>2.0.0beta5</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -119,14 +119,8 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="src" name="php_http_options.h"/>
    <file role="src" name="php_http_params.c"/>
    <file role="src" name="php_http_params.h"/>
-   <file role="src" name="php_http_persistent_handle.c"/>
-   <file role="src" name="php_http_persistent_handle.h"/>
-   <file role="src" name="php_http_property_proxy.c"/>
-   <file role="src" name="php_http_property_proxy.h"/>
    <file role="src" name="php_http_querystring.c"/>
    <file role="src" name="php_http_querystring.h"/>
-   <file role="src" name="php_http_resource_factory.c"/>
-   <file role="src" name="php_http_resource_factory.h"/>
    <file role="src" name="php_http_strlist.c"/>
    <file role="src" name="php_http_strlist.h"/>
    <file role="src" name="php_http_url.c"/>
@@ -173,7 +167,6 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
     <file role="test" name="negotiate001.phpt"/>
     <file role="test" name="params001.phpt"/>
     <file role="test" name="params002.phpt"/>
-    <file role="test" name="persistenthandles001.phpt"/>
     <file role="test" name="phpunit.phpt"/>
     <file role="test" name="propertyproxy001.phpt"/>
     <file role="test" name="querystring_001.phpt"/>
@@ -211,6 +204,18 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <pearinstaller>
     <min>1.4.1</min>
    </pearinstaller>
+   <package>
+    <name>raphf</name>
+    <channel>pecl.php.net</channel>
+    <min>0.1.0</min>
+    <providesextension>raphf</providesextension>
+   </package>
+   <package>
+    <name>propro</name>
+    <channel>pecl.php.net</channel>
+    <min>0.1.0</min>
+    <providesextension>propro</providesextension>
+   </package>
   </required>
   <optional>
    <extension><name>hash</name></extension>
