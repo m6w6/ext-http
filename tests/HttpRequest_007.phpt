@@ -44,8 +44,9 @@ HTTP/1.1 200 OK
 Date: %a
 Server: %a
 Vary: Accept-Encoding
-Content-Length: %d
 Content-Type: text/html
+X-Original-Transfer-Encoding: chunked
+Content-Length: %d
 
 <?php
 echo "-TEST\n";
