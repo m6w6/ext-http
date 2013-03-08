@@ -150,7 +150,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 #define http_message_object_write_prop _http_message_object_write_prop
 static void _http_message_object_write_prop(zval *object, zval *member, zval *value ZEND_LITERAL_KEY_DC TSRMLS_DC);
 #define http_message_object_get_prop_ptr _http_message_object_get_prop_ptr
-static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_LITERAL_KEY_DC TSRMLS_DC);
+static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_GET_PPTR_TYPE_DC ZEND_LITERAL_KEY_DC TSRMLS_DC);
 #define http_message_object_get_props _http_message_object_get_props
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC);
 
@@ -564,7 +564,7 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 	freeObject(o);
 }
 
-static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_LITERAL_KEY_DC TSRMLS_DC) {
+static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_GET_PPTR_TYPE_DC ZEND_LITERAL_KEY_DC TSRMLS_DC) {
 	getObjectEx(http_message_object, obj, object);
 	http_message_object_prophandler *handler;
 	
@@ -573,7 +573,7 @@ static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_
 		return NULL;
 	}
 
-	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member ZEND_LITERAL_KEY_CC TSRMLS_CC);
+	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member ZEND_GET_PPTR_TYPE_CC ZEND_LITERAL_KEY_CC TSRMLS_CC);
 }
 
 static zval *_http_message_object_read_prop(zval *object, zval *member, int type ZEND_LITERAL_KEY_DC TSRMLS_DC)
