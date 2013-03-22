@@ -83,7 +83,9 @@ class CookieTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(
             sprintf(
                 "this=expires; expires=%s; ", 
-                date_create("@$t")->format("D, d M Y H:i:s \\G\\M\\T")
+                date_create("@$t")
+            		->setTimezone(new DateTimezone("UTC"))
+            		->format("D, d M Y H:i:s \\G\\M\\T")
             ), 
             $o->toString()
         );

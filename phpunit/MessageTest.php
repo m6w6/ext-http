@@ -141,7 +141,7 @@ class MessageTest extends PHPUnit_Framework_TestCase
 			array(
 				array(
 					"cookies" => array("foo" => "bar"),
-					"expires" => date_create("2012-12-31 23:59:59")->format(
+					"expires" => date_create("2012-12-31 22:59:59 GMT")->format(
 						DateTime::COOKIE
 					),
 					"path" => "/somewhere"
