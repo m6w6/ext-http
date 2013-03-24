@@ -45,6 +45,7 @@ PHP_MINFO_FUNCTION(http);
 
 static zend_module_dep http_module_deps[] = {
 	ZEND_MOD_REQUIRED("raphf")
+	ZEND_MOD_REQUIRED("propro")
 	ZEND_MOD_REQUIRED("spl")
 #ifdef PHP_HTTP_HAVE_HASH
 	ZEND_MOD_REQUIRED("hash")

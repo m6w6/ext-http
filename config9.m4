@@ -503,6 +503,10 @@ dnl ----
 	HTTP_SHARED_DEP([iconv])
 	HTTP_SHARED_DEP([json])
 	
+	dnl extension deps
+	PHP_ADD_EXTENSION_DEP([http], [raphf], true)
+	PHP_ADD_EXTENSION_DEP([http], [propo], true)
+	
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 
 	PHP_HTTP_HEADERS="
