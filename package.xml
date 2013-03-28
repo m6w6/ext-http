@@ -28,7 +28,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </lead>
  <date>2012-12-31</date>
  <version>
-  <release>2.0.0beta5</release>
+  <release>2.0.0dev</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -37,13 +37,6 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-! >80% test coverage http://goo.gl/VmyIW
-* Fixed build with libcurl <= 7.21.3
-* Fixed var_dump of http\Message with inherited userland properties with increased access level
-+ Added http\Header::getParams()
-+ Added simple support for escapes and quotes in the params parser
-+ Added support for sending http\Env\Response over PHP streams
-+ Added message body reference counting
 ]]></notes>
  <contents>
   <dir name="/">
@@ -59,15 +52,9 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="src" name="php_http_buffer.h"/>
    <file role="src" name="php_http.c"/>
    <file role="src" name="php_http_client.c"/>
-   <file role="src" name="php_http_client_datashare.c"/>
-   <file role="src" name="php_http_client_datashare.h"/>
-   <file role="src" name="php_http_client_factory.c"/>
-   <file role="src" name="php_http_client_factory.h"/>
    <file role="src" name="php_http_client.h"/>
-   <file role="src" name="php_http_client_interface.c"/>
-   <file role="src" name="php_http_client_interface.h"/>
-   <file role="src" name="php_http_client_pool.c"/>
-   <file role="src" name="php_http_client_pool.h"/>
+   <file role="src" name="php_http_client_curl.c"/>
+   <file role="src" name="php_http_client_curl.h"/>
    <file role="src" name="php_http_client_request.c"/>
    <file role="src" name="php_http_client_request.h"/>
    <file role="src" name="php_http_client_response.c"/>
@@ -75,12 +62,6 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="src" name="php_http_cookie.c"/>
    <file role="src" name="php_http_cookie.h"/>
    <file role="src" name="php_http_curl.c"/>
-   <file role="src" name="php_http_curl_client.c"/>
-   <file role="src" name="php_http_curl_client_datashare.c"/>
-   <file role="src" name="php_http_curl_client_datashare.h"/>
-   <file role="src" name="php_http_curl_client.h"/>
-   <file role="src" name="php_http_curl_client_pool.c"/>
-   <file role="src" name="php_http_curl_client_pool.h"/>
    <file role="src" name="php_http_curl.h"/>
    <file role="src" name="php_http_encoding.c"/>
    <file role="src" name="php_http_encoding.h"/>
@@ -130,7 +111,6 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
 
    <dir name="tests">
     <file role="test" name="skipif.inc"/>
-    <dir name="HttpRequestPool_cache" />
     <dir name="data">
      <file role="test" name="message_r_multipart_put.txt"/>
      <file role="test" name="message_rr_empty.txt"/>
@@ -140,7 +120,6 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
      <file role="test" name="urls.txt"/>
     </dir>
     <file role="test" name="bug61444.phpt"/>
-    <file role="test" name="clientpool002.phpt"/>
     <file role="test" name="envrequestbody001.phpt"/>
     <file role="test" name="envrequestbody002.phpt"/>
     <file role="test" name="envrequestbody003.phpt"/>
@@ -153,7 +132,6 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
     <file role="test" name="envresponseheader001.phpt"/>
     <file role="test" name="envresponseranges001.phpt"/>
     <file role="test" name="etag001.phpt"/>
-    <file role="test" name="factory.phpt"/>
     <file role="test" name="filterchunked.phpt"/>
     <file role="test" name="filterzlib.phpt"/>
     <file role="test" name="info.phpt"/>
@@ -170,7 +148,6 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
     <file role="test" name="phpunit.phpt"/>
     <file role="test" name="propertyproxy001.phpt"/>
     <file role="test" name="querystring_001.phpt"/>
-    <file role="test" name="requestpool001.phpt"/>
     <file role="test" name="response001.phpt"/>
     <file role="test" name="response002.phpt"/>
     <file role="test" name="response003.phpt"/>
@@ -181,17 +158,15 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    </dir>
    <dir name="phpunit">
     <file role="test" name="ClientRequestTest.php"/>
+    <file role="test" name="ClientTest.php"/>
     <file role="test" name="CookieTest.php"/>
-    <file role="test" name="DataShareTest.php"/>
     <file role="test" name="EncodingTest.php"/>
     <file role="test" name="HeaderTest.php"/>
     <file role="test" name="MessageTest.php"/>
     <file role="test" name="MessageBodyTest.php"/>
     <file role="test" name="ObjectTest.php"/>
     <file role="test" name="ParamsTest.php"/>
-    <file role="test" name="PoolTest.php"/>
     <file role="test" name="QueryStringTest.php"/>
-    <file role="test" name="RequestTest.php"/>
     <file role="test" name="UrlTest.php"/>
    </dir>
   </dir>

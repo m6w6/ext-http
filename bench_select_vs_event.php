@@ -1,66 +1,5 @@
 <?php
 
-use http\request\Pool as HttpRequestPool;
-use http\Request as HttpRequest;
-
-$factory = new http\request\Factory("curl", array("requestPoolClass" => "pool", "requestClass" => "request"));
-
-class pool extends HttpRequestPool {
-	private $url;
-	private $cnt;
-
-    private $factory;
-
-    static function fetch($factory, $url, $n, $c, $e, $p) {
-        $pool = $factory->createPool();
-        $pool->factory = $factory;
-		$pool->url = $url;
-		$pool->cnt = $n;
-        
-        $pool->enablePipelining($p);
-		$pool->enableEvents($e);
-		
-		for ($i = 0; $i < $c; ++$i) {
-			$pool->push();
-		}
-		try {
-			$pool->send();
-		} catch (Exception $ex) {
-			echo $ex, "\n";
-		}
-	}
-	
-	function push() {
-        if ($this->cnt > 0) {
-            $this->factory->createRequest()->init($this, $this->url)->id = $this->cnt--;
-		}
-	}
-}
-
-class request extends HttpRequest implements SplObserver {
-	static $counter = 0;
-	
-	public $id;
-	private $pool;
-	
-	function init(pool $pool, $url) {
-		$this->setUrl($url);
-		$this->pool = $pool;
-        $this->attach($this);
-        $pool->attach($this);
-		return $this;
-	}
-	
-    function update(SplSubject $r) {
-        if ($r->getProgress()->finished) {
-            ++self::$counter;
-            $this->pool->detach($this);
-            $this->detach($this);
-            $this->pool->push();
-        }
-	}
-}
-
 function usage($e = null) {
     global $argv;
     if ($e) {
@@ -71,6 +10,17 @@ function usage($e = null) {
 	exit(-1);
 }
 
+function push($client, $url, &$n) {
+	if ($n-- > 0) {
+		$req = new http\Client\Request("GET", $url);
+		$client->enqueue($req, function($response) use ($client, $req, $url, &$n) {
+			global $count; ++$count;
+			push($client, $url, $n);
+			return true; // dequeue
+		});
+	}
+}
+
 isset($argv) or $argv = $_SERVER['argv'];
 defined('STDERR') or define('STDERR', fopen('php://stderr', 'w'));
 
@@ -79,16 +29,25 @@ isset($opts["u"]) or $opts["u"] = "http://localhost/";
 isset($opts["c"]) or $opts["c"] = 10;
 isset($opts["n"]) or $opts["n"] = 1000;
 
-try {
-    ($c=$factory->createRequest($opts["u"])->send()->getResponseCode()) == 200 or usage("Received response code $c");
-} catch (Exception $ex) {
-    usage($ex->getMessage());
+$argc > 1 or usage();
+var_Dump($opts);
+$time = microtime(true);
+$count = 0;
+$client = new http\Client;
+
+$client->enablePipelining($opts["p"]===false);
+$client->enableEvents($opts["e"]===false);
+
+for ($i = 0, $x = $opts["n"]; $i < $opts["c"]; ++$i) {
+	push($client, $opts["u"], $x);
 }
 
-$argc > 1 or usage();
+try {
+	$client->send();
+} catch (Exception $e) {
+	echo $e;
+}
 
-$time = microtime(true);
-pool::fetch($factory, $opts["u"], $opts["n"], $opts["c"], isset($opts["e"]), isset($opts["p"]));
 printf("\n> %10.6fs (%3.2fM)\n", microtime(true)-$time, memory_get_peak_usage(true)/1024/1024);
 
-request::$counter == $opts["n"] or printf("\nOnly %d finished\n", request::$counter);
+$count == $opts["n"] or printf("\nOnly %d finished\n", $count);

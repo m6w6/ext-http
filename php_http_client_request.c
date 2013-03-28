@@ -12,6 +12,10 @@
 
 #include "php_http_api.h"
 
+void php_http_client_options_set_subr(zval *this_ptr, char *key, size_t len, zval *opts, int overwrite TSRMLS_DC);
+void php_http_client_options_set(zval *this_ptr, zval *opts TSRMLS_DC);
+void php_http_client_options_get_subr(zval *this_ptr, char *key, size_t len, zval *return_value TSRMLS_DC);
+
 #define PHP_HTTP_BEGIN_ARGS(method, req_args) 			PHP_HTTP_BEGIN_ARGS_EX(HttpClientRequest, method, 0, req_args)
 #define PHP_HTTP_EMPTY_ARGS(method)						PHP_HTTP_EMPTY_ARGS_EX(HttpClientRequest, method, 0)
 #define PHP_HTTP_CLIENT_REQUEST_ME(method, visibility)	PHP_ME(HttpClientRequest, method, PHP_HTTP_ARGS(HttpClientRequest, method), visibility)

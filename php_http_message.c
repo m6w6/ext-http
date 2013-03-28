@@ -1021,7 +1021,6 @@ zend_object_value php_http_message_object_new(zend_class_entry *ce TSRMLS_DC)
 
 zend_object_value php_http_message_object_new_ex(zend_class_entry *ce, php_http_message_t *msg, php_http_message_object_t **ptr TSRMLS_DC)
 {
-	zend_object_value ov;
 	php_http_message_object_t *o;
 
 	o = ecalloc(1, sizeof(php_http_message_object_t));
@@ -1040,10 +1039,10 @@ zend_object_value php_http_message_object_new_ex(zend_class_entry *ce, php_http_
 		o->body = php_http_message_body_object_new_ex(php_http_message_body_get_class_entry(), php_http_message_body_init(&msg->body, NULL TSRMLS_CC), NULL TSRMLS_CC);
 	}
 
-	ov.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_message_object_free, NULL TSRMLS_CC);
-	ov.handlers = &php_http_message_object_handlers;
+	o->zv.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_message_object_free, NULL TSRMLS_CC);
+	o->zv.handlers = &php_http_message_object_handlers;
 
-	return ov;
+	return o->zv;
 }
 
 zend_object_value php_http_message_object_clone(zval *this_ptr TSRMLS_DC)

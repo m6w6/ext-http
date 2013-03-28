@@ -1,13 +1,13 @@
 <?php
 
 class ProgressObserver1 implements SplObserver {
-    function update(SplSubject $r) {
-        if ($r->getProgress()) $r->pi .= "-";
+    function update(SplSubject $c, $r = null) {
+        if ($c->getProgressInfo($r)) $c->pi .= "-";
     }
 }
 class ProgressObserver2 implements SplObserver {
-    function update(SplSubject $r) {
-        if ($r->getProgress()) $r->pi .= ".";
+    function update(SplSubject $c, $r = null) {
+        if ($c->getProgressInfo($r)) $c->pi .= ".";
     }
 }
 class CallbackObserver implements SplObserver {
@@ -15,21 +15,21 @@ class CallbackObserver implements SplObserver {
     function __construct($callback) {
         $this->callback = $callback;
     }
-    function update(SplSubject $r) {
-        call_user_func($this->callback, $r);
+    function update(SplSubject $c, $r = null) {
+        call_user_func($this->callback, $c, $r);
     } 
 }
 
 class RequestTest extends PHPUnit_Framework_TestCase
 {
     /**
-     * @var http\Request
+     * @var http\Client
      */
     protected $r;
 
     function setUp() {
-		$f = new http\Client\Factory;
-        $this->r = $f->createClient();
+        $this->r = new http\Client;
+        $this->r->pi = "";
         $this->r->setOptions(
             array(
                 "connecttimeout"    => 30,
@@ -50,19 +50,14 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    function testClone() {
-        $c = clone $this->r;
-        $this->assertNotSame($this->r, $c);
-    }
-
     function testObserver() {
 		$test = $this;
         $this->r->attach($o1 = new ProgressObserver1);
         $this->r->attach($o2 = new ProgressObserver2);
         $this->r->attach(
             $o3 = new CallbackObserver(
-                function ($r) use ($test) {
-                    $p = (array) $r->getProgress();
+                function ($c, $r) use ($test) {
+                    $p = (array) $c->getProgressInfo($r);
                     $test->assertArrayHasKey("started", $p);
                     $test->assertArrayHasKey("finished", $p);
                     $test->assertArrayHasKey("dlnow", $p);
@@ -73,7 +68,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
                 }
             )
         );
-        $this->r->setRequest(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/"))->send(null);
+        $this->r->enqueue(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/"))->send();
         $this->assertRegexp("/(\.-)+/", $this->r->pi);
         $this->assertCount(3, $this->r->getObservers());
         $this->r->detach($o1);
@@ -84,57 +79,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $this->assertCount(0, $this->r->getObservers());
     }
 
-    function testCookies() {
-        $this->r->setRequest(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/.cookie.php"))->send(null);
-        $this->assertNotContains("Cookie", (string) $this->r->getRequestMessage());
-        $this->r->send(null);
-        $this->assertNotContains("Cookie", (string) $this->r->getRequestMessage());
-        $this->r->enableCookies()->send(null);
-        $this->assertNotContains("Cookie", (string) $this->r->getRequestMessage());
-        $this->r->send(null);
-        $this->assertContains("Cookie", (string) $this->r->getRequestMessage());
-        $cookies = $this->r->getResponseMessage()->getCookies(0, array("extra"));
-        $this->assertCount(2, $cookies);
-        foreach ($cookies as $cookie) {
-        	if ($cookie->getCookie("perm")) {
-        		$this->assertTrue(0 < $cookie->getExpires());
-        	}
-        	if ($cookie->getCookie("temp")) {
-        		$this->assertEquals(-1, $cookie->getExpires());
-        	}
-        }
-        $this->r->send(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/.cookie1.php"));
-        $cookies = $this->r->getResponseMessage()->getCookies(0, array("bar"));
-        $this->assertCount(1, $cookies);
-        $cookies = $cookies[0];
-        $this->assertEquals(array("bar"=>"foo"), $cookies->getExtras());
-        $this->assertEquals(array("foo"=>"bar"), $cookies->getCookies());
-        $cookies = $this->r->getResponseMessage()->getCookies(0, array("foo"));
-        $this->assertCount(1, $cookies);
-        $cookies = $cookies[0];
-        $this->assertEquals(array("foo"=>"bar","bar"=>"foo"), $cookies->getCookies());
-        $this->assertEquals(array(), $cookies->getExtras());
-    }
-
-    function testResetCookies() {
-        $this->r->setRequest(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/.cookie.php"));
-
-        $this->r->enableCookies();
-        $this->r->send(null);
-
-        $f = function ($a) { return $a->getCookies(); };
-        $c = array_map($f, $this->r->getResponseMessage()->getCookies());
-
-        $this->r->send(null);
-        $this->assertEquals($c, array_map($f, $this->r->getResponseMessage()->getCookies()));
-        
-        $this->r->resetCookies();
-        $this->r->send(null);
-        $this->assertNotEquals($c, array_map($f, $this->r->getResponseMessage()->getCookies()));
-    }
-    
     function testSsl() {
-    	$this->r->setRequest(new http\Client\Request("GET", "https://twitter.com/"));
     	$this->r->setSslOptions(array("verify_peer" => true));
     	$this->r->addSslOptions(array("verify_host" => 2));
     	$this->assertEquals(
@@ -144,8 +89,9 @@ class RequestTest extends PHPUnit_Framework_TestCase
     		),
     		$this->r->getSslOptions()
     	);
+    	$this->r->enqueue($req = new http\Client\Request("GET", "https://twitter.com/"));
     	$this->r->send();
-    	$ti = $this->r->getTransferInfo();
+    	$ti = $this->r->getTransferInfo($req);
     	$this->assertArrayHasKey("ssl_engines", $ti);
     	$this->assertGreaterThan(0, count($ti["ssl_engines"]));	
     }
@@ -160,7 +106,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $request->setRequestUrl("http://dev.iworks.at/ext-http/.print_request.php");
 
         $this->r->recordHistory = true;
-        $this->r->send($request);
+        $this->r->enqueue($request)->send();
 
         $this->assertStringMatchesFormat(<<<HTTP
 POST /ext-http/.print_request.php HTTP/1.1
@@ -187,7 +133,7 @@ HTTP
         );
 
 
-        $this->r->send($request);
+        $this->r->requeue($request)->send();
 
         $this->assertStringMatchesFormat(<<<HTTP
 POST /ext-http/.print_request.php HTTP/1.1

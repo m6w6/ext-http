@@ -339,7 +339,7 @@ dnl ----
 				AC_MSG_CHECKING([for libevent version, roughly])
 				
 				if test -f "$EVENT_DIR/include/event2/event.h"; then
-					EVENT_VER="`$EGREP _EVENT_VERSION $EVENT_DIR/include/event2/event.h | $AWK '{print $3}'`"
+					EVENT_VER="`$EGREP _EVENT_VERSION $EVENT_DIR/include/event2/event-config.h | $AWK '{print $3}'`"
 					AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [1], [ ])
 				else
 					AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [0], [ ])
@@ -462,13 +462,7 @@ dnl ----
 		php_http_buffer.c \
 		php_http.c \
 		php_http_client.c \
-		php_http_curl_client.c \
-		php_http_client_datashare.c \
-		php_http_curl_client_datashare.c \
-		php_http_client_factory.c \
-		php_http_client_interface.c \
-		php_http_client_pool.c \
-		php_http_curl_client_pool.c \
+		php_http_client_curl.c \
 		php_http_client_request.c \
 		php_http_client_response.c \
 		php_http_cookie.c \

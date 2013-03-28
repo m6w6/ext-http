@@ -10,13 +10,25 @@
     +--------------------------------------------------------------------+
 */
 
-#ifndef PHP_HTTP_CLIENT_INTERFACE_H
+#ifndef PHP_HTTP_CLIENT_CURL_H
+#define PHP_HTTP_CLIENT_CURL_H
 
-zend_class_entry *php_http_client_interface_get_class_entry(void);
+#if PHP_HTTP_HAVE_CURL
 
-PHP_MINIT_FUNCTION(http_client_interface);
+#if PHP_HTTP_HAVE_EVENT
+struct php_http_curl_globals {
+	void *event_base;
+};
 
-#endif
+PHP_RINIT_FUNCTION(http_client_curl);
+PHP_RSHUTDOWN_FUNCTION(http_client_curl);
+#endif /* PHP_HTTP_HAVE_EVENT */
+
+PHP_MINIT_FUNCTION(http_client_curl);
+PHP_MSHUTDOWN_FUNCTION(http_client_curl);
+#endif /* PHP_HTTP_HAVE_CURL */
+
+#endif /* PHP_HTTP_CLIENT_CURL_H */
 
 /*
  * Local variables:
@@ -26,4 +38,3 @@ PHP_MINIT_FUNCTION(http_client_interface);
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

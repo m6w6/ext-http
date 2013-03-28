@@ -12,18 +12,11 @@
 
 #include "php_http_api.h"
 
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 			PHP_HTTP_BEGIN_ARGS_EX(HttpClientResponse, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)						PHP_HTTP_EMPTY_ARGS_EX(HttpClientResponse, method, 0)
-#define PHP_HTTP_CLIENT_RESPONSE_ME(method, visibility)	PHP_ME(HttpClientResponse, method, PHP_HTTP_ARGS(HttpClientResponse, method), visibility)
-#define PHP_HTTP_CLIENT_RESPONSE_ALIAS(method, func)	PHP_HTTP_STATIC_ME_ALIAS(method, func, PHP_HTTP_ARGS(HttpClientResponse, method))
-#define PHP_HTTP_CLIENT_RESPONSE_MALIAS(me, al, vis)	ZEND_FENTRY(me, ZEND_MN(HttpClientResponse_##al), PHP_HTTP_ARGS(HttpClientResponse, al), vis)
-
-PHP_HTTP_BEGIN_ARGS(getCookies, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
-	PHP_HTTP_ARG_VAL(allowed_extras, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_METHOD(HttpClientResponse, getCookies)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientResponse_getCookies, 0, 0, 0)
+	ZEND_ARG_INFO(0, flags)
+	ZEND_ARG_INFO(0, allowed_extras)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpClientResponse, getCookies)
 {
 	long flags = 0;
 	zval *allowed_extras_array = NULL;
@@ -91,6 +84,32 @@ PHP_METHOD(HttpClientResponse, getCookies)
 	RETURN_FALSE;
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientResponse_getTransferInfo, 0, 0, 0)
+	ZEND_ARG_INFO(0, element)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpClientResponse, getTransferInfo)
+{
+	char *info_name = NULL;
+	int info_len = 0;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &info_name, &info_len)) {
+		zval **infop, *info = zend_read_property(php_http_client_response_get_class_entry(), getThis(), ZEND_STRL("transferInfo"), 0 TSRMLS_CC);
+
+		/* request completed? */
+		if (Z_TYPE_P(info) == IS_ARRAY) {
+			if (info_len && info_name) {
+				if (SUCCESS == zend_symtable_find(Z_ARRVAL_P(info), php_http_pretty_key(info_name, info_len, 0, 0), info_len + 1, (void *) &infop)) {
+					RETURN_ZVAL(*infop, 1, 0);
+				} else {
+					php_http_error(HE_NOTICE, PHP_HTTP_E_INVALID_PARAM, "Could not find transfer info named %s", info_name);
+				}
+			} else {
+				RETURN_ZVAL(info, 1, 0);
+			}
+		}
+	}
+	RETURN_FALSE;
+}
 
 static zend_class_entry *php_http_client_response_class_entry;
 
@@ -100,7 +119,8 @@ zend_class_entry *php_http_client_response_get_class_entry(void)
 }
 
 static zend_function_entry php_http_client_response_method_entry[] = {
-	PHP_HTTP_CLIENT_RESPONSE_ME(getCookies, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClientResponse, getCookies, ai_HttpClientResponse_getCookies, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClientResponse, getTransferInfo, ai_HttpClientResponse_getTransferInfo, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 

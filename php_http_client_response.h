@@ -15,8 +15,6 @@
 
 zend_class_entry *php_http_client_response_get_class_entry(void);
 
-PHP_METHOD(HttpClientResponse, getCookies);
-
 PHP_MINIT_FUNCTION(http_client_response);
 
 #endif /* PHP_HTTP_CLIENT_RESPONSE_H */

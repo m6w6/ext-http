@@ -75,6 +75,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg,
 
 typedef struct php_http_message_object {
 	zend_object zo;
+	zend_object_value zv;
 	php_http_message_t *message;
 	zend_object_value parent, body;
 	zval *iterator;
