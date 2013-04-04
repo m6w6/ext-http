@@ -661,19 +661,38 @@ static PHP_METHOD(HttpClient, requeue)
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getResponse, 0, 0, 0)
+	ZEND_ARG_OBJ_INFO(0, request, http\\Client\\Request, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getResponse)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
+	zval *zrequest = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O", &zrequest, php_http_client_request_get_class_entry())) {
 		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-		if (obj->client->responses.tail) {
-			php_http_message_object_t *response_obj = *(php_http_message_object_t **) obj->client->responses.tail->data;
+		if (!zrequest) {
+			/* pop off the last respone */
+			if (obj->client->responses.tail) {
+				php_http_message_object_t *response_obj = *(php_http_message_object_t **) obj->client->responses.tail->data;
 
-			/* pop off and go */
-			if (response_obj) {
-				RETVAL_OBJVAL(response_obj->zv, 1);
-				zend_llist_remove_tail(&obj->client->responses);
+				/* pop off and go */
+				if (response_obj) {
+					RETVAL_OBJVAL(response_obj->zv, 1);
+					zend_llist_remove_tail(&obj->client->responses);
+				}
+			}
+		} else {
+			/* lookup the response with the request */
+			zend_llist_element *el = NULL;
+			php_http_message_object_t *req_obj = zend_object_store_get_object(zrequest TSRMLS_CC);
+
+			for (el = obj->client->responses.head; el; el = el->next) {
+				php_http_message_object_t *response_obj = *(php_http_message_object_t **) el->data;
+
+				if (response_obj->message->parent == req_obj->message) {
+					RETVAL_OBJVAL(response_obj->zv, 1);
+					break;
+				}
 			}
 		}
 	}

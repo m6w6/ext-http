@@ -36,7 +36,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
   <api>beta</api>
  </stability>
  <license>BSD, revised</license>
- <notes><![CDATA[
+ <notes><![CDATA[-
 ]]></notes>
  <contents>
   <dir name="/">
