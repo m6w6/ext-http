@@ -1,5 +1,5 @@
 --TEST--
-http\Env response codes
+env response codes
 --SKIPIF--
 <?php include "skipif.inc"; ?>
 --FILE--

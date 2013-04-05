@@ -1,5 +1,5 @@
 --TEST--
-http\QueryString
+query string
 --SKIPIF--
 <?php
 include("skipif.inc");

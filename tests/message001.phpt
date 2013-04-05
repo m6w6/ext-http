@@ -1,5 +1,5 @@
 --TEST--
-Message
+message
 --SKIPIF--
 <?php
 include "skipif.inc";

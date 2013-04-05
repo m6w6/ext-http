@@ -200,6 +200,8 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 	return FAILURE;
 }
 
+STATUS php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval **argv[], zval **retval_ptr TSRMLS_DC);
+
 /* return bool (v == SUCCESS) */
 #define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
 #define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))

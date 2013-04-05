@@ -1,5 +1,5 @@
 --TEST--
-http\Env\Request getQuery
+env request query
 --SKIPIF--
 <?php include "skipif.inc"; ?>
 --GET--

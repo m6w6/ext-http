@@ -1,5 +1,5 @@
 --TEST--
-http\Env\Request grabbing $_FILES
+env request grabbing $_FILES
 --SKIPIF--
 <?php include "skipif.inc"; ?>
 --POST_RAW--

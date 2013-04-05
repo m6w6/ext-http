@@ -1862,10 +1862,11 @@ PHP_MINIT_FUNCTION(http_client_curl)
 {
 	php_http_options_t *options;
 	php_http_client_driver_t driver = {
+		ZEND_STRL("curl"),
 		&php_http_client_curl_ops
 	};
 
-	if (SUCCESS != php_http_client_driver_add(ZEND_STRL("curl"), &driver)) {
+	if (SUCCESS != php_http_client_driver_add(&driver)) {
 			return FAILURE;
 		}
 

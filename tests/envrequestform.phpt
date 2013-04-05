@@ -1,5 +1,5 @@
 --TEST--
-http\Env\Request getForm
+env request form
 --SKIPIF--
 <?php include "skipif.inc"; ?>
 --POST--

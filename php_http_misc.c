@@ -289,6 +289,34 @@ void php_http_error(long type TSRMLS_DC, long code, const char *format, ...)
 	va_end(args);
 }
 
+/* ZEND */
+
+STATUS php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval **argv[], zval **retval_ptr TSRMLS_DC)
+{
+	zend_fcall_info fci;
+	zval zmethod;
+	zval *retval;
+	STATUS rv;
+
+	fci.size = sizeof(fci);
+	fci.object_ptr = object;
+	fci.function_name = &zmethod;
+	fci.retval_ptr_ptr = retval_ptr ? retval_ptr : &retval;
+	fci.param_count = argc;
+	fci.params = argv;
+	fci.no_separation = 1;
+	fci.symbol_table = NULL;
+	fci.function_table = NULL;
+
+	INIT_PZVAL(&zmethod);
+	ZVAL_STRINGL(&zmethod, method_str, method_len, 0);
+	rv = zend_call_function(&fci, NULL TSRMLS_CC);
+
+	if (!retval_ptr && retval) {
+		zval_ptr_dtor(&retval);
+	}
+	return rv;
+}
 /*
  * Local variables:
  * tab-width: 4

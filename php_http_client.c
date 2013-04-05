@@ -8,25 +8,38 @@
  */
 static HashTable php_http_client_drivers;
 
-PHP_HTTP_API STATUS php_http_client_driver_add(const char *name_str, uint name_len, php_http_client_driver_t *driver)
+PHP_HTTP_API STATUS php_http_client_driver_add(php_http_client_driver_t *driver)
 {
-	return zend_hash_add(&php_http_client_drivers, name_str, name_len + 1, (void *) driver, sizeof(php_http_client_driver_t), NULL);
+	return zend_hash_add(&php_http_client_drivers, driver->name_str, driver->name_len + 1, (void *) driver, sizeof(php_http_client_driver_t), NULL);
 }
 
-PHP_HTTP_API STATUS php_http_client_driver_get(char **name_str, uint *name_len, php_http_client_driver_t *driver)
+PHP_HTTP_API STATUS php_http_client_driver_get(const char *name_str, size_t name_len, php_http_client_driver_t *driver)
 {
 	php_http_client_driver_t *tmp;
 
-	if (*name_str && SUCCESS == zend_hash_find(&php_http_client_drivers, *name_str, (*name_len) + 1, (void *) &tmp)) {
-		*driver = *tmp;
-		return SUCCESS;
-	} else if (SUCCESS == zend_hash_get_current_data(&php_http_client_drivers, (void *) &tmp)) {
-		zend_hash_get_current_key_ex(&php_http_client_drivers, name_str, name_len, NULL, 0, NULL);
-		--(*name_len);
+	if ((name_str && SUCCESS == zend_hash_find(&php_http_client_drivers, name_str, name_len + 1, (void *) &tmp))
+	||	(SUCCESS == zend_hash_get_current_data(&php_http_client_drivers, (void *) &tmp))) {
 		*driver = *tmp;
 		return SUCCESS;
 	}
 	return FAILURE;
+}
+
+static int apply_driver_list(void *p, void *arg TSRMLS_DC)
+{
+	php_http_client_driver_t *d = p;
+	zval *zname;
+
+	MAKE_STD_ZVAL(zname);
+	ZVAL_STRINGL(zname, d->name_str, d->name_len, 1);
+
+	zend_hash_next_index_insert(arg, &zname, sizeof(zval *), NULL);
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+PHP_HTTP_API void php_http_client_driver_list(HashTable *ht TSRMLS_DC)
+{
+	zend_hash_apply_with_argument(&php_http_client_drivers, apply_driver_list, ht TSRMLS_CC);
 }
 
 void php_http_client_options_set_subr(zval *this_ptr, char *key, size_t len, zval *opts, int overwrite TSRMLS_DC)
@@ -420,20 +433,30 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 	return SUCCESS;
 }
 
-static void handle_progress(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_client_progress_state_t *state)
+static void handle_progress(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_client_progress_state_t *progress)
 {
-	zval *zrequest, *retval = NULL, *zclient;
+	zval *zrequest, *zprogress, *retval = NULL, *zclient;
 	TSRMLS_FETCH_FROM_CTX(client->ts);
 
 	MAKE_STD_ZVAL(zclient);
 	ZVAL_OBJVAL(zclient, ((php_http_client_object_t *) arg)->zv, 1);
 	MAKE_STD_ZVAL(zrequest);
 	ZVAL_OBJVAL(zrequest, ((php_http_message_object_t *) e->opaque)->zv, 1);
+	MAKE_STD_ZVAL(zprogress);
+	object_init(zprogress);
+	add_property_bool(zprogress, "started", progress->started);
+	add_property_bool(zprogress, "finished", progress->finished);
+	add_property_string(zprogress, "info", STR_PTR(progress->info), 1);
+	add_property_double(zprogress, "dltotal", progress->dl.total);
+	add_property_double(zprogress, "dlnow", progress->dl.now);
+	add_property_double(zprogress, "ultotal", progress->ul.total);
+	add_property_double(zprogress, "ulnow", progress->ul.now);
 	with_error_handling(EH_NORMAL, NULL) {
-		zend_call_method_with_1_params(&zclient, NULL, NULL, "notify", &retval, zrequest);
+		zend_call_method_with_2_params(&zclient, NULL, NULL, "notify", &retval, zrequest, zprogress);
 	} end_error_handling();
 	zval_ptr_dtor(&zclient);
 	zval_ptr_dtor(&zrequest);
+	zval_ptr_dtor(&zprogress);
 	if (retval) {
 		zval_ptr_dtor(&retval);
 	}
@@ -460,7 +483,7 @@ static PHP_METHOD(HttpClient, __construct)
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss", &driver_str, &driver_len, &persistent_handle_str, &persistent_handle_len)) {
 			php_http_client_driver_t driver;
 
-			if (SUCCESS == php_http_client_driver_get(&driver_str, (uint *) &driver_len, &driver)) {
+			if (SUCCESS == php_http_client_driver_get(driver_str, driver_len, &driver)) {
 				php_resource_factory_t *rf = NULL;
 				php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 				zval *os;
@@ -475,7 +498,8 @@ static PHP_METHOD(HttpClient, __construct)
 					size_t name_len;
 					php_persistent_handle_factory_t *pf;
 
-					name_len = spprintf(&name_str, 0, "http\\Client\\%s", php_http_pretty_key(driver_str, driver_len, 1, 1));
+					name_len = spprintf(&name_str, 0, "http\\Client\\%s", driver.name_str);
+					php_http_pretty_key(name_str + sizeof("http\\Client"), driver.name_len, 1, 1);
 
 					if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, persistent_handle_str, persistent_handle_len, NULL, NULL TSRMLS_CC))) {
 						rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
@@ -535,7 +559,7 @@ static HashTable *combined_options(zval *client, zval *request TSRMLS_DC)
 	}
 	if (z_roptions) {
 		if (Z_TYPE_P(z_roptions) == IS_ARRAY) {
-			array_join(Z_ARRVAL_P(z_roptions), options, 1, 0);
+			array_join(Z_ARRVAL_P(z_roptions), options, 0, 0);
 		}
 		zval_ptr_dtor(&z_roptions);
 	}
@@ -792,18 +816,11 @@ static PHP_METHOD(HttpClient, enableEvents)
 
 static int notify(zend_object_iterator *iter, void *puser TSRMLS_DC)
 {
-	zval **observer = NULL, **args = puser;
+	zval **observer = NULL, ***args = puser;
 
 	iter->funcs->get_current_data(iter, &observer TSRMLS_CC);
 	if (observer) {
-		zval *retval = NULL;
-
-		zend_call_method(observer, NULL, NULL, ZEND_STRL("update"), &retval, args[1]?2:1, args[0], args[1] TSRMLS_CC);
-		if (retval) {
-			zval_ptr_dtor(&retval);
-		}
-
-		return SUCCESS;
+		return php_http_method_call(*observer, ZEND_STRL("update"), args[2]?3:args[1]?2:args[0]?1:0, args, NULL TSRMLS_CC);
 	}
 	return FAILURE;
 }
@@ -813,22 +830,29 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_notify, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, notify)
 {
-	zval *request = NULL;
+	zval *request = NULL, *zprogress = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O!", &request, php_http_client_request_get_class_entry())) {
-		zval *args[2], *observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O!o!", &request, php_http_client_request_get_class_entry(), &zprogress)) {
+		zval **args[3], *observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
 
 		if (Z_TYPE_P(observers) == IS_OBJECT) {
 			Z_ADDREF_P(getThis());
+			args[0] = &getThis();
 			if (request) {
 				Z_ADDREF_P(request);
 			}
-			args[0] = getThis();
-			args[1] = request;
-			spl_iterator_apply(observers, notify, &args TSRMLS_CC);
+			args[1] = &request;
+			if (zprogress) {
+				Z_ADDREF_P(zprogress);
+			}
+			args[2] = &zprogress;
+			spl_iterator_apply(observers, notify, args TSRMLS_CC);
 			zval_ptr_dtor(&getThis());
 			if (request) {
 				zval_ptr_dtor(&request);
+			}
+			if (zprogress) {
+				zval_ptr_dtor(&zprogress);
 			}
 		}
 	}
@@ -1025,6 +1049,15 @@ static PHP_METHOD(HttpClient, getCookies)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getAvailableDrivers, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpClient, getAvailableDrivers) {
+	if (SUCCESS == zend_parse_parameters_none()) {
+		array_init(return_value);
+		php_http_client_driver_list(Z_ARRVAL_P(return_value) TSRMLS_CC);
+	}
+}
+
 static zend_function_entry php_http_client_methods[] = {
 	PHP_ME(HttpClient, __construct, ai_HttpClient_construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(HttpClient, reset, ai_HttpClient_reset, ZEND_ACC_PUBLIC)
@@ -1052,6 +1085,7 @@ static zend_function_entry php_http_client_methods[] = {
 	PHP_ME(HttpClient, setCookies, ai_HttpClient_setCookies, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, addCookies, ai_HttpClient_addCookies, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, getCookies, ai_HttpClient_getCookies, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getAvailableDrivers, ai_HttpClient_getAvailableDrivers, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
