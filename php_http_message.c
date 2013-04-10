@@ -515,6 +515,7 @@ PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(getHeader, 1)
 	PHP_HTTP_ARG_VAL(header, 0)
+	PHP_HTTP_ARG_VAL(into_class, 0)
 PHP_HTTP_END_ARGS;
 
 PHP_HTTP_BEGIN_ARGS(setHeader, 1)
@@ -1300,20 +1301,41 @@ PHP_METHOD(HttpMessage, addBody)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-
 PHP_METHOD(HttpMessage, getHeader)
 {
 	char *header_str;
 	int header_len;
+	zend_class_entry *header_ce = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &header_str, &header_len)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|C!", &header_str, &header_len, &header_ce)) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		zval *header;
 
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 		if ((header = php_http_message_header(obj->message, header_str, header_len, 0))) {
-			RETURN_ZVAL(header, 1, 1);
+			if (!header_ce) {
+				RETURN_ZVAL(header, 1, 1);
+			} else if (instanceof_function(header_ce, php_http_header_get_class_entry() TSRMLS_CC)) {
+				zval *header_name, **argv[2];
+
+				MAKE_STD_ZVAL(header_name);
+				ZVAL_STRINGL(header_name, header_str, header_len, 1);
+				Z_ADDREF_P(header);
+
+				argv[0] = &header_name;
+				argv[1] = &header;
+
+				object_init_ex(return_value, header_ce);
+				php_http_method_call(return_value, ZEND_STRL("__construct"), 2, argv, NULL TSRMLS_CC);
+
+				zval_ptr_dtor(&header_name);
+				zval_ptr_dtor(&header);
+
+				return;
+			} else {
+				php_http_error(HE_WARNING, PHP_HTTP_E_INVALID_PARAM, "Class '%s' is not as descendant of http\\Header", header_ce->name);
+			}
 		}
 	}
 	RETURN_FALSE;
