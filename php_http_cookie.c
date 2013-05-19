@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -359,117 +359,8 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 	*len = buf.used;
 }
 
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpCookie, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpCookie, method, 0)
-#define PHP_HTTP_COOKIE_ME(method, visibility)	PHP_ME(HttpCookie, method, PHP_HTTP_ARGS(HttpCookie, method), visibility)
 
-PHP_HTTP_BEGIN_ARGS(__construct, 0)
-	PHP_HTTP_ARG_VAL(cookie_string, 0)
-	PHP_HTTP_ARG_VAL(parser_flags, 0)
-	PHP_HTTP_ARG_VAL(allowed_extras, 0)
-PHP_HTTP_END_ARGS;
 
-PHP_HTTP_EMPTY_ARGS(toArray);
-PHP_HTTP_EMPTY_ARGS(getCookies);
-PHP_HTTP_EMPTY_ARGS(getExtras);
-PHP_HTTP_EMPTY_ARGS(getDomain);
-PHP_HTTP_EMPTY_ARGS(getPath);
-PHP_HTTP_EMPTY_ARGS(getExpires);
-PHP_HTTP_EMPTY_ARGS(getMaxAge);
-PHP_HTTP_EMPTY_ARGS(getFlags);
-PHP_HTTP_EMPTY_ARGS(toString);
-
-PHP_HTTP_BEGIN_ARGS(setDomain, 0)
-	PHP_HTTP_ARG_VAL(value, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(setPath, 0)
-	PHP_HTTP_ARG_VAL(value, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(setExpires, 0)
-	PHP_HTTP_ARG_VAL(value, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(setMaxAge, 0)
-	PHP_HTTP_ARG_VAL(value, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(setFlags, 0)
-	PHP_HTTP_ARG_VAL(value, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(setCookies, 0)
-	PHP_HTTP_ARG_VAL(cookies, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(addCookies, 1)
-	PHP_HTTP_ARG_VAL(cookies, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(setExtras, 0)
-	PHP_HTTP_ARG_VAL(extras, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(addExtras, 1)
-	PHP_HTTP_ARG_VAL(extras, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(setCookie, 1)
-	PHP_HTTP_ARG_VAL(cookie_name, 0)
-	PHP_HTTP_ARG_VAL(cookie_value, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(addCookie, 1)
-	PHP_HTTP_ARG_VAL(cookie_name, 0)
-	PHP_HTTP_ARG_VAL(cookie_value, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(getCookie, 1)
-	PHP_HTTP_ARG_VAL(name, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(setExtra, 1)
-	PHP_HTTP_ARG_VAL(extra_name, 0)
-	PHP_HTTP_ARG_VAL(extra_value, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(addExtra, 1)
-	PHP_HTTP_ARG_VAL(extra_name, 0)
-	PHP_HTTP_ARG_VAL(extra_value, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_BEGIN_ARGS(getExtra, 1)
-	PHP_HTTP_ARG_VAL(name, 0)
-PHP_HTTP_END_ARGS;
-
-static zend_class_entry *php_http_cookie_class_entry;
-
-zend_class_entry *php_http_cookie_get_class_entry(void)
-{
-	return php_http_cookie_class_entry;
-}
-
-static zend_function_entry php_http_cookie_method_entry[] = {
-	PHP_HTTP_COOKIE_ME(__construct, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(getCookies, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(setCookies, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(addCookies, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(getCookie, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(setCookie, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(addCookie, ZEND_ACC_PUBLIC)
-
-	PHP_HTTP_COOKIE_ME(getExtras, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(setExtras, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(addExtras, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(getExtra, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(setExtra, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(addExtra, ZEND_ACC_PUBLIC)
-
-	PHP_HTTP_COOKIE_ME(getDomain, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(setDomain, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(getPath, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(setPath, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(getExpires, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(setExpires, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(getMaxAge, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(setMaxAge, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(getFlags, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(setFlags, ZEND_ACC_PUBLIC)
-
-	PHP_HTTP_COOKIE_ME(toArray, ZEND_ACC_PUBLIC)
-	PHP_HTTP_COOKIE_ME(toString, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpCookie, __toString, toString, PHP_HTTP_ARGS(HttpCookie, toString), ZEND_ACC_PUBLIC)
-
-	EMPTY_FUNCTION_ENTRY
-};
 static zend_object_handlers php_http_cookie_object_handlers;
 
 zend_object_value php_http_cookie_object_new(zend_class_entry *ce TSRMLS_DC)
@@ -479,7 +370,6 @@ zend_object_value php_http_cookie_object_new(zend_class_entry *ce TSRMLS_DC)
 
 zend_object_value php_http_cookie_object_new_ex(zend_class_entry *ce, php_http_cookie_list_t *list, php_http_cookie_object_t **ptr TSRMLS_DC)
 {
-	zend_object_value ov;
 	php_http_cookie_object_t *o;
 
 	o = ecalloc(sizeof(*o), 1);
@@ -494,10 +384,10 @@ zend_object_value php_http_cookie_object_new_ex(zend_class_entry *ce, php_http_c
 		*ptr = o;
 	}
 
-	ov.handle = zend_objects_store_put(o, NULL, php_http_cookie_object_free, NULL TSRMLS_CC);
-	ov.handlers = &php_http_cookie_object_handlers;
+	o->zv.handle = zend_objects_store_put(o, NULL, php_http_cookie_object_free, NULL TSRMLS_CC);
+	o->zv.handlers = &php_http_cookie_object_handlers;
 
-	return ov;
+	return o->zv;
 }
 
 #define PHP_HTTP_COOKIE_OBJECT_INIT(obj) \
@@ -514,7 +404,7 @@ zend_object_value php_http_cookie_object_clone(zval *this_ptr TSRMLS_DC)
 
 	PHP_HTTP_COOKIE_OBJECT_INIT(old_obj);
 
-	ov = php_http_cookie_object_new_ex(old_obj->o.ce, php_http_cookie_list_copy(old_obj->list, NULL), &new_obj TSRMLS_CC);
+	ov = php_http_cookie_object_new_ex(old_obj->zo.ce, php_http_cookie_list_copy(old_obj->list, NULL), &new_obj TSRMLS_CC);
 	zend_objects_clone_members((zend_object *) new_obj, ov, (zend_object *) old_obj, Z_OBJ_HANDLE_P(getThis()) TSRMLS_CC);
 
 	return ov;
@@ -529,9 +419,14 @@ void php_http_cookie_object_free(void *object TSRMLS_DC)
 	efree(obj);
 }
 
-PHP_METHOD(HttpCookie, __construct)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie___construct, 0, 0, 0)
+	ZEND_ARG_INFO(0, cookie_string)
+	ZEND_ARG_INFO(0, parser_flags)
+	ZEND_ARG_INFO(0, allowed_extras)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		zval *zcookie = NULL;
 		long flags = 0;
@@ -539,7 +434,7 @@ PHP_METHOD(HttpCookie, __construct)
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!lH", &zcookie, &flags, &allowed_extras)) {
 			if (zcookie) {
-				with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+				with_error_handling(EH_THROW, php_http_exception_class_entry) {
 					char **ae = NULL;
 
 
@@ -596,7 +491,9 @@ PHP_METHOD(HttpCookie, __construct)
 	} end_error_handling();
 }
 
-PHP_METHOD(HttpCookie, getCookies)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getCookies, 0, 0, 0)
+ZEND_END_ARG_INFO();;
+static PHP_METHOD(HttpCookie, getCookies)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -610,7 +507,10 @@ PHP_METHOD(HttpCookie, getCookies)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpCookie, setCookies)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setCookies, 0, 0, 0)
+	ZEND_ARG_INFO(0, cookies)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, setCookies)
 {
 	HashTable *cookies = NULL;
 
@@ -627,7 +527,10 @@ PHP_METHOD(HttpCookie, setCookies)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, addCookies)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_addCookies, 0, 0, 1)
+	ZEND_ARG_INFO(0, cookies)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, addCookies)
 {
 	HashTable *cookies = NULL;
 
@@ -641,8 +544,9 @@ PHP_METHOD(HttpCookie, addCookies)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-
-PHP_METHOD(HttpCookie, getExtras)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getExtras, 0, 0, 0)
+ZEND_END_ARG_INFO();;
+static PHP_METHOD(HttpCookie, getExtras)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -656,7 +560,10 @@ PHP_METHOD(HttpCookie, getExtras)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpCookie, setExtras)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setExtras, 0, 0, 0)
+	ZEND_ARG_INFO(0, extras)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, setExtras)
 {
 	HashTable *extras = NULL;
 
@@ -673,7 +580,10 @@ PHP_METHOD(HttpCookie, setExtras)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, addExtras)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_addExtras, 0, 0, 1)
+	ZEND_ARG_INFO(0, extras)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, addExtras)
 {
 	HashTable *extras = NULL;
 
@@ -687,7 +597,10 @@ PHP_METHOD(HttpCookie, addExtras)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, getCookie)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getCookie, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, getCookie)
 {
 	char *name_str;
 	int name_len;
@@ -705,7 +618,11 @@ PHP_METHOD(HttpCookie, getCookie)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpCookie, setCookie)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setCookie, 0, 0, 1)
+	ZEND_ARG_INFO(0, cookie_name)
+	ZEND_ARG_INFO(0, cookie_value)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, setCookie)
 {
 	char *name_str, *value_str = NULL;
 	int name_len, value_len = 0;
@@ -724,7 +641,11 @@ PHP_METHOD(HttpCookie, setCookie)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, addCookie)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_addCookie, 0, 0, 1)
+	ZEND_ARG_INFO(0, cookie_name)
+	ZEND_ARG_INFO(0, cookie_value)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, addCookie)
 {
 	char *name_str, *value_str;
 	int name_len, value_len;
@@ -739,7 +660,10 @@ PHP_METHOD(HttpCookie, addCookie)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, getExtra)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getExtra, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, getExtra)
 {
 	char *name_str;
 	int name_len;
@@ -757,7 +681,11 @@ PHP_METHOD(HttpCookie, getExtra)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpCookie, setExtra)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setExtra, 0, 0, 1)
+	ZEND_ARG_INFO(0, extra_name)
+	ZEND_ARG_INFO(0, extra_value)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, setExtra)
 {
 	char *name_str, *value_str = NULL;
 	int name_len, value_len = 0;
@@ -776,7 +704,11 @@ PHP_METHOD(HttpCookie, setExtra)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, addExtra)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_addExtra, 0, 0, 1)
+	ZEND_ARG_INFO(0, extra_name)
+	ZEND_ARG_INFO(0, extra_value)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, addExtra)
 {
 	char *name_str, *value_str;
 	int name_len, value_len;
@@ -791,7 +723,9 @@ PHP_METHOD(HttpCookie, addExtra)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, getDomain)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getDomain, 0, 0, 0)
+ZEND_END_ARG_INFO();;
+static PHP_METHOD(HttpCookie, getDomain)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -806,7 +740,10 @@ PHP_METHOD(HttpCookie, getDomain)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpCookie, setDomain)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setDomain, 0, 0, 0)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, setDomain)
 {
 	char *domain_str = NULL;
 	int domain_len = 0;
@@ -821,7 +758,9 @@ PHP_METHOD(HttpCookie, setDomain)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, getPath)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getPath, 0, 0, 0)
+ZEND_END_ARG_INFO();;
+static PHP_METHOD(HttpCookie, getPath)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -836,7 +775,10 @@ PHP_METHOD(HttpCookie, getPath)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpCookie, setPath)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setPath, 0, 0, 0)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, setPath)
 {
 	char *path_str = NULL;
 	int path_len = 0;
@@ -851,7 +793,9 @@ PHP_METHOD(HttpCookie, setPath)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, getExpires)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getExpires, 0, 0, 0)
+ZEND_END_ARG_INFO();;
+static PHP_METHOD(HttpCookie, getExpires)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -863,7 +807,10 @@ PHP_METHOD(HttpCookie, getExpires)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpCookie, setExpires)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setExpires, 0, 0, 0)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, setExpires)
 {
 	long ts = -1;
 
@@ -877,7 +824,9 @@ PHP_METHOD(HttpCookie, setExpires)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, getMaxAge)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getMaxAge, 0, 0, 0)
+ZEND_END_ARG_INFO();;
+static PHP_METHOD(HttpCookie, getMaxAge)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -889,7 +838,10 @@ PHP_METHOD(HttpCookie, getMaxAge)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpCookie, setMaxAge)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setMaxAge, 0, 0, 0)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, setMaxAge)
 {
 	long ts = -1;
 
@@ -903,7 +855,9 @@ PHP_METHOD(HttpCookie, setMaxAge)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, getFlags)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getFlags, 0, 0, 0)
+ZEND_END_ARG_INFO();;
+static PHP_METHOD(HttpCookie, getFlags)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -915,7 +869,10 @@ PHP_METHOD(HttpCookie, getFlags)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpCookie, setFlags)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setFlags, 0, 0, 0)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpCookie, setFlags)
 {
 	long flags = 0;
 
@@ -929,7 +886,9 @@ PHP_METHOD(HttpCookie, setFlags)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-PHP_METHOD(HttpCookie, toString)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_toString, 0, 0, 0)
+ZEND_END_ARG_INFO();;
+static PHP_METHOD(HttpCookie, toString)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -944,7 +903,9 @@ PHP_METHOD(HttpCookie, toString)
 	RETURN_EMPTY_STRING();
 }
 
-PHP_METHOD(HttpCookie, toArray)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_toArray, 0, 0, 0)
+ZEND_END_ARG_INFO();;
+static PHP_METHOD(HttpCookie, toArray)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_cookie_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -956,9 +917,48 @@ PHP_METHOD(HttpCookie, toArray)
 	}
 }
 
+static zend_function_entry php_http_cookie_methods[] = {
+	PHP_ME(HttpCookie, __construct,   ai_HttpCookie___construct,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, getCookies,    ai_HttpCookie_getCookies,   ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, setCookies,    ai_HttpCookie_setCookies,   ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, addCookies,    ai_HttpCookie_addCookies,   ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, getCookie,     ai_HttpCookie_getCookie,    ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, setCookie,     ai_HttpCookie_setCookie,    ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, addCookie,     ai_HttpCookie_addCookie,    ZEND_ACC_PUBLIC)
+
+	PHP_ME(HttpCookie, getExtras,     ai_HttpCookie_getExtras,    ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, setExtras,     ai_HttpCookie_setExtras,    ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, addExtras,     ai_HttpCookie_addExtras,    ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, getExtra,      ai_HttpCookie_getExtra,     ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, setExtra,      ai_HttpCookie_setExtra,     ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, addExtra,      ai_HttpCookie_addExtra,     ZEND_ACC_PUBLIC)
+
+	PHP_ME(HttpCookie, getDomain,     ai_HttpCookie_getDomain,    ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, setDomain,     ai_HttpCookie_setDomain,    ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, getPath,       ai_HttpCookie_getPath,      ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, setPath,       ai_HttpCookie_setPath,      ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, getExpires,    ai_HttpCookie_getExpires,   ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, setExpires,    ai_HttpCookie_setExpires,   ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, getMaxAge,     ai_HttpCookie_getMaxAge,    ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, setMaxAge,     ai_HttpCookie_setMaxAge,    ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, getFlags,      ai_HttpCookie_getFlags,     ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, setFlags,      ai_HttpCookie_setFlags,     ZEND_ACC_PUBLIC)
+
+	PHP_ME(HttpCookie, toArray,       ai_HttpCookie_toArray,      ZEND_ACC_PUBLIC)
+	PHP_ME(HttpCookie, toString,      ai_HttpCookie_toString,     ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpCookie, __toString, toString, ai_HttpCookie_toString, ZEND_ACC_PUBLIC)
+
+	EMPTY_FUNCTION_ENTRY
+};
+
+zend_class_entry *php_http_cookie_class_entry;
+
 PHP_MINIT_FUNCTION(http_cookie)
 {
-	PHP_HTTP_REGISTER_CLASS(http, Cookie, http_cookie, php_http_object_get_class_entry(), 0);
+	zend_class_entry ce = {0};
+
+	INIT_NS_CLASS_ENTRY(ce, "http", "Cookie", php_http_cookie_methods);
+	php_http_cookie_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
 	php_http_cookie_class_entry->create_object = php_http_cookie_object_new;
 	memcpy(&php_http_cookie_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_cookie_object_handlers.clone_obj = php_http_cookie_object_clone;

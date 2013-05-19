@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -539,84 +539,7 @@ PHP_HTTP_API php_http_message_t *php_http_message_body_split(php_http_message_bo
 	return msg;
 }
 
-/* PHP */
-
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 			PHP_HTTP_BEGIN_ARGS_EX(HttpMessageBody, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)						PHP_HTTP_EMPTY_ARGS_EX(HttpMessageBody, method, 0)
-#define PHP_HTTP_MESSAGE_BODY_ME(method, visibility)	PHP_ME(HttpMessageBody, method, PHP_HTTP_ARGS(HttpMessageBody, method), visibility)
-
-PHP_HTTP_BEGIN_ARGS(__construct, 0)
-	PHP_HTTP_ARG_VAL(stream, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(__toString);
-PHP_HTTP_BEGIN_ARGS(unserialize, 1)
-	PHP_HTTP_ARG_VAL(serialized, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(toStream, 1)
-	PHP_HTTP_ARG_VAL(stream, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(toCallback, 1)
-	PHP_HTTP_ARG_VAL(callback, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(getResource);
-
-PHP_HTTP_BEGIN_ARGS(append, 1)
-	PHP_HTTP_ARG_VAL(string, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(addForm, 0)
-	PHP_HTTP_ARG_ARR(fields, 1, 0)
-	PHP_HTTP_ARG_ARR(files, 1, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(addPart, 1)
-	PHP_HTTP_ARG_OBJ(http\\Message, message, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(etag);
-
-PHP_HTTP_BEGIN_ARGS(stat, 0)
-	PHP_HTTP_ARG_VAL(what, 0)
-PHP_HTTP_END_ARGS;
-
-static zend_class_entry *php_http_message_body_class_entry;
-
-zend_class_entry *php_http_message_body_get_class_entry(void)
-{
-	return php_http_message_body_class_entry;
-}
-
-static zend_function_entry php_http_message_body_method_entry[] = {
-	PHP_HTTP_MESSAGE_BODY_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_HTTP_MESSAGE_BODY_ME(__toString, ZEND_ACC_PUBLIC)
-	PHP_MALIAS(HttpMessageBody, toString, __toString, args_for_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
-	PHP_MALIAS(HttpMessageBody, serialize, __toString, args_for_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(unserialize, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(toStream, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(toCallback, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(getResource, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(append, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(addForm, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(addPart, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(etag, ZEND_ACC_PUBLIC)
-	PHP_HTTP_MESSAGE_BODY_ME(stat, ZEND_ACC_PUBLIC)
-	EMPTY_FUNCTION_ENTRY
-};
 static zend_object_handlers php_http_message_body_object_handlers;
-
-PHP_MINIT_FUNCTION(http_message_body)
-{
-	PHP_HTTP_REGISTER_CLASS(http\\Message, Body, http_message_body, php_http_object_get_class_entry(), 0);
-	php_http_message_body_class_entry->create_object = php_http_message_body_object_new;
-	memcpy(&php_http_message_body_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	php_http_message_body_object_handlers.clone_obj = php_http_message_body_object_clone;
-	zend_class_implements(php_http_message_body_class_entry TSRMLS_CC, 1, zend_ce_serializable);
-	return SUCCESS;
-}
 
 zend_object_value php_http_message_body_object_new(zend_class_entry *ce TSRMLS_DC)
 {
@@ -625,7 +548,6 @@ zend_object_value php_http_message_body_object_new(zend_class_entry *ce TSRMLS_D
 
 zend_object_value php_http_message_body_object_new_ex(zend_class_entry *ce, php_http_message_body_t *body, php_http_message_body_object_t **ptr TSRMLS_DC)
 {
-	zend_object_value ov;
 	php_http_message_body_object_t *o;
 
 	o = ecalloc(1, sizeof(php_http_message_body_object_t));
@@ -640,10 +562,10 @@ zend_object_value php_http_message_body_object_new_ex(zend_class_entry *ce, php_
 		o->body = body;
 	}
 
-	ov.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_message_body_object_free, NULL TSRMLS_CC);
-	ov.handlers = &php_http_message_body_object_handlers;
+	o->zv.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_message_body_object_free, NULL TSRMLS_CC);
+	o->zv.handlers = &php_http_message_body_object_handlers;
 
-	return ov;
+	return o->zv;
 }
 
 zend_object_value php_http_message_body_object_clone(zval *object TSRMLS_DC)
@@ -663,9 +585,7 @@ void php_http_message_body_object_free(void *object TSRMLS_DC)
 {
 	php_http_message_body_object_t *obj = object;
 
-	if (!obj->shared) {
-		php_http_message_body_free(&obj->body);
-	}
+	php_http_message_body_free(&obj->body);
 	zend_object_std_dtor((zend_object *) obj TSRMLS_CC);
 	efree(obj);
 }
@@ -677,13 +597,16 @@ void php_http_message_body_object_free(void *object TSRMLS_DC)
 		} \
 	} while(0)
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody___construct, 0, 0, 0)
+	ZEND_ARG_INFO(0, stream)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, __construct)
 {
 	php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 	zval *zstream = NULL;
 	php_stream *stream;
 
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|r!", &zstream)) {
 			if (zstream) {
 				php_stream_from_zval(stream, &zstream);
@@ -700,6 +623,8 @@ PHP_METHOD(HttpMessageBody, __construct)
 	} end_error_handling();
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody___toString, 0, 0, 0)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, __toString)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
@@ -717,6 +642,9 @@ PHP_METHOD(HttpMessageBody, __toString)
 	RETURN_EMPTY_STRING();
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_unserialize, 0, 0, 1)
+	ZEND_ARG_INFO(0, serialized)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, unserialize)
 {
 	char *us_str;
@@ -730,6 +658,9 @@ PHP_METHOD(HttpMessageBody, unserialize)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_toStream, 0, 0, 1)
+	ZEND_ARG_INFO(0, stream)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, toStream)
 {
 	zval *zstream;
@@ -748,7 +679,9 @@ PHP_METHOD(HttpMessageBody, toStream)
 	RETURN_FALSE;
 }
 
-
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_toCallback, 0, 0, 1)
+	ZEND_ARG_INFO(0, callback)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, toCallback)
 {
 	php_http_pass_fcall_arg_t fcd;
@@ -772,6 +705,8 @@ PHP_METHOD(HttpMessageBody, toCallback)
 	RETURN_FALSE;
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_getResource, 0, 0, 0)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, getResource)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
@@ -784,6 +719,9 @@ PHP_METHOD(HttpMessageBody, getResource)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_append, 0, 0, 1)
+	ZEND_ARG_INFO(0, string)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, append)
 {
 	char *str;
@@ -799,6 +737,10 @@ PHP_METHOD(HttpMessageBody, append)
 	RETURN_FALSE;
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_addForm, 0, 0, 0)
+	ZEND_ARG_ARRAY_INFO(0, fields, 1)
+	ZEND_ARG_ARRAY_INFO(0, files, 1)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, addForm)
 {
 	HashTable *fields = NULL, *files = NULL;
@@ -808,16 +750,19 @@ PHP_METHOD(HttpMessageBody, addForm)
 
 		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 
-		RETURN_SUCCESS(php_http_message_body_add_form(obj->body, fields, files));
+		RETURN_BOOL(SUCCESS == php_http_message_body_add_form(obj->body, fields, files));
 	}
 	RETURN_FALSE;
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_addPart, 0, 0, 1)
+	ZEND_ARG_OBJ_INFO(0, message, http\\Message, 0)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, addPart)
 {
 	zval *zobj;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zobj, php_http_message_get_class_entry())) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zobj, php_http_message_class_entry)) {
 		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		php_http_message_object_t *mobj = zend_object_store_get_object(zobj TSRMLS_CC);
 
@@ -829,6 +774,8 @@ PHP_METHOD(HttpMessageBody, addPart)
 	RETURN_FALSE;
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_etag, 0, 0, 0)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, etag)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
@@ -844,6 +791,9 @@ PHP_METHOD(HttpMessageBody, etag)
 	RETURN_FALSE;
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_stat, 0, 0, 0)
+	ZEND_ARG_INFO(0, what)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, stat)
 {
 	char *field_str = NULL;
@@ -889,6 +839,39 @@ PHP_METHOD(HttpMessageBody, stat)
 		}
 	}
 	RETURN_FALSE;
+}
+
+static zend_function_entry php_http_message_body_methods[] = {
+	PHP_ME(HttpMessageBody, __construct,  ai_HttpMessageBody___construct,  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpMessageBody, __toString,   ai_HttpMessageBody___toString,   ZEND_ACC_PUBLIC)
+	PHP_MALIAS(HttpMessageBody, toString, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
+	PHP_MALIAS(HttpMessageBody, serialize, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, unserialize,  ai_HttpMessageBody_unserialize,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, toStream,     ai_HttpMessageBody_toStream,     ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, toCallback,   ai_HttpMessageBody_toCallback,   ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, getResource,  ai_HttpMessageBody_getResource,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, append,       ai_HttpMessageBody_append,       ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, addForm,      ai_HttpMessageBody_addForm,      ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, addPart,      ai_HttpMessageBody_addPart,      ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, etag,         ai_HttpMessageBody_etag,         ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, stat,         ai_HttpMessageBody_stat,         ZEND_ACC_PUBLIC)
+	EMPTY_FUNCTION_ENTRY
+};
+
+zend_class_entry *php_http_message_body_class_entry;
+
+PHP_MINIT_FUNCTION(http_message_body)
+{
+	zend_class_entry ce = {0};
+
+	INIT_NS_CLASS_ENTRY(ce, "http\\Message", "Body", php_http_message_body_methods);
+	php_http_message_body_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
+	php_http_message_body_class_entry->create_object = php_http_message_body_object_new;
+	memcpy(&php_http_message_body_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	php_http_message_body_object_handlers.clone_obj = php_http_message_body_object_clone;
+	zend_class_implements(php_http_message_body_class_entry TSRMLS_CC, 1, zend_ce_serializable);
+
+	return SUCCESS;
 }
 
 /*

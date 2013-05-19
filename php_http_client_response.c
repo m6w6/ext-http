@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -53,7 +53,7 @@ static PHP_METHOD(HttpClientResponse, getCookies)
 						zval *cookie;
 
 						MAKE_STD_ZVAL(cookie);
-						ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list, NULL TSRMLS_CC), 0);
+						ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
 						add_next_index_zval(return_value, cookie);
 					}
 					zval_ptr_dtor(&data);
@@ -64,7 +64,7 @@ static PHP_METHOD(HttpClientResponse, getCookies)
 					zval *cookie;
 
 					MAKE_STD_ZVAL(cookie);
-					ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list, NULL TSRMLS_CC), 0);
+					ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
 					add_next_index_zval(return_value, cookie);
 				}
 				zval_ptr_dtor(&data);
@@ -93,7 +93,7 @@ static PHP_METHOD(HttpClientResponse, getTransferInfo)
 	int info_len = 0;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &info_name, &info_len)) {
-		zval **infop, *info = zend_read_property(php_http_client_response_get_class_entry(), getThis(), ZEND_STRL("transferInfo"), 0 TSRMLS_CC);
+		zval **infop, *info = zend_read_property(php_http_client_response_class_entry, getThis(), ZEND_STRL("transferInfo"), 0 TSRMLS_CC);
 
 		/* request completed? */
 		if (Z_TYPE_P(info) == IS_ARRAY) {
@@ -111,22 +111,20 @@ static PHP_METHOD(HttpClientResponse, getTransferInfo)
 	RETURN_FALSE;
 }
 
-static zend_class_entry *php_http_client_response_class_entry;
-
-zend_class_entry *php_http_client_response_get_class_entry(void)
-{
-	return php_http_client_response_class_entry;
-}
-
-static zend_function_entry php_http_client_response_method_entry[] = {
-	PHP_ME(HttpClientResponse, getCookies, ai_HttpClientResponse_getCookies, ZEND_ACC_PUBLIC)
+static zend_function_entry php_http_client_response_methods[] = {
+	PHP_ME(HttpClientResponse, getCookies,      ai_HttpClientResponse_getCookies,      ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClientResponse, getTransferInfo, ai_HttpClientResponse_getTransferInfo, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
+zend_class_entry *php_http_client_response_class_entry;
+
 PHP_MINIT_FUNCTION(http_client_response)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Client, Response, http_client_response, php_http_message_get_class_entry(), 0);
+	zend_class_entry ce = {0};
+
+	INIT_NS_CLASS_ENTRY(ce, "http\\Client", "Response", php_http_client_response_methods);
+	php_http_client_response_class_entry = zend_register_internal_class_ex(&ce, php_http_message_class_entry, NULL TSRMLS_CC);
 
 	return SUCCESS;
 }

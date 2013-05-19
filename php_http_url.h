@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -211,17 +211,11 @@ static inline HashTable *php_http_url_to_struct(php_url *url, zval *strct TSRMLS
 	return Z_ARRVAL(arr);
 }
 
-zend_class_entry *php_http_url_get_class_entry(void);
+PHP_HTTP_API zend_class_entry *php_http_url_class_entry;
+PHP_MINIT_FUNCTION(http_url);
 
 #define php_http_url_object_new php_http_object_new
 #define php_http_url_object_new_ex php_http_object_new_ex
-
-PHP_METHOD(HttpUrl, __construct);
-PHP_METHOD(HttpUrl, mod);
-PHP_METHOD(HttpUrl, toString);
-PHP_METHOD(HttpUrl, toArray);
-
-PHP_MINIT_FUNCTION(http_url);
 
 #endif
 

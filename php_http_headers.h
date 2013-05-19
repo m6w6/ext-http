@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -22,16 +22,7 @@ PHP_HTTP_API void php_http_headers_to_string(php_http_buffer_t *str, HashTable *
 
 PHP_HTTP_API zval *php_http_header_value_to_string(zval *header TSRMLS_DC);
 
-zend_class_entry *php_http_header_get_class_entry(void);
-
-PHP_METHOD(HttpHeader, __construct);
-PHP_METHOD(HttpHeader, serialize);
-PHP_METHOD(HttpHeader, unserialize);
-PHP_METHOD(HttpHeader, match);
-PHP_METHOD(HttpHeader, negotiate);
-PHP_METHOD(HttpHeader, getParams);
-PHP_METHOD(HttpHeader, parse);
-
+PHP_HTTP_API zend_class_entry *php_http_header_class_entry;
 PHP_MINIT_FUNCTION(http_header);
 
 #endif

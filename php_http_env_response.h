@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -73,23 +73,7 @@ PHP_HTTP_API void php_http_env_response_free(php_http_env_response_t **r);
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC);
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC);
 
-zend_class_entry *php_http_env_response_get_class_entry(void);
-
-PHP_METHOD(HttpEnvResponse, __construct);
-PHP_METHOD(HttpEnvResponse, __invoke);
-PHP_METHOD(HttpEnvResponse, setEnvRequest);
-PHP_METHOD(HttpEnvResponse, setContentType);
-PHP_METHOD(HttpEnvResponse, setContentDisposition);
-PHP_METHOD(HttpEnvResponse, setContentEncoding);
-PHP_METHOD(HttpEnvResponse, setCacheControl);
-PHP_METHOD(HttpEnvResponse, setLastModified);
-PHP_METHOD(HttpEnvResponse, isCachedByLastModified);
-PHP_METHOD(HttpEnvResponse, setEtag);
-PHP_METHOD(HttpEnvResponse, isCachedByEtag);
-PHP_METHOD(HttpEnvResponse, setThrottleRate);
-PHP_METHOD(HttpEnvResponse, send);
-
-
+PHP_HTTP_API zend_class_entry *php_http_env_response_class_entry;
 PHP_MINIT_FUNCTION(http_env_response);
 
 #endif

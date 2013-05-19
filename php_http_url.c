@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -42,13 +42,98 @@ static inline char *localhostname(void)
 	return estrndup("localhost", lenof("localhost"));
 }
 
+static inline unsigned port(const char *scheme)
+{
+	unsigned port = 80;
+
+#if defined(ZTS) && defined(HAVE_GETSERVBYPORT_R)
+	int rc;
+	size_t len = 0xff;
+	char *buf = NULL;
+	struct servent *se_res = NULL, se_buf = {0};
+
+	do {
+		buf = erealloc(buf, len);
+		rc = getservbyname_r(scheme, "tcp", &se_buf, buf, len, &se_res);
+		len *= 2;
+	} while (rc == ERANGE && len <= 0xfff);
+
+	if (!rc) {
+		port = ntohs(se_res->s_port);
+	}
+
+	efree(buf);
+#elif !defined(ZTS) && defined(HAVE_GETSERVBYPORT)
+	struct servent *se;
+
+	if ((se = getservbyname(scheme, "tcp")) && se->s_port) {
+		port = ntohs(se->s_port);
+	}
+#endif
+
+	return port;
+}
+static inline char *scheme(unsigned port)
+{
+	char *scheme;
+#if defined(ZTS) && defined(HAVE_GETSERVBYPORT_R)
+	int rc;
+	size_t len = 0xff;
+	char *buf = NULL;
+	struct servent *se_res = NULL, se_buf = {0};
+#elif !defined(ZTS) && defined(HAVE_GETSERVBYPORT)
+	struct servent *se;
+#endif
+
+	switch (port) {
+	case 443:
+		scheme = estrndup("https", lenof("https"));
+		break;
+
+#if defined(ZTS) && !defined(HAVE_GETSERVBYPORT_R)
+	default:
+#elif !defined(ZTS) && !defined(HAVE_GETSERVBYPORT)
+	default:
+#endif
+	case 80:
+	case 0:
+		scheme = estrndup("http", lenof("http"));
+		break;
+
+#if defined(ZTS) && defined(HAVE_GETSERVBYPORT_R)
+	default:
+		do {
+			buf = erealloc(buf, len);
+			rc = getservbyport_r(htons(port), "tcp", &se_buf, buf, len, &se_res);
+			len *= 2;
+		} while (rc == ERANGE && len <= 0xfff);
+
+		if (!rc && se_res) {
+			scheme = estrdup(se_res->s_name);
+		} else {
+			scheme = estrndup("http", lenof("http"));
+		}
+
+		efree(buf);
+		break;
+
+#elif !defined(ZTS) && defined(HAVE_GETSERVBYPORT)
+	default:
+		if ((se = getservbyport(htons(port), "tcp")) && se->s_name) {
+			scheme = estrdup(se->s_name);
+		} else {
+			scheme = estrndup("http", lenof("http"));
+		}
+		break;
+#endif
+	}
+	return scheme;
+}
+
 static php_url *php_http_url_from_env(php_url *url TSRMLS_DC)
 {
 	zval *https, *zhost, *zport;
 	long port;
-#ifdef HAVE_GETSERVBYPORT
-	struct servent *se;
-#endif
 
 	if (!url) {
 		url = ecalloc(1, sizeof(*url));
@@ -64,28 +149,8 @@ static php_url *php_http_url_from_env(php_url *url TSRMLS_DC)
 	https = php_http_env_get_server_var(ZEND_STRL("HTTPS"), 1 TSRMLS_CC);
 	if (https && !strcasecmp(Z_STRVAL_P(https), "ON")) {
 		url->scheme = estrndup("https", lenof("https"));
-	} else switch (url->port) {
-		case 443:
-			url->scheme = estrndup("https", lenof("https"));
-			break;
-
-#ifndef HAVE_GETSERVBYPORT
-		default:
-#endif
-		case 80:
-		case 0:
-			url->scheme = estrndup("http", lenof("http"));
-			break;
-
-#ifdef HAVE_GETSERVBYPORT
-		default:
-			if ((se = getservbyport(htons(url->port), "tcp")) && se->s_name) {
-				url->scheme = estrdup(se->s_name);
-			} else {
-				url->scheme = estrndup("http", lenof("http"));
-			}
-			break;
-#endif
+	} else {
+		url->scheme = scheme(url->port);
 	}
 
 	/* host */
@@ -121,9 +186,6 @@ static php_url *php_http_url_from_env(php_url *url TSRMLS_DC)
 PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
 {
 	php_url *url, *tmp_url = NULL;
-#ifdef HAVE_GETSERVBYNAME
-	struct servent *se;
-#endif
 
 	/* set from env if requested */
 	if (flags & PHP_HTTP_URL_FROM_ENV) {
@@ -277,10 +339,7 @@ PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url 
 	if (url->port) {
 		if (	((url->port == 80) && !strcmp(url->scheme, "http"))
 			||	((url->port ==443) && !strcmp(url->scheme, "https"))
-#ifdef HAVE_GETSERVBYNAME
-			||	((se = getservbyname(url->scheme, "tcp")) && se->s_port && 
-					(url->port == ntohs(se->s_port)))
-#endif
+			||	( url->port == port(url->scheme))
 		) {
 			url->port = 0;
 		}
@@ -329,47 +388,19 @@ PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer
 	return SUCCESS;
 }
 
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpUrl, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpUrl, method, 0)
-#define PHP_HTTP_URL_ME(method, visibility)	PHP_ME(HttpUrl, method, PHP_HTTP_ARGS(HttpUrl, method), visibility)
-
-PHP_HTTP_BEGIN_ARGS(__construct, 0)
-	PHP_HTTP_ARG_VAL(old_url, 0)
-	PHP_HTTP_ARG_VAL(new_url, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
-PHP_HTTP_END_ARGS;
-PHP_HTTP_EMPTY_ARGS(toString);
-PHP_HTTP_EMPTY_ARGS(toArray);
-
-PHP_HTTP_BEGIN_ARGS(mod, 1)
-	PHP_HTTP_ARG_VAL(more_url_parts, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
-PHP_HTTP_END_ARGS;
-
-static zend_class_entry *php_http_url_class_entry;
-
-zend_class_entry *php_http_url_get_class_entry(void)
-{
-	return php_http_url_class_entry;
-}
-
-static zend_function_entry php_http_url_method_entry[] = {
-	PHP_HTTP_URL_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_HTTP_URL_ME(mod, ZEND_ACC_PUBLIC)
-	PHP_HTTP_URL_ME(toString, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpUrl, __toString, toString, PHP_HTTP_ARGS(HttpUrl, toString), ZEND_ACC_PUBLIC)
-	PHP_HTTP_URL_ME(toArray, ZEND_ACC_PUBLIC)
-	EMPTY_FUNCTION_ENTRY
-};
-
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl___construct, 0, 0, 0)
+	ZEND_ARG_INFO(0, old_url)
+	ZEND_ARG_INFO(0, new_url)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *new_url = NULL, *old_url = NULL;
 		long flags = PHP_HTTP_URL_FROM_ENV;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!z!l", &old_url, &new_url, &flags)) {
-			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_url *res_purl, *new_purl = NULL, *old_purl = NULL;
 
 				if (new_url) {
@@ -427,6 +458,10 @@ PHP_METHOD(HttpUrl, __construct)
 	} end_error_handling();
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_mod, 0, 0, 1)
+	ZEND_ARG_INFO(0, more_url_parts)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, mod)
 {
 	zval *new_url = NULL;
@@ -471,6 +506,8 @@ PHP_METHOD(HttpUrl, mod)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_toString, 0, 0, 0)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, toString)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
@@ -488,6 +525,8 @@ PHP_METHOD(HttpUrl, toString)
 	RETURN_EMPTY_STRING();
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_toArray, 0, 0, 0)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, toArray)
 {
 	if (SUCCESS != zend_parse_parameters_none()) {
@@ -497,9 +536,23 @@ PHP_METHOD(HttpUrl, toArray)
 	array_copy(HASH_OF(getThis()), HASH_OF(return_value));
 }
 
+static zend_function_entry php_http_url_methods[] = {
+	PHP_ME(HttpUrl, __construct,  ai_HttpUrl___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpUrl, mod,          ai_HttpUrl_mod, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpUrl, toString,     ai_HttpUrl_toString, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpUrl, __toString, toString, ai_HttpUrl_toString, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpUrl, toArray,      ai_HttpUrl_toArray, ZEND_ACC_PUBLIC)
+	EMPTY_FUNCTION_ENTRY
+};
+
+zend_class_entry *php_http_url_class_entry;
+
 PHP_MINIT_FUNCTION(http_url)
 {
-	PHP_HTTP_REGISTER_CLASS(http, Url, http_url, php_http_object_get_class_entry(), 0);
+	zend_class_entry ce = {0};
+
+	INIT_NS_CLASS_ENTRY(ce, "http", "Url", php_http_url_methods);
+	php_http_url_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
 
 	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("scheme"), ZEND_ACC_PUBLIC TSRMLS_CC);
 	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("user"), ZEND_ACC_PUBLIC TSRMLS_CC);

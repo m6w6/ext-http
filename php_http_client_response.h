@@ -6,15 +6,14 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
 #ifndef PHP_HTTP_CLIENT_RESPONSE_H
 #define PHP_HTTP_CLIENT_RESPONSE_H
 
-zend_class_entry *php_http_client_response_get_class_entry(void);
-
+PHP_HTTP_API zend_class_entry *php_http_client_response_class_entry;
 PHP_MINIT_FUNCTION(http_client_response);
 
 #endif /* PHP_HTTP_CLIENT_RESPONSE_H */

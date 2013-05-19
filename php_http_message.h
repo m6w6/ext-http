@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -71,17 +71,16 @@ PHP_HTTP_API php_http_message_t *php_http_message_zip(php_http_message_t *one, p
 
 PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *str, size_t len, zend_bool greedy TSRMLS_DC);
 
-/* PHP */
-
 typedef struct php_http_message_object {
 	zend_object zo;
 	zend_object_value zv;
 	php_http_message_t *message;
-	zend_object_value parent, body;
+	struct php_http_message_object *parent;
+	php_http_message_body_object_t *body;
 	zval *iterator;
 } php_http_message_object_t;
 
-zend_class_entry *php_http_message_get_class_entry(void);
+zend_class_entry *php_http_message_class_entry;
 
 PHP_MINIT_FUNCTION(http_message);
 PHP_MSHUTDOWN_FUNCTION(http_message);
@@ -95,54 +94,6 @@ zend_object_value php_http_message_object_new_ex(zend_class_entry *ce, php_http_
 zend_object_value php_http_message_object_clone(zval *object TSRMLS_DC);
 void php_http_message_object_free(void *object TSRMLS_DC);
 
-PHP_METHOD(HttpMessage, __construct);
-PHP_METHOD(HttpMessage, getBody);
-PHP_METHOD(HttpMessage, setBody);
-PHP_METHOD(HttpMessage, addBody);
-PHP_METHOD(HttpMessage, getHeader);
-PHP_METHOD(HttpMessage, setHeader);
-PHP_METHOD(HttpMessage, addHeader);
-PHP_METHOD(HttpMessage, getHeaders);
-PHP_METHOD(HttpMessage, setHeaders);
-PHP_METHOD(HttpMessage, addHeaders);
-PHP_METHOD(HttpMessage, getType);
-PHP_METHOD(HttpMessage, setType);
-PHP_METHOD(HttpMessage, getInfo);
-PHP_METHOD(HttpMessage, setInfo);
-PHP_METHOD(HttpMessage, getResponseCode);
-PHP_METHOD(HttpMessage, setResponseCode);
-PHP_METHOD(HttpMessage, getResponseStatus);
-PHP_METHOD(HttpMessage, setResponseStatus);
-PHP_METHOD(HttpMessage, getRequestMethod);
-PHP_METHOD(HttpMessage, setRequestMethod);
-PHP_METHOD(HttpMessage, getRequestUrl);
-PHP_METHOD(HttpMessage, setRequestUrl);
-PHP_METHOD(HttpMessage, getHttpVersion);
-PHP_METHOD(HttpMessage, setHttpVersion);
-PHP_METHOD(HttpMessage, guessContentType);
-PHP_METHOD(HttpMessage, getParentMessage);
-PHP_METHOD(HttpMessage, send);
-PHP_METHOD(HttpMessage, toString);
-PHP_METHOD(HttpMessage, toStream);
-PHP_METHOD(HttpMessage, toCallback);
-
-PHP_METHOD(HttpMessage, count);
-PHP_METHOD(HttpMessage, serialize);
-PHP_METHOD(HttpMessage, unserialize);
-PHP_METHOD(HttpMessage, rewind);
-PHP_METHOD(HttpMessage, valid);
-PHP_METHOD(HttpMessage, current);
-PHP_METHOD(HttpMessage, key);
-PHP_METHOD(HttpMessage, next);
-
-PHP_METHOD(HttpMessage, factory);
-
-PHP_METHOD(HttpMessage, detach);
-PHP_METHOD(HttpMessage, prepend);
-PHP_METHOD(HttpMessage, reverse);
-
-PHP_METHOD(HttpMessage, isMultipart);
-PHP_METHOD(HttpMessage, splitMultipartBody);
 #endif
 
 /*

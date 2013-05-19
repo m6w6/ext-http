@@ -6,20 +6,14 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
 #ifndef PHP_HTTP_ENV_REQUEST_H
 #define PHP_HTTP_ENV_REQUEST_H
 
-zend_class_entry *php_http_env_request_get_class_entry(void);
-
-PHP_METHOD(HttpEnvRequest, __construct);
-PHP_METHOD(HttpEnvRequest, getForm);
-PHP_METHOD(HttpEnvRequest, getQuery);
-PHP_METHOD(HttpEnvRequest, getFiles);
-
+PHP_HTTP_API zend_class_entry *php_http_env_request_class_entry;
 PHP_MINIT_FUNCTION(http_env_request);
 
 #endif

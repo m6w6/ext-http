@@ -1,0 +1,4 @@
+* let http_info.request.url be a php_url
+* let the message body be a simple query string unless files are added
+* revisit error handling
+ 

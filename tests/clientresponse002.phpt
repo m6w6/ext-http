@@ -24,7 +24,7 @@ Test
   \["cookies"\]\=\>
   array\(1\) \{
     \["temp"\]\=\>
-    string\(13\) "\d+\.\d+"
+    string\(1[23]\) "\d+\.\d+"
   \}
   \["extras"\]\=\>
   array\(0\) \{
@@ -44,7 +44,7 @@ array\(7\) \{
   \["cookies"\]\=\>
   array\(1\) \{
     \["perm"\]\=\>
-    string\(13\) "\d+\.\d+"
+    string\(1[23]\) "\d+\.\d+"
   \}
   \["extras"\]\=\>
   array\(0\) \{

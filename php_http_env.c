@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -581,7 +581,6 @@ PHP_HTTP_API STATUS php_http_env_set_response_header_value(long http_code, const
 	}
 }
 
-
 static PHP_HTTP_STRLIST(php_http_env_response_status) =
 	PHP_HTTP_STRLIST_ITEM("Continue")
 	PHP_HTTP_STRLIST_ITEM("Switching Protocols")
@@ -678,98 +677,10 @@ PHP_HTTP_API const char *php_http_env_get_response_status_for_code(unsigned code
 	return php_http_strlist_find(php_http_env_response_status, 100, code);
 }
 
-
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpEnv, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpEnv, method, 0)
-#define PHP_HTTP_ENV_ME(method)					PHP_ME(HttpEnv, method, PHP_HTTP_ARGS(HttpEnv, method), ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-
-PHP_HTTP_BEGIN_ARGS(getRequestHeader, 0)
-	PHP_HTTP_ARG_VAL(header_name, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(getRequestBody, 0)
-	PHP_HTTP_ARG_VAL(body_class_name, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(getResponseStatusForCode, 1)
-	PHP_HTTP_ARG_VAL(code, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(getResponseStatusForAllCodes);
-
-PHP_HTTP_BEGIN_ARGS(getResponseHeader, 0)
-	PHP_HTTP_ARG_VAL(header_name, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(getResponseCode);
-
-PHP_HTTP_BEGIN_ARGS(setResponseHeader, 1)
-	PHP_HTTP_ARG_VAL(header_name, 0)
-	PHP_HTTP_ARG_VAL(header_value, 0)
-	PHP_HTTP_ARG_VAL(response_code, 0)
-	PHP_HTTP_ARG_VAL(replace_header, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(setResponseCode, 1)
-	PHP_HTTP_ARG_VAL(code, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(negotiateLanguage, 1)
-	PHP_HTTP_ARG_VAL(supported, 0)
-	PHP_HTTP_ARG_VAL(result_array, 1)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(negotiateContentType, 1)
-	PHP_HTTP_ARG_VAL(supported, 0)
-	PHP_HTTP_ARG_VAL(result_array, 1)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(negotiateCharset, 1)
-	PHP_HTTP_ARG_VAL(supported, 0)
-	PHP_HTTP_ARG_VAL(result_array, 1)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(negotiateEncoding, 1)
-	PHP_HTTP_ARG_VAL(supported, 0)
-	PHP_HTTP_ARG_VAL(result_array, 1)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(negotiate, 2)
-	PHP_HTTP_ARG_VAL(value, 0)
-	PHP_HTTP_ARG_VAL(supported, 0)
-	PHP_HTTP_ARG_VAL(primary_type_separator, 0)
-	PHP_HTTP_ARG_VAL(result_array, 1)
-PHP_HTTP_END_ARGS;
-
-static zend_class_entry *php_http_env_class_entry;
-
-zend_class_entry *php_http_env_get_class_entry(void)
-{
-	return php_http_env_class_entry;
-}
-
-static zend_function_entry php_http_env_method_entry[] = {
-	PHP_HTTP_ENV_ME(getRequestHeader)
-	PHP_HTTP_ENV_ME(getRequestBody)
-
-	PHP_HTTP_ENV_ME(getResponseStatusForCode)
-	PHP_HTTP_ENV_ME(getResponseStatusForAllCodes)
-
-	PHP_HTTP_ENV_ME(getResponseHeader)
-	PHP_HTTP_ENV_ME(getResponseCode)
-	PHP_HTTP_ENV_ME(setResponseHeader)
-	PHP_HTTP_ENV_ME(setResponseCode)
-
-	PHP_HTTP_ENV_ME(negotiateLanguage)
-	PHP_HTTP_ENV_ME(negotiateContentType)
-	PHP_HTTP_ENV_ME(negotiateEncoding)
-	PHP_HTTP_ENV_ME(negotiateCharset)
-	PHP_HTTP_ENV_ME(negotiate)
-
-	EMPTY_FUNCTION_ENTRY
-};
-
-PHP_METHOD(HttpEnv, getRequestHeader)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getRequestHeader, 0, 0, 0)
+	ZEND_ARG_INFO(0, header_name)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, getRequestHeader)
 {
 	char *header_name_str = NULL;
 	int header_name_len = 0;
@@ -792,23 +703,29 @@ PHP_METHOD(HttpEnv, getRequestHeader)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEnv, getRequestBody)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getRequestBody, 0, 0, 0)
+	ZEND_ARG_INFO(0, body_class_name)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, getRequestBody)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
-		zend_class_entry *class_entry = php_http_message_body_get_class_entry();
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+		zend_class_entry *class_entry = php_http_message_body_class_entry;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|C", &class_entry)) {
 			zend_object_value ov;
 			php_http_message_body_t *body = php_http_env_get_request_body(TSRMLS_C);
 
-			if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_get_class_entry(), php_http_message_body_init(&body, NULL TSRMLS_CC), NULL TSRMLS_CC)) {
+			if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, php_http_message_body_init(&body, NULL TSRMLS_CC), NULL TSRMLS_CC)) {
 				RETVAL_OBJVAL(ov, 0);
 			}
 		}
 	} end_error_handling();
 }
 
-PHP_METHOD(HttpEnv, getResponseStatusForCode)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseStatusForCode, 0, 0, 1)
+	ZEND_ARG_INFO(0, code)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, getResponseStatusForCode)
 {
 	long code;
 
@@ -818,7 +735,9 @@ PHP_METHOD(HttpEnv, getResponseStatusForCode)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEnv, getResponseStatusForAllCodes)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseStatusForAllCodes, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, getResponseStatusForAllCodes)
 {
 	const char *s;
 	unsigned c;
@@ -837,7 +756,10 @@ PHP_METHOD(HttpEnv, getResponseStatusForAllCodes)
 	}
 }
 
-PHP_METHOD(HttpEnv, getResponseHeader)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseHeader, 0, 0, 0)
+	ZEND_ARG_INFO(0, header_name)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, getResponseHeader)
 {
 	char *header_name_str = NULL;
 	int header_name_len = 0;
@@ -859,7 +781,9 @@ PHP_METHOD(HttpEnv, getResponseHeader)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEnv, getResponseCode)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseCode, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, getResponseCode)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		RETURN_LONG(php_http_env_get_response_code(TSRMLS_C));
@@ -867,7 +791,13 @@ PHP_METHOD(HttpEnv, getResponseCode)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEnv, setResponseHeader)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_setResponseHeader, 0, 0, 1)
+	ZEND_ARG_INFO(0, header_name)
+	ZEND_ARG_INFO(0, header_value)
+	ZEND_ARG_INFO(0, response_code)
+	ZEND_ARG_INFO(0, replace_header)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, setResponseHeader)
 {
 	char *header_name_str;
 	int header_name_len;
@@ -876,22 +806,29 @@ PHP_METHOD(HttpEnv, setResponseHeader)
 	zend_bool replace_header = 1;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|z!lb", &header_name_str, &header_name_len, &header_value, &code, &replace_header)) {
-		RETURN_SUCCESS(php_http_env_set_response_header_value(code, header_name_str, header_name_len, header_value, replace_header TSRMLS_CC));
+		RETURN_BOOL(SUCCESS == php_http_env_set_response_header_value(code, header_name_str, header_name_len, header_value, replace_header TSRMLS_CC));
 	}
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEnv, setResponseCode)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_setResponseCode, 0, 0, 1)
+	ZEND_ARG_INFO(0, code)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, setResponseCode)
 {
 	long code;
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
-		RETURN_SUCCESS(php_http_env_set_response_code(code TSRMLS_CC));
+		RETURN_BOOL(SUCCESS == php_http_env_set_response_code(code TSRMLS_CC));
 	}
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEnv, negotiateLanguage)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiateLanguage, 0, 0, 1)
+	ZEND_ARG_INFO(0, supported)
+	ZEND_ARG_INFO(1, result_array)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, negotiateLanguage)
 {
 	HashTable *supported;
 	zval *rs_array = NULL;
@@ -908,7 +845,11 @@ PHP_METHOD(HttpEnv, negotiateLanguage)
 	}
 }
 
-PHP_METHOD(HttpEnv, negotiateCharset)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiateCharset, 0, 0, 1)
+	ZEND_ARG_INFO(0, supported)
+	ZEND_ARG_INFO(1, result_array)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, negotiateCharset)
 {
 	HashTable *supported;
 	zval *rs_array = NULL;
@@ -924,7 +865,11 @@ PHP_METHOD(HttpEnv, negotiateCharset)
 	}
 }
 
-PHP_METHOD(HttpEnv, negotiateEncoding)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiateEncoding, 0, 0, 1)
+	ZEND_ARG_INFO(0, supported)
+	ZEND_ARG_INFO(1, result_array)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, negotiateEncoding)
 {
 	HashTable *supported;
 	zval *rs_array = NULL;
@@ -940,7 +885,11 @@ PHP_METHOD(HttpEnv, negotiateEncoding)
 	}
 }
 
-PHP_METHOD(HttpEnv, negotiateContentType)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiateContentType, 0, 0, 1)
+	ZEND_ARG_INFO(0, supported)
+	ZEND_ARG_INFO(1, result_array)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, negotiateContentType)
 {
 	HashTable *supported;
 	zval *rs_array = NULL;
@@ -956,7 +905,13 @@ PHP_METHOD(HttpEnv, negotiateContentType)
 	}
 }
 
-PHP_METHOD(HttpEnv, negotiate)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiate, 0, 0, 2)
+	ZEND_ARG_INFO(0, value)
+	ZEND_ARG_INFO(0, supported)
+	ZEND_ARG_INFO(0, primary_type_separator)
+	ZEND_ARG_INFO(1, result_array)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, negotiate)
 {
 	HashTable *supported;
 	zval *rs_array = NULL;
@@ -981,6 +936,27 @@ PHP_METHOD(HttpEnv, negotiate)
 	}
 }
 
+static zend_function_entry php_http_env_methods[] = {
+	PHP_ME(HttpEnv, getRequestHeader,              ai_HttpEnv_getRequestHeader,              ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpEnv, getRequestBody,                ai_HttpEnv_getRequestBody,                ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+
+	PHP_ME(HttpEnv, getResponseStatusForCode,      ai_HttpEnv_getResponseStatusForCode,      ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpEnv, getResponseStatusForAllCodes,  ai_HttpEnv_getResponseStatusForAllCodes,  ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+
+	PHP_ME(HttpEnv, getResponseHeader,             ai_HttpEnv_getResponseHeader,             ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpEnv, getResponseCode,               ai_HttpEnv_getResponseCode,               ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpEnv, setResponseHeader,             ai_HttpEnv_setResponseHeader,             ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpEnv, setResponseCode,               ai_HttpEnv_setResponseCode,               ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+
+	PHP_ME(HttpEnv, negotiateLanguage,             ai_HttpEnv_negotiateLanguage,             ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpEnv, negotiateContentType,          ai_HttpEnv_negotiateContentType,          ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpEnv, negotiateEncoding,             ai_HttpEnv_negotiateEncoding,             ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpEnv, negotiateCharset,              ai_HttpEnv_negotiateCharset,              ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpEnv, negotiate,                     ai_HttpEnv_negotiate,                     ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+
+	EMPTY_FUNCTION_ENTRY
+};
+
 #ifdef PHP_HTTP_HAVE_JSON
 #include "ext/json/php_json.h"
 
@@ -997,11 +973,8 @@ static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 	}
 }
 
-#endif
-
-PHP_MINIT_FUNCTION(http_env)
+static void php_http_env_register_json_handler(TSRMLS_D)
 {
-#ifdef PHP_HTTP_HAVE_JSON
 	sapi_post_entry entry = {NULL, 0, NULL, NULL};
 
 	entry.post_reader = sapi_read_standard_form_data;
@@ -1014,9 +987,21 @@ PHP_MINIT_FUNCTION(http_env)
 	entry.content_type = "application/json";
 	entry.content_type_len = lenof("application/json");
 	sapi_register_post_entry(&entry TSRMLS_CC);
+}
 #endif
 
-	PHP_HTTP_REGISTER_CLASS(http, Env, http_env, NULL, 0);
+zend_class_entry *php_http_env_class_entry;
+
+PHP_MINIT_FUNCTION(http_env)
+{
+	zend_class_entry ce = {0};
+
+	INIT_NS_CLASS_ENTRY(ce, "http", "Env", php_http_env_methods);
+	php_http_env_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
+
+#ifdef PHP_HTTP_HAVE_JSON
+	php_http_env_register_json_handler(TSRMLS_C);
+#endif
 
 	return SUCCESS;
 }

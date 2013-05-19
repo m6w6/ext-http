@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -170,50 +170,21 @@ PHP_HTTP_API STATUS php_http_encoding_inflate(const char *data, size_t data_len,
 
 typedef struct php_http_encoding_stream_object {
 	zend_object zo;
+	zend_object_value zv;
 	php_http_encoding_stream_t *stream;
 } php_http_encoding_stream_object_t;
 
-zend_class_entry *php_http_encoding_stream_get_class_entry(void);
+PHP_HTTP_API zend_class_entry *php_http_encoding_stream_class_entry;
 
 zend_object_value php_http_encoding_stream_object_new(zend_class_entry *ce TSRMLS_DC);
 zend_object_value php_http_encoding_stream_object_new_ex(zend_class_entry *ce, php_http_encoding_stream_t *s, php_http_encoding_stream_object_t **ptr TSRMLS_DC);
 zend_object_value php_http_encoding_stream_object_clone(zval *object TSRMLS_DC);
 void php_http_encoding_stream_object_free(void *object TSRMLS_DC);
 
-zend_class_entry *php_http_deflate_stream_get_class_entry(void);
-zend_class_entry *php_http_inflate_stream_get_class_entry(void);
-zend_class_entry *php_http_dechunk_stream_get_class_entry(void);
+PHP_HTTP_API zend_class_entry *php_http_deflate_stream_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_inflate_stream_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_dechunk_stream_class_entry;
 
-PHP_METHOD(HttpEncodingStream, __construct);
-PHP_METHOD(HttpEncodingStream, update);
-PHP_METHOD(HttpEncodingStream, flush);
-PHP_METHOD(HttpEncodingStream, done);
-PHP_METHOD(HttpEncodingStream, finish);
-
-PHP_METHOD(HttpDeflateStream, encode);
-PHP_METHOD(HttpInflateStream, decode);
-PHP_METHOD(HttpDechunkStream, decode);
-
-/*
-typedef struct php_http_inflatestream_object {
-	zend_object zo;
-	php_http_encoding_stream_t *stream;
-} php_http_inflatestream_object_t;
-
-extern zend_class_entry *php_http_inflatestream_class_entry;
-extern zend_function_entry php_http_inflatestream_method_entry[];
-
-extern zend_object_value php_http_inflatestream_object_new(zend_class_entry *ce TSRMLS_DC);
-extern zend_object_value php_http_inflatestream_object_new_ex(zend_class_entry *ce, php_http_encoding_stream_t *s, php_http_inflatestream_object_t **ptr TSRMLS_DC);
-extern zend_object_value php_http_inflatestream_object_clone(zval *object TSRMLS_DC);
-extern void php_http_inflatestream_object_free(void *object TSRMLS_DC);
-
-PHP_METHOD(HttpInflateStream, __construct);
-PHP_METHOD(HttpInflateStream, factory);
-PHP_METHOD(HttpInflateStream, update);
-PHP_METHOD(HttpInflateStream, flush);
-PHP_METHOD(HttpInflateStream, finish);
-*/
 #endif
 
 /*

@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -79,28 +79,6 @@ zend_module_entry http_module_entry = {
 
 int http_module_number;
 
-static HashTable http_module_classes;
-void php_http_register_class(zend_class_entry *(*get_ce)(void))
-{
-	zend_hash_next_index_insert(&http_module_classes, &get_ce, sizeof(get_ce), NULL);
-}
-static void php_http_registered_classes(php_http_buffer_t *buf, unsigned flags)
-{
-	HashPosition pos;
-	zend_class_entry *(**get_ce)(void);
-
-	FOREACH_HASH_VAL(pos, &http_module_classes, get_ce) {
-		zend_class_entry *ce = (*get_ce)();
-		if ((flags && (ce->ce_flags & flags)) || (!flags && !(ce->ce_flags & 0x0fff))) {
-			if (buf->used) {
-				php_http_buffer_appends(buf, ", ");
-			}
-			php_http_buffer_append(buf, ce->name, ce->name_length);
-		}
-	}
-	php_http_buffer_fix(buf);
-}
-
 #if PHP_DEBUG && !HAVE_GCOV
 void _dpf(int type, const char *data, size_t length)
 {
@@ -146,7 +124,7 @@ zend_php_http_globals *php_http_globals(void)
 #endif
 
 PHP_INI_BEGIN()
-	PHP_HTTP_INI_ENTRY("http.etag.mode", "crc32b", PHP_INI_ALL, OnUpdateString, env.etag_mode)
+	STD_PHP_INI_ENTRY("http.etag.mode", "crc32b", PHP_INI_ALL, OnUpdateString, env.etag_mode, zend_php_http_globals, php_http_globals)
 PHP_INI_END()
 
 PHP_MINIT_FUNCTION(http)
@@ -155,8 +133,6 @@ PHP_MINIT_FUNCTION(http)
 	ZEND_INIT_MODULE_GLOBALS(php_http, php_http_globals_init_once, NULL);
 	REGISTER_INI_ENTRIES();
 	
-	zend_hash_init(&http_module_classes, 0, NULL, NULL, 1);
-
 	if (0
 	|| SUCCESS != PHP_MINIT_CALL(http_object)
 	|| SUCCESS != PHP_MINIT_CALL(http_exception)
@@ -203,8 +179,6 @@ PHP_MSHUTDOWN_FUNCTION(http)
 		return FAILURE;
 	}
 	
-	zend_hash_destroy(&http_module_classes);
-
 	return SUCCESS;
 }
 
@@ -238,7 +212,6 @@ PHP_RSHUTDOWN_FUNCTION(http)
 
 PHP_MINFO_FUNCTION(http)
 {
-	unsigned i;
 	php_http_buffer_t buf;
 
 	php_http_buffer_init(&buf);
@@ -272,49 +245,8 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_row(3, "libevent", "disabled", "disabled");
 #endif
 
-#if PHP_HTTP_HAVE_SERF
-	{
-		int v[3];
-
-		serf_lib_version(&v[0], &v[1], &v[2]);
-		php_http_buffer_appendf(&buf, "%d.%d.%d", v[0], v[1], v[2]);
-		php_http_buffer_fix(&buf);
-		php_info_print_table_row(3, "libserf", SERF_VERSION_STRING, buf.data);
-		php_http_buffer_reset(&buf);
-	}
-#else
-	php_info_print_table_row(3, "libserf", "disabled", "disabled");
-#endif
 	php_info_print_table_end();
 	
-	php_info_print_table_start();
-	php_info_print_table_colspan_header(2, "Registered API");
-	for (i = 0; http_functions[i].fname; ++i) {
-		if (buf.used) {
-			php_http_buffer_appends(&buf, ", ");
-		}
-		php_http_buffer_appendl(&buf, http_functions[i].fname);
-	}
-	php_http_buffer_fix(&buf);
-	php_info_print_table_row(2, "Functions", buf.data);
-	php_http_buffer_reset(&buf);
-	php_http_registered_classes(&buf, ZEND_ACC_INTERFACE);
-	php_info_print_table_row(2, "Interfaces", buf.data);
-	php_http_buffer_reset(&buf);
-	php_http_registered_classes(&buf, ZEND_ACC_EXPLICIT_ABSTRACT_CLASS);
-	php_info_print_table_row(2, "Abstract Classes", buf.data);
-	php_http_buffer_reset(&buf);
-	php_http_registered_classes(&buf, 0);
-	php_info_print_table_row(2, "Implemented Classes", buf.data);
-	php_http_buffer_reset(&buf);
-	php_http_registered_classes(&buf, ZEND_ACC_FINAL_CLASS);
-	php_info_print_table_row(2, "Final Classes", buf.data);
-	php_http_buffer_dtor(&buf);
-
-	php_info_print_table_row(2, "Stream Filters",  "http.chunked_encode, http.chunked_decode, http.inflate, http.deflate");
-	php_info_print_table_end();
-
-
 	DISPLAY_INI_ENTRIES();
 }
 

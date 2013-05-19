@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -114,68 +114,16 @@ PHP_HTTP_API zval *php_http_header_value_to_string(zval *header TSRMLS_DC)
 	return ret;
 }
 
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpHeader, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpHeader, method, 0)
-#define PHP_HTTP_HEADER_ME(method, v)			PHP_ME(HttpHeader, method, PHP_HTTP_ARGS(HttpHeader, method), v)
-
-PHP_HTTP_BEGIN_ARGS(__construct, 0)
-	PHP_HTTP_ARG_VAL(name, 0)
-	PHP_HTTP_ARG_VAL(value, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(serialize);
-PHP_HTTP_BEGIN_ARGS(unserialize, 1)
-	PHP_HTTP_ARG_VAL(serialized, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(match, 1)
-	PHP_HTTP_ARG_VAL(value, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(negotiate, 1)
-	PHP_HTTP_ARG_VAL(supported, 0)
-	PHP_HTTP_ARG_VAL(result, 1)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(parse, 1)
-	PHP_HTTP_ARG_VAL(string, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(getParams, 0)
-	PHP_HTTP_ARG_VAL(param_sep, 0)
-	PHP_HTTP_ARG_VAL(arg_sep, 0)
-	PHP_HTTP_ARG_VAL(val_sep, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
-PHP_HTTP_END_ARGS;
-
-static zend_class_entry *php_http_header_class_entry;
-
-zend_class_entry *php_http_header_get_class_entry(void)
-{
-	return php_http_header_class_entry;
-}
-
-static zend_function_entry php_http_header_method_entry[] = {
-	PHP_HTTP_HEADER_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_HTTP_HEADER_ME(serialize, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpHeader, __toString, serialize, PHP_HTTP_ARGS(HttpHeader, serialize), ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpHeader, toString, serialize, PHP_HTTP_ARGS(HttpHeader, serialize), ZEND_ACC_PUBLIC)
-	PHP_HTTP_HEADER_ME(unserialize, ZEND_ACC_PUBLIC)
-	PHP_HTTP_HEADER_ME(match, ZEND_ACC_PUBLIC)
-	PHP_HTTP_HEADER_ME(negotiate, ZEND_ACC_PUBLIC)
-	PHP_HTTP_HEADER_ME(getParams, ZEND_ACC_PUBLIC)
-	PHP_HTTP_HEADER_ME(parse, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	EMPTY_FUNCTION_ENTRY
-};
-
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader___construct, 0, 0, 0)
+	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, __construct)
 {
 	char *name_str = NULL, *value_str = NULL;
 	int name_len = 0, value_len = 0;
 
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!", &name_str, &name_len, &value_str, &value_len)) {
 			if (name_str && name_len) {
 				char *pretty_str = estrndup(name_str, name_len);
@@ -189,6 +137,8 @@ PHP_METHOD(HttpHeader, __construct)
 	} end_error_handling();
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_serialize, 0, 0, 0)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, serialize)
 {
 	php_http_buffer_t buf;
@@ -210,6 +160,9 @@ PHP_METHOD(HttpHeader, serialize)
 	RETURN_PHP_HTTP_BUFFER_VAL(&buf);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_unserialize, 0, 0, 1)
+	ZEND_ARG_INFO(0, serialized)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, unserialize)
 {
 	char *serialized_str;
@@ -248,6 +201,10 @@ PHP_METHOD(HttpHeader, unserialize)
 
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_match, 0, 0, 1)
+	ZEND_ARG_INFO(0, value)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, match)
 {
 	char *val_str;
@@ -264,6 +221,10 @@ PHP_METHOD(HttpHeader, match)
 	zval_ptr_dtor(&zvalue);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_negotiate, 0, 0, 1)
+	ZEND_ARG_INFO(0, supported)
+	ZEND_ARG_INFO(1, result)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, negotiate)
 {
 	HashTable *supported, *rs;
@@ -299,6 +260,12 @@ PHP_METHOD(HttpHeader, negotiate)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_getParams, 0, 0, 0)
+	ZEND_ARG_INFO(0, param_sep)
+	ZEND_ARG_INFO(0, arg_sep)
+	ZEND_ARG_INFO(0, val_sep)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, getParams)
 {
 	zval zctor, *zparams_obj, **zargs = NULL;
@@ -307,7 +274,7 @@ PHP_METHOD(HttpHeader, getParams)
 	ZVAL_STRINGL(&zctor, "__construct", lenof("__construct"), 0);
 	
 	MAKE_STD_ZVAL(zparams_obj);
-	object_init_ex(zparams_obj, php_http_params_get_class_entry());
+	object_init_ex(zparams_obj, php_http_params_class_entry);
 	
 	zargs = (zval **) ecalloc(ZEND_NUM_ARGS()+1, sizeof(zval *));
 	zargs[0] = zend_read_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("value"), 0 TSRMLS_CC);
@@ -324,6 +291,10 @@ PHP_METHOD(HttpHeader, getParams)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_parse, 0, 0, 1)
+	ZEND_ARG_INFO(0, string)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, parse)
 {
 	char *header_str;
@@ -374,9 +345,27 @@ PHP_METHOD(HttpHeader, parse)
 	}
 }
 
+static zend_function_entry php_http_header_methods[] = {
+	PHP_ME(HttpHeader, __construct,   ai_HttpHeader___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpHeader, serialize,     ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpHeader, __toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpHeader, toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, unserialize,   ai_HttpHeader_unserialize, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, match,         ai_HttpHeader_match, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, negotiate,     ai_HttpHeader_negotiate, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, getParams,     ai_HttpHeader_getParams, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, parse,         ai_HttpHeader_parse, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	EMPTY_FUNCTION_ENTRY
+};
+
+zend_class_entry *php_http_header_class_entry;
+
 PHP_MINIT_FUNCTION(http_header)
 {
-	PHP_HTTP_REGISTER_CLASS(http, Header, http_header, php_http_object_get_class_entry(), 0);
+	zend_class_entry ce = {0};
+
+	INIT_NS_CLASS_ENTRY(ce, "http", "Header", php_http_header_methods);
+	php_http_header_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
 	zend_class_implements(php_http_header_class_entry TSRMLS_CC, 1, zend_ce_serializable);
 	zend_declare_class_constant_long(php_http_header_class_entry, ZEND_STRL("MATCH_LOOSE"), PHP_HTTP_MATCH_LOOSE TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_header_class_entry, ZEND_STRL("MATCH_CASE"), PHP_HTTP_MATCH_CASE TSRMLS_CC);

@@ -6,52 +6,11 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
 #include "php_http_api.h"
-
-
-#undef PHP_HTTP_BEGIN_ARGS
-#undef PHP_HTTP_EMPTY_ARGS
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 		PHP_HTTP_BEGIN_ARGS_EX(HttpEnvRequest, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)					PHP_HTTP_EMPTY_ARGS_EX(HttpEnvRequest, method, 0)
-#define PHP_HTTP_ENV_REQUEST_ME(method, visibility)	PHP_ME(HttpEnvRequest, method, PHP_HTTP_ARGS(HttpEnvRequest, method), visibility)
-
-PHP_HTTP_EMPTY_ARGS(__construct);
-
-PHP_HTTP_BEGIN_ARGS(getQuery, 0)
-	PHP_HTTP_ARG_VAL(name, 0)
-	PHP_HTTP_ARG_VAL(type, 0)
-	PHP_HTTP_ARG_VAL(defval, 0)
-	PHP_HTTP_ARG_VAL(delete, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(getForm, 0)
-	PHP_HTTP_ARG_VAL(name, 0)
-	PHP_HTTP_ARG_VAL(type, 0)
-	PHP_HTTP_ARG_VAL(defval, 0)
-	PHP_HTTP_ARG_VAL(delete, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(getFiles);
-
-static zend_class_entry *php_http_env_request_class_entry;
-
-zend_class_entry *php_http_env_request_get_class_entry(void)
-{
-	return php_http_env_request_class_entry;
-}
-
-zend_function_entry php_http_env_request_method_entry[] = {
-	PHP_HTTP_ENV_REQUEST_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_HTTP_ENV_REQUEST_ME(getForm, ZEND_ACC_PUBLIC)
-	PHP_HTTP_ENV_REQUEST_ME(getQuery, ZEND_ACC_PUBLIC)
-	PHP_HTTP_ENV_REQUEST_ME(getFiles, ZEND_ACC_PUBLIC)
-
-	EMPTY_FUNCTION_ENTRY
-};
 
 static int grab_file(void *zpp TSRMLS_DC, int argc, va_list argv, zend_hash_key *key)
 {
@@ -151,20 +110,23 @@ static int grab_files(void *zpp TSRMLS_DC, int argc, va_list argv, zend_hash_key
 		} \
 	} while(0)
 
-PHP_METHOD(HttpEnvRequest, __construct)
+
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvRequest___construct, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnvRequest, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 		if (SUCCESS == zend_parse_parameters_none()) {
 			zval *zsg, *zqs;
 
 			obj->message = php_http_message_init_env(obj->message, PHP_HTTP_REQUEST TSRMLS_CC);
-			obj->body.handle = 0;
+			obj->body = NULL;
 
 			zsg = php_http_env_get_superglobal(ZEND_STRL("_GET") TSRMLS_CC);
 			MAKE_STD_ZVAL(zqs);
-			object_init_ex(zqs, php_http_querystring_get_class_entry());
+			object_init_ex(zqs, php_http_querystring_class_entry);
 			if (SUCCESS == php_http_querystring_ctor(zqs, zsg TSRMLS_CC)) {
 				zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), zqs TSRMLS_CC);
 			}
@@ -172,7 +134,7 @@ PHP_METHOD(HttpEnvRequest, __construct)
 
 			zsg = php_http_env_get_superglobal(ZEND_STRL("_POST") TSRMLS_CC);
 			MAKE_STD_ZVAL(zqs);
-			object_init_ex(zqs, php_http_querystring_get_class_entry());
+			object_init_ex(zqs, php_http_querystring_class_entry);
 			if (SUCCESS == php_http_querystring_ctor(zqs, zsg TSRMLS_CC)) {
 				zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), zqs TSRMLS_CC);
 			}
@@ -213,42 +175,71 @@ PHP_METHOD(HttpEnvRequest, __construct)
 		RETVAL_ZVAL(rv, 0, 1); \
 	} while(0);
 
-PHP_METHOD(HttpEnvRequest, getForm)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvRequest_getForm, 0, 0, 0)
+	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_INFO(0, type)
+	ZEND_ARG_INFO(0, defval)
+	ZEND_ARG_INFO(0, delete)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnvRequest, getForm)
 {
 	if (ZEND_NUM_ARGS()) {
 		call_querystring_get("form");
 	} else {
-		RETURN_PROP(php_http_env_request_class_entry, "form");
+		zval *zform = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), 0 TSRMLS_CC);
+		RETURN_ZVAL(zform, 1, 0);
 	}
 }
 
-PHP_METHOD(HttpEnvRequest, getQuery)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvRequest_getQuery, 0, 0, 0)
+	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_INFO(0, type)
+	ZEND_ARG_INFO(0, defval)
+	ZEND_ARG_INFO(0, delete)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnvRequest, getQuery)
 {
 	if (ZEND_NUM_ARGS()) {
 		call_querystring_get("query");
 	} else {
-		RETURN_PROP(php_http_env_request_class_entry, "query");
+		zval *zquery = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), 0 TSRMLS_CC);
+		RETURN_ZVAL(zquery, 1, 0);
 	}
 }
 
-PHP_METHOD(HttpEnvRequest, getFiles)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvRequest_getFiles, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnvRequest, getFiles)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		RETURN_PROP(php_http_env_request_class_entry, "files");
+		zval *zfiles = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), 0 TSRMLS_CC);
+		RETURN_ZVAL(zfiles, 1, 0);
 	}
 }
 
+static zend_function_entry php_http_env_request_methods[] = {
+	PHP_ME(HttpEnvRequest, __construct,  ai_HttpEnvRequest___construct,  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpEnvRequest, getForm,      ai_HttpEnvRequest_getForm,      ZEND_ACC_PUBLIC)
+	PHP_ME(HttpEnvRequest, getQuery,     ai_HttpEnvRequest_getQuery,     ZEND_ACC_PUBLIC)
+	PHP_ME(HttpEnvRequest, getFiles,     ai_HttpEnvRequest_getFiles,     ZEND_ACC_PUBLIC)
+	EMPTY_FUNCTION_ENTRY
+};
+
+zend_class_entry *php_http_env_request_class_entry;
 
 PHP_MINIT_FUNCTION(http_env_request)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Env, Request, http_env_request, php_http_message_get_class_entry(), 0);
+	zend_class_entry ce = {0};
+
+	INIT_NS_CLASS_ENTRY(ce, "http\\Env", "Request", php_http_env_request_methods);
+	php_http_env_request_class_entry = zend_register_internal_class_ex(&ce, php_http_message_class_entry, NULL TSRMLS_CC);
+
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("query"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("form"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("files"), ZEND_ACC_PROTECTED TSRMLS_CC);
 
 	return SUCCESS;
 }
-
 
 /*
  * Local variables:

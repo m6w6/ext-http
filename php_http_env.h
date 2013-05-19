@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -72,22 +72,7 @@ PHP_HTTP_API zval *php_http_env_get_server_var(const char *key_str, size_t key_l
 #define php_http_env_got_server_var(v) (NULL != php_http_env_get_server_var((v), strlen(v), 1 TSRMLS_CC))
 PHP_HTTP_API zval *php_http_env_get_superglobal(const char *key, size_t key_len TSRMLS_DC);
 
-zend_class_entry *php_http_env_get_class_entry(void);
-
-PHP_METHOD(HttpEnv, getRequestHeader);
-PHP_METHOD(HttpEnv, getRequestBody);
-PHP_METHOD(HttpEnv, getResponseStatusForCode);
-PHP_METHOD(HttpEnv, getResponseStatusForAllCodes);
-PHP_METHOD(HttpEnv, getResponseHeader);
-PHP_METHOD(HttpEnv, getResponseCode);
-PHP_METHOD(HttpEnv, setResponseHeader);
-PHP_METHOD(HttpEnv, setResponseCode);
-PHP_METHOD(HttpEnv, negotiateLanguage);
-PHP_METHOD(HttpEnv, negotiateCharset);
-PHP_METHOD(HttpEnv, negotiateEncoding);
-PHP_METHOD(HttpEnv, negotiateContentType);
-PHP_METHOD(HttpEnv, negotiate);
-
+PHP_HTTP_API zend_class_entry *php_http_env_class_entry;
 PHP_MINIT_FUNCTION(http_env);
 PHP_RINIT_FUNCTION(http_env);
 PHP_RSHUTDOWN_FUNCTION(http_env);

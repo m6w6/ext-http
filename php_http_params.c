@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -676,87 +676,6 @@ PHP_HTTP_API php_http_buffer_t *php_http_params_to_string(php_http_buffer_t *buf
 	return buf;
 }
 
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpParams, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpParams, method, 0)
-#define PHP_HTTP_PARAMS_ME(method, visibility)	PHP_ME(HttpParams, method, PHP_HTTP_ARGS(HttpParams, method), visibility)
-#define PHP_HTTP_PARAMS_GME(method, visibility)	PHP_ME(HttpParams, method, PHP_HTTP_ARGS(HttpParams, __getter), visibility)
-
-PHP_HTTP_BEGIN_ARGS(__construct, 0)
-	PHP_HTTP_ARG_VAL(params, 0)
-	PHP_HTTP_ARG_VAL(param_sep, 0)
-	PHP_HTTP_ARG_VAL(arg_sep, 0)
-	PHP_HTTP_ARG_VAL(val_sep, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(toArray);
-PHP_HTTP_EMPTY_ARGS(toString);
-
-PHP_HTTP_BEGIN_ARGS(offsetExists, 1)
-	PHP_HTTP_ARG_VAL(name, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(offsetUnset, 1)
-	PHP_HTTP_ARG_VAL(name, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(offsetGet, 1)
-	PHP_HTTP_ARG_VAL(name, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(offsetSet, 2)
-	PHP_HTTP_ARG_VAL(name, 0)
-	PHP_HTTP_ARG_VAL(value, 0)
-PHP_HTTP_END_ARGS;
-
-static zend_class_entry *php_http_params_class_entry;
-
-zend_class_entry *php_http_params_get_class_entry(void)
-{
-	return php_http_params_class_entry;
-}
-
-static zend_function_entry php_http_params_method_entry[] = {
-	PHP_HTTP_PARAMS_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR|ZEND_ACC_FINAL)
-
-	PHP_HTTP_PARAMS_ME(toArray, ZEND_ACC_PUBLIC)
-	PHP_HTTP_PARAMS_ME(toString, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpParams, __toString, toString, PHP_HTTP_ARGS(HttpParams, toString), ZEND_ACC_PUBLIC)
-
-	PHP_HTTP_PARAMS_ME(offsetExists, ZEND_ACC_PUBLIC)
-	PHP_HTTP_PARAMS_ME(offsetUnset, ZEND_ACC_PUBLIC)
-	PHP_HTTP_PARAMS_ME(offsetSet, ZEND_ACC_PUBLIC)
-	PHP_HTTP_PARAMS_ME(offsetGet, ZEND_ACC_PUBLIC)
-
-	EMPTY_FUNCTION_ENTRY
-};
-
-PHP_MINIT_FUNCTION(http_params)
-{
-	PHP_HTTP_REGISTER_CLASS(http, Params, http_params, php_http_object_get_class_entry(), 0);
-
-	zend_class_implements(php_http_params_class_entry TSRMLS_CC, 1, zend_ce_arrayaccess);
-
-	zend_declare_class_constant_stringl(php_http_params_class_entry, ZEND_STRL("DEF_PARAM_SEP"), ZEND_STRL(",") TSRMLS_CC);
-	zend_declare_class_constant_stringl(php_http_params_class_entry, ZEND_STRL("DEF_ARG_SEP"), ZEND_STRL(";") TSRMLS_CC);
-	zend_declare_class_constant_stringl(php_http_params_class_entry, ZEND_STRL("DEF_VAL_SEP"), ZEND_STRL("=") TSRMLS_CC);
-	zend_declare_class_constant_stringl(php_http_params_class_entry, ZEND_STRL("COOKIE_PARAM_SEP"), ZEND_STRL("") TSRMLS_CC);
-
-	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_RAW"), PHP_HTTP_PARAMS_RAW TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_DEFAULT"), PHP_HTTP_PARAMS_DEFAULT TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_URLENCODED"), PHP_HTTP_PARAMS_URLENCODED TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_DIMENSION"), PHP_HTTP_PARAMS_DIMENSION TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_QUERY"), PHP_HTTP_PARAMS_QUERY TSRMLS_CC);
-
-	zend_declare_property_null(php_http_params_class_entry, ZEND_STRL("params"), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_stringl(php_http_params_class_entry, ZEND_STRL("param_sep"), ZEND_STRL(","), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_stringl(php_http_params_class_entry, ZEND_STRL("arg_sep"), ZEND_STRL(";"), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_stringl(php_http_params_class_entry, ZEND_STRL("val_sep"), ZEND_STRL("="), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_long(php_http_params_class_entry, ZEND_STRL("flags"), PHP_HTTP_PARAMS_DEFAULT, ZEND_ACC_PUBLIC TSRMLS_CC);
-
-	return SUCCESS;
-}
-
 PHP_HTTP_API php_http_params_token_t **php_http_params_separator_init(zval *zv TSRMLS_DC)
 {
 	zval **sep;
@@ -800,9 +719,16 @@ PHP_HTTP_API void php_http_params_separator_free(php_http_params_token_t **separ
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams___construct, 0, 0, 0)
+	ZEND_ARG_INFO(0, params)
+	ZEND_ARG_INFO(0, param_sep)
+	ZEND_ARG_INFO(0, arg_sep)
+	ZEND_ARG_INFO(0, val_sep)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *zcopy, *zparams = NULL, *param_sep = NULL, *arg_sep = NULL, *val_sep = NULL;
 		long flags = PHP_HTTP_PARAMS_DEFAULT;
 
@@ -864,14 +790,19 @@ PHP_METHOD(HttpParams, __construct)
 	} end_error_handling();
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_toArray, 0, 0, 0)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, toArray)
 {
-	if (SUCCESS != zend_parse_parameters_none()) {
-		RETURN_FALSE;
+	if (SUCCESS == zend_parse_parameters_none()) {
+		zval *zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0 TSRMLS_CC);
+		RETURN_ZVAL(zparams, 1, 0);
 	}
-	RETURN_PROP(php_http_params_class_entry, "params");
+	RETURN_FALSE;
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_toString, 0, 0, 0)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, toString)
 {
 	zval **tmp, *zparams, *zpsep, *zasep, *zvsep, *zflags;
@@ -911,6 +842,9 @@ PHP_METHOD(HttpParams, toString)
 	RETVAL_PHP_HTTP_BUFFER_VAL(&buf);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_offsetExists, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, offsetExists)
 {
 	char *name_str;
@@ -928,6 +862,9 @@ PHP_METHOD(HttpParams, offsetExists)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_offsetGet, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, offsetGet)
 {
 	char *name_str;
@@ -944,7 +881,9 @@ PHP_METHOD(HttpParams, offsetGet)
 	}
 }
 
-
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_offsetUnset, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, offsetUnset)
 {
 	char *name_str;
@@ -960,6 +899,10 @@ PHP_METHOD(HttpParams, offsetUnset)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_offsetSet, 0, 0, 2)
+	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, offsetSet)
 {
 	zval *nvalue;
@@ -1008,6 +951,51 @@ PHP_METHOD(HttpParams, offsetSet)
 		zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), zparams TSRMLS_CC);
 		zval_ptr_dtor(&zparams);
 	}
+}
+
+static zend_function_entry php_http_params_methods[] = {
+	PHP_ME(HttpParams, __construct,   ai_HttpParams___construct,   ZEND_ACC_PUBLIC|ZEND_ACC_CTOR|ZEND_ACC_FINAL)
+
+	PHP_ME(HttpParams, toArray,       ai_HttpParams_toArray,       ZEND_ACC_PUBLIC)
+	PHP_ME(HttpParams, toString,      ai_HttpParams_toString,      ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpParams, __toString, toString, ai_HttpParams_toString, ZEND_ACC_PUBLIC)
+
+	PHP_ME(HttpParams, offsetExists,  ai_HttpParams_offsetExists,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpParams, offsetUnset,   ai_HttpParams_offsetUnset,   ZEND_ACC_PUBLIC)
+	PHP_ME(HttpParams, offsetSet,     ai_HttpParams_offsetSet,     ZEND_ACC_PUBLIC)
+	PHP_ME(HttpParams, offsetGet,     ai_HttpParams_offsetGet,     ZEND_ACC_PUBLIC)
+
+	EMPTY_FUNCTION_ENTRY
+};
+
+zend_class_entry *php_http_params_class_entry;
+
+PHP_MINIT_FUNCTION(http_params)
+{
+	zend_class_entry ce = {0};
+
+	INIT_NS_CLASS_ENTRY(ce, "http", "Params", php_http_params_methods);
+	php_http_params_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
+	zend_class_implements(php_http_params_class_entry TSRMLS_CC, 1, zend_ce_arrayaccess);
+
+	zend_declare_class_constant_stringl(php_http_params_class_entry, ZEND_STRL("DEF_PARAM_SEP"), ZEND_STRL(",") TSRMLS_CC);
+	zend_declare_class_constant_stringl(php_http_params_class_entry, ZEND_STRL("DEF_ARG_SEP"), ZEND_STRL(";") TSRMLS_CC);
+	zend_declare_class_constant_stringl(php_http_params_class_entry, ZEND_STRL("DEF_VAL_SEP"), ZEND_STRL("=") TSRMLS_CC);
+	zend_declare_class_constant_stringl(php_http_params_class_entry, ZEND_STRL("COOKIE_PARAM_SEP"), ZEND_STRL("") TSRMLS_CC);
+
+	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_RAW"), PHP_HTTP_PARAMS_RAW TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_DEFAULT"), PHP_HTTP_PARAMS_DEFAULT TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_URLENCODED"), PHP_HTTP_PARAMS_URLENCODED TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_DIMENSION"), PHP_HTTP_PARAMS_DIMENSION TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_params_class_entry, ZEND_STRL("PARSE_QUERY"), PHP_HTTP_PARAMS_QUERY TSRMLS_CC);
+
+	zend_declare_property_null(php_http_params_class_entry, ZEND_STRL("params"), ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_stringl(php_http_params_class_entry, ZEND_STRL("param_sep"), ZEND_STRL(","), ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_stringl(php_http_params_class_entry, ZEND_STRL("arg_sep"), ZEND_STRL(";"), ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_stringl(php_http_params_class_entry, ZEND_STRL("val_sep"), ZEND_STRL("="), ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_long(php_http_params_class_entry, ZEND_STRL("flags"), PHP_HTTP_PARAMS_DEFAULT, ZEND_ACC_PUBLIC TSRMLS_CC);
+
+	return SUCCESS;
 }
 
 /*

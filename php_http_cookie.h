@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -57,11 +57,11 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_cookie_list_t *list, zval *strct TSRMLS_DC);
 PHP_HTTP_API void php_http_cookie_list_to_struct(php_http_cookie_list_t *list, zval *strct);
 
-
-zend_class_entry *php_http_cookie_get_class_entry(void);
+PHP_HTTP_API zend_class_entry *php_http_cookie_class_entry;
 
 typedef struct php_http_cookie_object {
-	zend_object o;
+	zend_object zo;
+	zend_object_value zv;
 	php_http_cookie_list_t *list;
 } php_http_cookie_object_t;
 
@@ -70,34 +70,7 @@ zend_object_value php_http_cookie_object_new_ex(zend_class_entry *ce, php_http_c
 zend_object_value php_http_cookie_object_clone(zval *this_ptr TSRMLS_DC);
 void php_http_cookie_object_free(void *object TSRMLS_DC);
 
-PHP_METHOD(HttpCookie, __construct);
-PHP_METHOD(HttpCookie, getCookies);
-PHP_METHOD(HttpCookie, setCookies);
-PHP_METHOD(HttpCookie, addCookies);
-PHP_METHOD(HttpCookie, getExtras);
-PHP_METHOD(HttpCookie, setExtras);
-PHP_METHOD(HttpCookie, addExtras);
-PHP_METHOD(HttpCookie, getCookie);
-PHP_METHOD(HttpCookie, setCookie);
-PHP_METHOD(HttpCookie, addCookie);
-PHP_METHOD(HttpCookie, getExtra);
-PHP_METHOD(HttpCookie, setExtra);
-PHP_METHOD(HttpCookie, addExtra);
-PHP_METHOD(HttpCookie, getDomain);
-PHP_METHOD(HttpCookie, setDomain);
-PHP_METHOD(HttpCookie, getPath);
-PHP_METHOD(HttpCookie, setPath);
-PHP_METHOD(HttpCookie, getExpires);
-PHP_METHOD(HttpCookie, setExpires);
-PHP_METHOD(HttpCookie, getMaxAge);
-PHP_METHOD(HttpCookie, setMaxAge);
-PHP_METHOD(HttpCookie, getFlags);
-PHP_METHOD(HttpCookie, setFlags);
-PHP_METHOD(HttpCookie, toString);
-PHP_METHOD(HttpCookie, toArray);
-
-extern PHP_MINIT_FUNCTION(http_cookie);
-
+PHP_MINIT_FUNCTION(http_cookie);
 
 #endif
 

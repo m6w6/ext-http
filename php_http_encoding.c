@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -913,38 +913,6 @@ PHP_HTTP_API php_http_encoding_stream_ops_t *php_http_encoding_stream_get_dechun
 	return &php_http_encoding_dechunk_ops;
 }
 
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpEncodingStream, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpEncodingStream, method, 0)
-#define PHP_HTTP_ENCSTREAM_ME(method, visibility)	PHP_ME(HttpEncodingStream, method, PHP_HTTP_ARGS(HttpEncodingStream, method), visibility)
-
-PHP_HTTP_BEGIN_ARGS(__construct, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_BEGIN_ARGS(update, 1)
-	PHP_HTTP_ARG_VAL(data, 0)
-PHP_HTTP_END_ARGS;
-
-PHP_HTTP_EMPTY_ARGS(flush);
-PHP_HTTP_EMPTY_ARGS(done);
-PHP_HTTP_EMPTY_ARGS(finish);
-
-static zend_class_entry *php_http_encoding_stream_class_entry;
-
-zend_class_entry *php_http_encoding_stream_get_class_entry(void)
-{
-	return php_http_encoding_stream_class_entry;
-}
-
-static zend_function_entry php_http_encoding_stream_method_entry[] = {
-	PHP_HTTP_ENCSTREAM_ME(__construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_HTTP_ENCSTREAM_ME(update, ZEND_ACC_PUBLIC)
-	PHP_HTTP_ENCSTREAM_ME(flush, ZEND_ACC_PUBLIC)
-	PHP_HTTP_ENCSTREAM_ME(done, ZEND_ACC_PUBLIC)
-	PHP_HTTP_ENCSTREAM_ME(finish, ZEND_ACC_PUBLIC)
-
-	EMPTY_FUNCTION_ENTRY
-};
 static zend_object_handlers php_http_encoding_stream_object_handlers;
 
 zend_object_value php_http_encoding_stream_object_new(zend_class_entry *ce TSRMLS_DC)
@@ -954,7 +922,6 @@ zend_object_value php_http_encoding_stream_object_new(zend_class_entry *ce TSRML
 
 zend_object_value php_http_encoding_stream_object_new_ex(zend_class_entry *ce, php_http_encoding_stream_t *s, php_http_encoding_stream_object_t **ptr TSRMLS_DC)
 {
-	zend_object_value ov;
 	php_http_encoding_stream_object_t *o;
 
 	o = ecalloc(1, sizeof(*o));
@@ -969,10 +936,10 @@ zend_object_value php_http_encoding_stream_object_new_ex(zend_class_entry *ce, p
 		o->stream = s;
 	}
 
-	ov.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_encoding_stream_object_free, NULL TSRMLS_CC);
-	ov.handlers = &php_http_encoding_stream_object_handlers;
+	o->zv.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_encoding_stream_object_free, NULL TSRMLS_CC);
+	o->zv.handlers = &php_http_encoding_stream_object_handlers;
 
-	return ov;
+	return o->zv;
 }
 
 zend_object_value php_http_encoding_stream_object_clone(zval *this_ptr TSRMLS_DC)
@@ -997,23 +964,26 @@ void php_http_encoding_stream_object_free(void *object TSRMLS_DC)
 	efree(o);
 }
 
-PHP_METHOD(HttpEncodingStream, __construct)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream___construct, 0, 0, 0)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEncodingStream, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		long flags = 0;
 
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &flags)) {
-			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_http_encoding_stream_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 				if (!obj->stream) {
 					php_http_encoding_stream_ops_t *ops = NULL;
 
-					if (instanceof_function(obj->zo.ce, php_http_deflate_stream_get_class_entry() TSRMLS_CC)) {
+					if (instanceof_function(obj->zo.ce, php_http_deflate_stream_class_entry TSRMLS_CC)) {
 						ops = &php_http_encoding_deflate_ops;
-					} else if (instanceof_function(obj->zo.ce, php_http_inflate_stream_get_class_entry() TSRMLS_CC)) {
+					} else if (instanceof_function(obj->zo.ce, php_http_inflate_stream_class_entry TSRMLS_CC)) {
 						ops = &php_http_encoding_inflate_ops;
-					} else if (instanceof_function(obj->zo.ce, php_http_dechunk_stream_get_class_entry() TSRMLS_CC)) {
+					} else if (instanceof_function(obj->zo.ce, php_http_dechunk_stream_class_entry TSRMLS_CC)) {
 						ops = &php_http_encoding_dechunk_ops;
 					}
 
@@ -1031,7 +1001,10 @@ PHP_METHOD(HttpEncodingStream, __construct)
 	} end_error_handling();
 }
 
-PHP_METHOD(HttpEncodingStream, update)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_update, 0, 0, 1)
+	ZEND_ARG_INFO(0, data)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEncodingStream, update)
 {
 	int data_len;
 	char *data_str;
@@ -1051,7 +1024,9 @@ PHP_METHOD(HttpEncodingStream, update)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEncodingStream, flush)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_flush, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEncodingStream, flush)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_encoding_stream_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -1072,7 +1047,9 @@ PHP_METHOD(HttpEncodingStream, flush)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEncodingStream, done)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_done, 0, 0, 1)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEncodingStream, done)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_encoding_stream_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -1084,7 +1061,9 @@ PHP_METHOD(HttpEncodingStream, done)
 	RETURN_FALSE;
 }
 
-PHP_METHOD(HttpEncodingStream, finish)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_finish, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEncodingStream, finish)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_encoding_stream_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -1109,31 +1088,20 @@ PHP_METHOD(HttpEncodingStream, finish)
 	RETURN_FALSE;
 }
 
-#undef PHP_HTTP_BEGIN_ARGS
-#undef PHP_HTTP_EMPTY_ARGS
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpDeflateStream, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpDeflateStream, method, 0)
-#define PHP_HTTP_DEFLATE_ME(method, visibility)	PHP_ME(HttpDeflateStream, method, PHP_HTTP_ARGS(HttpDeflateStream, method), visibility)
-
-PHP_HTTP_BEGIN_ARGS(encode, 1)
-	PHP_HTTP_ARG_VAL(data, 0)
-	PHP_HTTP_ARG_VAL(flags, 0)
-PHP_HTTP_END_ARGS;
-
-static zend_class_entry *php_http_deflate_stream_class_entry;
-
-zend_class_entry *php_http_deflate_stream_get_class_entry(void)
-{
-	return php_http_deflate_stream_class_entry;
-}
-
-static zend_function_entry php_http_deflate_stream_method_entry[] = {
-	PHP_HTTP_DEFLATE_ME(encode, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-
+static zend_function_entry php_http_encoding_stream_methods[] = {
+	PHP_ME(HttpEncodingStream, __construct,  ai_HttpEncodingStream___construct,  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpEncodingStream, update,       ai_HttpEncodingStream_update,       ZEND_ACC_PUBLIC)
+	PHP_ME(HttpEncodingStream, flush,        ai_HttpEncodingStream_flush,        ZEND_ACC_PUBLIC)
+	PHP_ME(HttpEncodingStream, done,         ai_HttpEncodingStream_done,         ZEND_ACC_PUBLIC)
+	PHP_ME(HttpEncodingStream, finish,       ai_HttpEncodingStream_finish,       ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
-PHP_METHOD(HttpDeflateStream, encode)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpDeflateStream_encode, 0, 0, 1)
+	ZEND_ARG_INFO(0, data)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpDeflateStream, encode)
 {
 	char *str;
 	int len;
@@ -1150,30 +1118,15 @@ PHP_METHOD(HttpDeflateStream, encode)
 	RETURN_FALSE;
 }
 
-#undef PHP_HTTP_BEGIN_ARGS
-#undef PHP_HTTP_EMPTY_ARGS
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpInflateStream, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpInflateStream, method, 0)
-#define PHP_HTTP_INFLATE_ME(method, visibility)	PHP_ME(HttpInflateStream, method, PHP_HTTP_ARGS(HttpInflateStream, method), visibility)
-
-PHP_HTTP_BEGIN_ARGS(decode, 1)
-	PHP_HTTP_ARG_VAL(data, 0)
-PHP_HTTP_END_ARGS;
-
-static zend_class_entry *php_http_inflate_stream_class_entry;
-
-zend_class_entry *php_http_inflate_stream_get_class_entry(void)
-{
-	return php_http_inflate_stream_class_entry;
-}
-
-static zend_function_entry php_http_inflate_stream_method_entry[] = {
-	PHP_HTTP_INFLATE_ME(decode, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-
+static zend_function_entry php_http_deflate_stream_methods[] = {
+	PHP_ME(HttpDeflateStream, encode, ai_HttpDeflateStream_encode, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
-PHP_METHOD(HttpInflateStream, decode)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpInflateStream_decode, 0, 0, 1)
+	ZEND_ARG_INFO(0, data)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpInflateStream, decode)
 {
 	char *str;
 	int len;
@@ -1189,31 +1142,16 @@ PHP_METHOD(HttpInflateStream, decode)
 	RETURN_FALSE;
 }
 
-#undef PHP_HTTP_BEGIN_ARGS
-#undef PHP_HTTP_EMPTY_ARGS
-#define PHP_HTTP_BEGIN_ARGS(method, req_args) 	PHP_HTTP_BEGIN_ARGS_EX(HttpDechunkStream, method, 0, req_args)
-#define PHP_HTTP_EMPTY_ARGS(method)				PHP_HTTP_EMPTY_ARGS_EX(HttpDechunkStream, method, 0)
-#define PHP_HTTP_DECHUNK_ME(method, visibility)	PHP_ME(HttpDechunkStream, method, PHP_HTTP_ARGS(HttpDechunkStream, method), visibility)
-
-PHP_HTTP_BEGIN_ARGS(decode, 1)
-	PHP_HTTP_ARG_VAL(data, 0)
-	PHP_HTTP_ARG_VAL(decoded_len, 1)
-PHP_HTTP_END_ARGS;
-
-static zend_class_entry *php_http_dechunk_stream_class_entry;
-
-zend_class_entry *php_http_dechunk_stream_get_class_entry(void)
-{
-	return php_http_dechunk_stream_class_entry;
-}
-
-static zend_function_entry php_http_dechunk_stream_method_entry[] = {
-	PHP_HTTP_DECHUNK_ME(decode, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-
+static zend_function_entry php_http_inflate_stream_methods[] = {
+	PHP_ME(HttpInflateStream, decode, ai_HttpInflateStream_decode, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
-PHP_METHOD(HttpDechunkStream, decode)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpDechunkStream_decode, 0, 0, 1)
+	ZEND_ARG_INFO(0, data)
+	ZEND_ARG_INFO(1, decoded_len)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpDechunkStream, decode)
 {
 	char *str;
 	int len;
@@ -1235,9 +1173,23 @@ PHP_METHOD(HttpDechunkStream, decode)
 	RETURN_FALSE;
 }
 
+static zend_function_entry php_http_dechunk_stream_methods[] = {
+	PHP_ME(HttpDechunkStream, decode, ai_HttpDechunkStream_decode, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	EMPTY_FUNCTION_ENTRY
+};
+
+zend_class_entry *php_http_encoding_stream_class_entry;
+zend_class_entry *php_http_deflate_stream_class_entry;
+zend_class_entry *php_http_inflate_stream_class_entry;
+zend_class_entry *php_http_dechunk_stream_class_entry;
+
 PHP_MINIT_FUNCTION(http_encoding)
 {
-	PHP_HTTP_REGISTER_CLASS(http\\Encoding, Stream, http_encoding_stream, php_http_object_get_class_entry(), ZEND_ACC_EXPLICIT_ABSTRACT_CLASS);
+	zend_class_entry ce = {0};
+
+	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding", "Stream", php_http_encoding_stream_methods);
+	php_http_encoding_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
+	php_http_encoding_stream_class_entry->ce_flags |= ZEND_ACC_EXPLICIT_ABSTRACT_CLASS;
 	php_http_encoding_stream_class_entry->create_object = php_http_encoding_stream_object_new;
 	memcpy(&php_http_encoding_stream_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_encoding_stream_object_handlers.clone_obj = php_http_encoding_stream_object_clone;
@@ -1246,7 +1198,9 @@ PHP_MINIT_FUNCTION(http_encoding)
 	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_SYNC"), PHP_HTTP_ENCODING_STREAM_FLUSH_SYNC TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_FULL"), PHP_HTTP_ENCODING_STREAM_FLUSH_FULL TSRMLS_CC);
 
-	PHP_HTTP_REGISTER_CLASS(http\\Encoding\\Stream, Deflate, http_deflate_stream, php_http_encoding_stream_class_entry, 0);
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Deflate", php_http_deflate_stream_methods);
+	php_http_deflate_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry, NULL TSRMLS_CC);
 
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_GZIP"), PHP_HTTP_DEFLATE_TYPE_GZIP TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_ZLIB"), PHP_HTTP_DEFLATE_TYPE_ZLIB TSRMLS_CC);
@@ -1260,8 +1214,13 @@ PHP_MINIT_FUNCTION(http_encoding)
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_RLE"), PHP_HTTP_DEFLATE_STRATEGY_RLE TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_FIXED"), PHP_HTTP_DEFLATE_STRATEGY_FIXED TSRMLS_CC);
 
-	PHP_HTTP_REGISTER_CLASS(http\\Encoding\\Stream, Inflate, http_inflate_stream, php_http_encoding_stream_class_entry, 0);
-	PHP_HTTP_REGISTER_CLASS(http\\Encoding\\Stream, Dechunk, http_dechunk_stream, php_http_encoding_stream_class_entry, 0);
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Inflate", php_http_inflate_stream_methods);
+	php_http_inflate_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry, NULL TSRMLS_CC);
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Dechunk", php_http_dechunk_stream_methods);
+	php_http_dechunk_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry, NULL TSRMLS_CC);
 
 	return SUCCESS;
 }

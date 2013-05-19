@@ -1,3 +1,15 @@
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
+*/
+
 #include "php_http_api.h"
 #include "php_http_client.h"
 
@@ -351,7 +363,7 @@ static void handle_history(zval *zclient, php_http_message_t *request, php_http_
 {
 	zval *new_hist, *old_hist = zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("history"), 0 TSRMLS_CC);
 	php_http_message_t *zipped = php_http_message_zip(response, request);
-	zend_object_value ov = php_http_message_object_new_ex(php_http_message_get_class_entry(), zipped, NULL TSRMLS_CC);
+	zend_object_value ov = php_http_message_object_new_ex(php_http_message_class_entry, zipped, NULL TSRMLS_CC);
 
 	MAKE_STD_ZVAL(new_hist);
 	ZVAL_OBJVAL(new_hist, ov, 0);
@@ -387,7 +399,7 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 		*response = NULL;
 
 		MAKE_STD_ZVAL(zresponse);
-		ZVAL_OBJVAL(zresponse, php_http_message_object_new_ex(php_http_client_response_get_class_entry(), msg, &msg_obj TSRMLS_CC), 0);
+		ZVAL_OBJVAL(zresponse, php_http_message_object_new_ex(php_http_client_response_class_entry, msg, &msg_obj TSRMLS_CC), 0);
 
 		MAKE_STD_ZVAL(zrequest);
 		ZVAL_OBJVAL(zrequest, ((php_http_message_object_t *) e->opaque)->zv, 1);
@@ -397,7 +409,7 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 		MAKE_STD_ZVAL(info);
 		array_init(info);
 		php_http_client_getopt(client, PHP_HTTP_CLIENT_OPT_TRANSFER_INFO, e->request, &Z_ARRVAL_P(info));
-		zend_update_property(php_http_client_response_get_class_entry(), zresponse, ZEND_STRL("transferInfo"), info TSRMLS_CC);
+		zend_update_property(php_http_client_response_class_entry, zresponse, ZEND_STRL("transferInfo"), info TSRMLS_CC);
 		zval_ptr_dtor(&info);
 
 		zend_objects_store_add_ref_by_handle(msg_obj->zv.handle TSRMLS_CC);
@@ -476,7 +488,7 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_construct, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		char *driver_str = NULL, *persistent_handle_str = NULL;
 		int driver_len = 0, persistent_handle_len = 0;
 
@@ -589,12 +601,12 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_enqueue, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, enqueue)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *request;
 		zend_fcall_info fci = empty_fcall_info;
 		zend_fcall_info_cache fcc = empty_fcall_info_cache;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|f", &request, php_http_client_request_get_class_entry(), &fci, &fcc)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|f", &request, php_http_client_request_class_entry, &fci, &fcc)) {
 			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			php_http_message_object_t *msg_obj = zend_object_store_get_object(request TSRMLS_CC);
 
@@ -630,10 +642,10 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_dequeue, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, dequeue)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *request;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_get_class_entry())) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_class_entry)) {
 			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			php_http_message_object_t *msg_obj = zend_object_store_get_object(request TSRMLS_CC);
 
@@ -650,12 +662,12 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_requeue, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, requeue)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		zval *request;
 		zend_fcall_info fci = empty_fcall_info;
 		zend_fcall_info_cache fcc = empty_fcall_info_cache;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|f", &request, php_http_client_request_get_class_entry(), &fci, &fcc)) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|f", &request, php_http_client_request_class_entry, &fci, &fcc)) {
 			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			php_http_message_object_t *msg_obj = zend_object_store_get_object(request TSRMLS_CC);
 			php_http_client_enqueue_t q = {
@@ -691,7 +703,7 @@ static PHP_METHOD(HttpClient, getResponse)
 {
 	zval *zrequest = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O", &zrequest, php_http_client_request_get_class_entry())) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O", &zrequest, php_http_client_request_class_entry)) {
 		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 		if (!zrequest) {
@@ -738,9 +750,9 @@ static PHP_METHOD(HttpClient, send)
 {
 	RETVAL_FALSE;
 
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters_none()) {
-			with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+			with_error_handling(EH_THROW, php_http_exception_class_entry) {
 				php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 				php_http_client_exec(obj->client);
@@ -779,7 +791,7 @@ static PHP_METHOD(HttpClient, wait)
 		timeout_val.tv_sec = (time_t) timeout;
 		timeout_val.tv_usec = PHP_HTTP_USEC(timeout) % PHP_HTTP_MCROSEC;
 
-		RETURN_SUCCESS(php_http_client_wait(obj->client, timeout > 0 ? &timeout_val : NULL));
+		RETURN_BOOL(SUCCESS == php_http_client_wait(obj->client, timeout > 0 ? &timeout_val : NULL));
 	}
 	RETURN_FALSE;
 }
@@ -832,7 +844,7 @@ static PHP_METHOD(HttpClient, notify)
 {
 	zval *request = NULL, *zprogress = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O!o!", &request, php_http_client_request_get_class_entry(), &zprogress)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O!o!", &request, php_http_client_request_class_entry, &zprogress)) {
 		zval **args[3], *observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
 
 		if (Z_TYPE_P(observers) == IS_OBJECT) {
@@ -898,7 +910,7 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getObservers, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getObservers)
 {
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters_none()) {
 			zval *observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
 			RETVAL_ZVAL(observers, 1, 0);
@@ -913,8 +925,8 @@ static PHP_METHOD(HttpClient, getProgressInfo)
 {
 	zval *request;
 
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_get_class_entry())) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_class_entry)) {
 			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			php_http_message_object_t *req_obj = zend_object_store_get_object(request TSRMLS_CC);
 			php_http_client_progress_state_t *progress;
@@ -940,8 +952,8 @@ static PHP_METHOD(HttpClient, getTransferInfo)
 {
 	zval *request;
 
-	with_error_handling(EH_THROW, php_http_exception_get_class_entry()) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_get_class_entry())) {
+	with_error_handling(EH_THROW, php_http_exception_class_entry) {
+		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_class_entry)) {
 			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			php_http_message_object_t *req_obj = zend_object_store_get_object(request TSRMLS_CC);
 
@@ -1059,33 +1071,33 @@ static PHP_METHOD(HttpClient, getAvailableDrivers) {
 }
 
 static zend_function_entry php_http_client_methods[] = {
-	PHP_ME(HttpClient, __construct, ai_HttpClient_construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(HttpClient, reset, ai_HttpClient_reset, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, enqueue, ai_HttpClient_enqueue, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, dequeue, ai_HttpClient_dequeue, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, requeue, ai_HttpClient_requeue, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, send, ai_HttpClient_send, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, once, ai_HttpClient_once, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, wait, ai_HttpClient_wait, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, getResponse, ai_HttpClient_getResponse, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, getHistory, ai_HttpClient_getHistory, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, enablePipelining, ai_HttpClient_enablePipelining, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, enableEvents, ai_HttpClient_enableEvents, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, notify, ai_HttpClient_notify, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, attach, ai_HttpClient_attach, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, detach, ai_HttpClient_detach, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, getObservers, ai_HttpClient_getObservers, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, getProgressInfo, ai_HttpClient_getProgressInfo, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, getTransferInfo, ai_HttpClient_getTransferInfo, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, setOptions, ai_HttpClient_setOptions, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, getOptions, ai_HttpClient_getOptions, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, setSslOptions, ai_HttpClient_setSslOptions, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, addSslOptions, ai_HttpClient_addSslOptions, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, getSslOptions, ai_HttpClient_getSslOptions, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, setCookies, ai_HttpClient_setCookies, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, addCookies, ai_HttpClient_addCookies, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, getCookies, ai_HttpClient_getCookies, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpClient, getAvailableDrivers, ai_HttpClient_getAvailableDrivers, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpClient, __construct,          ai_HttpClient_construct,            ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpClient, reset,                ai_HttpClient_reset,                ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, enqueue,              ai_HttpClient_enqueue,              ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, dequeue,              ai_HttpClient_dequeue,              ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, requeue,              ai_HttpClient_requeue,              ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, send,                 ai_HttpClient_send,                 ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, once,                 ai_HttpClient_once,                 ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, wait,                 ai_HttpClient_wait,                 ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getResponse,          ai_HttpClient_getResponse,          ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getHistory,           ai_HttpClient_getHistory,           ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, enablePipelining,     ai_HttpClient_enablePipelining,     ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, enableEvents,         ai_HttpClient_enableEvents,         ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, notify,               ai_HttpClient_notify,               ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, attach,               ai_HttpClient_attach,               ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, detach,               ai_HttpClient_detach,               ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getObservers,         ai_HttpClient_getObservers,         ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getProgressInfo,      ai_HttpClient_getProgressInfo,      ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getTransferInfo,      ai_HttpClient_getTransferInfo,      ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, setOptions,           ai_HttpClient_setOptions,           ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getOptions,           ai_HttpClient_getOptions,           ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, setSslOptions,        ai_HttpClient_setSslOptions,        ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, addSslOptions,        ai_HttpClient_addSslOptions,        ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getSslOptions,        ai_HttpClient_getSslOptions,        ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, setCookies,           ai_HttpClient_setCookies,           ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, addCookies,           ai_HttpClient_addCookies,           ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getCookies,           ai_HttpClient_getCookies,           ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getAvailableDrivers,  ai_HttpClient_getAvailableDrivers,  ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
@@ -1114,3 +1126,12 @@ PHP_MSHUTDOWN_FUNCTION(http_client)
 	zend_hash_destroy(&php_http_client_drivers);
 	return SUCCESS;
 }
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */

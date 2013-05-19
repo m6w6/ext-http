@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -20,9 +20,6 @@
 
 /* CR LF */
 #define PHP_HTTP_CRLF "\r\n"
-
-/* max URL length */
-#define PHP_HTTP_URL_MAXLEN 4096
 
 /* def URL arg separator */
 #define PHP_HTTP_URL_ARGSEP "&"
@@ -202,9 +199,6 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 
 STATUS php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval **argv[], zval **retval_ptr TSRMLS_DC);
 
-/* return bool (v == SUCCESS) */
-#define RETVAL_SUCCESS(v) RETVAL_BOOL(SUCCESS == (v))
-#define RETURN_SUCCESS(v) RETURN_BOOL(SUCCESS == (v))
 /* return object(values) */
 #define RETVAL_OBJECT(o, addref) \
 	RETVAL_OBJVAL((o)->value.obj, addref)
@@ -221,29 +215,6 @@ STATUS php_http_method_call(zval *object, const char *method_str, size_t method_
 	(zv)->value.obj = (ov);\
 	if (addref && Z_OBJ_HT_P(zv)->add_ref) { \
 		Z_OBJ_HT_P(zv)->add_ref((zv) TSRMLS_CC); \
-	}
-/* return property */
-#define RETVAL_PROP(CE, n) RETVAL_PROP_EX(CE, getThis(), n)
-#define RETURN_PROP(CE, n) RETURN_PROP_EX(CE, getThis(), n)
-#define RETVAL_PROP_EX(CE, this, n) \
-	{ \
-		zval *__prop = zend_read_property(CE, this, ZEND_STRL(n), 0 TSRMLS_CC); \
-		RETVAL_ZVAL(__prop, 1, 0); \
-	}
-#define RETURN_PROP_EX(CE, this, n) \
-	{ \
-		zval *__prop = zend_read_property(CE, this, ZEND_STRL(n), 0 TSRMLS_CC); \
-		RETURN_ZVAL(__prop, 1, 0); \
-	}
-#define RETVAL_SPROP(CE, n) \
-	{ \
-		zval *__prop = zend_read_static_property(CE, ZEND_STRL(n), 0 TSRMLS_CC); \
-		RETVAL_ZVAL(__prop, 1, 0); \
-	}
-#define RETURN_SPROP(CE, n) \
-	{ \
-		zval *__prop = zend_read_static_property(CE, ZEND_STRL(n), 0 TSRMLS_CC); \
-		RETURN_ZVAL(__prop, 1, 0); \
 	}
 
 #define Z_OBJ_DELREF(z) \
@@ -271,56 +242,12 @@ STATUS php_http_method_call(zval *object, const char *method_str, size_t method_
 		Z_OBJ_HT_PP(z)->add_ref(*(z) TSRMLS_CC); \
 	}
 
-#define PHP_HTTP_BEGIN_ARGS_EX(class, method, ret_ref, req_args)	ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 0, ret_ref, req_args)
-#define PHP_HTTP_BEGIN_ARGS_AR(class, method, ret_ref, req_args)	ZEND_BEGIN_ARG_INFO_EX(args_for_ ##class## _ ##method , 1, ret_ref, req_args)
-#define PHP_HTTP_END_ARGS											}
-#define PHP_HTTP_EMPTY_ARGS_EX(class, method, ret_ref)				PHP_HTTP_BEGIN_ARGS_EX(class, method, ret_ref, 0) PHP_HTTP_END_ARGS
-#define PHP_HTTP_ARGS(class, method)								args_for_ ##class## _ ##method
-#define PHP_HTTP_ARG_VAL(name, pass_ref)							ZEND_ARG_INFO(pass_ref, name)
-#define PHP_HTTP_ARG_OBJ(class, name, allow_null)					ZEND_ARG_OBJ_INFO(0, name, class, allow_null)
-#define PHP_HTTP_ARG_ARR(name, allow_null, pass_ref)				ZEND_ARG_ARRAY_INFO(pass_ref, name, allow_null)
-
 #define EMPTY_FUNCTION_ENTRY {NULL, NULL, NULL, 0, 0}
 
 #define PHP_MINIT_CALL(func) PHP_MINIT(func)(INIT_FUNC_ARGS_PASSTHRU)
 #define PHP_RINIT_CALL(func) PHP_RINIT(func)(INIT_FUNC_ARGS_PASSTHRU)
 #define PHP_MSHUTDOWN_CALL(func) PHP_MSHUTDOWN(func)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
 #define PHP_RSHUTDOWN_CALL(func) PHP_RSHUTDOWN(func)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
-
-
-#define PHP_HTTP_INI_ENTRY(entry, default, scope, updater, global) \
-	STD_PHP_INI_ENTRY(entry, default, scope, updater, global, zend_php_http_globals, php_http_globals)
-#define PHP_HTTP_INI_ENTRY_EX(entry, default, scope, updater, displayer, global) \
-	STD_PHP_INI_ENTRY_EX(entry, default, scope, updater, global, zend_php_http_globals, php_http_globals, displayer)
-
-#define PHP_HTTP_REGISTER_CLASS(ns, classname, name, parent, flags) \
-	{ \
-		zend_class_entry ce; \
-		memset(&ce, 0, sizeof(zend_class_entry)); \
-		INIT_NS_CLASS_ENTRY(ce, #ns, #classname, php_ ##name## _method_entry); \
-		php_ ##name## _class_entry = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
-		php_ ##name## _class_entry->ce_flags |= flags;  \
-		php_http_register_class(php_ ##name## _get_class_entry); \
-	}
-
-#define PHP_HTTP_REGISTER_INTERFACE(ns, ifacename, name, flags) \
-	{ \
-		zend_class_entry ce; \
-		memset(&ce, 0, sizeof(zend_class_entry)); \
-		INIT_NS_CLASS_ENTRY(ce, #ns, #ifacename, php_ ##name## _method_entry); \
-		php_ ##name## _class_entry = zend_register_internal_interface(&ce TSRMLS_CC); \
-		php_ ##name## _class_entry->ce_flags |= flags; \
-		php_http_register_class(php_ ##name## _get_class_entry); \
-	}
-
-#define PHP_HTTP_REGISTER_EXCEPTION(classname, cename, parent) \
-	{ \
-		zend_class_entry ce; \
-		memset(&ce, 0, sizeof(zend_class_entry)); \
-		INIT_NS_CLASS_ENTRY(ce, "http", #classname, NULL); \
-		ce.create_object = NULL; \
-		cename = zend_register_internal_class_ex(&ce, parent, NULL TSRMLS_CC); \
-	}
 
 /* ARRAYS */
 PHP_HTTP_API unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...);
@@ -436,6 +363,7 @@ typedef enum php_http_error {
 } php_http_error_t;
 
 #endif
+
 /*
  * Local variables:
  * tab-width: 4

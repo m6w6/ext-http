@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -19,7 +19,6 @@ zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
 
 int http_module_number;
-void php_http_register_class(zend_class_entry *(*get_ce)(void));
 
 #endif	/* PHP_EXT_HTTP_H */
 

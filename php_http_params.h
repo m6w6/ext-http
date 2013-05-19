@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -22,7 +22,7 @@ typedef struct php_http_params_token {
 #define PHP_HTTP_PARAMS_DEFAULT		0x01
 #define PHP_HTTP_PARAMS_URLENCODED	0x04
 #define PHP_HTTP_PARAMS_DIMENSION	0x08
-#define PHP_HTTP_PARAMS_QUERY	(PHP_HTTP_PARAMS_URLENCODED|PHP_HTTP_PARAMS_DIMENSION)
+#define PHP_HTTP_PARAMS_QUERY		(PHP_HTTP_PARAMS_URLENCODED|PHP_HTTP_PARAMS_DIMENSION)
 
 typedef struct php_http_params_opts {
 	php_http_params_token_t input;
@@ -42,20 +42,12 @@ PHP_HTTP_API void php_http_params_separator_free(php_http_params_token_t **separ
 
 typedef php_http_object_t php_http_params_object_t;
 
-zend_class_entry *php_http_params_get_class_entry(void);
+PHP_HTTP_API zend_class_entry *php_http_params_class_entry;
 
 PHP_MINIT_FUNCTION(http_params);
 
 #define php_http_params_object_new php_http_object_new
 #define php_http_params_object_new_ex php_http_object_new_ex
-
-PHP_METHOD(HttpParams, __construct);
-PHP_METHOD(HttpParams, toString);
-PHP_METHOD(HttpParams, toArray);
-PHP_METHOD(HttpParams, offsetExists);
-PHP_METHOD(HttpParams, offsetUnset);
-PHP_METHOD(HttpParams, offsetSet);
-PHP_METHOD(HttpParams, offsetGet);
 
 #endif
 

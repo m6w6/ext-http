@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -51,33 +51,19 @@ static inline php_stream *php_http_message_body_stream(php_http_message_body_t *
 	return zend_fetch_resource(NULL TSRMLS_CC, body->stream_id, "stream", NULL, 2, php_file_le_stream(), php_file_le_pstream());
 }
 
-
 typedef struct php_http_message_body_object {
 	zend_object zo;
+	zend_object_value zv;
 	php_http_message_body_t *body;
-	unsigned shared:1;
 } php_http_message_body_object_t;
 
-zend_class_entry *php_http_message_body_get_class_entry(void);
-
+PHP_HTTP_API zend_class_entry *php_http_message_body_class_entry;
 PHP_MINIT_FUNCTION(http_message_body);
 
 zend_object_value php_http_message_body_object_new(zend_class_entry *ce TSRMLS_DC);
 zend_object_value php_http_message_body_object_new_ex(zend_class_entry *ce, php_http_message_body_t *body, php_http_message_body_object_t **ptr TSRMLS_DC);
 zend_object_value php_http_message_body_object_clone(zval *object TSRMLS_DC);
 void php_http_message_body_object_free(void *object TSRMLS_DC);
-
-PHP_METHOD(HttpMessageBody, __construct);
-PHP_METHOD(HttpMessageBody, __toString);
-PHP_METHOD(HttpMessageBody, unserialize);
-PHP_METHOD(HttpMessageBody, getResource);
-PHP_METHOD(HttpMessageBody, toStream);
-PHP_METHOD(HttpMessageBody, toCallback);
-PHP_METHOD(HttpMessageBody, append);
-PHP_METHOD(HttpMessageBody, addForm);
-PHP_METHOD(HttpMessageBody, addPart);
-PHP_METHOD(HttpMessageBody, etag);
-PHP_METHOD(HttpMessageBody, stat);
 
 #endif
 

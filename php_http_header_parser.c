@@ -6,7 +6,7 @@
     | modification, are permitted provided that the conditions mentioned |
     | in the accompanying LICENSE file are met.                          |
     +--------------------------------------------------------------------+
-    | Copyright (c) 2004-2011, Michael Wallner <mike@php.net>            |
+    | Copyright (c) 2004-2013, Michael Wallner <mike@php.net>            |
     +--------------------------------------------------------------------+
 */
 
@@ -26,7 +26,6 @@ static const php_http_header_parser_state_spec_t php_http_header_parser_states[]
 		{PHP_HTTP_HEADER_PARSER_STATE_DONE,			0}
 };
 
-
 PHP_HTTP_API php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser TSRMLS_DC)
 {
 	if (!parser) {
@@ -38,7 +37,6 @@ PHP_HTTP_API php_http_header_parser_t *php_http_header_parser_init(php_http_head
 
 	return parser;
 }
-
 
 PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_push(php_http_header_parser_t *parser, unsigned argc, ...)
 {
