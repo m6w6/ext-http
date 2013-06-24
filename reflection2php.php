@@ -35,7 +35,7 @@ printf("<?php\n\n");
 
 $ext = new ReflectionExtension($ext);
 foreach ($ext->getConstants() as $constant => $value) {
-    printf("const %s = %s;\n", $constant, $value);
+    printf("define('%s', '%s');\n", $constant, $value);
 }
 printf("\n");
 
