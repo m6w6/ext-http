@@ -1,5 +1,7 @@
 <?php
 
+ini_set("date.timezone", "Europe/Vienna");
+
 class CookieTest extends PHPUnit_Framework_TestCase {
     function testEmpty() {
         $c = new http\Cookie;

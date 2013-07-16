@@ -34,10 +34,7 @@ static PHP_METHOD(HttpClientRequest, __construct)
 			php_http_message_body_object_t *body_obj = NULL;
 
 			if (zbody) {
-				body_obj = zend_object_store_get_object(zbody TSRMLS_CC);
-				Z_OBJ_ADDREF_P(zbody);
-				obj->body->zv = Z_OBJVAL_P(zbody);
-				php_http_message_body_addref(body_obj->body);
+				php_http_message_object_set_body(obj, zbody TSRMLS_CC);
 			}
 
 			if (obj->message) {

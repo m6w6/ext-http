@@ -774,9 +774,12 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 	if (msg_obj->body) {
 		zend_objects_store_del_ref_by_handle(msg_obj->body->zv.handle TSRMLS_CC);
 	}
-	php_http_message_body_free(&msg_obj->message->body);
-
-	msg_obj->message->body = php_http_message_body_init(&body_obj->body, NULL TSRMLS_CC);
+	if (msg_obj->message) {
+		php_http_message_body_free(&msg_obj->message->body);
+		msg_obj->message->body = php_http_message_body_init(&body_obj->body, NULL TSRMLS_CC);
+	} else {
+		msg_obj->message = php_http_message_init(NULL, 0, php_http_message_body_init(&body_obj->body, NULL TSRMLS_CC) TSRMLS_CC);
+	}
 	msg_obj->body = body_obj;
 
 	if (tmp) {
