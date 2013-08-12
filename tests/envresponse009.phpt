@@ -1,5 +1,5 @@
 --TEST--
-http response stream cache negative
+env response stream cache negative
 --SKIPIF--
 <?php include "skipif.inc"; ?>
 --GET--

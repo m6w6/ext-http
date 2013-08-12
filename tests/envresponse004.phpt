@@ -1,5 +1,5 @@
 --TEST--
-reponse callback
+env reponse callback
 --SKIPIF--
 <?php
 include "skipif.inc";

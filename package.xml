@@ -28,9 +28,9 @@ support. Parallel requests are available for PHP 5 and greater.
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2012-12-31</date>
+ <date>2013-08-12</date>
  <version>
-  <release>2.0.0dev</release>
+  <release>2.0.0beta5</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -140,6 +140,9 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
      <file role="test" name="client008.phpt"/>
      <file role="test" name="client009.phpt"/>
      <file role="test" name="client010.phpt"/>
+     <file role="test" name="client011.phpt"/>
+     <file role="test" name="client012.phpt"/>
+     <file role="test" name="client013.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
@@ -157,6 +160,20 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
      <file role="test" name="envrequestjson001.phpt"/>
      <file role="test" name="envrequestjson002.phpt"/>
      <file role="test" name="envrequestquery.phpt"/>
+     <file role="test" name="envresponse001.phpt"/>
+     <file role="test" name="envresponse002.phpt"/>
+     <file role="test" name="envresponse003.phpt"/>
+     <file role="test" name="envresponse004.phpt"/>
+     <file role="test" name="envresponse005.phpt"/>
+     <file role="test" name="envresponse006.phpt"/>
+     <file role="test" name="envresponse007.phpt"/>
+     <file role="test" name="envresponse008.phpt"/>
+     <file role="test" name="envresponse009.phpt"/>
+     <file role="test" name="envresponse010.phpt"/>
+     <file role="test" name="envresponse011.phpt"/>
+     <file role="test" name="envresponse012.phpt"/>
+     <file role="test" name="envresponse013.phpt"/>
+     <file role="test" name="envresponse014.phpt"/>
      <file role="test" name="envresponsebody001.phpt"/>
      <file role="test" name="envresponsebody002.phpt"/>
      <file role="test" name="envresponsecodes.phpt"/>
@@ -165,6 +182,15 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
      <file role="test" name="etag001.phpt"/>
      <file role="test" name="filterchunked.phpt"/>
      <file role="test" name="filterzlib.phpt"/>
+     <file role="test" name="header001.phpt"/>
+     <file role="test" name="header002.phpt"/>
+     <file role="test" name="header003.phpt"/>
+     <file role="test" name="header004.phpt"/>
+     <file role="test" name="header005.phpt"/>
+     <file role="test" name="header006.phpt"/>
+     <file role="test" name="header007.phpt"/>
+     <file role="test" name="header008.phpt"/>
+     <file role="test" name="header009.phpt"/>
      <file role="test" name="info_001.phpt"/>
      <file role="test" name="info.phpt"/>
      <file role="test" name="message001.phpt"/>
@@ -173,38 +199,38 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
      <file role="test" name="message004.phpt"/>
      <file role="test" name="message005.phpt"/>
      <file role="test" name="message006.phpt"/>
+     <file role="test" name="message007.phpt"/>
+     <file role="test" name="message008.phpt"/>
+     <file role="test" name="message009.phpt"/>
+     <file role="test" name="message010.phpt"/>
+     <file role="test" name="message011.phpt"/>
+     <file role="test" name="message012.phpt"/>
+     <file role="test" name="message013.phpt"/>
+     <file role="test" name="message014.phpt"/>
+     <file role="test" name="message015.phpt"/>
      <file role="test" name="negotiate001.phpt"/>
+     <file role="test" name="object001.phpt"/>
+     <file role="test" name="object002.phpt"/>
+     <file role="test" name="object003.phpt"/>
+     <file role="test" name="object004.phpt"/>
+     <file role="test" name="object005.phpt"/>
+     <file role="test" name="object006.phpt"/>
+     <file role="test" name="object007.phpt"/>
+     <file role="test" name="object008.phpt"/>
+     <file role="test" name="object009.phpt"/>
      <file role="test" name="params001.phpt"/>
      <file role="test" name="params002.phpt"/>
      <file role="test" name="phpunit.phpt"/>
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="querystring_001.phpt"/>
-     <file role="test" name="response001.phpt"/>
-     <file role="test" name="response002.phpt"/>
-     <file role="test" name="response003.phpt"/>
-     <file role="test" name="response004.phpt"/>
-     <file role="test" name="response005.phpt"/>
-     <file role="test" name="response006.phpt"/>
-     <file role="test" name="response007.phpt"/>
-     <file role="test" name="response008.phpt"/>
-     <file role="test" name="response009.phpt"/>
-     <file role="test" name="response010.phpt"/>
-     <file role="test" name="response011.phpt"/>
-     <file role="test" name="response012.phpt"/>
-     <file role="test" name="response013.phpt"/>
-     <file role="test" name="response014.phpt"/>
      <file role="test" name="serialize001.phpt"/>
      <file role="test" name="url001.phpt"/>
      <file role="test" name="version001.phpt"/>
    </dir>
    <dir name="phpunit">
-    <file role="test" name="ClientTest.php"/>
     <file role="test" name="CookieTest.php"/>
     <file role="test" name="EncodingTest.php"/>
-    <file role="test" name="HeaderTest.php"/>
-    <file role="test" name="MessageTest.php"/>
     <file role="test" name="MessageBodyTest.php"/>
-    <file role="test" name="ObjectTest.php"/>
     <file role="test" name="ParamsTest.php"/>
     <file role="test" name="QueryStringTest.php"/>
     <file role="test" name="UrlTest.php"/>

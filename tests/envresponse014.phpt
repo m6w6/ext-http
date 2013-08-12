@@ -1,5 +1,5 @@
 --TEST--
-response invalid ranges
+env response invalid ranges
 --SKIPIF--
 <?php
 include "skipif.inc";

@@ -1,5 +1,5 @@
 --TEST--
-env response Message
+env response message
 --SKIPIF--
 <?php include "skipif.inc"; ?>
 --POST--

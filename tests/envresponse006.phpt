@@ -1,5 +1,5 @@
 --TEST--
-http response stream
+env response stream
 --SKIPIF--
 <?php
 include "skipif.inc";

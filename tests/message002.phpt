@@ -1,5 +1,5 @@
 --TEST--
-env request Message
+env request message
 --SKIPIF--
 <?php include "skipif.inc"; ?>
 --POST_RAW--

@@ -1,5 +1,5 @@
 --TEST--
-http response cache positive with env message
+env response cache positive with env message
 --SKIPIF--
 <?php include "skipif.inc"; ?>
 --GET--

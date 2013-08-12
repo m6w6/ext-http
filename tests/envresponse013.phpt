@@ -1,5 +1,5 @@
 --TEST--
-response deflate
+env response deflate
 --SKIPIF--
 <?php
 include "skipif.inc";

@@ -1,5 +1,5 @@
 --TEST--
-request header
+env request header
 --SKIPIF--
 <? include "skipif.inc";
 --POST--

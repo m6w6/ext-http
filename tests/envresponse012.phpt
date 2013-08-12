@@ -1,5 +1,5 @@
 --TEST--
-response content disposition
+env response content disposition
 --SKIPIF--
 <?php
 include "skipif.inc";
@@ -16,7 +16,7 @@ $r->send();
 
 ?>
 --EXPECTHEADERS--
-Content-Disposition: attachment;filename=response012.php
+Content-Disposition: attachment;filename=envresponse012.php
 --EXPECT--
 <?php
 
