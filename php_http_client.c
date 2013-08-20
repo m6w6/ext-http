@@ -199,12 +199,11 @@ PHP_HTTP_API php_http_client_t *php_http_client_copy(php_http_client_t *from, ph
 
 PHP_HTTP_API void php_http_client_dtor(php_http_client_t *h)
 {
+	php_http_client_reset(h);
+
 	if (h->ops->dtor) {
 		h->ops->dtor(h);
 	}
-
-	zend_llist_clean(&h->requests);
-	zend_llist_clean(&h->responses);
 
 	php_resource_factory_free(&h->rf);
 }
