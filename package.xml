@@ -56,6 +56,7 @@ Extended HTTP support. Again. Keep in mind that it's got the major version 2, be
    <file role="doc" name="ThanksTo.txt"/>
    <file role="src" name="config.m4"/>
    <file role="src" name="config9.m4"/>
+   <file role="src" name="config.w32"/>
    
    <file role="src" name="php_http_api.h"/>
    <file role="src" name="php_http_buffer.c"/>
