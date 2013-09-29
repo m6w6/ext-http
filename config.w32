@@ -118,6 +118,16 @@ if (PHP_HTTP != "no") {
 		AC_DEFINE("PHP_HAVE_CURL_FORMGET", 1, "");
 		AC_DEFINE("PHP_HAVE_CURL_MULTI_SETOPT", 1, "");
 		AC_DEFINE("PHP_HAVE_CURL_MULTI_TIMEOUT", 1, "");
+
+		if (CHECK_HEADER_ADD_INCLUDE("event2/event.h", "CFLAGS_HTTP") &&
+			CHECK_LIB("libevent.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("libevent_core.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("libevent_extras.lib", "http", PHP_HTTP)) {
+
+			AC_DEFINE("PHP_HTTP_HAVE_EVENT", 1);
+			AC_DEFINE("PHP_HTTP_HAVE_EVENT2", 1);
+			AC_DEFINE("PHP_HTTP_EVENT_VERSION", "2.0.21 or greater");
+		}
 	} else {
 		WARNING("curl convenience functions not enabled; libraries and headers not found");
 	}
