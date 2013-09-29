@@ -612,13 +612,13 @@ static PHP_METHOD(HttpClient, enqueue)
 			if (php_http_client_enqueued(obj->client, msg_obj->message, NULL)) {
 				php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Failed to enqueue request; request already in queue");
 			} else {
-				php_http_client_enqueue_t q = {
-					msg_obj->message,
-					combined_options(getThis(), request TSRMLS_CC),
-					msg_queue_dtor,
-					msg_obj,
-					{fci, fcc}
-				};
+				php_http_client_enqueue_t q;
+				q.request = msg_obj->message;
+				q.options = combined_options(getThis(), request TSRMLS_CC);
+				q.dtor = msg_queue_dtor;
+				q.opaque = msg_obj;
+				q.closure.fci = fci;
+				q.closure.fcc = fcc;
 
 				if (fci.size) {
 					Z_ADDREF_P(fci.function_name);
@@ -669,13 +669,13 @@ static PHP_METHOD(HttpClient, requeue)
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|f", &request, php_http_client_request_class_entry, &fci, &fcc)) {
 			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 			php_http_message_object_t *msg_obj = zend_object_store_get_object(request TSRMLS_CC);
-			php_http_client_enqueue_t q = {
-				msg_obj->message,
-				combined_options(getThis(), request TSRMLS_CC),
-				msg_queue_dtor,
-				msg_obj,
-				{fci, fcc}
-			};
+			php_http_client_enqueue_t q;
+			q.request = msg_obj->message;
+			q.options = combined_options(getThis(), request TSRMLS_CC);
+			q.dtor = msg_queue_dtor;
+			q.opaque = msg_obj;
+			q.closure.fci = fci;
+			q.closure.fcc = fcc;
 
 			if (fci.size) {
 				Z_ADDREF_P(fci.function_name);
