@@ -229,36 +229,37 @@ PHP_HTTP_API zval *php_http_env_get_server_var(const char *key, size_t key_len, 
 PHP_HTTP_API php_http_message_body_t *php_http_env_get_request_body(TSRMLS_D)
 {
 	if (!PHP_HTTP_G->env.request.body) {
-		php_stream *s = NULL;
+		php_stream *s = php_stream_temp_new();
+#if PHP_VERSION_ID >= 50600
+		php_stream *input = php_stream_open_wrapper("php://input", "r", 0, NULL);
 
+		/* php://input does not support stat */
+		php_stream_copy_to_stream(input, s, -1);
+		php_stream_close(input);
+#else
 		if (SG(request_info).post_data || SG(request_info).raw_post_data) {
-			if ((s = php_stream_temp_new())) {
-				/* php://input does not support seek() */
-				if (SG(request_info).raw_post_data) {
-					php_stream_write(s, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length);
-				} else {
-					php_stream_write(s, SG(request_info).post_data, SG(request_info).post_data_length);
-				}
-				php_stream_rewind(s);
+			/* php://input does not support seek() in PHP <= 5.5 */
+			if (SG(request_info).raw_post_data) {
+				php_stream_write(s, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length);
+			} else {
+				php_stream_write(s, SG(request_info).post_data, SG(request_info).post_data_length);
 			}
 		} else if (sapi_module.read_post && !SG(read_post_bytes)) {
-			if ((s = php_stream_temp_new())) {
-				char *buf = emalloc(4096);
-				int len;
+			char *buf = emalloc(4096);
+			int len;
 
-				while (0 < (len = sapi_module.read_post(buf, 4096 TSRMLS_CC))) {
-					SG(read_post_bytes) += len;
-					php_stream_write(s, buf, len);
+			while (0 < (len = sapi_module.read_post(buf, 4096 TSRMLS_CC))) {
+				SG(read_post_bytes) += len;
+				php_stream_write(s, buf, len);
 
-					if (len < 4096) {
-						break;
-					}
+				if (len < 4096) {
+					break;
 				}
-				efree(buf);
-
-				php_stream_rewind(s);
 			}
+			efree(buf);
 		}
+#endif
+		php_stream_rewind(s);
 		PHP_HTTP_G->env.request.body = php_http_message_body_init(NULL, s TSRMLS_CC);
 	}
 
@@ -962,14 +963,30 @@ static zend_function_entry php_http_env_methods[] = {
 
 static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 {
-	if (SG(request_info).raw_post_data) {
-		zval *zarg = arg;
+	zval *zarg = arg;
+	char *json_str = NULL;
+	size_t json_len = 0;
+
+#if PHP_VERSION_ID >= 50600
+	php_http_message_body_to_string(php_http_env_get_request_body(TSRMLS_C),
+			&json_str, &json_len, 0, -1 TSRMLS_CC);
+#else
+	json_str = SG(request_info).raw_post_data;
+	json_len = SG(request_info).raw_post_data_length;
+#endif
+
+	if (json_len) {
 		zval_dtor(zarg);
 		ZVAL_NULL(zarg);
-		php_json_decode(zarg, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length, 1, PG(max_input_nesting_level) TSRMLS_CC);
-		if (Z_TYPE_P(zarg) == IS_NULL) {
-			array_init(zarg);
-		}
+		php_json_decode(zarg, json_str, json_len, 1, PG(max_input_nesting_level) TSRMLS_CC);
+	}
+#if PHP_VERSION_ID >= 50600
+	STR_FREE(json_str);
+#endif
+
+	/* always let $_POST be array() */
+	if (Z_TYPE_P(zarg) == IS_NULL) {
+		array_init(zarg);
 	}
 }
 
