@@ -30,7 +30,7 @@ isset($opts["c"]) or $opts["c"] = 10;
 isset($opts["n"]) or $opts["n"] = 1000;
 
 $argc > 1 or usage();
-var_Dump($opts);
+
 $time = microtime(true);
 $count = 0;
 $client = new http\Client;
