@@ -11,6 +11,7 @@ version_compare(PHP_VERSION, "5.4.0", ">=") or die("skip PHP>=5.4 required");
 $body = new http\Message\Body;
 $body->append("Hello, my old fellow.");
 foreach (hash_algos() as $algo) {
+	if ($algo == "gost-crypto") continue;
     ini_set("http.etag.mode", $algo);
     printf("%10s: %s\n", 
         $algo, 
