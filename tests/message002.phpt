@@ -18,9 +18,15 @@ use http\env\Request as HttpEnvRequest;
 $m = new HttpEnvRequest();
 
 var_dump($m);
+
+echo "Message->toString\n";
 echo $m,"\n";
 
+echo "Body->toString\n";
 var_dump((string)$m->getBody());
+
+echo "stream\n";
+var_dump(file_get_contents("php://input"));
 
 echo "Done\n";
 --EXPECTF--
@@ -78,6 +84,7 @@ object(%s)#%d (13) {
   array(0) {
   }
 }
+Message->toString
 POST / HTTP/1.1%a
 X-Test: test%a
 Content-Length: 3%a
@@ -85,5 +92,8 @@ Content-Type: test/something%a
 Cookie: foo=bar%a
 %a
 b=c
+Body->toString
+string(3) "b=c"
+stream
 string(3) "b=c"
 Done
