@@ -202,7 +202,10 @@ PHP_HTTP_API size_t php_http_message_body_append(php_http_message_body_t *body, 
 	php_stream *s;
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 
-	s = php_http_message_body_stream(body);
+	if (!(s = php_http_message_body_stream(body))) {
+		return -1;
+	}
+
 	php_stream_seek(s, 0, SEEK_END);
 	return php_stream_write(s, buf, len);
 }

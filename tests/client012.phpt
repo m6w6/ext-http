@@ -23,7 +23,7 @@ var_dump(
 $client->enqueue($req = new http\Client\Request("GET", "https://twitter.com/"));
 $client->send();
 
-$ti = $client->getTransferInfo($req);
+$ti = (array) $client->getTransferInfo($req);
 var_dump(array_key_exists("ssl_engines", $ti));
 var_dump(0 < count($ti["ssl_engines"]));
 ?>

@@ -395,7 +395,7 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, toString)
 {
 	if (SUCCESS != zend_parse_parameters_none()) {
-		RETURN_FALSE;
+		return;
 	}
 	php_http_querystring_str(getThis(), return_value TSRMLS_CC);
 }
@@ -408,7 +408,6 @@ PHP_METHOD(HttpQueryString, toArray)
 		zval *zqa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
 		RETURN_ZVAL(zqa, 1, 0);
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_get, 0, 0, 0)
@@ -550,7 +549,7 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, serialize)
 {
 	if (SUCCESS != zend_parse_parameters_none()) {
-		RETURN_FALSE;
+		return;
 	}
 	php_http_querystring_str(getThis(), return_value TSRMLS_CC);
 }

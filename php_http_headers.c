@@ -209,11 +209,11 @@ PHP_METHOD(HttpHeader, match)
 {
 	char *val_str;
 	int val_len;
-	long flags = 0;
+	long flags = PHP_HTTP_MATCH_LOOSE;
 	zval *zvalue;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|sl", &val_str, &val_len, &flags)) {
-		RETURN_NULL();
+		return;
 	}
 
 	zvalue = php_http_ztyp(IS_STRING, zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("value"), 0 TSRMLS_CC));
@@ -232,32 +232,31 @@ PHP_METHOD(HttpHeader, negotiate)
 	char *sep_str = NULL;
 	size_t sep_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
-		if (rs_array) {
-			zval_dtor(rs_array);
-			array_init(rs_array);
-		}
-
-		zname = php_http_ztyp(IS_STRING, zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("name"), 0 TSRMLS_CC));
-		if (!strcasecmp(Z_STRVAL_P(zname), "Accept")) {
-			sep_str = "/";
-			sep_len = 1;
-		} else if (!strcasecmp(Z_STRVAL_P(zname), "Accept-Language")) {
-			sep_str = "-";
-			sep_len = 1;
-		}
-		zval_ptr_dtor(&zname);
-
-		zvalue = php_http_ztyp(IS_STRING, zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("value"), 0 TSRMLS_CC));
-		if ((rs = php_http_negotiate(Z_STRVAL_P(zvalue), Z_STRLEN_P(zvalue), supported, sep_str, sep_len TSRMLS_CC))) {
-			PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array);
-		} else {
-			PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array);
-		}
-		zval_ptr_dtor(&zvalue);
-	} else {
-		RETURN_FALSE;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+		return;
 	}
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
+
+	zname = php_http_ztyp(IS_STRING, zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("name"), 0 TSRMLS_CC));
+	if (!strcasecmp(Z_STRVAL_P(zname), "Accept")) {
+		sep_str = "/";
+		sep_len = 1;
+	} else if (!strcasecmp(Z_STRVAL_P(zname), "Accept-Language")) {
+		sep_str = "-";
+		sep_len = 1;
+	}
+	zval_ptr_dtor(&zname);
+
+	zvalue = php_http_ztyp(IS_STRING, zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("value"), 0 TSRMLS_CC));
+	if ((rs = php_http_negotiate(Z_STRVAL_P(zvalue), Z_STRLEN_P(zvalue), supported, sep_str, sep_len TSRMLS_CC))) {
+		PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array);
+	} else {
+		PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array);
+	}
+	zval_ptr_dtor(&zvalue);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_getParams, 0, 0, 0)
@@ -293,7 +292,7 @@ PHP_METHOD(HttpHeader, getParams)
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_parse, 0, 0, 1)
 	ZEND_ARG_INFO(0, string)
-	ZEND_ARG_INFO(0, flags)
+	ZEND_ARG_INFO(0, header_class)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, parse)
 {

@@ -794,11 +794,13 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_toArray, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, toArray)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
-		zval *zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0 TSRMLS_CC);
-		RETURN_ZVAL(zparams, 1, 0);
+	zval *zparams;
+
+	if (SUCCESS != zend_parse_parameters_none()) {
+		return;
 	}
-	RETURN_FALSE;
+	zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0 TSRMLS_CC);
+	RETURN_ZVAL(zparams, 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_toString, 0, 0, 0)

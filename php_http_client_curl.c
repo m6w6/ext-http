@@ -228,7 +228,12 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 	/* catch progress */
 	switch (type) {
 		case CURLINFO_TEXT:
-			if (php_memnstr(data, ZEND_STRL("About to connect"), data + length)) {
+			if (data[0] == '-') {
+			} else if (php_memnstr(data, ZEND_STRL("Adding handle:"), data + length)) {
+				h->progress.info = "setup";
+			} else if (php_memnstr(data, ZEND_STRL("addHandle"), data + length)) {
+				h->progress.info = "setup";
+			} else if (php_memnstr(data, ZEND_STRL("About to connect"), data + length)) {
 				h->progress.info = "resolve";
 			} else if (php_memnstr(data, ZEND_STRL("Trying"), data + length)) {
 				h->progress.info = "connect";
@@ -238,6 +243,10 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 				h->progress.info = "connected";
 			} else if (php_memnstr(data, ZEND_STRL("Re-using existing connection!"), data + length)) {
 				h->progress.info = "connected";
+			} else if (php_memnstr(data, ZEND_STRL("blacklisted"), data + length)) {
+				h->progress.info = "blacklist check";
+			} else if (php_memnstr(data, ZEND_STRL("SSL"), data + length)) {
+				h->progress.info = "ssl negotiation";
 			} else if (php_memnstr(data, ZEND_STRL("left intact"), data + length)) {
 				h->progress.info = "not disconnected";
 			} else if (php_memnstr(data, ZEND_STRL("closed"), data + length)) {
@@ -247,7 +256,9 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 			} else if (php_memnstr(data, ZEND_STRL("Operation timed out"), data + length)) {
 				h->progress.info = "timeout";
 			} else {
+#if PHP_DEBUG
 				h->progress.info = data;
+#endif
 			}
 			if (h->client->callback.progress.func) {
 				h->client->callback.progress.func(h->client->callback.progress.arg, h->client, &h->queue, &h->progress);
@@ -1054,11 +1065,9 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("redirect"), CURLOPT_FOLLOWLOCATION, IS_LONG))) {
 		opt->setter = php_http_curle_option_set_redirect;
 	}
-	php_http_option_register(registry, ZEND_STRL("unrestrictedauth"), CURLOPT_UNRESTRICTED_AUTH, IS_BOOL);
+	php_http_option_register(registry, ZEND_STRL("unrestricted_auth"), CURLOPT_UNRESTRICTED_AUTH, IS_BOOL);
 #if PHP_HTTP_CURL_VERSION(7,19,1)
-	php_http_option_register(registry, ZEND_STRL("postredir"), CURLOPT_POSTREDIR, IS_BOOL);
-#else
-	php_http_option_register(registry, ZEND_STRL("postredir"), CURLOPT_POST301, IS_BOOL);
+	php_http_option_register(registry, ZEND_STRL("postredir"), CURLOPT_POSTREDIR, IS_LONG);
 #endif
 
 	/* retries */
@@ -1161,7 +1170,6 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 		}
 		php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING);
-		php_http_option_register(registry, ZEND_STRL("certpasswd"), CURLOPT_SSLCERTPASSWD, IS_STRING);
 
 		if ((opt = php_http_option_register(registry, ZEND_STRL("key"), CURLOPT_SSLKEY, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;

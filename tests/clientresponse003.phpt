@@ -14,7 +14,7 @@ foreach (http\Client::getAvailableDrivers() as $driver) {
 	$client = new http\Client($driver);
 	$response = $client->enqueue($request)->send()->getResponse();
 	var_dump($response->getTransferInfo("response_code"));
-	var_dump(count($response->getTransferInfo()));
+	var_dump(count((array)$response->getTransferInfo()));
 }
 ?>
 Done

@@ -31,22 +31,16 @@ static PHP_METHOD(HttpClientRequest, __construct)
 	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!a!O!", &meth_str, &meth_len, &url_str, &url_len, &zheaders, &zbody, php_http_message_body_class_entry)) {
 			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-			php_http_message_body_object_t *body_obj = NULL;
+
+			if (obj->message) {
+				php_http_message_set_type(obj->message, PHP_HTTP_REQUEST);
+			} else {
+				obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST, NULL TSRMLS_CC);
+			}
 
 			if (zbody) {
 				php_http_message_object_set_body(obj, zbody TSRMLS_CC);
 			}
-
-			if (obj->message) {
-				php_http_message_set_type(obj->message, PHP_HTTP_REQUEST);
-				if (body_obj) {
-					php_http_message_body_free(&obj->message->body);
-					obj->message->body = body_obj->body;
-				}
-			} else {
-				obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST, body_obj ? body_obj->body : NULL TSRMLS_CC);
-			}
-
 			if (meth_str && meth_len) {
 				PHP_HTTP_INFO(obj->message).request.method = estrndup(meth_str, meth_len);
 			}
@@ -93,11 +87,14 @@ static PHP_METHOD(HttpClientRequest, getContentType)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-		zval *zct = php_http_message_header(obj->message, ZEND_STRL("Content-Type"), 1);
+		zval *zct;
 
-		RETURN_ZVAL(zct, 0, 1);
+		php_http_message_update_headers(obj->message);
+		zct = php_http_message_header(obj->message, ZEND_STRL("Content-Type"), 1);
+		if (zct) {
+			RETURN_ZVAL(zct, 0, 1);
+		}
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_setQuery, 0, 0, 0)

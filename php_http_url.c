@@ -529,11 +529,16 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_toArray, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, toArray)
 {
+	php_url *purl;
+
 	if (SUCCESS != zend_parse_parameters_none()) {
-		RETURN_FALSE;
+		return;
 	}
-	array_init(return_value);
-	array_copy(HASH_OF(getThis()), HASH_OF(return_value));
+
+	/* strip any non-URL properties */
+	purl = php_http_url_from_struct(NULL, HASH_OF(getThis()) TSRMLS_CC);
+	php_http_url_to_struct(purl, return_value TSRMLS_CC);
+	php_url_free(purl);
 }
 
 static zend_function_entry php_http_url_methods[] = {

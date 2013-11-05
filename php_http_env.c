@@ -234,7 +234,7 @@ PHP_HTTP_API php_http_message_body_t *php_http_env_get_request_body(TSRMLS_D)
 		php_stream *input = php_stream_open_wrapper("php://input", "r", 0, NULL);
 
 		/* php://input does not support stat */
-		php_stream_copy_to_stream(input, s, -1);
+		php_stream_copy_to_stream_ex(input, s, -1, NULL);
 		php_stream_close(input);
 #else
 		if (SG(request_info).post_data || SG(request_info).raw_post_data) {
@@ -686,22 +686,20 @@ static PHP_METHOD(HttpEnv, getRequestHeader)
 	char *header_name_str = NULL;
 	int header_name_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
-		if (header_name_str && header_name_len) {
-			size_t header_length;
-			char *header_value = php_http_env_get_request_header(header_name_str, header_name_len, &header_length, NULL TSRMLS_CC);
-
-			if (header_value) {
-				RETURN_STRINGL(header_value, header_length, 0);
-			}
-			RETURN_NULL();
-		} else {
-			array_init(return_value);
-			php_http_env_get_request_headers(Z_ARRVAL_P(return_value) TSRMLS_CC);
-			return;
-		}
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
+		return;
 	}
-	RETURN_FALSE;
+	if (header_name_str && header_name_len) {
+		size_t header_length;
+		char *header_value = php_http_env_get_request_header(header_name_str, header_name_len, &header_length, NULL TSRMLS_CC);
+
+		if (header_value) {
+			RETURN_STRINGL(header_value, header_length, 0);
+		}
+	} else {
+		array_init(return_value);
+		php_http_env_get_request_headers(Z_ARRVAL_P(return_value) TSRMLS_CC);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getRequestBody, 0, 0, 0)
@@ -730,10 +728,10 @@ static PHP_METHOD(HttpEnv, getResponseStatusForCode)
 {
 	long code;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
-		RETURN_STRING(php_http_env_get_response_status_for_code(code), 1);
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
+		return;
 	}
-	RETURN_FALSE;
+	RETURN_STRING(php_http_env_get_response_status_for_code(code), 1);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseStatusForAllCodes, 0, 0, 0)
@@ -745,7 +743,7 @@ static PHP_METHOD(HttpEnv, getResponseStatusForAllCodes)
 	php_http_strlist_iterator_t i;
 
 	if (SUCCESS != zend_parse_parameters_none()) {
-		RETURN_FALSE;
+		return;
 	}
 
 	array_init(return_value);
@@ -765,31 +763,29 @@ static PHP_METHOD(HttpEnv, getResponseHeader)
 	char *header_name_str = NULL;
 	int header_name_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
-		if (header_name_str && header_name_len) {
-			char *header_value = php_http_env_get_response_header(header_name_str, header_name_len TSRMLS_CC);
-
-			if (header_value) {
-				RETURN_STRING(header_value, 0);
-			}
-			RETURN_NULL();
-		} else {
-			array_init(return_value);
-			php_http_env_get_response_headers(Z_ARRVAL_P(return_value) TSRMLS_CC);
-			return;
-		}
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
+		return;
 	}
-	RETURN_FALSE;
+	if (header_name_str && header_name_len) {
+		char *header_value = php_http_env_get_response_header(header_name_str, header_name_len TSRMLS_CC);
+
+		if (header_value) {
+			RETURN_STRING(header_value, 0);
+		}
+	} else {
+		array_init(return_value);
+		php_http_env_get_response_headers(Z_ARRVAL_P(return_value) TSRMLS_CC);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseCode, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, getResponseCode)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
-		RETURN_LONG(php_http_env_get_response_code(TSRMLS_C));
+	if (SUCCESS != zend_parse_parameters_none()) {
+		return;
 	}
-	RETURN_FALSE;
+	RETURN_LONG(php_http_env_get_response_code(TSRMLS_C));
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_setResponseHeader, 0, 0, 1)
@@ -806,10 +802,10 @@ static PHP_METHOD(HttpEnv, setResponseHeader)
 	long code = 0;
 	zend_bool replace_header = 1;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|z!lb", &header_name_str, &header_name_len, &header_value, &code, &replace_header)) {
-		RETURN_BOOL(SUCCESS == php_http_env_set_response_header_value(code, header_name_str, header_name_len, header_value, replace_header TSRMLS_CC));
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|z!lb", &header_name_str, &header_name_len, &header_value, &code, &replace_header)) {
+		return;
 	}
-	RETURN_FALSE;
+	RETURN_BOOL(SUCCESS == php_http_env_set_response_header_value(code, header_name_str, header_name_len, header_value, replace_header TSRMLS_CC));
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_setResponseCode, 0, 0, 1)
@@ -819,10 +815,10 @@ static PHP_METHOD(HttpEnv, setResponseCode)
 {
 	long code;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
-		RETURN_BOOL(SUCCESS == php_http_env_set_response_code(code TSRMLS_CC));
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
+		return;
 	}
-	RETURN_FALSE;
+	RETURN_BOOL(SUCCESS == php_http_env_set_response_code(code TSRMLS_CC));
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiateLanguage, 0, 0, 1)
@@ -834,16 +830,15 @@ static PHP_METHOD(HttpEnv, negotiateLanguage)
 	HashTable *supported;
 	zval *rs_array = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
-		if (rs_array) {
-			zval_dtor(rs_array);
-			array_init(rs_array);
-		}
-
-		PHP_HTTP_DO_NEGOTIATE(language, supported, rs_array);
-	} else {
-		RETURN_FALSE;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+		return;
 	}
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
+
+	PHP_HTTP_DO_NEGOTIATE(language, supported, rs_array);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiateCharset, 0, 0, 1)
@@ -855,15 +850,14 @@ static PHP_METHOD(HttpEnv, negotiateCharset)
 	HashTable *supported;
 	zval *rs_array = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
-		if (rs_array) {
-			zval_dtor(rs_array);
-			array_init(rs_array);
-		}
-		PHP_HTTP_DO_NEGOTIATE(charset, supported, rs_array);
-	} else {
-		RETURN_FALSE;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+		return;
 	}
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
+	PHP_HTTP_DO_NEGOTIATE(charset, supported, rs_array);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiateEncoding, 0, 0, 1)
@@ -875,15 +869,14 @@ static PHP_METHOD(HttpEnv, negotiateEncoding)
 	HashTable *supported;
 	zval *rs_array = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
-		if (rs_array) {
-			zval_dtor(rs_array);
-			array_init(rs_array);
-		}
-		PHP_HTTP_DO_NEGOTIATE(encoding, supported, rs_array);
-	} else {
-		RETURN_FALSE;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+		return;
 	}
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
+	PHP_HTTP_DO_NEGOTIATE(encoding, supported, rs_array);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiateContentType, 0, 0, 1)
@@ -895,45 +888,43 @@ static PHP_METHOD(HttpEnv, negotiateContentType)
 	HashTable *supported;
 	zval *rs_array = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
-		if (rs_array) {
-			zval_dtor(rs_array);
-			array_init(rs_array);
-		}
-		PHP_HTTP_DO_NEGOTIATE(content_type, supported, rs_array);
-	} else {
-		RETURN_FALSE;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+		return;
 	}
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
+	PHP_HTTP_DO_NEGOTIATE(content_type, supported, rs_array);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiate, 0, 0, 2)
-	ZEND_ARG_INFO(0, value)
+	ZEND_ARG_INFO(0, params)
 	ZEND_ARG_INFO(0, supported)
 	ZEND_ARG_INFO(0, primary_type_separator)
 	ZEND_ARG_INFO(1, result_array)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, negotiate)
 {
-	HashTable *supported;
+	HashTable *supported, *rs;
 	zval *rs_array = NULL;
 	char *value_str, *sep_str = NULL;
 	int value_len, sep_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sH|s!z", &value_str, &value_len, &supported, &sep_str, &sep_len, &rs_array)) {
-		HashTable *rs;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sH|s!z", &value_str, &value_len, &supported, &sep_str, &sep_len, &rs_array)) {
+		return;
+	}
 
-		if (rs_array) {
-			zval_dtor(rs_array);
-			array_init(rs_array);
-		}
 
-		if ((rs = php_http_negotiate(value_str, value_len, supported, sep_str, sep_len TSRMLS_CC))) {
-			PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array);
-		} else {
-			PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array);
-		}
+	if (rs_array) {
+		zval_dtor(rs_array);
+		array_init(rs_array);
+	}
+
+	if ((rs = php_http_negotiate(value_str, value_len, supported, sep_str, sep_len TSRMLS_CC))) {
+		PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array);
 	} else {
-		RETURN_FALSE;
+		PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array);
 	}
 }
 
@@ -969,7 +960,7 @@ static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 
 #if PHP_VERSION_ID >= 50600
 	php_http_message_body_to_string(php_http_env_get_request_body(TSRMLS_C),
-			&json_str, &json_len, 0, -1 TSRMLS_CC);
+			&json_str, &json_len, 0, -1);
 #else
 	json_str = SG(request_info).raw_post_data;
 	json_len = SG(request_info).raw_post_data_length;
