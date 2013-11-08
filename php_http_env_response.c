@@ -1103,6 +1103,7 @@ static PHP_METHOD(HttpEnvResponse, setEnvRequest)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O", &env_req, php_http_message_class_entry)) {
 		set_option(getThis(), ZEND_STRL("request"), IS_OBJECT, env_req, 0 TSRMLS_CC);
+		RETVAL_ZVAL(getThis(), 1, 0);
 	}
 }
 
@@ -1116,6 +1117,7 @@ static PHP_METHOD(HttpEnvResponse, setContentType)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &ct_str, &ct_len)) {
 		set_option(getThis(), ZEND_STRL("contentType"), IS_STRING, ct_str, ct_len TSRMLS_CC);
+		RETVAL_ZVAL(getThis(), 1, 0);
 	}
 }
 
@@ -1128,6 +1130,7 @@ static PHP_METHOD(HttpEnvResponse, setContentDisposition)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &zdisposition)) {
 		zend_update_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("contentDisposition"), zdisposition TSRMLS_CC);
+		RETVAL_ZVAL(getThis(), 1, 0);
 	}
 }
 
@@ -1140,6 +1143,7 @@ static PHP_METHOD(HttpEnvResponse, setContentEncoding)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &ce)) {
 		set_option(getThis(), ZEND_STRL("contentEncoding"), IS_LONG, &ce, 0 TSRMLS_CC);
+		RETVAL_ZVAL(getThis(), 1, 0);
 	}
 }
 
@@ -1153,6 +1157,7 @@ static PHP_METHOD(HttpEnvResponse, setCacheControl)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &cc_str, &cc_len)) {
 		set_option(getThis(), ZEND_STRL("cacheControl"), IS_STRING, cc_str, cc_len TSRMLS_CC);
+		RETVAL_ZVAL(getThis(), 1, 0);
 	}
 }
 
@@ -1165,6 +1170,7 @@ static PHP_METHOD(HttpEnvResponse, setLastModified)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &last_modified)) {
 		set_option(getThis(), ZEND_STRL("lastModified"), IS_LONG, &last_modified, 0 TSRMLS_CC);
+		RETVAL_ZVAL(getThis(), 1, 0);
 	}
 }
 
@@ -1184,7 +1190,6 @@ static PHP_METHOD(HttpEnvResponse, isCachedByLastModified)
 
 		RETURN_LONG(php_http_env_is_response_cached_by_last_modified(getThis(), header_name_str, header_name_len, get_request(getThis() TSRMLS_CC) TSRMLS_CC));
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setEtag, 0, 0, 1)
@@ -1197,6 +1202,7 @@ static PHP_METHOD(HttpEnvResponse, setEtag)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &etag_str, &etag_len)) {
 		set_option(getThis(), ZEND_STRL("etag"), IS_STRING, etag_str, etag_len TSRMLS_CC);
+		RETVAL_ZVAL(getThis(), 1, 0);
 	}
 }
 
@@ -1215,7 +1221,6 @@ static PHP_METHOD(HttpEnvResponse, isCachedByEtag)
 		}
 		RETURN_LONG(php_http_env_is_response_cached_by_etag(getThis(), header_name_str, header_name_len, get_request(getThis() TSRMLS_CC) TSRMLS_CC));
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setThrottleRate, 0, 0, 1)
@@ -1230,39 +1235,46 @@ static PHP_METHOD(HttpEnvResponse, setThrottleRate)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|d", &chunk_size, &delay)) {
 		set_option(getThis(), ZEND_STRL("throttleDelay"), IS_DOUBLE, &delay, 0 TSRMLS_CC);
 		set_option(getThis(), ZEND_STRL("throttleChunk"), IS_LONG, &chunk_size, 0 TSRMLS_CC);
-		RETURN_TRUE;
+		RETVAL_ZVAL(getThis(), 1, 0);
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_send, 0, 0, 0)
+	ZEND_ARG_INFO(0, stream)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnvResponse, send)
 {
 	zval *zstream = NULL;
 	php_stream *s = NULL;
 
-	RETVAL_FALSE;
-
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|r", &zstream)) {
+		/* first flush the output layer to avoid conflicting headers and output;
+		 * also, ob_start($thisEnvResponse) might have been called */
+#if PHP_VERSION_ID >= 50400
+		php_output_end_all(TSRMLS_C);
+#else
+		php_end_ob_buffers(1 TSRMLS_CC);
+#endif
 		if (zstream) {
-			php_stream_from_zval_no_verify(s, &zstream);
+			php_http_env_response_t *r;
 
-			if (s) {
-				php_http_env_response_t *r;
-
-				if ((r = php_http_env_response_init(NULL, getThis(), php_http_env_response_get_stream_ops(), s TSRMLS_CC))) {
-					RETVAL_BOOL(SUCCESS == php_http_env_response_send(r));
-					php_http_env_response_free(&r);
-				}
+			php_stream_from_zval(s, &zstream);
+			r = php_http_env_response_init(NULL, getThis(), php_http_env_response_get_stream_ops(), s TSRMLS_CC);
+			if (!r) {
+				RETURN_FALSE;
 			}
+
+			RETVAL_BOOL(SUCCESS == php_http_env_response_send(r));
+			php_http_env_response_free(&r);
 		} else {
 			php_http_env_response_t r;
 
-			if (php_http_env_response_init(&r, getThis(), NULL, NULL TSRMLS_CC)) {
-				RETVAL_BOOL(SUCCESS == php_http_env_response_send(&r));
-				php_http_env_response_dtor(&r);
+			if (!php_http_env_response_init(&r, getThis(), NULL, NULL TSRMLS_CC)) {
+				RETURN_FALSE;
 			}
+
+			RETVAL_BOOL(SUCCESS == php_http_env_response_send(&r));
+			php_http_env_response_dtor(&r);
 		}
 	}
 }
