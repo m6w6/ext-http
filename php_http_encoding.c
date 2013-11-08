@@ -1021,7 +1021,6 @@ static PHP_METHOD(HttpEncodingStream, update)
 			}
 		}
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_flush, 0, 0, 0)
@@ -1044,10 +1043,9 @@ static PHP_METHOD(HttpEncodingStream, flush)
 			}
 		}
 	}
-	RETURN_FALSE;
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_done, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_done, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEncodingStream, done)
 {
@@ -1058,7 +1056,6 @@ static PHP_METHOD(HttpEncodingStream, done)
 			RETURN_BOOL(php_http_encoding_stream_done(obj->stream));
 		}
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_finish, 0, 0, 0)
@@ -1085,7 +1082,6 @@ static PHP_METHOD(HttpEncodingStream, finish)
 			}
 		}
 	}
-	RETURN_FALSE;
 }
 
 static zend_function_entry php_http_encoding_stream_methods[] = {

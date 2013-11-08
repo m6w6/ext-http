@@ -663,6 +663,8 @@ PHP_METHOD(HttpMessageBody, unserialize)
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_toStream, 0, 0, 1)
 	ZEND_ARG_INFO(0, stream)
+	ZEND_ARG_INFO(0, offset)
+	ZEND_ARG_INFO(0, maxlen)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, toStream)
 {
@@ -677,13 +679,14 @@ PHP_METHOD(HttpMessageBody, toStream)
 
 		php_stream_from_zval(stream, &zstream);
 		php_http_message_body_to_stream(obj->body, stream, offset, forlen);
-		RETURN_TRUE;
+		RETURN_ZVAL(getThis(), 1, 0);
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_toCallback, 0, 0, 1)
 	ZEND_ARG_INFO(0, callback)
+	ZEND_ARG_INFO(0, offset)
+	ZEND_ARG_INFO(0, maxlen)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, toCallback)
 {
@@ -703,9 +706,8 @@ PHP_METHOD(HttpMessageBody, toCallback)
 		zend_fcall_info_args_clear(&fcd.fci, 1);
 
 		zval_ptr_dtor(&fcd.fcz);
-		RETURN_TRUE;
+		RETURN_ZVAL(getThis(), 1, 0);
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_getResource, 0, 0, 0)
@@ -735,9 +737,11 @@ PHP_METHOD(HttpMessageBody, append)
 
 		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 
-		RETURN_LONG(php_http_message_body_append(obj->body, str, len));
+		if (len != php_http_message_body_append(obj->body, str, len)) {
+			php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "Could not append to body");
+		}
+		RETURN_ZVAL(getThis(), 1, 0);
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_addForm, 0, 0, 0)
@@ -753,9 +757,9 @@ PHP_METHOD(HttpMessageBody, addForm)
 
 		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 
-		RETURN_BOOL(SUCCESS == php_http_message_body_add_form(obj->body, fields, files));
+		php_http_message_body_add_form(obj->body, fields, files);
+		RETURN_ZVAL(getThis(), 1, 0);
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_addPart, 0, 0, 1)
@@ -772,9 +776,8 @@ PHP_METHOD(HttpMessageBody, addPart)
 		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 
 		php_http_message_body_add_part(obj->body, mobj->message);
-		RETURN_TRUE;
+		RETURN_ZVAL(getThis(), 1, 0);
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_etag, 0, 0, 0)
@@ -789,13 +792,14 @@ PHP_METHOD(HttpMessageBody, etag)
 
 		if ((etag = php_http_message_body_etag(obj->body))) {
 			RETURN_STRING(etag, 0);
+		} else {
+			RETURN_FALSE;
 		}
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_stat, 0, 0, 0)
-	ZEND_ARG_INFO(0, what)
+	ZEND_ARG_INFO(0, field)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, stat)
 {
@@ -832,16 +836,14 @@ PHP_METHOD(HttpMessageBody, stat)
 							break;
 					}
 			} else {
-				array_init(return_value);
-				add_assoc_long_ex(return_value, ZEND_STRS("size"), sb->sb.st_size);
-				add_assoc_long_ex(return_value, ZEND_STRS("atime"), sb->sb.st_atime);
-				add_assoc_long_ex(return_value, ZEND_STRS("mtime"), sb->sb.st_mtime);
-				add_assoc_long_ex(return_value, ZEND_STRS("ctime"), sb->sb.st_ctime);
-				return;
+				object_init(return_value);
+				add_property_long_ex(return_value, ZEND_STRS("size"), sb->sb.st_size);
+				add_property_long_ex(return_value, ZEND_STRS("atime"), sb->sb.st_atime);
+				add_property_long_ex(return_value, ZEND_STRS("mtime"), sb->sb.st_mtime);
+				add_property_long_ex(return_value, ZEND_STRS("ctime"), sb->sb.st_ctime);
 			}
 		}
 	}
-	RETURN_FALSE;
 }
 
 static zend_function_entry php_http_message_body_methods[] = {

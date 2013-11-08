@@ -14,7 +14,7 @@ class MessageBodyTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(fileatime(__FILE__), $this->file->stat("atime"));
         $this->assertEquals(filectime(__FILE__), $this->file->stat("ctime"));
         $this->assertEquals(
-            array(
+            (object) array(
                 "size" => 0,
                 "mtime" => 0,
                 "atime" => 0,
@@ -24,26 +24,27 @@ class MessageBodyTest extends PHPUnit_Framework_TestCase {
         );
     }
 
+    function testAppendError() {
+    	$this->setExpectedException("PHPUnit_Framework_Error");
+        $this->file->append("nope");
+    }
     function testAppend() {
-        $this->assertEquals(0, $this->file->append("nope"));
-        $this->assertEquals(3, $this->temp->append("yes"));
+        $this->temp->append("yes");
     }
 
     function testAddForm() {
-        $this->assertTrue( 
-            $this->temp->addForm(
-                array(
-                    "foo" => "bar",
-                    "more" => array(
-                        "bah", "baz", "fuz"
-                    ),
+        $this->temp->addForm(
+            array(
+                "foo" => "bar",
+                "more" => array(
+                    "bah", "baz", "fuz"
                 ),
+            ),
+            array(
                 array(
-                    array(
-                        "file" => __FILE__,
-                        "name" => "upload",
-                        "type" => "text/plain",
-                    )
+                    "file" => __FILE__,
+                    "name" => "upload",
+                    "type" => "text/plain",
                 )
             )
         );
