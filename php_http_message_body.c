@@ -724,6 +724,21 @@ PHP_METHOD(HttpMessageBody, getResource)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_getBoundary, 0, 0, 0)
+ZEND_END_ARG_INFO();
+PHP_METHOD(HttpMessageBody, getBoundary)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_message_body_object_t * obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
+		if (obj->body->boundary) {
+			RETURN_STRING(obj->body->boundary, 1);
+		}
+	}
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_append, 0, 0, 1)
 	ZEND_ARG_INFO(0, string)
 ZEND_END_ARG_INFO();
@@ -855,6 +870,7 @@ static zend_function_entry php_http_message_body_methods[] = {
 	PHP_ME(HttpMessageBody, toStream,     ai_HttpMessageBody_toStream,     ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, toCallback,   ai_HttpMessageBody_toCallback,   ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, getResource,  ai_HttpMessageBody_getResource,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, getBoundary,  ai_HttpMessageBody_getBoundary,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, append,       ai_HttpMessageBody_append,       ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, addForm,      ai_HttpMessageBody_addForm,      ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, addPart,      ai_HttpMessageBody_addPart,      ZEND_ACC_PUBLIC)
