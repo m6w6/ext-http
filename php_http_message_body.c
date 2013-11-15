@@ -852,10 +852,10 @@ PHP_METHOD(HttpMessageBody, stat)
 					}
 			} else {
 				object_init(return_value);
-				add_property_long_ex(return_value, ZEND_STRS("size"), sb->sb.st_size);
-				add_property_long_ex(return_value, ZEND_STRS("atime"), sb->sb.st_atime);
-				add_property_long_ex(return_value, ZEND_STRS("mtime"), sb->sb.st_mtime);
-				add_property_long_ex(return_value, ZEND_STRS("ctime"), sb->sb.st_ctime);
+				add_property_long_ex(return_value, ZEND_STRS("size"), sb->sb.st_size TSRMLS_CC);
+				add_property_long_ex(return_value, ZEND_STRS("atime"), sb->sb.st_atime TSRMLS_CC);
+				add_property_long_ex(return_value, ZEND_STRS("mtime"), sb->sb.st_mtime TSRMLS_CC);
+				add_property_long_ex(return_value, ZEND_STRS("ctime"), sb->sb.st_ctime TSRMLS_CC);
 			}
 		}
 	}
