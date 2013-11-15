@@ -1587,7 +1587,17 @@ static php_resource_factory_t *create_rf(const char *url TSRMLS_DC)
 	php_url *purl;
 	php_resource_factory_t *rf = NULL;
 
-	if ((purl = php_url_parse(url))) {
+	if (!url || !*url) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Cannot request empty URL");
+		return NULL;
+	}
+
+	purl = php_url_parse(url);
+
+	if (!purl) {
+		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Could not parse URL '%s'", url);
+		return NULL;
+	} else {
 		char *id_str = NULL;
 		size_t id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(purl->host), purl->port ? purl->port : 80);
 		php_persistent_handle_factory_t *pf = php_persistent_handle_concede(NULL, ZEND_STRL("http\\Client\\Curl\\Request"), id_str, id_len, NULL, NULL TSRMLS_CC);
@@ -1613,9 +1623,15 @@ static STATUS php_http_client_curl_enqueue(php_http_client_t *h, php_http_client
 	php_http_client_curl_t *curl = h->ctx;
 	php_http_client_curl_handler_t *handler;
 	php_http_client_progress_state_t *progress;
+	php_resource_factory_t *rf;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-	handler = php_http_client_curl_handler_init(h, create_rf(enqueue->request->http.info.request.url TSRMLS_CC));
+	rf = create_rf(enqueue->request->http.info.request.url TSRMLS_CC);
+	if (!rf) {
+		return FAILURE;
+	}
+
+	handler = php_http_client_curl_handler_init(h, rf);
 	if (!handler) {
 		return FAILURE;
 	}
