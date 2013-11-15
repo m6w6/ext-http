@@ -697,6 +697,17 @@ static PHP_METHOD(HttpClient, requeue)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_count, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpClient, count)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		RETVAL_LONG(zend_llist_count(&obj->client->requests));
+	}
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getResponse, 0, 0, 0)
 	ZEND_ARG_OBJ_INFO(0, request, http\\Client\\Request, 1)
 ZEND_END_ARG_INFO();
@@ -1073,6 +1084,7 @@ static zend_function_entry php_http_client_methods[] = {
 	PHP_ME(HttpClient, enqueue,              ai_HttpClient_enqueue,              ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, dequeue,              ai_HttpClient_dequeue,              ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, requeue,              ai_HttpClient_requeue,              ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, count,                ai_HttpClient_count,                ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, send,                 ai_HttpClient_send,                 ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, once,                 ai_HttpClient_once,                 ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, wait,                 ai_HttpClient_wait,                 ZEND_ACC_PUBLIC)
@@ -1105,7 +1117,7 @@ PHP_MINIT_FUNCTION(http_client)
 	INIT_NS_CLASS_ENTRY(ce, "http", "Client", php_http_client_methods);
 	php_http_client_class_entry = zend_register_internal_class_ex(&ce, NULL, NULL TSRMLS_CC);
 	php_http_client_class_entry->create_object = php_http_client_object_new;
-	zend_class_implements(php_http_client_class_entry TSRMLS_CC, 1, spl_ce_SplSubject);
+	zend_class_implements(php_http_client_class_entry TSRMLS_CC, 2, spl_ce_SplSubject, spl_ce_Countable);
 	memcpy(&php_http_client_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_object_handlers.clone_obj = NULL;
 	zend_declare_property_null(php_http_client_class_entry, ZEND_STRL("observers"), ZEND_ACC_PRIVATE TSRMLS_CC);
