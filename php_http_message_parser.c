@@ -451,7 +451,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_h
 				size_t dec_len;
 
 				if (SUCCESS != php_http_encoding_stream_update(parser->dechunk, buffer->data, buffer->used, &dec_str, &dec_len)) {
-					return FAILURE;
+					return PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE;
 				}
 
 				str = dec_str;
