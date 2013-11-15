@@ -34,9 +34,9 @@
 #ifdef PHP_WIN32
 # define PHP_HTTP_API __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
-# define PHP_HTTP_API __attribute__ ((visibility("default")))
+# define PHP_HTTP_API extern __attribute__ ((visibility("default")))
 #else
-# define PHP_HTTP_API
+# define PHP_HTTP_API extern
 #endif
 
 /* make functions that return SUCCESS|FAILURE more obvious */

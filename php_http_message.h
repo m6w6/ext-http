@@ -80,7 +80,7 @@ typedef struct php_http_message_object {
 	zval *iterator;
 } php_http_message_object_t;
 
-zend_class_entry *php_http_message_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_message_class_entry;
 
 PHP_MINIT_FUNCTION(http_message);
 PHP_MSHUTDOWN_FUNCTION(http_message);
