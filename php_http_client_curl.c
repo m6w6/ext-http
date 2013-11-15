@@ -586,7 +586,7 @@ static void php_http_curlm_event_callback(int socket, short action, void *event_
 	fprintf(stderr, "E");
 #endif
 	if (curl->useevents) {
-		CURLMcode rc = CURLE_OK;
+		CURLMcode rc = CURLM_OK;
 		TSRMLS_FETCH_FROM_CTX(context->ts);
 
 		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle, socket, etoca(action), &curl->unfinished)));
