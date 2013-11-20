@@ -24,13 +24,14 @@
 			php_http_message_body_appendf(body, "--%s" PHP_HTTP_CRLF, php_http_message_body_boundary(body)); \
 		} \
 	} while(0)
+
 #define BOUNDARY_CLOSE(body) \
 		php_http_message_body_appendf(body, PHP_HTTP_CRLF "--%s--" PHP_HTTP_CRLF, php_http_message_body_boundary(body))
 
 static STATUS add_recursive_fields(php_http_message_body_t *body, const char *name, zval *value);
 static STATUS add_recursive_files(php_http_message_body_t *body, const char *name, zval *value);
 
-PHP_HTTP_API php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **body_ptr, php_stream *stream TSRMLS_DC)
+php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **body_ptr, php_stream *stream TSRMLS_DC)
 {
 	php_http_message_body_t *body;
 
@@ -57,12 +58,12 @@ PHP_HTTP_API php_http_message_body_t *php_http_message_body_init(php_http_messag
 	return body;
 }
 
-PHP_HTTP_API unsigned php_http_message_body_addref(php_http_message_body_t *body)
+unsigned php_http_message_body_addref(php_http_message_body_t *body)
 {
 	return ++body->refcount;
 }
 
-PHP_HTTP_API php_http_message_body_t *php_http_message_body_copy(php_http_message_body_t *from, php_http_message_body_t *to)
+php_http_message_body_t *php_http_message_body_copy(php_http_message_body_t *from, php_http_message_body_t *to)
 {
 	if (from) {
 		TSRMLS_FETCH_FROM_CTX(from->ts);
@@ -86,14 +87,14 @@ PHP_HTTP_API php_http_message_body_t *php_http_message_body_copy(php_http_messag
 	return to;
 }
 
-PHP_HTTP_API void php_http_message_body_free(php_http_message_body_t **body_ptr)
+void php_http_message_body_free(php_http_message_body_t **body_ptr)
 {
 	if (*body_ptr) {
 		php_http_message_body_t *body = *body_ptr;
 
 		if (!--body->refcount) {
 			TSRMLS_FETCH_FROM_CTX(body->ts);
-			/* NO FIXME: shows leakinfo in DEBUG mode */
+			/* NOFIXME: shows leakinfo in DEBUG mode */
 			zend_list_delete(body->stream_id);
 			STR_FREE(body->boundary);
 			efree(body);
@@ -102,14 +103,14 @@ PHP_HTTP_API void php_http_message_body_free(php_http_message_body_t **body_ptr)
 	}
 }
 
-PHP_HTTP_API const php_stream_statbuf *php_http_message_body_stat(php_http_message_body_t *body)
+const php_stream_statbuf *php_http_message_body_stat(php_http_message_body_t *body)
 {
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 	php_stream_stat(php_http_message_body_stream(body), &body->ssb);
 	return &body->ssb;
 }
 
-PHP_HTTP_API const char *php_http_message_body_boundary(php_http_message_body_t *body)
+const char *php_http_message_body_boundary(php_http_message_body_t *body)
 {
 	if (!body->boundary) {
 		union { double dbl; int num[2]; } data;
@@ -121,7 +122,7 @@ PHP_HTTP_API const char *php_http_message_body_boundary(php_http_message_body_t 
 	return body->boundary;
 }
 
-PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body)
+char *php_http_message_body_etag(php_http_message_body_t *body)
 {
 	const php_stream_statbuf *ssb = php_http_message_body_stat(body);
 	TSRMLS_FETCH_FROM_CTX(body->ts);
@@ -144,7 +145,7 @@ PHP_HTTP_API char *php_http_message_body_etag(php_http_message_body_t *body)
 	}
 }
 
-PHP_HTTP_API void php_http_message_body_to_string(php_http_message_body_t *body, char **buf, size_t *len, off_t offset, size_t forlen)
+void php_http_message_body_to_string(php_http_message_body_t *body, char **buf, size_t *len, off_t offset, size_t forlen)
 {
 	php_stream *s = php_http_message_body_stream(body);
 	TSRMLS_FETCH_FROM_CTX(body->ts);
@@ -156,19 +157,20 @@ PHP_HTTP_API void php_http_message_body_to_string(php_http_message_body_t *body,
 	*len = php_stream_copy_to_mem(s, buf, forlen, 0);
 }
 
-PHP_HTTP_API void php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *dst, off_t offset, size_t forlen)
+STATUS php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *dst, off_t offset, size_t forlen)
 {
 	php_stream *s = php_http_message_body_stream(body);
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	php_stream_seek(s, offset, SEEK_SET);
+
 	if (!forlen) {
 		forlen = -1;
 	}
-	php_stream_copy_to_stream_ex(s, dst, forlen, NULL);
+	return php_stream_copy_to_stream_ex(s, dst, forlen, NULL);
 }
 
-PHP_HTTP_API void php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen)
+STATUS php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen)
 {
 	php_stream *s = php_http_message_body_stream(body);
 	char *buf = emalloc(0x1000);
@@ -183,7 +185,9 @@ PHP_HTTP_API void php_http_message_body_to_callback(php_http_message_body_t *bod
 		size_t read = php_stream_read(s, buf, MIN(forlen, 0x1000));
 
 		if (read) {
-			cb(cb_arg, buf, read);
+			if (-1 == cb(cb_arg, buf, read)) {
+				return FAILURE;
+			}
 		}
 
 		if (read < MIN(forlen, sizeof(buf))) {
@@ -195,22 +199,34 @@ PHP_HTTP_API void php_http_message_body_to_callback(php_http_message_body_t *bod
 		}
 	}
 	efree(buf);
+
+	return SUCCESS;
 }
 
-PHP_HTTP_API size_t php_http_message_body_append(php_http_message_body_t *body, const char *buf, size_t len)
+size_t php_http_message_body_append(php_http_message_body_t *body, const char *buf, size_t len)
 {
 	php_stream *s;
+	size_t written;
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	if (!(s = php_http_message_body_stream(body))) {
 		return -1;
 	}
 
-	php_stream_seek(s, 0, SEEK_END);
-	return php_stream_write(s, buf, len);
+	if (s->ops->seek) {
+		php_stream_seek(s, 0, SEEK_END);
+	}
+
+	written = php_stream_write(s, buf, len);
+
+	if (written != len) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to append %zu bytes to body; wrote %zu", len, written);
+	}
+
+	return len;
 }
 
-PHP_HTTP_API size_t php_http_message_body_appendf(php_http_message_body_t *body, const char *fmt, ...)
+size_t php_http_message_body_appendf(php_http_message_body_t *body, const char *fmt, ...)
 {
 	va_list argv;
 	char *print_str;
@@ -226,7 +242,7 @@ PHP_HTTP_API size_t php_http_message_body_appendf(php_http_message_body_t *body,
 	return print_len;
 }
 
-PHP_HTTP_API STATUS php_http_message_body_add_form(php_http_message_body_t *body, HashTable *fields, HashTable *files)
+STATUS php_http_message_body_add_form(php_http_message_body_t *body, HashTable *fields, HashTable *files)
 {
 	zval tmp;
 
@@ -246,7 +262,7 @@ PHP_HTTP_API STATUS php_http_message_body_add_form(php_http_message_body_t *body
 	return SUCCESS;
 }
 
-PHP_HTTP_API void php_http_message_body_add_part(php_http_message_body_t *body, php_http_message_t *part)
+void php_http_message_body_add_part(php_http_message_body_t *body, php_http_message_t *part)
 {
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 
@@ -256,7 +272,7 @@ PHP_HTTP_API void php_http_message_body_add_part(php_http_message_body_t *body, 
 }
 
 
-PHP_HTTP_API STATUS php_http_message_body_add_form_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
+STATUS php_http_message_body_add_form_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
 {
 	char *safe_name;
 	TSRMLS_FETCH_FROM_CTX(body->ts);
@@ -277,7 +293,7 @@ PHP_HTTP_API STATUS php_http_message_body_add_form_field(php_http_message_body_t
 	return SUCCESS;
 }
 
-PHP_HTTP_API STATUS php_http_message_body_add_form_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
+STATUS php_http_message_body_add_form_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
 {
 	char *safe_name, *path_dup = estrdup(path), *bname;
 	size_t bname_len;
@@ -363,7 +379,7 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	if (Z_TYPE_P(value) != IS_ARRAY && Z_TYPE_P(value) != IS_OBJECT) {
-		php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "Expected array or object (name, type, file) for message body file to add");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Expected array or object (name, type, file) for message body file to add");
 		return FAILURE;
 	}
 
@@ -495,7 +511,7 @@ static size_t splitbody(void *opaque, char *buf, size_t len TSRMLS_DC)
 					len = 0;
 				} else {
 					/* let this be garbage */
-					php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "Malformed multipart boundary at pos %zu", consumed);
+					php_error_docref(NULL TSRMLS_CC, E_WARNING, "Malformed multipart boundary at pos %zu", consumed);
 					return -1;
 				}
 			}
@@ -513,7 +529,7 @@ static size_t splitbody(void *opaque, char *buf, size_t len TSRMLS_DC)
 	return consumed;
 }
 
-PHP_HTTP_API php_http_message_t *php_http_message_body_split(php_http_message_body_t *body, const char *boundary)
+php_http_message_t *php_http_message_body_split(php_http_message_body_t *body, const char *boundary)
 {
 	php_stream *s = php_http_message_body_stream(body);
 	php_http_buffer_t *tmp = NULL;
@@ -609,21 +625,16 @@ PHP_METHOD(HttpMessageBody, __construct)
 	zval *zstream = NULL;
 	php_stream *stream;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|r!", &zstream)) {
-			if (zstream) {
-				php_stream_from_zval(stream, &zstream);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|r!", &zstream), invalid_arg, return);
 
-				if (stream) {
-					if (obj->body) {
-						php_http_message_body_free(&obj->body);
-					}
-					obj->body = php_http_message_body_init(NULL, stream TSRMLS_CC);
-				}
-			}
-			PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+	if (zstream) {
+		php_http_expect(php_stream_from_zval_no_verify(stream, &zstream), unexpected_val, return);
+
+		if (obj->body) {
+			php_http_message_body_free(&obj->body);
 		}
-	} end_error_handling();
+		obj->body = php_http_message_body_init(NULL, stream TSRMLS_CC);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody___toString, 0, 0, 0)
@@ -746,17 +757,17 @@ PHP_METHOD(HttpMessageBody, append)
 {
 	char *str;
 	int len;
+	php_http_message_body_object_t *obj;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &str, &len)) {
-		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &str, &len), invalid_arg, return);
 
-		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-		if (len != php_http_message_body_append(obj->body, str, len)) {
-			php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "Could not append to body");
-		}
-		RETURN_ZVAL(getThis(), 1, 0);
-	}
+	PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
+	php_http_expect(len == php_http_message_body_append(obj->body, str, len), runtime, return);
+
+	RETURN_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_addForm, 0, 0, 0)
@@ -766,15 +777,17 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, addForm)
 {
 	HashTable *fields = NULL, *files = NULL;
+	php_http_message_body_object_t *obj;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|h!h!", &fields, &files)) {
-		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|h!h!", &fields, &files), invalid_arg, return);
 
-		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-		php_http_message_body_add_form(obj->body, fields, files);
-		RETURN_ZVAL(getThis(), 1, 0);
-	}
+	PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
+	php_http_expect(SUCCESS == php_http_message_body_add_form(obj->body, fields, files), runtime, return);
+
+	RETURN_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_addPart, 0, 0, 1)
@@ -783,14 +796,22 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, addPart)
 {
 	zval *zobj;
+	php_http_message_body_object_t *obj;
+	php_http_message_object_t *mobj;
+	zend_error_handling zeh;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zobj, php_http_message_class_entry)) {
-		php_http_message_body_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-		php_http_message_object_t *mobj = zend_object_store_get_object(zobj TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &zobj, php_http_message_class_entry), invalid_arg, return);
 
-		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	mobj = zend_object_store_get_object(zobj TSRMLS_CC);
 
-		php_http_message_body_add_part(obj->body, mobj->message);
+	PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
+	zend_replace_error_handling(EH_THROW, php_http_exception_runtime_class_entry, &zeh TSRMLS_CC);
+	php_http_message_body_add_part(obj->body, mobj->message);
+	zend_restore_error_handling(&zeh TSRMLS_CC);
+
+	if (!EG(exception)) {
 		RETURN_ZVAL(getThis(), 1, 0);
 	}
 }
@@ -847,7 +868,7 @@ PHP_METHOD(HttpMessageBody, stat)
 							RETURN_LONG(sb->sb.st_ctime);
 							break;
 						default:
-							php_http_error(HE_WARNING, PHP_HTTP_E_MESSAGE_BODY, "unknown stat field: '%s' (should be one of [s]ize, [a]time, [m]time or [c]time)", field_str);
+							php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unknown stat field: '%s' (should be one of [s]ize, [a]time, [m]time or [c]time)", field_str);
 							break;
 					}
 			} else {
@@ -886,7 +907,7 @@ PHP_MINIT_FUNCTION(http_message_body)
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http\\Message", "Body", php_http_message_body_methods);
-	php_http_message_body_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
+	php_http_message_body_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
 	php_http_message_body_class_entry->create_object = php_http_message_body_object_new;
 	memcpy(&php_http_message_body_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_message_body_object_handlers.clone_obj = php_http_message_body_object_clone;

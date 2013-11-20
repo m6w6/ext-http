@@ -18,11 +18,6 @@
 /* required minimum length of an HTTP message "HTTP/1.1" */
 #define PHP_HTTP_MESSAGE_MIN_SIZE 8
 #define PHP_HTTP_MESSAGE_TYPE(TYPE, msg) ((msg) && ((msg)->type == PHP_HTTP_ ##TYPE))
-#define PHP_HTTP_MESSAGE_TYPE_CHECK(type, msg, action) \
-		if (!PHP_HTTP_MESSAGE_TYPE(type, (msg))) { \
-			php_http_error(HE_NOTICE, PHP_HTTP_E_MESSAGE_TYPE, "HttpMessage is not of type "#type); \
-			action; \
-		}
 
 typedef php_http_info_type_t php_http_message_type_t;
 typedef struct php_http_message php_http_message_t;

@@ -30,6 +30,8 @@
 #include <ext/date/php_date.h>
 
 #include <zend_interfaces.h>
+#include <zend_exceptions.h>
+
 
 #ifdef PHP_WIN32
 # define PHP_HTTP_API __declspec(dllexport)
@@ -41,9 +43,6 @@
 
 /* make functions that return SUCCESS|FAILURE more obvious */
 typedef int STATUS;
-
-/* inline doc */
-#define _RETURNS(type)
 
 #if (defined(HAVE_ICONV) || defined(PHP_HTTP_HAVE_EXT_ICONV)) && (PHP_HTTP_SHARED_DEPS || !defined(COMPILE_DL_ICONV))
 #	define PHP_HTTP_HAVE_ICONV
@@ -95,7 +94,7 @@ typedef int STATUS;
 #include "php_http_exception.h"
 #include "php_http_filter.h"
 #include "php_http_header_parser.h"
-#include "php_http_headers.h"
+#include "php_http_header.h"
 #include "php_http_message_body.h"
 #include "php_http_message_parser.h"
 #include "php_http_negotiate.h"

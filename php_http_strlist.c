@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-PHP_HTTP_API php_http_strlist_iterator_t *php_http_strlist_iterator_init(php_http_strlist_iterator_t *iter, const char list[], unsigned factor)
+php_http_strlist_iterator_t *php_http_strlist_iterator_init(php_http_strlist_iterator_t *iter, const char list[], unsigned factor)
 {
 	if (!iter) {
 		iter = emalloc(sizeof(*iter));
@@ -25,7 +25,7 @@ PHP_HTTP_API php_http_strlist_iterator_t *php_http_strlist_iterator_init(php_htt
 	return iter;
 }
 
-PHP_HTTP_API const char *php_http_strlist_iterator_this(php_http_strlist_iterator_t *iter, unsigned *id)
+const char *php_http_strlist_iterator_this(php_http_strlist_iterator_t *iter, unsigned *id)
 {
 	if (id) {
 		*id = (iter->major + 1) * iter->factor + iter->minor;
@@ -34,7 +34,7 @@ PHP_HTTP_API const char *php_http_strlist_iterator_this(php_http_strlist_iterato
 	return iter->p;
 }
 
-PHP_HTTP_API const char *php_http_strlist_iterator_next(php_http_strlist_iterator_t *iter)
+const char *php_http_strlist_iterator_next(php_http_strlist_iterator_t *iter)
 {
 	if (*iter->p) {
 		while (*iter->p) {
@@ -53,12 +53,12 @@ PHP_HTTP_API const char *php_http_strlist_iterator_next(php_http_strlist_iterato
     return iter->p;
 }
 
-PHP_HTTP_API void php_http_strlist_iterator_dtor(php_http_strlist_iterator_t *iter)
+void php_http_strlist_iterator_dtor(php_http_strlist_iterator_t *iter)
 {
 
 }
 
-PHP_HTTP_API void php_http_strlist_iterator_free(php_http_strlist_iterator_t **iter)
+void php_http_strlist_iterator_free(php_http_strlist_iterator_t **iter)
 {
 	if (*iter) {
 		efree(*iter);
@@ -66,7 +66,7 @@ PHP_HTTP_API void php_http_strlist_iterator_free(php_http_strlist_iterator_t **i
 	}
 }
 
-PHP_HTTP_API const char *php_http_strlist_find(const char list[], unsigned factor, unsigned item)
+const char *php_http_strlist_find(const char list[], unsigned factor, unsigned item)
 {
 	unsigned M = 0, m = 0, major, minor;
 	const char *p = &list[0];

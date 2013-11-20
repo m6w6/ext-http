@@ -1,4 +1,8 @@
 * let http_info.request.url be a php_url
 * let the message body be a simple query string unless files are added
+* php_http_message_serialize reverses the chain twice; remove that
 * revisit error handling
- 
+ * ditch http\Object
+ * interfacize http\Exception
+ * subclass Exceptions
+ * zend_throw_exception

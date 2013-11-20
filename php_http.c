@@ -134,7 +134,6 @@ PHP_MINIT_FUNCTION(http)
 	REGISTER_INI_ENTRIES();
 	
 	if (0
-	|| SUCCESS != PHP_MINIT_CALL(http_object)
 	|| SUCCESS != PHP_MINIT_CALL(http_exception)
 	|| SUCCESS != PHP_MINIT_CALL(http_cookie)
 	|| SUCCESS != PHP_MINIT_CALL(http_encoding)

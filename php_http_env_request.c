@@ -115,42 +115,43 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvRequest___construct, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnvRequest, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_message_object_t *obj;
+	zval *zsg, *zqs;
 
-		if (SUCCESS == zend_parse_parameters_none()) {
-			zval *zsg, *zqs;
+	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
-			obj->message = php_http_message_init_env(obj->message, PHP_HTTP_REQUEST TSRMLS_CC);
-			obj->body = NULL;
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	obj->body = NULL;
 
-			zsg = php_http_env_get_superglobal(ZEND_STRL("_GET") TSRMLS_CC);
-			MAKE_STD_ZVAL(zqs);
-			object_init_ex(zqs, php_http_querystring_class_entry);
-			if (SUCCESS == php_http_querystring_ctor(zqs, zsg TSRMLS_CC)) {
-				zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), zqs TSRMLS_CC);
-			}
+	php_http_expect(obj->message = php_http_message_init_env(obj->message, PHP_HTTP_REQUEST TSRMLS_CC), unexpected_val, return);
+
+	zsg = php_http_env_get_superglobal(ZEND_STRL("_GET") TSRMLS_CC);
+	MAKE_STD_ZVAL(zqs);
+	object_init_ex(zqs, php_http_querystring_class_entry);
+	php_http_expect(SUCCESS == php_http_querystring_ctor(zqs, zsg TSRMLS_CC), unexpected_val,
 			zval_ptr_dtor(&zqs);
+			return;
+	);
+	zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), zqs TSRMLS_CC);
+	zval_ptr_dtor(&zqs);
 
-			zsg = php_http_env_get_superglobal(ZEND_STRL("_POST") TSRMLS_CC);
-			MAKE_STD_ZVAL(zqs);
-			object_init_ex(zqs, php_http_querystring_class_entry);
-			if (SUCCESS == php_http_querystring_ctor(zqs, zsg TSRMLS_CC)) {
-				zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), zqs TSRMLS_CC);
-			}
+	zsg = php_http_env_get_superglobal(ZEND_STRL("_POST") TSRMLS_CC);
+	MAKE_STD_ZVAL(zqs);
+	object_init_ex(zqs, php_http_querystring_class_entry);
+	php_http_expect(SUCCESS == php_http_querystring_ctor(zqs, zsg TSRMLS_CC), unexpected_val,
 			zval_ptr_dtor(&zqs);
-			
-			MAKE_STD_ZVAL(zqs);
-			array_init(zqs);
-			if ((zsg = php_http_env_get_superglobal(ZEND_STRL("_FILES") TSRMLS_CC))) {
-				zend_hash_apply_with_arguments(Z_ARRVAL_P(zsg) TSRMLS_CC, grab_files, 1, zqs);
-			}
+			return;
+	);
+	zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), zqs TSRMLS_CC);
+	zval_ptr_dtor(&zqs);
 
-			zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), zqs TSRMLS_CC);
-			zval_ptr_dtor(&zqs);
-		}
-		PHP_HTTP_ENV_REQUEST_OBJECT_INIT(obj);
-	} end_error_handling();
+	MAKE_STD_ZVAL(zqs);
+	array_init(zqs);
+	if ((zsg = php_http_env_get_superglobal(ZEND_STRL("_FILES") TSRMLS_CC))) {
+		zend_hash_apply_with_arguments(Z_ARRVAL_P(zsg) TSRMLS_CC, grab_files, 1, zqs);
+	}
+	zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), zqs TSRMLS_CC);
+	zval_ptr_dtor(&zqs);
 }
 
 #define call_querystring_get(prop) \

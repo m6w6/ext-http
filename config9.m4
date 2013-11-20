@@ -166,7 +166,11 @@ dnl ----
 				AC_MSG_RESULT([found: $CURL_CONFIG])
 			fi
 		
-			dnl Debian stable has currently 7.18.2
+			dnl RHEL6:         7.19.7
+			dnl SUSE11:        7.19.7
+			dnl Debian wheezy: 7.26.0
+			dnl Debian sqeeze: 7.21.0
+			dnl Debian ancient 7.18.2
 			AC_MSG_CHECKING([for curl version >= 7.18.2])
 			CURL_VERSION=`$CURL_CONFIG --version | $SED -e 's/[[^0-9\.]]//g'`
 			AC_MSG_RESULT([$CURL_VERSION])
@@ -443,7 +447,7 @@ dnl ----
 		php_http_exception.c \
 		php_http_filter.c \
 		php_http_header_parser.c \
-		php_http_headers.c \
+		php_http_header.c \
 		php_http_info.c \
 		php_http_message_body.c \
 		php_http_message.c \
@@ -495,7 +499,7 @@ dnl ----
 		php_http_filter.h \
 		php_http.h \
 		php_http_header_parser.h \
-		php_http_headers.h \
+		php_http_header.h \
 		php_http_info.h \
 		php_http_message_body.h \
 		php_http_message.h \

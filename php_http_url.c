@@ -183,7 +183,7 @@ static php_url *php_http_url_from_env(php_url *url TSRMLS_DC)
 	return url;
 }
 
-PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
+void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
 {
 	php_url *url, *tmp_url = NULL;
 
@@ -356,7 +356,7 @@ PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url 
 	}
 }
 
-PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC)
+STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC)
 {
 	const char *arg_sep_str;
 	size_t arg_sep_len;
@@ -375,7 +375,7 @@ PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_en
 	return SUCCESS;
 }
 
-PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *pre_encoded_str, size_t pre_encoded_len TSRMLS_DC)
+STATUS php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *pre_encoded_str, size_t pre_encoded_len TSRMLS_DC)
 {
 	if (pre_encoded_len && pre_encoded_str) {
 		php_http_buffer_append(qstr, pre_encoded_str, pre_encoded_len);
@@ -395,67 +395,70 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl___construct, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		zval *new_url = NULL, *old_url = NULL;
-		long flags = PHP_HTTP_URL_FROM_ENV;
+	zval *new_url = NULL, *old_url = NULL;
+	long flags = PHP_HTTP_URL_FROM_ENV;
+	zend_error_handling zeh;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!z!l", &old_url, &new_url, &flags)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				php_url *res_purl, *new_purl = NULL, *old_purl = NULL;
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!z!l", &old_url, &new_url, &flags), invalid_arg, return);
 
-				if (new_url) {
-					switch (Z_TYPE_P(new_url)) {
-						case IS_OBJECT:
-						case IS_ARRAY:
-							new_purl = php_http_url_from_struct(NULL, HASH_OF(new_url) TSRMLS_CC);
-							break;
-						default: {
-							zval *cpy = php_http_ztyp(IS_STRING, new_url);
+	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
+	{
+		php_url *res_purl, *new_purl = NULL, *old_purl = NULL;
 
-							new_purl = php_url_parse(Z_STRVAL_P(cpy));
-							zval_ptr_dtor(&cpy);
-							break;
-						}
-					}
-					if (!new_purl) {
-						return;
-					}
+		if (new_url) {
+			switch (Z_TYPE_P(new_url)) {
+				case IS_OBJECT:
+				case IS_ARRAY:
+					new_purl = php_http_url_from_struct(NULL, HASH_OF(new_url) TSRMLS_CC);
+					break;
+				default: {
+					zval *cpy = php_http_ztyp(IS_STRING, new_url);
+
+					new_purl = php_url_parse(Z_STRVAL_P(cpy));
+					zval_ptr_dtor(&cpy);
+					break;
 				}
-				if (old_url) {
-					switch (Z_TYPE_P(old_url)) {
-						case IS_OBJECT:
-						case IS_ARRAY:
-							old_purl = php_http_url_from_struct(NULL, HASH_OF(old_url) TSRMLS_CC);
-							break;
-						default: {
-							zval *cpy = php_http_ztyp(IS_STRING, old_url);
+			}
+			if (!new_purl) {
+				zend_restore_error_handling(&zeh TSRMLS_CC);
+				return;
+			}
+		}
+		if (old_url) {
+			switch (Z_TYPE_P(old_url)) {
+				case IS_OBJECT:
+				case IS_ARRAY:
+					old_purl = php_http_url_from_struct(NULL, HASH_OF(old_url) TSRMLS_CC);
+					break;
+				default: {
+					zval *cpy = php_http_ztyp(IS_STRING, old_url);
 
-							old_purl = php_url_parse(Z_STRVAL_P(cpy));
-							zval_ptr_dtor(&cpy);
-							break;
-						}
-					}
-					if (!old_purl) {
-						if (new_purl) {
-							php_url_free(new_purl);
-						}
-						return;
-					}
+					old_purl = php_url_parse(Z_STRVAL_P(cpy));
+					zval_ptr_dtor(&cpy);
+					break;
 				}
-
-				php_http_url(flags, old_purl, new_purl, &res_purl, NULL, NULL TSRMLS_CC);
-				php_http_url_to_struct(res_purl, getThis() TSRMLS_CC);
-
-				php_url_free(res_purl);
-				if (old_purl) {
-					php_url_free(old_purl);
-				}
+			}
+			if (!old_purl) {
 				if (new_purl) {
 					php_url_free(new_purl);
 				}
-			} end_error_handling();
+				zend_restore_error_handling(&zeh TSRMLS_CC);
+				return;
+			}
 		}
-	} end_error_handling();
+
+		php_http_url(flags, old_purl, new_purl, &res_purl, NULL, NULL TSRMLS_CC);
+		php_http_url_to_struct(res_purl, getThis() TSRMLS_CC);
+
+		php_url_free(res_purl);
+		if (old_purl) {
+			php_url_free(old_purl);
+		}
+		if (new_purl) {
+			php_url_free(new_purl);
+		}
+	}
+	zend_restore_error_handling(&zeh TSRMLS_CC);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_mod, 0, 0, 1)
@@ -466,8 +469,12 @@ PHP_METHOD(HttpUrl, mod)
 {
 	zval *new_url = NULL;
 	long flags = PHP_HTTP_URL_JOIN_PATH | PHP_HTTP_URL_JOIN_QUERY;
+	zend_error_handling zeh;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|l", &new_url, &flags)) {
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|l", &new_url, &flags), invalid_arg, return);
+
+	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
+	{
 		php_url *new_purl = NULL, *old_purl = NULL;
 
 		if (new_url) {
@@ -485,6 +492,7 @@ PHP_METHOD(HttpUrl, mod)
 				}
 			}
 			if (!new_purl) {
+				zend_restore_error_handling(&zeh TSRMLS_CC);
 				return;
 			}
 		}
@@ -504,6 +512,7 @@ PHP_METHOD(HttpUrl, mod)
 			php_url_free(new_purl);
 		}
 	}
+	zend_restore_error_handling(&zeh TSRMLS_CC);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_toString, 0, 0, 0)
@@ -557,7 +566,7 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http", "Url", php_http_url_methods);
-	php_http_url_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
+	php_http_url_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
 
 	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("scheme"), ZEND_ACC_PUBLIC TSRMLS_CC);
 	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("user"), ZEND_ACC_PUBLIC TSRMLS_CC);

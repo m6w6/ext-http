@@ -17,7 +17,7 @@
 
 /* SLEEP */
 
-PHP_HTTP_API void php_http_sleep(double s)
+void php_http_sleep(double s)
 {
 #if defined(PHP_WIN32)
 	Sleep((DWORD) PHP_HTTP_MSEC(s));
@@ -142,7 +142,7 @@ int php_http_select_str(const char *cmp, int argc, ...)
 
 /* ARRAYS */
 
-PHP_HTTP_API unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...)
+unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...)
 {
 	HashPosition pos;
 	unsigned argl = 0;
@@ -229,7 +229,7 @@ int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list
 
 /* PASS CALLBACK */
 
-PHP_HTTP_API size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len)
+size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len)
 {
 	php_http_pass_fcall_arg_t *fcd = cb_arg;
 	zval *zdata;
@@ -245,78 +245,9 @@ PHP_HTTP_API size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, 
 	return len;
 }
 
-/* ERROR */
-
-static inline int scope_error_handling(long type TSRMLS_DC)
-{
-	if ((type == E_THROW) || (EG(error_handling) == EH_THROW)) {
-		return EH_THROW;
-	}
-
-	if (EG(This) && instanceof_function(Z_OBJCE_P(EG(This)), php_http_object_class_entry TSRMLS_CC)) {
-		return php_http_object_get_error_handling(EG(This) TSRMLS_CC);
-	}
-
-	return EH_NORMAL;
-}
-
-void php_http_error(long type TSRMLS_DC, long code, const char *format, ...)
-{
-	va_list args;
-
-	va_start(args, format);
-	switch (scope_error_handling(type TSRMLS_CC)) {
-		case EH_THROW: {
-			char *message;
-			zend_class_entry *ce = php_http_exception_class_entry;
-
-			/*  FIXME wat? */
-			if (0&& EG(exception_class) && instanceof_function(EG(exception_class), ce TSRMLS_CC)) {
-				ce = EG(exception_class);
-			}
-
-			vspprintf(&message, 0, format, args);
-			zend_throw_exception(ce, message, code TSRMLS_CC);
-			efree(message);
-			break;
-		}
-		case EH_NORMAL:
-			php_verror(NULL, "", type, format, args TSRMLS_CC);
-			break;
-		case EH_SUPPRESS:
-			break;
-	}
-	va_end(args);
-}
 
 /* ZEND */
 
-STATUS php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval **argv[], zval **retval_ptr TSRMLS_DC)
-{
-	zend_fcall_info fci;
-	zval zmethod;
-	zval *retval;
-	STATUS rv;
-
-	fci.size = sizeof(fci);
-	fci.object_ptr = object;
-	fci.function_name = &zmethod;
-	fci.retval_ptr_ptr = retval_ptr ? retval_ptr : &retval;
-	fci.param_count = argc;
-	fci.params = argv;
-	fci.no_separation = 1;
-	fci.symbol_table = NULL;
-	fci.function_table = NULL;
-
-	INIT_PZVAL(&zmethod);
-	ZVAL_STRINGL(&zmethod, method_str, method_len, 0);
-	rv = zend_call_function(&fci, NULL TSRMLS_CC);
-
-	if (!retval_ptr && retval) {
-		zval_ptr_dtor(&retval);
-	}
-	return rv;
-}
 /*
  * Local variables:
  * tab-width: 4

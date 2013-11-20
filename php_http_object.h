@@ -13,22 +13,18 @@
 #ifndef PHP_HTTP_OBJECT_H
 #define PHP_HTTP_OBJECT_H
 
-typedef zend_object_value (*php_http_new_t)(zend_class_entry *ce, void *, void ** TSRMLS_DC);
-
-PHP_HTTP_API STATUS php_http_new(zend_object_value *ov, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC);
-
 typedef struct php_http_object {
 	zend_object zo;
 	zend_object_value zv;
 } php_http_object_t;
 
-PHP_HTTP_API zend_class_entry *php_http_object_class_entry;
-PHP_MINIT_FUNCTION(http_object);
-
 zend_object_value php_http_object_new(zend_class_entry *ce TSRMLS_DC);
 zend_object_value php_http_object_new_ex(zend_class_entry *ce, void *nothing, php_http_object_t **ptr TSRMLS_DC);
 
-PHP_HTTP_API zend_error_handling_t php_http_object_get_error_handling(zval *object TSRMLS_DC);
+typedef zend_object_value (*php_http_new_t)(zend_class_entry *ce, void *, void ** TSRMLS_DC);
+
+STATUS php_http_new(zend_object_value *ov, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC);
+STATUS php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval **argv[], zval **retval_ptr TSRMLS_DC);
 
 #endif
 

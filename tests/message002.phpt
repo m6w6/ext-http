@@ -31,15 +31,11 @@ var_dump(file_get_contents("php://input"));
 echo "Done\n";
 --EXPECTF--
 Test
-object(%s)#%d (13) {
-  ["errorHandling":protected]=>
-  NULL
+object(%s)#%d (12) {
   ["type":protected]=>
   int(1)
   ["body":protected]=>
-  object(%s)#%d (1) {
-    ["errorHandling":protected]=>
-    NULL
+  object(http\Message\Body)#%d (0) {
   }
   ["requestMethod":protected]=>
   string(4) "POST"
@@ -65,17 +61,13 @@ object(%s)#%d (13) {
   ["parentMessage":protected]=>
   NULL
   ["query":protected]=>
-  object(http\QueryString)#2 (2) {
-    ["errorHandling":protected]=>
-    NULL
+  object(http\QueryString)#2 (1) {
     ["queryArray":"http\QueryString":private]=>
     array(0) {
     }
   }
   ["form":protected]=>
-  object(http\QueryString)#3 (2) {
-    ["errorHandling":protected]=>
-    NULL
+  object(http\QueryString)#3 (1) {
     ["queryArray":"http\QueryString":private]=>
     array(0) {
     }

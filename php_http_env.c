@@ -96,7 +96,7 @@ PHP_RSHUTDOWN_FUNCTION(http_env)
 	return SUCCESS;
 }
 
-PHP_HTTP_API void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC)
+void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC)
 {
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 	zval **hsv, **header;
@@ -137,7 +137,7 @@ PHP_HTTP_API void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC)
 	}
 }
 
-PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len, php_http_message_t *request TSRMLS_DC)
+char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len, php_http_message_t *request TSRMLS_DC)
 {
 	HashTable *request_headers;
 	zval **zvalue = NULL;
@@ -165,7 +165,7 @@ PHP_HTTP_API char *php_http_env_get_request_header(const char *name_str, size_t 
 	return val;
 }
 
-PHP_HTTP_API int php_http_env_got_request_header(const char *name_str, size_t name_len, php_http_message_t *request TSRMLS_DC)
+int php_http_env_got_request_header(const char *name_str, size_t name_len, php_http_message_t *request TSRMLS_DC)
 {
 	HashTable *request_headers;
 	char *key = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
@@ -183,7 +183,7 @@ PHP_HTTP_API int php_http_env_got_request_header(const char *name_str, size_t na
 	return got;
 }
 
-PHP_HTTP_API zval *php_http_env_get_superglobal(const char *key, size_t key_len TSRMLS_DC)
+zval *php_http_env_get_superglobal(const char *key, size_t key_len TSRMLS_DC)
 {
 	zval **hsv;
 
@@ -196,7 +196,7 @@ PHP_HTTP_API zval *php_http_env_get_superglobal(const char *key, size_t key_len 
 	return *hsv;
 }
 
-PHP_HTTP_API zval *php_http_env_get_server_var(const char *key, size_t key_len, zend_bool check TSRMLS_DC)
+zval *php_http_env_get_server_var(const char *key, size_t key_len, zend_bool check TSRMLS_DC)
 {
 	zval *hsv, **var;
 	char *env;
@@ -226,7 +226,7 @@ PHP_HTTP_API zval *php_http_env_get_server_var(const char *key, size_t key_len, 
 	return *var;
 }
 
-PHP_HTTP_API php_http_message_body_t *php_http_env_get_request_body(TSRMLS_D)
+php_http_message_body_t *php_http_env_get_request_body(TSRMLS_D)
 {
 	if (!PHP_HTTP_G->env.request.body) {
 		php_stream *s = php_stream_temp_new();
@@ -266,7 +266,7 @@ PHP_HTTP_API php_http_message_body_t *php_http_env_get_request_body(TSRMLS_D)
 	return PHP_HTTP_G->env.request.body;
 }
 
-PHP_HTTP_API const char *php_http_env_get_request_method(php_http_message_t *request TSRMLS_DC)
+const char *php_http_env_get_request_method(php_http_message_t *request TSRMLS_DC)
 {
 	const char *m;
 
@@ -279,7 +279,7 @@ PHP_HTTP_API const char *php_http_env_get_request_method(php_http_message_t *req
 	return m ? m : "GET";
 }
 
-PHP_HTTP_API php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_t length, php_http_message_t *request TSRMLS_DC)
+php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_t length, php_http_message_t *request TSRMLS_DC)
 {
 	zval *zentry;
 	char *range, *rp, c;
@@ -432,7 +432,7 @@ static void grab_headers(void *data, void *arg TSRMLS_DC)
 	php_http_buffer_appends(PHP_HTTP_BUFFER(arg), PHP_HTTP_CRLF);
 }
 
-PHP_HTTP_API STATUS php_http_env_get_response_headers(HashTable *headers_ht TSRMLS_DC)
+STATUS php_http_env_get_response_headers(HashTable *headers_ht TSRMLS_DC)
 {
 	STATUS status;
 	php_http_buffer_t headers;
@@ -441,13 +441,13 @@ PHP_HTTP_API STATUS php_http_env_get_response_headers(HashTable *headers_ht TSRM
 	zend_llist_apply_with_argument(&SG(sapi_headers).headers, grab_headers, &headers TSRMLS_CC);
 	php_http_buffer_fix(&headers);
 
-	status = php_http_headers_parse(headers.data, headers.used, headers_ht, NULL, NULL TSRMLS_CC);
+	status = php_http_header_parse(headers.data, headers.used, headers_ht, NULL, NULL TSRMLS_CC);
 	php_http_buffer_dtor(&headers);
 
 	return status;
 }
 
-PHP_HTTP_API char *php_http_env_get_response_header(const char *name_str, size_t name_len TSRMLS_DC)
+char *php_http_env_get_response_header(const char *name_str, size_t name_len TSRMLS_DC)
 {
 	char *val = NULL;
 	HashTable headers;
@@ -471,18 +471,18 @@ PHP_HTTP_API char *php_http_env_get_response_header(const char *name_str, size_t
 	return val;
 }
 
-PHP_HTTP_API long php_http_env_get_response_code(TSRMLS_D)
+long php_http_env_get_response_code(TSRMLS_D)
 {
 	long code = SG(sapi_headers).http_response_code;
 	return code ? code : 200;
 }
 
-PHP_HTTP_API STATUS php_http_env_set_response_code(long http_code TSRMLS_DC)
+STATUS php_http_env_set_response_code(long http_code TSRMLS_DC)
 {
 	return sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) http_code TSRMLS_CC);
 }
 
-PHP_HTTP_API STATUS php_http_env_set_response_status_line(long code, php_http_version_t *v TSRMLS_DC)
+STATUS php_http_env_set_response_status_line(long code, php_http_version_t *v TSRMLS_DC)
 {
 	sapi_header_line h = {NULL, 0, 0};
 	STATUS ret;
@@ -494,12 +494,12 @@ PHP_HTTP_API STATUS php_http_env_set_response_status_line(long code, php_http_ve
 	return ret;
 }
 
-PHP_HTTP_API STATUS php_http_env_set_response_protocol_version(php_http_version_t *v TSRMLS_DC)
+STATUS php_http_env_set_response_protocol_version(php_http_version_t *v TSRMLS_DC)
 {
 	return php_http_env_set_response_status_line(php_http_env_get_response_code(TSRMLS_C), v TSRMLS_CC);
 }
 
-PHP_HTTP_API STATUS php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace TSRMLS_DC)
+STATUS php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace TSRMLS_DC)
 {
 	sapi_header_line h = {estrndup(header_str, header_len), header_len, http_code};
 	STATUS ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h TSRMLS_CC);
@@ -507,7 +507,7 @@ PHP_HTTP_API STATUS php_http_env_set_response_header(long http_code, const char 
 	return ret;
 }
 
-PHP_HTTP_API STATUS php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv TSRMLS_DC)
+STATUS php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv TSRMLS_DC)
 {
 	STATUS ret = FAILURE;
 	sapi_header_line h = {NULL, 0, http_code};
@@ -523,7 +523,7 @@ PHP_HTTP_API STATUS php_http_env_set_response_header_va(long http_code, zend_boo
 	return ret;
 }
 
-PHP_HTTP_API STATUS php_http_env_set_response_header_format(long http_code, zend_bool replace TSRMLS_DC, const char *fmt, ...)
+STATUS php_http_env_set_response_header_format(long http_code, zend_bool replace TSRMLS_DC, const char *fmt, ...)
 {
 	STATUS ret;
 	va_list args;
@@ -535,7 +535,7 @@ PHP_HTTP_API STATUS php_http_env_set_response_header_format(long http_code, zend
 	return ret;
 }
 
-PHP_HTTP_API STATUS php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace TSRMLS_DC)
+STATUS php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace TSRMLS_DC)
 {
 	if (!value) {
 		sapi_header_line h = {(char *) name_str, name_len, http_code};
@@ -673,7 +673,7 @@ static PHP_HTTP_STRLIST(php_http_env_response_status) =
 	PHP_HTTP_STRLIST_STOP
 ;
 
-PHP_HTTP_API const char *php_http_env_get_response_status_for_code(unsigned code)
+const char *php_http_env_get_response_status_for_code(unsigned code)
 {
 	return php_http_strlist_find(php_http_env_response_status, 100, code);
 }
@@ -707,18 +707,16 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getRequestBody, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, getRequestBody)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		zend_class_entry *class_entry = php_http_message_body_class_entry;
+	zend_object_value ov;
+	php_http_message_body_t *body;
+	zend_class_entry *class_entry = php_http_message_body_class_entry;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|C", &class_entry)) {
-			zend_object_value ov;
-			php_http_message_body_t *body = php_http_env_get_request_body(TSRMLS_C);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|C", &class_entry), invalid_arg, return);
 
-			if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, php_http_message_body_init(&body, NULL TSRMLS_CC), NULL TSRMLS_CC)) {
-				RETVAL_OBJVAL(ov, 0);
-			}
-		}
-	} end_error_handling();
+	body = php_http_env_get_request_body(TSRMLS_C);
+	if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, body, NULL TSRMLS_CC)) {
+		RETVAL_OBJVAL(ov, 0);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseStatusForCode, 0, 0, 1)
@@ -1005,7 +1003,7 @@ PHP_MINIT_FUNCTION(http_env)
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http", "Env", php_http_env_methods);
-	php_http_env_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
+	php_http_env_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
 
 #ifdef PHP_HTTP_HAVE_JSON
 	php_http_env_register_json_handler(TSRMLS_C);

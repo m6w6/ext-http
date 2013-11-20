@@ -26,7 +26,7 @@ static const php_http_header_parser_state_spec_t php_http_header_parser_states[]
 		{PHP_HTTP_HEADER_PARSER_STATE_DONE,			0}
 };
 
-PHP_HTTP_API php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser TSRMLS_DC)
+php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser TSRMLS_DC)
 {
 	if (!parser) {
 		parser = emalloc(sizeof(*parser));
@@ -38,7 +38,7 @@ PHP_HTTP_API php_http_header_parser_t *php_http_header_parser_init(php_http_head
 	return parser;
 }
 
-PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_push(php_http_header_parser_t *parser, unsigned argc, ...)
+php_http_header_parser_state_t php_http_header_parser_state_push(php_http_header_parser_t *parser, unsigned argc, ...)
 {
 	va_list va_args;
 	unsigned i;
@@ -54,7 +54,7 @@ PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_push(ph
 	return state;
 }
 
-PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_is(php_http_header_parser_t *parser)
+php_http_header_parser_state_t php_http_header_parser_state_is(php_http_header_parser_t *parser)
 {
 	php_http_header_parser_state_t *state;
 
@@ -64,7 +64,7 @@ PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_is(php_
 	return PHP_HTTP_HEADER_PARSER_STATE_START;
 }
 
-PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_pop(php_http_header_parser_t *parser)
+php_http_header_parser_state_t php_http_header_parser_state_pop(php_http_header_parser_t *parser)
 {
 	php_http_header_parser_state_t state, *state_ptr;
 	if (SUCCESS == zend_stack_top(&parser->stack, (void *) &state_ptr)) {
@@ -75,7 +75,7 @@ PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_pop(php
 	return PHP_HTTP_HEADER_PARSER_STATE_START;
 }
 
-PHP_HTTP_API void php_http_header_parser_dtor(php_http_header_parser_t *parser)
+void php_http_header_parser_dtor(php_http_header_parser_t *parser)
 {
 	zend_stack_destroy(&parser->stack);
 	php_http_info_dtor(&parser->info);
@@ -83,7 +83,7 @@ PHP_HTTP_API void php_http_header_parser_dtor(php_http_header_parser_t *parser)
 	STR_FREE(parser->_val.str);
 }
 
-PHP_HTTP_API void php_http_header_parser_free(php_http_header_parser_t **parser)
+void php_http_header_parser_free(php_http_header_parser_t **parser)
 {
 	if (*parser) {
 		php_http_header_parser_dtor(*parser);
@@ -92,7 +92,7 @@ PHP_HTTP_API void php_http_header_parser_free(php_http_header_parser_t **parser)
 	}
 }
 
-PHP_HTTP_API STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
+STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
 {
 	TSRMLS_FETCH_FROM_CTX(parser->ts);
 

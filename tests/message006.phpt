@@ -20,20 +20,16 @@ var_dump($m);
 DONE
 --EXPECTF--
 Test
-object(c)#%d (10) {
+object(c)#%d (9) {
   ["headers"]=>
   array(1) {
     ["foo"]=>
     string(3) "bar"
   }
-  ["errorHandling":protected]=>
-  NULL
   ["type":protected]=>
   int(0)
   ["body":protected]=>
-  object(http\Message\Body)#%d (1) {
-    ["errorHandling":protected]=>
-    NULL
+  object(http\Message\Body)#%d (0) {
   }
   ["requestMethod":protected]=>
   string(0) ""

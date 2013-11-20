@@ -109,7 +109,7 @@ static php_http_message_t *get_request(zval *options TSRMLS_DC)
 	return request;
 }
 
-PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC)
+php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC)
 {
 	php_http_cache_status_t ret = PHP_HTTP_CACHE_NO;
 	int free_etag = 0;
@@ -151,7 +151,7 @@ PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zva
 	return ret;
 }
 
-PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC)
+php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC)
 {
 	php_http_cache_status_t ret = PHP_HTTP_CACHE_NO;
 	char *header;
@@ -202,7 +202,7 @@ static zend_bool php_http_env_response_is_cacheable(php_http_env_response_t *r, 
 		return 0;
 	}
 
-	if (php_http_env_got_request_header(ZEND_STRL("Authorizsation"), request TSRMLS_CC)) {
+	if (php_http_env_got_request_header(ZEND_STRL("Authorization"), request TSRMLS_CC)) {
 		return 0;
 	}
 
@@ -259,7 +259,7 @@ static STATUS php_http_env_response_send_data(php_http_env_response_t *r, const 
 	return SUCCESS;
 }
 
-PHP_HTTP_API php_http_env_response_t *php_http_env_response_init(php_http_env_response_t *r, zval *options, php_http_env_response_ops_t *ops, void *init_arg TSRMLS_DC)
+php_http_env_response_t *php_http_env_response_init(php_http_env_response_t *r, zval *options, php_http_env_response_ops_t *ops, void *init_arg TSRMLS_DC)
 {
 	zend_bool free_r;
 
@@ -293,7 +293,7 @@ PHP_HTTP_API php_http_env_response_t *php_http_env_response_init(php_http_env_re
 	return r;
 }
 
-PHP_HTTP_API void php_http_env_response_dtor(php_http_env_response_t *r)
+void php_http_env_response_dtor(php_http_env_response_t *r)
 {
 	if (r->ops->dtor) {
 		r->ops->dtor(r);
@@ -307,7 +307,7 @@ PHP_HTTP_API void php_http_env_response_dtor(php_http_env_response_t *r)
 	}
 }
 
-PHP_HTTP_API void php_http_env_response_free(php_http_env_response_t **r)
+void php_http_env_response_free(php_http_env_response_t **r)
 {
 	if (*r) {
 		php_http_env_response_dtor(*r);
@@ -358,7 +358,7 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r, php_ht
 
 	if ((zoption = get_option(options, ZEND_STRL("headers") TSRMLS_CC))) {
 		if (Z_TYPE_P(zoption) == IS_ARRAY) {
-			php_http_headers_to_callback(Z_ARRVAL_P(zoption), 0, (php_http_pass_format_callback_t) r->ops->set_header, r TSRMLS_CC);
+			php_http_header_to_callback(Z_ARRVAL_P(zoption), 0, (php_http_pass_format_callback_t) r->ops->set_header, r TSRMLS_CC);
 		}
 		zval_ptr_dtor(&zoption);
 	}
@@ -371,11 +371,9 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r, php_ht
 		zval *zoption_copy = php_http_ztyp(IS_STRING, zoption);
 
 		zval_ptr_dtor(&zoption);
-		if (Z_STRLEN_P(zoption_copy)) {
-			PHP_HTTP_CHECK_CONTENT_TYPE(Z_STRVAL_P(zoption_copy), ret = FAILURE) else {
-				if (SUCCESS == (ret = r->ops->set_header(r, "Content-Type: %.*s", Z_STRLEN_P(zoption_copy), Z_STRVAL_P(zoption_copy)))) {
-					r->content.type = estrndup(Z_STRVAL_P(zoption_copy), Z_STRLEN_P(zoption_copy));
-				}
+		if (Z_STRLEN_P(zoption_copy) && strchr(Z_STRVAL_P(zoption_copy), '/')) {
+			if (SUCCESS == (ret = r->ops->set_header(r, "Content-Type: %.*s", Z_STRLEN_P(zoption_copy), Z_STRVAL_P(zoption_copy)))) {
+				r->content.type = estrndup(Z_STRVAL_P(zoption_copy), Z_STRLEN_P(zoption_copy));
 			}
 		}
 		zval_ptr_dtor(&zoption_copy);
@@ -582,10 +580,11 @@ static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
 					&&	2 == php_http_array_list(Z_ARRVAL_PP(range) TSRMLS_CC, 2, &begin, &end)
 				) {
 					/* send chunk */
-					php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_env_response_send_data, r, Z_LVAL_PP(begin), Z_LVAL_PP(end) - Z_LVAL_PP(begin) + 1);
-					php_http_env_response_send_done(r);
+					ret = php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_env_response_send_data, r, Z_LVAL_PP(begin), Z_LVAL_PP(end) - Z_LVAL_PP(begin) + 1);
+					if (ret == SUCCESS) {
+						ret = php_http_env_response_send_done(r);
+					}
 					zend_hash_destroy(&r->range.values);
-					ret = SUCCESS;
 				} else {
 					/* this should never happen */
 					zend_hash_destroy(&r->range.values);
@@ -614,23 +613,28 @@ static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
 								Z_LVAL_PP(end),
 								r->content.length
 						);
-						php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_env_response_send_data, r, Z_LVAL_PP(begin), Z_LVAL_PP(end) - Z_LVAL_PP(begin) + 1);
+						ret = php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_env_response_send_data, r, Z_LVAL_PP(begin), Z_LVAL_PP(end) - Z_LVAL_PP(begin) + 1);
 					}
 				}
-				php_http_buffer_appendf(r->buffer, PHP_HTTP_CRLF "--%s--", r->range.boundary);
-				php_http_env_response_send_done(r);
+
+				if (ret == SUCCESS) {
+					php_http_buffer_appendf(r->buffer, PHP_HTTP_CRLF "--%s--", r->range.boundary);
+					ret = php_http_env_response_send_done(r);
+				}
 				zend_hash_destroy(&r->range.values);
 			}
 
 		} else {
-			php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_env_response_send_data, r, 0, 0);
-			php_http_env_response_send_done(r);
+			ret = php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_env_response_send_data, r, 0, 0);
+			if (ret == SUCCESS) {
+				ret = php_http_env_response_send_done(r);
+			}
 		}
 	}
 	return ret;
 }
 
-PHP_HTTP_API STATUS php_http_env_response_send(php_http_env_response_t *r)
+STATUS php_http_env_response_send(php_http_env_response_t *r)
 {
 	php_http_message_t *request;
 	php_http_message_body_t *body;
@@ -695,14 +699,17 @@ PHP_HTTP_API STATUS php_http_env_response_send(php_http_env_response_t *r)
 	}
 
 	if (SUCCESS != php_http_env_response_send_head(r, request)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to send response headers");
 		return FAILURE;
 	}
 
 	if (SUCCESS != php_http_env_response_send_body(r)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to send response body");
 		return FAILURE;
 	}
 
 	if (SUCCESS != r->ops->finish(r)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to finish response");
 		return FAILURE;
 	}
 
@@ -803,7 +810,7 @@ static php_http_env_response_ops_t php_http_env_response_sapi_ops = {
 	php_http_env_response_sapi_finish
 };
 
-PHP_HTTP_API php_http_env_response_ops_t *php_http_env_response_get_sapi_ops(void)
+php_http_env_response_ops_t *php_http_env_response_get_sapi_ops(void)
 {
 	return &php_http_env_response_sapi_ops;
 }
@@ -1042,7 +1049,7 @@ static php_http_env_response_ops_t php_http_env_response_stream_ops = {
 	php_http_env_response_stream_finish
 };
 
-PHP_HTTP_API php_http_env_response_ops_t *php_http_env_response_get_stream_ops(void)
+php_http_env_response_ops_t *php_http_env_response_get_stream_ops(void)
 {
 	return &php_http_env_response_stream_ops;
 }
@@ -1058,17 +1065,13 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse___construct, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnvResponse, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_message_object_t *obj;
 
-		if (SUCCESS == zend_parse_parameters_none()) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				obj->message = php_http_message_init_env(obj->message, PHP_HTTP_RESPONSE TSRMLS_CC);
-			} end_error_handling();
-		}
-		PHP_HTTP_ENV_RESPONSE_OBJECT_INIT(obj);
-	} end_error_handling();
+	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+	php_http_expect(obj->message = php_http_message_init_env(obj->message, PHP_HTTP_RESPONSE TSRMLS_CC), unexpected_val, return);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse___invoke, 0, 0, 1)
@@ -1101,10 +1104,10 @@ static PHP_METHOD(HttpEnvResponse, setEnvRequest)
 {
 	zval *env_req = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O", &env_req, php_http_message_class_entry)) {
-		set_option(getThis(), ZEND_STRL("request"), IS_OBJECT, env_req, 0 TSRMLS_CC);
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O", &env_req, php_http_message_class_entry), invalid_arg, return);
+
+	set_option(getThis(), ZEND_STRL("request"), IS_OBJECT, env_req, 0 TSRMLS_CC);
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setContentType, 0, 0, 1)
@@ -1115,10 +1118,10 @@ static PHP_METHOD(HttpEnvResponse, setContentType)
 	char *ct_str = NULL;
 	int ct_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &ct_str, &ct_len)) {
-		set_option(getThis(), ZEND_STRL("contentType"), IS_STRING, ct_str, ct_len TSRMLS_CC);
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &ct_str, &ct_len), invalid_arg, return);
+
+	set_option(getThis(), ZEND_STRL("contentType"), IS_STRING, ct_str, ct_len TSRMLS_CC);
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setContentDisposition, 0, 0, 1)
@@ -1128,10 +1131,10 @@ static PHP_METHOD(HttpEnvResponse, setContentDisposition)
 {
 	zval *zdisposition;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &zdisposition)) {
-		zend_update_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("contentDisposition"), zdisposition TSRMLS_CC);
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &zdisposition), invalid_arg, return);
+
+	zend_update_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("contentDisposition"), zdisposition TSRMLS_CC);
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setContentEncoding, 0, 0, 1)
@@ -1141,10 +1144,10 @@ static PHP_METHOD(HttpEnvResponse, setContentEncoding)
 {
 	long ce;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &ce)) {
-		set_option(getThis(), ZEND_STRL("contentEncoding"), IS_LONG, &ce, 0 TSRMLS_CC);
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &ce), invalid_arg, return);
+
+	set_option(getThis(), ZEND_STRL("contentEncoding"), IS_LONG, &ce, 0 TSRMLS_CC);
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setCacheControl, 0, 0, 1)
@@ -1155,10 +1158,10 @@ static PHP_METHOD(HttpEnvResponse, setCacheControl)
 	char *cc_str = NULL;
 	int cc_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &cc_str, &cc_len)) {
-		set_option(getThis(), ZEND_STRL("cacheControl"), IS_STRING, cc_str, cc_len TSRMLS_CC);
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &cc_str, &cc_len), invalid_arg, return);
+
+	set_option(getThis(), ZEND_STRL("cacheControl"), IS_STRING, cc_str, cc_len TSRMLS_CC);
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setLastModified, 0, 0, 1)
@@ -1168,10 +1171,10 @@ static PHP_METHOD(HttpEnvResponse, setLastModified)
 {
 	long last_modified;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &last_modified)) {
-		set_option(getThis(), ZEND_STRL("lastModified"), IS_LONG, &last_modified, 0 TSRMLS_CC);
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &last_modified), invalid_arg, return);
+
+	set_option(getThis(), ZEND_STRL("lastModified"), IS_LONG, &last_modified, 0 TSRMLS_CC);
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_isCachedByLastModified, 0, 0, 0)
@@ -1200,10 +1203,10 @@ static PHP_METHOD(HttpEnvResponse, setEtag)
 	char *etag_str = NULL;
 	int etag_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &etag_str, &etag_len)) {
-		set_option(getThis(), ZEND_STRL("etag"), IS_STRING, etag_str, etag_len TSRMLS_CC);
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!", &etag_str, &etag_len), invalid_arg, return);
+
+	set_option(getThis(), ZEND_STRL("etag"), IS_STRING, etag_str, etag_len TSRMLS_CC);
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_isCachedByEtag, 0, 0, 0)
@@ -1232,11 +1235,11 @@ static PHP_METHOD(HttpEnvResponse, setThrottleRate)
 	long chunk_size;
 	double delay = 1;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|d", &chunk_size, &delay)) {
-		set_option(getThis(), ZEND_STRL("throttleDelay"), IS_DOUBLE, &delay, 0 TSRMLS_CC);
-		set_option(getThis(), ZEND_STRL("throttleChunk"), IS_LONG, &chunk_size, 0 TSRMLS_CC);
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|d", &chunk_size, &delay), invalid_arg, return);
+
+	set_option(getThis(), ZEND_STRL("throttleDelay"), IS_DOUBLE, &delay, 0 TSRMLS_CC);
+	set_option(getThis(), ZEND_STRL("throttleChunk"), IS_LONG, &chunk_size, 0 TSRMLS_CC);
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_send, 0, 0, 0)

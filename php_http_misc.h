@@ -41,14 +41,6 @@ PHP_HTTP_API void php_http_sleep(double s);
 
 /* STRING UTILITIES */
 
-#define PHP_HTTP_CHECK_CONTENT_TYPE(ct, action) \
-	if (!strchr((ct), '/')) { \
-		php_http_error(HE_WARNING, PHP_HTTP_E_INVALID_PARAM, \
-			"Content type \"%s\" does not seem to contain a primary and a secondary part", (ct)); \
-		action; \
-	}
-
-
 #ifndef STR_SET
 #	define STR_SET(STR, SET) \
 	{ \
@@ -197,8 +189,6 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 	return FAILURE;
 }
 
-STATUS php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval **argv[], zval **retval_ptr TSRMLS_DC);
-
 /* return object(values) */
 #define RETVAL_OBJECT(o, addref) \
 	RETVAL_OBJVAL((o)->value.obj, addref)
@@ -318,49 +308,6 @@ typedef struct php_http_pass_fcall_arg {
 } php_http_pass_fcall_arg_t;
 
 PHP_HTTP_API size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len);
-
-/* ERROR */
-
-extern void php_http_error(long type TSRMLS_DC, long code, const char *format, ...);
-
-#define with_error_handling(eh, ec) \
-	{ \
-		zend_error_handling __eh; \
-		zend_replace_error_handling((eh), (ec), &__eh TSRMLS_CC);
-
-#define end_error_handling() \
-		zend_restore_error_handling(&__eh TSRMLS_CC); \
-	}
-
-#ifndef E_THROW
-#	define E_THROW -1
-#endif
-#define HE_THROW	E_THROW TSRMLS_CC
-#define HE_NOTICE	E_NOTICE TSRMLS_CC
-#define HE_WARNING	E_WARNING TSRMLS_CC
-#define HE_ERROR	E_ERROR TSRMLS_CC
-
-typedef enum php_http_error {
-	PHP_HTTP_E_UNKNOWN = 0,
-	PHP_HTTP_E_RUNTIME,
-	PHP_HTTP_E_INVALID_PARAM,
-	PHP_HTTP_E_HEADER,
-	PHP_HTTP_E_MALFORMED_HEADERS,
-	PHP_HTTP_E_REQUEST_METHOD,
-	PHP_HTTP_E_MESSAGE,
-	PHP_HTTP_E_MESSAGE_TYPE,
-	PHP_HTTP_E_MESSAGE_BODY,
-	PHP_HTTP_E_ENCODING,
-	PHP_HTTP_E_CLIENT,
-	PHP_HTTP_E_CLIENT_POOL,
-	PHP_HTTP_E_CLIENT_DATASHARE,
-	PHP_HTTP_E_REQUEST_FACTORY,
-	PHP_HTTP_E_SOCKET,
-	PHP_HTTP_E_RESPONSE,
-	PHP_HTTP_E_URL,
-	PHP_HTTP_E_QUERYSTRING,
-	PHP_HTTP_E_COOKIE,
-} php_http_error_t;
 
 #endif
 

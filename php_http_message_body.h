@@ -35,8 +35,8 @@ PHP_HTTP_API void php_http_message_body_add_part(php_http_message_body_t *body, 
 PHP_HTTP_API size_t php_http_message_body_append(php_http_message_body_t *body, const char *buf, size_t len);
 PHP_HTTP_API size_t php_http_message_body_appendf(php_http_message_body_t *body, const char *fmt, ...);
 PHP_HTTP_API void php_http_message_body_to_string(php_http_message_body_t *body, char **buf, size_t *len, off_t offset, size_t forlen);
-PHP_HTTP_API void php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *s, off_t offset, size_t forlen);
-PHP_HTTP_API void php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen);
+PHP_HTTP_API STATUS php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *s, off_t offset, size_t forlen);
+PHP_HTTP_API STATUS php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen);
 PHP_HTTP_API void php_http_message_body_free(php_http_message_body_t **body);
 PHP_HTTP_API const php_stream_statbuf *php_http_message_body_stat(php_http_message_body_t *body);
 #define php_http_message_body_size(b) (php_http_message_body_stat((b))->sb.st_size)

@@ -20,7 +20,7 @@
 #include <ext/standard/sha1.h>
 #include <ext/standard/md5.h>
 
-PHP_HTTP_API php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC)
+php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC)
 {
 	void *ctx;
 	php_http_etag_t *e;
@@ -52,7 +52,7 @@ PHP_HTTP_API php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC)
 	return e;
 }
 
-PHP_HTTP_API char *php_http_etag_finish(php_http_etag_t *e)
+char *php_http_etag_finish(php_http_etag_t *e)
 {
 	unsigned char digest[128] = {0};
 	char *etag = NULL;
@@ -90,7 +90,7 @@ PHP_HTTP_API char *php_http_etag_finish(php_http_etag_t *e)
 	return etag;
 }
 
-PHP_HTTP_API size_t php_http_etag_update(php_http_etag_t *e, const char *data_ptr, size_t data_len)
+size_t php_http_etag_update(php_http_etag_t *e, const char *data_ptr, size_t data_len)
 {
 	if (!strcasecmp(e->mode, "crc32b")) {
 		uint i, c = *((uint *) e->ctx);

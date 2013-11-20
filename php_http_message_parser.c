@@ -44,7 +44,7 @@ const char *php_http_message_parser_state_name(php_http_message_parser_state_t s
 }
 #endif
 
-PHP_HTTP_API php_http_message_parser_t *php_http_message_parser_init(php_http_message_parser_t *parser TSRMLS_DC)
+php_http_message_parser_t *php_http_message_parser_init(php_http_message_parser_t *parser TSRMLS_DC)
 {
 	if (!parser) {
 		parser = emalloc(sizeof(*parser));
@@ -59,7 +59,7 @@ PHP_HTTP_API php_http_message_parser_t *php_http_message_parser_init(php_http_me
 	return parser;
 }
 
-PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_state_push(php_http_message_parser_t *parser, unsigned argc, ...)
+php_http_message_parser_state_t php_http_message_parser_state_push(php_http_message_parser_t *parser, unsigned argc, ...)
 {
 	php_http_message_parser_state_t state;
 	va_list va_args;
@@ -75,7 +75,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_state_push(
 	return state;
 }
 
-PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_state_is(php_http_message_parser_t *parser)
+php_http_message_parser_state_t php_http_message_parser_state_is(php_http_message_parser_t *parser)
 {
 	php_http_message_parser_state_t *state;
 
@@ -85,7 +85,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_state_is(ph
 	return PHP_HTTP_MESSAGE_PARSER_STATE_START;
 }
 
-PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_state_pop(php_http_message_parser_t *parser)
+php_http_message_parser_state_t php_http_message_parser_state_pop(php_http_message_parser_t *parser)
 {
 	php_http_message_parser_state_t state, *state_ptr;
 	if (SUCCESS == zend_stack_top(&parser->stack, (void *) &state_ptr)) {
@@ -96,7 +96,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_state_pop(p
 	return PHP_HTTP_MESSAGE_PARSER_STATE_START;
 }
 
-PHP_HTTP_API void php_http_message_parser_dtor(php_http_message_parser_t *parser)
+void php_http_message_parser_dtor(php_http_message_parser_t *parser)
 {
 	php_http_header_parser_dtor(&parser->header);
 	zend_stack_destroy(&parser->stack);
@@ -108,7 +108,7 @@ PHP_HTTP_API void php_http_message_parser_dtor(php_http_message_parser_t *parser
 	}
 }
 
-PHP_HTTP_API void php_http_message_parser_free(php_http_message_parser_t **parser)
+void php_http_message_parser_free(php_http_message_parser_t **parser)
 {
 	if (*parser) {
 		php_http_message_parser_dtor(*parser);
@@ -117,7 +117,7 @@ PHP_HTTP_API void php_http_message_parser_free(php_http_message_parser_t **parse
 	}
 }
 
-PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_message_parser_t *parser, php_stream *s, unsigned flags, php_http_message_t **message)
+php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_message_parser_t *parser, php_stream *s, unsigned flags, php_http_message_t **message)
 {
 	php_http_buffer_t buf;
 	php_http_message_parser_state_t state = PHP_HTTP_MESSAGE_PARSER_STATE_START;
@@ -186,7 +186,7 @@ PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_strea
 }
 
 
-PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, php_http_message_t **message)
+php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, php_http_message_t **message)
 {
 	char *str = NULL;
 	size_t len = 0;

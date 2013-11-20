@@ -99,7 +99,7 @@ static int php_http_negotiate_reduce(void *p TSRMLS_DC, int num_args, va_list ar
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-PHP_HTTP_API HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable *supported, const char *primary_sep_str, size_t primary_sep_len TSRMLS_DC)
+HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable *supported, const char *primary_sep_str, size_t primary_sep_len TSRMLS_DC)
 {
 	HashTable *result = NULL;
 

@@ -16,6 +16,13 @@ void php_http_client_options_set_subr(zval *this_ptr, char *key, size_t len, zva
 void php_http_client_options_set(zval *this_ptr, zval *opts TSRMLS_DC);
 void php_http_client_options_get_subr(zval *this_ptr, char *key, size_t len, zval *return_value TSRMLS_DC);
 
+#define PHP_HTTP_CLIENT_REQUEST_OBJECT_INIT(obj) \
+	do { \
+		if (!obj->message) { \
+			obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST, NULL TSRMLS_CC); \
+		} \
+	} while(0)
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, method)
 	ZEND_ARG_INFO(0, url)
@@ -27,31 +34,30 @@ static PHP_METHOD(HttpClientRequest, __construct)
 	char *meth_str = NULL, *url_str = NULL;
 	int meth_len = 0, url_len = 0;
 	zval *zheaders = NULL, *zbody = NULL;
+	php_http_message_object_t *obj;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!a!O!", &meth_str, &meth_len, &url_str, &url_len, &zheaders, &zbody, php_http_message_body_class_entry)) {
-			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!a!O!", &meth_str, &meth_len, &url_str, &url_len, &zheaders, &zbody, php_http_message_body_class_entry), invalid_arg, return);
 
-			if (obj->message) {
-				php_http_message_set_type(obj->message, PHP_HTTP_REQUEST);
-			} else {
-				obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST, NULL TSRMLS_CC);
-			}
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-			if (zbody) {
-				php_http_message_object_set_body(obj, zbody TSRMLS_CC);
-			}
-			if (meth_str && meth_len) {
-				PHP_HTTP_INFO(obj->message).request.method = estrndup(meth_str, meth_len);
-			}
-			if (url_str && url_len) {
-				PHP_HTTP_INFO(obj->message).request.url = estrndup(url_str, url_len);
-			}
-			if (zheaders) {
-				array_copy(Z_ARRVAL_P(zheaders), &obj->message->hdrs);
-			}
-		}
-	} end_error_handling();
+	if (obj->message) {
+		php_http_message_set_type(obj->message, PHP_HTTP_REQUEST);
+	} else {
+		obj->message = php_http_message_init(NULL, PHP_HTTP_REQUEST, NULL TSRMLS_CC);
+	}
+
+	if (zbody) {
+		php_http_expect(SUCCESS == php_http_message_object_set_body(obj, zbody TSRMLS_CC), unexpected_val, return);
+	}
+	if (meth_str && meth_len) {
+		PHP_HTTP_INFO(obj->message).request.method = estrndup(meth_str, meth_len);
+	}
+	if (url_str && url_len) {
+		PHP_HTTP_INFO(obj->message).request.url = estrndup(url_str, url_len);
+	}
+	if (zheaders) {
+		array_copy(Z_ARRVAL_P(zheaders), &obj->message->hdrs);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_setContentType, 0, 0, 1)
@@ -61,23 +67,24 @@ static PHP_METHOD(HttpClientRequest, setContentType)
 {
 	char *ct_str;
 	int ct_len;
+	php_http_message_object_t *obj;
+	zval *zct;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ct_str, &ct_len)) {
-		int invalid = 0;
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ct_str, &ct_len), invalid_arg, return);
 
-		if (ct_len) {
-			PHP_HTTP_CHECK_CONTENT_TYPE(ct_str, invalid = 1);
-		}
-
-		if (!invalid) {
-			php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-			zval *zct;
-
-			MAKE_STD_ZVAL(zct);
-			ZVAL_STRINGL(zct, ct_str, ct_len, 1);
-			zend_hash_update(&obj->message->hdrs, "Content-Type", sizeof("Content-Type"), (void *) &zct, sizeof(void *), NULL);
-		}
+	if (ct_len && !strchr(ct_str, '/')) {
+		php_http_throw(unexpected_val, "Content type \"%s\" does not seem to contain a primary and a secondary part", ct_str);
+		return;
 	}
+
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+	PHP_HTTP_CLIENT_REQUEST_OBJECT_INIT(obj);
+
+	MAKE_STD_ZVAL(zct);
+	ZVAL_STRINGL(zct, ct_str, ct_len, 1);
+	zend_hash_update(&obj->message->hdrs, "Content-Type", sizeof("Content-Type"), (void *) &zct, sizeof(void *), NULL);
+
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
@@ -88,6 +95,8 @@ static PHP_METHOD(HttpClientRequest, getContentType)
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		zval *zct;
+
+		PHP_HTTP_CLIENT_REQUEST_OBJECT_INIT(obj);
 
 		php_http_message_update_headers(obj->message);
 		zct = php_http_message_header(obj->message, ZEND_STRL("Content-Type"), 1);
@@ -103,41 +112,48 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClientRequest, setQuery)
 {
 	zval *qdata = NULL;
+	php_http_message_object_t *obj;
+	php_url *old_url = NULL, new_url = {NULL};
+	char empty[] = "";
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!", &qdata)) {
-		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-		php_url *old_url = NULL, new_url = {NULL};
-		char empty[] = "";
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!", &qdata), invalid_arg, return);
 
-		if (qdata) {
-			zval arr, str;
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-			INIT_PZVAL(&arr);
-			array_init(&arr);
-			INIT_PZVAL(&str);
-			ZVAL_NULL(&str);
+	PHP_HTTP_CLIENT_REQUEST_OBJECT_INIT(obj);
 
-			php_http_querystring_update(&arr, qdata, &str TSRMLS_CC);
-			new_url.query = Z_STRVAL(str);
-			zval_dtor(&arr);
-		} else {
-			new_url.query = &empty[0];
-		}
+	if (qdata) {
+		zval arr, str;
 
-		if (obj->message->http.info.request.url) {
-			old_url = php_url_parse(obj->message->http.info.request.url);
-			efree(obj->message->http.info.request.url);
-		}
+		INIT_PZVAL(&arr);
+		array_init(&arr);
+		INIT_PZVAL(&str);
+		ZVAL_NULL(&str);
 
-		php_http_url(PHP_HTTP_URL_REPLACE, old_url, &new_url, NULL, &obj->message->http.info.request.url, NULL TSRMLS_CC);
-
-		if (old_url) {
-			php_url_free(old_url);
-		}
-		if (new_url.query != &empty[0]) {
-			STR_FREE(new_url.query);
-		}
+		php_http_expect(SUCCESS == php_http_querystring_update(&arr, qdata, &str TSRMLS_CC), bad_querystring,
+				zval_dtor(&arr);
+				return;
+		);
+		new_url.query = Z_STRVAL(str);
+		zval_dtor(&arr);
+	} else {
+		new_url.query = &empty[0];
 	}
+
+	if (obj->message->http.info.request.url) {
+		old_url = php_url_parse(obj->message->http.info.request.url);
+		efree(obj->message->http.info.request.url);
+	}
+
+	php_http_url(PHP_HTTP_URL_REPLACE, old_url, &new_url, NULL, &obj->message->http.info.request.url, NULL TSRMLS_CC);
+
+	if (old_url) {
+		php_url_free(old_url);
+	}
+	if (new_url.query != &empty[0]) {
+		STR_FREE(new_url.query);
+	}
+
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
@@ -147,6 +163,8 @@ static PHP_METHOD(HttpClientRequest, getQuery)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		PHP_HTTP_CLIENT_REQUEST_OBJECT_INIT(obj);
 
 		if (obj->message->http.info.request.url) {
 			php_url *purl = php_url_parse(obj->message->http.info.request.url);
@@ -167,35 +185,40 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_addQuery, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClientRequest, addQuery)
 {
-	zval *qdata;
+	zval *qdata, arr, str;
+	php_http_message_object_t *obj;
+	php_url *old_url = NULL, new_url = {NULL};
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &qdata)) {
-		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-		php_url *old_url = NULL, new_url = {NULL};
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &qdata), invalid_arg, return);
 
-		zval arr, str;
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-		INIT_PZVAL(&arr);
-		array_init(&arr);
-		INIT_PZVAL(&str);
-		ZVAL_NULL(&str);
+	PHP_HTTP_CLIENT_REQUEST_OBJECT_INIT(obj);
 
-		php_http_querystring_update(&arr, qdata, &str TSRMLS_CC);
-		new_url.query = Z_STRVAL(str);
-		zval_dtor(&arr);
+	INIT_PZVAL(&arr);
+	array_init(&arr);
+	INIT_PZVAL(&str);
+	ZVAL_NULL(&str);
 
-		if (obj->message->http.info.request.url) {
-			old_url = php_url_parse(obj->message->http.info.request.url);
-			efree(obj->message->http.info.request.url);
-		}
+	php_http_expect(SUCCESS == php_http_querystring_update(&arr, qdata, &str TSRMLS_CC), bad_querystring,
+			zval_dtor(&arr);
+			return;
+	);
+	new_url.query = Z_STRVAL(str);
+	zval_dtor(&arr);
 
-		php_http_url(PHP_HTTP_URL_JOIN_QUERY, old_url, &new_url, NULL, &obj->message->http.info.request.url, NULL TSRMLS_CC);
-
-		if (old_url) {
-			php_url_free(old_url);
-		}
-		STR_FREE(new_url.query);
+	if (obj->message->http.info.request.url) {
+		old_url = php_url_parse(obj->message->http.info.request.url);
+		efree(obj->message->http.info.request.url);
 	}
+
+	php_http_url(PHP_HTTP_URL_JOIN_QUERY, old_url, &new_url, NULL, &obj->message->http.info.request.url, NULL TSRMLS_CC);
+
+	if (old_url) {
+		php_url_free(old_url);
+	}
+	STR_FREE(new_url.query);
+
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
@@ -206,11 +229,11 @@ static PHP_METHOD(HttpClientRequest, setOptions)
 {
 	zval *opts = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
-		php_http_client_options_set(getThis(), opts TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts), invalid_arg, return);
 
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_client_options_set(getThis(), opts TSRMLS_CC);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_getOptions, 0, 0, 0)
@@ -221,7 +244,6 @@ static PHP_METHOD(HttpClientRequest, getOptions)
 		zval *zoptions = zend_read_property(php_http_client_request_class_entry, getThis(), ZEND_STRL("options"), 0 TSRMLS_CC);
 		RETURN_ZVAL(zoptions, 1, 0);
 	}
-	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_setSslOptions, 0, 0, 0)
@@ -231,11 +253,11 @@ static PHP_METHOD(HttpClientRequest, setSslOptions)
 {
 	zval *opts = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
-		php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 1 TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts), invalid_arg, return);
 
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 1 TSRMLS_CC);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_addSslOptions, 0, 0, 0)
@@ -245,11 +267,11 @@ static PHP_METHOD(HttpClientRequest, addSslOptions)
 {
 	zval *opts = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
-		php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 0 TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts), invalid_arg, return);
 
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 0 TSRMLS_CC);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_getSslOptions, 0, 0, 0)

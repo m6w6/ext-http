@@ -20,12 +20,12 @@
  */
 static HashTable php_http_client_drivers;
 
-PHP_HTTP_API STATUS php_http_client_driver_add(php_http_client_driver_t *driver)
+STATUS php_http_client_driver_add(php_http_client_driver_t *driver)
 {
 	return zend_hash_add(&php_http_client_drivers, driver->name_str, driver->name_len + 1, (void *) driver, sizeof(php_http_client_driver_t), NULL);
 }
 
-PHP_HTTP_API STATUS php_http_client_driver_get(const char *name_str, size_t name_len, php_http_client_driver_t *driver)
+STATUS php_http_client_driver_get(const char *name_str, size_t name_len, php_http_client_driver_t *driver)
 {
 	php_http_client_driver_t *tmp;
 
@@ -49,7 +49,7 @@ static int apply_driver_list(void *p, void *arg TSRMLS_DC)
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-PHP_HTTP_API void php_http_client_driver_list(HashTable *ht TSRMLS_DC)
+void php_http_client_driver_list(HashTable *ht TSRMLS_DC)
 {
 	zend_hash_apply_with_argument(&php_http_client_drivers, apply_driver_list, ht TSRMLS_CC);
 }
@@ -157,7 +157,7 @@ static void queue_dtor(void *enqueued)
 	}
 }
 
-PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC)
+php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC)
 {
 	php_http_client_t *free_h = NULL;
 
@@ -178,9 +178,9 @@ PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_h
 
 	if (h->ops->init) {
 		if (!(h = h->ops->init(h, init_arg))) {
-			php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Could not initialize client");
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize client");
 			if (free_h) {
-				efree(h);
+				efree(free_h);
 			}
 		}
 	}
@@ -188,7 +188,7 @@ PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_h
 	return h;
 }
 
-PHP_HTTP_API php_http_client_t *php_http_client_copy(php_http_client_t *from, php_http_client_t *to)
+php_http_client_t *php_http_client_copy(php_http_client_t *from, php_http_client_t *to)
 {
 	if (from->ops->copy) {
 		return from->ops->copy(from, to);
@@ -197,7 +197,7 @@ PHP_HTTP_API php_http_client_t *php_http_client_copy(php_http_client_t *from, ph
 	return NULL;
 }
 
-PHP_HTTP_API void php_http_client_dtor(php_http_client_t *h)
+void php_http_client_dtor(php_http_client_t *h)
 {
 	php_http_client_reset(h);
 
@@ -208,7 +208,7 @@ PHP_HTTP_API void php_http_client_dtor(php_http_client_t *h)
 	php_resource_factory_free(&h->rf);
 }
 
-PHP_HTTP_API void php_http_client_free(php_http_client_t **h) {
+void php_http_client_free(php_http_client_t **h) {
 	if (*h) {
 		php_http_client_dtor(*h);
 		efree(*h);
@@ -216,13 +216,13 @@ PHP_HTTP_API void php_http_client_free(php_http_client_t **h) {
 	}
 }
 
-PHP_HTTP_API STATUS php_http_client_enqueue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
+STATUS php_http_client_enqueue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
 {
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (h->ops->enqueue) {
 		if (php_http_client_enqueued(h, enqueue->request, NULL)) {
-			php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Failed to enqueue request; request already in queue");
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to enqueue request; request already in queue");
 			return FAILURE;
 		}
 		return h->ops->enqueue(h, enqueue);
@@ -231,7 +231,7 @@ PHP_HTTP_API STATUS php_http_client_enqueue(php_http_client_t *h, php_http_clien
 	return FAILURE;
 }
 
-PHP_HTTP_API STATUS php_http_client_dequeue(php_http_client_t *h, php_http_message_t *request)
+STATUS php_http_client_dequeue(php_http_client_t *h, php_http_message_t *request)
 {
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
@@ -239,7 +239,7 @@ PHP_HTTP_API STATUS php_http_client_dequeue(php_http_client_t *h, php_http_messa
 		php_http_client_enqueue_t *enqueue = php_http_client_enqueued(h, request, NULL);
 
 		if (!enqueue) {
-			php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Failed to dequeue request; request not in queue");
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to dequeue request; request not in queue");
 			return FAILURE;
 		}
 		return h->ops->dequeue(h, enqueue);
@@ -247,7 +247,7 @@ PHP_HTTP_API STATUS php_http_client_dequeue(php_http_client_t *h, php_http_messa
 	return FAILURE;
 }
 
-PHP_HTTP_API php_http_client_enqueue_t *php_http_client_enqueued(php_http_client_t *h, void *compare_arg, php_http_client_enqueue_cmp_func_t compare_func)
+php_http_client_enqueue_t *php_http_client_enqueued(php_http_client_t *h, void *compare_arg, php_http_client_enqueue_cmp_func_t compare_func)
 {
 	zend_llist_element *el = NULL;
 
@@ -267,7 +267,7 @@ PHP_HTTP_API php_http_client_enqueue_t *php_http_client_enqueued(php_http_client
 	return el ? (php_http_client_enqueue_t *) el->data : NULL;
 }
 
-PHP_HTTP_API STATUS php_http_client_wait(php_http_client_t *h, struct timeval *custom_timeout)
+STATUS php_http_client_wait(php_http_client_t *h, struct timeval *custom_timeout)
 {
 	if (h->ops->wait) {
 		return h->ops->wait(h, custom_timeout);
@@ -276,7 +276,7 @@ PHP_HTTP_API STATUS php_http_client_wait(php_http_client_t *h, struct timeval *c
 	return FAILURE;
 }
 
-PHP_HTTP_API int php_http_client_once(php_http_client_t *h)
+int php_http_client_once(php_http_client_t *h)
 {
 	if (h->ops->once) {
 		return h->ops->once(h);
@@ -285,7 +285,7 @@ PHP_HTTP_API int php_http_client_once(php_http_client_t *h)
 	return FAILURE;
 }
 
-PHP_HTTP_API STATUS php_http_client_exec(php_http_client_t *h)
+STATUS php_http_client_exec(php_http_client_t *h)
 {
 	if (h->ops->exec) {
 		return h->ops->exec(h);
@@ -294,7 +294,7 @@ PHP_HTTP_API STATUS php_http_client_exec(php_http_client_t *h)
 	return FAILURE;
 }
 
-PHP_HTTP_API void php_http_client_reset(php_http_client_t *h)
+void php_http_client_reset(php_http_client_t *h)
 {
 	if (h->ops->reset) {
 		h->ops->reset(h);
@@ -304,7 +304,7 @@ PHP_HTTP_API void php_http_client_reset(php_http_client_t *h)
 	zend_llist_clean(&h->responses);
 }
 
-PHP_HTTP_API STATUS php_http_client_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
+STATUS php_http_client_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
 {
 	if (h->ops->setopt) {
 		return h->ops->setopt(h, opt, arg);
@@ -313,7 +313,7 @@ PHP_HTTP_API STATUS php_http_client_setopt(php_http_client_t *h, php_http_client
 	return FAILURE;
 }
 
-PHP_HTTP_API STATUS php_http_client_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void *res_ptr)
+STATUS php_http_client_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void *res_ptr)
 {
 	if (h->ops->getopt) {
 		return h->ops->getopt(h, opt, arg, res_ptr);
@@ -418,11 +418,12 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 
 		if (e->closure.fci.size) {
 			zval *retval = NULL;
+			zend_error_handling zeh;
 
 			zend_fcall_info_argn(&e->closure.fci TSRMLS_CC, 1, &zresponse);
-			with_error_handling(EH_NORMAL, NULL) {
-				zend_fcall_info_call(&e->closure.fci, &e->closure.fcc, &retval, NULL TSRMLS_CC);
-			} end_error_handling();
+			zend_replace_error_handling(EH_NORMAL, NULL, &zeh TSRMLS_CC);
+			zend_fcall_info_call(&e->closure.fci, &e->closure.fcc, &retval, NULL TSRMLS_CC);
+			zend_restore_error_handling(&zeh TSRMLS_CC);
 			zend_fcall_info_argn(&e->closure.fci TSRMLS_CC, 0);
 
 			if (retval) {
@@ -449,6 +450,7 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 static void handle_progress(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_client_progress_state_t *progress)
 {
 	zval *zrequest, *zprogress, *retval = NULL, *zclient;
+	zend_error_handling zeh;
 	TSRMLS_FETCH_FROM_CTX(client->ts);
 
 	MAKE_STD_ZVAL(zclient);
@@ -464,9 +466,9 @@ static void handle_progress(void *arg, php_http_client_t *client, php_http_clien
 	add_property_double(zprogress, "dlnow", progress->dl.now);
 	add_property_double(zprogress, "ultotal", progress->ul.total);
 	add_property_double(zprogress, "ulnow", progress->ul.now);
-	with_error_handling(EH_NORMAL, NULL) {
-		zend_call_method_with_2_params(&zclient, NULL, NULL, "notify", &retval, zrequest, zprogress);
-	} end_error_handling();
+	zend_replace_error_handling(EH_NORMAL, NULL, &zeh TSRMLS_CC);
+	zend_call_method_with_2_params(&zclient, NULL, NULL, "notify", &retval, zrequest, zprogress);
+	zend_restore_error_handling(&zeh TSRMLS_CC);
 	zval_ptr_dtor(&zclient);
 	zval_ptr_dtor(&zrequest);
 	zval_ptr_dtor(&zprogress);
@@ -489,63 +491,64 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_construct, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, __construct)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
 		char *driver_str = NULL, *persistent_handle_str = NULL;
 		int driver_len = 0, persistent_handle_len = 0;
+		php_http_client_driver_t driver;
+		php_resource_factory_t *rf = NULL;
+		php_http_client_object_t *obj;
+		zval *os;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss", &driver_str, &driver_len, &persistent_handle_str, &persistent_handle_len)) {
-			php_http_client_driver_t driver;
+		php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|ss", &driver_str, &driver_len, &persistent_handle_str, &persistent_handle_len), invalid_arg, return);
 
-			if (SUCCESS == php_http_client_driver_get(driver_str, driver_len, &driver)) {
-				php_resource_factory_t *rf = NULL;
-				php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-				zval *os;
-
-				MAKE_STD_ZVAL(os);
-				object_init_ex(os, spl_ce_SplObjectStorage);
-				zend_update_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), os TSRMLS_CC);
-				zval_ptr_dtor(&os);
-
-				if (persistent_handle_len) {
-					char *name_str;
-					size_t name_len;
-					php_persistent_handle_factory_t *pf;
-
-					name_len = spprintf(&name_str, 0, "http\\Client\\%s", driver.name_str);
-					php_http_pretty_key(name_str + sizeof("http\\Client"), driver.name_len, 1, 1);
-
-					if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, persistent_handle_str, persistent_handle_len, NULL, NULL TSRMLS_CC))) {
-						rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
-					}
-
-					efree(name_str);
-				}
-
-				if ((obj->client = php_http_client_init(NULL, driver.client_ops, rf, NULL TSRMLS_CC))) {
-					obj->client->callback.response.func = handle_response;
-					obj->client->callback.response.arg = obj;
-					obj->client->callback.progress.func = handle_progress;
-					obj->client->callback.progress.arg = obj;
-
-					obj->client->responses.dtor = response_dtor;
-				}
-			} else {
-				php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Failed to locate \"%s\" client request handler", driver_str);
-			}
+		if (SUCCESS != php_http_client_driver_get(driver_str, driver_len, &driver)) {
+			php_http_throw(unexpected_val, "Failed to locate \"%s\" client request handler", driver_str);
+			return;
 		}
-	} end_error_handling();
+
+		MAKE_STD_ZVAL(os);
+		object_init_ex(os, spl_ce_SplObjectStorage);
+		zend_update_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), os TSRMLS_CC);
+		zval_ptr_dtor(&os);
+
+		if (persistent_handle_len) {
+			char *name_str;
+			size_t name_len;
+			php_persistent_handle_factory_t *pf;
+
+			name_len = spprintf(&name_str, 0, "http\\Client\\%s", driver.name_str);
+			php_http_pretty_key(name_str + sizeof("http\\Client"), driver.name_len, 1, 1);
+
+			if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, persistent_handle_str, persistent_handle_len, NULL, NULL TSRMLS_CC))) {
+				rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
+			}
+
+			efree(name_str);
+		}
+
+		obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		php_http_expect(obj->client = php_http_client_init(NULL, driver.client_ops, rf, NULL TSRMLS_CC), runtime, return);
+
+		obj->client->callback.response.func = handle_response;
+		obj->client->callback.response.arg = obj;
+		obj->client->callback.progress.func = handle_progress;
+		obj->client->callback.progress.arg = obj;
+
+		obj->client->responses.dtor = response_dtor;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_reset, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, reset)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
-		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_client_object_t *obj;
+	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
-		obj->iterator = 0;
-		php_http_client_reset(obj->client);
-	}
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+	obj->iterator = 0;
+	php_http_client_reset(obj->client);
+
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
@@ -602,38 +605,43 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_enqueue, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, enqueue)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		zval *request;
-		zend_fcall_info fci = empty_fcall_info;
-		zend_fcall_info_cache fcc = empty_fcall_info_cache;
+	zval *request;
+	zend_fcall_info fci = empty_fcall_info;
+	zend_fcall_info_cache fcc = empty_fcall_info_cache;
+	php_http_client_object_t *obj;
+	php_http_message_object_t *msg_obj;
+	php_http_client_enqueue_t q;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|f", &request, php_http_client_request_class_entry, &fci, &fcc)) {
-			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-			php_http_message_object_t *msg_obj = zend_object_store_get_object(request TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|f", &request, php_http_client_request_class_entry, &fci, &fcc), invalid_arg, return);
 
-			if (php_http_client_enqueued(obj->client, msg_obj->message, NULL)) {
-				php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Failed to enqueue request; request already in queue");
-			} else {
-				php_http_client_enqueue_t q;
-				q.request = msg_obj->message;
-				q.options = combined_options(getThis(), request TSRMLS_CC);
-				q.dtor = msg_queue_dtor;
-				q.opaque = msg_obj;
-				q.closure.fci = fci;
-				q.closure.fcc = fcc;
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	msg_obj = zend_object_store_get_object(request TSRMLS_CC);
 
-				if (fci.size) {
-					Z_ADDREF_P(fci.function_name);
-					if (fci.object_ptr) {
-						Z_ADDREF_P(fci.object_ptr);
-					}
-				}
+	if (php_http_client_enqueued(obj->client, msg_obj->message, NULL)) {
+		php_http_throw(bad_method_call, "Failed to enqueue request; request already in queue", NULL);
+		return;
+	}
 
-				zend_objects_store_add_ref_by_handle(msg_obj->zv.handle TSRMLS_CC);
-				php_http_client_enqueue(obj->client, &q);
-			}
+	q.request = msg_obj->message;
+	q.options = combined_options(getThis(), request TSRMLS_CC);
+	q.dtor = msg_queue_dtor;
+	q.opaque = msg_obj;
+	q.closure.fci = fci;
+	q.closure.fcc = fcc;
+
+	if (fci.size) {
+		Z_ADDREF_P(fci.function_name);
+		if (fci.object_ptr) {
+			Z_ADDREF_P(fci.object_ptr);
 		}
-	} end_error_handling();
+	}
+
+	zend_objects_store_add_ref_by_handle(msg_obj->zv.handle TSRMLS_CC);
+
+	php_http_expect(SUCCESS == php_http_client_enqueue(obj->client, &q), runtime,
+			msg_queue_dtor(&q);
+			return;
+	);
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -643,16 +651,21 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_dequeue, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, dequeue)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		zval *request;
+	zval *request;
+	php_http_client_object_t *obj;
+	php_http_message_object_t *msg_obj;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_class_entry)) {
-			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-			php_http_message_object_t *msg_obj = zend_object_store_get_object(request TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_class_entry), invalid_arg, return);
 
-			php_http_client_dequeue(obj->client, msg_obj->message);
-		}
-	} end_error_handling();
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	msg_obj = zend_object_store_get_object(request TSRMLS_CC);
+
+	if (!php_http_client_enqueued(obj->client, msg_obj->message, NULL)) {
+		php_http_throw(bad_method_call, "Failed to dequeue request; request not in queue", NULL);
+		return;
+	}
+
+	php_http_expect(SUCCESS == php_http_client_dequeue(obj->client, msg_obj->message), runtime, return);
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -663,36 +676,42 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_requeue, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, requeue)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		zval *request;
-		zend_fcall_info fci = empty_fcall_info;
-		zend_fcall_info_cache fcc = empty_fcall_info_cache;
+	zval *request;
+	zend_fcall_info fci = empty_fcall_info;
+	zend_fcall_info_cache fcc = empty_fcall_info_cache;
+	php_http_client_object_t *obj;
+	php_http_message_object_t *msg_obj;
+	php_http_client_enqueue_t q;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|f", &request, php_http_client_request_class_entry, &fci, &fcc)) {
-			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-			php_http_message_object_t *msg_obj = zend_object_store_get_object(request TSRMLS_CC);
-			php_http_client_enqueue_t q;
-			q.request = msg_obj->message;
-			q.options = combined_options(getThis(), request TSRMLS_CC);
-			q.dtor = msg_queue_dtor;
-			q.opaque = msg_obj;
-			q.closure.fci = fci;
-			q.closure.fcc = fcc;
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|f", &request, php_http_client_request_class_entry, &fci, &fcc), invalid_arg, return);
 
-			if (fci.size) {
-				Z_ADDREF_P(fci.function_name);
-				if (fci.object_ptr) {
-					Z_ADDREF_P(fci.object_ptr);
-				}
-			}
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	msg_obj = zend_object_store_get_object(request TSRMLS_CC);
 
-			zend_objects_store_add_ref_by_handle(msg_obj->zv.handle TSRMLS_CC);
-			if (php_http_client_enqueued(obj->client, msg_obj->message, NULL)) {
-				php_http_client_dequeue(obj->client, msg_obj->message);
-			}
-			php_http_client_enqueue(obj->client, &q);
+	if (php_http_client_enqueued(obj->client, msg_obj->message, NULL)) {
+		php_http_expect(SUCCESS == php_http_client_dequeue(obj->client, msg_obj->message), runtime, return);
+	}
+
+	q.request = msg_obj->message;
+	q.options = combined_options(getThis(), request TSRMLS_CC);
+	q.dtor = msg_queue_dtor;
+	q.opaque = msg_obj;
+	q.closure.fci = fci;
+	q.closure.fcc = fcc;
+
+	if (fci.size) {
+		Z_ADDREF_P(fci.function_name);
+		if (fci.object_ptr) {
+			Z_ADDREF_P(fci.object_ptr);
 		}
-	} end_error_handling();
+	}
+
+	zend_objects_store_add_ref_by_handle(msg_obj->zv.handle TSRMLS_CC);
+
+	php_http_expect(SUCCESS == php_http_client_enqueue(obj->client, &q), runtime,
+			msg_queue_dtor(&q);
+			return;
+	);
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -714,34 +733,38 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getResponse)
 {
 	zval *zrequest = NULL;
+	php_http_client_object_t *obj;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O", &zrequest, php_http_client_request_class_entry)) {
-		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O", &zrequest, php_http_client_request_class_entry), invalid_arg, return);
 
-		if (!zrequest) {
-			/* pop off the last respone */
-			if (obj->client->responses.tail) {
-				php_http_message_object_t *response_obj = *(php_http_message_object_t **) obj->client->responses.tail->data;
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
-				/* pop off and go */
-				if (response_obj) {
-					RETVAL_OBJVAL(response_obj->zv, 1);
-					zend_llist_remove_tail(&obj->client->responses);
-				}
+	if (zrequest) {
+		/* lookup the response with the request */
+		zend_llist_element *el = NULL;
+		php_http_message_object_t *req_obj = zend_object_store_get_object(zrequest TSRMLS_CC);
+
+		for (el = obj->client->responses.head; el; el = el->next) {
+			php_http_message_object_t *response_obj = *(php_http_message_object_t **) el->data;
+
+			if (response_obj->message->parent == req_obj->message) {
+				RETURN_OBJVAL(response_obj->zv, 1);
 			}
-		} else {
-			/* lookup the response with the request */
-			zend_llist_element *el = NULL;
-			php_http_message_object_t *req_obj = zend_object_store_get_object(zrequest TSRMLS_CC);
+		}
 
-			for (el = obj->client->responses.head; el; el = el->next) {
-				php_http_message_object_t *response_obj = *(php_http_message_object_t **) el->data;
+		/* not found for the request! */
+		php_http_throw(unexpected_val, "Could not find response for the request", NULL);
+		return;
+	}
 
-				if (response_obj->message->parent == req_obj->message) {
-					RETVAL_OBJVAL(response_obj->zv, 1);
-					break;
-				}
-			}
+	/* pop off the last response */
+	if (obj->client->responses.tail) {
+		php_http_message_object_t *response_obj = *(php_http_message_object_t **) obj->client->responses.tail->data;
+
+		/* pop off and go */
+		if (response_obj) {
+			RETVAL_OBJVAL(response_obj->zv, 1);
+			zend_llist_remove_tail(&obj->client->responses);
 		}
 	}
 }
@@ -750,25 +773,25 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getHistory, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getHistory)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
-		zval *zhistory = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("history"), 0 TSRMLS_CC);
-		RETVAL_ZVAL(zhistory, 1, 0);
-	}
+	zval *zhistory;
+
+	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
+
+	zhistory = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("history"), 0 TSRMLS_CC);
+	RETVAL_ZVAL(zhistory, 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_send, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, send)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters_none()) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_client_object_t *obj;
 
-				php_http_client_exec(obj->client);
-			} end_error_handling();
-		}
-	} end_error_handling();
+	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
+
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+	php_http_expect(SUCCESS == php_http_client_exec(obj->client), runtime, return);
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -808,12 +831,14 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, enablePipelining)
 {
 	zend_bool enable = 1;
+	php_http_client_object_t *obj;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &enable)) {
-		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &enable), invalid_arg, return);
 
-		php_http_client_setopt(obj->client, PHP_HTTP_CLIENT_OPT_ENABLE_PIPELINING, &enable);
-	}
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+	php_http_expect(SUCCESS == php_http_client_setopt(obj->client, PHP_HTTP_CLIENT_OPT_ENABLE_PIPELINING, &enable), unexpected_val, return);
+
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
@@ -823,12 +848,14 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, enableEvents)
 {
 	zend_bool enable = 1;
+	php_http_client_object_t *obj;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &enable)) {
-		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &enable), invalid_arg, return);
 
-		php_http_client_setopt(obj->client, PHP_HTTP_CLIENT_OPT_USE_EVENTS, &enable);
-	}
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+	php_http_expect(SUCCESS == php_http_client_setopt(obj->client, PHP_HTTP_CLIENT_OPT_USE_EVENTS, &enable), unexpected_val, return);
+
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
@@ -848,31 +875,34 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_notify, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, notify)
 {
-	zval *request = NULL, *zprogress = NULL;
+	zval *request = NULL, *zprogress = NULL, *observers, **args[3];
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O!o!", &request, php_http_client_request_class_entry, &zprogress)) {
-		zval **args[3], *observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O!o!", &request, php_http_client_request_class_entry, &zprogress), invalid_arg, return);
 
-		if (Z_TYPE_P(observers) == IS_OBJECT) {
-			Z_ADDREF_P(getThis());
-			args[0] = &getThis();
-			if (request) {
-				Z_ADDREF_P(request);
-			}
-			args[1] = &request;
-			if (zprogress) {
-				Z_ADDREF_P(zprogress);
-			}
-			args[2] = &zprogress;
-			spl_iterator_apply(observers, notify, args TSRMLS_CC);
-			zval_ptr_dtor(&getThis());
-			if (request) {
-				zval_ptr_dtor(&request);
-			}
-			if (zprogress) {
-				zval_ptr_dtor(&zprogress);
-			}
-		}
+	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
+
+	if (Z_TYPE_P(observers) != IS_OBJECT) {
+		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
+		return;
+	}
+
+	Z_ADDREF_P(getThis());
+	args[0] = &getThis();
+	if (request) {
+		Z_ADDREF_P(request);
+	}
+	args[1] = &request;
+	if (zprogress) {
+		Z_ADDREF_P(zprogress);
+	}
+	args[2] = &zprogress;
+	spl_iterator_apply(observers, notify, args TSRMLS_CC);
+	zval_ptr_dtor(&getThis());
+	if (request) {
+		zval_ptr_dtor(&request);
+	}
+	if (zprogress) {
+		zval_ptr_dtor(&zprogress);
 	}
 
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -883,14 +913,20 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_attach, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, attach)
 {
-	zval *observer;
+	zval *observers, *observer, *retval = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &observer, spl_ce_SplObserver)) {
-		zval *retval = NULL, *observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
-		zend_call_method_with_1_params(&observers, NULL, NULL, "attach", &retval, observer);
-		if (retval) {
-			zval_ptr_dtor(&retval);
-		}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &observer, spl_ce_SplObserver), invalid_arg, return);
+
+	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
+
+	if (Z_TYPE_P(observers) != IS_OBJECT) {
+		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
+		return;
+	}
+
+	zend_call_method_with_1_params(&observers, NULL, NULL, "attach", &retval, observer);
+	if (retval) {
+		zval_ptr_dtor(&retval);
 	}
 
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -901,11 +937,19 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_detach, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, detach)
 {
-	zval *observer;
+	zval *observers, *observer, *retval = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &observer, spl_ce_SplObserver)) {
-		zval *retval, *observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
-		zend_call_method_with_1_params(&observers, NULL, NULL, "detach", &retval, observer);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &observer, spl_ce_SplObserver), invalid_arg, return);
+
+	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
+
+	if (Z_TYPE_P(observers) != IS_OBJECT) {
+		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
+		return;
+	}
+
+	zend_call_method_with_1_params(&observers, NULL, NULL, "detach", &retval, observer);
+	if (retval) {
 		zval_ptr_dtor(&retval);
 	}
 
@@ -916,12 +960,18 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getObservers, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getObservers)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters_none()) {
-			zval *observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
-			RETVAL_ZVAL(observers, 1, 0);
-		}
-	} end_error_handling();
+	zval *observers;
+
+	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
+
+	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
+
+	if (Z_TYPE_P(observers) != IS_OBJECT) {
+		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
+		return;
+	}
+
+	RETVAL_ZVAL(observers, 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getProgressInfo, 0, 0, 1)
@@ -930,25 +980,25 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getProgressInfo)
 {
 	zval *request;
+	php_http_client_object_t *obj;
+	php_http_message_object_t *req_obj;
+	php_http_client_progress_state_t *progress;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_class_entry)) {
-			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-			php_http_message_object_t *req_obj = zend_object_store_get_object(request TSRMLS_CC);
-			php_http_client_progress_state_t *progress;
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_class_entry), invalid_arg, return);
 
-			if (SUCCESS == php_http_client_getopt(obj->client, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, req_obj->message, &progress)) {
-				object_init(return_value);
-				add_property_bool(return_value, "started", progress->started);
-				add_property_bool(return_value, "finished", progress->finished);
-				add_property_string(return_value, "info", STR_PTR(progress->info), 1);
-				add_property_double(return_value, "dltotal", progress->dl.total);
-				add_property_double(return_value, "dlnow", progress->dl.now);
-				add_property_double(return_value, "ultotal", progress->ul.total);
-				add_property_double(return_value, "ulnow", progress->ul.now);
-			}
-		}
-	} end_error_handling();
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	req_obj = zend_object_store_get_object(request TSRMLS_CC);
+
+	php_http_expect(SUCCESS == php_http_client_getopt(obj->client, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, req_obj->message, &progress), unexpected_val, return);
+
+	object_init(return_value);
+	add_property_bool(return_value, "started", progress->started);
+	add_property_bool(return_value, "finished", progress->finished);
+	add_property_string(return_value, "info", STR_PTR(progress->info), 1);
+	add_property_double(return_value, "dltotal", progress->dl.total);
+	add_property_double(return_value, "dlnow", progress->dl.now);
+	add_property_double(return_value, "ultotal", progress->ul.total);
+	add_property_double(return_value, "ulnow", progress->ul.now);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getTransferInfo, 0, 0, 1)
@@ -957,18 +1007,18 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getTransferInfo)
 {
 	zval *request;
+	HashTable *info;
+	php_http_client_object_t *obj;
+	php_http_message_object_t *req_obj;
 
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_class_entry)) {
-			HashTable *info;
-			php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-			php_http_message_object_t *req_obj = zend_object_store_get_object(request TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &request, php_http_client_request_class_entry), invalid_arg, return);
 
-			object_init(return_value);
-			info = HASH_OF(return_value);
-			php_http_client_getopt(obj->client, PHP_HTTP_CLIENT_OPT_TRANSFER_INFO, req_obj->message, &info);
-		}
-	} end_error_handling();
+	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	req_obj = zend_object_store_get_object(request TSRMLS_CC);
+
+	object_init(return_value);
+	info = HASH_OF(return_value);
+	php_http_expect(SUCCESS == php_http_client_getopt(obj->client, PHP_HTTP_CLIENT_OPT_TRANSFER_INFO, req_obj->message, &info), unexpected_val, return);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_setOptions, 0, 0, 0)
@@ -978,11 +1028,11 @@ static PHP_METHOD(HttpClient, setOptions)
 {
 	zval *opts = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
-		php_http_client_options_set(getThis(), opts TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts), invalid_arg, return);
 
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_client_options_set(getThis(), opts TSRMLS_CC);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getOptions, 0, 0, 0)
@@ -1002,11 +1052,11 @@ static PHP_METHOD(HttpClient, setSslOptions)
 {
 	zval *opts = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
-		php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 1 TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts), invalid_arg, return);
 
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 1 TSRMLS_CC);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_addSslOptions, 0, 0, 0)
@@ -1016,11 +1066,11 @@ static PHP_METHOD(HttpClient, addSslOptions)
 {
 	zval *opts = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
-		php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 0 TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts), invalid_arg, return);
 
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_client_options_set_subr(getThis(), ZEND_STRS("ssl"), opts, 0 TSRMLS_CC);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getSslOptions, 0, 0, 0)
@@ -1039,11 +1089,11 @@ static PHP_METHOD(HttpClient, setCookies)
 {
 	zval *opts = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
-		php_http_client_options_set_subr(getThis(), ZEND_STRS("cookies"), opts, 1 TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts), invalid_arg, return);
 
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_client_options_set_subr(getThis(), ZEND_STRS("cookies"), opts, 1 TSRMLS_CC);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_addCookies, 0, 0, 0)
@@ -1053,11 +1103,11 @@ static PHP_METHOD(HttpClient, addCookies)
 {
 	zval *opts = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts)) {
-		php_http_client_options_set_subr(getThis(), ZEND_STRS("cookies"), opts, 0 TSRMLS_CC);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!/", &opts), invalid_arg, return);
 
-		RETVAL_ZVAL(getThis(), 1, 0);
-	}
+	php_http_client_options_set_subr(getThis(), ZEND_STRS("cookies"), opts, 0 TSRMLS_CC);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getCookies, 0, 0, 0)

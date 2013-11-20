@@ -14,9 +14,7 @@ echo $p, "\n";
 ?>
 DONE
 --EXPECTF--
-object(http\Params)#%d (6) {
-  ["errorHandling":protected]=>
-  NULL
+object(http\Params)#%d (5) {
   ["params"]=>
   array(2) {
     ["foo"]=>

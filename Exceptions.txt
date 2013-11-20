@@ -1,0 +1,4 @@
+# Throw Exceptions:
+
+* on setters, that return self
+* on getters, that return objects

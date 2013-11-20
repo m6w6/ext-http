@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-PHP_HTTP_API php_http_options_t *php_http_options_init(php_http_options_t *registry, zend_bool persistent)
+php_http_options_t *php_http_options_init(php_http_options_t *registry, zend_bool persistent)
 {
 	if (!registry) {
 		registry = pecalloc(1, sizeof(*registry), persistent);
@@ -26,7 +26,7 @@ PHP_HTTP_API php_http_options_t *php_http_options_init(php_http_options_t *regis
 	return registry;
 }
 
-PHP_HTTP_API STATUS php_http_options_apply(php_http_options_t *registry, HashTable *options, void *userdata)
+STATUS php_http_options_apply(php_http_options_t *registry, HashTable *options, void *userdata)
 {
 	HashPosition pos;
 	zval *val;
@@ -47,12 +47,12 @@ PHP_HTTP_API STATUS php_http_options_apply(php_http_options_t *registry, HashTab
 	return SUCCESS;
 }
 
-PHP_HTTP_API void php_http_options_dtor(php_http_options_t *registry)
+void php_http_options_dtor(php_http_options_t *registry)
 {
 	zend_hash_destroy(&registry->options);
 }
 
-PHP_HTTP_API void php_http_options_free(php_http_options_t **registry)
+void php_http_options_free(php_http_options_t **registry)
 {
 	if (*registry) {
 		php_http_options_dtor(*registry);
@@ -61,7 +61,7 @@ PHP_HTTP_API void php_http_options_free(php_http_options_t **registry)
 	}
 }
 
-PHP_HTTP_API php_http_option_t *php_http_option_register(php_http_options_t *registry, const char *name_str, size_t name_len, ulong option, zend_uchar type)
+php_http_option_t *php_http_option_register(php_http_options_t *registry, const char *name_str, size_t name_len, ulong option, zend_uchar type)
 {
 	php_http_option_t opt, *dst = NULL;
 
@@ -102,7 +102,7 @@ PHP_HTTP_API php_http_option_t *php_http_option_register(php_http_options_t *reg
 	return dst;
 }
 
-PHP_HTTP_API zval *php_http_option_get(php_http_option_t *opt, HashTable *options, void *userdata)
+zval *php_http_option_get(php_http_option_t *opt, HashTable *options, void *userdata)
 {
 	if (options) {
 		zval **zoption;

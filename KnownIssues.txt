@@ -15,14 +15,11 @@ Internals:
 		as libcurl saves the cookies to the file on curl_easy_destroy(),
 		cookies are not saved until the CURL handle will be recycled.
 			Thus one would either need to
-				* run PHP with http.persistent.handles.limit = 0
-				* call http_persistent_handles_clean() every request
-				* call $HttpRequest->flushCookies(), which is available
+				* run PHP with raphf.persistent_handles.limit = 0
+				* call raphf\persistent_handles_clean() every request
+				* call $client->flushCookies(), which is available
 				  since libcurl v7.17.1 and does not work with the
 				  procedural API
-			Anyway, none of these options is really perfect, so using
-			HttpRequestDatashare with cookies enabled is probably the
-			best thing to do.
 	HTTP and Proxy authentication information (username/password) can not be
 		unset with NULL prior libcurl v7.19.6 and separate options for setting
 		username and password--which work--are only available since v7.19.6.

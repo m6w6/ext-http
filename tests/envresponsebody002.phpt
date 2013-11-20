@@ -20,5 +20,5 @@ try {
 Done
 --EXPECTF--
 Test
-Could not fetch response body, output has already been sent at %senvresponsebody002.php:3
+http\Env\Response::__construct(): Could not fetch response body, output has already been sent at %senvresponsebody002.php:3
 Done

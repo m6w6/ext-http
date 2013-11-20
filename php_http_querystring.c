@@ -76,7 +76,7 @@ static inline void php_http_querystring_get(zval *this_ptr, int type, char *name
 }
 
 #ifdef PHP_HTTP_HAVE_ICONV
-PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe TSRMLS_DC)
+STATUS php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe TSRMLS_DC)
 {
 	HashPosition pos;
 	zval **entry = NULL;
@@ -87,7 +87,7 @@ PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char 
 	FOREACH_KEYVAL(pos, src, key, entry) {
 		if (key.type == HASH_KEY_IS_STRING) {
 			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(key.str, key.len-1, &xkey, &xlen, oe, ie)) {
-				php_http_error(HE_WARNING, PHP_HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", key.len-1, key.str, ie, oe);
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to convert '%.*s' from '%s' to '%s'", key.len-1, key.str, ie, oe);
 				return FAILURE;
 			}
 		}
@@ -97,7 +97,7 @@ PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char 
 				if (key.type == HASH_KEY_IS_STRING) {
 					efree(xkey);
 				}
-				php_http_error(HE_WARNING, PHP_HTTP_E_QUERYSTRING, "Failed to convert '%.*s' from '%s' to '%s'", Z_STRLEN_PP(entry), Z_STRVAL_PP(entry), ie, oe);
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to convert '%.*s' from '%s' to '%s'", Z_STRLEN_PP(entry), Z_STRVAL_PP(entry), ie, oe);
 				return FAILURE;
 			}
 			if (key.type == HASH_KEY_IS_STRING) {
@@ -131,7 +131,7 @@ PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char 
 }
 #endif /* HAVE_ICONV */
 
-PHP_HTTP_API STATUS php_http_querystring_ctor(zval *instance, zval *params TSRMLS_DC)
+STATUS php_http_querystring_ctor(zval *instance, zval *params TSRMLS_DC)
 {
 	php_http_querystring_set(instance, params, 0 TSRMLS_CC);
 	return SUCCESS;
@@ -158,7 +158,7 @@ static int apply_querystring(void *pData TSRMLS_DC)
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-PHP_HTTP_API STATUS php_http_querystring_parse(HashTable *ht, const char *str, size_t len TSRMLS_DC)
+STATUS php_http_querystring_parse(HashTable *ht, const char *str, size_t len TSRMLS_DC)
 {
 	STATUS rv = FAILURE;
 	php_http_params_opts_t opts;
@@ -206,7 +206,7 @@ PHP_HTTP_API STATUS php_http_querystring_parse(HashTable *ht, const char *str, s
 	return rv;
 }
 
-PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval *outstring TSRMLS_DC)
+STATUS php_http_querystring_update(zval *qarray, zval *params, zval *outstring TSRMLS_DC)
 {
 	/* enforce proper type */
 	if (Z_TYPE_P(qarray) != IS_ARRAY) {
@@ -311,7 +311,7 @@ PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval
 			zval_dtor(outstring);
 			ZVAL_STRINGL(outstring, s, l, 0);
 		} else {
-			php_http_error(HE_WARNING, PHP_HTTP_E_QUERYSTRING, "Failed to encode query string");
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to encode query string");
 			return FAILURE;
 		}
 	}
@@ -325,69 +325,65 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, __construct)
 {
 	zval *params = NULL;
+	zend_error_handling zeh;
 	
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &params)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				php_http_querystring_set(getThis(), params, 0 TSRMLS_CC);
-			} end_error_handling();
-		}
-	} end_error_handling();
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &params), invalid_arg, return);
+
+	zend_replace_error_handling(EH_THROW, php_http_exception_bad_querystring_class_entry, &zeh TSRMLS_CC);
+	php_http_querystring_set(getThis(), params, 0 TSRMLS_CC);
+	zend_restore_error_handling(&zeh TSRMLS_CC);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_getGlobalInstance, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, getGlobalInstance)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters_none()) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				zval *instance = *zend_std_get_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), 0 PHP_HTTP_ZEND_LITERAL_CCN TSRMLS_CC);
+	zval *instance;
 
-				if (Z_TYPE_P(instance) != IS_OBJECT) {
-					zval **_GET = NULL;
+	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
-					zend_is_auto_global("_GET", lenof("_GET") TSRMLS_CC);
+	instance = *zend_std_get_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), 0 PHP_HTTP_ZEND_LITERAL_CCN TSRMLS_CC);
 
-					if ((SUCCESS == zend_hash_find(&EG(symbol_table), "_GET", sizeof("_GET"), (void *) &_GET))
-					&&	(Z_TYPE_PP(_GET) == IS_ARRAY)
-					) {
-						MAKE_STD_ZVAL(instance);
-						ZVAL_OBJVAL(instance, php_http_querystring_object_new(php_http_querystring_class_entry TSRMLS_CC), 0);
+	if (Z_TYPE_P(instance) != IS_OBJECT) {
+		zval **_GET = NULL;
 
-						SEPARATE_ZVAL_TO_MAKE_IS_REF(_GET);
-						convert_to_array(*_GET);
-						zend_update_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), *_GET TSRMLS_CC);
+		zend_is_auto_global("_GET", lenof("_GET") TSRMLS_CC);
 
-						zend_update_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), instance TSRMLS_CC);
-						zval_ptr_dtor(&instance);
-					} else {
-						php_http_error(HE_WARNING, PHP_HTTP_E_QUERYSTRING, "Could not acquire reference to superglobal GET array");
-					}
-				}
-				RETVAL_ZVAL(instance, 1, 0);
-			} end_error_handling();
+		if ((SUCCESS == zend_hash_find(&EG(symbol_table), "_GET", sizeof("_GET"), (void *) &_GET))
+		&&	(Z_TYPE_PP(_GET) == IS_ARRAY)
+		) {
+			MAKE_STD_ZVAL(instance);
+			ZVAL_OBJVAL(instance, php_http_querystring_object_new(php_http_querystring_class_entry TSRMLS_CC), 0);
+
+			SEPARATE_ZVAL_TO_MAKE_IS_REF(_GET);
+			convert_to_array(*_GET);
+			zend_update_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), *_GET TSRMLS_CC);
+
+			zend_update_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), instance TSRMLS_CC);
+			zval_ptr_dtor(&instance);
+		} else {
+			php_http_throw(unexpected_val, "Could not acquire reference to superglobal GET array", NULL);
 		}
-	} end_error_handling();
+	}
+
+	RETVAL_ZVAL(instance, 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_getIterator, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, getIterator)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters_none()) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				zval *retval = NULL, *qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+	zval *retval = NULL, *qa;
 
-				object_init_ex(return_value, spl_ce_RecursiveArrayIterator);
-				zend_call_method_with_1_params(&return_value, spl_ce_RecursiveArrayIterator, NULL, "__construct", &retval, qa);
-				if (retval) {
-					zval_ptr_dtor(&retval);
-				}
-			} end_error_handling();
-		}
-	} end_error_handling();
+	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
+
+	qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+
+	object_init_ex(return_value, spl_ce_RecursiveArrayIterator);
+	zend_call_method_with_1_params(&return_value, spl_ce_RecursiveArrayIterator, NULL, "__construct", &retval, qa);
+	if (retval) {
+		zval_ptr_dtor(&retval);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_toString, 0, 0, 0)
@@ -404,10 +400,14 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_toArray, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, toArray)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
-		zval *zqa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
-		RETURN_ZVAL(zqa, 1, 0);
+	zval *zqa;
+
+	if (SUCCESS != zend_parse_parameters_none()) {
+		return;
 	}
+
+	zqa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+	RETURN_ZVAL(zqa, 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_get, 0, 0, 0)
@@ -465,7 +465,7 @@ PHP_METHOD(HttpQueryString, set)
 	zval *params;
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &params)) {
-		RETURN_FALSE;
+		return;
 	}
 	
 	php_http_querystring_set(getThis(), params, QS_MERGE TSRMLS_CC);
@@ -478,15 +478,14 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, mod)
 {
 	zval *params;
+	zend_error_handling zeh;
+
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &params), invalid_arg, return);
 	
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &params)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				ZVAL_OBJVAL(return_value, Z_OBJ_HT_P(getThis())->clone_obj(getThis() TSRMLS_CC), 0);
-				php_http_querystring_set(return_value, params, QS_MERGE TSRMLS_CC);
-			} end_error_handling();
-		}
-	} end_error_handling();
+	zend_replace_error_handling(EH_THROW, php_http_exception_bad_querystring_class_entry, &zeh TSRMLS_CC);
+	ZVAL_OBJVAL(return_value, Z_OBJ_HT_P(getThis())->clone_obj(getThis() TSRMLS_CC), 0);
+	php_http_querystring_set(return_value, params, QS_MERGE TSRMLS_CC);
+	zend_restore_error_handling(&zeh TSRMLS_CC);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString___getter, 0, 0, 1)
@@ -519,28 +518,27 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_xlate, 0, 0, 2)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, xlate)
 {
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		char *ie, *oe;
-		int ie_len, oe_len;
+	char *ie, *oe;
+	int ie_len, oe_len;
+	zval *na, *qa;
 
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &ie, &ie_len, &oe, &oe_len)) {
-			with_error_handling(EH_THROW,  php_http_exception_class_entry) {
-				zval *na, *qa = php_http_ztyp(IS_ARRAY, zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC));
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &ie, &ie_len, &oe, &oe_len), invalid_arg, return);
 
-				MAKE_STD_ZVAL(na);
-				array_init(na);
-				if (SUCCESS == php_http_querystring_xlate(na, qa, ie, oe TSRMLS_CC)) {
-					php_http_querystring_set(getThis(), na, 0 TSRMLS_CC);
-				}
+	MAKE_STD_ZVAL(na);
+	array_init(na);
+	qa = php_http_ztyp(IS_ARRAY, zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC));
 
-				zval_ptr_dtor(&na);
-				zval_ptr_dtor(&qa);
+	php_http_expect(SUCCESS == php_http_querystring_xlate(na, qa, ie, oe TSRMLS_CC), bad_conversion,
+			zval_ptr_dtor(&na);
+			zval_ptr_dtor(&qa);
+			return;
+	);
 
-				RETVAL_ZVAL(getThis(), 1, 0);
-			} end_error_handling();
-		}
-	} end_error_handling();
+	php_http_querystring_set(getThis(), na, 0 TSRMLS_CC);
+	RETVAL_ZVAL(getThis(), 1, 0);
 	
+	zval_ptr_dtor(&na);
+	zval_ptr_dtor(&qa);
 }
 #endif /* HAVE_ICONV */
 
@@ -561,17 +559,15 @@ PHP_METHOD(HttpQueryString, unserialize)
 {
 	zval *serialized;
 	
-	with_error_handling(EH_THROW, php_http_exception_class_entry) {
-		if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &serialized)) {
-			with_error_handling(EH_THROW, php_http_exception_class_entry) {
-				if (Z_TYPE_P(serialized) == IS_STRING) {
-					php_http_querystring_set(getThis(), serialized, 0 TSRMLS_CC);
-				} else {
-					php_http_error(HE_WARNING, PHP_HTTP_E_QUERYSTRING, "Expected a string as parameter");
-				}
-			} end_error_handling();
-		}
-	} end_error_handling();
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &serialized)) {
+		return;
+	}
+
+	if (Z_TYPE_P(serialized) == IS_STRING) {
+		php_http_querystring_set(getThis(), serialized, 0 TSRMLS_CC);
+	} else {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Expected a string as parameter");
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_offsetGet, 0, 0, 1)
@@ -581,14 +577,16 @@ PHP_METHOD(HttpQueryString, offsetGet)
 {
 	char *offset_str;
 	int offset_len;
-	zval **value;
-	
-	if ((SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len))) {
-		zval *qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+	zval **value, *qa;
 
-		if (Z_TYPE_P(qa) == IS_ARRAY
-		&&	SUCCESS == zend_symtable_find(Z_ARRVAL_P(qa), offset_str, offset_len + 1, (void *) &value)
-		) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) {
+		return;
+	}
+	
+	qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+
+	if (Z_TYPE_P(qa) == IS_ARRAY) {
+		if (SUCCESS == zend_symtable_find(Z_ARRVAL_P(qa), offset_str, offset_len + 1, (void *) &value)) {
 			RETVAL_ZVAL(*value, 1, 0);
 		}
 	}
@@ -602,18 +600,18 @@ PHP_METHOD(HttpQueryString, offsetSet)
 {
 	char *offset_str;
 	int offset_len;
-	zval *value;
+	zval *value, *param;
 	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &offset_str, &offset_len, &value)) {
-		zval *param;
-		
-		MAKE_STD_ZVAL(param);
-		array_init(param);
-		Z_ADDREF_P(value);
-		add_assoc_zval_ex(param, offset_str, offset_len + 1, value);
-		php_http_querystring_set(getThis(), param, 0 TSRMLS_CC);
-		zval_ptr_dtor(&param);
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &offset_str, &offset_len, &value)) {
+		return;
 	}
+
+	MAKE_STD_ZVAL(param);
+	array_init(param);
+	Z_ADDREF_P(value);
+	add_assoc_zval_ex(param, offset_str, offset_len + 1, value);
+	php_http_querystring_set(getThis(), param, 0 TSRMLS_CC);
+	zval_ptr_dtor(&param);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_offsetExists, 0, 0, 1)
@@ -623,19 +621,20 @@ PHP_METHOD(HttpQueryString, offsetExists)
 {
 	char *offset_str;
 	int offset_len;
-	zval **value;
-	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) {
-		zval *qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+	zval **value, *qa;
 
-		if (Z_TYPE_P(qa) == IS_ARRAY
-		&&	SUCCESS == zend_symtable_find(Z_ARRVAL_P(qa), offset_str, offset_len + 1, (void *) &value)
-		&&	Z_TYPE_PP(value) != IS_NULL
-		) {
-			RETURN_TRUE;
-		}
-		RETURN_FALSE;
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) {
+		return;
 	}
+	
+	qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+
+	if (Z_TYPE_P(qa) == IS_ARRAY) {
+		if (SUCCESS == zend_symtable_find(Z_ARRVAL_P(qa), offset_str, offset_len + 1, (void *) &value)) {
+			RETURN_BOOL(Z_TYPE_PP(value) != IS_NULL);
+		}
+	}
+	RETURN_FALSE;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_offsetUnset, 0, 0, 1)
@@ -645,16 +644,17 @@ PHP_METHOD(HttpQueryString, offsetUnset)
 {
 	char *offset_str;
 	int offset_len;
+	zval *param;
 	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) {
-		zval *param;
-		
-		MAKE_STD_ZVAL(param);
-		array_init(param);
-		add_assoc_null_ex(param, offset_str, offset_len + 1);
-		php_http_querystring_set(getThis(), param, QS_MERGE TSRMLS_CC);
-		zval_ptr_dtor(&param);
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &offset_str, &offset_len)) {
+		return;
 	}
+
+	MAKE_STD_ZVAL(param);
+	array_init(param);
+	add_assoc_null_ex(param, offset_str, offset_len + 1);
+	php_http_querystring_set(getThis(), param, QS_MERGE TSRMLS_CC);
+	zval_ptr_dtor(&param);
 }
 
 zend_class_entry *php_http_querystring_class_entry;
@@ -702,7 +702,8 @@ PHP_MINIT_FUNCTION(http_querystring)
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http", "QueryString", php_http_querystring_methods);
-	php_http_querystring_class_entry = zend_register_internal_class_ex(&ce, php_http_object_class_entry, NULL TSRMLS_CC);
+	php_http_querystring_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
+	php_http_querystring_class_entry->create_object = php_http_querystring_object_new;
 	zend_class_implements(php_http_querystring_class_entry TSRMLS_CC, 3, zend_ce_serializable, zend_ce_arrayaccess, zend_ce_aggregate);
 
 	zend_declare_property_null(php_http_querystring_class_entry, ZEND_STRL("instance"), (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE) TSRMLS_CC);

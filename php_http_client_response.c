@@ -89,29 +89,28 @@ static PHP_METHOD(HttpClientResponse, getTransferInfo)
 {
 	char *info_name = NULL;
 	int info_len = 0;
-	zval *infop, *info;
+	zval *info;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &info_name, &info_len)) {
-		return;
-	}
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &info_name, &info_len), invalid_arg, return);
 
 	info = zend_read_property(php_http_client_response_class_entry, getThis(), ZEND_STRL("transferInfo"), 0 TSRMLS_CC);
 
 	/* request completed? */
-	if (Z_TYPE_P(info) == IS_OBJECT) {
-		if (info_len && info_name) {
-			infop = zend_read_property(NULL, info, php_http_pretty_key(info_name, info_len, 0, 0), info_len, 0 TSRMLS_CC);
+	if (Z_TYPE_P(info) != IS_OBJECT) {
+		php_http_throw(bad_method_call, "Incomplete state", NULL);
+		return;
+	}
 
-			if (infop) {
-				RETURN_ZVAL(infop, 1, 0);
-			} else {
-				php_http_error(HE_NOTICE, PHP_HTTP_E_INVALID_PARAM, "Could not find transfer info named %s", info_name);
-			}
-		} else {
-			RETURN_ZVAL(info, 1, 0);
+	if (info_len && info_name) {
+		info = zend_read_property(NULL, info, php_http_pretty_key(info_name, info_len, 0, 0), info_len, 0 TSRMLS_CC);
+
+		if (!info) {
+			php_http_throw(unexpected_val, "Could not find transfer info with name '%s'", info_name);
+			return;
 		}
 	}
-	RETURN_FALSE;
+
+	RETURN_ZVAL(info, 1, 0);
 }
 
 static zend_function_entry php_http_client_response_methods[] = {
@@ -128,6 +127,7 @@ PHP_MINIT_FUNCTION(http_client_response)
 
 	INIT_NS_CLASS_ENTRY(ce, "http\\Client", "Response", php_http_client_response_methods);
 	php_http_client_response_class_entry = zend_register_internal_class_ex(&ce, php_http_message_class_entry, NULL TSRMLS_CC);
+	zend_declare_property_null(php_http_client_response_class_entry, ZEND_STRL("transferInfo"), ZEND_ACC_PROTECTED TSRMLS_CC);
 
 	return SUCCESS;
 }

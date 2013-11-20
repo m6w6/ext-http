@@ -516,7 +516,7 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 		if (msg && CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
 				php_http_curle_storage_t *st = php_http_curle_get_storage(msg->easy_handle);
-				php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "%s; %s (%s)", curl_easy_strerror(msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
 			}
 
 			if ((enqueue = php_http_client_enqueued(context, msg->easy_handle, compare_queue))) {
@@ -570,7 +570,7 @@ static void php_http_curlm_timeout_callback(int socket, short action, void *even
 		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle, CURL_SOCKET_TIMEOUT, 0, &curl->unfinished)));
 
 		if (CURLM_OK != rc) {
-			php_http_error(HE_WARNING, PHP_HTTP_E_SOCKET, "%s",  curl_multi_strerror(rc));
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s",  curl_multi_strerror(rc));
 		}
 
 		php_http_curlm_responsehandler(context);
@@ -592,7 +592,7 @@ static void php_http_curlm_event_callback(int socket, short action, void *event_
 		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle, socket, etoca(action), &curl->unfinished)));
 
 		if (CURLM_OK != rc) {
-			php_http_error(HE_WARNING, PHP_HTTP_E_SOCKET, "%s", curl_multi_strerror(rc));
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s", curl_multi_strerror(rc));
 		}
 
 		php_http_curlm_responsehandler(context);
@@ -643,7 +643,7 @@ static int php_http_curlm_socket_callback(CURL *easy, curl_socket_t sock, int ac
 				return 0;
 
 			default:
-				php_http_error(HE_WARNING, PHP_HTTP_E_SOCKET, "Unknown socket action %d", action);
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unknown socket action %d", action);
 				return -1;
 		}
 
@@ -1307,7 +1307,7 @@ static STATUS php_http_curle_set_option(php_http_option_t *opt, zval *val, void 
 		break;
 	}
 	if (rv != SUCCESS) {
-		php_http_error(HE_NOTICE, PHP_HTTP_E_CLIENT, "Could not set option %s", opt->name.s);
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s", opt->name.s);
 	}
 	return rv;
 }
@@ -1370,7 +1370,7 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (!(handle = php_resource_factory_handle_ctor(rf, NULL TSRMLS_CC))) {
-		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Failed to initialize curl handle");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to initialize curl handle");
 		return NULL;
 	}
 
@@ -1420,7 +1420,7 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 
 	/* request url */
 	if (!PHP_HTTP_INFO(msg).request.url) {
-		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Cannot request empty URL");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot request empty URL");
 		return FAILURE;
 	}
 	storage->errorbuffer[0] = '\0';
@@ -1452,7 +1452,7 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 			if (PHP_HTTP_INFO(msg).request.method) {
 				curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, PHP_HTTP_INFO(msg).request.method);
 			} else {
-				php_http_error(HE_WARNING, PHP_HTTP_E_REQUEST_METHOD, "Cannot use empty request method");
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot use empty request method");
 				return FAILURE;
 			}
 			break;
@@ -1540,7 +1540,7 @@ static php_http_client_t *php_http_client_curl_init(php_http_client_t *h, void *
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (!handle && !(handle = php_resource_factory_handle_ctor(h->rf, NULL TSRMLS_CC))) {
-		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_POOL, "Failed to initialize curl handle");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to initialize curl handle");
 		return NULL;
 	}
 
@@ -1588,14 +1588,14 @@ static php_resource_factory_t *create_rf(const char *url TSRMLS_DC)
 	php_resource_factory_t *rf = NULL;
 
 	if (!url || !*url) {
-		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Cannot request empty URL");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot request empty URL");
 		return NULL;
 	}
 
 	purl = php_url_parse(url);
 
 	if (!purl) {
-		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Could not parse URL '%s'", url);
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse URL '%s'", url);
 		return NULL;
 	} else {
 		char *id_str = NULL;
@@ -1657,7 +1657,7 @@ static STATUS php_http_client_curl_enqueue(php_http_client_t *h, php_http_client
 
 		return SUCCESS;
 	} else {
-		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT_POOL, "Could not enqueue request: %s", curl_multi_strerror(rs));
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not enqueue request: %s", curl_multi_strerror(rs));
 		return FAILURE;
 	}
 }
@@ -1673,7 +1673,7 @@ static STATUS php_http_client_curl_dequeue(php_http_client_t *h, php_http_client
 		zend_llist_del_element(&h->requests, handler->handle, (int (*)(void *, void *)) compare_queue);
 		return SUCCESS;
 	} else {
-		php_http_error(HE_WARNING, PHP_HTTP_E_CLIENT, "Could not dequeue request: %s", curl_multi_strerror(rs));
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not dequeue request: %s", curl_multi_strerror(rs));
 	}
 
 	return FAILURE;
@@ -1706,7 +1706,7 @@ static STATUS php_http_client_curl_wait(php_http_client_t *h, struct timeval *cu
 	if (curl->useevents) {
 		TSRMLS_FETCH_FROM_CTX(h->ts);
 
-		php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "not implemented");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "not implemented");
 		return FAILURE;
 	}
 #endif
@@ -1747,7 +1747,7 @@ static int php_http_client_curl_once(php_http_client_t *h)
 #if PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
 		TSRMLS_FETCH_FROM_CTX(h->ts);
-		php_http_error(HE_WARNING, PHP_HTTP_E_RUNTIME, "not implemented");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "not implemented");
 		return FAILURE;
 	}
 #endif
@@ -1777,7 +1777,7 @@ static STATUS php_http_client_curl_exec(php_http_client_t *h)
 #endif
 
 			if (ev_rc < 0) {
-				php_http_error(HE_ERROR, PHP_HTTP_E_RUNTIME, "Error in event_base_dispatch()");
+				php_error_docref(NULL TSRMLS_CC, E_ERROR, "Error in event_base_dispatch()");
 				return FAILURE;
 			}
 		} while (curl->unfinished);
@@ -1788,9 +1788,9 @@ static STATUS php_http_client_curl_exec(php_http_client_t *h)
 			if (SUCCESS != php_http_client_curl_wait(h, NULL)) {
 #ifdef PHP_WIN32
 				/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
-				php_http_error(HE_WARNING, PHP_HTTP_E_SOCKET, "WinSock error: %d", WSAGetLastError());
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "WinSock error: %d", WSAGetLastError());
 #else
-				php_http_error(HE_WARNING, PHP_HTTP_E_SOCKET, strerror(errno));
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, strerror(errno));
 #endif
 				return FAILURE;
 			}
@@ -1881,7 +1881,7 @@ static php_http_client_ops_t php_http_client_curl_ops = {
 	php_http_client_curl_getopt
 };
 
-PHP_HTTP_API php_http_client_ops_t *php_http_client_curl_get_ops(void)
+php_http_client_ops_t *php_http_client_curl_get_ops(void)
 {
 	return &php_http_client_curl_ops;
 }

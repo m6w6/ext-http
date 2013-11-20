@@ -25,7 +25,7 @@ class MessageBodyTest extends PHPUnit_Framework_TestCase {
     }
 
     function testAppendError() {
-    	$this->setExpectedException("PHPUnit_Framework_Error");
+    	$this->setExpectedException("http\Exception\RuntimeException");
         $this->file->append("nope");
     }
     function testAppend() {

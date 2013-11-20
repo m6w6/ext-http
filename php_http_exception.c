@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-#include <zend_exceptions.h>
+#include <ext/spl/spl_exceptions.h>
 
 #ifndef PHP_HTTP_DBG_EXCEPTIONS
 #	define PHP_HTTP_DBG_EXCEPTIONS 0
@@ -30,33 +30,83 @@ static void php_http_exception_hook(zval *ex TSRMLS_DC)
 }
 #endif
 
-zend_class_entry *php_http_exception_class_entry;
+zend_class_entry *php_http_exception_interface_class_entry;
+zend_class_entry *php_http_exception_runtime_class_entry;
+zend_class_entry *php_http_exception_unexpected_val_class_entry;
+zend_class_entry *php_http_exception_bad_method_call_class_entry;
+zend_class_entry *php_http_exception_invalid_arg_class_entry;
+zend_class_entry *php_http_exception_bad_header_class_entry;
+zend_class_entry *php_http_exception_bad_url_class_entry;
+zend_class_entry *php_http_exception_bad_message_class_entry;
+zend_class_entry *php_http_exception_bad_conversion_class_entry;
+zend_class_entry *php_http_exception_bad_querystring_class_entry;
 
 PHP_MINIT_FUNCTION(http_exception)
 {
-	zend_class_entry ce = {0};
+	zend_class_entry *cep, ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http", "Exception", NULL);
-	php_http_exception_class_entry = zend_register_internal_class_ex(&ce, zend_exception_get_default(TSRMLS_C), NULL TSRMLS_CC);
+	php_http_exception_interface_class_entry = zend_register_internal_interface(&ce TSRMLS_CC);
 	
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_UNKNOWN"), PHP_HTTP_E_UNKNOWN TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_RUNTIME"), PHP_HTTP_E_RUNTIME TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_INVALID_PARAM"), PHP_HTTP_E_INVALID_PARAM TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_HEADER"), PHP_HTTP_E_HEADER TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MALFORMED_HEADERS"), PHP_HTTP_E_MALFORMED_HEADERS TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MESSAGE"), PHP_HTTP_E_MESSAGE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MESSAGE_TYPE"), PHP_HTTP_E_MESSAGE_TYPE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_MESSAGE_BODY"), PHP_HTTP_E_MESSAGE_BODY TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_ENCODING"), PHP_HTTP_E_ENCODING TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_CLIENT"), PHP_HTTP_E_CLIENT TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_CLIENT_POOL"), PHP_HTTP_E_CLIENT_POOL TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_CLIENT_DATASHARE"), PHP_HTTP_E_CLIENT_DATASHARE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_SOCKET"), PHP_HTTP_E_SOCKET TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_RESPONSE"), PHP_HTTP_E_RESPONSE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_URL"), PHP_HTTP_E_URL TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_QUERYSTRING"), PHP_HTTP_E_QUERYSTRING TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_exception_class_entry, ZEND_STRL("E_COOKIE"), PHP_HTTP_E_COOKIE TSRMLS_CC);
-	
+	/*
+	 * Would be great to only have a few exceptions and rather more identifying
+	 * error codes, but zend_replace_error_handling() does not accept any codes.
+	 */
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Exception", "RuntimeException", NULL);
+	cep = zend_register_internal_class_ex(&ce, spl_ce_RuntimeException, NULL TSRMLS_CC);
+	zend_class_implements(cep TSRMLS_CC, 1, php_http_exception_interface_class_entry);
+	php_http_exception_runtime_class_entry = cep;
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Exception", "UnexpectedValueException", NULL);
+	cep = zend_register_internal_class_ex(&ce, spl_ce_UnexpectedValueException, NULL TSRMLS_CC);
+	zend_class_implements(cep TSRMLS_CC, 1, php_http_exception_interface_class_entry);
+	php_http_exception_unexpected_val_class_entry = cep;
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Exception", "BadMethodCallException", NULL);
+	cep = zend_register_internal_class_ex(&ce, spl_ce_BadMethodCallException, NULL TSRMLS_CC);
+	zend_class_implements(cep TSRMLS_CC, 1, php_http_exception_interface_class_entry);
+	php_http_exception_bad_method_call_class_entry = cep;
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Exception", "InvalidArgumentException", NULL);
+	cep = zend_register_internal_class_ex(&ce, spl_ce_InvalidArgumentException, NULL TSRMLS_CC);
+	zend_class_implements(cep TSRMLS_CC, 1, php_http_exception_interface_class_entry);
+	php_http_exception_invalid_arg_class_entry = cep;
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Exception", "BadHeaderException", NULL);
+	cep = zend_register_internal_class_ex(&ce, spl_ce_DomainException, NULL TSRMLS_CC);
+	zend_class_implements(cep TSRMLS_CC, 1, php_http_exception_interface_class_entry);
+	php_http_exception_bad_header_class_entry = cep;
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Exception", "BadUrlException", NULL);
+	cep = zend_register_internal_class_ex(&ce, spl_ce_DomainException, NULL TSRMLS_CC);
+	zend_class_implements(cep TSRMLS_CC, 1, php_http_exception_interface_class_entry);
+	php_http_exception_bad_url_class_entry = cep;
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Exception", "BadMessageException", NULL);
+	cep = zend_register_internal_class_ex(&ce, spl_ce_DomainException, NULL TSRMLS_CC);
+	zend_class_implements(cep TSRMLS_CC, 1, php_http_exception_interface_class_entry);
+	php_http_exception_bad_message_class_entry = cep;
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Exception", "BadConversionException", NULL);
+	cep = zend_register_internal_class_ex(&ce, spl_ce_DomainException, NULL TSRMLS_CC);
+	zend_class_implements(cep TSRMLS_CC, 1, php_http_exception_interface_class_entry);
+	php_http_exception_bad_conversion_class_entry = cep;
+
+	memset(&ce, 0, sizeof(ce));
+	INIT_NS_CLASS_ENTRY(ce, "http\\Exception", "BadQueryStringException", NULL);
+	cep = zend_register_internal_class_ex(&ce, spl_ce_DomainException, NULL TSRMLS_CC);
+	zend_class_implements(cep TSRMLS_CC, 1, php_http_exception_interface_class_entry);
+	php_http_exception_bad_querystring_class_entry = cep;
+
 #if PHP_HTTP_DBG_EXCEPTIONS
 	zend_throw_exception_hook = php_http_exception_hook;
 #endif
