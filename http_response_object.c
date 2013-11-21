@@ -745,7 +745,11 @@ PHP_METHOD(HttpResponse, send)
 		zval *zetag, *the_data;
 
 		MAKE_STD_ZVAL(the_data);
+#ifdef PHP_OUTPUT_NEWAPI
+		php_output_get_contents(the_data TSRMLS_CC);
+#else
 		php_ob_get_buffer(the_data TSRMLS_CC);
+#endif
 		zend_update_static_property(THIS_CE, ZEND_STRS("data")-1, the_data TSRMLS_CC);
 		ZVAL_LONG(*zend_std_get_static_property(THIS_CE, ZEND_STRS("mode")-1, 0 ZEND_LITERAL_NIL_CC TSRMLS_CC), SEND_DATA);
 
@@ -767,7 +771,11 @@ PHP_METHOD(HttpResponse, send)
 		/* interrupt on-the-fly etag generation */
 		HTTP_G->etag.started = 0;
 		/* discard previous output buffers */
+#ifdef PHP_OUTPUT_NEWAPI
+		php_output_discard_all(TSRMLS_C);
+#else
 		php_end_ob_buffers(0 TSRMLS_CC);
+#endif
 	}
 
 	/* caching */
@@ -879,9 +887,13 @@ PHP_METHOD(HttpResponse, capture)
 	HTTP_CHECK_HEADERS_SENT(RETURN_FALSE);
 
 	zend_update_static_property_long(THIS_CE, ZEND_STRS("catch")-1, 1 TSRMLS_CC);
-
+#ifdef PHP_OUTPUT_NEWAPI
+	php_output_discard_all(TSRMLS_C);
+	php_output_start_default(TSRMLS_C);
+#else
 	php_end_ob_buffers(0 TSRMLS_CC);
 	php_start_ob_buffer(NULL, 0, 0 TSRMLS_CC);
+#endif
 
 	/* register shutdown function */
 	{

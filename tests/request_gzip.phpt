@@ -25,14 +25,16 @@ object(stdClass)%a {
   ["responseStatus"]=>
   string(2) "OK"
   ["headers"]=>
-  array(8) {
+  array(%d) {
     %a
     ["Vary"]=>
     string(15) "Accept-Encoding"
-    ["Content-Length"]=>
-    string(2) "26"
     ["Content-Type"]=>
     string(9) "text/html"
+    ["X-Original-Transfer-Encoding"]=>
+    string(7) "chunked"
+    ["Content-Length"]=>
+    string(2) "26"
     ["X-Original-Content-Encoding"]=>
     string(4) "gzip"
     ["X-Original-Content-Length"]=>

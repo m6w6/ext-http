@@ -252,10 +252,14 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 		STR_FREE(body);
 		return FAILURE;
 	}
-	
-	if (!OG(ob_lock)) {
+
+#ifndef PHP_OUTPUT_NEWAPI
+	if (!OG(ob_lock) &&
+		!php_ob_handler_used("zlib output compression" TSRMLS_CC) && !php_ob_handler_used("ob_gzhandler" TSRMLS_CC)) {
 		php_end_ob_buffers(0 TSRMLS_CC);
 	}
+#endif
+
 	if ((SUCCESS == sapi_send_headers(TSRMLS_C)) && body) {
 		PHPWRITE(body, strlen(body));
 	}
@@ -278,7 +282,11 @@ STATUS _http_exit_ex(int status, char *header, char *body, zend_bool send_header
 	if (HTTP_G->force_exit) {
 		zend_bailout();
 	} else {
+#ifdef PHP_OUTPUT_NEWAPI
+		php_output_start_devnull(TSRMLS_C);
+#else
 		php_ob_set_internal_handler(http_ob_blackhole, 4096, "blackhole", 0 TSRMLS_CC);
+#endif
 	}
 	
 	return SUCCESS;
@@ -356,11 +364,12 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 		HTTP_G->read_post_data = 1;
 		
 		while (0 < (len = sapi_module.read_post(buf, 4096 TSRMLS_CC))) {
+			SG(read_post_bytes) += len;
 			*body = erealloc(*body, *length + len + 1);
 			memcpy(*body + *length, buf, len);
 			*length += len;
 			(*body)[*length] = '\0';
-			if (len < (int) sizeof(buf)) {
+			if (len < 4096) {
 				break;
 			}
 		}
@@ -401,8 +410,9 @@ PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D)
 			int len;
 			
 			while (0 < (len = sapi_module.read_post(buf, 4096 TSRMLS_CC))) {
+				SG(read_post_bytes) += len;
 				php_stream_write(s, buf, len);
-				if (len < (int) sizeof(buf)) {
+				if (len < 4096) {
 					break;
 				}
 			}

@@ -182,7 +182,11 @@ typedef int STATUS;
 #	define getObject(t, o) getObjectEx(t, o, getThis())
 #	define getObjectEx(t, o, v) t * o = ((t *) zend_object_store_get_object(v TSRMLS_CC))
 #	define putObject(t, o) zend_objects_store_put(o, (zend_objects_store_dtor_t) zend_objects_destroy_object, (zend_objects_free_object_storage_t) _ ##t## _free, NULL TSRMLS_CC);
-#	ifndef WONKY
+#	if defined(ZEND_ENGINE_2_4)
+#		define freeObject(o) \
+			zend_object_std_dtor(o TSRMLS_CC); \
+			efree(o);
+#	elif !defined(WONKY)
 #		define freeObject(o) \
 			if (OBJ_GUARDS(o)) { \
 				zend_hash_destroy(OBJ_GUARDS(o)); \
@@ -331,6 +335,13 @@ typedef int STATUS;
 			ZEND_END_ARG_INFO(); \
 \
 			HTTP_STATIC_ARG_INFO \
+			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_3, 0) \
+				ZEND_ARG_PASS_INFO(0) \
+				ZEND_ARG_PASS_INFO(0) \
+				ZEND_ARG_PASS_INFO(1) \
+			ZEND_END_ARG_INFO(); \
+\
+			HTTP_STATIC_ARG_INFO \
 			ZEND_BEGIN_ARG_INFO(http_arg_pass_ref_4, 0) \
 				ZEND_ARG_PASS_INFO(0) \
 				ZEND_ARG_PASS_INFO(0) \
@@ -340,6 +351,7 @@ typedef int STATUS;
 #	else
 #		define HTTP_DECLARE_ARG_PASS_INFO() \
 			static unsigned char http_arg_pass_ref_2[] = {2, BYREF_NONE, BYREF_FORCE}; \
+			static unsigned char http_arg_pass_ref_3[] = {3, BYREF_NONE, BYREF_NONE, BYREF_FORCE}; \
 			static unsigned char http_arg_pass_ref_4[] = {4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE};
 #	endif /* ZEND_ENGINE_2 */
 #endif /* HTTP_HAVE_CURL */

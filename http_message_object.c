@@ -150,7 +150,7 @@ static zval *_http_message_object_read_prop(zval *object, zval *member, int type
 #define http_message_object_write_prop _http_message_object_write_prop
 static void _http_message_object_write_prop(zval *object, zval *member, zval *value ZEND_LITERAL_KEY_DC TSRMLS_DC);
 #define http_message_object_get_prop_ptr _http_message_object_get_prop_ptr
-static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_LITERAL_KEY_DC TSRMLS_DC);
+static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_GET_PPTR_TYPE_DC ZEND_LITERAL_KEY_DC TSRMLS_DC);
 #define http_message_object_get_props _http_message_object_get_props
 static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC);
 
@@ -513,9 +513,15 @@ zend_object_value _http_message_object_new_ex(zend_class_entry *ce, http_message
 		}
 	}
 
+	
+#ifdef ZEND_ENGINE_2_4
+	zend_object_std_init(o, ce TSRMLS_CC);
+	object_properties_init(o, ce);
+#else
 	ALLOC_HASHTABLE(OBJ_PROP(o));
 	zend_hash_init(OBJ_PROP(o), zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
 	zend_hash_copy(OBJ_PROP(o), &ce->default_properties, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+#endif
 
 	ov.handle = putObject(http_message_object, o);
 	ov.handlers = &http_message_object_handlers;
@@ -558,7 +564,7 @@ void _http_message_object_free(zend_object *object TSRMLS_DC)
 	freeObject(o);
 }
 
-static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_LITERAL_KEY_DC TSRMLS_DC) {
+static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_GET_PPTR_TYPE_DC ZEND_LITERAL_KEY_DC TSRMLS_DC) {
 	getObjectEx(http_message_object, obj, object);
 	http_message_object_prophandler *handler;
 	
@@ -567,7 +573,7 @@ static zval **_http_message_object_get_prop_ptr(zval *object, zval *member ZEND_
 		return NULL;
 	}
 
-	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member ZEND_LITERAL_KEY_CC TSRMLS_CC);
+	return zend_get_std_object_handlers()->get_property_ptr_ptr(object, member ZEND_GET_PPTR_TYPE_CC ZEND_LITERAL_KEY_CC TSRMLS_CC);
 }
 
 static zval *_http_message_object_read_prop(zval *object, zval *member, int type ZEND_LITERAL_KEY_DC TSRMLS_DC)
@@ -617,9 +623,12 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	zval *headers;
 	getObjectEx(http_message_object, obj, object);
 	http_message *msg = obj->message;
-	HashTable *props = OBJ_PROP(obj);
 	zval array, *parent;
-	
+#ifdef ZEND_ENGINE_2_4
+	HashTable *props = zend_get_std_object_handlers()->get_properties(object TSRMLS_CC);
+#else
+	HashTable *props = OBJ_PROP(obj);
+#endif
 	INIT_ZARR(array, props);
 
 #define ASSOC_PROP(array, ptype, name, val) \
@@ -681,7 +690,7 @@ static HashTable *_http_message_object_get_props(zval *object TSRMLS_DC)
 	}
 	ASSOC_PROP(array, zval, "parentMessage", parent);
 
-	return OBJ_PROP(obj);
+	return props;
 }
 
 /* ### USERLAND ### */
@@ -1000,7 +1009,7 @@ PHP_METHOD(HttpMessage, setResponseStatus)
 	
 	HTTP_CHECK_MESSAGE_TYPE_RESPONSE(obj->message, RETURN_FALSE);
 	
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &status, &status_len)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &status, &status_len)) {
 		RETURN_FALSE;
 	}
 	STR_SET(obj->message->http.info.response.status, estrndup(status, status_len));

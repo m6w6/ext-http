@@ -17,6 +17,18 @@
 
 #include "php_version.h"
 
+#if ZEND_MODULE_API_NO >= 20100409
+#define ZEND_ENGINE_2_4
+#endif
+
+#if defined(PHP_VERSION_ID) && (PHP_VERSION_ID >= 50500)
+#	define ZEND_GET_PPTR_TYPE_DC , int type
+#	define ZEND_GET_PPTR_TYPE_CC , type
+#else
+#	define ZEND_GET_PPTR_TYPE_DC
+#	define ZEND_GET_PPTR_TYPE_CC
+#endif
+
 #if defined(PHP_VERSION_ID) && (PHP_VERSION_ID >= 50399)
 #	define ZEND_LITERAL_KEY_DC , const zend_literal *_zend_literal_key
 #	define ZEND_LITERAL_KEY_CC , _zend_literal_key
@@ -66,7 +78,7 @@
 #	define HTTP_ZAPI_CONST_CAST(t) (const t)
 #	define GLOBAL_ERROR_HANDLING EG(error_handling)
 #	define GLOBAL_EXCEPTION_CLASS EG(exception_class)
-#	define IS_CALLABLE(cb_zv, flags, cb_sp) zend_is_callable((cb_zv), (flags), (cb_sp) TSRMLS_CC)
+#	define HTTP_IS_CALLABLE(cb_zv, flags, cb_sp) zend_is_callable((cb_zv), (flags), (cb_sp) TSRMLS_CC)
 #	define HTTP_STATIC_ARG_INFO
 #else
 #	define HTTP_ZAPI_HASH_TSRMLS_CC
@@ -74,7 +86,7 @@
 #	define HTTP_ZAPI_CONST_CAST(t) (t)
 #	define GLOBAL_ERROR_HANDLING PG(error_handling)
 #	define GLOBAL_EXCEPTION_CLASS PG(exception_class)
-#	define IS_CALLABLE(cb_zv, flags, cb_sp) zend_is_callable((cb_zv), (flags), (cb_sp))
+#	define HTTP_IS_CALLABLE(cb_zv, flags, cb_sp) zend_is_callable((cb_zv), (flags), (cb_sp))
 #	define HTTP_STATIC_ARG_INFO static
 #endif
 

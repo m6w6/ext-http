@@ -31,7 +31,9 @@ PHP_HTTP_API void _http_info_default_callback(void **nothing, HashTable **header
 		
 		case IS_HTTP_RESPONSE:
 			add_assoc_long(&array, "Response Code", (long) HTTP_INFO(info).response.code);
-			add_assoc_string(&array, "Response Status", HTTP_INFO(info).response.status, 1);
+			if (HTTP_INFO(info).response.status) {
+				add_assoc_string(&array, "Response Status", HTTP_INFO(info).response.status, 1);
+			}
 			break;
 	}
 }
