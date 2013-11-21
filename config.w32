@@ -46,20 +46,17 @@ function check_for_pecl_ext(ext, header)
 if (PHP_HTTP != "no") {
 
 	EXTENSION("http",
-		"missing.c http.c http_functions.c http_exception_object.c "+
-		"http_util_object.c http_message_object.c http_requestpool_object.c "+
-		"http_request_object.c http_response_object.c "+
-		"http_api.c http_cache_api.c http_request_pool_api.c "+
-		"http_request_api.c http_date_api.c http_headers_api.c "+
-		"http_message_api.c http_send_api.c http_url_api.c "+
-		"http_info_api.c http_request_method_api.c http_encoding_api.c "+
-		"http_filter_api.c http_request_body_api.c http_querystring_object.c "+
-		"http_deflatestream_object.c http_inflatestream_object.c "+
-		"http_cookie_api.c http_querystring_api.c http_request_datashare_api.c "+
-		"http_requestdatashare_object.c http_request_info.c http_persistent_handle_api.c",
+		"php_http.c php_http_buffer.c php_http_client.c " +
+		"php_http_client_request.c php_http_client_response.c " +
+		"php_http_cookie.c php_http_curl.c php_http_client_curl.c " +
+		"php_http_encoding.c php_http_env.c php_http_env_request.c " +
+		"php_http_env_response.c php_http_etag.c php_http_exception.c php_http_filter.c php_http_header_parser.c " +
+		"php_http_headers.c php_http_info.c php_http_message.c php_http_message_body.c php_http_message_parser.c " +
+		"php_http_misc.c php_http_negotiate.c php_http_object.c php_http_options.c php_http_params.c " +
+		"php_http_querystring.c " +
+		"php_http_strlist.c php_http_url.c php_http_version.c",
 		null,
-		"/I\"" + configure_module_dirname + "/phpstr\"");
-	ADD_SOURCES(configure_module_dirname + "/phpstr", "phpstr.c", "http");
+		null);
 	AC_DEFINE("HAVE_HTTP", 1, "Have extended HTTP support");
 	AC_DEFINE("HTTP_SHARED_DEPS", 1, "Depend on shared extensions");
 	
@@ -95,6 +92,11 @@ if (PHP_HTTP != "no") {
 		ADD_EXTENSION_DEP("http", "iconv", true);
 	}
 	
+	if (PHP_CURL != "no") {
+		ADD_EXTENSION_DEP("http", "curl", true);
+	}
+
+	
 	CURL_LIB="libcurl_a.lib;libcurl.lib;" + (PHP_DEBUG != "no" ? "libcurld.lib":"libcurl.lib");
 	if (CHECK_HEADER_ADD_INCLUDE("curl/curl.h", "CFLAGS_HTTP") &&
 			CHECK_HEADER_ADD_INCLUDE("openssl/crypto.h", "CFLAGS_HTTP") &&
@@ -102,28 +104,31 @@ if (PHP_HTTP != "no") {
 			CHECK_LIB("ssleay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("libeay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("zlib.lib;zlib_a.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("libcurl_a.lib", "http", PHP_HTTP) &&
+			ADD_EXTENSION_DEP("http", "propro", true) &&
+			ADD_EXTENSION_DEP("http", "raphf", true) &&
 			CHECK_LIB("winmm.lib", "http", PHP_HTTP)) {
-		AC_DEFINE("HTTP_HAVE_CURL", 1, "Have CURL library");
-		AC_DEFINE("HTTP_HAVE_SSL", 1, "Have SSL");
-		AC_DEFINE("HAVE_CURL_MULTI_STRERROR", 1, "");
-		AC_DEFINE("HAVE_CURL_SHARE_STRERROR", 1, "");
-		AC_DEFINE("HAVE_CURL_EASY_STRERROR", 1, "");
-		AC_DEFINE("HAVE_CURL_EASY_RESET", 1, "");
-		AC_DEFINE("HAVE_CURL_GETFORMDATA", 1, "");
-		AC_DEFINE("HAVE_CURL_FORMGET", 1, "");
-		AC_DEFINE("HAVE_CURL_MULTI_SETOPT", 1, "");
-		AC_DEFINE("HAVE_CURL_MULTI_TIMEOUT", 1, "");
+		AC_DEFINE("PHP_HTTP_HAVE_CURL", 1, "Have CURL library");
+		AC_DEFINE("PHP_HTTP_HAVE_SSL", 1, "Have SSL");
+		AC_DEFINE("PHP_HAVE_CURL_MULTI_STRERROR", 1, "");
+		AC_DEFINE("PHP_HAVE_CURL_SHARE_STRERROR", 1, "");
+		AC_DEFINE("PHP_HAVE_CURL_EASY_STRERROR", 1, "");
+		AC_DEFINE("PHP_HAVE_CURL_EASY_RESET", 1, "");
+		AC_DEFINE("PHP_HAVE_CURL_GETFORMDATA", 1, "");
+		AC_DEFINE("PHP_HAVE_CURL_FORMGET", 1, "");
+		AC_DEFINE("PHP_HAVE_CURL_MULTI_SETOPT", 1, "");
+		AC_DEFINE("PHP_HAVE_CURL_MULTI_TIMEOUT", 1, "");
+
+		if (CHECK_HEADER_ADD_INCLUDE("event2/event.h", "CFLAGS_HTTP") &&
+			CHECK_LIB("libevent.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("libevent_core.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("libevent_extras.lib", "http", PHP_HTTP)) {
+
+			AC_DEFINE("PHP_HTTP_HAVE_EVENT", 1);
+			AC_DEFINE("PHP_HTTP_HAVE_EVENT2", 1);
+			AC_DEFINE("PHP_HTTP_EVENT_VERSION", "2.0.21 or greater");
+		}
 	} else {
 		WARNING("curl convenience functions not enabled; libraries and headers not found");
 	}
-/*
-//	MAGIC_LIB = PHP_DEBUG != "no" ? "libmagic-staticd.lib":"libmagic-static.lib";
-//	if (CHECK_HEADER_ADD_INCLUDE("magic.h", "CFLAGS_HTTP") &&
-//			CHECK_LIB(MAGIC_LIB, "http", PHP_HTTP)) {
-//		AC_DEFINE("HTTP_HAVE_MAGIC", 1, "Have magic library");
-//		AC_DEFINE("USE_MAGIC_STATIC", "", "");
-//	} else {
-//		WARNING("content type guessing not enabled; libraries and headers not found");
-//	}
-*/
 }

@@ -1,0 +1,15 @@
+GET /default/empty.php HTTP/1.1
+Connection: close
+Host: localhost
+
+HTTP/1.1 200 OK
+Date: Thu, 26 Aug 2010 11:41:02 GMT
+Server: Apache/2.2.16 (Unix) mod_ssl/2.2.16 OpenSSL/1.0.0a mod_fastcgi/2.4.6
+X-Powered-By: PHP/5.3.3
+Vary: Accept-Encoding
+Connection: close
+Transfer-Encoding: chunked
+Content-Type: text/html
+
+0
+

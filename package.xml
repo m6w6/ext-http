@@ -14,8 +14,8 @@
 This HTTP extension aims to provide a convenient and powerful 
 set of functionality for one of PHPs major applications.
 
-It eases handling of HTTP urls, dates, redirects, headers and 
-messages, provides means for negotiation of clients preferred 
+It eases handling of HTTP urls, headers and messages, provides 
+means for negotiation of a client's preferred content type, 
 language and charset, as well as a convenient way to send any 
 arbitrary data with caching and resuming capabilities.
 
@@ -28,18 +28,25 @@ support. Parallel requests are available for PHP 5 and greater.
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2013-06-20</date>
+ <date>2013-08-12</date>
  <version>
-  <release>1.7.6</release>
-  <api>1.7.0</api>
+  <release>2.0.0RC1</release>
+  <api>2.0.0</api>
  </version>
  <stability>
-  <release>stable</release>
-  <api>stable</api>
+  <release>beta</release>
+  <api>beta</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed bug #64380 (PHP-5.5 build fails)
+Extended HTTP support. Again. Keep in mind that it's got the major version 2, because it's incompatible with pecl_http v1.
+
+Documentation:
+http://devel-m6w6.rhcloud.com/mdref/http
+
+Code Coverage:
+http://dev.iworks.at/ext-http/lcov/ext/http/
+
 ]]></notes>
  <contents>
   <dir name="/">
@@ -47,227 +54,203 @@ support. Parallel requests are available for PHP 5 and greater.
    <file role="doc" name="CREDITS"/>
    <file role="doc" name="KnownIssues.txt"/>
    <file role="doc" name="ThanksTo.txt"/>
-   <file role="doc" name="docs/http.ini"/>
-   <file role="doc" name="docs/examples/tutorial.txt"/>
-   
-   <file role="src" name="http.dsp"/>
-   <file role="src" name="config.w32"/>
    <file role="src" name="config.m4"/>
    <file role="src" name="config9.m4"/>
-   <file role="src" name="Makefile.frag"/>
+   <file role="src" name="config.w32"/>
    
-   <dir name="phpstr">
-    <file role="src" name="phpstr.h"/>
-    <file role="src" name="phpstr.c"/>
-   </dir>
-   
-   <file role="src" name="missing.h"/>
-   <file role="src" name="missing.c"/>
-   
-   <file role="src" name="php_http.h"/>
-   <file role="src" name="php_http_std_defs.h"/>
    <file role="src" name="php_http_api.h"/>
-   <file role="src" name="php_http_cache_api.h"/>
-   <file role="src" name="php_http_cookie_api.h"/>
-   <file role="src" name="php_http_date_api.h"/>
-   <file role="src" name="php_http_encoding_api.h"/>
-   <file role="src" name="php_http_filter_api.h"/>
-   <file role="src" name="php_http_headers_api.h"/>
-   <file role="src" name="php_http_info_api.h"/>
-   <file role="src" name="php_http_message_api.h"/>
-   <file role="src" name="php_http_persistent_handle_api.h"/>
-   <file role="src" name="php_http_querystring_api.h"/>
-   <file role="src" name="php_http_request_api.h"/>
-   <file role="src" name="php_http_request_int.h"/>
-   <file role="src" name="php_http_request_body_api.h"/>
-   <file role="src" name="php_http_request_datashare_api.h"/>
-   <file role="src" name="php_http_request_method_api.h"/>
-   <file role="src" name="php_http_request_pool_api.h"/>
-   <file role="src" name="php_http_send_api.h"/>
-   <file role="src" name="php_http_url_api.h"/>
-   <file role="src" name="php_http_util_object.h"/>
-   <file role="src" name="php_http_deflatestream_object.h"/>
-   <file role="src" name="php_http_inflatestream_object.h"/>
-   <file role="src" name="php_http_message_object.h"/>
-   <file role="src" name="php_http_querystring_object.h"/>
-   <file role="src" name="php_http_request_object.h"/>
-   <file role="src" name="php_http_requestdatashare_object.h"/>
-   <file role="src" name="php_http_requestpool_object.h"/>
-   <file role="src" name="php_http_response_object.h"/>
-   <file role="src" name="php_http_exception_object.h"/>
-   
-   <file role="src" name="http.c"/>
-   <file role="src" name="http_functions.c"/>
-   <file role="src" name="http_api.c"/>
-   <file role="src" name="http_cache_api.c"/>
-   <file role="src" name="http_cookie_api.c"/>
-   <file role="src" name="http_date_api.c"/>
-   <file role="src" name="http_encoding_api.c"/>
-   <file role="src" name="http_filter_api.c"/>
-   <file role="src" name="http_headers_api.c"/>
-   <file role="src" name="http_info_api.c"/>
-   <file role="src" name="http_message_api.c"/>
-   <file role="src" name="http_persistent_handle_api.c"/>
-   <file role="src" name="http_querystring_api.c"/>
-   <file role="src" name="http_request_api.c"/>
-   <file role="src" name="http_request_info.c"/>
-   <file role="src" name="http_request_body_api.c"/>
-   <file role="src" name="http_request_datashare_api.c"/>
-   <file role="src" name="http_request_method_api.c"/>
-   <file role="src" name="http_request_pool_api.c"/>
-   <file role="src" name="http_send_api.c"/>
-   <file role="src" name="http_url_api.c"/>
-   <file role="src" name="http_util_object.c"/>
-   <file role="src" name="http_deflatestream_object.c"/>
-   <file role="src" name="http_inflatestream_object.c"/>
-   <file role="src" name="http_message_object.c"/>
-   <file role="src" name="http_querystring_object.c"/>
-   <file role="src" name="http_request_object.c"/>
-   <file role="src" name="http_requestdatashare_object.c"/>
-   <file role="src" name="http_requestpool_object.c"/>
-   <file role="src" name="http_response_object.c"/>
-   <file role="src" name="http_exception_object.c"/>
-   
-   <dir name="lib">
-    <file role="php" name="BigGet.php"/>
-    <file role="php" name="FeedAggregator.php"/>
-    <file role="php" name="PgLobStream.php"/>
-    <file role="php" name="XmlRpcClient.php"/>
-    <file role="php" name="XmlRpcServer.php"/>
-   </dir>
-   
+   <file role="src" name="php_http_buffer.c"/>
+   <file role="src" name="php_http_buffer.h"/>
+   <file role="src" name="php_http.c"/>
+   <file role="src" name="php_http_client.c"/>
+   <file role="src" name="php_http_client.h"/>
+   <file role="src" name="php_http_client_curl.c"/>
+   <file role="src" name="php_http_client_curl.h"/>
+   <file role="src" name="php_http_client_request.c"/>
+   <file role="src" name="php_http_client_request.h"/>
+   <file role="src" name="php_http_client_response.c"/>
+   <file role="src" name="php_http_client_response.h"/>
+   <file role="src" name="php_http_cookie.c"/>
+   <file role="src" name="php_http_cookie.h"/>
+   <file role="src" name="php_http_curl.c"/>
+   <file role="src" name="php_http_curl.h"/>
+   <file role="src" name="php_http_encoding.c"/>
+   <file role="src" name="php_http_encoding.h"/>
+   <file role="src" name="php_http_env.c"/>
+   <file role="src" name="php_http_env.h"/>
+   <file role="src" name="php_http_env_request.c"/>
+   <file role="src" name="php_http_env_request.h"/>
+   <file role="src" name="php_http_env_response.c"/>
+   <file role="src" name="php_http_env_response.h"/>
+   <file role="src" name="php_http_etag.c"/>
+   <file role="src" name="php_http_etag.h"/>
+   <file role="src" name="php_http_exception.c"/>
+   <file role="src" name="php_http_exception.h"/>
+   <file role="src" name="php_http_filter.c"/>
+   <file role="src" name="php_http_filter.h"/>
+   <file role="src" name="php_http.h"/>
+   <file role="src" name="php_http_header_parser.c"/>
+   <file role="src" name="php_http_header_parser.h"/>
+   <file role="src" name="php_http_header.c"/>
+   <file role="src" name="php_http_header.h"/>
+   <file role="src" name="php_http_info.c"/>
+   <file role="src" name="php_http_info.h"/>
+   <file role="src" name="php_http_message_body.c"/>
+   <file role="src" name="php_http_message_body.h"/>
+   <file role="src" name="php_http_message.c"/>
+   <file role="src" name="php_http_message.h"/>
+   <file role="src" name="php_http_message_parser.c"/>
+   <file role="src" name="php_http_message_parser.h"/>
+   <file role="src" name="php_http_misc.c"/>
+   <file role="src" name="php_http_misc.h"/>
+   <file role="src" name="php_http_negotiate.c"/>
+   <file role="src" name="php_http_negotiate.h"/>
+   <file role="src" name="php_http_object.c"/>
+   <file role="src" name="php_http_object.h"/>
+   <file role="src" name="php_http_options.c"/>
+   <file role="src" name="php_http_options.h"/>
+   <file role="src" name="php_http_params.c"/>
+   <file role="src" name="php_http_params.h"/>
+   <file role="src" name="php_http_querystring.c"/>
+   <file role="src" name="php_http_querystring.h"/>
+   <file role="src" name="php_http_strlist.c"/>
+   <file role="src" name="php_http_strlist.h"/>
+   <file role="src" name="php_http_url.c"/>
+   <file role="src" name="php_http_url.h"/>
+   <file role="src" name="php_http_version.c"/>
+   <file role="src" name="php_http_version.h"/>
+
    <dir name="tests">
-    <file role="test" name="data.txt"/>
-    <file role="test" name="urls.txt"/>
-    <file role="test" name="skip.inc"/>
-    <file role="test" name="log.inc"/>
-    <file role="test" name="allowed_methods_002_logging.phpt"/>
-    <file role="test" name="allowed_methods_002.phpt"/>
-    <file role="test" name="bug_15800.phpt"/>
-    <file role="test" name="build_str_001.phpt"/>
-    <file role="test" name="build_url_001.phpt"/>
-    <file role="test" name="build_url_002.phpt"/>
-    <file role="test" name="build_url_003.phpt"/>
-    <file role="test" name="build_url_004.phpt"/>
-    <file role="test" name="chunked_decode_001.phpt"/>
-    <file role="test" name="chunked_decode_002.phpt"/>
-    <file role="test" name="chunked_decode_003.phpt"/>
-    <file role="test" name="chunked_decode_004.phpt"/>
-    <file role="test" name="cloning_001.phpt"/>
-    <file role="test" name="date_001.phpt"/>
-    <file role="test" name="date_002.phpt"/>
-    <file role="test" name="encoding_objects_001.phpt"/>
-    <file role="test" name="encodings.phpt"/>
-    <file role="test" name="etag_mode_031.phpt"/>
-    <file role="test" name="etag_mode_032.phpt"/>
-    <file role="test" name="etag_mode_033.phpt"/>
-    <file role="test" name="etag_mode_034.phpt"/>
-    <file role="test" name="etag_mode_041.phpt"/>
-    <file role="test" name="etag_mode_042.phpt"/>
-    <file role="test" name="etag_mode_043.phpt"/>
-    <file role="test" name="etag_mode_044.phpt"/>
-    <file role="test" name="exceptions.phpt"/>
-    <file role="test" name="get_request_data_001.phpt"/>
-    <file role="test" name="HttpMessage_001.phpt"/>
-    <file role="test" name="HttpMessage_002.phpt"/>
-    <file role="test" name="HttpMessage_003.phpt"/>
-    <file role="test" name="HttpMessage_004.phpt"/>
-    <file role="test" name="HttpMessage_005.phpt"/>
-    <file role="test" name="HttpMessage_006.phpt"/>
-    <file role="test" name="HttpMessage_007.phpt"/>
-    <file role="test" name="HttpMessage_008.phpt"/>
-    <file role="test" name="HttpMessage_009_bug16700.phpt"/>
-    <file role="test" name="HttpQueryString_001.phpt"/>
-    <file role="test" name="HttpQueryString_002.phpt"/>
-    <file role="test" name="HttpQueryString_003.phpt"/>
-    <file role="test" name="HttpQueryString_004.phpt"/>
-    <file role="test" name="HttpRequest_001.phpt"/>
-    <file role="test" name="HttpRequest_002.phpt"/>
-    <file role="test" name="HttpRequest_003.phpt"/>
-    <file role="test" name="HttpRequest_004.phpt"/>
-    <file role="test" name="HttpRequest_005.phpt"/>
-    <file role="test" name="HttpRequest_006.phpt"/>
-    <file role="test" name="HttpRequest_007.phpt"/>
-    <file role="test" name="HttpRequest_008.phpt"/>
-    <file role="test" name="HttpRequest_009.phpt"/>
-    <file role="test" name="HttpRequest_010.phpt"/>
-    <file role="test" name="HttpRequestDataShare_001.phpt"/>
-    <file role="test" name="HttpRequestDataShare_002.phpt"/>
-    <file role="test" name="HttpRequestPool_001.phpt"/>
-    <file role="test" name="HttpRequestPool_002.phpt"/>
-    <file role="test" name="HttpRequestPool_003.phpt"/>
-    <file role="test" name="HttpRequestPool_004.phpt"/>
-    <file role="test" name="HttpRequestPool_005.phpt"/>
-    <file role="test" name="HttpRequestPool_006.phpt"/>
-    <file role="test" name="HttpResponse_001.phpt"/>
-    <file role="test" name="HttpResponse_002.phpt"/>
-    <file role="test" name="HttpResponse_003.phpt"/>
-    <file role="test" name="HttpResponse_004.phpt"/>
-    <file role="test" name="HttpResponse_005.phpt"/>
-    <file role="test" name="match_request_header_001.phpt"/>
-    <file role="test" name="negotiation_001.phpt"/>
-    <file role="test" name="ob_deflatehandler_001.phpt"/>
-    <file role="test" name="ob_inflatehandler_001.phpt"/>
-    <file role="test" name="parse_cookie_001.phpt"/>
-    <file role="test" name="parse_cookie_002.phpt"/>
-    <file role="test" name="parse_headers_001.phpt"/>
-    <file role="test" name="parse_message_001.phpt"/>
-    <file role="test" name="parse_message_002.phpt"/>
-    <file role="test" name="parse_message_003.phpt"/>
-    <file role="test" name="parse_message_004.phpt"/>
-    <file role="test" name="parse_message_005.phpt"/>
-    <file role="test" name="parse_message_006.phpt"/>
-    <file role="test" name="parse_params_001.phpt"/>
-    <file role="test" name="persistent_handles_001.phpt"/>
-    <file role="test" name="persistent_handles_002.phpt"/>
-    <file role="test" name="persistent_handles_003.phpt"/>
-    <file role="test" name="redirect_011_logging.phpt"/>
-    <file role="test" name="redirect_011.phpt"/>
-    <file role="test" name="redirect_012_logging.phpt"/>
-    <file role="test" name="redirect_012.phpt"/>
-    <file role="test" name="redirect_013_logging.phpt"/>
-    <file role="test" name="redirect_013.phpt"/>
-    <file role="test" name="request_cookies.phpt"/>
-    <file role="test" name="request_etag.phpt"/>
-    <file role="test" name="request_gzip.phpt"/>
-    <file role="test" name="request_methods.phpt"/>
-    <file role="test" name="request_put_data.phpt"/>
-    <file role="test" name="send_data_001.phpt"/>
-    <file role="test" name="send_data_002.phpt"/>
-    <file role="test" name="send_data_003.phpt"/>
-    <file role="test" name="send_data_004.phpt"/>
-    <file role="test" name="send_data_005.phpt"/>
-    <file role="test" name="send_data_006.phpt"/>
-    <file role="test" name="send_data_010.phpt"/>
-    <file role="test" name="send_data_011.phpt"/>
-    <file role="test" name="send_failed_precond_001.phpt"/>
-    <file role="test" name="send_file_005.phpt"/>
-    <file role="test" name="send_file_008.phpt"/>
-    <file role="test" name="send_file_009.phpt"/>
-    <file role="test" name="send_file_010.phpt"/>
-    <file role="test" name="send_file_011.phpt"/>
-    <file role="test" name="send_file_012.phpt"/>
-    <file role="test" name="send_file_013.phpt"/>
-    <file role="test" name="send_ifrange_001.phpt"/>
-    <file role="test" name="send_ifrange_003.phpt"/>
-    <file role="test" name="stream_filters_001.phpt"/>
-    <file role="test" name="stream_filters_002.phpt"/>
-    <file role="test" name="stream_filters_003.phpt"/>
+    <file role="test" name="skipif.inc"/>
+    <dir name="data">
+     <file role="test" name="message_r_multipart_put.txt"/>
+     <file role="test" name="message_rr_empty.txt"/>
+     <file role="test" name="message_rr_empty_chunked.txt"/>
+     <file role="test" name="message_rr_empty_gzip.txt"/>
+     <file role="test" name="message_rr_helloworld_chunked.txt"/>
+     <file role="test" name="urls.txt"/>
+    </dir>
+     <file role="test" name="bug61444.phpt"/>
+     <file role="test" name="client001.phpt"/>
+     <file role="test" name="client002.phpt"/>
+     <file role="test" name="client003.phpt"/>
+     <file role="test" name="client004.phpt"/>
+     <file role="test" name="client005.phpt"/>
+     <file role="test" name="client006.phpt"/>
+     <file role="test" name="client007.phpt"/>
+     <file role="test" name="client008.phpt"/>
+     <file role="test" name="client009.phpt"/>
+     <file role="test" name="client010.phpt"/>
+     <file role="test" name="client011.phpt"/>
+     <file role="test" name="client012.phpt"/>
+     <file role="test" name="client013.phpt"/>
+     <file role="test" name="clientrequest001.phpt"/>
+     <file role="test" name="clientrequest002.phpt"/>
+     <file role="test" name="clientrequest003.phpt"/>
+     <file role="test" name="clientrequest004.phpt"/>
+     <file role="test" name="clientresponse001.phpt"/>
+     <file role="test" name="clientresponse002.phpt"/>
+     <file role="test" name="clientresponse003.phpt"/>
+     <file role="test" name="envrequestbody001.phpt"/>
+     <file role="test" name="envrequestbody002.phpt"/>
+     <file role="test" name="envrequestbody003.phpt"/>
+     <file role="test" name="envrequestfiles001.phpt"/>
+     <file role="test" name="envrequestfiles002.phpt"/>
+     <file role="test" name="envrequestform.phpt"/>
+     <file role="test" name="envrequestheader001.phpt"/>
+     <file role="test" name="envrequestjson001.phpt"/>
+     <file role="test" name="envrequestjson002.phpt"/>
+     <file role="test" name="envrequestquery.phpt"/>
+     <file role="test" name="envresponse001.phpt"/>
+     <file role="test" name="envresponse002.phpt"/>
+     <file role="test" name="envresponse003.phpt"/>
+     <file role="test" name="envresponse004.phpt"/>
+     <file role="test" name="envresponse005.phpt"/>
+     <file role="test" name="envresponse006.phpt"/>
+     <file role="test" name="envresponse007.phpt"/>
+     <file role="test" name="envresponse008.phpt"/>
+     <file role="test" name="envresponse009.phpt"/>
+     <file role="test" name="envresponse010.phpt"/>
+     <file role="test" name="envresponse011.phpt"/>
+     <file role="test" name="envresponse012.phpt"/>
+     <file role="test" name="envresponse013.phpt"/>
+     <file role="test" name="envresponse014.phpt"/>
+     <file role="test" name="envresponsebody001.phpt"/>
+     <file role="test" name="envresponsebody002.phpt"/>
+     <file role="test" name="envresponsecodes.phpt"/>
+     <file role="test" name="envresponseheader001.phpt"/>
+     <file role="test" name="envresponseranges001.phpt"/>
+     <file role="test" name="etag001.phpt"/>
+     <file role="test" name="filterchunked.phpt"/>
+     <file role="test" name="filterzlib.phpt"/>
+     <file role="test" name="header001.phpt"/>
+     <file role="test" name="header002.phpt"/>
+     <file role="test" name="header003.phpt"/>
+     <file role="test" name="header004.phpt"/>
+     <file role="test" name="header005.phpt"/>
+     <file role="test" name="header006.phpt"/>
+     <file role="test" name="header007.phpt"/>
+     <file role="test" name="header008.phpt"/>
+     <file role="test" name="header009.phpt"/>
+     <file role="test" name="info_001.phpt"/>
+     <file role="test" name="info.phpt"/>
+     <file role="test" name="message001.phpt"/>
+     <file role="test" name="message002.phpt"/>
+     <file role="test" name="message003.phpt"/>
+     <file role="test" name="message004.phpt"/>
+     <file role="test" name="message005.phpt"/>
+     <file role="test" name="message006.phpt"/>
+     <file role="test" name="message007.phpt"/>
+     <file role="test" name="message008.phpt"/>
+     <file role="test" name="message009.phpt"/>
+     <file role="test" name="message010.phpt"/>
+     <file role="test" name="message011.phpt"/>
+     <file role="test" name="message012.phpt"/>
+     <file role="test" name="message013.phpt"/>
+     <file role="test" name="message014.phpt"/>
+     <file role="test" name="message015.phpt"/>
+     <file role="test" name="negotiate001.phpt"/>
+     <file role="test" name="params001.phpt"/>
+     <file role="test" name="params002.phpt"/>
+     <file role="test" name="phpunit.phpt"/>
+     <file role="test" name="propertyproxy001.phpt"/>
+     <file role="test" name="querystring_001.phpt"/>
+     <file role="test" name="serialize001.phpt"/>
+     <file role="test" name="url001.phpt"/>
+     <file role="test" name="version001.phpt"/>
+   </dir>
+   <dir name="phpunit">
+    <file role="test" name="CookieTest.php"/>
+    <file role="test" name="EncodingTest.php"/>
+    <file role="test" name="MessageBodyTest.php"/>
+    <file role="test" name="ParamsTest.php"/>
+    <file role="test" name="QueryStringTest.php"/>
+    <file role="test" name="UrlTest.php"/>
    </dir>
   </dir>
  </contents>
  <dependencies>
   <required>
    <php>
-    <min>4.3</min>
+    <min>5.3.0</min>
    </php>
    <pearinstaller>
     <min>1.4.1</min>
    </pearinstaller>
+   <package>
+    <name>raphf</name>
+    <channel>pecl.php.net</channel>
+    <min>0.1.0</min>
+    <providesextension>raphf</providesextension>
+   </package>
+   <package>
+    <name>propro</name>
+    <channel>pecl.php.net</channel>
+    <min>0.1.0</min>
+    <providesextension>propro</providesextension>
+   </package>
   </required>
   <optional>
-   <extension><name>spl</name></extension>
-   <extension><name>session</name></extension>
    <extension><name>hash</name></extension>
    <extension><name>iconv</name></extension>
   </optional>
@@ -275,33 +258,25 @@ support. Parallel requests are available for PHP 5 and greater.
  <providesextension>http</providesextension>
  <extsrcrelease>
   <configureoption 
-   name="with-http-curl-requests"
-   prompt="whether to enable cURL HTTP requests; specify libcurl directory"
-   default="yes"
-  />
+   name="with-http"
+   prompt="Enable extended HTTP support"
+   default="yes" />
   <configureoption
-   name="with-http-zlib-compression"
-   prompt="whether to enable support for gzencoded/deflated message bodies; specify zlib directory"
-   default="yes"
-  />
+   name="with-http-zlib-dir"
+   prompt="where to find zlib"
+   default="/usr" />
   <configureoption
-   name="with-http-magic-mime"
-   prompt="whether to enable response content type guessing; specify libmagic directory"
-   default="no"
-  />
+   name="with-http-libcurl-dir"
+   prompt="where to find libcurl"
+   default="/usr" />
   <configureoption
-   name="with-http-shared-deps"
-   prompt="whether to depend on extensions which have been built shared"
-   default="yes"
-  />
+   name="with-http-libevent-dir"
+   prompt="where to find libevent"
+   default="/usr" />
   <filelist>
-   <install as="http.ini" name="docs/http.ini"/>
+   <!-- install as="http.ini" name="docs/http.ini"/>
    <install as="examples/tutorial.txt" name="docs/examples/tutorial.txt"/>
-   <install as="pecl/http/BigGet.php" name="lib/BigGet.php"/>
-   <install as="pecl/http/FeedAggregator.php" name="lib/FeedAggregator.php"/>
-   <install as="pecl/http/PgLobStream.php" name="lib/PgLobStream.php"/>
-   <install as="pecl/http/XmlRpcClient.php" name="lib/XmlRpcClient.php"/>
-   <install as="pecl/http/XmlRpcServer.php" name="lib/XmlRpcServer.php"/>
+   <install as="pecl/http/.php" name="lib/.php"/ -->
   </filelist>
  </extsrcrelease>
  <changelog />

@@ -1,0 +1,19 @@
+GET /default/empty.txt HTTP/1.1
+Host: localhost
+Connection: close
+
+HTTP/1.1 200 OK
+Date: Wed, 25 Aug 2010 12:11:44 GMT
+Server: Apache/2.2.16 (Unix) 
+    mod_ssl/2.2.16 
+    OpenSSL/1.0.0a 
+    mod_fastcgi/2.4.6
+Last-Modified: Wed, 28 Apr 2010 10:54:37 GMT
+ETag: "2002a-0-48549d615a35c"
+Accept-Ranges: bytes
+Content-Length: 0
+Vary: Accept-Encoding
+Connection: close
+Content-Type: text/plain
+
+

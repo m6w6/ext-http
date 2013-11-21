@@ -1,13 +1,14 @@
 Thanks To
 =========
-$Id$
 
 People who repeatedly reported issues with this extension in a manner
 so they could be fixed in a reasonable way, or suggested useful features
 to implement, in alphabetical order:
 
 	Ilia Alshanetsky (ilia at php dot net)
+	Anatol Belski (ab at php dot net)
 	Petr Czaderna (petr at hroch dot info)
+	Benjamin Eberlei (kontakt at beberlei dot de)
 	David James (james82 at gmail dot com)
 	Thomas Landro Johnsen (thomas dot l dot johnsen at gmail dot com)
 	Clay Loveless (clay at killersoft dot com)
