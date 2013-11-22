@@ -1,9 +1,9 @@
 --TEST--
 multipart message
 --SKIPIF--
-<? include "skipif.inc";
+<?php include "skipif.inc"; ?>
 --FILE--
-<?
+<?php
 $m = new http\Message(fopen(__DIR__."/data/message_r_multipart_put.txt","rb"));
 if ($m->isMultipart($boundary)) {
     var_dump($boundary);

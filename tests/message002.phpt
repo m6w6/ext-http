@@ -10,7 +10,7 @@ HTTP_X_TEST=test
 --COOKIE--
 foo=bar
 --FILE--
-<?
+<?php
 echo "Test\n";
 
 use http\env\Request as HttpEnvRequest;
@@ -27,8 +27,8 @@ var_dump((string)$m->getBody());
 
 echo "stream\n";
 var_dump(file_get_contents("php://input"));
-
-echo "Done\n";
+?>
+Done
 --EXPECTF--
 Test
 object(%s)#%d (12) {

@@ -1,7 +1,7 @@
 --TEST--
 env request body
 --SKIPIF--
-<? include "skipif.inc";
+<?php include "skipif.inc"; ?>
 --PUT--
 Content-Type: multipart/form-data;boundary=123
 --123
@@ -18,7 +18,7 @@ Content-Disposition: form-data; name="up"; filename="up.txt"
 foo=bar&baz=buh
 --123--
 --FILE--
-<?
+<?php
 var_dump($_POST);
 var_dump($_FILES);
 ?>

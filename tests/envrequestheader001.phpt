@@ -1,19 +1,20 @@
 --TEST--
 env request header
 --SKIPIF--
-<? include "skipif.inc";
+<?php include "skipif.inc"; ?>
 --POST--
 a=b
 --ENV--
 HTTP_HOST=foo.bar
 HTTP_ACCEPT=*/*
 --FILE--
-<?
+<?php
 
 var_dump(http\Env::getRequestHeader("nono"));
 var_dump(http\Env::getRequestHeader("Host"));
 var_dump(http\Env::getRequestHeader("content-type"));
 var_dump(http\Env::getRequestHeader());
+?>
 --EXPECTF--
 NULL
 string(%d) "foo.bar"

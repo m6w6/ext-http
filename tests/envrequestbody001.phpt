@@ -1,12 +1,12 @@
 --TEST--
 env request body
 --SKIPIF--
-<? include "skipif.inc";
+<?php include "skipif.inc"; ?>
 --PUT--
 Content-Type: skip/me
 foo
 --FILE--
-<?
+<?php
 var_dump((string) \http\Env::getRequestBody());
 ?>
 DONE

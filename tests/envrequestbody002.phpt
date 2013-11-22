@@ -1,12 +1,12 @@
 --TEST--
 env request body
 --SKIPIF--
-<? include "skipif.inc";
+<?php include "skipif.inc"; ?>
 --PUT--
 Content-Type: application/x-www-form-urlencoded
 foo=bar&baz=buh
 --FILE--
-<?
+<?php
 var_dump($_POST);
 ?>
 DONE
