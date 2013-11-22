@@ -73,7 +73,7 @@ zend_module_entry http_module_entry = {
 	PHP_RINIT(http),
 	PHP_RSHUTDOWN(http),
 	PHP_MINFO(http),
-	PHP_HTTP_EXT_VERSION,
+	PHP_PECL_HTTP_VERSION,
 	STANDARD_MODULE_PROPERTIES
 };
 
@@ -217,7 +217,7 @@ PHP_MINFO_FUNCTION(http)
 
 	php_info_print_table_start();
 	php_info_print_table_header(2, "HTTP Support", "enabled");
-	php_info_print_table_row(2, "Extension Version", PHP_HTTP_EXT_VERSION);
+	php_info_print_table_row(2, "Extension Version", PHP_PECL_HTTP_VERSION);
 	php_info_print_table_end();
 	
 	php_info_print_table_start();

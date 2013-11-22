@@ -19,8 +19,17 @@ means for negotiation of a client's preferred content type,
 language and charset, as well as a convenient way to send any 
 arbitrary data with caching and resuming capabilities.
 
-It provides powerful request functionality, if built with CURL 
-support. Parallel requests are available for PHP 5 and greater.
+It provides powerful request functionality with support for
+parallel requests.
+
+Documentation:
+v1: http://php.net/http
+v2: http://devel-m6w6.rhcloud.com/mdref/http
+
+Code Coverage:
+v1: http://dev.iworks.at/ext-http/lcov_html/ext/http/
+v2: http://dev.iworks.at/ext-http/lcov/ext/http/
+
 ]]></description>
  <lead>
   <name>Michael Wallner</name>
@@ -28,30 +37,26 @@ support. Parallel requests are available for PHP 5 and greater.
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2013-08-12</date>
+ <date>2013-11-22</date>
  <version>
-  <release>2.0.0RC1</release>
+  <release>2.0.0</release>
   <api>2.0.0</api>
  </version>
  <stability>
-  <release>beta</release>
-  <api>beta</api>
+  <release>stable</release>
+  <api>stable</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-Extended HTTP support. Again. Keep in mind that it's got the major version 2, because it's incompatible with pecl_http v1.
-
-Documentation:
-http://devel-m6w6.rhcloud.com/mdref/http
-
-Code Coverage:
-http://dev.iworks.at/ext-http/lcov/ext/http/
-
+Extended HTTP support. Again. 
+	 
+Keep in mind that it's got the major version 2, because it's incompatible with pecl_http v1.
 ]]></notes>
  <contents>
   <dir name="/">
    <file role="doc" name="LICENSE"/>
    <file role="doc" name="CREDITS"/>
+   <file role="doc" name="Exceptions.txt"/>
    <file role="doc" name="KnownIssues.txt"/>
    <file role="doc" name="ThanksTo.txt"/>
    <file role="src" name="config.m4"/>
@@ -240,13 +245,13 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
    <package>
     <name>raphf</name>
     <channel>pecl.php.net</channel>
-    <min>0.1.0</min>
+    <min>1.0.0</min>
     <providesextension>raphf</providesextension>
    </package>
    <package>
     <name>propro</name>
     <channel>pecl.php.net</channel>
-    <min>0.1.0</min>
+    <min>1.0.0</min>
     <providesextension>propro</providesextension>
    </package>
   </required>
@@ -273,11 +278,6 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
    name="with-http-libevent-dir"
    prompt="where to find libevent"
    default="/usr" />
-  <filelist>
-   <!-- install as="http.ini" name="docs/http.ini"/>
-   <install as="examples/tutorial.txt" name="docs/examples/tutorial.txt"/>
-   <install as="pecl/http/.php" name="lib/.php"/ -->
-  </filelist>
  </extsrcrelease>
  <changelog />
 </package>
