@@ -23,7 +23,9 @@
 			event_set(e, s, a, cb, d); \
 			event_base_set(b, e); \
 		} while(0)
-#	endif
+#   else
+#	    include <event_struct.h>
+#   endif
 #	ifndef DBG_EVENTS
 #		define DBG_EVENTS 0
 #	endif
