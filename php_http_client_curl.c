@@ -1769,11 +1769,12 @@ static int php_http_client_curl_once(php_http_client_t *h)
 
 static STATUS php_http_client_curl_exec(php_http_client_t *h)
 {
+#if PHP_HTTP_HAVE_EVENT
+	php_http_client_curl_t *curl = h->ctx;
+#endif
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 #if PHP_HTTP_HAVE_EVENT
-	php_http_client_curl_t *curl = h->ctx;
-
 	if (curl->useevents) {
 		php_http_curlm_timeout_callback(CURL_SOCKET_TIMEOUT, /*EV_READ|EV_WRITE*/0, h);
 		do {
