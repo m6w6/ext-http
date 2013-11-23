@@ -20,7 +20,12 @@
 #if PHP_HTTP_HAVE_CURL
 #	include <curl/curl.h>
 #	if PHP_HTTP_HAVE_EVENT
-#		include <event.h>
+#       if PHP_HTTP_HAVE_EVENT2
+#	        include <event2/event.h>
+#	        include <event2/event_struct.h>
+#       else
+#		    include <event.h>
+#       endif
 #	endif
 #endif
 #if PHP_HTTP_HAVE_SERF
