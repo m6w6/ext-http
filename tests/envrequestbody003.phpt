@@ -38,7 +38,7 @@ array(1) {
     ["type"]=>
     string(0) ""
     ["tmp_name"]=>
-    string(14) "%s"
+    string(%d) "%s"
     ["error"]=>
     int(0)
     ["size"]=>
