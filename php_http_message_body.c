@@ -55,6 +55,10 @@ php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **bo
 	}
 	TSRMLS_SET_CTX(body->ts);
 
+	if (body_ptr) {
+		*body_ptr = body;
+	}
+
 	return body;
 }
 

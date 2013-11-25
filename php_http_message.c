@@ -782,6 +782,14 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 	return SUCCESS;
 }
 
+STATUS php_http_message_object_init_body_object(php_http_message_object_t *obj)
+{
+	TSRMLS_FETCH_FROM_CTX(obj);
+
+	php_http_message_body_addref(obj->message->body);
+	return php_http_new(NULL, php_http_message_body_class_entry, (php_http_new_t) php_http_message_body_object_new_ex, NULL, obj->message->body, (void *) &obj->body TSRMLS_CC);
+}
+
 zend_object_value php_http_message_object_new(zend_class_entry *ce TSRMLS_DC)
 {
 	return php_http_message_object_new_ex(ce, NULL, NULL TSRMLS_CC);
@@ -1050,8 +1058,8 @@ static PHP_METHOD(HttpMessage, getBody)
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 	if (!obj->body) {
-		php_http_message_body_addref(obj->message->body);
-		php_http_new(NULL, php_http_message_body_class_entry, (php_http_new_t) php_http_message_body_object_new_ex, NULL, obj->message->body, (void *) &obj->body TSRMLS_CC);
+		php_http_message_object_init_body_object(obj);
+
 	}
 	if (obj->body) {
 		RETVAL_OBJVAL(obj->body->zv, 1);

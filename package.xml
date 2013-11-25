@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2013-11-22</date>
  <version>
-  <release>2.0.0</release>
+  <release>2.0.1</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -48,9 +48,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-Extended HTTP support. Again. 
-	 
-Keep in mind that it's got the major version 2, because it's incompatible with pecl_http v1.
+* Fixed a bug with multiple ob_start(http\Env\Response) while replacing the body
+* Some Windows fixes
 ]]></notes>
  <contents>
   <dir name="/">
@@ -180,6 +179,7 @@ Keep in mind that it's got the major version 2, because it's incompatible with p
      <file role="test" name="envresponse012.phpt"/>
      <file role="test" name="envresponse013.phpt"/>
      <file role="test" name="envresponse014.phpt"/>
+     <file role="test" name="envresponse015.phpt"/>
      <file role="test" name="envresponsebody001.phpt"/>
      <file role="test" name="envresponsebody002.phpt"/>
      <file role="test" name="envresponsecodes.phpt"/>

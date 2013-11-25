@@ -1089,11 +1089,9 @@ static PHP_METHOD(HttpEnvResponse, __invoke)
 
 		PHP_HTTP_ENV_RESPONSE_OBJECT_INIT(obj);
 
-		if (obj->body || SUCCESS == php_http_new(NULL, php_http_message_body_class_entry, (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_init(&obj->message->body, NULL TSRMLS_CC), (void *) &obj->body TSRMLS_CC)) {
-			php_http_message_body_append(obj->message->body, ob_str, ob_len);
-			RETURN_TRUE;
-		}
-		RETURN_FALSE;
+		php_http_message_object_init_body_object(obj);
+		php_http_message_body_append(obj->message->body, ob_str, ob_len);
+		RETURN_TRUE;
 	}
 }
 
