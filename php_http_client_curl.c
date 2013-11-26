@@ -17,20 +17,20 @@
 
 #if PHP_HTTP_HAVE_EVENT
 #	if !PHP_HTTP_HAVE_EVENT2 && /* just be really sure */ !(LIBEVENT_VERSION_NUMBER >= 0x02000000)
-#	    include <event.h>
+#		include <event.h>
 #		define event_base_new event_init
 #		define event_assign(e, b, s, a, cb, d) do {\
 			event_set(e, s, a, cb, d); \
 			event_base_set(b, e); \
 		} while(0)
-#   else
-#       if PHP_HTTP_HAVE_EVENT2
-#	        include <event2/event.h>
-#	        include <event2/event_struct.h>
-#       else
-#           error "libevent presence is unknown"
-#       endif
-#   endif
+#	else
+#		if PHP_HTTP_HAVE_EVENT2
+#			include <event2/event.h>
+#			include <event2/event_struct.h>
+#		else
+#			error "libevent presence is unknown"
+#		endif
+#	endif
 #	ifndef DBG_EVENTS
 #		define DBG_EVENTS 0
 #	endif
