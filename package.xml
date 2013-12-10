@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2013-12-10</date>
  <version>
-  <release>2.0.3</release>
+  <release>2.0.4dev</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -48,7 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed typo
+* Removed the pecl/event conflict
 ]]></notes>
  <contents>
   <dir name="/">
