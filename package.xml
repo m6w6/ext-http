@@ -48,7 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed shutdown crash as shared extension
+* Fixed bug #66250 (shutdown crash as shared extension)
 ]]></notes>
  <contents>
   <dir name="/">
