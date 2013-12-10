@@ -1980,7 +1980,11 @@ PHP_MINIT_FUNCTION(http_client_curl)
 
 PHP_MSHUTDOWN_FUNCTION(http_client_curl)
 {
+	php_persistent_handles_cleanup(ZEND_STRL("http\\Client\\Curl"), NULL, 0 TSRMLS_CC);
+	php_persistent_handles_cleanup(ZEND_STRL("http\\Client\\Curl\\Request"), NULL, 0 TSRMLS_CC);
+
 	php_http_options_dtor(&php_http_curle_options);
+
 	return SUCCESS;
 }
 

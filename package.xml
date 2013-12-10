@@ -37,9 +37,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2013-11-26</date>
+ <date>2013-12-10</date>
  <version>
-  <release>2.0.1</release>
+  <release>2.0.2</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -48,8 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed a bug with multiple ob_start(http\Env\Response) while replacing the body
-* Fixed build on Windows with libevent2
+* Fixed shutdown crash as shared extension
 ]]></notes>
  <contents>
   <dir name="/">
