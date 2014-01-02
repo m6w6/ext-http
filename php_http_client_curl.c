@@ -176,9 +176,13 @@ static size_t php_http_curle_read_callback(void *data, size_t len, size_t n, voi
 {
 	php_http_message_body_t *body = ctx;
 
-	if (body) {
-		TSRMLS_FETCH_FROM_CTX(body->ts);
-		return php_stream_read(php_http_message_body_stream(body), data, len * n);
+	if (body && body->stream_id) {
+		php_stream *s = php_http_message_body_stream(body);
+
+		if (s) {
+			TSRMLS_FETCH_FROM_CTX(body->ts);
+			return php_stream_read(s, data, len * n);
+		} else abort();
 	}
 	return 0;
 }
@@ -1504,6 +1508,11 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 		curl_easy_setopt(curl->handle, CURLOPT_READDATA, msg->body);
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, body_size);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, body_size);
+	} else {
+		curl_easy_setopt(curl->handle, CURLOPT_IOCTLDATA, NULL);
+		curl_easy_setopt(curl->handle, CURLOPT_READDATA, NULL);
+		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, 0L);
+		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, 0L);
 	}
 
 	php_http_options_apply(&php_http_curle_options, enqueue->options, curl);
