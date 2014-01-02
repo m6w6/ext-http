@@ -37,9 +37,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2013-12-10</date>
+ <date>2014-01-02</date>
  <version>
-  <release>2.0.4dev</release>
+  <release>2.0.4</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -49,6 +49,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  <license>BSD, revised</license>
  <notes><![CDATA[
 * Removed the pecl/event conflict
+* Fixed bug #66388 (Crash on POST with Content-Length:0 and untouched body)
 ]]></notes>
  <contents>
   <dir name="/">
@@ -134,6 +135,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="urls.txt"/>
     </dir>
      <file role="test" name="bug61444.phpt"/>
+     <file role="test" name="bug66388.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>
