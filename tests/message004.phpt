@@ -2,7 +2,8 @@
 message reversal
 --SKIPIF--
 <?php
-include "skip.inc";
+include "skipif.inc";
+?>
 --FILE--
 <?php
 

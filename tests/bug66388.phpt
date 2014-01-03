@@ -1,7 +1,7 @@
 --TEST--
 Bug #66388 (Crash on POST with Content-Length:0 and untouched body)
 --SKIPIF--
-<?php php
+<?php
 include "skipif.inc";
 ?>
 --FILE--

@@ -1,7 +1,9 @@
 --TEST--
 url from env
 --SKIPIF--
-<? include "skippif.inc"; ?>
+<?php
+include "skipif.inc";
+?>
 --ENV--
 SERVER_PORT=55555
 HTTP_HOST=example.com
