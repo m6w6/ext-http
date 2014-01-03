@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2014-01-02</date>
  <version>
-  <release>2.0.4</release>
+  <release>2.0.5dev</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -48,8 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Removed the pecl/event conflict
-* Fixed bug #66388 (Crash on POST with Content-Length:0 and untouched body)
+*
 ]]></notes>
  <contents>
   <dir name="/">
