@@ -47,6 +47,7 @@ typedef struct php_http_params_state {
 	} current;
 	unsigned quotes:1;
 	unsigned escape:1;
+	unsigned rfc5987:1;
 } php_http_params_state_t;
 
 static inline void sanitize_default(zval *zv TSRMLS_DC)
@@ -212,13 +213,22 @@ static void prepare_dimension(php_http_buffer_t *buf, php_http_buffer_t *keybuf,
 	--ht->nApplyCount;
 }
 
-static inline void sanitize_key(unsigned flags, char *str, size_t len, zval *zv TSRMLS_DC)
+static inline void sanitize_key(unsigned flags, char *str, size_t len, zval *zv, zend_bool *rfc5987 TSRMLS_DC)
 {
+	char *eos;
+
 	zval_dtor(zv);
 	php_trim(str, len, NULL, 0, zv, 3 TSRMLS_CC);
 
 	if (flags & PHP_HTTP_PARAMS_DEFAULT) {
 		sanitize_default(zv TSRMLS_CC);
+	}
+
+	eos = &Z_STRVAL(zv)[Z_STRLEN(zv)-1];
+	if (*eos == '*') {
+		*eos = '\0';
+		*rfc5987 = 1;
+		Z_STRLEN(zv) -= 1;
 	}
 
 	if (flags & PHP_HTTP_PARAMS_URLENCODED) {
@@ -230,10 +240,19 @@ static inline void sanitize_key(unsigned flags, char *str, size_t len, zval *zv 
 	}
 }
 
-static inline void sanitize_value(unsigned flags, char *str, size_t len, zval *zv TSRMLS_DC)
+static inline void sanitze_rfc5987(zval *zv, unsigned *flags TSRMLS_DC)
+{
+
+}
+
+static inline void sanitize_value(unsigned flags, char *str, size_t len, zval *zv, zend_bool rfc5987 TSRMLS_DC)
 {
 	zval_dtor(zv);
 	php_trim(str, len, NULL, 0, zv, 3 TSRMLS_CC);
+
+	if (rfc5987) {
+		sanitize_rfc5987(zv, &flags TSRMLS_CC);
+	}
 
 	if (flags & PHP_HTTP_PARAMS_DEFAULT) {
 		sanitize_default(zv TSRMLS_CC);
@@ -392,15 +411,18 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 {
 	if (state->val.str) {
 		if (0 < (state->val.len = state->input.str - state->val.str)) {
-			sanitize_value(opts->flags, state->val.str, state->val.len, *(state->current.val) TSRMLS_CC);
+			sanitize_value(opts->flags, state->val.str, state->val.len, *(state->current.val), state->rfc5987 TSRMLS_CC);
 		}
+		state->rfc5987 = 0;
 	} else if (state->arg.str) {
 		if (0 < (state->arg.len = state->input.str - state->arg.str)) {
 			zval *val, key;
+			zend_bool rfc5987 = 0;
 
 			INIT_PZVAL(&key);
 			ZVAL_NULL(&key);
-			sanitize_key(opts->flags, state->arg.str, state->arg.len, &key TSRMLS_CC);
+			sanitize_key(opts->flags, state->arg.str, state->arg.len, &key, &rfc5987 TSRMLS_CC);
+			state->rfc5987 = rfc5987;
 			if (Z_TYPE(key) == IS_STRING && Z_STRLEN(key)) {
 				MAKE_STD_ZVAL(val);
 				ZVAL_TRUE(val);
@@ -411,10 +433,12 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 	} else if (state->param.str) {
 		if (0 < (state->param.len = state->input.str - state->param.str)) {
 			zval *prm, *arg, *val, *key;
+			zend_bool rfc5987 = 0;
 
 			MAKE_STD_ZVAL(key);
 			ZVAL_NULL(key);
-			sanitize_key(opts->flags, state->param.str, state->param.len, key TSRMLS_CC);
+			sanitize_key(opts->flags, state->param.str, state->param.len, key, &rfc5987 TSRMLS_CC);
+			state->rfc5987 = rfc5987;
 			if (Z_TYPE_P(key) != IS_STRING) {
 				merge_param(params, key, &state->current.val, &state->current.args TSRMLS_CC);
 			} else if (Z_STRLEN_P(key)) {
