@@ -224,11 +224,11 @@ static inline void sanitize_key(unsigned flags, char *str, size_t len, zval *zv,
 		sanitize_default(zv TSRMLS_CC);
 	}
 
-	eos = &Z_STRVAL(zv)[Z_STRLEN(zv)-1];
+	eos = &Z_STRVAL_P(zv)[Z_STRLEN_P(zv)-1];
 	if (*eos == '*') {
 		*eos = '\0';
 		*rfc5987 = 1;
-		Z_STRLEN(zv) -= 1;
+		Z_STRLEN_P(zv) -= 1;
 	}
 
 	if (flags & PHP_HTTP_PARAMS_URLENCODED) {
@@ -240,26 +240,109 @@ static inline void sanitize_key(unsigned flags, char *str, size_t len, zval *zv,
 	}
 }
 
-static inline void sanitze_rfc5987(zval *zv, unsigned *flags TSRMLS_DC)
+static inline void sanitize_rfc5987(zval *zv, char **language, zend_bool *latin1 TSRMLS_DC)
 {
+	char *ptr;
 
+	/* examples:
+	 * iso-8850-1'de'bl%f6der%20schei%df%21
+	 * utf-8'de-DE'bl%c3%b6der%20schei%c3%9f%21
+	 */
+
+	switch (Z_STRVAL_P(zv)[0]) {
+	case 'I':
+	case 'i':
+		if (!strncasecmp(Z_STRVAL_P(zv), ZEND_STRL("iso-8859-1"))) {
+			*latin1 = 1;
+			ptr = Z_STRVAL_P(zv) + lenof("iso-8859-1");
+			break;
+		}
+		/* no break */
+	case 'U':
+	case 'u':
+		if (!strncasecmp(Z_STRVAL_P(zv), ZEND_STRL("utf-8"))) {
+			*latin1 = 0;
+			ptr = Z_STRVAL_P(zv) + lenof("utf-8");
+			break;
+		}
+		/* no break */
+	default:
+		return;
+	}
+
+	/* extract language */
+	if (*ptr == '\'') {
+		for (*language = ++ptr; *ptr && *ptr != '\''; ++ptr);
+		if (!*ptr) {
+			*language = NULL;
+			return;
+		}
+		*language = estrndup(*language, ptr - *language);
+
+		/* remainder */
+		ptr = estrdup(++ptr);
+		zval_dtor(zv);
+		ZVAL_STRING(zv, ptr, 0);
+	}
+}
+
+static void utf8encode(zval *zv)
+{
+	size_t pos, len = 0;
+	unsigned char *ptr = (unsigned char *) Z_STRVAL_P(zv);
+
+	while (*ptr) {
+		if (*ptr++ >= 0x80) {
+			++len;
+		}
+		++len;
+	}
+
+	ptr = safe_emalloc(1, len, 1);
+	for (len = 0, pos = 0; len <= Z_STRLEN_P(zv); ++len, ++pos) {
+		ptr[pos] = Z_STRVAL_P(zv)[len];
+		if ((ptr[pos]) >= 0x80) {
+			ptr[pos + 1] = 0x80 | (ptr[pos] & 0x3f);
+			ptr[pos] = 0xc0 | ((ptr[pos] >> 6) & 0x1f);
+			++pos;
+		}
+	}
+	zval_dtor(zv);
+	ZVAL_STRINGL(zv, (char *) ptr, pos-1, 0);
 }
 
 static inline void sanitize_value(unsigned flags, char *str, size_t len, zval *zv, zend_bool rfc5987 TSRMLS_DC)
 {
+	char *language = NULL;
+	zend_bool latin1 = 0;
+
 	zval_dtor(zv);
 	php_trim(str, len, NULL, 0, zv, 3 TSRMLS_CC);
 
 	if (rfc5987) {
-		sanitize_rfc5987(zv, &flags TSRMLS_CC);
+		sanitize_rfc5987(zv, &language, &latin1 TSRMLS_CC);
 	}
 
 	if (flags & PHP_HTTP_PARAMS_DEFAULT) {
 		sanitize_default(zv TSRMLS_CC);
 	}
 
-	if (flags & PHP_HTTP_PARAMS_URLENCODED) {
+	if ((flags & PHP_HTTP_PARAMS_URLENCODED) || (rfc5987 && language)) {
 		sanitize_urlencoded(zv TSRMLS_CC);
+	}
+
+	if (rfc5987 && language) {
+		zval *tmp;
+
+		if (latin1) {
+			utf8encode(zv);
+		}
+
+		MAKE_STD_ZVAL(tmp);
+		ZVAL_COPY_VALUE(tmp, zv);
+		array_init(zv);
+		add_assoc_zval(zv, language, tmp);
+		STR_FREE(language);
 	}
 }
 
