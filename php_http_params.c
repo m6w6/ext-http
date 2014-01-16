@@ -741,12 +741,13 @@ static inline void shift_val(php_http_buffer_t *buf, zval *zvalue, const char *v
 	}
 }
 
-static void shift_arg(php_http_buffer_t *buf, char *key_str, size_t key_len, zval *zvalue, const char *ass, size_t asl, const char *vss, size_t vsl, unsigned flags, zend_bool rfc5987 TSRMLS_DC)
+static void shift_arg(php_http_buffer_t *buf, char *key_str, size_t key_len, zval *zvalue, const char *ass, size_t asl, const char *vss, size_t vsl, unsigned flags TSRMLS_DC)
 {
 	if (Z_TYPE_P(zvalue) == IS_ARRAY || Z_TYPE_P(zvalue) == IS_OBJECT) {
 		HashPosition pos;
 		php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
 		zval **val;
+		zend_bool rfc5987 = !strcmp(key_str, "*rfc5987*");
 
 		if (!rfc5987) {
 			shift_key(buf, key_str, key_len, ass, asl, flags TSRMLS_CC);
@@ -758,7 +759,7 @@ static void shift_arg(php_http_buffer_t *buf, char *key_str, size_t key_len, zva
 				shift_key(buf, key.str, key.len-1, ass, asl, flags TSRMLS_CC);
 				shift_rfc5987(buf, *val, vss, vsl, flags TSRMLS_CC);
 			} else {
-				shift_arg(buf, key.str, key.len-1, *val, ass, asl, vss, vsl, flags, 0 TSRMLS_CC);
+				shift_arg(buf, key.str, key.len-1, *val, ass, asl, vss, vsl, flags TSRMLS_CC);
 			}
 			php_http_array_hashkey_stringfree(&key);
 		}
@@ -768,7 +769,7 @@ static void shift_arg(php_http_buffer_t *buf, char *key_str, size_t key_len, zva
 	}
 }
 
-static void shift_param(php_http_buffer_t *buf, char *key_str, size_t key_len, zval *zvalue, const char *pss, size_t psl, const char *ass, size_t asl, const char *vss, size_t vsl, unsigned flags TSRMLS_DC)
+static void shift_param(php_http_buffer_t *buf, char *key_str, size_t key_len, zval *zvalue, const char *pss, size_t psl, const char *ass, size_t asl, const char *vss, size_t vsl, unsigned flags, zend_bool rfc5987 TSRMLS_DC)
 {
 	if (Z_TYPE_P(zvalue) == IS_ARRAY || Z_TYPE_P(zvalue) == IS_OBJECT) {
 		/* treat as arguments, unless we care for dimensions or rfc5987 */
@@ -776,11 +777,11 @@ static void shift_param(php_http_buffer_t *buf, char *key_str, size_t key_len, z
 			php_http_buffer_t *keybuf = php_http_buffer_from_string(key_str, key_len);
 			prepare_dimension(buf, keybuf, zvalue, pss, psl, vss, vsl, flags TSRMLS_CC);
 			php_http_buffer_free(&keybuf);
-		} else if (flags & PHP_HTTP_PARAMS_RFC5987) {
+		} else if (rfc5987) {
 			shift_key(buf, key_str, key_len, pss, psl, flags TSRMLS_CC);
 			shift_rfc5987(buf, zvalue, vss, vsl, flags TSRMLS_CC);
 		} else {
-			shift_arg(buf, key_str, key_len, zvalue, ass, asl, vss, vsl, flags, 0 TSRMLS_CC);
+			shift_arg(buf, key_str, key_len, zvalue, ass, asl, vss, vsl, flags TSRMLS_CC);
 		}
 	} else {
 		shift_key(buf, key_str, key_len, pss, psl, flags TSRMLS_CC);
@@ -793,6 +794,7 @@ php_http_buffer_t *php_http_params_to_string(php_http_buffer_t *buf, HashTable *
 	zval **zparam;
 	HashPosition pos, pos1;
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0), key1 = php_http_array_hashkey_init(0);
+	zend_bool rfc5987 = 0;
 
 	if (!buf) {
 		buf = php_http_buffer_init(NULL);
@@ -807,12 +809,14 @@ php_http_buffer_t *php_http_params_to_string(php_http_buffer_t *buf, HashTable *
 			if (SUCCESS != zend_hash_find(Z_ARRVAL_PP(zparam), ZEND_STRS("value"), (void *) &zvalue)) {
 				if (SUCCESS != zend_hash_find(Z_ARRVAL_PP(zparam), ZEND_STRS("*rfc5987*"), (void *) &zvalue)) {
 					zvalue = zparam;
+				} else {
+					rfc5987 = 1;
 				}
 			}
 		}
 
 		php_http_array_hashkey_stringify(&key);
-		shift_param(buf, key.str, key.len - 1, *zvalue, pss, psl, ass, asl, vss, vsl, flags TSRMLS_CC);
+		shift_param(buf, key.str, key.len - 1, *zvalue, pss, psl, ass, asl, vss, vsl, flags, rfc5987 TSRMLS_CC);
 		php_http_array_hashkey_stringfree(&key);
 
 		if (Z_TYPE_PP(zparam) == IS_ARRAY && SUCCESS != zend_hash_find(Z_ARRVAL_PP(zparam), ZEND_STRS("arguments"), (void *) &zvalue)) {
@@ -829,8 +833,7 @@ php_http_buffer_t *php_http_params_to_string(php_http_buffer_t *buf, HashTable *
 				}
 
 				php_http_array_hashkey_stringify(&key1);
-				shift_arg(buf, key1.str, key1.len - 1, *zargs, ass, asl, vss, vsl, flags,
-						HASH_KEY_IS_STRING == key1.type && !strcmp(key1.str, "*rfc5987*") TSRMLS_CC);
+				shift_arg(buf, key1.str, key1.len - 1, *zargs, ass, asl, vss, vsl, flags TSRMLS_CC);
 				php_http_array_hashkey_stringfree(&key1);
 			}
 		}

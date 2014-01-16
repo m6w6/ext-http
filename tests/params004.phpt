@@ -12,7 +12,7 @@ $s = urlencode("ß");
 $t = "p1*=utf-8''s$u$s,p2*=utf-8''hei$s;a1*=utf-8''a$s;a2*=utf-8''e$s;a3=no,p3=not";
 $p = new http\Params($t);
 var_dump($p->params);
-var_dump((string)$p === $t);
+var_dump((string)$p === $t, (string)$p, $t);
 ?>
 ===DONE===
 --EXPECT--
@@ -65,4 +65,6 @@ array(3) {
   }
 }
 bool(true)
+string(96) "p1*=utf-8''s%C3%BC%C3%9F,p2*=utf-8''hei%C3%9F;a1*=utf-8''a%C3%9F;a2*=utf-8''e%C3%9F;a3=no,p3=not"
+string(96) "p1*=utf-8''s%C3%BC%C3%9F,p2*=utf-8''hei%C3%9F;a1*=utf-8''a%C3%9F;a2*=utf-8''e%C3%9F;a3=no,p3=not"
 ===DONE===
