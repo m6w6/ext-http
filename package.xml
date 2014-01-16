@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2014-01-02</date>
  <version>
-  <release>2.0.5dev</release>
+  <release>2.1.0dev</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -48,7 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-*
+* Added RFC5987 support in http\Params
 ]]></notes>
  <contents>
   <dir name="/">
@@ -217,6 +217,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="negotiate001.phpt"/>
      <file role="test" name="params001.phpt"/>
      <file role="test" name="params002.phpt"/>
+     <file role="test" name="params003.phpt"/>
+     <file role="test" name="params004.phpt"/>
      <file role="test" name="phpunit.phpt"/>
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="querystring_001.phpt"/>
