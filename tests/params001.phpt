@@ -3,6 +3,7 @@ header params
 --SKIPIF--
 <?php
 include "skipif.inc";
+?>
 --FILE--
 <?php
 echo "Test\n";
