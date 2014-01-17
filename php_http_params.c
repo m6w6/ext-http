@@ -60,7 +60,7 @@ static inline void sanitize_escaped(zval *zv TSRMLS_DC)
 		ZVAL_STRINGL(zv, deq, deq_len, 0);
 	}
 
-	php_stripslashes(Z_STRVAL_P(zv), &Z_STRLEN_P(zv) TSRMLS_CC);
+	php_stripcslashes(Z_STRVAL_P(zv), &Z_STRLEN_P(zv) TSRMLS_CC);
 }
 
 static inline void prepare_escaped(zval *zv TSRMLS_DC)
@@ -68,9 +68,10 @@ static inline void prepare_escaped(zval *zv TSRMLS_DC)
 	if (Z_TYPE_P(zv) == IS_STRING) {
 		int len = Z_STRLEN_P(zv);
 
-		Z_STRVAL_P(zv) = php_addslashes(Z_STRVAL_P(zv), Z_STRLEN_P(zv), &Z_STRLEN_P(zv), 1 TSRMLS_CC);
+		Z_STRVAL_P(zv) = php_addcslashes(Z_STRVAL_P(zv), Z_STRLEN_P(zv), &Z_STRLEN_P(zv), 1,
+				ZEND_STRL("\0..\37\173\\\"") TSRMLS_CC);
 
-		if (len != Z_STRLEN_P(zv)) {
+		if (len != Z_STRLEN_P(zv) || strpbrk(Z_STRVAL_P(zv), "()<>@,;:\"/[]?={} ")) {
 			zval tmp = *zv;
 			int len = Z_STRLEN_P(zv) + 2;
 			char *str = emalloc(len + 1);
