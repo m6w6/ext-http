@@ -48,7 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-*
+* Fix rare crash with uninitialized CURLOPT_HTTPHEADER
 ]]></notes>
  <contents>
   <dir name="/">

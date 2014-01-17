@@ -1492,8 +1492,8 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 			}
 		}
 		php_http_buffer_dtor(&header);
-		curl_easy_setopt(curl->handle, CURLOPT_HTTPHEADER, curl->options.headers);
 	}
+	curl_easy_setopt(curl->handle, CURLOPT_HTTPHEADER, curl->options.headers);
 
 	/* attach request body */
 	if ((body_size = php_http_message_body_size(msg->body))) {
