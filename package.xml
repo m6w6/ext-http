@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2014-04-04</date>
  <version>
-  <release>2.0.5</release>
+  <release>2.0.6dev</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -48,9 +48,6 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fix rare crash with uninitialized CURLOPT_HTTPHEADER
-* Fix build with -Werror=format-security (Remi)
-* Fix build with extenal libs needed by libcurl
 ]]></notes>
  <contents>
   <dir name="/">
