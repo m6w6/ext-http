@@ -13,7 +13,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_PECL_HTTP_VERSION "2.0.5dev"
+#define PHP_PECL_HTTP_VERSION "2.0.5"
 
 extern zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
