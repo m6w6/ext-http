@@ -390,7 +390,7 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 		zval *info, *zresponse, *zrequest;
 		HashTable *info_ht;
 
-		if (i_zend_is_true(zend_read_property(php_http_client_class_entry, &zclient, ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
+		if (z_is_true(zend_read_property(php_http_client_class_entry, &zclient, ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
 			handle_history(&zclient, *request, *response TSRMLS_CC);
 		}
 
@@ -720,7 +720,9 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_count, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, count)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
+	long count_mode = -1;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &count_mode)) {
 		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 		RETVAL_LONG(zend_llist_count(&obj->client->requests));

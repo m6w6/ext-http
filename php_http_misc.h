@@ -127,6 +127,12 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 #	define PHP_HTTP_ZEND_LITERAL_CCN , NULL
 #endif
 
+#if PHP_VERSION_ID < 50700
+#	define z_is_true zend_is_true
+#else
+#	define z_is_true(z) zend_is_true(z TSRMLS_CC)
+#endif
+
 #define INIT_PZVAL_ARRAY(zv, ht) \
 	{ \
 		INIT_PZVAL((zv)); \
