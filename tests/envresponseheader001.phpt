@@ -34,6 +34,6 @@ Array
             [2] => good
         )
 
-    [Content-Type] => text/html
+    [Content-Type] => text/html%s
 )
 Created
