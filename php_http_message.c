@@ -1808,7 +1808,9 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_count, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, count)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
+	long count_mode = -1;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &count_mode)) {
 		long i = 0;
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 

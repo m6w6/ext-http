@@ -258,6 +258,8 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 				h->progress.info = "blacklist check";
 			} else if (php_memnstr(data, ZEND_STRL("SSL"), data + length)) {
 				h->progress.info = "ssl negotiation";
+			} else if (php_memnstr(data, ZEND_STRL("upload"), data + length)) {
+				h->progress.info = "uploaded";
 			} else if (php_memnstr(data, ZEND_STRL("left intact"), data + length)) {
 				h->progress.info = "not disconnected";
 			} else if (php_memnstr(data, ZEND_STRL("closed"), data + length)) {
@@ -269,6 +271,7 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 			} else {
 #if PHP_DEBUG
 				h->progress.info = data;
+				data[length - 1] = '\0';
 #endif
 			}
 			if (h->client->callback.progress.func) {
