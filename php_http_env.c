@@ -957,8 +957,11 @@ static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 	size_t json_len = 0;
 
 #if PHP_VERSION_ID >= 50600
-	php_http_message_body_to_string(php_http_env_get_request_body(TSRMLS_C),
-			&json_str, &json_len, 0, -1);
+	if (SG(request_info).request_body) {
+		/* FG(stream_wrappers) not initialized yet, so we cannot use php://input */
+		php_stream_rewind(SG(request_info).request_body);
+		json_len = php_stream_copy_to_mem(SG(request_info).request_body, &json_str, PHP_STREAM_COPY_ALL, 0);
+	}
 #else
 	json_str = SG(request_info).raw_post_data;
 	json_len = SG(request_info).raw_post_data_length;
