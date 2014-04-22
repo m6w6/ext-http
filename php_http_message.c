@@ -784,7 +784,7 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 
 STATUS php_http_message_object_init_body_object(php_http_message_object_t *obj)
 {
-	TSRMLS_FETCH_FROM_CTX(obj);
+	TSRMLS_FETCH_FROM_CTX(obj->message->ts);
 
 	php_http_message_body_addref(obj->message->body);
 	return php_http_new(NULL, php_http_message_body_class_entry, (php_http_new_t) php_http_message_body_object_new_ex, NULL, obj->message->body, (void *) &obj->body TSRMLS_CC);

@@ -61,7 +61,8 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 			result = !strcasecmp(haystack_str, needle_str);
 		}
 	} else {
-		char *found, *haystack = estrdup(haystack_str), *needle = estrdup(needle_str);
+		const char *found;
+		char *haystack = estrdup(haystack_str), *needle = estrdup(needle_str);
 
 		if (flags & PHP_HTTP_MATCH_CASE) {
 			found = zend_memnstr(haystack, needle, strlen(needle), haystack+strlen(haystack));
