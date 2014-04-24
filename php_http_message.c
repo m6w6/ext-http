@@ -300,6 +300,14 @@ void php_http_message_update_headers(php_http_message_t *msg)
 				zval_ptr_dtor(&h);
 			}
 		}
+	} else if ((h = php_http_message_header(msg, ZEND_STRL("Content-Length"), 1))) {
+		zval *h_cpy = php_http_ztyp(IS_LONG, h);
+
+		zval_ptr_dtor(&h);
+		if (Z_LVAL_P(h_cpy)) {
+			zend_hash_del(&msg->hdrs, "Content-Length", sizeof("Content-Length"));
+		}
+		zval_ptr_dtor(&h_cpy);
 	}
 }
 
