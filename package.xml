@@ -37,9 +37,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-04-04</date>
+ <date>2014-04-24</date>
  <version>
-  <release>2.0.6dev</release>
+  <release>2.0.6</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -48,6 +48,10 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
++ Added "uploaded" progress state
+* Fixed bug #67089 (Segmentaion fault with ZTS)
+* Fixed compatibility with PHP-5.6+
+* Fixed re-use of request messages which content length remained untouched when the body was reset
 ]]></notes>
  <contents>
   <dir name="/">
@@ -147,6 +151,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="client011.phpt"/>
      <file role="test" name="client012.phpt"/>
      <file role="test" name="client013.phpt"/>
+     <file role="test" name="client014.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
