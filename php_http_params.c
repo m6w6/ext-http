@@ -60,7 +60,7 @@ static inline void sanitize_escaped(zval *zv TSRMLS_DC)
 		ZVAL_STRINGL(zv, deq, deq_len, 0);
 	}
 
-	php_stripcslashes(Z_STRVAL_P(zv), &Z_STRLEN_P(zv) TSRMLS_CC);
+	php_stripcslashes(Z_STRVAL_P(zv), &Z_STRLEN_P(zv));
 }
 
 static inline void prepare_escaped(zval *zv TSRMLS_DC)
