@@ -390,6 +390,9 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 		zval *info, *zresponse, *zrequest;
 		HashTable *info_ht;
 
+		/* ensure the message is of type response (could be uninitialized in case of early error, like DNS) */
+		php_http_message_set_type(msg, PHP_HTTP_RESPONSE);
+
 		if (z_is_true(zend_read_property(php_http_client_class_entry, &zclient, ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
 			handle_history(&zclient, *request, *response TSRMLS_CC);
 		}
