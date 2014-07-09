@@ -772,7 +772,9 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 	}
 
 	body_obj = zend_object_store_get_object(zbody TSRMLS_CC);
-
+	if (!body_obj->body) {
+		body_obj->body = php_http_message_body_init(NULL, NULL TSRMLS_CC);
+	}
 	if (msg_obj->body) {
 		zend_objects_store_del_ref_by_handle(msg_obj->body->zv.handle TSRMLS_CC);
 	}
