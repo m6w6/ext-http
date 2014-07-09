@@ -3,6 +3,7 @@ client response cookies
 --SKIPIF--
 <?php
 include "skipif.inc";
+skip_online_test();
 ?>
 --FILE--
 <?php
@@ -20,44 +21,4 @@ foreach (http\Client::getAvailableDrivers() as $driver) {
 Done
 --EXPECTREGEX--
 Test
-(?:array\(7\) \{
-  \["cookies"\]\=\>
-  array\(1\) \{
-    \["temp"\]\=\>
-    string\(1[23]\) "\d+\.\d+"
-  \}
-  \["extras"\]\=\>
-  array\(0\) \{
-  \}
-  \["flags"\]\=\>
-  int\(0\)
-  \["expires"\]\=\>
-  int\(\-1\)
-  \["max\-age"\]\=\>
-  int\(\-1\)
-  \["path"\]\=\>
-  string\(0\) ""
-  \["domain"\]\=\>
-  string\(0\) ""
-\}
-array\(7\) \{
-  \["cookies"\]\=\>
-  array\(1\) \{
-    \["perm"\]\=\>
-    string\(1[23]\) "\d+\.\d+"
-  \}
-  \["extras"\]\=\>
-  array\(0\) \{
-  \}
-  \["flags"\]\=\>
-  int\(0\)
-  \["expires"\]\=\>
-  int\(\d+\)
-  \["max\-age"\]\=\>
-  int\(\-1\)
-  \["path"\]\=\>
-  string\(0\) ""
-  \["domain"\]\=\>
-  string\(0\) ""
-\}
-)+Done
+(?:array\(7\) \{\n  \["cookies"\]\=\>\n  array\(1\) \{\n    \["temp"\]\=\>\n    string\(1\d\) "\d+\.\d+"\n  \}\n  \["extras"\]\=\>\n  array\(0\) \{\n  \}\n  \["flags"\]\=\>\n  int\(0\)\n  \["expires"\]\=\>\n  int\(\-1\)\n  \["max\-age"\]\=\>\n  int\(\-1\)\n  \["path"\]\=\>\n  string\(0\) ""\n  \["domain"\]\=\>\n  string\(0\) ""\n\}\narray\(7\) \{\n  \["cookies"\]\=\>\n  array\(1\) \{\n    \["perm"\]\=\>\n    string\(1\d\) "\d+\.\d+"\n  \}\n  \["extras"\]\=\>\n  array\(0\) \{\n  \}\n  \["flags"\]\=\>\n  int\(0\)\n  \["expires"\]\=\>\n  int\(\d+\)\n  \["max\-age"\]\=\>\n  int\(\-1\)\n  \["path"\]\=\>\n  string\(0\) ""\n  \["domain"\]\=\>\n  string\(0\) ""\n\}\n)+Done

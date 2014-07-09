@@ -715,6 +715,7 @@ static PHP_METHOD(HttpEnv, getRequestBody)
 
 	body = php_http_env_get_request_body(TSRMLS_C);
 	if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, body, NULL TSRMLS_CC)) {
+		php_http_message_body_addref(body);
 		RETVAL_OBJVAL(ov, 0);
 	}
 }
@@ -968,18 +969,18 @@ static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 #endif
 
 	if (json_len) {
-		zval_dtor(zarg);
-		ZVAL_NULL(zarg);
-		php_json_decode(zarg, json_str, json_len, 1, PG(max_input_nesting_level) TSRMLS_CC);
+		zval zjson;
+
+		INIT_ZVAL(zjson);
+		php_json_decode(&zjson, json_str, json_len, 1, PG(max_input_nesting_level) TSRMLS_CC);
+		if (Z_TYPE(zjson) != IS_NULL) {
+			zval_dtor(zarg);
+			ZVAL_COPY_VALUE(zarg, (&zjson));
+		}
 	}
 #if PHP_VERSION_ID >= 50600
 	STR_FREE(json_str);
 #endif
-
-	/* always let $_POST be array() */
-	if (Z_TYPE_P(zarg) == IS_NULL) {
-		array_init(zarg);
-	}
 }
 
 static void php_http_env_register_json_handler(TSRMLS_D)
