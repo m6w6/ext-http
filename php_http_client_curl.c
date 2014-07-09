@@ -1103,7 +1103,11 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 	/* useragent */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("useragent"), CURLOPT_USERAGENT, IS_STRING))) {
 		/* don't check strlen, to allow sending no useragent at all */
-		ZVAL_STRING(&opt->defval, "PECL::HTTP/" PHP_PECL_HTTP_VERSION " (PHP/" PHP_VERSION ")", 0);
+		ZVAL_STRING(&opt->defval,
+				"PECL_HTTP/" PHP_PECL_HTTP_VERSION " "
+				"PHP/" PHP_VERSION " "
+				"libcurl/" LIBCURL_VERSION
+			, 0);
 	}
 
 	/* resume */
