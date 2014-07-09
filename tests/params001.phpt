@@ -27,7 +27,8 @@ var_dump(
 
 var_dump((string) $ct);
 
-echo "Done\n";
+?>
+DONE
 --EXPECTF--
 Test
 bool(true)
@@ -37,4 +38,4 @@ bool(false)
 bool(true)
 string(10) "iso-8859-1"
 string(%d) "text/json;charset=iso-8859-1"
-Done
+DONE
