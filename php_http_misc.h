@@ -246,6 +246,11 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 #define PHP_RSHUTDOWN_CALL(func) PHP_RSHUTDOWN(func)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
 
 /* ARRAYS */
+
+#ifndef HASH_KEY_NON_EXISTENT
+#	define HASH_KEY_NON_EXISTENT HASH_KEY_NON_EXISTANT
+#endif
+
 PHP_HTTP_API unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...);
 
 typedef struct php_http_array_hashkey {
