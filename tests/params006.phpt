@@ -19,7 +19,7 @@ $c = array(
 	)
 );
 var_dump($c === $p->params);
-var_dump("form-data;name=upload;filename=\"trick\\\"\\0\\\"ed\"" === (string) $p);
+var_dump("form-data;name=upload;filename=\"trick\\\"\\000\\\"ed\"" === (string) $p);
 ?>
 DONE
 --EXPECT--
