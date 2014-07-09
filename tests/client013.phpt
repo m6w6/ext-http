@@ -3,6 +3,7 @@ client observers
 --SKIPIF--
 <?php 
 include "skipif.inc";
+skip_online_test();
 ?>
 --FILE--
 <?php 
@@ -50,7 +51,7 @@ $client->attach(
 		)
 );
 
-$client->enqueue(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/"))->send();
+$client->enqueue(new http\Client\Request("GET", "http://www.example.com/"))->send();
 var_dump(1 === preg_match("/(\.-)+/", $client->pi));
 var_dump(3 === count($client->getObservers()));
 $client->detach($o1);

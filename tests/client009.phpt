@@ -3,6 +3,7 @@ client static cookies
 --SKIPIF--
 <?php
 include "skipif.inc";
+skip_online_test();
 ?>
 --FILE--
 <?php
@@ -32,16 +33,4 @@ foreach (http\Client::getAvailableDrivers() as $driver) {
 Done
 --EXPECTREGEX--
 Test
-(?:string\(46\) "Array
-\(
-    \[test\] \=\> bar
-    \[foo\] \=\> test
-\)
-"
-string\(46\) "Array
-\(
-    \[test\] \=\> test
-    \[foo\] \=\> bar
-\)
-"
-)+Done
+(?:string\(46\) "Array\n\(\n    \[test\] \=\> bar\n    \[foo\] \=\> test\n\)\n"\nstring\(46\) "Array\n\(\n    \[test\] \=\> test\n    \[foo\] \=\> bar\n\)\n"\n)+Done
