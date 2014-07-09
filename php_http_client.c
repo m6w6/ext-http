@@ -377,6 +377,7 @@ static void handle_history(zval *zclient, php_http_message_t *request, php_http_
 
 static STATUS handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **request, php_http_message_t **response)
 {
+	zend_bool dequeue = 0;
 	zval zclient;
 	php_http_message_t *msg;
 	php_http_client_progress_state_t *progress;
@@ -430,8 +431,8 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 			zend_fcall_info_argn(&e->closure.fci TSRMLS_CC, 0);
 
 			if (retval) {
-				if (Z_TYPE_P(retval) == IS_BOOL && Z_BVAL_P(retval)) {
-					php_http_client_dequeue(client, e->request);
+				if (Z_TYPE_P(retval) == IS_BOOL) {
+					dequeue = Z_BVAL_P(retval);
 				}
 				zval_ptr_dtor(&retval);
 			}
@@ -445,6 +446,10 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 		progress->info = "finished";
 		progress->finished = 1;
 		client->callback.progress.func(client->callback.progress.arg, client, e, progress);
+	}
+
+	if (dequeue) {
+		php_http_client_dequeue(client, e->request);
 	}
 
 	return SUCCESS;
