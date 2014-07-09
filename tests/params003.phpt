@@ -1,5 +1,5 @@
 --TEST--
-header params rfc5987
+default params
 --SKIPIF--
 <?php
 include "skipif.inc";
@@ -8,72 +8,90 @@ include "skipif.inc";
 <?php
 echo "Test\n";
 
-$p = new http\Params("attachment; filename*=IsO-8859-1''d%f6ner.pdf");
-var_dump($p->params, (string) $p);
-$p = new http\Params("bar; title*=iso-8859-1'en'%A3%20rates");
-var_dump($p->params, (string) $p);
-$p = new http\Params("bar; title*=UTF-8''%c2%a3%20and%20%e2%82%ac%20rates");
-var_dump($p->params, (string) $p);
+$s = "foo, bar;arg=0;bla, gotit=0;now";
+$p = new http\Params($s);
+$c = str_replace(" ", "", $s);
+$k = array("foo", "bar", "gotit");
+$a = array("foo"=>"arg", "bar"=>"bla", "gotit"=>"now");
+$r = array (
+	'foo' => 
+	array (
+		'value' => true,
+		'arguments' => 
+		array (
+		),
+	),
+	'bar' => 
+	array (
+		'value' => true,
+		'arguments' => 
+		array (
+			'arg' => '0',
+			'bla' => true,
+		),
+	),
+	'gotit' => 
+	array (
+		'value' => '0',
+		'arguments' => 
+		array (
+			'now' => true,
+		),
+	),
+);
 
+# ---
+
+var_dump(count($p->params));
+
+echo "key exists\n";
+foreach ($k as $key) {
+	var_dump(array_key_exists($key, $p->params));
+}
+
+echo "values\n";
+foreach ($k as $key) {
+	var_dump($p[$key]["value"]);
+}
+
+echo "args\n";
+foreach ($k as $key) {
+	var_dump(count($p[$key]["arguments"]));
+}
+
+echo "arg values\n";
+foreach ($k as $key) {
+	var_dump(@$p[$key]["arguments"][$a[$key]]);
+}
+
+echo "equals\n";
+var_dump($c === (string) $p);
+var_dump($r === $p->params);
+$x = new http\Params($p->params);
+var_dump($r === $x->toArray());
 ?>
-===DONE===
+DONE
 --EXPECT--
 Test
-array(1) {
-  ["attachment"]=>
-  array(2) {
-    ["value"]=>
-    bool(true)
-    ["arguments"]=>
-    array(1) {
-      ["*rfc5987*"]=>
-      array(1) {
-        ["filename"]=>
-        array(1) {
-          [""]=>
-          string(10) "döner.pdf"
-        }
-      }
-    }
-  }
-}
-string(42) "attachment;filename*=utf-8''d%C3%B6ner.pdf"
-array(1) {
-  ["bar"]=>
-  array(2) {
-    ["value"]=>
-    bool(true)
-    ["arguments"]=>
-    array(1) {
-      ["*rfc5987*"]=>
-      array(1) {
-        ["title"]=>
-        array(1) {
-          ["en"]=>
-          string(8) "£ rates"
-        }
-      }
-    }
-  }
-}
-string(34) "bar;title*=utf-8'en'%C2%A3%20rates"
-array(1) {
-  ["bar"]=>
-  array(2) {
-    ["value"]=>
-    bool(true)
-    ["arguments"]=>
-    array(1) {
-      ["*rfc5987*"]=>
-      array(1) {
-        ["title"]=>
-        array(1) {
-          [""]=>
-          string(16) "£ and € rates"
-        }
-      }
-    }
-  }
-}
-string(50) "bar;title*=utf-8''%C2%A3%20and%20%E2%82%AC%20rates"
-===DONE===
+int(3)
+key exists
+bool(true)
+bool(true)
+bool(true)
+values
+bool(true)
+bool(true)
+string(1) "0"
+args
+int(0)
+int(2)
+int(1)
+arg values
+NULL
+bool(true)
+bool(true)
+equals
+bool(true)
+bool(true)
+bool(true)
+DONE

@@ -1,5 +1,5 @@
 --TEST--
-header params rfc5987
+custom params
 --SKIPIF--
 <?php
 include "skipif.inc";
@@ -7,64 +7,91 @@ include "skipif.inc";
 --FILE--
 <?php
 echo "Test\n";
-$u = urlencode("ü");
-$s = urlencode("ß");
-$t = "p1*=utf-8''s$u$s,p2*=utf-8''hei$s;a1*=utf-8''a$s;a2*=utf-8''e$s;a3=no,p3=not";
-$p = new http\Params($t);
-var_dump($p->params);
-var_dump((string)$p === $t, (string)$p, $t);
+
+$s = "foo bar.arg:0.bla gotit:0.now";
+$p = new http\Params($s, " ", ".", ":");
+$c = $s;
+$k = array("foo", "bar", "gotit");
+$a = array("foo"=>"arg", "bar"=>"bla", "gotit"=>"now");
+$r = array (
+	'foo' => 
+	array (
+		'value' => true,
+		'arguments' => 
+		array (
+		),
+	),
+	'bar' => 
+	array (
+		'value' => true,
+		'arguments' => 
+		array (
+			'arg' => '0',
+			'bla' => true,
+		),
+	),
+	'gotit' => 
+	array (
+		'value' => '0',
+		'arguments' => 
+		array (
+			'now' => true,
+		),
+	),
+);
+
+# ---
+
+var_dump(count($p->params));
+
+echo "key exists\n";
+foreach ($k as $key) {
+	var_dump(array_key_exists($key, $p->params));
+}
+
+echo "values\n";
+foreach ($k as $key) {
+	var_dump($p[$key]["value"]);
+}
+
+echo "args\n";
+foreach ($k as $key) {
+	var_dump(count($p[$key]["arguments"]));
+}
+
+echo "arg values\n";
+foreach ($k as $key) {
+	var_dump(@$p[$key]["arguments"][$a[$key]]);
+}
+
+echo "equals\n";
+var_dump($c === (string) $p);
+var_dump($r === $p->params);
+$x = new http\Params($p->params);
+var_dump($r === $x->toArray());
 ?>
-===DONE===
+DONE
 --EXPECT--
 Test
-array(3) {
-  ["p1"]=>
-  array(2) {
-    ["*rfc5987*"]=>
-    array(1) {
-      [""]=>
-      string(5) "süß"
-    }
-    ["arguments"]=>
-    array(0) {
-    }
-  }
-  ["p2"]=>
-  array(2) {
-    ["*rfc5987*"]=>
-    array(1) {
-      [""]=>
-      string(5) "heiß"
-    }
-    ["arguments"]=>
-    array(2) {
-      ["*rfc5987*"]=>
-      array(2) {
-        ["a1"]=>
-        array(1) {
-          [""]=>
-          string(3) "aß"
-        }
-        ["a2"]=>
-        array(1) {
-          [""]=>
-          string(3) "eß"
-        }
-      }
-      ["a3"]=>
-      string(2) "no"
-    }
-  }
-  ["p3"]=>
-  array(2) {
-    ["value"]=>
-    string(3) "not"
-    ["arguments"]=>
-    array(0) {
-    }
-  }
-}
+int(3)
+key exists
 bool(true)
-string(96) "p1*=utf-8''s%C3%BC%C3%9F,p2*=utf-8''hei%C3%9F;a1*=utf-8''a%C3%9F;a2*=utf-8''e%C3%9F;a3=no,p3=not"
-string(96) "p1*=utf-8''s%C3%BC%C3%9F,p2*=utf-8''hei%C3%9F;a1*=utf-8''a%C3%9F;a2*=utf-8''e%C3%9F;a3=no,p3=not"
-===DONE===
+bool(true)
+bool(true)
+values
+bool(true)
+bool(true)
+string(1) "0"
+args
+int(0)
+int(2)
+int(1)
+arg values
+NULL
+bool(true)
+bool(true)
+equals
+bool(true)
+bool(true)
+bool(true)
+DONE

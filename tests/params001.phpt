@@ -28,7 +28,8 @@ var_dump(
 
 var_dump((string) $ct,$ct);
 
-echo "Done\n";
+?>
+DONE
 --EXPECTF--
 Test
 bool(true)
@@ -61,4 +62,4 @@ object(http\Params)#%d (5) {
   ["flags"]=>
   int(0)
 }
-Done
+DONE
