@@ -715,6 +715,7 @@ static PHP_METHOD(HttpEnv, getRequestBody)
 
 	body = php_http_env_get_request_body(TSRMLS_C);
 	if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, body, NULL TSRMLS_CC)) {
+		php_http_message_body_addref(body);
 		RETVAL_OBJVAL(ov, 0);
 	}
 }
