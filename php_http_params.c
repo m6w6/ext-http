@@ -71,7 +71,7 @@ static inline void prepare_escaped(zval *zv TSRMLS_DC)
 		Z_STRVAL_P(zv) = php_addcslashes(Z_STRVAL_P(zv), Z_STRLEN_P(zv), &Z_STRLEN_P(zv), 1,
 				ZEND_STRL("\0..\37\173\\\"") TSRMLS_CC);
 
-		if (len != Z_STRLEN_P(zv) || strpbrk(Z_STRVAL_P(zv), "()<>@,;:\"/[]?={} ")) {
+		if (len != Z_STRLEN_P(zv) || strpbrk(Z_STRVAL_P(zv), "()<>@,;:\"[]?={} ")) {
 			zval tmp = *zv;
 			int len = Z_STRLEN_P(zv) + 2;
 			char *str = emalloc(len + 1);
