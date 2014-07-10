@@ -140,21 +140,24 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 		Z_ARRVAL_P(zv) = (ht); \
 	}
 
+static inline zval *php_http_zconv(int type, zval *z)
+{
+	switch (type) {
+		case IS_NULL:	convert_to_null_ex(&z);		break;
+		case IS_BOOL:	convert_to_boolean_ex(&z);	break;
+		case IS_LONG:	convert_to_long_ex(&z);		break;
+		case IS_DOUBLE:	convert_to_double_ex(&z);	break;
+		case IS_STRING:	convert_to_string_ex(&z);	break;
+		case IS_ARRAY:	convert_to_array_ex(&z);	break;
+		case IS_OBJECT:	convert_to_object_ex(&z);	break;
+	}
+	return z;
+}
+
 static inline zval *php_http_ztyp(int type, zval *z)
 {
 	SEPARATE_ARG_IF_REF(z);
-	if (Z_TYPE_P(z) != type) {
-		switch (type) {
-			case IS_NULL:	convert_to_null_ex(&z);		break;
-			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
-			case IS_LONG:	convert_to_long_ex(&z);		break;
-			case IS_DOUBLE:	convert_to_double_ex(&z);	break;
-			case IS_STRING:	convert_to_string_ex(&z);	break;
-			case IS_ARRAY:	convert_to_array_ex(&z);	break;
-			case IS_OBJECT:	convert_to_object_ex(&z);	break;
-		}
-	}
-	return z;
+	return (Z_TYPE_P(z) == type) ? z : php_http_zconv(type, z);
 }
 
 static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z)
@@ -163,19 +166,11 @@ static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z)
 		Z_ADDREF_P(z);
 	}
 	if (Z_TYPE_P(z) != type) {
-		switch (type) {
-			case IS_NULL:	convert_to_null_ex(&z);		break;
-			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
-			case IS_LONG:	convert_to_long_ex(&z);		break;
-			case IS_DOUBLE:	convert_to_double_ex(&z);	break;
-			case IS_STRING:	convert_to_string_ex(&z);	break;
-			case IS_ARRAY:	convert_to_array_ex(&z);	break;
-			case IS_OBJECT:	convert_to_object_ex(&z);	break;
-		}
+		return php_http_zconv(type, z);
 	} else {
 		SEPARATE_ZVAL_IF_NOT_REF(&z);
+		return z;
 	}
-	return z;
 }
 
 static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, const char **value_str, size_t *value_len, zend_bool orig TSRMLS_DC)
