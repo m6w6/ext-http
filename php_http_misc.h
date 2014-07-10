@@ -291,10 +291,13 @@ static inline void php_http_array_hashkey_stringfree(php_http_array_hashkey_t *k
 			zend_hash_move_forward_ex(hash, &pos))
 
 #define array_copy(src, dst) zend_hash_copy(dst, src, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
-#define ARRAY_JOIN_STRONLY 1
-#define ARRAY_JOIN_PRETTIFY 2
+#define array_copy_strings(src, dst) zend_hash_copy(dst, src, php_http_array_copy_strings, NULL, sizeof(zval *))
+#define ARRAY_JOIN_STRONLY   0x01
+#define ARRAY_JOIN_PRETTIFY  0x02
+#define ARRAY_JOIN_STRINGIFY 0x04
 #define array_join(src, dst, append, flags) zend_hash_apply_with_arguments(src TSRMLS_CC, (append)?php_http_array_apply_append_func:php_http_array_apply_merge_func, 2, dst, (int)flags)
 
+void php_http_array_copy_strings(void *zpp);
 int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
 int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
 
