@@ -140,21 +140,24 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 		Z_ARRVAL_P(zv) = (ht); \
 	}
 
+static inline zval *php_http_zconv(int type, zval *z)
+{
+	switch (type) {
+		case IS_NULL:	convert_to_null_ex(&z);		break;
+		case IS_BOOL:	convert_to_boolean_ex(&z);	break;
+		case IS_LONG:	convert_to_long_ex(&z);		break;
+		case IS_DOUBLE:	convert_to_double_ex(&z);	break;
+		case IS_STRING:	convert_to_string_ex(&z);	break;
+		case IS_ARRAY:	convert_to_array_ex(&z);	break;
+		case IS_OBJECT:	convert_to_object_ex(&z);	break;
+	}
+	return z;
+}
+
 static inline zval *php_http_ztyp(int type, zval *z)
 {
 	SEPARATE_ARG_IF_REF(z);
-	if (Z_TYPE_P(z) != type) {
-		switch (type) {
-			case IS_NULL:	convert_to_null_ex(&z);		break;
-			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
-			case IS_LONG:	convert_to_long_ex(&z);		break;
-			case IS_DOUBLE:	convert_to_double_ex(&z);	break;
-			case IS_STRING:	convert_to_string_ex(&z);	break;
-			case IS_ARRAY:	convert_to_array_ex(&z);	break;
-			case IS_OBJECT:	convert_to_object_ex(&z);	break;
-		}
-	}
-	return z;
+	return (Z_TYPE_P(z) == type) ? z : php_http_zconv(type, z);
 }
 
 static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z)
@@ -163,19 +166,11 @@ static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z)
 		Z_ADDREF_P(z);
 	}
 	if (Z_TYPE_P(z) != type) {
-		switch (type) {
-			case IS_NULL:	convert_to_null_ex(&z);		break;
-			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
-			case IS_LONG:	convert_to_long_ex(&z);		break;
-			case IS_DOUBLE:	convert_to_double_ex(&z);	break;
-			case IS_STRING:	convert_to_string_ex(&z);	break;
-			case IS_ARRAY:	convert_to_array_ex(&z);	break;
-			case IS_OBJECT:	convert_to_object_ex(&z);	break;
-		}
+		return php_http_zconv(type, z);
 	} else {
 		SEPARATE_ZVAL_IF_NOT_REF(&z);
+		return z;
 	}
-	return z;
 }
 
 static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, const char **value_str, size_t *value_len, zend_bool orig TSRMLS_DC)
@@ -296,10 +291,13 @@ static inline void php_http_array_hashkey_stringfree(php_http_array_hashkey_t *k
 			zend_hash_move_forward_ex(hash, &pos))
 
 #define array_copy(src, dst) zend_hash_copy(dst, src, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
-#define ARRAY_JOIN_STRONLY 1
-#define ARRAY_JOIN_PRETTIFY 2
+#define array_copy_strings(src, dst) zend_hash_copy(dst, src, php_http_array_copy_strings, NULL, sizeof(zval *))
+#define ARRAY_JOIN_STRONLY   0x01
+#define ARRAY_JOIN_PRETTIFY  0x02
+#define ARRAY_JOIN_STRINGIFY 0x04
 #define array_join(src, dst, append, flags) zend_hash_apply_with_arguments(src TSRMLS_CC, (append)?php_http_array_apply_append_func:php_http_array_apply_merge_func, 2, dst, (int)flags)
 
+void php_http_array_copy_strings(void *zpp);
 int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
 int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
 
