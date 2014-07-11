@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2014-07-11</date>
  <version>
-  <release>2.0.7</release>
+  <release>2.0.8dev</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -48,13 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* General improvements to the test suite
-* Fixed http\Env\Response::send() ignoring some write errors
-* Fixed bug #67528 (RFC compliant default user agent)
-* Fixed a garbage collector issue with JSON POSTs
-* Fixed refcount issue and double free of message bodies
-* Fixed use after free if the http\Client::enqueue() closure returns TRUE
-* Fixed bug #67584 (http\Client\Response not initialized as response on failure)
+*
 ]]></notes>
  <contents>
   <dir name="/">
