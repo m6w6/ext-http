@@ -29,6 +29,7 @@ var_dump($r->send($s));
 DONE
 --EXPECTF--
 Test
+
 Warning: http\Env\Response::send(): Failed to send response body in %s on line %d
 bool(false)
 DONE
