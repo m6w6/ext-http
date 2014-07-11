@@ -37,9 +37,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-01-02</date>
+ <date>2014-07-11</date>
  <version>
-  <release>2.1.0dev</release>
+  <release>2.1.0</release>
   <api>2.0.0</api>
  </version>
  <stability>
@@ -48,7 +48,14 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Added RFC5987 support in http\Params
++ Added RFC5987 support in http\Params
+* General improvements to the test suite
+* Fixed http\Env\Response::send() ignoring some write errors
+* Fixed bug #67528 (RFC compliant default user agent)
+* Fixed a garbage collector issue with JSON POSTs
+* Fixed refcount issue and double free of message bodies
+* Fixed use after free if the http\Client::enqueue() closure returns TRUE
+* Fixed bug #67584 (http\Client\Response not initialized as response on failure)
 ]]></notes>
  <contents>
   <dir name="/">
@@ -148,6 +155,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="client011.phpt"/>
      <file role="test" name="client012.phpt"/>
      <file role="test" name="client013.phpt"/>
+     <file role="test" name="client014.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
@@ -155,6 +163,27 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="clientresponse001.phpt"/>
      <file role="test" name="clientresponse002.phpt"/>
      <file role="test" name="clientresponse003.phpt"/>
+     <file role="test" name="cookie001.phpt"/>
+     <file role="test" name="cookie002.phpt"/>
+     <file role="test" name="cookie003.phpt"/>
+     <file role="test" name="cookie004.phpt"/>
+     <file role="test" name="cookie005.phpt"/>
+     <file role="test" name="cookie006.phpt"/>
+     <file role="test" name="cookie007.phpt"/>
+     <file role="test" name="cookie008.phpt"/>
+     <file role="test" name="cookie009.phpt"/>
+     <file role="test" name="cookie010.phpt"/>
+     <file role="test" name="cookie011.phpt"/>
+     <file role="test" name="cookie012.phpt"/>
+     <file role="test" name="encstream001.phpt"/>
+     <file role="test" name="encstream002.phpt"/>
+     <file role="test" name="encstream003.phpt"/>
+     <file role="test" name="encstream004.phpt"/>
+     <file role="test" name="encstream005.phpt"/>
+     <file role="test" name="encstream006.phpt"/>
+     <file role="test" name="encstream007.phpt"/>
+     <file role="test" name="encstream008.phpt"/>
+     <file role="test" name="encstream009.phpt"/>
      <file role="test" name="envrequestbody001.phpt"/>
      <file role="test" name="envrequestbody002.phpt"/>
      <file role="test" name="envrequestbody003.phpt"/>
@@ -180,6 +209,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="envresponse013.phpt"/>
      <file role="test" name="envresponse014.phpt"/>
      <file role="test" name="envresponse015.phpt"/>
+     <file role="test" name="envresponse016.phpt"/>
      <file role="test" name="envresponsebody001.phpt"/>
      <file role="test" name="envresponsebody002.phpt"/>
      <file role="test" name="envresponsecodes.phpt"/>
@@ -214,25 +244,42 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="message013.phpt"/>
      <file role="test" name="message014.phpt"/>
      <file role="test" name="message015.phpt"/>
+     <file role="test" name="messagebody001.phpt"/>
+     <file role="test" name="messagebody002.phpt"/>
+     <file role="test" name="messagebody003.phpt"/>
+     <file role="test" name="messagebody004.phpt"/>
+     <file role="test" name="messagebody005.phpt"/>
+     <file role="test" name="messagebody006.phpt"/>
+     <file role="test" name="messagebody007.phpt"/>
+     <file role="test" name="messagebody008.phpt"/>
+     <file role="test" name="messagebody009.phpt"/>
+     <file role="test" name="messagebody010.phpt"/>
      <file role="test" name="negotiate001.phpt"/>
      <file role="test" name="params001.phpt"/>
      <file role="test" name="params002.phpt"/>
      <file role="test" name="params003.phpt"/>
      <file role="test" name="params004.phpt"/>
-     <file role="test" name="phpunit.phpt"/>
+     <file role="test" name="params005.phpt"/>
+     <file role="test" name="params006.phpt"/>
+     <file role="test" name="params007.phpt"/>
+     <file role="test" name="params008.phpt"/>
+     <file role="test" name="params009.phpt"/>
+     <file role="test" name="params010.phpt"/>
+     <file role="test" name="params011.phpt"/>
+     <file role="test" name="params012.phpt"/>
+     <file role="test" name="params013.phpt"/>
+     <file role="test" name="params014.phpt"/>
+     <file role="test" name="params015.phpt"/>
      <file role="test" name="propertyproxy001.phpt"/>
-     <file role="test" name="querystring_001.phpt"/>
+     <file role="test" name="querystring001.phpt"/>
+     <file role="test" name="querystring002.phpt"/>
      <file role="test" name="serialize001.phpt"/>
+     <file role="test" name="url002.phpt"/>
+     <file role="test" name="url003.phpt"/>
+     <file role="test" name="url004.phpt"/>
+     <file role="test" name="url005.phpt"/>
      <file role="test" name="url001.phpt"/>
      <file role="test" name="version001.phpt"/>
-   </dir>
-   <dir name="phpunit">
-    <file role="test" name="CookieTest.php"/>
-    <file role="test" name="EncodingTest.php"/>
-    <file role="test" name="MessageBodyTest.php"/>
-    <file role="test" name="ParamsTest.php"/>
-    <file role="test" name="QueryStringTest.php"/>
-    <file role="test" name="UrlTest.php"/>
    </dir>
   </dir>
  </contents>
