@@ -162,27 +162,27 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="clientresponse001.phpt"/>
      <file role="test" name="clientresponse002.phpt"/>
      <file role="test" name="clientresponse003.phpt"/>
-     <file role="test" name="cookie001.phpt">
-     <file role="test" name="cookie002.phpt">
-     <file role="test" name="cookie003.phpt">
-     <file role="test" name="cookie004.phpt">
-     <file role="test" name="cookie005.phpt">
-     <file role="test" name="cookie006.phpt">
-     <file role="test" name="cookie007.phpt">
-     <file role="test" name="cookie008.phpt">
-     <file role="test" name="cookie009.phpt">
-     <file role="test" name="cookie010.phpt">
-     <file role="test" name="cookie011.phpt">
-     <file role="test" name="cookie012.phpt">
-     <file role="test" name="encstream001.phpt">
-     <file role="test" name="encstream002.phpt">
-     <file role="test" name="encstream003.phpt">
-     <file role="test" name="encstream004.phpt">
-     <file role="test" name="encstream005.phpt">
-     <file role="test" name="encstream006.phpt">
-     <file role="test" name="encstream007.phpt">
-     <file role="test" name="encstream008.phpt">
-     <file role="test" name="encstream009.phpt">
+     <file role="test" name="cookie001.phpt"/>
+     <file role="test" name="cookie002.phpt"/>
+     <file role="test" name="cookie003.phpt"/>
+     <file role="test" name="cookie004.phpt"/>
+     <file role="test" name="cookie005.phpt"/>
+     <file role="test" name="cookie006.phpt"/>
+     <file role="test" name="cookie007.phpt"/>
+     <file role="test" name="cookie008.phpt"/>
+     <file role="test" name="cookie009.phpt"/>
+     <file role="test" name="cookie010.phpt"/>
+     <file role="test" name="cookie011.phpt"/>
+     <file role="test" name="cookie012.phpt"/>
+     <file role="test" name="encstream001.phpt"/>
+     <file role="test" name="encstream002.phpt"/>
+     <file role="test" name="encstream003.phpt"/>
+     <file role="test" name="encstream004.phpt"/>
+     <file role="test" name="encstream005.phpt"/>
+     <file role="test" name="encstream006.phpt"/>
+     <file role="test" name="encstream007.phpt"/>
+     <file role="test" name="encstream008.phpt"/>
+     <file role="test" name="encstream009.phpt"/>
      <file role="test" name="envrequestbody001.phpt"/>
      <file role="test" name="envrequestbody002.phpt"/>
      <file role="test" name="envrequestbody003.phpt"/>
