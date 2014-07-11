@@ -208,7 +208,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="envresponse013.phpt"/>
      <file role="test" name="envresponse014.phpt"/>
      <file role="test" name="envresponse015.phpt"/>
-     <file role="test" name="envresponse016.phpt">
+     <file role="test" name="envresponse016.phpt"/>
      <file role="test" name="envresponsebody001.phpt"/>
      <file role="test" name="envresponsebody002.phpt"/>
      <file role="test" name="envresponsecodes.phpt"/>
@@ -243,38 +243,38 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="message013.phpt"/>
      <file role="test" name="message014.phpt"/>
      <file role="test" name="message015.phpt"/>
-     <file role="test" name="messagebody001.phpt">
-     <file role="test" name="messagebody002.phpt">
-     <file role="test" name="messagebody003.phpt">
-     <file role="test" name="messagebody004.phpt">
-     <file role="test" name="messagebody005.phpt">
-     <file role="test" name="messagebody006.phpt">
-     <file role="test" name="messagebody007.phpt">
-     <file role="test" name="messagebody008.phpt">
-     <file role="test" name="messagebody009.phpt">
-     <file role="test" name="messagebody010.phpt">
-     <file role="test" name="querystring001.phpt">
-     <file role="test" name="querystring002.phpt">
+     <file role="test" name="messagebody001.phpt"/>
+     <file role="test" name="messagebody002.phpt"/>
+     <file role="test" name="messagebody003.phpt"/>
+     <file role="test" name="messagebody004.phpt"/>
+     <file role="test" name="messagebody005.phpt"/>
+     <file role="test" name="messagebody006.phpt"/>
+     <file role="test" name="messagebody007.phpt"/>
+     <file role="test" name="messagebody008.phpt"/>
+     <file role="test" name="messagebody009.phpt"/>
+     <file role="test" name="messagebody010.phpt"/>
+     <file role="test" name="querystring001.phpt"/>
+     <file role="test" name="querystring002.phpt"/>
      <file role="test" name="negotiate001.phpt"/>
      <file role="test" name="params001.phpt"/>
      <file role="test" name="params002.phpt"/>
-     <file role="test" name="params003.phpt">
-     <file role="test" name="params004.phpt">
-     <file role="test" name="params005.phpt">
-     <file role="test" name="params006.phpt">
-     <file role="test" name="params007.phpt">
-     <file role="test" name="params008.phpt">
-     <file role="test" name="params009.phpt">
-     <file role="test" name="params010.phpt">
-     <file role="test" name="params011.phpt">
-     <file role="test" name="params012.phpt">
+     <file role="test" name="params003.phpt"/>
+     <file role="test" name="params004.phpt"/>
+     <file role="test" name="params005.phpt"/>
+     <file role="test" name="params006.phpt"/>
+     <file role="test" name="params007.phpt"/>
+     <file role="test" name="params008.phpt"/>
+     <file role="test" name="params009.phpt"/>
+     <file role="test" name="params010.phpt"/>
+     <file role="test" name="params011.phpt"/>
+     <file role="test" name="params012.phpt"/>
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="serialize001.phpt"/>
      <file role="test" name="url001.phpt"/>
-     <file role="test" name="url002.phpt">
-     <file role="test" name="url003.phpt">
-     <file role="test" name="url004.phpt">
-     <file role="test" name="url005.phpt">
+     <file role="test" name="url002.phpt"/>
+     <file role="test" name="url003.phpt"/>
+     <file role="test" name="url004.phpt"/>
+     <file role="test" name="url005.phpt"/>
      <file role="test" name="version001.phpt"/>
    </dir>
   </dir>
