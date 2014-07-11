@@ -36,3 +36,4 @@ tests/*.log
 tests/*.out
 tests/*.php
 tests/*.sh
+lcov_data
