@@ -103,7 +103,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_shrink(php_http_buffer_t *buf)
 
 PHP_HTTP_BUFFER_API size_t php_http_buffer_append(php_http_buffer_t *buf, const char *append, size_t append_len)
 {
-	if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize(buf, append_len)) {
+	if (buf->free < append_len && PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize(buf, append_len)) {
 		return PHP_HTTP_BUFFER_NOMEM;
 	}
 	memcpy(buf->data + buf->used, append, append_len);
@@ -160,7 +160,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_cut(php_http_buffer_t *buf, size_t of
 
 PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_fix(php_http_buffer_t *buf)
 {
-	if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize_ex(buf, 1, 1, 0)) {
+	if (buf->free < 1 && PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize_ex(buf, 1, 1, 0)) {
 		return NULL;
 	}
 	buf->data[buf->used] = '\0';
