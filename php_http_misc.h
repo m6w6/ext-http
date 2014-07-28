@@ -60,25 +60,51 @@ PHP_HTTP_API void php_http_sleep(double s);
 #define PHP_HTTP_MATCH_STRICT	(PHP_HTTP_MATCH_CASE|PHP_HTTP_MATCH_FULL)
 
 int php_http_match(const char *haystack, const char *needle, int flags);
-char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
+char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
 size_t php_http_boundary(char *buf, size_t len TSRMLS_DC);
 int php_http_select_str(const char *cmp, int argc, ...);
 
-static inline const char *php_http_locate_str(const char *h, size_t h_len, const char *n, size_t n_len)
-{
-	const char *p, *e;
+/* See "A Reusable Duff Device" By Ralf Holly, August 01, 2005 */
+#define PHP_HTTP_DUFF_BREAK(i) do { \
+	times_##i = 1; \
+} while (0)
 
-	if (n_len && h_len) {
-		e = h + h_len;
-		do {
+#define PHP_HTTP_DUFF(i, c, a) do { \
+		size_t count_##i = (c); \
+		size_t times_##i = (count_##i + 7) >> 3; \
+		switch (count_##i & 7){ \
+		case 0: do { a; \
+		case 7: a; \
+		case 6: a; \
+		case 5: a; \
+		case 4: a; \
+		case 3: a; \
+		case 2: a; \
+		case 1: a; \
+		} while (--times_##i > 0); \
+	} \
+} while (0)
+
+
+static inline const char *php_http_locate_str(register const char *h, size_t h_len, const char *n, size_t n_len)
+{
+	register const char *p1, *p2;
+
+	if (n_len && h_len && h_len >= n_len) {
+		PHP_HTTP_DUFF(1, h_len - n_len + 1,
 			if (*h == *n) {
-				for (p = n; *p == h[p-n]; ++p) {
-					if (p == n+n_len-1) {
+				p1 = h;
+				p2 = n;
+				PHP_HTTP_DUFF(2, n_len,
+					if (*p1++ != *p2++) {
+						PHP_HTTP_DUFF_BREAK(2);
+					} else if (p2 == n + n_len - 1) {
 						return h;
 					}
-				}
+				);
 			}
-		} while (h++ != e);
+			++h;
+		);
 	}
 
 	return NULL;
@@ -96,17 +122,19 @@ static inline const char *php_http_locate_eol(const char *line, int *eol_len)
 
 static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, int *eol_len)
 {
-	const char *eol;
+	register const char *eol = bin;
 
-	for (eol = bin; eol - bin < len; ++eol) {
-		if (*eol == '\r' || *eol == '\n') {
-			if (eol_len) {
-				*eol_len = ((eol[0] == '\r' && eol[1] == '\n') ? 2 : 1);
+	if (len > 0) {
+		PHP_HTTP_DUFF(1, len,
+			if (*eol == '\r' || *eol == '\n') {
+				if (eol_len) {
+					*eol_len = ((eol[0] == '\r' && eol[1] == '\n') ? 2 : 1);
+				}
+				return eol;
 			}
-			return eol;
-		}
+			++eol;
+		);
 	}
-
 	return NULL;
 }
 

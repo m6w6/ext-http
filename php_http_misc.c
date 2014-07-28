@@ -87,16 +87,16 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 	return result;
 }
 
-char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
+char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
-	size_t i;
+	size_t i = 1;
 	int wasalpha;
 
 	if (key && key_len) {
 		if ((wasalpha = PHP_HTTP_IS_CTYPE(alpha, key[0]))) {
 			key[0] = (char) (uctitle ? PHP_HTTP_TO_CTYPE(upper, key[0]) : PHP_HTTP_TO_CTYPE(lower, key[0]));
 		}
-		for (i = 1; i < key_len; i++) {
+		PHP_HTTP_DUFF(1, key_len,
 			if (PHP_HTTP_IS_CTYPE(alpha, key[i])) {
 				key[i] = (char) (((!wasalpha) && uctitle) ? PHP_HTTP_TO_CTYPE(upper, key[i]) : PHP_HTTP_TO_CTYPE(lower, key[i]));
 				wasalpha = 1;
@@ -106,7 +106,8 @@ char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_boo
 				}
 				wasalpha = 0;
 			}
-		}
+			++i;
+		);
 	}
 	return key;
 }
