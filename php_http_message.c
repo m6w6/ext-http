@@ -149,7 +149,13 @@ php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *
 zval *php_http_message_header(php_http_message_t *msg, const char *key_str, size_t key_len, int join)
 {
 	zval *ret = NULL, **header;
-	char *key = php_http_pretty_key(estrndup(key_str, key_len), key_len, 1, 1);
+	char *key;
+	ALLOCA_FLAG(free_key);
+
+	key = do_alloca(key_len + 1, free_key);
+	memcpy(key, key_str, key_len);
+	key[key_len] = '\0';
+	php_http_pretty_key(key, key_len, 1, 1);
 
 	if (SUCCESS == zend_symtable_find(&msg->hdrs, key, key_len + 1, (void *) &header)) {
 		if (join && Z_TYPE_PP(header) == IS_ARRAY) {
@@ -162,7 +168,7 @@ zval *php_http_message_header(php_http_message_t *msg, const char *key_str, size
 		}
 	}
 
-	efree(key);
+	free_alloca(key, free_key);
 
 	return ret;
 }
