@@ -49,13 +49,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  <license>BSD, revised</license>
  <notes><![CDATA[
 + Added RFC5987 support in http\Params
-* General improvements to the test suite
-* Fixed http\Env\Response::send() ignoring some write errors
-* Fixed bug #67528 (RFC compliant default user agent)
-* Fixed a garbage collector issue with JSON POSTs
-* Fixed refcount issue and double free of message bodies
-* Fixed use after free if the http\Client::enqueue() closure returns TRUE
-* Fixed bug #67584 (http\Client\Response not initialized as response on failure)
++ Improved synthetic HTTP message parsing performace for ~20%
 ]]></notes>
  <contents>
   <dir name="/">

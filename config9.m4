@@ -252,6 +252,25 @@ dnl ----
 			else
 				AC_MSG_RESULT([no])
 			fi
+			
+			AC_MSG_CHECKING([for ares support in libcurl])
+			AC_TRY_RUN([
+				#include <curl/curl.h>
+				int main(int argc, char *argv[]) {
+					curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
+					if (data && data->ares && data->ares_num0) {
+						return 0;
+					}
+					return 1;
+				}
+			], [
+				AC_MSG_RESULT([yes])
+				AC_DEFINE([PHP_HTTP_HAVE_ARES], [1], [ ])
+			], [
+				AC_MSG_RESULT([no])
+			], [
+				AC_MSG_RESULT([no])
+			])
 		
 			INCLUDES="$save_INCLUDES"
 			LIBS="$save_LIBS"

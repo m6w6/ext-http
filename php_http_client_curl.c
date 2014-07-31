@@ -796,9 +796,10 @@ static void php_http_curlm_timer_callback(CURLM *multi, long timeout_ms, void *t
 
 static php_http_options_t php_http_curle_options;
 
-#define PHP_HTTP_CURLE_OPTION_CHECK_STRLEN	0x0001
-#define PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR	0x0002
-#define PHP_HTTP_CURLE_OPTION_TRANSFORM_MS	0x0004
+#define PHP_HTTP_CURLE_OPTION_CHECK_STRLEN		0x0001
+#define PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR		0x0002
+#define PHP_HTTP_CURLE_OPTION_TRANSFORM_MS		0x0004
+#define PHP_HTTP_CURLE_OPTION_TRANSFORM_NULLS	0x0006
 
 static STATUS php_http_curle_option_set_ssl_verifyhost(php_http_option_t *opt, zval *val, void *userdata)
 {
@@ -925,13 +926,15 @@ static STATUS php_http_curle_option_set_etag(php_http_option_t *opt, zval *val, 
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	php_http_buffer_t header;
-	zend_bool is_quoted = !((Z_STRVAL_P(val)[0] != '"') || (Z_STRVAL_P(val)[Z_STRLEN_P(val)-1] != '"'));
 
-	php_http_buffer_init(&header);
-	php_http_buffer_appendf(&header, is_quoted?"%s: %s":"%s: \"%s\"", curl->options.range_request?"If-Match":"If-None-Match", Z_STRVAL_P(val));
-	php_http_buffer_fix(&header);
-	curl->options.headers = curl_slist_append(curl->options.headers, header.data);
-	php_http_buffer_dtor(&header);
+	if (Z_STRLEN_P(val)) {
+		zend_bool is_quoted = !((Z_STRVAL_P(val)[0] != '"') || (Z_STRVAL_P(val)[Z_STRLEN_P(val)-1] != '"'));
+		php_http_buffer_init(&header);
+		php_http_buffer_appendf(&header, is_quoted?"%s: %s":"%s: \"%s\"", curl->options.range_request?"If-Match":"If-None-Match", Z_STRVAL_P(val));
+		php_http_buffer_fix(&header);
+		curl->options.headers = curl_slist_append(curl->options.headers, header.data);
+		php_http_buffer_dtor(&header);
+	}
 	return SUCCESS;
 }
 
@@ -1121,10 +1124,23 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		opt->setter = php_http_curle_option_set_resolve;
 	}
 #endif
-#if PHP_HTTP_CURL_VERSION(7,24,0)
+#if PHP_HTTP_HAVE_ARES
+# if PHP_HTTP_CURL_VERSION(7,24,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_servers"), CURLOPT_DNS_SERVERS, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
+# endif
+# if PHP_HTTP_CURL_VERSION(7,33,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_interface"), CURLOPT_DNS_INTERFACE, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_local_ip4"), CURLOPT_DNS_LOCAL_IP4, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_local_ip6"), CURLOPT_DNS_LOCAL_IP6, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+# endif
 #endif
 
 	/* limits */
@@ -1259,8 +1275,15 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		opt->flags |= PHP_HTTP_CURLE_OPTION_TRANSFORM_MS;
 		Z_DVAL(opt->defval) = 3;
 	}
+#if PHP_HTTP_CURL_VERSION(7,36,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("expect_100_timeout"), CURLOPT_EXPECT_100_TIMEOUT_MS, IS_DOUBLE))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_TRANSFORM_MS;
+		Z_DVAL(opt->defval) = 1;
+	}
+#endif
 
 	/* tcp */
+	php_http_option_register(registry, ZEND_STRL("tcp_nodelay"), CURLOPT_TCP_NODELAY, IS_BOOL);
 #if PHP_HTTP_CURL_VERSION(7,25,0)
 	php_http_option_register(registry, ZEND_STRL("tcp_keepalive"), CURLOPT_TCP_KEEPALIVE, IS_BOOL);
 	if ((opt = php_http_option_register(registry, ZEND_STRL("tcp_keepidle"), CURLOPT_TCP_KEEPIDLE, IS_LONG))) {
@@ -1279,14 +1302,21 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 		}
-		php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING);
-
+		if ((opt = php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			ZVAL_STRING(&opt->defval, "PEM", 1);
+		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("key"), CURLOPT_SSLKEY, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 		}
-		php_http_option_register(registry, ZEND_STRL("keytype"), CURLOPT_SSLKEYTYPE, IS_STRING);
-		php_http_option_register(registry, ZEND_STRL("keypasswd"), CURLOPT_SSLKEYPASSWD, IS_STRING);
+		if ((opt = php_http_option_register(registry, ZEND_STRL("keytype"), CURLOPT_SSLKEYTYPE, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			ZVAL_STRING(&opt->defval, "PEM", 1);
+		}
+		if ((opt = php_http_option_register(registry, ZEND_STRL("keypasswd"), CURLOPT_SSLKEYPASSWD, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+		}
 		php_http_option_register(registry, ZEND_STRL("engine"), CURLOPT_SSLENGINE, IS_STRING);
 		php_http_option_register(registry, ZEND_STRL("version"), CURLOPT_SSLVERSION, IS_LONG);
 		if ((opt = php_http_option_register(registry, ZEND_STRL("verifypeer"), CURLOPT_SSL_VERIFYPEER, IS_BOOL))) {
@@ -1331,6 +1361,14 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 #if PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)
 		php_http_option_register(registry, ZEND_STRL("certinfo"), CURLOPT_CERTINFO, IS_BOOL);
 #endif
+#if PHP_HTTP_CURL_VERSION(7,36,0)
+		if ((opt = php_http_option_register(registry, ZEND_STRL("enable_npn"), CURLOPT_SSL_ENABLE_NPN, IS_BOOL))) {
+			ZVAL_BOOL(&opt->defval, 1);
+		}
+		if ((opt = php_http_option_register(registry, ZEND_STRL("enable_alpn"), CURLOPT_SSL_ENABLE_ALPN, IS_BOOL))) {
+			ZVAL_BOOL(&opt->defval, 1);
+		}
+#endif
 	}
 }
 
@@ -1351,6 +1389,7 @@ static STATUS php_http_curle_set_option(php_http_option_t *opt, zval *val, void 
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
 	zval tmp;
+	CURLcode rc = CURLE_OK;
 	STATUS rv = SUCCESS;
 	TSRMLS_FETCH_FROM_CTX(curl->client->ts);
 
@@ -1376,14 +1415,18 @@ static STATUS php_http_curle_set_option(php_http_option_t *opt, zval *val, void 
 		break;
 
 	case IS_STRING:
-		if (!(opt->flags & PHP_HTTP_CURLE_OPTION_CHECK_STRLEN) || Z_STRLEN_P(val)) {
-			if (!(opt->flags & PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR) || !Z_STRVAL_P(val) || SUCCESS == php_check_open_basedir(Z_STRVAL_P(val) TSRMLS_CC)) {
-				if (opt->setter) {
-					rv = opt->setter(opt, val, curl);
-				} else if (CURLE_OK != curl_easy_setopt(ch, opt->option, Z_STRVAL_P(val))) {
-					rv = FAILURE;
-				}
+		if (opt->setter) {
+			rv = opt->setter(opt, val, curl);
+		} else if ((opt->flags & PHP_HTTP_CURLE_OPTION_CHECK_STRLEN) && !Z_STRLEN_P(val)) {
+			if (CURLE_OK != (rc = curl_easy_setopt(ch, opt->option, NULL))) {
+				rv = FAILURE;
 			}
+		} else if ((opt->flags & PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR) && Z_STRVAL_P(val) && SUCCESS != php_check_open_basedir(Z_STRVAL_P(val) TSRMLS_CC)) {
+			if (CURLE_OK != (rc = curl_easy_setopt(ch, opt->option, NULL))) {
+				rv = FAILURE;
+			}
+		} else if (CURLE_OK != (rc = curl_easy_setopt(ch, opt->option, Z_STRVAL_P(val)))) {
+			rv = FAILURE;
 		}
 		break;
 
@@ -1417,7 +1460,7 @@ static STATUS php_http_curle_set_option(php_http_option_t *opt, zval *val, void 
 		break;
 	}
 	if (rv != SUCCESS) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s", opt->name.s);
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s (%s)", opt->name.s, curl_easy_strerror(rc));
 	}
 	return rv;
 }

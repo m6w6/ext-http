@@ -1,3 +1,4 @@
 * let http_info.request.url be a php_url
 * let the message body be a simple query string unless files are added
 * php_http_message_serialize reverses the chain twice; remove that
+* CURLOPT_PROXY_HEADER and CURLOPT_HEADEROPT
