@@ -40,7 +40,7 @@ $ifdefs = array(
     'LOCAL_IP' => 'PHP_HTTP_CURL_VERSION(7,21,0)',
 );
 $exclude = array(
-    'PRIVATE', 'LASTSOCKET', 'FTP_ENTRY_PATH', 'CERTINFO',
+    'PRIVATE', 'LASTSOCKET', 'FTP_ENTRY_PATH', 'CERTINFO', 'TLS_SESSION',
     'RTSP_SESSION_ID', 'RTSP_CLIENT_CSEQ', 'RTSP_SERVER_CSEQ', 'RTSP_CSEQ_RECV'
 );
 
@@ -91,8 +91,8 @@ foreach ($infos as $info) {
 	if (isset($ifdefs[$short])) printf("#endif\n");
 }
 
-file_put_contents("php_http_curl_client.c", 
+file_put_contents("php_http_client_curl.c", 
 	preg_replace('/(\/\* BEGIN::CURLINFO \*\/\n).*(\n\s*\/\* END::CURLINFO \*\/)/s', '$1'. ob_get_contents() .'$2',
-		file_get_contents("php_http_curl_client.c")));
+		file_get_contents("php_http_client_curl.c")));
 
 ?>
