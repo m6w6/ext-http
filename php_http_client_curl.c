@@ -194,7 +194,11 @@ static size_t php_http_curle_read_callback(void *data, size_t len, size_t n, voi
 	return 0;
 }
 
+#if PHP_HTTP_CURL_VERSION(7,32,0)
+static int php_http_curle_xferinfo_callback(void *ctx, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
+#else
 static int php_http_curle_progress_callback(void *ctx, double dltotal, double dlnow, double ultotal, double ulnow)
+#endif
 {
 	php_http_client_curl_handler_t *h = ctx;
 	zend_bool update = 0;
@@ -1507,9 +1511,14 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, php_http_curle_raw_callback);
 	curl_easy_setopt(handle, CURLOPT_READFUNCTION, php_http_curle_read_callback);
 	curl_easy_setopt(handle, CURLOPT_IOCTLFUNCTION, php_http_curle_ioctl_callback);
+#if PHP_HTTP_CURL_VERSION(7,32,0)
+	curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, php_http_curle_xferinfo_callback);
+	curl_easy_setopt(handle, CURLOPT_XFERINFODATA, handler);
+#else
 	curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, php_http_curle_progress_callback);
-	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, handler);
 	curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, handler);
+#endif
+	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, handler);
 
 	php_http_client_curl_handler_reset(handler);
 
@@ -1620,7 +1629,11 @@ static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *ha
 	TSRMLS_FETCH_FROM_CTX(handler->client->ts);
 
 	curl_easy_setopt(handler->handle, CURLOPT_NOPROGRESS, 1L);
+#if PHP_HTTP_CURL_VERSION(7,32,0)
+	curl_easy_setopt(handler->handle, CURLOPT_XFERINFOFUNCTION, NULL);
+#else
 	curl_easy_setopt(handler->handle, CURLOPT_PROGRESSFUNCTION, NULL);
+#endif
 	curl_easy_setopt(handler->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(handler->handle, CURLOPT_DEBUGFUNCTION, NULL);
 
