@@ -353,6 +353,8 @@ dnl ----
 			AC_DEFINE([PHP_HTTP_HAVE_PHP_RAPHF_H], [1], [Have ext/raphf support])
 			PHP_ADD_INCLUDE([$HTTP_EXT_RAPHF_INCDIR])
 		fi
+	], [
+		AC_MSG_ERROR([Please install pecl/raphf])
 	])
 
 dnl ----
@@ -379,6 +381,8 @@ dnl ----
 			AC_DEFINE([PHP_HTTP_HAVE_PHP_PROPRO_H], [1], [Have ext/propro support])
 			PHP_ADD_INCLUDE([$HTTP_EXT_PROPRO_INCDIR])
 		fi
+	], [
+		AC_MSG_ERROR([Please install pecl/propro])
 	])
 
 PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
