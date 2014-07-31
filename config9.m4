@@ -193,6 +193,7 @@ dnl ----
 		
 			AC_MSG_CHECKING([for SSL support in libcurl])
 			CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
+			CURL_SSL_LIBS=()
 			if test "$CURL_SSL" = "SSL"; then
 				AC_MSG_RESULT([yes])
 				AC_DEFINE([PHP_HTTP_HAVE_SSL], [1], [ ])
@@ -211,9 +212,11 @@ dnl ----
 					}
 				], [
 					AC_MSG_RESULT([yes])
-					AC_CHECK_HEADER([openssl/crypto.h], [
-						AC_DEFINE([PHP_HTTP_HAVE_OPENSSL], [1], [ ])
-						CURL_SSL="crypto"
+					AC_CHECK_HEADER([openssl/ssl.h], [
+						AC_CHECK_HEADER([openssl/crypto.h], [
+							AC_DEFINE([PHP_HTTP_HAVE_OPENSSL], [1], [ ])
+							CURL_SSL_LIBS=(ssl crypto)
+						])
 					])
 				], [
 					AC_MSG_RESULT([no])
@@ -235,9 +238,11 @@ dnl ----
 					}
 				], [
 					AC_MSG_RESULT([yes])
-					AC_CHECK_HEADER([gcrypt.h], [
-						AC_DEFINE([PHP_HTTP_HAVE_GNUTLS], [1], [ ])
-						CURL_SSL="gcrypt"
+					AC_CHECK_HEADER([gnutls.h], [
+						AC_CHECK_HEADER([gcrypt.h], [
+							AC_DEFINE([PHP_HTTP_HAVE_GNUTLS], [1], [ ])
+							CURL_SSL_LIBS=(gnutls gcrypt)
+						])
 					])
 				], [
 					AC_MSG_RESULT([no])
@@ -252,12 +257,16 @@ dnl ----
 			LIBS="$save_LIBS"
 			CFLAGS="$save_CFLAGS"
 			LDFLAGS="$save_LDFLAGS"
-		
+			
+			for CURL_SSL_LIB in "${CURL_SSL_LIBS[[@]]}"; do
+				PHP_ADD_LIBRARY_WITH_PATH([$CURL_SSL_LIB], $CURL_DIR/$PHP_LIBDIR, PHP_HTTP_SHARED_LIBADD)
+			done
+			
 			dnl end compile tests
 		
 			AC_MSG_CHECKING([for bundled SSL CA info])
 			CURL_CAINFO=
-			for i in `$CURL_CONFIG --ca` "/etc/ssl/certs/ca-certificates.crt"; do
+			for i in `$CURL_CONFIG --ca` "/etc/ssl/certs/ca-certificates.crt" "/etc/ssl/certs/ca-bundle.crt"; do
 				if test -f "$i"; then
 					CURL_CAINFO="$i"
 					break
@@ -273,9 +282,6 @@ dnl ----
 			PHP_ADD_INCLUDE($CURL_DIR/include)
 			PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 			PHP_EVAL_LIBLINE(`$CURL_CONFIG --libs`, HTTP_SHARED_LIBADD)
-			if test "x$CURL_SSL" != "x"; then
-				PHP_ADD_LIBRARY_WITH_PATH([$CURL_SSL], $CURL_DIR/$PHP_LIBDIR, PHP_HTTP_SHARED_LIBADD)
-			fi
 			AC_DEFINE([PHP_HTTP_HAVE_CURL], [1], [Have libcurl support])
 			HTTP_HAVE_A_REQUEST_LIB=true
 		fi
