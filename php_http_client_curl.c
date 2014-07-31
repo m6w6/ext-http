@@ -36,6 +36,13 @@
 #	endif
 #endif
 
+#ifdef PHP_HTTP_HAVE_OPENSSL
+#	include <openssl/ssl.h>
+#endif
+#ifdef PHP_HTTP_HAVE_GNUTLS
+#	include <gnutls.h>
+#endif
+
 typedef struct php_http_client_curl {
 	CURLM *handle;
 
@@ -473,6 +480,87 @@ static STATUS php_http_curle_get_info(CURL *ch, HashTable *info)
 #endif
 
 	/* END::CURLINFO */
+
+#if PHP_HTTP_CURL_VERSION(7,34,0)
+	{
+		int i;
+		zval *ti_array;
+		struct curl_tlssessioninfo *ti;
+
+		if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TLS_SESSION, &ti)) {
+			const char *backend;
+
+			MAKE_STD_ZVAL(subarray);
+			ZVAL_NULL(subarray);
+			MAKE_STD_ZVAL(ti_array);
+			array_init(ti_array);
+
+			switch (ti->backend) {
+			case CURLSSLBACKEND_NONE:
+				backend = "none";
+				break;
+			case CURLSSLBACKEND_OPENSSL:
+				backend = "openssl";
+#ifdef PHP_HTTP_HAVE_OPENSSL
+				{
+					SSL_CTX *ctx = ti->internals;
+
+					array_init(subarray);
+					add_assoc_long_ex(subarray, ZEND_STRS("number"), SSL_CTX_sess_number(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("connect"), SSL_CTX_sess_connect(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("connect_good"), SSL_CTX_sess_connect_good(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("connect_renegotiate"), SSL_CTX_sess_connect_renegotiate(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("hits"), SSL_CTX_sess_hits(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("cache_full"), SSL_CTX_sess_cache_full(ctx));
+				}
+#endif
+				break;
+			case CURLSSLBACKEND_GNUTLS:
+				backend = "gnutls";
+#ifdef PHP_HTTP_HAVE_GNUTLS
+				{
+					gnutls_session_t sess = ti->internals;
+					char *desc;
+
+					array_init(subarray);
+					if ((desc = gnutls_session_get_desc(sess))) {
+						add_assoc_string_ex(subarray, ZEND_STRS("desc"), desc, 1);
+						gnutls_free(desc);
+					}
+					add_assoc_bool_ex(subarray, ZEND_STRS("resumed"), gnutls_session_is_resumed(sess));
+				}
+#endif
+				break;
+			case CURLSSLBACKEND_NSS:
+				backend = "nss";
+				break;
+			case CURLSSLBACKEND_QSOSSL:
+				backend = "qsossl";
+				break;
+			case CURLSSLBACKEND_GSKIT:
+				backend = "gskit";
+				break;
+			case CURLSSLBACKEND_POLARSSL:
+				backend = "polarssl";
+				break;
+			case CURLSSLBACKEND_CYASSL:
+				backend = "cyassl";
+				break;
+			case CURLSSLBACKEND_SCHANNEL:
+				backend = "schannel";
+				break;
+			case CURLSSLBACKEND_DARWINSSL:
+				backend = "darwinssl";
+				break;
+			default:
+				backend = "unknown";
+			}
+			add_assoc_string_ex(ti_array, ZEND_STRS("backend"), estrdup(backend), 0);
+			add_assoc_zval_ex(ti_array, ZEND_STRS("internals"), subarray);
+			add_assoc_zval_ex(&array, "tls_session", sizeof("tls_session"), ti_array);
+		}
+	}
+#endif
 
 #if PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)
 	{
