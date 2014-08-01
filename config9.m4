@@ -331,7 +331,7 @@ dnl ----
 			AC_MSG_CHECKING([for libevent version, roughly])
 			
 			if test -f "$EVENT_DIR/include/event2/event.h"; then
-				EVENT_VER="`$EGREP _EVENT_VERSION $EVENT_DIR/include/event2/event-config.h | $AWK '{print $3}'`"
+				EVENT_VER="`$AWK '/_EVENT_VERSION/ {gsub(/\"/,\"\",$3); print $3}' < $EVENT_DIR/include/event2/event-config.h`"
 				AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [1], [ ])
 			else
 				AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [0], [ ])
