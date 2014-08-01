@@ -815,19 +815,20 @@ static STATUS php_http_curle_option_set_cookiestore(php_http_option_t *opt, zval
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
+	php_http_curle_storage_t *storage = php_http_curle_get_storage(curl->handle);
 
-	if (val) {
-		php_http_curle_storage_t *storage = php_http_curle_get_storage(curl->handle);
-
-		if (storage->cookiestore) {
-			pefree(storage->cookiestore, 1);
-		}
+	if (storage->cookiestore) {
+		pefree(storage->cookiestore, 1);
+	}
+	if (val && Z_STRLEN_P(val)) {
 		storage->cookiestore = pestrndup(Z_STRVAL_P(val), Z_STRLEN_P(val), 1);
-		if (	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEFILE, storage->cookiestore)
-			||	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEJAR, storage->cookiestore)
-		) {
-			return FAILURE;
-		}
+	} else {
+		storage->cookiestore = NULL;
+	}
+	if (	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEFILE, storage->cookiestore)
+		||	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEJAR, storage->cookiestore)
+	) {
+		return FAILURE;
 	}
 	return SUCCESS;
 }
@@ -869,6 +870,11 @@ static STATUS php_http_curle_option_set_cookies(php_http_option_t *opt, zval *va
 					return FAILURE;
 				}
 			}
+		}
+	} else {
+		php_http_buffer_reset(&curl->options.cookies);
+		if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIE, NULL)) {
+			return FAILURE;
 		}
 	}
 	return SUCCESS;
