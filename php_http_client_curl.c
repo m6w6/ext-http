@@ -799,7 +799,6 @@ static php_http_options_t php_http_curle_options;
 #define PHP_HTTP_CURLE_OPTION_CHECK_STRLEN		0x0001
 #define PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR		0x0002
 #define PHP_HTTP_CURLE_OPTION_TRANSFORM_MS		0x0004
-#define PHP_HTTP_CURLE_OPTION_TRANSFORM_NULLS	0x0006
 
 static STATUS php_http_curle_option_set_ssl_verifyhost(php_http_option_t *opt, zval *val, void *userdata)
 {
