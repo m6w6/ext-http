@@ -37,19 +37,26 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-07-11</date>
+ <date>2014-08-01</date>
  <version>
-  <release>2.1.0</release>
-  <api>2.0.0</api>
+  <release>2.1.0RC1</release>
+  <api>2.1.0</api>
  </version>
  <stability>
-  <release>stable</release>
+  <release>beta</release>
   <api>stable</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
 + Added RFC5987 support in http\Params
 + Improved synthetic HTTP message parsing performace for ~20%
++ Added request options if libcurl has builtin c-ares support:
+  dns_interface, dns_local_ip4, dns_local_ip6 (all libcurl >= 7.33.0)
++ Added request options:
+  expect_100_timeout (libcurl >= 7.36.0)
+  tcp_nodelay
++ Added transfer info:
+  tls_session (libcurl >= 7.34.0), only available during transfer
 ]]></notes>
  <contents>
   <dir name="/">
