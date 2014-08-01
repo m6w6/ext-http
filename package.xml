@@ -48,6 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
+* Fixed bug #67733 (Compile error with libevent 2.x)
 + Added RFC5987 support in http\Params
 + Improved synthetic HTTP message parsing performace for ~20%
 + Added request options if libcurl has builtin c-ares support:
