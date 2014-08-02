@@ -9,6 +9,8 @@ b=c
 HTTP_X_TEST=test
 --COOKIE--
 foo=bar
+--INI--
+always_populate_raw_post_data=-1
 --FILE--
 <?php
 echo "Test\n";
