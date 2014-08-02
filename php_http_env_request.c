@@ -96,7 +96,11 @@ static int grab_files(void *zpp TSRMLS_DC, int argc, va_list argv, zend_hash_key
 				add_assoc_zval_ex(cpy, ZEND_STRS("file"), *tmp);
 				zend_hash_del_key_or_index(Z_ARRVAL_P(cpy), ZEND_STRS("tmp_name"), 0, HASH_DEL_KEY);
 			}
-			zend_hash_quick_update(Z_ARRVAL_P(zfiles), key->arKey, key->nKeyLength, key->h, (void *) &cpy, sizeof(zval *), NULL);
+			if (key->nKeyLength > 0) {
+				zend_hash_quick_update(Z_ARRVAL_P(zfiles), key->arKey, key->nKeyLength, key->h, (void *) &cpy, sizeof(zval *), NULL);
+			} else {
+				zend_hash_index_update(Z_ARRVAL_P(zfiles), key->h, (void *) &cpy, sizeof(zval *), NULL);
+			}
 		}
 	}
 

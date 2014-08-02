@@ -1,7 +1,9 @@
 --TEST--
 ranges
 --SKIPIF--
-<? include "skipif.php";
+<?php
+include "skipif.inc";
+?>
 --GET--
 a=b
 --ENV--

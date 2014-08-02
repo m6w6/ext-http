@@ -217,7 +217,9 @@ static size_t output(void *context, char *buf, size_t len TSRMLS_DC)
 {
 	php_http_env_response_t *r = context;
 
-	r->ops->write(r, buf, len);
+	if (SUCCESS != r->ops->write(r, buf, len)) {
+		return (size_t) -1;
+	}
 
 	/*	we really only need to flush when throttling is enabled,
 		because we push the data as fast as possible anyway if not */
@@ -231,7 +233,7 @@ static size_t output(void *context, char *buf, size_t len TSRMLS_DC)
 #define php_http_env_response_send_done(r) php_http_env_response_send_data((r), NULL, 0)
 static STATUS php_http_env_response_send_data(php_http_env_response_t *r, const char *buf, size_t len)
 {
-	size_t chunk = r->throttle.chunk ? r->throttle.chunk : PHP_HTTP_SENDBUF_SIZE;
+	size_t chunks_sent, chunk = r->throttle.chunk ? r->throttle.chunk : PHP_HTTP_SENDBUF_SIZE;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	if (r->content.encoder) {
@@ -248,15 +250,16 @@ static STATUS php_http_env_response_send_data(php_http_env_response_t *r, const 
 			}
 		}
 
-		if (enc_str) {
-			php_http_buffer_chunked_output(&r->buffer, enc_str, enc_len, buf ? chunk : 0, output, r TSRMLS_CC);
-			STR_FREE(enc_str);
+		if (!enc_str) {
+			return SUCCESS;
 		}
+		chunks_sent = php_http_buffer_chunked_output(&r->buffer, enc_str, enc_len, buf ? chunk : 0, output, r TSRMLS_CC);
+		STR_FREE(enc_str);
 	} else {
-		php_http_buffer_chunked_output(&r->buffer, buf, len, buf ? chunk : 0, output, r TSRMLS_CC);
+		chunks_sent = php_http_buffer_chunked_output(&r->buffer, buf, len, buf ? chunk : 0, output, r TSRMLS_CC);
 	}
 
-	return SUCCESS;
+	return chunks_sent != (size_t) -1 ? SUCCESS : FAILURE;
 }
 
 php_http_env_response_t *php_http_env_response_init(php_http_env_response_t *r, zval *options, php_http_env_response_ops_t *ops, void *init_arg TSRMLS_DC)
@@ -996,7 +999,9 @@ static STATUS php_http_env_response_stream_write(php_http_env_response_t *r, con
 		}
 	}
 
-	php_stream_write(stream_ctx->stream, data_str, data_len);
+	if (data_len != php_stream_write(stream_ctx->stream, data_str, data_len)) {
+		return FAILURE;
+	}
 
 	return SUCCESS;
 }

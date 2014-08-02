@@ -3,6 +3,7 @@ client history
 --SKIPIF--
 <?php 
 include "skipif.inc";
+skip_online_test();
 ?>
 --FILE--
 <?php 
@@ -40,12 +41,12 @@ X-Original-Content-Length: 6
 
 foobar
 HTTP/1.1 200 OK
+Vary: %s
+Content-Type: text/html
 Date: %s
 Server: %s
-Vary: %s
+X-Original-Transfer-Encoding: chunked
 Content-Length: 19
-Content-Type: text/html
-X-Original-Content-Length: 19
 
 string(6) "foobar"
 
@@ -59,12 +60,12 @@ X-Original-Content-Length: 6
 
 foobar
 HTTP/1.1 200 OK
+Vary: %s
+Content-Type: text/html
 Date: %s
 Server: %s
-Vary: %s
+X-Original-Transfer-Encoding: chunked
 Content-Length: 19
-Content-Type: text/html
-X-Original-Content-Length: 19
 
 string(6) "foobar"
 
@@ -78,12 +79,12 @@ X-Original-Content-Length: 6
 
 foobar
 HTTP/1.1 200 OK
+Vary: %s
+Content-Type: text/html
 Date: %s
 Server: %s
-Vary: %s
+X-Original-Transfer-Encoding: chunked
 Content-Length: 19
-Content-Type: text/html
-X-Original-Content-Length: 19
 
 string(6) "foobar"
 

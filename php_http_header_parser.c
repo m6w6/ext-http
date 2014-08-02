@@ -44,10 +44,13 @@ php_http_header_parser_state_t php_http_header_parser_state_push(php_http_header
 	unsigned i;
 	php_http_header_parser_state_t state = 0;
 
+	/* short circuit */
+	ZEND_PTR_STACK_RESIZE_IF_NEEDED((&parser->stack), argc);
+
 	va_start(va_args, argc);
 	for (i = 0; i < argc; ++i) {
 		state = va_arg(va_args, php_http_header_parser_state_t);
-		zend_stack_push(&parser->stack, &state, sizeof(state));
+		zend_ptr_stack_push(&parser->stack, (void *) state);
 	}
 	va_end(va_args);
 
@@ -56,28 +59,27 @@ php_http_header_parser_state_t php_http_header_parser_state_push(php_http_header
 
 php_http_header_parser_state_t php_http_header_parser_state_is(php_http_header_parser_t *parser)
 {
-	php_http_header_parser_state_t *state;
+	php_http_header_parser_state_t state;
 
-	if (SUCCESS == zend_stack_top(&parser->stack, (void *) &state)) {
-		return *state;
+	if (parser->stack.top) {
+		return (php_http_header_parser_state_t) zend_ptr_stack_top(&parser->stack);
 	}
+
 	return PHP_HTTP_HEADER_PARSER_STATE_START;
 }
 
 php_http_header_parser_state_t php_http_header_parser_state_pop(php_http_header_parser_t *parser)
 {
-	php_http_header_parser_state_t state, *state_ptr;
-	if (SUCCESS == zend_stack_top(&parser->stack, (void *) &state_ptr)) {
-		state = *state_ptr;
-		zend_stack_del_top(&parser->stack);
-		return state;
+	if (parser->stack.top) {
+		return (php_http_header_parser_state_t) zend_ptr_stack_pop(&parser->stack);
 	}
+
 	return PHP_HTTP_HEADER_PARSER_STATE_START;
 }
 
 void php_http_header_parser_dtor(php_http_header_parser_t *parser)
 {
-	zend_stack_destroy(&parser->stack);
+	zend_ptr_stack_destroy(&parser->stack);
 	php_http_info_dtor(&parser->info);
 	STR_FREE(parser->_key.str);
 	STR_FREE(parser->_val.str);

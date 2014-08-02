@@ -187,13 +187,13 @@ dnl ----
 			save_LIBS="$LIBS"
 			LIBS=
 			save_CFLAGS="$CFLAGS"
-			CFLAGS=`$CURL_CONFIG --cflags`
+			CFLAGS="$CFLAGS `$CURL_CONFIG --cflags`"
 			save_LDFLAGS="$LDFLAGS"
-			LDFLAGS=`$CURL_CONFIG --libs`
-			LDFLAGS="$LDFLAGS $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
+			LDFLAGS="$LDFLAGS `$CURL_CONFIG --libs` $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
 		
 			AC_MSG_CHECKING([for SSL support in libcurl])
 			CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
+			CURL_SSL_LIBS=()
 			if test "$CURL_SSL" = "SSL"; then
 				AC_MSG_RESULT([yes])
 				AC_DEFINE([PHP_HTTP_HAVE_SSL], [1], [ ])
@@ -212,9 +212,11 @@ dnl ----
 					}
 				], [
 					AC_MSG_RESULT([yes])
-					AC_CHECK_HEADER([openssl/crypto.h], [
-						AC_DEFINE([PHP_HTTP_HAVE_OPENSSL], [1], [ ])
-						CURL_SSL="crypto"
+					AC_CHECK_HEADER([openssl/ssl.h], [
+						AC_CHECK_HEADER([openssl/crypto.h], [
+							AC_DEFINE([PHP_HTTP_HAVE_OPENSSL], [1], [ ])
+							CURL_SSL_LIBS=(ssl crypto)
+						])
 					])
 				], [
 					AC_MSG_RESULT([no])
@@ -236,9 +238,11 @@ dnl ----
 					}
 				], [
 					AC_MSG_RESULT([yes])
-					AC_CHECK_HEADER([gcrypt.h], [
-						AC_DEFINE([PHP_HTTP_HAVE_GNUTLS], [1], [ ])
-						CURL_SSL="gcrypt"
+					AC_CHECK_HEADER([gnutls.h], [
+						AC_CHECK_HEADER([gcrypt.h], [
+							AC_DEFINE([PHP_HTTP_HAVE_GNUTLS], [1], [ ])
+							CURL_SSL_LIBS=(gnutls gcrypt)
+						])
 					])
 				], [
 					AC_MSG_RESULT([no])
@@ -248,17 +252,40 @@ dnl ----
 			else
 				AC_MSG_RESULT([no])
 			fi
+			
+			AC_MSG_CHECKING([for ares support in libcurl])
+			AC_TRY_RUN([
+				#include <curl/curl.h>
+				int main(int argc, char *argv[]) {
+					curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
+					if (data && data->ares && data->ares_num0) {
+						return 0;
+					}
+					return 1;
+				}
+			], [
+				AC_MSG_RESULT([yes])
+				AC_DEFINE([PHP_HTTP_HAVE_ARES], [1], [ ])
+			], [
+				AC_MSG_RESULT([no])
+			], [
+				AC_MSG_RESULT([no])
+			])
 		
 			INCLUDES="$save_INCLUDES"
 			LIBS="$save_LIBS"
 			CFLAGS="$save_CFLAGS"
 			LDFLAGS="$save_LDFLAGS"
-		
+			
+			for CURL_SSL_LIB in "${CURL_SSL_LIBS[[@]]}"; do
+				PHP_ADD_LIBRARY_WITH_PATH([$CURL_SSL_LIB], $CURL_DIR/$PHP_LIBDIR, PHP_HTTP_SHARED_LIBADD)
+			done
+			
 			dnl end compile tests
 		
 			AC_MSG_CHECKING([for bundled SSL CA info])
 			CURL_CAINFO=
-			for i in `$CURL_CONFIG --ca` "/etc/ssl/certs/ca-certificates.crt"; do
+			for i in `$CURL_CONFIG --ca` "/etc/ssl/certs/ca-certificates.crt" "/etc/ssl/certs/ca-bundle.crt"; do
 				if test -f "$i"; then
 					CURL_CAINFO="$i"
 					break
@@ -274,9 +301,6 @@ dnl ----
 			PHP_ADD_INCLUDE($CURL_DIR/include)
 			PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 			PHP_EVAL_LIBLINE(`$CURL_CONFIG --libs`, HTTP_SHARED_LIBADD)
-			if test "x$CURL_SSL" != "x"; then
-				PHP_ADD_LIBRARY_WITH_PATH([$CURL_SSL], $CURL_DIR/$PHP_LIBDIR, PHP_HTTP_SHARED_LIBADD)
-			fi
 			AC_DEFINE([PHP_HTTP_HAVE_CURL], [1], [Have libcurl support])
 			HTTP_HAVE_A_REQUEST_LIB=true
 		fi
@@ -307,7 +331,7 @@ dnl ----
 			AC_MSG_CHECKING([for libevent version, roughly])
 			
 			if test -f "$EVENT_DIR/include/event2/event.h"; then
-				EVENT_VER="`$EGREP _EVENT_VERSION $EVENT_DIR/include/event2/event-config.h | $AWK '{print $3}'`"
+				EVENT_VER="`$AWK '/_EVENT_VERSION/ {gsub(/\"/,\"\",$3); print $3}' < $EVENT_DIR/include/event2/event-config.h`"
 				AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [1], [ ])
 			else
 				AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [0], [ ])
@@ -354,6 +378,8 @@ dnl ----
 			AC_DEFINE([PHP_HTTP_HAVE_PHP_RAPHF_H], [1], [Have ext/raphf support])
 			PHP_ADD_INCLUDE([$HTTP_EXT_RAPHF_INCDIR])
 		fi
+	], [
+		AC_MSG_ERROR([Please install pecl/raphf])
 	])
 
 dnl ----
@@ -380,6 +406,8 @@ dnl ----
 			AC_DEFINE([PHP_HTTP_HAVE_PHP_PROPRO_H], [1], [Have ext/propro support])
 			PHP_ADD_INCLUDE([$HTTP_EXT_PROPRO_INCDIR])
 		fi
+	], [
+		AC_MSG_ERROR([Please install pecl/propro])
 	])
 
 PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],

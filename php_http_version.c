@@ -27,19 +27,37 @@ php_http_version_t *php_http_version_init(php_http_version_t *v, unsigned major,
 php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *str TSRMLS_DC)
 {
 	php_http_version_t tmp;
-	char separator = 0;
+	char separator = 0, *stop = NULL;
+	register const char *ptr = str;
 
-	if (3 != sscanf(str, "HTTP/%u%c%u", &tmp.major, &separator, &tmp.minor)
-	&&	3 != sscanf(str, "%u%c%u", &tmp.major, &separator, &tmp.minor)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP protocol version '%s'", str);
-		return NULL;
+	switch (*ptr) {
+	case 'h':
+	case 'H':
+		++ptr; if (*ptr != 't' && *ptr != 'T') break;
+		++ptr; if (*ptr != 't' && *ptr != 'T') break;
+		++ptr; if (*ptr != 'p' && *ptr != 'P') break;
+		++ptr; if (*ptr != '/') break;
+		++ptr;
+		/* no break */
+	default:
+		tmp.major = strtol(ptr, &stop, 10);
+		if (stop && stop != ptr && tmp.major != LONG_MIN && tmp.major != LONG_MAX) {
+			separator = *stop;
+			if (separator) {
+				if (separator != '.' && separator != ',') {
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Non-standard version separator '%c' in HTTP protocol version '%s'", separator, ptr);
+				}
+				ptr = stop + 1;
+				tmp.minor = strtol(ptr, &stop, 10);
+				if (tmp.minor != LONG_MIN && tmp.minor != LONG_MAX) {
+					return php_http_version_init(v, tmp.major, tmp.minor TSRMLS_CC);
+				}
+			}
+		}
 	}
 
-	if (separator && separator != '.' && separator != ',') {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Non-standard version separator '%c' in HTTP protocol version '%s'", separator, str);
-	}
-
-	return php_http_version_init(v, tmp.major, tmp.minor TSRMLS_CC);
+	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP protocol version '%s'", str);
+	return NULL;
 }
 
 void php_http_version_to_string(php_http_version_t *v, char **str, size_t *len, const char *pre, const char *post TSRMLS_DC)

@@ -61,7 +61,8 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 			result = !strcasecmp(haystack_str, needle_str);
 		}
 	} else {
-		char *found, *haystack = estrdup(haystack_str), *needle = estrdup(needle_str);
+		const char *found;
+		char *haystack = estrdup(haystack_str), *needle = estrdup(needle_str);
 
 		if (flags & PHP_HTTP_MATCH_CASE) {
 			found = zend_memnstr(haystack, needle, strlen(needle), haystack+strlen(haystack));
@@ -86,16 +87,16 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 	return result;
 }
 
-char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
+char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
-	size_t i;
+	size_t i = 1;
 	int wasalpha;
 
 	if (key && key_len) {
 		if ((wasalpha = PHP_HTTP_IS_CTYPE(alpha, key[0]))) {
 			key[0] = (char) (uctitle ? PHP_HTTP_TO_CTYPE(upper, key[0]) : PHP_HTTP_TO_CTYPE(lower, key[0]));
 		}
-		for (i = 1; i < key_len; i++) {
+		PHP_HTTP_DUFF(1, key_len,
 			if (PHP_HTTP_IS_CTYPE(alpha, key[i])) {
 				key[i] = (char) (((!wasalpha) && uctitle) ? PHP_HTTP_TO_CTYPE(upper, key[i]) : PHP_HTTP_TO_CTYPE(lower, key[i]));
 				wasalpha = 1;
@@ -105,7 +106,8 @@ char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_boo
 				}
 				wasalpha = 0;
 			}
-		}
+			++i;
+		);
 	}
 	return key;
 }
@@ -165,12 +167,19 @@ unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...)
 	return argl;
 }
 
+void php_http_array_copy_strings(void *zpp)
+{
+	zval **zvpp = ((zval **) zpp);
+
+	*zvpp = php_http_zsep(1, IS_STRING, *zvpp);
+}
+
 int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	int flags;
 	char *key = NULL;
 	HashTable *dst;
-	zval **data = NULL, **value = (zval **) pDest;
+	zval **data = NULL, *value = *((zval **) pDest);
 
 	dst = va_arg(args, HashTable *);
 	flags = va_arg(args, int);
@@ -183,16 +192,21 @@ int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_lis
 			zend_hash_quick_find(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) &data);
 		}
 
-		Z_ADDREF_P(*value);
+		if (flags & ARRAY_JOIN_STRINGIFY) {
+			value = php_http_zsep(1, IS_STRING, value);
+		} else {
+			Z_ADDREF_P(value);
+		}
+
 		if (data) {
 			if (Z_TYPE_PP(data) != IS_ARRAY) {
 				convert_to_array(*data);
 			}
-			add_next_index_zval(*data, *value);
+			add_next_index_zval(*data, value);
 		} else if (key) {
-			zend_symtable_update(dst, key, hash_key->nKeyLength, value, sizeof(zval *), NULL);
+			zend_symtable_update(dst, key, hash_key->nKeyLength, &value, sizeof(zval *), NULL);
 		} else {
-			zend_hash_quick_add(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, value, sizeof(zval *), NULL);
+			zend_hash_quick_add(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, &value, sizeof(zval *), NULL);
 		}
 
 		if (key) {
@@ -208,19 +222,24 @@ int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list
 	int flags;
 	char *key = NULL;
 	HashTable *dst;
-	zval **value = (zval **) pDest;
+	zval *value = *((zval **) pDest);
 
 	dst = va_arg(args, HashTable *);
 	flags = va_arg(args, int);
 
 	if ((!(flags & ARRAY_JOIN_STRONLY)) || hash_key->nKeyLength) {
-		Z_ADDREF_P(*value);
+		if (flags & ARRAY_JOIN_STRINGIFY) {
+			value = php_http_zsep(1, IS_STRING, value);
+		} else {
+			Z_ADDREF_P(value);
+		}
+
 		if ((flags & ARRAY_JOIN_PRETTIFY) && hash_key->nKeyLength) {
 			key = php_http_pretty_key(estrndup(hash_key->arKey, hash_key->nKeyLength - 1), hash_key->nKeyLength - 1, 1, 1);
-			zend_hash_update(dst, key, hash_key->nKeyLength, (void *) value, sizeof(zval *), NULL);
+			zend_hash_update(dst, key, hash_key->nKeyLength, (void *) &value, sizeof(zval *), NULL);
 			efree(key);
 		} else {
-			zend_hash_quick_update(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) value, sizeof(zval *), NULL);
+			zend_hash_quick_update(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) &value, sizeof(zval *), NULL);
 		}
 	}
 

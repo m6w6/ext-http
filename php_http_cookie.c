@@ -526,7 +526,7 @@ static PHP_METHOD(HttpCookie, setCookies)
 
 	zend_hash_clean(&obj->list->cookies);
 	if (cookies) {
-		array_copy(cookies, &obj->list->cookies);
+		array_copy_strings(cookies, &obj->list->cookies);
 	}
 
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -546,7 +546,7 @@ static PHP_METHOD(HttpCookie, addCookies)
 
 	PHP_HTTP_COOKIE_OBJECT_INIT(obj);
 
-	array_join(cookies, &obj->list->cookies, 1, ARRAY_JOIN_STRONLY);
+	array_join(cookies, &obj->list->cookies, 1, ARRAY_JOIN_STRONLY|ARRAY_JOIN_STRINGIFY);
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -585,7 +585,7 @@ static PHP_METHOD(HttpCookie, setExtras)
 
 	zend_hash_clean(&obj->list->extras);
 	if (extras) {
-		array_copy(extras, &obj->list->extras);
+		array_copy_strings(extras, &obj->list->extras);
 	}
 
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -605,7 +605,7 @@ static PHP_METHOD(HttpCookie, addExtras)
 
 	PHP_HTTP_COOKIE_OBJECT_INIT(obj);
 
-	array_join(extras, &obj->list->extras, 1, ARRAY_JOIN_STRONLY);
+	array_join(extras, &obj->list->extras, 1, ARRAY_JOIN_STRONLY|ARRAY_JOIN_STRINGIFY);
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }

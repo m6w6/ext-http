@@ -377,6 +377,7 @@ static void handle_history(zval *zclient, php_http_message_t *request, php_http_
 
 static STATUS handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **request, php_http_message_t **response)
 {
+	zend_bool dequeue = 0;
 	zval zclient;
 	php_http_message_t *msg;
 	php_http_client_progress_state_t *progress;
@@ -390,7 +391,10 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 		zval *info, *zresponse, *zrequest;
 		HashTable *info_ht;
 
-		if (i_zend_is_true(zend_read_property(php_http_client_class_entry, &zclient, ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
+		/* ensure the message is of type response (could be uninitialized in case of early error, like DNS) */
+		php_http_message_set_type(msg, PHP_HTTP_RESPONSE);
+
+		if (z_is_true(zend_read_property(php_http_client_class_entry, &zclient, ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
 			handle_history(&zclient, *request, *response TSRMLS_CC);
 		}
 
@@ -427,8 +431,8 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 			zend_fcall_info_argn(&e->closure.fci TSRMLS_CC, 0);
 
 			if (retval) {
-				if (Z_TYPE_P(retval) == IS_BOOL && Z_BVAL_P(retval)) {
-					php_http_client_dequeue(client, e->request);
+				if (Z_TYPE_P(retval) == IS_BOOL) {
+					dequeue = Z_BVAL_P(retval);
 				}
 				zval_ptr_dtor(&retval);
 			}
@@ -442,6 +446,10 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 		progress->info = "finished";
 		progress->finished = 1;
 		client->callback.progress.func(client->callback.progress.arg, client, e, progress);
+	}
+
+	if (dequeue) {
+		php_http_client_dequeue(client, e->request);
 	}
 
 	return SUCCESS;
@@ -720,7 +728,9 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_count, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, count)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
+	long count_mode = -1;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &count_mode)) {
 		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 		RETVAL_LONG(zend_llist_count(&obj->client->requests));

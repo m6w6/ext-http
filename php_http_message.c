@@ -149,7 +149,13 @@ php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *
 zval *php_http_message_header(php_http_message_t *msg, const char *key_str, size_t key_len, int join)
 {
 	zval *ret = NULL, **header;
-	char *key = php_http_pretty_key(estrndup(key_str, key_len), key_len, 1, 1);
+	char *key;
+	ALLOCA_FLAG(free_key);
+
+	key = do_alloca(key_len + 1, free_key);
+	memcpy(key, key_str, key_len);
+	key[key_len] = '\0';
+	php_http_pretty_key(key, key_len, 1, 1);
 
 	if (SUCCESS == zend_symtable_find(&msg->hdrs, key, key_len + 1, (void *) &header)) {
 		if (join && Z_TYPE_PP(header) == IS_ARRAY) {
@@ -162,7 +168,7 @@ zval *php_http_message_header(php_http_message_t *msg, const char *key_str, size
 		}
 	}
 
-	efree(key);
+	free_alloca(key, free_key);
 
 	return ret;
 }
@@ -300,6 +306,14 @@ void php_http_message_update_headers(php_http_message_t *msg)
 				zval_ptr_dtor(&h);
 			}
 		}
+	} else if ((h = php_http_message_header(msg, ZEND_STRL("Content-Length"), 1))) {
+		zval *h_cpy = php_http_ztyp(IS_LONG, h);
+
+		zval_ptr_dtor(&h);
+		if (Z_LVAL_P(h_cpy)) {
+			zend_hash_del(&msg->hdrs, "Content-Length", sizeof("Content-Length"));
+		}
+		zval_ptr_dtor(&h_cpy);
 	}
 }
 
@@ -764,7 +778,9 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 	}
 
 	body_obj = zend_object_store_get_object(zbody TSRMLS_CC);
-
+	if (!body_obj->body) {
+		body_obj->body = php_http_message_body_init(NULL, NULL TSRMLS_CC);
+	}
 	if (msg_obj->body) {
 		zend_objects_store_del_ref_by_handle(msg_obj->body->zv.handle TSRMLS_CC);
 	}
@@ -784,7 +800,7 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 
 STATUS php_http_message_object_init_body_object(php_http_message_object_t *obj)
 {
-	TSRMLS_FETCH_FROM_CTX(obj);
+	TSRMLS_FETCH_FROM_CTX(obj->message->ts);
 
 	php_http_message_body_addref(obj->message->body);
 	return php_http_new(NULL, php_http_message_body_class_entry, (php_http_new_t) php_http_message_body_object_new_ex, NULL, obj->message->body, (void *) &obj->body TSRMLS_CC);
@@ -1808,7 +1824,9 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_count, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, count)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
+	long count_mode = -1;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &count_mode)) {
 		long i = 0;
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 

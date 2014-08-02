@@ -54,7 +54,6 @@ php_http_message_parser_t *php_http_message_parser_init(php_http_message_parser_
 	TSRMLS_SET_CTX(parser->ts);
 
 	php_http_header_parser_init(&parser->header TSRMLS_CC);
-	zend_stack_init(&parser->stack);
 
 	return parser;
 }
@@ -65,10 +64,13 @@ php_http_message_parser_state_t php_http_message_parser_state_push(php_http_mess
 	va_list va_args;
 	unsigned i;
 
+	/* short circuit */
+	ZEND_PTR_STACK_RESIZE_IF_NEEDED((&parser->stack), argc);
+
 	va_start(va_args, argc);
 	for (i = 0; i < argc; ++i) {
 		state  = va_arg(va_args, php_http_message_parser_state_t);
-		zend_stack_push(&parser->stack, &state, sizeof(state));
+		zend_ptr_stack_push(&parser->stack, (void *) state);
 	}
 	va_end(va_args);
 
@@ -77,21 +79,16 @@ php_http_message_parser_state_t php_http_message_parser_state_push(php_http_mess
 
 php_http_message_parser_state_t php_http_message_parser_state_is(php_http_message_parser_t *parser)
 {
-	php_http_message_parser_state_t *state;
-
-	if (SUCCESS == zend_stack_top(&parser->stack, (void *) &state)) {
-		return *state;
+	if (parser->stack.top) {
+		return (php_http_message_parser_state_t) zend_ptr_stack_top(&parser->stack);
 	}
 	return PHP_HTTP_MESSAGE_PARSER_STATE_START;
 }
 
 php_http_message_parser_state_t php_http_message_parser_state_pop(php_http_message_parser_t *parser)
 {
-	php_http_message_parser_state_t state, *state_ptr;
-	if (SUCCESS == zend_stack_top(&parser->stack, (void *) &state_ptr)) {
-		state = *state_ptr;
-		zend_stack_del_top(&parser->stack);
-		return state;
+	if (parser->stack.top) {
+		return (php_http_message_parser_state_t) zend_ptr_stack_pop(&parser->stack);
 	}
 	return PHP_HTTP_MESSAGE_PARSER_STATE_START;
 }
@@ -99,7 +96,7 @@ php_http_message_parser_state_t php_http_message_parser_state_pop(php_http_messa
 void php_http_message_parser_dtor(php_http_message_parser_t *parser)
 {
 	php_http_header_parser_dtor(&parser->header);
-	zend_stack_destroy(&parser->stack);
+	zend_ptr_stack_destroy(&parser->stack);
 	if (parser->dechunk) {
 		php_http_encoding_stream_free(&parser->dechunk);
 	}

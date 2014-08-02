@@ -19,10 +19,12 @@ typedef struct php_http_params_token {
 } php_http_params_token_t;
 
 #define PHP_HTTP_PARAMS_RAW			0x00
-#define PHP_HTTP_PARAMS_DEFAULT		0x01
+#define PHP_HTTP_PARAMS_ESCAPED		0x01
 #define PHP_HTTP_PARAMS_URLENCODED	0x04
 #define PHP_HTTP_PARAMS_DIMENSION	0x08
+#define PHP_HTTP_PARAMS_RFC5987		0x10
 #define PHP_HTTP_PARAMS_QUERY		(PHP_HTTP_PARAMS_URLENCODED|PHP_HTTP_PARAMS_DIMENSION)
+#define PHP_HTTP_PARAMS_DEFAULT		(PHP_HTTP_PARAMS_ESCAPED|PHP_HTTP_PARAMS_RFC5987)
 
 typedef struct php_http_params_opts {
 	php_http_params_token_t input;

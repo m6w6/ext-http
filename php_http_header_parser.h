@@ -28,7 +28,7 @@ typedef enum php_http_header_parser_state {
 #define PHP_HTTP_HEADER_PARSER_CLEANUP 0x1
 
 typedef struct php_http_header_parser {
-	zend_stack stack;
+	zend_ptr_stack stack;
 	php_http_info_t info;
 	struct {
 		char *str;

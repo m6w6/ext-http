@@ -1,5 +1,9 @@
 --TEST--
 property proxy
+--SKIPIF--
+<?php
+include "skipif.inc";
+?>
 --FILE--
 <?php
 

@@ -3,6 +3,7 @@ client once & wait
 --SKIPIF--
 <?php
 include "skipif.inc";
+skip_online_test();
 ?>
 --FILE--
 <?php

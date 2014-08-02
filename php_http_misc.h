@@ -60,25 +60,51 @@ PHP_HTTP_API void php_http_sleep(double s);
 #define PHP_HTTP_MATCH_STRICT	(PHP_HTTP_MATCH_CASE|PHP_HTTP_MATCH_FULL)
 
 int php_http_match(const char *haystack, const char *needle, int flags);
-char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
+char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen);
 size_t php_http_boundary(char *buf, size_t len TSRMLS_DC);
 int php_http_select_str(const char *cmp, int argc, ...);
 
-static inline const char *php_http_locate_str(const char *h, size_t h_len, const char *n, size_t n_len)
-{
-	const char *p, *e;
+/* See "A Reusable Duff Device" By Ralf Holly, August 01, 2005 */
+#define PHP_HTTP_DUFF_BREAK(i) do { \
+	times_##i = 1; \
+} while (0)
 
-	if (n_len && h_len) {
-		e = h + h_len;
-		do {
+#define PHP_HTTP_DUFF(i, c, a) do { \
+		size_t count_##i = (c); \
+		size_t times_##i = (count_##i + 7) >> 3; \
+		switch (count_##i & 7){ \
+		case 0: do { a; \
+		case 7: a; \
+		case 6: a; \
+		case 5: a; \
+		case 4: a; \
+		case 3: a; \
+		case 2: a; \
+		case 1: a; \
+		} while (--times_##i > 0); \
+	} \
+} while (0)
+
+
+static inline const char *php_http_locate_str(register const char *h, size_t h_len, const char *n, size_t n_len)
+{
+	register const char *p1, *p2;
+
+	if (n_len && h_len && h_len >= n_len) {
+		PHP_HTTP_DUFF(1, h_len - n_len + 1,
 			if (*h == *n) {
-				for (p = n; *p == h[p-n]; ++p) {
-					if (p == n+n_len-1) {
+				p1 = h;
+				p2 = n;
+				PHP_HTTP_DUFF(2, n_len,
+					if (*p1++ != *p2++) {
+						PHP_HTTP_DUFF_BREAK(2);
+					} else if (p2 == n + n_len - 1) {
 						return h;
 					}
-				}
+				);
 			}
-		} while (h++ != e);
+			++h;
+		);
 	}
 
 	return NULL;
@@ -96,17 +122,19 @@ static inline const char *php_http_locate_eol(const char *line, int *eol_len)
 
 static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, int *eol_len)
 {
-	const char *eol;
+	register const char *eol = bin;
 
-	for (eol = bin; eol - bin < len; ++eol) {
-		if (*eol == '\r' || *eol == '\n') {
-			if (eol_len) {
-				*eol_len = ((eol[0] == '\r' && eol[1] == '\n') ? 2 : 1);
+	if (len > 0) {
+		PHP_HTTP_DUFF(1, len,
+			if (*eol == '\r' || *eol == '\n') {
+				if (eol_len) {
+					*eol_len = ((eol[0] == '\r' && eol[1] == '\n') ? 2 : 1);
+				}
+				return eol;
 			}
-			return eol;
-		}
+			++eol;
+		);
 	}
-
 	return NULL;
 }
 
@@ -127,6 +155,12 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 #	define PHP_HTTP_ZEND_LITERAL_CCN , NULL
 #endif
 
+#if PHP_VERSION_ID < 50700
+#	define z_is_true zend_is_true
+#else
+#	define z_is_true(z) zend_is_true(z TSRMLS_CC)
+#endif
+
 #define INIT_PZVAL_ARRAY(zv, ht) \
 	{ \
 		INIT_PZVAL((zv)); \
@@ -134,21 +168,24 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 		Z_ARRVAL_P(zv) = (ht); \
 	}
 
+static inline zval *php_http_zconv(int type, zval *z)
+{
+	switch (type) {
+		case IS_NULL:	convert_to_null_ex(&z);		break;
+		case IS_BOOL:	convert_to_boolean_ex(&z);	break;
+		case IS_LONG:	convert_to_long_ex(&z);		break;
+		case IS_DOUBLE:	convert_to_double_ex(&z);	break;
+		case IS_STRING:	convert_to_string_ex(&z);	break;
+		case IS_ARRAY:	convert_to_array_ex(&z);	break;
+		case IS_OBJECT:	convert_to_object_ex(&z);	break;
+	}
+	return z;
+}
+
 static inline zval *php_http_ztyp(int type, zval *z)
 {
 	SEPARATE_ARG_IF_REF(z);
-	if (Z_TYPE_P(z) != type) {
-		switch (type) {
-			case IS_NULL:	convert_to_null_ex(&z);		break;
-			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
-			case IS_LONG:	convert_to_long_ex(&z);		break;
-			case IS_DOUBLE:	convert_to_double_ex(&z);	break;
-			case IS_STRING:	convert_to_string_ex(&z);	break;
-			case IS_ARRAY:	convert_to_array_ex(&z);	break;
-			case IS_OBJECT:	convert_to_object_ex(&z);	break;
-		}
-	}
-	return z;
+	return (Z_TYPE_P(z) == type) ? z : php_http_zconv(type, z);
 }
 
 static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z)
@@ -157,19 +194,11 @@ static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z)
 		Z_ADDREF_P(z);
 	}
 	if (Z_TYPE_P(z) != type) {
-		switch (type) {
-			case IS_NULL:	convert_to_null_ex(&z);		break;
-			case IS_BOOL:	convert_to_boolean_ex(&z);	break;
-			case IS_LONG:	convert_to_long_ex(&z);		break;
-			case IS_DOUBLE:	convert_to_double_ex(&z);	break;
-			case IS_STRING:	convert_to_string_ex(&z);	break;
-			case IS_ARRAY:	convert_to_array_ex(&z);	break;
-			case IS_OBJECT:	convert_to_object_ex(&z);	break;
-		}
+		return php_http_zconv(type, z);
 	} else {
 		SEPARATE_ZVAL_IF_NOT_REF(&z);
+		return z;
 	}
-	return z;
 }
 
 static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, const char **value_str, size_t *value_len, zend_bool orig TSRMLS_DC)
@@ -240,6 +269,11 @@ static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, c
 #define PHP_RSHUTDOWN_CALL(func) PHP_RSHUTDOWN(func)(SHUTDOWN_FUNC_ARGS_PASSTHRU)
 
 /* ARRAYS */
+
+#ifndef HASH_KEY_NON_EXISTENT
+#	define HASH_KEY_NON_EXISTENT HASH_KEY_NON_EXISTANT
+#endif
+
 PHP_HTTP_API unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...);
 
 typedef struct php_http_array_hashkey {
@@ -285,10 +319,13 @@ static inline void php_http_array_hashkey_stringfree(php_http_array_hashkey_t *k
 			zend_hash_move_forward_ex(hash, &pos))
 
 #define array_copy(src, dst) zend_hash_copy(dst, src, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *))
-#define ARRAY_JOIN_STRONLY 1
-#define ARRAY_JOIN_PRETTIFY 2
+#define array_copy_strings(src, dst) zend_hash_copy(dst, src, php_http_array_copy_strings, NULL, sizeof(zval *))
+#define ARRAY_JOIN_STRONLY   0x01
+#define ARRAY_JOIN_PRETTIFY  0x02
+#define ARRAY_JOIN_STRINGIFY 0x04
 #define array_join(src, dst, append, flags) zend_hash_apply_with_arguments(src TSRMLS_CC, (append)?php_http_array_apply_append_func:php_http_array_apply_merge_func, 2, dst, (int)flags)
 
+void php_http_array_copy_strings(void *zpp);
 int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
 int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key);
 

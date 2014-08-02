@@ -36,6 +36,13 @@
 #	endif
 #endif
 
+#ifdef PHP_HTTP_HAVE_OPENSSL
+#	include <openssl/ssl.h>
+#endif
+#ifdef PHP_HTTP_HAVE_GNUTLS
+#	include <gnutls.h>
+#endif
+
 typedef struct php_http_client_curl {
 	CURLM *handle;
 
@@ -187,7 +194,11 @@ static size_t php_http_curle_read_callback(void *data, size_t len, size_t n, voi
 	return 0;
 }
 
+#if PHP_HTTP_CURL_VERSION(7,32,0)
+static int php_http_curle_xferinfo_callback(void *ctx, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
+#else
 static int php_http_curle_progress_callback(void *ctx, double dltotal, double dlnow, double ultotal, double ulnow)
+#endif
 {
 	php_http_client_curl_handler_t *h = ctx;
 	zend_bool update = 0;
@@ -258,6 +269,8 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 				h->progress.info = "blacklist check";
 			} else if (php_memnstr(data, ZEND_STRL("SSL"), data + length)) {
 				h->progress.info = "ssl negotiation";
+			} else if (php_memnstr(data, ZEND_STRL("upload"), data + length)) {
+				h->progress.info = "uploaded";
 			} else if (php_memnstr(data, ZEND_STRL("left intact"), data + length)) {
 				h->progress.info = "not disconnected";
 			} else if (php_memnstr(data, ZEND_STRL("closed"), data + length)) {
@@ -269,6 +282,7 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 			} else {
 #if PHP_DEBUG
 				h->progress.info = data;
+				data[length - 1] = '\0';
 #endif
 			}
 			if (h->client->callback.progress.func) {
@@ -470,6 +484,87 @@ static STATUS php_http_curle_get_info(CURL *ch, HashTable *info)
 #endif
 
 	/* END::CURLINFO */
+
+#if PHP_HTTP_CURL_VERSION(7,34,0)
+	{
+		int i;
+		zval *ti_array;
+		struct curl_tlssessioninfo *ti;
+
+		if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TLS_SESSION, &ti)) {
+			const char *backend;
+
+			MAKE_STD_ZVAL(subarray);
+			ZVAL_NULL(subarray);
+			MAKE_STD_ZVAL(ti_array);
+			array_init(ti_array);
+
+			switch (ti->backend) {
+			case CURLSSLBACKEND_NONE:
+				backend = "none";
+				break;
+			case CURLSSLBACKEND_OPENSSL:
+				backend = "openssl";
+#ifdef PHP_HTTP_HAVE_OPENSSL
+				{
+					SSL_CTX *ctx = ti->internals;
+
+					array_init(subarray);
+					add_assoc_long_ex(subarray, ZEND_STRS("number"), SSL_CTX_sess_number(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("connect"), SSL_CTX_sess_connect(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("connect_good"), SSL_CTX_sess_connect_good(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("connect_renegotiate"), SSL_CTX_sess_connect_renegotiate(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("hits"), SSL_CTX_sess_hits(ctx));
+					add_assoc_long_ex(subarray, ZEND_STRS("cache_full"), SSL_CTX_sess_cache_full(ctx));
+				}
+#endif
+				break;
+			case CURLSSLBACKEND_GNUTLS:
+				backend = "gnutls";
+#ifdef PHP_HTTP_HAVE_GNUTLS
+				{
+					gnutls_session_t sess = ti->internals;
+					char *desc;
+
+					array_init(subarray);
+					if ((desc = gnutls_session_get_desc(sess))) {
+						add_assoc_string_ex(subarray, ZEND_STRS("desc"), desc, 1);
+						gnutls_free(desc);
+					}
+					add_assoc_bool_ex(subarray, ZEND_STRS("resumed"), gnutls_session_is_resumed(sess));
+				}
+#endif
+				break;
+			case CURLSSLBACKEND_NSS:
+				backend = "nss";
+				break;
+			case CURLSSLBACKEND_QSOSSL:
+				backend = "qsossl";
+				break;
+			case CURLSSLBACKEND_GSKIT:
+				backend = "gskit";
+				break;
+			case CURLSSLBACKEND_POLARSSL:
+				backend = "polarssl";
+				break;
+			case CURLSSLBACKEND_CYASSL:
+				backend = "cyassl";
+				break;
+			case CURLSSLBACKEND_SCHANNEL:
+				backend = "schannel";
+				break;
+			case CURLSSLBACKEND_DARWINSSL:
+				backend = "darwinssl";
+				break;
+			default:
+				backend = "unknown";
+			}
+			add_assoc_string_ex(ti_array, ZEND_STRS("backend"), estrdup(backend), 0);
+			add_assoc_zval_ex(ti_array, ZEND_STRS("internals"), subarray);
+			add_assoc_zval_ex(&array, "tls_session", sizeof("tls_session"), ti_array);
+		}
+	}
+#endif
 
 #if PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)
 	{
@@ -701,9 +796,9 @@ static void php_http_curlm_timer_callback(CURLM *multi, long timeout_ms, void *t
 
 static php_http_options_t php_http_curle_options;
 
-#define PHP_HTTP_CURLE_OPTION_CHECK_STRLEN	0x0001
-#define PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR	0x0002
-#define PHP_HTTP_CURLE_OPTION_TRANSFORM_MS	0x0004
+#define PHP_HTTP_CURLE_OPTION_CHECK_STRLEN		0x0001
+#define PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR		0x0002
+#define PHP_HTTP_CURLE_OPTION_TRANSFORM_MS		0x0004
 
 static STATUS php_http_curle_option_set_ssl_verifyhost(php_http_option_t *opt, zval *val, void *userdata)
 {
@@ -720,19 +815,20 @@ static STATUS php_http_curle_option_set_cookiestore(php_http_option_t *opt, zval
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
+	php_http_curle_storage_t *storage = php_http_curle_get_storage(curl->handle);
 
-	if (val) {
-		php_http_curle_storage_t *storage = php_http_curle_get_storage(curl->handle);
-
-		if (storage->cookiestore) {
-			pefree(storage->cookiestore, 1);
-		}
+	if (storage->cookiestore) {
+		pefree(storage->cookiestore, 1);
+	}
+	if (val && Z_STRLEN_P(val)) {
 		storage->cookiestore = pestrndup(Z_STRVAL_P(val), Z_STRLEN_P(val), 1);
-		if (	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEFILE, storage->cookiestore)
-			||	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEJAR, storage->cookiestore)
-		) {
-			return FAILURE;
-		}
+	} else {
+		storage->cookiestore = NULL;
+	}
+	if (	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEFILE, storage->cookiestore)
+		||	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEJAR, storage->cookiestore)
+	) {
+		return FAILURE;
 	}
 	return SUCCESS;
 }
@@ -774,6 +870,11 @@ static STATUS php_http_curle_option_set_cookies(php_http_option_t *opt, zval *va
 					return FAILURE;
 				}
 			}
+		}
+	} else {
+		php_http_buffer_reset(&curl->options.cookies);
+		if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIE, NULL)) {
+			return FAILURE;
 		}
 	}
 	return SUCCESS;
@@ -830,13 +931,15 @@ static STATUS php_http_curle_option_set_etag(php_http_option_t *opt, zval *val, 
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	php_http_buffer_t header;
-	zend_bool is_quoted = !((Z_STRVAL_P(val)[0] != '"') || (Z_STRVAL_P(val)[Z_STRLEN_P(val)-1] != '"'));
 
-	php_http_buffer_init(&header);
-	php_http_buffer_appendf(&header, is_quoted?"%s: %s":"%s: \"%s\"", curl->options.range_request?"If-Match":"If-None-Match", Z_STRVAL_P(val));
-	php_http_buffer_fix(&header);
-	curl->options.headers = curl_slist_append(curl->options.headers, header.data);
-	php_http_buffer_dtor(&header);
+	if (Z_STRLEN_P(val)) {
+		zend_bool is_quoted = !((Z_STRVAL_P(val)[0] != '"') || (Z_STRVAL_P(val)[Z_STRLEN_P(val)-1] != '"'));
+		php_http_buffer_init(&header);
+		php_http_buffer_appendf(&header, is_quoted?"%s: %s":"%s: \"%s\"", curl->options.range_request?"If-Match":"If-None-Match", Z_STRVAL_P(val));
+		php_http_buffer_fix(&header);
+		curl->options.headers = curl_slist_append(curl->options.headers, header.data);
+		php_http_buffer_dtor(&header);
+	}
 	return SUCCESS;
 }
 
@@ -1026,10 +1129,23 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		opt->setter = php_http_curle_option_set_resolve;
 	}
 #endif
-#if PHP_HTTP_CURL_VERSION(7,24,0)
+#if PHP_HTTP_HAVE_ARES
+# if PHP_HTTP_CURL_VERSION(7,24,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_servers"), CURLOPT_DNS_SERVERS, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
+# endif
+# if PHP_HTTP_CURL_VERSION(7,33,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_interface"), CURLOPT_DNS_INTERFACE, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_local_ip4"), CURLOPT_DNS_LOCAL_IP4, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_local_ip6"), CURLOPT_DNS_LOCAL_IP6, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+# endif
 #endif
 
 	/* limits */
@@ -1100,7 +1216,11 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 	/* useragent */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("useragent"), CURLOPT_USERAGENT, IS_STRING))) {
 		/* don't check strlen, to allow sending no useragent at all */
-		ZVAL_STRING(&opt->defval, "PECL::HTTP/" PHP_PECL_HTTP_VERSION " (PHP/" PHP_VERSION ")", 0);
+		ZVAL_STRING(&opt->defval,
+				"PECL_HTTP/" PHP_PECL_HTTP_VERSION " "
+				"PHP/" PHP_VERSION " "
+				"libcurl/" LIBCURL_VERSION
+			, 0);
 	}
 
 	/* resume */
@@ -1160,8 +1280,15 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		opt->flags |= PHP_HTTP_CURLE_OPTION_TRANSFORM_MS;
 		Z_DVAL(opt->defval) = 3;
 	}
+#if PHP_HTTP_CURL_VERSION(7,36,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("expect_100_timeout"), CURLOPT_EXPECT_100_TIMEOUT_MS, IS_DOUBLE))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_TRANSFORM_MS;
+		Z_DVAL(opt->defval) = 1;
+	}
+#endif
 
 	/* tcp */
+	php_http_option_register(registry, ZEND_STRL("tcp_nodelay"), CURLOPT_TCP_NODELAY, IS_BOOL);
 #if PHP_HTTP_CURL_VERSION(7,25,0)
 	php_http_option_register(registry, ZEND_STRL("tcp_keepalive"), CURLOPT_TCP_KEEPALIVE, IS_BOOL);
 	if ((opt = php_http_option_register(registry, ZEND_STRL("tcp_keepidle"), CURLOPT_TCP_KEEPIDLE, IS_LONG))) {
@@ -1180,14 +1307,21 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 		}
-		php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING);
-
+		if ((opt = php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			ZVAL_STRING(&opt->defval, "PEM", 1);
+		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("key"), CURLOPT_SSLKEY, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 		}
-		php_http_option_register(registry, ZEND_STRL("keytype"), CURLOPT_SSLKEYTYPE, IS_STRING);
-		php_http_option_register(registry, ZEND_STRL("keypasswd"), CURLOPT_SSLKEYPASSWD, IS_STRING);
+		if ((opt = php_http_option_register(registry, ZEND_STRL("keytype"), CURLOPT_SSLKEYTYPE, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			ZVAL_STRING(&opt->defval, "PEM", 1);
+		}
+		if ((opt = php_http_option_register(registry, ZEND_STRL("keypasswd"), CURLOPT_SSLKEYPASSWD, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+		}
 		php_http_option_register(registry, ZEND_STRL("engine"), CURLOPT_SSLENGINE, IS_STRING);
 		php_http_option_register(registry, ZEND_STRL("version"), CURLOPT_SSLVERSION, IS_LONG);
 		if ((opt = php_http_option_register(registry, ZEND_STRL("verifypeer"), CURLOPT_SSL_VERIFYPEER, IS_BOOL))) {
@@ -1232,6 +1366,14 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 #if PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)
 		php_http_option_register(registry, ZEND_STRL("certinfo"), CURLOPT_CERTINFO, IS_BOOL);
 #endif
+#if PHP_HTTP_CURL_VERSION(7,36,0)
+		if ((opt = php_http_option_register(registry, ZEND_STRL("enable_npn"), CURLOPT_SSL_ENABLE_NPN, IS_BOOL))) {
+			ZVAL_BOOL(&opt->defval, 1);
+		}
+		if ((opt = php_http_option_register(registry, ZEND_STRL("enable_alpn"), CURLOPT_SSL_ENABLE_ALPN, IS_BOOL))) {
+			ZVAL_BOOL(&opt->defval, 1);
+		}
+#endif
 	}
 }
 
@@ -1252,6 +1394,7 @@ static STATUS php_http_curle_set_option(php_http_option_t *opt, zval *val, void 
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
 	zval tmp;
+	CURLcode rc = CURLE_OK;
 	STATUS rv = SUCCESS;
 	TSRMLS_FETCH_FROM_CTX(curl->client->ts);
 
@@ -1277,14 +1420,18 @@ static STATUS php_http_curle_set_option(php_http_option_t *opt, zval *val, void 
 		break;
 
 	case IS_STRING:
-		if (!(opt->flags & PHP_HTTP_CURLE_OPTION_CHECK_STRLEN) || Z_STRLEN_P(val)) {
-			if (!(opt->flags & PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR) || !Z_STRVAL_P(val) || SUCCESS == php_check_open_basedir(Z_STRVAL_P(val) TSRMLS_CC)) {
-				if (opt->setter) {
-					rv = opt->setter(opt, val, curl);
-				} else if (CURLE_OK != curl_easy_setopt(ch, opt->option, Z_STRVAL_P(val))) {
-					rv = FAILURE;
-				}
+		if (opt->setter) {
+			rv = opt->setter(opt, val, curl);
+		} else if ((opt->flags & PHP_HTTP_CURLE_OPTION_CHECK_STRLEN) && !Z_STRLEN_P(val)) {
+			if (CURLE_OK != (rc = curl_easy_setopt(ch, opt->option, NULL))) {
+				rv = FAILURE;
 			}
+		} else if ((opt->flags & PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR) && Z_STRVAL_P(val) && SUCCESS != php_check_open_basedir(Z_STRVAL_P(val) TSRMLS_CC)) {
+			if (CURLE_OK != (rc = curl_easy_setopt(ch, opt->option, NULL))) {
+				rv = FAILURE;
+			}
+		} else if (CURLE_OK != (rc = curl_easy_setopt(ch, opt->option, Z_STRVAL_P(val)))) {
+			rv = FAILURE;
 		}
 		break;
 
@@ -1318,7 +1465,7 @@ static STATUS php_http_curle_set_option(php_http_option_t *opt, zval *val, void 
 		break;
 	}
 	if (rv != SUCCESS) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s", opt->name.s);
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s (%s)", opt->name.s, curl_easy_strerror(rc));
 	}
 	return rv;
 }
@@ -1412,9 +1559,14 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, php_http_curle_raw_callback);
 	curl_easy_setopt(handle, CURLOPT_READFUNCTION, php_http_curle_read_callback);
 	curl_easy_setopt(handle, CURLOPT_IOCTLFUNCTION, php_http_curle_ioctl_callback);
+#if PHP_HTTP_CURL_VERSION(7,32,0)
+	curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, php_http_curle_xferinfo_callback);
+	curl_easy_setopt(handle, CURLOPT_XFERINFODATA, handler);
+#else
 	curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, php_http_curle_progress_callback);
-	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, handler);
 	curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, handler);
+#endif
+	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, handler);
 
 	php_http_client_curl_handler_reset(handler);
 
@@ -1492,8 +1644,8 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 			}
 		}
 		php_http_buffer_dtor(&header);
-		curl_easy_setopt(curl->handle, CURLOPT_HTTPHEADER, curl->options.headers);
 	}
+	curl_easy_setopt(curl->handle, CURLOPT_HTTPHEADER, curl->options.headers);
 
 	/* attach request body */
 	if ((body_size = php_http_message_body_size(msg->body))) {
@@ -1525,7 +1677,11 @@ static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *ha
 	TSRMLS_FETCH_FROM_CTX(handler->client->ts);
 
 	curl_easy_setopt(handler->handle, CURLOPT_NOPROGRESS, 1L);
+#if PHP_HTTP_CURL_VERSION(7,32,0)
+	curl_easy_setopt(handler->handle, CURLOPT_XFERINFOFUNCTION, NULL);
+#else
 	curl_easy_setopt(handler->handle, CURLOPT_PROGRESSFUNCTION, NULL);
+#endif
 	curl_easy_setopt(handler->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(handler->handle, CURLOPT_DEBUGFUNCTION, NULL);
 

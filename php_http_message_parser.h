@@ -37,7 +37,7 @@ typedef enum php_http_message_parser_state {
 
 typedef struct php_http_message_parser {
 	php_http_header_parser_t header;
-	zend_stack stack;
+	zend_ptr_stack stack;
 	size_t body_length;
 	php_http_message_t *message;
 	php_http_encoding_stream_t *dechunk;

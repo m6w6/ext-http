@@ -8,29 +8,32 @@ include "skipif.inc";
 <?php
 echo "Test\n";
 
+$RE =
+'/(Array
+\(
+    \[upload\] \=\> Array
+        \(
+            \[name\] \=\> client010\.php
+            \[type\] \=\> text\/plain
+            \[tmp_name\] \=\> .+
+            \[error\] \=\> 0
+            \[size\] \=\> \d+
+        \)
+
+\)
+)+/';
 $request = new http\Client\Request("POST", "http://dev.iworks.at/ext-http/.print_request.php");
 $request->getBody()->addForm(null, array("file"=>__FILE__, "name"=>"upload", "type"=>"text/plain"));
 
 foreach (http\Client::getAvailableDrivers() as $driver) {
 	$client = new http\Client($driver);
 	$client->enqueue($request)->send();
-	var_dump($client->getResponse()->getBody()->toString());
+	if (!preg_match($RE, $s = $client->getResponse()->getBody()->toString())) {
+		echo($s);
+	}
 }
 ?>
 Done
---EXPECTREGEX--
+--EXPECT--
 Test
-(?:string\(\d+\) "Array
-\(
-    \[upload\] \=\> Array
-        \(
-            \[name\] \=\> client010\.php
-            \[type\] \=\> text\/plain
-            \[tmp_name\] \=\> .*
-            \[error\] \=\> 0
-            \[size\] \=\> \d+
-        \)
-
-\)
-"
-)+Done
+Done
