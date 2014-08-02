@@ -3,6 +3,7 @@ client upload
 --SKIPIF--
 <?php
 include "skipif.inc";
+skip_online_test();
 ?>
 --FILE--
 <?php
