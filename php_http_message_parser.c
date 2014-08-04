@@ -80,7 +80,7 @@ php_http_message_parser_state_t php_http_message_parser_state_push(php_http_mess
 php_http_message_parser_state_t php_http_message_parser_state_is(php_http_message_parser_t *parser)
 {
 	if (parser->stack.top) {
-		return (php_http_message_parser_state_t) zend_ptr_stack_top(&parser->stack);
+		return (php_http_message_parser_state_t) parser->stack.elements[parser->stack.top - 1];
 	}
 	return PHP_HTTP_MESSAGE_PARSER_STATE_START;
 }
