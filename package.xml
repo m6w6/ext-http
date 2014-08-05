@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2014-08-05</date>
  <version>
-  <release>2.1.0RC2</release>
+  <release>2.1.0dev</release>
   <api>2.1.0</api>
  </version>
  <stability>
@@ -48,10 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-Changes from RC1:
-* Fixed a possible crash with http\Encoding\Stream\Dechunk::decode($unencoded)
-* Fixed a leak in http\Client\Curl options
-* Fixed PHP-5.4 compatibility
+Changes from RC2:
 ]]></notes>
  <contents>
   <dir name="/">
