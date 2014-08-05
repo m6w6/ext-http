@@ -1309,7 +1309,7 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			ZVAL_STRING(&opt->defval, "PEM", 1);
+			ZVAL_STRING(&opt->defval, "PEM", 0);
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("key"), CURLOPT_SSLKEY, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
@@ -1317,7 +1317,7 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("keytype"), CURLOPT_SSLKEYTYPE, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			ZVAL_STRING(&opt->defval, "PEM", 1);
+			ZVAL_STRING(&opt->defval, "PEM", 0);
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("keypasswd"), CURLOPT_SSLKEYPASSWD, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
