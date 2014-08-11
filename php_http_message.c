@@ -98,6 +98,19 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 					zval_dtor(&tval);
 				}
 			}
+#else
+			if (OG(ob_nesting_level)) {
+				if (php_get_output_start_filename(TSRMLS_C)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not fetch response body, output has already been sent at %s:%d", php_get_output_start_filename(TSRMLS_C), php_get_output_start_lineno(TSRMLS_C));
+					goto error;
+				} else if (SUCCESS != php_ob_get_buffer(&tval TSRMLS_CC)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not fetch response body");
+					goto error;
+				} else {
+					php_http_message_body_append(message->body, Z_STRVAL(tval), Z_STRLEN(tval));
+					zval_dtor(&tval);
+				}
+			}
 #endif
 			break;
 			
