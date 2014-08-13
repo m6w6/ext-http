@@ -49,6 +49,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  <license>BSD, revised</license>
  <notes><![CDATA[
 Changes from RC2:
+* Fixed PHP-5.3 compatibility
+- Removed port and scheme guessing of http\Url for portability
 ]]></notes>
  <contents>
   <dir name="/">

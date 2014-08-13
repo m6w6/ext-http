@@ -58,16 +58,13 @@ typedef int STATUS;
 
 #ifdef PHP_WIN32
 #	define CURL_STATICLIB
-#	define PHP_HTTP_HAVE_NETDB
 #	include <winsock2.h>
-#elif defined(HAVE_NETDB_H)
-#	define PHP_HTTP_HAVE_NETDB
-#	include <netdb.h>
+#else
+#	ifdef HAVE_NETDB_H
+#		include <netdb.h>
+#	endif
 #	ifdef HAVE_UNISTD_H
 #		include <unistd.h>
-#	endif
-#	ifdef HAVE_ERRNO_H
-#		include <errno.h>
 #	endif
 #endif
 

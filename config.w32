@@ -61,8 +61,6 @@ if (PHP_HTTP != "no") {
 	AC_DEFINE("HTTP_SHARED_DEPS", 1, "Depend on shared extensions");
 	
 	AC_DEFINE("HAVE_GETHOSTNAME", 1);
-	AC_DEFINE("HAVE_GETSERVBYPORT", 1);
-	AC_DEFINE("HAVE_GETSERVBYNAME", 1);
 	
 	if (PHP_DEBUG != "no") {
 		ADD_FLAG("CFLAGS_HTTP", "/W3");

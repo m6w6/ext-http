@@ -96,13 +96,10 @@ if test "$PHP_HTTP" != "no"; then
 dnl ----
 dnl STDC
 dnl ----
+	dnl getdomainname() is declared in netdb.h on some platforms: AIX, OSF
 	AC_CHECK_HEADERS([netdb.h unistd.h])
 	PHP_CHECK_FUNC(gethostname, nsl)
 	PHP_CHECK_FUNC(getdomainname, nsl)
-	PHP_CHECK_FUNC(getservbyport, nsl)
-	PHP_CHECK_FUNC(getservbyport_r, nsl)
-	PHP_CHECK_FUNC(getservbyname, nsl)
-	PHP_CHECK_FUNC(getservbyname_r, nsl)
 
 dnl ----
 dnl ZLIB
