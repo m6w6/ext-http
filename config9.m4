@@ -68,7 +68,6 @@ if test "$PHP_HTTP" != "no"; then
 	AC_DEFUN([HTTP_HAVE_PHP_EXT], [
 		extname=$1
 		haveext=$[PHP_]translit($1,a-z_-,A-Z__)
-		
 		AC_MSG_CHECKING([for ext/$extname support])
 		if test -x "$PHP_EXECUTABLE"; then
 			grepext=`$PHP_EXECUTABLE -m | $EGREP ^$extname\$`
@@ -377,7 +376,7 @@ dnl ----
 			PHP_ADD_INCLUDE([$HTTP_EXT_RAPHF_INCDIR])
 		fi
 	], [
-		AC_MSG_ERROR([Please install pecl/raphf])
+		AC_MSG_ERROR([Please install pecl/raphf and activate extension=raphf.$SHLIB_DL_SUFFIX_NAME in your php.ini])
 	])
 
 dnl ----
@@ -405,7 +404,7 @@ dnl ----
 			PHP_ADD_INCLUDE([$HTTP_EXT_PROPRO_INCDIR])
 		fi
 	], [
-		AC_MSG_ERROR([Please install pecl/propro])
+		AC_MSG_ERROR([Please install pecl/propro and activate extension=propro.$SHLIB_DL_SUFFIX_NAME in your php.ini])
 	])
 
 PHP_ARG_WITH([http-shared-deps], [whether to depend on extensions which have been built shared],
