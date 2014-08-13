@@ -98,6 +98,7 @@ typedef struct php_http_client_curl_handler {
 typedef struct php_http_curle_storage {
 	char *url;
 	char *cookiestore;
+	CURLcode errorcode;
 	char errorbuffer[0x100];
 } php_http_curle_storage_t;
 
@@ -487,7 +488,6 @@ static STATUS php_http_curle_get_info(CURL *ch, HashTable *info)
 
 #if PHP_HTTP_CURL_VERSION(7,34,0)
 	{
-		int i;
 		zval *ti_array;
 		struct curl_tlssessioninfo *ti;
 
@@ -599,7 +599,12 @@ static STATUS php_http_curle_get_info(CURL *ch, HashTable *info)
 		}
 	}
 #endif
-	add_assoc_string_ex(&array, "error", sizeof("error"), php_http_curle_get_storage(ch)->errorbuffer, 1);
+	{
+		php_http_curle_storage_t *st = php_http_curle_get_storage(ch);
+
+		add_assoc_long_ex(&array, "curlcode", sizeof("curlcode"), st->errorcode);
+		add_assoc_string_ex(&array, "error", sizeof("error"), st->errorbuffer, 1);
+	}
 
 	return SUCCESS;
 }
@@ -622,7 +627,7 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 		if (msg && CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
 				php_http_curle_storage_t *st = php_http_curle_get_storage(msg->easy_handle);
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(st->errorcode = msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
 			}
 
 			if ((enqueue = php_http_client_enqueued(context, msg->easy_handle, compare_queue))) {
