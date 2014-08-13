@@ -1736,6 +1736,9 @@ static void php_http_client_curl_dtor(php_http_client_t *h)
 
 #if PHP_HTTP_HAVE_EVENT
 	if (curl->timeout) {
+		if (event_initialized(curl->timeout) && event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
+			event_del(curl->timeout);
+		}
 		efree(curl->timeout);
 		curl->timeout = NULL;
 	}
