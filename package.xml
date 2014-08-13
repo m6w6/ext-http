@@ -37,9 +37,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-08-05</date>
+ <date>2014-08-13</date>
  <version>
-  <release>2.1.0dev</release>
+  <release>2.1.0RC3</release>
   <api>2.1.0</api>
  </version>
  <stability>
