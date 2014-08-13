@@ -50,6 +50,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  <notes><![CDATA[
 Changes from RC2:
 * Fixed PHP-5.3 compatibility
+* Fixed possible bus error on shutdown when using events
 + Added curlcode transfer info
 - Removed port and scheme guessing of http\Url for portability
 ]]></notes>
