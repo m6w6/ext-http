@@ -224,6 +224,10 @@ static inline void sanitize_key(unsigned flags, char *str, size_t len, zval *zv,
 	if (flags & PHP_HTTP_PARAMS_ESCAPED) {
 		sanitize_escaped(zv TSRMLS_CC);
 	}
+	
+	if (!Z_STRLEN_P(zv)) {
+		return;
+	}
 
 	eos = &Z_STRVAL_P(zv)[Z_STRLEN_P(zv)-1];
 	if (*eos == '*') {
