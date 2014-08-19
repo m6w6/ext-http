@@ -97,6 +97,7 @@ void php_http_message_parser_dtor(php_http_message_parser_t *parser)
 {
 	php_http_header_parser_dtor(&parser->header);
 	zend_ptr_stack_destroy(&parser->stack);
+	php_http_message_free(&parser->message);
 	if (parser->dechunk) {
 		php_http_encoding_stream_free(&parser->dechunk);
 	}
@@ -506,6 +507,153 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 	}
 
 	return php_http_message_parser_state_is(parser);
+}
+
+zend_class_entry *php_http_message_parser_class_entry;
+static zend_object_handlers php_http_message_parser_object_handlers;
+
+zend_object_value php_http_message_parser_object_new(zend_class_entry *ce TSRMLS_DC)
+{
+	return php_http_message_parser_object_new_ex(ce, NULL, NULL TSRMLS_CC);
+}
+
+zend_object_value php_http_message_parser_object_new_ex(zend_class_entry *ce, php_http_message_parser_t *parser, php_http_message_parser_object_t **ptr TSRMLS_DC)
+{
+	php_http_message_parser_object_t *o;
+
+	o = ecalloc(1, sizeof(php_http_message_parser_object_t));
+	zend_object_std_init((zend_object *) o, ce TSRMLS_CC);
+	object_properties_init((zend_object *) o, ce);
+
+	if (ptr) {
+		*ptr = o;
+	}
+
+	if (parser) {
+		o->parser = parser;
+	} else {
+		o->parser = php_http_message_parser_init(NULL TSRMLS_CC);
+	}
+	o->buffer = php_http_buffer_new();
+
+	o->zv.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_message_parser_object_free, NULL TSRMLS_CC);
+	o->zv.handlers = &php_http_message_parser_object_handlers;
+
+	return o->zv;
+}
+
+void php_http_message_parser_object_free(void *object TSRMLS_DC)
+{
+	php_http_message_parser_object_t *o = (php_http_message_parser_object_t *) object;
+
+	if (o->parser) {
+		php_http_message_parser_free(&o->parser);
+	}
+	if (o->buffer) {
+		php_http_buffer_free(&o->buffer);
+	}
+	zend_object_std_dtor((zend_object *) o TSRMLS_CC);
+	efree(o);
+}
+
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageParser_getState, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpMessageParser, getState)
+{
+	php_http_message_parser_object_t *parser_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+	zend_parse_parameters_none();
+	/* always return the real state */
+	RETVAL_LONG(php_http_message_parser_state_is(parser_obj->parser));
+}
+
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageParser_parse, 0, 0, 3)
+	ZEND_ARG_INFO(0, data)
+	ZEND_ARG_INFO(0, flags)
+	ZEND_ARG_INFO(1, message)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpMessageParser, parse)
+{
+	php_http_message_parser_object_t *parser_obj;
+	zval *zmsg;
+	char *data_str;
+	int data_len;
+	long flags;
+
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slz", &data_str, &data_len, &flags, &zmsg), invalid_arg, return);
+
+	parser_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_buffer_append(parser_obj->buffer, data_str, data_len);
+	RETVAL_LONG(php_http_message_parser_parse(parser_obj->parser, parser_obj->buffer, flags, &parser_obj->parser->message));
+
+	zval_dtor(zmsg);
+	if (parser_obj->parser->message) {
+			ZVAL_OBJVAL(zmsg, php_http_message_object_new_ex(php_http_message_class_entry, php_http_message_copy(parser_obj->parser->message, NULL), NULL TSRMLS_CC), 0);
+		}
+}
+
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageParser_stream, 0, 0, 3)
+	ZEND_ARG_INFO(0, stream)
+	ZEND_ARG_INFO(0, flags)
+	ZEND_ARG_INFO(1, message)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpMessageParser, stream)
+{
+	php_http_message_parser_object_t *parser_obj;
+	zend_error_handling zeh;
+	zval *zmsg, *zstream;
+	php_stream *s;
+	long flags;
+
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlz", &zstream, &flags, &zmsg), invalid_arg, return);
+
+	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh TSRMLS_CC);
+	php_stream_from_zval(s, &zstream);
+	zend_restore_error_handling(&zeh TSRMLS_CC);
+
+	parser_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	RETVAL_LONG(php_http_message_parser_parse_stream(parser_obj->parser, s, flags, &parser_obj->parser->message));
+
+	zval_dtor(zmsg);
+	if (parser_obj->parser->message) {
+		ZVAL_OBJVAL(zmsg, php_http_message_object_new_ex(php_http_message_class_entry, php_http_message_copy(parser_obj->parser->message, NULL), NULL TSRMLS_CC), 0);
+	}
+}
+
+static zend_function_entry php_http_message_parser_methods[] = {
+		PHP_ME(HttpMessageParser, getState, ai_HttpMessageParser_getState, ZEND_ACC_PUBLIC)
+		PHP_ME(HttpMessageParser, parse, ai_HttpMessageParser_parse, ZEND_ACC_PUBLIC)
+		PHP_ME(HttpMessageParser, stream, ai_HttpMessageParser_stream, ZEND_ACC_PUBLIC)
+		{NULL, NULL, NULL}
+};
+
+PHP_MINIT_FUNCTION(http_message_parser)
+{
+	zend_class_entry ce;
+
+	INIT_NS_CLASS_ENTRY(ce, "http\\Message", "Parser", php_http_message_parser_methods);
+	php_http_message_parser_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
+	memcpy(&php_http_message_parser_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	php_http_message_parser_class_entry->create_object = php_http_message_parser_object_new;
+	php_http_message_parser_object_handlers.clone_obj = NULL;
+
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("CLEANUP"), PHP_HTTP_MESSAGE_PARSER_CLEANUP TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("DUMB_BODIES"), PHP_HTTP_MESSAGE_PARSER_DUMB_BODIES TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("EMPTY_REDIRECTS"), PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("GREEDY"), PHP_HTTP_MESSAGE_PARSER_GREEDY TSRMLS_CC);
+
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_FAILURE"), PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_START"), PHP_HTTP_MESSAGE_PARSER_STATE_START TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_HEADER"), PHP_HTTP_MESSAGE_PARSER_STATE_HEADER TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_HEADER_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_DUMB"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_LENGTH"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_CHUNKED"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_DONE TSRMLS_CC);
+
+	return SUCCESS;
 }
 
 /*

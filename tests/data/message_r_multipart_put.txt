@@ -2,7 +2,7 @@ PUT /docs/ HTTP/1.1
 User-Agent: curl/7.24.0 (x86_64-unknown-linux-gnu) libcurl/7.24.0 OpenSSL/1.0.0g zlib/1.2.6 libssh2/1.3.0
 Host: drop
 Accept: */*
-Content-Length: 2284
+Content-Length: 2273
 Expect: 100-continue
 Content-Type: multipart/form-data; boundary=----------------------------6e182425881c
 

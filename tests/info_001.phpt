@@ -40,8 +40,7 @@ object(http\Message)#%d (9) {
   ["type":protected]=>
   int(1)
   ["body":protected]=>
-  object(http\Message\Body)#%d (0) {
-  }
+  NULL
   ["requestMethod":protected]=>
   string(3) "GET"
   ["requestUrl":protected]=>

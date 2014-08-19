@@ -56,6 +56,21 @@ PHP_HTTP_API void php_http_message_parser_free(php_http_message_parser_t **parse
 PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, php_http_message_t **message);
 PHP_HTTP_API php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_message_parser_t *parser, php_stream *s, unsigned flags, php_http_message_t **message);
 
+typedef struct php_http_message_parser_object {
+	zend_object zo;
+	zend_object_value zv;
+	php_http_buffer_t *buffer;
+	php_http_message_parser_t *parser;
+} php_http_message_parser_object_t;
+
+PHP_HTTP_API zend_class_entry *php_http_message_parser_class_entry;
+
+PHP_MINIT_FUNCTION(http_message_parser);
+
+zend_object_value php_http_message_parser_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object_value php_http_message_parser_object_new_ex(zend_class_entry *ce, php_http_message_parser_t *parser, php_http_message_parser_object_t **ptr TSRMLS_DC);
+void php_http_message_parser_object_free(void *object TSRMLS_DC);
+
 #endif
 
 /*

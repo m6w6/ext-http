@@ -39,8 +39,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2014-08-19</date>
  <version>
-  <release>2.1.0RC3</release>
-  <api>2.1.0</api>
+  <release>2.2.0dev</release>
+  <api>2.2.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -48,11 +48,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-Changes from RC2:
-* Fixed PHP-5.3 compatibility
-* Fixed possible bus error on shutdown when using events
-+ Added curlcode transfer info
-- Removed port and scheme guessing of http\Url for portability
+- var_dump(http\Message) no longer automatically creates an empty body
++ Added http\Message\Parser class
 ]]></notes>
  <contents>
   <dir name="/">
@@ -251,6 +248,7 @@ Changes from RC2:
      <file role="test" name="messagebody008.phpt"/>
      <file role="test" name="messagebody009.phpt"/>
      <file role="test" name="messagebody010.phpt"/>
+     <file role="test" name="messageparser001.phpt"/>
      <file role="test" name="negotiate001.phpt"/>
      <file role="test" name="params001.phpt"/>
      <file role="test" name="params002.phpt"/>
