@@ -108,9 +108,6 @@ typedef int STATUS;
 
 ZEND_BEGIN_MODULE_GLOBALS(php_http)
 	struct php_http_env_globals env;
-#if PHP_HTTP_HAVE_CURL && PHP_HTTP_HAVE_EVENT
-	struct php_http_curl_globals curl;
-#endif
 ZEND_END_MODULE_GLOBALS(php_http)
 
 ZEND_EXTERN_MODULE_GLOBALS(php_http);
