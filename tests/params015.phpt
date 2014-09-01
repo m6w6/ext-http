@@ -7,7 +7,7 @@ include "skipif.inc";
 --FILE--
 <?php
 echo "Test\n";
-$p = new http\Params(["attachment"=>["filename"=>"foo.bar"]]);
+$p = new http\Params(array("attachment"=>array("filename"=>"foo.bar")));
 var_dump($p->params);
 var_dump((string)$p);
 ?>

@@ -53,7 +53,6 @@ const char *php_http_encoding_dechunk(const char *encoded, size_t encoded_len, c
 				php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Data does not seem to be chunked encoded");
 				memcpy(*decoded, encoded, encoded_len);
 				*decoded_len = encoded_len;
-				decoded[*decoded_len] = '\0';
 				return encoded + encoded_len;
 			} else {
 				efree(*decoded);

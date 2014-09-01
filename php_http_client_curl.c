@@ -49,6 +49,7 @@ typedef struct php_http_client_curl {
 	int unfinished;  /* int because of curl_multi_perform() */
 
 #if PHP_HTTP_HAVE_EVENT
+	struct event_base *evbase;
 	struct event *timeout;
 	unsigned useevents:1;
 #endif
@@ -98,6 +99,7 @@ typedef struct php_http_client_curl_handler {
 typedef struct php_http_curle_storage {
 	char *url;
 	char *cookiestore;
+	CURLcode errorcode;
 	char errorbuffer[0x100];
 } php_http_curle_storage_t;
 
@@ -487,7 +489,6 @@ static STATUS php_http_curle_get_info(CURL *ch, HashTable *info)
 
 #if PHP_HTTP_CURL_VERSION(7,34,0)
 	{
-		int i;
 		zval *ti_array;
 		struct curl_tlssessioninfo *ti;
 
@@ -599,7 +600,12 @@ static STATUS php_http_curle_get_info(CURL *ch, HashTable *info)
 		}
 	}
 #endif
-	add_assoc_string_ex(&array, "error", sizeof("error"), php_http_curle_get_storage(ch)->errorbuffer, 1);
+	{
+		php_http_curle_storage_t *st = php_http_curle_get_storage(ch);
+
+		add_assoc_long_ex(&array, "curlcode", sizeof("curlcode"), st->errorcode);
+		add_assoc_string_ex(&array, "error", sizeof("error"), st->errorbuffer, 1);
+	}
 
 	return SUCCESS;
 }
@@ -622,7 +628,7 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 		if (msg && CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
 				php_http_curle_storage_t *st = php_http_curle_get_storage(msg->easy_handle);
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(st->errorcode = msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
 			}
 
 			if ((enqueue = php_http_client_enqueued(context, msg->easy_handle, compare_queue))) {
@@ -753,7 +759,7 @@ static int php_http_curlm_socket_callback(CURL *easy, curl_socket_t sock, int ac
 				return -1;
 		}
 
-		event_assign(&ev->evnt, PHP_HTTP_G->curl.event_base, sock, events, php_http_curlm_event_callback, context);
+		event_assign(&ev->evnt, curl->evbase, sock, events, php_http_curlm_event_callback, context);
 		event_add(&ev->evnt, NULL);
 	}
 
@@ -774,10 +780,9 @@ static void php_http_curlm_timer_callback(CURLM *multi, long timeout_ms, void *t
 			php_http_curlm_timeout_callback(CURL_SOCKET_TIMEOUT, /*EV_READ|EV_WRITE*/0, context);
 		} else if (timeout_ms > 0 || !event_initialized(curl->timeout) || !event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
 			struct timeval timeout;
-			TSRMLS_FETCH_FROM_CTX(context->ts);
 
 			if (!event_initialized(curl->timeout)) {
-				event_assign(curl->timeout, PHP_HTTP_G->curl.event_base, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, context);
+				event_assign(curl->timeout, curl->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, context);
 			} else if (event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
 				event_del(curl->timeout);
 			}
@@ -1309,7 +1314,7 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			ZVAL_STRING(&opt->defval, "PEM", 1);
+			ZVAL_STRING(&opt->defval, "PEM", 0);
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("key"), CURLOPT_SSLKEY, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
@@ -1317,7 +1322,7 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("keytype"), CURLOPT_SSLKEYTYPE, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			ZVAL_STRING(&opt->defval, "PEM", 1);
+			ZVAL_STRING(&opt->defval, "PEM", 0);
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("keypasswd"), CURLOPT_SSLKEYPASSWD, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
@@ -1731,8 +1736,15 @@ static void php_http_client_curl_dtor(php_http_client_t *h)
 
 #if PHP_HTTP_HAVE_EVENT
 	if (curl->timeout) {
+		if (event_initialized(curl->timeout) && event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
+			event_del(curl->timeout);
+		}
 		efree(curl->timeout);
 		curl->timeout = NULL;
+	}
+	if (curl->evbase) {
+		event_base_free(curl->evbase);
+		curl->evbase = NULL;
 	}
 #endif
 	curl->unfinished = 0;
@@ -1943,7 +1955,7 @@ static STATUS php_http_client_curl_exec(php_http_client_t *h)
 	if (curl->useevents) {
 		php_http_curlm_timeout_callback(CURL_SOCKET_TIMEOUT, /*EV_READ|EV_WRITE*/0, h);
 		do {
-			int ev_rc = event_base_dispatch(PHP_HTTP_G->curl.event_base);
+			int ev_rc = event_base_dispatch(curl->evbase);
 
 #if DBG_EVENTS
 			fprintf(stderr, "%c", "X.0"[ev_rc+1]);
@@ -1987,6 +1999,9 @@ static STATUS php_http_client_curl_setopt(php_http_client_t *h, php_http_client_
 		case PHP_HTTP_CLIENT_OPT_USE_EVENTS:
 #if PHP_HTTP_HAVE_EVENT
 			if ((curl->useevents = *((zend_bool *) arg))) {
+				if (!curl->evbase) {
+					curl->evbase = event_base_new();
+				}
 				if (!curl->timeout) {
 					curl->timeout = ecalloc(1, sizeof(struct event));
 				}
@@ -2152,24 +2167,6 @@ PHP_MSHUTDOWN_FUNCTION(http_client_curl)
 
 	return SUCCESS;
 }
-
-#if PHP_HTTP_HAVE_EVENT
-PHP_RINIT_FUNCTION(http_client_curl)
-{
-	if (!PHP_HTTP_G->curl.event_base && !(PHP_HTTP_G->curl.event_base = event_base_new())) {
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-PHP_RSHUTDOWN_FUNCTION(http_client_curl)
-{
-	if (PHP_HTTP_G->curl.event_base) {
-		event_base_free(PHP_HTTP_G->curl.event_base);
-		PHP_HTTP_G->curl.event_base = NULL;
-	}
-	return SUCCESS;
-}
-#endif /* PHP_HTTP_HAVE_EVENT */
 
 #endif /* PHP_HTTP_HAVE_CURL */
 

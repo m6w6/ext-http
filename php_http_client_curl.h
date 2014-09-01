@@ -15,15 +15,6 @@
 
 #if PHP_HTTP_HAVE_CURL
 
-#if PHP_HTTP_HAVE_EVENT
-struct php_http_curl_globals {
-	void *event_base;
-};
-
-PHP_RINIT_FUNCTION(http_client_curl);
-PHP_RSHUTDOWN_FUNCTION(http_client_curl);
-#endif /* PHP_HTTP_HAVE_EVENT */
-
 PHP_MINIT_FUNCTION(http_client_curl);
 PHP_MSHUTDOWN_FUNCTION(http_client_curl);
 #endif /* PHP_HTTP_HAVE_CURL */

@@ -65,47 +65,43 @@ size_t php_http_boundary(char *buf, size_t len TSRMLS_DC);
 int php_http_select_str(const char *cmp, int argc, ...);
 
 /* See "A Reusable Duff Device" By Ralf Holly, August 01, 2005 */
-#define PHP_HTTP_DUFF_BREAK(i) do { \
-	times_##i = 1; \
-} while (0)
-
-#define PHP_HTTP_DUFF(i, c, a) do { \
-		size_t count_##i = (c); \
-		size_t times_##i = (count_##i + 7) >> 3; \
-		switch (count_##i & 7){ \
-		case 0: do { a; \
-		case 7: a; \
-		case 6: a; \
-		case 5: a; \
-		case 4: a; \
-		case 3: a; \
-		case 2: a; \
-		case 1: a; \
-		} while (--times_##i > 0); \
+#define PHP_HTTP_DUFF_BREAK() times_=1
+#define PHP_HTTP_DUFF(c, a) do { \
+	size_t count_ = (c); \
+	size_t times_ = (count_ + 7) >> 3; \
+	switch (count_ & 7){ \
+		case 0:	do { \
+			a; \
+		case 7: \
+			a; \
+		case 6: \
+			a; \
+		case 5: \
+			a; \
+		case 4: \
+			a; \
+		case 3: \
+			a; \
+		case 2: \
+			a; \
+		case 1: \
+			a; \
+					} while (--times_ > 0); \
 	} \
 } while (0)
 
-
 static inline const char *php_http_locate_str(register const char *h, size_t h_len, const char *n, size_t n_len)
 {
-	register const char *p1, *p2;
-
-	if (n_len && h_len && h_len >= n_len) {
-		PHP_HTTP_DUFF(1, h_len - n_len + 1,
-			if (*h == *n) {
-				p1 = h;
-				p2 = n;
-				PHP_HTTP_DUFF(2, n_len,
-					if (*p1++ != *p2++) {
-						PHP_HTTP_DUFF_BREAK(2);
-					} else if (p2 == n + n_len - 1) {
-						return h;
-					}
-				);
-			}
-			++h;
-		);
+	if (!n_len || !h_len || h_len < n_len) {
+		return NULL;
 	}
+
+	PHP_HTTP_DUFF(h_len - n_len + 1,
+		if (*h == *n && !strncmp(h + 1, n + 1, n_len - 1)) {
+			return h;
+		}
+		++h;
+	);
 
 	return NULL;
 }
@@ -125,7 +121,7 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 	register const char *eol = bin;
 
 	if (len > 0) {
-		PHP_HTTP_DUFF(1, len,
+		PHP_HTTP_DUFF(len,
 			if (*eol == '\r' || *eol == '\n') {
 				if (eol_len) {
 					*eol_len = ((eol[0] == '\r' && eol[1] == '\n') ? 2 : 1);

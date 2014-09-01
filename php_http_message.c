@@ -98,6 +98,19 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 					zval_dtor(&tval);
 				}
 			}
+#else
+			if (OG(ob_nesting_level)) {
+				if (php_get_output_start_filename(TSRMLS_C)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not fetch response body, output has already been sent at %s:%d", php_get_output_start_filename(TSRMLS_C), php_get_output_start_lineno(TSRMLS_C));
+					goto error;
+				} else if (SUCCESS != php_ob_get_buffer(&tval TSRMLS_CC)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not fetch response body");
+					goto error;
+				} else {
+					php_http_message_body_append(message->body, Z_STRVAL(tval), Z_STRLEN(tval));
+					zval_dtor(&tval);
+				}
+			}
 #endif
 			break;
 			
@@ -924,13 +937,11 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 {
 	zval *headers;
 	php_http_message_object_t *obj = zend_object_store_get_object(object TSRMLS_CC);
-	php_http_message_t *msg = obj->message;
 	HashTable *props = zend_get_std_object_handlers()->get_properties(object TSRMLS_CC);
 	zval array, *parent, *body;
 	char *version;
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
-	
 	INIT_PZVAL_ARRAY(&array, props);
 	
 #define ASSOC_PROP(ptype, n, val) \
@@ -951,20 +962,20 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 		} \
 	} while(0)
 
-	ASSOC_PROP(long, "type", msg->type);
-	ASSOC_STRINGL_EX("httpVersion", version, spprintf(&version, 0, "%u.%u", msg->http.version.major, msg->http.version.minor), 0);
+	ASSOC_PROP(long, "type", obj->message->type);
+	ASSOC_STRINGL_EX("httpVersion", version, spprintf(&version, 0, "%u.%u", obj->message->http.version.major, obj->message->http.version.minor), 0);
 
-	switch (msg->type) {
+	switch (obj->message->type) {
 		case PHP_HTTP_REQUEST:
 			ASSOC_PROP(long, "responseCode", 0);
 			ASSOC_STRINGL("responseStatus", "", 0);
-			ASSOC_STRING("requestMethod", STR_PTR(msg->http.info.request.method));
-			ASSOC_STRING("requestUrl", STR_PTR(msg->http.info.request.url));
+			ASSOC_STRING("requestMethod", STR_PTR(obj->message->http.info.request.method));
+			ASSOC_STRING("requestUrl", STR_PTR(obj->message->http.info.request.url));
 			break;
 
 		case PHP_HTTP_RESPONSE:
-			ASSOC_PROP(long, "responseCode", msg->http.info.response.code);
-			ASSOC_STRING("responseStatus", STR_PTR(msg->http.info.response.status));
+			ASSOC_PROP(long, "responseCode", obj->message->http.info.response.code);
+			ASSOC_STRING("responseStatus", STR_PTR(obj->message->http.info.response.status));
 			ASSOC_STRINGL("requestMethod", "", 0);
 			ASSOC_STRINGL("requestUrl", "", 0);
 			break;
@@ -980,18 +991,19 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 
 	MAKE_STD_ZVAL(headers);
 	array_init(headers);
-	zend_hash_copy(Z_ARRVAL_P(headers), &msg->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+	zend_hash_copy(Z_ARRVAL_P(headers), &obj->message->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
 	ASSOC_PROP(zval, "headers", headers);
 
 	MAKE_STD_ZVAL(body);
-	if (!obj->body) {
-		php_http_new(NULL, php_http_message_body_class_entry, (php_http_new_t) php_http_message_body_object_new_ex, NULL, (void *) php_http_message_body_init(&obj->message->body, NULL TSRMLS_CC), (void *) &obj->body TSRMLS_CC);
+	if (obj->body) {
+		ZVAL_OBJVAL(body, obj->body->zv, 1);
+	} else {
+		ZVAL_NULL(body);
 	}
-	ZVAL_OBJVAL(body, obj->body->zv, 1);
 	ASSOC_PROP(zval, "body", body);
 
 	MAKE_STD_ZVAL(parent);
-	if (msg->parent) {
+	if (obj->message->parent) {
 		ZVAL_OBJVAL(parent, obj->parent->zv, 1);
 	} else {
 		ZVAL_NULL(parent);

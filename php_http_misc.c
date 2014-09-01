@@ -96,7 +96,7 @@ char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle,
 		if ((wasalpha = PHP_HTTP_IS_CTYPE(alpha, key[0]))) {
 			key[0] = (char) (uctitle ? PHP_HTTP_TO_CTYPE(upper, key[0]) : PHP_HTTP_TO_CTYPE(lower, key[0]));
 		}
-		PHP_HTTP_DUFF(1, key_len,
+		PHP_HTTP_DUFF(key_len,
 			if (PHP_HTTP_IS_CTYPE(alpha, key[i])) {
 				key[i] = (char) (((!wasalpha) && uctitle) ? PHP_HTTP_TO_CTYPE(upper, key[i]) : PHP_HTTP_TO_CTYPE(lower, key[i]));
 				wasalpha = 1;

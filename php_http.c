@@ -142,6 +142,7 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_filter)
 	|| SUCCESS != PHP_MINIT_CALL(http_header)
 	|| SUCCESS != PHP_MINIT_CALL(http_message)
+	|| SUCCESS != PHP_MINIT_CALL(http_message_parser)
 	|| SUCCESS != PHP_MINIT_CALL(http_message_body)
 	|| SUCCESS != PHP_MINIT_CALL(http_querystring)
 	|| SUCCESS != PHP_MINIT_CALL(http_client)
@@ -187,9 +188,6 @@ PHP_RINIT_FUNCTION(http)
 {
 	if (0
 	|| SUCCESS != PHP_RINIT_CALL(http_env)
-#if PHP_HTTP_HAVE_CURL && PHP_HTTP_HAVE_EVENT
-	|| SUCCESS != PHP_RINIT_CALL(http_client_curl)
-#endif
 	) {
 		return FAILURE;
 	}
@@ -200,9 +198,6 @@ PHP_RINIT_FUNCTION(http)
 PHP_RSHUTDOWN_FUNCTION(http)
 {
 	if (0
-#if PHP_HTTP_HAVE_CURL && PHP_HTTP_HAVE_EVENT
-	|| SUCCESS != PHP_RSHUTDOWN_CALL(http_client_curl)
-#endif
 	|| SUCCESS != PHP_RSHUTDOWN_CALL(http_env)
 	) {
 		return FAILURE;

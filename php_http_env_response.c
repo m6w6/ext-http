@@ -1096,7 +1096,11 @@ static PHP_METHOD(HttpEnvResponse, __invoke)
 
 		php_http_message_object_init_body_object(obj);
 		php_http_message_body_append(obj->message->body, ob_str, ob_len);
+#if PHP_VERSION_ID >= 50400
 		RETURN_TRUE;
+#else
+		RETURN_EMPTY_STRING();
+#endif
 	}
 }
 

@@ -25,11 +25,6 @@
 #		elif defined(PHP_HTTP_HAVE_GNUTLS)
 #			define PHP_HTTP_NEED_GNUTLS_TSL
 #			include <gcrypt.h>
-#		else
-#			warning \
-				"libcurl was compiled with SSL support, but configure could not determine which" \
-				"library was used; thus no SSL crypto locking callbacks will be set, which may " \
-				"cause random crashes on SSL requests"
 #		endif /* PHP_HTTP_HAVE_OPENSSL || PHP_HTTP_HAVE_GNUTLS */
 #	endif /* PHP_WIN32 */
 #endif /* ZTS && PHP_HTTP_HAVE_SSL */
