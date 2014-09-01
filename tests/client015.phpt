@@ -10,6 +10,7 @@ try {
 } catch (Exception $e) {
 	die("skip ".$e->getMessage()); 
 }
+skip_online_test();
 ?>
 --FILE--
 <?php
