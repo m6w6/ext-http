@@ -49,6 +49,7 @@ typedef struct php_http_client_curl {
 	int unfinished;  /* int because of curl_multi_perform() */
 
 #if PHP_HTTP_HAVE_EVENT
+	struct event_base *evbase;
 	struct event *timeout;
 	unsigned useevents:1;
 #endif
@@ -758,7 +759,7 @@ static int php_http_curlm_socket_callback(CURL *easy, curl_socket_t sock, int ac
 				return -1;
 		}
 
-		event_assign(&ev->evnt, PHP_HTTP_G->curl.event_base, sock, events, php_http_curlm_event_callback, context);
+		event_assign(&ev->evnt, curl->evbase, sock, events, php_http_curlm_event_callback, context);
 		event_add(&ev->evnt, NULL);
 	}
 
@@ -779,10 +780,9 @@ static void php_http_curlm_timer_callback(CURLM *multi, long timeout_ms, void *t
 			php_http_curlm_timeout_callback(CURL_SOCKET_TIMEOUT, /*EV_READ|EV_WRITE*/0, context);
 		} else if (timeout_ms > 0 || !event_initialized(curl->timeout) || !event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
 			struct timeval timeout;
-			TSRMLS_FETCH_FROM_CTX(context->ts);
 
 			if (!event_initialized(curl->timeout)) {
-				event_assign(curl->timeout, PHP_HTTP_G->curl.event_base, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, context);
+				event_assign(curl->timeout, curl->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, context);
 			} else if (event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
 				event_del(curl->timeout);
 			}
@@ -1742,6 +1742,10 @@ static void php_http_client_curl_dtor(php_http_client_t *h)
 		efree(curl->timeout);
 		curl->timeout = NULL;
 	}
+	if (curl->evbase) {
+		event_base_free(curl->evbase);
+		curl->evbase = NULL;
+	}
 #endif
 	curl->unfinished = 0;
 
@@ -1951,7 +1955,7 @@ static STATUS php_http_client_curl_exec(php_http_client_t *h)
 	if (curl->useevents) {
 		php_http_curlm_timeout_callback(CURL_SOCKET_TIMEOUT, /*EV_READ|EV_WRITE*/0, h);
 		do {
-			int ev_rc = event_base_dispatch(PHP_HTTP_G->curl.event_base);
+			int ev_rc = event_base_dispatch(curl->evbase);
 
 #if DBG_EVENTS
 			fprintf(stderr, "%c", "X.0"[ev_rc+1]);
@@ -1995,6 +1999,9 @@ static STATUS php_http_client_curl_setopt(php_http_client_t *h, php_http_client_
 		case PHP_HTTP_CLIENT_OPT_USE_EVENTS:
 #if PHP_HTTP_HAVE_EVENT
 			if ((curl->useevents = *((zend_bool *) arg))) {
+				if (!curl->evbase) {
+					curl->evbase = event_base_new();
+				}
 				if (!curl->timeout) {
 					curl->timeout = ecalloc(1, sizeof(struct event));
 				}
@@ -2160,24 +2167,6 @@ PHP_MSHUTDOWN_FUNCTION(http_client_curl)
 
 	return SUCCESS;
 }
-
-#if PHP_HTTP_HAVE_EVENT
-PHP_RINIT_FUNCTION(http_client_curl)
-{
-	if (!PHP_HTTP_G->curl.event_base && !(PHP_HTTP_G->curl.event_base = event_base_new())) {
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-PHP_RSHUTDOWN_FUNCTION(http_client_curl)
-{
-	if (PHP_HTTP_G->curl.event_base) {
-		event_base_free(PHP_HTTP_G->curl.event_base);
-		PHP_HTTP_G->curl.event_base = NULL;
-	}
-	return SUCCESS;
-}
-#endif /* PHP_HTTP_HAVE_EVENT */
 
 #endif /* PHP_HTTP_HAVE_CURL */
 
