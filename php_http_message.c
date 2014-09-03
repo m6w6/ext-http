@@ -940,6 +940,7 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 	HashTable *props = zend_get_std_object_handlers()->get_properties(object TSRMLS_CC);
 	zval array, *parent, *body;
 	char *version;
+	int verlen;
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 	INIT_PZVAL_ARRAY(&array, props);
@@ -963,7 +964,8 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 	} while(0)
 
 	ASSOC_PROP(long, "type", obj->message->type);
-	ASSOC_STRINGL_EX("httpVersion", version, spprintf(&version, 0, "%u.%u", obj->message->http.version.major, obj->message->http.version.minor), 0);
+	verlen = spprintf(&version, 0, "%u.%u", obj->message->http.version.major, obj->message->http.version.minor);
+	ASSOC_STRINGL_EX("httpVersion", version, verlen, 0);
 
 	switch (obj->message->type) {
 		case PHP_HTTP_REQUEST:
