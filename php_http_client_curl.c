@@ -783,8 +783,6 @@ static void php_http_curlm_timer_callback(CURLM *multi, long timeout_ms, void *t
 
 			if (!event_initialized(curl->timeout)) {
 				event_assign(curl->timeout, curl->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, context);
-			} else if (event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
-				event_del(curl->timeout);
 			}
 
 			timeout.tv_sec = timeout_ms / 1000;
@@ -1873,6 +1871,17 @@ static void php_http_client_curl_reset(php_http_client_t *h)
 	}
 }
 
+static inline void php_http_client_curl_get_timeout(php_http_client_curl_t *curl, long max_tout, struct timeval *timeout)
+{
+	if ((CURLM_OK == curl_multi_timeout(curl->handle, &max_tout)) && (max_tout > 0)) {
+		timeout->tv_sec = max_tout / 1000;
+		timeout->tv_usec = (max_tout % 1000) * 1000;
+	} else {
+		timeout->tv_sec = 0;
+		timeout->tv_usec = 1000;
+	}
+}
+
 #ifdef PHP_WIN32
 #	define SELECT_ERROR SOCKET_ERROR
 #else
@@ -1888,10 +1897,18 @@ static STATUS php_http_client_curl_wait(php_http_client_t *h, struct timeval *cu
 
 #if PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
-		TSRMLS_FETCH_FROM_CTX(h->ts);
+		if (!event_initialized(curl->timeout)) {
+			event_assign(curl->timeout, curl->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, h);
+		} else if (custom_timeout && timerisset(custom_timeout)) {
+			event_add(curl->timeout, custom_timeout);
+		} else if (!event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
+			php_http_client_curl_get_timeout(curl, 1000, &timeout);
+			event_add(curl->timeout, &timeout);
+		}
 
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "not implemented");
-		return FAILURE;
+		event_base_loop(curl->evbase, EVLOOP_ONCE);
+
+		return SUCCESS;
 	}
 #endif
 
@@ -1903,15 +1920,7 @@ static STATUS php_http_client_curl_wait(php_http_client_t *h, struct timeval *cu
 		if (custom_timeout && timerisset(custom_timeout)) {
 			timeout = *custom_timeout;
 		} else {
-			long max_tout = 1000;
-
-			if ((CURLM_OK == curl_multi_timeout(curl->handle, &max_tout)) && (max_tout > 0)) {
-				timeout.tv_sec = max_tout / 1000;
-				timeout.tv_usec = (max_tout % 1000) * 1000;
-			} else {
-				timeout.tv_sec = 0;
-				timeout.tv_usec = 1000;
-			}
+			php_http_client_curl_get_timeout(curl, 1000, &timeout);
 		}
 
 		if (MAX == -1) {
@@ -1930,12 +1939,9 @@ static int php_http_client_curl_once(php_http_client_t *h)
 
 #if PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
-		TSRMLS_FETCH_FROM_CTX(h->ts);
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "not implemented");
-		return FAILURE;
-	}
+		event_base_loop(curl->evbase, EVLOOP_NONBLOCK);
+	} else
 #endif
-
 	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle, &curl->unfinished));
 
 	php_http_curlm_responsehandler(h);

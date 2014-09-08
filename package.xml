@@ -50,6 +50,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  <notes><![CDATA[
 - var_dump(http\Message) no longer automatically creates an empty body
 + Added http\Message\Parser class
++ Made http\Client::once() and http\Client::wait() available when using events
 ]]></notes>
  <contents>
   <dir name="/">
