@@ -37,9 +37,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-09-01</date>
+ <date>2014-09-09</date>
  <version>
-  <release>2.1.1dev</release>
+  <release>2.1.1</release>
   <api>2.1.0</api>
  </version>
  <stability>
@@ -48,7 +48,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-*
+* Fix httpVersion retrieval on bigendian (Remi)
+* Fix etag/crc32b on bigendian (Remi)
 ]]></notes>
  <contents>
   <dir name="/">
