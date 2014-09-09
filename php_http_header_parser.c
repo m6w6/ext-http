@@ -59,8 +59,6 @@ php_http_header_parser_state_t php_http_header_parser_state_push(php_http_header
 
 php_http_header_parser_state_t php_http_header_parser_state_is(php_http_header_parser_t *parser)
 {
-	php_http_header_parser_state_t state;
-
 	if (parser->stack.top) {
 		return (php_http_header_parser_state_t) parser->stack.elements[parser->stack.top - 1];
 	}
