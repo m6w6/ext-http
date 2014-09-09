@@ -151,6 +151,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="client012.phpt"/>
      <file role="test" name="client013.phpt"/>
      <file role="test" name="client014.phpt"/>
+     <file role="test" name="client015.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
