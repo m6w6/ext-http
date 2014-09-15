@@ -49,6 +49,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  <license>BSD, revised</license>
  <notes><![CDATA[
 * Fixed bug #68009 (Segmentation fault after calling exit(0) after a request)
+* Fixed bug #68000 (Extension does not build on FreeBSD)
 ]]></notes>
  <contents>
   <dir name="/">
