@@ -1677,10 +1677,8 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 	return SUCCESS;
 }
 
-static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *handler)
+static void php_http_client_curl_handler_clear(php_http_client_curl_handler_t *handler)
 {
-	TSRMLS_FETCH_FROM_CTX(handler->client->ts);
-
 	curl_easy_setopt(handler->handle, CURLOPT_NOPROGRESS, 1L);
 #if PHP_HTTP_CURL_VERSION(7,32,0)
 	curl_easy_setopt(handler->handle, CURLOPT_XFERINFOFUNCTION, NULL);
@@ -1689,6 +1687,13 @@ static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *ha
 #endif
 	curl_easy_setopt(handler->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(handler->handle, CURLOPT_DEBUGFUNCTION, NULL);
+}
+
+static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *handler)
+{
+	TSRMLS_FETCH_FROM_CTX(handler->client->ts);
+
+	php_http_client_curl_handler_clear(handler);
 
 	php_resource_factory_handle_dtor(handler->rf, handler->handle TSRMLS_CC);
 	php_resource_factory_free(&handler->rf);
@@ -1853,6 +1858,7 @@ static STATUS php_http_client_curl_dequeue(php_http_client_t *h, php_http_client
 	php_http_client_curl_handler_t *handler = enqueue->opaque;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
+	php_http_client_curl_handler_clear(handler);
 	if (CURLM_OK == (rs = curl_multi_remove_handle(curl->handle, handler->handle))) {
 		zend_llist_del_element(&h->requests, handler->handle, (int (*)(void *, void *)) compare_queue);
 		return SUCCESS;

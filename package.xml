@@ -48,8 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fix httpVersion retrieval on bigendian (Remi)
-* Fix etag/crc32b on bigendian (Remi)
+* Fixed bug #68009 (Segmentation fault after calling exit(0) after a request)
 ]]></notes>
  <contents>
   <dir name="/">
