@@ -190,7 +190,7 @@ dnl ----
 		
 			AC_MSG_CHECKING([for SSL support in libcurl])
 			CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
-			CURL_SSL_LIBS=()
+			CURL_SSL_LIBS=""
 			if test "$CURL_SSL" = "SSL"; then
 				AC_MSG_RESULT([yes])
 				AC_DEFINE([PHP_HTTP_HAVE_SSL], [1], [ ])
@@ -212,7 +212,7 @@ dnl ----
 					AC_CHECK_HEADER([openssl/ssl.h], [
 						AC_CHECK_HEADER([openssl/crypto.h], [
 							AC_DEFINE([PHP_HTTP_HAVE_OPENSSL], [1], [ ])
-							CURL_SSL_LIBS=(ssl crypto)
+							CURL_SSL_LIBS="ssl crypto"
 						])
 					])
 				], [
@@ -238,7 +238,7 @@ dnl ----
 					AC_CHECK_HEADER([gnutls.h], [
 						AC_CHECK_HEADER([gcrypt.h], [
 							AC_DEFINE([PHP_HTTP_HAVE_GNUTLS], [1], [ ])
-							CURL_SSL_LIBS=(gnutls gcrypt)
+							CURL_SSL_LIBS="gnutls gcrypt"
 						])
 					])
 				], [
@@ -274,9 +274,11 @@ dnl ----
 			CFLAGS="$save_CFLAGS"
 			LDFLAGS="$save_LDFLAGS"
 			
-			for CURL_SSL_LIB in "${CURL_SSL_LIBS[[@]]}"; do
-				PHP_ADD_LIBRARY_WITH_PATH([$CURL_SSL_LIB], $CURL_DIR/$PHP_LIBDIR, PHP_HTTP_SHARED_LIBADD)
-			done
+			if test -n "$CURL_SSL_LIBS"; then
+				for CURL_SSL_LIB in $CURL_SSL_LIBS; do
+					PHP_ADD_LIBRARY_WITH_PATH([$CURL_SSL_LIB], $CURL_DIR/$PHP_LIBDIR, PHP_HTTP_SHARED_LIBADD)
+				done
+			fi
 			
 			dnl end compile tests
 		
