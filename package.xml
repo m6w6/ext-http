@@ -50,6 +50,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  <notes><![CDATA[
 - var_dump(http\Message) no longer automatically creates an empty body
 + Added http\Message\Parser class
++ Made http\Client::once() and http\Client::wait() available when using events
 ]]></notes>
  <contents>
   <dir name="/">
@@ -150,6 +151,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="client012.phpt"/>
      <file role="test" name="client013.phpt"/>
      <file role="test" name="client014.phpt"/>
+     <file role="test" name="client015.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>

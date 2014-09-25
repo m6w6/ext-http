@@ -783,8 +783,6 @@ static void php_http_curlm_timer_callback(CURLM *multi, long timeout_ms, void *t
 
 			if (!event_initialized(curl->timeout)) {
 				event_assign(curl->timeout, curl->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, context);
-			} else if (event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
-				event_del(curl->timeout);
 			}
 
 			timeout.tv_sec = timeout_ms / 1000;
@@ -1496,6 +1494,9 @@ static STATUS php_http_client_curl_handler_reset(php_http_client_curl_handler_t 
 	}
 
 	curl_easy_setopt(ch, CURLOPT_URL, NULL);
+	curl_easy_setopt(ch, CURLOPT_CUSTOMREQUEST, NULL);
+	curl_easy_setopt(ch, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(ch, CURLOPT_NOBODY, 0L);
 	/* libcurl < 7.19.6 does not clear auth info with USERPWD set to NULL */
 #if PHP_HTTP_CURL_VERSION(7,19,1)
 	curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, NULL);
@@ -1677,10 +1678,8 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 	return SUCCESS;
 }
 
-static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *handler)
+static void php_http_client_curl_handler_clear(php_http_client_curl_handler_t *handler)
 {
-	TSRMLS_FETCH_FROM_CTX(handler->client->ts);
-
 	curl_easy_setopt(handler->handle, CURLOPT_NOPROGRESS, 1L);
 #if PHP_HTTP_CURL_VERSION(7,32,0)
 	curl_easy_setopt(handler->handle, CURLOPT_XFERINFOFUNCTION, NULL);
@@ -1689,6 +1688,13 @@ static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *ha
 #endif
 	curl_easy_setopt(handler->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(handler->handle, CURLOPT_DEBUGFUNCTION, NULL);
+}
+
+static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *handler)
+{
+	TSRMLS_FETCH_FROM_CTX(handler->client->ts);
+
+	php_http_client_curl_handler_clear(handler);
 
 	php_resource_factory_handle_dtor(handler->rf, handler->handle TSRMLS_CC);
 	php_resource_factory_free(&handler->rf);
@@ -1853,6 +1859,7 @@ static STATUS php_http_client_curl_dequeue(php_http_client_t *h, php_http_client
 	php_http_client_curl_handler_t *handler = enqueue->opaque;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
+	php_http_client_curl_handler_clear(handler);
 	if (CURLM_OK == (rs = curl_multi_remove_handle(curl->handle, handler->handle))) {
 		zend_llist_del_element(&h->requests, handler->handle, (int (*)(void *, void *)) compare_queue);
 		return SUCCESS;
@@ -1873,6 +1880,17 @@ static void php_http_client_curl_reset(php_http_client_t *h)
 	}
 }
 
+static inline void php_http_client_curl_get_timeout(php_http_client_curl_t *curl, long max_tout, struct timeval *timeout)
+{
+	if ((CURLM_OK == curl_multi_timeout(curl->handle, &max_tout)) && (max_tout > 0)) {
+		timeout->tv_sec = max_tout / 1000;
+		timeout->tv_usec = (max_tout % 1000) * 1000;
+	} else {
+		timeout->tv_sec = 0;
+		timeout->tv_usec = 1000;
+	}
+}
+
 #ifdef PHP_WIN32
 #	define SELECT_ERROR SOCKET_ERROR
 #else
@@ -1888,10 +1906,18 @@ static STATUS php_http_client_curl_wait(php_http_client_t *h, struct timeval *cu
 
 #if PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
-		TSRMLS_FETCH_FROM_CTX(h->ts);
+		if (!event_initialized(curl->timeout)) {
+			event_assign(curl->timeout, curl->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, h);
+		} else if (custom_timeout && timerisset(custom_timeout)) {
+			event_add(curl->timeout, custom_timeout);
+		} else if (!event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
+			php_http_client_curl_get_timeout(curl, 1000, &timeout);
+			event_add(curl->timeout, &timeout);
+		}
 
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "not implemented");
-		return FAILURE;
+		event_base_loop(curl->evbase, EVLOOP_ONCE);
+
+		return SUCCESS;
 	}
 #endif
 
@@ -1903,15 +1929,7 @@ static STATUS php_http_client_curl_wait(php_http_client_t *h, struct timeval *cu
 		if (custom_timeout && timerisset(custom_timeout)) {
 			timeout = *custom_timeout;
 		} else {
-			long max_tout = 1000;
-
-			if ((CURLM_OK == curl_multi_timeout(curl->handle, &max_tout)) && (max_tout > 0)) {
-				timeout.tv_sec = max_tout / 1000;
-				timeout.tv_usec = (max_tout % 1000) * 1000;
-			} else {
-				timeout.tv_sec = 0;
-				timeout.tv_usec = 1000;
-			}
+			php_http_client_curl_get_timeout(curl, 1000, &timeout);
 		}
 
 		if (MAX == -1) {
@@ -1930,12 +1948,9 @@ static int php_http_client_curl_once(php_http_client_t *h)
 
 #if PHP_HTTP_HAVE_EVENT
 	if (curl->useevents) {
-		TSRMLS_FETCH_FROM_CTX(h->ts);
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "not implemented");
-		return FAILURE;
-	}
+		event_base_loop(curl->evbase, EVLOOP_NONBLOCK);
+	} else
 #endif
-
 	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle, &curl->unfinished));
 
 	php_http_curlm_responsehandler(h);
@@ -2111,6 +2126,11 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	* SSL Version Constants
 	*/
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_TLSv1", CURL_SSLVERSION_TLSv1, CONST_CS|CONST_PERSISTENT);
+#if PHP_HTTP_CURL_VERSION(7,34,0)
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_TLSv1_0", CURL_SSLVERSION_TLSv1_0, CONST_CS|CONST_PERSISTENT);
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_TLSv1_1", CURL_SSLVERSION_TLSv1_1, CONST_CS|CONST_PERSISTENT);
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_TLSv1_2", CURL_SSLVERSION_TLSv1_2, CONST_CS|CONST_PERSISTENT);
+#endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_SSLv2", CURL_SSLVERSION_SSLv2, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_SSLv3", CURL_SSLVERSION_SSLv3, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_ANY", CURL_SSLVERSION_DEFAULT, CONST_CS|CONST_PERSISTENT);
@@ -2132,6 +2152,9 @@ PHP_MINIT_FUNCTION(http_client_curl)
 #endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_NTLM", CURLAUTH_NTLM, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_GSSNEG", CURLAUTH_GSSNEGOTIATE, CONST_CS|CONST_PERSISTENT);
+#if PHP_HTTP_CURL_VERSION(7,38,0)
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_SPNEGO", CURLAUTH_NEGOTIATE, CONST_CS|CONST_PERSISTENT);
+#endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_ANY", CURLAUTH_ANY, CONST_CS|CONST_PERSISTENT);
 
 	/*
@@ -2142,9 +2165,9 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "PROXY_SOCKS5_HOSTNAME", CURLPROXY_SOCKS5, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "PROXY_SOCKS5", CURLPROXY_SOCKS5, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "PROXY_HTTP", CURLPROXY_HTTP, CONST_CS|CONST_PERSISTENT);
-#	if PHP_HTTP_CURL_VERSION(7,19,4)
+#if PHP_HTTP_CURL_VERSION(7,19,4)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "PROXY_HTTP_1_0", CURLPROXY_HTTP_1_0, CONST_CS|CONST_PERSISTENT);
-#	endif
+#endif
 
 	/*
 	* Post Redirection Constants
@@ -2152,6 +2175,7 @@ PHP_MINIT_FUNCTION(http_client_curl)
 #if PHP_HTTP_CURL_VERSION(7,19,1)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "POSTREDIR_301", CURL_REDIR_POST_301, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "POSTREDIR_302", CURL_REDIR_POST_302, CONST_CS|CONST_PERSISTENT);
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "POSTREDIR_303", CURL_REDIR_POST_303, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "POSTREDIR_ALL", CURL_REDIR_POST_ALL, CONST_CS|CONST_PERSISTENT);
 #endif
 
