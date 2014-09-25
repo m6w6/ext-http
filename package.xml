@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2014-09-25</date>
  <version>
-  <release>2.1.2</release>
+  <release>2.1.3dev</release>
   <api>2.1.0</api>
  </version>
  <stability>
@@ -48,11 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added missing request option constants:
-  POSTREDIR_303, AUTH_SPNEGO (libcurl >= 7.38.0), SSL_VERSION_TLSv1_{0,1,2} (libcurl >= 7.34)
-* Fixed bug #68083 (PUT method not working after DELETE)
-* Fixed bug #68009 (Segmentation fault after calling exit(0) after a request)
-* Fixed bug #68000 (Extension does not build on FreeBSD)
+*
 ]]></notes>
  <contents>
   <dir name="/">
