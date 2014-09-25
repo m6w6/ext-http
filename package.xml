@@ -135,6 +135,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
     </dir>
      <file role="test" name="bug61444.phpt"/>
      <file role="test" name="bug66388.phpt"/>
+     <file role="test" name="bug67932.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>
