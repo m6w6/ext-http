@@ -1496,6 +1496,9 @@ static STATUS php_http_client_curl_handler_reset(php_http_client_curl_handler_t 
 	}
 
 	curl_easy_setopt(ch, CURLOPT_URL, NULL);
+	curl_easy_setopt(ch, CURLOPT_CUSTOMREQUEST, NULL);
+	curl_easy_setopt(ch, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(ch, CURLOPT_NOBODY, 0L);
 	/* libcurl < 7.19.6 does not clear auth info with USERPWD set to NULL */
 #if PHP_HTTP_CURL_VERSION(7,19,1)
 	curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, NULL);
