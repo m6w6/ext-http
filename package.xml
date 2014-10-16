@@ -306,10 +306,6 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </dependencies>
  <providesextension>http</providesextension>
  <extsrcrelease>
-  <configureoption 
-   name="with-http"
-   prompt="Enable extended HTTP support"
-   default="yes" />
   <configureoption
    name="with-http-zlib-dir"
    prompt="where to find zlib"
