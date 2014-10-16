@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2014-10-16</date>
  <version>
-  <release>2.1.3</release>
+  <release>2.1.4dev</release>
   <api>2.1.0</api>
  </version>
  <stability>
@@ -48,7 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fix build with libcurl < 7.26 (Remi)
+*
 ]]></notes>
  <contents>
   <dir name="/">
