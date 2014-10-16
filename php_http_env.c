@@ -15,8 +15,6 @@
 
 PHP_RINIT_FUNCTION(http_env)
 {
-	PHP_HTTP_G->env.request.time = sapi_get_request_time(TSRMLS_C);
-
 	/* populate form data on non-POST requests */
 	if (SG(request_info).request_method && strcasecmp(SG(request_info).request_method, "POST") && SG(request_info).content_type && *SG(request_info).content_type) {
 		uint ct_len = strlen(SG(request_info).content_type);

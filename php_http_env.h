@@ -21,7 +21,6 @@ struct php_http_env_globals {
 	char *etag_mode;
 
 	struct {
-		time_t time;
 		HashTable *headers;
 		php_http_message_body_t *body;
 	} request;

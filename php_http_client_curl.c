@@ -903,7 +903,7 @@ static STATUS php_http_curle_option_set_lastmodified(php_http_option_t *opt, zva
 				return FAILURE;
 			}
 		} else {
-			if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_TIMEVALUE, (long) PHP_HTTP_G->env.request.time + Z_LVAL_P(val))) {
+			if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_TIMEVALUE, (long) sapi_get_request_time(TSRMLS_C) + Z_LVAL_P(val))) {
 				return FAILURE;
 			}
 		}
