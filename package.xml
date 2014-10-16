@@ -304,14 +304,11 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <optional>
    <extension><name>hash</name></extension>
    <extension><name>iconv</name></extension>
+   <extension><name>json</name></extension>
   </optional>
  </dependencies>
  <providesextension>http</providesextension>
  <extsrcrelease>
-  <configureoption 
-   name="with-http"
-   prompt="Enable extended HTTP support"
-   default="yes" />
   <configureoption
    name="with-http-zlib-dir"
    prompt="where to find zlib"
