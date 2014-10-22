@@ -115,16 +115,16 @@ void php_http_message_parser_free(php_http_message_parser_t **parser)
 	}
 }
 
-php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_message_parser_t *parser, php_stream *s, unsigned flags, php_http_message_t **message)
+php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_message_parser_t *parser, php_http_buffer_t *buf, php_stream *s, unsigned flags, php_http_message_t **message)
 {
-	php_http_buffer_t buf;
 	php_http_message_parser_state_t state = PHP_HTTP_MESSAGE_PARSER_STATE_START;
 	TSRMLS_FETCH_FROM_CTX(parser->ts);
 
-	php_http_buffer_init_ex(&buf, 0x1000, PHP_HTTP_BUFFER_INIT_PREALLOC);
-
+	if (!buf->data) {
+		php_http_buffer_resize_ex(buf, 0x1000, 1, 0);
+	}
 	while (!php_stream_eof(s)) {
-		size_t len = 0;
+		size_t justread = 0;
 #if DBG_PARSER
 		fprintf(stderr, "#SP: %s (f:%u)\n", php_http_message_parser_state_name(state), flags);
 #endif
@@ -133,34 +133,36 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE:
 				/* read line */
-				php_stream_get_line(s, buf.data + buf.used, buf.free, &len);
-				php_http_buffer_account(&buf, len);
+				php_stream_get_line(s, buf->data + buf->used, buf->free, &justread);
+				php_http_buffer_account(buf, justread);
 				break;
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB:
 				/* read all */
-				php_http_buffer_account(&buf, php_stream_read(s, buf.data + buf.used, buf.free));
+				justread = php_stream_read(s, buf->data + buf->used, buf->free);
+				php_http_buffer_account(buf, justread);
 				break;
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH:
 				/* read body_length */
-				php_http_buffer_account(&buf, php_stream_read(s, buf.data + buf.used, MIN(buf.free, parser->body_length)));
+				justread = php_stream_read(s, buf->data + buf->used, MIN(buf->free, parser->body_length));
+				php_http_buffer_account(buf, justread);
 				break;
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED:
 				/* duh, this is very naive */
-				if (len) {
-					size_t read = php_stream_read(s, buf.data + buf.used, MIN(len, buf.free));
+				if (parser->body_length) {
+					justread = php_stream_read(s, buf->data + buf->used, MIN(parser->body_length, buf->free));
 
-					php_http_buffer_account(&buf, read);
+					php_http_buffer_account(buf, justread);
 
-					len -= read;
+					parser->body_length -= justread;
 				} else {
-					php_http_buffer_resize(&buf, 24);
-					php_stream_get_line(s, buf.data, buf.free, &len);
-					php_http_buffer_account(&buf, len);
+					php_http_buffer_resize(buf, 24);
+					php_stream_get_line(s, buf->data, buf->free, &justread);
+					php_http_buffer_account(buf, justread);
 
-					len = strtoul(buf.data + buf.used - len, NULL, 16);
+					parser->body_length = strtoul(buf->data + buf->used - justread, NULL, 16);
 				}
 				break;
 
@@ -172,14 +174,16 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_DONE:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE:
-				php_http_buffer_dtor(&buf);
 				return php_http_message_parser_state_is(parser);
 		}
 
-		state = php_http_message_parser_parse(parser, &buf, flags, message);
+		if (justread) {
+			state = php_http_message_parser_parse(parser, buf, flags, message);
+		} else  {
+			return state;
+		}
 	}
 
-	php_http_buffer_dtor(&buf);
 	return PHP_HTTP_MESSAGE_PARSER_STATE_DONE;
 }
 
@@ -588,8 +592,8 @@ static PHP_METHOD(HttpMessageParser, parse)
 
 	zval_dtor(zmsg);
 	if (parser_obj->parser->message) {
-			ZVAL_OBJVAL(zmsg, php_http_message_object_new_ex(php_http_message_class_entry, php_http_message_copy(parser_obj->parser->message, NULL), NULL TSRMLS_CC), 0);
-		}
+		ZVAL_OBJVAL(zmsg, php_http_message_object_new_ex(php_http_message_class_entry, php_http_message_copy(parser_obj->parser->message, NULL), NULL TSRMLS_CC), 0);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageParser_stream, 0, 0, 3)
@@ -612,7 +616,7 @@ static PHP_METHOD(HttpMessageParser, stream)
 	zend_restore_error_handling(&zeh TSRMLS_CC);
 
 	parser_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-	RETVAL_LONG(php_http_message_parser_parse_stream(parser_obj->parser, s, flags, &parser_obj->parser->message));
+	RETVAL_LONG(php_http_message_parser_parse_stream(parser_obj->parser, parser_obj->buffer, s, flags, &parser_obj->parser->message));
 
 	zval_dtor(zmsg);
 	if (parser_obj->parser->message) {
