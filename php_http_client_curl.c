@@ -282,7 +282,7 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 			} else if (php_memnstr(data, ZEND_STRL("Operation timed out"), data + length)) {
 				h->progress.info = "timeout";
 			} else {
-#if PHP_DEBUG
+#if 0
 				h->progress.info = data;
 				data[length - 1] = '\0';
 #endif
