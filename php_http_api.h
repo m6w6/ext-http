@@ -68,6 +68,10 @@ typedef int STATUS;
 #	endif
 #endif
 
+#if defined(HAVE_WCHAR_H) && defined(HAVE_WCTYPE_H) && defined(HAVE_ISWALNUM) && (defined(HAVE_MBRTOWC) || defined(HAVE_MBTOWC))
+#	define PHP_HTTP_HAVE_WCHAR 1
+#endif
+
 #include <ctype.h>
 #define PHP_HTTP_IS_CTYPE(type, c) is##type((int) (unsigned char) (c))
 #define PHP_HTTP_TO_CTYPE(type, c) to##type((int) (unsigned char) (c))

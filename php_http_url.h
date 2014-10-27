@@ -35,6 +35,37 @@
 #define PHP_HTTP_URL_FROM_ENV		0x1000
 #define PHP_HTTP_URL_SANITIZE_PATH	0x2000
 
+typedef struct php_http_url_part {
+	char *str;
+	size_t len;
+} php_http_url_part_t;
+
+#define PHP_HTTP_URL_PARSE_LOCMB   0x01
+#define PHP_HTTP_URL_PARSE_UTF8MB  0x02
+#define PHP_HTTP_URL_PARSE_LOCIDN  0x10
+#define PHP_HTTP_URL_PARSE_UTF8IDN 0x20
+
+typedef struct php_http_url {
+	php_http_url_part_t scheme;
+	struct {
+		struct {
+			php_http_url_part_t username;
+			php_http_url_part_t password;
+		} userinfo;
+		php_http_url_part_t host;
+		unsigned short port;
+	} authority;
+	php_http_url_part_t path;
+	php_http_url_part_t query;
+	php_http_url_part_t fragment;
+	unsigned flags;
+#ifdef ZTS
+	void ***ts;
+#endif
+} php_http_url_t;
+
+PHP_HTTP_API php_http_url_t *php_http_url_init(php_http_url_t *url, const char *str, size_t len, unsigned flags TSRMLS_DC);
+
 PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC);
 
 PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC);

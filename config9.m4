@@ -10,6 +10,8 @@ PHP_ARG_WITH([http-libcurl-dir], [],
 [  --with-http-libcurl-dir[=DIR]  HTTP: where to find libcurl], $PHP_HTTP, $PHP_HTTP)
 PHP_ARG_WITH([http-libevent-dir], [],
 [  --with-http-libevent-dir[=DIR] HTTP: where to find libevent], $PHP_HTTP_LIBCURL_DIR, "")
+PHP_ARG_WITH([http-libidn-dir], [],
+[  --with-http-libidn-dir=[=DIR]  HTTP: where to find libidn], $PHP_HTTP_LIBCURL_DIR, "")
 
 if test "$PHP_HTTP" != "no"; then
 
@@ -97,9 +99,34 @@ dnl STDC
 dnl ----
 	AC_TYPE_OFF_T
 	dnl getdomainname() is declared in netdb.h on some platforms: AIX, OSF
-	AC_CHECK_HEADERS([netdb.h unistd.h])
+	AC_CHECK_HEADERS([netdb.h unistd.h wchar.h wctype.h langinfo.h])
 	PHP_CHECK_FUNC(gethostname, nsl)
 	PHP_CHECK_FUNC(getdomainname, nsl)
+	PHP_CHECK_FUNC(mbrtowc)
+	PHP_CHECK_FUNC(mbtowc)
+	PHP_CHECK_FUNC(iswalnum)
+	PHP_CHECK_FUNC(nl_langinfo)
+
+dnl ----
+dnl IDN
+dnl ----
+
+	AC_MSG_CHECKING([for idna.h])
+	IDNA_DIR=
+	for i in "$PHP_HTTP_LIBIDN_DIR" "$IDN_DIR" /usr/local /usr /opt; do
+		if test -f "$i/include/idna.h"; then
+			IDNA_DIR=$i
+			break;
+		fi
+	done
+	if test "x$IDNA_DIR" = "x"; then
+		AC_MSG_RESULT([not found])
+	else
+		AC_MSG_RESULT([found in $IDNA_DIR])
+		AC_DEFINE([PHP_HTTP_HAVE_IDN], [1], [Have libidn support])
+		PHP_ADD_INCLUDE($IDNA_DIR/include)
+		PHP_ADD_LIBRARY_WITH_PATH(idn, $IDNA_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+	fi
 
 dnl ----
 dnl ZLIB

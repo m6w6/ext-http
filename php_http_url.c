@@ -12,6 +12,20 @@
 
 #include "php_http_api.h"
 
+#ifdef PHP_HTTP_HAVE_IDN
+#	include <idna.h>
+#endif
+
+#ifdef PHP_HTTP_HAVE_WCHAR
+#	include <wchar.h>
+#	include <wctype.h>
+#endif
+
+#ifdef HAVE_LANGINFO_H
+#	include <langinfo.h>
+#endif
+#include <locale.h>
+
 static inline char *localhostname(void)
 {
 	char hostname[1024] = {0};
@@ -299,6 +313,714 @@ STATUS php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, con
 	return SUCCESS;
 }
 
+void php_http_url_dtor(php_http_url_t *url)
+{
+	STR_FREE(url->scheme.str);
+	STR_FREE(url->authority.userinfo.username.str);
+	STR_FREE(url->authority.userinfo.password.str);
+	STR_FREE(url->authority.host.str);
+	STR_FREE(url->path.str);
+	STR_FREE(url->query.str);
+	STR_FREE(url->fragment.str);
+}
+
+void php_http_url_free(php_http_url_t **url)
+{
+	if (*url) {
+		php_http_url_dtor(*url);
+		efree(*url);
+		*url = NULL;
+	}
+}
+
+#ifdef PHP_HTTP_HAVE_WCHAR
+static zend_bool cs_is_utf8(char **lc_ctype)
+{
+#if HAVE_NL_LANGINFO
+	if (strcmp("UTF-8", nl_langinfo(CODESET))) {
+		*lc_ctype = setlocale(LC_CTYPE, NULL);
+		return 0;
+	}
+	return 1;
+#else
+	*lc_ctype = setlocale(LC_CTYPE, NULL);
+
+	if (*lc_ctype) {
+		char *cs;
+
+		if ((cs = strstr(*lc_ctype, ".utf")) || (cs = strstr(*lc_ctype, ".UTF"))) {
+			if (cs[4] == '-') {
+				++cs;
+			}
+			if (cs[4] == '8' && (cs[5] == '\0' || cs[5] == '@')) {
+				return 1;
+			}
+		}
+		return 0;
+	}
+#endif
+}
+
+static const unsigned char utf8mblen[256] = {
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+    4,4,4,4,4,4,4,4,5,5,5,5,6,6,6,6
+};
+static const unsigned char utf8mask[] = {
+		0, 0x7f, 0x1f, 0x0f, 0x07, 0x03, 0x01
+};
+
+static size_t utf8towc(wchar_t *wc, const unsigned char *uc, size_t len)
+{
+	unsigned char ub = utf8mblen[*uc];
+
+	if (!ub || ub > len || ub > 3) {
+		return 0;
+	}
+
+	*wc = *uc & utf8mask[ub];
+
+	switch (ub) {
+	case 4:
+		if ((uc[1] & 0xc0) != 0x80) {
+			return 0;
+		}
+		*wc <<= 6;
+		*wc += *++uc & 0x3f;
+		/* no break */
+	case 3:
+		if ((uc[1] & 0xc0) != 0x80) {
+			return 0;
+		}
+		*wc <<= 6;
+		*wc += *++uc & 0x3f;
+		/* no break */
+	case 2:
+		if ((uc[1] & 0xc0) != 0x80) {
+			return 0;
+		}
+		*wc <<= 6;
+		*wc += *++uc & 0x3f;
+		break;
+
+	default:
+		return 0;
+	}
+
+	return ub;
+}
+
+static size_t parse_locmb(php_http_url_t *url, const char *ptr, const char *end)
+{
+	wchar_t wchar;
+	size_t consumed = 0;
+#if defined(HAVE_MBRTOWC)
+	mbstate_t ps = {0};
+
+	consumed = mbrtowc(&wchar, ptr, end - ptr, &ps);
+#elif defined(HAVE_MBTOWC)
+	consumed = mbtowc(&wchar, ptr, end - ptr);
+#endif
+
+	if (!consumed || consumed == (size_t) -1 || !iswalnum(wchar)) {
+		return 0;
+	}
+
+	return consumed - 1;
+}
+
+#include "ualpha.h"
+
+static zend_bool isualnum(wchar_t ch)
+{
+	unsigned i;
+
+	/* digits */
+	if (ch >= 0x30 && ch <= 0x39) {
+		return 1;
+	}
+	for (i = 0; i < sizeof(utf8_ranges)/sizeof(utf8_range_t); ++i) {
+		if (utf8_ranges[i].start == ch) {
+			return 1;
+		} else if (utf8_ranges[i].start <= ch && utf8_ranges[i].end >= ch) {
+			if (utf8_ranges[i].step == 1) {
+				return 1;
+			}
+			/* FIXME step */
+			return 0;
+		}
+	}
+	return 0;
+}
+
+static size_t parse_utf8mb(php_http_url_t *url, const char *ptr, const char *end)
+{
+	char *lc_ctype = NULL;
+
+	if (0 && cs_is_utf8(&lc_ctype)) {
+		return parse_locmb(url, ptr, end);
+	} else {
+		wchar_t wchar;
+		size_t consumed = utf8towc(&wchar, (const unsigned char *) ptr, end - ptr);
+
+		if (!consumed || consumed == (size_t) -1 || !isualnum(wchar)) {
+			return 0;
+		}
+
+		return consumed -1 ;
+	}
+}
+#endif
+
+static STATUS parse_userinfo(php_http_url_t *url, const char *ptr, const char *end)
+{
+	const char *password = NULL, *tmp = ptr;
+	TSRMLS_FETCH_FROM_CTX(url->ts);
+
+	do {
+		switch (*ptr) {
+		case ':':
+			if (password) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse password; duplicate ':' at pos %u in '%s'",
+						(unsigned) (ptr - tmp), tmp);
+				return FAILURE;
+			}
+			password = ptr + 1;
+			break;
+
+		case '%':
+			if (end - ptr <= 2 || !isxdigit(*(ptr+1)) || !isxdigit(*(ptr+2))) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse userinfo; invalid percent encoding at pos %u in '%s'",
+						(unsigned) (ptr - tmp), tmp);
+				return FAILURE;
+			}
+			ptr += 2;
+			break;
+
+		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
+		case '+': case ',': case ';': case '=': /* sub-delims */
+		case '-': case '.': case '_': case '~': /* unreserved */
+		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
+		case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
+		case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
+		case 'V': case 'W': case 'X': case 'Y': case 'Z':
+		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
+		case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
+		case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
+		case 'v': case 'w': case 'x': case 'y': case 'z':
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+		case '7': case '8': case '9':
+			/* allowed */
+			break;
+
+		default:
+			if (url->flags & PHP_HTTP_URL_PARSE_UTF8MB) {
+				size_t n = parse_utf8mb(url, ptr, end);
+
+				if (n) {
+					ptr += n;
+					break;
+				}
+			}
+#ifdef PHP_HTTP_HAVE_WCHAR
+			else if (url->flags & PHP_HTTP_URL_PARSE_LOCMB) {
+				size_t n = parse_locmb(url, ptr, end);
+
+				if (n) {
+					ptr += n;
+					break;
+				}
+			}
+#endif
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Failed to parse userinfo; unexpected byte 0x%02x at pos %u in '%s'",
+					*ptr, (unsigned) (ptr - tmp), tmp);
+		}
+	} while(++ptr != end);
+
+	if (password) {
+		url->authority.userinfo.username.len = password - tmp - 1;
+		url->authority.userinfo.username.str = estrndup(tmp,
+				url->authority.userinfo.username.len);
+		url->authority.userinfo.password.len = end - password;
+		url->authority.userinfo.password.str = estrndup(password,
+				url->authority.userinfo.password.len);
+	} else {
+		url->authority.userinfo.username.len = end - tmp;
+		url->authority.userinfo.username.str = estrndup(tmp,
+				url->authority.userinfo.username.len);
+	}
+
+	return SUCCESS;
+}
+
+static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr, const char *end)
+{
+	const char *tmp = ptr, *port = NULL;
+	TSRMLS_FETCH_FROM_CTX(url->ts);
+
+	/* FIXME: IP(v6) addresses */
+	do {
+		switch (*ptr) {
+		case ':':
+			if (port) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse port; duplicate ':' at pos %u in '%s'",
+						(unsigned) (ptr - tmp), tmp);
+				return FAILURE;
+			}
+			port = ptr + 1;
+			break;
+
+		case '%':
+			if (end - ptr <= 2 || !isxdigit(*(ptr+1)) || !isxdigit(*(ptr+2))) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse hostinfo; invalid percent encoding at pos %u in '%s'",
+						(unsigned) (ptr - tmp), tmp);
+				return FAILURE;
+			}
+			ptr += 2;
+			break;
+
+		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
+		case '+': case ',': case ';': case '=': /* sub-delims */
+		case '-': case '.': case '_': case '~': /* unreserved */
+		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
+		case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
+		case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
+		case 'V': case 'W': case 'X': case 'Y': case 'Z':
+		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
+		case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
+		case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
+		case 'v': case 'w': case 'x': case 'y': case 'z':
+			if (port) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse port; unexpected char '%c' at pos %u in '%s'",
+						*ptr, (unsigned) (ptr - tmp), tmp);
+				return FAILURE;
+			}
+			/* no break */
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+		case '7': case '8': case '9':
+			/* allowed */
+			if (port) {
+				url->authority.port *= 10;
+				url->authority.port += *ptr - '0';
+			}
+			break;
+
+		default:
+			if (!port) {
+				if (url->flags & PHP_HTTP_URL_PARSE_UTF8MB) {
+					size_t n = parse_utf8mb(url, ptr, end);
+
+					if (n) {
+						ptr += n;
+						break;
+					}
+				}
+#ifdef PHP_HTTP_HAVE_WCHAR
+				else if ((url->flags & PHP_HTTP_URL_PARSE_LOCMB) || (url->flags & PHP_HTTP_URL_PARSE_LOCIDN)) {
+					size_t n = parse_locmb(url, ptr, end);
+
+					if (n) {
+						ptr += n;
+						break;
+					}
+				}
+#endif
+			}
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Failed to parse hostinfo; unexpected byte 0x%02x at pos %u in '%s'",
+					(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
+			return FAILURE;
+		}
+	} while (++ptr != end);
+
+	if (port) {
+		url->authority.host.len = port - tmp - 1;
+	} else {
+		url->authority.host.len = end - tmp;
+	}
+
+	url->authority.host.str = estrndup(tmp, url->authority.host.len);
+
+#ifdef PHP_HTTP_HAVE_IDN
+	if (url->flags & PHP_HTTP_URL_PARSE_UTF8IDN) {
+		char *idn = NULL;
+		int rv = idna_to_ascii_8z(url->authority.host.str, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+
+		if (rv != IDNA_SUCCESS) {
+			php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Failed to parse IDN: '%s'", idna_strerror(rv));
+		} else {
+			STR_SET(url->authority.host.str, estrdup(idn));
+			free(idn);
+		}
+	} else if (url->flags & PHP_HTTP_URL_PARSE_LOCIDN) {
+		char *idn = NULL;
+		int rv = idna_to_ascii_lz(url->authority.host.str, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+
+		if (rv != IDNA_SUCCESS) {
+			php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Failed to parse IDN: '%s'", idna_strerror(rv));
+		} else {
+			STR_SET(url->authority.host.str, estrdup(idn));
+			free(idn);
+		}
+	}
+#endif
+
+	return SUCCESS;
+}
+
+static const char *parse_authority(php_http_url_t *url, const char *ptr, const char *end)
+{
+	const char *tmp = ptr;
+
+	do {
+		switch (*ptr) {
+		case '@':
+			/* userinfo delimiter */
+			if (tmp != ptr && SUCCESS != parse_userinfo(url, tmp, ptr)) {
+				return NULL;
+			}
+			tmp = ptr + 1;
+			break;
+
+		case '/':
+		case '?':
+		case '#':
+		case '\0':
+			/* host delimiter */
+			if (tmp != ptr && SUCCESS != parse_hostinfo(url, tmp, ptr)) {
+				return NULL;
+			}
+			return ptr;
+		}
+	} while (++ptr <= end);
+
+	return NULL;
+}
+
+static const char *parse_path(php_http_url_t *url, const char *ptr, const char *end)
+{
+	const char *tmp = ptr;
+	TSRMLS_FETCH_FROM_CTX(url->ts);
+
+	do {
+		switch (*ptr) {
+		case '?':
+		case '\0':
+			url->path.len = ptr - tmp;
+			url->path.str = estrndup(tmp, url->path.len);
+			return ptr;
+
+		case '%':
+			if (end - ptr <= 2 || !isxdigit(*(ptr+1)) || !isxdigit(*(ptr+2))) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse path; invalid percent encoding at pos %u in '%s'",
+						(unsigned) (ptr - tmp), tmp);
+				return NULL;
+			}
+			ptr += 2;
+			break;
+
+		case '/': /* yeah, well */
+		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
+		case '+': case ',': case ';': case '=': /* sub-delims */
+		case '-': case '.': case '_': case '~': /* unreserved */
+		case ':': case '@': /* pchar */
+		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
+		case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
+		case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
+		case 'V': case 'W': case 'X': case 'Y': case 'Z':
+		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
+		case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
+		case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
+		case 'v': case 'w': case 'x': case 'y': case 'z':
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+		case '7': case '8': case '9':
+			/* allowed */
+			break;
+
+		default:
+			if (url->flags & PHP_HTTP_URL_PARSE_UTF8MB) {
+				size_t n = parse_utf8mb(url, ptr, end);
+
+				if (n) {
+					ptr += n;
+					break;
+				}
+			}
+#if PHP_HTTP_HAVE_WCHAR
+			else if (url->flags & PHP_HTTP_URL_PARSE_LOCMB) {
+				size_t n = parse_locmb(url, ptr, end);
+
+				if (n) {
+					ptr += n;
+					break;
+				}
+			}
+#endif
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Failed to parse path; unexpected byte 0x%02x pos %u in '%s'",
+					*ptr, (unsigned) (ptr - tmp), tmp);
+		}
+	} while (++ptr <= end);
+
+	return NULL;
+}
+
+static const char *parse_query(php_http_url_t *url, const char *ptr, const char *end)
+{
+	const char *tmp = ptr + !!*ptr;
+	TSRMLS_FETCH_FROM_CTX(url->ts);
+
+	do {
+		switch (*ptr) {
+		case '#':
+		case '\0':
+			url->query.len = ptr - tmp;
+			url->query.str = estrndup(tmp, url->query.len);
+			return ptr;
+
+		case '%':
+			if (end - ptr <= 2 || !isxdigit(*(ptr+1)) || !isxdigit(*(ptr+2))) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse query; invalid percent encoding at pos %u in '%s'",
+						(unsigned) (ptr - tmp), tmp);
+				return NULL;
+			}
+			ptr += 2;
+			break;
+
+		case '?': case '/': /* yeah, well */
+		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
+		case '+': case ',': case ';': case '=': /* sub-delims */
+		case '-': case '.': case '_': case '~': /* unreserved */
+		case ':': case '@': /* pchar */
+		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
+		case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
+		case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
+		case 'V': case 'W': case 'X': case 'Y': case 'Z':
+		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
+		case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
+		case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
+		case 'v': case 'w': case 'x': case 'y': case 'z':
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+		case '7': case '8': case '9':
+			/* allowed */
+			break;
+
+		default:
+#ifdef PHP_HTTP_HAVE_WCHAR
+			if (url->flags & PHP_HTTP_URL_PARSE_LOCMB) {
+				size_t n = parse_locmb(url, ptr, end);
+
+				if (n) {
+					ptr += n;
+					break;
+				}
+			}
+#endif
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Failed to parse query; unexpected byte 0x%02x at pos %u in '%s'",
+					*ptr, (unsigned) (ptr - tmp), tmp);
+		}
+	} while (++ptr <= end);
+
+	return NULL;
+}
+
+static const char *parse_fragment(php_http_url_t *url, const char *ptr, const char *end)
+{
+	const char *tmp = ptr + !!*ptr;
+	TSRMLS_FETCH_FROM_CTX(url->ts);
+
+	do {
+		switch (*ptr) {
+		case '\0':
+			url->fragment.len = ptr - tmp;
+			url->fragment.str = estrndup(tmp, url->fragment.len);
+			return ptr;
+
+		case '%':
+			if (end - ptr <= 2 || !isxdigit(*(ptr+1)) || !isxdigit(*(ptr+2))) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse query; invalid percent encoding at pos %u in '%s'",
+						(unsigned) (ptr - tmp), tmp);
+				return NULL;
+			}
+			ptr += 2;
+			break;
+
+		case '?': case '/': /* yeah, well */
+		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
+		case '+': case ',': case ';': case '=': /* sub-delims */
+		case '-': case '.': case '_': case '~': /* unreserved */
+		case ':': case '@': /* pchar */
+		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
+		case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
+		case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
+		case 'V': case 'W': case 'X': case 'Y': case 'Z':
+		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
+		case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
+		case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
+		case 'v': case 'w': case 'x': case 'y': case 'z':
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+		case '7': case '8': case '9':
+			/* allowed */
+			break;
+
+		default:
+#if PHP_HTTP_HAVE_WCHAR
+			if (url->flags & PHP_HTTP_URL_PARSE_LOCMB) {
+				size_t n = parse_locmb(url, ptr, end);
+
+				if (n) {
+					ptr += n;
+					break;
+				}
+			}
+#endif
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Failed to parse fragment; unexpected byte 0x%02x at pos %u in '%s'",
+					*ptr, (unsigned) (ptr - tmp), tmp);
+		}
+	} while (++ptr <= end);
+
+	return NULL;
+}
+
+static const char *parse_hier(php_http_url_t *url, const char *ptr, const char *end)
+{
+	if (*ptr == '/') {
+		if (end - ptr > 1) {
+			if (*(ptr + 1) == '/') {
+				if (!(ptr = parse_authority(url, ptr + 2, end))) {
+					return NULL;
+				}
+			}
+		}
+	}
+	return parse_path(url, ptr, end);
+}
+
+static const char *parse_scheme(php_http_url_t *url, const char *ptr, const char *end)
+{
+	const char *tmp = ptr;
+
+	do {
+		switch (*ptr) {
+		case ':':
+			/* scheme delimiter */
+			url->scheme.len = ptr - tmp;
+			url->scheme.str = estrndup(tmp, url->scheme.len);
+			return ++ptr;
+
+		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
+		case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
+		case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
+		case 'V': case 'W': case 'X': case 'Y': case 'Z':
+		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
+		case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
+		case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
+		case 'v': case 'w': case 'x': case 'y': case 'z':
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+		case '7': case '8': case '9':
+		case '+': case '-': case '.':
+			/* scheme part */
+			break;
+
+		default:
+#ifdef PHP_HTTP_HAVE_WCHAR
+			if (url->flags & PHP_HTTP_URL_PARSE_LOCMB) {
+				size_t n = parse_locmb(url, ptr, end);
+
+				if (n) {
+					ptr += n;
+					break;
+				}
+			}
+#endif
+			/* no scheme */
+			return tmp;
+		}
+	} while (++ptr != end);
+
+	return tmp;
+}
+
+php_http_url_t *php_http_url_init(php_http_url_t *url, const char *str, size_t len, unsigned flags TSRMLS_DC)
+{
+	const char *ptr, *end = str + len;
+	zend_bool free_url = !url;
+
+	if (url) {
+		memset(url, 0, sizeof(*url));
+	} else {
+		url = ecalloc(1, sizeof(*url));
+	}
+
+	url->flags = flags;
+	TSRMLS_SET_CTX(url->ts);
+
+	if ((ptr = str) && !(str = parse_scheme(url, ptr, end))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL scheme: '%s'", ptr);
+		if (free_url) {
+			php_http_url_free(&url);
+		} else {
+			php_http_url_dtor(url);
+		}
+		return NULL;
+	}
+
+	if ((ptr = str) && !(str = parse_hier(url, ptr, end))) {
+		if (free_url) {
+			php_http_url_free(&url);
+		} else {
+			php_http_url_dtor(url);
+		}
+		return NULL;
+	}
+
+	if ((ptr = str) && !(str = parse_query(url, ptr, end))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL query: '%s'", ptr);
+		if (free_url) {
+			php_http_url_free(&url);
+		} else {
+			php_http_url_dtor(url);
+		}
+		return NULL;
+	}
+
+	if ((ptr = str) && !(str = parse_fragment(url, ptr, end))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL fragment: '%s'", ptr);
+		if (free_url) {
+			php_http_url_free(&url);
+		} else {
+			php_http_url_dtor(url);
+		}
+		return NULL;
+	}
+
+	return url;
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, old_url)
 	ZEND_ARG_INFO(0, new_url)
@@ -461,12 +1183,41 @@ PHP_METHOD(HttpUrl, toArray)
 	php_url_free(purl);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_parse, 0, 0, 1)
+	ZEND_ARG_INFO(0, url)
+	ZEND_ARG_INFO(0, flags)
+ZEND_END_ARG_INFO();
+PHP_METHOD(HttpUrl, parse)
+{
+	char *str;
+	int len;
+	long flags = 0;
+	php_http_url_t url;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &str, &len, &flags)) {
+		return;
+	}
+
+	if (php_http_url_init(&url, str, len, flags TSRMLS_CC)) {
+		printf("  scheme=(%zu)%s\n", url.scheme.len,url.scheme.str);
+		printf("username=(%zu)%s\n", url.authority.userinfo.username.len,url.authority.userinfo.username.str);
+		printf("password=(%zu)%s\n", url.authority.userinfo.password.len,url.authority.userinfo.password.str);
+		printf("    host=(%zu)%s\n", url.authority.host.len,url.authority.host.str);
+		printf("    port=%d\n", (int) url.authority.port);
+		printf("    path=(%zu)%s\n", url.path.len,url.path.str);
+		printf("   query=(%zu)%s\n", url.query.len,url.query.str);
+		printf("fragment=(%zu)%s\n", url.fragment.len,url.fragment.str);
+		php_http_url_dtor(&url);
+	}
+}
+
 static zend_function_entry php_http_url_methods[] = {
 	PHP_ME(HttpUrl, __construct,  ai_HttpUrl___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(HttpUrl, mod,          ai_HttpUrl_mod, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpUrl, toString,     ai_HttpUrl_toString, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(HttpUrl, __toString, toString, ai_HttpUrl_toString, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpUrl, toArray,      ai_HttpUrl_toArray, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpUrl, parse,        ai_HttpUrl_parse, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
@@ -501,6 +1252,15 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_ALL"), PHP_HTTP_URL_STRIP_ALL TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("FROM_ENV"), PHP_HTTP_URL_FROM_ENV TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("SANITIZE_PATH"), PHP_HTTP_URL_SANITIZE_PATH TSRMLS_CC);
+
+#ifdef PHP_HTTP_HAVE_WCHAR
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_LOCMB"), PHP_HTTP_URL_PARSE_LOCMB TSRMLS_CC);
+#endif
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_UTF8MB"), PHP_HTTP_URL_PARSE_UTF8MB TSRMLS_CC);
+#ifdef PHP_HTTP_HAVE_IDN
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_LOCIDN"), PHP_HTTP_URL_PARSE_LOCIDN TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_UTF8IDN"), PHP_HTTP_URL_PARSE_UTF8IDN TSRMLS_CC);
+#endif
 
 	return SUCCESS;
 }
