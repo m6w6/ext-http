@@ -98,14 +98,14 @@ dnl ----
 dnl STDC
 dnl ----
 	AC_TYPE_OFF_T
+	AC_TYPE_MBSTATE_T
 	dnl getdomainname() is declared in netdb.h on some platforms: AIX, OSF
-	AC_CHECK_HEADERS([netdb.h unistd.h wchar.h wctype.h langinfo.h])
+	AC_CHECK_HEADERS([netdb.h unistd.h wchar.h wctype.h])
 	PHP_CHECK_FUNC(gethostname, nsl)
 	PHP_CHECK_FUNC(getdomainname, nsl)
 	PHP_CHECK_FUNC(mbrtowc)
 	PHP_CHECK_FUNC(mbtowc)
 	PHP_CHECK_FUNC(iswalnum)
-	PHP_CHECK_FUNC(nl_langinfo)
 
 dnl ----
 dnl IDN

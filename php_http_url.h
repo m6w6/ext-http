@@ -40,10 +40,9 @@ typedef struct php_http_url_part {
 	size_t len;
 } php_http_url_part_t;
 
-#define PHP_HTTP_URL_PARSE_LOCMB   0x01
-#define PHP_HTTP_URL_PARSE_UTF8MB  0x02
-#define PHP_HTTP_URL_PARSE_LOCIDN  0x10
-#define PHP_HTTP_URL_PARSE_UTF8IDN 0x20
+#define PHP_HTTP_URL_PARSE_MBLOC  0x001
+#define PHP_HTTP_URL_PARSE_MBUTF8 0x002
+#define PHP_HTTP_URL_PARSE_IDN    0x010
 
 typedef struct php_http_url {
 	php_http_url_part_t scheme;
@@ -65,6 +64,8 @@ typedef struct php_http_url {
 } php_http_url_t;
 
 PHP_HTTP_API php_http_url_t *php_http_url_init(php_http_url_t *url, const char *str, size_t len, unsigned flags TSRMLS_DC);
+PHP_HTTP_API void php_http_url_dtor(php_http_url_t *url);
+PHP_HTTP_API void php_http_url_free(php_http_url_t **url);
 
 PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC);
 
