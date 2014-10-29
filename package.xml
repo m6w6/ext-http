@@ -122,6 +122,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
    <file role="src" name="php_http_strlist.h"/>
    <file role="src" name="php_http_url.c"/>
    <file role="src" name="php_http_url.h"/>
+   <file role="src" name="php_http_utf8.h"/>
    <file role="src" name="php_http_version.c"/>
    <file role="src" name="php_http_version.h"/>
 
@@ -272,11 +273,18 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="querystring001.phpt"/>
      <file role="test" name="querystring002.phpt"/>
      <file role="test" name="serialize001.phpt"/>
+     <file role="test" name="url001.phpt"/>
      <file role="test" name="url002.phpt"/>
      <file role="test" name="url003.phpt"/>
      <file role="test" name="url004.phpt"/>
      <file role="test" name="url005.phpt"/>
-     <file role="test" name="url001.phpt"/>
+     <file role="test" name="urlparser001.phpt"/>
+     <file role="test" name="urlparser002.phpt"/>
+     <file role="test" name="urlparser003.phpt"/>
+     <file role="test" name="urlparser004.phpt"/>
+     <file role="test" name="urlparser005.phpt"/>
+     <file role="test" name="urlparser006.phpt"/>
+     <file role="test" name="urlparser007.phpt"/>
      <file role="test" name="version001.phpt"/>
    </dir>
   </dir>

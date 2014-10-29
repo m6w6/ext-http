@@ -21,6 +21,8 @@
 #	include <wctype.h>
 #endif
 
+#include "php_http_utf8.h"
+
 static inline char *localhostname(void)
 {
 	char hostname[1024] = {0};
@@ -328,93 +330,6 @@ void php_http_url_free(php_http_url_t **url)
 	}
 }
 
-static const unsigned char utf8mblen[256] = {
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-    4,4,4,4,4,4,4,4,5,5,5,5,6,6,6,6
-};
-static const unsigned char utf8mask[] = {
-		0, 0x7f, 0x1f, 0x0f, 0x07, 0x03, 0x01
-};
-
-static inline size_t utf8towc(unsigned *wc, const unsigned char *uc, size_t len)
-{
-	unsigned char ub = utf8mblen[*uc];
-
-	if (!ub || ub > len || ub > 3) {
-		return 0;
-	}
-
-	*wc = *uc & utf8mask[ub];
-
-	switch (ub) {
-	case 4:
-		if ((uc[1] & 0xc0) != 0x80) {
-			return 0;
-		}
-		*wc <<= 6;
-		*wc += *++uc & 0x3f;
-		/* no break */
-	case 3:
-		if ((uc[1] & 0xc0) != 0x80) {
-			return 0;
-		}
-		*wc <<= 6;
-		*wc += *++uc & 0x3f;
-		/* no break */
-	case 2:
-		if ((uc[1] & 0xc0) != 0x80) {
-			return 0;
-		}
-		*wc <<= 6;
-		*wc += *++uc & 0x3f;
-		break;
-
-	default:
-		return 0;
-	}
-
-	return ub;
-}
-
-#include "ualpha.h"
-
-static inline zend_bool isualnum(unsigned ch)
-{
-	unsigned i;
-
-	/* digits */
-	if (ch >= 0x30 && ch <= 0x39) {
-		return 1;
-	}
-
-	for (i = 0; i < sizeof(utf8_ranges)/sizeof(utf8_range_t); ++i) {
-		if (utf8_ranges[i].start == ch) {
-			return 1;
-		} else if (utf8_ranges[i].start <= ch && utf8_ranges[i].end >= ch) {
-			if (utf8_ranges[i].step == 1) {
-				return 1;
-			}
-			/* FIXME step */
-			return 0;
-		}
-	}
-	return 0;
-}
-
 static size_t parse_mb_utf8(php_http_url_t *url, const char *ptr, const char *end, zend_bool idn)
 {
 	unsigned wchar;
@@ -646,35 +561,26 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr, const char *e
 
 #ifdef PHP_HTTP_HAVE_IDN
 	if (url->flags & PHP_HTTP_URL_PARSE_IDN) {
-		if (url->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-			char *idn = NULL;
-			int rv = idna_to_ascii_8z(url->authority.host.str, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+		char *idn = NULL;
+		int rv = -1;
 
-			if (rv != IDNA_SUCCESS) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idna_strerror(rv));
-				return FAILURE;
-			} else {
-				STR_SET(url->authority.host.str, estrdup(idn));
-				url->authority.host.len = strlen(idn);
-				free(idn);
-			}
+		if (url->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+			rv = idna_to_ascii_8z(url->authority.host.str, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
 		}
 #	ifdef PHP_HTTP_HAVE_WCHAR
 		else if (url->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-			char *idn = NULL;
-			int rv = idna_to_ascii_lz(url->authority.host.str, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
-
-			if (rv != IDNA_SUCCESS) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idna_strerror(rv));
-				return FAILURE;
-			} else {
-				STR_SET(url->authority.host.str, estrdup(idn));
-				url->authority.host.len = strlen(idn);
-				free(idn);
-			}
+			rv = idna_to_ascii_lz(url->authority.host.str, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+		}
+#	endif
+		if (rv != IDNA_SUCCESS) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idna_strerror(rv));
+			return FAILURE;
+		} else {
+			STR_SET(url->authority.host.str, estrdup(idn));
+			url->authority.host.len = strlen(idn);
+			free(idn);
 		}
 	}
-#	endif
 #endif
 
 	return SUCCESS;

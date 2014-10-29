@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 error_reporting(E_ALL);
@@ -10,18 +11,8 @@ $i18n = $argc >= 2 ? $argv[1] : "/usr/share/i18n/locales/i18n";
 $f = fopen($i18n, "r");
 $c = false;
 $a = false;
-$r = array();
 
-print <<<C
-typedef struct utf8_range {
-	unsigned int start;
-	unsigned int end;
-	unsigned char step;
-} utf8_range_t;
-
-static const utf8_range_t utf8_ranges[] = {
-
-C;
+ob_start(null, 0xffff);
 while (!feof($f)) {
 	$line = fgets($f);
 	if (!$c && $line !== "LC_CTYPE\n") {
@@ -97,8 +88,6 @@ while (!feof($f)) {
 	}
 }
 
-print <<<C
-	{0, 0, 0}
-};
-
-C;
+file_put_contents("php_http_utf8.h",
+	preg_replace('/(\/\* BEGIN::UTF8TABLE \*\/\n).*(\n\s*\/\* END::UTF8TABLE \*\/)/s', '$1'. ob_get_contents() .'$2',
+		file_get_contents("php_http_utf8.h")));

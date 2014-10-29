@@ -1,10 +1,49 @@
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: http                                                       |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2004-2014, Michael Wallner <mike@php.net>            |
+    +--------------------------------------------------------------------+
+*/
+
+#ifndef PHP_HTTP_UTF8_H
+#define PHP_HTTP_UTF8_H
+
 typedef struct utf8_range {
 	unsigned int start;
 	unsigned int end;
 	unsigned char step;
 } utf8_range_t;
 
+static const unsigned char utf8_mblen[256] = {
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+    4,4,4,4,4,4,4,4,5,5,5,5,6,6,6,6
+};
+
+static const unsigned char utf8_mask[] = {
+		0, 0x7f, 0x1f, 0x0f, 0x07, 0x03, 0x01
+};
+
 static const utf8_range_t utf8_ranges[] = {
+/* BEGIN::UTF8TABLE */
 /* BASIC LATIN */
 	{    0x0041,     0x005A, 1},
 	{    0x0061,     0x007A, 1},
@@ -650,5 +689,86 @@ static const utf8_range_t utf8_ranges[] = {
 	{    0xAA50,     0xAA59, 1},
 /* HALFWIDTH AND FULLWIDTH FORMS */
 	{    0xFF10,     0xFF19, 1},
-	{0, 0, 0}
+
+/* END::UTF8TABLE */
 };
+
+static inline size_t utf8towc(unsigned *wc, const unsigned char *uc, size_t len)
+{
+	unsigned char ub = utf8_mblen[*uc];
+
+	if (!ub || ub > len || ub > 3) {
+		return 0;
+	}
+
+	*wc = *uc & utf8_mask[ub];
+
+	switch (ub) {
+	case 4:
+		if ((uc[1] & 0xc0) != 0x80) {
+			return 0;
+		}
+		*wc <<= 6;
+		*wc += *++uc & 0x3f;
+		/* no break */
+	case 3:
+		if ((uc[1] & 0xc0) != 0x80) {
+			return 0;
+		}
+		*wc <<= 6;
+		*wc += *++uc & 0x3f;
+		/* no break */
+	case 2:
+		if ((uc[1] & 0xc0) != 0x80) {
+			return 0;
+		}
+		*wc <<= 6;
+		*wc += *++uc & 0x3f;
+		/* no break */
+	case 1:
+		break;
+
+	default:
+		return 0;
+	}
+
+	return ub;
+}
+
+static inline zend_bool isualpha(unsigned ch)
+{
+	unsigned i;
+
+	for (i = 0; i < sizeof(utf8_ranges)/sizeof(utf8_range_t); ++i) {
+		if (utf8_ranges[i].start == ch) {
+			return 1;
+		} else if (utf8_ranges[i].start <= ch && utf8_ranges[i].end >= ch) {
+			if (utf8_ranges[i].step == 1) {
+				return 1;
+			}
+			/* FIXME step */
+			return 0;
+		}
+	}
+	return 0;
+}
+
+static inline zend_bool isualnum(unsigned ch)
+{
+	/* digits */
+	if (ch >= 0x30 && ch <= 0x39) {
+		return 1;
+	}
+	return isualpha(ch);
+}
+
+#endif	/* PHP_HTTP_UTF8_H */
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
