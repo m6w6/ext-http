@@ -46,6 +46,8 @@ typedef struct php_http_url_part {
 #define PHP_HTTP_URL_PARSE_MBUTF8 0x002
 /* convert multibyte hostnames to IDNA */
 #define PHP_HTTP_URL_PARSE_IDN    0x010
+/* percent encode multibyte sequences in userinfo, path, query and fragment */
+#define PHP_HTTP_URL_PARSE_PCTENC 0x020
 
 typedef struct php_http_url {
 	/* compatible to php_url, but do not use php_url_free() */

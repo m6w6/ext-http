@@ -379,6 +379,8 @@ static const char * const parse_what[] = {
 	"fragment"
 };
 
+static const char parse_xdigits[] = "0123456789ABCDEF";
+
 static size_t parse_mb(php_http_url_t *url, parse_mb_what_t what, const char *ptr, const char *end, const char *begin, zend_bool silent)
 {
 	size_t consumed = 0;
@@ -394,7 +396,18 @@ static size_t parse_mb(php_http_url_t *url, parse_mb_what_t what, const char *pt
 #endif
 
 	if (consumed) {
-		PHP_HTTP_DUFF(consumed, url->buffer[url->offset++] = *ptr++);
+		if (!(url->flags & PHP_HTTP_URL_PARSE_PCTENC) || what == PARSE_HOSTINFO || what == PARSE_SCHEME) {
+			PHP_HTTP_DUFF(consumed, url->buffer[url->offset++] = *ptr++);
+		} else {
+			int i = 0;
+
+			PHP_HTTP_DUFF(consumed,
+					url->buffer[url->offset++] = '%';
+					url->buffer[url->offset++] = parse_xdigits[((unsigned char) ptr[i]) >> 4];
+					url->buffer[url->offset++] = parse_xdigits[((unsigned char) ptr[i]) & 0xf];
+					++i;
+			);
+		}
 	} else if (!silent) {
 		TSRMLS_FETCH_FROM_CTX(url->ts);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING,
@@ -411,6 +424,8 @@ static STATUS parse_userinfo(php_http_url_t *url, const char *ptr)
 	const char *password = NULL, *end = url->ptr, *tmp = ptr;
 	TSRMLS_FETCH_FROM_CTX(url->ts);
 
+	url->user = &url->buffer[url->offset];
+
 	do {
 		switch (*ptr) {
 		case ':':
@@ -421,7 +436,8 @@ static STATUS parse_userinfo(php_http_url_t *url, const char *ptr)
 				return FAILURE;
 			}
 			password = ptr + 1;
-			url->buffer[url->offset++] = *ptr;
+			url->buffer[url->offset++] = 0;
+			url->pass = &url->buffer[url->offset];
 			break;
 
 		case '%':
@@ -461,15 +477,8 @@ static STATUS parse_userinfo(php_http_url_t *url, const char *ptr)
 		}
 	} while(++ptr != end);
 
-	if (password) {
-		url->user = &url->buffer[url->offset - (end - password) - (password - tmp)];
-		url->buffer[url->offset - (end - password) - 1] = 0;
-		url->pass = &url->buffer[url->offset - (end - password)];
-		url->buffer[url->offset++] = 0;
-	} else {
-		url->user = &url->buffer[url->offset - (end - tmp)];
-		url->buffer[url->offset++] = 0;
-	}
+
+	url->buffer[url->offset++] = 0;
 
 	return SUCCESS;
 }
@@ -654,14 +663,15 @@ static const char *parse_path(php_http_url_t *url)
 		return url->ptr;
 	}
 	tmp = url->ptr;
+	url->path = &url->buffer[url->offset];
 
 	do {
 		switch (*url->ptr) {
+		case '#':
 		case '?':
 		case '\0':
 			/* did we have any path component ? */
 			if (tmp != url->ptr) {
-				url->path = &url->buffer[url->offset - (url->ptr - tmp)];
 				url->buffer[url->offset++] = 0;
 			}
 			return url->ptr;
@@ -715,18 +725,18 @@ static const char *parse_query(php_http_url_t *url)
 	TSRMLS_FETCH_FROM_CTX(url->ts);
 
 	/* is there actually a query to parse ? */
-	if (!*url->ptr || *url->ptr != '?') {
+	if (!*url->ptr && *url->ptr != '?') {
 		return url->ptr;
 	}
 
 	/* skip initial '?' */
-	tmp = url->ptr + 1;
+	tmp = ++url->ptr;
+	url->query = &url->buffer[url->offset];
 
 	do {
 		switch (*url->ptr) {
 		case '#':
 		case '\0':
-			url->query = &url->buffer[url->offset - (url->ptr - tmp)];
 			url->buffer[url->offset++] = 0;
 			return url->ptr;
 
@@ -779,17 +789,17 @@ static const char *parse_fragment(php_http_url_t *url)
 	TSRMLS_FETCH_FROM_CTX(url->ts);
 
 	/* is there actually a fragment to parse */
-	if (!*url->ptr || *url->ptr != '#') {
+	if (!*url->ptr && *url->ptr != '#') {
 		return url->ptr;
 	}
 
 	/* skip initial '#' */
-	tmp = url->ptr + 1;
+	tmp = ++url->ptr;
+	url->fragment = &url->buffer[url->offset];
 
 	do {
 		switch (*url->ptr) {
 		case '\0':
-			url->fragment = &url->buffer[url->offset - (url->ptr - tmp)];
 			url->buffer[url->offset++] = 0;
 			return url->ptr;
 
@@ -805,7 +815,7 @@ static const char *parse_fragment(php_http_url_t *url)
 			url->buffer[url->offset++] = *url->ptr;
 			break;
 
-		case '?': case '/': /* yeah, well */
+		case '?': case '/':
 		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
 		case '+': case ',': case ';': case '=': /* sub-delims */
 		case '-': case '.': case '_': case '~': /* unreserved */
@@ -1199,6 +1209,7 @@ PHP_MINIT_FUNCTION(http_url)
 #ifdef PHP_HTTP_HAVE_IDN
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_IDN"), PHP_HTTP_URL_PARSE_IDN TSRMLS_CC);
 #endif
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_PCTENC"), PHP_HTTP_URL_PARSE_PCTENC TSRMLS_CC);
 
 	return SUCCESS;
 }
