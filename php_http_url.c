@@ -726,8 +726,8 @@ static const char *parse_query(php_http_url_t *url)
 	const char *tmp = url->ptr + !!*url->ptr;
 	TSRMLS_FETCH_FROM_CTX(url->ts);
 
-	/* is there actually a query to parse ? */
-	if (!*url->ptr && *url->ptr != '?') {
+	/* is there actually a query to parse? */
+	if (*url->ptr != '?') {
 		return url->ptr;
 	}
 
@@ -790,8 +790,8 @@ static const char *parse_fragment(php_http_url_t *url)
 	const char *tmp;
 	TSRMLS_FETCH_FROM_CTX(url->ts);
 
-	/* is there actually a fragment to parse */
-	if (!*url->ptr && *url->ptr != '#') {
+	/* is there actually a fragment to parse? */
+	if (*url->ptr != '#') {
 		return url->ptr;
 	}
 
