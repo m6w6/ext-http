@@ -737,7 +737,7 @@ static inline size_t utf8towc(unsigned *wc, const unsigned char *uc, size_t len)
 
 static inline zend_bool isualpha(unsigned ch)
 {
-	unsigned i;
+	unsigned i, j;
 
 	for (i = 0; i < sizeof(utf8_ranges)/sizeof(utf8_range_t); ++i) {
 		if (utf8_ranges[i].start == ch) {
@@ -746,7 +746,11 @@ static inline zend_bool isualpha(unsigned ch)
 			if (utf8_ranges[i].step == 1) {
 				return 1;
 			}
-			/* FIXME step */
+			for (j = utf8_ranges[i].start; j <= utf8_ranges[i].end; j+= utf8_ranges[i].step) {
+				if (ch == j) {
+					return 1;
+				}
+			}
 			return 0;
 		}
 	}

@@ -40,31 +40,36 @@ typedef struct php_http_url_part {
 	size_t len;
 } php_http_url_part_t;
 
+/* parse multibyte according to locale */
 #define PHP_HTTP_URL_PARSE_MBLOC  0x001
+/* parse utf8 multibyte sequences */
 #define PHP_HTTP_URL_PARSE_MBUTF8 0x002
+/* convert multibyte hostnames to IDNA */
 #define PHP_HTTP_URL_PARSE_IDN    0x010
 
 typedef struct php_http_url {
-	php_http_url_part_t scheme;
-	struct {
-		struct {
-			php_http_url_part_t username;
-			php_http_url_part_t password;
-		} userinfo;
-		php_http_url_part_t host;
-		unsigned short port;
-	} authority;
-	php_http_url_part_t path;
-	php_http_url_part_t query;
-	php_http_url_part_t fragment;
-	unsigned flags;
+	/* compatible to php_url, but do not use php_url_free() */
+	char *scheme;
+	char *user;
+	char *pass;
+	char *host;
+	unsigned short port;
+	char *path;
+	char *query;
+	char *fragment;
+	/* our stuff */
 #ifdef ZTS
 	void ***ts;
 #endif
+	const char *ptr;
+	const char *end;
+	size_t maxlen;
+	off_t offset;
+	unsigned flags;
+	char buffer[];
 } php_http_url_t;
 
-PHP_HTTP_API php_http_url_t *php_http_url_init(php_http_url_t *url, const char *str, size_t len, unsigned flags TSRMLS_DC);
-PHP_HTTP_API void php_http_url_dtor(php_http_url_t *url);
+PHP_HTTP_API php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags TSRMLS_DC);
 PHP_HTTP_API void php_http_url_free(php_http_url_t **url);
 
 PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC);
