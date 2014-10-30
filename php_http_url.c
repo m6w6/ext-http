@@ -673,6 +673,8 @@ static const char *parse_path(php_http_url_t *url)
 			/* did we have any path component ? */
 			if (tmp != url->ptr) {
 				url->buffer[url->offset++] = 0;
+			} else {
+				url->path = NULL;
 			}
 			return url->ptr;
 
