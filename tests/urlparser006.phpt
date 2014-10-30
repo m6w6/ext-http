@@ -4,9 +4,9 @@ url parser multibyte/locale/idna
 <?php
 include "skipif.inc";
 if (!defined("http\\Url::PARSE_MBLOC") or
-	!defined("http\\Url::PARSE_IDN") or
+	!defined("http\\Url::PARSE_TOIDN") or
 	!stristr(setlocale(LC_CTYPE, NULL), ".utf")) {
-	die("skip need http\\Url::PARSE_MBLOC|http\\Url::PARSE_IDN support and LC_CTYPE=*.UTF-8");
+	die("skip need http\\Url::PARSE_MBLOC|http\\Url::PARSE_TOIDN support and LC_CTYPE=*.UTF-8");
 }
 ?>
 --FILE--
@@ -21,7 +21,7 @@ $urls = array(
 
 foreach ($urls as $url) {
 	printf("\n%s\n", $url);
-	var_dump(http\Url::parse($url, http\Url::PARSE_MBLOC|http\Url::PARSE_IDN));
+	var_dump(http\Url::parse($url, http\Url::PARSE_MBLOC|http\Url::PARSE_TOIDN));
 }
 ?>
 DONE

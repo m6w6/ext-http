@@ -384,7 +384,7 @@ static const char parse_xdigits[] = "0123456789ABCDEF";
 static size_t parse_mb(php_http_url_t *url, parse_mb_what_t what, const char *ptr, const char *end, const char *begin, zend_bool silent)
 {
 	size_t consumed = 0;
-	zend_bool idn = (what == PARSE_HOSTINFO) && (url->flags & PHP_HTTP_URL_PARSE_IDN);
+	zend_bool idn = (what == PARSE_HOSTINFO) && (url->flags & PHP_HTTP_URL_PARSE_TOIDN);
 
 	if (url->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
 		consumed = parse_mb_utf8(url, ptr, end, idn);
@@ -396,7 +396,7 @@ static size_t parse_mb(php_http_url_t *url, parse_mb_what_t what, const char *pt
 #endif
 
 	if (consumed) {
-		if (!(url->flags & PHP_HTTP_URL_PARSE_PCTENC) || what == PARSE_HOSTINFO || what == PARSE_SCHEME) {
+		if (!(url->flags & PHP_HTTP_URL_PARSE_TOPCT) || what == PARSE_HOSTINFO || what == PARSE_SCHEME) {
 			PHP_HTTP_DUFF(consumed, url->buffer[url->offset++] = *ptr++);
 		} else {
 			int i = 0;
@@ -596,7 +596,7 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
 	}
 
 #ifdef PHP_HTTP_HAVE_IDN
-	if (url->flags & PHP_HTTP_URL_PARSE_IDN) {
+	if (url->flags & PHP_HTTP_URL_PARSE_TOIDN) {
 		char *idn = NULL;
 		int rv = -1;
 
@@ -1209,9 +1209,9 @@ PHP_MINIT_FUNCTION(http_url)
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBUTF8"), PHP_HTTP_URL_PARSE_MBUTF8 TSRMLS_CC);
 #ifdef PHP_HTTP_HAVE_IDN
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_IDN"), PHP_HTTP_URL_PARSE_IDN TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN"), PHP_HTTP_URL_PARSE_TOIDN TSRMLS_CC);
 #endif
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_PCTENC"), PHP_HTTP_URL_PARSE_PCTENC TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT TSRMLS_CC);
 
 	return SUCCESS;
 }
