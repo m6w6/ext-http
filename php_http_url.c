@@ -528,7 +528,7 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
 		case ':':
 			if (port) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse port; duplicate ':' at pos %u in '%s'",
+						"Failed to parse port; unexpected ':' at pos %u in '%s'",
 						(unsigned) (ptr - tmp), tmp);
 				return FAILURE;
 			}
@@ -625,12 +625,19 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
 
 static const char *parse_authority(php_http_url_t *url)
 {
-	const char *tmp = url->ptr;
+	const char *tmp = url->ptr, *host = NULL;
 
 	do {
 		switch (*url->ptr) {
 		case '@':
 			/* userinfo delimiter */
+			if (host) {
+				TSRMLS_FETCH_FROM_CTX(url->ts);
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse userinfo; unexpected '@'");
+				return NULL;
+			}
+			host = url->ptr + 1;
 			if (tmp != url->ptr && SUCCESS != parse_userinfo(url, tmp)) {
 				return NULL;
 			}
