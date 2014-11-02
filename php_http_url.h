@@ -59,16 +59,6 @@ typedef struct php_http_url {
 	char *path;
 	char *query;
 	char *fragment;
-	/* our stuff */
-#ifdef ZTS
-	void ***ts;
-#endif
-	const char *ptr;
-	const char *end;
-	size_t maxlen;
-	off_t offset;
-	unsigned flags;
-	char buffer[];
 } php_http_url_t;
 
 PHP_HTTP_API php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags TSRMLS_DC);

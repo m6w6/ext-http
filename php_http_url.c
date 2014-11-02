@@ -314,6 +314,19 @@ STATUS php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, con
 	return SUCCESS;
 }
 
+struct parse_state {
+	php_http_url_t url;
+#ifdef ZTS
+	void ***ts;
+#endif
+	const char *ptr;
+	const char *end;
+	size_t maxlen;
+	off_t offset;
+	unsigned flags;
+	char buffer[1]; /* last member */
+};
+
 void php_http_url_free(php_http_url_t **url)
 {
 	if (*url) {
@@ -322,7 +335,7 @@ void php_http_url_free(php_http_url_t **url)
 	}
 }
 
-static size_t parse_mb_utf8(php_http_url_t *url, const char *ptr, const char *end, zend_bool idn)
+static size_t parse_mb_utf8(struct parse_state *state, const char *ptr, const char *end, zend_bool idn)
 {
 	unsigned wchar;
 	size_t consumed = utf8towc(&wchar, (const unsigned char *) ptr, end - ptr);
@@ -338,7 +351,7 @@ static size_t parse_mb_utf8(php_http_url_t *url, const char *ptr, const char *en
 }
 
 #ifdef PHP_HTTP_HAVE_WCHAR
-static size_t parse_mb_loc(php_http_url_t *url, const char *ptr, const char *end, zend_bool idn)
+static size_t parse_mb_loc(struct parse_state *state, const char *ptr, const char *end, zend_bool idn)
 {
 	wchar_t wchar;
 	size_t consumed = 0;
@@ -381,35 +394,35 @@ static const char * const parse_what[] = {
 
 static const char parse_xdigits[] = "0123456789ABCDEF";
 
-static size_t parse_mb(php_http_url_t *url, parse_mb_what_t what, const char *ptr, const char *end, const char *begin, zend_bool silent)
+static size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const char *ptr, const char *end, const char *begin, zend_bool silent)
 {
 	size_t consumed = 0;
-	zend_bool idn = (what == PARSE_HOSTINFO) && (url->flags & PHP_HTTP_URL_PARSE_TOIDN);
+	zend_bool idn = (what == PARSE_HOSTINFO) && (state->flags & PHP_HTTP_URL_PARSE_TOIDN);
 
-	if (url->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-		consumed = parse_mb_utf8(url, ptr, end, idn);
+	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+		consumed = parse_mb_utf8(state, ptr, end, idn);
 	}
 #ifdef PHP_HTTP_HAVE_WCHAR
-	else if (url->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-		consumed = parse_mb_loc(url, ptr, end, idn);
+	else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
+		consumed = parse_mb_loc(state, ptr, end, idn);
 	}
 #endif
 
 	if (consumed) {
-		if (!(url->flags & PHP_HTTP_URL_PARSE_TOPCT) || what == PARSE_HOSTINFO || what == PARSE_SCHEME) {
-			PHP_HTTP_DUFF(consumed, url->buffer[url->offset++] = *ptr++);
+		if (!(state->flags & PHP_HTTP_URL_PARSE_TOPCT) || what == PARSE_HOSTINFO || what == PARSE_SCHEME) {
+			PHP_HTTP_DUFF(consumed, state->buffer[state->offset++] = *ptr++);
 		} else {
 			int i = 0;
 
 			PHP_HTTP_DUFF(consumed,
-					url->buffer[url->offset++] = '%';
-					url->buffer[url->offset++] = parse_xdigits[((unsigned char) ptr[i]) >> 4];
-					url->buffer[url->offset++] = parse_xdigits[((unsigned char) ptr[i]) & 0xf];
+					state->buffer[state->offset++] = '%';
+					state->buffer[state->offset++] = parse_xdigits[((unsigned char) ptr[i]) >> 4];
+					state->buffer[state->offset++] = parse_xdigits[((unsigned char) ptr[i]) & 0xf];
 					++i;
 			);
 		}
 	} else if (!silent) {
-		TSRMLS_FETCH_FROM_CTX(url->ts);
+		TSRMLS_FETCH_FROM_CTX(state->ts);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING,
 				"Failed to parse %s; unexpected byte 0x%02x at pos %u in '%s'",
 				parse_what[what], (unsigned char) *ptr, (unsigned) (ptr - begin), begin);
@@ -418,13 +431,13 @@ static size_t parse_mb(php_http_url_t *url, parse_mb_what_t what, const char *pt
 	return consumed;
 }
 
-static STATUS parse_userinfo(php_http_url_t *url, const char *ptr)
+static STATUS parse_userinfo(struct parse_state *state, const char *ptr)
 {
 	size_t mb;
-	const char *password = NULL, *end = url->ptr, *tmp = ptr;
-	TSRMLS_FETCH_FROM_CTX(url->ts);
+	const char *password = NULL, *end = state->ptr, *tmp = ptr;
+	TSRMLS_FETCH_FROM_CTX(state->ts);
 
-	url->user = &url->buffer[url->offset];
+	state->url.user = &state->buffer[state->offset];
 
 	do {
 		switch (*ptr) {
@@ -436,8 +449,8 @@ static STATUS parse_userinfo(php_http_url_t *url, const char *ptr)
 				return FAILURE;
 			}
 			password = ptr + 1;
-			url->buffer[url->offset++] = 0;
-			url->pass = &url->buffer[url->offset];
+			state->buffer[state->offset++] = 0;
+			state->url.pass = &state->buffer[state->offset];
 			break;
 
 		case '%':
@@ -447,9 +460,9 @@ static STATUS parse_userinfo(php_http_url_t *url, const char *ptr)
 						(unsigned) (ptr - tmp), tmp);
 				return FAILURE;
 			}
-			url->buffer[url->offset++] = *ptr++;
-			url->buffer[url->offset++] = *ptr++;
-			url->buffer[url->offset++] = *ptr;
+			state->buffer[state->offset++] = *ptr++;
+			state->buffer[state->offset++] = *ptr++;
+			state->buffer[state->offset++] = *ptr;
 			break;
 
 		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
@@ -466,11 +479,11 @@ static STATUS parse_userinfo(php_http_url_t *url, const char *ptr)
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
 		case '7': case '8': case '9':
 			/* allowed */
-			url->buffer[url->offset++] = *ptr;
+			state->buffer[state->offset++] = *ptr;
 			break;
 
 		default:
-			if (!(mb = parse_mb(url, PARSE_USERINFO, ptr, end, tmp, 0))) {
+			if (!(mb = parse_mb(state, PARSE_USERINFO, ptr, end, tmp, 0))) {
 				return FAILURE;
 			}
 			ptr += mb - 1;
@@ -478,16 +491,16 @@ static STATUS parse_userinfo(php_http_url_t *url, const char *ptr)
 	} while(++ptr != end);
 
 
-	url->buffer[url->offset++] = 0;
+	state->buffer[state->offset++] = 0;
 
 	return SUCCESS;
 }
 
-static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
+static STATUS parse_hostinfo(struct parse_state *state, const char *ptr)
 {
 	size_t mb, len;
-	const char *end = url->ptr, *tmp = ptr, *port = NULL;
-	TSRMLS_FETCH_FROM_CTX(url->ts);
+	const char *end = state->ptr, *tmp = ptr, *port = NULL;
+	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 
 #ifdef HAVE_INET_PTON
@@ -501,12 +514,12 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
 
 			efree(addr);
 			if (rv == 1) {
-				url->buffer[url->offset] = '[';
-				url->host = &url->buffer[url->offset];
-				inet_ntop(AF_INET6, buf, url->host + 1, url->maxlen - url->offset);
-				url->offset += strlen(url->host);
-				url->buffer[url->offset++] = ']';
-				url->buffer[url->offset++] = 0;
+				state->buffer[state->offset] = '[';
+				state->url.host = &state->buffer[state->offset];
+				inet_ntop(AF_INET6, buf, state->url.host + 1, state->maxlen - state->offset);
+				state->offset += strlen(state->url.host);
+				state->buffer[state->offset++] = ']';
+				state->buffer[state->offset++] = 0;
 				ptr = tmp + 1;
 			} else if (rv == -1) {
 				error = strerror(errno);
@@ -542,9 +555,9 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
 						(unsigned) (ptr - tmp), tmp);
 				return FAILURE;
 			}
-			url->buffer[url->offset++] = *ptr++;
-			url->buffer[url->offset++] = *ptr++;
-			url->buffer[url->offset++] = *ptr;
+			state->buffer[state->offset++] = *ptr++;
+			state->buffer[state->offset++] = *ptr++;
+			state->buffer[state->offset++] = *ptr;
 			break;
 
 		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
@@ -569,10 +582,10 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
 		case '7': case '8': case '9':
 			/* allowed */
 			if (port) {
-				url->port *= 10;
-				url->port += *ptr - '0';
+				state->url.port *= 10;
+				state->url.port += *ptr - '0';
 			} else {
-				url->buffer[url->offset++] = *ptr;
+				state->buffer[state->offset++] = *ptr;
 			}
 			break;
 
@@ -582,30 +595,30 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
 						"Failed to parse port; unexpected byte 0x%02x at pos %u in '%s'",
 						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
 				return FAILURE;
-			} else if (!(mb = parse_mb(url, PARSE_HOSTINFO, ptr, end, tmp, 0))) {
+			} else if (!(mb = parse_mb(state, PARSE_HOSTINFO, ptr, end, tmp, 0))) {
 				return FAILURE;
 			}
 			ptr += mb - 1;
 		}
 	} while (++ptr != end);
 
-	if (!url->host) {
+	if (!state->url.host) {
 		len = (port ? port - tmp - 1 : end - tmp);
-		url->host = &url->buffer[url->offset - len];
-		url->buffer[url->offset++] = 0;
+		state->url.host = &state->buffer[state->offset - len];
+		state->buffer[state->offset++] = 0;
 	}
 
 #ifdef PHP_HTTP_HAVE_IDN
-	if (url->flags & PHP_HTTP_URL_PARSE_TOIDN) {
+	if (state->flags & PHP_HTTP_URL_PARSE_TOIDN) {
 		char *idn = NULL;
 		int rv = -1;
 
-		if (url->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-			rv = idna_to_ascii_8z(url->host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+		if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+			rv = idna_to_ascii_8z(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
 		}
 #	ifdef PHP_HTTP_HAVE_WCHAR
-		else if (url->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-			rv = idna_to_ascii_lz(url->host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+		else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
+			rv = idna_to_ascii_lz(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
 		}
 #	endif
 		if (rv != IDNA_SUCCESS) {
@@ -613,9 +626,9 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
 			return FAILURE;
 		} else {
 			size_t idnlen = strlen(idn);
-			memcpy(url->host, idn, idnlen + 1);
+			memcpy(state->url.host, idn, idnlen + 1);
 			free(idn);
-			url->offset += idnlen - len;
+			state->offset += idnlen - len;
 		}
 	}
 #endif
@@ -623,25 +636,25 @@ static STATUS parse_hostinfo(php_http_url_t *url, const char *ptr)
 	return SUCCESS;
 }
 
-static const char *parse_authority(php_http_url_t *url)
+static const char *parse_authority(struct parse_state *state)
 {
-	const char *tmp = url->ptr, *host = NULL;
+	const char *tmp = state->ptr, *host = NULL;
 
 	do {
-		switch (*url->ptr) {
+		switch (*state->ptr) {
 		case '@':
 			/* userinfo delimiter */
 			if (host) {
-				TSRMLS_FETCH_FROM_CTX(url->ts);
+				TSRMLS_FETCH_FROM_CTX(state->ts);
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,
 						"Failed to parse userinfo; unexpected '@'");
 				return NULL;
 			}
-			host = url->ptr + 1;
-			if (tmp != url->ptr && SUCCESS != parse_userinfo(url, tmp)) {
+			host = state->ptr + 1;
+			if (tmp != state->ptr && SUCCESS != parse_userinfo(state, tmp)) {
 				return NULL;
 			}
-			tmp = url->ptr + 1;
+			tmp = state->ptr + 1;
 			break;
 
 		case '/':
@@ -649,52 +662,52 @@ static const char *parse_authority(php_http_url_t *url)
 		case '#':
 		case '\0':
 			/* host delimiter */
-			if (tmp != url->ptr && SUCCESS != parse_hostinfo(url, tmp)) {
+			if (tmp != state->ptr && SUCCESS != parse_hostinfo(state, tmp)) {
 				return NULL;
 			}
-			return url->ptr;
+			return state->ptr;
 		}
-	} while (++url->ptr <= url->end);
+	} while (++state->ptr <= state->end);
 
 	return NULL;
 }
 
-static const char *parse_path(php_http_url_t *url)
+static const char *parse_path(struct parse_state *state)
 {
 	size_t mb;
 	const char *tmp;
-	TSRMLS_FETCH_FROM_CTX(url->ts);
+	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	/* is there actually a path to parse? */
-	if (!*url->ptr) {
-		return url->ptr;
+	if (!*state->ptr) {
+		return state->ptr;
 	}
-	tmp = url->ptr;
-	url->path = &url->buffer[url->offset];
+	tmp = state->ptr;
+	state->url.path = &state->buffer[state->offset];
 
 	do {
-		switch (*url->ptr) {
+		switch (*state->ptr) {
 		case '#':
 		case '?':
 		case '\0':
 			/* did we have any path component ? */
-			if (tmp != url->ptr) {
-				url->buffer[url->offset++] = 0;
+			if (tmp != state->ptr) {
+				state->buffer[state->offset++] = 0;
 			} else {
-				url->path = NULL;
+				state->url.path = NULL;
 			}
-			return url->ptr;
+			return state->ptr;
 
 		case '%':
-			if (url->ptr[1] != '%' && (url->end - url->ptr <= 2 || !isxdigit(*(url->ptr+1)) || !isxdigit(*(url->ptr+2)))) {
+			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,
 						"Failed to parse path; invalid percent encoding at pos %u in '%s'",
-						(unsigned) (url->ptr - tmp), tmp);
+						(unsigned) (state->ptr - tmp), tmp);
 				return NULL;
 			}
-			url->buffer[url->offset++] = *url->ptr++;
-			url->buffer[url->offset++] = *url->ptr++;
-			url->buffer[url->offset++] = *url->ptr;
+			state->buffer[state->offset++] = *state->ptr++;
+			state->buffer[state->offset++] = *state->ptr++;
+			state->buffer[state->offset++] = *state->ptr;
 			break;
 
 		case '/': /* yeah, well */
@@ -713,52 +726,52 @@ static const char *parse_path(php_http_url_t *url)
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
 		case '7': case '8': case '9':
 			/* allowed */
-			url->buffer[url->offset++] = *url->ptr;
+			state->buffer[state->offset++] = *state->ptr;
 			break;
 
 		default:
-			if (!(mb = parse_mb(url, PARSE_PATH, url->ptr, url->end, tmp, 0))) {
+			if (!(mb = parse_mb(state, PARSE_PATH, state->ptr, state->end, tmp, 0))) {
 				return NULL;
 			}
-			url->ptr += mb - 1;
+			state->ptr += mb - 1;
 		}
-	} while (++url->ptr <= url->end);
+	} while (++state->ptr <= state->end);
 
 	return NULL;
 }
 
-static const char *parse_query(php_http_url_t *url)
+static const char *parse_query(struct parse_state *state)
 {
 	size_t mb;
-	const char *tmp = url->ptr + !!*url->ptr;
-	TSRMLS_FETCH_FROM_CTX(url->ts);
+	const char *tmp = state->ptr + !!*state->ptr;
+	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	/* is there actually a query to parse? */
-	if (*url->ptr != '?') {
-		return url->ptr;
+	if (*state->ptr != '?') {
+		return state->ptr;
 	}
 
 	/* skip initial '?' */
-	tmp = ++url->ptr;
-	url->query = &url->buffer[url->offset];
+	tmp = ++state->ptr;
+	state->url.query = &state->buffer[state->offset];
 
 	do {
-		switch (*url->ptr) {
+		switch (*state->ptr) {
 		case '#':
 		case '\0':
-			url->buffer[url->offset++] = 0;
-			return url->ptr;
+			state->buffer[state->offset++] = 0;
+			return state->ptr;
 
 		case '%':
-			if (url->ptr[1] != '%' && (url->end - url->ptr <= 2 || !isxdigit(*(url->ptr+1)) || !isxdigit(*(url->ptr+2)))) {
+			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,
 						"Failed to parse query; invalid percent encoding at pos %u in '%s'",
-						(unsigned) (url->ptr - tmp), tmp);
+						(unsigned) (state->ptr - tmp), tmp);
 				return NULL;
 			}
-			url->buffer[url->offset++] = *url->ptr++;
-			url->buffer[url->offset++] = *url->ptr++;
-			url->buffer[url->offset++] = *url->ptr;
+			state->buffer[state->offset++] = *state->ptr++;
+			state->buffer[state->offset++] = *state->ptr++;
+			state->buffer[state->offset++] = *state->ptr;
 			break;
 
 		case '?': case '/': /* yeah, well */
@@ -777,51 +790,51 @@ static const char *parse_query(php_http_url_t *url)
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
 		case '7': case '8': case '9':
 			/* allowed */
-			url->buffer[url->offset++] = *url->ptr;
+			state->buffer[state->offset++] = *state->ptr;
 			break;
 
 		default:
-			if (!(mb = parse_mb(url, PARSE_QUERY, url->ptr, url->end, tmp, 0))) {
+			if (!(mb = parse_mb(state, PARSE_QUERY, state->ptr, state->end, tmp, 0))) {
 				return NULL;
 			}
-			url->ptr += mb - 1;
+			state->ptr += mb - 1;
 		}
-	} while (++url->ptr <= url->end);
+	} while (++state->ptr <= state->end);
 
 	return NULL;
 }
 
-static const char *parse_fragment(php_http_url_t *url)
+static const char *parse_fragment(struct parse_state *state)
 {
 	size_t mb;
 	const char *tmp;
-	TSRMLS_FETCH_FROM_CTX(url->ts);
+	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	/* is there actually a fragment to parse? */
-	if (*url->ptr != '#') {
-		return url->ptr;
+	if (*state->ptr != '#') {
+		return state->ptr;
 	}
 
 	/* skip initial '#' */
-	tmp = ++url->ptr;
-	url->fragment = &url->buffer[url->offset];
+	tmp = ++state->ptr;
+	state->url.fragment = &state->buffer[state->offset];
 
 	do {
-		switch (*url->ptr) {
+		switch (*state->ptr) {
 		case '\0':
-			url->buffer[url->offset++] = 0;
-			return url->ptr;
+			state->buffer[state->offset++] = 0;
+			return state->ptr;
 
 		case '%':
-			if (url->ptr[1] != '%' && (url->end - url->ptr <= 2 || !isxdigit(*(url->ptr+1)) || !isxdigit(*(url->ptr+2)))) {
+			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,
 						"Failed to parse fragment; invalid percent encoding at pos %u in '%s'",
-						(unsigned) (url->ptr - tmp), tmp);
+						(unsigned) (state->ptr - tmp), tmp);
 				return NULL;
 			}
-			url->buffer[url->offset++] = *url->ptr++;
-			url->buffer[url->offset++] = *url->ptr++;
-			url->buffer[url->offset++] = *url->ptr;
+			state->buffer[state->offset++] = *state->ptr++;
+			state->buffer[state->offset++] = *state->ptr++;
+			state->buffer[state->offset++] = *state->ptr;
 			break;
 
 		case '?': case '/':
@@ -840,52 +853,52 @@ static const char *parse_fragment(php_http_url_t *url)
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
 		case '7': case '8': case '9':
 			/* allowed */
-			url->buffer[url->offset++] = *url->ptr;
+			state->buffer[state->offset++] = *state->ptr;
 			break;
 
 		default:
-			if (!(mb = parse_mb(url, PARSE_FRAGMENT, url->ptr, url->end, tmp, 0))) {
+			if (!(mb = parse_mb(state, PARSE_FRAGMENT, state->ptr, state->end, tmp, 0))) {
 				return NULL;
 			}
-			url->ptr += mb - 1;
+			state->ptr += mb - 1;
 		}
-	} while (++url->ptr <= url->end);
+	} while (++state->ptr <= state->end);
 
 	return NULL;
 }
 
-static const char *parse_hier(php_http_url_t *url)
+static const char *parse_hier(struct parse_state *state)
 {
-	if (*url->ptr == '/') {
-		if (url->end - url->ptr > 1) {
-			if (*(url->ptr + 1) == '/') {
-				url->ptr += 2;
-				if (!(url->ptr = parse_authority(url))) {
+	if (*state->ptr == '/') {
+		if (state->end - state->ptr > 1) {
+			if (*(state->ptr + 1) == '/') {
+				state->ptr += 2;
+				if (!(state->ptr = parse_authority(state))) {
 					return NULL;
 				}
 			}
 		}
 	}
-	return parse_path(url);
+	return parse_path(state);
 }
 
-static const char *parse_scheme(php_http_url_t *url)
+static const char *parse_scheme(struct parse_state *state)
 {
 	size_t mb;
-	const char *tmp = url->ptr;
+	const char *tmp = state->ptr;
 
 	do {
-		switch (*url->ptr) {
+		switch (*state->ptr) {
 		case ':':
 			/* scheme delimiter */
-			url->scheme = &url->buffer[0];
-			url->buffer[url->offset++] = 0;
-			return ++url->ptr;
+			state->url.scheme = &state->buffer[0];
+			state->buffer[state->offset++] = 0;
+			return ++state->ptr;
 
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
 		case '7': case '8': case '9':
 		case '+': case '-': case '.':
-			if (url->ptr == tmp) {
+			if (state->ptr == tmp) {
 				return tmp;
 			}
 			/* no break */
@@ -898,59 +911,56 @@ static const char *parse_scheme(php_http_url_t *url)
 		case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
 		case 'v': case 'w': case 'x': case 'y': case 'z':
 			/* scheme part */
-			url->buffer[url->offset++] = *url->ptr;
+			state->buffer[state->offset++] = *state->ptr;
 			break;
 
 		default:
-			if (!(mb = parse_mb(url, PARSE_SCHEME, url->ptr, url->end, tmp, 1))) {
+			if (!(mb = parse_mb(state, PARSE_SCHEME, state->ptr, state->end, tmp, 1))) {
 				/* soft fail; parse path next */
 				return tmp;
 			}
-			url->ptr += mb - 1;
+			state->ptr += mb - 1;
 		}
-	} while (++url->ptr != url->end);
+	} while (++state->ptr != state->end);
 
 	return tmp;
 }
 
-struct parser_state {
-};
-
 php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags TSRMLS_DC)
 {
 	size_t maxlen = 3 * len;
-	php_http_url_t *url = ecalloc(1, sizeof(*url) + maxlen);
+	struct parse_state *state = ecalloc(1, sizeof(*state) + maxlen);
 
-	url->end = str + len;
-	url->ptr = str;
-	url->flags = flags;
-	url->maxlen = maxlen;
-	TSRMLS_SET_CTX(url->ts);
+	state->end = str + len;
+	state->ptr = str;
+	state->flags = flags;
+	state->maxlen = maxlen;
+	TSRMLS_SET_CTX(state->ts);
 
-	if (!parse_scheme(url)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL scheme: '%s'", url->ptr);
-		php_http_url_free(&url);
+	if (!parse_scheme(state)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL scheme: '%s'", state->ptr);
+		efree(state);
 		return NULL;
 	}
 
-	if (!parse_hier(url)) {
-		php_http_url_free(&url);
+	if (!parse_hier(state)) {
+		efree(state);
 		return NULL;
 	}
 
-	if (!parse_query(url)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL query: '%s'", url->ptr);
-		php_http_url_free(&url);
+	if (!parse_query(state)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL query: '%s'", state->ptr);
+		efree(state);
 		return NULL;
 	}
 
-	if (!parse_fragment(url)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL fragment: '%s'", url->ptr);
-		php_http_url_free(&url);
+	if (!parse_fragment(state)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL fragment: '%s'", state->ptr);
+		efree(state);
 		return NULL;
 	}
 
-	return url;
+	return (php_http_url_t *) state;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl___construct, 0, 0, 0)
