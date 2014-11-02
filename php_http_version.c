@@ -26,7 +26,7 @@ php_http_version_t *php_http_version_init(php_http_version_t *v, unsigned major,
 
 php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *str TSRMLS_DC)
 {
-	php_http_version_t tmp;
+	long major, minor;
 	char separator = 0, *stop = NULL;
 	register const char *ptr = str;
 
@@ -40,17 +40,17 @@ php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *st
 		++ptr;
 		/* no break */
 	default:
-		tmp.major = strtol(ptr, &stop, 10);
-		if (stop && stop != ptr && tmp.major != LONG_MIN && tmp.major != LONG_MAX) {
+		major = strtol(ptr, &stop, 10);
+		if (stop && stop != ptr && major != LONG_MIN && major != LONG_MAX) {
 			separator = *stop;
 			if (separator) {
 				if (separator != '.' && separator != ',') {
 					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Non-standard version separator '%c' in HTTP protocol version '%s'", separator, ptr);
 				}
 				ptr = stop + 1;
-				tmp.minor = strtol(ptr, &stop, 10);
-				if (tmp.minor != LONG_MIN && tmp.minor != LONG_MAX) {
-					return php_http_version_init(v, tmp.major, tmp.minor TSRMLS_CC);
+				minor = strtol(ptr, &stop, 10);
+				if (minor != LONG_MIN && minor != LONG_MAX) {
+					return php_http_version_init(v, major, minor TSRMLS_CC);
 				}
 			}
 		}
