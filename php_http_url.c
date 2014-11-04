@@ -335,7 +335,7 @@ void php_http_url_free(php_http_url_t **url)
 	}
 }
 
-static size_t parse_mb_utf8(struct parse_state *state, const char *ptr, const char *end, zend_bool idn)
+static size_t parse_mb_utf8(unsigned *wc, const char *ptr, const char *end)
 {
 	unsigned wchar;
 	size_t consumed = utf8towc(&wchar, (const unsigned char *) ptr, end - ptr);
@@ -343,15 +343,15 @@ static size_t parse_mb_utf8(struct parse_state *state, const char *ptr, const ch
 	if (!consumed || consumed == (size_t) -1) {
 		return 0;
 	}
-	if (!idn && !isualnum(wchar)) {
-		return 0;
-	}
 
+	if (wc) {
+		*wc = wchar;
+	}
 	return consumed;
 }
 
 #ifdef PHP_HTTP_HAVE_WCHAR
-static size_t parse_mb_loc(struct parse_state *state, const char *ptr, const char *end, zend_bool idn)
+static size_t parse_mb_loc(unsigned *wc, const char *ptr, const char *end)
 {
 	wchar_t wchar;
 	size_t consumed = 0;
@@ -366,10 +366,10 @@ static size_t parse_mb_loc(struct parse_state *state, const char *ptr, const cha
 	if (!consumed || consumed == (size_t) -1) {
 		return 0;
 	}
-	if (!idn && !iswalnum(wchar)) {
-		return 0;
-	}
 
+	if (wc) {
+		*wc = wchar;
+	}
 	return consumed;
 }
 #endif
@@ -396,20 +396,33 @@ static const char parse_xdigits[] = "0123456789ABCDEF";
 
 static size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const char *ptr, const char *end, const char *begin, zend_bool silent)
 {
+	unsigned wchar;
 	size_t consumed = 0;
-	zend_bool idn = (what == PARSE_HOSTINFO) && (state->flags & PHP_HTTP_URL_PARSE_TOIDN);
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-		consumed = parse_mb_utf8(state, ptr, end, idn);
+		consumed = parse_mb_utf8(&wchar, ptr, end);
 	}
 #ifdef PHP_HTTP_HAVE_WCHAR
 	else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-		consumed = parse_mb_loc(state, ptr, end, idn);
+		consumed = parse_mb_loc(&wchar, ptr, end);
 	}
 #endif
 
-	if (consumed) {
+	while (consumed) {
 		if (!(state->flags & PHP_HTTP_URL_PARSE_TOPCT) || what == PARSE_HOSTINFO || what == PARSE_SCHEME) {
+			if (what == PARSE_HOSTINFO && (state->flags & PHP_HTTP_URL_PARSE_TOIDN)) {
+				/* idna */
+			} else if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+				if (!isualnum(wchar)) {
+					break;
+				}
+#ifdef PHP_HTTP_HAVE_WCHAR
+			} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
+				if (!iswalnum(wchar)) {
+					break;
+				}
+#endif
+			}
 			PHP_HTTP_DUFF(consumed, state->buffer[state->offset++] = *ptr++);
 		} else {
 			int i = 0;
@@ -421,14 +434,18 @@ static size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const ch
 					++i;
 			);
 		}
-	} else if (!silent) {
+
+		return consumed;
+	}
+
+	if (!silent) {
 		TSRMLS_FETCH_FROM_CTX(state->ts);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING,
 				"Failed to parse %s; unexpected byte 0x%02x at pos %u in '%s'",
 				parse_what[what], (unsigned char) *ptr, (unsigned) (ptr - begin), begin);
 	}
 
-	return consumed;
+	return 0;
 }
 
 static STATUS parse_userinfo(struct parse_state *state, const char *ptr)
