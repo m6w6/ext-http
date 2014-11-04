@@ -35,19 +35,14 @@
 #define PHP_HTTP_URL_FROM_ENV		0x1000
 #define PHP_HTTP_URL_SANITIZE_PATH	0x2000
 
-typedef struct php_http_url_part {
-	char *str;
-	size_t len;
-} php_http_url_part_t;
-
 /* parse multibyte according to locale */
-#define PHP_HTTP_URL_PARSE_MBLOC  0x001
+#define PHP_HTTP_URL_PARSE_MBLOC	0x10000
 /* parse utf8 multibyte sequences */
-#define PHP_HTTP_URL_PARSE_MBUTF8 0x002
+#define PHP_HTTP_URL_PARSE_MBUTF8	0x20000
 /* convert multibyte hostnames to IDNA */
-#define PHP_HTTP_URL_PARSE_TOIDN  0x010
+#define PHP_HTTP_URL_PARSE_TOIDN	0x100000
 /* percent encode multibyte sequences in userinfo, path, query and fragment */
-#define PHP_HTTP_URL_PARSE_TOPCT  0x020
+#define PHP_HTTP_URL_PARSE_TOPCT	0x200000
 
 typedef struct php_http_url {
 	/* compatible to php_url, but do not use php_url_free() */
