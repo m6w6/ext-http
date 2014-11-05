@@ -51,6 +51,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
 - var_dump(http\Message) no longer automatically creates an empty body
 + Added http\Message\Parser class
 + Made http\Client::once() and http\Client::wait() available when using events
++ Added http\Url::parse() method
++ Added http\Url::PARSE_MBLOC, http\Url::PARSE_MBUTF8, http\Url::PARSE_TOIDN and http\Url::PARSE_TOPCT constants
 ]]></notes>
  <contents>
   <dir name="/">
@@ -138,6 +140,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
     </dir>
      <file role="test" name="bug61444.phpt"/>
      <file role="test" name="bug66388.phpt"/>
+     <file role="test" name="bug67932.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>
@@ -153,6 +156,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="client013.phpt"/>
      <file role="test" name="client014.phpt"/>
      <file role="test" name="client015.phpt"/>
+     <file role="test" name="client016.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
@@ -285,6 +289,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="urlparser005.phpt"/>
      <file role="test" name="urlparser006.phpt"/>
      <file role="test" name="urlparser007.phpt"/>
+     <file role="test" name="urlparser008.phpt"/>
+     <file role="test" name="urlparser009.phpt"/>
+     <file role="test" name="urlparser010.phpt"/>
      <file role="test" name="version001.phpt"/>
    </dir>
   </dir>
