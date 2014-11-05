@@ -24,9 +24,6 @@ while (!feof($f)) {
 	}
 	switch($line{0}) {
 	case "%":
-		if ($a) {
-			printf("/* %s */\n", trim($line, "%\n/ "));
-		}
 		break;
 	case "\n":
 		if ($a) {
