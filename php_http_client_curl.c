@@ -539,9 +539,11 @@ static STATUS php_http_curle_get_info(CURL *ch, HashTable *info)
 			case CURLSSLBACKEND_NSS:
 				backend = "nss";
 				break;
+#if !PHP_HTTP_CURL_VERSION(7,39,0)
 			case CURLSSLBACKEND_QSOSSL:
 				backend = "qsossl";
 				break;
+#endif
 			case CURLSSLBACKEND_GSKIT:
 				backend = "gskit";
 				break;

@@ -48,7 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-*
+* Fixed bug #68353 (QsoSSL support removed in libcurl 7.39)
 ]]></notes>
  <contents>
   <dir name="/">
