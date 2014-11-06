@@ -37,9 +37,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-10-16</date>
+ <date>2014-11-06</date>
  <version>
-  <release>2.1.4dev</release>
+  <release>2.1.4</release>
   <api>2.1.0</api>
  </version>
  <stability>
@@ -137,6 +137,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
     </dir>
      <file role="test" name="bug61444.phpt"/>
      <file role="test" name="bug66388.phpt"/>
+     <file role="test" name="bug66891.phpt"/>
      <file role="test" name="bug67932.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
