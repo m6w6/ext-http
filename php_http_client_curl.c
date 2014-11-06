@@ -1636,15 +1636,25 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 	php_http_message_update_headers(msg);
 	if (zend_hash_num_elements(&msg->hdrs)) {
 		php_http_array_hashkey_t header_key = php_http_array_hashkey_init(0);
-		zval **header_val;
+		zval **header_val, *header_cpy;
 		HashPosition pos;
 		php_http_buffer_t header;
+#if !PHP_HTTP_CURL_VERSION(7,23,0)
+		zval **ct = NULL;
+
+		zend_hash_find(&msg->hdrs, ZEND_STRS("Content-Length"), (void *) &ct);
+#endif
 
 		php_http_buffer_init(&header);
 		FOREACH_HASH_KEYVAL(pos, &msg->hdrs, header_key, header_val) {
 			if (header_key.type == HASH_KEY_IS_STRING) {
-				zval *header_cpy = php_http_ztyp(IS_STRING, *header_val);
-
+#if !PHP_HTTP_CURL_VERSION(7,23,0)
+				/* avoid duplicate content-length header */
+				if (ct && *ct == *header_val) {
+					continue;
+				}
+#endif
+				header_cpy = php_http_ztyp(IS_STRING, *header_val);
 				php_http_buffer_appendf(&header, "%s: %s", header_key.str, Z_STRVAL_P(header_cpy));
 				php_http_buffer_fix(&header);
 				curl->options.headers = curl_slist_append(curl->options.headers, header.data);
