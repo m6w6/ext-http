@@ -57,111 +57,175 @@ static inline char *localhostname(void)
 	return estrndup("localhost", lenof("localhost"));
 }
 
-static php_url *php_http_url_from_env(php_url *url TSRMLS_DC)
+#define url(buf) ((php_http_url_t *) buf.data)
+
+static php_http_url_t *php_http_url_from_env(TSRMLS_D)
 {
 	zval *https, *zhost, *zport;
 	long port;
+	php_http_buffer_t buf;
 
-	if (!url) {
-		url = ecalloc(1, sizeof(*url));
-	}
-
-	/* port */
-	zport = php_http_env_get_server_var(ZEND_STRL("SERVER_PORT"), 1 TSRMLS_CC);
-	if (zport && IS_LONG == is_numeric_string(Z_STRVAL_P(zport), Z_STRLEN_P(zport), &port, NULL, 0)) {
-		url->port = port;
-	}
+	php_http_buffer_init_ex(&buf, MAX(PHP_HTTP_BUFFER_DEFAULT_SIZE, sizeof(php_http_url_t)<<2), PHP_HTTP_BUFFER_INIT_PREALLOC);
+	php_http_buffer_account(&buf, sizeof(php_http_url_t));
+	memset(buf.data, 0, buf.used);
 
 	/* scheme */
+	url(buf)->scheme = &buf.data[buf.used];
 	https = php_http_env_get_server_var(ZEND_STRL("HTTPS"), 1 TSRMLS_CC);
 	if (https && !strcasecmp(Z_STRVAL_P(https), "ON")) {
-		url->scheme = estrndup("https", lenof("https"));
+		php_http_buffer_append(&buf, "https", sizeof("https"));
 	} else {
-		url->scheme = estrndup("http", lenof("http"));
+		php_http_buffer_append(&buf, "http", sizeof("http"));
 	}
 
 	/* host */
+	url(buf)->host = &buf.data[buf.used];
 	if ((((zhost = php_http_env_get_server_var(ZEND_STRL("HTTP_HOST"), 1 TSRMLS_CC)) ||
 			(zhost = php_http_env_get_server_var(ZEND_STRL("SERVER_NAME"), 1 TSRMLS_CC)) ||
 			(zhost = php_http_env_get_server_var(ZEND_STRL("SERVER_ADDR"), 1 TSRMLS_CC)))) && Z_STRLEN_P(zhost)) {
 		size_t stop_at = strspn(Z_STRVAL_P(zhost), "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.");
 
-		url->host = estrndup(Z_STRVAL_P(zhost), stop_at);
+		php_http_buffer_append(&buf, Z_STRVAL_P(zhost), stop_at);
+		php_http_buffer_append(&buf, "", 1);
 	} else {
-		url->host = localhostname();
+		char *host_str = localhostname();
+
+		php_http_buffer_append(&buf, host_str, strlen(host_str) + 1);
+		efree(host_str);
+	}
+
+	/* port */
+	zport = php_http_env_get_server_var(ZEND_STRL("SERVER_PORT"), 1 TSRMLS_CC);
+	if (zport && IS_LONG == is_numeric_string(Z_STRVAL_P(zport), Z_STRLEN_P(zport), &port, NULL, 0)) {
+		url(buf)->port = port;
 	}
 
 	/* path */
 	if (SG(request_info).request_uri && SG(request_info).request_uri[0]) {
 		const char *q = strchr(SG(request_info).request_uri, '?');
 
+		url(buf)->path = &buf.data[buf.used];
+
 		if (q) {
-			url->path = estrndup(SG(request_info).request_uri, q - SG(request_info).request_uri);
+			php_http_buffer_append(&buf, SG(request_info).request_uri, q - SG(request_info).request_uri);
+			php_http_buffer_append(&buf, "", 1);
 		} else {
-			url->path = estrdup(SG(request_info).request_uri);
+			php_http_buffer_append(&buf, SG(request_info).request_uri, strlen(SG(request_info).request_uri) + 1);
 		}
 	}
 
 	/* query */
 	if (SG(request_info).query_string && SG(request_info).query_string[0]) {
-		url->query = estrdup(SG(request_info).query_string);
+		url(buf)->query = &buf.data[buf.used];
+		php_http_buffer_append(&buf, SG(request_info).query_string, strlen(SG(request_info).query_string) + 1);
 	}
 
-	return url;
+	return url(buf);
 }
 
 void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
 {
-	php_url *url, *tmp_url = NULL;
+	php_http_url_t *url = php_http_url_mod((const php_http_url_t *) old_url, (const php_http_url_t *) new_url, flags TSRMLS_CC);
+
+	if (url_ptr) {
+		*url_ptr = php_http_url_to_php_url(url);
+	}
+	if (url_str) {
+		php_http_url_to_string(url, url_str, url_len TSRMLS_CC);
+	}
+
+	php_http_url_free(&url);
+}
+
+#define url_isset(u,n) \
+	((u)&&(u)->n)
+#define url_copy(n) do { \
+	if (url_isset(new_url, n)) { \
+		url(buf)->n = &buf.data[buf.used]; \
+		php_http_buffer_append(&buf, new_url->n, strlen(new_url->n) + 1); \
+	} else if (url_isset(old_url, n)) { \
+		url(buf)->n = &buf.data[buf.used]; \
+		php_http_buffer_append(&buf, old_url->n, strlen(old_url->n) + 1); \
+	} \
+} while (0)
+
+php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_url_t *new_url, unsigned flags TSRMLS_DC)
+{
+	php_http_url_t *tmp_url = NULL;
+	php_http_buffer_t buf;
+
+	php_http_buffer_init_ex(&buf, MAX(PHP_HTTP_BUFFER_DEFAULT_SIZE, sizeof(php_http_url_t)<<2), PHP_HTTP_BUFFER_INIT_PREALLOC);
+	php_http_buffer_account(&buf, sizeof(php_http_url_t));
+	memset(buf.data, 0, buf.used);
 
 	/* set from env if requested */
 	if (flags & PHP_HTTP_URL_FROM_ENV) {
-		php_url *env_url = php_http_url_from_env(NULL TSRMLS_CC);
+		php_http_url_t *env_url = php_http_url_from_env(TSRMLS_C);
 
-		php_http_url(flags ^ PHP_HTTP_URL_FROM_ENV, env_url, old_url, &tmp_url, NULL, NULL TSRMLS_CC);
-
-		php_url_free(env_url);
-		old_url = tmp_url;
+		old_url = tmp_url = php_http_url_mod(env_url, old_url, flags ^ PHP_HTTP_URL_FROM_ENV TSRMLS_CC);
+		php_http_url_free(&env_url);
 	}
 
-	url = ecalloc(1, sizeof(*url));
+	url_copy(scheme);
 
-#define __URLSET(u,n) \
-	((u)&&(u)->n)
-#define __URLCPY(n) \
-	url->n = __URLSET(new_url,n) ? estrdup(new_url->n) : (__URLSET(old_url,n) ? estrdup(old_url->n) : NULL)
+	if (!(flags & PHP_HTTP_URL_STRIP_USER)) {
+		url_copy(user);
+	}
+
+	if (!(flags & PHP_HTTP_URL_STRIP_PASS)) {
+		url_copy(pass);
+	}
+	
+	url_copy(host);
 	
 	if (!(flags & PHP_HTTP_URL_STRIP_PORT)) {
-		url->port = __URLSET(new_url, port) ? new_url->port : ((old_url) ? old_url->port : 0);
+		url(buf)->port = url_isset(new_url, port) ? new_url->port : ((old_url) ? old_url->port : 0);
 	}
-	if (!(flags & PHP_HTTP_URL_STRIP_USER)) {
-		__URLCPY(user);
-	}
-	if (!(flags & PHP_HTTP_URL_STRIP_PASS)) {
-		__URLCPY(pass);
-	}
-	
-	__URLCPY(scheme);
-	__URLCPY(host);
-	
+
 	if (!(flags & PHP_HTTP_URL_STRIP_PATH)) {
-		if ((flags & PHP_HTTP_URL_JOIN_PATH) && __URLSET(old_url, path) && __URLSET(new_url, path) && *new_url->path != '/') {
+		if ((flags & PHP_HTTP_URL_JOIN_PATH) && url_isset(old_url, path) && url_isset(new_url, path) && *new_url->path != '/') {
 			size_t old_path_len = strlen(old_url->path), new_path_len = strlen(new_url->path);
+			char *path = ecalloc(1, old_path_len + new_path_len + 1 + 1);
 			
-			url->path = ecalloc(1, old_path_len + new_path_len + 1 + 1);
-			
-			strcat(url->path, old_url->path);
-			if (url->path[old_path_len - 1] != '/') {
-				php_dirname(url->path, old_path_len);
-				strcat(url->path, "/");
+			strcat(path, old_url->path);
+			if (path[old_path_len - 1] != '/') {
+				php_dirname(path, old_path_len);
+				strcat(path, "/");
 			}
-			strcat(url->path, new_url->path);
+			strcat(path, new_url->path);
+			
+			url(buf)->path = &buf.data[buf.used];
+			if (path[0] != '/') {
+				php_http_buffer_append(&buf, "/", 1);
+			}
+			php_http_buffer_append(&buf, path, strlen(path) + 1);
+			efree(path);
 		} else {
-			__URLCPY(path);
+			const char *path = NULL;
+
+			url(buf)->path = &buf.data[buf.used];
+
+			if (url_isset(new_url, path)) {
+				path = new_url->path;
+			} else if (url_isset(old_url, path)) {
+				path = old_url->path;
+			} else {
+				php_http_buffer_append(&buf, "/", sizeof("/"));
+			}
+
+			if (path) {
+				if (path[0] != '/') {
+					php_http_buffer_append(&buf, "/", 1);
+				}
+				php_http_buffer_append(&buf, path, strlen(path) + 1);
+			}
+
+
 		}
 	}
+
 	if (!(flags & PHP_HTTP_URL_STRIP_QUERY)) {
-		if ((flags & PHP_HTTP_URL_JOIN_QUERY) && __URLSET(new_url, query) && __URLSET(old_url, query)) {
+		if ((flags & PHP_HTTP_URL_JOIN_QUERY) && url_isset(new_url, query) && url_isset(old_url, query)) {
 			zval qarr, qstr;
 			
 			INIT_PZVAL(&qstr);
@@ -175,49 +239,50 @@ void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php
 			
 			ZVAL_NULL(&qstr);
 			php_http_querystring_update(&qarr, NULL, &qstr TSRMLS_CC);
-			url->query = Z_STRVAL(qstr);
+
+			url(buf)->query = &buf.data[buf.used];
+			php_http_buffer_append(&buf, Z_STRVAL(qstr), Z_STRLEN(qstr) + 1);
+
+			zval_dtor(&qstr);
 			zval_dtor(&qarr);
 		} else {
-			__URLCPY(query);
+			url_copy(query);
 		}
 	}
+
 	if (!(flags & PHP_HTTP_URL_STRIP_FRAGMENT)) {
-		__URLCPY(fragment);
+		url_copy(fragment);
 	}
 	
 	/* done with copy & combine & strip */
 
 	if (flags & PHP_HTTP_URL_FROM_ENV) {
 		/* free old_url we tainted above */
-		php_url_free(tmp_url);
+		php_http_url_free(&tmp_url);
 	}
 
 	/* set some sane defaults */
 
-	if (!url->scheme) {
-		url->scheme = estrndup("http", lenof("http"));
+	if (!url(buf)->scheme) {
+		url(buf)->scheme = &buf.data[buf.used];
+		php_http_buffer_append(&buf, "http", sizeof("http"));
 	}
 
-	if (!url->host) {
-		url->host = estrndup("localhost", lenof("localhost"));
+	if (!url(buf)->host) {
+		url(buf)->host = &buf.data[buf.used];
+		php_http_buffer_append(&buf, "localhost", sizeof("localhost"));
 	}
 	
-	if (!url->path) {
-		url->path = estrndup("/", 1);
-	} else if (url->path[0] != '/') {
-		size_t plen = strlen(url->path);
-		char *path = emalloc(plen + 1 + 1);
-
-		path[0] = '/';
-		memcpy(&path[1], url->path, plen + 1);
-		STR_SET(url->path, path);
+	if (!url(buf)->path) {
+		url(buf)->path = &buf.data[buf.used];
+		php_http_buffer_append(&buf, "/", sizeof("/"));
 	}
 	/* replace directory references if path is not a single slash */
 	if ((flags & PHP_HTTP_URL_SANITIZE_PATH)
-	&&	url->path[0] && (url->path[0] != '/' || url->path[1])) {
-		char *ptr, *end = url->path + strlen(url->path) + 1;
+	&&	url(buf)->path[0] && url(buf)->path[1]) {
+		char *ptr, *end = url(buf)->path + strlen(url(buf)->path) + 1;
 			
-		for (ptr = strchr(url->path, '/'); ptr; ptr = strchr(ptr, '/')) {
+		for (ptr = strchr(url(buf)->path, '/'); ptr; ptr = strchr(ptr, '/')) {
 			switch (ptr[1]) {
 				case '/':
 					memmove(&ptr[1], &ptr[2], end - &ptr[2]);
@@ -236,7 +301,7 @@ void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php
 						case '.':
 							if (ptr[3] == '/') {
 								char *pos = &ptr[4];
-								while (ptr != url->path) {
+								while (ptr != url(buf)->path) {
 									if (*--ptr == '/') {
 										break;
 									}
@@ -263,23 +328,185 @@ void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php
 		}
 	}
 	/* unset default ports */
-	if (url->port) {
-		if (	((url->port == 80) && !strcmp(url->scheme, "http"))
-			||	((url->port ==443) && !strcmp(url->scheme, "https"))
+	if (url(buf)->port) {
+		if (	((url(buf)->port == 80) && !strcmp(url(buf)->scheme, "http"))
+			||	((url(buf)->port ==443) && !strcmp(url(buf)->scheme, "https"))
 		) {
-			url->port = 0;
+			url(buf)->port = 0;
 		}
 	}
 	
-	if (url_str) {
-		php_http_url_to_string(url, url_str, url_len TSRMLS_CC);
-	}
-	
-	if (url_ptr) {
-		*url_ptr = url;
+	return url(buf);
+}
+
+void php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *url_len TSRMLS_DC)
+{
+	php_http_buffer_t buf;
+
+	php_http_buffer_init(&buf);
+
+	if (url->scheme && *url->scheme) {
+		php_http_buffer_appendl(&buf, url->scheme);
+		php_http_buffer_appends(&buf, "://");
 	} else {
-		php_url_free(url);
+		php_http_buffer_appends(&buf, "//");
 	}
+
+	if (url->user && *url->user) {
+		php_http_buffer_appendl(&buf, url->user);
+		if (url->pass && *url->pass) {
+			php_http_buffer_appends(&buf, ":");
+			php_http_buffer_appendl(&buf, url->pass);
+		}
+		php_http_buffer_appends(&buf, "@");
+	}
+
+	if (url->host && *url->host) {
+		php_http_buffer_appendl(&buf, url->host);
+	} else {
+		php_http_buffer_appends(&buf, "localhost");
+	}
+
+	if (url->port) {
+		php_http_buffer_appendf(&buf, ":%hu", url->port);
+	}
+
+	if (url->path && *url->path) {
+		php_http_buffer_appendl(&buf, url->path);
+	}
+
+	if (url->query && *url->query) {
+		php_http_buffer_appends(&buf, "?");
+		php_http_buffer_appendl(&buf, url->query);
+	}
+
+	if (url->fragment && *url->fragment) {
+		php_http_buffer_appends(&buf, "#");
+		php_http_buffer_appendl(&buf, url->fragment);
+	}
+
+	php_http_buffer_shrink(&buf);
+	php_http_buffer_fix(&buf);
+
+	if (url_len) {
+		*url_len = buf.used;
+	}
+
+	if (url_str) {
+		*url_str = buf.data;
+	} else {
+		php_http_buffer_dtor(&buf);
+	}
+}
+
+php_http_url_t *php_http_url_from_struct(HashTable *ht TSRMLS_DC)
+{
+	zval **e;
+	php_http_buffer_t buf;
+
+	php_http_buffer_init_ex(&buf, MAX(PHP_HTTP_BUFFER_DEFAULT_SIZE, sizeof(php_http_url_t)<<2), PHP_HTTP_BUFFER_INIT_PREALLOC);
+	php_http_buffer_account(&buf, sizeof(php_http_url_t));
+	memset(buf.data, 0, buf.used);
+
+	if (SUCCESS == zend_hash_find(ht, "scheme", sizeof("scheme"), (void *) &e)) {
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
+		url(buf)->scheme = &buf.data[buf.used];
+		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		zval_ptr_dtor(&cpy);
+	}
+	if (SUCCESS == zend_hash_find(ht, "user", sizeof("user"), (void *) &e)) {
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
+		url(buf)->user = &buf.data[buf.used];
+		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		zval_ptr_dtor(&cpy);
+	}
+	if (SUCCESS == zend_hash_find(ht, "pass", sizeof("pass"), (void *) &e)) {
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
+		url(buf)->pass = &buf.data[buf.used];
+		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		zval_ptr_dtor(&cpy);
+	}
+	if (SUCCESS == zend_hash_find(ht, "host", sizeof("host"), (void *) &e)) {
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
+		url(buf)->host = &buf.data[buf.used];
+		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		zval_ptr_dtor(&cpy);
+	}
+	if (SUCCESS == zend_hash_find(ht, "port", sizeof("port"), (void *) &e)) {
+		zval *cpy = php_http_ztyp(IS_LONG, *e);
+		url(buf)->port = (unsigned short) Z_LVAL_P(cpy);
+		zval_ptr_dtor(&cpy);
+	}
+	if (SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void *) &e)) {
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
+		url(buf)->path = &buf.data[buf.used];
+		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		zval_ptr_dtor(&cpy);
+	}
+	if (SUCCESS == zend_hash_find(ht, "query", sizeof("query"), (void *) &e)) {
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
+		url(buf)->query = &buf.data[buf.used];
+		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		zval_ptr_dtor(&cpy);
+	}
+	if (SUCCESS == zend_hash_find(ht, "fragment", sizeof("fragment"), (void *) &e)) {
+		zval *cpy = php_http_ztyp(IS_STRING, *e);
+		url(buf)->fragment = &buf.data[buf.used];
+		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		zval_ptr_dtor(&cpy);
+	}
+
+	return url(buf);
+}
+
+HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct TSRMLS_DC)
+{
+	zval arr;
+
+	if (strct) {
+		switch (Z_TYPE_P(strct)) {
+			default:
+				zval_dtor(strct);
+				array_init(strct);
+				/* no break */
+			case IS_ARRAY:
+			case IS_OBJECT:
+				INIT_PZVAL_ARRAY((&arr), HASH_OF(strct));
+				break;
+		}
+	} else {
+		INIT_PZVAL(&arr);
+		array_init(&arr);
+	}
+
+	if (url) {
+		if (url->scheme) {
+			add_assoc_string(&arr, "scheme", url->scheme, 1);
+		}
+		if (url->user) {
+			add_assoc_string(&arr, "user", url->user, 1);
+		}
+		if (url->pass) {
+			add_assoc_string(&arr, "pass", url->pass, 1);
+		}
+		if (url->host) {
+			add_assoc_string(&arr, "host", url->host, 1);
+		}
+		if (url->port) {
+			add_assoc_long(&arr, "port", (long) url->port);
+		}
+		if (url->path) {
+			add_assoc_string(&arr, "path", url->path, 1);
+		}
+		if (url->query) {
+			add_assoc_string(&arr, "query", url->query, 1);
+		}
+		if (url->fragment) {
+			add_assoc_string(&arr, "fragment", url->fragment, 1);
+		}
+	}
+
+	return Z_ARRVAL(arr);
 }
 
 STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC)
@@ -791,6 +1018,16 @@ static const char *parse_query(struct parse_state *state)
 			state->buffer[state->offset++] = *state->ptr;
 			break;
 
+		case ']':
+		case '[':
+			if (state->flags & PHP_HTTP_URL_PARSE_TOPCT) {
+				state->buffer[state->offset++] = '%';
+				state->buffer[state->offset++] = parse_xdigits[((unsigned char) *state->ptr) >> 4];
+				state->buffer[state->offset++] = parse_xdigits[((unsigned char) *state->ptr) & 0xf];
+				break;
+			}
+			/* no break */
+
 		case '?': case '/': /* yeah, well */
 		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
 		case '+': case ',': case ';': case '=': /* sub-delims */
@@ -940,7 +1177,7 @@ static const char *parse_scheme(struct parse_state *state)
 		}
 	} while (++state->ptr != state->end);
 
-	return tmp;
+	return state->ptr = tmp;
 }
 
 php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags TSRMLS_DC)
@@ -995,18 +1232,18 @@ PHP_METHOD(HttpUrl, __construct)
 
 	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
 	{
-		php_url *res_purl, *new_purl = NULL, *old_purl = NULL;
+		php_http_url_t *res_purl, *new_purl = NULL, *old_purl = NULL;
 
 		if (new_url) {
 			switch (Z_TYPE_P(new_url)) {
 				case IS_OBJECT:
 				case IS_ARRAY:
-					new_purl = php_http_url_from_struct(NULL, HASH_OF(new_url) TSRMLS_CC);
+					new_purl = php_http_url_from_struct(HASH_OF(new_url) TSRMLS_CC);
 					break;
 				default: {
 					zval *cpy = php_http_ztyp(IS_STRING, new_url);
 
-					new_purl = php_url_parse(Z_STRVAL_P(cpy));
+					new_purl = php_http_url_parse(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy), flags TSRMLS_CC);
 					zval_ptr_dtor(&cpy);
 					break;
 				}
@@ -1020,34 +1257,34 @@ PHP_METHOD(HttpUrl, __construct)
 			switch (Z_TYPE_P(old_url)) {
 				case IS_OBJECT:
 				case IS_ARRAY:
-					old_purl = php_http_url_from_struct(NULL, HASH_OF(old_url) TSRMLS_CC);
+					old_purl = php_http_url_from_struct(HASH_OF(old_url) TSRMLS_CC);
 					break;
 				default: {
 					zval *cpy = php_http_ztyp(IS_STRING, old_url);
 
-					old_purl = php_url_parse(Z_STRVAL_P(cpy));
+					old_purl = php_http_url_parse(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy), flags TSRMLS_CC);
 					zval_ptr_dtor(&cpy);
 					break;
 				}
 			}
 			if (!old_purl) {
 				if (new_purl) {
-					php_url_free(new_purl);
+					php_http_url_free(&new_purl);
 				}
 				zend_restore_error_handling(&zeh TSRMLS_CC);
 				return;
 			}
 		}
 
-		php_http_url(flags, old_purl, new_purl, &res_purl, NULL, NULL TSRMLS_CC);
+		res_purl = php_http_url_mod(old_purl, new_purl, flags TSRMLS_CC);
 		php_http_url_to_struct(res_purl, getThis() TSRMLS_CC);
 
-		php_url_free(res_purl);
+		php_http_url_free(&res_purl);
 		if (old_purl) {
-			php_url_free(old_purl);
+			php_http_url_free(&old_purl);
 		}
 		if (new_purl) {
-			php_url_free(new_purl);
+			php_http_url_free(&new_purl);
 		}
 	}
 	zend_restore_error_handling(&zeh TSRMLS_CC);
@@ -1067,18 +1304,18 @@ PHP_METHOD(HttpUrl, mod)
 
 	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
 	{
-		php_url *new_purl = NULL, *old_purl = NULL;
+		php_http_url_t *new_purl = NULL, *old_purl = NULL;
 
 		if (new_url) {
 			switch (Z_TYPE_P(new_url)) {
 				case IS_OBJECT:
 				case IS_ARRAY:
-					new_purl = php_http_url_from_struct(NULL, HASH_OF(new_url) TSRMLS_CC);
+					new_purl = php_http_url_from_struct(HASH_OF(new_url) TSRMLS_CC);
 					break;
 				default: {
 					zval *cpy = php_http_ztyp(IS_STRING, new_url);
 
-					new_purl = php_url_parse(Z_STRVAL_P(new_url));
+					new_purl = php_http_url_parse(Z_STRVAL_P(new_url), Z_STRLEN_P(new_url), flags TSRMLS_CC);
 					zval_ptr_dtor(&cpy);
 					break;
 				}
@@ -1089,19 +1326,19 @@ PHP_METHOD(HttpUrl, mod)
 			}
 		}
 
-		if ((old_purl = php_http_url_from_struct(NULL, HASH_OF(getThis()) TSRMLS_CC))) {
-			php_url *res_purl;
+		if ((old_purl = php_http_url_from_struct(HASH_OF(getThis()) TSRMLS_CC))) {
+			php_http_url_t *res_purl;
 
 			ZVAL_OBJVAL(return_value, zend_objects_clone_obj(getThis() TSRMLS_CC), 0);
 
-			php_http_url(flags, old_purl, new_purl, &res_purl, NULL, NULL TSRMLS_CC);
+			res_purl = php_http_url_mod(old_purl, new_purl, flags TSRMLS_CC);
 			php_http_url_to_struct(res_purl, return_value TSRMLS_CC);
 
-			php_url_free(res_purl);
-			php_url_free(old_purl);
+			php_http_url_free(&res_purl);
+			php_http_url_free(&old_purl);
 		}
 		if (new_purl) {
-			php_url_free(new_purl);
+			php_http_url_free(&new_purl);
 		}
 	}
 	zend_restore_error_handling(&zeh TSRMLS_CC);
@@ -1112,14 +1349,14 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, toString)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		php_url *purl;
+		php_http_url_t *purl;
 
-		if ((purl = php_http_url_from_struct(NULL, HASH_OF(getThis()) TSRMLS_CC))) {
+		if ((purl = php_http_url_from_struct(HASH_OF(getThis()) TSRMLS_CC))) {
 			char *str;
 			size_t len;
 
-			php_http_url(0, purl, NULL, NULL, &str, &len TSRMLS_CC);
-			php_url_free(purl);
+			php_http_url_to_string(purl, &str, &len TSRMLS_CC);
+			php_http_url_free(&purl);
 			RETURN_STRINGL(str, len, 0);
 		}
 	}
@@ -1130,16 +1367,16 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_toArray, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, toArray)
 {
-	php_url *purl;
+	php_http_url_t *purl;
 
 	if (SUCCESS != zend_parse_parameters_none()) {
 		return;
 	}
 
 	/* strip any non-URL properties */
-	purl = php_http_url_from_struct(NULL, HASH_OF(getThis()) TSRMLS_CC);
+	purl = php_http_url_from_struct(HASH_OF(getThis()) TSRMLS_CC);
 	php_http_url_to_struct(purl, return_value TSRMLS_CC);
-	php_url_free(purl);
+	php_http_url_free(&purl);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_parse, 0, 0, 1)
