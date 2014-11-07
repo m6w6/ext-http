@@ -147,7 +147,7 @@ php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, c
 		efree(etag);
 	}
 
-	STR_FREE(header);
+	PTR_FREE(header);
 	return ret;
 }
 
@@ -190,7 +190,7 @@ php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *o
 		}
 	}
 
-	STR_FREE(header);
+	PTR_FREE(header);
 	return ret;
 }
 
@@ -254,7 +254,7 @@ static STATUS php_http_env_response_send_data(php_http_env_response_t *r, const 
 			return SUCCESS;
 		}
 		chunks_sent = php_http_buffer_chunked_output(&r->buffer, enc_str, enc_len, buf ? chunk : 0, output, r TSRMLS_CC);
-		STR_FREE(enc_str);
+		PTR_FREE(enc_str);
 	} else {
 		chunks_sent = php_http_buffer_chunked_output(&r->buffer, buf, len, buf ? chunk : 0, output, r TSRMLS_CC);
 	}
@@ -303,8 +303,8 @@ void php_http_env_response_dtor(php_http_env_response_t *r)
 	}
 	php_http_buffer_free(&r->buffer);
 	zval_ptr_dtor(&r->options);
-	STR_FREE(r->content.type);
-	STR_FREE(r->content.encoding);
+	PTR_FREE(r->content.type);
+	PTR_FREE(r->content.encoding);
 	if (r->content.encoder) {
 		php_http_encoding_stream_free(&r->content.encoder);
 	}

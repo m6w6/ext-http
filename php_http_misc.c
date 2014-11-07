@@ -80,8 +80,8 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 			}
 		}
 
-		STR_FREE(haystack);
-		STR_FREE(needle);
+		PTR_FREE(haystack);
+		PTR_FREE(needle);
 	}
 
 	return result;

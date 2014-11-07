@@ -389,7 +389,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						}
 
 						if (str != buffer->data) {
-							STR_FREE(str);
+							PTR_FREE(str);
 						}
 						str = dec_str;
 						len = dec_len;
@@ -408,7 +408,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				}
 
 				if (str != buffer->data) {
-					STR_FREE(str);
+					PTR_FREE(str);
 				}
 
 				str = NULL;

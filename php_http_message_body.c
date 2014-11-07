@@ -100,7 +100,7 @@ void php_http_message_body_free(php_http_message_body_t **body_ptr)
 			TSRMLS_FETCH_FROM_CTX(body->ts);
 			/* NOFIXME: shows leakinfo in DEBUG mode */
 			zend_list_delete(body->stream_id);
-			STR_FREE(body->boundary);
+			PTR_FREE(body->boundary);
 			efree(body);
 		}
 		*body_ptr = NULL;
@@ -557,7 +557,7 @@ php_http_message_t *php_http_message_body_split(php_http_message_body_t *body, c
 	php_http_buffer_free(&tmp);
 	php_http_message_parser_free(&arg.parser);
 	php_http_buffer_dtor(&arg.buf);
-	STR_FREE(arg.boundary_str);
+	PTR_FREE(arg.boundary_str);
 
 	return msg;
 }

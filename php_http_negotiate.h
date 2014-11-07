@@ -24,7 +24,7 @@ static inline HashTable *php_http_negotiate_language(HashTable *supported, php_h
 	if (value) {
 		result = php_http_negotiate(value, length, supported, "-", 1 TSRMLS_CC);
 	}
-	STR_FREE(value);
+	PTR_FREE(value);
 
 	return result;
 }
@@ -38,7 +38,7 @@ static inline HashTable *php_http_negotiate_encoding(HashTable *supported, php_h
 	if (value) {
 		result = php_http_negotiate(value, length, supported, NULL, 0 TSRMLS_CC);
 	}
-	STR_FREE(value);
+	PTR_FREE(value);
 
 	return result;
 }
@@ -52,7 +52,7 @@ static inline HashTable *php_http_negotiate_charset(HashTable *supported, php_ht
 	if (value) {
 		result = php_http_negotiate(value, length, supported, NULL, 0 TSRMLS_CC);
 	}
-	STR_FREE(value);
+	PTR_FREE(value);
 
 	return result;
 }
@@ -66,7 +66,7 @@ static inline HashTable *php_http_negotiate_content_type(HashTable *supported, p
 	if (value) {
 		result = php_http_negotiate(value, length, supported, "/", 1 TSRMLS_CC);
 	}
-	STR_FREE(value);
+	PTR_FREE(value);
 
 	return result;
 }

@@ -229,7 +229,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_output(php_http_buffer_t **s,
 
 	while ((got = php_http_buffer_chunk_buffer(s, data, data_len, &chunk, chunk_len))) {
 		if (PHP_HTTP_BUFFER_PASS0 == passout(opaque, chunk, got TSRMLS_CC)) {
-			STR_SET(chunk, NULL);
+			PTR_SET(chunk, NULL);
 			return PHP_HTTP_BUFFER_PASS0;
 		}
 		++passed;
@@ -240,9 +240,9 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_output(php_http_buffer_t **s,
 		}
 		data = NULL;
 		data_len = 0;
-		STR_SET(chunk, NULL);
+		PTR_SET(chunk, NULL);
 	}
-	STR_FREE(chunk);
+	PTR_FREE(chunk);
 	return passed;
 }
 

@@ -347,7 +347,7 @@ static inline void sanitize_value(unsigned flags, char *str, size_t len, zval *z
 		ZVAL_COPY_VALUE(tmp, zv);
 		array_init(zv);
 		add_assoc_zval(zv, language, tmp);
-		STR_FREE(language);
+		PTR_FREE(language);
 	}
 }
 
@@ -885,7 +885,7 @@ void php_http_params_separator_free(php_http_params_token_t **separator)
 	php_http_params_token_t **sep = separator;
 	if (sep) {
 		while (*sep) {
-			STR_FREE((*sep)->str);
+			PTR_FREE((*sep)->str);
 			efree(*sep);
 			++sep;
 		}

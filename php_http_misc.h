@@ -41,10 +41,10 @@ PHP_HTTP_API void php_http_sleep(double s);
 
 /* STRING UTILITIES */
 
-#ifndef STR_SET
-#	define STR_SET(STR, SET) \
+#ifndef PTR_SET
+#	define PTR_SET(STR, SET) \
 	{ \
-		STR_FREE(STR); \
+		PTR_FREE(STR); \
 		STR = SET; \
 	}
 #endif
@@ -291,7 +291,7 @@ static inline void php_http_array_hashkey_stringify(php_http_array_hashkey_t *ke
 static inline void php_http_array_hashkey_stringfree(php_http_array_hashkey_t *key)
 {
 	if (key->type != HASH_KEY_IS_STRING || key->dup) {
-		STR_FREE(key->str);
+		PTR_FREE(key->str);
 	}
 }
 

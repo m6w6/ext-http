@@ -79,8 +79,8 @@ void php_http_header_parser_dtor(php_http_header_parser_t *parser)
 {
 	zend_ptr_stack_destroy(&parser->stack);
 	php_http_info_dtor(&parser->info);
-	STR_FREE(parser->_key.str);
-	STR_FREE(parser->_val.str);
+	PTR_FREE(parser->_key.str);
+	PTR_FREE(parser->_val.str);
 }
 
 void php_http_header_parser_free(php_http_header_parser_t **parser)
@@ -231,8 +231,8 @@ STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_b
 					parser->_val.str = NULL;
 				}
 
-				STR_SET(parser->_key.str, NULL);
-				STR_SET(parser->_val.str, NULL);
+				PTR_SET(parser->_key.str, NULL);
+				PTR_SET(parser->_val.str, NULL);
 
 				php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_KEY);
 				break;

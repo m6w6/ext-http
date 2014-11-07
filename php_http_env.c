@@ -70,7 +70,7 @@ PHP_RINIT_FUNCTION(http_env)
 		}
 	}
 
-	STR_SET(SG(request_info).content_type_dup, NULL);
+	PTR_SET(SG(request_info).content_type_dup, NULL);
 
 	return SUCCESS;
 }
@@ -287,7 +287,7 @@ php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_
 		return PHP_HTTP_RANGE_NO;
 	}
 	if (strncmp(range, "bytes=", lenof("bytes="))) {
-		STR_FREE(range);
+		PTR_FREE(range);
 		return PHP_HTTP_RANGE_NO;
 	}
 
@@ -343,7 +343,7 @@ php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_
 							switch (end) {
 								/* "0-" */
 								case -1:
-									STR_FREE(range);
+									PTR_FREE(range);
 									return PHP_HTTP_RANGE_NO;
 
 								/* "0-0" */
@@ -364,7 +364,7 @@ php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_
 						case -1:
 							/* "-", "-0" */
 							if (end == -1 || end == -10) {
-								STR_FREE(range);
+								PTR_FREE(range);
 								return PHP_HTTP_RANGE_ERR;
 							}
 							begin = length - end;
@@ -374,13 +374,13 @@ php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_
 						/* "12345-(NNN)" */
 						default:
 							if (length <= (size_t) begin) {
-								STR_FREE(range);
+								PTR_FREE(range);
 								return PHP_HTTP_RANGE_ERR;
 							}
 							switch (end) {
 								/* "12345-0" */
 								case -10:
-									STR_FREE(range);
+									PTR_FREE(range);
 									return PHP_HTTP_RANGE_ERR;
 
 								/* "12345-" */
@@ -393,7 +393,7 @@ php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_
 									if (length <= (size_t) end) {
 										end = length - 1;
 									} else if (end <  begin) {
-										STR_FREE(range);
+										PTR_FREE(range);
 										return PHP_HTTP_RANGE_ERR;
 									}
 									break;
@@ -415,12 +415,12 @@ php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_
 				break;
 
 			default:
-				STR_FREE(range);
+				PTR_FREE(range);
 				return PHP_HTTP_RANGE_NO;
 		}
 	} while (c != 0);
 
-	STR_FREE(range);
+	PTR_FREE(range);
 	return PHP_HTTP_RANGE_OK;
 }
 
@@ -573,7 +573,7 @@ STATUS php_http_env_set_response_header_value(long http_code, const char *name_s
 			ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h TSRMLS_CC);
 
 			zval_ptr_dtor(&data);
-			STR_FREE(h.line);
+			PTR_FREE(h.line);
 
 			return ret;
 		}
@@ -977,7 +977,7 @@ static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 		}
 	}
 #if PHP_VERSION_ID >= 50600
-	STR_FREE(json_str);
+	PTR_FREE(json_str);
 #endif
 }
 

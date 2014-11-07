@@ -27,12 +27,12 @@ void php_http_info_dtor(php_http_info_t *i)
 {
 	switch (i->type) {
 		case PHP_HTTP_REQUEST:
-			STR_SET(PHP_HTTP_INFO(i).request.method, NULL);
-			STR_SET(PHP_HTTP_INFO(i).request.url, NULL);
+			PTR_SET(PHP_HTTP_INFO(i).request.method, NULL);
+			PTR_SET(PHP_HTTP_INFO(i).request.url, NULL);
 			break;
 		
 		case PHP_HTTP_RESPONSE:
-			STR_SET(PHP_HTTP_INFO(i).response.status, NULL);
+			PTR_SET(PHP_HTTP_INFO(i).response.status, NULL);
 			break;
 		
 		default:
@@ -122,7 +122,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 			if (http > url) {
 				PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, ~0 TSRMLS_CC);
 			} else {
-				STR_SET(PHP_HTTP_INFO(info).request.method, NULL);
+				PTR_SET(PHP_HTTP_INFO(info).request.method, NULL);
 				return NULL;
 			}
 		} else {

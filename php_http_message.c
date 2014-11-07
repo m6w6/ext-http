@@ -253,12 +253,12 @@ void php_http_message_set_type(php_http_message_t *message, php_http_message_typ
 		/* free request info */
 		switch (message->type) {
 			case PHP_HTTP_REQUEST:
-				STR_FREE(message->http.info.request.method);
-				STR_FREE(message->http.info.request.url);
+				PTR_FREE(message->http.info.request.method);
+				PTR_FREE(message->http.info.request.url);
 				break;
 			
 			case PHP_HTTP_RESPONSE:
-				STR_FREE(message->http.info.response.status);
+				PTR_FREE(message->http.info.response.status);
 				break;
 			
 			default:
@@ -276,13 +276,13 @@ void php_http_message_set_info(php_http_message_t *message, php_http_info_t *inf
 	message->http.version = info->http.version;
 	switch (message->type) {
 		case PHP_HTTP_REQUEST:
-			STR_SET(PHP_HTTP_INFO(message).request.url, PHP_HTTP_INFO(info).request.url ? php_http_url_copy(PHP_HTTP_INFO(info).request.url, 0) : NULL);
-			STR_SET(PHP_HTTP_INFO(message).request.method, PHP_HTTP_INFO(info).request.method ? estrdup(PHP_HTTP_INFO(info).request.method) : NULL);
+			PTR_SET(PHP_HTTP_INFO(message).request.url, PHP_HTTP_INFO(info).request.url ? php_http_url_copy(PHP_HTTP_INFO(info).request.url, 0) : NULL);
+			PTR_SET(PHP_HTTP_INFO(message).request.method, PHP_HTTP_INFO(info).request.method ? estrdup(PHP_HTTP_INFO(info).request.method) : NULL);
 			break;
 		
 		case PHP_HTTP_RESPONSE:
 			PHP_HTTP_INFO(message).response.code = PHP_HTTP_INFO(info).response.code;
-			STR_SET(PHP_HTTP_INFO(message).response.status, PHP_HTTP_INFO(info).response.status ? estrdup(PHP_HTTP_INFO(info).response.status) : NULL);
+			PTR_SET(PHP_HTTP_INFO(message).response.status, PHP_HTTP_INFO(info).response.status ? estrdup(PHP_HTTP_INFO(info).response.status) : NULL);
 			break;
 		
 		default:
@@ -338,12 +338,12 @@ static void message_headers(php_http_message_t *msg, php_http_buffer_t *str)
 	switch (msg->type) {
 		case PHP_HTTP_REQUEST:
 			php_http_buffer_appendf(str, PHP_HTTP_INFO_REQUEST_FMT_ARGS(&msg->http, tmp, PHP_HTTP_CRLF));
-			STR_FREE(tmp);
+			PTR_FREE(tmp);
 			break;
 
 		case PHP_HTTP_RESPONSE:
 			php_http_buffer_appendf(str, PHP_HTTP_INFO_RESPONSE_FMT_ARGS(&msg->http, tmp, PHP_HTTP_CRLF));
-			STR_FREE(tmp);
+			PTR_FREE(tmp);
 			break;
 
 		default:
@@ -499,12 +499,12 @@ void php_http_message_dtor(php_http_message_t *message)
 		
 		switch (message->type) {
 			case PHP_HTTP_REQUEST:
-				STR_SET(message->http.info.request.method, NULL);
-				STR_SET(message->http.info.request.url, NULL);
+				PTR_SET(message->http.info.request.method, NULL);
+				PTR_SET(message->http.info.request.url, NULL);
 				break;
 			
 			case PHP_HTTP_RESPONSE:
-				STR_SET(message->http.info.response.status, NULL);
+				PTR_SET(message->http.info.response.status, NULL);
 				break;
 			
 			default:
@@ -564,7 +564,7 @@ static void php_http_message_object_prophandler_get_request_method(php_http_mess
 static void php_http_message_object_prophandler_set_request_method(php_http_message_object_t *obj, zval *value TSRMLS_DC) {
 	if (PHP_HTTP_MESSAGE_TYPE(REQUEST, obj->message)) {
 		zval *cpy = php_http_ztyp(IS_STRING, value);
-		STR_SET(obj->message->http.info.request.method, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
+		PTR_SET(obj->message->http.info.request.method, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
 		zval_ptr_dtor(&cpy);
 	}
 }
@@ -580,7 +580,7 @@ static void php_http_message_object_prophandler_get_request_url(php_http_message
 }
 static void php_http_message_object_prophandler_set_request_url(php_http_message_object_t *obj, zval *value TSRMLS_DC) {
 	if (PHP_HTTP_MESSAGE_TYPE(REQUEST, obj->message)) {
-		STR_SET(obj->message->http.info.request.url, php_http_url_from_zval(value, ~0 TSRMLS_CC));
+		PTR_SET(obj->message->http.info.request.url, php_http_url_from_zval(value, ~0 TSRMLS_CC));
 	}
 }
 static void php_http_message_object_prophandler_get_response_status(php_http_message_object_t *obj, zval *return_value TSRMLS_DC) {
@@ -593,7 +593,7 @@ static void php_http_message_object_prophandler_get_response_status(php_http_mes
 static void php_http_message_object_prophandler_set_response_status(php_http_message_object_t *obj, zval *value TSRMLS_DC) {
 	if (PHP_HTTP_MESSAGE_TYPE(RESPONSE, obj->message)) {
 		zval *cpy = php_http_ztyp(IS_STRING, value);
-		STR_SET(obj->message->http.info.response.status, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
+		PTR_SET(obj->message->http.info.response.status, estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy)));
 		zval_ptr_dtor(&cpy);
 	}
 }
@@ -608,7 +608,7 @@ static void php_http_message_object_prophandler_set_response_code(php_http_messa
 	if (PHP_HTTP_MESSAGE_TYPE(RESPONSE, obj->message)) {
 		zval *cpy = php_http_ztyp(IS_LONG, value);
 		obj->message->http.info.response.code = Z_LVAL_P(cpy);
-		STR_SET(obj->message->http.info.response.status, estrdup(php_http_env_get_response_status_for_code(obj->message->http.info.response.code)));
+		PTR_SET(obj->message->http.info.response.status, estrdup(php_http_env_get_response_status_for_code(obj->message->http.info.response.code)));
 		zval_ptr_dtor(&cpy);
 	}
 }
@@ -1338,11 +1338,11 @@ static PHP_METHOD(HttpMessage, getInfo)
 		switch (obj->message->type) {
 			case PHP_HTTP_REQUEST:
 				Z_STRLEN_P(return_value) = spprintf(&Z_STRVAL_P(return_value), 0, PHP_HTTP_INFO_REQUEST_FMT_ARGS(&obj->message->http, tmp, ""));
-				STR_FREE(tmp);
+				PTR_FREE(tmp);
 				break;
 			case PHP_HTTP_RESPONSE:
 				Z_STRLEN_P(return_value) = spprintf(&Z_STRVAL_P(return_value), 0, PHP_HTTP_INFO_RESPONSE_FMT_ARGS(&obj->message->http, tmp, ""));
-				STR_FREE(tmp);
+				PTR_FREE(tmp);
 				break;
 			default:
 				RETURN_NULL();
@@ -1462,7 +1462,7 @@ static PHP_METHOD(HttpMessage, setResponseCode)
 	}
 
 	obj->message->http.info.response.code = code;
-	STR_SET(obj->message->http.info.response.status, estrdup(php_http_env_get_response_status_for_code(code)));
+	PTR_SET(obj->message->http.info.response.status, estrdup(php_http_env_get_response_status_for_code(code)));
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -1507,7 +1507,7 @@ static PHP_METHOD(HttpMessage, setResponseStatus)
 		php_http_throw(bad_method_call, "http\\Message is not of type response", NULL);
 	}
 
-	STR_SET(obj->message->http.info.response.status, estrndup(status, status_len));
+	PTR_SET(obj->message->http.info.response.status, estrndup(status, status_len));
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
@@ -1558,7 +1558,7 @@ static PHP_METHOD(HttpMessage, setRequestMethod)
 		return;
 	}
 
-	STR_SET(obj->message->http.info.request.method, estrndup(method, method_len));
+	PTR_SET(obj->message->http.info.request.method, estrndup(method, method_len));
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
@@ -1617,7 +1617,7 @@ static PHP_METHOD(HttpMessage, setRequestUrl)
 		php_http_url_free(&url);
 		php_http_throw(invalid_arg, "Cannot set http\\Message's request url to an empty string", NULL);
 	} else {
-		STR_SET(obj->message->http.info.request.url, url);
+		PTR_SET(obj->message->http.info.request.url, url);
 	}
 
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -1854,7 +1854,7 @@ static PHP_METHOD(HttpMessage, splitMultipartBody)
 
 	php_http_expect(msg = php_http_message_body_split(obj->message->body, boundary), bad_message, return);
 
-	STR_FREE(boundary);
+	PTR_FREE(boundary);
 
 	RETURN_OBJVAL(php_http_message_object_new_ex(php_http_message_class_entry, msg, NULL TSRMLS_CC), 0);
 }

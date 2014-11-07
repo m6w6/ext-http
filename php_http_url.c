@@ -203,20 +203,15 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 		} else {
 			const char *path = NULL;
 
-			url(buf)->path = &buf.data[buf.used];
-
 			if (url_isset(new_url, path)) {
 				path = new_url->path;
 			} else if (url_isset(old_url, path)) {
 				path = old_url->path;
-			} else {
-				php_http_buffer_append(&buf, "/", sizeof("/"));
 			}
 
 			if (path) {
-				if (path[0] != '/') {
-					php_http_buffer_append(&buf, "/", 1);
-				}
+				url(buf)->path = &buf.data[buf.used];
+
 				php_http_buffer_append(&buf, path, strlen(path) + 1);
 			}
 
@@ -261,22 +256,6 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 		php_http_url_free(&tmp_url);
 	}
 
-	/* set some sane defaults */
-
-	if (!url(buf)->scheme) {
-		url(buf)->scheme = &buf.data[buf.used];
-		php_http_buffer_append(&buf, "http", sizeof("http"));
-	}
-
-	if (!url(buf)->host) {
-		url(buf)->host = &buf.data[buf.used];
-		php_http_buffer_append(&buf, "localhost", sizeof("localhost"));
-	}
-
-	if (!url(buf)->path) {
-		url(buf)->path = &buf.data[buf.used];
-		php_http_buffer_append(&buf, "/", sizeof("/"));
-	}
 	/* replace directory references if path is not a single slash */
 	if ((flags & PHP_HTTP_URL_SANITIZE_PATH)
 	&&	url(buf)->path[0] && url(buf)->path[1]) {
@@ -364,14 +343,18 @@ char *php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *
 
 	if (url->host && *url->host) {
 		php_http_buffer_appendl(&buf, url->host);
-	}
-
-	if (url->port) {
-		php_http_buffer_appendf(&buf, ":%hu", url->port);
+		if (url->port) {
+			php_http_buffer_appendf(&buf, ":%hu", url->port);
+		}
 	}
 
 	if (url->path && *url->path) {
+		if (*url->path != '/') {
+			php_http_buffer_appends(&buf, "/");
+		}
 		php_http_buffer_appendl(&buf, url->path);
+	} else if (buf.used) {
+		php_http_buffer_appends(&buf, "/");
 	}
 
 	if (url->query && *url->query) {
@@ -1396,67 +1379,12 @@ PHP_METHOD(HttpUrl, toArray)
 	php_http_url_free(&purl);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl_parse, 0, 0, 1)
-	ZEND_ARG_INFO(0, url)
-	ZEND_ARG_INFO(0, flags)
-ZEND_END_ARG_INFO();
-PHP_METHOD(HttpUrl, parse)
-{
-	char *str;
-	int len;
-	long flags = 0;
-	php_http_url_t *url;
-	zend_error_handling zeh;
-
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &str, &len, &flags), invalid_arg, return);
-
-	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
-	if ((url = php_http_url_parse(str, len, flags TSRMLS_CC))) {
-		object_init_ex(return_value, php_http_url_class_entry);
-		if (url->scheme) {
-			zend_update_property_string(php_http_url_class_entry, return_value,
-					ZEND_STRL("scheme"), url->scheme TSRMLS_CC);
-		}
-		if (url->user) {
-			zend_update_property_string(php_http_url_class_entry, return_value,
-					ZEND_STRL("user"), url->user TSRMLS_CC);
-		}
-		if (url->pass) {
-			zend_update_property_string(php_http_url_class_entry, return_value,
-					ZEND_STRL("pass"), url->pass TSRMLS_CC);
-		}
-		if (url->host) {
-			zend_update_property_string(php_http_url_class_entry, return_value,
-					ZEND_STRL("host"), url->host TSRMLS_CC);
-		}
-		if (url->port) {
-			zend_update_property_long(php_http_url_class_entry, return_value,
-					ZEND_STRL("port"), url->port TSRMLS_CC);
-		}
-		if (url->path) {
-			zend_update_property_string(php_http_url_class_entry, return_value,
-					ZEND_STRL("path"), url->path TSRMLS_CC);
-		}
-		if (url->query) {
-			zend_update_property_string(php_http_url_class_entry, return_value,
-					ZEND_STRL("query"), url->query TSRMLS_CC);
-		}
-		if (url->fragment) {
-			zend_update_property_string(php_http_url_class_entry, return_value,
-					ZEND_STRL("fragment"), url->fragment TSRMLS_CC);
-		}
-		php_http_url_free(&url);
-	}
-	zend_restore_error_handling(&zeh TSRMLS_CC);
-}
-
 static zend_function_entry php_http_url_methods[] = {
 	PHP_ME(HttpUrl, __construct,  ai_HttpUrl___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(HttpUrl, mod,          ai_HttpUrl_mod, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpUrl, toString,     ai_HttpUrl_toString, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(HttpUrl, __toString, toString, ai_HttpUrl_toString, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpUrl, toArray,      ai_HttpUrl_toArray, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpUrl, parse,        ai_HttpUrl_parse, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	EMPTY_FUNCTION_ENTRY
 };
 

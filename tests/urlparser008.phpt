@@ -18,7 +18,7 @@ $urls = array(
 foreach ($urls as $url) {
 	try {
 		printf("\n%s\n", $url);
-		var_dump(http\Url::parse($url));
+		var_dump(new http\Url($url, null, 0));
 	} catch (Exception $e) {
 		echo $e->getMessage(),"\n";
 	}
@@ -29,10 +29,10 @@ DONE
 Test
 
 s://[a:80
-http\Url::parse(): Failed to parse hostinfo; expected ']'
+http\Url::__construct(): Failed to parse hostinfo; expected ']'
 
 s://[0]
-http\Url::parse(): Failed to parse hostinfo; unexpected '['
+http\Url::__construct(): Failed to parse hostinfo; unexpected '['
 
 s://[::1]:80
 object(http\Url)#%d (8) {

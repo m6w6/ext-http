@@ -21,19 +21,19 @@
 #define PHP_HTTP_BUFFER_NOMEM PHP_HTTP_BUFFER_ERROR
 #define PHP_HTTP_BUFFER_PASS0 PHP_HTTP_BUFFER_ERROR
 
-#ifndef STR_FREE
-#	define STR_FREE(STR) \
+#ifndef PTR_FREE
+#	define PTR_FREE(PTR) \
 	{ \
-		if (STR) { \
-			efree(STR); \
+		if (PTR) { \
+			efree(PTR); \
 		} \
 	}
 #endif
-#ifndef STR_SET
-#	define STR_SET(STR, SET) \
+#ifndef PTR_SET
+#	define PTR_SET(PTR, SET) \
 	{ \
-		STR_FREE(STR); \
-		STR = SET; \
+		PTR_FREE(PTR); \
+		PTR = SET; \
 	}
 #endif
 #ifndef TSRMLS_D

@@ -141,7 +141,7 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 				add_index_double(&arr, key.num, q);
 			}
 
-			STR_FREE(key.str);
+			PTR_FREE(key.str);
 		}
 
 #if 0

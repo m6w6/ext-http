@@ -151,7 +151,7 @@ static PHP_METHOD(HttpClientRequest, setQuery)
 		php_http_url_free(&old_url);
 	}
 	if (new_url.query != &empty[0]) {
-		STR_FREE(new_url.query);
+		PTR_FREE(new_url.query);
 	}
 
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -208,7 +208,7 @@ static PHP_METHOD(HttpClientRequest, addQuery)
 	if (old_url) {
 		php_http_url_free(&old_url);
 	}
-	STR_FREE(new_url.query);
+	PTR_FREE(new_url.query);
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
