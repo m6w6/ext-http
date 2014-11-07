@@ -2,7 +2,7 @@
 url properties
 --SKIPIF--
 <?php
-include "skipif";
+include "skipif.inc";
 ?>
 --FILE--
 <?php
