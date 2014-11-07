@@ -14,14 +14,15 @@
 #define PHP_HTTP_INFO_H
 
 #include "php_http_version.h"
+#include "php_http_url.h"
 
-#define PHP_HTTP_INFO_REQUEST_FMT_ARGS(_http_ptr, eol) "%s %s HTTP/%u.%u" eol, \
+#define PHP_HTTP_INFO_REQUEST_FMT_ARGS(_http_ptr, tmp, eol) "%s %s HTTP/%u.%u" eol, \
 				(_http_ptr)->info.request.method?(_http_ptr)->info.request.method:"UNKNOWN", \
-				(_http_ptr)->info.request.url?(_http_ptr)->info.request.url:"/", \
+				(_http_ptr)->info.request.url?php_http_url_to_string((_http_ptr)->info.request.url, &(tmp), NULL, 0):"/", \
 				(_http_ptr)->version.major||(_http_ptr)->version.major?(_http_ptr)->version.major:1, \
 				(_http_ptr)->version.major||(_http_ptr)->version.minor?(_http_ptr)->version.minor:1
 
-#define PHP_HTTP_INFO_RESPONSE_FMT_ARGS(_http_ptr, eol) "HTTP/%u.%u %d%s%s" eol, \
+#define PHP_HTTP_INFO_RESPONSE_FMT_ARGS(_http_ptr, tmp, eol) "HTTP/%u.%u %d%s%s" eol, \
 				(_http_ptr)->version.major||(_http_ptr)->version.major?(_http_ptr)->version.major:1, \
 				(_http_ptr)->version.major||(_http_ptr)->version.minor?(_http_ptr)->version.minor:1, \
 				(_http_ptr)->info.response.code?(_http_ptr)->info.response.code:200, \
@@ -31,7 +32,7 @@
 typedef struct php_http_info_data {
 	union {
 		/* GET /foo/bar */
-		struct { char *method; char *url; } request;
+		struct { char *method; php_http_url_t *url; } request;
 		/* 200 Ok */
 		struct { unsigned code; char *status; } response;
 	} info;

@@ -31,12 +31,12 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest___construct, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClientRequest, __construct)
 {
-	char *meth_str = NULL, *url_str = NULL;
-	int meth_len = 0, url_len = 0;
-	zval *zheaders = NULL, *zbody = NULL;
+	char *meth_str = NULL;
+	int meth_len = 0;
+	zval *zheaders = NULL, *zbody = NULL, *zurl = NULL;
 	php_http_message_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!a!O!", &meth_str, &meth_len, &url_str, &url_len, &zheaders, &zbody, php_http_message_body_class_entry), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!z!a!O!", &meth_str, &meth_len, &zurl, &zheaders, &zbody, php_http_message_body_class_entry), invalid_arg, return);
 
 	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
@@ -52,8 +52,8 @@ static PHP_METHOD(HttpClientRequest, __construct)
 	if (meth_str && meth_len) {
 		PHP_HTTP_INFO(obj->message).request.method = estrndup(meth_str, meth_len);
 	}
-	if (url_str && url_len) {
-		PHP_HTTP_INFO(obj->message).request.url = estrndup(url_str, url_len);
+	if (zurl) {
+		PHP_HTTP_INFO(obj->message).request.url = php_http_url_from_zval(zurl, ~0 TSRMLS_CC);
 	}
 	if (zheaders) {
 		array_copy(Z_ARRVAL_P(zheaders), &obj->message->hdrs);
@@ -113,8 +113,9 @@ static PHP_METHOD(HttpClientRequest, setQuery)
 {
 	zval *qdata = NULL;
 	php_http_message_object_t *obj;
-	php_url *old_url = NULL, new_url = {NULL};
+	php_http_url_t *old_url = NULL, new_url = {NULL};
 	char empty[] = "";
+	unsigned flags = PHP_HTTP_URL_REPLACE;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!", &qdata), invalid_arg, return);
 
@@ -137,18 +138,17 @@ static PHP_METHOD(HttpClientRequest, setQuery)
 		new_url.query = Z_STRVAL(str);
 		zval_dtor(&arr);
 	} else {
-		new_url.query = &empty[0];
+		flags = PHP_HTTP_URL_STRIP_QUERY;
 	}
 
 	if (obj->message->http.info.request.url) {
-		old_url = php_url_parse(obj->message->http.info.request.url);
-		efree(obj->message->http.info.request.url);
+		old_url = obj->message->http.info.request.url;
 	}
 
-	php_http_url(PHP_HTTP_URL_REPLACE, old_url, &new_url, NULL, &obj->message->http.info.request.url, NULL TSRMLS_CC);
+	obj->message->http.info.request.url = php_http_url_mod(old_url, &new_url, flags TSRMLS_CC);
 
 	if (old_url) {
-		php_url_free(old_url);
+		php_http_url_free(&old_url);
 	}
 	if (new_url.query != &empty[0]) {
 		STR_FREE(new_url.query);
@@ -166,16 +166,8 @@ static PHP_METHOD(HttpClientRequest, getQuery)
 
 		PHP_HTTP_CLIENT_REQUEST_OBJECT_INIT(obj);
 
-		if (obj->message->http.info.request.url) {
-			php_url *purl = php_url_parse(obj->message->http.info.request.url);
-
-			if (purl) {
-				if (purl->query) {
-					RETVAL_STRING(purl->query, 0);
-					purl->query = NULL;
-				}
-				php_url_free(purl);
-			}
+		if (obj->message->http.info.request.url && obj->message->http.info.request.url->query) {
+			RETVAL_STRING(obj->message->http.info.request.url->query, 1);
 		}
 	}
 }
@@ -187,7 +179,7 @@ static PHP_METHOD(HttpClientRequest, addQuery)
 {
 	zval *qdata, arr, str;
 	php_http_message_object_t *obj;
-	php_url *old_url = NULL, new_url = {NULL};
+	php_http_url_t *old_url = NULL, new_url = {NULL};
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &qdata), invalid_arg, return);
 
@@ -208,14 +200,13 @@ static PHP_METHOD(HttpClientRequest, addQuery)
 	zval_dtor(&arr);
 
 	if (obj->message->http.info.request.url) {
-		old_url = php_url_parse(obj->message->http.info.request.url);
-		efree(obj->message->http.info.request.url);
+		old_url = obj->message->http.info.request.url;
 	}
 
-	php_http_url(PHP_HTTP_URL_JOIN_QUERY, old_url, &new_url, NULL, &obj->message->http.info.request.url, NULL TSRMLS_CC);
+	obj->message->http.info.request.url = php_http_url_mod(old_url, &new_url, PHP_HTTP_URL_JOIN_QUERY TSRMLS_CC);
 
 	if (old_url) {
-		php_url_free(old_url);
+		php_http_url_free(&old_url);
 	}
 	STR_FREE(new_url.query);
 

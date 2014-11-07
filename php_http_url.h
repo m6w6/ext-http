@@ -57,12 +57,17 @@ typedef struct php_http_url {
 } php_http_url_t;
 
 PHP_HTTP_API php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags TSRMLS_DC);
-PHP_HTTP_API void php_http_url_free(php_http_url_t **url);
-
 /* deprecated */
 PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC);
 /* use this instead */
 PHP_HTTP_API php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_url_t *new_url, unsigned flags TSRMLS_DC);
+PHP_HTTP_API php_http_url_t *php_http_url_copy(const php_http_url_t *url, zend_bool persistent);
+PHP_HTTP_API php_http_url_t *php_http_url_from_struct(HashTable *ht);
+PHP_HTTP_API php_http_url_t *php_http_url_from_zval(zval *value, unsigned flags TSRMLS_DC);
+PHP_HTTP_API HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct TSRMLS_DC);
+PHP_HTTP_API char *php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *url_len, zend_bool persistent);
+PHP_HTTP_API void php_http_url_free(php_http_url_t **url);
+
 
 PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *pre_encoded_str, size_t pre_encoded_len TSRMLS_DC);
@@ -90,9 +95,9 @@ static inline php_url *php_http_url_to_php_url(php_http_url_t *url)
 	return purl;
 }
 
-PHP_HTTP_API php_http_url_t *php_http_url_from_struct(HashTable *ht TSRMLS_DC);
-PHP_HTTP_API HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct TSRMLS_DC);
-PHP_HTTP_API void php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *url_len TSRMLS_DC);
+static inline zend_bool php_http_url_is_empty(const php_http_url_t *url) {
+	return !(url->scheme || url->pass || url->user || url->host || url->port ||	url->path || url->query || url->fragment);
+}
 
 PHP_HTTP_API zend_class_entry *php_http_url_class_entry;
 PHP_MINIT_FUNCTION(http_url);

@@ -131,7 +131,7 @@ void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php
 		*url_ptr = php_http_url_to_php_url(url);
 	}
 	if (url_str) {
-		php_http_url_to_string(url, url_str, url_len TSRMLS_CC);
+		php_http_url_to_string(url, url_str, url_len, 0);
 	}
 
 	php_http_url_free(&url);
@@ -272,7 +272,7 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 		url(buf)->host = &buf.data[buf.used];
 		php_http_buffer_append(&buf, "localhost", sizeof("localhost"));
 	}
-	
+
 	if (!url(buf)->path) {
 		url(buf)->path = &buf.data[buf.used];
 		php_http_buffer_append(&buf, "/", sizeof("/"));
@@ -339,16 +339,17 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 	return url(buf);
 }
 
-void php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *url_len TSRMLS_DC)
+char *php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *url_len, zend_bool persistent)
 {
 	php_http_buffer_t buf;
 
-	php_http_buffer_init(&buf);
+	php_http_buffer_init_ex(&buf, PHP_HTTP_BUFFER_DEFAULT_SIZE, persistent ?
+			PHP_HTTP_BUFFER_INIT_PERSISTENT : 0);
 
 	if (url->scheme && *url->scheme) {
 		php_http_buffer_appendl(&buf, url->scheme);
 		php_http_buffer_appends(&buf, "://");
-	} else {
+	} else if ((url->user && *url->user) || (url->host && *url->host)) {
 		php_http_buffer_appends(&buf, "//");
 	}
 
@@ -363,8 +364,6 @@ void php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *u
 
 	if (url->host && *url->host) {
 		php_http_buffer_appendl(&buf, url->host);
-	} else {
-		php_http_buffer_appends(&buf, "localhost");
 	}
 
 	if (url->port) {
@@ -394,12 +393,32 @@ void php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *u
 
 	if (url_str) {
 		*url_str = buf.data;
-	} else {
-		php_http_buffer_dtor(&buf);
 	}
+
+	return buf.data;
 }
 
-php_http_url_t *php_http_url_from_struct(HashTable *ht TSRMLS_DC)
+php_http_url_t *php_http_url_from_zval(zval *value, unsigned flags TSRMLS_DC)
+{
+	zval *zcpy;
+	php_http_url_t *purl;
+
+	switch (Z_TYPE_P(value)) {
+	case IS_ARRAY:
+	case IS_OBJECT:
+		purl = php_http_url_from_struct(HASH_OF(value));
+		break;
+
+	default:
+		zcpy = php_http_ztyp(IS_STRING, value);
+		purl = php_http_url_parse(Z_STRVAL_P(zcpy), Z_STRLEN_P(zcpy), flags TSRMLS_CC);
+		zval_ptr_dtor(&zcpy);
+	}
+
+	return purl;
+}
+
+php_http_url_t *php_http_url_from_struct(HashTable *ht)
 {
 	zval **e;
 	php_http_buffer_t buf;
@@ -560,6 +579,43 @@ void php_http_url_free(php_http_url_t **url)
 		efree(*url);
 		*url = NULL;
 	}
+}
+
+php_http_url_t *php_http_url_copy(const php_http_url_t *url, zend_bool persistent)
+{
+	php_http_url_t *cpy;
+	const char *end = NULL, *url_ptr = (const char *) url;
+	char *cpy_ptr;
+
+	end = MAX(url->scheme, end);
+	end = MAX(url->pass, end);
+	end = MAX(url->user, end);
+	end = MAX(url->host, end);
+	end = MAX(url->path, end);
+	end = MAX(url->query, end);
+	end = MAX(url->fragment, end);
+
+	if (end) {
+		end += strlen(end) + 1;
+		cpy_ptr = pecalloc(1, end - url_ptr, persistent);
+		cpy = (php_http_url_t *) cpy_ptr;
+
+		memcpy(cpy_ptr + sizeof(*cpy), url_ptr + sizeof(*url), end - url_ptr - sizeof(*url));
+
+		cpy->scheme = url->scheme ? cpy_ptr + (url->scheme - url_ptr) : NULL;
+		cpy->pass = url->pass ? cpy_ptr + (url->pass - url_ptr) : NULL;
+		cpy->user = url->user ? cpy_ptr + (url->user - url_ptr) : NULL;
+		cpy->host = url->host ? cpy_ptr + (url->host - url_ptr) : NULL;
+		cpy->path = url->path ? cpy_ptr + (url->path - url_ptr) : NULL;
+		cpy->query = url->query ? cpy_ptr + (url->query - url_ptr) : NULL;
+		cpy->fragment = url->fragment ? cpy_ptr + (url->fragment - url_ptr) : NULL;
+	} else {
+		cpy = ecalloc(1, sizeof(*url));
+	}
+
+	cpy->port = url->port;
+
+	return cpy;
 }
 
 static size_t parse_mb_utf8(unsigned *wc, const char *ptr, const char *end)
@@ -933,14 +989,7 @@ static const char *parse_path(struct parse_state *state)
 		switch (*state->ptr) {
 		case '#':
 		case '?':
-		case '\0':
-			/* did we have any path component ? */
-			if (tmp != state->ptr) {
-				state->buffer[state->offset++] = 0;
-			} else {
-				state->url.path = NULL;
-			}
-			return state->ptr;
+			goto done;
 
 		case '%':
 			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
@@ -979,9 +1028,16 @@ static const char *parse_path(struct parse_state *state)
 			}
 			state->ptr += mb - 1;
 		}
-	} while (++state->ptr <= state->end);
+	} while (++state->ptr < state->end);
 
-	return NULL;
+	done:
+	/* did we have any path component ? */
+	if (tmp != state->ptr) {
+		state->buffer[state->offset++] = 0;
+	} else {
+		state->url.path = NULL;
+	}
+	return state->ptr;
 }
 
 static const char *parse_query(struct parse_state *state)
@@ -1002,9 +1058,7 @@ static const char *parse_query(struct parse_state *state)
 	do {
 		switch (*state->ptr) {
 		case '#':
-		case '\0':
-			state->buffer[state->offset++] = 0;
-			return state->ptr;
+			goto done;
 
 		case '%':
 			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
@@ -1053,9 +1107,11 @@ static const char *parse_query(struct parse_state *state)
 			}
 			state->ptr += mb - 1;
 		}
-	} while (++state->ptr <= state->end);
+	} while (++state->ptr < state->end);
 
-	return NULL;
+	done:
+	state->buffer[state->offset++] = 0;
+	return state->ptr;
 }
 
 static const char *parse_fragment(struct parse_state *state)
@@ -1075,10 +1131,6 @@ static const char *parse_fragment(struct parse_state *state)
 
 	do {
 		switch (*state->ptr) {
-		case '\0':
-			state->buffer[state->offset++] = 0;
-			return state->ptr;
-
 		case '%':
 			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,
@@ -1116,9 +1168,10 @@ static const char *parse_fragment(struct parse_state *state)
 			}
 			state->ptr += mb - 1;
 		}
-	} while (++state->ptr <= state->end);
+	} while (++state->ptr < state->end);
 
-	return NULL;
+	state->buffer[state->offset++] = 0;
+	return state->ptr;
 }
 
 static const char *parse_hier(struct parse_state *state)
@@ -1235,38 +1288,14 @@ PHP_METHOD(HttpUrl, __construct)
 		php_http_url_t *res_purl, *new_purl = NULL, *old_purl = NULL;
 
 		if (new_url) {
-			switch (Z_TYPE_P(new_url)) {
-				case IS_OBJECT:
-				case IS_ARRAY:
-					new_purl = php_http_url_from_struct(HASH_OF(new_url) TSRMLS_CC);
-					break;
-				default: {
-					zval *cpy = php_http_ztyp(IS_STRING, new_url);
-
-					new_purl = php_http_url_parse(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy), flags TSRMLS_CC);
-					zval_ptr_dtor(&cpy);
-					break;
-				}
-			}
+			new_purl = php_http_url_from_zval(new_url, flags TSRMLS_CC);
 			if (!new_purl) {
 				zend_restore_error_handling(&zeh TSRMLS_CC);
 				return;
 			}
 		}
 		if (old_url) {
-			switch (Z_TYPE_P(old_url)) {
-				case IS_OBJECT:
-				case IS_ARRAY:
-					old_purl = php_http_url_from_struct(HASH_OF(old_url) TSRMLS_CC);
-					break;
-				default: {
-					zval *cpy = php_http_ztyp(IS_STRING, old_url);
-
-					old_purl = php_http_url_parse(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy), flags TSRMLS_CC);
-					zval_ptr_dtor(&cpy);
-					break;
-				}
-			}
+			old_purl = php_http_url_from_zval(old_url, flags TSRMLS_CC);
 			if (!old_purl) {
 				if (new_purl) {
 					php_http_url_free(&new_purl);
@@ -1307,26 +1336,14 @@ PHP_METHOD(HttpUrl, mod)
 		php_http_url_t *new_purl = NULL, *old_purl = NULL;
 
 		if (new_url) {
-			switch (Z_TYPE_P(new_url)) {
-				case IS_OBJECT:
-				case IS_ARRAY:
-					new_purl = php_http_url_from_struct(HASH_OF(new_url) TSRMLS_CC);
-					break;
-				default: {
-					zval *cpy = php_http_ztyp(IS_STRING, new_url);
-
-					new_purl = php_http_url_parse(Z_STRVAL_P(new_url), Z_STRLEN_P(new_url), flags TSRMLS_CC);
-					zval_ptr_dtor(&cpy);
-					break;
-				}
-			}
+			new_purl = php_http_url_from_zval(new_url, flags TSRMLS_CC);
 			if (!new_purl) {
 				zend_restore_error_handling(&zeh TSRMLS_CC);
 				return;
 			}
 		}
 
-		if ((old_purl = php_http_url_from_struct(HASH_OF(getThis()) TSRMLS_CC))) {
+		if ((old_purl = php_http_url_from_struct(HASH_OF(getThis())))) {
 			php_http_url_t *res_purl;
 
 			ZVAL_OBJVAL(return_value, zend_objects_clone_obj(getThis() TSRMLS_CC), 0);
@@ -1351,11 +1368,11 @@ PHP_METHOD(HttpUrl, toString)
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_url_t *purl;
 
-		if ((purl = php_http_url_from_struct(HASH_OF(getThis()) TSRMLS_CC))) {
+		if ((purl = php_http_url_from_struct(HASH_OF(getThis())))) {
 			char *str;
 			size_t len;
 
-			php_http_url_to_string(purl, &str, &len TSRMLS_CC);
+			php_http_url_to_string(purl, &str, &len, 0);
 			php_http_url_free(&purl);
 			RETURN_STRINGL(str, len, 0);
 		}
@@ -1374,7 +1391,7 @@ PHP_METHOD(HttpUrl, toArray)
 	}
 
 	/* strip any non-URL properties */
-	purl = php_http_url_from_struct(HASH_OF(getThis()) TSRMLS_CC);
+	purl = php_http_url_from_struct(HASH_OF(getThis()));
 	php_http_url_to_struct(purl, return_value TSRMLS_CC);
 	php_http_url_free(&purl);
 }

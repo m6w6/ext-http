@@ -1598,7 +1598,7 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 	if (storage->url) {
 		pefree(storage->url, 1);
 	}
-	storage->url = pestrdup(PHP_HTTP_INFO(msg).request.url, 1);
+	php_http_url_to_string(PHP_HTTP_INFO(msg).request.url, &storage->url, NULL, 1);
 	curl_easy_setopt(curl->handle, CURLOPT_URL, storage->url);
 
 	/* request method */
@@ -1784,37 +1784,28 @@ static void queue_dtor(php_http_client_enqueue_t *e)
 	php_http_client_curl_handler_dtor(handler);
 }
 
-static php_resource_factory_t *create_rf(const char *url TSRMLS_DC)
+static php_resource_factory_t *create_rf(php_http_url_t *url TSRMLS_DC)
 {
-	php_url *purl;
+	php_persistent_handle_factory_t *pf;
 	php_resource_factory_t *rf = NULL;
+	char *id_str = NULL;
+	size_t id_len;
 
-	if (!url || !*url) {
+	if (!url || (!url->host && !url->path)) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot request empty URL");
 		return NULL;
 	}
 
-	purl = php_url_parse(url);
+	id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(url->host), url->port ? url->port : 80);
 
-	if (!purl) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse URL '%s'", url);
-		return NULL;
+	pf = php_persistent_handle_concede(NULL, ZEND_STRL("http\\Client\\Curl\\Request"), id_str, id_len, NULL, NULL TSRMLS_CC);
+	if (pf) {
+		rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void*)) php_persistent_handle_abandon);
 	} else {
-		char *id_str = NULL;
-		size_t id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(purl->host), purl->port ? purl->port : 80);
-		php_persistent_handle_factory_t *pf = php_persistent_handle_concede(NULL, ZEND_STRL("http\\Client\\Curl\\Request"), id_str, id_len, NULL, NULL TSRMLS_CC);
-
-		if (pf) {
-			rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void*)) php_persistent_handle_abandon);
-		}
-
-		php_url_free(purl);
-		efree(id_str);
-	}
-
-	if (!rf) {
 		rf = php_resource_factory_init(NULL, &php_http_curle_resource_factory_ops, NULL, NULL);
 	}
+
+	efree(id_str);
 
 	return rf;
 }

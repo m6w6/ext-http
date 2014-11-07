@@ -120,7 +120,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 			while (' ' == *url) ++url;
 			while (' ' == *(http-1)) --http;
 			if (http > url) {
-				PHP_HTTP_INFO(info).request.url = estrndup(url, http - url);
+				PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, ~0 TSRMLS_CC);
 			} else {
 				STR_SET(PHP_HTTP_INFO(info).request.method, NULL);
 				return NULL;
