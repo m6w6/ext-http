@@ -51,6 +51,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
 - var_dump(http\Message) no longer automatically creates an empty body
 + Added http\Message\Parser class
 + Made http\Client::once() and http\Client::wait() available when using events
++ Added http\Url::parse() method
++ Added http\Url::PARSE_MBLOC, http\Url::PARSE_MBUTF8, http\Url::PARSE_TOIDN and http\Url::PARSE_TOPCT constants
 ]]></notes>
  <contents>
   <dir name="/">
@@ -122,6 +124,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
    <file role="src" name="php_http_strlist.h"/>
    <file role="src" name="php_http_url.c"/>
    <file role="src" name="php_http_url.h"/>
+   <file role="src" name="php_http_utf8.h"/>
    <file role="src" name="php_http_version.c"/>
    <file role="src" name="php_http_version.h"/>
 
@@ -137,6 +140,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
     </dir>
      <file role="test" name="bug61444.phpt"/>
      <file role="test" name="bug66388.phpt"/>
+     <file role="test" name="bug67932.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>
@@ -152,6 +156,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="client013.phpt"/>
      <file role="test" name="client014.phpt"/>
      <file role="test" name="client015.phpt"/>
+     <file role="test" name="client016.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
@@ -251,6 +256,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="messagebody009.phpt"/>
      <file role="test" name="messagebody010.phpt"/>
      <file role="test" name="messageparser001.phpt"/>
+     <file role="test" name="messageparser002.phpt"/>
      <file role="test" name="negotiate001.phpt"/>
      <file role="test" name="params001.phpt"/>
      <file role="test" name="params002.phpt"/>
@@ -271,11 +277,21 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="querystring001.phpt"/>
      <file role="test" name="querystring002.phpt"/>
      <file role="test" name="serialize001.phpt"/>
+     <file role="test" name="url001.phpt"/>
      <file role="test" name="url002.phpt"/>
      <file role="test" name="url003.phpt"/>
      <file role="test" name="url004.phpt"/>
      <file role="test" name="url005.phpt"/>
-     <file role="test" name="url001.phpt"/>
+     <file role="test" name="urlparser001.phpt"/>
+     <file role="test" name="urlparser002.phpt"/>
+     <file role="test" name="urlparser003.phpt"/>
+     <file role="test" name="urlparser004.phpt"/>
+     <file role="test" name="urlparser005.phpt"/>
+     <file role="test" name="urlparser006.phpt"/>
+     <file role="test" name="urlparser007.phpt"/>
+     <file role="test" name="urlparser008.phpt"/>
+     <file role="test" name="urlparser009.phpt"/>
+     <file role="test" name="urlparser010.phpt"/>
      <file role="test" name="version001.phpt"/>
    </dir>
   </dir>
@@ -304,14 +320,11 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <optional>
    <extension><name>hash</name></extension>
    <extension><name>iconv</name></extension>
+   <extension><name>json</name></extension>
   </optional>
  </dependencies>
  <providesextension>http</providesextension>
  <extsrcrelease>
-  <configureoption 
-   name="with-http"
-   prompt="Enable extended HTTP support"
-   default="yes" />
   <configureoption
    name="with-http-zlib-dir"
    prompt="where to find zlib"

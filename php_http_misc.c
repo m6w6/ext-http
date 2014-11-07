@@ -115,7 +115,7 @@ char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle,
 
 size_t php_http_boundary(char *buf, size_t buf_len TSRMLS_DC)
 {
-	return snprintf(buf, buf_len, "%15.15F", PHP_HTTP_G->env.request.time * php_combined_lcg(TSRMLS_C));
+	return snprintf(buf, buf_len, "%15.15F", sapi_get_request_time(TSRMLS_C) * php_combined_lcg(TSRMLS_C));
 }
 
 int php_http_select_str(const char *cmp, int argc, ...)

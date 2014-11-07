@@ -1041,13 +1041,15 @@ static PHP_METHOD(HttpMessage, __construct)
 
 		if (s && php_http_message_parser_init(&p TSRMLS_CC)) {
 			unsigned flags = (greedy ? PHP_HTTP_MESSAGE_PARSER_GREEDY : 0);
+			php_http_buffer_t buf;
 
-			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse_stream(&p, s, flags, &msg)) {
+			php_http_buffer_init_ex(&buf, 0x1000, PHP_HTTP_BUFFER_INIT_PREALLOC);
+			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse_stream(&p, &buf, s, flags, &msg)) {
 				if (!EG(exception)) {
 					php_http_throw(bad_message, "Could not parse message from stream", NULL);
 				}
 			}
-
+			php_http_buffer_dtor(&buf);
 			php_http_message_parser_dtor(&p);
 		}
 

@@ -329,6 +329,17 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r, php_ht
 		return ret;
 	}
 
+	if ((zoption = get_option(options, ZEND_STRL("headers") TSRMLS_CC))) {
+		if (Z_TYPE_P(zoption) == IS_ARRAY) {
+			php_http_header_to_callback(Z_ARRVAL_P(zoption), 0, (php_http_pass_format_callback_t) r->ops->set_header, r TSRMLS_CC);
+		}
+		zval_ptr_dtor(&zoption);
+	}
+
+	if (ret != SUCCESS) {
+		return ret;
+	}
+
 	if ((zoption = get_option(options, ZEND_STRL("responseCode") TSRMLS_CC))) {
 		zval *zoption_copy = php_http_ztyp(IS_LONG, zoption);
 
@@ -353,17 +364,6 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r, php_ht
 			php_http_version_dtor(&v);
 		}
 		zval_ptr_dtor(&zoption_copy);
-	}
-
-	if (ret != SUCCESS) {
-		return ret;
-	}
-
-	if ((zoption = get_option(options, ZEND_STRL("headers") TSRMLS_CC))) {
-		if (Z_TYPE_P(zoption) == IS_ARRAY) {
-			php_http_header_to_callback(Z_ARRVAL_P(zoption), 0, (php_http_pass_format_callback_t) r->ops->set_header, r TSRMLS_CC);
-		}
-		zval_ptr_dtor(&zoption);
 	}
 
 	if (ret != SUCCESS) {

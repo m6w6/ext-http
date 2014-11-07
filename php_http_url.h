@@ -35,7 +35,34 @@
 #define PHP_HTTP_URL_FROM_ENV		0x1000
 #define PHP_HTTP_URL_SANITIZE_PATH	0x2000
 
+/* parse multibyte according to locale */
+#define PHP_HTTP_URL_PARSE_MBLOC	0x10000
+/* parse utf8 multibyte sequences */
+#define PHP_HTTP_URL_PARSE_MBUTF8	0x20000
+/* convert multibyte hostnames to IDNA */
+#define PHP_HTTP_URL_PARSE_TOIDN	0x100000
+/* percent encode multibyte sequences in userinfo, path, query and fragment */
+#define PHP_HTTP_URL_PARSE_TOPCT	0x200000
+
+typedef struct php_http_url {
+	/* compatible to php_url, but do not use php_url_free() */
+	char *scheme;
+	char *user;
+	char *pass;
+	char *host;
+	unsigned short port;
+	char *path;
+	char *query;
+	char *fragment;
+} php_http_url_t;
+
+PHP_HTTP_API php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags TSRMLS_DC);
+PHP_HTTP_API void php_http_url_free(php_http_url_t **url);
+
+/* deprecated */
 PHP_HTTP_API void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC);
+/* use this instead */
+PHP_HTTP_API php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_url_t *new_url, unsigned flags TSRMLS_DC);
 
 PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC);
 PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *pre_encoded_str, size_t pre_encoded_len TSRMLS_DC);
@@ -48,168 +75,24 @@ static inline void php_http_url_argsep(const char **str, size_t *len TSRMLS_DC)
 	}
 }
 
-static inline void php_http_url_to_string(php_url *url, char **url_str, size_t *url_len TSRMLS_DC)
+static inline php_url *php_http_url_to_php_url(php_http_url_t *url)
 {
-	php_http_buffer_t buf;
+	php_url *purl = ecalloc(1, sizeof(*purl));
 
-	php_http_buffer_init(&buf);
+	if (url->scheme)   purl->scheme   = estrdup(url->scheme);
+	if (url->pass)     purl->pass     = estrdup(url->pass);
+	if (url->user)     purl->user     = estrdup(url->user);
+	if (url->host)     purl->host     = estrdup(url->host);
+	if (url->path)     purl->path     = estrdup(url->path);
+	if (url->query)    purl->query    = estrdup(url->query);
+	if (url->fragment) purl->fragment = estrdup(url->fragment);
 
-	if (url->scheme && *url->scheme) {
-		php_http_buffer_appendl(&buf, url->scheme);
-		php_http_buffer_appends(&buf, "://");
-	} else {
-		php_http_buffer_appends(&buf, "//");
-	}
-
-	if (url->user && *url->user) {
-		php_http_buffer_appendl(&buf, url->user);
-		if (url->pass && *url->pass) {
-			php_http_buffer_appends(&buf, ":");
-			php_http_buffer_appendl(&buf, url->pass);
-		}
-		php_http_buffer_appends(&buf, "@");
-	}
-
-	if (url->host && *url->host) {
-		php_http_buffer_appendl(&buf, url->host);
-	} else {
-		php_http_buffer_appends(&buf, "localhost");
-	}
-
-	if (url->port) {
-		php_http_buffer_appendf(&buf, ":%hu", url->port);
-	}
-
-	if (url->path && *url->path) {
-		php_http_buffer_appendl(&buf, url->path);
-	}
-
-	if (url->query && *url->query) {
-		php_http_buffer_appends(&buf, "?");
-		php_http_buffer_appendl(&buf, url->query);
-	}
-
-	if (url->fragment && *url->fragment) {
-		php_http_buffer_appends(&buf, "#");
-		php_http_buffer_appendl(&buf, url->fragment);
-	}
-
-	php_http_buffer_shrink(&buf);
-	php_http_buffer_fix(&buf);
-
-	if (url_len) {
-		*url_len = buf.used;
-	}
-
-	if (url_str) {
-		*url_str = buf.data;
-	} else {
-		php_http_buffer_dtor(&buf);
-	}
+	return purl;
 }
 
-static inline php_url *php_http_url_from_struct(php_url *url, HashTable *ht TSRMLS_DC)
-{
-	zval **e;
-	
-	if (!url) {
-		url = emalloc(sizeof(*url));
-	}
-	memset(url, 0, sizeof(*url));
-	
-	if (SUCCESS == zend_hash_find(ht, "scheme", sizeof("scheme"), (void *) &e)) {
-		zval *cpy = php_http_ztyp(IS_STRING, *e);
-		url->scheme = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
-		zval_ptr_dtor(&cpy);
-	}
-	if (SUCCESS == zend_hash_find(ht, "user", sizeof("user"), (void *) &e)) {
-		zval *cpy = php_http_ztyp(IS_STRING, *e);
-		url->user = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
-		zval_ptr_dtor(&cpy);
-	}
-	if (SUCCESS == zend_hash_find(ht, "pass", sizeof("pass"), (void *) &e)) {
-		zval *cpy = php_http_ztyp(IS_STRING, *e);
-		url->pass = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
-		zval_ptr_dtor(&cpy);
-	}
-	if (SUCCESS == zend_hash_find(ht, "host", sizeof("host"), (void *) &e)) {
-		zval *cpy = php_http_ztyp(IS_STRING, *e);
-		url->host = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
-		zval_ptr_dtor(&cpy);
-	}
-	if (SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void *) &e)) {
-		zval *cpy = php_http_ztyp(IS_STRING, *e);
-		url->path = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
-		zval_ptr_dtor(&cpy);
-	}
-	if (SUCCESS == zend_hash_find(ht, "query", sizeof("query"), (void *) &e)) {
-		zval *cpy = php_http_ztyp(IS_STRING, *e);
-		url->query = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
-		zval_ptr_dtor(&cpy);
-	}
-	if (SUCCESS == zend_hash_find(ht, "fragment", sizeof("fragment"), (void *) &e)) {
-		zval *cpy = php_http_ztyp(IS_STRING, *e);
-		url->fragment = estrndup(Z_STRVAL_P(cpy), Z_STRLEN_P(cpy));
-		zval_ptr_dtor(&cpy);
-	}
-	if (SUCCESS == zend_hash_find(ht, "port", sizeof("port"), (void *) &e)) {
-		zval *cpy = php_http_ztyp(IS_LONG, *e);
-		url->port = (unsigned short) Z_LVAL_P(cpy);
-		zval_ptr_dtor(&cpy);
-	}
-	
-	return url;
-}
-
-static inline HashTable *php_http_url_to_struct(php_url *url, zval *strct TSRMLS_DC)
-{
-	zval arr;
-	
-	if (strct) {
-		switch (Z_TYPE_P(strct)) {
-			default:
-				zval_dtor(strct);
-				array_init(strct);
-				/* no break */
-			case IS_ARRAY:
-			case IS_OBJECT:
-				INIT_PZVAL_ARRAY((&arr), HASH_OF(strct));
-				break;
-		}
-	} else {
-		INIT_PZVAL(&arr);
-		array_init(&arr);
-	}
-	
-	if (url) {
-		if (url->scheme) {
-			add_assoc_string(&arr, "scheme", url->scheme, 1);
-		}
-		if (url->user) {
-			add_assoc_string(&arr, "user", url->user, 1);
-		}
-		if (url->pass) {
-			add_assoc_string(&arr, "pass", url->pass, 1);
-		}
-		if (url->host) {
-			add_assoc_string(&arr, "host", url->host, 1);
-		}
-		if (url->port) {
-			add_assoc_long(&arr, "port", (long) url->port);
-		}
-		if (url->path) {
-			add_assoc_string(&arr, "path", url->path, 1);
-		}
-		if (url->query) {
-			add_assoc_string(&arr, "query", url->query, 1);
-		}
-		if (url->fragment) {
-			add_assoc_string(&arr, "fragment", url->fragment, 1);
-		}
-	}
-	
-	return Z_ARRVAL(arr);
-}
+PHP_HTTP_API php_http_url_t *php_http_url_from_struct(HashTable *ht TSRMLS_DC);
+PHP_HTTP_API HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct TSRMLS_DC);
+PHP_HTTP_API void php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *url_len TSRMLS_DC);
 
 PHP_HTTP_API zend_class_entry *php_http_url_class_entry;
 PHP_MINIT_FUNCTION(http_url);
