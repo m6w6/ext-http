@@ -26,6 +26,7 @@ static void set_option(zval *options, const char *name_str, size_t name_len, int
 				case IS_STRING:
 					zend_update_property_stringl(Z_OBJCE_P(options), options, name_str, name_len, value_ptr, value_len TSRMLS_CC);
 					break;
+				case IS_ARRAY:
 				case IS_OBJECT:
 					zend_update_property(Z_OBJCE_P(options), options, name_str, name_len, value_ptr TSRMLS_CC);
 					break;
@@ -47,6 +48,7 @@ static void set_option(zval *options, const char *name_str, size_t name_len, int
 					char *value = estrndup(value_ptr, value_len);
 					add_assoc_stringl_ex(options, name_str, name_len + 1, value, value_len, 0);
 					break;
+				case IS_ARRAY:
 				case IS_OBJECT:
 					Z_ADDREF_P(value_ptr);
 					add_assoc_zval_ex(options, name_str, name_len + 1, value_ptr);
@@ -107,6 +109,36 @@ static php_http_message_t *get_request(zval *options TSRMLS_DC)
 	}
 
 	return request;
+}
+static void set_cookie(zval *options, zval *zcookie_new TSRMLS_DC)
+{
+	HashPosition pos;
+	zval *zcookies_set;
+	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+	php_http_cookie_object_t *obj = zend_object_store_get_object(zcookie_new TSRMLS_CC);
+
+	zcookies_set = get_option(options, ZEND_STRL("cookies") TSRMLS_CC);
+	if (!zcookies_set || Z_TYPE_P(zcookies_set) != IS_ARRAY) {
+		if (zcookies_set) {
+			zval_ptr_dtor(&zcookies_set);
+		}
+		MAKE_STD_ZVAL(zcookies_set);
+		array_init_size(zcookies_set, zend_hash_num_elements(&obj->list->cookies));
+	} else {
+		SEPARATE_ZVAL(&zcookies_set);
+	}
+
+	FOREACH_HASH_KEY(pos, &obj->list->cookies, key) {
+		Z_ADDREF_P(zcookie_new);
+		if (key.type == HASH_KEY_IS_STRING) {
+			add_assoc_zval_ex(zcookies_set, key.str, key.len, zcookie_new);
+		} else {
+			add_index_zval(zcookies_set, key.num, zcookie_new);
+		}
+	}
+
+	set_option(options, ZEND_STRL("cookies"), IS_ARRAY, zcookies_set, 0 TSRMLS_CC);
+	zval_ptr_dtor(&zcookies_set);
 }
 
 php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC)
@@ -364,6 +396,33 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r, php_ht
 			php_http_version_dtor(&v);
 		}
 		zval_ptr_dtor(&zoption_copy);
+	}
+
+	if (ret != SUCCESS) {
+		return ret;
+	}
+
+	if ((zoption = get_option(options, ZEND_STRL("cookies") TSRMLS_CC))) {
+		if (Z_TYPE_P(zoption) == IS_ARRAY) {
+			HashPosition pos;
+			zval **zcookie;
+
+			FOREACH_VAL(pos, zoption, zcookie) {
+				if (Z_TYPE_PP(zcookie) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(zcookie), php_http_cookie_class_entry TSRMLS_CC)) {
+					php_http_cookie_object_t *obj = zend_object_store_get_object(*zcookie TSRMLS_CC);
+					char *str;
+					size_t len;
+
+					php_http_cookie_list_to_string(obj->list, &str, &len);
+					if (SUCCESS != (ret = r->ops->add_header(r, "Set-Cookie: %s", str))) {
+						efree(str);
+						break;
+					}
+					efree(str);
+				}
+			}
+		}
+		zval_ptr_dtor(&zoption);
 	}
 
 	if (ret != SUCCESS) {
@@ -864,12 +923,15 @@ static void php_http_env_response_stream_header(php_http_env_response_stream_ctx
 	HashPosition pos;
 	zval **val;
 
-	FOREACH_HASH_VAL(pos, &ctx->header, val) {
+	FOREACH_HASH_VAL(pos, header, val) {
 		if (Z_TYPE_PP(val) == IS_ARRAY) {
 			php_http_env_response_stream_header(ctx, Z_ARRVAL_PP(val) TSRMLS_CC);
 		} else {
-			php_stream_write(ctx->stream, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
+			zval *tmp = php_http_ztyp(IS_STRING, *val);
+
+			php_stream_write(ctx->stream, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
 			php_stream_write_string(ctx->stream, PHP_HTTP_CRLF);
+			zval_ptr_dtor(&tmp);
 		}
 	}
 }
@@ -1249,6 +1311,46 @@ static PHP_METHOD(HttpEnvResponse, setThrottleRate)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setCookie, 0, 0, 1)
+	ZEND_ARG_INFO(0, cookie)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnvResponse, setCookie)
+{
+	zval *zcookie_new;
+	zend_error_handling zeh;
+	php_http_cookie_list_t *list = NULL;
+
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &zcookie_new), invalid_arg, return);
+
+	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh TSRMLS_CC);
+	switch (Z_TYPE_P(zcookie_new)) {
+	case IS_OBJECT:
+		if (instanceof_function(Z_OBJCE_P(zcookie_new), php_http_cookie_class_entry TSRMLS_CC)) {
+			Z_ADDREF_P(zcookie_new);
+			break;
+		}
+		/* no break */
+	case IS_ARRAY:
+		list = php_http_cookie_list_from_struct(NULL, zcookie_new TSRMLS_CC);
+		MAKE_STD_ZVAL(zcookie_new);
+		ZVAL_OBJVAL(zcookie_new, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
+		break;
+
+	default:
+		zcookie_new = php_http_ztyp(IS_STRING, zcookie_new);
+		list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(zcookie_new), Z_STRLEN_P(zcookie_new), 0, NULL TSRMLS_CC);
+		zval_ptr_dtor(&zcookie_new);
+		MAKE_STD_ZVAL(zcookie_new);
+		ZVAL_OBJVAL(zcookie_new, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
+	}
+	zend_restore_error_handling(&zeh TSRMLS_CC);
+
+	set_cookie(getThis(), zcookie_new TSRMLS_CC);
+	zval_ptr_dtor(&zcookie_new);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_send, 0, 0, 0)
 	ZEND_ARG_INFO(0, stream)
 ZEND_END_ARG_INFO();
@@ -1293,6 +1395,7 @@ static zend_function_entry php_http_env_response_methods[] = {
 	PHP_ME(HttpEnvResponse, __construct,             ai_HttpEnvResponse___construct,             ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(HttpEnvResponse, __invoke,                ai_HttpEnvResponse___invoke,                ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setEnvRequest,           ai_HttpEnvResponse_setEnvRequest,           ZEND_ACC_PUBLIC)
+	PHP_ME(HttpEnvResponse, setCookie,               ai_HttpEnvResponse_setCookie,               ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setContentType,          ai_HttpEnvResponse_setContentType,          ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setContentDisposition,   ai_HttpEnvResponse_setContentDisposition,   ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setContentEncoding,      ai_HttpEnvResponse_setContentEncoding,      ZEND_ACC_PUBLIC)
@@ -1323,6 +1426,7 @@ PHP_MINIT_FUNCTION(http_env_response)
 	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CACHE_MISS"), PHP_HTTP_CACHE_MISS TSRMLS_CC);
 
 	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("request"), ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("cookies"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("contentType"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("contentDisposition"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("contentEncoding"), ZEND_ACC_PROTECTED TSRMLS_CC);
