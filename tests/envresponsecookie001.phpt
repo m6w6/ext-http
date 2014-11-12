@@ -1,5 +1,5 @@
 --TEST--
-http\Env\Response::setCookie()
+env response cookie
 --SKIPIF--
 <?php 
 include "skipif.inc";
