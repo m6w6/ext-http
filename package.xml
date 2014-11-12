@@ -37,9 +37,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-08-19</date>
+ <date>2014-11-12</date>
  <version>
-  <release>2.2.0dev</release>
+  <release>2.2.0RC1</release>
   <api>2.2.0</api>
  </version>
  <stability>
@@ -51,8 +51,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
 - var_dump(http\Message) no longer automatically creates an empty body
 + Added http\Message\Parser class
 + Made http\Client::once() and http\Client::wait() available when using events
-+ Added http\Url::parse() method
 + Added http\Url::PARSE_MBLOC, http\Url::PARSE_MBUTF8, http\Url::PARSE_TOIDN and http\Url::PARSE_TOPCT constants
++ Added http\Env\Response::setCookie()
++ Added http\Env\Request::getCookie()
 ]]></notes>
  <contents>
   <dir name="/">
@@ -188,6 +189,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="envrequestbody001.phpt"/>
      <file role="test" name="envrequestbody002.phpt"/>
      <file role="test" name="envrequestbody003.phpt"/>
+     <file role="test" name="envrequestcookie001.phpt"/>
      <file role="test" name="envrequestfiles001.phpt"/>
      <file role="test" name="envrequestfiles002.phpt"/>
      <file role="test" name="envrequestform.phpt"/>
@@ -214,6 +216,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="envresponsebody001.phpt"/>
      <file role="test" name="envresponsebody002.phpt"/>
      <file role="test" name="envresponsecodes.phpt"/>
+     <file role="test" name="envresponsecookie001.phpt"/>
      <file role="test" name="envresponseheader001.phpt"/>
      <file role="test" name="envresponseranges001.phpt"/>
      <file role="test" name="etag001.phpt"/>
