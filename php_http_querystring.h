@@ -14,14 +14,14 @@
 #define PHP_HTTP_QUERYSTRING_H
 
 #ifdef PHP_HTTP_HAVE_ICONV
-PHP_HTTP_API STATUS php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe TSRMLS_DC);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe);
 #endif /* PHP_HTTP_HAVE_ICONV */
-PHP_HTTP_API STATUS php_http_querystring_update(zval *qarray, zval *params, zval *qstring TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_querystring_ctor(zval *instance, zval *params TSRMLS_DC);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *qstring);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_querystring_ctor(zval *instance, zval *params);
 
 typedef php_http_object_t php_http_querystring_object_t;
 
-#define PHP_HTTP_QUERYSTRING_TYPE_BOOL		IS_BOOL
+#define PHP_HTTP_QUERYSTRING_TYPE_BOOL		_IS_BOOL
 #define PHP_HTTP_QUERYSTRING_TYPE_INT		IS_LONG
 #define PHP_HTTP_QUERYSTRING_TYPE_FLOAT		IS_DOUBLE
 #define PHP_HTTP_QUERYSTRING_TYPE_STRING	IS_STRING

@@ -263,7 +263,7 @@ static size_t output(void *context, char *buf, size_t len TSRMLS_DC)
 }
 
 #define php_http_env_response_send_done(r) php_http_env_response_send_data((r), NULL, 0)
-static STATUS php_http_env_response_send_data(php_http_env_response_t *r, const char *buf, size_t len)
+static ZEND_RESULT_CODE php_http_env_response_send_data(php_http_env_response_t *r, const char *buf, size_t len)
 {
 	size_t chunks_sent, chunk = r->throttle.chunk ? r->throttle.chunk : PHP_HTTP_SENDBUF_SIZE;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
@@ -351,9 +351,9 @@ void php_http_env_response_free(php_http_env_response_t **r)
 	}
 }
 
-static STATUS php_http_env_response_send_head(php_http_env_response_t *r, php_http_message_t *request)
+static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t *r, php_http_message_t *request)
 {
-	STATUS ret = SUCCESS;
+	ZEND_RESULT_CODE ret = SUCCESS;
 	zval *zoption, *options = r->options;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
@@ -608,9 +608,9 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r, php_ht
 	return ret;
 }
 
-static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
+static ZEND_RESULT_CODE php_http_env_response_send_body(php_http_env_response_t *r)
 {
-	STATUS ret = SUCCESS;
+	ZEND_RESULT_CODE ret = SUCCESS;
 	zval *zoption;
 	php_http_message_body_t *body;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
@@ -696,7 +696,7 @@ static STATUS php_http_env_response_send_body(php_http_env_response_t *r)
 	return ret;
 }
 
-STATUS php_http_env_response_send(php_http_env_response_t *r)
+ZEND_RESULT_CODE php_http_env_response_send(php_http_env_response_t *r)
 {
 	php_http_message_t *request;
 	php_http_message_body_t *body;
@@ -784,21 +784,21 @@ static long php_http_env_response_sapi_get_status(php_http_env_response_t *r)
 
 	return php_http_env_get_response_code(TSRMLS_C);
 }
-static STATUS php_http_env_response_sapi_set_status(php_http_env_response_t *r, long http_code)
+static ZEND_RESULT_CODE php_http_env_response_sapi_set_status(php_http_env_response_t *r, long http_code)
 {
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	return php_http_env_set_response_code(http_code TSRMLS_CC);
 }
-static STATUS php_http_env_response_sapi_set_protocol_version(php_http_env_response_t *r, php_http_version_t *v)
+static ZEND_RESULT_CODE php_http_env_response_sapi_set_protocol_version(php_http_env_response_t *r, php_http_version_t *v)
 {
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	return php_http_env_set_response_protocol_version(v TSRMLS_CC);
 }
-static STATUS php_http_env_response_sapi_set_header(php_http_env_response_t *r, const char *fmt, ...)
+static ZEND_RESULT_CODE php_http_env_response_sapi_set_header(php_http_env_response_t *r, const char *fmt, ...)
 {
-	STATUS ret;
+	ZEND_RESULT_CODE ret;
 	va_list args;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
@@ -808,9 +808,9 @@ static STATUS php_http_env_response_sapi_set_header(php_http_env_response_t *r, 
 
 	return ret;
 }
-static STATUS php_http_env_response_sapi_add_header(php_http_env_response_t *r, const char *fmt, ...)
+static ZEND_RESULT_CODE php_http_env_response_sapi_add_header(php_http_env_response_t *r, const char *fmt, ...)
 {
-	STATUS ret;
+	ZEND_RESULT_CODE ret;
 	va_list args;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
@@ -820,13 +820,13 @@ static STATUS php_http_env_response_sapi_add_header(php_http_env_response_t *r, 
 
 	return ret;
 }
-static STATUS php_http_env_response_sapi_del_header(php_http_env_response_t *r, const char *header_str, size_t header_len)
+static ZEND_RESULT_CODE php_http_env_response_sapi_del_header(php_http_env_response_t *r, const char *header_str, size_t header_len)
 {
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	return php_http_env_set_response_header_value(0, header_str, header_len, NULL, 1 TSRMLS_CC);
 }
-static STATUS php_http_env_response_sapi_write(php_http_env_response_t *r, const char *data_str, size_t data_len)
+static ZEND_RESULT_CODE php_http_env_response_sapi_write(php_http_env_response_t *r, const char *data_str, size_t data_len)
 {
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
@@ -835,7 +835,7 @@ static STATUS php_http_env_response_sapi_write(php_http_env_response_t *r, const
 	}
 	return FAILURE;
 }
-static STATUS php_http_env_response_sapi_flush(php_http_env_response_t *r)
+static ZEND_RESULT_CODE php_http_env_response_sapi_flush(php_http_env_response_t *r)
 {
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
@@ -853,7 +853,7 @@ static STATUS php_http_env_response_sapi_flush(php_http_env_response_t *r)
 
 	return SUCCESS;
 }
-static STATUS php_http_env_response_sapi_finish(php_http_env_response_t *r)
+static ZEND_RESULT_CODE php_http_env_response_sapi_finish(php_http_env_response_t *r)
 {
 	return SUCCESS;
 }
@@ -888,7 +888,7 @@ typedef struct php_http_env_response_stream_ctx {
 	unsigned finished:1;
 } php_http_env_response_stream_ctx_t;
 
-static STATUS php_http_env_response_stream_init(php_http_env_response_t *r, void *init_arg)
+static ZEND_RESULT_CODE php_http_env_response_stream_init(php_http_env_response_t *r, void *init_arg)
 {
 	php_http_env_response_stream_ctx_t *ctx;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
@@ -935,7 +935,7 @@ static void php_http_env_response_stream_header(php_http_env_response_stream_ctx
 		}
 	}
 }
-static STATUS php_http_env_response_stream_start(php_http_env_response_stream_ctx_t *ctx TSRMLS_DC)
+static ZEND_RESULT_CODE php_http_env_response_stream_start(php_http_env_response_stream_ctx_t *ctx TSRMLS_DC)
 {
 	if (ctx->started || ctx->finished) {
 		return FAILURE;
@@ -953,7 +953,7 @@ static long php_http_env_response_stream_get_status(php_http_env_response_t *r)
 
 	return ctx->status_code;
 }
-static STATUS php_http_env_response_stream_set_status(php_http_env_response_t *r, long http_code)
+static ZEND_RESULT_CODE php_http_env_response_stream_set_status(php_http_env_response_t *r, long http_code)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 
@@ -965,7 +965,7 @@ static STATUS php_http_env_response_stream_set_status(php_http_env_response_t *r
 
 	return SUCCESS;
 }
-static STATUS php_http_env_response_stream_set_protocol_version(php_http_env_response_t *r, php_http_version_t *v)
+static ZEND_RESULT_CODE php_http_env_response_stream_set_protocol_version(php_http_env_response_t *r, php_http_version_t *v)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 
@@ -977,7 +977,7 @@ static STATUS php_http_env_response_stream_set_protocol_version(php_http_env_res
 
 	return SUCCESS;
 }
-static STATUS php_http_env_response_stream_set_header_ex(php_http_env_response_t *r, zend_bool replace, const char *fmt, va_list argv)
+static ZEND_RESULT_CODE php_http_env_response_stream_set_header_ex(php_http_env_response_t *r, zend_bool replace, const char *fmt, va_list argv)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 	char *header_end, *header_str = NULL;
@@ -1014,9 +1014,9 @@ static STATUS php_http_env_response_stream_set_header_ex(php_http_env_response_t
 		return SUCCESS;
 	}
 }
-static STATUS php_http_env_response_stream_set_header(php_http_env_response_t *r, const char *fmt, ...)
+static ZEND_RESULT_CODE php_http_env_response_stream_set_header(php_http_env_response_t *r, const char *fmt, ...)
 {
-	STATUS ret;
+	ZEND_RESULT_CODE ret;
 	va_list argv;
 
 	va_start(argv, fmt);
@@ -1025,9 +1025,9 @@ static STATUS php_http_env_response_stream_set_header(php_http_env_response_t *r
 
 	return ret;
 }
-static STATUS php_http_env_response_stream_add_header(php_http_env_response_t *r, const char *fmt, ...)
+static ZEND_RESULT_CODE php_http_env_response_stream_add_header(php_http_env_response_t *r, const char *fmt, ...)
 {
-	STATUS ret;
+	ZEND_RESULT_CODE ret;
 	va_list argv;
 
 	va_start(argv, fmt);
@@ -1036,7 +1036,7 @@ static STATUS php_http_env_response_stream_add_header(php_http_env_response_t *r
 
 	return ret;
 }
-static STATUS php_http_env_response_stream_del_header(php_http_env_response_t *r, const char *header_str, size_t header_len)
+static ZEND_RESULT_CODE php_http_env_response_stream_del_header(php_http_env_response_t *r, const char *header_str, size_t header_len)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 
@@ -1047,7 +1047,7 @@ static STATUS php_http_env_response_stream_del_header(php_http_env_response_t *r
 	zend_hash_del(&stream_ctx->header, header_str, header_len + 1);
 	return SUCCESS;
 }
-static STATUS php_http_env_response_stream_write(php_http_env_response_t *r, const char *data_str, size_t data_len)
+static ZEND_RESULT_CODE php_http_env_response_stream_write(php_http_env_response_t *r, const char *data_str, size_t data_len)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
@@ -1067,7 +1067,7 @@ static STATUS php_http_env_response_stream_write(php_http_env_response_t *r, con
 
 	return SUCCESS;
 }
-static STATUS php_http_env_response_stream_flush(php_http_env_response_t *r)
+static ZEND_RESULT_CODE php_http_env_response_stream_flush(php_http_env_response_t *r)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
@@ -1083,7 +1083,7 @@ static STATUS php_http_env_response_stream_flush(php_http_env_response_t *r)
 
 	return php_stream_flush(stream_ctx->stream);
 }
-static STATUS php_http_env_response_stream_finish(php_http_env_response_t *r)
+static ZEND_RESULT_CODE php_http_env_response_stream_finish(php_http_env_response_t *r)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(r->ts);

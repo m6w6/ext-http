@@ -26,7 +26,7 @@ php_http_options_t *php_http_options_init(php_http_options_t *registry, zend_boo
 	return registry;
 }
 
-STATUS php_http_options_apply(php_http_options_t *registry, HashTable *options, void *userdata)
+ZEND_RESULT_CODE php_http_options_apply(php_http_options_t *registry, HashTable *options, void *userdata)
 {
 	HashPosition pos;
 	zval *val;

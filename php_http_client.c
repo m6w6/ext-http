@@ -20,12 +20,12 @@
  */
 static HashTable php_http_client_drivers;
 
-STATUS php_http_client_driver_add(php_http_client_driver_t *driver)
+ZEND_RESULT_CODE php_http_client_driver_add(php_http_client_driver_t *driver)
 {
 	return zend_hash_add(&php_http_client_drivers, driver->name_str, driver->name_len + 1, (void *) driver, sizeof(php_http_client_driver_t), NULL);
 }
 
-STATUS php_http_client_driver_get(const char *name_str, size_t name_len, php_http_client_driver_t *driver)
+ZEND_RESULT_CODE php_http_client_driver_get(const char *name_str, size_t name_len, php_http_client_driver_t *driver)
 {
 	php_http_client_driver_t *tmp;
 
@@ -216,7 +216,7 @@ void php_http_client_free(php_http_client_t **h) {
 	}
 }
 
-STATUS php_http_client_enqueue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
+ZEND_RESULT_CODE php_http_client_enqueue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
 {
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
@@ -231,7 +231,7 @@ STATUS php_http_client_enqueue(php_http_client_t *h, php_http_client_enqueue_t *
 	return FAILURE;
 }
 
-STATUS php_http_client_dequeue(php_http_client_t *h, php_http_message_t *request)
+ZEND_RESULT_CODE php_http_client_dequeue(php_http_client_t *h, php_http_message_t *request)
 {
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
@@ -267,7 +267,7 @@ php_http_client_enqueue_t *php_http_client_enqueued(php_http_client_t *h, void *
 	return el ? (php_http_client_enqueue_t *) el->data : NULL;
 }
 
-STATUS php_http_client_wait(php_http_client_t *h, struct timeval *custom_timeout)
+ZEND_RESULT_CODE php_http_client_wait(php_http_client_t *h, struct timeval *custom_timeout)
 {
 	if (h->ops->wait) {
 		return h->ops->wait(h, custom_timeout);
@@ -285,7 +285,7 @@ int php_http_client_once(php_http_client_t *h)
 	return FAILURE;
 }
 
-STATUS php_http_client_exec(php_http_client_t *h)
+ZEND_RESULT_CODE php_http_client_exec(php_http_client_t *h)
 {
 	if (h->ops->exec) {
 		return h->ops->exec(h);
@@ -304,7 +304,7 @@ void php_http_client_reset(php_http_client_t *h)
 	zend_llist_clean(&h->responses);
 }
 
-STATUS php_http_client_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
+ZEND_RESULT_CODE php_http_client_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
 {
 	if (h->ops->setopt) {
 		return h->ops->setopt(h, opt, arg);
@@ -313,7 +313,7 @@ STATUS php_http_client_setopt(php_http_client_t *h, php_http_client_setopt_opt_t
 	return FAILURE;
 }
 
-STATUS php_http_client_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void *res_ptr)
+ZEND_RESULT_CODE php_http_client_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void *res_ptr)
 {
 	if (h->ops->getopt) {
 		return h->ops->getopt(h, opt, arg, res_ptr);
@@ -361,7 +361,9 @@ zend_object_value php_http_client_object_new(zend_class_entry *ce TSRMLS_DC)
 static void handle_history(zval *zclient, php_http_message_t *request, php_http_message_t *response TSRMLS_DC)
 {
 	zval *new_hist, *old_hist = zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("history"), 0 TSRMLS_CC);
-	php_http_message_t *zipped = php_http_message_zip(response, request);
+	php_http_message_t *req_copy = php_http_message_copy(request, NULL);
+	php_http_message_t *res_copy = php_http_message_copy(response, NULL);
+	php_http_message_t *zipped = php_http_message_zip(res_copy, req_copy);
 	zend_object_value ov = php_http_message_object_new_ex(php_http_message_class_entry, zipped, NULL TSRMLS_CC);
 
 	MAKE_STD_ZVAL(new_hist);
@@ -375,7 +377,7 @@ static void handle_history(zval *zclient, php_http_message_t *request, php_http_
 	zval_ptr_dtor(&new_hist);
 }
 
-static STATUS handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **request, php_http_message_t **response)
+static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **request, php_http_message_t **response)
 {
 	zend_bool dequeue = 0;
 	zval zclient;

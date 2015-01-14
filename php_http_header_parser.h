@@ -38,12 +38,9 @@ typedef struct php_http_header_parser {
 		char *str;
 		size_t len;
 	} _val;
-#ifdef ZTS
-	void ***ts;
-#endif
 } php_http_header_parser_t;
 
-PHP_HTTP_API php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser TSRMLS_DC);
+PHP_HTTP_API php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser);
 PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_push(php_http_header_parser_t *parser, unsigned argc, ...);
 PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_is(php_http_header_parser_t *parser);
 PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_pop(php_http_header_parser_t *parser);

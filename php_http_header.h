@@ -15,12 +15,13 @@
 
 #include "php_http_info.h"
 
-PHP_HTTP_API STATUS php_http_header_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data TSRMLS_DC);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_header_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data);
 
-PHP_HTTP_API void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg TSRMLS_DC);
-PHP_HTTP_API void php_http_header_to_string(php_http_buffer_t *str, HashTable *headers TSRMLS_DC);
+PHP_HTTP_API void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg);
+PHP_HTTP_API void php_http_header_to_string(php_http_buffer_t *str, HashTable *headers);
 
-PHP_HTTP_API zval *php_http_header_value_to_string(zval *header TSRMLS_DC);
+PHP_HTTP_API zend_string *php_http_header_value_to_string(zval *header);
+PHP_HTTP_API zend_string *php_http_header_value_array_to_string(zval *header);
 
 PHP_HTTP_API zend_class_entry *php_http_header_class_entry;
 PHP_MINIT_FUNCTION(http_header);

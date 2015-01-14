@@ -26,14 +26,12 @@ static const php_http_header_parser_state_spec_t php_http_header_parser_states[]
 		{PHP_HTTP_HEADER_PARSER_STATE_DONE,			0}
 };
 
-php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser TSRMLS_DC)
+php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser)
 {
 	if (!parser) {
 		parser = emalloc(sizeof(*parser));
 	}
 	memset(parser, 0, sizeof(*parser));
-
-	TSRMLS_SET_CTX(parser->ts);
 
 	return parser;
 }
@@ -92,10 +90,8 @@ void php_http_header_parser_free(php_http_header_parser_t **parser)
 	}
 }
 
-STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
+php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
 {
-	TSRMLS_FETCH_FROM_CTX(parser->ts);
-
 	while (buffer->used || !php_http_header_parser_states[php_http_header_parser_state_is(parser)].need_data) {
 #if 0
 		const char *state[] = {"START", "KEY", "VALUE", "HEADER_DONE", "DONE"};
@@ -126,10 +122,10 @@ STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_b
 					/* end of headers */
 					php_http_buffer_cut(buffer, 0, eol_len);
 					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_DONE);
-				} else if (php_http_info_parse(&parser->info, php_http_buffer_fix(buffer)->data TSRMLS_CC)) {
+				} else if (php_http_info_parse(&parser->info, php_http_buffer_fix(buffer)->data)) {
 					/* new message starting with request/response line */
 					if (callback_func) {
-						callback_func(callback_arg, &headers, &parser->info TSRMLS_CC);
+						callback_func(callback_arg, &headers, &parser->info);
 					}
 					php_http_info_dtor(&parser->info);
 					php_http_buffer_cut(buffer, 0, eol_str + eol_len - buffer->data);
@@ -214,19 +210,19 @@ STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_b
 
 			case PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE:
 				if (parser->_key.str && parser->_val.str) {
-					zval array, **exist;
+					zval tmp, *exist;
 
 					if (!headers && callback_func) {
-						callback_func(callback_arg, &headers, NULL TSRMLS_CC);
+						callback_func(callback_arg, &headers, NULL);
 					}
 
-					INIT_PZVAL_ARRAY(&array, headers);
 					php_http_pretty_key(parser->_key.str, parser->_key.len, 1, 1);
-					if (SUCCESS == zend_symtable_find(headers, parser->_key.str, parser->_key.len + 1, (void *) &exist)) {
-						convert_to_array(*exist);
-						add_next_index_stringl(*exist, parser->_val.str, parser->_val.len, 0);
+					if ((exist = zend_symtable_str_find(headers, parser->_key.str, parser->_key.len))) {
+						convert_to_array(exist);
+						add_next_index_str(exist, php_http_cs2zs(parser->_val.str, parser->_val.len));
 					} else {
-						add_assoc_stringl_ex(&array, parser->_key.str, parser->_key.len + 1, parser->_val.str, parser->_val.len, 0);
+						ZVAL_STR(&tmp, php_http_cs2zs(parser->_val.str, parser->_val.len));
+						zend_symtable_str_update(headers, parser->_key.str, parser->_key.len, &tmp);
 					}
 					parser->_val.str = NULL;
 				}

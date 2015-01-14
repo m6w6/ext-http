@@ -44,16 +44,14 @@ const char *php_http_message_parser_state_name(php_http_message_parser_state_t s
 }
 #endif
 
-php_http_message_parser_t *php_http_message_parser_init(php_http_message_parser_t *parser TSRMLS_DC)
+php_http_message_parser_t *php_http_message_parser_init(php_http_message_parser_t *parser)
 {
 	if (!parser) {
 		parser = emalloc(sizeof(*parser));
 	}
 	memset(parser, 0, sizeof(*parser));
 
-	TSRMLS_SET_CTX(parser->ts);
-
-	php_http_header_parser_init(&parser->header TSRMLS_CC);
+	php_http_header_parser_init(&parser->header);
 
 	return parser;
 }
@@ -118,11 +116,11 @@ void php_http_message_parser_free(php_http_message_parser_t **parser)
 php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_message_parser_t *parser, php_http_buffer_t *buf, php_stream *s, unsigned flags, php_http_message_t **message)
 {
 	php_http_message_parser_state_t state = PHP_HTTP_MESSAGE_PARSER_STATE_START;
-	TSRMLS_FETCH_FROM_CTX(parser->ts);
 
 	if (!buf->data) {
 		php_http_buffer_resize_ex(buf, 0x1000, 1, 0);
 	}
+
 	while (!php_stream_eof(s)) {
 		size_t justread = 0;
 #if DBG_PARSER
@@ -193,7 +191,6 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 	char *str = NULL;
 	size_t len = 0;
 	size_t cut = 0;
-	TSRMLS_FETCH_FROM_CTX(parser->ts);
 
 	while (buffer->used || !php_http_message_parser_states[php_http_message_parser_state_is(parser)].need_data) {
 #if DBG_PARSER
@@ -250,24 +247,23 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE:
 			{
-				zval *h, *h_loc = NULL, *h_con = NULL, **h_cl = NULL, **h_cr = NULL, **h_te = NULL;
+				zval h, *h_loc = NULL, *h_con = NULL, *h_cl, *h_cr, *h_te, *h_ce;
 
-				if ((h = php_http_message_header(*message, ZEND_STRL("Transfer-Encoding"), 1))) {
-					zend_hash_update(&(*message)->hdrs, "X-Original-Transfer-Encoding", sizeof("X-Original-Transfer-Encoding"), &h, sizeof(zval *), (void *) &h_te);
-					zend_hash_del(&(*message)->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
+				if ((h_te = php_http_message_header(*message, ZEND_STRL("Transfer-Encoding"), 1))) {
+					zend_hash_str_update(&(*message)->hdrs, "X-Original-Transfer-Encoding", lenof("X-Original-Transfer-Encoding"), h_te);
+					zend_hash_str_del(&(*message)->hdrs, "Transfer-Encoding", lenof("Transfer-Encoding"));
 				}
-				if ((h = php_http_message_header(*message, ZEND_STRL("Content-Length"), 1))) {
-					zend_hash_update(&(*message)->hdrs, "X-Original-Content-Length", sizeof("X-Original-Content-Length"), &h, sizeof(zval *), (void *) &h_cl);
+				if ((h_cl = php_http_message_header(*message, ZEND_STRL("Content-Length"), 1))) {
+					zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Length", lenof("X-Original-Content-Length"), h_cl);
 				}
-				if ((h = php_http_message_header(*message, ZEND_STRL("Content-Range"), 1))) {
-					zend_hash_update(&(*message)->hdrs, "X-Original-Content-Range", sizeof("X-Original-Content-Range"), &h, sizeof(zval *), (void *) &h_cr);
-					zend_hash_del(&(*message)->hdrs, "Content-Range", sizeof("Content-Range"));
+				if ((h_cr = php_http_message_header(*message, ZEND_STRL("Content-Range"), 1))) {
+					zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Range", sizeof("X-Original-Content-Range"), h_cr);
+					zend_hash_str_del(&(*message)->hdrs, "Content-Range", lenof("Content-Range"));
 				}
 
 				/* default */
-				MAKE_STD_ZVAL(h);
-				ZVAL_LONG(h, 0);
-				zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), &h, sizeof(zval *), NULL);
+				ZVAL_LONG(&h, 0);
+				zend_hash_str_update(&(*message)->hdrs, "Content-Length", lenof("Content-Length"), &h);
 
 				/* so, if curl sees a 3xx code, a Location header and a Connection:close header
 				 * it decides not to read the response body.
@@ -280,32 +276,32 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				) {
 					if (php_http_match(Z_STRVAL_P(h_con), "close", PHP_HTTP_MATCH_WORD)) {
 						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
-						zval_ptr_dtor(&h_loc);
-						zval_ptr_dtor(&h_con);
+						zval_ptr_dtor(h_loc);
+						zval_ptr_dtor(h_con);
 						break;
 					}
 				}
 				if (h_loc) {
-					zval_ptr_dtor(&h_loc);
+					zval_ptr_dtor(h_loc);
 				}
 				if (h_con) {
-					zval_ptr_dtor(&h_con);
+					zval_ptr_dtor(h_con);
 				}
 
-				if ((h = php_http_message_header(*message, ZEND_STRL("Content-Encoding"), 1))) {
-					if (php_http_match(Z_STRVAL_P(h), "gzip", PHP_HTTP_MATCH_WORD)
-					||	php_http_match(Z_STRVAL_P(h), "x-gzip", PHP_HTTP_MATCH_WORD)
-					||	php_http_match(Z_STRVAL_P(h), "deflate", PHP_HTTP_MATCH_WORD)
+				if ((h_ce = php_http_message_header(*message, ZEND_STRL("Content-Encoding"), 1))) {
+					if (php_http_match(Z_STRVAL_P(h_ce), "gzip", PHP_HTTP_MATCH_WORD)
+					||	php_http_match(Z_STRVAL_P(h_ce), "x-gzip", PHP_HTTP_MATCH_WORD)
+					||	php_http_match(Z_STRVAL_P(h_ce), "deflate", PHP_HTTP_MATCH_WORD)
 					) {
 						if (parser->inflate) {
 							php_http_encoding_stream_reset(&parser->inflate);
 						} else {
-							parser->inflate = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), 0 TSRMLS_CC);
+							parser->inflate = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), 0);
 						}
-						zend_hash_update(&(*message)->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), &h, sizeof(zval *), NULL);
-						zend_hash_del(&(*message)->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
+						zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Encoding", lenof("X-Original-Content-Encoding"), h_ce);
+						zend_hash_str_del(&(*message)->hdrs, "Content-Encoding", lenof("Content-Encoding"));
 					} else {
-						zval_ptr_dtor(&h);
+						zval_ptr_dtor(h_ce);
 					}
 				}
 
@@ -313,8 +309,8 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 					php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB);
 				} else {
 					if (h_te) {
-						if (strstr(Z_STRVAL_PP(h_te), "chunked")) {
-							parser->dechunk = php_http_encoding_stream_init(parser->dechunk, php_http_encoding_stream_get_dechunk_ops(), 0 TSRMLS_CC);
+						if (strstr(Z_STRVAL_P(h_te), "chunked")) {
+							parser->dechunk = php_http_encoding_stream_init(parser->dechunk, php_http_encoding_stream_get_dechunk_ops(), 0);
 							php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED);
 							break;
 						}
@@ -323,15 +319,15 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 					if (h_cl) {
 						char *stop;
 
-						if (Z_TYPE_PP(h_cl) == IS_STRING) {
-							parser->body_length = strtoul(Z_STRVAL_PP(h_cl), &stop, 10);
+						if (Z_TYPE_P(h_cl) == IS_STRING) {
+							parser->body_length = strtoul(Z_STRVAL_P(h_cl), &stop, 10);
 
-							if (stop != Z_STRVAL_PP(h_cl)) {
+							if (stop != Z_STRVAL_P(h_cl)) {
 								php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
 								break;
 							}
-						} else if (Z_TYPE_PP(h_cl) == IS_LONG) {
-							parser->body_length = Z_LVAL_PP(h_cl);
+						} else if (Z_TYPE_P(h_cl) == IS_LONG) {
+							parser->body_length = Z_LVAL_P(h_cl);
 							php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
 							break;
 						}
@@ -340,14 +336,14 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 					if (h_cr) {
 						ulong total = 0, start = 0, end = 0;
 
-						if (!strncasecmp(Z_STRVAL_PP(h_cr), "bytes", lenof("bytes"))
-						&& (	Z_STRVAL_P(h)[lenof("bytes")] == ':'
-							||	Z_STRVAL_P(h)[lenof("bytes")] == ' '
-							||	Z_STRVAL_P(h)[lenof("bytes")] == '='
+						if (!strncasecmp(Z_STRVAL_P(h_cr), "bytes", lenof("bytes"))
+						&& (	Z_STRVAL_P(h_cr)[lenof("bytes")] == ':'
+							||	Z_STRVAL_P(h_cr)[lenof("bytes")] == ' '
+							||	Z_STRVAL_P(h_cr)[lenof("bytes")] == '='
 							)
 						) {
 							char *total_at = NULL, *end_at = NULL;
-							char *start_at = Z_STRVAL_PP(h_cr) + sizeof("bytes");
+							char *start_at = Z_STRVAL_P(h_cr) + sizeof("bytes");
 
 							start = strtoul(start_at, &end_at, 10);
 							if (end_at) {
@@ -378,7 +374,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY:
 			{
 				if (len) {
-					zval *zcl;
+					zval zcl;
 
 					if (parser->inflate) {
 						char *dec_str = NULL;
@@ -398,9 +394,8 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 					php_stream_write(php_http_message_body_stream((*message)->body), str, len);
 
 					/* keep track */
-					MAKE_STD_ZVAL(zcl);
-					ZVAL_LONG(zcl, php_http_message_body_size((*message)->body));
-					zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), &zcl, sizeof(zval *), NULL);
+					ZVAL_LONG(&zcl, php_http_message_body_size((*message)->body));
+					zend_hash_str_update(&(*message)->hdrs, "Content-Length", lenof("Content-Length"), &zcl);
 				}
 
 				if (cut) {
@@ -516,55 +511,46 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 zend_class_entry *php_http_message_parser_class_entry;
 static zend_object_handlers php_http_message_parser_object_handlers;
 
-zend_object_value php_http_message_parser_object_new(zend_class_entry *ce TSRMLS_DC)
+zend_object *php_http_message_parser_object_new(zend_class_entry *ce)
 {
-	return php_http_message_parser_object_new_ex(ce, NULL, NULL TSRMLS_CC);
+	return &php_http_message_parser_object_new_ex(ce, NULL)->zo;
 }
 
-zend_object_value php_http_message_parser_object_new_ex(zend_class_entry *ce, php_http_message_parser_t *parser, php_http_message_parser_object_t **ptr TSRMLS_DC)
+php_http_message_parser_object_t *php_http_message_parser_object_new_ex(zend_class_entry *ce, php_http_message_parser_t *parser)
 {
 	php_http_message_parser_object_t *o;
 
-	o = ecalloc(1, sizeof(php_http_message_parser_object_t));
-	zend_object_std_init((zend_object *) o, ce TSRMLS_CC);
-	object_properties_init((zend_object *) o, ce);
-
-	if (ptr) {
-		*ptr = o;
-	}
+	o = ecalloc(1, sizeof(php_http_message_parser_object_t) + (ce->default_properties_count - 1) * sizeof(zval));
+	zend_object_std_init(&o->zo, ce);
+	object_properties_init(&o->zo, ce);
 
 	if (parser) {
 		o->parser = parser;
 	} else {
-		o->parser = php_http_message_parser_init(NULL TSRMLS_CC);
+		o->parser = php_http_message_parser_init(NULL);
 	}
-	o->buffer = php_http_buffer_new();
+	php_http_buffer_init(&o->buffer);
+	o->zo.handlers = &php_http_message_parser_object_handlers;
 
-	o->zv.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_message_parser_object_free, NULL TSRMLS_CC);
-	o->zv.handlers = &php_http_message_parser_object_handlers;
-
-	return o->zv;
+	return o;
 }
 
-void php_http_message_parser_object_free(void *object TSRMLS_DC)
+void php_http_message_parser_object_free(zend_object *object)
 {
-	php_http_message_parser_object_t *o = (php_http_message_parser_object_t *) object;
+	php_http_message_parser_object_t *o = PHP_HTTP_OBJ(object, NULL);
 
 	if (o->parser) {
 		php_http_message_parser_free(&o->parser);
 	}
-	if (o->buffer) {
-		php_http_buffer_free(&o->buffer);
-	}
-	zend_object_std_dtor((zend_object *) o TSRMLS_CC);
-	efree(o);
+	php_http_buffer_dtor(&o->buffer);
+	zend_object_std_dtor(object);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageParser_getState, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessageParser, getState)
 {
-	php_http_message_parser_object_t *parser_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_message_parser_object_t *parser_obj = PHP_HTTP_OBJ(NULL, getThis());
 
 	zend_parse_parameters_none();
 	/* always return the real state */
@@ -581,18 +567,20 @@ static PHP_METHOD(HttpMessageParser, parse)
 	php_http_message_parser_object_t *parser_obj;
 	zval *zmsg;
 	char *data_str;
-	int data_len;
-	long flags;
+	size_t data_len;
+	zend_long flags;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slz", &data_str, &data_len, &flags, &zmsg), invalid_arg, return);
 
-	parser_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-	php_http_buffer_append(parser_obj->buffer, data_str, data_len);
-	RETVAL_LONG(php_http_message_parser_parse(parser_obj->parser, parser_obj->buffer, flags, &parser_obj->parser->message));
+	parser_obj = PHP_HTTP_OBJ(NULL, getThis());
+	php_http_buffer_append(&parser_obj->buffer, data_str, data_len);
+	RETVAL_LONG(php_http_message_parser_parse(parser_obj->parser, &parser_obj->buffer, flags, &parser_obj->parser->message));
 
 	zval_dtor(zmsg);
 	if (parser_obj->parser->message) {
-		ZVAL_OBJVAL(zmsg, php_http_message_object_new_ex(php_http_message_class_entry, php_http_message_copy(parser_obj->parser->message, NULL), NULL TSRMLS_CC), 0);
+		php_http_message_t *msg_cpy = php_http_message_copy(parser_obj->parser->message, NULL);
+		php_http_message_object_t *msg_obj = php_http_message_object_new_ex(php_http_message_class_entry, msg_cpy);
+		ZVAL_OBJ(zmsg, &msg_obj->zo);
 	}
 }
 
@@ -607,20 +595,22 @@ static PHP_METHOD(HttpMessageParser, stream)
 	zend_error_handling zeh;
 	zval *zmsg, *zstream;
 	php_stream *s;
-	long flags;
+	zend_long flags;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlz", &zstream, &flags, &zmsg), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh TSRMLS_CC);
-	php_stream_from_zval(s, &zstream);
-	zend_restore_error_handling(&zeh TSRMLS_CC);
+	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh);
+	php_stream_from_zval(s, zstream);
+	zend_restore_error_handling(&zeh);
 
-	parser_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
-	RETVAL_LONG(php_http_message_parser_parse_stream(parser_obj->parser, parser_obj->buffer, s, flags, &parser_obj->parser->message));
+	parser_obj = PHP_HTTP_OBJ(NULL, getThis());
+	RETVAL_LONG(php_http_message_parser_parse_stream(parser_obj->parser, &parser_obj->buffer, s, flags, &parser_obj->parser->message));
 
 	zval_dtor(zmsg);
 	if (parser_obj->parser->message) {
-		ZVAL_OBJVAL(zmsg, php_http_message_object_new_ex(php_http_message_class_entry, php_http_message_copy(parser_obj->parser->message, NULL), NULL TSRMLS_CC), 0);
+		php_http_message_t *msg_cpy = php_http_message_copy(parser_obj->parser->message, NULL);
+		php_http_message_object_t *msg_obj = php_http_message_object_new_ex(php_http_message_class_entry, msg_cpy);
+		ZVAL_OBJ(zmsg, &msg_obj->zo);
 	}
 }
 
@@ -636,26 +626,28 @@ PHP_MINIT_FUNCTION(http_message_parser)
 	zend_class_entry ce;
 
 	INIT_NS_CLASS_ENTRY(ce, "http\\Message", "Parser", php_http_message_parser_methods);
-	php_http_message_parser_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
+	php_http_message_parser_class_entry = zend_register_internal_class(&ce);
 	memcpy(&php_http_message_parser_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_message_parser_class_entry->create_object = php_http_message_parser_object_new;
 	php_http_message_parser_object_handlers.clone_obj = NULL;
+	php_http_message_parser_object_handlers.dtor_obj = php_http_message_parser_object_free;
+	php_http_message_parser_object_handlers.offset = XtOffsetOf(php_http_message_parser_object_t, zo);
 
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("CLEANUP"), PHP_HTTP_MESSAGE_PARSER_CLEANUP TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("DUMB_BODIES"), PHP_HTTP_MESSAGE_PARSER_DUMB_BODIES TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("EMPTY_REDIRECTS"), PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("GREEDY"), PHP_HTTP_MESSAGE_PARSER_GREEDY TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("CLEANUP"), PHP_HTTP_MESSAGE_PARSER_CLEANUP);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("DUMB_BODIES"), PHP_HTTP_MESSAGE_PARSER_DUMB_BODIES);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("EMPTY_REDIRECTS"), PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("GREEDY"), PHP_HTTP_MESSAGE_PARSER_GREEDY);
 
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_FAILURE"), PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_START"), PHP_HTTP_MESSAGE_PARSER_STATE_START TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_HEADER"), PHP_HTTP_MESSAGE_PARSER_STATE_HEADER TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_HEADER_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_DUMB"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_LENGTH"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_CHUNKED"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_DONE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_FAILURE"), PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_START"), PHP_HTTP_MESSAGE_PARSER_STATE_START);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_HEADER"), PHP_HTTP_MESSAGE_PARSER_STATE_HEADER);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_HEADER_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_DUMB"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_LENGTH"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_CHUNKED"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
 
 	return SUCCESS;
 }

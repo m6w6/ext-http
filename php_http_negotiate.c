@@ -12,14 +12,12 @@
 
 #include "php_http_api.h"
 
-static int php_http_negotiate_sort(const void *a, const void *b TSRMLS_DC)
+static int php_http_negotiate_sort(const void *first, const void *second TSRMLS_DC)
 {
-	zval result, *first, *second;
+	zval result;
+	Bucket *b1 = (Bucket *) first, *b2 = (Bucket *) second;
 
-	first = *((zval **) (*((Bucket **) a))->pData);
-	second= *((zval **) (*((Bucket **) b))->pData);
-
-	if (numeric_compare_function(&result, first, second TSRMLS_CC) != SUCCESS) {
+	if (numeric_compare_function(&result, &b1->val, &b2->val)!= SUCCESS) {
 		return 0;
 	}
 	return (Z_LVAL(result) > 0 ? -1 : (Z_LVAL(result) < 0 ? 1 : 0));
@@ -67,35 +65,37 @@ static inline unsigned php_http_negotiate_match(const char *param_str, size_t pa
 #endif
 	return match;
 }
-
-static int php_http_negotiate_reduce(void *p TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
+static int php_http_negotiate_reduce(zval *p, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	unsigned best_match = 0;
-	HashPosition pos;
-	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
-	zval **q = NULL, **val, *supported = php_http_ztyp(IS_STRING, *(zval **)p);
+	php_http_arrkey_t key;
+	zval *value, *q = NULL;
+	zend_string *supported = zval_get_string(p);
 	HashTable *params = va_arg(args, HashTable *);
 	HashTable *result = va_arg(args, HashTable *);
 	const char *sep_str = va_arg(args, const char *);
 	size_t sep_len = va_arg(args, size_t);
 
-	FOREACH_HASH_KEYVAL(pos, params, key, val) {
-		if (key.type == HASH_KEY_IS_STRING) {
-			unsigned match = php_http_negotiate_match(key.str, key.len-1, Z_STRVAL_P(supported), Z_STRLEN_P(supported), sep_str, sep_len);
+	ZEND_HASH_FOREACH_KEY_VAL(params, key.h, key.key, value)
+	{
+		unsigned match;
 
-			if (match > best_match) {
-				best_match = match;
-				q = val;
-			}
+		php_http_arrkey_stringify(&key, NULL);
+		match = php_http_negotiate_match(key.key->val, key.key->len, supported->val, supported->len, sep_str, sep_len);
+
+		if (match > best_match) {
+			best_match = match;
+			q = value;
 		}
+		php_http_arrkey_dtor(&key);
+	}
+	ZEND_HASH_FOREACH_END();
+
+	if (q && Z_DVAL_P(q) > 0) {
+		zend_hash_update(result, supported, q);
 	}
 
-	if (q && Z_DVAL_PP(q) > 0) {
-		Z_ADDREF_PP(q);
-		zend_hash_update(result, Z_STRVAL_P(supported), Z_STRLEN_P(supported) + 1, (void *) q, sizeof(zval *), NULL);
-	}
-
-	zval_ptr_dtor(&supported);
+	zend_string_release(supported);
 	return ZEND_HASH_APPLY_KEEP;
 }
 
@@ -105,10 +105,9 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 
 	if (value_str && value_len) {
 		unsigned i = 0;
-		zval arr, **val, **arg, **zq;
-		HashPosition pos;
+		zval arr, *val, *arg, *zq;
 		HashTable params;
-		php_http_array_hashkey_t key = php_http_array_hashkey_init(1);
+		php_http_arrkey_t key;
 		php_http_params_opts_t opts;
 
 		zend_hash_init(&params, 10, NULL, ZVAL_PTR_DTOR, 0);
@@ -118,42 +117,39 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 		php_http_params_parse(&params, &opts TSRMLS_CC);
 		efree(opts.input.str);
 
-		INIT_PZVAL(&arr);
 		array_init(&arr);
 
-		FOREACH_HASH_KEYVAL(pos, &params, key, val) {
+		ZEND_HASH_FOREACH_KEY_VAL(&params, key.h, key.key, val)
+		{
 			double q;
 
-			if (SUCCESS == zend_hash_find(Z_ARRVAL_PP(val), ZEND_STRS("arguments"), (void *) &arg)
-			&&	IS_ARRAY == Z_TYPE_PP(arg)
-			&&	SUCCESS == zend_hash_find(Z_ARRVAL_PP(arg), ZEND_STRS("q"), (void *) &zq)) {
-				zval *tmp = php_http_ztyp(IS_DOUBLE, *zq);
-
-				q = Z_DVAL_P(tmp);
-				zval_ptr_dtor(&tmp);
+			if ((arg = zend_hash_str_find(Z_ARRVAL_P(val), ZEND_STRL("arguments")))
+			&&	(IS_ARRAY == Z_TYPE_P(arg))
+			&&	(zq = zend_hash_str_find(Z_ARRVAL_P(arg), ZEND_STRL("q")))) {
+				q = zval_get_double(zq);
 			} else {
 				q = 1.0 - ++i / 100.0;
 			}
 
-			if (key.type == HASH_KEY_IS_STRING) {
-				add_assoc_double_ex(&arr, key.str, key.len, q);
+			if (key.key) {
+				add_assoc_double_ex(&arr, key.key->val, key.key->len, q);
 			} else {
-				add_index_double(&arr, key.num, q);
+				add_index_double(&arr, key.h, q);
 			}
 
-			PTR_FREE(key.str);
 		}
+		ZEND_HASH_FOREACH_END();
 
 #if 0
-		zend_print_zval_r(&arr, 1 TSRMLS_CC);
+		zend_print_zval_r(&arr, 1);
 #endif
 
 		ALLOC_HASHTABLE(result);
 		zend_hash_init(result, zend_hash_num_elements(supported), NULL, ZVAL_PTR_DTOR, 0);
-		zend_hash_apply_with_arguments(supported TSRMLS_CC, php_http_negotiate_reduce, 4, Z_ARRVAL(arr), result, primary_sep_str, primary_sep_len);
+		zend_hash_apply_with_arguments(supported, php_http_negotiate_reduce, 4, Z_ARRVAL(arr), result, primary_sep_str, primary_sep_len);
 		zend_hash_destroy(&params);
 		zval_dtor(&arr);
-		zend_hash_sort(result, zend_qsort, php_http_negotiate_sort, 0 TSRMLS_CC);
+		zend_hash_sort(result, zend_qsort, php_http_negotiate_sort, 0);
 	}
 	
 	return result;

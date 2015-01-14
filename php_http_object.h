@@ -14,17 +14,17 @@
 #define PHP_HTTP_OBJECT_H
 
 typedef struct php_http_object {
+	void *intern;
 	zend_object zo;
-	zend_object_value zv;
 } php_http_object_t;
 
-zend_object_value php_http_object_new(zend_class_entry *ce TSRMLS_DC);
-zend_object_value php_http_object_new_ex(zend_class_entry *ce, void *nothing, php_http_object_t **ptr TSRMLS_DC);
+zend_object *php_http_object_new(zend_class_entry *ce TSRMLS_DC);
+php_http_object_t *php_http_object_new_ex(zend_class_entry *ce, void *nothing);
 
-typedef zend_object_value (*php_http_new_t)(zend_class_entry *ce, void *, void ** TSRMLS_DC);
+typedef void *(*php_http_new_t)(zend_class_entry *ce, void *);
 
-STATUS php_http_new(zend_object_value *ov, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC);
-STATUS php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval **argv[], zval **retval_ptr TSRMLS_DC);
+ZEND_RESULT_CODE php_http_new(void **obj_ptr, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr);
+ZEND_RESULT_CODE php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval argv[], zval *retval_ptr);
 
 #endif
 

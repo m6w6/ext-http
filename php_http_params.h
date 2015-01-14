@@ -31,7 +31,7 @@ typedef struct php_http_params_opts {
 	php_http_params_token_t **param;
 	php_http_params_token_t **arg;
 	php_http_params_token_t **val;
-	zval *defval;
+	zval defval;
 	unsigned flags;
 } php_http_params_opts_t;
 

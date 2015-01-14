@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-php_http_version_t *php_http_version_init(php_http_version_t *v, unsigned major, unsigned minor TSRMLS_DC)
+php_http_version_t *php_http_version_init(php_http_version_t *v, unsigned major, unsigned minor)
 {
 	if (!v) {
 		v = emalloc(sizeof(*v));
@@ -24,7 +24,7 @@ php_http_version_t *php_http_version_init(php_http_version_t *v, unsigned major,
 	return v;
 }
 
-php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *str TSRMLS_DC)
+php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *str)
 {
 	long major, minor;
 	char separator = 0, *stop = NULL;
@@ -60,7 +60,7 @@ php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *st
 	return NULL;
 }
 
-void php_http_version_to_string(php_http_version_t *v, char **str, size_t *len, const char *pre, const char *post TSRMLS_DC)
+void php_http_version_to_string(php_http_version_t *v, char **str, size_t *len, const char *pre, const char *post)
 {
 	*len = spprintf(str, 0, "%s%u.%u%s", pre ? pre : "", v->major, v->minor, post ? post : "");
 }

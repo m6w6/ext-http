@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-php_http_info_t *php_http_info_init(php_http_info_t *i TSRMLS_DC)
+php_http_info_t *php_http_info_init(php_http_info_t *i)
 {
 	if (!i) {
 		i = emalloc(sizeof(*i));
@@ -49,7 +49,7 @@ void php_http_info_free(php_http_info_t **i)
 	}
 }
 
-php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header TSRMLS_DC)
+php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header)
 {
 	const char *end, *http;
 	zend_bool free_info = !info;
@@ -72,7 +72,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 	info = php_http_info_init(info TSRMLS_CC);
 
 	/* and nothing than SPACE or NUL after HTTP/1.x */
-	if (!php_http_version_parse(&info->http.version, http TSRMLS_CC)
+	if (!php_http_version_parse(&info->http.version, http)
 	||	(http[lenof("HTTP/1.1")] && (!PHP_HTTP_IS_CTYPE(space, http[lenof("HTTP/1.1")])))) {
 		if (free_info) {
 			php_http_info_free(&info);
@@ -120,7 +120,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 			while (' ' == *url) ++url;
 			while (' ' == *(http-1)) --http;
 			if (http > url) {
-				PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, ~0 TSRMLS_CC);
+				PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, ~0);
 			} else {
 				PTR_SET(PHP_HTTP_INFO(info).request.method, NULL);
 				return NULL;

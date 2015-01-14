@@ -18,7 +18,7 @@
 
 PHP_MINIT_FUNCTION(http_filter)
 {
-	php_stream_filter_register_factory("http.*", &php_http_filter_factory TSRMLS_CC);
+	php_stream_filter_register_factory("http.*", &php_http_filter_factory);
 	return SUCCESS;
 }
 
@@ -27,8 +27,8 @@ PHP_MINIT_FUNCTION(http_filter)
 	php_stream_filter *this, \
 	php_stream_bucket_brigade *buckets_in, \
 	php_stream_bucket_brigade *buckets_out, \
-	size_t *bytes_consumed, int flags \
-	TSRMLS_DC
+	size_t *bytes_consumed, \
+	int flags
 #define PHP_HTTP_FILTER_OP(filter) \
 	http_filter_op_ ##filter
 #define PHP_HTTP_FILTER_OPS(filter) \
@@ -36,7 +36,7 @@ PHP_MINIT_FUNCTION(http_filter)
 #define PHP_HTTP_FILTER_DTOR(filter) \
 	http_filter_ ##filter## _dtor
 #define PHP_HTTP_FILTER_DESTRUCTOR(filter) \
-	void PHP_HTTP_FILTER_DTOR(filter)(php_stream_filter *this TSRMLS_DC)
+	void PHP_HTTP_FILTER_DTOR(filter)(php_stream_filter *this)
 #define PHP_HTTP_FILTER_FUNC(filter) \
 	http_filter_ ##filter
 #define PHP_HTTP_FILTER_FUNCTION(filter) \
@@ -61,13 +61,13 @@ PHP_MINIT_FUNCTION(http_filter)
 		} \
 		memcpy(__data, data, length); \
 		\
-		__buck = php_stream_bucket_new(stream, __data, length, 1, this->is_persistent TSRMLS_CC); \
+		__buck = php_stream_bucket_new(stream, __data, length, 1, this->is_persistent); \
 		if (!__buck) { \
 			pefree(__data, this->is_persistent); \
 			return PSFS_ERR_FATAL; \
 		} \
 		\
-		php_stream_bucket_append(buckets_out, __buck TSRMLS_CC); \
+		php_stream_bucket_append(buckets_out, __buck); \
 	}
 
 typedef struct _http_chunked_decode_filter_buffer_t {
@@ -81,7 +81,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 {
 	int out_avail = 0;
 	php_stream_bucket *ptr, *nxt;
-	PHP_HTTP_FILTER_BUFFER(chunked_decode) *buffer = (PHP_HTTP_FILTER_BUFFER(chunked_decode) *) (this->abstract);
+	PHP_HTTP_FILTER_BUFFER(chunked_decode) *buffer = Z_PTR(this->abstract);
 	
 	if (bytes_consumed) {
 		*bytes_consumed = 0;
@@ -98,8 +98,8 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 		}
 
 		nxt = ptr->next;
-		php_stream_bucket_unlink(ptr TSRMLS_CC);
-		php_stream_bucket_delref(ptr TSRMLS_CC);
+		php_stream_bucket_unlink(ptr);
+		php_stream_bucket_delref(ptr);
 	}
 	
 	if (!php_http_buffer_fix(PHP_HTTP_BUFFER(buffer))) {
@@ -185,7 +185,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 					php_http_buffer_cut(PHP_HTTP_BUFFER(buffer), 0, eolstr + eollen - PHP_HTTP_BUFFER(buffer)->data);
 					/* buffer->hexlen is 0 now or contains the size of the next chunk */
 					if (!buffer->hexlen) {
-						php_stream_notify_info(stream->context, PHP_STREAM_NOTIFY_COMPLETED, NULL, 0);
+						php_stream_notify_info(PHP_STREAM_CONTEXT(stream), PHP_STREAM_NOTIFY_COMPLETED, NULL, 0);
 						break;
 					}
 					/* continue */
@@ -211,7 +211,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 
 static PHP_HTTP_FILTER_DESTRUCTOR(chunked_decode)
 {
-	PHP_HTTP_FILTER_BUFFER(chunked_decode) *b = (PHP_HTTP_FILTER_BUFFER(chunked_decode) *) (this->abstract);
+	PHP_HTTP_FILTER_BUFFER(chunked_decode) *b = Z_PTR(this->abstract);
 	
 	php_http_buffer_dtor(PHP_HTTP_BUFFER(b));
 	pefree(b, this->is_persistent);
@@ -239,7 +239,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 #endif
 		
 		nxt = ptr->next;
-		php_stream_bucket_unlink(ptr TSRMLS_CC);
+		php_stream_bucket_unlink(ptr);
 		php_http_buffer_appendf(&buf, "%lx" PHP_HTTP_CRLF, (long unsigned int) ptr->buflen);
 		php_http_buffer_append(&buf, ptr->buf, ptr->buflen);
 		php_http_buffer_appends(&buf, PHP_HTTP_CRLF);
@@ -248,7 +248,7 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 		NEW_BUCKET(buf.data, buf.used);
 		/* reset */
 		php_http_buffer_reset(&buf);
-		php_stream_bucket_delref(ptr TSRMLS_CC);
+		php_stream_bucket_delref(ptr);
 	}
 
 	/* free buffer */
@@ -281,7 +281,7 @@ static PHP_HTTP_FILTER_OPS(chunked_encode) = {
 static PHP_HTTP_FILTER_FUNCTION(zlib)
 {
 	php_stream_bucket *ptr, *nxt;
-	PHP_HTTP_FILTER_BUFFER(zlib) *buffer = (PHP_HTTP_FILTER_BUFFER(zlib) *) this->abstract;
+	PHP_HTTP_FILTER_BUFFER(zlib) *buffer = Z_PTR(this->abstract);
 	
 	if (bytes_consumed) {
 		*bytes_consumed = 0;
@@ -301,7 +301,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 #endif
 		
 		nxt = ptr->next;
-		php_stream_bucket_unlink(ptr TSRMLS_CC);
+		php_stream_bucket_unlink(ptr);
 		php_http_encoding_stream_update(buffer, ptr->buf, ptr->buflen, &encoded, &encoded_len);
 		
 #if DBG_FILTER
@@ -314,7 +314,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 			}
 			efree(encoded);
 		}
-		php_stream_bucket_delref(ptr TSRMLS_CC);
+		php_stream_bucket_delref(ptr);
 	}
 
 	/* flush & close */
@@ -358,7 +358,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 }
 static PHP_HTTP_FILTER_DESTRUCTOR(zlib)
 {
-	PHP_HTTP_FILTER_BUFFER(zlib) *buffer = (PHP_HTTP_FILTER_BUFFER(zlib) *) this->abstract;
+	PHP_HTTP_FILTER_BUFFER(zlib) *buffer = Z_PTR(this->abstract);
 	php_http_encoding_stream_free(&buffer);
 }
 
@@ -374,28 +374,22 @@ static PHP_HTTP_FILTER_OPS(inflate) = {
 	"http.inflate"
 };
 
-static php_stream_filter *http_filter_create(const char *name, zval *params, int p TSRMLS_DC)
+static php_stream_filter *http_filter_create(const char *name, zval *params, int p)
 {
-	zval **tmp = &params;
+	zval *tmp = params;
 	php_stream_filter *f = NULL;
 	int flags = p ? PHP_HTTP_ENCODING_STREAM_PERSISTENT : 0;
 	
 	if (params) {
 		switch (Z_TYPE_P(params)) {
-			case IS_ARRAY:
-			case IS_OBJECT:
-				if (SUCCESS != zend_hash_find(HASH_OF(params), "flags", sizeof("flags"), (void *) &tmp)) {
-					break;
-				}
-				/* no break */
-			default:
-			{
-				zval *num = php_http_ztyp(IS_LONG, *tmp);
-				
-				flags |= (Z_LVAL_P(num) & 0x0fffffff);
-				zval_ptr_dtor(&num);
-
+		case IS_ARRAY:
+		case IS_OBJECT:
+			if (!(tmp = zend_hash_str_find(HASH_OF(params), ZEND_STRL("flags")))) {
+				break;
 			}
+			/* no break */
+		default:
+			flags |= zval_get_long(tmp) & 0x0fffffff;
 			break;
 		}
 	}
@@ -418,7 +412,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	if (!strcasecmp(name, "http.inflate")) {
 		PHP_HTTP_FILTER_BUFFER(zlib) *b = NULL;
 		
-		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), flags TSRMLS_CC))) {
+		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), flags))) {
 			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(inflate), b, p))) {
 				php_http_encoding_stream_free(&b);
 			}
@@ -428,7 +422,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	if (!strcasecmp(name, "http.deflate")) {
 		PHP_HTTP_FILTER_BUFFER(zlib) *b = NULL;
 		
-		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), flags TSRMLS_CC))) {
+		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), flags))) {
 			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(deflate), b, p))) {
 				php_http_encoding_stream_free(&b);
 			}

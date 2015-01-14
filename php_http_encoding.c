@@ -28,7 +28,7 @@ static inline int eol_match(char **line, int *eol_len)
 	}
 }
 
-const char *php_http_encoding_dechunk(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+const char *php_http_encoding_dechunk(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len)
 {
 	int eol_len = 0;
 	char *n_ptr = NULL;
@@ -50,13 +50,13 @@ const char *php_http_encoding_dechunk(const char *encoded, size_t encoded_len, c
 			 * not encoded data and return a copy
 			 */
 			if (e_ptr == encoded) {
-				php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Data does not seem to be chunked encoded");
+				php_error_docref(NULL, E_NOTICE, "Data does not seem to be chunked encoded");
 				memcpy(*decoded, encoded, encoded_len);
 				*decoded_len = encoded_len;
 				return encoded + encoded_len;
 			} else {
 				efree(*decoded);
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Expected chunk size at pos %tu of %zu but got trash", n_ptr - encoded, encoded_len);
+				php_error_docref(NULL, E_WARNING, "Expected chunk size at pos %tu of %zu but got trash", n_ptr - encoded, encoded_len);
 				return NULL;
 			}
 		}
@@ -79,16 +79,16 @@ const char *php_http_encoding_dechunk(const char *encoded, size_t encoded_len, c
 		/* there should be CRLF after the chunk size, but we'll ignore SP+ too */
 		if (*n_ptr && !eol_match(&n_ptr, &eol_len)) {
 			if (eol_len == 2) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Expected CRLF at pos %tu of %zu but got 0x%02X 0x%02X", n_ptr - encoded, encoded_len, *n_ptr, *(n_ptr + 1));
+				php_error_docref(NULL, E_WARNING, "Expected CRLF at pos %tu of %zu but got 0x%02X 0x%02X", n_ptr - encoded, encoded_len, *n_ptr, *(n_ptr + 1));
 			} else {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Expected LF at pos %tu of %zu but got 0x%02X", n_ptr - encoded, encoded_len, *n_ptr);
+				php_error_docref(NULL, E_WARNING, "Expected LF at pos %tu of %zu but got 0x%02X", n_ptr - encoded, encoded_len, *n_ptr);
 			}
 		}
 		n_ptr += eol_len;
 		
 		/* chunk size pretends more data than we actually got, so it's probably a truncated message */
 		if (chunk_len > (rest = encoded + encoded_len - n_ptr)) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Truncated message: chunk size %lu exceeds remaining data size %lu at pos %tu of %zu", chunk_len, rest, n_ptr - encoded, encoded_len);
+			php_error_docref(NULL, E_WARNING, "Truncated message: chunk size %lu exceeds remaining data size %lu at pos %tu of %zu", chunk_len, rest, n_ptr - encoded, encoded_len);
 			chunk_len = rest;
 		}
 
@@ -148,7 +148,7 @@ static inline int php_http_inflate_rounds(z_stream *Z, int flush, char **buf, si
 	return status;
 }
 
-STATUS php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
+ZEND_RESULT_CODE php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
 {
 	int status, level, wbits, strategy;
 	z_stream Z;
@@ -185,11 +185,11 @@ STATUS php_http_encoding_deflate(int flags, const char *data, size_t data_len, c
 		}
 	}
 	
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not deflate data: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Could not deflate data: %s", zError(status));
 	return FAILURE;
 }
 
-STATUS php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+ZEND_RESULT_CODE php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len)
 {
 	z_stream Z;
 	int status, wbits = PHP_HTTP_WINDOW_BITS_ANY;
@@ -227,11 +227,11 @@ retry_raw_inflate:
 		}
 	}
 	
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not inflate data: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Could not inflate data: %s", zError(status));
 	return FAILURE;
 }
 
-php_http_encoding_stream_t *php_http_encoding_stream_init(php_http_encoding_stream_t *s, php_http_encoding_stream_ops_t *ops, unsigned flags TSRMLS_DC)
+php_http_encoding_stream_t *php_http_encoding_stream_init(php_http_encoding_stream_t *s, php_http_encoding_stream_ops_t *ops, unsigned flags)
 {
 	int freeme;
 
@@ -241,7 +241,6 @@ php_http_encoding_stream_t *php_http_encoding_stream_init(php_http_encoding_stre
 	memset(s, 0, sizeof(*s));
 
 	s->flags = flags;
-	TSRMLS_SET_CTX(s->ts);
 
 	if ((s->ops = ops)) {
 		php_http_encoding_stream_t *ss = s->ops->init(s);
@@ -261,8 +260,6 @@ php_http_encoding_stream_t *php_http_encoding_stream_init(php_http_encoding_stre
 
 php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_encoding_stream_t *from, php_http_encoding_stream_t *to)
 {
-	TSRMLS_FETCH_FROM_CTX(from->ts);
-
 	if (from->ops->copy) {
 		int freeme;
 		php_http_encoding_stream_t *ns;
@@ -274,7 +271,6 @@ php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_encoding_stre
 
 		to->flags = from->flags;
 		to->ops = from->ops;
-		TSRMLS_SET_CTX(to->ts);
 
 		if ((ns = to->ops->copy(from, to))) {
 			return ns;
@@ -290,9 +286,10 @@ php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_encoding_stre
 	return NULL;
 }
 
-STATUS php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
+ZEND_RESULT_CODE php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
 {
 	php_http_encoding_stream_t *ss;
+
 	if ((*s)->ops->dtor) {
 		(*s)->ops->dtor(*s);
 	}
@@ -303,7 +300,7 @@ STATUS php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
 	return FAILURE;
 }
 
-STATUS php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len)
+ZEND_RESULT_CODE php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len)
 {
 	if (!s->ops->update) {
 		return FAILURE;
@@ -311,7 +308,7 @@ STATUS php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char
 	return s->ops->update(s, in_str, in_len, out_str, out_len);
 }
 
-STATUS php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
+ZEND_RESULT_CODE php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
 {
 	if (!s->ops->flush) {
 		*out_str = NULL;
@@ -329,7 +326,7 @@ zend_bool php_http_encoding_stream_done(php_http_encoding_stream_t *s)
 	return s->ops->done(s);
 }
 
-STATUS php_http_encoding_stream_finish(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
+ZEND_RESULT_CODE php_http_encoding_stream_finish(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
 {
 	if (!s->ops->finish) {
 		*out_str = NULL;
@@ -367,7 +364,6 @@ static php_http_encoding_stream_t *deflate_init(php_http_encoding_stream_t *s)
 {
 	int status, level, wbits, strategy, p = (s->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT);
 	z_streamp ctx = pecalloc(1, sizeof(z_stream), p);
-	TSRMLS_FETCH_FROM_CTX(s->ts);
 	
 	PHP_HTTP_DEFLATE_LEVEL_SET(s->flags, level);
 	PHP_HTTP_DEFLATE_WBITS_SET(s->flags, wbits);
@@ -382,7 +378,7 @@ static php_http_encoding_stream_t *deflate_init(php_http_encoding_stream_t *s)
 		status = Z_MEM_ERROR;
 	}
 	pefree(ctx, p);
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to initialize deflate encoding stream: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Failed to initialize deflate encoding stream: %s", zError(status));
 	return NULL;
 }
 
@@ -390,7 +386,6 @@ static php_http_encoding_stream_t *inflate_init(php_http_encoding_stream_t *s)
 {
 	int status, wbits, p = (s->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT);
 	z_streamp ctx = pecalloc(1, sizeof(z_stream), p);
-	TSRMLS_FETCH_FROM_CTX(s->ts);
 	
 	PHP_HTTP_INFLATE_WBITS_SET(s->flags, wbits);
 	
@@ -403,7 +398,7 @@ static php_http_encoding_stream_t *inflate_init(php_http_encoding_stream_t *s)
 		status = Z_MEM_ERROR;
 	}
 	pefree(ctx, p);
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to initialize inflate stream: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Failed to initialize inflate stream: %s", zError(status));
 	return NULL;
 }
 
@@ -426,7 +421,6 @@ static php_http_encoding_stream_t *deflate_copy(php_http_encoding_stream_t *from
 {
 	int status, p = to->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT;
 	z_streamp from_ctx = from->ctx, to_ctx = pecalloc(1, sizeof(*to_ctx), p);
-	TSRMLS_FETCH_FROM_CTX(from->ts);
 
 	if (Z_OK == (status = deflateCopy(to_ctx, from_ctx))) {
 		if ((to_ctx->opaque = php_http_buffer_init_ex(NULL, PHP_HTTP_DEFLATE_BUFFER_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0))) {
@@ -437,7 +431,7 @@ static php_http_encoding_stream_t *deflate_copy(php_http_encoding_stream_t *from
 		deflateEnd(to_ctx);
 		status = Z_MEM_ERROR;
 	}
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to copy deflate encoding stream: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Failed to copy deflate encoding stream: %s", zError(status));
 	return NULL;
 }
 
@@ -445,7 +439,6 @@ static php_http_encoding_stream_t *inflate_copy(php_http_encoding_stream_t *from
 {
 	int status, p = from->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT;
 	z_streamp from_ctx = from->ctx, to_ctx = pecalloc(1, sizeof(*to_ctx), p);
-	TSRMLS_FETCH_FROM_CTX(from->ts);
 
 	if (Z_OK == (status = inflateCopy(to_ctx, from_ctx))) {
 		if ((to_ctx->opaque = php_http_buffer_init_ex(NULL, PHP_HTTP_DEFLATE_BUFFER_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0))) {
@@ -456,7 +449,7 @@ static php_http_encoding_stream_t *inflate_copy(php_http_encoding_stream_t *from
 		inflateEnd(to_ctx);
 		status = Z_MEM_ERROR;
 	}
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to copy inflate encoding stream: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Failed to copy inflate encoding stream: %s", zError(status));
 	return NULL;
 }
 
@@ -464,7 +457,6 @@ static php_http_encoding_stream_t *dechunk_copy(php_http_encoding_stream_t *from
 {
 	int p = from->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT;
 	struct dechunk_ctx *from_ctx = from->ctx, *to_ctx = pemalloc(sizeof(*to_ctx), p);
-	TSRMLS_FETCH_FROM_CTX(from->ts);
 
 	if (php_http_buffer_init_ex(&to_ctx->buffer, PHP_HTTP_BUFFER_DEFAULT_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0)) {
 		to_ctx->hexlen = from_ctx->hexlen;
@@ -474,15 +466,14 @@ static php_http_encoding_stream_t *dechunk_copy(php_http_encoding_stream_t *from
 		return to;
 	}
 	pefree(to_ctx, p);
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to copy inflate encoding stream: out of memory");
+	php_error_docref(NULL, E_WARNING, "Failed to copy inflate encoding stream: out of memory");
 	return NULL;
 }
 
-static STATUS deflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
+static ZEND_RESULT_CODE deflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
-	TSRMLS_FETCH_FROM_CTX(s->ts);
 	
 	/* append input to our buffer */
 	php_http_buffer_append(PHP_HTTP_BUFFER(ctx->opaque), data, data_len);
@@ -515,15 +506,14 @@ static STATUS deflate_update(php_http_encoding_stream_t *s, const char *data, si
 	
 	PTR_SET(*encoded, NULL);
 	*encoded_len = 0;
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to update deflate stream: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Failed to update deflate stream: %s", zError(status));
 	return FAILURE;
 }
 
-static STATUS inflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
+static ZEND_RESULT_CODE inflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
-	TSRMLS_FETCH_FROM_CTX(s->ts);
 	
 	/* append input to buffer */
 	php_http_buffer_append(PHP_HTTP_BUFFER(ctx->opaque), data, data_len);
@@ -554,18 +544,17 @@ retry_raw_inflate:
 			break;
 	}
 	
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to update inflate stream: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Failed to update inflate stream: %s", zError(status));
 	return FAILURE;
 }
 
-static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
+static ZEND_RESULT_CODE dechunk_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
 {
 	php_http_buffer_t tmp;
 	struct dechunk_ctx *ctx = s->ctx;
-	TSRMLS_FETCH_FROM_CTX(s->ts);
 
 	if (ctx->zeroed) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Dechunk encoding stream has already reached the end of chunked input");
+		php_error_docref(NULL, E_WARNING, "Dechunk encoding stream has already reached the end of chunked input");
 		return FAILURE;
 	}
 	if ((PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(&ctx->buffer, data, data_len)) || !php_http_buffer_fix(&ctx->buffer)) {
@@ -686,11 +675,10 @@ static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, si
 	return SUCCESS;
 }
 
-static STATUS deflate_flush(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
+static ZEND_RESULT_CODE deflate_flush(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
-	TSRMLS_FETCH_FROM_CTX(s->ts);
 	
 	*encoded_len = PHP_HTTP_DEFLATE_BUFFER_SIZE;
 	*encoded = emalloc(*encoded_len);
@@ -711,11 +699,11 @@ static STATUS deflate_flush(php_http_encoding_stream_t *s, char **encoded, size_
 	
 	PTR_SET(*encoded, NULL);
 	*encoded_len = 0;
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to flush deflate stream: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Failed to flush deflate stream: %s", zError(status));
 	return FAILURE;
 }
 
-static STATUS dechunk_flush(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
+static ZEND_RESULT_CODE dechunk_flush(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
 {
 	struct dechunk_ctx *ctx = s->ctx;
 
@@ -735,11 +723,10 @@ static STATUS dechunk_flush(php_http_encoding_stream_t *s, char **decoded, size_
 	return SUCCESS;
 }
 
-static STATUS deflate_finish(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
+static ZEND_RESULT_CODE deflate_finish(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
-	TSRMLS_FETCH_FROM_CTX(s->ts);
 	
 	*encoded_len = PHP_HTTP_DEFLATE_BUFFER_SIZE;
 	*encoded = emalloc(*encoded_len);
@@ -768,15 +755,14 @@ static STATUS deflate_finish(php_http_encoding_stream_t *s, char **encoded, size
 	
 	PTR_SET(*encoded, NULL);
 	*encoded_len = 0;
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to finish deflate stream: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Failed to finish deflate stream: %s", zError(status));
 	return FAILURE;
 }
 
-static STATUS inflate_finish(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
+static ZEND_RESULT_CODE inflate_finish(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
-	TSRMLS_FETCH_FROM_CTX(s->ts);
 	
 	if (!PHP_HTTP_BUFFER(ctx->opaque)->used) {
 		*decoded = NULL;
@@ -807,7 +793,7 @@ static STATUS inflate_finish(php_http_encoding_stream_t *s, char **decoded, size
 	
 	PTR_SET(*decoded, NULL);
 	*decoded_len = 0;
-	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to finish inflate stream: %s", zError(status));
+	php_error_docref(NULL, E_WARNING, "Failed to finish inflate stream: %s", zError(status));
 	return FAILURE;
 }
 
@@ -914,53 +900,47 @@ php_http_encoding_stream_ops_t *php_http_encoding_stream_get_dechunk_ops(void)
 
 static zend_object_handlers php_http_encoding_stream_object_handlers;
 
-zend_object_value php_http_encoding_stream_object_new(zend_class_entry *ce TSRMLS_DC)
+zend_object *php_http_encoding_stream_object_new(zend_class_entry *ce)
 {
-	return php_http_encoding_stream_object_new_ex(ce, NULL, NULL TSRMLS_CC);
+	return &php_http_encoding_stream_object_new_ex(ce, NULL)->zo;
 }
 
-zend_object_value php_http_encoding_stream_object_new_ex(zend_class_entry *ce, php_http_encoding_stream_t *s, php_http_encoding_stream_object_t **ptr TSRMLS_DC)
+php_http_encoding_stream_object_t *php_http_encoding_stream_object_new_ex(zend_class_entry *ce, php_http_encoding_stream_t *s)
 {
 	php_http_encoding_stream_object_t *o;
 
-	o = ecalloc(1, sizeof(*o));
-	zend_object_std_init((zend_object *) o, ce TSRMLS_CC);
-	object_properties_init((zend_object *) o, ce);
-
-	if (ptr) {
-		*ptr = o;
-	}
+	o = ecalloc(1, sizeof(*o) + (ce->default_properties_count - 1) * sizeof(zval));
+	zend_object_std_init(&o->zo, ce);
+	object_properties_init(&o->zo, ce);
 
 	if (s) {
 		o->stream = s;
 	}
 
-	o->zv.handle = zend_objects_store_put((zend_object *) o, NULL, php_http_encoding_stream_object_free, NULL TSRMLS_CC);
-	o->zv.handlers = &php_http_encoding_stream_object_handlers;
+	o->zo.handlers = &php_http_encoding_stream_object_handlers;
 
-	return o->zv;
+	return o;
 }
 
-zend_object_value php_http_encoding_stream_object_clone(zval *this_ptr TSRMLS_DC)
+zend_object *php_http_encoding_stream_object_clone(zval *object)
 {
-	zend_object_value new_ov;
-	php_http_encoding_stream_object_t *new_obj = NULL, *old_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	php_http_encoding_stream_object_t *new_obj = NULL, *old_obj = PHP_HTTP_OBJ(NULL, object);
+	php_http_encoding_stream_t *cpy = php_http_encoding_stream_copy(old_obj->stream, NULL);
 
-	new_ov = php_http_encoding_stream_object_new_ex(old_obj->zo.ce, php_http_encoding_stream_copy(old_obj->stream, NULL), &new_obj TSRMLS_CC);
-	zend_objects_clone_members(&new_obj->zo, new_ov, &old_obj->zo, Z_OBJ_HANDLE_P(this_ptr) TSRMLS_CC);
+	new_obj = php_http_encoding_stream_object_new_ex(old_obj->zo.ce, cpy);
+	zend_objects_clone_members(&new_obj->zo, &old_obj->zo);
 
-	return new_ov;
+	return &new_obj->zo;
 }
 
-void php_http_encoding_stream_object_free(void *object TSRMLS_DC)
+void php_http_encoding_stream_object_free(zend_object *object)
 {
-	php_http_encoding_stream_object_t *o = (php_http_encoding_stream_object_t *) object;
+	php_http_encoding_stream_object_t *o = PHP_HTTP_OBJ(object, NULL);
 
 	if (o->stream) {
 		php_http_encoding_stream_free(&o->stream);
 	}
-	zend_object_std_dtor((zend_object *) o TSRMLS_CC);
-	efree(o);
+	zend_object_std_dtor(object);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream___construct, 0, 0, 0)
@@ -968,31 +948,31 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream___construct, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEncodingStream, __construct)
 {
-	long flags = 0;
+	zend_long flags = 0;
 	php_http_encoding_stream_object_t *obj;
 	php_http_encoding_stream_ops_t *ops;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &flags), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &flags), invalid_arg, return);
 
-	obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	obj = PHP_HTTP_OBJ(NULL, getThis());
 
 	if (obj->stream) {
 		php_http_throw(bad_method_call, "http\\Encoding\\Stream cannot be initialized twice", NULL);
 		return;
 	}
 
-	if (instanceof_function(obj->zo.ce, php_http_deflate_stream_class_entry TSRMLS_CC)) {
+	if (instanceof_function(obj->zo.ce, php_http_deflate_stream_class_entry)) {
 		ops = &php_http_encoding_deflate_ops;
-	} else if (instanceof_function(obj->zo.ce, php_http_inflate_stream_class_entry TSRMLS_CC)) {
+	} else if (instanceof_function(obj->zo.ce, php_http_inflate_stream_class_entry)) {
 		ops = &php_http_encoding_inflate_ops;
-	} else if (instanceof_function(obj->zo.ce, php_http_dechunk_stream_class_entry TSRMLS_CC)) {
+	} else if (instanceof_function(obj->zo.ce, php_http_dechunk_stream_class_entry)) {
 		ops = &php_http_encoding_dechunk_ops;
 	} else {
-		php_http_throw(runtime, "Unknown http\\Encoding\\Stream class '%s'", obj->zo.ce->name);
+		php_http_throw(runtime, "Unknown http\\Encoding\\Stream class '%s'", obj->zo.ce->name->val);
 		return;
 	}
 
-	php_http_expect(obj->stream = php_http_encoding_stream_init(obj->stream, ops, flags TSRMLS_CC), runtime, return);
+	php_http_expect(obj->stream = php_http_encoding_stream_init(obj->stream, ops, flags), runtime, return);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_update, 0, 0, 1)
@@ -1000,18 +980,22 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream_update, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEncodingStream, update)
 {
-	int data_len;
+	size_t data_len;
 	char *data_str;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &data_str, &data_len)) {
-		php_http_encoding_stream_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s", &data_str, &data_len)) {
+		php_http_encoding_stream_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
 
 		if (obj->stream) {
+			char *encoded_str = NULL;
 			size_t encoded_len;
-			char *encoded_str;
 
 			if (SUCCESS == php_http_encoding_stream_update(obj->stream, data_str, data_len, &encoded_str, &encoded_len)) {
-				RETURN_STRINGL(encoded_str, encoded_len, 0);
+				if (encoded_str) {
+					RETURN_STR(php_http_cs2zs(encoded_str, encoded_len));
+				} else {
+					RETURN_EMPTY_STRING();
+				}
 			}
 		}
 	}
@@ -1022,15 +1006,15 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEncodingStream, flush)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		php_http_encoding_stream_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		php_http_encoding_stream_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
 
 		if (obj->stream) {
-			char *encoded_str;
+			char *encoded_str = NULL;
 			size_t encoded_len;
 
 			if (SUCCESS == php_http_encoding_stream_flush(obj->stream, &encoded_str, &encoded_len)) {
 				if (encoded_str) {
-					RETURN_STRINGL(encoded_str, encoded_len, 0);
+					RETURN_STR(php_http_cs2zs(encoded_str, encoded_len));
 				} else {
 					RETURN_EMPTY_STRING();
 				}
@@ -1044,7 +1028,7 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEncodingStream, done)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		php_http_encoding_stream_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		php_http_encoding_stream_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
 
 		if (obj->stream) {
 			RETURN_BOOL(php_http_encoding_stream_done(obj->stream));
@@ -1057,16 +1041,16 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEncodingStream, finish)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		php_http_encoding_stream_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+		php_http_encoding_stream_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
 
 		if (obj->stream) {
-			char *encoded_str;
+			char *encoded_str = NULL;
 			size_t encoded_len;
 
 			if (SUCCESS == php_http_encoding_stream_finish(obj->stream, &encoded_str, &encoded_len)) {
 				if (SUCCESS == php_http_encoding_stream_reset(&obj->stream)) {
 					if (encoded_str) {
-						RETURN_STRINGL(encoded_str, encoded_len, 0);
+						RETURN_STR(php_http_cs2zs(encoded_str, encoded_len));
 					} else {
 						RETURN_EMPTY_STRING();
 					}
@@ -1094,15 +1078,19 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpDeflateStream, encode)
 {
 	char *str;
-	int len;
-	long flags = 0;
+	size_t len;
+	zend_long flags = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &str, &len, &flags)) {
-		char *enc_str;
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s|l", &str, &len, &flags)) {
+		char *enc_str = NULL;
 		size_t enc_len;
 
-		if (SUCCESS == php_http_encoding_deflate(flags, str, len, &enc_str, &enc_len TSRMLS_CC)) {
-			RETURN_STRINGL(enc_str, enc_len, 0);
+		if (SUCCESS == php_http_encoding_deflate(flags, str, len, &enc_str, &enc_len)) {
+			if (enc_str) {
+				RETURN_STR(php_http_cs2zs(enc_str, enc_len));
+			} else {
+				RETURN_EMPTY_STRING();
+			}
 		}
 	}
 	RETURN_FALSE;
@@ -1119,14 +1107,18 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpInflateStream, decode)
 {
 	char *str;
-	int len;
+	size_t len;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &str, &len)) {
-		char *enc_str;
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s", &str, &len)) {
+		char *enc_str = NULL;
 		size_t enc_len;
 
-		if (SUCCESS == php_http_encoding_inflate(str, len, &enc_str, &enc_len TSRMLS_CC)) {
-			RETURN_STRINGL(enc_str, enc_len, 0);
+		if (SUCCESS == php_http_encoding_inflate(str, len, &enc_str, &enc_len)) {
+			if (enc_str) {
+				RETURN_STR(php_http_cs2zs(enc_str, enc_len));
+			} else {
+				RETURN_EMPTY_STRING();
+			}
 		}
 	}
 	RETURN_FALSE;
@@ -1144,20 +1136,24 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpDechunkStream, decode)
 {
 	char *str;
-	int len;
+	size_t len;
 	zval *zlen = NULL;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|z!", &str, &len, &zlen)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s|z!", &str, &len, &zlen)) {
 		const char *end_ptr;
-		char *enc_str;
+		char *enc_str = NULL;
 		size_t enc_len;
 
-		if ((end_ptr = php_http_encoding_dechunk(str, len, &enc_str, &enc_len TSRMLS_CC))) {
+		if ((end_ptr = php_http_encoding_dechunk(str, len, &enc_str, &enc_len))) {
 			if (zlen) {
 				zval_dtor(zlen);
 				ZVAL_LONG(zlen, str + len - end_ptr);
 			}
-			RETURN_STRINGL(enc_str, enc_len, 0);
+			if (enc_str) {
+				RETURN_STR(php_http_cs2zs(enc_str, enc_len));
+			} else {
+				RETURN_EMPTY_STRING();
+			}
 		}
 	}
 	RETURN_FALSE;
@@ -1178,39 +1174,40 @@ PHP_MINIT_FUNCTION(http_encoding)
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding", "Stream", php_http_encoding_stream_methods);
-	php_http_encoding_stream_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
+	php_http_encoding_stream_class_entry = zend_register_internal_class(&ce);
 	php_http_encoding_stream_class_entry->ce_flags |= ZEND_ACC_EXPLICIT_ABSTRACT_CLASS;
 	php_http_encoding_stream_class_entry->create_object = php_http_encoding_stream_object_new;
 	memcpy(&php_http_encoding_stream_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_encoding_stream_object_handlers.clone_obj = php_http_encoding_stream_object_clone;
+	php_http_encoding_stream_object_handlers.dtor_obj = php_http_encoding_stream_object_free;
 
-	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_NONE"), PHP_HTTP_ENCODING_STREAM_FLUSH_NONE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_SYNC"), PHP_HTTP_ENCODING_STREAM_FLUSH_SYNC TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_FULL"), PHP_HTTP_ENCODING_STREAM_FLUSH_FULL TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_NONE"), PHP_HTTP_ENCODING_STREAM_FLUSH_NONE);
+	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_SYNC"), PHP_HTTP_ENCODING_STREAM_FLUSH_SYNC);
+	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_FULL"), PHP_HTTP_ENCODING_STREAM_FLUSH_FULL);
 
 	memset(&ce, 0, sizeof(ce));
 	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Deflate", php_http_deflate_stream_methods);
-	php_http_deflate_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry, NULL TSRMLS_CC);
+	php_http_deflate_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry);
 
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_GZIP"), PHP_HTTP_DEFLATE_TYPE_GZIP TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_ZLIB"), PHP_HTTP_DEFLATE_TYPE_ZLIB TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_RAW"), PHP_HTTP_DEFLATE_TYPE_RAW TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("LEVEL_DEF"), PHP_HTTP_DEFLATE_LEVEL_DEF TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("LEVEL_MIN"), PHP_HTTP_DEFLATE_LEVEL_MIN TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("LEVEL_MAX"), PHP_HTTP_DEFLATE_LEVEL_MAX TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_DEF"), PHP_HTTP_DEFLATE_STRATEGY_DEF TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_FILT"), PHP_HTTP_DEFLATE_STRATEGY_FILT TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_HUFF"), PHP_HTTP_DEFLATE_STRATEGY_HUFF TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_RLE"), PHP_HTTP_DEFLATE_STRATEGY_RLE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_FIXED"), PHP_HTTP_DEFLATE_STRATEGY_FIXED TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_GZIP"), PHP_HTTP_DEFLATE_TYPE_GZIP);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_ZLIB"), PHP_HTTP_DEFLATE_TYPE_ZLIB);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_RAW"), PHP_HTTP_DEFLATE_TYPE_RAW);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("LEVEL_DEF"), PHP_HTTP_DEFLATE_LEVEL_DEF);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("LEVEL_MIN"), PHP_HTTP_DEFLATE_LEVEL_MIN);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("LEVEL_MAX"), PHP_HTTP_DEFLATE_LEVEL_MAX);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_DEF"), PHP_HTTP_DEFLATE_STRATEGY_DEF);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_FILT"), PHP_HTTP_DEFLATE_STRATEGY_FILT);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_HUFF"), PHP_HTTP_DEFLATE_STRATEGY_HUFF);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_RLE"), PHP_HTTP_DEFLATE_STRATEGY_RLE);
+	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("STRATEGY_FIXED"), PHP_HTTP_DEFLATE_STRATEGY_FIXED);
 
 	memset(&ce, 0, sizeof(ce));
 	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Inflate", php_http_inflate_stream_methods);
-	php_http_inflate_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry, NULL TSRMLS_CC);
+	php_http_inflate_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry);
 
 	memset(&ce, 0, sizeof(ce));
 	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Dechunk", php_http_dechunk_stream_methods);
-	php_http_dechunk_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry, NULL TSRMLS_CC);
+	php_http_dechunk_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry);
 
 	return SUCCESS;
 }

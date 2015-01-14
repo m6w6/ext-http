@@ -22,13 +22,7 @@ arbitrary data with caching and resuming capabilities.
 It provides powerful request functionality with support for
 parallel requests.
 
-Documentation:
-v1: http://php.net/http
-v2: http://devel-m6w6.rhcloud.com/mdref/http
-
-Code Coverage:
-v1: http://dev.iworks.at/ext-http/lcov_html/ext/http/
-v2: http://dev.iworks.at/ext-http/lcov/ext/http/
+http://devel-m6w6.rhcloud.com/mdref/http
 
 ]]></description>
  <lead>
@@ -37,10 +31,10 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-11-12</date>
+ <date>2014-12-17</date>
  <version>
-  <release>2.2.0dev</release>
-  <api>2.2.0</api>
+  <release>3.0.0dev</release>
+  <api>3.0.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -48,12 +42,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-- var_dump(http\Message) no longer automatically creates an empty body
-+ Added http\Message\Parser class
-+ Made http\Client::once() and http\Client::wait() available when using events
-+ Added http\Url::PARSE_MBLOC, http\Url::PARSE_MBUTF8, http\Url::PARSE_TOIDN and http\Url::PARSE_TOPCT constants
-+ Added http\Env\Response::setCookie()
-+ Added http\Env\Request::getCookie()
+*
 ]]></notes>
  <contents>
   <dir name="/">

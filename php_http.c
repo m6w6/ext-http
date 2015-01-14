@@ -117,14 +117,6 @@ static inline void php_http_globals_free(zend_php_http_globals *G TSRMLS_DC)
 }
 #endif
 
-#if ZTS && PHP_DEBUG && !HAVE_GCOV
-zend_php_http_globals *php_http_globals(void)
-{
-	TSRMLS_FETCH();
-	return PHP_HTTP_G;
-}
-#endif
-
 PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("http.etag.mode", "crc32b", PHP_INI_ALL, OnUpdateString, env.etag_mode, zend_php_http_globals, php_http_globals)
 PHP_INI_END()

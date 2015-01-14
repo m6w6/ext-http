@@ -430,9 +430,9 @@ static void grab_headers(void *data, void *arg TSRMLS_DC)
 	php_http_buffer_appends(PHP_HTTP_BUFFER(arg), PHP_HTTP_CRLF);
 }
 
-STATUS php_http_env_get_response_headers(HashTable *headers_ht TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_get_response_headers(HashTable *headers_ht TSRMLS_DC)
 {
-	STATUS status;
+	ZEND_RESULT_CODE status;
 	php_http_buffer_t headers;
 
 	php_http_buffer_init(&headers);
@@ -475,15 +475,15 @@ long php_http_env_get_response_code(TSRMLS_D)
 	return code ? code : 200;
 }
 
-STATUS php_http_env_set_response_code(long http_code TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_code(long http_code TSRMLS_DC)
 {
 	return sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) http_code TSRMLS_CC);
 }
 
-STATUS php_http_env_set_response_status_line(long code, php_http_version_t *v TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_status_line(long code, php_http_version_t *v TSRMLS_DC)
 {
 	sapi_header_line h = {NULL, 0, 0};
-	STATUS ret;
+	ZEND_RESULT_CODE ret;
 
 	h.line_len = spprintf(&h.line, 0, "HTTP/%u.%u %ld %s", v->major, v->minor, code, php_http_env_get_response_status_for_code(code));
 	ret = sapi_header_op(SAPI_HEADER_REPLACE, (void *) &h TSRMLS_CC);
@@ -492,22 +492,22 @@ STATUS php_http_env_set_response_status_line(long code, php_http_version_t *v TS
 	return ret;
 }
 
-STATUS php_http_env_set_response_protocol_version(php_http_version_t *v TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_protocol_version(php_http_version_t *v TSRMLS_DC)
 {
 	return php_http_env_set_response_status_line(php_http_env_get_response_code(TSRMLS_C), v TSRMLS_CC);
 }
 
-STATUS php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace TSRMLS_DC)
 {
 	sapi_header_line h = {estrndup(header_str, header_len), header_len, http_code};
-	STATUS ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h TSRMLS_CC);
+	ZEND_RESULT_CODE ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h TSRMLS_CC);
 	efree(h.line);
 	return ret;
 }
 
-STATUS php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv TSRMLS_DC)
 {
-	STATUS ret = FAILURE;
+	ZEND_RESULT_CODE ret = FAILURE;
 	sapi_header_line h = {NULL, 0, http_code};
 
 	h.line_len = vspprintf(&h.line, 0, fmt, argv);
@@ -521,9 +521,9 @@ STATUS php_http_env_set_response_header_va(long http_code, zend_bool replace, co
 	return ret;
 }
 
-STATUS php_http_env_set_response_header_format(long http_code, zend_bool replace TSRMLS_DC, const char *fmt, ...)
+ZEND_RESULT_CODE php_http_env_set_response_header_format(long http_code, zend_bool replace TSRMLS_DC, const char *fmt, ...)
 {
-	STATUS ret;
+	ZEND_RESULT_CODE ret;
 	va_list args;
 
 	va_start(args, fmt);
@@ -533,7 +533,7 @@ STATUS php_http_env_set_response_header_format(long http_code, zend_bool replace
 	return ret;
 }
 
-STATUS php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace TSRMLS_DC)
 {
 	if (!value) {
 		sapi_header_line h = {(char *) name_str, name_len, http_code};
@@ -562,7 +562,7 @@ STATUS php_http_env_set_response_header_value(long http_code, const char *name_s
 			return php_http_env_set_response_header_value(http_code, name_str, name_len, NULL, replace TSRMLS_CC);
 		} else {
 			sapi_header_line h;
-			STATUS ret;
+			ZEND_RESULT_CODE ret;
 
 			if (name_len > INT_MAX) {
 				name_len = INT_MAX;

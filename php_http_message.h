@@ -14,6 +14,7 @@
 #define PHP_HTTP_MESSAGE_H
 
 #include "php_http_message_body.h"
+#include "php_http_header.h"
 
 /* required minimum length of an HTTP message "HTTP/1.1" */
 #define PHP_HTTP_MESSAGE_MIN_SIZE 8
@@ -28,17 +29,18 @@ struct php_http_message {
 	php_http_message_body_t *body;
 	php_http_message_t *parent;
 	void *opaque;
-#ifdef ZTS
-	void ***ts;
-#endif
 };
 
-PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **message, HashTable **headers, php_http_info_t *info TSRMLS_DC);
+PHP_HTTP_API zend_bool php_http_message_info_callback(php_http_message_t **message, HashTable **headers, php_http_info_t *info);
 
-PHP_HTTP_API php_http_message_t *php_http_message_init(php_http_message_t *m, php_http_message_type_t t, php_http_message_body_t *body TSRMLS_DC);
-PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m, php_http_message_type_t t TSRMLS_DC);
-PHP_HTTP_API php_http_message_t *php_http_message_copy(php_http_message_t *from, php_http_message_t *to);
+PHP_HTTP_API php_http_message_t *php_http_message_init(php_http_message_t *m, php_http_message_type_t t, php_http_message_body_t *body);
+PHP_HTTP_API php_http_message_t *php_http_message_init_env(php_http_message_t *m, php_http_message_type_t t);
 PHP_HTTP_API php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_message_t *to, zend_bool parents);
+static inline php_http_message_t *php_http_message_copy(php_http_message_t *from, php_http_message_t *to)
+{
+	return php_http_message_copy_ex(from, to, 1);
+}
+
 PHP_HTTP_API void php_http_message_dtor(php_http_message_t *message);
 PHP_HTTP_API void php_http_message_free(php_http_message_t **message);
 
@@ -47,7 +49,18 @@ PHP_HTTP_API void php_http_message_set_info(php_http_message_t *message, php_htt
 
 PHP_HTTP_API void php_http_message_update_headers(php_http_message_t *msg);
 
-PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, const char *key_str, size_t key_len, int join);
+PHP_HTTP_API zval *php_http_message_header(php_http_message_t *msg, const char *key_str, size_t key_len);
+
+static inline zend_string *php_http_message_header_string(php_http_message_t *msg, const char *key_str, size_t key_len)
+{
+	zval *header;
+
+	if ((header = php_http_message_header(msg, key_str, key_len))) {
+		return php_http_header_value_to_string(header);
+	}
+	return NULL;
+}
+
 PHP_HTTP_API zend_bool php_http_message_is_multipart(php_http_message_t *msg, char **boundary);
 
 PHP_HTTP_API void php_http_message_to_string(php_http_message_t *msg, char **string, size_t *length);
@@ -58,21 +71,25 @@ PHP_HTTP_API void php_http_message_serialize(php_http_message_t *message, char *
 PHP_HTTP_API php_http_message_t *php_http_message_reverse(php_http_message_t *msg);
 PHP_HTTP_API php_http_message_t *php_http_message_zip(php_http_message_t *one, php_http_message_t *two);
 
-#define php_http_message_count(c, m) \
-{ \
-	php_http_message_t *__tmp_msg = (m); \
-	for (c = 0; __tmp_msg; __tmp_msg = __tmp_msg->parent, ++(c)); \
+static inline size_t php_http_message_count(php_http_message_t *m)
+{
+	size_t c = 1;
+
+	while ((m = m->parent)) {
+		++c;
+	}
+
+	return c;
 }
 
-PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *str, size_t len, zend_bool greedy TSRMLS_DC);
+PHP_HTTP_API php_http_message_t *php_http_message_parse(php_http_message_t *msg, const char *str, size_t len, zend_bool greedy);
 
 typedef struct php_http_message_object {
-	zend_object zo;
-	zend_object_value zv;
 	php_http_message_t *message;
 	struct php_http_message_object *parent;
 	php_http_message_body_object_t *body;
-	zval *iterator;
+	zval iterator;
+	zend_object zo;
 } php_http_message_object_t;
 
 PHP_HTTP_API zend_class_entry *php_http_message_class_entry;
@@ -80,15 +97,15 @@ PHP_HTTP_API zend_class_entry *php_http_message_class_entry;
 PHP_MINIT_FUNCTION(http_message);
 PHP_MSHUTDOWN_FUNCTION(http_message);
 
-void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool top /* = 1 */ TSRMLS_DC);
-void php_http_message_object_reverse(zval *this_ptr, zval *return_value TSRMLS_DC);
-STATUS php_http_message_object_set_body(php_http_message_object_t *obj, zval *zbody TSRMLS_DC);
-STATUS php_http_message_object_init_body_object(php_http_message_object_t *obj);
+void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool top /* = 1 */);
+void php_http_message_object_reverse(zval *this_ptr, zval *return_value);
+ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *obj, zval *zbody);
+ZEND_RESULT_CODE php_http_message_object_init_body_object(php_http_message_object_t *obj);
 
-zend_object_value php_http_message_object_new(zend_class_entry *ce TSRMLS_DC);
-zend_object_value php_http_message_object_new_ex(zend_class_entry *ce, php_http_message_t *msg, php_http_message_object_t **ptr TSRMLS_DC);
-zend_object_value php_http_message_object_clone(zval *object TSRMLS_DC);
-void php_http_message_object_free(void *object TSRMLS_DC);
+zend_object *php_http_message_object_new(zend_class_entry *ce);
+php_http_message_object_t *php_http_message_object_new_ex(zend_class_entry *ce, php_http_message_t *msg);
+zend_object *php_http_message_object_clone(zval *object);
+void php_http_message_object_free(zend_object *object);
 
 #endif
 

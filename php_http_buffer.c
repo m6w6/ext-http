@@ -13,7 +13,8 @@
 #include <php.h>
 #include "php_http_buffer.h"
 
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_init_ex(php_http_buffer_t *buf, size_t chunk_size, int flags)
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_init_ex(
+		php_http_buffer_t *buf, size_t chunk_size, unsigned flags)
 {
 	if (!buf) {
 		buf = pemalloc(sizeof(*buf), flags & PHP_HTTP_BUFFER_INIT_PERSISTENT);
@@ -22,7 +23,8 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_init_ex(php_http_buffer_t
 	if (buf) {
 		buf->size = (chunk_size) ? chunk_size : PHP_HTTP_BUFFER_DEFAULT_SIZE;
 		buf->pmem = (flags & PHP_HTTP_BUFFER_INIT_PERSISTENT) ? 1 : 0;
-		buf->data = (flags & PHP_HTTP_BUFFER_INIT_PREALLOC) ? pemalloc(buf->size, buf->pmem) : NULL;
+		buf->data = (flags & PHP_HTTP_BUFFER_INIT_PREALLOC) ?
+				pemalloc(buf->size, buf->pmem) : NULL;
 		buf->free = (flags & PHP_HTTP_BUFFER_INIT_PREALLOC) ? buf->size : 0;
 		buf->used = 0;
 	}
@@ -30,10 +32,11 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_init_ex(php_http_buffer_t
 	return buf;
 }
 
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_from_string_ex(php_http_buffer_t *buf, const char *string, size_t length)
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_from_string_ex(
+		php_http_buffer_t *buf, const char *str, size_t len)
 {
 	if ((buf = php_http_buffer_init(buf))) {
-		if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(buf, string, length)) {
+		if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(buf, str, len)) {
 			pefree(buf, buf->pmem);
 			buf = NULL;
 		}
@@ -41,7 +44,9 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_from_string_ex(php_http_b
 	return buf;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(php_http_buffer_t *buf, size_t len, size_t override_size, int allow_error)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(
+		php_http_buffer_t *buf, size_t len, size_t override_size,
+		zend_bool allow_error)
 {
 	char *ptr = NULL;
 #if 0
@@ -55,7 +60,8 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(php_http_buffer_t *buf, siz
 		}
 		
 		if (allow_error) {
-			ptr = perealloc_recoverable(buf->data, buf->used + buf->free + size, buf->pmem);
+			ptr = perealloc_recoverable(buf->data,
+					buf->used + buf->free + size, buf->pmem);
 		} else {
 			ptr = perealloc(buf->data, buf->used + buf->free + size, buf->pmem);
 		}
@@ -72,7 +78,8 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(php_http_buffer_t *buf, siz
 	return 0;
 }
 
-PHP_HTTP_BUFFER_API char *php_http_buffer_account(php_http_buffer_t *buf, size_t to_account)
+PHP_HTTP_BUFFER_API char *php_http_buffer_account(
+		php_http_buffer_t *buf, size_t to_account)
 {
 	/* it's probably already too late but check anyway */
 	if (to_account > buf->free) {
@@ -101,9 +108,12 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_shrink(php_http_buffer_t *buf)
 	return buf->used;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_append(php_http_buffer_t *buf, const char *append, size_t append_len)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_append(php_http_buffer_t *buf,
+		const char *append, size_t append_len)
 {
-	if (buf->free < append_len && PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize(buf, append_len)) {
+	if (	buf->free < append_len &&
+			PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize(buf, append_len)
+	) {
 		return PHP_HTTP_BUFFER_NOMEM;
 	}
 	memcpy(buf->data + buf->used, append, append_len);
@@ -112,7 +122,8 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_append(php_http_buffer_t *buf, const 
 	return append_len;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_appendf(php_http_buffer_t *buf, const char *format, ...)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_appendf(php_http_buffer_t *buf,
+		const char *format, ...)
 {
 	va_list argv;
 	char *append;
@@ -131,7 +142,8 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_appendf(php_http_buffer_t *buf, const
 	return append_len;
 }
 
-PHP_HTTP_BUFFER_API char *php_http_buffer_data(const php_http_buffer_t *buf, char **into, size_t *len)
+PHP_HTTP_BUFFER_API char *php_http_buffer_data(const php_http_buffer_t *buf,
+		char **into, size_t *len)
 {
 	char *copy = ecalloc(1, buf->used + 1);
 	memcpy(copy, buf->data, buf->used);
@@ -144,7 +156,8 @@ PHP_HTTP_BUFFER_API char *php_http_buffer_data(const php_http_buffer_t *buf, cha
 	return copy;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_cut(php_http_buffer_t *buf, size_t offset, size_t length)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_cut(php_http_buffer_t *buf,
+		size_t offset, size_t length)
 {
 	if (offset > buf->used) {
 		return 0;
@@ -152,15 +165,19 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_cut(php_http_buffer_t *buf, size_t of
 	if (offset + length > buf->used) {
 		length = buf->used - offset;
 	}
-	memmove(buf->data + offset, buf->data + offset + length, buf->used - length - offset);
+	memmove(buf->data + offset, buf->data + offset + length,
+			buf->used - length - offset);
 	buf->used -= length;
 	buf->free += length;
 	return length;
 }
 
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_fix(php_http_buffer_t *buf)
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_fix(
+		php_http_buffer_t *buf)
 {
-	if (buf->free < 1 && PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize_ex(buf, 1, 1, 0)) {
+	if (	buf->free < 1 &&
+			PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize_ex(buf, 1, 1, 0)
+	) {
 		return NULL;
 	}
 	buf->data[buf->used] = '\0';
@@ -192,14 +209,16 @@ PHP_HTTP_BUFFER_API void php_http_buffer_free(php_http_buffer_t **buf)
 	}
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_chunk_buffer(php_http_buffer_t **s, const char *data, size_t data_len, char **chunk, size_t chunk_size)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_chunk_buffer(php_http_buffer_t **s,
+		const char *data, size_t data_len, char **chunk, size_t chunk_size)
 {
 	php_http_buffer_t *storage;
 	
 	*chunk = NULL;
 	
 	if (!*s) {
-		*s = php_http_buffer_init_ex(NULL, chunk_size << 1, chunk_size ? PHP_HTTP_BUFFER_INIT_PREALLOC : 0);
+		*s = php_http_buffer_init_ex(NULL, chunk_size << 1,
+				chunk_size ? PHP_HTTP_BUFFER_INIT_PREALLOC : 0);
 	}
 	storage = *s;
 	
@@ -222,13 +241,15 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_chunk_buffer(php_http_buffer_t **s, c
 	return 0;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_output(php_http_buffer_t **s, const char *data, size_t data_len, size_t chunk_len, php_http_buffer_pass_func_t passout, void *opaque TSRMLS_DC)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_output(php_http_buffer_t **s,
+		const char *data, size_t data_len, size_t chunk_len,
+		php_http_buffer_pass_func_t passout, void *opaque)
 {
 	char *chunk = NULL;
 	size_t passed = 0, got = 0;
 
 	while ((got = php_http_buffer_chunk_buffer(s, data, data_len, &chunk, chunk_len))) {
-		if (PHP_HTTP_BUFFER_PASS0 == passout(opaque, chunk, got TSRMLS_CC)) {
+		if (PHP_HTTP_BUFFER_PASS0 == passout(opaque, chunk, got)) {
 			PTR_SET(chunk, NULL);
 			return PHP_HTTP_BUFFER_PASS0;
 		}
@@ -246,15 +267,19 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_output(php_http_buffer_t **s,
 	return passed;
 }
 
-PHP_HTTP_BUFFER_API ssize_t php_http_buffer_passthru(php_http_buffer_t **s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *passin_arg, php_http_buffer_pass_func_t passon, void *passon_arg TSRMLS_DC)
+PHP_HTTP_BUFFER_API ssize_t php_http_buffer_passthru(php_http_buffer_t **s, size_t chunk_size,
+		php_http_buffer_pass_func_t passin, void *passin_arg,
+		php_http_buffer_pass_func_t passon, void *passon_arg)
 {
-	size_t passed_on = 0, passed_in = php_http_buffer_chunked_input(s, chunk_size, passin, passin_arg TSRMLS_CC);
+	size_t passed_on = 0, passed_in;
+
+	passed_in = php_http_buffer_chunked_input(s, chunk_size, passin, passin_arg);
 
 	if (passed_in == PHP_HTTP_BUFFER_PASS0) {
 		return passed_in;
 	}
 	if (passed_in || (*s)->used) {
-		passed_on = passon(passon_arg, (*s)->data, (*s)->used TSRMLS_CC);
+		passed_on = passon(passon_arg, (*s)->data, (*s)->used);
 
 		if (passed_on == PHP_HTTP_BUFFER_PASS0) {
 			return passed_on;
@@ -268,18 +293,20 @@ PHP_HTTP_BUFFER_API ssize_t php_http_buffer_passthru(php_http_buffer_t **s, size
 	return passed_on - passed_in;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_input(php_http_buffer_t **s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *opaque TSRMLS_DC)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_input(php_http_buffer_t **s,
+		size_t chunk_size, php_http_buffer_pass_func_t passin, void *opaque)
 {
 	php_http_buffer_t *str;
 	size_t passed;
 
 	if (!*s) {
-		*s = php_http_buffer_init_ex(NULL, chunk_size, chunk_size ? PHP_HTTP_BUFFER_INIT_PREALLOC : 0);
+		*s = php_http_buffer_init_ex(NULL, chunk_size,
+				chunk_size ? PHP_HTTP_BUFFER_INIT_PREALLOC : 0);
 	}
 	str = *s;
 
 	php_http_buffer_resize(str, chunk_size);
-	passed = passin(opaque, str->data + str->used, chunk_size TSRMLS_CC);
+	passed = passin(opaque, str->data + str->used, chunk_size);
 
 	if (passed != PHP_HTTP_BUFFER_PASS0) {
 		str->used += passed;
@@ -293,7 +320,8 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_input(php_http_buffer_t **s, 
 
 #ifdef PHP_HTTP_BUFFER_EXTENDED
 
-PHP_HTTP_BUFFER_API int php_http_buffer_cmp(php_http_buffer_t *left, php_http_buffer_t *right)
+PHP_HTTP_BUFFER_API int php_http_buffer_cmp(php_http_buffer_t *left,
+		php_http_buffer_t *right)
 {
 	if (left->used > right->used) {
 		return -1;
@@ -304,7 +332,8 @@ PHP_HTTP_BUFFER_API int php_http_buffer_cmp(php_http_buffer_t *left, php_http_bu
 	}
 }
 
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_copy(const php_http_buffer_t *from, php_http_buffer_t *to)
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_copy(
+		const php_http_buffer_t *from, php_http_buffer_t *to)
 {
 	int free_to = !to;
 
@@ -320,7 +349,8 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_copy(const php_http_buffe
 	return to;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_insert(php_http_buffer_t *buf, const char *insert, size_t insert_len, size_t offset)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_insert(php_http_buffer_t *buf,
+		const char *insert, size_t insert_len, size_t offset)
 {
 	if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize(buf, insert_len)) {
 		return PHP_HTTP_BUFFER_NOMEM;
@@ -332,7 +362,8 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_insert(php_http_buffer_t *buf, const 
 	return insert_len;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_insertf(php_http_buffer_t *buf, size_t offset, const char *format, ...)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_insertf(php_http_buffer_t *buf,
+		size_t offset, const char *format, ...)
 {
 	va_list argv;
 	char *insert;
@@ -351,7 +382,8 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_insertf(php_http_buffer_t *buf, size_
 	return insert_len;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_prepend(php_http_buffer_t *buf, const char *prepend, size_t prepend_len)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_prepend(php_http_buffer_t *buf,
+		const char *prepend, size_t prepend_len)
 {
 	if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize(buf, prepend_len)) {
 		return PHP_HTTP_BUFFER_NOMEM;
@@ -363,7 +395,8 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_prepend(php_http_buffer_t *buf, const
 	return prepend_len;
 }
 
-PHP_HTTP_BUFFER_API size_t php_http_buffer_prependf(php_http_buffer_t *buf, const char *format, ...)
+PHP_HTTP_BUFFER_API size_t php_http_buffer_prependf(php_http_buffer_t *buf,
+		const char *format, ...)
 {
 	va_list argv;
 	char *prepend;
@@ -382,13 +415,20 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_prependf(php_http_buffer_t *buf, cons
 	return prepend_len;
 }
 
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_sub(const php_http_buffer_t *buf, size_t offset, size_t length)
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_sub(
+		const php_http_buffer_t *buf, size_t offset, size_t length)
 {
 	if (offset >= buf->used) {
 		return NULL;
 	} else {
-		size_t need = 1 + ((length + offset) > buf->used ? (buf->used - offset) : (length - offset));
-		php_http_buffer_t *sub = php_http_buffer_init_ex(NULL, need, PHP_HTTP_BUFFER_INIT_PREALLOC | (buf->pmem ? PHP_HTTP_BUFFER_INIT_PERSISTENT:0));
+		php_http_buffer_t *sub;
+		size_t need = 1 + ((length + offset) > buf->used ?
+				(buf->used - offset) : (length - offset));
+		unsigned flags = buf->pmem ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0;
+
+		sub = php_http_buffer_init_ex(NULL, need,
+				PHP_HTTP_BUFFER_INIT_PREALLOC | flags);
+
 		if (sub) {
 			if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(sub, buf->data + offset, need)) {
 				php_http_buffer_free(&sub);
@@ -400,7 +440,8 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_sub(const php_http_buffer
 	}
 }
 
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_right(const php_http_buffer_t *buf, size_t length)
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_right(
+		const php_http_buffer_t *buf, size_t length)
 {
 	if (length < buf->used) {
 		return php_http_buffer_sub(buf, buf->used - length, length);
@@ -410,7 +451,8 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_right(const php_http_buff
 }
 
 
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge_va(php_http_buffer_t *buf, unsigned argc, va_list argv)
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge_va(
+		php_http_buffer_t *buf, unsigned argc, va_list argv)
 {
 	unsigned i = 0;
 	buf = php_http_buffer_init(buf);
@@ -427,7 +469,8 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge_va(php_http_buffer_
 	return buf;
 }
 
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge_ex(php_http_buffer_t *buf, unsigned argc, ...)
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_merge_ex(
+		php_http_buffer_t *buf, unsigned argc, ...)
 {
 	va_list argv;
 	php_http_buffer_t *ret;

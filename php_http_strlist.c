@@ -55,7 +55,7 @@ const char *php_http_strlist_iterator_next(php_http_strlist_iterator_t *iter)
 
 void php_http_strlist_iterator_dtor(php_http_strlist_iterator_t *iter)
 {
-
+	(void) iter;
 }
 
 void php_http_strlist_iterator_free(php_http_strlist_iterator_t **iter)
