@@ -349,13 +349,8 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 
 	if (Z_TYPE_P(instance) != IS_OBJECT) {
 		zval *_GET = NULL;
-		zend_string *zs = zend_string_init("_GET", lenof("_GET"), 0);
 
-		zend_is_auto_global(zs);
-
-		if ((_GET = zend_hash_find(&EG(symbol_table).ht, zs))
-		&&	(Z_TYPE_P(_GET) == IS_ARRAY)
-		) {
+		if ((_GET = php_http_env_get_superglobal(ZEND_STRL("_GET")))) {
 			zval new_instance;
 
 			ZVAL_OBJ(&new_instance, php_http_querystring_object_new(php_http_querystring_class_entry));
@@ -368,8 +363,6 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 		} else {
 			php_http_throw(unexpected_val, "Could not acquire reference to superglobal GET array", NULL);
 		}
-
-		zend_string_release(zs);
 	}
 
 	RETVAL_ZVAL_FAST(instance);

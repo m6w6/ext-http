@@ -12,6 +12,14 @@
 
 #include "php_http_api.h"
 
+static void php_http_options_hash_dtor(zval *pData)
+{
+	php_http_option_t *opt = Z_PTR_P(pData);
+
+	zend_hash_destroy(&opt->suboptions.options);
+	zend_string_release(opt->name);
+}
+
 php_http_options_t *php_http_options_init(php_http_options_t *registry, zend_bool persistent)
 {
 	if (!registry) {
@@ -21,18 +29,19 @@ php_http_options_t *php_http_options_init(php_http_options_t *registry, zend_boo
 	}
 
 	registry->persistent = persistent;
-	zend_hash_init(&registry->options, 0, NULL, (dtor_func_t) zend_hash_destroy, persistent);
+	zend_hash_init(&registry->options, 0, NULL, php_http_options_hash_dtor, persistent);
 
 	return registry;
 }
 
 ZEND_RESULT_CODE php_http_options_apply(php_http_options_t *registry, HashTable *options, void *userdata)
 {
-	HashPosition pos;
-	zval *val;
+	zval *entry, *val;
 	php_http_option_t *opt;
 
-	FOREACH_HASH_VAL(pos, &registry->options, opt) {
+	ZEND_HASH_FOREACH_VAL(&registry->options, entry)
+	{
+		opt = Z_PTR_P(entry);
 		if (!(val = registry->getter(opt, options, userdata))) {
 			val = &opt->defval;
 		}
@@ -44,6 +53,8 @@ ZEND_RESULT_CODE php_http_options_apply(php_http_options_t *registry, HashTable 
 			return FAILURE;
 		}
 	}
+	ZEND_HASH_FOREACH_END();
+
 	return SUCCESS;
 }
 
@@ -63,7 +74,7 @@ void php_http_options_free(php_http_options_t **registry)
 
 php_http_option_t *php_http_option_register(php_http_options_t *registry, const char *name_str, size_t name_len, ulong option, zend_uchar type)
 {
-	php_http_option_t opt, *dst = NULL;
+	php_http_option_t opt;
 
 	memset(&opt, 0, sizeof(opt));
 
@@ -71,14 +82,17 @@ php_http_option_t *php_http_option_register(php_http_options_t *registry, const 
 	opt.suboptions.getter = registry->getter;
 	opt.suboptions.setter = registry->setter;
 
-	opt.name.h = zend_hash_func(opt.name.s = name_str, opt.name.l = name_len + 1);
+	opt.name = zend_string_init(name_str, name_len, registry->persistent);
 	opt.type = type;
 	opt.option = option;
 
-	INIT_ZVAL(opt.defval);
 	switch ((opt.type = type)) {
-	case IS_BOOL:
-		ZVAL_BOOL(&opt.defval, 0);
+	case IS_TRUE:
+		ZVAL_TRUE(&opt.defval);
+		break;
+
+	case IS_FALSE:
+		ZVAL_FALSE(&opt.defval);
 		break;
 
 	case IS_LONG:
@@ -86,7 +100,7 @@ php_http_option_t *php_http_option_register(php_http_options_t *registry, const 
 		break;
 
 	case IS_STRING:
-		ZVAL_STRINGL(&opt.defval, NULL, 0, 0);
+		ZVAL_EMPTY_STRING(&opt.defval);
 		break;
 
 	case IS_DOUBLE:
@@ -98,18 +112,13 @@ php_http_option_t *php_http_option_register(php_http_options_t *registry, const 
 		break;
 	}
 
-	zend_hash_quick_update(&registry->options, opt.name.s, opt.name.l, opt.name.h, (void *) &opt, sizeof(opt), (void *) &dst);
-	return dst;
+	return zend_hash_update_mem(&registry->options, opt.name, &opt, sizeof(opt));
 }
 
 zval *php_http_option_get(php_http_option_t *opt, HashTable *options, void *userdata)
 {
 	if (options) {
-		zval **zoption;
-
-		if (SUCCESS == zend_hash_quick_find(options, opt->name.s, opt->name.l, opt->name.h, (void *) &zoption)) {
-			return *zoption;
-		}
+		return zend_hash_find(options, opt->name);
 	}
 
 	return NULL;
