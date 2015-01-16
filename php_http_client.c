@@ -1164,7 +1164,7 @@ PHP_MINIT_FUNCTION(http_client)
 	zend_class_implements(php_http_client_class_entry, 2, spl_ce_SplSubject, spl_ce_Countable);
 	memcpy(&php_http_client_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_object_handlers.offset = XtOffsetOf(php_http_client_object_t, zo);
-	php_http_client_object_handlers.dtor_obj = php_http_client_object_free;
+	php_http_client_object_handlers.free_obj = php_http_client_object_free;
 	php_http_client_object_handlers.clone_obj = NULL;
 	zend_declare_property_null(php_http_client_class_entry, ZEND_STRL("observers"), ZEND_ACC_PRIVATE);
 	zend_declare_property_null(php_http_client_class_entry, ZEND_STRL("options"), ZEND_ACC_PROTECTED);

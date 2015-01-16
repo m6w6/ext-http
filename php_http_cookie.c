@@ -1021,7 +1021,7 @@ PHP_MINIT_FUNCTION(http_cookie)
 	memcpy(&php_http_cookie_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_cookie_object_handlers.offset = XtOffsetOf(php_http_cookie_object_t, zo);
 	php_http_cookie_object_handlers.clone_obj = php_http_cookie_object_clone;
-	php_http_cookie_object_handlers.dtor_obj = php_http_cookie_object_free;
+	php_http_cookie_object_handlers.free_obj = php_http_cookie_object_free;
 
 	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("PARSE_RAW"), PHP_HTTP_COOKIE_PARSE_RAW TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("SECURE"), PHP_HTTP_COOKIE_SECURE TSRMLS_CC);

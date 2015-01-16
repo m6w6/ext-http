@@ -1959,7 +1959,7 @@ PHP_MINIT_FUNCTION(http_message)
 	memcpy(&php_http_message_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_message_object_handlers.offset = XtOffsetOf(php_http_message_object_t, zo);
 	php_http_message_object_handlers.clone_obj = php_http_message_object_clone;
-	php_http_message_object_handlers.dtor_obj = php_http_message_object_free;
+	php_http_message_object_handlers.free_obj = php_http_message_object_free;
 	php_http_message_object_handlers.read_property = php_http_message_object_read_prop;
 	php_http_message_object_handlers.write_property = php_http_message_object_write_prop;
 	php_http_message_object_handlers.get_properties = php_http_message_object_get_props;

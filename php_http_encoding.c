@@ -1179,7 +1179,7 @@ PHP_MINIT_FUNCTION(http_encoding)
 	php_http_encoding_stream_class_entry->create_object = php_http_encoding_stream_object_new;
 	memcpy(&php_http_encoding_stream_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_encoding_stream_object_handlers.clone_obj = php_http_encoding_stream_object_clone;
-	php_http_encoding_stream_object_handlers.dtor_obj = php_http_encoding_stream_object_free;
+	php_http_encoding_stream_object_handlers.free_obj = php_http_encoding_stream_object_free;
 
 	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_NONE"), PHP_HTTP_ENCODING_STREAM_FLUSH_NONE);
 	zend_declare_class_constant_long(php_http_encoding_stream_class_entry, ZEND_STRL("FLUSH_SYNC"), PHP_HTTP_ENCODING_STREAM_FLUSH_SYNC);

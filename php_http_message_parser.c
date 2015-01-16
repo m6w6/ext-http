@@ -630,7 +630,7 @@ PHP_MINIT_FUNCTION(http_message_parser)
 	memcpy(&php_http_message_parser_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_message_parser_class_entry->create_object = php_http_message_parser_object_new;
 	php_http_message_parser_object_handlers.clone_obj = NULL;
-	php_http_message_parser_object_handlers.dtor_obj = php_http_message_parser_object_free;
+	php_http_message_parser_object_handlers.free_obj = php_http_message_parser_object_free;
 	php_http_message_parser_object_handlers.offset = XtOffsetOf(php_http_message_parser_object_t, zo);
 
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("CLEANUP"), PHP_HTTP_MESSAGE_PARSER_CLEANUP);
