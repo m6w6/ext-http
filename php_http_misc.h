@@ -163,7 +163,7 @@ static inline ZEND_RESULT_CODE php_http_ini_entry(const char *name_str, size_t n
 {
 	zend_ini_entry *ini_entry;
 
-	if (ini_entry == zend_hash_str_find_ptr(EG(ini_directives), name_str, name_len)) {
+	if ((ini_entry = zend_hash_str_find_ptr(EG(ini_directives), name_str, name_len))) {
 		if (orig && ini_entry->modified) {
 			*val_str = ini_entry->orig_value->val;
 			*val_len = ini_entry->orig_value->len;

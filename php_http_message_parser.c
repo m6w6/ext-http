@@ -249,14 +249,14 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 			{
 				zval h, *h_loc = NULL, *h_con = NULL, *h_cl, *h_cr, *h_te, *h_ce;
 
-				if ((h_te = php_http_message_header(*message, ZEND_STRL("Transfer-Encoding"), 1))) {
+				if ((h_te = php_http_message_header(*message, ZEND_STRL("Transfer-Encoding")))) {
 					zend_hash_str_update(&(*message)->hdrs, "X-Original-Transfer-Encoding", lenof("X-Original-Transfer-Encoding"), h_te);
 					zend_hash_str_del(&(*message)->hdrs, "Transfer-Encoding", lenof("Transfer-Encoding"));
 				}
-				if ((h_cl = php_http_message_header(*message, ZEND_STRL("Content-Length"), 1))) {
+				if ((h_cl = php_http_message_header(*message, ZEND_STRL("Content-Length")))) {
 					zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Length", lenof("X-Original-Content-Length"), h_cl);
 				}
-				if ((h_cr = php_http_message_header(*message, ZEND_STRL("Content-Range"), 1))) {
+				if ((h_cr = php_http_message_header(*message, ZEND_STRL("Content-Range")))) {
 					zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Range", sizeof("X-Original-Content-Range"), h_cr);
 					zend_hash_str_del(&(*message)->hdrs, "Content-Range", lenof("Content-Range"));
 				}
@@ -271,8 +271,8 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				if ((flags & PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS)
 				&&	(*message)->type == PHP_HTTP_RESPONSE
 				&&	(*message)->http.info.response.code/100 == 3
-				&&	(h_loc = php_http_message_header(*message, ZEND_STRL("Location"), 1))
-				&&	(h_con = php_http_message_header(*message, ZEND_STRL("Connection"), 1))
+				&&	(h_loc = php_http_message_header(*message, ZEND_STRL("Location")))
+				&&	(h_con = php_http_message_header(*message, ZEND_STRL("Connection")))
 				) {
 					if (php_http_match(Z_STRVAL_P(h_con), "close", PHP_HTTP_MATCH_WORD)) {
 						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
@@ -288,7 +288,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 					zval_ptr_dtor(h_con);
 				}
 
-				if ((h_ce = php_http_message_header(*message, ZEND_STRL("Content-Encoding"), 1))) {
+				if ((h_ce = php_http_message_header(*message, ZEND_STRL("Content-Encoding")))) {
 					if (php_http_match(Z_STRVAL_P(h_ce), "gzip", PHP_HTTP_MATCH_WORD)
 					||	php_http_match(Z_STRVAL_P(h_ce), "x-gzip", PHP_HTTP_MATCH_WORD)
 					||	php_http_match(Z_STRVAL_P(h_ce), "deflate", PHP_HTTP_MATCH_WORD)

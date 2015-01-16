@@ -344,7 +344,7 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
 	zs = zend_string_init(ZEND_STRL("instance"), 0);
-	instance = zend_std_get_static_property(php_http_querystring_class_entry, zs, 0, NULL);
+	instance = zend_std_get_static_property(php_http_querystring_class_entry, zs, 0);
 	zend_string_release(zs);
 
 	if (Z_TYPE_P(instance) != IS_OBJECT) {

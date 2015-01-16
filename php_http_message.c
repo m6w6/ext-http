@@ -498,6 +498,11 @@ static HashTable *php_http_message_object_get_props(zval *object);
 static zend_object_handlers php_http_message_object_handlers;
 static HashTable php_http_message_object_prophandlers;
 
+static void php_http_message_object_prophandler_hash_dtor(zval *pData)
+{
+	efree(Z_PTR_P(pData));
+}
+
 typedef void (*php_http_message_object_prophandler_func_t)(php_http_message_object_t *o, zval *v);
 
 typedef struct php_http_message_object_prophandler {
@@ -1962,7 +1967,7 @@ PHP_MINIT_FUNCTION(http_message)
 
 	zend_class_implements(php_http_message_class_entry, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
 
-	zend_hash_init(&php_http_message_object_prophandlers, 9, NULL, NULL, 1);
+	zend_hash_init(&php_http_message_object_prophandlers, 9, NULL, php_http_message_object_prophandler_hash_dtor, 1);
 	zend_declare_property_long(php_http_message_class_entry, ZEND_STRL("type"), PHP_HTTP_NONE, ZEND_ACC_PROTECTED);
 	php_http_message_object_add_prophandler(ZEND_STRL("type"), php_http_message_object_prophandler_get_type, php_http_message_object_prophandler_set_type);
 	zend_declare_property_null(php_http_message_class_entry, ZEND_STRL("body"), ZEND_ACC_PROTECTED);

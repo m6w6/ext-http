@@ -52,9 +52,10 @@ ZEND_RESULT_CODE php_http_new(void **obj_ptr, zend_class_entry *ce, php_http_new
 ZEND_RESULT_CODE php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval argv[], zval *retval_ptr)
 {
 	zend_fcall_info fci;
-	zval *retval;
+	zval retval;
 	ZEND_RESULT_CODE rv;
 
+	ZVAL_UNDEF(&retval);
 	fci.size = sizeof(fci);
 	fci.object = Z_OBJ_P(object);
 	fci.retval = retval_ptr ? retval_ptr : &retval;
@@ -68,7 +69,7 @@ ZEND_RESULT_CODE php_http_method_call(zval *object, const char *method_str, size
 	rv = zend_call_function(&fci, NULL TSRMLS_CC);
 	zval_ptr_dtor(&fci.function_name);
 
-	if (!retval_ptr && retval) {
+	if (!retval_ptr) {
 		zval_ptr_dtor(&retval);
 	}
 	return rv;

@@ -149,7 +149,7 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 		zend_hash_apply_with_arguments(supported, php_http_negotiate_reduce, 4, Z_ARRVAL(arr), result, primary_sep_str, primary_sep_len);
 		zend_hash_destroy(&params);
 		zval_dtor(&arr);
-		zend_hash_sort(result, zend_qsort, php_http_negotiate_sort, 0);
+		zend_hash_sort(result, php_http_negotiate_sort, 0);
 	}
 	
 	return result;

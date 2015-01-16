@@ -1,6 +1,5 @@
 #!/usr/bin/env php
 <?php
-// $Id: gen_curlinfo.php 323304 2012-02-17 21:13:24Z mike $
 
 error_reporting(0);
 
@@ -52,29 +51,31 @@ $translate = array(
 $templates = array(
 'STRING' => 
 '	if (CURLE_OK == curl_easy_getinfo(ch, %s, &c)) {
-		add_assoc_string_ex(&array, "%s", sizeof("%2$s"), c ? c : "", 1);
+		ZVAL_STRING(&tmp, STR_PTR(c));
+		zend_hash_str_update(info, "%s", lenof("%2$s"), &tmp);
 	}
 ',
 'DOUBLE' => 
 '	if (CURLE_OK == curl_easy_getinfo(ch, %s, &d)) {
-		add_assoc_double_ex(&array, "%s", sizeof("%2$s"), d);
+		ZVAL_DOUBLE(&tmp, d);
+		zend_hash_str_update(info, "%s", lenof("%2$s"), &tmp);
 	}
 ',
 'LONG' => 
 '	if (CURLE_OK == curl_easy_getinfo(ch, %s, &l)) {
-		add_assoc_long_ex(&array, "%s", sizeof("%2$s"), l);
+		ZVAL_LONG(&tmp, l);
+		zend_hash_str_update(info, "%s", lenof("%2$s"), &tmp);
 	}
 ',
 'SLIST' =>
 '	if (CURLE_OK == curl_easy_getinfo(ch, %s, &s)) {
-		MAKE_STD_ZVAL(subarray);
-		array_init(subarray);
+		array_init(&tmp);
 		for (p = s; p; p = p->next) {
 			if (p->data) {
-				add_next_index_string(subarray, p->data, 1);
+				add_next_index_string(&tmp, p->data);
 			}
 		}
-		add_assoc_zval_ex(&array, "%s", sizeof("%2$s"), subarray);
+		zend_hash_str_update(info, "%s", lenof("%2$s"), &tmp);
 		curl_slist_free_all(s);
 	}
 ',

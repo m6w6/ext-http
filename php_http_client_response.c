@@ -18,60 +18,63 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientResponse_getCookies, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClientResponse, getCookies)
 {
-	long flags = 0;
+	zend_long flags = 0;
 	zval *allowed_extras_array = NULL;
 	int i = 0;
 	char **allowed_extras = NULL;
-	zval *header = NULL, **entry = NULL;
-	HashPosition pos;
+	zval *header = NULL, *entry = NULL;
 	php_http_message_object_t *msg;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|la!", &flags, &allowed_extras_array)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "|la!/", &flags, &allowed_extras_array)) {
 		return;
 	}
 
-	msg = zend_object_store_get_object(getThis() TSRMLS_CC);
+	msg = PHP_HTTP_OBJ(NULL, getThis());
 	array_init(return_value);
 
 	if (allowed_extras_array) {
+		/* FIXME: use zend_string** instead of char** */
 		allowed_extras = ecalloc(zend_hash_num_elements(Z_ARRVAL_P(allowed_extras_array)) + 1, sizeof(char *));
-		FOREACH_VAL(pos, allowed_extras_array, entry) {
-			zval *data = php_http_ztyp(IS_STRING, *entry);
-			allowed_extras[i++] = estrndup(Z_STRVAL_P(data), Z_STRLEN_P(data));
-			zval_ptr_dtor(&data);
+		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(allowed_extras_array), entry)
+		{
+			zend_string *zs = zval_get_string(entry);
+			allowed_extras[i++] = estrndup(zs->val, zs->len);
+			zend_string_release(zs);
 		}
+		ZEND_HASH_FOREACH_END();
 	}
 
-	if ((header = php_http_message_header(msg->message, ZEND_STRL("Set-Cookie"), 0))) {
+	if ((header = php_http_message_header(msg->message, ZEND_STRL("Set-Cookie")))) {
 		php_http_cookie_list_t *list;
 
 		if (Z_TYPE_P(header) == IS_ARRAY) {
-			zval **single_header;
+			zval *single_header;
 
-			FOREACH_VAL(pos, header, single_header) {
-				zval *data = php_http_ztyp(IS_STRING, *single_header);
+			ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(header), single_header)
+			{
+				zend_string *zs = zval_get_string(single_header);
 
-				if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), Z_STRLEN_P(data), flags, allowed_extras TSRMLS_CC))) {
-					zval *cookie;
+				if ((list = php_http_cookie_list_parse(NULL, zs->val, zs->len, flags, allowed_extras))) {
+					zval cookie;
 
-					MAKE_STD_ZVAL(cookie);
-					ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
-					add_next_index_zval(return_value, cookie);
+					ZVAL_OBJ(&cookie, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo);
+					add_next_index_zval(return_value, &cookie);
 				}
-				zval_ptr_dtor(&data);
+				zend_string_release(zs);
 			}
+			ZEND_HASH_FOREACH_END();
 		} else {
-			zval *data = php_http_ztyp(IS_STRING, header);
-			if ((list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(data), Z_STRLEN_P(data), flags, allowed_extras TSRMLS_CC))) {
-				zval *cookie;
+			zend_string *zs = zval_get_string(header);
 
-				MAKE_STD_ZVAL(cookie);
-				ZVAL_OBJVAL(cookie, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
-				add_next_index_zval(return_value, cookie);
+			if ((list = php_http_cookie_list_parse(NULL, zs->val, zs->len, flags, allowed_extras))) {
+				zval cookie;
+
+				ZVAL_OBJ(&cookie, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo);
+				add_next_index_zval(return_value, &cookie);
 			}
-			zval_ptr_dtor(&data);
+			zend_string_release(zs);
 		}
-		zval_ptr_dtor(&header);
+		zval_ptr_dtor(header);
 	}
 
 	if (allowed_extras) {
@@ -88,12 +91,12 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClientResponse, getTransferInfo)
 {
 	char *info_name = NULL;
-	int info_len = 0;
+	size_t info_len = 0;
 	zval *info;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &info_name, &info_len), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|s", &info_name, &info_len), invalid_arg, return);
 
-	info = zend_read_property(php_http_client_response_class_entry, getThis(), ZEND_STRL("transferInfo"), 0 TSRMLS_CC);
+	info = zend_read_property(php_http_client_response_class_entry, getThis(), ZEND_STRL("transferInfo"), 0);
 
 	/* request completed? */
 	if (Z_TYPE_P(info) != IS_OBJECT) {
@@ -102,7 +105,7 @@ static PHP_METHOD(HttpClientResponse, getTransferInfo)
 	}
 
 	if (info_len && info_name) {
-		info = zend_read_property(NULL, info, php_http_pretty_key(info_name, info_len, 0, 0), info_len, 0 TSRMLS_CC);
+		info = zend_read_property(NULL, info, php_http_pretty_key(info_name, info_len, 0, 0), info_len, 0);
 
 		if (!info) {
 			php_http_throw(unexpected_val, "Could not find transfer info with name '%s'", info_name);
@@ -110,7 +113,7 @@ static PHP_METHOD(HttpClientResponse, getTransferInfo)
 		}
 	}
 
-	RETURN_ZVAL(info, 1, 0);
+	RETURN_ZVAL_FAST(info);
 }
 
 static zend_function_entry php_http_client_response_methods[] = {
@@ -126,8 +129,9 @@ PHP_MINIT_FUNCTION(http_client_response)
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http\\Client", "Response", php_http_client_response_methods);
-	php_http_client_response_class_entry = zend_register_internal_class_ex(&ce, php_http_message_class_entry, NULL TSRMLS_CC);
-	zend_declare_property_null(php_http_client_response_class_entry, ZEND_STRL("transferInfo"), ZEND_ACC_PROTECTED TSRMLS_CC);
+	php_http_client_response_class_entry = zend_register_internal_class_ex(&ce, php_http_message_class_entry);
+
+	zend_declare_property_null(php_http_client_response_class_entry, ZEND_STRL("transferInfo"), ZEND_ACC_PROTECTED);
 
 	return SUCCESS;
 }
