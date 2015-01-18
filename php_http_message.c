@@ -1017,7 +1017,7 @@ static PHP_METHOD(HttpMessage, __construct)
 		msg = php_http_message_parse(NULL, zs_msg->val, zs_msg->len, greedy);
 
 		if (!msg && !EG(exception)) {
-			php_http_throw(bad_message, "Could not parse message: %.*s", MIN(25, zs_msg->len), zs_msg->len);
+			php_http_throw(bad_message, "Could not parse message: %.*s", MIN(25, zs_msg->len), zs_msg->val);
 		}
 		zend_string_release(zs_msg);
 	}
