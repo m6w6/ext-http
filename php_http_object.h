@@ -26,6 +26,8 @@ typedef void *(*php_http_new_t)(zend_class_entry *ce, void *);
 ZEND_RESULT_CODE php_http_new(void **obj_ptr, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr);
 ZEND_RESULT_CODE php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval argv[], zval *retval_ptr);
 
+PHP_MINIT_FUNCTION(http_object);
+
 #endif
 
 

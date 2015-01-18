@@ -22,7 +22,7 @@ static HashTable php_http_client_drivers;
 
 static void php_http_client_driver_hash_dtor(zval *pData)
 {
-	efree(Z_PTR_P(pData));
+	pefree(Z_PTR_P(pData), 1);
 }
 
 ZEND_RESULT_CODE php_http_client_driver_add(php_http_client_driver_t *driver)

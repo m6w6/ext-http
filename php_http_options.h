@@ -38,6 +38,7 @@ struct php_http_option {
 	zval defval;
 
 	php_http_option_set_callback_t setter;
+	unsigned persistent:1;
 };
 
 PHP_HTTP_API php_http_options_t *php_http_options_init(php_http_options_t *registry, zend_bool persistent);

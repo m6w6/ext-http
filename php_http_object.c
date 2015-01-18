@@ -12,6 +12,8 @@
 
 #include "php_http_api.h"
 
+static zend_object_handlers php_http_object_handlers;
+
 zend_object *php_http_object_new(zend_class_entry *ce)
 {
 	return &php_http_object_new_ex(ce, NULL)->zo;
@@ -26,9 +28,15 @@ php_http_object_t *php_http_object_new_ex(zend_class_entry *ce, void *intern)
 	object_properties_init(&o->zo, ce);
 
 	o->intern = intern;
-	o->zo.handlers = zend_get_std_object_handlers();
+	o->zo.handlers = &php_http_object_handlers;
 
 	return o;
+}
+
+void php_http_object_free(zend_object *object)
+{
+	php_http_object_t *obj = PHP_HTTP_OBJ(object, NULL);
+	zend_object_std_dtor(object);
 }
 
 ZEND_RESULT_CODE php_http_new(void **obj_ptr, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr)
@@ -73,6 +81,14 @@ ZEND_RESULT_CODE php_http_method_call(zval *object, const char *method_str, size
 		zval_ptr_dtor(&retval);
 	}
 	return rv;
+}
+
+PHP_MINIT_FUNCTION(http_object)
+{
+	memcpy(&php_http_object_handlers, zend_get_std_object_handlers(), sizeof(php_http_object_handlers));
+	php_http_object_handlers.offset = XtOffsetOf(php_http_object_t, zo);
+
+	return SUCCESS;
 }
 
 /*

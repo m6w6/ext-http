@@ -500,7 +500,7 @@ static HashTable php_http_message_object_prophandlers;
 
 static void php_http_message_object_prophandler_hash_dtor(zval *pData)
 {
-	efree(Z_PTR_P(pData));
+	pefree(Z_PTR_P(pData), 1);
 }
 
 typedef void (*php_http_message_object_prophandler_func_t)(php_http_message_object_t *o, zval *v);

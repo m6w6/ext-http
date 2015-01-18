@@ -1227,7 +1227,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	/* useragent */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("useragent"), CURLOPT_USERAGENT, IS_STRING))) {
 		/* don't check strlen, to allow sending no useragent at all */
-		ZVAL_STRING(&opt->defval,
+		ZVAL_PSTRING(&opt->defval,
 				"PECL_HTTP/" PHP_PECL_HTTP_VERSION " "
 				"PHP/" PHP_VERSION " "
 				"libcurl/" LIBCURL_VERSION);
@@ -1319,7 +1319,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			ZVAL_STRING(&opt->defval, "PEM");
+			ZVAL_PSTRING(&opt->defval, "PEM");
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("key"), CURLOPT_SSLKEY, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
@@ -1327,7 +1327,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("keytype"), CURLOPT_SSLKEYTYPE, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			ZVAL_STRING(&opt->defval, "PEM");
+			ZVAL_PSTRING(&opt->defval, "PEM");
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("keypasswd"), CURLOPT_SSLKEYPASSWD, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
