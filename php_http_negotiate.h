@@ -102,7 +102,7 @@ static inline HashTable *php_http_negotiate_content_type(HashTable *supported, p
 		zend_string *key; \
 		zend_ulong idx; \
 		 \
-		if (zend_hash_num_elements(result) && HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(result, &key, &idx, NULL)) { \
+		if (zend_hash_num_elements(result) && HASH_KEY_IS_STRING == zend_hash_get_current_key(result, &key, &idx)) { \
 			RETVAL_STR_COPY(key); \
 		} else { \
 			PHP_HTTP_DO_NEGOTIATE_DEFAULT(supported); \

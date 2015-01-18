@@ -187,7 +187,7 @@ PHP_METHOD(HttpHeader, unserialize)
 				zend_ulong idx;
 
 				zend_hash_internal_pointer_reset(&ht);
-				switch (zend_hash_get_current_key_ex(&ht, &key, &idx, NULL)) {
+				switch (zend_hash_get_current_key(&ht, &key, &idx)) {
 					case HASH_KEY_IS_STRING:
 						zend_update_property_str(php_http_header_class_entry, getThis(), ZEND_STRL("name"), key);
 						break;

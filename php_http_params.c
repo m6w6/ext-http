@@ -397,7 +397,7 @@ static void merge_param(HashTable *params, zval *zdata, zval **current_param, zv
 	}
 #endif
 
-	zend_hash_get_current_key_ex(Z_ARRVAL_P(zdata), &hkey.key, &hkey.h, NULL);
+	zend_hash_get_current_key(Z_ARRVAL_P(zdata), &hkey.key, &hkey.h);
 
 	if ((hkey.key && !zend_hash_exists(params, hkey.key))
 	||	(!hkey.key && !zend_hash_index_exists(params, hkey.h))
@@ -444,7 +444,7 @@ static void merge_param(HashTable *params, zval *zdata, zval **current_param, zv
 			while (Z_TYPE_P(zdata_ptr) == IS_ARRAY && (test_ptr = zend_hash_get_current_data(Z_ARRVAL_P(zdata_ptr)))) {
 				if (Z_TYPE_P(test_ptr) == IS_ARRAY) {
 					/* now find key in ptr */
-					if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(Z_ARRVAL_P(zdata_ptr), &hkey.key, &hkey.h, NULL)) {
+					if (HASH_KEY_IS_STRING == zend_hash_get_current_key(Z_ARRVAL_P(zdata_ptr), &hkey.key, &hkey.h)) {
 						if ((ptr = zend_hash_find(Z_ARRVAL_P(ptr), hkey.key))) {
 							zdata_ptr = test_ptr;
 						} else {
@@ -472,7 +472,7 @@ static void merge_param(HashTable *params, zval *zdata, zval **current_param, zv
 						zval_dtor(ptr);
 						array_init(ptr);
 					}
-					if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(Z_ARRVAL_P(zdata_ptr), &hkey.key, &hkey.h, NULL)) {
+					if (HASH_KEY_IS_STRING == zend_hash_get_current_key(Z_ARRVAL_P(zdata_ptr), &hkey.key, &hkey.h)) {
 						ptr = zend_hash_update(Z_ARRVAL_P(ptr), hkey.key, test_ptr);
 					} else if (hkey.h) {
 						ptr = zend_hash_index_update(Z_ARRVAL_P(ptr), hkey.h, test_ptr);
@@ -543,10 +543,11 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 			ZVAL_NULL(&key);
 			sanitize_key(opts->flags, state->param.str, state->param.len, &key, &rfc5987);
 			state->rfc5987 = rfc5987;
-			if (Z_TYPE(key) != IS_STRING) {
+			if (Z_TYPE(key) == IS_ARRAY) {
 				merge_param(params, &key, &state->current.val, &state->current.args);
-			} else if (Z_STRLEN(key)) {
-				array_init_size(&prm, 2);
+			} else if (Z_TYPE(key) == IS_STRING && Z_STRLEN(key)) {
+				//array_init_size(&prm, 2);
+				array_init(&prm);
 
 				if (!Z_ISUNDEF(opts->defval)) {
 					ZVAL_COPY_VALUE(&val, &opts->defval);
@@ -559,8 +560,8 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 				} else {
 					state->current.val = zend_hash_str_update(Z_ARRVAL(prm), "value", lenof("value"), &val);
 				}
-
-				array_init_size(&arg, 3);
+				//array_init_size(&arg, 3);
+				array_init(&arg);
 				state->current.args = zend_hash_str_update(Z_ARRVAL(prm), "arguments", lenof("arguments"), &arg);
 				state->current.param = zend_symtable_str_update(params, Z_STRVAL(key), Z_STRLEN(key), &prm);
 			}
@@ -712,7 +713,7 @@ static inline void shift_rfc5987(php_http_buffer_t *buf, zval *zvalue, const cha
 	php_http_arrkey_t key = {0};
 
 	if ((zdata = zend_hash_get_current_data(ht))
-	&&	HASH_KEY_NON_EXISTENT != zend_hash_get_current_key_ex(ht, &key.key, &key.h, NULL)
+	&&	HASH_KEY_NON_EXISTENT != zend_hash_get_current_key(ht, &key.key, &key.h)
 	) {
 		php_http_arrkey_stringify(&key, NULL);
 		php_http_buffer_appendf(buf, "*%.*sutf-8'%.*s'",

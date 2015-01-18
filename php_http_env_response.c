@@ -502,7 +502,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 						zend_ulong index = 0;
 
 						zend_hash_internal_pointer_reset(result);
-						if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(result, &key_str, &index, NULL)) {
+						if (HASH_KEY_IS_STRING == zend_hash_get_current_key(result, &key_str, &index)) {
 							if (zend_string_equals_literal(key_str, "gzip")) {
 								if (!(r->content.encoder = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), PHP_HTTP_DEFLATE_TYPE_GZIP))) {
 									ret = FAILURE;

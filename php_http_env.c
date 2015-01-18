@@ -33,7 +33,7 @@ PHP_RINIT_FUNCTION(http_env)
 			zend_string *key_str;
 			zend_ulong key_num;
 
-			if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(&params, &key_str, &key_num, NULL)) {
+			if (HASH_KEY_IS_STRING == zend_hash_get_current_key(&params, &key_str, &key_num)) {
 				sapi_post_entry *post_entry = NULL;
 
 				if ((post_entry = zend_hash_find_ptr(&SG(known_post_content_types), key_str))) {
