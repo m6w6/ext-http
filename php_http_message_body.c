@@ -882,6 +882,7 @@ PHP_MINIT_FUNCTION(http_message_body)
 	php_http_message_body_class_entry = zend_register_internal_class(&ce);
 	php_http_message_body_class_entry->create_object = php_http_message_body_object_new;
 	memcpy(&php_http_message_body_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	php_http_message_body_object_handlers.offset = XtOffsetOf(php_http_message_body_object_t, zo);
 	php_http_message_body_object_handlers.clone_obj = php_http_message_body_object_clone;
 	php_http_message_body_object_handlers.free_obj = php_http_message_body_object_free;
 	zend_class_implements(php_http_message_body_class_entry, 1, zend_ce_serializable);
