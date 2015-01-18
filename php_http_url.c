@@ -211,10 +211,12 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 			
 			array_init(&qarr);
 			
-			ZVAL_STR(&qstr, php_http_cs2zs(old_url->query, strlen(old_url->query)));
+			ZVAL_STRING(&qstr, old_url->query);
 			php_http_querystring_update(&qarr, &qstr, NULL);
-			ZVAL_STR(&qstr, php_http_cs2zs(new_url->query, strlen(new_url->query)));
+			zval_ptr_dtor(&qstr);
+			ZVAL_STRING(&qstr, new_url->query);
 			php_http_querystring_update(&qarr, &qstr, NULL);
+			zval_ptr_dtor(&qstr);
 			
 			ZVAL_NULL(&qstr);
 			php_http_querystring_update(&qarr, NULL, &qstr);
@@ -464,38 +466,46 @@ HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct)
 		zend_hash_init(ht, 8, NULL, ZVAL_PTR_DTOR, 0);
 	}
 
+#define url_struct_add(part) \
+	if (Z_TYPE_P(strct) == IS_ARRAY) { \
+		zend_hash_str_update(Z_ARRVAL_P(strct), part, lenof(part), &tmp); \
+	} else { \
+		zend_update_property(Z_OBJCE_P(strct), strct, part, lenof(part), &tmp); \
+		zval_ptr_dtor(&tmp); \
+	}
+
 	if (url) {
 		if (url->scheme) {
 			ZVAL_STRING(&tmp, url->scheme);
-			zend_hash_str_update(ht, "scheme", lenof("scheme"), &tmp);
+			url_struct_add("scheme");
 		}
 		if (url->user) {
 			ZVAL_STRING(&tmp, url->user);
-			zend_hash_str_update(ht, "user", lenof("user"), &tmp);
+			url_struct_add("user");
 		}
 		if (url->pass) {
 			ZVAL_STRING(&tmp, url->pass);
-			zend_hash_str_update(ht, "pass", lenof("pass"), &tmp);
+			url_struct_add("pass");
 		}
 		if (url->host) {
 			ZVAL_STRING(&tmp, url->host);
-			zend_hash_str_update(ht, "host", lenof("host"), &tmp);
+			url_struct_add("host");
 		}
 		if (url->port) {
 			ZVAL_LONG(&tmp, url->port);
-			zend_hash_str_update(ht, "port", lenof("port"), &tmp);
+			url_struct_add("port");
 		}
 		if (url->path) {
 			ZVAL_STRING(&tmp, url->path);
-			zend_hash_str_update(ht, "path", lenof("path"), &tmp);
+			url_struct_add("path");
 		}
 		if (url->query) {
 			ZVAL_STRING(&tmp, url->query);
-			zend_hash_str_update(ht, "query", lenof("query"), &tmp);
+			url_struct_add("query");
 		}
 		if (url->fragment) {
 			ZVAL_STRING(&tmp, url->fragment);
-			zend_hash_str_update(ht, "fragment", lenof("fragment"), &tmp);
+			url_struct_add("fragment");
 		}
 	}
 
@@ -1244,7 +1254,7 @@ PHP_METHOD(HttpUrl, __construct)
 	zend_long flags = PHP_HTTP_URL_FROM_ENV;
 	zend_error_handling zeh;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!z!l", &old_url, &new_url, &flags), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|z!z!l", &old_url, &new_url, &flags), invalid_arg, return);
 
 	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh);
 	{
@@ -1292,7 +1302,7 @@ PHP_METHOD(HttpUrl, mod)
 	zend_long flags = PHP_HTTP_URL_JOIN_PATH | PHP_HTTP_URL_JOIN_QUERY;
 	zend_error_handling zeh;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|l", &new_url, &flags), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "z!|l", &new_url, &flags), invalid_arg, return);
 
 	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh);
 	{
@@ -1375,39 +1385,39 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http", "Url", php_http_url_methods);
-	php_http_url_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
+	php_http_url_class_entry = zend_register_internal_class(&ce);
 
-	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("scheme"), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("user"), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("pass"), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("host"), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("port"), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("path"), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("query"), ZEND_ACC_PUBLIC TSRMLS_CC);
-	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("fragment"), ZEND_ACC_PUBLIC TSRMLS_CC);
+	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("scheme"), ZEND_ACC_PUBLIC);
+	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("user"), ZEND_ACC_PUBLIC);
+	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("pass"), ZEND_ACC_PUBLIC);
+	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("host"), ZEND_ACC_PUBLIC);
+	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("port"), ZEND_ACC_PUBLIC);
+	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("path"), ZEND_ACC_PUBLIC);
+	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("query"), ZEND_ACC_PUBLIC);
+	zend_declare_property_null(php_http_url_class_entry, ZEND_STRL("fragment"), ZEND_ACC_PUBLIC);
 
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("REPLACE"), PHP_HTTP_URL_REPLACE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("JOIN_PATH"), PHP_HTTP_URL_JOIN_PATH TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("JOIN_QUERY"), PHP_HTTP_URL_JOIN_QUERY TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_USER"), PHP_HTTP_URL_STRIP_USER TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_PASS"), PHP_HTTP_URL_STRIP_PASS TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_AUTH"), PHP_HTTP_URL_STRIP_AUTH TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_PORT"), PHP_HTTP_URL_STRIP_PORT TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_PATH"), PHP_HTTP_URL_STRIP_PATH TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_QUERY"), PHP_HTTP_URL_STRIP_QUERY TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_FRAGMENT"), PHP_HTTP_URL_STRIP_FRAGMENT TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_ALL"), PHP_HTTP_URL_STRIP_ALL TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("FROM_ENV"), PHP_HTTP_URL_FROM_ENV TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("SANITIZE_PATH"), PHP_HTTP_URL_SANITIZE_PATH TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("REPLACE"), PHP_HTTP_URL_REPLACE);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("JOIN_PATH"), PHP_HTTP_URL_JOIN_PATH);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("JOIN_QUERY"), PHP_HTTP_URL_JOIN_QUERY);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_USER"), PHP_HTTP_URL_STRIP_USER);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_PASS"), PHP_HTTP_URL_STRIP_PASS);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_AUTH"), PHP_HTTP_URL_STRIP_AUTH);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_PORT"), PHP_HTTP_URL_STRIP_PORT);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_PATH"), PHP_HTTP_URL_STRIP_PATH);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_QUERY"), PHP_HTTP_URL_STRIP_QUERY);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_FRAGMENT"), PHP_HTTP_URL_STRIP_FRAGMENT);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STRIP_ALL"), PHP_HTTP_URL_STRIP_ALL);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("FROM_ENV"), PHP_HTTP_URL_FROM_ENV);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("SANITIZE_PATH"), PHP_HTTP_URL_SANITIZE_PATH);
 
 #ifdef PHP_HTTP_HAVE_WCHAR
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBLOC"), PHP_HTTP_URL_PARSE_MBLOC TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBLOC"), PHP_HTTP_URL_PARSE_MBLOC);
 #endif
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBUTF8"), PHP_HTTP_URL_PARSE_MBUTF8 TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBUTF8"), PHP_HTTP_URL_PARSE_MBUTF8);
 #ifdef PHP_HTTP_HAVE_IDN
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN"), PHP_HTTP_URL_PARSE_TOIDN TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN"), PHP_HTTP_URL_PARSE_TOIDN);
 #endif
-	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT);
 
 	return SUCCESS;
 }
