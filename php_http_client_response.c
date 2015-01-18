@@ -74,7 +74,6 @@ static PHP_METHOD(HttpClientResponse, getCookies)
 			}
 			zend_string_release(zs);
 		}
-		zval_ptr_dtor(header);
 	}
 
 	if (allowed_extras) {

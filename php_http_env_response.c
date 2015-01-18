@@ -119,6 +119,7 @@ static void set_cookie(zval *options, zval *zcookie_new TSRMLS_DC)
 		}
 		array_init_size(zcookies_set, zend_hash_num_elements(&obj->list->cookies));
 	} else {
+		Z_ADDREF_P(zcookies_set);
 		SEPARATE_ZVAL(zcookies_set);
 	}
 
@@ -465,7 +466,6 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 				zval *tmp = zoption;
 				SEPARATE_ZVAL(tmp);
 				convert_to_array(tmp);
-				zval_ptr_dtor(zoption);
 				zoption = tmp;
 			}
 

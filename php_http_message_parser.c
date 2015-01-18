@@ -250,13 +250,16 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				zval h, *h_loc = NULL, *h_con = NULL, *h_cl, *h_cr, *h_te, *h_ce;
 
 				if ((h_te = php_http_message_header(*message, ZEND_STRL("Transfer-Encoding")))) {
+					Z_TRY_ADDREF_P(h_te);
 					zend_hash_str_update(&(*message)->hdrs, "X-Original-Transfer-Encoding", lenof("X-Original-Transfer-Encoding"), h_te);
 					zend_hash_str_del(&(*message)->hdrs, "Transfer-Encoding", lenof("Transfer-Encoding"));
 				}
 				if ((h_cl = php_http_message_header(*message, ZEND_STRL("Content-Length")))) {
+					Z_TRY_ADDREF_P(h_cl);
 					zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Length", lenof("X-Original-Content-Length"), h_cl);
 				}
 				if ((h_cr = php_http_message_header(*message, ZEND_STRL("Content-Range")))) {
+					Z_TRY_ADDREF_P(h_cr);
 					zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Range", sizeof("X-Original-Content-Range"), h_cr);
 					zend_hash_str_del(&(*message)->hdrs, "Content-Range", lenof("Content-Range"));
 				}
@@ -298,10 +301,9 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						} else {
 							parser->inflate = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), 0);
 						}
+						Z_TRY_ADDREF_P(h_ce);
 						zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Encoding", lenof("X-Original-Content-Encoding"), h_ce);
 						zend_hash_str_del(&(*message)->hdrs, "Content-Encoding", lenof("Content-Encoding"));
-					} else {
-						zval_ptr_dtor(h_ce);
 					}
 				}
 

@@ -98,7 +98,7 @@ static PHP_METHOD(HttpClientRequest, getContentType)
 		php_http_message_update_headers(obj->message);
 		zct = php_http_message_header(obj->message, ZEND_STRL("Content-Type"));
 		if (zct) {
-			RETURN_ZVAL(zct, 0, 1);
+			RETURN_ZVAL_FAST(zct);
 		}
 	}
 }
