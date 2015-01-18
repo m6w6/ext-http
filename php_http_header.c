@@ -72,12 +72,12 @@ void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pa
 					}
 				}
 				ZEND_HASH_FOREACH_END();
-			}
-		} else {
-			zend_string *zs = php_http_header_value_to_string(header);
+			} else {
+				zend_string *zs = php_http_header_value_to_string(header);
 
-			cb(cb_arg, crlf ? "%s: %s" PHP_HTTP_CRLF : "%s: %s", key.key->val, zs->val);
-			zend_string_release(zs);
+				cb(cb_arg, crlf ? "%s: %s" PHP_HTTP_CRLF : "%s: %s", key.key->val, zs->val);
+				zend_string_release(zs);
+			}
 		}
 	}
 	ZEND_HASH_FOREACH_END();
