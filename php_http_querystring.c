@@ -39,6 +39,7 @@ static inline void php_http_querystring_set(zval *instance, zval *params, int fl
 
 	php_http_querystring_update(&qa, params, NULL);
 	zend_update_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), &qa);
+	zval_ptr_dtor(&qa);
 }
 
 static inline void php_http_querystring_str(zval *instance, zval *return_value)
@@ -185,8 +186,6 @@ ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size
 		} while (*asi_str);
 
 		opts.param = php_http_params_separator_init(&arr);
-
-		zval_ptr_dtor(&arr);
 	}
 
 	ZVAL_NULL(&opts.defval);
