@@ -243,6 +243,7 @@ PHP_METHOD(HttpHeader, negotiate)
 		return;
 	}
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}

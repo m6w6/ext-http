@@ -1771,6 +1771,7 @@ static PHP_METHOD(HttpMessage, isMultipart)
 		}
 
 		if (zboundary && boundary) {
+			ZVAL_DEREF(zboundary);
 			zval_dtor(zboundary);
 			ZVAL_STR(zboundary, php_http_cs2zs(boundary, strlen(boundary)));
 		}

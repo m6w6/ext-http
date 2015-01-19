@@ -92,6 +92,7 @@ static int php_http_negotiate_reduce(zval *p, int num_args, va_list args, zend_h
 	ZEND_HASH_FOREACH_END();
 
 	if (q && Z_DVAL_P(q) > 0) {
+		Z_TRY_ADDREF_P(q);
 		zend_hash_update(result, supported, q);
 	}
 

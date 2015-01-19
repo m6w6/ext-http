@@ -813,6 +813,7 @@ static PHP_METHOD(HttpEnv, negotiateLanguage)
 		return;
 	}
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}
@@ -833,6 +834,7 @@ static PHP_METHOD(HttpEnv, negotiateCharset)
 		return;
 	}
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}
@@ -852,6 +854,7 @@ static PHP_METHOD(HttpEnv, negotiateEncoding)
 		return;
 	}
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}
@@ -871,6 +874,7 @@ static PHP_METHOD(HttpEnv, negotiateContentType)
 		return;
 	}
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}
@@ -894,8 +898,8 @@ static PHP_METHOD(HttpEnv, negotiate)
 		return;
 	}
 
-
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}

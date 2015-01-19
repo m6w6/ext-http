@@ -578,7 +578,9 @@ static PHP_METHOD(HttpMessageParser, parse)
 	php_http_buffer_append(&parser_obj->buffer, data_str, data_len);
 	RETVAL_LONG(php_http_message_parser_parse(parser_obj->parser, &parser_obj->buffer, flags, &parser_obj->parser->message));
 
+	ZVAL_DEREF(zmsg);
 	zval_dtor(zmsg);
+	ZVAL_NULL(zmsg);
 	if (parser_obj->parser->message) {
 		php_http_message_t *msg_cpy = php_http_message_copy(parser_obj->parser->message, NULL);
 		php_http_message_object_t *msg_obj = php_http_message_object_new_ex(php_http_message_class_entry, msg_cpy);
@@ -608,7 +610,9 @@ static PHP_METHOD(HttpMessageParser, stream)
 	parser_obj = PHP_HTTP_OBJ(NULL, getThis());
 	RETVAL_LONG(php_http_message_parser_parse_stream(parser_obj->parser, &parser_obj->buffer, s, flags, &parser_obj->parser->message));
 
+	ZVAL_DEREF(zmsg);
 	zval_dtor(zmsg);
+	ZVAL_NULL(zmsg);
 	if (parser_obj->parser->message) {
 		php_http_message_t *msg_cpy = php_http_message_copy(parser_obj->parser->message, NULL);
 		php_http_message_object_t *msg_obj = php_http_message_object_new_ex(php_http_message_class_entry, msg_cpy);

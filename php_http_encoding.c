@@ -1146,6 +1146,7 @@ static PHP_METHOD(HttpDechunkStream, decode)
 
 		if ((end_ptr = php_http_encoding_dechunk(str, len, &enc_str, &enc_len))) {
 			if (zlen) {
+				ZVAL_DEREF(zlen);
 				zval_dtor(zlen);
 				ZVAL_LONG(zlen, str + len - end_ptr);
 			}
