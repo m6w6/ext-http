@@ -61,9 +61,11 @@ static inline void php_http_querystring_get(zval *instance, int type, char *name
 	ZVAL_DEREF(qarray);
 	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (arrval = zend_symtable_str_find(Z_ARRVAL_P(qarray), name, name_len))) {
 		if (type && type != Z_TYPE_P(arrval)) {
-			SEPARATE_ZVAL(arrval);
-			convert_to_explicit_type(arrval, type);
-			RETVAL_ZVAL(arrval, 1, 1);
+			zval tmp;
+
+			ZVAL_DUP(&tmp, arrval);
+			convert_to_explicit_type(&tmp, type);
+			RETVAL_ZVAL(&tmp, 0, 0);
 		} else {
 			RETVAL_ZVAL_FAST(arrval);
 		}
@@ -186,6 +188,7 @@ ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size
 		} while (*asi_str);
 
 		opts.param = php_http_params_separator_init(&arr);
+		zval_ptr_dtor(&arr);
 	}
 
 	ZVAL_NULL(&opts.defval);
@@ -256,12 +259,12 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 					/*
 					 * update
 					 */
-					zval equal, *entry = NULL;
+					zval equal, tmp, *entry = &tmp;
 
+					ZVAL_UNDEF(&tmp);
 					/* recursive */
 					if (Z_TYPE_P(params_entry) == IS_ARRAY || Z_TYPE_P(params_entry) == IS_OBJECT) {
-						entry = qarray_entry;
-						SEPARATE_ZVAL(entry);
+						ZVAL_DUP(entry, qarray_entry);
 						convert_to_array(entry);
 						php_http_querystring_update(entry, params_entry, NULL);
 					} else if ((FAILURE == is_equal_function(&equal, qarray_entry, params_entry)) || Z_TYPE(equal) != IS_TRUE) {
@@ -337,7 +340,7 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_getGlobalInstance, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, getGlobalInstance)
 {
-	zval *instance;
+	zval *instance, *_GET;
 	zend_string *zs;
 
 	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
@@ -346,25 +349,19 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 	instance = zend_std_get_static_property(php_http_querystring_class_entry, zs, 0);
 	zend_string_release(zs);
 
-	if (Z_TYPE_P(instance) != IS_OBJECT) {
-		zval *_GET = NULL;
+	if (Z_TYPE_P(instance) == IS_OBJECT) {
+		RETVAL_ZVAL_FAST(instance);
+	} else if ((_GET = php_http_env_get_superglobal(ZEND_STRL("_GET")))) {
+		ZVAL_OBJ(return_value, php_http_querystring_object_new(php_http_querystring_class_entry));
 
-		if ((_GET = php_http_env_get_superglobal(ZEND_STRL("_GET")))) {
-			zval new_instance;
+		ZVAL_MAKE_REF(_GET);
+		zend_update_property(php_http_querystring_class_entry, return_value, ZEND_STRL("queryArray"), _GET);
 
-			ZVAL_OBJ(&new_instance, php_http_querystring_object_new(php_http_querystring_class_entry));
-
-			ZVAL_MAKE_REF(_GET);
-			zend_update_property(php_http_querystring_class_entry, &new_instance, ZEND_STRL("queryArray"), _GET);
-
-			zend_update_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), instance);
-			instance = &new_instance;
-		} else {
-			php_http_throw(unexpected_val, "Could not acquire reference to superglobal GET array", NULL);
-		}
+		zend_update_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), return_value);
+	} else {
+		php_http_throw(unexpected_val, "Could not acquire reference to superglobal GET array", NULL);
 	}
 
-	RETVAL_ZVAL_FAST(instance);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_getIterator, 0, 0, 0)
@@ -479,6 +476,8 @@ PHP_METHOD(HttpQueryString, mod)
 	
 	zend_replace_error_handling(EH_THROW, php_http_exception_bad_querystring_class_entry, &zeh);
 	ZVAL_OBJ(return_value, Z_OBJ_HT_P(instance)->clone_obj(instance));
+	/* make sure we do not inherit the reference to _GET */
+	SEPARATE_ZVAL(zend_read_property(Z_OBJCE_P(return_value), return_value, ZEND_STRL("queryArray"), 0));
 	php_http_querystring_set(return_value, params, QS_MERGE);
 	zend_restore_error_handling(&zeh);
 }
