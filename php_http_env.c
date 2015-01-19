@@ -37,12 +37,10 @@ PHP_RINIT_FUNCTION(http_env)
 				sapi_post_entry *post_entry = NULL;
 
 				if ((post_entry = zend_hash_find_ptr(&SG(known_post_content_types), key_str))) {
-					if (post_entry) {
-						SG(request_info).post_entry = post_entry;
+					SG(request_info).post_entry = post_entry;
 
-						if (post_entry->post_reader) {
-							post_entry->post_reader();
-						}
+					if (post_entry->post_reader) {
+						post_entry->post_reader();
 					}
 
 					if (sapi_module.default_post_reader) {
@@ -53,9 +51,12 @@ PHP_RINIT_FUNCTION(http_env)
 
 					/*
 					 * the rfc1867 handler is an awkward buddy
+					 * FIXME: this leaks because php_auto_globals_create_files()
+					 * as well as the rfc1867_handler call
+					 * array_init(&PG(http_globals)[TRACK_VARS_FILES])
 					 */
 					Z_TRY_ADDREF(PG(http_globals)[TRACK_VARS_FILES]);
-					zend_hash_str_update(&EG(symbol_table).ht, "_FILES", sizeof("_FILES"), &PG(http_globals)[TRACK_VARS_FILES]);
+					zend_hash_str_update(&EG(symbol_table).ht, "_FILES", lenof("_FILES"), &PG(http_globals)[TRACK_VARS_FILES]);
 				}
 			}
 			zend_hash_destroy(&params);
