@@ -256,7 +256,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				}
 				if ((h_cl = php_http_message_header(*message, ZEND_STRL("Content-Length")))) {
 					Z_TRY_ADDREF_P(h_cl);
-					zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Length", lenof("X-Original-Content-Length"), h_cl);
+					h_cl = zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Length", lenof("X-Original-Content-Length"), h_cl);
 				}
 				if ((h_cr = php_http_message_header(*message, ZEND_STRL("Content-Range")))) {
 					Z_TRY_ADDREF_P(h_cr);

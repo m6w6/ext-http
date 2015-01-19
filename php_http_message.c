@@ -20,7 +20,7 @@ zend_bool php_http_message_info_callback(php_http_message_t **message, HashTable
 
 	/* advance message */
 	if (!old || old->type || zend_hash_num_elements(&old->hdrs)) {
-		(*message) = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
+		(*message) = php_http_message_init(NULL, 0, NULL);
 		(*message)->parent = old;
 		if (headers) {
 			(*headers) = &((*message)->hdrs);

@@ -94,8 +94,11 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 {
 	while (buffer->used || !php_http_header_parser_states[php_http_header_parser_state_is(parser)].need_data) {
 #if 0
-		const char *state[] = {"START", "KEY", "VALUE", "HEADER_DONE", "DONE"};
-		fprintf(stderr, "#HP: %s (avail:%zu, num:%d)\n", php_http_header_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_header_parser_state_is(parser)], buffer->used, headers?zend_hash_num_elements(headers):0);
+		const char *state[] = {"START", "KEY", "VALUE", "VALUE_EX", "HEADER_DONE", "DONE"};
+		int num_headers = headers ? zend_hash_num_elements(headers) : 0;
+		fprintf(stderr, "#HP: (%d) %s (avail:%zu, num:%d)\n", php_http_header_parser_state_is(parser),
+				php_http_header_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_header_parser_state_is(parser)],
+						buffer->used, num_headers);
 		_dpf(0, buffer->data, buffer->used);
 #endif
 		switch (php_http_header_parser_state_pop(parser)) {
