@@ -27,10 +27,10 @@ static int php_http_negotiate_sort(const void *first, const void *second TSRMLS_
 #define M_SEC 2
 #define M_ANY 1
 #define M_NOT 0
-#define M_ALL -1
+#define M_ALL ~0
 static inline unsigned php_http_negotiate_match(const char *param_str, size_t param_len, const char *supported_str, size_t supported_len, const char *sep_str, size_t sep_len)
 {
-	int match = M_NOT;
+	unsigned match = M_NOT;
 
 	if (param_len == supported_len && !strncasecmp(param_str, supported_str, param_len)) {
 		/* that was easy */
@@ -130,6 +130,10 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 			} else {
 				q = 1.0 - ++i / 100.0;
 			}
+
+#if 0
+			fprintf(stderr, "Q: %s=%1.3f\n", key.key->val, q);
+#endif
 
 			if (key.key) {
 				add_assoc_double_ex(&arr, key.key->val, key.key->len, q);

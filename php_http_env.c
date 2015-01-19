@@ -137,7 +137,7 @@ char *php_http_env_get_request_header(const char *name_str, size_t name_len, siz
 		request_headers = PHP_HTTP_G->env.request.headers;
 	}
 
-	if ((zvalue == zend_symtable_str_find(request_headers, key, name_len))) {
+	if ((zvalue = zend_symtable_str_find(request_headers, key, name_len))) {
 		zend_string *zs = zval_get_string(zvalue);
 
 		val = estrndup(zs->val, zs->len);

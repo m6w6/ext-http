@@ -122,7 +122,7 @@ CUSTOM
 a.b: Array
 (
     [a.b] => 0.9
-    [c.e] => 0.1
     [a.x] => 0.1
+    [c.e] => 0.1
 )
 DONE
