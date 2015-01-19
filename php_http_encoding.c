@@ -1179,6 +1179,7 @@ PHP_MINIT_FUNCTION(http_encoding)
 	php_http_encoding_stream_class_entry->ce_flags |= ZEND_ACC_EXPLICIT_ABSTRACT_CLASS;
 	php_http_encoding_stream_class_entry->create_object = php_http_encoding_stream_object_new;
 	memcpy(&php_http_encoding_stream_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	php_http_encoding_stream_object_handlers.offset = XtOffsetOf(php_http_encoding_stream_object_t, zo);
 	php_http_encoding_stream_object_handlers.clone_obj = php_http_encoding_stream_object_clone;
 	php_http_encoding_stream_object_handlers.free_obj = php_http_encoding_stream_object_free;
 
@@ -1189,6 +1190,7 @@ PHP_MINIT_FUNCTION(http_encoding)
 	memset(&ce, 0, sizeof(ce));
 	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Deflate", php_http_deflate_stream_methods);
 	php_http_deflate_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry);
+	php_http_deflate_stream_class_entry->create_object = php_http_encoding_stream_object_new;
 
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_GZIP"), PHP_HTTP_DEFLATE_TYPE_GZIP);
 	zend_declare_class_constant_long(php_http_deflate_stream_class_entry, ZEND_STRL("TYPE_ZLIB"), PHP_HTTP_DEFLATE_TYPE_ZLIB);
@@ -1205,10 +1207,12 @@ PHP_MINIT_FUNCTION(http_encoding)
 	memset(&ce, 0, sizeof(ce));
 	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Inflate", php_http_inflate_stream_methods);
 	php_http_inflate_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry);
+	php_http_inflate_stream_class_entry->create_object = php_http_encoding_stream_object_new;
 
 	memset(&ce, 0, sizeof(ce));
 	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Dechunk", php_http_dechunk_stream_methods);
 	php_http_dechunk_stream_class_entry = zend_register_internal_class_ex(&ce, php_http_encoding_stream_class_entry);
+	php_http_dechunk_stream_class_entry->create_object = php_http_encoding_stream_object_new;
 
 	return SUCCESS;
 }
