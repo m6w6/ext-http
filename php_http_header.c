@@ -291,6 +291,7 @@ PHP_METHOD(HttpHeader, getParams)
 		RETVAL_ZVAL(&zparams_obj, 0, 1);
 	}
 	
+	zval_ptr_dtor(&zctor);
 	if (zargs) {
 		efree(zargs);
 	}
