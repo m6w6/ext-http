@@ -113,27 +113,26 @@ void php_http_cookie_list_add_extra(php_http_cookie_list_t *list, const char *na
 #define _KEY_IS(s) (key->key && key->key->len == sizeof(s)-1 && !strncasecmp(key->key->val, (s), key->key->len))
 static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long flags, zend_hash_key *key, zval *val)
 {
-	zval *arg = val;
+	zval arg;
 
-	Z_TRY_ADDREF_P(arg);
-	SEPARATE_ZVAL(arg);
-	convert_to_string(arg);
+	ZVAL_DUP(&arg, val);
+	convert_to_string(&arg);
 
 	if (!(flags & PHP_HTTP_COOKIE_PARSE_RAW)) {
-		Z_STRLEN_P(arg) = php_raw_url_decode(Z_STRVAL_P(arg), Z_STRLEN_P(arg));
-		zend_string_forget_hash_val(Z_STR_P(arg));
+		Z_STRLEN(arg) = php_raw_url_decode(Z_STRVAL(arg), Z_STRLEN(arg));
+		zend_string_forget_hash_val(Z_STR(arg));
 	}
 
 	if _KEY_IS("path") {
-		PTR_SET(list->path, estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg)));
+		PTR_SET(list->path, estrndup(Z_STRVAL(arg), Z_STRLEN(arg)));
 	} else if _KEY_IS("domain") {
-		PTR_SET(list->domain, estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg)));
+		PTR_SET(list->domain, estrndup(Z_STRVAL(arg), Z_STRLEN(arg)));
 	} else if _KEY_IS("expires") {
-		char *date = estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg));
+		char *date = estrndup(Z_STRVAL(arg), Z_STRLEN(arg));
 		list->expires = php_parse_date(date, NULL);
 		efree(date);
 	} else if _KEY_IS("max-age") {
-		list->max_age = strtol(Z_STRVAL_P(arg), NULL, 10);
+		list->max_age = zval_get_long(val);
 	} else if _KEY_IS("secure") {
 		list->flags |= PHP_HTTP_COOKIE_SECURE;
 	} else if _KEY_IS("httpOnly") {
@@ -148,7 +147,7 @@ static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long 
 			char **ae = allowed_extras;
 			for (; *ae; ++ae) {
 				if (!strncasecmp(*ae, tmp.key->val, tmp.key->len)) {
-					zend_symtable_update(&list->extras, tmp.key, arg);
+					zend_symtable_update(&list->extras, tmp.key, &arg);
 					php_http_arrkey_dtor(&tmp);
 					return;
 				}
@@ -156,13 +155,13 @@ static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long 
 		}
 
 		/* cookie */
-		zend_symtable_update(&list->cookies, key->key, arg);
+		zend_symtable_update(&list->cookies, tmp.key, &arg);
 
 		php_http_arrkey_dtor(&tmp);
 		return;
 	}
 
-	zval_ptr_dtor(arg);
+	zval_ptr_dtor(&arg);
 }
 
 php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_list_t *list, const char *str, size_t len, long flags, char **allowed_extras)
@@ -188,9 +187,11 @@ php_http_cookie_list_t *php_http_cookie_list_parse(php_http_cookie_list_t *list,
 				add_entry(list, NULL, flags, &k, val);
 			}
 			if ((args = zend_hash_str_find(Z_ARRVAL_P(param), ZEND_STRL("arguments"))) && Z_TYPE_P(args) == IS_ARRAY) {
-				ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(args), arg_k.h, arg_k.key, arg) {
+				ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(args), arg_k.h, arg_k.key, arg)
+				{
 					add_entry(list, allowed_extras, flags, &arg_k, arg);
-				} ZEND_HASH_FOREACH_END();
+				}
+				ZEND_HASH_FOREACH_END();
 			}
 		}
 	}

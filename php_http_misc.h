@@ -225,7 +225,7 @@ static inline void *php_http_arrkey_stringify(php_http_arrkey_t *arrkey, zend_ha
 	}
 
 	if (key) {
-		memcpy(&arrkey, key, sizeof(*key));
+		memcpy(arrkey, key, sizeof(*key));
 	}
 	if ((arrkey->stringified = !arrkey->key)) {
 		arrkey->key = zend_long_to_str(arrkey->h);
