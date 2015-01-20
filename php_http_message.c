@@ -1434,7 +1434,7 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, setResponseStatus)
 {
 	char *status;
-	int status_len;
+	size_t status_len;
 	php_http_message_object_t *obj;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &status, &status_len), invalid_arg, return);
