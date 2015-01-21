@@ -62,12 +62,14 @@ static void set_option(zval *options, const char *name_str, size_t name_len, int
 }
 static zval *get_option(zval *options, const char *name_str, size_t name_len)
 {
-	zval *val;
+	zval *val = NULL;
 
 	if (Z_TYPE_P(options) == IS_OBJECT) {
 		val = zend_read_property(Z_OBJCE_P(options), options, name_str, name_len, 0);
-	} else {
+	} else if (Z_TYPE_P(options) == IS_ARRAY) {
 		val = zend_symtable_str_find(Z_ARRVAL_P(options), name_str, name_len);
+	} else {
+		abort();
 	}
 	if (val) {
 		Z_TRY_ADDREF_P(val);
@@ -85,7 +87,7 @@ static php_http_message_body_t *get_body(zval *options)
 
 			body = body_obj->body;
 		}
-		zval_ptr_dtor(zbody);
+		Z_TRY_DELREF_P(zbody);
 	}
 
 	return body;
@@ -101,7 +103,7 @@ static php_http_message_t *get_request(zval *options)
 
 			request = request_obj->message;
 		}
-		zval_ptr_dtor(zrequest);
+		Z_TRY_DELREF_P(zrequest);
 	}
 
 	return request;
