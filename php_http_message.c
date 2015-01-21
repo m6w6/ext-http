@@ -859,15 +859,18 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
+	/* supplied retun_value lives on the stack of zend_read_property! */
+	return_value = zend_get_std_object_handlers()->read_property(object, member, type, cache_slot, return_value);
+
 	if ((handler = php_http_message_object_get_prophandler(member_name))) {
+		zval_dtor(return_value);
+
 		if (type == BP_VAR_R) {
 			handler->read(obj, return_value);
 		} else {
 			php_property_proxy_t *proxy = php_property_proxy_init(object, member_name);
 			RETVAL_OBJ(&php_property_proxy_object_new_ex(php_property_proxy_get_class_entry(), proxy)->zo);
 		}
-	} else {
-		zend_get_std_object_handlers()->read_property(object, member, type, cache_slot, return_value);
 	}
 
 	zend_string_release(member_name);
