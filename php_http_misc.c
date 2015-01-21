@@ -226,7 +226,7 @@ int php_http_array_apply_merge_func(zval *value, int num_args, va_list args, zen
 			convert_to_string_ex(value);
 		}
 
-		Z_ADDREF_P(value);
+		Z_TRY_ADDREF_P(value);
 
 		if ((flags & ARRAY_JOIN_PRETTIFY) && hash_key->key) {
 			key = php_http_pretty_key(estrndup(hash_key->key->val, hash_key->key->len), hash_key->key->len, 1, 1);
