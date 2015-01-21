@@ -851,26 +851,26 @@ void php_http_message_object_free(zend_object *object)
 	zend_object_std_dtor(object);
 }
 
-static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *return_value)
+static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *tmp)
 {
-	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
-	php_http_message_object_prophandler_t *handler;
+	zval *return_value;
 	zend_string *member_name = zval_get_string(member);
+	php_http_message_object_prophandler_t *handler = php_http_message_object_get_prophandler(member_name);
 
-	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
+	if (!handler || type == BP_VAR_R || type == BP_VAR_IS) {
+		return_value = zend_get_std_object_handlers()->read_property(object, member, type, cache_slot, tmp);
 
-	/* supplied retun_value lives on the stack of zend_read_property! */
-	return_value = zend_get_std_object_handlers()->read_property(object, member, type, cache_slot, return_value);
+		if (handler) {
+			php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
 
-	if ((handler = php_http_message_object_get_prophandler(member_name))) {
-		zval_dtor(return_value);
+			PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
+			handler->read(obj, tmp);
 
-		if (type == BP_VAR_R) {
-			handler->read(obj, return_value);
-		} else {
-			php_property_proxy_t *proxy = php_property_proxy_init(object, member_name);
-			RETVAL_OBJ(&php_property_proxy_object_new_ex(php_property_proxy_get_class_entry(), proxy)->zo);
+			zval_ptr_dtor(return_value);
+			ZVAL_COPY_VALUE(return_value, tmp);
 		}
+	} else {
+		return_value = php_property_proxy_zval(object, member_name);
 	}
 
 	zend_string_release(member_name);
