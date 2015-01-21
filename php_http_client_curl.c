@@ -843,7 +843,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_cookiestore(php_http_option_t 
 	if (storage->cookiestore) {
 		pefree(storage->cookiestore, 1);
 	}
-	if (val && Z_STRLEN_P(val)) {
+	if (val && Z_TYPE_P(val) == IS_STRING && Z_STRLEN_P(val)) {
 		storage->cookiestore = pestrndup(Z_STRVAL_P(val), Z_STRLEN_P(val), 1);
 	} else {
 		storage->cookiestore = NULL;
@@ -956,7 +956,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_etag(php_http_option_t *opt, z
 	php_http_client_curl_handler_t *curl = userdata;
 	php_http_buffer_t header;
 
-	if (Z_STRLEN_P(val)) {
+	if (val && Z_TYPE_P(val) == IS_STRING && Z_STRLEN_P(val)) {
 		zend_bool is_quoted = !((Z_STRVAL_P(val)[0] != '"') || (Z_STRVAL_P(val)[Z_STRLEN_P(val)-1] != '"'));
 		php_http_buffer_init(&header);
 		php_http_buffer_appendf(&header, is_quoted?"%s: %s":"%s: \"%s\"", curl->options.range_request?"If-Match":"If-None-Match", Z_STRVAL_P(val));
@@ -1431,6 +1431,10 @@ static ZEND_RESULT_CODE php_http_curle_set_option(php_http_option_t *opt, zval *
 	case IS_STRING:
 		if (opt->setter) {
 			rv = opt->setter(opt, val, curl);
+		} else if (!val || Z_TYPE_P(val) == IS_NULL) {
+			if (CURLE_OK != (rc = curl_easy_setopt(ch, opt->option, NULL))) {
+				rv = FAILURE;
+			}
 		} else if ((opt->flags & PHP_HTTP_CURLE_OPTION_CHECK_STRLEN) && !Z_STRLEN_P(val)) {
 			if (CURLE_OK != (rc = curl_easy_setopt(ch, opt->option, NULL))) {
 				rv = FAILURE;
