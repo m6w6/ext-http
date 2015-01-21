@@ -20,6 +20,7 @@ echo "bar";
 
 ob_end_flush();
 $r->send();
+?>
 --EXPECTHEADERS--
 Accept-Ranges: bytes
 Cache-Control: public,must-revalidate,max-age=0

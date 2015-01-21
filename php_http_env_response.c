@@ -148,7 +148,7 @@ php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, c
 		return ret;
 	}
 
-	if ((zetag = get_option(options, ZEND_STRL("etag")))) {
+	if ((zetag = get_option(options, ZEND_STRL("etag"))) && Z_TYPE_P(zetag) != IS_NULL) {
 		zend_string *zs = zval_get_string(zetag);
 		etag = estrndup(zs->val, zs->len);
 		zend_string_release(zs);
@@ -458,23 +458,19 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		}
 
 		if ((zoption = get_option(options, ZEND_STRL("contentDisposition")))) {
-			php_http_buffer_t buf;
 
-			if (Z_TYPE_P(zoption) != IS_ARRAY) {
-				zval *tmp = zoption;
-				SEPARATE_ZVAL(tmp);
-				convert_to_array(tmp);
-				zoption = tmp;
-			}
+			if (Z_TYPE_P(zoption) == IS_ARRAY) {
+				php_http_buffer_t buf;
 
-			php_http_buffer_init(&buf);
-			if (php_http_params_to_string(&buf, Z_ARRVAL_P(zoption), ZEND_STRL(","), ZEND_STRL(";"), ZEND_STRL("="), PHP_HTTP_PARAMS_DEFAULT)) {
-				if (buf.used) {
-					ret = r->ops->set_header(r, "Content-Disposition: %.*s", buf.used, buf.data);
+				php_http_buffer_init(&buf);
+				if (php_http_params_to_string(&buf, Z_ARRVAL_P(zoption), ZEND_STRL(","), ZEND_STRL(";"), ZEND_STRL("="), PHP_HTTP_PARAMS_DEFAULT)) {
+					if (buf.used) {
+						ret = r->ops->set_header(r, "Content-Disposition: %.*s", buf.used, buf.data);
+					}
 				}
-			}
 
-			php_http_buffer_dtor(&buf);
+				php_http_buffer_dtor(&buf);
+			}
 			zval_ptr_dtor(zoption);
 		}
 
@@ -934,6 +930,8 @@ static ZEND_RESULT_CODE php_http_env_response_stream_set_header_ex(php_http_env_
 	char *header_end, *header_str = NULL;
 	size_t header_len = 0;
 	zval zheader, *zheader_ptr;
+	zend_string *header_key;
+	ZEND_RESULT_CODE rv;
 
 	if (stream_ctx->started || stream_ctx->finished) {
 		return FAILURE;
@@ -946,22 +944,21 @@ static ZEND_RESULT_CODE php_http_env_response_stream_set_header_ex(php_http_env_
 		return FAILURE;
 	}
 
-	*header_end = '\0';
+	header_key = zend_string_init(header_str, header_end - header_str, 0);
 
-	if (!replace && (zheader_ptr = zend_hash_str_find(&stream_ctx->header, header_str, header_end - header_str))) {
+	if (!replace && (zheader_ptr = zend_hash_find(&stream_ctx->header, header_key))) {
 		convert_to_array(zheader_ptr);
-		*header_end = ':';
-		return add_next_index_str(zheader_ptr, php_http_cs2zs(header_str, header_len));
+		rv = add_next_index_str(zheader_ptr, php_http_cs2zs(header_str, header_len));
 	} else {
 		ZVAL_STR(&zheader, php_http_cs2zs(header_str, header_len));
 
-		if (SUCCESS != zend_hash_str_update(&stream_ctx->header, header_str, header_end - header_str, &zheader)) {
-			return FAILURE;
-		}
-
-		*header_end = ':';
-		return SUCCESS;
+		rv = zend_hash_update(&stream_ctx->header, header_key, &zheader)
+			? SUCCESS : FAILURE;
 	}
+
+	zend_string_release(header_key);
+
+	return rv;
 }
 static ZEND_RESULT_CODE php_http_env_response_stream_set_header(php_http_env_response_t *r, const char *fmt, ...)
 {
@@ -1282,6 +1279,7 @@ static PHP_METHOD(HttpEnvResponse, setCookie)
 	default:
 		zs = zval_get_string(zcookie_new);
 		list = php_http_cookie_list_parse(NULL, zs->val, zs->len, 0, NULL);
+		zend_string_release(zs);
 		zcookie_new = &tmp;
 		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo, 1);
 	}

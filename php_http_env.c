@@ -415,6 +415,9 @@ static void grab_header(void *data, void *arg)
 	&& !strncmp(header->header, args->name_str, args->name_len)
 	) {
 		args->value_ptr = &header->header[args->name_len + 1];
+		while (PHP_HTTP_IS_CTYPE(space, *args->value_ptr)) {
+			++args->value_ptr;
+		}
 	}
 }
 
@@ -777,15 +780,15 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, setResponseHeader)
 {
 	char *header_name_str;
-	int header_name_len;
+	size_t header_name_len;
 	zval *header_value = NULL;
-	long code = 0;
+	zend_long code = 0;
 	zend_bool replace_header = 1;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "s|z!lb", &header_name_str, &header_name_len, &header_value, &code, &replace_header)) {
 		return;
 	}
-	RETURN_BOOL(SUCCESS == php_http_env_set_response_header_value(code, header_name_str, header_name_len, header_value, replace_header TSRMLS_CC));
+	RETURN_BOOL(SUCCESS == php_http_env_set_response_header_value(code, header_name_str, header_name_len, header_value, replace_header));
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_setResponseCode, 0, 0, 1)
