@@ -108,36 +108,32 @@ static php_http_message_t *get_request(zval *options)
 
 	return request;
 }
-static void set_cookie(zval *options, zval *zcookie_new TSRMLS_DC)
+static void set_cookie(zval *options, zval *zcookie_new)
 {
-	zval *zcookies_set;
+	zval tmp, *zcookies_set;
 	php_http_arrkey_t key;
 	php_http_cookie_object_t *obj = PHP_HTTP_OBJ(NULL, zcookie_new);
 
+	array_init(&tmp);
 	zcookies_set = get_option(options, ZEND_STRL("cookies"));
-	if (!zcookies_set || Z_TYPE_P(zcookies_set) != IS_ARRAY) {
-		if (zcookies_set) {
-			zval_ptr_dtor(zcookies_set);
-		}
-		array_init_size(zcookies_set, zend_hash_num_elements(&obj->list->cookies));
-	} else {
-		Z_ADDREF_P(zcookies_set);
-		SEPARATE_ZVAL(zcookies_set);
+	if (zcookies_set && Z_TYPE_P(zcookies_set) == IS_ARRAY) {
+		array_copy(Z_ARRVAL_P(zcookies_set), Z_ARRVAL(tmp));
+		zval_ptr_dtor(zcookies_set);
 	}
 
 	ZEND_HASH_FOREACH_KEY(&obj->list->cookies, key.h, key.key)
 	{
 		Z_ADDREF_P(zcookie_new);
 		if (key.key) {
-			add_assoc_zval_ex(zcookies_set, key.key->val, key.key->len, zcookie_new);
+			add_assoc_zval_ex(&tmp, key.key->val, key.key->len, zcookie_new);
 		} else {
-			add_index_zval(zcookies_set, key.h, zcookie_new);
+			add_index_zval(&tmp, key.h, zcookie_new);
 		}
 	}
 	ZEND_HASH_FOREACH_END();
 
-	set_option(options, ZEND_STRL("cookies"), IS_ARRAY, zcookies_set, 0);
-	zval_ptr_dtor(zcookies_set);
+	set_option(options, ZEND_STRL("cookies"), IS_ARRAY, &tmp, 0);
+	zval_ptr_dtor(&tmp);
 }
 
 php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len, php_http_message_t *request)
@@ -1280,14 +1276,14 @@ static PHP_METHOD(HttpEnvResponse, setCookie)
 	case IS_ARRAY:
 		list = php_http_cookie_list_from_struct(NULL, zcookie_new);
 		zcookie_new = &tmp;
-		ZVAL_OBJ(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo);
+		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo, 1);
 		break;
 
 	default:
 		zs = zval_get_string(zcookie_new);
 		list = php_http_cookie_list_parse(NULL, zs->val, zs->len, 0, NULL);
 		zcookie_new = &tmp;
-		ZVAL_OBJ(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo);
+		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo, 1);
 	}
 	zend_restore_error_handling(&zeh);
 
