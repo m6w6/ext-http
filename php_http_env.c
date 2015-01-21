@@ -952,13 +952,22 @@ static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
 
 	if (json) {
 		if (json->len) {
-			zval zjson;
+			zval tmp;
 
-			ZVAL_NULL(&zjson);
-			php_json_decode(&zjson, json->val, json->len, 1, PG(max_input_nesting_level));
-			if (Z_TYPE(zjson) != IS_NULL) {
-				zval_dtor(zarg);
-				ZVAL_COPY_VALUE(zarg, (&zjson));
+			ZVAL_NULL(&tmp);
+			php_json_decode(&tmp, json->val, json->len, 1, PG(max_input_nesting_level));
+
+			switch (Z_TYPE(tmp)) {
+			case IS_NULL:
+				break;
+
+			case IS_ARRAY:
+				array_copy(Z_ARRVAL(tmp), Z_ARRVAL_P(zarg));
+				zval_ptr_dtor(&tmp);
+				break;
+
+			default:
+				ZVAL_COPY_VALUE(zarg, &tmp);
 			}
 		}
 		zend_string_release(json);

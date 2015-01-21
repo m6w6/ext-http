@@ -33,15 +33,15 @@ static int grab_file(zval *tmp_name, int argc, va_list argv, zend_hash_key *key)
 
 		array_init(&entry);
 
-		Z_ADDREF_P(tmp_name);
+		Z_TRY_ADDREF_P(tmp_name);
 		add_assoc_zval_ex(&entry, ZEND_STRL("file"), tmp_name);
-		Z_ADDREF_P(zname);
+		Z_TRY_ADDREF_P(zname);
 		add_assoc_zval_ex(&entry, ZEND_STRL("name"), zname);
-		Z_ADDREF_P(zsize);
+		Z_TRY_ADDREF_P(zsize);
 		add_assoc_zval_ex(&entry, ZEND_STRL("size"), zsize);
-		Z_ADDREF_P(ztype);
+		Z_TRY_ADDREF_P(ztype);
 		add_assoc_zval_ex(&entry, ZEND_STRL("type"), ztype);
-		Z_ADDREF_P(zerror);
+		Z_TRY_ADDREF_P(zerror);
 		add_assoc_zval_ex(&entry, ZEND_STRL("error"), zerror);
 
 		if (file_key->key && (array = zend_hash_find(Z_ARRVAL_P(zfiles), file_key->key))) {
@@ -64,7 +64,7 @@ static int grab_file(zval *tmp_name, int argc, va_list argv, zend_hash_key *key)
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-static int grab_files(zval *val TSRMLS_DC, int argc, va_list argv, zend_hash_key *key)
+static int grab_files(zval *val, int argc, va_list argv, zend_hash_key *key)
 {
 	zval *zfiles, *name, *tmp_name, *error, *type, *size;
 
@@ -91,18 +91,18 @@ static int grab_files(zval *val TSRMLS_DC, int argc, va_list argv, zend_hash_key
 				return ZEND_HASH_APPLY_STOP;
 			}
 		} else  {
-			zval *tmp;
+			zval *tmp, entry;
 
-			SEPARATE_ZVAL(val);
+			ZVAL_DUP(&entry, val);
 			if ((tmp = zend_hash_str_find(Z_ARRVAL_P(val), ZEND_STRL("tmp_name")))) {
 				Z_ADDREF_P(tmp);
-				add_assoc_zval_ex(val, ZEND_STRL("file"), tmp);
-				zend_hash_str_del(Z_ARRVAL_P(val), ZEND_STRL("tmp_name"));
+				add_assoc_zval_ex(&entry, ZEND_STRL("file"), tmp);
+				zend_hash_str_del(Z_ARRVAL(entry), ZEND_STRL("tmp_name"));
 			}
 			if (key->key) {
-				zend_hash_update(Z_ARRVAL_P(zfiles), key->key, val);
+				zend_hash_update(Z_ARRVAL_P(zfiles), key->key, &entry);
 			} else {
-				zend_hash_index_update(Z_ARRVAL_P(zfiles), key->h, val);
+				zend_hash_index_update(Z_ARRVAL_P(zfiles), key->h, &entry);
 			}
 		}
 	}
