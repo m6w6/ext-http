@@ -163,6 +163,7 @@ unsigned php_http_array_list(HashTable *ht, unsigned argc, ...)
 
 void php_http_array_copy_strings(zval *zp)
 {
+	Z_TRY_ADDREF_P(zp);
 	convert_to_string_ex(zp);
 }
 
