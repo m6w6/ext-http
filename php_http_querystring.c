@@ -241,7 +241,7 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 			ht = Z_ARRVAL(zv);
 		}
 
-		ZEND_HASH_FOREACH_KEY_VAL(ht, key.h, key.key, params_entry)
+		ZEND_HASH_FOREACH_KEY_VAL_IND(ht, key.h, key.key, params_entry)
 		{
 			/* only public properties */
 			if (!key.key || *key.key->val) {

@@ -235,16 +235,16 @@ php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_cookie_list_t 
 	ht = HASH_OF(strct);
 	list = php_http_cookie_list_init(list);
 
-	if ((tmp = zend_hash_str_find(ht, ZEND_STRL("cookies"))) && Z_TYPE_P(tmp) == IS_ARRAY){
+	if ((tmp = zend_hash_str_find_ind(ht, ZEND_STRL("cookies"))) && Z_TYPE_P(tmp) == IS_ARRAY){
 		array_copy(Z_ARRVAL_P(tmp), &list->cookies);
 	}
-	if ((tmp = zend_hash_str_find(ht, ZEND_STRL("extras"))) && Z_TYPE_P(tmp) == IS_ARRAY){
+	if ((tmp = zend_hash_str_find_ind(ht, ZEND_STRL("extras"))) && Z_TYPE_P(tmp) == IS_ARRAY){
 		array_copy(Z_ARRVAL_P(tmp), &list->extras);
 	}
-	if ((tmp = zend_hash_str_find(ht, ZEND_STRL("flags")))) {
+	if ((tmp = zend_hash_str_find_ind(ht, ZEND_STRL("flags")))) {
 		list->flags = zval_get_long(tmp);
 	}
-	if ((tmp = zend_hash_str_find(ht, ZEND_STRL("expires")))) {
+	if ((tmp = zend_hash_str_find_ind(ht, ZEND_STRL("expires")))) {
 		if (Z_TYPE_P(tmp) == IS_LONG) {
 			list->expires = Z_LVAL_P(tmp);
 		} else {
@@ -260,7 +260,7 @@ php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_cookie_list_t 
 			zend_string_release(lstr);
 		}
 	}
-	if ((tmp = zend_hash_str_find(ht, ZEND_STRL("max-age")))) {
+	if ((tmp = zend_hash_str_find_ind(ht, ZEND_STRL("max-age")))) {
 		if (Z_TYPE_P(tmp) == IS_LONG) {
 			list->max_age = Z_LVAL_P(tmp);
 		} else {
@@ -274,13 +274,13 @@ php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_cookie_list_t 
 			zend_string_release(lstr);
 		}
 	}
-	if ((tmp = zend_hash_str_find(ht, ZEND_STRL("path")))) {
+	if ((tmp = zend_hash_str_find_ind(ht, ZEND_STRL("path")))) {
 		zend_string *str = zval_get_string(tmp);
 
 		list->path = estrndup(str->val, str->len);
 		zend_string_release(str);
 	}
-	if ((tmp = zend_hash_str_find(ht, ZEND_STRL("domain")))) {
+	if ((tmp = zend_hash_str_find_ind(ht, ZEND_STRL("domain")))) {
 		zend_string *str = zval_get_string(tmp);
 
 		list->domain = estrndup(str->val, str->len);

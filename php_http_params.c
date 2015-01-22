@@ -176,7 +176,7 @@ static void prepare_dimension(php_http_buffer_t *buf, php_http_buffer_t *keybuf,
 		php_http_buffer_init(&prefix);
 		php_http_buffer_append(&prefix, keybuf->data, keybuf->used);
 
-		ZEND_HASH_FOREACH_KEY_VAL(ht, key.h, key.key, val)
+		ZEND_HASH_FOREACH_KEY_VAL_IND(ht, key.h, key.key, val)
 		{
 			if (key.key && !*key.key->val) {
 				/* only public properties */
@@ -724,6 +724,9 @@ static inline void shift_rfc5987(php_http_buffer_t *buf, zval *zvalue, const cha
 				(int) (key.key->len > INT_MAX ? INT_MAX : key.key->len), key.key->val);
 		php_http_arrkey_dtor(&key);
 
+		if (Z_TYPE_P(zdata) == IS_INDIRECT) {
+			zdata = Z_INDIRECT_P(zdata);
+		}
 		zs = zval_get_string(zdata);
 		ZVAL_STR(&tmp, zs);
 		prepare_value(flags | PHP_HTTP_PARAMS_URLENCODED, &tmp);
@@ -770,7 +773,7 @@ static void shift_arg(php_http_buffer_t *buf, char *key_str, size_t key_len, zva
 		if (!rfc5987) {
 			shift_key(buf, key_str, key_len, ass, asl, flags);
 		}
-		ZEND_HASH_FOREACH_KEY_VAL(ht, key.h, key.key, val)
+		ZEND_HASH_FOREACH_KEY_VAL_IND(ht, key.h, key.key, val)
 		{
 			/* did you mean recursion? */
 			php_http_arrkey_stringify(&key, NULL);

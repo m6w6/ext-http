@@ -384,7 +384,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		switch (Z_TYPE_P(params)) {
 		case IS_ARRAY:
 		case IS_OBJECT:
-			if (!(tmp = zend_hash_str_find(HASH_OF(params), ZEND_STRL("flags")))) {
+			if (!(tmp = zend_hash_str_find_ind(HASH_OF(params), ZEND_STRL("flags")))) {
 				break;
 			}
 			/* no break */

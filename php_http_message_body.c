@@ -340,7 +340,7 @@ static ZEND_RESULT_CODE add_recursive_fields(php_http_message_body_t *body, cons
 
 	if (!ZEND_HASH_GET_APPLY_COUNT(fields)) {
 		ZEND_HASH_INC_APPLY_COUNT(fields);
-		ZEND_HASH_FOREACH_KEY_VAL(fields, key.h, key.key, val)
+		ZEND_HASH_FOREACH_KEY_VAL_IND(fields, key.h, key.key, val)
 		{
 			char *str = format_key(&key, name);
 
@@ -378,7 +378,7 @@ static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const
 
 		if (!ZEND_HASH_GET_APPLY_COUNT(files)) {
 			ZEND_HASH_INC_APPLY_COUNT(files);
-			ZEND_HASH_FOREACH_KEY_VAL(files, key.h, key.key, val)
+			ZEND_HASH_FOREACH_KEY_VAL_IND(files, key.h, key.key, val)
 			{
 				if (Z_TYPE_P(val) == IS_ARRAY || Z_TYPE_P(val) == IS_OBJECT) {
 					char *str = format_key(&key, name);

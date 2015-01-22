@@ -530,7 +530,7 @@ ZEND_RESULT_CODE php_http_env_set_response_header_value(long http_code, const ch
 		zval *data_ptr;
 		HashTable *ht = HASH_OF(value);
 
-		ZEND_HASH_FOREACH_VAL(ht, data_ptr)
+		ZEND_HASH_FOREACH_VAL_IND(ht, data_ptr)
 		{
 			if (SUCCESS != php_http_env_set_response_header_value(http_code, name_str, name_len, data_ptr, first)) {
 				return FAILURE;

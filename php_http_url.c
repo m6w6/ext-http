@@ -396,46 +396,46 @@ php_http_url_t *php_http_url_from_struct(HashTable *ht)
 	php_http_buffer_account(&buf, sizeof(php_http_url_t));
 	memset(buf.data, 0, buf.used);
 
-	if ((e = zend_hash_str_find(ht, ZEND_STRL("scheme")))) {
+	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("scheme")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->scheme = &buf.data[buf.used];
 		php_http_buffer_append(&buf, zs->val, zs->len + 1);
 		zend_string_release(zs);
 	}
-	if ((e = zend_hash_str_find(ht, ZEND_STRL("user")))) {
+	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("user")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->user = &buf.data[buf.used];
 		php_http_buffer_append(&buf, zs->val, zs->len + 1);
 		zend_string_release(zs);
 	}
-	if ((e = zend_hash_str_find(ht, ZEND_STRL("pass")))) {
+	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("pass")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->pass = &buf.data[buf.used];
 		php_http_buffer_append(&buf, zs->val, zs->len + 1);
 		zend_string_release(zs);
 	}
-	if ((e = zend_hash_str_find(ht, ZEND_STRL("host")))) {
+	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("host")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->host = &buf.data[buf.used];
 		php_http_buffer_append(&buf, zs->val, zs->len + 1);
 		zend_string_release(zs);
 	}
-	if ((e = zend_hash_str_find(ht, ZEND_STRL("port")))) {
+	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("port")))) {
 		url(buf)->port = (unsigned short) zval_get_long(e);
 	}
-	if ((e = zend_hash_str_find(ht, ZEND_STRL("path")))) {
+	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("path")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->path = &buf.data[buf.used];
 		php_http_buffer_append(&buf, zs->val, zs->len + 1);
 		zend_string_release(zs);
 	}
-	if ((e = zend_hash_str_find(ht, ZEND_STRL("query")))) {
+	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("query")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->query = &buf.data[buf.used];
 		php_http_buffer_append(&buf, zs->val, zs->len + 1);
 		zend_string_release(zs);
 	}
-	if ((e = zend_hash_str_find(ht, ZEND_STRL("fragment")))) {
+	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("fragment")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->fragment = &buf.data[buf.used];
 		php_http_buffer_append(&buf, zs->val, zs->len + 1);
