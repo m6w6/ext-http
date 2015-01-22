@@ -688,7 +688,7 @@ void php_http_message_object_reverse(zval *zmsg, zval *return_value)
 
 		/* add ref, because we previously have not been a parent message */
 		Z_ADDREF_P(zmsg);
-		RETVAL_OBJ(&objects[last]->zo);
+		RETVAL_OBJECT(&objects[last]->zo, 1);
 
 		efree(objects);
 	} else {
@@ -806,6 +806,8 @@ php_http_message_object_t *php_http_message_object_new_ex(zend_class_entry *ce, 
 		o->message = msg;
 		if (msg->parent) {
 			o->parent = php_http_message_object_new_ex(ce, msg->parent);
+			/* not assigned to any zval, so refcount is 0 */
+			--GC_REFCOUNT(&o->parent->zo);
 		}
 		o->body = php_http_message_body_object_new_ex(php_http_message_body_class_entry, php_http_message_body_init(&msg->body, NULL));
 	}
