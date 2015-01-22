@@ -60,14 +60,14 @@ static inline void sanitize_escaped(zval *zv)
 		ZVAL_STR(zv, php_http_cs2zs(deq, deq_len));
 	}
 
-	php_stripcslashes(Z_STRVAL_P(zv), &Z_STRLEN_P(zv));
+	php_stripcslashes(Z_STR_P(zv));
 }
 
 static inline void prepare_escaped(zval *zv)
 {
 	if (Z_TYPE_P(zv) == IS_STRING) {
 		size_t len = Z_STRLEN_P(zv);
-		zend_string *stripped = php_addcslashes(Z_STRVAL_P(zv), Z_STRLEN_P(zv), 0,
+		zend_string *stripped = php_addcslashes(Z_STR_P(zv), 0,
 				ZEND_STRL("\0..\37\173\\\""));
 
 		if (len != stripped->len || strpbrk(stripped->val, "()<>@,;:\"[]?={} ")) {
