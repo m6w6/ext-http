@@ -45,14 +45,13 @@ php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **bo
 	body->refcount = 1;
 
 	if (stream) {
-		php_stream_auto_cleanup(stream);
 		body->res = stream->res;
 		++GC_REFCOUNT(body->res);
 	} else {
 		stream = php_stream_temp_create(TEMP_STREAM_DEFAULT, 0xffff);
-		php_stream_auto_cleanup(stream);
 		body->res = stream->res;
 	}
+	php_stream_auto_cleanup(stream);
 
 	if (body_ptr) {
 		*body_ptr = body;
