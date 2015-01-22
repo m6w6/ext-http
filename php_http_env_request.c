@@ -164,7 +164,7 @@ static PHP_METHOD(HttpEnvRequest, __construct)
 		zend_fcall_info_cache fcc; \
 		zval rv, mn, *args = ecalloc(sizeof(zval), ZEND_NUM_ARGS()); \
 		zval *this_ptr = getThis(); \
-		zval *qs = zend_read_property(Z_OBJCE_P(this_ptr), this_ptr, ZEND_STRL(prop), 0); \
+		zval qs_tmp, *qs = zend_read_property(Z_OBJCE_P(this_ptr), this_ptr, ZEND_STRL(prop), 0, &qs_tmp); \
 		 \
 		array_init(&mn); \
 		Z_TRY_ADDREF_P(qs); \
@@ -191,7 +191,7 @@ static PHP_METHOD(HttpEnvRequest, getForm)
 	if (ZEND_NUM_ARGS()) {
 		call_querystring_get("form");
 	} else {
-		zval *zform = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), 0);
+		zval zform_tmp, *zform = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), 0, &zform_tmp);
 		RETURN_ZVAL_FAST(zform);
 	}
 }
@@ -207,7 +207,7 @@ static PHP_METHOD(HttpEnvRequest, getQuery)
 	if (ZEND_NUM_ARGS()) {
 		call_querystring_get("query");
 	} else {
-		zval *zquery = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), 0);
+		zval zquery_tmp, *zquery = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), 0, &zquery_tmp);
 		RETURN_ZVAL_FAST(zquery);
 	}
 }
@@ -223,7 +223,7 @@ static PHP_METHOD(HttpEnvRequest, getCookie)
 	if (ZEND_NUM_ARGS()) {
 		call_querystring_get("cookie");
 	} else {
-		zval *zcookie = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("cookie"), 0);
+		zval zcookie_tmp, *zcookie = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("cookie"), 0, &zcookie_tmp);
 		RETURN_ZVAL_FAST(zcookie);
 	}
 }
@@ -233,7 +233,7 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnvRequest, getFiles)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		zval *zfiles = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), 0);
+		zval zfiles_tmp, *zfiles = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), 0, &zfiles_tmp);
 		RETURN_ZVAL_FAST(zfiles);
 	}
 }

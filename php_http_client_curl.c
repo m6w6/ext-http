@@ -341,11 +341,11 @@ static int php_http_curle_dummy_callback(char *data, size_t n, size_t l, void *s
 
 static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 {
-	char *c;
-	long l;
-	double d;
-	struct curl_slist *s, *p;
-	zval tmp;
+	char *c = NULL;
+	long l = 0;
+	double d = 0;
+	struct curl_slist *s = NULL, *p = NULL;
+	zval tmp = {{0}};
 
 	/* BEGIN::CURLINFO */
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_EFFECTIVE_URL, &c)) {

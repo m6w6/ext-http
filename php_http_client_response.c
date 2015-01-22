@@ -91,11 +91,11 @@ static PHP_METHOD(HttpClientResponse, getTransferInfo)
 {
 	char *info_name = NULL;
 	size_t info_len = 0;
-	zval *info;
+	zval info_tmp, info_name_tmp, *info;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|s", &info_name, &info_len), invalid_arg, return);
 
-	info = zend_read_property(php_http_client_response_class_entry, getThis(), ZEND_STRL("transferInfo"), 0);
+	info = zend_read_property(php_http_client_response_class_entry, getThis(), ZEND_STRL("transferInfo"), 0, &info_tmp);
 
 	/* request completed? */
 	if (Z_TYPE_P(info) != IS_OBJECT) {
@@ -104,7 +104,7 @@ static PHP_METHOD(HttpClientResponse, getTransferInfo)
 	}
 
 	if (info_len && info_name) {
-		info = zend_read_property(NULL, info, php_http_pretty_key(info_name, info_len, 0, 0), info_len, 0);
+		info = zend_read_property(NULL, info, php_http_pretty_key(info_name, info_len, 0, 0), info_len, 0, &info_name_tmp);
 
 		if (!info) {
 			php_http_throw(unexpected_val, "Could not find transfer info with name '%s'", info_name);

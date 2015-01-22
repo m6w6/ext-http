@@ -60,12 +60,12 @@ static void set_option(zval *options, const char *name_str, size_t name_len, int
 		}
 	}
 }
-static zval *get_option(zval *options, const char *name_str, size_t name_len)
+static zval *get_option(zval *options, const char *name_str, size_t name_len, zval *tmp)
 {
 	zval *val = NULL;
 
 	if (Z_TYPE_P(options) == IS_OBJECT) {
-		val = zend_read_property(Z_OBJCE_P(options), options, name_str, name_len, 0);
+		val = zend_read_property(Z_OBJCE_P(options), options, name_str, name_len, 0, tmp);
 	} else if (Z_TYPE_P(options) == IS_ARRAY) {
 		val = zend_symtable_str_find(Z_ARRVAL_P(options), name_str, name_len);
 	} else {
@@ -78,10 +78,10 @@ static zval *get_option(zval *options, const char *name_str, size_t name_len)
 }
 static php_http_message_body_t *get_body(zval *options)
 {
-	zval *zbody;
+	zval zbody_tmp, *zbody;
 	php_http_message_body_t *body = NULL;
 
-	if ((zbody = get_option(options, ZEND_STRL("body")))) {
+	if ((zbody = get_option(options, ZEND_STRL("body"), &zbody_tmp))) {
 		if ((Z_TYPE_P(zbody) == IS_OBJECT) && instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_class_entry)) {
 			php_http_message_body_object_t *body_obj = PHP_HTTP_OBJ(NULL, zbody);
 
@@ -94,10 +94,10 @@ static php_http_message_body_t *get_body(zval *options)
 }
 static php_http_message_t *get_request(zval *options)
 {
-	zval *zrequest;
+	zval zrequest_tmp, *zrequest;
 	php_http_message_t *request = NULL;
 
-	if ((zrequest = get_option(options, ZEND_STRL("request")))) {
+	if ((zrequest = get_option(options, ZEND_STRL("request"), &zrequest_tmp))) {
 		if (Z_TYPE_P(zrequest) == IS_OBJECT && instanceof_function(Z_OBJCE_P(zrequest), php_http_message_class_entry)) {
 			php_http_message_object_t *request_obj = PHP_HTTP_OBJ(NULL, zrequest);
 
@@ -110,12 +110,12 @@ static php_http_message_t *get_request(zval *options)
 }
 static void set_cookie(zval *options, zval *zcookie_new)
 {
-	zval tmp, *zcookies_set;
+	zval tmp, zcookies_set_tmp, *zcookies_set;
 	php_http_arrkey_t key;
 	php_http_cookie_object_t *obj = PHP_HTTP_OBJ(NULL, zcookie_new);
 
 	array_init(&tmp);
-	zcookies_set = get_option(options, ZEND_STRL("cookies"));
+	zcookies_set = get_option(options, ZEND_STRL("cookies"), &zcookies_set_tmp);
 	if (zcookies_set && Z_TYPE_P(zcookies_set) == IS_ARRAY) {
 		array_copy(Z_ARRVAL_P(zcookies_set), Z_ARRVAL(tmp));
 		zval_ptr_dtor(zcookies_set);
@@ -141,14 +141,14 @@ php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, c
 	php_http_cache_status_t ret = PHP_HTTP_CACHE_NO;
 	char *header = NULL, *etag = NULL;
 	php_http_message_body_t *body;
-	zval *zetag;
+	zval zetag_tmp, *zetag;
 
 
 	if (!(body = get_body(options))) {
 		return ret;
 	}
 
-	if ((zetag = get_option(options, ZEND_STRL("etag"))) && Z_TYPE_P(zetag) != IS_NULL) {
+	if ((zetag = get_option(options, ZEND_STRL("etag"), &zetag_tmp)) && Z_TYPE_P(zetag) != IS_NULL) {
 		zend_string *zs = zval_get_string(zetag);
 		etag = estrndup(zs->val, zs->len);
 		zend_string_release(zs);
@@ -175,13 +175,13 @@ php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *o
 	char *header;
 	time_t ums, lm = 0;
 	php_http_message_body_t *body;
-	zval *zlm;
+	zval zlm_tmp, *zlm;
 
 	if (!(body = get_body(options))) {
 		return ret;
 	}
 
-	if ((zlm = get_option(options, ZEND_STRL("lastModified")))) {
+	if ((zlm = get_option(options, ZEND_STRL("lastModified"), &zlm_tmp))) {
 		lm = zval_get_long(zlm);
 		zval_ptr_dtor(zlm);
 	}
@@ -331,13 +331,13 @@ void php_http_env_response_free(php_http_env_response_t **r)
 static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t *r, php_http_message_t *request)
 {
 	ZEND_RESULT_CODE ret = SUCCESS;
-	zval *zoption, *options = &r->options;
+	zval zoption_tmp, *zoption, *options = &r->options;
 
 	if (r->done) {
 		return ret;
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("headers")))) {
+	if ((zoption = get_option(options, ZEND_STRL("headers"), &zoption_tmp))) {
 		if (Z_TYPE_P(zoption) == IS_ARRAY) {
 			php_http_header_to_callback(Z_ARRVAL_P(zoption), 0, (php_http_pass_format_callback_t) r->ops->set_header, r);
 		}
@@ -348,7 +348,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		return ret;
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("responseCode")))) {
+	if ((zoption = get_option(options, ZEND_STRL("responseCode"), &zoption_tmp))) {
 		zend_long rc = zval_get_long(zoption);
 
 		zval_ptr_dtor(zoption);
@@ -361,7 +361,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		return ret;
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("httpVersion")))) {
+	if ((zoption = get_option(options, ZEND_STRL("httpVersion"), &zoption_tmp))) {
 		php_http_version_t v;
 		zend_string *zs = zval_get_string(zoption);
 
@@ -377,7 +377,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		return ret;
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("cookies")))) {
+	if ((zoption = get_option(options, ZEND_STRL("cookies"), &zoption_tmp))) {
 		if (Z_TYPE_P(zoption) == IS_ARRAY) {
 			zval *zcookie;
 
@@ -405,7 +405,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		return ret;
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("contentType")))) {
+	if ((zoption = get_option(options, ZEND_STRL("contentType"), &zoption_tmp))) {
 		zend_string *zs = zval_get_string(zoption);
 
 		zval_ptr_dtor(zoption);
@@ -443,7 +443,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 			}
 		}
 	} else {
-		if ((zoption = get_option(options, ZEND_STRL("cacheControl")))) {
+		if ((zoption = get_option(options, ZEND_STRL("cacheControl"), &zoption_tmp))) {
 			zend_string *zs = zval_get_string(zoption);
 
 			zval_ptr_dtor(zoption);
@@ -457,7 +457,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 			return ret;
 		}
 
-		if ((zoption = get_option(options, ZEND_STRL("contentDisposition")))) {
+		if ((zoption = get_option(options, ZEND_STRL("contentDisposition"), &zoption_tmp))) {
 
 			if (Z_TYPE_P(zoption) == IS_ARRAY) {
 				php_http_buffer_t buf;
@@ -478,7 +478,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 			return ret;
 		}
 
-		if ((zoption = get_option(options, ZEND_STRL("contentEncoding")))) {
+		if ((zoption = get_option(options, ZEND_STRL("contentEncoding"), &zoption_tmp))) {
 			zend_long ce = zval_get_long(zoption);
 			zval zsupported;
 			HashTable *result = NULL;
@@ -553,7 +553,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 					break;
 			}
 
-			if ((zoption = get_option(options, ZEND_STRL("etag")))) {
+			if ((zoption = get_option(options, ZEND_STRL("etag"), &zoption_tmp))) {
 				zend_string *zs = zval_get_string(zoption);
 
 				zval_ptr_dtor(zoption);
@@ -564,7 +564,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 				}
 				zend_string_release(zs);
 			}
-			if ((zoption = get_option(options, ZEND_STRL("lastModified") TSRMLS_CC))) {
+			if ((zoption = get_option(options, ZEND_STRL("lastModified"), &zoption_tmp))) {
 				zend_long lm = zval_get_long(zoption);
 
 				zval_ptr_dtor(zoption);
@@ -585,7 +585,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 static ZEND_RESULT_CODE php_http_env_response_send_body(php_http_env_response_t *r)
 {
 	ZEND_RESULT_CODE ret = SUCCESS;
-	zval *zoption;
+	zval zoption_tmp, *zoption;
 	php_http_message_body_t *body;
 
 	if (r->done) {
@@ -593,11 +593,11 @@ static ZEND_RESULT_CODE php_http_env_response_send_body(php_http_env_response_t 
 	}
 
 	if ((body = get_body(&r->options))) {
-		if ((zoption = get_option(&r->options, ZEND_STRL("throttleDelay")))) {
+		if ((zoption = get_option(&r->options, ZEND_STRL("throttleDelay"), &zoption_tmp))) {
 			r->throttle.delay = zval_get_double(zoption);
 			zval_ptr_dtor(zoption);
 		}
-		if ((zoption = get_option(&r->options, ZEND_STRL("throttleChunk") TSRMLS_CC))) {
+		if ((zoption = get_option(&r->options, ZEND_STRL("throttleChunk"), &zoption_tmp))) {
 			r->throttle.chunk = zval_get_long(zoption);
 			zval_ptr_dtor(zoption);
 		}

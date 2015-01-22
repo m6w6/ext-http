@@ -65,10 +65,10 @@ void php_http_client_options_set_subr(zval *instance, char *key, size_t len, zva
 {
 	if (overwrite || (opts && zend_hash_num_elements(Z_ARRVAL_P(opts)))) {
 		zend_class_entry *this_ce = Z_OBJCE_P(instance);
-		zval *old_opts, new_opts, *entry = NULL;
+		zval old_opts_tmp, *old_opts, new_opts, *entry = NULL;
 
 		array_init(&new_opts);
-		old_opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0);
+		old_opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0, &old_opts_tmp);
 		if (Z_TYPE_P(old_opts) == IS_ARRAY) {
 			array_copy(Z_ARRVAL_P(old_opts), Z_ARRVAL(new_opts));
 		}
@@ -107,7 +107,7 @@ void php_http_client_options_set(zval *instance, zval *opts)
 		zend_update_property(this_ce, instance, ZEND_STRL("options"), &new_opts);
 		zval_ptr_dtor(&new_opts);
 	} else {
-		zval *old_opts, add_opts, *opt;
+		zval old_opts_tmp, *old_opts, add_opts, *opt;
 
 		array_init(&add_opts);
 		/* some options need extra attention -- thus cannot use array_merge() directly */
@@ -119,7 +119,7 @@ void php_http_client_options_set(zval *instance, zval *opts)
 				} else if (is_client && (zend_string_equals_literal(key.key, "recordHistory") || zend_string_equals_literal(key.key, "responseMessageClass"))) {
 					zend_update_property(this_ce, instance, key.key->val, key.key->len, opt);
 				} else if (Z_TYPE_P(opt) == IS_NULL) {
-					old_opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0);
+					old_opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0, &old_opts_tmp);
 					if (Z_TYPE_P(old_opts) == IS_ARRAY) {
 						zend_symtable_del(Z_ARRVAL_P(old_opts), key.key);
 					}
@@ -131,7 +131,7 @@ void php_http_client_options_set(zval *instance, zval *opts)
 		}
 		ZEND_HASH_FOREACH_END();
 
-		old_opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0);
+		old_opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0, &old_opts_tmp);
 		if (Z_TYPE_P(old_opts) == IS_ARRAY) {
 			array_copy(Z_ARRVAL_P(old_opts), Z_ARRVAL(new_opts));
 		}
@@ -145,7 +145,7 @@ void php_http_client_options_set(zval *instance, zval *opts)
 void php_http_client_options_get_subr(zval *instance, char *key, size_t len, zval *return_value)
 {
 	zend_class_entry *this_ce = Z_OBJCE_P(instance);
-	zval *options, *opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0);
+	zval *options, opts_tmp, *opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0, &opts_tmp);
 
 	if ((Z_TYPE_P(opts) == IS_ARRAY) && (options = zend_symtable_str_find(Z_ARRVAL_P(opts), key, len))) {
 		RETVAL_ZVAL_FAST(options);
@@ -351,7 +351,7 @@ zend_object *php_http_client_object_new(zend_class_entry *ce)
 
 static void handle_history(zval *zclient, php_http_message_t *request, php_http_message_t *response)
 {
-	zval new_hist, *old_hist = zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("history"), 0);
+	zval new_hist, old_hist_tmp, *old_hist = zend_read_property(php_http_client_class_entry, zclient, ZEND_STRL("history"), 0, &old_hist_tmp);
 	php_http_message_t *req_copy = php_http_message_copy(request, NULL);
 	php_http_message_t *res_copy = php_http_message_copy(response, NULL);
 	php_http_message_t *zipped = php_http_message_zip(res_copy, req_copy);
@@ -378,13 +378,13 @@ static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, ph
 
 	if ((msg = *response)) {
 		php_http_message_object_t *msg_obj;
-		zval info, zresponse, zrequest;
+		zval info, zresponse, zrequest, rec_hist_tmp;
 		HashTable *info_ht;
 
 		/* ensure the message is of type response (could be uninitialized in case of early error, like DNS) */
 		php_http_message_set_type(msg, PHP_HTTP_RESPONSE);
 
-		if (zend_is_true(zend_read_property(php_http_client_class_entry, &zclient, ZEND_STRL("recordHistory"), 0))) {
+		if (zend_is_true(zend_read_property(php_http_client_class_entry, &zclient, ZEND_STRL("recordHistory"), 0, &rec_hist_tmp))) {
 			handle_history(&zclient, *request, *response);
 		}
 
@@ -547,7 +547,7 @@ static HashTable *combined_options(zval *client, zval *request)
 {
 	HashTable *options;
 	unsigned num_options = 0;
-	zval z_roptions, *z_coptions = zend_read_property(php_http_client_class_entry, client, ZEND_STRL("options"), 0);
+	zval z_roptions, z_options_tmp, *z_coptions = zend_read_property(php_http_client_class_entry, client, ZEND_STRL("options"), 0, &z_options_tmp);
 
 	if (Z_TYPE_P(z_coptions) == IS_ARRAY) {
 		num_options = zend_hash_num_elements(Z_ARRVAL_P(z_coptions));
@@ -765,11 +765,11 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getHistory, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getHistory)
 {
-	zval *zhistory;
+	zval zhistory_tmp, *zhistory;
 
 	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
-	zhistory = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("history"), 0);
+	zhistory = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("history"), 0, &zhistory_tmp);
 	RETVAL_ZVAL_FAST(zhistory);
 }
 
@@ -867,11 +867,11 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_notify, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, notify)
 {
-	zval *request = NULL, *zprogress = NULL, *observers, args[3];
+	zval *request = NULL, *zprogress = NULL, observers_tmp, *observers, args[3];
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|O!o!", &request, php_http_client_request_class_entry, &zprogress), invalid_arg, return);
 
-	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0);
+	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
 		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
@@ -908,11 +908,11 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_attach, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, attach)
 {
-	zval *observers, *observer, retval;
+	zval observers_tmp, *observers, *observer, retval;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &observer, spl_ce_SplObserver), invalid_arg, return);
 
-	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0);
+	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
 		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
@@ -931,11 +931,11 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_detach, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, detach)
 {
-	zval *observers, *observer, retval;
+	zval observers_tmp, *observers, *observer, retval;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &observer, spl_ce_SplObserver), invalid_arg, return);
 
-	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0);
+	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
 		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
@@ -953,11 +953,11 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getObservers, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getObservers)
 {
-	zval *observers;
+	zval observers_tmp, *observers;
 
 	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
-	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0);
+	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
 		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
@@ -1033,7 +1033,7 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, getOptions)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		zval *options = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("options"), 0);
+		zval options_tmp, *options = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("options"), 0, &options_tmp);
 		RETVAL_ZVAL_FAST(options);
 	}
 }
