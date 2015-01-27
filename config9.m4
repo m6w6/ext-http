@@ -567,4 +567,7 @@ dnl ----
 	PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)
 
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
+	if $HTTP_HAVE_A_REQUEST_LIB; then
+		AC_DEFINE([PHP_HTTP_HAVE_CLIENT], [1], [Have HTTP client support])
+	fi
 fi

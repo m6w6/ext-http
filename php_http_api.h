@@ -109,6 +109,13 @@
 
 ZEND_BEGIN_MODULE_GLOBALS(php_http)
 	struct php_http_env_globals env;
+#ifdef PHP_HTTP_HAVE_CLIENT
+	struct {
+#ifdef PHP_HTTP_HAVE_CURL
+		struct php_http_client_curl_globals curl;
+#endif
+	} client;
+#endif
 ZEND_END_MODULE_GLOBALS(php_http)
 
 ZEND_EXTERN_MODULE_GLOBALS(php_http);

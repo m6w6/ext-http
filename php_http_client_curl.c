@@ -1789,6 +1789,7 @@ static php_resource_factory_t *create_rf(php_http_url_t *url)
 {
 	php_persistent_handle_factory_t *pf;
 	php_resource_factory_t *rf = NULL;
+	zend_string *id;
 	char *id_str = NULL;
 	size_t id_len;
 
@@ -1798,15 +1799,18 @@ static php_resource_factory_t *create_rf(php_http_url_t *url)
 	}
 
 	id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(url->host), url->port ? url->port : 80);
+	id = php_http_cs2zs(id_str, id_len);
 
-	pf = php_persistent_handle_concede(NULL, ZEND_STRL("http\\Client\\Curl\\Request"), id_str, id_len, NULL, NULL);
+	pf = php_persistent_handle_concede(NULL, PHP_HTTP_G->client.curl.driver.request_name, id, NULL, NULL);
+	zend_string_release(id);
+
 	if (pf) {
 		rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void*)) php_persistent_handle_abandon);
 	} else {
 		rf = php_resource_factory_init(NULL, &php_http_curle_resource_factory_ops, NULL, NULL);
 	}
 
-	efree(id_str);
+	zend_string_release(id);
 
 	return rf;
 }
@@ -2091,19 +2095,21 @@ php_http_client_ops_t *php_http_client_curl_get_ops(void)
 PHP_MINIT_FUNCTION(http_client_curl)
 {
 	php_http_options_t *options;
-	php_http_client_driver_t driver = {
-		ZEND_STRL("curl"),
-		&php_http_client_curl_ops
-	};
+	php_http_client_driver_t driver;
 
-	if (SUCCESS != php_http_client_driver_add(&driver)) {
-			return FAILURE;
-		}
+	PHP_HTTP_G->client.curl.driver.driver_name = zend_string_init(ZEND_STRL("curl"), 1);
+	PHP_HTTP_G->client.curl.driver.client_name = zend_string_init(ZEND_STRL("http\\Client\\Curl"), 1);
+	PHP_HTTP_G->client.curl.driver.request_name = zend_string_init(ZEND_STRL("http\\Client\\Curl\\Request"), 1);
+	PHP_HTTP_G->client.curl.driver.client_ops = &php_http_client_curl_ops;
 
-	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http\\Client\\Curl"), &php_http_curlm_resource_factory_ops, NULL, NULL)) {
+	if (SUCCESS != php_http_client_driver_add(&PHP_HTTP_G->client.curl.driver)) {
 		return FAILURE;
 	}
-	if (SUCCESS != php_persistent_handle_provide(ZEND_STRL("http\\Client\\Curl\\Request"), &php_http_curle_resource_factory_ops, NULL, NULL)) {
+
+	if (SUCCESS != php_persistent_handle_provide(PHP_HTTP_G->client.curl.driver.client_name, &php_http_curlm_resource_factory_ops, NULL, NULL)) {
+		return FAILURE;
+	}
+	if (SUCCESS != php_persistent_handle_provide(PHP_HTTP_G->client.curl.driver.request_name, &php_http_curle_resource_factory_ops, NULL, NULL)) {
 		return FAILURE;
 	}
 
@@ -2185,8 +2191,11 @@ PHP_MINIT_FUNCTION(http_client_curl)
 
 PHP_MSHUTDOWN_FUNCTION(http_client_curl)
 {
-	php_persistent_handle_cleanup(ZEND_STRL("http\\Client\\Curl"), NULL, 0);
-	php_persistent_handle_cleanup(ZEND_STRL("http\\Client\\Curl\\Request"), NULL, 0);
+	php_persistent_handle_cleanup(PHP_HTTP_G->client.curl.driver.client_name, NULL);
+	php_persistent_handle_cleanup(PHP_HTTP_G->client.curl.driver.request_name, NULL);
+	zend_string_release(PHP_HTTP_G->client.curl.driver.client_name);
+	zend_string_release(PHP_HTTP_G->client.curl.driver.request_name);
+	zend_string_release(PHP_HTTP_G->client.curl.driver.driver_name);
 
 	php_http_options_dtor(&php_http_curle_options);
 

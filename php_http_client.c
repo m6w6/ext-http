@@ -27,16 +27,16 @@ static void php_http_client_driver_hash_dtor(zval *pData)
 
 ZEND_RESULT_CODE php_http_client_driver_add(php_http_client_driver_t *driver)
 {
-	return zend_hash_str_add_mem(&php_http_client_drivers, driver->name_str, driver->name_len, (void *) driver, sizeof(php_http_client_driver_t))
+	return zend_hash_add_mem(&php_http_client_drivers, driver->driver_name, (void *) driver, sizeof(php_http_client_driver_t))
 			? SUCCESS : FAILURE;
 }
 
-php_http_client_driver_t *php_http_client_driver_get(const char *name_str, size_t name_len)
+php_http_client_driver_t *php_http_client_driver_get(zend_string *name)
 {
 	zval *ztmp;
 	php_http_client_driver_t *tmp;
 
-	if (name_str && (tmp = zend_hash_str_find_ptr(&php_http_client_drivers, name_str, name_len))) {
+	if (name && (tmp = zend_hash_find_ptr(&php_http_client_drivers, name))) {
 		return tmp;
 	}
 	if ((ztmp = zend_hash_get_current_data(&php_http_client_drivers))) {
@@ -50,7 +50,7 @@ static int apply_driver_list(zval *p, void *arg)
 	php_http_client_driver_t *d = Z_PTR_P(p);
 	zval zname;
 
-	ZVAL_STRINGL(&zname, d->name_str, d->name_len);
+	ZVAL_STR(&zname, d->driver_name);
 
 	zend_hash_next_index_insert(arg, &zname);
 	return ZEND_HASH_APPLY_KEEP;
@@ -479,21 +479,20 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_construct, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, __construct)
 {
-		char *driver_str = NULL, *persistent_handle_str = NULL;
-		size_t driver_len = 0, persistent_handle_len = 0;
+		zend_string *driver_name = NULL, *persistent_handle_name = NULL;
 		php_http_client_driver_t *driver;
 		php_resource_factory_t *rf = NULL;
 		php_http_client_object_t *obj;
 		zval os;
 
-		php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|s!s!", &driver_str, &driver_len, &persistent_handle_str, &persistent_handle_len), invalid_arg, return);
+		php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|S!S!", &driver_name, &persistent_handle_name), invalid_arg, return);
 
 		if (!zend_hash_num_elements(&php_http_client_drivers)) {
 			php_http_throw(unexpected_val, "No http\\Client drivers available", NULL);
 			return;
 		}
-		if (!(driver = php_http_client_driver_get(driver_str, driver_len))) {
-			php_http_throw(unexpected_val, "Failed to locate \"%s\" client request handler", driver_len ? driver_str : "default");
+		if (!(driver = php_http_client_driver_get(driver_name))) {
+			php_http_throw(unexpected_val, "Failed to locate \"%s\" client request handler", driver_name ? driver_name->val : "default");
 			return;
 		}
 
@@ -501,19 +500,12 @@ static PHP_METHOD(HttpClient, __construct)
 		zend_update_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), &os);
 		zval_ptr_dtor(&os);
 
-		if (persistent_handle_len) {
-			char *name_str;
-			size_t name_len;
+		if (persistent_handle_name) {
 			php_persistent_handle_factory_t *pf;
 
-			name_len = spprintf(&name_str, 0, "http\\Client\\%s", driver->name_str);
-			php_http_pretty_key(name_str + lenof("http\\Client\\"), driver->name_len, 1, 1);
-
-			if ((pf = php_persistent_handle_concede(NULL, name_str, name_len, persistent_handle_str, persistent_handle_len, NULL, NULL))) {
+			if ((pf = php_persistent_handle_concede(NULL, driver->client_name, persistent_handle_name, NULL, NULL))) {
 				rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
 			}
-
-			efree(name_str);
 		}
 
 		obj = PHP_HTTP_OBJ(NULL, getThis());

@@ -62,13 +62,14 @@ typedef struct php_http_client_ops {
 } php_http_client_ops_t;
 
 typedef struct php_http_client_driver {
-	const char *name_str;
-	size_t name_len;
+	zend_string *driver_name;
+	zend_string *client_name;
+	zend_string *request_name;
 	php_http_client_ops_t *client_ops;
 } php_http_client_driver_t;
 
 PHP_HTTP_API ZEND_RESULT_CODE php_http_client_driver_add(php_http_client_driver_t *driver);
-PHP_HTTP_API php_http_client_driver_t *php_http_client_driver_get(const char *name_str, size_t name_len);
+PHP_HTTP_API php_http_client_driver_t *php_http_client_driver_get(zend_string *name);
 
 typedef struct php_http_client_progress_state {
 	struct {
