@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-01-27</date>
  <version>
-  <release>2.2.0</release>
+  <release>2.2.1</release>
   <api>2.2.0</api>
  </version>
  <stability>
@@ -48,12 +48,6 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-- var_dump(http\Message) no longer automatically creates an empty body
-+ Added http\Message\Parser class
-+ Made http\Client::once() and http\Client::wait() available when using events
-+ Added http\Url::PARSE_MBLOC, http\Url::PARSE_MBUTF8, http\Url::PARSE_TOIDN and http\Url::PARSE_TOPCT constants
-+ Added http\Env\Response::setCookie()
-+ Added http\Env\Request::getCookie()
 ]]></notes>
  <contents>
   <dir name="/">
