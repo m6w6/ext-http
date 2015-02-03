@@ -593,8 +593,9 @@ static int compare_queue(php_http_client_enqueue_t *e, void *handle)
 
 static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_handler_t *h TSRMLS_DC)
 {
-	php_http_message_t *response = NULL;
+	php_http_message_t *response;
 	php_http_header_parser_t parser;
+	zval *zh;
 
 	response = php_http_message_init(NULL, 0, h->response.body TSRMLS_CC);
 	php_http_header_parser_init(&parser TSRMLS_CC);
@@ -613,6 +614,22 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 	}
 	php_http_message_body_addref(h->response.body);
 
+	/* let's update the response headers */
+	if ((zh = php_http_message_header(response, ZEND_STRL("Content-Length"), 1))) {
+		zend_hash_update(&response->hdrs, "X-Original-Content-Length", sizeof("X-Original-Content-Length"), &zh, sizeof(zval *), NULL);
+	}
+	if ((zh = php_http_message_header(response, ZEND_STRL("Transfer-Encoding"), 0))) {
+		zend_hash_update(&response->hdrs, "X-Original-Transfer-Encoding", sizeof("X-Original-Transfer-Encoding"), (void *) &zh, sizeof(zval *), NULL);
+		zend_hash_del(&response->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
+	}
+	if ((zh = php_http_message_header(response, ZEND_STRL("Content-Range"), 0))) {
+		zend_hash_update(&response->hdrs, "X-Original-Content-Range", sizeof("X-Original-Content-Range"), &zh, sizeof(zval *), NULL);
+		zend_hash_del(&response->hdrs, "Content-Range", sizeof("Content-Range"));
+	}
+	if ((zh = php_http_message_header(response, ZEND_STRL("Content-Encoding"), 0))) {
+		zend_hash_update(&response->hdrs, "X-Original-Content-Encoding", sizeof("X-Original-Content-Encoding"), &zh, sizeof(zval *), NULL);
+		zend_hash_del(&response->hdrs, "Content-Encoding", sizeof("Content-Encoding"));
+	}
 	php_http_message_update_headers(response);
 
 	return response;
@@ -638,8 +655,10 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 				php_http_client_curl_handler_t *handler = enqueue->opaque;
 				php_http_message_t *response = php_http_curlm_responseparser(handler TSRMLS_CC);
 
-				context->callback.response.func(context->callback.response.arg, context, &handler->queue, &response);
-				php_http_message_free(&response);
+				if (response) {
+					context->callback.response.func(context->callback.response.arg, context, &handler->queue, &response);
+					php_http_message_free(&response);
+				}
 			}
 		}
 	} while (remaining);
