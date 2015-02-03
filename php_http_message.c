@@ -302,6 +302,11 @@ void php_http_message_update_headers(php_http_message_t *msg)
 		ZVAL_LONG(h, size);
 		zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), &h, sizeof(zval *), NULL);
 
+		if ((h = php_http_message_header(msg, ZEND_STRL("Transfer-Encoding"), 0))) {
+			zend_hash_update(&msg->hdrs, "X-Original-Transfer-Encoding", sizeof("X-Original-Transfer-Encoding"), (void *) &h, sizeof(zval *), NULL);
+			zend_hash_del(&msg->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
+		}
+
 		if (msg->body->boundary) {
 			char *str;
 			size_t len;

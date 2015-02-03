@@ -60,19 +60,11 @@ typedef struct php_http_client_curl_handler {
 	php_resource_factory_t *rf;
 	php_http_client_t *client;
 	php_http_client_progress_state_t progress;
-
 	php_http_client_enqueue_t queue;
 
 	struct {
-		php_http_message_parser_t *parser;
-		php_http_message_t *message;
-		php_http_buffer_t *buffer;
-	} request;
-
-	struct {
-		php_http_message_parser_t *parser;
-		php_http_message_t *message;
-		php_http_buffer_t *buffer;
+		php_http_buffer_t headers;
+		php_http_message_body_t *body;
 	} response;
 
 	struct {
@@ -247,7 +239,6 @@ static curlioerr php_http_curle_ioctl_callback(CURL *ch, curliocmd cmd, void *ct
 static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data, size_t length, void *ctx)
 {
 	php_http_client_curl_handler_t *h = ctx;
-	unsigned flags = 0;
 
 	/* catch progress */
 	switch (type) {
@@ -304,32 +295,6 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 		default:
 			break;
 	}
-	/* process data */
-	switch (type) {
-		case CURLINFO_HEADER_IN:
-		case CURLINFO_DATA_IN:
-			php_http_buffer_append(h->response.buffer, data, length);
-
-			if (h->options.redirects) {
-				flags |= PHP_HTTP_MESSAGE_PARSER_EMPTY_REDIRECTS;
-			}
-
-			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse(h->response.parser, h->response.buffer, flags, &h->response.message)) {
-				return -1;
-			}
-			break;
-
-		case CURLINFO_HEADER_OUT:
-		case CURLINFO_DATA_OUT:
-			php_http_buffer_append(h->request.buffer, data, length);
-
-			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse(h->request.parser, h->request.buffer, flags, &h->request.message)) {
-				return -1;
-			}
-			break;
-		default:
-			break;
-	}
 
 #if 0
 	/* debug */
@@ -339,9 +304,18 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 	return 0;
 }
 
-static int php_http_curle_dummy_callback(char *data, size_t n, size_t l, void *s)
+static int php_http_curle_header_callback(char *data, size_t n, size_t l, void *arg)
 {
-	return n*l;
+	php_http_client_curl_handler_t *h = arg;
+
+	return php_http_buffer_append(&h->response.headers, data, n * l);
+}
+
+static int php_http_curle_body_callback(char *data, size_t n, size_t l, void *arg)
+{
+	php_http_client_curl_handler_t *h = arg;
+
+	return php_http_message_body_append(h->response.body, data, n*l);
 }
 
 static STATUS php_http_curle_get_info(CURL *ch, HashTable *info)
@@ -617,6 +591,33 @@ static int compare_queue(php_http_client_enqueue_t *e, void *handle)
 	return handle == ((php_http_client_curl_handler_t *) e->opaque)->handle;
 }
 
+static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_handler_t *h TSRMLS_DC)
+{
+	php_http_message_t *response = NULL;
+	php_http_header_parser_t parser;
+
+	response = php_http_message_init(NULL, 0, h->response.body TSRMLS_CC);
+	php_http_header_parser_init(&parser TSRMLS_CC);
+	php_http_header_parser_parse(&parser, &h->response.headers, PHP_HTTP_HEADER_PARSER_CLEANUP, &response->hdrs, (php_http_info_callback_t) php_http_message_info_callback, (void *) &response);
+	php_http_header_parser_dtor(&parser);
+
+	/* move body to right message */
+	if (response->body != h->response.body) {
+		php_http_message_t *ptr = response;
+
+		while (ptr->parent) {
+			ptr = ptr->parent;
+		}
+		response->body = ptr->body;
+		ptr->body = NULL;
+	}
+	php_http_message_body_addref(h->response.body);
+
+	php_http_message_update_headers(response);
+
+	return response;
+}
+
 static void php_http_curlm_responsehandler(php_http_client_t *context)
 {
 	int remaining = 0;
@@ -635,8 +636,10 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 
 			if ((enqueue = php_http_client_enqueued(context, msg->easy_handle, compare_queue))) {
 				php_http_client_curl_handler_t *handler = enqueue->opaque;
+				php_http_message_t *response = php_http_curlm_responseparser(handler TSRMLS_CC);
 
-				context->callback.response.func(context->callback.response.arg, context, &handler->queue, &handler->request.message, &handler->response.message);
+				context->callback.response.func(context->callback.response.arg, context, &handler->queue, &response);
+				php_http_message_free(&response);
 			}
 		}
 	} while (remaining);
@@ -1544,12 +1547,8 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	handler->rf = rf;
 	handler->client = h;
 	handler->handle = handle;
-	handler->request.buffer = php_http_buffer_init(NULL);
-	handler->request.parser = php_http_message_parser_init(NULL TSRMLS_CC);
-	handler->request.message = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
-	handler->response.buffer = php_http_buffer_init(NULL);
-	handler->response.parser = php_http_message_parser_init(NULL TSRMLS_CC);
-	handler->response.message = php_http_message_init(NULL, 0, NULL TSRMLS_CC);
+	handler->response.body = php_http_message_body_init(NULL, NULL TSRMLS_CC);
+	php_http_buffer_init(&handler->response.headers);
 	php_http_buffer_init(&handler->options.cookies);
 	php_http_buffer_init(&handler->options.ranges);
 	zend_hash_init(&handler->options.cache, 0, NULL, ZVAL_PTR_DTOR, 0);
@@ -1562,8 +1561,8 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	curl_easy_setopt(handle, CURLOPT_AUTOREFERER, 1L);
 	curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
 	curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
-	curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, NULL);
-	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, php_http_curle_dummy_callback);
+	curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, php_http_curle_header_callback);
+	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, php_http_curle_body_callback);
 	curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, php_http_curle_raw_callback);
 	curl_easy_setopt(handle, CURLOPT_READFUNCTION, php_http_curle_read_callback);
 	curl_easy_setopt(handle, CURLOPT_IOCTLFUNCTION, php_http_curle_ioctl_callback);
@@ -1575,6 +1574,8 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, handler);
 #endif
 	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, handler);
+	curl_easy_setopt(handle, CURLOPT_WRITEDATA, handler);
+	curl_easy_setopt(handle, CURLOPT_HEADERDATA, handler);
 
 	php_http_client_curl_handler_reset(handler);
 
@@ -1711,12 +1712,8 @@ static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *ha
 	php_resource_factory_handle_dtor(handler->rf, handler->handle TSRMLS_CC);
 	php_resource_factory_free(&handler->rf);
 
-	php_http_message_parser_free(&handler->request.parser);
-	php_http_message_free(&handler->request.message);
-	php_http_buffer_free(&handler->request.buffer);
-	php_http_message_parser_free(&handler->response.parser);
-	php_http_message_free(&handler->response.message);
-	php_http_buffer_free(&handler->response.buffer);
+	php_http_message_body_free(&handler->response.body);
+	php_http_buffer_dtor(&handler->response.headers);
 	php_http_buffer_dtor(&handler->options.ranges);
 	php_http_buffer_dtor(&handler->options.cookies);
 	zend_hash_destroy(&handler->options.cache);
@@ -2123,6 +2120,9 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	*/
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_1_0", CURL_HTTP_VERSION_1_0, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_1_1", CURL_HTTP_VERSION_1_1, CONST_CS|CONST_PERSISTENT);
+#if PHP_HTTP_CURL_VERSION(7,33,0)
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_2_0", CURL_HTTP_VERSION_2_0, CONST_CS|CONST_PERSISTENT);
+#endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_ANY", CURL_HTTP_VERSION_NONE, CONST_CS|CONST_PERSISTENT);
 
 	/*

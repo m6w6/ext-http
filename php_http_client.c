@@ -375,7 +375,7 @@ static void handle_history(zval *zclient, php_http_message_t *request, php_http_
 	zval_ptr_dtor(&new_hist);
 }
 
-static STATUS handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **request, php_http_message_t **response)
+static STATUS handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **response)
 {
 	zend_bool dequeue = 0;
 	zval zclient;
@@ -395,7 +395,7 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 		php_http_message_set_type(msg, PHP_HTTP_RESPONSE);
 
 		if (z_is_true(zend_read_property(php_http_client_class_entry, &zclient, ZEND_STRL("recordHistory"), 0 TSRMLS_CC))) {
-			handle_history(&zclient, *request, *response TSRMLS_CC);
+			handle_history(&zclient, e->request, *response TSRMLS_CC);
 		}
 
 		/* hard detach, redirects etc. are in the history */

@@ -65,15 +65,15 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 	}
 	
 	/* there must be HTTP/1.x in the line */
-	if (!(http = php_http_locate_str(pre_header, end - pre_header, "HTTP/1.", lenof("HTTP/1.")))) {
+	if (!(http = php_http_locate_str(pre_header, end - pre_header, "HTTP/", lenof("HTTP/")))) {
 		return NULL;
 	}
 	
 	info = php_http_info_init(info TSRMLS_CC);
 
-	/* and nothing than SPACE or NUL after HTTP/1.x */
+	/* and nothing than SPACE or NUL after HTTP/X.x */
 	if (!php_http_version_parse(&info->http.version, http TSRMLS_CC)
-	||	(http[lenof("HTTP/1.1")] && (!PHP_HTTP_IS_CTYPE(space, http[lenof("HTTP/1.1")])))) {
+	||	(http[lenof("HTTP/X.x")] && (!PHP_HTTP_IS_CTYPE(space, http[lenof("HTTP/X.x")])))) {
 		if (free_info) {
 			php_http_info_free(&info);
 		}
@@ -91,7 +91,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 	/* is response */
 	if (pre_header == http) {
 		char *status = NULL;
-		const char *code = http + sizeof("HTTP/1.1");
+		const char *code = http + sizeof("HTTP/X.x");
 		
 		info->type = PHP_HTTP_RESPONSE;
 		while (' ' == *code) ++code;
@@ -111,7 +111,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 	}
 	
 	/* is request */
-	else if (*(http - 1) == ' ' && (!http[lenof("HTTP/1.x")] || http[lenof("HTTP/1.x")] == '\r' || http[lenof("HTTP/1.x")] == '\n')) {
+	else if (*(http - 1) == ' ' && (!http[lenof("HTTP/X.x")] || http[lenof("HTTP/X.x")] == '\r' || http[lenof("HTTP/X.x")] == '\n')) {
 		const char *url = strchr(pre_header, ' ');
 		
 		info->type = PHP_HTTP_REQUEST;
@@ -133,7 +133,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		return info;
 	}
 
-	/* some darn header containing HTTP/1.x */
+	/* some darn header containing HTTP/X.x */
 	else {
 		if (free_info) {
 			php_http_info_free(&info);
