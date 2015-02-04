@@ -202,7 +202,7 @@ dnl ----
 			if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71802; then
 				AC_MSG_ERROR([libcurl version greater or equal to 7.18.2 required])
 			fi
-
+			
 			AC_MSG_CHECKING([for HTTP2 support in libcurl])
 			if $CURL_CONFIG --features | $EGREP -q HTTP2; then
 				AC_MSG_RESULT([yes])
@@ -218,11 +218,11 @@ dnl ----
 			save_INCLUDES="$INCLUDES"
 			INCLUDES=
 			save_LIBS="$LIBS"
-			LIBS=
+			LIBS=-lcurl
 			save_CFLAGS="$CFLAGS"
 			CFLAGS="$CFLAGS `$CURL_CONFIG --cflags`"
 			save_LDFLAGS="$LDFLAGS"
-			LDFLAGS="$LDFLAGS `$CURL_CONFIG --libs` $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
+			LDFLAGS="$ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
 		
 			AC_MSG_CHECKING([for SSL support in libcurl])
 			CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
