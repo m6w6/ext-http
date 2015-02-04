@@ -39,8 +39,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-01-27</date>
  <version>
-  <release>2.2.1</release>
-  <api>2.2.0</api>
+  <release>2.3.0</release>
+  <api>2.3.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -48,6 +48,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
++ Added support for HTTP2 if libcurl was built with nghttp2 support.
++ Added http\Client\Curl\HTTP_VERSION_2_0 constant (libcurl >= 7.33.0)
 ]]></notes>
  <contents>
   <dir name="/">
