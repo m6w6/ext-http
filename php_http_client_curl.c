@@ -1401,6 +1401,12 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 			ZVAL_BOOL(&opt->defval, 1);
 		}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,39,0)
+		if ((opt = php_http_option_register(registry, ZEND_STRL("pinned_publickey"), CURLOPT_PINNEDPUBLICKEY, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+		}
+#endif
 	}
 }
 

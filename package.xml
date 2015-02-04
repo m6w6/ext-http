@@ -50,6 +50,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  <notes><![CDATA[
 + Added support for HTTP2 if libcurl was built with nghttp2 support.
 + Added http\Client\Curl\HTTP_VERSION_2_0 constant (libcurl >= 7.33.0)
++ Added pinned_publickey SSL request option (libcurl >= 7.39.0)
 ]]></notes>
  <contents>
   <dir name="/">
