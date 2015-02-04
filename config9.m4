@@ -202,6 +202,14 @@ dnl ----
 			if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71802; then
 				AC_MSG_ERROR([libcurl version greater or equal to 7.18.2 required])
 			fi
+
+			AC_MSG_CHECKING([for HTTP2 support in libcurl])
+			if $CURL_CONFIG --features | $EGREP -q HTTP2; then
+				AC_MSG_RESULT([yes])
+				AC_DEFINE([PHP_HTTP_HAVE_HTTP2], [1], [ ])
+			else
+				AC_MSG_RESULT([no])
+			fi
 		
 			dnl
 			dnl compile tests
