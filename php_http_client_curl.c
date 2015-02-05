@@ -948,9 +948,10 @@ static STATUS php_http_curle_option_set_lastmodified(php_http_option_t *opt, zva
 static STATUS php_http_curle_option_set_compress(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
+	CURL *ch = curl->handle;
 
-	if (Z_BVAL_P(val)) {
-		curl->options.headers = curl_slist_append(curl->options.headers, "Accept-Encoding: gzip;q=1.0,deflate;q=0.5");
+	if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_ACCEPT_ENCODING, Z_BVAL_P(val) ? "" : NULL)) {
+		return FAILURE;
 	}
 	return SUCCESS;
 }
