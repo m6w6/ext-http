@@ -308,8 +308,8 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 	}
 	/* unset default ports */
 	if (url(buf)->port) {
-		if (	((url(buf)->port == 80) && !strcmp(url(buf)->scheme, "http"))
-			||	((url(buf)->port ==443) && !strcmp(url(buf)->scheme, "https"))
+		if (	((url(buf)->port == 80) && url(buf)->scheme && !strcmp(url(buf)->scheme, "http"))
+			||	((url(buf)->port ==443) && url(buf)->scheme && !strcmp(url(buf)->scheme, "https"))
 		) {
 			url(buf)->port = 0;
 		}
@@ -365,6 +365,42 @@ char *php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *
 	if (url->fragment && *url->fragment) {
 		php_http_buffer_appends(&buf, "#");
 		php_http_buffer_appendl(&buf, url->fragment);
+	}
+
+	php_http_buffer_shrink(&buf);
+	php_http_buffer_fix(&buf);
+
+	if (url_len) {
+		*url_len = buf.used;
+	}
+
+	if (url_str) {
+		*url_str = buf.data;
+	}
+
+	return buf.data;
+}
+
+char *php_http_url_authority_to_string(const php_http_url_t *url, char **url_str, size_t *url_len)
+{
+	php_http_buffer_t buf;
+
+	php_http_buffer_init(&buf);
+
+	if (url->user && *url->user) {
+		php_http_buffer_appendl(&buf, url->user);
+		if (url->pass && *url->pass) {
+			php_http_buffer_appends(&buf, ":");
+			php_http_buffer_appendl(&buf, url->pass);
+		}
+		php_http_buffer_appends(&buf, "@");
+	}
+
+	if (url->host && *url->host) {
+		php_http_buffer_appendl(&buf, url->host);
+		if (url->port) {
+			php_http_buffer_appendf(&buf, ":%hu", url->port);
+		}
 	}
 
 	php_http_buffer_shrink(&buf);
@@ -873,7 +909,9 @@ static STATUS parse_hostinfo(struct parse_state *state, const char *ptr)
 			break;
 
 		default:
-			if (port) {
+			if (ptr == end) {
+				break;
+			} else if (port) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,
 						"Failed to parse port; unexpected byte 0x%02x at pos %u in '%s'",
 						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
@@ -944,6 +982,7 @@ static const char *parse_authority(struct parse_state *state)
 		case '?':
 		case '#':
 		case '\0':
+			EOD:
 			/* host delimiter */
 			if (tmp != state->ptr && SUCCESS != parse_hostinfo(state, tmp)) {
 				return NULL;
@@ -952,7 +991,8 @@ static const char *parse_authority(struct parse_state *state)
 		}
 	} while (++state->ptr <= state->end);
 
-	return NULL;
+	--state->ptr;
+	goto EOD;
 }
 
 static const char *parse_path(struct parse_state *state)
@@ -1246,6 +1286,33 @@ php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags T
 
 	if (!parse_fragment(state)) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse URL fragment: '%s'", state->ptr);
+		efree(state);
+		return NULL;
+	}
+
+	return (php_http_url_t *) state;
+}
+
+php_http_url_t *php_http_url_parse_authority(const char *str, size_t len, unsigned flags TSRMLS_DC)
+{
+	size_t maxlen = 3 * len;
+	struct parse_state *state = ecalloc(1, sizeof(*state) + maxlen);
+
+	state->end = str + len;
+	state->ptr = str;
+	state->flags = flags;
+	state->maxlen = maxlen;
+	TSRMLS_SET_CTX(state->ts);
+
+	if (!(state->ptr = parse_authority(state))) {
+		efree(state);
+		return NULL;
+	}
+
+	if (state->ptr != state->end) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING,
+				"Failed to parse URL authority, unexpected character at pos %u in '%s'",
+				(unsigned) (state->ptr - str), str);
 		efree(state);
 		return NULL;
 	}
