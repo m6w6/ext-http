@@ -116,11 +116,20 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		
 		info->type = PHP_HTTP_REQUEST;
 		if (url && http > url) {
-			PHP_HTTP_INFO(info).request.method = estrndup(pre_header, url - pre_header);
+			size_t url_len = url - pre_header;
+
+			PHP_HTTP_INFO(info).request.method = estrndup(pre_header, url_len);
+
 			while (' ' == *url) ++url;
 			while (' ' == *(http-1)) --http;
+
 			if (http > url) {
-				PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, ~0 TSRMLS_CC);
+				/* CONNECT presents an authority only */
+				if (strcasecmp(PHP_HTTP_INFO(info).request.method, "CONNECT")) {
+					PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, ~0 TSRMLS_CC);
+				} else {
+					PHP_HTTP_INFO(info).request.url = php_http_url_parse_authority(url, http - url, ~0 TSRMLS_CC);
+				}
 			} else {
 				PTR_SET(PHP_HTTP_INFO(info).request.method, NULL);
 				return NULL;
