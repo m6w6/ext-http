@@ -218,23 +218,18 @@ static int php_http_curle_progress_callback(void *ctx, double dltotal, double dl
 	return 0;
 }
 
-static curlioerr php_http_curle_ioctl_callback(CURL *ch, curliocmd cmd, void *ctx)
+static int php_http_curle_seek_callback(void *userdata, curl_off_t offset, int origin)
 {
-	php_http_message_body_t *body = ctx;
+	php_http_message_body_t *body = userdata;
+	TSRMLS_FETCH_FROM_CTX(body->ts);
 
-	if (cmd != CURLIOCMD_RESTARTREAD) {
-		return CURLIOE_UNKNOWNCMD;
+	if (!body) {
+		return 1;
 	}
-
-	if (body) {
-		TSRMLS_FETCH_FROM_CTX(body->ts);
-
-		if (SUCCESS == php_stream_rewind(php_http_message_body_stream(body))) {
-			return CURLIOE_OK;
-		}
+	if (0 == php_stream_seek(php_http_message_body_stream(body), offset, origin)) {
+		return 0;
 	}
-
-	return CURLIOE_FAILRESTART;
+	return 2;
 }
 
 static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data, size_t length, void *ctx)
@@ -1677,7 +1672,7 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, php_http_curle_body_callback);
 	curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, php_http_curle_raw_callback);
 	curl_easy_setopt(handle, CURLOPT_READFUNCTION, php_http_curle_read_callback);
-	curl_easy_setopt(handle, CURLOPT_IOCTLFUNCTION, php_http_curle_ioctl_callback);
+	curl_easy_setopt(handle, CURLOPT_SEEKFUNCTION, php_http_curle_seek_callback);
 #if PHP_HTTP_CURL_VERSION(7,32,0)
 	curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, php_http_curle_xferinfo_callback);
 	curl_easy_setopt(handle, CURLOPT_XFERINFODATA, handler);
@@ -1790,12 +1785,12 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 		 * does not allow a request body.
 		 */
 		php_stream_rewind(php_http_message_body_stream(msg->body));
-		curl_easy_setopt(curl->handle, CURLOPT_IOCTLDATA, msg->body);
+		curl_easy_setopt(curl->handle, CURLOPT_SEEKDATA, msg->body);
 		curl_easy_setopt(curl->handle, CURLOPT_READDATA, msg->body);
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, body_size);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, body_size);
 	} else {
-		curl_easy_setopt(curl->handle, CURLOPT_IOCTLDATA, NULL);
+		curl_easy_setopt(curl->handle, CURLOPT_SEEKDATA, NULL);
 		curl_easy_setopt(curl->handle, CURLOPT_READDATA, NULL);
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, 0L);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, 0L);
