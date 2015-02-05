@@ -1743,6 +1743,9 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 		}
 	}
 
+	/* apply options */
+	php_http_options_apply(&php_http_curle_options, enqueue->options, curl);
+
 	/* request headers */
 	php_http_message_update_headers(msg);
 	if (zend_hash_num_elements(&msg->hdrs)) {
@@ -1797,8 +1800,6 @@ static STATUS php_http_client_curl_handler_prepare(php_http_client_curl_handler_
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, 0L);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, 0L);
 	}
-
-	php_http_options_apply(&php_http_curle_options, enqueue->options, curl);
 
 	return SUCCESS;
 }
