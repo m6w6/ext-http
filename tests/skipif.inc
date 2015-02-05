@@ -8,8 +8,14 @@ function skip_online_test($message = "skip test requiring internet connection\n"
 	}
 }
 
-function skip_slow_test($message = "skip slow test") {
+function skip_slow_test($message = "skip slow test\n") {
 	if (getenv("SKIP_SLOW_TESTS")) {
+		die($message);
+	}
+}
+
+function skip_client_test($message = "skip need a client driver\n") {
+	if (!http\Client::getAvailableDrivers()) {
 		die($message);
 	}
 }

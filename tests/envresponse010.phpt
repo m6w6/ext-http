@@ -25,5 +25,10 @@ Accept-Ranges: bytes%c
 X-Powered-By: PHP/%s%c
 Content-Type: text/plain%c
 Content-Range: bytes 2-4/311%c
+Transfer-Encoding: chunked%c
 %c
-php"
+3%c
+php%c
+0%c
+%c
+"

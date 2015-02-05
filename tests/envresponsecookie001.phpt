@@ -23,4 +23,7 @@ Set-Cookie: foo=bar; max-age=60;
 Set-Cookie: baz=1; 
 Set-Cookie: 123=1; 
 ETag: ""
+Transfer-Encoding: chunked
+
+0
 

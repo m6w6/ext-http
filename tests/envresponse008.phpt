@@ -18,6 +18,7 @@ $r->send($f);
 rewind($f);
 var_dump(stream_get_contents($f));
 
+?>
 --EXPECTREGEX--
 string\(\d+\) "HTTP\/1\.1 200 OK
 Accept-Ranges: bytes
@@ -26,5 +27,10 @@ Content-Encoding: gzip
 Vary: Accept-Encoding
 ETag: "\w+-\w+-\w+"
 Last-Modified: \w+, \d+ \w+ \d{4} \d\d:\d\d:\d\d GMT
+Transfer-Encoding: chunked
 
+d0
 \x1f\x8b\x08.+
+0
+
+"

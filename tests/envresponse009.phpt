@@ -24,7 +24,9 @@ Accept-Ranges: bytes%c
 X-Powered-By: %s%c
 ETag: "abc"%c
 Last-Modified: %s%c
+Transfer-Encoding: chunked%c
 %c
+e1%c
 <?php
 $f = tmpfile();
 $r = new http\Env\Response;
@@ -35,5 +37,8 @@ $r->send($f);
 rewind($f);
 var_dump(stream_get_contents($f));
 ?>
+%c
+0%c
+%c
 "
 

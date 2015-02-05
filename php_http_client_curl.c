@@ -70,6 +70,7 @@ typedef struct php_http_client_curl_handler {
 	struct {
 		HashTable cache;
 
+		struct curl_slist *proxyheaders;
 		struct curl_slist *headers;
 		struct curl_slist *resolve;
 		php_http_buffer_t cookies;
@@ -1095,6 +1096,43 @@ static STATUS php_http_curle_option_set_portrange(php_http_option_t *opt, zval *
 	return SUCCESS;
 }
 
+#if PHP_HTTP_CURL_VERSION(7,37,0)
+static STATUS php_http_curle_option_set_proxyheader(php_http_option_t *opt, zval *val, void *userdata)
+{
+	php_http_client_curl_handler_t *curl = userdata;
+	TSRMLS_FETCH_FROM_CTX(curl->client->ts);
+
+	if (val && Z_TYPE_P(val) != IS_NULL) {
+		php_http_array_hashkey_t header_key = php_http_array_hashkey_init(0);
+		zval **header_val, *header_cpy;
+		HashPosition pos;
+		php_http_buffer_t header;
+
+		php_http_buffer_init(&header);
+		FOREACH_KEYVAL(pos, val, header_key, header_val) {
+			if (header_key.type == HASH_KEY_IS_STRING) {
+				header_cpy = php_http_ztyp(IS_STRING, *header_val);
+				php_http_buffer_appendf(&header, "%s: %s", header_key.str, Z_STRVAL_P(header_cpy));
+				php_http_buffer_fix(&header);
+				curl->options.proxyheaders = curl_slist_append(curl->options.proxyheaders, header.data);
+				php_http_buffer_reset(&header);
+
+				zval_ptr_dtor(&header_cpy);
+			}
+		}
+		php_http_buffer_dtor(&header);
+	}
+	if (CURLE_OK != curl_easy_setopt(curl->handle, CURLOPT_PROXYHEADER, curl->options.proxyheaders)) {
+		return FAILURE;
+	}
+	if (CURLE_OK != curl_easy_setopt(curl->handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE)) {
+		curl_easy_setopt(curl->handle, CURLOPT_PROXYHEADER, NULL);
+		return FAILURE;
+	}
+	return SUCCESS;
+}
+#endif
+
 #if PHP_HTTP_CURL_VERSION(7,21,3)
 static STATUS php_http_curle_option_set_resolve(php_http_option_t *opt, zval *val, void *userdata)
 {
@@ -1144,6 +1182,12 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 	php_http_option_register(registry, ZEND_STRL("proxytunnel"), CURLOPT_HTTPPROXYTUNNEL, IS_BOOL);
 #if PHP_HTTP_CURL_VERSION(7,19,4)
 	php_http_option_register(registry, ZEND_STRL("noproxy"), CURLOPT_NOPROXY, IS_STRING);
+#endif
+
+#if PHP_HTTP_CURL_VERSION(7,37,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("proxyheader"), CURLOPT_PROXYHEADER, IS_ARRAY))) {
+		opt->setter = php_http_curle_option_set_proxyheader;
+	}
 #endif
 
 	/* dns */
@@ -1549,6 +1593,10 @@ static STATUS php_http_client_curl_handler_reset(php_http_client_curl_handler_t 
 	if (curl->options.headers) {
 		curl_slist_free_all(curl->options.headers);
 		curl->options.headers = NULL;
+	}
+	if (curl->options.proxyheaders) {
+		curl_slist_free_all(curl->options.proxyheaders);
+		curl->options.proxyheaders = NULL;
 	}
 
 	php_http_buffer_reset(&curl->options.cookies);

@@ -886,6 +886,7 @@ typedef struct php_http_env_response_stream_ctx {
 
 	unsigned started:1;
 	unsigned finished:1;
+	unsigned chunked:1;
 } php_http_env_response_stream_ctx_t;
 
 static STATUS php_http_env_response_stream_init(php_http_env_response_t *r, void *init_arg)
@@ -903,6 +904,7 @@ static STATUS php_http_env_response_stream_init(php_http_env_response_t *r, void
 	zend_hash_init(&ctx->header, 0, NULL, ZVAL_PTR_DTOR, 0);
 	php_http_version_init(&ctx->version, 1, 1 TSRMLS_CC);
 	ctx->status_code = 200;
+	ctx->chunked = 1;
 
 	r->ctx = ctx;
 
@@ -929,6 +931,12 @@ static void php_http_env_response_stream_header(php_http_env_response_stream_ctx
 		} else {
 			zval *tmp = php_http_ztyp(IS_STRING, *val);
 
+			if (ctx->chunked) {
+				/* disable chunked transfer encoding if we've got an explicit content-length */
+				if (!strncasecmp(Z_STRVAL_P(tmp), "Content-Length:", lenof("Content-Length:"))) {
+					ctx->chunked = 0;
+				}
+			}
 			php_stream_write(ctx->stream, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
 			php_stream_write_string(ctx->stream, PHP_HTTP_CRLF);
 			zval_ptr_dtor(&tmp);
@@ -943,7 +951,12 @@ static STATUS php_http_env_response_stream_start(php_http_env_response_stream_ct
 
 	php_stream_printf(ctx->stream TSRMLS_CC, "HTTP/%u.%u %ld %s" PHP_HTTP_CRLF, ctx->version.major, ctx->version.minor, ctx->status_code, php_http_env_get_response_status_for_code(ctx->status_code));
 	php_http_env_response_stream_header(ctx, &ctx->header TSRMLS_CC);
-	php_stream_write_string(ctx->stream, PHP_HTTP_CRLF);
+	/* enable chunked transfer encoding */
+	if (ctx->chunked) {
+		php_stream_write_string(ctx->stream, "Transfer-Encoding: chunked" PHP_HTTP_CRLF PHP_HTTP_CRLF);
+	} else {
+		php_stream_write_string(ctx->stream, PHP_HTTP_CRLF);
+	}
 	ctx->started = 1;
 	return SUCCESS;
 }
@@ -1061,7 +1074,15 @@ static STATUS php_http_env_response_stream_write(php_http_env_response_t *r, con
 		}
 	}
 
+	if (stream_ctx->chunked && 0 == php_stream_printf(stream_ctx->stream TSRMLS_CC, "%lx" PHP_HTTP_CRLF, (unsigned long) data_len)) {
+		return FAILURE;
+	}
+
 	if (data_len != php_stream_write(stream_ctx->stream, data_str, data_len)) {
+		return FAILURE;
+	}
+
+	if (stream_ctx->chunked && 2 != php_stream_write_string(stream_ctx->stream, PHP_HTTP_CRLF)) {
 		return FAILURE;
 	}
 
@@ -1095,6 +1116,10 @@ static STATUS php_http_env_response_stream_finish(php_http_env_response_t *r)
 		if (SUCCESS != php_http_env_response_stream_start(stream_ctx TSRMLS_CC)) {
 			return FAILURE;
 		}
+	}
+
+	if (stream_ctx->chunked && 5 != php_stream_write_string(stream_ctx->stream, "0" PHP_HTTP_CRLF PHP_HTTP_CRLF)) {
+		return FAILURE;
 	}
 
 	stream_ctx->finished = 1;
@@ -1367,6 +1392,7 @@ static PHP_METHOD(HttpEnvResponse, send)
 #else
 		php_end_ob_buffers(1 TSRMLS_CC);
 #endif
+
 		if (zstream) {
 			php_http_env_response_t *r;
 

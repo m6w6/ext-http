@@ -32,5 +32,10 @@ echo stream_get_contents($f);
 HTTP/1.1 200 OK
 Accept-Ranges: bytes
 ETag: "fc8305a1"
+Transfer-Encoding: chunked
 
+9
 foo: bar
+
+0
+

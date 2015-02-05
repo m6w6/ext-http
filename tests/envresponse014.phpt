@@ -16,9 +16,12 @@ $res->send($f);
 rewind($f);
 var_dump(stream_get_contents($f));
 --EXPECTF--
-string(96) "HTTP/1.1 416 Requested Range Not Satisfiable
+string(129) "HTTP/1.1 416 Requested Range Not Satisfiable
 Accept-Ranges: bytes
 Content-Range: bytes */6
+Transfer-Encoding: chunked
+
+0
 
 "
 

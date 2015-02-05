@@ -34,6 +34,11 @@ Accept-Ranges: bytes%c
 X-Powered-By: %s%c
 Content-Type: text/plain%c
 Content-Range: bytes 2-4/9%c
+Transfer-Encoding: chunked%c
 %c
-234"
+3%c
+234%c
+0%c
+%c
+"
 Done
