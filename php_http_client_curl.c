@@ -1163,6 +1163,30 @@ static STATUS php_http_curle_option_set_resolve(php_http_option_t *opt, zval *va
 }
 #endif
 
+#if PHP_HTTP_CURL_VERSION(7,21,4)
+static STATUS php_http_curle_option_set_ssl_tlsauthtype(php_http_option_t *opt, zval *val, void *userdata)
+{
+	php_http_client_curl_handler_t *curl = userdata;
+	CURL *ch = curl->handle;
+
+	if (val && Z_LVAL_P(val)) {
+		switch (Z_LVAL_P(val)) {
+		case CURL_TLSAUTH_SRP:
+			if (CURLE_OK == curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, PHP_HTTP_CURL_TLSAUTH_SRP)) {
+				return SUCCESS;
+			}
+			/* no break */
+		default:
+			return FAILURE;
+		}
+	}
+	if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, PHP_HTTP_CURL_TLSAUTH_DEF)) {
+		return FAILURE;
+	}
+	return SUCCESS;
+}
+#endif
+
 static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 {
 	php_http_option_t *opt;
@@ -1449,6 +1473,17 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		if ((opt = php_http_option_register(registry, ZEND_STRL("pinned_publickey"), CURLOPT_PINNEDPUBLICKEY, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+		}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,21,4)
+		if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthtype"), CURLOPT_TLSAUTH_TYPE, IS_LONG))) {
+			opt->setter = php_http_curle_option_set_ssl_tlsauthtype;
+		}
+		if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthuser"), CURLOPT_TLSAUTH_USERNAME, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+		}
+		if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthpass"), CURLOPT_TLSAUTH_PASSWORD, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 		}
 #endif
 	}
@@ -2210,6 +2245,9 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_SSLv2", CURL_SSLVERSION_SSLv2, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_SSLv3", CURL_SSLVERSION_SSLv3, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_ANY", CURL_SSLVERSION_DEFAULT, CONST_CS|CONST_PERSISTENT);
+#if PHP_HTTP_CURL_VERSION(7,21,4)
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "TLSAUTH_SRP", CURL_TLSAUTH_SRP, CONST_CS|CONST_PERSISTENT);
+#endif
 
 	/*
 	* DNS IPvX resolving

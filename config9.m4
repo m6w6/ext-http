@@ -304,6 +304,37 @@ dnl ----
 			], [
 				AC_MSG_RESULT([no])
 			])
+			
+			AC_MSG_CHECKING([whether CURLOPT_TLSAUTH_TYPE expects CURL_TLSAUTH_SRP or literal "SRP"])
+			AC_TRY_RUN([
+				#include <curl/curl.h>
+				int main(int argc, char *argv[]) {
+					CURL *ch = curl_easy_init();
+					return curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, CURL_TLSAUTH_SRP);
+				}
+			], [
+				AC_MSG_RESULT([CURL_TLSAUTH_SRP])
+				AC_DEFINE([PHP_HTTP_CURL_TLSAUTH_SRP], [CURL_TLSAUTH_SRP], [ ])
+				AC_DEFINE([PHP_HTTP_CURL_TLSAUTH_DEF], [CURL_TLSAUTH_NONE], [ ])
+			], [
+				AC_TRY_RUN([
+					#include <curl/curl.h>
+					int main(int argc, char *argv[]) {
+						CURL *ch = curl_easy_init();
+						return curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, "SRP");
+					}
+				], [
+					AC_MSG_RESULT(["SRP"])
+					AC_DEFINE([PHP_HTTP_CURL_TLSAUTH_SRP], ["SRP"], [ ])
+					AC_DEFINE([PHP_HTTP_CURL_TLSAUTH_DEF], [""], [ ])
+				], [
+					AC_MSG_RESULT([neither])
+				], [
+					AC_MSG_RESULT([neither])
+				])			
+			], [
+				AC_MSG_RESULT([neither])
+			])
 		
 			INCLUDES="$save_INCLUDES"
 			LIBS="$save_LIBS"
