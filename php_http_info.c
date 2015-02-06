@@ -90,13 +90,22 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 
 	/* is response */
 	if (pre_header == http) {
-		char *status = NULL;
-		const char *code = http + sizeof("HTTP/X.x");
+		const char *status = NULL, *code = http + sizeof("HTTP/X.x");
 		
 		info->type = PHP_HTTP_RESPONSE;
 		while (' ' == *code) ++code;
 		if (code && end > code) {
-			PHP_HTTP_INFO(info).response.code = strtol(code, &status, 10);
+			/* rfc7230#3.1.2 The status-code element is a 3-digit integer code */
+			PHP_HTTP_INFO(info).response.code = 100*(*code++ - '0');
+			PHP_HTTP_INFO(info).response.code += 10*(*code++ - '0');
+			PHP_HTTP_INFO(info).response.code +=     *code++ - '0';
+			if (PHP_HTTP_INFO(info).response.code < 100 || PHP_HTTP_INFO(info).response.code > 599) {
+				if (free_info) {
+					php_http_info_free(&info);
+				}
+				return NULL;
+			}
+			status = code;
 		} else {
 			PHP_HTTP_INFO(info).response.code = 0;
 		}

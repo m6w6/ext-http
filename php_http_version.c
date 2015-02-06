@@ -27,7 +27,7 @@ php_http_version_t *php_http_version_init(php_http_version_t *v, unsigned major,
 php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *str TSRMLS_DC)
 {
 	long major, minor;
-	char separator = 0, *stop = NULL;
+	char separator = 0;
 	register const char *ptr = str;
 
 	switch (*ptr) {
@@ -40,16 +40,16 @@ php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *st
 		++ptr;
 		/* no break */
 	default:
-		major = strtol(ptr, &stop, 10);
-		if (stop && stop != ptr && major != LONG_MIN && major != LONG_MAX) {
-			separator = *stop;
+		/* rfc7230#2.6 The HTTP version number consists of two decimal digits separated by a "." (period or decimal point) */
+		major = *ptr++ - '0';
+		if (major >= 0 && major <= 9) {
+			separator = *ptr++;
 			if (separator) {
 				if (separator != '.' && separator != ',') {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Non-standard version separator '%c' in HTTP protocol version '%s'", separator, ptr);
+					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Non-standard version separator '%c' in HTTP protocol version '%s'", separator, ptr - 2);
 				}
-				ptr = stop + 1;
-				minor = strtol(ptr, &stop, 10);
-				if (minor != LONG_MIN && minor != LONG_MAX) {
+				minor = *ptr - '0';
+				if (minor >= 0 && minor <= 9) {
 					return php_http_version_init(v, major, minor TSRMLS_CC);
 				}
 			}
