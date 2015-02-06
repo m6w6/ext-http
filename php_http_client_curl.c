@@ -410,17 +410,6 @@ static STATUS php_http_curle_get_info(CURL *ch, HashTable *info)
 		add_assoc_zval_ex(&array, "ssl_engines", sizeof("ssl_engines"), subarray);
 		curl_slist_free_all(s);
 	}
-	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_COOKIELIST, &s)) {
-		MAKE_STD_ZVAL(subarray);
-		array_init(subarray);
-		for (p = s; p; p = p->next) {
-			if (p->data) {
-				add_next_index_string(subarray, p->data, 1);
-			}
-		}
-		add_assoc_zval_ex(&array, "cookies", sizeof("cookies"), subarray);
-		curl_slist_free_all(s);
-	}
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_REDIRECT_URL, &c)) {
 		add_assoc_string_ex(&array, "redirect_url", sizeof("redirect_url"), c ? c : "", 1);
 	}
