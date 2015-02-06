@@ -1210,6 +1210,13 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 	}
 #endif
 
+#if PHP_HTTP_CURL_VERSION(7,40,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("unix_socket_path"), CURLOPT_UNIX_SOCKET_PATH, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+	}
+#endif
+
 	/* dns */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_cache_timeout"), CURLOPT_DNS_CACHE_TIMEOUT, IS_LONG))) {
 		Z_LVAL(opt->defval) = 60;
