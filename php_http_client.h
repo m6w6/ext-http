@@ -118,6 +118,8 @@ typedef struct php_http_client_object {
 	zend_object_value zv;
 	php_http_client_t *client;
 	long iterator;
+	php_http_object_method_t *update;
+	php_http_object_method_t notify;
 } php_http_client_object_t;
 
 PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC);

@@ -329,6 +329,8 @@ void php_http_client_object_free(void *object TSRMLS_DC)
 	php_http_client_object_t *o = (php_http_client_object_t *) object;
 
 	php_http_client_free(&o->client);
+	php_http_object_method_dtor(&o->notify);
+	php_http_object_method_free(&o->update);
 	zend_object_std_dtor((zend_object *) o TSRMLS_CC);
 	efree(o);
 }
@@ -457,14 +459,18 @@ static STATUS handle_response(void *arg, php_http_client_t *client, php_http_cli
 
 static void handle_progress(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_client_progress_state_t *progress)
 {
-	zval *zrequest, *zprogress, *retval = NULL, *zclient;
+	zval *zrequest, *zprogress, *zclient, **args[2];
+	php_http_client_object_t *client_obj = arg;
 	zend_error_handling zeh;
 	TSRMLS_FETCH_FROM_CTX(client->ts);
 
 	MAKE_STD_ZVAL(zclient);
-	ZVAL_OBJVAL(zclient, ((php_http_client_object_t *) arg)->zv, 1);
+	ZVAL_OBJVAL(zclient, client_obj->zv, 1);
+
 	MAKE_STD_ZVAL(zrequest);
 	ZVAL_OBJVAL(zrequest, ((php_http_message_object_t *) e->opaque)->zv, 1);
+	args[0] = &zrequest;
+
 	MAKE_STD_ZVAL(zprogress);
 	object_init(zprogress);
 	add_property_bool(zprogress, "started", progress->started);
@@ -474,15 +480,15 @@ static void handle_progress(void *arg, php_http_client_t *client, php_http_clien
 	add_property_double(zprogress, "dlnow", progress->dl.now);
 	add_property_double(zprogress, "ultotal", progress->ul.total);
 	add_property_double(zprogress, "ulnow", progress->ul.now);
+	args[1] = &zprogress;
+
 	zend_replace_error_handling(EH_NORMAL, NULL, &zeh TSRMLS_CC);
-	zend_call_method_with_2_params(&zclient, NULL, NULL, "notify", &retval, zrequest, zprogress);
+	php_http_object_method_call(&client_obj->notify, zclient, NULL, 2, args TSRMLS_CC);
 	zend_restore_error_handling(&zeh TSRMLS_CC);
+
 	zval_ptr_dtor(&zclient);
 	zval_ptr_dtor(&zrequest);
 	zval_ptr_dtor(&zprogress);
-	if (retval) {
-		zval_ptr_dtor(&retval);
-	}
 }
 
 static void response_dtor(void *data)
@@ -536,6 +542,8 @@ static PHP_METHOD(HttpClient, __construct)
 		obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 
 		php_http_expect(obj->client = php_http_client_init(NULL, driver.client_ops, rf, NULL TSRMLS_CC), runtime, return);
+
+		php_http_object_method_init(&obj->notify, getThis(), ZEND_STRL("notify") TSRMLS_CC);
 
 		obj->client->callback.response.func = handle_response;
 		obj->client->callback.response.arg = obj;
@@ -869,13 +877,20 @@ static PHP_METHOD(HttpClient, enableEvents)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
+struct notify_arg {
+	php_http_object_method_t *cb;
+	zval **args[3];
+	int argc;
+};
+
 static int notify(zend_object_iterator *iter, void *puser TSRMLS_DC)
 {
-	zval **observer = NULL, ***args = puser;
+	zval **observer = NULL;
+	struct notify_arg *arg = puser;
 
 	iter->funcs->get_current_data(iter, &observer TSRMLS_CC);
 	if (observer) {
-		return php_http_method_call(*observer, ZEND_STRL("update"), args[2]?3:args[1]?2:args[0]?1:0, args, NULL TSRMLS_CC);
+		return php_http_object_method_call(arg->cb, *observer, NULL, arg->argc, arg->args TSRMLS_CC);
 	}
 	return FAILURE;
 }
@@ -885,10 +900,13 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_notify, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, notify)
 {
-	zval *request = NULL, *zprogress = NULL, *observers, **args[3];
+	zval *request = NULL, *zprogress = NULL, *observers;
+	php_http_client_object_t *client_obj;
+	struct notify_arg arg = {NULL};
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|O!o!", &request, php_http_client_request_class_entry, &zprogress), invalid_arg, return);
 
+	client_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
@@ -896,23 +914,34 @@ static PHP_METHOD(HttpClient, notify)
 		return;
 	}
 
-	Z_ADDREF_P(getThis());
-	args[0] = &getThis();
-	if (request) {
-		Z_ADDREF_P(request);
-	}
-	args[1] = &request;
-	if (zprogress) {
-		Z_ADDREF_P(zprogress);
-	}
-	args[2] = &zprogress;
-	spl_iterator_apply(observers, notify, args TSRMLS_CC);
-	zval_ptr_dtor(&getThis());
-	if (request) {
-		zval_ptr_dtor(&request);
-	}
-	if (zprogress) {
-		zval_ptr_dtor(&zprogress);
+	if (client_obj->update) {
+		arg.cb = client_obj->update;
+
+		Z_ADDREF_P(getThis());
+		arg.args[0] = &getThis();
+		arg.argc = 1;
+
+		if (request) {
+			Z_ADDREF_P(request);
+			arg.args[1] = &request;
+			arg.argc += 1;
+		}
+
+		if (zprogress) {
+			Z_ADDREF_P(zprogress);
+			arg.args[2] = &zprogress;
+			arg.argc += 1;
+		}
+
+		spl_iterator_apply(observers, notify, &arg TSRMLS_CC);
+
+		zval_ptr_dtor(&getThis());
+		if (request) {
+			zval_ptr_dtor(&request);
+		}
+		if (zprogress) {
+			zval_ptr_dtor(&zprogress);
+		}
 	}
 
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -924,14 +953,20 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, attach)
 {
 	zval *observers, *observer, *retval = NULL;
+	php_http_client_object_t *client_obj;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &observer, spl_ce_SplObserver), invalid_arg, return);
 
+	client_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0 TSRMLS_CC);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
 		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
 		return;
+	}
+
+	if (!client_obj->update) {
+		client_obj->update = php_http_object_method_init(NULL, observer, ZEND_STRL("update") TSRMLS_CC);
 	}
 
 	zend_call_method_with_1_params(&observers, NULL, NULL, "attach", &retval, observer);

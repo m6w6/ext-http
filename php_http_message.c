@@ -1161,17 +1161,19 @@ static PHP_METHOD(HttpMessage, getHeader)
 			if (!header_ce) {
 				RETURN_ZVAL(header, 1, 1);
 			} else if (instanceof_function(header_ce, php_http_header_class_entry TSRMLS_CC)) {
+				php_http_object_method_t cb;
 				zval *header_name, **argv[2];
 
 				MAKE_STD_ZVAL(header_name);
 				ZVAL_STRINGL(header_name, header_str, header_len, 1);
-				Z_ADDREF_P(header);
 
 				argv[0] = &header_name;
 				argv[1] = &header;
 
 				object_init_ex(return_value, header_ce);
-				php_http_method_call(return_value, ZEND_STRL("__construct"), 2, argv, NULL TSRMLS_CC);
+				php_http_object_method_init(&cb, return_value, ZEND_STRL("__construct") TSRMLS_CC);
+				php_http_object_method_call(&cb, return_value, NULL, 2, argv TSRMLS_CC);
+				php_http_object_method_dtor(&cb);
 
 				zval_ptr_dtor(&header_name);
 				zval_ptr_dtor(&header);
