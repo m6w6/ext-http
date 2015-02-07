@@ -37,7 +37,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-01-27</date>
+ <date>2015-02-07</date>
  <version>
   <release>2.2.1</release>
   <api>2.2.0</api>
@@ -48,6 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
+* Fixed Bug #69000 (http\Url breaks down with very long URL query strings)
 ]]></notes>
  <contents>
   <dir name="/">
