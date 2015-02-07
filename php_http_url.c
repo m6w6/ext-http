@@ -57,7 +57,7 @@ static inline char *localhostname(void)
 	return estrndup("localhost", lenof("localhost"));
 }
 
-#define url(buf) ((php_http_url_t *) buf.data)
+#define url(buf) ((php_http_url_t *) (buf).data)
 
 static php_http_url_t *php_http_url_from_env(TSRMLS_D)
 {
@@ -139,13 +139,30 @@ void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php
 
 #define url_isset(u,n) \
 	((u)&&(u)->n)
+#define url_append(buf, append) do { \
+	char *_ptr = (buf)->data; \
+	php_http_url_t *_url = (php_http_url_t *) _ptr, _mem = *_url; \
+	append; \
+	/* relocate */ \
+	if (_ptr != (buf)->data) { \
+		ptrdiff_t diff = (buf)->data - _ptr; \
+		_url = (php_http_url_t *) (buf)->data; \
+		if (_mem.scheme)	_url->scheme += diff; \
+		if (_mem.user)		_url->user += diff; \
+		if (_mem.pass)		_url->pass += diff; \
+		if (_mem.host)		_url->host += diff; \
+		if (_mem.path)		_url->path += diff; \
+		if (_mem.query)		_url->query += diff; \
+		if (_mem.fragment)	_url->fragment += diff; \
+	} \
+} while (0)
 #define url_copy(n) do { \
 	if (url_isset(new_url, n)) { \
 		url(buf)->n = &buf.data[buf.used]; \
-		php_http_buffer_append(&buf, new_url->n, strlen(new_url->n) + 1); \
+		url_append(&buf, php_http_buffer_append(&buf, new_url->n, strlen(new_url->n) + 1)); \
 	} else if (url_isset(old_url, n)) { \
 		url(buf)->n = &buf.data[buf.used]; \
-		php_http_buffer_append(&buf, old_url->n, strlen(old_url->n) + 1); \
+		url_append(&buf, php_http_buffer_append(&buf, old_url->n, strlen(old_url->n) + 1)); \
 	} \
 } while (0)
 
@@ -196,9 +213,9 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 			
 			url(buf)->path = &buf.data[buf.used];
 			if (path[0] != '/') {
-				php_http_buffer_append(&buf, "/", 1);
+				url_append(&buf, php_http_buffer_append(&buf, "/", 1));
 			}
-			php_http_buffer_append(&buf, path, strlen(path) + 1);
+			url_append(&buf, php_http_buffer_append(&buf, path, strlen(path) + 1));
 			efree(path);
 		} else {
 			const char *path = NULL;
@@ -212,7 +229,7 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 			if (path) {
 				url(buf)->path = &buf.data[buf.used];
 
-				php_http_buffer_append(&buf, path, strlen(path) + 1);
+				url_append(&buf, php_http_buffer_append(&buf, path, strlen(path) + 1));
 			}
 
 
@@ -236,7 +253,7 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 			php_http_querystring_update(&qarr, NULL, &qstr TSRMLS_CC);
 
 			url(buf)->query = &buf.data[buf.used];
-			php_http_buffer_append(&buf, Z_STRVAL(qstr), Z_STRLEN(qstr) + 1);
+			url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL(qstr), Z_STRLEN(qstr) + 1));
 
 			zval_dtor(&qstr);
 			zval_dtor(&qarr);
@@ -449,25 +466,25 @@ php_http_url_t *php_http_url_from_struct(HashTable *ht)
 	if (SUCCESS == zend_hash_find(ht, "scheme", sizeof("scheme"), (void *) &e)) {
 		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url(buf)->scheme = &buf.data[buf.used];
-		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "user", sizeof("user"), (void *) &e)) {
 		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url(buf)->user = &buf.data[buf.used];
-		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "pass", sizeof("pass"), (void *) &e)) {
 		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url(buf)->pass = &buf.data[buf.used];
-		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "host", sizeof("host"), (void *) &e)) {
 		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url(buf)->host = &buf.data[buf.used];
-		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "port", sizeof("port"), (void *) &e)) {
@@ -478,19 +495,19 @@ php_http_url_t *php_http_url_from_struct(HashTable *ht)
 	if (SUCCESS == zend_hash_find(ht, "path", sizeof("path"), (void *) &e)) {
 		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url(buf)->path = &buf.data[buf.used];
-		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "query", sizeof("query"), (void *) &e)) {
 		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url(buf)->query = &buf.data[buf.used];
-		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1));
 		zval_ptr_dtor(&cpy);
 	}
 	if (SUCCESS == zend_hash_find(ht, "fragment", sizeof("fragment"), (void *) &e)) {
 		zval *cpy = php_http_ztyp(IS_STRING, *e);
 		url(buf)->fragment = &buf.data[buf.used];
-		php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1);
+		url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL_P(cpy), Z_STRLEN_P(cpy) + 1));
 		zval_ptr_dtor(&cpy);
 	}
 
