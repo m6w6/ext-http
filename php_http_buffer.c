@@ -74,7 +74,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(php_http_buffer_t *buf, siz
 
 PHP_HTTP_BUFFER_API char *php_http_buffer_account(php_http_buffer_t *buf, size_t to_account)
 {
-	assert(to_account < buf->free);
+	assert(to_account <= buf->free);
 
 	buf->free -= to_account;
 	buf->used += to_account;
