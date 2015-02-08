@@ -18,7 +18,9 @@
 
 #define PHP_HTTP_INFO_REQUEST_FMT_ARGS(_http_ptr, tmp, eol) "%s %s HTTP/%u.%u" eol, \
 				(_http_ptr)->info.request.method?(_http_ptr)->info.request.method:"UNKNOWN", \
-				(_http_ptr)->info.request.url?php_http_url_to_string((_http_ptr)->info.request.url, &(tmp), NULL, 0):"/", \
+				(_http_ptr)->info.request.method&&!strcasecmp((_http_ptr)->info.request.method,"CONNECT")?( \
+				(_http_ptr)->info.request.url?php_http_url_authority_to_string((_http_ptr)->info.request.url, &(tmp), NULL):"0"):( \
+				(_http_ptr)->info.request.url?php_http_url_to_string((_http_ptr)->info.request.url, &(tmp), NULL, 0):"/"), \
 				(_http_ptr)->version.major||(_http_ptr)->version.major?(_http_ptr)->version.major:1, \
 				(_http_ptr)->version.major||(_http_ptr)->version.minor?(_http_ptr)->version.minor:1
 

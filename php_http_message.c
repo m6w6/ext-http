@@ -604,9 +604,8 @@ static void php_http_message_object_prophandler_set_headers(php_http_message_obj
 
 	if (Z_TYPE_P(value) != IS_ARRAY && Z_TYPE_P(value) != IS_OBJECT) {
 		convert_to_array_ex(value);
-	} else {
-		headers = HASH_OF(value);
 	}
+	headers = HASH_OF(value);
 
 	zend_hash_clean(&obj->message->hdrs);
 	array_copy(headers, &obj->message->hdrs);
@@ -798,7 +797,7 @@ php_http_message_object_t *php_http_message_object_new_ex(zend_class_entry *ce, 
 {
 	php_http_message_object_t *o;
 
-	o = ecalloc(1, sizeof(php_http_message_object_t) + (ce->default_properties_count - 1) * sizeof(zval));
+	o = ecalloc(1, sizeof(*o) + zend_object_properties_size(ce));
 	zend_object_std_init(&o->zo, ce);
 	object_properties_init(&o->zo, ce);
 
@@ -1109,13 +1108,16 @@ static PHP_METHOD(HttpMessage, getHeader)
 			if (!header_ce) {
 				RETURN_ZVAL(header, 1, 1);
 			} else if (instanceof_function(header_ce, php_http_header_class_entry)) {
+				php_http_object_method_t cb;
 				zval argv[2];
 
 				ZVAL_STRINGL(&argv[0], header_str, header_len);
 				ZVAL_COPY(&argv[1], header);
 
 				object_init_ex(return_value, header_ce);
-				php_http_method_call(return_value, ZEND_STRL("__construct"), 2, argv, NULL);
+				php_http_object_method_init(&cb, return_value, ZEND_STRL("__construct"));
+				php_http_object_method_call(&cb, return_value, NULL, 2, argv);
+				php_http_object_method_dtor(&cb);
 
 				zval_ptr_dtor(&argv[0]);
 				zval_ptr_dtor(&argv[1]);

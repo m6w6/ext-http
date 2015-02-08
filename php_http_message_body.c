@@ -554,7 +554,7 @@ php_http_message_body_object_t *php_http_message_body_object_new_ex(zend_class_e
 {
 	php_http_message_body_object_t *o;
 
-	o = ecalloc(1, sizeof(php_http_message_body_object_t) + (ce->default_properties_count - 1) * sizeof(zval));
+	o = ecalloc(1, sizeof(*o) + zend_object_properties_size(ce));
 	zend_object_std_init(&o->zo, php_http_message_body_class_entry);
 	object_properties_init(&o->zo, ce);
 

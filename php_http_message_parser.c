@@ -517,7 +517,7 @@ php_http_message_parser_object_t *php_http_message_parser_object_new_ex(zend_cla
 {
 	php_http_message_parser_object_t *o;
 
-	o = ecalloc(1, sizeof(php_http_message_parser_object_t) + (ce->default_properties_count - 1) * sizeof(zval));
+	o = ecalloc(1, sizeof(*o) + zend_object_properties_size(ce));
 	zend_object_std_init(&o->zo, ce);
 	object_properties_init(&o->zo, ce);
 

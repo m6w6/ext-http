@@ -85,7 +85,7 @@ typedef struct php_http_client_progress_state {
 	unsigned finished:1;
 } php_http_client_progress_state_t;
 
-typedef ZEND_RESULT_CODE (*php_http_client_response_callback_t)(void *arg, struct php_http_client *client, php_http_client_enqueue_t *e, php_http_message_t **request, php_http_message_t **response);
+typedef ZEND_RESULT_CODE (*php_http_client_response_callback_t)(void *arg, struct php_http_client *client, php_http_client_enqueue_t *e, php_http_message_t **response);
 typedef void (*php_http_client_progress_callback_t)(void *arg, struct php_http_client *client, php_http_client_enqueue_t *e, php_http_client_progress_state_t *state);
 
 typedef struct php_http_client {
@@ -112,6 +112,8 @@ PHP_HTTP_API zend_class_entry *php_http_client_class_entry;
 
 typedef struct php_http_client_object {
 	php_http_client_t *client;
+	php_http_object_method_t *update;
+	php_http_object_method_t notify;
 	long iterator;
 	zend_object zo;
 } php_http_client_object_t;

@@ -57,7 +57,7 @@ static inline char *localhostname(void)
 	return estrndup("localhost", lenof("localhost"));
 }
 
-#define url(buf) ((php_http_url_t *) buf.data)
+#define url(buf) ((php_http_url_t *) (buf).data)
 
 static php_http_url_t *php_http_url_from_env(void)
 {
@@ -125,13 +125,30 @@ static php_http_url_t *php_http_url_from_env(void)
 
 #define url_isset(u,n) \
 	((u)&&(u)->n)
+#define url_append(buf, append) do { \
+	char *_ptr = (buf)->data; \
+	php_http_url_t *_url = (php_http_url_t *) _ptr, _mem = *_url; \
+	append; \
+	/* relocate */ \
+	if (_ptr != (buf)->data) { \
+		ptrdiff_t diff = (buf)->data - _ptr; \
+		_url = (php_http_url_t *) (buf)->data; \
+		if (_mem.scheme)	_url->scheme += diff; \
+		if (_mem.user)		_url->user += diff; \
+		if (_mem.pass)		_url->pass += diff; \
+		if (_mem.host)		_url->host += diff; \
+		if (_mem.path)		_url->path += diff; \
+		if (_mem.query)		_url->query += diff; \
+		if (_mem.fragment)	_url->fragment += diff; \
+	} \
+} while (0)
 #define url_copy(n) do { \
 	if (url_isset(new_url, n)) { \
 		url(buf)->n = &buf.data[buf.used]; \
-		php_http_buffer_append(&buf, new_url->n, strlen(new_url->n) + 1); \
+		url_append(&buf, php_http_buffer_append(&buf, new_url->n, strlen(new_url->n) + 1)); \
 	} else if (url_isset(old_url, n)) { \
 		url(buf)->n = &buf.data[buf.used]; \
-		php_http_buffer_append(&buf, old_url->n, strlen(old_url->n) + 1); \
+		url_append(&buf, php_http_buffer_append(&buf, old_url->n, strlen(old_url->n) + 1)); \
 	} \
 } while (0)
 
@@ -182,9 +199,9 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 			
 			url(buf)->path = &buf.data[buf.used];
 			if (path[0] != '/') {
-				php_http_buffer_append(&buf, "/", 1);
+				url_append(&buf, php_http_buffer_append(&buf, "/", 1));
 			}
-			php_http_buffer_append(&buf, path, strlen(path) + 1);
+			url_append(&buf, php_http_buffer_append(&buf, path, strlen(path) + 1));
 			efree(path);
 		} else {
 			const char *path = NULL;
@@ -198,7 +215,7 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 			if (path) {
 				url(buf)->path = &buf.data[buf.used];
 
-				php_http_buffer_append(&buf, path, strlen(path) + 1);
+				url_append(&buf, php_http_buffer_append(&buf, path, strlen(path) + 1));
 			}
 
 
@@ -222,7 +239,7 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 			php_http_querystring_update(&qarr, NULL, &qstr);
 
 			url(buf)->query = &buf.data[buf.used];
-			php_http_buffer_append(&buf, Z_STRVAL(qstr), Z_STRLEN(qstr) + 1);
+			url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL(qstr), Z_STRLEN(qstr) + 1));
 
 			zval_dtor(&qstr);
 			zval_dtor(&qarr);
@@ -294,8 +311,8 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 	}
 	/* unset default ports */
 	if (url(buf)->port) {
-		if (	((url(buf)->port == 80) && !strcmp(url(buf)->scheme, "http"))
-			||	((url(buf)->port ==443) && !strcmp(url(buf)->scheme, "https"))
+		if (	((url(buf)->port == 80) && url(buf)->scheme && !strcmp(url(buf)->scheme, "http"))
+			||	((url(buf)->port ==443) && url(buf)->scheme && !strcmp(url(buf)->scheme, "https"))
 		) {
 			url(buf)->port = 0;
 		}
@@ -367,6 +384,42 @@ char *php_http_url_to_string(const php_http_url_t *url, char **url_str, size_t *
 	return buf.data;
 }
 
+char *php_http_url_authority_to_string(const php_http_url_t *url, char **url_str, size_t *url_len)
+{
+	php_http_buffer_t buf;
+
+	php_http_buffer_init(&buf);
+
+	if (url->user && *url->user) {
+		php_http_buffer_appendl(&buf, url->user);
+		if (url->pass && *url->pass) {
+			php_http_buffer_appends(&buf, ":");
+			php_http_buffer_appendl(&buf, url->pass);
+		}
+		php_http_buffer_appends(&buf, "@");
+	}
+
+	if (url->host && *url->host) {
+		php_http_buffer_appendl(&buf, url->host);
+		if (url->port) {
+			php_http_buffer_appendf(&buf, ":%hu", url->port);
+		}
+	}
+
+	php_http_buffer_shrink(&buf);
+	php_http_buffer_fix(&buf);
+
+	if (url_len) {
+		*url_len = buf.used;
+	}
+
+	if (url_str) {
+		*url_str = buf.data;
+	}
+
+	return buf.data;
+}
+
 php_http_url_t *php_http_url_from_zval(zval *value, unsigned flags)
 {
 	zend_string *zs;
@@ -399,25 +452,25 @@ php_http_url_t *php_http_url_from_struct(HashTable *ht)
 	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("scheme")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->scheme = &buf.data[buf.used];
-		php_http_buffer_append(&buf, zs->val, zs->len + 1);
+		url_append(&buf, php_http_buffer_append(&buf, zs->val, zs->len + 1));
 		zend_string_release(zs);
 	}
 	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("user")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->user = &buf.data[buf.used];
-		php_http_buffer_append(&buf, zs->val, zs->len + 1);
+		url_append(&buf, php_http_buffer_append(&buf, zs->val, zs->len + 1));
 		zend_string_release(zs);
 	}
 	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("pass")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->pass = &buf.data[buf.used];
-		php_http_buffer_append(&buf, zs->val, zs->len + 1);
+		url_append(&buf, php_http_buffer_append(&buf, zs->val, zs->len + 1));
 		zend_string_release(zs);
 	}
 	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("host")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->host = &buf.data[buf.used];
-		php_http_buffer_append(&buf, zs->val, zs->len + 1);
+		url_append(&buf, php_http_buffer_append(&buf, zs->val, zs->len + 1));
 		zend_string_release(zs);
 	}
 	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("port")))) {
@@ -426,19 +479,19 @@ php_http_url_t *php_http_url_from_struct(HashTable *ht)
 	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("path")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->path = &buf.data[buf.used];
-		php_http_buffer_append(&buf, zs->val, zs->len + 1);
+		url_append(&buf, php_http_buffer_append(&buf, zs->val, zs->len + 1));
 		zend_string_release(zs);
 	}
 	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("query")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->query = &buf.data[buf.used];
-		php_http_buffer_append(&buf, zs->val, zs->len + 1);
+		url_append(&buf, php_http_buffer_append(&buf, zs->val, zs->len + 1));
 		zend_string_release(zs);
 	}
 	if ((e = zend_hash_str_find_ind(ht, ZEND_STRL("fragment")))) {
 		zend_string *zs = zval_get_string(e);
 		url(buf)->fragment = &buf.data[buf.used];
-		php_http_buffer_append(&buf, zs->val, zs->len + 1);
+		url_append(&buf, php_http_buffer_append(&buf, zs->val, zs->len + 1));
 		zend_string_release(zs);
 	}
 
@@ -868,7 +921,9 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 			break;
 
 		default:
-			if (port) {
+			if (ptr == end) {
+				break;
+			} else if (port) {
 				php_error_docref(NULL, E_WARNING,
 						"Failed to parse port; unexpected byte 0x%02x at pos %u in '%s'",
 						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
@@ -938,6 +993,7 @@ static const char *parse_authority(struct parse_state *state)
 		case '?':
 		case '#':
 		case '\0':
+			EOD:
 			/* host delimiter */
 			if (tmp != state->ptr && SUCCESS != parse_hostinfo(state, tmp)) {
 				return NULL;
@@ -946,7 +1002,8 @@ static const char *parse_authority(struct parse_state *state)
 		}
 	} while (++state->ptr <= state->end);
 
-	return NULL;
+	--state->ptr;
+	goto EOD;
 }
 
 static const char *parse_path(struct parse_state *state)
@@ -1236,6 +1293,33 @@ php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags)
 
 	if (!parse_fragment(state)) {
 		php_error_docref(NULL, E_WARNING, "Failed to parse URL fragment: '%s'", state->ptr);
+		efree(state);
+		return NULL;
+	}
+
+	return (php_http_url_t *) state;
+}
+
+php_http_url_t *php_http_url_parse_authority(const char *str, size_t len, unsigned flags TSRMLS_DC)
+{
+	size_t maxlen = 3 * len;
+	struct parse_state *state = ecalloc(1, sizeof(*state) + maxlen);
+
+	state->end = str + len;
+	state->ptr = str;
+	state->flags = flags;
+	state->maxlen = maxlen;
+	TSRMLS_SET_CTX(state->ts);
+
+	if (!(state->ptr = parse_authority(state))) {
+		efree(state);
+		return NULL;
+	}
+
+	if (state->ptr != state->end) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING,
+				"Failed to parse URL authority, unexpected character at pos %u in '%s'",
+				(unsigned) (state->ptr - str), str);
 		efree(state);
 		return NULL;
 	}

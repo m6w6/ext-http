@@ -23,7 +23,7 @@ php_http_object_t *php_http_object_new_ex(zend_class_entry *ce, void *intern)
 {
 	php_http_object_t *o;
 
-	o = ecalloc(1, sizeof(php_http_object_t) + (ce->default_properties_count - 1) * sizeof(zval));
+	o = ecalloc(1, sizeof(*o) + zend_object_properties_size(ce));
 	zend_object_std_init(&o->zo, ce);
 	object_properties_init(&o->zo, ce);
 
@@ -35,7 +35,6 @@ php_http_object_t *php_http_object_new_ex(zend_class_entry *ce, void *intern)
 
 void php_http_object_free(zend_object *object)
 {
-	php_http_object_t *obj = PHP_HTTP_OBJ(object, NULL);
 	zend_object_std_dtor(object);
 }
 
@@ -57,29 +56,64 @@ ZEND_RESULT_CODE php_http_new(void **obj_ptr, zend_class_entry *ce, php_http_new
 	return SUCCESS;
 }
 
-ZEND_RESULT_CODE php_http_method_call(zval *object, const char *method_str, size_t method_len, int argc, zval argv[], zval *retval_ptr)
+php_http_object_method_t *php_http_object_method_init(php_http_object_method_t *cb, zval *zobject, const char *method_str, size_t method_len)
 {
-	zend_fcall_info fci;
-	zval retval;
+	if (!cb) {
+		cb = ecalloc(1, sizeof(*cb));
+	} else {
+		memset(cb, 0, sizeof(*cb));
+	}
+
+	cb->fci.size = sizeof(cb->fci);
+	ZVAL_STRINGL(&cb->fci.function_name, method_str, method_len);
+	cb->fcc.initialized = 1;
+	cb->fcc.calling_scope = cb->fcc.called_scope = Z_OBJCE_P(zobject);
+	cb->fcc.function_handler = Z_OBJ_HT_P(zobject)->get_method(&Z_OBJ_P(zobject), Z_STR(cb->fci.function_name), NULL);
+
+	return cb;
+}
+
+void php_http_object_method_dtor(php_http_object_method_t *cb)
+{
+	zval_ptr_dtor(&cb->fci.function_name);
+}
+
+void php_http_object_method_free(php_http_object_method_t **cb)
+{
+	if (*cb) {
+		php_http_object_method_dtor(*cb);
+		efree(*cb);
+		*cb = NULL;
+	}
+}
+
+ZEND_RESULT_CODE php_http_object_method_call(php_http_object_method_t *cb, zval *zobject, zval *retval_ptr, int argc, zval *args)
+{
 	ZEND_RESULT_CODE rv;
+	zval retval;
 
 	ZVAL_UNDEF(&retval);
-	fci.size = sizeof(fci);
-	fci.object = Z_OBJ_P(object);
-	fci.retval = retval_ptr ? retval_ptr : &retval;
-	fci.param_count = argc;
-	fci.params = argv;
-	fci.no_separation = 1;
-	fci.symbol_table = NULL;
-	fci.function_table = NULL;
+	Z_ADDREF_P(zobject);
+	cb->fci.object = Z_OBJ_P(zobject);
+	cb->fcc.object = Z_OBJ_P(zobject);
 
-	ZVAL_STRINGL(&fci.function_name, method_str, method_len);
-	rv = zend_call_function(&fci, NULL TSRMLS_CC);
-	zval_ptr_dtor(&fci.function_name);
+	cb->fci.retval = retval_ptr ? retval_ptr : &retval;
 
-	if (!retval_ptr) {
+	cb->fci.param_count = argc;
+	cb->fci.params = args;
+
+	if (cb->fcc.called_scope != Z_OBJCE_P(zobject)) {
+		cb->fcc.called_scope = Z_OBJCE_P(zobject);
+		cb->fcc.function_handler = Z_OBJ_HT_P(zobject)->get_method(&Z_OBJ_P(zobject), Z_STR(cb->fci.function_name), NULL);
+	}
+
+	rv = zend_call_function(&cb->fci, &cb->fcc);
+
+	zval_ptr_dtor(zobject);
+	if (!retval_ptr && !Z_ISUNDEF(retval)) {
 		zval_ptr_dtor(&retval);
 	}
+
 	return rv;
 }
 

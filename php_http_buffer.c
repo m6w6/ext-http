@@ -50,7 +50,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(
 {
 	char *ptr = NULL;
 #if 0
-	fprintf(stderr, "RESIZE: len=%lu, size=%lu, used=%lu, free=%lu\n", len, buf->size, buf->used, buf->free);
+	fprintf(stderr, "RESIZE: len=%lu, size=%lu, used=%lu, free=%lu, total=%lu\n", len, buf->size, buf->used, buf->free, buf->free+buf->used);
 #endif
 	if (buf->free < len) {
 		size_t size = override_size ? override_size : buf->size;
@@ -81,10 +81,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(
 PHP_HTTP_BUFFER_API char *php_http_buffer_account(
 		php_http_buffer_t *buf, size_t to_account)
 {
-	/* it's probably already too late but check anyway */
-	if (to_account > buf->free) {
-		return NULL;
-	}
+	assert(to_account <= buf->free);
 
 	buf->free -= to_account;
 	buf->used += to_account;

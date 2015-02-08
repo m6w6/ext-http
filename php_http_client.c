@@ -326,6 +326,8 @@ void php_http_client_object_free(zend_object *object)
 	php_http_client_object_t *o = PHP_HTTP_OBJ(object, NULL);
 
 	php_http_client_free(&o->client);
+	php_http_object_method_dtor(&o->notify);
+	php_http_object_method_free(&o->update);
 	zend_object_std_dtor(object);
 }
 
@@ -333,7 +335,7 @@ php_http_client_object_t *php_http_client_object_new_ex(zend_class_entry *ce, ph
 {
 	php_http_client_object_t *o;
 
-	o = ecalloc(1, sizeof(php_http_client_object_t) + (ce->default_properties_count - 1) * sizeof(zval));
+	o = ecalloc(1, sizeof(*o) + zend_object_properties_size(ce));
 	zend_object_std_init(&o->zo, ce);
 	object_properties_init(&o->zo, ce);
 
@@ -367,7 +369,7 @@ static void handle_history(zval *zclient, php_http_message_t *request, php_http_
 	zval_ptr_dtor(&new_hist);
 }
 
-static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **request, php_http_message_t **response)
+static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **response)
 {
 	zend_bool dequeue = 0;
 	zval zclient;
@@ -385,7 +387,7 @@ static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, ph
 		php_http_message_set_type(msg, PHP_HTTP_RESPONSE);
 
 		if (zend_is_true(zend_read_property(php_http_client_class_entry, &zclient, ZEND_STRL("recordHistory"), 0, &rec_hist_tmp))) {
-			handle_history(&zclient, *request, *response);
+			handle_history(&zclient, e->request, *response);
 		}
 
 		/* hard detach, redirects etc. are in the history */
@@ -443,27 +445,28 @@ static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, ph
 
 static void handle_progress(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_client_progress_state_t *progress)
 {
-	zval zrequest, zprogress, retval, zclient;
+	zval zclient, args[2];
+	php_http_client_object_t *client_obj = arg;
 	zend_error_handling zeh;
 
-	ZVAL_UNDEF(&retval);
-	ZVAL_OBJECT(&zclient, &((php_http_client_object_t *) arg)->zo, 1);
-	ZVAL_OBJECT(&zrequest, &((php_http_message_object_t *) e->opaque)->zo, 1);
-	object_init(&zprogress);
-	add_property_bool(&zprogress, "started", progress->started);
-	add_property_bool(&zprogress, "finished", progress->finished);
-	add_property_string(&zprogress, "info", STR_PTR(progress->info));
-	add_property_double(&zprogress, "dltotal", progress->dl.total);
-	add_property_double(&zprogress, "dlnow", progress->dl.now);
-	add_property_double(&zprogress, "ultotal", progress->ul.total);
-	add_property_double(&zprogress, "ulnow", progress->ul.now);
+	ZVAL_OBJECT(&zclient, &client_obj->zo, 1);
+	ZVAL_OBJECT(&args[0], &((php_http_message_object_t *) e->opaque)->zo, 1);
+	object_init(&args[1]);
+	add_property_bool(&args[1], "started", progress->started);
+	add_property_bool(&args[1], "finished", progress->finished);
+	add_property_string(&args[1], "info", STR_PTR(progress->info));
+	add_property_double(&args[1], "dltotal", progress->dl.total);
+	add_property_double(&args[1], "dlnow", progress->dl.now);
+	add_property_double(&args[1], "ultotal", progress->ul.total);
+	add_property_double(&args[1], "ulnow", progress->ul.now);
+
 	zend_replace_error_handling(EH_NORMAL, NULL, &zeh);
-	zend_call_method_with_2_params(&zclient, NULL, NULL, "notify", &retval, &zrequest, &zprogress);
+	php_http_object_method_call(&client_obj->notify, &zclient, NULL, 2, args);
 	zend_restore_error_handling(&zeh);
+
 	zval_ptr_dtor(&zclient);
-	zval_ptr_dtor(&zrequest);
-	zval_ptr_dtor(&zprogress);
-	zval_ptr_dtor(&retval);
+	zval_ptr_dtor(&args[0]);
+	zval_ptr_dtor(&args[1]);
 }
 
 static void response_dtor(void *data)
@@ -511,6 +514,8 @@ static PHP_METHOD(HttpClient, __construct)
 		obj = PHP_HTTP_OBJ(NULL, getThis());
 
 		php_http_expect(obj->client = php_http_client_init(NULL, driver->client_ops, rf, NULL), runtime, return);
+
+		php_http_object_method_init(&obj->notify, getThis(), ZEND_STRL("notify"));
 
 		obj->client->callback.response.func = handle_response;
 		obj->client->callback.response.arg = obj;
@@ -843,13 +848,19 @@ static PHP_METHOD(HttpClient, enableEvents)
 	RETVAL_ZVAL_FAST(getThis());
 }
 
+struct notify_arg {
+	php_http_object_method_t *cb;
+	zval args[3];
+	int argc;
+};
+
 static int notify(zend_object_iterator *iter, void *puser)
 {
-	zval *observer, *args = puser;
+	zval *observer;
+	struct notify_arg *arg = puser;
 
 	if ((observer = iter->funcs->get_current_data(iter))) {
-		int num_args = !Z_ISUNDEF(args[0]) + !Z_ISUNDEF(args[1]) + !Z_ISUNDEF(args[2]);
-		return php_http_method_call(observer, ZEND_STRL("update"), num_args, args, NULL);
+		return php_http_object_method_call(arg->cb, observer, NULL, arg->argc, arg->args);
 	}
 	return FAILURE;
 }
@@ -859,10 +870,13 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_notify, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, notify)
 {
-	zval *request = NULL, *zprogress = NULL, observers_tmp, *observers, args[3];
+	zval *request = NULL, *zprogress = NULL, observers_tmp, *observers;
+	php_http_client_object_t *client_obj;
+	struct notify_arg arg = {NULL};
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|O!o!", &request, php_http_client_request_class_entry, &zprogress), invalid_arg, return);
 
+	client_obj = PHP_HTTP_OBJ(NULL, getThis());
 	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
@@ -870,26 +884,29 @@ static PHP_METHOD(HttpClient, notify)
 		return;
 	}
 
-	ZVAL_COPY(&args[0], getThis());
-	if (request) {
-		ZVAL_COPY(&args[1], request);
-	} else {
-		ZVAL_UNDEF(&args[1]);
-	}
-	if (zprogress) {
-		ZVAL_COPY(&args[2], zprogress);
-	} else {
-		ZVAL_UNDEF(&args[2]);
-	}
+	if (client_obj->update) {
+		arg.cb = client_obj->update;
+		ZVAL_COPY(&arg.args[0], getThis());
+		arg.argc = 1;
 
-	spl_iterator_apply(observers, notify, args);
+		if (request) {
+			ZVAL_COPY(&arg.args[1], request);
+			arg.argc += 1;
+		}
+		if (zprogress) {
+			ZVAL_COPY(&arg.args[2], zprogress);
+			arg.argc += 1;
+		}
 
-	zval_ptr_dtor(getThis());
-	if (request) {
-		zval_ptr_dtor(request);
-	}
-	if (zprogress) {
-		zval_ptr_dtor(zprogress);
+		spl_iterator_apply(observers, notify, &arg);
+
+		zval_ptr_dtor(getThis());
+		if (request) {
+			zval_ptr_dtor(request);
+		}
+		if (zprogress) {
+			zval_ptr_dtor(zprogress);
+		}
 	}
 
 	RETVAL_ZVAL_FAST(getThis());
@@ -901,14 +918,20 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, attach)
 {
 	zval observers_tmp, *observers, *observer, retval;
+	php_http_client_object_t *client_obj;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &observer, spl_ce_SplObserver), invalid_arg, return);
 
+	client_obj = PHP_HTTP_OBJ(NULL, getThis());
 	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
 		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
 		return;
+	}
+
+	if (!client_obj->update) {
+		client_obj->update = php_http_object_method_init(NULL, observer, ZEND_STRL("update"));
 	}
 
 	ZVAL_UNDEF(&retval);

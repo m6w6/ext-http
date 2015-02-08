@@ -40,7 +40,8 @@ $ifdefs = array(
 );
 $exclude = array(
     'PRIVATE', 'LASTSOCKET', 'FTP_ENTRY_PATH', 'CERTINFO', 'TLS_SESSION',
-    'RTSP_SESSION_ID', 'RTSP_CLIENT_CSEQ', 'RTSP_SERVER_CSEQ', 'RTSP_CSEQ_RECV'
+    'RTSP_SESSION_ID', 'RTSP_CLIENT_CSEQ', 'RTSP_SERVER_CSEQ', 'RTSP_CSEQ_RECV',
+	'COOKIELIST'
 );
 
 $translate = array(

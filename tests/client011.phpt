@@ -31,13 +31,8 @@ echo $client->getHistory()->toString(true);
 Done
 --EXPECTF--
 Test
-POST /ext-http/.print_request.php HTTP/1.1
-User-Agent: %s
-Host: dev.iworks.at
-Accept: */*
+POST http://dev.iworks.at/ext-http/.print_request.php HTTP/1.1
 Content-Length: 6
-Content-Type: application/x-www-form-urlencoded
-X-Original-Content-Length: 6
 
 foobar
 HTTP/1.1 200 OK
@@ -50,13 +45,8 @@ Content-Length: 19
 
 string(6) "foobar"
 
-POST /ext-http/.print_request.php HTTP/1.1
-User-Agent: %s
-Host: dev.iworks.at
-Accept: */*
+POST http://dev.iworks.at/ext-http/.print_request.php HTTP/1.1
 Content-Length: 6
-Content-Type: application/x-www-form-urlencoded
-X-Original-Content-Length: 6
 
 foobar
 HTTP/1.1 200 OK
@@ -69,13 +59,8 @@ Content-Length: 19
 
 string(6) "foobar"
 
-POST /ext-http/.print_request.php HTTP/1.1
-User-Agent: %s
-Host: dev.iworks.at
-Accept: */*
+POST http://dev.iworks.at/ext-http/.print_request.php HTTP/1.1
 Content-Length: 6
-Content-Type: application/x-www-form-urlencoded
-X-Original-Content-Length: 6
 
 foobar
 HTTP/1.1 200 OK

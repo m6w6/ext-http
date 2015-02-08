@@ -12,12 +12,12 @@ echo "Test\n";
 
 $client = new http\Client;
 
-$client->setSslOptions(array("verify_peer" => true));
-$client->addSslOptions(array("verify_host" => 2));
+$client->setSslOptions(array("verifypeer" => true));
+$client->addSslOptions(array("verifyhost" => 2));
 var_dump(
 	array(
-		"verify_peer" => true,
-		"verify_host" => 2,
+		"verifypeer" => true,
+		"verifyhost" => 2,
 	) === $client->getSslOptions()
 );
 

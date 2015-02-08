@@ -382,7 +382,7 @@ php_http_cookie_object_t *php_http_cookie_object_new_ex(zend_class_entry *ce, ph
 		ce = php_http_cookie_class_entry;
 	}
 
-	o = ecalloc(sizeof(*o) + sizeof(zval) * (ce->default_properties_count - 1), 1);
+	o = ecalloc(1, sizeof(*o) + zend_object_properties_size(ce));
 	zend_object_std_init(&o->zo, ce);
 	object_properties_init(&o->zo, ce);
 	o->zo.handlers = &php_http_cookie_object_handlers;
