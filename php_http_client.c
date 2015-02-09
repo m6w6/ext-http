@@ -860,9 +860,11 @@ static int notify(zend_object_iterator *iter, void *puser)
 	struct notify_arg *arg = puser;
 
 	if ((observer = iter->funcs->get_current_data(iter))) {
-		return php_http_object_method_call(arg->cb, observer, NULL, arg->argc, arg->args);
+		if (SUCCESS == php_http_object_method_call(arg->cb, observer, NULL, arg->argc, arg->args)) {
+			return ZEND_HASH_APPLY_KEEP;
+		}
 	}
-	return FAILURE;
+	return ZEND_HASH_APPLY_STOP;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_notify, 0, 0, 0)
