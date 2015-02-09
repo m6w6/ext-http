@@ -1300,7 +1300,7 @@ php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags)
 	return (php_http_url_t *) state;
 }
 
-php_http_url_t *php_http_url_parse_authority(const char *str, size_t len, unsigned flags TSRMLS_DC)
+php_http_url_t *php_http_url_parse_authority(const char *str, size_t len, unsigned flags)
 {
 	size_t maxlen = 3 * len;
 	struct parse_state *state = ecalloc(1, sizeof(*state) + maxlen);
