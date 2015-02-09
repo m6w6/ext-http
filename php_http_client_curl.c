@@ -1920,8 +1920,6 @@ static php_resource_factory_t *create_rf(php_http_url_t *url)
 		rf = php_resource_factory_init(NULL, &php_http_curle_resource_factory_ops, NULL, NULL);
 	}
 
-	zend_string_release(id);
-
 	return rf;
 }
 
