@@ -50,7 +50,7 @@ static int apply_driver_list(zval *p, void *arg)
 	php_http_client_driver_t *d = Z_PTR_P(p);
 	zval zname;
 
-	ZVAL_STR(&zname, d->driver_name);
+	ZVAL_STR_COPY(&zname, d->driver_name);
 
 	zend_hash_next_index_insert(arg, &zname);
 	return ZEND_HASH_APPLY_KEEP;
