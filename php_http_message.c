@@ -1106,7 +1106,7 @@ static PHP_METHOD(HttpMessage, getHeader)
 
 		if ((header = php_http_message_header(obj->message, header_str, header_len))) {
 			if (!header_ce) {
-				RETURN_ZVAL(header, 1, 1);
+				RETURN_ZVAL_FAST(header);
 			} else if (instanceof_function(header_ce, php_http_header_class_entry)) {
 				php_http_object_method_t cb;
 				zval argv[2];

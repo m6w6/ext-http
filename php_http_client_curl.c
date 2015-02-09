@@ -1111,11 +1111,14 @@ static ZEND_RESULT_CODE php_http_curle_option_set_proxyheader(php_http_option_t 
 		{
 			if (header_key.key) {
 				zend_string *zs = zval_get_string(header_val);
+
 				php_http_buffer_appendf(&header, "%s: %s", header_key.key->val, zs->val);
+				zend_string_release(zs);
+
 				php_http_buffer_fix(&header);
 				curl->options.proxyheaders = curl_slist_append(curl->options.proxyheaders, header.data);
 				php_http_buffer_reset(&header);
-				zend_string_release(zs);
+
 			}
 		}
 		ZEND_HASH_FOREACH_END();
@@ -1834,9 +1837,21 @@ static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *ha
 	php_http_buffer_dtor(&handler->options.cookies);
 	zend_hash_destroy(&handler->options.cache);
 
+#if PHP_HTTP_CURL_VERSION(7,21,3)
+	if (handler->options.resolve) {
+		curl_slist_free_all(handler->options.resolve);
+		handler->options.resolve = NULL;
+	}
+#endif
+
 	if (handler->options.headers) {
 		curl_slist_free_all(handler->options.headers);
 		handler->options.headers = NULL;
+	}
+
+	if (handler->options.proxyheaders) {
+		curl_slist_free_all(handler->options.proxyheaders);
+		handler->options.proxyheaders = NULL;
 	}
 
 	efree(handler);
