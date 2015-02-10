@@ -16,6 +16,7 @@
 typedef enum php_http_client_setopt_opt {
 	PHP_HTTP_CLIENT_OPT_ENABLE_PIPELINING,
 	PHP_HTTP_CLIENT_OPT_USE_EVENTS,
+	PHP_HTTP_CLIENT_OPT_CONFIGURATION,
 } php_http_client_setopt_opt_t;
 
 typedef enum php_http_client_getopt_opt {

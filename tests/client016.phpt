@@ -3,13 +3,6 @@ client once & wait with events
 --SKIPIF--
 <?php
 include "skipif.inc";
-try {
-	$client = new http\Client;
-	if (!$client->enableEvents())
-		throw new Exception("need events support");
-} catch (Exception $e) {
-	die("skip ".$e->getMessage());
-}
 skip_online_test();
 ?>
 --FILE--
@@ -20,7 +13,7 @@ $request = new http\Client\Request("GET", "http://www.example.org/");
 
 foreach (http\Client::getAvailableDrivers() as $driver) {
 	$client = new http\Client($driver);
-	$client->enableEvents(true);
+	$client->configure(["use_eventloop" => true]);
 	$client->enqueue($request);
 	
 	while ($client->once()) {

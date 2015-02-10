@@ -13,8 +13,7 @@ $request = new http\Client\Request("GET", "http://www.example.org");
 
 foreach (http\Client::getAvailableDrivers() as $driver) {
 	$client = new http\Client($driver);
-	$client->enablePipelining(true);
-	$client->enableEvents(true);
+	$client->configure(["pipelining" => true, "use_eventloop" => true]);
 	
 	$client->enqueue($request);
 	$client->enqueue(clone $request);
