@@ -1682,7 +1682,7 @@ static void php_http_curlm_options_init(php_http_options_t *registry TSRMLS_DC)
 	php_http_option_register(registry, ZEND_STRL("pipelining"), CURLMOPT_PIPELINING, IS_BOOL);
 	/* chunk length threshold for pipelining */
 #if PHP_HTTP_CURL_VERSION(7,30,0)
-	php_http_option_register(registry, ZEND_STRL("chunk_lenght_penalty_size"), CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE, IS_LONG);
+	php_http_option_register(registry, ZEND_STRL("chunk_length_penalty_size"), CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE, IS_LONG);
 #endif
 	/* size threshold for pipelining penalty */
 #if PHP_HTTP_CURL_VERSION(7,30,0)
