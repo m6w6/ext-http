@@ -3,28 +3,35 @@ client features
 --SKIPIF--
 <?php
 include "skipif.inc";
-skip_online_test();
+skip_client_test();
 ?>
 --FILE--
 <?php
+
+include "server.inc";
+
 echo "Test\n";
 
-$request = new http\Client\Request("GET", "http://www.example.org");
-
-foreach (http\Client::getAvailableDrivers() as $driver) {
-	$client = new http\Client($driver);
+server("pipeline.inc", function($port, $stdin) {
+	fputs($stdin, "2\n");
+	
+	$request = new http\Client\Request("GET", "http://localhost:$port");
+	
+	$client = new http\Client();
 	$client->configure(["pipelining" => true, "use_eventloop" => true]);
-	
+
 	$client->enqueue($request);
-	$client->enqueue(clone $request);
-	$client->enqueue(clone $request);
-	
 	$client->send();
 	
+	$client->enqueue(clone $request);
+	$client->enqueue(clone $request);
+
+	$client->send();
+
 	while ($client->getResponse()) {
 		echo "R\n";
 	}
-}
+});
 
 ?>
 Done

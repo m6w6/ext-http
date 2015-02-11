@@ -4,9 +4,18 @@ function serve(callable $cb) {
 	foreach (range(8000, 9000) as $port) {
 		if (($server = stream_socket_server("tcp://localhost:$port"))) {
 			fprintf(STDERR, "%s\n", $port);
-			if (($client = stream_socket_accept($server))) {
-				$cb($client);
-			}
+			do {
+				$R = [$server]; $W = []; $E = [];
+				$select = stream_select($R, $E, $E, 0, 10000);
+				if ($select && ($client = stream_socket_accept($server, 1))) {
+					if (getenv("PHP_HTTP_TEST_SSL")) {
+						stream_socket_enable_crypto($client, true, STREAM_CRYPTO_METHOD_SSLv23_SERVER);
+					}
+					while (!feof($client)) {
+						$cb($client);
+					}
+				}
+			} while ($select !== false);
 			return;
 		}
 	}
@@ -17,10 +26,9 @@ function server($file, callable $cb) {
 	if (($proc = proc_open(PHP_BINARY . " $file", $spec, $pipes, __DIR__))) {
 		$port = trim(fgets($pipes[2]));
 		
-		$cb($port, 
-				$stdin = $pipes[0], 
-				$stdout = $pipes[1], 
-				$stderr = $pipes[2]);
+		$cb($port, $stdin = $pipes[0], $stdout = $pipes[1], $stderr = $pipes[2]);
+		
+		proc_terminate($proc);
 		
 		fpassthru($stderr);
 		fpassthru($stdout);

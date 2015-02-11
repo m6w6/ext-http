@@ -3,6 +3,7 @@ reset content length when resetting body
 --SKIPIF--
 <?php 
 include "skipif.inc";
+skip_client_test();
 ?>
 --FILE--
 <?php 

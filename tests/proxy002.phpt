@@ -8,11 +8,11 @@ skip_client_test();
 --FILE--
 <?php
 
+include "server.inc";
+
 echo "Test\n";
 
-$spec = array(array("pipe","r"), array("pipe","w"), array("pipe","w"));
-if (($proc = proc_open(PHP_BINARY . " proxy.inc", $spec, $pipes, __DIR__))) {
-	$port = trim(fgets($pipes[2]));
+server("proxy.inc", function($port, $stdin, $stdout, $stderr) {
 	echo "Server on port $port\n";
 	$c = new http\Client;
 	$r = new http\Client\Request("GET", "http://localhost:$port/");
@@ -26,11 +26,9 @@ if (($proc = proc_open(PHP_BINARY . " proxy.inc", $spec, $pipes, __DIR__))) {
 		echo $e;
 	}
 	echo $c->getResponse()->getBody();
-	while (!feof($pipes[1])) {
-		echo fgets($pipes[1]);
-	}
 	unset($r, $client);
-}
+});
+
 ?>
 ===DONE===
 --EXPECTF--

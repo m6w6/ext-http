@@ -3,10 +3,13 @@ client response callback + dequeue
 --SKIPIF--
 <?php
 include "skipif.inc";
-skip_online_test();
+skip_client_test();
 ?>
 --FILE--
 <?php
+
+include "server.inc";
+
 echo "Test\n";
 
 function response($response) {
@@ -19,20 +22,22 @@ function response($response) {
 	return true;
 }
 
-$request = new http\Client\Request("GET", "http://www.example.org");
-
-foreach (http\Client::getAvailableDrivers() as $driver) {
-	$client = new http\Client($driver);
-	for ($i=0; $i < 2; ++ $i) {
-		$client->enqueue($request, "response");
-		$client->send();
-		try {
-			$client->dequeue($request);
-		} catch (Exception $e) {
-			echo $e->getMessage(),"\n";
+server("proxy.inc", function($port) {
+	$request = new http\Client\Request("GET", "http://localhost:$port");
+	
+	foreach (http\Client::getAvailableDrivers() as $driver) {
+		$client = new http\Client($driver);
+		for ($i=0; $i < 2; ++ $i) {
+			$client->enqueue($request, "response");
+			$client->send();
+			try {
+				$client->dequeue($request);
+			} catch (Exception $e) {
+				echo $e->getMessage(),"\n";
+			}
 		}
 	}
-}
+});
 
 ?>
 Done

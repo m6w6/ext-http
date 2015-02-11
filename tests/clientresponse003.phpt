@@ -3,20 +3,25 @@ client response transfer info
 --SKIPIF--
 <?php
 include "skipif.inc";
-skip_online_test();
+skip_client_test();
 ?>
 --FILE--
 <?php
+
+include "server.inc";
+
 echo "Test\n";
 
-$request = new http\Client\Request("GET", "http://www.example.org");
-
-foreach (http\Client::getAvailableDrivers() as $driver) {
-	$client = new http\Client($driver);
-	$response = $client->enqueue($request)->send()->getResponse();
-	var_dump($response->getTransferInfo("response_code"));
-	var_dump(count((array)$response->getTransferInfo()));
-}
+server("proxy.inc", function($port) {
+	$request = new http\Client\Request("GET", "http://localhost:$port");
+	
+	foreach (http\Client::getAvailableDrivers() as $driver) {
+		$client = new http\Client($driver);
+		$response = $client->enqueue($request)->send()->getResponse();
+		var_dump($response->getTransferInfo("response_code"));
+		var_dump(count((array)$response->getTransferInfo()));
+	}
+});
 ?>
 Done
 --EXPECTREGEX--
