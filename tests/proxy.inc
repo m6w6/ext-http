@@ -9,7 +9,6 @@ foreach (range(8000, 9000) as $port) {
 			
 			if ($request->getHeader("Proxy-Connection")) {
 				$response = new http\Env\Response;
-				$response->setHeader("Content-Length", 0);
 				$response->send($client);
 				
 				/* soak up the request following the connect */
