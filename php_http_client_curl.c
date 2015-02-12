@@ -2322,9 +2322,42 @@ static STATUS php_http_client_curl_setopt(php_http_client_t *h, php_http_client_
 	return SUCCESS;
 }
 
+static int apply_available_options(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
+{
+	php_http_option_t *opt = pDest;
+	HashTable *ht;
+	zval *entry;
+	int c;
+
+	ht = va_arg(args, HashTable*);
+
+	MAKE_STD_ZVAL(entry);
+
+	if ((c = zend_hash_num_elements(&opt->suboptions.options))) {
+		array_init_size(entry, c);
+		zend_hash_apply_with_arguments(&opt->suboptions.options TSRMLS_CC, apply_available_options, 1, Z_ARRVAL_P(entry));
+	} else {
+		/* catch deliberate NULL options */
+		if (Z_TYPE(opt->defval) == IS_STRING && !Z_STRVAL(opt->defval)) {
+			ZVAL_NULL(entry);
+		} else {
+			ZVAL_ZVAL(entry, &opt->defval, 1, 0);
+		}
+	}
+
+	if (hash_key->nKeyLength) {
+		zend_hash_quick_update(ht, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) &entry, sizeof(zval *), NULL);
+	} else {
+		zend_hash_index_update(ht, hash_key->h, (void *) &entry, sizeof(zval *), NULL);
+	}
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
 static STATUS php_http_client_curl_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void **res)
 {
 	php_http_client_enqueue_t *enqueue;
+	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	switch (opt) {
 	case PHP_HTTP_CLIENT_OPT_PROGRESS_INFO:
@@ -2343,6 +2376,14 @@ static STATUS php_http_client_curl_getopt(php_http_client_t *h, php_http_client_
 			php_http_curle_get_info(handler->handle, *(HashTable **) res);
 			return SUCCESS;
 		}
+		break;
+
+	case PHP_HTTP_CLIENT_OPT_AVAILABLE_OPTIONS:
+		zend_hash_apply_with_arguments(&php_http_curle_options.options TSRMLS_CC, apply_available_options, 1, *(HashTable **) res);
+		break;
+
+	case PHP_HTTP_CLIENT_OPT_AVAILABLE_CONFIGURATION:
+		zend_hash_apply_with_arguments(&php_http_curlm_options.options TSRMLS_CC, apply_available_options, 1, *(HashTable **) res);
 		break;
 
 	default:

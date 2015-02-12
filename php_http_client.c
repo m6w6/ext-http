@@ -1189,6 +1189,30 @@ static PHP_METHOD(HttpClient, getAvailableDrivers) {
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getAvailableOptions, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpClient, getAvailableOptions)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		array_init(return_value);
+		php_http_client_getopt(obj->client, PHP_HTTP_CLIENT_OPT_AVAILABLE_OPTIONS, NULL, &Z_ARRVAL_P(return_value));
+	}
+}
+
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getAvailableConfiguration, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpClient, getAvailableConfiguration)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		php_http_client_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+		array_init(return_value);
+		php_http_client_getopt(obj->client, PHP_HTTP_CLIENT_OPT_AVAILABLE_CONFIGURATION, NULL, &Z_ARRVAL_P(return_value));
+	}
+}
+
 static zend_function_entry php_http_client_methods[] = {
 	PHP_ME(HttpClient, __construct,          ai_HttpClient_construct,            ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(HttpClient, reset,                ai_HttpClient_reset,                ZEND_ACC_PUBLIC)
@@ -1219,6 +1243,8 @@ static zend_function_entry php_http_client_methods[] = {
 	PHP_ME(HttpClient, addCookies,           ai_HttpClient_addCookies,           ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, getCookies,           ai_HttpClient_getCookies,           ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, getAvailableDrivers,  ai_HttpClient_getAvailableDrivers,  ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(HttpClient, getAvailableOptions,  ai_HttpClient_getAvailableOptions,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, getAvailableConfiguration, ai_HttpClient_getAvailableConfiguration, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
