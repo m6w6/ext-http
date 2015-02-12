@@ -8,7 +8,7 @@ skip_client_test();
 --FILE--
 <?php
 
-include "server.inc";
+include "helper/server.inc";
 
 echo "Test\n";
 
