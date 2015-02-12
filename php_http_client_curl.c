@@ -1720,7 +1720,7 @@ static STATUS php_http_curlm_set_option(php_http_option_t *opt, zval *val, void 
 
 	if (!val) {
 		val = &opt->defval;
-	} else if (Z_TYPE_P(val) != opt->type && !(Z_TYPE_P(val) == IS_NULL && opt->type == IS_ARRAY)) {
+	} else if (opt->type && Z_TYPE_P(val) != opt->type && !(Z_TYPE_P(val) == IS_NULL && opt->type == IS_ARRAY)) {
 		val = php_http_ztyp(opt->type, val);
 	}
 
@@ -2061,28 +2061,43 @@ static void queue_dtor(php_http_client_enqueue_t *e)
 	php_http_client_curl_handler_dtor(handler);
 }
 
-static php_resource_factory_t *create_rf(php_http_url_t *url TSRMLS_DC)
+static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_enqueue_t *enqueue TSRMLS_DC)
 {
-	php_persistent_handle_factory_t *pf;
+	php_persistent_handle_factory_t *pf = NULL;
 	php_resource_factory_t *rf = NULL;
-	char *id_str = NULL;
-	size_t id_len;
+	php_http_url_t *url = enqueue->request->http.info.request.url;
 
 	if (!url || (!url->host && !url->path)) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot request empty URL");
 		return NULL;
 	}
 
-	id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(url->host), url->port ? url->port : 80);
+	/* only if the client itself is setup for persistence */
+	if (h->rf->dtor == (void (*)(void*)) php_persistent_handle_abandon) {
+		char *id_str = NULL;
+		size_t id_len;
+		int port = url->port ? url->port : 80;
+		zval **zport;
 
-	pf = php_persistent_handle_concede(NULL, ZEND_STRL("http\\Client\\Curl\\Request"), id_str, id_len, NULL, NULL TSRMLS_CC);
+		if (SUCCESS == zend_hash_find(enqueue->options, ZEND_STRS("port"), (void *) &zport)) {
+			zval *zcpy = php_http_ztyp(IS_LONG, *zport);
+
+			if (Z_LVAL_P(zcpy)) {
+				port = Z_LVAL_P(zcpy);
+			}
+			zval_ptr_dtor(&zcpy);
+		}
+
+		id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(url->host), port);
+		pf = php_persistent_handle_concede(NULL, ZEND_STRL("http\\Client\\Curl\\Request"), id_str, id_len, NULL, NULL TSRMLS_CC);
+		efree(id_str);
+	}
+
 	if (pf) {
 		rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void*)) php_persistent_handle_abandon);
 	} else {
 		rf = php_resource_factory_init(NULL, &php_http_curle_resource_factory_ops, NULL, NULL);
 	}
-
-	efree(id_str);
 
 	return rf;
 }
@@ -2096,7 +2111,7 @@ static STATUS php_http_client_curl_enqueue(php_http_client_t *h, php_http_client
 	php_resource_factory_t *rf;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
-	rf = create_rf(enqueue->request->http.info.request.url TSRMLS_CC);
+	rf = create_rf(h, enqueue TSRMLS_CC);
 	if (!rf) {
 		return FAILURE;
 	}
