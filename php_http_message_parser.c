@@ -320,6 +320,34 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						}
 					}
 
+					if (h_cr) {
+						ulong total = 0, start = 0, end = 0;
+
+						if (!strncasecmp(Z_STRVAL_PP(h_cr), "bytes", lenof("bytes"))
+						&& (	Z_STRVAL_PP(h_cr)[lenof("bytes")] == ':'
+							||	Z_STRVAL_PP(h_cr)[lenof("bytes")] == ' '
+							||	Z_STRVAL_PP(h_cr)[lenof("bytes")] == '='
+							)
+						) {
+							char *total_at = NULL, *end_at = NULL;
+							char *start_at = Z_STRVAL_PP(h_cr) + sizeof("bytes");
+
+							start = strtoul(start_at, &end_at, 10);
+							if (end_at) {
+								end = strtoul(end_at + 1, &total_at, 10);
+								if (total_at && strncmp(total_at + 1, "*", 1)) {
+									total = strtoul(total_at + 1, NULL, 10);
+								}
+
+								if (end >= start && (!total || end <= total)) {
+									parser->body_length = end + 1 - start;
+									php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+									break;
+								}
+							}
+						}
+					}
+
 					if (h_cl) {
 						char *stop;
 
@@ -336,35 +364,6 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 							break;
 						}
 					}
-
-					if (h_cr) {
-						ulong total = 0, start = 0, end = 0;
-
-						if (!strncasecmp(Z_STRVAL_PP(h_cr), "bytes", lenof("bytes"))
-						&& (	Z_STRVAL_P(h)[lenof("bytes")] == ':'
-							||	Z_STRVAL_P(h)[lenof("bytes")] == ' '
-							||	Z_STRVAL_P(h)[lenof("bytes")] == '='
-							)
-						) {
-							char *total_at = NULL, *end_at = NULL;
-							char *start_at = Z_STRVAL_PP(h_cr) + sizeof("bytes");
-
-							start = strtoul(start_at, &end_at, 10);
-							if (end_at) {
-								end = strtoul(end_at + 1, &total_at, 10);
-								if (total_at && strncmp(total_at + 1, "*", 1)) {
-									total = strtoul(total_at + 1, NULL, 10);
-								}
-
-								if (end >= start && (!total || end < total)) {
-									parser->body_length = end + 1 - start;
-									php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
-									break;
-								}
-							}
-						}
-					}
-
 
 					if ((*message)->type == PHP_HTTP_REQUEST) {
 						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
