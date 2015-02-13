@@ -38,5 +38,4 @@ GET / HTTP/1.1
 User-Agent: PECL_HTTP/%s PHP/%s libcurl/%s
 Host: localhost:%d
 Accept: */*
-Content-Length: 0
 ===DONE===

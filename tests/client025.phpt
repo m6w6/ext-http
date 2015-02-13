@@ -30,12 +30,12 @@ X-Original-Transfer-Encoding: chunked
 Content-Length: %d
 
 PUT / HTTP/1.1
+Content-Range: bytes 1-2/3
 User-Agent: %s
 Host: localhost:%d
 Accept: */*
-Content-Length: 2
+Content-Length: 3
 Expect: 100-continue
 X-Original-Content-Length: 3
-X-Original-Content-Range: bytes 1-2/3
 
 23===DONE===

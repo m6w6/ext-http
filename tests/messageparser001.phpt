@@ -12,6 +12,7 @@ echo "Test\n";
 use http\Message\Parser;
 
 foreach (glob(__DIR__."/data/message_*.txt") as $file) {
+	$string = "";
 	$parser = new Parser;
 	$fd = fopen($file, "r") or die("Could not open $file");
 	while (!feof($fd)) {
@@ -22,6 +23,11 @@ foreach (glob(__DIR__."/data/message_*.txt") as $file) {
 		case Parser::STATE_FAILURE:
 			throw new Exception(($e = error_get_last()) ? $e["message"] : "Could not parse $file");
 		}
+	}
+	
+	if (!$string) {
+		$s = ["START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "UPDATE_CL", "DONE"];
+		printf("Unexpected state: %s (%s)\n", $s[$parser->getState()], $file);
 	}
 
 	$parser = new Parser;
@@ -38,12 +44,14 @@ foreach (glob(__DIR__."/data/message_*.txt") as $file) {
 	if ($string !== (string) $message) {
 		$a = explode("\n", $string);
 		$b = explode("\n", (string) $message);
-		while ((null !== ($aa = array_shift($a))) || (null !== ($bb = array_shift($b)))) {
+		do {
+			$aa = array_shift($a);
+			$bb = array_shift($b);
 			if ($aa !== $bb) {
 				isset($aa) and printf("-- %s\n", $aa);
 				isset($bb) and printf("++ %s\n", $bb);
 			}
-		}
+		} while ($a || $b);
 	}
 }
 ?>

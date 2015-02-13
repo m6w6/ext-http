@@ -30,12 +30,13 @@ static const php_http_message_parser_state_spec_t php_http_message_parser_states
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH,		1},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED,	1},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE,		0},
+		{PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL,		0},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_DONE,			0}
 };
 
 #if DBG_PARSER
 const char *php_http_message_parser_state_name(php_http_message_parser_state_t state) {
-	const char *states[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "DONE"};
+	const char *states[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "UPDATE_CL", "DONE"};
 	
 	if (state < 0 || state > (sizeof(states)/sizeof(char*))-1) {
 		return "FAILURE";
@@ -168,6 +169,7 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:
+			case PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL:
 				/* should not occur */
 				abort();
 				break;
@@ -252,22 +254,31 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 			{
 				zval *h, *h_loc = NULL, *h_con = NULL, **h_cl = NULL, **h_cr = NULL, **h_te = NULL;
 
+				/* Content-Range has higher precedence than Content-Length,
+				 * and content-length denotes the original length of the entity,
+				 * so let's *NOT* remove CR/CL, because that would fundamentally
+				 * change the meaning of the whole message
+				 */
 				if ((h = php_http_message_header(*message, ZEND_STRL("Transfer-Encoding"), 1))) {
-					zend_hash_update(&(*message)->hdrs, "X-Original-Transfer-Encoding", sizeof("X-Original-Transfer-Encoding"), &h, sizeof(zval *), (void *) &h_te);
+					zend_hash_update(&(*message)->hdrs, "X-Original-Transfer-Encoding", sizeof("X-Original-Transfer-Encoding"), (void *) &h, sizeof(zval *), (void *) &h_te);
 					zend_hash_del(&(*message)->hdrs, "Transfer-Encoding", sizeof("Transfer-Encoding"));
-				}
-				if ((h = php_http_message_header(*message, ZEND_STRL("Content-Length"), 1))) {
-					zend_hash_update(&(*message)->hdrs, "X-Original-Content-Length", sizeof("X-Original-Content-Length"), &h, sizeof(zval *), (void *) &h_cl);
-				}
-				if ((h = php_http_message_header(*message, ZEND_STRL("Content-Range"), 1))) {
-					zend_hash_update(&(*message)->hdrs, "X-Original-Content-Range", sizeof("X-Original-Content-Range"), &h, sizeof(zval *), (void *) &h_cr);
-					zend_hash_del(&(*message)->hdrs, "Content-Range", sizeof("Content-Range"));
+
+					/* reset */
+					MAKE_STD_ZVAL(h);
+					ZVAL_LONG(h, 0);
+					zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), (void *) &h, sizeof(zval *), NULL);
+				} else if ((h = php_http_message_header(*message, ZEND_STRL("Content-Length"), 1))) {
+					zend_hash_update(&(*message)->hdrs, "X-Original-Content-Length", sizeof("X-Original-Content-Length"), (void *) &h, sizeof(zval *), (void *) &h_cl);
 				}
 
-				/* default */
-				MAKE_STD_ZVAL(h);
-				ZVAL_LONG(h, 0);
-				zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), &h, sizeof(zval *), NULL);
+				if ((h = php_http_message_header(*message, ZEND_STRL("Content-Range"), 1))) {
+					zend_hash_find(&(*message)->hdrs, ZEND_STRS("Content-Range"), (void *) &h_cr);
+					if (h != *h_cr) {
+						zend_hash_update(&(*message)->hdrs, "Content-Range", sizeof("Content-Range"), &h, sizeof(zval *), (void *) &h_cr);
+					} else {
+						zval_ptr_dtor(&h);
+					}
+				}
 
 				/* so, if curl sees a 3xx code, a Location header and a Connection:close header
 				 * it decides not to read the response body.
@@ -377,8 +388,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY:
 			{
 				if (len) {
-					zval *zcl;
-
+					/* FIXME: what if we re-use the parser? */
 					if (parser->inflate) {
 						char *dec_str = NULL;
 						size_t dec_len;
@@ -396,10 +406,6 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 
 					php_stream_write(php_http_message_body_stream((*message)->body), str, len);
 
-					/* keep track */
-					MAKE_STD_ZVAL(zcl);
-					ZVAL_LONG(zcl, php_http_message_body_size((*message)->body));
-					zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), &zcl, sizeof(zval *), NULL);
 				}
 
 				if (cut) {
@@ -472,7 +478,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 			{
 				php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
 
-				if (parser->dechunk) {
+				if (parser->dechunk && parser->dechunk->ctx) {
 					char *dec_str = NULL;
 					size_t dec_len;
 
@@ -485,14 +491,24 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						str = dec_str;
 						len = dec_len;
 						cut = 0;
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
+						php_http_message_parser_state_push(parser, 2, PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
 					}
 				}
 
 				break;
 			}
 
-			case PHP_HTTP_MESSAGE_PARSER_STATE_DONE: {
+			case PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL:
+			{
+				zval *zcl;
+				MAKE_STD_ZVAL(zcl);
+				ZVAL_LONG(zcl, php_http_message_body_size((*message)->body));
+				zend_hash_update(&(*message)->hdrs, "Content-Length", sizeof("Content-Length"), &zcl, sizeof(zval *), NULL);
+				break;
+			}
+
+			case PHP_HTTP_MESSAGE_PARSER_STATE_DONE:
+			{
 				char *ptr = buffer->data;
 
 				while (ptr - buffer->data < buffer->used && PHP_HTTP_IS_CTYPE(space, *ptr)) {

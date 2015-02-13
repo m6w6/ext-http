@@ -43,5 +43,4 @@ Host: www.example.com:80
 User-Agent: PECL_HTTP/%s PHP/%s libcurl/%s
 Proxy-Connection: Keep-Alive
 Hello: there!
-Content-Length: 0
 ===DONE===
