@@ -883,6 +883,7 @@ typedef struct php_http_env_response_stream_ctx {
 	long status_code;
 
 	php_stream *stream;
+	php_stream_filter *chunked_filter;
 	php_http_message_t *request;
 
 	unsigned started:1;
@@ -924,6 +925,9 @@ static void php_http_env_response_stream_dtor(php_http_env_response_t *r)
 	php_http_env_response_stream_ctx_t *ctx = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
+	if (ctx->chunked_filter) {
+		php_stream_filter_free(ctx->chunked_filter TSRMLS_CC);
+	}
 	zend_hash_destroy(&ctx->header);
 	zend_list_delete(ctx->stream->rsrc_id);
 	efree(ctx);
@@ -980,8 +984,16 @@ static STATUS php_http_env_response_stream_start(php_http_env_response_stream_ct
 	}
 	php_http_buffer_appends(&header_buf, PHP_HTTP_CRLF);
 
-	ctx->started = (header_buf.used == php_stream_write(ctx->stream, header_buf.data, header_buf.used));
+	if (header_buf.used == php_stream_write(ctx->stream, header_buf.data, header_buf.used)) {
+		ctx->started = 1;
+	}
 	php_http_buffer_dtor(&header_buf);
+	php_stream_flush(ctx->stream);
+
+	if (ctx->chunked) {
+		ctx->chunked_filter = php_stream_filter_create("http.chunked_encode", NULL, 0 TSRMLS_CC);
+		php_stream_filter_append(&ctx->stream->writefilters, ctx->chunked_filter);
+	}
 
 	return ctx->started ? SUCCESS : FAILURE;
 }
@@ -1099,15 +1111,7 @@ static STATUS php_http_env_response_stream_write(php_http_env_response_t *r, con
 		}
 	}
 
-	if (stream_ctx->chunked && 0 == php_stream_printf(stream_ctx->stream TSRMLS_CC, "%lx" PHP_HTTP_CRLF, (unsigned long) data_len)) {
-		return FAILURE;
-	}
-
 	if (data_len != php_stream_write(stream_ctx->stream, data_str, data_len)) {
-		return FAILURE;
-	}
-
-	if (stream_ctx->chunked && 2 != php_stream_write_string(stream_ctx->stream, PHP_HTTP_CRLF)) {
 		return FAILURE;
 	}
 
@@ -1131,23 +1135,25 @@ static STATUS php_http_env_response_stream_flush(php_http_env_response_t *r)
 }
 static STATUS php_http_env_response_stream_finish(php_http_env_response_t *r)
 {
-	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
+	php_http_env_response_stream_ctx_t *ctx = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
-	if (stream_ctx->finished) {
+	if (ctx->finished) {
 		return FAILURE;
 	}
-	if (!stream_ctx->started) {
-		if (SUCCESS != php_http_env_response_stream_start(stream_ctx TSRMLS_CC)) {
+	if (!ctx->started) {
+		if (SUCCESS != php_http_env_response_stream_start(ctx TSRMLS_CC)) {
 			return FAILURE;
 		}
 	}
 
-	if (stream_ctx->chunked && 5 != php_stream_write_string(stream_ctx->stream, "0" PHP_HTTP_CRLF PHP_HTTP_CRLF)) {
-		return FAILURE;
+	php_stream_flush(ctx->stream);
+	if (ctx->chunked && ctx->chunked_filter) {
+		php_stream_filter_flush(ctx->chunked_filter, 1);
+		ctx->chunked_filter = php_stream_filter_remove(ctx->chunked_filter, 1 TSRMLS_CC);
 	}
 
-	stream_ctx->finished = 1;
+	ctx->finished = 1;
 
 	return SUCCESS;
 }
