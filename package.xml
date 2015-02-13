@@ -48,7 +48,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Preliminiary HTTP2 support (libcurl with nghttp2 support)
++ Preliminiary HTTP2 support for http\Client (libcurl with nghttp2 support)
 + Improved performance of HTTP info parser (request/response line)
 + Improved performance of updating client observers
 + Improved performance of http\Env\Response output to streams
@@ -68,12 +68,12 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
 + Added http\Client\Curl\HTTP_VERSION_2_0 constant (libcurl >= 7.33.0)
 + Added http\Client\Curl\TLS_AUTH_SRP constant (libcurl >= 7.21.4)
 + Added pinned_publickey SSL request option (libcurl >= 7.39.0)
-+ Added tlsauth SSL request option (libcurl >= 7.21.4)
++ Added tlsauthtype, tlsauthuser and tlsauthpass SSL request option (libcurl >= 7.21.4)
 + Added verifystatus (a.k.a OCSP) SSL request option (libcurl >= 7.41.0)
 + Added proxyheader request option (libcurl >= 7.37.0)
 + Added unix_socket_path request option (libcurl >= 7.40.0)
 * Fixed compress request option
-* Fixed parsing authroities of CONNECT messages
+* Fixed parsing authorities of CONNECT messages
 * Fixed parsing Content-Range messages
 * Fixed http\Env\Response to default to chunked encoding over streams
 * Fixed superfluous output of Content-Length:0 headers
