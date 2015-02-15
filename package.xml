@@ -52,6 +52,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
 + Improved performance of HTTP info parser (request/response line)
 + Improved performance of updating client observers
 + Improved performance of http\Env\Response output to streams
++ Added http\Header\Parser class
 + Added http\Client::configure() method accepting an array with the following options for libcurl:
   . maxconnects (int, size of the connection cache)
   . max_host_connections (int, max number of connections to a single host, libcurl >= 7.30.0)
@@ -78,6 +79,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
 * Fixed http\Env\Response to default to chunked encoding over streams
 * Fixed superfluous output of Content-Length:0 headers
 * Fixed persistent easy handles to be only created for persistent multi handles
+* Fixed the header parser to accept not-yet-complete header lines
 - Deprecated http\Client::enablePipelining(), use http\Client::configure(["pipelining" => true]) instead
 - Deprecated http\Client::enableEvents(), use http\Client::configure(["use_eventloop" => true]) instead
 - Removed the cookies entry from the transfer info, wich was very slow and generated a Netscape formatted list of cookies
