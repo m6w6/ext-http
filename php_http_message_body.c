@@ -482,9 +482,11 @@ static size_t splitbody(void *opaque, char *buf, size_t len TSRMLS_DC)
 			}
 
 			if (!first_boundary) {
+				int st;
 				/* this is not the first boundary, read rest of this message */
 				php_http_buffer_append(&arg->buf, buf, real_boundary - buf);
-				php_http_message_parser_parse(arg->parser, &arg->buf, 0, &arg->parser->message);
+				st=php_http_message_parser_parse(arg->parser, &arg->buf, 0, &arg->parser->message);
+				//fprintf(stderr, "1 st=%d\n",st);
 			}
 
 			/* move after the boundary */
@@ -524,9 +526,11 @@ static size_t splitbody(void *opaque, char *buf, size_t len TSRMLS_DC)
 
 	/* let there be room for the next boundary */
 	if (len > arg->boundary_len) {
+		int st;
 		consumed += len - arg->boundary_len;
 		php_http_buffer_append(&arg->buf, buf, len - arg->boundary_len);
-		php_http_message_parser_parse(arg->parser, &arg->buf, 0, &arg->parser->message);
+		st=php_http_message_parser_parse(arg->parser, &arg->buf, 0, &arg->parser->message);
+		//fprintf(stderr, "2 st=%d\n", st);
 	}
 
 	arg->consumed += consumed;

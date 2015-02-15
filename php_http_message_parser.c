@@ -23,7 +23,7 @@ typedef struct php_http_message_parser_state_spec {
 
 static const php_http_message_parser_state_spec_t php_http_message_parser_states[] = {
 		{PHP_HTTP_MESSAGE_PARSER_STATE_START,			1},
-		{PHP_HTTP_MESSAGE_PARSER_STATE_HEADER,			1},
+		{PHP_HTTP_MESSAGE_PARSER_STATE_HEADER,			0},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE,		0},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY,			0},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB,		1},
@@ -181,6 +181,8 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 
 		if (justread) {
 			state = php_http_message_parser_parse(parser, buf, flags, message);
+		} else if (php_stream_eof(s)) {
+			return php_http_message_parser_parse(parser, buf, flags | PHP_HTTP_MESSAGE_PARSER_CLEANUP, message);
 		} else  {
 			return state;
 		}
@@ -242,9 +244,10 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						break;
 
 					default:
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER);
-						if (buffer->used) {
-							return PHP_HTTP_MESSAGE_PARSER_STATE_HEADER;
+						if (buffer->used || !(flags & PHP_HTTP_MESSAGE_PARSER_CLEANUP)) {
+							return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER);
+						} else {
+							php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE);
 						}
 				}
 				break;
