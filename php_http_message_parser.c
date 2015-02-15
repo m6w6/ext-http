@@ -673,6 +673,7 @@ PHP_MINIT_FUNCTION(http_message_parser)
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_LENGTH"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_CHUNKED"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_UPDATE_CL"), PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL TSRMLS_CC);
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_DONE TSRMLS_CC);
 
 	return SUCCESS;
