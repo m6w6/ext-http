@@ -11,8 +11,13 @@ function serve(callable $cb) {
 					if (getenv("PHP_HTTP_TEST_SSL")) {
 						stream_socket_enable_crypto($client, true, STREAM_CRYPTO_METHOD_SSLv23_SERVER);
 					}
-					while (!feof($client)) {
-						$cb($client);
+					try {
+						while (!feof($client)) {
+							$cb($client);
+						}
+					} catch (Exception $ex) {
+						fprintf(STDERR, "%s\n", $ex);
+						break;
 					}
 				}
 			} while ($select !== false);

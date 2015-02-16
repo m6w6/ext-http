@@ -16,6 +16,7 @@ serve(function($client) {
 	
 	/* return the initial message as response body */
 	$response = new http\Env\Response;
-	$response->getBody()->append($request);
+	/* avoid OOM with $response->getBody()->append($request); */
+	$request->toStream($response->getBody()->getResource());
 	$response->send($client);
 });

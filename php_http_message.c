@@ -1677,6 +1677,16 @@ static PHP_METHOD(HttpMessage, toString)
 	RETURN_EMPTY_STRING();
 }
 
+#ifdef ZTS
+static size_t write_to_stream(void *s, const char *str, size_t len)
+{
+	TSRMLS_FETCH();
+	return php_stream_write(s, str, len);
+}
+#else
+#	define write_to_stream (php_http_pass_callback_t)_php_stream_write
+#endif
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_toStream, 0, 0, 1)
 	ZEND_ARG_INFO(0, stream)
 ZEND_END_ARG_INFO();
@@ -1691,7 +1701,7 @@ static PHP_METHOD(HttpMessage, toStream)
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 		php_stream_from_zval(s, &zstream);
-		php_http_message_to_callback(obj->message, (php_http_pass_callback_t) _php_stream_write, s);
+		php_http_message_to_callback(obj->message, write_to_stream, s);
 	}
 }
 
