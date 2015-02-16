@@ -124,17 +124,30 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 	if (!buf->data) {
 		php_http_buffer_resize_ex(buf, 0x1000, 1, 0);
 	}
-	while (!php_stream_eof(s)) {
+	while (1) {
 		size_t justread = 0;
 #if DBG_PARSER
 		fprintf(stderr, "#SP: %s (f:%u)\n", php_http_message_parser_state_name(state), flags);
 #endif
+		/* resize if needed */
+		if (buf->free < 0x1000) {
+			php_http_buffer_resize_ex(buf, 0x1000, 1, 0);
+		}
 		switch (state) {
 			case PHP_HTTP_MESSAGE_PARSER_STATE_START:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE:
 				/* read line */
 				php_stream_get_line(s, buf->data + buf->used, buf->free, &justread);
+				/* of we fail reading a whole line, try a single char */
+				if (!justread) {
+					int c = php_stream_getc(s);
+
+					if (c != EOF) {
+						char s[1] = {c};
+						justread = php_http_buffer_append(buf, s, 1);
+					}
+				}
 				php_http_buffer_account(buf, justread);
 				break;
 
@@ -183,7 +196,7 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 			state = php_http_message_parser_parse(parser, buf, flags, message);
 		} else if (php_stream_eof(s)) {
 			return php_http_message_parser_parse(parser, buf, flags | PHP_HTTP_MESSAGE_PARSER_CLEANUP, message);
-		} else  {
+		} else {
 			return state;
 		}
 	}
