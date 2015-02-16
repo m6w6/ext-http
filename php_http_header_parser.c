@@ -244,6 +244,54 @@ STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_b
 	return php_http_header_parser_state_is(parser);
 }
 
+php_http_header_parser_state_t php_http_header_parser_parse_stream(php_http_header_parser_t *parser, php_http_buffer_t *buf, php_stream *s, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
+{
+	php_http_message_parser_state_t state = PHP_HTTP_MESSAGE_PARSER_STATE_START;
+	TSRMLS_FETCH_FROM_CTX(parser->ts);
+
+	if (!buf->data) {
+		php_http_buffer_resize_ex(buf, 0x1000, 1, 0);
+	}
+	while (1) {
+		size_t justread = 0;
+#if DBG_PARSER
+		fprintf(stderr, "#SHP: %s (f:%u)\n", php_http_message_parser_state_name(state), flags);
+#endif
+		/* resize if needed */
+		if (buf->free < 0x1000) {
+			php_http_buffer_resize_ex(buf, 0x1000, 1, 0);
+		}
+		switch (state) {
+		case PHP_HTTP_HEADER_PARSER_STATE_FAILURE:
+		case PHP_HTTP_HEADER_PARSER_STATE_DONE:
+			return state;
+
+		default:
+			/* read line */
+			php_stream_get_line(s, buf->data + buf->used, buf->free, &justread);
+			/* if we fail reading a whole line, try a single char */
+			if (!justread) {
+				int c = php_stream_getc(s);
+
+				if (c != EOF) {
+					char s[1] = {c};
+					justread = php_http_buffer_append(buf, s, 1);
+				}
+			}
+			php_http_buffer_account(buf, justread);
+		}
+
+		if (justread) {
+			state = php_http_header_parser_parse(parser, buf, flags, headers, callback_func, callback_arg);
+		} else if (php_stream_eof(s)) {
+			return php_http_header_parser_parse(parser, buf, flags | PHP_HTTP_HEADER_PARSER_CLEANUP, headers, callback_func, callback_arg);
+		} else  {
+			return state;
+		}
+	}
+
+	return PHP_HTTP_HEADER_PARSER_STATE_DONE;
+}
 
 zend_class_entry *php_http_header_parser_class_entry;
 static zend_object_handlers php_http_header_parser_object_handlers;
@@ -327,10 +375,37 @@ static PHP_METHOD(HttpHeaderParser, parse)
 	RETVAL_LONG(php_http_header_parser_parse(parser_obj->parser, parser_obj->buffer, flags, Z_ARRVAL_P(zmsg), NULL, NULL));
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeaderParser_stream, 0, 0, 3)
+	ZEND_ARG_INFO(0, stream)
+	ZEND_ARG_INFO(0, flags)
+	ZEND_ARG_ARRAY_INFO(1, headers, 1)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpHeaderParser, stream)
+{
+	php_http_header_parser_object_t *parser_obj;
+	zend_error_handling zeh;
+	zval *zmsg, *zstream;
+	php_stream *s;
+	long flags;
+
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlz", &zstream, &flags, &zmsg), invalid_arg, return);
+
+	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh TSRMLS_CC);
+	php_stream_from_zval(s, &zstream);
+	zend_restore_error_handling(&zeh TSRMLS_CC);
+
+	if (Z_TYPE_P(zmsg) != IS_ARRAY) {
+		zval_dtor(zmsg);
+		array_init(zmsg);
+	}
+	parser_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+	RETVAL_LONG(php_http_header_parser_parse_stream(parser_obj->parser, parser_obj->buffer, s, flags, Z_ARRVAL_P(zmsg), NULL, NULL));
+}
 
 static zend_function_entry php_http_header_parser_methods[] = {
 		PHP_ME(HttpHeaderParser, getState, ai_HttpHeaderParser_getState, ZEND_ACC_PUBLIC)
 		PHP_ME(HttpHeaderParser, parse, ai_HttpHeaderParser_parse, ZEND_ACC_PUBLIC)
+		PHP_ME(HttpHeaderParser, stream, ai_HttpHeaderParser_stream, ZEND_ACC_PUBLIC)
 		{NULL, NULL, NULL}
 };
 
