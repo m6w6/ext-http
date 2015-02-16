@@ -41,10 +41,4 @@ array(5) {
   ["Content-Length"]=>
   int(134217973)
 }
-exception 'http\Exception\BadMessageException' with message 'Empty message received from stream' in %sproxy.inc:%d
-Stack trace:
-#0 %sproxy.inc(%d): http\Message->__construct(Resource id #%d, false)
-#1 %sserver.inc(%d): {closure}(Resource id #%d)
-#2 %sproxy.inc(%d): serve(Object(Closure))
-#3 {main}
 ===DONE===

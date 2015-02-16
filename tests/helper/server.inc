@@ -16,7 +16,10 @@ function serve(callable $cb) {
 							$cb($client);
 						}
 					} catch (Exception $ex) {
-						fprintf(STDERR, "%s\n", $ex);
+						/* ignore disconnect */
+						if ($ex->getMessage() !== "Empty message received from stream") {
+							fprintf(STDERR, "%s\n", $ex);
+						}
 						break;
 					}
 				}
