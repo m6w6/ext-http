@@ -139,7 +139,7 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE:
 				/* read line */
 				php_stream_get_line(s, buf->data + buf->used, buf->free, &justread);
-				/* of we fail reading a whole line, try a single char */
+				/* if we fail reading a whole line, try a single char */
 				if (!justread) {
 					int c = php_stream_getc(s);
 
