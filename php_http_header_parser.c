@@ -108,6 +108,7 @@ STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_b
 #endif
 		switch (php_http_header_parser_state_pop(parser)) {
 			case PHP_HTTP_HEADER_PARSER_STATE_FAILURE:
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse headers");
 				return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 
 			case PHP_HTTP_HEADER_PARSER_STATE_START: {
@@ -140,12 +141,27 @@ STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_b
 					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
 				} else if ((colon = memchr(buffer->data, ':', buffer->used)) && (!eol_str || eol_str > colon)) {
 					/* header: string */
-					parser->_key.str = estrndup(buffer->data, parser->_key.len = colon - buffer->data);
+					size_t valid_len;
+
+					parser->_key.len = colon - buffer->data;
+					parser->_key.str = estrndup(buffer->data, parser->_key.len);
+
+					valid_len = strspn(parser->_key.str, PHP_HTTP_HEADER_NAME_CHARS);
+					if (valid_len != parser->_key.len) {
+						php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parser headers: unexpected character '0x%02x' at pos %zu of '%.*s'", parser->_key.str[valid_len], valid_len+1, (int) parser->_key.len, parser->_key.str);
+						PTR_SET(parser->_key.str, NULL);
+						return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
+					}
 					while (PHP_HTTP_IS_CTYPE(space, *++colon) && *colon != '\n' && *colon != '\r');
 					php_http_buffer_cut(buffer, 0, colon - buffer->data);
 					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
+				} else if (eol_str) {
+					/* injected new line */
+					php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse headers: unexpected character '0x%02x' at pos %zu of '%.*s'", *eol_str, eol_str - buffer->data, (int) buffer->used, buffer->data);
+					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 				} else if (flags & PHP_HTTP_HEADER_PARSER_CLEANUP) {
 					/* neither reqeust/response line nor header: string */
+					php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse headers: unexpected end of input at pos %zu of '%.*s'", buffer->used, (int) buffer->used, buffer->data);
 					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 				} else {
 					/* keep feeding */
@@ -255,7 +271,8 @@ php_http_header_parser_state_t php_http_header_parser_parse_stream(php_http_head
 	while (1) {
 		size_t justread = 0;
 #if DBG_PARSER
-		fprintf(stderr, "#SHP: %s (f:%u)\n", php_http_message_parser_state_name(state), flags);
+		const char *states[] = {"START", "KEY", "VALUE", "VALUE_EX", "HEADER_DONE", "DONE"};
+		fprintf(stderr, "#SHP: %s (f:%u)\n", states[state], flags);
 #endif
 		/* resize if needed */
 		if (buf->free < 0x1000) {

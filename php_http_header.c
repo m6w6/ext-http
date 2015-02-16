@@ -33,12 +33,7 @@ STATUS php_http_header_parse(const char *header, size_t length, HashTable *heade
 	php_http_header_parser_dtor(&ctx);
 	php_http_buffer_dtor(&buf);
 
-	if (rs == PHP_HTTP_HEADER_PARSER_STATE_FAILURE) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse headers");
-		return FAILURE;
-	}
-	
-	return SUCCESS;
+	return rs == PHP_HTTP_HEADER_PARSER_STATE_FAILURE ? FAILURE : SUCCESS;
 }
 
 void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg TSRMLS_DC)
