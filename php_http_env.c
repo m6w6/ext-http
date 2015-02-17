@@ -580,100 +580,15 @@ STATUS php_http_env_set_response_header_value(long http_code, const char *name_s
 	}
 }
 
-static PHP_HTTP_STRLIST(php_http_env_response_status) =
-	PHP_HTTP_STRLIST_ITEM("Continue")
-	PHP_HTTP_STRLIST_ITEM("Switching Protocols")
-	PHP_HTTP_STRLIST_ITEM("Processing")
-	PHP_HTTP_STRLIST_NEXT
-	PHP_HTTP_STRLIST_ITEM("OK")
-	PHP_HTTP_STRLIST_ITEM("Created")
-	PHP_HTTP_STRLIST_ITEM("Accepted")
-	PHP_HTTP_STRLIST_ITEM("Non-Authoritative Information")
-	PHP_HTTP_STRLIST_ITEM("No Content")
-	PHP_HTTP_STRLIST_ITEM("Reset Content")
-	PHP_HTTP_STRLIST_ITEM("Partial Content")
-	PHP_HTTP_STRLIST_ITEM("Multi-Status")
-	PHP_HTTP_STRLIST_ITEM("Already Reported")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("IM Used")
-	PHP_HTTP_STRLIST_NEXT
-	PHP_HTTP_STRLIST_ITEM("Multiple Choices")
-	PHP_HTTP_STRLIST_ITEM("Moved Permanently")
-	PHP_HTTP_STRLIST_ITEM("Found")
-	PHP_HTTP_STRLIST_ITEM("See Other")
-	PHP_HTTP_STRLIST_ITEM("Not Modified")
-	PHP_HTTP_STRLIST_ITEM("Use Proxy")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("Temporary Redirect")
-	PHP_HTTP_STRLIST_ITEM("Permanent Redirect")
-	PHP_HTTP_STRLIST_NEXT
-	PHP_HTTP_STRLIST_ITEM("Bad Request")
-	PHP_HTTP_STRLIST_ITEM("Unauthorized")
-	PHP_HTTP_STRLIST_ITEM("Payment Required")
-	PHP_HTTP_STRLIST_ITEM("Forbidden")
-	PHP_HTTP_STRLIST_ITEM("Not Found")
-	PHP_HTTP_STRLIST_ITEM("Method Not Allowed")
-	PHP_HTTP_STRLIST_ITEM("Not Acceptable")
-	PHP_HTTP_STRLIST_ITEM("Proxy Authentication Required")
-	PHP_HTTP_STRLIST_ITEM("Request Timeout")
-	PHP_HTTP_STRLIST_ITEM("Conflict")
-	PHP_HTTP_STRLIST_ITEM("Gone")
-	PHP_HTTP_STRLIST_ITEM("Length Required")
-	PHP_HTTP_STRLIST_ITEM("Precondition Failed")
-	PHP_HTTP_STRLIST_ITEM("Request Entity Too Large")
-	PHP_HTTP_STRLIST_ITEM("Request URI Too Long")
-	PHP_HTTP_STRLIST_ITEM("Unsupported Media Type")
-	PHP_HTTP_STRLIST_ITEM("Requested Range Not Satisfiable")
-	PHP_HTTP_STRLIST_ITEM("Expectation Failed")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("Unprocessible Entity")
-	PHP_HTTP_STRLIST_ITEM("Locked")
-	PHP_HTTP_STRLIST_ITEM("Failed Dependency")
-	PHP_HTTP_STRLIST_ITEM("(Reserved)")
-	PHP_HTTP_STRLIST_ITEM("Upgrade Required")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("Precondition Required")
-	PHP_HTTP_STRLIST_ITEM("Too Many Requests")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("Request Header Fields Too Large")
-	PHP_HTTP_STRLIST_NEXT
-	PHP_HTTP_STRLIST_ITEM("Internal Server Error")
-	PHP_HTTP_STRLIST_ITEM("Not Implemented")
-	PHP_HTTP_STRLIST_ITEM("Bad Gateway")
-	PHP_HTTP_STRLIST_ITEM("Service Unavailable")
-	PHP_HTTP_STRLIST_ITEM("Gateway Timeout")
-	PHP_HTTP_STRLIST_ITEM("HTTP Version Not Supported")
-	PHP_HTTP_STRLIST_ITEM("Variant Also Negotiates")
-	PHP_HTTP_STRLIST_ITEM("Insufficient Storage")
-	PHP_HTTP_STRLIST_ITEM("Loop Detected")
-	PHP_HTTP_STRLIST_ITEM("(Unused)")
-	PHP_HTTP_STRLIST_ITEM("Not Extended")
-	PHP_HTTP_STRLIST_ITEM("Network Authentication Required")
-	PHP_HTTP_STRLIST_STOP
-;
-
 const char *php_http_env_get_response_status_for_code(unsigned code)
 {
-	return php_http_strlist_find(php_http_env_response_status, 100, code);
+	switch (code) {
+#define PHP_HTTP_RESPONSE_CODE(c, s) case c: return s;
+#include "php_http_response_codes.h"
+#undef PHP_HTTP_RESPONSE_CODE
+	default:
+		return NULL;
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getRequestHeader, 0, 0, 0)
@@ -724,32 +639,29 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, getResponseStatusForCode)
 {
 	long code;
+	const char *status;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
 		return;
 	}
-	RETURN_STRING(php_http_env_get_response_status_for_code(code), 1);
+
+	if ((status = php_http_env_get_response_status_for_code(code))) {
+		RETURN_STRING(status, 1);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseStatusForAllCodes, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, getResponseStatusForAllCodes)
 {
-	const char *s;
-	unsigned c;
-	php_http_strlist_iterator_t i;
-
 	if (SUCCESS != zend_parse_parameters_none()) {
 		return;
 	}
 
 	array_init(return_value);
-	for (	php_http_strlist_iterator_init(&i, php_http_env_response_status, 100);
-			*(s = php_http_strlist_iterator_this(&i, &c));
-			php_http_strlist_iterator_next(&i)
-	) {
-		add_index_string(return_value, c, s, 1);
-	}
+#define PHP_HTTP_RESPONSE_CODE(code, status) add_index_string(return_value, code, status, 1);
+#include "php_http_response_codes.h"
+#undef PHP_HTTP_RESPONSE_CODE
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseHeader, 0, 0, 0)

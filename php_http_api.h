@@ -79,7 +79,6 @@ typedef int STATUS;
 #include "php_http.h"
 
 #include "php_http_buffer.h"
-#include "php_http_strlist.h"
 #include "php_http_misc.h"
 #include "php_http_options.h"
 
