@@ -934,6 +934,9 @@ static STATUS php_http_curle_option_set_compress(php_http_option_t *opt, zval *v
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
 
+#if !PHP_HTTP_CURL_VERSION(7,21,6)
+#	define CURLOPT_ACCEPT_ENCODING CURLOPT_ENCODING
+#endif
 	if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_ACCEPT_ENCODING, Z_BVAL_P(val) ? "" : NULL)) {
 		return FAILURE;
 	}
