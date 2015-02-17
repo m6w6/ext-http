@@ -32,13 +32,13 @@ echo new http\Message("CONNECT www.example.org:80 HTTP/1.1");
 ===DONE===
 --EXPECTF--
 Test
-exception 'http\Exception\BadMessageException' with message 'Could not parse message: HTTP/1.1 99 Apples in my ' in %sinfo002.php:%d
+exception 'http\Exception\BadMessageException' with message 'http\Message::__construct(): Failed to parse headers: unexpected character '\057' at pos 4 of 'HTTP/1.1 99 Apples in my Basket'' in %sinfo002.php:%d
 Stack trace:
 #0 %sinfo002.php(%d): http\Message->__construct('HTTP/1.1 99 App...')
 #1 %sinfo002.php(%d): {closure}()
 #2 %sinfo002.php(%d): trap(Object(Closure))
 #3 {main}
-exception 'http\Exception\BadMessageException' with message 'Could not parse message: CONNECT HTTP/1.1' in %sinfo002.php:%d
+exception 'http\Exception\BadMessageException' with message 'http\Message::__construct(): Failed to parse headers: unexpected character '\040' at pos 7 of 'CONNECT HTTP/1.1'' in %sinfo002.php:%d
 Stack trace:
 #0 %sinfo002.php(%d): http\Message->__construct('CONNECT HTTP/1....')
 #1 %sinfo002.php(%d): {closure}()
