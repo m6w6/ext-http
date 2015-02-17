@@ -123,20 +123,6 @@ static php_http_url_t *php_http_url_from_env(TSRMLS_D)
 	return url(buf);
 }
 
-void php_http_url(int flags, const php_url *old_url, const php_url *new_url, php_url **url_ptr, char **url_str, size_t *url_len TSRMLS_DC)
-{
-	php_http_url_t *url = php_http_url_mod((const php_http_url_t *) old_url, (const php_http_url_t *) new_url, flags TSRMLS_CC);
-
-	if (url_ptr) {
-		*url_ptr = php_http_url_to_php_url(url);
-	}
-	if (url_str) {
-		php_http_url_to_string(url, url_str, url_len, 0);
-	}
-
-	php_http_url_free(&url);
-}
-
 #define url_isset(u,n) \
 	((u)&&(u)->n)
 #define url_append(buf, append) do { \
