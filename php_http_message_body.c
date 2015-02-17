@@ -128,25 +128,29 @@ const char *php_http_message_body_boundary(php_http_message_body_t *body)
 
 char *php_http_message_body_etag(php_http_message_body_t *body)
 {
-	const php_stream_statbuf *ssb = php_http_message_body_stat(body);
+	php_http_etag_t *etag;
+	php_stream *s = php_http_message_body_stream(body);
 	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	/* real file or temp buffer ? */
-	if (ssb && ssb->sb.st_mtime) {
-		char *etag;
+	if (s->ops != &php_stream_temp_ops && s->ops != &php_stream_memory_ops) {
+		php_stream_stat(php_http_message_body_stream(body), &body->ssb);
 
-		spprintf(&etag, 0, "%lx-%lx-%lx", ssb->sb.st_ino, ssb->sb.st_mtime, ssb->sb.st_size);
-		return etag;
-	} else {
-		php_http_etag_t *etag = php_http_etag_init(PHP_HTTP_G->env.etag_mode TSRMLS_CC);
+		if (body->ssb.sb.st_mtime) {
+			char *etag;
 
-		if (etag) {
-			php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_etag_update, etag, 0, 0);
-			return php_http_etag_finish(etag);
-		} else {
-			return NULL;
+			spprintf(&etag, 0, "%lx-%lx-%lx", body->ssb.sb.st_ino, body->ssb.sb.st_mtime, body->ssb.sb.st_size);
+			return etag;
 		}
 	}
+
+	/* content based */
+	if ((etag = php_http_etag_init(PHP_HTTP_G->env.etag_mode TSRMLS_CC))) {
+		php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_etag_update, etag, 0, 0);
+		return php_http_etag_finish(etag);
+	}
+
+	return NULL;
 }
 
 void php_http_message_body_to_string(php_http_message_body_t *body, char **buf, size_t *len, off_t offset, size_t forlen)
