@@ -1,5 +1,5 @@
 --TEST--
-proxy - send proxy headers for a proxy request
+client proxy - send proxy headers for a proxy request
 --SKIPIF--
 <?php 
 include "skipif.inc";
@@ -18,7 +18,7 @@ server("proxy.inc", function($port, $stdin, $stdout, $stderr) {
 	$c = new http\Client;
 	$r = new http\Client\Request("GET", "http://www.example.com/");
 	$r->setOptions(array(
-			"timeout" => 3,
+			"timeout" => 10,
 			"proxytunnel" => true,
 			"proxyheader" => array("Hello" => "there!"),
 			"proxyhost" => "localhost",
@@ -30,7 +30,6 @@ server("proxy.inc", function($port, $stdin, $stdout, $stderr) {
 		echo $e;
 	}
 	echo $c->getResponse()->getBody();
-	unset($r, $client);
 });
 
 ?>

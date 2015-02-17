@@ -1,5 +1,5 @@
 --TEST--
-proxy - don't send proxy headers for a standard request
+client proxy - don't send proxy headers for a standard request
 --SKIPIF--
 <?php 
 include "skipif.inc";

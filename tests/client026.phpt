@@ -19,7 +19,7 @@ server("proxy.inc", function($port) {
 	for ($i = 0, $data = str_repeat("a",1024); $i < 128*1024; ++$i) {
 		$request->getBody()->append($data);
 	}
-	$request->setOptions(["expect_100_timeout" => 0]);
+	$request->setOptions(["timeout" => 10, "expect_100_timeout" => 0]);
 	$client->enqueue($request);
 	$client->send();
 	var_dump($client->getResponse()->getHeaders());
@@ -39,6 +39,6 @@ array(5) {
   ["X-Original-Transfer-Encoding"]=>
   string(7) "chunked"
   ["Content-Length"]=>
-  int(134217973)
+  int(134217%d%d%d)
 }
 ===DONE===

@@ -1,5 +1,5 @@
 --TEST--
-pipelining
+client pipelining
 --SKIPIF--
 <?php 
 include "skipif.inc";

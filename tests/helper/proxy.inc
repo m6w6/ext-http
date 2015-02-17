@@ -8,6 +8,7 @@ serve(function($client) {
 	
 	if ($request->getHeader("Proxy-Connection")) {
 		$response = new http\Env\Response;
+		$response->setEnvRequest($request);
 		$response->send($client);
 		
 		/* soak up the request following the connect */
