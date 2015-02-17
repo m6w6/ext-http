@@ -17,5 +17,5 @@ Done
 --EXPECTF--
 Test
 
-Warning: http\Header::parse(): Failed to parse headers: unexpected character '\012' at pos 4 of 'wass\nup' in %s on line %d
+Warning: http\Header::parse(): Failed to parse headers: unexpected end of line at pos 4 of 'wass\nup' in %s on line %d
 Done

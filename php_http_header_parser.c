@@ -104,10 +104,10 @@ static void php_http_header_parser_error(size_t valid_len, char *str, size_t len
 
 	escaped_str = php_addcslashes(str, len, &escaped_len, 0, ZEND_STRL("\x0..\x1F\x7F..\xFF") TSRMLS_CC);
 
-	if (valid_len != len) {
+	if (valid_len != len && (!eol_str || (str+valid_len) != eol_str)) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse headers: unexpected character '\\%03o' at pos %zu of '%.*s'", str[valid_len], valid_len, escaped_len, escaped_str);
 	} else if (eol_str) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse headers: unexpected character '\\%03o' at pos %zu of '%.*s'", *eol_str, eol_str - str, escaped_len, escaped_str);
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse headers: unexpected end of line at pos %zu of '%.*s'", eol_str - str, escaped_len, escaped_str);
 	} else {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse headers: unexpected end of input at pos %zu of '%.*s'", len, escaped_len, escaped_str);
 	}
@@ -246,6 +246,17 @@ STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_b
 			case PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE:
 				if (parser->_key.str && parser->_val.str) {
 					zval array, **exist;
+					size_t valid_len = strlen(parser->_val.str);
+
+					/* check for truncation */
+					if (valid_len != parser->_val.len) {
+						php_http_header_parser_error(valid_len, parser->_val.str, parser->_val.len, NULL TSRMLS_CC);
+
+						PTR_SET(parser->_key.str, NULL);
+						PTR_SET(parser->_val.str, NULL);
+
+						return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
+					}
 
 					if (!headers && callback_func) {
 						callback_func(callback_arg, &headers, NULL TSRMLS_CC);
