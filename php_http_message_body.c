@@ -488,6 +488,7 @@ static size_t splitbody(void *opaque, char *buf, size_t len TSRMLS_DC)
 			if (!first_boundary) {
 				/* this is not the first boundary, read rest of this message */
 				php_http_buffer_append(&arg->buf, buf, real_boundary - buf);
+				php_http_message_parser_parse(arg->parser, &arg->buf, 0, &arg->parser->message);
 			}
 
 			/* move after the boundary */
