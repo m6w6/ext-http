@@ -555,7 +555,7 @@ static inline size_t utf8towc(unsigned *wc, const unsigned char *uc, size_t len)
 {
 	unsigned char ub = utf8_mblen[*uc];
 
-	if (!ub || ub > len || ub > 3) {
+	if (!ub || ub > len || ub > 4) {
 		return 0;
 	}
 

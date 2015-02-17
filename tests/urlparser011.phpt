@@ -1,13 +1,8 @@
 --TEST--
-url parser multibyte/locale/topct
+url parser multibyte/utf-8/topct
 --SKIPIF--
 <?php
 include "skipif.inc";
-if (!defined("http\\Url::PARSE_MBLOC") or
-	!stristr(setlocale(LC_CTYPE, NULL), ".utf")) {
-	die("skip need http\\Url::PARSE_MBLOC support and LC_CTYPE=*.UTF-8");
-}
-
 ?>
 --FILE--
 <?php
@@ -18,7 +13,7 @@ $urls = array(
 );
 
 foreach ($urls as $url) {
-	var_dump(new http\Url($url, null, http\Url::PARSE_MBLOC|http\Url::PARSE_TOPCT));
+	var_dump(new http\Url($url, null, http\Url::PARSE_MBUTF8|http\Url::PARSE_TOPCT));
 }
 ?>
 DONE
