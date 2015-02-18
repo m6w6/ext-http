@@ -113,7 +113,7 @@ const char *php_http_message_body_boundary(php_http_message_body_t *body)
 	if (!body->boundary) {
 		union { double dbl; int num[2]; } data;
 
-		data.dbl = php_combined_lcg(TSRMLS_C);
+		data.dbl = php_combined_lcg();
 		spprintf(&body->boundary, 0, "%x.%x", data.num[0], data.num[1]);
 	}
 	return body->boundary;
@@ -121,24 +121,28 @@ const char *php_http_message_body_boundary(php_http_message_body_t *body)
 
 char *php_http_message_body_etag(php_http_message_body_t *body)
 {
-	const php_stream_statbuf *ssb = php_http_message_body_stat(body);
+	php_http_etag_t *etag;
+	php_stream *s = php_http_message_body_stream(body);
 
 	/* real file or temp buffer ? */
-	if (ssb->sb.st_mtime) {
-		char *etag;
+	if (s->ops != &php_stream_temp_ops && s->ops != &php_stream_memory_ops) {
+		php_stream_stat(php_http_message_body_stream(body), &body->ssb);
 
-		spprintf(&etag, 0, "%lx-%lx-%lx", ssb->sb.st_ino, ssb->sb.st_mtime, ssb->sb.st_size);
-		return etag;
-	} else {
-		php_http_etag_t *etag = php_http_etag_init(PHP_HTTP_G->env.etag_mode);
+		if (body->ssb.sb.st_mtime) {
+			char *etag;
 
-		if (etag) {
-			php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_etag_update, etag, 0, 0);
-			return php_http_etag_finish(etag);
-		} else {
-			return NULL;
+			spprintf(&etag, 0, "%lx-%lx-%lx", body->ssb.sb.st_ino, body->ssb.sb.st_mtime, body->ssb.sb.st_size);
+			return etag;
 		}
 	}
+
+	/* content based */
+	if ((etag = php_http_etag_init(PHP_HTTP_G->env.etag_mode))) {
+		php_http_message_body_to_callback(body, (php_http_pass_callback_t) php_http_etag_update, etag, 0, 0);
+		return php_http_etag_finish(etag);
+	}
+
+	return NULL;
 }
 
 zend_string *php_http_message_body_to_string(php_http_message_body_t *body, off_t offset, size_t forlen)
@@ -212,7 +216,7 @@ size_t php_http_message_body_append(php_http_message_body_t *body, const char *b
 	written = php_stream_write(s, buf, len);
 
 	if (written != len) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to append %zu bytes to body; wrote %zu", len, written);
+		php_error_docref(NULL, E_WARNING, "Failed to append %zu bytes to body; wrote %zu", len, written);
 	}
 
 	return len;
@@ -584,7 +588,7 @@ void php_http_message_body_object_free(zend_object *object)
 	php_http_message_body_object_t *obj = PHP_HTTP_OBJ(object, NULL);
 
 	php_http_message_body_free(&obj->body);
-	zend_object_std_dtor(object TSRMLS_CC);
+	zend_object_std_dtor(object);
 }
 
 #define PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj) \
@@ -813,7 +817,7 @@ PHP_METHOD(HttpMessageBody, stat)
 	char *field_str = NULL;
 	size_t field_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &field_str, &field_len)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|s", &field_str, &field_len)) {
 		php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
 		const php_stream_statbuf *sb;
 

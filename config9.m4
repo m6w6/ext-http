@@ -547,7 +547,6 @@ dnl ----
 		php_http_options.c \
 		php_http_params.c \
 		php_http_querystring.c \
-		php_http_strlist.c \
 		php_http_url.c \
 		php_http_version.c \
 	"
@@ -599,8 +598,9 @@ dnl ----
 		php_http_options.h \
 		php_http_params.h \
 		php_http_querystring.h \
-		php_http_strlist.h \
+		php_http_response_codes.h \
 		php_http_url.h \
+		php_http_utf8.h \
 		php_http_version.h \
 	"
 	PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)

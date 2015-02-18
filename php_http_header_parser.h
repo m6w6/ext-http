@@ -47,6 +47,21 @@ PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_pop(php
 PHP_HTTP_API void php_http_header_parser_dtor(php_http_header_parser_t *parser);
 PHP_HTTP_API void php_http_header_parser_free(php_http_header_parser_t **parser);
 PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg);
+PHP_HTTP_API php_http_header_parser_state_t php_http_headerparser_parse_stream(php_http_header_parser_t *parser, php_http_buffer_t *buffer, php_stream *s, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg);
+
+typedef struct php_http_header_parser_object {
+	php_http_buffer_t *buffer;
+	php_http_header_parser_t *parser;
+	zend_object zo;
+} php_http_header_parser_object_t;
+
+PHP_HTTP_API zend_class_entry *php_http_header_parser_class_entry;
+
+PHP_MINIT_FUNCTION(http_header_parser);
+
+zend_object *php_http_header_parser_object_new(zend_class_entry *ce);
+php_http_header_parser_object_t *php_http_header_parser_object_new_ex(zend_class_entry *ce, php_http_header_parser_t *parser);
+void php_http_header_parser_object_free(zend_object *object);
 
 #endif /* PHP_HTTP_HEADER_PARSER_H */
 

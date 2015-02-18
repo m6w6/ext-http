@@ -3,26 +3,31 @@ client once & wait
 --SKIPIF--
 <?php
 include "skipif.inc";
-skip_online_test();
+skip_client_test();
 ?>
 --FILE--
 <?php
+
+include "helper/server.inc";
+
 echo "Test\n";
 
-$request = new http\Client\Request("GET", "http://www.example.org/");
-
-foreach (http\Client::getAvailableDrivers() as $driver) {
-	$client = new http\Client($driver);
-	$client->enqueue($request);
+server("proxy.inc", function($port) {
+	$request = new http\Client\Request("GET", "http://www.example.org/");
 	
-	while ($client->once()) {
-		$client->wait(.1);
-	}
+	foreach (http\Client::getAvailableDrivers() as $driver) {
+		$client = new http\Client($driver);
+		$client->enqueue($request);
 	
-	if (!$client->getResponse()) {
-		var_dump($client);
+		while ($client->once()) {
+			$client->wait(.1);
+		}
+	
+		if (!$client->getResponse()) {
+			var_dump($client);
+		}
 	}
-}
+});
 ?>
 Done
 --EXPECT--

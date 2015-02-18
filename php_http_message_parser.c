@@ -23,19 +23,20 @@ typedef struct php_http_message_parser_state_spec {
 
 static const php_http_message_parser_state_spec_t php_http_message_parser_states[] = {
 		{PHP_HTTP_MESSAGE_PARSER_STATE_START,			1},
-		{PHP_HTTP_MESSAGE_PARSER_STATE_HEADER,			1},
+		{PHP_HTTP_MESSAGE_PARSER_STATE_HEADER,			0},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE,		0},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY,			0},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB,		1},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH,		1},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED,	1},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE,		0},
+		{PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL,		0},
 		{PHP_HTTP_MESSAGE_PARSER_STATE_DONE,			0}
 };
 
 #if DBG_PARSER
 const char *php_http_message_parser_state_name(php_http_message_parser_state_t state) {
-	const char *states[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "DONE"};
+	const char *states[] = {"START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "UPDATE_CL", "DONE"};
 	
 	if (state < 0 || state > (sizeof(states)/sizeof(char*))-1) {
 		return "FAILURE";
@@ -120,18 +121,30 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 	if (!buf->data) {
 		php_http_buffer_resize_ex(buf, 0x1000, 1, 0);
 	}
-
-	while (!php_stream_eof(s)) {
+	while (1) {
 		size_t justread = 0;
 #if DBG_PARSER
 		fprintf(stderr, "#SP: %s (f:%u)\n", php_http_message_parser_state_name(state), flags);
 #endif
+		/* resize if needed */
+		if (buf->free < 0x1000) {
+			php_http_buffer_resize_ex(buf, 0x1000, 1, 0);
+		}
 		switch (state) {
 			case PHP_HTTP_MESSAGE_PARSER_STATE_START:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE:
 				/* read line */
 				php_stream_get_line(s, buf->data + buf->used, buf->free, &justread);
+				/* if we fail reading a whole line, try a single char */
+				if (!justread) {
+					int c = php_stream_getc(s);
+
+					if (c != EOF) {
+						char s[1] = {c};
+						justread = php_http_buffer_append(buf, s, 1);
+					}
+				}
 				php_http_buffer_account(buf, justread);
 				break;
 
@@ -166,6 +179,7 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:
+			case PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL:
 				/* should not occur */
 				abort();
 				break;
@@ -177,7 +191,9 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 
 		if (justread) {
 			state = php_http_message_parser_parse(parser, buf, flags, message);
-		} else  {
+		} else if (php_stream_eof(s)) {
+			return php_http_message_parser_parse(parser, buf, flags | PHP_HTTP_MESSAGE_PARSER_CLEANUP, message);
+		} else {
 			return state;
 		}
 	}
@@ -237,9 +253,10 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						break;
 
 					default:
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER);
-						if (buffer->used) {
-							return PHP_HTTP_MESSAGE_PARSER_STATE_HEADER;
+						if (buffer->used || !(flags & PHP_HTTP_MESSAGE_PARSER_CLEANUP)) {
+							return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER);
+						} else {
+							php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE);
 						}
 				}
 				break;
@@ -252,6 +269,11 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				zend_long content_length = -1;
 				zend_string *content_range = NULL;
 
+				/* Content-Range has higher precedence than Content-Length,
+				 * and content-length denotes the original length of the entity,
+				 * so let's *NOT* remove CR/CL, because that would fundamentally
+				 * change the meaning of the whole message
+				 */
 				if ((h_ptr = php_http_message_header(*message, ZEND_STRL("Transfer-Encoding")))) {
 					zend_string *zs = zval_get_string(h_ptr);
 
@@ -262,24 +284,19 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 					zend_hash_str_update(&(*message)->hdrs, "X-Original-Transfer-Encoding", lenof("X-Original-Transfer-Encoding"), h_ptr);
 					zend_hash_str_del(&(*message)->hdrs, "Transfer-Encoding", lenof("Transfer-Encoding"));
 
-				}
-				if ((h_ptr = php_http_message_header(*message, ZEND_STRL("Content-Length")))) {
+					/* reset */
+					ZVAL_LONG(&h, 0);
+					zend_hash_str_update(&(*message)->hdrs, "Content-Length", lenof("Content-Length"), &h);
+				} else if ((h_ptr = php_http_message_header(*message, ZEND_STRL("Content-Length")))) {
 					content_length = zval_get_long(h_ptr);
-
 					Z_TRY_ADDREF_P(h_ptr);
 					zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Length", lenof("X-Original-Content-Length"), h_ptr);
 				}
-				if ((h_ptr = php_http_message_header(*message, ZEND_STRL("Content-Range")))) {
-					content_range = zval_get_string(h_ptr);
 
-					Z_TRY_ADDREF_P(h_ptr);
-					zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Range", lenof("X-Original-Content-Range"), h_ptr);
-					zend_hash_str_del(&(*message)->hdrs, "Content-Range", lenof("Content-Range"));
+				if ((content_range = php_http_message_header_string(*message, ZEND_STRL("Content-Range")))) {
+					ZVAL_STR_COPY(&h, content_range);
+					zend_hash_str_update(&(*message)->hdrs, "Content-Range", lenof("Content-Range"), &h);
 				}
-
-				/* default */
-				ZVAL_LONG(&h, 0);
-				zend_hash_str_update(&(*message)->hdrs, "Content-Length", lenof("Content-Length"), &h);
 
 				/* so, if curl sees a 3xx code, a Location header and a Connection:close header
 				 * it decides not to read the response body.
@@ -290,16 +307,22 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				&&	(h_loc = php_http_message_header(*message, ZEND_STRL("Location")))
 				&&	(h_con = php_http_message_header(*message, ZEND_STRL("Connection")))
 				) {
-					if (php_http_match(Z_STRVAL_P(h_con), "close", PHP_HTTP_MATCH_WORD)) {
+					zend_string *con = zval_get_string(h_con);
+
+					if (php_http_match(con->val, "close", PHP_HTTP_MATCH_WORD)) {
+						zend_string_release(con);
 						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
 						break;
 					}
+					zend_string_release(con);
 				}
 
 				if ((h_ce = php_http_message_header(*message, ZEND_STRL("Content-Encoding")))) {
-					if (php_http_match(Z_STRVAL_P(h_ce), "gzip", PHP_HTTP_MATCH_WORD)
-					||	php_http_match(Z_STRVAL_P(h_ce), "x-gzip", PHP_HTTP_MATCH_WORD)
-					||	php_http_match(Z_STRVAL_P(h_ce), "deflate", PHP_HTTP_MATCH_WORD)
+					zend_string *ce = zval_get_string(h_ce);
+
+					if (php_http_match(ce->val, "gzip", PHP_HTTP_MATCH_WORD)
+					||	php_http_match(ce->val, "x-gzip", PHP_HTTP_MATCH_WORD)
+					||	php_http_match(ce->val, "deflate", PHP_HTTP_MATCH_WORD)
 					) {
 						if (parser->inflate) {
 							php_http_encoding_stream_reset(&parser->inflate);
@@ -310,6 +333,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						zend_hash_str_update(&(*message)->hdrs, "X-Original-Content-Encoding", lenof("X-Original-Content-Encoding"), h_ce);
 						zend_hash_str_del(&(*message)->hdrs, "Content-Encoding", lenof("Content-Encoding"));
 					}
+					zend_string_release(ce);
 				}
 
 				if ((flags & PHP_HTTP_MESSAGE_PARSER_DUMB_BODIES)) {
@@ -318,12 +342,6 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 					if (chunked) {
 						parser->dechunk = php_http_encoding_stream_init(parser->dechunk, php_http_encoding_stream_get_dechunk_ops(), 0);
 						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED);
-						break;
-					}
-
-					if (content_length >= 0) {
-						parser->body_length = content_length;
-						php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
 						break;
 					}
 
@@ -346,7 +364,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 									total = strtoul(total_at + 1, NULL, 10);
 								}
 
-								if (end >= start && (!total || end < total)) {
+								if (end >= start && (!total || end <= total)) {
 									parser->body_length = end + 1 - start;
 									php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
 									zend_string_release(content_range);
@@ -358,6 +376,11 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						zend_string_release(content_range);
 					}
 
+					if (content_length >= 0) {
+						parser->body_length = content_length;
+						php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+						break;
+					}
 
 					if ((*message)->type == PHP_HTTP_REQUEST) {
 						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
@@ -371,8 +394,6 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY:
 			{
 				if (len) {
-					zval zcl;
-
 					if (parser->inflate) {
 						char *dec_str = NULL;
 						size_t dec_len;
@@ -389,10 +410,6 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 					}
 
 					php_stream_write(php_http_message_body_stream((*message)->body), str, len);
-
-					/* keep track */
-					ZVAL_LONG(&zcl, php_http_message_body_size((*message)->body));
-					zend_hash_str_update(&(*message)->hdrs, "Content-Length", lenof("Content-Length"), &zcl);
 				}
 
 				if (cut) {
@@ -465,7 +482,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 			{
 				php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
 
-				if (parser->dechunk) {
+				if (parser->dechunk && parser->dechunk->ctx) {
 					char *dec_str = NULL;
 					size_t dec_len;
 
@@ -478,14 +495,24 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						str = dec_str;
 						len = dec_len;
 						cut = 0;
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
+						php_http_message_parser_state_push(parser, 2, PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
 					}
 				}
 
 				break;
 			}
 
-			case PHP_HTTP_MESSAGE_PARSER_STATE_DONE: {
+			case PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL:
+			{
+				zval zcl;
+
+				ZVAL_LONG(&zcl, php_http_message_body_size((*message)->body));
+				zend_hash_str_update(&(*message)->hdrs, "Content-Length", lenof("Content-Length"), &zcl);
+				break;
+			}
+
+			case PHP_HTTP_MESSAGE_PARSER_STATE_DONE:
+			{
 				char *ptr = buffer->data;
 
 				while (ptr - buffer->data < buffer->used && PHP_HTTP_IS_CTYPE(space, *ptr)) {
@@ -648,6 +675,7 @@ PHP_MINIT_FUNCTION(http_message_parser)
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_LENGTH"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_CHUNKED"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED);
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_BODY_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE);
+	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_UPDATE_CL"), PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL);
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("STATE_DONE"), PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
 
 	return SUCCESS;

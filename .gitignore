@@ -29,6 +29,7 @@ mkinstalldirs
 modules/
 pecl_http-*.tgz
 *.lo
+*.o
 run-tests.php
 tests/*.diff
 tests/*.exp
@@ -37,3 +38,4 @@ tests/*.out
 tests/*.php
 tests/*.sh
 lcov_data
+*~

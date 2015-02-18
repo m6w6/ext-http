@@ -3,10 +3,13 @@ client observer
 --SKIPIF--
 <?php
 include "skipif.inc";
-skip_online_test();
+skip_client_test();
 ?>
 --FILE--
 <?php
+
+include "helper/server.inc";
+
 echo "Test\n";
 
 class Observer implements SplObserver
@@ -19,15 +22,14 @@ class Observer implements SplObserver
 	}
 }
 
-$observer = new Observer;
-$request = new http\Client\Request("GET", "http://www.example.org/");
-
-foreach (http\Client::getAvailableDrivers() as $driver) {
-	$client = new http\Client($driver);
-	$client->attach($observer);
-	$client->enqueue($request);
-	$client->send();
-}
+server("proxy.inc", function($port, $stdin, $stdout, $stderr) {
+	foreach (http\Client::getAvailableDrivers() as $driver) {
+		$client = new http\Client($driver);
+		$client->attach(new Observer);
+		$client->enqueue(new http\Client\Request("GET", "http://localhost:$port/"));
+		$client->send();
+	}
+});
 
 ?>
 

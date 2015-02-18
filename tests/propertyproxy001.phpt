@@ -4,6 +4,8 @@ property proxy
 <?php
 include "skipif.inc";
 ?>
+--XFAIL--
+TBD
 --FILE--
 <?php
 

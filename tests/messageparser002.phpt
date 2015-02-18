@@ -54,7 +54,7 @@ object(http\Message)#%d (9) {
     ["Host"]=>
     string(9) "localhost"
     ["Content-Length"]=>
-    int(3)
+    string(1) "3"
     ["X-Original-Content-Length"]=>
     string(1) "3"
   }

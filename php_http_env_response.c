@@ -834,6 +834,7 @@ typedef struct php_http_env_response_stream_ctx {
 	long status_code;
 
 	php_stream *stream;
+	php_stream_filter *chunked_filter;
 	php_http_message_t *request;
 
 	unsigned started:1;
@@ -844,6 +845,7 @@ typedef struct php_http_env_response_stream_ctx {
 static ZEND_RESULT_CODE php_http_env_response_stream_init(php_http_env_response_t *r, void *init_arg)
 {
 	php_http_env_response_stream_ctx_t *ctx;
+	size_t buffer_size = 0x1000;
 
 	ctx = ecalloc(1, sizeof(*ctx));
 
@@ -851,6 +853,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_init(php_http_env_response_
 	++GC_REFCOUNT(ctx->stream->res);
 	ZEND_INIT_SYMTABLE(&ctx->header);
 	php_http_version_init(&ctx->version, 1, 1);
+	php_stream_set_option(ctx->stream, PHP_STREAM_OPTION_WRITE_BUFFER, PHP_STREAM_BUFFER_FULL, &buffer_size);
 	ctx->status_code = 200;
 	ctx->chunked = 1;
 	ctx->request = get_request(&r->options);
@@ -868,19 +871,22 @@ static void php_http_env_response_stream_dtor(php_http_env_response_t *r)
 {
 	php_http_env_response_stream_ctx_t *ctx = r->ctx;
 
+	if (ctx->chunked_filter) {
+		ctx->chunked_filter = php_stream_filter_remove(ctx->chunked_filter, 1);
+	}
 	zend_hash_destroy(&ctx->header);
 	zend_list_delete(ctx->stream->res);
 	efree(ctx);
 	r->ctx = NULL;
 }
-static void php_http_env_response_stream_header(php_http_env_response_stream_ctx_t *ctx, HashTable *header)
+static void php_http_env_response_stream_header(php_http_env_response_stream_ctx_t *ctx, HashTable *header, php_http_buffer_t *buf)
 {
 	zval *val;
 
 	ZEND_HASH_FOREACH_VAL(header, val)
 	{
 		if (Z_TYPE_P(val) == IS_ARRAY) {
-			php_http_env_response_stream_header(ctx, Z_ARRVAL_P(val));
+			php_http_env_response_stream_header(ctx, Z_ARRVAL_P(val), buf);
 		} else {
 			zend_string *zs = zval_get_string(val);
 
@@ -890,8 +896,8 @@ static void php_http_env_response_stream_header(php_http_env_response_stream_ctx
 					ctx->chunked = 0;
 				}
 			}
-			php_stream_write(ctx->stream, zs->val, zs->len);
-			php_stream_write_string(ctx->stream, PHP_HTTP_CRLF);
+			php_http_buffer_append(buf, zs->val, zs->len);
+			php_http_buffer_appends(buf, PHP_HTTP_CRLF);
 			zend_string_release(zs);
 		}
 	}
@@ -899,11 +905,14 @@ static void php_http_env_response_stream_header(php_http_env_response_stream_ctx
 }
 static ZEND_RESULT_CODE php_http_env_response_stream_start(php_http_env_response_stream_ctx_t *ctx)
 {
+	php_http_buffer_t header_buf;
+
 	if (ctx->started || ctx->finished) {
 		return FAILURE;
 	}
 
-	php_stream_printf(ctx->stream, "HTTP/%u.%u %ld %s" PHP_HTTP_CRLF, ctx->version.major, ctx->version.minor, ctx->status_code, php_http_env_get_response_status_for_code(ctx->status_code));
+	php_http_buffer_init(&header_buf);
+	php_http_buffer_appendf(&header_buf, "HTTP/%u.%u %ld %s" PHP_HTTP_CRLF, ctx->version.major, ctx->version.minor, ctx->status_code, php_http_env_get_response_status_for_code(ctx->status_code));
 
 	/* there are some limitations regarding TE:chunked, see https://tools.ietf.org/html/rfc7230#section-3.3.1 */
 	if (ctx->version.major == 1 && ctx->version.minor == 0) {
@@ -914,18 +923,27 @@ static ZEND_RESULT_CODE php_http_env_response_stream_start(php_http_env_response
 		ctx->chunked = 0;
 	}
 
-	php_http_env_response_stream_header(ctx, &ctx->header);
+	php_http_env_response_stream_header(ctx, &ctx->header, &header_buf);
 
 	/* enable chunked transfer encoding */
 	if (ctx->chunked) {
-		php_stream_write_string(ctx->stream, "Transfer-Encoding: chunked" PHP_HTTP_CRLF);
+		php_http_buffer_appends(&header_buf, "Transfer-Encoding: chunked" PHP_HTTP_CRLF);
 	}
 
-	php_stream_write_string(ctx->stream, PHP_HTTP_CRLF);
+	php_http_buffer_appends(&header_buf, PHP_HTTP_CRLF);
 
-	ctx->started = 1;
+	if (header_buf.used == php_stream_write(ctx->stream, header_buf.data, header_buf.used)) {
+		ctx->started = 1;
+	}
+	php_http_buffer_dtor(&header_buf);
+	php_stream_flush(ctx->stream);
 
-	return SUCCESS;
+	if (ctx->chunked) {
+		ctx->chunked_filter = php_stream_filter_create("http.chunked_encode", NULL, 0);
+		php_stream_filter_append(&ctx->stream->writefilters, ctx->chunked_filter);
+	}
+
+	return ctx->started ? SUCCESS : FAILURE;
 }
 static long php_http_env_response_stream_get_status(php_http_env_response_t *r)
 {
@@ -1039,15 +1057,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_write(php_http_env_response
 		}
 	}
 
-	if (stream_ctx->chunked && 0 == php_stream_printf(stream_ctx->stream TSRMLS_CC, "%lx" PHP_HTTP_CRLF, (unsigned long) data_len)) {
-		return FAILURE;
-	}
-
 	if (data_len != php_stream_write(stream_ctx->stream, data_str, data_len)) {
-		return FAILURE;
-	}
-
-	if (stream_ctx->chunked && 2 != php_stream_write_string(stream_ctx->stream, PHP_HTTP_CRLF)) {
 		return FAILURE;
 	}
 
@@ -1070,22 +1080,24 @@ static ZEND_RESULT_CODE php_http_env_response_stream_flush(php_http_env_response
 }
 static ZEND_RESULT_CODE php_http_env_response_stream_finish(php_http_env_response_t *r)
 {
-	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
+	php_http_env_response_stream_ctx_t *ctx = r->ctx;
 
-	if (stream_ctx->finished) {
+	if (ctx->finished) {
 		return FAILURE;
 	}
-	if (!stream_ctx->started) {
-		if (SUCCESS != php_http_env_response_stream_start(stream_ctx)) {
+	if (!ctx->started) {
+		if (SUCCESS != php_http_env_response_stream_start(ctx)) {
 			return FAILURE;
 		}
 	}
 
-	if (stream_ctx->chunked && 5 != php_stream_write_string(stream_ctx->stream, "0" PHP_HTTP_CRLF PHP_HTTP_CRLF)) {
-		return FAILURE;
+	php_stream_flush(ctx->stream);
+	if (ctx->chunked && ctx->chunked_filter) {
+		php_stream_filter_flush(ctx->chunked_filter, 1);
+		ctx->chunked_filter = php_stream_filter_remove(ctx->chunked_filter, 1 TSRMLS_CC);
 	}
 
-	stream_ctx->finished = 1;
+	ctx->finished = 1;
 
 	return SUCCESS;
 }

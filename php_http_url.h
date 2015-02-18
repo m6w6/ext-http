@@ -79,21 +79,6 @@ static inline void php_http_url_argsep(const char **str, size_t *len)
 	}
 }
 
-static inline php_url *php_http_url_to_php_url(php_http_url_t *url)
-{
-	php_url *purl = ecalloc(1, sizeof(*purl));
-
-	if (url->scheme)   purl->scheme   = estrdup(url->scheme);
-	if (url->pass)     purl->pass     = estrdup(url->pass);
-	if (url->user)     purl->user     = estrdup(url->user);
-	if (url->host)     purl->host     = estrdup(url->host);
-	if (url->path)     purl->path     = estrdup(url->path);
-	if (url->query)    purl->query    = estrdup(url->query);
-	if (url->fragment) purl->fragment = estrdup(url->fragment);
-
-	return purl;
-}
-
 static inline zend_bool php_http_url_is_empty(const php_http_url_t *url) {
 	return !(url->scheme || url->pass || url->user || url->host || url->port ||	url->path || url->query || url->fragment);
 }

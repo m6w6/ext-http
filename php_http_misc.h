@@ -27,6 +27,9 @@
 /* send buffer size */
 #define PHP_HTTP_SENDBUF_SIZE 40960
 
+/* allowed characters of header field names */
+#define PHP_HTTP_HEADER_NAME_CHARS "!#$%&'*+-.^_`|~1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 /* SLEEP */
 
 #define PHP_HTTP_DIFFSEC (0.001)

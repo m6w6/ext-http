@@ -16,11 +16,14 @@
 typedef enum php_http_client_setopt_opt {
 	PHP_HTTP_CLIENT_OPT_ENABLE_PIPELINING,
 	PHP_HTTP_CLIENT_OPT_USE_EVENTS,
+	PHP_HTTP_CLIENT_OPT_CONFIGURATION,
 } php_http_client_setopt_opt_t;
 
 typedef enum php_http_client_getopt_opt {
-	PHP_HTTP_CLIENT_OPT_PROGRESS_INFO,		/* php_http_client_progress_state_t** */
-	PHP_HTTP_CLIENT_OPT_TRANSFER_INFO,		/* HashTable* */
+	PHP_HTTP_CLIENT_OPT_PROGRESS_INFO,		/* php_http_client_enqueue_t*, php_http_client_progress_state_t** */
+	PHP_HTTP_CLIENT_OPT_TRANSFER_INFO,		/* php_http_client_enqueue_t*, HashTable* */
+	PHP_HTTP_CLIENT_OPT_AVAILABLE_OPTIONS,		/* NULL, HashTable* */
+	PHP_HTTP_CLIENT_OPT_AVAILABLE_CONFIGURATION,/* NULL, HashTable */
 } php_http_client_getopt_opt_t;
 
 typedef struct php_http_client_enqueue {

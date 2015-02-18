@@ -275,6 +275,8 @@ void php_http_message_update_headers(php_http_message_t *msg)
 
 	if (php_http_message_body_stream(msg->body)->readfilters.head) {
 		/* if a read stream filter is attached to the body the caller must also care for the headers */
+	} else if (php_http_message_header(msg, ZEND_STRL("Content-Range"))) {
+		/* don't mess around with a Content-Range message */
 	} else if ((size = php_http_message_body_size(msg->body))) {
 		ZVAL_LONG(&h, size);
 		zend_hash_str_update(&msg->hdrs, "Content-Length", lenof("Content-Length"), &h);
@@ -299,6 +301,7 @@ void php_http_message_update_headers(php_http_message_t *msg)
 		}
 	} else if ((cl = php_http_message_header_string(msg, ZEND_STRL("Content-Length")))) {
 		if (!zend_string_equals_literal(cl, "0")) {
+			/* body->size == 0, so get rid of old Content-Length */
 			zend_hash_str_del(&msg->hdrs, ZEND_STRL("Content-Length"));
 		}
 		zend_string_release(cl);
