@@ -56,7 +56,7 @@ PHP_RINIT_FUNCTION(http_env)
 					 * array_init(&PG(http_globals)[TRACK_VARS_FILES])
 					 */
 					Z_TRY_ADDREF(PG(http_globals)[TRACK_VARS_FILES]);
-					zend_hash_str_update(&EG(symbol_table).ht, "_FILES", lenof("_FILES"), &PG(http_globals)[TRACK_VARS_FILES]);
+					zend_hash_str_update(&EG(symbol_table), "_FILES", lenof("_FILES"), &PG(http_globals)[TRACK_VARS_FILES]);
 				}
 			}
 			zend_hash_destroy(&params);
@@ -177,7 +177,7 @@ zval *php_http_env_get_superglobal(const char *key, size_t key_len)
 	zend_string *key_str = zend_string_init(key, key_len, 0);
 
 	zend_is_auto_global(key_str);
-	hsv = zend_hash_find(&EG(symbol_table).ht, key_str);
+	hsv = zend_hash_find(&EG(symbol_table), key_str);
 	zend_string_release(key_str);
 
 	if (Z_TYPE_P(hsv) != IS_ARRAY) {
