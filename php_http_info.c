@@ -93,7 +93,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		const char *status = NULL, *code = http + sizeof("HTTP/X.x");
 		
 		info->type = PHP_HTTP_RESPONSE;
-		while (' ' == *code) ++code;
+		while (code < end && ' ' == *code) ++code;
 		if (code && end > code) {
 			/* rfc7230#3.1.2 The status-code element is a 3-digit integer code */
 			PHP_HTTP_INFO(info).response.code = 100*(*code++ - '0');
