@@ -18,7 +18,7 @@ server("proxy.inc", function($port) {
 	$request->getBody()->append("123");
 	echo $client->enqueue($request)->send()->getResponse();
 });
-
+// Content-length is 2 instead of 3 in older libcurls
 ?>
 ===DONE===
 --EXPECTF--
@@ -34,8 +34,8 @@ Content-Range: bytes 1-2/3
 User-Agent: %s
 Host: localhost:%d
 Accept: */*
-Content-Length: 3
+Content-Length: %d
 Expect: 100-continue
-X-Original-Content-Length: 3
+X-Original-Content-Length: %d
 
 23===DONE===
