@@ -17,7 +17,7 @@ server("proxy.inc", function($port) {
 	
 	foreach (http\Client::getAvailableDrivers() as $driver) {
 		$client = new http\Client($driver);
-		$client->configure(["use_eventloop" => true]);
+		$client->configure(array("use_eventloop" => true));
 		$client->enqueue($request);
 	
 		while ($client->once()) {

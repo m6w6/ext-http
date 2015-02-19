@@ -53,6 +53,15 @@ STATUS php_http_new(zend_object_value *ovp, zend_class_entry *ce, php_http_new_t
 	return SUCCESS;
 }
 
+static inline zend_function *get_object_method(zval *zobject, zval *zmeth TSRMLS_DC)
+{
+#if PHP_VERSION_ID >= 50400
+	return Z_OBJ_HT_P(zobject)->get_method(&zobject, Z_STRVAL_P(zmeth), Z_STRLEN_P(zmeth), NULL TSRMLS_CC);
+#else
+	return Z_OBJ_HT_P(zobject)->get_method(&zobject, Z_STRVAL_P(zmeth), Z_STRLEN_P(zmeth) TSRMLS_CC);
+#endif
+}
+
 php_http_object_method_t *php_http_object_method_init(php_http_object_method_t *cb, zval *zobject, const char *method_str, size_t method_len TSRMLS_DC)
 {
 	zval *zfn;
@@ -70,7 +79,7 @@ php_http_object_method_t *php_http_object_method_init(php_http_object_method_t *
 	cb->fci.function_name = zfn;
 	cb->fcc.initialized = 1;
 	cb->fcc.calling_scope = cb->fcc.called_scope = Z_OBJCE_P(zobject);
-	cb->fcc.function_handler = Z_OBJ_HT_P(zobject)->get_method(&zobject, Z_STRVAL_P(cb->fci.function_name), Z_STRLEN_P(cb->fci.function_name), NULL TSRMLS_CC);
+	cb->fcc.function_handler = get_object_method(zobject, cb->fci.function_name TSRMLS_CC);
 
 	return cb;
 }
@@ -108,7 +117,7 @@ STATUS php_http_object_method_call(php_http_object_method_t *cb, zval *zobject, 
 
 	if (cb->fcc.called_scope != Z_OBJCE_P(zobject)) {
 		cb->fcc.called_scope = Z_OBJCE_P(zobject);
-		cb->fcc.function_handler = Z_OBJ_HT_P(zobject)->get_method(&zobject, Z_STRVAL_P(cb->fci.function_name), Z_STRLEN_P(cb->fci.function_name), NULL TSRMLS_CC);
+		cb->fcc.function_handler = get_object_method(zobject, cb->fci.function_name TSRMLS_CC);
 	}
 
 	rv = zend_call_function(&cb->fci, &cb->fcc TSRMLS_CC);

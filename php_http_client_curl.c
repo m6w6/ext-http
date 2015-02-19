@@ -2344,7 +2344,8 @@ static int apply_available_options(void *pDest TSRMLS_DC, int num_args, va_list 
 		if (Z_TYPE(opt->defval) == IS_STRING && !Z_STRVAL(opt->defval)) {
 			ZVAL_NULL(entry);
 		} else {
-			ZVAL_ZVAL(entry, &opt->defval, 1, 0);
+			ZVAL_COPY_VALUE(entry, &opt->defval);
+			zval_copy_ctor(entry);
 		}
 	}
 

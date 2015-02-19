@@ -14,7 +14,7 @@ echo "Test\n";
 server("proxy.inc", function($port) {
 	$client = new http\Client;
 	$request = new http\Client\Request("PUT", "http://localhost:$port");
-	$request->setOptions(["resume" => 1, "expect_100_timeout" => 0]);
+	$request->setOptions(array("resume" => 1, "expect_100_timeout" => 0));
 	$request->getBody()->append("123");
 	echo $client->enqueue($request)->send()->getResponse();
 });

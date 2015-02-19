@@ -1,11 +1,16 @@
 <?php 
 
-function serve(callable $cb) {
+// PHP-5.3
+if (!defined("PHP_BINARY")) {
+	define("PHP_BINARY", PHP_BINDIR.DIRECTORY_SEPARATOR."php");
+}
+
+function serve($cb) {
 	foreach (range(8000, 9000) as $port) {
 		if (($server = @stream_socket_server("tcp://localhost:$port"))) {
 			fprintf(STDERR, "%s\n", $port);
 			do {
-				$R = [$server]; $W = []; $E = [];
+				$R = array($server); $W = array(); $E = array();
 				$select = stream_select($R, $E, $E, 0, 10000);
 				if ($select && ($client = stream_socket_accept($server, 1))) {
 					if (getenv("PHP_HTTP_TEST_SSL")) {
@@ -29,12 +34,12 @@ function serve(callable $cb) {
 	}
 }
 
-function server($handler, callable $cb) {
-	proc(PHP_BINARY, [__DIR__."/$handler"], $cb);
+function server($handler, $cb) {
+	proc(PHP_BINARY, array(__DIR__."/$handler"), $cb);
 }
 
-function nghttpd(callable $cb) {
-	$spec = [["pipe","r"], ["pipe","w"], ["pipe","w"]];
+function nghttpd($cb) {
+	$spec = array(array("pipe","r"), array("pipe","w"), array("pipe","w"));
 	foreach (range(8000, 9000) as $port) {
 		$comm = "exec nghttpd -d html $port http2.key http2.crt";
 		if (($proc = proc_open($comm, $spec, $pipes, __DIR__))) {
@@ -65,8 +70,8 @@ function nghttpd(callable $cb) {
 			
 }
 
-function proc($bin, $args, callable $cb) {
-	$spec = [["pipe","r"], ["pipe","w"], ["pipe","w"]];
+function proc($bin, $args, $cb) {
+	$spec = array(array("pipe","r"), array("pipe","w"), array("pipe","w"));
 	$comm = escapeshellcmd($bin) . " ". implode(" ", array_map("escapeshellarg", $args));
 	if (($proc = proc_open($comm, $spec, $pipes, __DIR__))) {
 		$stdin = $pipes[0];
@@ -75,7 +80,7 @@ function proc($bin, $args, callable $cb) {
 		
 		do {
 			$port = trim(fgets($stderr));
-			$R = [$stderr]; $W = []; $E = [];
+			$R = array($stderr); $W = array(); $E = array();
 		} while (is_numeric($port) && stream_select($R, $W, $E, 0, 10000));
 	
 		if (is_numeric($port)) {

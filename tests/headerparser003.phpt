@@ -12,12 +12,12 @@ $parser = new http\Header\Parser;
 $socket = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 stream_set_blocking($socket[0], 0);
 
-$headers = [
+$headers = array(
 "GET / HTTP/1.1\n",
 "Host: localhost","\n",
 "Content","-length: 3\n",
 "\n",
-];
+);
 
 while ($headers) {
 	$line = array_shift($headers);

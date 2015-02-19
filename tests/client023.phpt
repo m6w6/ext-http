@@ -22,11 +22,11 @@ foreach ($avail as $k => $v) {
 		$oo = $opt[$k];
 		foreach ($v as $kk => $vv) {
 			if (isset($vv) && $oo[$kk] !== $vv) {
-				var_dump([$kk => [$vv, $oo[$kk]]]);
+				var_dump(array($kk => array($vv, $oo[$kk])));
 			}
 		}
 	} else if (isset($v) && $opt[$k] !== $v) {
-		var_dump([$k => [$v, $opt[$k]]]);
+		var_dump(array($k => array($v, $opt[$k])));
 	}
 }
 var_dump($client === $client->configure($client->getAvailableConfiguration()));

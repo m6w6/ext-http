@@ -14,10 +14,10 @@ echo "Test\n";
 
 $tmpfile = tempnam(sys_get_temp_dir(), "cookie.");
 $request = new http\Client\Request("GET", "http://localhost");
-$request->setOptions(["cookiestore" => $tmpfile]);
+$request->setOptions(array("cookiestore" => $tmpfile));
 
 server("cookie.inc", function($port) use($request) {
-	$request->setOptions(["port" => $port]);
+	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
 	echo $client->requeue($request)->send()->getResponse();
 	echo $client->requeue($request)->send()->getResponse();
@@ -25,7 +25,7 @@ server("cookie.inc", function($port) use($request) {
 });
 
 server("cookie.inc", function($port) use($request) {
-	$request->setOptions(["port" => $port]);
+	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
 	echo $client->requeue($request)->send()->getResponse();
 	echo $client->requeue($request)->send()->getResponse();
@@ -33,7 +33,7 @@ server("cookie.inc", function($port) use($request) {
 });
 
 server("cookie.inc", function($port) use($request) {
-	$request->setOptions(["port" => $port, "cookiesession" => true]);
+	$request->setOptions(array("port" => $port, "cookiesession" => true));
 	$client = new http\Client;
 	echo $client->requeue($request)->send()->getResponse();
 	echo $client->requeue($request)->send()->getResponse();
@@ -41,7 +41,7 @@ server("cookie.inc", function($port) use($request) {
 });
 
 server("cookie.inc", function($port) use($request) {
-	$request->setOptions(["port" => $port, "cookiesession" => false]);
+	$request->setOptions(array("port" => $port, "cookiesession" => false));
 	$client = new http\Client;
 	echo $client->requeue($request)->send()->getResponse();
 	echo $client->requeue($request)->send()->getResponse();

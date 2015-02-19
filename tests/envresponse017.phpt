@@ -10,7 +10,7 @@ echo "Test\n";
 
 $req = new http\Env\Request;
 $req->setRequestMethod("CONNECT");
-$req->setRequestUrl(["host"=>"www.example.com", "port"=>80]);
+$req->setRequestUrl(array("host"=>"www.example.com", "port"=>80));
 
 echo $req;
 

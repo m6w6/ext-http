@@ -12,7 +12,7 @@ skip_client_test();
 echo "Test\n";
 
 $client = new http\Client;
-$client->setOptions(["compress" => true]);
+$client->setOptions(array("compress" => true));
 
 $client->enqueue(new http\Client\Request("GET", "http://dev.iworks.at/ext-http/.print_request.php"));
 $client->send();

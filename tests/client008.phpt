@@ -18,7 +18,7 @@ server("pipeline.inc", function($port, $stdin) {
 	$request = new http\Client\Request("GET", "http://localhost:$port");
 	
 	$client = new http\Client();
-	$client->configure(["pipelining" => true, "use_eventloop" => true]);
+	$client->configure(array("pipelining" => true, "use_eventloop" => true));
 
 	$client->enqueue($request);
 	$client->send();

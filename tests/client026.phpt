@@ -19,7 +19,7 @@ server("proxy.inc", function($port) {
 	for ($i = 0, $data = str_repeat("a",1024); $i < 128*1024; ++$i) {
 		$request->getBody()->append($data);
 	}
-	$request->setOptions(["timeout" => 10, "expect_100_timeout" => 0]);
+	$request->setOptions(array("timeout" => 10, "expect_100_timeout" => 0));
 	$client->enqueue($request);
 	$client->send();
 	var_dump($client->getResponse()->getHeaders());

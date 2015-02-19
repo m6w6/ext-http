@@ -26,7 +26,7 @@ foreach (glob(__DIR__."/data/message_*.txt") as $file) {
 	}
 	
 	if (!$string) {
-		$s = ["START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "UPDATE_CL", "DONE"];
+		$s = array("START", "HEADER", "HEADER_DONE", "BODY", "BODY_DUMB", "BODY_LENGTH", "BODY_CHUNK", "BODY_DONE", "UPDATE_CL", "DONE");
 		printf("Unexpected state: %s (%s)\n", $s[$parser->getState()], $file);
 	}
 
