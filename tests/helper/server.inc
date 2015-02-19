@@ -11,7 +11,7 @@ if ($php) {
 }
 
 function serve($cb) {
-	foreach (range(8000, 9000) as $port) {
+	foreach (range(8000+PHP_INT_SIZE, 9000) as $port) {
 		if (($server = @stream_socket_server("tcp://localhost:$port"))) {
 			fprintf(STDERR, "%s\n", $port);
 			do {
@@ -50,7 +50,7 @@ function server($handler, $cb) {
 
 function nghttpd($cb) {
 	$spec = array(array("pipe","r"), array("pipe","w"), array("pipe","w"));
-	foreach (range(8000, 9000) as $port) {
+	foreach (range(8000+PHP_INT_SIZE, 9000) as $port) {
 		$comm = "exec nghttpd -d html $port http2.key http2.crt";
 		if (($proc = proc_open($comm, $spec, $pipes, __DIR__))) {
 			$stdin = $pipes[0];
