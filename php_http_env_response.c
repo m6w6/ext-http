@@ -926,7 +926,7 @@ static void php_http_env_response_stream_dtor(php_http_env_response_t *r)
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	if (ctx->chunked_filter) {
-		php_stream_filter_free(ctx->chunked_filter TSRMLS_CC);
+		ctx->chunked_filter = php_stream_filter_remove(ctx->chunked_filter, 1 TSRMLS_CC);
 	}
 	zend_hash_destroy(&ctx->header);
 	zend_list_delete(ctx->stream->rsrc_id);
