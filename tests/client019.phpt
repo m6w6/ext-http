@@ -4,13 +4,16 @@ client proxy - send proxy headers for a proxy request
 <?php 
 include "skipif.inc";
 skip_client_test();
+$client = new http\Client("curl");
+array_key_exists("proxyheader", $client->getAvailableOptions())
+	or die("skip need libcurl with CUTLOPT_PROXYHEADER support\n");
 ?>
 --FILE--
 <?php
 
 include "helper/server.inc";
 
-echo "Test\n";
+echo "Test\n";var_dump((new http\Client)->getAvailableOptions());
 
 server("proxy.inc", function($port, $stdin, $stdout, $stderr) {
 	echo "Server on port $port\n";
