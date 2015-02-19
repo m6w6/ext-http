@@ -11,7 +11,11 @@ if ($php) {
 }
 
 function serve($cb) {
-	foreach (range(8000+PHP_INT_SIZE, 9000) as $port) {
+	/* stream_socket_server() automatically sets SO_REUSEADDR, 
+	 * which is, well, bad if the tests are run in parallel
+	 */
+	$offset = rand(0,2000);
+	foreach (range(8000+$offset, 9000+$offset) as $port) {
 		if (($server = @stream_socket_server("tcp://localhost:$port"))) {
 			fprintf(STDERR, "%s\n", $port);
 			do {
