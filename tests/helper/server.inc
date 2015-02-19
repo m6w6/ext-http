@@ -1,8 +1,13 @@
-<?php 
+<?php
 
-// PHP-5.3
-if (!defined("PHP_BINARY")) {
-	define("PHP_BINARY", PHP_BINDIR.DIRECTORY_SEPARATOR."php");
+$php = getenv('TEST_PHP_EXECUTABLE');
+if ($php) {
+	define('PHP_BIN', $php);
+} else if (defined('PHP_BINARY')) {
+	define('PHP_BIN', PHP_BINARY);
+} else {
+	// PHP-5.3
+	define("PHP_BIN", PHP_BINDIR.DIRECTORY_SEPARATOR."php");
 }
 
 function serve($cb) {
@@ -35,7 +40,12 @@ function serve($cb) {
 }
 
 function server($handler, $cb) {
-	proc(PHP_BINARY, array(__DIR__."/$handler"), $cb);
+	$args = explode(' ', getenv('TEST_PHP_ARGS'));
+	$args[] = __DIR__."/$handler";
+	foreach ($args as $k => $v) {
+		if (!$v) unset($args[$k]);
+	}
+	proc(PHP_BIN, $args, $cb);
 }
 
 function nghttpd($cb) {
@@ -77,7 +87,7 @@ function proc($bin, $args, $cb) {
 		$stdin = $pipes[0];
 		$stdout = $pipes[1];
 		$stderr = $pipes[2];
-		
+
 		do {
 			$port = trim(fgets($stderr));
 			$R = array($stderr); $W = array(); $E = array();
