@@ -54,7 +54,8 @@ function server($handler, $cb) {
 
 function nghttpd($cb) {
 	$spec = array(array("pipe","r"), array("pipe","w"), array("pipe","w"));
-	foreach (range(8000+PHP_INT_SIZE, 9000) as $port) {
+	$offset = rand(0,2000);
+	foreach (range(8000+$offset, 9000+$offset) as $port) {
 		$comm = "exec nghttpd -d html $port http2.key http2.crt";
 		if (($proc = proc_open($comm, $spec, $pipes, __DIR__))) {
 			$stdin = $pipes[0];
