@@ -33,7 +33,7 @@ var_dump(file_get_contents("php://input"));
 Done
 --EXPECTF--
 Test
-object(%s)#%d (12) {
+object(%s)#%d (13) {
   ["type":protected]=>
   int(1)
   ["body":protected]=>
@@ -62,15 +62,23 @@ object(%s)#%d (12) {
   ["parentMessage":protected]=>
   NULL
   ["query":protected]=>
-  object(http\QueryString)#2 (1) {
+  object(http\QueryString)#%d (1) {
     ["queryArray":"http\QueryString":private]=>
     array(0) {
     }
   }
   ["form":protected]=>
-  object(http\QueryString)#3 (1) {
+  object(http\QueryString)#%d (1) {
     ["queryArray":"http\QueryString":private]=>
     array(0) {
+    }
+  }
+  ["cookie":protected]=>
+  object(http\QueryString)#%d (1) {
+    ["queryArray":"http\QueryString":private]=>
+    array(1) {
+      ["foo"]=>
+      string(3) "bar"
     }
   }
   ["files":protected]=>

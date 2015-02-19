@@ -16,11 +16,14 @@
 typedef enum php_http_client_setopt_opt {
 	PHP_HTTP_CLIENT_OPT_ENABLE_PIPELINING,
 	PHP_HTTP_CLIENT_OPT_USE_EVENTS,
+	PHP_HTTP_CLIENT_OPT_CONFIGURATION,
 } php_http_client_setopt_opt_t;
 
 typedef enum php_http_client_getopt_opt {
-	PHP_HTTP_CLIENT_OPT_PROGRESS_INFO,		/* php_http_client_progress_state_t** */
-	PHP_HTTP_CLIENT_OPT_TRANSFER_INFO,		/* HashTable* */
+	PHP_HTTP_CLIENT_OPT_PROGRESS_INFO,		/* php_http_client_enqueue_t*, php_http_client_progress_state_t** */
+	PHP_HTTP_CLIENT_OPT_TRANSFER_INFO,		/* php_http_client_enqueue_t*, HashTable* */
+	PHP_HTTP_CLIENT_OPT_AVAILABLE_OPTIONS,		/* NULL, HashTable* */
+	PHP_HTTP_CLIENT_OPT_AVAILABLE_CONFIGURATION,/* NULL, HashTable */
 } php_http_client_getopt_opt_t;
 
 typedef struct php_http_client_enqueue {
@@ -84,7 +87,7 @@ typedef struct php_http_client_progress_state {
 	unsigned finished:1;
 } php_http_client_progress_state_t;
 
-typedef STATUS (*php_http_client_response_callback_t)(void *arg, struct php_http_client *client, php_http_client_enqueue_t *e, php_http_message_t **request, php_http_message_t **response);
+typedef STATUS (*php_http_client_response_callback_t)(void *arg, struct php_http_client *client, php_http_client_enqueue_t *e, php_http_message_t **response);
 typedef void (*php_http_client_progress_callback_t)(void *arg, struct php_http_client *client, php_http_client_enqueue_t *e, php_http_client_progress_state_t *state);
 
 typedef struct php_http_client {
@@ -118,6 +121,8 @@ typedef struct php_http_client_object {
 	zend_object_value zv;
 	php_http_client_t *client;
 	long iterator;
+	php_http_object_method_t *update;
+	php_http_object_method_t notify;
 } php_http_client_object_t;
 
 PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC);

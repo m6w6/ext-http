@@ -1,19 +1,24 @@
 --TEST--
-url parser multibyte/utf-8/topct
+url parser multibyte/locale/topct
 --SKIPIF--
 <?php
 include "skipif.inc";
+if (!defined("http\\Url::PARSE_MBLOC") or
+	!stristr(setlocale(LC_CTYPE, NULL), ".utf")) {
+	die("skip need http\\Url::PARSE_MBLOC support and LC_CTYPE=*.UTF-8");
+}
+
 ?>
 --FILE--
 <?php
 echo "Test\n";
 
 $urls = array(
-	"http://mike:paßwort@sörver.net/for/€/?by=¢#ø"
+	"http://mike:paßwort@𐌀𐌁𐌂.it/for/€/?by=¢#ø"
 );
 
 foreach ($urls as $url) {
-	var_dump(http\Url::parse($url, http\Url::PARSE_MBUTF8|http\Url::PARSE_TOPCT));
+	var_dump(new http\Url($url, null, http\Url::PARSE_MBLOC|http\Url::PARSE_TOPCT));
 }
 ?>
 DONE
@@ -27,7 +32,7 @@ object(http\Url)#%d (8) {
   ["pass"]=>
   string(12) "pa%C3%9Fwort"
   ["host"]=>
-  string(11) "sörver.net"
+  string(15) "𐌀𐌁𐌂.it"
   ["port"]=>
   NULL
   ["path"]=>

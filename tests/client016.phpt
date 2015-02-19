@@ -3,34 +3,32 @@ client once & wait with events
 --SKIPIF--
 <?php
 include "skipif.inc";
-try {
-	$client = new http\Client;
-	if (!$client->enableEvents())
-		throw new Exception("need events support");
-} catch (Exception $e) {
-	die("skip ".$e->getMessage());
-}
-skip_online_test();
+skip_client_test();
 ?>
 --FILE--
 <?php
+
+include "helper/server.inc";
+
 echo "Test\n";
 
-$request = new http\Client\Request("GET", "http://www.example.org/");
-
-foreach (http\Client::getAvailableDrivers() as $driver) {
-	$client = new http\Client($driver);
-	$client->enableEvents(true);
-	$client->enqueue($request);
+server("proxy.inc", function($port) {
+	$request = new http\Client\Request("GET", "http://localhost:$port/");
 	
-	while ($client->once()) {
-		$client->wait(.1);
-	}
+	foreach (http\Client::getAvailableDrivers() as $driver) {
+		$client = new http\Client($driver);
+		$client->configure(array("use_eventloop" => true));
+		$client->enqueue($request);
 	
-	if (!$client->getResponse()) {
-		var_dump($client);
+		while ($client->once()) {
+			$client->wait(.1);
+		}
+	
+		if (!$client->getResponse()) {
+			var_dump($client);
+		}
 	}
-}
+});
 ?>
 Done
 --EXPECT--

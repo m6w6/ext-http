@@ -41,8 +41,8 @@ php_http_cookie_list_t *php_http_cookie_list_copy(php_http_cookie_list_t *from, 
 	array_copy(&from->cookies, &to->cookies);
 	array_copy(&from->extras, &to->extras);
 
-	STR_SET(to->path, from->path ? estrdup(from->path) : NULL);
-	STR_SET(to->domain, from->domain ? estrdup(from->domain) : NULL);
+	PTR_SET(to->path, from->path ? estrdup(from->path) : NULL);
+	PTR_SET(to->domain, from->domain ? estrdup(from->domain) : NULL);
 	to->expires = from->expires;
 	to->max_age = from->max_age;
 	to->flags = from->flags;
@@ -56,8 +56,8 @@ void php_http_cookie_list_dtor(php_http_cookie_list_t *list)
 		zend_hash_destroy(&list->cookies);
 		zend_hash_destroy(&list->extras);
 	
-		STR_SET(list->path, NULL);
-		STR_SET(list->domain, NULL);
+		PTR_SET(list->path, NULL);
+		PTR_SET(list->domain, NULL);
 	}
 }
 
@@ -125,9 +125,9 @@ static void add_entry(php_http_cookie_list_t *list, char **allowed_extras, long 
 	}
 
 	if _KEY_IS("path") {
-		STR_SET(list->path, estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg)));
+		PTR_SET(list->path, estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg)));
 	} else if _KEY_IS("domain") {
-		STR_SET(list->domain, estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg)));
+		PTR_SET(list->domain, estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg)));
 	} else if _KEY_IS("expires") {
 		char *date = estrndup(Z_STRVAL_P(arg), Z_STRLEN_P(arg));
 		list->expires = php_parse_date(date, NULL);
@@ -782,7 +782,7 @@ static PHP_METHOD(HttpCookie, setDomain)
 
 	PHP_HTTP_COOKIE_OBJECT_INIT(obj);
 
-	STR_SET(obj->list->domain, domain_str ? estrndup(domain_str, domain_len) : NULL);
+	PTR_SET(obj->list->domain, domain_str ? estrndup(domain_str, domain_len) : NULL);
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -821,7 +821,7 @@ static PHP_METHOD(HttpCookie, setPath)
 
 	PHP_HTTP_COOKIE_OBJECT_INIT(obj);
 
-	STR_SET(obj->list->path, path_str ? estrndup(path_str, path_len) : NULL);
+	PTR_SET(obj->list->path, path_str ? estrndup(path_str, path_len) : NULL);
 
 	RETVAL_ZVAL(getThis(), 1, 0);
 }

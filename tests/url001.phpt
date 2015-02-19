@@ -23,5 +23,5 @@ http://example.com:55555/?s=b&i=0&e=&a[]=1&a[]=2
 http://example.com:55555/index?s=b&i=0&e=&a[]=1&a[]=2
 https://example.com/?s=b&i=0&e=&a[]=1&a[]=2
 http://example.com:55555/index.php/
-http://localhost/
+
 DONE

@@ -80,8 +80,8 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 			}
 		}
 
-		STR_FREE(haystack);
-		STR_FREE(needle);
+		PTR_FREE(haystack);
+		PTR_FREE(needle);
 	}
 
 	return result;
@@ -188,8 +188,10 @@ int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_lis
 		if ((flags & ARRAY_JOIN_PRETTIFY) && hash_key->nKeyLength) {
 			key = php_http_pretty_key(estrndup(hash_key->arKey, hash_key->nKeyLength - 1), hash_key->nKeyLength - 1, 1, 1);
 			zend_hash_find(dst, key, hash_key->nKeyLength, (void *) &data);
-		} else {
+		} else if (hash_key->nKeyLength) {
 			zend_hash_quick_find(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) &data);
+		} else {
+			zend_hash_index_find(dst, hash_key->h, (void *) &data);
 		}
 
 		if (flags & ARRAY_JOIN_STRINGIFY) {
@@ -205,8 +207,10 @@ int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_lis
 			add_next_index_zval(*data, value);
 		} else if (key) {
 			zend_symtable_update(dst, key, hash_key->nKeyLength, &value, sizeof(zval *), NULL);
-		} else {
+		} else if (hash_key->nKeyLength) {
 			zend_hash_quick_add(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, &value, sizeof(zval *), NULL);
+		} else {
+			zend_hash_index_update(dst, hash_key->h, (void *) &value, sizeof(zval *), NULL);
 		}
 
 		if (key) {
@@ -238,8 +242,10 @@ int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list
 			key = php_http_pretty_key(estrndup(hash_key->arKey, hash_key->nKeyLength - 1), hash_key->nKeyLength - 1, 1, 1);
 			zend_hash_update(dst, key, hash_key->nKeyLength, (void *) &value, sizeof(zval *), NULL);
 			efree(key);
-		} else {
+		} else if (hash_key->nKeyLength) {
 			zend_hash_quick_update(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) &value, sizeof(zval *), NULL);
+		} else {
+			zend_hash_index_update(dst, hash_key->h, (void *) &value, sizeof(zval *), NULL);
 		}
 	}
 

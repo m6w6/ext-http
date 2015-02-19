@@ -4,6 +4,7 @@ client static cookies
 <?php
 include "skipif.inc";
 skip_online_test();
+skip_client_test();
 ?>
 --FILE--
 <?php

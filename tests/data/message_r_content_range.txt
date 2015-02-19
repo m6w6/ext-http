@@ -1,0 +1,9 @@
+PUT / HTTP/1.1
+User-Agent: PECL_HTTP/2.3.0dev PHP/5.6.6-dev libcurl/7.41.0-DEV
+Host: localhost:8000
+Accept: */*
+Expect: 100-continue
+Content-Length: 3
+Content-Range: bytes 1-2/3
+
+23

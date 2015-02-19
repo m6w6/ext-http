@@ -555,7 +555,7 @@ static inline size_t utf8towc(unsigned *wc, const unsigned char *uc, size_t len)
 {
 	unsigned char ub = utf8_mblen[*uc];
 
-	if (!ub || ub > len || ub > 3) {
+	if (!ub || ub > len || ub > 4) {
 		return 0;
 	}
 
@@ -595,9 +595,9 @@ static inline size_t utf8towc(unsigned *wc, const unsigned char *uc, size_t len)
 
 static inline zend_bool isualpha(unsigned ch)
 {
-	unsigned i, j;
+	unsigned i = 0, j;
 
-	for (i = 0; i < sizeof(utf8_ranges)/sizeof(utf8_range_t); ++i) {
+	PHP_HTTP_DUFF(sizeof(utf8_ranges)/sizeof(utf8_range_t),
 		if (utf8_ranges[i].start == ch) {
 			return 1;
 		} else if (utf8_ranges[i].start <= ch && utf8_ranges[i].end >= ch) {
@@ -611,7 +611,8 @@ static inline zend_bool isualpha(unsigned ch)
 			}
 			return 0;
 		}
-	}
+		++i;
+	);
 	return 0;
 }
 

@@ -180,7 +180,7 @@ STATUS php_http_encoding_deflate(int flags, const char *data, size_t data_len, c
 			(*encoded)[*encoded_len = Z.total_out] = '\0';
 			return SUCCESS;
 		} else {
-			STR_SET(*encoded, NULL);
+			PTR_SET(*encoded, NULL);
 			*encoded_len = 0;
 		}
 	}
@@ -513,7 +513,7 @@ static STATUS deflate_update(php_http_encoding_stream_t *s, const char *data, si
 			return SUCCESS;
 	}
 	
-	STR_SET(*encoded, NULL);
+	PTR_SET(*encoded, NULL);
 	*encoded_len = 0;
 	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to update deflate stream: %s", zError(status));
 	return FAILURE;
@@ -709,7 +709,7 @@ static STATUS deflate_flush(php_http_encoding_stream_t *s, char **encoded, size_
 			return SUCCESS;
 	}
 	
-	STR_SET(*encoded, NULL);
+	PTR_SET(*encoded, NULL);
 	*encoded_len = 0;
 	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to flush deflate stream: %s", zError(status));
 	return FAILURE;
@@ -766,7 +766,7 @@ static STATUS deflate_finish(php_http_encoding_stream_t *s, char **encoded, size
 		return SUCCESS;
 	}
 	
-	STR_SET(*encoded, NULL);
+	PTR_SET(*encoded, NULL);
 	*encoded_len = 0;
 	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to finish deflate stream: %s", zError(status));
 	return FAILURE;
@@ -805,7 +805,7 @@ static STATUS inflate_finish(php_http_encoding_stream_t *s, char **decoded, size
 		return SUCCESS;
 	}
 	
-	STR_SET(*decoded, NULL);
+	PTR_SET(*decoded, NULL);
 	*decoded_len = 0;
 	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to finish inflate stream: %s", zError(status));
 	return FAILURE;
@@ -1071,7 +1071,7 @@ static PHP_METHOD(HttpEncodingStream, finish)
 						RETURN_EMPTY_STRING();
 					}
 				} else {
-					STR_FREE(encoded_str);
+					PTR_FREE(encoded_str);
 				}
 			}
 		}

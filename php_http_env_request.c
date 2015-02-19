@@ -149,6 +149,16 @@ static PHP_METHOD(HttpEnvRequest, __construct)
 	zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), zqs TSRMLS_CC);
 	zval_ptr_dtor(&zqs);
 
+	zsg = php_http_env_get_superglobal(ZEND_STRL("_COOKIE") TSRMLS_CC);
+	MAKE_STD_ZVAL(zqs);
+	object_init_ex(zqs, php_http_querystring_class_entry);
+	php_http_expect(SUCCESS == php_http_querystring_ctor(zqs, zsg TSRMLS_CC), unexpected_val,
+			zval_ptr_dtor(&zqs);
+			return;
+	);
+	zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("cookie"), zqs TSRMLS_CC);
+	zval_ptr_dtor(&zqs);
+
 	MAKE_STD_ZVAL(zqs);
 	array_init(zqs);
 	if ((zsg = php_http_env_get_superglobal(ZEND_STRL("_FILES") TSRMLS_CC))) {
@@ -212,6 +222,22 @@ static PHP_METHOD(HttpEnvRequest, getQuery)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvRequest_getCookie, 0, 0, 0)
+	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_INFO(0, type)
+	ZEND_ARG_INFO(0, defval)
+	ZEND_ARG_INFO(0, delete)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnvRequest, getCookie)
+{
+	if (ZEND_NUM_ARGS()) {
+		call_querystring_get("cookie");
+	} else {
+		zval *zcookie = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("cookie"), 0 TSRMLS_CC);
+		RETURN_ZVAL(zcookie, 1, 0);
+	}
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvRequest_getFiles, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnvRequest, getFiles)
@@ -226,6 +252,7 @@ static zend_function_entry php_http_env_request_methods[] = {
 	PHP_ME(HttpEnvRequest, __construct,  ai_HttpEnvRequest___construct,  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(HttpEnvRequest, getForm,      ai_HttpEnvRequest_getForm,      ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvRequest, getQuery,     ai_HttpEnvRequest_getQuery,     ZEND_ACC_PUBLIC)
+	PHP_ME(HttpEnvRequest, getCookie,    ai_HttpEnvRequest_getCookie,    ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvRequest, getFiles,     ai_HttpEnvRequest_getFiles,     ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
@@ -241,6 +268,7 @@ PHP_MINIT_FUNCTION(http_env_request)
 
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("query"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("form"), ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("cookie"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("files"), ZEND_ACC_PROTECTED TSRMLS_CC);
 
 	return SUCCESS;

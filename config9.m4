@@ -202,6 +202,14 @@ dnl ----
 			if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71802; then
 				AC_MSG_ERROR([libcurl version greater or equal to 7.18.2 required])
 			fi
+			
+			AC_MSG_CHECKING([for HTTP2 support in libcurl])
+			if $CURL_CONFIG --features | $EGREP -q HTTP2; then
+				AC_MSG_RESULT([yes])
+				AC_DEFINE([PHP_HTTP_HAVE_HTTP2], [1], [ ])
+			else
+				AC_MSG_RESULT([no])
+			fi
 		
 			dnl
 			dnl compile tests
@@ -210,11 +218,11 @@ dnl ----
 			save_INCLUDES="$INCLUDES"
 			INCLUDES=
 			save_LIBS="$LIBS"
-			LIBS=
+			LIBS=-lcurl
 			save_CFLAGS="$CFLAGS"
 			CFLAGS="$CFLAGS `$CURL_CONFIG --cflags`"
 			save_LDFLAGS="$LDFLAGS"
-			LDFLAGS="$LDFLAGS `$CURL_CONFIG --libs` $ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
+			LDFLAGS="$ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
 		
 			AC_MSG_CHECKING([for SSL support in libcurl])
 			CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
@@ -295,6 +303,37 @@ dnl ----
 				AC_MSG_RESULT([no])
 			], [
 				AC_MSG_RESULT([no])
+			])
+			
+			AC_MSG_CHECKING([whether CURLOPT_TLSAUTH_TYPE expects CURL_TLSAUTH_SRP or literal "SRP"])
+			AC_TRY_RUN([
+				#include <curl/curl.h>
+				int main(int argc, char *argv[]) {
+					CURL *ch = curl_easy_init();
+					return curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, CURL_TLSAUTH_SRP);
+				}
+			], [
+				AC_MSG_RESULT([CURL_TLSAUTH_SRP])
+				AC_DEFINE([PHP_HTTP_CURL_TLSAUTH_SRP], [CURL_TLSAUTH_SRP], [ ])
+				AC_DEFINE([PHP_HTTP_CURL_TLSAUTH_DEF], [CURL_TLSAUTH_NONE], [ ])
+			], [
+				AC_TRY_RUN([
+					#include <curl/curl.h>
+					int main(int argc, char *argv[]) {
+						CURL *ch = curl_easy_init();
+						return curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, "SRP");
+					}
+				], [
+					AC_MSG_RESULT(["SRP"])
+					AC_DEFINE([PHP_HTTP_CURL_TLSAUTH_SRP], ["SRP"], [ ])
+					AC_DEFINE([PHP_HTTP_CURL_TLSAUTH_DEF], [""], [ ])
+				], [
+					AC_MSG_RESULT([neither])
+				], [
+					AC_MSG_RESULT([neither])
+				])			
+			], [
+				AC_MSG_RESULT([neither])
 			])
 		
 			INCLUDES="$save_INCLUDES"
@@ -508,7 +547,6 @@ dnl ----
 		php_http_options.c \
 		php_http_params.c \
 		php_http_querystring.c \
-		php_http_strlist.c \
 		php_http_url.c \
 		php_http_version.c \
 	"
@@ -560,8 +598,9 @@ dnl ----
 		php_http_options.h \
 		php_http_params.h \
 		php_http_querystring.h \
-		php_http_strlist.h \
+		php_http_response_codes.h \
 		php_http_url.h \
+		php_http_utf8.h \
 		php_http_version.h \
 	"
 	PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)

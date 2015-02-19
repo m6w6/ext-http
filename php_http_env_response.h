@@ -36,6 +36,7 @@ struct php_http_env_response {
 	void *ctx;
 	php_http_env_response_ops_t *ops;
 
+	php_http_cookie_list_t *cookies;
 	php_http_buffer_t *buffer;
 	zval *options;
 

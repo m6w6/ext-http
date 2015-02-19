@@ -16,7 +16,7 @@ $urls = array(
 
 foreach ($urls as $url) {
 	printf("\n%s\n", $url);
-	var_dump(http\Url::parse($url, http\Url::PARSE_MBUTF8));
+	var_dump(new http\Url($url, null, http\Url::PARSE_MBUTF8));
 }
 ?>
 DONE

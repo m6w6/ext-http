@@ -3,6 +3,7 @@ client drivers
 --SKIPIF--
 <?php
 include "skipif.inc";
+skip_client_test();
 ?>
 --FILE--
 <?php

@@ -37,22 +37,58 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-08-19</date>
+ <date>2015-02-19</date>
  <version>
-  <release>2.2.0dev</release>
-  <api>2.2.0</api>
+  <release>2.3.0dev</release>
+  <api>2.3.0</api>
  </version>
  <stability>
   <release>beta</release>
-  <api>stable</api>
+  <api>beta</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-- var_dump(http\Message) no longer automatically creates an empty body
-+ Added http\Message\Parser class
-+ Made http\Client::once() and http\Client::wait() available when using events
-+ Added http\Url::parse() method
-+ Added http\Url::PARSE_MBLOC, http\Url::PARSE_MBUTF8, http\Url::PARSE_TOIDN and http\Url::PARSE_TOPCT constants
++ Preliminiary HTTP2 support for http\Client (libcurl with nghttp2 support)
++ Improved performance of HTTP info parser (request/response line)
++ Improved performance of updating client observers
++ Improved performance of http\Env\Response output to streams
++ Improved the error messages of the header parser
++ Added http\Header\Parser class
++ Added http\Client::configure() method accepting an array with the following options for libcurl:
+  . maxconnects (int, size of the connection cache)
+  . max_host_connections (int, max number of connections to a single host, libcurl >= 7.30.0)
+  . max_pipeline_length (int, max number of requests in a pipeline, libcurl >= 7.30.0)
+  . max_total_connections (int, max number of simultaneous open connections of this client, libcurl >= 7.30.0)
+  . pipelining (bool, whether to enable HTTP/1.1 pipelining)
+  . chunk_length_penalty_size (int, chunk length threshold for pipelining, libcurl >= 7.30.0)
+  . content_length_penalty_size (int, size threshold for pipelining, libcurl >= 7.30.0)
+  . pipelining_server_bl (array, list of server software names to blacklist for pipelining, libcurl >= 7.30.0)
+  . pipelining_site_bl (array, list of server host names to blacklist for pipelining, libcurl >= 7.30.0)
+  . use_eventloop (bool, whether to use libevent, libcurl+libevent)
++ Added http\Client::getAvailableOptions() and http\Client::getAvailableConfiguration() methods
++ Added support for HTTP2 if libcurl was built with nghttp2 support.
++ Added http\Client\Curl\HTTP_VERSION_2_0 constant (libcurl >= 7.33.0)
++ Added http\Client\Curl\TLS_AUTH_SRP constant (libcurl >= 7.21.4)
++ Added pinned_publickey SSL request option (libcurl >= 7.39.0)
++ Added tlsauthtype, tlsauthuser and tlsauthpass SSL request option (libcurl >= 7.21.4)
++ Added verifystatus (a.k.a OCSP) SSL request option (libcurl >= 7.41.0)
++ Added proxyheader request option (libcurl >= 7.37.0)
++ Added unix_socket_path request option (libcurl >= 7.40.0)
+* Fixed compress request option
+* Fixed parsing authorities of CONNECT messages
+* Fixed parsing Content-Range messages
+* Fixed http\Env\Response to default to chunked encoding over streams
+* Fixed superfluous output of Content-Length:0 headers
+* Fixed persistent easy handles to be only created for persistent multi handles
+* Fixed the header parser to accept not-yet-complete header lines
+* Fixed http\Message::toStream() crash in ZTS mode
+* Fixed the message stream parser to handle intermediary data bigger than 4k
+* Fixed the message stream parser to handle single header lines without EOL
+* Fixed http\Message\Body to not generate stat based etags for temporary streams
+- Deprecated http\Client::enablePipelining(), use http\Client::configure(["pipelining" => true]) instead
+- Deprecated http\Client::enableEvents(), use http\Client::configure(["use_eventloop" => true]) instead
+- Removed the cookies entry from the transfer info, wich was very slow and generated a Netscape formatted list of cookies
+- Changed the header parser to reject illegal characters
 ]]></notes>
  <contents>
   <dir name="/">
@@ -120,8 +156,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
    <file role="src" name="php_http_params.h"/>
    <file role="src" name="php_http_querystring.c"/>
    <file role="src" name="php_http_querystring.h"/>
-   <file role="src" name="php_http_strlist.c"/>
-   <file role="src" name="php_http_strlist.h"/>
+   <file role="src" name="php_http_response_codes.h"/>
    <file role="src" name="php_http_url.c"/>
    <file role="src" name="php_http_url.h"/>
    <file role="src" name="php_http_utf8.h"/>
@@ -130,17 +165,31 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
 
    <dir name="tests">
     <file role="test" name="skipif.inc"/>
-    <dir name="data">
-     <file role="test" name="message_r_multipart_put.txt"/>
-     <file role="test" name="message_rr_empty.txt"/>
-     <file role="test" name="message_rr_empty_chunked.txt"/>
-     <file role="test" name="message_rr_empty_gzip.txt"/>
-     <file role="test" name="message_rr_helloworld_chunked.txt"/>
-     <file role="test" name="urls.txt"/>
-    </dir>
+     <dir name="data">
+      <file role="test" name="message_r_content_range.txt"/>
+      <file role="test" name="message_r_multipart_put.txt"/>
+      <file role="test" name="message_rr_empty.txt"/>
+      <file role="test" name="message_rr_empty_chunked.txt"/>
+      <file role="test" name="message_rr_empty_gzip.txt"/>
+      <file role="test" name="message_rr_helloworld_chunked.txt"/>
+      <file role="test" name="urls.txt"/>
+     </dir>
+     <dir name="helper">
+      <file role="test" name="cookie.inc"/>
+      <file role="test" name="http2.crt"/>
+      <file role="test" name="http2.key"/>
+      <file role="test" name="pipeline.inc"/>
+      <file role="test" name="proxy.inc"/>
+      <file role="test" name="server.inc"/>
+      <dir name="html">
+       <file role="test" name="index.html"/>
+      </dir>
+     </dir>
      <file role="test" name="bug61444.phpt"/>
      <file role="test" name="bug66388.phpt"/>
+     <file role="test" name="bug66891.phpt"/>
      <file role="test" name="bug67932.phpt"/>
+     <file role="test" name="bug69000.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>
@@ -157,6 +206,16 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="client014.phpt"/>
      <file role="test" name="client015.phpt"/>
      <file role="test" name="client016.phpt"/>
+     <file role="test" name="client017.phpt"/>
+     <file role="test" name="client018.phpt"/>
+     <file role="test" name="client019.phpt"/>
+     <file role="test" name="client020.phpt"/>
+     <file role="test" name="client021.phpt"/>
+     <file role="test" name="client022.phpt"/>
+     <file role="test" name="client023.phpt"/>
+     <file role="test" name="client024.phpt"/>
+     <file role="test" name="client025.phpt"/>
+     <file role="test" name="client026.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
@@ -188,6 +247,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="envrequestbody001.phpt"/>
      <file role="test" name="envrequestbody002.phpt"/>
      <file role="test" name="envrequestbody003.phpt"/>
+     <file role="test" name="envrequestcookie001.phpt"/>
      <file role="test" name="envrequestfiles001.phpt"/>
      <file role="test" name="envrequestfiles002.phpt"/>
      <file role="test" name="envrequestform.phpt"/>
@@ -211,9 +271,12 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="envresponse014.phpt"/>
      <file role="test" name="envresponse015.phpt"/>
      <file role="test" name="envresponse016.phpt"/>
+     <file role="test" name="envresponse017.phpt"/>
+     <file role="test" name="envresponse018.phpt"/>
      <file role="test" name="envresponsebody001.phpt"/>
      <file role="test" name="envresponsebody002.phpt"/>
      <file role="test" name="envresponsecodes.phpt"/>
+     <file role="test" name="envresponsecookie001.phpt"/>
      <file role="test" name="envresponseheader001.phpt"/>
      <file role="test" name="envresponseranges001.phpt"/>
      <file role="test" name="etag001.phpt"/>
@@ -228,8 +291,11 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="header007.phpt"/>
      <file role="test" name="header008.phpt"/>
      <file role="test" name="header009.phpt"/>
-     <file role="test" name="info_001.phpt"/>
-     <file role="test" name="info.phpt"/>
+     <file role="test" name="headerparser001.phpt"/>
+     <file role="test" name="headerparser002.phpt"/>
+     <file role="test" name="headerparser003.phpt"/>
+     <file role="test" name="info001.phpt"/>
+     <file role="test" name="info002.phpt"/>
      <file role="test" name="message001.phpt"/>
      <file role="test" name="message002.phpt"/>
      <file role="test" name="message003.phpt"/>
@@ -245,6 +311,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="message013.phpt"/>
      <file role="test" name="message014.phpt"/>
      <file role="test" name="message015.phpt"/>
+     <file role="test" name="message016.phpt"/>
      <file role="test" name="messagebody001.phpt"/>
      <file role="test" name="messagebody002.phpt"/>
      <file role="test" name="messagebody003.phpt"/>
@@ -273,6 +340,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="params013.phpt"/>
      <file role="test" name="params014.phpt"/>
      <file role="test" name="params015.phpt"/>
+     <file role="test" name="phpinfo.phpt"/>
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="querystring001.phpt"/>
      <file role="test" name="querystring002.phpt"/>
@@ -292,6 +360,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="urlparser008.phpt"/>
      <file role="test" name="urlparser009.phpt"/>
      <file role="test" name="urlparser010.phpt"/>
+     <file role="test" name="urlparser011.phpt"/>
      <file role="test" name="version001.phpt"/>
    </dir>
   </dir>

@@ -26,7 +26,7 @@ $urls = array(
 foreach ($urls as $url) {
 	try {
 		printf("\n%s\n", $url);
-		var_dump(http\Url::parse($url));
+		var_dump(new http\Url($url, null, 0));
 	} catch (Exception $e) {
 		echo $e->getMessage(),"\n";
 	}

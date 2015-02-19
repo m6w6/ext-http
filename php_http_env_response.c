@@ -26,6 +26,7 @@ static void set_option(zval *options, const char *name_str, size_t name_len, int
 				case IS_STRING:
 					zend_update_property_stringl(Z_OBJCE_P(options), options, name_str, name_len, value_ptr, value_len TSRMLS_CC);
 					break;
+				case IS_ARRAY:
 				case IS_OBJECT:
 					zend_update_property(Z_OBJCE_P(options), options, name_str, name_len, value_ptr TSRMLS_CC);
 					break;
@@ -47,6 +48,7 @@ static void set_option(zval *options, const char *name_str, size_t name_len, int
 					char *value = estrndup(value_ptr, value_len);
 					add_assoc_stringl_ex(options, name_str, name_len + 1, value, value_len, 0);
 					break;
+				case IS_ARRAY:
 				case IS_OBJECT:
 					Z_ADDREF_P(value_ptr);
 					add_assoc_zval_ex(options, name_str, name_len + 1, value_ptr);
@@ -108,6 +110,36 @@ static php_http_message_t *get_request(zval *options TSRMLS_DC)
 
 	return request;
 }
+static void set_cookie(zval *options, zval *zcookie_new TSRMLS_DC)
+{
+	HashPosition pos;
+	zval *zcookies_set;
+	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
+	php_http_cookie_object_t *obj = zend_object_store_get_object(zcookie_new TSRMLS_CC);
+
+	zcookies_set = get_option(options, ZEND_STRL("cookies") TSRMLS_CC);
+	if (!zcookies_set || Z_TYPE_P(zcookies_set) != IS_ARRAY) {
+		if (zcookies_set) {
+			zval_ptr_dtor(&zcookies_set);
+		}
+		MAKE_STD_ZVAL(zcookies_set);
+		array_init_size(zcookies_set, zend_hash_num_elements(&obj->list->cookies));
+	} else {
+		SEPARATE_ZVAL(&zcookies_set);
+	}
+
+	FOREACH_HASH_KEY(pos, &obj->list->cookies, key) {
+		Z_ADDREF_P(zcookie_new);
+		if (key.type == HASH_KEY_IS_STRING) {
+			add_assoc_zval_ex(zcookies_set, key.str, key.len, zcookie_new);
+		} else {
+			add_index_zval(zcookies_set, key.num, zcookie_new);
+		}
+	}
+
+	set_option(options, ZEND_STRL("cookies"), IS_ARRAY, zcookies_set, 0 TSRMLS_CC);
+	zval_ptr_dtor(&zcookies_set);
+}
 
 php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC)
 {
@@ -147,7 +179,7 @@ php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, c
 		efree(etag);
 	}
 
-	STR_FREE(header);
+	PTR_FREE(header);
 	return ret;
 }
 
@@ -190,7 +222,7 @@ php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *o
 		}
 	}
 
-	STR_FREE(header);
+	PTR_FREE(header);
 	return ret;
 }
 
@@ -254,7 +286,7 @@ static STATUS php_http_env_response_send_data(php_http_env_response_t *r, const 
 			return SUCCESS;
 		}
 		chunks_sent = php_http_buffer_chunked_output(&r->buffer, enc_str, enc_len, buf ? chunk : 0, output, r TSRMLS_CC);
-		STR_FREE(enc_str);
+		PTR_FREE(enc_str);
 	} else {
 		chunks_sent = php_http_buffer_chunked_output(&r->buffer, buf, len, buf ? chunk : 0, output, r TSRMLS_CC);
 	}
@@ -303,8 +335,8 @@ void php_http_env_response_dtor(php_http_env_response_t *r)
 	}
 	php_http_buffer_free(&r->buffer);
 	zval_ptr_dtor(&r->options);
-	STR_FREE(r->content.type);
-	STR_FREE(r->content.encoding);
+	PTR_FREE(r->content.type);
+	PTR_FREE(r->content.encoding);
 	if (r->content.encoder) {
 		php_http_encoding_stream_free(&r->content.encoder);
 	}
@@ -364,6 +396,33 @@ static STATUS php_http_env_response_send_head(php_http_env_response_t *r, php_ht
 			php_http_version_dtor(&v);
 		}
 		zval_ptr_dtor(&zoption_copy);
+	}
+
+	if (ret != SUCCESS) {
+		return ret;
+	}
+
+	if ((zoption = get_option(options, ZEND_STRL("cookies") TSRMLS_CC))) {
+		if (Z_TYPE_P(zoption) == IS_ARRAY) {
+			HashPosition pos;
+			zval **zcookie;
+
+			FOREACH_VAL(pos, zoption, zcookie) {
+				if (Z_TYPE_PP(zcookie) == IS_OBJECT && instanceof_function(Z_OBJCE_PP(zcookie), php_http_cookie_class_entry TSRMLS_CC)) {
+					php_http_cookie_object_t *obj = zend_object_store_get_object(*zcookie TSRMLS_CC);
+					char *str;
+					size_t len;
+
+					php_http_cookie_list_to_string(obj->list, &str, &len);
+					if (SUCCESS != (ret = r->ops->add_header(r, "Set-Cookie: %s", str))) {
+						efree(str);
+						break;
+					}
+					efree(str);
+				}
+			}
+		}
+		zval_ptr_dtor(&zoption);
 	}
 
 	if (ret != SUCCESS) {
@@ -824,26 +883,38 @@ typedef struct php_http_env_response_stream_ctx {
 	long status_code;
 
 	php_stream *stream;
+	php_stream_filter *chunked_filter;
+	php_http_message_t *request;
 
 	unsigned started:1;
 	unsigned finished:1;
+	unsigned chunked:1;
 } php_http_env_response_stream_ctx_t;
 
 static STATUS php_http_env_response_stream_init(php_http_env_response_t *r, void *init_arg)
 {
 	php_http_env_response_stream_ctx_t *ctx;
+	size_t buffer_size = 0x1000;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
 	ctx = ecalloc(1, sizeof(*ctx));
 
 	ctx->stream = init_arg;
-	if (SUCCESS != zend_list_addref(ctx->stream->rsrc_id)) {
+	if (!ctx->stream || SUCCESS != zend_list_addref(ctx->stream->rsrc_id)) {
 		efree(ctx);
 		return FAILURE;
 	}
+	php_stream_set_option(ctx->stream, PHP_STREAM_OPTION_WRITE_BUFFER, PHP_STREAM_BUFFER_FULL, &buffer_size);
 	zend_hash_init(&ctx->header, 0, NULL, ZVAL_PTR_DTOR, 0);
 	php_http_version_init(&ctx->version, 1, 1 TSRMLS_CC);
 	ctx->status_code = 200;
+	ctx->chunked = 1;
+	ctx->request = get_request(r->options TSRMLS_CC);
+
+	/* there are some limitations regarding TE:chunked, see https://tools.ietf.org/html/rfc7230#section-3.3.1 */
+	if (ctx->request && ctx->request->http.version.major == 1 && ctx->request->http.version.minor == 0) {
+		ctx->version.minor = 0;
+	}
 
 	r->ctx = ctx;
 
@@ -854,36 +925,77 @@ static void php_http_env_response_stream_dtor(php_http_env_response_t *r)
 	php_http_env_response_stream_ctx_t *ctx = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
+	if (ctx->chunked_filter) {
+		php_stream_filter_free(ctx->chunked_filter TSRMLS_CC);
+	}
 	zend_hash_destroy(&ctx->header);
 	zend_list_delete(ctx->stream->rsrc_id);
 	efree(ctx);
 	r->ctx = NULL;
 }
-static void php_http_env_response_stream_header(php_http_env_response_stream_ctx_t *ctx, HashTable *header TSRMLS_DC)
+static void php_http_env_response_stream_header(php_http_env_response_stream_ctx_t *ctx, HashTable *header, php_http_buffer_t *buf TSRMLS_DC)
 {
 	HashPosition pos;
 	zval **val;
 
-	FOREACH_HASH_VAL(pos, &ctx->header, val) {
+	FOREACH_HASH_VAL(pos, header, val) {
 		if (Z_TYPE_PP(val) == IS_ARRAY) {
-			php_http_env_response_stream_header(ctx, Z_ARRVAL_PP(val) TSRMLS_CC);
+			php_http_env_response_stream_header(ctx, Z_ARRVAL_PP(val), buf TSRMLS_CC);
 		} else {
-			php_stream_write(ctx->stream, Z_STRVAL_PP(val), Z_STRLEN_PP(val));
-			php_stream_write_string(ctx->stream, PHP_HTTP_CRLF);
+			zval *tmp = php_http_ztyp(IS_STRING, *val);
+
+			if (ctx->chunked) {
+				/* disable chunked transfer encoding if we've got an explicit content-length */
+				if (!strncasecmp(Z_STRVAL_P(tmp), "Content-Length:", lenof("Content-Length:"))) {
+					ctx->chunked = 0;
+				}
+			}
+			php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+			php_http_buffer_appends(buf, PHP_HTTP_CRLF);
+			zval_ptr_dtor(&tmp);
 		}
 	}
 }
 static STATUS php_http_env_response_stream_start(php_http_env_response_stream_ctx_t *ctx TSRMLS_DC)
 {
+	php_http_buffer_t header_buf;
+
 	if (ctx->started || ctx->finished) {
 		return FAILURE;
 	}
 
-	php_stream_printf(ctx->stream TSRMLS_CC, "HTTP/%u.%u %ld %s" PHP_HTTP_CRLF, ctx->version.major, ctx->version.minor, ctx->status_code, php_http_env_get_response_status_for_code(ctx->status_code));
-	php_http_env_response_stream_header(ctx, &ctx->header TSRMLS_CC);
-	php_stream_write_string(ctx->stream, PHP_HTTP_CRLF);
-	ctx->started = 1;
-	return SUCCESS;
+	php_http_buffer_init(&header_buf);
+	php_http_buffer_appendf(&header_buf, "HTTP/%u.%u %ld %s" PHP_HTTP_CRLF, ctx->version.major, ctx->version.minor, ctx->status_code, php_http_env_get_response_status_for_code(ctx->status_code));
+
+	/* there are some limitations regarding TE:chunked, see https://tools.ietf.org/html/rfc7230#section-3.3.1 */
+	if (ctx->version.major == 1 && ctx->version.minor == 0) {
+		ctx->chunked = 0;
+	} else if (ctx->status_code == 204 || ctx->status_code/100 == 1) {
+		ctx->chunked = 0;
+	} else if (ctx->request && ctx->status_code/100 == 2 && !strcasecmp(ctx->request->http.info.request.method, "CONNECT")) {
+		ctx->chunked = 0;
+	}
+
+	php_http_env_response_stream_header(ctx, &ctx->header, &header_buf TSRMLS_CC);
+
+	/* enable chunked transfer encoding */
+	if (ctx->chunked) {
+		php_http_buffer_appends(&header_buf, "Transfer-Encoding: chunked" PHP_HTTP_CRLF);
+	}
+	php_http_buffer_appends(&header_buf, PHP_HTTP_CRLF);
+
+	if (header_buf.used == php_stream_write(ctx->stream, header_buf.data, header_buf.used)) {
+		ctx->started = 1;
+	}
+	php_http_buffer_dtor(&header_buf);
+	php_stream_flush(ctx->stream);
+
+	if (ctx->chunked) {
+		ctx->chunked_filter = php_stream_filter_create("http.chunked_encode", NULL, 0 TSRMLS_CC);
+		php_stream_filter_append(&ctx->stream->writefilters, ctx->chunked_filter);
+	}
+
+	return ctx->started ? SUCCESS : FAILURE;
 }
 static long php_http_env_response_stream_get_status(php_http_env_response_t *r)
 {
@@ -1023,19 +1135,25 @@ static STATUS php_http_env_response_stream_flush(php_http_env_response_t *r)
 }
 static STATUS php_http_env_response_stream_finish(php_http_env_response_t *r)
 {
-	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
+	php_http_env_response_stream_ctx_t *ctx = r->ctx;
 	TSRMLS_FETCH_FROM_CTX(r->ts);
 
-	if (stream_ctx->finished) {
+	if (ctx->finished) {
 		return FAILURE;
 	}
-	if (!stream_ctx->started) {
-		if (SUCCESS != php_http_env_response_stream_start(stream_ctx TSRMLS_CC)) {
+	if (!ctx->started) {
+		if (SUCCESS != php_http_env_response_stream_start(ctx TSRMLS_CC)) {
 			return FAILURE;
 		}
 	}
 
-	stream_ctx->finished = 1;
+	php_stream_flush(ctx->stream);
+	if (ctx->chunked && ctx->chunked_filter) {
+		php_stream_filter_flush(ctx->chunked_filter, 1);
+		ctx->chunked_filter = php_stream_filter_remove(ctx->chunked_filter, 1 TSRMLS_CC);
+	}
+
+	ctx->finished = 1;
 
 	return SUCCESS;
 }
@@ -1249,6 +1367,46 @@ static PHP_METHOD(HttpEnvResponse, setThrottleRate)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setCookie, 0, 0, 1)
+	ZEND_ARG_INFO(0, cookie)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnvResponse, setCookie)
+{
+	zval *zcookie_new;
+	zend_error_handling zeh;
+	php_http_cookie_list_t *list = NULL;
+
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &zcookie_new), invalid_arg, return);
+
+	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh TSRMLS_CC);
+	switch (Z_TYPE_P(zcookie_new)) {
+	case IS_OBJECT:
+		if (instanceof_function(Z_OBJCE_P(zcookie_new), php_http_cookie_class_entry TSRMLS_CC)) {
+			Z_ADDREF_P(zcookie_new);
+			break;
+		}
+		/* no break */
+	case IS_ARRAY:
+		list = php_http_cookie_list_from_struct(NULL, zcookie_new TSRMLS_CC);
+		MAKE_STD_ZVAL(zcookie_new);
+		ZVAL_OBJVAL(zcookie_new, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
+		break;
+
+	default:
+		zcookie_new = php_http_ztyp(IS_STRING, zcookie_new);
+		list = php_http_cookie_list_parse(NULL, Z_STRVAL_P(zcookie_new), Z_STRLEN_P(zcookie_new), 0, NULL TSRMLS_CC);
+		zval_ptr_dtor(&zcookie_new);
+		MAKE_STD_ZVAL(zcookie_new);
+		ZVAL_OBJVAL(zcookie_new, php_http_cookie_object_new_ex(php_http_cookie_class_entry, list, NULL TSRMLS_CC), 0);
+	}
+	zend_restore_error_handling(&zeh TSRMLS_CC);
+
+	set_cookie(getThis(), zcookie_new TSRMLS_CC);
+	zval_ptr_dtor(&zcookie_new);
+
+	RETVAL_ZVAL(getThis(), 1, 0);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_send, 0, 0, 0)
 	ZEND_ARG_INFO(0, stream)
 ZEND_END_ARG_INFO();
@@ -1265,6 +1423,7 @@ static PHP_METHOD(HttpEnvResponse, send)
 #else
 		php_end_ob_buffers(1 TSRMLS_CC);
 #endif
+
 		if (zstream) {
 			php_http_env_response_t *r;
 
@@ -1293,6 +1452,7 @@ static zend_function_entry php_http_env_response_methods[] = {
 	PHP_ME(HttpEnvResponse, __construct,             ai_HttpEnvResponse___construct,             ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(HttpEnvResponse, __invoke,                ai_HttpEnvResponse___invoke,                ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setEnvRequest,           ai_HttpEnvResponse_setEnvRequest,           ZEND_ACC_PUBLIC)
+	PHP_ME(HttpEnvResponse, setCookie,               ai_HttpEnvResponse_setCookie,               ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setContentType,          ai_HttpEnvResponse_setContentType,          ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setContentDisposition,   ai_HttpEnvResponse_setContentDisposition,   ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setContentEncoding,      ai_HttpEnvResponse_setContentEncoding,      ZEND_ACC_PUBLIC)
@@ -1323,6 +1483,7 @@ PHP_MINIT_FUNCTION(http_env_response)
 	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CACHE_MISS"), PHP_HTTP_CACHE_MISS TSRMLS_CC);
 
 	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("request"), ZEND_ACC_PROTECTED TSRMLS_CC);
+	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("cookies"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("contentType"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("contentDisposition"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_env_response_class_entry, ZEND_STRL("contentEncoding"), ZEND_ACC_PROTECTED TSRMLS_CC);

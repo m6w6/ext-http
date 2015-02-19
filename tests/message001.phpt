@@ -184,7 +184,7 @@ array(10) {
   ["Accept-Ranges"]=>
   string(5) "bytes"
   ["Content-Length"]=>
-  int(0)
+  string(1) "0"
   ["Vary"]=>
   string(15) "Accept-Encoding"
   ["Connection"]=>
@@ -197,7 +197,6 @@ array(10) {
 GET /default/empty.txt HTTP/1.1
 Host: localhost
 Connection: close
-Content-Length: 0
 HTTP/1.1 200 OK
 Date: Thu, 26 Aug 2010 09:55:09 GMT
 Server: Apache/2.2.16 (Unix) mod_ssl/2.2.16 OpenSSL/1.0.0a mod_fastcgi/2.4.6
@@ -205,7 +204,6 @@ Last-Modified: Wed, 28 Apr 2010 10:54:37 GMT
 Etag: "2002a-0-48549d615a35c"
 Accept-Ranges: bytes
 Vary: Accept-Encoding
-Content-Length: 0
 Connection: close
 Content-Type: text/plain
 X-Original-Content-Length: 20
@@ -214,7 +212,7 @@ string(3) "1.1"
 bool(true)
 int(200)
 string(2) "OK"
-array(11) {
+array(10) {
   ["Date"]=>
   string(29) "Thu, 26 Aug 2010 09:55:09 GMT"
   ["Server"]=>
@@ -227,8 +225,6 @@ array(11) {
   string(5) "bytes"
   ["Vary"]=>
   string(15) "Accept-Encoding"
-  ["Content-Length"]=>
-  int(0)
   ["Connection"]=>
   string(5) "close"
   ["Content-Type"]=>
@@ -242,7 +238,6 @@ GET /default/empty.txt HTTP/1.1
 Host: localhost
 Accept-Encoding: gzip
 Connection: close
-Content-Length: 0
 HTTP/1.1 200 OK
 Date: Thu, 26 Aug 2010 11:41:02 GMT
 Server: Apache/2.2.16 (Unix) mod_ssl/2.2.16 OpenSSL/1.0.0a mod_fastcgi/2.4.6
@@ -277,7 +272,6 @@ array(8) {
 GET /default/empty.php HTTP/1.1
 Connection: close
 Host: localhost
-Content-Length: 0
 HTTP/1.1 200 OK
 Date: Thu, 26 Aug 2010 12:51:28 GMT
 Server: Apache/2.2.16 (Unix) mod_ssl/2.2.16 OpenSSL/1.0.0a mod_fastcgi/2.4.6
@@ -311,7 +305,6 @@ array(7) {
 GET /cgi-bin/chunked.sh HTTP/1.1
 Host: localhost
 Connection: close
-Content-Length: 0
 ---
 HTTP/1.1 200 OK
 Date: Wed, 25 Aug 2010 12:11:44 GMT
@@ -340,7 +333,7 @@ array(10) {
   ["Accept-Ranges"]=>
   string(5) "bytes"
   ["Content-Length"]=>
-  int(0)
+  string(1) "0"
   ["Vary"]=>
   string(15) "Accept-Encoding"
   ["Connection"]=>
@@ -353,7 +346,6 @@ array(10) {
 GET /default/empty.txt HTTP/1.1
 Host: localhost
 Connection: close
-Content-Length: 0
 HTTP/1.1 200 OK
 Date: Thu, 26 Aug 2010 09:55:09 GMT
 Server: Apache/2.2.16 (Unix) mod_ssl/2.2.16 OpenSSL/1.0.0a mod_fastcgi/2.4.6
@@ -361,7 +353,6 @@ Last-Modified: Wed, 28 Apr 2010 10:54:37 GMT
 Etag: "2002a-0-48549d615a35c"
 Accept-Ranges: bytes
 Vary: Accept-Encoding
-Content-Length: 0
 Connection: close
 Content-Type: text/plain
 X-Original-Content-Length: 20
@@ -370,7 +361,7 @@ string(3) "1.1"
 bool(true)
 int(200)
 string(2) "OK"
-array(11) {
+array(10) {
   ["Date"]=>
   string(29) "Thu, 26 Aug 2010 09:55:09 GMT"
   ["Server"]=>
@@ -383,8 +374,6 @@ array(11) {
   string(5) "bytes"
   ["Vary"]=>
   string(15) "Accept-Encoding"
-  ["Content-Length"]=>
-  int(0)
   ["Connection"]=>
   string(5) "close"
   ["Content-Type"]=>
@@ -398,7 +387,6 @@ GET /default/empty.txt HTTP/1.1
 Host: localhost
 Accept-Encoding: gzip
 Connection: close
-Content-Length: 0
 HTTP/1.1 200 OK
 Date: Thu, 26 Aug 2010 11:41:02 GMT
 Server: Apache/2.2.16 (Unix) mod_ssl/2.2.16 OpenSSL/1.0.0a mod_fastcgi/2.4.6
@@ -433,7 +421,6 @@ array(8) {
 GET /default/empty.php HTTP/1.1
 Connection: close
 Host: localhost
-Content-Length: 0
 HTTP/1.1 200 OK
 Date: Thu, 26 Aug 2010 12:51:28 GMT
 Server: Apache/2.2.16 (Unix) mod_ssl/2.2.16 OpenSSL/1.0.0a mod_fastcgi/2.4.6
@@ -467,5 +454,4 @@ array(7) {
 GET /cgi-bin/chunked.sh HTTP/1.1
 Host: localhost
 Connection: close
-Content-Length: 0
 Done
