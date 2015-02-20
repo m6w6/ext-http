@@ -13,7 +13,7 @@ array_key_exists("proxyheader", $client->getAvailableOptions())
 
 include "helper/server.inc";
 
-echo "Test\n";var_dump((new http\Client)->getAvailableOptions());
+echo "Test\n";
 
 server("proxy.inc", function($port, $stdin, $stdout, $stderr) {
 	echo "Server on port $port\n";
