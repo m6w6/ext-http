@@ -289,7 +289,7 @@ STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_b
 
 php_http_header_parser_state_t php_http_header_parser_parse_stream(php_http_header_parser_t *parser, php_http_buffer_t *buf, php_stream *s, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
 {
-	php_http_message_parser_state_t state = PHP_HTTP_MESSAGE_PARSER_STATE_START;
+	php_http_header_parser_state_t state = PHP_HTTP_MESSAGE_PARSER_STATE_START;
 	TSRMLS_FETCH_FROM_CTX(parser->ts);
 
 	if (!buf->data) {
