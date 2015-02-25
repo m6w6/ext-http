@@ -625,6 +625,39 @@ static inline zend_bool isualnum(unsigned ch)
 	return isualpha(ch);
 }
 
+static inline size_t wctoutf16(unsigned short u16[2], unsigned wc)
+{
+	if (wc > 0x10ffff || (wc >= 0xd800 && wc <= 0xdfff)) {
+		return 0;
+	}
+
+	if (wc <= 0xffff) {
+		u16[0] = (unsigned short) wc;
+		return 1;
+	}
+
+	wc -= 0x10000;
+	u16[0] = (unsigned short) ((wc >> 10) + 0xd800);
+	u16[1] = (unsigned short) ((wc & 0x3ff) + 0xdc00);
+	return 2;
+}
+
+static inline size_t utf16towc(unsigned *wc, unsigned short *u16_str, size_t u16_len)
+{
+	if (u16_len < 1) {
+		return 0;
+	}
+	if (u16_str[0] - 0xd800 >= 0x800) {
+		*wc = u16_str[0];
+		return 1;
+	}
+	if (u16_len < 2 || (u16_str[0] & 0xfffffc00) != 0xd800 || (u16_str[1] & 0xfffffc00) != 0xdc00) {
+		return 0;
+	}
+	*wc = (u16_str[0] << 10) + u16_str[1] - 0x35fdc00;
+	return 2;
+}
+
 #endif	/* PHP_HTTP_UTF8_H */
 
 /*

@@ -661,8 +661,9 @@ static size_t parse_mb_loc(unsigned *wc, const char *ptr, const char *end)
 	wchar_t wchar;
 	size_t consumed = 0;
 #if defined(HAVE_MBRTOWC)
-	mbstate_t ps = {0};
+	mbstate_t ps;
 
+	memset(&ps, 0, sizeof(ps));
 	consumed = mbrtowc(&wchar, ptr, end - ptr, &ps);
 #elif defined(HAVE_MBTOWC)
 	consumed = mbtowc(&wchar, ptr, end - ptr);
@@ -818,6 +819,124 @@ static STATUS parse_userinfo(struct parse_state *state, const char *ptr)
 	return SUCCESS;
 }
 
+#ifdef PHP_HTTP_HAVE_IDN
+static STATUS parse_idn(struct parse_state *state)
+{
+	char *idn = NULL;
+	int rv = -1;
+
+	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+		rv = idna_to_ascii_8z(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+	}
+#	ifdef PHP_HTTP_HAVE_WCHAR
+	else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
+		rv = idna_to_ascii_lz(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+	}
+#	endif
+	if (rv != IDNA_SUCCESS) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idna_strerror(rv));
+		return FAILURE;
+	} else {
+		size_t idnlen = strlen(idn);
+		memcpy(state->url.host, idn, idnlen + 1);
+		free(idn);
+		state->offset += idnlen - len;
+		return SUCCESS;
+	}
+}
+#endif
+
+#ifdef HAVE_UIDNA_IDNTOASCII
+#	if HAVE_UNICODE_UIDNA_H
+#		include <unicode/uidna.h>
+#	else
+typedef uint16_t UChar;
+typedef enum { U_ZERO_ERROR = 0 } UErrorCode;
+int32_t uidna_IDNToASCII(const UChar *src, int32_t srcLength, UChar *dest, int32_t destCapacity, int32_t options, void *parseError, UErrorCode *status);
+#	endif
+typedef size_t (*parse_mb_func)(unsigned *wc, const char *ptr, const char *end);
+static STATUS toutf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len)
+{
+	size_t offset = 0, u8_len = strlen(u8);
+
+	*u16 = ecalloc(4 * sizeof(uint16_t), u8_len + 1);
+	*len = 0;
+
+	while (offset < u8_len) {
+		unsigned wc;
+		uint16_t buf[2], *ptr = buf;
+		size_t consumed = fn(&wc, &u8[offset], &u8[u8_len]);
+
+		if (!consumed) {
+			efree(*u16);
+			return FAILURE;
+		} else {
+			offset += consumed;
+		}
+
+		switch (wctoutf16(buf, wc)) {
+		case 2:
+			(*u16)[(*len)++] = *ptr++;
+			/* no break */
+		case 1:
+			(*u16)[(*len)++] = *ptr++;
+			break;
+		case 0:
+		default:
+			efree(*u16);
+			return FAILURE;
+		}
+	}
+
+	return SUCCESS;
+}
+static STATUS parse_uidn(struct parse_state *state)
+{
+	char *host_ptr;
+	uint16_t *uhost_str = NULL, *ahost_str, *ahost_ptr;
+	size_t uhost_len, ahost_len;
+	UErrorCode error = U_ZERO_ERROR;
+
+	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+		if (SUCCESS != toutf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN");
+			return FAILURE;
+		}
+#ifdef PHP_HTTP_HAVE_WCHAR
+	} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
+		if (SUCCESS != toutf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN");
+			return FAILURE;
+		}
+#endif
+	} else {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN");
+		return FAILURE;
+	}
+
+	ahost_len = uhost_len * 3;
+	ahost_str = ecalloc(sizeof(uint16_t), ahost_len);
+
+	ahost_len = uidna_IDNToASCII(uhost_str, uhost_len, ahost_str, ahost_len, 3, NULL, &error);
+	efree(uhost_str);
+
+	if (error != U_ZERO_ERROR) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN");
+		return FAILURE;
+	}
+
+	host_ptr = state->url.host;
+	ahost_ptr = ahost_str;
+	PHP_HTTP_DUFF(ahost_len, *host_ptr++ = *ahost_ptr++);
+	efree(ahost_str);
+
+	*host_ptr = '\0';
+	state->offset += host_ptr - state->url.host;
+
+	return SUCCESS;
+}
+#endif
+
 static STATUS parse_hostinfo(struct parse_state *state, const char *ptr)
 {
 	size_t mb, len;
@@ -932,30 +1051,14 @@ static STATUS parse_hostinfo(struct parse_state *state, const char *ptr)
 		state->buffer[state->offset++] = 0;
 	}
 
-#ifdef PHP_HTTP_HAVE_IDN
 	if (state->flags & PHP_HTTP_URL_PARSE_TOIDN) {
-		char *idn = NULL;
-		int rv = -1;
-
-		if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-			rv = idna_to_ascii_8z(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
-		}
-#	ifdef PHP_HTTP_HAVE_WCHAR
-		else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-			rv = idna_to_ascii_lz(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
-		}
-#	endif
-		if (rv != IDNA_SUCCESS) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idna_strerror(rv));
-			return FAILURE;
-		} else {
-			size_t idnlen = strlen(idn);
-			memcpy(state->url.host, idn, idnlen + 1);
-			free(idn);
-			state->offset += idnlen - len;
-		}
-	}
+#ifdef PHP_HTTP_HAVE_IDN
+		return parse_idn(state);
 #endif
+#ifdef HAVE_UIDNA_IDNTOASCII
+		return parse_uidn(state);
+#endif
+	}
 
 	return SUCCESS;
 }
@@ -1494,7 +1597,7 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBLOC"), PHP_HTTP_URL_PARSE_MBLOC TSRMLS_CC);
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBUTF8"), PHP_HTTP_URL_PARSE_MBUTF8 TSRMLS_CC);
-#ifdef PHP_HTTP_HAVE_IDN
+#if defined(PHP_HTTP_HAVE_IDN) || defined(HAVE_UIDNA_IDNTOASCII)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN"), PHP_HTTP_URL_PARSE_TOIDN TSRMLS_CC);
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT TSRMLS_CC);

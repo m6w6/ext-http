@@ -122,6 +122,11 @@ dnl ----
 	done
 	if test "x$IDNA_DIR" = "x"; then
 		AC_MSG_RESULT([not found])
+		case $host_os in
+		darwin*)
+			AC_CHECK_HEADERS(unicode/uidna.h)
+			PHP_CHECK_FUNC(uidna_IDNToASCII, icucore);;
+		esac
 	else
 		AC_MSG_RESULT([found in $IDNA_DIR])
 		AC_DEFINE([PHP_HTTP_HAVE_IDN], [1], [Have libidn support])
