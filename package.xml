@@ -37,14 +37,14 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-02-19</date>
+ <date>2015-03-01</date>
  <version>
-  <release>2.3.0dev</release>
+  <release>2.3.1dev</release>
   <api>2.3.0</api>
  </version>
  <stability>
-  <release>beta</release>
-  <api>beta</api>
+  <release>stable</release>
+  <api>stable</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
@@ -89,6 +89,9 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
 - Deprecated http\Client::enableEvents(), use http\Client::configure(["use_eventloop" => true]) instead
 - Removed the cookies entry from the transfer info, wich was very slow and generated a Netscape formatted list of cookies
 - Changed the header parser to reject illegal characters
+
+Changes from RC1:
+* Fixed a shutdown crash with chunked encoded stream responses
 ]]></notes>
  <contents>
   <dir name="/">
