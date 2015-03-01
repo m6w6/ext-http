@@ -39,59 +39,16 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-03-01</date>
  <version>
-  <release>2.3.1dev</release>
-  <api>2.3.0</api>
+  <release>2.4.0dev</release>
+  <api>2.4.0</api>
  </version>
  <stability>
-  <release>stable</release>
-  <api>stable</api>
+  <release>beta</release>
+  <api>beta</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Preliminiary HTTP2 support for http\Client (libcurl with nghttp2 support)
-+ Improved performance of HTTP info parser (request/response line)
-+ Improved performance of updating client observers
-+ Improved performance of http\Env\Response output to streams
-+ Improved the error messages of the header parser
-+ Added http\Header\Parser class
-+ Added http\Client::configure() method accepting an array with the following options for libcurl:
-  . maxconnects (int, size of the connection cache)
-  . max_host_connections (int, max number of connections to a single host, libcurl >= 7.30.0)
-  . max_pipeline_length (int, max number of requests in a pipeline, libcurl >= 7.30.0)
-  . max_total_connections (int, max number of simultaneous open connections of this client, libcurl >= 7.30.0)
-  . pipelining (bool, whether to enable HTTP/1.1 pipelining)
-  . chunk_length_penalty_size (int, chunk length threshold for pipelining, libcurl >= 7.30.0)
-  . content_length_penalty_size (int, size threshold for pipelining, libcurl >= 7.30.0)
-  . pipelining_server_bl (array, list of server software names to blacklist for pipelining, libcurl >= 7.30.0)
-  . pipelining_site_bl (array, list of server host names to blacklist for pipelining, libcurl >= 7.30.0)
-  . use_eventloop (bool, whether to use libevent, libcurl+libevent)
-+ Added http\Client::getAvailableOptions() and http\Client::getAvailableConfiguration() methods
-+ Added support for HTTP2 if libcurl was built with nghttp2 support.
-+ Added http\Client\Curl\HTTP_VERSION_2_0 constant (libcurl >= 7.33.0)
-+ Added http\Client\Curl\TLS_AUTH_SRP constant (libcurl >= 7.21.4)
-+ Added pinned_publickey SSL request option (libcurl >= 7.39.0)
-+ Added tlsauthtype, tlsauthuser and tlsauthpass SSL request option (libcurl >= 7.21.4)
-+ Added verifystatus (a.k.a OCSP) SSL request option (libcurl >= 7.41.0)
-+ Added proxyheader request option (libcurl >= 7.37.0)
-+ Added unix_socket_path request option (libcurl >= 7.40.0)
-* Fixed compress request option
-* Fixed parsing authorities of CONNECT messages
-* Fixed parsing Content-Range messages
-* Fixed http\Env\Response to default to chunked encoding over streams
-* Fixed superfluous output of Content-Length:0 headers
-* Fixed persistent easy handles to be only created for persistent multi handles
-* Fixed the header parser to accept not-yet-complete header lines
-* Fixed http\Message::toStream() crash in ZTS mode
-* Fixed the message stream parser to handle intermediary data bigger than 4k
-* Fixed the message stream parser to handle single header lines without EOL
-* Fixed http\Message\Body to not generate stat based etags for temporary streams
-- Deprecated http\Client::enablePipelining(), use http\Client::configure(["pipelining" => true]) instead
-- Deprecated http\Client::enableEvents(), use http\Client::configure(["use_eventloop" => true]) instead
-- Removed the cookies entry from the transfer info, wich was very slow and generated a Netscape formatted list of cookies
-- Changed the header parser to reject illegal characters
-
-Changes from RC1:
-* Fixed a shutdown crash with chunked encoded stream responses
+*
 ]]></notes>
  <contents>
   <dir name="/">
