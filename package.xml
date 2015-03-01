@@ -39,7 +39,7 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-03-01</date>
  <version>
-  <release>2.3.0</release>
+  <release>2.3.1dev</release>
   <api>2.3.0</api>
  </version>
  <stability>
