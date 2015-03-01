@@ -43,8 +43,8 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <api>2.3.0</api>
  </version>
  <stability>
-  <release>beta</release>
-  <api>beta</api>
+  <release>stable</release>
+  <api>stable</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
