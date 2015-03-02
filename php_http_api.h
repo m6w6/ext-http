@@ -52,10 +52,6 @@ typedef int STATUS;
 #	define PHP_HTTP_HAVE_HASH
 #endif
 
-#if (defined(HAVE_JSON) || defined(PHP_HTTP_HAVE_EXT_JSON)) && (PHP_HTTP_SHARED_DEPS || !defined(COMPILE_DL_JSON))
-#	define PHP_HTTP_HAVE_JSON
-#endif
-
 #include <stddef.h>
 
 #ifdef PHP_WIN32

@@ -44,7 +44,6 @@ zend_function_entry http_functions[] = {
 
 PHP_MINIT_FUNCTION(http);
 PHP_MSHUTDOWN_FUNCTION(http);
-PHP_RINIT_FUNCTION(http);
 PHP_RSHUTDOWN_FUNCTION(http);
 PHP_MINFO_FUNCTION(http);
 
@@ -58,9 +57,6 @@ static zend_module_dep http_module_deps[] = {
 #ifdef PHP_HTTP_HAVE_ICONV
 	ZEND_MOD_REQUIRED("iconv")
 #endif
-#ifdef PHP_HTTP_HAVE_JSON
-	ZEND_MOD_REQUIRED("json")
-#endif
 	{NULL, NULL, NULL, 0}
 };
 
@@ -72,7 +68,7 @@ zend_module_entry http_module_entry = {
 	http_functions,
 	PHP_MINIT(http),
 	PHP_MSHUTDOWN(http),
-	PHP_RINIT(http),
+	NULL,
 	PHP_RSHUTDOWN(http),
 	PHP_MINFO(http),
 	PHP_PECL_HTTP_VERSION,
@@ -178,17 +174,6 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
 #endif
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_client)
-	) {
-		return FAILURE;
-	}
-	
-	return SUCCESS;
-}
-
-PHP_RINIT_FUNCTION(http)
-{
-	if (0
-	|| SUCCESS != PHP_RINIT_CALL(http_env)
 	) {
 		return FAILURE;
 	}

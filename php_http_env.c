@@ -13,68 +13,6 @@
 #include "php_http_api.h"
 #include "php_variables.h"
 
-PHP_RINIT_FUNCTION(http_env)
-{
-	/* populate form data on non-POST requests */
-	if (SG(request_info).request_method && strcasecmp(SG(request_info).request_method, "POST") && SG(request_info).content_type && *SG(request_info).content_type) {
-		uint ct_len = strlen(SG(request_info).content_type);
-		char *ct_str = estrndup(SG(request_info).content_type, ct_len);
-		php_http_params_opts_t opts;
-		HashTable params;
-
-		php_http_params_opts_default_get(&opts);
-		opts.input.str = ct_str;
-		opts.input.len = ct_len;
-
-		SG(request_info).content_type_dup = ct_str;
-
-		ZEND_INIT_SYMTABLE(&params);
-		if (php_http_params_parse(&params, &opts TSRMLS_CC)) {
-			char *key_str;
-			uint key_len;
-			ulong key_num;
-
-			if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(&params, &key_str, &key_len, &key_num, 0, NULL)) {
-				sapi_post_entry *post_entry = NULL;
-
-				if (SUCCESS == zend_hash_find(&SG(known_post_content_types), key_str, key_len, (void *) &post_entry)) {
-					zval *files = PG(http_globals)[TRACK_VARS_FILES];
-
-					if (post_entry) {
-						SG(request_info).post_entry = post_entry;
-
-						if (post_entry->post_reader) {
-							post_entry->post_reader(TSRMLS_C);
-						}
-					}
-
-					if (sapi_module.default_post_reader) {
-						sapi_module.default_post_reader(TSRMLS_C);
-					}
-
-					sapi_handle_post(PG(http_globals)[TRACK_VARS_POST] TSRMLS_CC);
-
-					/*
-					 * the rfc1867 handler is an awkward buddy
-					 */
-					if (files != PG(http_globals)[TRACK_VARS_FILES] && PG(http_globals)[TRACK_VARS_FILES]) {
-						Z_ADDREF_P(PG(http_globals)[TRACK_VARS_FILES]);
-						zend_hash_update(&EG(symbol_table), "_FILES", sizeof("_FILES"), &PG(http_globals)[TRACK_VARS_FILES], sizeof(zval *), NULL);
-						if (files) {
-							zval_ptr_dtor(&files);
-						}
-					}
-				}
-			}
-			zend_hash_destroy(&params);
-		}
-	}
-
-	PTR_SET(SG(request_info).content_type_dup, NULL);
-
-	return SUCCESS;
-}
-
 PHP_RSHUTDOWN_FUNCTION(http_env)
 {
 	if (PHP_HTTP_G->env.request.headers) {
@@ -858,58 +796,6 @@ static zend_function_entry php_http_env_methods[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-#ifdef PHP_HTTP_HAVE_JSON
-#include "ext/json/php_json.h"
-
-static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
-{
-	zval *zarg = arg;
-	char *json_str = NULL;
-	size_t json_len = 0;
-
-#if PHP_VERSION_ID >= 50600
-	if (SG(request_info).request_body) {
-		/* FG(stream_wrappers) not initialized yet, so we cannot use php://input */
-		php_stream_rewind(SG(request_info).request_body);
-		json_len = php_stream_copy_to_mem(SG(request_info).request_body, &json_str, PHP_STREAM_COPY_ALL, 0);
-	}
-#else
-	json_str = SG(request_info).raw_post_data;
-	json_len = SG(request_info).raw_post_data_length;
-#endif
-
-	if (json_len) {
-		zval zjson;
-
-		INIT_ZVAL(zjson);
-		php_json_decode(&zjson, json_str, json_len, 1, PG(max_input_nesting_level) TSRMLS_CC);
-		if (Z_TYPE(zjson) != IS_NULL) {
-			zval_dtor(zarg);
-			ZVAL_COPY_VALUE(zarg, (&zjson));
-		}
-	}
-#if PHP_VERSION_ID >= 50600
-	PTR_FREE(json_str);
-#endif
-}
-
-static void php_http_env_register_json_handler(TSRMLS_D)
-{
-	sapi_post_entry entry = {NULL, 0, NULL, NULL};
-
-	entry.post_reader = sapi_read_standard_form_data;
-	entry.post_handler = php_http_json_post_handler;
-
-	entry.content_type = "text/json";
-	entry.content_type_len = lenof("text/json");
-	sapi_register_post_entry(&entry TSRMLS_CC);
-
-	entry.content_type = "application/json";
-	entry.content_type_len = lenof("application/json");
-	sapi_register_post_entry(&entry TSRMLS_CC);
-}
-#endif
-
 zend_class_entry *php_http_env_class_entry;
 
 PHP_MINIT_FUNCTION(http_env)
@@ -918,10 +804,6 @@ PHP_MINIT_FUNCTION(http_env)
 
 	INIT_NS_CLASS_ENTRY(ce, "http", "Env", php_http_env_methods);
 	php_http_env_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
-
-#ifdef PHP_HTTP_HAVE_JSON
-	php_http_env_register_json_handler(TSRMLS_C);
-#endif
 
 	return SUCCESS;
 }

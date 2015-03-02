@@ -23,12 +23,10 @@ It provides powerful request functionality with support for
 parallel requests.
 
 Documentation:
-v1: http://php.net/http
-v2: http://devel-m6w6.rhcloud.com/mdref/http
+http://devel-m6w6.rhcloud.com/mdref/http
 
 Code Coverage:
-v1: http://dev.iworks.at/ext-http/lcov_html/ext/http/
-v2: http://dev.iworks.at/ext-http/lcov/ext/http/
+http://dev.iworks.at/ext-http/lcov/ext/http/
 
 ]]></description>
  <lead>
@@ -349,7 +347,6 @@ v2: http://dev.iworks.at/ext-http/lcov/ext/http/
   <optional>
    <extension><name>hash</name></extension>
    <extension><name>iconv</name></extension>
-   <extension><name>json</name></extension>
   </optional>
  </dependencies>
  <providesextension>http</providesextension>

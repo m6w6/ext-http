@@ -511,12 +511,6 @@ dnl ----
 	])
 
 dnl ----
-dnl JSON
-dnl ----
-	HTTP_HAVE_PHP_EXT([json])
-
-
-dnl ----
 dnl ICONV
 dnl ----
 	HTTP_HAVE_PHP_EXT([iconv])
@@ -560,7 +554,6 @@ dnl ----
 	dnl shared extension deps
 	HTTP_SHARED_DEP([hash])
 	HTTP_SHARED_DEP([iconv])
-	HTTP_SHARED_DEP([json])
 	
 	dnl extension deps
 	PHP_ADD_EXTENSION_DEP([http], [raphf], true)
