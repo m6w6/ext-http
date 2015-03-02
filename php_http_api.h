@@ -41,9 +41,6 @@
 # define PHP_HTTP_API extern
 #endif
 
-/* make functions that return SUCCESS|FAILURE more obvious */
-typedef int STATUS;
-
 #if (defined(HAVE_ICONV) || defined(PHP_HTTP_HAVE_EXT_ICONV)) && (PHP_HTTP_SHARED_DEPS || !defined(COMPILE_DL_ICONV))
 #	define PHP_HTTP_HAVE_ICONV
 #endif

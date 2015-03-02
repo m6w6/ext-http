@@ -125,10 +125,10 @@ typedef struct php_http_encoding_stream php_http_encoding_stream_t;
 
 typedef php_http_encoding_stream_t *(*php_http_encoding_stream_init_func_t)(php_http_encoding_stream_t *s);
 typedef php_http_encoding_stream_t *(*php_http_encoding_stream_copy_func_t)(php_http_encoding_stream_t *from, php_http_encoding_stream_t *to);
-typedef STATUS (*php_http_encoding_stream_update_func_t)(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len);
-typedef STATUS (*php_http_encoding_stream_flush_func_t)(php_http_encoding_stream_t *s, char **out_str, size_t *out_len);
+typedef ZEND_RESULT_CODE (*php_http_encoding_stream_update_func_t)(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len);
+typedef ZEND_RESULT_CODE (*php_http_encoding_stream_flush_func_t)(php_http_encoding_stream_t *s, char **out_str, size_t *out_len);
 typedef zend_bool (*php_http_encoding_stream_done_func_t)(php_http_encoding_stream_t *s);
-typedef STATUS (*php_http_encoding_stream_finish_func_t)(php_http_encoding_stream_t *s, char **out_str, size_t *out_len);
+typedef ZEND_RESULT_CODE (*php_http_encoding_stream_finish_func_t)(php_http_encoding_stream_t *s, char **out_str, size_t *out_len);
 typedef void (*php_http_encoding_stream_dtor_func_t)(php_http_encoding_stream_t *s);
 
 typedef struct php_http_encoding_stream_ops {
@@ -156,17 +156,17 @@ PHP_HTTP_API php_http_encoding_stream_ops_t *php_http_encoding_stream_get_dechun
 
 PHP_HTTP_API php_http_encoding_stream_t *php_http_encoding_stream_init(php_http_encoding_stream_t *s, php_http_encoding_stream_ops_t *ops, unsigned flags TSRMLS_DC);
 PHP_HTTP_API php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_encoding_stream_t *from, php_http_encoding_stream_t *to);
-PHP_HTTP_API STATUS php_http_encoding_stream_reset(php_http_encoding_stream_t **s);
-PHP_HTTP_API STATUS php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len);
-PHP_HTTP_API STATUS php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *len);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_stream_reset(php_http_encoding_stream_t **s);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *len);
 PHP_HTTP_API zend_bool php_http_encoding_stream_done(php_http_encoding_stream_t *s);
-PHP_HTTP_API STATUS php_http_encoding_stream_finish(php_http_encoding_stream_t *s, char **out_str, size_t *len);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_stream_finish(php_http_encoding_stream_t *s, char **out_str, size_t *len);
 PHP_HTTP_API void php_http_encoding_stream_dtor(php_http_encoding_stream_t *s);
 PHP_HTTP_API void php_http_encoding_stream_free(php_http_encoding_stream_t **s);
 
 PHP_HTTP_API const char *php_http_encoding_dechunk(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC);
 
 typedef struct php_http_encoding_stream_object {
 	zend_object zo;

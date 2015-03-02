@@ -68,8 +68,8 @@ PHP_HTTP_API char *php_http_url_to_string(const php_http_url_t *url, char **url_
 PHP_HTTP_API char *php_http_url_authority_to_string(const php_http_url_t *url, char **url_str, size_t *url_len);
 PHP_HTTP_API void php_http_url_free(php_http_url_t **url);
 
-PHP_HTTP_API STATUS php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC);
-PHP_HTTP_API STATUS php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *pre_encoded_str, size_t pre_encoded_len TSRMLS_DC);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC);
+PHP_HTTP_API ZEND_RESULT_CODE php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *pre_encoded_str, size_t pre_encoded_len TSRMLS_DC);
 
 static inline void php_http_url_argsep(const char **str, size_t *len TSRMLS_DC)
 {

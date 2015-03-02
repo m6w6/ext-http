@@ -543,11 +543,11 @@ typedef struct php_http_message_object_prophandler {
 	php_http_message_object_prophandler_func_t write;
 } php_http_message_object_prophandler_t;
 
-static STATUS php_http_message_object_add_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_func_t read, php_http_message_object_prophandler_func_t write) {
+static ZEND_RESULT_CODE php_http_message_object_add_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_func_t read, php_http_message_object_prophandler_func_t write) {
 	php_http_message_object_prophandler_t h = { read, write };
 	return zend_hash_add(&php_http_message_object_prophandlers, prop_str, prop_len + 1, (void *) &h, sizeof(h), NULL);
 }
-static STATUS php_http_message_object_get_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_t **handler) {
+static ZEND_RESULT_CODE php_http_message_object_get_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_t **handler) {
 	return zend_hash_find(&php_http_message_object_prophandlers, prop_str, prop_len + 1, (void *) handler);
 }
 static void php_http_message_object_prophandler_get_type(php_http_message_object_t *obj, zval *return_value TSRMLS_DC) {
@@ -753,7 +753,7 @@ void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool to
 	}
 }
 
-STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval *zbody TSRMLS_DC)
+ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval *zbody TSRMLS_DC)
 {
 	zval *tmp = NULL;
 	php_stream *s;
@@ -819,7 +819,7 @@ STATUS php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval
 	return SUCCESS;
 }
 
-STATUS php_http_message_object_init_body_object(php_http_message_object_t *obj)
+ZEND_RESULT_CODE php_http_message_object_init_body_object(php_http_message_object_t *obj)
 {
 	TSRMLS_FETCH_FROM_CTX(obj->message->ts);
 

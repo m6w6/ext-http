@@ -148,7 +148,7 @@ static inline int php_http_inflate_rounds(z_stream *Z, int flush, char **buf, si
 	return status;
 }
 
-STATUS php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
+ZEND_RESULT_CODE php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len TSRMLS_DC)
 {
 	int status, level, wbits, strategy;
 	z_stream Z;
@@ -189,7 +189,7 @@ STATUS php_http_encoding_deflate(int flags, const char *data, size_t data_len, c
 	return FAILURE;
 }
 
-STATUS php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
+ZEND_RESULT_CODE php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len TSRMLS_DC)
 {
 	z_stream Z;
 	int status, wbits = PHP_HTTP_WINDOW_BITS_ANY;
@@ -290,7 +290,7 @@ php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_encoding_stre
 	return NULL;
 }
 
-STATUS php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
+ZEND_RESULT_CODE php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
 {
 	php_http_encoding_stream_t *ss;
 	if ((*s)->ops->dtor) {
@@ -303,7 +303,7 @@ STATUS php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
 	return FAILURE;
 }
 
-STATUS php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len)
+ZEND_RESULT_CODE php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len)
 {
 	if (!s->ops->update) {
 		return FAILURE;
@@ -311,7 +311,7 @@ STATUS php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char
 	return s->ops->update(s, in_str, in_len, out_str, out_len);
 }
 
-STATUS php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
+ZEND_RESULT_CODE php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
 {
 	if (!s->ops->flush) {
 		*out_str = NULL;
@@ -329,7 +329,7 @@ zend_bool php_http_encoding_stream_done(php_http_encoding_stream_t *s)
 	return s->ops->done(s);
 }
 
-STATUS php_http_encoding_stream_finish(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
+ZEND_RESULT_CODE php_http_encoding_stream_finish(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
 {
 	if (!s->ops->finish) {
 		*out_str = NULL;
@@ -478,7 +478,7 @@ static php_http_encoding_stream_t *dechunk_copy(php_http_encoding_stream_t *from
 	return NULL;
 }
 
-static STATUS deflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
+static ZEND_RESULT_CODE deflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
@@ -519,7 +519,7 @@ static STATUS deflate_update(php_http_encoding_stream_t *s, const char *data, si
 	return FAILURE;
 }
 
-static STATUS inflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
+static ZEND_RESULT_CODE inflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
@@ -558,7 +558,7 @@ retry_raw_inflate:
 	return FAILURE;
 }
 
-static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
+static ZEND_RESULT_CODE dechunk_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
 {
 	php_http_buffer_t tmp;
 	struct dechunk_ctx *ctx = s->ctx;
@@ -686,7 +686,7 @@ static STATUS dechunk_update(php_http_encoding_stream_t *s, const char *data, si
 	return SUCCESS;
 }
 
-static STATUS deflate_flush(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
+static ZEND_RESULT_CODE deflate_flush(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
@@ -715,7 +715,7 @@ static STATUS deflate_flush(php_http_encoding_stream_t *s, char **encoded, size_
 	return FAILURE;
 }
 
-static STATUS dechunk_flush(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
+static ZEND_RESULT_CODE dechunk_flush(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
 {
 	struct dechunk_ctx *ctx = s->ctx;
 
@@ -735,7 +735,7 @@ static STATUS dechunk_flush(php_http_encoding_stream_t *s, char **decoded, size_
 	return SUCCESS;
 }
 
-static STATUS deflate_finish(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
+static ZEND_RESULT_CODE deflate_finish(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
@@ -772,7 +772,7 @@ static STATUS deflate_finish(php_http_encoding_stream_t *s, char **encoded, size
 	return FAILURE;
 }
 
-static STATUS inflate_finish(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
+static ZEND_RESULT_CODE inflate_finish(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;

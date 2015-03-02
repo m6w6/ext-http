@@ -35,7 +35,7 @@ zend_object_value php_http_object_new_ex(zend_class_entry *ce, void *nothing, ph
 	return o->zv;
 }
 
-STATUS php_http_new(zend_object_value *ovp, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC)
+ZEND_RESULT_CODE php_http_new(zend_object_value *ovp, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr, void **obj_ptr TSRMLS_DC)
 {
 	zend_object_value ov;
 
@@ -101,9 +101,9 @@ void php_http_object_method_free(php_http_object_method_t **cb)
 	}
 }
 
-STATUS php_http_object_method_call(php_http_object_method_t *cb, zval *zobject, zval **retval_ptr, int argc, zval ***args TSRMLS_DC)
+ZEND_RESULT_CODE php_http_object_method_call(php_http_object_method_t *cb, zval *zobject, zval **retval_ptr, int argc, zval ***args TSRMLS_DC)
 {
-	STATUS rv;
+	ZEND_RESULT_CODE rv;
 	zval *retval = NULL;
 
 	Z_ADDREF_P(zobject);

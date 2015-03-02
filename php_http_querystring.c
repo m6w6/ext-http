@@ -76,7 +76,7 @@ static inline void php_http_querystring_get(zval *this_ptr, int type, char *name
 }
 
 #ifdef PHP_HTTP_HAVE_ICONV
-STATUS php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe TSRMLS_DC)
+ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe TSRMLS_DC)
 {
 	HashPosition pos;
 	zval **entry = NULL;
@@ -131,7 +131,7 @@ STATUS php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const ch
 }
 #endif /* HAVE_ICONV */
 
-STATUS php_http_querystring_ctor(zval *instance, zval *params TSRMLS_DC)
+ZEND_RESULT_CODE php_http_querystring_ctor(zval *instance, zval *params TSRMLS_DC)
 {
 	php_http_querystring_set(instance, params, 0 TSRMLS_CC);
 	return SUCCESS;
@@ -158,9 +158,9 @@ static int apply_querystring(void *pData TSRMLS_DC)
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-STATUS php_http_querystring_parse(HashTable *ht, const char *str, size_t len TSRMLS_DC)
+ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size_t len TSRMLS_DC)
 {
-	STATUS rv = FAILURE;
+	ZEND_RESULT_CODE rv = FAILURE;
 	php_http_params_opts_t opts;
 	php_http_params_token_t psep = { ZEND_STRL("&") }, *psepp[] = { &psep, NULL };
 	php_http_params_token_t vsep = { ZEND_STRL("=") }, *vsepp[] = { &vsep, NULL };
@@ -206,7 +206,7 @@ STATUS php_http_querystring_parse(HashTable *ht, const char *str, size_t len TSR
 	return rv;
 }
 
-STATUS php_http_querystring_update(zval *qarray, zval *params, zval *outstring TSRMLS_DC)
+ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *outstring TSRMLS_DC)
 {
 	/* enforce proper type */
 	if (Z_TYPE_P(qarray) != IS_ARRAY) {

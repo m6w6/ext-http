@@ -28,8 +28,8 @@
 #define BOUNDARY_CLOSE(body) \
 		php_http_message_body_appendf(body, PHP_HTTP_CRLF "--%s--" PHP_HTTP_CRLF, php_http_message_body_boundary(body))
 
-static STATUS add_recursive_fields(php_http_message_body_t *body, const char *name, zval *value);
-static STATUS add_recursive_files(php_http_message_body_t *body, const char *name, zval *value);
+static ZEND_RESULT_CODE add_recursive_fields(php_http_message_body_t *body, const char *name, zval *value);
+static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const char *name, zval *value);
 
 php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **body_ptr, php_stream *stream TSRMLS_DC)
 {
@@ -165,7 +165,7 @@ void php_http_message_body_to_string(php_http_message_body_t *body, char **buf, 
 	*len = php_stream_copy_to_mem(s, buf, forlen, 0);
 }
 
-STATUS php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *dst, off_t offset, size_t forlen)
+ZEND_RESULT_CODE php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *dst, off_t offset, size_t forlen)
 {
 	php_stream *s = php_http_message_body_stream(body);
 	TSRMLS_FETCH_FROM_CTX(body->ts);
@@ -178,7 +178,7 @@ STATUS php_http_message_body_to_stream(php_http_message_body_t *body, php_stream
 	return php_stream_copy_to_stream_ex(s, dst, forlen, NULL);
 }
 
-STATUS php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen)
+ZEND_RESULT_CODE php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen)
 {
 	php_stream *s = php_http_message_body_stream(body);
 	char *buf = emalloc(0x1000);
@@ -250,7 +250,7 @@ size_t php_http_message_body_appendf(php_http_message_body_t *body, const char *
 	return print_len;
 }
 
-STATUS php_http_message_body_add_form(php_http_message_body_t *body, HashTable *fields, HashTable *files)
+ZEND_RESULT_CODE php_http_message_body_add_form(php_http_message_body_t *body, HashTable *fields, HashTable *files)
 {
 	zval tmp;
 
@@ -280,7 +280,7 @@ void php_http_message_body_add_part(php_http_message_body_t *body, php_http_mess
 }
 
 
-STATUS php_http_message_body_add_form_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
+ZEND_RESULT_CODE php_http_message_body_add_form_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
 {
 	char *safe_name;
 	TSRMLS_FETCH_FROM_CTX(body->ts);
@@ -301,7 +301,7 @@ STATUS php_http_message_body_add_form_field(php_http_message_body_t *body, const
 	return SUCCESS;
 }
 
-STATUS php_http_message_body_add_form_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
+ZEND_RESULT_CODE php_http_message_body_add_form_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
 {
 	char *safe_name, *path_dup = estrdup(path), *bname;
 	size_t bname_len;
@@ -348,7 +348,7 @@ static inline char *format_key(uint type, char *str, ulong num, const char *pref
 	return new_key;
 }
 
-static STATUS add_recursive_fields(php_http_message_body_t *body, const char *name, zval *value)
+static ZEND_RESULT_CODE add_recursive_fields(php_http_message_body_t *body, const char *name, zval *value)
 {
 	if (Z_TYPE_P(value) == IS_ARRAY || Z_TYPE_P(value) == IS_OBJECT) {
 		zval **val;
@@ -380,7 +380,7 @@ static STATUS add_recursive_fields(php_http_message_body_t *body, const char *na
 	return SUCCESS;
 }
 
-static STATUS add_recursive_files(php_http_message_body_t *body, const char *name, zval *value)
+static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const char *name, zval *value)
 {
 	zval **zdata = NULL, **zfile, **zname, **ztype;
 	HashTable *ht;
@@ -441,7 +441,7 @@ static STATUS add_recursive_files(php_http_message_body_t *body, const char *nam
 		} else {
 			zval *znc = php_http_ztyp(IS_STRING, *zname), *ztc = php_http_ztyp(IS_STRING, *ztype);
 			char *key = format_key(HASH_KEY_IS_STRING, Z_STRVAL_P(znc), 0, name);
-			STATUS ret =  php_http_message_body_add_form_file(body, key, Z_STRVAL_P(ztc), Z_STRVAL_P(zfc), stream);
+			ZEND_RESULT_CODE ret =  php_http_message_body_add_form_file(body, key, Z_STRVAL_P(ztc), Z_STRVAL_P(zfc), stream);
 
 			efree(key);
 			zval_ptr_dtor(&znc);

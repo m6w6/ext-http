@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-STATUS php_http_header_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data TSRMLS_DC)
+ZEND_RESULT_CODE php_http_header_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data TSRMLS_DC)
 {
 	php_http_header_parser_t ctx;
 	php_http_buffer_t buf;

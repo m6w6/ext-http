@@ -115,7 +115,7 @@ static void php_http_header_parser_error(size_t valid_len, char *str, size_t len
 	efree(escaped_str);
 }
 
-STATUS php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
+php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
 {
 	TSRMLS_FETCH_FROM_CTX(parser->ts);
 

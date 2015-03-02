@@ -154,6 +154,13 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 #	define PHP_HTTP_ZEND_LITERAL_CCN , NULL
 #endif
 
+#if PHP_VERSION_ID < 50500
+typedef enum {
+	SUCCESS = 0,
+	FAILURE = -1
+} ZEND_RESULT_CODE;
+#endif
+
 #if PHP_VERSION_ID < 50700
 #	define z_is_true zend_is_true
 #else
@@ -200,7 +207,7 @@ static inline zval *php_http_zsep(zend_bool add_ref, int type, zval *z)
 	}
 }
 
-static inline STATUS php_http_ini_entry(const char *name_str, size_t name_len, const char **value_str, size_t *value_len, zend_bool orig TSRMLS_DC)
+static inline ZEND_RESULT_CODE php_http_ini_entry(const char *name_str, size_t name_len, const char **value_str, size_t *value_len, zend_bool orig TSRMLS_DC)
 {
 	zend_ini_entry *ini_entry;
 
