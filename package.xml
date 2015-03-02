@@ -37,7 +37,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-03-02</date>
  <version>
-  <release>2.3.1</release>
+  <release>2.3.2dev</release>
   <api>2.3.0</api>
  </version>
  <stability>
@@ -46,7 +46,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed build on platforms that need stddef.h to define ptrdiff_t (e.g. CentOS 7.5)
+*
 ]]></notes>
  <contents>
   <dir name="/">
