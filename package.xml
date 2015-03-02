@@ -35,9 +35,9 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-03-02</date>
+ <date>2015-03-12</date>
  <version>
-  <release>2.3.1</release>
+  <release>2.3.2</release>
   <api>2.3.0</api>
  </version>
  <stability>
@@ -46,7 +46,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed build on platforms that need stddef.h to define ptrdiff_t (e.g. CentOS 7.5)
+* Fixed bug with http\QueryString::offsetSet() resetting the complete query string
 ]]></notes>
  <contents>
   <dir name="/">
@@ -302,6 +302,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="querystring001.phpt"/>
      <file role="test" name="querystring002.phpt"/>
+     <file role="test" name="querystring003.phpt"/>
      <file role="test" name="serialize001.phpt"/>
      <file role="test" name="url001.phpt"/>
      <file role="test" name="url002.phpt"/>
