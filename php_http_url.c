@@ -746,9 +746,15 @@ static size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const ch
 
 	if (!silent) {
 		TSRMLS_FETCH_FROM_CTX(state->ts);
-		php_error_docref(NULL TSRMLS_CC, E_WARNING,
-				"Failed to parse %s; unexpected byte 0x%02x at pos %u in '%s'",
-				parse_what[what], (unsigned char) *ptr, (unsigned) (ptr - begin), begin);
+		if (consumed) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Failed to parse %s; unexpected multibyte sequence 0x%x at pos %u in '%s'",
+					parse_what[what], wchar, (unsigned) (ptr - begin), begin);
+		} else {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Failed to parse %s; unexpected byte 0x%02x at pos %u in '%s'",
+					parse_what[what], (unsigned char) *ptr, (unsigned) (ptr - begin), begin);
+		}
 	}
 
 	return 0;
@@ -819,6 +825,51 @@ static STATUS parse_userinfo(struct parse_state *state, const char *ptr)
 	return SUCCESS;
 }
 
+#if defined(PHP_WIN32) || defined(HAVE_UIDNA_IDNTOASCII)
+typedef size_t (*parse_mb_func)(unsigned *wc, const char *ptr, const char *end);
+static STATUS to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len)
+{
+	size_t offset = 0, u8_len = strlen(u8);
+
+	*u16 = ecalloc(4 * sizeof(uint16_t), u8_len + 1);
+	*len = 0;
+
+	while (offset < u8_len) {
+		unsigned wc;
+		uint16_t buf[2], *ptr = buf;
+		size_t consumed = fn(&wc, &u8[offset], &u8[u8_len]);
+
+		if (!consumed) {
+			efree(*u16);
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse UTF-8 at pos %zu of '%s'", offset, u8);
+			return FAILURE;
+		} else {
+			offset += consumed;
+		}
+
+		switch (wctoutf16(buf, wc)) {
+		case 2:
+			(*u16)[(*len)++] = *ptr++;
+			/* no break */
+		case 1:
+			(*u16)[(*len)++] = *ptr++;
+			break;
+		case 0:
+		default:
+			efree(*u16);
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to convert UTF-32 'U+%X' to UTF-16", wc);
+			return FAILURE;
+		}
+	}
+
+	return SUCCESS;
+}
+#endif
+
+#ifndef MAXHOSTNAMELEN
+#	define MAXHOSTNAMELEN 256
+#endif
+
 #ifdef PHP_HTTP_HAVE_IDN
 static STATUS parse_idn(struct parse_state *state)
 {
@@ -854,57 +905,62 @@ typedef uint16_t UChar;
 typedef enum { U_ZERO_ERROR = 0 } UErrorCode;
 int32_t uidna_IDNToASCII(const UChar *src, int32_t srcLength, UChar *dest, int32_t destCapacity, int32_t options, void *parseError, UErrorCode *status);
 #	endif
-typedef size_t (*parse_mb_func)(unsigned *wc, const char *ptr, const char *end);
-static STATUS toutf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len)
-{
-	size_t offset = 0, u8_len = strlen(u8);
-
-	*u16 = ecalloc(4 * sizeof(uint16_t), u8_len + 1);
-	*len = 0;
-
-	while (offset < u8_len) {
-		unsigned wc;
-		uint16_t buf[2], *ptr = buf;
-		size_t consumed = fn(&wc, &u8[offset], &u8[u8_len]);
-
-		if (!consumed) {
-			efree(*u16);
-			return FAILURE;
-		} else {
-			offset += consumed;
-		}
-
-		switch (wctoutf16(buf, wc)) {
-		case 2:
-			(*u16)[(*len)++] = *ptr++;
-			/* no break */
-		case 1:
-			(*u16)[(*len)++] = *ptr++;
-			break;
-		case 0:
-		default:
-			efree(*u16);
-			return FAILURE;
-		}
-	}
-
-	return SUCCESS;
-}
 static STATUS parse_uidn(struct parse_state *state)
 {
 	char *host_ptr;
-	uint16_t *uhost_str = NULL, *ahost_str, *ahost_ptr;
+	uint16_t *uhost_str, ahost_str[MAXHOSTNAMELEN], *ahost_ptr;
 	size_t uhost_len, ahost_len;
 	UErrorCode error = U_ZERO_ERROR;
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-		if (SUCCESS != toutf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
+		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
+			return FAILURE;
+		}
+#ifdef PHP_HTTP_HAVE_WCHAR
+	} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
+		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len)) {
+			return FAILURE;
+		}
+#endif
+	} else {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; codepage not specified");
+		return FAILURE;
+	}
+
+	ahost_len = uidna_IDNToASCII(uhost_str, uhost_len, ahost_str, MAXHOSTNAMELEN, 3, NULL, &error);
+	efree(uhost_str);
+
+	if (error != U_ZERO_ERROR) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; ICU error %d", error);
+		return FAILURE;
+	}
+
+	host_ptr = state->url.host;
+	ahost_ptr = ahost_str;
+	PHP_HTTP_DUFF(ahost_len, *host_ptr++ = *ahost_ptr++);
+
+	*host_ptr = '\0';
+	state->offset += host_ptr - state->url.host;
+
+	return SUCCESS;
+}
+#endif
+
+#if 0 && defined(PHP_WIN32)
+static STATUS parse_widn(struct parse_state *state)
+{
+	char *host_ptr;
+	uint16_t *uhost_str, ahost_str[MAXHOSTNAMELEN], *ahost_ptr;
+	size_t uhost_len;
+
+	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN");
 			return FAILURE;
 		}
 #ifdef PHP_HTTP_HAVE_WCHAR
 	} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-		if (SUCCESS != toutf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len)) {
+		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len)) {
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN");
 			return FAILURE;
 		}
@@ -914,20 +970,16 @@ static STATUS parse_uidn(struct parse_state *state)
 		return FAILURE;
 	}
 
-	ahost_len = uhost_len * 3;
-	ahost_str = ecalloc(sizeof(uint16_t), ahost_len);
-
-	ahost_len = uidna_IDNToASCII(uhost_str, uhost_len, ahost_str, ahost_len, 3, NULL, &error);
-	efree(uhost_str);
-
-	if (error != U_ZERO_ERROR) {
+	if (!IdnToAscii(IDN_ALLOW_UNASSIGNED|IDN_USE_STD3_ASCII_RULES, uhost_str, uhost_len, ahost_str, MAXHOSTNAMELEN)) {
+		efree(uhost_str);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN");
 		return FAILURE;
 	}
 
+	efree(uhost_str);
 	host_ptr = state->url.host;
 	ahost_ptr = ahost_str;
-	PHP_HTTP_DUFF(ahost_len, *host_ptr++ = *ahost_ptr++);
+	PHP_HTTP_DUFF(wcslen(ahost_str), *host_ptr++ = *ahost_ptr++);
 	efree(ahost_str);
 
 	*host_ptr = '\0';
@@ -942,7 +994,6 @@ static STATUS parse_hostinfo(struct parse_state *state, const char *ptr)
 	size_t mb, len;
 	const char *end = state->ptr, *tmp = ptr, *port = NULL;
 	TSRMLS_FETCH_FROM_CTX(state->ts);
-
 
 #ifdef HAVE_INET_PTON
 	if (*ptr == '[') {
