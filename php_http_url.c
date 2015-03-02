@@ -871,10 +871,11 @@ static STATUS to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t 
 #endif
 
 #ifdef PHP_HTTP_HAVE_IDN
-static STATUS parse_idn(struct parse_state *state)
+static STATUS parse_idn(struct parse_state *state, size_t prev_len)
 {
 	char *idn = NULL;
 	int rv = -1;
+	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
 		rv = idna_to_ascii_8z(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
@@ -891,7 +892,7 @@ static STATUS parse_idn(struct parse_state *state)
 		size_t idnlen = strlen(idn);
 		memcpy(state->url.host, idn, idnlen + 1);
 		free(idn);
-		state->offset += idnlen - len;
+		state->offset += idnlen - prev_len;
 		return SUCCESS;
 	}
 }
@@ -911,6 +912,7 @@ static STATUS parse_uidn(struct parse_state *state)
 	uint16_t *uhost_str, ahost_str[MAXHOSTNAMELEN], *ahost_ptr;
 	size_t uhost_len, ahost_len;
 	UErrorCode error = U_ZERO_ERROR;
+	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
 		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
@@ -952,6 +954,7 @@ static STATUS parse_widn(struct parse_state *state)
 	char *host_ptr;
 	uint16_t *uhost_str, ahost_str[MAXHOSTNAMELEN], *ahost_ptr;
 	size_t uhost_len;
+	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
 		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
@@ -1104,10 +1107,13 @@ static STATUS parse_hostinfo(struct parse_state *state, const char *ptr)
 
 	if (state->flags & PHP_HTTP_URL_PARSE_TOIDN) {
 #ifdef PHP_HTTP_HAVE_IDN
-		return parse_idn(state);
+		return parse_idn(state, len);
 #endif
 #ifdef HAVE_UIDNA_IDNTOASCII
 		return parse_uidn(state);
+#endif
+#if 0 && defined(PHP_WIN32)
+		return parse_widn(state);
 #endif
 	}
 
