@@ -56,6 +56,8 @@ typedef int STATUS;
 #	define PHP_HTTP_HAVE_JSON
 #endif
 
+#include <stddef.h>
+
 #ifdef PHP_WIN32
 #	define CURL_STATICLIB
 #	include <winsock2.h>
