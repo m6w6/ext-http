@@ -606,11 +606,19 @@ PHP_METHOD(HttpQueryString, offsetSet)
 		return;
 	}
 
-	MAKE_STD_ZVAL(param);
-	array_init(param);
-	Z_ADDREF_P(value);
-	add_assoc_zval_ex(param, offset_str, offset_len + 1, value);
-	php_http_querystring_set(getThis(), param, 0 TSRMLS_CC);
+	param = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0 TSRMLS_CC);
+
+	if (Z_TYPE_P(param) == IS_ARRAY && zend_symtable_exists(Z_ARRVAL_P(param), offset_str, offset_len + 1)) {
+		Z_ADDREF_P(value);
+		zend_symtable_update(Z_ARRVAL_P(param), offset_str, offset_len + 1, (void *) &value, sizeof(zval *), NULL);
+		Z_ADDREF_P(param);
+	} else {
+		MAKE_STD_ZVAL(param);
+		array_init(param);
+		Z_ADDREF_P(value);
+		add_assoc_zval_ex(param, offset_str, offset_len + 1, value);
+	}
+	php_http_querystring_set(getThis(), param, QS_MERGE TSRMLS_CC);
 	zval_ptr_dtor(&param);
 }
 
