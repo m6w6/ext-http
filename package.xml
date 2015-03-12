@@ -37,7 +37,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-03-12</date>
  <version>
-  <release>2.3.2</release>
+  <release>2.3.3dev</release>
   <api>2.3.0</api>
  </version>
  <stability>
@@ -46,7 +46,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed bug with http\QueryString::offsetSet() resetting the complete query string
+*
 ]]></notes>
  <contents>
   <dir name="/">
