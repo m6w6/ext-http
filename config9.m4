@@ -122,6 +122,11 @@ dnl ----
 	done
 	if test "x$IDNA_DIR" = "x"; then
 		AC_MSG_RESULT([not found])
+		case $host_os in
+		darwin*)
+			AC_CHECK_HEADERS(unicode/uidna.h)
+			PHP_CHECK_FUNC(uidna_IDNToASCII, icucore);;
+		esac
 	else
 		AC_MSG_RESULT([found in $IDNA_DIR])
 		AC_DEFINE([PHP_HTTP_HAVE_IDN], [1], [Have libidn support])
@@ -506,12 +511,6 @@ dnl ----
 	])
 
 dnl ----
-dnl JSON
-dnl ----
-	HTTP_HAVE_PHP_EXT([json])
-
-
-dnl ----
 dnl ICONV
 dnl ----
 	HTTP_HAVE_PHP_EXT([iconv])
@@ -555,11 +554,10 @@ dnl ----
 	dnl shared extension deps
 	HTTP_SHARED_DEP([hash])
 	HTTP_SHARED_DEP([iconv])
-	HTTP_SHARED_DEP([json])
 	
 	dnl extension deps
 	PHP_ADD_EXTENSION_DEP([http], [raphf], true)
-	PHP_ADD_EXTENSION_DEP([http], [propo], true)
+	PHP_ADD_EXTENSION_DEP([http], [propro], true)
 	
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 

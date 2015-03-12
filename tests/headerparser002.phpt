@@ -8,14 +8,14 @@ include "skipif.inc";
 <?php 
 echo "Test\n";
 
-$headers = [
+$headers = array(
 	"Na\0me: value",
 	"Na\nme: value",
 	"Name:\0value",
 	"Name:\nvalue",
 	"Name: val\0ue",
 	"Name: value\0",
-];
+);
 
 foreach ($headers as $header) {
 	$parsed = null;

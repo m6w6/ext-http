@@ -75,9 +75,9 @@ static inline zend_bool php_http_env_got_server_var(const char *v)
 	return NULL != php_http_env_get_server_var(v, strlen(v), 1);
 }
 
+
 PHP_HTTP_API zend_class_entry *php_http_env_class_entry;
 PHP_MINIT_FUNCTION(http_env);
-PHP_RINIT_FUNCTION(http_env);
 PHP_RSHUTDOWN_FUNCTION(http_env);
 
 #endif

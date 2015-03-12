@@ -9,7 +9,7 @@ include "skipif.inc";
 
 echo "Test\n";
 
-function trap(callable $cb) {
+function trap($cb) {
 	try {
 		$cb();
 	} catch (Exception $e) { 

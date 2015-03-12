@@ -21,9 +21,11 @@ function skip_client_test($message = "skip need a client driver\n") {
 }
 
 function skip_http2_test($message = "skip need http2 support (nghttpd in PATH)\n") {
-	foreach (explode(":", $_ENV["PATH"]) as $path) {
-		if (is_executable($path . "/nghttpd")) {
-			return;
+	if (defined("http\\Client\\Curl\\HTTP_VERSION_2_0")) {
+		foreach (explode(":", $_ENV["PATH"]) as $path) {
+			if (is_executable($path . "/nghttpd")) {
+				return;
+			}
 		}
 	}
 	die($message);

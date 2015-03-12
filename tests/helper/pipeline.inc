@@ -3,7 +3,8 @@
 include "server.inc";
 
 function respond($client, $msg) {
-	(new http\Env\Response)->setEnvRequest($msg)
+	$r = new http\Env\Response;
+	$r->setEnvRequest($msg)
 		->setHeader("X-Req", $msg->getRequestUrl())
 		->send($client);
 }

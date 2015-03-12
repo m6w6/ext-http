@@ -1,11 +1,25 @@
-<?php 
+<?php
 
-function serve(callable $cb) {
-	foreach (range(8000, 9000) as $port) {
+$php = getenv('TEST_PHP_EXECUTABLE');
+if ($php) {
+	define('PHP_BIN', $php);
+} else if (defined('PHP_BINARY')) {
+	define('PHP_BIN', PHP_BINARY);
+} else {
+	// PHP-5.3
+	define("PHP_BIN", PHP_BINDIR.DIRECTORY_SEPARATOR."php");
+}
+
+function serve($cb) {
+	/* stream_socket_server() automatically sets SO_REUSEADDR, 
+	 * which is, well, bad if the tests are run in parallel
+	 */
+	$offset = rand(0,2000);
+	foreach (range(8000+$offset, 9000+$offset) as $port) {
 		if (($server = @stream_socket_server("tcp://localhost:$port"))) {
 			fprintf(STDERR, "%s\n", $port);
 			do {
-				$R = [$server]; $W = []; $E = [];
+				$R = array($server); $W = array(); $E = array();
 				$select = stream_select($R, $E, $E, 0, 10000);
 				if ($select && ($client = stream_socket_accept($server, 1))) {
 					if (getenv("PHP_HTTP_TEST_SSL")) {
@@ -29,13 +43,19 @@ function serve(callable $cb) {
 	}
 }
 
-function server($handler, callable $cb) {
-	proc(PHP_BINARY, [__DIR__."/$handler"], $cb);
+function server($handler, $cb) {
+	$args = explode(' ', getenv('TEST_PHP_ARGS'));
+	$args[] = __DIR__."/$handler";
+	foreach ($args as $k => $v) {
+		if (!$v) unset($args[$k]);
+	}
+	proc(PHP_BIN, $args, $cb);
 }
 
-function nghttpd(callable $cb) {
-	$spec = [["pipe","r"], ["pipe","w"], ["pipe","w"]];
-	foreach (range(8000, 9000) as $port) {
+function nghttpd($cb) {
+	$spec = array(array("pipe","r"), array("pipe","w"), array("pipe","w"));
+	$offset = rand(0,2000);
+	foreach (range(8000+$offset, 9000+$offset) as $port) {
 		$comm = "exec nghttpd -d html $port http2.key http2.crt";
 		if (($proc = proc_open($comm, $spec, $pipes, __DIR__))) {
 			$stdin = $pipes[0];
@@ -65,17 +85,17 @@ function nghttpd(callable $cb) {
 			
 }
 
-function proc($bin, $args, callable $cb) {
-	$spec = [["pipe","r"], ["pipe","w"], ["pipe","w"]];
+function proc($bin, $args, $cb) {
+	$spec = array(array("pipe","r"), array("pipe","w"), array("pipe","w"));
 	$comm = escapeshellcmd($bin) . " ". implode(" ", array_map("escapeshellarg", $args));
 	if (($proc = proc_open($comm, $spec, $pipes, __DIR__))) {
 		$stdin = $pipes[0];
 		$stdout = $pipes[1];
 		$stderr = $pipes[2];
-		
+
 		do {
 			$port = trim(fgets($stderr));
-			$R = [$stderr]; $W = []; $E = [];
+			$R = array($stderr); $W = array(); $E = array();
 		} while (is_numeric($port) && stream_select($R, $W, $E, 0, 10000));
 	
 		if (is_numeric($port)) {

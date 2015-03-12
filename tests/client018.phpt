@@ -17,7 +17,7 @@ server("pipeline.inc", function($port, $stdin, $stdout, $stderr) {
 	fputs($stdin, "3\n");
 	
 	$client = new http\Client(null);
-	$client->configure(["pipelining" => true, "max_host_connections" => 0]);
+	$client->configure(array("pipelining" => true, "max_host_connections" => 0));
 	
 	/* this is just to let curl know the server may be capable of pipelining */
 	$client->enqueue(new http\Client\Request("GET", "http://localhost:$port"));

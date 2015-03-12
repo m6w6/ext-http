@@ -592,16 +592,21 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, offsetSet)
 {
 	zend_string *offset;
-	zval *value, param;
+	zval *value, param, znull;
 	
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Sz", &offset, &value)) {
 		return;
 	}
 
-	array_init(&param);
+	array_init_size(&param, 1);
+	/* unset first */
+	ZVAL_NULL(&znull);
+	zend_symtable_update(Z_ARRVAL(param), offset, &znull);
+	php_http_querystring_set(getThis(), &param, QS_MERGE);
+	/* then update, else QS_MERGE would merge sub-arrrays */
 	Z_TRY_ADDREF_P(value);
 	zend_symtable_update(Z_ARRVAL(param), offset, value);
-	php_http_querystring_set(getThis(), &param, 0);
+	php_http_querystring_set(getThis(), &param, QS_MERGE);
 	zval_ptr_dtor(&param);
 }
 

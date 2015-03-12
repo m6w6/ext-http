@@ -13,60 +13,6 @@
 #include "php_http_api.h"
 #include "php_variables.h"
 
-PHP_RINIT_FUNCTION(http_env)
-{
-	/* populate form data on non-POST requests */
-	if (SG(request_info).request_method && strcasecmp(SG(request_info).request_method, "POST") && SG(request_info).content_type && *SG(request_info).content_type) {
-		uint ct_len = strlen(SG(request_info).content_type);
-		char *ct_str = estrndup(SG(request_info).content_type, ct_len);
-		php_http_params_opts_t opts;
-		HashTable params;
-
-		php_http_params_opts_default_get(&opts);
-		opts.input.str = ct_str;
-		opts.input.len = ct_len;
-
-		SG(request_info).content_type_dup = ct_str;
-
-		ZEND_INIT_SYMTABLE(&params);
-		if (php_http_params_parse(&params, &opts)) {
-			zend_string *key_str;
-			zend_ulong key_num;
-
-			if (HASH_KEY_IS_STRING == zend_hash_get_current_key(&params, &key_str, &key_num)) {
-				sapi_post_entry *post_entry = NULL;
-
-				if ((post_entry = zend_hash_find_ptr(&SG(known_post_content_types), key_str))) {
-					SG(request_info).post_entry = post_entry;
-
-					if (post_entry->post_reader) {
-						post_entry->post_reader();
-					}
-
-					if (sapi_module.default_post_reader) {
-						sapi_module.default_post_reader();
-					}
-
-					sapi_handle_post(&PG(http_globals)[TRACK_VARS_POST]);
-
-					/*
-					 * the rfc1867 handler is an awkward buddy
-					 * FIXME: this leaks because php_auto_globals_create_files()
-					 * as well as the rfc1867_handler call
-					 * array_init(&PG(http_globals)[TRACK_VARS_FILES])
-					 */
-					Z_TRY_ADDREF(PG(http_globals)[TRACK_VARS_FILES]);
-					zend_hash_str_update(&EG(symbol_table), "_FILES", lenof("_FILES"), &PG(http_globals)[TRACK_VARS_FILES]);
-				}
-			}
-			zend_hash_destroy(&params);
-		}
-	}
-
-	PTR_SET(SG(request_info).content_type_dup, NULL);
-
-	return SUCCESS;
-}
 
 PHP_RSHUTDOWN_FUNCTION(http_env)
 {
@@ -485,6 +431,7 @@ ZEND_RESULT_CODE php_http_env_set_response_header(long http_code, const char *he
 {
 	sapi_header_line h = {estrndup(header_str, header_len), header_len, http_code};
 	ZEND_RESULT_CODE ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h);
+
 	efree(h.line);
 	return ret;
 }
@@ -848,53 +795,6 @@ static zend_function_entry php_http_env_methods[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-#ifdef PHP_HTTP_HAVE_JSON
-#include "ext/json/php_json.h"
-
-static SAPI_POST_HANDLER_FUNC(php_http_json_post_handler)
-{
-	zval *zarg = arg;
-	zend_string *json = NULL;
-
-	if (SG(request_info).request_body) {
-		/* FG(stream_wrappers) not initialized yet, so we cannot use php://input */
-		php_stream_rewind(SG(request_info).request_body);
-		json = php_stream_copy_to_mem(SG(request_info).request_body, PHP_STREAM_COPY_ALL, 0);
-	}
-
-	if (json) {
-		if (json->len) {
-			zval tmp;
-
-			ZVAL_NULL(&tmp);
-			php_json_decode(&tmp, json->val, json->len, 1, PG(max_input_nesting_level));
-
-			if (Z_TYPE(tmp) == IS_ARRAY) {
-				array_copy(Z_ARRVAL(tmp), Z_ARRVAL_P(zarg));
-			}
-			zval_ptr_dtor(&tmp);
-		}
-		zend_string_release(json);
-	}
-}
-
-static void php_http_env_register_json_handler(void)
-{
-	sapi_post_entry entry = {NULL, 0, NULL, NULL};
-
-	entry.post_reader = sapi_read_standard_form_data;
-	entry.post_handler = php_http_json_post_handler;
-
-	entry.content_type = "text/json";
-	entry.content_type_len = lenof("text/json");
-	sapi_register_post_entry(&entry);
-
-	entry.content_type = "application/json";
-	entry.content_type_len = lenof("application/json");
-	sapi_register_post_entry(&entry);
-}
-#endif
-
 zend_class_entry *php_http_env_class_entry;
 
 PHP_MINIT_FUNCTION(http_env)
@@ -903,10 +803,6 @@ PHP_MINIT_FUNCTION(http_env)
 
 	INIT_NS_CLASS_ENTRY(ce, "http", "Env", php_http_env_methods);
 	php_http_env_class_entry = zend_register_internal_class(&ce);
-
-#ifdef PHP_HTTP_HAVE_JSON
-	php_http_env_register_json_handler();
-#endif
 
 	return SUCCESS;
 }

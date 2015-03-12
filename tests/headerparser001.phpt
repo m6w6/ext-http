@@ -8,16 +8,16 @@ include "skipif.inc";
 <?php
 echo "Test\n";
 
-$headers = [
+$headers = array(
 	"One: ","header\n",
 	"Two: header\n\tlines\n",
 	"Three",": header\n lines\n here\n",
 	"More: than one header\n",
 	"More: ", "than: ", "you: ", "expect\n",
 	"\n",
-];
+);
 
-$states = [-1=>"FAILURE",0=>"START","KEY","VALUE","VALUE_EX","HEADER_DONE","DONE"];
+$states = array(-1=>"FAILURE",0=>"START","KEY","VALUE","VALUE_EX","HEADER_DONE","DONE");
 $parser = new http\Header\Parser;
 do {
 	$state = $parser->parse($part = array_shift($headers), 
