@@ -27,7 +27,7 @@ echo $client->send()->getResponse()->getResponseCode();
 ?>
 
 ===DONE===
---EXPECT--
+--EXPECTF--
 Test
-401
+40%d
 ===DONE===
