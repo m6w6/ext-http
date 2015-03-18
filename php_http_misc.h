@@ -155,6 +155,8 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 #endif
 
 #if PHP_VERSION_ID < 50500
+#undef SUCCESS
+#undef FAILURE
 typedef enum {
 	SUCCESS = 0,
 	FAILURE = -1
