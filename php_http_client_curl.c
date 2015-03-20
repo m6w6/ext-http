@@ -622,7 +622,8 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 
 static void php_http_curlm_responsehandler(php_http_client_t *context)
 {
-	int remaining = 0;
+	int err_count = 0, remaining = 0;
+	php_http_curle_storage_t *st, *err = NULL;
 	php_http_client_enqueue_t *enqueue;
 	php_http_client_curl_t *curl = context->ctx;
 	TSRMLS_FETCH_FROM_CTX(context->ts);
@@ -632,8 +633,18 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 
 		if (msg && CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
-				php_http_curle_storage_t *st = php_http_curle_get_storage(msg->easy_handle);
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(st->errorcode = msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
+				st = php_http_curle_get_storage(msg->easy_handle);
+				st->errorcode = msg->data.result;
+
+				/* defer the warnings/exceptions, so the callback is still called for this request */
+				if (!err) {
+					err = ecalloc(remaining + 1, sizeof(*err));
+				}
+				memcpy(&err[err_count], st, sizeof(*st));
+				if (st->url) {
+					err[err_count].url = estrdup(st->url);
+				}
+				err_count++;
 			}
 
 			if ((enqueue = php_http_client_enqueued(context, msg->easy_handle, compare_queue))) {
@@ -647,6 +658,19 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 			}
 		}
 	} while (remaining);
+
+	if (err_count) {
+		int i = 0;
+
+		do {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(err[i].errorcode), err[i].errorbuffer, STR_PTR(err[i].url));
+			if (err[i].url) {
+				efree(err[i].url);
+			}
+		} while (++i < err_count);
+
+		efree(err);
+	}
 }
 
 #if PHP_HTTP_HAVE_EVENT
@@ -2278,11 +2302,11 @@ static ZEND_RESULT_CODE php_http_client_curl_exec(php_http_client_t *h)
 				php_error_docref(NULL TSRMLS_CC, E_ERROR, "Error in event_base_dispatch()");
 				return FAILURE;
 			}
-		} while (curl->unfinished);
+		} while (curl->unfinished && !EG(exception));
 	} else
 #endif
 	{
-		while (php_http_client_curl_once(h)) {
+		while (php_http_client_curl_once(h) && !EG(exception)) {
 			if (SUCCESS != php_http_client_curl_wait(h, NULL)) {
 #ifdef PHP_WIN32
 				/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
