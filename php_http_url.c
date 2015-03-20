@@ -12,7 +12,9 @@
 
 #include "php_http_api.h"
 
-#ifdef PHP_HTTP_HAVE_IDN
+#if PHP_HTTP_HAVE_IDN2
+#	include <idn2.h>
+#elif PHP_HTTP_HAVE_IDN
 #	include <idna.h>
 #endif
 
@@ -827,7 +829,7 @@ static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *pt
 
 #if defined(PHP_WIN32) || defined(HAVE_UIDNA_IDNTOASCII)
 typedef size_t (*parse_mb_func)(unsigned *wc, const char *ptr, const char *end);
-static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len)
+static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len TSRMLS_DC)
 {
 	size_t offset = 0, u8_len = strlen(u8);
 
@@ -870,7 +872,33 @@ static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u1
 #	define MAXHOSTNAMELEN 256
 #endif
 
-#ifdef PHP_HTTP_HAVE_IDN
+#if PHP_HTTP_HAVE_IDN2
+static ZEND_RESULT_CODE parse_idn2(struct parse_state *state, size_t prev_len)
+{
+	char *idn = NULL;
+	int rv = -1;
+	TSRMLS_FETCH_FROM_CTX(state->ts);
+
+	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+		rv = idn2_lookup_u8((const unsigned char *) state->url.host, (unsigned char **) &idn, IDN2_NFC_INPUT);
+	}
+#	ifdef PHP_HTTP_HAVE_WCHAR
+	else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
+		rv = idn2_lookup_ul(state->url.host, &idn, 0);
+	}
+#	endif
+	if (rv != IDN2_OK) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idn2_strerror(rv));
+		return FAILURE;
+	} else {
+		size_t idnlen = strlen(idn);
+		memcpy(state->url.host, idn, idnlen + 1);
+		free(idn);
+		state->offset += idnlen - prev_len;
+		return SUCCESS;
+	}
+}
+#elif PHP_HTTP_HAVE_IDN
 static ZEND_RESULT_CODE parse_idn(struct parse_state *state, size_t prev_len)
 {
 	char *idn = NULL;
@@ -915,12 +943,12 @@ static ZEND_RESULT_CODE parse_uidn(struct parse_state *state)
 	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
+		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len TSRMLS_CC)) {
 			return FAILURE;
 		}
 #ifdef PHP_HTTP_HAVE_WCHAR
 	} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len)) {
+		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len TSRMLS_CC)) {
 			return FAILURE;
 		}
 #endif
@@ -1106,7 +1134,9 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 	}
 
 	if (state->flags & PHP_HTTP_URL_PARSE_TOIDN) {
-#ifdef PHP_HTTP_HAVE_IDN
+#if PHP_HTTP_HAVE_IDN2
+		return parse_idn2(state, len);
+#elif PHP_HTTP_HAVE_IDN
 		return parse_idn(state, len);
 #endif
 #ifdef HAVE_UIDNA_IDNTOASCII
@@ -1654,7 +1684,7 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBLOC"), PHP_HTTP_URL_PARSE_MBLOC TSRMLS_CC);
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBUTF8"), PHP_HTTP_URL_PARSE_MBUTF8 TSRMLS_CC);
-#if defined(PHP_HTTP_HAVE_IDN) || defined(HAVE_UIDNA_IDNTOASCII)
+#if defined(PHP_HTTP_HAVE_IDN2) || defined(PHP_HTTP_HAVE_IDN) || defined(HAVE_UIDNA_IDNTOASCII)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN"), PHP_HTTP_URL_PARSE_TOIDN TSRMLS_CC);
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT TSRMLS_CC);
