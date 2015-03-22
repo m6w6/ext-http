@@ -1271,7 +1271,7 @@ static const char *parse_query(struct parse_state *state)
 	tmp = ++state->ptr;
 	state->url.query = &state->buffer[state->offset];
 
-	do {
+	while(state->ptr < state->end) {
 		switch (*state->ptr) {
 		case '#':
 			goto done;
@@ -1323,7 +1323,9 @@ static const char *parse_query(struct parse_state *state)
 			}
 			state->ptr += mb - 1;
 		}
-	} while (++state->ptr < state->end);
+
+		++state->ptr;
+	}
 
 	done:
 	state->buffer[state->offset++] = 0;
