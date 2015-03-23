@@ -35,9 +35,9 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-03-18</date>
+ <date>2015-03-23</date>
  <version>
-  <release>2.4.2dev</release>
+  <release>2.4.2</release>
   <api>2.4.0</api>
  </version>
  <stability>
@@ -46,7 +46,9 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-*
+* Fixed bug 69076 (http\Url throws Exception on empty querystring) (p at wspnr dot com)
++ Added libidn2 and UIDNA as fallbacks for IDN support
+- Deferred warnings/exceptions of the client, so callbacks for the currently failing requests will still be called
 ]]></notes>
  <contents>
   <dir name="/">
@@ -148,6 +150,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="bug66891.phpt"/>
      <file role="test" name="bug67932.phpt"/>
      <file role="test" name="bug69000.phpt"/>
+     <file role="test" name="bug69076.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>
