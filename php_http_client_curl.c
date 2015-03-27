@@ -1908,35 +1908,6 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 	php_http_url_to_string(PHP_HTTP_INFO(msg).request.url, &storage->url, NULL, 1);
 	curl_easy_setopt(curl->handle, CURLOPT_URL, storage->url);
 
-	/* request method */
-	switch (php_http_select_str(PHP_HTTP_INFO(msg).request.method, 4, "GET", "HEAD", "POST", "PUT")) {
-		case 0:
-			curl_easy_setopt(curl->handle, CURLOPT_HTTPGET, 1L);
-			break;
-
-		case 1:
-			curl_easy_setopt(curl->handle, CURLOPT_NOBODY, 1L);
-			break;
-
-		case 2:
-			curl_easy_setopt(curl->handle, CURLOPT_POST, 1L);
-			break;
-
-		case 3:
-			curl_easy_setopt(curl->handle, CURLOPT_UPLOAD, 1L);
-			break;
-
-		default: {
-			if (PHP_HTTP_INFO(msg).request.method) {
-				curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, PHP_HTTP_INFO(msg).request.method);
-			} else {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot use empty request method");
-				return FAILURE;
-			}
-			break;
-		}
-	}
-
 	/* apply options */
 	php_http_options_apply(&php_http_curle_options, enqueue->options, curl);
 
@@ -1988,11 +1959,35 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 		curl_easy_setopt(curl->handle, CURLOPT_READDATA, msg->body);
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, body_size);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, body_size);
+		curl_easy_setopt(curl->handle, CURLOPT_POST, 1L);
 	} else {
 		curl_easy_setopt(curl->handle, CURLOPT_SEEKDATA, NULL);
 		curl_easy_setopt(curl->handle, CURLOPT_READDATA, NULL);
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, 0L);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, 0L);
+	}
+
+	/*
+	 * Always use CUSTOMREQUEST, else curl won't send any request body for GET etc.
+	 * See e.g. bug #69313.
+	 *
+	 * Here's what curl does:
+	 * - CURLOPT_HTTPGET: ignore request body
+	 * - CURLOPT_UPLOAD: set "Expect: 100-continue" header
+	 * - CURLOPT_POST: set "Content-Type: application/x-www-form-urlencoded" header
+	 * Now select the least bad.
+	 *
+	 * See also https://tools.ietf.org/html/rfc7231#section-5.1.1
+	 */
+	if (PHP_HTTP_INFO(msg).request.method) {
+		if (!strcasecmp("PUT", PHP_HTTP_INFO(msg).request.method)) {
+			curl_easy_setopt(curl->handle, CURLOPT_UPLOAD, 1L);
+		} else {
+			curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, PHP_HTTP_INFO(msg).request.method);
+		}
+	} else {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot use empty request method");
+		return FAILURE;
 	}
 
 	return SUCCESS;
