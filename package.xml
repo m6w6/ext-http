@@ -37,7 +37,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-04-03</date>
  <version>
-  <release>2.4.2</release>
+  <release>2.4.3dev</release>
   <api>2.4.0</api>
  </version>
  <stability>
@@ -46,10 +46,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed bug 69076 (http\Url throws Exception on empty querystring) (p at wspnr dot com)
-* Fixed bug 69313 (http\Client doesn't send GET body)
-+ Added libidn2 and UIDNA as fallbacks for IDN support
-- Deferred warnings/exceptions of the client, so callbacks for the currently failing requests will still be called
+*
 ]]></notes>
  <contents>
   <dir name="/">
