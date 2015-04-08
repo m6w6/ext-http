@@ -584,7 +584,14 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 
 	response = php_http_message_init(NULL, 0, h->response.body TSRMLS_CC);
 	php_http_header_parser_init(&parser TSRMLS_CC);
-	php_http_header_parser_parse(&parser, &h->response.headers, PHP_HTTP_HEADER_PARSER_CLEANUP, &response->hdrs, (php_http_info_callback_t) php_http_message_info_callback, (void *) &response);
+	while (h->response.headers.used) {
+		php_http_header_parser_state_t st = php_http_header_parser_parse(&parser,
+				&h->response.headers, PHP_HTTP_HEADER_PARSER_CLEANUP, &response->hdrs,
+				(php_http_info_callback_t) php_http_message_info_callback, (void *) &response);
+		if (PHP_HTTP_HEADER_PARSER_STATE_FAILURE == st) {
+			break;
+		}
+	}
 	php_http_header_parser_dtor(&parser);
 
 	/* move body to right message */
@@ -594,6 +601,7 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 		while (ptr->parent) {
 			ptr = ptr->parent;
 		}
+		php_http_message_body_free(&response->body);
 		response->body = ptr->body;
 		ptr->body = NULL;
 	}
@@ -622,7 +630,8 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 
 static void php_http_curlm_responsehandler(php_http_client_t *context)
 {
-	int remaining = 0;
+	int err_count = 0, remaining = 0;
+	php_http_curle_storage_t *st, *err = NULL;
 	php_http_client_enqueue_t *enqueue;
 	php_http_client_curl_t *curl = context->ctx;
 	TSRMLS_FETCH_FROM_CTX(context->ts);
@@ -632,8 +641,18 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 
 		if (msg && CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
-				php_http_curle_storage_t *st = php_http_curle_get_storage(msg->easy_handle);
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(st->errorcode = msg->data.result), STR_PTR(st->errorbuffer), STR_PTR(st->url));
+				st = php_http_curle_get_storage(msg->easy_handle);
+				st->errorcode = msg->data.result;
+
+				/* defer the warnings/exceptions, so the callback is still called for this request */
+				if (!err) {
+					err = ecalloc(remaining + 1, sizeof(*err));
+				}
+				memcpy(&err[err_count], st, sizeof(*st));
+				if (st->url) {
+					err[err_count].url = estrdup(st->url);
+				}
+				err_count++;
 			}
 
 			if ((enqueue = php_http_client_enqueued(context, msg->easy_handle, compare_queue))) {
@@ -647,6 +666,19 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 			}
 		}
 	} while (remaining);
+
+	if (err_count) {
+		int i = 0;
+
+		do {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(err[i].errorcode), err[i].errorbuffer, STR_PTR(err[i].url));
+			if (err[i].url) {
+				efree(err[i].url);
+			}
+		} while (++i < err_count);
+
+		efree(err);
+	}
 }
 
 #if PHP_HTTP_HAVE_EVENT
@@ -1884,35 +1916,6 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 	php_http_url_to_string(PHP_HTTP_INFO(msg).request.url, &storage->url, NULL, 1);
 	curl_easy_setopt(curl->handle, CURLOPT_URL, storage->url);
 
-	/* request method */
-	switch (php_http_select_str(PHP_HTTP_INFO(msg).request.method, 4, "GET", "HEAD", "POST", "PUT")) {
-		case 0:
-			curl_easy_setopt(curl->handle, CURLOPT_HTTPGET, 1L);
-			break;
-
-		case 1:
-			curl_easy_setopt(curl->handle, CURLOPT_NOBODY, 1L);
-			break;
-
-		case 2:
-			curl_easy_setopt(curl->handle, CURLOPT_POST, 1L);
-			break;
-
-		case 3:
-			curl_easy_setopt(curl->handle, CURLOPT_UPLOAD, 1L);
-			break;
-
-		default: {
-			if (PHP_HTTP_INFO(msg).request.method) {
-				curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, PHP_HTTP_INFO(msg).request.method);
-			} else {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot use empty request method");
-				return FAILURE;
-			}
-			break;
-		}
-	}
-
 	/* apply options */
 	php_http_options_apply(&php_http_curle_options, enqueue->options, curl);
 
@@ -1964,11 +1967,35 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 		curl_easy_setopt(curl->handle, CURLOPT_READDATA, msg->body);
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, body_size);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, body_size);
+		curl_easy_setopt(curl->handle, CURLOPT_POST, 1L);
 	} else {
 		curl_easy_setopt(curl->handle, CURLOPT_SEEKDATA, NULL);
 		curl_easy_setopt(curl->handle, CURLOPT_READDATA, NULL);
 		curl_easy_setopt(curl->handle, CURLOPT_INFILESIZE, 0L);
 		curl_easy_setopt(curl->handle, CURLOPT_POSTFIELDSIZE, 0L);
+	}
+
+	/*
+	 * Always use CUSTOMREQUEST, else curl won't send any request body for GET etc.
+	 * See e.g. bug #69313.
+	 *
+	 * Here's what curl does:
+	 * - CURLOPT_HTTPGET: ignore request body
+	 * - CURLOPT_UPLOAD: set "Expect: 100-continue" header
+	 * - CURLOPT_POST: set "Content-Type: application/x-www-form-urlencoded" header
+	 * Now select the least bad.
+	 *
+	 * See also https://tools.ietf.org/html/rfc7231#section-5.1.1
+	 */
+	if (PHP_HTTP_INFO(msg).request.method) {
+		if (!strcasecmp("PUT", PHP_HTTP_INFO(msg).request.method)) {
+			curl_easy_setopt(curl->handle, CURLOPT_UPLOAD, 1L);
+		} else {
+			curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, PHP_HTTP_INFO(msg).request.method);
+		}
+	} else {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot use empty request method");
+		return FAILURE;
 	}
 
 	return SUCCESS;
@@ -2278,11 +2305,11 @@ static ZEND_RESULT_CODE php_http_client_curl_exec(php_http_client_t *h)
 				php_error_docref(NULL TSRMLS_CC, E_ERROR, "Error in event_base_dispatch()");
 				return FAILURE;
 			}
-		} while (curl->unfinished);
+		} while (curl->unfinished && !EG(exception));
 	} else
 #endif
 	{
-		while (php_http_client_curl_once(h)) {
+		while (php_http_client_curl_once(h) && !EG(exception)) {
 			if (SUCCESS != php_http_client_curl_wait(h, NULL)) {
 #ifdef PHP_WIN32
 				/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
