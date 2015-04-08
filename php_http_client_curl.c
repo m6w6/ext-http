@@ -584,7 +584,14 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 
 	response = php_http_message_init(NULL, 0, h->response.body TSRMLS_CC);
 	php_http_header_parser_init(&parser TSRMLS_CC);
-	php_http_header_parser_parse(&parser, &h->response.headers, PHP_HTTP_HEADER_PARSER_CLEANUP, &response->hdrs, (php_http_info_callback_t) php_http_message_info_callback, (void *) &response);
+	while (h->response.headers.used) {
+		php_http_header_parser_state_t st = php_http_header_parser_parse(&parser,
+				&h->response.headers, PHP_HTTP_HEADER_PARSER_CLEANUP, &response->hdrs,
+				(php_http_info_callback_t) php_http_message_info_callback, (void *) &response);
+		if (PHP_HTTP_HEADER_PARSER_STATE_FAILURE == st) {
+			break;
+		}
+	}
 	php_http_header_parser_dtor(&parser);
 
 	/* move body to right message */
@@ -594,6 +601,7 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 		while (ptr->parent) {
 			ptr = ptr->parent;
 		}
+		php_http_message_body_free(&response->body);
 		response->body = ptr->body;
 		ptr->body = NULL;
 	}
