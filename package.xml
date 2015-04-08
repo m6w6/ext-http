@@ -139,6 +139,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
       <file role="test" name="pipeline.inc"/>
       <file role="test" name="proxy.inc"/>
       <file role="test" name="server.inc"/>
+      <file role="test" name="upload.inc"/>
       <dir name="html">
        <file role="test" name="index.html"/>
       </dir>
