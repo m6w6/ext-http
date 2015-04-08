@@ -37,7 +37,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-04-08</date>
  <version>
-  <release>2.4.3</release>
+  <release>2.4.4dev</release>
   <api>2.4.0</api>
  </version>
  <stability>
@@ -46,7 +46,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed bug #69357 (HTTP/1.1 100 Continue overriding subsequent 200 response code with PUT request)
+*
 ]]></notes>
  <contents>
   <dir name="/">
