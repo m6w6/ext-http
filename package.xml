@@ -150,6 +150,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="bug67932.phpt"/>
      <file role="test" name="bug69000.phpt"/>
      <file role="test" name="bug69076.phpt"/>
+     <file role="test" name="bug69313.phpt"/>
      <file role="test" name="bug69357.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
@@ -301,6 +302,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="querystring001.phpt"/>
      <file role="test" name="querystring002.phpt"/>
+     <file role="test" name="querystring003.phpt"/>
      <file role="test" name="serialize001.phpt"/>
      <file role="test" name="url001.phpt"/>
      <file role="test" name="url002.phpt"/>
