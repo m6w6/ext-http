@@ -35,9 +35,9 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-04-03</date>
+ <date>2015-04-08</date>
  <version>
-  <release>2.4.3dev</release>
+  <release>2.4.3</release>
   <api>2.4.0</api>
  </version>
  <stability>
@@ -46,7 +46,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-*
+* Fixed bug #69357 (HTTP/1.1 100 Continue overriding subsequent 200 response code with PUT request)
 ]]></notes>
  <contents>
   <dir name="/">
@@ -149,6 +149,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="bug67932.phpt"/>
      <file role="test" name="bug69000.phpt"/>
      <file role="test" name="bug69076.phpt"/>
+     <file role="test" name="bug69357.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>
