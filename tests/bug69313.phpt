@@ -2,7 +2,7 @@
 Bug #69313 (http\Client doesn't send GET body)
 --SKIPIF--
 <?php
-include "./skipif.inc";
+include "skipif.inc";
 skip_client_test();
 ?>
 --FILE--
