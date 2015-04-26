@@ -1438,7 +1438,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 			opt->setter = php_http_curle_option_set_ssl_verifyhost;
 		}
 #if PHP_HTTP_CURL_VERSION(7,41,0)
-		php_http_option_register(registry, ZEND_STRL("verifystatus"), CURLOPT_SSL_VERIFYSTATUS, IS_BOOL);
+		php_http_option_register(registry, ZEND_STRL("verifystatus"), CURLOPT_SSL_VERIFYSTATUS, _IS_BOOL);
 #endif
 		php_http_option_register(registry, ZEND_STRL("cipher_list"), CURLOPT_SSL_CIPHER_LIST, IS_STRING);
 		if ((opt = php_http_option_register(registry, ZEND_STRL("cainfo"), CURLOPT_CAINFO, IS_STRING))) {
