@@ -1571,7 +1571,7 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, mod)
 {
 	zval *new_url = NULL;
-	long flags = PHP_HTTP_URL_JOIN_PATH | PHP_HTTP_URL_JOIN_QUERY;
+	long flags = PHP_HTTP_URL_JOIN_PATH | PHP_HTTP_URL_JOIN_QUERY | PHP_HTTP_URL_SANITIZE_PATH;
 	zend_error_handling zeh;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|l", &new_url, &flags), invalid_arg, return);
