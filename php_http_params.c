@@ -291,6 +291,12 @@ static inline void sanitize_rfc5987(zval *zv, char **language, zend_bool *latin1
 	}
 }
 
+static inline void sanitize_rfc5988(char *str, size_t len, zval *zv TSRMLS_DC)
+{
+	zval_dtor(zv);
+	php_trim(str, len, " ><", 3, zv, 3 TSRMLS_CC);
+}
+
 static void utf8encode(zval *zv)
 {
 	size_t pos, len = 0;
@@ -542,11 +548,11 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 			MAKE_STD_ZVAL(key);
 			ZVAL_NULL(key);
 			if (opts->flags & PHP_HTTP_PARAMS_RFC5988) {
-				state->param.str += 1; /* < */
-				state->param.len -= 2; /* > */
+				sanitize_rfc5988(state->param.str, state->param.len, key TSRMLS_CC);
+			} else {
+				sanitize_key(opts->flags, state->param.str, state->param.len, key, &rfc5987 TSRMLS_CC);
+				state->rfc5987 = rfc5987;
 			}
-			sanitize_key(opts->flags, state->param.str, state->param.len, key, &rfc5987 TSRMLS_CC);
-			state->rfc5987 = rfc5987;
 			if (Z_TYPE_P(key) != IS_STRING) {
 				merge_param(params, key, &state->current.val, &state->current.args TSRMLS_CC);
 			} else if (Z_STRLEN_P(key)) {
@@ -628,7 +634,7 @@ HashTable *php_http_params_parse(HashTable *params, const php_http_params_opts_t
 
 	while (state.input.len) {
 		if ((opts->flags & PHP_HTTP_PARAMS_RFC5988) && !state.arg.str) {
-			if (!state.param.str && *state.input.str == '<') {
+			if (*state.input.str == '<') {
 				state.quotes = 1;
 			} else if (*state.input.str == '>') {
 				state.quotes = 0;
