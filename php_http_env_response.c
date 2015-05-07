@@ -229,8 +229,9 @@ php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *o
 static zend_bool php_http_env_response_is_cacheable(php_http_env_response_t *r, php_http_message_t *request)
 {
 	TSRMLS_FETCH_FROM_CTX(r->ts);
+	long status = r->ops->get_status(r);
 
-	if (r->ops->get_status(r) >= 400) {
+	if (status && status / 100 != 2) {
 		return 0;
 	}
 
