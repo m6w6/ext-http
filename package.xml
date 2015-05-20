@@ -239,15 +239,11 @@ http://devel-m6w6.rhcloud.com/mdref/http
      <file role="test" name="encstream008.phpt"/>
      <file role="test" name="encstream009.phpt"/>
      <file role="test" name="envrequestbody001.phpt"/>
-     <file role="test" name="envrequestbody002.phpt"/>
-     <file role="test" name="envrequestbody003.phpt"/>
      <file role="test" name="envrequestcookie001.phpt"/>
      <file role="test" name="envrequestfiles001.phpt"/>
      <file role="test" name="envrequestfiles002.phpt"/>
      <file role="test" name="envrequestform.phpt"/>
      <file role="test" name="envrequestheader001.phpt"/>
-     <file role="test" name="envrequestjson001.phpt"/>
-     <file role="test" name="envrequestjson002.phpt"/>
      <file role="test" name="envrequestquery.phpt"/>
      <file role="test" name="envresponse001.phpt"/>
      <file role="test" name="envresponse002.phpt"/>
