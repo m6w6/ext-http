@@ -35,18 +35,20 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-04-08</date>
+ <date>2015-05-21</date>
  <version>
-  <release>2.4.4dev</release>
-  <api>2.4.0</api>
+  <release>2.5.0RC1</release>
+  <api>2.5.0</api>
  </version>
  <stability>
-  <release>stable</release>
+  <release>beta</release>
   <api>stable</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-*
+* Added RFC5988 (Web Linking) support to http\Params
+* Added http\Url::SANITIZE_PATH to default flags of http\Url::mod()
+* Fixed overly aggressive response chaching to only consider 2xx cachable
 ]]></notes>
  <contents>
   <dir name="/">
@@ -134,6 +136,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      </dir>
      <dir name="helper">
       <file role="test" name="cookie.inc"/>
+      <file role="test" name="dump.inc"/>
       <file role="test" name="http2.crt"/>
       <file role="test" name="http2.key"/>
       <file role="test" name="pipeline.inc"/>
@@ -298,6 +301,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="params013.phpt"/>
      <file role="test" name="params014.phpt"/>
      <file role="test" name="params015.phpt"/>
+     <file role="test" name="params016.phpt"/>
      <file role="test" name="phpinfo.phpt"/>
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="querystring001.phpt"/>

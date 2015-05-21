@@ -36,6 +36,11 @@ if (($xml = simplexml_load_file($file))) {
 			}
 		}
 	}
+	foreach ($xml_files as $file) {
+		if (!file_exists($file)) {
+			echo "Extraneous file $file\n";
+		}
+	}
 }
 
 ###
