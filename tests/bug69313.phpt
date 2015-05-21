@@ -8,7 +8,7 @@ skip_client_test();
 --FILE--
 <?php
 
-
+include "helper/dump.inc";
 include "helper/server.inc";
 
 echo "Test\n";
@@ -20,7 +20,7 @@ server("proxy.inc", function($port, $stdin, $stdout, $stderr) {
 	$client = new http\Client();
 	$client->enqueue($request);
 	$client->send();
-	echo $client->getResponse();
+	dump_message(null, $client->getResponse());
 });
 
 ?>
@@ -30,16 +30,16 @@ Done
 Test
 HTTP/1.1 200 OK
 Accept-Ranges: bytes
+Content-Length: %d
 Etag: "%s"
 X-Original-Transfer-Encoding: chunked
-Content-Length: %d
 
 GET / HTTP/1.1
-User-Agent: %s
-Host: localhost:%d
 Accept: */*
-Content-Type: text/plain
 Content-Length: 3
+Content-Type: text/plain
+Host: localhost:%d
+User-Agent: %s
 X-Original-Content-Length: 3
 
 foo

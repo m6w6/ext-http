@@ -7,6 +7,7 @@ include "skipif.inc";
 --FILE--
 <?php 
 
+include "helper/dump.inc";
 include "helper/server.inc";
 
 echo "Test\n";
@@ -16,7 +17,7 @@ server("proxy.inc", function($port) {
 	$request = new http\Client\Request("PUT", "http://localhost:$port");
 	$request->setOptions(array("resume" => 1, "expect_100_timeout" => 0));
 	$request->getBody()->append("123");
-	echo $client->enqueue($request)->send()->getResponse();
+	dump_message(null, $client->enqueue($request)->send()->getResponse());
 });
 // Content-length is 2 instead of 3 in older libcurls
 ?>
@@ -25,17 +26,17 @@ server("proxy.inc", function($port) {
 Test
 HTTP/1.1 200 OK
 Accept-Ranges: bytes
+Content-Length: %d
 Etag: "%x"
 X-Original-Transfer-Encoding: chunked
-Content-Length: %d
 
 PUT / HTTP/1.1
-Content-Range: bytes 1-2/3
-User-Agent: %s
-Host: localhost:%d
 Accept: */*
 Content-Length: %d
+Content-Range: bytes 1-2/3
 Expect: 100-continue
+Host: localhost:%d
+User-Agent: %s
 X-Original-Content-Length: %d
 
 23===DONE===

@@ -35,7 +35,8 @@ server("proxy.inc", function($port, $stdin, $stdout, $stderr) {
 Test
 Server on port %d
 GET / HTTP/1.1
-User-Agent: PECL_HTTP/%s PHP/%s libcurl/%s
-Host: localhost:%d
 Accept: */*
+Host: localhost:%d
+User-Agent: PECL_HTTP/%s PHP/%s libcurl/%s
+
 ===DONE===

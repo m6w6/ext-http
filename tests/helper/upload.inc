@@ -1,5 +1,6 @@
 <?php 
 
+include "dump.inc";
 include "server.inc";
 
 serve(function($client) {
@@ -15,6 +16,6 @@ serve(function($client) {
 	/* return the initial message as response body */
 	$response = new http\Env\Response;
 	/* avoid OOM with $response->getBody()->append($request); */
-	$request->toStream($response->getBody()->getResource());
+	dump_message($response->getBody()->getResource(), $request);
 	$response->send($client);
 });

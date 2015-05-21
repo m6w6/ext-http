@@ -63,27 +63,32 @@ static inline void sanitize_escaped(zval *zv TSRMLS_DC)
 	php_stripcslashes(Z_STRVAL_P(zv), &Z_STRLEN_P(zv));
 }
 
+static inline void quote_string(zval *zv, zend_bool force TSRMLS_DC)
+{
+	int len = Z_STRLEN_P(zv);
+
+	Z_STRVAL_P(zv) = php_addcslashes(Z_STRVAL_P(zv), Z_STRLEN_P(zv), &Z_STRLEN_P(zv), 1,
+			ZEND_STRL("\0..\37\173\\\"") TSRMLS_CC);
+
+	if (force || len != Z_STRLEN_P(zv) || strpbrk(Z_STRVAL_P(zv), "()<>@,;:\"[]?={} ")) {
+		zval tmp = *zv;
+		int len = Z_STRLEN_P(zv) + 2;
+		char *str = emalloc(len + 1);
+
+		str[0] = '"';
+		memcpy(&str[1], Z_STRVAL_P(zv), Z_STRLEN_P(zv));
+		str[len-1] = '"';
+		str[len] = '\0';
+
+		zval_dtor(&tmp);
+		ZVAL_STRINGL(zv, str, len, 0);
+	}
+}
+
 static inline void prepare_escaped(zval *zv TSRMLS_DC)
 {
 	if (Z_TYPE_P(zv) == IS_STRING) {
-		int len = Z_STRLEN_P(zv);
-
-		Z_STRVAL_P(zv) = php_addcslashes(Z_STRVAL_P(zv), Z_STRLEN_P(zv), &Z_STRLEN_P(zv), 1,
-				ZEND_STRL("\0..\37\173\\\"") TSRMLS_CC);
-
-		if (len != Z_STRLEN_P(zv) || strpbrk(Z_STRVAL_P(zv), "()<>@,;:\"[]?={} ")) {
-			zval tmp = *zv;
-			int len = Z_STRLEN_P(zv) + 2;
-			char *str = emalloc(len + 1);
-
-			str[0] = '"';
-			memcpy(&str[1], Z_STRVAL_P(zv), Z_STRLEN_P(zv));
-			str[len-1] = '"';
-			str[len] = '\0';
-
-			zval_dtor(&tmp);
-			ZVAL_STRINGL(zv, str, len, 0);
-		}
+		quote_string(zv, 0 TSRMLS_CC);
 	} else {
 		zval_dtor(zv);
 		ZVAL_EMPTY_STRING(zv);
@@ -297,6 +302,14 @@ static inline void sanitize_rfc5988(char *str, size_t len, zval *zv TSRMLS_DC)
 	php_trim(str, len, " ><", 3, zv, 3 TSRMLS_CC);
 }
 
+static inline void prepare_rfc5988(zval *zv TSRMLS_DC)
+{
+	if (Z_TYPE_P(zv) != IS_STRING) {
+		zval_dtor(zv);
+		ZVAL_EMPTY_STRING(zv);
+	}
+}
+
 static void utf8encode(zval *zv)
 {
 	size_t pos, len = 0;
@@ -369,7 +382,11 @@ static inline void prepare_key(unsigned flags, char *old_key, size_t old_len, ch
 	}
 
 	if (flags & PHP_HTTP_PARAMS_ESCAPED) {
-		prepare_escaped(&zv TSRMLS_CC);
+		if (flags & PHP_HTTP_PARAMS_RFC5988) {
+			prepare_rfc5988(&zv TSRMLS_CC);
+		} else {
+			prepare_escaped(&zv TSRMLS_CC);
+		}
 	}
 
 	*new_key = Z_STRVAL(zv);
@@ -762,6 +779,17 @@ static inline void shift_rfc5988(php_http_buffer_t *buf, char *key_str, size_t k
 	efree(str);
 }
 
+static inline void shift_rfc5988_val(php_http_buffer_t *buf, zval *zv, const char *vss, size_t vsl, unsigned flags TSRMLS_DC)
+{
+	zval *tmp = php_http_zsep(1, IS_STRING, zv);
+
+	quote_string(tmp, 1 TSRMLS_CC);
+	php_http_buffer_append(buf, vss, vsl);
+	php_http_buffer_append(buf, Z_STRVAL_P(tmp), Z_STRLEN_P(tmp));
+
+	zval_ptr_dtor(&tmp);
+}
+
 static inline void shift_val(php_http_buffer_t *buf, zval *zvalue, const char *vss, size_t vsl, unsigned flags TSRMLS_DC)
 {
 	if (Z_TYPE_P(zvalue) != IS_BOOL) {
@@ -802,6 +830,21 @@ static void shift_arg(php_http_buffer_t *buf, char *key_str, size_t key_len, zva
 		}
 	} else {
 		shift_key(buf, key_str, key_len, ass, asl, flags TSRMLS_CC);
+
+		if (flags & PHP_HTTP_PARAMS_RFC5988) {
+			switch (key_len) {
+			case lenof("rel"):
+			case lenof("title"):
+			case lenof("anchor"):
+				/* some args must be quoted */
+				if (0 <= php_http_select_str(key_str, 3, "rel", "title", "anchor")) {
+					shift_rfc5988_val(buf, zvalue, vss, vsl, flags TSRMLS_CC);
+					return;
+				}
+				break;
+			}
+		}
+
 		shift_val(buf, zvalue, vss, vsl, flags TSRMLS_CC);
 	}
 }

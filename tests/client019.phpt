@@ -41,8 +41,9 @@ server("proxy.inc", function($port, $stdin, $stdout, $stderr) {
 Test
 Server on port %d
 CONNECT www.example.com:80 HTTP/1.1
-Host: www.example.com:80
-User-Agent: PECL_HTTP/%s PHP/%s libcurl/%s
-Proxy-Connection: Keep-Alive
 Hello: there!
+Host: www.example.com:80
+Proxy-Connection: Keep-Alive
+User-Agent: PECL_HTTP/%s PHP/%s libcurl/%s
+
 ===DONE===
