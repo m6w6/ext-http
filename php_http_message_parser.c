@@ -61,19 +61,21 @@ php_http_message_parser_t *php_http_message_parser_init(php_http_message_parser_
 
 php_http_message_parser_state_t php_http_message_parser_state_push(php_http_message_parser_t *parser, unsigned argc, ...)
 {
-	php_http_message_parser_state_t state;
+	php_http_message_parser_state_t state = PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE;
 	va_list va_args;
 	unsigned i;
 
-	/* short circuit */
-	ZEND_PTR_STACK_RESIZE_IF_NEEDED((&parser->stack), argc);
+	if (argc > 0) {
+		/* short circuit */
+		ZEND_PTR_STACK_RESIZE_IF_NEEDED((&parser->stack), argc);
 
-	va_start(va_args, argc);
-	for (i = 0; i < argc; ++i) {
-		state  = va_arg(va_args, php_http_message_parser_state_t);
-		zend_ptr_stack_push(&parser->stack, (void *) state);
+		va_start(va_args, argc);
+		for (i = 0; i < argc; ++i) {
+			state  = va_arg(va_args, php_http_message_parser_state_t);
+			zend_ptr_stack_push(&parser->stack, (void *) state);
+		}
+		va_end(va_args);
 	}
-	va_end(va_args);
 
 	return state;
 }
