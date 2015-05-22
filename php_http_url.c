@@ -554,8 +554,8 @@ HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct TSRMLS_
 
 ZEND_RESULT_CODE php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len TSRMLS_DC)
 {
-	const char *arg_sep_str;
-	size_t arg_sep_len;
+	const char *arg_sep_str = "&";
+	size_t arg_sep_len = 1;
 	php_http_buffer_t *qstr = php_http_buffer_new();
 
 	php_http_url_argsep(&arg_sep_str, &arg_sep_len TSRMLS_CC);
