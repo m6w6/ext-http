@@ -187,12 +187,6 @@ static inline ZEND_RESULT_CODE php_http_ini_entry(const char *name_str, size_t n
 #define Z_ISUSER(zv) (Z_TYPE(zv) <= 10)
 #define Z_ISUSER_P(zvp) Z_ISUSER(*(zvp))
 
-#define RETVAL_STR_COPY(zs) ZVAL_STR_COPY(return_value, zs)
-#define RETURN_STR_COPY(zs) do { \
-	ZVAL_STR_COPY(return_value, zs); \
-	return; \
-}
-
 /* return object(values) */
 #define ZVAL_OBJECT(z, o, addref) \
 	ZVAL_OBJ(z, o); \
