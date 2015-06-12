@@ -904,7 +904,6 @@ static void shift_param(php_http_buffer_t *buf, char *key_str, size_t key_len, z
 			shift_arg(buf, key_str, key_len, zvalue, ass, asl, vss, vsl, flags);
 		}
 	} else {
-		shift_key(buf, key_str, key_len, pss, psl, flags);
 		if (flags & PHP_HTTP_PARAMS_RFC5988) {
 			shift_rfc5988(buf, key_str, key_len, pss, psl, flags);
 		} else {
