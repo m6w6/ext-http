@@ -1214,8 +1214,12 @@ static PHP_METHOD(HttpEnvResponse, __invoke)
 		PHP_HTTP_ENV_RESPONSE_OBJECT_INIT(obj);
 
 		php_http_message_object_init_body_object(obj);
+
 		php_http_message_body_append(obj->message->body, ob_str, ob_len);
 #if PHP_VERSION_ID >= 50400
+		if (ob_flags & PHP_OUTPUT_HANDLER_CLEAN) {
+			php_stream_truncate_set_size(php_http_message_body_stream(obj->message->body), 0);
+		}
 		RETURN_TRUE;
 #else
 		RETURN_EMPTY_STRING();
