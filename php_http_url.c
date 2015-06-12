@@ -12,7 +12,9 @@
 
 #include "php_http_api.h"
 
-#ifdef PHP_HTTP_HAVE_IDN
+#if PHP_HTTP_HAVE_IDN2
+#	include <idn2.h>
+#elif PHP_HTTP_HAVE_IDN
 #	include <idna.h>
 #endif
 
@@ -567,8 +569,8 @@ HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct)
 
 ZEND_RESULT_CODE php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len)
 {
-	const char *arg_sep_str;
-	size_t arg_sep_len;
+	const char *arg_sep_str = "&";
+	size_t arg_sep_len = 1;
 	php_http_buffer_t *qstr = php_http_buffer_new();
 
 	php_http_url_argsep(&arg_sep_str, &arg_sep_len);
@@ -837,7 +839,7 @@ static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *pt
 
 #if defined(PHP_WIN32) || defined(HAVE_UIDNA_IDNTOASCII)
 typedef size_t (*parse_mb_func)(unsigned *wc, const char *ptr, const char *end);
-static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len)
+static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len TSRMLS_DC)
 {
 	size_t offset = 0, u8_len = strlen(u8);
 
@@ -880,7 +882,33 @@ static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u1
 #	define MAXHOSTNAMELEN 256
 #endif
 
-#ifdef PHP_HTTP_HAVE_IDN
+#if PHP_HTTP_HAVE_IDN2
+static ZEND_RESULT_CODE parse_idn2(struct parse_state *state, size_t prev_len)
+{
+	char *idn = NULL;
+	int rv = -1;
+	TSRMLS_FETCH_FROM_CTX(state->ts);
+
+	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+		rv = idn2_lookup_u8((const unsigned char *) state->url.host, (unsigned char **) &idn, IDN2_NFC_INPUT);
+	}
+#	ifdef PHP_HTTP_HAVE_WCHAR
+	else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
+		rv = idn2_lookup_ul(state->url.host, &idn, 0);
+	}
+#	endif
+	if (rv != IDN2_OK) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idn2_strerror(rv));
+		return FAILURE;
+	} else {
+		size_t idnlen = strlen(idn);
+		memcpy(state->url.host, idn, idnlen + 1);
+		free(idn);
+		state->offset += idnlen - prev_len;
+		return SUCCESS;
+	}
+}
+#elif PHP_HTTP_HAVE_IDN
 static ZEND_RESULT_CODE parse_idn(struct parse_state *state, size_t prev_len)
 {
 	char *idn = NULL;
@@ -924,12 +952,12 @@ static ZEND_RESULT_CODE parse_uidn(struct parse_state *state)
 	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
+		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len TSRMLS_CC)) {
 			return FAILURE;
 		}
 #ifdef PHP_HTTP_HAVE_WCHAR
 	} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len)) {
+		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len TSRMLS_CC)) {
 			return FAILURE;
 		}
 #endif
@@ -1113,7 +1141,9 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 	}
 
 	if (state->flags & PHP_HTTP_URL_PARSE_TOIDN) {
-#ifdef PHP_HTTP_HAVE_IDN
+#if PHP_HTTP_HAVE_IDN2
+		return parse_idn2(state, len);
+#elif PHP_HTTP_HAVE_IDN
 		return parse_idn(state, len);
 #endif
 #ifdef HAVE_UIDNA_IDNTOASCII
@@ -1245,7 +1275,7 @@ static const char *parse_query(struct parse_state *state)
 	tmp = ++state->ptr;
 	state->url.query = &state->buffer[state->offset];
 
-	do {
+	while (state->ptr < state->end) {
 		switch (*state->ptr) {
 		case '#':
 			goto done;
@@ -1297,7 +1327,9 @@ static const char *parse_query(struct parse_state *state)
 			}
 			state->ptr += mb - 1;
 		}
-	} while (++state->ptr < state->end);
+
+		++state->ptr;
+	}
 
 	done:
 	state->buffer[state->offset++] = 0;
@@ -1541,7 +1573,7 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, mod)
 {
 	zval *new_url = NULL;
-	zend_long flags = PHP_HTTP_URL_JOIN_PATH | PHP_HTTP_URL_JOIN_QUERY;
+	zend_long flags = PHP_HTTP_URL_JOIN_PATH | PHP_HTTP_URL_JOIN_QUERY | PHP_HTTP_URL_SANITIZE_PATH;
 	zend_error_handling zeh;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "z!|l", &new_url, &flags), invalid_arg, return);
@@ -1656,7 +1688,7 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBLOC"), PHP_HTTP_URL_PARSE_MBLOC);
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBUTF8"), PHP_HTTP_URL_PARSE_MBUTF8);
-#if defined(PHP_HTTP_HAVE_IDN) || defined(HAVE_UIDNA_IDNTOASCII)
+#if defined(PHP_HTTP_HAVE_IDN2) || defined(PHP_HTTP_HAVE_IDN) || defined(HAVE_UIDNA_IDNTOASCII)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN"), PHP_HTTP_URL_PARSE_TOIDN);
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT);

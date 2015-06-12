@@ -4,16 +4,13 @@ include "dump.inc";
 include "server.inc";
 
 serve(function($client) {
-	/* this might be a proxy connect or a standard request */
 	$request = new http\Message($client, false);
 	
-	if ($request->getHeader("Proxy-Connection")) {
+	if ($request->getHeader("Expect") === "100-continue") {
 		$response = new http\Env\Response;
 		$response->setEnvRequest($request);
+		$response->setResponseCode(100);
 		$response->send($client);
-		
-		/* soak up the request following the connect */
-		new http\Message($client, false);
 	}
 	
 	/* return the initial message as response body */

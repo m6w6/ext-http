@@ -39,3 +39,4 @@ tests/*.php
 tests/*.sh
 lcov_data
 *~
+*.phar

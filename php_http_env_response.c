@@ -207,7 +207,9 @@ php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *o
 
 static zend_bool php_http_env_response_is_cacheable(php_http_env_response_t *r, php_http_message_t *request)
 {
-	if (r->ops->get_status(r) >= 400) {
+	long status = r->ops->get_status(r);
+
+	if (status && status / 100 != 2) {
 		return 0;
 	}
 
@@ -1157,7 +1159,12 @@ static PHP_METHOD(HttpEnvResponse, __invoke)
 		PHP_HTTP_ENV_RESPONSE_OBJECT_INIT(obj);
 
 		php_http_message_object_init_body_object(obj);
-		php_http_message_body_append(obj->message->body, ob_str, ob_len);
+
+		if (ob_flags & PHP_OUTPUT_HANDLER_CLEAN) {
+			php_stream_truncate_set_size(php_http_message_body_stream(obj->message->body), 0);
+		} else {
+			php_http_message_body_append(obj->message->body, ob_str, ob_len);
+		}
 		RETURN_TRUE;
 	}
 }

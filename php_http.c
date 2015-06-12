@@ -28,8 +28,10 @@
 #		endif
 #	endif
 #endif
-#if PHP_HTTP_HAVE_SERF
-#	include <serf.h>
+#if PHP_HTTP_HAVE_IDN2
+#	include <idn2.h>
+#elif PHP_HTTP_HAVE_IDN
+#	include <idna.h>
 #endif
 
 ZEND_DECLARE_MODULE_GLOBALS(php_http);
@@ -218,6 +220,12 @@ PHP_MINFO_FUNCTION(http)
 			event_get_version());
 #else
 	php_info_print_table_row(3, "libevent", "disabled", "disabled");
+#endif
+
+#if PHP_HTTP_HAVE_IDN2
+	php_info_print_table_row(3, "libidn2 (IDNA2008)", IDN2_VERSION, idn2_check_version(NULL));
+#elif PHP_HTTP_HAVE_IDN
+	php_info_print_table_row(3, "libidn (IDNA2003)", PHP_HTTP_LIBIDN_VERSION, "unknown");
 #endif
 
 	php_info_print_table_end();

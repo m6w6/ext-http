@@ -98,11 +98,11 @@ foreach ($namespaces as $ns) {
             fprintf($out, "\n\tfunction %s(", $fn);
             $ps = array();
             foreach ($f->getParameters() as $p) {
-                $p1 = sfprintf($out, "%s%s\$%s", t($p), 
-                        $p->isPassedByReference()?"&":"", $p->getName());
+                $p1 = sprintf("%s%s\$%s", t($p), 
+                        $p->isPassedByReference()?"&":"", trim($p->getName(), "\""));
                 if ($p->isOptional()) {
                     if ($p->isDefaultValueAvailable()) {
-                        $p1 .= sfprintf($out, " = %s", 
+                        $p1 .= sprintf(" = %s", 
                                 var_export($p->getDefaultValue(), true));
                     } elseif (!($p->isArray() || $p->getClass()) || $p->allowsNull()) {
                         $p1 .= " = NULL";

@@ -41,6 +41,8 @@ typedef struct php_http_info_data {
 	php_http_version_t version;
 } php_http_info_data_t;
 
+#undef PHP_HTTP_REQUEST
+#undef PHP_HTTP_RESPONSE
 typedef enum php_http_info_type {
 	PHP_HTTP_NONE = 0,
 	PHP_HTTP_REQUEST,

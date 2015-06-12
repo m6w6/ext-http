@@ -11,7 +11,7 @@ PHP_ARG_WITH([http-libcurl-dir], [],
 PHP_ARG_WITH([http-libevent-dir], [],
 [  --with-http-libevent-dir[=DIR] HTTP: where to find libevent], $PHP_HTTP_LIBCURL_DIR, "")
 PHP_ARG_WITH([http-libidn-dir], [],
-[  --with-http-libidn-dir=[=DIR]  HTTP: where to find libidn], $PHP_HTTP_LIBCURL_DIR, "")
+[  --with-http-libidn-dir[=DIR]   HTTP: where to find libidn], $PHP_HTTP_LIBCURL_DIR, "")
 
 if test "$PHP_HTTP" != "no"; then
 
@@ -120,18 +120,70 @@ dnl ----
 			break;
 		fi
 	done
-	if test "x$IDNA_DIR" = "x"; then
-		AC_MSG_RESULT([not found])
-		case $host_os in
-		darwin*)
-			AC_CHECK_HEADERS(unicode/uidna.h)
-			PHP_CHECK_FUNC(uidna_IDNToASCII, icucore);;
-		esac
-	else
+	if test "x$IDNA_DIR" != "x"; then
 		AC_MSG_RESULT([found in $IDNA_DIR])
 		AC_DEFINE([PHP_HTTP_HAVE_IDN], [1], [Have libidn support])
 		PHP_ADD_INCLUDE($IDNA_DIR/include)
 		PHP_ADD_LIBRARY_WITH_PATH(idn, $IDNA_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+		AC_MSG_CHECKING([for libidn version])
+		IDNA_VER=$(pkg-config --version libidn 2>/dev/null || echo unknown)
+		AC_MSG_RESULT([$IDNA_VER])
+		AC_DEFINE_UNQUOTED([PHP_HTTP_LIBIDN_VERSION], "$IDNA_VER", [ ])
+	else
+		AC_MSG_RESULT([not found])
+		AC_MSG_CHECKING([for idn2.h])
+		IDNA_DIR=
+		for i in "$PHP_HTTP_LIBIDN_DIR" "$IDN_DIR" /usr/local /usr /opt; do
+			if test -f "$i/include/idn2.h"; then
+				IDNA_DIR=$i
+				break;
+			fi
+		done
+		if test "x$IDNA_DIR" != "x"; then
+			AC_MSG_RESULT([found in $IDNA_DIR])
+			AC_DEFINE([PHP_HTTP_HAVE_IDN2], [1], [Have libidn2 support])
+			PHP_ADD_INCLUDE($IDNA_DIR/include)
+			PHP_ADD_LIBRARY_WITH_PATH(idn2, $IDNA_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
+			AC_MSG_CHECKING([for libidn2 version])
+			IDNA_VER=`$EGREP "define IDN2_VERSION " $IDNA_DIR/include/idn2.h | $SED -e's/^.*VERSION //g' -e 's/[[^0-9\.]]//g'`
+			AC_MSG_RESULT([$IDNA_VER])
+			AC_DEFINE_UNQUOTED([PHP_HTTP_LIBIDN2_VERSION], "$IDNA_VER", [ ])
+		else
+			AC_MSG_RESULT([not found])
+			AC_CHECK_HEADERS([unicode/uidna.h])
+			case $host_os in
+			darwin*)
+				PHP_CHECK_FUNC(uidna_IDNToASCII, icucore);;
+			*)
+				AC_PATH_PROG(ICU_CONFIG, icu-config, no, [$PATH:/usr/local/bin])
+				if test ! -x "$ICU_CONFIG"; then
+					ICU_CONFIG="icu-config"
+				fi
+				AC_MSG_CHECKING([for uidna_IDNToASCII])
+				if ! test -x "$ICU_CONFIG"; then
+					ICU_CONFIG=icu-config
+				fi
+				if $ICU_CONFIG --exists 2>/dev/null >&2; then
+					save_LIBS=$LIBS
+					LIBS=$($ICU_CONFIG --ldflags)
+					AC_TRY_RUN([
+						#include <unicode/uidna.h>
+						int main(int argc, char *argv[]) {
+							return uidna_IDNToASCII(0, 0, 0, 0, 0, 0, 0);
+						}
+					], [
+						AC_MSG_RESULT([yes])
+						AC_DEFINE([HAVE_UIDNA_IDNTOASCII], [1], [ ])
+						LIBS=$save_LIBS
+						PHP_EVAL_LIBLINE(`$ICU_CONFIG --ldflags`, HTTP_SHARED_LIBADD)
+					], [
+						LIBS=$save_LIBS
+						AC_MSG_RESULT([no])
+					])
+				fi
+				;;
+			esac
+		fi
 	fi
 
 dnl ----
