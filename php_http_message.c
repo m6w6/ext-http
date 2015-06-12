@@ -912,7 +912,7 @@ static HashTable *php_http_message_object_get_props(zval *object)
 		zend_property_info *pi; \
 		if ((pi = zend_hash_str_find_ptr(&obj->zo.ce->properties_info, name_str, lenof(name_str)))) { \
 			action_with_tmp; \
-			zend_hash_update(props, pi->name, &tmp); \
+			zend_hash_update_ind(props, pi->name, &tmp); \
 		} \
 	} while(0)
 
