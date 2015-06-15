@@ -4,8 +4,6 @@ property proxy
 <?php
 include "skipif.inc";
 ?>
---XFAIL--
-TBD
 --FILE--
 <?php
 
@@ -57,7 +55,7 @@ array(3) {
   ["by1ref"]=>
   int(2)
   ["by2ref"]=>
-  &int(1)
+  int(1)
 }
 array(4) {
   ["bykey"]=>
@@ -65,9 +63,9 @@ array(4) {
   ["by1ref"]=>
   int(2)
   ["by2ref"]=>
-  &int(1)
+  int(1)
   ["byXref"]=>
-  &int(2)
+  int(2)
 }
 array(5) {
   ["bykey"]=>
@@ -75,9 +73,9 @@ array(5) {
   ["by1ref"]=>
   int(2)
   ["by2ref"]=>
-  &int(1)
+  int(1)
   ["byXref"]=>
-  &int(2)
+  int(2)
   ["bynext"]=>
   array(3) {
     [0]=>

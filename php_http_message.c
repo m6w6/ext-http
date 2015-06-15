@@ -872,7 +872,14 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 			ZVAL_COPY_VALUE(return_value, tmp);
 		}
 	} else {
-		return_value = php_property_proxy_zval(object, member_name);
+		php_property_proxy_t *proxy;
+		php_property_proxy_object_t *proxy_obj;
+
+		proxy = php_property_proxy_init(object, member_name);
+		proxy_obj = php_property_proxy_object_new_ex(NULL, proxy);
+
+		ZVAL_OBJ(tmp, &proxy_obj->zo);
+		return tmp;
 	}
 
 	zend_string_release(member_name);
