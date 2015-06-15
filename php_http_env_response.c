@@ -1158,7 +1158,9 @@ static PHP_METHOD(HttpEnvResponse, __invoke)
 
 		PHP_HTTP_ENV_RESPONSE_OBJECT_INIT(obj);
 
-		php_http_message_object_init_body_object(obj);
+		if (!obj->body) {
+			php_http_message_object_init_body_object(obj);
+		}
 
 		if (ob_flags & PHP_OUTPUT_HANDLER_CLEAN) {
 			php_stream_truncate_set_size(php_http_message_body_stream(obj->message->body), 0);
