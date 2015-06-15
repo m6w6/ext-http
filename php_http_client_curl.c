@@ -2143,9 +2143,6 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 		int port = url->port ? url->port : 80;
 		zval *zport;
 
-		id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(url->host), url->port ? url->port : 80);
-		id = php_http_cs2zs(id_str, id_len);
-
 		if ((zport = zend_hash_str_find(enqueue->options, ZEND_STRL("port")))) {
 			zend_long lport = zval_get_long(zport);
 
@@ -2155,6 +2152,7 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 		}
 
 		id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(url->host), port);
+		id = php_http_cs2zs(id_str, id_len);
 		pf = php_persistent_handle_concede(NULL, PHP_HTTP_G->client.curl.driver.request_name, id, NULL, NULL);
 		zend_string_release(id);
 	}
