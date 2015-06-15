@@ -496,7 +496,6 @@ void php_http_message_free(php_http_message_t **message)
 
 static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *rv);
 static void php_http_message_object_write_prop(zval *object, zval *member, zval *value, void **cache_slot);
-static HashTable *php_http_message_object_get_props(zval *object);
 
 static zend_object_handlers php_http_message_object_handlers;
 static HashTable php_http_message_object_prophandlers;
@@ -690,7 +689,8 @@ void php_http_message_object_reverse(zval *zmsg, zval *return_value)
 
 		/* add ref, because we previously have not been a parent message */
 		Z_ADDREF_P(zmsg);
-		RETVAL_OBJECT(&objects[last]->zo, 1);
+		/* no addref, because we've been a parent message previously */
+		RETVAL_OBJECT(&objects[last]->zo, 0);
 
 		efree(objects);
 	} else {
@@ -897,7 +897,7 @@ static void php_http_message_object_write_prop(zval *object, zval *member, zval 
 	zend_string_release(member_name);
 }
 
-static HashTable *php_http_message_object_get_props(zval *object)
+static HashTable *php_http_message_object_get_debug_info(zval *object, int *is_temp)
 {
 	zval tmp;
 	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
@@ -906,6 +906,7 @@ static HashTable *php_http_message_object_get_props(zval *object)
 	size_t ver_len, url_len = 0;
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
+	*is_temp = 0;
 	
 #define UPDATE_PROP(name_str, action_with_tmp) \
 	do { \
@@ -1971,7 +1972,7 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_object_handlers.free_obj = php_http_message_object_free;
 	php_http_message_object_handlers.read_property = php_http_message_object_read_prop;
 	php_http_message_object_handlers.write_property = php_http_message_object_write_prop;
-	php_http_message_object_handlers.get_properties = php_http_message_object_get_props;
+	php_http_message_object_handlers.get_debug_info = php_http_message_object_get_debug_info;
 	php_http_message_object_handlers.get_property_ptr_ptr = NULL;
 
 	zend_class_implements(php_http_message_class_entry, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);

@@ -1337,7 +1337,7 @@ static PHP_METHOD(HttpEnvResponse, setCookie)
 	case IS_ARRAY:
 		list = php_http_cookie_list_from_struct(NULL, zcookie_new);
 		zcookie_new = &tmp;
-		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo, 1);
+		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo, 0);
 		break;
 
 	default:
@@ -1345,7 +1345,7 @@ static PHP_METHOD(HttpEnvResponse, setCookie)
 		list = php_http_cookie_list_parse(NULL, zs->val, zs->len, 0, NULL);
 		zend_string_release(zs);
 		zcookie_new = &tmp;
-		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo, 1);
+		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo, 0);
 	}
 	zend_restore_error_handling(&zeh);
 
