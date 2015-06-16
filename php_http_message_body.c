@@ -93,7 +93,7 @@ void php_http_message_body_free(php_http_message_body_t **body_ptr)
 		php_http_message_body_t *body = *body_ptr;
 
 		if (!--body->refcount) {
-			//zend_list_close(body->res);
+			zend_list_delete(body->res);
 			PTR_FREE(body->boundary);
 			efree(body);
 		}

@@ -843,10 +843,16 @@ void php_http_message_object_free(zend_object *object)
 		o->message = NULL;
 	}
 	if (o->parent) {
+		if (GC_REFCOUNT(&o->parent->zo) == 1) {
+			zend_objects_store_del(&o->parent->zo);
+		}
 		zend_objects_store_del(&o->parent->zo);
 		o->parent = NULL;
 	}
 	if (o->body) {
+		if (GC_REFCOUNT(&o->body->zo) == 1) {
+			zend_objects_store_del(&o->body->zo);
+		}
 		zend_objects_store_del(&o->body->zo);
 		o->body = NULL;
 	}
