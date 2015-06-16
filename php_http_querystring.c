@@ -67,7 +67,7 @@ static inline void php_http_querystring_get(zval *instance, int type, char *name
 			convert_to_explicit_type(&tmp, type);
 			RETVAL_ZVAL(&tmp, 0, 0);
 		} else {
-			RETVAL_ZVAL_FAST(arrval);
+			RETVAL_ZVAL(arrval, 1, 0);
 		}
 
 		if (del) {
@@ -79,7 +79,7 @@ static inline void php_http_querystring_get(zval *instance, int type, char *name
 			zval_ptr_dtor(&delarr);
 		}
 	} else if(defval) {
-		RETURN_ZVAL_FAST(defval);
+		RETURN_ZVAL(defval, 1, 0);
 	}
 }
 
@@ -350,7 +350,7 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 	zend_string_release(zs);
 
 	if (Z_TYPE_P(instance) == IS_OBJECT) {
-		RETVAL_ZVAL_FAST(instance);
+		RETVAL_ZVAL(instance, 1, 0);
 	} else if ((_GET = php_http_env_get_superglobal(ZEND_STRL("_GET")))) {
 		ZVAL_OBJ(return_value, php_http_querystring_object_new(php_http_querystring_class_entry));
 
@@ -399,7 +399,7 @@ PHP_METHOD(HttpQueryString, toArray)
 	}
 
 	zqa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0, &zqa_tmp);
-	RETURN_ZVAL_FAST(zqa);
+	RETURN_ZVAL(zqa, 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_get, 0, 0, 0)
@@ -529,7 +529,7 @@ PHP_METHOD(HttpQueryString, xlate)
 	);
 
 	php_http_querystring_set(getThis(), &na, 0);
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 	
 	zval_ptr_dtor(&na);
 }
@@ -580,7 +580,7 @@ PHP_METHOD(HttpQueryString, offsetGet)
 
 	if (Z_TYPE_P(qa) == IS_ARRAY) {
 		if ((value = zend_symtable_find(Z_ARRVAL_P(qa), offset))) {
-			RETVAL_ZVAL_FAST(value);
+			RETVAL_ZVAL(value, 1, 0);
 		}
 	}
 }

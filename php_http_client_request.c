@@ -82,7 +82,7 @@ static PHP_METHOD(HttpClientRequest, setContentType)
 	ZVAL_STR_COPY(&zct, ct_str);
 	zend_hash_str_update(&obj->message->hdrs, "Content-Type", lenof("Content-Type"), &zct);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_getContentType, 0, 0, 0)
@@ -98,7 +98,7 @@ static PHP_METHOD(HttpClientRequest, getContentType)
 		php_http_message_update_headers(obj->message);
 		zct = php_http_message_header(obj->message, ZEND_STRL("Content-Type"));
 		if (zct) {
-			RETURN_ZVAL_FAST(zct);
+			RETURN_ZVAL(zct, 1, 0);
 		}
 	}
 }
@@ -144,7 +144,7 @@ static PHP_METHOD(HttpClientRequest, setQuery)
 	}
 	zval_ptr_dtor(&str);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_getQuery, 0, 0, 0)
@@ -197,7 +197,7 @@ static PHP_METHOD(HttpClientRequest, addQuery)
 	}
 	zval_ptr_dtor(&str);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_setOptions, 0, 0, 0)
@@ -211,7 +211,7 @@ static PHP_METHOD(HttpClientRequest, setOptions)
 
 	php_http_client_options_set(getThis(), opts);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_getOptions, 0, 0, 0)
@@ -220,7 +220,7 @@ static PHP_METHOD(HttpClientRequest, getOptions)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		zval tmp, *zoptions = zend_read_property(php_http_client_request_class_entry, getThis(), ZEND_STRL("options"), 0, &tmp);
-		RETURN_ZVAL_FAST(zoptions);
+		RETURN_ZVAL(zoptions, 1, 0);
 	}
 }
 
@@ -235,7 +235,7 @@ static PHP_METHOD(HttpClientRequest, setSslOptions)
 
 	php_http_client_options_set_subr(getThis(), ZEND_STRL("ssl"), opts, 1);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_addSslOptions, 0, 0, 0)
@@ -249,7 +249,7 @@ static PHP_METHOD(HttpClientRequest, addSslOptions)
 
 	php_http_client_options_set_subr(getThis(), ZEND_STRL("ssl"), opts, 0);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientRequest_getSslOptions, 0, 0, 0)

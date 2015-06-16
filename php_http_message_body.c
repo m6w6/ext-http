@@ -693,7 +693,7 @@ PHP_METHOD(HttpMessageBody, toCallback)
 		php_http_message_body_to_callback(obj->body, php_http_pass_fcall_callback, &fcd, offset, forlen);
 		zend_fcall_info_args_clear(&fcd.fci, 1);
 		zval_ptr_dtor(&fcd.fcz);
-		RETURN_ZVAL_FAST(getThis());
+		RETURN_ZVAL(getThis(), 1, 0);
 	}
 }
 
@@ -742,7 +742,7 @@ PHP_METHOD(HttpMessageBody, append)
 
 	php_http_expect(len == php_http_message_body_append(obj->body, str, len), runtime, return);
 
-	RETURN_ZVAL_FAST(getThis());
+	RETURN_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_addForm, 0, 0, 0)
@@ -761,7 +761,7 @@ PHP_METHOD(HttpMessageBody, addForm)
 
 	php_http_expect(SUCCESS == php_http_message_body_add_form(obj->body, fields, files), runtime, return);
 
-	RETURN_ZVAL_FAST(getThis());
+	RETURN_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_addPart, 0, 0, 1)
@@ -786,7 +786,7 @@ PHP_METHOD(HttpMessageBody, addPart)
 	zend_restore_error_handling(&zeh);
 
 	if (!EG(exception)) {
-		RETURN_ZVAL_FAST(getThis());
+		RETURN_ZVAL(getThis(), 1, 0);
 	}
 }
 

@@ -1111,7 +1111,7 @@ PHP_METHOD(HttpParams, toArray)
 		return;
 	}
 	zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0, &zparams_tmp);
-	RETURN_ZVAL_FAST(zparams);
+	RETURN_ZVAL(zparams, 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_toString, 0, 0, 0)
@@ -1193,7 +1193,7 @@ PHP_METHOD(HttpParams, offsetGet)
 	zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0, &zparams_tmp);
 
 	if (Z_TYPE_P(zparams) == IS_ARRAY && (zparam = zend_symtable_find(Z_ARRVAL_P(zparams), name))) {
-		RETVAL_ZVAL_FAST(zparam);
+		RETVAL_ZVAL(zparam, 1, 0);
 	}
 }
 

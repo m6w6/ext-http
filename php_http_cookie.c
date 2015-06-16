@@ -532,7 +532,7 @@ static PHP_METHOD(HttpCookie, setCookies)
 		array_copy_strings(cookies, &obj->list->cookies);
 	}
 
-	RETURN_ZVAL_FAST(getThis());
+	RETURN_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_addCookies, 0, 0, 1)
@@ -551,7 +551,7 @@ static PHP_METHOD(HttpCookie, addCookies)
 
 	array_join(cookies, &obj->list->cookies, 1, ARRAY_JOIN_STRONLY|ARRAY_JOIN_STRINGIFY);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getExtras, 0, 0, 0)
@@ -591,7 +591,7 @@ static PHP_METHOD(HttpCookie, setExtras)
 		array_copy_strings(extras, &obj->list->extras);
 	}
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_addExtras, 0, 0, 1)
@@ -610,7 +610,7 @@ static PHP_METHOD(HttpCookie, addExtras)
 
 	array_join(extras, &obj->list->extras, 1, ARRAY_JOIN_STRONLY|ARRAY_JOIN_STRINGIFY);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getCookie, 0, 0, 1)
@@ -632,7 +632,7 @@ static PHP_METHOD(HttpCookie, getCookie)
 	PHP_HTTP_COOKIE_OBJECT_INIT(obj);
 
 	if (php_http_cookie_list_get_cookie(obj->list, name_str, name_len, &zvalue)) {
-		RETURN_ZVAL_FAST(&zvalue);
+		RETURN_ZVAL(&zvalue, 1, 0);
 	}
 }
 
@@ -658,7 +658,7 @@ static PHP_METHOD(HttpCookie, setCookie)
 		php_http_cookie_list_add_cookie(obj->list, name_str, name_len, value_str, value_len);
 	}
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_addCookie, 0, 0, 2)
@@ -679,7 +679,7 @@ static PHP_METHOD(HttpCookie, addCookie)
 
 	php_http_cookie_list_add_cookie(obj->list, name_str, name_len, value_str, value_len);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getExtra, 0, 0, 1)
@@ -701,7 +701,7 @@ static PHP_METHOD(HttpCookie, getExtra)
 	PHP_HTTP_COOKIE_OBJECT_INIT(obj);
 
 	if (php_http_cookie_list_get_extra(obj->list, name_str, name_len, &zvalue)) {
-		RETURN_ZVAL_FAST(&zvalue);
+		RETURN_ZVAL(&zvalue, 1, 0);
 	}
 }
 
@@ -727,7 +727,7 @@ static PHP_METHOD(HttpCookie, setExtra)
 		php_http_cookie_list_add_extra(obj->list, name_str, name_len, value_str, value_len);
 	}
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_addExtra, 0, 0, 2)
@@ -748,7 +748,7 @@ static PHP_METHOD(HttpCookie, addExtra)
 
 	php_http_cookie_list_add_extra(obj->list, name_str, name_len, value_str, value_len);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getDomain, 0, 0, 0)
@@ -787,7 +787,7 @@ static PHP_METHOD(HttpCookie, setDomain)
 
 	PTR_SET(obj->list->domain, domain_str ? estrndup(domain_str, domain_len) : NULL);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getPath, 0, 0, 0)
@@ -826,7 +826,7 @@ static PHP_METHOD(HttpCookie, setPath)
 
 	PTR_SET(obj->list->path, path_str ? estrndup(path_str, path_len) : NULL);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getExpires, 0, 0, 0)
@@ -862,7 +862,7 @@ static PHP_METHOD(HttpCookie, setExpires)
 
 	obj->list->expires = ts;
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getMaxAge, 0, 0, 0)
@@ -898,7 +898,7 @@ static PHP_METHOD(HttpCookie, setMaxAge)
 
 	obj->list->max_age = ma;
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_getFlags, 0, 0, 0)
@@ -934,7 +934,7 @@ static PHP_METHOD(HttpCookie, setFlags)
 
 	obj->list->flags = flags;
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_toString, 0, 0, 0)

@@ -148,7 +148,7 @@ void php_http_client_options_get_subr(zval *instance, char *key, size_t len, zva
 	zval *options, opts_tmp, *opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0, &opts_tmp);
 
 	if ((Z_TYPE_P(opts) == IS_ARRAY) && (options = zend_symtable_str_find(Z_ARRVAL_P(opts), key, len))) {
-		RETVAL_ZVAL_FAST(options);
+		RETVAL_ZVAL(options, 1, 0);
 	}
 }
 
@@ -537,7 +537,7 @@ static PHP_METHOD(HttpClient, reset)
 	obj->iterator = 0;
 	php_http_client_reset(obj->client);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 static HashTable *combined_options(zval *client, zval *request)
@@ -630,7 +630,7 @@ static PHP_METHOD(HttpClient, enqueue)
 			return;
 	);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_dequeue, 0, 0, 1)
@@ -654,7 +654,7 @@ static PHP_METHOD(HttpClient, dequeue)
 
 	php_http_expect(SUCCESS == php_http_client_dequeue(obj->client, msg_obj->message), runtime, return);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_requeue, 0, 0, 1)
@@ -700,7 +700,7 @@ static PHP_METHOD(HttpClient, requeue)
 			return;
 	);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_count, 0, 0, 0)
@@ -767,7 +767,7 @@ static PHP_METHOD(HttpClient, getHistory)
 	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
 	zhistory = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("history"), 0, &zhistory_tmp);
-	RETVAL_ZVAL_FAST(zhistory);
+	RETVAL_ZVAL(zhistory, 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_send, 0, 0, 0)
@@ -782,7 +782,7 @@ static PHP_METHOD(HttpClient, send)
 
 	php_http_expect(SUCCESS == php_http_client_exec(obj->client), runtime, return);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_once, 0, 0, 0)
@@ -844,7 +844,7 @@ static PHP_METHOD(HttpClient, enablePipelining)
 
 	php_http_expect(SUCCESS == php_http_client_setopt(obj->client, PHP_HTTP_CLIENT_OPT_ENABLE_PIPELINING, &enable), unexpected_val, return);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_enableEvents, 0, 0, 0)
@@ -861,7 +861,7 @@ static PHP_METHOD(HttpClient, enableEvents)
 
 	php_http_expect(SUCCESS == php_http_client_setopt(obj->client, PHP_HTTP_CLIENT_OPT_USE_EVENTS, &enable), unexpected_val, return);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 struct notify_arg {
@@ -927,7 +927,7 @@ static PHP_METHOD(HttpClient, notify)
 		}
 	}
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_attach, 0, 0, 1)
@@ -956,7 +956,7 @@ static PHP_METHOD(HttpClient, attach)
 	zend_call_method_with_1_params(observers, NULL, NULL, "attach", &retval, observer);
 	zval_ptr_dtor(&retval);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_detach, 0, 0, 1)
@@ -979,7 +979,7 @@ static PHP_METHOD(HttpClient, detach)
 	zend_call_method_with_1_params(observers, NULL, NULL, "detach", &retval, observer);
 	zval_ptr_dtor(&retval);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getObservers, 0, 0, 0)
@@ -997,7 +997,7 @@ static PHP_METHOD(HttpClient, getObservers)
 		return;
 	}
 
-	RETVAL_ZVAL_FAST(observers);
+	RETVAL_ZVAL(observers, 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getProgressInfo, 0, 0, 1)
@@ -1058,7 +1058,7 @@ static PHP_METHOD(HttpClient, setOptions)
 
 	php_http_client_options_set(getThis(), opts);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getOptions, 0, 0, 0)
@@ -1067,7 +1067,7 @@ static PHP_METHOD(HttpClient, getOptions)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		zval options_tmp, *options = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("options"), 0, &options_tmp);
-		RETVAL_ZVAL_FAST(options);
+		RETVAL_ZVAL(options, 1, 0);
 	}
 }
 
@@ -1082,7 +1082,7 @@ static PHP_METHOD(HttpClient, setSslOptions)
 
 	php_http_client_options_set_subr(getThis(), ZEND_STRL("ssl"), opts, 1);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_addSslOptions, 0, 0, 0)
@@ -1096,7 +1096,7 @@ static PHP_METHOD(HttpClient, addSslOptions)
 
 	php_http_client_options_set_subr(getThis(), ZEND_STRL("ssl"), opts, 0);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getSslOptions, 0, 0, 0)
@@ -1119,7 +1119,7 @@ static PHP_METHOD(HttpClient, setCookies)
 
 	php_http_client_options_set_subr(getThis(), ZEND_STRL("cookies"), opts, 1);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_addCookies, 0, 0, 0)
@@ -1133,7 +1133,7 @@ static PHP_METHOD(HttpClient, addCookies)
 
 	php_http_client_options_set_subr(getThis(), ZEND_STRL("cookies"), opts, 0);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getCookies, 0, 0, 0)

@@ -192,7 +192,7 @@ static PHP_METHOD(HttpEnvRequest, getForm)
 		call_querystring_get("form");
 	} else {
 		zval zform_tmp, *zform = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), 0, &zform_tmp);
-		RETURN_ZVAL_FAST(zform);
+		RETURN_ZVAL(zform, 1, 0);
 	}
 }
 
@@ -208,7 +208,7 @@ static PHP_METHOD(HttpEnvRequest, getQuery)
 		call_querystring_get("query");
 	} else {
 		zval zquery_tmp, *zquery = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), 0, &zquery_tmp);
-		RETURN_ZVAL_FAST(zquery);
+		RETURN_ZVAL(zquery, 1, 0);
 	}
 }
 
@@ -224,7 +224,7 @@ static PHP_METHOD(HttpEnvRequest, getCookie)
 		call_querystring_get("cookie");
 	} else {
 		zval zcookie_tmp, *zcookie = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("cookie"), 0, &zcookie_tmp);
-		RETURN_ZVAL_FAST(zcookie);
+		RETURN_ZVAL(zcookie, 1, 0);
 	}
 }
 
@@ -234,7 +234,7 @@ static PHP_METHOD(HttpEnvRequest, getFiles)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		zval zfiles_tmp, *zfiles = zend_read_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("files"), 0, &zfiles_tmp);
-		RETURN_ZVAL_FAST(zfiles);
+		RETURN_ZVAL(zfiles, 1, 0);
 	}
 }
 

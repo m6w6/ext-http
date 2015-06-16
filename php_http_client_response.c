@@ -112,7 +112,7 @@ static PHP_METHOD(HttpClientResponse, getTransferInfo)
 		}
 	}
 
-	RETURN_ZVAL_FAST(info);
+	RETURN_ZVAL(info, 1, 0);
 }
 
 static zend_function_entry php_http_client_response_methods[] = {

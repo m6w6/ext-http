@@ -77,7 +77,7 @@ static inline HashTable *php_http_negotiate_content_type(HashTable *supported, p
 		 \
 		zend_hash_internal_pointer_reset((supported)); \
 		if ((value = zend_hash_get_current_data((supported)))) { \
-			RETVAL_ZVAL_FAST(value); \
+			RETVAL_ZVAL(value, 1, 0); \
 		} else { \
 			RETVAL_NULL(); \
 		} \

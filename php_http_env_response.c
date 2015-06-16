@@ -1181,7 +1181,7 @@ static PHP_METHOD(HttpEnvResponse, setEnvRequest)
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|O", &env_req, php_http_message_class_entry), invalid_arg, return);
 
 	set_option(getThis(), ZEND_STRL("request"), IS_OBJECT, env_req, 0);
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setContentType, 0, 0, 1)
@@ -1195,7 +1195,7 @@ static PHP_METHOD(HttpEnvResponse, setContentType)
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s!", &ct_str, &ct_len), invalid_arg, return);
 
 	set_option(getThis(), ZEND_STRL("contentType"), IS_STRING, ct_str, ct_len);
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setContentDisposition, 0, 0, 1)
@@ -1208,7 +1208,7 @@ static PHP_METHOD(HttpEnvResponse, setContentDisposition)
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "a", &zdisposition), invalid_arg, return);
 
 	zend_update_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("contentDisposition"), zdisposition);
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setContentEncoding, 0, 0, 1)
@@ -1221,7 +1221,7 @@ static PHP_METHOD(HttpEnvResponse, setContentEncoding)
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "l", &ce), invalid_arg, return);
 
 	set_option(getThis(), ZEND_STRL("contentEncoding"), IS_LONG, &ce, 0);
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setCacheControl, 0, 0, 1)
@@ -1235,7 +1235,7 @@ static PHP_METHOD(HttpEnvResponse, setCacheControl)
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s!", &cc_str, &cc_len), invalid_arg, return);
 
 	set_option(getThis(), ZEND_STRL("cacheControl"), IS_STRING, cc_str, cc_len);
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setLastModified, 0, 0, 1)
@@ -1248,7 +1248,7 @@ static PHP_METHOD(HttpEnvResponse, setLastModified)
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "l", &last_modified), invalid_arg, return);
 
 	set_option(getThis(), ZEND_STRL("lastModified"), IS_LONG, &last_modified, 0);
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_isCachedByLastModified, 0, 0, 0)
@@ -1280,7 +1280,7 @@ static PHP_METHOD(HttpEnvResponse, setEtag)
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s!", &etag_str, &etag_len), invalid_arg, return);
 
 	set_option(getThis(), ZEND_STRL("etag"), IS_STRING, etag_str, etag_len);
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_isCachedByEtag, 0, 0, 0)
@@ -1313,7 +1313,7 @@ static PHP_METHOD(HttpEnvResponse, setThrottleRate)
 
 	set_option(getThis(), ZEND_STRL("throttleDelay"), IS_DOUBLE, &delay, 0);
 	set_option(getThis(), ZEND_STRL("throttleChunk"), IS_LONG, &chunk_size, 0);
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_setCookie, 0, 0, 1)
@@ -1354,7 +1354,7 @@ static PHP_METHOD(HttpEnvResponse, setCookie)
 	set_cookie(getThis(), zcookie_new);
 	zval_ptr_dtor(zcookie_new);
 
-	RETVAL_ZVAL_FAST(getThis());
+	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvResponse_send, 0, 0, 0)
