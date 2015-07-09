@@ -35,20 +35,20 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-05-21</date>
+ <date>2015-07-09</date>
  <version>
-  <release>2.5.0RC1</release>
+  <release>2.5.0</release>
   <api>2.5.0</api>
  </version>
  <stability>
-  <release>beta</release>
+  <release>stable</release>
   <api>stable</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Added RFC5988 (Web Linking) support to http\Params
-* Added http\Url::SANITIZE_PATH to default flags of http\Url::mod()
-* Fixed overly aggressive response chaching to only consider 2xx cachable
++ Added RFC5988 (Web Linking) support to http\Params
++ Added http\Url::SANITIZE_PATH to default flags of http\Url::mod()
+* Fixed overly aggressive response caching to only consider 2xx cachable
 ]]></notes>
  <contents>
   <dir name="/">
@@ -302,6 +302,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="params014.phpt"/>
      <file role="test" name="params015.phpt"/>
      <file role="test" name="params016.phpt"/>
+     <file role="test" name="params017.phpt"/>
      <file role="test" name="phpinfo.phpt"/>
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="querystring001.phpt"/>
