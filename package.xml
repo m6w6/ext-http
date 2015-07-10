@@ -37,18 +37,16 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-07-09</date>
  <version>
-  <release>2.5.0</release>
+  <release>2.5.1dev</release>
   <api>2.5.0</api>
  </version>
  <stability>
-  <release>stable</release>
+  <release>beta</release>
   <api>stable</api>
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-+ Added RFC5988 (Web Linking) support to http\Params
-+ Added http\Url::SANITIZE_PATH to default flags of http\Url::mod()
-* Fixed overly aggressive response caching to only consider 2xx cachable
+* Fixed VC11 build (Jan Erhardt)
 ]]></notes>
  <contents>
   <dir name="/">
