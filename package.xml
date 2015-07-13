@@ -47,6 +47,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  <license>BSD, revised</license>
  <notes><![CDATA[
 * Fixed VC11 build (Jan Erhardt)
+* Fixed gh-issue #2: comparison of obsolete pointers in the header parser (xiaoyjy)
 ]]></notes>
  <contents>
   <dir name="/">

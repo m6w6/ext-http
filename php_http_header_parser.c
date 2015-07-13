@@ -146,11 +146,14 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 				const char *colon, *eol_str = NULL;
 				int eol_len = 0;
 
+				/* fix buffer here, so eol_str pointer doesn't become obsolete afterwards */
+				php_http_buffer_fix(buffer);
+
 				if (buffer->data == (eol_str = php_http_locate_bin_eol(buffer->data, buffer->used, &eol_len))) {
 					/* end of headers */
 					php_http_buffer_cut(buffer, 0, eol_len);
 					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_DONE);
-				} else if (php_http_info_parse(&parser->info, php_http_buffer_fix(buffer)->data TSRMLS_CC)) {
+				} else if (php_http_info_parse(&parser->info, buffer->data TSRMLS_CC)) {
 					/* new message starting with request/response line */
 					if (callback_func) {
 						callback_func(callback_arg, &headers, &parser->info TSRMLS_CC);
@@ -176,7 +179,6 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
 				} else if (eol_str || (flags & PHP_HTTP_HEADER_PARSER_CLEANUP)) {
 					/* neither reqeust/response line nor 'header:' string, or injected new line or NUL etc. */
-					php_http_buffer_fix(buffer);
 					php_http_header_parser_error(strspn(buffer->data, PHP_HTTP_HEADER_NAME_CHARS), buffer->data, buffer->used, eol_str TSRMLS_CC);
 					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 				} else {
