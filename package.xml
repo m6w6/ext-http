@@ -48,6 +48,9 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  <notes><![CDATA[
 * Fixed VC11 build (Jan Erhardt)
 * Fixed gh-issue #2: comparison of obsolete pointers in the header parser (xiaoyjy)
++ SSL certinfo is available for libcurl >= 7.42 with gnutls (openssl has already been since 7.19.1)
++ Added "falsestart" SSL request option (available with libcurl >= 7.42 and darwinssl/NSS)
++ Added "service_name" and "proxy_service_name" request options for SPNEGO (available with libcurl >= 7.43)
 ]]></notes>
  <contents>
   <dir name="/">

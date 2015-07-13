@@ -528,7 +528,7 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 	}
 #endif
 
-#if PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)
+#if (PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)) || (PHP_HTTP_CURL_VERSION(7,42,0) && defined(PHP_HTTP_HAVE_GNUTLS))
 	{
 		int i;
 		zval *ci_array;
@@ -1233,6 +1233,11 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		opt->setter = php_http_curle_option_set_proxyheader;
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,43,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("proxy_service_name"), CURLOPT_PROXY_SERVICE_NAME, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+#endif
 
 #if PHP_HTTP_CURL_VERSION(7,40,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("unix_socket_path"), CURLOPT_UNIX_SOCKET_PATH, IS_STRING))) {
@@ -1309,6 +1314,11 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("httpauthtype"), CURLOPT_HTTPAUTH, IS_LONG))) {
 		Z_LVAL(opt->defval) = CURLAUTH_ANYSAFE;
 	}
+#if PHP_HTTP_CURL_VERSION(7,43,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("service_name"), CURLOPT_SERVICE_NAME, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+#endif
 
 	/* redirects */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("redirect"), CURLOPT_FOLLOWLOCATION, IS_LONG))) {
@@ -1515,6 +1525,9 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthpass"), CURLOPT_TLSAUTH_PASSWORD, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 		}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,42,0) && (defined(PHP_HTTP_HAVE_NSS) || defined(PHP_HTTP_HAVE_DARWINSSL))
+		php_http_option_register(registry, ZEND_STRL("falsestart"), CURLOPT_SSL_FALSESTART, IS_BOOL);
 #endif
 	}
 }

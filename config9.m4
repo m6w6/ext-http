@@ -93,6 +93,34 @@ if test "$PHP_HTTP" != "no"; then
 		fi
 	])
 	
+	dnl
+	dnl HTTP_CURL_SSL_LIB_CHECK(ssllib[, code-if-yes[, code-if-not])
+	dnl
+	AC_DEFUN([HTTP_CURL_SSL_LIB_CHECK], [
+		AC_MSG_CHECKING([for $1 support in libcurl])
+		AC_TRY_RUN([
+			#include <curl/curl.h>
+			int main(int argc, char *argv[]) {
+				curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
+				if (data && data->ssl_version && *data->ssl_version) {
+					const char *ptr = data->ssl_version;
+					while(*ptr == ' ') ++ptr;
+					return strncasecmp(ptr, "$1", sizeof("$1")-1);
+				}
+				return 1;
+			}
+		], [
+			AC_MSG_RESULT([yes])
+			$2
+		], [
+			AC_MSG_RESULT([no])
+			$3
+		], [
+			AC_MSG_RESULT([no])
+			$3
+		])
+	])
+	
 
 dnl ----
 dnl STDC
@@ -288,58 +316,30 @@ dnl ----
 				AC_MSG_RESULT([yes])
 				AC_DEFINE([PHP_HTTP_HAVE_SSL], [1], [ ])
 			
-				AC_MSG_CHECKING([for openssl support in libcurl])
-				AC_TRY_RUN([
-					#include <curl/curl.h>
-					int main(int argc, char *argv[]) {
-						curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
-						if (data && data->ssl_version && *data->ssl_version) {
-							const char *ptr = data->ssl_version;
-							while(*ptr == ' ') ++ptr;
-							return strncasecmp(ptr, "OpenSSL", sizeof("OpenSSL")-1);
-						}
-						return 1;
-					}
-				], [
-					AC_MSG_RESULT([yes])
+				HTTP_CURL_SSL_LIB_CHECK(OpenSSL, [
 					AC_CHECK_HEADER([openssl/ssl.h], [
 						AC_CHECK_HEADER([openssl/crypto.h], [
 							AC_DEFINE([PHP_HTTP_HAVE_OPENSSL], [1], [ ])
 							CURL_SSL_LIBS="ssl crypto"
 						])
 					])
-				], [
-					AC_MSG_RESULT([no])
-				], [
-					AC_MSG_RESULT([no])
 				])
-			
-				AC_MSG_CHECKING([for gnutls support in libcurl])
-				AC_TRY_RUN([
-					#include <curl/curl.h>
-					int main(int argc, char *argv[]) {
-						curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
-						if (data && data->ssl_version && *data->ssl_version) {
-							const char *ptr = data->ssl_version;
-							while(*ptr == ' ') ++ptr;
-							return strncasecmp(ptr, "GnuTLS", sizeof("GnuTLS")-1);
-						}
-						return 1;
-					}
-				], [
-					AC_MSG_RESULT([yes])
+				HTTP_CURL_SSL_LIB_CHECK(GnuTLS, [
 					AC_CHECK_HEADER([gnutls.h], [
 						AC_CHECK_HEADER([gcrypt.h], [
 							AC_DEFINE([PHP_HTTP_HAVE_GNUTLS], [1], [ ])
 							CURL_SSL_LIBS="gnutls gcrypt"
 						])
 					])
-				], [
-					AC_MSG_RESULT([no])
-				], [
-					AC_MSG_RESULT([no])
+				])
+				HTTP_CURL_SSL_LIB_CHECK(NSS, [
+					AC_DEFINE([PHP_HTTP_HAVE_NSS], [1], [ ])
+				])
+				HTTP_CURL_SSL_LIB_CHECK(SecureTransport, [
+					AC_DEFINE([PHP_HTTP_HAVE_DARWINSSL], [1], [ ])
 				])
 			else
+				dnl no CURL_SSL
 				AC_MSG_RESULT([no])
 			fi
 			
