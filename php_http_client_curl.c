@@ -502,10 +502,11 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 			case CURLSSLBACKEND_QSOSSL:
 				backend = "qsossl";
 				break;
-#endif
+#else
 			case CURLSSLBACKEND_GSKIT:
 				backend = "gskit";
 				break;
+#endif
 			case CURLSSLBACKEND_POLARSSL:
 				backend = "polarssl";
 				break;
@@ -528,7 +529,7 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 	}
 #endif
 
-#if (PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)) || (PHP_HTTP_CURL_VERSION(7,42,0) && defined(PHP_HTTP_HAVE_GNUTLS))
+#if (PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)) || (PHP_HTTP_CURL_VERSION(7,34,0) && defined(PHP_HTTP_HAVE_NSS)) || (PHP_HTTP_CURL_VERSION(7,42,0) && defined(PHP_HTTP_HAVE_GNUTLS)) || (PHP_HTTP_CURL_VERSION(7,39,0) && defined(PHP_HTTP_HAVE_GSKIT))
 	{
 		int i;
 		zval *ci_array;
@@ -1498,7 +1499,7 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		}
 #	endif
 #endif
-#if PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)
+#if (PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)) || (PHP_HTTP_CURL_VERSION(7,34,0) && defined(PHP_HTTP_HAVE_NSS)) || (PHP_HTTP_CURL_VERSION(7,42,0) && defined(PHP_HTTP_HAVE_GNUTLS)) || (PHP_HTTP_CURL_VERSION(7,39,0) && defined(PHP_HTTP_HAVE_GSKIT))
 		php_http_option_register(registry, ZEND_STRL("certinfo"), CURLOPT_CERTINFO, IS_BOOL);
 #endif
 #if PHP_HTTP_CURL_VERSION(7,36,0)

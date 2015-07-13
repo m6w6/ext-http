@@ -338,6 +338,9 @@ dnl ----
 				HTTP_CURL_SSL_LIB_CHECK(SecureTransport, [
 					AC_DEFINE([PHP_HTTP_HAVE_DARWINSSL], [1], [ ])
 				])
+				HTTP_CURL_SSL_LIB_CHECK(GSKit, [
+					AC_DEFINE([PHP_HTTP_HAVE_GSKIT], [1], [ ])
+				])
 			else
 				dnl no CURL_SSL
 				AC_MSG_RESULT([no])

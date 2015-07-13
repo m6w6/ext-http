@@ -51,6 +51,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
 + SSL certinfo is available for libcurl >= 7.42 with gnutls (openssl has already been since 7.19.1)
 + Added "falsestart" SSL request option (available with libcurl >= 7.42 and darwinssl/NSS)
 + Added "service_name" and "proxy_service_name" request options for SPNEGO (available with libcurl >= 7.43)
++ Enabled "certinfo" transfer info on all supporting SSL backends (OpenSSL: libcurl v7.19.1, NSS: libcurl v7.34.0, GSKit: libcurl v7.39.0, GnuTLS: libcurl v7.42.0)
 ]]></notes>
  <contents>
   <dir name="/">
