@@ -37,7 +37,7 @@ php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **bo
 
 	if (body_ptr && *body_ptr) {
 		body = *body_ptr;
-		++body->refcount;
+		php_http_message_body_addref(body);
 		return body;
 	}
 	

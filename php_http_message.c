@@ -776,10 +776,11 @@ ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *msg
 	}
 	if (msg_obj->message) {
 		php_http_message_body_free(&msg_obj->message->body);
-		msg_obj->message->body = php_http_message_body_init(&body_obj->body, NULL);
+		msg_obj->message->body = body_obj->body;
 	} else {
-		msg_obj->message = php_http_message_init(NULL, 0, php_http_message_body_init(&body_obj->body, NULL));
+		msg_obj->message = php_http_message_init(NULL, 0, body_obj->body);
 	}
+	php_http_message_body_addref(body_obj->body);
 	msg_obj->body = body_obj;
 
 	return SUCCESS;
