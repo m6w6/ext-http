@@ -507,7 +507,7 @@ static PHP_METHOD(HttpClient, __construct)
 			php_persistent_handle_factory_t *pf;
 
 			if ((pf = php_persistent_handle_concede(NULL, driver->client_name, persistent_handle_name, NULL, NULL))) {
-				rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
+				rf = php_persistent_handle_resource_factory_init(NULL, pf);
 			}
 		}
 
