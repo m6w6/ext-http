@@ -315,7 +315,7 @@ static inline void sanitize_rfc5987(zval *zv, char **language, zend_bool *latin1
 	}
 }
 
-static inline void sanitize_rfc5988(char *str, size_t len, zval *zv TSRMLS_DC)
+static inline void sanitize_rfc5988(char *str, size_t len, zval *zv)
 {
 	zend_string *zs = zend_string_init(str, len, 0);
 
@@ -324,7 +324,7 @@ static inline void sanitize_rfc5988(char *str, size_t len, zval *zv TSRMLS_DC)
 	zend_string_release(zs);
 }
 
-static inline void prepare_rfc5988(zval *zv TSRMLS_DC)
+static inline void prepare_rfc5988(zval *zv)
 {
 	if (Z_TYPE_P(zv) != IS_STRING) {
 		zval_dtor(zv);
@@ -437,7 +437,7 @@ static void merge_param(HashTable *params, zval *zdata, zval **current_param, zv
 		zval tmp;
 		INIT_PZVAL_ARRAY(&tmp, params);
 		fprintf(stderr, "params = ");
-		zend_print_zval_r(&tmp, 1 TSRMLS_CC);
+		zend_print_zval_r(&tmp, 1);
 		fprintf(stderr, "\n");
 	}
 #endif
@@ -1225,7 +1225,7 @@ PHP_METHOD(HttpParams, offsetSet)
 	zend_string *name;
 	zval zparams_tmp, *zparam, *zparams, *nvalue;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Sz", &name, &nvalue)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "Sz", &name, &nvalue)) {
 		return;
 	}
 

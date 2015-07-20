@@ -634,7 +634,7 @@ static ZEND_RESULT_CODE dechunk_update(php_http_encoding_stream_t *s, const char
 					/*	if strtoul() stops at the beginning of the buffered data
 						there's something oddly wrong, i.e. bad input */
 					if (stop == ctx->buffer.data) {
-						php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse chunk len from '%.*s'", (int) MIN(16, ctx->buffer.used), ctx->buffer.data);
+						php_error_docref(NULL, E_WARNING, "Failed to parse chunk len from '%.*s'", (int) MIN(16, ctx->buffer.used), ctx->buffer.data);
 						php_http_buffer_dtor(&tmp);
 						return FAILURE;
 					}

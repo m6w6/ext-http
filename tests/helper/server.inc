@@ -10,6 +10,18 @@ if ($php) {
 	define("PHP_BIN", PHP_BINDIR.DIRECTORY_SEPARATOR."php");
 }
 
+foreach (array("raphf", "propro", "http") as $ext) {
+	if (!extension_loaded($ext)) {
+		switch (PHP_SHLIB_SUFFIX) {
+			case "dll":
+				dl("php_$ext.dll"); 
+				break;
+			default:
+				dl($ext .".". PHP_SHLIB_SUFFIX);
+		}
+	}
+}
+
 function serve($cb) {
 	/* stream_socket_server() automatically sets SO_REUSEADDR, 
 	 * which is, well, bad if the tests are run in parallel

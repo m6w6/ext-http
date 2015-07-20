@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-static int php_http_negotiate_sort(const void *first, const void *second TSRMLS_DC)
+static int php_http_negotiate_sort(const void *first, const void *second)
 {
 	zval result;
 	Bucket *b1 = (Bucket *) first, *b2 = (Bucket *) second;
@@ -100,7 +100,7 @@ static int php_http_negotiate_reduce(zval *p, int num_args, va_list args, zend_h
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable *supported, const char *primary_sep_str, size_t primary_sep_len TSRMLS_DC)
+HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable *supported, const char *primary_sep_str, size_t primary_sep_len)
 {
 	HashTable *result = NULL;
 
@@ -115,7 +115,7 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 		php_http_params_opts_default_get(&opts);
 		opts.input.str = estrndup(value_str, value_len);
 		opts.input.len = value_len;
-		php_http_params_parse(&params, &opts TSRMLS_CC);
+		php_http_params_parse(&params, &opts);
 		efree(opts.input.str);
 
 		array_init(&arr);

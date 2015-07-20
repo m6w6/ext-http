@@ -596,7 +596,7 @@ static PHP_METHOD(HttpMessageParser, parse)
 	size_t data_len;
 	zend_long flags;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slz", &data_str, &data_len, &flags, &zmsg), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "slz", &data_str, &data_len, &flags, &zmsg), invalid_arg, return);
 
 	parser_obj = PHP_HTTP_OBJ(NULL, getThis());
 	php_http_buffer_append(&parser_obj->buffer, data_str, data_len);
@@ -625,7 +625,7 @@ static PHP_METHOD(HttpMessageParser, stream)
 	php_stream *s;
 	zend_long flags;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlz", &zstream, &flags, &zmsg), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "rlz", &zstream, &flags, &zmsg), invalid_arg, return);
 
 	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh);
 	php_stream_from_zval(s, zstream);

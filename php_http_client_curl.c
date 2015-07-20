@@ -220,7 +220,6 @@ static int php_http_curle_progress_callback(void *ctx, double dltotal, double dl
 static int php_http_curle_seek_callback(void *userdata, curl_off_t offset, int origin)
 {
 	php_http_message_body_t *body = userdata;
-	TSRMLS_FETCH_FROM_CTX(body->ts);
 
 	if (!body) {
 		return 1;
@@ -603,14 +602,14 @@ static int compare_queue(php_http_client_enqueue_t *e, void *handle)
 	return handle == ((php_http_client_curl_handler_t *) e->opaque)->handle;
 }
 
-static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_handler_t *h TSRMLS_DC)
+static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_handler_t *h)
 {
 	php_http_message_t *response;
 	php_http_header_parser_t parser;
 	zval *zh;
 
-	response = php_http_message_init(NULL, 0, h->response.body TSRMLS_CC);
-	php_http_header_parser_init(&parser TSRMLS_CC);
+	response = php_http_message_init(NULL, 0, h->response.body);
+	php_http_header_parser_init(&parser);
 	while (h->response.headers.used) {
 		php_http_header_parser_state_t st = php_http_header_parser_parse(&parser,
 				&h->response.headers, PHP_HTTP_HEADER_PARSER_CLEANUP, &response->hdrs,
@@ -687,7 +686,7 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 
 			if ((enqueue = php_http_client_enqueued(context, msg->easy_handle, compare_queue))) {
 				php_http_client_curl_handler_t *handler = enqueue->opaque;
-				php_http_message_t *response = php_http_curlm_responseparser(handler TSRMLS_CC);
+				php_http_message_t *response = php_http_curlm_responseparser(handler);
 
 				if (response) {
 					context->callback.response.func(context->callback.response.arg, context, &handler->queue, &response);
@@ -701,7 +700,7 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 		int i = 0;
 
 		do {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s; %s (%s)", curl_easy_strerror(err[i].errorcode), err[i].errorbuffer, STR_PTR(err[i].url));
+			php_error_docref(NULL, E_WARNING, "%s; %s (%s)", curl_easy_strerror(err[i].errorcode), err[i].errorbuffer, STR_PTR(err[i].url));
 			if (err[i].url) {
 				efree(err[i].url);
 			}
@@ -1643,7 +1642,6 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_
 	CURLM *ch = curl->handle;
 	HashTable tmp_ht;
 	char **bl = NULL;
-	TSRMLS_FETCH_FROM_CTX(client->ts);
 
 	/* array of char *, ending with a NULL */
 	if (value && Z_TYPE_P(value) != IS_NULL) {
@@ -1714,7 +1712,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_use_eventloop(php_http_option_
 }
 #endif
 
-static void php_http_curlm_options_init(php_http_options_t *registry TSRMLS_DC)
+static void php_http_curlm_options_init(php_http_options_t *registry)
 {
 	php_http_option_t *opt;
 
@@ -1812,7 +1810,7 @@ static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *
 	}
 
 	if (rv != SUCCESS) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s (%s)", opt->name->val, curl_easy_strerror(rc));
+		php_error_docref(NULL, E_NOTICE, "Could not set option %s (%s)", opt->name->val, curl_easy_strerror(rc));
 	}
 	return rv;
 }
@@ -2019,7 +2017,7 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 			curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, PHP_HTTP_INFO(msg).request.method);
 		}
 	} else {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot use empty request method");
+		php_error_docref(NULL, E_WARNING, "Cannot use empty request method");
 		return FAILURE;
 	}
 
@@ -2414,7 +2412,6 @@ static int apply_available_options(zval *pDest, int num_args, va_list args, zend
 static ZEND_RESULT_CODE php_http_client_curl_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void **res)
 {
 	php_http_client_enqueue_t *enqueue;
-	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	switch (opt) {
 	case PHP_HTTP_CLIENT_OPT_PROGRESS_INFO:
@@ -2436,11 +2433,11 @@ static ZEND_RESULT_CODE php_http_client_curl_getopt(php_http_client_t *h, php_ht
 		break;
 
 	case PHP_HTTP_CLIENT_OPT_AVAILABLE_OPTIONS:
-		zend_hash_apply_with_arguments(&php_http_curle_options.options TSRMLS_CC, apply_available_options, 1, *(HashTable **) res);
+		zend_hash_apply_with_arguments(&php_http_curle_options.options, apply_available_options, 1, *(HashTable **) res);
 		break;
 
 	case PHP_HTTP_CLIENT_OPT_AVAILABLE_CONFIGURATION:
-		zend_hash_apply_with_arguments(&php_http_curlm_options.options TSRMLS_CC, apply_available_options, 1, *(HashTable **) res);
+		zend_hash_apply_with_arguments(&php_http_curlm_options.options, apply_available_options, 1, *(HashTable **) res);
 		break;
 
 	default:

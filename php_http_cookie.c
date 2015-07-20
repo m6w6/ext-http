@@ -413,7 +413,7 @@ zend_object *php_http_cookie_object_clone(zval *obj)
 	return &new_obj->zo;
 }
 
-void php_http_cookie_object_free(zend_object *object TSRMLS_DC)
+void php_http_cookie_object_free(zend_object *object)
 {
 	php_http_cookie_object_t *obj = PHP_HTTP_OBJ(object, NULL);
 
@@ -926,7 +926,7 @@ static PHP_METHOD(HttpCookie, setFlags)
 	long flags = 0;
 	php_http_cookie_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &flags), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &flags), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
@@ -1024,9 +1024,9 @@ PHP_MINIT_FUNCTION(http_cookie)
 	php_http_cookie_object_handlers.clone_obj = php_http_cookie_object_clone;
 	php_http_cookie_object_handlers.free_obj = php_http_cookie_object_free;
 
-	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("PARSE_RAW"), PHP_HTTP_COOKIE_PARSE_RAW TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("SECURE"), PHP_HTTP_COOKIE_SECURE TSRMLS_CC);
-	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("HTTPONLY"), PHP_HTTP_COOKIE_HTTPONLY TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("PARSE_RAW"), PHP_HTTP_COOKIE_PARSE_RAW);
+	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("SECURE"), PHP_HTTP_COOKIE_SECURE);
+	zend_declare_class_constant_long(php_http_cookie_class_entry, ZEND_STRL("HTTPONLY"), PHP_HTTP_COOKIE_HTTPONLY);
 
 	return SUCCESS;
 }

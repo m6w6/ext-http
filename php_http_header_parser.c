@@ -122,7 +122,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 #endif
 		switch (php_http_header_parser_state_pop(parser)) {
 			case PHP_HTTP_HEADER_PARSER_STATE_FAILURE:
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse headers");
+				php_error_docref(NULL, E_WARNING, "Failed to parse headers");
 				return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 
 			case PHP_HTTP_HEADER_PARSER_STATE_START: {
@@ -162,7 +162,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 
 					valid_len = strspn(parser->_key.str, PHP_HTTP_HEADER_NAME_CHARS);
 					if (valid_len != parser->_key.len) {
-						php_http_header_parser_error(valid_len, parser->_key.str, parser->_key.len, eol_str TSRMLS_CC);
+						php_http_header_parser_error(valid_len, parser->_key.str, parser->_key.len, eol_str);
 						PTR_SET(parser->_key.str, NULL);
 						return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 					}
@@ -172,7 +172,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 				} else if (eol_str || (flags & PHP_HTTP_HEADER_PARSER_CLEANUP)) {
 					/* neither reqeust/response line nor 'header:' string, or injected new line or NUL etc. */
 					php_http_buffer_fix(buffer);
-					php_http_header_parser_error(strspn(buffer->data, PHP_HTTP_HEADER_NAME_CHARS), buffer->data, buffer->used, eol_str TSRMLS_CC);
+					php_http_header_parser_error(strspn(buffer->data, PHP_HTTP_HEADER_NAME_CHARS), buffer->data, buffer->used, eol_str);
 					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 				} else {
 					/* keep feeding */
@@ -245,7 +245,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 
 					/* check for truncation */
 					if (valid_len != parser->_val.len) {
-						php_http_header_parser_error(valid_len, parser->_val.str, parser->_val.len, NULL TSRMLS_CC);
+						php_http_header_parser_error(valid_len, parser->_val.str, parser->_val.len, NULL);
 
 						PTR_SET(parser->_key.str, NULL);
 						PTR_SET(parser->_val.str, NULL);
@@ -285,7 +285,6 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 php_http_header_parser_state_t php_http_header_parser_parse_stream(php_http_header_parser_t *parser, php_http_buffer_t *buf, php_stream *s, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
 {
 	php_http_header_parser_state_t state = PHP_HTTP_HEADER_PARSER_STATE_START;
-	TSRMLS_FETCH_FROM_CTX(parser->ts);
 
 	if (!buf->data) {
 		php_http_buffer_resize_ex(buf, 0x1000, 1, 0);

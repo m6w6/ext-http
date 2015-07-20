@@ -19,13 +19,13 @@ ZEND_RESULT_CODE php_http_header_parse(const char *header, size_t length, HashTa
 	php_http_header_parser_state_t rs;
 	
 	if (!php_http_buffer_from_string_ex(&buf, header, length)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not allocate buffer");
+		php_error_docref(NULL, E_WARNING, "Could not allocate buffer");
 		return FAILURE;
 	}
 	
-	if (!php_http_header_parser_init(&ctx TSRMLS_CC)) {
+	if (!php_http_header_parser_init(&ctx)) {
 		php_http_buffer_dtor(&buf);
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not initialize header parser");
+		php_error_docref(NULL, E_WARNING, "Could not initialize header parser");
 		return FAILURE;
 	}
 	
@@ -36,7 +36,7 @@ ZEND_RESULT_CODE php_http_header_parse(const char *header, size_t length, HashTa
 	return rs == PHP_HTTP_HEADER_PARSER_STATE_FAILURE ? FAILURE : SUCCESS;
 }
 
-void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg TSRMLS_DC)
+void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg)
 {
 	php_http_arrkey_t key;
 	zval *header, *single_header;
@@ -78,9 +78,9 @@ void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pa
 	ZEND_HASH_FOREACH_END();
 }
 
-void php_http_header_to_string(php_http_buffer_t *str, HashTable *headers TSRMLS_DC)
+void php_http_header_to_string(php_http_buffer_t *str, HashTable *headers)
 {
-	php_http_header_to_callback(headers, 1, (php_http_pass_format_callback_t) php_http_buffer_appendf, str TSRMLS_CC);
+	php_http_header_to_callback(headers, 1, (php_http_pass_format_callback_t) php_http_buffer_appendf, str);
 }
 
 zend_string *php_http_header_value_array_to_string(zval *header)
@@ -173,7 +173,7 @@ PHP_METHOD(HttpHeader, unserialize)
 	char *serialized_str;
 	size_t serialized_len;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &serialized_str, &serialized_len)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s", &serialized_str, &serialized_len)) {
 		HashTable ht;
 
 		zend_hash_init(&ht, 1, NULL, ZVAL_PTR_DTOR, 0);
@@ -311,7 +311,7 @@ PHP_METHOD(HttpHeader, parse)
 			zval_dtor(return_value);
 			RETURN_FALSE;
 		} else {
-			if (ce && instanceof_function(ce, php_http_header_class_entry TSRMLS_CC)) {
+			if (ce && instanceof_function(ce, php_http_header_class_entry)) {
 				php_http_arrkey_t key;
 				zval *val;
 

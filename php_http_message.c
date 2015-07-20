@@ -86,7 +86,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 			php_http_env_get_response_headers(&message->hdrs);
 			if (php_output_get_level()) {
 				if (php_output_get_status() & PHP_OUTPUT_SENT) {
-					php_error_docref(NULL, E_WARNING, "Could not fetch response body, output has already been sent at %s:%d", php_output_get_start_filename(TSRMLS_C), php_output_get_start_lineno(TSRMLS_C));
+					php_error_docref(NULL, E_WARNING, "Could not fetch response body, output has already been sent at %s:%d", php_output_get_start_filename(), php_output_get_start_lineno());
 					goto error;
 				} else if (SUCCESS != php_output_get_contents(&tval)) {
 					php_error_docref(NULL, E_WARNING, "Could not fetch response body");
@@ -818,7 +818,7 @@ php_http_message_object_t *php_http_message_object_new_ex(zend_class_entry *ce, 
 	return o;
 }
 
-zend_object *php_http_message_object_clone(zval *this_ptr TSRMLS_DC)
+zend_object *php_http_message_object_clone(zval *this_ptr)
 {
 	php_http_message_object_t *new_obj = NULL;
 	php_http_message_object_t *old_obj = PHP_HTTP_OBJ(NULL, this_ptr);
@@ -1409,7 +1409,7 @@ static PHP_METHOD(HttpMessage, setResponseCode)
 	zend_bool strict = 1;
 	php_http_message_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|b", &code, &strict), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "l|b", &code, &strict), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
@@ -1460,7 +1460,7 @@ static PHP_METHOD(HttpMessage, setResponseStatus)
 	size_t status_len;
 	php_http_message_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &status, &status_len), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s", &status, &status_len), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
@@ -1710,7 +1710,7 @@ static PHP_METHOD(HttpMessage, unserialize)
 			obj->message = msg;
 		} else {
 			obj->message = php_http_message_init(NULL, 0, NULL);
-			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Could not unserialize http\\Message");
+			php_error_docref(NULL, E_ERROR, "Could not unserialize http\\Message");
 		}
 	}
 }
@@ -1832,7 +1832,7 @@ static PHP_METHOD(HttpMessage, count)
 {
 	zend_long count_mode = -1;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &count_mode)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &count_mode)) {
 		php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
 
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);

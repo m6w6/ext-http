@@ -178,7 +178,7 @@ ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size
 	opts.val = vsepp;
 	opts.flags = PHP_HTTP_PARAMS_QUERY;
 
-	if (SUCCESS == php_http_ini_entry(ZEND_STRL("arg_separator.input"), &asi_str, &asi_len, 0 TSRMLS_CC) && asi_len) {
+	if (SUCCESS == php_http_ini_entry(ZEND_STRL("arg_separator.input"), &asi_str, &asi_len, 0) && asi_len) {
 		zval arr;
 
 		array_init_size(&arr, asi_len);
@@ -329,7 +329,7 @@ PHP_METHOD(HttpQueryString, __construct)
 	zval *params = NULL;
 	zend_error_handling zeh;
 	
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z", &params), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &params), invalid_arg, return);
 
 	zend_replace_error_handling(EH_THROW, php_http_exception_bad_querystring_class_entry, &zeh);
 	php_http_querystring_set(getThis(), params, 0);
@@ -594,7 +594,7 @@ PHP_METHOD(HttpQueryString, offsetSet)
 	zend_string *offset;
 	zval *value, param, znull;
 	
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Sz", &offset, &value)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "Sz", &offset, &value)) {
 		return;
 	}
 
@@ -641,7 +641,7 @@ PHP_METHOD(HttpQueryString, offsetUnset)
 	zend_string *offset;
 	zval param, znull;
 	
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "S", &offset)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S", &offset)) {
 		return;
 	}
 

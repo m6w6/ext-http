@@ -69,7 +69,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		return NULL;
 	}
 	
-	info = php_http_info_init(info TSRMLS_CC);
+	info = php_http_info_init(info);
 
 	/* and nothing than SPACE or NUL after HTTP/X.x */
 	if (!php_http_version_parse(&info->http.version, http)

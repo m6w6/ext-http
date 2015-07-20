@@ -113,9 +113,9 @@ char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle,
 }
 
 
-size_t php_http_boundary(char *buf, size_t buf_len TSRMLS_DC)
+size_t php_http_boundary(char *buf, size_t buf_len)
 {
-	return snprintf(buf, buf_len, "%15.15F", sapi_get_request_time(TSRMLS_C) * php_combined_lcg(TSRMLS_C));
+	return snprintf(buf, buf_len, "%15.15F", sapi_get_request_time() * php_combined_lcg());
 }
 
 int php_http_select_str(const char *cmp, int argc, ...)
@@ -251,8 +251,8 @@ size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len)
 	zval zdata;
 
 	ZVAL_STRINGL(&zdata, str, len);
-	if (SUCCESS == zend_fcall_info_argn(&fcd->fci TSRMLS_CC, 2, &fcd->fcz, &zdata)) {
-		zend_fcall_info_call(&fcd->fci, &fcd->fcc, NULL, NULL TSRMLS_CC);
+	if (SUCCESS == zend_fcall_info_argn(&fcd->fci, 2, &fcd->fcz, &zdata)) {
+		zend_fcall_info_call(&fcd->fci, &fcd->fcc, NULL, NULL);
 		zend_fcall_info_args_clear(&fcd->fci, 0);
 	}
 	zval_ptr_dtor(&zdata);

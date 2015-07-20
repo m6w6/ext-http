@@ -106,11 +106,11 @@ static void php_http_globals_init_once(zend_php_http_globals *G)
 }
 
 #if 0
-static inline void php_http_globals_init(zend_php_http_globals *G TSRMLS_DC)
+static inline void php_http_globals_init(zend_php_http_globals *G)
 {
 }
 
-static inline void php_http_globals_free(zend_php_http_globals *G TSRMLS_DC)
+static inline void php_http_globals_free(zend_php_http_globals *G)
 {
 }
 #endif

@@ -18,7 +18,7 @@ typedef struct php_http_object {
 	zend_object zo;
 } php_http_object_t;
 
-zend_object *php_http_object_new(zend_class_entry *ce TSRMLS_DC);
+zend_object *php_http_object_new(zend_class_entry *ce);
 php_http_object_t *php_http_object_new_ex(zend_class_entry *ce, void *nothing);
 
 typedef void *(*php_http_new_t)(zend_class_entry *ce, void *);

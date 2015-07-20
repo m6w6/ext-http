@@ -172,7 +172,7 @@ static PHP_METHOD(HttpEnvRequest, __construct)
 		add_next_index_stringl(&mn, ZEND_STRL("get")); \
 		zend_fcall_info_init(&mn, 0, &fci, &fcc, NULL, NULL); \
 		zend_get_parameters_array_ex(ZEND_NUM_ARGS(), args); \
-		zend_fcall_info_argp(&fci TSRMLS_CC, ZEND_NUM_ARGS(), args); \
+		zend_fcall_info_argp(&fci, ZEND_NUM_ARGS(), args); \
 		zend_fcall_info_call(&fci, &fcc, &rv, NULL); \
 		zend_fcall_info_args_clear(&fci, 1); \
 		efree(args); \

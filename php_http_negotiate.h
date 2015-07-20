@@ -119,7 +119,7 @@ static inline HashTable *php_http_negotiate_content_type(HashTable *supported, p
 #define PHP_HTTP_DO_NEGOTIATE(type, supported, rs_array) \
 	{ \
 		HashTable *result; \
-		if ((result = php_http_negotiate_ ##type(supported, NULL TSRMLS_CC))) { \
+		if ((result = php_http_negotiate_ ##type(supported, NULL))) { \
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(result, supported, rs_array); \
 		} else { \
 			PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array); \

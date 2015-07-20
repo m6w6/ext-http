@@ -839,7 +839,7 @@ static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *pt
 
 #if defined(PHP_WIN32) || defined(HAVE_UIDNA_IDNTOASCII)
 typedef size_t (*parse_mb_func)(unsigned *wc, const char *ptr, const char *end);
-static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len TSRMLS_DC)
+static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len)
 {
 	size_t offset = 0, u8_len = strlen(u8);
 
@@ -887,7 +887,6 @@ static ZEND_RESULT_CODE parse_idn2(struct parse_state *state, size_t prev_len)
 {
 	char *idn = NULL;
 	int rv = -1;
-	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
 		rv = idn2_lookup_u8((const unsigned char *) state->url.host, (unsigned char **) &idn, IDN2_NFC_INPUT);
@@ -898,7 +897,7 @@ static ZEND_RESULT_CODE parse_idn2(struct parse_state *state, size_t prev_len)
 	}
 #	endif
 	if (rv != IDN2_OK) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idn2_strerror(rv));
+		php_error_docref(NULL, E_WARNING, "Failed to parse IDN; %s", idn2_strerror(rv));
 		return FAILURE;
 	} else {
 		size_t idnlen = strlen(idn);
@@ -949,15 +948,14 @@ static ZEND_RESULT_CODE parse_uidn(struct parse_state *state)
 	uint16_t *uhost_str, ahost_str[MAXHOSTNAMELEN], *ahost_ptr;
 	size_t uhost_len, ahost_len;
 	UErrorCode error = U_ZERO_ERROR;
-	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len TSRMLS_CC)) {
+		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
 			return FAILURE;
 		}
 #ifdef PHP_HTTP_HAVE_WCHAR
 	} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len TSRMLS_CC)) {
+		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len)) {
 			return FAILURE;
 		}
 #endif
@@ -1499,7 +1497,6 @@ php_http_url_t *php_http_url_parse_authority(const char *str, size_t len, unsign
 	state->ptr = str;
 	state->flags = flags;
 	state->maxlen = maxlen;
-	TSRMLS_SET_CTX(state->ts);
 
 	if (!(state->ptr = parse_authority(state))) {
 		efree(state);
@@ -1507,7 +1504,7 @@ php_http_url_t *php_http_url_parse_authority(const char *str, size_t len, unsign
 	}
 
 	if (state->ptr != state->end) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING,
+		php_error_docref(NULL, E_WARNING,
 				"Failed to parse URL authority, unexpected character at pos %u in '%s'",
 				(unsigned) (state->ptr - str), str);
 		efree(state);

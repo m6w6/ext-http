@@ -1096,7 +1096,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_finish(php_http_env_respons
 	php_stream_flush(ctx->stream);
 	if (ctx->chunked && ctx->chunked_filter) {
 		php_stream_filter_flush(ctx->chunked_filter, 1);
-		ctx->chunked_filter = php_stream_filter_remove(ctx->chunked_filter, 1 TSRMLS_CC);
+		ctx->chunked_filter = php_stream_filter_remove(ctx->chunked_filter, 1);
 	}
 
 	ctx->finished = 1;
@@ -1291,7 +1291,7 @@ static PHP_METHOD(HttpEnvResponse, isCachedByEtag)
 	char *header_name_str = NULL;
 	size_t header_name_len = 0;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|s!", &header_name_str, &header_name_len)) {
 		if (!header_name_str || !header_name_len) {
 			header_name_str = "If-None-Match";
 			header_name_len = lenof("If-None-Match");

@@ -33,7 +33,7 @@ PHP_RSHUTDOWN_FUNCTION(http_env)
 	return SUCCESS;
 }
 
-void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC)
+void php_http_env_get_request_headers(HashTable *headers)
 {
 	php_http_arrkey_t key;
 	zval *hsv, *header;
@@ -574,7 +574,7 @@ static PHP_METHOD(HttpEnv, getResponseStatusForCode)
 	zend_long code;
 	const char *status;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "l", &code)) {
 		return;
 	}
 
@@ -672,7 +672,7 @@ static PHP_METHOD(HttpEnv, negotiateLanguage)
 	HashTable *supported;
 	zval *rs_array = NULL;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "H|z", &supported, &rs_array)) {
 		return;
 	}
 	if (rs_array) {
@@ -757,7 +757,7 @@ static PHP_METHOD(HttpEnv, negotiate)
 	char *value_str, *sep_str = NULL;
 	size_t value_len, sep_len = 0;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sH|s!z", &value_str, &value_len, &supported, &sep_str, &sep_len, &rs_array)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "sH|s!z", &value_str, &value_len, &supported, &sep_str, &sep_len, &rs_array)) {
 		return;
 	}
 
