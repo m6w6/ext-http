@@ -32,8 +32,8 @@ server("proxy.inc", function($port) {
 Test
 Accept-Ranges: bytes
 Content-Length: 134217960
-Etag: "cc048f13"
-Last-Modified: Mon, 20 Jul 2015 12:55:36 GMT
+Etag: "%x"
+Last-Modified: %s
 X-Original-Transfer-Encoding: chunked
 
 ===DONE===
