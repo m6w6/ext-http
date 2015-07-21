@@ -2117,7 +2117,7 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 	}
 
 	/* only if the client itself is setup for persistence */
-	if (h->rf->dtor == (void (*)(void*)) php_persistent_handle_abandon) {
+	if (php_resource_factory_is_persistent(h->rf)) {
 		char *id_str = NULL;
 		size_t id_len;
 		int port = url->port ? url->port : 80;
@@ -2138,7 +2138,7 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 	}
 
 	if (pf) {
-		rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void*)) php_persistent_handle_abandon);
+		rf = php_persistent_handle_resource_factory_init(NULL, pf);
 	} else {
 		rf = php_resource_factory_init(NULL, &php_http_curle_resource_factory_ops, NULL, NULL);
 	}

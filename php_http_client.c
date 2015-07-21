@@ -533,7 +533,7 @@ static PHP_METHOD(HttpClient, __construct)
 			php_http_pretty_key(name_str + sizeof("http\\Client"), driver.name_len, 1, 1);
 
 			if ((pf = php_persistent_handle_concede(NULL , name_str, name_len, persistent_handle_str, persistent_handle_len, NULL, NULL TSRMLS_CC))) {
-				rf = php_resource_factory_init(NULL, php_persistent_handle_get_resource_factory_ops(), pf, (void (*)(void *)) php_persistent_handle_abandon);
+				rf = php_persistent_handle_resource_factory_init(NULL, pf);
 			}
 
 			efree(name_str);
