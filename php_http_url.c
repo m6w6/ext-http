@@ -1288,8 +1288,11 @@ static const char *parse_query(struct parse_state *state)
 			state->buffer[state->offset++] = *state->ptr;
 			break;
 
-		case ']':
-		case '[':
+		/* RFC1738 unsafe */
+		case '{': case '}':
+		case '<': case '>':
+		case '[': case ']':
+		case '|': case '\\': case '^': case '`': case '"': case ' ':
 			if (state->flags & PHP_HTTP_URL_PARSE_TOPCT) {
 				state->buffer[state->offset++] = '%';
 				state->buffer[state->offset++] = parse_xdigits[((unsigned char) *state->ptr) >> 4];
@@ -1360,6 +1363,19 @@ static const char *parse_fragment(struct parse_state *state)
 			state->buffer[state->offset++] = *state->ptr++;
 			state->buffer[state->offset++] = *state->ptr;
 			break;
+
+		/* RFC1738 unsafe */
+		case '{': case '}':
+		case '<': case '>':
+		case '[': case ']':
+		case '|': case '\\': case '^': case '`': case '"': case ' ':
+			if (state->flags & PHP_HTTP_URL_PARSE_TOPCT) {
+				state->buffer[state->offset++] = '%';
+				state->buffer[state->offset++] = parse_xdigits[((unsigned char) *state->ptr) >> 4];
+				state->buffer[state->offset++] = parse_xdigits[((unsigned char) *state->ptr) & 0xf];
+				break;
+			}
+			/* no break */
 
 		case '?': case '/':
 		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
