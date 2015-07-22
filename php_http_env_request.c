@@ -172,7 +172,7 @@ static PHP_METHOD(HttpEnvRequest, __construct)
 	do {\
 		zend_fcall_info fci; \
 		zend_fcall_info_cache fcc; \
-		zval *rv, mn, ***args = ecalloc(sizeof(zval **), ZEND_NUM_ARGS()); \
+		zval *rv = NULL, mn, ***args = ecalloc(sizeof(zval **), ZEND_NUM_ARGS()); \
 		zval *qs = zend_read_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL(prop), 0 TSRMLS_CC); \
 		 \
 		INIT_PZVAL(&mn); \
@@ -187,7 +187,9 @@ static PHP_METHOD(HttpEnvRequest, __construct)
 		zend_fcall_info_args_clear(&fci, 1); \
 		efree(args); \
 		zval_dtor(&mn); \
-		RETVAL_ZVAL(rv, 0, 1); \
+		if (rv) { \
+			RETVAL_ZVAL(rv, 0, 1); \
+		} \
 	} while(0);
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvRequest_getForm, 0, 0, 0)

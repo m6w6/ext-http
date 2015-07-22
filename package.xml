@@ -49,6 +49,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
 * Fixed VC11 build (Jan Erhardt)
 * Fixed gh-issue #2: comparison of obsolete pointers in the header parser (xiaoyjy)
 * Fixed gh-issue #6: allow RFC1738 unsafe characters in query/fragment
+* Fixed gh-issue #7: crash with querystring and exception from error handler
 + SSL certinfo is available for libcurl >= 7.42 with gnutls (openssl has already been since 7.19.1)
 + Added "falsestart" SSL request option (available with libcurl >= 7.42 and darwinssl/NSS)
 + Added "service_name" and "proxy_service_name" request options for SPNEGO (available with libcurl >= 7.43)
@@ -248,6 +249,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="filterchunked.phpt"/>
      <file role="test" name="filterzlib.phpt"/>
      <file role="test" name="gh-issue6.phpt"/>
+     <file role="test" name="gh-issue7.phpt"/>
      <file role="test" name="header001.phpt"/>
      <file role="test" name="header002.phpt"/>
      <file role="test" name="header003.phpt"/>
