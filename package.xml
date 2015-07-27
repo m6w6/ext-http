@@ -35,13 +35,13 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-07-09</date>
+ <date>2015-07-27</date>
  <version>
-  <release>2.5.1dev</release>
+  <release>2.5.1</release>
   <api>2.5.0</api>
  </version>
  <stability>
-  <release>beta</release>
+  <release>stable</release>
   <api>stable</api>
  </stability>
  <license>BSD, revised</license>
@@ -347,7 +347,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
    <package>
     <name>raphf</name>
     <channel>pecl.php.net</channel>
-    <min>1.0.0</min>
+    <min>1.1.0</min>
     <providesextension>raphf</providesextension>
    </package>
    <package>
@@ -376,6 +376,10 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
    name="with-http-libevent-dir"
    prompt="where to find libevent"
    default="/usr" />
- </extsrcrelease>
+  <configureoption
+   name="with-http-libidn-dir"
+   prompt="where to find libidn"
+   default="/usr" />
+  </extsrcrelease>
  <changelog />
 </package>
