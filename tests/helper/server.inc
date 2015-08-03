@@ -36,7 +36,7 @@ function serve($cb) {
 			logger("serve: Using port %d", $port);
 			do {
 				$R = array($server); $W = array(); $E = array();
-				$select = stream_select($R, $E, $E, 0, 10000);
+				$select = stream_select($R, $E, $E, 10, 0);
 				if ($select && ($client = stream_socket_accept($server, 1))) {
 					logger("serve: Accept client %d", (int) $client);
 					if (getenv("PHP_HTTP_TEST_SSL")) {
