@@ -6,7 +6,7 @@ addons:
   packages:
    - php5-cli
    - php-pear
-   - libcurl5-openssl-dev
+   - libcurl4-openssl-dev
    - zlib1g-dev
    - libidn11-dev
    - libevent-dev
@@ -45,5 +45,8 @@ before_script:
 script:
  - make -f travis/pecl/Makefile ext PECL=http
  - make -f travis/pecl/Makefile test
+
+after_script:
+ - test -e tests/helper/server.log && cat tests/helper/server.log
 
 sudo: false
