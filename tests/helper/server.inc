@@ -3,6 +3,11 @@
 ini_set("log_errors", true);
 ini_set("error_log", __DIR__."/server.log");
 
+function log() {
+	error_log(sprintf("%s: %s\n", date("[Y-m-d H:i:s]"),
+		call_user_func_array("sprintf", func_get_args())));
+}
+
 $php = getenv('TEST_PHP_EXECUTABLE');
 if ($php) {
 	define('PHP_BIN', $php);
@@ -19,20 +24,26 @@ function serve($cb) {
 	 */
 	$offset = rand(0,2000);
 	foreach (range(8000+$offset, 9000+$offset) as $port) {
+		log("serve: Trying port %d", $port);
 		if (($server = @stream_socket_server("tcp://localhost:$port"))) {
 			fprintf(STDERR, "%s\n", $port);
+			log("serve: Using port %d", $port);
 			do {
 				$R = array($server); $W = array(); $E = array();
 				$select = stream_select($R, $E, $E, 0, 10000);
 				if ($select && ($client = stream_socket_accept($server, 1))) {
+					log("serve: Accept client %d", (int) $client);
 					if (getenv("PHP_HTTP_TEST_SSL")) {
 						stream_socket_enable_crypto($client, true, STREAM_CRYPTO_METHOD_SSLv23_SERVER);
 					}
 					try {
 						while (!feof($client)) {
+							log("serve: Handle client %d", (int) $client);
 							$cb($client);
 						}
+						log("serve: EOF on client %d", (int) $client);
 					} catch (Exception $ex) {
+						log("serve: Exception on client %d", (int) $client);
 						/* ignore disconnect */
 						if ($ex->getMessage() !== "Empty message received from stream") {
 							fprintf(STDERR, "%s\n", $ex);
