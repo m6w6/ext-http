@@ -25,48 +25,48 @@ pecl/http depends on a number of system libraries and PHP extensions for special
 
 The following system libraries are required to build this extension:
 
-=zlib=
-	Provides gzip/zlib/deflate encoding.  
-	Minimum version: 1.2.0.4  
-	Install on Debian: `apt-get install zlib1g-dev`
+##### zlib
+Provides gzip/zlib/deflate encoding.  
+Minimum version: 1.2.0.4  
+Install on Debian: `apt-get install zlib1g-dev`
 
 
 #### Optional system libraries:
 
 The following system libraries are optional and provide additional features:
 
-=libidn=
-	Provides IDNA support in URLs.  
-	Minimum version: none  
-	Install on Debian: `apt-get install libidn11-dev`
+##### libidn
+Provides IDNA support in URLs.  
+Minimum version: none  
+Install on Debian: `apt-get install libidn11-dev`
 
-=libidn2=
-	Provides IDNA support in URLs (fallback if libidn is not available).  
-	Minimum version: none  
-	Install on Debian: `apt-get install libidn2-0-dev`
+##### libidn2
+Provides IDNA support in URLs (fallback if libidn is not available).  
+Minimum version: none  
+Install on Debian: `apt-get install libidn2-0-dev`
 
-=libicu=
-	Provides IDNA support in URLs (fallback if libidn is not available).  
-	Minimum version: none  
-	Install on Debian: `apt-get install libicu-dev`
+##### libicu
+Provides IDNA support in URLs (fallback if libidn is not available).  
+Minimum version: none  
+Install on Debian: `apt-get install libicu-dev`
 
-=libcurl=
-	Provides HTTP request functionality.  
-	Minimum version: 7.18.2  
-	Install on Debian: `apt-get install libcurl4-openssl-dev`  
-	Note: There are usually different styles of SSL support for libcurl available, so you can replace 'openssl' in the above command f.e. with 'nss' or 'gnutls'.
+##### libcurl
+Provides HTTP request functionality.  
+Minimum version: 7.18.2  
+Install on Debian: `apt-get install libcurl4-openssl-dev`  
+Note: There are usually different styles of SSL support for libcurl available, so you can replace 'openssl' in the above command f.e. with 'nss' or 'gnutls'.
 
-=libevent=
-	Eventloop support for the HTTP client.  
-	Minimum version: none  
-	Install on Debian: `apt-get install libevent-dev`
+##### libevent
+Eventloop support for the HTTP client.  
+Minimum version: none  
+Install on Debian: `apt-get install libevent-dev`
 
 ### PHP extensions:
 
 This extension unconditionally depends on the pre-loaded presence of the following PHP extensions:
 
-* raphf
-* propro
+* [raphf](https://github.com/m6w6/ext-raphf)
+* [propro](https://github.com/m6w6/ext-propro)
 * spl
 
 
