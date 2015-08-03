@@ -7,7 +7,7 @@ addons:
   packages:
    - php5-cli
    - php-pear
-   - libcurl5-openssl-dev
+   - libcurl4-openssl-dev
    - zlib1g-dev
    - libidn11-dev
    - libevent-dev
