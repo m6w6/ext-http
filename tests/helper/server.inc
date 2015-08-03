@@ -4,6 +4,9 @@ ini_set("log_errors", true);
 ini_set("error_log", __DIR__."/server.log");
 
 function logger() {
+	if (!ini_get("date.timezone")) {
+		date_default_timezone_set(@date_default_timezone_get());
+	}
 	error_log(sprintf("%s(%s): %s", 
 		basename(getenv("SCRIPT_FILENAME"), ".php"), 
 		basename(current(get_included_files()), ".inc"), 
@@ -46,7 +49,7 @@ function serve($cb) {
 						}
 						logger("serve: EOF on client %d", (int) $client);
 					} catch (Exception $ex) {
-						logger("serve: Exception on client %d", (int) $client);
+						logger("serve: Exception on client %d: %s", (int) $client, $ex->getMessage());
 						/* ignore disconnect */
 						if ($ex->getMessage() !== "Empty message received from stream") {
 							fprintf(STDERR, "%s\n", $ex);
