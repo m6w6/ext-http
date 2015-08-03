@@ -57,7 +57,7 @@ function serve($cb) {
 						break;
 					}
 				}
-			} while ($select !== false);
+			} while ($select);
 			return;
 		}
 	}
