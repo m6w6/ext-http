@@ -1,5 +1,8 @@
 <?php
 
+ini_set("log_errors", true);
+ini_set("error_log", __DIR__."/server.log");
+
 $php = getenv('TEST_PHP_EXECUTABLE');
 if ($php) {
 	define('PHP_BIN', $php);

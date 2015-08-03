@@ -39,4 +39,7 @@ script:
  - make -f travis/pecl/Makefile ext PECL=http
  - make -f travis/pecl/Makefile test
 
+after_script:
+ - test -e tests/helper/server.log && cat tests/helper/server.log
+
 sudo: false
