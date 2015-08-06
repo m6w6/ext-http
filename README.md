@@ -118,4 +118,4 @@ The http extension registers the ```http.*``` namespace for its stream filters. 
 
 ## Documentation:
 
-Documentation is available at http://devel-m6w6.rhcloud.com/mdref/http/
+Documentation is available at https://mdref.m6w6.name/http
