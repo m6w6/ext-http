@@ -12,14 +12,14 @@ addons:
    - libevent-dev
 
 env:
- - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
 
 before_script:
  - make -f travis/pecl/Makefile php

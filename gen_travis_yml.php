@@ -22,7 +22,9 @@ $env = $gen([
 	"enable_maintainer_zts",
 	"enable_json",
 	"enable_hash" => ["yes"],
-	"enable_iconv" => ["yes"]
+	"enable_iconv" => ["yes"],
+	"enable_phar" => ["yes"],
+	"enable_posix" => ["yes"]
 ]);
 foreach ($env as $e) {
 	printf(" - %s\n", $e);
