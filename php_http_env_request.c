@@ -166,6 +166,7 @@ static PHP_METHOD(HttpEnvRequest, __construct)
 		zval *this_ptr = getThis(); \
 		zval qs_tmp, *qs = zend_read_property(Z_OBJCE_P(this_ptr), this_ptr, ZEND_STRL(prop), 0, &qs_tmp); \
 		 \
+		ZVAL_NULL(&rv); \
 		array_init(&mn); \
 		Z_TRY_ADDREF_P(qs); \
 		add_next_index_zval(&mn, qs); \

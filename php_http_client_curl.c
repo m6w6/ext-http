@@ -528,10 +528,11 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 			case CURLSSLBACKEND_QSOSSL:
 				backend = "qsossl";
 				break;
-#endif
+#else
 			case CURLSSLBACKEND_GSKIT:
 				backend = "gskit";
 				break;
+#endif
 			case CURLSSLBACKEND_POLARSSL:
 				backend = "polarssl";
 				break;
@@ -554,7 +555,7 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 	}
 #endif
 
-#if PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)
+#if (PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)) || (PHP_HTTP_CURL_VERSION(7,34,0) && defined(PHP_HTTP_HAVE_NSS)) || (PHP_HTTP_CURL_VERSION(7,42,0) && defined(PHP_HTTP_HAVE_GNUTLS)) || (PHP_HTTP_CURL_VERSION(7,39,0) && defined(PHP_HTTP_HAVE_GSKIT))
 	{
 		int i;
 		zval ci_array, subarray;
@@ -1249,6 +1250,11 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		opt->setter = php_http_curle_option_set_proxyheader;
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,43,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("proxy_service_name"), CURLOPT_PROXY_SERVICE_NAME, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+#endif
 
 #if PHP_HTTP_CURL_VERSION(7,40,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("unix_socket_path"), CURLOPT_UNIX_SOCKET_PATH, IS_STRING))) {
@@ -1325,6 +1331,11 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("httpauthtype"), CURLOPT_HTTPAUTH, IS_LONG))) {
 		Z_LVAL(opt->defval) = CURLAUTH_ANYSAFE;
 	}
+#if PHP_HTTP_CURL_VERSION(7,43,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("service_name"), CURLOPT_SERVICE_NAME, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+#endif
 
 	/* redirects */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("redirect"), CURLOPT_FOLLOWLOCATION, IS_LONG))) {
@@ -1503,8 +1514,10 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		}
 #	endif
 #endif
-#if PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)
-		php_http_option_register(registry, ZEND_STRL("certinfo"), CURLOPT_CERTINFO, _IS_BOOL);
+#if (PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)) || (PHP_HTTP_CURL_VERSION(7,34,0) && defined(PHP_HTTP_HAVE_NSS)) || (PHP_HTTP_CURL_VERSION(7,42,0) && defined(PHP_HTTP_HAVE_GNUTLS)) || (PHP_HTTP_CURL_VERSION(7,39,0) && defined(PHP_HTTP_HAVE_GSKIT))
+		if ((opt = php_http_option_register(registry, ZEND_STRL("certinfo"), CURLOPT_CERTINFO, _IS_BOOL))) {
+			ZVAL_FALSE(&opt->defval);
+		}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,36,0)
 		if ((opt = php_http_option_register(registry, ZEND_STRL("enable_npn"), CURLOPT_SSL_ENABLE_NPN, _IS_BOOL))) {
@@ -1530,6 +1543,9 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthpass"), CURLOPT_TLSAUTH_PASSWORD, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 		}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,42,0) && (defined(PHP_HTTP_HAVE_NSS) || defined(PHP_HTTP_HAVE_DARWINSSL))
+		php_http_option_register(registry, ZEND_STRL("falsestart"), CURLOPT_SSL_FALSESTART, _IS_BOOL);
 #endif
 	}
 }

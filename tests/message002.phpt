@@ -19,6 +19,11 @@ use http\env\Request as HttpEnvRequest;
 
 $m = new HttpEnvRequest();
 
+// travis' env headers have another order, wtf?
+$h = $m->getHeaders();
+ksort($h);
+$m->setHeaders($h);
+
 var_dump($m);
 
 echo "Message->toString\n";
@@ -50,14 +55,14 @@ object(%s)#%d (13) {
   string(3) "1.1"
   ["headers":protected]=>
   array(4) {
-    ["X-Test"]=>
-    string(4) "test"
     ["Content-Length"]=>
     string(1) "3"
     ["Content-Type"]=>
     string(14) "test/something"
     ["Cookie"]=>
     string(7) "foo=bar"
+    ["X-Test"]=>
+    string(4) "test"
   }
   ["parentMessage":protected]=>
   NULL
@@ -87,10 +92,10 @@ object(%s)#%d (13) {
 }
 Message->toString
 POST / HTTP/1.1%a
-X-Test: test%a
 Content-Length: 3%a
 Content-Type: test/something%a
 Cookie: foo=bar%a
+X-Test: test%a
 %a
 b=c
 Body->toString

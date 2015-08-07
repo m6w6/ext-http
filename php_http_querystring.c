@@ -16,6 +16,9 @@
 #include <ext/spl/spl_array.h>
 
 #ifdef PHP_HTTP_HAVE_ICONV
+#	ifndef HAVE_ICONV
+#		define HAVE_ICONV 1
+#	endif
 #	undef PHP_ATOM_INC
 #	include <ext/iconv/php_iconv.h>
 #endif

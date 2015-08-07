@@ -1,5 +1,19 @@
 <?php
 
+ini_set("log_errors", true);
+ini_set("error_log", __DIR__."/server.log");
+
+function logger() {
+	if (!ini_get("date.timezone")) {
+		date_default_timezone_set(@date_default_timezone_get());
+	}
+	error_log(sprintf("%s(%s): %s", 
+		basename(getenv("SCRIPT_FILENAME"), ".php"), 
+		basename(current(get_included_files()), ".inc"), 
+		call_user_func_array("sprintf", func_get_args())
+	));
+}
+
 $php = getenv('TEST_PHP_EXECUTABLE');
 if ($php) {
 	define('PHP_BIN', $php);
@@ -28,20 +42,26 @@ function serve($cb) {
 	 */
 	$offset = rand(0,2000);
 	foreach (range(8000+$offset, 9000+$offset) as $port) {
+		logger("serve: Trying port %d", $port);
 		if (($server = @stream_socket_server("tcp://localhost:$port"))) {
 			fprintf(STDERR, "%s\n", $port);
+			logger("serve: Using port %d", $port);
 			do {
 				$R = array($server); $W = array(); $E = array();
-				$select = stream_select($R, $E, $E, 0, 10000);
+				$select = stream_select($R, $E, $E, 10, 0);
 				if ($select && ($client = stream_socket_accept($server, 1))) {
+					logger("serve: Accept client %d", (int) $client);
 					if (getenv("PHP_HTTP_TEST_SSL")) {
 						stream_socket_enable_crypto($client, true, STREAM_CRYPTO_METHOD_SSLv23_SERVER);
 					}
 					try {
 						while (!feof($client)) {
+							logger("serve: Handle client %d", (int) $client);
 							$cb($client);
 						}
+						logger("serve: EOF on client %d", (int) $client);
 					} catch (Exception $ex) {
+						logger("serve: Exception on client %d: %s", (int) $client, $ex->getMessage());
 						/* ignore disconnect */
 						if ($ex->getMessage() !== "Empty message received from stream") {
 							fprintf(STDERR, "%s\n", $ex);
@@ -49,7 +69,7 @@ function serve($cb) {
 						break;
 					}
 				}
-			} while ($select !== false);
+			} while ($select);
 			return;
 		}
 	}
