@@ -878,6 +878,8 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 			zval_ptr_dtor(return_value);
 			ZVAL_COPY_VALUE(return_value, tmp);
 		}
+		zend_string_release(member_name);
+		return return_value;
 	} else {
 		php_property_proxy_t *proxy;
 		php_property_proxy_object_t *proxy_obj;
@@ -886,12 +888,9 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 		proxy_obj = php_property_proxy_object_new_ex(NULL, proxy);
 
 		ZVAL_OBJ(tmp, &proxy_obj->zo);
+		zend_string_release(member_name);
 		return tmp;
 	}
-
-	zend_string_release(member_name);
-
-	return return_value;
 }
 
 static void php_http_message_object_write_prop(zval *object, zval *member, zval *value, void **cache_slot)
