@@ -20,7 +20,7 @@
 #include <ext/standard/sha1.h>
 #include <ext/standard/md5.h>
 
-php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC)
+php_http_etag_t *php_http_etag_init(const char *mode)
 {
 	void *ctx;
 	php_http_etag_t *e;
@@ -47,7 +47,6 @@ php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC)
 	e = emalloc(sizeof(*e));
 	e->ctx = ctx;
 	e->mode = estrdup(mode);
-	TSRMLS_SET_CTX(e->ts);
 
 	return e;
 }

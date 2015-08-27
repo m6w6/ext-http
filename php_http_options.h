@@ -31,18 +31,14 @@ struct php_http_options {
 struct php_http_option {
 	php_http_options_t suboptions;
 
-	struct {
-		const char *s;
-		size_t l;
-		ulong h;
-	} name;
-
+	zend_string *name;
 	ulong option;
 	zend_uchar type;
 	unsigned flags;
 	zval defval;
 
 	php_http_option_set_callback_t setter;
+	unsigned persistent:1;
 };
 
 PHP_HTTP_API php_http_options_t *php_http_options_init(php_http_options_t *registry, zend_bool persistent);

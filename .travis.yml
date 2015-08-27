@@ -12,35 +12,18 @@ addons:
    - libevent-dev
 
 env:
- - PHP=5.4 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.5 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.6 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.4 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.5 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.6 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.4 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.5 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.6 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.4 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.5 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.6 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=5.4 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.5 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.6 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.4 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.5 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.6 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.4 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.5 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.6 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.4 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.5 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=5.6 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
 
 before_script:
  - make -f travis/pecl/Makefile php
- - make -f travis/pecl/Makefile pecl PECL=raphf
- - make -f travis/pecl/Makefile pecl PECL=propro
+ - make -f travis/pecl/Makefile pharext/raphf-phpng pharext/propro-phpng
 
 script:
  - make -f travis/pecl/Makefile ext PECL=http

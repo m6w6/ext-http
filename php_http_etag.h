@@ -16,13 +16,9 @@
 typedef struct php_http_etag {
 	void *ctx;
 	char *mode;
-
-#ifdef ZTS
-	void ***ts;
-#endif
 } php_http_etag_t;
 
-PHP_HTTP_API php_http_etag_t *php_http_etag_init(const char *mode TSRMLS_DC);
+PHP_HTTP_API php_http_etag_t *php_http_etag_init(const char *mode);
 PHP_HTTP_API size_t php_http_etag_update(php_http_etag_t *e, const char *data_ptr, size_t data_len);
 PHP_HTTP_API char *php_http_etag_finish(php_http_etag_t *e);
 

@@ -13,6 +13,7 @@
 #include "php_http_api.h"
 #include "php_variables.h"
 
+
 PHP_RSHUTDOWN_FUNCTION(http_env)
 {
 	if (PHP_HTTP_G->env.request.headers) {
@@ -25,75 +26,72 @@ PHP_RSHUTDOWN_FUNCTION(http_env)
 	}
 
 	if (PHP_HTTP_G->env.server_var) {
-		zval_ptr_dtor(&PHP_HTTP_G->env.server_var);
+		zval_ptr_dtor(PHP_HTTP_G->env.server_var);
 		PHP_HTTP_G->env.server_var = NULL;
 	}
 
 	return SUCCESS;
 }
 
-void php_http_env_get_request_headers(HashTable *headers TSRMLS_DC)
+void php_http_env_get_request_headers(HashTable *headers)
 {
-	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
-	zval **hsv, **header;
-	HashPosition pos;
+	php_http_arrkey_t key;
+	zval *hsv, *header;
 
 	if (!PHP_HTTP_G->env.request.headers) {
 		ALLOC_HASHTABLE(PHP_HTTP_G->env.request.headers);
-		zend_hash_init(PHP_HTTP_G->env.request.headers, 0, NULL, ZVAL_PTR_DTOR, 0);
+		ZEND_INIT_SYMTABLE(PHP_HTTP_G->env.request.headers);
 
-		zend_is_auto_global("_SERVER", lenof("_SERVER") TSRMLS_CC);
+		if ((hsv = php_http_env_get_superglobal(ZEND_STRL("_SERVER")))) {
+			ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(hsv), key.h, key.key, header)
+			{
+				if (key.key && key.key->len > 5 && *key.key->val == 'H' && !strncmp(key.key->val, "HTTP_", 5)) {
+					size_t key_len = key.key->len - 5;
+					char *key_str = php_http_pretty_key(estrndup(&key.key->val[5], key_len), key_len, 1, 1);
 
-		if (SUCCESS == zend_hash_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER"), (void *) &hsv) && Z_TYPE_PP(hsv) == IS_ARRAY) {
-			FOREACH_KEY(pos, *hsv, key) {
-				if (key.type == HASH_KEY_IS_STRING && key.len > 6 && *key.str == 'H' && !strncmp(key.str, "HTTP_", 5)) {
-					key.len -= 5;
-					key.str = php_http_pretty_key(estrndup(key.str + 5, key.len - 1), key.len - 1, 1, 1);
+					Z_TRY_ADDREF_P(header);
+					zend_symtable_str_update(PHP_HTTP_G->env.request.headers, key_str, key_len, header);
 
-					zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void *) &header, &pos);
-					Z_ADDREF_P(*header);
-					zend_symtable_update(PHP_HTTP_G->env.request.headers, key.str, key.len, (void *) header, sizeof(zval *), NULL);
+					efree(key_str);
+				} else if (key.key && key.key->len > 8 && *key.key->val == 'C' && !strncmp(key.key->val, "CONTENT_", 8)) {
+					char *key_str = php_http_pretty_key(estrndup(key.key->val, key.key->len), key.key->len, 1, 1);
 
-					efree(key.str);
-				} else if (key.type == HASH_KEY_IS_STRING && key.len > 9 && *key.str == 'C' && !strncmp(key.str, "CONTENT_", 8)) {
-					key.str = php_http_pretty_key(estrndup(key.str, key.len - 1), key.len - 1, 1, 1);
+					Z_TRY_ADDREF_P(header);
+					zend_symtable_str_update(PHP_HTTP_G->env.request.headers, key_str, key.key->len, header);
 
-					zend_hash_get_current_data_ex(Z_ARRVAL_PP(hsv), (void *) &header, &pos);
-					Z_ADDREF_P(*header);
-					zend_symtable_update(PHP_HTTP_G->env.request.headers, key.str, key.len, (void *) header, sizeof(zval *), NULL);
-
-					efree(key.str);
+					efree(key_str);
 				}
 			}
+			ZEND_HASH_FOREACH_END();
 		}
 	}
 
 	if (headers) {
-		zend_hash_copy(headers, PHP_HTTP_G->env.request.headers, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
+		array_copy(PHP_HTTP_G->env.request.headers, headers);
 	}
 }
 
-char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len, php_http_message_t *request TSRMLS_DC)
+char *php_http_env_get_request_header(const char *name_str, size_t name_len, size_t *len, php_http_message_t *request)
 {
 	HashTable *request_headers;
-	zval **zvalue = NULL;
+	zval *zvalue = NULL;
 	char *val = NULL, *key = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
 
 	if (request) {
 		request_headers = &request->hdrs;
 	} else {
-		php_http_env_get_request_headers(NULL TSRMLS_CC);
+		php_http_env_get_request_headers(NULL);
 		request_headers = PHP_HTTP_G->env.request.headers;
 	}
 
-	if (SUCCESS == zend_symtable_find(request_headers, key, name_len + 1, (void *) &zvalue)) {
-		zval *zcopy = php_http_ztyp(IS_STRING, *zvalue);
+	if ((zvalue = zend_symtable_str_find(request_headers, key, name_len))) {
+		zend_string *zs = zval_get_string(zvalue);
 
-		val = estrndup(Z_STRVAL_P(zcopy), Z_STRLEN_P(zcopy));
+		val = estrndup(zs->val, zs->len);
 		if (len) {
-			*len = Z_STRLEN_P(zcopy);
+			*len = zs->len;
 		}
-		zval_ptr_dtor(&zcopy);
+		zend_string_release(zs);
 	}
 
 	efree(key);
@@ -101,45 +99,49 @@ char *php_http_env_get_request_header(const char *name_str, size_t name_len, siz
 	return val;
 }
 
-int php_http_env_got_request_header(const char *name_str, size_t name_len, php_http_message_t *request TSRMLS_DC)
+zend_bool php_http_env_got_request_header(const char *name_str, size_t name_len, php_http_message_t *request)
 {
 	HashTable *request_headers;
 	char *key = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
-	int got;
+	zend_bool got;
 
 	if (request) {
 		request_headers = &request->hdrs;
 	} else {
-		php_http_env_get_request_headers(NULL TSRMLS_CC);
+		php_http_env_get_request_headers(NULL);
 		request_headers = PHP_HTTP_G->env.request.headers;
 	}
-	got = zend_symtable_exists(request_headers, key, name_len + 1);
+	got = zend_symtable_str_exists(request_headers, key, name_len);
 	efree(key);
 
 	return got;
 }
 
-zval *php_http_env_get_superglobal(const char *key, size_t key_len TSRMLS_DC)
+zval *php_http_env_get_superglobal(const char *key, size_t key_len)
 {
-	zval **hsv;
+	zval *hsv;
+	zend_string *key_str = zend_string_init(key, key_len, 0);
 
-	zend_is_auto_global(key, key_len TSRMLS_CC);
+	zend_is_auto_global(key_str);
+	hsv = zend_hash_find(&EG(symbol_table), key_str);
+	zend_string_release(key_str);
 
-	if ((SUCCESS != zend_hash_find(&EG(symbol_table), key, key_len + 1, (void *) &hsv)) || (Z_TYPE_PP(hsv) != IS_ARRAY)) {
+	if (Z_TYPE_P(hsv) != IS_ARRAY) {
 		return NULL;
 	}
 
-	return *hsv;
+	return hsv;
 }
 
-zval *php_http_env_get_server_var(const char *key, size_t key_len, zend_bool check TSRMLS_DC)
+zval *php_http_env_get_server_var(const char *key, size_t key_len, zend_bool check)
 {
-	zval *hsv, **var;
-	char *env;
+	zval *hsv, *var;
 
-	/* if available, this is a lot faster than accessing $_SERVER */
+	/* if available, this is a lot faster than accessing $_SERVER * /
 	if (sapi_module.getenv) {
-		if ((!(env = sapi_module.getenv((char *) key, key_len TSRMLS_CC))) || (check && !*env)) {
+		char *env;
+
+		if ((!(env = sapi_module.getenv((char *) key, key_len))) || (check && !*env)) {
 			return NULL;
 		}
 		if (PHP_HTTP_G->env.server_var) {
@@ -149,60 +151,38 @@ zval *php_http_env_get_server_var(const char *key, size_t key_len, zend_bool che
 		ZVAL_STRING(PHP_HTTP_G->env.server_var, env, 1);
 		return PHP_HTTP_G->env.server_var;
 	}
+	/ * */
 
-	if (!(hsv = php_http_env_get_superglobal(ZEND_STRL("_SERVER") TSRMLS_CC))) {
+	if (!(hsv = php_http_env_get_superglobal(ZEND_STRL("_SERVER")))) {
 		return NULL;
 	}
-	if ((SUCCESS != zend_symtable_find(Z_ARRVAL_P(hsv), key, key_len + 1, (void *) &var))) {
+	if (!(var = zend_symtable_str_find(Z_ARRVAL_P(hsv), key, key_len))) {
 		return NULL;
 	}
-	if (check && !((Z_TYPE_PP(var) == IS_STRING) && Z_STRVAL_PP(var) && Z_STRLEN_PP(var))) {
+	if (check && !((Z_TYPE_P(var) == IS_STRING) && Z_STRVAL_P(var) && Z_STRLEN_P(var))) {
 		return NULL;
 	}
-	return *var;
+	return var;
 }
 
-php_http_message_body_t *php_http_env_get_request_body(TSRMLS_D)
+php_http_message_body_t *php_http_env_get_request_body(void)
 {
 	if (!PHP_HTTP_G->env.request.body) {
 		php_stream *s = php_stream_temp_new();
-#if PHP_VERSION_ID >= 50600
 		php_stream *input = php_stream_open_wrapper("php://input", "r", 0, NULL);
 
 		/* php://input does not support stat */
 		php_stream_copy_to_stream_ex(input, s, -1, NULL);
 		php_stream_close(input);
-#else
-		if (SG(request_info).post_data || SG(request_info).raw_post_data) {
-			/* php://input does not support seek() in PHP <= 5.5 */
-			if (SG(request_info).raw_post_data) {
-				php_stream_write(s, SG(request_info).raw_post_data, SG(request_info).raw_post_data_length);
-			} else {
-				php_stream_write(s, SG(request_info).post_data, SG(request_info).post_data_length);
-			}
-		} else if (sapi_module.read_post && !SG(read_post_bytes)) {
-			char *buf = emalloc(4096);
-			int len;
 
-			while (0 < (len = sapi_module.read_post(buf, 4096 TSRMLS_CC))) {
-				SG(read_post_bytes) += len;
-				php_stream_write(s, buf, len);
-
-				if (len < 4096) {
-					break;
-				}
-			}
-			efree(buf);
-		}
-#endif
 		php_stream_rewind(s);
-		PHP_HTTP_G->env.request.body = php_http_message_body_init(NULL, s TSRMLS_CC);
+		PHP_HTTP_G->env.request.body = php_http_message_body_init(NULL, s);
 	}
 
 	return PHP_HTTP_G->env.request.body;
 }
 
-const char *php_http_env_get_request_method(php_http_message_t *request TSRMLS_DC)
+const char *php_http_env_get_request_method(php_http_message_t *request)
 {
 	const char *m;
 
@@ -215,13 +195,13 @@ const char *php_http_env_get_request_method(php_http_message_t *request TSRMLS_D
 	return m ? m : "GET";
 }
 
-php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_t length, php_http_message_t *request TSRMLS_DC)
+php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_t length, php_http_message_t *request)
 {
-	zval *zentry;
+	zval zentry;
 	char *range, *rp, c;
 	long begin = -1, end = -1, *ptr;
 
-	if (!(range = php_http_env_get_request_header(ZEND_STRL("Range"), NULL, request TSRMLS_CC))) {
+	if (!(range = php_http_env_get_request_header(ZEND_STRL("Range"), NULL, request))) {
 		return PHP_HTTP_RANGE_NO;
 	}
 	if (strncmp(range, "bytes=", lenof("bytes="))) {
@@ -340,11 +320,10 @@ php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_
 					}
 				}
 
-				MAKE_STD_ZVAL(zentry);
-				array_init(zentry);
-				add_index_long(zentry, 0, begin);
-				add_index_long(zentry, 1, end);
-				zend_hash_next_index_insert(ranges, &zentry, sizeof(zval *), NULL);
+				array_init(&zentry);
+				add_index_long(&zentry, 0, begin);
+				add_index_long(&zentry, 1, end);
+				zend_hash_next_index_insert(ranges, &zentry);
 
 				begin = -1;
 				end = -1;
@@ -362,88 +341,102 @@ php_http_range_status_t php_http_env_get_request_ranges(HashTable *ranges, size_
 	return PHP_HTTP_RANGE_OK;
 }
 
-static void grab_headers(void *data, void *arg TSRMLS_DC)
+static void grab_headers(void *data, void *arg)
 {
 	php_http_buffer_appendl(PHP_HTTP_BUFFER(arg), ((sapi_header_struct *)data)->header);
 	php_http_buffer_appends(PHP_HTTP_BUFFER(arg), PHP_HTTP_CRLF);
 }
 
-ZEND_RESULT_CODE php_http_env_get_response_headers(HashTable *headers_ht TSRMLS_DC)
+static void grab_header(void *data, void *arg)
+{
+	struct {
+		char *name_str;
+		size_t name_len;
+		char *value_ptr;
+	} *args = arg;
+	sapi_header_struct *header = data;
+
+	if (	header->header_len > args->name_len
+	&& header->header[args->name_len] == ':'
+	&& !strncmp(header->header, args->name_str, args->name_len)
+	) {
+		args->value_ptr = &header->header[args->name_len + 1];
+		while (PHP_HTTP_IS_CTYPE(space, *args->value_ptr)) {
+			++args->value_ptr;
+		}
+	}
+}
+
+ZEND_RESULT_CODE php_http_env_get_response_headers(HashTable *headers_ht)
 {
 	ZEND_RESULT_CODE status;
 	php_http_buffer_t headers;
 
 	php_http_buffer_init(&headers);
-	zend_llist_apply_with_argument(&SG(sapi_headers).headers, grab_headers, &headers TSRMLS_CC);
+	zend_llist_apply_with_argument(&SG(sapi_headers).headers, grab_headers, &headers);
 	php_http_buffer_fix(&headers);
 
-	status = php_http_header_parse(headers.data, headers.used, headers_ht, NULL, NULL TSRMLS_CC);
+	status = php_http_header_parse(headers.data, headers.used, headers_ht, NULL, NULL);
 	php_http_buffer_dtor(&headers);
 
 	return status;
 }
 
-char *php_http_env_get_response_header(const char *name_str, size_t name_len TSRMLS_DC)
+char *php_http_env_get_response_header(const char *name_str, size_t name_len)
 {
-	char *val = NULL;
-	HashTable headers;
+	struct {
+		char *name_str;
+		size_t name_len;
+		char *value_ptr;
+	} args;
 
-	zend_hash_init(&headers, 0, NULL, ZVAL_PTR_DTOR, 0);
-	if (SUCCESS == php_http_env_get_response_headers(&headers TSRMLS_CC)) {
-		zval **zvalue;
-		char *key = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
+	args.name_str = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
+	args.name_len = name_len;
+	args.value_ptr = NULL;
+	zend_llist_apply_with_argument(&SG(sapi_headers).headers, grab_header, &args);
+	efree(args.name_str);
 
-		if (SUCCESS == zend_symtable_find(&headers, key, name_len + 1, (void *) &zvalue)) {
-			zval *zcopy = php_http_ztyp(IS_STRING, *zvalue);
-
-			val = estrndup(Z_STRVAL_P(zcopy), Z_STRLEN_P(zcopy));
-			zval_ptr_dtor(&zcopy);
-		}
-
-		efree(key);
-	}
-	zend_hash_destroy(&headers);
-
-	return val;
+	return args.value_ptr ? estrdup(args.value_ptr) : NULL;
 }
 
-long php_http_env_get_response_code(TSRMLS_D)
+long php_http_env_get_response_code(void)
 {
 	long code = SG(sapi_headers).http_response_code;
 	return code ? code : 200;
 }
 
-ZEND_RESULT_CODE php_http_env_set_response_code(long http_code TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_code(long http_code)
 {
-	return sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) http_code TSRMLS_CC);
+	return sapi_header_op(SAPI_HEADER_SET_STATUS, (void *) (zend_intptr_t) http_code);
 }
 
-ZEND_RESULT_CODE php_http_env_set_response_status_line(long code, php_http_version_t *v TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_status_line(long code, php_http_version_t *v)
 {
 	sapi_header_line h = {NULL, 0, 0};
 	ZEND_RESULT_CODE ret;
 
 	h.line_len = spprintf(&h.line, 0, "HTTP/%u.%u %ld %s", v->major, v->minor, code, php_http_env_get_response_status_for_code(code));
-	ret = sapi_header_op(SAPI_HEADER_REPLACE, (void *) &h TSRMLS_CC);
+	ret = sapi_header_op(SAPI_HEADER_REPLACE, (void *) &h);
 	efree(h.line);
 
 	return ret;
 }
 
-ZEND_RESULT_CODE php_http_env_set_response_protocol_version(php_http_version_t *v TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_protocol_version(php_http_version_t *v)
 {
-	return php_http_env_set_response_status_line(php_http_env_get_response_code(TSRMLS_C), v TSRMLS_CC);
+	return php_http_env_set_response_status_line(php_http_env_get_response_code(), v);
 }
 
-ZEND_RESULT_CODE php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace)
 {
 	sapi_header_line h = {estrndup(header_str, header_len), header_len, http_code};
-	ZEND_RESULT_CODE ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h TSRMLS_CC);
+	ZEND_RESULT_CODE ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h);
+
 	efree(h.line);
 	return ret;
 }
 
-ZEND_RESULT_CODE php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv)
 {
 	ZEND_RESULT_CODE ret = FAILURE;
 	sapi_header_line h = {NULL, 0, http_code};
@@ -452,65 +445,67 @@ ZEND_RESULT_CODE php_http_env_set_response_header_va(long http_code, zend_bool r
 
 	if (h.line) {
 		if (h.line_len) {
-			ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h TSRMLS_CC);
+			ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h);
 		}
 		efree(h.line);
 	}
 	return ret;
 }
 
-ZEND_RESULT_CODE php_http_env_set_response_header_format(long http_code, zend_bool replace TSRMLS_DC, const char *fmt, ...)
+ZEND_RESULT_CODE php_http_env_set_response_header_format(long http_code, zend_bool replace, const char *fmt, ...)
 {
 	ZEND_RESULT_CODE ret;
 	va_list args;
 
 	va_start(args, fmt);
-	ret = php_http_env_set_response_header_va(http_code, replace, fmt, args TSRMLS_CC);
+	ret = php_http_env_set_response_header_va(http_code, replace, fmt, args);
 	va_end(args);
 
 	return ret;
 }
 
-ZEND_RESULT_CODE php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace TSRMLS_DC)
+ZEND_RESULT_CODE php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace)
 {
 	if (!value) {
 		sapi_header_line h = {(char *) name_str, name_len, http_code};
 
-		return sapi_header_op(SAPI_HEADER_DELETE, (void *) &h TSRMLS_CC);
+		return sapi_header_op(SAPI_HEADER_DELETE, (void *) &h);
 	}
 
-	if(Z_TYPE_P(value) == IS_ARRAY || Z_TYPE_P(value) == IS_OBJECT) {
-		HashPosition pos;
+	if (Z_TYPE_P(value) == IS_ARRAY || Z_TYPE_P(value) == IS_OBJECT) {
 		int first = replace;
-		zval **data_ptr;
+		zval *data_ptr;
+		HashTable *ht = HASH_OF(value);
 
-		FOREACH_HASH_VAL(pos, HASH_OF(value), data_ptr) {
-			if (SUCCESS != php_http_env_set_response_header_value(http_code, name_str, name_len, *data_ptr, first TSRMLS_CC)) {
+		ZEND_HASH_FOREACH_VAL_IND(ht, data_ptr)
+		{
+			if (SUCCESS != php_http_env_set_response_header_value(http_code, name_str, name_len, data_ptr, first)) {
 				return FAILURE;
 			}
 			first = 0;
 		}
+		ZEND_HASH_FOREACH_END();
 
 		return SUCCESS;
 	} else {
-		zval *data = php_http_ztyp(IS_STRING, value);
+		zend_string *data = zval_get_string(value);
 
-		if (!Z_STRLEN_P(data)) {
-			zval_ptr_dtor(&data);
-			return php_http_env_set_response_header_value(http_code, name_str, name_len, NULL, replace TSRMLS_CC);
+		if (!data->len) {
+			zend_string_release(data);
+			return php_http_env_set_response_header_value(http_code, name_str, name_len, NULL, replace);
 		} else {
 			sapi_header_line h;
 			ZEND_RESULT_CODE ret;
 
 			if (name_len > INT_MAX) {
-				name_len = INT_MAX;
+				return FAILURE;
 			}
 			h.response_code = http_code;
-			h.line_len = spprintf(&h.line, 0, "%.*s: %.*s", (int) name_len, name_str, Z_STRLEN_P(data), Z_STRVAL_P(data));
+			h.line_len = spprintf(&h.line, 0, "%.*s: %.*s", (int) name_len, name_str, data->len, data->val);
 
-			ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h TSRMLS_CC);
+			ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h);
 
-			zval_ptr_dtor(&data);
+			zend_string_release(data);
 			PTR_FREE(h.line);
 
 			return ret;
@@ -535,21 +530,21 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, getRequestHeader)
 {
 	char *header_name_str = NULL;
-	int header_name_len = 0;
+	size_t header_name_len = 0;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "|s!", &header_name_str, &header_name_len)) {
 		return;
 	}
 	if (header_name_str && header_name_len) {
 		size_t header_length;
-		char *header_value = php_http_env_get_request_header(header_name_str, header_name_len, &header_length, NULL TSRMLS_CC);
+		char *header_value = php_http_env_get_request_header(header_name_str, header_name_len, &header_length, NULL);
 
 		if (header_value) {
-			RETURN_STRINGL(header_value, header_length, 0);
+			RETURN_STR(php_http_cs2zs(header_value, header_length));
 		}
 	} else {
 		array_init(return_value);
-		php_http_env_get_request_headers(Z_ARRVAL_P(return_value) TSRMLS_CC);
+		php_http_env_get_request_headers(Z_ARRVAL_P(return_value));
 	}
 }
 
@@ -558,16 +553,16 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getRequestBody, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, getRequestBody)
 {
-	zend_object_value ov;
 	php_http_message_body_t *body;
+	php_http_message_body_object_t *body_obj;
 	zend_class_entry *class_entry = php_http_message_body_class_entry;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|C", &class_entry), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|C", &class_entry), invalid_arg, return);
 
-	body = php_http_env_get_request_body(TSRMLS_C);
-	if (SUCCESS == php_http_new(&ov, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, body, NULL TSRMLS_CC)) {
+	body = php_http_env_get_request_body();
+	if (SUCCESS == php_http_new((void *) &body_obj, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, body)) {
 		php_http_message_body_addref(body);
-		RETVAL_OBJVAL(ov, 0);
+		RETVAL_OBJ(&body_obj->zo);
 	}
 }
 
@@ -576,15 +571,15 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_getResponseStatusForCode, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, getResponseStatusForCode)
 {
-	long code;
+	zend_long code;
 	const char *status;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "l", &code)) {
 		return;
 	}
 
 	if ((status = php_http_env_get_response_status_for_code(code))) {
-		RETURN_STRING(status, 1);
+		RETURN_STRING(status);
 	}
 }
 
@@ -597,7 +592,7 @@ static PHP_METHOD(HttpEnv, getResponseStatusForAllCodes)
 	}
 
 	array_init(return_value);
-#define PHP_HTTP_RESPONSE_CODE(code, status) add_index_string(return_value, code, status, 1);
+#define PHP_HTTP_RESPONSE_CODE(code, status) add_index_string(return_value, code, status);
 #include "php_http_response_codes.h"
 #undef PHP_HTTP_RESPONSE_CODE
 }
@@ -608,20 +603,20 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, getResponseHeader)
 {
 	char *header_name_str = NULL;
-	int header_name_len = 0;
+	size_t header_name_len = 0;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!", &header_name_str, &header_name_len)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "|s!", &header_name_str, &header_name_len)) {
 		return;
 	}
 	if (header_name_str && header_name_len) {
-		char *header_value = php_http_env_get_response_header(header_name_str, header_name_len TSRMLS_CC);
+		char *header_value = php_http_env_get_response_header(header_name_str, header_name_len);
 
 		if (header_value) {
-			RETURN_STRING(header_value, 0);
+			RETURN_STR(php_http_cs2zs(header_value, strlen(header_value)));
 		}
 	} else {
 		array_init(return_value);
-		php_http_env_get_response_headers(Z_ARRVAL_P(return_value) TSRMLS_CC);
+		php_http_env_get_response_headers(Z_ARRVAL_P(return_value));
 	}
 }
 
@@ -632,7 +627,7 @@ static PHP_METHOD(HttpEnv, getResponseCode)
 	if (SUCCESS != zend_parse_parameters_none()) {
 		return;
 	}
-	RETURN_LONG(php_http_env_get_response_code(TSRMLS_C));
+	RETURN_LONG(php_http_env_get_response_code());
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_setResponseHeader, 0, 0, 1)
@@ -644,15 +639,15 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, setResponseHeader)
 {
 	char *header_name_str;
-	int header_name_len;
+	size_t header_name_len;
 	zval *header_value = NULL;
-	long code = 0;
+	zend_long code = 0;
 	zend_bool replace_header = 1;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|z!lb", &header_name_str, &header_name_len, &header_value, &code, &replace_header)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "s|z!lb", &header_name_str, &header_name_len, &header_value, &code, &replace_header)) {
 		return;
 	}
-	RETURN_BOOL(SUCCESS == php_http_env_set_response_header_value(code, header_name_str, header_name_len, header_value, replace_header TSRMLS_CC));
+	RETURN_BOOL(SUCCESS == php_http_env_set_response_header_value(code, header_name_str, header_name_len, header_value, replace_header));
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_setResponseCode, 0, 0, 1)
@@ -660,12 +655,12 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_setResponseCode, 0, 0, 1)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpEnv, setResponseCode)
 {
-	long code;
+	zend_long code;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &code)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "l", &code)) {
 		return;
 	}
-	RETURN_BOOL(SUCCESS == php_http_env_set_response_code(code TSRMLS_CC));
+	RETURN_BOOL(SUCCESS == php_http_env_set_response_code(code));
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnv_negotiateLanguage, 0, 0, 1)
@@ -677,10 +672,11 @@ static PHP_METHOD(HttpEnv, negotiateLanguage)
 	HashTable *supported;
 	zval *rs_array = NULL;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "H|z", &supported, &rs_array)) {
 		return;
 	}
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}
@@ -697,10 +693,11 @@ static PHP_METHOD(HttpEnv, negotiateCharset)
 	HashTable *supported;
 	zval *rs_array = NULL;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "H|z", &supported, &rs_array)) {
 		return;
 	}
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}
@@ -716,10 +713,11 @@ static PHP_METHOD(HttpEnv, negotiateEncoding)
 	HashTable *supported;
 	zval *rs_array = NULL;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "H|z", &supported, &rs_array)) {
 		return;
 	}
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}
@@ -735,10 +733,11 @@ static PHP_METHOD(HttpEnv, negotiateContentType)
 	HashTable *supported;
 	zval *rs_array = NULL;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "H|z", &supported, &rs_array)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "H|z", &supported, &rs_array)) {
 		return;
 	}
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}
@@ -756,19 +755,19 @@ static PHP_METHOD(HttpEnv, negotiate)
 	HashTable *supported, *rs;
 	zval *rs_array = NULL;
 	char *value_str, *sep_str = NULL;
-	int value_len, sep_len = 0;
+	size_t value_len, sep_len = 0;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sH|s!z", &value_str, &value_len, &supported, &sep_str, &sep_len, &rs_array)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "sH|s!z", &value_str, &value_len, &supported, &sep_str, &sep_len, &rs_array)) {
 		return;
 	}
 
-
 	if (rs_array) {
+		ZVAL_DEREF(rs_array);
 		zval_dtor(rs_array);
 		array_init(rs_array);
 	}
 
-	if ((rs = php_http_negotiate(value_str, value_len, supported, sep_str, sep_len TSRMLS_CC))) {
+	if ((rs = php_http_negotiate(value_str, value_len, supported, sep_str, sep_len))) {
 		PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array);
 	} else {
 		PHP_HTTP_DO_NEGOTIATE_HANDLE_DEFAULT(supported, rs_array);
@@ -803,7 +802,7 @@ PHP_MINIT_FUNCTION(http_env)
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http", "Env", php_http_env_methods);
-	php_http_env_class_entry = zend_register_internal_class(&ce TSRMLS_CC);
+	php_http_env_class_entry = zend_register_internal_class(&ce);
 
 	return SUCCESS;
 }

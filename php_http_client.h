@@ -65,13 +65,14 @@ typedef struct php_http_client_ops {
 } php_http_client_ops_t;
 
 typedef struct php_http_client_driver {
-	const char *name_str;
-	size_t name_len;
+	zend_string *driver_name;
+	zend_string *client_name;
+	zend_string *request_name;
 	php_http_client_ops_t *client_ops;
 } php_http_client_driver_t;
 
 PHP_HTTP_API ZEND_RESULT_CODE php_http_client_driver_add(php_http_client_driver_t *driver);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_client_driver_get(const char *name_str, size_t name_len, php_http_client_driver_t *driver);
+PHP_HTTP_API php_http_client_driver_t *php_http_client_driver_get(zend_string *name);
 
 typedef struct php_http_client_progress_state {
 	struct {
@@ -108,24 +109,19 @@ typedef struct php_http_client {
 
 	zend_llist requests;
 	zend_llist responses;
-
-#ifdef ZTS
-	void ***ts;
-#endif
 } php_http_client_t;
 
 PHP_HTTP_API zend_class_entry *php_http_client_class_entry;
 
 typedef struct php_http_client_object {
-	zend_object zo;
-	zend_object_value zv;
 	php_http_client_t *client;
-	long iterator;
 	php_http_object_method_t *update;
 	php_http_object_method_t notify;
+	long iterator;
+	zend_object zo;
 } php_http_client_object_t;
 
-PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC);
+PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_resource_factory_t *rf, void *init_arg);
 PHP_HTTP_API php_http_client_t *php_http_client_copy(php_http_client_t *from, php_http_client_t *to);
 PHP_HTTP_API void php_http_client_dtor(php_http_client_t *h);
 PHP_HTTP_API void php_http_client_free(php_http_client_t **h);

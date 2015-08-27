@@ -1,7 +1,12 @@
 --TEST--
 crash with querystring and exception from error handler
 --SKIPIF--
-<?php include "skipif.inc"; ?>
+<?php
+include "skipif.inc";
+if (version_compare(PHP_VERSION, "7", ">=")) {
+	die("skip PHP>=7\n");
+}
+?>
 --GET--
 q[]=1&r[]=2
 --FILE--

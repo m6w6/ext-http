@@ -36,12 +36,6 @@
 		PTR = SET; \
 	}
 #endif
-#ifndef TSRMLS_D
-#	define TSRMLS_D
-#	define TSRMLS_DC
-#	define TSRMLS_CC
-#	define TSRMLS_C
-#endif
 #ifdef PHP_ATTRIBUTE_FORMAT
 #	define PHP_HTTP_BUFFER_ATTRIBUTE_FORMAT(f, a, b) PHP_ATTRIBUTE_FORMAT(f, a, b)
 #else
@@ -84,7 +78,7 @@ static inline void *estrndup(void *p, size_t s)
 	case PHP_HTTP_BUFFER_FREE_NOT: \
 		break; \
 	case PHP_HTTP_BUFFER_FREE_PTR: \
-		pefree(STR, STR->pmem);	break; \
+		pefree(STR, STR->pmem); \
 		break; \
 	case PHP_HTTP_BUFFER_FREE_VAL: \
 		php_http_buffer_dtor(STR); \
@@ -142,7 +136,7 @@ typedef enum php_http_buffer_free {
 #define php_http_buffer_new() php_http_buffer_init(NULL)
 #define php_http_buffer_init(b) php_http_buffer_init_ex(b, PHP_HTTP_BUFFER_DEFAULT_SIZE, 0)
 #define php_http_buffer_clone(from, to) php_http_buffer_init_ex((to), (from)->size, (from)->pmem ? PHP_HTTP_BUFFER_INIT_PERSISTENT:0)
-PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_init_ex(php_http_buffer_t *buf, size_t chunk_size, int flags);
+PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_init_ex(php_http_buffer_t *buf, size_t chunk_size, unsigned flags);
 
 /* create a php_http_buffer_t from a zval or c-string */
 #define php_http_buffer_from_zval(z) php_http_buffer_from_string(Z_STRVAL(z), Z_STRLEN(z))
@@ -152,7 +146,7 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_from_string_ex(php_http_b
 
 /* usually only called from within the internal functions */
 #define php_http_buffer_resize(b, s) php_http_buffer_resize_ex((b), (s), 0, 0)
-PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(php_http_buffer_t *buf, size_t len, size_t override_size, int allow_error);
+PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(php_http_buffer_t *buf, size_t len, size_t override_size, zend_bool allow_error);
 
 PHP_HTTP_BUFFER_API char *php_http_buffer_account(php_http_buffer_t *buf, size_t to_account);
 
@@ -162,6 +156,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_shrink(php_http_buffer_t *buf);
 /* append data to the php_http_buffer_t */
 #define php_http_buffer_appends(b, a) php_http_buffer_append((b), (a), sizeof(a)-1)
 #define php_http_buffer_appendl(b, a) php_http_buffer_append((b), (a), strlen(a))
+#define php_http_buffer_appendz(b, z) php_http_buffer_append((b), (z)->val, (z)->len)
 PHP_HTTP_BUFFER_API size_t php_http_buffer_append(php_http_buffer_t *buf, const char *append, size_t append_len);
 PHP_HTTP_BUFFER_API size_t php_http_buffer_appendf(php_http_buffer_t *buf, const char *format, ...) PHP_HTTP_BUFFER_ATTRIBUTE_FORMAT(printf, 2, 3);
 
@@ -186,15 +181,15 @@ PHP_HTTP_BUFFER_API void php_http_buffer_free(php_http_buffer_t **buf);
 /* stores data in a php_http_buffer_t until it reaches chunk_size */
 PHP_HTTP_BUFFER_API size_t php_http_buffer_chunk_buffer(php_http_buffer_t **s, const char *data, size_t data_len, char **chunk, size_t chunk_size);
 
-typedef size_t (*php_http_buffer_pass_func_t)(void *opaque, char *, size_t TSRMLS_DC);
+typedef size_t (*php_http_buffer_pass_func_t)(void *opaque, char *, size_t);
 
-PHP_HTTP_BUFFER_API ssize_t php_http_buffer_passthru(php_http_buffer_t **s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *passin_arg, php_http_buffer_pass_func_t passon, void *passon_arg TSRMLS_DC);
+PHP_HTTP_BUFFER_API ssize_t php_http_buffer_passthru(php_http_buffer_t **s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *passin_arg, php_http_buffer_pass_func_t passon, void *passon_arg);
 
 /* wrapper around php_http_buffer_chunk_buffer, which passes available chunks to passthru() */
-PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_output(php_http_buffer_t **s, const char *data, size_t data_len, size_t chunk_size, php_http_buffer_pass_func_t passout, void *opaque TSRMLS_DC);
+PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_output(php_http_buffer_t **s, const char *data, size_t data_len, size_t chunk_size, php_http_buffer_pass_func_t passout, void *opaque);
 
 /* write chunks directly into php_http_buffer_t buffer */
-PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_input(php_http_buffer_t **s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *opaque TSRMLS_DC);
+PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_input(php_http_buffer_t **s, size_t chunk_size, php_http_buffer_pass_func_t passin, void *opaque);
 
 
 #	ifdef PHP_HTTP_BUFFER_EXTENDED

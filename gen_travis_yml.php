@@ -17,12 +17,14 @@ env:
 
 $gen = include "./travis/pecl/gen-matrix.php";
 $env = $gen([
-	"PHP" => ["5.4", "5.5", "5.6"],
+	"PHP" => ["master"],
 	"enable_debug",
 	"enable_maintainer_zts",
 	"enable_json",
 	"enable_hash" => ["yes"],
-	"enable_iconv" => ["yes"]
+	"enable_iconv" => ["yes"],
+	"enable_phar" => ["yes"],
+	"enable_posix" => ["yes"]
 ]);
 foreach ($env as $e) {
 	printf(" - %s\n", $e);
@@ -32,8 +34,7 @@ foreach ($env as $e) {
 
 before_script:
  - make -f travis/pecl/Makefile php
- - make -f travis/pecl/Makefile pecl PECL=raphf
- - make -f travis/pecl/Makefile pecl PECL=propro
+ - make -f travis/pecl/Makefile pharext/raphf-phpng pharext/propro-phpng
 
 script:
  - make -f travis/pecl/Makefile ext PECL=http

@@ -24,15 +24,15 @@ var_dump(new http\Message("GET / HTTP/1.1"));
 ?>
 DONE
 --EXPECTF--
-exception 'http\Exception\BadMessageException' with message 'http\Message::__construct(): Failed to parse headers: unexpected character '\040' at pos 3 of 'GET HTTP/1.1'' in %s
+http\Exception\BadMessageException: http\Message::__construct(): Failed to parse headers: unexpected character '\040' at pos 3 of 'GET HTTP/1.1' in %s
 Stack trace:
 #0 %s: http\Message->__construct('GET HTTP/1.1')
 #1 {main}
-exception 'http\Exception\BadMessageException' with message 'http\Message::__construct(): Failed to parse headers: unexpected character '\040' at pos 3 of 'GET HTTP/1.123'' in %s
+http\Exception\BadMessageException: http\Message::__construct(): Failed to parse headers: unexpected character '\040' at pos 3 of 'GET HTTP/1.123' in %s
 Stack trace:
 #0 %s: http\Message->__construct('GET HTTP/1.123')
 #1 {main}
-exception 'http\Exception\BadMessageException' with message 'http\Message::__construct(): Failed to parse headers: unexpected character '\057' at pos 7 of 'GETHTTP/1.1'' %s
+http\Exception\BadMessageException: http\Message::__construct(): Failed to parse headers: unexpected character '\057' at pos 7 of 'GETHTTP/1.1' %s
 Stack trace:
 #0 %s: http\Message->__construct('GETHTTP/1.1')
 #1 {main}

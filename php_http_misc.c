@@ -113,9 +113,9 @@ char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle,
 }
 
 
-size_t php_http_boundary(char *buf, size_t buf_len TSRMLS_DC)
+size_t php_http_boundary(char *buf, size_t buf_len)
 {
-	return snprintf(buf, buf_len, "%15.15F", sapi_get_request_time(TSRMLS_C) * php_combined_lcg(TSRMLS_C));
+	return snprintf(buf, buf_len, "%15.15F", sapi_get_request_time() * php_combined_lcg());
 }
 
 int php_http_select_str(const char *cmp, int argc, ...)
@@ -144,73 +144,65 @@ int php_http_select_str(const char *cmp, int argc, ...)
 
 /* ARRAYS */
 
-unsigned php_http_array_list(HashTable *ht TSRMLS_DC, unsigned argc, ...)
+unsigned php_http_array_list(HashTable *ht, unsigned argc, ...)
 {
-	HashPosition pos;
 	unsigned argl = 0;
 	va_list argv;
+	zval *data;
 
 	va_start(argv, argc);
-	for (	zend_hash_internal_pointer_reset_ex(ht, &pos);
-			SUCCESS == zend_hash_has_more_elements_ex(ht, &pos) && (argl < argc);
-			zend_hash_move_forward_ex(ht, &pos))
-	{
-		zval **data, ***argp = (zval ***) va_arg(argv, zval ***);
-
-		if (SUCCESS == zend_hash_get_current_data_ex(ht, (void *) &data, &pos)) {
-			*argp = data;
-			++argl;
-		}
-	}
+	ZEND_HASH_FOREACH_VAL(ht, data) {
+		zval **argp = (zval **) va_arg(argv, zval **);
+		*argp = data;
+		++argl;
+	} ZEND_HASH_FOREACH_END();
 	va_end(argv);
 
 	return argl;
 }
 
-void php_http_array_copy_strings(void *zpp)
+void php_http_array_copy_strings(zval *zp)
 {
-	zval **zvpp = ((zval **) zpp);
-
-	*zvpp = php_http_zsep(1, IS_STRING, *zvpp);
+	Z_TRY_ADDREF_P(zp);
+	convert_to_string_ex(zp);
 }
 
-int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
+int php_http_array_apply_append_func(zval *value, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	int flags;
 	char *key = NULL;
 	HashTable *dst;
-	zval **data = NULL, *value = *((zval **) pDest);
+	zval *data = NULL;
 
 	dst = va_arg(args, HashTable *);
 	flags = va_arg(args, int);
 
-	if ((!(flags & ARRAY_JOIN_STRONLY)) || hash_key->nKeyLength) {
-		if ((flags & ARRAY_JOIN_PRETTIFY) && hash_key->nKeyLength) {
-			key = php_http_pretty_key(estrndup(hash_key->arKey, hash_key->nKeyLength - 1), hash_key->nKeyLength - 1, 1, 1);
-			zend_hash_find(dst, key, hash_key->nKeyLength, (void *) &data);
-		} else if (hash_key->nKeyLength) {
-			zend_hash_quick_find(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) &data);
+	if ((!(flags & ARRAY_JOIN_STRONLY)) || hash_key->key) {
+		if ((flags & ARRAY_JOIN_PRETTIFY) && hash_key->key) {
+			key = php_http_pretty_key(estrndup(hash_key->key->val, hash_key->key->len), hash_key->key->len, 1, 1);
+			data = zend_hash_str_find(dst, key, hash_key->key->len);
+		} else if (hash_key->key) {
+			data = zend_hash_find(dst, hash_key->key);
 		} else {
-			zend_hash_index_find(dst, hash_key->h, (void *) &data);
+			data = zend_hash_index_find(dst, hash_key->h);
 		}
 
 		if (flags & ARRAY_JOIN_STRINGIFY) {
-			value = php_http_zsep(1, IS_STRING, value);
-		} else {
-			Z_ADDREF_P(value);
+			convert_to_string_ex(value);
 		}
+		Z_ADDREF_P(value);
 
 		if (data) {
-			if (Z_TYPE_PP(data) != IS_ARRAY) {
-				convert_to_array(*data);
+			if (Z_TYPE_P(data) != IS_ARRAY) {
+				convert_to_array(data);
 			}
-			add_next_index_zval(*data, value);
+			add_next_index_zval(data, value);
 		} else if (key) {
-			zend_symtable_update(dst, key, hash_key->nKeyLength, &value, sizeof(zval *), NULL);
-		} else if (hash_key->nKeyLength) {
-			zend_hash_quick_add(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, &value, sizeof(zval *), NULL);
+			zend_hash_str_update(dst, key, hash_key->key->len, value);
+		} else if (hash_key->key) {
+			zend_hash_update(dst, hash_key->key, value);
 		} else {
-			zend_hash_index_update(dst, hash_key->h, (void *) &value, sizeof(zval *), NULL);
+			zend_hash_index_update(dst, hash_key->h, value);
 		}
 
 		if (key) {
@@ -221,31 +213,30 @@ int php_http_array_apply_append_func(void *pDest TSRMLS_DC, int num_args, va_lis
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list args, zend_hash_key *hash_key)
+int php_http_array_apply_merge_func(zval *value, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	int flags;
 	char *key = NULL;
 	HashTable *dst;
-	zval *value = *((zval **) pDest);
 
 	dst = va_arg(args, HashTable *);
 	flags = va_arg(args, int);
 
-	if ((!(flags & ARRAY_JOIN_STRONLY)) || hash_key->nKeyLength) {
+	if ((!(flags & ARRAY_JOIN_STRONLY)) || hash_key->key) {
 		if (flags & ARRAY_JOIN_STRINGIFY) {
-			value = php_http_zsep(1, IS_STRING, value);
-		} else {
-			Z_ADDREF_P(value);
+			convert_to_string_ex(value);
 		}
 
-		if ((flags & ARRAY_JOIN_PRETTIFY) && hash_key->nKeyLength) {
-			key = php_http_pretty_key(estrndup(hash_key->arKey, hash_key->nKeyLength - 1), hash_key->nKeyLength - 1, 1, 1);
-			zend_hash_update(dst, key, hash_key->nKeyLength, (void *) &value, sizeof(zval *), NULL);
+		Z_TRY_ADDREF_P(value);
+
+		if ((flags & ARRAY_JOIN_PRETTIFY) && hash_key->key) {
+			key = php_http_pretty_key(estrndup(hash_key->key->val, hash_key->key->len), hash_key->key->len, 1, 1);
+			zend_hash_str_update(dst, key, hash_key->key->len, value);
 			efree(key);
-		} else if (hash_key->nKeyLength) {
-			zend_hash_quick_update(dst, hash_key->arKey, hash_key->nKeyLength, hash_key->h, (void *) &value, sizeof(zval *), NULL);
+		} else if (hash_key->key) {
+			zend_hash_update(dst, hash_key->key, value);
 		} else {
-			zend_hash_index_update(dst, hash_key->h, (void *) &value, sizeof(zval *), NULL);
+			zend_hash_index_update(dst, hash_key->h, value);
 		}
 	}
 
@@ -257,13 +248,11 @@ int php_http_array_apply_merge_func(void *pDest TSRMLS_DC, int num_args, va_list
 size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len)
 {
 	php_http_pass_fcall_arg_t *fcd = cb_arg;
-	zval *zdata;
-	TSRMLS_FETCH_FROM_CTX(fcd->ts);
+	zval zdata;
 
-	MAKE_STD_ZVAL(zdata);
-	ZVAL_STRINGL(zdata, str, len, 1);
-	if (SUCCESS == zend_fcall_info_argn(&fcd->fci TSRMLS_CC, 2, &fcd->fcz, &zdata)) {
-		zend_fcall_info_call(&fcd->fci, &fcd->fcc, NULL, NULL TSRMLS_CC);
+	ZVAL_STRINGL(&zdata, str, len);
+	if (SUCCESS == zend_fcall_info_argn(&fcd->fci, 2, &fcd->fcz, &zdata)) {
+		zend_fcall_info_call(&fcd->fci, &fcd->fcc, NULL, NULL);
 		zend_fcall_info_args_clear(&fcd->fci, 0);
 	}
 	zval_ptr_dtor(&zdata);

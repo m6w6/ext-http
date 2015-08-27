@@ -9,6 +9,7 @@ skip_client_test();
 <?php
 
 include "helper/server.inc";
+include "helper/dump.inc";
 
 echo "Test\n";
 
@@ -22,23 +23,17 @@ server("proxy.inc", function($port) {
 	$request->setOptions(array("timeout" => 10, "expect_100_timeout" => 0));
 	$client->enqueue($request);
 	$client->send();
-	var_dump($client->getResponse()->getHeaders());
+	dump_headers(null, $client->getResponse()->getHeaders());
 });
 
 ?>
 ===DONE===
 --EXPECTF--
 Test
-array(5) {
-  ["Accept-Ranges"]=>
-  string(5) "bytes"
-  ["Etag"]=>
-  string(%d) "%s"
-  ["Last-Modified"]=>
-  string(%d) "%s"
-  ["X-Original-Transfer-Encoding"]=>
-  string(7) "chunked"
-  ["Content-Length"]=>
-  int(134217%d%d%d)
-}
+Accept-Ranges: bytes
+Content-Length: 134217960
+Etag: "%x"
+Last-Modified: %s
+X-Original-Transfer-Encoding: chunked
+
 ===DONE===

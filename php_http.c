@@ -106,20 +106,12 @@ static void php_http_globals_init_once(zend_php_http_globals *G)
 }
 
 #if 0
-static inline void php_http_globals_init(zend_php_http_globals *G TSRMLS_DC)
+static inline void php_http_globals_init(zend_php_http_globals *G)
 {
 }
 
-static inline void php_http_globals_free(zend_php_http_globals *G TSRMLS_DC)
+static inline void php_http_globals_free(zend_php_http_globals *G)
 {
-}
-#endif
-
-#if ZTS && PHP_DEBUG && !HAVE_GCOV
-zend_php_http_globals *php_http_globals(void)
-{
-	TSRMLS_FETCH();
-	return PHP_HTTP_G;
 }
 #endif
 
@@ -134,6 +126,7 @@ PHP_MINIT_FUNCTION(http)
 	REGISTER_INI_ENTRIES();
 	
 	if (0
+	|| SUCCESS != PHP_MINIT_CALL(http_object)
 	|| SUCCESS != PHP_MINIT_CALL(http_exception)
 	|| SUCCESS != PHP_MINIT_CALL(http_cookie)
 	|| SUCCESS != PHP_MINIT_CALL(http_encoding)

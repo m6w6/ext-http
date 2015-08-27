@@ -38,7 +38,7 @@ struct php_http_env_response {
 
 	php_http_cookie_list_t *cookies;
 	php_http_buffer_t *buffer;
-	zval *options;
+	zval options;
 
 	struct {
 		size_t chunk;
@@ -60,19 +60,15 @@ struct php_http_env_response {
 	} content;
 
 	zend_bool done;
-
-#ifdef ZTS
-	void ***ts;
-#endif
 };
 
-PHP_HTTP_API php_http_env_response_t *php_http_env_response_init(php_http_env_response_t *r, zval *options, php_http_env_response_ops_t *ops, void *ops_ctx TSRMLS_DC);
+PHP_HTTP_API php_http_env_response_t *php_http_env_response_init(php_http_env_response_t *r, zval *options, php_http_env_response_ops_t *ops, void *ops_ctx);
 PHP_HTTP_API ZEND_RESULT_CODE php_http_env_response_send(php_http_env_response_t *r);
 PHP_HTTP_API void php_http_env_response_dtor(php_http_env_response_t *r);
 PHP_HTTP_API void php_http_env_response_free(php_http_env_response_t **r);
 
-PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC);
-PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *options, const char *header_str, size_t header_len, php_http_message_t *request TSRMLS_DC);
+PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len, php_http_message_t *request);
+PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *options, const char *header_str, size_t header_len, php_http_message_t *request);
 
 PHP_HTTP_API zend_class_entry *php_http_env_response_class_entry;
 PHP_MINIT_FUNCTION(http_env_response);

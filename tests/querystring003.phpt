@@ -18,5 +18,5 @@ echo $qs,"\n";
 --EXPECT--
 Test
 foo=bar&bar=baz
-foo=baz&bar=baz
+bar=baz&foo=baz
 ===DONE===

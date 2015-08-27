@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-php_http_info_t *php_http_info_init(php_http_info_t *i TSRMLS_DC)
+php_http_info_t *php_http_info_init(php_http_info_t *i)
 {
 	if (!i) {
 		i = emalloc(sizeof(*i));
@@ -49,7 +49,7 @@ void php_http_info_free(php_http_info_t **i)
 	}
 }
 
-php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header TSRMLS_DC)
+php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header)
 {
 	const char *end, *http;
 	zend_bool free_info = !info;
@@ -69,10 +69,10 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		return NULL;
 	}
 	
-	info = php_http_info_init(info TSRMLS_CC);
+	info = php_http_info_init(info);
 
 	/* and nothing than SPACE or NUL after HTTP/X.x */
-	if (!php_http_version_parse(&info->http.version, http TSRMLS_CC)
+	if (!php_http_version_parse(&info->http.version, http)
 	||	(http[lenof("HTTP/X.x")] && (!PHP_HTTP_IS_CTYPE(space, http[lenof("HTTP/X.x")])))) {
 		if (free_info) {
 			php_http_info_free(&info);
@@ -93,7 +93,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		const char *status = NULL, *code = http + sizeof("HTTP/X.x");
 		
 		info->type = PHP_HTTP_RESPONSE;
-		while (' ' == *code) ++code;
+		while (code < end && ' ' == *code) ++code;
 		if (code && end > code) {
 			/* rfc7230#3.1.2 The status-code element is a 3-digit integer code */
 			PHP_HTTP_INFO(info).response.code = 100*(*code++ - '0');
@@ -135,9 +135,9 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 			if (http > url) {
 				/* CONNECT presents an authority only */
 				if (strcasecmp(PHP_HTTP_INFO(info).request.method, "CONNECT")) {
-					PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, ~0 TSRMLS_CC);
+					PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, ~0);
 				} else {
-					PHP_HTTP_INFO(info).request.url = php_http_url_parse_authority(url, http - url, ~0 TSRMLS_CC);
+					PHP_HTTP_INFO(info).request.url = php_http_url_parse_authority(url, http - url, ~0);
 				}
 			} else {
 				PTR_SET(PHP_HTTP_INFO(info).request.method, NULL);

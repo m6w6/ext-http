@@ -40,3 +40,4 @@ tests/*.sh
 lcov_data
 *~
 *.phar
+!travis/*.phar

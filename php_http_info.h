@@ -41,6 +41,8 @@ typedef struct php_http_info_data {
 	php_http_version_t version;
 } php_http_info_data_t;
 
+#undef PHP_HTTP_REQUEST
+#undef PHP_HTTP_RESPONSE
 typedef enum php_http_info_type {
 	PHP_HTTP_NONE = 0,
 	PHP_HTTP_REQUEST,
@@ -56,10 +58,10 @@ typedef struct php_http_info {
 	PHP_HTTP_INFO_IMPL(http, type)
 } php_http_info_t;
 
-typedef zend_bool (*php_http_info_callback_t)(void **callback_data, HashTable **headers, php_http_info_t *info TSRMLS_DC);
+typedef zend_bool (*php_http_info_callback_t)(void **callback_data, HashTable **headers, php_http_info_t *info);
 
-PHP_HTTP_API php_http_info_t *php_http_info_init(php_http_info_t *info TSRMLS_DC);
-PHP_HTTP_API php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header TSRMLS_DC);
+PHP_HTTP_API php_http_info_t *php_http_info_init(php_http_info_t *info);
+PHP_HTTP_API php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header);
 PHP_HTTP_API void php_http_info_dtor(php_http_info_t *info);
 PHP_HTTP_API void php_http_info_free(php_http_info_t **info);
 

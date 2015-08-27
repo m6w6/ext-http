@@ -106,15 +106,22 @@
 
 ZEND_BEGIN_MODULE_GLOBALS(php_http)
 	struct php_http_env_globals env;
+#ifdef PHP_HTTP_HAVE_CLIENT
+	struct {
+#ifdef PHP_HTTP_HAVE_CURL
+		struct php_http_client_curl_globals curl;
+#endif
+	} client;
+#endif
 ZEND_END_MODULE_GLOBALS(php_http)
 
 ZEND_EXTERN_MODULE_GLOBALS(php_http);
 
 #ifdef ZTS
 #	include "TSRM/TSRM.h"
-#	define PHP_HTTP_G ((zend_php_http_globals *) (*((void ***) tsrm_ls))[TSRM_UNSHUFFLE_RSRC_ID(php_http_globals_id)])
+#	define PHP_HTTP_G ((zend_php_http_globals *) (*((void ***) tsrm_get_ls_cache()))[TSRM_UNSHUFFLE_RSRC_ID(php_http_globals_id)])
 #	undef TSRMLS_FETCH_FROM_CTX
-#	define TSRMLS_FETCH_FROM_CTX(ctx) void ***tsrm_ls = ((ctx)?(ctx):ts_resource_ex(0, NULL))
+#	define TSRMLS_FETCH_FROM_CTX(ctx) ERROR
 #else
 #	define PHP_HTTP_G (&php_http_globals)
 #endif
