@@ -488,10 +488,10 @@ static void merge_param(HashTable *params, zval *zdata, zval **current_param, zv
 
 			while (Z_TYPE_P(zdata_ptr) == IS_ARRAY && (test_ptr = zend_hash_get_current_data(Z_ARRVAL_P(zdata_ptr)))) {
 				if (Z_TYPE_P(test_ptr) == IS_ARRAY) {
+					zval *tmp_ptr = ptr;
+
 					/* now find key in ptr */
 					if (HASH_KEY_IS_STRING == zend_hash_get_current_key(Z_ARRVAL_P(zdata_ptr), &hkey.key, &hkey.h)) {
-						zval *tmp_ptr = ptr;
-
 						if ((ptr = zend_hash_find(Z_ARRVAL_P(ptr), hkey.key))) {
 							zdata_ptr = test_ptr;
 						} else {
@@ -504,10 +504,12 @@ static void merge_param(HashTable *params, zval *zdata, zval **current_param, zv
 						if ((ptr = zend_hash_index_find(Z_ARRVAL_P(ptr), hkey.h))) {
 							zdata_ptr = test_ptr;
 						} else if (hkey.h) {
+							ptr = tmp_ptr;
 							Z_TRY_ADDREF_P(test_ptr);
 							ptr = zend_hash_index_update(Z_ARRVAL_P(ptr), hkey.h, test_ptr);
 							break;
 						} else {
+							ptr = tmp_ptr;
 							Z_TRY_ADDREF_P(test_ptr);
 							ptr = zend_hash_next_index_insert(Z_ARRVAL_P(ptr), test_ptr);
 							break;
