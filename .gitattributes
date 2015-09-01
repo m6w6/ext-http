@@ -1,2 +1,3 @@
 package.xml		merge=touch
 php_http.h		merge=touch
+.travis.yml		merge=touch
