@@ -1,6 +1,6 @@
 # pecl/http v2
 
-[![Build Status](https://travis-ci.org/m6w6/ext-http.svg?branch=master)](https://travis-ci.org/m6w6/ext-http)
+[![Build Status](https://travis-ci.org/m6w6/ext-http.svg?branch=R_2_5)](https://travis-ci.org/m6w6/ext-http)
 
 ## About:
 
