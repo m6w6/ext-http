@@ -46,6 +46,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
+* Fixed regression with HEAD requests always warning about a partial file transfer
 + Added "path_as_is" request option (libcurl >= 7.42)
 ]]></notes>
  <contents>

@@ -2008,9 +2008,14 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 	 * See also https://tools.ietf.org/html/rfc7231#section-5.1.1
 	 */
 	if (PHP_HTTP_INFO(msg).request.method) {
-		if (!strcasecmp("PUT", PHP_HTTP_INFO(msg).request.method)) {
+		switch(php_http_select_str(PHP_HTTP_INFO(msg).request.method, 2, "HEAD", "PUT")) {
+		case 0:
+			curl_easy_setopt(curl->handle, CURLOPT_NOBODY, 1L);
+			break;
+		case 1:
 			curl_easy_setopt(curl->handle, CURLOPT_UPLOAD, 1L);
-		} else {
+			break;
+		default:
 			curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, PHP_HTTP_INFO(msg).request.method);
 		}
 	} else {
