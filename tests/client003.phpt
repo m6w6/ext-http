@@ -14,7 +14,7 @@ include "helper/server.inc";
 echo "Test\n";
 
 server("proxy.inc", function($port) {
-	$request = new http\Client\Request("GET", "http://www.example.org/");
+	$request = new http\Client\Request("GET", "http://localhost:$port/");
 	
 	foreach (http\Client::getAvailableDrivers() as $driver) {
 		$client = new http\Client($driver);
