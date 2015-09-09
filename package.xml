@@ -23,7 +23,7 @@ It provides powerful request functionality with support for
 parallel requests.
 
 Documentation:
-http://devel-m6w6.rhcloud.com/mdref/http
+https://mdref.m6w6.name/http
 
 Code Coverage:
 http://dev.iworks.at/ext-http/lcov/ext/http/
@@ -35,9 +35,9 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-07-28</date>
+ <date>2015-09-09</date>
  <version>
-  <release>2.5.2dev</release>
+  <release>2.5.2</release>
   <api>2.5.0</api>
  </version>
  <stability>
