@@ -37,7 +37,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-09-10</date>
  <version>
-  <release>2.5.2</release>
+  <release>2.5.3dev</release>
   <api>2.5.0</api>
  </version>
  <stability>
@@ -46,8 +46,8 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license>BSD, revised</license>
  <notes><![CDATA[
-* Fixed regression with HEAD requests always warning about a partial file transfer
-+ Added "path_as_is" request option (libcurl >= 7.42)
+* Fixed gh-issue #12: crash on bad url passed to http\Message::setRequestUrl()
+* URL parser now fails on empty labels 
 ]]></notes>
  <contents>
   <dir name="/">
@@ -244,6 +244,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="filterzlib.phpt"/>
      <file role="test" name="gh-issue6.phpt"/>
      <file role="test" name="gh-issue7.phpt"/>
+     <file role="test" name="gh-issue12.phpt"/>
      <file role="test" name="header001.phpt"/>
      <file role="test" name="header002.phpt"/>
      <file role="test" name="header003.phpt"/>
