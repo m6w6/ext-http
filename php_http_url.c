@@ -1020,45 +1020,56 @@ static ZEND_RESULT_CODE parse_widn(struct parse_state *state)
 }
 #endif
 
+#ifdef HAVE_INET_PTON
+static const char *parse_ip6(struct parse_state *state, const char *ptr)
+{
+	const char *error = NULL, *end = state->ptr, *tmp = memchr(ptr, ']', end - ptr);
+	TSRMLS_FETCH_FROM_CTX(state->ts);
+
+	if (tmp) {
+		size_t addrlen = tmp - ptr + 1;
+		char buf[16], *addr = estrndup(ptr + 1, addrlen - 2);
+		int rv = inet_pton(AF_INET6, addr, buf);
+
+		if (rv == 1) {
+			state->buffer[state->offset] = '[';
+			state->url.host = &state->buffer[state->offset];
+			inet_ntop(AF_INET6, buf, state->url.host + 1, state->maxlen - state->offset);
+			state->offset += strlen(state->url.host);
+			state->buffer[state->offset++] = ']';
+			state->buffer[state->offset++] = 0;
+			ptr = tmp + 1;
+		} else if (rv == -1) {
+			error = strerror(errno);
+		} else {
+			error = "unexpected '['";
+		}
+		efree(addr);
+	} else {
+		error = "expected ']'";
+	}
+
+	if (error) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse hostinfo; %s", error);
+		return NULL;
+	}
+
+	return ptr;
+}
+#endif
+
 static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *ptr)
 {
 	size_t mb, len;
-	const char *end = state->ptr, *tmp = ptr, *port = NULL;
+	const char *end = state->ptr, *tmp = ptr, *port = NULL, *label = NULL;
 	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 #ifdef HAVE_INET_PTON
-	if (*ptr == '[') {
-		char *error = NULL, *tmp = memchr(ptr, ']', end - ptr);
-
-		if (tmp) {
-			size_t addrlen = tmp - ptr + 1;
-			char buf[16], *addr = estrndup(ptr + 1, addrlen - 2);
-			int rv = inet_pton(AF_INET6, addr, buf);
-
-			efree(addr);
-			if (rv == 1) {
-				state->buffer[state->offset] = '[';
-				state->url.host = &state->buffer[state->offset];
-				inet_ntop(AF_INET6, buf, state->url.host + 1, state->maxlen - state->offset);
-				state->offset += strlen(state->url.host);
-				state->buffer[state->offset++] = ']';
-				state->buffer[state->offset++] = 0;
-				ptr = tmp + 1;
-			} else if (rv == -1) {
-				error = strerror(errno);
-			} else {
-				error = "unexpected '['";
-			}
-		} else {
-			error = "expected ']'";
-		}
-
-		if (error) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse hostinfo; %s", error);
-			return FAILURE;
-		}
+	if (*ptr == '[' && !(ptr = parse_ip6(state, ptr))) {
+		return FAILURE;
 	}
 #endif
+
 	if (ptr != end) do {
 		switch (*ptr) {
 		case ':':
@@ -1086,6 +1097,20 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
 		case '+': case ',': case ';': case '=': /* sub-delims */
 		case '-': case '.': case '_': case '~': /* unreserved */
+			if (port || !label) {
+				/* sort of a compromise, just ensure we don't end up
+				 * with a dot at the beginning or two consecutive dots
+				 */
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse %s; unexpected '%c' at pos %u in '%s'",
+						port ? "port" : "host",
+						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
+				return FAILURE;
+			}
+			state->buffer[state->offset++] = *ptr;
+			label = NULL;
+			break;
+
 		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
 		case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
 		case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
@@ -1108,6 +1133,7 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 				state->url.port *= 10;
 				state->url.port += *ptr - '0';
 			} else {
+				label = ptr;
 				state->buffer[state->offset++] = *ptr;
 			}
 			break;
@@ -1123,6 +1149,7 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 			} else if (!(mb = parse_mb(state, PARSE_HOSTINFO, ptr, end, tmp, 0))) {
 				return FAILURE;
 			}
+			label = ptr;
 			ptr += mb - 1;
 		}
 	} while (++ptr != end);
