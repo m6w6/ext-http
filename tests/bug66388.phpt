@@ -11,23 +11,27 @@ skip_online_test();
 use http\Client,
 	http\Client\Request;
 
+include "helper/server.inc";
+
 echo "Test\n";
 
-$client = new Client();
-$request = new Request(
-	'POST',
-	'https://api.twitter.com/oauth/request_token',
-	array(
-		'Content-Length' => 0
-	)
-);
-$client->enqueue($request);
-echo $client->send()->getResponse()->getResponseCode();
+server("proxy.inc", function($port) {
+	$client = new Client();
+	$request = new Request(
+		'POST',
+		"http://localhost:$port/",
+		array(
+			'Content-Length' => 0
+		)
+	);
+	$client->enqueue($request);
+	echo $client->send()->getResponse()->getResponseCode();
+});
 
 ?>
 
 ===DONE===
 --EXPECTF--
 Test
-40%d
+200
 ===DONE===

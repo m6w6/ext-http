@@ -1228,6 +1228,11 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 {
 	php_http_option_t *opt;
 
+	/* url options */
+#if PHP_HTTP_CURL_VERSION(7,42,0)
+	php_http_option_register(registry, ZEND_STRL("path_as_is"), CURLOPT_PATH_AS_IS, IS_BOOL);
+#endif
+
 	/* proxy */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("proxyhost"), CURLOPT_PROXY, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
@@ -1528,6 +1533,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,39,0)
+		/* FIXME: see http://curl.haxx.se/libcurl/c/CURLOPT_PINNEDPUBLICKEY.html#AVAILABILITY */
 		if ((opt = php_http_option_register(registry, ZEND_STRL("pinned_publickey"), CURLOPT_PINNEDPUBLICKEY, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
@@ -2027,9 +2033,14 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 	 * See also https://tools.ietf.org/html/rfc7231#section-5.1.1
 	 */
 	if (PHP_HTTP_INFO(msg).request.method) {
-		if (!strcasecmp("PUT", PHP_HTTP_INFO(msg).request.method)) {
+		switch(php_http_select_str(PHP_HTTP_INFO(msg).request.method, 2, "HEAD", "PUT")) {
+		case 0:
+			curl_easy_setopt(curl->handle, CURLOPT_NOBODY, 1L);
+			break;
+		case 1:
 			curl_easy_setopt(curl->handle, CURLOPT_UPLOAD, 1L);
-		} else {
+			break;
+		default:
 			curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, PHP_HTTP_INFO(msg).request.method);
 		}
 	} else {

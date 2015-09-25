@@ -139,6 +139,10 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 				} else {
 					PHP_HTTP_INFO(info).request.url = php_http_url_parse_authority(url, http - url, ~0);
 				}
+				if (!PHP_HTTP_INFO(info).request.url) {
+					PTR_SET(PHP_HTTP_INFO(info).request.method, NULL);
+					return NULL;
+				}
 			} else {
 				PTR_SET(PHP_HTTP_INFO(info).request.method, NULL);
 				return NULL;
