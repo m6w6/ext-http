@@ -129,11 +129,13 @@ http://devel-m6w6.rhcloud.com/mdref/http
      </dir>
      <dir name="helper">
       <file role="test" name="cookie.inc"/>
+      <file role="test" name="dump.inc"/>
       <file role="test" name="http2.crt"/>
       <file role="test" name="http2.key"/>
       <file role="test" name="pipeline.inc"/>
       <file role="test" name="proxy.inc"/>
       <file role="test" name="server.inc"/>
+      <file role="test" name="upload.inc"/>
       <dir name="html">
        <file role="test" name="index.html"/>
       </dir>
@@ -143,6 +145,13 @@ http://devel-m6w6.rhcloud.com/mdref/http
      <file role="test" name="bug66891.phpt"/>
      <file role="test" name="bug67932.phpt"/>
      <file role="test" name="bug69000.phpt"/>
+     <file role="test" name="bug69076.phpt" />
+     <file role="test" name="bug69313.phpt" />
+     <file role="test" name="bug69357.phpt" />
+     <file role="test" name="gh-issue11.phpt" />
+     <file role="test" name="gh-issue12.phpt" />
+     <file role="test" name="gh-issue6.phpt" />
+     <file role="test" name="gh-issue7.phpt" />
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>
@@ -289,10 +298,13 @@ http://devel-m6w6.rhcloud.com/mdref/http
      <file role="test" name="params013.phpt"/>
      <file role="test" name="params014.phpt"/>
      <file role="test" name="params015.phpt"/>
+     <file role="test" name="params016.phpt"/>
+     <file role="test" name="params017.phpt"/>
      <file role="test" name="phpinfo.phpt"/>
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="querystring001.phpt"/>
      <file role="test" name="querystring002.phpt"/>
+     <file role="test" name="querystring003.phpt" />
      <file role="test" name="serialize001.phpt"/>
      <file role="test" name="url001.phpt"/>
      <file role="test" name="url002.phpt"/>
