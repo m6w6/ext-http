@@ -1619,10 +1619,10 @@ static PHP_METHOD(HttpMessage, setRequestUrl)
 	url = php_http_url_from_zval(zurl, ~0 TSRMLS_CC);
 	zend_restore_error_handling(&zeh TSRMLS_CC);
 
-	if (php_http_url_is_empty(url)) {
+	if (url && php_http_url_is_empty(url)) {
 		php_http_url_free(&url);
 		php_http_throw(invalid_arg, "Cannot set http\\Message's request url to an empty string", NULL);
-	} else {
+	} else if (url) {
 		PTR_SET(obj->message->http.info.request.url, url);
 	}
 
