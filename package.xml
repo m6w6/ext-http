@@ -35,9 +35,9 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-09-10</date>
+ <date>2015-09-25</date>
  <version>
-  <release>2.5.3dev</release>
+  <release>2.5.3</release>
   <api>2.5.0</api>
  </version>
  <stability>
@@ -47,7 +47,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  <license>BSD, revised</license>
  <notes><![CDATA[
 * Fixed gh-issue #12: crash on bad url passed to http\Message::setRequestUrl()
-* URL parser now fails on empty labels 
+* The URL parser now fails on empty labels 
 ]]></notes>
  <contents>
   <dir name="/">
