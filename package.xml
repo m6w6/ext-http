@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <package version="2.0" xmlns="http://pear.php.net/dtd/package-2.0"
  xmlns:tasks="http://pear.php.net/dtd/tasks-1.0"
  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -11,18 +11,22 @@
  <channel>pecl.php.net</channel>
  <summary>Extended HTTP Support</summary>
  <description><![CDATA[
-This HTTP extension aims to provide a convenient and powerful 
+This HTTP extension aims to provide a convenient and powerful
 set of functionality for one of PHPs major applications.
 
-It eases handling of HTTP urls, headers and messages, provides 
-means for negotiation of a client's preferred content type, 
-language and charset, as well as a convenient way to send any 
+It eases handling of HTTP urls, headers and messages, provides
+means for negotiation of a client's preferred content type,
+language and charset, as well as a convenient way to send any
 arbitrary data with caching and resuming capabilities.
 
 It provides powerful request functionality with support for
 parallel requests.
 
-http://devel-m6w6.rhcloud.com/mdref/http
+Documentation:
+https://mdref.m6w6.name/http
+
+Code Coverage:
+http://dev.iworks.at/ext-http/lcov/ext/http/
 
 ]]></description>
  <lead>
@@ -31,7 +35,7 @@ http://devel-m6w6.rhcloud.com/mdref/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2014-12-17</date>
+ <date>2015-09-25</date>
  <version>
   <release>3.0.0dev</release>
   <api>3.0.0</api>
@@ -40,82 +44,87 @@ http://devel-m6w6.rhcloud.com/mdref/http
   <release>beta</release>
   <api>beta</api>
  </stability>
- <license>BSD, revised</license>
+ <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
+PHP7 compatible release based on the 2.5.x series with the following backwards incompatible changes:
 ]]></notes>
  <contents>
   <dir name="/">
-   <file role="doc" name="LICENSE"/>
+   <file role="doc" name="AUTHORS"/>
+   <file role="doc" name="BUGS"/>
+   <file role="doc" name="CONTRIBUTING.md"/>
    <file role="doc" name="CREDITS"/>
-   <file role="doc" name="Exceptions.txt"/>
-   <file role="doc" name="KnownIssues.txt"/>
-   <file role="doc" name="ThanksTo.txt"/>
+   <file role="doc" name="LICENSE"/>
+   <file role="doc" name="README.md"/>
+   <file role="doc" name="THANKS"/>
+   <file role="doc" name="TODO"/>
    <file role="src" name="config.m4"/>
    <file role="src" name="config9.m4"/>
    <file role="src" name="config.w32"/>
-   
-   <file role="src" name="php_http_api.h"/>
-   <file role="src" name="php_http_buffer.c"/>
-   <file role="src" name="php_http_buffer.h"/>
-   <file role="src" name="php_http.c"/>
-   <file role="src" name="php_http_client.c"/>
-   <file role="src" name="php_http_client.h"/>
-   <file role="src" name="php_http_client_curl.c"/>
-   <file role="src" name="php_http_client_curl.h"/>
-   <file role="src" name="php_http_client_request.c"/>
-   <file role="src" name="php_http_client_request.h"/>
-   <file role="src" name="php_http_client_response.c"/>
-   <file role="src" name="php_http_client_response.h"/>
-   <file role="src" name="php_http_cookie.c"/>
-   <file role="src" name="php_http_cookie.h"/>
-   <file role="src" name="php_http_curl.c"/>
-   <file role="src" name="php_http_curl.h"/>
-   <file role="src" name="php_http_encoding.c"/>
-   <file role="src" name="php_http_encoding.h"/>
-   <file role="src" name="php_http_env.c"/>
-   <file role="src" name="php_http_env.h"/>
-   <file role="src" name="php_http_env_request.c"/>
-   <file role="src" name="php_http_env_request.h"/>
-   <file role="src" name="php_http_env_response.c"/>
-   <file role="src" name="php_http_env_response.h"/>
-   <file role="src" name="php_http_etag.c"/>
-   <file role="src" name="php_http_etag.h"/>
-   <file role="src" name="php_http_exception.c"/>
-   <file role="src" name="php_http_exception.h"/>
-   <file role="src" name="php_http_filter.c"/>
-   <file role="src" name="php_http_filter.h"/>
+   <file role="src" name="Makefile.frag"/>
    <file role="src" name="php_http.h"/>
-   <file role="src" name="php_http_header_parser.c"/>
-   <file role="src" name="php_http_header_parser.h"/>
-   <file role="src" name="php_http_header.c"/>
-   <file role="src" name="php_http_header.h"/>
-   <file role="src" name="php_http_info.c"/>
-   <file role="src" name="php_http_info.h"/>
-   <file role="src" name="php_http_message_body.c"/>
-   <file role="src" name="php_http_message_body.h"/>
-   <file role="src" name="php_http_message.c"/>
-   <file role="src" name="php_http_message.h"/>
-   <file role="src" name="php_http_message_parser.c"/>
-   <file role="src" name="php_http_message_parser.h"/>
-   <file role="src" name="php_http_misc.c"/>
-   <file role="src" name="php_http_misc.h"/>
-   <file role="src" name="php_http_negotiate.c"/>
-   <file role="src" name="php_http_negotiate.h"/>
-   <file role="src" name="php_http_object.c"/>
-   <file role="src" name="php_http_object.h"/>
-   <file role="src" name="php_http_options.c"/>
-   <file role="src" name="php_http_options.h"/>
-   <file role="src" name="php_http_params.c"/>
-   <file role="src" name="php_http_params.h"/>
-   <file role="src" name="php_http_querystring.c"/>
-   <file role="src" name="php_http_querystring.h"/>
-   <file role="src" name="php_http_response_codes.h"/>
-   <file role="src" name="php_http_url.c"/>
-   <file role="src" name="php_http_url.h"/>
-   <file role="src" name="php_http_utf8.h"/>
-   <file role="src" name="php_http_version.c"/>
-   <file role="src" name="php_http_version.h"/>
-
+   <dir name="src">
+    <file role="src" name="php_http_api.h"/>
+    <file role="src" name="php_http_buffer.c"/>
+    <file role="src" name="php_http_buffer.h"/>
+    <file role="src" name="php_http.c"/>
+    <file role="src" name="php_http_client.c"/>
+    <file role="src" name="php_http_client.h"/>
+    <file role="src" name="php_http_client_curl.c"/>
+    <file role="src" name="php_http_client_curl.h"/>
+    <file role="src" name="php_http_client_request.c"/>
+    <file role="src" name="php_http_client_request.h"/>
+    <file role="src" name="php_http_client_response.c"/>
+    <file role="src" name="php_http_client_response.h"/>
+    <file role="src" name="php_http_cookie.c"/>
+    <file role="src" name="php_http_cookie.h"/>
+    <file role="src" name="php_http_curl.c"/>
+    <file role="src" name="php_http_curl.h"/>
+    <file role="src" name="php_http_encoding.c"/>
+    <file role="src" name="php_http_encoding.h"/>
+    <file role="src" name="php_http_env.c"/>
+    <file role="src" name="php_http_env.h"/>
+    <file role="src" name="php_http_env_request.c"/>
+    <file role="src" name="php_http_env_request.h"/>
+    <file role="src" name="php_http_env_response.c"/>
+    <file role="src" name="php_http_env_response.h"/>
+    <file role="src" name="php_http_etag.c"/>
+    <file role="src" name="php_http_etag.h"/>
+    <file role="src" name="php_http_exception.c"/>
+    <file role="src" name="php_http_exception.h"/>
+    <file role="src" name="php_http_filter.c"/>
+    <file role="src" name="php_http_filter.h"/>
+    <file role="src" name="php_http_header_parser.c"/>
+    <file role="src" name="php_http_header_parser.h"/>
+    <file role="src" name="php_http_header.c"/>
+    <file role="src" name="php_http_header.h"/>
+    <file role="src" name="php_http_info.c"/>
+    <file role="src" name="php_http_info.h"/>
+    <file role="src" name="php_http_message_body.c"/>
+    <file role="src" name="php_http_message_body.h"/>
+    <file role="src" name="php_http_message.c"/>
+    <file role="src" name="php_http_message.h"/>
+    <file role="src" name="php_http_message_parser.c"/>
+    <file role="src" name="php_http_message_parser.h"/>
+    <file role="src" name="php_http_misc.c"/>
+    <file role="src" name="php_http_misc.h"/>
+    <file role="src" name="php_http_negotiate.c"/>
+    <file role="src" name="php_http_negotiate.h"/>
+    <file role="src" name="php_http_object.c"/>
+    <file role="src" name="php_http_object.h"/>
+    <file role="src" name="php_http_options.c"/>
+    <file role="src" name="php_http_options.h"/>
+    <file role="src" name="php_http_params.c"/>
+    <file role="src" name="php_http_params.h"/>
+    <file role="src" name="php_http_querystring.c"/>
+    <file role="src" name="php_http_querystring.h"/>
+    <file role="src" name="php_http_response_codes.h"/>
+    <file role="src" name="php_http_url.c"/>
+    <file role="src" name="php_http_url.h"/>
+    <file role="src" name="php_http_utf8.h"/>
+    <file role="src" name="php_http_version.c"/>
+    <file role="src" name="php_http_version.h"/>
+   </dir>
    <dir name="tests">
     <file role="test" name="skipif.inc"/>
      <dir name="data">
@@ -145,13 +154,9 @@ http://devel-m6w6.rhcloud.com/mdref/http
      <file role="test" name="bug66891.phpt"/>
      <file role="test" name="bug67932.phpt"/>
      <file role="test" name="bug69000.phpt"/>
-     <file role="test" name="bug69076.phpt" />
-     <file role="test" name="bug69313.phpt" />
-     <file role="test" name="bug69357.phpt" />
-     <file role="test" name="gh-issue11.phpt" />
-     <file role="test" name="gh-issue12.phpt" />
-     <file role="test" name="gh-issue6.phpt" />
-     <file role="test" name="gh-issue7.phpt" />
+     <file role="test" name="bug69076.phpt"/>
+     <file role="test" name="bug69313.phpt"/>
+     <file role="test" name="bug69357.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>
@@ -240,6 +245,9 @@ http://devel-m6w6.rhcloud.com/mdref/http
      <file role="test" name="etag001.phpt"/>
      <file role="test" name="filterchunked.phpt"/>
      <file role="test" name="filterzlib.phpt"/>
+     <file role="test" name="gh-issue6.phpt"/>
+     <file role="test" name="gh-issue7.phpt"/>
+     <file role="test" name="gh-issue12.phpt"/>
      <file role="test" name="header001.phpt"/>
      <file role="test" name="header002.phpt"/>
      <file role="test" name="header003.phpt"/>
@@ -304,7 +312,7 @@ http://devel-m6w6.rhcloud.com/mdref/http
      <file role="test" name="propertyproxy001.phpt"/>
      <file role="test" name="querystring001.phpt"/>
      <file role="test" name="querystring002.phpt"/>
-     <file role="test" name="querystring003.phpt" />
+     <file role="test" name="querystring003.phpt"/>
      <file role="test" name="serialize001.phpt"/>
      <file role="test" name="url001.phpt"/>
      <file role="test" name="url002.phpt"/>
@@ -324,6 +332,14 @@ http://devel-m6w6.rhcloud.com/mdref/http
      <file role="test" name="urlparser011.phpt"/>
      <file role="test" name="version001.phpt"/>
    </dir>
+   <dir name="scripts">
+    <file role="src" name="bench_select_vs_event.php"/>
+    <file role="src" name="check_package-xml.php"/>
+    <file role="src" name="gen_curlinfo.php"/>
+    <file role="src" name="gen_stubs.php"/>
+    <file role="src" name="gen_travis_yml.php"/>
+    <file role="src" name="gen_utf8.php"/>
+   </dir>
   </dir>
  </contents>
  <dependencies>
@@ -337,20 +353,19 @@ http://devel-m6w6.rhcloud.com/mdref/http
    <package>
     <name>raphf</name>
     <channel>pecl.php.net</channel>
-    <min>2.0.0-dev</min>
+    <min>2.0.0dev</min>
     <providesextension>raphf</providesextension>
    </package>
    <package>
     <name>propro</name>
     <channel>pecl.php.net</channel>
-    <min>2.0.0-dev</min>
+    <min>2.0.0dev</min>
     <providesextension>propro</providesextension>
    </package>
   </required>
   <optional>
    <extension><name>hash</name></extension>
    <extension><name>iconv</name></extension>
-   <extension><name>json</name></extension>
   </optional>
  </dependencies>
  <providesextension>http</providesextension>
@@ -368,9 +383,9 @@ http://devel-m6w6.rhcloud.com/mdref/http
    prompt="where to find libevent"
    default="/usr" />
   <configureoption
-    name="with-http-libidn-dir"
-    prompt="where to find libidn"
-    default="/usr" />
- </extsrcrelease>
+   name="with-http-libidn-dir"
+   prompt="where to find libidn"
+   default="/usr" />
+  </extsrcrelease>
  <changelog />
 </package>
