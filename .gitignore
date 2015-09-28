@@ -41,3 +41,4 @@ lcov_data
 *~
 *.phar
 !travis/*.phar
+vendor/

@@ -24,6 +24,9 @@ if (($xml = simplexml_load_file($file))) {
 			if (is_gitignored($file)) {
 				continue;
 			}
+			if (is_commonly_ignored($file)) {
+				continue;
+			}
 			if (!is_dir($file)) {
 				if (!in_array($file, $xml_files)) {
 					echo "Missing file $file\n";
@@ -55,19 +58,41 @@ function stdin_is_readable() {
 }
 
 function is_gitignored($file) {
-	static $gitignore;
-	
+	static $gitignore, $gitmodules;
+
+	if (!isset($gitmodules)) {
+		if (is_readable("./.gitmodules")) {
+			$gitmodules = explode("\n", `git submodule status | awk '{printf$2}'`);
+		} else {
+			$gitmodules = false;
+		}
+	}
 	if (!isset($gitignore)) {
-		if (is_readable(".gitignore")) {
-			$gitignore = explode("\n", `find | git check-ignore --stdin`);
+		if (is_readable("./.gitignore")) {
+			$ignore_submodules = $gitmodules ? " ! -path './".implode("/*' ! -path './", $gitmodules)."/*'" : "";
+			$gitignore = explode("\n", `find . $ignore_submodules | git check-ignore --stdin`);
 		} else {
 			$gitignore = false;
 		}
 	}
 	if ($gitignore) {
-		return in_array($file, $gitignore);
+		if (in_array($file, $gitignore)) {
+			return true;
+		}
+	}
+	if ($gitmodules) {
+		foreach ($gitmodules as $module) {
+			if (fnmatch("./$module/*", $file)) {
+				return true;
+			}
+		}
 	}
 	return false;
+}
+
+function is_commonly_ignored($file) {
+	return fnmatch("./.git*", $file)
+		|| in_array($file, ["./package.xml", "./package2.xml", "./.travis.yml", "./.editorconfig"], true);
 }
 
 function xmllist(SimpleXmlElement $dir, $p = ".", &$a = null) {

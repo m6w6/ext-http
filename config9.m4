@@ -31,22 +31,22 @@ if test "$PHP_HTTP" != "no"; then
 			AC_CHECK_PROG(SED, sed, sed)
 		])
 	])
-	
+
 	AC_PROG_CPP
-	
+
 	if test "$PHP_HTTP_SHARED_DEPS" != "no"; then
 		AC_DEFINE([PHP_HTTP_SHARED_DEPS], [1], [ ])
 	else
 		AC_DEFINE([PHP_HTTP_SHARED_DEPS], [0], [ ])
 	fi
-	
+
 	dnl
 	dnl HTTP_SHARED_DEP(name[, code-if-yes[, code-if-not]])
 	dnl
 	AC_DEFUN([HTTP_SHARED_DEP], [
 		extname=$1
 		haveext=$[PHP_HTTP_HAVE_EXT_]translit($1,a-z_-,A-Z__)
-		
+
 		AC_MSG_CHECKING([whether to add a dependency on ext/$extname])
 		if test "$PHP_HTTP_SHARED_DEPS" = "no"; then
 			AC_MSG_RESULT([no])
@@ -63,7 +63,7 @@ if test "$PHP_HTTP" != "no"; then
 			$3
 		fi
 	])
-	
+
 	dnl
 	dnl HTTP_HAVE_PHP_EXT(name[, code-if-yes[, code-if-not]])
 	dnl
@@ -92,7 +92,7 @@ if test "$PHP_HTTP" != "no"; then
 			$3
 		fi
 	])
-	
+
 	dnl
 	dnl HTTP_CURL_SSL_LIB_CHECK(ssllib[, code-if-yes[, code-if-not])
 	dnl
@@ -120,7 +120,7 @@ if test "$PHP_HTTP" != "no"; then
 			$3
 		])
 	])
-	
+
 
 dnl ----
 dnl STDC
@@ -240,7 +240,7 @@ dnl ----
 			PHP_ADD_LIBRARY_WITH_PATH(z, $ZLIB_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 		fi
 	fi
-	
+
 dnl ----
 dnl CURL
 dnl ----
@@ -260,7 +260,7 @@ dnl ----
 			AC_MSG_RESULT([not found])
 		else
 			AC_MSG_RESULT([found in $CURL_DIR])
-		
+
 			AC_MSG_CHECKING([for curl-config])
 			CURL_CONFIG=
 			for i in "$CURL_DIR/bin/curl-config" "$CURL_DIR/curl-config" `which curl-config`; do
@@ -275,7 +275,7 @@ dnl ----
 			else
 				AC_MSG_RESULT([found: $CURL_CONFIG])
 			fi
-		
+
 			dnl RHEL6:         7.19.7
 			dnl SUSE11:        7.19.7
 			dnl Debian wheezy: 7.26.0
@@ -287,7 +287,7 @@ dnl ----
 			if test `echo $CURL_VERSION | $SED -e 's/[[^0-9]]/ /g' | $AWK '{print $1*10000 + $2*100 + $3}'` -lt 71802; then
 				AC_MSG_ERROR([libcurl version greater or equal to 7.18.2 required])
 			fi
-			
+
 			AC_MSG_CHECKING([for HTTP2 support in libcurl])
 			if $CURL_CONFIG --features | $EGREP -q HTTP2; then
 				AC_MSG_RESULT([yes])
@@ -295,11 +295,11 @@ dnl ----
 			else
 				AC_MSG_RESULT([no])
 			fi
-		
+
 			dnl
 			dnl compile tests
 			dnl
-		
+
 			save_INCLUDES="$INCLUDES"
 			INCLUDES=
 			save_LIBS="$LIBS"
@@ -308,14 +308,14 @@ dnl ----
 			CFLAGS="$CFLAGS `$CURL_CONFIG --cflags`"
 			save_LDFLAGS="$LDFLAGS"
 			LDFLAGS="$ld_runpath_switch$CURL_DIR/$PHP_LIBDIR"
-		
+
 			AC_MSG_CHECKING([for SSL support in libcurl])
 			CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
 			CURL_SSL_LIBS=""
 			if test "$CURL_SSL" = "SSL"; then
 				AC_MSG_RESULT([yes])
 				AC_DEFINE([PHP_HTTP_HAVE_SSL], [1], [ ])
-			
+
 				HTTP_CURL_SSL_LIB_CHECK(OpenSSL, [
 					AC_CHECK_HEADER([openssl/ssl.h], [
 						AC_CHECK_HEADER([openssl/crypto.h], [
@@ -345,7 +345,7 @@ dnl ----
 				dnl no CURL_SSL
 				AC_MSG_RESULT([no])
 			fi
-			
+
 			AC_MSG_CHECKING([for ares support in libcurl])
 			AC_TRY_RUN([
 				#include <curl/curl.h>
@@ -364,7 +364,7 @@ dnl ----
 			], [
 				AC_MSG_RESULT([no])
 			])
-			
+
 			AC_MSG_CHECKING([whether CURLOPT_TLSAUTH_TYPE expects CURL_TLSAUTH_SRP or literal "SRP"])
 			AC_TRY_RUN([
 				#include <curl/curl.h>
@@ -391,24 +391,24 @@ dnl ----
 					AC_MSG_RESULT([neither])
 				], [
 					AC_MSG_RESULT([neither])
-				])			
+				])
 			], [
 				AC_MSG_RESULT([neither])
 			])
-		
+
 			INCLUDES="$save_INCLUDES"
 			LIBS="$save_LIBS"
 			CFLAGS="$save_CFLAGS"
 			LDFLAGS="$save_LDFLAGS"
-			
+
 			if test -n "$CURL_SSL_LIBS"; then
 				for CURL_SSL_LIB in $CURL_SSL_LIBS; do
 					PHP_ADD_LIBRARY_WITH_PATH([$CURL_SSL_LIB], $CURL_DIR/$PHP_LIBDIR, PHP_HTTP_SHARED_LIBADD)
 				done
 			fi
-			
+
 			dnl end compile tests
-		
+
 			AC_MSG_CHECKING([for bundled SSL CA info])
 			CURL_CAINFO=
 			for i in `$CURL_CONFIG --ca` "/etc/ssl/certs/ca-certificates.crt" "/etc/ssl/certs/ca-bundle.crt"; do
@@ -423,7 +423,7 @@ dnl ----
 				AC_MSG_RESULT([$CURL_CAINFO])
 				AC_DEFINE_UNQUOTED([PHP_HTTP_CURL_CAINFO], ["$CURL_CAINFO"], [path to bundled SSL CA info])
 			fi
-		
+
 			PHP_ADD_INCLUDE($CURL_DIR/include)
 			PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 			PHP_EVAL_LIBLINE(`$CURL_CONFIG --libs`, HTTP_SHARED_LIBADD)
@@ -453,9 +453,9 @@ dnl ----
 			AC_DEFINE([PHP_HTTP_HAVE_EVENT], [0], [ ])
 		else
 			AC_MSG_RESULT([found in $EVENT_DIR])
-			
+
 			AC_MSG_CHECKING([for libevent version, roughly])
-			
+
 			if test -f "$EVENT_DIR/include/event2/event.h"; then
 				EVENT_VER="`$AWK '/_EVENT_VERSION/ {gsub(/\"/,\"\",$3); print $3}' < $EVENT_DIR/include/event2/event-config.h`"
 				AC_DEFINE([PHP_HTTP_HAVE_EVENT2], [1], [ ])
@@ -473,7 +473,7 @@ dnl ----
 			fi
 			AC_DEFINE_UNQUOTED([PHP_HTTP_EVENT_VERSION], ["$EVENT_VER"], [ ])
 			AC_MSG_RESULT([$EVENT_VER])
-			
+
 			PHP_ADD_INCLUDE($EVENT_DIR/include)
 			PHP_ADD_LIBRARY_WITH_PATH(event, $EVENT_DIR/$PHP_LIBDIR, HTTP_SHARED_LIBADD)
 			AC_DEFINE([PHP_HTTP_HAVE_EVENT], [1], [Have libevent support for cURL])
@@ -573,90 +573,59 @@ dnl ----
 dnl ----
 dnl DONE
 dnl ----
+	PHP_ADD_INCLUDE(src)
+	PHP_ADD_BUILD_DIR(src)
 	PHP_HTTP_SOURCES="\
-		php_http_buffer.c \
-		php_http.c \
-		php_http_client.c \
-		php_http_client_curl.c \
-		php_http_client_request.c \
-		php_http_client_response.c \
-		php_http_cookie.c \
-		php_http_curl.c \
-		php_http_encoding.c \
-		php_http_env.c \
-		php_http_env_request.c \
-		php_http_env_response.c \
-		php_http_etag.c \
-		php_http_exception.c \
-		php_http_filter.c \
-		php_http_header_parser.c \
-		php_http_header.c \
-		php_http_info.c \
-		php_http_message_body.c \
-		php_http_message.c \
-		php_http_message_parser.c \
-		php_http_misc.c \
-		php_http_negotiate.c \
-		php_http_object.c \
-		php_http_options.c \
-		php_http_params.c \
-		php_http_querystring.c \
-		php_http_url.c \
-		php_http_version.c \
+		src/php_http_buffer.c \
+		src/php_http.c \
+		src/php_http_client.c \
+		src/php_http_client_curl.c \
+		src/php_http_client_request.c \
+		src/php_http_client_response.c \
+		src/php_http_cookie.c \
+		src/php_http_curl.c \
+		src/php_http_encoding.c \
+		src/php_http_env.c \
+		src/php_http_env_request.c \
+		src/php_http_env_response.c \
+		src/php_http_etag.c \
+		src/php_http_exception.c \
+		src/php_http_filter.c \
+		src/php_http_header_parser.c \
+		src/php_http_header.c \
+		src/php_http_info.c \
+		src/php_http_message_body.c \
+		src/php_http_message.c \
+		src/php_http_message_parser.c \
+		src/php_http_misc.c \
+		src/php_http_negotiate.c \
+		src/php_http_object.c \
+		src/php_http_options.c \
+		src/php_http_params.c \
+		src/php_http_querystring.c \
+		src/php_http_url.c \
+		src/php_http_version.c \
 	"
 	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, $ext_shared)
-	
+
 	dnl shared extension deps
 	HTTP_SHARED_DEP([hash])
 	HTTP_SHARED_DEP([iconv])
-	
+
 	dnl extension deps
 	PHP_ADD_EXTENSION_DEP([http], [raphf], true)
 	PHP_ADD_EXTENSION_DEP([http], [propro], true)
-	
+
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 
-	PHP_HTTP_HEADERS="
-		php_http_api.h \
-		php_http_buffer.h \
-		php_http_curl_client.h \
-		php_http_curl_client_datashare.h \
-		php_http_client_datashare.h \
-		php_http_client_factory.h \
-		php_http_client.h \
-		php_http_client_interface.h \
-		php_http_curl_client_pool.h \
-		php_http_client_pool.h \
-		php_http_client_request.h \
-		php_http_client_response.h \
-		php_http_cookie.h \
-		php_http_curl.h \
-		php_http_encoding.h \
-		php_http_env.h \
-		php_http_env_request.h \
-		php_http_env_response.h \
-		php_http_etag.h \
-		php_http_exception.h \
-		php_http_filter.h \
-		php_http.h \
-		php_http_header_parser.h \
-		php_http_header.h \
-		php_http_info.h \
-		php_http_message_body.h \
-		php_http_message.h \
-		php_http_message_parser.h \
-		php_http_misc.h \
-		php_http_negotiate.h \
-		php_http_object.h \
-		php_http_options.h \
-		php_http_params.h \
-		php_http_querystring.h \
-		php_http_response_codes.h \
-		php_http_url.h \
-		php_http_utf8.h \
-		php_http_version.h \
-	"
-	PHP_INSTALL_HEADERS(ext/http, $PHP_HTTP_HEADERS)
+	PHP_HTTP_HEADERS=`(cd $ext_srcdir/src && echo *.h)`
+	PHP_INSTALL_HEADERS(ext/http, php_http.h $PHP_HTTP_HEADERS)
+	PHP_SUBST([PHP_HTTP_HEADERS])
+	PHP_HTTP_SRCDIR=$ext_srcdir
+	PHP_SUBST([PHP_HTTP_SRCDIR])
+	PHP_HTTP_BUILDDIR=$ext_builddir
+	PHP_SUBST([PHP_HTTP_BUILDDIR])
+	PHP_ADD_MAKEFILE_FRAGMENT
 
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
 	if $HTTP_HAVE_A_REQUEST_LIB; then
