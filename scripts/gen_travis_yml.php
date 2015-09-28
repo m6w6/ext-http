@@ -43,3 +43,10 @@ after_script:
  - test -e tests/helper/server.log && cat tests/helper/server.log
 
 sudo: false
+notifications:
+ webhooks:
+  urls:
+   - https://webhooks.gitter.im/e/28d35158ac7e385bd14d
+  on_success: change
+  on_failure: always
+  on_start: never
