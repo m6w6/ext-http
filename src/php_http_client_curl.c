@@ -1230,7 +1230,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 
 	/* url options */
 #if PHP_HTTP_CURL_VERSION(7,42,0)
-	php_http_option_register(registry, ZEND_STRL("path_as_is"), CURLOPT_PATH_AS_IS, IS_BOOL);
+	php_http_option_register(registry, ZEND_STRL("path_as_is"), CURLOPT_PATH_AS_IS, _IS_BOOL);
 #endif
 
 	/* proxy */

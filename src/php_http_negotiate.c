@@ -14,13 +14,10 @@
 
 static int php_http_negotiate_sort(const void *first, const void *second)
 {
-	zval result;
 	Bucket *b1 = (Bucket *) first, *b2 = (Bucket *) second;
+	int result = numeric_compare_function(&b1->val, &b2->val);
 
-	if (numeric_compare_function(&result, &b1->val, &b2->val)!= SUCCESS) {
-		return 0;
-	}
-	return (Z_LVAL(result) > 0 ? -1 : (Z_LVAL(result) < 0 ? 1 : 0));
+	return (result > 0 ? -1 : (result < 0 ? 1 : 0));
 }
 
 #define M_PRI 5
@@ -156,7 +153,7 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 		zval_dtor(&arr);
 		zend_hash_sort(result, php_http_negotiate_sort, 0);
 	}
-	
+
 	return result;
 }
 
