@@ -472,7 +472,7 @@ $installer = new Installer();
 $installer->run($argc, $argv);
 
 __HALT_COMPILER(); ?>
-¦  7           ,  a:7:{s:7:"version";s:5:"4.1.1";s:6:"header";s:49:"pharext v4.1.1 (c) Michael Wallner <mike@php.net>";s:4:"date";s:10:"2015-09-28";s:4:"name";s:5:"raphf";s:7:"release";s:9:"2.0.0-dev";s:7:"license";s:1345:"Copyright (c) 2013, Michael Wallner <mike@php.net>.
+…  =           )  a:7:{s:7:"version";s:5:"4.1.1";s:6:"header";s:49:"pharext v4.1.1 (c) Michael Wallner <mike@php.net>";s:4:"date";s:10:"2015-09-28";s:4:"name";s:5:"raphf";s:7:"release";s:6:"master";s:7:"license";s:1345:"Copyright (c) 2013, Michael Wallner <mike@php.net>.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without 
@@ -494,8 +494,11 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-";s:4:"type";s:9:"extension";}   pharext/Archive.php  ”h	V  4-ÔI¶         pharext/Cli/Args/Help.phpÉ  ”h	VÉ  gX'¶         pharext/Cli/Args.php  ”h	V  ?nö¶         pharext/Cli/Command.phpk	  ”h	Vk	  d„aê¶         pharext/Command.php  ”h	V  Ôm`Í¶         pharext/Exception.phpc  ”h	Vc  U†Ï{¶         pharext/ExecCmd.php  ”h	V  ¹l”Ê¶         pharext/Installer.php&  ”h	V&  ød&À¶         pharext/License.php“  ”h	V“  îòE¶         pharext/Metadata.php•  ”h	V•  ¿Ú¶         pharext/Openssl/PrivateKey.phpÁ  ”h	VÁ  &æP¶         pharext/Packager.phpÌ!  ”h	VÌ!  0<¶         pharext/SourceDir/Basic.phpz  ”h	Vz  ÷+Ôâ¶         pharext/SourceDir/Git.phpZ  ”h	VZ  ÉÎ\¶         pharext/SourceDir/Pecl.phpø  ”h	Vø  ãùĞ¶         pharext/SourceDir.php½  ”h	V½  3·#¶         pharext/Task/Activate.phpÜ  ”h	VÜ  I“¶         pharext/Task/Askpass.phpU  ”h	VU  ‡*¶          pharext/Task/BundleGenerator.php}  ”h	V}   ï`Y¶         pharext/Task/Cleanup.php  ”h	V  ÉI€B¶         pharext/Task/Configure.phpT  ”h	VT  }Ëì¶         pharext/Task/Extract.phpp  ”h	Vp  [¨ÛÌ¶         pharext/Task/GitClone.phpm  ”h	Vm  óyµ@¶         pharext/Task/Make.phpª  ”h	Vª  œç6¶         pharext/Task/PaxFixup.php¬  ”h	V¬  yâ¯¶         pharext/Task/PeclFixup.phpœ  ”h	Vœ  eùtš¶         pharext/Task/PharBuild.phpâ  ”h	Vâ  Î¶0É¶         pharext/Task/PharCompress.phpc  ”h	Vc  ½³Ï¶         pharext/Task/PharRename.phpä  ”h	Vä  Š[ŞË¶         pharext/Task/PharSign.php¨  ”h	V¨  Ûº¦i¶         pharext/Task/PharStub.phpæ  ”h	Væ  Y|­›¶         pharext/Task/Phpize.php  ”h	V  ù2Ñ¶         pharext/Task/StreamFetch.php  ”h	V  ˆîs\¶         pharext/Task.phpw   ”h	Vw    ÄIÇ¶         pharext/Tempdir.phpµ  ”h	Vµ  ë–,¶         pharext/Tempfile.php  ”h	V   ®ô¶         pharext/Tempname.phpt  ”h	Vt  n<¶         pharext/Updater.php  ”h	V  Ïv¶         pharext_installer.phpİ  ”h	Vİ  ŒŞq¶         pharext_packager.phpb  ”h	Vb  îVÓÏ¶         pharext_updater.phph  ”h	Vh   Êúj¶         pharext_package.php2   ”h	V2   vSTÒ¶         package.xml  ”h	V  L(—)¶         CREDITS   ”h	V   Cµ]²¶         LICENSEA  ”h	VA  ¾¬Jş¶         DoxyfileW,  ”h	VW,  ZÎ°¶      	   config.m4$  ”h	V$  Åê@›¶      
-   config.w32Ğ   ”h	VĞ   ıÍ¶         php_raphf.h  ”h	V  b·Ò¶         php_raphf_api.hˆ2  ”h	Vˆ2  J^V¶         php_raphf.cE  ”h	VE  ™P¶         tests/http001.phpt  ”h	V  *®¶         tests/http002.phptL  ”h	VL  €ÔïS¶         tests/http003.phpt^  ”h	V^  ˆp¶         tests/http004.phpt[  ”h	V[  Yè«¶      <?php
+";s:4:"type";s:9:"extension";}   pharext/Archive.php  ók	V  4-ÔI¶         pharext/Cli/Args/Help.phpÉ  ók	VÉ  gX'¶         pharext/Cli/Args.php  ók	V  ?nö¶         pharext/Cli/Command.phpk	  ók	Vk	  d„aê¶         pharext/Command.php  ók	V  Ôm`Í¶         pharext/Exception.phpc  ók	Vc  U†Ï{¶         pharext/ExecCmd.php  ók	V  ¹l”Ê¶         pharext/Installer.php&  ók	V&  ød&À¶         pharext/License.php“  ók	V“  îòE¶         pharext/Metadata.php•  ók	V•  ¿Ú¶         pharext/Openssl/PrivateKey.phpÁ  ók	VÁ  &æP¶         pharext/Packager.phpÌ!  ók	VÌ!  0<¶         pharext/SourceDir/Basic.phpz  ók	Vz  ÷+Ôâ¶         pharext/SourceDir/Git.phpZ  ók	VZ  ÉÎ\¶         pharext/SourceDir/Pecl.phpø  ók	Vø  ãùĞ¶         pharext/SourceDir.php½  ók	V½  3·#¶         pharext/Task/Activate.phpÜ  ók	VÜ  I“¶         pharext/Task/Askpass.phpU  ók	VU  ‡*¶          pharext/Task/BundleGenerator.php}  ók	V}   ï`Y¶         pharext/Task/Cleanup.php  ók	V  ÉI€B¶         pharext/Task/Configure.phpT  ók	VT  }Ëì¶         pharext/Task/Extract.phpp  ók	Vp  [¨ÛÌ¶         pharext/Task/GitClone.phpm  ók	Vm  óyµ@¶         pharext/Task/Make.phpª  ók	Vª  œç6¶         pharext/Task/PaxFixup.php¬  ók	V¬  yâ¯¶         pharext/Task/PeclFixup.phpœ  ók	Vœ  eùtš¶         pharext/Task/PharBuild.phpâ  ók	Vâ  Î¶0É¶         pharext/Task/PharCompress.phpc  ók	Vc  ½³Ï¶         pharext/Task/PharRename.phpä  ók	Vä  Š[ŞË¶         pharext/Task/PharSign.php¨  ók	V¨  Ûº¦i¶         pharext/Task/PharStub.phpæ  ók	Væ  Y|­›¶         pharext/Task/Phpize.php  ók	V  ù2Ñ¶         pharext/Task/StreamFetch.php  ók	V  ˆîs\¶         pharext/Task.phpw   ók	Vw    ÄIÇ¶         pharext/Tempdir.phpµ  ók	Vµ  ë–,¶         pharext/Tempfile.php  ók	V   ®ô¶         pharext/Tempname.phpt  ók	Vt  n<¶         pharext/Updater.php  ók	V  Ïv¶         pharext_installer.phpİ  ók	Vİ  ŒŞq¶         pharext_packager.phpb  ók	Vb  îVÓÏ¶         pharext_updater.phph  ók	Vh   Êúj¶         .gitattributes2   ók	V2   êXV«¶      
+   .gitignoreº   ók	Vº   zNè%¶         CREDITS   ók	V   Cµ]²¶         DoxyfileW,  ók	VW,  ZÎ°¶         LICENSEA  ók	VA  ¾¬Jş¶      	   README.mdD  ók	VD  “”›¶         TODO   ók	V   y_÷E¶      	   config.m4$  ók	V$  Åê@›¶      
+   config.w32Ğ   ók	VĞ   ıÍ¶         package.xml  ók	V  L(—)¶         php_raphf.cE  ók	VE  ™P¶         php_raphf.h  ók	V  b·Ò¶         php_raphf_api.hˆ2  ók	Vˆ2  J^V¶         php_raphf_test.cÍ  ók	VÍ  ·f>x¶      	   raphf.png|p  ók	V|p  sä™³¶         tests/http001.phpt  ók	V  *®¶         tests/http002.phptL  ók	VL  €ÔïS¶         tests/http003.phpt^  ók	V^  ˆp¶         tests/http004.phpt[  ók	V[  Yè«¶         tests/test.phpt¾
+  ók	V¾
+  $àíY¶      <?php
 
 namespace pharext;
 
@@ -4258,97 +4261,33 @@ $updater = new Updater();
 $updater->run($argc, $argv);
 
 __HALT_COMPILER();
-<?php
-return new pharext\SourceDir\Pecl(__DIR__);
-<?xml version="1.0" encoding="UTF-8"?>
-<package 
- packagerversion="1.4.11" 
- version="2.0" 
- xmlns="http://pear.php.net/dtd/package-2.0" 
- xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" 
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
- xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
-http://pear.php.net/dtd/tasks-1.0.xsd
-http://pear.php.net/dtd/package-2.0
-http://pear.php.net/dtd/package-2.0.xsd">
- <name>raphf</name>
- <channel>pecl.php.net</channel>
- <summary>Resource and persistent handles factory</summary>
- <description>A reusable split-off of pecl_http's persistent handle and resource factory API.</description>
- <lead>
-  <name>Michael Wallner</name>
-  <user>mike</user>
-  <email>mike@php.net</email>
-  <active>yes</active>
- </lead>
- <date>2015-07-28</date>
- <version>
-  <release>2.0.0-dev</release>
-  <api>2.0.0</api>
- </version>
- <stability>
-  <release>stable</release>
-  <api>stable</api>
- </stability>
- <license>BSD, revised</license>
- <notes><![CDATA[
-]]></notes>
- <contents>
-  <dir name="/">
-   <file role="doc" name="CREDITS" />
-   <file role="doc" name="LICENSE" />
-   <file role="doc" name="Doxyfile" />
-   <file role="src" name="config.m4" />
-   <file role="src" name="config.w32" />
-   <file role="src" name="php_raphf.h" />
-   <file role="src" name="php_raphf_api.h" />
-   <file role="src" name="php_raphf.c" />
-   <dir name="tests">
-    <file role="test" name="http001.phpt" />
-    <file role="test" name="http002.phpt" />
-    <file role="test" name="http003.phpt" />
-    <file role="test" name="http004.phpt" />
-   </dir>
-  </dir>
- </contents>
- <dependencies>
-  <required>
-   <php>
-    <min>7.0.0</min>
-   </php>
-   <pearinstaller>
-    <min>1.4.0</min>
-   </pearinstaller>
-  </required>
- </dependencies>
- <providesextension>raphf</providesextension>
- <extsrcrelease/>
-</package>
+package.xml		merge=touch
+php_raphf.h		merge=touch
 
+# /
+*~
+/*.tgz
+/.deps
+/*.lo
+/*.la
+/config.[^mw]*
+/configure*
+/lib*
+/ac*.m4
+/ltmain.sh
+/install-sh
+/Make*
+/mk*
+/missing
+/.libs
+/build
+/include
+/modules
+/autom4te*
+/.dep.inc
+run-tests.php
 raphf
 Michael Wallner
-Copyright (c) 2013, Michael Wallner <mike@php.net>.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice, 
-      this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright 
-      notice, this list of conditions and the following disclaimer in the 
-      documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE 
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Doxyfile 1.8.9.1
 
 #---------------------------------------------------------------------------
@@ -4668,6 +4607,58 @@ DOT_TRANSPARENT        = NO
 DOT_MULTI_TARGETS      = NO
 GENERATE_LEGEND        = YES
 DOT_CLEANUP            = YES
+Copyright (c) 2013, Michael Wallner <mike@php.net>.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, 
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright 
+      notice, this list of conditions and the following disclaimer in the 
+      documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE 
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# pecl/raphf
+
+## About:
+
+The "Resource and Persistent Handle Factory" extension provides facilities to manage those in a convenient manner.
+
+## Installation:
+
+This extension is hosted at [PECL](http://pecl.php.net) and can be installed with [PEAR](http://pear.php.net)'s pecl command:
+
+    # pecl install raphf
+
+Also, watch out for self-installing [pharext](https://github.com/m6w6/pharext) packages attached to [releases](https://github.com/m6w6/ext-raphf/releases).
+
+
+## INI Directives:
+
+* raphf.persistent_handle.limit = -1  
+  The per process/thread persistent handle limit.
+
+## Internals:
+
+> ***NOTE:***  
+  This extension mostly only provides infrastructure for other extensions.
+  See the [API docs here](http://m6w6.github.io/ext-raphf/).
+
+## Documentation:
+
+Userland documentation can be found at https://mdref.m6w6.name/raphf
+* TTL
 PHP_ARG_ENABLE(raphf, whether to enable raphf support,
 [  --enable-raphf           Enable resource and persistent handles factory support])
 
@@ -4685,468 +4676,71 @@ if (PHP_RAPHF == "yes") {
 		AC_DEFINE("HAVE_RAPHF", 1);
 		PHP_INSTALL_HEADERS("ext/raphf", "php_raphf.h");
 }
-/*
-    +--------------------------------------------------------------------+
-    | PECL :: raphf                                                      |
-    +--------------------------------------------------------------------+
-    | Redistribution and use in source and binary forms, with or without |
-    | modification, are permitted provided that the conditions mentioned |
-    | in the accompanying LICENSE file are met.                          |
-    +--------------------------------------------------------------------+
-    | Copyright (c) 2013, Michael Wallner <mike@php.net>                 |
-    +--------------------------------------------------------------------+
-*/
+<?xml version="1.0" encoding="UTF-8"?>
+<package 
+ packagerversion="1.4.11" 
+ version="2.0" 
+ xmlns="http://pear.php.net/dtd/package-2.0" 
+ xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" 
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+ xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+http://pear.php.net/dtd/tasks-1.0.xsd
+http://pear.php.net/dtd/package-2.0
+http://pear.php.net/dtd/package-2.0.xsd">
+ <name>raphf</name>
+ <channel>pecl.php.net</channel>
+ <summary>Resource and persistent handles factory</summary>
+ <description>A reusable split-off of pecl_http's persistent handle and resource factory API.</description>
+ <lead>
+  <name>Michael Wallner</name>
+  <user>mike</user>
+  <email>mike@php.net</email>
+  <active>yes</active>
+ </lead>
+ <date>2015-07-28</date>
+ <version>
+  <release>2.0.0-dev</release>
+  <api>2.0.0</api>
+ </version>
+ <stability>
+  <release>stable</release>
+  <api>stable</api>
+ </stability>
+ <license>BSD, revised</license>
+ <notes><![CDATA[
+]]></notes>
+ <contents>
+  <dir name="/">
+   <file role="doc" name="CREDITS" />
+   <file role="doc" name="LICENSE" />
+   <file role="doc" name="Doxyfile" />
+   <file role="src" name="config.m4" />
+   <file role="src" name="config.w32" />
+   <file role="src" name="php_raphf.h" />
+   <file role="src" name="php_raphf_api.h" />
+   <file role="src" name="php_raphf.c" />
+   <dir name="tests">
+    <file role="test" name="http001.phpt" />
+    <file role="test" name="http002.phpt" />
+    <file role="test" name="http003.phpt" />
+    <file role="test" name="http004.phpt" />
+   </dir>
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>7.0.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>raphf</providesextension>
+ <extsrcrelease/>
+</package>
 
-#ifndef PHP_RAPHF_H
-#define PHP_RAPHF_H
-
-extern zend_module_entry raphf_module_entry;
-#define phpext_raphf_ptr &raphf_module_entry
-
-#define PHP_RAPHF_VERSION "2.0.0dev"
-
-#ifdef PHP_WIN32
-#	define PHP_RAPHF_API __declspec(dllexport)
-#elif defined(__GNUC__) && __GNUC__ >= 4
-#	define PHP_RAPHF_API extern __attribute__ ((visibility("default")))
-#else
-#	define PHP_RAPHF_API extern
-#endif
-
-#ifdef ZTS
-#	include "TSRM.h"
-#endif
-
-#include "php_raphf_api.h"
-
-#endif	/* PHP_RAPHF_H */
-
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */
-/*
-    +--------------------------------------------------------------------+
-    | PECL :: raphf                                                      |
-    +--------------------------------------------------------------------+
-    | Redistribution and use in source and binary forms, with or without |
-    | modification, are permitted provided that the conditions mentioned |
-    | in the accompanying LICENSE file are met.                          |
-    +--------------------------------------------------------------------+
-    | Copyright (c) 2013, Michael Wallner <mike@php.net>                 |
-    +--------------------------------------------------------------------+
-*/
-
-#ifndef PHP_RAPHF_API_H
-#define PHP_RAPHF_API_H
-
-#include "php_raphf.h"
-
-/**
- * A resource constructor.
- *
- * @param opaque is the \a data from php_persistent_handle_provide()
- * @param init_arg is the \a init_arg from php_resource_factory_init()
- * @return the created (persistent) handle
- */
-typedef void *(*php_resource_factory_handle_ctor_t)(void *opaque, void *init_arg);
-
-/**
- * The copy constructor of a resource.
- *
- * @param opaque the factory's data
- * @param handle the (persistent) handle to copy
- */
-typedef void *(*php_resource_factory_handle_copy_t)(void *opaque, void *handle);
-
-/**
- * The destructor of a resource.
- *
- * @param opaque the factory's data
- * @param handle the handle to destroy
- */
-typedef void (*php_resource_factory_handle_dtor_t)(void *opaque, void *handle);
-
-/**
- * The resource ops consisting of a ctor, a copy ctor and a dtor.
- *
- * Define this ops and register them with php_persistent_handle_provide()
- * in MINIT.
- */
-typedef struct php_resource_factory_ops {
-	/** The resource constructor */
-	php_resource_factory_handle_ctor_t ctor;
-	/** The resource's copy constructor */
-	php_resource_factory_handle_copy_t copy;
-	/** The resource's destructor */
-	php_resource_factory_handle_dtor_t dtor;
-} php_resource_factory_ops_t;
-
-/**
- * The resource factory.
- */
-typedef struct php_resource_factory {
-	/** The resource ops */
-	php_resource_factory_ops_t fops;
-	/** Opaque user data */
-	void *data;
-	/** User data destructor */
-	void (*dtor)(void *data);
-	/** How often this factory is referenced */
-	unsigned refcount;
-} php_resource_factory_t;
-
-/**
- * Initialize a resource factory.
- *
- * If you register a \a dtor for a resource factory used with a persistent
- * handle provider, be sure to call php_persistent_handle_cleanup() for your
- * registered provider in MSHUTDOWN, else the dtor will point to no longer
- * available memory if the extension has already been unloaded.
- *
- * @param f the factory to initialize; if NULL allocated on the heap
- * @param fops the resource ops to assign to the factory
- * @param data opaque user data; may be NULL
- * @param dtor a destructor for the data; may be NULL
- * @return \a f or an allocated resource factory
- */
-PHP_RAPHF_API php_resource_factory_t *php_resource_factory_init(
-		php_resource_factory_t *f, php_resource_factory_ops_t *fops, void *data,
-		void (*dtor)(void *data));
-
-/**
- * Increase the refcount of the resource factory.
- *
- * @param rf the resource factory
- * @return the new refcount
- */
-PHP_RAPHF_API unsigned php_resource_factory_addref(php_resource_factory_t *rf);
-
-/**
- * Destroy the resource factory.
- *
- * If the factory's refcount reaches 0, the \a dtor for \a data is called.
- *
- * @param f the resource factory
- */
-PHP_RAPHF_API void php_resource_factory_dtor(php_resource_factory_t *f);
-
-/**
- * Destroy and free the resource factory.
- *
- * Calls php_resource_factory_dtor() and frees \a f if the factory's refcount
- * reached 0.
- *
- * @param f the resource factory
- */
-PHP_RAPHF_API void php_resource_factory_free(php_resource_factory_t **f);
-
-/**
- * Construct a resource by the resource factory \a f
- *
- * @param f the resource factory
- * @param init_arg for the resource constructor
- * @return the new resource
- */
-PHP_RAPHF_API void *php_resource_factory_handle_ctor(php_resource_factory_t *f,
-		void *init_arg);
-
-/**
- * Create a copy of the resource \a handle
- *
- * @param f the resource factory
- * @param handle the resource to copy
- * @return the copy
- */
-PHP_RAPHF_API void *php_resource_factory_handle_copy(php_resource_factory_t *f,
-		void *handle);
-
-/**
- * Destroy (and free) the resource
- *
- * @param f the resource factory
- * @param handle the resource to destroy
- */
-PHP_RAPHF_API void php_resource_factory_handle_dtor(php_resource_factory_t *f,
-		void *handle);
-
-/**
- * Persistent handles storage
- */
-typedef struct php_persistent_handle_list {
-	/** Storage of free resources */
-	HashTable free;
-	/** Count of acquired resources */
-	ulong used;
-} php_persistent_handle_list_t;
-
-/**
- * Definition of a persistent handle provider.
- * Holds a resource factory an a persistent handle list.
- */
-typedef struct php_persistent_handle_provider {
-	 /**
-	  * The list of free handles.
-	  * Hash of "ident" => array(handles) entries. Persistent handles are
-	  * acquired out of this list.
-	  */
-	php_persistent_handle_list_t list;
-
-	/**
-	 * The resource factory.
-	 * New handles are created by this factory.
-	 */
-	php_resource_factory_t rf;
-} php_persistent_handle_provider_t;
-
-typedef struct php_persistent_handle_factory php_persistent_handle_factory_t;
-
-/**
- * Wakeup the persistent handle on re-acquisition.
- */
-typedef void (*php_persistent_handle_wakeup_t)(
-		php_persistent_handle_factory_t *f, void **handle);
-/**
- * Retire the persistent handle on release.
- */
-typedef void (*php_persistent_handle_retire_t)(
-		php_persistent_handle_factory_t *f, void **handle);
-
-/**
- * Definition of a persistent handle factory.
- *
- * php_persistent_handle_concede() will return a pointer to a
- * php_persistent_handle_factory if a provider for the \a name has
- * been registered with php_persistent_handle_provide().
- */
-struct php_persistent_handle_factory {
-	/** The persistent handle provider */
-	php_persistent_handle_provider_t *provider;
-	/** The persistent handle wakeup routine; may be NULL */
-	php_persistent_handle_wakeup_t wakeup;
-	/** The persistent handle retire routine; may be NULL */
-	php_persistent_handle_retire_t retire;
-
-	/** The ident for which this factory manages resources */
-	zend_string *ident;
-
-	/** Whether it has to be free'd on php_persistent_handle_abandon() */
-	unsigned free_on_abandon:1;
-};
-
-/**
- * Register a persistent handle provider in MINIT.
- *
- * Registers a factory provider for \a name_str with \a fops resource factory
- * ops. Call this in your MINIT.
- *
- * A php_resource_factory will be created with \a fops, \a data and \a dtor
- * and will be stored together with a php_persistent_handle_list in the global
- * raphf hash.
- *
- * A php_persistent_handle_factory can then be retrieved by
- * php_persistent_handle_concede() at runtime.
- *
- * @param name the provider name, e.g. "http\Client\Curl"
- * @param fops the resource factory ops
- * @param data opaque user data
- * @param dtor \a data destructor
- * @return SUCCESS/FAILURE
- */
-PHP_RAPHF_API ZEND_RESULT_CODE php_persistent_handle_provide(
-		zend_string *name, php_resource_factory_ops_t *fops,
-		void *data, void (*dtor)(void *));
-
-/**
- * Retrieve a persistent handle factory at runtime.
- *
- * If a persistent handle provider has been registered for \a name, a new
- * php_persistent_handle_factory creating resources in the \a ident
- * namespace will be constructed.
- *
- * The wakeup routine \a wakeup and the retire routine \a retire will be
- * assigned to the new php_persistent_handle_factory.
- *
- * @param a pointer to a factory; allocated on the heap if NULL
- * @param name the provider name, e.g. "http\Client\Curl"
- * @param ident the subsidiary namespace, e.g. "php.net:80"
- * @param wakeup any persistent handle wakeup routine
- * @param retire any persistent handle retire routine
- * @return \a a or an allocated persistent handle factory
- */
-PHP_RAPHF_API php_persistent_handle_factory_t *php_persistent_handle_concede(
-		php_persistent_handle_factory_t *a,
-		zend_string *name, zend_string *ident,
-		php_persistent_handle_wakeup_t wakeup,
-		php_persistent_handle_retire_t retire);
-
-/**
- * Abandon the persistent handle factory.
- *
- * Destroy a php_persistent_handle_factory created by
- * php_persistent_handle_concede(). If the memory for the factory was allocated,
- * it will automatically be free'd.
- *
- * @param a the persistent handle factory to destroy
- */
-PHP_RAPHF_API void php_persistent_handle_abandon(
-		php_persistent_handle_factory_t *a);
-
-/**
- * Acquire a persistent handle.
- *
- * That is, either re-use a resource from the free list or create a new handle.
- *
- * If a handle is acquired from the free list, the
- * php_persistent_handle_factory::wakeup callback will be executed for that
- * handle.
- *
- * @param a the persistent handle factory
- * @param init_arg the \a init_arg for php_resource_factory_handle_ctor()
- * @return the acquired resource
- */
-PHP_RAPHF_API void *php_persistent_handle_acquire(
-		php_persistent_handle_factory_t *a, void *init_arg);
-
-/**
- * Release a persistent handle.
- *
- * That is, either put it back into the free list for later re-use or clean it
- * up with php_resource_factory_handle_dtor().
- *
- * If a handle is put back into the free list, the
- * php_persistent_handle_factory::retire callback will be executed for that
- * handle.
- *
- * @param a the persistent handle factory
- * @param handle the handle to release
- */
-PHP_RAPHF_API void php_persistent_handle_release(
-		php_persistent_handle_factory_t *a, void *handle);
-
-/**
- * Copy a persistent handle.
- *
- * Let the underlying resource factory copy the \a handle.
- *
- * @param a the persistent handle factory
- * @param handle the resource to accrete
- */
-PHP_RAPHF_API void *php_persistent_handle_accrete(
-		php_persistent_handle_factory_t *a, void *handle);
-
-/**
- * Retrieve persistent handle resource factory ops.
- *
- * These ops can be used to mask a persistent handle factory as
- * resource factory itself, so you can transparently use the
- * resource factory API, both for persistent and non-persistent
- * ressources.
- *
- * Example:
- * ~~~~~~~~~~~~~~~{.c}
- * php_resource_factory_t *create_my_rf(zend_string *persistent_id)
- * {
- *     php_resource_factory_t *rf;
- *
- *     if (persistent_id) {
- *         php_persistent_handle_factory_t *pf;
- *         php_resource_factory_ops_t *ops;
- *         zend_string *ns = zend_string_init("my", 2, 1);
- *
- *         ops = php_persistent_handle_get_resource_factory_ops();
- *         pf = php_persistent_handle_concede(NULL, ns, persistent_id, NULL, NULL);
- *         rf = php_persistent_handle_resource_factory_init(NULL, pf);
- *         zend_string_release(ns);
- *     } else {
- *         rf = php_resource_factory_init(NULL, &myops, NULL, NULL);
- *     }
- *     return rf;
- * }
- * ~~~~~~~~~~~~~~~
- */
-PHP_RAPHF_API php_resource_factory_ops_t *
-php_persistent_handle_get_resource_factory_ops(void);
-
-/**
- * Create a resource factory for persistent handles.
- *
- * This will create a resource factory with persistent handle ops, which wraps
- * the provided reource factory \a pf.
- *
- * @param a the persistent handle resource factory to initialize
- * @param pf the resource factory to wrap
- */
-PHP_RAPHF_API php_resource_factory_t *
-php_persistent_handle_resource_factory_init(php_resource_factory_t *a,
-		php_persistent_handle_factory_t *pf);
-
-/**
- * Check whether a resource factory is a persistent handle resource factory.
- *
- * @param a the resource factory to check
- */
-PHP_RAPHF_API zend_bool php_resource_factory_is_persistent(
-		php_resource_factory_t *a);
-
-/**
- * Clean persistent handles up.
- *
- * Destroy persistent handles of provider \a name and in subsidiary
- * namespace \a ident.
- *
- * If \a name is NULL, all persistent handles of all providers with a
- * matching \a ident will be cleaned up.
- *
- * If \a identr is NULL all persistent handles of the provider will be
- * cleaned up.
- *
- * Ergo, if both, \a name and \a ident are NULL, then all
- * persistent handles will be cleaned up.
- *
- * You must call this in MSHUTDOWN, if your resource factory ops hold a
- * registered php_resource_factory::dtor, else the dtor will point to
- * memory not any more available if the extension has already been unloaded.
- *
- * @param name the provider name; may be NULL
- * @param ident the subsidiary namespace name; may be NULL
- */
-PHP_RAPHF_API void php_persistent_handle_cleanup(zend_string *name,
-		zend_string *ident);
-
-/**
- * Retrieve statistics about the current process/thread's persistent handles.
- *
- * @return a HashTable like:
- * ~~~~~~~~~~~~~~~
- *     [
- *         "name" => [
- *             "ident" => [
- *                 "used" => 1,
- *                 "free" => 0,
- *             ]
- *         ]
- *     ]
- * ~~~~~~~~~~~~~~~
- */
-PHP_RAPHF_API HashTable *php_persistent_handle_statall(HashTable *ht);
-
-#endif	/* PHP_RAPHF_API_H */
-
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */
 /*
     +--------------------------------------------------------------------+
     | PECL :: raphf                                                      |
@@ -5846,7 +5440,889 @@ ZEND_GET_MODULE(raphf)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
---TEST--
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: raphf                                                      |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2013, Michael Wallner <mike@php.net>                 |
+    +--------------------------------------------------------------------+
+*/
+
+#ifndef PHP_RAPHF_H
+#define PHP_RAPHF_H
+
+extern zend_module_entry raphf_module_entry;
+#define phpext_raphf_ptr &raphf_module_entry
+
+#define PHP_RAPHF_VERSION "2.0.0dev"
+
+#ifdef PHP_WIN32
+#	define PHP_RAPHF_API __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#	define PHP_RAPHF_API extern __attribute__ ((visibility("default")))
+#else
+#	define PHP_RAPHF_API extern
+#endif
+
+#ifdef ZTS
+#	include "TSRM.h"
+#endif
+
+#include "php_raphf_api.h"
+
+#endif	/* PHP_RAPHF_H */
+
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: raphf                                                      |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2013, Michael Wallner <mike@php.net>                 |
+    +--------------------------------------------------------------------+
+*/
+
+#ifndef PHP_RAPHF_API_H
+#define PHP_RAPHF_API_H
+
+#include "php_raphf.h"
+
+/**
+ * A resource constructor.
+ *
+ * @param opaque is the \a data from php_persistent_handle_provide()
+ * @param init_arg is the \a init_arg from php_resource_factory_init()
+ * @return the created (persistent) handle
+ */
+typedef void *(*php_resource_factory_handle_ctor_t)(void *opaque, void *init_arg);
+
+/**
+ * The copy constructor of a resource.
+ *
+ * @param opaque the factory's data
+ * @param handle the (persistent) handle to copy
+ */
+typedef void *(*php_resource_factory_handle_copy_t)(void *opaque, void *handle);
+
+/**
+ * The destructor of a resource.
+ *
+ * @param opaque the factory's data
+ * @param handle the handle to destroy
+ */
+typedef void (*php_resource_factory_handle_dtor_t)(void *opaque, void *handle);
+
+/**
+ * The resource ops consisting of a ctor, a copy ctor and a dtor.
+ *
+ * Define this ops and register them with php_persistent_handle_provide()
+ * in MINIT.
+ */
+typedef struct php_resource_factory_ops {
+	/** The resource constructor */
+	php_resource_factory_handle_ctor_t ctor;
+	/** The resource's copy constructor */
+	php_resource_factory_handle_copy_t copy;
+	/** The resource's destructor */
+	php_resource_factory_handle_dtor_t dtor;
+} php_resource_factory_ops_t;
+
+/**
+ * The resource factory.
+ */
+typedef struct php_resource_factory {
+	/** The resource ops */
+	php_resource_factory_ops_t fops;
+	/** Opaque user data */
+	void *data;
+	/** User data destructor */
+	void (*dtor)(void *data);
+	/** How often this factory is referenced */
+	unsigned refcount;
+} php_resource_factory_t;
+
+/**
+ * Initialize a resource factory.
+ *
+ * If you register a \a dtor for a resource factory used with a persistent
+ * handle provider, be sure to call php_persistent_handle_cleanup() for your
+ * registered provider in MSHUTDOWN, else the dtor will point to no longer
+ * available memory if the extension has already been unloaded.
+ *
+ * @param f the factory to initialize; if NULL allocated on the heap
+ * @param fops the resource ops to assign to the factory
+ * @param data opaque user data; may be NULL
+ * @param dtor a destructor for the data; may be NULL
+ * @return \a f or an allocated resource factory
+ */
+PHP_RAPHF_API php_resource_factory_t *php_resource_factory_init(
+		php_resource_factory_t *f, php_resource_factory_ops_t *fops, void *data,
+		void (*dtor)(void *data));
+
+/**
+ * Increase the refcount of the resource factory.
+ *
+ * @param rf the resource factory
+ * @return the new refcount
+ */
+PHP_RAPHF_API unsigned php_resource_factory_addref(php_resource_factory_t *rf);
+
+/**
+ * Destroy the resource factory.
+ *
+ * If the factory's refcount reaches 0, the \a dtor for \a data is called.
+ *
+ * @param f the resource factory
+ */
+PHP_RAPHF_API void php_resource_factory_dtor(php_resource_factory_t *f);
+
+/**
+ * Destroy and free the resource factory.
+ *
+ * Calls php_resource_factory_dtor() and frees \a f if the factory's refcount
+ * reached 0.
+ *
+ * @param f the resource factory
+ */
+PHP_RAPHF_API void php_resource_factory_free(php_resource_factory_t **f);
+
+/**
+ * Construct a resource by the resource factory \a f
+ *
+ * @param f the resource factory
+ * @param init_arg for the resource constructor
+ * @return the new resource
+ */
+PHP_RAPHF_API void *php_resource_factory_handle_ctor(php_resource_factory_t *f,
+		void *init_arg);
+
+/**
+ * Create a copy of the resource \a handle
+ *
+ * @param f the resource factory
+ * @param handle the resource to copy
+ * @return the copy
+ */
+PHP_RAPHF_API void *php_resource_factory_handle_copy(php_resource_factory_t *f,
+		void *handle);
+
+/**
+ * Destroy (and free) the resource
+ *
+ * @param f the resource factory
+ * @param handle the resource to destroy
+ */
+PHP_RAPHF_API void php_resource_factory_handle_dtor(php_resource_factory_t *f,
+		void *handle);
+
+/**
+ * Persistent handles storage
+ */
+typedef struct php_persistent_handle_list {
+	/** Storage of free resources */
+	HashTable free;
+	/** Count of acquired resources */
+	ulong used;
+} php_persistent_handle_list_t;
+
+/**
+ * Definition of a persistent handle provider.
+ * Holds a resource factory an a persistent handle list.
+ */
+typedef struct php_persistent_handle_provider {
+	 /**
+	  * The list of free handles.
+	  * Hash of "ident" => array(handles) entries. Persistent handles are
+	  * acquired out of this list.
+	  */
+	php_persistent_handle_list_t list;
+
+	/**
+	 * The resource factory.
+	 * New handles are created by this factory.
+	 */
+	php_resource_factory_t rf;
+} php_persistent_handle_provider_t;
+
+typedef struct php_persistent_handle_factory php_persistent_handle_factory_t;
+
+/**
+ * Wakeup the persistent handle on re-acquisition.
+ */
+typedef void (*php_persistent_handle_wakeup_t)(
+		php_persistent_handle_factory_t *f, void **handle);
+/**
+ * Retire the persistent handle on release.
+ */
+typedef void (*php_persistent_handle_retire_t)(
+		php_persistent_handle_factory_t *f, void **handle);
+
+/**
+ * Definition of a persistent handle factory.
+ *
+ * php_persistent_handle_concede() will return a pointer to a
+ * php_persistent_handle_factory if a provider for the \a name has
+ * been registered with php_persistent_handle_provide().
+ */
+struct php_persistent_handle_factory {
+	/** The persistent handle provider */
+	php_persistent_handle_provider_t *provider;
+	/** The persistent handle wakeup routine; may be NULL */
+	php_persistent_handle_wakeup_t wakeup;
+	/** The persistent handle retire routine; may be NULL */
+	php_persistent_handle_retire_t retire;
+
+	/** The ident for which this factory manages resources */
+	zend_string *ident;
+
+	/** Whether it has to be free'd on php_persistent_handle_abandon() */
+	unsigned free_on_abandon:1;
+};
+
+/**
+ * Register a persistent handle provider in MINIT.
+ *
+ * Registers a factory provider for \a name_str with \a fops resource factory
+ * ops. Call this in your MINIT.
+ *
+ * A php_resource_factory will be created with \a fops, \a data and \a dtor
+ * and will be stored together with a php_persistent_handle_list in the global
+ * raphf hash.
+ *
+ * A php_persistent_handle_factory can then be retrieved by
+ * php_persistent_handle_concede() at runtime.
+ *
+ * @param name the provider name, e.g. "http\Client\Curl"
+ * @param fops the resource factory ops
+ * @param data opaque user data
+ * @param dtor \a data destructor
+ * @return SUCCESS/FAILURE
+ */
+PHP_RAPHF_API ZEND_RESULT_CODE php_persistent_handle_provide(
+		zend_string *name, php_resource_factory_ops_t *fops,
+		void *data, void (*dtor)(void *));
+
+/**
+ * Retrieve a persistent handle factory at runtime.
+ *
+ * If a persistent handle provider has been registered for \a name, a new
+ * php_persistent_handle_factory creating resources in the \a ident
+ * namespace will be constructed.
+ *
+ * The wakeup routine \a wakeup and the retire routine \a retire will be
+ * assigned to the new php_persistent_handle_factory.
+ *
+ * @param a pointer to a factory; allocated on the heap if NULL
+ * @param name the provider name, e.g. "http\Client\Curl"
+ * @param ident the subsidiary namespace, e.g. "php.net:80"
+ * @param wakeup any persistent handle wakeup routine
+ * @param retire any persistent handle retire routine
+ * @return \a a or an allocated persistent handle factory
+ */
+PHP_RAPHF_API php_persistent_handle_factory_t *php_persistent_handle_concede(
+		php_persistent_handle_factory_t *a,
+		zend_string *name, zend_string *ident,
+		php_persistent_handle_wakeup_t wakeup,
+		php_persistent_handle_retire_t retire);
+
+/**
+ * Abandon the persistent handle factory.
+ *
+ * Destroy a php_persistent_handle_factory created by
+ * php_persistent_handle_concede(). If the memory for the factory was allocated,
+ * it will automatically be free'd.
+ *
+ * @param a the persistent handle factory to destroy
+ */
+PHP_RAPHF_API void php_persistent_handle_abandon(
+		php_persistent_handle_factory_t *a);
+
+/**
+ * Acquire a persistent handle.
+ *
+ * That is, either re-use a resource from the free list or create a new handle.
+ *
+ * If a handle is acquired from the free list, the
+ * php_persistent_handle_factory::wakeup callback will be executed for that
+ * handle.
+ *
+ * @param a the persistent handle factory
+ * @param init_arg the \a init_arg for php_resource_factory_handle_ctor()
+ * @return the acquired resource
+ */
+PHP_RAPHF_API void *php_persistent_handle_acquire(
+		php_persistent_handle_factory_t *a, void *init_arg);
+
+/**
+ * Release a persistent handle.
+ *
+ * That is, either put it back into the free list for later re-use or clean it
+ * up with php_resource_factory_handle_dtor().
+ *
+ * If a handle is put back into the free list, the
+ * php_persistent_handle_factory::retire callback will be executed for that
+ * handle.
+ *
+ * @param a the persistent handle factory
+ * @param handle the handle to release
+ */
+PHP_RAPHF_API void php_persistent_handle_release(
+		php_persistent_handle_factory_t *a, void *handle);
+
+/**
+ * Copy a persistent handle.
+ *
+ * Let the underlying resource factory copy the \a handle.
+ *
+ * @param a the persistent handle factory
+ * @param handle the resource to accrete
+ */
+PHP_RAPHF_API void *php_persistent_handle_accrete(
+		php_persistent_handle_factory_t *a, void *handle);
+
+/**
+ * Retrieve persistent handle resource factory ops.
+ *
+ * These ops can be used to mask a persistent handle factory as
+ * resource factory itself, so you can transparently use the
+ * resource factory API, both for persistent and non-persistent
+ * ressources.
+ *
+ * Example:
+ * ~~~~~~~~~~~~~~~{.c}
+ * php_resource_factory_t *create_my_rf(zend_string *persistent_id)
+ * {
+ *     php_resource_factory_t *rf;
+ *
+ *     if (persistent_id) {
+ *         php_persistent_handle_factory_t *pf;
+ *         php_resource_factory_ops_t *ops;
+ *         zend_string *ns = zend_string_init("my", 2, 1);
+ *
+ *         ops = php_persistent_handle_get_resource_factory_ops();
+ *         pf = php_persistent_handle_concede(NULL, ns, persistent_id, NULL, NULL);
+ *         rf = php_persistent_handle_resource_factory_init(NULL, pf);
+ *         zend_string_release(ns);
+ *     } else {
+ *         rf = php_resource_factory_init(NULL, &myops, NULL, NULL);
+ *     }
+ *     return rf;
+ * }
+ * ~~~~~~~~~~~~~~~
+ */
+PHP_RAPHF_API php_resource_factory_ops_t *
+php_persistent_handle_get_resource_factory_ops(void);
+
+/**
+ * Create a resource factory for persistent handles.
+ *
+ * This will create a resource factory with persistent handle ops, which wraps
+ * the provided reource factory \a pf.
+ *
+ * @param a the persistent handle resource factory to initialize
+ * @param pf the resource factory to wrap
+ */
+PHP_RAPHF_API php_resource_factory_t *
+php_persistent_handle_resource_factory_init(php_resource_factory_t *a,
+		php_persistent_handle_factory_t *pf);
+
+/**
+ * Check whether a resource factory is a persistent handle resource factory.
+ *
+ * @param a the resource factory to check
+ */
+PHP_RAPHF_API zend_bool php_resource_factory_is_persistent(
+		php_resource_factory_t *a);
+
+/**
+ * Clean persistent handles up.
+ *
+ * Destroy persistent handles of provider \a name and in subsidiary
+ * namespace \a ident.
+ *
+ * If \a name is NULL, all persistent handles of all providers with a
+ * matching \a ident will be cleaned up.
+ *
+ * If \a identr is NULL all persistent handles of the provider will be
+ * cleaned up.
+ *
+ * Ergo, if both, \a name and \a ident are NULL, then all
+ * persistent handles will be cleaned up.
+ *
+ * You must call this in MSHUTDOWN, if your resource factory ops hold a
+ * registered php_resource_factory::dtor, else the dtor will point to
+ * memory not any more available if the extension has already been unloaded.
+ *
+ * @param name the provider name; may be NULL
+ * @param ident the subsidiary namespace name; may be NULL
+ */
+PHP_RAPHF_API void php_persistent_handle_cleanup(zend_string *name,
+		zend_string *ident);
+
+/**
+ * Retrieve statistics about the current process/thread's persistent handles.
+ *
+ * @return a HashTable like:
+ * ~~~~~~~~~~~~~~~
+ *     [
+ *         "name" => [
+ *             "ident" => [
+ *                 "used" => 1,
+ *                 "free" => 0,
+ *             ]
+ *         ]
+ *     ]
+ * ~~~~~~~~~~~~~~~
+ */
+PHP_RAPHF_API HashTable *php_persistent_handle_statall(HashTable *ht);
+
+#endif	/* PHP_RAPHF_API_H */
+
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: raphf                                                      |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2014, Michael Wallner <mike@php.net>                 |
+    +--------------------------------------------------------------------+
+*/
+
+#include <php.h>
+
+struct user_cb {
+	zend_fcall_info fci;
+	zend_fcall_info_cache fcc;
+};
+
+struct raphf_user {
+	struct user_cb ctor;
+	struct user_cb copy;
+	struct user_cb dtor;
+	struct {
+		struct user_cb dtor;
+		zval data;
+	} data;
+};
+
+static inline void user_cb_addref(struct user_cb *cb)
+{
+	Z_ADDREF(cb->fci.function_name);
+	if (cb->fci.object) {
+		Z_ADDREF_P((zval *) cb->fci.object);
+	}
+}
+
+static inline void user_cb_delref(struct user_cb *cb)
+{
+	if (cb->fci.object) {
+		Z_DELREF_P((zval *) cb->fci.object);
+	}
+}
+
+static void raphf_user_dtor(void *opaque)
+{
+	struct raphf_user *ru = opaque;
+
+	zend_fcall_info_argn(&ru->data.dtor.fci, 1, &ru->data.data);
+	zend_fcall_info_call(&ru->data.dtor.fci, &ru->data.dtor.fcc, NULL, NULL);
+	zend_fcall_info_args_clear(&ru->data.dtor.fci, 1);
+	user_cb_delref(&ru->data.dtor);
+	zend_fcall_info_args_clear(&ru->ctor.fci, 1);
+	user_cb_delref(&ru->ctor);
+	zend_fcall_info_args_clear(&ru->copy.fci, 1);
+	user_cb_delref(&ru->copy);
+	zend_fcall_info_args_clear(&ru->dtor.fci, 1);
+	user_cb_delref(&ru->dtor);
+	memset(ru, 0, sizeof(*ru));
+	efree(ru);
+}
+
+static void *user_ctor(void *opaque, void *init_arg TSRMLS_DC)
+{
+	struct raphf_user *ru = opaque;
+	zval *zinit_arg = init_arg, *retval = ecalloc(1, sizeof(*retval));
+
+	zend_fcall_info_argn(&ru->ctor.fci, 2, &ru->data.data, zinit_arg);
+	zend_fcall_info_call(&ru->ctor.fci, &ru->ctor.fcc, retval, NULL);
+	zend_fcall_info_args_clear(&ru->ctor.fci, 0);
+
+	return retval;
+}
+
+static void *user_copy(void *opaque, void *handle TSRMLS_DC)
+{
+	struct raphf_user *ru = opaque;
+	zval *zhandle = handle, *retval = ecalloc(1, sizeof(*retval));
+
+	zend_fcall_info_argn(&ru->copy.fci, 2, &ru->data.data, zhandle);
+	zend_fcall_info_call(&ru->copy.fci, &ru->copy.fcc, retval, NULL);
+	zend_fcall_info_args_clear(&ru->copy.fci, 0);
+
+	return retval;
+}
+
+static void user_dtor(void *opaque, void *handle TSRMLS_DC)
+{
+	struct raphf_user *ru = opaque;
+	zval *zhandle = handle, retval;
+
+	ZVAL_UNDEF(&retval);
+	zend_fcall_info_argn(&ru->dtor.fci, 2, &ru->data.data, zhandle);
+	zend_fcall_info_call(&ru->dtor.fci, &ru->dtor.fcc, &retval, NULL);
+	zend_fcall_info_args_clear(&ru->dtor.fci, 0);
+	if (!Z_ISUNDEF(retval)) {
+		zval_ptr_dtor(&retval);
+	}
+}
+
+static php_resource_factory_ops_t user_ops = {
+		user_ctor,
+		user_copy,
+		user_dtor
+};
+
+static int raphf_user_le;
+
+static void raphf_user_res_dtor(zend_resource *res TSRMLS_DC)
+{
+	php_resource_factory_free((void *) &res->ptr);
+}
+
+static PHP_FUNCTION(raphf_provide)
+{
+	struct raphf_user *ru;
+	char *name_str;
+	size_t name_len;
+	zval *zdata;
+
+	ru = ecalloc(1, sizeof(*ru));
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sfffzf",
+			&name_str, &name_len,
+			&ru->ctor.fci, &ru->ctor.fcc,
+			&ru->copy.fci, &ru->copy.fcc,
+			&ru->dtor.fci, &ru->dtor.fcc,
+			&zdata,
+			&ru->data.dtor.fci, &ru->data.dtor.fcc)) {
+		efree(ru);
+		return;
+	}
+
+	user_cb_addref(&ru->ctor);
+	user_cb_addref(&ru->copy);
+	user_cb_addref(&ru->dtor);
+	user_cb_addref(&ru->data.dtor);
+
+	ZVAL_COPY(&ru->data.data, zdata);
+
+	if (SUCCESS != php_persistent_handle_provide(name_str, name_len,
+			&user_ops, ru, raphf_user_dtor)) {
+		RETURN_FALSE;
+	}
+	RETURN_TRUE;
+}
+
+static PHP_FUNCTION(raphf_conceal)
+{
+	zend_string *name;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "S", &name)) {
+		return;
+	}
+
+	RETURN_BOOL(FAILURE != zend_hash_del(&PHP_RAPHF_G->persistent_handle.hash, name));
+}
+
+static PHP_FUNCTION(raphf_concede)
+{
+	char *name_str, *id_str;
+	size_t name_len, id_len;
+	php_persistent_handle_factory_t *pf;
+	php_resource_factory_t *rf;
+	php_resource_factory_ops_t *ops;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss",
+			&name_str, &name_len, &id_str, &id_len)) {
+		return;
+	}
+
+	ops = php_persistent_handle_get_resource_factory_ops();
+	pf = php_persistent_handle_concede(NULL, name_str, name_len, id_str, id_len,
+			NULL, NULL TSRMLS_CC);
+	if (!pf) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING,
+				"Could not locate persistent handle factory '%s'", name_str);
+		RETURN_FALSE;
+	}
+	rf = php_resource_factory_init(NULL, ops, pf,
+			(void(*)(void*)) php_persistent_handle_abandon);
+	if (!rf) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING,
+				"Could not create resource factory "
+				"for persistent handle factory '%s'", name_str);
+		RETURN_FALSE;
+	}
+
+	zend_register_resource(return_value, rf, raphf_user_le);
+}
+
+static PHP_FUNCTION(raphf_dispute)
+{
+	zval *zrf;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zrf)) {
+		return;
+	}
+
+	RETURN_BOOL(SUCCESS == zend_list_close(Z_RES_P(zrf)));
+}
+
+static PHP_FUNCTION(raphf_handle_ctor)
+{
+	zval *zrf, *zrv, *zinit_arg;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz",
+			&zrf, &zinit_arg)) {
+		return;
+	}
+
+	zrv = php_resource_factory_handle_ctor(Z_RES_VAL_P(zrf), zinit_arg);
+	RETVAL_ZVAL(zrv, 0, 0);
+	efree(zrv);
+}
+
+static PHP_FUNCTION(raphf_handle_copy)
+{
+	zval *zrf, *zrv, *zhandle;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz",
+			&zrf, &zhandle)) {
+		return;
+	}
+
+	zrv = php_resource_factory_handle_copy(Z_RES_VAL_P(zrf), zhandle);
+	RETVAL_ZVAL(zrv, 0, 0);
+	efree(zrv);
+}
+
+static PHP_FUNCTION(raphf_handle_dtor)
+{
+	zval *zrf, *zhandle;
+
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rz",
+			&zrf, &zhandle)) {
+		return;
+	}
+
+	php_resource_factory_handle_dtor(Z_RES_VAL_P(zrf), zhandle);
+}
+
+static PHP_MINIT_FUNCTION(raphf_test)
+{
+	zend_register_long_constant(ZEND_STRL("RAPHF_TEST"), PHP_RAPHF_TEST, CONST_CS|CONST_PERSISTENT, module_number);
+	raphf_user_le = zend_register_list_destructors_ex(raphf_user_res_dtor, NULL,
+			"raphf_user", module_number);
+	return SUCCESS;
+}
+
+static PHP_MSHUTDOWN_FUNCTION(raphf_test)
+{
+	php_persistent_handle_cleanup(ZEND_STRL("test"), NULL, 0 TSRMLS_CC);
+	return SUCCESS;
+}
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+‰PNG
+
+   IHDR   Ù   l   ç¹°   gAMA  ±üa   bKGD      ùC»   	pHYs     šœ   tIMEİ'É=)…    IDATxÚì½GÜùu5|*çœsWçfhr˜&hFÒ(YòH Ë ÛğÆ6¼´—¸ñğ'0m´²$À0Ù3$8$;‡ê®œsÎõ.Fç¢z,ùµ¤ç}k£ÑYááŞsÏ9Wñÿğ‹Éd¯×‹J¥½^N‡gÏÉ?‡CÌf3,ôû}¨Õj4¼öÚkP©TÈd2è÷ûX,°Ûí8<<Äîî.ªÕ*>÷¹ÏáääƒÁ NV«+++°X,8;;C¹\†ÛíÆh4Ât:E§ÓÅbA¯×Ãöö64={§Ó	»İ H§Óp:0›Íè÷û  Ÿ ­Vİn7nÜÀ|>‡Ëå‚F£A6›…Ãá€ÇãA©TÂùù9VVV0ŸÏ±²²‚|>x<F£~¿ñxŒñxŒ›7oâää*•
+'''hµZxóÍ71ŸÏ‡¡R©ĞjµÉdĞn·Ç11Náv»Q©Tğüùs‡CÜºuN§Ï=ƒÉdB,Ã`0€R©ÄÖÖ
+…^ÆãÅŠ‡ê7ŞxØét R©p||Œn·‹H$Fƒ`0ˆÑh„F£N‡Ñh Çğûı‡¸¸¸€F£ÅbÕjE¥RA(Âb±€ÃáÀ³gÏ°X, Õj¡Õj¡Óé`4Q­V¡Ñh P(Ğjµ0¡ÓéĞjµ`·Ûáóù T*Ñn·a0`2™ T*¡P(0P«Õ`2™‰D`6›Ñl61›Ípÿş}ŒÇc”ËeD"(
+L§S¬®®¢×ëa2™  æó9ö÷÷Ñn·±³³ƒÙl†jµ
+‹Å—Ë…x<óós‡Clooc8¢\.c>Ÿ Ün7l6:t:,NNNĞh4àt:±X, R©  >Ÿz½*•
+NívÑhÓéÍfõz/ãñbÅCõÎ;ï<ôx<¸¸¸Àl6ƒÁ`Àb±€ÕjE£Ñ€Á`Àh4‚ÇãÃáÀp8„Éd‚ÅbA2™„ÍfƒÍfC³ÙD£ÑÀh4B$ÍfC»İ†^¯G³ÙD:F$J¥Âh4B»İF¯×ƒB¡€Á`@¯×ƒZ­†ßïÇx<–€šL&x<	‚×ë•“ ´Z-ìv;Úí6jµz½Ìf3¦Ó)4æó9L&†Ã!b±Òé´üÎ^¯‡t:˜Íf¼ÿşûP(¸~ı:†Ã!ªÕ*úı>ìv;¦Ó)‰‹nŞ¼	¯×N‡L&ƒZ­›Í†••Yl*•
+NF^¯ƒÁ ³Ùv»V«İn­V‘HãñÉdív6›/ãñbÅCõÕ¯~õa>Ÿ‡Ãá€Éd’Sp4áÃ?Ä`0ÀÍ›7Q«ÕP(°¹¹	Fƒn·‹N§FƒÅb‹Å‚ápÇƒÑh„ããc‡Ch4øı~(
+˜Íf,ŒÇcÀjµB£ÑÀl6Ãn·C­V L& @§Óa±X`8b4A¡P@­VC¯×C«ÕÂb±Àãñ ßïc:Ê"Ğëõ˜ÏçrÂL&èõzôû}8 Àh4‚Á`@(’ÓĞjµ¢^¯Ãáp`±XÈ{6›MìììÀåra:ÊßU©TĞëõ˜N§˜L&øè£àñxàñx`µZ‘J¥`³ÙÍf¡Ñh ×ëáp8ptt„\.£Ñˆ`0³ÙŒD"`0¥R‰—ñx±â¡úÂ¾ğp}}¥R	ƒAv`«Õ‚ÇãÓé„R©Äb±€ÍfÃb±@µZ…B¡€ÏçC­VÃ|>‡^¯‡Éd‚V«E³ÙD¿ßG·Û…Á`€İnÇÎÎšÍ&ƒªÕ*¬V+ü~?F£l6›œÍf*•
+F£‹Å³ÙÍfóùF£QN¦*ÓéG>3—ËÁ`0 V«Ál6C­VòCU*L&(•J(•Jx<¨Õj(•JÌçs8ÜºuZ­jµZ­J¥jµı~:õz^¯óùN•J^¯ñxrºµÛm8NèõzŒF#Ìçslll  ƒºİ.l6êõ:ŠÅ"<x€ñxŒÁ`€—ñx±â¡úæ7¿ù0‘H ×ëA§Ó¡Z­âğğ‹^¯ı~ÓéJ¥•JEN›Í†Éd«Õ
+µZÅb!?Øãñ  NOO%Hãñf³Yşût:E:F«Õ‚Ñh„Ñh„J¥B©T‚Z­Æêê*4ƒÆã1‹…œªÅbV«ÅbF£Q¾ïl6““P£ÑÀn·Ëb©Õjp»İèv»ŸäÌ*z½T*L&T*†Ã¡,T‡ÃL&#Å3 8Fôz=œbkk 0Ñl6Ñét T*át:aµZáp8`³Ùp~~½^·Şz¥R	³ÙN§SNN‡—ñx±â¡øû¿ÿûÅb±@»İÆl6“‡±X,°X,P(‡aµZQ*• T*a2™Ğn·qíÚ5
+4›MX­V)>Õj5¬V+”J%Òé4NNNğê«¯B©TÂívK:’Ïç¥ˆn·ÛĞét˜Ïç¨×ë  éÏçC£Ñ€İn‡Ñh”‡Ì‚<ŸÏc:B­Vc8Âív£V«Áëõb8b±X@­VËÏçóÇp»İĞëõ¨×ë0™L°Ùl‡¨×ëğûıh6›èv»ˆÅbH$r"`p8‚zõû}ƒA¨T*är9B¡Z­†Ã!æó¹<k“É„Ñh$)^¯G»İÆËx¼XñP}ñ‹_|xqqz½`0ˆµµ5˜L&Ôëuär9¸İnÌf3(
+x<T*Ìçs¨T*,(
+Ìçs,4›M8N¨T*
+”ËeØl6¬­­a±XHQX«ÕÏçådJ0›Í R© Óé P(Ğl6fÊZ¡P —Ë	BÖn· F£“Éápİnù|³Ù6›ÕjƒÁ N§ƒ
+…B¢V«E·ÛÅx<†ÉdÂ`0Àh4B§ÓA­VC8†^¯‡ÕjÅp8D:†N§ƒÇãX[§Ó	¤íóù ÓéP(N§a·Û1™L`³Ù0°²²µZf³‰f³‰Åb—ñx±â¡òù| jµJ¥|>,¢Ñ(†Ã!
+.//a41NaµZQ(°X,àr¹­‰ÇãĞjµ8::B£ÑÁ`0@£ÑH
+Ñív¡Óé T*%]á	ÂÜ»V«ÉÉ`4Q¯×a4&|<ŸÏ¥ğÖh4‡èõzršÙl6h4YÓé&“	N‡FÒ&ötôz= šÍ¦¤>ƒÁ ¥R	óùƒóùÍfFŠz‡ÃŸÏ‡\.‡N§ƒÁ€[·n¡Ñh P(Àf³Áëõ"‹áìì…BANüƒƒ¼ŒÇ‹ÕŸşéŸ>ÜŞŞ†Z­†N§C³ÙÄt:E·Û•7è÷ûè÷û(•JP(è÷ûP*•‡ÃP*•0°Ùl¸¼¼Äññ1ôz=|>ŸäÊ*•
+J¥½^ı~óùN§S
+O…BÁ`€Á` µZ-péÆÆ†¼/¡`…B…B½^‹Å‚J¥"¹;¿«İnG2™Ä|>‡ÏçÃt:•EÂ“W«Õb2™ ßï£ÕjA§Ó¡\.C§ÓIÏh4Éo p¥À‡°X,èv»0›Íp8òJ¥jµÖ××áõz‘N§%àÁ`årÿöoÿ†ét
+§Ó‰““hµZ¬®®âe<^¬x¨~ÿ÷ÿá`0şF³Ù„N§“^F§ÓA*•B¥R‘ëy8ÂårÁh4"¢ÕjI—›»7#“É Âét
+RÅ¢   ÈéÂff4ˆçx<Æp8„R©Äd2DI§ÓIóq8¢T*ÉIY.—Ç…-`6›¥ğ/‹Â (•J’2¹\.éó$	x½^Øív(
+~€ÔÌáY_°Q*•ğù|rKğÏp!=zôV«UXìóX­V¼ŒÇ‹Õ×¾öµ‡…Bççç˜Ïçr‚E"‡CÔj5Ôj5,˜ÍfA©
+Ôj5Z­â’sW*Ìf3ôû}ù{>Ÿ Ğëõ0NFÑíva±Xàp8Ğjµ¤°œN§(
+òÃY€v:D"Ìçsôû}øı~´Z-Äb1L&”ËeÜ½{årívãñkkkÈårĞëõÇP©TW~^¯G«Õ‚ÏçC·Û•ßçó	ˆÀ÷q8Ğjµ¸¸¸~lôÚl¶+HÓ$öÆã1F£‘¤7/ãñbÅCõ;¿ó;m6Òé4Úí¶ô9:<b±¼^/&“‰49É×º¼¼D­V$‡á(—Ë(—ËX__—ŞÆd2‘¦¥ÓéD¯×“­Ùl"“É`:Âl6C¥R¡\.£ßïÃ`0Àf³Áï÷E¦ÑhHJsyy)?P£Ñ P(`}}]`èr¹Œp8Œ­­-i’‡V*•N§¤Ø&S‚§¿^¯‡Ñh«İnÃápt~qq!ÏÂãñ ^¯#‘HÁß\«ÕP©T°ºº
+«Õ*,‹—ñx±â¡úæ7¿ùhQ8F @¹\†R©DµZªL €ÅbZL£Ñ@·Û…J¥‚Ãá€Åb L§Sá‡17w¹\d¦Ãá‡FC˜<YXdÛl6Fa.èt:¨Õj˜Íf˜L&ø|>T«UéG°°e¨Õja:Ân·£Ûíb6›áüü‹‹“É‹ÅN§Sd±X`·ÛÑét„‡æt:¡ÑhĞëõ Õjqzz
+³Ù‹Å‚D"!E~¯×ƒÅbÁúú:òù<*•
+:@Ç$Î¦Ói¨Õji^^^¢Óé`6›ÉŸ{'ªû÷ï?œÍf0ÒÁ¯×ëršL&d³Yèõz„Ãa4›M‡C €ÕjÅx<Æd2Á`0(´Ûí"
+!‚ï_­VÑëõ„±=àr¹„®²Œbt»]AÊ †Ã!¼^¯ü¹v»·Ûét*9??‡F£Úd2a>Ÿc0  l6¦Ó)¦Ó)z½ğ×Æã1ÔjµĞfxÂ‹EL&!Ôò$eo&‰ İnc4!ÃápH1Î‚˜ı$6‚ÙÄt»İ0™L‚¾µZ-¼ŒÇ‹Õ›o¾ù]óÉdµZ-Ô~…B¥R‰B¡ N'4£Ñ(½›Í&ù1ósµZ“É$y6™ÕF£:n·[zäÅ-ÌçséY$	h4I[x“vc±Xı2™LH&“Èårøù|ápN­V‹B¡€x<³Ù…B!iÒb±€ßïG¹\Æh4’n¿V«…F£f¶J¥‚Õjä¨ÑhÀb±`ccC>Ïçóa±XàôôZ­>ŸOè@ÏŸ?G¿ßG­VC4…Z­†B¡Àp8ôN­V£Ûíâe<^¬x¨¾ıío?$lÉ¢¯V«Áétb8¢X,"
+A¡PH7'›N§Ãt:…Ëå’kx4a4É)zyy‰ápˆx<µZñxƒÁ l‚L&#hV.—Ãx<–“‘‹…Åb!'´Ùl–bX¡P İnc8¢Ñh²¦P(Ğét„JCé†Ãá
+åÃáİnZ­V´C\h˜b©T*‘It:ÉÅF#òù<NOO±»»+„Ö~¿‹Å"t¡R©$ÚÙl†n·‹F£d2‰••¼ŒÇ‹Õç>÷¹‡l®±×P,Ñjµ ×ëa6› «««è÷ûÒq',\($÷e‘MÂËËKÉUÙ×étÒmµZÒå§¬ ÕjÁår]y?’B‰åóyáÔ±°X,h4R”ûı~Io”J%f³t:ŠÅ"\.t:t:ºİ.úı>L&f³aµZár¹îµX,P(H¥R0›Í²8É„p:˜ÏçÇ‡Ã‚Pñy2Îf3¸İnôz=är9L&¸İn¸İnÄãqÔëu¼ŒÇ‹ÕÛo¿ıĞï÷Ë•Üëõ0¥síp8àt:qyyy¥%9”'N«Õ‚V«¶v£Ñ@(’^›‰üaz½^Ğ¦v»X,&Wr³ÙD8–Ş¹nÌß™‚Ôëuh©ª­Õj˜L&ØÚÚÂb±@¯×‘`£ÑaµZ¥‡@(C&“IÒ²"f³Ìf³œ®
+…B×n·ù| `6›eq‰şˆiåóù±XÃá¹\‹ù|
+…/ãñbÅCõå/ùa0„N§Ãéé)t:ÎÏÏá÷û¡×ë‘Íf¥eÎÊÀd2—BAµZ`0(?„ªS½^Á`€B¡ £Ñ(ª]’P«Õ*\.Ôj5²Ù,:ìv;f³™À©£ÑHÈ¬Ì™ÉÈårĞh4…B˜Íf˜ÏçH&“P«Õ˜Ïç(—ËØÙÙZUÀà2*g2™„²3%àBR}LÎû:äãY,èõzèõz¸\.ôû}á¼ÅãqA¢ìv;*•
+l6^ÆãÅŠ‡ê«_ıêCşæœ<í´Z-ÎÏÏát:1ŸÏá÷ûQ«Õ„Z ‹EÄtÁ`PĞjlòù¼¤NGh3kkkh4èt:0øğÃáÑh4899‘‚÷îİ»P©TøøãE»£V«¥ÉÈ^…ÕjÅh4’š$
+%‡ŒvéÙˆ%¬Ûï÷%¿¦èp:
+›Àl6Ã`0ˆ¬a<Kss>ŸÃjµ¢ÕjÉÉ;›Íàñx$=S*•"'!° P(°ººŠÑh„—ñx±â¡zıõ×úı~ôz=á|ñdªV«0™LX]]E«ÕBµZ…V«…Ûí†B¡âu0H…=¥R)_Šâ<´ô€¨V«˜ÏçR0gv»İ¢!r¹\P(BFP*•’÷×j5øı~Ìf3„Ãa8ù=ô£ Èn<K2ŸÏa6›Ñh4®4c™"‘r´X,‰D„\ËŞÉ«f³“É~¿étZH·z½^
+~ ¨T*p¹\¨Õjèt:ƒp8H¥R°X,è÷ûèt:x+ªx<şĞl6c{{‡*•J®n ƒh4èõzÂIëõzh4ÒùW(ò÷˜†å"ÎcŸ¤İnm‡M@æø.—Éd•JjµZĞ,•ŒF#èõzÌf3T*lmmÉ©ùôéS‘@¬¯¯c8~Òqÿ9¥F¯×K_*•Ğëõ`4Eë¤Óé ×ëÑëõ®,
+­VƒÁ Ç#é‚,¢©Áâ‚S«ÕÈårR‘%Şï÷a41DêO1âññ1*•
+^ÆãÅŠ‡êÿğMâÕKo‡ÕÕUi¼QÁÊ^‹V«E.—“æ‰CÉƒÕj…ÅbA§ÓÏçC¡P)û7v»]±ìßF¹ş{½Z­Ìf3”J¥ğÖ”J%²Ù¬¤1N‰D:ëëë0¨T*(•JÒ±ŸL&"ê;>>–f$õO@@<›$Æò{)
+Ôj5)¬—û5ü-Íf&“IôY.—KD‘H:N™L±XÍf“ÉÑh/ãñ‚ÅãŞ½{—¯}—Ë…““Aa
+…ìv»Øk©T*´Ûm)î‰úı>¬V«@ºZ­+++ØÛÛƒÛíÆd2A£ÑÀd2A»İ†B¡8˜’­V“É$Ww±X„R©”^Êd2A(†ËåB¯×Ö‚Ûí†ÙlÆÚÚ²Ù,>}Šİİ]ôû}9¹‰ö¸İn	û4Ká©W©T R©`±Xí¢c›“v»]ôU#º\.Éùçó9r¹\.— i‹EŒnjµ4ô±2™Œ¤u/ãñâÄCI©4O¿‹‹øı~QÕRÇ"”]{î|RGÎÎÎ¤Î×úú:2™Œô/t:œN§¸±ï Ñh`µZ…Œêñx ×ë…5¾œ¿›L&Qâa
+…B…Bx÷İwÑï÷ñÆo`8ŠÌÜjµÂf³	Ê5›Í„¡NvÀh4B«ÕÓÆÆ:F£,2™ŒÀ0Eêt:¨V«¨×ë¢Çj·Ûh4¢ébQM½S¿ß¿@  °¹×ëÅËx¼xñP}ùË_~8F1ŸÏ¹¡ÄVXÌÉm6†|A³ÙŒz½.×&)ş¥RIòv<QhpÉÿNIŸLØ8ŒÅbâK@²œM&îŞ½‹‹‹|øá‡ØŞŞoÁb±“ÉƒÁ ¯×‹D"N§ƒX,›Í&,oƒÁğÉÃø9‰V©T"ÊBeÑ¯P($Ía_&—Ë¡İnckkKÄ$åòä§NJ­Vãüü‹ÅBrùÃÃC¸\.Üºuv»­V/ãñbÅC9›Íğæ›oÂív#Nãüü6›ÉdRdê¹\6›MPj‚T*•ô/XW*´ÛmÌçs!^F#øı~awët:qE"òåp8ğÁÈ	d2™ V«qûöm©¨êõz(
+¨ÕjxõÕWqvv†D"!Wú|>—Â”Z¦^¯‡p8Œµµ54›M
+1ôÇĞjµ(—ËXYYÁÖÖ–]®¯¯‹‹,šŒF#F£‘ôMØíçŸaaìr¹¤ïC¿?—Ë³ÙŒ³³3hµZ¬­­‰ˆ’Ìô—ñx±â¡úË¿üË‡J¥årY<õìv;€äµ»»»èv»¨V«˜Íf¢”-‹‚ªĞNù•W^'ØH$«ÕŠÉd‚b±(ğ¦ÏçC¹\–œ×jµ"™LÂï÷Ãçóa<#‘HH#”ıö]H µÛíÈf³§¾ùæ›"_ŸÍf‡ƒˆF£¨ÕjòïhGV­Vj4RÃ”ËeFÄãqÑ±?Â”Àd2ÁjµŠï^­V–g¦Ó)Âá° cN§^¯ù|ÑhëëëÒ,e:CCÍ—ñxqâ¡øŞ÷¾·˜L&èv»øàƒğÙÏ~V])»¦4a>Ÿ‹¥3;í½^O¸Z‘HD®g:Á²7Ã«–¦ü¡PH¤Âñä#|œÍf1qÿş}±å¢¯{*•‚Á`@«Õ’ G£Qa)”Ëe4lnn"ŸÏK~ìv»át:]#šf±XÄ*šÀÙ””³·²¹¹‰V«·Û-§ål66ŒÈXg_Šğ@  èµLÑhTNıñxŒ^¯‡>ø o½õ–è¨£Ñ(ñ H‘ñà	ş‹âA¸ıWÁLÿÿŒG¿ßób±(ñ Læÿëxı›ìÕ·¿ıí‡ì“¼ùæ›£Ò–‹½ â½Ç“|²)£¬B£ÑA5H/D«ÕJß†ü/."şıL&Ç Ğh4H&“X]]…ËåÂÙÙvvvcÁËàP±k·Û‘ÉdĞívåïrÃ(
+T*8N	§‡°¯”ÍfÅÕˆÄXÊ?Hl¥ÄA£Ñˆ Òf³I³—Jòıl6jµš€~¿‡Íf¹\N
+No¼ñ²Ù,æó¹,n¢z½.µ†^¯íãqvv‹Å“É$ú«ét
+¯×‹`0(ñĞét˜Ífp¹\âŞËŠñH¥Rğz½ËËK¬¬¬ÀétşÒxt:˜ÍfIm6Òé4ºİ.âñ¸X¶¡,—Ëp8².šÍæ¨>—ËawwWå*•JPQ­V+·3)_Œ='™&šÍæ_9¿êşX‡êßøÆÃ÷Ş{>ŸO‚AÒ#Œ¤–èõz(•JØl6éV¥'ÙÓ•J
+…âŠáÈh4ÓM…B!A¦¿:¡dÂÏf³¡PH8p888@8Æáá¡ÀÄÕjÁ`BÌ\[[C§ÓSÌF£!t"vÿN'¦Ó)ªÕª°h\IÔl<#Êûv»]Ù8¥RéŠò—RıeOv¥R)¶ÖË˜İn°€l¦rï½÷œN§,öˆúı>
+…ºİ®¸ùr¡¨ÕjÔëu)¾'“‰¨˜—{m6›@ç<èH®V«"YPÂş’Á`@ Ó~}}GGG…B8>>–ú¦Z­Âï÷ãàà@œœ–Ğ-¸^¯#›Í¢ÑhÈçsQRKF¤R©”;ĞëõäÖµZ­0Â_8c4¡P(¤åá4NåĞ!€A=Z Ğƒÿ'?ù	¼^¯0Işßö‡İn‡F£‘g®øîw¿» `8Š?‚ÙlF­VC©T¶3U´¸‘÷Öï÷?!BşÜfŒèt:…^¯(™¾LqÈzæƒ¡ù%­¸<H
+B¡ôvø°Ÿ={&vÉn·[z9Åb~¿Z­çççWXÛäóQÚĞëõ„Y@V™&“I\j3™Œøı•ËeaeeE‚±ºº
+•J…'OÀl6c6›!
+	£œ‚E
+I\m4‡ÃÈårƒò]È)äæfäfÏçrĞğp Ÿ<UÃtgb<è¥×ëQ­V1ö¾~ı:Úí¶˜œúı~1Í¡D¦^¯C§Ó!‰|RÔ«Tr`<ş\|4‡¤ûÙlöñâÏ­2™Œ0.ƒÜn·4¬9@‚RòÉÚ'3ƒ^!4Ï©×ëH&“ò=‹B¡Œ<"sŸ·1½¹1xr=ììì \.cssn·[bö¿ÙôFŸ\(ÿøÿ¸`
+a6›qI§Óòeø&³ÙLaioœÉdpxx(5M!yZåÉÈÓbÙkĞ*OŸÏ‡X,¥R‰ÍÍM¬¬¬HÁIn	¢o¾ù&Ş{ï=”J%)@ÉP(8??G¥RA<Çb±÷¤ÿüÏÿ”Åi4%¥8>>dåğæ    IDATF±XD"‘Àp8L§ÓÁn·#£R©ˆ ‘"EÖ0¤9œœœ J*I_ˆÓÓS\\\ P(HCöoOê­X{PfÂ´œ–ĞÎÚn·Ë"
+p¹\¢¦ç­jµ†Ã!=z$ßƒ§;k–Åb!‡á}ƒÁ «Õ
+ƒÁ€­­-Ü¾}[€ŠñxŒÏ|æ3x÷İw…ÂÄÙ`\p´ ôŸk©R©ˆEÁ`€Ïça©ÏçC¥RÁéé©@êô5ämÍú”‡:™L+™fsSÑ^ f³™ 4t¬¢öíõ×_Çb±LÍì_¶?˜½q¨†J¥‚úæÍ›Èår888üıøøXN”ÕÕUÔëuôz=x<™^H²æ£GÏç%íãb!x±üâ‰Á^şw´cŠÄÑ5£Ñ‰DB†Èííí¡İncmmJ¥ÿñÿ!­Ùl7oŞ”SŠSêŒL&“XD³Ş##áøø P­V±··'´ ét
+ƒÁ€·Şzn·ûûûP*•ƒâ—ÁÏbJC•0g{±Fk6›8;;ÃÓ§Oq~~.llÆş¢ŸÏ§Ÿÿy6›ÉÍe0ÄÄ4•JáŞ½{²¸9—#}ø;©€æëÅŸÇz<‰Èj2™°¹¹	…BÿøÇ²÷÷÷‘J¥p~~.©Ú/{o¾?­àƒß¸qCêçt:d2)ö/ZgLÙçóZşsüoü>T\/iÂÇc¬¯¯ãúõë¨ÕjØÛÛû_íl6‹n·+Ö©T
+ê‹‹”J%‘˜s‚ÅÆÆêõ:àt:‹ÅM¢¨×ëÉIÌT€@¶Ÿ~x„S	˜°XN‹(`!Ûn·±¹¹‰\.‡J¥«ÕŠõõuhµZ¤Ói¹®9Åƒ>Bàƒè÷ûH$(
+p8˜ÏçX__Ç|>—|}:¢R©HzI³¦§¹\NØv»]
+îÁ` µÇ›ò´^NõÚíö=k†ét*J¸x»saŒàmÃFñd2‚5Ó­Ùl†7nÀl6ÃårÁétJêÆ¦-oåÅ¹ü=>½Áx{˜L&<şáp×¯_Ù›Élî²”X^ø\ĞË/ÖM•Ôï÷Q,ñÎ;ïˆt„ô)Ú‡ú}Ø¨&Iš¿‰ŸÉõIô‘ ×ğò‹1Îçó¨×ëâñÈÃñÚd™†OHÂÛÛÛùÅÈóûı2?¸Óéˆ…Ñö(è<
+…°²²ƒÁ ¿ß/hV«•tÌf³auu‡¡P.—K–ÏçÃÖÖ–,\Šô†Ã¡Ğ`h
+…àóùP¯×Õq¹\Rƒ)
+¹U)¡gï†ßm±XÀ`0a:òä	Æ•ßKğ†ô!¯×+4{=Ì@B2»ÉÕ«V«8;;y·Ûk×®	Ôn0Ä¨Åh4ÂápÀjµbss7oŞ”´Q¥Raeen·^¯›››rCqÜk%„9Ë™P>'£p1‹	çÏy‚d*p“Ó$Õn·ãÁƒØÜÜ„R©ÄŸÿùŸcwwñx\@Zº¹İn‘Õ,è£T†^‰tãu82Îˆ’“?û³?ƒÙl–‚‘Ë¹Ì¬}¨(°Z­Ò÷óûı²Îâñ¸LµÛíXYY‘45„Ïær8†Ïç»â@¿ÿÓş˜L&0™L(‹Ÿ”F+++¨T*RË05a‡œÁ¢ët:•<Øív#
+¡V«‰çGÔP¤·ŒL½şúë¸}û¶:‰Qğ·¿¿/6ËœæÑï÷Ñl6¥ÓÏšÅ`0 _ñô£¢Õl6£İnË÷äìß7nH*Õh4Yâ¨ÕZ­†r¹,§û1¼-hriµZÅq—(É¤ï;=yV«UlooË9zgg———Fò¼9.ÕëõâßøÂá0Ş}÷]S(Q¡=öææ&~úÓŸb±Xœ+ÎSŞØØzË`0ˆ¯Å½{÷P.—¡ÕjåæN¥RÂlw»İâ)Oòî›o¾‰@  Ë‹‹‡C¬­­]ËÃá°è´Íçs|üñÇ2³™Y†{÷îÁëõ
+÷ñôôF<@¡P@¡P€V«•Ú0;3›Í†o~ó›²ykµ¬V« á¼í“É$¼^¯8qU*$	ağ
+|ç;ß×ës!ÚƒÿOûƒé3Ùÿ@à“>™Åb‘“ V«É(š‚ØívádÑÅU£ÑH1ÈùLdp€œB¡ÀÖÖ– twîÜÆ3eŞ‘HDd’ÍŞ„Ñh`a>Ÿ‹Á?ƒ§ÓéÄv«T*ÁívKŠĞh4dáğtÕh48::B·ÛÅÚÚšÜ°årYÆŸòvæÉÄ[nssSÜfkµ´Z­Èèù`kµš,¨f³)·2{DÜ<ô0h4(‹(•J’Æb1„Ãa¬¬¬ Âh4bssS€`0(–ÕL·].—ÜRn·[Ğ4öé0‹Åäû²¦"û­ šÊX­VAhı~?~÷w_ûÚ×àñx°¶¶†ÍÍM$“IhµZ±Œ#c¤\.#
+ÉÁÄvE“”ÖĞçîİ»ø“?ù¬¯¯£İn#‰
+yãÆifÓÑŠ>ûİnWD¤lZß»wOØ[[[2mfÙÎ€Ïßn·£Z­¢Z­"ŸÏËaÊ²€ë—ëvyÔÓ/ÚÌ4¨”™LFNjr˜JqÊ;=û6›MI‡¡Òû½2”…sFQQ>‡Ãb±(‹Âår!‘”ÓWWWáóùp~~.-nN6Yg°ĞfŸƒ½+‚´†&§P(°¶¶†½½=q„eNÎ x<Ñb1 œMÅiív>ŸgggÈd2¢Âå¼*šÎĞœ¥ßïãàà@`a¶h<£Õj%ä ®®®
+0ÀC…z*Ë#Ãô.‰ Ñh V«áòò?ıéOÅR› ‰ÍfÃîî.B¡òù<²Ù¬pü‚Á 
+…ªÕªÔ‰ñxz½‡‡‡h·ÛhµZˆF£X,°ÛíâQ*•„¢¤R©„´Ì¾$×]Š···át:ñ…/|ï¿ÿ>Úí¶l`ŸˆD"2X}OöCÃá°¤Ú½^·nİB6›EµZ…×ë†Ñh„ÙlF,“zh53:W©T
+½^ï½?èÂ6J¥‚Òçó¡Õj¡ÙlJ·»X,J±~çÎ¡™¤Ói‘4
+I™¾â¤Şˆ‚¿gÏá‡?ü!t:|>"‘ÎÎÎpyy	§Ó)SÉ"áµl6›%E`Z7N1›Í Ñh°¹¹)´ö%\.—°¸):œÏçÂøv»İxã7 P(®V«â‹Á¥ ‡‡‡˜ÏçÈf³"AçxÔ\.'è!OM ¡PHü6šÍ¦Œı)•JB"e}I ‰øÚÚNOO1Éd°½½-N·§§§W†ì1McZH„‹ğu,ƒN§Ãşş>Ş}÷]èõzƒAiK”ËeY¼¬'‰ÄòPËårxÿı÷ñïÿşïøøãÅ¥‰›o6›I=N»*‘Ûí¶l:²(\.>ÿùÏ‹6K­V#•Jáîİ»rYCïúÁ` ŒhF£J¥Rê%ZàÑÀ”`Y@ét———2W›
+kª§Õ[4•rãWÙ\Ó&“	Êjµz…:ÃüÈÈÑÑ‘)ƒ}-")²Z­"N¬LNÓ­;wî`4áÑ£GˆD"2ö”¬	·Ûd2‰n·‹ë×¯Ë&èv»RT/í¡x!›ÍŠÅ™F£Ëåğƒğ*A
+‹Å"º&ª}Ëå²¤wz½Gxƒô¤5óp8Äd2İn¾Ú|>'Y»İ.3É|1ò[è›±µµ%-¢±t;28<<Äl6Ãµk×¤qúüùsäóyär91eo†VÛ4æ<>>†ÃáÀ½{÷D)­×ë±X,pëÖ-Ìf3<ş¡PGÆÖÈév»(‹¸ÿ¾€
+z½ûûû8==E"‘ÀÖÖ–¨†‰Øy½^d³YA$U*•|7M"#Ÿ)^­V“ÅÌt‹^‹Å">ˆ´XF°É¹dÉBÒğññ±x–”J%ŒF#1we[€ÙÑ²·äb±À×¿şu1Q%ô«îÅbñ‰†´ƒƒI/ªÕª,ŠeêÏµk×dtùxD$Yè25"ÆÔ‡sª666°··‡z½T*“É$H­½ØØäUn6›±±±!j’¬Êå²q4!ÊÈ›££#looËãt:å»¯T*ù+
+„B!¼óÎ;èõzxòä‰Ü²ì›1ãTG»İ.¬tö &“	r¹"‘ˆL£$=Š‚u
+af¢•Óéûûûğz½p:²ˆ…‚4ó;vvv$ƒ³ÙGGGr"sü,[-LÍidêñx$ÅÇ(
+˜L&ò]x#år9ôû}cwwWZ(³ÙLšÚìv:¡¤‡C¡¥•J%¡¦q!2I&“²†ø¾GGGÂŠÅb&Êš\~f„ã{½vwwe
+&AFƒl6{%´Î#-¯ÛíJ“Üëõ¢ßïËgìïïÃf³!ÿÊûCI›b¯×¯×‹b±(ˆ:»İ.<?~-àìììÊ¤Äå¾=8ñƒïqyy	¿ß/5D"‘À;wı"‹y8Ê÷¡OÅ5ñJ'½G­V£P( R©ÀápàÆ’2,d³YñX'©9™LŠcae²ˆ@y<|üñÇRƒ‘AÁoõt:-§!§‘¥Aš§£x½^a¼,/¦EÁ`ÙlöÊğÆƒ}3KgšIà…éaäX,¿ß/z«`0(3‘
+Òé´¸øòE=1Z­şë¿ş:NPS¢¹ÙlVN}ŞâËÃŞ)]Ñh4’Êóö…Bp88::)Ë²Cñ£G Õj±»»·Û-ïÃÃœæ5“ÉDjíR©„‹‹iøÛl6ÑÖ‘¢ÑhàõzÇqãÆD£Q˜L&É8Úí6²Ù,<Ï¯½?ÔL}h­Å~.—
+N·Û».²£»İ.666$HF£O<¹Òä46g9Ac±XàæÍ›¸¸¸nÕ®:NĞ;vüÌ7nÈcó5ãÁƒ888x•õK,ƒF£A8h>›ÍJ^}qq­V+}1¦Š´
+Ëd2(•JĞëõØØØ¸âdËÁ¤1™dB ¦˜ôF§±èh4’÷åÉ¹Ì¶`‰ †^¯a Ãá±>‹EM§ÓÁöö¶‘Ëå²ô¹ ûı>Âá°*•
+ÉdÃáÛÛÛØßß¿’‰Ìçsi½îõz¥ôx<Ğjµxşü¹øÇollàşıû8::’[z4!•JI¯0QåÅb!ó–766$ÍnµZh·Û¸¸¸ÀÊÊŠÔBìi-?3Òôü~¿üVn¬z½Z­†@ p%TH“?ËAíÄ)®_¿Ÿüä'èt:‚püùUö‡’¨?¬X,¢^¯Ãn·KMÃ>;ê„My’Çc4øış+'S4•J%iûZ­f³Â$“€Œæíä@6œâéÓ§xë­·pûöm¨T*œ"£V«‰"÷•W^A³ÙD­V“q<z½Ÿÿüç1›ÍÉd„fU(® ŠßùÎwä¤î÷û¨V«RóÑÒL­V‹ÑµT”m×ÆX6ÂYO\\\È©½üÒétp¹\’nT*Ióş§xP3Å˜ğ¶h6›¸¼¼”–­»Õj5šÍ¦@üÔÓ-³<(ì\,ØØØOFZQ'“IX,Ü½{W¨UgggWâ1qíÚ5a—,3H^yåL§S$“Iø|>Ìf3œJ<…wÊ´³Ë–×ÇèªT*Ù°T…ü²x°>å\l¶¨Ú.‹Bçä›_g(¯]»&(T·ÛE*•’æE~œÈøìÙ3ä…ÃaL§S¤Y°.ÿx¢€¤¹F¼òÊ+¢"­V«R¼s$)›™$Åò¤âB'SºÙlÊúÕÕU™Ùí???‡ÇãÁÖÖ†Ã!ö÷÷a6›‘Ïç¥???G:–ÏaN§!"¤$¸
+1oá¦%û€Ï`0`ss«««RP/ÅTh,g~-¿ôz½0ê[­‰ÏçÿÇxÏ´˜7!¬—<y"¾÷f³×®]C¯×C½^—aè|e£Ùe/&“	étZho$FÛív˜L&Äãñ+ñ €43Ö{F¼1œN§hÍ¨d ÂLñ(›Ö¬1—ÓE¦àÍfSnB¶†¶¶¶ş[<¸>©McVÁßS.—ñ³Ÿı«««rÈüºûCI\6³Ù,4ƒÁ ƒ§IybqHõg,Ã`0Àáá¡öø"4:›ÍP.—¥‘Ûjµp||ŒP($Œr
+äÇòE6…ÏçÃ¿øEÌf3qFp»İøÒ—¾—Ë…ÓÓSlmmassS
+T¿ßgÏ¡Ñhˆ}—Ñh”[ŒµM¿ßG4•T€c_ ÙÅbR©¥R‰ë×¯õ‡{ggG¨8ü~ÍfSŒE­V«ôÏ8_xù`"A­79âè—Åƒ½F
+yú§R)Ü¸qëëëò½©Xfm™H$¤¶[îv»]ìííÉâŞÛÛ“æ/¥T\d³YŸ–ãqvv†x<.¼}†¬£`0ˆİİ]Aü(-—ËÒ 8Â6ÑrºH2Ãƒ”:88€Ïçû¥ñ`M­R©¤óx<˜N§(—Ëxíµ×¤ÕÍfíı¡ænãàîP($^r ppp€7n ‘Hˆ%ø~¿/jÖ¯ıëxşüù•“ÊZ±p´ŒÉdÈxY—N§ås©>]&t’›ÈAãgggğx<(•J"ìõzÂçÛÛÛ“æ$óir"§Ó©Pv–OÃ/}éKWb¹P§Ó©ûÙÏ~†»wïâòò³Ù+++Ò'#•‰í“É$Ú(ŠS3™ŒP3™Ì•MFíÁ–û÷ï£R©È ó_¯»İ.’Éä•l‚,ŒıèGğx<ø‹¿øéÕí#·ğÓ„[6â¼d¿ß/ršB¡ 4;ZÉ]^^"‹Ó¾µµ5!•ófˆSb8àB¡Pàşıûxüø±¬Çét*¶Ô=òFdí8™LN§¡Õjñ­o}K¼BR©Ô•x°Í6@:ò@4E±X„Ãá€Ïç•D.—ûö‡²Ñh N‹›Q"‘€Ùl†Ãá~Z*•’ü•BÊB¡ ©Ä`0@³ÙÄÚÚÚ•šŒ©âŞŞšÍ&´Z-l6îÜ¹#Ã°s¹œğçó9R©” ËiË`0¦§&^¿~]]3™ ¶··±³³#f/<J¥nİº%Á©T*H&“òì#ùı~¸İnD"Ñy1…¥Ó’Ãá¸ÒßJ¥R¸¸¸Àl6C6›E"‘º-)Pìélll •J]©S˜F‘¼¼¼ÄÉÉ	¬Vërô/ŠG>Ÿ—›gù”§D4g§½½=iÎZ­V\»vM”Á”øj·ÛrĞÄb1Ü¸q?úÑL&‘ÉdÍfà¢ü…sÃ¼^/Ö××±¹¹yÅ.€ƒ:TAd³Y¬­­a±X`ggG¦g’^W¯×‘ÏçÅ‡9]d©P($Åfl–E»dïS!°··‡½½=”Ëe<ş\ìÜšÍ&NOOQ¯×ãı¡ÜÜÜŸÃá@¡PÀl6ÊÊîî.Âá0¢Ñ(|>Ÿì~Ne¤áH0¼rR-l ŠÅ"~ğƒ  
+…ÖÖÖ°±±[·na8âñãÇBy:99¹lææwîÜ‘<šßJ¥‚íímapVç÷j4q)â€ºR©„½½=¡ÉĞ×òw¦[„çé£Á‘«ì©ñ&[„MoƒÁ |Èv»§Ó‰ÕÕU™ˆrëÖ-Pn·Û%•á3³ÙlĞëõ°X,²ˆS©šÍ&nİºu%½^©T
+*•
+'''âu²|[î¿wïúı>¶¶¶J¥ğOÿôOÒzˆÅbâ¸¼x™>F"Ôëu|÷»ßß”@ €V«%ÈaµZE*•ºYùOŸ>[®ZĞÆâèèü±ÔÕl•ôz=É.ØD_Feys/$œNãóù`0P*•¤Â‚?Æññ1Êå²XÂ9N„B!ißüßØj·Û×_{{{úàE"™ÙDp•J%ƒØí¾ÿ¾8ú,çôlÔíììÈ¿?==•Ñ£„QYèÿä'?Áññ1.//¯œÄìU)•Jüİßıòù<ÎÏÏ‹ÅP©Tpyy)€›ÉdÂ;w°²²"Sz`áÁ˜\´ßû½ßC$A ÀóçÏ±½½-` 9…$ƒîíí!àââ6›Mê¾Yõ4éaÀ—O`Jb–{‹FÈ­*•
+_ıêW…º½½-ua4òßÿ}œŸŸ_I³	}şóŸÇ‡~ˆ¯|å+¸ÿ>šÍ&ÎÏÏqqq!VjD&—ãÇ™eôÅ BúéÓ§"¥aëv»1ğäÉ¹¡™MğöàáI ˆ[8±ÎÎÎ„¾¦ÑhP,±µµ%ƒû–y¦Ô+N§Sá·~ë·¤n&!¹×ëÁl6‹•µoäd’ƒ‰DDÇ¹Ï¿éşPw»]iÄºİnÒ‡¦4©TJè>jµét»»»P*•ø×ıWÄb11ç_²V«ÅÏ~ö3˜Íf|éK__‡G	ª¨ÑhÄ3ƒ|<Âf³‰ì#
+R‹ÅËåpvv&ı*ÇƒD"!'e¡P>	y”œ#Ì[ŒßÓjµ"`0àüü\¬"‘r¹œÔ”‰D¯½öšÈ83™t*ÒÌh°É†&‰Æ­VKÒ
+³ÙŒL&s%Å&ĞB/‘z½‹Å›Í†Á` NOÉdRdô“Éûûû{óE6y¿ßÇéé)şê¯ş
+Íf?şñÑívñöÛo³ÿôôÍfó
+jÇø)\__Çåå%NOO¥õÀZ•‡èòMÅÄZo™AÁf0o|>Ç›Í†>úf³Yüé¹c±˜¸Z-?3Ê³¸ñ˜:Ïf3µD‹À[:F*•’¿±³³#Ş’ìÙrâo²?Ô¼n)<Fb–ÂJ¹\¾b&ât:áñxĞl6Q*•àñxÄpeùE§ZjÁÈí+
+H$RR¯³|:q Á²/‰`G~P·ÛÅÊÊŠèšhj³Œn>yòN§7oŞÄşş>åÁÑ:Œ‹+"NÃëõ
+Á€òÄ‡0Âh¿~ıºlb2U8 µ Ó\ZËQ.Do“å]¤X–Ëe‘Y(•J
+X­Vq­âB …(šÚX­VT«U$“I|å+_AµZÅÿù?ÿGäz’y¿Ìø àb±Xpxx((){ˆtcìI[¶àÿ2]då÷û¯ØK0ıe”ıÍjµ*©éåå¥Ô¬Ë/Nz¹¼¼Äõë×ÅA*•J¡ÓéÈ÷#Ğ’ÏçeÓ³¥aµZáp8„0@äù7İj$›ÍJqIò-eŞ”·sÇSR>±²²‚••$‰+ÖøbÎ¾ººŠv»ÓÓS‘•ĞzëÓşjµ@@ÆıÜ¿ßùÎwP.—åôyüø1>ûÙÏ
+»áÚµk8??½k'ª¶ÉããÄáñxwïŞ•ïÁô‹°ğ²)ŠÕjåu½^Çúúº¤|TıR:Ab)Õœöa·Û%0¿ÈÛƒñX[[ …†§¼9éV­VñôéS\y—Ë…`0ˆ@  »İoûÛèõz(‹899Íf³Î„ÇãW6g#¯¬¬È­;NñÆo X,Šø•Eÿl6C0D§ÓÁx<–Búo%n`ZPºÂM¿³³ƒçÏŸw’¾õl{,›:-³dˆF#ñ!mkÙ_d9=çaÎÍÍõÛï÷áóùpyyùï5{1šÍü´R©\Ü±xäè‹‹i–ËeL—<Ù™LF¨E<¥>ı°X§Äb1!y¾óÎ;¸}û6NOOát:ñ¹Ï}ßûŞ÷D¨HnQ3*«kµÅZ~¹\–¡İL©t:¶··Å²„î9a„¹ør:DfÁêêªØYºg;ƒü¾ÍÍMQ~ói?ópÔì`0€R©ÄÉÉ‰¸óv»]ôû}I{i…Àöh4
+Fƒ?ú£?ú„C§Vãı÷ßG©T”[ö.)ñà­T(àt:qíÚ5ìîî
+dÿıï¸}û6Ş{ï=ñwd£ “Åb}ëoúxF#¡N§›Í&İjµ*h%‘ÜN§#³Ÿ—7OF™Z³œš.±Ù®àå÷L&xe³Y„B!üßØjœĞv$A­VÃêê*†Ã¡xA«vtt$b>½^/1AŒåS‚Å?5I\MÂ0sıe^£ÑˆP(„·ß~÷îİ“¹¾¾T*…üàB²e h7@û3×¯½öæó9úı¾<øåF&9pkkkÂE¬T*’JFÜ½{™LÅbñŠ-¹ÍfC<İ×ññ±˜ö0˜Ïç(‹ÂvÉçóğù|¢îV«Õøàƒ®Ô*¬ÉÈ“T«Õxòä‰h 8M’òšå°X,†x<“É„/~ñ‹Â`/‹Ò¬w»İ°Ùl¸¸¸Ù¾×ëıoé"Ä
+…şöoÿNGê§B¡€Ñh„?şã?Æp8”´Z¯×KíI¿G:Ÿ!—ËáââápXâV«…·ŞzƒÁ [[[Øßß—øòwa“<şüJª¨P(„äëõzqrr‚h4ŠN§s%í£ºšœUÖ~ñx\tuõz]ÔİİnWÔ¿îşP–äµ9Ç¥'A×Ør¹•J%j\.NûX6\şñÅb¯¾ú*Âá0nß¯–&    IDAT¾étŠGÉàÿøÇ¢\L&XYYÁüÁ 
+	ªöê«¯JšDuíêêªş·Z-!»F#lmm!
+a6›!™L"ŸÏÃjµ"•J]éq@^,“áuİJÙ>{läÑQ¤JR±XÄÙÙ™Ácó™T 6j9c+•JI¾NÁà§)Bd}8Q“yÀCŒMf…B!
+nzgºİn¼ıöÛğx<‡Ãè÷û¢1£â—Œ‹Å‚D"¯×+úåC’é¢×ëÆÌo¼@  |M4ívétZ4bOŞ¸q{{{x÷İw‘L&…3Øï÷EşÔét`2™DûÅş']†Ãa,©å?Í]díùúë¯ãÁƒ’5ğÙQû×ívQ.—Q«Õppp ZC¶Š àääDÌ}˜ùüÚûƒ­„à™¿rî/;õ$„r’ ÙçdqP†¾|º¢5™LBÁùÆ7¾ ŸÏãââ·oßÆÑÑ
+"‘¶¶¶ğÏÿüÏbÖòÚk¯áììÉdRš€‘HOŸ>ŠõW+++÷’Çæõz¥®zòäÉ£
+<),•J8??¿"6eÚÈ›ƒ·>ÿ™ô7ŞxCÜ±Xøó&bnyJ	½E–©cË2ÊDeı<È¤™N§R¤ƒA1+b¯‹Òétâğğ———0›Í¢Ã#âóùD·|H’SÈÚëöíÛøìg?‹b±ˆóós‰G4•1K¸>şp:’BôÑGâ§È>×l6ÃG}‹Å‚ñx,uk\Ş< €çÏŸË ùet‘1&	u43(–&óù\ ²ápˆÍÍM”ËeÜºuKRQ¦³üÿ¿éşP“Ä»ì=H$®8Q&Ïi‚$¶Ò#‘éÚòDæ»„¾™k3ƒ¢Cóx<ÂõbÁúà‡?ü¡äõù|ÿò/ÿ"´£ƒƒ8Ü½{ÑhT
+S‚cqNOO¯˜x²QKGZš ‘rEq&óxJ)8„·¬Á`q=Ëu&å0³Ùn·[Ná½½=iz//’åúb™Áğ7ó7ØßßÇ÷¿ÿ}looËˆ£¯|å+âFT“uH0D2™„Á`@¡P2‰HàÉ°§X–àÍ2]‰Äh4Â;wññÇ‹MœÉdÂÉÉ	?~,-Š>úN§×¯_—»V«I¯Œ5æT*u…©â÷û1ŸÏRO$â±ÉóòM6¥eÃì€1ãÉxUòøñcÇ8¤ƒSs‚Á ’ÿMö‡šì úƒh·Û˜L&²H:r¹œ°)R©”(K}>Ÿ°+–ƒ¤×ë…SF X,ŠE×l6“éö‰D+++ÂuËår²èÊûşûï¨ÛíâöíÛ0™Lâ7o±Xp~~.'R>ŸG"‘@6›½Ro®3„ŠåóùP«ÕD`j·ÛÑn·áv»¥%@_½Z­§Ó)è%½ş	írr
+‘/§Ó)DgÒ(åù4]©Tpıúué÷üõ_ÿµÊS(ˆF£b JD.•JI­Kçä‹‹¤Óilllu*“ÉHL	ÖĞ\v¦ÔŸñ(•JR§ñ;>~üf³ÛÛÛèt:Øİİ•xğ÷x<KÂ~&“	nÜ¸!Ên	>ŸétZ@,ö5].>}z…ô@^+¹L	º]^^Ân·‹·?g5°ßåt:dy°X,‡¥¶üMö‡: ›Í
+»¡X,â3Ÿù’É¤äç×®]çY^rpª_t“qÁìîîÂd2É¬^zø-ç¯øMÊÔb±@:F(’ÓÔl6ceeEĞ¦eÿs
+!«Õªè÷ûˆÅb8??G2™£¦n@@,íŒF£¤UG<™rµZ­OF“şºÏç^ĞÎí·û·ú5™L’š’˜|~~•J¯×+sÃ¨À^®ùÌ•J%ñ­o}K¸xjµ¯¼ò
+’É¤¬é‡á÷û…ÅÂÙ\´WcÚÅÑ¬¼)³Ù¬X#}Ú®›Ï–õ7u‡œ³LíÓjº(—J%!7Óä‡™¤^~'Xä4Òº`_HF£<ßgÏı7ôÖÖæó¹hÜÖ××Eâ¤×ëq~~~åséµ‡¥ÇÈç•J¥„:F£_w¨¹k94W -½®]»&·MµZÅÚÚ¢Ñ(2™ŒğÀ8³‰Ş{|Ñä…óÏø y’ü?íYSÛé™öobĞŠ$$@ƒñ†ín·S§&NW¥jªf¦æd²U–“|¾A*‡ù"ÉA*©¤;®ôô¤Ûv³X€¬]BBBìzŞù]%œdŞtú=¢ğQ¯¶Ğóÿ?ÏıÜ÷uı.jbæ?´¬‡ÍÏÏ["‘°_ıêW¶¼¼lóóóHrÒ<xğ@
+€ÁÁA‹ÅblkkK´\š½Jˆ±±1‹Åbö­o}KyX»»»¶°° ²/âÙıı}å#ã,Îd2öÁØññ±İ¿_T&8¨âı~¿åóyËårj2°yP¢y<KÚÅ^ÈL2™´şç¶T*¥—vyyÙö÷÷e­'c{{ûRWN!Z¾N§cårÙÆÇÇ­Ùl*‡ÍëõÚşş¾ÊŞ2ÕÄÄ„»¨)(
+¶··g•JÅ>|hfvi=ü~¿Æğ;Øx|>ŸÆ‘HDšÑ££#Ù˜ü®á¤zÓ´‰¨wyyYœM QlÅPİ‡B!EI=}úT´+”úT _õıpüøÇ?^Íçó—r¶À¯Ÿ<??××ívk€‘¯7¥cssÓ*•ŠJ2x˜ á!|şùç¢,Q§»\.«ÕjÖl6UrÀÊp:ªÉ)İ8(8qÀ,sÇZ__×‹×××g·nİ²`0hï¾û®vjÜ™¸OÂ…ğûı
+…¬İnÛöö¶Œ§§§§F5˜¦arpp`ıııV©T”2sttd@@PVRlP´›™¹İnÍq€-..Z­VS‰IJåÚÚš,xï^¡½£Ôååğ
+ŒˆĞF2“OOO5®à¡t:å,//ë4±íím9Ä‡‡‡¥Æè]F£a‘HÄÜn·½zõÊŠÅ¢N´ÑÑQ[ZZ²ÙÙYëv»öèÑ#U3ÀOéğöÎ³Ùì%i!8ñŸ<ybûûûânğ{öFæ’A‹ÅBÂ’D4²¾¯ú~ô_\\X<·ÙÙYÕ«Ü›@I…g€Œ§¿¿_œ‡^ûwïNÈŒÈšƒƒûÓŸşd‡CZD`ÂäöîîîÊ¸GˆD±XÔLøƒYvræ=^¯W°IÊ( 0?üá¥tçGı€DlooÏ²Ù¬º###š¯pŸ ”Â¶3m_Î\.§MpM/û‚FĞìì¬år9^ÙØH¨ šÍ¦Õj5«Õj—8‘è9 2j4’sŠ}ùò¥9K0˜Şî"ëN×–¦D>Ÿ×fãv»56ù[ëö ·ÒÙÜÜ´f³iËËËš±ñÒĞlà3ãà&ƒ¬÷Nî±®y4àİ ü¢Ú€Â¨àğğPò1bj¿êûÑŸN§eÁ =…¥!‡mnnN"–mNZÊLİ{ÂŞ›¦Ói5.€bŞ¾}ÛÂá°:@xŒFFFlmmÍJ¥’ıö·¿ÕÎ ŠŒ¡",F”„HàSë»\.k·Û–H$.¢{[¶˜ı¸Çäóy+•Jvrrb›››2B	&L{	‰DdˆÅÊ–ú¿·TäÄ!–•õ@İM)
+…*­×ëb%ˆ¦Ä¬n||ÜÆÇÇ­Ñh¨s:22¢î"âçÅÅE•÷üB5??oñxÜ&''í£>²õõuÛØØ\hppĞjµšÖƒ\jÖƒTP^ÜŞ¸Ñï~÷;EYMMM™×ë•A—áX¼Ş_N§Sw9ş=(Ã`0hù|^
+Öƒ,ìb±x	İpvvfÿ?ŞvŞW¯^i—&Êív[,ÓîóùÔaCPÊüÀétÊÌØûƒ³±¸$h”J%í(N§S`Ô±±1iÔÎÎÎ,ÛÙÙ™•J%ÕÄ”Ä™Ò‰k·ÛºÄ·Z-5$(_Ù­#‘ˆÍÎÎ
+§Ì†ZÃívkş·¿¿oápØÖ××ÍétÚ½{÷dÎ„`Ûn·•2I3ÀëõÚÔÔ”(K 
+Šò"râ¿ùkssSJ·Ûmù|ŞÂá°ÿ¯õàI&“"CE"1Jºİ®0İtÏŞtÓlB­Aö6/{¡P°ééi½œ¨aÊå²İ½{×Tbñàõ6Å°ñ‡B!™İn·†Ê”áÌ¹`N}Ó´‰^pppĞ^¾|)[
+ùx<n333
+áâHrHÀ8_õıèïïï—@@YÍ­VKlXt°ë;<<ÔîòòåË¿xX&''mhhHísvev@†®ápØ?~,Åˆ1î´„ñ¥Ói¡¡ÿéŸşI{\×\º\.»}û¶}ó›ß´¡¡!H0÷¢K
+@åùóçbRæb~zzj{{{*ƒr¹œLƒÇÇÇJ¼ä¡$âçÁVÿ¦z]¸Z­ÚÄÄ„ÍÍÍé.ğ÷®ÇÇ¬c,“¼ŒÓ”;ÃùŞSŸr”Mà†ááa‹Åb2òàÎÍÍÙ³gÏd½g=p·³¡pÄãñK¹jµZMsSFœâ7¾Ù`ã;İİİµÓÓSe¤™™e2)YH”‹S`hhÈ\.—šEÄ1OüªïG?“{†”<ĞešäºO”s@@¾)‡ÃaÕjÕ)ôfpœÇã‘6è	ZB.Ë O ™ğÅ°ÃÌÌÌØÈÈˆíììÈ"€e<×ƒH„k¯}†¹cËËË²ÚPd2	YªÎÍÍ©Y188h>ŸÏ€Œ§œL­VËb±˜† ëëëò°Q~ÑÎ³{÷îi¦Ó{z0T><<´Ç›Óé´z½.Ç.˜7×N"<6‚½½==Hx¹Ó°›
+=½•Èéé©mllèŸ3À¦Œs8šsmmmÙáá¡Pñx\0ÑŞö=Ï†ËåX––;Š÷óósÉ´z×˜RïİŸ±
+˜AHb„òğÛÙÙ•Šş ³Z·Ûm+++šâOû*ïëÑ?;;k[[[æt:-‹i·Åb–L&ÕR/•JÂjÑí"ûÉ›6Ôì´¾IsAèÙè§ƒ599i‘HDÌ<”Á`Pª"l+•ŠvlÇc[[[Öh44: áÁé477§ShrrR¾ RVÚí¶Íü·”P(Í™ót»]{ùË_ênùÙgŸY©T2§Ó©Ÿóüü\.m.Ï½s20i³³³’nÍÎÎÚææ¦Z__Ÿ•J%ÜÉnÇk‡ª‚4¸NG%Z$Ñ¬¨P(\’+áóûıò3óÊår–L&5ô†çQ©T$4ğûı’U“ë½N0òƒjß‡B!¡¿éNCñe{Sô@W‘n/–\Ğ¥RIÅ/^È×È½½ÛíJÈ€§ŒÍı}?z×£Œ6í`EÍfÓnÜ¸!hãÍ›7Íív[6›µl6k>ŸOe.dù½¿Pà£‚ïÇ ;;ÆÉ`0h>ŸÏ\.—°c”(wîÜ1§Ói}ô‘vóããc[XX°n·k¯^½RĞ@ŞİÎívÛüÇ˜Ëå²7nX©TÚ›M³Ù¼Ôb7>>n¯_¿V{†óš½½=™)£Ñ¨²­¡d}öÙg2.,,Øøø¸ıñ@³·YD÷æ·Ûµl6k¡PH;øÂÂ‚<^(8z!±”2Ìuô]Äz´Z-k·Ûz1z…·l€”î¬›êÒÒ’œœX:õybbBĞÙ­­-Å`õ"ØØŒ¹#“F‰ˆ’‚çn?X+½¿xø!G§R)K¥RRœüùÏÖ‰åv»UØòò²MMMÙŸÿügUŒ6şÑ÷£w=`ŞÑmÁÔH4vì"½š°z½n.—Ë’É¤µZ-K$2U²H~¿_¥b/Ñ‚R__ŸE£QQ_Ab³Œ©u\.—­ÛíÊbÂÃ‰ÑëõZ2™´t:métúñ
+	Õîî®•ËeµéÏÏÏ-Jİl6e’d8‹öääD TÒAã€¾µµeÃÃÃ²ƒ`‘Á$é÷û-›ÍÚÎÎ
+-Jï%».É0X*âñ¸fZ”J¼d5ûı~Ù<<år9´7n\Šx¢B@Ñ+=ë·­Õj–H$¬¿¿ß²Ù¬:y¢T¥R)óûıq€:Ïd2J²U÷š\ o8âÂòupp qL.—»ôÑ½½yó¦¼w¬ê½zUÌ”gggòmË8 ^¯k~÷eß7×c ‹ÙgŸ}f‡‡‡
+…ìáÃ‡–H$„Ñ¢”á®@Ë·ëşğÍ¯zUÔô}}}Òye³Y8¢ÉÛš˜˜PûøèèÈîİ»g©TÊŠÅ¢MOO[¹\V§,r>Ÿ7§Ó©Å£>N¥R—fO”–¥RIò™?üPô½{÷TwS.î€l«×
+“H$¤ yÓ6ƒÄgjjÊ666Ô	‡ÃÒ
+f³Y{ñâÅ_@:qjg2±™™s»İöâÅu7éàú|>ƒ¢bqÇèÈ]T@/½¦jú—/_Z©TºtcıèÇãqk4–ËåÔĞˆF£RÏ3·Tî6á|kkk²!õ~_$UÆb1Ù_¶··"„Âápˆ¸½½-Fïïåt:­X,*•'›Í^zIãñ¸}ñÅ*Açææ”8va||\³¥¥%k·Ûö¼D{±[·n­ÙÂÂ‚ŒŒX¥R±İİ]Ío˜}y<ÛÜÜ”>+•JY©T²µµ5ÛØØ¸ôÀÑ!óx<²i ËÅÀ–/w†€Ì0Pàƒ¢ì!yü,Œt:ı‹‰D´Ğh4”Cˆ!wF~Næ]ü.—ËööölßşøÇ?Z2™¼T®€#ácxxXFIû ÏÏÏíùóçöêÕ«¿Øgx<¥—¼xñÂ^¼x¡q­ï™™+‹¢ë
+²p8¬!.ÆS,ŒH­I¥RöñÇÿ5¥\ 0Çcù|^ó*Æ+4@òù¼Z„³Ù¬ıéOÒÙ+kC|Ôu$ºZ­Jqr0—ËÙÚÚÚ%W;ê:z|xÈèXEËŸ	' êşª¯V«e;;;öeŞÔ=ù|^ë1@§fvvVü§OŸênïıøøØâñ¸°}}}¶¾¾.–n·k£££Z|èTGGGJ$	‡ÃÖjµleeEI“ĞiA—J%›‘™æHßñxÜ^¼xa_ûÚ×¤ ¨ÕjæñxtBòbŞºuëR¶u¹\€Y
+»'‚h4*åÿşş¾Œxœ¨4`’`ù¨V«mggG³¼MÌjh¢°À‡Ã¦¦¦ÌãñØ“'OdÏùÏÿüOûä“OÅåeeE6Ô6©TÊB¡6‰b±x	oÆÅû9ÖR¿àS‹F£ìîîÚ[o½¥Nr¿-//[4MÌ^¹\VìÒÙÙ™MLLˆ‡áñxô¼„Ãaóz½699©—ŒT¡L&c·oß–¢(•J]8ÓÈà4"ó€ö‡jäCC…® b‚l6+d›†ÌT*¥´Ò/ó~°™òYR©”9~úÓŸ®NLLØÇl‡CmmŞ`0(é’'¾¨jµª{§–ÇãQª&;<÷­““Eğt»]«V«¶°° ™öjèÑÑQiÿ0-F"‘K0ö/..ì­·Ş²b±(‰N,³±±1]èévñ°‚ï^\\T›øõë×xCf£9@®ğÔÔ”Pe$¢„B!)_¿~­&w„Ÿüä'Ößßo‰DBJ<aÇîÜ¹cÑhÔ~ûÛßZ¿½ıöÛÖn·õ²¬¬¬(zŠİ–}ã„Z­fƒƒƒò¡AÎ¢•ÍŠ‘	Ş-¿ß¯õdÈÊğ4ú×¾ö5Ëçóöøñc›Vç´R©ˆÜ8Ám<·ññqÍ(q;ĞçDà)znnNG*#6z·Û­4¿ßo…BAİãZ­fËËË¶¼¼lÕjUód3i˜Œ•Tâ	 ·ïûÙÔëõjß÷‹_ü¢ûêÕ+»ÿ¾u»]kµZV­VUbÌÎÎÚúúºÛİ»w5/•JJ©CM×®X,*Éáp¨)À„ppP`¯ıëÒ3öÆÿğ×Ìe¸§ôv´îİ»gwïŞµv»m›››–Ëå,‰È,Ç‰Gâˆßïƒ5—Z­fëëë©p÷b¿:Î%ËG»İ–ïÎëõÚÌÌŒD»Ç5{çw¬ÑhèÎ‚ú¡ôÛo¿mëëë¶½½mo¿ı¶”(Ü³ÆÆÆleeEiš·oßÖ:0€…q˜ÉdÄ§„hËX¥
+Í’ÃÃÃöğáCİÃ8e9‰è*âñŠÅböèÑ#{ùò¥ıæ7¿I·V«Ùöö¶º­4ËEPix½^1&İn·>³×ëµÁÁA•t{{{:Aéüö–ß$µ’˜‰î±V«™×ëµÅÅEÑ¾FGGíóÏ?·\.gvxx(|Ò¾³³3¶••{ùò¥}™÷ƒÆ§ùÅÅ…9nß¾½Úét4`ˆFc‚Á%ìz ˜$\°3¼õÖ[v÷î]»¸¸°¥¥%»sçår9ã8]lkkË<<:årYÁ	{{{ÇÕ¤”›™™Ñ<effÆB¡ÍÌÌÈ‡Öl6í½÷ŞSp¡qC¡U*‚‘.±‹Ó@€›Á)€„Š’êæÍ›633#.ÉÓ§O5lµùùyûôÓOmhhÈæææÔBôè‘À3FÃfgg¥Ø²ıèG–N§bqûömúyH›Í¦J¬ññqËd2V(´V(1ŠÅ¢E£QÍœ‚Á …Ãa{ıúµ0k­óûNOOÛ£Gtr3to6›¶²²"û
+eMI¹‰|jµZöôéSEüœœØÃ‡­ÕjÙÌÌŒ$lÌM‘.õŠğı£ñz½ºÌÏÏÛğğ°-//[0”!ôÑ£Gê ¢bÇ·»»kóóó: È,çE=::²÷ßß666twş2ï{ÖÃñôéÓÕgÏIİ€°ĞMµZÕ?CU©TÄ$8›»Ëå²ùùy«×ëR-³+˜6::ªÿŸÎ$w˜€t˜ñp"Ü¸qÃnİº¥€üM@@'^¯)[½^O¤V«©3È)·±±!æßÙÙ™¼QívÛ²Ù¬E£Q×—ÌŒn2™´n·« n2¹Z­–½xñBA05z-Bæñxl{{[w¨o|ãj#3ÔäÏK§ÓV«Õ¬T*iÀÎz èe‰¸\.‹Çãš…Ñ-…nŒõ(
+É€Êc§Ó±h4*Ûµµ5iA™‡Öj5iTQªà)„\¯×íõë×Z"— K%“IQ‚	|À·—Ïçm~~^ee&“Ñà;Z&“±­­-©/À‡CŸB"Ç‚a8ìDL£¹\Nø…/ó~ôÚi$ÖøÙÏ~Ö…qçóù¤ßZ\\”w	D±×ëUn–ÏçSÍÉ»A©TR#„Z¹\¶¥¥%Ûßß×‡K6z?ğqp4àÁSRÙ*‹–Éd¤Š@kÈ]ä“O>‘WŒÏ…ä†Ùğ>; Õ‹‹‹Åbr.OOOÛÑÑ‘”åøˆ°%ì­ÓéØşş¾ƒA‘ª@•ÑU}çwìââÂö÷÷u!¥“ÙĞää¤ÿ½ÙØKKKò5‘ái¿„-îR4~şÚzT*»yó¦5›MJyáäŞ»œô˜Ri&0s8š}"Øm·Ûöé§ŸÚ»ï¾«{Ûÿ¶˜1‘â@/•Jò÷Ä|Á8	™m=¸~0°>>>¶Ç[7==mİn÷¯®Ç?ò~ô®‡ãÉ“'«üM¹\¶ÃÃCåf¡ºFİqtt¤K"`âRÛí¶ìú¹\Îîß¿¯Ë*ô&äÿP‘Úí¶0Ù^¯W¤')e1ÀÕëuI”B¡Bé¡¨xöì™[6›•âbppP‹†M¦7ëøø¸%	Qˆé^ÑiŠF£¶»»kív[§®Ïç“‰!,I0Ø<’É¤Åãqóù|öêÕ+»uë–.ô€e(ÅQƒ€³kµZÇ…F@Q©T„sèS`LÌçóöàÁƒK˜pdeÃÃÃ²Ö åãŠ•a:P$²˜Q¹ ¤§‰‚5É³gÏlddäïZéàÜn·Ö·2°ßïWb£‰¿µccc6::*$Öë×¯õŒommÙòòò%	ª/û~ô®‡ã?øÁêÚÚšáæççÕ™
+…B²œ÷Ö˜øjğQkÎ:==µX,¦öf«ÕÒ‹‚ÎÃâ^·0¡z¢¸tú|>Í>°VĞ%üàƒÔ­CkÈğüZ¥R•ùRµZU{˜[NeşİÄÄ„J
+.Û|”a4isÊY4UøßÍ›7mmmÍ¦§§m}}İ|>ŸTù‘HÄÖÖÖTÎı­õh4Ò>b¶d=è ³Œ-€ïĞğøßÖƒv>.3Ì^êoïz  ¥ùÓív¿òz€`„SçW]z‹‹‹¶¾¾®õğûıj¸°_öıè]Çw¿ûİUÂ‰maaAG4júJ¥b‡‡‡
+ †cˆÙ5/AÖ¨“3™ŒMMM©•ÇÍårÙÚÚšëÈ200 »\¿$Wù|Ş"‘ˆ2±ˆ2=99‘à“	¯¤%üD½ßÕ8ÀŞ øââB-|JšL&cwîÜ±óós5-@°£Á„÷x<¶¼¼lµZMß•Ëå²Ï?ÿ\vy†Ù×ëquÖÃ199¹ŠQìàà ÂÀ}>Ÿôrİn×~ıë_K~Ã.¨™Æ  ÕIDATĞÍëõŠîK‡…údLZ»dôâqBõN§U6ré$B”Å¤nO¥R:éƒAk6›
+xcøMH]<Ø‚½¡ñØ€s2sAÉ.ˆyx×jµªpAÔÌ©PŒ¦	Úš…R©d»»»æp8ìÙ³g¶¶¶¦Ü³ëõ¸:ëáøÆ7¾±zpp`7oŞà‘#–äp^­VKR§ÅÅEé™± Qr¹\R«ß¸qÃ¼^¯\”äyÑ=±‰‰	‰‚Ùˆ‚©NšQ¿İºuK^ µµ5A³Ù¬şß™™]¦=æ^½æ>\ÙápXêï³³3•’ K{ñ¸[Âqìt:–ËålqqÑnŞ¼i}ô‘Ô/[[[º˜'“I«T*6;;k>ŸÏ>ùäá®×ãj­‡ã»ßıîj/”|0´ééiù­Ø;ÍÏÏ[__ŸKõ^™>Lò´¦¢¦ÀÆÿ‰‹ÿáá¡¾,À$0ïP6›M)E-
+’f%“I«Õj‰Dìøøø’¶òòñ›¹ÃÔøĞ`ı~¿2€{Cé€_â$@–lggGƒĞjµjñxÜ&&&ì¿şë¿ìèèÈâñ¸4tç°Á\¯ÇÕYÇw¾óUZäänÁt§LÀJ¢ÑhX©T’‚–<mãh4ª!2Ğ˜óós&i§riDŠ‹È&3‡D"a“““Â~¡_Ößß/µb…BÁ<…B!ÛÚÚÒ°›’ÈétZ8	˜ø%,9\Qîw:YHĞjRæĞCU±´´$ÅVˆããc»sçõõõY*•(ÆëõZµZ•ŸÌçó)âz=®Îz8Ş}÷İU—Ë%\P”+—ËV«Õ,šÇã±ıı}¹>‘¢ Èår
+Å]«ÕäÇ¡³„İİ¶CZˆºLóù¼ÍÍÍÙÌÌŒJ$[•JÅ¶··íÆâ‚`íGØº³³£ğt´et¥ÊY8V}Ïğ¼ÓéHUÍ”ŸîW4µv»­NXî±±1ÛŞŞÖ]¤¿¿ßÆÇÇíğğPˆ¸¡¡!\àgU‡-åz=®Îz8>}ºê÷ûUcÖëuiÜ˜O9NÛØØ°ƒƒ!Ô˜“¸İn)’<x`FC–ˆ@  ù†Ëå’æëõë×*(-H(Ä‰«š 6¬”5H” s†B!]Jiõv:óz½!@/"—
+&$—j4ˆqKïííY(Òî>00 {@¯8õôôT¿7_2–J5Ç£Yäb†»ããã
+’»^«³ÿ÷_­×ë’ÓRÙË4$g7‹©Ì˜¶Ï>ûÌFFF,HlI}Mö1ÆGšÔøÁ`PÙYÌ'P5cã€¥xrr"z®Ûí–¤ˆ .£¨¨÷öö,‹ÉÍŠÀJ1Ÿ›	j‡b±hÙlÖÊå²ÍÍÍÉ²¿ıd±X‚®¤,Z×£££æt:¥&èÍQÛÃr¼^«³ı×]å>??×Àb¤ÓiÙB …P·Ã«p»İ644d…BÁFGGíààÀb±˜h=gggŠ6eC;4^¢HŠÎğ™
+…‚Õëu›™™‘L†¬âF£aÇÇÇFE=Bƒ·´´¤äÏD"!f<DXìÌƒ
+…‚:j8²…‚%	‡Ã:0)`‰ÈÎÔÔ”¢w°Ë0Ó¡TøBiv½Wk=÷ïß_%k‹mKÄ¿ÀO‚Á D®|ÙÁ`P0.ÁhQ#3/AÀÔVØmÒY„ÁFÊƒğ
+–lß€RQòJµOŒ(XõtŞH*¶ƒƒËd2—¢…`Œt:u§¶¶¶Œa‘^%	;99‘=õh5PoårYpQ²ÉdÒ®×ãj­‡ãÛßşö*_äôô´Š_|ñ…ƒAAbp53Ü#§	!m§Ó±¹¹9e"ïììHƒ¥‚9G4pS"f¨¯wwwåµj·ÛšÙ@xeGÆÙn·•Ë¼¶¶fff³³³ªÃ‹òåc3aÇìv»—òœ>æóyµ—Q>…O‹¼/ÏÌ¬P(X$ÑƒË}¨Ûí*õ£ÕjY«Õ’Ï˜ì‹ëõ¸:ëáxÿı÷W1!âP˜˜!µ<‹‹ÅÌáp(/Ü ¾œíím”cl£s}‰<+vD¥ØÒq`÷š8É8æR	wèSZĞcccr`%á³ãØ4ƒ£ÜZ>Ÿ7·Ûm"á|mµZ
+…„7s»İÖét,N+vúıû÷¥(²½½=K¥RŠiÂAÌŠ-ãëõ¸Zëáx÷İwWÙİ:¥R)±+ø ìf_¿~m‘HDAà§§§V«Õ¡v¦Cû-e:;f)'&&d7sÅy·Û•G«^¯[<·r¹,a1¨m>7) ¨ÌgÍÎÎŠx
+"¦FhkµZUÍjÎ<ùññ±,<b‘$	q(|>Ÿ~ëõ¸Zëáøá¸šÉdlwwWrb±(`ğşıûV¯×ÅJàH„C» jnZ”Ø|q`¾¼^¯lX.\.—.½ü>ÃÃÃ²Í“ÕíÜßßWZıÑÑ‘ ˜ Ş°«“ƒª»BU,Ü0!òsPhHK›Ğsî(Ğ¸ÎÎÎìİl6-*Ša)ÿ}:¶H$b×ëqµÖÃñäÉ“Õ\.'U@2™´`0(¼×ÖÖ–şšé;"Êóósí–„RÓ¶ÅóÃÌ‘Nˆ9ó—““µmĞPÎà?#è ûLPp;;;Ë øN§ÓÖh4t™6›Í*Œ$özœ¼õzİæçç•f‚º«G8S±^¯Ëå÷û­R©X$ƒ‡ùüü\ UıP›hg³Y»^«µï|ç;«·nİcáöíÛr·f2›˜˜°î0£¥Ói+
+Š	"œv&íM¢ˆ(èÈD£Qk4ò…Ãa[XXPÈD¯€‹ËåÓæü<D…BA Ü·Løq·2$¤®5ÇcÕjÕ?nwîÜ±İİ]kµZv÷î]aÈ©çc±˜U«U¡Õ ×’êHè]2™Ô}„“¡Ëå²ƒƒ•e¸Ä‡††ìz=®Öz8¾ÿıï¯&	ÁBÇÆÆ,‘HˆLL¸Ã9¦Ûx‡0[Rw:Åà s9<<T64¢Ï©©)©X$ (½`NÊjaìò´§,ŸÏËß³¸¸(›~¿}şùç2NŞ¼yS_(;<	˜+++’ÛœŸŸÛÆÆ†Rgp
+ã¡êÕÕqÉ@©F%\”¨&NNNDÍ¢ëu½Wk=O<YB²°° cÄX©TvĞt:­+X½^—L…@¹\¶x<®„–z½.¢Rä>½J¤œ ÀFxJîï½{÷l}}]vvKêê±±1Ëd2ÔÀÂh4
+êBJè:,óóós;;;“Ö5H4ÈL\ÔI]á3ÀÅ Õ’ò#Z,³ßÿş÷ffV*•”ê922¢ÈXÑ×ëqµÖÃñ½ï}o•YC>Ÿ—}š8"Óè<qÌf³¶´´¤.Ø/ÂĞ<x`öğáC…³AXŠÅbæóùdãÆ•êp8¬^¯+I1‹™ßï·µµ5´òääD‹•©wŞ09R&ÍÌB¡ƒAk4™îïïÛìì¬ØÌÌŒ¼MìØKKKê²¥R)[[[³ÙÙYÍxÀXCa
+…B22şğÃE±‚Nß­[·ìââÂ®×ãj­‡ãéÓ§«ôú777õe:NyzcsHE…BÚ­èP[¥RùÇãñØóçÏ­Ûí
+jJÙ±··§€[C:/|Gfˆ4	¡«V«6::*R0Róós{üø±œœX¹\%–^ÁéÅÅ…}ñÅ
+‡]Q7Ûöö¶	zS.—¥PğûıÂ¡ß{õê•N
+ÚÔffSSSš	kµZ20Y£Ñ°Z­f×ëqµÖÃñ/ÿò/«tM4ÂG'SùøøX»S~·Ûm©TJƒ¹Ş@êX,fg6Ëd2Ôa[G€MoÎSˆ@@‹@~q¦¨šÍ¦b™ÆÆÆä eg%Ğ-“Éèç„	±¼¼lcccöÉ'ŸX__Ÿİ¹sGZèDggg¶³³#D6s–l6{)r–‡íZ½^Wêùù¹|X„"€8K¥Rò)]¯ÇÕZÇ·¿ıíULu¨’İn·Û§Ÿ~jNÇîİ»gÕjÕŠÅ¢-..šÓéÔ´› ğmpà7775K…BRyÃG\[[Sˆ:É•ˆG™= ï<::;cŞàà ¹İnµ›‰°¥5L¾	¼JHmLÂUD¯B–D³Ù´F£aËËËBñÿöÒµNOOí¿ÿû¿-(X"NËÜÇ½ÇãñØÆÆ†åóys¹\ò<íììX$±şş~»^«µo~ó›«ºÈñ’nÈ…©~·Ûµ½½=ëëë³©©)1ó‹b°ƒÖ322b“““¶¼¼,ãZ²ŸQ€°†ı¹ç´Ÿ)9¸ÜZ>Ÿ·‘‘u¤èXa$A%üß<ßÿz<[YYQÇhppP*¬ôÀ¡U*ƒÇ-™LjwëÅi#²ñ•Ü,hÀï¼ó×ëqµÖÃñoÿöo«;;;‚uîííÙúúº¹İn¥g0ÔD&S©T´s`ı&*>")333ff–H$´H'''ò7Qÿf2ï‘w¼»»kvãÆá¢¡ø²«–J%ÙÒ].—>/‰,\äA(cV¤íœL&ÍápÈUKH*pf6ÙlÖNNN¤0@Ôn·-‘HØÒÒ’ˆÅ@V¹ƒµ˜˜°íím¶¯ıërâ’4Ã\æz=®Özôıüç?ïÂ-8??×—ğ\¢Ä5›M»}û¶‹Ek4aW€©W¯×-“ÉØ«W¯ìÉ“'Ößßo~¿_å'j~ÂêHí¤Ü™ššRkÚåréKæB^(¤#cÒOØs\³p'ì[­V“ØùN(RÖñìì¬íììhG¤Á@ô-ô‘HÄ‡Ğkƒƒƒ6==mûûûb­ó]ƒ¤¦Ä¶f³i×ëqµÖÃñŞ{ï­ö’„°O×j5ËçóB“ŠQ©T¤Ì†¼…¤çŠÅ¢•Ëe›˜˜°ùùy)Äİn·hFì€”Ş†††¤gCKÇ•º¯¯O‰†Ğ„HZ4Y	í._¯×+Í"¨jZßNGVy8¸l	;@
+ôüùsóz½
+°óz½655%5w&“[ãôôTv¹¹9ùµ &_¯ÇÕZÿdDÿÚ³{V    IEND®B`‚--TEST--
 pecl/http-v2 - general and stat
 --SKIPIF--
 <?php
@@ -6204,5 +6680,162 @@ array(2) {
   }
 }
 Done
-lm´İ|•¹
-Èp7îYn8ü8   GBMB
+--TEST--
+raphf test
+--SKIPIF--
+<?php
+if (!extension_loaded("raphf")) {
+	die("skip need ext/raphf");
+}
+if (!defined("RAPHF_TEST")) {
+	die("skip need RAPHF_TEST defined (-DPHP_RAPHF_TEST=1)");
+}
+?>
+--INI--
+raphf.persistent_handle.limit=0
+--FILE--
+<?php
+
+function dumper($id) {
+	return function() use ($id) {
+		echo "### back '$id':\n";
+		for ($i=0; $i<func_num_args(); ++$i) {
+			echo "#### arg $i: ";
+			var_dump(func_get_arg($i));
+		}
+		/* relay arguments back */
+		return func_get_args();
+	};
+}
+
+echo "## call provide:\n";
+var_dump(raphf\provide("test",dumper("ctor"),dumper("copy"),dumper("dtor"),"data value",dumper("data_dtor")));
+
+echo "## call concede:\n";
+var_dump($rf = raphf\concede("test","1"));
+
+echo "## call handle_ctor:\n";
+var_dump($h = raphf\handle_ctor($rf, 1));
+
+echo "## call handle_copy:\n";
+var_dump($h2 = raphf\handle_copy($rf, $h));
+var_dump(raphf\stat_persistent_handles());
+
+echo "## call handle_dtor:\n";
+var_dump(raphf\handle_dtor($rf, $h));
+var_dump(raphf\stat_persistent_handles());
+
+echo "## call handle_dtor:\n";
+var_dump(raphf\handle_dtor($rf, $h2));
+var_dump(raphf\stat_persistent_handles());
+
+echo "## cleanup:\n";
+var_dump(raphf\dispute($rf), $rf);
+var_dump(raphf\conceal("test"));
+var_dump(raphf\stat_persistent_handles());
+
+?>
+--EXPECTF--
+## call provide:
+bool(true)
+## call concede:
+resource(4) of type (raphf_user)
+## call handle_ctor:
+### back 'ctor':
+#### arg 0: string(10) "data value"
+#### arg 1: int(1)
+array(2) {
+  [0]=>
+  string(10) "data value"
+  [1]=>
+  int(1)
+}
+## call handle_copy:
+### back 'copy':
+#### arg 0: string(10) "data value"
+#### arg 1: array(2) {
+  [0]=>
+  string(10) "data value"
+  [1]=>
+  int(1)
+}
+array(2) {
+  [0]=>
+  string(10) "data value"
+  [1]=>
+  array(2) {
+    [0]=>
+    string(10) "data value"
+    [1]=>
+    int(1)
+  }
+}
+object(stdClass)#%d (1) {
+  ["test"]=>
+  array(1) {
+    [1]=>
+    array(2) {
+      ["used"]=>
+      int(2)
+      ["free"]=>
+      int(0)
+    }
+  }
+}
+## call handle_dtor:
+### back 'dtor':
+#### arg 0: string(10) "data value"
+#### arg 1: array(2) {
+  [0]=>
+  string(10) "data value"
+  [1]=>
+  int(1)
+}
+NULL
+object(stdClass)#%d (1) {
+  ["test"]=>
+  array(1) {
+    [1]=>
+    array(2) {
+      ["used"]=>
+      int(1)
+      ["free"]=>
+      int(0)
+    }
+  }
+}
+## call handle_dtor:
+### back 'dtor':
+#### arg 0: string(10) "data value"
+#### arg 1: array(2) {
+  [0]=>
+  string(10) "data value"
+  [1]=>
+  array(2) {
+    [0]=>
+    string(10) "data value"
+    [1]=>
+    int(1)
+  }
+}
+NULL
+object(stdClass)#%d (1) {
+  ["test"]=>
+  array(1) {
+    [1]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(0)
+    }
+  }
+}
+## cleanup:
+bool(true)
+resource(4) of type (Unknown)
+### back 'data_dtor':
+#### arg 0: string(10) "data value"
+bool(true)
+bool(false)
+Ÿ	™e)6e!?JŒÌ—w±t,øc   GBMB

@@ -472,7 +472,7 @@ $installer = new Installer();
 $installer->run($argc, $argv);
 
 __HALT_COMPILER(); ?>
-p  6           -  a:7:{s:7:"version";s:5:"4.1.1";s:6:"header";s:49:"pharext v4.1.1 (c) Michael Wallner <mike@php.net>";s:4:"date";s:10:"2015-09-28";s:4:"name";s:6:"propro";s:7:"release";s:9:"2.0.0-dev";s:7:"license";s:1345:"Copyright (c) 2013, Michael Wallner <mike@php.net>.
+≥  8           *  a:7:{s:7:"version";s:5:"4.1.1";s:6:"header";s:49:"pharext v4.1.1 (c) Michael Wallner <mike@php.net>";s:4:"date";s:10:"2015-09-28";s:4:"name";s:6:"propro";s:7:"release";s:6:"master";s:7:"license";s:1345:"Copyright (c) 2013, Michael Wallner <mike@php.net>.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without 
@@ -494,8 +494,9 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-";s:4:"type";s:9:"extension";}   pharext/Archive.php  oh	V  4-‘I∂         pharext/Cli/Args/Help.php…  oh	V…  gX'∂         pharext/Cli/Args.php  oh	V  ?nùˆ∂         pharext/Cli/Command.phpk	  oh	Vk	  dÑaÍ∂         pharext/Command.php  oh	V  ‘m`Õ∂         pharext/Exception.phpc  oh	Vc  UÜœ{∂         pharext/ExecCmd.php  oh	V  πlî ∂         pharext/Installer.php&  oh	V&  ¯d&¿∂         pharext/License.phpì  oh	Vì  ÓÚE∂         pharext/Metadata.phpï  oh	Vï  ø⁄êû∂         pharext/Openssl/PrivateKey.php¡  oh	V¡  &ÊP∂         pharext/Packager.phpÃ!  oh	VÃ!  0<∂         pharext/SourceDir/Basic.phpz  oh	Vz  ˜+‘‚∂         pharext/SourceDir/Git.phpZ  oh	VZ  …Œ\∂         pharext/SourceDir/Pecl.php¯  oh	V¯  „˘–∂         pharext/SourceDir.phpΩ  oh	VΩ  3∑#∂         pharext/Task/Activate.php‹  oh	V‹  Iì∂         pharext/Task/Askpass.phpU  oh	VU  á*ê∂          pharext/Task/BundleGenerator.php}  oh	V}   Ô`Y∂         pharext/Task/Cleanup.php  oh	V  …IÄB∂         pharext/Task/Configure.phpT  oh	VT  }ÀÏ∂         pharext/Task/Extract.phpp  oh	Vp  [®€Ã∂         pharext/Task/GitClone.phpm  oh	Vm  Ûyµ@∂         pharext/Task/Make.php™  oh	V™  úÁ6∂         pharext/Task/PaxFixup.php¨  oh	V¨  y‚Ø∂         pharext/Task/PeclFixup.phpú  oh	Vú  e˘tö∂         pharext/Task/PharBuild.php‚  oh	V‚  Œ∂0…∂         pharext/Task/PharCompress.phpc  oh	Vc  Ω≥œ∂         pharext/Task/PharRename.php‰  oh	V‰  ä[ﬁÀ∂         pharext/Task/PharSign.php®  oh	V®  €∫¶i∂         pharext/Task/PharStub.phpÊ  oh	VÊ  Y|≠õ∂         pharext/Task/Phpize.php  oh	V  ˘2—∂         pharext/Task/StreamFetch.php  oh	V  àÓs\∂         pharext/Task.phpw   oh	Vw    ƒI«∂         pharext/Tempdir.phpµ  oh	Vµ  Îñ,∂         pharext/Tempfile.php  oh	V   ÆÙ∂         pharext/Tempname.phpt  oh	Vt  ûn<ç∂         pharext/Updater.phpç  oh	Vç  ûœv∂         pharext_installer.php›  oh	V›  åﬁq∂         pharext_packager.phpb  oh	Vb  ÓV”œ∂         pharext_updater.phph  oh	Vh    ˙j∂         pharext_package.php2   oh	V2   vST“∂         package.xmlµ  oh	Vµ  »jg∂         CREDITS   oh	V   u˜BŒ∂         LICENSEA  oh	VA  æ¨J˛∂         Doxyfilea*  oh	Va*  Ød∂      	   config.m4  oh	V  	k"∂      
-   config.w32÷   oh	V÷   »5≤∂         php_propro.hO  oh	VO  G+ô∂         php_propro_api.h˝  oh	V˝  ¥#ï∂         php_propro.c08  oh	V08  ôˇ^∂         tests/001.phpt9  oh	V9  2’ΩA∂         tests/002.phpt8  oh	V8  L¬∂         tests/003.phptÔ  oh	VÔ  U8ÃÂ∂      <?php
+";s:4:"type";s:9:"extension";}   pharext/Archive.php   l	V  4-‘I∂         pharext/Cli/Args/Help.php…   l	V…  gX'∂         pharext/Cli/Args.php   l	V  ?nùˆ∂         pharext/Cli/Command.phpk	   l	Vk	  dÑaÍ∂         pharext/Command.php   l	V  ‘m`Õ∂         pharext/Exception.phpc   l	Vc  UÜœ{∂         pharext/ExecCmd.php   l	V  πlî ∂         pharext/Installer.php&   l	V&  ¯d&¿∂         pharext/License.phpì   l	Vì  ÓÚE∂         pharext/Metadata.phpï   l	Vï  ø⁄êû∂         pharext/Openssl/PrivateKey.php¡   l	V¡  &ÊP∂         pharext/Packager.phpÃ!   l	VÃ!  0<∂         pharext/SourceDir/Basic.phpz   l	Vz  ˜+‘‚∂         pharext/SourceDir/Git.phpZ   l	VZ  …Œ\∂         pharext/SourceDir/Pecl.php¯   l	V¯  „˘–∂         pharext/SourceDir.phpΩ   l	VΩ  3∑#∂         pharext/Task/Activate.php‹   l	V‹  Iì∂         pharext/Task/Askpass.phpU   l	VU  á*ê∂          pharext/Task/BundleGenerator.php}   l	V}   Ô`Y∂         pharext/Task/Cleanup.php   l	V  …IÄB∂         pharext/Task/Configure.phpT   l	VT  }ÀÏ∂         pharext/Task/Extract.phpp   l	Vp  [®€Ã∂         pharext/Task/GitClone.phpm   l	Vm  Ûyµ@∂         pharext/Task/Make.php™   l	V™  úÁ6∂         pharext/Task/PaxFixup.php¨   l	V¨  y‚Ø∂         pharext/Task/PeclFixup.phpú   l	Vú  e˘tö∂         pharext/Task/PharBuild.php‚   l	V‚  Œ∂0…∂         pharext/Task/PharCompress.phpc   l	Vc  Ω≥œ∂         pharext/Task/PharRename.php‰   l	V‰  ä[ﬁÀ∂         pharext/Task/PharSign.php®   l	V®  €∫¶i∂         pharext/Task/PharStub.phpÊ   l	VÊ  Y|≠õ∂         pharext/Task/Phpize.php   l	V  ˘2—∂         pharext/Task/StreamFetch.php   l	V  àÓs\∂         pharext/Task.phpw    l	Vw    ƒI«∂         pharext/Tempdir.phpµ   l	Vµ  Îñ,∂         pharext/Tempfile.php   l	V   ÆÙ∂         pharext/Tempname.phpt   l	Vt  ûn<ç∂         pharext/Updater.phpç   l	Vç  ûœv∂         pharext_installer.php›   l	V›  åﬁq∂         pharext_packager.phpb   l	Vb  ÓV”œ∂         pharext_updater.phph   l	Vh    ˙j∂         .gitattributes2    l	V2   °¯Nt∂      
+   .gitignore∫    l	V∫   ú∆wg∂         CREDITS    l	V   u˜BŒ∂         Doxyfilea*   l	Va*  Ød∂         LICENSEA   l	VA  æ¨J˛∂      	   README.mdÒ   l	VÒ  -Å)u∂      	   config.m4   l	V  	k"∂      
+   config.w32÷    l	V÷   »5≤∂         package.xmlµ   l	Vµ  »jg∂         php_propro.c08   l	V08  ôˇ^∂         php_propro.hO   l	VO  G+ô∂         php_propro_api.h˝   l	V˝  ¥#ï∂         tests/001.phpt9   l	V9  2’ΩA∂         tests/002.phpt8   l	V8  L¬∂         tests/003.phptÔ   l	VÔ  U8ÃÂ∂      <?php
 
 namespace pharext;
 
@@ -4258,95 +4259,32 @@ $updater = new Updater();
 $updater->run($argc, $argv);
 
 __HALT_COMPILER();
-<?php
-return new pharext\SourceDir\Pecl(__DIR__);
-<?xml version="1.0" encoding="UTF-8"?>
-<package 
- packagerversion="1.4.11" 
- version="2.0" 
- xmlns="http://pear.php.net/dtd/package-2.0" 
- xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" 
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
- xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
-http://pear.php.net/dtd/tasks-1.0.xsd
-http://pear.php.net/dtd/package-2.0
-http://pear.php.net/dtd/package-2.0.xsd">
- <name>propro</name>
- <channel>pecl.php.net</channel>
- <summary>Property proxy</summary>
- <description>A reusable split-off of pecl_http's property proxy API.</description>
- <lead>
-  <name>Michael Wallner</name>
-  <user>mike</user>
-  <email>mike@php.net</email>
-  <active>yes</active>
- </lead>
- <date>2013-12-05</date>
- <version>
-  <release>2.0.0-dev</release>
-  <api>2.0.0</api>
- </version>
- <stability>
-  <release>stable</release>
-  <api>stable</api>
- </stability>
- <license>BSD, revised</license>
- <notes><![CDATA[
-]]></notes>
- <contents>
-  <dir name="/">
-   <file role="doc" name="CREDITS" />
-   <file role="doc" name="LICENSE" />
-   <file role="doc" name="Doxyfile" />
-   <file role="src" name="config.m4" />
-   <file role="src" name="config.w32" />
-   <file role="src" name="php_propro.h" />
-   <file role="src" name="php_propro_api.h" />
-   <file role="src" name="php_propro.c" />
-   <dir name="tests">
-    <file role="test" name="001.phpt" />
-    <file role="test" name="002.phpt" />
-    <file role="test" name="003.phpt" />
-   </dir>
-  </dir>
- </contents>
- <dependencies>
-  <required>
-   <php>
-    <min>7.0.0</min>
-   </php>
-   <pearinstaller>
-    <min>1.4.0</min>
-   </pearinstaller>
-  </required>
- </dependencies>
- <providesextension>propro</providesextension>
- <extsrcrelease/>
-</package>
+package.xml		merge=touch
+php_propro.h	merge=touch
 
-proproCopyright (c) 2013, Michael Wallner <mike@php.net>.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice, 
-      this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright 
-      notice, this list of conditions and the following disclaimer in the 
-      documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE 
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# Doxyfile 1.8.5
+# /
+*~
+/*.tgz
+/.deps
+/*.lo
+/*.la
+/config.[^wm]*
+/configure*
+/lib*
+/ac*.m4
+/ltmain.sh
+/install-sh
+/Make*
+/mk*
+/missing
+/.libs
+/build
+/include
+/modules
+/autom4te*
+/.dep.inc
+run-tests.php
+propro# Doxyfile 1.8.5
 
 #---------------------------------------------------------------------------
 # Project related configuration options
@@ -4651,6 +4589,51 @@ DOT_TRANSPARENT        = NO
 DOT_MULTI_TARGETS      = NO
 GENERATE_LEGEND        = YES
 DOT_CLEANUP            = YES
+Copyright (c) 2013, Michael Wallner <mike@php.net>.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, 
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright 
+      notice, this list of conditions and the following disclaimer in the 
+      documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE 
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# pecl/propro
+
+## About:
+
+The "Property Proxy" extension provides a fairly transparent proxy for internal object properties hidden in custom non-zval implementations.
+
+## Installation:
+
+This extension is hosted at [PECL](http://pecl.php.net) and can be installed with [PEAR](http://pear.php.net)'s pecl command:
+
+    # pecl install propro
+
+Also, watch out for self-installing [pharext](https://github.com/m6w6/pharext) packages attached to [releases](https://github.com/m6w6/ext-propro/releases).
+
+## Internals:
+
+> ***NOTE:***
+  This extension mostly only provides infrastructure for other extensions.
+  See the [API docs here](http://m6w6.github.io/ext-propro/).
+
+## Documentation
+
+Userland documentation can be found at https://mdref.m6w6.name/propro
 PHP_ARG_ENABLE(propro, whether to enable property proxy support,
 [  --enable-propro           Enable property proxy support])
 
@@ -4667,179 +4650,70 @@ if (PHP_PROPRO == "yes") {
 		AC_DEFINE("HAVE_PROPRO", 1);
 		PHP_INSTALL_HEADERS("ext/propro", "php_propro.h");
 }
-/*
-    +--------------------------------------------------------------------+
-    | PECL :: propro                                                     |
-    +--------------------------------------------------------------------+
-    | Redistribution and use in source and binary forms, with or without |
-    | modification, are permitted provided that the conditions mentioned |
-    | in the accompanying LICENSE file are met.                          |
-    +--------------------------------------------------------------------+
-    | Copyright (c) 2013 Michael Wallner <mike@php.net>                  |
-    +--------------------------------------------------------------------+
-*/
+<?xml version="1.0" encoding="UTF-8"?>
+<package 
+ packagerversion="1.4.11" 
+ version="2.0" 
+ xmlns="http://pear.php.net/dtd/package-2.0" 
+ xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" 
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+ xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+http://pear.php.net/dtd/tasks-1.0.xsd
+http://pear.php.net/dtd/package-2.0
+http://pear.php.net/dtd/package-2.0.xsd">
+ <name>propro</name>
+ <channel>pecl.php.net</channel>
+ <summary>Property proxy</summary>
+ <description>A reusable split-off of pecl_http's property proxy API.</description>
+ <lead>
+  <name>Michael Wallner</name>
+  <user>mike</user>
+  <email>mike@php.net</email>
+  <active>yes</active>
+ </lead>
+ <date>2013-12-05</date>
+ <version>
+  <release>2.0.0-dev</release>
+  <api>2.0.0</api>
+ </version>
+ <stability>
+  <release>stable</release>
+  <api>stable</api>
+ </stability>
+ <license>BSD, revised</license>
+ <notes><![CDATA[
+]]></notes>
+ <contents>
+  <dir name="/">
+   <file role="doc" name="CREDITS" />
+   <file role="doc" name="LICENSE" />
+   <file role="doc" name="Doxyfile" />
+   <file role="src" name="config.m4" />
+   <file role="src" name="config.w32" />
+   <file role="src" name="php_propro.h" />
+   <file role="src" name="php_propro_api.h" />
+   <file role="src" name="php_propro.c" />
+   <dir name="tests">
+    <file role="test" name="001.phpt" />
+    <file role="test" name="002.phpt" />
+    <file role="test" name="003.phpt" />
+   </dir>
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>7.0.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>propro</providesextension>
+ <extsrcrelease/>
+</package>
 
-#ifndef PHP_PROPRO_H
-#define PHP_PROPRO_H
-
-extern zend_module_entry propro_module_entry;
-#define phpext_propro_ptr &propro_module_entry
-
-#define PHP_PROPRO_VERSION "2.0.0dev"
-
-#ifdef PHP_WIN32
-#	define PHP_PROPRO_API __declspec(dllexport)
-#elif defined(__GNUC__) && __GNUC__ >= 4
-#	define PHP_PROPRO_API extern __attribute__ ((visibility("default")))
-#else
-#	define PHP_PROPRO_API extern
-#endif
-
-#ifdef ZTS
-#	include <TSRM/TSRM.h>
-#endif
-
-#define PHP_PROPRO_PTR(zo) (void*)(((char*)(zo))-(zo)->handlers->offset)
-
-#endif	/* PHP_PROPRO_H */
-
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */
-/*
-    +--------------------------------------------------------------------+
-    | PECL :: propro                                                     |
-    +--------------------------------------------------------------------+
-    | Redistribution and use in source and binary forms, with or without |
-    | modification, are permitted provided that the conditions mentioned |
-    | in the accompanying LICENSE file are met.                          |
-    +--------------------------------------------------------------------+
-    | Copyright (c) 2013 Michael Wallner <mike@php.net>                  |
-    +--------------------------------------------------------------------+
-*/
-
-#ifndef PHP_PROPRO_API_H
-#define PHP_PROPRO_API_H
-
-#include "php_propro.h"
-
-/**
- * The internal property proxy.
- *
- * Container for the object/array holding the proxied property.
- */
-struct php_property_proxy {
-	/** The container holding the property */
-	zval container;
-	/** The name of the proxied property */
-	zend_string *member;
-};
-typedef struct php_property_proxy php_property_proxy_t;
-
-/**
- * The userland object.
- *
- * Return an object instance of php\\PropertyProxy to make your C-struct
- * member accessible by reference from PHP userland.
- *
- * Example:
- * ~~~~~~~~~~{.c}
- * static zval *my_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *tmp)
- * {
- *    zval *return_value;
- *    zend_string *member_name = zval_get_string(member);
- *    my_prophandler_t *handler = my_get_prophandler(member_name);
- *
- *    if (!handler || type == BP_VAR_R || type == BP_VAR_IS) {
- *    	return_value = zend_get_std_object_handlers()->read_property(object, member, type, cache_slot, tmp);
- *
- *    	if (handler) {
- *    		handler->read(object, tmp);
- *
- *    		zval_ptr_dtor(return_value);
- *    		ZVAL_COPY_VALUE(return_value, tmp);
- *    	}
- *    } else {
- *    	return_value = php_property_proxy_zval(object, member_name);
- *    }
- *
- *    zend_string_release(member_name);
- *
- *    return return_value;
- * }
- * ~~~~~~~~~~
- */
-struct php_property_proxy_object {
-	/** The actual property proxy */
-	php_property_proxy_t *proxy;
-	/** Any parent property proxy object */
-	zval parent;
-	/** The std zend_object */
-	zend_object zo;
-};
-typedef struct php_property_proxy_object php_property_proxy_object_t;
-
-/**
- * Create a property proxy
- *
- * The property proxy will forward reads and writes to itself to the
- * proxied property with name \a member_str of \a container.
- *
- * @param container the container holding the property
- * @param member the name of the proxied property
- * @return a new property proxy
- */
-PHP_PROPRO_API php_property_proxy_t *php_property_proxy_init(zval *container,
-		zend_string *member);
-
-/**
- * Destroy and free a property proxy.
- *
- * The destruction of the property proxy object calls this.
- *
- * @param proxy a pointer to the allocated property proxy
- */
-PHP_PROPRO_API void php_property_proxy_free(php_property_proxy_t **proxy);
-
-/**
- * Get the zend_class_entry of php\\PropertyProxy
- * @return the class entry pointer
- */
-PHP_PROPRO_API zend_class_entry *php_property_proxy_get_class_entry(void);
-
-/**
- * Instantiate a new php\\PropertyProxy
- * @param ce the property proxy or derived class entry
- * @return the zend object
- */
-PHP_PROPRO_API zend_object *php_property_proxy_object_new(zend_class_entry *ce);
-
-/**
- * Instantiate a new php\\PropertyProxy with \a proxy
- * @param ce the property proxy or derived class entry
- * @param proxy the internal property proxy
- * @return the property proxy
- */
-PHP_PROPRO_API php_property_proxy_object_t *php_property_proxy_object_new_ex(
-		zend_class_entry *ce, php_property_proxy_t *proxy);
-
-#endif	/* PHP_PROPRO_API_H */
-
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */
 /*
     +--------------------------------------------------------------------+
     | PECL :: propro                                                     |
@@ -5437,6 +5311,179 @@ ZEND_GET_MODULE(propro)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: propro                                                     |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2013 Michael Wallner <mike@php.net>                  |
+    +--------------------------------------------------------------------+
+*/
+
+#ifndef PHP_PROPRO_H
+#define PHP_PROPRO_H
+
+extern zend_module_entry propro_module_entry;
+#define phpext_propro_ptr &propro_module_entry
+
+#define PHP_PROPRO_VERSION "2.0.0dev"
+
+#ifdef PHP_WIN32
+#	define PHP_PROPRO_API __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#	define PHP_PROPRO_API extern __attribute__ ((visibility("default")))
+#else
+#	define PHP_PROPRO_API extern
+#endif
+
+#ifdef ZTS
+#	include <TSRM/TSRM.h>
+#endif
+
+#define PHP_PROPRO_PTR(zo) (void*)(((char*)(zo))-(zo)->handlers->offset)
+
+#endif	/* PHP_PROPRO_H */
+
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: propro                                                     |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2013 Michael Wallner <mike@php.net>                  |
+    +--------------------------------------------------------------------+
+*/
+
+#ifndef PHP_PROPRO_API_H
+#define PHP_PROPRO_API_H
+
+#include "php_propro.h"
+
+/**
+ * The internal property proxy.
+ *
+ * Container for the object/array holding the proxied property.
+ */
+struct php_property_proxy {
+	/** The container holding the property */
+	zval container;
+	/** The name of the proxied property */
+	zend_string *member;
+};
+typedef struct php_property_proxy php_property_proxy_t;
+
+/**
+ * The userland object.
+ *
+ * Return an object instance of php\\PropertyProxy to make your C-struct
+ * member accessible by reference from PHP userland.
+ *
+ * Example:
+ * ~~~~~~~~~~{.c}
+ * static zval *my_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *tmp)
+ * {
+ *    zval *return_value;
+ *    zend_string *member_name = zval_get_string(member);
+ *    my_prophandler_t *handler = my_get_prophandler(member_name);
+ *
+ *    if (!handler || type == BP_VAR_R || type == BP_VAR_IS) {
+ *    	return_value = zend_get_std_object_handlers()->read_property(object, member, type, cache_slot, tmp);
+ *
+ *    	if (handler) {
+ *    		handler->read(object, tmp);
+ *
+ *    		zval_ptr_dtor(return_value);
+ *    		ZVAL_COPY_VALUE(return_value, tmp);
+ *    	}
+ *    } else {
+ *    	return_value = php_property_proxy_zval(object, member_name);
+ *    }
+ *
+ *    zend_string_release(member_name);
+ *
+ *    return return_value;
+ * }
+ * ~~~~~~~~~~
+ */
+struct php_property_proxy_object {
+	/** The actual property proxy */
+	php_property_proxy_t *proxy;
+	/** Any parent property proxy object */
+	zval parent;
+	/** The std zend_object */
+	zend_object zo;
+};
+typedef struct php_property_proxy_object php_property_proxy_object_t;
+
+/**
+ * Create a property proxy
+ *
+ * The property proxy will forward reads and writes to itself to the
+ * proxied property with name \a member_str of \a container.
+ *
+ * @param container the container holding the property
+ * @param member the name of the proxied property
+ * @return a new property proxy
+ */
+PHP_PROPRO_API php_property_proxy_t *php_property_proxy_init(zval *container,
+		zend_string *member);
+
+/**
+ * Destroy and free a property proxy.
+ *
+ * The destruction of the property proxy object calls this.
+ *
+ * @param proxy a pointer to the allocated property proxy
+ */
+PHP_PROPRO_API void php_property_proxy_free(php_property_proxy_t **proxy);
+
+/**
+ * Get the zend_class_entry of php\\PropertyProxy
+ * @return the class entry pointer
+ */
+PHP_PROPRO_API zend_class_entry *php_property_proxy_get_class_entry(void);
+
+/**
+ * Instantiate a new php\\PropertyProxy
+ * @param ce the property proxy or derived class entry
+ * @return the zend object
+ */
+PHP_PROPRO_API zend_object *php_property_proxy_object_new(zend_class_entry *ce);
+
+/**
+ * Instantiate a new php\\PropertyProxy with \a proxy
+ * @param ce the property proxy or derived class entry
+ * @param proxy the internal property proxy
+ * @return the property proxy
+ */
+PHP_PROPRO_API php_property_proxy_object_t *php_property_proxy_object_new_ex(
+		zend_class_entry *ce, php_property_proxy_t *proxy);
+
+#endif	/* PHP_PROPRO_API_H */
+
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
 --TEST--
 property proxy
 --SKIPIF--
@@ -5645,4 +5692,4 @@ object(t)#%d (1) {
     int(2)
   }
 }
-===DONE===Æ,¯ˇ≈mÌPVº‹ÚÁc   GBMB
+===DONE===ûhz%›†d˛®ÈÒ	‹R√`«ï˝   GBMB
