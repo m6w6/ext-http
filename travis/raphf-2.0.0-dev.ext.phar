@@ -1,0 +1,6208 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * The installer sub-stub for extension phars
+ */
+
+namespace pharext;
+
+define("PHAREXT_PHAR", __FILE__);
+
+spl_autoload_register(function($c) {
+	return include strtr($c, "\\_", "//") . ".php";
+});
+
+
+
+namespace pharext;
+
+class Exception extends \Exception
+{
+	public function __construct($message = null, $code = 0, $previous = null) {
+		if (!isset($message)) {
+			$last_error = error_get_last();
+			$message = $last_error["message"];
+			if (!$code) {
+				$code = $last_error["type"];
+			}
+		}
+		parent::__construct($message, $code, $previous);
+	}
+}
+
+
+
+namespace pharext;
+
+use pharext\Exception;
+
+/**
+ * A temporary file/directory name
+ */
+class Tempname
+{
+	/**
+	 * @var string
+	 */
+	private $name;
+
+	/**
+	 * @param string $prefix uniqid() prefix
+	 * @param string $suffix e.g. file extension
+	 */
+	public function __construct($prefix, $suffix = null) {
+		$temp = sys_get_temp_dir() . "/pharext-" . $this->getUser();
+		if (!is_dir($temp) && !mkdir($temp, 0700, true)) {
+			throw new Exception;
+		}
+		$this->name = $temp ."/". uniqid($prefix) . $suffix;
+	}
+
+	private function getUser() {
+		if (extension_loaded("posix") && function_exists("posix_getpwuid")) {
+			return posix_getpwuid(posix_getuid())["name"];
+		}
+		return trim(`whoami 2>/dev/null`)
+			?: trim(`id -nu 2>/dev/null`)
+			?: getenv("USER")
+			?: get_current_user();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function __toString() {
+		return (string) $this->name;
+	}
+}
+
+ 
+
+namespace pharext;
+
+/**
+ * Create a new temporary file
+ */
+class Tempfile extends \SplFileInfo
+{
+	/**
+	 * @var resource
+	 */
+	private $handle;
+
+	/**
+	 * @param string $prefix uniqid() prefix
+	 * @param string $suffix e.g. file extension
+	 * @throws \pharext\Exception
+	 */
+	public function __construct($prefix, $suffix = ".tmp") {
+		$tries = 0;
+		$omask = umask(077);
+		do {
+			$path = new Tempname($prefix, $suffix);
+			$this->handle = fopen($path, "x");
+		} while (!is_resource($this->handle) && $tries++ < 10);
+		umask($omask);
+		
+		if (!is_resource($this->handle)) {
+			throw new Exception("Could not create temporary file");
+		}
+		
+		parent::__construct($path);
+	}
+
+	/**
+	 * Unlink the file
+	 */
+	public function __destruct() {
+		if (is_file($this->getPathname())) {
+			@unlink($this->getPathname());
+		}
+	}
+
+	/**
+	 * Close the stream
+	 */
+	public function closeStream() {
+		fclose($this->handle);
+	}
+
+	/**
+	 * Retrieve the stream resource
+	 * @return resource
+	 */
+	public function getStream() {
+		return $this->handle;
+	}
+}
+
+
+
+namespace pharext;
+
+/**
+ * Create a temporary directory
+ */
+class Tempdir extends \SplFileInfo
+{
+	/**
+	 * @param string $prefix prefix to uniqid()
+	 * @throws \pharext\Exception
+	 */
+	public function __construct($prefix) {
+		$temp = new Tempname($prefix);
+		if (!is_dir($temp) && !mkdir($temp, 0700, true)) {
+			throw new Exception("Could not create tempdir: ".error_get_last()["message"]);
+		}
+		parent::__construct($temp);
+	}
+}
+
+
+
+namespace pharext;
+
+use ArrayAccess;
+use IteratorAggregate;
+use RecursiveDirectoryIterator;
+use SplFileInfo;
+
+use pharext\Exception;
+
+class Archive implements ArrayAccess, IteratorAggregate
+{
+	const HALT_COMPILER = "\137\137\150\141\154\164\137\143\157\155\160\151\154\145\162\50\51\73";
+	const SIGNED = 0x10000;
+	const SIG_MD5    = 0x0001;
+	const SIG_SHA1   = 0x0002;
+	const SIG_SHA256 = 0x0003;
+	const SIG_SHA512 = 0x0004;
+	const SIG_OPENSSL= 0x0010;
+
+	private static $siglen = [
+		self::SIG_MD5    => 16,
+		self::SIG_SHA1   => 20,
+		self::SIG_SHA256 => 32,
+		self::SIG_SHA512 => 64,
+		self::SIG_OPENSSL=> 0
+	];
+
+	private static $sigalg = [
+		self::SIG_MD5    => "md5",
+		self::SIG_SHA1   => "sha1",
+		self::SIG_SHA256 => "sha256",
+		self::SIG_SHA512 => "sha512",
+		self::SIG_OPENSSL=> "openssl"
+	];
+
+	private static $sigtyp = [
+		self::SIG_MD5    => "MD5",
+		self::SIG_SHA1   => "SHA-1",
+		self::SIG_SHA256 => "SHA-256",
+		self::SIG_SHA512 => "SHA-512",
+		self::SIG_OPENSSL=> "OpenSSL",
+	];
+
+	const PERM_FILE_MASK = 0x01ff;
+	const COMP_FILE_MASK = 0xf000;
+	const COMP_GZ_FILE   = 0x1000;
+	const COMP_BZ2_FILE  = 0x2000;
+
+	const COMP_PHAR_MASK= 0xf000;
+	const COMP_PHAR_GZ  = 0x1000;
+	const COMP_PHAR_BZ2 = 0x2000;
+
+	private $file;
+	private $fd;
+	private $stub;
+	private $manifest;
+	private $signature;
+	private $extracted;
+
+	function __construct($file = null) {
+		if (strlen($file)) {
+			$this->open($file);
+		}
+	}
+
+	function open($file) {
+		if (!$this->fd = @fopen($file, "r")) {
+			throw new Exception;
+		}
+		$this->file = $file;
+		$this->stub = $this->readStub();
+		$this->manifest = $this->readManifest();
+		$this->signature = $this->readSignature();
+	}
+
+	function getIterator() {
+		return new RecursiveDirectoryIterator($this->extract());
+	}
+
+	function extract() {
+		return $this->extracted ?: $this->extractTo(new Tempdir("archive"));
+	}
+
+	function extractTo($dir) {
+		if ((string) $this->extracted == (string) $dir) {
+			return $this->extracted;
+		}
+		foreach ($this->manifest["entries"] as $file => $entry) {
+			fseek($this->fd, $this->manifest["offset"]+$entry["offset"]);
+			$path = "$dir/$file";
+			$copy = stream_copy_to_stream($this->fd, $this->outFd($path, $entry["flags"]), $entry["csize"]);
+			if ($entry["osize"] != $copy) {
+				throw new Exception("Copied '$copy' of '$file', expected '{$entry["osize"]}' from '{$entry["csize"]}");
+			}
+
+			$crc = hexdec(hash_file("crc32b", $path));
+			if ($crc !== $entry["crc32"]) {
+				throw new Exception("CRC mismatch of '$file': '$crc' != '{$entry["crc32"]}");
+			}
+
+			chmod($path, $entry["flags"] & self::PERM_FILE_MASK);
+			touch($path, $entry["stamp"]);
+		}
+		return $this->extracted = $dir;
+	}
+
+	function offsetExists($o) {
+		return isset($this->entries[$o]);
+	}
+
+	function offsetGet($o) {
+		$this->extract();
+		return new SplFileInfo($this->extracted."/$o");
+	}
+
+	function offsetSet($o, $v) {
+		throw new Exception("Archive is read-only");
+	}
+
+	function offsetUnset($o) {
+		throw new Exception("Archive is read-only");
+	}
+
+	function getSignature() {
+		/* compatible with Phar::getSignature() */
+		return [
+			"hash_type" => self::$sigtyp[$this->signature["flags"]],
+			"hash" => strtoupper(bin2hex($this->signature["hash"])),
+		];
+	}
+
+	function getPath() {
+		/* compatible with Phar::getPath() */
+		return new SplFileInfo($this->file);
+	}
+
+	function getMetadata($key = null) {
+		if (isset($key)) {
+			return $this->manifest["meta"][$key];
+		}
+		return $this->manifest["meta"];
+	}
+
+	private function outFd($path, $flags) {
+			$dirn = dirname($path);
+			if (!is_dir($dirn) && !@mkdir($dirn, 0777, true)) {
+				throw new Exception;
+			}
+			if (!$fd = @fopen($path, "w")) {
+				throw new Exception;
+			}
+			switch ($flags & self::COMP_FILE_MASK) {
+			case self::COMP_GZ_FILE:
+				if (!@stream_filter_append($fd, "zlib.inflate")) {
+					throw new Exception;
+				}
+				break;
+			case self::COMP_BZ2_FILE:
+				if (!@stream_filter_append($fd, "bz2.decompress")) {
+					throw new Exception;
+				}
+				break;
+			}
+
+	}
+	private function readVerified($fd, $len) {
+		if ($len != strlen($data = fread($fd, $len))) {
+			throw new Exception("Unexpected EOF");
+		}
+		return $data;
+	}
+
+	private function readFormat($format, $fd, $len) {
+		if (false === ($data = @unpack($format, $this->readVerified($fd, $len)))) {
+			throw new Exception;
+		}
+		return $data;
+	}
+
+	private function readSingleFormat($format, $fd, $len) {
+		return current($this->readFormat($format, $fd, $len));
+	}
+
+	private function readStringBinary($fd) {
+		if (($length = $this->readSingleFormat("V", $fd, 4))) {
+			return $this->readVerified($this->fd, $length);
+		}
+		return null;
+	}
+
+	private function readSerializedBinary($fd) {
+		if (($length = $this->readSingleFormat("V", $fd, 4))) {
+			if (false === ($data = unserialize($this->readVerified($fd, $length)))) {
+				throw new Exception;
+			}
+			return $data;
+		}
+		return null;
+	}
+
+	private function readStub() {
+		$stub = "";
+		while (!feof($this->fd)) {
+			$line = fgets($this->fd);
+			$stub .= $line;
+			if (false !== stripos($line, self::HALT_COMPILER)) {
+				/* check for '?>' on a separate line */
+				if ('?>' === $this->readVerified($this->fd, 2)) {
+					$stub .= '?>' . fgets($this->fd);
+				} else {
+					fseek($this->fd, -2, SEEK_CUR);
+				}
+				break;
+			}
+		}
+		return $stub;
+	}
+
+	private function readManifest() {
+		$current = ftell($this->fd);
+		$header = $this->readFormat("Vlen/Vnum/napi/Vflags", $this->fd, 14);
+		$alias = $this->readStringBinary($this->fd);
+		$meta = $this->readSerializedBinary($this->fd);
+		$entries = [];
+		for ($i = 0; $i < $header["num"]; ++$i) {
+			$this->readEntry($entries);
+		}
+		$offset = ftell($this->fd);
+		if (($length = $offset - $current - 4) != $header["len"]) {
+			throw new Exception("Manifest length read was '$length', expected '{$header["len"]}'");
+		}
+		return $header + compact("alias", "meta", "entries", "offset");
+	}
+
+	private function readEntry(array &$entries) {
+		if (!count($entries)) {
+			$offset = 0;
+		} else {
+			$last = end($entries);
+			$offset = $last["offset"] + $last["csize"];
+		}
+		$file = $this->readStringBinary($this->fd);
+		if (!strlen($file)) {
+			throw new Exception("Empty file name encountered at offset '$offset'");
+		}
+		$header = $this->readFormat("Vosize/Vstamp/Vcsize/Vcrc32/Vflags", $this->fd, 20);
+		$meta = $this->readSerializedBinary($this->fd);
+		$entries[$file] =  $header + compact("meta", "offset");
+	}
+
+	private function readSignature() {
+		fseek($this->fd, -8, SEEK_END);
+		$sig = $this->readFormat("Vflags/Z4magic", $this->fd, 8);
+		$end = ftell($this->fd);
+
+		if ($sig["magic"] !== "GBMB") {
+			throw new Exception("Invalid signature magic value '{$sig["magic"]}");
+		}
+
+ 		switch ($sig["flags"]) {
+		case self::SIG_OPENSSL:
+			fseek($this->fd, -12, SEEK_END);
+			if (($hash = $this->readSingleFormat("V", $this->fd, 4))) {
+				$offset = 4 + $hash;
+				fseek($this->fd, -$offset, SEEK_CUR);
+				$hash = $this->readVerified($this->fd, $hash);
+				fseek($this->fd, 0, SEEK_SET);
+				$valid = openssl_verify($this->readVerified($this->fd, $end - $offset - 8),
+					$hash, @file_get_contents($this->file.".pubkey")) === 1;
+			}
+			break;
+
+		case self::SIG_MD5:
+		case self::SIG_SHA1:
+		case self::SIG_SHA256:
+		case self::SIG_SHA512:
+			$offset = 8 + self::$siglen[$sig["flags"]];
+			fseek($this->fd, -$offset, SEEK_END);
+			$hash = $this->readVerified($this->fd, self::$siglen[$sig["flags"]]);
+			$algo = hash_init(self::$sigalg[$sig["flags"]]);
+			fseek($this->fd, 0, SEEK_SET);
+			hash_update_stream($algo, $this->fd, $end - $offset);
+			$valid = hash_final($algo, true) === $hash;
+			break;
+
+		default:
+			throw new Exception("Invalid signature type '{$sig["flags"]}");
+		}
+
+		return $sig + compact("hash", "valid");
+	}
+}
+
+
+namespace pharext;
+
+if (extension_loaded("Phar")) {
+	\Phar::interceptFileFuncs();
+	\Phar::mapPhar();
+	$phardir = "phar://".__FILE__;
+} else {
+	$archive = new Archive(__FILE__);
+	$phardir = $archive->extract();
+}
+
+set_include_path("$phardir:". get_include_path());
+
+$installer = new Installer();
+$installer->run($argc, $argv);
+
+__HALT_COMPILER(); ?>
+¶  7           ,  a:7:{s:7:"version";s:5:"4.1.1";s:6:"header";s:49:"pharext v4.1.1 (c) Michael Wallner <mike@php.net>";s:4:"date";s:10:"2015-09-28";s:4:"name";s:5:"raphf";s:7:"release";s:9:"2.0.0-dev";s:7:"license";s:1345:"Copyright (c) 2013, Michael Wallner <mike@php.net>.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, 
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright 
+      notice, this list of conditions and the following disclaimer in the 
+      documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE 
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+";s:4:"type";s:9:"extension";}   pharext/Archive.php  îh	V  4-‘I∂         pharext/Cli/Args/Help.php…  îh	V…  gX'∂         pharext/Cli/Args.php  îh	V  ?nùˆ∂         pharext/Cli/Command.phpk	  îh	Vk	  dÑaÍ∂         pharext/Command.php  îh	V  ‘m`Õ∂         pharext/Exception.phpc  îh	Vc  UÜœ{∂         pharext/ExecCmd.php  îh	V  πlî ∂         pharext/Installer.php&  îh	V&  ¯d&¿∂         pharext/License.phpì  îh	Vì  ÓÚE∂         pharext/Metadata.phpï  îh	Vï  ø⁄êû∂         pharext/Openssl/PrivateKey.php¡  îh	V¡  &ÊP∂         pharext/Packager.phpÃ!  îh	VÃ!  0<∂         pharext/SourceDir/Basic.phpz  îh	Vz  ˜+‘‚∂         pharext/SourceDir/Git.phpZ  îh	VZ  …Œ\∂         pharext/SourceDir/Pecl.php¯  îh	V¯  „˘–∂         pharext/SourceDir.phpΩ  îh	VΩ  3∑#∂         pharext/Task/Activate.php‹  îh	V‹  Iì∂         pharext/Task/Askpass.phpU  îh	VU  á*ê∂          pharext/Task/BundleGenerator.php}  îh	V}   Ô`Y∂         pharext/Task/Cleanup.php  îh	V  …IÄB∂         pharext/Task/Configure.phpT  îh	VT  }ÀÏ∂         pharext/Task/Extract.phpp  îh	Vp  [®€Ã∂         pharext/Task/GitClone.phpm  îh	Vm  Ûyµ@∂         pharext/Task/Make.php™  îh	V™  úÁ6∂         pharext/Task/PaxFixup.php¨  îh	V¨  y‚Ø∂         pharext/Task/PeclFixup.phpú  îh	Vú  e˘tö∂         pharext/Task/PharBuild.php‚  îh	V‚  Œ∂0…∂         pharext/Task/PharCompress.phpc  îh	Vc  Ω≥œ∂         pharext/Task/PharRename.php‰  îh	V‰  ä[ﬁÀ∂         pharext/Task/PharSign.php®  îh	V®  €∫¶i∂         pharext/Task/PharStub.phpÊ  îh	VÊ  Y|≠õ∂         pharext/Task/Phpize.php  îh	V  ˘2—∂         pharext/Task/StreamFetch.php  îh	V  àÓs\∂         pharext/Task.phpw   îh	Vw    ƒI«∂         pharext/Tempdir.phpµ  îh	Vµ  Îñ,∂         pharext/Tempfile.php  îh	V   ÆÙ∂         pharext/Tempname.phpt  îh	Vt  ûn<ç∂         pharext/Updater.phpç  îh	Vç  ûœv∂         pharext_installer.php›  îh	V›  åﬁq∂         pharext_packager.phpb  îh	Vb  ÓV”œ∂         pharext_updater.phph  îh	Vh    ˙j∂         pharext_package.php2   îh	V2   vST“∂         package.xml  îh	V  L(ó)∂         CREDITS   îh	V   Cµ]≤∂         LICENSEA  îh	VA  æ¨J˛∂         DoxyfileW,  îh	VW,  ZŒ∞∂      	   config.m4$  îh	V$  ≈Í@õ∂      
+   config.w32–   îh	V–   ˝Õé∂         php_raphf.h  îh	V  b∑“∂         php_raphf_api.hà2  îh	Và2  J^V∂         php_raphf.cÅE  îh	VÅE  ôP∂         tests/http001.phpt  îh	V  *Æ∂         tests/http002.phptL  îh	VL  Ä‘ÔS∂         tests/http003.phpt^  îh	V^  àp∂         tests/http004.phpt[  îh	V[  YË´∂      <?php
+
+namespace pharext;
+
+use ArrayAccess;
+use IteratorAggregate;
+use RecursiveDirectoryIterator;
+use SplFileInfo;
+
+use pharext\Exception;
+
+class Archive implements ArrayAccess, IteratorAggregate
+{
+	const HALT_COMPILER = "\137\137\150\141\154\164\137\143\157\155\160\151\154\145\162\50\51\73";
+	const SIGNED = 0x10000;
+	const SIG_MD5    = 0x0001;
+	const SIG_SHA1   = 0x0002;
+	const SIG_SHA256 = 0x0003;
+	const SIG_SHA512 = 0x0004;
+	const SIG_OPENSSL= 0x0010;
+
+	private static $siglen = [
+		self::SIG_MD5    => 16,
+		self::SIG_SHA1   => 20,
+		self::SIG_SHA256 => 32,
+		self::SIG_SHA512 => 64,
+		self::SIG_OPENSSL=> 0
+	];
+
+	private static $sigalg = [
+		self::SIG_MD5    => "md5",
+		self::SIG_SHA1   => "sha1",
+		self::SIG_SHA256 => "sha256",
+		self::SIG_SHA512 => "sha512",
+		self::SIG_OPENSSL=> "openssl"
+	];
+
+	private static $sigtyp = [
+		self::SIG_MD5    => "MD5",
+		self::SIG_SHA1   => "SHA-1",
+		self::SIG_SHA256 => "SHA-256",
+		self::SIG_SHA512 => "SHA-512",
+		self::SIG_OPENSSL=> "OpenSSL",
+	];
+
+	const PERM_FILE_MASK = 0x01ff;
+	const COMP_FILE_MASK = 0xf000;
+	const COMP_GZ_FILE   = 0x1000;
+	const COMP_BZ2_FILE  = 0x2000;
+
+	const COMP_PHAR_MASK= 0xf000;
+	const COMP_PHAR_GZ  = 0x1000;
+	const COMP_PHAR_BZ2 = 0x2000;
+
+	private $file;
+	private $fd;
+	private $stub;
+	private $manifest;
+	private $signature;
+	private $extracted;
+
+	function __construct($file = null) {
+		if (strlen($file)) {
+			$this->open($file);
+		}
+	}
+
+	function open($file) {
+		if (!$this->fd = @fopen($file, "r")) {
+			throw new Exception;
+		}
+		$this->file = $file;
+		$this->stub = $this->readStub();
+		$this->manifest = $this->readManifest();
+		$this->signature = $this->readSignature();
+	}
+
+	function getIterator() {
+		return new RecursiveDirectoryIterator($this->extract());
+	}
+
+	function extract() {
+		return $this->extracted ?: $this->extractTo(new Tempdir("archive"));
+	}
+
+	function extractTo($dir) {
+		if ((string) $this->extracted == (string) $dir) {
+			return $this->extracted;
+		}
+		foreach ($this->manifest["entries"] as $file => $entry) {
+			fseek($this->fd, $this->manifest["offset"]+$entry["offset"]);
+			$path = "$dir/$file";
+			$copy = stream_copy_to_stream($this->fd, $this->outFd($path, $entry["flags"]), $entry["csize"]);
+			if ($entry["osize"] != $copy) {
+				throw new Exception("Copied '$copy' of '$file', expected '{$entry["osize"]}' from '{$entry["csize"]}");
+			}
+
+			$crc = hexdec(hash_file("crc32b", $path));
+			if ($crc !== $entry["crc32"]) {
+				throw new Exception("CRC mismatch of '$file': '$crc' != '{$entry["crc32"]}");
+			}
+
+			chmod($path, $entry["flags"] & self::PERM_FILE_MASK);
+			touch($path, $entry["stamp"]);
+		}
+		return $this->extracted = $dir;
+	}
+
+	function offsetExists($o) {
+		return isset($this->entries[$o]);
+	}
+
+	function offsetGet($o) {
+		$this->extract();
+		return new SplFileInfo($this->extracted."/$o");
+	}
+
+	function offsetSet($o, $v) {
+		throw new Exception("Archive is read-only");
+	}
+
+	function offsetUnset($o) {
+		throw new Exception("Archive is read-only");
+	}
+
+	function getSignature() {
+		/* compatible with Phar::getSignature() */
+		return [
+			"hash_type" => self::$sigtyp[$this->signature["flags"]],
+			"hash" => strtoupper(bin2hex($this->signature["hash"])),
+		];
+	}
+
+	function getPath() {
+		/* compatible with Phar::getPath() */
+		return new SplFileInfo($this->file);
+	}
+
+	function getMetadata($key = null) {
+		if (isset($key)) {
+			return $this->manifest["meta"][$key];
+		}
+		return $this->manifest["meta"];
+	}
+
+	private function outFd($path, $flags) {
+			$dirn = dirname($path);
+			if (!is_dir($dirn) && !@mkdir($dirn, 0777, true)) {
+				throw new Exception;
+			}
+			if (!$fd = @fopen($path, "w")) {
+				throw new Exception;
+			}
+			switch ($flags & self::COMP_FILE_MASK) {
+			case self::COMP_GZ_FILE:
+				if (!@stream_filter_append($fd, "zlib.inflate")) {
+					throw new Exception;
+				}
+				break;
+			case self::COMP_BZ2_FILE:
+				if (!@stream_filter_append($fd, "bz2.decompress")) {
+					throw new Exception;
+				}
+				break;
+			}
+
+	}
+	private function readVerified($fd, $len) {
+		if ($len != strlen($data = fread($fd, $len))) {
+			throw new Exception("Unexpected EOF");
+		}
+		return $data;
+	}
+
+	private function readFormat($format, $fd, $len) {
+		if (false === ($data = @unpack($format, $this->readVerified($fd, $len)))) {
+			throw new Exception;
+		}
+		return $data;
+	}
+
+	private function readSingleFormat($format, $fd, $len) {
+		return current($this->readFormat($format, $fd, $len));
+	}
+
+	private function readStringBinary($fd) {
+		if (($length = $this->readSingleFormat("V", $fd, 4))) {
+			return $this->readVerified($this->fd, $length);
+		}
+		return null;
+	}
+
+	private function readSerializedBinary($fd) {
+		if (($length = $this->readSingleFormat("V", $fd, 4))) {
+			if (false === ($data = unserialize($this->readVerified($fd, $length)))) {
+				throw new Exception;
+			}
+			return $data;
+		}
+		return null;
+	}
+
+	private function readStub() {
+		$stub = "";
+		while (!feof($this->fd)) {
+			$line = fgets($this->fd);
+			$stub .= $line;
+			if (false !== stripos($line, self::HALT_COMPILER)) {
+				/* check for '?>' on a separate line */
+				if ('?>' === $this->readVerified($this->fd, 2)) {
+					$stub .= '?>' . fgets($this->fd);
+				} else {
+					fseek($this->fd, -2, SEEK_CUR);
+				}
+				break;
+			}
+		}
+		return $stub;
+	}
+
+	private function readManifest() {
+		$current = ftell($this->fd);
+		$header = $this->readFormat("Vlen/Vnum/napi/Vflags", $this->fd, 14);
+		$alias = $this->readStringBinary($this->fd);
+		$meta = $this->readSerializedBinary($this->fd);
+		$entries = [];
+		for ($i = 0; $i < $header["num"]; ++$i) {
+			$this->readEntry($entries);
+		}
+		$offset = ftell($this->fd);
+		if (($length = $offset - $current - 4) != $header["len"]) {
+			throw new Exception("Manifest length read was '$length', expected '{$header["len"]}'");
+		}
+		return $header + compact("alias", "meta", "entries", "offset");
+	}
+
+	private function readEntry(array &$entries) {
+		if (!count($entries)) {
+			$offset = 0;
+		} else {
+			$last = end($entries);
+			$offset = $last["offset"] + $last["csize"];
+		}
+		$file = $this->readStringBinary($this->fd);
+		if (!strlen($file)) {
+			throw new Exception("Empty file name encountered at offset '$offset'");
+		}
+		$header = $this->readFormat("Vosize/Vstamp/Vcsize/Vcrc32/Vflags", $this->fd, 20);
+		$meta = $this->readSerializedBinary($this->fd);
+		$entries[$file] =  $header + compact("meta", "offset");
+	}
+
+	private function readSignature() {
+		fseek($this->fd, -8, SEEK_END);
+		$sig = $this->readFormat("Vflags/Z4magic", $this->fd, 8);
+		$end = ftell($this->fd);
+
+		if ($sig["magic"] !== "GBMB") {
+			throw new Exception("Invalid signature magic value '{$sig["magic"]}");
+		}
+
+ 		switch ($sig["flags"]) {
+		case self::SIG_OPENSSL:
+			fseek($this->fd, -12, SEEK_END);
+			if (($hash = $this->readSingleFormat("V", $this->fd, 4))) {
+				$offset = 4 + $hash;
+				fseek($this->fd, -$offset, SEEK_CUR);
+				$hash = $this->readVerified($this->fd, $hash);
+				fseek($this->fd, 0, SEEK_SET);
+				$valid = openssl_verify($this->readVerified($this->fd, $end - $offset - 8),
+					$hash, @file_get_contents($this->file.".pubkey")) === 1;
+			}
+			break;
+
+		case self::SIG_MD5:
+		case self::SIG_SHA1:
+		case self::SIG_SHA256:
+		case self::SIG_SHA512:
+			$offset = 8 + self::$siglen[$sig["flags"]];
+			fseek($this->fd, -$offset, SEEK_END);
+			$hash = $this->readVerified($this->fd, self::$siglen[$sig["flags"]]);
+			$algo = hash_init(self::$sigalg[$sig["flags"]]);
+			fseek($this->fd, 0, SEEK_SET);
+			hash_update_stream($algo, $this->fd, $end - $offset);
+			$valid = hash_final($algo, true) === $hash;
+			break;
+
+		default:
+			throw new Exception("Invalid signature type '{$sig["flags"]}");
+		}
+
+		return $sig + compact("hash", "valid");
+	}
+}
+<?php
+
+namespace pharext\Cli\Args;
+
+use pharext\Cli\Args;
+
+class Help
+{
+	private $args;
+
+	function __construct($prog, Args $args) {
+		$this->prog = $prog;
+		$this->args = $args;
+	}
+
+	function __toString() {
+		$usage = "Usage:\n\n  \$ ";
+		$usage .= $this->prog;
+
+		list($flags, $required, $optional, $positional) = $this->listSpec();
+		if ($flags) {
+			$usage .= $this->dumpFlags($flags);
+		}
+		if ($required) {
+			$usage .= $this->dumpRequired($required);
+		}
+		if ($optional) {
+			$usage .= $this->dumpOptional($optional);
+		}
+		if ($positional) {
+			$usage .= $this->dumpPositional($positional);
+		}
+
+		$help = $this->dumpHelp($positional);
+
+		return $usage . "\n\n" . $help . "\n";
+	}
+
+	function listSpec() {
+		$flags = [];
+		$required = [];
+		$optional = [];
+		$positional = [];
+		foreach ($this->args->getSpec() as $spec) {
+			if (is_numeric($spec[0])) {
+				$positional[] = $spec;
+			} elseif ($spec[3] & Args::REQUIRED) {
+				$required[] = $spec;
+			} elseif ($spec[3] & (Args::OPTARG|Args::REQARG)) {
+				$optional[] = $spec;
+			} else {
+				$flags[] = $spec;
+			}
+		}
+
+		return [$flags, $required, $optional, $positional]
+			+ compact("flags", "required", "optional", "positional");
+	}
+
+	function dumpFlags(array $flags) {
+		return sprintf(" [-%s]", implode("", array_column($flags, 0)));
+	}
+
+	function dumpRequired(array $required) {
+		$dump = "";
+		foreach ($required as $req) {
+			$dump .= sprintf(" -%s <%s>", $req[0], $req[1]);
+		}
+		return $dump;
+	}
+
+	function dumpOptional(array $optional) {
+		$req = array_filter($optional, function($a) {
+			return $a[3] & Args::REQARG;
+		});
+		$opt = array_filter($optional, function($a) {
+			return $a[3] & Args::OPTARG;
+		});
+
+		$dump = "";
+		if ($req) {
+			$dump .= sprintf(" [-%s <arg>]", implode("|-", array_column($req, 0)));
+		}
+		if ($opt) {
+			$dump .= sprintf(" [-%s [<arg>]]", implode("|-", array_column($opt, 0)));
+		}
+		return $dump;
+	}
+
+	function dumpPositional(array $positional) {
+		$dump = " [--]";
+		foreach ($positional as $pos) {
+			if ($pos[3] & Args::REQUIRED) {
+				$dump .= sprintf(" <%s>", $pos[1]);
+			} else {
+				$dump .= sprintf(" [<%s>]", $pos[1]);
+			}
+			if ($pos[3] & Args::MULTI) {
+				$dump .= sprintf(" [<%s>]...", $pos[1]);
+			}
+		}
+		return $dump;
+	}
+
+	function calcMaxLen() {
+		$spc = $this->args->getSpec();
+		$max = max(array_map("strlen", array_column($spc, 1)));
+		$max += $max % 8 + 2;
+		return $max;
+	}
+
+	function dumpHelp() {
+		$max = $this->calcMaxLen();
+		$dump = "";
+		foreach ($this->args->getSpec() as $spec) {
+			$dump .= "    ";
+			if (is_numeric($spec[0])) {
+				$dump .= sprintf("--   %s ", $spec[1]);
+			} elseif (isset($spec[0])) {
+				$dump .= sprintf("-%s|", $spec[0]);
+			}
+			if (!is_numeric($spec[0])) {
+				$dump .= sprintf("--%s ", $spec[1]);
+			}
+			if ($spec[3] & Args::REQARG) {
+				$dump .= "<arg>  ";
+			} elseif ($spec[3] & Args::OPTARG) {
+				$dump .= "[<arg>]";
+			} else {
+				$dump .= "       ";
+			}
+
+			$dump .= str_repeat(" ", $max-strlen($spec[1])+3*!isset($spec[0]));
+			$dump .= $spec[2];
+
+			if ($spec[3] & Args::REQUIRED) {
+				$dump .= " (REQUIRED)";
+			}
+			if ($spec[3] & Args::MULTI) {
+				$dump .= " (MULTIPLE)";
+			}
+			if (isset($spec[4])) {
+				$dump .= sprintf(" [%s]", $spec[4]);
+			}
+			$dump .= "\n";
+		}
+		return $dump;
+	}
+}
+<?php
+
+namespace pharext\Cli;
+
+/**
+ * Command line arguments
+ */
+class Args implements \ArrayAccess
+{
+	/**
+	 * Optional option
+	 */
+	const OPTIONAL = 0x000;
+
+	/**
+	 * Required Option
+	 */
+	const REQUIRED = 0x001;
+
+	/**
+	 * Only one value, even when used multiple times
+	 */
+	const SINGLE = 0x000;
+
+	/**
+	 * Aggregate an array, when used multiple times
+	 */
+	const MULTI = 0x010;
+
+	/**
+	 * Option takes no argument
+	 */
+	const NOARG = 0x000;
+
+	/**
+	 * Option requires an argument
+	 */
+	const REQARG = 0x100;
+
+	/**
+	 * Option takes an optional argument
+	 */
+	const OPTARG = 0x200;
+
+	/**
+	 * Option halts processing
+	 */
+	const HALT = 0x10000000;
+
+	/**
+	 * Original option spec
+	 * @var array
+	 */
+	private $orig = [];
+
+	/**
+	 * Compiled spec
+	 * @var array
+	 */
+	private $spec = [];
+
+	/**
+	 * Parsed args
+	 * @var array
+	 */
+	private $args = [];
+
+	/**
+	 * Compile the original spec
+	 * @param array|Traversable $spec
+	 */
+	public function __construct($spec = null) {
+		if (is_array($spec) || $spec instanceof Traversable) {
+			$this->compile($spec);
+		}
+
+	}
+
+	/**
+	 * Compile the original spec
+	 * @param array|Traversable $spec
+	 * @return pharext\Cli\Args self
+	 */
+	public function compile($spec) {
+		foreach ($spec as $arg) {
+			if (isset($arg[0]) && is_numeric($arg[0])) {
+				$arg[3] &= ~0xf00;
+				$this->spec["--".$arg[0]] = $arg;
+			} elseif (isset($arg[0])) {
+				$this->spec["-".$arg[0]] = $arg;
+				$this->spec["--".$arg[1]] = $arg;
+			} else {
+				$this->spec["--".$arg[1]] = $arg;
+			}
+			$this->orig[] = $arg;
+		}
+		return $this;
+	}
+
+	/**
+	 * Get original spec
+	 * @return array
+	 */
+	public function getSpec() {
+		return $this->orig;
+	}
+
+	/**
+	 * Get compiled spec
+	 * @return array
+	 */
+	public function getCompiledSpec() {
+		return $this->spec;
+	}
+
+	/**
+	 * Parse command line arguments according to the compiled spec.
+	 *
+	 * The Generator yields any parsing errors.
+	 * Parsing will stop when all arguments are processed or the first option
+	 * flagged Cli\Args::HALT was encountered.
+	 *
+	 * @param int $argc
+	 * @param array $argv
+	 * @return Generator
+	 */
+	public function parse($argc, array $argv) {
+		for ($f = false, $p = 0, $i = 0; $i < $argc; ++$i) {
+			$o = $argv[$i];
+
+			if ($o{0} === "-" && strlen($o) > 2 && $o{1} !== "-") {
+				// multiple short opts, e.g. -vps
+				$argc += strlen($o) - 2;
+				array_splice($argv, $i, 1, array_map(function($s) {
+					return "-$s";
+				}, str_split(substr($o, 1))));
+				$o = $argv[$i];
+			} elseif ($o{0} === "-" && strlen($o) > 2 && $o{1} === "-" && 0 < ($eq = strpos($o, "="))) {
+				// long opt with argument, e.g. --foo=bar
+				$argc++;
+				array_splice($argv, $i, 1, [
+					substr($o, 0, $eq++),
+					substr($o, $eq)
+				]);
+				$o = $argv[$i];
+			} elseif ($o === "--") {
+				// only positional args following
+				$f = true;
+				continue;
+			}
+
+			if ($f || !isset($this->spec[$o])) {
+				if ($o{0} !== "-" && isset($this->spec["--$p"])) {
+					$this[$p] = $o;
+					if (!$this->optIsMulti($p)) {
+						++$p;
+					}
+				} else {
+					yield sprintf("Unknown option %s", $o);
+				}
+			} elseif (!$this->optAcceptsArg($o)) {
+				$this[$o] = true;
+			} elseif ($i+1 < $argc && !isset($this->spec[$argv[$i+1]])) {
+				$this[$o] = $argv[++$i];
+			} elseif ($this->optRequiresArg($o)) {
+				yield sprintf("Option --%s requires an argument", $this->optLongName($o));
+			} else {
+				// OPTARG
+				$this[$o] = $this->optDefaultArg($o);
+			}
+
+			if ($this->optHalts($o)) {
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Validate that all required options were given.
+	 *
+	 * The Generator yields any validation errors.
+	 *
+	 * @return Generator
+	 */
+	public function validate() {
+		$required = array_filter($this->orig, function($spec) {
+			return $spec[3] & self::REQUIRED;
+		});
+		foreach ($required as $req) {
+			if ($req[3] & self::MULTI) {
+				if (is_array($this[$req[0]])) {
+					continue;
+				}
+			} elseif (strlen($this[$req[0]])) {
+				continue;
+			}
+			if (is_numeric($req[0])) {
+				yield sprintf("Argument <%s> is required", $req[1]);
+			} else {
+				yield sprintf("Option --%s is required", $req[1]);
+			}
+		}
+	}
+
+
+	public function toArray() {
+		$args = [];
+		foreach ($this->spec as $spec) {
+			$opt = $this->opt($spec[1]);
+			$args[$opt] = $this[$opt];
+		}
+		return $args;
+	}
+
+	/**
+	 * Retreive the default argument of an option
+	 * @param string $o
+	 * @return mixed
+	 */
+	private function optDefaultArg($o) {
+		$o = $this->opt($o);
+		if (isset($this->spec[$o][4])) {
+			return $this->spec[$o][4];
+		}
+		return null;
+	}
+
+	/**
+	 * Retrieve the help message of an option
+	 * @param string $o
+	 * @return string
+	 */
+	private function optHelp($o) {
+		$o = $this->opt($o);
+		if (isset($this->spec[$o][2])) {
+			return $this->spec[$o][2];
+		}
+		return "";
+	}
+
+	/**
+	 * Retrieve option's flags
+	 * @param string $o
+	 * @return int
+	 */
+	private function optFlags($o) {
+		$o = $this->opt($o);
+		if (isset($this->spec[$o])) {
+			return $this->spec[$o][3];
+		}
+		return null;
+	}
+
+	/**
+	 * Check whether an option is flagged for halting argument processing
+	 * @param string $o
+	 * @return boolean
+	 */
+	private function optHalts($o) {
+		return $this->optFlags($o) & self::HALT;
+	}
+
+	/**
+	 * Check whether an option needs an argument
+	 * @param string $o
+	 * @return boolean
+	 */
+	private function optRequiresArg($o) {
+		return $this->optFlags($o) & self::REQARG;
+	}
+
+	/**
+	 * Check wether an option accepts any argument
+	 * @param string $o
+	 * @return boolean
+	 */
+	private function optAcceptsArg($o) {
+		return $this->optFlags($o) & 0xf00;
+	}
+
+	/**
+	 * Check whether an option can be used more than once
+	 * @param string $o
+	 * @return boolean
+	 */
+	private function optIsMulti($o) {
+		return $this->optFlags($o) & self::MULTI;
+	}
+
+	/**
+	 * Retreive the long name of an option
+	 * @param string $o
+	 * @return string
+	 */
+	private function optLongName($o) {
+		$o = $this->opt($o);
+		return is_numeric($this->spec[$o][0]) ? $this->spec[$o][0] : $this->spec[$o][1];
+	}
+
+	/**
+	 * Retreive the short name of an option
+	 * @param string $o
+	 * @return string
+	 */
+	private function optShortName($o) {
+		$o = $this->opt($o);
+		return is_numeric($this->spec[$o][0]) ? null : $this->spec[$o][0];
+	}
+
+	/**
+	 * Retreive the canonical name (--long-name) of an option
+	 * @param string $o
+	 * @return string
+	 */
+	private function opt($o) {
+		if (is_numeric($o)) {
+			return "--$o";
+		}
+		if ($o{0} !== '-') {
+			if (strlen($o) > 1) {
+				$o = "-$o";
+			}
+			$o = "-$o";
+		}
+		return $o;
+	}
+
+	/**@+
+	 * Implements ArrayAccess and virtual properties
+	 */
+	function offsetExists($o) {
+		$o = $this->opt($o);
+		return isset($this->args[$o]);
+	}
+	function __isset($o) {
+		return $this->offsetExists($o);
+	}
+	function offsetGet($o) {
+		$o = $this->opt($o);
+		if (isset($this->args[$o])) {
+			return $this->args[$o];
+		}
+		return $this->optDefaultArg($o);
+	}
+	function __get($o) {
+		return $this->offsetGet($o);
+	}
+	function offsetSet($o, $v) {
+		$osn = $this->optShortName($o);
+		$oln = $this->optLongName($o);
+		if ($this->optIsMulti($o)) {
+			if (isset($osn)) {
+				$this->args["-$osn"][] = $v;
+			}
+			$this->args["--$oln"][] = $v;
+		} else {
+			if (isset($osn)) {
+				$this->args["-$osn"] = $v;
+			}
+			$this->args["--$oln"] = $v;
+		}
+	}
+	function __set($o, $v) {
+		$this->offsetSet($o, $v);
+	}
+	function offsetUnset($o) {
+		unset($this->args["-".$this->optShortName($o)]);
+		unset($this->args["--".$this->optLongName($o)]);
+	}
+	function __unset($o) {
+		$this->offsetUnset($o);
+	}
+	/**@-*/
+}
+<?php
+
+namespace pharext\Cli;
+
+use pharext\Archive;
+
+use Phar;
+
+trait Command
+{
+	/**
+	 * Command line arguments
+	 * @var pharext\Cli\Args
+	 */
+	private $args;
+	
+	/**
+	 * @inheritdoc
+	 * @see \pharext\Command::getArgs()
+	 */
+	public function getArgs() {
+		return $this->args;
+	}
+
+	/**
+	 * Retrieve metadata of the currently running phar
+	 * @param string $key
+	 * @return mixed
+	 */
+	public function metadata($key = null) {
+		if (extension_loaded("Phar")) {
+			$running = new Phar(Phar::running(false));
+		} else {
+			$running = new Archive(PHAREXT_PHAR);
+		}
+
+		if ($key === "signature") {
+			$sig = $running->getSignature();
+			return sprintf("%s signature of %s\n%s", 
+				$sig["hash_type"],
+				$this->metadata("name"),
+				chunk_split($sig["hash"], 64, "\n"));
+		}
+
+		$metadata = $running->getMetadata();
+		if (isset($key)) {
+			return $metadata[$key];
+		}
+		return $metadata;
+	}
+
+	/**
+	 * Output pharext vX.Y.Z header
+	 */
+	public function header() {
+		if (!headers_sent()) {
+			/* only display header, if we didn't generate any output yet */
+			printf("%s\n\n", $this->metadata("header"));
+		}
+	}
+	
+	/**
+	 * @inheritdoc
+	 * @see \pharext\Command::debug()
+	 */
+	public function debug($fmt) {
+		if ($this->args->verbose) {
+			vprintf($fmt, array_slice(func_get_args(), 1));
+		}
+	}
+	
+	/**
+	 * @inheritdoc
+	 * @see \pharext\Command::info()
+	 */
+	public function info($fmt) {
+		if (!$this->args->quiet) {
+			vprintf($fmt, array_slice(func_get_args(), 1));
+		}
+	}
+
+	/**
+	 * @inheritdoc
+	 * @see \pharext\Command::warn()
+	 */
+	public function warn($fmt) {
+		if (!$this->args->quiet) {
+			if (!isset($fmt)) {
+				$fmt = "%s\n";
+				$arg = error_get_last()["message"];
+			} else {
+				$arg = array_slice(func_get_args(), 1);
+			}
+			vfprintf(STDERR, "Warning: $fmt", $arg);
+		}
+	}
+
+	/**
+	 * @inheritdoc
+	 * @see \pharext\Command::error()
+	 */
+	public function error($fmt) {
+		if (!isset($fmt)) {
+			$fmt = "%s\n";
+			$arg = error_get_last()["message"];
+		} else {
+			$arg = array_slice(func_get_args(), 1);
+		}
+		vfprintf(STDERR, "ERROR: $fmt", $arg);
+	}
+
+	/**
+	 * Output command line help message
+	 * @param string $prog
+	 */
+	public function help($prog) {
+		print new Args\Help($prog, $this->args);
+	}
+	
+	/**
+	 * Verbosity
+	 * @return boolean
+	 */
+	public function verbosity() {
+		if ($this->args->verbose) {
+			return true;
+		} elseif ($this->args->quiet) {
+			return false;
+		} else {
+			return null;
+		}
+	}
+}
+<?php
+
+namespace pharext;
+
+/**
+ * Command interface
+ */
+interface Command
+{
+	/**
+	 * Argument error
+	 */
+	const EARGS = 1;
+	/**
+	 * Build error
+	 */
+	const EBUILD = 2;
+	/**
+	 * Signature error
+	 */
+	const ESIGN = 3;
+	/**
+	 * Extract/unpack error
+	 */
+	const EEXTRACT = 4;
+	/**
+	 * Install error
+	 */
+	const EINSTALL = 5;
+	
+	/**
+	 * Retrieve command line arguments
+	 * @return pharext\Cli\Args
+	 */
+	public function getArgs();
+	
+	/**
+	 * Print debug message
+	 * @param string $fmt
+	 * @param string ...$args
+	 */
+	public function debug($fmt);
+	
+	/**
+	 * Print info
+	 * @param string $fmt
+	 * @param string ...$args
+	 */
+	public function info($fmt);
+	
+	/**
+	 * Print warning
+	 * @param string $fmt
+	 * @param string ...$args
+	 */
+	public function warn($fmt);
+
+	/**
+	 * Print error
+	 * @param string $fmt
+	 * @param string ...$args
+	 */
+	public function error($fmt);
+
+	/**
+	 * Execute the command
+	 * @param int $argc command line argument count
+	 * @param array $argv command line argument list
+	 */
+	public function run($argc, array $argv);
+}
+<?php
+
+namespace pharext;
+
+class Exception extends \Exception
+{
+	public function __construct($message = null, $code = 0, $previous = null) {
+		if (!isset($message)) {
+			$last_error = error_get_last();
+			$message = $last_error["message"];
+			if (!$code) {
+				$code = $last_error["type"];
+			}
+		}
+		parent::__construct($message, $code, $previous);
+	}
+}
+<?php
+
+namespace pharext;
+
+/**
+ * Execute system command
+ */
+class ExecCmd
+{
+	/**
+	 * Sudo command, if the cmd needs escalated privileges
+	 * @var string
+	 */
+	private $sudo;
+	
+	/**
+	 * Executable of the cmd
+	 * @var string
+	 */
+	private $command;
+	
+	/**
+	 * Passthrough cmd output
+	 * @var bool
+	 */
+	private $verbose;
+	
+	/**
+	 * Output of cmd run
+	 * @var string
+	 */
+	private $output;
+	
+	/**
+	 * Return code of cmd run
+	 * @var int
+	 */
+	private $status;
+
+	/**
+	 * @param string $command
+	 * @param bool verbose
+	 */
+	public function __construct($command, $verbose = false) {
+		$this->command = $command;
+		$this->verbose = $verbose;
+	}
+	
+	/**
+	 * (Re-)set sudo command
+	 * @param string $sudo
+	 */
+	public function setSu($sudo = false) {
+		$this->sudo = $sudo;
+	}
+	
+	/**
+	 * Execute a program with escalated privileges handling interactive password prompt
+	 * @param string $command
+	 * @param bool $verbose
+	 * @return int exit status
+	 */
+	private function suExec($command, $verbose = null) {
+		if (!($proc = proc_open($command, [STDIN,["pipe","w"],["pipe","w"]], $pipes))) {
+			$this->status = -1;
+			throw new Exception("Failed to run {$command}");
+		}
+		
+		$stdout = $pipes[1];
+		$passwd = 0;
+		$checks = 10;
+
+		while (!feof($stdout)) {
+			$R = [$stdout]; $W = []; $E = [];
+			if (!stream_select($R, $W, $E, null)) {
+				continue;
+			}
+			$data = fread($stdout, 0x1000);
+			/* only check a few times */
+			if ($passwd < $checks) {
+				$passwd++;
+				if (stristr($data, "password")) {
+					$passwd = $checks + 1;
+					printf("\n%s", $data);
+					continue;
+				}
+			} elseif ($passwd > $checks) {
+				/* new line after pw entry */
+				printf("\n");
+				$passwd = $checks;
+			}
+			
+			if ($verbose === null) {
+				print $this->progress($data, 0);
+			} else {
+				if ($verbose) {
+					printf("%s", $data);
+				}
+				$this->output .= $data;
+			}
+		}
+		if ($verbose === null) {
+			$this->progress("", PHP_OUTPUT_HANDLER_FINAL);
+		}
+		return $this->status = proc_close($proc);
+	}
+
+	/**
+	 * Output handler that displays some progress while soaking output
+	 * @param string $string
+	 * @param int $flags
+	 * @return string
+	 */
+	private function progress($string, $flags) {
+		static $counter = 0;
+		static $symbols = ["\\","|","/","-"];
+
+		$this->output .= $string;
+		
+		if (false !== strpos($string, "\n")) {
+			++$counter;
+		}
+
+		return $flags & PHP_OUTPUT_HANDLER_FINAL
+			? "   \r"
+			: sprintf("  %s\r", $symbols[$counter % 4]);
+	}
+
+	/**
+	 * Run the command
+	 * @param array $args
+	 * @return \pharext\ExecCmd self
+	 * @throws \pharext\Exception
+	 */
+	public function run(array $args = null) {
+		$exec = escapeshellcmd($this->command);
+		if ($args) {
+			$exec .= " ". implode(" ", array_map("escapeshellarg", (array) $args));
+		}
+		
+		if ($this->sudo) {
+			$this->suExec(sprintf($this->sudo." 2>&1", $exec), $this->verbose);
+		} elseif ($this->verbose) {
+			ob_start(function($s) {
+				$this->output .= $s;
+				return $s;
+			}, 1);
+			passthru($exec, $this->status);
+			ob_end_flush();
+		} elseif ($this->verbose !== false /* !quiet */) {
+			ob_start([$this, "progress"], 1);
+			passthru($exec . " 2>&1", $this->status);
+			ob_end_flush();
+		} else {
+			exec($exec ." 2>&1", $output, $this->status);
+			$this->output = implode("\n", $output);
+		}
+		
+		if ($this->status) {
+			throw new Exception("Command {$exec} failed ({$this->status})");
+		}
+
+		return $this;
+	}
+	
+	/**
+	 * Retrieve exit code of cmd run
+	 * @return int
+	 */
+	public function getStatus() {
+		return $this->status;
+	}
+	
+	/**
+	 * Retrieve output of cmd run
+	 * @return string
+	 */
+	public function getOutput() {
+		return $this->output;
+	}
+}
+<?php
+
+namespace pharext;
+
+use Phar;
+use SplObjectStorage;
+
+/**
+ * The extension install command executed by the extension phar
+ */
+class Installer implements Command
+{
+	use Cli\Command;
+
+	/**
+	 * Cleanups
+	 * @var array
+	 */
+	private $cleanup = [];
+
+	/**
+	 * Create the command
+	 */
+	public function __construct() {
+		$this->args = new Cli\Args([
+			["h", "help", "Display help",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			["v", "verbose", "More output",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			["q", "quiet", "Less output",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			["p", "prefix", "PHP installation prefix if phpize is not in \$PATH, e.g. /opt/php7",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::REQARG],
+			["n", "common-name", "PHP common program name, e.g. php5 or zts-php",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::REQARG,
+				"php"],
+			["c", "configure", "Additional extension configure flags, e.g. -c --with-flag",
+				Cli\Args::OPTIONAL|Cli\Args::MULTI|Cli\Args::REQARG],
+			["s", "sudo", "Installation might need increased privileges",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::OPTARG,
+				"sudo -S %s"],
+			["i", "ini", "Activate in this php.ini instead of loaded default php.ini",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::REQARG],
+			[null, "signature", "Show package signature",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[null, "license", "Show package license",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[null, "name", "Show package name",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[null, "date", "Show package release date",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[null, "release", "Show package release version",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[null, "version", "Show pharext version",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+		]);
+	}
+
+	/**
+	 * Perform cleaniup
+	 */
+	function __destruct() {
+		foreach ($this->cleanup as $cleanup) {
+			$cleanup->run();
+		}
+	}
+
+	private function extract($phar) {
+		$temp = (new Task\Extract($phar))->run($this->verbosity());
+		$this->cleanup[] = new Task\Cleanup($temp);
+		return $temp;
+	}
+
+	private function hooks(SplObjectStorage $phars) {
+		$hook = [];
+		foreach ($phars as $phar) {
+			if (isset($phar["pharext_package.php"])) {
+				$sdir = include $phar["pharext_package.php"];
+				if ($sdir instanceof SourceDir) {
+					$this->args->compile($sdir->getArgs());
+					$hook[] = $sdir;
+				}
+			}
+		}
+		return $hook;
+	}
+
+	private function load() {
+		$list = new SplObjectStorage();
+		$phar = extension_loaded("Phar")
+			? new Phar(Phar::running(false))
+			: new Archive(PHAREXT_PHAR);
+		$temp = $this->extract($phar);
+
+		foreach ($phar as $entry) {
+			$dep_file = $entry->getBaseName();
+			if (fnmatch("*.ext.phar*", $dep_file)) {
+				$dep_phar = extension_loaded("Phar")
+					? new Phar("$temp/$dep_file")
+					: new Archive("$temp/$dep_file");
+				$list[$dep_phar] = $this->extract($dep_phar);
+			}
+		}
+
+		/* the actual ext.phar at last */
+		$list[$phar] = $temp;
+		return $list;
+	}
+
+	/**
+	 * @inheritdoc
+	 * @see \pharext\Command::run()
+	 */
+	public function run($argc, array $argv) {
+		try {
+			/* load the phar(s) */
+			$list = $this->load();
+			/* installer hooks */
+			$hook = $this->hooks($list);
+		} catch (\Exception $e) {
+			$this->error("%s\n", $e->getMessage());
+			exit(self::EEXTRACT);
+		}
+
+		/* standard arg stuff */
+		$errs = [];
+		$prog = array_shift($argv);
+		foreach ($this->args->parse(--$argc, $argv) as $error) {
+			$errs[] = $error;
+		}
+
+		if ($this->args["help"]) {
+			$this->header();
+			$this->help($prog);
+			exit;
+		}
+		try {
+			foreach (["signature", "name", "date", "license", "release", "version"] as $opt) {
+				if ($this->args[$opt]) {
+					printf("%s\n", $this->metadata($opt));
+					exit;
+				}
+			}
+		} catch (\Exception $e) {
+			$this->error("%s\n", $e->getMessage());
+			exit(self::EARGS);
+		}
+
+		foreach ($this->args->validate() as $error) {
+			$errs[] = $error;
+		}
+
+		if ($errs) {
+			if (!$this->args["quiet"]) {
+				$this->header();
+			}
+			foreach ($errs as $err) {
+				$this->error("%s\n", $err);
+			}
+			if (!$this->args["quiet"]) {
+				$this->help($prog);
+			}
+			exit(self::EARGS);
+		}
+
+		try {
+			/* post process hooks */
+			foreach ($hook as $sdir) {
+				$sdir->setArgs($this->args);
+			}
+		} catch (\Exception $e) {
+			$this->error("%s\n", $e->getMessage());
+			exit(self::EARGS);
+		}
+
+		/* install packages */
+		try {
+			foreach ($list as $phar) {
+				$this->info("Installing %s ...\n", basename($phar->getPath()));
+				$this->install($list[$phar]);
+				$this->activate($list[$phar]);
+				$this->info("Successfully installed %s!\n", basename($phar->getPath()));
+			}
+		} catch (\Exception $e) {
+			$this->error("%s\n", $e->getMessage());
+			exit(self::EINSTALL);
+		}
+	}
+
+	/**
+	 * Phpize + trinity
+	 */
+	private function install($temp) {
+		// phpize
+		$phpize = new Task\Phpize($temp, $this->args->prefix, $this->args->{"common-name"});
+		$phpize->run($this->verbosity());
+
+		// configure
+		$configure = new Task\Configure($temp, $this->args->configure, $this->args->prefix, $this->args->{"common-name"});
+		$configure->run($this->verbosity());
+
+		// make
+		$make = new Task\Make($temp);
+		$make->run($this->verbosity());
+
+		// install
+		$sudo = isset($this->args->sudo) ? $this->args->sudo : null;
+		$install = new Task\Make($temp, ["install"], $sudo);
+		$install->run($this->verbosity());
+	}
+
+	private function activate($temp) {
+		if ($this->args->ini) {
+			$files = [$this->args->ini];
+		} else {
+			$files = array_filter(array_map("trim", explode(",", php_ini_scanned_files())));
+			$files[] = php_ini_loaded_file();
+		}
+
+		$sudo = isset($this->args->sudo) ? $this->args->sudo : null;
+		$type = $this->metadata("type") ?: "extension";
+
+		$activate = new Task\Activate($temp, $files, $type, $this->args->prefix, $this->args{"common-name"}, $sudo);
+		if (!$activate->run($this->verbosity())) {
+			$this->info("Extension already activated ...\n");
+		}
+	}
+}
+<?php
+
+namespace pharext;
+
+trait License
+{
+	function findLicense($dir, $file = null) {
+		if (isset($file)) {
+			return realpath("$dir/$file");
+		}
+
+		$names = [];
+		foreach (["{,UN}LICEN{S,C}{E,ING}", "COPY{,ING,RIGHT}"] as $name) {
+			$names[] = $this->mergeLicensePattern($name, strtolower($name));
+		}
+		$exts = [];
+		foreach (["t{,e}xt", "rst", "asc{,i,ii}", "m{,ark}d{,own}", "htm{,l}"] as $ext) {
+			$exts[] = $this->mergeLicensePattern(strtoupper($ext), $ext);
+		}
+		
+		$pattern = "{". implode(",", $names) ."}{,.{". implode(",", $exts) ."}}";
+
+		if (($glob = glob("$dir/$pattern", GLOB_BRACE))) {
+			return current($glob);
+		}
+	}
+
+	private function mergeLicensePattern($upper, $lower) {
+		$pattern = "";
+		$length = strlen($upper);
+		for ($i = 0; $i < $length; ++$i) {
+			if ($lower{$i} === $upper{$i}) {
+				$pattern .= $upper{$i};
+			} else {
+				$pattern .= "[" . $upper{$i} . $lower{$i} . "]";
+			}
+		}
+		return $pattern;
+	}
+
+	public function readLicense($file) {
+		$text = file_get_contents($file);
+		switch (strtolower(pathinfo($file, PATHINFO_EXTENSION))) {
+			case "htm":
+			case "html":
+				$text = strip_tags($text);
+				break;
+		}
+		return $text;
+	}
+}
+<?php
+
+namespace pharext;
+
+class Metadata
+{
+	static function version() {
+		return "4.1.1";
+	}
+
+	static function header() {
+		return sprintf("pharext v%s (c) Michael Wallner <mike@php.net>", self::version());
+	}
+
+	static function date() {
+		return gmdate("Y-m-d");
+	}
+
+	static function all() {
+		return [
+			"version" => self::version(),
+			"header" => self::header(),
+			"date" => self::date(),
+		];
+	}
+}
+<?php
+
+namespace pharext\Openssl;
+
+use pharext\Exception;
+
+class PrivateKey
+{
+	/**
+	 * Private key
+	 * @var string
+	 */
+	private $key;
+	
+	/**
+	 * Public key
+	 * @var string
+	 */
+	private $pub;
+
+	/**
+	 * Read a private key
+	 * @param string $file
+	 * @param string $password
+	 * @throws \pharext\Exception
+	 */
+	function __construct($file, $password) {
+		/* there appears to be a bug with refcount handling of this
+		 * resource; when the resource is stored as property, it cannot be
+		 * "coerced to a private key" on openssl_sign() later in another method
+		 */
+		$key = openssl_pkey_get_private("file://$file", $password);
+		if (!is_resource($key)) {
+			throw new Exception("Could not load private key");
+		}
+		openssl_pkey_export($key, $this->key);
+		$this->pub = openssl_pkey_get_details($key)["key"];
+	}
+
+	/**
+	 * Sign the PHAR
+	 * @param \Phar $package
+	 */
+	function sign(\Phar $package) {
+		$package->setSignatureAlgorithm(\Phar::OPENSSL, $this->key);
+	}
+
+	/**
+	 * Export the public key to a file
+	 * @param string $file
+	 * @throws \pharext\Exception
+	 */
+	function exportPublicKey($file) {
+		if (!file_put_contents("$file.tmp", $this->pub) || !rename("$file.tmp", $file)) {
+			throw new Exception;
+		}
+	}
+}
+<?php
+
+namespace pharext;
+
+use Phar;
+use pharext\Exception;
+
+/**
+ * The extension packaging command executed by bin/pharext
+ */
+class Packager implements Command
+{
+	use Cli\Command;
+	
+	/**
+	 * Extension source directory
+	 * @var pharext\SourceDir
+	 */
+	private $source;
+	
+	/**
+	 * Cleanups
+	 * @var array
+	 */
+	private $cleanup = [];
+	
+	/**
+	 * Create the command
+	 */
+	public function __construct() {
+		$this->args = new Cli\Args([
+			["h", "help", "Display this help",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			["v", "verbose", "More output",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			["q", "quiet", "Less output",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			["n", "name", "Extension name",
+				Cli\Args::REQUIRED|Cli\Args::SINGLE|Cli\Args::REQARG],
+			["r", "release", "Extension release version",
+				Cli\Args::REQUIRED|Cli\Args::SINGLE|Cli\Args::REQARG],
+			["s", "source", "Extension source directory",
+				Cli\Args::REQUIRED|Cli\Args::SINGLE|Cli\Args::REQARG],
+			["g", "git", "Use `git ls-tree` to determine file list",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			["b", "branch", "Checkout this tag/branch",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::REQARG],
+			["p", "pecl", "Use PECL package.xml to determine file list, name and release",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			["d", "dest", "Destination directory",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::REQARG,
+				"."],
+			["z", "gzip", "Create additional PHAR compressed with gzip",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			["Z", "bzip", "Create additional PHAR compressed with bzip",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			["S", "sign", "Sign the PHAR with a private key",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::REQARG],
+			["E", "zend", "Mark as Zend Extension",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			[null, "signature", "Show pharext signature",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[null, "license", "Show pharext license",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[null, "version", "Show pharext version",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+		]);
+	}
+	
+	/**
+	 * Perform cleaniup
+	 */
+	function __destruct() {
+		foreach ($this->cleanup as $cleanup) {
+			$cleanup->run();
+		}
+	}
+	
+	/**
+	 * @inheritdoc
+	 * @see \pharext\Command::run()
+	 */
+	public function run($argc, array $argv) {
+		$errs = [];
+		$prog = array_shift($argv);
+		foreach ($this->args->parse(--$argc, $argv) as $error) {
+			$errs[] = $error;
+		}
+		
+		if ($this->args["help"]) {
+			$this->header();
+			$this->help($prog);
+			exit;
+		}
+		try {
+			foreach (["signature", "license", "version"] as $opt) {
+				if ($this->args[$opt]) {
+					printf("%s\n", $this->metadata($opt));
+					exit;
+				}
+			}
+		} catch (\Exception $e) {
+			$this->error("%s\n", $e->getMessage());
+			exit(self::EARGS);
+		}
+
+		try {
+			/* source needs to be evaluated before Cli\Args validation, 
+			 * so e.g. name and version can be overriden and Cli\Args 
+			 * does not complain about missing arguments
+			 */
+			$this->loadSource();
+		} catch (\Exception $e) {
+			$errs[] = $e->getMessage();
+		}
+		
+		foreach ($this->args->validate() as $error) {
+			$errs[] = $error;
+		}
+		
+		if ($errs) {
+			if (!$this->args["quiet"]) {
+				$this->header();
+			}
+			foreach ($errs as $err) {
+				$this->error("%s\n", $err);
+			}
+			printf("\n");
+			if (!$this->args["quiet"]) {
+				$this->help($prog);
+			}
+			exit(self::EARGS);
+		}
+		
+		$this->createPackage();
+	}
+	
+	/**
+	 * Download remote source
+	 * @param string $source
+	 * @return string local source
+	 */
+	private function download($source) {
+		if ($this->args->git) {
+			$task = new Task\GitClone($source, $this->args->branch);
+		} else {
+			/* print newline only once */
+			$done = false;
+			$task = new Task\StreamFetch($source, function($bytes_pct) use(&$done) {
+				if (!$done) {
+					$this->info(" %3d%% [%s>%s] \r",
+						floor($bytes_pct*100),
+						str_repeat("=", round(50*$bytes_pct)),
+						str_repeat(" ", round(50*(1-$bytes_pct)))
+					);
+					if ($bytes_pct == 1) {
+						$done = true;
+						$this->info("\n");
+					}
+				}
+			});
+		}
+		$local = $task->run($this->verbosity());
+
+		$this->cleanup[] = new Task\Cleanup($local);
+		return $local;
+	}
+
+	/**
+	 * Extract local archive
+	 * @param stirng $source
+	 * @return string extracted directory
+	 */
+	private function extract($source) {
+		try {
+			$task = new Task\Extract($source);
+			$dest = $task->run($this->verbosity());
+		} catch (\Exception $e) {
+			if (false === strpos($e->getMessage(), "checksum mismatch")) {
+				throw $e;
+			}
+			$dest = (new Task\PaxFixup($source))->run($this->verbosity());
+		}
+		
+		$this->cleanup[] = new Task\Cleanup($dest);
+		return $dest;
+	}
+
+	/**
+	 * Localize a possibly remote source
+	 * @param string $source
+	 * @return string local source directory
+	 */
+	private function localize($source) {
+		if (!stream_is_local($source) || ($this->args->git && isset($this->args->branch))) {
+			$source = $this->download($source);
+			$this->cleanup[] = new Task\Cleanup($source);
+		}
+		$source = realpath($source);
+		if (!is_dir($source)) {
+			$source = $this->extract($source);
+			$this->cleanup[] = new Task\Cleanup($source);
+			
+			if (!$this->args->git) {
+				$source = (new Task\PeclFixup($source))->run($this->verbosity());
+			}
+		}
+		return $source;
+	}
+
+	/**
+	 * Load the source dir
+	 * @throws \pharext\Exception
+	 */
+	private function loadSource(){
+		if ($this->args["source"]) {
+			$source = $this->localize($this->args["source"]);
+
+			if ($this->args["pecl"]) {
+				$this->source = new SourceDir\Pecl($source);
+			} elseif ($this->args["git"]) {
+				$this->source = new SourceDir\Git($source);
+			} elseif (is_file("$source/pharext_package.php")) {
+				$this->source = include "$source/pharext_package.php";
+			} else {
+				$this->source = new SourceDir\Basic($source);
+			}
+
+			if (!$this->source instanceof SourceDir) {
+				throw new Exception("Unknown source dir $source");
+			}
+
+			foreach ($this->source->getPackageInfo() as $key => $val) {
+				$this->args->$key = $val;
+			}
+		}
+	}
+
+	/**
+	 * Creates the extension phar
+	 */
+	private function createPackage() {
+		try {
+			$meta = array_merge(Metadata::all(), [
+				"name" => $this->args->name,
+				"release" => $this->args->release,
+				"license" => $this->source->getLicense(),
+				"type" => $this->args->zend ? "zend_extension" : "extension",
+			]);
+			$file = (new Task\PharBuild($this->source, __DIR__."/../pharext_installer.php", $meta))->run($this->verbosity());
+		} catch (\Exception $e) {
+			$this->error("%s\n", $e->getMessage());
+			exit(self::EBUILD);
+		}
+
+		try {
+			if ($this->args->sign) {
+				$this->info("Using private key to sign phar ...\n");
+				$pass = (new Task\Askpass)->run($this->verbosity());
+				$sign = new Task\PharSign($file, $this->args->sign, $pass);
+				$pkey = $sign->run($this->verbosity());
+			}
+
+		} catch (\Exception $e) {
+			$this->error("%s\n", $e->getMessage());
+			exit(self::ESIGN);
+		}
+
+		if ($this->args->gzip) {
+			try {
+				$gzip = (new Task\PharCompress($file, Phar::GZ))->run();
+				$move = new Task\PharRename($gzip, $this->args->dest, $this->args->name ."-". $this->args->release);
+				$name = $move->run($this->verbosity());
+
+				$this->info("Created gzipped phar %s\n", $name);
+
+				if ($this->args->sign) {
+					$sign = new Task\PharSign($name, $this->args->sign, $pass);
+					$sign->run($this->verbosity())->exportPublicKey($name.".pubkey");
+				}
+
+			} catch (\Exception $e) {
+				$this->warn("%s\n", $e->getMessage());
+			}
+		}
+		
+		if ($this->args->bzip) {
+			try {
+				$bzip = (new Task\PharCompress($file, Phar::BZ2))->run();
+				$move = new Task\PharRename($bzip, $this->args->dest, $this->args->name ."-". $this->args->release);
+				$name = $move->run($this->verbosity());
+
+				$this->info("Created bzipped phar %s\n", $name);
+
+				if ($this->args->sign) {
+					$sign = new Task\PharSign($name, $this->args->sign, $pass);
+					$sign->run($this->verbosity())->exportPublicKey($name.".pubkey");
+				}
+
+			} catch (\Exception $e) {
+				$this->warn("%s\n", $e->getMessage());
+			}
+		}
+
+		try {
+			$move = new Task\PharRename($file, $this->args->dest, $this->args->name ."-". $this->args->release);
+			$name = $move->run($this->verbosity());
+
+			$this->info("Created executable phar %s\n", $name);
+
+			if (isset($pkey)) {
+				$pkey->exportPublicKey($name.".pubkey");
+			}
+
+		} catch (\Exception $e) {
+			$this->error("%s\n", $e->getMessage());
+			exit(self::EBUILD);
+		}
+	}
+}
+<?php
+
+namespace pharext\SourceDir;
+
+use pharext\Cli\Args;
+use pharext\License;
+use pharext\SourceDir;
+
+use FilesystemIterator;
+use IteratorAggregate;
+use RecursiveCallbackFilterIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+
+
+class Basic implements IteratorAggregate, SourceDir
+{
+	use License;
+	
+	private $path;
+	
+	public function __construct($path) {
+		$this->path = $path;
+	}
+	
+	public function getBaseDir() {
+		return $this->path;
+	}
+	
+	public function getPackageInfo() {
+		return [];
+	}
+	
+	public function getLicense() {
+		if (($file = $this->findLicense($this->getBaseDir()))) {
+			return $this->readLicense($file);
+		}
+		return "UNKNOWN";
+	}
+
+	public function getArgs() {
+		return [];
+	}
+	
+	public function setArgs(Args $args) {
+	}
+
+	public function filter($current, $key, $iterator) {
+		$sub = $current->getSubPath();
+		if ($sub === ".git" || $sub === ".hg" || $sub === ".svn") {
+			return false;
+		}
+		return true;
+	}
+	
+	public function getIterator() {
+		$rdi = new RecursiveDirectoryIterator($this->path,
+				FilesystemIterator::CURRENT_AS_SELF | // needed for 5.5
+				FilesystemIterator::KEY_AS_PATHNAME |
+				FilesystemIterator::SKIP_DOTS);
+		$rci = new RecursiveCallbackFilterIterator($rdi, [$this, "filter"]);
+		$rii = new RecursiveIteratorIterator($rci);
+		foreach ($rii as $path => $child) {
+			if (!$child->isDir()) {
+				yield realpath($path);
+			}
+		}
+	}
+}
+<?php
+
+namespace pharext\SourceDir;
+
+use pharext\Cli\Args;
+use pharext\License;
+use pharext\SourceDir;
+
+/**
+ * Extension source directory which is a git repo
+ */
+class Git implements \IteratorAggregate, SourceDir
+{
+	use License;
+	
+	/**
+	 * Base directory
+	 * @var string
+	 */
+	private $path;
+	
+	/**
+	 * @inheritdoc
+	 * @see \pharext\SourceDir::__construct()
+	 */
+	public function __construct($path) {
+		$this->path = $path;
+	}
+
+	/**
+	 * @inheritdoc
+	 * @see \pharext\SourceDir::getBaseDir()
+	 */
+	public function getBaseDir() {
+		return $this->path;
+	}
+
+	/**
+	 * @inheritdoc
+	 * @return array
+	 */
+	public function getPackageInfo() {
+		return [];
+	}
+
+	/**
+	 * @inheritdoc
+	 * @return string
+	 */
+	public function getLicense() {
+		if (($file = $this->findLicense($this->getBaseDir()))) {
+			return $this->readLicense($file);
+		}
+		return "UNKNOWN";
+	}
+
+	/**
+	 * @inheritdoc
+	 * @return array
+	 */
+	public function getArgs() {
+		return [];
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function setArgs(Args $args) {
+	}
+
+	/**
+	 * Generate a list of files by `git ls-files`
+	 * @return Generator
+	 */
+	private function generateFiles() {
+		$pwd = getcwd();
+		chdir($this->path);
+		if (($pipe = popen("git ls-tree -r --name-only HEAD", "r"))) {
+			$path = realpath($this->path);
+			while (!feof($pipe)) {
+				if (strlen($file = trim(fgets($pipe)))) {
+					/* there may be symlinks, so no realpath here */
+					yield "$path/$file";
+				}
+			}
+			pclose($pipe);
+		}
+		chdir($pwd);
+	}
+
+	/**
+	 * Implements IteratorAggregate
+	 * @see IteratorAggregate::getIterator()
+	 */
+	public function getIterator() {
+		return $this->generateFiles();
+	}
+}
+<?php
+
+namespace pharext\SourceDir;
+
+use pharext\Cli\Args;
+use pharext\Exception;
+use pharext\SourceDir;
+use pharext\License;
+
+/**
+ * A PECL extension source directory containing a v2 package.xml
+ */
+class Pecl implements \IteratorAggregate, SourceDir
+{
+	use License;
+	
+	/**
+	 * The package.xml
+	 * @var SimpleXmlElement
+	 */
+	private $sxe;
+	
+	/**
+	 * The base directory
+	 * @var string
+	 */
+	private $path;
+
+	/**
+	 * The package.xml
+	 * @var string
+	 */
+	private $file;
+	
+	/**
+	 * @inheritdoc
+	 * @see \pharext\SourceDir::__construct()
+	 */
+	public function __construct($path) {
+		if (is_file("$path/package2.xml")) {
+			$sxe = simplexml_load_file($this->file = "$path/package2.xml");
+		} elseif (is_file("$path/package.xml")) {
+			$sxe = simplexml_load_file($this->file = "$path/package.xml");
+		} else {
+			throw new Exception("Missing package.xml in $path");
+		}
+		
+		$sxe->registerXPathNamespace("pecl", $sxe->getDocNamespaces()[""]);
+		
+		$this->sxe = $sxe;
+		$this->path = realpath($path);
+	}
+	
+	/**
+	 * @inheritdoc
+	 * @see \pharext\SourceDir::getBaseDir()
+	 */
+	public function getBaseDir() {
+		return $this->path;
+	}
+
+	/**
+	 * Retrieve gathered package info
+	 * @return Generator
+	 */
+	public function getPackageInfo() {
+		if (($name = $this->sxe->xpath("/pecl:package/pecl:name"))) {
+			yield "name" => (string) $name[0];
+		}
+		if (($release = $this->sxe->xpath("/pecl:package/pecl:version/pecl:release"))) {
+			yield "release" => (string) $release[0];
+		}
+		if ($this->sxe->xpath("/pecl:package/pecl:zendextsrcrelease")) {
+			yield "zend" => true;
+		}
+	}
+
+	/**
+	 * @inheritdoc
+	 * @return string
+	 */
+	public function getLicense() {
+		if (($license = $this->sxe->xpath("/pecl:package/pecl:license"))) {
+			if (($file = $this->findLicense($this->getBaseDir(), $license[0]["filesource"]))) {
+				return $this->readLicense($file);
+			}
+		}
+		if (($file = $this->findLicense($this->getBaseDir()))) {
+			return $this->readLicense($file);
+		}
+		if ($license) {
+			return $license[0] ." ". $license[0]["uri"];
+		}
+		return "UNKNOWN";
+	}
+
+	/**
+	 * @inheritdoc
+	 * @see \pharext\SourceDir::getArgs()
+	 */
+	public function getArgs() {
+		$configure = $this->sxe->xpath("/pecl:package/pecl:extsrcrelease/pecl:configureoption");
+		foreach ($configure as $cfg) {
+			yield [null, $cfg["name"], ucfirst($cfg["prompt"]), Args::OPTARG,
+				strlen($cfg["default"]) ? $cfg["default"] : null];
+		}
+		$configure = $this->sxe->xpath("/pecl:package/pecl:zendextsrcrelease/pecl:configureoption");
+		foreach ($configure as $cfg) {
+			yield [null, $cfg["name"], ucfirst($cfg["prompt"]), Args::OPTARG,
+				strlen($cfg["default"]) ? $cfg["default"] : null];
+		}
+	}
+
+	/**
+	 * @inheritdoc
+	 * @see \pharext\SourceDir::setArgs()
+	 */
+	public function setArgs(Args $args) {
+		$configure = $this->sxe->xpath("/pecl:package/pecl:extsrcrelease/pecl:configureoption");
+		foreach ($configure as $cfg) {
+			if (isset($args[$cfg["name"]])) {
+				$args->configure = "--{$cfg["name"]}={$args[$cfg["name"]]}";
+			}
+		}
+		$configure = $this->sxe->xpath("/pecl:package/pecl:zendextsrcrelease/pecl:configureoption");
+		foreach ($configure as $cfg) {
+			if (isset($args[$cfg["name"]])) {
+				$args->configure = "--{$cfg["name"]}={$args[$cfg["name"]]}";
+			}
+		}
+	}
+	
+	/**
+	 * Compute the path of a file by parent dir nodes
+	 * @param \SimpleXMLElement $ele
+	 * @return string
+	 */
+	private function dirOf($ele) {
+		$path = "";
+		while (($ele = current($ele->xpath(".."))) && $ele->getName() == "dir") {
+			$path = trim($ele["name"], "/") ."/". $path ;
+		}
+		return trim($path, "/");
+	}
+
+	/**
+	 * Generate a list of files from the package.xml
+	 * @return Generator
+	 */
+	private function generateFiles() {
+		/* hook  */
+		$temp = tmpfile();
+		fprintf($temp, "<?php\nreturn new %s(__DIR__);\n", get_class($this));
+		rewind($temp);
+		yield "pharext_package.php" => $temp;
+
+		/* deps */
+		$dependencies = $this->sxe->xpath("/pecl:package/pecl:dependencies/pecl:required/pecl:package");
+		foreach ($dependencies as $key => $dep) {
+			if (($glob = glob("{$this->path}/{$dep->name}-*.ext.phar*"))) {
+				usort($glob, function($a, $b) {
+					return version_compare(
+						substr($a, strpos(".ext.phar", $a)),
+						substr($b, strpos(".ext.phar", $b))
+					);
+				});
+				yield end($glob);
+			}
+		}
+
+		/* files */
+		yield realpath($this->file);
+		foreach ($this->sxe->xpath("//pecl:file") as $file) {
+			yield realpath($this->path ."/". $this->dirOf($file) ."/". $file["name"]);
+		}
+	}
+	
+	/**
+	 * Implements IteratorAggregate
+	 * @see IteratorAggregate::getIterator()
+	 */
+	public function getIterator() {
+		return $this->generateFiles();
+	}
+}
+<?php
+
+namespace pharext;
+
+/**
+ * Source directory interface, which should yield file names to package on traversal
+ */
+interface SourceDir extends \Traversable
+{
+	/**
+	 * Retrieve the base directory
+	 * @return string
+	 */
+	public function getBaseDir();
+
+	/**
+	 * Retrieve gathered package info
+	 * @return array|Traversable
+	 */
+	public function getPackageInfo();
+
+	/**
+	 * Retrieve the full text license
+	 * @return string
+	 */
+	public function getLicense();
+
+	/**
+	 * Provide installer command line args
+	 * @return array|Traversable
+	 */
+	public function getArgs();
+
+	/**
+	 * Process installer command line args
+	 * @param \pharext\Cli\Args $args
+	 */
+	public function setArgs(Cli\Args $args);
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Exception;
+use pharext\ExecCmd;
+use pharext\Task;
+use pharext\Tempfile;
+
+/**
+ * PHP INI activation
+ */
+class Activate implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $cwd;
+
+	/**
+	 * @var array
+	 */
+	private $inis;
+
+	/**
+	 * @var string
+	 */
+	private $type;
+
+	/**
+	 * @var string
+	 */
+	private $php_config;
+	
+	/**
+	 * @var string
+	 */
+	private $sudo;
+
+	/**
+	 * @param string $cwd working directory
+	 * @param array $inis custom INI or list of loaded/scanned INI files
+	 * @param string $type extension or zend_extension
+	 * @param string $prefix install prefix, e.g. /usr/local
+	 * @param string $common_name PHP programs common name, e.g. php5
+	 * @param string $sudo sudo command
+	 * @throws \pharext\Exception
+	 */
+	public function __construct($cwd, array $inis, $type = "extension", $prefix = null, $common_name = "php", $sudo = null) {
+		$this->cwd = $cwd;
+		$this->type = $type;
+		$this->sudo = $sudo;
+		if (!$this->inis = $inis) {
+			throw new Exception("No PHP INIs given");
+		}
+		$cmd = $common_name . "-config";
+		if (isset($prefix)) {
+			$cmd = $prefix . "/bin/" . $cmd;
+		}
+		$this->php_config = $cmd;
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return boolean false, if extension was already activated
+	 */
+	public function run($verbose = false) {
+		if ($verbose !== false) {
+			printf("Running INI activation ...\n");
+		}
+		$extension = basename(current(glob("{$this->cwd}/modules/*.so")));
+
+		if ($this->type === "zend_extension") {
+			$pattern = preg_quote((new ExecCmd($this->php_config))->run(["--extension-dir"])->getOutput() . "/$extension", "/");
+		} else {
+			$pattern = preg_quote($extension, "/");
+		}
+
+		foreach ($this->inis as $file) {
+			if ($verbose) {
+				printf("Checking %s ...\n", $file);
+			}
+			if (!file_exists($file)) {
+				throw new Exception(sprintf("INI file '%s' does not exist", $file));
+			}
+			$temp = new Tempfile("phpini");
+			foreach (file($file) as $line) {
+				if (preg_match("/^\s*{$this->type}\s*=\s*[\"']?{$pattern}[\"']?\s*(;.*)?\$/", $line)) {
+					return false;
+				}
+				fwrite($temp->getStream(), $line);
+			}
+		}
+
+		/* not found; append to last processed file, which is the main by default */
+		if ($verbose) {
+			printf("Activating in %s ...\n", $file);
+		}
+		fprintf($temp->getStream(), $this->type . "=%s\n", $extension);
+		$temp->closeStream();
+
+		$path = $temp->getPathname();
+		$stat = stat($file);
+
+		// owner transfer
+		$ugid = sprintf("%d:%d", $stat["uid"], $stat["gid"]);
+		$cmd = new ExecCmd("chown", $verbose);
+		if (isset($this->sudo)) {
+			$cmd->setSu($this->sudo);
+		}
+		$cmd->run([$ugid, $path]);
+
+		// permission transfer
+		$perm = decoct($stat["mode"] & 0777);
+		$cmd = new ExecCmd("chmod", $verbose);
+		if (isset($this->sudo)) {
+			$cmd->setSu($this->sudo);
+		}
+		$cmd->run([$perm, $path]);
+
+		// rename
+		$cmd = new ExecCmd("mv", $verbose);
+		if (isset($this->sudo)) {
+			$cmd->setSu($this->sudo);
+		}
+		$cmd->run([$path, $file]);
+		
+		if ($verbose) {
+			printf("Replaced %s ...\n", $file);
+		}
+
+		return true;
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Task;
+
+/**
+ * Ask password on console
+ */
+class Askpass implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $prompt;
+
+	/**
+	 * @param string $prompt
+	 */
+	public function __construct($prompt = "Password:") {
+		$this->prompt = $prompt;
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return string
+	 */
+	public function run($verbose = false) {
+		system("stty -echo");
+		printf("%s ", $this->prompt);
+		$pass = fgets(STDIN, 1024);
+		printf("\n");
+		system("stty echo");
+		if (substr($pass, -1) == "\n") {
+			$pass = substr($pass, 0, -1);
+		}
+		return $pass;
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Task;
+
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+
+/**
+ * List all library files of pharext to bundle with a phar
+ */
+class BundleGenerator implements Task
+{
+	/**
+	 * @param bool $verbose
+	 * @return Generator
+	 */
+	public function run($verbose = false) {
+		if ($verbose) {
+			printf("Packaging pharext ... \n");
+		}
+		$rdi = new RecursiveDirectoryIterator(dirname(dirname(__DIR__)));
+		$rii = new RecursiveIteratorIterator($rdi);
+		for ($rii->rewind(); $rii->valid(); $rii->next()) {
+			if (!$rii->isDot()) {
+				yield $rii->getSubPathname() => $rii->key();
+			}
+		}
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Task;
+
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+
+/**
+ * Recursively cleanup FS entries
+ */
+class Cleanup implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $rm;
+
+	public function __construct($rm) {
+		$this->rm = $rm;
+	}
+
+	/**
+	 * @param bool $verbose
+	 */
+	public function run($verbose = false) {
+		if ($verbose) {
+			printf("Cleaning up %s ...\n", $this->rm);
+		}
+		if ($this->rm instanceof Tempfile) {
+			unset($this->rm);
+		} elseif (is_dir($this->rm)) {
+			$rdi = new RecursiveDirectoryIterator($this->rm,
+				FilesystemIterator::CURRENT_AS_SELF | // needed for 5.5
+				FilesystemIterator::KEY_AS_PATHNAME |
+				FilesystemIterator::SKIP_DOTS);
+			$rii = new RecursiveIteratorIterator($rdi,
+				RecursiveIteratorIterator::CHILD_FIRST);
+			foreach ($rii as $path => $child) {
+				if ($child->isDir()) {
+					@rmdir($path);
+				} else {
+					@unlink($path);
+				}
+			}
+			@rmdir($this->rm);
+		} elseif (file_exists($this->rm)) {
+			@unlink($this->rm);
+		}
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Exception;
+use pharext\ExecCmd;
+use pharext\Task;
+
+/**
+ * Runs extension's configure
+ */
+class Configure implements Task
+{
+	/**
+	 * @var array
+	 */
+	private $args;
+
+	/**
+	 * @var string
+	 */
+	private $cwd;
+
+	/**
+	 * @param string $cwd working directory
+	 * @param array $args configure args
+	 * @param string $prefix install prefix, e.g. /usr/local
+	 * @param string $common_name PHP programs common name, e.g. php5
+	 */
+	public function __construct($cwd, array $args = null, $prefix = null, $common_name = "php") {
+		$this->cwd = $cwd;
+		$cmd = $common_name . "-config";
+		if (isset($prefix)) {
+			$cmd = $prefix . "/bin/" . $cmd;
+		}
+		$this->args =  ["--with-php-config=$cmd"];
+		if ($args) {
+			$this->args = array_merge($this->args, $args);
+		}
+	}
+
+	public function run($verbose = false) {
+		if ($verbose !== false) {
+			printf("Running ./configure ...\n");
+		}
+		$pwd = getcwd();
+		if (!chdir($this->cwd)) {
+			throw new Exception;
+		}
+		try {
+			$cmd = new ExecCmd("./configure", $verbose);
+			$cmd->run($this->args);
+		} finally {
+			chdir($pwd);
+		}
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Archive;
+use pharext\Task;
+use pharext\Tempdir;
+
+use Phar;
+use PharData;
+
+/**
+ * Extract a package archive
+ */
+class Extract implements Task
+{
+	/**
+	 * @var Phar(Data)
+	 */
+	private $source;
+
+	/**
+	 * @param mixed $source archive location
+	 */
+	public function __construct($source) {
+		if ($source instanceof Phar || $source instanceof PharData || $source instanceof Archive) {
+			$this->source = $source;
+		} else {
+			$this->source = new PharData($source);
+		}
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return \pharext\Tempdir
+	 */
+	public function run($verbose = false) {
+		if ($verbose) {
+			printf("Extracting %s ...\n", basename($this->source->getPath()));
+		}
+		if ($this->source instanceof Archive) {
+			return $this->source->extract();
+		}
+		$dest = new Tempdir("extract");
+		$this->source->extractTo($dest);
+		return $dest;
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\ExecCmd;
+use pharext\Task;
+use pharext\Tempdir;
+
+/**
+ * Clone a git repo
+ */
+class GitClone implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $source;
+	
+	/**
+	 * @var string
+	 */
+	private $branch;
+
+	/**
+	 * @param string $source git repo location
+	 */
+	public function __construct($source, $branch = null) {
+		$this->source = $source;
+		$this->branch = $branch;
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return \pharext\Tempdir
+	 */
+	public function run($verbose = false) {
+		if ($verbose !== false) {
+			printf("Fetching %s ...\n", $this->source);
+		}
+		$local = new Tempdir("gitclone");
+		$cmd = new ExecCmd("git", $verbose);
+		if (strlen($this->branch)) {
+			$cmd->run(["clone", "--depth", 1, "--branch", $this->branch, $this->source, $local]);
+		} else {
+			$cmd->run(["clone", $this->source, $local]);
+		}
+		return $local;
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\ExecCmd;
+use pharext\Exception;
+use pharext\Task;
+
+/**
+ * Run make in the source dir
+ */
+class Make implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $cwd;
+
+	/**
+	 * @var array
+	 */
+	private $args;
+
+	/**
+	 * @var string
+	 */
+	private $sudo;
+
+	/**
+	 *
+	 * @param string $cwd working directory
+	 * @param array $args make's arguments
+	 * @param string $sudo sudo command
+	 */
+	public function __construct($cwd, array $args = null, $sudo = null) {
+		$this->cwd = $cwd;
+		$this->sudo = $sudo;
+		$this->args = $args;
+	}
+
+	/**
+	 *
+	 * @param bool $verbose
+	 * @throws \pharext\Exception
+	 */
+	public function run($verbose = false) {
+		if ($verbose !== false) {
+			printf("Running make");
+			if ($this->args) {
+				foreach ($this->args as $arg) {
+					printf(" %s", $arg);
+				}
+			}
+			printf(" ...\n");
+		}
+		$pwd = getcwd();
+		if (!chdir($this->cwd)) {
+			throw new Exception;
+		}
+		try {
+			$cmd = new ExecCmd("make", $verbose);
+			if (isset($this->sudo)) {
+				$cmd->setSu($this->sudo);
+			}
+			$args = $this->args;
+			if (!$verbose) {
+				$args = array_merge((array) $args, ["-s"]);
+			}
+			$cmd->run($args);
+		} finally {
+			chdir($pwd);
+		}
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Exception;
+use pharext\Task;
+use pharext\Tempfile;
+
+class PaxFixup implements Task
+{
+	private $source;
+
+	public function __construct($source) {
+		$this->source = $source;
+	}
+
+	private function openArchive($source) {
+		$hdr = file_get_contents($source, false, null, 0, 3);
+		if ($hdr === "\x1f\x8b\x08") {
+			$fd = fopen("compress.zlib://$source", "r");
+		} elseif ($hdr === "BZh") {
+			$fd = fopen("compress.bzip2://$source", "r");
+		} else {
+			$fd = fopen($source, "r");
+		}
+		if (!is_resource($fd)) {
+			throw new Exception;
+		}
+		return $fd;
+	}
+
+	public function run($verbose = false) {
+		if ($verbose !== false) {
+			printf("Fixing up a tarball with global pax header ...\n");
+		}
+		$temp = new Tempfile("paxfix");
+		stream_copy_to_stream($this->openArchive($this->source),
+			$temp->getStream(), -1, 1024);
+		$temp->closeStream();
+		return (new Extract((string) $temp))->run($verbose);
+	}
+}<?php
+
+namespace pharext\Task;
+
+use pharext\Exception;
+use pharext\Task;
+
+/**
+ * Fixup package.xml files in an extracted PECL dir
+ */
+class PeclFixup implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $source;
+
+	/**
+	 * @param string $source source directory
+	 */
+	public function __construct($source) {
+		$this->source = $source;
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return string sanitized source location
+	 * @throws \pahrext\Exception
+	 */
+	public function run($verbose = false) {
+		if ($verbose !== false) {
+			printf("Sanitizing PECL dir ...\n");
+		}
+		$dirs = glob("{$this->source}/*", GLOB_ONLYDIR);
+		$files = array_diff(glob("{$this->source}/*"), $dirs);
+		$check = array_reduce($files, function($r, $v) {
+			return $v && fnmatch("package*.xml", basename($v));
+		}, true);
+
+		if (count($dirs) !== 1 || !$check) {
+			throw new Exception("Does not look like an extracted PECL dir: {$this->source}");
+		}
+
+		$dest = current($dirs);
+
+		foreach ($files as $file) {
+			if ($verbose) {
+				printf("Moving %s into %s ...\n", basename($file), basename($dest));
+			}
+			if (!rename($file, "$dest/" . basename($file))) {
+				throw new Exception;
+			}
+		}
+
+		return $dest;
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Exception;
+use pharext\SourceDir;
+use pharext\Task;
+use pharext\Tempname;
+
+use Phar;
+
+/**
+ * Build phar
+ */
+class PharBuild implements Task
+{
+	/**
+	 * @var \pharext\SourceDir
+	 */
+	private $source;
+
+	/**
+	 * @var string
+	 */
+	private $stub;
+
+	/**
+	 * @var array
+	 */
+	private $meta;
+
+	/**
+	 * @var bool
+	 */
+	private $readonly;
+
+	/**
+	 * @param SourceDir $source extension source directory
+	 * @param string $stub path to phar stub
+	 * @param array $meta phar meta data
+	 * @param bool $readonly whether the stub has -dphar.readonly=1 set
+	 */
+	public function __construct(SourceDir $source = null, $stub, array $meta = null, $readonly = true) {
+		$this->source = $source;
+		$this->stub = $stub;
+		$this->meta = $meta;
+		$this->readonly = $readonly;
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return \pharext\Tempname
+	 * @throws \pharext\Exception
+	 */
+	public function run($verbose = false) {
+		/* Phar::compress() and ::convert*() use strtok("."), ugh!
+		 * so, be sure to not use any other dots in the filename
+		 * except for .phar
+		 */
+		$temp = new Tempname("", "-pharext.phar");
+
+		$phar = new Phar($temp);
+		$phar->startBuffering();
+
+		if ($this->meta) {
+			$phar->setMetadata($this->meta);
+		}
+		if ($this->stub) {
+			(new PharStub($phar, $this->stub))->run($verbose);
+		}
+
+		$phar->buildFromIterator((new Task\BundleGenerator)->run());
+
+		if ($this->source) {
+			if ($verbose) {
+				$bdir = $this->source->getBaseDir();
+				$blen = strlen($bdir);
+				foreach ($this->source as $index => $file) {
+					if (is_resource($file)) {
+						printf("Packaging %s ...\n", $index);
+						$phar[$index] = $file;
+					} else {
+						printf("Packaging %s ...\n", $index = trim(substr($file, $blen), "/"));
+						$phar->addFile($file, $index);
+					}
+				}
+			} else {
+				$phar->buildFromIterator($this->source, $this->source->getBaseDir());
+			}
+		}
+
+		$phar->stopBuffering();
+		
+		if (!chmod($temp, fileperms($temp) | 0111)) {
+			throw new Exception;
+		}
+		
+		return $temp;
+	}
+}<?php
+
+namespace pharext\Task;
+
+use pharext\Task;
+
+use Phar;
+
+/**
+ * Clone a compressed copy of a phar
+ */
+class PharCompress implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $file;
+
+	/**
+	 * @var Phar
+	 */
+	private $package;
+
+	/**
+	 * @var int
+	 */
+	private $encoding;
+
+	/**
+	 * @var string
+	 */
+	private $extension;
+
+	/**
+	 * @param string $file path to the original phar
+	 * @param int $encoding Phar::GZ or Phar::BZ2
+	 */
+	public function __construct($file, $encoding) {
+		$this->file = $file;
+		$this->package = new Phar($file);
+		$this->encoding = $encoding;
+
+		switch ($encoding) {
+			case Phar::GZ:
+				$this->extension = ".gz";
+				break;
+			case Phar::BZ2:
+				$this->extension = ".bz2";
+				break;
+		}
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return string
+	 */
+	public function run($verbose = false) {
+		if ($verbose) {
+			printf("Compressing %s ...\n", basename($this->package->getPath()));
+		}
+		/* stop shebang */
+		$stub = $this->package->getStub();
+		$phar = $this->package->compress($this->encoding);
+		$phar->setStub(substr($stub, strpos($stub, "\n")+1));
+		return $this->file . $this->extension;
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Exception;
+use pharext\Task;
+
+/**
+ * Rename the phar archive
+ */
+class PharRename implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $phar;
+
+	/**
+	 * @var string
+	 */
+	private $dest;
+
+	/**
+	 * @var string
+	 */
+	private $name;
+
+	/**
+	 * @param string $phar path to phar
+	 * @param string $dest destination dir
+	 * @param string $name package name
+	 */
+	public function __construct($phar, $dest, $name) {
+		$this->phar = $phar;
+		$this->dest = $dest;
+		$this->name = $name;
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return string path to renamed phar
+	 * @throws \pharext\Exception
+	 */
+	public function run($verbose = false) {
+		$extension = substr(strstr($this->phar, "-pharext.phar"), 8);
+		$name = sprintf("%s/%s.ext%s", $this->dest, $this->name, $extension);
+		
+		if ($verbose) {
+			printf("Renaming %s to %s ...\n", basename($this->phar), basename($name));
+		}
+
+		if (!rename($this->phar, $name)) {
+			throw new Exception;
+		}
+
+		return $name;
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Openssl;
+use pharext\Task;
+
+use Phar;
+
+/**
+ * Sign the phar with a private key
+ */
+class PharSign implements Task
+{
+	/**
+	 * @var Phar
+	 */
+	private $phar;
+
+	/**
+	 * @var \pharext\Openssl\PrivateKey
+	 */
+	private $pkey;
+
+	/**
+	 *
+	 * @param mixed $phar phar instance or path to phar
+	 * @param string $pkey path to private key
+	 * @param string $pass password for the private key
+	 */
+	public function __construct($phar, $pkey, $pass) {
+		if ($phar instanceof Phar || $phar instanceof PharData) {
+			$this->phar = $phar;
+		} else {
+			$this->phar = new Phar($phar);
+		}
+		$this->pkey = new Openssl\PrivateKey($pkey, $pass);
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return \pharext\Openssl\PrivateKey
+	 */
+	public function run($verbose = false) {
+		if ($verbose) {
+			printf("Signing %s ...\n", basename($this->phar->getPath()));
+		}
+		$this->pkey->sign($this->phar);
+		return $this->pkey;
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use Phar;
+use pharext\Exception;
+use pharext\Task;
+
+/**
+ * Set the phar's stub
+ */
+class PharStub implements Task
+{
+	/**
+	 * @var \Phar
+	 */
+	private $phar;
+
+	/**
+	 * @var string
+	 */
+	private $stub;
+
+	/**
+	 * @param \Phar $phar
+	 * @param string $stub file path to the stub
+	 * @throws \pharext\Exception
+	 */
+	function __construct(Phar $phar, $stub) {
+		$this->phar = $phar;
+		if (!file_exists($this->stub = $stub)) {
+			throw new Exception("File '$stub' does not exist");
+		}
+	}
+
+	/**
+	 * @param bool $verbose
+	 */
+	function run($verbose = false) {
+		if ($verbose) {
+			printf("Using stub '%s'...\n", basename($this->stub));
+		}
+		$stub = preg_replace_callback('/^#include <([^>]+)>/m', function($includes) {
+			return file_get_contents($includes[1], true, null, 5);
+		}, file_get_contents($this->stub));
+		if ($this->phar->isCompressed() && substr($stub, 0, 2) === "#!") {
+			$stub = substr($stub, strpos($stub, "\n")+1);
+		}
+		$this->phar->setStub($stub);
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Exception;
+use pharext\ExecCmd;
+use pharext\Task;
+
+/**
+ * Run phpize in the extension source directory
+ */
+class Phpize implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $phpize;
+
+	/**
+	 *
+	 * @var string
+	 */
+	private $cwd;
+
+	/**
+	 * @param string $cwd working directory
+	 * @param string $prefix install prefix, e.g. /usr/local
+	 * @param string $common_name PHP program common name, e.g. php5
+	 */
+	public function __construct($cwd, $prefix = null,  $common_name = "php") {
+		$this->cwd = $cwd;
+		$cmd = $common_name . "ize";
+		if (isset($prefix)) {
+			$cmd = $prefix . "/bin/" . $cmd;
+		}
+		$this->phpize = $cmd;
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @throws \pharext\Exception
+	 */
+	public function run($verbose = false) {
+		if ($verbose !== false) {
+			printf("Running %s ...\n", $this->phpize);
+		}
+		$pwd = getcwd();
+		if (!chdir($this->cwd)) {
+			throw new Exception;
+		}
+		try {
+			$cmd = new ExecCmd($this->phpize, $verbose);
+			$cmd->run();
+		} finally {
+			chdir($pwd);
+		}
+	}
+}
+<?php
+
+namespace pharext\Task;
+
+use pharext\Exception;
+use pharext\Task;
+use pharext\Tempfile;
+
+/**
+ * Fetch a remote archive
+ */
+class StreamFetch implements Task
+{
+	/**
+	 * @var string
+	 */
+	private $source;
+
+	/**
+	 * @var callable
+	 */
+	private $progress;
+
+	/**
+	 * @param string $source remote file location
+	 * @param callable $progress progress callback
+	 */
+	public function __construct($source, callable $progress) {
+		$this->source = $source;
+		$this->progress = $progress;
+	}
+
+	private function createStreamContext() {
+		$progress = $this->progress;
+
+		/* avoid bytes_max bug of older PHP versions */
+		$maxbytes = 0;
+		return stream_context_create([],["notification" => function($notification, $severity, $message, $code, $bytes_cur, $bytes_max) use($progress, &$maxbytes) {
+			if ($bytes_max > $maxbytes) {
+				$maxbytes = $bytes_max;
+			}
+			switch ($notification) {
+				case STREAM_NOTIFY_CONNECT:
+					$progress(0);
+					break;
+				case STREAM_NOTIFY_PROGRESS:
+					$progress($maxbytes > 0 ? $bytes_cur/$maxbytes : .5);
+					break;
+				case STREAM_NOTIFY_COMPLETED:
+					/* this is sometimes not generated, why? */
+					$progress(1);
+					break;
+			}
+		}]);
+	}
+
+	/**
+	 * @param bool $verbose
+	 * @return \pharext\Task\Tempfile
+	 * @throws \pharext\Exception
+	 */
+	public function run($verbose = false) {
+		if ($verbose !== false) {
+			printf("Fetching %s ...\n", $this->source);
+		}
+		$context = $this->createStreamContext();
+
+		if (!$remote = fopen($this->source, "r", false, $context)) {
+			throw new Exception;
+		}
+		
+		$local = new Tempfile("remote");
+		if (!stream_copy_to_stream($remote, $local->getStream())) {
+			throw new Exception;
+		}
+		$local->closeStream();
+
+		/* STREAM_NOTIFY_COMPLETED is not generated, see above */
+		call_user_func($this->progress, 1);
+
+		return $local;
+	}
+}
+<?php
+
+namespace pharext;
+
+/**
+ * Simple task interface
+ */
+interface Task
+{
+	public function run($verbose = false);
+}
+<?php
+
+namespace pharext;
+
+/**
+ * Create a temporary directory
+ */
+class Tempdir extends \SplFileInfo
+{
+	/**
+	 * @param string $prefix prefix to uniqid()
+	 * @throws \pharext\Exception
+	 */
+	public function __construct($prefix) {
+		$temp = new Tempname($prefix);
+		if (!is_dir($temp) && !mkdir($temp, 0700, true)) {
+			throw new Exception("Could not create tempdir: ".error_get_last()["message"]);
+		}
+		parent::__construct($temp);
+	}
+}
+<?php 
+
+namespace pharext;
+
+/**
+ * Create a new temporary file
+ */
+class Tempfile extends \SplFileInfo
+{
+	/**
+	 * @var resource
+	 */
+	private $handle;
+
+	/**
+	 * @param string $prefix uniqid() prefix
+	 * @param string $suffix e.g. file extension
+	 * @throws \pharext\Exception
+	 */
+	public function __construct($prefix, $suffix = ".tmp") {
+		$tries = 0;
+		$omask = umask(077);
+		do {
+			$path = new Tempname($prefix, $suffix);
+			$this->handle = fopen($path, "x");
+		} while (!is_resource($this->handle) && $tries++ < 10);
+		umask($omask);
+		
+		if (!is_resource($this->handle)) {
+			throw new Exception("Could not create temporary file");
+		}
+		
+		parent::__construct($path);
+	}
+
+	/**
+	 * Unlink the file
+	 */
+	public function __destruct() {
+		if (is_file($this->getPathname())) {
+			@unlink($this->getPathname());
+		}
+	}
+
+	/**
+	 * Close the stream
+	 */
+	public function closeStream() {
+		fclose($this->handle);
+	}
+
+	/**
+	 * Retrieve the stream resource
+	 * @return resource
+	 */
+	public function getStream() {
+		return $this->handle;
+	}
+}
+<?php
+
+namespace pharext;
+
+use pharext\Exception;
+
+/**
+ * A temporary file/directory name
+ */
+class Tempname
+{
+	/**
+	 * @var string
+	 */
+	private $name;
+
+	/**
+	 * @param string $prefix uniqid() prefix
+	 * @param string $suffix e.g. file extension
+	 */
+	public function __construct($prefix, $suffix = null) {
+		$temp = sys_get_temp_dir() . "/pharext-" . $this->getUser();
+		if (!is_dir($temp) && !mkdir($temp, 0700, true)) {
+			throw new Exception;
+		}
+		$this->name = $temp ."/". uniqid($prefix) . $suffix;
+	}
+
+	private function getUser() {
+		if (extension_loaded("posix") && function_exists("posix_getpwuid")) {
+			return posix_getpwuid(posix_getuid())["name"];
+		}
+		return trim(`whoami 2>/dev/null`)
+			?: trim(`id -nu 2>/dev/null`)
+			?: getenv("USER")
+			?: get_current_user();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function __toString() {
+		return (string) $this->name;
+	}
+}
+<?php
+
+namespace pharext;
+
+use Phar;
+use PharFileInfo;
+use SplFileInfo;
+use pharext\Exception;
+
+class Updater implements Command
+{
+	use Cli\Command;
+
+	/**
+	 * Create the command
+	 */
+	public function __construct() {
+		$this->args = new Cli\Args([
+			["h", "help", "Display this help",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			["v", "verbose", "More output",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			["q", "quiet", "Less output",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG],
+			[null, "signature", "Show pharext signature",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[null, "license", "Show pharext license",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[null, "version", "Show pharext version",
+				Cli\Args::OPTIONAL|Cli\Args::SINGLE|Cli\Args::NOARG|Cli\Args::HALT],
+			[0, "path", "Path to .ext.phar to update",
+				Cli\Args::REQUIRED|Cli\Args::MULTI],
+		]);
+	}
+
+	/**
+	 * @inheritdoc
+	 * @see \pharext\Command::run()
+	 */
+	public function run($argc, array $argv) {
+		$errs = [];
+		$prog = array_shift($argv);
+		foreach ($this->args->parse(--$argc, $argv) as $error) {
+			$errs[] = $error;
+		}
+
+		if ($this->args["help"]) {
+			$this->header();
+			$this->help($prog);
+			exit;
+		}
+
+		try {
+			foreach (["signature", "license", "version"] as $opt) {
+				if ($this->args[$opt]) {
+					printf("%s\n", $this->metadata($opt));
+					exit;
+				}
+			}
+		} catch (\Exception $e) {
+			$this->error("%s\n", $e->getMessage());
+			exit(self::EARGS);
+		}
+
+
+		foreach ($this->args->validate() as $error) {
+			$errs[] = $error;
+		}
+
+		if ($errs) {
+			if (!$this->args["quiet"]) {
+				$this->header();
+			}
+			foreach ($errs as $err) {
+				$this->error("%s\n", $err);
+			}
+			printf("\n");
+			if (!$this->args["quiet"]) {
+				$this->help($prog);
+			}
+			exit(self::EARGS);
+		}
+
+		foreach ($this->args[0] as $file) {
+			$info = new SplFileInfo($file);
+
+			while ($info->isLink()) {
+				$info = new SplFileInfo($info->getLinkTarget());
+			}
+			
+			if ($info->isFile()) {
+				if (!$this->updatePackage($info)) {
+					$this->warn("Cannot upgrade pre-v3 packages\n");
+				}
+			} else {
+				$this->error("File '%s' does not exist\n", $file);
+				exit(self::EARGS);
+			}
+		}
+	}
+
+	/**
+	 * Replace the pharext core in an .ext.phar package
+	 * @param string $temp path to temp phar
+	 * @return boolean FALSE if the package is too old (pre-v3) to upgrade
+	 */
+	private function replacePharext($temp) {
+		$phar = new Phar($temp, Phar::CURRENT_AS_SELF);
+		$phar->startBuffering();
+
+		if (!$meta = $phar->getMetadata()) {
+			// don't upgrade pre-v3 packages
+			return false;
+		}
+
+		// replace current pharext files
+		$core = (new Task\BundleGenerator)->run($this->verbosity());
+		$phar->buildFromIterator($core);
+		$stub = __DIR__."/../pharext_installer.php";
+		(new Task\PharStub($phar, $stub))->run($this->verbosity());
+
+		// check dependencies
+		foreach ($phar as $info) {
+			if (fnmatch("*.ext.phar*", $info->getBasename())) {
+				$this->updatePackage($info, $phar);
+			}
+		}
+		
+		$phar->stopBuffering();
+
+		$phar->setMetadata([
+			"version" => Metadata::version(),
+			"header" => Metadata::header(),
+		] + $meta);
+
+		$this->info("Updated pharext version from '%s' to '%s'\n",
+			isset($meta["version"]) ? $meta["version"] : "(unknown)",
+			$phar->getMetadata()["version"]);
+
+		return true;
+	}
+
+	/**
+	 * Update an .ext.phar package to the current pharext version
+	 * @param SplFileInfo $file
+	 * @param Phar $phar the parent phar containing $file as dependency
+	 * @return boolean FALSE if the package is too old (pre-v3) to upgrade
+	 * @throws Exception
+	 */
+	private function updatePackage(SplFileInfo $file, Phar $phar = null) {
+		$this->info("Updating pharext core in '%s'...\n", basename($file));
+
+		$temp = new Tempname("update", substr(strstr($file, ".ext.phar"), 4));
+
+		if (!copy($file->getPathname(), $temp)) {
+			throw new Exception;
+		}
+		if (!chmod($temp, $file->getPerms())) {
+			throw new Exception;
+		}
+		
+		if (!$this->replacePharext($temp)) {
+			return false;
+		}
+
+		if ($phar) {
+			$phar->addFile($temp, $file);
+		} elseif (!rename($temp, $file->getPathname())) {
+			throw new Exception;
+		}
+
+		return true;
+	}
+}
+#!/usr/bin/env php
+<?php
+
+/**
+ * The installer sub-stub for extension phars
+ */
+
+namespace pharext;
+
+define("PHAREXT_PHAR", __FILE__);
+
+spl_autoload_register(function($c) {
+	return include strtr($c, "\\_", "//") . ".php";
+});
+
+#include <pharext/Exception.php>
+#include <pharext/Tempname.php>
+#include <pharext/Tempfile.php>
+#include <pharext/Tempdir.php>
+#include <pharext/Archive.php>
+
+namespace pharext;
+
+if (extension_loaded("Phar")) {
+	\Phar::interceptFileFuncs();
+	\Phar::mapPhar();
+	$phardir = "phar://".__FILE__;
+} else {
+	$archive = new Archive(__FILE__);
+	$phardir = $archive->extract();
+}
+
+set_include_path("$phardir:". get_include_path());
+
+$installer = new Installer();
+$installer->run($argc, $argv);
+
+__HALT_COMPILER();
+#!/usr/bin/php -dphar.readonly=0
+<?php
+
+/**
+ * The packager sub-stub for bin/pharext
+ */
+
+namespace pharext;
+
+spl_autoload_register(function($c) {
+	return include strtr($c, "\\_", "//") . ".php";
+});
+
+set_include_path('phar://' . __FILE__ .":". get_include_path());
+
+if (!extension_loaded("Phar")) {
+	fprintf(STDERR, "ERROR: Phar extension not loaded\n\n");
+	fprintf(STDERR, "\tPlease load the phar extension in your php.ini\n".
+					"\tor rebuild PHP with the --enable-phar flag.\n\n");
+	exit(1);
+}
+
+if (ini_get("phar.readonly")) {
+	fprintf(STDERR, "ERROR: Phar is configured read-only\n\n");
+	fprintf(STDERR, "\tPlease specify phar.readonly=0 in your php.ini\n".
+					"\tor run this command with php -dphar.readonly=0\n\n");
+	exit(1);
+}
+
+\Phar::interceptFileFuncs();
+\Phar::mapPhar();
+
+$packager = new Packager();
+$packager->run($argc, $argv);
+
+__HALT_COMPILER();
+#!/usr/bin/php -dphar.readonly=0
+<?php
+
+/**
+ * The installer updater stub for extension phars
+ */
+
+namespace pharext;
+
+spl_autoload_register(function($c) {
+	return include strtr($c, "\\_", "//") . ".php";
+});
+
+set_include_path('phar://' . __FILE__ .":". get_include_path());
+
+if (!extension_loaded("Phar")) {
+	fprintf(STDERR, "ERROR: Phar extension not loaded\n\n");
+	fprintf(STDERR, "\tPlease load the phar extension in your php.ini\n".
+					"\tor rebuild PHP with the --enable-phar flag.\n\n");
+	exit(1);
+}
+
+if (ini_get("phar.readonly")) {
+	fprintf(STDERR, "ERROR: Phar is configured read-only\n\n");
+	fprintf(STDERR, "\tPlease specify phar.readonly=0 in your php.ini\n".
+					"\tor run this command with php -dphar.readonly=0\n\n");
+	exit(1);
+}
+
+\Phar::interceptFileFuncs();
+\Phar::mapPhar();
+
+$updater = new Updater();
+$updater->run($argc, $argv);
+
+__HALT_COMPILER();
+<?php
+return new pharext\SourceDir\Pecl(__DIR__);
+<?xml version="1.0" encoding="UTF-8"?>
+<package 
+ packagerversion="1.4.11" 
+ version="2.0" 
+ xmlns="http://pear.php.net/dtd/package-2.0" 
+ xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" 
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+ xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+http://pear.php.net/dtd/tasks-1.0.xsd
+http://pear.php.net/dtd/package-2.0
+http://pear.php.net/dtd/package-2.0.xsd">
+ <name>raphf</name>
+ <channel>pecl.php.net</channel>
+ <summary>Resource and persistent handles factory</summary>
+ <description>A reusable split-off of pecl_http's persistent handle and resource factory API.</description>
+ <lead>
+  <name>Michael Wallner</name>
+  <user>mike</user>
+  <email>mike@php.net</email>
+  <active>yes</active>
+ </lead>
+ <date>2015-07-28</date>
+ <version>
+  <release>2.0.0-dev</release>
+  <api>2.0.0</api>
+ </version>
+ <stability>
+  <release>stable</release>
+  <api>stable</api>
+ </stability>
+ <license>BSD, revised</license>
+ <notes><![CDATA[
+]]></notes>
+ <contents>
+  <dir name="/">
+   <file role="doc" name="CREDITS" />
+   <file role="doc" name="LICENSE" />
+   <file role="doc" name="Doxyfile" />
+   <file role="src" name="config.m4" />
+   <file role="src" name="config.w32" />
+   <file role="src" name="php_raphf.h" />
+   <file role="src" name="php_raphf_api.h" />
+   <file role="src" name="php_raphf.c" />
+   <dir name="tests">
+    <file role="test" name="http001.phpt" />
+    <file role="test" name="http002.phpt" />
+    <file role="test" name="http003.phpt" />
+    <file role="test" name="http004.phpt" />
+   </dir>
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>7.0.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>raphf</providesextension>
+ <extsrcrelease/>
+</package>
+
+raphf
+Michael Wallner
+Copyright (c) 2013, Michael Wallner <mike@php.net>.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, 
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright 
+      notice, this list of conditions and the following disclaimer in the 
+      documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE 
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Doxyfile 1.8.9.1
+
+#---------------------------------------------------------------------------
+# Project related configuration options
+#---------------------------------------------------------------------------
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = "Resource and persistent handle factory API"
+PROJECT_NUMBER         =
+PROJECT_BRIEF          = "A facility to manage possibly persistent resources with a comprehensible API.  Provides simliar functionality like the zend_list API, but with more flexiblity and freedom."
+PROJECT_LOGO           = raphf.png
+OUTPUT_DIRECTORY       =
+CREATE_SUBDIRS         = NO
+ALLOW_UNICODE_NAMES    = NO
+OUTPUT_LANGUAGE        = English
+BRIEF_MEMBER_DESC      = YES
+REPEAT_BRIEF           = YES
+ABBREVIATE_BRIEF       =
+ALWAYS_DETAILED_SEC    = NO
+INLINE_INHERITED_MEMB  = NO
+FULL_PATH_NAMES        = YES
+STRIP_FROM_PATH        =
+STRIP_FROM_INC_PATH    =
+SHORT_NAMES            = NO
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = NO
+MULTILINE_CPP_IS_BRIEF = NO
+INHERIT_DOCS           = YES
+SEPARATE_MEMBER_PAGES  = NO
+TAB_SIZE               = 4
+ALIASES                =
+TCL_SUBST              =
+OPTIMIZE_OUTPUT_FOR_C  = YES
+OPTIMIZE_OUTPUT_JAVA   = NO
+OPTIMIZE_FOR_FORTRAN   = NO
+OPTIMIZE_OUTPUT_VHDL   = NO
+EXTENSION_MAPPING      =
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+BUILTIN_STL_SUPPORT    = NO
+CPP_CLI_SUPPORT        = NO
+SIP_SUPPORT            = NO
+IDL_PROPERTY_SUPPORT   = YES
+DISTRIBUTE_GROUP_DOC   = NO
+SUBGROUPING            = YES
+INLINE_GROUPED_CLASSES = NO
+INLINE_SIMPLE_STRUCTS  = YES
+TYPEDEF_HIDES_STRUCT   = NO
+LOOKUP_CACHE_SIZE      = 0
+#---------------------------------------------------------------------------
+# Build related configuration options
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_PACKAGE        = NO
+EXTRACT_STATIC         = NO
+EXTRACT_LOCAL_CLASSES  = NO
+EXTRACT_LOCAL_METHODS  = NO
+EXTRACT_ANON_NSPACES   = NO
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+HIDE_FRIEND_COMPOUNDS  = NO
+HIDE_IN_BODY_DOCS      = NO
+INTERNAL_DOCS          = NO
+CASE_SENSE_NAMES       = YES
+HIDE_SCOPE_NAMES       = NO
+HIDE_COMPOUND_REFERENCE= NO
+SHOW_INCLUDE_FILES     = YES
+SHOW_GROUPED_MEMB_INC  = NO
+FORCE_LOCAL_INCLUDES   = NO
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = NO
+SORT_MEMBERS_CTORS_1ST = NO
+SORT_GROUP_NAMES       = NO
+SORT_BY_SCOPE_NAME     = NO
+STRICT_PROTO_MATCHING  = NO
+GENERATE_TODOLIST      = YES
+GENERATE_TESTLIST      = YES
+GENERATE_BUGLIST       = YES
+GENERATE_DEPRECATEDLIST= YES
+ENABLED_SECTIONS       =
+MAX_INITIALIZER_LINES  = 30
+SHOW_USED_FILES        = YES
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = YES
+FILE_VERSION_FILTER    =
+LAYOUT_FILE            =
+CITE_BIB_FILES         =
+#---------------------------------------------------------------------------
+# Configuration options related to warning and progress messages
+#---------------------------------------------------------------------------
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+WARN_FORMAT            = "$file:$line: $text"
+WARN_LOGFILE           =
+#---------------------------------------------------------------------------
+# Configuration options related to the input files
+#---------------------------------------------------------------------------
+INPUT                  = php_raphf.h
+INPUT_ENCODING         = UTF-8
+FILE_PATTERNS          =
+RECURSIVE              = NO
+EXCLUDE                =
+EXCLUDE_SYMLINKS       = NO
+EXCLUDE_PATTERNS       =
+EXCLUDE_SYMBOLS        =
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       =
+EXAMPLE_RECURSIVE      = NO
+IMAGE_PATH             =
+INPUT_FILTER           =
+FILTER_PATTERNS        =
+FILTER_SOURCE_FILES    = NO
+FILTER_SOURCE_PATTERNS =
+USE_MDFILE_AS_MAINPAGE =
+#---------------------------------------------------------------------------
+# Configuration options related to source browsing
+#---------------------------------------------------------------------------
+SOURCE_BROWSER         = NO
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = NO
+REFERENCES_LINK_SOURCE = YES
+SOURCE_TOOLTIPS        = YES
+USE_HTAGS              = NO
+VERBATIM_HEADERS       = YES
+#---------------------------------------------------------------------------
+# Configuration options related to the alphabetical class index
+#---------------------------------------------------------------------------
+ALPHABETICAL_INDEX     = YES
+COLS_IN_ALPHA_INDEX    = 5
+IGNORE_PREFIX          =
+#---------------------------------------------------------------------------
+# Configuration options related to the HTML output
+#---------------------------------------------------------------------------
+GENERATE_HTML          = YES
+HTML_OUTPUT            = .
+HTML_FILE_EXTENSION    = .html
+HTML_HEADER            =
+HTML_FOOTER            =
+HTML_STYLESHEET        =
+HTML_EXTRA_STYLESHEET  =
+HTML_EXTRA_FILES       =
+HTML_COLORSTYLE_HUE    = 220
+HTML_COLORSTYLE_SAT    = 100
+HTML_COLORSTYLE_GAMMA  = 80
+HTML_TIMESTAMP         = NO
+HTML_DYNAMIC_SECTIONS  = NO
+HTML_INDEX_NUM_ENTRIES = 100
+GENERATE_DOCSET        = NO
+DOCSET_FEEDNAME        = "Doxygen generated docs"
+DOCSET_BUNDLE_ID       = org.doxygen.Project
+DOCSET_PUBLISHER_ID    = org.doxygen.Publisher
+DOCSET_PUBLISHER_NAME  = Publisher
+GENERATE_HTMLHELP      = NO
+CHM_FILE               =
+HHC_LOCATION           =
+GENERATE_CHI           = NO
+CHM_INDEX_ENCODING     =
+BINARY_TOC             = NO
+TOC_EXPAND             = NO
+GENERATE_QHP           = NO
+QCH_FILE               =
+QHP_NAMESPACE          = org.doxygen.Project
+QHP_VIRTUAL_FOLDER     = doc
+QHP_CUST_FILTER_NAME   =
+QHP_CUST_FILTER_ATTRS  =
+QHP_SECT_FILTER_ATTRS  =
+QHG_LOCATION           =
+GENERATE_ECLIPSEHELP   = NO
+ECLIPSE_DOC_ID         = org.doxygen.Project
+DISABLE_INDEX          = NO
+GENERATE_TREEVIEW      = YES
+ENUM_VALUES_PER_LINE   = 4
+TREEVIEW_WIDTH         = 250
+EXT_LINKS_IN_WINDOW    = NO
+FORMULA_FONTSIZE       = 10
+FORMULA_TRANSPARENT    = YES
+USE_MATHJAX            = NO
+MATHJAX_FORMAT         = HTML-CSS
+MATHJAX_RELPATH        = http://cdn.mathjax.org/mathjax/latest
+MATHJAX_EXTENSIONS     =
+MATHJAX_CODEFILE       =
+SEARCHENGINE           = YES
+SERVER_BASED_SEARCH    = NO
+EXTERNAL_SEARCH        = NO
+SEARCHENGINE_URL       =
+SEARCHDATA_FILE        = searchdata.xml
+EXTERNAL_SEARCH_ID     =
+EXTRA_SEARCH_MAPPINGS  =
+#---------------------------------------------------------------------------
+# Configuration options related to the LaTeX output
+#---------------------------------------------------------------------------
+GENERATE_LATEX         = NO
+LATEX_OUTPUT           = latex
+LATEX_CMD_NAME         = latex
+MAKEINDEX_CMD_NAME     = makeindex
+COMPACT_LATEX          = NO
+PAPER_TYPE             = a4
+EXTRA_PACKAGES         =
+LATEX_HEADER           =
+LATEX_FOOTER           =
+LATEX_EXTRA_STYLESHEET =
+LATEX_EXTRA_FILES      =
+PDF_HYPERLINKS         = YES
+USE_PDFLATEX           = YES
+LATEX_BATCHMODE        = NO
+LATEX_HIDE_INDICES     = NO
+LATEX_SOURCE_CODE      = NO
+LATEX_BIB_STYLE        = plain
+#---------------------------------------------------------------------------
+# Configuration options related to the RTF output
+#---------------------------------------------------------------------------
+GENERATE_RTF           = NO
+RTF_OUTPUT             = rtf
+COMPACT_RTF            = NO
+RTF_HYPERLINKS         = NO
+RTF_STYLESHEET_FILE    =
+RTF_EXTENSIONS_FILE    =
+RTF_SOURCE_CODE        = NO
+#---------------------------------------------------------------------------
+# Configuration options related to the man page output
+#---------------------------------------------------------------------------
+GENERATE_MAN           = NO
+MAN_OUTPUT             = man
+MAN_EXTENSION          = .3
+MAN_SUBDIR             =
+MAN_LINKS              = NO
+#---------------------------------------------------------------------------
+# Configuration options related to the XML output
+#---------------------------------------------------------------------------
+GENERATE_XML           = NO
+XML_OUTPUT             = xml
+XML_PROGRAMLISTING     = YES
+#---------------------------------------------------------------------------
+# Configuration options related to the DOCBOOK output
+#---------------------------------------------------------------------------
+GENERATE_DOCBOOK       = NO
+DOCBOOK_OUTPUT         = docbook
+DOCBOOK_PROGRAMLISTING = NO
+#---------------------------------------------------------------------------
+# Configuration options for the AutoGen Definitions output
+#---------------------------------------------------------------------------
+GENERATE_AUTOGEN_DEF   = NO
+#---------------------------------------------------------------------------
+# Configuration options related to the Perl module output
+#---------------------------------------------------------------------------
+GENERATE_PERLMOD       = NO
+PERLMOD_LATEX          = NO
+PERLMOD_PRETTY         = YES
+PERLMOD_MAKEVAR_PREFIX =
+#---------------------------------------------------------------------------
+# Configuration options related to the preprocessor
+#---------------------------------------------------------------------------
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+SEARCH_INCLUDES        = YES
+INCLUDE_PATH           =
+INCLUDE_FILE_PATTERNS  =
+PREDEFINED             = DOXYGEN \
+                         TSRMLS_C= \
+                         TSRMLS_D= \
+                         TSRMLS_CC= \
+                         TSRMLS_DC= \
+                         PHP_RAPHF_API=
+EXPAND_AS_DEFINED      =
+SKIP_FUNCTION_MACROS   = YES
+#---------------------------------------------------------------------------
+# Configuration options related to external references
+#---------------------------------------------------------------------------
+TAGFILES               =
+GENERATE_TAGFILE       =
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = YES
+EXTERNAL_PAGES         = YES
+PERL_PATH              = /usr/bin/perl
+#---------------------------------------------------------------------------
+# Configuration options related to the dot tool
+#---------------------------------------------------------------------------
+CLASS_DIAGRAMS         = YES
+MSCGEN_PATH            =
+DIA_PATH               =
+HIDE_UNDOC_RELATIONS   = YES
+HAVE_DOT               = YES
+DOT_NUM_THREADS        = 0
+DOT_FONTNAME           = Helvetica
+DOT_FONTSIZE           = 10
+DOT_FONTPATH           =
+CLASS_GRAPH            = NO
+COLLABORATION_GRAPH    = YES
+GROUP_GRAPHS           = YES
+UML_LOOK               = NO
+UML_LIMIT_NUM_FIELDS   = 10
+TEMPLATE_RELATIONS     = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+GRAPHICAL_HIERARCHY    = YES
+DIRECTORY_GRAPH        = YES
+DOT_IMAGE_FORMAT       = png
+INTERACTIVE_SVG        = NO
+DOT_PATH               =
+DOTFILE_DIRS           =
+MSCFILE_DIRS           =
+DIAFILE_DIRS           =
+PLANTUML_JAR_PATH      =
+PLANTUML_INCLUDE_PATH  =
+DOT_GRAPH_MAX_NODES    = 50
+MAX_DOT_GRAPH_DEPTH    = 0
+DOT_TRANSPARENT        = NO
+DOT_MULTI_TARGETS      = NO
+GENERATE_LEGEND        = YES
+DOT_CLEANUP            = YES
+PHP_ARG_ENABLE(raphf, whether to enable raphf support,
+[  --enable-raphf           Enable resource and persistent handles factory support])
+
+if test "$PHP_RAPHF" != "no"; then
+	PHP_INSTALL_HEADERS(ext/raphf, php_raphf.h php_raphf_api.h)
+	PHP_NEW_EXTENSION(raphf, php_raphf.c, $ext_shared)
+fi
+
+
+ARG_ENABLE("raphf", "for raphf support", "no");
+
+if (PHP_RAPHF == "yes") {
+		EXTENSION("raphf", "php_raphf.c");
+
+		AC_DEFINE("HAVE_RAPHF", 1);
+		PHP_INSTALL_HEADERS("ext/raphf", "php_raphf.h");
+}
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: raphf                                                      |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2013, Michael Wallner <mike@php.net>                 |
+    +--------------------------------------------------------------------+
+*/
+
+#ifndef PHP_RAPHF_H
+#define PHP_RAPHF_H
+
+extern zend_module_entry raphf_module_entry;
+#define phpext_raphf_ptr &raphf_module_entry
+
+#define PHP_RAPHF_VERSION "2.0.0dev"
+
+#ifdef PHP_WIN32
+#	define PHP_RAPHF_API __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#	define PHP_RAPHF_API extern __attribute__ ((visibility("default")))
+#else
+#	define PHP_RAPHF_API extern
+#endif
+
+#ifdef ZTS
+#	include "TSRM.h"
+#endif
+
+#include "php_raphf_api.h"
+
+#endif	/* PHP_RAPHF_H */
+
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: raphf                                                      |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2013, Michael Wallner <mike@php.net>                 |
+    +--------------------------------------------------------------------+
+*/
+
+#ifndef PHP_RAPHF_API_H
+#define PHP_RAPHF_API_H
+
+#include "php_raphf.h"
+
+/**
+ * A resource constructor.
+ *
+ * @param opaque is the \a data from php_persistent_handle_provide()
+ * @param init_arg is the \a init_arg from php_resource_factory_init()
+ * @return the created (persistent) handle
+ */
+typedef void *(*php_resource_factory_handle_ctor_t)(void *opaque, void *init_arg);
+
+/**
+ * The copy constructor of a resource.
+ *
+ * @param opaque the factory's data
+ * @param handle the (persistent) handle to copy
+ */
+typedef void *(*php_resource_factory_handle_copy_t)(void *opaque, void *handle);
+
+/**
+ * The destructor of a resource.
+ *
+ * @param opaque the factory's data
+ * @param handle the handle to destroy
+ */
+typedef void (*php_resource_factory_handle_dtor_t)(void *opaque, void *handle);
+
+/**
+ * The resource ops consisting of a ctor, a copy ctor and a dtor.
+ *
+ * Define this ops and register them with php_persistent_handle_provide()
+ * in MINIT.
+ */
+typedef struct php_resource_factory_ops {
+	/** The resource constructor */
+	php_resource_factory_handle_ctor_t ctor;
+	/** The resource's copy constructor */
+	php_resource_factory_handle_copy_t copy;
+	/** The resource's destructor */
+	php_resource_factory_handle_dtor_t dtor;
+} php_resource_factory_ops_t;
+
+/**
+ * The resource factory.
+ */
+typedef struct php_resource_factory {
+	/** The resource ops */
+	php_resource_factory_ops_t fops;
+	/** Opaque user data */
+	void *data;
+	/** User data destructor */
+	void (*dtor)(void *data);
+	/** How often this factory is referenced */
+	unsigned refcount;
+} php_resource_factory_t;
+
+/**
+ * Initialize a resource factory.
+ *
+ * If you register a \a dtor for a resource factory used with a persistent
+ * handle provider, be sure to call php_persistent_handle_cleanup() for your
+ * registered provider in MSHUTDOWN, else the dtor will point to no longer
+ * available memory if the extension has already been unloaded.
+ *
+ * @param f the factory to initialize; if NULL allocated on the heap
+ * @param fops the resource ops to assign to the factory
+ * @param data opaque user data; may be NULL
+ * @param dtor a destructor for the data; may be NULL
+ * @return \a f or an allocated resource factory
+ */
+PHP_RAPHF_API php_resource_factory_t *php_resource_factory_init(
+		php_resource_factory_t *f, php_resource_factory_ops_t *fops, void *data,
+		void (*dtor)(void *data));
+
+/**
+ * Increase the refcount of the resource factory.
+ *
+ * @param rf the resource factory
+ * @return the new refcount
+ */
+PHP_RAPHF_API unsigned php_resource_factory_addref(php_resource_factory_t *rf);
+
+/**
+ * Destroy the resource factory.
+ *
+ * If the factory's refcount reaches 0, the \a dtor for \a data is called.
+ *
+ * @param f the resource factory
+ */
+PHP_RAPHF_API void php_resource_factory_dtor(php_resource_factory_t *f);
+
+/**
+ * Destroy and free the resource factory.
+ *
+ * Calls php_resource_factory_dtor() and frees \a f if the factory's refcount
+ * reached 0.
+ *
+ * @param f the resource factory
+ */
+PHP_RAPHF_API void php_resource_factory_free(php_resource_factory_t **f);
+
+/**
+ * Construct a resource by the resource factory \a f
+ *
+ * @param f the resource factory
+ * @param init_arg for the resource constructor
+ * @return the new resource
+ */
+PHP_RAPHF_API void *php_resource_factory_handle_ctor(php_resource_factory_t *f,
+		void *init_arg);
+
+/**
+ * Create a copy of the resource \a handle
+ *
+ * @param f the resource factory
+ * @param handle the resource to copy
+ * @return the copy
+ */
+PHP_RAPHF_API void *php_resource_factory_handle_copy(php_resource_factory_t *f,
+		void *handle);
+
+/**
+ * Destroy (and free) the resource
+ *
+ * @param f the resource factory
+ * @param handle the resource to destroy
+ */
+PHP_RAPHF_API void php_resource_factory_handle_dtor(php_resource_factory_t *f,
+		void *handle);
+
+/**
+ * Persistent handles storage
+ */
+typedef struct php_persistent_handle_list {
+	/** Storage of free resources */
+	HashTable free;
+	/** Count of acquired resources */
+	ulong used;
+} php_persistent_handle_list_t;
+
+/**
+ * Definition of a persistent handle provider.
+ * Holds a resource factory an a persistent handle list.
+ */
+typedef struct php_persistent_handle_provider {
+	 /**
+	  * The list of free handles.
+	  * Hash of "ident" => array(handles) entries. Persistent handles are
+	  * acquired out of this list.
+	  */
+	php_persistent_handle_list_t list;
+
+	/**
+	 * The resource factory.
+	 * New handles are created by this factory.
+	 */
+	php_resource_factory_t rf;
+} php_persistent_handle_provider_t;
+
+typedef struct php_persistent_handle_factory php_persistent_handle_factory_t;
+
+/**
+ * Wakeup the persistent handle on re-acquisition.
+ */
+typedef void (*php_persistent_handle_wakeup_t)(
+		php_persistent_handle_factory_t *f, void **handle);
+/**
+ * Retire the persistent handle on release.
+ */
+typedef void (*php_persistent_handle_retire_t)(
+		php_persistent_handle_factory_t *f, void **handle);
+
+/**
+ * Definition of a persistent handle factory.
+ *
+ * php_persistent_handle_concede() will return a pointer to a
+ * php_persistent_handle_factory if a provider for the \a name has
+ * been registered with php_persistent_handle_provide().
+ */
+struct php_persistent_handle_factory {
+	/** The persistent handle provider */
+	php_persistent_handle_provider_t *provider;
+	/** The persistent handle wakeup routine; may be NULL */
+	php_persistent_handle_wakeup_t wakeup;
+	/** The persistent handle retire routine; may be NULL */
+	php_persistent_handle_retire_t retire;
+
+	/** The ident for which this factory manages resources */
+	zend_string *ident;
+
+	/** Whether it has to be free'd on php_persistent_handle_abandon() */
+	unsigned free_on_abandon:1;
+};
+
+/**
+ * Register a persistent handle provider in MINIT.
+ *
+ * Registers a factory provider for \a name_str with \a fops resource factory
+ * ops. Call this in your MINIT.
+ *
+ * A php_resource_factory will be created with \a fops, \a data and \a dtor
+ * and will be stored together with a php_persistent_handle_list in the global
+ * raphf hash.
+ *
+ * A php_persistent_handle_factory can then be retrieved by
+ * php_persistent_handle_concede() at runtime.
+ *
+ * @param name the provider name, e.g. "http\Client\Curl"
+ * @param fops the resource factory ops
+ * @param data opaque user data
+ * @param dtor \a data destructor
+ * @return SUCCESS/FAILURE
+ */
+PHP_RAPHF_API ZEND_RESULT_CODE php_persistent_handle_provide(
+		zend_string *name, php_resource_factory_ops_t *fops,
+		void *data, void (*dtor)(void *));
+
+/**
+ * Retrieve a persistent handle factory at runtime.
+ *
+ * If a persistent handle provider has been registered for \a name, a new
+ * php_persistent_handle_factory creating resources in the \a ident
+ * namespace will be constructed.
+ *
+ * The wakeup routine \a wakeup and the retire routine \a retire will be
+ * assigned to the new php_persistent_handle_factory.
+ *
+ * @param a pointer to a factory; allocated on the heap if NULL
+ * @param name the provider name, e.g. "http\Client\Curl"
+ * @param ident the subsidiary namespace, e.g. "php.net:80"
+ * @param wakeup any persistent handle wakeup routine
+ * @param retire any persistent handle retire routine
+ * @return \a a or an allocated persistent handle factory
+ */
+PHP_RAPHF_API php_persistent_handle_factory_t *php_persistent_handle_concede(
+		php_persistent_handle_factory_t *a,
+		zend_string *name, zend_string *ident,
+		php_persistent_handle_wakeup_t wakeup,
+		php_persistent_handle_retire_t retire);
+
+/**
+ * Abandon the persistent handle factory.
+ *
+ * Destroy a php_persistent_handle_factory created by
+ * php_persistent_handle_concede(). If the memory for the factory was allocated,
+ * it will automatically be free'd.
+ *
+ * @param a the persistent handle factory to destroy
+ */
+PHP_RAPHF_API void php_persistent_handle_abandon(
+		php_persistent_handle_factory_t *a);
+
+/**
+ * Acquire a persistent handle.
+ *
+ * That is, either re-use a resource from the free list or create a new handle.
+ *
+ * If a handle is acquired from the free list, the
+ * php_persistent_handle_factory::wakeup callback will be executed for that
+ * handle.
+ *
+ * @param a the persistent handle factory
+ * @param init_arg the \a init_arg for php_resource_factory_handle_ctor()
+ * @return the acquired resource
+ */
+PHP_RAPHF_API void *php_persistent_handle_acquire(
+		php_persistent_handle_factory_t *a, void *init_arg);
+
+/**
+ * Release a persistent handle.
+ *
+ * That is, either put it back into the free list for later re-use or clean it
+ * up with php_resource_factory_handle_dtor().
+ *
+ * If a handle is put back into the free list, the
+ * php_persistent_handle_factory::retire callback will be executed for that
+ * handle.
+ *
+ * @param a the persistent handle factory
+ * @param handle the handle to release
+ */
+PHP_RAPHF_API void php_persistent_handle_release(
+		php_persistent_handle_factory_t *a, void *handle);
+
+/**
+ * Copy a persistent handle.
+ *
+ * Let the underlying resource factory copy the \a handle.
+ *
+ * @param a the persistent handle factory
+ * @param handle the resource to accrete
+ */
+PHP_RAPHF_API void *php_persistent_handle_accrete(
+		php_persistent_handle_factory_t *a, void *handle);
+
+/**
+ * Retrieve persistent handle resource factory ops.
+ *
+ * These ops can be used to mask a persistent handle factory as
+ * resource factory itself, so you can transparently use the
+ * resource factory API, both for persistent and non-persistent
+ * ressources.
+ *
+ * Example:
+ * ~~~~~~~~~~~~~~~{.c}
+ * php_resource_factory_t *create_my_rf(zend_string *persistent_id)
+ * {
+ *     php_resource_factory_t *rf;
+ *
+ *     if (persistent_id) {
+ *         php_persistent_handle_factory_t *pf;
+ *         php_resource_factory_ops_t *ops;
+ *         zend_string *ns = zend_string_init("my", 2, 1);
+ *
+ *         ops = php_persistent_handle_get_resource_factory_ops();
+ *         pf = php_persistent_handle_concede(NULL, ns, persistent_id, NULL, NULL);
+ *         rf = php_persistent_handle_resource_factory_init(NULL, pf);
+ *         zend_string_release(ns);
+ *     } else {
+ *         rf = php_resource_factory_init(NULL, &myops, NULL, NULL);
+ *     }
+ *     return rf;
+ * }
+ * ~~~~~~~~~~~~~~~
+ */
+PHP_RAPHF_API php_resource_factory_ops_t *
+php_persistent_handle_get_resource_factory_ops(void);
+
+/**
+ * Create a resource factory for persistent handles.
+ *
+ * This will create a resource factory with persistent handle ops, which wraps
+ * the provided reource factory \a pf.
+ *
+ * @param a the persistent handle resource factory to initialize
+ * @param pf the resource factory to wrap
+ */
+PHP_RAPHF_API php_resource_factory_t *
+php_persistent_handle_resource_factory_init(php_resource_factory_t *a,
+		php_persistent_handle_factory_t *pf);
+
+/**
+ * Check whether a resource factory is a persistent handle resource factory.
+ *
+ * @param a the resource factory to check
+ */
+PHP_RAPHF_API zend_bool php_resource_factory_is_persistent(
+		php_resource_factory_t *a);
+
+/**
+ * Clean persistent handles up.
+ *
+ * Destroy persistent handles of provider \a name and in subsidiary
+ * namespace \a ident.
+ *
+ * If \a name is NULL, all persistent handles of all providers with a
+ * matching \a ident will be cleaned up.
+ *
+ * If \a identr is NULL all persistent handles of the provider will be
+ * cleaned up.
+ *
+ * Ergo, if both, \a name and \a ident are NULL, then all
+ * persistent handles will be cleaned up.
+ *
+ * You must call this in MSHUTDOWN, if your resource factory ops hold a
+ * registered php_resource_factory::dtor, else the dtor will point to
+ * memory not any more available if the extension has already been unloaded.
+ *
+ * @param name the provider name; may be NULL
+ * @param ident the subsidiary namespace name; may be NULL
+ */
+PHP_RAPHF_API void php_persistent_handle_cleanup(zend_string *name,
+		zend_string *ident);
+
+/**
+ * Retrieve statistics about the current process/thread's persistent handles.
+ *
+ * @return a HashTable like:
+ * ~~~~~~~~~~~~~~~
+ *     [
+ *         "name" => [
+ *             "ident" => [
+ *                 "used" => 1,
+ *                 "free" => 0,
+ *             ]
+ *         ]
+ *     ]
+ * ~~~~~~~~~~~~~~~
+ */
+PHP_RAPHF_API HashTable *php_persistent_handle_statall(HashTable *ht);
+
+#endif	/* PHP_RAPHF_API_H */
+
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: raphf                                                      |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2013, Michael Wallner <mike@php.net>                 |
+    +--------------------------------------------------------------------+
+*/
+
+#ifdef HAVE_CONFIG_H
+#	include "config.h"
+#endif
+
+#include "php.h"
+#include "php_ini.h"
+#include "ext/standard/info.h"
+#include "php_raphf.h"
+
+#ifndef PHP_RAPHF_TEST
+#	define PHP_RAPHF_TEST 0
+#endif
+
+struct php_persistent_handle_globals {
+	ulong limit;
+	HashTable hash;
+};
+
+ZEND_BEGIN_MODULE_GLOBALS(raphf)
+	struct php_persistent_handle_globals persistent_handle;
+ZEND_END_MODULE_GLOBALS(raphf)
+
+#ifdef ZTS
+#	define PHP_RAPHF_G ((zend_raphf_globals *) \
+		(*((void ***) tsrm_get_ls_cache()))[TSRM_UNSHUFFLE_RSRC_ID(raphf_globals_id)])
+#else
+#	define PHP_RAPHF_G (&raphf_globals)
+#endif
+
+ZEND_DECLARE_MODULE_GLOBALS(raphf)
+
+#ifndef PHP_RAPHF_DEBUG_PHANDLES
+#	define PHP_RAPHF_DEBUG_PHANDLES 0
+#endif
+#if PHP_RAPHF_DEBUG_PHANDLES
+#	undef inline
+#	define inline
+#endif
+
+php_resource_factory_t *php_resource_factory_init(php_resource_factory_t *f,
+		php_resource_factory_ops_t *fops, void *data, void (*dtor)(void *data))
+{
+	if (!f) {
+		f = emalloc(sizeof(*f));
+	}
+	memset(f, 0, sizeof(*f));
+
+	memcpy(&f->fops, fops, sizeof(*fops));
+
+	f->data = data;
+	f->dtor = dtor;
+
+	f->refcount = 1;
+
+	return f;
+}
+
+unsigned php_resource_factory_addref(php_resource_factory_t *rf)
+{
+	return ++rf->refcount;
+}
+
+void php_resource_factory_dtor(php_resource_factory_t *f)
+{
+	if (!--f->refcount) {
+		if (f->dtor) {
+			f->dtor(f->data);
+		}
+	}
+}
+
+void php_resource_factory_free(php_resource_factory_t **f)
+{
+	if (*f) {
+		php_resource_factory_dtor(*f);
+		if (!(*f)->refcount) {
+			efree(*f);
+			*f = NULL;
+		}
+	}
+}
+
+void *php_resource_factory_handle_ctor(php_resource_factory_t *f, void *init_arg)
+{
+	if (f->fops.ctor) {
+		return f->fops.ctor(f->data, init_arg);
+	}
+	return NULL;
+}
+
+void *php_resource_factory_handle_copy(php_resource_factory_t *f, void *handle)
+{
+	if (f->fops.copy) {
+		return f->fops.copy(f->data, handle);
+	}
+	return NULL;
+}
+
+void php_resource_factory_handle_dtor(php_resource_factory_t *f, void *handle)
+{
+	if (f->fops.dtor) {
+		f->fops.dtor(f->data, handle);
+	}
+}
+
+php_resource_factory_t *php_persistent_handle_resource_factory_init(
+		php_resource_factory_t *a, php_persistent_handle_factory_t *pf)
+{
+	return php_resource_factory_init(a,
+			php_persistent_handle_get_resource_factory_ops(), pf,
+			(void(*)(void*)) php_persistent_handle_abandon);
+}
+
+zend_bool php_resource_factory_is_persistent(php_resource_factory_t *a)
+{
+	return a->dtor == (void(*)(void *)) php_persistent_handle_abandon;
+}
+
+static inline php_persistent_handle_list_t *php_persistent_handle_list_init(
+		php_persistent_handle_list_t *list)
+{
+	if (!list) {
+		list = pemalloc(sizeof(*list), 1);
+	}
+	list->used = 0;
+	zend_hash_init(&list->free, 0, NULL, NULL, 1);
+
+	return list;
+}
+
+static int php_persistent_handle_apply_stat(zval *p, int argc, va_list argv,
+		zend_hash_key *key)
+{
+	php_persistent_handle_list_t *list = Z_PTR_P(p);
+	zval zsubentry, *zentry = va_arg(argv, zval *);
+
+	array_init(&zsubentry);
+	add_assoc_long_ex(&zsubentry, ZEND_STRL("used"), list->used);
+	add_assoc_long_ex(&zsubentry, ZEND_STRL("free"),
+			zend_hash_num_elements(&list->free));
+	if (key->key) {
+		add_assoc_zval_ex(zentry, key->key->val, key->key->len, &zsubentry);
+	} else {
+		add_index_zval(zentry, key->h, &zsubentry);
+	}
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+static int php_persistent_handle_apply_statall(zval *p, int argc, va_list argv,
+		zend_hash_key *key)
+{
+	php_persistent_handle_provider_t *provider = Z_PTR_P(p);
+	HashTable *ht = va_arg(argv, HashTable *);
+	zval zentry;
+
+	array_init(&zentry);
+
+	zend_hash_apply_with_arguments(&provider->list.free,
+			php_persistent_handle_apply_stat, 1, &zentry);
+
+	if (key->key) {
+		zend_hash_update(ht, key->key, &zentry);
+	} else {
+		zend_hash_index_update(ht, key->h, &zentry);
+	}
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+static int php_persistent_handle_apply_cleanup_ex(zval *p, void *arg)
+{
+	php_resource_factory_t *rf = arg;
+	void *handle = Z_PTR_P(p);
+
+#if PHP_RAPHF_DEBUG_PHANDLES
+	fprintf(stderr, "DESTROY: %p\n", handle);
+#endif
+	php_resource_factory_handle_dtor(rf, handle);
+	return ZEND_HASH_APPLY_REMOVE;
+}
+
+static int php_persistent_handle_apply_cleanup(zval *p, void *arg)
+{
+	php_resource_factory_t *rf = arg;
+	php_persistent_handle_list_t *list = Z_PTR_P(p);
+
+	zend_hash_apply_with_argument(&list->free,
+			php_persistent_handle_apply_cleanup_ex, rf);
+	if (list->used) {
+		return ZEND_HASH_APPLY_KEEP;
+	}
+	zend_hash_destroy(&list->free);
+#if PHP_RAPHF_DEBUG_PHANDLES
+	fprintf(stderr, "LSTFREE: %p\n", list);
+#endif
+	pefree(list, 1);
+	return ZEND_HASH_APPLY_REMOVE;
+}
+
+static inline void php_persistent_handle_list_dtor(
+		php_persistent_handle_list_t *list,
+		php_persistent_handle_provider_t *provider)
+{
+#if PHP_RAPHF_DEBUG_PHANDLES
+	fprintf(stderr, "LSTDTOR: %p\n", list);
+#endif
+	zend_hash_apply_with_argument(&list->free,
+			php_persistent_handle_apply_cleanup_ex, &provider->rf);
+	zend_hash_destroy(&list->free);
+}
+
+static inline void php_persistent_handle_list_free(
+		php_persistent_handle_list_t **list,
+		php_persistent_handle_provider_t *provider)
+{
+	php_persistent_handle_list_dtor(*list, provider);
+#if PHP_RAPHF_DEBUG_PHANDLES
+	fprintf(stderr, "LSTFREE: %p\n", *list);
+#endif
+	pefree(*list, 1);
+	*list = NULL;
+}
+
+static int php_persistent_handle_list_apply_dtor(zval *p, void *provider)
+{
+	php_persistent_handle_list_t *list = Z_PTR_P(p);
+
+	php_persistent_handle_list_free(&list, provider );
+	ZVAL_PTR(p, NULL);
+	return ZEND_HASH_APPLY_REMOVE;
+}
+
+static inline php_persistent_handle_list_t *php_persistent_handle_list_find(
+		php_persistent_handle_provider_t *provider, zend_string *ident)
+{
+	php_persistent_handle_list_t *list;
+	zval *zlist = zend_symtable_find(&provider->list.free, ident);
+
+	if (zlist && (list = Z_PTR_P(zlist))) {
+#if PHP_RAPHF_DEBUG_PHANDLES
+		fprintf(stderr, "LSTFIND: %p\n", list);
+#endif
+		return list;
+	}
+
+	if ((list = php_persistent_handle_list_init(NULL))) {
+		zval p, *rv;
+		zend_string *id;
+
+		ZVAL_PTR(&p, list);
+		id = zend_string_init(ident->val, ident->len, 1);
+		rv = zend_symtable_update(&provider->list.free, id, &p);
+		zend_string_release(id);
+
+		if (rv) {
+#if PHP_RAPHF_DEBUG_PHANDLES
+			fprintf(stderr, "LSTFIND: %p (new)\n", list);
+#endif
+			return list;
+		}
+		php_persistent_handle_list_free(&list, provider);
+	}
+
+	return NULL;
+}
+
+static int php_persistent_handle_apply_cleanup_all(zval *p, int argc,
+		va_list argv, zend_hash_key *key)
+{
+	php_persistent_handle_provider_t *provider = Z_PTR_P(p);
+	zend_string *ident = va_arg(argv, zend_string *);
+	php_persistent_handle_list_t *list;
+
+	if (ident && ident->len) {
+		if ((list = php_persistent_handle_list_find(provider, ident))) {
+			zend_hash_apply_with_argument(&list->free,
+					php_persistent_handle_apply_cleanup_ex,
+					&provider->rf);
+		}
+	} else {
+		zend_hash_apply_with_argument(&provider->list.free,
+				php_persistent_handle_apply_cleanup, &provider->rf);
+	}
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+static void php_persistent_handle_hash_dtor(zval *p)
+{
+	php_persistent_handle_provider_t *provider = Z_PTR_P(p);
+
+	zend_hash_apply_with_argument(&provider->list.free,
+			php_persistent_handle_list_apply_dtor, provider);
+	zend_hash_destroy(&provider->list.free);
+	php_resource_factory_dtor(&provider->rf);
+	pefree(provider, 1);
+}
+
+ZEND_RESULT_CODE php_persistent_handle_provide(zend_string *name,
+		php_resource_factory_ops_t *fops, void *data, void (*dtor)(void *))
+{
+	php_persistent_handle_provider_t *provider = pemalloc(sizeof(*provider), 1);
+
+	if (php_persistent_handle_list_init(&provider->list)) {
+		if (php_resource_factory_init(&provider->rf, fops, data, dtor)) {
+			zval p, *rv;
+			zend_string *ns;
+
+#if PHP_RAPHF_DEBUG_PHANDLES
+			fprintf(stderr, "PROVIDE: %p %s\n", PHP_RAPHF_G, name_str);
+#endif
+
+			ZVAL_PTR(&p, provider);
+			ns = zend_string_init(name->val, name->len, 1);
+			rv = zend_symtable_update(&PHP_RAPHF_G->persistent_handle.hash, ns, &p);
+			zend_string_release(ns);
+
+			if (rv) {
+				return SUCCESS;
+			}
+			php_resource_factory_dtor(&provider->rf);
+		}
+	}
+
+	return FAILURE;
+}
+
+
+php_persistent_handle_factory_t *php_persistent_handle_concede(
+		php_persistent_handle_factory_t *a,
+		zend_string *name, zend_string *ident,
+		php_persistent_handle_wakeup_t wakeup,
+		php_persistent_handle_retire_t retire)
+{
+	zval *zprovider = zend_symtable_find(&PHP_RAPHF_G->persistent_handle.hash, name);
+
+	if (zprovider) {
+		zend_bool free_a = 0;
+
+		if ((free_a = !a)) {
+			a = emalloc(sizeof(*a));
+		}
+		memset(a, 0, sizeof(*a));
+
+		a->provider = Z_PTR_P(zprovider);
+		a->ident = zend_string_copy(ident);
+		a->wakeup = wakeup;
+		a->retire = retire;
+		a->free_on_abandon = free_a;
+	} else {
+		a = NULL;
+	}
+
+#if PHP_RAPHF_DEBUG_PHANDLES
+	fprintf(stderr, "CONCEDE: %p %p (%s) (%s)\n", PHP_RAPHF_G,
+			a ? a->provider : NULL, name->val, ident->val);
+#endif
+
+	return a;
+}
+
+void php_persistent_handle_abandon(php_persistent_handle_factory_t *a)
+{
+	zend_bool f = a->free_on_abandon;
+
+#if PHP_RAPHF_DEBUG_PHANDLES
+	fprintf(stderr, "ABANDON: %p\n", a->provider);
+#endif
+
+	zend_string_release(a->ident);
+	memset(a, 0, sizeof(*a));
+	if (f) {
+		efree(a);
+	}
+}
+
+void *php_persistent_handle_acquire(php_persistent_handle_factory_t *a, void *init_arg)
+{
+	int key;
+	zval *p;
+	zend_ulong index;
+	void *handle = NULL;
+	php_persistent_handle_list_t *list;
+
+	list = php_persistent_handle_list_find(a->provider, a->ident);
+	if (list) {
+		zend_hash_internal_pointer_end(&list->free);
+		key = zend_hash_get_current_key(&list->free, NULL, &index);
+		p = zend_hash_get_current_data(&list->free);
+		if (p && HASH_KEY_NON_EXISTENT != key) {
+			handle = Z_PTR_P(p);
+			if (a->wakeup) {
+				a->wakeup(a, &handle);
+			}
+			zend_hash_index_del(&list->free, index);
+		} else {
+			handle = php_resource_factory_handle_ctor(&a->provider->rf, init_arg);
+		}
+#if PHP_RAPHF_DEBUG_PHANDLES
+		fprintf(stderr, "CREATED: %p\n", handle);
+#endif
+		if (handle) {
+			++a->provider->list.used;
+			++list->used;
+		}
+	}
+
+	return handle;
+}
+
+void *php_persistent_handle_accrete(php_persistent_handle_factory_t *a, void *handle)
+{
+	void *new_handle = NULL;
+	php_persistent_handle_list_t *list;
+
+	new_handle = php_resource_factory_handle_copy(&a->provider->rf, handle);
+	if (handle) {
+		list = php_persistent_handle_list_find(a->provider, a->ident);
+		if (list) {
+			++list->used;
+		}
+		++a->provider->list.used;
+	}
+
+	return new_handle;
+}
+
+void php_persistent_handle_release(php_persistent_handle_factory_t *a, void *handle)
+{
+	php_persistent_handle_list_t *list;
+
+	list = php_persistent_handle_list_find(a->provider, a->ident);
+	if (list) {
+		if (a->provider->list.used >= PHP_RAPHF_G->persistent_handle.limit) {
+#if PHP_RAPHF_DEBUG_PHANDLES
+			fprintf(stderr, "DESTROY: %p\n", handle);
+#endif
+			php_resource_factory_handle_dtor(&a->provider->rf, handle);
+		} else {
+			if (a->retire) {
+				a->retire(a, &handle);
+			}
+			zend_hash_next_index_insert_ptr(&list->free, handle);
+		}
+
+		--a->provider->list.used;
+		--list->used;
+	}
+}
+
+void php_persistent_handle_cleanup(zend_string *name, zend_string *ident)
+{
+	php_persistent_handle_provider_t *provider;
+	php_persistent_handle_list_t *list;
+
+	if (name) {
+		zval *zprovider = zend_symtable_find(&PHP_RAPHF_G->persistent_handle.hash,
+				name);
+
+		if (zprovider && (provider = Z_PTR_P(zprovider))) {
+			if (ident) {
+				list = php_persistent_handle_list_find(provider, ident);
+				if (list) {
+					zend_hash_apply_with_argument(&list->free,
+							php_persistent_handle_apply_cleanup_ex,
+							&provider->rf);
+				}
+			} else {
+				zend_hash_apply_with_argument(&provider->list.free,
+						php_persistent_handle_apply_cleanup,
+						&provider->rf);
+			}
+		}
+	} else {
+		zend_hash_apply_with_arguments(
+				&PHP_RAPHF_G->persistent_handle.hash,
+				php_persistent_handle_apply_cleanup_all, 1, ident);
+	}
+}
+
+HashTable *php_persistent_handle_statall(HashTable *ht)
+{
+	if (zend_hash_num_elements(&PHP_RAPHF_G->persistent_handle.hash)) {
+		if (!ht) {
+			ALLOC_HASHTABLE(ht);
+			zend_hash_init(ht, 0, NULL, ZVAL_PTR_DTOR, 0);
+		}
+		zend_hash_apply_with_arguments(
+				&PHP_RAPHF_G->persistent_handle.hash,
+				php_persistent_handle_apply_statall, 1, ht);
+	} else if (ht) {
+		ht = NULL;
+	}
+
+	return ht;
+}
+
+static php_resource_factory_ops_t php_persistent_handle_resource_factory_ops = {
+	(php_resource_factory_handle_ctor_t) php_persistent_handle_acquire,
+	(php_resource_factory_handle_copy_t) php_persistent_handle_accrete,
+	(php_resource_factory_handle_dtor_t) php_persistent_handle_release
+};
+
+php_resource_factory_ops_t *php_persistent_handle_get_resource_factory_ops(void)
+{
+	return &php_persistent_handle_resource_factory_ops;
+}
+
+ZEND_BEGIN_ARG_INFO_EX(ai_raphf_stat_persistent_handles, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_FUNCTION(raphf_stat_persistent_handles)
+{
+	if (SUCCESS == zend_parse_parameters_none()) {
+		object_init(return_value);
+		if (php_persistent_handle_statall(HASH_OF(return_value))) {
+			return;
+		}
+		zval_dtor(return_value);
+	}
+	RETURN_FALSE;
+}
+
+ZEND_BEGIN_ARG_INFO_EX(ai_raphf_clean_persistent_handles, 0, 0, 0)
+	ZEND_ARG_INFO(0, name)
+	ZEND_ARG_INFO(0, ident)
+ZEND_END_ARG_INFO();
+static PHP_FUNCTION(raphf_clean_persistent_handles)
+{
+	zend_string *name = NULL, *ident = NULL;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|S!S!", &name, &ident)) {
+		php_persistent_handle_cleanup(name, ident);
+	}
+}
+
+#if PHP_RAPHF_TEST
+#	include "php_raphf_test.c"
+#endif
+
+static const zend_function_entry raphf_functions[] = {
+	ZEND_NS_FENTRY("raphf", stat_persistent_handles,
+			ZEND_FN(raphf_stat_persistent_handles),
+			ai_raphf_stat_persistent_handles, 0)
+	ZEND_NS_FENTRY("raphf", clean_persistent_handles,
+			ZEND_FN(raphf_clean_persistent_handles),
+			ai_raphf_clean_persistent_handles, 0)
+#if PHP_RAPHF_TEST
+	ZEND_NS_FENTRY("raphf", provide, ZEND_FN(raphf_provide), NULL, 0)
+	ZEND_NS_FENTRY("raphf", conceal, ZEND_FN(raphf_conceal), NULL, 0)
+	ZEND_NS_FENTRY("raphf", concede, ZEND_FN(raphf_concede), NULL, 0)
+	ZEND_NS_FENTRY("raphf", dispute, ZEND_FN(raphf_dispute), NULL, 0)
+	ZEND_NS_FENTRY("raphf", handle_ctor, ZEND_FN(raphf_handle_ctor), NULL, 0)
+	ZEND_NS_FENTRY("raphf", handle_copy, ZEND_FN(raphf_handle_copy), NULL, 0)
+	ZEND_NS_FENTRY("raphf", handle_dtor, ZEND_FN(raphf_handle_dtor), NULL, 0)
+#endif
+	{0}
+};
+
+PHP_INI_BEGIN()
+	STD_PHP_INI_ENTRY("raphf.persistent_handle.limit", "-1", PHP_INI_SYSTEM,
+			OnUpdateLong, persistent_handle.limit, zend_raphf_globals,
+			raphf_globals)
+PHP_INI_END()
+
+static HashTable *php_persistent_handles_global_hash;
+
+static PHP_GINIT_FUNCTION(raphf)
+{
+	raphf_globals->persistent_handle.limit = -1;
+
+	zend_hash_init(&raphf_globals->persistent_handle.hash, 0, NULL,
+			php_persistent_handle_hash_dtor, 1);
+	if (php_persistent_handles_global_hash) {
+		zend_hash_copy(&raphf_globals->persistent_handle.hash,
+				php_persistent_handles_global_hash, NULL);
+	}
+}
+
+static PHP_GSHUTDOWN_FUNCTION(raphf)
+{
+	zend_hash_destroy(&raphf_globals->persistent_handle.hash);
+}
+
+PHP_MINIT_FUNCTION(raphf)
+{
+	php_persistent_handles_global_hash = &PHP_RAPHF_G->persistent_handle.hash;
+
+#if PHP_RAPHF_TEST
+	PHP_MINIT(raphf_test)(INIT_FUNC_ARGS_PASSTHRU);
+#endif
+
+	REGISTER_INI_ENTRIES();
+	return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(raphf)
+{
+#if PHP_RAPHF_TEST
+	PHP_MSHUTDOWN(raphf_test)(SHUTDOWN_FUNC_ARGS_PASSTHRU);
+#endif
+
+	UNREGISTER_INI_ENTRIES();
+	php_persistent_handles_global_hash = NULL;
+	return SUCCESS;
+}
+
+static int php_persistent_handle_apply_info_ex(zval *p, int argc,
+		va_list argv, zend_hash_key *key)
+{
+	php_persistent_handle_list_t *list = Z_PTR_P(p);
+	zend_hash_key *super_key = va_arg(argv, zend_hash_key *);
+	char used[21], free[21];
+
+	slprintf(used, sizeof(used), "%u", list->used);
+	slprintf(free, sizeof(free), "%d", zend_hash_num_elements(&list->free));
+
+	php_info_print_table_row(4, super_key->key->val, key->key->val, used, free);
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+static int php_persistent_handle_apply_info(zval *p, int argc,
+		va_list argv, zend_hash_key *key)
+{
+	php_persistent_handle_provider_t *provider = Z_PTR_P(p);
+
+	zend_hash_apply_with_arguments(&provider->list.free,
+			php_persistent_handle_apply_info_ex, 1, key);
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
+PHP_MINFO_FUNCTION(raphf)
+{
+	php_info_print_table_start();
+	php_info_print_table_header(2,
+			"Resource and persistent handle factory support", "enabled");
+	php_info_print_table_row(2, "Extension version", PHP_RAPHF_VERSION);
+	php_info_print_table_end();
+
+	php_info_print_table_start();
+	php_info_print_table_colspan_header(4, "Persistent handles in this "
+#ifdef ZTS
+			"thread"
+#else
+			"process"
+#endif
+	);
+	php_info_print_table_header(4, "Provider", "Ident", "Used", "Free");
+	zend_hash_apply_with_arguments(
+			&PHP_RAPHF_G->persistent_handle.hash,
+			php_persistent_handle_apply_info, 0);
+	php_info_print_table_end();
+
+	DISPLAY_INI_ENTRIES();
+}
+
+zend_module_entry raphf_module_entry = {
+	STANDARD_MODULE_HEADER,
+	"raphf",
+	raphf_functions,
+	PHP_MINIT(raphf),
+	PHP_MSHUTDOWN(raphf),
+	NULL,
+	NULL,
+	PHP_MINFO(raphf),
+	PHP_RAPHF_VERSION,
+	ZEND_MODULE_GLOBALS(raphf),
+	PHP_GINIT(raphf),
+	PHP_GSHUTDOWN(raphf),
+	NULL,
+	STANDARD_MODULE_PROPERTIES_EX
+};
+/* }}} */
+
+#ifdef COMPILE_DL_RAPHF
+ZEND_GET_MODULE(raphf)
+#endif
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+--TEST--
+pecl/http-v2 - general and stat
+--SKIPIF--
+<?php
+if (!extension_loaded("http")) {
+	die("skip pecl/http needed");
+}
+if (!class_exists("http\\Client", false)) {
+	die("skip pecl/http-v2 with curl support needed");
+}
+?>
+--FILE--
+<?php
+echo "Test\n";
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+$c = new http\Client("curl", "php.net:80");
+do {
+	$c->enqueue(new http\Client\Request("GET", "http://php.net"));
+} while (count($c) < 3);
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+unset($c);
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+?>
+Done
+--EXPECTF--
+Test
+array(2) {
+  ["http\Client\Curl"]=>
+  array(0) {
+  }
+  ["http\Client\Curl\Request"]=>
+  array(0) {
+  }
+}
+array(2) {
+  ["http\Client\Curl"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(1)
+      ["free"]=>
+      int(0)
+    }
+  }
+  ["http\Client\Curl\Request"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(3)
+      ["free"]=>
+      int(0)
+    }
+  }
+}
+array(2) {
+  ["http\Client\Curl"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(1)
+    }
+  }
+  ["http\Client\Curl\Request"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(3)
+    }
+  }
+}
+Done
+--TEST--
+pecl/http-v2 - clean with name and id
+--SKIPIF--
+<?php
+if (!extension_loaded("http")) {
+	die("skip pecl/http needed");
+}
+if (!class_exists("http\\Client", false)) {
+	die("skip pecl/http-v2 with curl support needed");
+}
+?>
+--FILE--
+<?php
+echo "Test\n";
+
+$c = new http\Client("curl", "php.net:80");
+do {
+	$c->enqueue(new http\Client\Request("GET", "http://php.net"));
+} while (count($c) < 3);
+
+unset($c);
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+
+raphf\clean_persistent_handles("http\\Client\\Curl");
+raphf\clean_persistent_handles("http\\Client\\Curl\\Request", "php.net:80");
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+?>
+Done
+--EXPECTF--
+Test
+array(2) {
+  ["http\Client\Curl"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(1)
+    }
+  }
+  ["http\Client\Curl\Request"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(3)
+    }
+  }
+}
+array(2) {
+  ["http\Client\Curl"]=>
+  array(0) {
+  }
+  ["http\Client\Curl\Request"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(0)
+    }
+  }
+}
+Done
+--TEST--
+pecl/http-v2 - clean with id only
+--SKIPIF--
+<?php
+if (!extension_loaded("http")) {
+	die("skip pecl/http needed");
+}
+if (!class_exists("http\\Client", false)) {
+	die("skip pecl/http-v2 with curl support needed");
+}
+?>
+--FILE--
+<?php
+echo "Test\n";
+
+$c = new http\Client("curl", "php.net:80");
+do {
+	$c->enqueue(new http\Client\Request("GET", "http://php.net"));
+} while (count($c) < 3);
+
+unset($c);
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+raphf\clean_persistent_handles(null, "php.net:80");
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+?>
+Done
+--EXPECTF--
+Test
+array(2) {
+  ["http\Client\Curl"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(1)
+    }
+  }
+  ["http\Client\Curl\Request"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(3)
+    }
+  }
+}
+array(2) {
+  ["http\Client\Curl"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(0)
+    }
+  }
+  ["http\Client\Curl\Request"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(0)
+      ["free"]=>
+      int(0)
+    }
+  }
+}
+Done
+--TEST--
+pecl/http-v2 - partial clean
+--SKIPIF--
+<?php
+if (!extension_loaded("http")) {
+	die("skip pecl/http needed");
+}
+if (!class_exists("http\\Client", false)) {
+	die("skip pecl/http-v2 with curl support needed");
+}
+?>
+--FILE--
+<?php
+echo "Test\n";
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+$c = new http\Client("curl", "php.net:80");
+$c2 = new http\Client("curl", "php.net:80");
+do {
+	$c->enqueue(new http\Client\Request("GET", "http://php.net"));
+	$c2->enqueue(new http\Client\Request("GET", "http://php.net"));
+} while (count($c) < 3);
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+unset($c);
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+raphf\clean_persistent_handles();
+
+$h = (array) raphf\stat_persistent_handles();
+var_dump(array_intersect_key($h, array_flip(preg_grep("/^http/", array_keys($h)))));
+
+?>
+Done
+--EXPECTF--
+Test
+array(2) {
+  ["http\Client\Curl"]=>
+  array(0) {
+  }
+  ["http\Client\Curl\Request"]=>
+  array(0) {
+  }
+}
+array(2) {
+  ["http\Client\Curl"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(2)
+      ["free"]=>
+      int(0)
+    }
+  }
+  ["http\Client\Curl\Request"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(6)
+      ["free"]=>
+      int(0)
+    }
+  }
+}
+array(2) {
+  ["http\Client\Curl"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(1)
+      ["free"]=>
+      int(1)
+    }
+  }
+  ["http\Client\Curl\Request"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(3)
+      ["free"]=>
+      int(3)
+    }
+  }
+}
+array(2) {
+  ["http\Client\Curl"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(1)
+      ["free"]=>
+      int(0)
+    }
+  }
+  ["http\Client\Curl\Request"]=>
+  array(1) {
+    ["php.net:80"]=>
+    array(2) {
+      ["used"]=>
+      int(3)
+      ["free"]=>
+      int(0)
+    }
+  }
+}
+Done
+lm¥›|ïπ
+»pû7ÓYn8¸8   GBMB
