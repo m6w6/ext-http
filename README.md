@@ -1,121 +1,48 @@
-# pecl/http v2
+# ext-http
 
-[![Build Status](https://travis-ci.org/m6w6/ext-http.svg?branch=R_2_5)](https://travis-ci.org/m6w6/ext-http)
+[![Build Status](https://travis-ci.org/m6w6/ext-http.svg?branch=master)](https://travis-ci.org/m6w6/ext-http)
 
-## About:
+Extended HTTP support. Again.
 
-Extended HTTP support. Again. 
+## Documentation
 
-* Introduces the http namespace.
-* PHP stream based message bodies.
-* Encapsulated env request/response.
-* Modular client support.
+See the [online markdown reference](https://mdref.m6w6.name/http).
 
-## Installation:
+Known issues are listed in [BUGS](./BUGS) and future ideas can be found in [TODO](./TODO).
 
-This extension is hosted at [PECL](http://pecl.php.net) and can be installed with [PEAR](http://pear.php.net)'s pecl command:
+## Installing
 
-    # pecl install pecl_http
+### PECL
 
-## Dependencies:
+	pecl install pecl_http
 
-pecl/http depends on a number of system libraries and PHP extensions for special features.
+### PHARext
 
-#### Required system libraries:
+Watch out for [PECL replicates](https://replicator.pharext.org?pecl_http)
+and pharext packages attached to [releases](./releases).
 
-The following system libraries are required to build this extension:
+### Checkout
 
-##### zlib
-Provides gzip/zlib/deflate encoding.  
-Minimum version: 1.2.0.4  
-Install on Debian: `apt-get install zlib1g-dev`
+	git clone github.com:m6w6/ext-http
+	cd ext-http
+	/path/to/phpize
+	./configure --with-php-config=/path/to/php-config
+	make
+	sudo make install
 
+## ChangeLog
 
-#### Optional system libraries:
+A comprehensive list of changes can be obtained from the
+[PECL website](https://pecl.php.net/package-changelog.php?package=pecl_http).
 
-The following system libraries are optional and provide additional features:
+## License
 
-##### libidn
-Provides IDNA support in URLs.  
-Minimum version: none  
-Install on Debian: `apt-get install libidn11-dev`
+ext-http is licensed under the 2-Clause-BSD license, which can be found in
+the accompanying [LICENSE](./LICENSE) file.
 
-##### libidn2
-Provides IDNA support in URLs (fallback if libidn is not available).  
-Minimum version: none  
-Install on Debian: `apt-get install libidn2-0-dev`
+## Contributing
 
-##### libicu
-Provides IDNA support in URLs (fallback if libidn is not available).  
-Minimum version: none  
-Install on Debian: `apt-get install libicu-dev`
+All forms of contribution are welcome! Please see the bundled
+[CONTRIBUTING](./CONTRIBUTING.md) note for the general principles followed.
 
-##### libcurl
-Provides HTTP request functionality.  
-Minimum version: 7.18.2  
-Install on Debian: `apt-get install libcurl4-openssl-dev`  
-Note: There are usually different styles of SSL support for libcurl available, so you can replace 'openssl' in the above command f.e. with 'nss' or 'gnutls'.
-
-##### libevent
-Eventloop support for the HTTP client.  
-Minimum version: none  
-Install on Debian: `apt-get install libevent-dev`
-
-### PHP extensions:
-
-This extension unconditionally depends on the pre-loaded presence of the following PHP extensions:
-
-* [raphf](https://github.com/m6w6/ext-raphf)
-* [propro](https://github.com/m6w6/ext-propro)
-* spl
-
-
-If configured ```--with-http-shared-deps``` (default) it depends on the pre-loaded presence of the following extensions, as long as they were available at build time:
-
-* hash
-* iconv
-* json (only until < 2.4.0)
-
-Please ensure that all extension on which pecl/http depends, are loaded before it, e.g in your `php.ini`:
-
-	; obligatory deps
-	extension = raphf.so
-	extension = propro.so
-	
-	; if shared deps were enabled
-	extension = hash.so
-	extension = iconv.so
-	extension = json.so
-	
-	; finally load pecl/http
-	extension = http.so
-
-## Conflicts:
-
-pecl/http-v2 conflicts with the following extensions:
-
-* http-v1
-* event (only until <= 2.0.3)
-
-## INI Directives:
-
-* http.etag.mode = "crc32b"  
-  Default hash method for dynamic response payloads to generate an ETag.
-
-## Stream Filters:
-
-The http extension registers the ```http.*``` namespace for its stream filters. Provided stream filters are:
-
-* http.chunked_decode  
-  Decode a stream encoded with chunked transfer encoding.
-* http.chunked_encode  
-  Encode a stream with chunked transfer encoding.
-* http.inflate  
-  Decode a stream encoded with deflate/zlib/gzip encoding.
-* http.deflate  
-  Encode a stream with deflate/zlib/gzip encoding.
-
-
-## Documentation:
-
-Documentation is available at https://mdref.m6w6.name/http
+The list of past and current contributors is maintained in [THANKS](./THANKS).
