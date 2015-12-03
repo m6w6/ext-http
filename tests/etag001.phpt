@@ -4,19 +4,12 @@ etags with hash
 <?php 
 include "skipif.inc"; 
 _ext("hash"); 
-version_compare(PHP_VERSION, "5.4.0", ">=") or die("skip PHP>=5.4 required");
 ?>
 --FILE--
 <?php
 $body = new http\Message\Body;
 $body->append("Hello, my old fellow.");
 foreach (hash_algos() as $algo) {
-    switch ($algo) {
-    case "gost-crypto":
-    case "fnv1a32":
-    case "fnv1a64":
-        continue 2;
-    }
     ini_set("http.etag.mode", $algo);
     printf("%10s: %s\n", 
         $algo, 
@@ -34,6 +27,10 @@ DONE
     sha256: ed9ecfe5c76d51179c3c1065916fdb8d94aee05577f187bd763cdc962bba1f42
     sha384: 923a756152da113db192958da485c7881e7c4811d2d34e22f4d74cd45310d983f7fb1c5527a5f9037a4c7b649a6cc2b2
     sha512: ad5ea693b8df4457d08d835ad5ccf7b626b66285f8424b3ec59e54c63bf63feef9a92baaba71c38d7bd9a1135488499fc835a8818390965c9ce8a5e4c40e519f
+  sha3-224: 2c8a112ec84af4bed902071e13329136c537d514ea24b47a6f82389d
+  sha3-256: a96753d03e6280a531e78870a6454d0c68da3b43150c77f08db77adede39741b
+  sha3-384: 2b51d78f7ab6e8e9ec4048faa837a9370ace5fc27fdcbf19f9a393fd979a6ff0369a57e06576a8ac862cb5b81f4cdb19
+  sha3-512: 849aac3468e187f871b321d4bd8a3d45ae851abd05af18463b7913b10ca8bffe73e5fb6ee43e831bb32961a3c293d692698b353ed5df0e63db561c4d5cd0c704
  ripemd128: b9e8d5864b5821d72e66101a9a0e730a
  ripemd160: d697a33676aece781b72f6fcb95f4c730367706b
  ripemd256: 9c3a73ab03e6d7d3471cf70316c4ff3ec56212d25730d382fb1480346529742b
@@ -48,11 +45,14 @@ tiger192,4: e6a1628a4da8fa6adf4ca866c5e235b51939bb61ecf8423f
     snefru: 8f50c66c8f0a1510f9c591a2b7a070853d4770c60a38394c8857918dd91a2e5b
  snefru256: 8f50c66c8f0a1510f9c591a2b7a070853d4770c60a38394c8857918dd91a2e5b
       gost: efc79cdd01331adf80b30af816ff7a934f3f3df3085294a310918cacff3500f0
+gost-crypto: 2e6bd37841520cc9ccb8c7abd68bd3ec9ce601651b995f3639090f585cc23684
    adler32: 4ff5075d
      crc32: 757b06f7
     crc32b: e56655c5
     fnv132: ebd1fa1f
+   fnv1a32: 8e2ee037
     fnv164: 9790ce01eba3ae9f
+   fnv1a64: 43ef200fe3ef9b37
      joaat: 70a407c9
 haval128,3: 68a1bee33d2a4fa5543be7fa871f84ea
 haval160,3: b4204e8c4f3c993385d997539afa723888700bbd
