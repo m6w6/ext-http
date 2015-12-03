@@ -13,4 +13,4 @@ http-build-headers: $(PHP_HTTP_HEADERS)
 
 .PHONY: http-clean-headers
 http-clean-headers:
-	-rm $(PHP_HTTP_HEADERS)
+	-rm -f $(PHP_HTTP_HEADERS)
