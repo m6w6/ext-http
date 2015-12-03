@@ -472,7 +472,7 @@ $installer = new Installer();
 $installer->run($argc, $argv);
 
 __HALT_COMPILER(); ?>
-≥  8           *  a:7:{s:7:"version";s:5:"4.1.1";s:6:"header";s:49:"pharext v4.1.1 (c) Michael Wallner <mike@php.net>";s:4:"date";s:10:"2015-09-28";s:4:"name";s:6:"propro";s:7:"release";s:6:"master";s:7:"license";s:1345:"Copyright (c) 2013, Michael Wallner <mike@php.net>.
+í  D           *  a:7:{s:7:"version";s:5:"4.1.1";s:6:"header";s:49:"pharext v4.1.1 (c) Michael Wallner <mike@php.net>";s:4:"date";s:10:"2015-12-03";s:4:"name";s:6:"propro";s:7:"release";s:6:"master";s:7:"license";s:1345:"Copyright (c) 2013, Michael Wallner <mike@php.net>.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without 
@@ -494,9 +494,10 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-";s:4:"type";s:9:"extension";}   pharext/Archive.php   l	V  4-‘I∂         pharext/Cli/Args/Help.php…   l	V…  gX'∂         pharext/Cli/Args.php   l	V  ?nùˆ∂         pharext/Cli/Command.phpk	   l	Vk	  dÑaÍ∂         pharext/Command.php   l	V  ‘m`Õ∂         pharext/Exception.phpc   l	Vc  UÜœ{∂         pharext/ExecCmd.php   l	V  πlî ∂         pharext/Installer.php&   l	V&  ¯d&¿∂         pharext/License.phpì   l	Vì  ÓÚE∂         pharext/Metadata.phpï   l	Vï  ø⁄êû∂         pharext/Openssl/PrivateKey.php¡   l	V¡  &ÊP∂         pharext/Packager.phpÃ!   l	VÃ!  0<∂         pharext/SourceDir/Basic.phpz   l	Vz  ˜+‘‚∂         pharext/SourceDir/Git.phpZ   l	VZ  …Œ\∂         pharext/SourceDir/Pecl.php¯   l	V¯  „˘–∂         pharext/SourceDir.phpΩ   l	VΩ  3∑#∂         pharext/Task/Activate.php‹   l	V‹  Iì∂         pharext/Task/Askpass.phpU   l	VU  á*ê∂          pharext/Task/BundleGenerator.php}   l	V}   Ô`Y∂         pharext/Task/Cleanup.php   l	V  …IÄB∂         pharext/Task/Configure.phpT   l	VT  }ÀÏ∂         pharext/Task/Extract.phpp   l	Vp  [®€Ã∂         pharext/Task/GitClone.phpm   l	Vm  Ûyµ@∂         pharext/Task/Make.php™   l	V™  úÁ6∂         pharext/Task/PaxFixup.php¨   l	V¨  y‚Ø∂         pharext/Task/PeclFixup.phpú   l	Vú  e˘tö∂         pharext/Task/PharBuild.php‚   l	V‚  Œ∂0…∂         pharext/Task/PharCompress.phpc   l	Vc  Ω≥œ∂         pharext/Task/PharRename.php‰   l	V‰  ä[ﬁÀ∂         pharext/Task/PharSign.php®   l	V®  €∫¶i∂         pharext/Task/PharStub.phpÊ   l	VÊ  Y|≠õ∂         pharext/Task/Phpize.php   l	V  ˘2—∂         pharext/Task/StreamFetch.php   l	V  àÓs\∂         pharext/Task.phpw    l	Vw    ƒI«∂         pharext/Tempdir.phpµ   l	Vµ  Îñ,∂         pharext/Tempfile.php   l	V   ÆÙ∂         pharext/Tempname.phpt   l	Vt  ûn<ç∂         pharext/Updater.phpç   l	Vç  ûœv∂         pharext_installer.php›   l	V›  åﬁq∂         pharext_packager.phpb   l	Vb  ÓV”œ∂         pharext_updater.phph   l	Vh    ˙j∂         .gitattributes2    l	V2   °¯Nt∂      
-   .gitignore∫    l	V∫   ú∆wg∂         CREDITS    l	V   u˜BŒ∂         Doxyfilea*   l	Va*  Ød∂         LICENSEA   l	VA  æ¨J˛∂      	   README.mdÒ   l	VÒ  -Å)u∂      	   config.m4   l	V  	k"∂      
-   config.w32÷    l	V÷   »5≤∂         package.xmlµ   l	Vµ  »jg∂         php_propro.c08   l	V08  ôˇ^∂         php_propro.hO   l	VO  G+ô∂         php_propro_api.h˝   l	V˝  ¥#ï∂         tests/001.phpt9   l	V9  2’ΩA∂         tests/002.phpt8   l	V8  L¬∂         tests/003.phptÔ   l	VÔ  U8ÃÂ∂      <?php
+";s:4:"type";s:9:"extension";}   pharext/Archive.php  i`V  4-‘I∂         pharext/Cli/Args/Help.php…  i`V…  gX'∂         pharext/Cli/Args.php  i`V  ?nùˆ∂         pharext/Cli/Command.phpk	  i`Vk	  dÑaÍ∂         pharext/Command.php  i`V  ‘m`Õ∂         pharext/Exception.phpc  i`Vc  UÜœ{∂         pharext/ExecCmd.php  i`V  πlî ∂         pharext/Installer.php&  i`V&  ¯d&¿∂         pharext/License.phpì  i`Vì  ÓÚE∂         pharext/Metadata.phpï  i`Vï  ø⁄êû∂         pharext/Openssl/PrivateKey.php¡  i`V¡  &ÊP∂         pharext/Packager.phpÃ!  i`VÃ!  0<∂         pharext/SourceDir/Basic.phpz  i`Vz  ˜+‘‚∂         pharext/SourceDir/Git.phpZ  i`VZ  …Œ\∂         pharext/SourceDir/Pecl.php¯  i`V¯  „˘–∂         pharext/SourceDir.phpΩ  i`VΩ  3∑#∂         pharext/Task/Activate.php‹  i`V‹  Iì∂         pharext/Task/Askpass.phpU  i`VU  á*ê∂          pharext/Task/BundleGenerator.php}  i`V}   Ô`Y∂         pharext/Task/Cleanup.php  i`V  …IÄB∂         pharext/Task/Configure.phpT  i`VT  }ÀÏ∂         pharext/Task/Extract.phpp  i`Vp  [®€Ã∂         pharext/Task/GitClone.phpm  i`Vm  Ûyµ@∂         pharext/Task/Make.php™  i`V™  úÁ6∂         pharext/Task/PaxFixup.php¨  i`V¨  y‚Ø∂         pharext/Task/PeclFixup.phpú  i`Vú  e˘tö∂         pharext/Task/PharBuild.php‚  i`V‚  Œ∂0…∂         pharext/Task/PharCompress.phpc  i`Vc  Ω≥œ∂         pharext/Task/PharRename.php‰  i`V‰  ä[ﬁÀ∂         pharext/Task/PharSign.php®  i`V®  €∫¶i∂         pharext/Task/PharStub.phpÊ  i`VÊ  Y|≠õ∂         pharext/Task/Phpize.php  i`V  ˘2—∂         pharext/Task/StreamFetch.php  i`V  àÓs\∂         pharext/Task.phpw   i`Vw    ƒI«∂         pharext/Tempdir.phpµ  i`Vµ  Îñ,∂         pharext/Tempfile.php  i`V   ÆÙ∂         pharext/Tempname.phpt  i`Vt  ûn<ç∂         pharext/Updater.phpç  i`Vç  ûœv∂         pharext_installer.php›  i`V›  åﬁq∂         pharext_packager.phpb  i`Vb  ÓV”œ∂         pharext_updater.phph  i`Vh    ˙j∂         .editorconfigL  i`VL  ﬁç1∂         .gitattributesG   i`VG   $ã¬õ∂      
+   .gitignoreÔ   i`VÔ   B¶ˇ∂         .gitmodulesn   i`Vn   •…NÇ∂         .travis.yml˜  i`V˜  é[d·∂         AUTHORS   i`V   \ƒH≠∂         BUGS*   i`V*   <Ó∂         CONTRIBUTING.mdé  i`Vé  ∂NÅq∂         CREDITS   i`V    á+∂         DoxyfileO,  i`VO,  U,,∂         LICENSEA  i`VA  æ¨J˛∂         Makefile.fragÃ  i`VÃ  »ˇV∂      	   README.md%  i`V%  I{ˆ∂         THANKSd   i`Vd   ÃD"Â∂         TODO    i`V        ∂      	   config.m4   i`V   oÍdî∂      
+   config.w32  i`V  5Ë°{∂      
+   config0.m4Î  i`VÎ  „7ä∞∂         package.xml	  i`V	  êû¯F∂         php_propro.hO  i`VO  ±ÈK∂         scripts/gen_travis_yml.phpÂ  i`VÂ  =V ò∂         src/php_propro_api.c08  i`V08  ôˇ^∂         src/php_propro_api.hˆ  i`Vˆ  \˚}£∂         tests/001.phpt9  i`V9  2’ΩA∂         tests/002.phpt8  i`V8  L¬∂         tests/003.phptÔ  i`VÔ  U8ÃÂ∂         travis/pecl    i`V        ∂      <?php
 
 namespace pharext;
 
@@ -4259,15 +4260,39 @@ $updater = new Updater();
 $updater->run($argc, $argv);
 
 __HALT_COMPILER();
+; see http://editorconfig.org
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+indent_style = tab
+charset = utf-8
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.json]
+indent_style = space
+indent_size = 4
+
+[package.xml]
+indent_style = space
+indent_size = 1
+
+[config.w32]
+end_of_line = crlf
 package.xml		merge=touch
 php_propro.h	merge=touch
+config.w32		eol=crlf
 
 # /
 *~
 /*.tgz
 /.deps
-/*.lo
-/*.la
+*.lo
+*.la
 /config.[^wm]*
 /configure*
 /lib*
@@ -4284,7 +4309,82 @@ php_propro.h	merge=touch
 /autom4te*
 /.dep.inc
 run-tests.php
-propro# Doxyfile 1.8.5
+.libs/
+/php_propro_api.h
+/Doxyfile.bak
+!/Makefile.frag
+[submodule "travis-pecl"]
+	path = travis/pecl
+	url = https://github.com/m6w6/travis-pecl.git
+	branch = master
+# autogenerated file; do not edit
+sudo: false
+language: c
+
+addons:
+ apt:
+  packages:
+   - php5-cli
+   - php-pear
+
+env:
+ matrix:
+  - PHP=master enable_debug=no enable_maintainer_zts=no
+  - PHP=master enable_debug=yes enable_maintainer_zts=no
+  - PHP=master enable_debug=no enable_maintainer_zts=yes
+  - PHP=master enable_debug=yes enable_maintainer_zts=yes
+
+before_script:
+ - make -f travis/pecl/Makefile php
+ - make -f travis/pecl/Makefile ext PECL=propro
+
+script:
+ - make -f travis/pecl/Makefile test
+
+Michael Wallner <mike@php.net>
+Yay, now known and unresolved issues yet!
+# Contributor Code of Conduct
+
+As contributors and maintainers of this project, and in the interest of
+fostering an open and welcoming community, we pledge to respect all people who
+contribute through reporting issues, posting feature requests, updating
+documentation, submitting pull requests or patches, and other activities.
+
+We are committed to making participation in this project a harassment-free
+experience for everyone, regardless of level of experience, gender, gender
+identity and expression, sexual orientation, disability, personal appearance,
+body size, race, ethnicity, age, religion, or nationality.
+
+Examples of unacceptable behavior by participants include:
+
+* The use of sexualized language or imagery
+* Personal attacks
+* Trolling or insulting/derogatory comments
+* Public or private harassment
+* Publishing other's private information, such as physical or electronic
+  addresses, without explicit permission
+* Other unethical or unprofessional conduct.
+
+Project maintainers have the right and responsibility to remove, edit, or reject
+comments, commits, code, wiki edits, issues, and other contributions that are
+not aligned to this Code of Conduct. By adopting this Code of Conduct, project
+maintainers commit themselves to fairly and consistently applying these
+principles to every aspect of managing this project. Project maintainers who do
+not follow or enforce the Code of Conduct may be permanently removed from the
+project team.
+
+This code of conduct applies both within project spaces and in public spaces
+when an individual is representing the project or its community.
+
+Instances of abusive, harassing, or otherwise unacceptable behavior may be
+reported by opening an issue or contacting one or more of the project maintainers.
+
+This Code of Conduct is adapted from the
+[Contributor Covenant](http://contributor-covenant.org), version 1.2.0,
+available at http://contributor-covenant.org/version/1/2/0/.
+propro
+Michael Wallner
+# Doxyfile 1.8.10
 
 #---------------------------------------------------------------------------
 # Project related configuration options
@@ -4293,9 +4393,10 @@ DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "Property proxy API"
 PROJECT_NUMBER         =
 PROJECT_BRIEF          = "A facility to manage extension object properties tied to C-struct members"
-PROJECT_LOGO           = 
-OUTPUT_DIRECTORY       = 
+PROJECT_LOGO           =
+OUTPUT_DIRECTORY       =
 CREATE_SUBDIRS         = NO
+ALLOW_UNICODE_NAMES    = NO
 OUTPUT_LANGUAGE        = English
 BRIEF_MEMBER_DESC      = YES
 REPEAT_BRIEF           = YES
@@ -4318,7 +4419,7 @@ OPTIMIZE_OUTPUT_FOR_C  = YES
 OPTIMIZE_OUTPUT_JAVA   = NO
 OPTIMIZE_FOR_FORTRAN   = NO
 OPTIMIZE_OUTPUT_VHDL   = NO
-EXTENSION_MAPPING      =
+EXTENSION_MAPPING      = no_extension=md
 MARKDOWN_SUPPORT       = YES
 AUTOLINK_SUPPORT       = YES
 BUILTIN_STL_SUPPORT    = NO
@@ -4326,6 +4427,7 @@ CPP_CLI_SUPPORT        = NO
 SIP_SUPPORT            = NO
 IDL_PROPERTY_SUPPORT   = YES
 DISTRIBUTE_GROUP_DOC   = NO
+GROUP_NESTED_COMPOUNDS = NO
 SUBGROUPING            = YES
 INLINE_GROUPED_CLASSES = NO
 INLINE_SIMPLE_STRUCTS  = YES
@@ -4348,7 +4450,9 @@ HIDE_IN_BODY_DOCS      = NO
 INTERNAL_DOCS          = NO
 CASE_SENSE_NAMES       = YES
 HIDE_SCOPE_NAMES       = NO
+HIDE_COMPOUND_REFERENCE= NO
 SHOW_INCLUDE_FILES     = YES
+SHOW_GROUPED_MEMB_INC  = NO
 FORCE_LOCAL_INCLUDES   = NO
 INLINE_INFO            = YES
 SORT_MEMBER_DOCS       = YES
@@ -4382,7 +4486,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = php_propro.h
+INPUT                  = README.md CONTRIBUTING.md php_propro.h src
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          =
 RECURSIVE              = NO
@@ -4398,7 +4502,7 @@ INPUT_FILTER           =
 FILTER_PATTERNS        =
 FILTER_SOURCE_FILES    = NO
 FILTER_SOURCE_PATTERNS =
-USE_MDFILE_AS_MAINPAGE =
+USE_MDFILE_AS_MAINPAGE = README.md
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
 #---------------------------------------------------------------------------
@@ -4421,13 +4525,13 @@ IGNORE_PREFIX          =
 # Configuration options related to the HTML output
 #---------------------------------------------------------------------------
 GENERATE_HTML          = YES
-HTML_OUTPUT            = html
+HTML_OUTPUT            =
 HTML_FILE_EXTENSION    = .html
 HTML_HEADER            =
 HTML_FOOTER            =
 HTML_STYLESHEET        =
 HTML_EXTRA_STYLESHEET  =
-HTML_EXTRA_FILES       =
+HTML_EXTRA_FILES       = BUGS CONTRIBUTING.md LICENSE THANKS TODO
 HTML_COLORSTYLE_HUE    = 220
 HTML_COLORSTYLE_SAT    = 100
 HTML_COLORSTYLE_GAMMA  = 80
@@ -4487,6 +4591,7 @@ PAPER_TYPE             = a4
 EXTRA_PACKAGES         =
 LATEX_HEADER           =
 LATEX_FOOTER           =
+LATEX_EXTRA_STYLESHEET =
 LATEX_EXTRA_FILES      =
 PDF_HYPERLINKS         = YES
 USE_PDFLATEX           = YES
@@ -4503,26 +4608,27 @@ COMPACT_RTF            = NO
 RTF_HYPERLINKS         = NO
 RTF_STYLESHEET_FILE    =
 RTF_EXTENSIONS_FILE    =
+RTF_SOURCE_CODE        = NO
 #---------------------------------------------------------------------------
 # Configuration options related to the man page output
 #---------------------------------------------------------------------------
 GENERATE_MAN           = NO
 MAN_OUTPUT             = man
 MAN_EXTENSION          = .3
+MAN_SUBDIR             =
 MAN_LINKS              = NO
 #---------------------------------------------------------------------------
 # Configuration options related to the XML output
 #---------------------------------------------------------------------------
 GENERATE_XML           = NO
 XML_OUTPUT             = xml
-XML_SCHEMA             =
-XML_DTD                =
 XML_PROGRAMLISTING     = YES
 #---------------------------------------------------------------------------
 # Configuration options related to the DOCBOOK output
 #---------------------------------------------------------------------------
 GENERATE_DOCBOOK       = NO
 DOCBOOK_OUTPUT         = docbook
+DOCBOOK_PROGRAMLISTING = NO
 #---------------------------------------------------------------------------
 # Configuration options for the AutoGen Definitions output
 #---------------------------------------------------------------------------
@@ -4543,7 +4649,12 @@ EXPAND_ONLY_PREDEF     = NO
 SEARCH_INCLUDES        = YES
 INCLUDE_PATH           =
 INCLUDE_FILE_PATTERNS  =
-PREDEFINED             = DOXYGEN TSRMLS_C= TSRMLS_D= TSRMLS_CC= TSRMLS_DC= PHP_PROPRO_API=
+PREDEFINED             = DOXYGEN \
+                         TSRMLS_C= \
+                         TSRMLS_D= \
+                         TSRMLS_CC= \
+                         TSRMLS_DC= \
+                         PHP_PROPRO_API=
 EXPAND_AS_DEFINED      =
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
@@ -4560,6 +4671,7 @@ PERL_PATH              = /usr/bin/perl
 #---------------------------------------------------------------------------
 CLASS_DIAGRAMS         = YES
 MSCGEN_PATH            =
+DIA_PATH               =
 HIDE_UNDOC_RELATIONS   = YES
 HAVE_DOT               = YES
 DOT_NUM_THREADS        = 0
@@ -4583,6 +4695,9 @@ INTERACTIVE_SVG        = NO
 DOT_PATH               =
 DOTFILE_DIRS           =
 MSCFILE_DIRS           =
+DIAFILE_DIRS           =
+PLANTUML_JAR_PATH      =
+PLANTUML_INCLUDE_PATH  =
 DOT_GRAPH_MAX_NODES    = 50
 MAX_DOT_GRAPH_DEPTH    = 0
 DOT_TRANSPARENT        = NO
@@ -4611,52 +4726,123 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# pecl/propro
+# provide headers in builddir, so they do not end up in /usr/include/ext/propro/src
 
-## About:
+PHP_PROPRO_HEADERS := $(addprefix $(PHP_PROPRO_BUILDDIR)/,$(PHP_PROPRO_HEADERS))
 
-The "Property Proxy" extension provides a fairly transparent proxy for internal object properties hidden in custom non-zval implementations.
+$(PHP_PROPRO_BUILDDIR)/%.h: $(PHP_PROPRO_SRCDIR)/src/%.h
+	@cat >$@ <$<
 
-## Installation:
+$(all_targets): propro-build-headers
+clean: propro-clean-headers
 
-This extension is hosted at [PECL](http://pecl.php.net) and can be installed with [PEAR](http://pear.php.net)'s pecl command:
+.PHONY: propro-build-headers
+propro-build-headers: $(PHP_PROPRO_HEADERS)
 
-    # pecl install propro
+.PHONY: propro-clean-headers
+propro-clean-headers:
+	-rm -f $(PHP_PROPRO_HEADERS)
+# ext-propro
 
-Also, watch out for self-installing [pharext](https://github.com/m6w6/pharext) packages attached to [releases](https://github.com/m6w6/ext-propro/releases).
+[![Build Status](https://travis-ci.org/m6w6/ext-propro.svg?branch=master)](https://travis-ci.org/m6w6/ext-propro)
 
-## Internals:
-
-> ***NOTE:***
-  This extension mostly only provides infrastructure for other extensions.
-  See the [API docs here](http://m6w6.github.io/ext-propro/).
+The "Property Proxy" extension provides a fairly transparent proxy for internal
+object properties hidden in custom non-zval implementations.
 
 ## Documentation
 
-Userland documentation can be found at https://mdref.m6w6.name/propro
-PHP_ARG_ENABLE(propro, whether to enable property proxy support,
-[  --enable-propro           Enable property proxy support])
+See the [online markdown reference](https://mdref.m6w6.name/propro).
 
-if test "$PHP_PROPRO" != "no"; then
-	PHP_INSTALL_HEADERS(ext/propro, php_propro.h php_propro_api.h)
-	PHP_NEW_EXTENSION(propro, php_propro.c, $ext_shared)
-fi
+Known issues are listed in [BUGS](./BUGS) and future ideas can be found in [TODO](./TODO).
+
+## Installing
+
+### PECL
+
+	pecl install propro
+
+### PHARext
+
+Watch out for [PECL replicates](https://replicator.pharext.org?propro)
+and pharext packages attached to [releases](./releases).
+
+### Checkout
+
+	git clone github.com:m6w6/ext-propro
+	cd ext-propro
+	/path/to/phpize
+	./configure --with-php-config=/path/to/php-config
+	make
+	sudo make install
+
+## ChangeLog
+
+A comprehensive list of changes can be obtained from the
+[PECL website](https://pecl.php.net/package-changelog.php?package=propro).
+
+## License
+
+ext-propro is licensed under the 2-Clause-BSD license, which can be found in
+the accompanying [LICENSE](./LICENSE) file.
+
+## Contributing
+
+All forms of contribution are welcome! Please see the bundled
+[CONTRIBUTING](./CONTRIBUTING.md) note for the general principles followed.
+
+The list of past and current contributors is maintained in [THANKS](./THANKS).
+Thanks go to the following people, who have contributed to this project:
+
+Anatol Belski
+Remi Collet
+sinclude(config0.m4)
 
 ARG_ENABLE("propro", "for propro support", "no");
 
 if (PHP_PROPRO == "yes") {
-		EXTENSION("propro", "php_propro.c");
+	var PHP_PROPRO_HEADERS=glob("src/*.h"), PHP_PROPRO_SOURCES=glob("src/*.c");
 
-		AC_DEFINE("HAVE_PROPRO", 1);
-		PHP_INSTALL_HEADERS("ext/propro", "php_propro.h");
+	EXTENSION("propro", PHP_PROPRO_SOURCES);
+	PHP_INSTALL_HEADERS("ext/propro", "php_propro.h");
+	for (var i=0; i<PHP_PROPRO_HEADERS.length; ++i) {
+		var basename = FSO.GetFileName(PHP_PROPRO_HEADERS[i]);
+		copy_and_subst(PHP_PROPRO_HEADERS[i], basename, []);
+		PHP_INSTALL_HEADERS("ext/propro", basename);
+	}
+
+	AC_DEFINE("HAVE_PROPRO", 1);
 }
+PHP_ARG_ENABLE(propro, whether to enable property proxy support,
+[  --enable-propro         Enable property proxy support])
+
+if test "$PHP_PROPRO" != "no"; then
+	PHP_PROPRO_SRCDIR=PHP_EXT_SRCDIR(propro)
+	PHP_PROPRO_BUILDDIR=PHP_EXT_BUILDDIR(propro)
+
+	PHP_ADD_INCLUDE($PHP_PROPRO_SRCDIR/src)
+	PHP_ADD_BUILD_DIR($PHP_PROPRO_BUILDDIR/src)
+
+	PHP_PROPRO_HEADERS=`(cd $PHP_PROPRO_SRCDIR/src && echo *.h)`
+	PHP_PROPRO_SOURCES=`(cd $PHP_PROPRO_SRCDIR && echo src/*.c)`
+
+	PHP_NEW_EXTENSION(propro, $PHP_PROPRO_SOURCES, $ext_shared)
+	PHP_INSTALL_HEADERS(ext/propro, php_propro.h $PHP_PROPRO_HEADERS)
+
+	PHP_SUBST(PHP_PROPRO_HEADERS)
+	PHP_SUBST(PHP_PROPRO_SOURCES)
+
+	PHP_SUBST(PHP_PROPRO_SRCDIR)
+	PHP_SUBST(PHP_PROPRO_BUILDDIR)
+
+	PHP_ADD_MAKEFILE_FRAGMENT
+fi
 <?xml version="1.0" encoding="UTF-8"?>
-<package 
- packagerversion="1.4.11" 
- version="2.0" 
- xmlns="http://pear.php.net/dtd/package-2.0" 
- xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" 
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+<package
+ packagerversion="1.4.11"
+ version="2.0"
+ xmlns="http://pear.php.net/dtd/package-2.0"
+ xmlns:tasks="http://pear.php.net/dtd/tasks-1.0"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
  xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
 http://pear.php.net/dtd/tasks-1.0.xsd
 http://pear.php.net/dtd/package-2.0
@@ -4671,28 +4857,44 @@ http://pear.php.net/dtd/package-2.0.xsd">
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2013-12-05</date>
+ <date>2015-12-01</date>
  <version>
-  <release>2.0.0-dev</release>
+  <release>2.0.0RC1</release>
   <api>2.0.0</api>
  </version>
  <stability>
-  <release>stable</release>
+  <release>beta</release>
   <api>stable</api>
  </stability>
- <license>BSD, revised</license>
+ <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
+* Internals documentation at http://m6w6.github.io/ext-propro/master/
+* Travis support
+* PHP7 compatible version
 ]]></notes>
  <contents>
   <dir name="/">
-   <file role="doc" name="CREDITS" />
-   <file role="doc" name="LICENSE" />
+   <file role="doc" name="AUTHORS"/>
+   <file role="doc" name="BUGS"/>
+   <file role="doc" name="CONTRIBUTING.md"/>
+   <file role="doc" name="CREDITS"/>
+   <file role="doc" name="LICENSE"/>
+   <file role="doc" name="README.md"/>
+   <file role="doc" name="THANKS"/>
+   <file role="doc" name="TODO"/>
    <file role="doc" name="Doxyfile" />
-   <file role="src" name="config.m4" />
-   <file role="src" name="config.w32" />
-   <file role="src" name="php_propro.h" />
-   <file role="src" name="php_propro_api.h" />
-   <file role="src" name="php_propro.c" />
+   <file role="src" name="config.m4"/>
+   <file role="src" name="config0.m4"/>
+   <file role="src" name="config.w32"/>
+   <file role="src" name="Makefile.frag"/>
+   <file role="src" name="php_propro.h"/>
+   <dir name="src">
+    <file role="src" name="php_propro_api.h"/>
+    <file role="src" name="php_propro_api.c"/>
+   </dir>
+   <dir name="scripts">
+    <file role="src" name="gen_travis_yml.php"/>
+   </dir>
    <dir name="tests">
     <file role="test" name="001.phpt" />
     <file role="test" name="002.phpt" />
@@ -4713,6 +4915,84 @@ http://pear.php.net/dtd/package-2.0.xsd">
  <providesextension>propro</providesextension>
  <extsrcrelease/>
 </package>
+/*
+    +--------------------------------------------------------------------+
+    | PECL :: propro                                                     |
+    +--------------------------------------------------------------------+
+    | Redistribution and use in source and binary forms, with or without |
+    | modification, are permitted provided that the conditions mentioned |
+    | in the accompanying LICENSE file are met.                          |
+    +--------------------------------------------------------------------+
+    | Copyright (c) 2013 Michael Wallner <mike@php.net>                  |
+    +--------------------------------------------------------------------+
+*/
+
+#ifndef PHP_PROPRO_H
+#define PHP_PROPRO_H
+
+extern zend_module_entry propro_module_entry;
+#define phpext_propro_ptr &propro_module_entry
+
+#define PHP_PROPRO_VERSION "2.0.0RC1"
+
+#ifdef PHP_WIN32
+#	define PHP_PROPRO_API __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#	define PHP_PROPRO_API extern __attribute__ ((visibility("default")))
+#else
+#	define PHP_PROPRO_API extern
+#endif
+
+#ifdef ZTS
+#	include <TSRM/TSRM.h>
+#endif
+
+#define PHP_PROPRO_PTR(zo) (void*)(((char*)(zo))-(zo)->handlers->offset)
+
+#endif	/* PHP_PROPRO_H */
+
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */
+#!/usr/bin/env php
+# autogenerated file; do not edit
+sudo: false
+language: c
+
+addons:
+ apt:
+  packages:
+   - php5-cli
+   - php-pear
+
+env:
+ matrix:
+<?php
+
+$gen = include "./travis/pecl/gen-matrix.php";
+$env = $gen([
+	"PHP" => ["master"],
+	"enable_debug",
+	"enable_maintainer_zts",
+]);
+foreach ($env as $e) {
+	printf("  - %s\n", $e);
+}
+
+?>
+
+before_script:
+ - make -f travis/pecl/Makefile php
+ - make -f travis/pecl/Makefile ext PECL=propro
+
+script:
+ - make -f travis/pecl/Makefile test
 
 /*
     +--------------------------------------------------------------------+
@@ -5323,51 +5603,6 @@ ZEND_GET_MODULE(propro)
     +--------------------------------------------------------------------+
 */
 
-#ifndef PHP_PROPRO_H
-#define PHP_PROPRO_H
-
-extern zend_module_entry propro_module_entry;
-#define phpext_propro_ptr &propro_module_entry
-
-#define PHP_PROPRO_VERSION "2.0.0dev"
-
-#ifdef PHP_WIN32
-#	define PHP_PROPRO_API __declspec(dllexport)
-#elif defined(__GNUC__) && __GNUC__ >= 4
-#	define PHP_PROPRO_API extern __attribute__ ((visibility("default")))
-#else
-#	define PHP_PROPRO_API extern
-#endif
-
-#ifdef ZTS
-#	include <TSRM/TSRM.h>
-#endif
-
-#define PHP_PROPRO_PTR(zo) (void*)(((char*)(zo))-(zo)->handlers->offset)
-
-#endif	/* PHP_PROPRO_H */
-
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */
-/*
-    +--------------------------------------------------------------------+
-    | PECL :: propro                                                     |
-    +--------------------------------------------------------------------+
-    | Redistribution and use in source and binary forms, with or without |
-    | modification, are permitted provided that the conditions mentioned |
-    | in the accompanying LICENSE file are met.                          |
-    +--------------------------------------------------------------------+
-    | Copyright (c) 2013 Michael Wallner <mike@php.net>                  |
-    +--------------------------------------------------------------------+
-*/
-
 #ifndef PHP_PROPRO_API_H
 #define PHP_PROPRO_API_H
 
@@ -5393,7 +5628,7 @@ typedef struct php_property_proxy php_property_proxy_t;
  * member accessible by reference from PHP userland.
  *
  * Example:
- * ~~~~~~~~~~{.c}
+ * \code{.c}
  * static zval *my_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *tmp)
  * {
  *    zval *return_value;
@@ -5417,7 +5652,7 @@ typedef struct php_property_proxy php_property_proxy_t;
  *
  *    return return_value;
  * }
- * ~~~~~~~~~~
+ * \endcode
  */
 struct php_property_proxy_object {
 	/** The actual property proxy */
@@ -5692,4 +5927,4 @@ object(t)#%d (1) {
     int(2)
   }
 }
-===DONE===ûhz%›†d˛®ÈÒ	‹R√`«ï˝   GBMB
+===DONE===ÉºµíÿC96$FH&ÓkÖ˚   GBMB
