@@ -573,58 +573,32 @@ dnl ----
 dnl ----
 dnl DONE
 dnl ----
-	PHP_ADD_INCLUDE(src)
-	PHP_ADD_BUILD_DIR(src)
-	PHP_HTTP_SOURCES="\
-		src/php_http_buffer.c \
-		src/php_http.c \
-		src/php_http_client.c \
-		src/php_http_client_curl.c \
-		src/php_http_client_request.c \
-		src/php_http_client_response.c \
-		src/php_http_cookie.c \
-		src/php_http_curl.c \
-		src/php_http_encoding.c \
-		src/php_http_env.c \
-		src/php_http_env_request.c \
-		src/php_http_env_response.c \
-		src/php_http_etag.c \
-		src/php_http_exception.c \
-		src/php_http_filter.c \
-		src/php_http_header_parser.c \
-		src/php_http_header.c \
-		src/php_http_info.c \
-		src/php_http_message_body.c \
-		src/php_http_message.c \
-		src/php_http_message_parser.c \
-		src/php_http_misc.c \
-		src/php_http_negotiate.c \
-		src/php_http_object.c \
-		src/php_http_options.c \
-		src/php_http_params.c \
-		src/php_http_querystring.c \
-		src/php_http_url.c \
-		src/php_http_version.c \
-	"
-	PHP_NEW_EXTENSION([http], $PHP_HTTP_SOURCES, $ext_shared)
-
-	dnl shared extension deps
-	HTTP_SHARED_DEP([hash])
-	HTTP_SHARED_DEP([iconv])
-
-	dnl extension deps
-	PHP_ADD_EXTENSION_DEP([http], [raphf], true)
-	PHP_ADD_EXTENSION_DEP([http], [propro], true)
 
 	PHP_SUBST([HTTP_SHARED_LIBADD])
 
-	PHP_HTTP_HEADERS=`(cd $ext_srcdir/src && echo *.h)`
+	PHP_HTTP_SRCDIR=PHP_EXT_SRCDIR(http)
+	PHP_HTTP_BUILDDIR=PHP_EXT_BUILDDIR(http)
+
+	PHP_ADD_INCLUDE($PHP_HTTP_SRCDIR/src)
+	PHP_ADD_BUILD_DIR($PHP_HTTP_BUILDDIR/src)
+
+	PHP_HTTP_HEADERS=`(cd $PHP_HTTP_SRCDIR/src && echo *.h)`
+	PHP_HTTP_SOURCES=`(cd $PHP_HTTP_SRCDIR && echo src/*.c)`
+
+	PHP_NEW_EXTENSION(http, $PHP_HTTP_SOURCES, $ext_shared)
 	PHP_INSTALL_HEADERS(ext/http, php_http.h $PHP_HTTP_HEADERS)
-	PHP_SUBST([PHP_HTTP_HEADERS])
-	PHP_HTTP_SRCDIR=$ext_srcdir
-	PHP_SUBST([PHP_HTTP_SRCDIR])
-	PHP_HTTP_BUILDDIR=$ext_builddir
-	PHP_SUBST([PHP_HTTP_BUILDDIR])
+
+	HTTP_SHARED_DEP([hash])
+	HTTP_SHARED_DEP([iconv])
+	PHP_ADD_EXTENSION_DEP([http], [raphf], true)
+	PHP_ADD_EXTENSION_DEP([http], [propro], true)
+
+	PHP_SUBST(PHP_HTTP_HEADERS)
+	PHP_SUBST(PHP_HTTP_SOURCES)
+
+	PHP_SUBST(PHP_HTTP_SRCDIR)
+	PHP_SUBST(PHP_HTTP_BUILDDIR)
+
 	PHP_ADD_MAKEFILE_FRAGMENT
 
 	AC_DEFINE([HAVE_HTTP], [1], [Have extended HTTP support])
