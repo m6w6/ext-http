@@ -56,7 +56,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 	int free_msg = !message;
 	zval *sval, tval;
 	php_http_message_body_t *mbody;
-	
+
 	switch (type) {
 		case PHP_HTTP_REQUEST:
 			mbody = php_http_env_get_request_body(TSRMLS_C);
@@ -71,10 +71,10 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("REQUEST_URI"), 1 TSRMLS_CC))) {
 				message->http.info.request.url = php_http_url_parse(Z_STRVAL_P(sval), Z_STRLEN_P(sval), ~0 TSRMLS_CC);
 			}
-			
+
 			php_http_env_get_request_headers(&message->hdrs TSRMLS_CC);
 			break;
-			
+
 		case PHP_HTTP_RESPONSE:
 			message = php_http_message_init(NULL, type, NULL TSRMLS_CC);
 			if (!SG(sapi_headers).http_status_line || !php_http_info_parse((php_http_info_t *) &message->http, SG(sapi_headers).http_status_line TSRMLS_CC)) {
@@ -83,7 +83,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 				}
 				message->http.info.response.status = estrdup(php_http_env_get_response_status_for_code(message->http.info.response.code));
 			}
-			
+
 			php_http_env_get_response_headers(&message->hdrs TSRMLS_CC);
 #if PHP_VERSION_ID >= 50400
 			if (php_output_get_level(TSRMLS_C)) {
@@ -113,7 +113,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 			}
 #endif
 			break;
-			
+
 		default:
 		error:
 			if (free_msg) {
@@ -125,7 +125,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 			}
 			break;
 	}
-	
+
 	return message;
 }
 
@@ -256,11 +256,11 @@ void php_http_message_set_type(php_http_message_t *message, php_http_message_typ
 				PTR_FREE(message->http.info.request.method);
 				PTR_FREE(message->http.info.request.url);
 				break;
-			
+
 			case PHP_HTTP_RESPONSE:
 				PTR_FREE(message->http.info.response.status);
 				break;
-			
+
 			default:
 				break;
 		}
@@ -279,12 +279,12 @@ void php_http_message_set_info(php_http_message_t *message, php_http_info_t *inf
 			PTR_SET(PHP_HTTP_INFO(message).request.url, PHP_HTTP_INFO(info).request.url ? php_http_url_copy(PHP_HTTP_INFO(info).request.url, 0) : NULL);
 			PTR_SET(PHP_HTTP_INFO(message).request.method, PHP_HTTP_INFO(info).request.method ? estrdup(PHP_HTTP_INFO(info).request.method) : NULL);
 			break;
-		
+
 		case PHP_HTTP_RESPONSE:
 			PHP_HTTP_INFO(message).response.code = PHP_HTTP_INFO(info).response.code;
 			PTR_SET(PHP_HTTP_INFO(message).response.status, PHP_HTTP_INFO(info).response.status ? estrdup(PHP_HTTP_INFO(info).response.status) : NULL);
 			break;
-		
+
 		default:
 			break;
 	}
@@ -331,6 +331,27 @@ void php_http_message_update_headers(php_http_message_t *msg)
 			zend_hash_del(&msg->hdrs, "Content-Length", sizeof("Content-Length"));
 		}
 		zval_ptr_dtor(&h_cpy);
+	} else if (msg->type == PHP_HTTP_REQUEST) {
+		if ((h = php_http_message_header(msg, ZEND_STRL("Transfer-Encoding"), 0))) {
+			zval_ptr_dtor(&h);
+		} else {
+			/* no filter, no CR, no size, no TE, no CL */
+			if (0 <= php_http_select_str(msg->http.info.request.method, 3, "POST", "PUT", "PATCH")) {
+				/* quoting RFC7230#section-3.3.2
+					A user agent SHOULD send a Content-Length in a request message when
+					no Transfer-Encoding is sent and the request method defines a meaning
+					for an enclosed payload body.  For example, a Content-Length header
+					field is normally sent in a POST request even when the value is 0
+					(indicating an empty payload body).  A user agent SHOULD NOT send a
+					Content-Length header field when the request message does not contain
+					a payload body and the method semantics do not anticipate such a
+					body.
+				*/
+				MAKE_STD_ZVAL(h);
+				ZVAL_LONG(h, 0);
+				zend_hash_update(&msg->hdrs, "Content-Length", sizeof("Content-Length"), &h, sizeof(zval *), NULL);
+			}
+		}
 	}
 }
 
@@ -419,9 +440,9 @@ void php_http_message_serialize(php_http_message_t *message, char **string, size
 php_http_message_t *php_http_message_reverse(php_http_message_t *msg)
 {
 	int i, c = 0;
-	
+
 	php_http_message_count(c, msg);
-	
+
 	if (c > 1) {
 		php_http_message_t *tmp = msg, **arr;
 
@@ -434,11 +455,11 @@ php_http_message_t *php_http_message_reverse(php_http_message_t *msg)
 		for (i = 0; i < c-1; ++i) {
 			arr[i+1]->parent = arr[i];
 		}
-		
+
 		msg = arr[c-1];
 		efree(arr);
 	}
-	
+
 	return msg;
 }
 
@@ -465,28 +486,28 @@ php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_
 	php_http_message_t *temp, *copy = NULL;
 	php_http_info_t info;
 	TSRMLS_FETCH_FROM_CTX(from->ts);
-	
+
 	if (from) {
 		info.type = from->type;
 		info.http = from->http;
-		
+
 		copy = temp = php_http_message_init(to, 0, php_http_message_body_copy(from->body, NULL) TSRMLS_CC);
 		php_http_message_set_info(temp, &info);
 		zend_hash_copy(&temp->hdrs, &from->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-	
+
 		if (parents) while (from->parent) {
 			info.type = from->parent->type;
 			info.http = from->parent->http;
-		
+
 			temp->parent = php_http_message_init(NULL, 0, php_http_message_body_copy(from->parent->body, NULL) TSRMLS_CC);
 			php_http_message_set_info(temp->parent, &info);
 			zend_hash_copy(&temp->parent->hdrs, &from->parent->hdrs, (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval *));
-		
+
 			temp = temp->parent;
 			from = from->parent;
 		}
 	}
-	
+
 	return copy;
 }
 
@@ -500,17 +521,17 @@ void php_http_message_dtor(php_http_message_t *message)
 	if (message) {
 		zend_hash_destroy(&message->hdrs);
 		php_http_message_body_free(&message->body);
-		
+
 		switch (message->type) {
 			case PHP_HTTP_REQUEST:
 				PTR_SET(message->http.info.request.method, NULL);
 				PTR_SET(message->http.info.request.url, NULL);
 				break;
-			
+
 			case PHP_HTTP_RESPONSE:
 				PTR_SET(message->http.info.response.status, NULL);
 				break;
-			
+
 			default:
 				break;
 		}
@@ -952,7 +973,7 @@ static HashTable *php_http_message_object_get_props(zval *object TSRMLS_DC)
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 	INIT_PZVAL_ARRAY(&array, props);
-	
+
 #define ASSOC_PROP(ptype, n, val) \
 	do { \
 		zend_property_info *pi; \
@@ -2082,4 +2103,3 @@ PHP_MSHUTDOWN_FUNCTION(http_message)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

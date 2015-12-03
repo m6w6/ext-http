@@ -37,17 +37,16 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-09-25</date>
  <version>
-  <release>2.5.3</release>
+  <release>2.5.4dev</release>
   <api>2.5.0</api>
  </version>
  <stability>
-  <release>stable</release>
+  <release>beta</release>
   <api>stable</api>
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-* Fixed gh-issue #12: crash on bad url passed to http\Message::setRequestUrl()
-* The URL parser now fails on empty labels
+* Fixed gh-issue #16: No Content-Length header with empty POST requests
 ]]></notes>
  <contents>
   <dir name="/">
