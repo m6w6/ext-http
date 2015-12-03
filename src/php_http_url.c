@@ -1029,7 +1029,6 @@ static ZEND_RESULT_CODE parse_widn(struct parse_state *state)
 #ifdef HAVE_INET_PTON
 static const char *parse_ip6(struct parse_state *state, const char *ptr)
 {
-	size_t mb, len;
 	const char *error = NULL, *end = state->ptr, *tmp = memchr(ptr, ']', end - ptr);
 
 	if (tmp) {
