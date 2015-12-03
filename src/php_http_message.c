@@ -55,7 +55,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 	int free_msg = !message;
 	zval *sval, tval;
 	php_http_message_body_t *mbody;
-	
+
 	switch (type) {
 		case PHP_HTTP_REQUEST:
 			mbody = php_http_env_get_request_body();
@@ -70,10 +70,9 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("REQUEST_URI"), 1))) {
 				message->http.info.request.url = php_http_url_parse(Z_STRVAL_P(sval), Z_STRLEN_P(sval), ~0);
 			}
-			
 			php_http_env_get_request_headers(&message->hdrs);
 			break;
-			
+
 		case PHP_HTTP_RESPONSE:
 			message = php_http_message_init(NULL, type, NULL);
 			if (!SG(sapi_headers).http_status_line || !php_http_info_parse((php_http_info_t *) &message->http, SG(sapi_headers).http_status_line)) {
@@ -97,7 +96,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 				}
 			}
 			break;
-			
+
 		default:
 		error:
 			if (free_msg) {
@@ -109,7 +108,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 			}
 			break;
 	}
-	
+
 	return message;
 }
 
@@ -233,11 +232,11 @@ void php_http_message_set_type(php_http_message_t *message, php_http_message_typ
 				PTR_FREE(message->http.info.request.method);
 				PTR_FREE(message->http.info.request.url);
 				break;
-			
+
 			case PHP_HTTP_RESPONSE:
 				PTR_FREE(message->http.info.response.status);
 				break;
-			
+
 			default:
 				break;
 		}
@@ -256,12 +255,12 @@ void php_http_message_set_info(php_http_message_t *message, php_http_info_t *inf
 			PTR_SET(PHP_HTTP_INFO(message).request.url, PHP_HTTP_INFO(info).request.url ? php_http_url_copy(PHP_HTTP_INFO(info).request.url, 0) : NULL);
 			PTR_SET(PHP_HTTP_INFO(message).request.method, PHP_HTTP_INFO(info).request.method ? estrdup(PHP_HTTP_INFO(info).request.method) : NULL);
 			break;
-		
+
 		case PHP_HTTP_RESPONSE:
 			PHP_HTTP_INFO(message).response.code = PHP_HTTP_INFO(info).response.code;
 			PTR_SET(PHP_HTTP_INFO(message).response.status, PHP_HTTP_INFO(info).response.status ? estrdup(PHP_HTTP_INFO(info).response.status) : NULL);
 			break;
-		
+
 		default:
 			break;
 	}
@@ -305,6 +304,24 @@ void php_http_message_update_headers(php_http_message_t *msg)
 			zend_hash_str_del(&msg->hdrs, ZEND_STRL("Content-Length"));
 		}
 		zend_string_release(cl);
+	} else if (msg->type == PHP_HTTP_REQUEST) {
+		if (!php_http_message_header(msg, ZEND_STRL("Transfer-Encoding"))) {
+			/* no filter, no CR, no size, no TE, no CL */
+			if (0 <= php_http_select_str(msg->http.info.request.method, 3, "POST", "PUT", "PATCH")) {
+				/* quoting RFC7230#section-3.3.2
+					A user agent SHOULD send a Content-Length in a request message when
+					no Transfer-Encoding is sent and the request method defines a meaning
+					for an enclosed payload body.  For example, a Content-Length header
+					field is normally sent in a POST request even when the value is 0
+					(indicating an empty payload body).  A user agent SHOULD NOT send a
+					Content-Length header field when the request message does not contain
+					a payload body and the method semantics do not anticipate such a
+					body.
+				*/
+				ZVAL_LONG(&h, 0);
+				zend_hash_str_update(&msg->hdrs, "Content-Length", lenof("Content-Length"), &h);
+			}
+		}
 	}
 }
 
@@ -405,11 +422,11 @@ php_http_message_t *php_http_message_reverse(php_http_message_t *msg)
 		for (i = 0; i < c-1; ++i) {
 			arr[i+1]->parent = arr[i];
 		}
-		
+
 		msg = arr[c-1];
 		efree(arr);
 	}
-	
+
 	return msg;
 }
 
@@ -452,11 +469,12 @@ php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_
 			php_http_message_set_info(temp->parent, &info);
 			array_copy(&from->parent->hdrs, &temp->parent->hdrs);
 		
+
 			temp = temp->parent;
 			from = from->parent;
 		}
 	}
-	
+
 	return copy;
 }
 
@@ -465,17 +483,17 @@ void php_http_message_dtor(php_http_message_t *message)
 	if (message) {
 		zend_hash_destroy(&message->hdrs);
 		php_http_message_body_free(&message->body);
-		
+
 		switch (message->type) {
 			case PHP_HTTP_REQUEST:
 				PTR_SET(message->http.info.request.method, NULL);
 				PTR_SET(message->http.info.request.url, NULL);
 				break;
-			
+
 			case PHP_HTTP_RESPONSE:
 				PTR_SET(message->http.info.response.status, NULL);
 				break;
-			
+
 			default:
 				break;
 		}
@@ -2032,4 +2050,3 @@ PHP_MSHUTDOWN_FUNCTION(http_message)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-
