@@ -35,9 +35,9 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-09-25</date>
+ <date>2015-12-04</date>
  <version>
-  <release>3.0.0dev</release>
+  <release>3.0.0RC1</release>
   <api>3.0.0</api>
  </version>
  <stability>
@@ -47,6 +47,8 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
 PHP7 compatible release based on the 2.5.x series with the following backwards incompatible changes:
+- removed http\Url::FROM_ENV from the default flags of the http\Url constructor, use http\Env\Url instead
+
 ]]></notes>
  <contents>
   <dir name="/">
