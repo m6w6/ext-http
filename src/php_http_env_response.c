@@ -82,7 +82,7 @@ static php_http_message_body_t *get_body(zval *options)
 	php_http_message_body_t *body = NULL;
 
 	if ((zbody = get_option(options, ZEND_STRL("body"), &zbody_tmp))) {
-		if ((Z_TYPE_P(zbody) == IS_OBJECT) && instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_class_entry)) {
+		if ((Z_TYPE_P(zbody) == IS_OBJECT) && instanceof_function(Z_OBJCE_P(zbody), php_http_get_message_body_class_entry())) {
 			php_http_message_body_object_t *body_obj = PHP_HTTP_OBJ(NULL, zbody);
 
 			body = body_obj->body;
@@ -98,7 +98,7 @@ static php_http_message_t *get_request(zval *options)
 	php_http_message_t *request = NULL;
 
 	if ((zrequest = get_option(options, ZEND_STRL("request"), &zrequest_tmp))) {
-		if (Z_TYPE_P(zrequest) == IS_OBJECT && instanceof_function(Z_OBJCE_P(zrequest), php_http_message_class_entry)) {
+		if (Z_TYPE_P(zrequest) == IS_OBJECT && instanceof_function(Z_OBJCE_P(zrequest), php_http_message_get_class_entry())) {
 			php_http_message_object_t *request_obj = PHP_HTTP_OBJ(NULL, zrequest);
 
 			request = request_obj->message;
@@ -385,7 +385,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 
 			ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(zoption), zcookie)
 			{
-				if (Z_TYPE_P(zcookie) == IS_OBJECT && instanceof_function(Z_OBJCE_P(zcookie), php_http_cookie_class_entry)) {
+				if (Z_TYPE_P(zcookie) == IS_OBJECT && instanceof_function(Z_OBJCE_P(zcookie), php_http_cookie_get_class_entry())) {
 					php_http_cookie_object_t *obj = PHP_HTTP_OBJ(NULL, zcookie);
 					char *str;
 					size_t len;
@@ -1178,7 +1178,7 @@ static PHP_METHOD(HttpEnvResponse, setEnvRequest)
 {
 	zval *env_req = NULL;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|O", &env_req, php_http_message_class_entry), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|O", &env_req, php_http_message_get_class_entry()), invalid_arg, return);
 
 	set_option(getThis(), ZEND_STRL("request"), IS_OBJECT, env_req, 0);
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -1328,10 +1328,10 @@ static PHP_METHOD(HttpEnvResponse, setCookie)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "z", &zcookie_new), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_unexpected_val_class_entry(), &zeh);
 	switch (Z_TYPE_P(zcookie_new)) {
 	case IS_OBJECT:
-		if (instanceof_function(Z_OBJCE_P(zcookie_new), php_http_cookie_class_entry)) {
+		if (instanceof_function(Z_OBJCE_P(zcookie_new), php_http_cookie_get_class_entry())) {
 			Z_ADDREF_P(zcookie_new);
 			break;
 		}
@@ -1339,7 +1339,7 @@ static PHP_METHOD(HttpEnvResponse, setCookie)
 	case IS_ARRAY:
 		list = php_http_cookie_list_from_struct(NULL, zcookie_new);
 		zcookie_new = &tmp;
-		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo, 0);
+		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list)->zo, 0);
 		break;
 
 	default:
@@ -1347,7 +1347,7 @@ static PHP_METHOD(HttpEnvResponse, setCookie)
 		list = php_http_cookie_list_parse(NULL, zs->val, zs->len, 0, NULL);
 		zend_string_release(zs);
 		zcookie_new = &tmp;
-		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo, 0);
+		ZVAL_OBJECT(zcookie_new, &php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list)->zo, 0);
 	}
 	zend_restore_error_handling(&zeh);
 
@@ -1412,14 +1412,18 @@ static zend_function_entry php_http_env_response_methods[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-zend_class_entry *php_http_env_response_class_entry;
+static zend_class_entry *php_http_env_response_class_entry;
+zend_class_entry *php_http_get_env_response_class_entry(void)
+{
+	return php_http_env_response_class_entry;
+}
 
 PHP_MINIT_FUNCTION(http_env_response)
 {
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http\\Env", "Response", php_http_env_response_methods);
-	php_http_env_response_class_entry = zend_register_internal_class_ex(&ce, php_http_message_class_entry);
+	php_http_env_response_class_entry = zend_register_internal_class_ex(&ce, php_http_message_get_class_entry());
 
 	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CONTENT_ENCODING_NONE"), PHP_HTTP_CONTENT_ENCODING_NONE);
 	zend_declare_class_constant_long(php_http_env_response_class_entry, ZEND_STRL("CONTENT_ENCODING_GZIP"), PHP_HTTP_CONTENT_ENCODING_GZIP);

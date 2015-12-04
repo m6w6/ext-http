@@ -116,6 +116,12 @@ zend_string *php_http_header_value_to_string(zval *header)
 	}
 }
 
+static zend_class_entry *php_http_header_class_entry;
+zend_class_entry *php_http_header_get_class_entry(void)
+{
+	return php_http_header_class_entry;
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, name)
 	ZEND_ARG_INFO(0, value)
@@ -276,7 +282,7 @@ PHP_METHOD(HttpHeader, getParams)
 	
 	ZVAL_STRINGL(&zctor, "__construct", lenof("__construct"));
 	
-	object_init_ex(&zparams_obj, php_http_params_class_entry);
+	object_init_ex(&zparams_obj, php_http_params_get_class_entry());
 	
 	zargs = (zval *) ecalloc(ZEND_NUM_ARGS()+1, sizeof(zval));
 	ZVAL_COPY_VALUE(&zargs[0], zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("value"), 0, &value_tmp));
@@ -355,8 +361,6 @@ static zend_function_entry php_http_header_methods[] = {
 	PHP_ME(HttpHeader, parse,         ai_HttpHeader_parse, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	EMPTY_FUNCTION_ENTRY
 };
-
-zend_class_entry *php_http_header_class_entry;
 
 PHP_MINIT_FUNCTION(http_header)
 {

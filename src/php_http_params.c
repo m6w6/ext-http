@@ -1027,6 +1027,12 @@ void php_http_params_separator_free(php_http_params_token_t **separator)
 	}
 }
 
+static zend_class_entry *php_http_params_class_entry;
+zend_class_entry *php_http_params_get_class_entry(void)
+{
+	return php_http_params_class_entry;
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, params)
 	ZEND_ARG_INFO(0, param_sep)
@@ -1043,7 +1049,7 @@ PHP_METHOD(HttpParams, __construct)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|z!/z/z/z/l", &zparams, &param_sep, &arg_sep, &val_sep, &flags), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_runtime_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_runtime_class_entry(), &zeh);
 	{
 		switch (ZEND_NUM_ARGS()) {
 			case 5:
@@ -1282,8 +1288,6 @@ static zend_function_entry php_http_params_methods[] = {
 
 	EMPTY_FUNCTION_ENTRY
 };
-
-zend_class_entry *php_http_params_class_entry;
 
 PHP_MINIT_FUNCTION(http_params)
 {

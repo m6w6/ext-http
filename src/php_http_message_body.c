@@ -546,6 +546,12 @@ php_http_message_t *php_http_message_body_split(php_http_message_body_t *body, c
 	return msg;
 }
 
+static zend_class_entry *php_http_message_body_class_entry;
+zend_class_entry *php_http_get_message_body_class_entry(void)
+{
+	return php_http_message_body_class_entry;
+}
+
 static zend_object_handlers php_http_message_body_object_handlers;
 
 zend_object *php_http_message_body_object_new(zend_class_entry *ce)
@@ -774,14 +780,14 @@ PHP_METHOD(HttpMessageBody, addPart)
 	php_http_message_object_t *mobj;
 	zend_error_handling zeh;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &zobj, php_http_message_class_entry), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &zobj, php_http_message_get_class_entry()), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 	mobj = PHP_HTTP_OBJ(NULL, zobj);
 
 	PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_runtime_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_runtime_class_entry(), &zeh);
 	php_http_message_body_add_part(obj->body, mobj->message);
 	zend_restore_error_handling(&zeh);
 
@@ -873,8 +879,6 @@ static zend_function_entry php_http_message_body_methods[] = {
 	PHP_ME(HttpMessageBody, stat,         ai_HttpMessageBody_stat,         ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
-
-zend_class_entry *php_http_message_body_class_entry;
 
 PHP_MINIT_FUNCTION(http_message_body)
 {

@@ -60,7 +60,7 @@ typedef struct php_http_message_parser_object {
 	zend_object zo;
 } php_http_message_parser_object_t;
 
-PHP_HTTP_API zend_class_entry *php_http_message_parser_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_get_message_parser_class_entry(void);
 
 PHP_MINIT_FUNCTION(http_message_parser);
 

@@ -23,7 +23,7 @@ PHP_HTTP_API void php_http_header_to_string(php_http_buffer_t *str, HashTable *h
 PHP_HTTP_API zend_string *php_http_header_value_to_string(zval *header);
 PHP_HTTP_API zend_string *php_http_header_value_array_to_string(zval *header);
 
-PHP_HTTP_API zend_class_entry *php_http_header_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_header_get_class_entry(void);
 PHP_MINIT_FUNCTION(http_header);
 
 #endif

@@ -60,7 +60,7 @@ typedef struct php_http_message_body_object {
 	zend_object zo;
 } php_http_message_body_object_t;
 
-PHP_HTTP_API zend_class_entry *php_http_message_body_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_get_message_body_class_entry(void);
 PHP_MINIT_FUNCTION(http_message_body);
 
 zend_object *php_http_message_body_object_new(zend_class_entry *ce);

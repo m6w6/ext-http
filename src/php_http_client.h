@@ -111,7 +111,7 @@ typedef struct php_http_client {
 	zend_llist responses;
 } php_http_client_t;
 
-PHP_HTTP_API zend_class_entry *php_http_client_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_client_get_class_entry();
 
 typedef struct php_http_client_object {
 	php_http_client_t *client;

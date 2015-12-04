@@ -45,7 +45,7 @@ PHP_HTTP_API void php_http_params_separator_free(php_http_params_token_t **separ
 
 typedef php_http_object_t php_http_params_object_t;
 
-PHP_HTTP_API zend_class_entry *php_http_params_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_params_get_class_entry(void);
 
 PHP_MINIT_FUNCTION(http_params);
 

@@ -28,7 +28,7 @@ typedef php_http_object_t php_http_querystring_object_t;
 #define PHP_HTTP_QUERYSTRING_TYPE_ARRAY		IS_ARRAY
 #define PHP_HTTP_QUERYSTRING_TYPE_OBJECT	IS_OBJECT
 
-PHP_HTTP_API zend_class_entry *php_http_querystring_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_querystring_get_class_entry(void);
 
 PHP_MINIT_FUNCTION(http_querystring);
 

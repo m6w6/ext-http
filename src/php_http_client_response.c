@@ -12,6 +12,12 @@
 
 #include "php_http_api.h"
 
+static zend_class_entry *php_http_client_response_class_entry;
+zend_class_entry *php_http_get_client_response_class_entry(void)
+{
+	return php_http_client_response_class_entry;
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClientResponse_getCookies, 0, 0, 0)
 	ZEND_ARG_INFO(0, flags)
 	ZEND_ARG_INFO(0, allowed_extras)
@@ -57,7 +63,7 @@ static PHP_METHOD(HttpClientResponse, getCookies)
 				if ((list = php_http_cookie_list_parse(NULL, zs->val, zs->len, flags, allowed_extras))) {
 					zval cookie;
 
-					ZVAL_OBJ(&cookie, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo);
+					ZVAL_OBJ(&cookie, &php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list)->zo);
 					add_next_index_zval(return_value, &cookie);
 				}
 				zend_string_release(zs);
@@ -69,7 +75,7 @@ static PHP_METHOD(HttpClientResponse, getCookies)
 			if ((list = php_http_cookie_list_parse(NULL, zs->val, zs->len, flags, allowed_extras))) {
 				zval cookie;
 
-				ZVAL_OBJ(&cookie, &php_http_cookie_object_new_ex(php_http_cookie_class_entry, list)->zo);
+				ZVAL_OBJ(&cookie, &php_http_cookie_object_new_ex(php_http_cookie_get_class_entry(), list)->zo);
 				add_next_index_zval(return_value, &cookie);
 			}
 			zend_string_release(zs);
@@ -121,14 +127,12 @@ static zend_function_entry php_http_client_response_methods[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-zend_class_entry *php_http_client_response_class_entry;
-
 PHP_MINIT_FUNCTION(http_client_response)
 {
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http\\Client", "Response", php_http_client_response_methods);
-	php_http_client_response_class_entry = zend_register_internal_class_ex(&ce, php_http_message_class_entry);
+	php_http_client_response_class_entry = zend_register_internal_class_ex(&ce, php_http_message_get_class_entry());
 
 	zend_declare_property_null(php_http_client_response_class_entry, ZEND_STRL("transferInfo"), ZEND_ACC_PROTECTED);
 

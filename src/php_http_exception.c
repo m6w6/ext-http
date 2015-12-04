@@ -30,16 +30,56 @@ static void php_http_exception_hook(zval *ex)
 }
 #endif
 
-zend_class_entry *php_http_exception_interface_class_entry;
-zend_class_entry *php_http_exception_runtime_class_entry;
-zend_class_entry *php_http_exception_unexpected_val_class_entry;
-zend_class_entry *php_http_exception_bad_method_call_class_entry;
-zend_class_entry *php_http_exception_invalid_arg_class_entry;
-zend_class_entry *php_http_exception_bad_header_class_entry;
-zend_class_entry *php_http_exception_bad_url_class_entry;
-zend_class_entry *php_http_exception_bad_message_class_entry;
-zend_class_entry *php_http_exception_bad_conversion_class_entry;
-zend_class_entry *php_http_exception_bad_querystring_class_entry;
+static zend_class_entry *php_http_exception_interface_class_entry;
+zend_class_entry *php_http_get_exception_interface_class_entry(void)
+{
+	return php_http_exception_interface_class_entry;
+}
+static zend_class_entry *php_http_exception_runtime_class_entry;
+zend_class_entry *php_http_get_exception_runtime_class_entry(void)
+{
+	return php_http_exception_runtime_class_entry;
+}
+static zend_class_entry *php_http_exception_unexpected_val_class_entry;
+zend_class_entry *php_http_get_exception_unexpected_val_class_entry(void)
+{
+	return php_http_exception_unexpected_val_class_entry;
+}
+static zend_class_entry *php_http_exception_bad_method_call_class_entry;
+zend_class_entry *php_http_get_exception_bad_method_call_class_entry(void)
+{
+	return php_http_exception_bad_method_call_class_entry;
+}
+static zend_class_entry *php_http_exception_invalid_arg_class_entry;
+zend_class_entry *php_http_get_exception_invalid_arg_class_entry(void)
+{
+	return php_http_exception_invalid_arg_class_entry;
+}
+static zend_class_entry *php_http_exception_bad_header_class_entry;
+zend_class_entry *php_http_get_exception_bad_header_class_entry(void)
+{
+	return php_http_exception_bad_header_class_entry;
+}
+static zend_class_entry *php_http_exception_bad_url_class_entry;
+zend_class_entry *php_http_get_exception_bad_url_class_entry(void)
+{
+	return php_http_exception_bad_url_class_entry;
+}
+static zend_class_entry *php_http_exception_bad_message_class_entry;
+zend_class_entry *php_http_get_exception_bad_message_class_entry(void)
+{
+	return php_http_exception_bad_message_class_entry;
+}
+static zend_class_entry *php_http_exception_bad_conversion_class_entry;
+zend_class_entry *php_http_get_exception_bad_conversion_class_entry(void)
+{
+	return php_http_exception_bad_conversion_class_entry;
+}
+static zend_class_entry *php_http_exception_bad_querystring_class_entry;
+zend_class_entry *php_http_get_exception_bad_querystring_class_entry(void)
+{
+	return php_http_exception_bad_querystring_class_entry;
+}
 
 PHP_MINIT_FUNCTION(http_exception)
 {

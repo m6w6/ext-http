@@ -512,6 +512,12 @@ void php_http_message_free(php_http_message_t **message)
 	}
 }
 
+static zend_class_entry *php_http_message_class_entry;
+zend_class_entry *php_http_message_get_class_entry(void)
+{
+	return php_http_message_class_entry;
+}
+
 static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *rv);
 static void php_http_message_object_write_prop(zval *object, zval *member, zval *value, void **cache_slot);
 
@@ -763,14 +769,14 @@ ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *msg
 			is_resource:
 
 			body = php_http_message_body_init(NULL, s);
-			if (!(body_obj = php_http_message_body_object_new_ex(php_http_message_body_class_entry, body))) {
+			if (!(body_obj = php_http_message_body_object_new_ex(php_http_get_message_body_class_entry(), body))) {
 				php_http_message_body_free(&body);
 				return FAILURE;
 			}
 			break;
 
 		case IS_OBJECT:
-			if (instanceof_function(Z_OBJCE_P(zbody), php_http_message_body_class_entry)) {
+			if (instanceof_function(Z_OBJCE_P(zbody), php_http_get_message_body_class_entry())) {
 				Z_ADDREF_P(zbody);
 				body_obj = PHP_HTTP_OBJ(NULL, zbody);
 				break;
@@ -807,7 +813,7 @@ ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *msg
 ZEND_RESULT_CODE php_http_message_object_init_body_object(php_http_message_object_t *obj)
 {
 	php_http_message_body_addref(obj->message->body);
-	return php_http_new((void *) &obj->body, php_http_message_body_class_entry, (php_http_new_t) php_http_message_body_object_new_ex, NULL, obj->message->body);
+	return php_http_new((void *) &obj->body, php_http_get_message_body_class_entry(), (php_http_new_t) php_http_message_body_object_new_ex, NULL, obj->message->body);
 }
 
 zend_object *php_http_message_object_new(zend_class_entry *ce)
@@ -828,7 +834,7 @@ php_http_message_object_t *php_http_message_object_new_ex(zend_class_entry *ce, 
 		if (msg->parent) {
 			o->parent = php_http_message_object_new_ex(ce, msg->parent);
 		}
-		o->body = php_http_message_body_object_new_ex(php_http_message_body_class_entry, php_http_message_body_init(&msg->body, NULL));
+		o->body = php_http_message_body_object_new_ex(php_http_get_message_body_class_entry(), php_http_message_body_init(&msg->body, NULL));
 	}
 
 	o->zo.handlers = &php_http_message_object_handlers;
@@ -1021,13 +1027,13 @@ static PHP_METHOD(HttpMessage, __construct)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|z!b", &zmessage, &greedy), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_bad_message_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_message_class_entry(), &zeh);
 	if (zmessage && Z_TYPE_P(zmessage) == IS_RESOURCE) {
 		php_stream *s;
 		php_http_message_parser_t p;
 		zend_error_handling zeh;
 
-		zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh);
+		zend_replace_error_handling(EH_THROW, php_http_get_exception_unexpected_val_class_entry(), &zeh);
 		php_stream_from_zval(s, zmessage);
 		zend_restore_error_handling(&zeh);
 
@@ -1097,7 +1103,7 @@ static PHP_METHOD(HttpMessage, setBody)
 {
 	zval *zbody;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &zbody, php_http_message_body_class_entry)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &zbody, php_http_get_message_body_class_entry())) {
 		php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
 
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
@@ -1113,7 +1119,7 @@ static PHP_METHOD(HttpMessage, addBody)
 {
 	zval *new_body;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &new_body, php_http_message_body_class_entry)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &new_body, php_http_get_message_body_class_entry())) {
 		php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
 		php_http_message_body_object_t *new_obj = PHP_HTTP_OBJ(NULL, new_body);
 
@@ -1142,7 +1148,7 @@ static PHP_METHOD(HttpMessage, getHeader)
 		if ((header = php_http_message_header(obj->message, header_str, header_len))) {
 			if (!header_ce) {
 				RETURN_ZVAL(header, 1, 0);
-			} else if (instanceof_function(header_ce, php_http_header_class_entry)) {
+			} else if (instanceof_function(header_ce, php_http_header_get_class_entry())) {
 				php_http_object_method_t cb;
 				zval argv[2];
 
@@ -1589,7 +1595,7 @@ static PHP_METHOD(HttpMessage, setRequestUrl)
 		return;
 	}
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_url_class_entry(), &zeh);
 	url = php_http_url_from_zval(zurl, ~0);
 	zend_restore_error_handling(&zeh);
 
@@ -1987,8 +1993,6 @@ static zend_function_entry php_http_message_methods[] = {
 
 	EMPTY_FUNCTION_ENTRY
 };
-
-zend_class_entry *php_http_message_class_entry;
 
 PHP_MINIT_FUNCTION(http_message)
 {

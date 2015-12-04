@@ -13,7 +13,7 @@
 #ifndef PHP_HTTP_CLIENT_REQUEST_H
 #define PHP_HTTP_CLIENT_REQUEST_H
 
-PHP_HTTP_API zend_class_entry *php_http_client_request_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_get_client_request_class_entry(void);
 PHP_MINIT_FUNCTION(http_client_request);
 
 #endif /* PHP_HTTP_CLIENT_REQUEST_H */

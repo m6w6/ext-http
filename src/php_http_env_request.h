@@ -13,7 +13,7 @@
 #ifndef PHP_HTTP_ENV_REQUEST_H
 #define PHP_HTTP_ENV_REQUEST_H
 
-PHP_HTTP_API zend_class_entry *php_http_env_request_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_get_env_request_class_entry(void);
 PHP_MINIT_FUNCTION(http_env_request);
 
 #endif

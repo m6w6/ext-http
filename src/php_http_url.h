@@ -83,7 +83,8 @@ static inline zend_bool php_http_url_is_empty(const php_http_url_t *url) {
 	return !(url->scheme || url->pass || url->user || url->host || url->port ||	url->path || url->query || url->fragment);
 }
 
-PHP_HTTP_API zend_class_entry *php_http_url_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_url_get_class_entry(void);
+PHP_HTTP_API zend_class_entry *php_http_get_env_url_class_entry(void);
 PHP_MINIT_FUNCTION(http_url);
 
 #define php_http_url_object_new php_http_object_new

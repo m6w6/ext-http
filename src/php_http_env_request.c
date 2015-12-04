@@ -117,6 +117,11 @@ static int grab_files(zval *val, int argc, va_list argv, zend_hash_key *key)
 		} \
 	} while(0)
 
+static zend_class_entry *php_http_env_request_class_entry;
+zend_class_entry *php_http_get_env_request_class_entry(void)
+{
+	return php_http_env_request_class_entry;
+}
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEnvRequest___construct, 0, 0, 0)
 ZEND_END_ARG_INFO();
@@ -133,19 +138,19 @@ static PHP_METHOD(HttpEnvRequest, __construct)
 	php_http_expect(obj->message = php_http_message_init_env(obj->message, PHP_HTTP_REQUEST), unexpected_val, return);
 
 	zsg = php_http_env_get_superglobal(ZEND_STRL("_GET"));
-	object_init_ex(&zqs, php_http_querystring_class_entry);
+	object_init_ex(&zqs, php_http_querystring_get_class_entry());
 	php_http_expect(SUCCESS == php_http_querystring_ctor(&zqs, zsg), unexpected_val, return);
 	zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("query"), &zqs);
 	zval_ptr_dtor(&zqs);
 
 	zsg = php_http_env_get_superglobal(ZEND_STRL("_POST"));
-	object_init_ex(&zqs, php_http_querystring_class_entry);
+	object_init_ex(&zqs, php_http_querystring_get_class_entry());
 	php_http_expect(SUCCESS == php_http_querystring_ctor(&zqs, zsg), unexpected_val, return);
 	zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("form"), &zqs);
 	zval_ptr_dtor(&zqs);
 
 	zsg = php_http_env_get_superglobal(ZEND_STRL("_COOKIE"));
-	object_init_ex(&zqs, php_http_querystring_class_entry);
+	object_init_ex(&zqs, php_http_querystring_get_class_entry());
 	php_http_expect(SUCCESS == php_http_querystring_ctor(&zqs, zsg), unexpected_val, return);
 	zend_update_property(php_http_env_request_class_entry, getThis(), ZEND_STRL("cookie"), &zqs);
 	zval_ptr_dtor(&zqs);
@@ -248,14 +253,12 @@ static zend_function_entry php_http_env_request_methods[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-zend_class_entry *php_http_env_request_class_entry;
-
 PHP_MINIT_FUNCTION(http_env_request)
 {
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http\\Env", "Request", php_http_env_request_methods);
-	php_http_env_request_class_entry = zend_register_internal_class_ex(&ce, php_http_message_class_entry);
+	php_http_env_request_class_entry = zend_register_internal_class_ex(&ce, php_http_message_get_class_entry());
 
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("query"), ZEND_ACC_PROTECTED);
 	zend_declare_property_null(php_http_env_request_class_entry, ZEND_STRL("form"), ZEND_ACC_PROTECTED);

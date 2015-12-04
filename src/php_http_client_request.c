@@ -12,6 +12,12 @@
 
 #include "php_http_api.h"
 
+static zend_class_entry *php_http_client_request_class_entry;
+zend_class_entry *php_http_get_client_request_class_entry(void)
+{
+	return php_http_client_request_class_entry;
+}
+
 void php_http_client_options_set_subr(zval *this_ptr, char *key, size_t len, zval *opts, int overwrite);
 void php_http_client_options_set(zval *this_ptr, zval *opts);
 void php_http_client_options_get_subr(zval *this_ptr, char *key, size_t len, zval *return_value);
@@ -36,7 +42,7 @@ static PHP_METHOD(HttpClientRequest, __construct)
 	zval *zheaders = NULL, *zbody = NULL, *zurl = NULL;
 	php_http_message_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|s!z!a!O!", &meth_str, &meth_len, &zurl, &zheaders, &zbody, php_http_message_body_class_entry), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|s!z!a!O!", &meth_str, &meth_len, &zurl, &zheaders, &zbody, php_http_get_message_body_class_entry()), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
@@ -276,14 +282,12 @@ static zend_function_entry php_http_client_request_methods[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-zend_class_entry *php_http_client_request_class_entry;
-
 PHP_MINIT_FUNCTION(http_client_request)
 {
 	zend_class_entry ce = {0};
 
 	INIT_NS_CLASS_ENTRY(ce, "http\\Client", "Request", php_http_client_request_methods);
-	php_http_client_request_class_entry = zend_register_internal_class_ex(&ce, php_http_message_class_entry);
+	php_http_client_request_class_entry = zend_register_internal_class_ex(&ce, php_http_message_get_class_entry());
 
 	zend_declare_property_null(php_http_client_request_class_entry, ZEND_STRL("options"), ZEND_ACC_PROTECTED);
 

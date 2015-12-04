@@ -555,12 +555,12 @@ static PHP_METHOD(HttpEnv, getRequestBody)
 {
 	php_http_message_body_t *body;
 	php_http_message_body_object_t *body_obj;
-	zend_class_entry *class_entry = php_http_message_body_class_entry;
+	zend_class_entry *class_entry = php_http_get_message_body_class_entry();
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|C", &class_entry), invalid_arg, return);
 
 	body = php_http_env_get_request_body();
-	if (SUCCESS == php_http_new((void *) &body_obj, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_message_body_class_entry, body)) {
+	if (SUCCESS == php_http_new((void *) &body_obj, class_entry, (php_http_new_t) php_http_message_body_object_new_ex, php_http_get_message_body_class_entry(), body)) {
 		php_http_message_body_addref(body);
 		RETVAL_OBJ(&body_obj->zo);
 	}
@@ -795,7 +795,11 @@ static zend_function_entry php_http_env_methods[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-zend_class_entry *php_http_env_class_entry;
+static zend_class_entry *php_http_env_class_entry;
+zend_class_entry *php_http_env_get_class_entry(void)
+{
+	return php_http_env_class_entry;
+}
 
 PHP_MINIT_FUNCTION(http_env)
 {

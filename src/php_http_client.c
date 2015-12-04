@@ -61,6 +61,12 @@ void php_http_client_driver_list(HashTable *ht)
 	zend_hash_apply_with_argument(&php_http_client_drivers, apply_driver_list, ht);
 }
 
+static zend_class_entry *php_http_client_class_entry;
+zend_class_entry *php_http_client_get_class_entry(void)
+{
+	return php_http_client_class_entry;
+}
+
 void php_http_client_options_set_subr(zval *instance, char *key, size_t len, zval *opts, int overwrite)
 {
 	if (overwrite || (opts && zend_hash_num_elements(Z_ARRVAL_P(opts)))) {
@@ -318,7 +324,6 @@ ZEND_RESULT_CODE php_http_client_getopt(php_http_client_t *h, php_http_client_ge
 	return FAILURE;
 }
 
-zend_class_entry *php_http_client_class_entry;
 static zend_object_handlers php_http_client_object_handlers;
 
 void php_http_client_object_free(zend_object *object)
@@ -357,7 +362,7 @@ static void handle_history(zval *zclient, php_http_message_t *request, php_http_
 	php_http_message_t *req_copy = php_http_message_copy(request, NULL);
 	php_http_message_t *res_copy = php_http_message_copy(response, NULL);
 	php_http_message_t *zipped = php_http_message_zip(res_copy, req_copy);
-	php_http_message_object_t *obj = php_http_message_object_new_ex(php_http_message_class_entry, zipped);
+	php_http_message_object_t *obj = php_http_message_object_new_ex(php_http_message_get_class_entry(), zipped);
 
 	ZVAL_OBJ(&new_hist, &obj->zo);
 
@@ -394,7 +399,7 @@ static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, ph
 		php_http_message_free(&msg->parent);
 		*response = NULL;
 
-		msg_obj = php_http_message_object_new_ex(php_http_client_response_class_entry, msg);
+		msg_obj = php_http_message_object_new_ex(php_http_get_client_response_class_entry(), msg);
 		ZVAL_OBJ(&zresponse, &msg_obj->zo);
 		ZVAL_OBJECT(&zrequest, &((php_http_message_object_t *) e->opaque)->zo, 1);
 
@@ -403,7 +408,7 @@ static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, ph
 		object_init(&info);
 		info_ht = HASH_OF(&info);
 		php_http_client_getopt(client, PHP_HTTP_CLIENT_OPT_TRANSFER_INFO, e->request, &info_ht);
-		zend_update_property(php_http_client_response_class_entry, &zresponse, ZEND_STRL("transferInfo"), &info);
+		zend_update_property(php_http_get_client_response_class_entry(), &zresponse, ZEND_STRL("transferInfo"), &info);
 		zval_ptr_dtor(&info);
 
 		Z_ADDREF(zresponse);
@@ -599,7 +604,7 @@ static PHP_METHOD(HttpClient, enqueue)
 	php_http_message_object_t *msg_obj;
 	php_http_client_enqueue_t q;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O|f", &request, php_http_client_request_class_entry, &fci, &fcc), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O|f", &request, php_http_get_client_request_class_entry(), &fci, &fcc), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 	msg_obj = PHP_HTTP_OBJ(NULL, request);
@@ -642,7 +647,7 @@ static PHP_METHOD(HttpClient, dequeue)
 	php_http_client_object_t *obj;
 	php_http_message_object_t *msg_obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &request, php_http_client_request_class_entry), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &request, php_http_get_client_request_class_entry()), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 	msg_obj = PHP_HTTP_OBJ(NULL, request);
@@ -670,7 +675,7 @@ static PHP_METHOD(HttpClient, requeue)
 	php_http_message_object_t *msg_obj;
 	php_http_client_enqueue_t q;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O|f", &request, php_http_client_request_class_entry, &fci, &fcc), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O|f", &request, php_http_get_client_request_class_entry(), &fci, &fcc), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 	msg_obj = PHP_HTTP_OBJ(NULL, request);
@@ -724,7 +729,7 @@ static PHP_METHOD(HttpClient, getResponse)
 	zval *zrequest = NULL;
 	php_http_client_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|O", &zrequest, php_http_client_request_class_entry), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|O", &zrequest, php_http_get_client_request_class_entry()), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
@@ -892,7 +897,7 @@ static PHP_METHOD(HttpClient, notify)
 	php_http_client_object_t *client_obj;
 	struct notify_arg arg = {NULL};
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|O!o!", &request, php_http_client_request_class_entry, &zprogress), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|O!o!", &request, php_http_get_client_request_class_entry(), &zprogress), invalid_arg, return);
 
 	client_obj = PHP_HTTP_OBJ(NULL, getThis());
 	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
@@ -1010,7 +1015,7 @@ static PHP_METHOD(HttpClient, getProgressInfo)
 	php_http_message_object_t *req_obj;
 	php_http_client_progress_state_t *progress;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &request, php_http_client_request_class_entry), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &request, php_http_get_client_request_class_entry()), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 	req_obj = PHP_HTTP_OBJ(NULL, request);
@@ -1037,7 +1042,7 @@ static PHP_METHOD(HttpClient, getTransferInfo)
 	php_http_client_object_t *obj;
 	php_http_message_object_t *req_obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &request, php_http_client_request_class_entry), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O", &request, php_http_get_client_request_class_entry()), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 	req_obj = PHP_HTTP_OBJ(NULL, request);

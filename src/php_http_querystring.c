@@ -23,6 +23,12 @@
 #	include <ext/iconv/php_iconv.h>
 #endif
 
+static zend_class_entry *php_http_querystring_class_entry;
+zend_class_entry *php_http_querystring_get_class_entry(void)
+{
+	return php_http_querystring_class_entry;
+}
+
 #define QS_MERGE 1
 
 static inline void php_http_querystring_set(zval *instance, zval *params, int flags)
@@ -334,7 +340,7 @@ PHP_METHOD(HttpQueryString, __construct)
 	
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &params), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_bad_querystring_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_querystring_class_entry(), &zeh);
 	php_http_querystring_set(getThis(), params, 0);
 	zend_restore_error_handling(&zeh);
 }
@@ -477,7 +483,7 @@ PHP_METHOD(HttpQueryString, mod)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "z", &params), invalid_arg, return);
 	
-	zend_replace_error_handling(EH_THROW, php_http_exception_bad_querystring_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_querystring_class_entry(), &zeh);
 	ZVAL_OBJ(return_value, Z_OBJ_HT_P(instance)->clone_obj(instance));
 	/* make sure we do not inherit the reference to _GET */
 	SEPARATE_ZVAL(zend_read_property(Z_OBJCE_P(return_value), return_value, ZEND_STRL("queryArray"), 0, &qa_tmp));
@@ -654,8 +660,6 @@ PHP_METHOD(HttpQueryString, offsetUnset)
 	php_http_querystring_set(getThis(), &param, QS_MERGE);
 	zval_ptr_dtor(&param);
 }
-
-zend_class_entry *php_http_querystring_class_entry;
 
 static zend_function_entry php_http_querystring_methods[] = {
 	PHP_ME(HttpQueryString, __construct, ai_HttpQueryString___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR|ZEND_ACC_FINAL)

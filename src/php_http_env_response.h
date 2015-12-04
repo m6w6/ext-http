@@ -70,7 +70,7 @@ PHP_HTTP_API void php_http_env_response_free(php_http_env_response_t **r);
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, const char *header_str, size_t header_len, php_http_message_t *request);
 PHP_HTTP_API php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *options, const char *header_str, size_t header_len, php_http_message_t *request);
 
-PHP_HTTP_API zend_class_entry *php_http_env_response_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_get_env_response_class_entry();
 PHP_MINIT_FUNCTION(http_env_response);
 
 #endif

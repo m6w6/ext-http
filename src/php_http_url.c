@@ -1556,6 +1556,19 @@ php_http_url_t *php_http_url_parse_authority(const char *str, size_t len, unsign
 	return (php_http_url_t *) state;
 }
 
+static zend_class_entry *php_http_url_class_entry;
+static zend_class_entry *php_http_env_url_class_entry;
+
+zend_class_entry *php_http_url_get_class_entry(void)
+{
+	return php_http_url_class_entry;
+}
+
+zend_class_entry *php_http_get_env_url_class_entry(void)
+{
+	return php_http_env_url_class_entry;
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpUrl___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, old_url)
 	ZEND_ARG_INFO(0, new_url)
@@ -1564,12 +1577,17 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpUrl, __construct)
 {
 	zval *new_url = NULL, *old_url = NULL;
-	zend_long flags = PHP_HTTP_URL_FROM_ENV;
+	zend_long flags = 0;
 	zend_error_handling zeh;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|z!z!l", &old_url, &new_url, &flags), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh);
+	/* always set http\Url::FROM_ENV for instances of http\Env\Url */
+	if (instanceof_function(Z_OBJCE_P(getThis()), php_http_env_url_class_entry)) {
+		flags |= PHP_HTTP_URL_FROM_ENV;
+	}
+
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_url_class_entry(), &zeh);
 	{
 		php_http_url_t *res_purl, *new_purl = NULL, *old_purl = NULL;
 
@@ -1617,7 +1635,7 @@ PHP_METHOD(HttpUrl, mod)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "z!|l", &new_url, &flags), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_url_class_entry(), &zeh);
 	{
 		php_http_url_t *new_purl = NULL, *old_purl = NULL;
 
@@ -1691,8 +1709,6 @@ static zend_function_entry php_http_url_methods[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
-zend_class_entry *php_http_url_class_entry;
-
 PHP_MINIT_FUNCTION(http_url)
 {
 	zend_class_entry ce = {0};
@@ -1731,6 +1747,9 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN"), PHP_HTTP_URL_PARSE_TOIDN);
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT);
+
+	INIT_NS_CLASS_ENTRY(ce, "http\\Env", "Url", php_http_url_methods);
+	php_http_env_url_class_entry = zend_register_internal_class_ex(&ce, php_http_url_class_entry);
 
 	return SUCCESS;
 }

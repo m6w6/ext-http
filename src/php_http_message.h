@@ -92,7 +92,7 @@ typedef struct php_http_message_object {
 	zend_object zo;
 } php_http_message_object_t;
 
-PHP_HTTP_API zend_class_entry *php_http_message_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_message_get_class_entry(void);
 
 PHP_MINIT_FUNCTION(http_message);
 PHP_MSHUTDOWN_FUNCTION(http_message);

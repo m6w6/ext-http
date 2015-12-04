@@ -53,7 +53,7 @@ PHP_HTTP_API void php_http_cookie_list_to_string(php_http_cookie_list_t *list, c
 PHP_HTTP_API php_http_cookie_list_t *php_http_cookie_list_from_struct(php_http_cookie_list_t *list, zval *strct);
 PHP_HTTP_API void php_http_cookie_list_to_struct(php_http_cookie_list_t *list, zval *strct);
 
-PHP_HTTP_API zend_class_entry *php_http_cookie_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_cookie_get_class_entry(void);
 
 typedef struct php_http_cookie_object {
 	php_http_cookie_list_t *list;

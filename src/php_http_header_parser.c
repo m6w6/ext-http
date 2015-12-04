@@ -333,7 +333,11 @@ php_http_header_parser_state_t php_http_header_parser_parse_stream(php_http_head
 	return PHP_HTTP_HEADER_PARSER_STATE_DONE;
 }
 
-zend_class_entry *php_http_header_parser_class_entry;
+static zend_class_entry *php_http_header_parser_class_entry;
+zend_class_entry *php_http_get_header_parser_class_entry(void)
+{
+	return php_http_header_parser_class_entry;
+}
 static zend_object_handlers php_http_header_parser_object_handlers;
 
 zend_object *php_http_header_parser_object_new(zend_class_entry *ce)
@@ -425,7 +429,7 @@ static PHP_METHOD(HttpHeaderParser, stream)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "rlz", &zstream, &flags, &zmsg), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_unexpected_val_class_entry(), &zeh);
 	php_stream_from_zval(s, zstream);
 	zend_restore_error_handling(&zeh);
 

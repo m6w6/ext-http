@@ -366,6 +366,11 @@ void php_http_cookie_list_to_string(php_http_cookie_list_t *list, char **str, si
 }
 
 
+static zend_class_entry *php_http_cookie_class_entry;
+zend_class_entry *php_http_cookie_get_class_entry(void)
+{
+	return php_http_cookie_class_entry;
+}
 
 static zend_object_handlers php_http_cookie_object_handlers;
 
@@ -439,7 +444,7 @@ static PHP_METHOD(HttpCookie, __construct)
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_runtime_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_runtime_class_entry(), &zeh);
 	if (zcookie) {
 
 		if (allowed_extras && zend_hash_num_elements(allowed_extras)) {
@@ -1009,8 +1014,6 @@ static zend_function_entry php_http_cookie_methods[] = {
 
 	EMPTY_FUNCTION_ENTRY
 };
-
-zend_class_entry *php_http_cookie_class_entry;
 
 PHP_MINIT_FUNCTION(http_cookie)
 {

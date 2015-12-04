@@ -534,7 +534,11 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 	return php_http_message_parser_state_is(parser);
 }
 
-zend_class_entry *php_http_message_parser_class_entry;
+static zend_class_entry *php_http_message_parser_class_entry;
+zend_class_entry *php_http_get_message_parser_class_entry(void)
+{
+	return php_http_message_parser_class_entry;
+}
 static zend_object_handlers php_http_message_parser_object_handlers;
 
 zend_object *php_http_message_parser_object_new(zend_class_entry *ce)
@@ -607,7 +611,7 @@ static PHP_METHOD(HttpMessageParser, parse)
 	ZVAL_NULL(zmsg);
 	if (parser_obj->parser->message) {
 		php_http_message_t *msg_cpy = php_http_message_copy(parser_obj->parser->message, NULL);
-		php_http_message_object_t *msg_obj = php_http_message_object_new_ex(php_http_message_class_entry, msg_cpy);
+		php_http_message_object_t *msg_obj = php_http_message_object_new_ex(php_http_message_get_class_entry(), msg_cpy);
 		ZVAL_OBJ(zmsg, &msg_obj->zo);
 	}
 }
@@ -627,7 +631,7 @@ static PHP_METHOD(HttpMessageParser, stream)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "rlz", &zstream, &flags, &zmsg), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_unexpected_val_class_entry, &zeh);
+	zend_replace_error_handling(EH_THROW, php_http_get_exception_unexpected_val_class_entry(), &zeh);
 	php_stream_from_zval(s, zstream);
 	zend_restore_error_handling(&zeh);
 
@@ -639,7 +643,7 @@ static PHP_METHOD(HttpMessageParser, stream)
 	ZVAL_NULL(zmsg);
 	if (parser_obj->parser->message) {
 		php_http_message_t *msg_cpy = php_http_message_copy(parser_obj->parser->message, NULL);
-		php_http_message_object_t *msg_obj = php_http_message_object_new_ex(php_http_message_class_entry, msg_cpy);
+		php_http_message_object_t *msg_obj = php_http_message_object_new_ex(php_http_message_get_class_entry(), msg_cpy);
 		ZVAL_OBJ(zmsg, &msg_obj->zo);
 	}
 }

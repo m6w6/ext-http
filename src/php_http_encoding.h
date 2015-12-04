@@ -170,16 +170,16 @@ typedef struct php_http_encoding_stream_object {
 	zend_object zo;
 } php_http_encoding_stream_object_t;
 
-PHP_HTTP_API zend_class_entry *php_http_encoding_stream_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_get_encoding_stream_class_entry(void);
 
 zend_object *php_http_encoding_stream_object_new(zend_class_entry *ce);
 php_http_encoding_stream_object_t *php_http_encoding_stream_object_new_ex(zend_class_entry *ce, php_http_encoding_stream_t *s);
 zend_object *php_http_encoding_stream_object_clone(zval *object);
 void php_http_encoding_stream_object_free(zend_object *object);
 
-PHP_HTTP_API zend_class_entry *php_http_deflate_stream_class_entry;
-PHP_HTTP_API zend_class_entry *php_http_inflate_stream_class_entry;
-PHP_HTTP_API zend_class_entry *php_http_dechunk_stream_class_entry;
+PHP_HTTP_API zend_class_entry *php_http_get_deflate_stream_class_entry(void);
+PHP_HTTP_API zend_class_entry *php_http_get_inflate_stream_class_entry(void);
+PHP_HTTP_API zend_class_entry *php_http_get_dechunk_stream_class_entry(void);
 
 #endif
 

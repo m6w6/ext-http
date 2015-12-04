@@ -943,6 +943,27 @@ void php_http_encoding_stream_object_free(zend_object *object)
 	zend_object_std_dtor(object);
 }
 
+static zend_class_entry *php_http_encoding_stream_class_entry;
+zend_class_entry *php_http_get_encoding_stream_class_entry(void)
+{
+	return php_http_encoding_stream_class_entry;
+}
+static zend_class_entry *php_http_deflate_stream_class_entry;
+zend_class_entry *php_http_get_deflate_stream_class_entry(void)
+{
+	return php_http_deflate_stream_class_entry;
+}
+static zend_class_entry *php_http_inflate_stream_class_entry;
+zend_class_entry *php_http_get_inflate_stream_class_entry(void)
+{
+	return php_http_inflate_stream_class_entry;
+}
+static zend_class_entry *php_http_dechunk_stream_class_entry;
+zend_class_entry *php_http_get_dechunk_stream_class_entry(void)
+{
+	return php_http_dechunk_stream_class_entry;
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpEncodingStream___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, flags)
 ZEND_END_ARG_INFO();
@@ -1164,11 +1185,6 @@ static zend_function_entry php_http_dechunk_stream_methods[] = {
 	PHP_ME(HttpDechunkStream, decode, ai_HttpDechunkStream_decode, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	EMPTY_FUNCTION_ENTRY
 };
-
-zend_class_entry *php_http_encoding_stream_class_entry;
-zend_class_entry *php_http_deflate_stream_class_entry;
-zend_class_entry *php_http_inflate_stream_class_entry;
-zend_class_entry *php_http_dechunk_stream_class_entry;
 
 PHP_MINIT_FUNCTION(http_encoding)
 {
