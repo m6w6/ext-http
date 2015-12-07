@@ -35,14 +35,14 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2015-12-04</date>
+ <date>2015-12-07</date>
  <version>
   <release>3.0.0RC1</release>
   <api>3.0.0</api>
  </version>
  <stability>
   <release>beta</release>
-  <api>beta</api>
+  <api>stable</api>
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
@@ -347,7 +347,7 @@ PHP7 compatible release based on the 2.5.x series with the following backwards i
  <dependencies>
   <required>
    <php>
-    <min>7.0.0-dev</min>
+    <min>7.0.0</min>
    </php>
    <pearinstaller>
     <min>1.4.1</min>
