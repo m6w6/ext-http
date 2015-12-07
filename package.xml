@@ -37,7 +37,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </lead>
  <date>2015-12-07</date>
  <version>
-  <release>2.5.5</release>
+  <release>2.5.6dev</release>
   <api>2.5.0</api>
  </version>
  <stability>
@@ -46,7 +46,7 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-* Fixed gh-issue #16: No Content-Length header with empty POST requests
+*
 ]]></notes>
  <contents>
   <dir name="/">
