@@ -12,13 +12,21 @@ addons:
    - libevent-dev
 
 env:
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
  - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
  - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
  - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
  - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
  - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
  - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
  - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
  - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes enable_phar=yes enable_posix=yes
 
 before_script:
@@ -33,3 +41,10 @@ after_script:
  - test -e tests/helper/server.log && cat tests/helper/server.log
 
 sudo: false
+notifications:
+ webhooks:
+  urls:
+   - https://webhooks.gitter.im/e/28d35158ac7e385bd14d
+  on_success: change
+  on_failure: always
+  on_start: never
