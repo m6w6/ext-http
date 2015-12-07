@@ -31,9 +31,10 @@ server("proxy.inc", function($port) {
 --EXPECTF--
 Test
 Accept-Ranges: bytes
-Content-Length: 134217960
+Content-Length: %d
 Etag: "%x"
 Last-Modified: %s
 X-Original-Transfer-Encoding: chunked
+X-Request-Content-Length: 134217728
 
 ===DONE===

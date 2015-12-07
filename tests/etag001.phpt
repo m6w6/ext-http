@@ -1,20 +1,22 @@
 --TEST--
 etags with hash
 --SKIPIF--
-<?php 
-include "skipif.inc"; 
-_ext("hash"); 
+<?php
+include "skipif.inc";
+_ext("hash");
 ?>
 --FILE--
 <?php
 $body = new http\Message\Body;
 $body->append("Hello, my old fellow.");
 foreach (hash_algos() as $algo) {
-    ini_set("http.etag.mode", $algo);
-    printf("%10s: %s\n", 
-        $algo, 
-        $body->etag()
-    );
+    if (strncmp($algo, "sha3-", 4)) {
+        ini_set("http.etag.mode", $algo);
+        printf("%10s: %s\n",
+            $algo,
+            $body->etag()
+        );
+    }
 }
 ?>
 DONE
@@ -27,10 +29,6 @@ DONE
     sha256: ed9ecfe5c76d51179c3c1065916fdb8d94aee05577f187bd763cdc962bba1f42
     sha384: 923a756152da113db192958da485c7881e7c4811d2d34e22f4d74cd45310d983f7fb1c5527a5f9037a4c7b649a6cc2b2
     sha512: ad5ea693b8df4457d08d835ad5ccf7b626b66285f8424b3ec59e54c63bf63feef9a92baaba71c38d7bd9a1135488499fc835a8818390965c9ce8a5e4c40e519f
-  sha3-224: 2c8a112ec84af4bed902071e13329136c537d514ea24b47a6f82389d
-  sha3-256: a96753d03e6280a531e78870a6454d0c68da3b43150c77f08db77adede39741b
-  sha3-384: 2b51d78f7ab6e8e9ec4048faa837a9370ace5fc27fdcbf19f9a393fd979a6ff0369a57e06576a8ac862cb5b81f4cdb19
-  sha3-512: 849aac3468e187f871b321d4bd8a3d45ae851abd05af18463b7913b10ca8bffe73e5fb6ee43e831bb32961a3c293d692698b353ed5df0e63db561c4d5cd0c704
  ripemd128: b9e8d5864b5821d72e66101a9a0e730a
  ripemd160: d697a33676aece781b72f6fcb95f4c730367706b
  ripemd256: 9c3a73ab03e6d7d3471cf70316c4ff3ec56212d25730d382fb1480346529742b

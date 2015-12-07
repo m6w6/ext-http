@@ -33,6 +33,7 @@ Accept-Ranges: bytes
 Content-Length: %d
 Etag: "%s"
 X-Original-Transfer-Encoding: chunked
+X-Request-Content-Length: 3
 
 GET / HTTP/1.1
 Accept: */*

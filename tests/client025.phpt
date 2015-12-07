@@ -1,11 +1,11 @@
 --TEST--
 client seek
 --SKIPIF--
-<?php 
+<?php
 include "skipif.inc";
 ?>
 --FILE--
-<?php 
+<?php
 
 include "helper/dump.inc";
 include "helper/server.inc";
@@ -29,6 +29,7 @@ Accept-Ranges: bytes
 Content-Length: %d
 Etag: "%x"
 X-Original-Transfer-Encoding: chunked
+X-Request-Content-Length: 2
 
 PUT / HTTP/1.1
 Accept: */*
