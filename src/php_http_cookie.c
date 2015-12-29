@@ -435,7 +435,7 @@ static PHP_METHOD(HttpCookie, __construct)
 {
 	php_http_cookie_object_t *obj;
 	zval *zcookie = NULL;
-	long flags = 0;
+	zend_long flags = 0;
 	char **ae = NULL;
 	HashTable *allowed_extras = NULL;
 	zend_error_handling zeh;
@@ -856,7 +856,7 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setExpires, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpCookie, setExpires)
 {
-	long ts = -1;
+	zend_long ts = -1;
 	php_http_cookie_object_t *obj;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &ts), invalid_arg, return);
@@ -892,7 +892,7 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setMaxAge, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpCookie, setMaxAge)
 {
-	long ma = -1;
+	zend_long ma = -1;
 	php_http_cookie_object_t *obj;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &ma), invalid_arg, return);
@@ -928,7 +928,7 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpCookie_setFlags, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpCookie, setFlags)
 {
-	long flags = 0;
+	zend_long flags = 0;
 	php_http_cookie_object_t *obj;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &flags), invalid_arg, return);

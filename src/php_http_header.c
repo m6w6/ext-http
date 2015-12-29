@@ -215,8 +215,8 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_match, 0, 0, 1)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, match)
 {
-	char *val_str;
-	size_t val_len;
+	char *val_str = NULL;
+	size_t val_len = 0;
 	zend_long flags = PHP_HTTP_MATCH_LOOSE;
 	zend_string *zs;
 	zval value_tmp;
