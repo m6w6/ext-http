@@ -39,11 +39,11 @@ env:
 
 before_script:
  - make -f travis/pecl/Makefile php
- - make -f travis/pecl/Makefile pecl PECL=raphf:raphf:1.1.1RC1
- - make -f travis/pecl/Makefile pecl PECL=propro:propro:1.0.2RC1
+ - make -f travis/pecl/Makefile pecl PECL=raphf:raphf:1.1.1
+ - make -f travis/pecl/Makefile pecl PECL=propro:propro:1.0.2
+ - make -f travis/pecl/Makefile ext PECL=http
 
 script:
- - make -f travis/pecl/Makefile ext PECL=http
  - make -f travis/pecl/Makefile test
 
 after_script:
