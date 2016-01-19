@@ -70,6 +70,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("REQUEST_URI"), 1))) {
 				message->http.info.request.url = php_http_url_parse(Z_STRVAL_P(sval), Z_STRLEN_P(sval), ~0);
 			}
+
 			php_http_env_get_request_headers(&message->hdrs);
 			break;
 
@@ -81,11 +82,12 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 				}
 				message->http.info.response.status = estrdup(php_http_env_get_response_status_for_code(message->http.info.response.code));
 			}
-			
+
 			php_http_env_get_response_headers(&message->hdrs);
 			if (php_output_get_level()) {
 				if (php_output_get_status() & PHP_OUTPUT_SENT) {
 					php_error_docref(NULL, E_WARNING, "Could not fetch response body, output has already been sent at %s:%d", php_output_get_start_filename(), php_output_get_start_lineno());
+
 					goto error;
 				} else if (SUCCESS != php_output_get_contents(&tval)) {
 					php_error_docref(NULL, E_WARNING, "Could not fetch response body");
@@ -409,7 +411,7 @@ void php_http_message_serialize(php_http_message_t *message, char **string, size
 php_http_message_t *php_http_message_reverse(php_http_message_t *msg)
 {
 	size_t i, c = php_http_message_count(msg);
-	
+
 	if (c > 1) {
 		php_http_message_t *tmp = msg, **arr;
 
@@ -452,23 +454,22 @@ php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_
 {
 	php_http_message_t *temp, *copy = NULL;
 	php_http_info_t info;
-	
+
 	if (from) {
 		info.type = from->type;
 		info.http = from->http;
-		
+
 		copy = temp = php_http_message_init(to, 0, php_http_message_body_copy(from->body, NULL));
 		php_http_message_set_info(temp, &info);
 		zend_hash_copy(&temp->hdrs, &from->hdrs, (copy_ctor_func_t) zval_add_ref);
-	
+
 		if (parents) while (from->parent) {
 			info.type = from->parent->type;
 			info.http = from->parent->http;
-		
+
 			temp->parent = php_http_message_init(NULL, 0, php_http_message_body_copy(from->parent->body, NULL));
 			php_http_message_set_info(temp->parent, &info);
 			array_copy(&from->parent->hdrs, &temp->parent->hdrs);
-		
 
 			temp = temp->parent;
 			from = from->parent;
@@ -944,7 +945,7 @@ static HashTable *php_http_message_object_get_debug_info(zval *object, int *is_t
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 	*is_temp = 0;
-	
+
 #define UPDATE_PROP(name_str, action_with_tmp) \
 	do { \
 		zend_property_info *pi; \
