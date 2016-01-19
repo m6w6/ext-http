@@ -13,7 +13,7 @@
 #ifndef PHP_EXT_HTTP_H
 #define PHP_EXT_HTTP_H
 
-#define PHP_PECL_HTTP_VERSION "3.0.0RC1"
+#define PHP_PECL_HTTP_VERSION "3.0.0"
 
 extern zend_module_entry http_module_entry;
 #define phpext_http_ptr &http_module_entry
@@ -30,4 +30,3 @@ extern int http_module_number;
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-
