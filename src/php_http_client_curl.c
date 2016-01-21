@@ -1469,7 +1469,7 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 			ZVAL_BOOL(&opt->defval, 1);
 			opt->setter = php_http_curle_option_set_ssl_verifyhost;
 		}
-#if PHP_HTTP_CURL_VERSION(7,41,0)
+#if PHP_HTTP_CURL_VERSION(7,41,0) && (defined(PHP_HTTP_HAVE_OPENSSL) || defined(PHP_HTTP_HAVE_NSS) || defined(PHP_HTTP_HAVE_GNUTLS))
 		php_http_option_register(registry, ZEND_STRL("verifystatus"), CURLOPT_SSL_VERIFYSTATUS, IS_BOOL);
 #endif
 		php_http_option_register(registry, ZEND_STRL("cipher_list"), CURLOPT_SSL_CIPHER_LIST, IS_STRING);
