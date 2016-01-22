@@ -45,17 +45,15 @@ function check_for_pecl_ext(ext, header)
 
 if (PHP_HTTP != "no") {
 
-	EXTENSION("http",
-		"src/php_http.c src/php_http_buffer.c src/php_http_client.c " +
-		"src/php_http_client_request.c src/php_http_client_response.c " +
-		"src/php_http_cookie.c src/php_http_curl.c src/php_http_client_curl.c " +
-		"src/php_http_encoding.c src/php_http_env.c src/php_http_env_request.c " +
-		"src/php_http_env_response.c src/php_http_etag.c src/php_http_exception.c src/php_http_filter.c src/php_http_header_parser.c " +
-		"src/php_http_header.c src/php_http_info.c src/php_http_message.c src/php_http_message_body.c src/php_http_message_parser.c " +
-		"src/php_http_misc.c src/php_http_negotiate.c src/php_http_object.c src/php_http_options.c src/php_http_params.c " +
-		"src/php_http_querystring.c src/php_http_url.c src/php_http_version.c",
-		null,
-		null);
+	var PHP_HTTP_SRC_ARRAY = glob(configure_module_dirname + "/src/*.c");
+	var PHP_HTTP_SOURCES="";
+	for (var i=0; i<PHP_HTTP_SRC_ARRAY.length; ++i) {
+		var basename = FSO.GetFileName(PHP_HTTP_SRC_ARRAY[i]);
+		PHP_HTTP_SOURCES = PHP_HTTP_SOURCES + " " + basename;
+	}
+	//EXTENSION("http");
+	ADD_SOURCES(configure_module_dirname + "/src", PHP_HTTP_SOURCES, "http");
+	EXTENSION("http", "src/php_http.c");
 	AC_DEFINE("HAVE_HTTP", 1, "Have extended HTTP support");
 	AC_DEFINE("HTTP_SHARED_DEPS", 1, "Depend on shared extensions");
 
@@ -115,6 +113,8 @@ if (PHP_HTTP != "no") {
 		AC_DEFINE("PHP_HAVE_CURL_FORMGET", 1, "");
 		AC_DEFINE("PHP_HAVE_CURL_MULTI_SETOPT", 1, "");
 		AC_DEFINE("PHP_HAVE_CURL_MULTI_TIMEOUT", 1, "");
+		AC_DEFINE("PHP_HTTP_HAVE_CLIENT", 1, "Have HTTP client support");
+ 		ADD_FLAG("CFLAGS_HTTP", "/I" + configure_module_dirname + " ");
 
 		if (CHECK_HEADER_ADD_INCLUDE("event2/event.h", "CFLAGS_HTTP") &&
 			CHECK_LIB("libevent.lib", "http", PHP_HTTP) &&
