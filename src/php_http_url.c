@@ -263,6 +263,7 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 
 	/* replace directory references if path is not a single slash */
 	if ((flags & PHP_HTTP_URL_SANITIZE_PATH)
+	&&	url(buf)->path
 	&&	url(buf)->path[0] && url(buf)->path[1]) {
 		char *ptr, *end = url(buf)->path + strlen(url(buf)->path) + 1;
 			
