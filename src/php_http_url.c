@@ -1468,7 +1468,7 @@ static const char *parse_scheme(struct parse_state *state)
 		case '7': case '8': case '9':
 		case '+': case '-': case '.':
 			if (state->ptr == tmp) {
-				return tmp;
+				goto softfail;
 			}
 			/* no break */
 		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
@@ -1485,19 +1485,20 @@ static const char *parse_scheme(struct parse_state *state)
 
 		default:
 			if (!(mb = parse_mb(state, PARSE_SCHEME, state->ptr, state->end, tmp, 1))) {
-				/* soft fail; parse path next */
-				return tmp;
+				goto softfail;
 			}
 			state->ptr += mb - 1;
 		}
 	} while (++state->ptr != state->end);
 
+softfail:
+	state->offset = 0;
 	return state->ptr = tmp;
 }
 
 php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags)
 {
-	size_t maxlen = 3 * len;
+	size_t maxlen = 3 * len + 8 /* null bytes for all components */;
 	struct parse_state *state = ecalloc(1, sizeof(*state) + maxlen);
 
 	state->end = str + len;

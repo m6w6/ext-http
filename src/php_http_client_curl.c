@@ -1484,7 +1484,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 			ZVAL_BOOL(&opt->defval, 1);
 			opt->setter = php_http_curle_option_set_ssl_verifyhost;
 		}
-#if PHP_HTTP_CURL_VERSION(7,41,0)
+#if PHP_HTTP_CURL_VERSION(7,41,0) && (defined(PHP_HTTP_HAVE_OPENSSL) || defined(PHP_HTTP_HAVE_NSS) || defined(PHP_HTTP_HAVE_GNUTLS))
 		php_http_option_register(registry, ZEND_STRL("verifystatus"), CURLOPT_SSL_VERIFYSTATUS, _IS_BOOL);
 #endif
 		php_http_option_register(registry, ZEND_STRL("cipher_list"), CURLOPT_SSL_CIPHER_LIST, IS_STRING);
@@ -2534,6 +2534,9 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_1_1", CURL_HTTP_VERSION_1_1, CONST_CS|CONST_PERSISTENT);
 #if PHP_HTTP_CURL_VERSION(7,33,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_2_0", CURL_HTTP_VERSION_2_0, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,47,0)
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_2TLS", CURL_HTTP_VERSION_2TLS, CONST_CS|CONST_PERSISTENT);
 #endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_ANY", CURL_HTTP_VERSION_NONE, CONST_CS|CONST_PERSISTENT);
 
