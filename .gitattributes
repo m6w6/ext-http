@@ -1,3 +1,4 @@
 package.xml		merge=touch
 php_http.h		merge=touch
 .travis.yml		merge=touch
+/tests/data/bug71719.bin	-diff -text
