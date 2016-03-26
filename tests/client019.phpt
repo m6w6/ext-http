@@ -3,6 +3,7 @@ client proxy - send proxy headers for a proxy request
 --SKIPIF--
 <?php 
 include "skipif.inc";
+skip_online_test();
 skip_client_test();
 $client = new http\Client("curl");
 array_key_exists("proxyheader", $client->getAvailableOptions())
