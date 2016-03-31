@@ -38,39 +38,13 @@ ZEND_RESULT_CODE php_http_header_parse(const char *header, size_t length, HashTa
 
 void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg TSRMLS_DC)
 {
-	HashPosition pos1, pos2;
+	HashPosition pos;
 	php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
-	zval **header, **single_header;
+	zval **header;
 
-	FOREACH_HASH_KEYVAL(pos1, headers, key, header) {
+	FOREACH_HASH_KEYVAL(pos, headers, key, header) {
 		if (key.type == HASH_KEY_IS_STRING) {
-			if (key.len == sizeof("Set-Cookie") && !strcasecmp(key.str, "Set-Cookie") && Z_TYPE_PP(header) == IS_ARRAY) {
-				FOREACH_VAL(pos2, *header, single_header) {
-					if (Z_TYPE_PP(single_header) == IS_ARRAY) {
-						php_http_cookie_list_t *cookie = php_http_cookie_list_from_struct(NULL, *single_header TSRMLS_CC);
-
-						if (cookie) {
-							char *buf;
-							size_t len;
-
-							php_http_cookie_list_to_string(cookie, &buf, &len);
-							cb(cb_arg, crlf ? "Set-Cookie: %s" PHP_HTTP_CRLF : "Set-Cookie: %s", buf);
-							php_http_cookie_list_free(&cookie);
-							efree(buf);
-						}
-					} else {
-						zval *strval = php_http_header_value_to_string(*single_header TSRMLS_CC);
-
-						cb(cb_arg, crlf ? "Set-Cookie: %s" PHP_HTTP_CRLF : "Set-Cookie: %s", Z_STRVAL_P(strval));
-						zval_ptr_dtor(&strval);
-					}
-				}
-			} else {
-				zval *strval = php_http_header_value_to_string(*header TSRMLS_CC);
-
-				cb(cb_arg, crlf ? "%s: %s" PHP_HTTP_CRLF : "%s: %s", key.str, Z_STRVAL_P(strval));
-				zval_ptr_dtor(&strval);
-			}
+			php_http_header_to_callback_ex(key.str, *header, crlf, cb, cb_arg TSRMLS_CC);
 		}
 	}
 }
@@ -78,6 +52,35 @@ void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pa
 void php_http_header_to_string(php_http_buffer_t *str, HashTable *headers TSRMLS_DC)
 {
 	php_http_header_to_callback(headers, 1, (php_http_pass_format_callback_t) php_http_buffer_appendf, str TSRMLS_CC);
+}
+
+void php_http_header_to_callback_ex(const char *key, zval *val, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg TSRMLS_DC)
+{
+	HashPosition pos;
+	zval **aval, *tmp;
+
+	switch (Z_TYPE_P(val)) {
+	case IS_ARRAY:
+		FOREACH_VAL(pos, val, aval) {
+			php_http_header_to_callback_ex(key, *aval, crlf, cb, cb_arg TSRMLS_CC);
+		}
+		break;
+
+	case IS_BOOL:
+		cb(cb_arg, "%s: %s%s", key, Z_BVAL_P(val) ? "true" : "false", crlf ? PHP_HTTP_CRLF:"");
+		break;
+
+	default:
+		tmp = php_http_ztyp(IS_STRING, val);
+		cb(cb_arg, "%s: %s%s", key, Z_STRVAL_P(tmp), crlf ? PHP_HTTP_CRLF:"");
+		zval_ptr_dtor(&tmp);
+		break;
+	}
+}
+
+void php_http_header_to_string_ex(php_http_buffer_t *str, const char *key, zval *val TSRMLS_DC)
+{
+	php_http_header_to_callback_ex(key, val, 1, (php_http_pass_format_callback_t) php_http_buffer_appendf, str TSRMLS_CC);
 }
 
 zval *php_http_header_value_to_string(zval *header TSRMLS_DC)

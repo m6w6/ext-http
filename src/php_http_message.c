@@ -1286,17 +1286,27 @@ static PHP_METHOD(HttpMessage, addHeader)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &name_str, &name_len, &zvalue)) {
 		php_http_message_object_t *obj = zend_object_store_get_object(getThis() TSRMLS_CC);
 		char *name = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
-		zval *header;
+		zval *header, *cpy = php_http_header_value_to_string(zvalue TSRMLS_CC);
 
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
-		Z_ADDREF_P(zvalue);
-		if ((header = php_http_message_header(obj->message, name, name_len, 0))) {
+		if ((name_len != lenof("Set-Cookie") && strcmp(name, "Set-Cookie"))
+		&&	(header = php_http_message_header(obj->message, name, name_len, 1))) {
+			zval *tmp;
+			char *hdr_str;
+			size_t hdr_len = spprintf(&hdr_str, 0, "%s, %s", Z_STRVAL_P(header), Z_STRVAL_P(cpy));
+
+			MAKE_STD_ZVAL(tmp);
+			ZVAL_STRINGL(tmp, hdr_str, hdr_len, 0);
+			zend_symtable_update(&obj->message->hdrs, name, name_len + 1, &tmp, sizeof(void *), NULL);
+			zval_ptr_dtor(&header);
+			zval_ptr_dtor(&cpy);
+		} else if ((header = php_http_message_header(obj->message, name, name_len, 0))) {
 			convert_to_array(header);
-			zend_hash_next_index_insert(Z_ARRVAL_P(header), &zvalue, sizeof(void *), NULL);
+			zend_hash_next_index_insert(Z_ARRVAL_P(header), &cpy, sizeof(void *), NULL);
 			zval_ptr_dtor(&header);
 		} else {
-			zend_symtable_update(&obj->message->hdrs, name, name_len + 1, &zvalue, sizeof(void *), NULL);
+			zend_symtable_update(&obj->message->hdrs, name, name_len + 1, &cpy, sizeof(void *), NULL);
 		}
 		efree(name);
 	}

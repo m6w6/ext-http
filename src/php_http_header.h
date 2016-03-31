@@ -18,7 +18,9 @@
 PHP_HTTP_API ZEND_RESULT_CODE php_http_header_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data TSRMLS_DC);
 
 PHP_HTTP_API void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg TSRMLS_DC);
+PHP_HTTP_API void php_http_header_to_callback_ex(const char *key, zval *val, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg TSRMLS_DC);
 PHP_HTTP_API void php_http_header_to_string(php_http_buffer_t *str, HashTable *headers TSRMLS_DC);
+PHP_HTTP_API void php_http_header_to_string_ex(php_http_buffer_t *str, const char *key, zval *val TSRMLS_DC);
 
 PHP_HTTP_API zval *php_http_header_value_to_string(zval *header TSRMLS_DC);
 
