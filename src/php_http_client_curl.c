@@ -1829,6 +1829,7 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_reset(php_http_client_curl_
 			st->cookiestore = NULL;
 		}
 		st->errorbuffer[0] = '\0';
+		st->errorcode = 0;
 	}
 
 	curl_easy_setopt(ch, CURLOPT_URL, NULL);
