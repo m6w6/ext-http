@@ -12,42 +12,58 @@ include "helper/server.inc";
 
 echo "Test\n";
 
+function dump($f) {
+	return;
+	readfile($f);
+}
+
 $tmpfile = tempnam(sys_get_temp_dir(), "cookie.");
 $request = new http\Client\Request("GET", "http://localhost");
 $request->setOptions(array("cookiestore" => $tmpfile));
 
-server("cookie.inc", function($port) use($request) {
+server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
 	echo $client->requeue($request)->send()->getResponse();
+#dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
+#dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
+#dump($tmpfile);
 });
-
-server("cookie.inc", function($port) use($request) {
+server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
 	echo $client->requeue($request)->send()->getResponse();
+#dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
+#dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
+#dump($tmpfile);
 });
-
-server("cookie.inc", function($port) use($request) {
+	
+server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port, "cookiesession" => true));
 	$client = new http\Client;
 	echo $client->requeue($request)->send()->getResponse();
+dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
+dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
+dump($tmpfile);
 });
-
-server("cookie.inc", function($port) use($request) {
+	
+server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port, "cookiesession" => false));
 	$client = new http\Client;
 	echo $client->requeue($request)->send()->getResponse();
+dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
+dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
+dump($tmpfile);
 });
-
+	
 unlink($tmpfile);
 
 ?>

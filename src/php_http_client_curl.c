@@ -43,8 +43,13 @@
 #	include <gnutls.h>
 #endif
 
+typedef struct php_http_client_curl_handle {
+	CURLM *multi;
+	CURLSH *share;
+} php_http_client_curl_handle_t;
+
 typedef struct php_http_client_curl {
-	CURLM *handle;
+	php_http_client_curl_handle_t *handle;
 
 	int unfinished;  /* int because of curl_multi_perform() */
 
@@ -158,12 +163,29 @@ static php_resource_factory_ops_t php_http_curle_resource_factory_ops = {
 
 static void *php_http_curlm_ctor(void *opaque, void *init_arg TSRMLS_DC)
 {
-	return curl_multi_init();
+	php_http_client_curl_handle_t *curl = calloc(1, sizeof(*curl));
+
+	if (!(curl->multi = curl_multi_init())) {
+		free(curl);
+		return NULL;
+	}
+	if (!(curl->share = curl_share_init())) {
+		curl_multi_cleanup(curl->multi);
+		free(curl);
+		return NULL;
+	}
+	curl_share_setopt(curl->share, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
+	curl_share_setopt(curl->share, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
+	return curl;
 }
 
 static void php_http_curlm_dtor(void *opaque, void *handle TSRMLS_DC)
 {
-	curl_multi_cleanup(handle);
+	php_http_client_curl_handle_t *curl = handle;
+
+	curl_share_cleanup(curl->share);
+	curl_multi_cleanup(curl->multi);
+	free(handle);
 }
 
 static php_resource_factory_ops_t php_http_curlm_resource_factory_ops = {
@@ -638,7 +660,7 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 	TSRMLS_FETCH_FROM_CTX(context->ts);
 
 	do {
-		CURLMsg *msg = curl_multi_info_read(curl->handle, &remaining);
+		CURLMsg *msg = curl_multi_info_read(curl->handle->multi, &remaining);
 
 		if (msg && CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
@@ -721,7 +743,7 @@ static void php_http_curlm_timeout_callback(int socket, short action, void *even
 		(void) socket;
 		(void) action;
 
-		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle, CURL_SOCKET_TIMEOUT, 0, &curl->unfinished)));
+		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle->multi, CURL_SOCKET_TIMEOUT, 0, &curl->unfinished)));
 
 		if (CURLM_OK != rc) {
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s",  curl_multi_strerror(rc));
@@ -743,7 +765,7 @@ static void php_http_curlm_event_callback(int socket, short action, void *event_
 		CURLMcode rc = CURLM_OK;
 		TSRMLS_FETCH_FROM_CTX(context->ts);
 
-		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle, socket, etoca(action), &curl->unfinished)));
+		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle->multi, socket, etoca(action), &curl->unfinished)));
 
 		if (CURLM_OK != rc) {
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s", curl_multi_strerror(rc));
@@ -774,7 +796,7 @@ static int php_http_curlm_socket_callback(CURL *easy, curl_socket_t sock, int ac
 		if (!ev) {
 			ev = ecalloc(1, sizeof(php_http_curlm_event_t));
 			ev->context = context;
-			curl_multi_assign(curl->handle, sock, ev);
+			curl_multi_assign(curl->handle->multi, sock, ev);
 		} else {
 			event_del(&ev->evnt);
 		}
@@ -875,6 +897,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_cookiestore(php_http_option_t 
 	) {
 		return FAILURE;
 	}
+
 	return SUCCESS;
 }
 
@@ -1640,7 +1663,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_
 {
 	php_http_client_t *client = userdata;
 	php_http_client_curl_t *curl = client->ctx;
-	CURLM *ch = curl->handle;
+	CURLM *ch = curl->handle->multi;
 	HashTable tmp_ht;
 	char **bl = NULL;
 	TSRMLS_FETCH_FROM_CTX(client->ts);
@@ -1691,15 +1714,15 @@ static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h
 		if (!curl->timeout) {
 			curl->timeout = ecalloc(1, sizeof(struct event));
 		}
-		curl_multi_setopt(curl->handle, CURLMOPT_SOCKETDATA, h);
-		curl_multi_setopt(curl->handle, CURLMOPT_SOCKETFUNCTION, php_http_curlm_socket_callback);
-		curl_multi_setopt(curl->handle, CURLMOPT_TIMERDATA, h);
-		curl_multi_setopt(curl->handle, CURLMOPT_TIMERFUNCTION, php_http_curlm_timer_callback);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETDATA, h);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETFUNCTION, php_http_curlm_socket_callback);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERDATA, h);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERFUNCTION, php_http_curlm_timer_callback);
 	} else {
-		curl_multi_setopt(curl->handle, CURLMOPT_SOCKETDATA, NULL);
-		curl_multi_setopt(curl->handle, CURLMOPT_SOCKETFUNCTION, NULL);
-		curl_multi_setopt(curl->handle, CURLMOPT_TIMERDATA, NULL);
-		curl_multi_setopt(curl->handle, CURLMOPT_TIMERFUNCTION, NULL);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETDATA, NULL);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETFUNCTION, NULL);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERDATA, NULL);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERFUNCTION, NULL);
 	}
 
 	return SUCCESS;
@@ -1770,7 +1793,7 @@ static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *
 {
 	php_http_client_t *client = userdata;
 	php_http_client_curl_t *curl = client->ctx;
-	CURLM *ch = curl->handle;
+	CURLM *ch = curl->handle->multi;
 	zval *orig = val;
 	CURLMcode rc = CURLM_UNKNOWN_OPTION;
 	ZEND_RESULT_CODE rv = SUCCESS;
@@ -1873,11 +1896,12 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_reset(php_http_client_curl_
 static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_http_client_t *h, php_resource_factory_t *rf)
 {
 	void *handle;
+	php_http_client_curl_t *curl = h->ctx;
 	php_http_client_curl_handler_t *handler;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (!(handle = php_resource_factory_handle_ctor(rf, NULL TSRMLS_CC))) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to initialize curl handle");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to initialize curl handle->multi");
 		return NULL;
 	}
 
@@ -1908,12 +1932,13 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, php_http_curle_xferinfo_callback);
 	curl_easy_setopt(handle, CURLOPT_XFERINFODATA, handler);
 #else
-	curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, php_http_curle_progress_callback);
-	curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, handler);
+	curl_easy_setopt(handle->multi, CURLOPT_PROGRESSFUNCTION, php_http_curle_progress_callback);
+	curl_easy_setopt(handle->multi, CURLOPT_PROGRESSDATA, handler);
 #endif
 	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, handler);
 	curl_easy_setopt(handle, CURLOPT_WRITEDATA, handler);
 	curl_easy_setopt(handle, CURLOPT_HEADERDATA, handler);
+	curl_easy_setopt(handle, CURLOPT_SHARE, curl->handle->share);
 
 	php_http_client_curl_handler_reset(handler);
 
@@ -2036,10 +2061,12 @@ static void php_http_client_curl_handler_clear(php_http_client_curl_handler_t *h
 #if PHP_HTTP_CURL_VERSION(7,32,0)
 	curl_easy_setopt(handler->handle, CURLOPT_XFERINFOFUNCTION, NULL);
 #else
-	curl_easy_setopt(handler->handle, CURLOPT_PROGRESSFUNCTION, NULL);
+	curl_easy_setopt(handler->handle->multi, CURLOPT_PROGRESSFUNCTION, NULL);
 #endif
 	curl_easy_setopt(handler->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(handler->handle, CURLOPT_DEBUGFUNCTION, NULL);
+	curl_easy_setopt(handler->handle, CURLOPT_COOKIELIST, "FLUSH");
+	curl_easy_setopt(handler->handle, CURLOPT_SHARE, NULL);
 }
 
 static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *handler)
@@ -2071,7 +2098,7 @@ static php_http_client_t *php_http_client_curl_init(php_http_client_t *h, void *
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	if (!handle && !(handle = php_resource_factory_handle_ctor(h->rf, NULL TSRMLS_CC))) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to initialize curl handle");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to initialize curl handle->multi");
 		return NULL;
 	}
 
@@ -2137,6 +2164,7 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 		size_t id_len;
 		int port = url->port ? url->port : 80;
 		zval **zport;
+		php_persistent_handle_factory_t *phf = h->rf->data;
 
 		if (SUCCESS == zend_hash_find(enqueue->options, ZEND_STRS("port"), (void *) &zport)) {
 			zval *zcpy = php_http_ztyp(IS_LONG, *zport);
@@ -2147,7 +2175,7 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 			zval_ptr_dtor(&zcpy);
 		}
 
-		id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(url->host), port);
+		id_len = spprintf(&id_str, 0, "%.*s:%s:%d", (int) phf->ident.len, phf->ident.str, STR_PTR(url->host), port);
 		pf = php_persistent_handle_concede(NULL, ZEND_STRL("http\\Client\\Curl\\Request"), id_str, id_len, NULL, NULL TSRMLS_CC);
 		efree(id_str);
 	}
@@ -2189,21 +2217,22 @@ static ZEND_RESULT_CODE php_http_client_curl_enqueue(php_http_client_t *h, php_h
 	enqueue->opaque = handler;
 	enqueue->dtor = queue_dtor;
 
-	if (CURLM_OK == (rs = curl_multi_add_handle(curl->handle, handler->handle))) {
-		zend_llist_add_element(&h->requests, enqueue);
-		++curl->unfinished;
-
-		if (h->callback.progress.func && SUCCESS == php_http_client_getopt(h, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, enqueue->request, &progress)) {
-			progress->info = "start";
-			h->callback.progress.func(h->callback.progress.arg, h, &handler->queue, progress);
-			progress->started = 1;
-		}
-
-		return SUCCESS;
-	} else {
+	if (CURLM_OK != (rs = curl_multi_add_handle(curl->handle->multi, handler->handle))) {
+		php_http_client_curl_handler_dtor(handler);
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not enqueue request: %s", curl_multi_strerror(rs));
 		return FAILURE;
 	}
+
+	zend_llist_add_element(&h->requests, enqueue);
+	++curl->unfinished;
+
+	if (h->callback.progress.func && SUCCESS == php_http_client_getopt(h, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, enqueue->request, &progress)) {
+		progress->info = "start";
+		h->callback.progress.func(h->callback.progress.arg, h, &handler->queue, progress);
+		progress->started = 1;
+	}
+
+	return SUCCESS;
 }
 
 static ZEND_RESULT_CODE php_http_client_curl_dequeue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
@@ -2214,7 +2243,7 @@ static ZEND_RESULT_CODE php_http_client_curl_dequeue(php_http_client_t *h, php_h
 	TSRMLS_FETCH_FROM_CTX(h->ts);
 
 	php_http_client_curl_handler_clear(handler);
-	if (CURLM_OK == (rs = curl_multi_remove_handle(curl->handle, handler->handle))) {
+	if (CURLM_OK == (rs = curl_multi_remove_handle(curl->handle->multi, handler->handle))) {
 		zend_llist_del_element(&h->requests, handler->handle, (int (*)(void *, void *)) compare_queue);
 		return SUCCESS;
 	} else {
@@ -2236,7 +2265,7 @@ static void php_http_client_curl_reset(php_http_client_t *h)
 
 static inline void php_http_client_curl_get_timeout(php_http_client_curl_t *curl, long max_tout, struct timeval *timeout)
 {
-	if ((CURLM_OK == curl_multi_timeout(curl->handle, &max_tout)) && (max_tout > 0)) {
+	if ((CURLM_OK == curl_multi_timeout(curl->handle->multi, &max_tout)) && (max_tout > 0)) {
 		timeout->tv_sec = max_tout / 1000;
 		timeout->tv_usec = (max_tout % 1000) * 1000;
 	} else {
@@ -2279,7 +2308,7 @@ static ZEND_RESULT_CODE php_http_client_curl_wait(php_http_client_t *h, struct t
 	FD_ZERO(&W);
 	FD_ZERO(&E);
 
-	if (CURLM_OK == curl_multi_fdset(curl->handle, &R, &W, &E, &MAX)) {
+	if (CURLM_OK == curl_multi_fdset(curl->handle->multi, &R, &W, &E, &MAX)) {
 		if (custom_timeout && timerisset(custom_timeout)) {
 			timeout = *custom_timeout;
 		} else {
@@ -2305,7 +2334,7 @@ static int php_http_client_curl_once(php_http_client_t *h)
 		event_base_loop(curl->evbase, EVLOOP_NONBLOCK);
 	} else
 #endif
-	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle, &curl->unfinished));
+	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle->multi, &curl->unfinished));
 
 	php_http_curlm_responsehandler(h);
 
@@ -2364,7 +2393,7 @@ static ZEND_RESULT_CODE php_http_client_curl_setopt(php_http_client_t *h, php_ht
 			break;
 
 		case PHP_HTTP_CLIENT_OPT_ENABLE_PIPELINING:
-			if (CURLM_OK != curl_multi_setopt(curl->handle, CURLMOPT_PIPELINING, (long) *((zend_bool *) arg))) {
+			if (CURLM_OK != curl_multi_setopt(curl->handle->multi, CURLMOPT_PIPELINING, (long) *((zend_bool *) arg))) {
 				return FAILURE;
 			}
 			break;
