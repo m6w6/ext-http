@@ -2504,6 +2504,7 @@ php_http_client_ops_t *php_http_client_curl_get_ops(void)
 
 PHP_MINIT_FUNCTION(http_client_curl)
 {
+	curl_version_info_data *info;
 	php_http_options_t *options;
 	php_http_client_driver_t driver = {
 		ZEND_STRL("curl"),
@@ -2532,6 +2533,62 @@ PHP_MINIT_FUNCTION(http_client_curl)
 		options->setter = php_http_curlm_set_option;
 
 		php_http_curlm_options_init(options TSRMLS_CC);
+	}
+
+	if ((info = curl_version_info(CURLVERSION_NOW))) {
+		/*
+		 * Feature constants
+		 */
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "FEATURES", info->features, CONST_CS|CONST_PERSISTENT);
+
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "IPV6", CURL_VERSION_IPV6, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "KERBEROS4", CURL_VERSION_KERBEROS4, CONST_CS|CONST_PERSISTENT);
+#if PHP_HTTP_CURL_VERSION(7,40,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "KERBEROS5", CURL_VERSION_KERBEROS5, CONST_CS|CONST_PERSISTENT);
+#endif
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "SSL", CURL_VERSION_SSL, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "LIBZ", CURL_VERSION_LIBZ, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "NTLM", CURL_VERSION_NTLM, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "GSSNEGOTIATE", CURL_VERSION_GSSNEGOTIATE, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "ASYNCHDNS", CURL_VERSION_ASYNCHDNS, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "SPNEGO", CURL_VERSION_SPNEGO, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "LARGEFILE", CURL_VERSION_LARGEFILE, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "IDN", CURL_VERSION_IDN, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "SSPI", CURL_VERSION_SSPI, CONST_CS|CONST_PERSISTENT);
+#if PHP_HTTP_CURL_VERSION(7,38,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "GSSAPI", CURL_VERSION_GSSAPI, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,21,4)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "TLSAUTH_SRP", CURL_VERSION_TLSAUTH_SRP, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,22,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "NTLM_WB", CURL_VERSION_NTLM_WB, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,33,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "HTTP2", CURL_VERSION_HTTP2, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,40,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "UNIX_SOCKETS", CURL_VERSION_UNIX_SOCKETS, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,47,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "PSL", CURL_VERSION_PSL, CONST_CS|CONST_PERSISTENT);
+#endif
+
+		/*
+		 * Version constants
+		 */
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl", "VERSIONS", curl_version(), CONST_CS|CONST_PERSISTENT);
+#if CURLVERSION_NOW >= 0
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "CURL", (char *) info->version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "SSL", (char *) info->ssl_version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "LIBZ", (char *) info->libz_version, CONST_CS|CONST_PERSISTENT);
+# if CURLVERSION_NOW >= 1
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "ARES", (char *) info->ares, CONST_CS|CONST_PERSISTENT);
+#  if CURLVERSION_NOW >= 2
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "IDN", (char *) info->libidn, CONST_CS|CONST_PERSISTENT);
+#  endif
+# endif
+#endif
 	}
 
 	/*
