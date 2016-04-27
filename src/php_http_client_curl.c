@@ -1522,7 +1522,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 #ifdef PHP_HTTP_CURL_CAPATH
-			ZVAL_STRING(&opt->defval, PHP_HTTP_CURL_CAPATH, 0);
+			ZVAL_PSTRING(&opt->defval, PHP_HTTP_CURL_CAPATH);
 #endif
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("random_file"), CURLOPT_RANDOM_FILE, IS_STRING))) {
