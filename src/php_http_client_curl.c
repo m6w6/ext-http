@@ -1261,7 +1261,9 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 	}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,43,0)
-	if ((opt = php_http_option_register(registry, ZEND_STRL("proxy_service_name"), CURLOPT_PROXY_SERVICE_NAME, IS_STRING))) {
+	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_GSSAPI)
+	&& (opt = php_http_option_register(registry, ZEND_STRL("proxy_service_name"), CURLOPT_PROXY_SERVICE_NAME, IS_STRING))
+	) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
 #endif
