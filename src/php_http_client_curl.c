@@ -1932,8 +1932,8 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, php_http_curle_xferinfo_callback);
 	curl_easy_setopt(handle, CURLOPT_XFERINFODATA, handler);
 #else
-	curl_easy_setopt(handle->multi, CURLOPT_PROGRESSFUNCTION, php_http_curle_progress_callback);
-	curl_easy_setopt(handle->multi, CURLOPT_PROGRESSDATA, handler);
+	curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, php_http_curle_progress_callback);
+	curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, handler);
 #endif
 	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, handler);
 	curl_easy_setopt(handle, CURLOPT_WRITEDATA, handler);
@@ -2061,7 +2061,7 @@ static void php_http_client_curl_handler_clear(php_http_client_curl_handler_t *h
 #if PHP_HTTP_CURL_VERSION(7,32,0)
 	curl_easy_setopt(handler->handle, CURLOPT_XFERINFOFUNCTION, NULL);
 #else
-	curl_easy_setopt(handler->handle->multi, CURLOPT_PROGRESSFUNCTION, NULL);
+	curl_easy_setopt(handler->handle, CURLOPT_PROGRESSFUNCTION, NULL);
 #endif
 	curl_easy_setopt(handler->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(handler->handle, CURLOPT_DEBUGFUNCTION, NULL);
