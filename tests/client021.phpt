@@ -1,12 +1,12 @@
 --TEST--
 client cookies
 --SKIPIF--
-<?php 
+<?php
 include "skipif.inc";
 skip_client_test();
 ?>
 --FILE--
-<?php 
+<?php
 
 include "helper/server.inc";
 
@@ -41,7 +41,7 @@ server("cookie.inc", function($port) use($request, $tmpfile) {
 	echo $client->requeue($request)->send()->getResponse();
 #dump($tmpfile);
 });
-	
+
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port, "cookiesession" => true));
 	$client = new http\Client;
@@ -52,7 +52,7 @@ dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
 dump($tmpfile);
 });
-	
+
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port, "cookiesession" => false));
 	$client = new http\Client;
@@ -63,7 +63,7 @@ dump($tmpfile);
 	echo $client->requeue($request)->send()->getResponse();
 dump($tmpfile);
 });
-	
+
 unlink($tmpfile);
 
 ?>
@@ -119,3 +119,5 @@ Set-Cookie: counter=4;
 Etag: ""
 X-Original-Transfer-Encoding: chunked
 ===DONE===
+--XFAIL--
+TBD
