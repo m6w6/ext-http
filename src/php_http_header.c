@@ -39,6 +39,18 @@ ZEND_RESULT_CODE php_http_header_parse(const char *header, size_t length, HashTa
 void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg)
 {
 	php_http_arrkey_t key;
+	zval *header;
+
+	ZEND_HASH_FOREACH_KEY_VAL(headers, key.h, key.key, header)
+	{
+		if (key.key) {
+			php_http_header_to_callback_ex(key.key->val, header, crlf, cb, cb_arg);
+		}
+	}
+	ZEND_HASH_FOREACH_END();
+/*
+<<<<<<< HEAD
+	php_http_arrkey_t key;
 	zval *header, *single_header;
 
 	ZEND_HASH_FOREACH_KEY_VAL(headers, key.h, key.key, header)
@@ -73,14 +85,49 @@ void php_http_header_to_callback(HashTable *headers, zend_bool crlf, php_http_pa
 				cb(cb_arg, crlf ? "%s: %s" PHP_HTTP_CRLF : "%s: %s", key.key->val, zs->val);
 				zend_string_release(zs);
 			}
-		}
-	}
-	ZEND_HASH_FOREACH_END();
+=======
+>>>>>>> 343738ad56eb70017704fdac57cf0d74da3d0f2e
+*/
 }
 
 void php_http_header_to_string(php_http_buffer_t *str, HashTable *headers)
 {
 	php_http_header_to_callback(headers, 1, (php_http_pass_format_callback_t) php_http_buffer_appendf, str);
+}
+
+void php_http_header_to_callback_ex(const char *key, zval *val, zend_bool crlf, php_http_pass_format_callback_t cb, void *cb_arg)
+{
+	zval *aval;
+	zend_string *str;
+
+	switch (Z_TYPE_P(val)) {
+	case IS_ARRAY:
+		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(val), aval)
+		{
+			php_http_header_to_callback_ex(key, aval, crlf, cb, cb_arg);
+		}
+		ZEND_HASH_FOREACH_END();
+		break;
+
+	case IS_TRUE:
+		cb(cb_arg, "%s: true%s", key, crlf ? PHP_HTTP_CRLF:"");
+		break;
+
+	case IS_FALSE:
+		cb(cb_arg, "%s: false%s", key, crlf ? PHP_HTTP_CRLF:"");
+		break;
+
+	default:
+		str = zval_get_string(val);
+		cb(cb_arg, "%s: %s%s", key, str->val, crlf ? PHP_HTTP_CRLF:"");
+		zend_string_release(str);
+		break;
+	}
+}
+
+void php_http_header_to_string_ex(php_http_buffer_t *str, const char *key, zval *val)
+{
+	php_http_header_to_callback_ex(key, val, 1, (php_http_pass_format_callback_t) php_http_buffer_appendf, str);
 }
 
 zend_string *php_http_header_value_array_to_string(zval *header)

@@ -17,6 +17,7 @@
 
 #include <curl/curl.h>
 #define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
+#define PHP_HTTP_CURL_FEATURE(f) (curl_version_info(CURLVERSION_NOW)->features & (f))
 
 PHP_MINIT_FUNCTION(http_curl);
 PHP_MSHUTDOWN_FUNCTION(http_curl);

@@ -409,19 +409,44 @@ dnl ----
 
 			dnl end compile tests
 
-			AC_MSG_CHECKING([for bundled SSL CA info])
-			CURL_CAINFO=
-			for i in `$CURL_CONFIG --ca` "/etc/ssl/certs/ca-certificates.crt" "/etc/ssl/certs/ca-bundle.crt"; do
-				if test -f "$i"; then
-					CURL_CAINFO="$i"
-					break
+			AC_MSG_CHECKING([for default SSL CA info/path])
+			CURL_CA_PATH=
+			CURL_CA_INFO=
+			CURL_CONFIG_CA=$($CURL_CONFIG --ca)
+			if test -z "$CURL_CONFIG_CA"; then
+				CURL_CONFIG_CA=$($CURL_CONFIG --configure  | $EGREP -o -- "--with-ca@<:@^'@:>@*" | $SED 's/.*=//')
+			fi
+			for i in \
+				"$CURL_CONFIG_CA" \
+				/etc/ssl/certs \
+				/etc/ssl/certs/ca-bundle.crt \
+				/etc/ssl/certs/ca-certificates.crt \
+				/etc/pki/tls/certs/ca-bundle.crt \
+				/etc/pki/tls/certs/ca-bundle.trust.crt \
+				/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem \
+				/System/Library/OpenSSL
+			do
+				if test -z "$CURL_CA_PATH" && test -d "$i"; then
+					# check if it's actually a hashed directory
+					if ls "$i"/@<:@0-9a-f@:>@@<:@0-9a-f@:>@@<:@0-9a-f@:>@@<:@0-9a-f@:>@@<:@0-9a-f@:>@@<:@0-9a-f@:>@@<:@0-9a-f@:>@@<:@0-9a-f@:>@.0 >/dev/null 2>&1; then
+						CURL_CA_PATH="$i"
+					fi
+				elif test -z "$CURL_CA_INFO" && test -f "$i"; then
+					CURL_CA_INFO="$i"
 				fi
 			done
-			if test "x$CURL_CAINFO" = "x"; then
-				AC_MSG_RESULT([not found])
+			if test -n "$CURL_CA_PATH" && test -n "$CURL_CA_INFO"; then
+				AC_MSG_RESULT([path:$CURL_CA_PATH, info:$CURL_CA_INFO])
+				AC_DEFINE_UNQUOTED([PHP_HTTP_CURL_CAPATH], ["$CURL_CA_PATH"], [path to default SSL CA path])
+				AC_DEFINE_UNQUOTED([PHP_HTTP_CURL_CAINFO], ["$CURL_CA_INFO"], [path to default SSL CA info])
+			elif test -n "$CURL_CA_INFO"; then
+				AC_MSG_RESULT([info:$CURL_CA_INFO])
+				AC_DEFINE_UNQUOTED([PHP_HTTP_CURL_CAINFO], ["$CURL_CA_INFO"], [path to default SSL CA info])
+			elif test -n "$CURL_CA_PATH"; then
+				AC_MSG_RESULT([path:$CURL_CA_PATH])
+				AC_DEFINE_UNQUOTED([PHP_HTTP_CURL_CAPATH], ["$CURL_CA_PATH"], [path to default SSL CA path])
 			else
-				AC_MSG_RESULT([$CURL_CAINFO])
-				AC_DEFINE_UNQUOTED([PHP_HTTP_CURL_CAINFO], ["$CURL_CAINFO"], [path to bundled SSL CA info])
+				AC_MSG_RESULT([none])
 			fi
 
 			PHP_ADD_INCLUDE($CURL_DIR/include)

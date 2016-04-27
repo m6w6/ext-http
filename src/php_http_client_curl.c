@@ -43,8 +43,13 @@
 #	include <gnutls.h>
 #endif
 
+typedef struct php_http_client_curl_handle {
+	CURLM *multi;
+	CURLSH *share;
+} php_http_client_curl_handle_t;
+
 typedef struct php_http_client_curl {
-	CURLM *handle;
+	php_http_client_curl_handle_t *handle;
 
 	int unfinished;  /* int because of curl_multi_perform() */
 
@@ -158,12 +163,29 @@ static php_resource_factory_ops_t php_http_curle_resource_factory_ops = {
 
 static void *php_http_curlm_ctor(void *opaque, void *init_arg)
 {
-	return curl_multi_init();
+	php_http_client_curl_handle_t *curl = calloc(1, sizeof(*curl));
+
+	if (!(curl->multi = curl_multi_init())) {
+		free(curl);
+		return NULL;
+	}
+	if (!(curl->share = curl_share_init())) {
+		curl_multi_cleanup(curl->multi);
+		free(curl);
+		return NULL;
+	}
+	curl_share_setopt(curl->share, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
+	curl_share_setopt(curl->share, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
+	return curl;
 }
 
 static void php_http_curlm_dtor(void *opaque, void *handle)
 {
-	curl_multi_cleanup(handle);
+	php_http_client_curl_handle_t *curl = handle;
+
+	curl_share_cleanup(curl->share);
+	curl_multi_cleanup(curl->multi);
+	free(handle);
 }
 
 static php_resource_factory_ops_t php_http_curlm_resource_factory_ops = {
@@ -667,7 +689,7 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 	php_http_client_curl_t *curl = context->ctx;
 
 	do {
-		CURLMsg *msg = curl_multi_info_read(curl->handle, &remaining);
+		CURLMsg *msg = curl_multi_info_read(curl->handle->multi, &remaining);
 
 		if (msg && CURLMSG_DONE == msg->msg) {
 			if (CURLE_OK != msg->data.result) {
@@ -749,7 +771,7 @@ static void php_http_curlm_timeout_callback(int socket, short action, void *even
 		(void) socket;
 		(void) action;
 
-		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle, CURL_SOCKET_TIMEOUT, 0, &curl->unfinished)));
+		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle->multi, CURL_SOCKET_TIMEOUT, 0, &curl->unfinished)));
 
 		if (CURLM_OK != rc) {
 			php_error_docref(NULL, E_WARNING, "%s",  curl_multi_strerror(rc));
@@ -770,7 +792,7 @@ static void php_http_curlm_event_callback(int socket, short action, void *event_
 	if (curl->useevents) {
 		CURLMcode rc = CURLM_OK;
 
-		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle, socket, etoca(action), &curl->unfinished)));
+		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle->multi, socket, etoca(action), &curl->unfinished)));
 
 		if (CURLM_OK != rc) {
 			php_error_docref(NULL, E_WARNING, "%s", curl_multi_strerror(rc));
@@ -800,7 +822,7 @@ static int php_http_curlm_socket_callback(CURL *easy, curl_socket_t sock, int ac
 		if (!ev) {
 			ev = ecalloc(1, sizeof(php_http_curlm_event_t));
 			ev->context = context;
-			curl_multi_assign(curl->handle, sock, ev);
+			curl_multi_assign(curl->handle->multi, sock, ev);
 		} else {
 			event_del(&ev->evnt);
 		}
@@ -901,6 +923,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_cookiestore(php_http_option_t 
 	) {
 		return FAILURE;
 	}
+
 	return SUCCESS;
 }
 
@@ -1234,9 +1257,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 #endif
 
 	/* proxy */
-	if ((opt = php_http_option_register(registry, ZEND_STRL("proxyhost"), CURLOPT_PROXY, IS_STRING))) {
-		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-	}
+	php_http_option_register(registry, ZEND_STRL("proxyhost"), CURLOPT_PROXY, IS_STRING);
 	php_http_option_register(registry, ZEND_STRL("proxytype"), CURLOPT_PROXYTYPE, IS_LONG);
 	php_http_option_register(registry, ZEND_STRL("proxyport"), CURLOPT_PROXYPORT, IS_LONG);
 	if ((opt = php_http_option_register(registry, ZEND_STRL("proxyauth"), CURLOPT_PROXYUSERPWD, IS_STRING))) {
@@ -1256,7 +1277,9 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,43,0)
-	if ((opt = php_http_option_register(registry, ZEND_STRL("proxy_service_name"), CURLOPT_PROXY_SERVICE_NAME, IS_STRING))) {
+	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_GSSAPI)
+	&& (opt = php_http_option_register(registry, ZEND_STRL("proxy_service_name"), CURLOPT_PROXY_SERVICE_NAME, IS_STRING))
+	) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
 #endif
@@ -1498,6 +1521,9 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		if ((opt = php_http_option_register(registry, ZEND_STRL("capath"), CURLOPT_CAPATH, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+#ifdef PHP_HTTP_CURL_CAPATH
+			ZVAL_STRING(&opt->defval, PHP_HTTP_CURL_CAPATH, 0);
+#endif
 		}
 		if ((opt = php_http_option_register(registry, ZEND_STRL("random_file"), CURLOPT_RANDOM_FILE, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
@@ -1661,7 +1687,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_
 {
 	php_http_client_t *client = userdata;
 	php_http_client_curl_t *curl = client->ctx;
-	CURLM *ch = curl->handle;
+	CURLM *ch = curl->handle->multi;
 	HashTable tmp_ht;
 	char **bl = NULL;
 
@@ -1712,15 +1738,15 @@ static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h
 		if (!curl->timeout) {
 			curl->timeout = ecalloc(1, sizeof(struct event));
 		}
-		curl_multi_setopt(curl->handle, CURLMOPT_SOCKETDATA, h);
-		curl_multi_setopt(curl->handle, CURLMOPT_SOCKETFUNCTION, php_http_curlm_socket_callback);
-		curl_multi_setopt(curl->handle, CURLMOPT_TIMERDATA, h);
-		curl_multi_setopt(curl->handle, CURLMOPT_TIMERFUNCTION, php_http_curlm_timer_callback);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETDATA, h);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETFUNCTION, php_http_curlm_socket_callback);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERDATA, h);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERFUNCTION, php_http_curlm_timer_callback);
 	} else {
-		curl_multi_setopt(curl->handle, CURLMOPT_SOCKETDATA, NULL);
-		curl_multi_setopt(curl->handle, CURLMOPT_SOCKETFUNCTION, NULL);
-		curl_multi_setopt(curl->handle, CURLMOPT_TIMERDATA, NULL);
-		curl_multi_setopt(curl->handle, CURLMOPT_TIMERFUNCTION, NULL);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETDATA, NULL);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETFUNCTION, NULL);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERDATA, NULL);
+		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERFUNCTION, NULL);
 	}
 
 	return SUCCESS;
@@ -1791,7 +1817,7 @@ static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *
 {
 	php_http_client_t *client = userdata;
 	php_http_client_curl_t *curl = client->ctx;
-	CURLM *ch = curl->handle;
+	CURLM *ch = curl->handle->multi;
 	zval *orig = val;
 	CURLMcode rc = CURLM_UNKNOWN_OPTION;
 	ZEND_RESULT_CODE rv = SUCCESS;
@@ -1854,6 +1880,7 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_reset(php_http_client_curl_
 			st->cookiestore = NULL;
 		}
 		st->errorbuffer[0] = '\0';
+		st->errorcode = 0;
 	}
 
 	curl_easy_setopt(ch, CURLOPT_URL, NULL);
@@ -1897,6 +1924,7 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_reset(php_http_client_curl_
 static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_http_client_t *h, php_resource_factory_t *rf)
 {
 	void *handle;
+	php_http_client_curl_t *curl = h->ctx;
 	php_http_client_curl_handler_t *handler;
 
 	if (!(handle = php_resource_factory_handle_ctor(rf, NULL))) {
@@ -1937,6 +1965,7 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 	curl_easy_setopt(handle, CURLOPT_DEBUGDATA, handler);
 	curl_easy_setopt(handle, CURLOPT_WRITEDATA, handler);
 	curl_easy_setopt(handle, CURLOPT_HEADERDATA, handler);
+	curl_easy_setopt(handle, CURLOPT_SHARE, curl->handle->share);
 
 	php_http_client_curl_handler_reset(handler);
 
@@ -2061,6 +2090,8 @@ static void php_http_client_curl_handler_clear(php_http_client_curl_handler_t *h
 #endif
 	curl_easy_setopt(handler->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(handler->handle, CURLOPT_DEBUGFUNCTION, NULL);
+	curl_easy_setopt(handler->handle, CURLOPT_COOKIELIST, "FLUSH");
+	curl_easy_setopt(handler->handle, CURLOPT_SHARE, NULL);
 }
 
 static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *handler)
@@ -2167,6 +2198,7 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 		size_t id_len;
 		int port = url->port ? url->port : 80;
 		zval *zport;
+		php_persistent_handle_factory_t *phf = h->rf->data;
 
 		if ((zport = zend_hash_str_find(enqueue->options, ZEND_STRL("port")))) {
 			zend_long lport = zval_get_long(zport);
@@ -2176,7 +2208,7 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 			}
 		}
 
-		id_len = spprintf(&id_str, 0, "%s:%d", STR_PTR(url->host), port);
+		id_len = spprintf(&id_str, 0, "%.*s:%s:%d", (int) phf->ident->len, phf->ident->val, STR_PTR(url->host), port);
 		id = php_http_cs2zs(id_str, id_len);
 		pf = php_persistent_handle_concede(NULL, PHP_HTTP_G->client.curl.driver.request_name, id, NULL, NULL);
 		zend_string_release(id);
@@ -2218,21 +2250,22 @@ static ZEND_RESULT_CODE php_http_client_curl_enqueue(php_http_client_t *h, php_h
 	enqueue->opaque = handler;
 	enqueue->dtor = queue_dtor;
 
-	if (CURLM_OK == (rs = curl_multi_add_handle(curl->handle, handler->handle))) {
-		zend_llist_add_element(&h->requests, enqueue);
-		++curl->unfinished;
-
-		if (h->callback.progress.func && SUCCESS == php_http_client_getopt(h, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, enqueue->request, &progress)) {
-			progress->info = "start";
-			h->callback.progress.func(h->callback.progress.arg, h, &handler->queue, progress);
-			progress->started = 1;
-		}
-
-		return SUCCESS;
-	} else {
+	if (CURLM_OK != (rs = curl_multi_add_handle(curl->handle->multi, handler->handle))) {
+		php_http_client_curl_handler_dtor(handler);
 		php_error_docref(NULL, E_WARNING, "Could not enqueue request: %s", curl_multi_strerror(rs));
 		return FAILURE;
 	}
+
+	zend_llist_add_element(&h->requests, enqueue);
+	++curl->unfinished;
+
+	if (h->callback.progress.func && SUCCESS == php_http_client_getopt(h, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, enqueue->request, &progress)) {
+		progress->info = "start";
+		h->callback.progress.func(h->callback.progress.arg, h, &handler->queue, progress);
+		progress->started = 1;
+	}
+
+	return SUCCESS;
 }
 
 static ZEND_RESULT_CODE php_http_client_curl_dequeue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
@@ -2242,7 +2275,7 @@ static ZEND_RESULT_CODE php_http_client_curl_dequeue(php_http_client_t *h, php_h
 	php_http_client_curl_handler_t *handler = enqueue->opaque;
 
 	php_http_client_curl_handler_clear(handler);
-	if (CURLM_OK == (rs = curl_multi_remove_handle(curl->handle, handler->handle))) {
+	if (CURLM_OK == (rs = curl_multi_remove_handle(curl->handle->multi, handler->handle))) {
 		zend_llist_del_element(&h->requests, handler->handle, (int (*)(void *, void *)) compare_queue);
 		return SUCCESS;
 	} else {
@@ -2264,7 +2297,7 @@ static void php_http_client_curl_reset(php_http_client_t *h)
 
 static inline void php_http_client_curl_get_timeout(php_http_client_curl_t *curl, long max_tout, struct timeval *timeout)
 {
-	if ((CURLM_OK == curl_multi_timeout(curl->handle, &max_tout)) && (max_tout > 0)) {
+	if ((CURLM_OK == curl_multi_timeout(curl->handle->multi, &max_tout)) && (max_tout > 0)) {
 		timeout->tv_sec = max_tout / 1000;
 		timeout->tv_usec = (max_tout % 1000) * 1000;
 	} else {
@@ -2307,7 +2340,7 @@ static ZEND_RESULT_CODE php_http_client_curl_wait(php_http_client_t *h, struct t
 	FD_ZERO(&W);
 	FD_ZERO(&E);
 
-	if (CURLM_OK == curl_multi_fdset(curl->handle, &R, &W, &E, &MAX)) {
+	if (CURLM_OK == curl_multi_fdset(curl->handle->multi, &R, &W, &E, &MAX)) {
 		if (custom_timeout && timerisset(custom_timeout)) {
 			timeout = *custom_timeout;
 		} else {
@@ -2333,7 +2366,7 @@ static int php_http_client_curl_once(php_http_client_t *h)
 		event_base_loop(curl->evbase, EVLOOP_NONBLOCK);
 	} else
 #endif
-	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle, &curl->unfinished));
+	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle->multi, &curl->unfinished));
 
 	php_http_curlm_responsehandler(h);
 
@@ -2389,7 +2422,7 @@ static ZEND_RESULT_CODE php_http_client_curl_setopt(php_http_client_t *h, php_ht
 			break;
 
 		case PHP_HTTP_CLIENT_OPT_ENABLE_PIPELINING:
-			if (CURLM_OK != curl_multi_setopt(curl->handle, CURLMOPT_PIPELINING, (long) *((zend_bool *) arg))) {
+			if (CURLM_OK != curl_multi_setopt(curl->handle->multi, CURLMOPT_PIPELINING, (long) *((zend_bool *) arg))) {
 				return FAILURE;
 			}
 			break;
@@ -2496,6 +2529,7 @@ php_http_client_ops_t *php_http_client_curl_get_ops(void)
 
 PHP_MINIT_FUNCTION(http_client_curl)
 {
+	curl_version_info_data *info;
 	php_http_options_t *options;
 
 	PHP_HTTP_G->client.curl.driver.driver_name = zend_string_init(ZEND_STRL("curl"), 1);
@@ -2525,6 +2559,62 @@ PHP_MINIT_FUNCTION(http_client_curl)
 		options->setter = php_http_curlm_set_option;
 
 		php_http_curlm_options_init(options);
+	}
+
+	if ((info = curl_version_info(CURLVERSION_NOW))) {
+		/*
+		 * Feature constants
+		 */
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "FEATURES", info->features, CONST_CS|CONST_PERSISTENT);
+
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "IPV6", CURL_VERSION_IPV6, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "KERBEROS4", CURL_VERSION_KERBEROS4, CONST_CS|CONST_PERSISTENT);
+#if PHP_HTTP_CURL_VERSION(7,40,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "KERBEROS5", CURL_VERSION_KERBEROS5, CONST_CS|CONST_PERSISTENT);
+#endif
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "SSL", CURL_VERSION_SSL, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "LIBZ", CURL_VERSION_LIBZ, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "NTLM", CURL_VERSION_NTLM, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "GSSNEGOTIATE", CURL_VERSION_GSSNEGOTIATE, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "ASYNCHDNS", CURL_VERSION_ASYNCHDNS, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "SPNEGO", CURL_VERSION_SPNEGO, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "LARGEFILE", CURL_VERSION_LARGEFILE, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "IDN", CURL_VERSION_IDN, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "SSPI", CURL_VERSION_SSPI, CONST_CS|CONST_PERSISTENT);
+#if PHP_HTTP_CURL_VERSION(7,38,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "GSSAPI", CURL_VERSION_GSSAPI, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,21,4)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "TLSAUTH_SRP", CURL_VERSION_TLSAUTH_SRP, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,22,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "NTLM_WB", CURL_VERSION_NTLM_WB, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,33,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "HTTP2", CURL_VERSION_HTTP2, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,40,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "UNIX_SOCKETS", CURL_VERSION_UNIX_SOCKETS, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,47,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "PSL", CURL_VERSION_PSL, CONST_CS|CONST_PERSISTENT);
+#endif
+
+		/*
+		 * Version constants
+		 */
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl", "VERSIONS", curl_version(), CONST_CS|CONST_PERSISTENT);
+#if CURLVERSION_NOW >= 0
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "CURL", (char *) info->version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "SSL", (char *) info->ssl_version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "LIBZ", (char *) info->libz_version, CONST_CS|CONST_PERSISTENT);
+# if CURLVERSION_NOW >= 1
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "ARES", (char *) info->ares, CONST_CS|CONST_PERSISTENT);
+#  if CURLVERSION_NOW >= 2
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "IDN", (char *) info->libidn, CONST_CS|CONST_PERSISTENT);
+#  endif
+# endif
+#endif
 	}
 
 	/*

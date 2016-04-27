@@ -55,11 +55,12 @@ function serve($cb) {
 						stream_socket_enable_crypto($client, true, STREAM_CRYPTO_METHOD_SSLv23_SERVER);
 					}
 					try {
-						while (!feof($client)) {
+						$R = array($client);
+						while (!feof($client) && stream_select($R, $W, $E, 1, 0)) {
 							logger("serve: Handle client %d", (int) $client);
 							$cb($client);
 						}
-						logger("serve: EOF on client %d", (int) $client);
+						logger("serve: EOF/timeout on client %d", (int) $client);
 					} catch (Exception $ex) {
 						logger("serve: Exception on client %d: %s", (int) $client, $ex->getMessage());
 						/* ignore disconnect */
