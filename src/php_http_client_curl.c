@@ -1241,9 +1241,7 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 #endif
 
 	/* proxy */
-	if ((opt = php_http_option_register(registry, ZEND_STRL("proxyhost"), CURLOPT_PROXY, IS_STRING))) {
-		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-	}
+	php_http_option_register(registry, ZEND_STRL("proxyhost"), CURLOPT_PROXY, IS_STRING);
 	php_http_option_register(registry, ZEND_STRL("proxytype"), CURLOPT_PROXYTYPE, IS_LONG);
 	php_http_option_register(registry, ZEND_STRL("proxyport"), CURLOPT_PROXYPORT, IS_LONG);
 	if ((opt = php_http_option_register(registry, ZEND_STRL("proxyauth"), CURLOPT_PROXYUSERPWD, IS_STRING))) {
