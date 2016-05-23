@@ -878,6 +878,23 @@ static ZEND_RESULT_CODE php_http_curle_option_set_ssl_verifyhost(php_http_option
 	return SUCCESS;
 }
 
+static ZEND_RESULT_CODE php_http_curle_option_set_cookiesession(php_http_option_t *opt, zval *val, void *userdata)
+{
+	php_http_client_curl_handler_t *curl = userdata;
+	CURL *ch = curl->handle;
+
+	if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIESESSION, (long) Z_BVAL_P(val))) {
+		return FAILURE;
+	}
+	if (Z_BVAL_P(val)) {
+		if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIELIST, "SESS")) {
+			return FAILURE;
+		}
+	}
+
+	return SUCCESS;
+}
+
 static ZEND_RESULT_CODE php_http_curle_option_set_cookiestore(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
@@ -1419,7 +1436,9 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 	}
 
 	/* cookiesession, don't load session cookies from cookiestore */
-	php_http_option_register(registry, ZEND_STRL("cookiesession"), CURLOPT_COOKIESESSION, IS_BOOL);
+	if ((opt = php_http_option_register(registry, ZEND_STRL("cookiesession"), CURLOPT_COOKIESESSION, IS_BOOL))) {
+		opt->setter = php_http_curle_option_set_cookiesession;
+	}
 	/* cookiestore, read initial cookies from that file and store cookies back into that file */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("cookiestore"), 0, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
