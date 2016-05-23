@@ -17,6 +17,12 @@ function dump($f) {
 	readfile($f);
 }
 
+function cookies($client) {
+	foreach ($client->getResponse()->getCookies() as $cookie) {
+		echo trim($cookie), "\n";
+	}
+}
+
 $tmpfile = tempnam(sys_get_temp_dir(), "cookie.");
 $request = new http\Client\Request("GET", "http://localhost");
 $request->setOptions(array("cookiestore" => $tmpfile));
@@ -24,43 +30,43 @@ $request->setOptions(array("cookiestore" => $tmpfile));
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 #dump($tmpfile);
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 #dump($tmpfile);
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 #dump($tmpfile);
 });
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 #dump($tmpfile);
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 #dump($tmpfile);
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 #dump($tmpfile);
 });
 
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port, "cookiesession" => true));
 	$client = new http\Client;
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 dump($tmpfile);
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 dump($tmpfile);
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 dump($tmpfile);
 });
 
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port, "cookiesession" => false));
 	$client = new http\Client;
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 dump($tmpfile);
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 dump($tmpfile);
-	echo $client->requeue($request)->send()->getResponse();
+	cookies($client->requeue($request)->send());
 dump($tmpfile);
 });
 
@@ -70,54 +76,16 @@ unlink($tmpfile);
 ===DONE===
 --EXPECT--
 Test
-HTTP/1.1 200 OK
-Set-Cookie: counter=1;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=2;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=3;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=4;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=5;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=6;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=1;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=1;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=1;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=2;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=3;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
-HTTP/1.1 200 OK
-Set-Cookie: counter=4;
-Etag: ""
-X-Original-Transfer-Encoding: chunked
+counter=1;
+counter=2;
+counter=3;
+counter=4;
+counter=5;
+counter=6;
+counter=1;
+counter=1;
+counter=1;
+counter=2;
+counter=3;
+counter=4;
 ===DONE===
---XFAIL--
-TBD
