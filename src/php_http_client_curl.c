@@ -1601,7 +1601,7 @@ static ZEND_RESULT_CODE php_http_curle_set_option(php_http_option_t *opt, zval *
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
 	zval tmp;
-	CURLcode rc = CURLE_OK;
+	CURLcode rc = CURLE_UNKNOWN_OPTION;
 	ZEND_RESULT_CODE rv = SUCCESS;
 	TSRMLS_FETCH_FROM_CTX(curl->client->ts);
 
