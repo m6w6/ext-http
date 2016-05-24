@@ -1286,9 +1286,11 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 #endif
 
 #if PHP_HTTP_CURL_VERSION(7,40,0)
-	if ((opt = php_http_option_register(registry, ZEND_STRL("unix_socket_path"), CURLOPT_UNIX_SOCKET_PATH, IS_STRING))) {
-		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_UNIX_SOCKETS)) {
+		if ((opt = php_http_option_register(registry, ZEND_STRL("unix_socket_path"), CURLOPT_UNIX_SOCKET_PATH, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+		}
 	}
 #endif
 
@@ -1361,6 +1363,7 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 		Z_LVAL(opt->defval) = CURLAUTH_ANYSAFE;
 	}
 #if PHP_HTTP_CURL_VERSION(7,43,0)
+	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_SSPI) || PHP_HTTP_CURL_FEATURE(CURL_VERSION_GSSAPI))
 	if ((opt = php_http_option_register(registry, ZEND_STRL("service_name"), CURLOPT_SERVICE_NAME, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
@@ -1480,107 +1483,109 @@ static void php_http_curle_options_init(php_http_options_t *registry TSRMLS_DC)
 #endif
 
 	/* ssl */
-	if ((opt = php_http_option_register(registry, ZEND_STRL("ssl"), 0, IS_ARRAY))) {
-		registry = &opt->suboptions;
+	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_SSL)) {
+		if ((opt = php_http_option_register(registry, ZEND_STRL("ssl"), 0, IS_ARRAY))) {
+			registry = &opt->suboptions;
 
-		if ((opt = php_http_option_register(registry, ZEND_STRL("cert"), CURLOPT_SSLCERT, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			ZVAL_STRING(&opt->defval, "PEM", 0);
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("key"), CURLOPT_SSLKEY, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("keytype"), CURLOPT_SSLKEYTYPE, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			ZVAL_STRING(&opt->defval, "PEM", 0);
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("keypasswd"), CURLOPT_SSLKEYPASSWD, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-		}
-		php_http_option_register(registry, ZEND_STRL("engine"), CURLOPT_SSLENGINE, IS_STRING);
-		php_http_option_register(registry, ZEND_STRL("version"), CURLOPT_SSLVERSION, IS_LONG);
-		if ((opt = php_http_option_register(registry, ZEND_STRL("verifypeer"), CURLOPT_SSL_VERIFYPEER, IS_BOOL))) {
-			ZVAL_BOOL(&opt->defval, 1);
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("verifyhost"), CURLOPT_SSL_VERIFYHOST, IS_BOOL))) {
-			ZVAL_BOOL(&opt->defval, 1);
-			opt->setter = php_http_curle_option_set_ssl_verifyhost;
-		}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("cert"), CURLOPT_SSLCERT, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("certtype"), CURLOPT_SSLCERTTYPE, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				ZVAL_STRING(&opt->defval, "PEM", 0);
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("key"), CURLOPT_SSLKEY, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("keytype"), CURLOPT_SSLKEYTYPE, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				ZVAL_STRING(&opt->defval, "PEM", 0);
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("keypasswd"), CURLOPT_SSLKEYPASSWD, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			}
+			php_http_option_register(registry, ZEND_STRL("engine"), CURLOPT_SSLENGINE, IS_STRING);
+			php_http_option_register(registry, ZEND_STRL("version"), CURLOPT_SSLVERSION, IS_LONG);
+			if ((opt = php_http_option_register(registry, ZEND_STRL("verifypeer"), CURLOPT_SSL_VERIFYPEER, IS_BOOL))) {
+				ZVAL_BOOL(&opt->defval, 1);
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("verifyhost"), CURLOPT_SSL_VERIFYHOST, IS_BOOL))) {
+				ZVAL_BOOL(&opt->defval, 1);
+				opt->setter = php_http_curle_option_set_ssl_verifyhost;
+			}
 #if PHP_HTTP_CURL_VERSION(7,41,0) && (defined(PHP_HTTP_HAVE_OPENSSL) || defined(PHP_HTTP_HAVE_NSS) || defined(PHP_HTTP_HAVE_GNUTLS))
-		php_http_option_register(registry, ZEND_STRL("verifystatus"), CURLOPT_SSL_VERIFYSTATUS, IS_BOOL);
+			php_http_option_register(registry, ZEND_STRL("verifystatus"), CURLOPT_SSL_VERIFYSTATUS, IS_BOOL);
 #endif
-		php_http_option_register(registry, ZEND_STRL("cipher_list"), CURLOPT_SSL_CIPHER_LIST, IS_STRING);
-		if ((opt = php_http_option_register(registry, ZEND_STRL("cainfo"), CURLOPT_CAINFO, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			php_http_option_register(registry, ZEND_STRL("cipher_list"), CURLOPT_SSL_CIPHER_LIST, IS_STRING);
+			if ((opt = php_http_option_register(registry, ZEND_STRL("cainfo"), CURLOPT_CAINFO, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 #ifdef PHP_HTTP_CURL_CAINFO
-			ZVAL_STRING(&opt->defval, PHP_HTTP_CURL_CAINFO, 0);
+				ZVAL_STRING(&opt->defval, PHP_HTTP_CURL_CAINFO, 0);
 #endif
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("capath"), CURLOPT_CAPATH, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("capath"), CURLOPT_CAPATH, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 #ifdef PHP_HTTP_CURL_CAPATH
-			ZVAL_STRING(&opt->defval, PHP_HTTP_CURL_CAPATH, 0);
+				ZVAL_STRING(&opt->defval, PHP_HTTP_CURL_CAPATH, 0);
 #endif
 		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("random_file"), CURLOPT_RANDOM_FILE, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("egdsocket"), CURLOPT_EGDSOCKET, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
-		}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("random_file"), CURLOPT_RANDOM_FILE, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("egdsocket"), CURLOPT_EGDSOCKET, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
 #if PHP_HTTP_CURL_VERSION(7,19,0)
-		if ((opt = php_http_option_register(registry, ZEND_STRL("issuercert"), CURLOPT_ISSUERCERT, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
-		}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("issuercert"), CURLOPT_ISSUERCERT, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
 #	ifdef PHP_HTTP_HAVE_OPENSSL
-		if ((opt = php_http_option_register(registry, ZEND_STRL("crlfile"), CURLOPT_CRLFILE, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
-		}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("crlfile"), CURLOPT_CRLFILE, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
 #	endif
 #endif
 #if (PHP_HTTP_CURL_VERSION(7,19,1) && defined(PHP_HTTP_HAVE_OPENSSL)) || (PHP_HTTP_CURL_VERSION(7,34,0) && defined(PHP_HTTP_HAVE_NSS)) || (PHP_HTTP_CURL_VERSION(7,42,0) && defined(PHP_HTTP_HAVE_GNUTLS)) || (PHP_HTTP_CURL_VERSION(7,39,0) && defined(PHP_HTTP_HAVE_GSKIT))
-		php_http_option_register(registry, ZEND_STRL("certinfo"), CURLOPT_CERTINFO, IS_BOOL);
+			php_http_option_register(registry, ZEND_STRL("certinfo"), CURLOPT_CERTINFO, IS_BOOL);
 #endif
 #if PHP_HTTP_CURL_VERSION(7,36,0)
-		if ((opt = php_http_option_register(registry, ZEND_STRL("enable_npn"), CURLOPT_SSL_ENABLE_NPN, IS_BOOL))) {
-			ZVAL_BOOL(&opt->defval, 1);
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("enable_alpn"), CURLOPT_SSL_ENABLE_ALPN, IS_BOOL))) {
-			ZVAL_BOOL(&opt->defval, 1);
-		}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("enable_npn"), CURLOPT_SSL_ENABLE_NPN, IS_BOOL))) {
+				ZVAL_BOOL(&opt->defval, 1);
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("enable_alpn"), CURLOPT_SSL_ENABLE_ALPN, IS_BOOL))) {
+				ZVAL_BOOL(&opt->defval, 1);
+			}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,39,0)
-		/* FIXME: see http://curl.haxx.se/libcurl/c/CURLOPT_PINNEDPUBLICKEY.html#AVAILABILITY */
-		if ((opt = php_http_option_register(registry, ZEND_STRL("pinned_publickey"), CURLOPT_PINNEDPUBLICKEY, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
-		}
+			/* FIXME: see http://curl.haxx.se/libcurl/c/CURLOPT_PINNEDPUBLICKEY.html#AVAILABILITY */
+			if ((opt = php_http_option_register(registry, ZEND_STRL("pinned_publickey"), CURLOPT_PINNEDPUBLICKEY, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,21,4) && defined(PHP_HTTP_CURL_TLSAUTH_SRP)
-		if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthtype"), CURLOPT_TLSAUTH_TYPE, IS_LONG))) {
-			opt->setter = php_http_curle_option_set_ssl_tlsauthtype;
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthuser"), CURLOPT_TLSAUTH_USERNAME, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-		}
-		if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthpass"), CURLOPT_TLSAUTH_PASSWORD, IS_STRING))) {
-			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
-		}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthtype"), CURLOPT_TLSAUTH_TYPE, IS_LONG))) {
+				opt->setter = php_http_curle_option_set_ssl_tlsauthtype;
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthuser"), CURLOPT_TLSAUTH_USERNAME, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			}
+			if ((opt = php_http_option_register(registry, ZEND_STRL("tlsauthpass"), CURLOPT_TLSAUTH_PASSWORD, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,42,0) && (defined(PHP_HTTP_HAVE_NSS) || defined(PHP_HTTP_HAVE_DARWINSSL))
-		php_http_option_register(registry, ZEND_STRL("falsestart"), CURLOPT_SSL_FALSESTART, IS_BOOL);
+			php_http_option_register(registry, ZEND_STRL("falsestart"), CURLOPT_SSL_FALSESTART, IS_BOOL);
 #endif
+		}
 	}
 }
 
