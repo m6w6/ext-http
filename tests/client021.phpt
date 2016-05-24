@@ -25,27 +25,66 @@ function cookies($client) {
 
 $tmpfile = tempnam(sys_get_temp_dir(), "cookie.");
 $request = new http\Client\Request("GET", "http://localhost");
+
+server("cookie.inc", function($port) use($request, $tmpfile) {
+	$request->setOptions(array("port" => $port));
+	$client = new http\Client;
+	cookies($client->requeue($request)->send());
+dump($tmpfile);
+});
+server("cookie.inc", function($port) use($request, $tmpfile) {
+	$request->setOptions(array("port" => $port));
+	$client = new http\Client;
+	cookies($client->requeue($request)->send());
+dump($tmpfile);
+});
+server("cookie.inc", function($port) use($request, $tmpfile) {
+	$request->setOptions(array("port" => $port));
+	$client = new http\Client;
+	cookies($client->requeue($request)->send());
+dump($tmpfile);
+});
+
+server("cookie.inc", function($port) use($request, $tmpfile) {
+	$request->setOptions(array("port" => $port));
+	$client = new http\Client("curl", "test");
+	cookies($client->requeue($request)->send());
+dump($tmpfile);
+});
+server("cookie.inc", function($port) use($request, $tmpfile) {
+	$request->setOptions(array("port" => $port));
+	$client = new http\Client("curl", "test");
+	cookies($client->requeue($request)->send());
+dump($tmpfile);
+});
+server("cookie.inc", function($port) use($request, $tmpfile) {
+	$request->setOptions(array("port" => $port));
+	$client = new http\Client("curl", "test");
+	cookies($client->requeue($request)->send());
+dump($tmpfile);
+});
+
 $request->setOptions(array("cookiestore" => $tmpfile));
 
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
 	cookies($client->requeue($request)->send());
-#dump($tmpfile);
+dump($tmpfile);
 	cookies($client->requeue($request)->send());
-#dump($tmpfile);
+dump($tmpfile);
 	cookies($client->requeue($request)->send());
-#dump($tmpfile);
+dump($tmpfile);
 });
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
 	cookies($client->requeue($request)->send());
-#dump($tmpfile);
+dump($tmpfile);
 	cookies($client->requeue($request)->send());
-#dump($tmpfile);
+dump($tmpfile);
 	cookies($client->requeue($request)->send());
-#dump($tmpfile);
+dump($tmpfile);
 });
 
 server("cookie.inc", function($port) use($request, $tmpfile) {
@@ -70,12 +109,42 @@ dump($tmpfile);
 dump($tmpfile);
 });
 
+
+(new http\Client("curl", "test"))->configure(["share_cookies" => false]);
+$request->setOptions(["cookiestore" => null]);
+
+server("cookie.inc", function($port) use($request, $tmpfile) {
+	$request->setOptions(array("port" => $port));
+	$client = new http\Client("curl", "test");
+	cookies($client->requeue($request)->send());
+dump($tmpfile);
+});
+server("cookie.inc", function($port) use($request, $tmpfile) {
+	$request->setOptions(array("port" => $port));
+	$client = new http\Client("curl", "test");
+	cookies($client->requeue($request)->send());
+dump($tmpfile);
+});
+server("cookie.inc", function($port) use($request, $tmpfile) {
+	$request->setOptions(array("port" => $port));
+	$client = new http\Client("curl", "test");
+	cookies($client->requeue($request)->send());
+dump($tmpfile);
+});
+
+
 unlink($tmpfile);
 
 ?>
 ===DONE===
 --EXPECT--
 Test
+counter=1;
+counter=1;
+counter=1;
+counter=1;
+counter=2;
+counter=3;
 counter=1;
 counter=2;
 counter=3;
@@ -88,4 +157,7 @@ counter=1;
 counter=2;
 counter=3;
 counter=4;
+counter=1;
+counter=1;
+counter=1;
 ===DONE===

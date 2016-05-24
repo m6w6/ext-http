@@ -1760,6 +1760,34 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_use_eventloop(php_http_option_
 }
 #endif
 
+static ZEND_RESULT_CODE php_http_curlm_option_set_share_cookies(php_http_option_t *opt, zval *value, void *userdata)
+{
+	php_http_client_t *client = userdata;
+	php_http_client_curl_t *curl = client->ctx;
+	CURLSHcode rc;
+
+	if (Z_BVAL_P(value)) {
+		rc = curl_share_setopt(curl->handle->share, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
+	} else {
+		rc = curl_share_setopt(curl->handle->share, CURLSHOPT_UNSHARE, CURL_LOCK_DATA_COOKIE);
+	}
+	return CURLSHE_OK == rc ? SUCCESS : FAILURE;
+}
+
+static ZEND_RESULT_CODE php_http_curlm_option_set_share_ssl(php_http_option_t *opt, zval *value, void *userdata)
+{
+	php_http_client_t *client = userdata;
+	php_http_client_curl_t *curl = client->ctx;
+	CURLSHcode rc;
+
+	if (Z_BVAL_P(value)) {
+		rc = curl_share_setopt(curl->handle->share, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
+	} else {
+		rc = curl_share_setopt(curl->handle->share, CURLSHOPT_UNSHARE, CURL_LOCK_DATA_SSL_SESSION);
+	}
+	return CURLSHE_OK == rc ? SUCCESS : FAILURE;
+}
+
 static void php_http_curlm_options_init(php_http_options_t *registry TSRMLS_DC)
 {
 	php_http_option_t *opt;
@@ -1811,6 +1839,15 @@ static void php_http_curlm_options_init(php_http_options_t *registry TSRMLS_DC)
 		opt->setter = php_http_curlm_option_set_use_eventloop;
 	}
 #endif
+	/* share */
+	if ((opt = php_http_option_register(registry, ZEND_STRL("share_cookies"), 0, IS_BOOL))) {
+		opt->setter = php_http_curlm_option_set_share_cookies;
+		ZVAL_BOOL(&opt->defval, 1);
+	}
+	if ((opt = php_http_option_register(registry, ZEND_STRL("share_ssl"), 0, IS_BOOL))) {
+		opt->setter = php_http_curlm_option_set_share_ssl;
+		ZVAL_BOOL(&opt->defval, 1);
+	}
 }
 
 static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *val, void *userdata)
