@@ -1771,7 +1771,13 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_share_cookies(php_http_option_
 	} else {
 		rc = curl_share_setopt(curl->handle->share, CURLSHOPT_UNSHARE, CURL_LOCK_DATA_COOKIE);
 	}
-	return CURLSHE_OK == rc ? SUCCESS : FAILURE;
+
+	if (CURLSHE_OK != rc) {
+		TSRMLS_FETCH_FROM_CTX(client->ts);
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s (%s)", opt->name.s, curl_share_strerror(rc));
+		return FAILURE;
+	}
+	return SUCCESS;
 }
 
 static ZEND_RESULT_CODE php_http_curlm_option_set_share_ssl(php_http_option_t *opt, zval *value, void *userdata)
@@ -1785,7 +1791,13 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_share_ssl(php_http_option_t *o
 	} else {
 		rc = curl_share_setopt(curl->handle->share, CURLSHOPT_UNSHARE, CURL_LOCK_DATA_SSL_SESSION);
 	}
-	return CURLSHE_OK == rc ? SUCCESS : FAILURE;
+
+	if (CURLSHE_OK != rc) {
+		TSRMLS_FETCH_FROM_CTX(client->ts);
+		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s (%s)", opt->name.s, curl_share_strerror(rc));
+		return FAILURE;
+	}
+	return SUCCESS;
 }
 
 static void php_http_curlm_options_init(php_http_options_t *registry TSRMLS_DC)
@@ -1873,15 +1885,18 @@ static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *
 		case IS_BOOL:
 			if (CURLM_OK != (rc = curl_multi_setopt(ch, opt->option, (long) Z_BVAL_P(val)))) {
 				rv = FAILURE;
+				php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s (%s)", opt->name.s, curl_multi_strerror(rc));
 			}
 			break;
 		case IS_LONG:
 			if (CURLM_OK != (rc = curl_multi_setopt(ch, opt->option, Z_LVAL_P(val)))) {
 				rv = FAILURE;
+				php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s (%s)", opt->name.s, curl_multi_strerror(rc));
 			}
 			break;
 		default:
 			rv = FAILURE;
+			php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s", opt->name.s);
 			break;
 		}
 	}
@@ -1890,9 +1905,6 @@ static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *
 		zval_ptr_dtor(&val);
 	}
 
-	if (rv != SUCCESS) {
-		php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Could not set option %s (%s)", opt->name.s, curl_easy_strerror(rc));
-	}
 	return rv;
 }
 
