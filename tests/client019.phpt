@@ -44,7 +44,7 @@ Server on port %d
 CONNECT www.example.com:80 HTTP/1.1
 Hello: there!
 Host: www.example.com:80
-Proxy-Connection: Keep-Alive
-User-Agent: PECL_HTTP/%s PHP/%s libcurl/%s
+%r(Proxy-Connection: Keep-Alive
+)?%rUser-Agent: PECL_HTTP/%s PHP/%s libcurl/%s
 
 ===DONE===

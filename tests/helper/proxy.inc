@@ -6,8 +6,10 @@ include "server.inc";
 serve(function($client) {
 	/* this might be a proxy connect or a standard request */
 	$request = new http\Message($client, false);
-
-	if ($request->getHeader("Proxy-Connection")) {
+	
+	/* libcurl >= 7.48 does not send Proxy-Connection anymore */
+	if ($request->getHeader("Proxy-Connection")
+	||	$request->getRequestMethod() === "CONNECT") {
 		$response = new http\Env\Response;
 		$response->setEnvRequest($request);
 		$response->send($client);
