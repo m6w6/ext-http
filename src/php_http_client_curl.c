@@ -1780,6 +1780,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_share_cookies(php_http_option_
 	return SUCCESS;
 }
 
+#if PHP_HTTP_CURL_VERSION(7,23,0)
 static ZEND_RESULT_CODE php_http_curlm_option_set_share_ssl(php_http_option_t *opt, zval *value, void *userdata)
 {
 	php_http_client_t *client = userdata;
@@ -1799,6 +1800,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_share_ssl(php_http_option_t *o
 	}
 	return SUCCESS;
 }
+#endif
 
 static void php_http_curlm_options_init(php_http_options_t *registry TSRMLS_DC)
 {
@@ -1856,10 +1858,12 @@ static void php_http_curlm_options_init(php_http_options_t *registry TSRMLS_DC)
 		opt->setter = php_http_curlm_option_set_share_cookies;
 		ZVAL_BOOL(&opt->defval, 1);
 	}
+#if PHP_HTTP_CURL_VERSION(7,23,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("share_ssl"), 0, IS_BOOL))) {
 		opt->setter = php_http_curlm_option_set_share_ssl;
 		ZVAL_BOOL(&opt->defval, 1);
 	}
+#endif
 }
 
 static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *val, void *userdata)
