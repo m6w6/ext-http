@@ -1795,9 +1795,15 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_share_cookies(php_http_option_
 	} else {
 		rc = curl_share_setopt(curl->handle->share, CURLSHOPT_UNSHARE, CURL_LOCK_DATA_COOKIE);
 	}
-	return CURLSHE_OK == rc ? SUCCESS : FAILURE;
+
+	if (CURLSHE_OK != rc) {
+		php_error_docref(NULL, E_NOTICE, "Could not set option %s (%s)", opt->name->val, curl_share_strerror(rc));
+		return FAILURE;
+	}
+	return SUCCESS;
 }
 
+#if PHP_HTTP_CURL_VERSION(7,23,0)
 static ZEND_RESULT_CODE php_http_curlm_option_set_share_ssl(php_http_option_t *opt, zval *value, void *userdata)
 {
 	php_http_client_t *client = userdata;
@@ -1809,8 +1815,14 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_share_ssl(php_http_option_t *o
 	} else {
 		rc = curl_share_setopt(curl->handle->share, CURLSHOPT_UNSHARE, CURL_LOCK_DATA_SSL_SESSION);
 	}
-	return CURLSHE_OK == rc ? SUCCESS : FAILURE;
+
+	if (CURLSHE_OK != rc) {
+		php_error_docref(NULL, E_NOTICE, "Could not set option %s (%s)", opt->name->val, curl_share_strerror(rc));
+		return FAILURE;
+	}
+	return SUCCESS;
 }
+#endif
 
 static void php_http_curlm_options_init(php_http_options_t *registry)
 {
@@ -1868,10 +1880,12 @@ static void php_http_curlm_options_init(php_http_options_t *registry)
 		opt->setter = php_http_curlm_option_set_share_cookies;
 		ZVAL_TRUE(&opt->defval);
 	}
+#if PHP_HTTP_CURL_VERSION(7,23,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("share_ssl"), 0, _IS_BOOL))) {
 		opt->setter = php_http_curlm_option_set_share_ssl;
 		ZVAL_TRUE(&opt->defval);
 	}
+#endif
 }
 
 static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *val, void *userdata)
@@ -1901,15 +1915,18 @@ static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *
 		case _IS_BOOL:
 			if (CURLM_OK != (rc = curl_multi_setopt(ch, opt->option, (long) zend_is_true(val)))) {
 				rv = FAILURE;
+				php_error_docref(NULL, E_NOTICE, "Could not set option %s (%s)", opt->name->val, curl_multi_strerror(rc));
 			}
 			break;
 		case IS_LONG:
 			if (CURLM_OK != (rc = curl_multi_setopt(ch, opt->option, Z_LVAL_P(val)))) {
 				rv = FAILURE;
+				php_error_docref(NULL, E_NOTICE, "Could not set option %s (%s)", opt->name->val, curl_multi_strerror(rc));
 			}
 			break;
 		default:
 			rv = FAILURE;
+			php_error_docref(NULL, E_NOTICE, "Could not set option %s", opt->name->val);
 			break;
 		}
 	}
@@ -1918,9 +1935,6 @@ static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *
 		zval_ptr_dtor(val);
 	}
 
-	if (rv != SUCCESS) {
-		php_error_docref(NULL, E_NOTICE, "Could not set option %s (%s)", opt->name->val, curl_easy_strerror(rc));
-	}
 	return rv;
 }
 
