@@ -35,7 +35,7 @@ foreach ($env as $e) {
 before_script:
  - make -f travis/pecl/Makefile php
  - make -f travis/pecl/Makefile pecl PECL=raphf:raphf:2.0.0
- - make -f travis/pecl/Makefile pecl PECL=propro:propro:2.0.0
+ - make -f travis/pecl/Makefile pecl PECL=propro:propro:2.0.1
  - make -f travis/pecl/Makefile ext PECL=http
 
 script:
