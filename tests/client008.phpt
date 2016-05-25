@@ -1,5 +1,5 @@
 --TEST--
-client features
+client configuration
 --SKIPIF--
 <?php
 include "skipif.inc";
