@@ -1099,9 +1099,7 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 			state->buffer[state->offset++] = *ptr;
 			break;
 
-		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
-		case '+': case ',': case ';': case '=': /* sub-delims */
-		case '-': case '.': case '_': case '~': /* unreserved */
+		case '.':
 			if (port || !label) {
 				/* sort of a compromise, just ensure we don't end up
 				 * with a dot at the beginning or two consecutive dots
@@ -1116,6 +1114,21 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 			label = NULL;
 			break;
 
+		case '-':
+			if (!label) {
+				/* sort of a compromise, just ensure we don't end up
+				 * with a hyphen at the beginning
+				 */
+				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+						"Failed to parse %s; unexpected '%c' at pos %u in '%s'",
+						port ? "port" : "host",
+						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
+				return FAILURE;
+			}
+			/* no break */
+		case '_': case '~': /* unreserved */
+		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
+		case '+': case ',': case ';': case '=': /* sub-delims */
 		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
 		case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
 		case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
