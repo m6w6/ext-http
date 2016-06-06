@@ -161,6 +161,27 @@ static int apply_querystring(void *pData TSRMLS_DC)
 	return ZEND_HASH_APPLY_KEEP;
 }
 
+static int apply_querystring_filter(void *pData TSRMLS_DC)
+{
+	zval **val = pData;
+
+	switch (Z_TYPE_PP(val)) {
+	case IS_NULL:
+		return ZEND_HASH_APPLY_REMOVE;
+	case IS_ARRAY:
+	case IS_OBJECT:
+		zend_hash_apply(HASH_OF(*val), apply_querystring_filter TSRMLS_CC);
+		if (!zend_hash_num_elements(HASH_OF(*val))) {
+			return ZEND_HASH_APPLY_REMOVE;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
 ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size_t len TSRMLS_DC)
 {
 	ZEND_RESULT_CODE rv = FAILURE;
@@ -193,7 +214,7 @@ ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size
 	}
 
 	MAKE_STD_ZVAL(opts.defval);
-	ZVAL_NULL(opts.defval);
+	ZVAL_TRUE(opts.defval);
 
 	if (php_http_params_parse(ht, &opts TSRMLS_CC)) {
 		zend_hash_apply(ht, apply_querystring TSRMLS_CC);
@@ -217,7 +238,9 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 	}
 
 	/* modify qarray */
-	if (params) {
+	if (!params) {
+		zend_hash_apply(Z_ARRVAL_P(qarray), apply_querystring_filter TSRMLS_CC);
+	} else {
 		HashPosition pos;
 		HashTable *ptr;
 		php_http_array_hashkey_t key = php_http_array_hashkey_init(0);
@@ -265,7 +288,7 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 					if (Z_TYPE_PP(params_entry) == IS_ARRAY || Z_TYPE_PP(params_entry) == IS_OBJECT) {
 						entry = php_http_zsep(1, IS_ARRAY, *qarray_entry);
 						php_http_querystring_update(entry, *params_entry, NULL TSRMLS_CC);
-					} else if ((FAILURE == is_equal_function(&equal, *qarray_entry, *params_entry TSRMLS_CC)) || !Z_BVAL(equal)) {
+					} else if ((FAILURE == is_identical_function(&equal, *qarray_entry, *params_entry TSRMLS_CC)) || !Z_BVAL(equal)) {
 						Z_ADDREF_PP(params_entry);
 						entry = *params_entry;
 					}
