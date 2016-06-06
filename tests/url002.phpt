@@ -13,7 +13,7 @@ $u = "http://user:pass@www.example.com:8080/path/file.ext".
 var_dump($u === (string) new http\Url($u));
 
 $url = new http\Url($u, 
-	array("path" => "changed", "query" => "foo=&added=this"), 
+	array("path" => "changed", "query" => "bar&foo=&added=this"), 
 	http\Url::JOIN_PATH |
 	http\Url::JOIN_QUERY |
 	http\Url::STRIP_AUTH |
@@ -40,6 +40,6 @@ NULL
 string(15) "www.example.com"
 int(8080)
 string(13) "/path/changed"
-string(38) "more%5B0%5D=1&more%5B1%5D=2&added=this"
+string(47) "foo=&more%5B0%5D=1&more%5B1%5D=2&bar&added=this"
 NULL
 DONE
