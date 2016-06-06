@@ -234,11 +234,13 @@ static inline void sanitize_key(unsigned flags, char *str, size_t len, zval *zv,
 		return;
 	}
 
-	eos = &Z_STRVAL_P(zv)[Z_STRLEN_P(zv)-1];
-	if (*eos == '*') {
-		*eos = '\0';
-		*rfc5987 = 1;
-		Z_STRLEN_P(zv) -= 1;
+	if (flags & PHP_HTTP_PARAMS_RFC5987) {
+		eos = &Z_STRVAL_P(zv)[Z_STRLEN_P(zv)-1];
+		if (*eos == '*') {
+			*eos = '\0';
+			*rfc5987 = 1;
+			Z_STRLEN_P(zv) -= 1;
+		}
 	}
 
 	if (flags & PHP_HTTP_PARAMS_URLENCODED) {

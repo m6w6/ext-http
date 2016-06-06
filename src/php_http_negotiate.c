@@ -115,6 +115,7 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 		php_http_params_opts_default_get(&opts);
 		opts.input.str = estrndup(value_str, value_len);
 		opts.input.len = value_len;
+		opts.flags &= ~PHP_HTTP_PARAMS_RFC5987;
 		php_http_params_parse(&params, &opts TSRMLS_CC);
 		efree(opts.input.str);
 
