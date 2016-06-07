@@ -15,6 +15,41 @@
 
 #if PHP_HTTP_HAVE_CURL
 
+typedef struct php_http_client_curl_handle {
+	CURLM *multi;
+	CURLSH *share;
+} php_http_client_curl_handle_t;
+
+typedef struct php_http_client_curl_ops {
+	void *(*init)();
+	void (*dtor)(void **ctx_ptr);
+	ZEND_RESULT_CODE (*once)(void *ctx);
+	ZEND_RESULT_CODE (*wait)(void *ctx, struct timeval *custom_timeout);
+	ZEND_RESULT_CODE (*exec)(void *ctx);
+} php_http_client_curl_ops_t;
+
+typedef struct php_http_client_curl {
+	php_http_client_curl_handle_t *handle;
+
+	int unfinished;  /* int because of curl_multi_perform() */
+
+	void *ev_ctx;
+	php_http_client_curl_ops_t *ev_ops;
+} php_http_client_curl_t;
+
+static inline void php_http_client_curl_get_timeout(php_http_client_curl_t *curl, long max_tout, struct timeval *timeout)
+{
+	if ((CURLM_OK == curl_multi_timeout(curl->handle->multi, &max_tout)) && (max_tout > 0)) {
+		timeout->tv_sec = max_tout / 1000;
+		timeout->tv_usec = (max_tout % 1000) * 1000;
+	} else {
+		timeout->tv_sec = 0;
+		timeout->tv_usec = 1000;
+	}
+}
+
+PHP_HTTP_API void php_http_client_curl_responsehandler(php_http_client_t *client);
+
 PHP_MINIT_FUNCTION(http_client_curl);
 PHP_MSHUTDOWN_FUNCTION(http_client_curl);
 #endif /* PHP_HTTP_HAVE_CURL */
