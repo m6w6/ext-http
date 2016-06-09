@@ -52,11 +52,17 @@ static inline time_t php_http_message_body_mtime(php_http_message_body_t *b)
 
 static inline php_stream *php_http_message_body_stream(php_http_message_body_t *body)
 {
-	return body->res->ptr;
+	return body && body->res ? body->res->ptr : NULL;
+}
+
+static inline zend_resource *php_http_message_body_resource(php_http_message_body_t *body)
+{
+	return body ? body->res : NULL;
 }
 
 typedef struct php_http_message_body_object {
 	php_http_message_body_t *body;
+	zval *gc;
 	zend_object zo;
 } php_http_message_body_object_t;
 

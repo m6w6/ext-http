@@ -198,14 +198,10 @@ static php_resource_factory_ops_t php_http_curlm_resource_factory_ops = {
 
 static size_t php_http_curle_read_callback(void *data, size_t len, size_t n, void *ctx)
 {
-	php_http_message_body_t *body = ctx;
+	php_stream *s = php_http_message_body_stream(ctx);
 
-	if (body && body->res) {
-		php_stream *s = php_http_message_body_stream(body);
-
-		if (s) {
-			return php_stream_read(s, data, len * n);
-		} else abort();
+	if (s) {
+		return php_stream_read(s, data, len * n);
 	}
 	return 0;
 }

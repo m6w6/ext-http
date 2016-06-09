@@ -48,10 +48,8 @@ php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **bo
 		body->res = stream->res;
 		++GC_REFCOUNT(body->res);
 	} else {
-		stream = php_stream_temp_create(TEMP_STREAM_DEFAULT, 0xffff);
-		body->res = stream->res;
+		body->res = php_stream_temp_create(TEMP_STREAM_DEFAULT, 0xffff)->res;
 	}
-	php_stream_auto_cleanup(stream);
 
 	if (body_ptr) {
 		*body_ptr = body;
@@ -93,7 +91,6 @@ void php_http_message_body_free(php_http_message_body_t **body_ptr)
 		php_http_message_body_t *body = *body_ptr;
 
 		if (!--body->refcount) {
-			zend_list_delete(body->res);
 			PTR_FREE(body->boundary);
 			efree(body);
 		}
@@ -567,8 +564,12 @@ php_http_message_body_object_t *php_http_message_body_object_new_ex(zend_class_e
 	zend_object_std_init(&o->zo, php_http_message_body_class_entry);
 	object_properties_init(&o->zo, ce);
 
+	o->gc = emalloc(sizeof(zval));
+
 	if (body) {
 		o->body = body;
+		php_stream_to_zval(php_http_message_body_stream(o->body), o->gc);
+
 	}
 
 	o->zo.handlers = &php_http_message_body_object_handlers;
@@ -588,10 +589,34 @@ zend_object *php_http_message_body_object_clone(zval *object)
 	return &new_obj->zo;
 }
 
+static HashTable *php_http_message_body_object_get_gc(zval *object, zval **table, int *n)
+{
+	php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, object);
+	HashTable *props = Z_OBJPROP_P(object);
+	uint32_t count = zend_hash_num_elements(props);
+
+	*n = 1;
+	if (count) {
+		zval *val;
+
+		obj->gc = erealloc(obj->gc, (*n + count) * sizeof(zval));
+
+		ZEND_HASH_FOREACH_VAL(props, val)
+		{
+			ZVAL_COPY_VALUE(&obj->gc[(*n)++], val);
+		}
+		ZEND_HASH_FOREACH_END();
+	}
+	*table = obj->gc;
+
+	return NULL;
+}
+
 void php_http_message_body_object_free(zend_object *object)
 {
 	php_http_message_body_object_t *obj = PHP_HTTP_OBJ(object, NULL);
 
+	PTR_FREE(obj->gc);
 	php_http_message_body_free(&obj->body);
 	zend_object_std_dtor(object);
 }
@@ -600,6 +625,7 @@ void php_http_message_body_object_free(zend_object *object)
 	do { \
 		if (!obj->body) { \
 			obj->body = php_http_message_body_init(NULL, NULL); \
+			php_stream_to_zval(php_http_message_body_stream(obj->body), obj->gc); \
 		} \
 	} while(0)
 
@@ -621,6 +647,7 @@ PHP_METHOD(HttpMessageBody, __construct)
 			php_http_message_body_free(&obj->body);
 		}
 		obj->body = php_http_message_body_init(NULL, stream);
+		php_stream_to_zval(stream, obj->gc);
 	}
 }
 
@@ -655,6 +682,7 @@ PHP_METHOD(HttpMessageBody, unserialize)
 		php_stream *s = php_stream_memory_open(0, us_str, us_len);
 
 		obj->body = php_http_message_body_init(NULL, s);
+		php_stream_to_zval(s, obj->gc);
 	}
 }
 
@@ -712,8 +740,8 @@ PHP_METHOD(HttpMessageBody, getResource)
 
 		PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
 
-		++GC_REFCOUNT(obj->body->res);
-		RETVAL_RES(obj->body->res);
+		php_stream_to_zval(php_http_message_body_stream(obj->body), return_value);
+		Z_ADDREF_P(return_value);
 	}
 }
 
@@ -891,6 +919,7 @@ PHP_MINIT_FUNCTION(http_message_body)
 	php_http_message_body_object_handlers.offset = XtOffsetOf(php_http_message_body_object_t, zo);
 	php_http_message_body_object_handlers.clone_obj = php_http_message_body_object_clone;
 	php_http_message_body_object_handlers.free_obj = php_http_message_body_object_free;
+	php_http_message_body_object_handlers.get_gc = php_http_message_body_object_get_gc;
 	zend_class_implements(php_http_message_body_class_entry, 1, zend_ce_serializable);
 
 	return SUCCESS;

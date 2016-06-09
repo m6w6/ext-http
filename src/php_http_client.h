@@ -118,6 +118,7 @@ typedef struct php_http_client_object {
 	php_http_object_method_t *update;
 	php_http_object_method_t notify;
 	long iterator;
+	zval *gc;
 	zend_object zo;
 } php_http_client_object_t;
 

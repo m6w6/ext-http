@@ -330,6 +330,8 @@ void php_http_client_object_free(zend_object *object)
 {
 	php_http_client_object_t *o = PHP_HTTP_OBJ(object, NULL);
 
+	PTR_FREE(o->gc);
+
 	php_http_client_free(&o->client);
 	php_http_object_method_dtor(&o->notify);
 	php_http_object_method_free(&o->update);
@@ -354,6 +356,37 @@ php_http_client_object_t *php_http_client_object_new_ex(zend_class_entry *ce, ph
 zend_object *php_http_client_object_new(zend_class_entry *ce)
 {
 	return &php_http_client_object_new_ex(ce, NULL)->zo;
+}
+
+static HashTable *php_http_client_object_get_gc(zval *object, zval **table, int *n)
+{
+	php_http_client_object_t *obj = PHP_HTTP_OBJ(NULL, object);
+	zend_llist_element *el = NULL;
+	HashTable *props = Z_OBJPROP_P(object);
+	uint32_t count = zend_hash_num_elements(props) + zend_llist_count(&obj->client->responses) + zend_llist_count(&obj->client->requests);
+	zval *val;
+
+	*n = 0;
+	*table = obj->gc = erealloc(obj->gc, sizeof(zval) * count);
+
+	for (el = obj->client->responses.head; el; el = el->next) {
+		php_http_message_object_t *response_obj = *(php_http_message_object_t **) el->data;
+		ZVAL_OBJ(&obj->gc[(*n)++], &response_obj->zo);
+	}
+
+	for (el = obj->client->requests.head; el; el = el->next) {
+		php_http_client_enqueue_t *q = *(php_http_client_enqueue_t **) el->data;
+		php_http_message_object_t *request_obj = q->opaque; /* FIXME */
+		ZVAL_OBJ(&obj->gc[(*n)++], &request_obj->zo);
+	}
+
+	ZEND_HASH_FOREACH_VAL(props, val)
+	{
+		ZVAL_COPY_VALUE(&obj->gc[(*n)++], val);
+	}
+	ZEND_HASH_FOREACH_END();
+
+	return NULL;
 }
 
 static void handle_history(zval *zclient, php_http_message_t *request, php_http_message_t *response)
@@ -400,7 +433,7 @@ static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, ph
 		*response = NULL;
 
 		msg_obj = php_http_message_object_new_ex(php_http_get_client_response_class_entry(), msg);
-		ZVAL_OBJ(&zresponse, &msg_obj->zo);
+		ZVAL_OBJECT(&zresponse, &msg_obj->zo, 1);
 		ZVAL_OBJECT(&zrequest, &((php_http_message_object_t *) e->opaque)->zo, 1);
 
 		php_http_message_object_prepend(&zresponse, &zrequest, 1);
@@ -411,7 +444,6 @@ static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, ph
 		zend_update_property(php_http_get_client_response_class_entry(), &zresponse, ZEND_STRL("transferInfo"), &info);
 		zval_ptr_dtor(&info);
 
-		Z_ADDREF(zresponse);
 		zend_llist_add_element(&client->responses, &msg_obj);
 
 		if (e->closure.fci.size) {
@@ -478,7 +510,7 @@ static void response_dtor(void *data)
 {
 	php_http_message_object_t *msg_obj = *(php_http_message_object_t **) data;
 
-	zend_objects_store_del(&msg_obj->zo);
+	zend_object_release(&msg_obj->zo);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_construct, 0, 0, 0)
@@ -579,14 +611,14 @@ static void msg_queue_dtor(php_http_client_enqueue_t *e)
 {
 	php_http_message_object_t *msg_obj = e->opaque;
 
-	zend_objects_store_del(&msg_obj->zo);
+	zend_object_release(&msg_obj->zo);
 	zend_hash_destroy(e->options);
 	FREE_HASHTABLE(e->options);
 
 	if (e->closure.fci.size) {
 		zval_ptr_dtor(&e->closure.fci.function_name);
 		if (e->closure.fci.object) {
-			zend_objects_store_del(e->closure.fci.object);
+			zend_object_release(e->closure.fci.object);
 		}
 	}
 }
@@ -1231,6 +1263,7 @@ PHP_MINIT_FUNCTION(http_client)
 	php_http_client_object_handlers.offset = XtOffsetOf(php_http_client_object_t, zo);
 	php_http_client_object_handlers.free_obj = php_http_client_object_free;
 	php_http_client_object_handlers.clone_obj = NULL;
+	php_http_client_object_handlers.get_gc = php_http_client_object_get_gc;
 	zend_declare_property_null(php_http_client_class_entry, ZEND_STRL("observers"), ZEND_ACC_PRIVATE);
 	zend_declare_property_null(php_http_client_class_entry, ZEND_STRL("options"), ZEND_ACC_PROTECTED);
 	zend_declare_property_null(php_http_client_class_entry, ZEND_STRL("history"), ZEND_ACC_PROTECTED);

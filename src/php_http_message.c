@@ -461,7 +461,7 @@ php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_
 
 		copy = temp = php_http_message_init(to, 0, php_http_message_body_copy(from->body, NULL));
 		php_http_message_set_info(temp, &info);
-		zend_hash_copy(&temp->hdrs, &from->hdrs, (copy_ctor_func_t) zval_add_ref);
+		array_copy(&from->hdrs, &temp->hdrs);
 
 		if (parents) while (from->parent) {
 			info.type = from->parent->type;
@@ -663,7 +663,7 @@ static void php_http_message_object_prophandler_set_parent_message(php_http_mess
 		php_http_message_object_t *parent_obj = PHP_HTTP_OBJ(NULL, value);
 
 		if (obj->message->parent) {
-			zend_objects_store_del(&obj->parent->zo);
+			zend_object_release(&obj->parent->zo);
 		}
 		Z_ADDREF_P(value);
 		obj->parent = parent_obj;
@@ -797,7 +797,7 @@ ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *msg
 		body_obj->body = php_http_message_body_init(NULL, NULL);
 	}
 	if (msg_obj->body) {
-		zend_objects_store_del(&msg_obj->body->zo);
+		zend_object_release(&msg_obj->body->zo);
 	}
 	if (msg_obj->message) {
 		php_http_message_body_free(&msg_obj->message->body);
@@ -858,6 +858,8 @@ void php_http_message_object_free(zend_object *object)
 {
 	php_http_message_object_t *o = PHP_HTTP_OBJ(object, NULL);
 
+	PTR_FREE(o->gc);
+
 	if (!Z_ISUNDEF(o->iterator)) {
 		zval_ptr_dtor(&o->iterator);
 		ZVAL_UNDEF(&o->iterator);
@@ -869,17 +871,11 @@ void php_http_message_object_free(zend_object *object)
 		o->message = NULL;
 	}
 	if (o->parent) {
-		if (GC_REFCOUNT(&o->parent->zo) == 1) {
-			zend_objects_store_del(&o->parent->zo);
-		}
-		zend_objects_store_del(&o->parent->zo);
+		zend_object_release(&o->parent->zo);
 		o->parent = NULL;
 	}
 	if (o->body) {
-		if (GC_REFCOUNT(&o->body->zo) == 1) {
-			zend_objects_store_del(&o->body->zo);
-		}
-		zend_objects_store_del(&o->body->zo);
+		zend_object_release(&o->body->zo);
 		o->body = NULL;
 	}
 	zend_object_std_dtor(object);
@@ -1012,6 +1008,32 @@ static HashTable *php_http_message_object_get_debug_info(zval *object, int *is_t
 	);
 
 	return props;
+}
+
+static HashTable *php_http_message_object_get_gc(zval *object, zval **table, int *n)
+{
+	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
+	HashTable *props = Z_OBJPROP_P(object);
+	uint32_t count = 2 + zend_hash_num_elements(props);
+	zval *val;
+
+	*n = 0;
+	*table = obj->gc = erealloc(obj->gc, count * sizeof(zval));
+
+	if (obj->body) {
+		ZVAL_OBJ(&obj->gc[(*n)++], &obj->body->zo);
+	}
+	if (obj->parent) {
+		ZVAL_OBJ(&obj->gc[(*n)++], &obj->parent->zo);
+	}
+
+	ZEND_HASH_FOREACH_VAL(props, val)
+	{
+		ZVAL_COPY_VALUE(&obj->gc[(*n)++], val);
+	}
+	ZEND_HASH_FOREACH_END();
+
+	return NULL;
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage___construct, 0, 0, 0)
@@ -2021,6 +2043,7 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_object_handlers.write_property = php_http_message_object_write_prop;
 	php_http_message_object_handlers.get_debug_info = php_http_message_object_get_debug_info;
 	php_http_message_object_handlers.get_property_ptr_ptr = NULL;
+	php_http_message_object_handlers.get_gc = php_http_message_object_get_gc;
 
 	zend_class_implements(php_http_message_class_entry, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
 

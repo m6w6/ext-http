@@ -88,7 +88,7 @@ typedef struct php_http_message_object {
 	php_http_message_t *message;
 	struct php_http_message_object *parent;
 	php_http_message_body_object_t *body;
-	zval iterator;
+	zval iterator, *gc;
 	zend_object zo;
 } php_http_message_object_t;
 
