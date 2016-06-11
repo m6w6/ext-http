@@ -625,7 +625,7 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 {
 	php_http_message_t *response;
 	php_http_header_parser_t parser;
-	zval *zh;
+	zval *zh, tmp;
 
 	response = php_http_message_init(NULL, 0, h->response.body);
 	php_http_header_parser_init(&parser);
@@ -654,23 +654,23 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 
 	/* let's update the response headers */
 	if ((zh = php_http_message_header(response, ZEND_STRL("Content-Length")))) {
-		Z_TRY_ADDREF_P(zh);
-		zend_hash_str_update(&response->hdrs, "X-Original-Content-Length", lenof("X-Original-Content-Length"), zh);
+		ZVAL_COPY(&tmp, zh);
+		zend_hash_str_update(&response->hdrs, "X-Original-Content-Length", lenof("X-Original-Content-Length"), &tmp);
 	}
 	if ((zh = php_http_message_header(response, ZEND_STRL("Transfer-Encoding")))) {
-		Z_TRY_ADDREF_P(zh);
-		zend_hash_str_update(&response->hdrs, "X-Original-Transfer-Encoding", lenof("X-Original-Transfer-Encoding"), zh);
+		ZVAL_COPY(&tmp, zh);
 		zend_hash_str_del(&response->hdrs, "Transfer-Encoding", lenof("Transfer-Encoding"));
+		zend_hash_str_update(&response->hdrs, "X-Original-Transfer-Encoding", lenof("X-Original-Transfer-Encoding"), &tmp);
 	}
 	if ((zh = php_http_message_header(response, ZEND_STRL("Content-Range")))) {
-		Z_TRY_ADDREF_P(zh);
-		zend_hash_str_update(&response->hdrs, "X-Original-Content-Range", lenof("X-Original-Content-Range"), zh);
+		ZVAL_COPY(&tmp, zh);
 		zend_hash_str_del(&response->hdrs, "Content-Range", lenof("Content-Range"));
+		zend_hash_str_update(&response->hdrs, "X-Original-Content-Range", lenof("X-Original-Content-Range"), &tmp);
 	}
 	if ((zh = php_http_message_header(response, ZEND_STRL("Content-Encoding")))) {
-		Z_TRY_ADDREF_P(zh);
-		zend_hash_str_update(&response->hdrs, "X-Original-Content-Encoding", lenof("X-Original-Content-Encoding"), zh);
+		ZVAL_COPY(&tmp, zh);
 		zend_hash_str_del(&response->hdrs, "Content-Encoding", lenof("Content-Encoding"));
+		zend_hash_str_update(&response->hdrs, "X-Original-Content-Encoding", lenof("X-Original-Content-Encoding"), &tmp);
 	}
 	php_http_message_update_headers(response);
 
