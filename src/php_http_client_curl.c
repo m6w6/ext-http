@@ -13,6 +13,7 @@
 #include "php_http_api.h"
 #include "php_http_client.h"
 #include "php_http_client_curl_event.h"
+#include "php_http_client_curl_user.h"
 
 #if PHP_HTTP_HAVE_CURL
 
@@ -665,6 +666,27 @@ void php_http_client_curl_responsehandler(php_http_client_t *context)
 
 		efree(err);
 	}
+}
+
+void php_http_client_curl_loop(php_http_client_t *client, curl_socket_t s, int curl_action)
+{
+	CURLMcode rc;
+	php_http_client_curl_t *curl = client->ctx;
+	TSRMLS_FETCH_FROM_CTX(client->ts);
+
+#if DBG_EVENTS
+	fprintf(stderr, "H");
+#endif
+
+	do {
+		rc = curl_multi_socket_action(curl->handle->multi, s, curl_action, &curl->unfinished);
+	} while (CURLM_CALL_MULTI_PERFORM == rc);
+
+	if (CURLM_OK != rc) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "%s",  curl_multi_strerror(rc));
+	}
+
+	php_http_client_curl_responsehandler(client);
 }
 
 /* curl options */
@@ -1534,22 +1556,17 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_
 }
 #endif
 
-#if PHP_HTTP_HAVE_EVENT
-static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h, zend_bool enable)
+static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h, php_http_client_curl_ops_t *ev_ops, zval *init_data)
 {
 	php_http_client_curl_t *curl = h->ctx;
+	void *ev_ctx;
 
-	if (enable) {
-		if (!curl->ev_ops) {
-			if (!(curl->ev_ops = php_http_client_curl_event_ops_get())) {
-				return FAILURE;
-			}
+	if (ev_ops) {
+		if (!(ev_ctx = ev_ops->init(h, init_data))) {
+			return FAILURE;
 		}
-		if (curl->ev_ops && !curl->ev_ctx) {
-			if (!(curl->ev_ctx = curl->ev_ops->init(h))) {
-				return FAILURE;
-			}
-		}
+		curl->ev_ctx = ev_ctx;
+		curl->ev_ops = ev_ops;
 	} else {
 		if (curl->ev_ops) {
 			if (curl->ev_ctx) {
@@ -1565,13 +1582,19 @@ static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h
 static ZEND_RESULT_CODE php_http_curlm_option_set_use_eventloop(php_http_option_t *opt, zval *value, void *userdata)
 {
 	php_http_client_t *client = userdata;
+	php_http_client_curl_ops_t *ev_ops = NULL;
+	TSRMLS_FETCH_FROM_CTX(client->ts);
 
-	if (Z_TYPE_P(value) == IS_OBJECT /* && instanceof_function */) {
-		abort();
-	}
-	return php_http_curlm_use_eventloop(client, value && z_is_true(value));
-}
+	if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), php_http_client_curl_user_class_entry TSRMLS_CC)) {
+		ev_ops = php_http_client_curl_user_ops_get();
+#if PHP_HTTP_HAVE_EVENT
+	} else if (value && z_is_true(value)) {
+		ev_ops = php_http_client_curl_event_ops_get();
 #endif
+	}
+
+	return php_http_curlm_use_eventloop(client, ev_ops, value);
+}
 
 static ZEND_RESULT_CODE php_http_curlm_option_set_share_cookies(php_http_option_t *opt, zval *value, void *userdata)
 {
@@ -1661,11 +1684,9 @@ static void php_http_curlm_options_init(php_http_options_t *registry TSRMLS_DC)
 	}
 #endif
 	/* events */
-#if PHP_HTTP_HAVE_EVENT
-	if ((opt = php_http_option_register(registry, ZEND_STRL("use_eventloop"), 0, IS_BOOL))) {
+	if ((opt = php_http_option_register(registry, ZEND_STRL("use_eventloop"), 0, 0))) {
 		opt->setter = php_http_curlm_option_set_use_eventloop;
 	}
-#endif
 	/* share */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("share_cookies"), 0, IS_BOOL))) {
 		opt->setter = php_http_curlm_option_set_share_cookies;
@@ -2238,7 +2259,9 @@ static ZEND_RESULT_CODE php_http_client_curl_setopt(php_http_client_t *h, php_ht
 
 		case PHP_HTTP_CLIENT_OPT_USE_EVENTS:
 #if PHP_HTTP_HAVE_EVENT
-			return php_http_curlm_use_eventloop(h, *(zend_bool *) arg);
+			return php_http_curlm_use_eventloop(h, (*(zend_bool *) arg)
+					? php_http_client_curl_event_ops_get()
+					: NULL, NULL);
 			break;
 #endif
 

@@ -49,6 +49,7 @@ static inline void php_http_client_curl_get_timeout(php_http_client_curl_t *curl
 }
 
 PHP_HTTP_API void php_http_client_curl_responsehandler(php_http_client_t *client);
+PHP_HTTP_API void php_http_client_curl_loop(php_http_client_t *client, curl_socket_t s, int curl_action);
 
 PHP_MINIT_FUNCTION(http_client_curl);
 PHP_MSHUTDOWN_FUNCTION(http_client_curl);
