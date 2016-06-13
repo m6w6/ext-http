@@ -243,8 +243,6 @@ static void php_http_client_curl_user_dtor(void **context)
 	fprintf(stderr, "D");
 #endif
 
-	ZEND_ASSERT(ctx);
-
 	curl = ctx->client->ctx;
 
 	curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETDATA, NULL);
