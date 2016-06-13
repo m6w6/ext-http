@@ -46,10 +46,10 @@ php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **bo
 
 	if (stream) {
 		body->res = stream->res;
-		++GC_REFCOUNT(body->res);
 	} else {
 		body->res = php_stream_temp_create(TEMP_STREAM_DEFAULT, 0xffff)->res;
 	}
+	++GC_REFCOUNT(body->res);
 
 	if (body_ptr) {
 		*body_ptr = body;

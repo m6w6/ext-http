@@ -253,11 +253,13 @@ static inline void sanitize_key(unsigned flags, const char *str, size_t len, zva
 		return;
 	}
 
-	eos = &Z_STRVAL_P(zv)[Z_STRLEN_P(zv)-1];
-	if (*eos == '*') {
-		*eos = '\0';
-		*rfc5987 = 1;
-		Z_STRLEN_P(zv) -= 1;
+	if (flags & PHP_HTTP_PARAMS_RFC5987) {
+		eos = &Z_STRVAL_P(zv)[Z_STRLEN_P(zv)-1];
+		if (*eos == '*') {
+			*eos = '\0';
+			*rfc5987 = 1;
+			Z_STRLEN_P(zv) -= 1;
+		}
 	}
 
 	if (flags & PHP_HTTP_PARAMS_URLENCODED) {
@@ -554,6 +556,8 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 	if (state->val.str) {
 		if (0 < (state->val.len = state->input.str - state->val.str)) {
 			sanitize_value(opts->flags, state->val.str, state->val.len, state->current.val, state->rfc5987);
+		} else {
+			ZVAL_EMPTY_STRING(state->current.val);
 		}
 		state->rfc5987 = 0;
 	} else if (state->arg.str) {

@@ -171,6 +171,25 @@ static int apply_querystring(zval *val)
 	return ZEND_HASH_APPLY_KEEP;
 }
 
+static int apply_querystring_filter(zval *val)
+{
+	switch (Z_TYPE_P(val)) {
+	case IS_NULL:
+		return ZEND_HASH_APPLY_REMOVE;
+	case IS_ARRAY:
+	case IS_OBJECT:
+		zend_hash_apply(HASH_OF(val), apply_querystring_filter);
+		if (!zend_hash_num_elements(HASH_OF(val))) {
+			return ZEND_HASH_APPLY_REMOVE;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
 ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size_t len)
 {
 	ZEND_RESULT_CODE rv = FAILURE;
@@ -200,7 +219,7 @@ ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size
 		zval_ptr_dtor(&arr);
 	}
 
-	ZVAL_NULL(&opts.defval);
+	ZVAL_TRUE(&opts.defval);
 
 	if (php_http_params_parse(ht, &opts)) {
 		zend_hash_apply(ht, apply_querystring);
@@ -224,7 +243,9 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 	}
 
 	/* modify qarray */
-	if (params) {
+	if (!params) {
+		zend_hash_apply(Z_ARRVAL_P(qarray), apply_querystring_filter);
+	} else {
 		HashTable *ht;
 		php_http_arrkey_t key;
 		zval zv, *params_entry, *qarray_entry;
@@ -276,7 +297,7 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 						ZVAL_DUP(entry, qarray_entry);
 						convert_to_array(entry);
 						php_http_querystring_update(entry, params_entry, NULL);
-					} else if ((FAILURE == is_equal_function(&equal, qarray_entry, params_entry)) || Z_TYPE(equal) != IS_TRUE) {
+					} else if ((FAILURE == is_identical_function(&equal, qarray_entry, params_entry)) || Z_TYPE(equal) != IS_TRUE) {
 						Z_TRY_ADDREF_P(params_entry);
 						entry = params_entry;
 					}

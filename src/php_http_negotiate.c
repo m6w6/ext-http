@@ -12,6 +12,10 @@
 
 #include "php_http_api.h"
 
+#ifndef PHP_HTTP_DEBUG_NEG
+# define PHP_HTTP_DEBUG_NEG 0
+#endif
+
 static int php_http_negotiate_sort(const void *first, const void *second)
 {
 	Bucket *b1 = (Bucket *) first, *b2 = (Bucket *) second;
@@ -22,7 +26,7 @@ static int php_http_negotiate_sort(const void *first, const void *second)
 
 #define M_PRI 5
 #define M_SEC 2
-#define M_ANY 1
+#define M_ANY -1
 #define M_NOT 0
 #define M_ALL ~0
 static inline unsigned php_http_negotiate_match(const char *param_str, size_t param_len, const char *supported_str, size_t supported_len, const char *sep_str, size_t sep_len)
@@ -46,7 +50,11 @@ static inline unsigned php_http_negotiate_match(const char *param_str, size_t pa
 			match += M_PRI;
 		}
 
-		if (param_sec && supported_sec && !strcasecmp(param_sec, supported_sec)) {
+		if (param_sec && supported_sec
+		&& ((*(param_sec + sep_len) == '*' || *(supported_sec + sep_len) == '*')
+			|| !strcasecmp(param_sec, supported_sec)
+			)
+		) {
 			match += M_SEC;
 		}
 
@@ -57,7 +65,7 @@ static inline unsigned php_http_negotiate_match(const char *param_str, size_t pa
 			match += M_ANY;
 		}
 	}
-#if 0
+#if PHP_HTTP_DEBUG_NEG
 	fprintf(stderr, "match: %s == %s => %u\n", supported_str, param_str, match);
 #endif
 	return match;
@@ -65,8 +73,9 @@ static inline unsigned php_http_negotiate_match(const char *param_str, size_t pa
 static int php_http_negotiate_reduce(zval *p, int num_args, va_list args, zend_hash_key *hash_key)
 {
 	unsigned best_match = 0;
+	double q = 0;
 	php_http_arrkey_t key;
-	zval *value, *q = NULL;
+	zval *value;
 	zend_string *supported = zval_get_string(p);
 	HashTable *params = va_arg(args, HashTable *);
 	HashTable *result = va_arg(args, HashTable *);
@@ -77,20 +86,25 @@ static int php_http_negotiate_reduce(zval *p, int num_args, va_list args, zend_h
 	{
 		unsigned match;
 
+#if PHP_HTTP_DEBUG_NEG
+			fprintf(stderr, "match(%u) > best_match(%u) = %u (q=%f)\n", match, best_match, match>best_match, Z_DVAL_PP(val));
+#endif
 		php_http_arrkey_stringify(&key, NULL);
 		match = php_http_negotiate_match(key.key->val, key.key->len, supported->val, supported->len, sep_str, sep_len);
 
 		if (match > best_match) {
 			best_match = match;
-			q = value;
+			q = Z_DVAL_P(value) - 0.1 / match;
 		}
 		php_http_arrkey_dtor(&key);
 	}
 	ZEND_HASH_FOREACH_END();
 
-	if (q && Z_DVAL_P(q) > 0) {
-		Z_TRY_ADDREF_P(q);
-		zend_hash_update(result, supported, q);
+	if (q > 0) {
+		zval tmp;
+
+		ZVAL_DOUBLE(&tmp, q);
+		zend_hash_update(result, supported, &tmp);
 	}
 
 	zend_string_release(supported);
@@ -112,6 +126,7 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 		php_http_params_opts_default_get(&opts);
 		opts.input.str = estrndup(value_str, value_len);
 		opts.input.len = value_len;
+		opts.flags &= ~PHP_HTTP_PARAMS_RFC5987;
 		php_http_params_parse(&params, &opts);
 		efree(opts.input.str);
 
@@ -126,7 +141,7 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 			&&	(zq = zend_hash_str_find(Z_ARRVAL_P(arg), ZEND_STRL("q")))) {
 				q = zval_get_double(zq);
 			} else {
-				q = 1.0 - ++i / 100.0;
+				q = 1.0 - (((double) ++i) / 100.0);
 			}
 
 #if 0
@@ -142,7 +157,7 @@ HashTable *php_http_negotiate(const char *value_str, size_t value_len, HashTable
 		}
 		ZEND_HASH_FOREACH_END();
 
-#if 0
+#if PHP_HTTP_DEBUG_NEG
 		zend_print_zval_r(&arr, 1);
 #endif
 

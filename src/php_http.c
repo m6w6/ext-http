@@ -143,6 +143,7 @@ PHP_MINIT_FUNCTION(http)
 #if PHP_HTTP_HAVE_CURL
 	|| SUCCESS != PHP_MINIT_CALL(http_curl)
 	|| SUCCESS != PHP_MINIT_CALL(http_client_curl)
+	|| SUCCESS != PHP_MINIT_CALL(http_client_curl_user)
 #endif
 	|| SUCCESS != PHP_MINIT_CALL(http_url)
 	|| SUCCESS != PHP_MINIT_CALL(http_env)

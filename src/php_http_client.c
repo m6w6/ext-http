@@ -363,11 +363,23 @@ static HashTable *php_http_client_object_get_gc(zval *object, zval **table, int 
 	php_http_client_object_t *obj = PHP_HTTP_OBJ(NULL, object);
 	zend_llist_element *el = NULL;
 	HashTable *props = Z_OBJPROP_P(object);
-	uint32_t count = zend_hash_num_elements(props) + zend_llist_count(&obj->client->responses) + zend_llist_count(&obj->client->requests);
+	uint32_t count = zend_hash_num_elements(props) + zend_llist_count(&obj->client->responses) + zend_llist_count(&obj->client->requests) + 1;
 	zval *val;
 
 	*n = 0;
 	*table = obj->gc = erealloc(obj->gc, sizeof(zval) * count);
+
+#if PHP_HTTP_HAVE_CURL
+	if (obj->client->ops == php_http_client_curl_get_ops()) {
+		php_http_client_curl_t *curl = obj->client->ctx;
+
+		if (curl->ev_ops == php_http_client_curl_user_ops_get()) {
+			php_http_client_curl_user_context_t *ctx = curl->ev_ctx;
+
+			ZVAL_COPY_VALUE(&obj->gc[(*n)++], &ctx->user);
+		}
+	}
+#endif
 
 	for (el = obj->client->responses.head; el; el = el->next) {
 		php_http_message_object_t *response_obj = *(php_http_message_object_t **) el->data;
@@ -375,7 +387,7 @@ static HashTable *php_http_client_object_get_gc(zval *object, zval **table, int 
 	}
 
 	for (el = obj->client->requests.head; el; el = el->next) {
-		php_http_client_enqueue_t *q = *(php_http_client_enqueue_t **) el->data;
+		php_http_client_enqueue_t *q = (php_http_client_enqueue_t *) el->data;
 		php_http_message_object_t *request_obj = q->opaque; /* FIXME */
 		ZVAL_OBJ(&obj->gc[(*n)++], &request_obj->zo);
 	}

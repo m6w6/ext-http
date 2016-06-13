@@ -23,8 +23,8 @@ serve(function($client) {
 	/* pipelined messages */
 	$req = array();
 	for ($i=0; $i < $count; ++ $i) {
-		$req[] = new http\Message($client, false);
-		logger("Read request no. %d from client %d", $i+1, (int) $client);
+		$req[] = $m = new http\Message($client, false);
+		logger("Read request no. %d from client %d (%s)", $i+1, (int) $client, $m->getRequestUrl());
 	}
 	foreach ($req as $i => $msg) {
 		respond($client, $msg);

@@ -18,7 +18,7 @@ nghttpd(function($port) {
 	$client->setOptions([
 		"protocol" => http\Client\Curl\HTTP_VERSION_2_0,
 		"ssl" => [
-			"cainfo" => __DIR__."/helper/http2.crt",
+			"cafile" => __DIR__."/helper/http2.crt",
 		]
 	]);
 	$client->enqueue(new http\Client\Request("GET", "https://localhost:$port"));

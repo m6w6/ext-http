@@ -12,29 +12,10 @@
 
 #include "php_http_api.h"
 #include "php_http_client.h"
+#include "php_http_client_curl_event.h"
+#include "php_http_client_curl_user.h"
 
 #if PHP_HTTP_HAVE_CURL
-
-#if PHP_HTTP_HAVE_EVENT
-#	if !PHP_HTTP_HAVE_EVENT2 && /* just be really sure */ !(LIBEVENT_VERSION_NUMBER >= 0x02000000)
-#		include <event.h>
-#		define event_base_new event_init
-#		define event_assign(e, b, s, a, cb, d) do {\
-			event_set(e, s, a, cb, d); \
-			event_base_set(b, e); \
-		} while(0)
-#	else
-#		if PHP_HTTP_HAVE_EVENT2
-#			include <event2/event.h>
-#			include <event2/event_struct.h>
-#		else
-#			error "libevent presence is unknown"
-#		endif
-#	endif
-#	ifndef DBG_EVENTS
-#		define DBG_EVENTS 0
-#	endif
-#endif
 
 #ifdef PHP_HTTP_HAVE_OPENSSL
 #	include <openssl/ssl.h>
@@ -42,23 +23,6 @@
 #ifdef PHP_HTTP_HAVE_GNUTLS
 #	include <gnutls.h>
 #endif
-
-typedef struct php_http_client_curl_handle {
-	CURLM *multi;
-	CURLSH *share;
-} php_http_client_curl_handle_t;
-
-typedef struct php_http_client_curl {
-	php_http_client_curl_handle_t *handle;
-
-	int unfinished;  /* int because of curl_multi_perform() */
-
-#if PHP_HTTP_HAVE_EVENT
-	struct event_base *evbase;
-	struct event *timeout;
-	unsigned useevents:1;
-#endif
-} php_http_client_curl_t;
 
 typedef struct php_http_client_curl_handler {
 	CURL *handle;
@@ -677,7 +641,7 @@ static php_http_message_t *php_http_curlm_responseparser(php_http_client_curl_ha
 	return response;
 }
 
-static void php_http_curlm_responsehandler(php_http_client_t *context)
+void php_http_client_curl_responsehandler(php_http_client_t *context)
 {
 	int err_count = 0, remaining = 0;
 	php_http_curle_storage_t *st, *err = NULL;
@@ -729,157 +693,25 @@ static void php_http_curlm_responsehandler(php_http_client_t *context)
 	}
 }
 
-#if PHP_HTTP_HAVE_EVENT
-
-typedef struct php_http_curlm_event {
-	struct event evnt;
-	php_http_client_t *context;
-} php_http_curlm_event_t;
-
-static inline int etoca(short action) {
-	switch (action & (EV_READ|EV_WRITE)) {
-		case EV_READ:
-			return CURL_CSELECT_IN;
-			break;
-		case EV_WRITE:
-			return CURL_CSELECT_OUT;
-			break;
-		case EV_READ|EV_WRITE:
-			return CURL_CSELECT_IN|CURL_CSELECT_OUT;
-			break;
-		default:
-			return 0;
-	}
-}
-
-static void php_http_curlm_timeout_callback(int socket, short action, void *event_data)
+void php_http_client_curl_loop(php_http_client_t *client, curl_socket_t s, int curl_action)
 {
-	php_http_client_t *context = event_data;
-	php_http_client_curl_t *curl = context->ctx;
+	CURLMcode rc;
+	php_http_client_curl_t *curl = client->ctx;
 
 #if DBG_EVENTS
-	fprintf(stderr, "T");
+	fprintf(stderr, "H");
 #endif
-	if (curl->useevents) {
-		CURLMcode rc;
 
-		/* ignore and use -1,0 on timeout */
-		(void) socket;
-		(void) action;
+	do {
+		rc = curl_multi_socket_action(curl->handle->multi, s, curl_action, &curl->unfinished);
+	} while (CURLM_CALL_MULTI_PERFORM == rc);
 
-		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle->multi, CURL_SOCKET_TIMEOUT, 0, &curl->unfinished)));
-
-		if (CURLM_OK != rc) {
-			php_error_docref(NULL, E_WARNING, "%s",  curl_multi_strerror(rc));
-		}
-
-		php_http_curlm_responsehandler(context);
-	}
-}
-
-static void php_http_curlm_event_callback(int socket, short action, void *event_data)
-{
-	php_http_client_t *context = event_data;
-	php_http_client_curl_t *curl = context->ctx;
-
-#if DBG_EVENTS
-	fprintf(stderr, "E");
-#endif
-	if (curl->useevents) {
-		CURLMcode rc = CURLM_OK;
-
-		while (CURLM_CALL_MULTI_PERFORM == (rc = curl_multi_socket_action(curl->handle->multi, socket, etoca(action), &curl->unfinished)));
-
-		if (CURLM_OK != rc) {
-			php_error_docref(NULL, E_WARNING, "%s", curl_multi_strerror(rc));
-		}
-
-		php_http_curlm_responsehandler(context);
-
-		/* remove timeout if there are no transfers left */
-		if (!curl->unfinished && event_initialized(curl->timeout) && event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
-			event_del(curl->timeout);
-		}
-	}
-}
-
-static int php_http_curlm_socket_callback(CURL *easy, curl_socket_t sock, int action, void *socket_data, void *assign_data)
-{
-	php_http_client_t *context = socket_data;
-	php_http_client_curl_t *curl = context->ctx;
-
-#if DBG_EVENTS
-	fprintf(stderr, "S");
-#endif
-	if (curl->useevents) {
-		int events = EV_PERSIST;
-		php_http_curlm_event_t *ev = assign_data;
-
-		if (!ev) {
-			ev = ecalloc(1, sizeof(php_http_curlm_event_t));
-			ev->context = context;
-			curl_multi_assign(curl->handle->multi, sock, ev);
-		} else {
-			event_del(&ev->evnt);
-		}
-
-		switch (action) {
-			case CURL_POLL_IN:
-				events |= EV_READ;
-				break;
-			case CURL_POLL_OUT:
-				events |= EV_WRITE;
-				break;
-			case CURL_POLL_INOUT:
-				events |= EV_READ|EV_WRITE;
-				break;
-
-			case CURL_POLL_REMOVE:
-				efree(ev);
-				/* no break */
-			case CURL_POLL_NONE:
-				return 0;
-
-			default:
-				php_error_docref(NULL, E_WARNING, "Unknown socket action %d", action);
-				return -1;
-		}
-
-		event_assign(&ev->evnt, curl->evbase, sock, events, php_http_curlm_event_callback, context);
-		event_add(&ev->evnt, NULL);
+	if (CURLM_OK != rc) {
+		php_error_docref(NULL, E_WARNING, "%s",  curl_multi_strerror(rc));
 	}
 
-	return 0;
+	php_http_client_curl_responsehandler(client);
 }
-
-static void php_http_curlm_timer_callback(CURLM *multi, long timeout_ms, void *timer_data)
-{
-	php_http_client_t *context = timer_data;
-	php_http_client_curl_t *curl = context->ctx;
-
-#if DBG_EVENTS
-	fprintf(stderr, "\ntimer <- timeout_ms: %ld\n", timeout_ms);
-#endif
-	if (curl->useevents) {
-
-		if (timeout_ms < 0) {
-			php_http_curlm_timeout_callback(CURL_SOCKET_TIMEOUT, /*EV_READ|EV_WRITE*/0, context);
-		} else if (timeout_ms > 0 || !event_initialized(curl->timeout) || !event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
-			struct timeval timeout;
-
-			if (!event_initialized(curl->timeout)) {
-				event_assign(curl->timeout, curl->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, context);
-			}
-
-			timeout.tv_sec = timeout_ms / 1000;
-			timeout.tv_usec = (timeout_ms % 1000) * 1000;
-
-			event_add(curl->timeout, &timeout);
-		}
-	}
-}
-
-#endif /* HAVE_EVENT */
 
 /* curl options */
 
@@ -1746,27 +1578,24 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_
 }
 #endif
 
-#if PHP_HTTP_HAVE_EVENT
-static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h, zend_bool enable)
+static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h, php_http_client_curl_ops_t *ev_ops, zval *init_data)
 {
 	php_http_client_curl_t *curl = h->ctx;
+	void *ev_ctx;
 
-	if ((curl->useevents = enable)) {
-		if (!curl->evbase) {
-			curl->evbase = event_base_new();
+	if (ev_ops) {
+		if (!(ev_ctx = ev_ops->init(h, init_data))) {
+			return FAILURE;
 		}
-		if (!curl->timeout) {
-			curl->timeout = ecalloc(1, sizeof(struct event));
-		}
-		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETDATA, h);
-		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETFUNCTION, php_http_curlm_socket_callback);
-		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERDATA, h);
-		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERFUNCTION, php_http_curlm_timer_callback);
+		curl->ev_ctx = ev_ctx;
+		curl->ev_ops = ev_ops;
 	} else {
-		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETDATA, NULL);
-		curl_multi_setopt(curl->handle->multi, CURLMOPT_SOCKETFUNCTION, NULL);
-		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERDATA, NULL);
-		curl_multi_setopt(curl->handle->multi, CURLMOPT_TIMERFUNCTION, NULL);
+		if (curl->ev_ops) {
+			if (curl->ev_ctx) {
+				curl->ev_ops->dtor(&curl->ev_ctx);
+			}
+			curl->ev_ops = NULL;
+		}
 	}
 
 	return SUCCESS;
@@ -1775,10 +1604,18 @@ static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h
 static ZEND_RESULT_CODE php_http_curlm_option_set_use_eventloop(php_http_option_t *opt, zval *value, void *userdata)
 {
 	php_http_client_t *client = userdata;
+	php_http_client_curl_ops_t *ev_ops = NULL;
 
-	return php_http_curlm_use_eventloop(client, value && Z_TYPE_P(value) == IS_TRUE);
-}
+	if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), php_http_client_curl_user_get_class_entry())) {
+		ev_ops = php_http_client_curl_user_ops_get();
+#if PHP_HTTP_HAVE_EVENT
+	} else if (value && zend_is_true(value)) {
+		ev_ops = php_http_client_curl_event_ops_get();
 #endif
+	}
+
+	return php_http_curlm_use_eventloop(client, ev_ops, value);
+}
 
 static ZEND_RESULT_CODE php_http_curlm_option_set_share_cookies(php_http_option_t *opt, zval *value, void *userdata)
 {
@@ -1866,11 +1703,9 @@ static void php_http_curlm_options_init(php_http_options_t *registry)
 	}
 #endif
 	/* events */
-#if PHP_HTTP_HAVE_EVENT
-	if ((opt = php_http_option_register(registry, ZEND_STRL("use_eventloop"), 0, _IS_BOOL))) {
+	if ((opt = php_http_option_register(registry, ZEND_STRL("use_eventloop"), 0, 0))) {
 		opt->setter = php_http_curlm_option_set_use_eventloop;
 	}
-#endif
 	/* share */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("share_cookies"), 0, _IS_BOOL))) {
 		opt->setter = php_http_curlm_option_set_share_cookies;
@@ -2219,19 +2054,9 @@ static void php_http_client_curl_dtor(php_http_client_t *h)
 {
 	php_http_client_curl_t *curl = h->ctx;
 
-#if PHP_HTTP_HAVE_EVENT
-	if (curl->timeout) {
-		if (event_initialized(curl->timeout) && event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
-			event_del(curl->timeout);
-		}
-		efree(curl->timeout);
-		curl->timeout = NULL;
+	if (curl->ev_ops) {
+		curl->ev_ops->dtor(&curl->ev_ctx);
 	}
-	if (curl->evbase) {
-		event_base_free(curl->evbase);
-		curl->evbase = NULL;
-	}
-#endif
 	curl->unfinished = 0;
 
 	php_resource_factory_handle_dtor(h->rf, curl->handle);
@@ -2366,17 +2191,6 @@ static void php_http_client_curl_reset(php_http_client_t *h)
 	}
 }
 
-static inline void php_http_client_curl_get_timeout(php_http_client_curl_t *curl, long max_tout, struct timeval *timeout)
-{
-	if ((CURLM_OK == curl_multi_timeout(curl->handle->multi, &max_tout)) && (max_tout > 0)) {
-		timeout->tv_sec = max_tout / 1000;
-		timeout->tv_usec = (max_tout % 1000) * 1000;
-	} else {
-		timeout->tv_sec = 0;
-		timeout->tv_usec = 1000;
-	}
-}
-
 #ifdef PHP_WIN32
 #	define SELECT_ERROR SOCKET_ERROR
 #else
@@ -2390,22 +2204,9 @@ static ZEND_RESULT_CODE php_http_client_curl_wait(php_http_client_t *h, struct t
 	struct timeval timeout;
 	php_http_client_curl_t *curl = h->ctx;
 
-#if PHP_HTTP_HAVE_EVENT
-	if (curl->useevents) {
-		if (!event_initialized(curl->timeout)) {
-			event_assign(curl->timeout, curl->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_curlm_timeout_callback, h);
-		} else if (custom_timeout && timerisset(custom_timeout)) {
-			event_add(curl->timeout, custom_timeout);
-		} else if (!event_pending(curl->timeout, EV_TIMEOUT, NULL)) {
-			php_http_client_curl_get_timeout(curl, 1000, &timeout);
-			event_add(curl->timeout, &timeout);
-		}
-
-		event_base_loop(curl->evbase, EVLOOP_ONCE);
-
-		return SUCCESS;
+	if (curl->ev_ops) {
+		return curl->ev_ops->wait(curl->ev_ctx, custom_timeout);
 	}
-#endif
 
 	FD_ZERO(&R);
 	FD_ZERO(&W);
@@ -2432,14 +2233,13 @@ static int php_http_client_curl_once(php_http_client_t *h)
 {
 	php_http_client_curl_t *curl = h->ctx;
 
-#if PHP_HTTP_HAVE_EVENT
-	if (curl->useevents) {
-		event_base_loop(curl->evbase, EVLOOP_NONBLOCK);
-	} else
-#endif
-	while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle->multi, &curl->unfinished));
+	if (curl->ev_ops) {
+		curl->ev_ops->once(curl->ev_ctx);
+	} else {
+		while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle->multi, &curl->unfinished));
+	}
 
-	php_http_curlm_responsehandler(h);
+	php_http_client_curl_responsehandler(h);
 
 	return curl->unfinished;
 
@@ -2447,36 +2247,21 @@ static int php_http_client_curl_once(php_http_client_t *h)
 
 static ZEND_RESULT_CODE php_http_client_curl_exec(php_http_client_t *h)
 {
-#if PHP_HTTP_HAVE_EVENT
 	php_http_client_curl_t *curl = h->ctx;
 
-	if (curl->useevents) {
-		php_http_curlm_timeout_callback(CURL_SOCKET_TIMEOUT, /*EV_READ|EV_WRITE*/0, h);
-		do {
-			int ev_rc = event_base_dispatch(curl->evbase);
+	if (curl->ev_ops) {
+		return curl->ev_ops->exec(curl->ev_ctx);
+	}
 
-#if DBG_EVENTS
-			fprintf(stderr, "%c", "X.0"[ev_rc+1]);
-#endif
-
-			if (ev_rc < 0) {
-				php_error_docref(NULL, E_ERROR, "Error in event_base_dispatch()");
-				return FAILURE;
-			}
-		} while (curl->unfinished && !EG(exception));
-	} else
-#endif
-	{
-		while (php_http_client_curl_once(h) && !EG(exception)) {
-			if (SUCCESS != php_http_client_curl_wait(h, NULL)) {
+	while (php_http_client_curl_once(h) && !EG(exception)) {
+		if (SUCCESS != php_http_client_curl_wait(h, NULL)) {
 #ifdef PHP_WIN32
-				/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
-				php_error_docref(NULL, E_WARNING, "WinSock error: %d", WSAGetLastError());
+			/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
+			php_error_docref(NULL, E_WARNING, "WinSock error: %d", WSAGetLastError());
 #else
-				php_error_docref(NULL, E_WARNING, "%s", strerror(errno));
+			php_error_docref(NULL, E_WARNING, "%s", strerror(errno));
 #endif
-				return FAILURE;
-			}
+			return FAILURE;
 		}
 	}
 
@@ -2500,7 +2285,9 @@ static ZEND_RESULT_CODE php_http_client_curl_setopt(php_http_client_t *h, php_ht
 
 		case PHP_HTTP_CLIENT_OPT_USE_EVENTS:
 #if PHP_HTTP_HAVE_EVENT
-			return php_http_curlm_use_eventloop(h, *(zend_bool *) arg);
+			return php_http_curlm_use_eventloop(h, (*(zend_bool *) arg)
+					? php_http_client_curl_event_ops_get()
+					: NULL, NULL);
 			break;
 #endif
 
@@ -2597,6 +2384,7 @@ php_http_client_ops_t *php_http_client_curl_get_ops(void)
 {
 	return &php_http_client_curl_ops;
 }
+
 
 PHP_MINIT_FUNCTION(http_client_curl)
 {

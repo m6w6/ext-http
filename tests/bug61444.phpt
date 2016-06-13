@@ -29,7 +29,7 @@ DONE
 --EXPECT--
 http://www.example.com/foobar?bar.baz=blah&utm_source=google&utm_campaign=somethingelse&blat
 
-http://www.example.com/foobar?bar.baz=blah&utm_source=changed&utm_campaign=somethingelse
+http://www.example.com/foobar?bar.baz=blah&utm_source=changed&utm_campaign=somethingelse&blat
 
 http://www.google.com/foobar?bar.baz=blah&utm_source=google&utm_campaign=somethingelse&blat
 

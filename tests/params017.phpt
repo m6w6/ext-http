@@ -19,7 +19,7 @@ $p = current(http\Header::parse($link, "http\\Header"))->getParams(
 	http\Params::DEF_PARAM_SEP,
 	http\Params::DEF_ARG_SEP,
 	http\Params::DEF_VAL_SEP,
-	http\Params::PARSE_RFC5988 | http\Params::PARSE_ESCAPED
+	http\Params::PARSE_RFC5987 | http\Params::PARSE_RFC5988 | http\Params::PARSE_ESCAPED
 );
 var_dump($p->params);
 var_dump((string)$p);
