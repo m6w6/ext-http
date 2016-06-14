@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-#include <ext/spl/spl_exceptions.h>
+#include "ext/spl/spl_exceptions.h"
 
 #ifndef PHP_HTTP_DBG_EXCEPTIONS
 #	define PHP_HTTP_DBG_EXCEPTIONS 0

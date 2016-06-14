@@ -16,9 +16,9 @@
 #	include "php_hash.h"
 #endif
 
-#include <ext/standard/crc32.h>
-#include <ext/standard/sha1.h>
-#include <ext/standard/md5.h>
+#include "ext/standard/crc32.h"
+#include "ext/standard/sha1.h"
+#include "ext/standard/md5.h"
 
 php_http_etag_t *php_http_etag_init(const char *mode)
 {

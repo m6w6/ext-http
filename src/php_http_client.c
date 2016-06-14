@@ -13,7 +13,7 @@
 #include "php_http_api.h"
 #include "php_http_client.h"
 
-#include <ext/spl/spl_observer.h>
+#include "ext/spl/spl_observer.h"
 
 /*
  * array of name => php_http_client_driver_t*

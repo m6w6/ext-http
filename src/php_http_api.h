@@ -18,19 +18,19 @@
 #endif
 
 #ifndef PHP_WIN32
-#include <php_config.h>
+#include "php_config.h"
 #endif
-#include <php.h>
-#include <SAPI.h>
+#include "php.h"
+#include "SAPI.h"
 
-#include <ext/raphf/php_raphf_api.h>
-#include <ext/propro/php_propro_api.h>
-#include <ext/standard/php_string.h>
-#include <ext/spl/spl_iterators.h>
-#include <ext/date/php_date.h>
+#include "ext/raphf/php_raphf_api.h"
+#include "ext/propro/php_propro_api.h"
+#include "ext/standard/php_string.h"
+#include "ext/spl/spl_iterators.h"
+#include "ext/date/php_date.h"
 
-#include <zend_interfaces.h>
-#include <zend_exceptions.h>
+#include "zend_interfaces.h"
+#include "zend_exceptions.h"
 
 
 #ifdef PHP_WIN32

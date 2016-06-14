@@ -1725,7 +1725,7 @@ static PHP_METHOD(HttpMessage, toCallback)
 		zend_fcall_info_args_clear(&fcd.fci, 1);
 		zval_ptr_dtor(&fcd.fcz);
 
-		RETURN_ZVAL(getThis(), 1, 0);
+		RETURN_ZVAL(&fcd.fcz, 1, 0);
 	}
 }
 

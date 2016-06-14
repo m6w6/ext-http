@@ -13,7 +13,7 @@
 #ifndef PHP_HTTP_URL_H
 #define PHP_HTTP_URL_H
 
-#include <ext/standard/url.h>
+#include "ext/standard/url.h"
 
 /* php_http_url_mod() */
 #define PHP_HTTP_URL_REPLACE		0x000
