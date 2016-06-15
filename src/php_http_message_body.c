@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-#include <ext/standard/php_lcg.h>
+#include "ext/standard/php_lcg.h"
 
 #define BOUNDARY_OPEN(body) \
 	do {\

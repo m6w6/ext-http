@@ -12,8 +12,8 @@
 
 #include "php_http_api.h"
 
-#include <ext/standard/php_lcg.h>
-#include <zend_exceptions.h>
+#include "ext/standard/php_lcg.h"
+#include "zend_exceptions.h"
 
 /* SLEEP */
 
