@@ -29,6 +29,7 @@ static void php_http_client_curl_user_handler(INTERNAL_FUNCTION_PARAMETERS)
 	long action = 0;
 	php_socket_t fd = CURL_SOCKET_TIMEOUT;
 	php_http_client_object_t *client = NULL;
+	php_http_client_curl_t *curl;
 
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "O|rl", &zclient, php_http_client_get_class_entry(), &zstream, &action)) {
 		return;
@@ -43,6 +44,9 @@ static void php_http_client_curl_user_handler(INTERNAL_FUNCTION_PARAMETERS)
 		}
 	}
 	php_http_client_curl_loop(client->client, fd, action);
+
+	curl = client->client->ctx;
+	RETVAL_LONG(curl->unfinished);
 }
 
 static void php_http_client_curl_user_timer(CURLM *multi, long timeout_ms, void *timer_data)

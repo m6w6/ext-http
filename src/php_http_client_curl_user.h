@@ -50,7 +50,7 @@ interface http\Client\Curl\User
 	 *  - timeout occurs
 	 *  - a watched socket needs action
 	 *
-	 * @param callable $run callback as function(http\Client $client, resource $socket = null, int $action = http\Client\Curl\User::POLL_NONE)
+	 * @param callable $run callback as function(http\Client $client, resource $socket = null, int $action = http\Client\Curl\User::POLL_NONE):int (returns unfinished requests pending)
 	 */
 	function init(callable $run);
 
