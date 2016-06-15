@@ -101,8 +101,8 @@
 #include "php_http_client_request.h"
 #include "php_http_client_response.h"
 #include "php_http_client_curl.h"
-#include "php_http_client_curl_user.h"
 #include "php_http_client_curl_event.h"
+#include "php_http_client_curl_user.h"
 #include "php_http_url.h"
 #include "php_http_version.h"
 
