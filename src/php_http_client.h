@@ -89,6 +89,14 @@ typedef struct php_http_client_progress_state {
 
 typedef ZEND_RESULT_CODE (*php_http_client_response_callback_t)(void *arg, struct php_http_client *client, php_http_client_enqueue_t *e, php_http_message_t **response);
 typedef void (*php_http_client_progress_callback_t)(void *arg, struct php_http_client *client, php_http_client_enqueue_t *e, php_http_client_progress_state_t *state);
+typedef void (*php_http_client_debug_callback_t)(void *arg, struct php_http_client *client, php_http_client_enqueue_t *e, unsigned type, const char *data, size_t size);
+
+#define PHP_HTTP_CLIENT_DEBUG_INFO		0x00
+#define PHP_HTTP_CLIENT_DEBUG_IN		0x01
+#define PHP_HTTP_CLIENT_DEBUG_OUT		0x02
+#define PHP_HTTP_CLIENT_DEBUG_HEADER	0x10
+#define PHP_HTTP_CLIENT_DEBUG_BODY		0x20
+#define PHP_HTTP_CLIENT_DEBUG_SSL		0x40
 
 typedef struct php_http_client {
 	void *ctx;
@@ -104,6 +112,10 @@ typedef struct php_http_client {
 			php_http_client_progress_callback_t func;
 			void *arg;
 		} progress;
+		struct {
+			php_http_client_debug_callback_t func;
+			void *arg;
+		} debug;
 	} callback;
 
 	zend_llist requests;
@@ -123,6 +135,10 @@ typedef struct php_http_client_object {
 	long iterator;
 	php_http_object_method_t *update;
 	php_http_object_method_t notify;
+	struct {
+		zend_fcall_info fci;
+		zend_fcall_info_cache fcc;
+	} debug;
 } php_http_client_object_t;
 
 PHP_HTTP_API php_http_client_t *php_http_client_init(php_http_client_t *h, php_http_client_ops_t *ops, php_resource_factory_t *rf, void *init_arg TSRMLS_DC);

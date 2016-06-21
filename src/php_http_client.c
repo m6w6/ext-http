@@ -204,6 +204,8 @@ void php_http_client_dtor(php_http_client_t *h)
 	if (h->ops->dtor) {
 		h->ops->dtor(h);
 	}
+	h->callback.debug.func = NULL;
+	h->callback.debug.arg = NULL;
 
 	php_resource_factory_free(&h->rf);
 }
@@ -329,6 +331,11 @@ void php_http_client_object_free(void *object TSRMLS_DC)
 	php_http_client_object_t *o = (php_http_client_object_t *) object;
 
 	php_http_client_free(&o->client);
+	if (o->debug.fci.size > 0) {
+		zend_fcall_info_args_clear(&o->debug.fci, 1);
+		zval_ptr_dtor(&o->debug.fci.function_name);
+		o->debug.fci.size = 0;
+	}
 	php_http_object_method_dtor(&o->notify);
 	php_http_object_method_free(&o->update);
 	zend_object_std_dtor((zend_object *) o TSRMLS_CC);
@@ -489,6 +496,36 @@ static void handle_progress(void *arg, php_http_client_t *client, php_http_clien
 	zval_ptr_dtor(&zclient);
 	zval_ptr_dtor(&zrequest);
 	zval_ptr_dtor(&zprogress);
+}
+
+static void handle_debug(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, unsigned type, const char *data, size_t size)
+{
+	zval *ztype, *zdata, *zreq, *zclient;
+	php_http_client_object_t *client_obj = arg;
+	zend_error_handling zeh;
+	TSRMLS_FETCH_FROM_CTX(client->ts);
+
+	MAKE_STD_ZVAL(zclient);
+	ZVAL_OBJVAL(zclient, client_obj->zv, 1);
+	MAKE_STD_ZVAL(zreq);
+	ZVAL_OBJVAL(zreq, ((php_http_message_object_t *) e->opaque)->zv, 1);
+	MAKE_STD_ZVAL(ztype);
+	ZVAL_LONG(ztype, type);
+	MAKE_STD_ZVAL(zdata);
+	ZVAL_STRINGL(zdata, data, size, 1);
+
+	zend_replace_error_handling(EH_NORMAL, NULL, &zeh TSRMLS_CC);
+	if (SUCCESS == zend_fcall_info_argn(&client_obj->debug.fci TSRMLS_CC, 4, &zclient, &zreq, &ztype, &zdata)) {
+		zend_fcall_info_call(&client_obj->debug.fci, &client_obj->debug.fcc, NULL, NULL TSRMLS_CC);
+		zend_fcall_info_args_clear(&client_obj->debug.fci, 0);
+	}
+	zend_restore_error_handling(&zeh TSRMLS_CC);
+
+	zval_ptr_dtor(&zclient);
+	zval_ptr_dtor(&zreq);
+	zval_ptr_dtor(&ztype);
+	zval_ptr_dtor(&zdata);
+
 }
 
 static void response_dtor(void *data)
@@ -1213,6 +1250,38 @@ static PHP_METHOD(HttpClient, getAvailableConfiguration)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_setDebug, 0, 0, 1)
+	ZEND_ARG_TYPE_INFO(0, callback, IS_CALLABLE, 1)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpClient, setDebug)
+{
+	zend_fcall_info fci;
+	zend_fcall_info_cache fcc;
+	php_http_client_object_t *client_obj;
+
+	fci.size = 0;
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|f", &fci, &fcc), invalid_arg, return);
+
+	client_obj = zend_object_store_get_object(getThis() TSRMLS_CC);
+
+	if (client_obj->debug.fci.size > 0) {
+		zval_ptr_dtor(&client_obj->debug.fci.function_name);
+		client_obj->debug.fci.size = 0;
+	}
+	if (fci.size > 0) {
+		memcpy(&client_obj->debug.fci, &fci, sizeof(fci));
+		memcpy(&client_obj->debug.fcc, &fcc, sizeof(fcc));
+		Z_ADDREF_P(fci.function_name);
+		client_obj->client->callback.debug.func = handle_debug;
+		client_obj->client->callback.debug.arg = client_obj;
+	} else {
+		client_obj->client->callback.debug.func = NULL;
+		client_obj->client->callback.debug.arg = NULL;
+	}
+
+	RETVAL_ZVAL(getThis(), 1, 0);
+}
+
 static zend_function_entry php_http_client_methods[] = {
 	PHP_ME(HttpClient, __construct,          ai_HttpClient_construct,            ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(HttpClient, reset,                ai_HttpClient_reset,                ZEND_ACC_PUBLIC)
@@ -1245,6 +1314,7 @@ static zend_function_entry php_http_client_methods[] = {
 	PHP_ME(HttpClient, getAvailableDrivers,  ai_HttpClient_getAvailableDrivers,  ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	PHP_ME(HttpClient, getAvailableOptions,  ai_HttpClient_getAvailableOptions,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, getAvailableConfiguration, ai_HttpClient_getAvailableConfiguration, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpClient, setDebug,             ai_HttpClient_setDebug,             ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
 
@@ -1262,6 +1332,13 @@ PHP_MINIT_FUNCTION(http_client)
 	zend_declare_property_null(php_http_client_class_entry, ZEND_STRL("options"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_null(php_http_client_class_entry, ZEND_STRL("history"), ZEND_ACC_PROTECTED TSRMLS_CC);
 	zend_declare_property_bool(php_http_client_class_entry, ZEND_STRL("recordHistory"), 0, ZEND_ACC_PUBLIC TSRMLS_CC);
+
+	zend_declare_class_constant_long(php_http_client_class_entry, ZEND_STRL("DEBUG_INFO"), PHP_HTTP_CLIENT_DEBUG_INFO TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_client_class_entry, ZEND_STRL("DEBUG_IN"), PHP_HTTP_CLIENT_DEBUG_IN TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_client_class_entry, ZEND_STRL("DEBUG_OUT"), PHP_HTTP_CLIENT_DEBUG_OUT TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_client_class_entry, ZEND_STRL("DEBUG_HEADER"), PHP_HTTP_CLIENT_DEBUG_HEADER TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_client_class_entry, ZEND_STRL("DEBUG_BODY"), PHP_HTTP_CLIENT_DEBUG_BODY TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_client_class_entry, ZEND_STRL("DEBUG_SSL"), PHP_HTTP_CLIENT_DEBUG_SSL TSRMLS_CC);
 
 	zend_hash_init(&php_http_client_drivers, 2, NULL, NULL, 1);
 
