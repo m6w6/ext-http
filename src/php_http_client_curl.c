@@ -215,6 +215,7 @@ static int php_http_curle_seek_callback(void *userdata, curl_off_t offset, int o
 static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data, size_t length, void *ctx)
 {
 	php_http_client_curl_handler_t *h = ctx;
+	unsigned utype = PHP_HTTP_CLIENT_DEBUG_INFO;
 
 	/* catch progress */
 	switch (type) {
@@ -258,18 +259,41 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 				h->client->callback.progress.func(h->client->callback.progress.arg, h->client, &h->queue, &h->progress);
 			}
 			break;
+
 		case CURLINFO_HEADER_OUT:
-		case CURLINFO_DATA_OUT:
+			utype |= PHP_HTTP_CLIENT_DEBUG_HEADER;
+			goto data_out;
+
 		case CURLINFO_SSL_DATA_OUT:
+			utype |= PHP_HTTP_CLIENT_DEBUG_SSL;
+			goto data_out;
+
+		case CURLINFO_DATA_OUT:
+		data_out:
+			utype |= PHP_HTTP_CLIENT_DEBUG_OUT;
 			h->progress.info = "send";
 			break;
+
 		case CURLINFO_HEADER_IN:
-		case CURLINFO_DATA_IN:
+			utype |= PHP_HTTP_CLIENT_DEBUG_HEADER;
+			goto data_in;
+
 		case CURLINFO_SSL_DATA_IN:
+			utype |= PHP_HTTP_CLIENT_DEBUG_SSL;
+			goto data_in;
+
+		case CURLINFO_DATA_IN:
+		data_in:
+			utype |= PHP_HTTP_CLIENT_DEBUG_IN;
 			h->progress.info = "receive";
 			break;
+
 		default:
 			break;
+	}
+
+	if (h->client->callback.debug.func) {
+		h->client->callback.debug.func(h->client->callback.debug.arg, h->client, &h->queue, utype, data, length);
 	}
 
 #if 0
@@ -2056,6 +2080,7 @@ static void php_http_client_curl_dtor(php_http_client_t *h)
 
 	if (curl->ev_ops) {
 		curl->ev_ops->dtor(&curl->ev_ctx);
+		curl->ev_ops = NULL;
 	}
 	curl->unfinished = 0;
 
