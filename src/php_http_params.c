@@ -522,12 +522,10 @@ static void merge_param(HashTable *params, zval *zdata, zval ***current_param, z
 
 static void push_param(HashTable *params, php_http_params_state_t *state, const php_http_params_opts_t *opts TSRMLS_DC)
 {
-	if (!state->current.val) {
-		return;
-	}
-
 	if (state->val.str) {
-		if (0 < (state->val.len = state->input.str - state->val.str)) {
+		if (!state->current.val) {
+			return;
+		} else if (0 < (state->val.len = state->input.str - state->val.str)) {
 			sanitize_value(opts->flags, state->val.str, state->val.len, *(state->current.val), state->rfc5987 TSRMLS_CC);
 		} else {
 			ZVAL_EMPTY_STRING(*(state->current.val));
