@@ -349,6 +349,7 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 	*length = 0;
 	*body = NULL;
 	
+#if (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION < 6)
 	if (SG(request_info).raw_post_data) {
 		*length = SG(request_info).raw_post_data_length;
 		*body = SG(request_info).raw_post_data;
@@ -358,6 +359,9 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 		}
 		return SUCCESS;
 	} else if (sapi_module.read_post && !HTTP_G->read_post_data) {
+#else
+	if (sapi_module.read_post && !HTTP_G->read_post_data) {
+#endif
 		char *buf = emalloc(4096);
 		int len;
 		
@@ -382,8 +386,10 @@ PHP_HTTP_API STATUS _http_get_request_body_ex(char **body, size_t *length, zend_
 			return FAILURE;
 		}
 		
+#if (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION < 6)
 		SG(request_info).raw_post_data = *body;
 		SG(request_info).raw_post_data_length = *length;
+#endif
 		
 		if (dup) {
 			*body = estrndup(*body, *length);
@@ -400,9 +406,13 @@ PHP_HTTP_API php_stream *_http_get_request_body_stream(TSRMLS_D)
 {
 	php_stream *s = NULL;
 	
+#if (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION < 6)
 	if (SG(request_info).raw_post_data) {
 		s = php_stream_open_wrapper("php://input", "rb", 0, NULL);
 	} else if (sapi_module.read_post && !HTTP_G->read_post_data) {
+#else
+	if (sapi_module.read_post && !HTTP_G->read_post_data) {
+#endif
 		HTTP_G->read_post_data = 1;
 		
 		if ((s = php_stream_temp_new())) {
