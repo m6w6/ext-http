@@ -46,10 +46,11 @@ php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **bo
 
 	if (stream) {
 		body->res = stream->res;
+		++GC_REFCOUNT(body->res);
 	} else {
 		body->res = php_stream_temp_create(TEMP_STREAM_DEFAULT, 0xffff)->res;
 	}
-	++GC_REFCOUNT(body->res);
+	php_stream_auto_cleanup(php_http_message_body_stream(body));
 
 	if (body_ptr) {
 		*body_ptr = body;
@@ -91,6 +92,7 @@ void php_http_message_body_free(php_http_message_body_t **body_ptr)
 		php_http_message_body_t *body = *body_ptr;
 
 		if (!--body->refcount) {
+			zend_list_delete(body->res);
 			PTR_FREE(body->boundary);
 			efree(body);
 		}
