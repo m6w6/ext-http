@@ -30,11 +30,11 @@ void php_http_info_dtor(php_http_info_t *i)
 			PTR_SET(PHP_HTTP_INFO(i).request.method, NULL);
 			PTR_SET(PHP_HTTP_INFO(i).request.url, NULL);
 			break;
-		
+
 		case PHP_HTTP_RESPONSE:
 			PTR_SET(PHP_HTTP_INFO(i).response.status, NULL);
 			break;
-		
+
 		default:
 			break;
 	}
@@ -51,29 +51,41 @@ void php_http_info_free(php_http_info_t **i)
 
 php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header)
 {
-	const char *end, *http;
+	const char *end, *http, *off;
 	zend_bool free_info = !info;
-	
+
 	/* sane parameter */
 	if ((!pre_header) || (!*pre_header)) {
 		return NULL;
 	}
-	
+
 	/* where's the end of the line */
 	if (!(end = php_http_locate_eol(pre_header, NULL))) {
 		end = pre_header + strlen(pre_header);
 	}
-	
+
 	/* there must be HTTP/1.x in the line */
 	if (!(http = php_http_locate_str(pre_header, end - pre_header, "HTTP/", lenof("HTTP/")))) {
 		return NULL;
 	}
-	
+
 	info = php_http_info_init(info);
 
-	/* and nothing than SPACE or NUL after HTTP/X.x */
-	if (!php_http_version_parse(&info->http.version, http)
-	||	(http[lenof("HTTP/X.x")] && (!PHP_HTTP_IS_CTYPE(space, http[lenof("HTTP/X.x")])))) {
+	if (!php_http_version_parse(&info->http.version, http)) {
+		if (free_info) {
+			php_http_info_free(&info);
+		}
+		return NULL;
+	}
+
+	/* clumsy fix for changed libcurl behaviour in 7.49.1, see https://github.com/curl/curl/issues/888 */
+	off = &http[lenof("HTTP/X")];
+	if (info->http.version.major < 2) {
+		off += 2;
+	}
+
+	/* and nothing than SPACE or NUL after HTTP/X(.x) */
+	if (*off && (!PHP_HTTP_IS_CTYPE(space, *off))) {
 		if (free_info) {
 			php_http_info_free(&info);
 		}
@@ -90,11 +102,11 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 
 	/* is response */
 	if (pre_header == http) {
-		const char *status = NULL, *code = http + sizeof("HTTP/X.x");
-		
+		const char *status = NULL, *code = off;
+
 		info->type = PHP_HTTP_RESPONSE;
 		while (code < end && ' ' == *code) ++code;
-		if (code && end > code) {
+		if (end > code) {
 			/* rfc7230#3.1.2 The status-code element is a 3-digit integer code */
 			PHP_HTTP_INFO(info).response.code = 100*(*code++ - '0');
 			PHP_HTTP_INFO(info).response.code += 10*(*code++ - '0');
@@ -115,14 +127,14 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		} else {
 			PHP_HTTP_INFO(info).response.status = NULL;
 		}
-		
+
 		return info;
 	}
-	
+
 	/* is request */
-	else if (*(http - 1) == ' ' && (!http[lenof("HTTP/X.x")] || http[lenof("HTTP/X.x")] == '\r' || http[lenof("HTTP/X.x")] == '\n')) {
+	else if (*(http - 1) == ' ' && (!*off || *off == '\r' || *off == '\n')) {
 		const char *url = strchr(pre_header, ' ');
-		
+
 		info->type = PHP_HTTP_REQUEST;
 		if (url && http > url) {
 			size_t url_len = url - pre_header;
@@ -151,11 +163,11 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 			PHP_HTTP_INFO(info).request.method = NULL;
 			PHP_HTTP_INFO(info).request.url = NULL;
 		}
-		
+
 		return info;
 	}
 
-	/* some darn header containing HTTP/X.x */
+	/* some darn header containing HTTP/X(.x) */
 	else {
 		if (free_info) {
 			php_http_info_free(&info);

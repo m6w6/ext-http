@@ -248,7 +248,7 @@ static inline void sanitize_key(unsigned flags, const char *str, size_t len, zva
 	if (flags & PHP_HTTP_PARAMS_ESCAPED) {
 		sanitize_escaped(zv);
 	}
-	
+
 	if (!Z_STRLEN_P(zv)) {
 		return;
 	}
@@ -554,7 +554,9 @@ static void merge_param(HashTable *params, zval *zdata, zval **current_param, zv
 static void push_param(HashTable *params, php_http_params_state_t *state, const php_http_params_opts_t *opts)
 {
 	if (state->val.str) {
-		if (0 < (state->val.len = state->input.str - state->val.str)) {
+		if (!state->current.val) {
+			return;
+		} else if (0 < (state->val.len = state->input.str - state->val.str)) {
 			sanitize_value(opts->flags, state->val.str, state->val.len, state->current.val, state->rfc5987);
 		} else {
 			ZVAL_EMPTY_STRING(state->current.val);
@@ -639,7 +641,7 @@ static size_t check_sep(php_http_params_state_t *state, php_http_params_token_t 
 	if (state->quotes || state->escape) {
 		return 0;
 	}
-	
+
 	if (sep) while (*sep) {
 		if (check_str(state->input.str, state->input.len, (*sep)->str, (*sep)->len)) {
 			return (*sep)->len;
@@ -689,7 +691,7 @@ HashTable *php_http_params_parse(HashTable *params, const php_http_params_opts_t
 		} else {
 			state.escape = (*state.input.str == '\\');
 		}
-		
+
 		if (!state.param.str) {
 			/* initialize */
 			skip_sep(0, &state, opts->param, opts->arg, opts->val);
@@ -743,7 +745,7 @@ HashTable *php_http_params_parse(HashTable *params, const php_http_params_opts_t
 				}
 			}
 		}
-		
+
 		if (state.input.len) {
 			++state.input.str;
 			--state.input.len;
