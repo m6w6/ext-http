@@ -51,7 +51,7 @@ void php_http_info_free(php_http_info_t **i)
 
 php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header TSRMLS_DC)
 {
-	const char *end, *http;
+	const char *end, *http, *off;
 	zend_bool free_info = !info;
 	
 	/* sane parameter */
@@ -71,9 +71,21 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 	
 	info = php_http_info_init(info TSRMLS_CC);
 
-	/* and nothing than SPACE or NUL after HTTP/X.x */
-	if (!php_http_version_parse(&info->http.version, http TSRMLS_CC)
-	||	(http[lenof("HTTP/X.x")] && (!PHP_HTTP_IS_CTYPE(space, http[lenof("HTTP/X.x")])))) {
+	if (!php_http_version_parse(&info->http.version, http TSRMLS_CC)) {
+		if (free_info) {
+			php_http_info_free(&info);
+		}
+		return NULL;
+	}
+
+	/* clumsy fix for changed libcurl behaviour in 7.49.1, see https://github.com/curl/curl/issues/888 */
+	off = &http[lenof("HTTP/X")];
+	if (info->http.version.major < 2) {
+		off += 2;
+	}
+
+	/* and nothing than SPACE or NUL after HTTP/X(.x) */
+	if (*off && (!PHP_HTTP_IS_CTYPE(space, *off))) {
 		if (free_info) {
 			php_http_info_free(&info);
 		}
@@ -90,11 +102,11 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 
 	/* is response */
 	if (pre_header == http) {
-		const char *status = NULL, *code = http + sizeof("HTTP/X.x");
+		const char *status = NULL, *code = off;
 		
 		info->type = PHP_HTTP_RESPONSE;
 		while (' ' == *code) ++code;
-		if (code && end > code) {
+		if (end > code) {
 			/* rfc7230#3.1.2 The status-code element is a 3-digit integer code */
 			PHP_HTTP_INFO(info).response.code = 100*(*code++ - '0');
 			PHP_HTTP_INFO(info).response.code += 10*(*code++ - '0');
@@ -120,7 +132,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 	}
 	
 	/* is request */
-	else if (*(http - 1) == ' ' && (!http[lenof("HTTP/X.x")] || http[lenof("HTTP/X.x")] == '\r' || http[lenof("HTTP/X.x")] == '\n')) {
+	else if (*(http - 1) == ' ' && (!*off || *off == '\r' || *off == '\n')) {
 		const char *url = strchr(pre_header, ' ');
 		
 		info->type = PHP_HTTP_REQUEST;
@@ -155,7 +167,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		return info;
 	}
 
-	/* some darn header containing HTTP/X.x */
+	/* some darn header containing HTTP/X(.x) */
 	else {
 		if (free_info) {
 			php_http_info_free(&info);

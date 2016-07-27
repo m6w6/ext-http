@@ -44,18 +44,29 @@ php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *st
 		major = *ptr++ - '0';
 		if (major >= 0 && major <= 9) {
 			separator = *ptr++;
-			if (separator) {
-				if (separator != '.' && separator != ',') {
-					php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Non-standard version separator '%c' in HTTP protocol version '%s'", separator, ptr - 2);
-				}
+			switch (separator) {
+			default:
+				php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Non-standard version separator '%c' in HTTP protocol version '%s'", separator, ptr - 2);
+				/* no break */
+			case '.':
+			case ',':
 				minor = *ptr - '0';
-				if (minor >= 0 && minor <= 9) {
-					return php_http_version_init(v, major, minor TSRMLS_CC);
+				break;
+
+			case ' ':
+				if (major > 1) {
+					minor = 0;
+				} else {
+					goto error;
 				}
+			}
+			if (minor >= 0 && minor <= 9) {
+				return php_http_version_init(v, major, minor TSRMLS_CC);
 			}
 		}
 	}
 
+	error:
 	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not parse HTTP protocol version '%s'", str);
 	return NULL;
 }
