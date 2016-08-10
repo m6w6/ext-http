@@ -1119,7 +1119,7 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 				/* sort of a compromise, just ensure we don't end up
 				 * with a hyphen at the beginning
 				 */
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
+				php_error_docref(NULL, E_WARNING,
 						"Failed to parse %s; unexpected '%c' at pos %u in '%s'",
 						port ? "port" : "host",
 						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);

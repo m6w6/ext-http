@@ -476,7 +476,9 @@ static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, ph
 			ZVAL_UNDEF(&retval);
 			zend_fcall_info_argn(&e->closure.fci, 1, &zresponse);
 			zend_replace_error_handling(EH_NORMAL, NULL, &zeh);
+			++client->callback.depth;
 			zend_fcall_info_call(&e->closure.fci, &e->closure.fcc, &retval, NULL);
+			--client->callback.depth;
 			zend_restore_error_handling(&zeh);
 			zend_fcall_info_argn(&e->closure.fci, 0);
 
@@ -521,7 +523,9 @@ static void handle_progress(void *arg, php_http_client_t *client, php_http_clien
 	add_property_double(&args[1], "ulnow", progress->ul.now);
 
 	zend_replace_error_handling(EH_NORMAL, NULL, &zeh);
+	++client->callback.depth;
 	php_http_object_method_call(&client_obj->notify, &zclient, NULL, 2, args);
+	--client->callback.depth;
 	zend_restore_error_handling(&zeh);
 
 	zval_ptr_dtor(&zclient);
@@ -542,7 +546,9 @@ static void handle_debug(void *arg, php_http_client_t *client, php_http_client_e
 
 	zend_replace_error_handling(EH_NORMAL, NULL, &zeh);
 	if (SUCCESS == zend_fcall_info_argn(&client_obj->debug.fci, 4, &zclient, &zreq, &ztype, &zdata)) {
+		++client->callback.depth;
 		zend_fcall_info_call(&client_obj->debug.fci, &client_obj->debug.fcc, NULL, NULL);
+		--client->callback.depth;
 		zend_fcall_info_args_clear(&client_obj->debug.fci, 0);
 	}
 	zend_restore_error_handling(&zeh);
