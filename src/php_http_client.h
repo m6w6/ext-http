@@ -116,6 +116,7 @@ typedef struct php_http_client {
 			php_http_client_debug_callback_t func;
 			void *arg;
 		} debug;
+		unsigned depth;
 	} callback;
 
 	zend_llist requests;

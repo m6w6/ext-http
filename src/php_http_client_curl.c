@@ -182,22 +182,19 @@ static int php_http_curle_progress_callback(void *ctx, double dltotal, double dl
 #endif
 {
 	php_http_client_curl_handler_t *h = ctx;
-	zend_bool update = 0;
 
 	if (h->progress.dl.total != dltotal
 	||	h->progress.dl.now != dlnow
 	||	h->progress.ul.total != ultotal
 	||	h->progress.ul.now != ulnow
 	) {
-		update = 1;
-
 		h->progress.dl.total = dltotal;
 		h->progress.dl.now = dlnow;
 		h->progress.ul.total = ultotal;
 		h->progress.ul.now = ulnow;
 	}
 
-	if (update && h->client->callback.progress.func) {
+	if (h->client->callback.progress.func) {
 		h->client->callback.progress.func(h->client->callback.progress.arg, h->client, &h->queue, &h->progress);
 	}
 
@@ -2167,6 +2164,11 @@ static ZEND_RESULT_CODE php_http_client_curl_dequeue(php_http_client_t *h, php_h
 	php_http_client_curl_t *curl = h->ctx;
 	php_http_client_curl_handler_t *handler = enqueue->opaque;
 	TSRMLS_FETCH_FROM_CTX(h->ts);
+
+	if (h->callback.depth) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Could not dequeue request while executing callbacks");
+		return FAILURE;
+	}
 
 	php_http_client_curl_handler_clear(handler);
 	if (CURLM_OK == (rs = curl_multi_remove_handle(curl->handle->multi, handler->handle))) {

@@ -435,7 +435,9 @@ static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, ph
 
 			zend_fcall_info_argn(&e->closure.fci TSRMLS_CC, 1, &zresponse);
 			zend_replace_error_handling(EH_NORMAL, NULL, &zeh TSRMLS_CC);
+			++client->callback.depth;
 			zend_fcall_info_call(&e->closure.fci, &e->closure.fcc, &retval, NULL TSRMLS_CC);
+			--client->callback.depth;
 			zend_restore_error_handling(&zeh TSRMLS_CC);
 			zend_fcall_info_argn(&e->closure.fci TSRMLS_CC, 0);
 
@@ -490,7 +492,9 @@ static void handle_progress(void *arg, php_http_client_t *client, php_http_clien
 	args[1] = &zprogress;
 
 	zend_replace_error_handling(EH_NORMAL, NULL, &zeh TSRMLS_CC);
+	++client->callback.depth;
 	php_http_object_method_call(&client_obj->notify, zclient, NULL, 2, args TSRMLS_CC);
+	--client->callback.depth;
 	zend_restore_error_handling(&zeh TSRMLS_CC);
 
 	zval_ptr_dtor(&zclient);
@@ -516,7 +520,9 @@ static void handle_debug(void *arg, php_http_client_t *client, php_http_client_e
 
 	zend_replace_error_handling(EH_NORMAL, NULL, &zeh TSRMLS_CC);
 	if (SUCCESS == zend_fcall_info_argn(&client_obj->debug.fci TSRMLS_CC, 4, &zclient, &zreq, &ztype, &zdata)) {
+		++client_obj->client->callback.depth;
 		zend_fcall_info_call(&client_obj->debug.fci, &client_obj->debug.fcc, NULL, NULL TSRMLS_CC);
+		--client_obj->client->callback.depth;
 		zend_fcall_info_args_clear(&client_obj->debug.fci, 0);
 	}
 	zend_restore_error_handling(&zeh TSRMLS_CC);
@@ -525,7 +531,6 @@ static void handle_debug(void *arg, php_http_client_t *client, php_http_client_e
 	zval_ptr_dtor(&zreq);
 	zval_ptr_dtor(&ztype);
 	zval_ptr_dtor(&zdata);
-
 }
 
 static void response_dtor(void *data)
