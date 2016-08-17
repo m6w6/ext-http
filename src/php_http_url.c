@@ -775,10 +775,16 @@ static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *pt
 		switch (*ptr) {
 		case ':':
 			if (password) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse password; duplicate ':' at pos %u in '%s'",
-						(unsigned) (ptr - tmp), tmp);
-				return FAILURE;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse password; duplicate ':' at pos %u in '%s'",
+							(unsigned) (ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return FAILURE;
+				}
+				state->buffer[state->offset++] = *ptr;
+				break;
 			}
 			password = ptr + 1;
 			state->buffer[state->offset++] = 0;
@@ -787,16 +793,31 @@ static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *pt
 
 		case '%':
 			if (ptr[1] != '%' && (end - ptr <= 2 || !isxdigit(*(ptr+1)) || !isxdigit(*(ptr+2)))) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse userinfo; invalid percent encoding at pos %u in '%s'",
-						(unsigned) (ptr - tmp), tmp);
-				return FAILURE;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse userinfo; invalid percent encoding at pos %u in '%s'",
+							(unsigned) (ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return FAILURE;
+				}
+				state->buffer[state->offset++] = *ptr++;
+				break;
 			}
 			state->buffer[state->offset++] = *ptr++;
 			state->buffer[state->offset++] = *ptr++;
 			state->buffer[state->offset++] = *ptr;
 			break;
 
+		default:
+			if ((mb = parse_mb(state, PARSE_USERINFO, ptr, end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+				ptr += mb - 1;
+				break;
+			}
+			if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+				return FAILURE;
+			}
+			/* no break */
 		case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
 		case '+': case ',': case ';': case '=': /* sub-delims */
 		case '-': case '.': case '_': case '~': /* unreserved */
@@ -814,11 +835,6 @@ static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *pt
 			state->buffer[state->offset++] = *ptr;
 			break;
 
-		default:
-			if (!(mb = parse_mb(state, PARSE_USERINFO, ptr, end, tmp, 0))) {
-				return FAILURE;
-			}
-			ptr += mb - 1;
 		}
 	} while(++ptr != end);
 
@@ -889,15 +905,19 @@ static ZEND_RESULT_CODE parse_idn2(struct parse_state *state, size_t prev_len)
 	}
 #	endif
 	if (rv != IDN2_OK) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idn2_strerror(rv));
-		return FAILURE;
+		if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idn2_strerror(rv));
+		}
+		if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+			return FAILURE;
+		}
 	} else {
 		size_t idnlen = strlen(idn);
 		memcpy(state->url.host, idn, idnlen + 1);
 		free(idn);
 		state->offset += idnlen - prev_len;
-		return SUCCESS;
 	}
+	return SUCCESS;
 }
 #elif PHP_HTTP_HAVE_IDN
 static ZEND_RESULT_CODE parse_idn(struct parse_state *state, size_t prev_len)
@@ -915,15 +935,19 @@ static ZEND_RESULT_CODE parse_idn(struct parse_state *state, size_t prev_len)
 	}
 #	endif
 	if (rv != IDNA_SUCCESS) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idna_strerror(rv));
-		return FAILURE;
+		if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse IDN; %s", idna_strerror(rv));
+		}
+		if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+			return FAILURE;
+		}
 	} else {
 		size_t idnlen = strlen(idn);
 		memcpy(state->url.host, idn, idnlen + 1);
 		free(idn);
 		state->offset += idnlen - prev_len;
-		return SUCCESS;
 	}
+	return SUCCESS;
 }
 #endif
 
@@ -1024,6 +1048,7 @@ static ZEND_RESULT_CODE parse_widn(struct parse_state *state)
 #ifdef HAVE_INET_PTON
 static const char *parse_ip6(struct parse_state *state, const char *ptr)
 {
+	unsigned pos = 0;
 	const char *error = NULL, *end = state->ptr, *tmp = memchr(ptr, ']', end - ptr);
 	TSRMLS_FETCH_FROM_CTX(state->ts);
 
@@ -1041,17 +1066,21 @@ static const char *parse_ip6(struct parse_state *state, const char *ptr)
 			state->buffer[state->offset++] = 0;
 			ptr = tmp + 1;
 		} else if (rv == -1) {
+			pos = 1;
 			error = strerror(errno);
 		} else {
 			error = "unexpected '['";
 		}
 		efree(addr);
 	} else {
+		pos = tmp ? tmp - ptr : end - ptr;
 		error = "expected ']'";
 	}
 
 	if (error) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse hostinfo; %s", error);
+		if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to parse hostinfo; %s at pos %u in '%s'", error, pos, ptr);
+		}
 		return NULL;
 	}
 
@@ -1061,13 +1090,16 @@ static const char *parse_ip6(struct parse_state *state, const char *ptr)
 
 static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *ptr)
 {
-	size_t mb, len;
+	size_t mb, len = state->offset;
 	const char *end = state->ptr, *tmp = ptr, *port = NULL, *label = NULL;
 	TSRMLS_FETCH_FROM_CTX(state->ts);
 
 #ifdef HAVE_INET_PTON
 	if (*ptr == '[' && !(ptr = parse_ip6(state, ptr))) {
-		return FAILURE;
+		if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+			return FAILURE;
+		}
+		ptr = tmp;
 	}
 #endif
 
@@ -1075,20 +1107,30 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 		switch (*ptr) {
 		case ':':
 			if (port) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse port; unexpected ':' at pos %u in '%s'",
-						(unsigned) (ptr - tmp), tmp);
-				return FAILURE;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse port; unexpected ':' at pos %u in '%s'",
+							(unsigned) (ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return FAILURE;
+				}
 			}
 			port = ptr + 1;
 			break;
 
 		case '%':
 			if (ptr[1] != '%' && (end - ptr <= 2 || !isxdigit(*(ptr+1)) || !isxdigit(*(ptr+2)))) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse hostinfo; invalid percent encoding at pos %u in '%s'",
-						(unsigned) (ptr - tmp), tmp);
-				return FAILURE;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse hostinfo; invalid percent encoding at pos %u in '%s'",
+							(unsigned) (ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return FAILURE;
+				}
+				state->buffer[state->offset++] = *ptr++;
+				break;
 			}
 			state->buffer[state->offset++] = *ptr++;
 			state->buffer[state->offset++] = *ptr++;
@@ -1100,11 +1142,16 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 				/* sort of a compromise, just ensure we don't end up
 				 * with a dot at the beginning or two consecutive dots
 				 */
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse %s; unexpected '%c' at pos %u in '%s'",
-						port ? "port" : "host",
-						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
-				return FAILURE;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse %s; unexpected '%c' at pos %u in '%s'",
+							port ? "port" : "host",
+							(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return FAILURE;
+				}
+				break;
 			}
 			state->buffer[state->offset++] = *ptr;
 			label = NULL;
@@ -1115,11 +1162,16 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 				/* sort of a compromise, just ensure we don't end up
 				 * with a hyphen at the beginning
 				 */
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse %s; unexpected '%c' at pos %u in '%s'",
-						port ? "port" : "host",
-						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
-				return FAILURE;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse %s; unexpected '%c' at pos %u in '%s'",
+							port ? "port" : "host",
+							(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return FAILURE;
+				}
+				break;
 			}
 			/* no break */
 		case '_': case '~': /* unreserved */
@@ -1134,10 +1186,15 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 		case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
 		case 'v': case 'w': case 'x': case 'y': case 'z':
 			if (port) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse port; unexpected char '%c' at pos %u in '%s'",
-						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
-				return FAILURE;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse port; unexpected char '%c' at pos %u in '%s'",
+							(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return FAILURE;
+				}
+				break;
 			}
 			/* no break */
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6':
@@ -1156,12 +1213,20 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 			if (ptr == end) {
 				break;
 			} else if (port) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse port; unexpected byte 0x%02x at pos %u in '%s'",
-						(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
-				return FAILURE;
-			} else if (!(mb = parse_mb(state, PARSE_HOSTINFO, ptr, end, tmp, 0))) {
-				return FAILURE;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse port; unexpected byte 0x%02x at pos %u in '%s'",
+							(unsigned char) *ptr, (unsigned) (ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return FAILURE;
+				}
+				break;
+			} else if (!(mb = parse_mb(state, PARSE_HOSTINFO, ptr, end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return FAILURE;
+				}
+				break;
 			}
 			label = ptr;
 			ptr += mb - 1;
@@ -1169,7 +1234,7 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 	} while (++ptr != end);
 
 	if (!state->url.host) {
-		len = (port ? port - tmp - 1 : end - tmp);
+		len = state->offset - len;
 		state->url.host = &state->buffer[state->offset - len];
 		state->buffer[state->offset++] = 0;
 	}
@@ -1200,10 +1265,15 @@ static const char *parse_authority(struct parse_state *state)
 		case '@':
 			/* userinfo delimiter */
 			if (host) {
-				TSRMLS_FETCH_FROM_CTX(state->ts);
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse userinfo; unexpected '@'");
-				return NULL;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					TSRMLS_FETCH_FROM_CTX(state->ts);
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse userinfo; unexpected '@'");
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return NULL;
+				}
+				break;
 			}
 			host = state->ptr + 1;
 			if (tmp != state->ptr && SUCCESS != parse_userinfo(state, tmp)) {
@@ -1250,10 +1320,16 @@ static const char *parse_path(struct parse_state *state)
 
 		case '%':
 			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse path; invalid percent encoding at pos %u in '%s'",
-						(unsigned) (state->ptr - tmp), tmp);
-				return NULL;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse path; invalid percent encoding at pos %u in '%s'",
+							(unsigned) (state->ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return NULL;
+				}
+				state->buffer[state->offset++] = *state->ptr;
+				break;
 			}
 			state->buffer[state->offset++] = *state->ptr++;
 			state->buffer[state->offset++] = *state->ptr++;
@@ -1280,8 +1356,11 @@ static const char *parse_path(struct parse_state *state)
 			break;
 
 		default:
-			if (!(mb = parse_mb(state, PARSE_PATH, state->ptr, state->end, tmp, 0))) {
-				return NULL;
+			if (!(mb = parse_mb(state, PARSE_PATH, state->ptr, state->end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return NULL;
+				}
+				break;
 			}
 			state->ptr += mb - 1;
 		}
@@ -1319,21 +1398,27 @@ static const char *parse_query(struct parse_state *state)
 
 		case '%':
 			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse query; invalid percent encoding at pos %u in '%s'",
-						(unsigned) (state->ptr - tmp), tmp);
-				return NULL;
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse query; invalid percent encoding at pos %u in '%s'",
+							(unsigned) (state->ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return NULL;
+				}
+				/* fallthrough, pct-encode the percent sign */
+			} else {
+				state->buffer[state->offset++] = *state->ptr++;
+				state->buffer[state->offset++] = *state->ptr++;
+				state->buffer[state->offset++] = *state->ptr;
+				break;
 			}
-			state->buffer[state->offset++] = *state->ptr++;
-			state->buffer[state->offset++] = *state->ptr++;
-			state->buffer[state->offset++] = *state->ptr;
-			break;
-
-		/* RFC1738 unsafe */
+			/* no break */
 		case '{': case '}':
 		case '<': case '>':
 		case '[': case ']':
 		case '|': case '\\': case '^': case '`': case '"': case ' ':
+			/* RFC1738 unsafe */
 			if (state->flags & PHP_HTTP_URL_PARSE_TOPCT) {
 				state->buffer[state->offset++] = '%';
 				state->buffer[state->offset++] = parse_xdigits[((unsigned char) *state->ptr) >> 4];
@@ -1362,8 +1447,11 @@ static const char *parse_query(struct parse_state *state)
 			break;
 
 		default:
-			if (!(mb = parse_mb(state, PARSE_QUERY, state->ptr, state->end, tmp, 0))) {
-				return NULL;
+			if (!(mb = parse_mb(state, PARSE_QUERY, state->ptr, state->end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return NULL;
+				}
+				break;
 			}
 			state->ptr += mb - 1;
 		}
@@ -1393,23 +1481,42 @@ static const char *parse_fragment(struct parse_state *state)
 
 	do {
 		switch (*state->ptr) {
-		case '%':
-			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
+		case '#':
+			if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
 				php_error_docref(NULL TSRMLS_CC, E_WARNING,
-						"Failed to parse fragment; invalid percent encoding at pos %u in '%s'",
+						"Failed to parse fragment; invalid fragment identifier at pos %u in '%s'",
 						(unsigned) (state->ptr - tmp), tmp);
+			}
+			if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
 				return NULL;
 			}
-			state->buffer[state->offset++] = *state->ptr++;
-			state->buffer[state->offset++] = *state->ptr++;
 			state->buffer[state->offset++] = *state->ptr;
 			break;
 
-		/* RFC1738 unsafe */
+		case '%':
+			if (state->ptr[1] != '%' && (state->end - state->ptr <= 2 || !isxdigit(*(state->ptr+1)) || !isxdigit(*(state->ptr+2)))) {
+				if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+					php_error_docref(NULL TSRMLS_CC, E_WARNING,
+							"Failed to parse fragment; invalid percent encoding at pos %u in '%s'",
+							(unsigned) (state->ptr - tmp), tmp);
+				}
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return NULL;
+				}
+				/* fallthrough */
+			} else {
+				state->buffer[state->offset++] = *state->ptr++;
+				state->buffer[state->offset++] = *state->ptr++;
+				state->buffer[state->offset++] = *state->ptr;
+				break;
+			}
+			/* no break */
+
 		case '{': case '}':
 		case '<': case '>':
 		case '[': case ']':
 		case '|': case '\\': case '^': case '`': case '"': case ' ':
+			/* RFC1738 unsafe */
 			if (state->flags & PHP_HTTP_URL_PARSE_TOPCT) {
 				state->buffer[state->offset++] = '%';
 				state->buffer[state->offset++] = parse_xdigits[((unsigned char) *state->ptr) >> 4];
@@ -1438,8 +1545,11 @@ static const char *parse_fragment(struct parse_state *state)
 			break;
 
 		default:
-			if (!(mb = parse_mb(state, PARSE_FRAGMENT, state->ptr, state->end, tmp, 0))) {
-				return NULL;
+			if (!(mb = parse_mb(state, PARSE_FRAGMENT, state->ptr, state->end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+					return NULL;
+				}
+				break;
 			}
 			state->ptr += mb - 1;
 		}
@@ -1563,11 +1673,15 @@ php_http_url_t *php_http_url_parse_authority(const char *str, size_t len, unsign
 	}
 
 	if (state->ptr != state->end) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING,
-				"Failed to parse URL authority, unexpected character at pos %u in '%s'",
-				(unsigned) (state->ptr - str), str);
-		efree(state);
-		return NULL;
+		if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING,
+					"Failed to parse URL authority, unexpected character at pos %u in '%s'",
+					(unsigned) (state->ptr - str), str);
+		}
+		if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
+			efree(state);
+			return NULL;
+		}
 	}
 
 	return (php_http_url_t *) state;
@@ -1586,7 +1700,13 @@ PHP_METHOD(HttpUrl, __construct)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|z!z!l", &old_url, &new_url, &flags), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
+	if (flags & PHP_HTTP_URL_SILENT_ERRORS) {
+		zend_replace_error_handling(EH_SUPPRESS, NULL, &zeh TSRMLS_CC);
+	} else if (flags & PHP_HTTP_URL_IGNORE_ERRORS) {
+		zend_replace_error_handling(EH_NORMAL, NULL, &zeh TSRMLS_CC);
+	} else {
+		zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
+	}
 	{
 		php_http_url_t *res_purl, *new_purl = NULL, *old_purl = NULL;
 
@@ -1634,7 +1754,13 @@ PHP_METHOD(HttpUrl, mod)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z!|l", &new_url, &flags), invalid_arg, return);
 
-	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
+	if (flags & PHP_HTTP_URL_SILENT_ERRORS) {
+		zend_replace_error_handling(EH_SUPPRESS, NULL, &zeh TSRMLS_CC);
+	} else if (flags & PHP_HTTP_URL_IGNORE_ERRORS) {
+		zend_replace_error_handling(EH_NORMAL, NULL, &zeh TSRMLS_CC);
+	} else {
+		zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
+	}
 	{
 		php_http_url_t *new_purl = NULL, *old_purl = NULL;
 
@@ -1748,6 +1874,11 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN"), PHP_HTTP_URL_PARSE_TOIDN TSRMLS_CC);
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT TSRMLS_CC);
+
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("IGNORE_ERRORS"), PHP_HTTP_URL_IGNORE_ERRORS TSRMLS_CC);
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("SILENT_ERRORS"), PHP_HTTP_URL_SILENT_ERRORS TSRMLS_CC);
+
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STDFLAGS"), PHP_HTTP_URL_STDFLAGS TSRMLS_CC);
 
 	return SUCCESS;
 }

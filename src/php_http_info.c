@@ -147,9 +147,9 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 			if (http > url) {
 				/* CONNECT presents an authority only */
 				if (strcasecmp(PHP_HTTP_INFO(info).request.method, "CONNECT")) {
-					PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, ~0 TSRMLS_CC);
+					PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, PHP_HTTP_URL_STDFLAGS TSRMLS_CC);
 				} else {
-					PHP_HTTP_INFO(info).request.url = php_http_url_parse_authority(url, http - url, ~0 TSRMLS_CC);
+					PHP_HTTP_INFO(info).request.url = php_http_url_parse_authority(url, http - url, PHP_HTTP_URL_STDFLAGS TSRMLS_CC);
 				}
 				if (!PHP_HTTP_INFO(info).request.url) {
 					PTR_SET(PHP_HTTP_INFO(info).request.method, NULL);

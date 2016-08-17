@@ -69,7 +69,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 				message->http.info.request.method = estrdup(Z_STRVAL_P(sval));
 			}
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("REQUEST_URI"), 1 TSRMLS_CC))) {
-				message->http.info.request.url = php_http_url_parse(Z_STRVAL_P(sval), Z_STRLEN_P(sval), ~0 TSRMLS_CC);
+				message->http.info.request.url = php_http_url_parse(Z_STRVAL_P(sval), Z_STRLEN_P(sval), PHP_HTTP_URL_STDFLAGS TSRMLS_CC);
 			}
 
 			php_http_env_get_request_headers(&message->hdrs TSRMLS_CC);
@@ -605,7 +605,7 @@ static void php_http_message_object_prophandler_get_request_url(php_http_message
 }
 static void php_http_message_object_prophandler_set_request_url(php_http_message_object_t *obj, zval *value TSRMLS_DC) {
 	if (PHP_HTTP_MESSAGE_TYPE(REQUEST, obj->message)) {
-		PTR_SET(obj->message->http.info.request.url, php_http_url_from_zval(value, ~0 TSRMLS_CC));
+		PTR_SET(obj->message->http.info.request.url, php_http_url_from_zval(value, PHP_HTTP_URL_STDFLAGS TSRMLS_CC));
 	}
 }
 static void php_http_message_object_prophandler_get_response_status(php_http_message_object_t *obj, zval *return_value TSRMLS_DC) {
@@ -1647,7 +1647,7 @@ static PHP_METHOD(HttpMessage, setRequestUrl)
 	}
 
 	zend_replace_error_handling(EH_THROW, php_http_exception_bad_url_class_entry, &zeh TSRMLS_CC);
-	url = php_http_url_from_zval(zurl, ~0 TSRMLS_CC);
+	url = php_http_url_from_zval(zurl, PHP_HTTP_URL_STDFLAGS TSRMLS_CC);
 	zend_restore_error_handling(&zeh TSRMLS_CC);
 
 	if (url && php_http_url_is_empty(url)) {
