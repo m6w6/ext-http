@@ -166,7 +166,7 @@ http://foobar:123/
 http\Url::__construct(): Failed to parse fragment; invalid fragment identifier at pos 7 in '/?foo=&#'
 # IGNORE
 
-Warning: http\Url::__construct(): Failed to parse fragment; invalid fragment identifier at pos 7 in '/?foo=&#' in /home/mike/src/ext-http.git/tests/gh-issue48.php on line 13
+Warning: http\Url::__construct(): Failed to parse fragment; invalid fragment identifier at pos 7 in '/?foo=&#' in %sgh-issue48.php on line %d
 #/?foo=&#
 # SILENT
 
