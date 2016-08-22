@@ -68,7 +68,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 				message->http.info.request.method = estrdup(Z_STRVAL_P(sval));
 			}
 			if ((sval = php_http_env_get_server_var(ZEND_STRL("REQUEST_URI"), 1))) {
-				message->http.info.request.url = php_http_url_parse(Z_STRVAL_P(sval), Z_STRLEN_P(sval), ~0);
+				message->http.info.request.url = php_http_url_parse(Z_STRVAL_P(sval), Z_STRLEN_P(sval), PHP_HTTP_URL_STDFLAGS);
 			}
 
 			php_http_env_get_request_headers(&message->hdrs);
@@ -579,7 +579,7 @@ static void php_http_message_object_prophandler_get_request_url(php_http_message
 }
 static void php_http_message_object_prophandler_set_request_url(php_http_message_object_t *obj, zval *value) {
 	if (PHP_HTTP_MESSAGE_TYPE(REQUEST, obj->message)) {
-		PTR_SET(obj->message->http.info.request.url, php_http_url_from_zval(value, ~0));
+		PTR_SET(obj->message->http.info.request.url, php_http_url_from_zval(value, PHP_HTTP_URL_STDFLAGS));
 	}
 }
 static void php_http_message_object_prophandler_get_response_status(php_http_message_object_t *obj, zval *return_value) {
@@ -1256,6 +1256,38 @@ static PHP_METHOD(HttpMessage, setHeaders)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
+static inline void php_http_message_object_add_header(php_http_message_object_t *obj, const char *name_str, size_t name_len, zval *zvalue)
+{
+	char *name = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
+	zend_string *hstr, *vstr;
+	zval *header, tmp;
+
+	if (Z_TYPE_P(zvalue) == IS_NULL) {
+		return;
+	}
+
+	vstr = php_http_header_value_to_string(zvalue);
+
+	if ((name_len != lenof("Set-Cookie") && strcmp(name, "Set-Cookie"))
+	&&	(hstr = php_http_message_header_string(obj->message, name, name_len))) {
+		char *hdr_str;
+		size_t hdr_len = spprintf(&hdr_str, 0, "%s, %s", hstr->val, vstr->val);
+
+		ZVAL_STR(&tmp, php_http_cs2zs(hdr_str, hdr_len));
+		zend_symtable_str_update(&obj->message->hdrs, name, name_len, &tmp);
+		zend_string_release(hstr);
+		zend_string_release(vstr);
+	} else if ((header = php_http_message_header(obj->message, name, name_len))) {
+		convert_to_array(header);
+		ZVAL_STR(&tmp, vstr);
+		zend_hash_next_index_insert(Z_ARRVAL_P(header), &tmp);
+	} else {
+		ZVAL_STR(&tmp, vstr);
+		zend_symtable_str_update(&obj->message->hdrs, name, name_len, &tmp);
+	}
+	efree(name);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_addHeader, 0, 0, 2)
 	ZEND_ARG_INFO(0, header)
 	ZEND_ARG_INFO(0, value)
@@ -1268,30 +1300,10 @@ static PHP_METHOD(HttpMessage, addHeader)
 
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "sz", &name_str, &name_len, &zvalue)) {
 		php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
-		char *name = php_http_pretty_key(estrndup(name_str, name_len), name_len, 1, 1);
-		zend_string *hstr, *vstr = php_http_header_value_to_string(zvalue);
-		zval tmp, *header;
 
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
-		if ((name_len != lenof("Set-Cookie") && strcmp(name, "Set-Cookie"))
-		&&	(hstr = php_http_message_header_string(obj->message, name, name_len))) {
-			char *hdr_str;
-			size_t hdr_len = spprintf(&hdr_str, 0, "%s, %s", hstr->val, vstr->val);
-
-			ZVAL_STR(&tmp, php_http_cs2zs(hdr_str, hdr_len));
-			zend_symtable_str_update(&obj->message->hdrs, name, name_len, &tmp);
-			zend_string_release(hstr);
-			zend_string_release(vstr);
-		} else if ((header = php_http_message_header(obj->message, name, name_len))) {
-			convert_to_array(header);
-			ZVAL_STR(&tmp, vstr);
-			zend_hash_next_index_insert(Z_ARRVAL_P(header), &tmp);
-		} else {
-			ZVAL_STR(&tmp, vstr);
-			zend_symtable_str_update(&obj->message->hdrs, name, name_len, &tmp);
-		}
-		efree(name);
+		php_http_message_object_add_header(obj, name_str, name_len, zvalue);
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -1310,7 +1322,20 @@ static PHP_METHOD(HttpMessage, addHeaders)
 
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
-		array_join(Z_ARRVAL_P(new_headers), &obj->message->hdrs, append, ARRAY_JOIN_STRONLY|ARRAY_JOIN_PRETTIFY);
+		if (append) {
+			php_http_arrkey_t key = {0};
+			zval *val;
+
+			ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(new_headers), key.h, key.key, val)
+			{
+				php_http_arrkey_stringify(&key, NULL);
+				php_http_message_object_add_header(obj, key.key->val, key.key->len, val);
+				php_http_arrkey_dtor(&key);
+			}
+			ZEND_HASH_FOREACH_END();
+		} else {
+			array_join(Z_ARRVAL_P(new_headers), &obj->message->hdrs, 0, ARRAY_JOIN_PRETTIFY|ARRAY_JOIN_STRONLY);
+		}
 	}
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -1630,7 +1655,7 @@ static PHP_METHOD(HttpMessage, setRequestUrl)
 	}
 
 	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_url_class_entry(), &zeh);
-	url = php_http_url_from_zval(zurl, ~0);
+	url = php_http_url_from_zval(zurl, PHP_HTTP_URL_STDFLAGS);
 	zend_restore_error_handling(&zeh);
 
 	if (url && php_http_url_is_empty(url)) {

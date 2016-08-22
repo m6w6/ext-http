@@ -29,10 +29,10 @@ DONE
 Test
 
 s://[a:80
-http\Url::__construct(): Failed to parse hostinfo; expected ']'
+http\Url::__construct(): Failed to parse hostinfo; expected ']' at pos 5 in '[a:80'
 
 s://[0]
-http\Url::__construct(): Failed to parse hostinfo; unexpected '['
+http\Url::__construct(): Failed to parse hostinfo; unexpected '[' at pos 0 in '[0]'
 
 s://[::1]:80
 object(http\Url)#%d (8) {

@@ -24,10 +24,6 @@ parallel requests.
 
 Documentation:
 https://mdref.m6w6.name/http
-
-Code Coverage:
-http://dev.iworks.at/ext-http/lcov/ext/http/
-
 ]]></description>
  <lead>
   <name>Michael Wallner</name>
@@ -35,21 +31,40 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2016-03-09</date>
+ <date>2016-08-22</date>
  <version>
-  <release>3.0.1</release>
-  <api>3.0.0</api>
+  <release>3.1.0beta1</release>
+  <api>3.1.0</api>
  </version>
  <stability>
-  <release>stable</release>
+  <release>beta</release>
   <api>stable</api>
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-* Fix php-bug #71719: Buffer overflow in HTTP url parsing functions (Mike, rc0r)
-* Fix gh-issue #28: Possible null pointer dereference in php_http_url_mod() (rc0r)
-* Fix gh-issue #21: Fix PHP7 config.w32 (Jan Ehrhardt)
-* Fix gh-issue #20: setSslOptions notice with curl 7.43 (Mike, Vitaliy Demidov)
++ Added http\Client\Curl\User interface for userland event loops
++ Added http\Url::IGNORE_ERRORS, http\Url::SILENT_ERRORS and http\Url::STDFLAGS
++ Added http\Client::setDebug(callable $debug)
++ Added http\Client\Curl\FEATURES constants and namespace
++ Added http\Client\Curl\VERSIONS constants and namespace
++ Added share_cookies and share_ssl (libcurl >= 7.23.0) options to http\Client::configure()
++ http\Client uses curl_share handles to properly share cookies and SSL/TLS sessions between requests
++ Improved configure checks for default CA bundles
++ Improved negotiation precision
+* Fixed regression introduced by http\Params::PARSE_RFC5987: negotiation using the params parser would receive param keys without the trailing asterisk, stripped by http\Params::PARSE_RFC5987.
+* Fix gh-issue #50: http\Client::dequeue() within http\Client::setDebug() causes segfault (Mike, Maik Wagner)
+* Fix gh-issue #47: http\Url: Null pointer deref in sanitize_value() (Mike, @rc0r)
+* Fix gh-issue #45: HTTP/2 response message parsing broken with libcurl >= 7.49.1 (Mike)
+* Fix gh-issue #43: Joining query with empty original variable in query (Mike, Sander Backus)
+* Fix gh-issue #42: fatal error when using punycode in URLs (Mike, Sebastian Thielen)
+* Fix gh-issue #41: Use curl_version_info_data.features when initializing options (Mike)
+* Fix gh-issue #40: determinde the SSL backend used by curl at runtime (Mike, @rcanavan)
+* Fix gh-issue #39: Notice: http\Client::enqueue(): Could not set option proxy_service_name (Mike, @rcanavan)
+* Fix gh-issue #38: Persistent curl handles: error code not properly reset (Mike, @afflerbach)
+* Fix gh-issue #36: Unexpected cookies sent if persistent_handle_id is used (Mike, @rcanavan, @afflerbach)
+* Fix gh-issue #34: allow setting multiple headers with the same name (Mike, @rcanavan)
+* Fix gh-issue #33: allow setting prodyhost request option to NULL (Mike, @rcanavan)
+* Fix gh-issue #31: add/improve configure checks for default CA bundle/path (Mike, @rcanavan)
 ]]></notes>
  <contents>
   <dir name="/">
@@ -75,6 +90,10 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
     <file role="src" name="php_http_client.h"/>
     <file role="src" name="php_http_client_curl.c"/>
     <file role="src" name="php_http_client_curl.h"/>
+    <file role="src" name="php_http_client_curl_event.c"/>
+    <file role="src" name="php_http_client_curl_event.h"/>
+    <file role="src" name="php_http_client_curl_user.c"/>
+    <file role="src" name="php_http_client_curl_user.h"/>
     <file role="src" name="php_http_client_request.c"/>
     <file role="src" name="php_http_client_request.h"/>
     <file role="src" name="php_http_client_response.c"/>
@@ -188,6 +207,9 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="client024.phpt"/>
      <file role="test" name="client025.phpt"/>
      <file role="test" name="client026.phpt"/>
+     <file role="test" name="client027.phpt"/>
+     <file role="test" name="client028.phpt"/>
+     <file role="test" name="client029.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
@@ -251,8 +273,11 @@ http://dev.iworks.at/ext-http/lcov/ext/http/
      <file role="test" name="filterchunked.phpt"/>
      <file role="test" name="filterzlib.phpt"/>
      <file role="test" name="gh-issue6.phpt"/>
-     <file role="test" name="gh-issue7.phpt"/>
      <file role="test" name="gh-issue12.phpt"/>
+     <file role="test" name="gh-issue42.phpt"/>
+     <file role="test" name="gh-issue47.phpt"/>
+     <file role="test" name="gh-issue48.phpt"/>
+     <file role="test" name="gh-issue50.phpt"/>
      <file role="test" name="header001.phpt"/>
      <file role="test" name="header002.phpt"/>
      <file role="test" name="header003.phpt"/>
