@@ -2277,19 +2277,21 @@ static ZEND_RESULT_CODE php_http_client_curl_exec(php_http_client_t *h)
 {
 	php_http_client_curl_t *curl = h->ctx;
 
-	if (curl->ev_ops) {
-		return curl->ev_ops->exec(curl->ev_ctx);
-	}
+	if (!h->callback.depth) {
+		if (curl->ev_ops) {
+			return curl->ev_ops->exec(curl->ev_ctx);
+		}
 
-	while (php_http_client_curl_once(h) && !EG(exception)) {
-		if (SUCCESS != php_http_client_curl_wait(h, NULL)) {
+		while (php_http_client_curl_once(h) && !EG(exception)) {
+			if (SUCCESS != php_http_client_curl_wait(h, NULL)) {
 #ifdef PHP_WIN32
-			/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
-			php_error_docref(NULL, E_WARNING, "WinSock error: %d", WSAGetLastError());
+				/* see http://msdn.microsoft.com/library/en-us/winsock/winsock/windows_sockets_error_codes_2.asp */
+				php_error_docref(NULL, E_WARNING, "WinSock error: %d", WSAGetLastError());
 #else
-			php_error_docref(NULL, E_WARNING, "%s", strerror(errno));
+				php_error_docref(NULL, E_WARNING, "%s", strerror(errno));
 #endif
-			return FAILURE;
+				return FAILURE;
+			}
 		}
 	}
 
