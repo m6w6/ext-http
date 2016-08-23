@@ -2233,16 +2233,17 @@ static int php_http_client_curl_once(php_http_client_t *h)
 {
 	php_http_client_curl_t *curl = h->ctx;
 
-	if (curl->ev_ops) {
-		curl->ev_ops->once(curl->ev_ctx);
-	} else {
-		while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle->multi, &curl->unfinished));
+	if (!h->callback.depth) {
+		if (curl->ev_ops) {
+			curl->ev_ops->once(curl->ev_ctx);
+		} else {
+			while (CURLM_CALL_MULTI_PERFORM == curl_multi_perform(curl->handle->multi, &curl->unfinished));
+		}
+
+		php_http_client_curl_responsehandler(h);
 	}
 
-	php_http_client_curl_responsehandler(h);
-
 	return curl->unfinished;
-
 }
 
 static ZEND_RESULT_CODE php_http_client_curl_exec(php_http_client_t *h)
