@@ -17,9 +17,9 @@ class test implements SplObserver {
 }
 server("proxy.inc", function($port) {
 	$client = new http\Client;
-	$client->configure([
+	$client->configure(array(
 			"use_eventloop" => true,
-	]);
+	));
 	$client->attach(new test);
 	$client->enqueue(new http\Client\Request("GET", "http://localhost:$port/"), function($r) {
 		var_dump($r->getResponseCode());

@@ -216,7 +216,11 @@ static void *php_http_client_curl_user_init(php_http_client_t *client, void *use
 	ctx->closure.internal_function.handler = php_http_client_curl_user_handler;
 
 	MAKE_STD_ZVAL(zclosure);
+#if PHP_VERSION_ID >= 50400
 	zend_create_closure(zclosure, &ctx->closure, NULL, NULL TSRMLS_CC);
+#else
+	zend_create_closure(zclosure, &ctx->closure TSRMLS_CC);
+#endif
 	args[0] = &zclosure;
 
 	php_http_object_method_init(&init, ctx->user, ZEND_STRL("init") TSRMLS_CC);
@@ -282,7 +286,8 @@ php_http_client_curl_ops_t *php_http_client_curl_user_ops_get()
 zend_class_entry *php_http_client_curl_user_class_entry;
 
 ZEND_BEGIN_ARG_INFO_EX(ai_init, 0, 0, 1)
-	ZEND_ARG_TYPE_INFO(0, run, IS_CALLABLE, 0)
+	/* using IS_CALLABLE type hint would create a forwards compatibility break */
+	ZEND_ARG_INFO(0, run)
 ZEND_END_ARG_INFO();
 ZEND_BEGIN_ARG_INFO_EX(ai_timer, 0, 0, 1)
 #if PHP_VERSION_ID >= 70000

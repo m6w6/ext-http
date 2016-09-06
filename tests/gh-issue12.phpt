@@ -14,7 +14,8 @@ $urls = array(
 
 foreach ($urls as $url) {
 	try {
-		(new http\Client\Request)->setRequestUrl($url);
+		$c = new http\Client\Request;
+		$c->setRequestUrl($url);
 		printf("OK: %s\n", $url);
 	} catch (Exception $e) {
 		printf("%s\n", $e->getMessage());

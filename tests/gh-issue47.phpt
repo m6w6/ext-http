@@ -8,10 +8,10 @@ include "skipif.inc";
 <?php
 echo "Test\n";
 
-$urls = [
+$urls = array(
     "",
     "? = ="
-];
+);
 
 $url0=new http\Url($urls[0]);
 $url1=$url0->mod($urls[1]);
