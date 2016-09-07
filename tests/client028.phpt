@@ -13,19 +13,19 @@ class UserHandler implements http\Client\Curl\User
 {
 	private $client;
 	private $run;
-	private $fds = [
-			"R" => [],
-			"W" => []
-	];
-	private $R = [];
-	private $W = [];
+	private $fds = array(
+			"R" => array(),
+			"W" => array()
+	);
+	private $R = array();
+	private $W = array();
 	private $timeout = 1000;
 	
 	function __construct(http\Client $client) {
 		$this->client = $client;
 	}
 	
-	function init(callable $run) {
+	function init($run) {
 		$this->run = $run;
 	}
 	
@@ -124,9 +124,9 @@ include "helper/server.inc";
 
 server("proxy.inc", function($port) {
 	$client = new http\Client;
-	$client->configure([
+	$client->configure(array(
 			"use_eventloop" => new UserHandler($client)
-	]);
+	));
 	$client->enqueue(new http\Client\Request("GET", "http://localhost:$port/"), function($r) {
 		var_dump($r->getResponseCode());
 	});

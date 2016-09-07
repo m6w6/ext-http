@@ -33,7 +33,7 @@ Test
 http\Exception\RuntimeException: http\Client::dequeue(): Could not dequeue request while executing callbacks in %sgh-issue50.php:9
 Stack trace:
 #0 %sgh-issue50.php(9): http\Client->dequeue(Object(http\Client\Request))
-#1 [internal function]: {closure}(Object(http\Client), Object(http\Client\Request), 18, 'GET / HTTP/1.1\r...')
+#1 [internal function]: {closure}(Object(http\Client), Object(http\Client\Request), 18, 'GET / HTTP/1.1%s...')
 #2 %sgh-issue50.php(14): http\Client->send()
 #3 {main}
 ===DONE===

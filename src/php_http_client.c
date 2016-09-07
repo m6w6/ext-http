@@ -1270,7 +1270,8 @@ static PHP_METHOD(HttpClient, getAvailableConfiguration)
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_setDebug, 0, 0, 1)
-	ZEND_ARG_TYPE_INFO(0, callback, IS_CALLABLE, 1)
+	/* using IS_CALLABLE type hint would create a forwards compatibility break */
+	ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, setDebug)
 {

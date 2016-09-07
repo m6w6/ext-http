@@ -110,8 +110,10 @@ dump($tmpfile);
 });
 
 
-(new http\Client("curl", "test"))->configure(["share_cookies" => false]);
-$request->setOptions(["cookiestore" => null]);
+$c = new http\Client("curl", "test");
+$c->configure(array("share_cookies" => false));
+$c = null;
+$request->setOptions(array("cookiestore" => null));
 
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));

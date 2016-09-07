@@ -15,7 +15,7 @@ echo "Test\n";
 
 server("cookie.inc", function($port) {
 	$client = new http\Client(null, "cookies");
-	$client->configure(["pipelining" => false]);
+	$client->configure(array("pipelining" => false));
 	$request = new http\Client\Request("GET", "http://localhost:$port?r1");
 	$client->enqueue($request);
 	$client->send();

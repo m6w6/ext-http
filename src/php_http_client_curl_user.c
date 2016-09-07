@@ -260,7 +260,8 @@ zend_class_entry *php_http_client_curl_user_get_class_entry()
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_init, 0, 0, 1)
-	ZEND_ARG_TYPE_INFO(0, run, IS_CALLABLE, 0)
+	/* using IS_CALLABLE type hint would create a forwards compatibility break */
+	ZEND_ARG_INFO(0, run)
 ZEND_END_ARG_INFO();
 ZEND_BEGIN_ARG_INFO_EX(ai_timer, 0, 0, 1)
 #if PHP_VERSION_ID >= 70000

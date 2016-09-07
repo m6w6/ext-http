@@ -12,11 +12,11 @@ echo "Test\n";
 include "helper/server.inc";
 
 server("upload.inc", function($port) {
-	$r = new \http\Client\Request("PUT", "http://localhost:$port/", [],
-			(new \http\Message\Body)->append("foo")
-	);
+	$b = new \http\Message\Body;
+	$b->append("foo");
+	$r = new \http\Client\Request("PUT", "http://localhost:$port/", array(), $b);
 	$c = new \http\Client;
-	$c->setOptions(["expect_100_timeout" => 0]);
+	$c->setOptions(array("expect_100_timeout" => 0));
 	$c->enqueue($r)->send();
 	
 	var_dump($c->getResponse($r)->getInfo());
