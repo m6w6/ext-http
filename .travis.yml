@@ -12,27 +12,35 @@ addons:
    - libevent-dev
 
 env:
+ - PHP=5.3 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.4 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.5 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.6 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
+ - PHP=5.3 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.4 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.5 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.6 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
+ - PHP=5.3 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.4 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.5 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.6 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
+ - PHP=5.3 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.4 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.5 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
  - PHP=5.6 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
+ - PHP=5.3 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.4 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.5 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.6 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
+ - PHP=5.3 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.4 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.5 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.6 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
+ - PHP=5.3 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.4 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.5 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.6 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
+ - PHP=5.3 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.4 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.5 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=5.6 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes

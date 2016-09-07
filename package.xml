@@ -31,7 +31,7 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2016-08-22</date>
+ <date>2016-09-07</date>
  <version>
   <release>2.6.0beta2</release>
   <api>2.6.0</api>
@@ -65,6 +65,10 @@ https://mdref.m6w6.name/http
 * Fix gh-issue #34: allow setting multiple headers with the same name (Mike, @rcanavan)
 * Fix gh-issue #33: allow setting prodyhost request option to NULL (Mike, @rcanavan)
 * Fix gh-issue #31: add/improve configure checks for default CA bundle/path (Mike, @rcanavan) 
+
+Changes from beta1:
+* Fixed PHP-5.3 compatibility
+* Fixed recursive calls to the event loop dispatcher
 ]]></notes>
  <contents>
   <dir name="/">
