@@ -276,7 +276,6 @@ Changes from beta1:
      <file role="test" name="filterchunked.phpt"/>
      <file role="test" name="filterzlib.phpt"/>
      <file role="test" name="gh-issue6.phpt"/>
-     <file role="test" name="gh-issue7.phpt"/>
      <file role="test" name="gh-issue12.phpt"/>
      <file role="test" name="gh-issue42.phpt"/>
      <file role="test" name="gh-issue47.phpt"/>
