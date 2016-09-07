@@ -16,21 +16,6 @@
 #include "php_http_version.h"
 #include "php_http_url.h"
 
-#define PHP_HTTP_INFO_REQUEST_FMT_ARGS(_http_ptr, tmp, eol) "%s %s HTTP/%u.%u" eol, \
-				(_http_ptr)->info.request.method?(_http_ptr)->info.request.method:"UNKNOWN", \
-				(_http_ptr)->info.request.method&&!strcasecmp((_http_ptr)->info.request.method,"CONNECT")?( \
-				(_http_ptr)->info.request.url?php_http_url_authority_to_string((_http_ptr)->info.request.url, &(tmp), NULL):"0"):( \
-				(_http_ptr)->info.request.url?php_http_url_to_string((_http_ptr)->info.request.url, &(tmp), NULL, 0):"/"), \
-				(_http_ptr)->version.major||(_http_ptr)->version.major?(_http_ptr)->version.major:1, \
-				(_http_ptr)->version.major||(_http_ptr)->version.minor?(_http_ptr)->version.minor:1
-
-#define PHP_HTTP_INFO_RESPONSE_FMT_ARGS(_http_ptr, tmp, eol) "HTTP/%u.%u %d%s%s" eol, \
-				(_http_ptr)->version.major||(_http_ptr)->version.major?(_http_ptr)->version.major:1, \
-				(_http_ptr)->version.major||(_http_ptr)->version.minor?(_http_ptr)->version.minor:1, \
-				(_http_ptr)->info.response.code?(_http_ptr)->info.response.code:200, \
-				(_http_ptr)->info.response.status&&*(_http_ptr)->info.response.status ? " ":"", \
-				STR_PTR((_http_ptr)->info.response.status)
-
 typedef struct php_http_info_data {
 	union {
 		/* GET /foo/bar */
@@ -60,6 +45,7 @@ typedef zend_bool (*php_http_info_callback_t)(void **callback_data, HashTable **
 
 PHP_HTTP_API php_http_info_t *php_http_info_init(php_http_info_t *info TSRMLS_DC);
 PHP_HTTP_API php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header TSRMLS_DC);
+PHP_HTTP_API void php_http_info_to_string(php_http_info_t *info, char **str, size_t *len, const char *eol TSRMLS_DC);
 PHP_HTTP_API void php_http_info_dtor(php_http_info_t *info);
 PHP_HTTP_API void php_http_info_free(php_http_info_t **info);
 

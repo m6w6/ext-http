@@ -23,7 +23,7 @@ class UserHandler implements http\Client\Curl\User
 		$this->client = $client;
 	}
 	
-	function init(callable $run) {
+	function init($run) {
 		$this->run = $run;
 	}
 	

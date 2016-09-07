@@ -31,7 +31,7 @@ nghttpd(function($port) {
 ===DONE===
 --EXPECTF--
 Test
-HTTP/2.0 200
+HTTP/2 200
 %a
 
 <!doctype html>
