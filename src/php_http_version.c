@@ -73,7 +73,12 @@ php_http_version_t *php_http_version_parse(php_http_version_t *v, const char *st
 
 void php_http_version_to_string(php_http_version_t *v, char **str, size_t *len, const char *pre, const char *post)
 {
-	*len = spprintf(str, 0, "%s%u.%u%s", pre ? pre : "", v->major, v->minor, post ? post : "");
+	/* different semantics for different versions */
+	if (v->major == 2) {
+		*len = spprintf(str, 0, "%s2%s", STR_PTR(pre), STR_PTR(post));
+	} else  {
+		*len = spprintf(str, 0, "%s%u.%u%s", STR_PTR(pre), v->major, v->minor, STR_PTR(post));
+	}
 }
 
 void php_http_version_dtor(php_http_version_t *v)

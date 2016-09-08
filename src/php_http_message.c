@@ -330,24 +330,14 @@ void php_http_message_update_headers(php_http_message_t *msg)
 static void message_headers(php_http_message_t *msg, php_http_buffer_t *str)
 {
 	char *tmp = NULL;
+	size_t len = 0;
 
-	switch (msg->type) {
-		case PHP_HTTP_REQUEST:
-			php_http_buffer_appendf(str, PHP_HTTP_INFO_REQUEST_FMT_ARGS(&msg->http, tmp, PHP_HTTP_CRLF));
-			PTR_FREE(tmp);
-			break;
-
-		case PHP_HTTP_RESPONSE:
-			php_http_buffer_appendf(str, PHP_HTTP_INFO_RESPONSE_FMT_ARGS(&msg->http, tmp, PHP_HTTP_CRLF));
-			PTR_FREE(tmp);
-			break;
-
-		default:
-			break;
-	}
-
+	php_http_info_to_string((php_http_info_t *) msg, &tmp, &len, PHP_HTTP_CRLF TSRMLS_CC);
 	php_http_message_update_headers(msg);
+
+	php_http_buffer_append(str, tmp, len);
 	php_http_header_to_string(str, &msg->hdrs);
+	PTR_FREE(tmp);
 }
 
 void php_http_message_to_callback(php_http_message_t *msg, php_http_pass_callback_t cb, void *cb_arg)
@@ -1375,25 +1365,12 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, getInfo)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		char *str, *tmp = NULL;
-		size_t len;
+		char *str = NULL;
+		size_t len = 0;
 		php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
 
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
-
-		switch (obj->message->type) {
-			case PHP_HTTP_REQUEST:
-				len = spprintf(&str, 0, PHP_HTTP_INFO_REQUEST_FMT_ARGS(&obj->message->http, tmp, ""));
-				PTR_FREE(tmp);
-				break;
-			case PHP_HTTP_RESPONSE:
-				len = spprintf(&str, 0, PHP_HTTP_INFO_RESPONSE_FMT_ARGS(&obj->message->http, tmp, ""));
-				PTR_FREE(tmp);
-				break;
-			default:
-				RETURN_NULL();
-				break;
-		}
+		php_http_info_to_string((php_http_info_t *) obj->message, &str, &len, "");
 
 		RETVAL_STR(php_http_cs2zs(str, len));
 	}

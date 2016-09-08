@@ -49,6 +49,46 @@ void php_http_info_free(php_http_info_t **i)
 	}
 }
 
+void php_http_info_to_string(php_http_info_t *info, char **str, size_t *len, const char *eol)
+{
+	char *tmp = NULL;
+
+	if (info->http.version.major == 2) {
+		if (info->type == PHP_HTTP_REQUEST) {
+			*len = spprintf(str, 0, "%s %s HTTP/2%s",
+					info->http.info.request.method?info->http.info.request.method:"UNKNOWN",
+					info->http.info.request.method&&!strcasecmp(info->http.info.request.method,"CONNECT")?(
+					info->http.info.request.url?php_http_url_authority_to_string(info->http.info.request.url, &(tmp), NULL):"0"):(
+					info->http.info.request.url?php_http_url_to_string(info->http.info.request.url, &(tmp), NULL, 0):"/"),
+					eol);
+		} else if (info->type == PHP_HTTP_RESPONSE) {
+			*len = spprintf(str, 0, "HTTP/2 %d%s%s%s",
+					info->http.info.response.code?info->http.info.response.code:200,
+					info->http.info.response.status&&*info->http.info.response.status ? " ":"",
+					STR_PTR(info->http.info.response.status),
+					eol);
+		}
+	} else if (info->type == PHP_HTTP_REQUEST) {
+		*len = spprintf(str, 0, "%s %s HTTP/%u.%u%s",
+				info->http.info.request.method?info->http.info.request.method:"UNKNOWN",
+				info->http.info.request.method&&!strcasecmp(info->http.info.request.method,"CONNECT")?(
+				info->http.info.request.url?php_http_url_authority_to_string(info->http.info.request.url, &(tmp), NULL):"0"):(
+				info->http.info.request.url?php_http_url_to_string(info->http.info.request.url, &(tmp), NULL, 0):"/"),
+				info->http.version.major||info->http.version.major?info->http.version.major:1,
+				info->http.version.major||info->http.version.minor?info->http.version.minor:1,
+				eol);
+	} else if (info->type == PHP_HTTP_RESPONSE){
+		*len = spprintf(str, 0, "HTTP/%u.%u %d%s%s%s", info->http.version.major||info->http.version.major?info->http.version.major:1,
+				info->http.version.major||info->http.version.minor?info->http.version.minor:1,
+				info->http.info.response.code?info->http.info.response.code:200,
+				info->http.info.response.status&&*info->http.info.response.status ? " ":"",
+				STR_PTR(info->http.info.response.status),
+				eol);
+	}
+
+	PTR_FREE(tmp);
+}
+
 php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_header)
 {
 	const char *end, *http, *off;
@@ -80,7 +120,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 
 	/* clumsy fix for changed libcurl behaviour in 7.49.1, see https://github.com/curl/curl/issues/888 */
 	off = &http[lenof("HTTP/X")];
-	if (info->http.version.major < 2) {
+	if (info->http.version.major < 2 || (info->http.version.major == 2 && *off == '.')) {
 		off += 2;
 	}
 
