@@ -1,5 +1,5 @@
 --TEST--
-Buffer overflow in HTTP url parsing functions
+Bug #71719 (Buffer overflow in HTTP url parsing functions)
 --SKIPIF--
 <?php
 include "skipif.inc";
