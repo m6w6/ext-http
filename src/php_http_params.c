@@ -470,7 +470,7 @@ static void merge_param(HashTable *params, zval *zdata, zval ***current_param, z
 			while (Z_TYPE_PP(zdata_ptr) == IS_ARRAY
 			&&	SUCCESS == zend_hash_get_current_data(Z_ARRVAL_PP(zdata_ptr), (void *) &test_ptr)
 			) {
-				if (Z_TYPE_PP(test_ptr) == IS_ARRAY) {
+				if (Z_TYPE_PP(test_ptr) == IS_ARRAY && Z_TYPE_PP(ptr) == IS_ARRAY) {
 
 					/* now find key in ptr */
 					if (HASH_KEY_IS_STRING == zend_hash_get_current_key_ex(Z_ARRVAL_PP(zdata_ptr), &hkey.str, &hkey.len, &hkey.num, hkey.dup, NULL)) {
