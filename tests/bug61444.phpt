@@ -1,5 +1,5 @@
 --TEST--
-. become _ in query strings due to php_default_treat_data()
+Bug #61444 (. become _ in query strings due to php_default_treat_data())
 --SKIPIF--
 <?php
 include "skipif.inc";
