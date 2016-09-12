@@ -31,9 +31,9 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2016-09-07</date>
+ <date>2016-09-12</date>
  <version>
-  <release>3.1.0beta2</release>
+  <release>3.1.0RC1</release>
   <api>3.1.0</api>
  </version>
  <stability>
@@ -68,6 +68,10 @@ https://mdref.m6w6.name/http
 
 Changes from beta1:
 * Fixed recursive calls to the event loop dispatcher
+
+Changes from beta2:
+* Fix bug #73055: crash in http\QueryString (Mike, @rc0r)
+* Fix HTTP/2 version parser for older libcurl versions (Mike)
 ]]></notes>
  <contents>
   <dir name="/">
@@ -184,6 +188,7 @@ Changes from beta1:
      <file role="test" name="bug69313.phpt"/>
      <file role="test" name="bug69357.phpt"/>
      <file role="test" name="bug71719.phpt"/>
+     <file role="test" name="bug73055.phpt"/>
      <file role="test" name="client001.phpt"/>
      <file role="test" name="client002.phpt"/>
      <file role="test" name="client003.phpt"/>

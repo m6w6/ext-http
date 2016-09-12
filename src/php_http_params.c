@@ -489,7 +489,7 @@ static void merge_param(HashTable *params, zval *zdata, zval **current_param, zv
 			zval *test_ptr;
 
 			while (Z_TYPE_P(zdata_ptr) == IS_ARRAY && (test_ptr = zend_hash_get_current_data(Z_ARRVAL_P(zdata_ptr)))) {
-				if (Z_TYPE_P(test_ptr) == IS_ARRAY) {
+				if (Z_TYPE_P(test_ptr) == IS_ARRAY && Z_TYPE_P(ptr) == IS_ARRAY) {
 					zval *tmp_ptr = ptr;
 
 					/* now find key in ptr */
