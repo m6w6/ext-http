@@ -503,7 +503,7 @@ php_http_url_t *php_http_url_from_struct(HashTable *ht)
 
 HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct)
 {
-	HashTable *ht;
+	HashTable *ht = NULL;
 	zval tmp;
 
 	if (strct) {
@@ -523,8 +523,8 @@ HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct)
 	}
 
 #define url_struct_add(part) \
-	if (Z_TYPE_P(strct) == IS_ARRAY) { \
-		zend_hash_str_update(Z_ARRVAL_P(strct), part, lenof(part), &tmp); \
+	if (!strct || Z_TYPE_P(strct) == IS_ARRAY) { \
+		zend_hash_str_update(ht, part, lenof(part), &tmp); \
 	} else { \
 		zend_update_property(Z_OBJCE_P(strct), strct, part, lenof(part), &tmp); \
 		zval_ptr_dtor(&tmp); \

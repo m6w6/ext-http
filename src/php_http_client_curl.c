@@ -923,20 +923,23 @@ static ZEND_RESULT_CODE php_http_curle_option_set_range(php_http_option_t *opt, 
 
 	if (val && Z_TYPE_P(val) != IS_NULL) {
 		zval *rr, *rb, *re;
-		zend_long rbl, rel;
 		HashTable *ht = HASH_OF(val);
 
 		ZEND_HASH_FOREACH_VAL(ht, rr)
 		{
 			if (Z_TYPE_P(rr) == IS_ARRAY) {
 				if (2 == php_http_array_list(Z_ARRVAL_P(rr), 2, &rb, &re)) {
-					if (	((Z_TYPE_P(rb) == IS_LONG) || ((Z_TYPE_P(rb) == IS_STRING) && is_numeric_string(Z_STRVAL_P(rb), Z_STRLEN_P(rb), &rbl, NULL, 1))) &&
-							((Z_TYPE_P(re) == IS_LONG) || ((Z_TYPE_P(re) == IS_STRING) && is_numeric_string(Z_STRVAL_P(re), Z_STRLEN_P(re), &rel, NULL, 1)))) {
-						if ((rbl >= 0) && (rel >= 0)) {
-							php_http_buffer_appendf(&curl->options.ranges, "%ld-%ld,", rbl, rel);
-						}
-					}
+					zend_long rbl = zval_get_long(rb), rel = zval_get_long(re);
 
+					if (rbl >= 0) {
+						if (rel > 0) {
+							php_http_buffer_appendf(&curl->options.ranges, "%ld-%ld,", rbl, rel);
+						} else {
+							php_http_buffer_appendf(&curl->options.ranges, "%ld-", rbl);
+						}
+					} else if (rel > 0) {
+						php_http_buffer_appendf(&curl->options.ranges, "-%ld", rel);
+					}
 				}
 			}
 		}
@@ -1751,15 +1754,13 @@ static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *
 	php_http_client_t *client = userdata;
 	php_http_client_curl_t *curl = client->ctx;
 	CURLM *ch = curl->handle->multi;
-	zval *orig = val;
+	zval zopt, *orig = val;
 	CURLMcode rc = CURLM_UNKNOWN_OPTION;
 	ZEND_RESULT_CODE rv = SUCCESS;
 
 	if (!val) {
 		val = &opt->defval;
 	} else if (opt->type && Z_TYPE_P(val) != opt->type && !(Z_TYPE_P(val) == IS_NULL && opt->type == IS_ARRAY)) {
-		zval zopt;
-
 		ZVAL_DUP(&zopt, val);
 		convert_to_explicit_type(&zopt, opt->type);
 
