@@ -106,7 +106,7 @@ static int php_http_client_curl_user_socket(CURL *easy, curl_socket_t sock, int 
 			return -1;
 	}
 
-	if (action == CURL_POLL_REMOVE && ev) {
+	if (action == CURL_POLL_REMOVE) {
 		php_stream_close(ev->socket);
 		efree(ev);
 		curl_multi_assign(curl->handle->multi, sock, NULL);

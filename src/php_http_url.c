@@ -1078,7 +1078,7 @@ static const char *parse_ip6(struct parse_state *state, const char *ptr)
 		}
 		efree(addr);
 	} else {
-		pos = tmp ? tmp - ptr : end - ptr;
+		pos = end - ptr;
 		error = "expected ']'";
 	}
 

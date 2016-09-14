@@ -1633,7 +1633,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_use_eventloop(php_http_option_
 	php_http_client_t *client = userdata;
 	php_http_client_curl_ops_t *ev_ops = NULL;
 
-	if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), php_http_client_curl_user_get_class_entry())) {
+	if (value && Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), php_http_client_curl_user_get_class_entry())) {
 		ev_ops = php_http_client_curl_user_ops_get();
 #if PHP_HTTP_HAVE_EVENT
 	} else if (value && zend_is_true(value)) {
