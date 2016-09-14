@@ -369,10 +369,6 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		zval_ptr_dtor(&zoption);
 	}
 
-	if (ret != SUCCESS) {
-		return ret;
-	}
-
 	if ((zoption = get_option(options, ZEND_STRL("responseCode") TSRMLS_CC))) {
 		zval *zoption_copy = php_http_ztyp(IS_LONG, zoption);
 
