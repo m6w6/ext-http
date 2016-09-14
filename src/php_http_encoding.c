@@ -262,10 +262,9 @@ php_http_encoding_stream_t *php_http_encoding_stream_init(php_http_encoding_stre
 php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_encoding_stream_t *from, php_http_encoding_stream_t *to)
 {
 	if (from->ops->copy) {
-		int freeme;
 		php_http_encoding_stream_t *ns;
 
-		if ((freeme = !to)) {
+		if (!to) {
 			to = pemalloc(sizeof(*to), (from->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT));
 		}
 		memset(to, 0, sizeof(*to));
@@ -277,10 +276,6 @@ php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_encoding_stre
 			return ns;
 		} else {
 			return to;
-		}
-
-		if (freeme) {
-			pefree(to, (to->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT));
 		}
 	}
 
