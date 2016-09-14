@@ -5,9 +5,7 @@
 error_reporting(0);
 
 function failure() {
-	// this is why error_get_last() should return a stdClass object
-	$error = error_get_last();
-	fprintf(STDERR, "FAILURE: %s\n", $error["message"]);
+	fprintf(STDERR, "FAILURE: %s\n", error_get_last()["message"]);
 	exit(-1);
 }
 
@@ -38,11 +36,21 @@ $ifdefs = array(
     'PRIMARY_PORT' => 'PHP_HTTP_CURL_VERSION(7,21,0)',
     'LOCAL_PORT' => 'PHP_HTTP_CURL_VERSION(7,21,0)',
     'LOCAL_IP' => 'PHP_HTTP_CURL_VERSION(7,21,0)',
+	'HTTP_VERSION' => 'PHP_HTTP_CURL_VERSION(7,50,0)'
 );
 $exclude = array(
-    'PRIVATE', 'LASTSOCKET', 'FTP_ENTRY_PATH', 'CERTINFO', 'TLS_SESSION',
-    'RTSP_SESSION_ID', 'RTSP_CLIENT_CSEQ', 'RTSP_SERVER_CSEQ', 'RTSP_CSEQ_RECV',
-	'COOKIELIST'
+	'ACTIVESOCKET',
+	'CERTINFO',
+	'COOKIELIST',
+	'FTP_ENTRY_PATH',
+	'LASTSOCKET',
+	'PRIVATE',
+	'RTSP_CLIENT_CSEQ',
+	'RTSP_CSEQ_RECV',
+	'RTSP_SERVER_CSEQ',
+	'RTSP_SESSION_ID',
+	'TLS_SESSION',
+	'TLS_SSL_PTR',
 );
 
 $translate = array(
@@ -92,8 +100,8 @@ foreach ($infos as $info) {
 	if (isset($ifdefs[$short])) printf("#endif\n");
 }
 
-file_put_contents("php_http_client_curl.c", 
+file_put_contents("src/php_http_client_curl.c", 
 	preg_replace('/(\/\* BEGIN::CURLINFO \*\/\n).*(\n\s*\/\* END::CURLINFO \*\/)/s', '$1'. ob_get_contents() .'$2',
-		file_get_contents("php_http_client_curl.c")));
+		file_get_contents("src/php_http_client_curl.c")));
 
 ?>

@@ -450,6 +450,11 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		add_assoc_long_ex(&array, "local_port", sizeof("local_port"), l);
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,50,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_HTTP_VERSION, &l)) {
+		add_assoc_long_ex(&array, "http_version", sizeof("http_version"), l);
+	}
+#endif
 
 	/* END::CURLINFO */
 
