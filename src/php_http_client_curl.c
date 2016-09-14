@@ -474,6 +474,12 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		zend_hash_str_update(info, "local_port", lenof("local_port"), &tmp);
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,50,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_HTTP_VERSION, &l)) {
+		ZVAL_LONG(&tmp, l);
+		zend_hash_str_update(info, "http_version", lenof("http_version"), &tmp);
+	}
+#endif
 
 	/* END::CURLINFO */
 
