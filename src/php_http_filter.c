@@ -302,7 +302,9 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		
 		nxt = ptr->next;
 		php_stream_bucket_unlink(ptr);
-		php_http_encoding_stream_update(buffer, ptr->buf, ptr->buflen, &encoded, &encoded_len);
+		if (SUCCESS != php_http_encoding_stream_update(buffer, ptr->buf, ptr->buflen, &encoded, &encoded_len)) {
+			return PSFS_ERR_FATAL;
+		}
 		
 #if DBG_FILTER
 		fprintf(stderr, "update: deflate (-> %zu) (w: %zu, r: %zu)\n", encoded_len, stream->writepos, stream->readpos);
@@ -322,7 +324,9 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		char *encoded = NULL;
 		size_t encoded_len = 0;
 		
-		php_http_encoding_stream_flush(buffer, &encoded, &encoded_len);
+		if (SUCCESS != php_http_encoding_stream_flush(buffer, &encoded, &encoded_len)) {
+			return PSFS_ERR_FATAL;
+		}
 		
 #if DBG_FILTER
 		fprintf(stderr, "flush: deflate (-> %zu)\n", encoded_len);
@@ -340,7 +344,9 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		char *encoded = NULL;
 		size_t encoded_len = 0;
 		
-		php_http_encoding_stream_finish(buffer, &encoded, &encoded_len);
+		if (SUCCESS != php_http_encoding_stream_finish(buffer, &encoded, &encoded_len)) {
+			return PSFS_ERR_FATAL;
+		}
 		
 #if DBG_FILTER
 		fprintf(stderr, "finish: deflate (-> %zu)\n", encoded_len);

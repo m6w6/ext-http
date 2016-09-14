@@ -405,7 +405,7 @@ php_http_message_t *php_http_message_reverse(php_http_message_t *msg)
 	if (c > 1) {
 		php_http_message_t *tmp = msg, **arr;
 
-		arr = ecalloc(c, sizeof(**arr));
+		arr = ecalloc(c, sizeof(*arr));
 		for (i = 0; i < c; ++i) {
 			arr[i] = tmp;
 			tmp = tmp->parent;
@@ -683,7 +683,7 @@ void php_http_message_object_reverse(zval *zmsg, zval *return_value)
 		php_http_message_object_t **objects;
 		int last;
 
-		objects = ecalloc(i, sizeof(**objects));
+		objects = ecalloc(i, sizeof(*objects));
 
 		/* we are the first message */
 		objects[0] = obj;

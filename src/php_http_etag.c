@@ -79,7 +79,7 @@ char *php_http_etag_finish(php_http_etag_t *e)
 #ifdef PHP_HTTP_HAVE_HASH
 		const php_hash_ops *eho = NULL;
 
-		if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
+		if ((eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
 			eho->hash_final(digest, e->ctx);
 			etag = php_http_etag_digest(digest, eho->digest_size);
 		}
@@ -109,7 +109,7 @@ size_t php_http_etag_update(php_http_etag_t *e, const char *data_ptr, size_t dat
 #ifdef PHP_HTTP_HAVE_HASH
 		const php_hash_ops *eho = NULL;
 
-		if (e->mode && (eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
+		if ((eho = php_hash_fetch_ops(e->mode, strlen(e->mode)))) {
 			eho->hash_update(e->ctx, (const unsigned char *) data_ptr, data_len);
 		}
 #endif

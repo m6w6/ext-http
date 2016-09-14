@@ -222,7 +222,7 @@ retry_raw_inflate:
 		}
 		inflateEnd(&Z);
 
-		if (decoded_len && *decoded) {
+		if (*decoded_len && *decoded) {
 			efree(*decoded);
 		}
 	}

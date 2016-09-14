@@ -35,9 +35,13 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_init_ex(
 PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_from_string_ex(
 		php_http_buffer_t *buf, const char *str, size_t len)
 {
+	int free_buf = !!buf;
+
 	if ((buf = php_http_buffer_init(buf))) {
 		if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(buf, str, len)) {
-			pefree(buf, buf->pmem);
+			if (free_buf) {
+				pefree(buf, buf->pmem);
+			}
 			buf = NULL;
 		}
 	}
