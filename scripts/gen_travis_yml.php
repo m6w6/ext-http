@@ -29,6 +29,8 @@ foreach ($env as $e) {
 }
 
 ?>
+# once with gcov
+ - CFLAGS="-O0 -fprofile-arcs -ftest-coverage" PHP=master enable_json=yes enable_hash=yes enable_iconv=yes 
 
 before_script:
  - make -f travis/pecl/Makefile php
@@ -41,6 +43,8 @@ script:
 
 after_script:
  - test -e tests/helper/server.log && cat tests/helper/server.log
+after_success:
+ - test -n "$CFLAGS" && bash <(curl -s https://codecov.io/bash)
 
 sudo: false
 notifications:
