@@ -64,7 +64,7 @@ const char *php_http_encoding_dechunk(const char *encoded, size_t encoded_len, c
 		/* reached the end */
 		if (!chunk_len) {
 			/* move over '0' chunked encoding terminator and any new lines */
-			do {
+			while(1) {
 				switch (*e_ptr) {
 					case '0':
 					case '\r':
@@ -72,7 +72,8 @@ const char *php_http_encoding_dechunk(const char *encoded, size_t encoded_len, c
 						++e_ptr;
 						continue;
 				}
-			} while (0);
+				break;
+			}
 			break;
 		}
 
