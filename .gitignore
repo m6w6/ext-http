@@ -111,3 +111,4 @@ php_http_url.h
 php_http_utf8.h
 php_http_version.h
 >>>>>>> v2.6.x
+*.gcov

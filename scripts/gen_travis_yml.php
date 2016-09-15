@@ -30,7 +30,7 @@ foreach ($env as $e) {
 
 ?>
 # once with gcov
- - CFLAGS="-O0 -fprofile-arcs -ftest-coverage" PHP=master enable_json=yes enable_hash=yes enable_iconv=yes 
+ - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master enable_json=yes enable_hash=yes enable_iconv=yes 
 
 before_script:
  - make -f travis/pecl/Makefile php
@@ -41,10 +41,10 @@ before_script:
 script:
  - make -f travis/pecl/Makefile test
 
-after_script:
+after_failure:
  - test -e tests/helper/server.log && cat tests/helper/server.log
 after_success:
- - test -n "$CFLAGS" && bash <(curl -s https://codecov.io/bash)
+ - test -n "$CFLAGS" && cd src/.libs && bash <(curl -s https://codecov.io/bash) -X xcode -X coveragepy
 
 sudo: false
 notifications:
