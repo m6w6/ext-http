@@ -11,13 +11,14 @@ addons:
    - zlib1g-dev
    - libidn11-dev
    - libevent-dev
+   - cppcheck
 
 env:
 <?php
 
 $gen = include "./travis/pecl/gen-matrix.php";
 $env = $gen([
-	"PHP" => ["7.0", "master"],
+	"PHP" => ["7.0", "7.1", "master"],
 	"enable_debug",
 	"enable_maintainer_zts",
 	"enable_json",
@@ -40,6 +41,7 @@ before_script:
 
 script:
  - make -f travis/pecl/Makefile test
+ - make -f travis/pecl/Makefile cppcheck
 
 after_failure:
  - test -e tests/helper/server.log && cat tests/helper/server.log

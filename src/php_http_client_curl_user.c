@@ -59,7 +59,7 @@ static void php_http_client_curl_user_timer(CURLM *multi, long timeout_ms, void 
 
 	if (timeout_ms <= 0) {
 		php_http_client_curl_loop(context->client, CURL_SOCKET_TIMEOUT, 0);
-	} else if (timeout_ms > 0) {
+	} else {
 		zval args[1], *ztimeout = &args[0];
 
 		ZVAL_LONG(ztimeout, timeout_ms);

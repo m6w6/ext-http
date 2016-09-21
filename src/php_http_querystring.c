@@ -160,7 +160,7 @@ static int apply_querystring(zval *val)
 		zval *zvalue;
 
 		if ((zvalue = zend_hash_str_find(Z_ARRVAL_P(val), ZEND_STRL("value")))) {
-			zval tmp;
+			zval tmp = {0};
 
 			ZVAL_COPY(&tmp, zvalue);
 			zval_dtor(val);
@@ -289,25 +289,24 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 					/*
 					 * update
 					 */
-					zval equal, tmp, *entry = &tmp;
+					zval equal, tmp, *entry = NULL;
 
 					ZVAL_UNDEF(&tmp);
 					/* recursive */
 					if (Z_TYPE_P(params_entry) == IS_ARRAY || Z_TYPE_P(params_entry) == IS_OBJECT) {
-						ZVAL_DUP(entry, qarray_entry);
-						convert_to_array(entry);
-						php_http_querystring_update(entry, params_entry, NULL);
+						ZVAL_DUP(&tmp, qarray_entry);
+						convert_to_array(&tmp);
+						php_http_querystring_update(&tmp, params_entry, NULL);
+						entry = &tmp;
 					} else if ((FAILURE == is_identical_function(&equal, qarray_entry, params_entry)) || Z_TYPE(equal) != IS_TRUE) {
 						Z_TRY_ADDREF_P(params_entry);
 						entry = params_entry;
 					}
 
-					if (entry) {
-						if (key.key) {
-							zend_hash_update(Z_ARRVAL_P(qarray), key.key, entry);
-						} else {
-							zend_hash_index_update(Z_ARRVAL_P(qarray), key.h, entry);
-						}
+					if (key.key) {
+						zend_hash_update(Z_ARRVAL_P(qarray), key.key, entry ? entry : &tmp);
+					} else {
+						zend_hash_index_update(Z_ARRVAL_P(qarray), key.h, entry ? entry : &tmp);
 					}
 				} else {
 					zval entry, *entry_ptr = &entry;

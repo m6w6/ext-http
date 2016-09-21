@@ -74,11 +74,12 @@ void php_http_info_to_string(php_http_info_t *info, char **str, size_t *len, con
 				info->http.info.request.method&&!strcasecmp(info->http.info.request.method,"CONNECT")?(
 				info->http.info.request.url?php_http_url_authority_to_string(info->http.info.request.url, &(tmp), NULL):"0"):(
 				info->http.info.request.url?php_http_url_to_string(info->http.info.request.url, &(tmp), NULL, 0):"/"),
-				info->http.version.major||info->http.version.major?info->http.version.major:1,
+				info->http.version.major||info->http.version.minor?info->http.version.major:1,
 				info->http.version.major||info->http.version.minor?info->http.version.minor:1,
 				eol);
 	} else if (info->type == PHP_HTTP_RESPONSE){
-		*len = spprintf(str, 0, "HTTP/%u.%u %d%s%s%s", info->http.version.major||info->http.version.major?info->http.version.major:1,
+		*len = spprintf(str, 0, "HTTP/%u.%u %d%s%s%s",
+				info->http.version.major||info->http.version.minor?info->http.version.major:1,
 				info->http.version.major||info->http.version.minor?info->http.version.minor:1,
 				info->http.info.response.code?info->http.info.response.code:200,
 				info->http.info.response.status&&*info->http.info.response.status ? " ":"",
