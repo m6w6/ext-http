@@ -13,7 +13,7 @@
 #ifndef PHP_HTTP_CLIENT_CURL_USER_H
 #define PHP_HTTP_CLIENT_CURL_USER_H
 
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 
 typedef struct php_http_client_curl_user_context {
 	php_http_client_t *client;

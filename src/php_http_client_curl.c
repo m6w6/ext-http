@@ -15,7 +15,7 @@
 #include "php_http_client_curl_event.h"
 #include "php_http_client_curl_user.h"
 
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 
 #ifdef PHP_HTTP_HAVE_OPENSSL
 #	include <openssl/ssl.h>
@@ -1638,7 +1638,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_use_eventloop(php_http_option_
 
 	if (value && Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), php_http_client_curl_user_get_class_entry())) {
 		ev_ops = php_http_client_curl_user_ops_get();
-#if PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_LIBEVENT
 	} else if (value && zend_is_true(value)) {
 		ev_ops = php_http_client_curl_event_ops_get();
 #endif
@@ -2321,7 +2321,7 @@ static ZEND_RESULT_CODE php_http_client_curl_setopt(php_http_client_t *h, php_ht
 			break;
 
 		case PHP_HTTP_CLIENT_OPT_USE_EVENTS:
-#if PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_LIBEVENT
 			return php_http_curlm_use_eventloop(h, (*(zend_bool *) arg)
 					? php_http_client_curl_event_ops_get()
 					: NULL, NULL);
@@ -2605,7 +2605,7 @@ PHP_MSHUTDOWN_FUNCTION(http_client_curl)
 	return SUCCESS;
 }
 
-#endif /* PHP_HTTP_HAVE_CURL */
+#endif /* PHP_HTTP_HAVE_LIBCURL */
 
 /*
  * Local variables:

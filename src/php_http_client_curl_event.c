@@ -12,9 +12,9 @@
 
 #include "php_http_api.h"
 
-#if PHP_HTTP_HAVE_CURL
-#if PHP_HTTP_HAVE_EVENT
-#	if !PHP_HTTP_HAVE_EVENT2 && /* just be really sure */ !(LIBEVENT_VERSION_NUMBER >= 0x02000000)
+#if PHP_HTTP_HAVE_LIBCURL
+#if PHP_HTTP_HAVE_LIBEVENT
+#	if !PHP_HTTP_HAVE_LIBEVENT2 && /* just be really sure */ !(LIBEVENT_VERSION_NUMBER >= 0x02000000)
 #		include <event.h>
 #		define event_base_new event_init
 #		define event_assign(e, b, s, a, cb, d) do {\
@@ -22,7 +22,7 @@
 			event_base_set(b, e); \
 		} while(0)
 #	else
-#		if PHP_HTTP_HAVE_EVENT2
+#		if PHP_HTTP_HAVE_LIBEVENT2
 #			include <event2/event.h>
 #			include <event2/event_struct.h>
 #		else
@@ -314,8 +314,8 @@ php_http_client_curl_ops_t *php_http_client_curl_event_ops_get()
 	return &php_http_client_curl_event_ops;
 }
 
-#endif /* PHP_HTTP_HAVE_EVENT */
-#endif /* PHP_HTTP_HAVE_CURL */
+#endif /* PHP_HTTP_HAVE_LIBEVENT */
+#endif /* PHP_HTTP_HAVE_LIBCURL */
 
 /*
  * Local variables:

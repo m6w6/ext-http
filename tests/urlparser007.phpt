@@ -3,7 +3,7 @@ url parser multibyte/utf-8/idna
 --SKIPIF--
 <?php
 include "skipif.inc";
-if (!defined("http\\Url::PARSE_TOIDN")) {
+if (!defined("http\\Url::PARSE_TOIDN")||!defined("http\\Url::PARSE_TOIDN_2003")) {
 	die("skip need http\\Url::PARSE_TOIDN support");
 }
 ?>
@@ -19,7 +19,7 @@ $urls = array(
 
 foreach ($urls as $url) {
 	printf("\n%s\n", $url);
-	var_dump(new http\Url($url, null, http\Url::PARSE_MBUTF8|http\Url::PARSE_TOIDN));
+	var_dump(new http\Url($url, null, http\Url::PARSE_MBUTF8|http\Url::PARSE_TOIDN|http\Url::PARSE_TOIDN_2003));
 }
 ?>
 DONE

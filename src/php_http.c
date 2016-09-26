@@ -17,10 +17,10 @@
 
 #include <zlib.h>
 
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 #	include <curl/curl.h>
-#	if PHP_HTTP_HAVE_EVENT
-#		if PHP_HTTP_HAVE_EVENT2
+#	if PHP_HTTP_HAVE_LIBEVENT
+#		if PHP_HTTP_HAVE_LIBEVENT2
 #			include <event2/event.h>
 #			include <event2/event_struct.h>
 #		else
@@ -28,9 +28,13 @@
 #		endif
 #	endif
 #endif
-#if PHP_HTTP_HAVE_IDN2
+#if PHP_HTTP_HAVE_LIBICU
+#	include <unicode/uversion.h>
+#endif
+#if PHP_HTTP_HAVE_LIBIDN2
 #	include <idn2.h>
-#elif PHP_HTTP_HAVE_IDN
+#endif
+#if PHP_HTTP_HAVE_LIBIDN
 #	include <idna.h>
 #endif
 
@@ -140,7 +144,7 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_client)
 	|| SUCCESS != PHP_MINIT_CALL(http_client_request)
 	|| SUCCESS != PHP_MINIT_CALL(http_client_response)
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 	|| SUCCESS != PHP_MINIT_CALL(http_curl)
 	|| SUCCESS != PHP_MINIT_CALL(http_client_curl)
 	|| SUCCESS != PHP_MINIT_CALL(http_client_curl_user)
@@ -165,7 +169,7 @@ PHP_MSHUTDOWN_FUNCTION(http)
 	
 	if (0
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_message)
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_client_curl)
 	|| SUCCESS != PHP_MSHUTDOWN_CALL(http_curl)
 #endif
@@ -202,7 +206,7 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_start();
 	php_info_print_table_header(3, "Used Library", "Compiled", "Linked");
 	php_info_print_table_row(3, "libz", ZLIB_VERSION, zlibVersion());
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 	{
 		curl_version_info_data *cv = curl_version_info(CURLVERSION_NOW);
 		php_info_print_table_row(3, "libcurl", LIBCURL_VERSION, cv->version);
@@ -211,22 +215,47 @@ PHP_MINFO_FUNCTION(http)
 	php_info_print_table_row(3, "libcurl", "disabled", "disabled");
 #endif
 
-#if PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_LIBEVENT
 	php_info_print_table_row(3, "libevent",
 #	ifdef LIBEVENT_VERSION
 			LIBEVENT_VERSION,
 #	else
-			PHP_HTTP_EVENT_VERSION,
+			PHP_HTTP_LIBEVENT_VERSION,
 #	endif
 			event_get_version());
 #else
 	php_info_print_table_row(3, "libevent", "disabled", "disabled");
 #endif
 
-#if PHP_HTTP_HAVE_IDN2
+#if PHP_HTTP_HAVE_LIBICU
+	{
+		UVersionInfo uv = {0};
+		char us[U_MAX_VERSION_STRING_LENGTH] = {0};
+
+		u_getVersion(uv);
+		u_versionToString(uv, us);
+		php_info_print_table_row(3, "libicu "
+#if HAVE_UIDNA_NAMETOASCII_UTF8 && HAVE_UIDNA_IDNTOASCII
+				"(IDNA2008/IDNA2003)"
+#elif HAVE_UIDNA_NAMETOASCII_UTF8
+				"(IDNA2008)"
+#elif HAVE_UIDNA_IDNTOASCII
+				"(IDNA2003)"
+#endif
+				, U_ICU_VERSION, us);
+	}
+#else
+	php_info_print_table_row(3, "libicu (IDNA2008/IDNA2003)", "disabled", "disabled");
+#endif
+#if PHP_HTTP_HAVE_LIBIDN2
 	php_info_print_table_row(3, "libidn2 (IDNA2008)", IDN2_VERSION, idn2_check_version(NULL));
-#elif PHP_HTTP_HAVE_IDN
+#else
+	php_info_print_table_row(3, "libidn2 (IDNA2008)", "disabled", "disabled");
+#endif
+#if PHP_HTTP_HAVE_LIBIDN
 	php_info_print_table_row(3, "libidn (IDNA2003)", PHP_HTTP_LIBIDN_VERSION, "unknown");
+#else
+	php_info_print_table_row(3, "libidn (IDNA2003)", "disabled", "disabled");
 #endif
 
 	php_info_print_table_end();

@@ -13,8 +13,8 @@
 #ifndef PHP_HTTP_CLIENT_CURL_EVENT_H
 #define PHP_HTTP_CLIENT_CURL_EVENT_H
 
-#if PHP_HTTP_HAVE_CURL
-#if PHP_HTTP_HAVE_EVENT
+#if PHP_HTTP_HAVE_LIBCURL
+#if PHP_HTTP_HAVE_LIBEVENT
 
 php_http_client_curl_ops_t *php_http_client_curl_event_ops_get();
 

@@ -13,7 +13,7 @@
 #ifndef PHP_HTTP_CLIENT_CURL_H
 #define PHP_HTTP_CLIENT_CURL_H
 
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 
 struct php_http_client_curl_globals {
 	php_http_client_driver_t driver;
@@ -59,7 +59,7 @@ PHP_HTTP_API php_http_client_ops_t *php_http_client_curl_get_ops(void);
 PHP_MINIT_FUNCTION(http_client_curl);
 PHP_MSHUTDOWN_FUNCTION(http_client_curl);
 
-#endif /* PHP_HTTP_HAVE_CURL */
+#endif /* PHP_HTTP_HAVE_LIBCURL */
 
 #endif /* PHP_HTTP_CLIENT_CURL_H */
 

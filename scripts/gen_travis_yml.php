@@ -10,8 +10,9 @@ addons:
    - php5-cli
    - php-pear
    - libcurl4-openssl-dev
-   - zlib1g-dev
    - libidn11-dev
+   - libidn2-0-dev
+   - libicu-dev
    - libevent-dev
 
 env:

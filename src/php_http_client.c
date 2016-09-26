@@ -376,7 +376,7 @@ static HashTable *php_http_client_object_get_gc(zval *object, zval **table, int 
 	*n = 0;
 	*table = obj->gc = erealloc(obj->gc, sizeof(zval) * count);
 
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 	if (obj->client->ops == php_http_client_curl_get_ops()) {
 		php_http_client_curl_t *curl = obj->client->ctx;
 

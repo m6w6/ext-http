@@ -13,7 +13,7 @@
 #ifndef PHP_HTTP_CURL_H
 #define PHP_HTTP_CURL_H
 
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 
 #include <curl/curl.h>
 #define PHP_HTTP_CURL_VERSION(x, y, z) (LIBCURL_VERSION_NUM >= (((x)<<16) + ((y)<<8) + (z)))
@@ -26,7 +26,7 @@
 PHP_MINIT_FUNCTION(http_curl);
 PHP_MSHUTDOWN_FUNCTION(http_curl);
 
-#endif /* PHP_HTTP_HAVE_CURL */
+#endif /* PHP_HTTP_HAVE_LIBCURL */
 
 #endif /* PHP_HTTP_CURL_H */
 

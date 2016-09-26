@@ -110,7 +110,7 @@ ZEND_BEGIN_MODULE_GLOBALS(php_http)
 	struct php_http_env_globals env;
 #ifdef PHP_HTTP_HAVE_CLIENT
 	struct {
-#ifdef PHP_HTTP_HAVE_CURL
+#ifdef PHP_HTTP_HAVE_LIBCURL
 		struct php_http_client_curl_globals curl;
 #endif
 	} client;

@@ -45,6 +45,15 @@
 /* percent encode multibyte sequences in userinfo, path, query and fragment */
 #define PHP_HTTP_URL_PARSE_TOPCT	0x200000
 
+#if PHP_HTTP_HAVE_IDNA2008
+#define PHP_HTTP_URL_PARSE_TOIDN_2008 \
+	(PHP_HTTP_URL_PARSE_TOIDN	|	0x400000)
+#endif
+#if PHP_HTTP_HAVE_IDNA2003
+#define PHP_HTTP_URL_PARSE_TOIDN_2003 \
+	(PHP_HTTP_URL_PARSE_TOIDN	|	0x800000)
+#endif
+
 /* ignore errors */
 #define PHP_HTTP_URL_IGNORE_ERRORS	0x10000000
 /* do not report errors */

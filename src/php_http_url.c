@@ -12,10 +12,14 @@
 
 #include "php_http_api.h"
 
-#if PHP_HTTP_HAVE_IDN2
+#if PHP_HTTP_HAVE_LIBIDN2
 #	include <idn2.h>
-#elif PHP_HTTP_HAVE_IDN
+#endif
+#if PHP_HTTP_HAVE_LIBIDN
 #	include <idna.h>
+#endif
+#if PHP_HTTP_HAVE_LIBICU
+#	include <unicode/uidna.h>
 #endif
 
 #ifdef PHP_HTTP_HAVE_WCHAR
@@ -899,8 +903,8 @@ static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u1
 #	define MAXHOSTNAMELEN 256
 #endif
 
-#if PHP_HTTP_HAVE_IDN2
-static ZEND_RESULT_CODE parse_idn2(struct parse_state *state, size_t prev_len)
+#if PHP_HTTP_HAVE_LIBIDN2
+static ZEND_RESULT_CODE parse_gidn_2008(struct parse_state *state, size_t prev_len)
 {
 	char *idn = NULL;
 	int rv = -1;
@@ -915,7 +919,7 @@ static ZEND_RESULT_CODE parse_idn2(struct parse_state *state, size_t prev_len)
 #	endif
 	if (rv != IDN2_OK) {
 		if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
-			php_error_docref(NULL, E_WARNING, "Failed to parse IDN; %s", idn2_strerror(rv));
+			php_error_docref(NULL, E_WARNING, "Failed to parse IDN (IDNA2008); %s", idn2_strerror(rv));
 		}
 		if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
 			return FAILURE;
@@ -928,8 +932,10 @@ static ZEND_RESULT_CODE parse_idn2(struct parse_state *state, size_t prev_len)
 	}
 	return SUCCESS;
 }
-#elif PHP_HTTP_HAVE_IDN
-static ZEND_RESULT_CODE parse_idn(struct parse_state *state, size_t prev_len)
+#endif
+
+#if PHP_HTTP_HAVE_LIBIDN
+static ZEND_RESULT_CODE parse_gidn_2003(struct parse_state *state, size_t prev_len)
 {
 	char *idn = NULL;
 	int rv = -1;
@@ -944,7 +950,7 @@ static ZEND_RESULT_CODE parse_idn(struct parse_state *state, size_t prev_len)
 #	endif
 	if (rv != IDNA_SUCCESS) {
 		if (!(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
-			php_error_docref(NULL, E_WARNING, "Failed to parse IDN; %s", idna_strerror(rv));
+			php_error_docref(NULL, E_WARNING, "Failed to parse IDN (IDNA2003); %s", idna_strerror(rv));
 		}
 		if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
 			return FAILURE;
@@ -960,56 +966,136 @@ static ZEND_RESULT_CODE parse_idn(struct parse_state *state, size_t prev_len)
 #endif
 
 #ifdef HAVE_UIDNA_IDNTOASCII
-#	if HAVE_UNICODE_UIDNA_H
+#	if PHP_HTTP_HAVE_LIBICU
 #		include <unicode/uidna.h>
 #	else
 typedef uint16_t UChar;
 typedef enum { U_ZERO_ERROR = 0 } UErrorCode;
 int32_t uidna_IDNToASCII(const UChar *src, int32_t srcLength, UChar *dest, int32_t destCapacity, int32_t options, void *parseError, UErrorCode *status);
 #	endif
-static ZEND_RESULT_CODE parse_uidn(struct parse_state *state)
+static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state)
 {
-	char *host_ptr;
+	char *host_ptr = state->url.host, ebuf[64] = {0}, *error = NULL;
 	uint16_t *uhost_str, ahost_str[MAXHOSTNAMELEN], *ahost_ptr;
 	size_t uhost_len, ahost_len;
-	UErrorCode error = U_ZERO_ERROR;
+	UErrorCode rc = U_ZERO_ERROR;
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
 		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
-			return FAILURE;
+			error = "failed to convert to UTF-16";
+			goto error;
 		}
 #ifdef PHP_HTTP_HAVE_WCHAR
 	} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
 		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len)) {
-			return FAILURE;
+			error = "failed to convert to UTF-16";
+			goto error;
 		}
 #endif
 	} else {
-		php_error_docref(NULL, E_WARNING, "Failed to parse IDN; codepage not specified");
-		return FAILURE;
+		error = "codepage not specified";
+		goto error;
 	}
 
-	ahost_len = uidna_IDNToASCII(uhost_str, uhost_len, ahost_str, MAXHOSTNAMELEN, 3, NULL, &error);
+	ahost_len = uidna_IDNToASCII(uhost_str, uhost_len, ahost_str, MAXHOSTNAMELEN, 3, NULL, &rc);
 	efree(uhost_str);
 
-	if (error != U_ZERO_ERROR) {
-		php_error_docref(NULL, E_WARNING, "Failed to parse IDN; ICU error %d", error);
-		return FAILURE;
+	if (error > U_ZERO_ERROR) {
+		goto error;
 	}
 
-	host_ptr = state->url.host;
 	ahost_ptr = ahost_str;
 	PHP_HTTP_DUFF(ahost_len, *host_ptr++ = *ahost_ptr++);
-
 	*host_ptr = '\0';
 	state->offset += host_ptr - state->url.host;
 
 	return SUCCESS;
+
+	error:
+	if (!error) {
+		slprintf(ebuf, sizeof(ebuf)-1, "errorcode: %d", rc);
+		error = ebuf;
+	}
+	php_error_docref(NULL, E_WARNING, "Failed to parse IDN (ICU IDNA2003); %s", error);
+
+	return FAILURE;
+}
+#endif
+
+#ifdef HAVE_UIDNA_IDNTOASCII
+#	if PHP_HTTP_HAVE_LIBICU
+#		include <unicode/uidna.h>
+#	endif
+static ZEND_RESULT_CODE parse_uidn_2008(struct parse_state *state)
+{
+	char *host_ptr, *error = NULL, ebuf[64] = {0};
+	UErrorCode rc = U_ZERO_ERROR;
+	UIDNAInfo info = UIDNA_INFO_INITIALIZER;
+	UIDNA *uidna = uidna_openUTS46(UIDNA_ALLOW_UNASSIGNED|UIDNA_USE_STD3_RULES, &rc);
+
+	if (!uidna || U_FAILURE(rc)) {
+		return FAILURE;
+	}
+
+	host_ptr = state->url.host;
+
+	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
+		char ahost_str[MAXHOSTNAMELEN], *ahost_ptr = &ahost_str[0];
+		size_t ahost_len = uidna_nameToASCII_UTF8(uidna, host_ptr, -1, ahost_str, sizeof(ahost_str)-1, &info, &rc);
+
+		if (U_FAILURE(rc) || info.errors) {
+			goto error;
+		}
+		PHP_HTTP_DUFF(ahost_len, *host_ptr++ = *ahost_ptr++);
+#ifdef PHP_HTTP_HAVE_WCHAR
+	} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
+		uint16_t *uhost_str, whost_str[MAXHOSTNAMELEN], *whost_ptr = &whost_str[0];
+		size_t uhost_len, whost_len;
+
+		if (SUCCESS != to_utf16(parse_mb_loc, host_ptr, &uhost_str, &uhost_len)) {
+			error = "could not convert to UTF-16";
+			goto error;
+		}
+
+		whost_len = uidna_nameToASCII(uidna, uhost_str, uhost_len, whost_str, sizeof(whost_str)-1, &info, &rc);
+		whost_ptr = whost_str;
+		if (U_FAILURE(rc) || info.errors) {
+			goto error;
+		}
+		PHP_HTTP_DUFF(whost_len, *host_ptr++ = *whost_ptr++);
+#endif
+	} else {
+		error = "codepage not specified";
+		goto error;
+	}
+
+	*host_ptr = '\0';
+	state->offset += host_ptr - state->url.host;
+
+	uidna_close(uidna);
+	return SUCCESS;
+
+	error:
+	if (!error) {
+		if (U_FAILURE(rc)) {
+			slprintf(ebuf, sizeof(ebuf)-1, "%s", u_errorName(rc));
+			error = ebuf;
+		} else if (info.errors) {
+			slprintf(ebuf, sizeof(ebuf)-1, "ICU IDNA error codes: 0x%x", info.errors);
+			error = ebuf;
+		} else {
+			error = "unknown error";
+		}
+	}
+	php_error_docref(NULL, E_WARNING, "Failed to parse IDN (ICU IDNA2008); %s", error);
+
+	uidna_close(uidna);
+	return FAILURE;
 }
 #endif
 
 #if 0 && defined(PHP_WIN32)
-static ZEND_RESULT_CODE parse_widn(struct parse_state *state)
+static ZEND_RESULT_CODE parse_widn_2003(struct parse_state *state)
 {
 	char *host_ptr;
 	uint16_t *uhost_str, ahost_str[MAXHOSTNAMELEN], *ahost_ptr;
@@ -1050,6 +1136,45 @@ static ZEND_RESULT_CODE parse_widn(struct parse_state *state)
 	return SUCCESS;
 }
 #endif
+
+static ZEND_RESULT_CODE parse_idna(struct parse_state *state, size_t len)
+{
+	if ((state->flags & PHP_HTTP_URL_PARSE_TOIDN_2008)
+	|| !(state->flags & PHP_HTTP_URL_PARSE_TOIDN_2003)
+	) {
+#if HAVE_UIDNA_NAMETOASCII_UTF8
+		return parse_uidn_2008(state);
+#elif PHP_HTTP_HAVE_LIBIDN2
+		return parse_gidn_2008(state, len);
+#endif
+	}
+
+	if ((state->flags & PHP_HTTP_URL_PARSE_TOIDN_2003)
+	|| !(state->flags & PHP_HTTP_URL_PARSE_TOIDN_2008)
+	) {
+#if HAVE_UIDNA_IDNTOASCII
+		return parse_uidn_2003(state);
+#elif PHP_HTTP_HAVE_LIBIDN
+		return parse_gidn_2003(state, len);
+#endif
+	}
+
+#if 0 && defined(PHP_WIN32)
+	return parse_widn_2003(state);
+#endif
+
+#if HAVE_UIDNA_NAMETOASCII_UTF8
+		return parse_uidn_2008(state);
+#elif PHP_HTTP_HAVE_LIBIDN2
+		return parse_gidn_2008(state, len);
+#elif HAVE_UIDNA_IDNTOASCII
+		return parse_uidn_2003(state);
+#elif PHP_HTTP_HAVE_LIBIDN
+		return parse_gidn_2003(state, len);
+#endif
+
+	return SUCCESS;
+}
 
 #ifdef HAVE_INET_PTON
 static const char *parse_ip6(struct parse_state *state, const char *ptr)
@@ -1244,17 +1369,7 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 	}
 
 	if (state->flags & PHP_HTTP_URL_PARSE_TOIDN) {
-#if PHP_HTTP_HAVE_IDN2
-		return parse_idn2(state, len);
-#elif PHP_HTTP_HAVE_IDN
-		return parse_idn(state, len);
-#endif
-#ifdef HAVE_UIDNA_IDNTOASCII
-		return parse_uidn(state);
-#endif
-#if 0 && defined(PHP_WIN32)
-		return parse_widn(state);
-#endif
+		return parse_idna(state, len);
 	}
 
 	return SUCCESS;
@@ -1884,8 +1999,14 @@ PHP_MINIT_FUNCTION(http_url)
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBLOC"), PHP_HTTP_URL_PARSE_MBLOC);
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_MBUTF8"), PHP_HTTP_URL_PARSE_MBUTF8);
-#if defined(PHP_HTTP_HAVE_IDN2) || defined(PHP_HTTP_HAVE_IDN) || defined(HAVE_UIDNA_IDNTOASCII)
+#if PHP_HTTP_HAVE_LIBIDN2 || PHP_HTTP_HAVE_LIBIDN || HAVE_UIDNA_IDNTOASCII || HAVE_UIDNA_NAMETOASCII_UTF8
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN"), PHP_HTTP_URL_PARSE_TOIDN);
+#	if PHP_HTTP_HAVE_IDNA2003
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN_2003"), PHP_HTTP_URL_PARSE_TOIDN_2003);
+#	endif
+#	if PHP_HTTP_HAVE_IDNA2008
+	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOIDN_2008"), PHP_HTTP_URL_PARSE_TOIDN_2008);
+#	endif
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT);
 

@@ -15,7 +15,7 @@
 #include "php_network.h"
 #include "zend_closures.h"
 
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 
 typedef struct php_http_client_curl_user_ev {
 	php_stream *socket;
@@ -316,7 +316,7 @@ PHP_MINIT_FUNCTION(http_client_curl_user)
 	return SUCCESS;
 }
 
-#endif /* PHP_HTTP_HAVE_CURL */
+#endif /* PHP_HTTP_HAVE_LIBCURL */
 
 /*
  * Local variables:

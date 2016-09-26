@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-#if PHP_HTTP_HAVE_CURL
+#if PHP_HTTP_HAVE_LIBCURL
 
 #if defined(ZTS) && defined(PHP_HTTP_HAVE_SSL)
 #	ifdef PHP_WIN32
@@ -133,7 +133,7 @@ PHP_MSHUTDOWN_FUNCTION(http_curl)
 	return SUCCESS;
 }
 
-#endif /* PHP_HTTP_HAVE_CURL */
+#endif /* PHP_HTTP_HAVE_LIBCURL */
 
 /*
  * Local variables:
