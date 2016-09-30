@@ -42,7 +42,6 @@ lcov_data
 *.phar
 !travis/*.phar
 vendor/
-<<<<<<< HEAD
 /php_http_api.h
 /php_http_buffer.h
 /php_http_client.h
@@ -75,8 +74,6 @@ vendor/
 /php_http_utf8.h
 /php_http_version.h
 /tests/helper/server.log
-=======
-tests/helper/server.log
 php_http_api.h
 php_http_buffer.h
 php_http_client.h
@@ -110,5 +107,4 @@ php_http_response_codes.h
 php_http_url.h
 php_http_utf8.h
 php_http_version.h
->>>>>>> v2.6.x
 *.gcov
