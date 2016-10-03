@@ -26,6 +26,7 @@ $env = $gen([
 	"enable_json",
 	"enable_hash" => ["yes"],
 	"enable_iconv" => ["yes"],
+	"with_http_libicu_dir",
 ]);
 foreach ($env as $e) {
 	printf(" - %s\n", $e);

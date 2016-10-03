@@ -1,7 +1,10 @@
 --TEST--
 serialization
 --SKIPIF--
-<?php include "skipif.inc"; ?>
+<?php
+include "skipif.inc";
+skip_client_test();
+?>
 --FILE--
 <?php
 

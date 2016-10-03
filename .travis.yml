@@ -9,35 +9,60 @@ addons:
    - php5-cli
    - php-pear
    - libcurl4-openssl-dev
-   - zlib1g-dev
    - libidn11-dev
+   - libidn2-0-dev
+   - libicu-dev
    - libevent-dev
 
 env:
- - PHP=7.0 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=7.1 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=7.0 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=7.1 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=7.0 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=7.1 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=7.1 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes
- - PHP=7.0 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=7.1 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=7.0 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=7.1 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=7.0 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=7.1 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=7.1 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
- - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.1 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.1 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.1 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.1 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.1 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.1 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.1 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.1 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=no
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.1 enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.1 enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.1 enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.1 enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=no enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.1 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.1 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.0 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.1 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=master enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=7.1 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
+ - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes
 # once with gcov
  - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master enable_json=yes enable_hash=yes enable_iconv=yes 
 

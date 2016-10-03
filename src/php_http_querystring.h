@@ -13,7 +13,7 @@
 #ifndef PHP_HTTP_QUERYSTRING_H
 #define PHP_HTTP_QUERYSTRING_H
 
-#ifdef PHP_HTTP_HAVE_ICONV
+#if PHP_HTTP_HAVE_ICONV
 PHP_HTTP_API ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe);
 #endif /* PHP_HTTP_HAVE_ICONV */
 PHP_HTTP_API ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *qstring);

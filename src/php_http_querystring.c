@@ -15,7 +15,7 @@
 #include "php_variables.h"
 #include "ext/spl/spl_array.h"
 
-#ifdef PHP_HTTP_HAVE_ICONV
+#if PHP_HTTP_HAVE_ICONV
 #	ifndef HAVE_ICONV
 #		define HAVE_ICONV 1
 #	endif
@@ -92,7 +92,7 @@ static inline void php_http_querystring_get(zval *instance, int type, char *name
 	}
 }
 
-#ifdef PHP_HTTP_HAVE_ICONV
+#if PHP_HTTP_HAVE_ICONV
 ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe)
 {
 	zval *entry;
@@ -534,7 +534,7 @@ PHP_HTTP_QUERYSTRING_GETTER(getString, IS_STRING);
 PHP_HTTP_QUERYSTRING_GETTER(getArray, IS_ARRAY);
 PHP_HTTP_QUERYSTRING_GETTER(getObject, IS_OBJECT);
 
-#ifdef PHP_HTTP_HAVE_ICONV
+#if PHP_HTTP_HAVE_ICONV
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_xlate, 0, 0, 2)
 	ZEND_ARG_INFO(0, from_encoding)
 	ZEND_ARG_INFO(0, to_encoding)
@@ -702,7 +702,7 @@ static zend_function_entry php_http_querystring_methods[] = {
 	PHP_ME(HttpQueryString, getIterator, ai_HttpQueryString_getIterator, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HttpQueryString, getGlobalInstance, ai_HttpQueryString_getGlobalInstance, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-#ifdef PHP_HTTP_HAVE_ICONV
+#if PHP_HTTP_HAVE_ICONV
 	PHP_ME(HttpQueryString, xlate, ai_HttpQueryString_xlate, ZEND_ACC_PUBLIC)
 #endif
 

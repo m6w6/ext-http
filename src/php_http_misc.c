@@ -19,11 +19,11 @@
 
 void php_http_sleep(double s)
 {
-#if defined(PHP_WIN32)
+#if PHP_WIN32
 	Sleep((DWORD) PHP_HTTP_MSEC(s));
-#elif defined(HAVE_USLEEP)
+#elif HAVE_USLEEP
 	usleep(PHP_HTTP_USEC(s));
-#elif defined(HAVE_NANOSLEEP)
+#elif HAVE_NANOSLEEP
 	struct timespec req, rem;
 
 	req.tv_sec = (time_t) s;

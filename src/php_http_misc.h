@@ -139,7 +139,7 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 
 /* ZEND */
 
-#ifdef PHP_DEBUG
+#if PHP_DEBUG
 #	undef  HASH_OF
 #	define HASH_OF(p) ((HashTable*)(Z_TYPE_P(p)==IS_ARRAY ? Z_ARRVAL_P(p) : ((Z_TYPE_P(p)==IS_OBJECT ? Z_OBJ_HT_P(p)->get_properties((p)) : NULL))))
 #endif

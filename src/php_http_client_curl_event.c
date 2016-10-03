@@ -14,24 +14,11 @@
 
 #if PHP_HTTP_HAVE_LIBCURL
 #if PHP_HTTP_HAVE_LIBEVENT
-#	if !PHP_HTTP_HAVE_LIBEVENT2 && /* just be really sure */ !(LIBEVENT_VERSION_NUMBER >= 0x02000000)
-#		include <event.h>
-#		define event_base_new event_init
-#		define event_assign(e, b, s, a, cb, d) do {\
-			event_set(e, s, a, cb, d); \
-			event_base_set(b, e); \
-		} while(0)
-#	else
-#		if PHP_HTTP_HAVE_LIBEVENT2
-#			include <event2/event.h>
-#			include <event2/event_struct.h>
-#		else
-#			error "libevent presence is unknown"
-#		endif
-#	endif
-#	ifndef DBG_EVENTS
-#		define DBG_EVENTS 0
-#	endif
+
+#include <event.h>
+#ifndef DBG_EVENTS
+#	define DBG_EVENTS 0
+#endif
 
 typedef struct php_http_client_curl_event_context {
 	php_http_client_t *client;

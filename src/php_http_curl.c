@@ -14,23 +14,24 @@
 
 #if PHP_HTTP_HAVE_LIBCURL
 
-#if defined(ZTS) && defined(PHP_HTTP_HAVE_SSL)
-#	ifdef PHP_WIN32
-#		define PHP_HTTP_NEED_OPENSSL_TSL
+#if ZTS && PHP_HTTP_HAVE_LIBCURL_SSL
+#	include "TSRM.h"
+#	if PHP_WIN32
+#		define PHP_HTTP_NEED_OPENSSL_TSL 1
 #		include <openssl/crypto.h>
 #	else /* !PHP_WIN32 */
-#		if defined(PHP_HTTP_HAVE_OPENSSL)
-#			define PHP_HTTP_NEED_OPENSSL_TSL
+#		if PHP_HTTP_HAVE_LIBCURL_OPENSSL
+#			define PHP_HTTP_NEED_OPENSSL_TSL 1
 #			include <openssl/crypto.h>
-#		elif defined(PHP_HTTP_HAVE_GNUTLS)
-#			define PHP_HTTP_NEED_GNUTLS_TSL
+#		elif PHP_HTTP_HAVE_LIBCURL_GNUTLS
+#			define PHP_HTTP_NEED_GNUTLS_TSL 1
 #			include <gcrypt.h>
-#		endif /* PHP_HTTP_HAVE_OPENSSL || PHP_HTTP_HAVE_GNUTLS */
+#		endif /* PHP_HTTP_HAVE_LIBCURL_OPENSSL || PHP_HTTP_HAVE_LIBCURL_GNUTLS */
 #	endif /* PHP_WIN32 */
-#endif /* ZTS && PHP_HTTP_HAVE_SSL */
+#endif /* ZTS && PHP_HTTP_HAVE_LIBCURL_SSL */
 
 
-#ifdef PHP_HTTP_NEED_OPENSSL_TSL
+#if PHP_HTTP_NEED_OPENSSL_TSL
 static MUTEX_T *php_http_openssl_tsl = NULL;
 
 static void php_http_openssl_thread_lock(int mode, int n, const char * file, int line)
@@ -47,7 +48,7 @@ static ulong php_http_openssl_thread_id(void)
 	return (ulong) tsrm_thread_id();
 }
 #endif
-#ifdef PHP_HTTP_NEED_GNUTLS_TSL
+#if PHP_HTTP_NEED_GNUTLS_TSL
 static int php_http_gnutls_mutex_create(void **m)
 {
 	if (*((MUTEX_T *) m) = tsrm_mutex_alloc()) {
@@ -86,7 +87,7 @@ static struct gcry_thread_cbs php_http_gnutls_tsl = {
 
 PHP_MINIT_FUNCTION(http_curl)
 {
-#ifdef PHP_HTTP_NEED_OPENSSL_TSL
+#if PHP_HTTP_NEED_OPENSSL_TSL
 	/* mod_ssl, libpq or ext/curl might already have set thread lock callbacks */
 	if (!CRYPTO_get_id_callback()) {
 		int i, c = CRYPTO_num_locks();
@@ -101,7 +102,7 @@ PHP_MINIT_FUNCTION(http_curl)
 		CRYPTO_set_locking_callback(php_http_openssl_thread_lock);
 	}
 #endif
-#ifdef PHP_HTTP_NEED_GNUTLS_TSL
+#if PHP_HTTP_NEED_GNUTLS_TSL
 	gcry_control(GCRYCTL_SET_THREAD_CBS, &php_http_gnutls_tsl);
 #endif
 
@@ -115,7 +116,7 @@ PHP_MINIT_FUNCTION(http_curl)
 PHP_MSHUTDOWN_FUNCTION(http_curl)
 {
 	curl_global_cleanup();
-#ifdef PHP_HTTP_NEED_OPENSSL_TSL
+#if PHP_HTTP_NEED_OPENSSL_TSL
 	if (php_http_openssl_tsl) {
 		int i, c = CRYPTO_num_locks();
 

@@ -33,37 +33,37 @@
 #include "zend_exceptions.h"
 
 
-#ifdef PHP_WIN32
+#if PHP_WIN32
 # define PHP_HTTP_API __declspec(dllexport)
-#elif defined(__GNUC__) && __GNUC__ >= 4
+#elif __GNUC__ >= 4
 # define PHP_HTTP_API extern __attribute__ ((visibility("default")))
 #else
 # define PHP_HTTP_API extern
 #endif
 
-#if (defined(HAVE_ICONV) || defined(PHP_HTTP_HAVE_EXT_ICONV)) && (PHP_HTTP_SHARED_DEPS || !defined(COMPILE_DL_ICONV))
-#	define PHP_HTTP_HAVE_ICONV
+#if (HAVE_ICONV || PHP_HTTP_HAVE_EXT_ICONV) && (PHP_HTTP_SHARED_DEPS || !COMPILE_DL_ICONV)
+#	define PHP_HTTP_HAVE_ICONV 1
 #endif
 
-#if (defined(HAVE_HASH_EXT) || defined(PHP_HTTP_HAVE_EXT_HASH)) && (PHP_HTTP_SHARED_DEPS || !defined(COMPILE_DL_HASH)) && defined(PHP_HTTP_HAVE_PHP_HASH_H)
-#	define PHP_HTTP_HAVE_HASH
+#if (HAVE_HASH_EXT || PHP_HTTP_HAVE_EXT_HASH) && (PHP_HTTP_SHARED_DEPS || !COMPILE_DL_HASH)
+#	define PHP_HTTP_HAVE_HASH 1
 #endif
 
 #include <stddef.h>
 
-#ifdef PHP_WIN32
+#if PHP_WIN32
 #	define CURL_STATICLIB
 #	include <winsock2.h>
 #else
-#	ifdef HAVE_NETDB_H
+#	if HAVE_NETDB_H
 #		include <netdb.h>
 #	endif
-#	ifdef HAVE_UNISTD_H
+#	if HAVE_UNISTD_H
 #		include <unistd.h>
 #	endif
 #endif
 
-#if defined(HAVE_WCHAR_H) && defined(HAVE_WCTYPE_H) && defined(HAVE_ISWALNUM) && (defined(HAVE_MBRTOWC) || defined(HAVE_MBTOWC))
+#if HAVE_WCHAR_H && HAVE_WCTYPE_H && HAVE_ISWALNUM && (HAVE_MBRTOWC || HAVE_MBTOWC)
 #	define PHP_HTTP_HAVE_WCHAR 1
 #endif
 
@@ -108,18 +108,18 @@
 
 ZEND_BEGIN_MODULE_GLOBALS(php_http)
 	struct php_http_env_globals env;
-#ifdef PHP_HTTP_HAVE_CLIENT
+#if PHP_HTTP_HAVE_CLIENT
 	struct {
-#ifdef PHP_HTTP_HAVE_LIBCURL
+#	if PHP_HTTP_HAVE_LIBCURL
 		struct php_http_client_curl_globals curl;
-#endif
+#	endif
 	} client;
 #endif
 ZEND_END_MODULE_GLOBALS(php_http)
 
 ZEND_EXTERN_MODULE_GLOBALS(php_http);
 
-#ifdef ZTS
+#if ZTS
 #	include "TSRM/TSRM.h"
 #	define PHP_HTTP_G ((zend_php_http_globals *) (*((void ***) tsrm_get_ls_cache()))[TSRM_UNSHUFFLE_RSRC_ID(php_http_globals_id)])
 #	undef TSRMLS_FETCH_FROM_CTX

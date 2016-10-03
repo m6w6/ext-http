@@ -37,10 +37,13 @@
 #if PHP_HTTP_HAVE_LIBIDN
 #	include <idna.h>
 #endif
+#if PHP_HTTP_HAVE_LIBIDNKIT2 || PHP_HTTP_HAVE_LIBIDNKIT
+#include "idn/version.h"
+#endif
 
 ZEND_DECLARE_MODULE_GLOBALS(php_http);
 
-#ifdef COMPILE_DL_HTTP
+#if COMPILE_DL_HTTP
 ZEND_GET_MODULE(http)
 #endif
 
@@ -57,10 +60,10 @@ static zend_module_dep http_module_deps[] = {
 	ZEND_MOD_REQUIRED("raphf")
 	ZEND_MOD_REQUIRED("propro")
 	ZEND_MOD_REQUIRED("spl")
-#ifdef PHP_HTTP_HAVE_HASH
+#if PHP_HTTP_HAVE_HASH
 	ZEND_MOD_REQUIRED("hash")
 #endif
-#ifdef PHP_HTTP_HAVE_ICONV
+#if PHP_HTTP_HAVE_ICONV
 	ZEND_MOD_REQUIRED("iconv")
 #endif
 	{NULL, NULL, NULL, 0}
@@ -257,7 +260,16 @@ PHP_MINFO_FUNCTION(http)
 #else
 	php_info_print_table_row(3, "libidn (IDNA2003)", "disabled", "disabled");
 #endif
-
+#if PHP_HTTP_HAVE_LIBIDNKIT2
+	php_info_print_table_row(3, "libidnkit2 (IDNA2008)",  IDNKIT_VERSION_LIBIDN, idn_version_libidn());
+#else
+	php_info_print_table_row(3, "libidnkit2 (IDNA2008)", "disabled", "disabled");
+#endif
+#if PHP_HTTP_HAVE_LIBIDNKIT
+	php_info_print_table_row(3, "libidnkit (IDNA2003)",  IDNKIT_VERSION, idn_version_getstring());
+#else
+	php_info_print_table_row(3, "libidnkit (IDNA2003)", "disabled", "disabled");
+#endif
 	php_info_print_table_end();
 	
 	DISPLAY_INI_ENTRIES();
