@@ -255,9 +255,9 @@ AC_DEFUN([PECL_CHECK_CUSTOM], [
 		LIBS="-l$4"
 
 		AC_CACHE_VAL(PECL_CACHE_VAR([$1_version]), [
-			pushd $PECL_CACHE_VAR([$1_prefix])
+			pushd $PECL_CACHE_VAR([$1_prefix]) >/dev/null
 			PECL_CACHE_VAR([$1_version])=$5
-			popd
+			popd >/dev/null
 		])
 		PECL_CHECKED_VERSION([$1])=$PECL_CACHE_VAR([$1_version])
 
@@ -268,6 +268,8 @@ AC_DEFUN([PECL_CHECK_CUSTOM], [
 		else
 			PECL_VAR([HAVE_$1])=false
 		fi
+	else
+		PECL_VAR([HAVE_$1])=false
 	fi
 	AC_MSG_RESULT([${PECL_CHECKED_VERSION([$1]):-no}])
 ])
