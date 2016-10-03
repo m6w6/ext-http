@@ -181,8 +181,8 @@ AC_DEFUN([PECL_CHECK_LIBCURL], [dnl
 	PECL_CHECK_CONFIG(libcurl, $CURL_CONFIG,
 		[--version | $SED -e 's/@<:@^0-9\.@:>@//g'],
 		[--cflags],
-		[--libs | $EGREP -o -- '-L@<:@^ @:>@* ?'],
-		[--libs | $EGREP -o -- '-l@<:@^ @:>@* ?']dnl
+		[--libs | $EGREP -o -- '(^|\s)-L@<:@^ @:>@* ?'],
+		[--libs | $EGREP -o -- '(^|\s)-l@<:@^ @:>@* ?']dnl
 	)
 	ifelse([$2],,,[
 		PECL_HAVE_VERSION([libcurl], [$2])
