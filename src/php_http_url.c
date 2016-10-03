@@ -1189,9 +1189,9 @@ static ZEND_RESULT_CODE parse_widn_2003(struct parse_state *state)
 static ZEND_RESULT_CODE parse_idna(struct parse_state *state, size_t len)
 {
 #if PHP_HTTP_HAVE_IDNA2008
-	if ((state->flags & PHP_HTTP_URL_PARSE_TOIDN_2008)
+	if ((state->flags & PHP_HTTP_URL_PARSE_TOIDN_2008) == PHP_HTTP_URL_PARSE_TOIDN_2008
 #	if PHP_HTTP_HAVE_IDNA2003
-	|| !(state->flags & PHP_HTTP_URL_PARSE_TOIDN_2003)
+	||	(state->flags & PHP_HTTP_URL_PARSE_TOIDN_2003) != PHP_HTTP_URL_PARSE_TOIDN_2003
 #	endif
 	) {
 #if HAVE_UIDNA_NAMETOASCII_UTF8
@@ -1205,9 +1205,9 @@ static ZEND_RESULT_CODE parse_idna(struct parse_state *state, size_t len)
 #endif
 
 #if PHP_HTTP_HAVE_IDNA2003
-	if ((state->flags & PHP_HTTP_URL_PARSE_TOIDN_2003)
+	if ((state->flags & PHP_HTTP_URL_PARSE_TOIDN_2003) == PHP_HTTP_URL_PARSE_TOIDN_2003
 #	if PHP_HTTP_HAVE_IDNA2008
-	|| !(state->flags & PHP_HTTP_URL_PARSE_TOIDN_2008)
+	||	(state->flags & PHP_HTTP_URL_PARSE_TOIDN_2008) != PHP_HTTP_URL_PARSE_TOIDN_2008
 #endif
 	) {
 #if HAVE_UIDNA_IDNTOASCII
