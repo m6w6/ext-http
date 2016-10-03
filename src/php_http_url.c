@@ -947,11 +947,11 @@ static ZEND_RESULT_CODE parse_gidn_2003(struct parse_state *state, size_t prev_l
 	int rv = -1;
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-		rv = idna_to_ascii_8z(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+		rv = idna_to_ascii_8z(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED);
 	}
 #	if PHP_HTTP_HAVE_WCHAR
 	else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-		rv = idna_to_ascii_lz(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED|IDNA_USE_STD3_ASCII_RULES);
+		rv = idna_to_ascii_lz(state->url.host, &idn, IDNA_ALLOW_UNASSIGNED);
 	}
 #	endif
 	if (rv != IDNA_SUCCESS) {
@@ -1043,7 +1043,7 @@ static ZEND_RESULT_CODE parse_uidn_2008(struct parse_state *state)
 	char *host_ptr, *error = NULL, ebuf[64] = {0};
 	UErrorCode rc = U_ZERO_ERROR;
 	UIDNAInfo info = UIDNA_INFO_INITIALIZER;
-	UIDNA *uidna = uidna_openUTS46(UIDNA_ALLOW_UNASSIGNED|UIDNA_USE_STD3_RULES, &rc);
+	UIDNA *uidna = uidna_openUTS46(UIDNA_ALLOW_UNASSIGNED, &rc);
 
 	if (!uidna || U_FAILURE(rc)) {
 		return FAILURE;
