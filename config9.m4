@@ -58,7 +58,7 @@ if test "$PHP_HTTP" != "no"; then
 	[  --with-http-libidn2-dir[=DIR]      HTTP: where to find libidn2], $PHP_HTTP_LIBCURL_DIR, no)
 	if test "$PHP_HTTP_LIBIDN2_DIR" != "no"; then
 		PECL_CHECK_CUSTOM(libidn2, "$PHP_HTTP_LIBIDN2_DIR", idn2.h, idn2,
-			[$($EGREP "define IDN2_VERSION " "$path/include/idn2.h" | $SED -e's/^.*VERSION //g' -e 's/@<:@^0-9\.@:>@//g')])
+			[$($EGREP "define IDN2_VERSION " "include/idn2.h" | $SED -e's/^.*VERSION //g' -e 's/@<:@^0-9\.@:>@//g')])
 		if $PECL_VAR([HAVE_LIBIDN2]); then
 			PECL_DEFINE([HAVE_IDNA2008])
 		fi
@@ -120,7 +120,7 @@ if test "$PHP_HTTP" != "no"; then
 	[  --with-http-libidnkit2-dir[=DIR]   HTTP: where to find libidnkit2], $PHP_HTTP_LIBCURL_DIR, no)
 	if test "$PHP_HTTP_LIBIDNKIT2_DIR" != "no"; then
 		PECL_CHECK_CUSTOM(libidnkit2, "$PHP_HTTP_LIBIDNKIT2_DIR", idn/api.h, idnkit,
-			[$($EGREP "define IDNKIT_VERSION_LIBIDN\b" "$path/include/idn/version.h" | $SED -e's/^.*VERSION_LIBIDN//g' -e 's/@<:@^0-9\.@:>@//g')])
+			[$($EGREP "define IDNKIT_VERSION_LIBIDN\b" "include/idn/version.h" | $SED -e's/^.*VERSION_LIBIDN//g' -e 's/@<:@^0-9\.@:>@//g')])
 		if $PECL_VAR([HAVE_LIBIDNKIT2]); then
 			PECL_DEFINE([HAVE_IDNA2008])
 		fi
@@ -135,7 +135,7 @@ if test "$PHP_HTTP" != "no"; then
 			AC_MSG_WARN([libidnkit-$PECL_VAR([LIBIDNKIT2_VERSION]) already enabled, skipping libidnkit1])
 		else
 			PECL_CHECK_CUSTOM(libidnkit, "$PHP_HTTP_LIBIDNKIT_DIR", idn/api.h, idnkit,
-				[$($EGREP "define IDNKIT_VERSION\b" "$path/include/idn/version.h" | $SED -e's/^.*VERSION//g' -e 's/@<:@^0-9\.@:>@//g')])
+				[$($EGREP "define IDNKIT_VERSION\b" "include/idn/version.h" | $SED -e's/^.*VERSION//g' -e 's/@<:@^0-9\.@:>@//g')])
 			if $PECL_VAR([HAVE_LIBIDNKIT]); then
 				PECL_DEFINE([HAVE_IDNA2003])
 			fi

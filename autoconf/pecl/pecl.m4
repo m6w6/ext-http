@@ -255,7 +255,9 @@ AC_DEFUN([PECL_CHECK_CUSTOM], [
 		LIBS="-l$4"
 
 		AC_CACHE_VAL(PECL_CACHE_VAR([$1_version]), [
+			pushd $PECL_CACHE_VAR([$1_prefix])
 			PECL_CACHE_VAR([$1_version])=$5
+			popd
 		])
 		PECL_CHECKED_VERSION([$1])=$PECL_CACHE_VAR([$1_version])
 
