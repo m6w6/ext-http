@@ -100,16 +100,22 @@ static void php_http_client_curl_event_timeout_callback(int socket, short action
 static void php_http_client_curl_event_timer(CURLM *multi, long timeout_ms, void *timer_data)
 {
 	php_http_client_curl_event_context_t *context = timer_data;
+	struct timeval timeout;
 
 #if DBG_EVENTS
-	fprintf(stderr, "\ntimer <- timeout_ms: %ld\n", timeout_ms);
+	fprintf(stderr, "(%ld)", timeout_ms);
 #endif
 
-	if (timeout_ms < 0) {
+	switch (timeout_ms) {
+	case -1:
+		if (event_initialized(context->timeout) && event_pending(context->timeout, EV_TIMEOUT, NULL)) {
+			event_del(context->timeout);
+		}
+		break;
+	case 0:
 		php_http_client_curl_event_handler(context, CURL_SOCKET_TIMEOUT, 0);
-	} else if (timeout_ms > 0 || !event_initialized(context->timeout) || !event_pending(context->timeout, EV_TIMEOUT, NULL)) {
-		struct timeval timeout;
-
+		break;
+	default:
 		if (!event_initialized(context->timeout)) {
 			event_assign(context->timeout, context->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_client_curl_event_timeout_callback, context);
 		}
@@ -117,7 +123,10 @@ static void php_http_client_curl_event_timer(CURLM *multi, long timeout_ms, void
 		timeout.tv_sec = timeout_ms / 1000;
 		timeout.tv_usec = (timeout_ms % 1000) * 1000;
 
-		event_add(context->timeout, &timeout);
+		if (!event_pending(context->timeout, EV_TIMEOUT, &timeout)) {
+			event_add(context->timeout, &timeout);
+		}
+		break;
 	}
 }
 
