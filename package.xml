@@ -70,9 +70,11 @@ Changes from beta1:
 * Fixed recursive calls to the event loop dispatcher
 
 Changes from beta2:
++ Improved configure checks for IDNA libraries (added --with-http-libicu-dir, --with-http-libidnkit{,2}-dir, --with-http-libidn2-dir)
 * Fix bug #73055: crash in http\QueryString (Mike, @rc0r) (CVE-2016-7398)
 * Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r)
 * Fix HTTP/2 version parser for older libcurl versions (Mike)
+* Fix gh-issue #52: Underscores in host names: libidn Failed to parse IDN (Mike, @canavan)
 ]]></notes>
  <contents>
   <dir name="/">
@@ -436,8 +438,24 @@ Changes from beta2:
    prompt="where to find libevent"
    default="/usr" />
   <configureoption
+   name="with-http-libicu-dir"
+   prompt="where to find libicu"
+   default="/usr" />
+  <configureoption
+   name="with-http-libidn2-dir"
+   prompt="where to find libidn2"
+   default="/usr" />
+  <configureoption
    name="with-http-libidn-dir"
    prompt="where to find libidn"
+   default="/usr" />
+  <configureoption
+   name="with-http-libidnkit2-dir"
+   prompt="where to find libidnkit2"
+   default="/usr" />
+  <configureoption
+   name="with-http-libidnkit-dir"
+   prompt="where to find libidnkit"
    default="/usr" />
   </extsrcrelease>
  <changelog />
