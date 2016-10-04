@@ -31,7 +31,7 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2016-09-12</date>
+ <date>2016-10-04</date>
  <version>
   <release>3.1.0RC1</release>
   <api>3.1.0</api>
@@ -70,14 +70,17 @@ Changes from beta1:
 * Fixed recursive calls to the event loop dispatcher
 
 Changes from beta2:
-* Fix bug #73055: crash in http\QueryString (Mike, @rc0r)
+* Fix bug #73055: crash in http\QueryString (Mike, @rc0r) (CVE-2016-7398)
+* Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r)
 * Fix HTTP/2 version parser for older libcurl versions (Mike)
 ]]></notes>
  <contents>
   <dir name="/">
    <file role="doc" name="AUTHORS"/>
    <file role="doc" name="BUGS"/>
+   <file role="doc" name="CHANGELOG.md"/>
    <file role="doc" name="CONTRIBUTING.md"/>
+   <file role="doc" name="CVE.md"/>
    <file role="doc" name="CREDITS"/>
    <file role="doc" name="LICENSE"/>
    <file role="doc" name="README.md"/>
@@ -88,6 +91,14 @@ Changes from beta2:
    <file role="src" name="config.w32"/>
    <file role="src" name="Makefile.frag"/>
    <file role="src" name="php_http.h"/>
+   <dir name="autoconf">
+    <dir name="pecl">
+   	 <file role="src" name="pecl.m4"/>
+   	 <file role="src" name="libcurl.m4"/>
+   	 <file role="src" name="libevent.m4"/>
+   	 <file role="src" name="zlib.m4"/>
+    </dir>
+   </dir>
    <dir name="src">
     <file role="src" name="php_http_api.h"/>
     <file role="src" name="php_http_buffer.c"/>
@@ -218,6 +229,7 @@ Changes from beta2:
      <file role="test" name="client027.phpt"/>
      <file role="test" name="client028.phpt"/>
      <file role="test" name="client029.phpt"/>
+     <file role="test" name="client030.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
@@ -281,6 +293,7 @@ Changes from beta2:
      <file role="test" name="filterchunked.phpt"/>
      <file role="test" name="filterzlib.phpt"/>
      <file role="test" name="gh-issue6.phpt"/>
+     <file role="test" name="gh-issue11.phpt"/>
      <file role="test" name="gh-issue12.phpt"/>
      <file role="test" name="gh-issue42.phpt"/>
      <file role="test" name="gh-issue47.phpt"/>
@@ -368,6 +381,8 @@ Changes from beta2:
      <file role="test" name="urlparser009.phpt"/>
      <file role="test" name="urlparser010.phpt"/>
      <file role="test" name="urlparser011.phpt"/>
+     <file role="test" name="urlparser012.phpt"/>
+     <file role="test" name="urlparser013.phpt"/>
      <file role="test" name="version001.phpt"/>
    </dir>
    <dir name="scripts">
