@@ -31,7 +31,7 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2016-09-12</date>
+ <date>2016-10-04</date>
  <version>
   <release>2.6.0RC1</release>
   <api>2.6.0</api>
@@ -71,14 +71,17 @@ Changes from beta1:
 * Fixed recursive calls to the event loop dispatcher
 
 Changes from beta2:
-* Fix bug #73055: crash in http\QueryString (Mike, @rc0r)
+* Fix bug #73055: crash in http\QueryString (Mike, @rc0r) (CVE-2016-7398)
+* Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r)
 * Fix HTTP/2 version parser for older libcurl versions (Mike)
 ]]></notes>
  <contents>
   <dir name="/">
    <file role="doc" name="AUTHORS"/>
    <file role="doc" name="BUGS"/>
+   <file role="doc" name="CHANGELOG.md"/>
    <file role="doc" name="CONTRIBUTING.md"/>
+   <file role="doc" name="CVE.md"/>
    <file role="doc" name="CREDITS"/>
    <file role="doc" name="LICENSE"/>
    <file role="doc" name="README.md"/>
@@ -219,6 +222,7 @@ Changes from beta2:
      <file role="test" name="client027.phpt"/>
      <file role="test" name="client028.phpt"/>
      <file role="test" name="client029.phpt"/>
+     <file role="test" name="client030.phpt"/>
      <file role="test" name="clientrequest001.phpt"/>
      <file role="test" name="clientrequest002.phpt"/>
      <file role="test" name="clientrequest003.phpt"/>
