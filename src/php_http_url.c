@@ -854,7 +854,7 @@ static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *pt
 			break;
 
 		}
-	} while(++ptr != end);
+	} while(++ptr < end);
 
 
 	state->buffer[state->offset++] = 0;
@@ -1425,7 +1425,7 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 			label = ptr;
 			ptr += mb - 1;
 		}
-	} while (++ptr != end);
+	} while (++ptr < end);
 
 	if (!state->url.host) {
 		len = state->offset - len;
@@ -1792,7 +1792,7 @@ static const char *parse_scheme(struct parse_state *state)
 			}
 			state->ptr += mb - 1;
 		}
-	} while (++state->ptr != state->end);
+	} while (++state->ptr < state->end);
 
 softfail:
 	state->offset = 0;

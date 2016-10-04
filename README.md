@@ -35,8 +35,7 @@ and pharext packages attached to [releases](https://github.com/m6w6/ext-http/rel
 
 ## ChangeLog
 
-A comprehensive list of changes can be obtained from the
-[PECL website](https://pecl.php.net/package-changelog.php?package=pecl_http).
+A comprehensive list of changes can be obtained from the [ChangeLog](./CHANGELOG.md) and the list of [fixed CVEs](./CVE.md).
 
 ## License
 
