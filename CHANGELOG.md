@@ -2,7 +2,7 @@
 
 ## 2.6.0RC1, 2016-10-04
 
- Added http\Client\Curl\User interface for userland event loops
++ Added http\Client\Curl\User interface for userland event loops
 + Added http\Url::IGNORE_ERRORS, http\Url::SILENT_ERRORS and http\Url::STDFLAGS
 + Added http\Client::setDebug(callable $debug)
 + Added http\Client\Curl\FEATURES constants and namespace
