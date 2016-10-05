@@ -1395,6 +1395,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		php_http_option_register(registry, ZEND_STRL("verifystatus"), CURLOPT_SSL_VERIFYSTATUS, _IS_BOOL);
 #endif
 			php_http_option_register(registry, ZEND_STRL("cipher_list"), CURLOPT_SSL_CIPHER_LIST, IS_STRING);
+#if PHP_HTTP_HAVE_LIBCURL_CAINFO
 			if ((opt = php_http_option_register(registry, ZEND_STRL("cainfo"), CURLOPT_CAINFO, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
@@ -1402,13 +1403,16 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 			ZVAL_PSTRING(&opt->defval, PHP_HTTP_CAINFO);
 #endif
 			}
+#endif
+#if PHP_HTTP_HAVE_LIBCURL_CAPATH
 			if ((opt = php_http_option_register(registry, ZEND_STRL("capath"), CURLOPT_CAPATH, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 #ifdef PHP_HTTP_CAPATH
 			ZVAL_PSTRING(&opt->defval, PHP_HTTP_CAPATH);
 #endif
-		}
+			}
+#endif
 			if ((opt = php_http_option_register(registry, ZEND_STRL("random_file"), CURLOPT_RANDOM_FILE, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;

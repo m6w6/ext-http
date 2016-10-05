@@ -184,6 +184,7 @@ AC_DEFUN([PECL_HAVE_CONST], [dnl
 			#include "$1"
 		], [
 			]ifelse([$3],,int,[$3])[ _c = $2;
+			(void) _c;
 		], [
 			PECL_CACHE_VAR([HAVE_$1_$2])=yes
 		], [
@@ -253,7 +254,8 @@ AC_DEFUN([PECL_CHECK_CUSTOM], [
 		CPPFLAGS="-I$PECL_CACHE_VAR([$1_prefix])/include"
 		LDFLAGS="-L$PECL_CACHE_VAR([$1_prefix])/$PHP_LIBDIR"
 		LIBS="-l$4"
-
+		PHP_EVAL_LIBLINE([$LDFLAGS $LIBS])
+		
 		AC_CACHE_VAL(PECL_CACHE_VAR([$1_version]), [
 			pushd $PECL_CACHE_VAR([$1_prefix]) >/dev/null
 			PECL_CACHE_VAR([$1_version])=$5
@@ -309,6 +311,8 @@ AC_DEFUN([PECL_CHECK_CONFIG], [
 			PECL_CACHE_VAR([$1_libs])=$($2 $6)
 		])
 		LIBS=$PECL_CACHE_VAR([$1_libs])
+		
+		PHP_EVAL_LIBLINE([$LDFLAGS $LIBS])
 	ifelse($2, [$PKG_CONFIG $1], [
 		fi
 	])
