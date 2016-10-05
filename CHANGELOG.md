@@ -32,7 +32,7 @@ Changes from beta1:
 Changes from beta2:
 + Improved configure checks for IDNA libraries (added --with-http-libicu-dir, --with-http-libidnkit{,2}-dir, --with-http-libidn2-dir)
 * Fix bug #73055: crash in http\QueryString (Mike, @rc0r) (CVE-2016-7398)
-* Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r)
+* Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r) (CVE-2016-7961)
 * Fix HTTP/2 version parser for older libcurl versions (Mike)
 * Fix gh-issue #52: Underscores in host names: libidn Failed to parse IDN (Mike, @canavan)
 
