@@ -19,6 +19,7 @@ nghttpd(function($port) {
 		"protocol" => http\Client\Curl\HTTP_VERSION_2_0,
 		"ssl" => [
 			"cainfo" => __DIR__."/helper/http2.crt",
+			"verifypeer" => false, // needed for NSS without PEM support 
 		]
 	]);
 	
