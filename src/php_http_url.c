@@ -1003,11 +1003,11 @@ static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state)
 		goto error;
 	}
 
-#	if __GNUC__
+#	if __GNUC__ >= 5
 #		pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #	endif
 	ahost_len = uidna_IDNToASCII(uhost_str, uhost_len, ahost_str, 256, 3, NULL, &rc);
-#	if __GNUC__
+#	if __GNUC__ >= 5
 #		pragma GCC diagnostic pop
 #	endif
 
