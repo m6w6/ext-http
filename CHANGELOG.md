@@ -24,7 +24,7 @@
 * Fix gh-issue #36: Unexpected cookies sent if persistent_handle_id is used (Mike, @rcanavan, @afflerbach)
 * Fix gh-issue #34: allow setting multiple headers with the same name (Mike, @rcanavan)
 * Fix gh-issue #33: allow setting prodyhost request option to NULL (Mike, @rcanavan)
-* Fix gh-issue #31: add/improve configure checks for default CA bundle/path (Mike, @rcanavan) 
+* Fix gh-issue #31: add/improve configure checks for default CA bundle/path (Mike, @rcanavan)
 
 Changes from beta1:
 * Fixed PHP-5.3 compatibility
@@ -32,7 +32,7 @@ Changes from beta1:
 
 Changes from beta2:
 * Fix bug #73055: crash in http\QueryString (Mike, @rc0r) (CVE-2016-7398)
-* Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r)
+* Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r) (CVE-2016-7961)
 * Fix HTTP/2 version parser for older libcurl versions (Mike)
 
 ## 2.6.0beta2, 2016-09-07
