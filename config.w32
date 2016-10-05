@@ -103,7 +103,7 @@ if (PHP_HTTP != "no") {
 			ADD_EXTENSION_DEP("http", "propro", true) &&
 			ADD_EXTENSION_DEP("http", "raphf", true) &&
 			CHECK_LIB("winmm.lib", "http", PHP_HTTP)) {
-		AC_DEFINE("PHP_HTTP_HAVE_CURL", 1, "Have CURL library");
+		AC_DEFINE("PHP_HTTP_HAVE_LIBCURL", 1, "Have CURL library");
 		AC_DEFINE("PHP_HTTP_HAVE_SSL", 1, "Have SSL");
 		AC_DEFINE("PHP_HAVE_CURL_MULTI_STRERROR", 1, "");
 		AC_DEFINE("PHP_HAVE_CURL_SHARE_STRERROR", 1, "");
