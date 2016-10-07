@@ -90,6 +90,17 @@ if (PHP_HTTP != "no") {
 		ADD_EXTENSION_DEP("http", "iconv", true);
 	}
 
+	if (PHP_INTL != "no") {
+		ADD_EXTENSION_DEP("http", "intl", true);
+		AC_DEFINE("HAVE_IDNA2008", 1, "");
+		AC_DEFINE("HAVE_UIDNA_IDNTOASCII", 1, "");
+		AC_DEFINE("HAVE_UIDNA_NAMETOASCII_UTF8", 1, "");
+		AC_DEFINE("PHP_HTTP_HAVE_LIBICU", 1, "");
+		AC_DEFINE("PHP_HTTP_HAVE_IDNA2003", 1, "");
+		AC_DEFINE("PHP_HTTP_HAVE_IDNA2008", 1, "");
+		ADD_FLAG("LIBS_HTTP", "icuuc.lib icudt.lib icuin.lib icuio.lib icule.lib iculx.lib");
+	}
+
 	if (PHP_CURL != "no") {
 		ADD_EXTENSION_DEP("http", "curl", true);
 	}
