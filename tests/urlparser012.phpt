@@ -5,7 +5,7 @@ url parser multibyte/locale/topct
 include "skipif.inc";
 if (!defined("http\\Url::PARSE_MBLOC") or
 	!defined("http\\Url::PARSE_TOIDN") or
-	!stristr(setlocale(LC_CTYPE, NULL), ".utf")) {
+	!stristr(setlocale(LC_CTYPE, "C.UTF-8"), ".utf")) {
 	die("skip need http\\Url::PARSE_MBLOC|http\Url::PARSE_TOIDN support and LC_CTYPE=*.UTF-8");
 }
 
@@ -13,6 +13,7 @@ if (!defined("http\\Url::PARSE_MBLOC") or
 --FILE--
 <?php
 echo "Test\n";
+setlocale(LC_CTYPE, "C.UTF-8");
 
 $urls = array(
 	"http://mike:paßwort@𐌀𐌁𐌂.it/for/€/?by=¢#ø"

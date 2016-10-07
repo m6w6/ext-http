@@ -5,13 +5,14 @@ url parser multibyte/locale/idna
 include "skipif.inc";
 if (!defined("http\\Url::PARSE_MBLOC") or
 	!defined("http\\Url::PARSE_TOIDN_2003") or
-	!stristr(setlocale(LC_CTYPE, NULL), ".utf")) {
+	!stristr(setlocale(LC_CTYPE, "C.UTF-8"), ".utf")) {
 	die("skip need http\\Url::PARSE_MBLOC|http\\Url::PARSE_TOIDN_2003 support and LC_CTYPE=*.UTF-8");
 }
 ?>
 --FILE--
 <?php
 echo "Test\n";
+setlocale(LC_CTYPE, "C.UTF-8");
 
 $urls = array(
 	"s\xc3\xa7heme:",

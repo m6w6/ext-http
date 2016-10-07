@@ -4,13 +4,14 @@ url parser multibyte/locale
 <?php
 include "skipif.inc";
 if (!defined("http\\Url::PARSE_MBLOC") or
-	!stristr(setlocale(LC_CTYPE, NULL), "utf")) {
+	!stristr(setlocale(LC_CTYPE, "C.UTF-8"), "utf")) {
 	die("skip need http\\Url::PARSE_MBLOC support and LC_CTYPE=*.UTF-8");
 }
 ?>
 --FILE--
 <?php
 echo "Test\n";
+setlocale(LC_CTYPE, "C.UTF-8");
 
 $urls = array(
 	"s\xc3\xa7heme:",
