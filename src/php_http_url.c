@@ -972,9 +972,7 @@ static ZEND_RESULT_CODE parse_gidn_2003(struct parse_state *state, size_t prev_l
 #endif
 
 #if HAVE_UIDNA_IDNTOASCII
-#	if PHP_HTTP_HAVE_LIBICU
-#		include <unicode/uidna.h>
-#	else
+#	if !PHP_HTTP_HAVE_LIBICU
 typedef uint16_t UChar;
 typedef enum { U_ZERO_ERROR = 0 } UErrorCode;
 int32_t uidna_IDNToASCII(const UChar *src, int32_t srcLength, UChar *dest, int32_t destCapacity, int32_t options, void *parseError, UErrorCode *status);
@@ -1034,10 +1032,7 @@ static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state)
 }
 #endif
 
-#if HAVE_UIDNA_IDNTOASCII
-#	if PHP_HTTP_HAVE_LIBICU
-#		include <unicode/uidna.h>
-#	endif
+#if PHP_HTTP_HAVE_LIBICU && HAVE_UIDNA_NAMETOASCII_UTF8
 static ZEND_RESULT_CODE parse_uidn_2008(struct parse_state *state)
 {
 	char *host_ptr, *error = NULL, ebuf[64] = {0};
@@ -1194,7 +1189,7 @@ static ZEND_RESULT_CODE parse_idna(struct parse_state *state, size_t len)
 	||	(state->flags & PHP_HTTP_URL_PARSE_TOIDN_2003) != PHP_HTTP_URL_PARSE_TOIDN_2003
 #	endif
 	) {
-#if HAVE_UIDNA_NAMETOASCII_UTF8
+#if PHP_HTTP_HAVE_LIBICU && HAVE_UIDNA_NAMETOASCII_UTF8
 		return parse_uidn_2008(state);
 #elif PHP_HTTP_HAVE_LIBIDN2
 		return parse_gidn_2008(state, len);
@@ -1224,7 +1219,7 @@ static ZEND_RESULT_CODE parse_idna(struct parse_state *state, size_t len)
 	return parse_widn_2003(state);
 #endif
 
-#if HAVE_UIDNA_NAMETOASCII_UTF8
+#if PHP_HTTP_HAVE_LIBICU && HAVE_UIDNA_NAMETOASCII_UTF8
 		return parse_uidn_2008(state);
 #elif PHP_HTTP_HAVE_LIBIDN2
 		return parse_gidn_2008(state, len);
