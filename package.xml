@@ -31,13 +31,13 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2016-10-04</date>
+ <date>2016-12-12</date>
  <version>
-  <release>2.6.0RC1</release>
+  <release>2.6.0</release>
   <api>2.6.0</api>
  </version>
  <stability>
-  <release>beta</release>
+  <release>stable</release>
   <api>stable</api>
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
@@ -72,7 +72,7 @@ Changes from beta1:
 
 Changes from beta2:
 * Fix bug #73055: crash in http\QueryString (Mike, @rc0r) (CVE-2016-7398)
-* Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r)
+* Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r) (CVE-2016-7961)
 * Fix HTTP/2 version parser for older libcurl versions (Mike)
 ]]></notes>
  <contents>
