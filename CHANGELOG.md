@@ -2,7 +2,6 @@
 
 ## 2.6.0, 2016-12-12
 
-
 + Added http\Client\Curl\User interface for userland event loops
 + Added http\Url::IGNORE_ERRORS, http\Url::SILENT_ERRORS and http\Url::STDFLAGS
 + Added http\Client::setDebug(callable $debug)
@@ -35,7 +34,6 @@ Changes from beta2:
 * Fix bug #73055: crash in http\QueryString (Mike, @rc0r) (CVE-2016-7398)
 * Fix bug #73185: Buffer overflow in HTTP parse_hostinfo() (Mike, @rc0r) (CVE-2016-7961)
 * Fix HTTP/2 version parser for older libcurl versions (Mike)
-
 
 ## 2.6.0RC1, 2016-10-04
 
