@@ -46,6 +46,8 @@ vendor/
 /php_http_buffer.h
 /php_http_client.h
 /php_http_client_curl.h
+/php_http_client_curl_event.h
+/php_http_client_curl_user.h
 /php_http_client_request.h
 /php_http_client_response.h
 /php_http_cookie.h
