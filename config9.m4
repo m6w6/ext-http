@@ -76,7 +76,7 @@ if test "$PHP_HTTP" != "no"; then
 
 	dnl ICU IDNA
 	PHP_ARG_WITH([http-libicu-dir], [whether/where to check for libicu],
-	[  --with-http-libidn-dir[=DIR]       HTTP: where to find libicu], $PHP_HTTP_LIBCURL_DIR, no)
+	[  --with-http-libicu-dir[=DIR]       HTTP: where to find libicu], $PHP_HTTP_LIBCURL_DIR, no)
 	if test "$PHP_HTTP_LIBICU_DIR" != "no"; then
 		AC_PATH_PROG(ICU_CONFIG, icu-config, false, [$PHP_HTTP_LIBICU_DIR/bin:$PATH:/usr/local/bin])
 
