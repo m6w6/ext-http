@@ -60,7 +60,7 @@ char *php_http_etag_finish(php_http_etag_t *e)
 		unsigned char buf[4];
 
 		*((uint *) e->ctx) = ~*((uint *) e->ctx);
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 		etag = php_http_etag_digest((unsigned char *) e->ctx, 4);
 #else
 		buf[0] = ((unsigned char *) e->ctx)[3];
