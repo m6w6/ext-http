@@ -26,7 +26,7 @@ $client->send();
 
 $ti = (array) $client->getTransferInfo($req);
 var_dump(array_key_exists("ssl_engines", $ti));
-var_dump(0 < count($ti["ssl_engines"] || $ti["tls_session"]["backend"] != "openssl"));
+var_dump(0 < count($ti["ssl_engines"]) || $ti["tls_session"]["backend"] != "openssl");
 ?>
 Done
 --EXPECTF--
