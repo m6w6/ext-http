@@ -82,6 +82,11 @@ if test "$PHP_HTTP" != "no"; then
 
 		PECL_CHECK_CONFIG(libicu, [$ICU_CONFIG], [--version], [--cppflags], [--ldflags-searchpath], [--ldflags-libsonly])
 		AC_CACHE_CHECK([for uidna_IDNToASCII], PECL_CACHE_VAR([HAVE_UIDNA_IDNToASCII]), [
+			if printf "%s" "$CFLAGS" | $EGREP -q "(^|\s)-Werror\b"; then
+				if ! printf "%s" "$CFLAGS" | $EGREP -q "(^|\s)-Wno-error=deprecated-declarations\b"; then
+					CFLAGS="$CFLAGS -Wno-error=deprecated-declarations"
+				fi
+			fi
 			AC_TRY_LINK([
 				#include <unicode/uidna.h>
 			], [
