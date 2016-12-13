@@ -47,6 +47,7 @@ AC_DEFUN([PECL_HAVE_LIBCURL_SSLLIB], [
 	if test -z "$PECL_VAR([LIBCURL_SSLLIB])"; then
 		AC_CACHE_CHECK([for $1 providing SSL in libcurl], PECL_CACHE_VAR([HAVE_LIBCURL_$1]), [
 			AC_TRY_RUN([
+				#include <strings.h>
 				#include <curl/curl.h>
 				int main(int argc, char *argv[]) {
 					curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
