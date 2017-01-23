@@ -57,18 +57,10 @@ char *php_http_etag_finish(php_http_etag_t *e)
 	char *etag = NULL;
 
 	if (!strcasecmp(e->mode, "crc32b")) {
-		unsigned char buf[4];
-
-		*((uint *) e->ctx) = ~*((uint *) e->ctx);
-#ifdef WORDS_BIGENDIAN
-		etag = php_http_etag_digest((unsigned char *) e->ctx, 4);
-#else
-		buf[0] = ((unsigned char *) e->ctx)[3];
-		buf[1] = ((unsigned char *) e->ctx)[2];
-		buf[2] = ((unsigned char *) e->ctx)[1];
-		buf[3] = ((unsigned char *) e->ctx)[0];
-		etag = php_http_etag_digest(buf, 4);
-#endif
+		uint e_ctx;
+		memcpy(&e_ctx, e->ctx, 4);
+		e_ctx = ntohl(~e_ctx);
+		etag = php_http_etag_digest((unsigned char *) &e_ctx, 4);
 	} else if ((!strcasecmp(e->mode, "sha1"))) {
 		PHP_SHA1Final(digest, e->ctx);
 		etag = php_http_etag_digest(digest, 20);
