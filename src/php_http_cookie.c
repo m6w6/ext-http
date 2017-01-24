@@ -440,7 +440,7 @@ static PHP_METHOD(HttpCookie, __construct)
 	HashTable *allowed_extras = NULL;
 	zend_error_handling zeh;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|z!lH", &zcookie, &flags, &allowed_extras), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|z!lH/", &zcookie, &flags, &allowed_extras), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
@@ -526,7 +526,7 @@ static PHP_METHOD(HttpCookie, setCookies)
 	HashTable *cookies = NULL;
 	php_http_cookie_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|H", &cookies), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|H/", &cookies), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
@@ -548,7 +548,7 @@ static PHP_METHOD(HttpCookie, addCookies)
 	HashTable *cookies = NULL;
 	php_http_cookie_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "H", &cookies), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "H/", &cookies), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
@@ -585,7 +585,7 @@ static PHP_METHOD(HttpCookie, setExtras)
 	HashTable *extras = NULL;
 	php_http_cookie_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|H", &extras), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|H/", &extras), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
@@ -607,7 +607,7 @@ static PHP_METHOD(HttpCookie, addExtras)
 	HashTable *extras = NULL;
 	php_http_cookie_object_t *obj;
 
-	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "H", &extras), invalid_arg, return);
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "H/", &extras), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
