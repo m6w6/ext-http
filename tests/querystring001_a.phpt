@@ -3,7 +3,7 @@ query string
 --SKIPIF--
 <?php
 include("skipif.inc");
-version_compare(PHP_VERSION, "7.2.0-dev", "<") or die("skip only for PHP < 7.2.0");
+version_compare(PHP_VERSION, "7.2.0-dev", ">=") or die("skip only for PHP >= 7.2.0");
 ?>
 --GET--
 str=abc&num=-123&dec=123.123&bool=1&arr[]=1&arr[]=2&ma[l1][l2]=2&ma[l2][l3][l4]=3
@@ -105,9 +105,9 @@ array(2) {
   }
 }
 object(stdClass)#%d (2) {
-  [0]=>
+  ["0"]=>
   string(1) "1"
-  [1]=>
+  ["1"]=>
   string(1) "2"
 }
 object(stdClass)#%d (2) {
