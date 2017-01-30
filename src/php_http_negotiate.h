@@ -74,9 +74,10 @@ static inline HashTable *php_http_negotiate_content_type(HashTable *supported, p
 #define PHP_HTTP_DO_NEGOTIATE_DEFAULT(supported) \
 	{ \
 		zval *value; \
+		HashPosition pos; \
 		 \
-		zend_hash_internal_pointer_reset((supported)); \
-		if ((value = zend_hash_get_current_data((supported)))) { \
+		zend_hash_internal_pointer_reset_ex((supported), &pos); \
+		if ((value = zend_hash_get_current_data_ex((supported), &pos))) { \
 			RETVAL_ZVAL(value, 1, 0); \
 		} else { \
 			RETVAL_NULL(); \
