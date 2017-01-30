@@ -75,6 +75,7 @@ void php_http_client_options_set_subr(zval *instance, char *key, size_t len, zva
 
 		array_init(&new_opts);
 		old_opts = zend_read_property(this_ce, instance, ZEND_STRL("options"), 0, &old_opts_tmp);
+
 		if (Z_TYPE_P(old_opts) == IS_ARRAY) {
 			array_copy(Z_ARRVAL_P(old_opts), Z_ARRVAL(new_opts));
 		}
@@ -88,6 +89,7 @@ void php_http_client_options_set_subr(zval *instance, char *key, size_t len, zva
 			}
 		} else if (opts && zend_hash_num_elements(Z_ARRVAL_P(opts))) {
 			if ((entry = zend_symtable_str_find(Z_ARRVAL(new_opts), key, len))) {
+				SEPARATE_ZVAL(entry);
 				array_join(Z_ARRVAL_P(opts), Z_ARRVAL_P(entry), 0, 0);
 			} else {
 				Z_ADDREF_P(opts);
