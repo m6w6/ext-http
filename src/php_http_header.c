@@ -100,6 +100,7 @@ void php_http_header_to_callback_ex(const char *key, zval *val, zend_bool crlf, 
 	zval *aval;
 	zend_string *str;
 
+	ZVAL_DEREF(val);
 	switch (Z_TYPE_P(val)) {
 	case IS_ARRAY:
 		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(val), aval)
