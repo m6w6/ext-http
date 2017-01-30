@@ -63,24 +63,26 @@ static inline void sanitize_escaped(zval *zv)
 	php_stripcslashes(Z_STR_P(zv));
 }
 
-static inline void quote_string(zend_string **zs, zend_bool force)
+static inline zend_string *quote_string(zend_string *zs, zend_bool force)
 {
-	int len = (*zs)->len;
+	size_t len = (zs)->len;
 
-	*zs = php_addcslashes(*zs, 1, ZEND_STRL("\0..\37\173\\\""));
+	zs = php_addcslashes(zs, 0, ZEND_STRL("\0..\37\173\\\""));
 
-	if (force || len != (*zs)->len || strpbrk((*zs)->val, "()<>@,;:\"[]?={} ")) {
-		int len = (*zs)->len + 2;
+	if (force || len != (zs)->len || strpbrk((zs)->val, "()<>@,;:\"[]?={} ")) {
+		int len = (zs)->len + 2;
 
-		*zs = zend_string_extend(*zs, len, 0);
+		zs = zend_string_extend(zs, len, 0);
 
-		memmove(&(*zs)->val[1], (*zs)->val, (*zs)->len);
-		(*zs)->val[0] = '"';
-		(*zs)->val[len-1] = '"';
-		(*zs)->val[len] = '\0';
+		memmove(&(zs)->val[1], (zs)->val, (zs)->len);
+		(zs)->val[0] = '"';
+		(zs)->val[len-1] = '"';
+		(zs)->val[len] = '\0';
 
-		zend_string_forget_hash_val(*zs);
+		zend_string_forget_hash_val(zs);
 	}
+
+	return zs;
 }
 
 /*	if (Z_TYPE_P(zv) == IS_STRING) {
@@ -109,7 +111,10 @@ static inline void quote_string(zend_string **zs, zend_bool force)
 static inline void prepare_escaped(zval *zv)
 {
 	if (Z_TYPE_P(zv) == IS_STRING) {
-		quote_string(&Z_STR_P(zv), 0);
+		zend_string *str = quote_string(Z_STR_P(zv), 0);
+
+		zval_dtor(zv);
+		ZVAL_STR(zv, str);
 	} else {
 		zval_dtor(zv);
 		ZVAL_EMPTY_STRING(zv);
@@ -816,13 +821,14 @@ static inline void shift_rfc5988(php_http_buffer_t *buf, char *key_str, size_t k
 
 static inline void shift_rfc5988_val(php_http_buffer_t *buf, zval *zv, const char *vss, size_t vsl, unsigned flags)
 {
-	zend_string *zs = zval_get_string(zv);
+	zend_string *str, *zs = zval_get_string(zv);
 
-	quote_string(&zs, 1);
-	php_http_buffer_append(buf, vss, vsl);
-	php_http_buffer_append(buf, zs->val, zs->len);
-
+	str = quote_string(zs, 1);
 	zend_string_release(zs);
+
+	php_http_buffer_append(buf, vss, vsl);
+	php_http_buffer_append(buf, str->val, str->len);
+	zend_string_release(str);
 }
 
 static inline void shift_val(php_http_buffer_t *buf, zval *zvalue, const char *vss, size_t vsl, unsigned flags)
