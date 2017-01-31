@@ -886,7 +886,7 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 			PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 			handler->read(obj, tmp);
 
-			zval_ptr_dtor(return_value);
+			//zval_ptr_dtor(return_value);
 			ZVAL_COPY_VALUE(return_value, tmp);
 		}
 		zend_string_release(member_name);
