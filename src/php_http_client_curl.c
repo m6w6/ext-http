@@ -2206,7 +2206,7 @@ static ZEND_RESULT_CODE php_http_client_curl_dequeue(php_http_client_t *h, php_h
 	php_http_client_curl_t *curl = h->ctx;
 	php_http_client_curl_handler_t *handler = enqueue->opaque;
 
-	if (h->callback.depth) {
+	if (h->callback.depth && !CG(unclean_shutdown)) {
 		php_error_docref(NULL, E_WARNING, "Could not dequeue request while executing callbacks");
 		return FAILURE;
 	}
