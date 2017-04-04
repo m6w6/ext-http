@@ -723,7 +723,7 @@ static const char * const parse_what[] = {
 
 static const char parse_xdigits[] = "0123456789ABCDEF";
 
-static size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const char *ptr, const char *end, const char *begin, zend_bool silent)
+static size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const char *ptr, const char *end, const char *begin, zend_bool force_silent)
 {
 	unsigned wchar;
 	size_t consumed = 0;
@@ -767,7 +767,7 @@ static size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const ch
 		return consumed;
 	}
 
-	if (!silent) {
+	if (!force_silent && !(state->flags & PHP_HTTP_URL_SILENT_ERRORS)) {
 		if (consumed) {
 			php_error_docref(NULL, E_WARNING,
 					"Failed to parse %s; unexpected multibyte sequence 0x%x at pos %u in '%s'",
@@ -777,6 +777,11 @@ static size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const ch
 					"Failed to parse %s; unexpected byte 0x%02x at pos %u in '%s'",
 					parse_what[what], (unsigned char) *ptr, (unsigned) (ptr - begin), begin);
 		}
+	}
+
+	if (state->flags & PHP_HTTP_URL_IGNORE_ERRORS) {
+		state->buffer[state->offset++] = *ptr;
+		return 1;
 	}
 
 	return 0;
@@ -828,7 +833,7 @@ static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *pt
 			break;
 
 		default:
-			if ((mb = parse_mb(state, PARSE_USERINFO, ptr, end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+			if ((mb = parse_mb(state, PARSE_USERINFO, ptr, end, tmp, 0))) {
 				ptr += mb - 1;
 				break;
 			}
@@ -1411,7 +1416,7 @@ static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *pt
 					return FAILURE;
 				}
 				break;
-			} else if (!(mb = parse_mb(state, PARSE_HOSTINFO, ptr, end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+			} else if (!(mb = parse_mb(state, PARSE_HOSTINFO, ptr, end, tmp, 0))) {
 				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
 					return FAILURE;
 				}
@@ -1533,7 +1538,7 @@ static const char *parse_path(struct parse_state *state)
 			break;
 
 		default:
-			if (!(mb = parse_mb(state, PARSE_PATH, state->ptr, state->end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+			if (!(mb = parse_mb(state, PARSE_PATH, state->ptr, state->end, tmp, 0))) {
 				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
 					return NULL;
 				}
@@ -1623,7 +1628,7 @@ static const char *parse_query(struct parse_state *state)
 			break;
 
 		default:
-			if (!(mb = parse_mb(state, PARSE_QUERY, state->ptr, state->end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+			if (!(mb = parse_mb(state, PARSE_QUERY, state->ptr, state->end, tmp, 0))) {
 				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
 					return NULL;
 				}
@@ -1720,7 +1725,7 @@ static const char *parse_fragment(struct parse_state *state)
 			break;
 
 		default:
-			if (!(mb = parse_mb(state, PARSE_FRAGMENT, state->ptr, state->end, tmp, state->flags & PHP_HTTP_URL_SILENT_ERRORS))) {
+			if (!(mb = parse_mb(state, PARSE_FRAGMENT, state->ptr, state->end, tmp, 0))) {
 				if (!(state->flags & PHP_HTTP_URL_IGNORE_ERRORS)) {
 					return NULL;
 				}

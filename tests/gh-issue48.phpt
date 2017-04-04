@@ -141,11 +141,11 @@ http\Url::__construct(): Failed to parse hostinfo; unexpected byte 0xc3 at pos 1
 Warning: http\Url::__construct(): Failed to parse hostinfo; unexpected byte 0xc3 at pos 1 in 'a%c%cb' in %sgh-issue48.php on line %d
 
 Warning: http\Url::__construct(): Failed to parse hostinfo; unexpected byte 0xc3 at pos 2 in 'a%c%cb' in %sgh-issue48.php on line %d
-http://ab/
+http://a%r\xc3\xc3%rb/
 # SILENT
 
 # IGNORE|SILENT
-http://ab/
+http://a%r\xc3\xc3%rb/
 ==========
 # DEFAULT
 http\Url::__construct(): Failed to parse hostinfo; unexpected '[' at pos 0 in '[foobar]:123'
@@ -156,11 +156,11 @@ Warning: http\Url::__construct(): Failed to parse hostinfo; unexpected '[' at po
 Warning: http\Url::__construct(): Failed to parse hostinfo; unexpected byte 0x5b at pos 0 in '[foobar]:123' in %sgh-issue48.php on line %d
 
 Warning: http\Url::__construct(): Failed to parse hostinfo; unexpected byte 0x5d at pos 7 in '[foobar]:123' in %sgh-issue48.php on line %d
-http://foobar:123/
+http://[foobar]:123/
 # SILENT
 
 # IGNORE|SILENT
-http://foobar:123/
+http://[foobar]:123/
 ==========
 # DEFAULT
 http\Url::__construct(): Failed to parse fragment; invalid fragment identifier at pos 7 in '/?foo=&#'
