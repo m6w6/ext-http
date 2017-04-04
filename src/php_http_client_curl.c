@@ -21,7 +21,7 @@
 #	include <openssl/ssl.h>
 #endif
 #if PHP_HTTP_HAVE_LIBCURL_GNUTLS
-#	include <gnutls.h>
+#	include <gnutls/gnutls.h>
 #endif
 
 typedef struct php_http_client_curl_handler {
