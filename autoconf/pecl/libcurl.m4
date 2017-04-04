@@ -88,7 +88,7 @@ AC_DEFUN([PECL_HAVE_LIBCURL_SSL], [dnl
 	AC_REQUIRE([PECL_HAVE_LIBCURL_CA])dnl
 	PECL_HAVE_LIBCURL_FEATURE([SSL], [
 		PECL_HAVE_LIBCURL_SSLLIB([OpenSSL], [openssl/ssl.h openssl/crypto.h], [ssl crypto])
-		PECL_HAVE_LIBCURL_SSLLIB([GnuTLS], [gnutls.h gcrypt.h], [gnutls gcrypt])
+		PECL_HAVE_LIBCURL_SSLLIB([GnuTLS], [gnutls/gnutls.h gcrypt.h], [gnutls gcrypt])
 		PECL_HAVE_LIBCURL_SSLLIB([NSS])
 		PECL_HAVE_LIBCURL_SSLLIB([SecureTransport])
 		PECL_HAVE_LIBCURL_SSLLIB([GSKit])
