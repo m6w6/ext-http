@@ -1,10 +1,8 @@
 --TEST--
-segfault with Client::setDebug and Client::dequeue()
+gh issue #63: Url::mod() breaks query strings containing plus-notation spaces in the input URL
 --SKIPIF--
 <?php
 include "skipif.inc";
-skip_client_test();
-skip_online_test();
 ?>
 --FILE--
 <?php
