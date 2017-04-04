@@ -59,7 +59,12 @@ static PHP_METHOD(HttpClientRequest, __construct)
 		PHP_HTTP_INFO(obj->message).request.method = estrndup(meth_str, meth_len);
 	}
 	if (zurl) {
-		PHP_HTTP_INFO(obj->message).request.url = php_http_url_from_zval(zurl, PHP_HTTP_URL_STDFLAGS);
+		php_http_url_t *url = php_http_url_from_zval(zurl, PHP_HTTP_URL_STDFLAGS);
+
+		if (url) {
+			PHP_HTTP_INFO(obj->message).request.url = php_http_url_mod(url, NULL, PHP_HTTP_URL_STDFLAGS);
+			php_http_url_free(&url);
+		}
 	}
 	if (zheaders) {
 		array_copy(Z_ARRVAL_P(zheaders), &obj->message->hdrs);
