@@ -123,7 +123,7 @@ static inline void prepare_escaped(zval *zv)
 
 static inline void sanitize_urlencoded(zval *zv)
 {
-	Z_STRLEN_P(zv) = php_raw_url_decode(Z_STRVAL_P(zv), Z_STRLEN_P(zv));
+	Z_STRLEN_P(zv) = php_url_decode(Z_STRVAL_P(zv), Z_STRLEN_P(zv));
 }
 
 static inline void prepare_urlencoded(zval *zv)
