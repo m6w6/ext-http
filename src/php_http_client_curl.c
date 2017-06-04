@@ -2429,6 +2429,14 @@ php_http_client_ops_t *php_http_client_curl_get_ops(void)
 	return &php_http_client_curl_ops;
 }
 
+#define REGISTER_NS_STRING_OR_NULL_CONSTANT(ns, name, str, flags)                              \
+		do {                                                                           \
+			if ((str) != NULL) {                                                   \
+				REGISTER_NS_STRING_CONSTANT(ns, name, str, flags);             \
+			} else {                                                               \
+				REGISTER_NS_NULL_CONSTANT(ns, name, flags);                    \
+			}                                                                      \
+		} while (0)
 
 PHP_MINIT_FUNCTION(http_client_curl)
 {
@@ -2509,12 +2517,12 @@ PHP_MINIT_FUNCTION(http_client_curl)
 		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl", "VERSIONS", curl_version(), CONST_CS|CONST_PERSISTENT);
 #if CURLVERSION_NOW >= 0
 		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "CURL", (char *) info->version, CONST_CS|CONST_PERSISTENT);
-		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "SSL", (char *) info->ssl_version, CONST_CS|CONST_PERSISTENT);
-		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "LIBZ", (char *) info->libz_version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "SSL", (char *) info->ssl_version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "LIBZ", (char *) info->libz_version, CONST_CS|CONST_PERSISTENT);
 # if CURLVERSION_NOW >= 1
-		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "ARES", (char *) info->ares, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "ARES", (char *) info->ares, CONST_CS|CONST_PERSISTENT);
 #  if CURLVERSION_NOW >= 2
-		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "IDN", (char *) info->libidn, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "IDN", (char *) info->libidn, CONST_CS|CONST_PERSISTENT);
 #  endif
 # endif
 #endif
