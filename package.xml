@@ -31,18 +31,24 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2017-04-04</date>
+ <date>2017-07-03</date>
  <version>
-  <release>3.1.1dev</release>
+  <release>3.1.1RC1</release>
   <api>3.1.0</api>
  </version>
  <stability>
-  <release>stable</release>
+  <release>beta</release>
   <api>stable</api>
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
 * Fix gh-issue #65: http\Client::enqueue(): Could not enqueue request: The easy handle is already added to a multi handle (@rcanavan, Mike)
+* Fix gh-issue #66: SILENT_ERRORS flag not properly passed to parse_mb (@rcanavan, Mike)
+* Fix gh-issue #67: IGNORE_ERRORS should not drop "invalid" characters (@rcanavan, Mike)
+* Fix gh-issue #68 STDFLAGS not fully applied when creating http\Client\Request with URL as string (@rcanavan, Mike)
+* Fixed -Werror builds
+* Fixed big endian builds
+* Fixed builds against libcurl with gnutls, without libz or without ssl support
 ]]></notes>
  <contents>
   <dir name="/">
