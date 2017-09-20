@@ -190,7 +190,7 @@ int php_http_array_apply_append_func(zval *value, int num_args, va_list args, ze
 		if (flags & ARRAY_JOIN_STRINGIFY) {
 			convert_to_string_ex(value);
 		}
-		Z_ADDREF_P(value);
+		Z_TRY_ADDREF_P(value);
 
 		if (data) {
 			if (Z_TYPE_P(data) != IS_ARRAY) {

@@ -8,14 +8,16 @@ include "skipif.inc";
 <?php
 
 class m extends http\Message { 
-    function test() { 
+    function test1() { 
         $this->headers["bykey"] = 1; 
         var_dump($this->headers); 
-
+	}
+	function test2() {
         $h = &$this->headers; 
         $h["by1ref"] = 2; 
         var_dump($this->headers); 
-
+	}
+	function test3() {
         $x = &$this->headers["byXref"];
 
         $h = &$this->headers["by2ref"]; 
@@ -24,7 +26,8 @@ class m extends http\Message {
 
         $x = 2;
         var_dump($this->headers);
-
+	}
+	function test4() {
         $this->headers["bynext"][] = 1;
         $this->headers["bynext"][] = 2;
         $this->headers["bynext"][] = 3;
@@ -33,7 +36,10 @@ class m extends http\Message {
 } 
 
 $m=new m; 
-$m->test(); 
+$m->test1(); 
+$m->test2(); 
+$m->test3(); 
+$m->test4(); 
 echo $m,"\n";
 
 ?>

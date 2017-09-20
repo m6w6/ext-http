@@ -616,18 +616,18 @@ static void php_http_message_object_prophandler_get_headers(php_http_message_obj
 	array_copy(&obj->message->hdrs, Z_ARRVAL_P(return_value));
 }
 static void php_http_message_object_prophandler_set_headers(php_http_message_object_t *obj, zval *value) {
-	HashTable *headers;
-	zval *orig_value = value;
+	int converted = 0;
 
 	if (Z_TYPE_P(value) != IS_ARRAY && Z_TYPE_P(value) != IS_OBJECT) {
-		convert_to_array_ex(value);
+		converted = 1;
+		SEPARATE_ZVAL(value);
+		convert_to_array(value);
 	}
-	headers = HASH_OF(value);
 
 	zend_hash_clean(&obj->message->hdrs);
-	array_copy(headers, &obj->message->hdrs);
+	array_copy(HASH_OF(value), &obj->message->hdrs);
 
-	if (orig_value != value) {
+	if (converted) {
 		zval_ptr_dtor(value);
 	}
 }
@@ -785,6 +785,7 @@ ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *msg
 
 	if (!body_obj->body) {
 		body_obj->body = php_http_message_body_init(NULL, NULL);
+		php_stream_to_zval(php_http_message_body_stream(body_obj->body), body_obj->gc);
 	}
 	if (msg_obj->body) {
 		zend_object_release(&msg_obj->body->zo);
@@ -882,12 +883,13 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 
 		if (handler) {
 			php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
+			zval tmp2;
 
 			PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
-			handler->read(obj, tmp);
+			handler->read(obj, &tmp2);
 
-			//zval_ptr_dtor(return_value);
-			ZVAL_COPY_VALUE(return_value, tmp);
+			zval_ptr_dtor(return_value);
+			ZVAL_COPY_VALUE(return_value, &tmp2);
 		}
 		zend_string_release(member_name);
 		return return_value;
@@ -1102,7 +1104,6 @@ static PHP_METHOD(HttpMessage, getBody)
 
 	if (!obj->body) {
 		php_http_message_object_init_body_object(obj);
-
 	}
 	if (obj->body) {
 		RETVAL_OBJECT(&obj->body->zo, 1);

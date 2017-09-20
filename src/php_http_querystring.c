@@ -385,8 +385,6 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 
 		ZVAL_MAKE_REF(_GET);
 		zend_update_property(php_http_querystring_class_entry, return_value, ZEND_STRL("queryArray"), _GET);
-
-		zend_update_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), return_value);
 	} else {
 		php_http_throw(unexpected_val, "Could not acquire reference to superglobal GET array", NULL);
 	}

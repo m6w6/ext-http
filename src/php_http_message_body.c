@@ -90,9 +90,9 @@ void php_http_message_body_free(php_http_message_body_t **body_ptr)
 {
 	if (*body_ptr) {
 		php_http_message_body_t *body = *body_ptr;
-
 		if (!--body->refcount) {
-			zend_list_delete(body->res);
+			zend_list_close(body->res);
+			body->res = NULL;
 			PTR_FREE(body->boundary);
 			efree(body);
 		}
@@ -570,8 +570,6 @@ php_http_message_body_object_t *php_http_message_body_object_new_ex(zend_class_e
 
 	if (body) {
 		o->body = body;
-		php_stream_to_zval(php_http_message_body_stream(o->body), o->gc);
-
 	}
 
 	o->zo.handlers = &php_http_message_body_object_handlers;
@@ -597,11 +595,17 @@ static HashTable *php_http_message_body_object_get_gc(zval *object, zval **table
 	HashTable *props = Z_OBJPROP_P(object);
 	uint32_t count = zend_hash_num_elements(props);
 
-	*n = 1;
+	obj->gc = erealloc(obj->gc, (1 + count) * sizeof(zval));
+
+	if (php_http_message_body_stream(obj->body)) {
+		*n = 1;
+		php_stream_to_zval(php_http_message_body_stream(obj->body), obj->gc);
+	} else {
+		*n = 0;
+	}
+
 	if (count) {
 		zval *val;
-
-		obj->gc = erealloc(obj->gc, (*n + count) * sizeof(zval));
 
 		ZEND_HASH_FOREACH_VAL(props, val)
 		{
