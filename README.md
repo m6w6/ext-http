@@ -26,7 +26,7 @@ and pharext packages attached to [releases](https://github.com/m6w6/ext-http/rel
 
 ### Checkout
 
-	git clone github.com:m6w6/ext-http
+	git clone https://github.com/m6w6/ext-http.git
 	cd ext-http
 	/path/to/phpize
 	./configure --with-php-config=/path/to/php-config
