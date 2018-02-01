@@ -31,11 +31,11 @@
 #if PHP_HTTP_HAVE_LIBICU
 #	include <unicode/uversion.h>
 #endif
-#if PHP_HTTP_HAVE_LIBIDN2
-#	include <idn2.h>
-#endif
 #if PHP_HTTP_HAVE_LIBIDN
 #	include <idna.h>
+#endif
+#if PHP_HTTP_HAVE_LIBIDN2
+#	include <idn2.h>
 #endif
 #if PHP_HTTP_HAVE_LIBIDNKIT2 || PHP_HTTP_HAVE_LIBIDNKIT
 #include "idn/version.h"
