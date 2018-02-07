@@ -87,7 +87,7 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 	return result;
 }
 
-char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
+char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
 	size_t i = 1;
 	int wasalpha;

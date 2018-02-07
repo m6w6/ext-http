@@ -95,9 +95,9 @@ function nghttpd($cb) {
 			$stdout = $pipes[1];
 			$stderr = $pipes[2];
 			
-			usleep(50000);
+			sleep(1);
 			$status = proc_get_status($proc);
-			
+			logger("nghttpd: %s", new http\Params($status));
 			if (!$status["running"]) {
 				continue;
 			}
@@ -121,6 +121,7 @@ function nghttpd($cb) {
 function proc($bin, $args, $cb) {
 	$spec = array(array("pipe","r"), array("pipe","w"), array("pipe","w"));
 	$comm = escapeshellcmd($bin) . " ". implode(" ", array_map("escapeshellarg", $args));
+	logger("proc: %s %s", $bin, implode(" ", $args));
 	if (($proc = proc_open($comm, $spec, $pipes, __DIR__))) {
 		$stdin = $pipes[0];
 		$stdout = $pipes[1];

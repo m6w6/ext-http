@@ -1,6 +1,22 @@
 <?php
-function _ext($ext) { extension_loaded($ext) or die("skip $ext extension needed\n"); }
 _ext("http");
+
+function _ext($ext) { 
+	if (!extension_loaded($ext)) {
+		die("skip $ext extension needed\n");
+	}
+}
+
+function utf8locale() {
+	if (stristr(setlocale(LC_CTYPE, "C.UTF-8"), "utf")) {
+		return true;
+	}
+	$locale = setlocale(LC_CTYPE, null);
+	if (stristr($locale, "utf") && substr($locale, -1) === "8") {
+		return true;
+	}
+	return false;
+}
 
 function skip_online_test($message = "skip test requiring internet connection\n") {
 	if (getenv("SKIP_ONLINE_TESTS")) {

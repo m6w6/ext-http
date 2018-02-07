@@ -25,6 +25,7 @@ server("proxy.inc", function($port) {
 			'Content-Length' => 0
 		)
 	);
+	$client->setOptions(["timeout" => 30]);
 	$client->enqueue($request);
 	echo $client->send()->getResponse()->getResponseCode();
 });

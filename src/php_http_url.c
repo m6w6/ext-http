@@ -663,7 +663,7 @@ php_http_url_t *php_http_url_copy(const php_http_url_t *url, zend_bool persisten
 	return cpy;
 }
 
-static size_t parse_mb_utf8(unsigned *wc, const char *ptr, const char *end)
+static inline size_t parse_mb_utf8(unsigned *wc, const char *ptr, const char *end)
 {
 	unsigned wchar;
 	size_t consumed = utf8towc(&wchar, (const unsigned char *) ptr, end - ptr);
@@ -679,7 +679,7 @@ static size_t parse_mb_utf8(unsigned *wc, const char *ptr, const char *end)
 }
 
 #if PHP_HTTP_HAVE_WCHAR
-static size_t parse_mb_loc(unsigned *wc, const char *ptr, const char *end)
+static inline size_t parse_mb_loc(unsigned *wc, const char *ptr, const char *end)
 {
 	wchar_t wchar;
 	size_t consumed = 0;
@@ -723,7 +723,7 @@ static const char * const parse_what[] = {
 
 static const char parse_xdigits[] = "0123456789ABCDEF";
 
-static size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const char *ptr, const char *end, const char *begin, zend_bool force_silent)
+static inline size_t parse_mb(struct parse_state *state, parse_mb_what_t what, const char *ptr, const char *end, const char *begin, zend_bool force_silent)
 {
 	unsigned wchar;
 	size_t consumed = 0;

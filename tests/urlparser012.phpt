@@ -5,7 +5,7 @@ url parser multibyte/locale/topct
 include "skipif.inc";
 if (!defined("http\\Url::PARSE_MBLOC") or
 	!defined("http\\Url::PARSE_TOIDN") or
-	!stristr(setlocale(LC_CTYPE, "C.UTF-8"), ".utf")) {
+	!utf8locale()) {
 	die("skip need http\\Url::PARSE_MBLOC|http\Url::PARSE_TOIDN support and LC_CTYPE=*.UTF-8");
 }
 

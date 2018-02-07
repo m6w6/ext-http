@@ -4,7 +4,7 @@ url parser multibyte/locale
 <?php
 include "skipif.inc";
 if (!defined("http\\Url::PARSE_MBLOC") or
-	!stristr(setlocale(LC_CTYPE, "C.UTF-8"), "utf")) {
+	!utf8locale()) {
 	die("skip need http\\Url::PARSE_MBLOC support and LC_CTYPE=*.UTF-8");
 }
 ?>

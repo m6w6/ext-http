@@ -1,8 +1,11 @@
 #!/usr/bin/env php
 <?php
 
-function m($m) {
+function m($m, $c = null) {
 	$n = "";
+	if ($c && $c->isInterface()) {
+		$m ^= ReflectionMethod::IS_ABSTRACT;
+	}
 	foreach (Reflection::getModifierNames($m) as $mn) {
 		$n .= $mn . " ";
 	}
@@ -169,7 +172,7 @@ foreach ($namespaces as $ns) {
 
             foreach ($c->getMethods() as $m) {
                 if ($m->getDeclaringClass()->getName() == $c->getName()) {
-                    fprintf($out, "\t\t%sfunction %s(", m($m->getModifiers()), 
+                    fprintf($out, "\t\t%sfunction %s(", m($m->getModifiers(), $c), 
                             $m->getName());
                     $ps = array();
                     foreach ($m->getParameters() as $p) {
