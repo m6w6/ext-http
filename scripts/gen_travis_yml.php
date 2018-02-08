@@ -20,7 +20,7 @@ env:
 
 $gen = include "./travis/pecl/gen-matrix.php";
 $env = $gen([
-	"PHP" => ["7.0", "7.1", "master"],
+	"PHP" => ["7.0", "7.1", "7.2", "master"],
 	"enable_debug",
 	"enable_maintainer_zts",
 	"enable_json",
@@ -34,7 +34,7 @@ foreach ($env as $e) {
 
 ?>
 # once with gcov
- - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master enable_json=yes enable_hash=yes enable_iconv=yes 
+ - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master enable_json=yes enable_hash=yes enable_iconv=yes
 
 before_script:
  - make -f travis/pecl/Makefile php
