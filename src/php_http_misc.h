@@ -165,7 +165,7 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 #	define HT_PROTECT_RECURSION(ht) GC_PROTECT_RECURSION(ht)
 #endif
 #ifdef ZEND_HASH_DEC_APPLY_COUNT
-#	define HT_UNPROTECT_RECURSION ZEND_HASH_DEC_APPLY_COUNT(ht)
+#	define HT_UNPROTECT_RECURSION(ht) ZEND_HASH_DEC_APPLY_COUNT(ht)
 #else
 #	define HT_UNPROTECT_RECURSION(ht) GC_UNPROTECT_RECURSION(ht)
 #endif
