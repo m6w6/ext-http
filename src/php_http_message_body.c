@@ -40,13 +40,13 @@ php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **bo
 		php_http_message_body_addref(body);
 		return body;
 	}
-	
+
 	body = ecalloc(1, sizeof(php_http_message_body_t));
 	body->refcount = 1;
 
 	if (stream) {
 		body->res = stream->res;
-		++GC_REFCOUNT(body->res);
+		GC_ADDREF(body->res);
 	} else {
 		body->res = php_stream_temp_create(TEMP_STREAM_DEFAULT, 0xffff)->res;
 	}
@@ -339,8 +339,8 @@ static ZEND_RESULT_CODE add_recursive_fields(php_http_message_body_t *body, cons
 	zval *val;
 	php_http_arrkey_t key;
 
-	if (!ZEND_HASH_GET_APPLY_COUNT(fields)) {
-		ZEND_HASH_INC_APPLY_COUNT(fields);
+	if (!HT_IS_RECURSIVE(fields)) {
+		HT_PROTECT_RECURSION(fields);
 		ZEND_HASH_FOREACH_KEY_VAL_IND(fields, key.h, key.key, val)
 		{
 			char *str = format_key(&key, name);
@@ -348,18 +348,18 @@ static ZEND_RESULT_CODE add_recursive_fields(php_http_message_body_t *body, cons
 			if (Z_TYPE_P(val) != IS_ARRAY && Z_TYPE_P(val) != IS_OBJECT) {
 				if (SUCCESS != add_recursive_field_value(body, str, val)) {
 					efree(str);
-					ZEND_HASH_DEC_APPLY_COUNT(fields);
+					HT_UNPROTECT_RECURSION(fields);
 					return FAILURE;
 				}
 			} else if (SUCCESS != add_recursive_fields(body, str, HASH_OF(val))) {
 				efree(str);
-				ZEND_HASH_DEC_APPLY_COUNT(fields);
+				HT_UNPROTECT_RECURSION(fields);
 				return FAILURE;
 			}
 			efree(str);
 		}
 		ZEND_HASH_FOREACH_END();
-		ZEND_HASH_DEC_APPLY_COUNT(fields);
+		HT_UNPROTECT_RECURSION(fields);
 	}
 
 	return SUCCESS;
@@ -377,8 +377,8 @@ static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const
 		zval *val;
 		php_http_arrkey_t key;
 
-		if (!ZEND_HASH_GET_APPLY_COUNT(files)) {
-			ZEND_HASH_INC_APPLY_COUNT(files);
+		if (!HT_IS_RECURSIVE(files)) {
+			HT_PROTECT_RECURSION(files);
 			ZEND_HASH_FOREACH_KEY_VAL_IND(files, key.h, key.key, val)
 			{
 				if (Z_TYPE_P(val) == IS_ARRAY || Z_TYPE_P(val) == IS_OBJECT) {
@@ -386,14 +386,14 @@ static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const
 
 					if (SUCCESS != add_recursive_files(body, str, HASH_OF(val))) {
 						efree(str);
-						ZEND_HASH_DEC_APPLY_COUNT(files);
+						HT_UNPROTECT_RECURSION(files);
 						return FAILURE;
 					}
 					efree(str);
 				}
 			}
 			ZEND_HASH_FOREACH_END();
-			ZEND_HASH_DEC_APPLY_COUNT(files);
+			HT_UNPROTECT_RECURSION(files);
 		}
 		return SUCCESS;
 	} else {

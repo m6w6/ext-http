@@ -144,6 +144,32 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 #	define HASH_OF(p) ((HashTable*)(Z_TYPE_P(p)==IS_ARRAY ? Z_ARRVAL_P(p) : ((Z_TYPE_P(p)==IS_OBJECT ? Z_OBJ_HT_P(p)->get_properties((p)) : NULL))))
 #endif
 
+#ifndef GC_SET_REFCOUNT
+#	define GC_SET_REFCOUNT(gc, rc) GC_REFCOUNT(gc) = rc
+#endif
+#ifndef GC_ADDREF
+#	define GC_ADDREF(gc) ++GC_REFCOUNT(gc)
+#endif
+#ifndef GC_DELREF
+#	define GC_DELREF(gc) --GC_REFCOUNT(gc)
+#endif
+
+#ifdef ZEND_HASH_GET_APPLY_COUNT
+#	define HT_IS_RECURSIVE(ht) (ZEND_HASH_GET_APPLY_COUNT(ht) > 0)
+#else
+#	define HT_IS_RECURSIVE(ht) GC_IS_RECURSIVE(ht)
+#endif
+#ifdef ZEND_HASH_INC_APPLY_COUNT
+#	define HT_PROTECT_RECURSION(ht) ZEND_HASH_INC_APPLY_COUNT(ht)
+#else
+#	define HT_PROTECT_RECURSION(ht) GC_PROTECT_RECURSION(ht)
+#endif
+#ifdef ZEND_HASH_DEC_APPLY_COUNT
+#	define HT_UNPROTECT_RECURSION ZEND_HASH_DEC_APPLY_COUNT(ht)
+#else
+#	define HT_UNPROTECT_RECURSION(ht) GC_UNPROTECT_RECURSION(ht)
+#endif
+
 static inline void *PHP_HTTP_OBJ(zend_object *zo, zval *zv)
 {
 	if (!zo) {
@@ -161,7 +187,7 @@ static inline zend_string *php_http_cs2zs(char *s, size_t l)
 	str->len = l;
 	str->h = 0;
 
-	GC_REFCOUNT(str) = 1;
+	GC_SET_REFCOUNT(str, 1);
 	GC_TYPE_INFO(str) = IS_STRING;
 
 	return str;

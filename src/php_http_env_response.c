@@ -848,7 +848,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_init(php_http_env_response_
 	ctx = ecalloc(1, sizeof(*ctx));
 
 	ctx->stream = init_arg;
-	++GC_REFCOUNT(ctx->stream->res);
+	GC_ADDREF(ctx->stream->res);
 	ZEND_INIT_SYMTABLE(&ctx->header);
 	php_http_version_init(&ctx->version, 1, 1);
 	php_stream_set_option(ctx->stream, PHP_STREAM_OPTION_WRITE_BUFFER, PHP_STREAM_BUFFER_FULL, &buffer_size);

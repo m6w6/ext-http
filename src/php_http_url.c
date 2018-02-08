@@ -40,7 +40,7 @@
 static inline char *localhostname(void)
 {
 	char hostname[1024] = {0};
-	
+
 #if PHP_WIN32
 	if (SUCCESS == gethostname(hostname, lenof(hostname))) {
 		return estrdup(hostname);
@@ -188,9 +188,9 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 	if (!(flags & PHP_HTTP_URL_STRIP_PASS)) {
 		url_copy(pass);
 	}
-	
+
 	url_copy(host);
-	
+
 	if (!(flags & PHP_HTTP_URL_STRIP_PORT)) {
 		url(buf)->port = url_isset(new_url, port) ? new_url->port : ((old_url) ? old_url->port : 0);
 	}
@@ -199,14 +199,14 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 		if ((flags & PHP_HTTP_URL_JOIN_PATH) && url_isset(old_url, path) && url_isset(new_url, path) && *new_url->path != '/') {
 			size_t old_path_len = strlen(old_url->path), new_path_len = strlen(new_url->path);
 			char *path = ecalloc(1, old_path_len + new_path_len + 1 + 1);
-			
+
 			strcat(path, old_url->path);
 			if (path[old_path_len - 1] != '/') {
 				php_dirname(path, old_path_len);
 				strcat(path, "/");
 			}
 			strcat(path, new_url->path);
-			
+
 			url(buf)->path = &buf.data[buf.used];
 			if (path[0] != '/') {
 				url_append(&buf, php_http_buffer_append(&buf, "/", 1));
@@ -235,16 +235,16 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 	if (!(flags & PHP_HTTP_URL_STRIP_QUERY)) {
 		if ((flags & PHP_HTTP_URL_JOIN_QUERY) && url_isset(new_url, query) && url_isset(old_url, query)) {
 			zval qarr, qstr;
-			
+
 			array_init(&qarr);
-			
+
 			ZVAL_STRING(&qstr, old_url->query);
 			php_http_querystring_update(&qarr, &qstr, NULL);
 			zval_ptr_dtor(&qstr);
 			ZVAL_STRING(&qstr, new_url->query);
 			php_http_querystring_update(&qarr, &qstr, NULL);
 			zval_ptr_dtor(&qstr);
-			
+
 			ZVAL_NULL(&qstr);
 			php_http_querystring_update(&qarr, NULL, &qstr);
 
@@ -261,7 +261,7 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 	if (!(flags & PHP_HTTP_URL_STRIP_FRAGMENT)) {
 		url_copy(fragment);
 	}
-	
+
 	/* done with copy & combine & strip */
 
 	if (flags & PHP_HTTP_URL_FROM_ENV) {
@@ -274,13 +274,13 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 	&&	url(buf)->path
 	&&	url(buf)->path[0] && url(buf)->path[1]) {
 		char *ptr, *end = url(buf)->path + strlen(url(buf)->path) + 1;
-			
+
 		for (ptr = strchr(url(buf)->path, '/'); ptr; ptr = strchr(ptr, '/')) {
 			switch (ptr[1]) {
 				case '/':
 					memmove(&ptr[1], &ptr[2], end - &ptr[2]);
 					break;
-					
+
 				case '.':
 					switch (ptr[2]) {
 						case '\0':
@@ -328,7 +328,7 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 			url(buf)->port = 0;
 		}
 	}
-	
+
 	return url(buf);
 }
 
@@ -1810,7 +1810,9 @@ php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags)
 	state->maxlen = maxlen;
 
 	if (!parse_scheme(state)) {
-		php_error_docref(NULL, E_WARNING, "Failed to parse URL scheme: '%s'", state->ptr);
+		if (!(flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+			php_error_docref(NULL, E_WARNING, "Failed to parse URL scheme: '%s'", state->ptr);
+		}
 		efree(state);
 		return NULL;
 	}
@@ -1821,13 +1823,17 @@ php_http_url_t *php_http_url_parse(const char *str, size_t len, unsigned flags)
 	}
 
 	if (!parse_query(state)) {
-		php_error_docref(NULL, E_WARNING, "Failed to parse URL query: '%s'", state->ptr);
+		if (!(flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+			php_error_docref(NULL, E_WARNING, "Failed to parse URL query: '%s'", state->ptr);
+		}
 		efree(state);
 		return NULL;
 	}
 
 	if (!parse_fragment(state)) {
-		php_error_docref(NULL, E_WARNING, "Failed to parse URL fragment: '%s'", state->ptr);
+		if (!(flags & PHP_HTTP_URL_SILENT_ERRORS)) {
+			php_error_docref(NULL, E_WARNING, "Failed to parse URL fragment: '%s'", state->ptr);
+		}
 		efree(state);
 		return NULL;
 	}
@@ -1896,9 +1902,7 @@ PHP_METHOD(HttpUrl, __construct)
 		flags |= PHP_HTTP_URL_FROM_ENV;
 	}
 
-	if (flags & PHP_HTTP_URL_SILENT_ERRORS) {
-		zend_replace_error_handling(EH_SUPPRESS, NULL, &zeh);
-	} else if (flags & PHP_HTTP_URL_IGNORE_ERRORS) {
+	if (flags & (PHP_HTTP_URL_SILENT_ERRORS|PHP_HTTP_URL_IGNORE_ERRORS)) {
 		zend_replace_error_handling(EH_NORMAL, NULL, &zeh);
 	} else {
 		zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_url_class_entry(), &zeh);
@@ -1950,9 +1954,7 @@ PHP_METHOD(HttpUrl, mod)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "z!|l", &new_url, &flags), invalid_arg, return);
 
-	if (flags & PHP_HTTP_URL_SILENT_ERRORS) {
-		zend_replace_error_handling(EH_SUPPRESS, NULL, &zeh);
-	} else if (flags & PHP_HTTP_URL_IGNORE_ERRORS) {
+	if (flags & (PHP_HTTP_URL_SILENT_ERRORS|PHP_HTTP_URL_IGNORE_ERRORS)) {
 		zend_replace_error_handling(EH_NORMAL, NULL, &zeh);
 	} else {
 		zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_url_class_entry(), &zeh);

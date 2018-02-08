@@ -200,8 +200,8 @@ static void prepare_dimension(php_http_buffer_t *buf, php_http_buffer_t *keybuf,
 	zval *val;
 	php_http_buffer_t prefix;
 
-	if (!ZEND_HASH_GET_APPLY_COUNT(ht)) {
-		ZEND_HASH_INC_APPLY_COUNT(ht);
+	if (!HT_IS_RECURSIVE(ht)) {
+		HT_PROTECT_RECURSION(ht);
 		php_http_buffer_init(&prefix);
 		php_http_buffer_append(&prefix, keybuf->data, keybuf->used);
 
@@ -235,7 +235,7 @@ static void prepare_dimension(php_http_buffer_t *buf, php_http_buffer_t *keybuf,
 			php_http_buffer_cut(&prefix, keybuf->used, prefix.used - keybuf->used);
 		}
 		ZEND_HASH_FOREACH_END();
-		ZEND_HASH_DEC_APPLY_COUNT(ht);
+		HT_UNPROTECT_RECURSION(ht);
 
 		php_http_buffer_dtor(&prefix);
 	}

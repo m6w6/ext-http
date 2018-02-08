@@ -711,7 +711,7 @@ static PHP_METHOD(HttpClient, enqueue)
 	if (fci.size) {
 		Z_TRY_ADDREF(fci.function_name);
 		if (fci.object) {
-			++GC_REFCOUNT(fci.object);
+			GC_ADDREF(fci.object);
 		}
 	}
 
@@ -781,7 +781,7 @@ static PHP_METHOD(HttpClient, requeue)
 	if (fci.size) {
 		Z_TRY_ADDREF(fci.function_name);
 		if (fci.object) {
-			++GC_REFCOUNT(fci.object);
+			GC_ADDREF(fci.object);
 		}
 	}
 
