@@ -640,9 +640,7 @@ static void php_http_message_object_prophandler_set_headers(php_http_message_obj
 	zend_hash_init(&obj->message->hdrs, zend_hash_num_elements(src), NULL, ZVAL_PTR_DTOR, 0);
 	array_copy(HASH_OF(value), &obj->message->hdrs);
 
-	if (GC_REFCOUNT(&garbage) <= 1 && (garbage.u.flags & HASH_FLAG_INITIALIZED)) {
-		efree(HT_GET_DATA_ADDR(&garbage));
-	}
+	zend_hash_destroy(&garbage);
 
 	if (converted) {
 		zval_ptr_dtor(value);
