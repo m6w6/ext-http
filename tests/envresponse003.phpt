@@ -18,7 +18,7 @@ $r->setBody(new http\Message\Body(fopen(__FILE__, "rb")));
 $r->send();
 
 ?>
---EXPECTHEADERSF--
-Content-Type: text/plain%s
+--EXPECTHEADERS--
+Content-Range: bytes 2-4/248
 --EXPECTF--
 php
