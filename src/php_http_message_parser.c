@@ -57,41 +57,16 @@ php_http_message_parser_t *php_http_message_parser_init(php_http_message_parser_
 	return parser;
 }
 
-php_http_message_parser_state_t php_http_message_parser_state_push(php_http_message_parser_t *parser, unsigned argc, ...)
-{
-	php_http_message_parser_state_t state = PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE;
-	va_list va_args;
-	unsigned i;
-
-	if (argc > 0) {
-		/* short circuit */
-		ZEND_PTR_STACK_RESIZE_IF_NEEDED((&parser->stack), argc);
-
-		va_start(va_args, argc);
-		for (i = 0; i < argc; ++i) {
-			state  = va_arg(va_args, php_http_message_parser_state_t);
-			zend_ptr_stack_push(&parser->stack, (void *) state);
-		}
-		va_end(va_args);
-	}
-
-	return state;
-}
-
+#define php_http_message_parser_state_push(parser, state) zend_ptr_stack_push(&(parser)->stack, (void *) (state)), (state)
+#define php_http_message_parser_state_pop(parser) ((parser)->stack.top \
+		? (php_http_message_parser_state_t) zend_ptr_stack_pop(&parser->stack) \
+		: PHP_HTTP_MESSAGE_PARSER_STATE_START)
+#define php_http_message_parser_state_is_ex(parser) ((parser)->stack.top \
+		? (php_http_message_parser_state_t) (parser)->stack.elements[(parser)->stack.top - 1] \
+		: PHP_HTTP_MESSAGE_PARSER_STATE_START)
 php_http_message_parser_state_t php_http_message_parser_state_is(php_http_message_parser_t *parser)
 {
-	if (parser->stack.top) {
-		return (php_http_message_parser_state_t) parser->stack.elements[parser->stack.top - 1];
-	}
-	return PHP_HTTP_MESSAGE_PARSER_STATE_START;
-}
-
-php_http_message_parser_state_t php_http_message_parser_state_pop(php_http_message_parser_t *parser)
-{
-	if (parser->stack.top) {
-		return (php_http_message_parser_state_t) zend_ptr_stack_pop(&parser->stack);
-	}
-	return PHP_HTTP_MESSAGE_PARSER_STATE_START;
+	return php_http_message_parser_state_is_ex(parser);
 }
 
 void php_http_message_parser_dtor(php_http_message_parser_t *parser)
@@ -188,7 +163,7 @@ php_http_message_parser_state_t php_http_message_parser_parse_stream(php_http_me
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_DONE:
 			case PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE:
-				return php_http_message_parser_state_is(parser);
+				return php_http_message_parser_state_is_ex(parser);
 		}
 
 		if (justread) {
@@ -210,7 +185,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 	size_t len = 0;
 	size_t cut = 0;
 
-	while (buffer->used || !php_http_message_parser_states[php_http_message_parser_state_is(parser)].need_data) {
+	while (buffer->used || !php_http_message_parser_states[php_http_message_parser_state_is_ex(parser)].need_data) {
 #if DBG_PARSER
 		fprintf(stderr, "#MP: %s (f: %u, t:%d, l:%zu)\n", 
 			php_http_message_parser_state_name(php_http_message_parser_state_is(parser)),
@@ -224,7 +199,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 		switch (php_http_message_parser_state_pop(parser))
 		{
 			case PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE:
-				return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
+				return php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_START:
 			{
@@ -237,7 +212,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				php_http_buffer_cut(buffer, 0, ptr - buffer->data);
 
 				if (buffer->used) {
-					php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER);
+					php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER);
 				}
 				break;
 			}
@@ -251,14 +226,14 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						return PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE;
 
 					case PHP_HTTP_HEADER_PARSER_STATE_DONE:
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE);
+						php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE);
 						break;
 
 					default:
 						if (buffer->used || !(flags & PHP_HTTP_MESSAGE_PARSER_CLEANUP)) {
-							return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER);
+							return php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER);
 						} else {
-							php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE);
+							php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_HEADER_DONE);
 						}
 				}
 				break;
@@ -313,7 +288,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 
 					if (php_http_match(con->val, "close", PHP_HTTP_MATCH_WORD)) {
 						zend_string_release(con);
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
+						php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
 						break;
 					}
 					zend_string_release(con);
@@ -339,11 +314,11 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				}
 
 				if ((flags & PHP_HTTP_MESSAGE_PARSER_DUMB_BODIES)) {
-					php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB);
+					php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB);
 				} else {
 					if (chunked) {
 						parser->dechunk = php_http_encoding_stream_init(parser->dechunk, php_http_encoding_stream_get_dechunk_ops(), 0);
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED);
+						php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED);
 						break;
 					}
 
@@ -368,7 +343,11 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 
 								if (end >= start && (!total || end <= total)) {
 									parser->body_length = end + 1 - start;
-									php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+									if (parser->body_length) {
+										php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+									} else {
+										php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE);
+									}
 									zend_string_release(content_range);
 									break;
 								}
@@ -380,14 +359,18 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 
 					if (content_length >= 0) {
 						parser->body_length = content_length;
-						php_http_message_parser_state_push(parser, 1, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+						if (parser->body_length) {
+							php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+						} else {
+							php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE);
+						}
 						break;
 					}
 
 					if ((*message)->type == PHP_HTTP_REQUEST) {
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
+						php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
 					} else {
-						php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB);
+						php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DUMB);
 					}
 				}
 				break;
@@ -401,7 +384,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						size_t dec_len;
 
 						if (SUCCESS != php_http_encoding_stream_update(parser->inflate, str, len, &dec_str, &dec_len)) {
-							return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
+							return php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
 						}
 
 						if (str != buffer->data) {
@@ -434,7 +417,8 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 				len = buffer->used;
 				cut = len;
 
-				php_http_message_parser_state_push(parser, 2, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
+				php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE);
+				php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
 				break;
 			}
 
@@ -446,7 +430,12 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 
 				parser->body_length -= len;
 
-				php_http_message_parser_state_push(parser, 2, !parser->body_length?PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
+				if (parser->body_length) {
+					php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_LENGTH);
+				} else {
+					php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE);
+				}
+				php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
 				break;
 			}
 
@@ -472,24 +461,26 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 
 				if (php_http_encoding_stream_done(parser->dechunk)) {
 					cut = buffer->used - PHP_HTTP_BUFFER(parser->dechunk->ctx)->used;
-					php_http_message_parser_state_push(parser, 2, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
+					php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE);
+					php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
 				} else {
 					cut = buffer->used;
-					php_http_message_parser_state_push(parser, 2, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
+					php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY_CHUNKED);
+					php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
 				}
 				break;
 			}
 
 			case PHP_HTTP_MESSAGE_PARSER_STATE_BODY_DONE:
 			{
-				php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
+				php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_DONE);
 
 				if (parser->dechunk && parser->dechunk->ctx) {
 					char *dec_str = NULL;
 					size_t dec_len;
 
 					if (SUCCESS != php_http_encoding_stream_finish(parser->dechunk, &dec_str, &dec_len)) {
-						return php_http_message_parser_state_push(parser, 1, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
+						return php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE);
 					}
 					php_http_encoding_stream_dtor(parser->dechunk);
 
@@ -497,7 +488,8 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 						str = dec_str;
 						len = dec_len;
 						cut = 0;
-						php_http_message_parser_state_push(parser, 2, PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
+						php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_UPDATE_CL);
+						php_http_message_parser_state_push(parser, PHP_HTTP_MESSAGE_PARSER_STATE_BODY);
 					}
 				}
 
@@ -531,7 +523,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 		}
 	}
 
-	return php_http_message_parser_state_is(parser);
+	return php_http_message_parser_state_is_ex(parser);
 }
 
 static zend_class_entry *php_http_message_parser_class_entry;
@@ -584,7 +576,7 @@ static PHP_METHOD(HttpMessageParser, getState)
 
 	zend_parse_parameters_none();
 	/* always return the real state */
-	RETVAL_LONG(php_http_message_parser_state_is(parser_obj->parser));
+	RETVAL_LONG(php_http_message_parser_state_is_ex(parser_obj->parser));
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageParser_parse, 0, 0, 3)

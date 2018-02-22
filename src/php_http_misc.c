@@ -50,11 +50,11 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 {
 	int result = 0;
 
-	if (!haystack_str || !needle_str) {
+	if (UNEXPECTED(!haystack_str || !needle_str)) {
 		return result;
 	}
 
-	if (flags & PHP_HTTP_MATCH_FULL) {
+	if (UNEXPECTED(flags & PHP_HTTP_MATCH_FULL)) {
 		if (flags & PHP_HTTP_MATCH_CASE) {
 			result = !strcmp(haystack_str, needle_str);
 		} else {
@@ -64,7 +64,7 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 		const char *found;
 		char *haystack = estrdup(haystack_str), *needle = estrdup(needle_str);
 
-		if (flags & PHP_HTTP_MATCH_CASE) {
+		if (UNEXPECTED(flags & PHP_HTTP_MATCH_CASE)) {
 			found = zend_memnstr(haystack, needle, strlen(needle), haystack+strlen(haystack));
 		} else {
 			found = php_stristr(haystack, needle, strlen(haystack), strlen(needle));
@@ -73,7 +73,7 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 		if (found) {
 			if (!(flags & PHP_HTTP_MATCH_WORD)
 			||	(	(found == haystack || !PHP_HTTP_IS_CTYPE(alnum, *(found - 1)))
-				&&	(!*(found + strlen(needle)) || !PHP_HTTP_IS_CTYPE(alnum, *(found + strlen(needle))))
+				&&	EXPECTED(!*(found + strlen(needle)) || !PHP_HTTP_IS_CTYPE(alnum, *(found + strlen(needle))))
 				)
 			) {
 				result = 1;
@@ -89,25 +89,35 @@ int php_http_match(const char *haystack_str, const char *needle_str, int flags)
 
 char *php_http_pretty_key(char *key, size_t key_len, zend_bool uctitle, zend_bool xhyphen)
 {
-	size_t i = 1;
+	size_t i;
 	int wasalpha;
 
 	if (key && key_len) {
-		if ((wasalpha = PHP_HTTP_IS_CTYPE(alpha, key[0]))) {
-			key[0] = (char) (uctitle ? PHP_HTTP_TO_CTYPE(upper, key[0]) : PHP_HTTP_TO_CTYPE(lower, key[0]));
-		}
-		PHP_HTTP_DUFF(key_len,
-			if (PHP_HTTP_IS_CTYPE(alpha, key[i])) {
-				key[i] = (char) (((!wasalpha) && uctitle) ? PHP_HTTP_TO_CTYPE(upper, key[i]) : PHP_HTTP_TO_CTYPE(lower, key[i]));
-				wasalpha = 1;
+		if (EXPECTED(wasalpha = PHP_HTTP_IS_CTYPE(alpha, key[0]))) {
+			if (EXPECTED(uctitle)) {
+				key[0] = PHP_HTTP_TO_CTYPE(upper, key[0]);
 			} else {
-				if (xhyphen && (key[i] == '_')) {
+				key[0] = PHP_HTTP_TO_CTYPE(lower, key[0]);
+			}
+		}
+		for (i = 1; i < key_len; ++i) {
+			if (EXPECTED(PHP_HTTP_IS_CTYPE(alpha, key[i]))) {
+				if (EXPECTED(wasalpha)) {
+					key[i] = PHP_HTTP_TO_CTYPE(lower, key[i]);
+				} else if (EXPECTED(uctitle)) {
+					key[i] = PHP_HTTP_TO_CTYPE(upper, key[i]);
+					wasalpha = 1;
+				} else {
+					key[i] = PHP_HTTP_TO_CTYPE(lower, key[i]);
+					wasalpha = 1;
+				}
+			} else {
+				if (EXPECTED(xhyphen && (key[i] == '_'))) {
 					key[i] = '-';
 				}
 				wasalpha = 0;
 			}
-			++i;
-		);
+		}
 	}
 	return key;
 }

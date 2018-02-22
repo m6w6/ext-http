@@ -595,24 +595,25 @@ static inline size_t utf8towc(unsigned *wc, const unsigned char *uc, size_t len)
 
 static inline zend_bool isualpha(unsigned ch)
 {
-	unsigned i = 0, j;
+	unsigned j;
+	const utf8_range_t *u = &utf8_ranges[0], *e = &utf8_ranges[sizeof(utf8_ranges)/sizeof(utf8_range_t)-1];
 
-	PHP_HTTP_DUFF(sizeof(utf8_ranges)/sizeof(utf8_range_t),
-		if (utf8_ranges[i].start == ch) {
+	do {
+		if (u->start == ch) {
 			return 1;
-		} else if (utf8_ranges[i].start <= ch && utf8_ranges[i].end >= ch) {
-			if (utf8_ranges[i].step == 1) {
+		} else if (u->start <= ch && u->end >= ch) {
+			if (u->step == 1) {
 				return 1;
 			}
-			for (j = utf8_ranges[i].start; j <= utf8_ranges[i].end; j+= utf8_ranges[i].step) {
+			for (j = u->start; j <= u->end; j+= u->step) {
 				if (ch == j) {
 					return 1;
 				}
 			}
 			return 0;
 		}
-		++i;
-	);
+	} while (++u != e);
+
 	return 0;
 }
 

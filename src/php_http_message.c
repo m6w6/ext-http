@@ -177,24 +177,24 @@ zend_bool php_http_message_is_multipart(php_http_message_t *msg, char **boundary
 		popts.input.str = ct->val;
 		popts.input.len = ct->len;
 
-		if (php_http_params_parse(&params, &popts)) {
+		if (EXPECTED(php_http_params_parse(&params, &popts))) {
 			zval *cur, *arg;
 			zend_string *ct_str;
 			zend_ulong index;
 
 			zend_hash_internal_pointer_reset(&params);
 
-			if ((cur = zend_hash_get_current_data(&params))
+			if (EXPECTED((cur = zend_hash_get_current_data(&params))
 			&&	(Z_TYPE_P(cur) == IS_ARRAY)
-			&&	(HASH_KEY_IS_STRING == zend_hash_get_current_key(&params, &ct_str, &index))
+			&&	(HASH_KEY_IS_STRING == zend_hash_get_current_key(&params, &ct_str, &index)))
 			) {
 				if (php_http_match(ct_str->val, "multipart", PHP_HTTP_MATCH_WORD)) {
 					is_multipart = 1;
 
 					/* get boundary */
-					if (boundary
+					if (EXPECTED(boundary
 					&&	(arg = zend_hash_str_find(Z_ARRVAL_P(cur), ZEND_STRL("arguments")))
-					&&	Z_TYPE_P(arg) == IS_ARRAY
+					&&	Z_TYPE_P(arg) == IS_ARRAY)
 					) {
 						zval *val;
 						php_http_arrkey_t key;
@@ -204,7 +204,7 @@ zend_bool php_http_message_is_multipart(php_http_message_t *msg, char **boundary
 							if (key.key && key.key->len == lenof("boundary") && !strcasecmp(key.key->val, "boundary")) {
 								zend_string *bnd = zval_get_string(val);
 
-								if (bnd->len) {
+								if (EXPECTED(bnd->len)) {
 									*boundary = estrndup(bnd->val, bnd->len);
 								}
 								zend_string_release(bnd);
@@ -471,7 +471,7 @@ php_http_message_t *php_http_message_copy_ex(php_http_message_t *from, php_http_
 
 void php_http_message_dtor(php_http_message_t *message)
 {
-	if (message) {
+	if (EXPECTED(message)) {
 		zend_hash_destroy(&message->hdrs);
 		php_http_message_body_free(&message->body);
 
@@ -493,7 +493,7 @@ void php_http_message_dtor(php_http_message_t *message)
 
 void php_http_message_free(php_http_message_t **message)
 {
-	if (*message) {
+	if (EXPECTED(*message)) {
 		if ((*message)->parent) {
 			php_http_message_free(&(*message)->parent);
 		}

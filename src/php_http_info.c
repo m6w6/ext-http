@@ -96,12 +96,12 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 	zend_bool free_info = !info;
 
 	/* sane parameter */
-	if ((!pre_header) || (!*pre_header)) {
+	if (UNEXPECTED((!pre_header) || (!*pre_header))) {
 		return NULL;
 	}
 
 	/* where's the end of the line */
-	if (!(end = php_http_locate_eol(pre_header, NULL))) {
+	if (UNEXPECTED(!(end = php_http_locate_eol(pre_header, NULL)))) {
 		end = pre_header + strlen(pre_header);
 	}
 
@@ -112,7 +112,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 
 	info = php_http_info_init(info);
 
-	if (!php_http_version_parse(&info->http.version, http)) {
+	if (UNEXPECTED(!php_http_version_parse(&info->http.version, http))) {
 		if (free_info) {
 			php_http_info_free(&info);
 		}
@@ -126,7 +126,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 	}
 
 	/* and nothing than SPACE or NUL after HTTP/X(.x) */
-	if (*off && (!PHP_HTTP_IS_CTYPE(space, *off))) {
+	if (UNEXPECTED(*off && (!PHP_HTTP_IS_CTYPE(space, *off)))) {
 		if (free_info) {
 			php_http_info_free(&info);
 		}
@@ -147,7 +147,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 
 		info->type = PHP_HTTP_RESPONSE;
 		while (code < end && ' ' == *code) ++code;
-		if (end > code) {
+		if (EXPECTED(end > code)) {
 			/* rfc7230#3.1.2 The status-code element is a 3-digit integer code */
 			PHP_HTTP_INFO(info).response.code = 100*(*code++ - '0');
 			PHP_HTTP_INFO(info).response.code += 10*(*code++ - '0');
@@ -162,7 +162,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		} else {
 			PHP_HTTP_INFO(info).response.code = 0;
 		}
-		if (status && end > status) {
+		if (EXPECTED(status && end > status)) {
 			while (' ' == *status) ++status;
 			PHP_HTTP_INFO(info).response.status = estrndup(status, end - status);
 		} else {
@@ -177,7 +177,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 		const char *url = strchr(pre_header, ' ');
 
 		info->type = PHP_HTTP_REQUEST;
-		if (url && http > url) {
+		if (EXPECTED(url && http > url)) {
 			size_t url_len = url - pre_header;
 
 			PHP_HTTP_INFO(info).request.method = estrndup(pre_header, url_len);
@@ -185,9 +185,9 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 			while (' ' == *url) ++url;
 			while (' ' == *(http-1)) --http;
 
-			if (http > url) {
+			if (EXPECTED(http > url)) {
 				/* CONNECT presents an authority only */
-				if (strcasecmp(PHP_HTTP_INFO(info).request.method, "CONNECT")) {
+				if (UNEXPECTED(strcasecmp(PHP_HTTP_INFO(info).request.method, "CONNECT"))) {
 					PHP_HTTP_INFO(info).request.url = php_http_url_parse(url, http - url, PHP_HTTP_URL_STDFLAGS);
 				} else {
 					PHP_HTTP_INFO(info).request.url = php_http_url_parse_authority(url, http - url, PHP_HTTP_URL_STDFLAGS);

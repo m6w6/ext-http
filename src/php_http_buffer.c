@@ -37,7 +37,7 @@ PHP_HTTP_BUFFER_API php_http_buffer_t *php_http_buffer_from_string_ex(
 {
 	int free_buf = !!buf;
 
-	if ((buf = php_http_buffer_init(buf))) {
+	if (EXPECTED(buf = php_http_buffer_init(buf))) {
 		if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_append(buf, str, len)) {
 			if (free_buf) {
 				pefree(buf, buf->pmem);
@@ -59,7 +59,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_resize_ex(
 	if (buf->free < len) {
 		size_t size = override_size ? override_size : buf->size;
 		
-		while ((size + buf->free) < len) {
+		while (UNEXPECTED((size + buf->free) < len)) {
 			size <<= 1;
 		}
 		
@@ -300,7 +300,7 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_chunked_input(php_http_buffer_t **s,
 	php_http_buffer_t *str;
 	size_t passed;
 
-	if (!*s) {
+	if (UNEXPECTED(!*s)) {
 		*s = php_http_buffer_init_ex(NULL, chunk_size,
 				chunk_size ? PHP_HTTP_BUFFER_INIT_PREALLOC : 0);
 	}

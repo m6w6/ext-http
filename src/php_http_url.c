@@ -752,16 +752,17 @@ static inline size_t parse_mb(struct parse_state *state, parse_mb_what_t what, c
 				}
 #endif
 			}
-			PHP_HTTP_DUFF(consumed, state->buffer[state->offset++] = *ptr++);
-		} else {
-			int i = 0;
 
-			PHP_HTTP_DUFF(consumed,
-					state->buffer[state->offset++] = '%';
-					state->buffer[state->offset++] = parse_xdigits[((unsigned char) ptr[i]) >> 4];
-					state->buffer[state->offset++] = parse_xdigits[((unsigned char) ptr[i]) & 0xf];
-					++i;
-			);
+			memcpy(&state->buffer[state->offset], ptr, consumed);
+			state->offset += consumed;
+		} else {
+			size_t i;
+
+			for (i = 0; i < consumed; ++i) {
+				state->buffer[state->offset++] = '%';
+				state->buffer[state->offset++] = parse_xdigits[((unsigned char) ptr[i]) >> 4];
+				state->buffer[state->offset++] = parse_xdigits[((unsigned char) ptr[i]) & 0xf];
+			}
 		}
 
 		return consumed;
@@ -982,10 +983,10 @@ typedef uint16_t UChar;
 typedef enum { U_ZERO_ERROR = 0 } UErrorCode;
 int32_t uidna_IDNToASCII(const UChar *src, int32_t srcLength, UChar *dest, int32_t destCapacity, int32_t options, void *parseError, UErrorCode *status);
 #	endif
-static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state)
+static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state, size_t prev_len)
 {
-	char *host_ptr = state->url.host, ebuf[64] = {0}, *error = NULL;
-	uint16_t *uhost_str, ahost_str[256], *ahost_ptr;
+	char ebuf[64] = {0}, *error = NULL;
+	uint16_t *uhost_str, ahost_str[256];
 	size_t uhost_len, ahost_len;
 	UErrorCode rc = U_ZERO_ERROR;
 
@@ -1019,10 +1020,11 @@ static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state)
 		goto error;
 	}
 
-	ahost_ptr = ahost_str;
-	PHP_HTTP_DUFF(ahost_len, *host_ptr++ = *ahost_ptr++);
-	*host_ptr = '\0';
-	state->offset += host_ptr - state->url.host;
+	state->url.host[ahost_len] = '\0';
+	state->offset += ahost_len - prev_len;
+	while (ahost_len--) {
+		state->url.host[ahost_len] = ahost_str[ahost_len];
+	}
 
 	return SUCCESS;
 
@@ -1038,9 +1040,9 @@ static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state)
 #endif
 
 #if PHP_HTTP_HAVE_LIBICU && HAVE_UIDNA_NAMETOASCII_UTF8
-static ZEND_RESULT_CODE parse_uidn_2008(struct parse_state *state)
+static ZEND_RESULT_CODE parse_uidn_2008(struct parse_state *state, size_t prev_len)
 {
-	char *host_ptr, *error = NULL, ebuf[64] = {0};
+	char *error = NULL, ebuf[64] = {0};
 	UErrorCode rc = U_ZERO_ERROR;
 	UIDNAInfo info = UIDNA_INFO_INITIALIZER;
 	UIDNA *uidna = uidna_openUTS46(UIDNA_ALLOW_UNASSIGNED, &rc);
@@ -1049,41 +1051,45 @@ static ZEND_RESULT_CODE parse_uidn_2008(struct parse_state *state)
 		return FAILURE;
 	}
 
-	host_ptr = state->url.host;
-
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-		char ahost_str[256], *ahost_ptr = &ahost_str[0];
-		size_t ahost_len = uidna_nameToASCII_UTF8(uidna, host_ptr, -1, ahost_str, sizeof(ahost_str)-1, &info, &rc);
+		char ahost_str[256];
+		size_t ahost_len = uidna_nameToASCII_UTF8(uidna, state->url.host, -1, ahost_str, sizeof(ahost_str)-1, &info, &rc);
 
 		if (U_FAILURE(rc) || info.errors) {
 			goto error;
 		}
-		PHP_HTTP_DUFF(ahost_len, *host_ptr++ = *ahost_ptr++);
+
+		memcpy(state->url.host, ahost_str, ahost_len);
+		state->url.host[ahost_len] = '\0';
+		state->offset += ahost_len - prev_len;
+
 #if PHP_HTTP_HAVE_WCHAR
 	} else if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
-		uint16_t *uhost_str, whost_str[256], *whost_ptr = &whost_str[0];
+		uint16_t *uhost_str, whost_str[256];
 		size_t uhost_len, whost_len;
 
-		if (SUCCESS != to_utf16(parse_mb_loc, host_ptr, &uhost_str, &uhost_len)) {
+		if (SUCCESS != to_utf16(parse_mb_loc, state->url.host, &uhost_str, &uhost_len)) {
 			error = "could not convert to UTF-16";
 			goto error;
 		}
 
 		whost_len = uidna_nameToASCII(uidna, uhost_str, uhost_len, whost_str, sizeof(whost_str)-1, &info, &rc);
-		whost_ptr = whost_str;
 		efree(uhost_str);
+
 		if (U_FAILURE(rc) || info.errors) {
 			goto error;
 		}
-		PHP_HTTP_DUFF(whost_len, *host_ptr++ = *whost_ptr++);
+
+		state->url.host[whost_len] = '\0';
+		state->offset += whost_len - prev_len;
+		while (whost_len--) {
+			state->url.host[whost_len] = whost_str[whost_len];
+		}
 #endif
 	} else {
 		error = "codepage not specified";
 		goto error;
 	}
-
-	*host_ptr = '\0';
-	state->offset += host_ptr - state->url.host;
 
 	uidna_close(uidna);
 	return SUCCESS;
@@ -1111,7 +1117,7 @@ static ZEND_RESULT_CODE parse_uidn_2008(struct parse_state *state)
 #	if __GNUC__
 __attribute__ ((unused))
 #	endif
-static ZEND_RESULT_CODE parse_kidn(struct parse_state *state)
+static ZEND_RESULT_CODE parse_kidn(struct parse_state *state, size_t prev_len)
 {
 	idn_result_t rc;
 #if PHP_HTTP_HAVE_LIBIDNKIT
@@ -1119,7 +1125,7 @@ static ZEND_RESULT_CODE parse_kidn(struct parse_state *state)
 #elif PHP_HTTP_HAVE_LIBIDNKIT2
 	int actions = IDN_MAP|IDN_ASCLOWER|IDN_RTCONV|IDN_PROHCHECK|IDN_NFCCHECK|IDN_PREFCHECK|IDN_COMBCHECK|IDN_CTXOLITECHECK|IDN_BIDICHECK|IDN_LOCALCHECK|IDN_IDNCONV|IDN_LENCHECK|IDN_RTCHECK;
 #endif
-	char ahost_str[256] = {0}, *ahost_ptr = &ahost_str[0], *host_ptr = state->url.host;
+	char ahost_str[256] = {0};
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBLOC) {
 #if PHP_HTTP_HAVE_LIBIDNKIT
@@ -1131,10 +1137,10 @@ static ZEND_RESULT_CODE parse_kidn(struct parse_state *state)
 
 	rc = idn_encodename(actions, state->url.host, ahost_str, 256);
 	if (rc == idn_success) {
-		PHP_HTTP_DUFF(strlen(ahost_str), *host_ptr++ = *ahost_ptr++);
+		size_t ahost_len = strlen(ahost_str);
 
-		*host_ptr = '\0';
-		state->offset += host_ptr - state->url.host;
+		memcpy(state->url.host, ahost_str, ahost_len + 1);
+		state->offset += ahost_len - prev_len;
 
 		return SUCCESS;
 	} else {
@@ -1145,11 +1151,11 @@ static ZEND_RESULT_CODE parse_kidn(struct parse_state *state)
 #endif
 
 #if 0 && PHP_WIN32
-static ZEND_RESULT_CODE parse_widn_2003(struct parse_state *state)
+static ZEND_RESULT_CODE parse_widn_2003(struct parse_state *state, size_t prev_len)
 {
 	char *host_ptr;
-	uint16_t *uhost_str, ahost_str[256], *ahost_ptr;
-	size_t uhost_len;
+	uint16_t *uhost_str, ahost_str[256];
+	size_t uhost_len, ahost_len;
 
 	if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
 		if (SUCCESS != to_utf16(parse_mb_utf8, state->url.host, &uhost_str, &uhost_len)) {
@@ -1175,12 +1181,12 @@ static ZEND_RESULT_CODE parse_widn_2003(struct parse_state *state)
 	}
 
 	efree(uhost_str);
-	host_ptr = state->url.host;
-	ahost_ptr = ahost_str;
-	PHP_HTTP_DUFF(wcslen(ahost_str), *host_ptr++ = *ahost_ptr++);
-
-	*host_ptr = '\0';
-	state->offset += host_ptr - state->url.host;
+	ahost_len = wcslen(ahost_str);
+	state->url.host[ahost_len] = '\0';
+	state->offset += ahost_len - prev_len;
+	while (ahost_len--) {
+		state->url.host[ahost_len] = ahost_str[ahost_len];
+	}
 
 	return SUCCESS;
 }
@@ -1195,11 +1201,11 @@ static ZEND_RESULT_CODE parse_idna(struct parse_state *state, size_t len)
 #	endif
 	) {
 #if PHP_HTTP_HAVE_LIBICU && HAVE_UIDNA_NAMETOASCII_UTF8
-		return parse_uidn_2008(state);
+		return parse_uidn_2008(state, len);
 #elif PHP_HTTP_HAVE_LIBIDN2
 		return parse_gidn_2008(state, len);
 #elif PHP_HTTP_HAVE_LIBIDNKIT2
-		return parse_kidn(state);
+		return parse_kidn(state, len);
 #endif
 	}
 #endif
@@ -1211,31 +1217,31 @@ static ZEND_RESULT_CODE parse_idna(struct parse_state *state, size_t len)
 #endif
 	) {
 #if HAVE_UIDNA_IDNTOASCII
-		return parse_uidn_2003(state);
+		return parse_uidn_2003(state, len);
 #elif PHP_HTTP_HAVE_LIBIDN
 		return parse_gidn_2003(state, len);
 #elif PHP_HTTP_HAVE_LIBIDNKIT
-		return parse_kidn(state);
+		return parse_kidn(state, len);
 #endif
 	}
 #endif
 
 #if 0 && PHP_WIN32
-	return parse_widn_2003(state);
+	return parse_widn_2003(state, len);
 #endif
 
 #if PHP_HTTP_HAVE_LIBICU && HAVE_UIDNA_NAMETOASCII_UTF8
-		return parse_uidn_2008(state);
+		return parse_uidn_2008(state, len);
 #elif PHP_HTTP_HAVE_LIBIDN2
 		return parse_gidn_2008(state, len);
 #elif PHP_HTTP_HAVE_LIBIDNKIT2
-		return parse_kidn(state);
+		return parse_kidn(state, len);
 #elif HAVE_UIDNA_IDNTOASCII
-		return parse_uidn_2003(state);
+		return parse_uidn_2003(state, len);
 #elif PHP_HTTP_HAVE_LIBIDN
 		return parse_gidn_2003(state, len);
 #elif PHP_HTTP_HAVE_LIBIDNKIT
-		return parse_kidn(state);
+		return parse_kidn(state, len);
 #endif
 
 	return SUCCESS;

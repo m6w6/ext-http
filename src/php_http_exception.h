@@ -22,7 +22,7 @@
 	do { \
 		zend_error_handling __zeh; \
 		zend_replace_error_handling(EH_THROW, php_http_get_exception_ ##e## _class_entry(), &__zeh); \
-		if (!(test)) { \
+		if (UNEXPECTED(!(test))) { \
 			zend_restore_error_handling(&__zeh); \
 			fail; \
 		} \

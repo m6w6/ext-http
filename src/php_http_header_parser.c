@@ -40,42 +40,19 @@ php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *
 	return parser;
 }
 
-php_http_header_parser_state_t php_http_header_parser_state_push(php_http_header_parser_t *parser, unsigned argc, ...)
-{
-	va_list va_args;
-	unsigned i;
-	php_http_header_parser_state_t state = 0;
-
-	/* short circuit */
-	ZEND_PTR_STACK_RESIZE_IF_NEEDED((&parser->stack), argc);
-
-	va_start(va_args, argc);
-	for (i = 0; i < argc; ++i) {
-		state = va_arg(va_args, php_http_header_parser_state_t);
-		zend_ptr_stack_push(&parser->stack, (void *) state);
-	}
-	va_end(va_args);
-
-	return state;
-}
+#define php_http_header_parser_state_push(parser, state) zend_ptr_stack_push(&(parser)->stack, (void *) (state)), (state)
+#define php_http_header_parser_state_ex(parser) ((parser)->stack.top \
+		? (php_http_header_parser_state_t) (parser)->stack.elements[(parser)->stack.top - 1] \
+		: PHP_HTTP_HEADER_PARSER_STATE_START)
 
 php_http_header_parser_state_t php_http_header_parser_state_is(php_http_header_parser_t *parser)
 {
-	if (parser->stack.top) {
-		return (php_http_header_parser_state_t) parser->stack.elements[parser->stack.top - 1];
-	}
-
-	return PHP_HTTP_HEADER_PARSER_STATE_START;
+	return php_http_header_parser_state_ex(parser);
 }
 
-php_http_header_parser_state_t php_http_header_parser_state_pop(php_http_header_parser_t *parser)
-{
-	if (parser->stack.top) {
-		return (php_http_header_parser_state_t) zend_ptr_stack_pop(&parser->stack);
-	}
-
-	return PHP_HTTP_HEADER_PARSER_STATE_START;
-}
+#define php_http_header_parser_state_pop(parser) ((parser)->stack.top \
+		? (php_http_header_parser_state_t) zend_ptr_stack_pop(&(parser)->stack) \
+		: PHP_HTTP_HEADER_PARSER_STATE_START)
 
 void php_http_header_parser_dtor(php_http_header_parser_t *parser)
 {
@@ -114,7 +91,7 @@ static void php_http_header_parser_error(size_t valid_len, char *str, size_t len
 
 php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg)
 {
-	while (buffer->used || !php_http_header_parser_states[php_http_header_parser_state_is(parser)].need_data) {
+	while (buffer->used || !php_http_header_parser_states[php_http_header_parser_state_ex(parser)].need_data) {
 #if DBG_PARSER
 		const char *state[] = {"START", "KEY", "VALUE", "VALUE_EX", "HEADER_DONE", "DONE"};
 		fprintf(stderr, "#HP: %s (avail:%zu, num:%d cleanup:%u)\n", php_http_header_parser_state_is(parser) < 0 ? "FAILURE" : state[php_http_header_parser_state_is(parser)], buffer->used, headers?zend_hash_num_elements(headers):0, flags);
@@ -123,7 +100,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 		switch (php_http_header_parser_state_pop(parser)) {
 			case PHP_HTTP_HEADER_PARSER_STATE_FAILURE:
 				php_error_docref(NULL, E_WARNING, "Failed to parse headers");
-				return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
+				return php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 
 			case PHP_HTTP_HEADER_PARSER_STATE_START: {
 				char *ptr = buffer->data;
@@ -133,7 +110,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 				}
 
 				php_http_buffer_cut(buffer, 0, ptr - buffer->data);
-				php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_KEY);
+				php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_KEY);
 				break;
 			}
 
@@ -147,7 +124,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 				if (buffer->data == (eol_str = php_http_locate_bin_eol(buffer->data, buffer->used, &eol_len))) {
 					/* end of headers */
 					php_http_buffer_cut(buffer, 0, eol_len);
-					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_DONE);
+					php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_DONE);
 				} else if (php_http_info_parse(&parser->info, buffer->data)) {
 					/* new message starting with request/response line */
 					if (callback_func) {
@@ -155,7 +132,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 					}
 					php_http_info_dtor(&parser->info);
 					php_http_buffer_cut(buffer, 0, eol_str + eol_len - buffer->data);
-					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
+					php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
 				} else if ((colon = memchr(buffer->data, ':', buffer->used)) && (!eol_str || eol_str > colon)) {
 					/* header: string */
 					size_t valid_len;
@@ -167,18 +144,18 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 					if (valid_len != parser->_key.len) {
 						php_http_header_parser_error(valid_len, parser->_key.str, parser->_key.len, eol_str);
 						PTR_SET(parser->_key.str, NULL);
-						return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
+						return php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 					}
 					while (PHP_HTTP_IS_CTYPE(space, *++colon) && *colon != '\n' && *colon != '\r');
 					php_http_buffer_cut(buffer, 0, colon - buffer->data);
-					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
+					php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
 				} else if (eol_str || (flags & PHP_HTTP_HEADER_PARSER_CLEANUP)) {
 					/* neither reqeust/response line nor 'header:' string, or injected new line or NUL etc. */
 					php_http_header_parser_error(strspn(buffer->data, PHP_HTTP_HEADER_NAME_CHARS), buffer->data, buffer->used, eol_str);
-					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
+					return php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 				} else {
 					/* keep feeding */
-					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_KEY);
+					return php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_KEY);
 				}
 				break;
 			}
@@ -217,26 +194,26 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 
 				if ((eol_str = php_http_locate_bin_eol(buffer->data, buffer->used, &eol_len))) {
 					SET_ADD_VAL(eol_str - buffer->data, eol_len);
-					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE_EX);
+					php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_VALUE_EX);
 				} else if (flags & PHP_HTTP_HEADER_PARSER_CLEANUP) {
 					if (buffer->used) {
 						SET_ADD_VAL(buffer->used, 0);
 					}
-					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
+					php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
 				} else {
-					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
+					return php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
 				}
 				break;
 			}
 
 			case PHP_HTTP_HEADER_PARSER_STATE_VALUE_EX:
 				if (buffer->used && (*buffer->data == ' ' || *buffer->data == '\t')) {
-					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
+					php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_VALUE);
 				} else if (buffer->used || (flags & PHP_HTTP_HEADER_PARSER_CLEANUP)) {
-					php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
+					php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_HEADER_DONE);
 				} else {
 					/* keep feeding */
-					return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_VALUE_EX);
+					return php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_VALUE_EX);
 				}
 				break;
 
@@ -252,7 +229,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 						PTR_SET(parser->_key.str, NULL);
 						PTR_SET(parser->_val.str, NULL);
 
-						return php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
+						return php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_FAILURE);
 					}
 
 					if (!headers && callback_func) {
@@ -273,7 +250,7 @@ php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_pars
 				PTR_SET(parser->_key.str, NULL);
 				PTR_SET(parser->_val.str, NULL);
 
-				php_http_header_parser_state_push(parser, 1, PHP_HTTP_HEADER_PARSER_STATE_KEY);
+				php_http_header_parser_state_push(parser, PHP_HTTP_HEADER_PARSER_STATE_KEY);
 				break;
 
 			case PHP_HTTP_HEADER_PARSER_STATE_DONE:

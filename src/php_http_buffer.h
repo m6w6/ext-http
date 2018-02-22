@@ -24,7 +24,7 @@
 #ifndef PTR_FREE
 #	define PTR_FREE(PTR) \
 	{ \
-		if (PTR) { \
+		if (EXPECTED(PTR)) { \
 			efree(PTR); \
 		} \
 	}

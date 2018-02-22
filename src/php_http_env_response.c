@@ -15,7 +15,7 @@
 static void set_option(zval *options, const char *name_str, size_t name_len, int type, void *value_ptr, size_t value_len)
 {
 	if (Z_TYPE_P(options) == IS_OBJECT) {
-		if (value_ptr) {
+		if (EXPECTED(value_ptr)) {
 			switch (type) {
 				case IS_DOUBLE:
 					zend_update_property_double(Z_OBJCE_P(options), options, name_str, name_len, *(double *)value_ptr);
@@ -36,7 +36,7 @@ static void set_option(zval *options, const char *name_str, size_t name_len, int
 		}
 	} else {
 		convert_to_array(options);
-		if (value_ptr) {
+		if (EXPECTED(value_ptr)) {
 			switch (type) {
 				case IS_DOUBLE:
 					add_assoc_double_ex(options, name_str, name_len, *(double *)value_ptr);
@@ -64,9 +64,9 @@ static zval *get_option(zval *options, const char *name_str, size_t name_len, zv
 {
 	zval *val = NULL;
 
-	if (Z_TYPE_P(options) == IS_OBJECT) {
+	if (EXPECTED(Z_TYPE_P(options) == IS_OBJECT)) {
 		val = zend_read_property(Z_OBJCE_P(options), options, name_str, name_len, 0, tmp);
-	} else if (Z_TYPE_P(options) == IS_ARRAY) {
+	} else if (EXPECTED(Z_TYPE_P(options) == IS_ARRAY)) {
 		val = zend_symtable_str_find(Z_ARRVAL_P(options), name_str, name_len);
 	} else {
 		abort();
@@ -81,7 +81,7 @@ static php_http_message_body_t *get_body(zval *options)
 	zval zbody_tmp, *zbody;
 	php_http_message_body_t *body = NULL;
 
-	if ((zbody = get_option(options, ZEND_STRL("body"), &zbody_tmp))) {
+	if (EXPECTED(zbody = get_option(options, ZEND_STRL("body"), &zbody_tmp))) {
 		if ((Z_TYPE_P(zbody) == IS_OBJECT) && instanceof_function(Z_OBJCE_P(zbody), php_http_get_message_body_class_entry())) {
 			php_http_message_body_object_t *body_obj = PHP_HTTP_OBJ(NULL, zbody);
 
@@ -97,8 +97,8 @@ static php_http_message_t *get_request(zval *options)
 	zval zrequest_tmp, *zrequest;
 	php_http_message_t *request = NULL;
 
-	if ((zrequest = get_option(options, ZEND_STRL("request"), &zrequest_tmp))) {
-		if (Z_TYPE_P(zrequest) == IS_OBJECT && instanceof_function(Z_OBJCE_P(zrequest), php_http_message_get_class_entry())) {
+	if (EXPECTED(zrequest = get_option(options, ZEND_STRL("request"), &zrequest_tmp))) {
+		if (UNEXPECTED(Z_TYPE_P(zrequest) == IS_OBJECT && instanceof_function(Z_OBJCE_P(zrequest), php_http_message_get_class_entry()))) {
 			php_http_message_object_t *request_obj = PHP_HTTP_OBJ(NULL, zrequest);
 
 			request = request_obj->message;
@@ -144,11 +144,11 @@ php_http_cache_status_t php_http_env_is_response_cached_by_etag(zval *options, c
 	zval zetag_tmp, *zetag;
 
 
-	if (!(body = get_body(options))) {
+	if (UNEXPECTED(!(body = get_body(options)))) {
 		return ret;
 	}
 
-	if ((zetag = get_option(options, ZEND_STRL("etag"), &zetag_tmp)) && Z_TYPE_P(zetag) != IS_NULL) {
+	if (EXPECTED(zetag = get_option(options, ZEND_STRL("etag"), &zetag_tmp)) && Z_TYPE_P(zetag) != IS_NULL) {
 		zend_string *zs = zval_get_string(zetag);
 		etag = estrndup(zs->val, zs->len);
 		zend_string_release(zs);
@@ -177,16 +177,16 @@ php_http_cache_status_t php_http_env_is_response_cached_by_last_modified(zval *o
 	php_http_message_body_t *body;
 	zval zlm_tmp, *zlm;
 
-	if (!(body = get_body(options))) {
+	if (UNEXPECTED(!(body = get_body(options)))) {
 		return ret;
 	}
 
-	if ((zlm = get_option(options, ZEND_STRL("lastModified"), &zlm_tmp))) {
+	if (EXPECTED(zlm = get_option(options, ZEND_STRL("lastModified"), &zlm_tmp))) {
 		lm = zval_get_long(zlm);
 		zval_ptr_dtor(zlm);
 	}
 
-	if (lm <= 0) {
+	if (EXPECTED(lm <= 0)) {
 		lm = php_http_message_body_mtime(body);
 		set_option(options, ZEND_STRL("lastModified"), IS_LONG, &lm, 0);
 	}
@@ -228,13 +228,13 @@ static size_t output(void *context, char *buf, size_t len)
 {
 	php_http_env_response_t *r = context;
 
-	if (SUCCESS != r->ops->write(r, buf, len)) {
+	if (UNEXPECTED(SUCCESS != r->ops->write(r, buf, len))) {
 		return (size_t) -1;
 	}
 
 	/*	we really only need to flush when throttling is enabled,
 		because we push the data as fast as possible anyway if not */
-	if (r->throttle.delay >= PHP_HTTP_DIFFSEC) {
+	if (UNEXPECTED(r->throttle.delay >= PHP_HTTP_DIFFSEC)) {
 		r->ops->flush(r);
 		php_http_sleep(r->throttle.delay);
 	}
@@ -339,14 +339,14 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		return ret;
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("headers"), &zoption_tmp))) {
-		if (Z_TYPE_P(zoption) == IS_ARRAY) {
+	if (EXPECTED(zoption = get_option(options, ZEND_STRL("headers"), &zoption_tmp))) {
+		if (EXPECTED(Z_TYPE_P(zoption) == IS_ARRAY)) {
 			php_http_header_to_callback(Z_ARRVAL_P(zoption), 0, (php_http_pass_format_callback_t) r->ops->set_header, r);
 		}
 		zval_ptr_dtor(zoption);
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("responseCode"), &zoption_tmp))) {
+	if (EXPECTED(zoption = get_option(options, ZEND_STRL("responseCode"), &zoption_tmp))) {
 		zend_long rc = zval_get_long(zoption);
 
 		zval_ptr_dtor(zoption);
@@ -359,12 +359,12 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		return ret;
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("httpVersion"), &zoption_tmp))) {
+	if (EXPECTED(zoption = get_option(options, ZEND_STRL("httpVersion"), &zoption_tmp))) {
 		php_http_version_t v;
 		zend_string *zs = zval_get_string(zoption);
 
 		zval_ptr_dtor(zoption);
-		if (zs->len && php_http_version_parse(&v, zs->val)) {
+		if (EXPECTED(zs->len && php_http_version_parse(&v, zs->val))) {
 			ret = r->ops->set_protocol_version(r, &v);
 			php_http_version_dtor(&v);
 		}
@@ -375,7 +375,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		return ret;
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("cookies"), &zoption_tmp))) {
+	if (EXPECTED(zoption = get_option(options, ZEND_STRL("cookies"), &zoption_tmp))) {
 		if (Z_TYPE_P(zoption) == IS_ARRAY) {
 			zval *zcookie;
 
@@ -403,7 +403,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		return ret;
 	}
 
-	if ((zoption = get_option(options, ZEND_STRL("contentType"), &zoption_tmp))) {
+	if (EXPECTED(zoption = get_option(options, ZEND_STRL("contentType"), &zoption_tmp))) {
 		zend_string *zs = zval_get_string(zoption);
 
 		zval_ptr_dtor(zoption);
@@ -419,12 +419,12 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		return ret;
 	}
 
-	if (r->range.status == PHP_HTTP_RANGE_OK) {
+	if (UNEXPECTED(r->range.status == PHP_HTTP_RANGE_OK)) {
 		if (zend_hash_num_elements(&r->range.values) == 1) {
 			zval *range, *begin, *end;
 
-			if (	1 == php_http_array_list(&r->range.values, 1, &range)
-				&&	2 == php_http_array_list(Z_ARRVAL_P(range), 2, &begin, &end)
+			if (EXPECTED(	1 == php_http_array_list(&r->range.values, 1, &range)
+				&&	2 == php_http_array_list(Z_ARRVAL_P(range), 2, &begin, &end))
 			) {
 				if (SUCCESS == (ret = r->ops->set_status(r, 206))) {
 					ret = r->ops->set_header(r, "Content-Range: bytes %ld-%ld/%zu", Z_LVAL_P(begin), Z_LVAL_P(end), r->content.length);
@@ -441,7 +441,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 			}
 		}
 	} else {
-		if ((zoption = get_option(options, ZEND_STRL("cacheControl"), &zoption_tmp))) {
+		if (EXPECTED(zoption = get_option(options, ZEND_STRL("cacheControl"), &zoption_tmp))) {
 			zend_string *zs = zval_get_string(zoption);
 
 			zval_ptr_dtor(zoption);
@@ -455,7 +455,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 			return ret;
 		}
 
-		if ((zoption = get_option(options, ZEND_STRL("contentDisposition"), &zoption_tmp))) {
+		if (EXPECTED(zoption = get_option(options, ZEND_STRL("contentDisposition"), &zoption_tmp))) {
 
 			if (Z_TYPE_P(zoption) == IS_ARRAY) {
 				php_http_buffer_t buf;
@@ -476,7 +476,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 			return ret;
 		}
 
-		if ((zoption = get_option(options, ZEND_STRL("contentEncoding"), &zoption_tmp))) {
+		if (EXPECTED(zoption = get_option(options, ZEND_STRL("contentEncoding"), &zoption_tmp))) {
 			zend_long ce = zval_get_long(zoption);
 			zval zsupported;
 			HashTable *result = NULL;
@@ -551,22 +551,22 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 					break;
 			}
 
-			if ((zoption = get_option(options, ZEND_STRL("etag"), &zoption_tmp))) {
+			if (EXPECTED(zoption = get_option(options, ZEND_STRL("etag"), &zoption_tmp))) {
 				zend_string *zs = zval_get_string(zoption);
 
 				zval_ptr_dtor(zoption);
-				if (*zs->val != '"' && strncmp(zs->val, "W/\"", 3)) {
+				if (EXPECTED(*zs->val != '"' && strncmp(zs->val, "W/\"", 3))) {
 					ret = r->ops->set_header(r, "ETag: \"%s\"", zs->val);
 				} else {
 					ret = r->ops->set_header(r, "ETag: %s", zs->val);
 				}
 				zend_string_release(zs);
 			}
-			if ((zoption = get_option(options, ZEND_STRL("lastModified"), &zoption_tmp))) {
+			if (EXPECTED(zoption = get_option(options, ZEND_STRL("lastModified"), &zoption_tmp))) {
 				zend_long lm = zval_get_long(zoption);
 
 				zval_ptr_dtor(zoption);
-				if (lm) {
+				if (EXPECTED(lm)) {
 					zend_string *date = php_format_date(ZEND_STRL(PHP_HTTP_DATE_FORMAT), lm, 0);
 					if (date) {
 						ret = r->ops->set_header(r, "Last-Modified: %s", date->val);
@@ -590,17 +590,17 @@ static ZEND_RESULT_CODE php_http_env_response_send_body(php_http_env_response_t 
 		return ret;
 	}
 
-	if ((body = get_body(&r->options))) {
-		if ((zoption = get_option(&r->options, ZEND_STRL("throttleDelay"), &zoption_tmp))) {
+	if (EXPECTED(body = get_body(&r->options))) {
+		if (EXPECTED(zoption = get_option(&r->options, ZEND_STRL("throttleDelay"), &zoption_tmp))) {
 			r->throttle.delay = zval_get_double(zoption);
 			zval_ptr_dtor(zoption);
 		}
-		if ((zoption = get_option(&r->options, ZEND_STRL("throttleChunk"), &zoption_tmp))) {
+		if (EXPECTED(zoption = get_option(&r->options, ZEND_STRL("throttleChunk"), &zoption_tmp))) {
 			r->throttle.chunk = zval_get_long(zoption);
 			zval_ptr_dtor(zoption);
 		}
 
-		if (r->range.status == PHP_HTTP_RANGE_OK) {
+		if (UNEXPECTED(r->range.status == PHP_HTTP_RANGE_OK)) {
 			if (zend_hash_num_elements(&r->range.values) == 1) {
 				/* single range */
 				zval *range, *begin, *end;
@@ -672,10 +672,10 @@ ZEND_RESULT_CODE php_http_env_response_send(php_http_env_response_t *r)
 	request = get_request(&r->options);
 
 	/* check for ranges */
-	if ((body = get_body(&r->options))) {
+	if (EXPECTED(body = get_body(&r->options))) {
 		r->content.length = php_http_message_body_size(body);
 
-		if (SUCCESS != r->ops->set_header(r, "Accept-Ranges: bytes")) {
+		if (UNEXPECTED(SUCCESS != r->ops->set_header(r, "Accept-Ranges: bytes"))) {
 			return FAILURE;
 		} else {
 			ZEND_INIT_SYMTABLE_EX(&r->range.values, 0, 0);
@@ -727,17 +727,17 @@ ZEND_RESULT_CODE php_http_env_response_send(php_http_env_response_t *r)
 		}
 	}
 
-	if (SUCCESS != php_http_env_response_send_head(r, request)) {
+	if (UNEXPECTED(SUCCESS != php_http_env_response_send_head(r, request))) {
 		php_error_docref(NULL, E_WARNING, "Failed to send response headers");
 		return FAILURE;
 	}
 
-	if (SUCCESS != php_http_env_response_send_body(r)) {
+	if (UNEXPECTED(SUCCESS != php_http_env_response_send_body(r))) {
 		php_error_docref(NULL, E_WARNING, "Failed to send response body");
 		return FAILURE;
 	}
 
-	if (SUCCESS != r->ops->finish(r)) {
+	if (UNEXPECTED(SUCCESS != r->ops->finish(r))) {
 		php_error_docref(NULL, E_WARNING, "Failed to finish response");
 		return FAILURE;
 	}
@@ -857,7 +857,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_init(php_http_env_response_
 	ctx->request = get_request(&r->options);
 
 	/* there are some limitations regarding TE:chunked, see https://tools.ietf.org/html/rfc7230#section-3.3.1 */
-	if (ctx->request && ctx->request->http.version.major == 1 && ctx->request->http.version.minor == 0) {
+	if (UNEXPECTED(ctx->request && ctx->request->http.version.major == 1 && ctx->request->http.version.minor == 0)) {
 		ctx->version.minor = 0;
 	}
 
@@ -869,7 +869,7 @@ static void php_http_env_response_stream_dtor(php_http_env_response_t *r)
 {
 	php_http_env_response_stream_ctx_t *ctx = r->ctx;
 
-	if (ctx->chunked_filter) {
+	if (UNEXPECTED(ctx->chunked_filter)) {
 		ctx->chunked_filter = php_stream_filter_remove(ctx->chunked_filter, 1);
 	}
 	zend_hash_destroy(&ctx->header);
@@ -883,7 +883,7 @@ static void php_http_env_response_stream_header(php_http_env_response_stream_ctx
 
 	ZEND_HASH_FOREACH_VAL(header, val)
 	{
-		if (Z_TYPE_P(val) == IS_ARRAY) {
+		if (UNEXPECTED(Z_TYPE_P(val) == IS_ARRAY)) {
 			php_http_env_response_stream_header(ctx, Z_ARRVAL_P(val), buf);
 		} else {
 			zend_string *zs = zval_get_string(val);
@@ -913,11 +913,11 @@ static ZEND_RESULT_CODE php_http_env_response_stream_start(php_http_env_response
 	php_http_buffer_appendf(&header_buf, "HTTP/%u.%u %ld %s" PHP_HTTP_CRLF, ctx->version.major, ctx->version.minor, ctx->status_code, php_http_env_get_response_status_for_code(ctx->status_code));
 
 	/* there are some limitations regarding TE:chunked, see https://tools.ietf.org/html/rfc7230#section-3.3.1 */
-	if (ctx->version.major == 1 && ctx->version.minor == 0) {
+	if (UNEXPECTED(ctx->version.major == 1 && ctx->version.minor == 0)) {
 		ctx->chunked = 0;
-	} else if (ctx->status_code == 204 || ctx->status_code/100 == 1) {
+	} else if (UNEXPECTED(ctx->status_code == 204 || ctx->status_code/100 == 1)) {
 		ctx->chunked = 0;
-	} else if (ctx->request && ctx->status_code/100 == 2 && !strcasecmp(ctx->request->http.info.request.method, "CONNECT")) {
+	} else if (UNEXPECTED(ctx->request && ctx->status_code/100 == 2 && !strcasecmp(ctx->request->http.info.request.method, "CONNECT"))) {
 		ctx->chunked = 0;
 	}
 
@@ -982,13 +982,13 @@ static ZEND_RESULT_CODE php_http_env_response_stream_set_header_ex(php_http_env_
 	zend_string *header_key;
 	ZEND_RESULT_CODE rv;
 
-	if (stream_ctx->started || stream_ctx->finished) {
+	if (UNEXPECTED(stream_ctx->started || stream_ctx->finished)) {
 		return FAILURE;
 	}
 
 	header_len = vspprintf(&header_str, 0, fmt, argv);
 
-	if (!(header_end = strchr(header_str, ':'))) {
+	if (UNEXPECTED(!(header_end = strchr(header_str, ':')))) {
 		efree(header_str);
 		return FAILURE;
 	}
@@ -1080,10 +1080,10 @@ static ZEND_RESULT_CODE php_http_env_response_stream_finish(php_http_env_respons
 {
 	php_http_env_response_stream_ctx_t *ctx = r->ctx;
 
-	if (ctx->finished) {
+	if (UNEXPECTED(ctx->finished)) {
 		return FAILURE;
 	}
-	if (!ctx->started) {
+	if (UNEXPECTED(!ctx->started)) {
 		if (SUCCESS != php_http_env_response_stream_start(ctx)) {
 			return FAILURE;
 		}

@@ -67,47 +67,7 @@ char *php_http_pretty_key(register char *key, size_t key_len, zend_bool uctitle,
 size_t php_http_boundary(char *buf, size_t len);
 int php_http_select_str(const char *cmp, int argc, ...);
 
-/* See "A Reusable Duff Device" By Ralf Holly, August 01, 2005 */
-#define PHP_HTTP_DUFF_BREAK() times_=1
-#define PHP_HTTP_DUFF(c, a) do { \
-	size_t count_ = (c); \
-	size_t times_ = (count_ + 7) >> 3; \
-	switch (count_ & 7){ \
-		case 0:	do { \
-			a; \
-		case 7: \
-			a; \
-		case 6: \
-			a; \
-		case 5: \
-			a; \
-		case 4: \
-			a; \
-		case 3: \
-			a; \
-		case 2: \
-			a; \
-		case 1: \
-			a; \
-					} while (--times_ > 0); \
-	} \
-} while (0)
-
-static inline const char *php_http_locate_str(register const char *h, size_t h_len, const char *n, size_t n_len)
-{
-	if (!n_len || !h_len || h_len < n_len) {
-		return NULL;
-	}
-
-	PHP_HTTP_DUFF(h_len - n_len + 1,
-		if (*h == *n && !strncmp(h + 1, n + 1, n_len - 1)) {
-			return h;
-		}
-		++h;
-	);
-
-	return NULL;
-}
+#define php_http_locate_str(h, h_len, n, n_len) zend_memnstr((h), (n), (n_len), (h)+(h_len))
 
 static inline const char *php_http_locate_eol(const char *line, int *eol_len)
 {
@@ -123,16 +83,14 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 {
 	register const char *eol = bin;
 
-	if (len > 0) {
-		PHP_HTTP_DUFF(len,
-			if (*eol == '\r' || *eol == '\n') {
-				if (eol_len) {
-					*eol_len = ((eol[0] == '\r' && eol[1] == '\n') ? 2 : 1);
-				}
-				return eol;
+	while (len--) {
+		if (UNEXPECTED(*eol == '\r' || *eol == '\n')) {
+			if (EXPECTED(eol_len)) {
+				*eol_len = (EXPECTED(eol[0] == '\r' && eol[1] == '\n') ? 2 : 1);
 			}
-			++eol;
-		);
+			return eol;
+		}
+		++eol;
 	}
 	return NULL;
 }

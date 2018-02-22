@@ -41,9 +41,7 @@ typedef struct php_http_header_parser {
 } php_http_header_parser_t;
 
 PHP_HTTP_API php_http_header_parser_t *php_http_header_parser_init(php_http_header_parser_t *parser);
-PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_push(php_http_header_parser_t *parser, unsigned argc, ...);
 PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_is(php_http_header_parser_t *parser);
-PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_state_pop(php_http_header_parser_t *parser);
 PHP_HTTP_API void php_http_header_parser_dtor(php_http_header_parser_t *parser);
 PHP_HTTP_API void php_http_header_parser_free(php_http_header_parser_t **parser);
 PHP_HTTP_API php_http_header_parser_state_t php_http_header_parser_parse(php_http_header_parser_t *parser, php_http_buffer_t *buffer, unsigned flags, HashTable *headers, php_http_info_callback_t callback_func, void *callback_arg);
