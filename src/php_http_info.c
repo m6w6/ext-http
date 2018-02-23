@@ -163,7 +163,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 			PHP_HTTP_INFO(info).response.code = 0;
 		}
 		if (EXPECTED(status && end > status)) {
-			while (' ' == *status) ++status;
+			while (' ' == *status && end > status) ++status;
 			PHP_HTTP_INFO(info).response.status = estrndup(status, end - status);
 		} else {
 			PHP_HTTP_INFO(info).response.status = NULL;
@@ -182,7 +182,7 @@ php_http_info_t *php_http_info_parse(php_http_info_t *info, const char *pre_head
 
 			PHP_HTTP_INFO(info).request.method = estrndup(pre_header, url_len);
 
-			while (' ' == *url) ++url;
+			while (' ' == *url && http > url) ++url;
 			while (' ' == *(http-1)) --http;
 
 			if (EXPECTED(http > url)) {

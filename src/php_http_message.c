@@ -858,7 +858,7 @@ php_http_message_object_t *php_http_message_object_new_ex(zend_class_entry *ce, 
 
 zend_object *php_http_message_object_clone(zval *this_ptr)
 {
-	php_http_message_object_t *new_obj = NULL;
+	php_http_message_object_t *new_obj;
 	php_http_message_object_t *old_obj = PHP_HTTP_OBJ(NULL, this_ptr);
 
 	new_obj = php_http_message_object_new_ex(old_obj->zo.ce, php_http_message_copy(old_obj->message, NULL));

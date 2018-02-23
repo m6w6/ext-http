@@ -136,12 +136,11 @@ static inline void prepare_urlencoded(zval *zv)
 
 static void sanitize_dimension(zval *zv)
 {
-	zval arr, tmp, *cur = NULL;
+	zval arr, tmp, *cur = &arr;
 	char *var = NULL, *ptr = Z_STRVAL_P(zv), *end = Z_STRVAL_P(zv) + Z_STRLEN_P(zv);
 	long level = 0;
 
 	array_init(&arr);
-	cur = &arr;
 
 	while (ptr < end) {
 		if (!var) {

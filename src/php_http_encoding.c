@@ -920,7 +920,7 @@ php_http_encoding_stream_object_t *php_http_encoding_stream_object_new_ex(zend_c
 
 zend_object *php_http_encoding_stream_object_clone(zval *object)
 {
-	php_http_encoding_stream_object_t *new_obj = NULL, *old_obj = PHP_HTTP_OBJ(NULL, object);
+	php_http_encoding_stream_object_t *new_obj, *old_obj = PHP_HTTP_OBJ(NULL, object);
 	php_http_encoding_stream_t *cpy = php_http_encoding_stream_copy(old_obj->stream, NULL);
 
 	new_obj = php_http_encoding_stream_object_new_ex(old_obj->zo.ce, cpy);

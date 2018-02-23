@@ -579,7 +579,7 @@ php_http_message_body_object_t *php_http_message_body_object_new_ex(zend_class_e
 
 zend_object *php_http_message_body_object_clone(zval *object)
 {
-	php_http_message_body_object_t *new_obj = NULL;
+	php_http_message_body_object_t *new_obj;
 	php_http_message_body_object_t *old_obj = PHP_HTTP_OBJ(NULL, object);
 	php_http_message_body_t *body = php_http_message_body_copy(old_obj->body, NULL);
 
