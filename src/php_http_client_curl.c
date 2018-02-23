@@ -480,6 +480,24 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		zend_hash_str_update(info, "http_version", lenof("http_version"), &tmp);
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,52,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PROXY_SSL_VERIFYRESULT, &l)) {
+		ZVAL_LONG(&tmp, l);
+		zend_hash_str_update(info, "proxy_ssl_verifyresult", lenof("proxy_ssl_verifyresult"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,52,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PROTOCOL, &l)) {
+		ZVAL_LONG(&tmp, l);
+		zend_hash_str_update(info, "protocol", lenof("protocol"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,52,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SCHEME, &c)) {
+		ZVAL_STRING(&tmp, STR_PTR(c));
+		zend_hash_str_update(info, "scheme", lenof("scheme"), &tmp);
+	}
+#endif
 
 	/* END::CURLINFO */
 
