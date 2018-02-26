@@ -380,7 +380,11 @@ static PHP_HTTP_FILTER_OPS(inflate) = {
 	"http.inflate"
 };
 
+#if PHP_VERSION_ID >= 70200
+static php_stream_filter *http_filter_create(const char *name, zval *params, uint8_t p)
+#else
 static php_stream_filter *http_filter_create(const char *name, zval *params, int p)
+#endif
 {
 	zval *tmp = params;
 	php_stream_filter *f = NULL;
