@@ -29,7 +29,7 @@ PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_enbrotli(int flags, const char *
 PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_debrotli(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len);
 
 #define PHP_HTTP_ENBROTLI_LEVEL_MIN			0x00000001
-#define PHP_HTTP_ENBROTLI_LEVEL_DEF			0x0000000a
+#define PHP_HTTP_ENBROTLI_LEVEL_DEF			0x00000004
 #define PHP_HTTP_ENBROTLI_LEVEL_MAX			0x0000000b
 
 #define PHP_HTTP_ENBROTLI_WBITS_MIN			0x000000a0

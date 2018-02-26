@@ -25,7 +25,7 @@
 #define PHP_HTTP_ENBROTLI_FLUSH_FLAG(flags) \
 	PHP_HTTP_ENCODING_STREAM_FLUSH_FLAG((flags), BROTLI_OPERATION_FLUSH, BROTLI_OPERATION_FLUSH, BROTLI_OPERATION_PROCESS)
 
-#define PHP_HTTP_ENBROTLI_BUFFER_SIZE		0x8000
+#define PHP_HTTP_ENBROTLI_BUFFER_SIZE		0x2000
 #define PHP_HTTP_DEBROTLI_BUFFER_SIZE		0x1000
 
 #define PHP_HTTP_ENBROTLI_LEVEL_SET(flags, level) \
@@ -36,146 +36,73 @@
 	mode = (((flags) >> 12) & 0xf)
 
 
-ZEND_RESULT_CODE php_http_encoding_enbrotli(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
-{
-	BROTLI_BOOL rc;
-	int q, win, mode;
-
-	*encoded_len = PHP_HTTP_ENBROTLI_BUFFER_SIZE_GUESS(data_len);
-	*encoded = emalloc(*encoded_len + 1);
-
-	PHP_HTTP_ENBROTLI_LEVEL_SET(flags, q);
-	PHP_HTTP_ENBROTLI_WBITS_SET(flags, win);
-	PHP_HTTP_ENBROTLI_MODE_SET(flags, mode);
-
-	rc = BrotliEncoderCompress(q, win, mode, data_len, (const unsigned char *) data, encoded_len, (unsigned char *) *encoded);
-	if (rc) {
-		return SUCCESS;
-	}
-
-	PTR_SET(*encoded, NULL);
-	*encoded_len = 0;
-
-	php_error_docref(NULL, E_WARNING, "Could not brotli encode data");
-	return FAILURE;
-}
-
-ZEND_RESULT_CODE php_http_encoding_debrotli(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len)
-{
-	BrotliDecoderState *br;
-	BrotliDecoderResult rc;
-	php_http_buffer_t buffer;
-	unsigned char *ptr;
-	size_t len;
-	int round = 0;
-
-	*decoded = NULL;
-	*decoded_len = 0;
-
-	br = BrotliDecoderCreateInstance(NULL, NULL, NULL);
-	if (!br) {
-		return FAILURE;
-	}
-
-	php_http_buffer_init_ex(&buffer, encoded_len, PHP_HTTP_BUFFER_INIT_PREALLOC);
-
-	do {
-		if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize_ex(&buffer, buffer.size, 0, 1)) {
-			break;
-		} else {
-			len = buffer.free;
-			ptr = (unsigned char *) &buffer.data[buffer.used];
-
-			rc = BrotliDecoderDecompressStream(br, &encoded_len, (const unsigned char **) &encoded, &len, &ptr, NULL);
-
-			php_http_buffer_account(&buffer, buffer.free - len);
-			PHP_HTTP_DEBROTLI_BUFFER_SIZE_ALIGN(buffer.size);
-		}
-	} while ((BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT == rc) && ++round < PHP_HTTP_DEBROTLI_ROUNDS);
-
-	BrotliDecoderDestroyInstance(br);
-
-	if (rc == BROTLI_DECODER_RESULT_SUCCESS) {
-		php_http_buffer_shrink(&buffer);
-		php_http_buffer_fix(&buffer);
-
-		*decoded = buffer.data;
-		*decoded_len = buffer.used;
-
-		return SUCCESS;
-	}
-
-	php_http_buffer_dtor(&buffer);
-	php_error_docref(NULL, E_WARNING, "Could not brotli decode data: %s", BrotliDecoderErrorString(rc));
-
-	return FAILURE;
-}
-
-struct enbrotli_ctx {
-	BrotliEncoderState *br;
-	php_http_buffer_t buffer;
-};
-
 static php_http_encoding_stream_t *enbrotli_init(php_http_encoding_stream_t *s)
 {
 	BrotliEncoderState *br;
-	int q, win, mode, p = (s->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT);
-	struct enbrotli_ctx *ctx = pemalloc(sizeof(*ctx), p);
+	int q, win, mode;
 
 	PHP_HTTP_ENBROTLI_LEVEL_SET(s->flags, q);
 	PHP_HTTP_ENBROTLI_WBITS_SET(s->flags, win);
 	PHP_HTTP_ENBROTLI_MODE_SET(s->flags, mode);
 
 	br = BrotliEncoderCreateInstance(NULL, NULL, NULL);
-	if (br) {
+	if (EXPECTED(br)) {
 		BrotliEncoderSetParameter(br, BROTLI_PARAM_QUALITY, q);
 		BrotliEncoderSetParameter(br, BROTLI_PARAM_LGWIN, win);
 		BrotliEncoderSetParameter(br, BROTLI_PARAM_MODE, mode);
 
-		ctx->br = br;
-		php_http_buffer_init_ex(&ctx->buffer, PHP_HTTP_ENBROTLI_BUFFER_SIZE, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0);
-		s->ctx = ctx;
+		s->ctx = br;
 		return s;
 	}
 
-	pefree(ctx, p);
 	php_error_docref(NULL, E_WARNING, "Failed to initialize brotli encoding stream");
 	return NULL;
 }
 
 static ZEND_RESULT_CODE enbrotli_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
 {
-	struct enbrotli_ctx *ctx = s->ctx;
+	php_http_buffer_t out;
 	const unsigned char *in_ptr;
-	unsigned char *out_ptr;
-	size_t in_len, out_len;
+	size_t in_len;
 	BROTLI_BOOL rc;
 
-	php_http_buffer_append(&ctx->buffer, data, data_len);
+	php_http_buffer_init_ex(&out, PHP_HTTP_ENBROTLI_BUFFER_SIZE_GUESS(data_len), 0);
 
-	in_len = ctx->buffer.used;
-	in_ptr = (unsigned char *) ctx->buffer.data;
-	out_len = PHP_HTTP_ENBROTLI_BUFFER_SIZE_GUESS(in_len);
-	out_ptr = emalloc(out_len + 1);
+	in_len = data_len;
+	in_ptr = (const unsigned char *) data;
 
-	*encoded_len = out_len;
-	*encoded = (char *) out_ptr;
+	while (in_len) {
+		size_t out_len = 0;
 
-	rc = BrotliEncoderCompressStream(ctx->br, PHP_HTTP_ENBROTLI_FLUSH_FLAG(s->flags), &in_len, &in_ptr, &out_len, &out_ptr, NULL);
-	if (rc) {
-		if (in_len) {
-			php_http_buffer_cut(&ctx->buffer, 0, ctx->buffer.used - in_len);
-		} else {
-			php_http_buffer_reset(&ctx->buffer);
+		rc = BrotliEncoderCompressStream(s->ctx, PHP_HTTP_ENBROTLI_FLUSH_FLAG(s->flags), &in_len, &in_ptr, &out_len, NULL, NULL);
+
+		if (!rc) {
+			break;
 		}
 
-		*encoded_len -= out_len;
-		*encoded = erealloc(*encoded, *encoded_len + 1);
-		(*encoded)[*encoded_len] = '\0';
+		if (BrotliEncoderHasMoreOutput(s->ctx)) {
+			const char *out_str = (const char *) BrotliEncoderTakeOutput(s->ctx, &out_len);
+
+			php_http_buffer_append(&out, out_str, out_len);
+		}
+	}
+
+	if (rc) {
+		if (out.used) {
+			php_http_buffer_shrink(&out);
+			php_http_buffer_fix(&out);
+			*encoded = out.data;
+			*encoded_len = out.used;
+		} else {
+			*encoded = NULL;
+			*encoded_len = 0;
+		}
 		return SUCCESS;
 	}
 
-	PTR_SET(*encoded, NULL);
+	php_http_buffer_dtor(&out);
+
+	*encoded = NULL;
 	*encoded_len = 0;
 
 	php_error_docref(NULL, E_WARNING, "Failed to update brotli encoding stream");
@@ -184,40 +111,43 @@ static ZEND_RESULT_CODE enbrotli_update(php_http_encoding_stream_t *s, const cha
 
 static inline ZEND_RESULT_CODE enbrotli_flush_ex(php_http_encoding_stream_t *s, BrotliEncoderOperation op, char **encoded, size_t *encoded_len)
 {
-	struct enbrotli_ctx *ctx = s->ctx;
-	size_t out_len, len;
-	ptrdiff_t off;
-	unsigned char *out_ptr, *ptr;
+	php_http_buffer_t out;
 	BROTLI_BOOL rc;
 	int round = 0;
 
-	out_len = len = 32;
-	out_ptr = ptr = emalloc(len);
+	php_http_buffer_init_ex(&out, PHP_HTTP_ENBROTLI_BUFFER_SIZE, 0);
 
 	do {
 		const unsigned char *empty = NULL;
-		size_t unused = 0;
+		size_t unused = 0, out_len = 0;
 
-		rc = BrotliEncoderCompressStream(ctx->br, op, &unused, &empty, &out_len, &out_ptr, NULL);
+		rc = BrotliEncoderCompressStream(s->ctx, op, &unused, &empty, &out_len, NULL, NULL);
+
 		if (!rc) {
 			break;
 		}
-		if (!BrotliEncoderHasMoreOutput(ctx->br)) {
-			*encoded_len = len - out_len;
-			*encoded = erealloc(ptr, *encoded_len + 1);
-			(*encoded)[*encoded_len] = '\0';
+
+		if (BrotliEncoderHasMoreOutput(s->ctx)) {
+			const char *out_str = (const char *) BrotliEncoderTakeOutput(s->ctx, &out_len);
+
+			php_http_buffer_append(&out, out_str, out_len);
+		} else {
+			if (out.used) {
+				php_http_buffer_shrink(&out);
+				php_http_buffer_fix(&out);
+
+				*encoded = out.data;
+				*encoded_len = out.used;
+			} else {
+				*encoded = NULL;
+				*encoded_len = 0;
+			}
 			return SUCCESS;
 		}
-
-		/* again */
-		off = out_ptr - ptr;
-		len += 32;
-		ptr = erealloc(ptr, len);
-		out_len += 32;
-		out_ptr = ptr + off;
 	} while (++round < PHP_HTTP_ENBROTLI_ROUNDS);
 
-	efree(ptr);
+	php_http_buffer_dtor(&out);
+
 	*encoded = NULL;
 	*encoded_len = 0;
 
@@ -237,19 +167,13 @@ static ZEND_RESULT_CODE enbrotli_finish(php_http_encoding_stream_t *s, char **en
 
 static zend_bool enbrotli_done(php_http_encoding_stream_t *s)
 {
-	struct enbrotli_ctx *ctx = s->ctx;
-
-	return !ctx->buffer.used && BrotliEncoderIsFinished(ctx->br);
+	return BrotliEncoderIsFinished(s->ctx);
 }
 
 static void enbrotli_dtor(php_http_encoding_stream_t *s)
 {
 	if (s->ctx) {
-		struct enbrotli_ctx *ctx = s->ctx;
-
-		php_http_buffer_dtor(&ctx->buffer);
-		BrotliEncoderDestroyInstance(ctx->br);
-		pefree(ctx, (s->flags & PHP_HTTP_ENCODING_STREAM_PERSISTENT));
+		BrotliEncoderDestroyInstance(s->ctx);
 		s->ctx = NULL;
 	}
 }
@@ -270,42 +194,48 @@ static php_http_encoding_stream_t *debrotli_init(php_http_encoding_stream_t *s)
 
 static ZEND_RESULT_CODE debrotli_update(php_http_encoding_stream_t *s, const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len)
 {
-	BrotliDecoderState *br = s->ctx;
-	php_http_buffer_t buffer;
+	php_http_buffer_t out;
 	BrotliDecoderResult rc;
-	unsigned char *ptr;
-	size_t len;
-	int round = 0;
+	const unsigned char *in_ptr;
+	size_t in_len;
 
-	php_http_buffer_init_ex(&buffer, encoded_len, PHP_HTTP_BUFFER_INIT_PREALLOC);
+	in_ptr = (const unsigned char *) encoded;
+	in_len = encoded_len;
 
-	do {
-		if (PHP_HTTP_BUFFER_NOMEM == php_http_buffer_resize_ex(&buffer, buffer.size, 0, 1)) {
+	php_http_buffer_init_ex(&out, encoded_len, PHP_HTTP_BUFFER_INIT_PREALLOC);
+
+	while (in_len) {
+		size_t out_len = 0;
+
+		rc = BrotliDecoderDecompressStream(s->ctx, &in_len, &in_ptr, &out_len, NULL, NULL);
+
+		if (BROTLI_DECODER_RESULT_ERROR == rc) {
 			break;
-		} else {
-			len = buffer.free;
-			ptr = (unsigned char *) &buffer.data[buffer.used];
-
-			rc = BrotliDecoderDecompressStream(br, &encoded_len, (const unsigned char **) &encoded, &len, &ptr, NULL);
-
-			php_http_buffer_account(&buffer, buffer.free - len);
-			PHP_HTTP_DEBROTLI_BUFFER_SIZE_ALIGN(buffer.size);
 		}
-	} while ((BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT == rc) && ++round < PHP_HTTP_DEBROTLI_ROUNDS);
 
-	if (rc != BROTLI_DECODER_RESULT_ERROR) {
-		php_http_buffer_shrink(&buffer);
-		php_http_buffer_fix(&buffer);
+		if (BrotliDecoderHasMoreOutput(s->ctx)) {
+			const char *out_str = (const char *) BrotliDecoderTakeOutput(s->ctx, &out_len);
 
-		*decoded = buffer.data;
-		*decoded_len = buffer.used;
+			php_http_buffer_append(&out, out_str, out_len);
+		}
+	}
 
+	if (BROTLI_DECODER_RESULT_ERROR != rc) {
+		if (out.used) {
+			php_http_buffer_shrink(&out);
+			php_http_buffer_fix(&out);
+			*decoded = out.data;
+			*decoded_len = out.used;
+		} else {
+			*decoded = NULL;
+			*decoded_len = 0;
+		}
 		return SUCCESS;
 	}
 
-	php_http_buffer_dtor(&buffer);
-	php_error_docref(NULL, E_WARNING, "Could not brotli decode data: %s", BrotliDecoderErrorString(rc));
+	php_http_buffer_dtor(&out);
 
+	php_error_docref(NULL, E_WARNING, "Could not brotli decode data: %s", BrotliDecoderErrorString(rc));
 	return FAILURE;
 }
 
@@ -350,6 +280,43 @@ static php_http_encoding_stream_ops_t php_http_encoding_debrotli_ops = {
 php_http_encoding_stream_ops_t *php_http_encoding_stream_get_debrotli_ops(void)
 {
 	return &php_http_encoding_debrotli_ops;
+}
+
+ZEND_RESULT_CODE php_http_encoding_enbrotli(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
+{
+	BROTLI_BOOL rc;
+	int q, win, mode;
+
+	*encoded_len = PHP_HTTP_ENBROTLI_BUFFER_SIZE_GUESS(data_len);
+	*encoded = emalloc(*encoded_len + 1);
+
+	PHP_HTTP_ENBROTLI_LEVEL_SET(flags, q);
+	PHP_HTTP_ENBROTLI_WBITS_SET(flags, win);
+	PHP_HTTP_ENBROTLI_MODE_SET(flags, mode);
+
+	rc = BrotliEncoderCompress(q, win, mode, data_len, (const unsigned char *) data, encoded_len, (unsigned char *) *encoded);
+	if (rc) {
+		return SUCCESS;
+	}
+
+	PTR_SET(*encoded, NULL);
+	*encoded_len = 0;
+
+	php_error_docref(NULL, E_WARNING, "Could not brotli encode data");
+	return FAILURE;
+}
+
+ZEND_RESULT_CODE php_http_encoding_debrotli(const char *encoded, size_t encoded_len, char **decoded, size_t *decoded_len)
+{
+	php_http_encoding_stream_t s = {0};
+	ZEND_RESULT_CODE rc = FAILURE;
+
+	if (debrotli_init(&s)) {
+		rc = debrotli_update(&s, encoded, encoded_len, decoded, decoded_len);
+		debrotli_dtor(&s);
+	}
+
+	return rc;
 }
 
 static zend_class_entry *php_http_enbrotli_stream_class_entry;
