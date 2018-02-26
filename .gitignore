@@ -53,6 +53,8 @@ vendor/
 /php_http_cookie.h
 /php_http_curl.h
 /php_http_encoding.h
+/php_http_encoding_zlib.h
+/php_http_encoding_brotli.h
 /php_http_env.h
 /php_http_env_request.h
 /php_http_env_response.h
