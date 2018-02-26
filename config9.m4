@@ -2,6 +2,7 @@
 m4_foreach(dir, [., ext/http], [
 	sinclude(dir/autoconf/pecl/pecl.m4)
 	sinclude(dir/autoconf/pecl/zlib.m4)
+	sinclude(dir/autoconf/pecl/libbrotli.m4)
 	sinclude(dir/autoconf/pecl/libcurl.m4)
 	sinclude(dir/autoconf/pecl/libevent.m4)
 ])
@@ -29,6 +30,12 @@ if test "$PHP_HTTP" != "no"; then
 	[  --with-http-zlib-dir[=DIR]         HTTP: where to find zlib], $PHP_HTTP, no)
 	PECL_CHECK_ZLIB([$PHP_HTTP_ZLIB_DIR], [1.2.0.4])
 	PECL_CHECK_DONE(zlib, $PECL_VAR([HAVE_ZLIB]))
+	
+	dnl BROTLI
+	PHP_ARG_WITH([http-libbrotli-dir], [whether/where to check for libbrotli],
+	[  --with-http-libbrotli-dir[=DIR]    HTTP: where to find libbrotli], $PHP_HTTP, no)
+	PECL_CHECK_LIBBROTLI([$PHP_HTTP_LIBBROTLI_DIR], [1.0])
+	PECL_CHECK_DONE(libbrotli, $PECL_VAR([HAVE_LIBBROTLI]))
 
 	dnl CURL
 	PHP_ARG_WITH([http-libcurl-dir], [whether/where to check for libcurl],

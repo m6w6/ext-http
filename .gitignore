@@ -77,3 +77,5 @@ vendor/
 /php_http_version.h
 /tests/helper/server.log
 *.gcov
+*gcov
+*lcov

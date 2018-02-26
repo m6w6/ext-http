@@ -1,0 +1,33 @@
+
+AC_DEFUN([PECL_CHECK_LIBBROTLI], [
+	PECL_CHECK_LIBBROTLI_DEC([$1], [$2])
+	PECL_CHECK_DONE(libbrotlidec, [$PECL_VAR([HAVE_LIBBROTLI_DEC])])
+	PECL_CHECK_LIBBROTLI_ENC([$1], [$2])
+	PECL_CHECK_DONE(libbrotlienc, [$PECL_VAR([HAVE_LIBBROTLI_ENC])])
+	
+	if $PECL_VAR([HAVE_LIBBROTLI_DEC]) && $PECL_VAR([HAVE_LIBBROTLI_ENC]); then
+		PECL_VAR([HAVE_LIBBROTLI])=true
+	fi
+])
+
+AC_DEFUN([PECL_CHECK_LIBBROTLI_DEC], [
+	PECL_CHECK_PKGCONFIG(libbrotlidec, [$1])
+	
+	PECL_HAVE_VERSION(libbrotlidec, ifelse($2,,1.0,$2), [
+		PECL_VAR([HAVE_LIBBROTLI_DEC])=true
+	], [
+		AC_MSG_WARN([skipping libbrotli])
+		PECL_VAR([HAVE_LIBBROTLI_DEC])=false
+	])
+])
+
+AC_DEFUN([PECL_CHECK_LIBBROTLI_ENC], [
+	PECL_CHECK_PKGCONFIG(libbrotlienc, [$1])
+	
+	PECL_HAVE_VERSION(libbrotlienc, ifelse($2,,1.0,$2), [
+		PECL_VAR([HAVE_LIBBROTLI_ENC])=true
+	], [
+		AC_MSG_WARN([skipping libbrotli])
+		PECL_VAR([HAVE_LIBBROTLI_ENC])=false
+	])
+])

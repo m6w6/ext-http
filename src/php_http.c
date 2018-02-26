@@ -137,6 +137,10 @@ PHP_MINIT_FUNCTION(http)
 	|| SUCCESS != PHP_MINIT_CALL(http_exception)
 	|| SUCCESS != PHP_MINIT_CALL(http_cookie)
 	|| SUCCESS != PHP_MINIT_CALL(http_encoding)
+	|| SUCCESS != PHP_MINIT_CALL(http_encoding_zlib)
+#if PHP_HTTP_HAVE_LIBBROTLI
+	|| SUCCESS != PHP_MINIT_CALL(http_encoding_brotli)
+#endif
 	|| SUCCESS != PHP_MINIT_CALL(http_filter)
 	|| SUCCESS != PHP_MINIT_CALL(http_header)
 	|| SUCCESS != PHP_MINIT_CALL(http_header_parser)

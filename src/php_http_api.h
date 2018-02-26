@@ -80,6 +80,8 @@
 #include "php_http.h"
 #include "php_http_cookie.h"
 #include "php_http_encoding.h"
+#include "php_http_encoding_zlib.h"
+#include "php_http_encoding_brotli.h"
 #include "php_http_info.h"
 #include "php_http_message.h"
 #include "php_http_env.h"

@@ -92,6 +92,10 @@ https://mdref.m6w6.name/http
     <file role="src" name="php_http_curl.h"/>
     <file role="src" name="php_http_encoding.c"/>
     <file role="src" name="php_http_encoding.h"/>
+    <file role="src" name="php_http_encoding_zlib.c"/>
+    <file role="src" name="php_http_encoding_zlib.h"/>
+    <file role="src" name="php_http_encoding_brotli.c"/>
+    <file role="src" name="php_http_encoding_brotli.h"/>
     <file role="src" name="php_http_env.c"/>
     <file role="src" name="php_http_env.h"/>
     <file role="src" name="php_http_env_request.c"/>
