@@ -164,7 +164,9 @@ ZEND_RESULT_CODE php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
 	if (EXPECTED((*s)->ops->dtor)) {
 		(*s)->ops->dtor(*s);
 	}
+
 	if (EXPECTED(ss = (*s)->ops->init(*s))) {
+		ss->flags &= ~PHP_HTTP_ENCODING_STREAM_DIRTY;
 		*s = ss;
 		return SUCCESS;
 	}
@@ -173,10 +175,15 @@ ZEND_RESULT_CODE php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
 
 ZEND_RESULT_CODE php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len)
 {
-	if (UNEXPECTED(!s->ops->update)) {
-		return FAILURE;
+	ZEND_RESULT_CODE rc = FAILURE;
+
+	if (EXPECTED(s->ops->update)) {
+		rc = s->ops->update(s, in_str, in_len, out_str, out_len);
 	}
-	return s->ops->update(s, in_str, in_len, out_str, out_len);
+
+	s->flags |= PHP_HTTP_ENCODING_STREAM_DIRTY;
+
+	return rc;
 }
 
 ZEND_RESULT_CODE php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
@@ -192,7 +199,7 @@ ZEND_RESULT_CODE php_http_encoding_stream_flush(php_http_encoding_stream_t *s, c
 zend_bool php_http_encoding_stream_done(php_http_encoding_stream_t *s)
 {
 	if (!s->ops->done) {
-		return 0;
+		return !(s->flags & PHP_HTTP_ENCODING_STREAM_DIRTY);
 	}
 	return s->ops->done(s);
 }
@@ -202,6 +209,9 @@ ZEND_RESULT_CODE php_http_encoding_stream_finish(php_http_encoding_stream_t *s, 
 	if (!s->ops->finish) {
 		*out_str = NULL;
 		*out_len = 0;
+
+		s->flags &= ~PHP_HTTP_ENCODING_STREAM_DIRTY;
+
 		return SUCCESS;
 	}
 	return s->ops->finish(s, out_str, out_len);
@@ -471,6 +481,10 @@ zend_object *php_http_encoding_stream_object_clone(zval *object)
 {
 	php_http_encoding_stream_object_t *new_obj, *old_obj = PHP_HTTP_OBJ(NULL, object);
 	php_http_encoding_stream_t *cpy = php_http_encoding_stream_copy(old_obj->stream, NULL);
+
+	if (!cpy) {
+		return NULL;
+	}
 
 	new_obj = php_http_encoding_stream_object_new_ex(old_obj->zo.ce, cpy);
 	zend_objects_clone_members(&new_obj->zo, &old_obj->zo);

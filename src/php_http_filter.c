@@ -75,7 +75,7 @@ typedef struct _http_chunked_decode_filter_buffer_t {
 	ulong	hexlen;
 } PHP_HTTP_FILTER_BUFFER(chunked_decode);
 
-typedef php_http_encoding_stream_t PHP_HTTP_FILTER_BUFFER(zlib);
+typedef php_http_encoding_stream_t PHP_HTTP_FILTER_BUFFER(stream);
 
 static PHP_HTTP_FILTER_FUNCTION(chunked_decode)
 {
@@ -266,22 +266,10 @@ static PHP_HTTP_FILTER_FUNCTION(chunked_encode)
 	return PSFS_PASS_ON;
 }
 
-static PHP_HTTP_FILTER_OPS(chunked_decode) = {
-	PHP_HTTP_FILTER_FUNC(chunked_decode),
-	PHP_HTTP_FILTER_DTOR(chunked_decode),
-	"http.chunked_decode"
-};
-
-static PHP_HTTP_FILTER_OPS(chunked_encode) = {
-	PHP_HTTP_FILTER_FUNC(chunked_encode),
-	NULL,
-	"http.chunked_encode"
-};
-
-static PHP_HTTP_FILTER_FUNCTION(zlib)
+static PHP_HTTP_FILTER_FUNCTION(stream)
 {
 	php_stream_bucket *ptr, *nxt;
-	PHP_HTTP_FILTER_BUFFER(zlib) *buffer = Z_PTR(this->abstract);
+	PHP_HTTP_FILTER_BUFFER(stream) *buffer = Z_PTR(this->abstract);
 	
 	if (bytes_consumed) {
 		*bytes_consumed = 0;
@@ -307,7 +295,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		}
 		
 #if DBG_FILTER
-		fprintf(stderr, "update: deflate (-> %zu) (w: %zu, r: %zu)\n", encoded_len, stream->writepos, stream->readpos);
+		fprintf(stderr, "update: compress (-> %zu) (w: %zu, r: %zu)\n", encoded_len, stream->writepos, stream->readpos);
 #endif
 		
 		if (encoded) {
@@ -329,7 +317,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		}
 		
 #if DBG_FILTER
-		fprintf(stderr, "flush: deflate (-> %zu)\n", encoded_len);
+		fprintf(stderr, "flush: compress (-> %zu)\n", encoded_len);
 #endif
 		
 		if (encoded) {
@@ -349,7 +337,7 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 		}
 		
 #if DBG_FILTER
-		fprintf(stderr, "finish: deflate (-> %zu)\n", encoded_len);
+		fprintf(stderr, "finish: compress (-> %zu)\n", encoded_len);
 #endif
 		
 		if (encoded) {
@@ -362,22 +350,47 @@ static PHP_HTTP_FILTER_FUNCTION(zlib)
 	
 	return PSFS_PASS_ON;
 }
-static PHP_HTTP_FILTER_DESTRUCTOR(zlib)
+
+static PHP_HTTP_FILTER_DESTRUCTOR(stream)
 {
-	PHP_HTTP_FILTER_BUFFER(zlib) *buffer = Z_PTR(this->abstract);
+	PHP_HTTP_FILTER_BUFFER(stream) *buffer = Z_PTR(this->abstract);
 	php_http_encoding_stream_free(&buffer);
 }
 
+static PHP_HTTP_FILTER_OPS(chunked_decode) = {
+	PHP_HTTP_FILTER_FUNC(chunked_decode),
+	PHP_HTTP_FILTER_DTOR(chunked_decode),
+	"http.chunked_decode"
+};
+
+static PHP_HTTP_FILTER_OPS(chunked_encode) = {
+	PHP_HTTP_FILTER_FUNC(chunked_encode),
+	NULL,
+	"http.chunked_encode"
+};
+
 static PHP_HTTP_FILTER_OPS(deflate) = {
-	PHP_HTTP_FILTER_FUNC(zlib),
-	PHP_HTTP_FILTER_DTOR(zlib),
+	PHP_HTTP_FILTER_FUNC(stream),
+	PHP_HTTP_FILTER_DTOR(stream),
 	"http.deflate"
 };
 
 static PHP_HTTP_FILTER_OPS(inflate) = {
-	PHP_HTTP_FILTER_FUNC(zlib),
-	PHP_HTTP_FILTER_DTOR(zlib),
+	PHP_HTTP_FILTER_FUNC(stream),
+	PHP_HTTP_FILTER_DTOR(stream),
 	"http.inflate"
+};
+
+static PHP_HTTP_FILTER_OPS(brotli_encode) = {
+	PHP_HTTP_FILTER_FUNC(stream),
+	PHP_HTTP_FILTER_DTOR(stream),
+	"http.brotli_encode"
+};
+
+static PHP_HTTP_FILTER_OPS(brotli_decode) = {
+	PHP_HTTP_FILTER_FUNC(stream),
+	PHP_HTTP_FILTER_DTOR(stream),
+	"http.brotli_decode"
 };
 
 #if PHP_VERSION_ID >= 70200
@@ -420,7 +433,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	} else
 	
 	if (!strcasecmp(name, "http.inflate")) {
-		PHP_HTTP_FILTER_BUFFER(zlib) *b = NULL;
+		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
 		
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), flags))) {
 			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(inflate), b, p))) {
@@ -430,10 +443,30 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 	} else
 	
 	if (!strcasecmp(name, "http.deflate")) {
-		PHP_HTTP_FILTER_BUFFER(zlib) *b = NULL;
+		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
 		
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), flags))) {
 			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(deflate), b, p))) {
+				php_http_encoding_stream_free(&b);
+			}
+		}
+	} else
+
+	if (!strcasecmp(name, "http.brotli_encode")) {
+		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
+
+		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_enbrotli_ops(), flags))) {
+			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(brotli_encode), b, p))) {
+				php_http_encoding_stream_free(&b);
+			}
+		}
+	} else
+
+	if (!strcasecmp(name, "http.brotli_decode")) {
+		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
+
+		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_debrotli_ops(), flags))) {
+			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(brotli_decode), b, p))) {
 				php_http_encoding_stream_free(&b);
 			}
 		}

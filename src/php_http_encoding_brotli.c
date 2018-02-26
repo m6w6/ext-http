@@ -96,6 +96,7 @@ static ZEND_RESULT_CODE enbrotli_update(php_http_encoding_stream_t *s, const cha
 		} else {
 			*encoded = NULL;
 			*encoded_len = 0;
+			php_http_buffer_dtor(&out);
 		}
 		return SUCCESS;
 	}
@@ -162,12 +163,19 @@ static ZEND_RESULT_CODE enbrotli_flush(php_http_encoding_stream_t *s, char **enc
 
 static ZEND_RESULT_CODE enbrotli_finish(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
 {
-	return enbrotli_flush_ex(s, BROTLI_OPERATION_FINISH, encoded, encoded_len);
+	ZEND_RESULT_CODE rc;
+
+	do {
+		rc = enbrotli_flush_ex(s, BROTLI_OPERATION_FINISH, encoded, encoded_len);
+	} while (SUCCESS == rc && !BrotliEncoderIsFinished(s->ctx));
+
+	return rc;
 }
 
 static zend_bool enbrotli_done(php_http_encoding_stream_t *s)
 {
-	return BrotliEncoderIsFinished(s->ctx);
+	return !(s->flags & PHP_HTTP_ENCODING_STREAM_DIRTY)
+			|| BrotliEncoderIsFinished(s->ctx);
 }
 
 static void enbrotli_dtor(php_http_encoding_stream_t *s)
@@ -227,6 +235,7 @@ static ZEND_RESULT_CODE debrotli_update(php_http_encoding_stream_t *s, const cha
 			*decoded = out.data;
 			*decoded_len = out.used;
 		} else {
+			php_http_buffer_dtor(&out);
 			*decoded = NULL;
 			*decoded_len = 0;
 		}
@@ -235,13 +244,13 @@ static ZEND_RESULT_CODE debrotli_update(php_http_encoding_stream_t *s, const cha
 
 	php_http_buffer_dtor(&out);
 
-	php_error_docref(NULL, E_WARNING, "Could not brotli decode data: %s", BrotliDecoderErrorString(rc));
+	php_error_docref(NULL, E_WARNING, "Could not brotli decode data: %s", BrotliDecoderErrorString(BrotliDecoderGetErrorCode(s->ctx)));
 	return FAILURE;
 }
 
 static zend_bool debrotli_done(php_http_encoding_stream_t *s)
 {
-	return BrotliDecoderIsFinished(s->ctx);
+	return !BrotliDecoderIsUsed(s->ctx) || BrotliDecoderIsFinished(s->ctx);
 }
 
 static void debrotli_dtor(php_http_encoding_stream_t *s)
@@ -341,7 +350,7 @@ static PHP_METHOD(HttpEnbrotliStream, encode)
 	size_t len;
 	zend_long flags = PHP_HTTP_ENBROTLI_MODE_GENERIC | PHP_HTTP_ENBROTLI_WBITS_DEF | PHP_HTTP_ENBROTLI_LEVEL_DEF;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s", &str, &len, &flags)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s|l", &str, &len, &flags)) {
 		char *enc_str = NULL;
 		size_t enc_len;
 
