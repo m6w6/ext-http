@@ -27,6 +27,7 @@ $env = $gen([
 	"enable_hash" => ["yes"],
 	"enable_iconv" => ["yes"],
 	"with_http_libicu_dir",
+	"with_http_libbrotli_dir" => ["/home/travis/brotli"]
 ]);
 foreach ($env as $e) {
 	printf(" - %s\n", $e);
@@ -37,6 +38,7 @@ foreach ($env as $e) {
  - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master enable_json=yes enable_hash=yes enable_iconv=yes
 
 before_script:
+ - ./travis/brotli.sh
  - make -f travis/pecl/Makefile php
  - make -f travis/pecl/Makefile pecl PECL=ext-raphf.git:raphf:master
  - make -f travis/pecl/Makefile pecl PECL=ext-propro.git:propro:master
