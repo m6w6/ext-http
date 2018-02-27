@@ -381,6 +381,7 @@ static PHP_HTTP_FILTER_OPS(inflate) = {
 	"http.inflate"
 };
 
+#if PHP_HTTP_HAVE_LIBBROTLI
 static PHP_HTTP_FILTER_OPS(brotli_encode) = {
 	PHP_HTTP_FILTER_FUNC(stream),
 	PHP_HTTP_FILTER_DTOR(stream),
@@ -392,6 +393,7 @@ static PHP_HTTP_FILTER_OPS(brotli_decode) = {
 	PHP_HTTP_FILTER_DTOR(stream),
 	"http.brotli_decode"
 };
+#endif
 
 #if PHP_VERSION_ID >= 70200
 static php_stream_filter *http_filter_create(const char *name, zval *params, uint8_t p)
@@ -452,6 +454,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		}
 	} else
 
+#if PHP_HTTP_HAVE_LIBBROTLI
 	if (!strcasecmp(name, "http.brotli_encode")) {
 		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
 
@@ -471,6 +474,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 			}
 		}
 	}
+#endif
 	
 	return f;
 }
