@@ -538,10 +538,12 @@ static PHP_METHOD(HttpEncodingStream, __construct)
 		ops = php_http_encoding_stream_get_inflate_ops();
 	} else if (instanceof_function(obj->zo.ce, php_http_dechunk_stream_class_entry)) {
 		ops = &php_http_encoding_dechunk_ops;
+#if PHP_HTTP_HAVE_LIBBROTLI
 	} else if (instanceof_function(obj->zo.ce, php_http_get_enbrotli_stream_class_entry())) {
 		ops = php_http_encoding_stream_get_enbrotli_ops();
 	} else if (instanceof_function(obj->zo.ce, php_http_get_debrotli_stream_class_entry())) {
 		ops = php_http_encoding_stream_get_debrotli_ops();
+#endif
 	} else {
 		php_http_throw(runtime, "Unknown http\\Encoding\\Stream class '%s'", obj->zo.ce->name->val);
 		return;
