@@ -35,7 +35,7 @@ foreach ($env as $e) {
 
 ?>
 # once with gcov
- - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master enable_json=yes enable_hash=yes enable_iconv=yes
+ - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master with_http_libbrotli_dir=/home/travis/brotli enable_json=yes enable_hash=yes enable_iconv=yes
 
 before_script:
  - ./travis/brotli.sh

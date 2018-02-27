@@ -80,7 +80,7 @@ env:
  - PHP=7.2 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes with_http_libbrotli_dir=/home/travis/brotli
  - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libicu_dir=yes with_http_libbrotli_dir=/home/travis/brotli
 # once with gcov
- - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master enable_json=yes enable_hash=yes enable_iconv=yes
+ - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master with_http_libbrotli_dir=/home/travis/brotli enable_json=yes enable_hash=yes enable_iconv=yes
 
 before_script:
  - ./travis/brotli.sh
