@@ -221,7 +221,7 @@ AC_DEFUN([PECL_HAVE_VERSION], [
 	aversion=_PECL_TR_VERSION([$PECL_CHECKED_VERSION([$1])])
 	mversion=_PECL_TR_VERSION([$2])
 	AC_MSG_CHECKING([whether $1 version $PECL_CHECKED_VERSION([$1]) >= $2])
-	if test "$aversion" -lt "$mversion"; then
+	if test -z "$aversion" || test "$aversion" -lt "$mversion"; then
 		ifelse($4,,AC_MSG_ERROR([no]), [
 			AC_MSG_RESULT([no])
 			$4
