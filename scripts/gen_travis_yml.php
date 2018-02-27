@@ -46,7 +46,7 @@ before_script:
 
 script:
  - make -f travis/pecl/Makefile test
- - make -f travis/pecl/Makefile cppcheck
+ - make -f travis/pecl/Makefile cppcheck CPPCHECK_EXITCODE=0
 
 after_failure:
  - test -e tests/helper/server.log && cat tests/helper/server.log
