@@ -397,9 +397,16 @@ static zend_function_entry php_http_debrotli_stream_methods[] = {
 	EMPTY_FUNCTION_ENTRY
 };
 
+/* POS */
+const void *BrotliGetDictionary();
+const void *(*php_http_brotli_get_dictionary)();
+
 PHP_MINIT_FUNCTION(http_encoding_brotli)
 {
 	zend_class_entry ce;
+
+	/* force link to libbrotlicommon, because their libraries don't */
+	php_http_brotli_get_dictionary = BrotliGetDictionary();
 
 	memset(&ce, 0, sizeof(ce));
 	INIT_NS_CLASS_ENTRY(ce, "http\\Encoding\\Stream", "Enbrotli", php_http_enbrotli_stream_methods);
