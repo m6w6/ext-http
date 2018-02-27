@@ -218,6 +218,7 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 	switch (type) {
 		case CURLINFO_TEXT:
 			if (data[0] == '-') {
+				goto text;
 			} else if (php_memnstr(data, ZEND_STRL("Adding handle:"), data + length)) {
 				h->progress.info = "setup";
 			} else if (php_memnstr(data, ZEND_STRL("addHandle"), data + length)) {
@@ -234,8 +235,16 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 				h->progress.info = "connected";
 			} else if (php_memnstr(data, ZEND_STRL("blacklisted"), data + length)) {
 				h->progress.info = "blacklist check";
+			} else if (php_memnstr(data, ZEND_STRL("TLS"), data + length)) {
+				h->progress.info = "ssl negotiation";
 			} else if (php_memnstr(data, ZEND_STRL("SSL"), data + length)) {
 				h->progress.info = "ssl negotiation";
+			} else if (php_memnstr(data, ZEND_STRL("certificate"), data + length)) {
+				h->progress.info = "ssl negotiation";
+			} else if (php_memnstr(data, ZEND_STRL("ALPN"), data + length)) {
+				h->progress.info = "alpn";
+			} else if (php_memnstr(data, ZEND_STRL("NPN"), data + length)) {
+				h->progress.info = "npn";
 			} else if (php_memnstr(data, ZEND_STRL("upload"), data + length)) {
 				h->progress.info = "uploaded";
 			} else if (php_memnstr(data, ZEND_STRL("left intact"), data + length)) {
@@ -247,6 +256,7 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 			} else if (php_memnstr(data, ZEND_STRL("Operation timed out"), data + length)) {
 				h->progress.info = "timeout";
 			} else {
+				text:;
 #if 0
 				h->progress.info = data;
 				data[length - 1] = '\0';

@@ -689,7 +689,7 @@ static PHP_METHOD(HttpClient, enqueue)
 	zend_fcall_info_cache fcc = empty_fcall_info_cache;
 	php_http_client_object_t *obj;
 	php_http_message_object_t *msg_obj;
-	php_http_client_enqueue_t q;
+	php_http_client_enqueue_t q = {0};
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O|f", &request, php_http_get_client_request_class_entry(), &fci, &fcc), invalid_arg, return);
 
@@ -701,6 +701,17 @@ static PHP_METHOD(HttpClient, enqueue)
 		return;
 	}
 
+	/* set early for progress callback */
+	q.opaque = msg_obj;
+
+	if (obj->client->callback.progress.func) {
+		php_http_client_progress_state_t progress = {0};
+
+		progress.info = "prepare";
+		obj->client->callback.progress.func(obj->client->callback.progress.arg, obj->client, &q, &progress);
+	}
+
+	Z_ADDREF_P(request);
 	q.request = msg_obj->message;
 	q.options = combined_options(getThis(), request);
 	q.dtor = msg_queue_dtor;
@@ -714,8 +725,6 @@ static PHP_METHOD(HttpClient, enqueue)
 			GC_ADDREF(fci.object);
 		}
 	}
-
-	Z_ADDREF_P(request);
 
 	php_http_expect(SUCCESS == php_http_client_enqueue(obj->client, &q), runtime,
 			msg_queue_dtor(&q);

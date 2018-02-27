@@ -43,6 +43,9 @@ server("proxy.inc", function($port) {
 			$o3 = new CallbackObserver(
 					function ($c, $r) {
 						$p = (array) $c->getProgressInfo($r);
+						if (!$p) {
+							return;
+						}
 						var_dump(array_key_exists("started", $p));
 						var_dump(array_key_exists("finished", $p));
 						var_dump(array_key_exists("dlnow", $p));
