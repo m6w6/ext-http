@@ -11,6 +11,8 @@ AC_DEFUN([PECL_CHECK_LIBBROTLI], [
 	&& $PECL_VAR([HAVE_LIBBROTLI_DEC]) \
 	&& $PECL_VAR([HAVE_LIBBROTLI_ENC]); then
 		PECL_VAR([HAVE_LIBBROTLI])=true
+	else
+		PECL_VAR([HAVE_LIBBROTLI])=false
 	fi
 ])
 
@@ -20,7 +22,6 @@ AC_DEFUN([PECL_CHECK_LIBBROTLI_COMMON], [
 	PECL_HAVE_VERSION(libbrotlicommon, ifelse($2,,1.0,$2), [
 		PECL_VAR([HAVE_LIBBROTLI_COMMON])=true
 	], [
-		AC_MSG_WARN([skipping libbrotli])
 		PECL_VAR([HAVE_LIBBROTLI_COMMON])=false
 	])
 ])
@@ -31,7 +32,6 @@ AC_DEFUN([PECL_CHECK_LIBBROTLI_DEC], [
 	PECL_HAVE_VERSION(libbrotlidec, ifelse($2,,1.0,$2), [
 		PECL_VAR([HAVE_LIBBROTLI_DEC])=true
 	], [
-		AC_MSG_WARN([skipping libbrotli])
 		PECL_VAR([HAVE_LIBBROTLI_DEC])=false
 	])
 ])
@@ -42,7 +42,6 @@ AC_DEFUN([PECL_CHECK_LIBBROTLI_ENC], [
 	PECL_HAVE_VERSION(libbrotlienc, ifelse($2,,1.0,$2), [
 		PECL_VAR([HAVE_LIBBROTLI_ENC])=true
 	], [
-		AC_MSG_WARN([skipping libbrotli])
 		PECL_VAR([HAVE_LIBBROTLI_ENC])=false
 	])
 ])
