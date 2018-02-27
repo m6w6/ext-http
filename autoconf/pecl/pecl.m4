@@ -332,8 +332,16 @@ dnl PECL_CHECK_PKGCONFIG(pkg[, additional-pkg-config-path])
 dnl
 AC_DEFUN([PECL_CHECK_PKGCONFIG], [dnl
 	AC_REQUIRE([PECL_PROG_PKGCONFIG])dnl
-	ifelse($2,,,PKG_CONFIG_PATH="$2/lib/pkgconfig:$PKG_CONFIG_PATH")
+	ifelse($2,,, [
+		PECL_SAVE_VAR(pkgconfig_path)="$PKG_CONFIG_PATH"
+		if test -d "$2"; then
+			export PKG_CONFIG_PATH="$2/lib/pkgconfig:$PKG_CONFIG_PATH"
+		fi
+	])
 	PECL_CHECK_CONFIG([$1], [$PKG_CONFIG $1], [--modversion], [--cflags-only-I], [--libs-only-L], [--libs-only-l])
+	ifelse($2,,, [
+		PKG_CONFIG_PATH="$PECL_SAVE_VAR(pkgconfig_path)"
+	])
 ])
 dnl
 dnl PECL_CHECK_DONE(name, success[, incline, libline])
