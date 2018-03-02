@@ -21,7 +21,7 @@ compiler:
 
 cache:
  directories:
-  - $HOME/build
+  - $HOME/cache
 
 env:
 <?php
