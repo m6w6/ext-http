@@ -1,11 +1,19 @@
 #!/bin/bash
 
-if test -n "$with_http_libbrotli_dir" && test "$with_http_libbrotli_dir" != "no"; then
-	git clone https://github.com/google/brotli.git /home/travis/brotli.git
-	cd /home/travis/brotli.git
-	git checkout v1.0.2
+BROTLI_DIR="$with_http_libbrotli_dir"
+BROTLI_SRC="$BROTLI_DIR.git"
+
+if test -n "$BROTLI_DIR" && test "$BROTLI_DIR" != "no"; then
+	if test -d "$BROTLI_SRC"; then
+		cd "$BROTLI_SRC"
+		git pull
+	else
+		git clone https://github.com/google/brotli.git "$BROTLI_SRC"
+		cd "$BROTLI_SRC"
+	fi
+	git checkout $1
 	./bootstrap
-	./configure --prefix=/home/travis/brotli
-	make -j2
-	make install
+	./configure -C --prefix="$BROTLI_DIR"
+	make -j ${JOBS:2}
+	make install INSTALL=install
 fi
