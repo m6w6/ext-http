@@ -452,9 +452,9 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 				php_http_encoding_stream_free(&b);
 			}
 		}
+#if PHP_HTTP_HAVE_LIBBROTLI
 	} else
 
-#if PHP_HTTP_HAVE_LIBBROTLI
 	if (!strcasecmp(name, "http.brotli_encode")) {
 		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
 
@@ -473,8 +473,8 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 				php_http_encoding_stream_free(&b);
 			}
 		}
-	}
 #endif
+	}
 	
 	return f;
 }
