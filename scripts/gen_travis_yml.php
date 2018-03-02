@@ -15,27 +15,63 @@ addons:
    - libicu-dev
    - libevent-dev
 
+compiler:
+ - gcc
+ - clang
+
 env:
 <?php
 
 $gen = include "./travis/pecl/gen-matrix.php";
+$cur = "7.2";
 $env = $gen([
-	"PHP" => ["7.0", "7.1", "7.2", "master"],
+// most useful for all additional versions except current
+	"PHP" => ["7.0", "7.1",  "master"],
+	"enable_debug" => "yes",
+	"enable_maintainer_zts" => "yes",
+	"enable_json" => "yes",
+	"enable_hash" => "yes",
+	"enable_iconv" => "yes",
+	"with_http_libbrotli_dir" => "/home/travis/brotli"
+], [
+// everything disabled for current
+	"PHP" => $cur,
+	"with_http_libicu_dir" => "no",
+	"with_http_libidn_dir" => "no",
+	"with_http_libidn2_dir" => "no",
+	"with_http_libcurl_dir" => "no",
+	"with_http_libevent_dir" => "no",
+], [
+// everything enabled for current, switching on debug/zts
+	"PHP" => $cur,
 	"enable_debug",
 	"enable_maintainer_zts",
-	"enable_json",
-	"enable_hash" => ["yes"],
-	"enable_iconv" => ["yes"],
-	"with_http_libicu_dir",
-	"with_http_libbrotli_dir" => ["/home/travis/brotli"]
+	"enable_json" => "yes",
+	"enable_hash" => "yes",
+	"enable_iconv" => "yes",
+	"with_http_libbrotli_dir" => "/home/travis/brotli",
+], [
+// once everything enabled for current, with coverage
+	"CFLAGS" => "'-O0 -g --coverage'",
+	"CXXFLAGS" => "'-O0 -g --coverage'",
+	"PHP" => $cur,
+	"enable_json" => "yes",
+	"enable_hash" => "yes",
+	"enable_iconv" => "yes",
+	"with_http_libbrotli_dir" => "/home/travis/brotli",
+	[
+		"with_http_libicu_dir",
+		"with_http_libidn_dir",
+		"with_http_libidn2_dir",
+	],
 ]);
-foreach ($env as $e) {
-	printf(" - %s\n", $e);
+foreach ($env as $grp) {
+	foreach ($grp as $e) {
+		printf(" - %s\n", $e);
+	}
 }
 
 ?>
-# once with gcov
- - CFLAGS="-O0 -g --coverage" CXXFLAGS="-O0 -g --coverage" PHP=master with_http_libbrotli_dir=/home/travis/brotli enable_json=yes enable_hash=yes enable_iconv=yes
 
 before_script:
  - ./travis/brotli.sh
