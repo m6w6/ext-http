@@ -938,7 +938,9 @@ static ZEND_RESULT_CODE php_http_env_response_stream_start(php_http_env_response
 
 	if (ctx->chunked) {
 		ctx->chunked_filter = php_stream_filter_create("http.chunked_encode", NULL, 0);
-		php_stream_filter_append(&ctx->stream->writefilters, ctx->chunked_filter);
+		if (ctx->chunked_filter) {
+			php_stream_filter_append(&ctx->stream->writefilters, ctx->chunked_filter);
+		}
 	}
 
 	return ctx->started ? SUCCESS : FAILURE;
