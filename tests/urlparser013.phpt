@@ -5,7 +5,6 @@ url parser multibyte/utf-8/topct
 include "skipif.inc";
 defined("http\\Url::PARSE_TOIDN") or
 	die("skip need http\\Url::PARSE_TOIDN support");
-}
 ?>
 --FILE--
 <?php
