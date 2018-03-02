@@ -3,6 +3,7 @@ encoding stream brotli static
 --SKIPIF--
 <?php
 include "skipif.inc";
+class_exists("http\\Encoding\\Stream\\Enbrotli", false) or die("SKIP need brotli support");
 ?>
 --FILE--
 <?php

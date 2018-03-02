@@ -3,7 +3,7 @@ url parser multibyte/utf-8/topct
 --SKIPIF--
 <?php
 include "skipif.inc";
-if (!defined("http\\Url::PARSE_TOIDN") or
+defined("http\\Url::PARSE_TOIDN") or
 	die("skip need http\\Url::PARSE_TOIDN support");
 }
 ?>
