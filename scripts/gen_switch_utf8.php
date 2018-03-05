@@ -9,12 +9,19 @@ set_error_handler(function($c, $e, $f, $l) {
 $i18n = $argc >= 2 ? $argv[1] : "/usr/share/i18n/locales/i18n";
 
 $b = 10;
+$m = 0xfffff000 >> $b;
+$b2 = 8;
+$x = $m >> $b2;
 
 $f = fopen($i18n, "r");
 $c = false;
 $a = false;
 
 ob_start(null, 0xfffff);
+
+printf("/* generated on %s with\n b = %d\n m = 0x%08x\n b2= %d\n*/", 
+	strftime("%x %X"), $b, $m, $b2);
+
 while (!feof($f)) {
 	$line = fgets($f);
 	if (!$c && $line !== "LC_CTYPE\n") {
@@ -57,7 +64,7 @@ while (!feof($f)) {
 					sscanf($sstart, "<U%X>", $start);
 					break;
 				}
-				$r[$start >> $b][]=[$start,$end,$step];
+				$r[$start >> $b][($start & $m) >> $b2][]=[$start,$end,$step];
 			}
 		}
 		break;
@@ -73,9 +80,12 @@ while (!feof($f)) {
 
 function sp($sp, $ch = " ") { return str_repeat($ch, $sp); }
 printf("switch (ch >> %d) {\n", $b);
-foreach ($r as $sw => $specs) {
+foreach ($r as $sw => $sws) {
 	printf("case 0x%08X:\n", $sw);
-	$sp = 1;
+	printf(" switch((ch & 0x%08X) >> %d) {\n", $m, $b2);
+	foreach ($sws as $sw2 => $specs) {
+	printf(" case 0x%08X:\n", $sw2);
+	$sp = 2;
 	foreach ($specs as list($start, $end, $step)) {
 		if ($end) {
 			if ($step > 1) {
@@ -90,7 +100,9 @@ foreach ($r as $sw => $specs) {
 			printf("%sif (ch == 0x%08X) return 1;\n", sp($sp), $start);
 		}
 	}
-	printf(" %s\n break;\n", sp(--$sp, "}"));
+	printf("  %s\n  break;\n", sp($sp-2, "}"));
+	}
+	printf(" }\n break;\n");
 }
 printf("}\n");
 
