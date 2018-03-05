@@ -22,6 +22,8 @@ compiler:
 cache:
  directories:
   - $HOME/cache
+before_cache:
+ - find $HOME/cache -name '*.gcda' -o -name '*.gcno' -delete
 
 env:
 <?php

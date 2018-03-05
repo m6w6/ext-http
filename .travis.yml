@@ -21,6 +21,8 @@ compiler:
 cache:
  directories:
   - $HOME/cache
+before_cache:
+ - find $HOME/cache -name '*.gcda' -o -name '*.gcno' -delete
 
 env:
  - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
