@@ -17,10 +17,9 @@ $f = fopen($i18n, "r");
 $c = false;
 $a = false;
 
-ob_start(null, 0xfffff);
+$ranges = $lables = $gotos = [];
 
-printf("/* generated on %s with\n b = %d\n m = 0x%08x\n b2= %d\n*/", 
-	strftime("%x %X"), $b, $m, $b2);
+ob_start(null, 0xfffff);
 
 while (!feof($f)) {
 	$line = fgets($f);
@@ -41,8 +40,8 @@ while (!feof($f)) {
 		break;
 	case " ":
 		if ($a) {
-			foreach (explode(";", trim($line, "\n/ ;")) as $ranges) {
-				$range = explode("..", $ranges);
+			foreach (explode(";", trim($line, "\n/ ;")) as $list) {
+				$range = explode("..", $list);
 				$step = 0;
 				$end = 0;
 				switch (count($range)) {
@@ -64,7 +63,26 @@ while (!feof($f)) {
 					sscanf($sstart, "<U%X>", $start);
 					break;
 				}
-				$r[$start >> $b][($start & $m) >> $b2][]=[$start,$end,$step];
+				$sw = $start >> $b;
+				$sw2 = ($start & $m) >> $b2;
+				if (isset($ranges[$sw][$sw2])) {
+					//$ranges[$sw][$sw2] = array_filter($ranges[$sw][$sw2]);
+				}
+				$ranges[$sw][$sw2][]=[$start,$end,$step];
+				if ($end) {
+					$goto = $start;
+				}
+				while (($start += $step) <= $end) {
+					$ssw = $start >> $b;
+					$ssw2 = ($start & $m) >> $b2;
+					if (!isset($ranges[$ssw][$ssw2]) || null !== end($ranges[$ssw][$ssw2])) {
+						$ranges[$ssw][$ssw2][]=null;
+					}
+					if ($ssw != $sw || $ssw2 != $sw2) {
+						$gotos[$ssw][$ssw2] = $goto;
+						$labels[$sw][$sw2] = $goto;
+					}
+				}
 			}
 		}
 		break;
@@ -79,28 +97,51 @@ while (!feof($f)) {
 }
 
 function sp($sp, $ch = " ") { return str_repeat($ch, $sp); }
+
 printf("switch (ch >> %d) {\n", $b);
-foreach ($r as $sw => $sws) {
+foreach ($ranges as $sw => $sws) {
 	printf("case 0x%08X:\n", $sw);
 	printf(" switch((ch & 0x%08X) >> %d) {\n", $m, $b2);
 	foreach ($sws as $sw2 => $specs) {
-	printf(" case 0x%08X:\n", $sw2);
-	$sp = 2;
-	foreach ($specs as list($start, $end, $step)) {
-		if ($end) {
-			if ($step > 1) {
-				die("\nUNEXPECTED: step>1\n");
-				printf("\tfor (i=0x%08X; i <= 0x%08X; i+= %d) { if (i == ch) return 1; }\n", $start, $end, $step);
+		printf(" case 0x%08X:\n", $sw2);
+		$sp = 2;
+		$start = null;
+		foreach ($specs as $index => $spec) {
+			if ($spec) {
+				list($start, $end, $step) = $spec;
+				if (isset($labels[$sw][$sw2])) {
+					$label = $labels[$sw][$sw2];
+					if ((!$end && $label == $start) || ($end && $label >= $start && $label <= $end)) {
+						printf("%sc_%08X:;\n", sp($sp), $label);
+					}
+				}
+				if ($end) {
+					if ($step > 1) {
+						die("\nUNEXPECTED: step>1\n");
+						printf("\tfor (i=0x%08X; i <= 0x%08X; i+= %d) { if (i == ch) return 1; }\n", $start, $end, $step);
+					} else {
+						printf("%sif (ch >= 0x%08X) {\n", sp($sp), $start);
+						printf("%sif (ch <= 0x%08X) return 1;\n", sp(++$sp), $end);
+					}
+				} else {
+					printf("%sif (ch == 0x%08X) return 1;\n", sp($sp), $start);
+				}			
 			} else {
-				//printf(" if (ch >= 0x%08X && ch <= 0x%08X) return 1;\n", $start, $end);
-				printf("%sif (ch >= 0x%08X) {\n", sp($sp), $start);
-				printf("%sif (ch <= 0x%08X) return 1;\n", sp(++$sp), $end);
+				if (isset($gotos[$sw][$sw2]) && !$start) {
+					if (isset($specs[$index + 1])) {
+						list($next) = $specs[$index + 1];
+						printf("%sif (ch < 0x%08X)\n ", sp($sp), $next);
+					}
+					$goto = $gotos[$sw][$sw2];
+					printf("%sgoto c_%08X;\n", sp($sp), $goto);
+					$start = $goto;
+				}
 			}
-		} else {
-			printf("%sif (ch == 0x%08X) return 1;\n", sp($sp), $start);
 		}
-	}
-	printf("  %s\n  break;\n", sp($sp-2, "}"));
+		if ($sp > 2) {
+			printf("  %s\n", sp($sp-2, "}"));
+		}
+		printf("  break;\n");
 	}
 	printf(" }\n break;\n");
 }

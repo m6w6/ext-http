@@ -743,7 +743,7 @@ static inline size_t parse_mb(struct parse_state *state, parse_mb_what_t what, c
 			if (what == PARSE_HOSTINFO && (state->flags & PHP_HTTP_URL_PARSE_TOIDN)) {
 				/* idna */
 			} else if (state->flags & PHP_HTTP_URL_PARSE_MBUTF8) {
-#if PHP_HTTP_HAVE_LIBICU
+#if 0&&PHP_HTTP_HAVE_LIBICU
 				if (!u_isalnum(wchar)) {
 #else
 				if (!isualnum(wchar)) {
