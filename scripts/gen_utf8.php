@@ -11,6 +11,8 @@ $i18n = $argc >= 2 ? $argv[1] : "/usr/share/i18n/locales/i18n";
 $f = fopen($i18n, "r");
 $c = false;
 $a = false;
+$r = [];
+$n = [];
 
 ob_start(null, 0xffff);
 while (!feof($f)) {
@@ -55,23 +57,14 @@ while (!feof($f)) {
 					sscanf($sstart, "<U%X>", $start);
 					break;
 				}
-				print "\t{";
-				if ($start >= 0xffff) {
-					printf("0x%08X, ", $start);
-					if ($end) {
-						printf("0x%08X, ", $end);
-					} else {
-						print("         0, ");
+				if ($end) {
+					if ($step != 1) {
+						die("UNEXPECTED step=$step\n");
 					}
+					$r[] = [$start, $end];
 				} else {
-					printf("    0x%04X, ", $start);
-					if ($end) {
-						printf("    0x%04X, ", $end);
-					} else {
-						print("         0, ");
-					}
+					$n[] = $start;
 				}
-				printf("%d},\n", $step);
 			}
 		}
 		break;
@@ -84,6 +77,29 @@ while (!feof($f)) {
 		break;
 	}
 }
+
+$maxstep = 0;
+printf("static const utf8_range_t utf8_ranges[] = {\n\t{");
+foreach ($r as $i => list($start, $end)) {
+	if ($i) if ($i%3) {
+		printf(", {");
+	} else {
+		printf(",\n\t{");
+	}
+		
+	printf("0x%08X, 0x%08X}", $start, $end);
+}
+printf("\n};\n\n");
+printf("static const unsigned utf8_chars[] = {\n\t");
+foreach ($n as $i => $u) {
+	if ($i) if (($i%6)) {
+		printf(", ");
+	} else {
+		printf(",\n\t");
+	}
+	printf("0x%08X", $u);
+}
+printf("\n};\n");
 
 file_put_contents("php_http_utf8.h",
 	preg_replace('/(\/\* BEGIN::UTF8TABLE \*\/\n).*(\n\s*\/\* END::UTF8TABLE \*\/)/s', '$1'. ob_get_contents() .'$2',
