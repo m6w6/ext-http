@@ -117,9 +117,11 @@ PHP_HTTP_BUFFER_API size_t php_http_buffer_append(php_http_buffer_t *buf,
 	) {
 		return PHP_HTTP_BUFFER_NOMEM;
 	}
-	memcpy(buf->data + buf->used, append, append_len);
-	buf->used += append_len;
-	buf->free -= append_len;
+	if (append_len) {
+		memcpy(buf->data + buf->used, append, append_len);
+		buf->used += append_len;
+		buf->free -= append_len;
+	}
 	return append_len;
 }
 
@@ -147,7 +149,9 @@ PHP_HTTP_BUFFER_API char *php_http_buffer_data(const php_http_buffer_t *buf,
 		char **into, size_t *len)
 {
 	char *copy = ecalloc(1, buf->used + 1);
-	memcpy(copy, buf->data, buf->used);
+	if (buf->data) {
+		memcpy(copy, buf->data, buf->used);
+	}
 	if (into) {
 		*into = copy;
 	}
