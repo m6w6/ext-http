@@ -22,7 +22,7 @@ typedef struct php_http_client_curl_user_ev {
 	php_http_client_curl_user_context_t *context;
 } php_http_client_curl_user_ev_t;
 
-static void php_http_client_curl_user_handler(INTERNAL_FUNCTION_PARAMETERS)
+static ZEND_NAMED_FUNCTION(php_http_client_curl_user_handler)
 {
 	zval *zstream = NULL, *zclient = NULL;
 	php_stream *stream = NULL;
