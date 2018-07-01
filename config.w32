@@ -1,5 +1,4 @@
 // config.w32 for pecl/http
-// $Id$
 
 ARG_ENABLE("http", "whether to enable extended HTTP support", "no");
 
