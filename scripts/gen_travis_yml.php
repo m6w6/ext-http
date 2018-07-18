@@ -81,7 +81,12 @@ foreach ($env as $grp) {
 
 install:
  - ./travis/brotli.sh v1.0.2
- - if test "$PHP" = master; then make -f travis/pecl/Makefile reconf; fi
+ - |
+   if test "$PHP" = master; then \
+     make -f travis/pecl/Makefile reconf; \
+     make -f travis/pecl/Makefile pecl-rm pecl-clean PECL=ext-raphf.git:raphf:master; \
+     make -f travis/pecl/Makefile pecl-rm pecl-clean PECL=ext-propro.git:propro:master; \
+   fi
  - make -f travis/pecl/Makefile php || make -f travis/pecl/Makefile clean php
  - make -f travis/pecl/Makefile pecl PECL=ext-raphf.git:raphf:master
  - make -f travis/pecl/Makefile pecl PECL=ext-propro.git:propro:master
