@@ -32,7 +32,7 @@ $gen = include "./travis/pecl/gen-matrix.php";
 $cur = "7.2";
 $env = $gen([
 // most useful for all additional versions except current
-	"PHP" => ["7.0", "7.1",  "master"],
+	"PHP" => ["7.0", "7.1", "7.3", "master"],
 	"enable_debug" => "yes",
 	"enable_maintainer_zts" => "yes",
 	"enable_json" => "yes",
@@ -81,6 +81,7 @@ foreach ($env as $grp) {
 
 install:
  - ./travis/brotli.sh v1.0.2
+ - if test "$PHP" = master; then make -f travis/pecl/Makefile reconf; fi
  - make -f travis/pecl/Makefile php
  - make -f travis/pecl/Makefile pecl PECL=ext-raphf.git:raphf:master
  - make -f travis/pecl/Makefile pecl PECL=ext-propro.git:propro:master
