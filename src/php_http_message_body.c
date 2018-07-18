@@ -262,9 +262,14 @@ void php_http_message_body_add_part(php_http_message_body_t *body, php_http_mess
 
 ZEND_RESULT_CODE php_http_message_body_add_form_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
 {
-	zend_string *safe_name = zend_string_init(name, strlen(name), 0);
+	zend_string *safe_name, *zstr_name = zend_string_init(name, strlen(name), 0);
 
-	safe_name = php_addslashes(safe_name, 1);
+#if PHP_VERSION_ID < 70300
+	safe_name = php_addslashes(zstr_name, 1);
+#else
+	safe_name = php_addslashes(zstr_name);
+	zend_string_release_ex(zstr_name, 0);
+#endif
 
 	BOUNDARY_OPEN(body);
 	php_http_message_body_appendf(
@@ -284,9 +289,14 @@ ZEND_RESULT_CODE php_http_message_body_add_form_file(php_http_message_body_t *bo
 {
 	size_t path_len = strlen(path);
 	char *path_dup = estrndup(path, path_len);
-	zend_string *base_name, *safe_name = zend_string_init(name, strlen(name), 0);
+	zend_string *base_name, *safe_name, *zstr_name = zend_string_init(name, strlen(name), 0);
 
-	safe_name = php_addslashes(safe_name, 1);
+#if PHP_VERSION_ID < 70300
+	safe_name = php_addslashes(zstr_name, 1);
+#else
+	safe_name = php_addslashes(zstr_name);
+	zend_string_release_ex(zstr_name, 0);
+#endif
 	base_name = php_basename(path_dup, path_len, NULL, 0);
 
 	BOUNDARY_OPEN(body);

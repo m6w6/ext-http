@@ -74,9 +74,14 @@ void php_http_header_parser_free(php_http_header_parser_t **parser)
 /* NOTE: 'str' has to be null terminated */
 static void php_http_header_parser_error(size_t valid_len, char *str, size_t len, const char *eol_str )
 {
-	zend_string *escaped_str = zend_string_init(str, len, 0);
+	zend_string *escaped_str, *zstr_str = zend_string_init(str, len, 0);
 
-	escaped_str = php_addcslashes(escaped_str, 1, ZEND_STRL("\x0..\x1F\x7F..\xFF"));
+#if PHP_VERSION_ID < 70300
+	escaped_str = php_addcslashes(zstr_str, 1, ZEND_STRL("\x0..\x1F\x7F..\xFF"));
+#else
+	escaped_str = php_addcslashes(zstr_str, ZEND_STRL("\x0..\x1F\x7F..\xFF"));
+	zend_string_release_ex(zstr_str, 0);
+#endif
 
 	if (valid_len != len && (!eol_str || (str+valid_len) != eol_str)) {
 		php_error_docref(NULL, E_WARNING, "Failed to parse headers: unexpected character '\\%03o' at pos %zu of '%s'", str[valid_len], valid_len, escaped_str->val);

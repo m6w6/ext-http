@@ -67,7 +67,11 @@ static inline zend_string *quote_string(zend_string *zs, zend_bool force)
 {
 	size_t len = (zs)->len;
 
+#if PHP_VERSION_ID < 70300
 	zs = php_addcslashes(zs, 0, ZEND_STRL("\0..\37\173\\\""));
+#else
+	zs = php_addcslashes(zs, ZEND_STRL("\0..\37\173\\\""));
+#endif
 
 	if (force || len != (zs)->len || strpbrk((zs)->val, "()<>@,;:\"[]?={} ")) {
 		int len = (zs)->len + 2;
