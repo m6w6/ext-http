@@ -33,7 +33,7 @@ https://mdref.m6w6.name/http
  </lead>
  <date>2018-07-19</date>
  <version>
-  <release>3.2.0</release>
+  <release>3.2.1dev</release>
   <api>3.2.0</api>
  </version>
  <stability>
@@ -42,11 +42,7 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-* Fixed gh-issue #73: build fails with libidn and libidn2
-* Fixed gh-issue #78: PHP-7.3 build crashes
-* Fixed PHP-7.2 build crashes
-+ Added brotli compression support
-+ Implemented gh-issue #58: Notify observers before any request is built
+*
 ]]></notes>
  <contents>
   <dir name="/">
