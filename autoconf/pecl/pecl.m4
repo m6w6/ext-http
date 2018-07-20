@@ -180,14 +180,14 @@ dnl
 AC_DEFUN([PECL_HAVE_CONST], [dnl
 	AC_REQUIRE([PECL_PROG_EGREP])dnl
 	AC_CACHE_CHECK([for $2 in $1], PECL_CACHE_VAR([HAVE_$1_$2]), [
-		AC_TRY_COMPILE([
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 			#include "$1"
-		], [
-			]ifelse([$3],,int,[$3])[ _c = $2;
+		]], [[
+			ifelse($3,,int,$3) _c = $2;
 			(void) _c;
-		], [
+		]])],[
 			PECL_CACHE_VAR([HAVE_$1_$2])=yes
-		], [
+		],[
 			PECL_CACHE_VAR([HAVE_$1_$2])=no
 		])
 	])

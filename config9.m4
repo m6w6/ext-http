@@ -94,13 +94,13 @@ if test "$PHP_HTTP" != "no"; then
 					CFLAGS="$CFLAGS -Wno-error=deprecated-declarations"
 				fi
 			fi
-			AC_TRY_LINK([
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 				#include <unicode/uidna.h>
-			], [
+			]], [[
 				uidna_IDNToASCII(0, 0, 0, 0, 0, 0, 0);
-			], [
+			]])],[
 				PECL_CACHE_VAR([HAVE_UIDNA_IDNToASCII])=yes
-			], [
+			],[
 				PECL_CACHE_VAR([HAVE_UIDNA_IDNToASCII])=no
 			])
 		])
@@ -110,13 +110,13 @@ if test "$PHP_HTTP" != "no"; then
 		fi
 
 		AC_CACHE_CHECK([for uidna_nameToASCII_UTF8], PECL_CACHE_VAR([HAVE_UIDNA_NAMETOASCII_UTF8]), [
-			AC_TRY_LINK([
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 				#include <unicode/uidna.h>
-			], [
+			]], [[
 				uidna_nameToASCII_UTF8(0, 0, 0, 0, 0, 0, 0);
-			], [
+			]])],[
 				PECL_CACHE_VAR([HAVE_UIDNA_NAMETOASCII_UTF8])=yes
-			], [
+			],[
 				PECL_CACHE_VAR([HAVE_UIDNA_NAMETOASCII_UTF8])=no
 			])
 		])

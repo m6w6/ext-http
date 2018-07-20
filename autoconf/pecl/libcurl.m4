@@ -46,7 +46,7 @@ dnl
 AC_DEFUN([PECL_HAVE_LIBCURL_SSLLIB], [
 	if test -z "$PECL_VAR([LIBCURL_SSLLIB])"; then
 		AC_CACHE_CHECK([for $1 providing SSL in libcurl], PECL_CACHE_VAR([HAVE_LIBCURL_$1]), [
-			AC_TRY_RUN([
+			AC_RUN_IFELSE([AC_LANG_SOURCE([[
 				#include <strings.h>
 				#include <curl/curl.h>
 				int main(int argc, char *argv[]) {
@@ -58,11 +58,11 @@ AC_DEFUN([PECL_HAVE_LIBCURL_SSLLIB], [
 					}
 					return 1;
 				}
-			], [
+			]])],[
 				PECL_CACHE_VAR([HAVE_LIBCURL_$1])=yes
-			], [
+			],[
 				PECL_CACHE_VAR([HAVE_LIBCURL_$1])=no
-			])
+			],[])
 		])
 		PECL_VAR([HAVE_LIBCURL_$1])=$PECL_CACHE_VAR([HAVE_LIBCURL_$1])
 		if $PECL_VAR([HAVE_LIBCURL_$1]); then
@@ -106,9 +106,9 @@ AC_DEFUN([PECL_HAVE_LIBCURL_SSL], [dnl
 			AC_CACHE_CHECK([whether NSS PEM is available], [PECL_CACHE_VAR([HAVE_LIBCURL_NSSPEM])], [
 				PECL_SAVE_ENV([LIBS], [NSSPEM])
 				LIBS="$LIBS -lnsspem"
-				AC_TRY_LINK([], [(void)0;], [
+				AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[(void)0;]])],[
 					PECL_CACHE_VAR([HAVE_LIBCURL_NSSPEM])=yes
-				], [
+				],[
 					PECL_CACHE_VAR([HAVE_LIBCURL_NSSPEM])=no
 				])
 				PECL_RESTORE_ENV([LIBS], [NSSPEM])
@@ -129,25 +129,21 @@ AC_DEFUN([PECL_HAVE_LIBCURL_SSL], [dnl
 		PECL_HAVE_CONST([curl/curl.h], [CURLOPT_TLSAUTH_TYPE], int, [
 			AC_CACHE_CHECK([whether CURLOPT_TLSAUTH_TYPE expects CURL_TLSAUTH_SRP], PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP]), [
 				PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=
-				AC_TRY_RUN([
+				AC_RUN_IFELSE([AC_LANG_SOURCE([[
 					#include <curl/curl.h>
 					int main(int argc, char *argv[]) {
 						CURL *ch = curl_easy_init();
 						return curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, CURL_TLSAUTH_SRP);
 					}
-				], [
-					PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=yes
-				], [
-					AC_TRY_RUN([
+				]])],[PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=yes],[
+					AC_RUN_IFELSE([AC_LANG_SOURCE([[
 						#include <curl/curl.h>
 						int main(int argc, char *argv[]) {
 							CURL *ch = curl_easy_init();
 							return curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, "SRP");
 						}
-					], [
-						PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=no
-					])
-				])
+					]])],[PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=no],[],[])
+				],[])
 			])
 			if test -n "$PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])"; then
 				PECL_DEFINE([HAVE_LIBCURL_TLSAUTH_TYPE])
@@ -167,7 +163,7 @@ dnl PECL_HAVE_LIBCURL_ARES
 dnl
 AC_DEFUN([PECL_HAVE_LIBCURL_ARES], [
 	AC_CACHE_CHECK([for c-ares providing AsynchDNS in libcurl], PECL_CACHE_VAR([HAVE_LIBCURL_ARES]), [
-		AC_TRY_RUN([
+		AC_RUN_IFELSE([AC_LANG_SOURCE([[
 			#include <curl/curl.h>
 			int main(int argc, char *argv[]) {
 				curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
@@ -176,11 +172,11 @@ AC_DEFUN([PECL_HAVE_LIBCURL_ARES], [
 				}
 				return 1;
 			}
-		], [
+		]])],[
 			PECL_CACHE_VAR([HAVE_LIBCURL_ARES])=yes
-		], [
+		],[
 			PECL_CACHE_VAR([HAVE_LIBCURL_ARES])=no
-		])
+		],[])
 	])
 	PECL_VAR([HAVE_LIBCURL_ARES])=$PECL_CACHE_VAR([HAVE_LIBCURL_ARES])
 	if $PECL_VAR([HAVE_LIBCURL_ARES]); then
