@@ -516,7 +516,11 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		zval ti_array, subarray;
 		struct curl_tlssessioninfo *ti;
 
+#if PHP_HTTP_CURL_VERSION(7,48,0)
+		if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TLS_SSL_PTR, &ti)) {
+#else
 		if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TLS_SESSION, &ti)) {
+#endif
 			char *backend;
 
 			ZVAL_NULL(&subarray);
@@ -530,15 +534,22 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 				backend = "openssl";
 #if PHP_HTTP_HAVE_LIBCURL_OPENSSL
 				{
+#if PHP_HTTP_CURL_VERSION(7,48,0)
+					SSL *ssl = ti->internals;
+					SSL_CTX *ctx = ssl ? SSL_get_SSL_CTX(ssl) : NULL;
+#else
 					SSL_CTX *ctx = ti->internals;
+#endif
 
 					array_init(&subarray);
-					add_assoc_long_ex(&subarray, ZEND_STRL("number"), SSL_CTX_sess_number(ctx));
-					add_assoc_long_ex(&subarray, ZEND_STRL("connect"), SSL_CTX_sess_connect(ctx));
-					add_assoc_long_ex(&subarray, ZEND_STRL("connect_good"), SSL_CTX_sess_connect_good(ctx));
-					add_assoc_long_ex(&subarray, ZEND_STRL("connect_renegotiate"), SSL_CTX_sess_connect_renegotiate(ctx));
-					add_assoc_long_ex(&subarray, ZEND_STRL("hits"), SSL_CTX_sess_hits(ctx));
-					add_assoc_long_ex(&subarray, ZEND_STRL("cache_full"), SSL_CTX_sess_cache_full(ctx));
+					if (ctx) {
+						add_assoc_long_ex(&subarray, ZEND_STRL("number"), SSL_CTX_sess_number(ctx));
+						add_assoc_long_ex(&subarray, ZEND_STRL("connect"), SSL_CTX_sess_connect(ctx));
+						add_assoc_long_ex(&subarray, ZEND_STRL("connect_good"), SSL_CTX_sess_connect_good(ctx));
+						add_assoc_long_ex(&subarray, ZEND_STRL("connect_renegotiate"), SSL_CTX_sess_connect_renegotiate(ctx));
+						add_assoc_long_ex(&subarray, ZEND_STRL("hits"), SSL_CTX_sess_hits(ctx));
+						add_assoc_long_ex(&subarray, ZEND_STRL("cache_full"), SSL_CTX_sess_cache_full(ctx));
+					}
 				}
 #endif
 				break;
@@ -550,11 +561,13 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 					char *desc;
 
 					array_init(&subarray);
-					if ((desc = gnutls_session_get_desc(sess))) {
-						add_assoc_string_ex(&subarray, ZEND_STRL("desc"), desc);
-						gnutls_free(desc);
+					if (sess) {
+						if ((desc = gnutls_session_get_desc(sess))) {
+							add_assoc_string_ex(&subarray, ZEND_STRL("desc"), desc);
+							gnutls_free(desc);
+						}
+						add_assoc_bool_ex(&subarray, ZEND_STRL("resumed"), gnutls_session_is_resumed(sess));
 					}
-					add_assoc_bool_ex(&subarray, ZEND_STRL("resumed"), gnutls_session_is_resumed(sess));
 				}
 #endif
 				break;

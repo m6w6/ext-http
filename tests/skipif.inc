@@ -36,6 +36,12 @@ function skip_client_test($message = "skip need a client driver\n") {
 	}
 }
 
+function skip_curl_test($version) {
+	if (!version_compare(http\Client\Curl\Versions\CURL, $version, "<=")) {
+		die("need at least libcurl version $version\n");
+	}
+}
+
 function skip_http2_test($message = "skip need http2 support") {
 	if (!defined("http\\Client\\Curl\\HTTP_VERSION_2_0")) {
 		die("$message (HTTP_VERSION_2_0)\n");

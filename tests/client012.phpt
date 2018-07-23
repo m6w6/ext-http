@@ -5,6 +5,7 @@ client ssl
 include "skipif.inc";
 skip_online_test();
 skip_client_test();
+skip_curl_test("7.34.0");
 ?>
 --FILE--
 <?php 
@@ -21,17 +22,36 @@ var_dump(
 	) === $client->getSslOptions()
 );
 
+$client->attach($observer = new class implements SplObserver { 
+	public $data = [];
+	function update(SplSubject $client, $req = null, $progress = null) {
+		$ti = $client->getTransferInfo($req);
+		if (isset($ti->tls_session["internals"])) {
+			foreach ((array) $ti->tls_session["internals"] as $key => $val) {
+				if (!isset($this->data[$key]) || $this->data[$key] < $val) {
+					$this->data[$key] = $val;
+				}
+			}
+		}
+	}
+});
+
 $client->enqueue($req = new http\Client\Request("GET", "https://twitter.com/"));
 $client->send();
 
-$ti = (array) $client->getTransferInfo($req);
-var_dump(array_key_exists("ssl_engines", $ti));
-var_dump(0 < count($ti["ssl_engines"]) || $ti["tls_session"]["backend"] != "openssl");
+switch ($client->getTransferInfo($req)->tls_session["backend"]) {
+	case "openssl":
+	case "gnutls":
+		if (count($observer->data) < 1) {
+			die("failed count(ssl.internals) >= 1\n");
+		}
+		break;
+	default:
+		break;
+}
 ?>
 Done
 --EXPECTF--
 Test
-bool(true)
-bool(true)
 bool(true)
 Done
