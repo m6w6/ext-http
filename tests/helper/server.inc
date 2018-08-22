@@ -26,14 +26,49 @@ if ($php) {
 
 foreach (array("raphf", "propro", "http") as $ext) {
 	if (!extension_loaded($ext)) {
-		switch (PHP_SHLIB_SUFFIX) {
-			case "dll":
-				dl("php_$ext.dll"); 
-				break;
-			default:
-				dl($ext .".". PHP_SHLIB_SUFFIX);
+		dl(ext_lib_name($ext));
+	}
+}
+
+function get_extension_load_arg($bin, $args, $ext) {
+	$bin = escapeshellcmd($bin);
+	$args = implode(' ', array_map('escapeshellarg', $args));
+
+	// check if php will load the extension with the existing args
+	exec(sprintf('%s %s -m', $bin, $args), $output);
+
+	foreach ($output as $line ) {
+		if (trim($line) === $ext) {
+			return null;
 		}
 	}
+
+	// try to load the extension with an arg
+	$arg = '-dextension=' . ini_get('extension_dir') . '/' . ext_lib_name($ext);
+	exec(sprintf('%s %s %s -m', $bin, $args, escapeshellarg($arg)), $output);
+
+	foreach ($output as $line ) {
+		if (trim($line) === $ext) {
+			return $arg;
+		}
+	}
+
+	// check if the child will be able to dl() the extension
+	$success = shell_exec(sprintf('%s %s -r "echo (int)dl(%s);', $bin, $args, var_export(ext_lib_name($ext), true)));
+	if ($success) {
+		return null;
+	}
+
+	echo "Unable to load extension '{$ext}' in child process";
+	exit(1);
+}
+
+function ext_lib_name($ext) {
+	if (PHP_SHLIB_SUFFIX === 'dll') {
+		return "php_{$ext}.dll";
+	}
+
+	return $ext . "." . PHP_SHLIB_SUFFIX;
 }
 
 function serve($cb) {
@@ -77,11 +112,31 @@ function serve($cb) {
 }
 
 function server($handler, $cb) {
-	$args = explode(' ', getenv('TEST_PHP_ARGS'));
-	$args[] = __DIR__."/$handler";
-	foreach ($args as $k => $v) {
-		if (!$v) unset($args[$k]);
+	$args = [];
+	$argList = preg_split('#\s+#', getenv('TEST_PHP_ARGS'), -1, PREG_SPLIT_NO_EMPTY);
+	for ($i = 0; isset($argList[$i]); $i++) {
+		if ($argList[$i] === '-c') {
+			array_push($args, '-c', $argList[++$i]);
+			continue;
+		}
+		if ($argList[$i] === '-n') {
+			$args[] = '-n';
+			continue;
+		}
+		if ($argList[$i] === '-d') {
+			$args[] = '-d' . $args[++$i];
+			continue;
+		}
+		if (substr($argList[$i], 0, 2) === '-d') {
+			$args[] = $argList[$i];
+		}
 	}
+	foreach (['raphf', 'propro', 'http'] as $ext) {
+		if (null !== $arg = get_extension_load_arg(PHP_BIN, $args, $ext)) {
+			$args[] = $arg;
+		}
+	}
+	$args[] = __DIR__ . '/' . $handler;
 	proc(PHP_BIN, $args, $cb);
 }
 
