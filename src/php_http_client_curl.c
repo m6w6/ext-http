@@ -516,11 +516,7 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		zval ti_array, subarray;
 		struct curl_tlssessioninfo *ti;
 
-#if PHP_HTTP_CURL_VERSION(7,48,0)
-		if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TLS_SSL_PTR, &ti)) {
-#else
 		if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TLS_SESSION, &ti)) {
-#endif
 			char *backend;
 
 			ZVAL_NULL(&subarray);
@@ -534,12 +530,7 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 				backend = "openssl";
 #if PHP_HTTP_HAVE_LIBCURL_OPENSSL
 				{
-#if PHP_HTTP_CURL_VERSION(7,48,0)
-					SSL *ssl = ti->internals;
-					SSL_CTX *ctx = ssl ? SSL_get_SSL_CTX(ssl) : NULL;
-#else
 					SSL_CTX *ctx = ti->internals;
-#endif
 
 					array_init(&subarray);
 					if (ctx) {
