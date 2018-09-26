@@ -17,8 +17,17 @@ phpize
 ./configure
 make clean
 
- 
+
 $COVERITY_BIN --dir $COVERITY_BUILD_DIR/cov-int make -j8
+
+echo >&2
+echo -n "Submit results to scan.coverity.com? (y/N) " >&2
+read submit
+echo >&2
+
+if test "$submit" != "y"; then
+	exit
+fi
 
 pushd $COVERITY_BUILD_DIR
 tar -czf cov-int{.tgz,}

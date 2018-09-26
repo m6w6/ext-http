@@ -13,6 +13,14 @@
 #ifndef PHP_HTTP_API_H
 #define PHP_HTTP_API_H
 
+#ifdef __COVERITY_GCC_VERSION_AT_LEAST
+# define _Float128 float
+# define _Float64 float
+# define _Float32 float
+# define _Float64x float
+# define _Float32x float
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
