@@ -680,7 +680,7 @@ PHP_METHOD(HttpQueryString, offsetUnset)
 }
 
 static zend_function_entry php_http_querystring_methods[] = {
-	PHP_ME(HttpQueryString, __construct, ai_HttpQueryString___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR|ZEND_ACC_FINAL)
+	PHP_ME(HttpQueryString, __construct, ai_HttpQueryString___construct, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
 
 	PHP_ME(HttpQueryString, toArray, ai_HttpQueryString_toArray, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpQueryString, toString, ai_HttpQueryString_toString, ZEND_ACC_PUBLIC)

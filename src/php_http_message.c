@@ -1993,7 +1993,7 @@ static PHP_METHOD(HttpMessage, current)
 }
 
 static zend_function_entry php_http_message_methods[] = {
-	PHP_ME(HttpMessage, __construct,        ai_HttpMessage___construct,        ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpMessage, __construct,        ai_HttpMessage___construct,        ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, getBody,            ai_HttpMessage_getBody,            ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, setBody,            ai_HttpMessage_setBody,            ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, addBody,            ai_HttpMessage_addBody,            ZEND_ACC_PUBLIC)

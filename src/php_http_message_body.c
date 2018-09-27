@@ -907,7 +907,7 @@ PHP_METHOD(HttpMessageBody, stat)
 }
 
 static zend_function_entry php_http_message_body_methods[] = {
-	PHP_ME(HttpMessageBody, __construct,  ai_HttpMessageBody___construct,  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpMessageBody, __construct,  ai_HttpMessageBody___construct,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, __toString,   ai_HttpMessageBody___toString,   ZEND_ACC_PUBLIC)
 	PHP_MALIAS(HttpMessageBody, toString, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
 	PHP_MALIAS(HttpMessageBody, serialize, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)

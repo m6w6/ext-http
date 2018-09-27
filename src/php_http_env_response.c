@@ -1393,7 +1393,7 @@ static PHP_METHOD(HttpEnvResponse, send)
 }
 
 static zend_function_entry php_http_env_response_methods[] = {
-	PHP_ME(HttpEnvResponse, __construct,             ai_HttpEnvResponse___construct,             ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpEnvResponse, __construct,             ai_HttpEnvResponse___construct,             ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, __invoke,                ai_HttpEnvResponse___invoke,                ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setEnvRequest,           ai_HttpEnvResponse_setEnvRequest,           ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvResponse, setCookie,               ai_HttpEnvResponse_setCookie,               ZEND_ACC_PUBLIC)

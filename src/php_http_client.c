@@ -1314,7 +1314,7 @@ static PHP_METHOD(HttpClient, setDebug)
 }
 
 static zend_function_entry php_http_client_methods[] = {
-	PHP_ME(HttpClient, __construct,          ai_HttpClient_construct,            ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpClient, __construct,          ai_HttpClient_construct,            ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, reset,                ai_HttpClient_reset,                ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, enqueue,              ai_HttpClient_enqueue,              ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClient, dequeue,              ai_HttpClient_dequeue,              ZEND_ACC_PUBLIC)

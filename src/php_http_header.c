@@ -398,7 +398,7 @@ PHP_METHOD(HttpHeader, parse)
 }
 
 static zend_function_entry php_http_header_methods[] = {
-	PHP_ME(HttpHeader, __construct,   ai_HttpHeader___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpHeader, __construct,   ai_HttpHeader___construct, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, serialize,     ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(HttpHeader, __toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(HttpHeader, toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)

@@ -273,7 +273,7 @@ static PHP_METHOD(HttpClientRequest, getSslOptions)
 }
 
 static zend_function_entry php_http_client_request_methods[] = {
-	PHP_ME(HttpClientRequest, __construct,    ai_HttpClientRequest___construct,    ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpClientRequest, __construct,    ai_HttpClientRequest___construct,    ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClientRequest, setContentType, ai_HttpClientRequest_setContentType, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClientRequest, getContentType, ai_HttpClientRequest_getContentType, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpClientRequest, setQuery,       ai_HttpClientRequest_setQuery,       ZEND_ACC_PUBLIC)

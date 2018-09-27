@@ -640,7 +640,7 @@ static PHP_METHOD(HttpEncodingStream, finish)
 }
 
 static zend_function_entry php_http_encoding_stream_methods[] = {
-	PHP_ME(HttpEncodingStream, __construct,  ai_HttpEncodingStream___construct,  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpEncodingStream, __construct,  ai_HttpEncodingStream___construct,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEncodingStream, update,       ai_HttpEncodingStream_update,       ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEncodingStream, flush,        ai_HttpEncodingStream_flush,        ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEncodingStream, done,         ai_HttpEncodingStream_done,         ZEND_ACC_PUBLIC)

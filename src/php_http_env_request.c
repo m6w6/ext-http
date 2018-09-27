@@ -245,7 +245,7 @@ static PHP_METHOD(HttpEnvRequest, getFiles)
 }
 
 static zend_function_entry php_http_env_request_methods[] = {
-	PHP_ME(HttpEnvRequest, __construct,  ai_HttpEnvRequest___construct,  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(HttpEnvRequest, __construct,  ai_HttpEnvRequest___construct,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvRequest, getForm,      ai_HttpEnvRequest_getForm,      ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvRequest, getQuery,     ai_HttpEnvRequest_getQuery,     ZEND_ACC_PUBLIC)
 	PHP_ME(HttpEnvRequest, getCookie,    ai_HttpEnvRequest_getCookie,    ZEND_ACC_PUBLIC)

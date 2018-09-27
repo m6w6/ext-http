@@ -1290,7 +1290,7 @@ PHP_METHOD(HttpParams, offsetSet)
 }
 
 static zend_function_entry php_http_params_methods[] = {
-	PHP_ME(HttpParams, __construct,   ai_HttpParams___construct,   ZEND_ACC_PUBLIC|ZEND_ACC_CTOR|ZEND_ACC_FINAL)
+	PHP_ME(HttpParams, __construct,   ai_HttpParams___construct,   ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
 
 	PHP_ME(HttpParams, toArray,       ai_HttpParams_toArray,       ZEND_ACC_PUBLIC)
 	PHP_ME(HttpParams, toString,      ai_HttpParams_toString,      ZEND_ACC_PUBLIC)
