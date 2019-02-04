@@ -105,7 +105,7 @@ static PHP_METHOD(HttpClientResponse, getTransferInfo)
 
 	/* request completed? */
 	if (Z_TYPE_P(info) != IS_OBJECT) {
-		php_http_throw(bad_method_call, "Incomplete state", NULL);
+		php_http_throw(bad_method_call, "Incomplete state");
 		return;
 	}
 

@@ -776,7 +776,7 @@ ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *msg
 		case IS_RESOURCE:
 			php_stream_from_zval_no_verify(s, zbody);
 			if (!s) {
-				php_http_throw(unexpected_val, "The stream is not a valid resource", NULL);
+				php_http_throw(unexpected_val, "The stream is not a valid resource");
 				return FAILURE;
 			}
 
@@ -1076,7 +1076,7 @@ static PHP_METHOD(HttpMessage, __construct)
 			php_http_buffer_init_ex(&buf, 0x1000, PHP_HTTP_BUFFER_INIT_PREALLOC);
 			if (PHP_HTTP_MESSAGE_PARSER_STATE_FAILURE == php_http_message_parser_parse_stream(&p, &buf, s, flags, &msg)) {
 				if (!EG(exception)) {
-					php_http_throw(bad_message, "Could not parse message from stream", NULL);
+					php_http_throw(bad_message, "Could not parse message from stream");
 				}
 			}
 			php_http_buffer_dtor(&buf);
@@ -1084,7 +1084,7 @@ static PHP_METHOD(HttpMessage, __construct)
 		}
 
 		if (!msg && !EG(exception)) {
-			php_http_throw(bad_message, "Empty message received from stream", NULL);
+			php_http_throw(bad_message, "Empty message received from stream");
 		}
 	} else if (zmessage) {
 		zend_string *zs_msg = zval_get_string(zmessage);
@@ -1092,7 +1092,7 @@ static PHP_METHOD(HttpMessage, __construct)
 		msg = php_http_message_parse(NULL, zs_msg->val, zs_msg->len, greedy);
 
 		if (!msg && !EG(exception)) {
-			php_http_throw(bad_message, "Could not parse message: %.*s", MIN(25, zs_msg->len), zs_msg->val);
+			php_http_throw(bad_message, "Could not parse message: %.*s", (int)MIN(25, zs_msg->len), zs_msg->val);
 		}
 		zend_string_release(zs_msg);
 	}
@@ -1492,7 +1492,7 @@ static PHP_METHOD(HttpMessage, setResponseCode)
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 	if (obj->message->type != PHP_HTTP_RESPONSE) {
-		php_http_throw(bad_method_call, "http\\Message is not of type response", NULL);
+		php_http_throw(bad_method_call, "http\\Message is not of type response");
 		return;
 	}
 
@@ -1544,7 +1544,7 @@ static PHP_METHOD(HttpMessage, setResponseStatus)
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 	if (obj->message->type != PHP_HTTP_RESPONSE) {
-		php_http_throw(bad_method_call, "http\\Message is not of type response", NULL);
+		php_http_throw(bad_method_call, "http\\Message is not of type response");
 	}
 
 	PTR_SET(obj->message->http.info.response.status, estrndup(status, status_len));
@@ -1589,12 +1589,12 @@ static PHP_METHOD(HttpMessage, setRequestMethod)
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 	if (obj->message->type != PHP_HTTP_REQUEST) {
-		php_http_throw(bad_method_call, "http\\Message is not of type request", NULL);
+		php_http_throw(bad_method_call, "http\\Message is not of type request");
 		return;
 	}
 
 	if (method_len < 1) {
-		php_http_throw(invalid_arg, "Cannot set http\\Message's request method to an empty string", NULL);
+		php_http_throw(invalid_arg, "Cannot set http\\Message's request method to an empty string");
 		return;
 	}
 
@@ -1645,7 +1645,7 @@ static PHP_METHOD(HttpMessage, setRequestUrl)
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 	if (obj->message->type != PHP_HTTP_REQUEST) {
-		php_http_throw(bad_method_call, "http\\Message is not of type request", NULL);
+		php_http_throw(bad_method_call, "http\\Message is not of type request");
 		return;
 	}
 
@@ -1655,7 +1655,7 @@ static PHP_METHOD(HttpMessage, setRequestUrl)
 
 	if (url && php_http_url_is_empty(url)) {
 		php_http_url_free(&url);
-		php_http_throw(invalid_arg, "Cannot set http\\Message's request url to an empty string", NULL);
+		php_http_throw(invalid_arg, "Cannot set http\\Message's request url to an empty string");
 	} else if (url) {
 		PTR_SET(obj->message->http.info.request.url, url);
 	}
@@ -1675,7 +1675,7 @@ static PHP_METHOD(HttpMessage, getParentMessage)
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 	if (!obj->message->parent) {
-		php_http_throw(unexpected_val, "http\\Message has not parent message", NULL);
+		php_http_throw(unexpected_val, "http\\Message has not parent message");
 		return;
 	}
 
@@ -1832,7 +1832,7 @@ static PHP_METHOD(HttpMessage, prepend)
 	for (msg[0] = obj->message; msg[0]; msg[0] = msg[0]->parent) {
 		for (msg[1] = prepend_obj->message; msg[1]; msg[1] = msg[1]->parent) {
 			if (msg[0] == msg[1]) {
-				php_http_throw(unexpected_val, "Cannot prepend a message located within the same message chain", NULL);
+				php_http_throw(unexpected_val, "Cannot prepend a message located within the same message chain");
 				return;
 			}
 		}
@@ -1892,7 +1892,7 @@ static PHP_METHOD(HttpMessage, splitMultipartBody)
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 	if (!php_http_message_is_multipart(obj->message, &boundary)) {
-		php_http_throw(bad_method_call, "http\\Message is not a multipart message", NULL);
+		php_http_throw(bad_method_call, "http\\Message is not a multipart message");
 		return;
 	}
 

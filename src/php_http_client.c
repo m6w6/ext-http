@@ -583,7 +583,7 @@ static PHP_METHOD(HttpClient, __construct)
 		php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|S!S!", &driver_name, &persistent_handle_name), invalid_arg, return);
 
 		if (!zend_hash_num_elements(&php_http_client_drivers)) {
-			php_http_throw(unexpected_val, "No http\\Client drivers available", NULL);
+			php_http_throw(unexpected_val, "No http\\Client drivers available");
 			return;
 		}
 		if (!(driver = php_http_client_driver_get(driver_name))) {
@@ -697,7 +697,7 @@ static PHP_METHOD(HttpClient, enqueue)
 	msg_obj = PHP_HTTP_OBJ(NULL, request);
 
 	if (php_http_client_enqueued(obj->client, msg_obj->message, NULL)) {
-		php_http_throw(bad_method_call, "Failed to enqueue request; request already in queue", NULL);
+		php_http_throw(bad_method_call, "Failed to enqueue request; request already in queue");
 		return;
 	}
 
@@ -749,7 +749,7 @@ static PHP_METHOD(HttpClient, dequeue)
 	msg_obj = PHP_HTTP_OBJ(NULL, request);
 
 	if (!php_http_client_enqueued(obj->client, msg_obj->message, NULL)) {
-		php_http_throw(bad_method_call, "Failed to dequeue request; request not in queue", NULL);
+		php_http_throw(bad_method_call, "Failed to dequeue request; request not in queue");
 		return;
 	}
 
@@ -843,7 +843,7 @@ static PHP_METHOD(HttpClient, getResponse)
 		}
 
 		/* not found for the request! */
-		php_http_throw(unexpected_val, "Could not find response for the request", NULL);
+		php_http_throw(unexpected_val, "Could not find response for the request");
 		return;
 	}
 
@@ -999,7 +999,7 @@ static PHP_METHOD(HttpClient, notify)
 	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
-		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
+		php_http_throw(unexpected_val, "Observer storage is corrupted");
 		return;
 	}
 
@@ -1045,7 +1045,7 @@ static PHP_METHOD(HttpClient, attach)
 	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
-		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
+		php_http_throw(unexpected_val, "Observer storage is corrupted");
 		return;
 	}
 
@@ -1072,7 +1072,7 @@ static PHP_METHOD(HttpClient, detach)
 	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
-		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
+		php_http_throw(unexpected_val, "Observer storage is corrupted");
 		return;
 	}
 
@@ -1094,7 +1094,7 @@ static PHP_METHOD(HttpClient, getObservers)
 	observers = zend_read_property(php_http_client_class_entry, getThis(), ZEND_STRL("observers"), 0, &observers_tmp);
 
 	if (Z_TYPE_P(observers) != IS_OBJECT) {
-		php_http_throw(unexpected_val, "Observer storage is corrupted", NULL);
+		php_http_throw(unexpected_val, "Observer storage is corrupted");
 		return;
 	}
 
