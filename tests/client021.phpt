@@ -12,103 +12,110 @@ include "helper/server.inc";
 
 echo "Test\n";
 
-function dump($f) {
-	return;
-	readfile($f);
+function dump() {
+	global $tmpfile, $section;
+	printf("# %s\n", $section);
+	foreach (file($tmpfile) as $line) {
+		if ($line{0} === "#" || $line === "\n") {
+			continue;
+		}
+		printf("%s:\t%s", $tmpfile, $line);
+	}
 }
 
-function cookies($client) {
-	foreach ($client->getResponse()->getCookies() as $cookie) {
-		echo trim($cookie), "\n";
+function send_and_check($client, $cmp) {
+	global $section, $request;
+	$client->requeue($request)->send();
+	foreach ($client->getResponse()->getCookies() as $list) {
+		foreach ($list->getCookies() as $name => $value) {
+			if ($cmp[$name] != $value) {
+				printf("# %s\nExpected %s=%s, got %s\n",
+					$section, $name, $cmp[$name], $value);
+			}
+		}
 	}
+	#dump();
 }
 
 $tmpfile = tempnam(sys_get_temp_dir(), "cookie.");
 $request = new http\Client\Request("GET", "http://localhost");
 
+$section = "distinct clients";
+
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 1]);
 });
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 1]);
 });
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 1]);
 });
+
+$section = "reusing curl handles";
 
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client("curl", "test");
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 1]);
 });
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client("curl", "test");
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 2]);
 });
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client("curl", "test");
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 3]);
 });
+
+$section = "distict client with persistent cookies";
 
 $request->setOptions(array("cookiestore" => $tmpfile));
 
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 1]);
+	send_and_check($client, ["counter" => 2]);
+	send_and_check($client, ["counter" => 3]);
 });
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client;
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 4]);
+	send_and_check($client, ["counter" => 5]);
+	send_and_check($client, ["counter" => 6]);
 });
+
+$section = "distinct client with persistent cookies, but session cookies removed";
 
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port, "cookiesession" => true));
 	$client = new http\Client;
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 1]);
+	send_and_check($client, ["counter" => 1]);
+	send_and_check($client, ["counter" => 1]);
 });
+
+$section = "distinct client with persistent cookies, and session cookies kept";
 
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port, "cookiesession" => false));
 	$client = new http\Client;
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 2]);
+	send_and_check($client, ["counter" => 3]);
+	send_and_check($client, ["counter" => 4]);
 });
 
+$section = "reusing curl handles without persistent cookies and disabling cookie_share";
 
 $c = new http\Client("curl", "test");
 $c->configure(array("share_cookies" => false));
@@ -118,20 +125,17 @@ $request->setOptions(array("cookiestore" => null));
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client("curl", "test");
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 1]);
 });
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client("curl", "test");
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 1]);
 });
 server("cookie.inc", function($port) use($request, $tmpfile) {
 	$request->setOptions(array("port" => $port));
 	$client = new http\Client("curl", "test");
-	cookies($client->requeue($request)->send());
-dump($tmpfile);
+	send_and_check($client, ["counter" => 1]);
 });
 
 
@@ -141,25 +145,4 @@ unlink($tmpfile);
 ===DONE===
 --EXPECT--
 Test
-counter=1;
-counter=1;
-counter=1;
-counter=1;
-counter=2;
-counter=3;
-counter=1;
-counter=2;
-counter=3;
-counter=4;
-counter=5;
-counter=6;
-counter=1;
-counter=1;
-counter=1;
-counter=2;
-counter=3;
-counter=4;
-counter=1;
-counter=1;
-counter=1;
 ===DONE===

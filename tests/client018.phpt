@@ -4,6 +4,9 @@ client pipelining
 <?php 
 include "skipif.inc";
 skip_client_test();
+if (version_compare(http\Client\Curl\Versions\CURL, "7.62.0", ">=")) {
+	die("skip CURL_VERSION >= 7.62 -- pipelining disabled\n");
+}
 ?>
 --FILE--
 <?php 

@@ -1,9 +1,12 @@
 --TEST--
-client configuration
+client pipelining
 --SKIPIF--
 <?php
 include "skipif.inc";
 skip_client_test();
+if (version_compare(http\Client\Curl\Versions\CURL, "7.62.0", ">=")) {
+	die("skip CURL_VERSION >= 7.62 -- pipelining disabled\n");
+}
 ?>
 --FILE--
 <?php
@@ -18,7 +21,7 @@ server("pipeline.inc", function($port, $stdin) {
 	$request = new http\Client\Request("GET", "http://localhost:$port");
 	
 	$client = new http\Client();
-	$client->configure(array("pipelining" => true, "use_eventloop" => true));
+	$client->configure(array("pipelining" => false, "use_eventloop" => true));
 
 	$client->enqueue($request);
 	$client->send();
