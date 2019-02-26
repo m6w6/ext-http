@@ -27,16 +27,16 @@ before_cache:
 env:
  - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
  - PHP=7.1 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
- - PHP=7.3 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
- - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
- - PHP=7.2 with_http_libicu_dir=no with_http_libidn_dir=no with_http_libidn2_dir=no with_http_libcurl_dir=no with_http_libevent_dir=no
- - PHP=7.2 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
- - PHP=7.2 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
- - PHP=7.2 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
  - PHP=7.2 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
- - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.2 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libicu_dir=yes with_http_libidn_dir=no with_http_libidn2_dir=no 
- - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.2 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libidn_dir=yes with_http_libicu_dir=no with_http_libidn2_dir=no 
- - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.2 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libidn2_dir=yes with_http_libicu_dir=no with_http_libidn_dir=no 
+ - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
+ - PHP=7.3 with_http_libicu_dir=no with_http_libidn_dir=no with_http_libidn2_dir=no with_http_libcurl_dir=no with_http_libevent_dir=no
+ - PHP=7.3 enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
+ - PHP=7.3 enable_debug=yes enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
+ - PHP=7.3 enable_debug=no enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
+ - PHP=7.3 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
+ - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.3 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libicu_dir=yes with_http_libidn_dir=no with_http_libidn2_dir=no
+ - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.3 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libidn_dir=yes with_http_libicu_dir=no with_http_libidn2_dir=no
+ - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.3 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libidn2_dir=yes with_http_libicu_dir=no with_http_libidn_dir=no
 
 install:
  - ./travis/brotli.sh v1.0.2
