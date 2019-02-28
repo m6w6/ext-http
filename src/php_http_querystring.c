@@ -103,7 +103,7 @@ ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie
 	{
 		if (key.key) {
 			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(key.key->val, key.key->len, &xkey, oe, ie)) {
-				php_error_docref(NULL, E_WARNING, "Failed to convert '%.*s' from '%s' to '%s'", key.key->len, key.key->val, ie, oe);
+				php_error_docref(NULL, E_WARNING, "Failed to convert '%.*s' from '%s' to '%s'", (int) key.key->len, key.key->val, ie, oe);
 				return FAILURE;
 			}
 		}
@@ -113,7 +113,7 @@ ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie
 				if (key.key) {
 					zend_string_release(xkey);
 				}
-				php_error_docref(NULL, E_WARNING, "Failed to convert '%.*s' from '%s' to '%s'", Z_STRLEN_P(entry), Z_STRVAL_P(entry), ie, oe);
+				php_error_docref(NULL, E_WARNING, "Failed to convert '%.*s' from '%s' to '%s'", (int) Z_STRLEN_P(entry), Z_STRVAL_P(entry), ie, oe);
 				return FAILURE;
 			}
 			if (key.key) {
@@ -386,7 +386,7 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 		ZVAL_MAKE_REF(_GET);
 		zend_update_property(php_http_querystring_class_entry, return_value, ZEND_STRL("queryArray"), _GET);
 	} else {
-		php_http_throw(unexpected_val, "Could not acquire reference to superglobal GET array", NULL);
+		php_http_throw(unexpected_val, "Could not acquire reference to superglobal GET array");
 	}
 
 }

@@ -528,7 +528,7 @@ static PHP_METHOD(HttpEncodingStream, __construct)
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 
 	if (UNEXPECTED(obj->stream)) {
-		php_http_throw(bad_method_call, "http\\Encoding\\Stream cannot be initialized twice", NULL);
+		php_http_throw(bad_method_call, "http\\Encoding\\Stream cannot be initialized twice");
 		return;
 	}
 

@@ -501,7 +501,7 @@ ZEND_RESULT_CODE php_http_env_set_response_header_value(long http_code, const ch
 				return FAILURE;
 			}
 			h.response_code = http_code;
-			h.line_len = spprintf(&h.line, 0, "%.*s: %.*s", (int) name_len, name_str, data->len, data->val);
+			h.line_len = spprintf(&h.line, 0, "%s: %s", name_str, data->val);
 
 			ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h);
 

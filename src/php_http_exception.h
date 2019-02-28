@@ -14,8 +14,8 @@
 #define PHP_HTTP_EXCEPTION_H
 
 /* short hand for zend_throw_exception_ex */
-#define php_http_throw(e, fmt, ...) \
-	zend_throw_exception_ex(php_http_get_exception_ ##e## _class_entry(), 0, fmt, __VA_ARGS__)
+#define php_http_throw(e, ...) \
+	zend_throw_exception_ex(php_http_get_exception_ ##e## _class_entry(), 0, __VA_ARGS__)
 
 /* wrap a call with replaced zend_error_handling */
 #define php_http_expect(test, e, fail) \
