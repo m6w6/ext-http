@@ -44,6 +44,6 @@ Done
 Test
 http\Message is not of type request
 Cannot set http\Message's request url to an empty string
-http\Message has not parent message
+http\Message has no parent message
 Cannot prepend a message located within the same message chain
 Done
