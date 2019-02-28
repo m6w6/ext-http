@@ -370,21 +370,24 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, getGlobalInstance)
 {
 	zval *instance, *_GET;
-	zend_string *zs;
 
 	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
-	zs = zend_string_init(ZEND_STRL("instance"), 0);
-	instance = zend_std_get_static_property(php_http_querystring_class_entry, zs, 0);
-	zend_string_release(zs);
+	instance = zend_read_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), 0);
 
 	if (Z_TYPE_P(instance) == IS_OBJECT) {
 		RETVAL_ZVAL(instance, 1, 0);
 	} else if ((_GET = php_http_env_get_superglobal(ZEND_STRL("_GET")))) {
+		zval tmp, *qa;
+
 		ZVAL_OBJ(return_value, php_http_querystring_object_new(php_http_querystring_class_entry));
 
-		ZVAL_MAKE_REF(_GET);
-		zend_update_property(php_http_querystring_class_entry, return_value, ZEND_STRL("queryArray"), _GET);
+		ZVAL_STRING(&tmp, "queryArray");
+		qa = Z_OBJ_HT_P(return_value)->get_property_ptr_ptr(return_value, &tmp, BP_VAR_RW, NULL);
+		ZVAL_NEW_REF(qa, _GET);
+		zval_ptr_dtor(&tmp);
+
+		zend_update_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), return_value);
 	} else {
 		php_http_throw(unexpected_val, "Could not acquire reference to superglobal GET array");
 	}
