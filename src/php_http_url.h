@@ -62,7 +62,6 @@
 #define PHP_HTTP_URL_STDFLAGS		0x00332003
 
 typedef struct php_http_url {
-	/* compatible to php_url, but do not use php_url_free() */
 	char *scheme;
 	char *user;
 	char *pass;
