@@ -510,7 +510,8 @@ zend_class_entry *php_http_message_get_class_entry(void)
 }
 
 static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *rv);
-static void php_http_message_object_write_prop(zval *object, zval *member, zval *value, void **cache_slot);
+
+static PHP_WRITE_PROP_HANDLER_TYPE php_http_message_object_write_prop(zval *object, zval *member, zval *value, void **cache_slot);
 
 static zend_object_handlers php_http_message_object_handlers;
 static HashTable php_http_message_object_prophandlers;
@@ -923,7 +924,7 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 	return return_value;
 }
 
-static void php_http_message_object_write_prop(zval *object, zval *member, zval *value, void **cache_slot)
+static PHP_WRITE_PROP_HANDLER_TYPE php_http_message_object_write_prop(zval *object, zval *member, zval *value, void **cache_slot)
 {
 	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
 	php_http_message_object_prophandler_t *handler;
@@ -938,6 +939,7 @@ static void php_http_message_object_write_prop(zval *object, zval *member, zval 
 	}
 
 	zend_string_release(member_name);
+	PHP_WRITE_PROP_HANDLER_RETURN(value);
 }
 
 static HashTable *php_http_message_object_get_debug_info(zval *object, int *is_temp)

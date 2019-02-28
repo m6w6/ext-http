@@ -99,7 +99,11 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 
 #if PHP_DEBUG
 #	undef  HASH_OF
-#	define HASH_OF(p) ((HashTable*)(Z_TYPE_P(p)==IS_ARRAY ? Z_ARRVAL_P(p) : ((Z_TYPE_P(p)==IS_OBJECT ? Z_OBJ_HT_P(p)->get_properties((p)) : NULL))))
+#	if PHP_VERSION_ID >= 70500
+#		define HASH_OF(p) ((HashTable*)(Z_TYPE_P(p)==IS_ARRAY ? Z_ARRVAL_P(p) : ((Z_TYPE_P(p)==IS_OBJECT ? Z_OBJ_HT_P(p)->get_properties(Z_OBJ_P(p)) : NULL))))
+#	else
+#		define HASH_OF(p) ((HashTable*)(Z_TYPE_P(p)==IS_ARRAY ? Z_ARRVAL_P(p) : ((Z_TYPE_P(p)==IS_OBJECT ? Z_OBJ_HT_P(p)->get_properties((p)) : NULL))))
+#	endif
 #endif
 
 #ifndef GC_SET_REFCOUNT
@@ -126,6 +130,14 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 #	define HT_UNPROTECT_RECURSION(ht) ZEND_HASH_DEC_APPLY_COUNT(ht)
 #else
 #	define HT_UNPROTECT_RECURSION(ht) GC_UNPROTECT_RECURSION(ht)
+#endif
+
+#if PHP_VERSION_ID >= 70400
+#	define PHP_WRITE_PROP_HANDLER_TYPE zval *
+#	define PHP_WRITE_PROP_HANDLER_RETURN(v) return v
+#else
+#	define PHP_WRITE_PROP_HANDLER_TYPE void
+#	define PHP_WRITE_PROP_HANDLER_RETURN(v)
 #endif
 
 static inline void *PHP_HTTP_OBJ(zend_object *zo, zval *zv)
