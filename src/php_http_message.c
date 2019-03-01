@@ -895,6 +895,13 @@ void php_http_message_object_free(zend_object *object)
 	zend_object_std_dtor(object);
 }
 
+#if PHP_VERSION_ID >= 70400
+static zval *php_http_message_object_get_prop_ptr(zval *object, zval *member, int type, void **cache_slot)
+{
+	return NULL;
+}
+#endif
+
 static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *tmp)
 {
 	zval *return_value;
@@ -2064,7 +2071,11 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_object_handlers.read_property = php_http_message_object_read_prop;
 	php_http_message_object_handlers.write_property = php_http_message_object_write_prop;
 	php_http_message_object_handlers.get_debug_info = php_http_message_object_get_debug_info;
+#if PHP_VERSION_ID >= 70400
+	php_http_message_object_handlers.get_property_ptr_ptr = php_http_message_object_get_prop_ptr;
+#else
 	php_http_message_object_handlers.get_property_ptr_ptr = NULL;
+#endif
 	php_http_message_object_handlers.get_gc = php_http_message_object_get_gc;
 
 	zend_class_implements(php_http_message_class_entry, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
