@@ -378,21 +378,16 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 	if (Z_TYPE_P(instance) == IS_OBJECT) {
 		RETVAL_ZVAL(instance, 1, 0);
 	} else if ((_GET = php_http_env_get_superglobal(ZEND_STRL("_GET")))) {
-#if PHP_VERSION_ID >= 70200
 		zval tmp, *qa;
 
 		ZVAL_OBJ(return_value, php_http_querystring_object_new(php_http_querystring_class_entry));
 
 		ZVAL_STRING(&tmp, "queryArray");
 		qa = Z_OBJ_HT_P(return_value)->get_property_ptr_ptr(return_value, &tmp, BP_VAR_RW, NULL);
-		ZVAL_NEW_REF(qa, _GET);
 		zval_ptr_dtor(&tmp);
-#else
-		ZVAL_OBJ(return_value, php_http_querystring_object_new(php_http_querystring_class_entry));
 
-		ZVAL_MAKE_REF(_GET);
-		zend_update_property(php_http_querystring_class_entry, return_value, ZEND_STRL("queryArray"), _GET);
-#endif
+		ZVAL_NEW_REF(_GET, _GET);
+		ZVAL_COPY(qa, _GET);
 
 		zend_update_static_property(php_http_querystring_class_entry, ZEND_STRL("instance"), return_value);
 	} else {

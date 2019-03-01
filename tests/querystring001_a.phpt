@@ -14,6 +14,7 @@ echo "Test\n";
 printf("\nGlobal instance:\n");
 $q = http\QueryString::getGlobalInstance();
 printf("%s\n", $q);
+$q = http\QueryString::getGlobalInstance();
 
 printf("\nStandard getters:\n");
 var_dump($q->getString("str"));
