@@ -70,6 +70,15 @@ AC_DEFUN([PECL_RESTORE_ENV], [
 	$1=$PECL_SAVE_VAR([$2_$1])
 ])
 dnl
+dnl PECL_EVAL_LIBLINE(libline)
+dnl
+AC_DEFUN([PECL_EVAL_LIBLINE], [
+	PECL_SAVE_ENV(ext_shared, pecl)
+	ext_shared=no
+	PHP_EVAL_LIBLINE([$1], _pecl_eval_libline_dummy)
+	PECL_RESTORE_ENV(ext_shared, pecl)
+])
+dnl
 dnl PECL_PROG_EGREP
 dnl
 dnl Checks for an egrep. Defines $EGREP.
@@ -254,7 +263,7 @@ AC_DEFUN([PECL_CHECK_CUSTOM], [
 		CPPFLAGS="-I$PECL_CACHE_VAR([$1_prefix])/include"
 		LDFLAGS="-L$PECL_CACHE_VAR([$1_prefix])/$PHP_LIBDIR"
 		LIBS="-l$4"
-		PHP_EVAL_LIBLINE([$LDFLAGS $LIBS])
+		PECL_EVAL_LIBLINE([$LDFLAGS $LIBS])
 		
 		AC_CACHE_VAL(PECL_CACHE_VAR([$1_version]), [
 			pushd $PECL_CACHE_VAR([$1_prefix]) >/dev/null
@@ -311,8 +320,7 @@ AC_DEFUN([PECL_CHECK_CONFIG], [
 			PECL_CACHE_VAR([$1_libs])=$($2 $6)
 		])
 		LIBS=$PECL_CACHE_VAR([$1_libs])
-		
-		PHP_EVAL_LIBLINE([$LDFLAGS $LIBS])
+		PECL_EVAL_LIBLINE([$LDFLAGS $LIBS])
 	ifelse($2, [$PKG_CONFIG $1], [
 		fi
 	])
