@@ -82,6 +82,11 @@ foreach ($env as $grp) {
 ?>
 
 matrix:
+ include:
+  - os: linux
+    dist: trusty
+  - os: linux
+    dist: xenial  
  fast_finish: true
  allow_failures:
 <?php

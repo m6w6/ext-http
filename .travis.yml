@@ -38,6 +38,11 @@ env:
  - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.3 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libidn2_dir=yes with_http_libicu_dir=no with_http_libidn_dir=no 
 
 matrix:
+ include:
+  - os: linux
+    dist: trusty
+  - os: linux
+    dist: xenial  
  fast_finish: true
  allow_failures:
   - env: PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
