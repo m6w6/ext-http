@@ -5,13 +5,16 @@ language: c
 addons:
  apt:
   packages:
-   - php5-cli
+   - php-cli
    - php-pear
    - libcurl4-openssl-dev
    - libidn11-dev
    - libidn2-0-dev
    - libicu-dev
    - libevent-dev
+   - libbrotli-dev
+
+dist: xenial
 
 compiler:
  - gcc
@@ -37,7 +40,6 @@ $env = $gen([
 	"enable_json" => "yes",
 	"enable_hash" => "yes",
 	"enable_iconv" => "yes",
-	"with_http_libbrotli_dir" => "/home/travis/brotli"
 ], [
 // everything disabled for current
 	"PHP" => $cur,
@@ -46,6 +48,7 @@ $env = $gen([
 	"with_http_libidn2_dir" => "no",
 	"with_http_libcurl_dir" => "no",
 	"with_http_libevent_dir" => "no",
+	"with_http_libbrotli_dir" => "no",
 ], [
 // everything enabled for current, switching on debug/zts
 	"PHP" => $cur,
@@ -54,7 +57,6 @@ $env = $gen([
 	"enable_json" => "yes",
 	"enable_hash" => "yes",
 	"enable_iconv" => "yes",
-	"with_http_libbrotli_dir" => "/home/travis/brotli",
 ], [
 // once everything enabled for current, with coverage
 	"CFLAGS" => "'-O0 -g --coverage'",
@@ -63,33 +65,26 @@ $env = $gen([
 	"enable_json" => "yes",
 	"enable_hash" => "yes",
 	"enable_iconv" => "yes",
-	"with_http_libbrotli_dir" => "/home/travis/brotli",
 	[
 		"with_http_libicu_dir",
 		"with_http_libidn_dir",
 		"with_http_libidn2_dir",
 	],
 ]);
-$allow_failures = [];
 foreach ($env as $grp) {
 	foreach ($grp as $e) {
-		if (!strncmp($e, "PHP=master", strlen("PHP=master"))) {
-			$allow_failures[] = $e;
-		}
 		printf(" - %s\n", $e);
 	}
 }
 ?>
 
 matrix:
- include:
-  - os: linux
-    dist: trusty
-  - os: linux
-    dist: xenial  
  fast_finish: true
  allow_failures:
 <?php
+$allow_failures = array_merge( ... array_map(function($a) {
+	return preg_grep('/^PHP=master /', $a);
+}, $env));
 foreach ($allow_failures as $e) {
 	printf("  - env: %s\n", $e);
 }
