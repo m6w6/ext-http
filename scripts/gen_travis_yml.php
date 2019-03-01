@@ -91,7 +91,6 @@ foreach ($allow_failures as $e) {
 ?>
 
 install:
- - ./travis/brotli.sh v1.0.2
  - |
    if test "$PHP" = master; then \
      make -f travis/pecl/Makefile reconf; \

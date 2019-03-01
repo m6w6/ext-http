@@ -46,7 +46,6 @@ matrix:
   - env: PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
 
 install:
- - ./travis/brotli.sh v1.0.2
  - |
    if test "$PHP" = master; then \
      make -f travis/pecl/Makefile reconf; \
