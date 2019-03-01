@@ -17,15 +17,11 @@ compiler:
  - clang
 
 cache:
+ apt: true
  directories:
   - $HOME/cache
 before_cache:
  - find $HOME/cache -name '*.gcda' -o -name '*.gcno' -delete
-
-matrix:
- fast_finish: true
- allow_failures:
-  - env: PHP=master
 
 env:
  - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
@@ -40,6 +36,11 @@ env:
  - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.3 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libicu_dir=yes with_http_libidn_dir=no with_http_libidn2_dir=no 
  - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.3 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libidn_dir=yes with_http_libicu_dir=no with_http_libidn2_dir=no 
  - CFLAGS='-O0 -g --coverage' CXXFLAGS='-O0 -g --coverage' PHP=7.3 enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli with_http_libidn2_dir=yes with_http_libicu_dir=no with_http_libidn_dir=no 
+
+matrix:
+ fast_finish: true
+ allow_failures:
+  - env: PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes with_http_libbrotli_dir=/home/travis/brotli
 
 install:
  - ./travis/brotli.sh v1.0.2

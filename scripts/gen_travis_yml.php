@@ -18,15 +18,11 @@ compiler:
  - clang
 
 cache:
+ apt: true
  directories:
   - $HOME/cache
 before_cache:
  - find $HOME/cache -name '*.gcda' -o -name '*.gcno' -delete
-
-matrix:
- fast_finish: true
- allow_failures:
-  - env: PHP=master
 
 env:
 <?php
@@ -74,12 +70,24 @@ $env = $gen([
 		"with_http_libidn2_dir",
 	],
 ]);
+$allow_failures = [];
 foreach ($env as $grp) {
 	foreach ($grp as $e) {
+		if (!strncmp($e, "PHP=master", strlen("PHP=master"))) {
+			$allow_failures[] = $e;
+		}
 		printf(" - %s\n", $e);
 	}
 }
+?>
 
+matrix:
+ fast_finish: true
+ allow_failures:
+<?php
+foreach ($allow_failures as $e) {
+	printf("  - env: %s\n", $e);
+}
 ?>
 
 install:
