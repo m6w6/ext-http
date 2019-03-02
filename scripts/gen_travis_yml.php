@@ -16,10 +16,6 @@ addons:
 
 dist: xenial
 
-compiler:
- - gcc
- - clang
-
 cache:
  apt: true
  directories:
@@ -50,8 +46,9 @@ $env = $gen([
 	"with_http_libevent_dir" => "no",
 	"with_http_libbrotli_dir" => "no",
 ], [
-// everything enabled for current, switching on debug/zts
+// everything enabled for current, switching on CC and debug/zts
 	"PHP" => $cur,
+	"CC" => ["gcc", "clang"],
 	"enable_debug",
 	"enable_maintainer_zts",
 	"enable_json" => "yes",
