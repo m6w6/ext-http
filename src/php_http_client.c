@@ -986,6 +986,7 @@ static int notify(zend_object_iterator *iter, void *puser)
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_notify, 0, 0, 0)
 	ZEND_ARG_OBJ_INFO(0, request, http\\Client\\Request, 1)
+	ZEND_ARG_INFO(0, progress)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, notify)
 {

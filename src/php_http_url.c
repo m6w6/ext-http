@@ -2088,13 +2088,13 @@ PHP_MINIT_FUNCTION(http_url)
 #endif
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("PARSE_TOPCT"), PHP_HTTP_URL_PARSE_TOPCT);
 
-	INIT_NS_CLASS_ENTRY(ce, "http\\Env", "Url", php_http_url_methods);
-	php_http_env_url_class_entry = zend_register_internal_class_ex(&ce, php_http_url_class_entry);
-
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("IGNORE_ERRORS"), PHP_HTTP_URL_IGNORE_ERRORS);
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("SILENT_ERRORS"), PHP_HTTP_URL_SILENT_ERRORS);
 
 	zend_declare_class_constant_long(php_http_url_class_entry, ZEND_STRL("STDFLAGS"), PHP_HTTP_URL_STDFLAGS);
+
+	INIT_NS_CLASS_ENTRY(ce, "http\\Env", "Url", NULL);
+	php_http_env_url_class_entry = zend_register_internal_class_ex(&ce, php_http_url_class_entry);
 
 	return SUCCESS;
 }
