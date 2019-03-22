@@ -3,21 +3,25 @@ client response cookies
 --SKIPIF--
 <?php
 include "skipif.inc";
-skip_online_test();
 skip_client_test();
 ?>
 --FILE--
 <?php
+
+include "helper/server.inc";
+
 echo "Test\n";
 
-$request = new http\Client\Request("GET", "http://dev.iworks.at/ext-http/.cookie.php");
-
-foreach (http\Client::getAvailableDrivers() as $driver) {
-	$client = new http\Client($driver);
-	foreach($client->enqueue($request)->send()->getResponse()->getCookies(0, array("comment")) as $cookies) {
-		var_dump($cookies->toArray());
+server("cookie2.inc", function($port) {
+	$request = new http\Client\Request("GET", "http://localhost:$port");
+	
+	foreach (http\Client::getAvailableDrivers() as $driver) {
+		$client = new http\Client($driver);
+		foreach($client->enqueue($request)->send()->getResponse()->getCookies(0, array("comment")) as $cookies) {
+			var_dump($cookies->toArray());
+		}
 	}
-}
+});
 ?>
 Done
 --EXPECTREGEX--
