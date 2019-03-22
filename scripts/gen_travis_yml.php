@@ -48,6 +48,7 @@ $env = $gen([
 ], [
 // everything enabled for current, switching debug/zts
 	"PHP" => $cur,
+	"PECL_EVENT" => "yes",
 	"enable_debug",
 	"enable_maintainer_zts",
 	"enable_json" => "yes",
@@ -96,6 +97,10 @@ install:
  - make -f travis/pecl/Makefile php || make -f travis/pecl/Makefile clean php
  - make -f travis/pecl/Makefile pecl PECL=ext-raphf.git:raphf:master
  - make -f travis/pecl/Makefile pecl PECL=ext-propro.git:propro:master
+ - |
+   if test "$PECL_EVENT" = "yes"; then \
+     make -f travis/pecl/Makefile pecl PECL=event; \
+   fi
 
 script:
  - make -f travis/pecl/Makefile ext PECL=http
