@@ -48,7 +48,8 @@ $env = $gen([
 ], [
 // everything enabled for current, switching debug/zts
 	"PHP" => $cur,
-	"PECL_EVENT" => "yes",
+	"PECLs" => "event",			// for tests/client029.phpt
+	"enable_sockets" => "yes",	// needed by pecl/event
 	"enable_debug",
 	"enable_maintainer_zts",
 	"enable_json" => "yes",
@@ -59,6 +60,8 @@ $env = $gen([
 	"CFLAGS" => "'-O0 -g --coverage'",
 	"CXXFLAGS" => "'-O0 -g --coverage'",
 	"PHP" => $cur,
+	"PECLs" => "event",			// for tests/client029.phpt
+	"enable_sockets" => "yes",	// needed by pecl/event
 	"enable_json" => "yes",
 	"enable_hash" => "yes",
 	"enable_iconv" => "yes",
@@ -98,8 +101,12 @@ install:
  - make -f travis/pecl/Makefile pecl PECL=ext-raphf.git:raphf:master
  - make -f travis/pecl/Makefile pecl PECL=ext-propro.git:propro:master
  - |
-   if test "$PECL_EVENT" = "yes"; then \
-     make -f travis/pecl/Makefile pecl PECL=event; \
+   if test -n "$PECLs"; then \
+     IFS=$','; \
+     for pecl in $PECLs; do \
+       make -f travis/pecl/Makefile pecl PECL=$pecl; \
+     done; \
+     unset IFS; \
    fi
 
 script:
