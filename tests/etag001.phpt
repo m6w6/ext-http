@@ -10,7 +10,7 @@ _ext("hash");
 $body = new http\Message\Body;
 $body->append("Hello, my old fellow.");
 foreach (hash_algos() as $algo) {
-    if (strncmp($algo, "sha3-", 5) && strncmp($algo, "sha512/", 7)) {
+    if (strncmp($algo, "sha3-", 5) && strncmp($algo, "sha512/", 7) && strcmp($algo, "crc32c")) {
         ini_set("http.etag.mode", $algo);
         printf("%10s: %s\n",
             $algo,
