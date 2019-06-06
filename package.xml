@@ -31,9 +31,9 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2018-07-19</date>
+ <date>2019-06-06</date>
  <version>
-  <release>3.2.1dev</release>
+  <release>3.2.1</release>
   <api>3.2.0</api>
  </version>
  <stability>
@@ -42,7 +42,14 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-*
+* Fixed gh-issue #88: Unable to run test suite (Remi Collet)
+* Fixed gh-issue #86: test failure with curl 7.64
+* Fixed gh-issue #85: [-Wformat-extra-args] build warnings
+* Fixed gh-issue #84: segfault and build failure since curl 7.62
+* Fixed gh-issue #82: Test harness improvements (Chris Wright)
+* Fixed http\QueryString::getGlobalInstance()
+* Fixed missing 2nd reflection argument info of http\Client::notify()
+* Fixed PHP-7.4 compatibility
 ]]></notes>
  <contents>
   <dir name="/">
@@ -154,7 +161,10 @@ https://mdref.m6w6.name/http
      </dir>
      <dir name="helper">
       <file role="test" name="cookie.inc"/>
+      <file role="test" name="cookie1.inc"/>
+      <file role="test" name="cookie2.inc"/>
       <file role="test" name="dump.inc"/>
+      <file role="test" name="env.inc"/>
       <file role="test" name="http2.crt"/>
       <file role="test" name="http2.key"/>
       <file role="test" name="pipeline.inc"/>

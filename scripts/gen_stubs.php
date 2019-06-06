@@ -11,9 +11,12 @@ function m($m, $c = null) {
 	}
 	return $n;
 }
-function t($p) {
-	if ($c = $p->getClass()) return "\\" . $c->getName() . " ";
-	if ($p->isArray()) return "array ";
+function t(ReflectionParameter $p) {
+	if ($c = $p->getClass()) return ($p->allowsNull()?"?":"") . "\\" . $c->getName() . " ";
+	if ($p->isArray()) return ($p->allowsNull() ? "?":"") . "array ";
+	if ($p->hasType()) {
+		return ($p->allowsNull() ? "?" : "") . ($p->getType()->isBuiltin() ? "" : "\\") . $p->getType()->getName() . " ";
+    }
 }
 function c($n, $c) {
     $_=$c;
@@ -115,7 +118,11 @@ foreach ($namespaces as $ns) {
                 }
                 $ps[] = $p1;
             }
-            fprintf($out, "%s) {\n\t}\n", implode(", ", $ps));
+            fprintf($out, "%s)", implode(", ", $ps));
+	        if ($f->hasReturnType()) {
+		        fprintf($out, " : %s%s", $f->getReturnType()->allowsNull() ? "?":"", $f->getReturnType()->getName());
+	        }
+	        fprintf($out, " {\n\t}\n");
         }
     }
     //
@@ -146,8 +153,14 @@ foreach ($namespaces as $ns) {
                 fprintf($out, "extends \\%s ", $p->getName());
             }
             if ($i = $c->getInterfaceNames()) {
-                fprintf($out, "implements \\%s ", 
-                        implode(", \\", array_filter($i, function($v) {
+                fprintf($out, "%s \\%s ",
+                        $c->isInterface() ? "extends" : "implements",
+                        implode(", \\", array_filter($i, function($v) use($c, $i) {
+                            foreach ($i as $ii) {
+                                if ($v != $ii && (new ReflectionClass($ii))->implementsInterface("\\".$v)) {
+                                    return false;
+                                }
+                            }
                             return $v != "Traversable";
                             
                         }))
@@ -191,6 +204,11 @@ foreach ($namespaces as $ns) {
                         $ps[] = $p1;
                     }
                     fprintf($out, "%s)", implode(", ", $ps));
+                    if ($m->hasReturnType()) {
+                        fprintf($out, " : %s%s%s", $m->getReturnType()->allowsNull() ? "?":"",
+                            $m->getReturnType()->isBuiltin() ? "" : "\\", //0 === strpos($m->getReturnType()->getName(), $c->getNamespaceName()) ? "\\":"",
+                            $m->getReturnType()->getName());
+                    }
                     if ($m->isAbstract()) {
                         fprintf($out, ";\n\n");
                     } else {
