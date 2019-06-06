@@ -124,7 +124,7 @@ function server($handler, $cb) {
 			continue;
 		}
 		if ($argList[$i] === '-d') {
-			$args[] = '-d' . $args[++$i];
+			$args[] = '-d' . $argList[++$i];
 			continue;
 		}
 		if (substr($argList[$i], 0, 2) === '-d') {
