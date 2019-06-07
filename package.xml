@@ -31,7 +31,7 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2019-06-06</date>
+ <date>2019-06-07</date>
  <version>
   <release>3.2.1</release>
   <api>3.2.0</api>
@@ -47,6 +47,7 @@ https://mdref.m6w6.name/http
 * Fixed gh-issue #85: [-Wformat-extra-args] build warnings
 * Fixed gh-issue #84: segfault and build failure since curl 7.62
 * Fixed gh-issue #82: Test harness improvements (Chris Wright)
+* Fixed gh-issue #64: compress and connecttimeout interfere with low_speed_limit (@rcanavan)
 * Fixed http\QueryString::getGlobalInstance()
 * Fixed missing 2nd reflection argument info of http\Client::notify()
 * Fixed PHP-7.4 compatibility
