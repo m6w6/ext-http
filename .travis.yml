@@ -26,6 +26,7 @@ env:
  - PHP=7.0 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=7.1 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=7.2 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
+ - PHP=7.4 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
  - PHP=7.3 with_http_libicu_dir=no with_http_libidn_dir=no with_http_libidn2_dir=no with_http_libcurl_dir=no with_http_libevent_dir=no with_http_libbrotli_dir=no
  - PHP=7.3 PECLs=event enable_sockets=yes enable_debug=no enable_maintainer_zts=no enable_json=yes enable_hash=yes enable_iconv=yes
@@ -39,6 +40,7 @@ env:
 matrix:
  fast_finish: true
  allow_failures:
+  - env: PHP=7.4 enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
   - env: PHP=master enable_debug=yes enable_maintainer_zts=yes enable_json=yes enable_hash=yes enable_iconv=yes
 
 install:
