@@ -2075,9 +2075,7 @@ static void php_http_client_curl_handler_clear(php_http_client_curl_handler_t *h
 	curl_easy_setopt(handler->handle, CURLOPT_COOKIELIST, "FLUSH");
 	curl_easy_setopt(handler->handle, CURLOPT_SHARE, NULL);
 	/* see gh issue #84 */
-	//if (php_http_curle_get_storage(handler->handle)->cookiestore) {
-		//curl_easy_setopt(handler->handle, CURLOPT_COOKIEJAR, NULL);
-	//}
+	curl_easy_setopt(handler->handle, CURLOPT_COOKIEJAR, NULL);
 }
 
 static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *handler)
