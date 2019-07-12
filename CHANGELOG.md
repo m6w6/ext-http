@@ -1,5 +1,34 @@
 # ChangeLog v3
 
+## 3.2.1, 2019-06-07
+
+* Fixed gh-issue #88: Unable to run test suite (Remi Collet)
+* Fixed gh-issue #86: test failure with curl 7.64
+* Fixed gh-issue #85: [-Wformat-extra-args] build warnings
+* Fixed gh-issue #84: segfault and build failure since curl 7.62
+* Fixed gh-issue #82: Test harness improvements (Chris Wright)
+* Fixed gh-issue #64: compress and connecttimeout interfere with low_speed_limit (@rcanavan)
+* Fixed http\QueryString::getGlobalInstance()
+* Fixed missing 2nd reflection argument info of http\Client::notify()
+* Fixed PHP-7.4 compatibility
+
+## 3.2.0, 2018-07-19 
+
+* PHP-7.2 compatibility
+* Fixed gh-issue #73: build fails with libidn and libidn2
++ Added brotli compression support
++ Implemented gh-issue #58: Notify observers before any request is built
+
+Changes from RC1:
+* Fixed gh-issue #78: PHP-7.3 build crashes
+
+## 3.2.0RC1, 2018-04-09
+
+* PHP-7.2 compatibility
+* Fixed gh-issue #73: build fails with libidn and libidn2
++ Added brotli compression support
++ Implemented gh-issue #58: Notify observers before any request is built
+
 ## 3.1.0, 2016-12-12
 
 + Added http\Client\Curl\User interface for userland event loops
