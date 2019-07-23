@@ -16,7 +16,7 @@ function dump() {
 	global $tmpfile, $section;
 	printf("# %s\n", $section);
 	foreach (file($tmpfile) as $line) {
-		if ($line{0} === "#" || $line === "\n") {
+		if ($line[0] === "#" || $line === "\n") {
 			continue;
 		}
 		printf("%s:\t%s", $tmpfile, $line);
