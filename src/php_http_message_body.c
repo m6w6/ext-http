@@ -214,7 +214,7 @@ size_t php_http_message_body_append(php_http_message_body_t *body, const char *b
 	written = php_stream_write(s, buf, len);
 
 	if (written != len) {
-		php_error_docref(NULL, E_WARNING, "Failed to append %zu bytes to body; wrote %zu", len, written);
+		php_error_docref(NULL, E_WARNING, "Failed to append %zu bytes to body; wrote %zu", len, written == (size_t) -1 ? 0 : written);
 	}
 
 	return len;
