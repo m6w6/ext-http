@@ -330,7 +330,7 @@ static inline char *format_key(php_http_arrkey_t *key, const char *prefix) {
 	} else if (key->key) {
 		new_key = estrdup(key->key->val);
 	} else {
-		new_key = estrdup("");
+		spprintf(&new_key, 0, "%lu", key->h);
 	}
 
 	return new_key;
