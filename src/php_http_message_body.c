@@ -392,14 +392,17 @@ static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const
 			ZEND_HASH_FOREACH_KEY_VAL_IND(files, key.h, key.key, val)
 			{
 				if (Z_TYPE_P(val) == IS_ARRAY || Z_TYPE_P(val) == IS_OBJECT) {
-					char *str = format_key(&key, name);
+					char *str = key.key ? format_key(&key, name) : NULL;
+					const char *prefix = str ?: name;
 
-					if (SUCCESS != add_recursive_files(body, str, HASH_OF(val))) {
+					if (SUCCESS != add_recursive_files(body, prefix, HASH_OF(val))) {
 						efree(str);
 						HT_UNPROTECT_RECURSION(files);
 						return FAILURE;
 					}
-					efree(str);
+					if (str) {
+						efree(str);
+					}
 				}
 			}
 			ZEND_HASH_FOREACH_END();
