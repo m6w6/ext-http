@@ -1477,7 +1477,7 @@ static PHP_METHOD(HttpMessage, getResponseCode)
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 		if (obj->message->type != PHP_HTTP_RESPONSE) {
-			php_error_docref(NULL, E_WARNING, "http\\Message is not if type response");
+			php_error_docref(NULL, E_WARNING, "http\\Message is not of type response");
 			RETURN_FALSE;
 		}
 
