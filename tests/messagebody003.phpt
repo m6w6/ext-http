@@ -10,7 +10,7 @@ echo "Test\n";
 
 $file = new http\Message\Body(fopen(__FILE__, "r"));
 try {
-	$file->append("nope");
+	@$file->append("nope");
 } catch (Exception $e) {
 	echo $e, "\n";
 }
