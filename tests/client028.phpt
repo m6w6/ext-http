@@ -137,5 +137,5 @@ server("proxy.inc", function($port) {
 ===DONE===
 --EXPECTREGEX--
 Test
-[ST][WST]*([OWST]*)+U+int\(200\)
+[ST][WST]*([OWSTU]*)+U+int\(200\)
 O*===DONE===

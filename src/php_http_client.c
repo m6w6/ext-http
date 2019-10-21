@@ -401,8 +401,9 @@ static HashTable *php_http_client_object_get_gc(zval *object, zval **table, int 
 
 	for (el = obj->client->requests.head; el; el = el->next) {
 		php_http_client_enqueue_t *q = (php_http_client_enqueue_t *) el->data;
-		php_http_message_object_t *request_obj = q->opaque; /* FIXME */
-		ZVAL_OBJ(&obj->gc[(*n)++], &request_obj->zo);
+		if (q->request_obj) {
+			ZVAL_OBJ(&obj->gc[(*n)++], &q->request_obj->zo);
+		}
 	}
 
 	ZEND_HASH_FOREACH_VAL(props, val)

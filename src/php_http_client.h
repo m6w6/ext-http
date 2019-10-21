@@ -35,6 +35,7 @@ typedef struct php_http_client_enqueue {
 		zend_fcall_info fci;
 		zend_fcall_info_cache fcc;
 	} closure;
+	php_http_message_object_t *request_obj; /* supplemental to request */
 } php_http_client_enqueue_t;
 
 typedef struct php_http_client *(*php_http_client_init_func_t)(struct php_http_client *p, void *init_arg);
