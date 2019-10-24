@@ -32,7 +32,7 @@ struct php_http_option {
 	php_http_options_t suboptions;
 
 	zend_string *name;
-	ulong option;
+	unsigned long option;
 	zend_uchar type;
 	unsigned flags;
 	zval defval;
@@ -46,7 +46,7 @@ PHP_HTTP_API ZEND_RESULT_CODE php_http_options_apply(php_http_options_t *registr
 PHP_HTTP_API void php_http_options_dtor(php_http_options_t *registry);
 PHP_HTTP_API void php_http_options_free(php_http_options_t **registry);
 
-PHP_HTTP_API php_http_option_t *php_http_option_register(php_http_options_t *registry, const char *name_str, size_t name_len, ulong option, zend_uchar type);
+PHP_HTTP_API php_http_option_t *php_http_option_register(php_http_options_t *registry, const char *name_str, size_t name_len, unsigned long option, zend_uchar type);
 PHP_HTTP_API zval *php_http_option_get(php_http_option_t *opt, HashTable *options, void *userdata);
 
 #endif /* PHP_HTTP_OPTIONS_H */

@@ -74,7 +74,7 @@ void php_http_options_free(php_http_options_t **registry)
 	}
 }
 
-php_http_option_t *php_http_option_register(php_http_options_t *registry, const char *name_str, size_t name_len, ulong option, zend_uchar type)
+php_http_option_t *php_http_option_register(php_http_options_t *registry, const char *name_str, size_t name_len, unsigned long option, zend_uchar type)
 {
 	php_http_option_t opt;
 

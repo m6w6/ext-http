@@ -43,9 +43,9 @@ static void php_http_openssl_thread_lock(int mode, int n, const char * file, int
 	}
 }
 
-static ulong php_http_openssl_thread_id(void)
+static unsigned long php_http_openssl_thread_id(void)
 {
-	return (ulong) tsrm_thread_id();
+	return (unsigned long) tsrm_thread_id();
 }
 #endif
 #if PHP_HTTP_NEED_GNUTLS_TSL

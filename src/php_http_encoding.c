@@ -36,7 +36,7 @@ const char *php_http_encoding_dechunk(const char *encoded, size_t encoded_len, c
 	*decoded = ecalloc(1, encoded_len + 1);
 
 	while ((encoded + encoded_len - e_ptr) > 0) {
-		ulong chunk_len = 0, rest;
+		unsigned long chunk_len = 0, rest;
 
 		chunk_len = strtoul(e_ptr, &n_ptr, 16);
 
@@ -237,7 +237,7 @@ void php_http_encoding_stream_free(php_http_encoding_stream_t **s)
 
 struct dechunk_ctx {
 	php_http_buffer_t buffer;
-	ulong hexlen;
+	unsigned long hexlen;
 	unsigned zeroed:1;
 };
 

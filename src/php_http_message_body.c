@@ -393,7 +393,7 @@ static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const
 			{
 				if (Z_TYPE_P(val) == IS_ARRAY || Z_TYPE_P(val) == IS_OBJECT) {
 					char *str = key.key ? format_key(&key, name) : NULL;
-					const char *prefix = str ?: name;
+					const char *prefix = str ? str : name;
 
 					if (SUCCESS != add_recursive_files(body, prefix, HASH_OF(val))) {
 						efree(str);

@@ -63,7 +63,7 @@ static inline void php_http_querystring_str(zval *instance, zval *return_value)
 	}
 }
 
-static inline void php_http_querystring_get(zval *instance, int type, char *name, uint name_len, zval *defval, zend_bool del, zval *return_value)
+static inline void php_http_querystring_get(zval *instance, int type, char *name, uint32_t name_len, zval *defval, zend_bool del, zval *return_value)
 {
 	zval *arrval, qarray_tmp, *qarray = zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0, &qarray_tmp);
 

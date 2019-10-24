@@ -72,7 +72,7 @@ PHP_MINIT_FUNCTION(http_filter)
 
 typedef struct _http_chunked_decode_filter_buffer_t {
 	php_http_buffer_t	buffer;
-	ulong	hexlen;
+	unsigned long	hexlen;
 } PHP_HTTP_FILTER_BUFFER(chunked_decode);
 
 typedef php_http_encoding_stream_t PHP_HTTP_FILTER_BUFFER(stream);
