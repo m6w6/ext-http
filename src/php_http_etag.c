@@ -26,8 +26,8 @@ php_http_etag_t *php_http_etag_init(const char *mode)
 	php_http_etag_t *e;
 
 	if (mode && (!strcasecmp(mode, "crc32b"))) {
-		ctx = emalloc(sizeof(uint));
-		*((uint *) ctx) = ~0;
+		ctx = emalloc(sizeof(uint32_t));
+		*((uint32_t *) ctx) = ~0;
 	} else if (mode && !strcasecmp(mode, "sha1")) {
 		PHP_SHA1Init(ctx = emalloc(sizeof(PHP_SHA1_CTX)));
 	} else if (mode && !strcasecmp(mode, "md5")) {
@@ -57,7 +57,7 @@ char *php_http_etag_finish(php_http_etag_t *e)
 	char *etag = NULL;
 
 	if (!strcasecmp(e->mode, "crc32b")) {
-		uint e_ctx;
+		uint32_t e_ctx;
 		memcpy(&e_ctx, e->ctx, 4);
 		e_ctx = ntohl(~e_ctx);
 		etag = php_http_etag_digest((unsigned char *) &e_ctx, 4);
@@ -88,11 +88,11 @@ char *php_http_etag_finish(php_http_etag_t *e)
 size_t php_http_etag_update(php_http_etag_t *e, const char *data_ptr, size_t data_len)
 {
 	if (!strcasecmp(e->mode, "crc32b")) {
-		uint i, c = *((uint *) e->ctx);
+		uint32_t i, c = *((uint32_t *) e->ctx);
 		for (i = 0; i < data_len; ++i) {
 			CRC32(c, data_ptr[i]);
 		}
-		*((uint *) e->ctx) = c;
+		*((uint32_t *) e->ctx) = c;
 	} else if ((!strcasecmp(e->mode, "sha1"))) {
 		PHP_SHA1Update(e->ctx, (const unsigned char *) data_ptr, data_len);
 	} else if ((!strcasecmp(e->mode, "md5"))) {

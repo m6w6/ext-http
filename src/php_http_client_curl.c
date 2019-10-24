@@ -46,7 +46,7 @@ typedef struct php_http_client_curl_handler {
 		php_http_buffer_t ranges;
 
 		struct {
-			uint count;
+			uint32_t count;
 			double delay;
 		} retry;
 

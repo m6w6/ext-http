@@ -323,7 +323,7 @@ php_http_message_parser_state_t php_http_message_parser_parse(php_http_message_p
 					}
 
 					if (content_range) {
-						ulong total = 0, start = 0, end = 0;
+						unsigned long total = 0, start = 0, end = 0;
 
 						if (!strncasecmp(content_range->val, "bytes", lenof("bytes"))
 						&& (	content_range->val[lenof("bytes")] == ':'
