@@ -98,7 +98,14 @@ if (PHP_HTTP != "no") {
 		AC_DEFINE("PHP_HTTP_HAVE_LIBICU", 1, "");
 		AC_DEFINE("PHP_HTTP_HAVE_IDNA2003", 1, "");
 		AC_DEFINE("PHP_HTTP_HAVE_IDNA2008", 1, "");
-		ADD_FLAG("LIBS_HTTP", "icuuc.lib icudt.lib icuin.lib icuio.lib icule.lib iculx.lib");
+		ADD_FLAG("LIBS_HTTP", "icuuc.lib icudt.lib icuin.lib icuio.lib");
+		/* Compat for ICU before 58.1.*/
+		if (CHECK_LIB("icule.lib", "http", PHP_HTTP)) {
+			ADD_FLAG("LIBS_HTTP", "icule.lib");
+		}
+		if (CHECK_LIB("iculx.lib", "http", PHP_HTTP)) {
+			ADD_FLAG("LIBS_HTTP", "iculx.lib");
+		}
 	}
 
 	if (PHP_CURL != "no") {
