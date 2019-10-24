@@ -110,10 +110,13 @@ if (PHP_HTTP != "no") {
 	if (CHECK_HEADER_ADD_INCLUDE("curl/curl.h", "CFLAGS_HTTP") &&
 			CHECK_HEADER_ADD_INCLUDE("openssl/crypto.h", "CFLAGS_HTTP") &&
 			CHECK_LIB(CURL_LIB, "http", PHP_HTTP) &&
+			CHECK_LIB("wldap32.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("libssh2.lib;libssh2_a.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("nghttp2.lib;nghttp2_a.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("normaliz.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("libssl.lib;ssleay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("libcrypto.lib;libeay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("zlib.lib;zlib_a.lib", "http", PHP_HTTP) &&
-			CHECK_LIB("libcurl_a.lib", "http", PHP_HTTP) &&
 			ADD_EXTENSION_DEP("http", "propro", true) &&
 			ADD_EXTENSION_DEP("http", "raphf", true) &&
 			CHECK_LIB("winmm.lib", "http", PHP_HTTP)) {
