@@ -4,6 +4,8 @@ invalid HTTP info
 <?php 
 include "skipif.inc";
 ?>
+--INI--
+zend.exception_ignore_args=off
 --FILE--
 <?php 
 

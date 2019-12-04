@@ -6,6 +6,8 @@ include "skipif.inc";
 skip_client_test();
 skip_online_test();
 ?>
+--INI--
+zend.exception_ignore_args=off
 --FILE--
 <?php
 echo "Test\n";

@@ -4,6 +4,8 @@ Bug #73055 (Type confusion vulnerability in merge_param())
 <?php
 include "skipif.inc";
 ?>
+--INI--
+zend.exception_ignore_args=off
 --FILE--
 <?php
 

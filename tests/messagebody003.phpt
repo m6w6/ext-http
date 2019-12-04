@@ -4,6 +4,8 @@ message body append error
 <?php
 include "skipif.inc";
 ?>
+--INI--
+zend.exception_ignore_args=off
 --FILE--
 <?php
 echo "Test\n";

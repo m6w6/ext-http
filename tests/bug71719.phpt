@@ -4,6 +4,8 @@ Bug #71719 (Buffer overflow in HTTP url parsing functions)
 <?php
 include "skipif.inc";
 ?>
+--INI--
+zend.exception_ignore_args=off
 --FILE--
 <?php
 
