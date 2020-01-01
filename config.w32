@@ -123,6 +123,7 @@ if (PHP_HTTP != "no") {
 			CHECK_LIB("normaliz.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("libssl.lib;ssleay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("libcrypto.lib;libeay32.lib", "http", PHP_HTTP) &&
+			CHECK_LIB("crypt32.lib;libeay32.lib", "http", PHP_HTTP) &&
 			CHECK_LIB("zlib.lib;zlib_a.lib", "http", PHP_HTTP) &&
 			ADD_EXTENSION_DEP("http", "propro", true) &&
 			ADD_EXTENSION_DEP("http", "raphf", true) &&
