@@ -27,19 +27,19 @@ if test "$PHP_HTTP" != "no"; then
 
 	dnl ZLIB
 	PHP_ARG_WITH([http-zlib-dir], [whether/where to check for zlib],
-	[  --with-http-zlib-dir[=DIR]         HTTP: where to find zlib], $PHP_HTTP, no)
+	[  --with-http-zlib-dir[=DIR]         HTTP: where to find zlib], $PHP_HTTP)
 	PECL_CHECK_ZLIB([$PHP_HTTP_ZLIB_DIR], [1.2.0.4])
 	PECL_CHECK_DONE(zlib, $PECL_VAR([HAVE_ZLIB]))
-	
+
 	dnl BROTLI
 	PHP_ARG_WITH([http-libbrotli-dir], [whether/where to check for libbrotli],
-	[  --with-http-libbrotli-dir[=DIR]    HTTP: where to find libbrotli], $PHP_HTTP, no)
+	[  --with-http-libbrotli-dir[=DIR]    HTTP: where to find libbrotli], $PHP_HTTP)
 	PECL_CHECK_LIBBROTLI([$PHP_HTTP_LIBBROTLI_DIR], [1.0])
 	PECL_CHECK_DONE(libbrotli, $PECL_VAR([HAVE_LIBBROTLI]))
 
 	dnl CURL
 	PHP_ARG_WITH([http-libcurl-dir], [whether/where to check for libcurl],
-	[  --with-http-libcurl-dir[=DIR]      HTTP: where to find libcurl], $PHP_HTTP, no)
+	[  --with-http-libcurl-dir[=DIR]      HTTP: where to find libcurl], $PHP_HTTP)
 	if test "$PHP_HTTP_LIBCURL_DIR" != "no"; then
 		PECL_CHECK_LIBCURL([$PHP_HTTP_LIBCURL_DIR], [7.18.2])
 		PECL_HAVE_LIBCURL_PROTOCOL([HTTP], [
