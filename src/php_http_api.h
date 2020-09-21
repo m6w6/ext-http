@@ -32,7 +32,6 @@
 #include "SAPI.h"
 
 #include "ext/raphf/php_raphf_api.h"
-#include "ext/propro/php_propro_api.h"
 #include "ext/standard/php_string.h"
 #include "ext/spl/spl_iterators.h"
 #include "ext/date/php_date.h"

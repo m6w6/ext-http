@@ -31,10 +31,10 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2019-10-29</date>
+ <date>2020-09-21</date>
  <version>
-  <release>3.2.3</release>
-  <api>3.2.0</api>
+  <release>4.0.0dev</release>
+  <api>4.0.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -42,7 +42,7 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-  * Fixed Windows build (Jan Ehrhardt)
+  *
 ]]></notes>
  <contents>
   <dir name="/">
@@ -386,7 +386,7 @@ https://mdref.m6w6.name/http
  <dependencies>
   <required>
    <php>
-    <min>7.0.0</min>
+    <min>8.0.0</min>
    </php>
    <pearinstaller>
     <min>1.4.1</min>
@@ -396,12 +396,6 @@ https://mdref.m6w6.name/http
     <channel>pecl.php.net</channel>
     <min>2.0.0dev</min>
     <providesextension>raphf</providesextension>
-   </package>
-   <package>
-    <name>propro</name>
-    <channel>pecl.php.net</channel>
-    <min>2.0.0dev</min>
-    <providesextension>propro</providesextension>
    </package>
   </required>
   <optional>

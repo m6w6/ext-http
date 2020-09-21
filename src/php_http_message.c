@@ -911,20 +911,9 @@ static zval *php_http_message_object_read_prop(zval *object, zval *member, int t
 	return_value = zend_get_std_object_handlers()->read_property(object, member, type, cache_slot, tmp);
 
 	if (handler && handler->read) {
-		if (type == BP_VAR_R || type == BP_VAR_IS) {
-			php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
+		php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
 
-			handler->read(obj, return_value);
-		} else {
-			php_property_proxy_t *proxy;
-			php_property_proxy_object_t *proxy_obj;
-
-			proxy = php_property_proxy_init(object, member_name);
-			proxy_obj = php_property_proxy_object_new_ex(NULL, proxy);
-
-			ZVAL_OBJ(tmp, &proxy_obj->zo);
-			return_value = tmp;
-		}
+		handler->read(obj, return_value);
 	}
 
 	zend_string_release(member_name);

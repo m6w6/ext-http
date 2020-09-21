@@ -24,7 +24,7 @@ if ($php) {
 	define("PHP_BIN", PHP_BINDIR.DIRECTORY_SEPARATOR."php");
 }
 
-foreach (array("raphf", "propro", "http") as $ext) {
+foreach (array("raphf", "http") as $ext) {
 	if (!extension_loaded($ext)) {
 		dl(ext_lib_name($ext));
 	}
@@ -131,7 +131,7 @@ function server($handler, $cb) {
 			$args[] = $argList[$i];
 		}
 	}
-	foreach (['raphf', 'propro', 'http'] as $ext) {
+	foreach (['raphf', 'http'] as $ext) {
 		if (null !== $arg = get_extension_load_arg(PHP_BIN, $args, $ext)) {
 			$args[] = $arg;
 		}

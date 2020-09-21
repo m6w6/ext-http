@@ -161,11 +161,6 @@ if test "$PHP_HTTP" != "no"; then
 	], [
 		AC_MSG_ERROR([please install and enable pecl/raphf])
 	])
-	PECL_HAVE_PHP_EXT([propro], [
-		PECL_HAVE_PHP_EXT_HEADER([propro])
-	], [
-		AC_MSG_ERROR([please install and enable pecl/propro])
-	])
 	PECL_HAVE_PHP_EXT([hash])
 	PECL_HAVE_PHP_EXT([iconv])
 
@@ -196,7 +191,6 @@ if test "$PHP_HTTP" != "no"; then
 		fi
 	fi
 	PHP_ADD_EXTENSION_DEP([http], [raphf], true)
-	PHP_ADD_EXTENSION_DEP([http], [propro], true)
 
 	PHP_SUBST(PECL_VAR([HEADERS]))
 	PHP_SUBST(PECL_VAR([SOURCES]))

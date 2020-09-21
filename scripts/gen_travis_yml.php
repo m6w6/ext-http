@@ -95,11 +95,9 @@ install:
    if test "$PHP" = master; then \
      make -f travis/pecl/Makefile reconf; \
      make -f travis/pecl/Makefile pecl-rm pecl-clean PECL=ext-raphf.git:raphf:master; \
-     make -f travis/pecl/Makefile pecl-rm pecl-clean PECL=ext-propro.git:propro:master; \
    fi
  - make -f travis/pecl/Makefile php || make -f travis/pecl/Makefile clean php
  - make -f travis/pecl/Makefile pecl PECL=ext-raphf.git:raphf:master
- - make -f travis/pecl/Makefile pecl PECL=ext-propro.git:propro:master
  - |
    if test -n "$PECLs"; then \
      IFS=$','; \

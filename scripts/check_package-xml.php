@@ -33,7 +33,7 @@ if (($xml = simplexml_load_file($file))) {
 				}
 			} else {
 				$base = basename($file);
-				if ($base{0} !== ".") {
+				if ($base[0] !== ".") {
 					array_push($dirs, $file);
 				}
 			}
