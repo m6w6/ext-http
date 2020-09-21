@@ -305,7 +305,6 @@ https://mdref.m6w6.name/http
      <file role="test" name="message003.phpt"/>
      <file role="test" name="message004.phpt"/>
      <file role="test" name="message005.phpt"/>
-     <file role="test" name="message006.phpt"/>
      <file role="test" name="message007.phpt"/>
      <file role="test" name="message008.phpt"/>
      <file role="test" name="message009.phpt"/>
@@ -347,8 +346,6 @@ https://mdref.m6w6.name/http
      <file role="test" name="params016.phpt"/>
      <file role="test" name="params017.phpt"/>
      <file role="test" name="phpinfo.phpt"/>
-     <file role="test" name="propertyproxy001.phpt"/>
-     <file role="test" name="querystring001.phpt"/>
      <file role="test" name="querystring001_a.phpt"/>
      <file role="test" name="querystring002.phpt"/>
      <file role="test" name="querystring003.phpt"/>
