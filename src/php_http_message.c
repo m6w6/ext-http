@@ -332,7 +332,7 @@ static void message_headers(php_http_message_t *msg, php_http_buffer_t *str)
 	char *tmp = NULL;
 	size_t len = 0;
 
-	php_http_info_to_string((php_http_info_t *) msg, &tmp, &len, PHP_HTTP_CRLF TSRMLS_CC);
+	php_http_info_to_string((php_http_info_t *) msg, &tmp, &len, PHP_HTTP_CRLF);
 	php_http_message_update_headers(msg);
 
 	php_http_buffer_append(str, tmp, len);
@@ -509,9 +509,8 @@ zend_class_entry *php_http_message_get_class_entry(void)
 	return php_http_message_class_entry;
 }
 
-static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *rv);
-
-static PHP_WRITE_PROP_HANDLER_TYPE php_http_message_object_write_prop(zval *object, zval *member, zval *value, void **cache_slot);
+static zval *php_http_message_object_read_prop(zend_object *object, zend_string *member, int type, void **cache_slot, zval *rv);
+static zval *php_http_message_object_write_prop(zend_object *object, zend_string *member, zval *value, void **cache_slot);
 
 static zend_object_handlers php_http_message_object_handlers;
 static HashTable php_http_message_object_prophandlers;
@@ -857,10 +856,10 @@ php_http_message_object_t *php_http_message_object_new_ex(zend_class_entry *ce, 
 	return o;
 }
 
-zend_object *php_http_message_object_clone(zval *this_ptr)
+zend_object *php_http_message_object_clone(zend_object *this_ptr)
 {
 	php_http_message_object_t *new_obj;
-	php_http_message_object_t *old_obj = PHP_HTTP_OBJ(NULL, this_ptr);
+	php_http_message_object_t *old_obj = PHP_HTTP_OBJ(this_ptr, NULL);
 
 	new_obj = php_http_message_object_new_ex(old_obj->zo.ce, php_http_message_copy(old_obj->message, NULL));
 	zend_objects_clone_members(&new_obj->zo, &old_obj->zo);
@@ -895,53 +894,45 @@ void php_http_message_object_free(zend_object *object)
 	zend_object_std_dtor(object);
 }
 
-#if PHP_VERSION_ID >= 70400
-static zval *php_http_message_object_get_prop_ptr(zval *object, zval *member, int type, void **cache_slot)
+static zval *php_http_message_object_get_prop_ptr(zend_object *object, zend_string *member, int type, void **cache_slot)
 {
 	return NULL;
 }
-#endif
 
-static zval *php_http_message_object_read_prop(zval *object, zval *member, int type, void **cache_slot, zval *tmp)
+static zval *php_http_message_object_read_prop(zend_object *object, zend_string *member, int type, void **cache_slot, zval *tmp)
 {
 	zval *return_value;
-	zend_string *member_name = zval_get_string(member);
-	php_http_message_object_prophandler_t *handler = php_http_message_object_get_prophandler(member_name);
+	php_http_message_object_prophandler_t *handler = php_http_message_object_get_prophandler(member);
 
 	return_value = zend_get_std_object_handlers()->read_property(object, member, type, cache_slot, tmp);
 
 	if (handler && handler->read) {
-		php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
+		php_http_message_object_t *obj = PHP_HTTP_OBJ(object, NULL);
 
 		handler->read(obj, return_value);
 	}
-
-	zend_string_release(member_name);
 	return return_value;
 }
 
-static PHP_WRITE_PROP_HANDLER_TYPE php_http_message_object_write_prop(zval *object, zval *member, zval *value, void **cache_slot)
+static zval *php_http_message_object_write_prop(zend_object *object, zend_string *member, zval *value, void **cache_slot)
 {
-	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
+	php_http_message_object_t *obj = PHP_HTTP_OBJ(object, NULL);
 	php_http_message_object_prophandler_t *handler;
-	zend_string *member_name = zval_get_string(member);
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
-	if ((handler = php_http_message_object_get_prophandler(member_name))) {
+	if ((handler = php_http_message_object_get_prophandler(member))) {
 		handler->write(obj, value);
 	} else {
 		zend_get_std_object_handlers()->write_property(object, member, value, cache_slot);
 	}
-
-	zend_string_release(member_name);
-	PHP_WRITE_PROP_HANDLER_RETURN(value);
+	return value;
 }
 
-static HashTable *php_http_message_object_get_debug_info(zval *object, int *is_temp)
+static HashTable *php_http_message_object_get_debug_info(zend_object *object, int *is_temp)
 {
 	zval tmp;
-	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
+	php_http_message_object_t *obj = PHP_HTTP_OBJ(object, NULL);
 	HashTable *props = zend_get_std_object_handlers()->get_properties(object);
 	char *ver_str, *url_str = NULL;
 	size_t ver_len, url_len = 0;
@@ -1017,10 +1008,10 @@ static HashTable *php_http_message_object_get_debug_info(zval *object, int *is_t
 	return props;
 }
 
-static HashTable *php_http_message_object_get_gc(zval *object, zval **table, int *n)
+static HashTable *php_http_message_object_get_gc(zend_object *object, zval **table, int *n)
 {
-	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, object);
-	HashTable *props = Z_OBJPROP_P(object);
+	php_http_message_object_t *obj = PHP_HTTP_OBJ(object, NULL);
+	HashTable *props = object->handlers->get_properties(object);
 	uint32_t count = 2 + zend_hash_num_elements(props);
 	zval *val;
 
@@ -1041,6 +1032,30 @@ static HashTable *php_http_message_object_get_gc(zval *object, zval **table, int
 	ZEND_HASH_FOREACH_END();
 
 	return NULL;
+}
+
+static int php_http_message_object_cast(zend_object *object, zval *return_value, int type)
+{
+	php_http_message_object_t *obj = PHP_HTTP_OBJ(object, NULL);
+	char *string;
+	size_t length;
+
+	switch (type) {
+	case IS_STRING:
+		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
+		php_http_message_to_string(obj->message, &string, &length);
+		if (string) {
+			RETVAL_STR(php_http_cs2zs(string, length));
+		} else {
+			RETVAL_EMPTY_STRING();
+		}
+		return SUCCESS;
+	case _IS_BOOL:
+		RETVAL_TRUE;
+		return SUCCESS;
+	default:
+		return FAILURE;
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage___construct, 0, 0, 0)
@@ -2066,6 +2081,7 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_object_handlers.get_property_ptr_ptr = NULL;
 #endif
 	php_http_message_object_handlers.get_gc = php_http_message_object_get_gc;
+	php_http_message_object_handlers.cast_object = php_http_message_object_cast;
 
 	zend_class_implements(php_http_message_class_entry, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
 

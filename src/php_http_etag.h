@@ -13,9 +13,11 @@
 #ifndef PHP_HTTP_ETAG_H
 #define PHP_HTTP_ETAG_H
 
+#include "ext/hash/php_hash.h"
+
 typedef struct php_http_etag {
-	void *ctx;
-	char *mode;
+	const php_hash_ops *ops;
+	char ctx[1];
 } php_http_etag_t;
 
 PHP_HTTP_API php_http_etag_t *php_http_etag_init(const char *mode);

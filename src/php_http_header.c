@@ -183,11 +183,11 @@ PHP_METHOD(HttpHeader, __construct)
 
 	if (name_str && name_len) {
 		char *pretty_str = estrndup(name_str, name_len);
-		zend_update_property_stringl(php_http_header_class_entry, getThis(), ZEND_STRL("name"), php_http_pretty_key(pretty_str, name_len, 1, 1), name_len);
+		zend_update_property_stringl(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), php_http_pretty_key(pretty_str, name_len, 1, 1), name_len);
 		efree(pretty_str);
 	}
 	if (value_str && value_len) {
-		zend_update_property_stringl(php_http_header_class_entry, getThis(), ZEND_STRL("value"), value_str, value_len);
+		zend_update_property_stringl(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), value_str, value_len);
 	}
 }
 
@@ -201,11 +201,11 @@ PHP_METHOD(HttpHeader, serialize)
 		zval name_tmp, value_tmp;
 
 		php_http_buffer_init(&buf);
-		zs = zval_get_string(zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("name"), 0, &name_tmp));
+		zs = zval_get_string(zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), 0, &name_tmp));
 		php_http_buffer_appendz(&buf, zs);
 		zend_string_release(zs);
 
-		zs = zval_get_string(zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("value"), 0, &value_tmp));
+		zs = zval_get_string(zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), 0, &value_tmp));
 		if (zs->len) {
 			php_http_buffer_appends(&buf, ": ");
 			php_http_buffer_appendz(&buf, zs);
@@ -239,16 +239,16 @@ PHP_METHOD(HttpHeader, unserialize)
 				zend_hash_internal_pointer_reset(&ht);
 				switch (zend_hash_get_current_key(&ht, &key, &idx)) {
 					case HASH_KEY_IS_STRING:
-						zend_update_property_str(php_http_header_class_entry, getThis(), ZEND_STRL("name"), key);
+						zend_update_property_str(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), key);
 						break;
 					case HASH_KEY_IS_LONG:
-						zend_update_property_long(php_http_header_class_entry, getThis(), ZEND_STRL("name"), idx);
+						zend_update_property_long(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), idx);
 						break;
 					default:
 						break;
 				}
 				zs = zval_get_string(zend_hash_get_current_data(&ht));
-				zend_update_property_str(php_http_header_class_entry, getThis(), ZEND_STRL("value"), zs);
+				zend_update_property_str(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), zs);
 				zend_string_release(zs);
 			}
 		}
@@ -273,7 +273,7 @@ PHP_METHOD(HttpHeader, match)
 		return;
 	}
 
-	zs = zval_get_string(zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("value"), 0, &value_tmp));
+	zs = zval_get_string(zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), 0, &value_tmp));
 	RETVAL_BOOL(php_http_match(zs->val, val_str, flags));
 	zend_string_release(zs);
 }
@@ -299,7 +299,7 @@ PHP_METHOD(HttpHeader, negotiate)
 		array_init(rs_array);
 	}
 
-	zs = zval_get_string(zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("name"), 0, &name_tmp));
+	zs = zval_get_string(zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), 0, &name_tmp));
 	if (zend_string_equals_literal(zs, "Accept")) {
 		sep_str = "/";
 		sep_len = 1;
@@ -309,7 +309,7 @@ PHP_METHOD(HttpHeader, negotiate)
 	}
 	zend_string_release(zs);
 
-	zs = zval_get_string(zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("value"), 0, &value_tmp));
+	zs = zval_get_string(zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), 0, &value_tmp));
 	if ((rs = php_http_negotiate(zs->val, zs->len, supported, sep_str, sep_len))) {
 		PHP_HTTP_DO_NEGOTIATE_HANDLE_RESULT(rs, supported, rs_array);
 	} else {
@@ -333,7 +333,7 @@ PHP_METHOD(HttpHeader, getParams)
 	object_init_ex(&zparams_obj, php_http_params_get_class_entry());
 	
 	zargs = (zval *) ecalloc(ZEND_NUM_ARGS()+1, sizeof(zval));
-	ZVAL_COPY_VALUE(&zargs[0], zend_read_property(php_http_header_class_entry, getThis(), ZEND_STRL("value"), 0, &value_tmp));
+	ZVAL_COPY_VALUE(&zargs[0], zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), 0, &value_tmp));
 	if (ZEND_NUM_ARGS()) {
 		zend_get_parameters_array(ZEND_NUM_ARGS(), ZEND_NUM_ARGS(), &zargs[1]);
 	}
@@ -381,7 +381,7 @@ PHP_METHOD(HttpHeader, parse)
 
 					object_init_ex(&zho, ce);
 					Z_TRY_ADDREF_P(val);
-					zend_call_method_with_2_params(&zho, ce, NULL, "__construct", NULL, &zkey, val);
+					zend_call_method_with_2_params(Z_OBJ(zho), ce, NULL, "__construct", NULL, &zkey, val);
 					zval_ptr_dtor(val);
 					zval_ptr_dtor(&zkey);
 

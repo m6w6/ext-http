@@ -62,7 +62,7 @@ typedef struct php_http_cookie_object {
 
 zend_object *php_http_cookie_object_new(zend_class_entry *ce);
 php_http_cookie_object_t *php_http_cookie_object_new_ex(zend_class_entry *ce, php_http_cookie_list_t *list);
-zend_object *php_http_cookie_object_clone(zval *this_ptr);
+zend_object *php_http_cookie_object_clone(zend_object *this_ptr);
 void php_http_cookie_object_free(zend_object *object);
 
 PHP_MINIT_FUNCTION(http_cookie);

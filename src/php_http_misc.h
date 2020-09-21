@@ -99,46 +99,13 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 
 #if PHP_DEBUG
 #	undef  HASH_OF
-#	if PHP_VERSION_ID >= 70500
-#		define HASH_OF(p) ((HashTable*)(Z_TYPE_P(p)==IS_ARRAY ? Z_ARRVAL_P(p) : ((Z_TYPE_P(p)==IS_OBJECT ? Z_OBJ_HT_P(p)->get_properties(Z_OBJ_P(p)) : NULL))))
-#	else
-#		define HASH_OF(p) ((HashTable*)(Z_TYPE_P(p)==IS_ARRAY ? Z_ARRVAL_P(p) : ((Z_TYPE_P(p)==IS_OBJECT ? Z_OBJ_HT_P(p)->get_properties((p)) : NULL))))
-#	endif
+#	define HASH_OF(p) ((HashTable*)(Z_TYPE_P(p)==IS_ARRAY ? Z_ARRVAL_P(p) : ((Z_TYPE_P(p)==IS_OBJECT ? Z_OBJ_HT_P(p)->get_properties(Z_OBJ_P(p)) : NULL))))
 #endif
 
-#ifndef GC_SET_REFCOUNT
-#	define GC_SET_REFCOUNT(gc, rc) GC_REFCOUNT(gc) = rc
-#endif
-#ifndef GC_ADDREF
-#	define GC_ADDREF(gc) ++GC_REFCOUNT(gc)
-#endif
-#ifndef GC_DELREF
-#	define GC_DELREF(gc) --GC_REFCOUNT(gc)
-#endif
 
-#ifdef ZEND_HASH_GET_APPLY_COUNT
-#	define HT_IS_RECURSIVE(ht) (ZEND_HASH_GET_APPLY_COUNT(ht) > 0)
-#else
-#	define HT_IS_RECURSIVE(ht) GC_IS_RECURSIVE(ht)
-#endif
-#ifdef ZEND_HASH_INC_APPLY_COUNT
-#	define HT_PROTECT_RECURSION(ht) ZEND_HASH_INC_APPLY_COUNT(ht)
-#else
-#	define HT_PROTECT_RECURSION(ht) GC_PROTECT_RECURSION(ht)
-#endif
-#ifdef ZEND_HASH_DEC_APPLY_COUNT
-#	define HT_UNPROTECT_RECURSION(ht) ZEND_HASH_DEC_APPLY_COUNT(ht)
-#else
-#	define HT_UNPROTECT_RECURSION(ht) GC_UNPROTECT_RECURSION(ht)
-#endif
-
-#if PHP_VERSION_ID >= 70400
-#	define PHP_WRITE_PROP_HANDLER_TYPE zval *
-#	define PHP_WRITE_PROP_HANDLER_RETURN(v) return v
-#else
-#	define PHP_WRITE_PROP_HANDLER_TYPE void
-#	define PHP_WRITE_PROP_HANDLER_RETURN(v)
-#endif
+#define HT_IS_RECURSIVE(ht) GC_IS_RECURSIVE(ht)
+#define HT_PROTECT_RECURSION(ht) GC_PROTECT_RECURSION(ht)
+#define HT_UNPROTECT_RECURSION(ht) GC_UNPROTECT_RECURSION(ht)
 
 static inline void *PHP_HTTP_OBJ(zend_object *zo, zval *zv)
 {
@@ -150,16 +117,8 @@ static inline void *PHP_HTTP_OBJ(zend_object *zo, zval *zv)
 
 static inline zend_string *php_http_cs2zs(char *s, size_t l)
 {
-	zend_string *str = erealloc(s, sizeof(*str) + l);
-
-	memmove(str->val, str, l);
-	str->val[l] = 0;
-	str->len = l;
-	str->h = 0;
-
-	GC_SET_REFCOUNT(str, 1);
-	GC_TYPE_INFO(str) = IS_STRING;
-
+	zend_string *str = zend_string_init(s, l, 0);
+	efree(s);
 	return str;
 }
 
@@ -179,9 +138,6 @@ static inline ZEND_RESULT_CODE php_http_ini_entry(const char *name_str, size_t n
 	}
 	return FAILURE;
 }
-
-#define Z_ISUSER(zv) (Z_TYPE(zv) <= 10)
-#define Z_ISUSER_P(zvp) Z_ISUSER(*(zvp))
 
 /* return object(values) */
 #define ZVAL_OBJECT(z, o, addref) \

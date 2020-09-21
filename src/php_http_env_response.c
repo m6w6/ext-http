@@ -18,21 +18,21 @@ static void set_option(zval *options, const char *name_str, size_t name_len, int
 		if (EXPECTED(value_ptr)) {
 			switch (type) {
 				case IS_DOUBLE:
-					zend_update_property_double(Z_OBJCE_P(options), options, name_str, name_len, *(double *)value_ptr);
+					zend_update_property_double(Z_OBJCE_P(options), Z_OBJ_P(options), name_str, name_len, *(double *)value_ptr);
 					break;
 				case IS_LONG:
-					zend_update_property_long(Z_OBJCE_P(options), options, name_str, name_len, *(zend_long *)value_ptr);
+					zend_update_property_long(Z_OBJCE_P(options), Z_OBJ_P(options), name_str, name_len, *(zend_long *)value_ptr);
 					break;
 				case IS_STRING:
-					zend_update_property_stringl(Z_OBJCE_P(options), options, name_str, name_len, value_ptr, value_len);
+					zend_update_property_stringl(Z_OBJCE_P(options), Z_OBJ_P(options), name_str, name_len, value_ptr, value_len);
 					break;
 				case IS_ARRAY:
 				case IS_OBJECT:
-					zend_update_property(Z_OBJCE_P(options), options, name_str, name_len, value_ptr);
+					zend_update_property(Z_OBJCE_P(options), Z_OBJ_P(options), name_str, name_len, value_ptr);
 					break;
 			}
 		} else {
-			zend_update_property_null(Z_OBJCE_P(options), options, name_str, name_len);
+			zend_update_property_null(Z_OBJCE_P(options), Z_OBJ_P(options), name_str, name_len);
 		}
 	} else {
 		convert_to_array(options);
@@ -65,7 +65,7 @@ static zval *get_option(zval *options, const char *name_str, size_t name_len, zv
 	zval *val = NULL;
 
 	if (EXPECTED(Z_TYPE_P(options) == IS_OBJECT)) {
-		val = zend_read_property(Z_OBJCE_P(options), options, name_str, name_len, 0, tmp);
+		val = zend_read_property(Z_OBJCE_P(options), Z_OBJ_P(options), name_str, name_len, 0, tmp);
 	} else if (EXPECTED(Z_TYPE_P(options) == IS_ARRAY)) {
 		val = zend_symtable_str_find(Z_ARRVAL_P(options), name_str, name_len);
 	} else {
@@ -363,12 +363,12 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		php_http_version_t v;
 		zend_string *zs = zval_get_string(zoption);
 
-		zval_ptr_dtor(zoption);
 		if (EXPECTED(zs->len && php_http_version_parse(&v, zs->val))) {
 			ret = r->ops->set_protocol_version(r, &v);
 			php_http_version_dtor(&v);
 		}
 		zend_string_release(zs);
+		zval_ptr_dtor(zoption);
 	}
 
 	if (ret != SUCCESS) {
@@ -1205,7 +1205,7 @@ static PHP_METHOD(HttpEnvResponse, setContentDisposition)
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "a", &zdisposition), invalid_arg, return);
 
-	zend_update_property(Z_OBJCE_P(getThis()), getThis(), ZEND_STRL("contentDisposition"), zdisposition);
+	zend_update_property(Z_OBJCE_P(ZEND_THIS), Z_OBJ_P(ZEND_THIS), ZEND_STRL("contentDisposition"), zdisposition);
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 

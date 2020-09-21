@@ -27,14 +27,12 @@ env:
 <?php
 
 $gen = include "./travis/pecl/gen-matrix.php";
-$cur = "7.4";
+$cur = "8.0";
 $env = $gen([
 // most useful for all additional versions except current
-	"PHP" => ["7.0", "7.1", "7.2", "7.3", "master"],
+	"PHP" => ["master"],
 	"enable_debug" => "yes",
-	"enable_maintainer_zts" => "yes",
-	"enable_json" => "yes",
-	"enable_hash" => "yes",
+	"enable_zts" => "yes",
 	"enable_iconv" => "yes",
 ], [
 // everything disabled for current
@@ -48,22 +46,18 @@ $env = $gen([
 ], [
 // everything enabled for current, switching debug/zts
 	"PHP" => $cur,
-	"PECLs" => "event",			// for tests/client029.phpt
-	"enable_sockets" => "yes",	// needed by pecl/event
+//	"PECLs" => "event",			// for tests/client029.phpt
+//	"enable_sockets" => "yes",	// needed by pecl/event
 	"enable_debug",
-	"enable_maintainer_zts",
-	"enable_json" => "yes",
-	"enable_hash" => "yes",
+	"enable_zts",
 	"enable_iconv" => "yes",
 ], [
 // once everything enabled for current, with coverage
 	"CFLAGS" => "'-O0 -g --coverage'",
 	"CXXFLAGS" => "'-O0 -g --coverage'",
 	"PHP" => $cur,
-	"PECLs" => "event",			// for tests/client029.phpt
-	"enable_sockets" => "yes",	// needed by pecl/event
-	"enable_json" => "yes",
-	"enable_hash" => "yes",
+//	"PECLs" => "event",			// for tests/client029.phpt
+//	"enable_sockets" => "yes",	// needed by pecl/event
 	"enable_iconv" => "yes",
 	[
 		"with_http_libicu_dir",

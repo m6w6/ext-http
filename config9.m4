@@ -161,7 +161,6 @@ if test "$PHP_HTTP" != "no"; then
 	], [
 		AC_MSG_ERROR([please install and enable pecl/raphf])
 	])
-	PECL_HAVE_PHP_EXT([hash])
 	PECL_HAVE_PHP_EXT([iconv])
 
 	dnl DONE

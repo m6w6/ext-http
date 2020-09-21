@@ -16,9 +16,8 @@
 # define PHP_HTTP_DEBUG_NEG 0
 #endif
 
-static int php_http_negotiate_sort(const void *first, const void *second)
+static int php_http_negotiate_sort(Bucket *b1, Bucket *b2)
 {
-	Bucket *b1 = (Bucket *) first, *b2 = (Bucket *) second;
 	int result = numeric_compare_function(&b1->val, &b2->val);
 
 	return (result > 0 ? -1 : (result < 0 ? 1 : 0));

@@ -57,7 +57,13 @@ php_http_message_parser_t *php_http_message_parser_init(php_http_message_parser_
 	return parser;
 }
 
-#define php_http_message_parser_state_push(parser, state) zend_ptr_stack_push(&(parser)->stack, (void *) (state)), (state)
+static inline php_http_message_parser_state_t
+php_http_message_parser_state_push(php_http_message_parser_t *parser, php_http_message_parser_state_t state)
+{
+	zend_ptr_stack_push(&parser->stack, (void *) state);
+	return state;
+}
+
 #define php_http_message_parser_state_pop(parser) ((parser)->stack.top \
 		? (php_http_message_parser_state_t) zend_ptr_stack_pop(&parser->stack) \
 		: PHP_HTTP_MESSAGE_PARSER_STATE_START)
@@ -644,7 +650,7 @@ static zend_function_entry php_http_message_parser_methods[] = {
 		PHP_ME(HttpMessageParser, getState, ai_HttpMessageParser_getState, ZEND_ACC_PUBLIC)
 		PHP_ME(HttpMessageParser, parse, ai_HttpMessageParser_parse, ZEND_ACC_PUBLIC)
 		PHP_ME(HttpMessageParser, stream, ai_HttpMessageParser_stream, ZEND_ACC_PUBLIC)
-		{NULL, NULL, NULL}
+		{0}
 };
 
 PHP_MINIT_FUNCTION(http_message_parser)

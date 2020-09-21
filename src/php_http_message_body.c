@@ -432,7 +432,7 @@ static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const
 			return FAILURE;
 		} else {
 			zend_string *znc = zval_get_string(zname), *ztc = zval_get_string(ztype);
-			php_http_arrkey_t arrkey = {0, znc};
+			php_http_arrkey_t arrkey = {0, znc, 0, 0};
 			char *key = format_key(&arrkey, name);
 			ZEND_RESULT_CODE ret = php_http_message_body_add_form_file(body, key, ztc->val, zfc->val, stream);
 
@@ -590,10 +590,10 @@ php_http_message_body_object_t *php_http_message_body_object_new_ex(zend_class_e
 	return o;
 }
 
-zend_object *php_http_message_body_object_clone(zval *object)
+zend_object *php_http_message_body_object_clone(zend_object *object)
 {
 	php_http_message_body_object_t *new_obj;
-	php_http_message_body_object_t *old_obj = PHP_HTTP_OBJ(NULL, object);
+	php_http_message_body_object_t *old_obj = PHP_HTTP_OBJ(object, NULL);
 	php_http_message_body_t *body = php_http_message_body_copy(old_obj->body, NULL);
 
 	new_obj = php_http_message_body_object_new_ex(old_obj->zo.ce, body);
@@ -602,10 +602,10 @@ zend_object *php_http_message_body_object_clone(zval *object)
 	return &new_obj->zo;
 }
 
-static HashTable *php_http_message_body_object_get_gc(zval *object, zval **table, int *n)
+static HashTable *php_http_message_body_object_get_gc(zend_object *object, zval **table, int *n)
 {
-	php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, object);
-	HashTable *props = Z_OBJPROP_P(object);
+	php_http_message_body_object_t *obj = PHP_HTTP_OBJ(object, NULL);
+	HashTable *props = object->handlers->get_properties(object);
 	uint32_t count = zend_hash_num_elements(props);
 
 	obj->gc = erealloc(obj->gc, (1 + count) * sizeof(zval));

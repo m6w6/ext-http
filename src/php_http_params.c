@@ -20,7 +20,7 @@ static php_http_params_opts_t def_opts = {
 	def_param_sep_ptr,
 	def_arg_sep_ptr,
 	def_val_sep_ptr,
-	{{0}},
+	{{0}, {0}, {0}},
 	PHP_HTTP_PARAMS_DEFAULT
 };
 
@@ -677,8 +677,9 @@ static void skip_sep(size_t skip, php_http_params_state_t *state, php_http_param
 
 HashTable *php_http_params_parse(HashTable *params, const php_http_params_opts_t *opts)
 {
-	php_http_params_state_t state = {{NULL,0}, {NULL,0}, {NULL,0}, {NULL,0}, {NULL,NULL,NULL}, 0, 0};
+	php_http_params_state_t state;
 
+	memset(&state, 0, sizeof(state));
 	state.input.str = opts->input.str;
 	state.input.len = opts->input.len;
 
@@ -1068,16 +1069,16 @@ PHP_METHOD(HttpParams, __construct)
 	{
 		switch (ZEND_NUM_ARGS()) {
 			case 5:
-				zend_update_property_long(php_http_params_class_entry, getThis(), ZEND_STRL("flags"), flags);
+				zend_update_property_long(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("flags"), flags);
 				/* no break */
 			case 4:
-				zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("val_sep"), val_sep);
+				zend_update_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("val_sep"), val_sep);
 				/* no break */
 			case 3:
-				zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("arg_sep"), arg_sep);
+				zend_update_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("arg_sep"), arg_sep);
 				/* no break */
 			case 2:
-				zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("param_sep"), param_sep);
+				zend_update_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("param_sep"), param_sep);
 				/* no break */
 		}
 
@@ -1086,7 +1087,7 @@ PHP_METHOD(HttpParams, __construct)
 				case IS_OBJECT:
 				case IS_ARRAY:
 					convert_to_array(zparams);
-					zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), zparams);
+					zend_update_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), zparams);
 					break;
 				default:
 					zs = zval_get_string(zparams);
@@ -1095,15 +1096,15 @@ PHP_METHOD(HttpParams, __construct)
 
 						php_http_params_opts_t opts = {
 							{zs->val, zs->len},
-							php_http_params_separator_init(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("param_sep"), 0, &tmp)),
-							php_http_params_separator_init(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("arg_sep"), 0, &tmp)),
-							php_http_params_separator_init(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("val_sep"), 0, &tmp)),
-							{{0}}, flags
+							php_http_params_separator_init(zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("param_sep"), 0, &tmp)),
+							php_http_params_separator_init(zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("arg_sep"), 0, &tmp)),
+							php_http_params_separator_init(zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("val_sep"), 0, &tmp)),
+							{{0}, {0}, {0}}, flags
 						};
 
 						array_init(&tmp);
 						php_http_params_parse(Z_ARRVAL(tmp), &opts);
-						zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), &tmp);
+						zend_update_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), &tmp);
 						zval_ptr_dtor(&tmp);
 
 						php_http_params_separator_free(opts.param);
@@ -1117,7 +1118,7 @@ PHP_METHOD(HttpParams, __construct)
 			zval tmp;
 
 			array_init(&tmp);
-			zend_update_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), &tmp);
+			zend_update_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), &tmp);
 			zval_ptr_dtor(&tmp);
 		}
 	}
@@ -1133,7 +1134,7 @@ PHP_METHOD(HttpParams, toArray)
 	if (SUCCESS != zend_parse_parameters_none()) {
 		return;
 	}
-	zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0, &zparams_tmp);
+	zparams = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), 0, &zparams_tmp);
 	RETURN_ZVAL(zparams, 1, 0);
 }
 
@@ -1147,23 +1148,23 @@ PHP_METHOD(HttpParams, toString)
 	long flags;
 	php_http_buffer_t buf;
 
-	zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0, &zparams_tmp);
+	zparams = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), 0, &zparams_tmp);
 	convert_to_array_ex(zparams);
-	flags = zval_get_long(zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("flags"), 0, &flags_tmp));
+	flags = zval_get_long(zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("flags"), 0, &flags_tmp));
 
-	zpsep = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("param_sep"), 0, &psep_tmp);
+	zpsep = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("param_sep"), 0, &psep_tmp);
 	if (Z_TYPE_P(zpsep) == IS_ARRAY && (tmp = zend_hash_get_current_data(Z_ARRVAL_P(zpsep)))) {
 		psep = zval_get_string(tmp);
 	} else {
 		psep = zval_get_string(zpsep);
 	}
-	zasep = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("arg_sep"), 0, &asep_tmp);
+	zasep = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("arg_sep"), 0, &asep_tmp);
 	if (Z_TYPE_P(zasep) == IS_ARRAY && (tmp = zend_hash_get_current_data(Z_ARRVAL_P(zasep)))) {
 		asep = zval_get_string(tmp);
 	} else {
 		asep = zval_get_string(zasep);
 	}
-	zvsep = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("val_sep"), 0, &vsep_tmp);
+	zvsep = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("val_sep"), 0, &vsep_tmp);
 	if (Z_TYPE_P(zvsep) == IS_ARRAY && (tmp = zend_hash_get_current_data(Z_ARRVAL_P(zvsep)))) {
 		vsep = zval_get_string(tmp);
 	} else {
@@ -1192,7 +1193,7 @@ PHP_METHOD(HttpParams, offsetExists)
 		return;
 	}
 
-	zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0, &zparams_tmp);
+	zparams = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), 0, &zparams_tmp);
 
 	if (Z_TYPE_P(zparams) == IS_ARRAY && (zparam = zend_symtable_find(Z_ARRVAL_P(zparams), name))) {
 		RETVAL_BOOL(Z_TYPE_P(zparam) != IS_NULL);
@@ -1213,7 +1214,7 @@ PHP_METHOD(HttpParams, offsetGet)
 		return;
 	}
 
-	zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0, &zparams_tmp);
+	zparams = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), 0, &zparams_tmp);
 
 	if (Z_TYPE_P(zparams) == IS_ARRAY && (zparam = zend_symtable_find(Z_ARRVAL_P(zparams), name))) {
 		RETVAL_ZVAL(zparam, 1, 0);
@@ -1232,7 +1233,7 @@ PHP_METHOD(HttpParams, offsetUnset)
 		return;
 	}
 
-	zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0, &zparams_tmp);
+	zparams = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), 0, &zparams_tmp);
 
 	if (Z_TYPE_P(zparams) == IS_ARRAY) {
 		zend_symtable_del(Z_ARRVAL_P(zparams), name);
@@ -1252,7 +1253,7 @@ PHP_METHOD(HttpParams, offsetSet)
 		return;
 	}
 
-	zparams = zend_read_property(php_http_params_class_entry, getThis(), ZEND_STRL("params"), 0, &zparams_tmp);
+	zparams = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), 0, &zparams_tmp);
 	convert_to_array(zparams);
 
 	if (name->len) {

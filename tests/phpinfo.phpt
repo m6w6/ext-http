@@ -14,6 +14,6 @@ Done
 Test
 %a
 HTTP Support => enabled
-Extension Version => 3.%s
+Extension Version => 4.%s
 %a
 Done

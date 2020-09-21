@@ -414,10 +414,12 @@ ZEND_RESULT_CODE php_http_env_set_response_status_line(long code, php_http_versi
 {
 	sapi_header_line h = {NULL, 0, 0};
 	ZEND_RESULT_CODE ret;
+	char *line;
 
-	h.line_len = spprintf(&h.line, 0, "HTTP/%u.%u %ld %s", v->major, v->minor, code, php_http_env_get_response_status_for_code(code));
+	h.line_len = spprintf(&line, 0, "HTTP/%u.%u %ld %s", v->major, v->minor, code, php_http_env_get_response_status_for_code(code));
+	h.line = line;
 	ret = sapi_header_op(SAPI_HEADER_REPLACE, (void *) &h);
-	efree(h.line);
+	efree(line);
 
 	return ret;
 }
@@ -429,10 +431,9 @@ ZEND_RESULT_CODE php_http_env_set_response_protocol_version(php_http_version_t *
 
 ZEND_RESULT_CODE php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace)
 {
-	sapi_header_line h = {estrndup(header_str, header_len), header_len, http_code};
+	sapi_header_line h = {header_str, header_len, http_code};
 	ZEND_RESULT_CODE ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h);
 
-	efree(h.line);
 	return ret;
 }
 
@@ -440,14 +441,16 @@ ZEND_RESULT_CODE php_http_env_set_response_header_va(long http_code, zend_bool r
 {
 	ZEND_RESULT_CODE ret = FAILURE;
 	sapi_header_line h = {NULL, 0, http_code};
+	char *line;
 
-	h.line_len = vspprintf(&h.line, 0, fmt, argv);
+	h.line_len = vspprintf(&line, 0, fmt, argv);
+	h.line = line;
 
 	if (h.line) {
 		if (h.line_len) {
 			ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h);
 		}
-		efree(h.line);
+		efree(line);
 	}
 	return ret;
 }
@@ -496,17 +499,19 @@ ZEND_RESULT_CODE php_http_env_set_response_header_value(long http_code, const ch
 		} else {
 			sapi_header_line h;
 			ZEND_RESULT_CODE ret;
+			char *line;
 
 			if (name_len > INT_MAX) {
 				return FAILURE;
 			}
 			h.response_code = http_code;
-			h.line_len = spprintf(&h.line, 0, "%s: %s", name_str, data->val);
+			h.line_len = spprintf(&line, 0, "%s: %s", name_str, data->val);
+			h.line = line;
 
 			ret = sapi_header_op(replace ? SAPI_HEADER_REPLACE : SAPI_HEADER_ADD, (void *) &h);
 
 			zend_string_release(data);
-			PTR_FREE(h.line);
+			PTR_FREE(line);
 
 			return ret;
 		}

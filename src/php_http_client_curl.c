@@ -331,7 +331,9 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 	long l = 0;
 	double d = 0;
 	struct curl_slist *s = NULL, *p = NULL;
-	zval tmp = {{0}};
+	zval tmp;
+
+	ZVAL_NULL(&tmp);
 
 	/* BEGIN::CURLINFO */
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_EFFECTIVE_URL, &c)) {

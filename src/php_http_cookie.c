@@ -406,9 +406,9 @@ php_http_cookie_object_t *php_http_cookie_object_new_ex(zend_class_entry *ce, ph
 		} \
 	} while(0)
 
-zend_object *php_http_cookie_object_clone(zval *obj)
+zend_object *php_http_cookie_object_clone(zend_object *obj)
 {
-	php_http_cookie_object_t *new_obj, *old_obj = PHP_HTTP_OBJ(NULL, obj);
+	php_http_cookie_object_t *new_obj, *old_obj = PHP_HTTP_OBJ(obj, NULL);
 
 	PHP_HTTP_COOKIE_OBJECT_INIT(old_obj);
 

@@ -535,7 +535,7 @@ HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct)
 	if (!strct || Z_TYPE_P(strct) == IS_ARRAY) { \
 		zend_hash_str_update(ht, part, lenof(part), &tmp); \
 	} else { \
-		zend_update_property(Z_OBJCE_P(strct), strct, part, lenof(part), &tmp); \
+		zend_update_property(Z_OBJCE_P(strct), Z_OBJ_P(strct), part, lenof(part), &tmp); \
 		zval_ptr_dtor(&tmp); \
 	}
 
@@ -1021,7 +1021,7 @@ static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state, size_t prev_l
 #	endif
 
 	efree(uhost_str);
-	if (error > U_ZERO_ERROR) {
+	if (rc > U_ZERO_ERROR) {
 		goto error;
 	}
 
@@ -1984,7 +1984,7 @@ PHP_METHOD(HttpUrl, mod)
 		if ((old_purl = php_http_url_from_struct(HASH_OF(getThis())))) {
 			php_http_url_t *res_purl;
 
-			ZVAL_OBJ(return_value, zend_objects_clone_obj(getThis()));
+			ZVAL_OBJ(return_value, zend_objects_clone_obj(Z_OBJ_P(getThis())));
 
 			res_purl = php_http_url_mod(old_purl, new_purl, flags);
 			php_http_url_to_struct(res_purl, return_value);

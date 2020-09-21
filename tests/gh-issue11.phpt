@@ -3,7 +3,7 @@ crash when query string has nested array keys
 --SKIPIF--
 <?php
 include "skipif.inc";
-php_version_compare(PHP_VERSION, "7.0.0-dev") or die("skip php<7");
+version_compare(PHP_VERSION, "7.0.0-dev") or die("skip php<7");
 ?>
 --FILE--
 <?php

@@ -12,7 +12,8 @@ if (!defined("http\\Url::PARSE_MBLOC") or
 --FILE--
 <?php
 echo "Test\n";
-setlocale(LC_CTYPE, "C.UTF-8");
+include "skipif.inc";
+utf8locale();
 
 $urls = array(
 	"s\xc3\xa7heme:",

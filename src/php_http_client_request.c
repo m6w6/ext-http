@@ -230,7 +230,7 @@ ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClientRequest, getOptions)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
-		zval tmp, *zoptions = zend_read_property(php_http_client_request_class_entry, getThis(), ZEND_STRL("options"), 0, &tmp);
+		zval tmp, *zoptions = zend_read_property(php_http_client_request_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("options"), 0, &tmp);
 		RETURN_ZVAL(zoptions, 1, 0);
 	}
 }

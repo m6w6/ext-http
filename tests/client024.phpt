@@ -1,12 +1,12 @@
 --TEST--
 client deprecated methods
 --SKIPIF--
-<?php 
+<?php
 include "skipif.inc";
 skip_client_test();
 ?>
 --FILE--
-<?php 
+<?php
 
 echo "Test\n";
 
@@ -19,7 +19,7 @@ $client->enablePipelining(false);
 --EXPECTF--
 Test
 
-Deprecated: Function http\Client::enableEvents() is deprecated in %sclient024.php on line %d
+Deprecated: Method http\Client::enableEvents() is deprecated in %sclient024.php on line %d
 
-Deprecated: Function http\Client::enablePipelining() is deprecated in %sclient024.php on line %d
+Deprecated: Method http\Client::enablePipelining() is deprecated in %sclient024.php on line %d
 ===DONE===

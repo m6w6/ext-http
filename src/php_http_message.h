@@ -104,7 +104,7 @@ ZEND_RESULT_CODE php_http_message_object_init_body_object(php_http_message_objec
 
 zend_object *php_http_message_object_new(zend_class_entry *ce);
 php_http_message_object_t *php_http_message_object_new_ex(zend_class_entry *ce, php_http_message_t *msg);
-zend_object *php_http_message_object_clone(zval *object);
+zend_object *php_http_message_object_clone(zend_object *object);
 void php_http_message_object_free(zend_object *object);
 
 #endif

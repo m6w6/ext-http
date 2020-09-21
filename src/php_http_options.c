@@ -16,7 +16,7 @@ static void php_http_options_hash_dtor(zval *pData)
 {
 	php_http_option_t *opt = Z_PTR_P(pData);
 
-	zval_internal_dtor(&opt->defval);
+	zval_internal_ptr_dtor(&opt->defval);
 	zend_hash_destroy(&opt->suboptions.options);
 	zend_string_release(opt->name);
 	pefree(opt, opt->persistent);

@@ -38,7 +38,7 @@ static inline void php_http_querystring_set(zval *instance, zval *params, int fl
 	array_init(&qa);
 
 	if (flags & QS_MERGE) {
-		zval old_tmp, *old = zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0, &old_tmp);
+		zval old_tmp, *old = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(instance), ZEND_STRL("queryArray"), 0, &old_tmp);
 
 		ZVAL_DEREF(old);
 		if (Z_TYPE_P(old) == IS_ARRAY) {
@@ -47,13 +47,13 @@ static inline void php_http_querystring_set(zval *instance, zval *params, int fl
 	}
 
 	php_http_querystring_update(&qa, params, NULL);
-	zend_update_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), &qa);
+	zend_update_property(php_http_querystring_class_entry, Z_OBJ_P(instance), ZEND_STRL("queryArray"), &qa);
 	zval_ptr_dtor(&qa);
 }
 
 static inline void php_http_querystring_str(zval *instance, zval *return_value)
 {
-	zval qa_tmp, *qa = zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0, &qa_tmp);
+	zval qa_tmp, *qa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(instance), ZEND_STRL("queryArray"), 0, &qa_tmp);
 
 	ZVAL_DEREF(qa);
 	if (Z_TYPE_P(qa) == IS_ARRAY) {
@@ -65,7 +65,7 @@ static inline void php_http_querystring_str(zval *instance, zval *return_value)
 
 static inline void php_http_querystring_get(zval *instance, int type, char *name, uint32_t name_len, zval *defval, zend_bool del, zval *return_value)
 {
-	zval *arrval, qarray_tmp, *qarray = zend_read_property(php_http_querystring_class_entry, instance, ZEND_STRL("queryArray"), 0, &qarray_tmp);
+	zval *arrval, qarray_tmp, *qarray = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(instance), ZEND_STRL("queryArray"), 0, &qarray_tmp);
 
 	ZVAL_DEREF(qarray);
 	if ((Z_TYPE_P(qarray) == IS_ARRAY) && (arrval = zend_symtable_str_find(Z_ARRVAL_P(qarray), name, name_len))) {
@@ -254,7 +254,7 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 
 		/* squeeze the hash out of the zval */
 		if (Z_TYPE_P(params) == IS_OBJECT && instanceof_function(Z_OBJCE_P(params), php_http_querystring_class_entry)) {
-			zval qa_tmp, *qa = zend_read_property(php_http_querystring_class_entry, params, ZEND_STRL("queryArray"), 0, &qa_tmp);
+			zval qa_tmp, *qa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(params), ZEND_STRL("queryArray"), 0, &qa_tmp);
 
 			ZVAL_DEREF(qa);
 			convert_to_array(qa);
@@ -378,13 +378,12 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 	if (Z_TYPE_P(instance) == IS_OBJECT) {
 		RETVAL_ZVAL(instance, 1, 0);
 	} else if ((_GET = php_http_env_get_superglobal(ZEND_STRL("_GET")))) {
-		zval tmp, *qa;
+		zval *qa;
+		zend_string *qa_str = zend_string_init(ZEND_STRL("queryArray"), 0);
 
 		ZVAL_OBJ(return_value, php_http_querystring_object_new(php_http_querystring_class_entry));
-
-		ZVAL_STRING(&tmp, "queryArray");
-		qa = Z_OBJ_HT_P(return_value)->get_property_ptr_ptr(return_value, &tmp, BP_VAR_RW, NULL);
-		zval_ptr_dtor(&tmp);
+		qa = Z_OBJ_HT_P(return_value)->get_property_ptr_ptr(Z_OBJ_P(return_value), qa_str, BP_VAR_RW, NULL);
+		zend_string_release(qa_str);
 
 		ZVAL_NEW_REF(_GET, _GET);
 		ZVAL_COPY(qa, _GET);
@@ -404,10 +403,10 @@ PHP_METHOD(HttpQueryString, getIterator)
 
 	php_http_expect(SUCCESS == zend_parse_parameters_none(), invalid_arg, return);
 
-	qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0, &qa_tmp);
+	qa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("queryArray"), 0, &qa_tmp);
 
 	object_init_ex(return_value, spl_ce_RecursiveArrayIterator);
-	zend_call_method_with_1_params(return_value, spl_ce_RecursiveArrayIterator, NULL, "__construct", NULL, qa);
+	zend_call_method_with_1_params(Z_OBJ_P(return_value), spl_ce_RecursiveArrayIterator, NULL, "__construct", NULL, qa);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_toString, 0, 0, 0)
@@ -430,7 +429,7 @@ PHP_METHOD(HttpQueryString, toArray)
 		return;
 	}
 
-	zqa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0, &zqa_tmp);
+	zqa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("queryArray"), 0, &zqa_tmp);
 	RETURN_ZVAL(zqa, 1, 0);
 }
 
@@ -507,9 +506,9 @@ PHP_METHOD(HttpQueryString, mod)
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "z", &params), invalid_arg, return);
 	
 	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_querystring_class_entry(), &zeh);
-	ZVAL_OBJ(return_value, Z_OBJ_HT_P(instance)->clone_obj(instance));
+	ZVAL_OBJ(return_value, Z_OBJ_HT_P(instance)->clone_obj(Z_OBJ_P(instance)));
 	/* make sure we do not inherit the reference to _GET */
-	SEPARATE_ZVAL(zend_read_property(Z_OBJCE_P(return_value), return_value, ZEND_STRL("queryArray"), 0, &qa_tmp));
+	SEPARATE_ZVAL(zend_read_property(Z_OBJCE_P(return_value), Z_OBJ_P(return_value), ZEND_STRL("queryArray"), 0, &qa_tmp));
 	php_http_querystring_set(return_value, params, QS_MERGE);
 	zend_restore_error_handling(&zeh);
 }
@@ -551,7 +550,7 @@ PHP_METHOD(HttpQueryString, xlate)
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "ss", &ie, &ie_len, &oe, &oe_len), invalid_arg, return);
 
 	array_init(&na);
-	qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0, &qa_tmp);
+	qa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("queryArray"), 0, &qa_tmp);
 	ZVAL_DEREF(qa);
 	convert_to_array(qa);
 
@@ -607,7 +606,7 @@ PHP_METHOD(HttpQueryString, offsetGet)
 		return;
 	}
 	
-	qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0, &qa_tmp);
+	qa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("queryArray"), 0, &qa_tmp);
 	ZVAL_DEREF(qa);
 
 	if (Z_TYPE_P(qa) == IS_ARRAY) {
@@ -654,7 +653,7 @@ PHP_METHOD(HttpQueryString, offsetExists)
 		return;
 	}
 	
-	qa = zend_read_property(php_http_querystring_class_entry, getThis(), ZEND_STRL("queryArray"), 0, &qa_tmp);
+	qa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("queryArray"), 0, &qa_tmp);
 	ZVAL_DEREF(qa);
 
 	if (Z_TYPE_P(qa) == IS_ARRAY) {

@@ -76,7 +76,7 @@ PHP_HTTP_API zend_class_entry *php_http_get_encoding_stream_class_entry(void);
 
 zend_object *php_http_encoding_stream_object_new(zend_class_entry *ce);
 php_http_encoding_stream_object_t *php_http_encoding_stream_object_new_ex(zend_class_entry *ce, php_http_encoding_stream_t *s);
-zend_object *php_http_encoding_stream_object_clone(zval *object);
+zend_object *php_http_encoding_stream_object_clone(zend_object *object);
 void php_http_encoding_stream_object_free(zend_object *object);
 
 #endif

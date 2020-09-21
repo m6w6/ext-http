@@ -261,10 +261,9 @@ size_t php_http_pass_fcall_callback(void *cb_arg, const char *str, size_t len)
 	zval zdata;
 
 	ZVAL_STRINGL(&zdata, str, len);
-	if (SUCCESS == zend_fcall_info_argn(&fcd->fci, 2, &fcd->fcz, &zdata)) {
-		zend_fcall_info_call(&fcd->fci, &fcd->fcc, NULL, NULL);
-		zend_fcall_info_args_clear(&fcd->fci, 0);
-	}
+	zend_fcall_info_argn(&fcd->fci, 2, &fcd->fcz, &zdata);
+	zend_fcall_info_call(&fcd->fci, &fcd->fcc, NULL, NULL);
+	zend_fcall_info_args_clear(&fcd->fci, 0);
 	zval_ptr_dtor(&zdata);
 	return len;
 }
