@@ -31,18 +31,26 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2020-09-21</date>
+ <date>2020-09-23</date>
  <version>
-  <release>4.0.0dev</release>
+  <release>4.0.0beta1</release>
   <api>4.0.0</api>
  </version>
  <stability>
-  <release>stable</release>
-  <api>stable</api>
+  <release>beta</release>
+  <api>beta</api>
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-  *
+  >*NOTE:*
+  v4.x will be PHP-8 only, v3.x continues PHP-7 support
+
+  * PHP 8 compatibility
+    - Drop ext-propro support
+      PHP 8 removes the object get/set API from the ZendEngine, which renders
+      that extension dysfunctional. As a consequence, the header property of
+      http\Message and derived classes cannot be modified in place, and thus
+      by reference.
 ]]></notes>
  <contents>
   <dir name="/">
