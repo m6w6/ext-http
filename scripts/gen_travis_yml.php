@@ -14,8 +14,6 @@ addons:
    - libevent-dev
    - libbrotli-dev
 
-dist: xenial
-
 cache:
  apt: true
  directories:
