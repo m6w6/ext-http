@@ -31,14 +31,14 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2020-09-23</date>
+ <date>2020-12-01</date>
  <version>
-  <release>4.0.0beta1</release>
+  <release>4.0.0</release>
   <api>4.0.0</api>
  </version>
  <stability>
-  <release>beta</release>
-  <api>beta</api>
+  <release>stable</release>
+  <api>stable</api>
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
