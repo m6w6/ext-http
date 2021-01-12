@@ -1,4 +1,25 @@
+# ChangeLog v4
+
+## 4.0.0beta1
+
+* PHP 8 compatibility
+	- Drop ext-propro support:  
+		PHP 8 removes the object get/set API from the ZendEngine, which renders
+		that extension dysfunctional. As a consequence, the header property of
+		http\Message and derived classes cannot be modified in place, and thus
+		by reference.
+
 # ChangeLog v3
+
+## 3.2.3, 2019-10-29
+
+* Fixed Windows build (Jan Ehrhardt)
+
+## 3.2.2, 2019-10-24
+
+* PHP-7.4 compatibility
+* Fixed gh-issue #92: http\Message\Body::addForm() discards numeric names
+* Fixed gh-issue #95: typo in http\Message::getResponseCode()'s error message
 
 ## 3.2.1, 2019-06-07
 
@@ -172,4 +193,3 @@ PHP7 compatible release based on the 2.5.x series with the following backwards i
 
 PHP7 compatible release based on the 2.5.x series with the following backwards incompatible changes:
 - removed http\Url::FROM_ENV from the default flags of the http\Url constructor, use http\Env\Url instead
-
