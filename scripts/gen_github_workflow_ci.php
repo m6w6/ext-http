@@ -58,7 +58,7 @@ foreach ($job as $id => $env) {
     }
     printf("    env:\n");
     foreach ($env as $key => $val) {
-        printf("      %s: %s\n", $key, $val);
+        printf("      %s: \"%s\"\n", $key, $val);
     }
 ?>
     runs-on: ubuntu-20.04

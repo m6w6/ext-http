@@ -11,10 +11,10 @@ jobs:
     name: master-0
     continue-on-error: true
     env:
-      PHP: master
-      enable_debug: yes
-      enable_zts: yes
-      enable_iconv: yes
+      PHP: "master"
+      enable_debug: "yes"
+      enable_zts: "yes"
+      enable_iconv: "yes"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -45,13 +45,13 @@ jobs:
   cur-none-0:
     name: cur-none-0
     env:
-      PHP: 8.0
-      with_http_libicu_dir: no
-      with_http_libidn_dir: no
-      with_http_libidn2_dir: no
-      with_http_libcurl_dir: no
-      with_http_libevent_dir: no
-      with_http_libbrotli_dir: no
+      PHP: "8.0"
+      with_http_libicu_dir: "no"
+      with_http_libidn_dir: "no"
+      with_http_libidn2_dir: "no"
+      with_http_libcurl_dir: "no"
+      with_http_libevent_dir: "no"
+      with_http_libbrotli_dir: "no"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -82,10 +82,10 @@ jobs:
   cur-dbg-zts-0:
     name: cur-dbg-zts-0
     env:
-      PHP: 8.0
-      enable_debug: yes
-      enable_zts: yes
-      enable_iconv: yes
+      PHP: "8.0"
+      enable_debug: "yes"
+      enable_zts: "yes"
+      enable_iconv: "yes"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -116,10 +116,10 @@ jobs:
   cur-dbg-zts-1:
     name: cur-dbg-zts-1
     env:
-      PHP: 8.0
-      enable_debug: no
-      enable_zts: yes
-      enable_iconv: yes
+      PHP: "8.0"
+      enable_debug: "no"
+      enable_zts: "yes"
+      enable_iconv: "yes"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -150,10 +150,10 @@ jobs:
   cur-dbg-zts-2:
     name: cur-dbg-zts-2
     env:
-      PHP: 8.0
-      enable_debug: yes
-      enable_zts: no
-      enable_iconv: yes
+      PHP: "8.0"
+      enable_debug: "yes"
+      enable_zts: "no"
+      enable_iconv: "yes"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -184,10 +184,10 @@ jobs:
   cur-dbg-zts-3:
     name: cur-dbg-zts-3
     env:
-      PHP: 8.0
-      enable_debug: no
-      enable_zts: no
-      enable_iconv: yes
+      PHP: "8.0"
+      enable_debug: "no"
+      enable_zts: "no"
+      enable_iconv: "yes"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -218,13 +218,13 @@ jobs:
   cur-cov-0:
     name: cur-cov-0
     env:
-      CFLAGS: '-O0 -g --coverage'
-      CXXFLAGS: '-O0 -g --coverage'
-      PHP: 8.0
-      enable_iconv: yes
-      with_http_libicu_dir: yes
-      with_http_libidn_dir: no
-      with_http_libidn2_dir: no
+      CFLAGS: "'-O0 -g --coverage'"
+      CXXFLAGS: "'-O0 -g --coverage'"
+      PHP: "8.0"
+      enable_iconv: "yes"
+      with_http_libicu_dir: "yes"
+      with_http_libidn_dir: "no"
+      with_http_libidn2_dir: "no"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -260,13 +260,13 @@ jobs:
   cur-cov-1:
     name: cur-cov-1
     env:
-      CFLAGS: '-O0 -g --coverage'
-      CXXFLAGS: '-O0 -g --coverage'
-      PHP: 8.0
-      enable_iconv: yes
-      with_http_libicu_dir: no
-      with_http_libidn_dir: yes
-      with_http_libidn2_dir: no
+      CFLAGS: "'-O0 -g --coverage'"
+      CXXFLAGS: "'-O0 -g --coverage'"
+      PHP: "8.0"
+      enable_iconv: "yes"
+      with_http_libicu_dir: "no"
+      with_http_libidn_dir: "yes"
+      with_http_libidn2_dir: "no"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -302,13 +302,13 @@ jobs:
   cur-cov-2:
     name: cur-cov-2
     env:
-      CFLAGS: '-O0 -g --coverage'
-      CXXFLAGS: '-O0 -g --coverage'
-      PHP: 8.0
-      enable_iconv: yes
-      with_http_libicu_dir: no
-      with_http_libidn_dir: no
-      with_http_libidn2_dir: yes
+      CFLAGS: "'-O0 -g --coverage'"
+      CXXFLAGS: "'-O0 -g --coverage'"
+      PHP: "8.0"
+      enable_iconv: "yes"
+      with_http_libicu_dir: "no"
+      with_http_libidn_dir: "no"
+      with_http_libidn2_dir: "yes"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
