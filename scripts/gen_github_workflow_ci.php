@@ -39,8 +39,8 @@ $job = $gen->github([
 ], 
 "cur-cov" => [
 // once everything enabled for current, with coverage
-    "CFLAGS" => "'-O0 -g --coverage'",
-    "CXXFLAGS" => "'-O0 -g --coverage'",
+    "CFLAGS" => "-O0 -g --coverage",
+    "CXXFLAGS" => "-O0 -g --coverage",
     "PHP" => $cur,
     "enable_iconv" => "yes",
     [

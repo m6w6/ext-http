@@ -224,8 +224,8 @@ jobs:
   cur-cov-0:
     name: cur-cov-0
     env:
-      CFLAGS: "'-O0 -g --coverage'"
-      CXXFLAGS: "'-O0 -g --coverage'"
+      CFLAGS: "-O0 -g --coverage"
+      CXXFLAGS: "-O0 -g --coverage"
       PHP: "8.0"
       enable_iconv: "yes"
       with_http_libicu_dir: "yes"
@@ -267,8 +267,8 @@ jobs:
   cur-cov-1:
     name: cur-cov-1
     env:
-      CFLAGS: "'-O0 -g --coverage'"
-      CXXFLAGS: "'-O0 -g --coverage'"
+      CFLAGS: "-O0 -g --coverage"
+      CXXFLAGS: "-O0 -g --coverage"
       PHP: "8.0"
       enable_iconv: "yes"
       with_http_libicu_dir: "no"
@@ -310,8 +310,8 @@ jobs:
   cur-cov-2:
     name: cur-cov-2
     env:
-      CFLAGS: "'-O0 -g --coverage'"
-      CXXFLAGS: "'-O0 -g --coverage'"
+      CFLAGS: "-O0 -g --coverage"
+      CXXFLAGS: "-O0 -g --coverage"
       PHP: "8.0"
       enable_iconv: "yes"
       with_http_libicu_dir: "no"
