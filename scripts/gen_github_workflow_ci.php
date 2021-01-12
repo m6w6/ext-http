@@ -83,10 +83,10 @@ foreach ($job as $id => $env) {
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
       - name: Build
         run: |
-          make -f travis/pecl/Makefile ext PECL=http
+          make -f scripts/ci/Makefile ext PECL=http
       - name: Test
         run: |
-          make -f travis/pecl/Makefile test
+          make -f scripts/ci/Makefile test
 <?php if (isset($env["CFLAGS"]) && strpos($env["CFLAGS"], "--coverage") != false) : ?>
       - name: Coverage
         if: success()
