@@ -63,6 +63,7 @@ foreach ($job as $id => $env) {
 ?>
     steps:
       - uses: actions/checkout@v2
+        submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
