@@ -17,6 +17,12 @@
 #include "ext/standard/sha1.h"
 #include "ext/standard/md5.h"
 
+#if PHP_VERSION_ID >= 80100
+# define HASH_INIT_ARGS ,NULL
+#else
+# define HASH_INIT_ARGS
+#endif
+
 php_http_etag_t *php_http_etag_init(const char *mode)
 {
 	php_http_etag_t *e;
@@ -31,7 +37,7 @@ php_http_etag_t *php_http_etag_init(const char *mode)
 
 	e = emalloc(sizeof(*e) + eho->context_size - 1);
 	e->ops = eho;
-	eho->hash_init(e->ctx);
+	eho->hash_init(e->ctx HASH_INIT_ARGS);
 
 	return e;
 }
@@ -64,4 +70,3 @@ size_t php_http_etag_update(php_http_etag_t *e, const char *data_ptr, size_t dat
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-
