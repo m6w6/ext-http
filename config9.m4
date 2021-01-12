@@ -87,7 +87,11 @@ if test "$PHP_HTTP" != "no"; then
 	if test "$PHP_HTTP_LIBICU_DIR" != "no"; then
 		AC_PATH_PROG(ICU_CONFIG, icu-config, false, [$PHP_HTTP_LIBICU_DIR/bin:$PATH:/usr/local/bin])
 
-		PECL_CHECK_CONFIG(libicu, [$ICU_CONFIG], [--version], [--cppflags], [--ldflags-searchpath], [--ldflags-libsonly])
+		if $ICU_CONFIG --exists >/dev/null 2>/dev/null; then
+			PECL_CHECK_CONFIG(libicu, [$ICU_CONFIG], [--version], [--cppflags], [--ldflags-searchpath], [--ldflags-libsonly])
+		else
+			PECL_CHECK_PKGCONFIG(icu-i18n, [$PHP_HTTP_LIBICU_DIR])
+		fi
 		AC_CACHE_CHECK([for uidna_IDNToASCII], PECL_CACHE_VAR([HAVE_UIDNA_IDNToASCII]), [
 			if printf "%s" "$CFLAGS" | $EGREP -q "(^|\s)-Werror\b"; then
 				if ! printf "%s" "$CFLAGS" | $EGREP -q "(^|\s)-Wno-error=deprecated-declarations\b"; then
