@@ -15,9 +15,11 @@ jobs:
       enable_debug: yes
       enable_zts: yes
       enable_iconv: yes
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        submodules: true
+        with:
+          submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
@@ -50,9 +52,11 @@ jobs:
       with_http_libcurl_dir: no
       with_http_libevent_dir: no
       with_http_libbrotli_dir: no
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        submodules: true
+        with:
+          submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
@@ -82,9 +86,11 @@ jobs:
       enable_debug: yes
       enable_zts: yes
       enable_iconv: yes
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        submodules: true
+        with:
+          submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
@@ -114,9 +120,11 @@ jobs:
       enable_debug: no
       enable_zts: yes
       enable_iconv: yes
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        submodules: true
+        with:
+          submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
@@ -146,9 +154,11 @@ jobs:
       enable_debug: yes
       enable_zts: no
       enable_iconv: yes
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        submodules: true
+        with:
+          submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
@@ -178,9 +188,11 @@ jobs:
       enable_debug: no
       enable_zts: no
       enable_iconv: yes
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        submodules: true
+        with:
+          submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
@@ -213,9 +225,11 @@ jobs:
       with_http_libicu_dir: yes
       with_http_libidn_dir: no
       with_http_libidn2_dir: no
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        submodules: true
+        with:
+          submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
@@ -253,9 +267,11 @@ jobs:
       with_http_libicu_dir: no
       with_http_libidn_dir: yes
       with_http_libidn2_dir: no
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        submodules: true
+        with:
+          submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
@@ -293,9 +309,11 @@ jobs:
       with_http_libicu_dir: no
       with_http_libidn_dir: no
       with_http_libidn2_dir: yes
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-        submodules: true
+        with:
+          submodules: true
       - name: Install
         run: |
           sudo apt-get install -y \
