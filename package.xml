@@ -383,7 +383,7 @@ https://mdref.m6w6.name/http
     <file role="src" name="check_package-xml.php"/>
     <file role="src" name="gen_curlinfo.php"/>
     <file role="src" name="gen_stubs.php"/>
-    <file role="src" name="gen_travis_yml.php"/>
+    <file role="src" name="gen_github_workflow_ci.php"/>
     <file role="src" name="gen_utf8.php"/>
    </dir>
   </dir>
