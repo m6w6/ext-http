@@ -1,11 +1,16 @@
 # ext-http
 
-[![Build Status](https://travis-ci.com/m6w6/ext-http.svg?branch=master)](https://travis-ci.com/m6w6/ext-http)
+[![Build Status](https://github.com/m6w6/ext-http/workflows/ci/badge.svg)](https://github.com/m6w6/ext-http/actions?query=workflow%3Aci)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/8711/badge.svg)](https://scan.coverity.com/projects/m6w6-ext-http)
 [![codecov](https://codecov.io/gh/m6w6/ext-http/branch/master/graph/badge.svg)](https://codecov.io/gh/m6w6/ext-http)
-[![Join the chat at https://gitter.im/m6w6/ext-http](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/m6w6/ext-http)
 
-Extended HTTP support. Again.
+Extended HTTP support for PHP.
+
+## Branches and Versions:
+
+> **NOTE:**  
+  Use `v3.x` branch, and resp. v3 releases, for PHP-7. `master` and v4 releases are only for PHP-8.
+
 
 ## Documentation
 
@@ -13,7 +18,7 @@ See the [online markdown reference](https://mdref.m6w6.name/http).
 
 Known issues are listed in [BUGS](./BUGS) and future ideas can be found in [TODO](./TODO).
 
-## Installing
+## Install
 
 ### PECL
 

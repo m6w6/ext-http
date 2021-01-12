@@ -1,4 +1,6 @@
 [submodule "travis-pecl"]
-	path = travis/pecl
+	path = scripts/ci
 	url = https://github.com/m6w6/travis-pecl.git
 	branch = master
+[submodule "scripts/ci"]
+	url = https://github.com/m6w6/pecl-ci.git
