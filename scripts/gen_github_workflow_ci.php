@@ -76,7 +76,8 @@ foreach ($job as $id => $env) {
             libidn2-0-dev \
             libicu-dev \
             libevent-dev \
-            libbrotli-dev
+            libbrotli-dev \
+            re2c
       - name: Prepare
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
