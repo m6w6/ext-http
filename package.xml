@@ -31,9 +31,9 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2019-10-29</date>
+ <date>2021-01-13</date>
  <version>
-  <release>3.2.3</release>
+  <release>3.2.4</release>
   <api>3.2.0</api>
  </version>
  <stability>
@@ -42,7 +42,8 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-  * Fixed Windows build (Jan Ehrhardt)
+  * Fixed configure on systems which do not provide icu-config
+  * Fixed gh-issue #89: Cookie handling cannot be disabled since v3.2.1
 ]]></notes>
  <contents>
   <dir name="/">

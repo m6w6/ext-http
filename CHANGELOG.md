@@ -1,7 +1,8 @@
 # ChangeLog v3
 
-## 3.2.4, TBR
+## 3.2.4, 2021-01-13
 
+* Fixed configure on systems which do not provide icu-config
 * Fixed gh-issue #89: Cookie handling cannot be disabled since v3.2.1
 
 ## 3.2.3, 2019-10-29
@@ -186,4 +187,3 @@ PHP7 compatible release based on the 2.5.x series with the following backwards i
 
 PHP7 compatible release based on the 2.5.x series with the following backwards incompatible changes:
 - removed http\Url::FROM_ENV from the default flags of the http\Url constructor, use http\Env\Url instead
-
