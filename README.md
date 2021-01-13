@@ -1,6 +1,6 @@
 # ext-http
 
-[![Build Status](https://travis-ci.org/m6w6/ext-http.svg?branch=master)](https://travis-ci.org/m6w6/ext-http)
+[![Build Status](https://github.com/m6w6/ext-http/workflows/ci/badge.svg?branch=v3.x)](https://github.com/m6w6/ext-http/actions?query=branch%3Av3.x+workflow%3Aci)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/8711/badge.svg)](https://scan.coverity.com/projects/m6w6-ext-http)
 [![codecov](https://codecov.io/gh/m6w6/ext-http/branch/master/graph/badge.svg)](https://codecov.io/gh/m6w6/ext-http)
 [![Join the chat at https://gitter.im/m6w6/ext-http](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/m6w6/ext-http)
