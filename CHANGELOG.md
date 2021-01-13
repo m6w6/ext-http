@@ -1,5 +1,19 @@
 # ChangeLog v3
 
+## 3.2.4, TBR
+
+* Fixed gh-issue #89: Cookie handling cannot be disabled since v3.2.1
+
+## 3.2.3, 2019-10-29
+
+* Fixed Windows build (Jan Ehrhardt)
+
+## 3.2.2, 2019-10-24
+
+* PHP-7.4 compatibility
+* Fixed gh-issue #92: http\Message\Body::addForm() discards numeric names
+* Fixed gh-issue #95: typo in http\Message::getResponseCode()'s error message
+
 ## 3.2.1, 2019-06-07
 
 * Fixed gh-issue #88: Unable to run test suite (Remi Collet)
