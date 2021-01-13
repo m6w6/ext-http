@@ -1,6 +1,10 @@
 # ChangeLog v4
 
-## 4.0.0beta1
+## 4.0.0beta2, TBR
+
+* Fixed gh-issue #89: Cookie handling cannot be disabled since v3.2.1
+
+## 4.0.0beta1, 2020-09-23
 
 * PHP 8 compatibility
 	- Drop ext-propro support:  
@@ -10,6 +14,10 @@
 		by reference.
 
 # ChangeLog v3
+
+## 3.2.4, TBR
+
+* Fixed gh-issue #89: Cookie handling cannot be disabled since v3.2.1
 
 ## 3.2.3, 2019-10-29
 
