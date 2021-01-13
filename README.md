@@ -1,6 +1,6 @@
 # ext-http
 
-[![Build Status](https://github.com/m6w6/ext-http/workflows/ci/badge.svg)](https://github.com/m6w6/ext-http/actions?query=workflow%3Aci)
+[![Build Status](https://github.com/m6w6/ext-http/workflows/ci/badge.svg?branch=master)](https://github.com/m6w6/ext-http/actions?query=workflow%3Aci+branch%3Amaster)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/8711/badge.svg)](https://scan.coverity.com/projects/m6w6-ext-http)
 [![codecov](https://codecov.io/gh/m6w6/ext-http/branch/master/graph/badge.svg)](https://codecov.io/gh/m6w6/ext-http)
 
