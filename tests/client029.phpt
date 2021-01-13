@@ -1,13 +1,13 @@
 --TEST--
 client curl user handler
 --SKIPIF--
-<?php 
+<?php
 include "skipif.inc";
 skip_client_test();
 _ext("event");
-?> 
+?>
 --FILE--
-<?php 
+<?php
 echo "Test\n";
 
 class UserHandler implements http\Client\Curl\User
@@ -23,11 +23,11 @@ class UserHandler implements http\Client\Curl\User
 		$this->evbase = $evbase;
 		$this->client = $client;
 	}
-	
+
 	function init($run) {
 		$this->run = $run;
 	}
-	
+
 	function timer(int $timeout_ms) {
 		echo "T";
 		if (isset($this->timeout)) {
@@ -44,10 +44,10 @@ class UserHandler implements http\Client\Curl\User
 			$this->timeout->add($timeout_ms/1000);
 		}
 	}
-	
+
 	function socket($socket, int $action) {
 		echo "S";
-		
+
 		switch ($action) {
 		case self::POLL_NONE:
 			break;
@@ -58,7 +58,7 @@ class UserHandler implements http\Client\Curl\User
 				unset($this->ios[(int) $socket]);
 			}
 			break;
-			
+
 		default:
 			$ev = 0;
 			if ($action & self::POLL_IN) {
@@ -68,16 +68,16 @@ class UserHandler implements http\Client\Curl\User
 				$ev |= Event::WRITE;
 			}
 			if (isset($this->ios[(int) $socket])) {
-				$this->ios[(int) $socket]->set($this->evbase, 
+				$this->ios[(int) $socket]->set($this->evbase,
 						$socket, $ev, $this->onEvent($socket));
 			} else {
-				$this->ios[(int) $socket] = new Event($this->evbase, 
+				$this->ios[(int) $socket] = new Event($this->evbase,
 						$socket, $ev, $this->onEvent($socket));
 			}
 			break;
 		}
 	}
-	
+
 	function onEvent($socket) {
 		return function($watcher, $events) use($socket) {
 			$action = 0;
@@ -95,15 +95,15 @@ class UserHandler implements http\Client\Curl\User
 			}
 		};
 	}
-	
+
 	function once() {
 		throw new BadMethodCallException("this test uses EventBase::loop()");
 	}
-	
+
 	function wait(int $timeout_ms = null) {
 		throw new BadMethodCallException("this test uses EventBase::loop()");
 	}
-	
+
 	function send() {
 		throw new BadMethodCallException("this test uses EventBase::loop()");
 	}
@@ -128,5 +128,5 @@ server("proxy.inc", function($port) {
 ===DONE===
 --EXPECTREGEX--
 Test
-T*[ST]+U+T*int\(200\)
+[ST]+U+T*int\(200\)
 ===DONE===
