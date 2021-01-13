@@ -38,7 +38,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -85,7 +85,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -132,7 +132,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -179,7 +179,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -227,7 +227,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -276,7 +276,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -325,7 +325,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -374,7 +374,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -423,7 +423,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -442,8 +442,8 @@ jobs:
   cur-cov-0:
     name: cur-cov-0
     env:
-      CFLAGS: "'-O0 -g --coverage'"
-      CXXFLAGS: "'-O0 -g --coverage'"
+      CFLAGS: "-O0 -g --coverage"
+      CXXFLAGS: "-O0 -g --coverage"
       PHP: "7.4"
       PECLs: "event"
       enable_sockets: "yes"
@@ -475,7 +475,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -499,8 +499,8 @@ jobs:
   cur-cov-1:
     name: cur-cov-1
     env:
-      CFLAGS: "'-O0 -g --coverage'"
-      CXXFLAGS: "'-O0 -g --coverage'"
+      CFLAGS: "-O0 -g --coverage"
+      CXXFLAGS: "-O0 -g --coverage"
       PHP: "7.4"
       PECLs: "event"
       enable_sockets: "yes"
@@ -532,7 +532,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
@@ -556,8 +556,8 @@ jobs:
   cur-cov-2:
     name: cur-cov-2
     env:
-      CFLAGS: "'-O0 -g --coverage'"
-      CXXFLAGS: "'-O0 -g --coverage'"
+      CFLAGS: "-O0 -g --coverage"
+      CXXFLAGS: "-O0 -g --coverage"
       PHP: "7.4"
       PECLs: "event"
       enable_sockets: "yes"
@@ -589,7 +589,7 @@ jobs:
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do

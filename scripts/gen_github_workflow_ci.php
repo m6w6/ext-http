@@ -45,8 +45,8 @@ $job = $gen->github([
 ], 
 "cur-cov" => [
 // once everything enabled for current, with coverage
-	"CFLAGS" => "'-O0 -g --coverage'",
-	"CXXFLAGS" => "'-O0 -g --coverage'",
+	"CFLAGS" => "-O0 -g --coverage",
+	"CXXFLAGS" => "-O0 -g --coverage",
 	"PHP" => $cur,
 	"PECLs" => "event",			// for tests/client029.phpt
 	"enable_sockets" => "yes",	// needed by pecl/event
@@ -93,7 +93,7 @@ foreach ($job as $id => $env) {
         run: |
           make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
           make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-          make -f scripts/ci/Makefile pecl PECL=ext-propro.git:propro:master
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-propro.git:propro:master
           if test -n "$PECLs"; then
             IFS=$','
             for pecl in $PECLs; do
