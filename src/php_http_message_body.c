@@ -420,7 +420,7 @@ static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const
 			} else {
 				zend_string *tmp = zval_get_string(zdata);
 
-				stream = php_stream_memory_open(TEMP_STREAM_READONLY, tmp->val, tmp->len);
+				stream = php_http_mem_stream_open(TEMP_STREAM_READONLY, tmp);
 				zend_string_release(tmp);
 			}
 		} else {
@@ -693,12 +693,11 @@ ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_unserialize, 0, 0, 1)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpMessageBody, unserialize)
 {
-	char *us_str;
-	size_t us_len;
+	zend_string *us_str;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s", &us_str, &us_len)) {
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "S", &us_str)) {
 		php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
-		php_stream *s = php_stream_memory_open(0, us_str, us_len);
+		php_stream *s = php_http_mem_stream_open(0, us_str);
 
 		obj->body = php_http_message_body_init(NULL, s);
 		php_stream_to_zval(s, obj->gc);

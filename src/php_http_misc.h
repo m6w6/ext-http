@@ -102,6 +102,11 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 #	define HASH_OF(p) ((HashTable*)(Z_TYPE_P(p)==IS_ARRAY ? Z_ARRVAL_P(p) : ((Z_TYPE_P(p)==IS_OBJECT ? Z_OBJ_HT_P(p)->get_properties(Z_OBJ_P(p)) : NULL))))
 #endif
 
+#if PHP_VERSION_ID >= 80100
+# define php_http_mem_stream_open(type, zstr) php_stream_memory_open((type), (zstr))
+#else
+# define php_http_mem_stream_open(type, zstr) php_stream_memory_open((type), (zstr)->val, (zstr)->len)
+#endif
 
 #define HT_IS_RECURSIVE(ht) GC_IS_RECURSIVE(ht)
 #define HT_PROTECT_RECURSION(ht) GC_PROTECT_RECURSION(ht)
