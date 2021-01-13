@@ -1,7 +1,9 @@
 # ChangeLog v4
 
-## 4.0.0beta2, TBR
+## 4.0.0, 2021-01-13
 
+Changes from beta1:
+* Fixed configure on systems which do not provide icu-config
 * Fixed gh-issue #89: Cookie handling cannot be disabled since v3.2.1
 
 ## 4.0.0beta1, 2020-09-23

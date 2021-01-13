@@ -31,7 +31,7 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2020-12-01</date>
+ <date>2021-01-13</date>
  <version>
   <release>4.0.0</release>
   <api>4.0.0</api>
@@ -42,8 +42,8 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-  >*NOTE:*
-  v4.x will be PHP-8 only, v3.x continues PHP-7 support
+  > *NOTE:*  
+    v4.x is PHP-8 only.
 
   * PHP 8 compatibility
     - Drop ext-propro support
@@ -51,6 +51,10 @@ https://mdref.m6w6.name/http
       that extension dysfunctional. As a consequence, the header property of
       http\Message and derived classes cannot be modified in place, and thus
       by reference.
+
+  Changes from beta1:
+  * Fixed configure on systems which do not provide icu-config
+  * Fixed gh-issue #89: Cookie handling cannot be disabled since v3.2.1
 ]]></notes>
  <contents>
   <dir name="/">
