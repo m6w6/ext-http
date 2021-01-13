@@ -294,6 +294,7 @@ https://mdref.m6w6.name/http
      <file role="test" name="gh-issue48.phpt"/>
      <file role="test" name="gh-issue50.phpt"/>
      <file role="test" name="gh-issue63.phpt"/>
+     <file role="test" name="gh-issue92.phpt"/>
      <file role="test" name="header001.phpt"/>
      <file role="test" name="header002.phpt"/>
      <file role="test" name="header003.phpt"/>
