@@ -1203,6 +1203,9 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 #if PHP_HTTP_CURL_VERSION(7,19,4)
 	php_http_option_register(registry, ZEND_STRL("noproxy"), CURLOPT_NOPROXY, IS_STRING);
 #endif
+#if PHP_HTTP_CURL_VERSION(7,55,0)
+	php_http_option_register(registry, ZEND_STRL("socks5_auth"), CURLOPT_SOCKS5_AUTH, IS_LONG);
+#endif
 
 #if PHP_HTTP_CURL_VERSION(7,37,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("proxyheader"), CURLOPT_PROXYHEADER, IS_ARRAY))) {
@@ -2626,6 +2629,7 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	/*
 	* Auth Constants
 	*/
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_NONE", CURLAUTH_NONE, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_BASIC", CURLAUTH_BASIC, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_DIGEST", CURLAUTH_DIGEST, CONST_CS|CONST_PERSISTENT);
 #if PHP_HTTP_CURL_VERSION(7,19,3)
