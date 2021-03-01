@@ -1415,6 +1415,9 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		Z_LVAL(opt->defval) = 60;
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,49,0)
+	php_http_option_register(registry, ZEND_STRL("tcp_fastopen"), CURLOPT_TCP_FASTOPEN, _IS_BOOL);
+#endif
 
 	/* ssl */
 	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_SSL)) {
