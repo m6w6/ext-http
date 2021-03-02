@@ -1219,7 +1219,11 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,60,0)
+	php_http_option_register(registry, ZEND_STRL("haproxy_protocol"), CURLOPT_HAPROXYPROTOCOL, _IS_BOOL);
+#endif
 
+	/* unix sockets */
 #if PHP_HTTP_CURL_VERSION(7,40,0)
 	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_UNIX_SOCKETS)) {
 		if ((opt = php_http_option_register(registry, ZEND_STRL("unix_socket_path"), CURLOPT_UNIX_SOCKET_PATH, IS_STRING))) {
