@@ -1614,6 +1614,13 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			}
 # endif
+# if PHP_HTTP_CURL_VERSION(7,59,0)
+			/* FIXME: see http://curl.haxx.se/libcurl/c/CURLOPT_PINNEDPUBLICKEY.html#AVAILABILITY */
+			if ((opt = php_http_option_register(proxy_registry, ZEND_STRL("pinned_publickey"), CURLOPT_PROXY_PINNEDPUBLICKEY, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
+# endif
 		}
 #endif
 
