@@ -1543,6 +1543,11 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 #if PHP_HTTP_CURL_VERSION(7,42,0) && (PHP_HTTP_HAVE_LIBCURL_NSS || PHP_HTTP_HAVE_LIBCURL_SECURETRANSPORT)
 			php_http_option_register(ssl_registry, ZEND_STRL("falsestart"), CURLOPT_SSL_FALSESTART, _IS_BOOL);
 #endif
+#if PHP_HTTP_CURL_VERSION(7,61,0)
+			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("tls13_ciphers"), CURLOPT_TLS13_CIPHERS, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			}
+#endif
 		}
 
 #if PHP_HTTP_CURL_VERSION(7,52,0)
@@ -1619,6 +1624,11 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 			if ((opt = php_http_option_register(proxy_registry, ZEND_STRL("pinned_publickey"), CURLOPT_PROXY_PINNEDPUBLICKEY, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
+# endif
+# if PHP_HTTP_CURL_VERSION(7,61,0)
+			if ((opt = php_http_option_register(proxy_registry, ZEND_STRL("tls13_ciphers"), CURLOPT_PROXY_TLS13_CIPHERS, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			}
 # endif
 		}
