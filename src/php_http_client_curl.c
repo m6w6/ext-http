@@ -1316,6 +1316,11 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,61,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("xoauth2_bearer"), CURLOPT_XOAUTH2_BEARER, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+	}
+#endif
 
 	/* redirects */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("redirect"), CURLOPT_FOLLOWLOCATION, IS_LONG))) {
@@ -2810,6 +2815,9 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_GSSNEG", CURLAUTH_GSSNEGOTIATE, CONST_CS|CONST_PERSISTENT);
 #if PHP_HTTP_CURL_VERSION(7,38,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_SPNEGO", CURLAUTH_NEGOTIATE, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,61,0)
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_BEARER", CURLAUTH_BEARER, CONST_CS|CONST_PERSISTENT);
 #endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_ANY", CURLAUTH_ANY, CONST_CS|CONST_PERSISTENT);
 
