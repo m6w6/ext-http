@@ -1220,7 +1220,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,60,0)
-	php_http_option_register(registry, ZEND_STRL("haproxy_protocol"), CURLOPT_HAPROXYPROTOCOL, _IS_BOOL);
+	php_http_option_register(registry, ZEND_STRL("haproxy_protocol"), CURLOPT_HAPROX	YPROTOCOL, _IS_BOOL);
 #endif
 
 	/* unix sockets */
@@ -1266,6 +1266,10 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	}
 # endif
 #endif
+#if PHP_HTTP_CURL_VERSION(7,60,0)
+	php_http_option_register(registry, ZEND_STRL("dns_shuffle_addresses"), CURLOPT_DNS_SHUFFLE_ADDRESSES, _IS_BOOL);
+#endif
+
 
 	/* limits */
 	php_http_option_register(registry, ZEND_STRL("low_speed_limit"), CURLOPT_LOW_SPEED_LIMIT, IS_LONG);
