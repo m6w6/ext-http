@@ -1220,7 +1220,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,60,0)
-	php_http_option_register(registry, ZEND_STRL("haproxy_protocol"), CURLOPT_HAPROX	YPROTOCOL, _IS_BOOL);
+	php_http_option_register(registry, ZEND_STRL("haproxy_protocol"), CURLOPT_HAPROXYPROTOCOL, _IS_BOOL);
 #endif
 
 	/* unix sockets */
@@ -2551,6 +2551,13 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	}
 
 	if ((info = curl_version_info(CURLVERSION_NOW))) {
+		char tmp_ver[0x20], *tmp_ptr, *tmp_end;
+#define tmp_ver_init() do {\
+	tmp_ver[0] = 0; \
+	tmp_ptr = &tmp_ver[0]; \
+	tmp_end = &tmp_ver[sizeof(tmp_ver) - 1]; \
+} while (0)
+
 		/*
 		 * Feature constants
 		 */
@@ -2558,9 +2565,6 @@ PHP_MINIT_FUNCTION(http_client_curl)
 
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "IPV6", CURL_VERSION_IPV6, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "KERBEROS4", CURL_VERSION_KERBEROS4, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,40,0)
-		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "KERBEROS5", CURL_VERSION_KERBEROS5, CONST_CS|CONST_PERSISTENT);
-#endif
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "SSL", CURL_VERSION_SSL, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "LIBZ", CURL_VERSION_LIBZ, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "NTLM", CURL_VERSION_NTLM, CONST_CS|CONST_PERSISTENT);
@@ -2570,9 +2574,6 @@ PHP_MINIT_FUNCTION(http_client_curl)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "LARGEFILE", CURL_VERSION_LARGEFILE, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "IDN", CURL_VERSION_IDN, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "SSPI", CURL_VERSION_SSPI, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,38,0)
-		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "GSSAPI", CURL_VERSION_GSSAPI, CONST_CS|CONST_PERSISTENT);
-#endif
 #if PHP_HTTP_CURL_VERSION(7,21,4)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "TLSAUTH_SRP", CURL_VERSION_TLSAUTH_SRP, CONST_CS|CONST_PERSISTENT);
 #endif
@@ -2582,28 +2583,73 @@ PHP_MINIT_FUNCTION(http_client_curl)
 #if PHP_HTTP_CURL_VERSION(7,33,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "HTTP2", CURL_VERSION_HTTP2, CONST_CS|CONST_PERSISTENT);
 #endif
+#if PHP_HTTP_CURL_VERSION(7,38,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "GSSAPI", CURL_VERSION_GSSAPI, CONST_CS|CONST_PERSISTENT);
+#endif
 #if PHP_HTTP_CURL_VERSION(7,40,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "KERBEROS5", CURL_VERSION_KERBEROS5, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "UNIX_SOCKETS", CURL_VERSION_UNIX_SOCKETS, CONST_CS|CONST_PERSISTENT);
 #endif
 #if PHP_HTTP_CURL_VERSION(7,47,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "PSL", CURL_VERSION_PSL, CONST_CS|CONST_PERSISTENT);
 #endif
+#if PHP_HTTP_CURL_VERSION(7,52,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "HTTPS_PROXY", CURL_VERSION_HTTPS_PROXY, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,56,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "MULTI_SSL", CURL_VERSION_MULTI_SSL, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,57,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "BROTLI", CURL_VERSION_BROTLI, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,64,1)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "ALTSVC", CURL_VERSION_ALTSVC, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,66,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "HTTP3", CURL_VERSION_HTTP3, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,72,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "ZSTD", CURL_VERSION_ZSTD, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "UNICODE", CURL_VERSION_UNICODE, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,74,0)
+		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "HSTS", CURL_VERSION_HSTS, CONST_CS|CONST_PERSISTENT);
+#endif
+
 
 		/*
 		 * Version constants
 		 */
 		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl", "VERSIONS", curl_version(), CONST_CS|CONST_PERSISTENT);
-#if CURLVERSION_NOW >= 0
-		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "CURL", (char *) info->version, CONST_CS|CONST_PERSISTENT);
-		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "SSL", (char *) info->ssl_version, CONST_CS|CONST_PERSISTENT);
-		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "LIBZ", (char *) info->libz_version, CONST_CS|CONST_PERSISTENT);
-# if CURLVERSION_NOW >= 1
-		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "ARES", (char *) info->ares, CONST_CS|CONST_PERSISTENT);
-#  if CURLVERSION_NOW >= 2
-		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "IDN", (char *) info->libidn, CONST_CS|CONST_PERSISTENT);
-#  endif
-# endif
+		REGISTER_NS_STRING_CONSTANT("http\\Client\\Curl\\Versions", "CURL", info->version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "SSL", info->ssl_version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "LIBZ", info->libz_version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "ARES", info->ares, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "IDN", info->libidn, CONST_CS|CONST_PERSISTENT);
+		tmp_ver_init();
+		tmp_ptr = zend_print_ulong_to_buf(tmp_end, info->iconv_ver_num & 0xf);
+		tmp_end = tmp_ptr - 1;
+		tmp_ptr = zend_print_ulong_to_buf(tmp_end, info->iconv_ver_num >> 8);
+		*tmp_end = '.';
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "ICONV", tmp_ptr, CONST_CS|CONST_PERSISTENT);
+#if PHP_HTTP_CURL_VERSION(7,57,0)
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "BROTLI", info->brotli_version, CONST_CS|CONST_PERSISTENT);
 #endif
+#if PHP_HTTP_CURL_VERSION(7,66,0)
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "NGHTTP2", info->nghttp2_version, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "QUIC", info->quic_version, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,70,0)
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "CAINFO", info->cainfo, CONST_CS|CONST_PERSISTENT);
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "CAPATH", info->capath, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,72,0)
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "ZSTD", info->zstd_version, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,75,0)
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "HYPER", info->hyper_version, CONST_CS|CONST_PERSISTENT);
+#endif
+
 	}
 
 	/*
