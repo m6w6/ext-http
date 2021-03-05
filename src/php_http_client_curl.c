@@ -1483,7 +1483,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 #ifdef PHP_HTTP_CAPATH
-			ZVAL_PSTRING(&opt->defval, PHP_HTTP_CAPATH);
+				ZVAL_PSTRING(&opt->defval, PHP_HTTP_CAPATH);
 #endif
 			}
 #endif
