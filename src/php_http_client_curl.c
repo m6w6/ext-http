@@ -1269,6 +1269,9 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 #if PHP_HTTP_CURL_VERSION(7,60,0)
 	php_http_option_register(registry, ZEND_STRL("dns_shuffle_addresses"), CURLOPT_DNS_SHUFFLE_ADDRESSES, _IS_BOOL);
 #endif
+#if PHP_HTTP_CURL_VERSION(7,62,0)
+	php_http_option_register(registry, ZEND_STRL("doh_url"), CURLOPT_DOH_URL, IS_STRING);
+#endif
 
 
 	/* limits */
