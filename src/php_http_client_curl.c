@@ -1621,6 +1621,12 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 				opt->setter = php_http_curle_option_set_ssl_verifyhost;
 			}
 			php_http_option_register(proxy_registry, ZEND_STRL("cipher_list"), CURLOPT_PROXY_SSL_CIPHER_LIST, IS_STRING);
+#  if PHP_HTTP_CURL_VERSION(7,71,0)
+			if ((opt = php_http_option_register(proxy_registry, ZEND_STRL("issuercert"), CURLOPT_PROXY_ISSUERCERT, IS_STRING))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+			}
+#  endif
 #  if PHP_HTTP_HAVE_LIBCURL_OPENSSL
 			if ((opt = php_http_option_register(proxy_registry, ZEND_STRL("crlfile"), CURLOPT_PROXY_CRLFILE, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
