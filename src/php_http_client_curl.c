@@ -330,6 +330,7 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 	char *c = NULL;
 	long l = 0;
 	double d = 0;
+	curl_off_t o = 0;
 	struct curl_slist *s = NULL, *p = NULL;
 	zval tmp;
 
@@ -508,6 +509,12 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SCHEME, &c)) {
 		ZVAL_STRING(&tmp, STR_PTR(c));
 		zend_hash_str_update(info, "scheme", lenof("scheme"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,66,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_RETRY_AFTER, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "retry_after", lenof("retry_after"), &tmp);
 	}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,72,0)

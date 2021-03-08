@@ -39,6 +39,7 @@ $ifdefs = array(
 	'PROXY_SSL_VERIFYRESULT' => 'PHP_HTTP_CURL_VERSION(7,52,0)',
 	'PROTOCOL' => 'PHP_HTTP_CURL_VERSION(7,52,0)',
 	'SCHEME' => 'PHP_HTTP_CURL_VERSION(7,52,0)',
+	'RETRY_AFTER' => 'PHP_HTTP_CURL_VERSION(7,66,0)',
 	'EFFECTIVE_METHOD' => 'PHP_HTTP_CURL_VERSION(7,72,0)',
 	'PROXY_ERROR' => 'PHP_HTTP_CURL_VERSION(7,73,0)',
 );
@@ -81,6 +82,12 @@ $templates = array(
 		zend_hash_str_update(info, "%s", lenof("%2$s"), &tmp);
 	}
 ',
+'OFF_T' =>
+'	if (CURLE_OK == curl_easy_getinfo(ch, %s, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "%s", lenof("%2$s"), &tmp);
+	}
+',
 'SLIST' =>
 '	if (CURLE_OK == curl_easy_getinfo(ch, %s, &s)) {
 		array_init(&tmp);
@@ -95,12 +102,12 @@ $templates = array(
 ',
 );
 
-$infos = file_re('curl.h', '/^\s*(CURLINFO_(\w+))\s*=\s*CURLINFO_(STRING|LONG|DOUBLE|SLIST)\s*\+\s*\d+\s*,?\s*$/m');
+$infos = file_re('curl.h', '/^\s*(CURLINFO_(\w+))\s*=\s*CURLINFO_(STRING|LONG|DOUBLE|SLIST|OFF_T)\s*\+\s*\d+\s*,?\s*$/m');
 
 ob_start();
 foreach ($infos as $info) {
 	list(, $full, $short, $type) = $info;
-	if (in_array($short, $exclude)) continue;
+	if (in_array($short, $exclude) || substr($short, -2) === "_T") continue;
 	if (isset($ifdefs[$short])) printf("#if %s\n", $ifdefs[$short]);
 	printf($templates[$type], $full, strtolower((isset($translate[$short])) ? $translate[$short] : $short));
 	if (isset($ifdefs[$short])) printf("#endif\n");
