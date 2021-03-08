@@ -1351,6 +1351,9 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(7,75,0)
+	php_http_option_register(registry, ZEND_STRL("aws_sigv4"), CURLOPT_AWS_SIGV4, IS_STRING);
+#endif
 
 	/* redirects */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("redirect"), CURLOPT_FOLLOWLOCATION, IS_LONG))) {
@@ -2871,6 +2874,9 @@ PHP_MINIT_FUNCTION(http_client_curl)
 #endif
 #if PHP_HTTP_CURL_VERSION(7,61,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_BEARER", CURLAUTH_BEARER, CONST_CS|CONST_PERSISTENT);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,75,0)
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AWS_SIGV4", CURLAUTH_AWS_SIGV4, CONST_CS|CONST_PERSISTENT);
 #endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_ANY", CURLAUTH_ANY, CONST_CS|CONST_PERSISTENT);
 
