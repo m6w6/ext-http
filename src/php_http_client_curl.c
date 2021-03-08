@@ -1771,7 +1771,7 @@ static ZEND_RESULT_CODE php_http_curle_set_option(php_http_option_t *opt, zval *
 	return rv;
 }
 
-#if PHP_HTTP_CURL_VERSION(7,30,0)
+#if PHP_HTTP_CURL_VERSION(7,30,0) && !PHP_HTTP_CURL_VERSION(7,62,0)
 static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_t *opt, zval *value, void *userdata)
 {
 	php_http_client_t *client = userdata;
@@ -1907,37 +1907,31 @@ static void php_http_curlm_options_init(php_http_options_t *registry)
 #if PHP_HTTP_CURL_VERSION(7,30,0)
 	php_http_option_register(registry, ZEND_STRL("max_host_connections"), CURLMOPT_MAX_HOST_CONNECTIONS, IS_LONG);
 #endif
-	/* maximum number of requests in a pipeline */
-#if PHP_HTTP_CURL_VERSION(7,30,0)
-	if ((opt = php_http_option_register(registry, ZEND_STRL("max_pipeline_length"), CURLMOPT_MAX_PIPELINE_LENGTH, IS_LONG))) {
-		ZVAL_LONG(&opt->defval, 5);
-	}
-#endif
 	/* max simultaneously open connections */
 #if PHP_HTTP_CURL_VERSION(7,30,0)
 	php_http_option_register(registry, ZEND_STRL("max_total_connections"), CURLMOPT_MAX_TOTAL_CONNECTIONS, IS_LONG);
 #endif
+#if !PHP_HTTP_CURL_VERSION(7,62,0)
 	/* enable/disable HTTP pipelining */
 	php_http_option_register(registry, ZEND_STRL("pipelining"), CURLMOPT_PIPELINING, _IS_BOOL);
+# if PHP_HTTP_CURL_VERSION(7,30,0)
+	/* maximum number of requests in a pipeline */
+	if ((opt = php_http_option_register(registry, ZEND_STRL("max_pipeline_length"), CURLMOPT_MAX_PIPELINE_LENGTH, IS_LONG))) {
+		ZVAL_LONG(&opt->defval, 5);
+	}
 	/* chunk length threshold for pipelining */
-#if PHP_HTTP_CURL_VERSION(7,30,0)
 	php_http_option_register(registry, ZEND_STRL("chunk_length_penalty_size"), CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE, IS_LONG);
-#endif
 	/* size threshold for pipelining penalty */
-#if PHP_HTTP_CURL_VERSION(7,30,0)
 	php_http_option_register(registry, ZEND_STRL("content_length_penalty_size"), CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE, IS_LONG);
-#endif
 	/* pipelining server blacklist */
-#if PHP_HTTP_CURL_VERSION(7,30,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("pipelining_server_bl"), CURLMOPT_PIPELINING_SERVER_BL, IS_ARRAY))) {
 		opt->setter = php_http_curlm_option_set_pipelining_bl;
 	}
-#endif
 	/* pipelining host blacklist */
-#if PHP_HTTP_CURL_VERSION(7,30,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("pipelining_site_bl"), CURLMOPT_PIPELINING_SITE_BL, IS_ARRAY))) {
 		opt->setter = php_http_curlm_option_set_pipelining_bl;
 	}
+# endif
 #endif
 	/* events */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("use_eventloop"), 0, 0))) {
@@ -2524,13 +2518,13 @@ static ZEND_RESULT_CODE php_http_client_curl_setopt(php_http_client_t *h, php_ht
 		case PHP_HTTP_CLIENT_OPT_CONFIGURATION:
 			return php_http_options_apply(&php_http_curlm_options, (HashTable *) arg,  h);
 			break;
-
+#if !PHP_HTTP_CURL_VERSION(7,62,0)
 		case PHP_HTTP_CLIENT_OPT_ENABLE_PIPELINING:
 			if (CURLM_OK != curl_multi_setopt(curl->handle->multi, CURLMOPT_PIPELINING, (long) *((zend_bool *) arg))) {
 				return FAILURE;
 			}
 			break;
-
+#endif
 		case PHP_HTTP_CLIENT_OPT_USE_EVENTS:
 #if PHP_HTTP_HAVE_LIBEVENT
 			return php_http_curlm_use_eventloop(h, (*(zend_bool *) arg)
