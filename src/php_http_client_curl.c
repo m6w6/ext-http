@@ -1923,6 +1923,12 @@ static void php_http_curlm_options_init(php_http_options_t *registry)
 #if PHP_HTTP_CURL_VERSION(7,30,0)
 	php_http_option_register(registry, ZEND_STRL("max_total_connections"), CURLMOPT_MAX_TOTAL_CONNECTIONS, IS_LONG);
 #endif
+#if PHP_HTTP_CURL_VERSION(7,67,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("max_concurrent_streams"), CURLMOPT_MAX_CONCURRENT_STREAMS, IS_LONG))) {
+		ZVAL_LONG(&opt->defval, 100);
+	}
+#endif
+
 #if !PHP_HTTP_CURL_VERSION(7,62,0)
 	/* enable/disable HTTP pipelining */
 	php_http_option_register(registry, ZEND_STRL("pipelining"), CURLMOPT_PIPELINING, _IS_BOOL);
