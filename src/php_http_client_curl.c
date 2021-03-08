@@ -1409,6 +1409,9 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 
 	/* http protocol version */
 	php_http_option_register(registry, ZEND_STRL("protocol"), CURLOPT_HTTP_VERSION, IS_LONG);
+#if PHP_HTTP_CURL_VERSION(7,64,0)
+	php_http_option_register(registry, ZEND_STRL("http09_allowed"), CURLOPT_HTTP09_ALLOWED, _IS_BOOL);
+#endif
 
 	/* timeouts */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("timeout"), CURLOPT_TIMEOUT_MS, IS_DOUBLE))) {
