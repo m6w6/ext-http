@@ -942,6 +942,21 @@ static ZEND_RESULT_CODE php_http_curle_option_set_lastmodified(php_http_option_t
 	return SUCCESS;
 }
 
+#if PHP_HTTP_CURL_VERSION(7,64,1)
+static ZEND_RESULT_CODE php_http_curle_option_set_altsvc_ctrl(php_http_option_t *opt, zval *val, void *userdata)
+{
+	php_http_client_curl_handler_t *curl = userdata;
+	CURL *ch = curl->handle;
+
+	if (Z_LVAL_P(val)) {
+		if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_ALTSVC_CTRL, Z_LVAL_P(val))) {
+			return FAILURE;
+		}
+	}
+	return SUCCESS;
+}
+#endif
+
 static ZEND_RESULT_CODE php_http_curle_option_set_compress(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
@@ -1644,8 +1659,16 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 # endif
 		}
 #endif
-
 	}
+
+#if PHP_HTTP_CURL_VERSION(7,64,1)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("altsvc_ctrl"), CURLOPT_ALTSVC_CTRL, IS_LONG))) {
+		opt->setter = php_http_curle_option_set_altsvc_ctrl;
+	}
+	if ((opt = php_http_option_register(registry, ZEND_STRL("altsvc"), CURLOPT_ALTSVC, IS_STRING))) {
+		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
+	}
+#endif
 }
 
 static zval *php_http_curle_get_option(php_http_option_t *opt, HashTable *options, void *userdata)
@@ -2851,6 +2874,12 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "POSTREDIR_ALL", CURL_REDIR_POST_ALL, CONST_CS|CONST_PERSISTENT);
 #endif
 
+#if PHP_HTTP_CURL_VERSION(7,64,1)
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "ALTSVC_READONLYFILE", CURLALTSVC_READONLYFILE, CONST_CS|CONST_PERSISTENT);
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "ALTSVC_H1", CURLALTSVC_H1, CONST_CS|CONST_PERSISTENT);
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "ALTSVC_H2", CURLALTSVC_H2, CONST_CS|CONST_PERSISTENT);
+	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "ALTSVC_H3", CURLALTSVC_H3, CONST_CS|CONST_PERSISTENT);
+#endif
 	return SUCCESS;
 }
 
