@@ -1306,6 +1306,11 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	*/
 	php_http_option_register(registry, ZEND_STRL("fresh_connect"), CURLOPT_FRESH_CONNECT, _IS_BOOL);
 	php_http_option_register(registry, ZEND_STRL("forbid_reuse"), CURLOPT_FORBID_REUSE, _IS_BOOL);
+#if PHP_HTTP_CURL_VERSION(7,65,0)
+	if ((opt = php_http_option_register(registry, ZEND_STRL("maxage_conn"), CURLOPT_MAXAGE_CONN, IS_LONG))) {
+		ZVAL_LONG(&opt->defval, 118);
+	}
+#endif
 
 	/* outgoing interface */
 	php_http_option_register(registry, ZEND_STRL("interface"), CURLOPT_INTERFACE, IS_STRING);
