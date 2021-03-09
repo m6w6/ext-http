@@ -1357,7 +1357,7 @@ PHP_MINIT_FUNCTION(http_client)
 	INIT_NS_CLASS_ENTRY(ce, "http", "Client", php_http_client_methods);
 	php_http_client_class_entry = zend_register_internal_class_ex(&ce, NULL);
 	php_http_client_class_entry->create_object = php_http_client_object_new;
-	zend_class_implements(php_http_client_class_entry, 2, spl_ce_SplSubject, spl_ce_Countable);
+	zend_class_implements(php_http_client_class_entry, 2, spl_ce_SplSubject, zend_ce_countable);
 	memcpy(&php_http_client_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_client_object_handlers.offset = XtOffsetOf(php_http_client_object_t, zo);
 	php_http_client_object_handlers.free_obj = php_http_client_object_free;

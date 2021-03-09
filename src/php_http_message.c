@@ -2075,15 +2075,11 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_object_handlers.read_property = php_http_message_object_read_prop;
 	php_http_message_object_handlers.write_property = php_http_message_object_write_prop;
 	php_http_message_object_handlers.get_debug_info = php_http_message_object_get_debug_info;
-#if PHP_VERSION_ID >= 70400
 	php_http_message_object_handlers.get_property_ptr_ptr = php_http_message_object_get_prop_ptr;
-#else
-	php_http_message_object_handlers.get_property_ptr_ptr = NULL;
-#endif
 	php_http_message_object_handlers.get_gc = php_http_message_object_get_gc;
 	php_http_message_object_handlers.cast_object = php_http_message_object_cast;
 
-	zend_class_implements(php_http_message_class_entry, 3, spl_ce_Countable, zend_ce_serializable, zend_ce_iterator);
+	zend_class_implements(php_http_message_class_entry, 3, zend_ce_countable, zend_ce_serializable, zend_ce_iterator);
 
 	zend_hash_init(&php_http_message_object_prophandlers, 9, NULL, php_http_message_object_prophandler_hash_dtor, 1);
 	zend_declare_property_long(php_http_message_class_entry, ZEND_STRL("type"), PHP_HTTP_NONE, ZEND_ACC_PROTECTED);
