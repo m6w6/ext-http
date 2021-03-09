@@ -7,7 +7,7 @@ dnl
 AC_DEFUN([PECL_HAVE_LIBCURL_FEATURE], [dnl
 	AC_REQUIRE([PECL_PROG_EGREP])dnl
 	AC_CACHE_CHECK([for $1 feature in libcurl], PECL_CACHE_VAR([HAVE_LIBCURL_FEATURE_$1]), [
-		if $CURL_CONFIG --feature | $EGREP -q $1; then
+		if $CURL_CONFIG --feature | $EGREP -qi $1; then
 			PECL_CACHE_VAR([HAVE_LIBCURL_FEATURE_$1])=yes
 		else
 			PECL_CACHE_VAR([HAVE_LIBCURL_FEATURE_$1])=no

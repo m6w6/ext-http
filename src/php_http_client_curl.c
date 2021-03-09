@@ -1683,18 +1683,30 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	}
 
 #if PHP_HTTP_CURL_VERSION(7,64,1)
+# if !PHP_HTTP_HAVE_LIBCURL_ALT_SVC
+	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_ALTSVC)) {
+# endif
 	if ((opt = php_http_option_register(registry, ZEND_STRL("altsvc_ctrl"), CURLOPT_ALTSVC_CTRL, IS_LONG))) {
 		opt->setter = php_http_curle_option_set_altsvc_ctrl;
 	}
 	if ((opt = php_http_option_register(registry, ZEND_STRL("altsvc"), CURLOPT_ALTSVC, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 	}
+# if !PHP_HTTP_HAVE_LIBCURL_ALT_SVC
+	}
+# endif
 #endif
 #if PHP_HTTP_CURL_VERSION(7,74,0)
+# if !PHP_HTTP_HAVE_LIBCURL_HSTS
+	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_HSTS)) {
+# endif
 	php_http_option_register(registry, ZEND_STRL("hsts_ctrl"), CURLOPT_HSTS_CTRL, IS_LONG);
 	if ((opt = php_http_option_register(registry, ZEND_STRL("hsts"), CURLOPT_HSTS, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 	}
+# if !PHP_HTTP_HAVE_LIBCURL_HSTS
+	}
+# endif
 #endif
 }
 
