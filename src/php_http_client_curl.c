@@ -2660,13 +2660,13 @@ php_http_client_ops_t *php_http_client_curl_get_ops(void)
 	return &php_http_client_curl_ops;
 }
 
-#define REGISTER_NS_STRING_OR_NULL_CONSTANT(ns, name, str, flags)                              \
-		do {                                                                           \
-			if ((str) != NULL) {                                                   \
-				REGISTER_NS_STRING_CONSTANT(ns, name, str, flags);             \
-			} else {                                                               \
-				REGISTER_NS_NULL_CONSTANT(ns, name, flags);                    \
-			}                                                                      \
+#define REGISTER_NS_STRING_OR_NULL_CONSTANT(ns, name, str, flags) \
+		do { \
+			if ((str) != NULL) { \
+				REGISTER_NS_STRING_CONSTANT(ns, name, str, flags); \
+			} else { \
+				REGISTER_NS_NULL_CONSTANT(ns, name, flags); \
+			} \
 		} while (0)
 
 PHP_MINIT_FUNCTION(http_client_curl)
@@ -2780,11 +2780,13 @@ PHP_MINIT_FUNCTION(http_client_curl)
 		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "ARES", info->ares, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "IDN", info->libidn, CONST_CS|CONST_PERSISTENT);
 		tmp_ver_init();
-		tmp_ptr = zend_print_ulong_to_buf(tmp_end, info->iconv_ver_num & 0xf);
-		tmp_end = tmp_ptr - 1;
-		tmp_ptr = zend_print_ulong_to_buf(tmp_end, info->iconv_ver_num >> 8);
-		*tmp_end = '.';
-		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "ICONV", tmp_ptr, CONST_CS|CONST_PERSISTENT);
+		if (info->iconv_ver_num) {
+			tmp_ptr = zend_print_ulong_to_buf(tmp_end, info->iconv_ver_num & 0xf);
+			tmp_end = tmp_ptr - 1;
+			tmp_ptr = zend_print_ulong_to_buf(tmp_end, info->iconv_ver_num >> 8);
+			*tmp_end = '.';
+		}
+		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "ICONV", *tmp_ptr ? tmp_ptr : NULL, CONST_CS|CONST_PERSISTENT);
 #if PHP_HTTP_CURL_VERSION(7,57,0)
 		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "BROTLI", info->brotli_version, CONST_CS|CONST_PERSISTENT);
 #endif
