@@ -1249,14 +1249,14 @@ PHP_METHOD(HttpParams, offsetSet)
 	zend_string *name;
 	zval zparams_tmp, *zparam, *zparams, *nvalue;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "Sz", &name, &nvalue)) {
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S!z", &name, &nvalue)) {
 		return;
 	}
 
 	zparams = zend_read_property(php_http_params_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("params"), 0, &zparams_tmp);
 	convert_to_array(zparams);
 
-	if (name->len) {
+	if (name && name->len) {
 		if (Z_TYPE_P(nvalue) == IS_ARRAY) {
 			if ((zparam = zend_symtable_find(Z_ARRVAL_P(zparams), name))) {
 				convert_to_array(zparam);
