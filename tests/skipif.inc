@@ -53,7 +53,7 @@ function skip_http2_test($message = "skip need http2 support") {
 	if (!(http\Client\Curl\FEATURES & http\Client\Curl\Features\HTTP2)) {
 		die("$message (FEATURES & HTTP2)\n");
 	}
-	foreach (explode(":", $_ENV["PATH"]) as $path) {
+	foreach (explode(":", getenv("PATH")) as $path) {
 		if (is_executable($path . "/nghttpd")) {
 			return;
 		}
