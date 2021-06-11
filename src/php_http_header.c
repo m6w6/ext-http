@@ -191,9 +191,9 @@ PHP_METHOD(HttpHeader, __construct)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_serialize, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_tostring, 0, 0, 0)
 ZEND_END_ARG_INFO();
-PHP_METHOD(HttpHeader, serialize)
+PHP_METHOD(HttpHeader, __toString)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_buffer_t buf;
@@ -219,42 +219,44 @@ PHP_METHOD(HttpHeader, serialize)
 	RETURN_EMPTY_STRING();
 }
 
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_serialize, 0, 0, 0)
+ZEND_END_ARG_INFO();
+PHP_METHOD(HttpHeader, __serialize)
+{
+	zval *val, tmp;
+
+	if (SUCCESS != zend_parse_parameters_none()) {
+		RETURN_THROWS();
+	}
+	array_init(return_value);
+
+	val = zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), 0, &tmp);
+	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), val);
+	val = zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), 0, &tmp);
+	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), val);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_unserialize, 0, 0, 1)
 	ZEND_ARG_INFO(0, serialized)
 ZEND_END_ARG_INFO();
-PHP_METHOD(HttpHeader, unserialize)
+PHP_METHOD(HttpHeader, __unserialize)
 {
-	char *serialized_str;
-	size_t serialized_len;
+	zval *serialized;
+	HashTable *data;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s", &serialized_str, &serialized_len)) {
-		HashTable ht;
-
-		zend_hash_init(&ht, 1, NULL, ZVAL_PTR_DTOR, 0);
-		if (SUCCESS == php_http_header_parse(serialized_str, serialized_len, &ht, NULL, NULL)) {
-			if (zend_hash_num_elements(&ht)) {
-				zend_string *zs, *key;
-				zend_ulong idx;
-
-				zend_hash_internal_pointer_reset(&ht);
-				switch (zend_hash_get_current_key(&ht, &key, &idx)) {
-					case HASH_KEY_IS_STRING:
-						zend_update_property_str(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), key);
-						break;
-					case HASH_KEY_IS_LONG:
-						zend_update_property_long(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), idx);
-						break;
-					default:
-						break;
-				}
-				zs = zval_get_string(zend_hash_get_current_data(&ht));
-				zend_update_property_str(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), zs);
-				zend_string_release(zs);
-			}
-		}
-		zend_hash_destroy(&ht);
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "h", &data) == FAILURE) {
+		RETURN_THROWS();
 	}
 
+	ZVAL_NULL(return_value);
+	serialized = zend_hash_index_find(data, 0);
+	if (serialized) {
+		zend_update_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), serialized);
+	}
+	serialized = zend_hash_index_find(data, 1);
+	if (serialized) {
+		zend_update_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), serialized);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_match, 0, 0, 1)
@@ -399,10 +401,10 @@ PHP_METHOD(HttpHeader, parse)
 
 static zend_function_entry php_http_header_methods[] = {
 	PHP_ME(HttpHeader, __construct,   ai_HttpHeader___construct, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpHeader, serialize,     ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpHeader, __toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpHeader, toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpHeader, unserialize,   ai_HttpHeader_unserialize, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, __serialize,     ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, __toString,      ai_HttpHeader_tostring, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpHeader, toString, __toString, ai_HttpHeader_tostring, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, __unserialize,   ai_HttpHeader_unserialize, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, match,         ai_HttpHeader_match, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, negotiate,     ai_HttpHeader_negotiate, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, getParams,     ai_HttpHeader_getParams, ZEND_ACC_PUBLIC)
@@ -416,7 +418,6 @@ PHP_MINIT_FUNCTION(http_header)
 
 	INIT_NS_CLASS_ENTRY(ce, "http", "Header", php_http_header_methods);
 	php_http_header_class_entry = zend_register_internal_class(&ce);
-	zend_class_implements(php_http_header_class_entry, 1, zend_ce_serializable);
 	zend_declare_class_constant_long(php_http_header_class_entry, ZEND_STRL("MATCH_LOOSE"), PHP_HTTP_MATCH_LOOSE);
 	zend_declare_class_constant_long(php_http_header_class_entry, ZEND_STRL("MATCH_CASE"), PHP_HTTP_MATCH_CASE);
 	zend_declare_class_constant_long(php_http_header_class_entry, ZEND_STRL("MATCH_WORD"), PHP_HTTP_MATCH_WORD);

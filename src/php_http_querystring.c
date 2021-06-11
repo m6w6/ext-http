@@ -568,26 +568,35 @@ PHP_METHOD(HttpQueryString, xlate)
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_serialize, 0, 0, 0)
 ZEND_END_ARG_INFO();
-PHP_METHOD(HttpQueryString, serialize)
+PHP_METHOD(HttpQueryString, __serialize)
 {
+	zval zstr;
+
 	if (SUCCESS != zend_parse_parameters_none()) {
-		return;
+		RETURN_THROWS();
 	}
-	php_http_querystring_str(getThis(), return_value);
+	ZVAL_NULL(&zstr);
+	array_init(return_value);
+
+	php_http_querystring_str(getThis(), &zstr);
+	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &zstr);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_unserialize, 0, 0, 1)
 	ZEND_ARG_INFO(0, serialized)
 ZEND_END_ARG_INFO();
-PHP_METHOD(HttpQueryString, unserialize)
+PHP_METHOD(HttpQueryString, __unserialize)
 {
 	zval *serialized;
-	
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "z", &serialized)) {
-		return;
+	HashTable *data;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "h", &data) == FAILURE) {
+		RETURN_THROWS();
 	}
 
-	if (Z_TYPE_P(serialized) == IS_STRING) {
+	ZVAL_NULL(return_value);
+	serialized = zend_hash_index_find(data, 0);
+	if (serialized && Z_TYPE_P(serialized) == IS_STRING) {
 		php_http_querystring_set(getThis(), serialized, 0);
 	} else {
 		php_error_docref(NULL, E_WARNING, "Expected a string as parameter");
@@ -708,9 +717,9 @@ static zend_function_entry php_http_querystring_methods[] = {
 	PHP_ME(HttpQueryString, xlate, ai_HttpQueryString_xlate, ZEND_ACC_PUBLIC)
 #endif
 
-	/* Implements Serializable */
-	PHP_ME(HttpQueryString, serialize, ai_HttpQueryString_serialize, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpQueryString, unserialize, ai_HttpQueryString_unserialize, ZEND_ACC_PUBLIC)
+
+	PHP_ME(HttpQueryString, __serialize, ai_HttpQueryString_serialize, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpQueryString, __unserialize, ai_HttpQueryString_unserialize, ZEND_ACC_PUBLIC)
 
 	/* Implements ArrayAccess */
 	PHP_ME(HttpQueryString, offsetGet, ai_HttpQueryString_offsetGet, ZEND_ACC_PUBLIC)
@@ -728,7 +737,7 @@ PHP_MINIT_FUNCTION(http_querystring)
 	INIT_NS_CLASS_ENTRY(ce, "http", "QueryString", php_http_querystring_methods);
 	php_http_querystring_class_entry = zend_register_internal_class(&ce);
 	php_http_querystring_class_entry->create_object = php_http_querystring_object_new;
-	zend_class_implements(php_http_querystring_class_entry, 3, zend_ce_serializable, zend_ce_arrayaccess, zend_ce_aggregate);
+	zend_class_implements(php_http_querystring_class_entry, 2, zend_ce_arrayaccess, zend_ce_aggregate);
 
 	zend_declare_property_null(php_http_querystring_class_entry, ZEND_STRL("instance"), (ZEND_ACC_STATIC|ZEND_ACC_PRIVATE));
 	zend_declare_property_null(php_http_querystring_class_entry, ZEND_STRL("queryArray"), ZEND_ACC_PRIVATE);
