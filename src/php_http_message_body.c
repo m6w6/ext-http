@@ -688,16 +688,46 @@ PHP_METHOD(HttpMessageBody, __toString)
 	RETURN_EMPTY_STRING();
 }
 
+
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_serialize, 0, 0, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpMessageBody, __serialize)
+{
+	php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
+	zend_string *zs;
+	zval zstr;
+
+	if (zend_parse_parameters_none() == FAILURE) {
+		RETURN_THROWS();
+	}
+	array_init(return_value);
+
+	PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
+	zs = php_http_message_body_to_string(obj->body, 0, 0);
+	if (zs) {
+		ZVAL_STR(&zstr, zs);
+		zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &zstr);
+	}
+}
+
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_unserialize, 0, 0, 1)
 	ZEND_ARG_INFO(0, serialized)
 ZEND_END_ARG_INFO();
-PHP_METHOD(HttpMessageBody, unserialize)
+PHP_METHOD(HttpMessageBody, __unserialize)
 {
-	zend_string *us_str;
+	zval *serialized;
+	HashTable *data;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "S", &us_str)) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "h", &data) == FAILURE) {
+		RETURN_THROWS();
+	}
+
+	serialized = zend_hash_index_find(data, 0);
+	if (serialized && Z_TYPE_P(serialized) == IS_STRING) {
 		php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
-		php_stream *s = php_http_mem_stream_open(0, us_str);
+		php_stream *s = php_http_mem_stream_open(0, Z_STR_P(serialized));
 
 		obj->body = php_http_message_body_init(NULL, s);
 		php_stream_to_zval(s, obj->gc);
@@ -912,8 +942,8 @@ static zend_function_entry php_http_message_body_methods[] = {
 	PHP_ME(HttpMessageBody, __construct,  ai_HttpMessageBody___construct,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, __toString,   ai_HttpMessageBody___toString,   ZEND_ACC_PUBLIC)
 	PHP_MALIAS(HttpMessageBody, toString, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
-	PHP_MALIAS(HttpMessageBody, serialize, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessageBody, unserialize,  ai_HttpMessageBody_unserialize,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, __serialize,  ai_HttpMessageBody_serialize,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, __unserialize,  ai_HttpMessageBody_unserialize,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, toStream,     ai_HttpMessageBody_toStream,     ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, toCallback,   ai_HttpMessageBody_toCallback,   ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, getResource,  ai_HttpMessageBody_getResource,  ZEND_ACC_PUBLIC)
@@ -938,7 +968,6 @@ PHP_MINIT_FUNCTION(http_message_body)
 	php_http_message_body_object_handlers.clone_obj = php_http_message_body_object_clone;
 	php_http_message_body_object_handlers.free_obj = php_http_message_body_object_free;
 	php_http_message_body_object_handlers.get_gc = php_http_message_body_object_get_gc;
-	zend_class_implements(php_http_message_body_class_entry, 1, zend_ce_serializable);
 
 	return SUCCESS;
 }

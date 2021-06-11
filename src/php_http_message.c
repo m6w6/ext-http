@@ -1764,44 +1764,53 @@ static PHP_METHOD(HttpMessage, toCallback)
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_serialize, 0, 0, 0)
 ZEND_END_ARG_INFO();
-static PHP_METHOD(HttpMessage, serialize)
+static PHP_METHOD(HttpMessage, __serialize)
 {
-	if (SUCCESS == zend_parse_parameters_none()) {
-		php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
-		char *string;
-		size_t length;
+	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
+	char *string;
+	size_t length;
+	zval zstr;
 
-		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
-
-		php_http_message_serialize(obj->message, &string, &length);
-		RETURN_STR(php_http_cs2zs(string, length));
+	if (zend_parse_parameters_none() == FAILURE) {
+		RETURN_THROWS();
 	}
-	RETURN_EMPTY_STRING();
+	array_init(return_value);
+
+	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
+
+	php_http_message_serialize(obj->message, &string, &length);
+	ZVAL_STR(&zstr, php_http_cs2zs(string, length));
+	zend_hash_next_index_insert(Z_ARRVAL_P(return_value), &zstr);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_unserialize, 0, 0, 1)
 	ZEND_ARG_INFO(0, serialized)
 ZEND_END_ARG_INFO();
-static PHP_METHOD(HttpMessage, unserialize)
+static PHP_METHOD(HttpMessage, __unserialize)
 {
-	size_t length;
-	char *serialized;
+	zval *serialized;
+	HashTable *data;
 
-	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "s", &serialized, &length)) {
-		php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
-		php_http_message_t *msg;
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "h", &data) == FAILURE) {
+		RETURN_THROWS();
+	}
 
-		if (obj->message) {
-			/* do not free recursively */
-			php_http_message_dtor(obj->message);
-			efree(obj->message);
-		}
-		if ((msg = php_http_message_parse(NULL, serialized, length, 1))) {
-			obj->message = msg;
-		} else {
-			obj->message = php_http_message_init(NULL, 0, NULL);
-			php_error_docref(NULL, E_ERROR, "Could not unserialize http\\Message");
-		}
+	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
+	php_http_message_t *msg;
+
+	if (obj->message) {
+		/* do not free recursively */
+		php_http_message_dtor(obj->message);
+		efree(obj->message);
+	}
+
+	serialized = zend_hash_index_find(data, 0);
+	if (serialized && Z_TYPE_P(serialized) == IS_STRING &&
+		(msg = php_http_message_parse(NULL, Z_STRVAL_P(serialized), Z_STRLEN_P(serialized), 1))) {
+		obj->message = msg;
+	} else {
+		obj->message = php_http_message_init(NULL, 0, NULL);
+		php_error_docref(NULL, E_ERROR, "Could not unserialize http\\Message");
 	}
 }
 
@@ -2038,9 +2047,8 @@ static zend_function_entry php_http_message_methods[] = {
 	/* implements Countable */
 	PHP_ME(HttpMessage, count,              ai_HttpMessage_count,              ZEND_ACC_PUBLIC)
 
-	/* implements Serializable */
-	PHP_ME(HttpMessage, serialize,          ai_HttpMessage_serialize,          ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessage, unserialize,        ai_HttpMessage_unserialize,        ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, __serialize,        ai_HttpMessage_serialize,          ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, __unserialize,      ai_HttpMessage_unserialize,        ZEND_ACC_PUBLIC)
 
 	/* implements Iterator */
 	PHP_ME(HttpMessage, rewind,             ai_HttpMessage_rewind,             ZEND_ACC_PUBLIC)
@@ -2079,7 +2087,7 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_object_handlers.get_gc = php_http_message_object_get_gc;
 	php_http_message_object_handlers.cast_object = php_http_message_object_cast;
 
-	zend_class_implements(php_http_message_class_entry, 3, zend_ce_countable, zend_ce_serializable, zend_ce_iterator);
+	zend_class_implements(php_http_message_class_entry, 2, zend_ce_countable, zend_ce_iterator);
 
 	zend_hash_init(&php_http_message_object_prophandlers, 9, NULL, php_http_message_object_prophandler_hash_dtor, 1);
 	zend_declare_property_long(php_http_message_class_entry, ZEND_STRL("type"), PHP_HTTP_NONE, ZEND_ACC_PROTECTED);
