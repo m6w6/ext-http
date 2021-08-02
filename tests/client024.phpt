@@ -4,6 +4,8 @@ client deprecated methods
 <?php
 include "skipif.inc";
 skip_client_test();
+if (!(error_reporting() & E_DEPRECATED))
+	die("skip error_reporting() & ~E_DEPRECATED\n");
 ?>
 --FILE--
 <?php
