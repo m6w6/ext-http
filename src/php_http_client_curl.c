@@ -812,6 +812,7 @@ static php_http_options_t php_http_curle_options, php_http_curlm_options;
 #define PHP_HTTP_CURLE_OPTION_CHECK_STRLEN		0x0001
 #define PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR		0x0002
 #define PHP_HTTP_CURLE_OPTION_TRANSFORM_MS		0x0004
+#define PHP_HTTP_CURLE_OPTION_IGNORE_RC			0x0008
 
 static ZEND_RESULT_CODE php_http_curle_option_set_ssl_verifyhost(php_http_option_t *opt, zval *val, void *userdata)
 {
@@ -1582,7 +1583,9 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 			}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,42,0) && (PHP_HTTP_HAVE_LIBCURL_NSS || PHP_HTTP_HAVE_LIBCURL_SECURETRANSPORT)
-			php_http_option_register(ssl_registry, ZEND_STRL("falsestart"), CURLOPT_SSL_FALSESTART, _IS_BOOL);
+			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("falsestart"), CURLOPT_SSL_FALSESTART, _IS_BOOL))) {
+				opt->flags |= PHP_HTTP_CURLE_OPTION_IGNORE_RC;
+			}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,61,0)
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("tls13_ciphers"), CURLOPT_TLS13_CIPHERS, IS_STRING))) {
@@ -1805,7 +1808,11 @@ static ZEND_RESULT_CODE php_http_curle_set_option(php_http_option_t *opt, zval *
 		break;
 	}
 	if (rv != SUCCESS) {
-		php_error_docref(NULL, E_NOTICE, "Could not set option %s (%s)", opt->name->val, curl_easy_strerror(rc));
+		if (opt->flags & PHP_HTTP_CURLE_OPTION_IGNORE_RC) {
+			rv = SUCCESS;
+		} else {
+			php_error_docref(NULL, E_NOTICE, "Could not set option %s (%s)", opt->name->val, curl_easy_strerror(rc));
+		}
 	}
 	return rv;
 }
