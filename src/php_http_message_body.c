@@ -704,6 +704,50 @@ PHP_METHOD(HttpMessageBody, unserialize)
 	}
 }
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessageBody___unserialize, 0, 1, IS_VOID, 0)
+	ZEND_ARG_TYPE_INFO(0, data, IS_ARRAY, 0)
+ZEND_END_ARG_INFO();
+PHP_METHOD(HttpMessageBody, __unserialize)
+{
+	HashTable *arr;
+
+	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "h", &arr)) {
+		zval *zv = zend_hash_index_find(arr, 0);
+
+		if (0 && zv) {
+			zend_string *zs = zval_get_string(zv);
+			php_stream *s = php_http_mem_stream_open(0, zs);
+			php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
+
+			obj->body = php_http_message_body_init(NULL, s);
+			php_stream_to_zval(s, obj->gc);
+			zend_string_release(zs);
+		}
+	}
+}
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessageBody___serialize, 0, 0, IS_ARRAY, 0)
+ZEND_END_ARG_INFO();
+PHP_METHOD(HttpMessageBody, __serialize)
+{
+
+	php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
+	zend_string *zs;
+
+	zend_parse_parameters_none();
+
+	PHP_HTTP_MESSAGE_BODY_OBJECT_INIT(obj);
+
+	array_init(return_value);
+	zs = php_http_message_body_to_string(obj->body, 0, 0);
+	if (zs) {
+		add_index_str(return_value, 0, zs);
+		zend_string_release(zs);
+	}
+}
+
+
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_toStream, 0, 0, 1)
 	ZEND_ARG_INFO(0, stream)
 	ZEND_ARG_INFO(0, offset)
@@ -914,6 +958,8 @@ static zend_function_entry php_http_message_body_methods[] = {
 	PHP_MALIAS(HttpMessageBody, toString, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
 	PHP_MALIAS(HttpMessageBody, serialize, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, unserialize,  ai_HttpMessageBody_unserialize,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, __serialize,  ai_HttpMessageBody___serialize,  ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, __unserialize,ai_HttpMessageBody___unserialize,ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, toStream,     ai_HttpMessageBody_toStream,     ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, toCallback,   ai_HttpMessageBody_toCallback,   ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, getResource,  ai_HttpMessageBody_getResource,  ZEND_ACC_PUBLIC)

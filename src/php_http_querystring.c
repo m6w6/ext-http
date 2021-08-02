@@ -395,7 +395,7 @@ PHP_METHOD(HttpQueryString, getGlobalInstance)
 
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_getIterator, 0, 0, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(ai_HttpQueryString_getIterator, 0, 0, Traversable, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, getIterator)
 {
@@ -566,6 +566,29 @@ PHP_METHOD(HttpQueryString, xlate)
 }
 #endif /* HAVE_ICONV */
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpQueryString___serialize, 0, 0, IS_ARRAY, 0)
+ZEND_END_ARG_INFO();
+PHP_METHOD(HttpQueryString, __serialize)
+{
+	zval *zqa, zqa_tmp;
+
+	zend_parse_parameters_none();
+
+	zqa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("queryArray"), 0, &zqa_tmp);
+	RETURN_ZVAL(zqa, 1, 0);
+}
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpQueryString___unserialize, 0, 1, IS_VOID, 0)
+	ZEND_ARG_TYPE_INFO(0, data, IS_ARRAY, 0)
+ZEND_END_ARG_INFO();
+PHP_METHOD(HttpQueryString, __unserialize)
+{
+	zval *qa;
+
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "a", &qa), invalid_arg, return);
+	php_http_querystring_set(getThis(), qa, 0);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_serialize, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, serialize)
@@ -594,8 +617,8 @@ PHP_METHOD(HttpQueryString, unserialize)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_offsetGet, 0, 0, 1)
-	ZEND_ARG_INFO(0, offset)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpQueryString_offsetGet, 0, 1, IS_MIXED, 1)
+	ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, offsetGet)
 {
@@ -616,8 +639,8 @@ PHP_METHOD(HttpQueryString, offsetGet)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_offsetSet, 0, 0, 2)
-	ZEND_ARG_INFO(0, offset)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpQueryString_offsetSet, 0, 2, IS_VOID, 0)
+	ZEND_ARG_INFO(0, name)
 	ZEND_ARG_INFO(0, value)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, offsetSet)
@@ -641,8 +664,8 @@ PHP_METHOD(HttpQueryString, offsetSet)
 	zval_ptr_dtor(&param);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_offsetExists, 0, 0, 1)
-	ZEND_ARG_INFO(0, offset)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpQueryString_offsetExists, 0, 1, _IS_BOOL, 0)
+	ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, offsetExists)
 {
@@ -664,8 +687,8 @@ PHP_METHOD(HttpQueryString, offsetExists)
 	RETURN_FALSE;
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpQueryString_offsetUnset, 0, 0, 1)
-	ZEND_ARG_INFO(0, offset)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpQueryString_offsetUnset, 0, 1, IS_VOID, 0)
+	ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, offsetUnset)
 {
@@ -711,6 +734,8 @@ static zend_function_entry php_http_querystring_methods[] = {
 	/* Implements Serializable */
 	PHP_ME(HttpQueryString, serialize, ai_HttpQueryString_serialize, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpQueryString, unserialize, ai_HttpQueryString_unserialize, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpQueryString, __serialize, ai_HttpQueryString___serialize, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpQueryString, __unserialize, ai_HttpQueryString___unserialize, ZEND_ACC_PUBLIC)
 
 	/* Implements ArrayAccess */
 	PHP_ME(HttpQueryString, offsetGet, ai_HttpQueryString_offsetGet, ZEND_ACC_PUBLIC)

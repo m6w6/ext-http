@@ -191,6 +191,41 @@ PHP_METHOD(HttpHeader, __construct)
 	}
 }
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpHeader___serialize, 0, 0, IS_ARRAY, 0)
+ZEND_END_ARG_INFO();
+PHP_METHOD(HttpHeader, __serialize)
+{
+	zval name, value, *ptr;
+
+	zend_parse_parameters_none();
+
+	array_init(return_value);
+	ptr = zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), 0, &name);
+	Z_TRY_ADDREF_P(ptr);
+	add_next_index_zval(return_value, ptr);
+	ptr = zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), 0, &value);
+	Z_TRY_ADDREF_P(ptr);
+	add_next_index_zval(return_value, ptr);
+}
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpHeader___unserialize, 0, 1, IS_VOID, 0)
+	ZEND_ARG_TYPE_INFO(0, data, IS_ARRAY, 0)
+ZEND_END_ARG_INFO();
+PHP_METHOD(HttpHeader, __unserialize)
+{
+	HashTable *ha;
+	zval *name, *value;
+
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "h", &ha), invalid_arg, return);
+	name = zend_hash_index_find(ha, 0);
+	value = zend_hash_index_find(ha, 1);
+
+	if (name && value) {
+		zend_update_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("name"), name);
+		zend_update_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), value);
+	}
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpHeader_serialize, 0, 0, 0)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, serialize)
@@ -399,10 +434,12 @@ PHP_METHOD(HttpHeader, parse)
 
 static zend_function_entry php_http_header_methods[] = {
 	PHP_ME(HttpHeader, __construct,   ai_HttpHeader___construct, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, __unserialize, ai_HttpHeader___unserialize, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, __serialize,   ai_HttpHeader___serialize, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpHeader, unserialize,   ai_HttpHeader_unserialize, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, serialize,     ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(HttpHeader, __toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(HttpHeader, toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
-	PHP_ME(HttpHeader, unserialize,   ai_HttpHeader_unserialize, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, match,         ai_HttpHeader_match, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, negotiate,     ai_HttpHeader_negotiate, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, getParams,     ai_HttpHeader_getParams, ZEND_ACC_PUBLIC)

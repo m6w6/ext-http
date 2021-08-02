@@ -804,7 +804,7 @@ static PHP_METHOD(HttpClient, requeue)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_count, 0, 0, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpClient_count, 0, 0, IS_LONG, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, count)
 {

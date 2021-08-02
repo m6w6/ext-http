@@ -647,15 +647,15 @@ static void php_http_message_object_prophandler_set_headers(php_http_message_obj
 	}
 }
 static void php_http_message_object_prophandler_get_body(php_http_message_object_t *obj, zval *return_value) {
-	if (obj->body) {
-		zval tmp;
+	zval tmp;
 
-		ZVAL_COPY_VALUE(&tmp, return_value);
-		RETVAL_OBJECT(&obj->body->zo, 1);
-		zval_ptr_dtor(&tmp);
-	} else {
-		RETVAL_NULL();
+	if (!obj->body) {
+		RETURN_NULL();
 	}
+
+	ZVAL_COPY_VALUE(&tmp, return_value);
+	RETVAL_OBJECT(&obj->body->zo, 1);
+	zval_ptr_dtor(&tmp);
 }
 static void php_http_message_object_prophandler_set_body(php_http_message_object_t *obj, zval *value) {
 	php_http_message_object_set_body(obj, value);
@@ -931,14 +931,16 @@ static zval *php_http_message_object_write_prop(zend_object *object, zend_string
 
 static HashTable *php_http_message_object_get_debug_info(zend_object *object, int *is_temp)
 {
-	zval tmp;
 	php_http_message_object_t *obj = PHP_HTTP_OBJ(object, NULL);
 	HashTable *props = zend_get_std_object_handlers()->get_properties(object);
 	char *ver_str, *url_str = NULL;
 	size_t ver_len, url_len = 0;
+	zval tmp;
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
-	*is_temp = 0;
+	if (is_temp) {
+		*is_temp = 0;
+	}
 
 #define UPDATE_PROP(name_str, action_with_tmp) \
 	do { \
@@ -1762,6 +1764,57 @@ static PHP_METHOD(HttpMessage, toCallback)
 	}
 }
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage___serialize, 0, 0, IS_ARRAY, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpMessage, __serialize)
+{
+	zend_ulong num_index;
+	zend_string *str_index;
+	zend_property_info *pi;
+	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
+	HashTable *props = php_http_message_object_get_debug_info(&obj->zo, NULL);
+
+	zend_parse_parameters_none();
+
+	array_init(return_value);
+
+	ZEND_HASH_FOREACH_KEY_PTR(&obj->zo.ce->properties_info, num_index, str_index, pi)
+	{
+		zval *val;
+		if (str_index && (val = zend_hash_find_ind(props, pi->name))) {
+			Z_TRY_ADDREF_P(val);
+			zend_hash_update(Z_ARRVAL_P(return_value), str_index, val);
+		}
+	}
+	ZEND_HASH_FOREACH_END();
+}
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage___unserialize, 0, 1, IS_VOID, 0)
+	ZEND_ARG_TYPE_INFO(0, data, IS_ARRAY, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpMessage, __unserialize)
+{
+	HashTable *arr;
+	zend_string *key;
+	zval *val;
+	php_http_message_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
+
+	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "h", &arr), invalid_arg, return);
+
+	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
+
+	ZEND_HASH_FOREACH_STR_KEY_VAL(arr, key, val)
+	{
+		php_http_message_object_prophandler_t *ph = php_http_message_object_get_prophandler(key);
+		if (ph) {
+			ph->write(obj, val);
+		} else {
+			zend_update_property_ex(php_http_message_class_entry, &obj->zo, key, val);
+		}
+	}
+	ZEND_HASH_FOREACH_END();
+}
+
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_serialize, 0, 0, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, serialize)
@@ -1916,7 +1969,7 @@ static PHP_METHOD(HttpMessage, splitMultipartBody)
 	RETURN_OBJ(&php_http_message_object_new_ex(obj->zo.ce, msg)->zo);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_count, 0, 0, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_count, 0, 0, IS_LONG, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, count)
 {
@@ -1931,7 +1984,7 @@ static PHP_METHOD(HttpMessage, count)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_rewind, 0, 0, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_rewind, 0, 0, IS_VOID, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, rewind)
 {
@@ -1946,7 +1999,7 @@ static PHP_METHOD(HttpMessage, rewind)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_valid, 0, 0, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_valid, 0, 0, _IS_BOOL, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, valid)
 {
@@ -1957,7 +2010,7 @@ static PHP_METHOD(HttpMessage, valid)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_next, 0, 0, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_next, 0, 0, IS_VOID, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, next)
 {
@@ -1981,7 +2034,7 @@ static PHP_METHOD(HttpMessage, next)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_key, 0, 0, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_key, 0, 0, IS_LONG, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, key)
 {
@@ -1992,7 +2045,7 @@ static PHP_METHOD(HttpMessage, key)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_current, 0, 0, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(ai_HttpMessage_current, 0, 0, http\\Message, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, current)
 {
@@ -2041,6 +2094,8 @@ static zend_function_entry php_http_message_methods[] = {
 	/* implements Serializable */
 	PHP_ME(HttpMessage, serialize,          ai_HttpMessage_serialize,          ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessage, unserialize,        ai_HttpMessage_unserialize,        ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, __serialize,        ai_HttpMessage___serialize,        ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessage, __unserialize,      ai_HttpMessage___unserialize,      ZEND_ACC_PUBLIC)
 
 	/* implements Iterator */
 	PHP_ME(HttpMessage, rewind,             ai_HttpMessage_rewind,             ZEND_ACC_PUBLIC)

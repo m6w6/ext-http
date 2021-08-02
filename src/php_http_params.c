@@ -1181,7 +1181,7 @@ PHP_METHOD(HttpParams, toString)
 	RETVAL_STR(php_http_cs2zs(buf.data, buf.used));
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_offsetExists, 0, 0, 1)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpParams_offsetExists, 0, 1, _IS_BOOL, 0)
 	ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, offsetExists)
@@ -1202,7 +1202,7 @@ PHP_METHOD(HttpParams, offsetExists)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_offsetGet, 0, 0, 1)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpParams_offsetGet, 0, 1, IS_MIXED, 1)
 	ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, offsetGet)
@@ -1221,7 +1221,7 @@ PHP_METHOD(HttpParams, offsetGet)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_offsetUnset, 0, 0, 1)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpParams_offsetUnset, 0, 1, IS_VOID, 0)
 	ZEND_ARG_INFO(0, name)
 ZEND_END_ARG_INFO();
 PHP_METHOD(HttpParams, offsetUnset)
@@ -1240,7 +1240,7 @@ PHP_METHOD(HttpParams, offsetUnset)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpParams_offsetSet, 0, 0, 2)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpParams_offsetSet, 0, 2, IS_VOID, 0)
 	ZEND_ARG_INFO(0, name)
 	ZEND_ARG_INFO(0, value)
 ZEND_END_ARG_INFO();
