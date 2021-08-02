@@ -856,7 +856,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_cookiestore(php_http_option_t 
 	} else {
 		storage->cookiestore = NULL;
 	}
-	if (	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEFILE, storage->cookiestore)
+	if (	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEFILE, storage->cookiestore ? storage->cookiestore : "")
 		||	CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEJAR, storage->cookiestore)
 	) {
 		return FAILURE;
