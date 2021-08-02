@@ -1,5 +1,6 @@
 .cproject
 .deps
+*.dep
 .libs/
 .project
 Makefile
