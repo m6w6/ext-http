@@ -714,7 +714,7 @@ PHP_METHOD(HttpMessageBody, __unserialize)
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "h", &arr)) {
 		zval *zv = zend_hash_index_find(arr, 0);
 
-		if (0 && zv) {
+		if (zv) {
 			zend_string *zs = zval_get_string(zv);
 			php_stream *s = php_http_mem_stream_open(0, zs);
 			php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
@@ -742,7 +742,6 @@ PHP_METHOD(HttpMessageBody, __serialize)
 	zs = php_http_message_body_to_string(obj->body, 0, 0);
 	if (zs) {
 		add_index_str(return_value, 0, zs);
-		zend_string_release(zs);
 	}
 }
 

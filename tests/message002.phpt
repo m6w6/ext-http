@@ -42,7 +42,8 @@ object(%s)#%d (13) {
   ["type":protected]=>
   int(1)
   ["body":protected]=>
-  NULL
+  object(http\Message\Body)#3 (0) {
+  }
   ["requestMethod":protected]=>
   string(4) "POST"
   ["requestUrl":protected]=>

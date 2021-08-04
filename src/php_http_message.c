@@ -688,6 +688,8 @@ static void php_http_message_object_prophandler_set_parent_message(php_http_mess
 	do { \
 		if (!obj->message) { \
 			obj->message = php_http_message_init(NULL, 0, NULL); \
+		} else if (!obj->body && php_http_message_body_size(obj->message->body)) { \
+			php_http_message_object_init_body_object(obj); \
 		} \
 	} while(0)
 
