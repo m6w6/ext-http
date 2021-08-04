@@ -16,11 +16,13 @@ class Client extends http\Client {
 	public $pi;
 }
 class ProgressObserver1 implements SplObserver {
+	#[ReturnTypeWillChange]
 	function update(SplSubject $c, $r = null) {
 		if ($c->getProgressInfo($r)) $c->pi .= "-";
 	}
 }
 class ProgressObserver2 implements SplObserver {
+	#[ReturnTypeWillChange]
 	function update(SplSubject $c, $r = null) {
 		if ($c->getProgressInfo($r)) $c->pi .= ".";
 	}
@@ -30,6 +32,7 @@ class CallbackObserver implements SplObserver {
 	function __construct($callback) {
 		$this->callback = $callback;
 	}
+	#[ReturnTypeWillChange]
 	function update(SplSubject $c, $r = null) {
 		call_user_func($this->callback, $c, $r);
 	}

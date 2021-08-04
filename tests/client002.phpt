@@ -14,6 +14,7 @@ echo "Test\n";
 
 class Observer implements SplObserver
 {
+	#[ReturnTypeWillChange]
 	function update(SplSubject $client, http\Client\Request $request = null, StdClass $progress = null) {
 		echo "P";
 		if ($progress->info !== "prepare" && $client->getProgressInfo($request) != $progress) {
