@@ -20,11 +20,13 @@ config.status
 config.sub
 configure
 configure.in
+configure.ac
 http.la
 install-sh
 lcov_data
 libtool
 ltmain.sh
+ltmain.sh.backup
 missing
 mkinstalldirs
 modules/
@@ -32,6 +34,7 @@ pecl_http-*.tgz
 *.lo
 *.o
 run-tests.php
+run-tests.sh
 tests/*.diff
 tests/*.exp
 tests/*.log
