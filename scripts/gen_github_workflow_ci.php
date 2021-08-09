@@ -19,6 +19,7 @@ $job = $gen->github([
     "enable_debug" => "yes",
     "enable_zts" => "yes",
     "enable_iconv" => "yes",
+    "TEST_PHP_ARGS" => "-d error_reporting=24575" // ignore E_DEPRECATED
 ], 
 "cur-none" => [
 // everything disabled for current

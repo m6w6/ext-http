@@ -15,6 +15,7 @@ jobs:
       enable_debug: "yes"
       enable_zts: "yes"
       enable_iconv: "yes"
+      TEST_PHP_ARGS: "-d error_reporting=24575"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
