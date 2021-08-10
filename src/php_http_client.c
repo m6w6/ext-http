@@ -804,7 +804,7 @@ static PHP_METHOD(HttpClient, requeue)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpClient_count, 0, 0, IS_LONG, 0)
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(ai_HttpClient_count, 0, 0, IS_LONG, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, count)
 {
@@ -984,7 +984,11 @@ static int notify(zend_object_iterator *iter, void *puser)
 	return ZEND_HASH_APPLY_STOP;
 }
 
+#if PHP_VERSION_ID >= 80100
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(ai_HttpClient_notify, 0, 0, IS_VOID, 0)
+#else
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_notify, 0, 0, 0)
+#endif
 	ZEND_ARG_OBJ_INFO(0, request, http\\Client\\Request, 1)
 	ZEND_ARG_INFO(0, progress)
 ZEND_END_ARG_INFO();
@@ -1028,11 +1032,16 @@ static PHP_METHOD(HttpClient, notify)
 			zval_ptr_dtor(zprogress);
 		}
 	}
-
+#if PHP_VERSION_ID < 80100
 	RETVAL_ZVAL(getThis(), 1, 0);
+#endif
 }
 
+#if PHP_VERSION_ID >= 80100
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(ai_HttpClient_attach, 0, 1, IS_VOID, 0)
+#else
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_attach, 0, 0, 1)
+#endif
 	ZEND_ARG_OBJ_INFO(0, observer, SplObserver, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, attach)
@@ -1057,11 +1066,16 @@ static PHP_METHOD(HttpClient, attach)
 	ZVAL_UNDEF(&retval);
 	zend_call_method_with_1_params(Z_OBJ_P(observers), NULL, NULL, "attach", &retval, observer);
 	zval_ptr_dtor(&retval);
-
+#if PHP_VERSION_ID < 80100
 	RETVAL_ZVAL(getThis(), 1, 0);
+#endif
 }
 
+#if PHP_VERSION_ID >= 80100
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(ai_HttpClient_detach, 0, 1, IS_VOID, 0)
+#else
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_detach, 0, 0, 1)
+#endif
 	ZEND_ARG_OBJ_INFO(0, observer, SplObserver, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpClient, detach)
@@ -1080,8 +1094,9 @@ static PHP_METHOD(HttpClient, detach)
 	ZVAL_UNDEF(&retval);
 	zend_call_method_with_1_params(Z_OBJ_P(observers), NULL, NULL, "detach", &retval, observer);
 	zval_ptr_dtor(&retval);
-
+#if PHP_VERSION_ID < 80100
 	RETVAL_ZVAL(getThis(), 1, 0);
+#endif
 }
 
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpClient_getObservers, 0, 0, 0)

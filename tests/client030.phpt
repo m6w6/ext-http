@@ -12,6 +12,7 @@ echo "Test\n";
 include "helper/server.inc";
 
 class test implements SplObserver {
+	#[ReturnTypeWillChange]
 	function update(SplSubject $client) {
 		$client->once();
 	}

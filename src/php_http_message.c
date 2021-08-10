@@ -1971,7 +1971,7 @@ static PHP_METHOD(HttpMessage, splitMultipartBody)
 	RETURN_OBJ(&php_http_message_object_new_ex(obj->zo.ce, msg)->zo);
 }
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_count, 0, 0, IS_LONG, 0)
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(ai_HttpMessage_count, 0, 0, IS_LONG, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, count)
 {
@@ -1986,7 +1986,7 @@ static PHP_METHOD(HttpMessage, count)
 	}
 }
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_rewind, 0, 0, IS_VOID, 0)
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(ai_HttpMessage_rewind, 0, 0, IS_VOID, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, rewind)
 {
@@ -2001,7 +2001,7 @@ static PHP_METHOD(HttpMessage, rewind)
 	}
 }
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_valid, 0, 0, _IS_BOOL, 0)
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(ai_HttpMessage_valid, 0, 0, _IS_BOOL, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, valid)
 {
@@ -2012,7 +2012,7 @@ static PHP_METHOD(HttpMessage, valid)
 	}
 }
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_next, 0, 0, IS_VOID, 0)
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(ai_HttpMessage_next, 0, 0, IS_VOID, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, next)
 {
@@ -2036,7 +2036,7 @@ static PHP_METHOD(HttpMessage, next)
 	}
 }
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage_key, 0, 0, IS_LONG, 0)
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(ai_HttpMessage_key, 0, 0, IS_LONG, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, key)
 {
@@ -2047,7 +2047,7 @@ static PHP_METHOD(HttpMessage, key)
 	}
 }
 
-ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(ai_HttpMessage_current, 0, 0, http\\Message, 0)
+ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_OBJ_INFO_EX(ai_HttpMessage_current, 0, 0, http\\Message, 0)
 ZEND_END_ARG_INFO();
 static PHP_METHOD(HttpMessage, current)
 {

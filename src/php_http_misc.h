@@ -106,6 +106,10 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 # define php_http_mem_stream_open(type, zstr) php_stream_memory_open((type), (zstr))
 #else
 # define php_http_mem_stream_open(type, zstr) php_stream_memory_open((type), (zstr)->val, (zstr)->len)
+# define ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_TYPE_INFO_EX(name, return_reference, required_num_args, type, allow_null) \
+		 ZEND_BEGIN_ARG_INFO_EX(name, 0, return_reference, required_num_args)
+# define ZEND_BEGIN_ARG_WITH_TENTATIVE_RETURN_OBJ_INFO_EX(name, return_reference, required_num_args, type, allow_null) \
+		 ZEND_BEGIN_ARG_INFO_EX(name, 0, return_reference, required_num_args)
 #endif
 
 #define HT_IS_RECURSIVE(ht) GC_IS_RECURSIVE(ht)
