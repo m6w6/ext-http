@@ -26,6 +26,8 @@ var_dump(
 
 $client->attach($observer = new class implements SplObserver { 
 	public $data = [];
+
+	#[ReturnTypeWillChange]
 	function update(SplSubject $client, $req = null, $progress = null) {
 		$ti = $client->getTransferInfo($req);
 		if (isset($ti->tls_session["internals"])) {
