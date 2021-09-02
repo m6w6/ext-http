@@ -25,6 +25,7 @@ server("cookie.inc", function($port) {
 	$client->requeue($request);
 	$client->send();
 	dump_responses($client, ["counter" => 2]);
+	$client->dequeue($request);
 
 	$request = new http\Client\Request("GET", "http://localhost:$port?r2");
 	$client->enqueue($request);

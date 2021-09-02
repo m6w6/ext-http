@@ -254,6 +254,20 @@ ZEND_RESULT_CODE php_http_client_dequeue(php_http_client_t *h, php_http_message_
 	return FAILURE;
 }
 
+ZEND_RESULT_CODE php_http_client_requeue(php_http_client_t *h, php_http_message_t *request)
+{
+	if (h->ops->dequeue) {
+		php_http_client_enqueue_t *enqueue = php_http_client_enqueued(h, request, NULL);
+
+		if (!enqueue) {
+			php_error_docref(NULL, E_WARNING, "Failed to requeue request; request not in queue");
+			return FAILURE;
+		}
+		return h->ops->requeue(h, enqueue);
+	}
+	return FAILURE;
+}
+
 php_http_client_enqueue_t *php_http_client_enqueued(php_http_client_t *h, void *compare_arg, php_http_client_enqueue_cmp_func_t compare_func)
 {
 	zend_llist_element *el = NULL;
@@ -632,9 +646,8 @@ static PHP_METHOD(HttpClient, reset)
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
 
-static HashTable *combined_options(zval *client, zval *request)
+static HashTable *combined_options(HashTable *options, zval *client, zval *request)
 {
-	HashTable *options;
 	unsigned num_options = 0;
 	zval z_roptions, z_options_tmp, *z_coptions = zend_read_property(php_http_client_class_entry, Z_OBJ_P(client), ZEND_STRL("options"), 0, &z_options_tmp);
 
@@ -649,8 +662,12 @@ static HashTable *combined_options(zval *client, zval *request)
 			num_options = num;
 		}
 	}
-	ALLOC_HASHTABLE(options);
-	ZEND_INIT_SYMTABLE_EX(options, num_options, 0);
+	if (options) {
+		zend_hash_clean(options);
+	} else {
+		ALLOC_HASHTABLE(options);
+		ZEND_INIT_SYMTABLE_EX(options, num_options, 0);
+	}
 	if (Z_TYPE_P(z_coptions) == IS_ARRAY) {
 		array_copy(Z_ARRVAL_P(z_coptions), options);
 	}
@@ -713,7 +730,7 @@ static PHP_METHOD(HttpClient, enqueue)
 
 	Z_ADDREF_P(request);
 	q.request = msg_obj->message;
-	q.options = combined_options(getThis(), request);
+	q.options = combined_options(NULL, getThis(), request);
 	q.dtor = msg_queue_dtor;
 	q.opaque = msg_obj;
 	q.closure.fci = fci;
@@ -769,19 +786,33 @@ static PHP_METHOD(HttpClient, requeue)
 	zend_fcall_info_cache fcc = empty_fcall_info_cache;
 	php_http_client_object_t *obj;
 	php_http_message_object_t *msg_obj;
-	php_http_client_enqueue_t q;
+	php_http_client_enqueue_t q, *e;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "O|f", &request, php_http_get_client_request_class_entry(), &fci, &fcc), invalid_arg, return);
 
 	obj = PHP_HTTP_OBJ(NULL, getThis());
 	msg_obj = PHP_HTTP_OBJ(NULL, request);
 
-	if (php_http_client_enqueued(obj->client, msg_obj->message, NULL)) {
-		php_http_expect(SUCCESS == php_http_client_dequeue(obj->client, msg_obj->message), runtime, return);
+	if ((e = php_http_client_enqueued(obj->client, msg_obj->message, NULL))) {
+		combined_options(e->options, getThis(), request);
+		php_http_expect(SUCCESS == php_http_client_requeue(obj->client, msg_obj->message), runtime, return);
+		if (fci.size) {
+			if (e->closure.fci.size) {
+				zval_ptr_dtor(&e->closure.fci.function_name);
+				if (e->closure.fci.object) {
+					zend_object_release(e->closure.fci.object);
+				}
+			}
+			Z_TRY_ADDREF(fci.function_name);
+			if (fci.object) {
+				GC_ADDREF(fci.object);
+			}
+		}
+		RETURN_ZVAL(getThis(), 1, 0);
 	}
 
 	q.request = msg_obj->message;
-	q.options = combined_options(getThis(), request);
+	q.options = combined_options(NULL, getThis(), request);
 	q.dtor = msg_queue_dtor;
 	q.opaque = msg_obj;
 	q.closure.fci = fci;

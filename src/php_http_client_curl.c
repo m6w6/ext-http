@@ -863,14 +863,14 @@ static ZEND_RESULT_CODE php_http_curle_option_set_cookiestore(php_http_option_t 
 	}
 
 #if DEBUG_COOKIES
-	fprintf(stderr, "CURLOPT_COOKIEFILE: %s\n", cookiestore);
+	fprintf(stderr, "CURLOPT_COOKIEFILE: %s\n", storage->cookiestore);
 #endif
 	// does NOT enable ch->data.cookies until transfer; adds to ch->stsate.cookielist
 	if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEFILE, storage->cookiestore ? storage->cookiestore : "")) {
 		return FAILURE;
 	}
 #if DEBUG_COOKIES
-	fprintf(stderr, "CURLOPT_COOKIEJAR: %s\n", cookiestore);
+	fprintf(stderr, "CURLOPT_COOKIEJAR: %s\n", storage->cookiestore);
 #endif
 	// enables ch->data.cookies
 	if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_COOKIEJAR, storage->cookiestore)) {
@@ -2121,6 +2121,12 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_reset(php_http_client_curl_
 	php_http_buffer_reset(&handler->options.cookies);
 	php_http_buffer_reset(&handler->options.ranges);
 
+	if (php_http_message_body_size(handler->response.body)) {
+		php_http_message_body_free(&handler->response.body);
+		handler->response.body = php_http_message_body_init(NULL, NULL);
+	}
+	php_http_buffer_reset(&handler->response.headers);
+
 #if ZTS
 	curl_easy_setopt(ch, CURLOPT_NOSIGNAL, 1L);
 #endif
@@ -2296,18 +2302,18 @@ static void php_http_client_curl_handler_clear(php_http_client_curl_handler_t *h
 	curl_easy_setopt(handler->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(handler->handle, CURLOPT_DEBUGFUNCTION, NULL);
 	/* see gh issue #84 */
-#if PHP_HTTP_CURL_VERSION(7,63,0) && !PHP_HTTP_CURL_VERSION(7,65,0)
-	{
-		php_http_curle_storage_t *st = php_http_curle_get_storage(handler->handle);
-		curl_easy_setopt(handler->handle, CURLOPT_COOKIEJAR, st ? st->cookiestore : NULL);
-	}
-#endif
 #if DEBUG_COOKIES
 	fprintf(stderr, "CURLOPT_COOKIELIST: FLUSH\n");
 	fprintf(stderr, "CURLOPT_SHARE: (null)\n");
 #endif
 	curl_easy_setopt(handler->handle, CURLOPT_COOKIELIST, "FLUSH");
 	curl_easy_setopt(handler->handle, CURLOPT_SHARE, NULL);
+#if PHP_HTTP_CURL_VERSION(7,63,0) && !PHP_HTTP_CURL_VERSION(7,65,0)
+	{
+		php_http_curle_storage_t *st = php_http_curle_get_storage(handler->handle);
+		curl_easy_setopt(handler->handle, CURLOPT_COOKIEJAR, st ? st->cookiestore : NULL);
+	}
+#endif
 }
 
 static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *handler)
@@ -2387,6 +2393,17 @@ static void queue_dtor(php_http_client_enqueue_t *e)
 	php_http_client_curl_handler_dtor(handler);
 }
 
+static void retire_ch(php_persistent_handle_factory_t *f, void **handle)
+{
+	CURL *ch = *handle;
+	/* erase all cookies */
+	if (ch) {
+		curl_easy_reset(ch);
+		curl_easy_setopt(ch, CURLOPT_COOKIELIST, "ALL");
+		curl_easy_setopt(ch, CURLOPT_COOKIEFILE, NULL);
+	}
+}
+
 static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
 {
 	php_persistent_handle_factory_t *pf = NULL;
@@ -2417,7 +2434,7 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 
 		id_len = spprintf(&id_str, 0, "%.*s:%s:%d", (int) phf->ident->len, phf->ident->val, STR_PTR(url->host), port);
 		id = php_http_cs2zs(id_str, id_len);
-		pf = php_persistent_handle_concede(NULL, PHP_HTTP_G->client.curl.driver.request_name, id, NULL, NULL);
+		pf = php_persistent_handle_concede(NULL, PHP_HTTP_G->client.curl.driver.request_name, id, NULL, retire_ch);
 		zend_string_release(id);
 	}
 
@@ -2464,6 +2481,43 @@ static ZEND_RESULT_CODE php_http_client_curl_enqueue(php_http_client_t *h, php_h
 	}
 
 	zend_llist_add_element(&h->requests, enqueue);
+	++curl->unfinished;
+
+	if (h->callback.progress.func && SUCCESS == php_http_client_getopt(h, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, enqueue->request, &progress)) {
+		progress->info = "start";
+		h->callback.progress.func(h->callback.progress.arg, h, &handler->queue, progress);
+		progress->started = 1;
+	}
+
+	return SUCCESS;
+}
+
+static ZEND_RESULT_CODE php_http_client_curl_requeue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
+{
+	CURLMcode rs;
+	php_http_client_curl_t *curl = h->ctx;
+	php_http_client_curl_handler_t *handler = enqueue->opaque;
+	php_http_client_progress_state_t *progress;
+
+	if (SUCCESS != php_http_client_curl_handler_reset(handler)) {
+		return FAILURE;
+	}
+
+	if (SUCCESS != php_http_client_curl_handler_prepare(handler, enqueue)) {
+		return FAILURE;
+	}
+
+	if (CURLM_OK != (rs = curl_multi_remove_handle(curl->handle->multi, handler->handle))) {
+		php_error_docref(NULL, E_WARNING, "Could not dequeue request: %s", curl_multi_strerror(rs));
+		return FAILURE;
+	}
+
+	if (CURLM_OK != (rs = curl_multi_add_handle(curl->handle->multi, handler->handle))) {
+		zend_llist_del_element(&h->requests, handler->handle, (int (*)(void *, void *)) compare_queue);
+		php_error_docref(NULL, E_WARNING, "Could not enqueue request: %s", curl_multi_strerror(rs));
+		return FAILURE;
+	}
+
 	++curl->unfinished;
 
 	if (h->callback.progress.func && SUCCESS == php_http_client_getopt(h, PHP_HTTP_CLIENT_OPT_PROGRESS_INFO, enqueue->request, &progress)) {
@@ -2591,6 +2645,8 @@ static ZEND_RESULT_CODE php_http_client_curl_setopt(php_http_client_t *h, php_ht
 {
 	php_http_client_curl_t *curl = h->ctx;
 
+	(void) curl;
+
 	switch (opt) {
 		case PHP_HTTP_CLIENT_OPT_CONFIGURATION:
 			return php_http_options_apply(&php_http_curlm_options, (HashTable *) arg,  h);
@@ -2695,6 +2751,7 @@ static php_http_client_ops_t php_http_client_curl_ops = {
 	php_http_client_curl_once,
 	php_http_client_curl_enqueue,
 	php_http_client_curl_dequeue,
+	php_http_client_curl_requeue,
 	php_http_client_curl_setopt,
 	php_http_client_curl_getopt
 };
