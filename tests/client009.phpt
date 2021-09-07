@@ -19,24 +19,33 @@ function x($a) {
 }
 
 server("env.inc", function($port) {
+	$client = new http\Client;
+	$client->setCookies(array("test" => "bar"));
+	$client->addCookies(array("foo" => "test"));
 
 	$request = new http\Client\Request("GET", "http://localhost:$port");
+	$client->enqueue($request);
+	$client->send();
+	echo $client->getResponse()->getBody()->toString();
 
-	foreach (http\Client::getAvailableDrivers() as $driver) {
-		$client = new http\Client($driver);
-		$client->setCookies(array("test" => "bar"));
-		$client->addCookies(array("foo" => "test"));
-		$client->enqueue($request);
-		$client->send();
-		var_dump($client->getResponse()->getBody()->toString());
-		$request->setOptions(array("cookies" => x($client->getCookies())));
-		$client->requeue($request);
-		$client->send();
-		var_dump($client->getResponse()->getBody()->toString());
-	}
+	$request->setOptions(array("cookies" => x($client->getCookies())));
+	$client->requeue($request);
+	$client->send();
+
+	echo $client->getResponse()->getBody()->toString();
 });
 ?>
 Done
---EXPECTREGEX--
+--EXPECT--
 Test
-(?:string\(46\) "Array\n\(\n    \[test\] \=\> bar\n    \[foo\] \=\> test\n\)\n"\nstring\(46\) "Array\n\(\n    \[test\] \=\> test\n    \[foo\] \=\> bar\n\)\n"\n)+Done
+Array
+(
+    [test] => bar
+    [foo] => test
+)
+Array
+(
+    [test] => test
+    [foo] => bar
+)
+Done

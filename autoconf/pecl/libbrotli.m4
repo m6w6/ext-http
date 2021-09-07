@@ -1,5 +1,11 @@
 
 AC_DEFUN([PECL_CHECK_LIBBROTLI], [
+	dnl config.m4 calls PECL_CHECK_DONE once more
+	PECL_COUNT_CHECKS([+1])
+	PECL_SAVE_ENV([CPPFLAGS], [libbrotli])
+	PECL_SAVE_ENV([LDFLAGS], [libbrotli])
+	PECL_SAVE_ENV([LIBS], [libbrotli])
+
 	PECL_CHECK_LIBBROTLI_COMMON([$1], [$2])
 	PECL_CHECK_DONE(libbrotlicommon, [$PECL_VAR([HAVE_LIBBROTLI_COMMON])])
 	PECL_CHECK_LIBBROTLI_DEC([$1], [$2])

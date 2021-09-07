@@ -1,0 +1,993 @@
+# generated file; do not edit!
+
+name: curl-matrix
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  curl-master:
+    name: curl-master
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "master"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_78_0:
+    name: curl-7_78_0
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_78_0"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_78_0 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_77_0:
+    name: curl-7_77_0
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_77_0"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_77_0 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_76_1:
+    name: curl-7_76_1
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_76_1"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_76_1 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_74_0:
+    name: curl-7_74_0
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_74_0"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_74_0 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_71_1:
+    name: curl-7_71_1
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_71_1"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_71_1 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_68_0:
+    name: curl-7_68_0
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_68_0"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_68_0 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_67_0:
+    name: curl-7_67_0
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_67_0"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_67_0 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_64_0:
+    name: curl-7_64_0
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_64_0"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_64_0 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_61_1:
+    name: curl-7_61_1
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_61_1"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_61_1 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_58_0:
+    name: curl-7_58_0
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_58_0"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_58_0 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_52_1:
+    name: curl-7_52_1
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_52_1"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_52_1 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_49_1:
+    name: curl-7_49_1
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_49_1"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_49_1 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_31_0:
+    name: curl-7_31_0
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_31_0"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_31_0 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_20_1:
+    name: curl-7_20_1
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_20_1"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_20_1 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_19_7:
+    name: curl-7_19_7
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_19_7"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_19_7 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
+  curl-7_18_2:
+    name: curl-7_18_2
+    continue-on-error: true
+    env:
+      PHP: "8.0"
+      CURL: "7_18_2"
+      enable_debug: "yes"
+      enable_iconv: "yes"
+      with_http_libcurl_dir: "/opt"
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: http
+      - uses: actions/checkout@v2
+        with:
+          repository: curl/curl
+          path: curl
+          ref: curl-7_18_2 #
+      - name: Install
+        run: |
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          sudo apt-get update -y &&  \
+          sudo apt-get build-dep -y libcurl4-openssl-dev && \
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Curl
+        run: |
+          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
+          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
+          cd curl
+          ./buildconf
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          make -j2
+          make install
+      - name: Prepare
+        run: |
+          cd http
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          cd http
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          cd http
+          make -f scripts/ci/Makefile test
+
