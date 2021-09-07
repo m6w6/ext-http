@@ -4,6 +4,9 @@ client cookies
 <?php
 include "skipif.inc";
 skip_client_test();
+if (0 === strpos(http\Client\Curl\Versions\CURL, "7.64.0")) {
+	die("skip - cookie handling broken or crashes with libcurl-7.64\n");
+}
 ?>
 --FILE--
 <?php

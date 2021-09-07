@@ -24,6 +24,8 @@ if test "$PHP_HTTP" != "no"; then
 		AC_CHECK_LIB(nsl, getdomainname)
 	])
 	AC_CHECK_FUNCS(mbrtowc mbtowc iswalnum inet_pton)
+	
+	CFLAGS="$CFLAGS -Wno-strict-prototypes"
 
 	dnl ZLIB
 	PHP_ARG_WITH([http-zlib-dir], [whether/where to check for zlib],
