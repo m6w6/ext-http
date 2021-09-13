@@ -1,5 +1,12 @@
 # ChangeLog v4
 
+## 4.2.1, 2021-09-13
+
+* Fixed failing tests with PHP-8.1 (see gh issue #120)
+* Fixed configure reliably finding the right libcurl features available
+* Fixed cookie handling with libcurl 7.77+ and consistently across all 
+  supported libcurl versions (follow-up to gh issue #116)
+
 ## 4.2.0, 2021-08-30
 
 * Fixed PHP-8.1 compatibility (see gh issues #114, #115 and #118)
