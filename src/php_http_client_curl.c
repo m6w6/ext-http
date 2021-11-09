@@ -1486,9 +1486,8 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,49,0)
-# if PHP_WIN32
+# if defined(linux) || defined(__APPLE__)
 	/* CURLOPT_TCP_FASTOPEN is not supported (yet) on Windows */
-# else
 	php_http_option_register(registry, ZEND_STRL("tcp_fastopen"), CURLOPT_TCP_FASTOPEN, _IS_BOOL);
 # endif
 #endif
@@ -2207,7 +2206,9 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 	curl_easy_setopt(curl->handle, CURLOPT_URL, storage->url);
 
 	/* apply options */
-	php_http_options_apply(&php_http_curle_options, enqueue->options, curl);
+	if (SUCCESS != php_http_options_apply(&php_http_curle_options, enqueue->options, curl)) {
+		return FAILURE;
+	}
 
 	/* request headers */
 	php_http_message_update_headers(msg);
