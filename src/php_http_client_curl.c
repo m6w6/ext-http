@@ -1486,7 +1486,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	}
 #endif
 #if PHP_HTTP_CURL_VERSION(7,49,0)
-# if defined(linux) || defined(__APPLE__)
+# if defined(linux) || defined(__APPLE__)
 	/* CURLOPT_TCP_FASTOPEN is not supported (yet) on Windows */
 	php_http_option_register(registry, ZEND_STRL("tcp_fastopen"), CURLOPT_TCP_FASTOPEN, _IS_BOOL);
 # endif
