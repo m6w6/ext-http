@@ -1,18 +1,12 @@
 
 AC_DEFUN([PECL_CHECK_LIBBROTLI], [
-	dnl config.m4 calls PECL_CHECK_DONE once more
-	PECL_COUNT_CHECKS([+1])
-	PECL_SAVE_ENV([CPPFLAGS], [libbrotli])
-	PECL_SAVE_ENV([LDFLAGS], [libbrotli])
-	PECL_SAVE_ENV([LIBS], [libbrotli])
-
 	PECL_CHECK_LIBBROTLI_COMMON([$1], [$2])
 	PECL_CHECK_DONE(libbrotlicommon, [$PECL_VAR([HAVE_LIBBROTLI_COMMON])])
 	PECL_CHECK_LIBBROTLI_DEC([$1], [$2])
 	PECL_CHECK_DONE(libbrotlidec, [$PECL_VAR([HAVE_LIBBROTLI_DEC])])
 	PECL_CHECK_LIBBROTLI_ENC([$1], [$2])
 	PECL_CHECK_DONE(libbrotlienc, [$PECL_VAR([HAVE_LIBBROTLI_ENC])])
-	
+
 	if $PECL_VAR([HAVE_LIBBROTLI_COMMON]) \
 	&& $PECL_VAR([HAVE_LIBBROTLI_DEC]) \
 	&& $PECL_VAR([HAVE_LIBBROTLI_ENC]); then
@@ -20,11 +14,16 @@ AC_DEFUN([PECL_CHECK_LIBBROTLI], [
 	else
 		PECL_VAR([HAVE_LIBBROTLI])=false
 	fi
+	dnl config.m4 calls PECL_CHECK_DONE once more
+	PECL_COUNT_CHECKS([+1])
+	PECL_SAVE_ENV([CPPFLAGS], [libbrotli])
+	PECL_SAVE_ENV([LDFLAGS], [libbrotli])
+	PECL_SAVE_ENV([LIBS], [libbrotli])
 ])
 
 AC_DEFUN([PECL_CHECK_LIBBROTLI_COMMON], [
 	PECL_CHECK_PKGCONFIG(libbrotlicommon, [$1])
-	
+
 	PECL_HAVE_VERSION(libbrotlicommon, ifelse($2,,1.0,$2), [
 		PECL_VAR([HAVE_LIBBROTLI_COMMON])=true
 	], [
@@ -34,7 +33,7 @@ AC_DEFUN([PECL_CHECK_LIBBROTLI_COMMON], [
 
 AC_DEFUN([PECL_CHECK_LIBBROTLI_DEC], [
 	PECL_CHECK_PKGCONFIG(libbrotlidec, [$1])
-	
+
 	PECL_HAVE_VERSION(libbrotlidec, ifelse($2,,1.0,$2), [
 		PECL_VAR([HAVE_LIBBROTLI_DEC])=true
 	], [
@@ -44,7 +43,7 @@ AC_DEFUN([PECL_CHECK_LIBBROTLI_DEC], [
 
 AC_DEFUN([PECL_CHECK_LIBBROTLI_ENC], [
 	PECL_CHECK_PKGCONFIG(libbrotlienc, [$1])
-	
+
 	PECL_HAVE_VERSION(libbrotlienc, ifelse($2,,1.0,$2), [
 		PECL_VAR([HAVE_LIBBROTLI_ENC])=true
 	], [
