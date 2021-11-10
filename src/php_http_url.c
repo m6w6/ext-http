@@ -2034,11 +2034,14 @@ PHP_METHOD(HttpUrl, toArray)
 	php_http_url_free(&purl);
 }
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpUrl___toString, 0, 0, IS_STRING, 0)
+ZEND_END_ARG_INFO();
+
 static zend_function_entry php_http_url_methods[] = {
 	PHP_ME(HttpUrl, __construct,  ai_HttpUrl___construct, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpUrl, mod,          ai_HttpUrl_mod, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpUrl, toString,     ai_HttpUrl_toString, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpUrl, __toString, toString, ai_HttpUrl_toString, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpUrl, __toString, toString, ai_HttpUrl___toString, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpUrl, toArray,      ai_HttpUrl_toArray, ZEND_ACC_PUBLIC)
 	EMPTY_FUNCTION_ENTRY
 };
@@ -2108,4 +2111,3 @@ PHP_MINIT_FUNCTION(http_url)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

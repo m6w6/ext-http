@@ -1699,8 +1699,6 @@ static PHP_METHOD(HttpMessage, getParentMessage)
 	RETVAL_OBJECT(&obj->parent->zo, 1);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage___toString, 0, 0, 0)
-ZEND_END_ARG_INFO();
 ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessage_toString, 0, 0, 0)
 	ZEND_ARG_INFO(0, include_parent)
 ZEND_END_ARG_INFO();
@@ -2059,6 +2057,9 @@ static PHP_METHOD(HttpMessage, current)
 		}
 	}
 }
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessage___toString, 0, 0, IS_STRING, 0)
+ZEND_END_ARG_INFO();
 
 static zend_function_entry php_http_message_methods[] = {
 	PHP_ME(HttpMessage, __construct,        ai_HttpMessage___construct,        ZEND_ACC_PUBLIC)

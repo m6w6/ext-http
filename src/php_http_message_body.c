@@ -670,9 +670,9 @@ PHP_METHOD(HttpMessageBody, __construct)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody___toString, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(ai_HttpMessageBody_serialize, 0, 0, 0)
 ZEND_END_ARG_INFO();
-PHP_METHOD(HttpMessageBody, __toString)
+PHP_METHOD(HttpMessageBody, serialize)
 {
 	if (SUCCESS == zend_parse_parameters_none()) {
 		php_http_message_body_object_t *obj = PHP_HTTP_OBJ(NULL, getThis());
@@ -951,11 +951,14 @@ PHP_METHOD(HttpMessageBody, stat)
 	}
 }
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpMessageBody___toString, 0, 0, IS_STRING, 0)
+ZEND_END_ARG_INFO();
+
 static zend_function_entry php_http_message_body_methods[] = {
 	PHP_ME(HttpMessageBody, __construct,  ai_HttpMessageBody___construct,  ZEND_ACC_PUBLIC)
-	PHP_ME(HttpMessageBody, __toString,   ai_HttpMessageBody___toString,   ZEND_ACC_PUBLIC)
-	PHP_MALIAS(HttpMessageBody, toString, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
-	PHP_MALIAS(HttpMessageBody, serialize, __toString, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
+	PHP_ME(HttpMessageBody, serialize,    ai_HttpMessageBody_serialize,    ZEND_ACC_PUBLIC)
+	PHP_MALIAS(HttpMessageBody, toString, serialize, ai_HttpMessageBody_serialize, ZEND_ACC_PUBLIC)
+	PHP_MALIAS(HttpMessageBody, __toString, serialize, ai_HttpMessageBody___toString, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, unserialize,  ai_HttpMessageBody_unserialize,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, __serialize,  ai_HttpMessageBody___serialize,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpMessageBody, __unserialize,ai_HttpMessageBody___unserialize,ZEND_ACC_PUBLIC)

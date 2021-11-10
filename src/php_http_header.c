@@ -17,18 +17,18 @@ ZEND_RESULT_CODE php_http_header_parse(const char *header, size_t length, HashTa
 	php_http_header_parser_t ctx;
 	php_http_buffer_t buf;
 	php_http_header_parser_state_t rs;
-	
+
 	if (!php_http_buffer_from_string_ex(&buf, header, length)) {
 		php_error_docref(NULL, E_WARNING, "Could not allocate buffer");
 		return FAILURE;
 	}
-	
+
 	if (!php_http_header_parser_init(&ctx)) {
 		php_http_buffer_dtor(&buf);
 		php_error_docref(NULL, E_WARNING, "Could not initialize header parser");
 		return FAILURE;
 	}
-	
+
 	rs = php_http_header_parser_parse(&ctx, &buf, PHP_HTTP_HEADER_PARSER_CLEANUP, headers, callback_func, callback_data);
 	php_http_header_parser_dtor(&ctx);
 	php_http_buffer_dtor(&buf);
@@ -362,21 +362,21 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpHeader, getParams)
 {
 	zval value_tmp, zctor, zparams_obj, *zargs = NULL;
-	
+
 	ZVAL_STRINGL(&zctor, "__construct", lenof("__construct"));
-	
+
 	object_init_ex(&zparams_obj, php_http_params_get_class_entry());
-	
+
 	zargs = (zval *) ecalloc(ZEND_NUM_ARGS()+1, sizeof(zval));
 	ZVAL_COPY_VALUE(&zargs[0], zend_read_property(php_http_header_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("value"), 0, &value_tmp));
 	if (ZEND_NUM_ARGS()) {
 		zend_get_parameters_array(ZEND_NUM_ARGS(), ZEND_NUM_ARGS(), &zargs[1]);
 	}
-	
+
 	if (SUCCESS == call_user_function(NULL, &zparams_obj, &zctor, return_value, ZEND_NUM_ARGS()+1, zargs)) {
 		RETVAL_ZVAL(&zparams_obj, 0, 1);
 	}
-	
+
 	zval_ptr_dtor(&zctor);
 	if (zargs) {
 		efree(zargs);
@@ -432,14 +432,17 @@ PHP_METHOD(HttpHeader, parse)
 	}
 }
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpHeader___toString, 0, 0, IS_STRING, 0)
+ZEND_END_ARG_INFO();
+
 static zend_function_entry php_http_header_methods[] = {
 	PHP_ME(HttpHeader, __construct,   ai_HttpHeader___construct, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, __unserialize, ai_HttpHeader___unserialize, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, __serialize,   ai_HttpHeader___serialize, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, unserialize,   ai_HttpHeader_unserialize, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, serialize,     ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpHeader, __toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
 	ZEND_MALIAS(HttpHeader, toString, serialize, ai_HttpHeader_serialize, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpHeader, __toString, serialize, ai_HttpHeader___toString, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, match,         ai_HttpHeader_match, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, negotiate,     ai_HttpHeader_negotiate, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpHeader, getParams,     ai_HttpHeader_getParams, ZEND_ACC_PUBLIC)
@@ -473,4 +476,3 @@ PHP_MINIT_FUNCTION(http_header)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

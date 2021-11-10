@@ -98,7 +98,7 @@ ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie
 	zval *entry;
 	zend_string *xkey, *xstr;
 	php_http_arrkey_t key;
-	
+
 	ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(src), key.h, key.key, entry)
 	{
 		if (key.key) {
@@ -107,7 +107,7 @@ ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie
 				return FAILURE;
 			}
 		}
-		
+
 		if (Z_TYPE_P(entry) == IS_STRING) {
 			if (PHP_ICONV_ERR_SUCCESS != php_iconv_string(Z_STRVAL_P(entry), Z_STRLEN_P(entry), &xstr, oe, ie)) {
 				if (key.key) {
@@ -123,7 +123,7 @@ ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie
 			}
 		} else if (Z_TYPE_P(entry) == IS_ARRAY) {
 			zval subarray;
-			
+
 			array_init(&subarray);
 			if (key.key) {
 				add_assoc_zval_ex(dst, xkey->val, xkey->len, &subarray);
@@ -137,7 +137,7 @@ ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie
 				return FAILURE;
 			}
 		}
-		
+
 		if (key.key) {
 			zend_string_release(xkey);
 		}
@@ -357,7 +357,7 @@ PHP_METHOD(HttpQueryString, __construct)
 {
 	zval *params = NULL;
 	zend_error_handling zeh;
-	
+
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &params), invalid_arg, return);
 
 	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_querystring_class_entry(), &zeh);
@@ -446,7 +446,7 @@ PHP_METHOD(HttpQueryString, get)
 	zend_long type = 0;
 	zend_bool del = 0;
 	zval *ztype = NULL, *defval = NULL;
-	
+
 	if (SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "|szzb", &name_str, &name_len, &ztype, &defval, &del)) {
 		if (name_str && name_len) {
 			if (ztype) {
@@ -454,7 +454,7 @@ PHP_METHOD(HttpQueryString, get)
 					type = Z_LVAL_P(ztype);
 				} else if(Z_TYPE_P(ztype) == IS_STRING) {
 					switch (Z_STRVAL_P(ztype)[0]) {
-						case 'B': 
+						case 'B':
 						case 'b':	type = PHP_HTTP_QUERYSTRING_TYPE_BOOL;		break;
 						case 'L':
 						case 'l':
@@ -463,7 +463,7 @@ PHP_METHOD(HttpQueryString, get)
 						case 'd':
 						case 'D':
 						case 'F':
-						case 'f':	type = PHP_HTTP_QUERYSTRING_TYPE_FLOAT;		break;	
+						case 'f':	type = PHP_HTTP_QUERYSTRING_TYPE_FLOAT;		break;
 						case 'S':
 						case 's':	type = PHP_HTTP_QUERYSTRING_TYPE_STRING;	break;
 						case 'A':
@@ -486,11 +486,11 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, set)
 {
 	zval *params;
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "z", &params)) {
 		return;
 	}
-	
+
 	php_http_querystring_set(getThis(), params, QS_MERGE);
 	RETVAL_ZVAL(getThis(), 1, 0);
 }
@@ -504,7 +504,7 @@ PHP_METHOD(HttpQueryString, mod)
 	zend_error_handling zeh;
 
 	php_http_expect(SUCCESS == zend_parse_parameters(ZEND_NUM_ARGS(), "z", &params), invalid_arg, return);
-	
+
 	zend_replace_error_handling(EH_THROW, php_http_get_exception_bad_querystring_class_entry(), &zeh);
 	ZVAL_OBJ(return_value, Z_OBJ_HT_P(instance)->clone_obj(Z_OBJ_P(instance)));
 	/* make sure we do not inherit the reference to _GET */
@@ -561,7 +561,7 @@ PHP_METHOD(HttpQueryString, xlate)
 
 	php_http_querystring_set(getThis(), &na, 0);
 	RETVAL_ZVAL(getThis(), 1, 0);
-	
+
 	zval_ptr_dtor(&na);
 }
 #endif /* HAVE_ICONV */
@@ -605,7 +605,7 @@ ZEND_END_ARG_INFO();
 PHP_METHOD(HttpQueryString, unserialize)
 {
 	zval *serialized;
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "z", &serialized)) {
 		return;
 	}
@@ -628,7 +628,7 @@ PHP_METHOD(HttpQueryString, offsetGet)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S", &offset)) {
 		return;
 	}
-	
+
 	qa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("queryArray"), 0, &qa_tmp);
 	ZVAL_DEREF(qa);
 
@@ -647,7 +647,7 @@ PHP_METHOD(HttpQueryString, offsetSet)
 {
 	zend_string *offset;
 	zval *value, param, znull;
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "Sz", &offset, &value)) {
 		return;
 	}
@@ -675,7 +675,7 @@ PHP_METHOD(HttpQueryString, offsetExists)
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S", &offset)) {
 		return;
 	}
-	
+
 	qa = zend_read_property(php_http_querystring_class_entry, Z_OBJ_P(ZEND_THIS), ZEND_STRL("queryArray"), 0, &qa_tmp);
 	ZVAL_DEREF(qa);
 
@@ -694,7 +694,7 @@ PHP_METHOD(HttpQueryString, offsetUnset)
 {
 	zend_string *offset;
 	zval param, znull;
-	
+
 	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "S", &offset)) {
 		return;
 	}
@@ -706,12 +706,15 @@ PHP_METHOD(HttpQueryString, offsetUnset)
 	zval_ptr_dtor(&param);
 }
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpQueryString___toString, 0, 0, IS_STRING, 0)
+ZEND_END_ARG_INFO();
+
 static zend_function_entry php_http_querystring_methods[] = {
 	PHP_ME(HttpQueryString, __construct, ai_HttpQueryString___construct, ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
 
 	PHP_ME(HttpQueryString, toArray, ai_HttpQueryString_toArray, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpQueryString, toString, ai_HttpQueryString_toString, ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpQueryString, __toString, toString, ai_HttpQueryString_toString, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpQueryString, __toString, toString, ai_HttpQueryString___toString, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HttpQueryString, get, ai_HttpQueryString_get, ZEND_ACC_PUBLIC)
 	PHP_ME(HttpQueryString, set, ai_HttpQueryString_set, ZEND_ACC_PUBLIC)

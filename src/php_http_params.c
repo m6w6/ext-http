@@ -1290,12 +1290,15 @@ PHP_METHOD(HttpParams, offsetSet)
 	}
 }
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_HttpParams___toString, 0, 0, IS_STRING, 0)
+ZEND_END_ARG_INFO();
+
 static zend_function_entry php_http_params_methods[] = {
 	PHP_ME(HttpParams, __construct,   ai_HttpParams___construct,   ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
 
 	PHP_ME(HttpParams, toArray,       ai_HttpParams_toArray,       ZEND_ACC_PUBLIC)
 	PHP_ME(HttpParams, toString,      ai_HttpParams_toString,      ZEND_ACC_PUBLIC)
-	ZEND_MALIAS(HttpParams, __toString, toString, ai_HttpParams_toString, ZEND_ACC_PUBLIC)
+	ZEND_MALIAS(HttpParams, __toString, toString, ai_HttpParams___toString, ZEND_ACC_PUBLIC)
 
 	PHP_ME(HttpParams, offsetExists,  ai_HttpParams_offsetExists,  ZEND_ACC_PUBLIC)
 	PHP_ME(HttpParams, offsetUnset,   ai_HttpParams_offsetUnset,   ZEND_ACC_PUBLIC)
@@ -1345,4 +1348,3 @@ PHP_MINIT_FUNCTION(http_params)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-
