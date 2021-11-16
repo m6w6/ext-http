@@ -13,14 +13,14 @@ jobs:
 $gen = include __DIR__ . "/ci/gen-matrix.php";
 $cur = "8.0";
 $job = $gen->github([
-"master" => [
+"next" => [
 // most useful for all additional versions except current
-    "PHP" => ["master"],
+    "PHP" => ["8.1", "master"],
     "enable_debug" => "yes",
     "enable_zts" => "yes",
     "enable_iconv" => "yes",
     "TEST_PHP_ARGS" => "-d error_reporting=24575" // ignore E_DEPRECATED
-], 
+],
 "cur-none" => [
 // everything disabled for current
     "PHP" => $cur,
@@ -30,14 +30,14 @@ $job = $gen->github([
     "with_http_libcurl_dir" => "no",
     "with_http_libevent_dir" => "no",
     "with_http_libbrotli_dir" => "no",
-], 
+],
 "cur-dbg-zts" => [
 // everything enabled for current, switching debug/zts
     "PHP" => $cur,
     "enable_debug",
     "enable_zts",
     "enable_iconv" => "yes",
-], 
+],
 "cur-cov" => [
 // once everything enabled for current, with coverage
     "CFLAGS" => "-O0 -g --coverage",
@@ -53,7 +53,7 @@ $job = $gen->github([
 ]]);
 foreach ($job as $id => $env) {
     printf("  %s:\n", $id);
-    printf("    name: %s\n", $id);
+    printf("    name: \"%s (%s)\"\n", $id, $env["PHP"]);
     if ($env["PHP"] == "master") {
         printf("    continue-on-error: true\n");
     }

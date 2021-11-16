@@ -7,8 +7,44 @@ on:
   pull_request:
 
 jobs:
-  master-0:
-    name: master-0
+  next-0:
+    name: "next-0 (8.1)"
+    env:
+      PHP: "8.1"
+      enable_debug: "yes"
+      enable_zts: "yes"
+      enable_iconv: "yes"
+      TEST_PHP_ARGS: "-d error_reporting=24575"
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Install
+        run: |
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libcurl4-openssl-dev \
+            libidn11-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Prepare
+        run: |
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          make -f scripts/ci/Makefile test
+
+  next-1:
+    name: "next-1 (master)"
     continue-on-error: true
     env:
       PHP: "master"
@@ -45,7 +81,7 @@ jobs:
           make -f scripts/ci/Makefile test
 
   cur-none-0:
-    name: cur-none-0
+    name: "cur-none-0 (8.0)"
     env:
       PHP: "8.0"
       with_http_libicu_dir: "no"
@@ -83,7 +119,7 @@ jobs:
           make -f scripts/ci/Makefile test
 
   cur-dbg-zts-0:
-    name: cur-dbg-zts-0
+    name: "cur-dbg-zts-0 (8.0)"
     env:
       PHP: "8.0"
       enable_debug: "yes"
@@ -118,7 +154,7 @@ jobs:
           make -f scripts/ci/Makefile test
 
   cur-dbg-zts-1:
-    name: cur-dbg-zts-1
+    name: "cur-dbg-zts-1 (8.0)"
     env:
       PHP: "8.0"
       enable_debug: "no"
@@ -153,7 +189,7 @@ jobs:
           make -f scripts/ci/Makefile test
 
   cur-dbg-zts-2:
-    name: cur-dbg-zts-2
+    name: "cur-dbg-zts-2 (8.0)"
     env:
       PHP: "8.0"
       enable_debug: "yes"
@@ -188,7 +224,7 @@ jobs:
           make -f scripts/ci/Makefile test
 
   cur-dbg-zts-3:
-    name: cur-dbg-zts-3
+    name: "cur-dbg-zts-3 (8.0)"
     env:
       PHP: "8.0"
       enable_debug: "no"
@@ -223,7 +259,7 @@ jobs:
           make -f scripts/ci/Makefile test
 
   cur-cov-0:
-    name: cur-cov-0
+    name: "cur-cov-0 (8.0)"
     env:
       CFLAGS: "-O0 -g --coverage"
       CXXFLAGS: "-O0 -g --coverage"
@@ -266,7 +302,7 @@ jobs:
           bash <(curl -s https://codecov.io/bash) -X xcode -X coveragepy
 
   cur-cov-1:
-    name: cur-cov-1
+    name: "cur-cov-1 (8.0)"
     env:
       CFLAGS: "-O0 -g --coverage"
       CXXFLAGS: "-O0 -g --coverage"
@@ -309,7 +345,7 @@ jobs:
           bash <(curl -s https://codecov.io/bash) -X xcode -X coveragepy
 
   cur-cov-2:
-    name: cur-cov-2
+    name: "cur-cov-2 (8.0)"
     env:
       CFLAGS: "-O0 -g --coverage"
       CXXFLAGS: "-O0 -g --coverage"
