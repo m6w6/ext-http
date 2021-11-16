@@ -1,4 +1,4 @@
-# current is 7.78.0 ATM
+# current is 7.80.0 ATM
 # 7.21.5-7.29.0 fail to configure on gh actions
 
 alpine: 7.78.0 7.67.0
@@ -9,7 +9,8 @@ other: 7.49.1 7.31.0
 ubuntu: 7.74.0 7.68.0 7.58.0
 
 # always test against a few recent
-latest: master 7.78.0 7.77.0 7.76.1
+latest: master 7.80.0 7.79.1
+# and a couple ancient
 oldest: 7.18.2 7.19.7 7.20.1
 
 # 7.64.1 fails client tests because of superfluous infof() calls
