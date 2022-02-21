@@ -1,5 +1,9 @@
 # ChangeLog v3
 
+## 3.2.5, 2022-02-22
+
+* Fixed gh-issue #123: Segfault with libcurl 7.81
+
 ## 3.2.4, 2021-01-13
 
 * Fixed configure on systems which do not provide icu-config
