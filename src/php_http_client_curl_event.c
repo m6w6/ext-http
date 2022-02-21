@@ -97,8 +97,6 @@ static void php_http_client_curl_event_timer(CURLM *multi, long timeout_ms, void
 		}
 		break;
 	case 0:
-		php_http_client_curl_event_handler(context, CURL_SOCKET_TIMEOUT, 0);
-		break;
 	default:
 		if (!event_initialized(context->timeout)) {
 			event_assign(context->timeout, context->evbase, CURL_SOCKET_TIMEOUT, 0, php_http_client_curl_event_timeout_callback, context);
