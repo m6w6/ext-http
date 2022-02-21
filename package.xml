@@ -31,9 +31,9 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2021-09-13</date>
+ <date>2022-02-22</date>
  <version>
-  <release>4.2.1</release>
+  <release>4.2.2</release>
   <api>4.2.0</api>
  </version>
  <stability>
@@ -42,10 +42,7 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-* Fixed failing tests with PHP-8.1 (see gh issue #120)
-* Fixed configure reliably finding the right libcurl features available
-* Fixed cookie handling with libcurl 7.77+ and consistently across all 
-  supported libcurl versions (follow-up to gh issue #116)
+  * Fixed gh-issue #123: Segfault with libcurl 7.81
 ]]></notes>
  <contents>
   <dir name="/">

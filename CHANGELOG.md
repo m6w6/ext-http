@@ -1,5 +1,9 @@
 # ChangeLog v4
 
+## 4.2.2, 2022-02-22
+
+* Fixed gh-issue #123: Segfault with libcurl 7.81
+
 ## 4.2.1, 2021-09-13
 
 * Fixed failing tests with PHP-8.1 (see gh issue #120)
