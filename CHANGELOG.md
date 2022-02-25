@@ -1,6 +1,6 @@
 # ChangeLog v3
 
-## 3.2.5, 2022-02-22
+## 3.2.5, 2022-02-25
 
 * Fixed gh-issue #123: Segfault with libcurl 7.81
 
