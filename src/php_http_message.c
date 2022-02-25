@@ -1780,6 +1780,7 @@ static PHP_METHOD(HttpMessage, __serialize)
 
 	ZEND_HASH_FOREACH_KEY_PTR(&obj->zo.ce->properties_info, num_index, str_index, pi)
 	{
+		(void)num_index;
 		zval *val;
 		if (str_index && (val = zend_hash_find_ind(props, pi->name))) {
 			Z_TRY_ADDREF_P(val);

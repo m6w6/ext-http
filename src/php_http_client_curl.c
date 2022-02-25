@@ -313,14 +313,14 @@ static int php_http_curle_raw_callback(CURL *ch, curl_infotype type, char *data,
 	return 0;
 }
 
-static int php_http_curle_header_callback(char *data, size_t n, size_t l, void *arg)
+static size_t php_http_curle_header_callback(char *data, size_t n, size_t l, void *arg)
 {
 	php_http_client_curl_handler_t *h = arg;
 
 	return php_http_buffer_append(&h->response.headers, data, n * l);
 }
 
-static int php_http_curle_body_callback(char *data, size_t n, size_t l, void *arg)
+static size_t php_http_curle_body_callback(char *data, size_t n, size_t l, void *arg)
 {
 	php_http_client_curl_handler_t *h = arg;
 
