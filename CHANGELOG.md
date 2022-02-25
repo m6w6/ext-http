@@ -1,6 +1,6 @@
 # ChangeLog v4
 
-## 4.2.2, 2022-02-22
+## 4.2.2, 2022-02-25
 
 * Fixed gh-issue #123: Segfault with libcurl 7.81
 
