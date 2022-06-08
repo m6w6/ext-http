@@ -81,3 +81,4 @@ vendor/
 /tests/helper/server.log
 *gcov
 *lcov
+*.loT
