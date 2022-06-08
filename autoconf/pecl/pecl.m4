@@ -70,6 +70,12 @@ AC_DEFUN([PECL_RESTORE_ENV], [
 	$1=$PECL_SAVE_VAR([$2_$1])
 ])
 dnl
+dnl PECL_COUNT_CHECKS(incdec)
+dnl
+AC_DEFUN([PECL_COUNT_CHECKS], [
+	PECL_VAR([_checks])=$(($PECL_VAR([_checks])$1))
+])
+dnl
 dnl PECL_EVAL_LIBLINE(libline)
 dnl
 AC_DEFUN([PECL_EVAL_LIBLINE], [
@@ -244,6 +250,7 @@ dnl
 dnl PECL_CHECK_CUSTOM(name, path, header, lib, version)
 dnl
 AC_DEFUN([PECL_CHECK_CUSTOM], [
+	PECL_COUNT_CHECKS([+1])
 	PECL_SAVE_ENV([CPPFLAGS], [$1])
 	PECL_SAVE_ENV([LDFLAGS], [$1])
 	PECL_SAVE_ENV([LIBS], [$1])
@@ -260,10 +267,10 @@ AC_DEFUN([PECL_CHECK_CUSTOM], [
 		done
 	])
 	if test -n "$PECL_CACHE_VAR([$1_prefix])"; then
-		CPPFLAGS="-I$PECL_CACHE_VAR([$1_prefix])/include"
-		LDFLAGS="-L$PECL_CACHE_VAR([$1_prefix])/$PHP_LIBDIR"
-		LIBS="-l$4"
-		PECL_EVAL_LIBLINE([$LDFLAGS $LIBS])
+		CPPFLAGS="$CPPFLAGS -I$PECL_CACHE_VAR([$1_prefix])/include"
+		LDFLAGS="$LDFLAGS -L$PECL_CACHE_VAR([$1_prefix])/$PHP_LIBDIR"
+		LIBS="$LIBS -l$4"
+		dnl PECL_EVAL_LIBLINE([$LDFLAGS $LIBS])
 		
 		AC_CACHE_VAL(PECL_CACHE_VAR([$1_version]), [
 			pushd $PECL_CACHE_VAR([$1_prefix]) >/dev/null
@@ -288,10 +295,10 @@ dnl
 dnl PECL_CHECK_CONFIG(name, prog-config, version-flag, cppflags-flag, ldflags-flag, libs-flag)
 dnl
 AC_DEFUN([PECL_CHECK_CONFIG], [
+	PECL_COUNT_CHECKS([+1])
 	PECL_SAVE_ENV([CPPFLAGS], [$1])
 	PECL_SAVE_ENV([LDFLAGS], [$1])
 	PECL_SAVE_ENV([LIBS], [$1])
-
 
 	AC_MSG_CHECKING([for $1])
 	ifelse($2, [$PKG_CONFIG $1], [
@@ -311,19 +318,21 @@ AC_DEFUN([PECL_CHECK_CONFIG], [
 		AC_CACHE_VAL(PECL_CACHE_VAR([$1_cppflags]), [
 			PECL_CACHE_VAR([$1_cppflags])=$($2 $4)
 		])
-		CPPFLAGS=$PECL_CACHE_VAR([$1_cppflags])
+		CPPFLAGS="$CPPFLAGS $PECL_CACHE_VAR([$1_cppflags])"
 		AC_CACHE_VAL(PECL_CACHE_VAR([$1_ldflags]), [
 			PECL_CACHE_VAR([$1_ldflags])=$($2 $5)
 		])
-		LDFLAGS=$PECL_CACHE_VAR([$1_ldflags])
+		LDFLAGS="$LDFLAGS $PECL_CACHE_VAR([$1_ldflags])"
 		AC_CACHE_VAL(PECL_CACHE_VAR([$1_libs]), [
 			PECL_CACHE_VAR([$1_libs])=$($2 $6)
 		])
-		LIBS=$PECL_CACHE_VAR([$1_libs])
-		PECL_EVAL_LIBLINE([$LDFLAGS $LIBS])
+		LIBS="$LIBS $PECL_CACHE_VAR([$1_libs])"
+		dnl PECL_EVAL_LIBLINE([$LDFLAGS $LIBS])
 	ifelse($2, [$PKG_CONFIG $1], [
 		fi
 	])
+
+	AC_MSG_RESULT([${PECL_CHECKED_VERSION([$1]):-no}])
 
 	if test -n "$PECL_CHECKED_VERSION([$1])"; then
 		PECL_VAR([HAVE_$1])=true
@@ -332,8 +341,6 @@ AC_DEFUN([PECL_CHECK_CONFIG], [
 	else
 		PECL_VAR([HAVE_$1])=false
 	fi
-
-	AC_MSG_RESULT([${PECL_CHECKED_VERSION([$1]):-no}])
 ])
 dnl
 dnl PECL_CHECK_PKGCONFIG(pkg[, additional-pkg-config-path])
@@ -355,9 +362,25 @@ dnl
 dnl PECL_CHECK_DONE(name, success[, incline, libline])
 dnl
 AC_DEFUN([PECL_CHECK_DONE], [
-	if $2; then
-		incline=$CPPFLAGS
-		libline="$LDFLAGS $LIBS"
+	PECL_COUNT_CHECKS([-1])
+	success=$2
+	if $success && test -n "$LDFLAGS$LIBS"; then
+		AC_MSG_CHECKING([whether $1 can be linked])
+		AC_TRY_LINK([], [], [success=yes], [success=no])
+		AC_MSG_RESULT([$success])
+		if ! $success; then
+			AC_MSG_WARN([$1 was found, but fails to link with:])
+			AC_MSG_WARN([    LDFLAGS='$LDFLAGS'])
+			AC_MSG_WARN([    LIBS='$LIBS'])
+			AC_MSG_WARN([Missing or updated library paths?])
+		fi
+	fi
+	if $success; then
+		_cppflags=$PECL_SAVE_VAR([$1_CPPFLAGS])
+		_ldflags=$PECL_SAVE_VAR([$1_LDFLAGS])
+		_libs=$PECL_SAVE_VAR([$1_LIBS])
+		incline=${CPPFLAGS:${#_cppflags}}
+		libline=["${LDFLAGS:${#_ldflags}} ${LIBS:${#_libs}}"]
 		PECL_DEFINE([HAVE_$1])
 	else
 		incline=$3

@@ -31,10 +31,10 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2022-02-25</date>
+ <date>2022-06-10</date>
  <version>
-  <release>3.2.5</release>
-  <api>3.2.0</api>
+  <release>3.3.0</release>
+  <api>3.3.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -42,7 +42,7 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-  * Fixed gh-issue #123: Segfault with libcurl 7.81
+  * Backport features and bug fixes from v4.
 ]]></notes>
  <contents>
   <dir name="/">
@@ -250,6 +250,7 @@ https://mdref.m6w6.name/http
      <file role="test" name="envrequestform.phpt"/>
      <file role="test" name="envrequestheader001.phpt"/>
      <file role="test" name="envrequestquery.phpt"/>
+     <file role="test" name="envreset001.phpt"/>
      <file role="test" name="envresponse001.phpt"/>
      <file role="test" name="envresponse002.phpt"/>
      <file role="test" name="envresponse003.phpt"/>
@@ -286,6 +287,7 @@ https://mdref.m6w6.name/http
      <file role="test" name="gh-issue48.phpt"/>
      <file role="test" name="gh-issue50.phpt"/>
      <file role="test" name="gh-issue63.phpt"/>
+     <file role="test" name="gh-issue92.phpt"/>
      <file role="test" name="header001.phpt"/>
      <file role="test" name="header002.phpt"/>
      <file role="test" name="header003.phpt"/>

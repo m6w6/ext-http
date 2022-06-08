@@ -6,6 +6,8 @@ include "skipif.inc";
 skip_online_test();
 skip_client_test();
 skip_curl_test("7.34.0");
+if (strpos(http\Client\Curl\Versions\SSL, "SecureTransport") !== false)
+	die("skip SecureTransport\n");
 ?>
 --FILE--
 <?php 
@@ -43,7 +45,9 @@ switch ($client->getTransferInfo($req)->tls_session["backend"]) {
 	case "openssl":
 	case "gnutls":
 		if (count($observer->data) < 1) {
-			die("failed count(ssl.internals) >= 1\n");
+			printf("%s: failed count(ssl.internals) >= 1\n", $client->getTransferInfo($req)->tls_session["backend"]);
+			var_dump($observer);
+			exit;
 		}
 		break;
 	default:

@@ -1,13 +1,17 @@
 <?php
 _ext("http");
 
-function _ext($ext) { 
+function _ext($ext) {
 	if (!extension_loaded($ext)) {
 		die("skip $ext extension needed\n");
 	}
 }
 
 function utf8locale() {
+	$locale = setlocale(LC_CTYPE, null);
+	if (stristr($locale, "utf") && substr($locale, -1) === "8") {
+		return true;
+	}
 	if (stristr(setlocale(LC_CTYPE, "C.UTF-8"), "utf")) {
 		return true;
 	}
@@ -37,8 +41,8 @@ function skip_client_test($message = "skip need a client driver\n") {
 }
 
 function skip_curl_test($version) {
-	if (!version_compare(http\Client\Curl\Versions\CURL, $version, "<=")) {
-		die("need at least libcurl version $version\n");
+	if (!version_compare(http\Client\Curl\Versions\CURL, $version, ">=")) {
+		die("skip need at least libcurl version $version\n");
 	}
 }
 
@@ -49,7 +53,7 @@ function skip_http2_test($message = "skip need http2 support") {
 	if (!(http\Client\Curl\FEATURES & http\Client\Curl\Features\HTTP2)) {
 		die("$message (FEATURES & HTTP2)\n");
 	}
-	foreach (explode(":", $_ENV["PATH"]) as $path) {
+	foreach (explode(":", getenv("PATH")) as $path) {
 		if (is_executable($path . "/nghttpd")) {
 			return;
 		}

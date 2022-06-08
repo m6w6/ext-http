@@ -16,6 +16,12 @@
 
 PHP_RSHUTDOWN_FUNCTION(http_env)
 {
+	php_http_env_reset();
+	return SUCCESS;
+}
+
+void php_http_env_reset()
+{
 	if (PHP_HTTP_G->env.request.headers) {
 		zend_hash_destroy(PHP_HTTP_G->env.request.headers);
 		FREE_HASHTABLE(PHP_HTTP_G->env.request.headers);
@@ -24,13 +30,10 @@ PHP_RSHUTDOWN_FUNCTION(http_env)
 	if (PHP_HTTP_G->env.request.body) {
 		php_http_message_body_free(&PHP_HTTP_G->env.request.body);
 	}
-
 	if (PHP_HTTP_G->env.server_var) {
 		zval_ptr_dtor(PHP_HTTP_G->env.server_var);
 		PHP_HTTP_G->env.server_var = NULL;
 	}
-
-	return SUCCESS;
 }
 
 void php_http_env_get_request_headers(HashTable *headers)
@@ -774,6 +777,15 @@ static PHP_METHOD(HttpEnv, negotiate)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO(ai_HttpEnv_reset, 0)
+ZEND_END_ARG_INFO();
+static PHP_METHOD(HttpEnv, reset)
+{
+	zend_parse_parameters_none();
+	php_http_env_reset();
+}
+
+
 static zend_function_entry php_http_env_methods[] = {
 	PHP_ME(HttpEnv, getRequestHeader,              ai_HttpEnv_getRequestHeader,              ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	PHP_ME(HttpEnv, getRequestBody,                ai_HttpEnv_getRequestBody,                ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
@@ -791,6 +803,8 @@ static zend_function_entry php_http_env_methods[] = {
 	PHP_ME(HttpEnv, negotiateEncoding,             ai_HttpEnv_negotiateEncoding,             ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	PHP_ME(HttpEnv, negotiateCharset,              ai_HttpEnv_negotiateCharset,              ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	PHP_ME(HttpEnv, negotiate,                     ai_HttpEnv_negotiate,                     ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+
+	PHP_ME(HttpEnv, reset,                         ai_HttpEnv_reset,                         ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 
 	EMPTY_FUNCTION_ENTRY
 };

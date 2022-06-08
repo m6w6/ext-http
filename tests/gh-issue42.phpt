@@ -2,10 +2,10 @@
 URL barfs on punycode
 --SKIPIF--
 <?php
-include "./skipif.inc";
+include "skipif.inc";
 ?>
 --FILE--
-<?php 
+<?php
 echo "Test\n";
 echo new http\Url("http://www.xn--kln-sna.de"), "\n";
 ?>

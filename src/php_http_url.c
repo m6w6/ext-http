@@ -1021,7 +1021,7 @@ static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state, size_t prev_l
 #	endif
 
 	efree(uhost_str);
-	if (error > U_ZERO_ERROR) {
+	if (rc > U_ZERO_ERROR) {
 		goto error;
 	}
 
@@ -2108,4 +2108,3 @@ PHP_MINIT_FUNCTION(http_url)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

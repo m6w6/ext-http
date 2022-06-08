@@ -332,7 +332,7 @@ static void message_headers(php_http_message_t *msg, php_http_buffer_t *str)
 	char *tmp = NULL;
 	size_t len = 0;
 
-	php_http_info_to_string((php_http_info_t *) msg, &tmp, &len, PHP_HTTP_CRLF TSRMLS_CC);
+	php_http_info_to_string((php_http_info_t *) msg, &tmp, &len, PHP_HTTP_CRLF);
 	php_http_message_update_headers(msg);
 
 	php_http_buffer_append(str, tmp, len);
@@ -648,15 +648,15 @@ static void php_http_message_object_prophandler_set_headers(php_http_message_obj
 	}
 }
 static void php_http_message_object_prophandler_get_body(php_http_message_object_t *obj, zval *return_value) {
-	if (obj->body) {
-		zval tmp;
+	zval tmp;
 
-		ZVAL_COPY_VALUE(&tmp, return_value);
-		RETVAL_OBJECT(&obj->body->zo, 1);
-		zval_ptr_dtor(&tmp);
-	} else {
-		RETVAL_NULL();
+	if (!obj->body) {
+		RETURN_NULL();
 	}
+
+	ZVAL_COPY_VALUE(&tmp, return_value);
+	RETVAL_OBJECT(&obj->body->zo, 1);
+	zval_ptr_dtor(&tmp);
 }
 static void php_http_message_object_prophandler_set_body(php_http_message_object_t *obj, zval *value) {
 	php_http_message_object_set_body(obj, value);
@@ -689,6 +689,8 @@ static void php_http_message_object_prophandler_set_parent_message(php_http_mess
 	do { \
 		if (!obj->message) { \
 			obj->message = php_http_message_init(NULL, 0, NULL); \
+		} else if (!obj->body && php_http_message_body_size(obj->message->body)) { \
+			php_http_message_object_init_body_object(obj); \
 		} \
 	} while(0)
 
@@ -958,7 +960,9 @@ static HashTable *php_http_message_object_get_debug_info(zval *object, int *is_t
 	size_t ver_len, url_len = 0;
 
 	PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
-	*is_temp = 0;
+	if (is_temp) {
+		*is_temp = 0;
+	}
 
 #define UPDATE_PROP(name_str, action_with_tmp) \
 	do { \

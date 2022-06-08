@@ -47,6 +47,7 @@ typedef int (*php_http_client_once_func_t)(struct php_http_client *p);
 typedef ZEND_RESULT_CODE (*php_http_client_wait_func_t)(struct php_http_client *p, struct timeval *custom_timeout);
 typedef ZEND_RESULT_CODE (*php_http_client_enqueue_func_t)(struct php_http_client *p, php_http_client_enqueue_t *enqueue);
 typedef ZEND_RESULT_CODE (*php_http_client_dequeue_func_t)(struct php_http_client *p, php_http_client_enqueue_t *enqueue);
+typedef ZEND_RESULT_CODE (*php_http_client_requeue_func_t)(struct php_http_client *p, php_http_client_enqueue_t *enqueue);
 typedef ZEND_RESULT_CODE (*php_http_client_setopt_func_t)(struct php_http_client *p, php_http_client_setopt_opt_t opt, void *arg);
 typedef ZEND_RESULT_CODE (*php_http_client_getopt_func_t)(struct php_http_client *h, php_http_client_getopt_opt_t opt, void *arg, void **res);
 
@@ -61,6 +62,7 @@ typedef struct php_http_client_ops {
 	php_http_client_once_func_t once;
 	php_http_client_enqueue_func_t enqueue;
 	php_http_client_dequeue_func_t dequeue;
+	php_http_client_requeue_func_t requeue;
 	php_http_client_setopt_func_t setopt;
 	php_http_client_getopt_func_t getopt;
 } php_http_client_ops_t;

@@ -16,8 +16,10 @@ class Observer implements SplObserver
 {
 	function update(SplSubject $client, http\Client\Request $request = null, StdClass $progress = null) {
 		echo "P";
-		if ($progress->info !== "prepare" && $client->getProgressInfo($request) != $progress) {
-			var_dump($progress);
+		/* fence against buggy infof() calls in some curl versions */
+		$compare = $client->getProgressInfo($request);
+		if ($progress->info !== "prepare" && $compare && $compare != $progress) {
+			var_dump($progress, $compare);
 		}
 	}
 }

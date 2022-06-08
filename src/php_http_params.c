@@ -677,8 +677,9 @@ static void skip_sep(size_t skip, php_http_params_state_t *state, php_http_param
 
 HashTable *php_http_params_parse(HashTable *params, const php_http_params_opts_t *opts)
 {
-	php_http_params_state_t state = {{NULL,0}, {NULL,0}, {NULL,0}, {NULL,0}, {NULL,NULL,NULL}, 0, 0};
+	php_http_params_state_t state;
 
+	memset(&state, 0, sizeof(state));
 	state.input.str = opts->input.str;
 	state.input.len = opts->input.len;
 

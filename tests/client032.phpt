@@ -16,32 +16,29 @@ echo "Test\n";
 server("cookie.inc", function($port) {
 	$client = new http\Client(null, "cookies");
 	$client->configure(array("share_cookies" => true));
+
 	$request = new http\Client\Request("GET", "http://localhost:$port");
 	$client->enqueue($request);
 	$client->send();
-	while (($r = $client->getResponse())) {
-		dump_headers(null, $r->getHeaders());
-	}
+	dump_responses($client, ["counter" => 1]);
+
 	/* requeue the previous request */
 	$client->requeue($request);
-	$request = new http\Client\Request("GET", "http://localhost:$port");
-	$client->enqueue($request);
 	$client->send();
-	while (($r = $client->getResponse())) {
-		dump_headers(null, $r->getHeaders());
+	dump_responses($client, ["counter" => 2]);
+
+	for($i = 3; $i < 6; ++$i) {
+		/* new requests */
+		$request = new http\Client\Request("GET", "http://localhost:$port");
+		$client->enqueue($request);
+		$client->send();
+		dump_responses($client, ["counter" => $i]);
 	}
-	$request = new http\Client\Request("GET", "http://localhost:$port");
-	$client->enqueue($request);
+
+	/* requeue the previous request */
+	$client->requeue($request);
 	$client->send();
-	while (($r = $client->getResponse())) {
-		dump_headers(null, $r->getHeaders());
-	}
-	$request = new http\Client\Request("GET", "http://localhost:$port");
-	$client->enqueue($request);
-	$client->send();
-	while (($r = $client->getResponse())) {
-		dump_headers(null, $r->getHeaders());
-	}
+	dump_responses($client, ["counter" => $i]);
 });
 
 ?>
@@ -57,15 +54,19 @@ Set-Cookie: counter=2;
 X-Original-Transfer-Encoding: chunked
 
 Etag: ""
-Set-Cookie: counter=2;
-X-Original-Transfer-Encoding: chunked
-
-Etag: ""
 Set-Cookie: counter=3;
 X-Original-Transfer-Encoding: chunked
 
 Etag: ""
 Set-Cookie: counter=4;
+X-Original-Transfer-Encoding: chunked
+
+Etag: ""
+Set-Cookie: counter=5;
+X-Original-Transfer-Encoding: chunked
+
+Etag: ""
+Set-Cookie: counter=6;
 X-Original-Transfer-Encoding: chunked
 
 ===DONE===

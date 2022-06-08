@@ -7,12 +7,15 @@ if (!defined("http\\Url::PARSE_MBLOC") or
 	!utf8locale()) {
 	die("skip need http\\Url::PARSE_MBLOC support and LC_CTYPE=*.UTF-8");
 }
-
+if (PHP_OS == "Darwin") {
+  die("skip Darwin\n");
+}
 ?>
 --FILE--
 <?php
 echo "Test\n";
-setlocale(LC_CTYPE, "C.UTF-8");
+include "skipif.inc";
+utf8locale();
 
 $urls = array(
 	"http://mike:paßwort@𐌀𐌁𐌂.it/for/€/?by=¢#ø"

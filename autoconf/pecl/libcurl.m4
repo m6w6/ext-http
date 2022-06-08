@@ -7,7 +7,7 @@ dnl
 AC_DEFUN([PECL_HAVE_LIBCURL_FEATURE], [dnl
 	AC_REQUIRE([PECL_PROG_EGREP])dnl
 	AC_CACHE_CHECK([for $1 feature in libcurl], PECL_CACHE_VAR([HAVE_LIBCURL_FEATURE_$1]), [
-		if $CURL_CONFIG --feature | $EGREP -q $1; then
+		if $CURL_CONFIG --feature | $EGREP -qi $1; then
 			PECL_CACHE_VAR([HAVE_LIBCURL_FEATURE_$1])=yes
 		else
 			PECL_CACHE_VAR([HAVE_LIBCURL_FEATURE_$1])=no
@@ -160,6 +160,48 @@ AC_DEFUN([PECL_HAVE_LIBCURL_SSL], [dnl
 				fi
 			fi
 		])
+
+		PECL_HAVE_CONST([curl/curl.h], [CURL_LOCK_DATA_SSL_SESSION], int, [
+			AC_CACHE_CHECK([whether curl_share accepts CURL_LOCK_DATA_SSL_SESSION], PECL_CACHE_VAR([LIBCURL_SHARE_SSL]), [
+				PECL_CACHE_VAR([LIBCURL_SHARE_SSL])=
+				AC_TRY_RUN([
+					#include <curl/curl.h>
+					int main(int argc, char *argv[]) {
+						CURLSH *ch = curl_share_init();
+						return curl_share_setopt(ch, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
+					}
+				], [
+					PECL_CACHE_VAR([LIBCURL_SHARE_SSL])=yes
+				], [
+					PECL_CACHE_VAR([LIBCURL_SHARE_SSL])=no
+				])
+			])
+			if test "$PECL_CACHE_VAR([LIBCURL_SHARE_SSL])" = yes; then
+				PECL_DEFINE([HAVE_LIBCURL_SHARE_SSL], [1])
+			fi
+		])
+
+		if test "$PECL_VAR([LIBCURL_SSLLIB])" == "OpenSSL"; then
+			PECL_HAVE_CONST([curl/curl.h], [CURLOPT_TLS13_CIPHERS], int, [
+				AC_CACHE_CHECK([whether curl_easy_setopt accepts CURLOPT_TLS13_CIPHERS], PECL_CACHE_VAR([LIBCURL_TLS13_CIPHERS]), [
+					PECL_CACHE_VAR([LIBCURL_TLS13_CIPHERS])=
+					AC_TRY_RUN([
+						#include <curl/curl.h>
+						int main(int argc, char *argv[]) {
+							CURL *ch = curl_easy_init();
+							return curl_easy_setopt(ch, CURLSHOPT_TLS13_CIPHERS, "");
+						}
+					], [
+						PECL_CACHE_VAR([LIBCURL_TLS13_CIPHERS])=yes
+					], [
+						PECL_CACHE_VAR([LIBCURL_TLS13_CIPHERS])=no
+					])
+				])
+				if test "$PECL_CACHE_VAR([LIBCURL_TLS13_CIPHERS])" = yes; then
+					PECL_DEFINE([HAVE_LIBCURL_TLS13_CIPHERS], [1])
+				fi
+			])
+		fi
 	])
 ])
 dnl
