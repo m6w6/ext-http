@@ -18,7 +18,7 @@ function dump_message($stream, http\Message $msg, $parent = false) {
 	fprintf($stream, "%s\n", $msg->getInfo());
 	dump_headers($stream, $msg->getHeaders());
 	$msg->getBody()->toStream($stream);
-	
+
 	if ($parent && ($msg = $msg->getParentMessage())) {
 		dump_message($stream, $msg, true);
 	}
@@ -28,7 +28,9 @@ function dump_responses($client, array $expect_cookie = []) {
 	while (($r = $client->getResponse())) {
 		dump_headers(null, $r->getHeaders());
 		if ($expect_cookie) {
-			$got_cookies = array_merge(...array_map(fn($c) => $c->getCookies(), $r->getCookies()));
+			$got_cookies = array_merge(...array_map(function($c) {
+				return $c->getCookies();
+			}, $r->getCookies()));
 			if ($expect_cookie != $got_cookies) {
 				var_dump($expect_cookie, $got_cookies);
 				echo $r->toString(true);
