@@ -363,12 +363,12 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 		php_http_version_t v;
 		zend_string *zs = zval_get_string(zoption);
 
-		zval_ptr_dtor(zoption);
 		if (EXPECTED(zs->len && php_http_version_parse(&v, zs->val))) {
 			ret = r->ops->set_protocol_version(r, &v);
 			php_http_version_dtor(&v);
 		}
 		zend_string_release(zs);
+		zval_ptr_dtor(zoption);
 	}
 
 	if (ret != SUCCESS) {
