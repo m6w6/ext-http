@@ -808,6 +808,8 @@ static PHP_METHOD(HttpClient, requeue)
 			if (fci.object) {
 				GC_ADDREF(fci.object);
 			}
+			e->closure.fci = fci;
+			e->closure.fcc = fcc;
 		}
 		RETURN_ZVAL(getThis(), 1, 0);
 	}
