@@ -1,5 +1,9 @@
 # ChangeLog v4
 
+## 4.2.3, 2022-MM-DD
+
+* Fix http\Client::requeue() not updating response callback
+
 ## 4.2.2, 2022-02-25
 
 * Fixed gh-issue #123: Segfault with libcurl 7.81
