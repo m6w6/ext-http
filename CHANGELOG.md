@@ -1,6 +1,6 @@
 # ChangeLog v4
 
-## 4.2.3, 2022-MM-DD
+## 4.2.3, 2022-06-10
 
 * Fix http\Client::requeue() not updating response callback
 
