@@ -1,6 +1,6 @@
 # ChangeLog v3
 
-## 3.3.0, 2022-MM-DD
+## 3.3.0, 2022-06-10
 
 * Fix http\Client::requeue() not updating response callback
 * Backport bug fixes and features from v4:
