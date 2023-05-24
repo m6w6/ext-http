@@ -83,7 +83,7 @@ foreach ($job as $id => $env) {
           sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
           cd curl
           ./buildconf
-          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2
+          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2 --disable-ldap
           make -j2
           make install
       - name: Prepare

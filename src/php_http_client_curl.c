@@ -1202,8 +1202,10 @@ static ZEND_RESULT_CODE php_http_curle_option_set_ssl_tlsauthtype(php_http_optio
 
 	if (val && Z_LVAL_P(val)) {
 		switch (Z_LVAL_P(val)) {
+		case CURL_TLSAUTH_NONE:
+			break;
 		case CURL_TLSAUTH_SRP:
-			if (CURLE_OK == curl_easy_setopt(ch, opt->option, PHP_HTTP_LIBCURL_TLSAUTH_SRP)) {
+			if (CURLE_OK == curl_easy_setopt(ch, opt->option, "SRP")) {
 				return SUCCESS;
 			}
 			/* no break */
@@ -1211,7 +1213,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_ssl_tlsauthtype(php_http_optio
 			return FAILURE;
 		}
 	}
-	if (CURLE_OK != curl_easy_setopt(ch, opt->option, PHP_HTTP_LIBCURL_TLSAUTH_DEF)) {
+	if (CURLE_OK != curl_easy_setopt(ch, opt->option, "NONE")) {
 		return FAILURE;
 	}
 	return SUCCESS;

@@ -126,38 +126,22 @@ AC_DEFUN([PECL_HAVE_LIBCURL_SSL], [dnl
 			;;
 		esac
 
-		PECL_HAVE_CONST([curl/curl.h], [CURLOPT_TLSAUTH_TYPE], int, [
-			AC_CACHE_CHECK([whether CURLOPT_TLSAUTH_TYPE expects CURL_TLSAUTH_SRP], PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP]), [
-				PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=
+		PECL_HAVE_CONST([curl/curl.h], [CURL_VERSION_TLSAUTH_SRP], int, [
+			AC_CACHE_CHECK([for CURLOPT_TLSAUTH_TYPE SRP support], PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP]), [
+				PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=no
 				AC_TRY_RUN([
 					#include <curl/curl.h>
 					int main(int argc, char *argv[]) {
-						CURL *ch = curl_easy_init();
-						return curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, CURL_TLSAUTH_SRP);
+						int has_feature = curl_version_info(CURLVERSION_NOW)->features & CURL_VERSION_TLSAUTH_SRP;
+						int set_failure = curl_easy_setopt(curl_easy_init(), CURLOPT_TLSAUTH_TYPE, "SRP"");
+						return !has_feature || set_failure;
 					}
 				], [
 					PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=yes
-				], [
-					AC_TRY_RUN([
-						#include <curl/curl.h>
-						int main(int argc, char *argv[]) {
-							CURL *ch = curl_easy_init();
-							return curl_easy_setopt(ch, CURLOPT_TLSAUTH_TYPE, "SRP");
-						}
-					], [
-						PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=no
-					])
 				])
 			])
-			if test -n "$PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])"; then
+			if test "$PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])" = "yes"; then
 				PECL_DEFINE([HAVE_LIBCURL_TLSAUTH_TYPE])
-				if $PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP]); then
-					PECL_DEFINE([LIBCURL_TLSAUTH_SRP], [CURL_TLSAUTH_SRP])
-					PECL_DEFINE([LIBCURL_TLSAUTH_DEF], [CURL_TLSAUTH_NONE])
-				else
-					PECL_DEFINE([LIBCURL_TLSAUTH_SRP], ["SRP"])
-					PECL_DEFINE([LIBCURL_TLSAUTH_DEF], [""])
-				fi
 			fi
 		])
 
