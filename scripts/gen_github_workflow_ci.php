@@ -11,15 +11,20 @@ jobs:
 <?php
 
 $gen = include __DIR__ . "/ci/gen-matrix.php";
-$cur = "8.0";
+$cur = "8.2";
 $job = $gen->github([
 "next" => [
-// most useful for all additional versions except current
-    "PHP" => ["8.1", "master"],
+    "PHP" => ["master"],
     "enable_debug" => "yes",
     "enable_zts" => "yes",
     "enable_iconv" => "yes",
     "TEST_PHP_ARGS" => "-d error_reporting=24575" // ignore E_DEPRECATED
+],
+"old" => [
+    "PHP" => ["8.1", "8.0"],
+    "enable_debug" => "yes",
+    "enable_zts" => "yes",
+    "enable_iconv" => "yes",
 ],
 "cur-none" => [
 // everything disabled for current
@@ -62,18 +67,21 @@ foreach ($job as $id => $env) {
         printf("      %s: \"%s\"\n", $key, $val);
     }
 ?>
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
+      - name: Info
+        run: |
+          locale -a && locale
       - name: Install
         run: |
           sudo apt-get install -y \
             php-cli \
             php-pear \
             libcurl4-openssl-dev \
-            libidn11-dev \
+            libidn-dev \
             libidn2-0-dev \
             libicu-dev \
             libevent-dev \

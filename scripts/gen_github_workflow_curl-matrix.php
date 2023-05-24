@@ -34,7 +34,7 @@ rsort($curlver, SORT_NATURAL);
 $gen = include __DIR__ . "/ci/gen-matrix.php";
 $job = $gen->github([
 "curl" => [
-    "PHP" => "8.0",
+    "PHP" => "8.2",
     "CURL" => $curlver,
     "enable_debug" => "yes",
     "enable_iconv" => "yes",
@@ -49,7 +49,7 @@ foreach ($job as $id => $env) {
         printf("      %s: \"%s\"\n", $key, $val);
     }
 ?>
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
         with:
@@ -64,8 +64,8 @@ foreach ($job as $id => $env) {
 <?php endif; ?>
       - name: Install
         run: |
-          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic main' | sudo tee -a /etc/apt/sources.list && \
-          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu bionic-updates main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu jammy main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu jammy-updates main' | sudo tee -a /etc/apt/sources.list && \
           sudo apt-get update -y &&  \
           sudo apt-get build-dep -y libcurl4-openssl-dev && \
           sudo apt-get install -y \
