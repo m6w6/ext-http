@@ -22,6 +22,11 @@ typedef struct php_http_client_curl_user_ev {
 	php_http_client_curl_user_context_t *context;
 } php_http_client_curl_user_ev_t;
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ai_user_handler, 0, 1, IS_LONG, 1)
+	ZEND_ARG_OBJ_INFO(0, client, "http\\Client", 0)
+	ZEND_ARG_TYPE_INFO(0, stream, IS_RESOURCE, 1)
+	ZEND_ARG_TYPE_INFO(0, action, IS_LONG, 1)
+ZEND_END_ARG_INFO();
 static ZEND_NAMED_FUNCTION(php_http_client_curl_user_handler)
 {
 	zval *zstream = NULL, *zclient = NULL;
@@ -186,6 +191,10 @@ static void *php_http_client_curl_user_init(php_http_client_t *client, void *use
 	ctx->closure.common.type = ZEND_INTERNAL_FUNCTION;
 	ctx->closure.common.function_name = zend_string_init(ZEND_STRL("php_http_client_curl_user_handler"), 0);
 	ctx->closure.internal_function.handler = php_http_client_curl_user_handler;
+	ctx->closure.internal_function.arg_info = (zend_internal_arg_info *) &ai_user_handler[1];
+	ctx->closure.internal_function.num_args = 3;
+	ctx->closure.internal_function.required_num_args = 1;
+
 
 	zend_create_closure(zclosure, &ctx->closure, NULL, NULL, NULL);
 
