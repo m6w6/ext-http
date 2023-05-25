@@ -36,8 +36,8 @@ PUT / HTTP/1.1
 Accept: */*
 Content-Length: %d
 Content-Range: bytes 1-2/3
-Expect: 100-continue
-Host: localhost:%d
+%r(Expect: 100-continue
+)?%rHost: localhost:%d
 User-Agent: %s
 X-Original-Content-Length: %d
 
