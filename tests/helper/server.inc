@@ -7,9 +7,9 @@ function logger() {
 	if (!ini_get("date.timezone")) {
 		date_default_timezone_set(@date_default_timezone_get());
 	}
-	error_log(sprintf("%s(%s): %s", 
-		basename(getenv("SCRIPT_FILENAME"), ".php"), 
-		basename(current(get_included_files()), ".inc"), 
+	error_log(sprintf("%s(%s): %s",
+		basename(getenv("SCRIPT_FILENAME"), ".php"),
+		basename(current(get_included_files()), ".inc"),
 		call_user_func_array("sprintf", func_get_args())
 	));
 }
@@ -72,11 +72,11 @@ function ext_lib_name($ext) {
 }
 
 function serve($cb) {
-	/* stream_socket_server() automatically sets SO_REUSEADDR, 
+	/* stream_socket_server() automatically sets SO_REUSEADDR,
 	 * which is, well, bad if the tests are run in parallel
 	 */
 	$offset = rand(0,2000);
-	foreach (range(8000+$offset, 9000+$offset) as $port) {
+	foreach (range(40000+$offset, 50000+$offset) as $port) {
 		logger("serve: Trying port %d", $port);
 		if (($server = @stream_socket_server("tcp://localhost:$port"))) {
 			fprintf(STDERR, "%s\n", $port);
@@ -149,28 +149,28 @@ function nghttpd($cb) {
 			$stdin = $pipes[0];
 			$stdout = $pipes[1];
 			$stderr = $pipes[2];
-			
+
 			sleep(1);
 			$status = proc_get_status($proc);
 			logger("nghttpd: %s", new http\Params($status));
 			if (!$status["running"]) {
 				continue;
 			}
-			
+
 			try {
 				$cb($port, $stdin, $stdout, $stderr);
 			} catch (Exception $e) {
 				echo $e,"\n";
 			}
-		
+
 			proc_terminate($proc);
-		
+
 			fpassthru($stderr);
 			fpassthru($stdout);
 			return;
 		}
 	}
-			
+
 }
 
 function proc($bin, $args, $cb) {
@@ -186,7 +186,7 @@ function proc($bin, $args, $cb) {
 			$port = trim(fgets($stderr));
 			$R = array($stderr); $W = array(); $E = array();
 		} while (is_numeric($port) && stream_select($R, $W, $E, 0, 10000));
-	
+
 		if (is_numeric($port)) {
 			try {
 				$cb($port, $stdin, $stdout, $stderr);
@@ -194,9 +194,9 @@ function proc($bin, $args, $cb) {
 				echo $e,"\n";
 			}
 		}
-	
+
 		proc_terminate($proc);
-	
+
 		fpassthru($stderr);
 		fpassthru($stdout);
 	}
