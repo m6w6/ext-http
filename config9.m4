@@ -24,7 +24,7 @@ if test "$PHP_HTTP" != "no"; then
 		AC_CHECK_LIB(nsl, getdomainname)
 	])
 	AC_CHECK_FUNCS(mbrtowc mbtowc iswalnum inet_pton)
-	
+
 	CFLAGS="$CFLAGS -Wno-strict-prototypes"
 
 	dnl ZLIB
@@ -80,7 +80,16 @@ if test "$PHP_HTTP" != "no"; then
 	if test "$PHP_HTTP_LIBIDN_DIR" != "no"; then
 		PECL_CHECK_PKGCONFIG(libidn, [$PHP_HTTP_LIBIDN_DIR])
 		if $PECL_VAR([HAVE_LIBIDN]); then
-			PECL_DEFINE([HAVE_IDNA2003])
+			PECL_HAVE_VERSION(libidn, 1.36, [
+				PECL_HAVE_VERSION(libidn, 1.39, [
+					PECL_DEFINE([HAVE_IDNA2003])
+				], [
+					PECL_VAR([HAVE_LIBIDN])=false
+					AC_MSG_WARN([libidn locale detection broken; disabling libidn support])
+				])
+			], [
+				PECL_DEFINE([HAVE_IDNA2003])
+			])
 		fi
 		PECL_CHECK_DONE(libidn, $PECL_VAR([HAVE_LIBIDN]))
 	fi

@@ -271,7 +271,7 @@ AC_DEFUN([PECL_CHECK_CUSTOM], [
 		LDFLAGS="$LDFLAGS -L$PECL_CACHE_VAR([$1_prefix])/$PHP_LIBDIR"
 		LIBS="$LIBS -l$4"
 		dnl PECL_EVAL_LIBLINE([$LDFLAGS $LIBS])
-		
+
 		AC_CACHE_VAL(PECL_CACHE_VAR([$1_version]), [
 			pushd $PECL_CACHE_VAR([$1_prefix]) >/dev/null
 			PECL_CACHE_VAR([$1_version])=$5
@@ -281,7 +281,6 @@ AC_DEFUN([PECL_CHECK_CUSTOM], [
 
 		if test -n "$PECL_CHECKED_VERSION([$1])"; then
 			PECL_VAR([HAVE_$1])=true
-			PECL_DEFINE([HAVE_$1])
 			PECL_DEFINE_UQ($1[_VERSION], "$PECL_CHECKED_VERSION([$1])")
 		else
 			PECL_VAR([HAVE_$1])=false
@@ -336,7 +335,6 @@ AC_DEFUN([PECL_CHECK_CONFIG], [
 
 	if test -n "$PECL_CHECKED_VERSION([$1])"; then
 		PECL_VAR([HAVE_$1])=true
-		PECL_DEFINE([HAVE_$1])
 		PECL_DEFINE_UQ([$1_VERSION], "$PECL_CHECKED_VERSION([$1])")
 	else
 		PECL_VAR([HAVE_$1])=false
