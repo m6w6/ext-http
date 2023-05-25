@@ -1,16 +1,19 @@
 --TEST--
 client ssl
 --SKIPIF--
-<?php 
+<?php
 include "skipif.inc";
 skip_online_test();
 skip_client_test();
 skip_curl_test("7.34.0");
+if (0 === strpos(http\Client\Curl\Versions\CURL, "7.87.0")) {
+	die("skip SSL bug in libcurl-7.87\n");
+}
 if (strpos(http\Client\Curl\Versions\SSL, "SecureTransport") !== false)
 	die("skip SecureTransport\n");
 ?>
 --FILE--
-<?php 
+<?php
 echo "Test\n";
 
 $client = new http\Client;
@@ -24,7 +27,7 @@ var_dump(
 	) === $client->getSslOptions()
 );
 
-$client->attach($observer = new class implements SplObserver { 
+$client->attach($observer = new class implements SplObserver {
 	public $data = [];
 
 	#[ReturnTypeWillChange]
