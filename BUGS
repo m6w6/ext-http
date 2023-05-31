@@ -2,15 +2,13 @@ Known Issues
 ============
 
 Windows:
-	If you keep getting "SSL connect error" when trying to issue 
+	If you keep getting "SSL connect error" when trying to issue
 		requests, try another (newer) libeay32.dll/ssleay32.dll pair.
 
 Internals:
 	Inflating raw deflated data causes a re-initialization of the inflate
 		stream where the corresponding window bits are modified to tell libz
 		to not check for zlib header bytes.  This is not preventable AFAICS.
-	LFS dependant parts of libcurl are left out because of off_t,
-		respectively off64_t confusion.
 	Persistent handles and "cookiestore" request option do interfere,
 		as libcurl saves the cookies to the file on curl_easy_destroy(),
 		cookies are not saved until the CURL handle will be recycled.

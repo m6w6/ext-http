@@ -367,17 +367,33 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		ZVAL_DOUBLE(&tmp, d);
 		zend_hash_str_update(info, "size_upload", lenof("size_upload"), &tmp);
 	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SIZE_UPLOAD_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "size_upload_t", lenof("size_upload_t"), &tmp);
+	}
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SIZE_DOWNLOAD, &d)) {
 		ZVAL_DOUBLE(&tmp, d);
 		zend_hash_str_update(info, "size_download", lenof("size_download"), &tmp);
+	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SIZE_DOWNLOAD_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "size_download_t", lenof("size_download_t"), &tmp);
 	}
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SPEED_DOWNLOAD, &d)) {
 		ZVAL_DOUBLE(&tmp, d);
 		zend_hash_str_update(info, "speed_download", lenof("speed_download"), &tmp);
 	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SPEED_DOWNLOAD_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "speed_download_t", lenof("speed_download_t"), &tmp);
+	}
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SPEED_UPLOAD, &d)) {
 		ZVAL_DOUBLE(&tmp, d);
 		zend_hash_str_update(info, "speed_upload", lenof("speed_upload"), &tmp);
+	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SPEED_UPLOAD_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "speed_upload_t", lenof("speed_upload_t"), &tmp);
 	}
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_HEADER_SIZE, &l)) {
 		ZVAL_LONG(&tmp, l);
@@ -395,13 +411,25 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		ZVAL_LONG(&tmp, l);
 		zend_hash_str_update(info, "filetime", lenof("filetime"), &tmp);
 	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_FILETIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "filetime_t", lenof("filetime_t"), &tmp);
+	}
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &d)) {
 		ZVAL_DOUBLE(&tmp, d);
 		zend_hash_str_update(info, "content_length_download", lenof("content_length_download"), &tmp);
 	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "content_length_download_t", lenof("content_length_download_t"), &tmp);
+	}
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_CONTENT_LENGTH_UPLOAD, &d)) {
 		ZVAL_DOUBLE(&tmp, d);
 		zend_hash_str_update(info, "content_length_upload", lenof("content_length_upload"), &tmp);
+	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_CONTENT_LENGTH_UPLOAD_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "content_length_upload_t", lenof("content_length_upload_t"), &tmp);
 	}
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_STARTTRANSFER_TIME, &d)) {
 		ZVAL_DOUBLE(&tmp, d);
@@ -513,6 +541,34 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		zend_hash_str_update(info, "scheme", lenof("scheme"), &tmp);
 	}
 #endif
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TOTAL_TIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "total_time_t", lenof("total_time_t"), &tmp);
+	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_NAMELOOKUP_TIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "namelookup_time_t", lenof("namelookup_time_t"), &tmp);
+	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_CONNECT_TIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "connect_time_t", lenof("connect_time_t"), &tmp);
+	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PRETRANSFER_TIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "pretransfer_time_t", lenof("pretransfer_time_t"), &tmp);
+	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_STARTTRANSFER_TIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "starttransfer_time_t", lenof("starttransfer_time_t"), &tmp);
+	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_REDIRECT_TIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "redirect_time_t", lenof("redirect_time_t"), &tmp);
+	}
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_APPCONNECT_TIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "appconnect_time_t", lenof("appconnect_time_t"), &tmp);
+	}
 #if PHP_HTTP_CURL_VERSION(7,66,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_RETRY_AFTER, &o)) {
 		ZVAL_LONG(&tmp, o);
@@ -529,6 +585,24 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PROXY_ERROR, &l)) {
 		ZVAL_LONG(&tmp, l);
 		zend_hash_str_update(info, "proxy_error", lenof("proxy_error"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,76,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_REFERER, &c)) {
+		ZVAL_STRING(&tmp, STR_PTR(c));
+		zend_hash_str_update(info, "referer", lenof("referer"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,84,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_CAINFO, &c)) {
+		ZVAL_STRING(&tmp, STR_PTR(c));
+		zend_hash_str_update(info, "cainfo", lenof("cainfo"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(7,84,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_CAPATH, &c)) {
+		ZVAL_STRING(&tmp, STR_PTR(c));
+		zend_hash_str_update(info, "capath", lenof("capath"), &tmp);
 	}
 #endif
 
@@ -630,8 +704,9 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 
 #if (PHP_HTTP_CURL_VERSION(7,19,1) && PHP_HTTP_HAVE_LIBCURL_OPENSSL) || \
 	(PHP_HTTP_CURL_VERSION(7,34,0) && PHP_HTTP_HAVE_LIBCURL_NSS) || \
+	(PHP_HTTP_CURL_VERSION(7,39,0) && PHP_HTTP_HAVE_LIBCURL_GSKIT) || \
 	(PHP_HTTP_CURL_VERSION(7,42,0) && PHP_HTTP_HAVE_LIBCURL_GNUTLS) || \
-	(PHP_HTTP_CURL_VERSION(7,39,0) && PHP_HTTP_HAVE_LIBCURL_GSKIT)
+	(PHP_HTTP_CURL_VERSION(7,79,0) && PHP_HTTP_HAVE_LIBCURL_SECURETRANSPORT)
 	{
 		int i;
 		zval ci_array, subarray;

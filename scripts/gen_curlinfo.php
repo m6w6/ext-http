@@ -42,6 +42,9 @@ $ifdefs = array(
 	'RETRY_AFTER' => 'PHP_HTTP_CURL_VERSION(7,66,0)',
 	'EFFECTIVE_METHOD' => 'PHP_HTTP_CURL_VERSION(7,72,0)',
 	'PROXY_ERROR' => 'PHP_HTTP_CURL_VERSION(7,73,0)',
+	'REFERER' => 'PHP_HTTP_CURL_VERSION(7,76,0)',
+	'CAINFO' => 'PHP_HTTP_CURL_VERSION(7,84,0)',
+	'CAPATH' => 'PHP_HTTP_CURL_VERSION(7,84,0)',
 );
 $exclude = array(
 	'ACTIVESOCKET',
@@ -102,12 +105,12 @@ $templates = array(
 ',
 );
 
-$infos = file_re('curl.h', '/^\s*(CURLINFO_(\w+))\s*=\s*CURLINFO_(STRING|LONG|DOUBLE|SLIST|OFF_T)\s*\+\s*\d+\s*,?\s*$/m');
-
+$infos = file_re('curl.h', '/\s*(CURLINFO_(\w+))\s*(?:CURL_DEPRECATED\(\d+\.\d+\.\d+,\s*"[\w _-]+"\))?\s*=\s*CURLINFO_(STRING|LONG|DOUBLE|SLIST|OFF_T)\s*\+\s*\d+\s*,?\s*/m');
+var_dump($infos);
 ob_start();
 foreach ($infos as $info) {
 	list(, $full, $short, $type) = $info;
-	if (in_array($short, $exclude) || substr($short, -2) === "_T") continue;
+	if (in_array($short, $exclude)) continue;
 	if (isset($ifdefs[$short])) printf("#if %s\n", $ifdefs[$short]);
 	printf($templates[$type], $full, strtolower((isset($translate[$short])) ? $translate[$short] : $short));
 	if (isset($ifdefs[$short])) printf("#endif\n");
