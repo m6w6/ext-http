@@ -1,5 +1,12 @@
 # ChangeLog v4
 
+## 4.2.4, 2023-10-02
+
+* Fix Error using ssl array in options : Could not set option tlsauthtype
+  (see  gh issue #131)
+* Fix arginfo wargnings of the internal curl client user handler 
+* Disable libidn support for v1.36-v1.38 due to broken locale detection
+
 ## 4.2.3, 2022-06-10
 
 * Fix http\Client::requeue() not updating response callback

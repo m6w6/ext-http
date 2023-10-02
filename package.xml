@@ -31,9 +31,9 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2022-06-10</date>
+ <date>2023-10-02</date>
  <version>
-  <release>4.2.3</release>
+  <release>4.2.4</release>
   <api>4.2.0</api>
  </version>
  <stability>
@@ -42,7 +42,10 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-* Fix http\Client::requeue() not updating response callback
+* Fix Error using ssl array in options : Could not set option tlsauthtype
+  (see  gh issue #131)
+* Fix arginfo wargnings of the internal curl client user handler
+* Disable libidn support for v1.36-v1.38 due to broken locale detection
 ]]></notes>
  <contents>
   <dir name="/">
