@@ -133,7 +133,7 @@ AC_DEFUN([PECL_HAVE_LIBCURL_SSL], [dnl
 					#include <curl/curl.h>
 					int main(int argc, char *argv[]) {
 						int has_feature = curl_version_info(CURLVERSION_NOW)->features & CURL_VERSION_TLSAUTH_SRP;
-						int set_failure = curl_easy_setopt(curl_easy_init(), CURLOPT_TLSAUTH_TYPE, "SRP"");
+						int set_failure = curl_easy_setopt(curl_easy_init(), CURLOPT_TLSAUTH_TYPE, "SRP");
 						return !has_feature || set_failure;
 					}
 				], [
