@@ -73,7 +73,7 @@ static inline char *localhostname(void)
 static php_http_url_t *php_http_url_from_env(void)
 {
 	zval *https, *zhost, *zport;
-	long port;
+	zend_long port;
 	php_http_buffer_t buf;
 
 	php_http_buffer_init_ex(&buf, MAX(PHP_HTTP_BUFFER_DEFAULT_SIZE, sizeof(php_http_url_t)<<2), PHP_HTTP_BUFFER_INIT_PREALLOC);
