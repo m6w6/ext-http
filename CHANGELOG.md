@@ -1,10 +1,15 @@
 # ChangeLog v4
 
+## 4.2.5, 2024-02-05
+
+* Fix incompatible pointer types (32-bit) (see gh issue #134)
+* Fix glitch in CURL_VERSION_TLSAUTH_SRP autoconf probe (see gh issue #133)
+
 ## 4.2.4, 2023-10-02
 
 * Fix Error using ssl array in options : Could not set option tlsauthtype
   (see  gh issue #131)
-* Fix arginfo wargnings of the internal curl client user handler 
+* Fix arginfo wargnings of the internal curl client user handler
 * Disable libidn support for v1.36-v1.38 due to broken locale detection
 
 ## 4.2.3, 2022-06-10
@@ -19,7 +24,7 @@
 
 * Fixed failing tests with PHP-8.1 (see gh issue #120)
 * Fixed configure reliably finding the right libcurl features available
-* Fixed cookie handling with libcurl 7.77+ and consistently across all 
+* Fixed cookie handling with libcurl 7.77+ and consistently across all
   supported libcurl versions (follow-up to gh issue #116)
 
 ## 4.2.0, 2021-08-30
@@ -66,7 +71,7 @@
   * http\Client\Curl\Versions\NGHTTP2
   * http\Client\Curl\Versions\QUIC
   * http\Client\Curl\Versions\ZSTD
- 
+
 ## 4.0.0, 2021-01-13
 
 Changes from beta1:
@@ -76,7 +81,7 @@ Changes from beta1:
 ## 4.0.0beta1, 2020-09-23
 
 * PHP 8 compatibility
-	- Drop ext-propro support:  
+	- Drop ext-propro support:
 		PHP 8 removes the object get/set API from the ZendEngine, which renders
 		that extension dysfunctional. As a consequence, the header property of
 		http\Message and derived classes cannot be modified in place, and thus
