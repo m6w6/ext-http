@@ -80,7 +80,7 @@ class UserHandler implements http\Client\Curl\User
 		return count($this->client);
 	}
 	
-	function wait(int $timeout_ms = null) {
+	function wait(?int $timeout_ms = null) {
 		echo "W";
 		
 		if ($timeout_ms === null) {
