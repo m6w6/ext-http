@@ -12,7 +12,12 @@
 
 #include "php_http_api.h"
 
-#include "ext/standard/php_lcg.h"
+#if PHP_VERSION_ID >= 80300
+# include "ext/random/php_random.h"
+#else
+# include "ext/standard/php_lcg.h"
+#endif
+
 #include "zend_exceptions.h"
 
 /* SLEEP */
