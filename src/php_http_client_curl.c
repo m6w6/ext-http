@@ -1413,7 +1413,12 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 #endif
 
 	/* outgoing interface */
-	php_http_option_register(registry, ZEND_STRL("interface"), CURLOPT_INTERFACE, IS_STRING);
+	if ((opt = php_http_option_register(registry, ZEND_STRL("interface"), CURLOPT_INTERFACE, IS_STRING))) {
+#if PHP_HTTP_CURL_VERSION(8,9,0) && !PHP_HTTP_CURL_VERSION(8,10,0)
+		// NULL support lost in v8.9 and restored in libcurl v8.10
+		opt->flags |= PHP_HTTP_CURLE_OPTION_IGNORE_RC;
+#endif
+	}
 	if ((opt = php_http_option_register(registry, ZEND_STRL("portrange"), CURLOPT_LOCALPORT, IS_ARRAY))) {
 		opt->setter = php_http_curle_option_set_portrange;
 	}
