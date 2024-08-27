@@ -34,7 +34,7 @@ rsort($curlver, SORT_NATURAL);
 $gen = include __DIR__ . "/ci/gen-matrix.php";
 $job = $gen->github([
 "curl" => [
-    "PHP" => "8.2",
+    "PHP" => "8.3",
     "CURL" => $curlver,
     "enable_debug" => "yes",
     "enable_iconv" => "yes",
@@ -49,7 +49,7 @@ foreach ($job as $id => $env) {
         printf("      %s: \"%s\"\n", $key, $val);
     }
 ?>
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v2
         with:

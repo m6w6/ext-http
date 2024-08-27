@@ -11,7 +11,7 @@ jobs:
 <?php
 
 $gen = include __DIR__ . "/ci/gen-matrix.php";
-$cur = "8.2";
+$cur = "8.3";
 $job = $gen->github([
 "next" => [
     "PHP" => ["master"],
@@ -21,7 +21,7 @@ $job = $gen->github([
     "TEST_PHP_ARGS" => "-d error_reporting=24575" // ignore E_DEPRECATED
 ],
 "old" => [
-    "PHP" => ["8.1", "8.0"],
+    "PHP" => ["8.1", "8.0", "8.2"],
     "enable_debug" => "yes",
     "enable_zts" => "yes",
     "enable_iconv" => "yes",
@@ -67,7 +67,7 @@ foreach ($job as $id => $env) {
         printf("      %s: \"%s\"\n", $key, $val);
     }
 ?>
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
         with:
