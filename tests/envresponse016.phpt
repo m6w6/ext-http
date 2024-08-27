@@ -4,6 +4,8 @@ env response send failure
 <?php
 include "skipif.inc";
 ?>
+--XFAIL--
+stream filters leak since 8.2
 --FILE--
 <?php
 
