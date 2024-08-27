@@ -1,21 +1,21 @@
 --TEST--
 invalid HTTP info
 --SKIPIF--
-<?php 
+<?php
 include "skipif.inc";
 ?>
 --INI--
 zend.exception_ignore_args=off
 --FILE--
-<?php 
+<?php
 
 echo "Test\n";
 
 function trap($cb) {
 	try {
 		$cb();
-	} catch (Exception $e) { 
-		echo $e,"\n"; 
+	} catch (Exception $e) {
+		echo $e,"\n";
 	}
 }
 
@@ -37,13 +37,13 @@ Test
 http\Exception\BadMessageException: http\Message::__construct(): Failed to parse headers: unexpected character '\057' at pos 4 of 'HTTP/1.1 99 Apples in my Basket' in %sinfo002.php:%d
 Stack trace:
 #0 %sinfo002.php(%d): http\Message->__construct('HTTP/1.1 99 App...')
-#1 %sinfo002.php(%d): {closure}()
+#1 %sinfo002.php(%d): {closure%s}()
 #2 %sinfo002.php(%d): trap(Object(Closure))
 #3 {main}
 http\Exception\BadMessageException: http\Message::__construct(): Failed to parse headers: unexpected character '\040' at pos 7 of 'CONNECT HTTP/1.1' in %sinfo002.php:%d
 Stack trace:
 #0 %sinfo002.php(%d): http\Message->__construct('CONNECT HTTP/1....')
-#1 %sinfo002.php(%d): {closure}()
+#1 %sinfo002.php(%d): {closure%s}()
 #2 %sinfo002.php(%d): trap(Object(Closure))
 #3 {main}
 HTTP/1.1 200

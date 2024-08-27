@@ -15,7 +15,7 @@ echo "Test\n";
 class Observer implements SplObserver
 {
 	#[ReturnTypeWillChange]
-	function update(SplSubject $client, http\Client\Request $request = null, StdClass $progress = null) {
+	function update(SplSubject $client, ?http\Client\Request $request = null, ?StdClass $progress = null) {
 		echo "P";
 		/* fence against buggy infof() calls in some curl versions */
 		$compare = $client->getProgressInfo($request);

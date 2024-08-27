@@ -1,12 +1,12 @@
 --TEST--
 client curl user handler
 --SKIPIF--
-<?php 
+<?php
 include "skipif.inc";
 skip_client_test();
-?> 
+?>
 --FILE--
-<?php 
+<?php
 echo "Test\n";
 
 class UserHandler implements http\Client\Curl\User
@@ -20,23 +20,23 @@ class UserHandler implements http\Client\Curl\User
 	private $R = array();
 	private $W = array();
 	private $timeout = 1000;
-	
+
 	function __construct(http\Client $client) {
 		$this->client = $client;
 	}
-	
+
 	function init($run) {
 		$this->run = $run;
 	}
-	
+
 	function timer(int $timeout_ms) {
 		echo "T";
 		$this->timeout = $timeout_ms;
 	}
-	
+
 	function socket($socket, int $action) {
 		echo "S";
-		
+
 		switch ($action) {
 		case self::POLL_NONE:
 			break;
@@ -45,14 +45,14 @@ class UserHandler implements http\Client\Curl\User
 				echo "U";
 				unset($this->fds["R"][$r]);
 			}
-			
+
 			if (false !== ($w = array_search($socket, $this->fds["W"], true))) {
 				echo "U";
 				unset($this->fds["W"][$w]);
 			}
-			
+
 			break;
-			
+
 		default:
 			if ($action & self::POLL_IN) {
 				if (!in_array($socket, $this->fds["R"], true)) {
@@ -67,10 +67,10 @@ class UserHandler implements http\Client\Curl\User
 			break;
 		}
 	}
-	
+
 	function once() {
 		echo "O";
-		
+
 		foreach ($this->W as $w) {
 			call_user_func($this->run, $this->client, $w, self::POLL_OUT);
 		}
@@ -79,18 +79,18 @@ class UserHandler implements http\Client\Curl\User
 		}
 		return count($this->client);
 	}
-	
-	function wait(int $timeout_ms = null) {
+
+	function wait(?int $timeout_ms = null) {
 		echo "W";
-		
+
 		if ($timeout_ms === null) {
 			$timeout_ms = $this->timeout;
 		}
 		$ts = floor($timeout_ms / 1000);
 		$tu = ($timeout_ms % 1000) * 1000;
-		
+
 		extract($this->fds);
-		
+
 		if (($wfds = count($R) + count($W))) {
 			$nfds = stream_select($R, $W, $E, $ts, $tu);
 		} else {
@@ -98,7 +98,7 @@ class UserHandler implements http\Client\Curl\User
 		}
 		$this->R = (array) $R;
 		$this->W = (array) $W;
-		
+
 		if ($nfds === false) {
 			return false;
 		}
@@ -109,10 +109,10 @@ class UserHandler implements http\Client\Curl\User
 			}
 			call_user_func($this->run, $this->client);
 		}
-			
+
 		return true;
 	}
-	
+
 	function send() {
 		$this->wait();
 		$this->once();
