@@ -134,7 +134,15 @@ AC_DEFUN([PECL_HAVE_LIBCURL_SSL], [dnl
 					int main(int argc, char *argv[]) {
 						int has_feature = curl_version_info(CURLVERSION_NOW)->features & CURL_VERSION_TLSAUTH_SRP;
 						int set_failure = curl_easy_setopt(curl_easy_init(), CURLOPT_TLSAUTH_TYPE, "SRP");
-						return !has_feature || set_failure;
+						int unset_failure = curl_easy_setopt(curl_easy_init(), CURLOPT_TLSAUTH_TYPE, "NONE");
+						fprintf(stderr, "SRP has_feature=%d set_failure=%d unset_failure=%d\n", has_feature, set_failure, unset_failure);
+						int ret = !has_feature;
+						if (set_failure)
+							ret |= 1<<1;
+						if (unset_failure)
+							ret |= 1<<2;
+
+						return ret;
 					}
 				], [
 					PECL_CACHE_VAR([LIBCURL_TLSAUTH_SRP])=yes
