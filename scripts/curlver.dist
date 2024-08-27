@@ -1,19 +1,12 @@
 # latest is 8.9.1 ATM
 # 7.21.5-7.29.0 fail to configure on gh actions
 
-alpine:
-centos:
-debian: 8.6.0
-fedora:
-other:
-ubuntu: 8.5.0
-
 # always test against a few recent
 latest: master 8.9.1 8.8.0 8.7.1 8.6.0 8.5.0
 # various linux distros
-current: 8.2.1 8.1.1 7.88.1 7.81.0 7.78.0 7.76.1 7.61.1
-# and a couple ancient
-oldest: 7.18.2 7.19.7 7.20.1
+current: 8.2.1 8.1.1 7.88.1 7.81.0
+# and a couple older
+oldest: 7.78.0 7.76.1 7.61.1
 
 # 7.64.1 fails client tests because of superfluous infof() calls
 # 7.64.0 fails client cookie test because of curl/curl#3613
