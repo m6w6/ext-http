@@ -48,7 +48,45 @@ jobs:
           make -f scripts/ci/Makefile test
 
   old-0:
-    name: "old-0 (8.1)"
+    name: "old-0 (8.2)"
+    env:
+      PHP: "8.2"
+      enable_debug: "yes"
+      enable_zts: "yes"
+      enable_iconv: "yes"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Info
+        run: |
+          locale -a && locale
+      - name: Install
+        run: |
+          sudo apt-get install -y \
+            php-cli \
+            php-pear \
+            libcurl4-openssl-dev \
+            libidn-dev \
+            libidn2-0-dev \
+            libicu-dev \
+            libevent-dev \
+            libbrotli-dev \
+            re2c
+      - name: Prepare
+        run: |
+          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
+          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
+      - name: Build
+        run: |
+          make -f scripts/ci/Makefile ext PECL=http
+      - name: Test
+        run: |
+          make -f scripts/ci/Makefile test
+
+  old-1:
+    name: "old-1 (8.1)"
     env:
       PHP: "8.1"
       enable_debug: "yes"
@@ -85,48 +123,10 @@ jobs:
         run: |
           make -f scripts/ci/Makefile test
 
-  old-1:
-    name: "old-1 (8.0)"
+  old-2:
+    name: "old-2 (8.0)"
     env:
       PHP: "8.0"
-      enable_debug: "yes"
-      enable_zts: "yes"
-      enable_iconv: "yes"
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-      - name: Info
-        run: |
-          locale -a && locale
-      - name: Install
-        run: |
-          sudo apt-get install -y \
-            php-cli \
-            php-pear \
-            libcurl4-openssl-dev \
-            libidn-dev \
-            libidn2-0-dev \
-            libicu-dev \
-            libevent-dev \
-            libbrotli-dev \
-            re2c
-      - name: Prepare
-        run: |
-          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
-          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-      - name: Build
-        run: |
-          make -f scripts/ci/Makefile ext PECL=http
-      - name: Test
-        run: |
-          make -f scripts/ci/Makefile test
-
-  old-2:
-    name: "old-2 (8.2)"
-    env:
-      PHP: "8.2"
       enable_debug: "yes"
       enable_zts: "yes"
       enable_iconv: "yes"
