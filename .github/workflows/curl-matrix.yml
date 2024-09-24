@@ -121,12 +121,12 @@ jobs:
           cd http
           make -f scripts/ci/Makefile test
 
-  curl-8_10_0:
-    name: curl-8_10_0
+  curl-8_9_0:
+    name: curl-8_9_0
     continue-on-error: true
     env:
       PHP: "8.3"
-      CURL: "8_10_0"
+      CURL: "8_9_0"
       enable_debug: "yes"
       enable_iconv: "yes"
       with_http_libcurl_dir: "/opt"
@@ -140,65 +140,7 @@ jobs:
         with:
           repository: curl/curl
           path: curl
-          ref: curl-8_10_0 #
-      - name: Install
-        run: |
-          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu jammy main' | sudo tee -a /etc/apt/sources.list && \
-          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu jammy-updates main' | sudo tee -a /etc/apt/sources.list && \
-          sudo apt-get update -y &&  \
-          sudo apt-get build-dep -y libcurl4-openssl-dev && \
-          sudo apt-get install -y \
-            php-cli \
-            php-pear \
-            libidn11-dev \
-            libidn2-0-dev \
-            libicu-dev \
-            libevent-dev \
-            libbrotli-dev \
-            re2c
-      - name: Curl
-        run: |
-          sudo chmod +x /usr/share/libtool/build-aux/ltmain.sh
-          sudo ln -s /usr/share/libtool/build-aux/ltmain.sh /usr/bin/libtool
-          cd curl
-          ./buildconf
-          ./configure --prefix=/opt --disable-dependency-tracking --with-ssl --with-openssl --without-libssh2 --disable-ldap
-          make -j2
-          make install
-      - name: Prepare
-        run: |
-          cd http
-          make -f scripts/ci/Makefile php || make -f scripts/ci/Makefile clean php
-          make -f scripts/ci/Makefile pecl PECL=m6w6/ext-raphf.git:raphf:master
-      - name: Build
-        run: |
-          cd http
-          make -f scripts/ci/Makefile ext PECL=http
-      - name: Test
-        run: |
-          cd http
-          make -f scripts/ci/Makefile test
-
-  curl-8_9_1:
-    name: curl-8_9_1
-    continue-on-error: true
-    env:
-      PHP: "8.3"
-      CURL: "8_9_1"
-      enable_debug: "yes"
-      enable_iconv: "yes"
-      with_http_libcurl_dir: "/opt"
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-          path: http
-      - uses: actions/checkout@v2
-        with:
-          repository: curl/curl
-          path: curl
-          ref: curl-8_9_1 #
+          ref: curl-8_9_0 #
       - name: Install
         run: |
           echo 'deb-src http://azure.archive.ubuntu.com/ubuntu jammy main' | sudo tee -a /etc/apt/sources.list && \
