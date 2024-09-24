@@ -2,7 +2,7 @@
 # 7.21.5-7.29.0 fail to configure on gh actions
 
 # always test against a few recent
-latest: master 8.9.1 8.8.0 8.7.1 8.6.0 8.5.0
+latest: master 8.10.1 8.10.0 8.9.1 8.8.0 8.7.1 8.6.0 8.5.0
 # various linux distros
 current: 8.2.1 8.1.1 7.88.1 7.81.0
 # and a couple older
