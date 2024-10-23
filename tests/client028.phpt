@@ -71,10 +71,10 @@ class UserHandler implements http\Client\Curl\User
 	function once() {
 		echo "O";
 
-		foreach ($this->W as $w) {
+		foreach ($this->W as $w) if (is_resource($w)) {
 			call_user_func($this->run, $this->client, $w, self::POLL_OUT);
 		}
-		foreach ($this->R as $r) {
+		foreach ($this->R as $r) if (is_resource($r)) {
 			call_user_func($this->run, $this->client, $r, self::POLL_IN);
 		}
 		return count($this->client);
