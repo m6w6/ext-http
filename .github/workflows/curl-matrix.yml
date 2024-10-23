@@ -121,12 +121,12 @@ jobs:
           cd http
           make -f scripts/ci/Makefile test
 
-  curl-8_9_0:
-    name: curl-8_9_0
+  curl-8_9_1:
+    name: curl-8_9_1
     continue-on-error: true
     env:
       PHP: "8.3"
-      CURL: "8_9_0"
+      CURL: "8_9_1"
       enable_debug: "yes"
       enable_iconv: "yes"
       with_http_libcurl_dir: "/opt"
@@ -140,7 +140,7 @@ jobs:
         with:
           repository: curl/curl
           path: curl
-          ref: curl-8_9_0 #
+          ref: curl-8_9_1 #
       - name: Install
         run: |
           echo 'deb-src http://azure.archive.ubuntu.com/ubuntu jammy main' | sudo tee -a /etc/apt/sources.list && \
