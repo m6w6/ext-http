@@ -64,8 +64,8 @@ foreach ($job as $id => $env) {
 <?php endif; ?>
       - name: Install
         run: |
-          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu jammy main' | sudo tee -a /etc/apt/sources.list && \
-          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu jammy-updates main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu noble main' | sudo tee -a /etc/apt/sources.list && \
+          echo 'deb-src http://azure.archive.ubuntu.com/ubuntu noble-updates main' | sudo tee -a /etc/apt/sources.list && \
           sudo apt-get update -y &&  \
           sudo apt-get build-dep -y libcurl4-openssl-dev && \
           sudo apt-get install -y \
