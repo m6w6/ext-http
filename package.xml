@@ -31,9 +31,9 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2024-02-05</date>
+ <date>2024-11-05</date>
  <version>
-  <release>4.2.5</release>
+  <release>4.2.6</release>
   <api>4.2.0</api>
  </version>
  <stability>
@@ -42,8 +42,8 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-* Fix incompatible pointer types (32-bit) (see gh issue #134)
-* Fix glitch in CURL_VERSION_TLSAUTH_SRP autoconf probe (see gh issue #133)
+* Fix #136 Potential incompatibility with libcurl 8.9.0; add workaround for CURLOPT_INTERFACE for v8.9-8.10
+* Fix #137 Potential compilation error with PHP 8.4; php_lcg.h was deprecated in 8.2
 ]]></notes>
  <contents>
   <dir name="/">
