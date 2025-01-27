@@ -25,7 +25,7 @@ typedef struct php_http_client_curl_handle {
 } php_http_client_curl_handle_t;
 
 typedef struct php_http_client_curl_ops {
-	void *(*init)();
+	void *(*init)(php_http_client_t *client, void *user_data);
 	void (*dtor)(void **ctx_ptr);
 	ZEND_RESULT_CODE (*once)(void *ctx);
 	ZEND_RESULT_CODE (*wait)(void *ctx, struct timeval *custom_timeout);

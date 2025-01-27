@@ -242,7 +242,7 @@ static ZEND_RESULT_CODE php_http_client_curl_event_exec(void *context)
 	return SUCCESS;
 }
 
-static void *php_http_client_curl_event_init(php_http_client_t *client)
+static void *php_http_client_curl_event_init(php_http_client_t *client, void *user_data)
 {
 	php_http_client_curl_t *curl = client->ctx;
 	php_http_client_curl_event_context_t *ctx;
