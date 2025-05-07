@@ -1811,6 +1811,21 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	}
 # endif
 #endif
+
+#if PHP_HTTP_CURL_VERSION(7,45,0)
+		php_http_option_register(registry, ZEND_STRL("default_protocol"), CURLOPT_DEFAULT_PROTOCOL, IS_STRING);
+#endif
+#if PHP_HTTP_CURL_VERSION(7,85,0)
+		if ((opt = php_http_option_register(registry, ZEND_STRL("protocols"), CURLOPT_PROTOCOLS_STR, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			ZVAL_PSTRING(&opt->defval, "ALL");
+		}
+
+		if ((opt = php_http_option_register(registry, ZEND_STRL("redir_protocols"), CURLOPT_REDIR_PROTOCOLS_STR, IS_STRING))) {
+			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
+			ZVAL_PSTRING(&opt->defval, "ALL");
+		}
+#endif
 }
 
 static zval *php_http_curle_get_option(php_http_option_t *opt, HashTable *options, void *userdata)
