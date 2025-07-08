@@ -8,14 +8,14 @@ function _ext($ext) {
 }
 
 function utf8locale() {
-	$locale = setlocale(LC_CTYPE, null);
+	$locale = @setlocale(LC_CTYPE, null);
 	if (stristr($locale, "utf") && substr($locale, -1) === "8") {
 		return true;
 	}
 	if (stristr(setlocale(LC_CTYPE, "C.UTF-8"), "utf")) {
 		return true;
 	}
-	$locale = setlocale(LC_CTYPE, null);
+	$locale = @setlocale(LC_CTYPE, null);
 	if (stristr($locale, "utf") && substr($locale, -1) === "8") {
 		return true;
 	}
