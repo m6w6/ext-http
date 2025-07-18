@@ -1165,7 +1165,7 @@ static PHP_METHOD(HttpEnvResponse, __invoke)
 		} else {
 			php_http_message_body_append(obj->message->body, ob_str, ob_len);
 		}
-		RETURN_TRUE;
+		RETURN_EMPTY_STRING();
 	}
 }
 
