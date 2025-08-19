@@ -605,6 +605,48 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		zend_hash_str_update(info, "capath", lenof("capath"), &tmp);
 	}
 #endif
+#if PHP_HTTP_CURL_VERSION(8,2,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_XFER_ID, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "xfer_id", lenof("xfer_id"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(8,2,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_CONN_ID, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "conn_id", lenof("conn_id"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(8,6,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_QUEUE_TIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "queue_time_t", lenof("queue_time_t"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(8,7,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_USED_PROXY, &l)) {
+		ZVAL_LONG(&tmp, l);
+		zend_hash_str_update(info, "used_proxy", lenof("used_proxy"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(8,10,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_POSTTRANSFER_TIME_T, &o)) {
+		ZVAL_LONG(&tmp, o);
+		zend_hash_str_update(info, "posttransfer_time_t", lenof("posttransfer_time_t"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(8,12,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_HTTPAUTH_USED, &l)) {
+		ZVAL_LONG(&tmp, l);
+		zend_hash_str_update(info, "httpauth_used", lenof("httpauth_used"), &tmp);
+	}
+#endif
+#if PHP_HTTP_CURL_VERSION(8,12,0)
+	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PROXYAUTH_USED, &l)) {
+		ZVAL_LONG(&tmp, l);
+		zend_hash_str_update(info, "proxyauth_used", lenof("proxyauth_used"), &tmp);
+	}
+#endif
 
 	/* END::CURLINFO */
 
