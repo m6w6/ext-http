@@ -34,7 +34,7 @@ rsort($curlver, SORT_NATURAL);
 $gen = include __DIR__ . "/ci/gen-matrix.php";
 $job = $gen->github([
 "curl" => [
-    "PHP" => "8.3",
+    "PHP" => "8.4",
     "CURL" => $curlver,
     "enable_debug" => "yes",
     "enable_iconv" => "yes",

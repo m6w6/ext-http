@@ -11,7 +11,7 @@ jobs:
 <?php
 
 $gen = include __DIR__ . "/ci/gen-matrix.php";
-$cur = "8.3";
+$cur = "8.4";
 $job = $gen->github([
 "next" => [
     "PHP" => ["master"],
@@ -21,7 +21,7 @@ $job = $gen->github([
     "TEST_PHP_ARGS" => "-d error_reporting=24575" // ignore E_DEPRECATED
 ],
 "old" => [
-    "PHP" => ["8.2", "8.1", "8.0"],
+    "PHP" => ["8.3", "8.2", "8.1", "8.0"],
     "enable_debug" => "yes",
     "enable_zts" => "yes",
     "enable_iconv" => "yes",
