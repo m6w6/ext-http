@@ -1097,7 +1097,7 @@ static PHP_METHOD(HttpClient, attach)
 	}
 
 	ZVAL_UNDEF(&retval);
-	zend_call_method_with_1_params(Z_OBJ_P(observers), NULL, NULL, "attach", &retval, observer);
+	zend_call_method_with_1_params(Z_OBJ_P(observers), NULL, NULL, "offsetSet", &retval, observer);
 	zval_ptr_dtor(&retval);
 #if PHP_VERSION_ID < 80100
 	RETVAL_ZVAL(getThis(), 1, 0);
@@ -1125,7 +1125,7 @@ static PHP_METHOD(HttpClient, detach)
 	}
 
 	ZVAL_UNDEF(&retval);
-	zend_call_method_with_1_params(Z_OBJ_P(observers), NULL, NULL, "detach", &retval, observer);
+	zend_call_method_with_1_params(Z_OBJ_P(observers), NULL, NULL, "offsetUnset", &retval, observer);
 	zval_ptr_dtor(&retval);
 #if PHP_VERSION_ID < 80100
 	RETVAL_ZVAL(getThis(), 1, 0);
