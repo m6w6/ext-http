@@ -1,0 +1,55 @@
+{
+    "name": "m6w6/ext-http",
+    "type": "php-ext",
+    "license": "BSD-2-Clause",
+    "description": "Extended HTTP support",
+    "require": {
+        "php": ">= 8.0.0",
+        "ext-raphf": "*"
+    },
+    "php-ext": {
+        "extension-name": "http",
+        "configure-options": [
+            {
+                "name": "with-http-zlib-dir",
+                "description": "where to find zlib",
+                "needs-value": true
+            },
+            {
+                "name": "with-http-libcurl-dir",
+                "description": "where to find libcurl",
+                "needs-value": true
+            },
+            {
+                "name": "with-http-libevent-dir",
+                "description": "where to find libevent",
+                "needs-value": true
+            },
+            {
+                "name": "with-http-libicu-dir",
+                "description": "where to find libicu",
+                "needs-value": true
+            },
+            {
+                "name": "with-http-libidn2-dir",
+                "description": "where to find libidn2",
+                "needs-value": true
+            },
+            {
+                "name": "with-http-libidn-dir",
+                "description": "where to find libidn",
+                "needs-value": true
+            },
+            {
+                "name": "with-http-libidnkit2-dir",
+                "description": "where to find libidnkit2",
+                "needs-value": true
+            },
+            {
+                "name": "with-http-libidnkit-dir",
+                "description": "where to find libidnkit",
+                "needs-value": true
+            }
+        ]
+    }
+}

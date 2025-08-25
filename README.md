@@ -24,10 +24,9 @@ Known issues are listed in [BUGS](./BUGS) and future ideas can be found in [TODO
 
 	pecl install pecl_http
 
-### PHARext
+### PIE
 
-Watch out for [PECL replicates](https://replicator.pharext.org?pecl_http)
-and pharext packages attached to [releases](https://github.com/m6w6/ext-http/releases).
+    pie install m6w6/ext-http
 
 ### Checkout
 
