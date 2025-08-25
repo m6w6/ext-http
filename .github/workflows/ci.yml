@@ -434,9 +434,10 @@ jobs:
           make -f scripts/ci/Makefile test
       - name: Coverage
         if: success()
-        run: |
-          cd src/.libs
-          bash <(curl -s https://codecov.io/bash) -X xcode -X coveragepy
+        uses: codecov/codecov-action@v5
+        with:
+          gcov: true
+          gcov_include: "src/**/*"
 
   cur-cov-1:
     name: "cur-cov-1 (8.4)"
@@ -480,9 +481,10 @@ jobs:
           make -f scripts/ci/Makefile test
       - name: Coverage
         if: success()
-        run: |
-          cd src/.libs
-          bash <(curl -s https://codecov.io/bash) -X xcode -X coveragepy
+        uses: codecov/codecov-action@v5
+        with:
+          gcov: true
+          gcov_include: "src/**/*"
 
   cur-cov-2:
     name: "cur-cov-2 (8.4)"
@@ -526,7 +528,8 @@ jobs:
           make -f scripts/ci/Makefile test
       - name: Coverage
         if: success()
-        run: |
-          cd src/.libs
-          bash <(curl -s https://codecov.io/bash) -X xcode -X coveragepy
+        uses: codecov/codecov-action@v5
+        with:
+          gcov: true
+          gcov_include: "src/**/*"
 
