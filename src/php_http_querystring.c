@@ -243,9 +243,7 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 	}
 
 	/* modify qarray */
-	if (!params) {
-		zend_hash_apply(Z_ARRVAL_P(qarray), apply_querystring_filter);
-	} else {
+	if (params) {
 		HashTable *ht;
 		php_http_arrkey_t key;
 		zval zv, *params_entry, *qarray_entry;
@@ -332,6 +330,8 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 
 		zval_dtor(&zv);
 	}
+
+	zend_hash_apply(Z_ARRVAL_P(qarray), apply_querystring_filter);
 
 	/* serialize to string */
 	if (outstring) {

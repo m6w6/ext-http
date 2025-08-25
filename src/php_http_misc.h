@@ -113,8 +113,8 @@ static inline const char *php_http_locate_bin_eol(const char *bin, size_t len, i
 #endif
 
 #define HT_IS_RECURSIVE(ht) GC_IS_RECURSIVE(ht)
-#define HT_PROTECT_RECURSION(ht) GC_PROTECT_RECURSION(ht)
-#define HT_UNPROTECT_RECURSION(ht) GC_UNPROTECT_RECURSION(ht)
+#define HT_PROTECT_RECURSION(ht) GC_TRY_PROTECT_RECURSION(ht)
+#define HT_UNPROTECT_RECURSION(ht) GC_TRY_UNPROTECT_RECURSION(ht)
 
 #ifndef convert_to_explicit_type
 # define convert_to_explicit_type(pzv, type) \
