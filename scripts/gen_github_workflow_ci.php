@@ -102,8 +102,7 @@ foreach ($job as $id => $env) {
         if: success()
         uses: codecov/codecov-action@v5
         with:
-          gcov: true
-          gcov_include: "src/**/*"
+          directory: src
 <?php endif; ?>
 
 <?php

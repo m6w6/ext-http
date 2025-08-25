@@ -5,6 +5,7 @@ name: curl-matrix
 on:
   workflow_dispatch:
   push:
+    path: src/*curl*
 
 jobs:
 <?php

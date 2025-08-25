@@ -436,8 +436,7 @@ jobs:
         if: success()
         uses: codecov/codecov-action@v5
         with:
-          gcov: true
-          gcov_include: "src/**/*"
+          directory: src
 
   cur-cov-1:
     name: "cur-cov-1 (8.4)"
@@ -483,8 +482,7 @@ jobs:
         if: success()
         uses: codecov/codecov-action@v5
         with:
-          gcov: true
-          gcov_include: "src/**/*"
+          directory: src
 
   cur-cov-2:
     name: "cur-cov-2 (8.4)"
@@ -530,6 +528,5 @@ jobs:
         if: success()
         uses: codecov/codecov-action@v5
         with:
-          gcov: true
-          gcov_include: "src/**/*"
+          directory: src
 
