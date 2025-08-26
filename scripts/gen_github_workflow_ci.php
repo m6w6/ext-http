@@ -101,8 +101,6 @@ foreach ($job as $id => $env) {
       - name: Coverage
         if: success()
         uses: codecov/codecov-action@v5
-        with:
-          directory: src
 <?php endif; ?>
 
 <?php

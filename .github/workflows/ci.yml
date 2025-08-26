@@ -435,8 +435,6 @@ jobs:
       - name: Coverage
         if: success()
         uses: codecov/codecov-action@v5
-        with:
-          directory: src
 
   cur-cov-1:
     name: "cur-cov-1 (8.4)"
@@ -481,8 +479,6 @@ jobs:
       - name: Coverage
         if: success()
         uses: codecov/codecov-action@v5
-        with:
-          directory: src
 
   cur-cov-2:
     name: "cur-cov-2 (8.4)"
@@ -527,6 +523,4 @@ jobs:
       - name: Coverage
         if: success()
         uses: codecov/codecov-action@v5
-        with:
-          directory: src
 
