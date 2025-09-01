@@ -43,7 +43,7 @@ if test "$PHP_HTTP" != "no"; then
 	PHP_ARG_WITH([http-libcurl-dir], [whether/where to check for libcurl],
 	[  --with-http-libcurl-dir[=DIR]      HTTP: where to find libcurl], $PHP_HTTP)
 	if test "$PHP_HTTP_LIBCURL_DIR" != "no"; then
-		PECL_CHECK_LIBCURL([$PHP_HTTP_LIBCURL_DIR], [7.18.2])
+		PECL_CHECK_LIBCURL([$PHP_HTTP_LIBCURL_DIR], [7.61.1])
 		PECL_HAVE_LIBCURL_PROTOCOL([HTTP], [
 			PECL_HAVE_LIBCURL_FEATURE([HTTP2])
 			PECL_HAVE_LIBCURL_FEATURE([ALT-SVC])

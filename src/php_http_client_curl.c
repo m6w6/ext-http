@@ -172,11 +172,7 @@ static size_t php_http_curle_read_callback(void *data, size_t len, size_t n, voi
 	return 0;
 }
 
-#if PHP_HTTP_CURL_VERSION(7,32,0)
 static int php_http_curle_xferinfo_callback(void *ctx, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
-#else
-static int php_http_curle_progress_callback(void *ctx, double dltotal, double dlnow, double ultotal, double ulnow)
-#endif
 {
 	php_http_client_curl_handler_t *h = ctx;
 
@@ -481,66 +477,46 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 		ZVAL_STRING(&tmp, STR_PTR(c));
 		zend_hash_str_update(info, "redirect_url", lenof("redirect_url"), &tmp);
 	}
-#if PHP_HTTP_CURL_VERSION(7,19,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PRIMARY_IP, &c)) {
 		ZVAL_STRING(&tmp, STR_PTR(c));
 		zend_hash_str_update(info, "primary_ip", lenof("primary_ip"), &tmp);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,19,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_APPCONNECT_TIME, &d)) {
 		ZVAL_DOUBLE(&tmp, d);
 		zend_hash_str_update(info, "appconnect_time", lenof("appconnect_time"), &tmp);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,19,4)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_CONDITION_UNMET, &l)) {
 		ZVAL_LONG(&tmp, l);
 		zend_hash_str_update(info, "condition_unmet", lenof("condition_unmet"), &tmp);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,21,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PRIMARY_PORT, &l)) {
 		ZVAL_LONG(&tmp, l);
 		zend_hash_str_update(info, "primary_port", lenof("primary_port"), &tmp);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,21,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_LOCAL_IP, &c)) {
 		ZVAL_STRING(&tmp, STR_PTR(c));
 		zend_hash_str_update(info, "local_ip", lenof("local_ip"), &tmp);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,21,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_LOCAL_PORT, &l)) {
 		ZVAL_LONG(&tmp, l);
 		zend_hash_str_update(info, "local_port", lenof("local_port"), &tmp);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,50,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_HTTP_VERSION, &l)) {
 		ZVAL_LONG(&tmp, l);
 		zend_hash_str_update(info, "http_version", lenof("http_version"), &tmp);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,52,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PROXY_SSL_VERIFYRESULT, &l)) {
 		ZVAL_LONG(&tmp, l);
 		zend_hash_str_update(info, "proxy_ssl_verifyresult", lenof("proxy_ssl_verifyresult"), &tmp);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,52,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_PROTOCOL, &l)) {
 		ZVAL_LONG(&tmp, l);
 		zend_hash_str_update(info, "protocol", lenof("protocol"), &tmp);
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,52,0)
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_SCHEME, &c)) {
 		ZVAL_STRING(&tmp, STR_PTR(c));
 		zend_hash_str_update(info, "scheme", lenof("scheme"), &tmp);
 	}
-#endif
 	if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TOTAL_TIME_T, &o)) {
 		ZVAL_LONG(&tmp, o);
 		zend_hash_str_update(info, "total_time_t", lenof("total_time_t"), &tmp);
@@ -650,16 +626,11 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 
 	/* END::CURLINFO */
 
-#if PHP_HTTP_CURL_VERSION(7,34,0)
 	{
 		zval ti_array, subarray;
 		struct curl_tlssessioninfo *ti;
 
-#if PHP_HTTP_CURL_VERSION(7,48,0)
 		if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TLS_SSL_PTR, &ti)) {
-#else
-		if (CURLE_OK == curl_easy_getinfo(ch, CURLINFO_TLS_SESSION, &ti)) {
-#endif
 			char *backend;
 
 			ZVAL_NULL(&subarray);
@@ -673,12 +644,8 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 				backend = "openssl";
 #if PHP_HTTP_HAVE_LIBCURL_OPENSSL
 				{
-#if PHP_HTTP_CURL_VERSION(7,48,0)
 					SSL *ssl = ti->internals;
 					SSL_CTX *ctx = ssl ? SSL_get_SSL_CTX(ssl) : NULL;
-#else
-					SSL_CTX *ctx = ti->internals;
-#endif
 
 					array_init(&subarray);
 					if (ctx) {
@@ -713,15 +680,9 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 			case CURLSSLBACKEND_NSS:
 				backend = "nss";
 				break;
-#if !PHP_HTTP_CURL_VERSION(7,39,0)
-			case CURLSSLBACKEND_QSOSSL:
-				backend = "qsossl";
-				break;
-#else
 			case CURLSSLBACKEND_GSKIT:
 				backend = "gskit";
 				break;
-#endif
 			case CURLSSLBACKEND_POLARSSL:
 				backend = "polarssl";
 				break;
@@ -742,12 +703,11 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 			zend_hash_str_update(info, "tls_session", lenof("tls_session"), &ti_array);
 		}
 	}
-#endif
 
-#if (PHP_HTTP_CURL_VERSION(7,19,1) && PHP_HTTP_HAVE_LIBCURL_OPENSSL) || \
-	(PHP_HTTP_CURL_VERSION(7,34,0) && PHP_HTTP_HAVE_LIBCURL_NSS) || \
-	(PHP_HTTP_CURL_VERSION(7,39,0) && PHP_HTTP_HAVE_LIBCURL_GSKIT) || \
-	(PHP_HTTP_CURL_VERSION(7,42,0) && PHP_HTTP_HAVE_LIBCURL_GNUTLS) || \
+#if (PHP_HTTP_HAVE_LIBCURL_OPENSSL) || \
+	(PHP_HTTP_HAVE_LIBCURL_NSS) || \
+	(PHP_HTTP_HAVE_LIBCURL_GSKIT) || \
+	(PHP_HTTP_HAVE_LIBCURL_GNUTLS) || \
 	(PHP_HTTP_CURL_VERSION(7,79,0) && PHP_HTTP_HAVE_LIBCURL_SECURETRANSPORT)
 	{
 		int i;
@@ -1102,9 +1062,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_compress(php_http_option_t *op
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
 
-#if !PHP_HTTP_CURL_VERSION(7,21,6)
 #	define CURLOPT_ACCEPT_ENCODING CURLOPT_ENCODING
-#endif
 	if (CURLE_OK != curl_easy_setopt(ch, CURLOPT_ACCEPT_ENCODING, Z_TYPE_P(val) == IS_TRUE ? "" : NULL)) {
 		return FAILURE;
 	}
@@ -1242,7 +1200,6 @@ static ZEND_RESULT_CODE php_http_curle_option_set_portrange(php_http_option_t *o
 	return SUCCESS;
 }
 
-#if PHP_HTTP_CURL_VERSION(7,37,0)
 static ZEND_RESULT_CODE php_http_curle_option_set_proxyheader(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
@@ -1279,9 +1236,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_proxyheader(php_http_option_t 
 	}
 	return SUCCESS;
 }
-#endif
 
-#if PHP_HTTP_CURL_VERSION(7,21,3)
 static ZEND_RESULT_CODE php_http_curle_option_set_resolve(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
@@ -1309,9 +1264,8 @@ static ZEND_RESULT_CODE php_http_curle_option_set_resolve(php_http_option_t *opt
 	}
 	return SUCCESS;
 }
-#endif
 
-#if PHP_HTTP_CURL_VERSION(7,21,4) && PHP_HTTP_HAVE_LIBCURL_TLSAUTH_TYPE
+#if PHP_HTTP_HAVE_LIBCURL_TLSAUTH_TYPE
 static ZEND_RESULT_CODE php_http_curle_option_set_ssl_tlsauthtype(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
@@ -1342,9 +1296,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	php_http_option_t *opt;
 
 	/* url options */
-#if PHP_HTTP_CURL_VERSION(7,42,0)
 	php_http_option_register(registry, ZEND_STRL("path_as_is"), CURLOPT_PATH_AS_IS, _IS_BOOL);
-#endif
 
 	/* proxy */
 	php_http_option_register(registry, ZEND_STRL("proxyhost"), CURLOPT_PROXY, IS_STRING);
@@ -1357,61 +1309,42 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		Z_LVAL(opt->defval) = CURLAUTH_ANYSAFE;
 	}
 	php_http_option_register(registry, ZEND_STRL("proxytunnel"), CURLOPT_HTTPPROXYTUNNEL, _IS_BOOL);
-#if PHP_HTTP_CURL_VERSION(7,19,4)
 	php_http_option_register(registry, ZEND_STRL("noproxy"), CURLOPT_NOPROXY, IS_STRING);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,55,0)
 	php_http_option_register(registry, ZEND_STRL("socks5_auth"), CURLOPT_SOCKS5_AUTH, IS_LONG);
-#endif
 
-#if PHP_HTTP_CURL_VERSION(7,37,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("proxyheader"), CURLOPT_PROXYHEADER, IS_ARRAY))) {
 		opt->setter = php_http_curle_option_set_proxyheader;
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,43,0)
 	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_GSSAPI)
 	&& (opt = php_http_option_register(registry, ZEND_STRL("proxy_service_name"), CURLOPT_PROXY_SERVICE_NAME, IS_STRING))
 	) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,60,0)
 	php_http_option_register(registry, ZEND_STRL("haproxy_protocol"), CURLOPT_HAPROXYPROTOCOL, _IS_BOOL);
-#endif
 
 	/* unix sockets */
-#if PHP_HTTP_CURL_VERSION(7,40,0)
 	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_UNIX_SOCKETS)) {
 		if ((opt = php_http_option_register(registry, ZEND_STRL("unix_socket_path"), CURLOPT_UNIX_SOCKET_PATH, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 		}
-#if PHP_HTTP_CURL_VERSION(7,53,0)
 		if ((opt = php_http_option_register(registry, ZEND_STRL("abstract_unix_socket"), CURLOPT_ABSTRACT_UNIX_SOCKET, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 		}
-#endif
 	}
-#endif
 
 	/* dns */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_cache_timeout"), CURLOPT_DNS_CACHE_TIMEOUT, IS_LONG))) {
 		Z_LVAL(opt->defval) = 60;
 	}
 	php_http_option_register(registry, ZEND_STRL("ipresolve"), CURLOPT_IPRESOLVE, IS_LONG);
-#if PHP_HTTP_CURL_VERSION(7,21,3)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("resolve"), CURLOPT_RESOLVE, IS_ARRAY))) {
 		opt->setter = php_http_curle_option_set_resolve;
 	}
-#endif
 #if PHP_HTTP_HAVE_LIBCURL_ARES
-# if PHP_HTTP_CURL_VERSION(7,24,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_servers"), CURLOPT_DNS_SERVERS, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
-# endif
-# if PHP_HTTP_CURL_VERSION(7,33,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_interface"), CURLOPT_DNS_INTERFACE, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
@@ -1421,11 +1354,8 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("dns_local_ip6"), CURLOPT_DNS_LOCAL_IP6, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
-# endif
 #endif
-#if PHP_HTTP_CURL_VERSION(7,60,0)
 	php_http_option_register(registry, ZEND_STRL("dns_shuffle_addresses"), CURLOPT_DNS_SHUFFLE_ADDRESSES, _IS_BOOL);
-#endif
 #if PHP_HTTP_CURL_VERSION(7,62,0)
 	php_http_option_register(registry, ZEND_STRL("doh_url"), CURLOPT_DOH_URL, IS_STRING);
 #endif
@@ -1469,9 +1399,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	php_http_option_register(registry, ZEND_STRL("port"), CURLOPT_PORT, IS_LONG);
 
 	/* RFC4007 zone_id */
-#if PHP_HTTP_CURL_VERSION(7,19,0)
 	php_http_option_register(registry, ZEND_STRL("address_scope"), CURLOPT_ADDRESS_SCOPE, IS_LONG);
-#endif
 
 	/* auth */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("httpauth"), CURLOPT_USERPWD, IS_STRING))) {
@@ -1480,17 +1408,13 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("httpauthtype"), CURLOPT_HTTPAUTH, IS_LONG))) {
 		Z_LVAL(opt->defval) = CURLAUTH_ANYSAFE;
 	}
-#if PHP_HTTP_CURL_VERSION(7,43,0)
 	if (PHP_HTTP_CURL_FEATURE(CURL_VERSION_SSPI) || PHP_HTTP_CURL_FEATURE(CURL_VERSION_GSSAPI))
 	if ((opt = php_http_option_register(registry, ZEND_STRL("service_name"), CURLOPT_SERVICE_NAME, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,61,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("xoauth2_bearer"), CURLOPT_XOAUTH2_BEARER, IS_STRING))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 	}
-#endif
 #if PHP_HTTP_CURL_VERSION(7,75,0)
 	php_http_option_register(registry, ZEND_STRL("aws_sigv4"), CURLOPT_AWS_SIGV4, IS_STRING);
 #endif
@@ -1500,9 +1424,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		opt->setter = php_http_curle_option_set_redirect;
 	}
 	php_http_option_register(registry, ZEND_STRL("unrestricted_auth"), CURLOPT_UNRESTRICTED_AUTH, _IS_BOOL);
-#if PHP_HTTP_CURL_VERSION(7,19,1)
 	php_http_option_register(registry, ZEND_STRL("postredir"), CURLOPT_POSTREDIR, IS_LONG);
-#endif
 
 	/* retries */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("retrycount"), 0, IS_LONG))) {
@@ -1591,16 +1513,13 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 		opt->flags |= PHP_HTTP_CURLE_OPTION_TRANSFORM_MS;
 		Z_DVAL(opt->defval) = 3;
 	}
-#if PHP_HTTP_CURL_VERSION(7,36,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("expect_100_timeout"), CURLOPT_EXPECT_100_TIMEOUT_MS, IS_DOUBLE))) {
 		opt->flags |= PHP_HTTP_CURLE_OPTION_TRANSFORM_MS;
 		Z_DVAL(opt->defval) = 1;
 	}
-#endif
 
 	/* tcp */
 	php_http_option_register(registry, ZEND_STRL("tcp_nodelay"), CURLOPT_TCP_NODELAY, _IS_BOOL);
-#if PHP_HTTP_CURL_VERSION(7,25,0)
 	php_http_option_register(registry, ZEND_STRL("tcp_keepalive"), CURLOPT_TCP_KEEPALIVE, _IS_BOOL);
 	if ((opt = php_http_option_register(registry, ZEND_STRL("tcp_keepidle"), CURLOPT_TCP_KEEPIDLE, IS_LONG))) {
 		Z_LVAL(opt->defval) = 60;
@@ -1608,15 +1527,12 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("tcp_keepintvl"), CURLOPT_TCP_KEEPINTVL, IS_LONG))) {
 		Z_LVAL(opt->defval) = 60;
 	}
-#endif
 #if PHP_HTTP_CURL_VERSION(8,9,0)
 	php_http_option_register(registry, ZEND_STRL("tcp_keepcnt"), CURLOPT_TCP_KEEPCNT, IS_LONG);
 #endif
-#if PHP_HTTP_CURL_VERSION(7,49,0)
-# if defined(linux) || defined(__APPLE__)
+#if defined(linux) || defined(__APPLE__)
 	/* CURLOPT_TCP_FASTOPEN is not supported (yet) on Windows */
 	php_http_option_register(registry, ZEND_STRL("tcp_fastopen"), CURLOPT_TCP_FASTOPEN, _IS_BOOL);
-# endif
 #endif
 
 	/* ssl */
@@ -1654,7 +1570,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 				ZVAL_BOOL(&opt->defval, 1);
 				opt->setter = php_http_curle_option_set_ssl_verifyhost;
 			}
-#if PHP_HTTP_CURL_VERSION(7,41,0) && (PHP_HTTP_HAVE_LIBCURL_OPENSSL || PHP_HTTP_HAVE_LIBCURL_NSS || PHP_HTTP_HAVE_LIBCURL_GNUTLS)
+#if (PHP_HTTP_HAVE_LIBCURL_OPENSSL || PHP_HTTP_HAVE_LIBCURL_NSS || PHP_HTTP_HAVE_LIBCURL_GNUTLS)
 			php_http_option_register(ssl_registry, ZEND_STRL("verifystatus"), CURLOPT_SSL_VERIFYSTATUS, _IS_BOOL);
 #endif
 			php_http_option_register(ssl_registry, ZEND_STRL("cipher_list"), CURLOPT_SSL_CIPHER_LIST, IS_STRING);
@@ -1684,39 +1600,33 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 			}
-#if PHP_HTTP_CURL_VERSION(7,19,0)
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("issuercert"), CURLOPT_ISSUERCERT, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 			}
-#	if PHP_HTTP_HAVE_LIBCURL_OPENSSL
+#if PHP_HTTP_HAVE_LIBCURL_OPENSSL
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("crlfile"), CURLOPT_CRLFILE, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 			}
-#	endif
 #endif
-#if (PHP_HTTP_CURL_VERSION(7,19,1) && PHP_HTTP_HAVE_LIBCURL_OPENSSL) || (PHP_HTTP_CURL_VERSION(7,34,0) && PHP_HTTP_HAVE_LIBCURL_NSS) || (PHP_HTTP_CURL_VERSION(7,42,0) && defined(PHP_HTTP_HAVE_LIBCURL_GNUTLS)) || (PHP_HTTP_CURL_VERSION(7,39,0) && defined(PHP_HTTP_HAVE_LIBCURL_GSKIT))
+#if (PHP_HTTP_HAVE_LIBCURL_OPENSSL || PHP_HTTP_HAVE_LIBCURL_NSS || PHP_HTTP_HAVE_LIBCURL_GNUTLS || PHP_HTTP_HAVE_LIBCURL_GSKIT)
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("certinfo"), CURLOPT_CERTINFO, _IS_BOOL))) {
 				ZVAL_FALSE(&opt->defval);
 			}
 #endif
-#if PHP_HTTP_CURL_VERSION(7,36,0)
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("enable_npn"), CURLOPT_SSL_ENABLE_NPN, _IS_BOOL))) {
 				ZVAL_BOOL(&opt->defval, 1);
 			}
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("enable_alpn"), CURLOPT_SSL_ENABLE_ALPN, _IS_BOOL))) {
 				ZVAL_BOOL(&opt->defval, 1);
 			}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,39,0)
 			/* FIXME: see http://curl.haxx.se/libcurl/c/CURLOPT_PINNEDPUBLICKEY.html#AVAILABILITY */
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("pinned_publickey"), CURLOPT_PINNEDPUBLICKEY, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 			}
-#endif
-#if PHP_HTTP_CURL_VERSION(7,21,4) && PHP_HTTP_HAVE_LIBCURL_TLSAUTH_TYPE
+#if PHP_HTTP_HAVE_LIBCURL_TLSAUTH_TYPE
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("tlsauthtype"), CURLOPT_TLSAUTH_TYPE, IS_LONG))) {
 				opt->setter = php_http_curle_option_set_ssl_tlsauthtype;
 			}
@@ -1727,19 +1637,18 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			}
 #endif
-#if PHP_HTTP_CURL_VERSION(7,42,0) && (PHP_HTTP_HAVE_LIBCURL_NSS || PHP_HTTP_HAVE_LIBCURL_SECURETRANSPORT)
+#if (PHP_HTTP_HAVE_LIBCURL_NSS || PHP_HTTP_HAVE_LIBCURL_SECURETRANSPORT)
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("falsestart"), CURLOPT_SSL_FALSESTART, _IS_BOOL))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_IGNORE_RC;
 			}
 #endif
-#if PHP_HTTP_CURL_VERSION(7,61,0) && PHP_HTTP_HAVE_LIBCURL_TLS13_CIPHERS
+#if PHP_HTTP_HAVE_LIBCURL_TLS13_CIPHERS
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("tls13_ciphers"), CURLOPT_TLS13_CIPHERS, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			}
 #endif
 		}
 
-#if PHP_HTTP_CURL_VERSION(7,52,0)
 		/* proxy_ssl */
 		if ((proxy_opt = php_http_option_register(registry, ZEND_STRL("proxy_ssl"), 0, IS_ARRAY))) {
 			php_http_options_t *proxy_registry = &proxy_opt->suboptions;
@@ -1814,20 +1723,16 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			}
 # endif
-# if PHP_HTTP_CURL_VERSION(7,59,0)
-			/* FIXME: see http://curl.haxx.se/libcurl/c/CURLOPT_PINNEDPUBLICKEY.html#AVAILABILITY */
 			if ((opt = php_http_option_register(proxy_registry, ZEND_STRL("pinned_publickey"), CURLOPT_PROXY_PINNEDPUBLICKEY, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 			}
-# endif
-# if PHP_HTTP_CURL_VERSION(7,61,0) && PHP_HTTP_HAVE_LIBCURL_TLS13_CIPHERS
+# if PHP_HTTP_HAVE_LIBCURL_TLS13_CIPHERS
 			if ((opt = php_http_option_register(proxy_registry, ZEND_STRL("tls13_ciphers"), CURLOPT_PROXY_TLS13_CIPHERS, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 			}
 # endif
 		}
-#endif
 	}
 
 #if PHP_HTTP_CURL_VERSION(7,64,1)
@@ -1857,9 +1762,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 # endif
 #endif
 
-#if PHP_HTTP_CURL_VERSION(7,45,0)
 		php_http_option_register(registry, ZEND_STRL("default_protocol"), CURLOPT_DEFAULT_PROTOCOL, IS_STRING);
-#endif
 #if PHP_HTTP_CURL_VERSION(7,85,0)
 		if ((opt = php_http_option_register(registry, ZEND_STRL("protocols"), CURLOPT_PROTOCOLS_STR, IS_STRING))) {
 			opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
@@ -1977,50 +1880,6 @@ static ZEND_RESULT_CODE php_http_curle_set_option(php_http_option_t *opt, zval *
 	return rv;
 }
 
-#if PHP_HTTP_CURL_VERSION(7,30,0) && !PHP_HTTP_CURL_VERSION(7,62,0)
-static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_t *opt, zval *value, void *userdata)
-{
-	php_http_client_t *client = userdata;
-	php_http_client_curl_t *curl = client->ctx;
-	CURLM *ch = curl->handle->multi;
-	HashTable tmp_ht;
-	char **bl = NULL;
-
-	/* array of char *, ending with a NULL */
-	if (value && Z_TYPE_P(value) != IS_NULL) {
-		zval *entry;
-		HashTable *ht = HASH_OF(value);
-		int c = zend_hash_num_elements(ht);
-		char **ptr = ecalloc(c + 1, sizeof(char *));
-
-		bl = ptr;
-
-		zend_hash_init(&tmp_ht, c, NULL, ZVAL_PTR_DTOR, 0);
-		array_join(ht, &tmp_ht, 0, ARRAY_JOIN_STRINGIFY);
-
-		ZEND_HASH_FOREACH_VAL(&tmp_ht, entry)
-		{
-			*ptr++ = Z_STRVAL_P(entry);
-		}
-		ZEND_HASH_FOREACH_END();
-	}
-
-	if (CURLM_OK != curl_multi_setopt(ch, opt->option, bl)) {
-		if (bl) {
-			efree(bl);
-			zend_hash_destroy(&tmp_ht);
-		}
-		return FAILURE;
-	}
-
-	if (bl) {
-		efree(bl);
-		zend_hash_destroy(&tmp_ht);
-	}
-	return SUCCESS;
-}
-#endif
-
 static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h, php_http_client_curl_ops_t *ev_ops, zval *init_data)
 {
 	php_http_client_curl_t *curl = h->ctx;
@@ -2110,41 +1969,15 @@ static void php_http_curlm_options_init(php_http_options_t *registry)
 		ZVAL_LONG(&opt->defval, -1);
 	}
 	/* set max number of connections to a single host */
-#if PHP_HTTP_CURL_VERSION(7,30,0)
 	php_http_option_register(registry, ZEND_STRL("max_host_connections"), CURLMOPT_MAX_HOST_CONNECTIONS, IS_LONG);
-#endif
 	/* max simultaneously open connections */
-#if PHP_HTTP_CURL_VERSION(7,30,0)
 	php_http_option_register(registry, ZEND_STRL("max_total_connections"), CURLMOPT_MAX_TOTAL_CONNECTIONS, IS_LONG);
-#endif
 #if PHP_HTTP_CURL_VERSION(7,67,0)
 	if ((opt = php_http_option_register(registry, ZEND_STRL("max_concurrent_streams"), CURLMOPT_MAX_CONCURRENT_STREAMS, IS_LONG))) {
 		ZVAL_LONG(&opt->defval, 100);
 	}
 #endif
 
-#if !PHP_HTTP_CURL_VERSION(7,62,0)
-	/* enable/disable HTTP pipelining */
-	php_http_option_register(registry, ZEND_STRL("pipelining"), CURLMOPT_PIPELINING, _IS_BOOL);
-# if PHP_HTTP_CURL_VERSION(7,30,0)
-	/* maximum number of requests in a pipeline */
-	if ((opt = php_http_option_register(registry, ZEND_STRL("max_pipeline_length"), CURLMOPT_MAX_PIPELINE_LENGTH, IS_LONG))) {
-		ZVAL_LONG(&opt->defval, 5);
-	}
-	/* chunk length threshold for pipelining */
-	php_http_option_register(registry, ZEND_STRL("chunk_length_penalty_size"), CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE, IS_LONG);
-	/* size threshold for pipelining penalty */
-	php_http_option_register(registry, ZEND_STRL("content_length_penalty_size"), CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE, IS_LONG);
-	/* pipelining server blacklist */
-	if ((opt = php_http_option_register(registry, ZEND_STRL("pipelining_server_bl"), CURLMOPT_PIPELINING_SERVER_BL, IS_ARRAY))) {
-		opt->setter = php_http_curlm_option_set_pipelining_bl;
-	}
-	/* pipelining host blacklist */
-	if ((opt = php_http_option_register(registry, ZEND_STRL("pipelining_site_bl"), CURLMOPT_PIPELINING_SITE_BL, IS_ARRAY))) {
-		opt->setter = php_http_curlm_option_set_pipelining_bl;
-	}
-# endif
-#endif
 	/* events */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("use_eventloop"), 0, 0))) {
 		opt->setter = php_http_curlm_option_set_use_eventloop;
@@ -2236,19 +2069,15 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_reset(php_http_client_curl_
 	curl_easy_setopt(ch, CURLOPT_HTTPGET, 1L);
 	curl_easy_setopt(ch, CURLOPT_NOBODY, 0L);
 	/* libcurl < 7.19.6 does not clear auth info with USERPWD set to NULL */
-#if PHP_HTTP_CURL_VERSION(7,19,1)
 	curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, NULL);
 	curl_easy_setopt(ch, CURLOPT_PROXYPASSWORD, NULL);
 	curl_easy_setopt(ch, CURLOPT_USERNAME, NULL);
 	curl_easy_setopt(ch, CURLOPT_PASSWORD, NULL);
-#endif
 
-#if PHP_HTTP_CURL_VERSION(7,21,3)
 	if (handler->options.resolve) {
 		curl_slist_free_all(handler->options.resolve);
 		handler->options.resolve = NULL;
 	}
-#endif
 	handler->options.retry.count = 0;
 	handler->options.retry.delay = 0;
 	handler->options.redirects = 0;
@@ -2285,13 +2114,8 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_reset(php_http_client_curl_
 	curl_easy_setopt(ch, CURLOPT_DEBUGFUNCTION, php_http_curle_raw_callback);
 	curl_easy_setopt(ch, CURLOPT_READFUNCTION, php_http_curle_read_callback);
 	curl_easy_setopt(ch, CURLOPT_SEEKFUNCTION, php_http_curle_seek_callback);
-#if PHP_HTTP_CURL_VERSION(7,32,0)
 	curl_easy_setopt(ch, CURLOPT_XFERINFOFUNCTION, php_http_curle_xferinfo_callback);
 	curl_easy_setopt(ch, CURLOPT_XFERINFODATA, handler);
-#else
-	curl_easy_setopt(ch, CURLOPT_PROGRESSFUNCTION, php_http_curle_progress_callback);
-	curl_easy_setopt(ch, CURLOPT_PROGRESSDATA, handler);
-#endif
 	curl_easy_setopt(ch, CURLOPT_DEBUGDATA, handler);
 	curl_easy_setopt(ch, CURLOPT_WRITEDATA, handler);
 	curl_easy_setopt(ch, CURLOPT_HEADERDATA, handler);
@@ -2359,20 +2183,11 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 		zval *header_val;
 		zend_string *header_str;
 		php_http_buffer_t header;
-#if !PHP_HTTP_CURL_VERSION(7,23,0)
-		zval *ct = zend_hash_str_find(&msg->hdrs, ZEND_STRL("Content-Length"));
-#endif
 
 		php_http_buffer_init(&header);
 		ZEND_HASH_FOREACH_KEY_VAL(&msg->hdrs, header_key.h, header_key.key, header_val)
 		{
 			if (header_key.key) {
-#if !PHP_HTTP_CURL_VERSION(7,23,0)
-				/* avoid duplicate content-length header */
-				if (ct && ct == header_val) {
-					continue;
-				}
-#endif
 				header_str = zval_get_string(header_val);
 				php_http_buffer_appendf(&header, "%s: %s", header_key.key->val, header_str->val);
 				php_http_buffer_fix(&header);
@@ -2441,11 +2256,7 @@ static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_cur
 static void php_http_client_curl_handler_clear(php_http_client_curl_handler_t *handler)
 {
 	curl_easy_setopt(handler->handle, CURLOPT_NOPROGRESS, 1L);
-#if PHP_HTTP_CURL_VERSION(7,32,0)
 	curl_easy_setopt(handler->handle, CURLOPT_XFERINFOFUNCTION, NULL);
-#else
-	curl_easy_setopt(handler->handle, CURLOPT_PROGRESSFUNCTION, NULL);
-#endif
 	curl_easy_setopt(handler->handle, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(handler->handle, CURLOPT_DEBUGFUNCTION, NULL);
 	/* see gh issue #84 */
@@ -2476,12 +2287,10 @@ static void php_http_client_curl_handler_dtor(php_http_client_curl_handler_t *ha
 	php_http_buffer_dtor(&handler->options.cookies);
 	zend_hash_destroy(&handler->options.cache);
 
-#if PHP_HTTP_CURL_VERSION(7,21,3)
 	if (handler->options.resolve) {
 		curl_slist_free_all(handler->options.resolve);
 		handler->options.resolve = NULL;
 	}
-#endif
 
 	if (handler->options.headers) {
 		curl_slist_free_all(handler->options.headers);
@@ -2975,34 +2784,16 @@ PHP_MINIT_FUNCTION(http_client_curl)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "LARGEFILE", CURL_VERSION_LARGEFILE, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "IDN", CURL_VERSION_IDN, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "SSPI", CURL_VERSION_SSPI, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,21,4)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "TLSAUTH_SRP", CURL_VERSION_TLSAUTH_SRP, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,22,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "NTLM_WB", CURL_VERSION_NTLM_WB, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,33,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "HTTP2", CURL_VERSION_HTTP2, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,38,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "GSSAPI", CURL_VERSION_GSSAPI, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,40,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "KERBEROS5", CURL_VERSION_KERBEROS5, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "UNIX_SOCKETS", CURL_VERSION_UNIX_SOCKETS, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,47,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "PSL", CURL_VERSION_PSL, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,52,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "HTTPS_PROXY", CURL_VERSION_HTTPS_PROXY, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,56,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "MULTI_SSL", CURL_VERSION_MULTI_SSL, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,57,0)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "BROTLI", CURL_VERSION_BROTLI, CONST_CS|CONST_PERSISTENT);
-#endif
 #if PHP_HTTP_CURL_VERSION(7,64,1)
 		REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl\\Features", "ALTSVC", CURL_VERSION_ALTSVC, CONST_CS|CONST_PERSISTENT);
 #endif
@@ -3035,9 +2826,7 @@ PHP_MINIT_FUNCTION(http_client_curl)
 			*tmp_end = '.';
 		}
 		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "ICONV", *tmp_ptr ? tmp_ptr : NULL, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,57,0)
 		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "BROTLI", info->brotli_version, CONST_CS|CONST_PERSISTENT);
-#endif
 #if PHP_HTTP_CURL_VERSION(7,66,0)
 		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "NGHTTP2", info->nghttp2_version, CONST_CS|CONST_PERSISTENT);
 		REGISTER_NS_STRING_OR_NULL_CONSTANT("http\\Client\\Curl\\Versions", "QUIC", info->quic_version, CONST_CS|CONST_PERSISTENT);
@@ -3060,15 +2849,9 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	*/
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_1_0", CURL_HTTP_VERSION_1_0, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_1_1", CURL_HTTP_VERSION_1_1, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,33,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_2_0", CURL_HTTP_VERSION_2_0, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,47,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_2TLS", CURL_HTTP_VERSION_2TLS, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,49,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_2_PRIOR_KNOWLEDGE", CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE, CONST_CS|CONST_PERSISTENT);
-#endif
 #if PHP_HTTP_CURL_VERSION(7,66,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "HTTP_VERSION_3", CURL_HTTP_VERSION_3, CONST_CS|CONST_PERSISTENT);
 #endif
@@ -3078,28 +2861,22 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	* SSL Version Constants
 	*/
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_TLSv1", CURL_SSLVERSION_TLSv1, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,34,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_TLSv1_0", CURL_SSLVERSION_TLSv1_0, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_TLSv1_1", CURL_SSLVERSION_TLSv1_1, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_TLSv1_2", CURL_SSLVERSION_TLSv1_2, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,52,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_TLSv1_3", CURL_SSLVERSION_TLSv1_3, CONST_CS|CONST_PERSISTENT);
-#endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_SSLv2", CURL_SSLVERSION_SSLv2, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_SSLv3", CURL_SSLVERSION_SSLv3, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_ANY", CURL_SSLVERSION_DEFAULT, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,21,4) && PHP_HTTP_HAVE_LIBCURL_TLSAUTH_TYPE
+#if PHP_HTTP_HAVE_LIBCURL_TLSAUTH_TYPE
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "TLSAUTH_SRP", CURL_TLSAUTH_SRP, CONST_CS|CONST_PERSISTENT);
 #endif
 
-#if PHP_HTTP_CURL_VERSION(7,54,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_MAX_DEFAULT", CURL_SSLVERSION_MAX_DEFAULT, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_MAX_TLSv1_0", CURL_SSLVERSION_MAX_TLSv1_0, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_MAX_TLSv1_1", CURL_SSLVERSION_MAX_TLSv1_1, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_MAX_TLSv1_2", CURL_SSLVERSION_MAX_TLSv1_2, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "SSL_VERSION_MAX_TLSv1_3", CURL_SSLVERSION_MAX_TLSv1_3, CONST_CS|CONST_PERSISTENT);
-#endif
 
 	/*
 	* DNS IPvX resolving
@@ -3114,17 +2891,11 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_NONE", CURLAUTH_NONE, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_BASIC", CURLAUTH_BASIC, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_DIGEST", CURLAUTH_DIGEST, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,19,3)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_DIGEST_IE", CURLAUTH_DIGEST_IE, CONST_CS|CONST_PERSISTENT);
-#endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_NTLM", CURLAUTH_NTLM, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_GSSNEG", CURLAUTH_GSSNEGOTIATE, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,38,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_SPNEGO", CURLAUTH_NEGOTIATE, CONST_CS|CONST_PERSISTENT);
-#endif
-#if PHP_HTTP_CURL_VERSION(7,61,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AUTH_BEARER", CURLAUTH_BEARER, CONST_CS|CONST_PERSISTENT);
-#endif
 #if PHP_HTTP_CURL_VERSION(7,75,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "AWS_SIGV4", CURLAUTH_AWS_SIGV4, CONST_CS|CONST_PERSISTENT);
 #endif
@@ -3138,21 +2909,15 @@ PHP_MINIT_FUNCTION(http_client_curl)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "PROXY_SOCKS5_HOSTNAME", CURLPROXY_SOCKS5_HOSTNAME, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "PROXY_SOCKS5", CURLPROXY_SOCKS5, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "PROXY_HTTP", CURLPROXY_HTTP, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,19,4)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "PROXY_HTTP_1_0", CURLPROXY_HTTP_1_0, CONST_CS|CONST_PERSISTENT);
-#endif
 
 	/*
 	* Post Redirection Constants
 	*/
-#if PHP_HTTP_CURL_VERSION(7,19,1)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "POSTREDIR_301", CURL_REDIR_POST_301, CONST_CS|CONST_PERSISTENT);
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "POSTREDIR_302", CURL_REDIR_POST_302, CONST_CS|CONST_PERSISTENT);
-#if PHP_HTTP_CURL_VERSION(7,26,0)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "POSTREDIR_303", CURL_REDIR_POST_303, CONST_CS|CONST_PERSISTENT);
-#endif
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "POSTREDIR_ALL", CURL_REDIR_POST_ALL, CONST_CS|CONST_PERSISTENT);
-#endif
 
 #if PHP_HTTP_CURL_VERSION(7,64,1)
 	REGISTER_NS_LONG_CONSTANT("http\\Client\\Curl", "ALTSVC_READONLYFILE", CURLALTSVC_READONLYFILE, CONST_CS|CONST_PERSISTENT);
