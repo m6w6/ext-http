@@ -31,10 +31,10 @@ https://mdref.m6w6.name/http
   <email>mike@php.net</email>
   <active>yes</active>
  </lead>
- <date>2024-11-05</date>
+ <date>2025-10-09</date>
  <version>
-  <release>4.2.6</release>
-  <api>4.2.0</api>
+  <release>4.3.0</release>
+  <api>4.3.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -42,8 +42,10 @@ https://mdref.m6w6.name/http
  </stability>
  <license uri="http://copyfree.org/content/standard/licenses/2bsd/license.txt">BSD-2-Clause</license>
  <notes><![CDATA[
-* Fix #136 Potential incompatibility with libcurl 8.9.0; add workaround for CURLOPT_INTERFACE for v8.9-8.10
-* Fix #137 Potential compilation error with PHP 8.4; php_lcg.h was deprecated in 8.2
+* Fix PHP-8.5 compatibility (#150, #149, #148)
+* Fix GCC-15 compatibility (#143)
+* Add new curl options: default_protocol, protocols, redir_protocols (#146)
+* Add recent curl info and options up to v8.12 (c08b957)
 ]]></notes>
  <contents>
   <dir name="/">
