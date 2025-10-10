@@ -1880,6 +1880,50 @@ static ZEND_RESULT_CODE php_http_curle_set_option(php_http_option_t *opt, zval *
 	return rv;
 }
 
+#if !PHP_HTTP_CURL_VERSION(7,62,0)
+static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_t *opt, zval *value, void *userdata)
+{
+	php_http_client_t *client = userdata;
+	php_http_client_curl_t *curl = client->ctx;
+	CURLM *ch = curl->handle->multi;
+	HashTable tmp_ht;
+	char **bl = NULL;
+
+	/* array of char *, ending with a NULL */
+	if (value && Z_TYPE_P(value) != IS_NULL) {
+		zval *entry;
+		HashTable *ht = HASH_OF(value);
+		int c = zend_hash_num_elements(ht);
+		char **ptr = ecalloc(c + 1, sizeof(char *));
+
+		bl = ptr;
+
+		zend_hash_init(&tmp_ht, c, NULL, ZVAL_PTR_DTOR, 0);
+		array_join(ht, &tmp_ht, 0, ARRAY_JOIN_STRINGIFY);
+
+		ZEND_HASH_FOREACH_VAL(&tmp_ht, entry)
+		{
+			*ptr++ = Z_STRVAL_P(entry);
+		}
+		ZEND_HASH_FOREACH_END();
+	}
+
+	if (CURLM_OK != curl_multi_setopt(ch, opt->option, bl)) {
+		if (bl) {
+			efree(bl);
+			zend_hash_destroy(&tmp_ht);
+		}
+		return FAILURE;
+	}
+
+	if (bl) {
+		efree(bl);
+		zend_hash_destroy(&tmp_ht);
+	}
+	return SUCCESS;
+}
+#endif
+
 static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h, php_http_client_curl_ops_t *ev_ops, zval *init_data)
 {
 	php_http_client_curl_t *curl = h->ctx;
@@ -1978,6 +2022,26 @@ static void php_http_curlm_options_init(php_http_options_t *registry)
 	}
 #endif
 
+#if !PHP_HTTP_CURL_VERSION(7,62,0)
+	/* enable/disable HTTP pipelining */
+	php_http_option_register(registry, ZEND_STRL("pipelining"), CURLMOPT_PIPELINING, _IS_BOOL);
+	/* maximum number of requests in a pipeline */
+	if ((opt = php_http_option_register(registry, ZEND_STRL("max_pipeline_length"), CURLMOPT_MAX_PIPELINE_LENGTH, IS_LONG))) {
+		ZVAL_LONG(&opt->defval, 5);
+	}
+	/* chunk length threshold for pipelining */
+	php_http_option_register(registry, ZEND_STRL("chunk_length_penalty_size"), CURLMOPT_CHUNK_LENGTH_PENALTY_SIZE, IS_LONG);
+	/* size threshold for pipelining penalty */
+	php_http_option_register(registry, ZEND_STRL("content_length_penalty_size"), CURLMOPT_CONTENT_LENGTH_PENALTY_SIZE, IS_LONG);
+	/* pipelining server blacklist */
+	if ((opt = php_http_option_register(registry, ZEND_STRL("pipelining_server_bl"), CURLMOPT_PIPELINING_SERVER_BL, IS_ARRAY))) {
+		opt->setter = php_http_curlm_option_set_pipelining_bl;
+	}
+	/* pipelining host blacklist */
+	if ((opt = php_http_option_register(registry, ZEND_STRL("pipelining_site_bl"), CURLMOPT_PIPELINING_SITE_BL, IS_ARRAY))) {
+		opt->setter = php_http_curlm_option_set_pipelining_bl;
+	}
+#endif
 	/* events */
 	if ((opt = php_http_option_register(registry, ZEND_STRL("use_eventloop"), 0, 0))) {
 		opt->setter = php_http_curlm_option_set_use_eventloop;
