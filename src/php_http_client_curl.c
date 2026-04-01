@@ -677,15 +677,19 @@ static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
 				}
 #endif
 				break;
+#if !PHP_HTTP_CURL_VERSION(8,3,0)
 			case CURLSSLBACKEND_NSS:
 				backend = "nss";
 				break;
 			case CURLSSLBACKEND_GSKIT:
 				backend = "gskit";
 				break;
+#endif
+#if !PHP_HTTP_CURL_VERSION(7,69,0)
 			case CURLSSLBACKEND_POLARSSL:
 				backend = "polarssl";
 				break;
+#endif
 			case CURLSSLBACKEND_CYASSL:
 				backend = "cyassl";
 				break;
@@ -1592,6 +1596,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 # endif
 			}
 #endif
+#if !PHP_HTTP_CURL_VERSION(7,84,0)
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("random_file"), CURLOPT_RANDOM_FILE, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
@@ -1600,6 +1605,7 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
 			}
+#endif
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("issuercert"), CURLOPT_ISSUERCERT, IS_STRING))) {
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_STRLEN;
 				opt->flags |= PHP_HTTP_CURLE_OPTION_CHECK_BASEDIR;
@@ -1615,9 +1621,11 @@ static void php_http_curle_options_init(php_http_options_t *registry)
 				ZVAL_FALSE(&opt->defval);
 			}
 #endif
+#if !PHP_HTTP_CURL_VERSION(7,86,0)
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("enable_npn"), CURLOPT_SSL_ENABLE_NPN, _IS_BOOL))) {
 				ZVAL_BOOL(&opt->defval, 1);
 			}
+#endif
 			if ((opt = php_http_option_register(ssl_registry, ZEND_STRL("enable_alpn"), CURLOPT_SSL_ENABLE_ALPN, _IS_BOOL))) {
 				ZVAL_BOOL(&opt->defval, 1);
 			}
