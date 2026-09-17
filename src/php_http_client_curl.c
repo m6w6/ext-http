@@ -323,7 +323,7 @@ static size_t php_http_curle_body_callback(char *data, size_t n, size_t l, void 
 	return php_http_message_body_append(h->response.body, data, n*l);
 }
 
-static ZEND_RESULT_CODE php_http_curle_get_info(CURL *ch, HashTable *info)
+static zend_result php_http_curle_get_info(CURL *ch, HashTable *info)
 {
 	char *c = NULL;
 	long l = 0;
@@ -897,7 +897,7 @@ static php_http_options_t php_http_curle_options, php_http_curlm_options;
 #define PHP_HTTP_CURLE_OPTION_TRANSFORM_MS		0x0004
 #define PHP_HTTP_CURLE_OPTION_IGNORE_RC			0x0008
 
-static ZEND_RESULT_CODE php_http_curle_option_set_ssl_verifyhost(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_ssl_verifyhost(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -908,7 +908,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_ssl_verifyhost(php_http_option
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_cookiesession(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_cookiesession(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -928,7 +928,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_cookiesession(php_http_option_
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_cookiestore(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_cookiestore(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -961,7 +961,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_cookiestore(php_http_option_t 
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_cookies(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_cookies(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1010,7 +1010,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_cookies(php_http_option_t *opt
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_encodecookies(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_encodecookies(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 
@@ -1018,7 +1018,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_encodecookies(php_http_option_
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_lastmodified(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_lastmodified(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1047,7 +1047,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_lastmodified(php_http_option_t
 }
 
 #if PHP_HTTP_CURL_VERSION(7,64,1)
-static ZEND_RESULT_CODE php_http_curle_option_set_altsvc_ctrl(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_altsvc_ctrl(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1061,7 +1061,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_altsvc_ctrl(php_http_option_t 
 }
 #endif
 
-static ZEND_RESULT_CODE php_http_curle_option_set_compress(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_compress(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1073,7 +1073,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_compress(php_http_option_t *op
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_etag(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_etag(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	php_http_buffer_t header;
@@ -1089,7 +1089,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_etag(php_http_option_t *opt, z
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_range(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_range(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1133,7 +1133,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_range(php_http_option_t *opt, 
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_resume(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_resume(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1147,7 +1147,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_resume(php_http_option_t *opt,
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_retrydelay(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_retrydelay(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 
@@ -1155,7 +1155,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_retrydelay(php_http_option_t *
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_retrycount(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_retrycount(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 
@@ -1163,7 +1163,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_retrycount(php_http_option_t *
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_redirect(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_redirect(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1176,7 +1176,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_redirect(php_http_option_t *op
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_portrange(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_portrange(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1204,7 +1204,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_portrange(php_http_option_t *o
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_proxyheader(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_proxyheader(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 
@@ -1241,7 +1241,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_proxyheader(php_http_option_t 
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curle_option_set_resolve(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_resolve(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1270,7 +1270,7 @@ static ZEND_RESULT_CODE php_http_curle_option_set_resolve(php_http_option_t *opt
 }
 
 #if PHP_HTTP_HAVE_LIBCURL_TLSAUTH_TYPE
-static ZEND_RESULT_CODE php_http_curle_option_set_ssl_tlsauthtype(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_option_set_ssl_tlsauthtype(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
@@ -1800,13 +1800,13 @@ static zval *php_http_curle_get_option(php_http_option_t *opt, HashTable *option
 	return option;
 }
 
-static ZEND_RESULT_CODE php_http_curle_set_option(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curle_set_option(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_curl_handler_t *curl = userdata;
 	CURL *ch = curl->handle;
 	zval tmp;
 	CURLcode rc = CURLE_UNKNOWN_OPTION;
-	ZEND_RESULT_CODE rv = SUCCESS;
+	zend_result rv = SUCCESS;
 
 	if (!val) {
 		val = &opt->defval;
@@ -1889,7 +1889,7 @@ static ZEND_RESULT_CODE php_http_curle_set_option(php_http_option_t *opt, zval *
 }
 
 #if !PHP_HTTP_CURL_VERSION(7,62,0)
-static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_t *opt, zval *value, void *userdata)
+static zend_result php_http_curlm_option_set_pipelining_bl(php_http_option_t *opt, zval *value, void *userdata)
 {
 	php_http_client_t *client = userdata;
 	php_http_client_curl_t *curl = client->ctx;
@@ -1932,7 +1932,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_pipelining_bl(php_http_option_
 }
 #endif
 
-static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h, php_http_client_curl_ops_t *ev_ops, zval *init_data)
+static inline zend_result php_http_curlm_use_eventloop(php_http_client_t *h, php_http_client_curl_ops_t *ev_ops, zval *init_data)
 {
 	php_http_client_curl_t *curl = h->ctx;
 	void *ev_ctx;
@@ -1955,7 +1955,7 @@ static inline ZEND_RESULT_CODE php_http_curlm_use_eventloop(php_http_client_t *h
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_curlm_option_set_use_eventloop(php_http_option_t *opt, zval *value, void *userdata)
+static zend_result php_http_curlm_option_set_use_eventloop(php_http_option_t *opt, zval *value, void *userdata)
 {
 	php_http_client_t *client = userdata;
 	php_http_client_curl_ops_t *ev_ops = NULL;
@@ -1971,7 +1971,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_use_eventloop(php_http_option_
 	return php_http_curlm_use_eventloop(client, ev_ops, value);
 }
 
-static ZEND_RESULT_CODE php_http_curlm_option_set_share_cookies(php_http_option_t *opt, zval *value, void *userdata)
+static zend_result php_http_curlm_option_set_share_cookies(php_http_option_t *opt, zval *value, void *userdata)
 {
 	php_http_client_t *client = userdata;
 	php_http_client_curl_t *curl = client->ctx;
@@ -1991,7 +1991,7 @@ static ZEND_RESULT_CODE php_http_curlm_option_set_share_cookies(php_http_option_
 }
 
 #if PHP_HTTP_HAVE_LIBCURL_SHARE_SSL
-static ZEND_RESULT_CODE php_http_curlm_option_set_share_ssl(php_http_option_t *opt, zval *value, void *userdata)
+static zend_result php_http_curlm_option_set_share_ssl(php_http_option_t *opt, zval *value, void *userdata)
 {
 	php_http_client_t *client = userdata;
 	php_http_client_curl_t *curl = client->ctx;
@@ -2067,14 +2067,14 @@ static void php_http_curlm_options_init(php_http_options_t *registry)
 #endif
 }
 
-static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *val, void *userdata)
+static zend_result php_http_curlm_set_option(php_http_option_t *opt, zval *val, void *userdata)
 {
 	php_http_client_t *client = userdata;
 	php_http_client_curl_t *curl = client->ctx;
 	CURLM *ch = curl->handle->multi;
 	zval zopt, *orig = val;
 	CURLMcode rc = CURLM_UNKNOWN_OPTION;
-	ZEND_RESULT_CODE rv = SUCCESS;
+	zend_result rv = SUCCESS;
 
 	if (!val) {
 		val = &opt->defval;
@@ -2117,7 +2117,7 @@ static ZEND_RESULT_CODE php_http_curlm_set_option(php_http_option_t *opt, zval *
 
 /* client ops */
 
-static ZEND_RESULT_CODE php_http_client_curl_handler_reset(php_http_client_curl_handler_t *handler)
+static zend_result php_http_client_curl_handler_reset(php_http_client_curl_handler_t *handler)
 {
 	php_http_client_curl_t *curl = handler->client->ctx;
 	CURL *ch = handler->handle;
@@ -2225,7 +2225,7 @@ static php_http_client_curl_handler_t *php_http_client_curl_handler_init(php_htt
 }
 
 
-static ZEND_RESULT_CODE php_http_client_curl_handler_prepare(php_http_client_curl_handler_t *curl, php_http_client_enqueue_t *enqueue)
+static zend_result php_http_client_curl_handler_prepare(php_http_client_curl_handler_t *curl, php_http_client_enqueue_t *enqueue)
 {
 	size_t body_size;
 	php_http_message_t *msg = enqueue->request;
@@ -2475,7 +2475,7 @@ static php_resource_factory_t *create_rf(php_http_client_t *h, php_http_client_e
 	return rf;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_enqueue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
+static zend_result php_http_client_curl_enqueue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
 {
 	CURLMcode rs;
 	php_http_client_curl_t *curl = h->ctx;
@@ -2520,7 +2520,7 @@ static ZEND_RESULT_CODE php_http_client_curl_enqueue(php_http_client_t *h, php_h
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_requeue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
+static zend_result php_http_client_curl_requeue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
 {
 	CURLMcode rs;
 	php_http_client_curl_t *curl = h->ctx;
@@ -2557,7 +2557,7 @@ static ZEND_RESULT_CODE php_http_client_curl_requeue(php_http_client_t *h, php_h
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_dequeue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
+static zend_result php_http_client_curl_dequeue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
 {
 	CURLMcode rs;
 	php_http_client_curl_t *curl = h->ctx;
@@ -2595,7 +2595,7 @@ static void php_http_client_curl_reset(php_http_client_t *h)
 #	define SELECT_ERROR -1
 #endif
 
-static ZEND_RESULT_CODE php_http_client_curl_wait(php_http_client_t *h, struct timeval *custom_timeout)
+static zend_result php_http_client_curl_wait(php_http_client_t *h, struct timeval *custom_timeout)
 {
 	int MAX;
 	fd_set R, W, E;
@@ -2644,7 +2644,7 @@ static int php_http_client_curl_once(php_http_client_t *h)
 	return curl->unfinished;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_exec(php_http_client_t *h)
+static zend_result php_http_client_curl_exec(php_http_client_t *h)
 {
 	php_http_client_curl_t *curl = h->ctx;
 
@@ -2669,7 +2669,7 @@ static ZEND_RESULT_CODE php_http_client_curl_exec(php_http_client_t *h)
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
+static zend_result php_http_client_curl_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
 {
 	php_http_client_curl_t *curl = h->ctx;
 
@@ -2730,7 +2730,7 @@ static int apply_available_options(zval *pDest, int num_args, va_list args, zend
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void **res)
+static zend_result php_http_client_curl_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void **res)
 {
 	php_http_client_enqueue_t *enqueue;
 

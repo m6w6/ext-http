@@ -93,7 +93,7 @@ static inline void php_http_querystring_get(zval *instance, int type, char *name
 }
 
 #if PHP_HTTP_HAVE_ICONV
-ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe)
+zend_result php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe)
 {
 	zval *entry;
 	zend_string *xkey, *xstr;
@@ -148,7 +148,7 @@ ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie
 }
 #endif /* HAVE_ICONV */
 
-ZEND_RESULT_CODE php_http_querystring_ctor(zval *instance, zval *params)
+zend_result php_http_querystring_ctor(zval *instance, zval *params)
 {
 	php_http_querystring_set(instance, params, 0);
 	return SUCCESS;
@@ -163,7 +163,7 @@ static int apply_querystring(zval *val)
 			zval tmp = {0};
 
 			ZVAL_COPY(&tmp, zvalue);
-			zval_dtor(val);
+			zval_ptr_dtor_nogc(val);
 			ZVAL_COPY_VALUE(val, &tmp);
 		}
 	}
@@ -190,9 +190,9 @@ static int apply_querystring_filter(zval *val)
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size_t len)
+zend_result php_http_querystring_parse(HashTable *ht, const char *str, size_t len)
 {
-	ZEND_RESULT_CODE rv = FAILURE;
+	zend_result rv = FAILURE;
 	php_http_params_opts_t opts;
 	php_http_params_token_t psep = { ZEND_STRL("&") }, *psepp[] = { &psep, NULL };
 	php_http_params_token_t vsep = { ZEND_STRL("=") }, *vsepp[] = { &vsep, NULL };
@@ -235,7 +235,7 @@ ZEND_RESULT_CODE php_http_querystring_parse(HashTable *ht, const char *str, size
 	return rv;
 }
 
-ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *outstring)
+zend_result php_http_querystring_update(zval *qarray, zval *params, zval *outstring)
 {
 	/* enforce proper type */
 	if (Z_TYPE_P(qarray) != IS_ARRAY) {
@@ -328,7 +328,7 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 		}
 		ZEND_HASH_FOREACH_END();
 
-		zval_dtor(&zv);
+		zval_ptr_dtor_nogc(&zv);
 	}
 
 	zend_hash_apply(Z_ARRVAL_P(qarray), apply_querystring_filter);
@@ -339,7 +339,7 @@ ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *o
 		size_t l;
 
 		if (SUCCESS == php_http_url_encode_hash(Z_ARRVAL_P(qarray), NULL, 0, &s, &l)) {
-			zval_dtor(outstring);
+			zval_ptr_dtor_nogc(outstring);
 			ZVAL_STR(outstring, php_http_cs2zs(s, l));
 		} else {
 			php_error_docref(NULL, E_WARNING, "Failed to encode query string");

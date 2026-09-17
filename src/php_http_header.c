@@ -12,7 +12,7 @@
 
 #include "php_http_api.h"
 
-ZEND_RESULT_CODE php_http_header_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data)
+zend_result php_http_header_parse(const char *header, size_t length, HashTable *headers, php_http_info_callback_t callback_func, void **callback_data)
 {
 	php_http_header_parser_t ctx;
 	php_http_buffer_t buf;
@@ -330,7 +330,7 @@ PHP_METHOD(HttpHeader, negotiate)
 	}
 	if (rs_array) {
 		ZVAL_DEREF(rs_array);
-		zval_dtor(rs_array);
+		zval_ptr_dtor_nogc(rs_array);
 		array_init(rs_array);
 	}
 
@@ -397,7 +397,7 @@ PHP_METHOD(HttpHeader, parse)
 		array_init(return_value);
 
 		if (SUCCESS != php_http_header_parse(header_str, header_len, Z_ARRVAL_P(return_value), NULL, NULL)) {
-			zval_dtor(return_value);
+			zval_ptr_dtor_nogc(return_value);
 			RETURN_FALSE;
 		} else {
 			if (ce && instanceof_function(ce, php_http_header_class_entry)) {

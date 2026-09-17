@@ -157,7 +157,7 @@ php_http_encoding_stream_t *php_http_encoding_stream_copy(php_http_encoding_stre
 	return NULL;
 }
 
-ZEND_RESULT_CODE php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
+zend_result php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
 {
 	php_http_encoding_stream_t *ss;
 
@@ -173,9 +173,9 @@ ZEND_RESULT_CODE php_http_encoding_stream_reset(php_http_encoding_stream_t **s)
 	return FAILURE;
 }
 
-ZEND_RESULT_CODE php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len)
+zend_result php_http_encoding_stream_update(php_http_encoding_stream_t *s, const char *in_str, size_t in_len, char **out_str, size_t *out_len)
 {
-	ZEND_RESULT_CODE rc = FAILURE;
+	zend_result rc = FAILURE;
 
 	if (EXPECTED(s->ops->update)) {
 		rc = s->ops->update(s, in_str, in_len, out_str, out_len);
@@ -186,7 +186,7 @@ ZEND_RESULT_CODE php_http_encoding_stream_update(php_http_encoding_stream_t *s, 
 	return rc;
 }
 
-ZEND_RESULT_CODE php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
+zend_result php_http_encoding_stream_flush(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
 {
 	if (!s->ops->flush) {
 		*out_str = NULL;
@@ -204,7 +204,7 @@ zend_bool php_http_encoding_stream_done(php_http_encoding_stream_t *s)
 	return s->ops->done(s);
 }
 
-ZEND_RESULT_CODE php_http_encoding_stream_finish(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
+zend_result php_http_encoding_stream_finish(php_http_encoding_stream_t *s, char **out_str, size_t *out_len)
 {
 	if (!s->ops->finish) {
 		*out_str = NULL;
@@ -273,7 +273,7 @@ static php_http_encoding_stream_t *dechunk_copy(php_http_encoding_stream_t *from
 	return NULL;
 }
 
-static ZEND_RESULT_CODE dechunk_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
+static zend_result dechunk_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
 {
 	php_http_buffer_t tmp;
 	struct dechunk_ctx *ctx = s->ctx;
@@ -400,7 +400,7 @@ static ZEND_RESULT_CODE dechunk_update(php_http_encoding_stream_t *s, const char
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE dechunk_flush(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
+static zend_result dechunk_flush(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
 {
 	struct dechunk_ctx *ctx = s->ctx;
 
@@ -666,7 +666,7 @@ static PHP_METHOD(HttpDechunkStream, decode)
 		if (EXPECTED(end_ptr = php_http_encoding_dechunk(str, len, &enc_str, &enc_len))) {
 			if (zlen) {
 				ZVAL_DEREF(zlen);
-				zval_dtor(zlen);
+				zval_ptr_dtor_nogc(zlen);
 				ZVAL_LONG(zlen, str + len - end_ptr);
 			}
 			if (enc_str) {
@@ -693,7 +693,7 @@ PHP_MINIT_FUNCTION(http_encoding)
 	php_http_encoding_stream_class_entry->ce_flags |= ZEND_ACC_EXPLICIT_ABSTRACT_CLASS;
 	php_http_encoding_stream_class_entry->create_object = php_http_encoding_stream_object_new;
 	memcpy(&php_http_encoding_stream_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	php_http_encoding_stream_object_handlers.offset = XtOffsetOf(php_http_encoding_stream_object_t, zo);
+	php_http_encoding_stream_object_handlers.offset = offsetof(php_http_encoding_stream_object_t, zo);
 	php_http_encoding_stream_object_handlers.clone_obj = php_http_encoding_stream_object_clone;
 	php_http_encoding_stream_object_handlers.free_obj = php_http_encoding_stream_object_free;
 

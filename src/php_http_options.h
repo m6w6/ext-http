@@ -16,7 +16,7 @@
 typedef struct php_http_option php_http_option_t;
 typedef struct php_http_options php_http_options_t;
 
-typedef ZEND_RESULT_CODE (*php_http_option_set_callback_t)(php_http_option_t *opt, zval *val, void *userdata);
+typedef zend_result (*php_http_option_set_callback_t)(php_http_option_t *opt, zval *val, void *userdata);
 typedef zval *(*php_http_option_get_callback_t)(php_http_option_t *opt, HashTable *options, void *userdata);
 
 struct php_http_options {
@@ -42,7 +42,7 @@ struct php_http_option {
 };
 
 PHP_HTTP_API php_http_options_t *php_http_options_init(php_http_options_t *registry, zend_bool persistent);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_options_apply(php_http_options_t *registry, HashTable *options, void *userdata);
+PHP_HTTP_API zend_result php_http_options_apply(php_http_options_t *registry, HashTable *options, void *userdata);
 PHP_HTTP_API void php_http_options_dtor(php_http_options_t *registry);
 PHP_HTTP_API void php_http_options_free(php_http_options_t **registry);
 

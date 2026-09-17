@@ -32,8 +32,8 @@
 #define BOUNDARY_CLOSE(body) \
 		php_http_message_body_appendf(body, PHP_HTTP_CRLF "--%s--" PHP_HTTP_CRLF, php_http_message_body_boundary(body))
 
-static ZEND_RESULT_CODE add_recursive_fields(php_http_message_body_t *body, const char *name, HashTable *fields);
-static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const char *name, HashTable *files);
+static zend_result add_recursive_fields(php_http_message_body_t *body, const char *name, HashTable *fields);
+static zend_result add_recursive_files(php_http_message_body_t *body, const char *name, HashTable *files);
 
 php_http_message_body_t *php_http_message_body_init(php_http_message_body_t **body_ptr, php_stream *stream)
 {
@@ -158,7 +158,7 @@ zend_string *php_http_message_body_to_string(php_http_message_body_t *body, off_
 	return php_stream_copy_to_mem(s, forlen, 0);
 }
 
-ZEND_RESULT_CODE php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *dst, off_t offset, size_t forlen)
+zend_result php_http_message_body_to_stream(php_http_message_body_t *body, php_stream *dst, off_t offset, size_t forlen)
 {
 	php_stream *s = php_http_message_body_stream(body);
 
@@ -170,7 +170,7 @@ ZEND_RESULT_CODE php_http_message_body_to_stream(php_http_message_body_t *body, 
 	return php_stream_copy_to_stream_ex(s, dst, forlen, NULL);
 }
 
-ZEND_RESULT_CODE php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen)
+zend_result php_http_message_body_to_callback(php_http_message_body_t *body, php_http_pass_callback_t cb, void *cb_arg, off_t offset, size_t forlen)
 {
 	php_stream *s = php_http_message_body_stream(body);
 	char *buf = emalloc(0x1000);
@@ -240,7 +240,7 @@ size_t php_http_message_body_appendf(php_http_message_body_t *body, const char *
 	return print_len;
 }
 
-ZEND_RESULT_CODE php_http_message_body_add_form(php_http_message_body_t *body, HashTable *fields, HashTable *files)
+zend_result php_http_message_body_add_form(php_http_message_body_t *body, HashTable *fields, HashTable *files)
 {
 	if (fields) {
 		if (SUCCESS != add_recursive_fields(body, NULL, fields)) {
@@ -264,7 +264,7 @@ void php_http_message_body_add_part(php_http_message_body_t *body, php_http_mess
 }
 
 
-ZEND_RESULT_CODE php_http_message_body_add_form_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
+zend_result php_http_message_body_add_form_field(php_http_message_body_t *body, const char *name, const char *value_str, size_t value_len)
 {
 	zend_string *safe_name, *zstr_name = zend_string_init(name, strlen(name), 0);
 
@@ -289,7 +289,7 @@ ZEND_RESULT_CODE php_http_message_body_add_form_field(php_http_message_body_t *b
 	return SUCCESS;
 }
 
-ZEND_RESULT_CODE php_http_message_body_add_form_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
+zend_result php_http_message_body_add_form_file(php_http_message_body_t *body, const char *name, const char *ctype, const char *path, php_stream *in)
 {
 	size_t path_len = strlen(path);
 	char *path_dup = estrndup(path, path_len);
@@ -340,15 +340,15 @@ static inline char *format_key(php_http_arrkey_t *key, const char *prefix) {
 	return new_key;
 }
 
-static ZEND_RESULT_CODE add_recursive_field_value(php_http_message_body_t *body, const char *name, zval *value)
+static zend_result add_recursive_field_value(php_http_message_body_t *body, const char *name, zval *value)
 {
 	zend_string *zs = zval_get_string(value);
-	ZEND_RESULT_CODE rc = php_http_message_body_add_form_field(body, name, zs->val, zs->len);
+	zend_result rc = php_http_message_body_add_form_field(body, name, zs->val, zs->len);
 	zend_string_release(zs);
 	return rc;
 }
 
-static ZEND_RESULT_CODE add_recursive_fields(php_http_message_body_t *body, const char *name, HashTable *fields)
+static zend_result add_recursive_fields(php_http_message_body_t *body, const char *name, HashTable *fields)
 {
 	zval *val;
 	php_http_arrkey_t key;
@@ -379,7 +379,7 @@ static ZEND_RESULT_CODE add_recursive_fields(php_http_message_body_t *body, cons
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const char *name, HashTable *files)
+static zend_result add_recursive_files(php_http_message_body_t *body, const char *name, HashTable *files)
 {
 	zval *zdata = NULL, *zfile, *zname, *ztype;
 
@@ -438,7 +438,7 @@ static ZEND_RESULT_CODE add_recursive_files(php_http_message_body_t *body, const
 			zend_string *znc = zval_get_string(zname), *ztc = zval_get_string(ztype);
 			php_http_arrkey_t arrkey = {0, znc, 0, 0};
 			char *key = format_key(&arrkey, name);
-			ZEND_RESULT_CODE ret = php_http_message_body_add_form_file(body, key, ztc->val, zfc->val, stream);
+			zend_result ret = php_http_message_body_add_form_file(body, key, ztc->val, zfc->val, stream);
 
 			efree(key);
 			zend_string_release(znc);
@@ -548,7 +548,11 @@ php_http_message_t *php_http_message_body_split(php_http_message_body_t *body, c
 
 	php_stream_rewind(s);
 	while (!php_stream_eof(s)) {
+#if PHP_VERSION_ID < 80600
 		php_http_buffer_passthru(&tmp, 0x1000, (php_http_buffer_pass_func_t) _php_stream_read, s, splitbody, &arg);
+#else
+		php_http_buffer_passthru(&tmp, 0x1000, (php_http_buffer_pass_func_t) php_stream_read, s, splitbody, &arg);
+#endif
 	}
 
 	msg = arg.parser->message;
@@ -986,7 +990,7 @@ PHP_MINIT_FUNCTION(http_message_body)
 	php_http_message_body_class_entry = zend_register_internal_class(&ce);
 	php_http_message_body_class_entry->create_object = php_http_message_body_object_new;
 	memcpy(&php_http_message_body_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	php_http_message_body_object_handlers.offset = XtOffsetOf(php_http_message_body_object_t, zo);
+	php_http_message_body_object_handlers.offset = offsetof(php_http_message_body_object_t, zo);
 	php_http_message_body_object_handlers.clone_obj = php_http_message_body_object_clone;
 	php_http_message_body_object_handlers.free_obj = php_http_message_body_object_free;
 	php_http_message_body_object_handlers.get_gc = php_http_message_body_object_get_gc;

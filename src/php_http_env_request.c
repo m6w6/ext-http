@@ -182,7 +182,7 @@ static PHP_METHOD(HttpEnvRequest, __construct)
 		zend_fcall_info_call(&fci, &fcc, &rv, NULL); \
 		zend_fcall_info_args_clear(&fci, 1); \
 		efree(args); \
-		zval_dtor(&mn); \
+		zval_ptr_dtor_nogc(&mn); \
 		RETVAL_ZVAL(&rv, 0, 1); \
 	} while(0);
 
