@@ -16,17 +16,17 @@
 typedef struct php_http_env_response php_http_env_response_t;
 
 typedef struct php_http_env_response_ops {
-	ZEND_RESULT_CODE (*init)(php_http_env_response_t *r, void *arg);
+	zend_result (*init)(php_http_env_response_t *r, void *arg);
 	void (*dtor)(php_http_env_response_t *r);
 	long (*get_status)(php_http_env_response_t *r);
-	ZEND_RESULT_CODE (*set_status)(php_http_env_response_t *r, long http_code);
-	ZEND_RESULT_CODE (*set_protocol_version)(php_http_env_response_t *r, php_http_version_t *v);
-	ZEND_RESULT_CODE (*set_header)(php_http_env_response_t *r, const char *fmt, ...);
-	ZEND_RESULT_CODE (*add_header)(php_http_env_response_t *r, const char *fmt, ...);
-	ZEND_RESULT_CODE (*del_header)(php_http_env_response_t *r, const char *header_str, size_t header_len);
-	ZEND_RESULT_CODE (*write)(php_http_env_response_t *r, const char *data_str, size_t data_len);
-	ZEND_RESULT_CODE (*flush)(php_http_env_response_t *r);
-	ZEND_RESULT_CODE (*finish)(php_http_env_response_t *r);
+	zend_result (*set_status)(php_http_env_response_t *r, long http_code);
+	zend_result (*set_protocol_version)(php_http_env_response_t *r, php_http_version_t *v);
+	zend_result (*set_header)(php_http_env_response_t *r, const char *fmt, ...);
+	zend_result (*add_header)(php_http_env_response_t *r, const char *fmt, ...);
+	zend_result (*del_header)(php_http_env_response_t *r, const char *header_str, size_t header_len);
+	zend_result (*write)(php_http_env_response_t *r, const char *data_str, size_t data_len);
+	zend_result (*flush)(php_http_env_response_t *r);
+	zend_result (*finish)(php_http_env_response_t *r);
 } php_http_env_response_ops_t;
 
 PHP_HTTP_API php_http_env_response_ops_t *php_http_env_response_get_sapi_ops(void);
@@ -63,7 +63,7 @@ struct php_http_env_response {
 };
 
 PHP_HTTP_API php_http_env_response_t *php_http_env_response_init(php_http_env_response_t *r, zval *options, php_http_env_response_ops_t *ops, void *ops_ctx);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_env_response_send(php_http_env_response_t *r);
+PHP_HTTP_API zend_result php_http_env_response_send(php_http_env_response_t *r);
 PHP_HTTP_API void php_http_env_response_dtor(php_http_env_response_t *r);
 PHP_HTTP_API void php_http_env_response_free(php_http_env_response_t **r);
 

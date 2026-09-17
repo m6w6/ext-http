@@ -24,6 +24,11 @@ typedef struct php_http_client_curl_user_context {
 	php_http_object_method_t once;
 	php_http_object_method_t wait;
 	php_http_object_method_t send;
+#if PHP_VERSION_ID < 80600
+	zend_internal_arg_info ai;
+#else
+	zend_arg_info ai;
+#endif
 } php_http_client_curl_user_context_t;
 
 PHP_HTTP_API zend_class_entry *php_http_client_curl_user_get_class_entry();

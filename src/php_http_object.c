@@ -38,7 +38,7 @@ void php_http_object_free(zend_object *object)
 	zend_object_std_dtor(object);
 }
 
-ZEND_RESULT_CODE php_http_new(void **obj_ptr, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr)
+zend_result php_http_new(void **obj_ptr, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr)
 {
 	void *obj;
 
@@ -89,9 +89,9 @@ void php_http_object_method_free(php_http_object_method_t **cb)
 	}
 }
 
-ZEND_RESULT_CODE php_http_object_method_call(php_http_object_method_t *cb, zval *zobject, zval *retval_ptr, int argc, zval *args)
+zend_result php_http_object_method_call(php_http_object_method_t *cb, zval *zobject, zval *retval_ptr, int argc, zval *args)
 {
-	ZEND_RESULT_CODE rv;
+	zend_result rv;
 	zval retval;
 
 	ZVAL_UNDEF(&retval);
@@ -122,7 +122,7 @@ ZEND_RESULT_CODE php_http_object_method_call(php_http_object_method_t *cb, zval 
 PHP_MINIT_FUNCTION(http_object)
 {
 	memcpy(&php_http_object_handlers, zend_get_std_object_handlers(), sizeof(php_http_object_handlers));
-	php_http_object_handlers.offset = XtOffsetOf(php_http_object_t, zo);
+	php_http_object_handlers.offset = offsetof(php_http_object_t, zo);
 
 	return SUCCESS;
 }

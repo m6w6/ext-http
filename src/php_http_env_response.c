@@ -241,7 +241,7 @@ static size_t output(void *context, char *buf, size_t len)
 	return len;
 }
 
-static ZEND_RESULT_CODE php_http_env_response_send_data(php_http_env_response_t *r, const char *buf, size_t len)
+static zend_result php_http_env_response_send_data(php_http_env_response_t *r, const char *buf, size_t len)
 {
 	size_t chunks_sent, chunk = r->throttle.chunk ? r->throttle.chunk : PHP_HTTP_SENDBUF_SIZE;
 
@@ -271,7 +271,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_data(php_http_env_response_t 
 	return chunks_sent != (size_t) -1 ? SUCCESS : FAILURE;
 }
 
-static inline ZEND_RESULT_CODE php_http_env_response_send_done(php_http_env_response_t *r)
+static inline zend_result php_http_env_response_send_done(php_http_env_response_t *r)
 {
 	return php_http_env_response_send_data(r, NULL, 0);
 }
@@ -330,9 +330,9 @@ void php_http_env_response_free(php_http_env_response_t **r)
 	}
 }
 
-static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t *r, php_http_message_t *request)
+static zend_result php_http_env_response_send_head(php_http_env_response_t *r, php_http_message_t *request)
 {
-	ZEND_RESULT_CODE ret = SUCCESS;
+	zend_result ret = SUCCESS;
 	zval zoption_tmp, *zoption, *options = &r->options;
 
 	if (r->done) {
@@ -520,7 +520,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 						FREE_HASHTABLE(result);
 					}
 
-					zval_dtor(&zsupported);
+					zval_ptr_dtor_nogc(&zsupported);
 					break;
 
 				case PHP_HTTP_CONTENT_ENCODING_NONE:
@@ -580,9 +580,9 @@ static ZEND_RESULT_CODE php_http_env_response_send_head(php_http_env_response_t 
 	return ret;
 }
 
-static ZEND_RESULT_CODE php_http_env_response_send_body(php_http_env_response_t *r)
+static zend_result php_http_env_response_send_body(php_http_env_response_t *r)
 {
-	ZEND_RESULT_CODE ret = SUCCESS;
+	zend_result ret = SUCCESS;
 	zval zoption_tmp, *zoption;
 	php_http_message_body_t *body;
 
@@ -664,7 +664,7 @@ static ZEND_RESULT_CODE php_http_env_response_send_body(php_http_env_response_t 
 	return ret;
 }
 
-ZEND_RESULT_CODE php_http_env_response_send(php_http_env_response_t *r)
+zend_result php_http_env_response_send(php_http_env_response_t *r)
 {
 	php_http_message_t *request;
 	php_http_message_body_t *body;
@@ -749,18 +749,18 @@ static long php_http_env_response_sapi_get_status(php_http_env_response_t *r)
 {
 	return php_http_env_get_response_code();
 }
-static ZEND_RESULT_CODE php_http_env_response_sapi_set_status(php_http_env_response_t *r, long http_code)
+static zend_result php_http_env_response_sapi_set_status(php_http_env_response_t *r, long http_code)
 {
 	return php_http_env_set_response_code(http_code);
 }
-static ZEND_RESULT_CODE php_http_env_response_sapi_set_protocol_version(php_http_env_response_t *r, php_http_version_t *v)
+static zend_result php_http_env_response_sapi_set_protocol_version(php_http_env_response_t *r, php_http_version_t *v)
 {
 
 	return php_http_env_set_response_protocol_version(v);
 }
-static ZEND_RESULT_CODE php_http_env_response_sapi_set_header(php_http_env_response_t *r, const char *fmt, ...)
+static zend_result php_http_env_response_sapi_set_header(php_http_env_response_t *r, const char *fmt, ...)
 {
-	ZEND_RESULT_CODE ret;
+	zend_result ret;
 	va_list args;
 
 	va_start(args, fmt);
@@ -769,9 +769,9 @@ static ZEND_RESULT_CODE php_http_env_response_sapi_set_header(php_http_env_respo
 
 	return ret;
 }
-static ZEND_RESULT_CODE php_http_env_response_sapi_add_header(php_http_env_response_t *r, const char *fmt, ...)
+static zend_result php_http_env_response_sapi_add_header(php_http_env_response_t *r, const char *fmt, ...)
 {
-	ZEND_RESULT_CODE ret;
+	zend_result ret;
 	va_list args;
 
 	va_start(args, fmt);
@@ -780,18 +780,18 @@ static ZEND_RESULT_CODE php_http_env_response_sapi_add_header(php_http_env_respo
 
 	return ret;
 }
-static ZEND_RESULT_CODE php_http_env_response_sapi_del_header(php_http_env_response_t *r, const char *header_str, size_t header_len)
+static zend_result php_http_env_response_sapi_del_header(php_http_env_response_t *r, const char *header_str, size_t header_len)
 {
 	return php_http_env_set_response_header_value(0, header_str, header_len, NULL, 1);
 }
-static ZEND_RESULT_CODE php_http_env_response_sapi_write(php_http_env_response_t *r, const char *data_str, size_t data_len)
+static zend_result php_http_env_response_sapi_write(php_http_env_response_t *r, const char *data_str, size_t data_len)
 {
 	if (0 < PHPWRITE(data_str, data_len)) {
 		return SUCCESS;
 	}
 	return FAILURE;
 }
-static ZEND_RESULT_CODE php_http_env_response_sapi_flush(php_http_env_response_t *r)
+static zend_result php_http_env_response_sapi_flush(php_http_env_response_t *r)
 {
 	if (php_output_get_level()) {
 		php_output_flush_all();
@@ -802,7 +802,7 @@ static ZEND_RESULT_CODE php_http_env_response_sapi_flush(php_http_env_response_t
 
 	return SUCCESS;
 }
-static ZEND_RESULT_CODE php_http_env_response_sapi_finish(php_http_env_response_t *r)
+static zend_result php_http_env_response_sapi_finish(php_http_env_response_t *r)
 {
 	return SUCCESS;
 }
@@ -840,7 +840,7 @@ typedef struct php_http_env_response_stream_ctx {
 	unsigned chunked:1;
 } php_http_env_response_stream_ctx_t;
 
-static ZEND_RESULT_CODE php_http_env_response_stream_init(php_http_env_response_t *r, void *init_arg)
+static zend_result php_http_env_response_stream_init(php_http_env_response_t *r, void *init_arg)
 {
 	php_http_env_response_stream_ctx_t *ctx;
 	size_t buffer_size = 0x1000;
@@ -901,7 +901,7 @@ static void php_http_env_response_stream_header(php_http_env_response_stream_ctx
 	}
 	ZEND_HASH_FOREACH_END();
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_start(php_http_env_response_stream_ctx_t *ctx)
+static zend_result php_http_env_response_stream_start(php_http_env_response_stream_ctx_t *ctx)
 {
 	php_http_buffer_t header_buf;
 
@@ -951,7 +951,7 @@ static long php_http_env_response_stream_get_status(php_http_env_response_t *r)
 
 	return ctx->status_code;
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_set_status(php_http_env_response_t *r, long http_code)
+static zend_result php_http_env_response_stream_set_status(php_http_env_response_t *r, long http_code)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 
@@ -963,7 +963,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_set_status(php_http_env_res
 
 	return SUCCESS;
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_set_protocol_version(php_http_env_response_t *r, php_http_version_t *v)
+static zend_result php_http_env_response_stream_set_protocol_version(php_http_env_response_t *r, php_http_version_t *v)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 
@@ -975,14 +975,14 @@ static ZEND_RESULT_CODE php_http_env_response_stream_set_protocol_version(php_ht
 
 	return SUCCESS;
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_set_header_ex(php_http_env_response_t *r, zend_bool replace, const char *fmt, va_list argv)
+static zend_result php_http_env_response_stream_set_header_ex(php_http_env_response_t *r, zend_bool replace, const char *fmt, va_list argv)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 	char *header_end, *header_str = NULL;
 	size_t header_len = 0;
 	zval zheader, *zheader_ptr;
 	zend_string *header_key;
-	ZEND_RESULT_CODE rv;
+	zend_result rv;
 
 	if (UNEXPECTED(stream_ctx->started || stream_ctx->finished)) {
 		return FAILURE;
@@ -1011,9 +1011,9 @@ static ZEND_RESULT_CODE php_http_env_response_stream_set_header_ex(php_http_env_
 
 	return rv;
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_set_header(php_http_env_response_t *r, const char *fmt, ...)
+static zend_result php_http_env_response_stream_set_header(php_http_env_response_t *r, const char *fmt, ...)
 {
-	ZEND_RESULT_CODE ret;
+	zend_result ret;
 	va_list argv;
 
 	va_start(argv, fmt);
@@ -1022,9 +1022,9 @@ static ZEND_RESULT_CODE php_http_env_response_stream_set_header(php_http_env_res
 
 	return ret;
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_add_header(php_http_env_response_t *r, const char *fmt, ...)
+static zend_result php_http_env_response_stream_add_header(php_http_env_response_t *r, const char *fmt, ...)
 {
-	ZEND_RESULT_CODE ret;
+	zend_result ret;
 	va_list argv;
 
 	va_start(argv, fmt);
@@ -1033,7 +1033,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_add_header(php_http_env_res
 
 	return ret;
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_del_header(php_http_env_response_t *r, const char *header_str, size_t header_len)
+static zend_result php_http_env_response_stream_del_header(php_http_env_response_t *r, const char *header_str, size_t header_len)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 
@@ -1044,7 +1044,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_del_header(php_http_env_res
 	zend_hash_str_del(&stream_ctx->header, header_str, header_len);
 	return SUCCESS;
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_write(php_http_env_response_t *r, const char *data_str, size_t data_len)
+static zend_result php_http_env_response_stream_write(php_http_env_response_t *r, const char *data_str, size_t data_len)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 
@@ -1063,7 +1063,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_write(php_http_env_response
 
 	return SUCCESS;
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_flush(php_http_env_response_t *r)
+static zend_result php_http_env_response_stream_flush(php_http_env_response_t *r)
 {
 	php_http_env_response_stream_ctx_t *stream_ctx = r->ctx;
 
@@ -1078,7 +1078,7 @@ static ZEND_RESULT_CODE php_http_env_response_stream_flush(php_http_env_response
 
 	return php_stream_flush(stream_ctx->stream);
 }
-static ZEND_RESULT_CODE php_http_env_response_stream_finish(php_http_env_response_t *r)
+static zend_result php_http_env_response_stream_finish(php_http_env_response_t *r)
 {
 	php_http_env_response_stream_ctx_t *ctx = r->ctx;
 

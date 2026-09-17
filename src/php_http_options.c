@@ -36,7 +36,7 @@ php_http_options_t *php_http_options_init(php_http_options_t *registry, zend_boo
 	return registry;
 }
 
-ZEND_RESULT_CODE php_http_options_apply(php_http_options_t *registry, HashTable *options, void *userdata)
+zend_result php_http_options_apply(php_http_options_t *registry, HashTable *options, void *userdata)
 {
 	zval *entry, *val;
 	php_http_option_t *opt;

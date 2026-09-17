@@ -99,8 +99,8 @@ PHP_MSHUTDOWN_FUNCTION(http_message);
 
 void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool top /* = 1 */);
 void php_http_message_object_reverse(zval *this_ptr, zval *return_value);
-ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *obj, zval *zbody);
-ZEND_RESULT_CODE php_http_message_object_init_body_object(php_http_message_object_t *obj);
+zend_result php_http_message_object_set_body(php_http_message_object_t *obj, zval *zbody);
+zend_result php_http_message_object_init_body_object(php_http_message_object_t *obj);
 
 zend_object *php_http_message_object_new(zend_class_entry *ce);
 php_http_message_object_t *php_http_message_object_new_ex(zend_class_entry *ce, php_http_message_t *msg);

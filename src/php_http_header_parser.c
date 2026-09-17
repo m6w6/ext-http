@@ -394,7 +394,7 @@ static PHP_METHOD(HttpHeaderParser, parse)
 
 	ZVAL_DEREF(zmsg);
 	if (Z_TYPE_P(zmsg) != IS_ARRAY) {
-		zval_dtor(zmsg);
+		zval_ptr_dtor_nogc(zmsg);
 		array_init(zmsg);
 	}
 	parser_obj = PHP_HTTP_OBJ(NULL, getThis());
@@ -423,7 +423,7 @@ static PHP_METHOD(HttpHeaderParser, stream)
 
 	ZVAL_DEREF(zmsg);
 	if (Z_TYPE_P(zmsg) != IS_ARRAY) {
-		zval_dtor(zmsg);
+		zval_ptr_dtor_nogc(zmsg);
 		array_init(zmsg);
 	}
 	parser_obj = PHP_HTTP_OBJ(NULL, getThis());
@@ -445,7 +445,7 @@ PHP_MINIT_FUNCTION(http_header_parser)
 	php_http_header_parser_class_entry = zend_register_internal_class(&ce);
 	memcpy(&php_http_header_parser_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_http_header_parser_class_entry->create_object = php_http_header_parser_object_new;
-	php_http_header_parser_object_handlers.offset = XtOffsetOf(php_http_header_parser_object_t, zo);
+	php_http_header_parser_object_handlers.offset = offsetof(php_http_header_parser_object_t, zo);
 	php_http_header_parser_object_handlers.clone_obj = NULL;
 	php_http_header_parser_object_handlers.free_obj = php_http_header_parser_object_free;
 
