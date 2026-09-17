@@ -14,10 +14,10 @@
 #define PHP_HTTP_QUERYSTRING_H
 
 #if PHP_HTTP_HAVE_ICONV
-PHP_HTTP_API ZEND_RESULT_CODE php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe);
+PHP_HTTP_API zend_result php_http_querystring_xlate(zval *dst, zval *src, const char *ie, const char *oe);
 #endif /* PHP_HTTP_HAVE_ICONV */
-PHP_HTTP_API ZEND_RESULT_CODE php_http_querystring_update(zval *qarray, zval *params, zval *qstring);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_querystring_ctor(zval *instance, zval *params);
+PHP_HTTP_API zend_result php_http_querystring_update(zval *qarray, zval *params, zval *qstring);
+PHP_HTTP_API zend_result php_http_querystring_ctor(zval *instance, zval *params);
 
 typedef php_http_object_t php_http_querystring_object_t;
 

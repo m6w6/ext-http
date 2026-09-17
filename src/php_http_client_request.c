@@ -134,12 +134,12 @@ static PHP_METHOD(HttpClientRequest, setQuery)
 		array_init(&arr);
 
 		php_http_expect(SUCCESS == php_http_querystring_update(&arr, qdata, &str), bad_querystring,
-				zval_dtor(&arr);
+				zval_ptr_dtor_nogc(&arr);
 				return;
 		);
 
 		new_url.query = Z_STRVAL(str);
-		zval_dtor(&arr);
+		zval_ptr_dtor_nogc(&arr);
 	} else {
 		flags = PHP_HTTP_URL_STRIP_QUERY;
 	}
@@ -191,11 +191,11 @@ static PHP_METHOD(HttpClientRequest, addQuery)
 	ZVAL_NULL(&str);
 
 	php_http_expect(SUCCESS == php_http_querystring_update(&arr, qdata, &str), bad_querystring,
-			zval_dtor(&arr);
+			zval_ptr_dtor_nogc(&arr);
 			return;
 	);
 	new_url.query = Z_STRVAL(str);
-	zval_dtor(&arr);
+	zval_ptr_dtor_nogc(&arr);
 
 	if (obj->message->http.info.request.url) {
 		old_url = obj->message->http.info.request.url;

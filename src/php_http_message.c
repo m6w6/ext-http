@@ -94,7 +94,7 @@ php_http_message_t *php_http_message_init_env(php_http_message_t *message, php_h
 					goto error;
 				} else {
 					php_http_message_body_append(message->body, Z_STRVAL(tval), Z_STRLEN(tval));
-					zval_dtor(&tval);
+					zval_ptr_dtor_nogc(&tval);
 				}
 			}
 			break;
@@ -527,7 +527,7 @@ typedef struct php_http_message_object_prophandler {
 	php_http_message_object_prophandler_func_t write;
 } php_http_message_object_prophandler_t;
 
-static ZEND_RESULT_CODE php_http_message_object_add_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_func_t read, php_http_message_object_prophandler_func_t write) {
+static zend_result php_http_message_object_add_prophandler(const char *prop_str, size_t prop_len, php_http_message_object_prophandler_func_t read, php_http_message_object_prophandler_func_t write) {
 	php_http_message_object_prophandler_t h = { read, write };
 	if (!zend_hash_str_add_mem(&php_http_message_object_prophandlers, prop_str, prop_len, (void *) &h, sizeof(h))) {
 		return FAILURE;
@@ -767,7 +767,7 @@ void php_http_message_object_prepend(zval *this_ptr, zval *prepend, zend_bool to
 	}
 }
 
-ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval *zbody)
+zend_result php_http_message_object_set_body(php_http_message_object_t *msg_obj, zval *zbody)
 {
 	php_stream *s;
 	zend_string *body_str;
@@ -826,7 +826,7 @@ ZEND_RESULT_CODE php_http_message_object_set_body(php_http_message_object_t *msg
 	return SUCCESS;
 }
 
-ZEND_RESULT_CODE php_http_message_object_init_body_object(php_http_message_object_t *obj)
+zend_result php_http_message_object_init_body_object(php_http_message_object_t *obj)
 {
 	php_http_message_body_addref(obj->message->body);
 	return php_http_new((void *) &obj->body, php_http_get_message_body_class_entry(), (php_http_new_t) php_http_message_body_object_new_ex, NULL, obj->message->body);
@@ -1739,7 +1739,11 @@ static PHP_METHOD(HttpMessage, toStream)
 		PHP_HTTP_MESSAGE_OBJECT_INIT(obj);
 
 		php_stream_from_zval(s, zstream);
+#if PHP_VERSION_ID < 80600
 		php_http_message_to_callback(obj->message, (php_http_pass_callback_t) _php_stream_write, s);
+#else
+		php_http_message_to_callback(obj->message, (php_http_pass_callback_t) php_stream_write, s);
+#endif
 	}
 }
 
@@ -1939,7 +1943,7 @@ static PHP_METHOD(HttpMessage, isMultipart)
 
 		if (zboundary && boundary) {
 			ZVAL_DEREF(zboundary);
-			zval_dtor(zboundary);
+			zval_ptr_dtor_nogc(zboundary);
 			ZVAL_STR(zboundary, php_http_cs2zs(boundary, strlen(boundary)));
 		}
 	}
@@ -2128,7 +2132,7 @@ PHP_MINIT_FUNCTION(http_message)
 	php_http_message_class_entry = zend_register_internal_class(&ce);
 	php_http_message_class_entry->create_object = php_http_message_object_new;
 	memcpy(&php_http_message_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	php_http_message_object_handlers.offset = XtOffsetOf(php_http_message_object_t, zo);
+	php_http_message_object_handlers.offset = offsetof(php_http_message_object_t, zo);
 	php_http_message_object_handlers.clone_obj = php_http_message_object_clone;
 	php_http_message_object_handlers.free_obj = php_http_message_object_free;
 	php_http_message_object_handlers.read_property = php_http_message_object_read_prop;

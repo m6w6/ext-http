@@ -30,8 +30,8 @@ zend_class_entry *php_http_get_inflate_stream_class_entry(void);
 PHP_HTTP_API php_http_encoding_stream_ops_t *php_http_encoding_stream_get_deflate_ops(void);
 PHP_HTTP_API php_http_encoding_stream_ops_t *php_http_encoding_stream_get_inflate_ops(void);
 
-PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len);
+PHP_HTTP_API zend_result php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len);
+PHP_HTTP_API zend_result php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len);
 
 #define PHP_HTTP_DEFLATE_LEVEL_DEF			0x00000000
 #define PHP_HTTP_DEFLATE_LEVEL_MIN			0x00000001

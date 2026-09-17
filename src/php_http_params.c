@@ -56,7 +56,7 @@ static inline void sanitize_escaped(zval *zv)
 		size_t deq_len = Z_STRLEN_P(zv) - 2;
 		char *deq = estrndup(Z_STRVAL_P(zv) + 1, deq_len);
 
-		zval_dtor(zv);
+		zval_ptr_dtor_nogc(zv);
 		ZVAL_STR(zv, php_http_cs2zs(deq, deq_len));
 	}
 
@@ -103,11 +103,11 @@ static inline zend_string *quote_string(zend_string *zs, zend_bool force)
 			str[len-1] = '"';
 			str[len] = '\0';
 
-			zval_dtor(zv);
+			zval_ptr_dtor_nogc(zv);
 			zend_string_release(stripped);
 			ZVAL_STR(zv, php_http_cs2zs(str, len));
 		} else {
-			zval_dtor(zv);
+			zval_ptr_dtor_nogc(zv);
 			ZVAL_STR(zv, stripped);
 		}
 */
@@ -117,10 +117,10 @@ static inline void prepare_escaped(zval *zv)
 	if (Z_TYPE_P(zv) == IS_STRING) {
 		zend_string *str = quote_string(Z_STR_P(zv), 0);
 
-		zval_dtor(zv);
+		zval_ptr_dtor_nogc(zv);
 		ZVAL_STR(zv, str);
 	} else {
-		zval_dtor(zv);
+		zval_ptr_dtor_nogc(zv);
 		ZVAL_EMPTY_STRING(zv);
 	}
 }
@@ -134,7 +134,7 @@ static inline void prepare_urlencoded(zval *zv)
 {
 	zend_string *str = php_raw_url_encode(Z_STRVAL_P(zv), Z_STRLEN_P(zv));
 
-	zval_dtor(zv);
+	zval_ptr_dtor_nogc(zv);
 	ZVAL_STR(zv, str);
 }
 
@@ -186,7 +186,7 @@ static void sanitize_dimension(zval *zv)
 	}
 
 	if (zend_hash_num_elements(Z_ARRVAL(arr))) {
-		zval_dtor(zv);
+		zval_ptr_dtor_nogc(zv);
 		ZVAL_COPY_VALUE(zv, &arr);
 	} else {
 		zval_ptr_dtor(&arr);
@@ -249,7 +249,7 @@ static inline void sanitize_key(unsigned flags, const char *str, size_t len, zva
 	char *eos;
 	zend_string *zs = zend_string_init(str, len, 0);
 
-	zval_dtor(zv);
+	zval_ptr_dtor_nogc(zv);
 	ZVAL_STR(zv, php_trim(zs, NULL, 0, 3));
 	zend_string_release(zs);
 
@@ -320,7 +320,7 @@ static inline void sanitize_rfc5987(zval *zv, char **language, zend_bool *latin1
 
 		/* remainder */
 		ptr = estrdup(++ptr);
-		zval_dtor(zv);
+		zval_ptr_dtor_nogc(zv);
 		ZVAL_STR(zv, php_http_cs2zs(ptr, strlen(ptr)));
 	}
 }
@@ -329,7 +329,7 @@ static inline void sanitize_rfc5988(char *str, size_t len, zval *zv)
 {
 	zend_string *zs = zend_string_init(str, len, 0);
 
-	zval_dtor(zv);
+	zval_ptr_dtor_nogc(zv);
 	ZVAL_STR(zv, php_trim(zs, " ><", 3, 3));
 	zend_string_release(zs);
 }
@@ -337,7 +337,7 @@ static inline void sanitize_rfc5988(char *str, size_t len, zval *zv)
 static inline void prepare_rfc5988(zval *zv)
 {
 	if (Z_TYPE_P(zv) != IS_STRING) {
-		zval_dtor(zv);
+		zval_ptr_dtor_nogc(zv);
 		ZVAL_EMPTY_STRING(zv);
 	}
 }
@@ -363,7 +363,7 @@ static void utf8encode(zval *zv)
 			++pos;
 		}
 	}
-	zval_dtor(zv);
+	zval_ptr_dtor_nogc(zv);
 	ZVAL_STR(zv, php_http_cs2zs((char *) ptr, pos-1));
 }
 
@@ -373,7 +373,7 @@ static inline void sanitize_value(unsigned flags, const char *str, size_t len, z
 	zend_bool latin1 = 0;
 	zend_string *zs = zend_string_init(str, len, 0);
 
-	zval_dtor(zv);
+	zval_ptr_dtor_nogc(zv);
 	ZVAL_STR(zv, php_trim(zs, NULL, 0, 3));
 	zend_string_release(zs);
 
@@ -529,7 +529,7 @@ static void merge_param(HashTable *params, zval *zdata, zval **current_param, zv
 					/* this is the leaf */
 					Z_TRY_ADDREF_P(test_ptr);
 					if (Z_TYPE_P(ptr) != IS_ARRAY) {
-						zval_dtor(ptr);
+						zval_ptr_dtor_nogc(ptr);
 						array_init(ptr);
 					}
 					if (HASH_KEY_IS_STRING == zend_hash_get_current_key(Z_ARRVAL_P(zdata_ptr), &hkey.key, &hkey.h)) {
@@ -597,7 +597,7 @@ static void push_param(HashTable *params, php_http_params_state_t *state, const 
 					state->current.val = zend_symtable_str_update(Z_ARRVAL_P(state->current.args), Z_STRVAL(key), Z_STRLEN(key), &val);
 				}
 			}
-			zval_dtor(&key);
+			zval_ptr_dtor_nogc(&key);
 		}
 	} else if (state->param.str) {
 		if (0 < (state->param.len = state->input.str - state->param.str)) {

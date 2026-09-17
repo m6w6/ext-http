@@ -89,7 +89,7 @@
 		break; \
 	}
 
-ZEND_RESULT_CODE php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
+zend_result php_http_encoding_deflate(int flags, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
 {
 	int status, level, wbits, strategy;
 	z_stream Z;
@@ -170,7 +170,7 @@ static php_http_encoding_stream_t *deflate_copy(php_http_encoding_stream_t *from
 	return NULL;
 }
 
-static ZEND_RESULT_CODE deflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
+static zend_result deflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **encoded, size_t *encoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
@@ -210,7 +210,7 @@ static ZEND_RESULT_CODE deflate_update(php_http_encoding_stream_t *s, const char
 	return FAILURE;
 }
 
-static ZEND_RESULT_CODE deflate_flush(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
+static zend_result deflate_flush(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
@@ -237,7 +237,7 @@ static ZEND_RESULT_CODE deflate_flush(php_http_encoding_stream_t *s, char **enco
 	return FAILURE;
 }
 
-static ZEND_RESULT_CODE deflate_finish(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
+static zend_result deflate_finish(php_http_encoding_stream_t *s, char **encoded, size_t *encoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
@@ -333,7 +333,7 @@ static inline int php_http_inflate_rounds(z_stream *Z, int flush, char **buf, si
 	return status;
 }
 
-ZEND_RESULT_CODE php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len)
+zend_result php_http_encoding_inflate(const char *data, size_t data_len, char **decoded, size_t *decoded_len)
 {
 	z_stream Z;
 	int status, wbits = PHP_HTTP_WINDOW_BITS_ANY;
@@ -413,7 +413,7 @@ static php_http_encoding_stream_t *inflate_copy(php_http_encoding_stream_t *from
 	return NULL;
 }
 
-static ZEND_RESULT_CODE inflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
+static zend_result inflate_update(php_http_encoding_stream_t *s, const char *data, size_t data_len, char **decoded, size_t *decoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;
@@ -451,7 +451,7 @@ retry_raw_inflate:
 	return FAILURE;
 }
 
-static ZEND_RESULT_CODE inflate_finish(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
+static zend_result inflate_finish(php_http_encoding_stream_t *s, char **decoded, size_t *decoded_len)
 {
 	int status;
 	z_streamp ctx = s->ctx;

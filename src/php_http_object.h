@@ -23,7 +23,7 @@ php_http_object_t *php_http_object_new_ex(zend_class_entry *ce, void *nothing);
 
 typedef void *(*php_http_new_t)(zend_class_entry *ce, void *);
 
-ZEND_RESULT_CODE php_http_new(void **obj_ptr, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr);
+zend_result php_http_new(void **obj_ptr, zend_class_entry *ce, php_http_new_t create, zend_class_entry *parent_ce, void *intern_ptr);
 
 PHP_MINIT_FUNCTION(http_object);
 
@@ -33,7 +33,7 @@ typedef struct php_http_method {
 } php_http_object_method_t;
 
 php_http_object_method_t *php_http_object_method_init(php_http_object_method_t *cb, zval *zobject, const char *method_str, size_t method_len);
-ZEND_RESULT_CODE php_http_object_method_call(php_http_object_method_t *cb, zval *zobject, zval *retval, int argc, zval *args);
+zend_result php_http_object_method_call(php_http_object_method_t *cb, zval *zobject, zval *retval, int argc, zval *args);
 void php_http_object_method_dtor(php_http_object_method_t *cb);
 void php_http_object_method_free(php_http_object_method_t **cb);
 

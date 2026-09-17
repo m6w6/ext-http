@@ -605,7 +605,7 @@ static PHP_METHOD(HttpMessageParser, parse)
 	RETVAL_LONG(php_http_message_parser_parse(parser_obj->parser, &parser_obj->buffer, flags, &parser_obj->parser->message));
 
 	ZVAL_DEREF(zmsg);
-	zval_dtor(zmsg);
+	zval_ptr_dtor_nogc(zmsg);
 	ZVAL_NULL(zmsg);
 	if (parser_obj->parser->message) {
 		php_http_message_t *msg_cpy = php_http_message_copy(parser_obj->parser->message, NULL);
@@ -637,7 +637,7 @@ static PHP_METHOD(HttpMessageParser, stream)
 	RETVAL_LONG(php_http_message_parser_parse_stream(parser_obj->parser, &parser_obj->buffer, s, flags, &parser_obj->parser->message));
 
 	ZVAL_DEREF(zmsg);
-	zval_dtor(zmsg);
+	zval_ptr_dtor_nogc(zmsg);
 	ZVAL_NULL(zmsg);
 	if (parser_obj->parser->message) {
 		php_http_message_t *msg_cpy = php_http_message_copy(parser_obj->parser->message, NULL);
@@ -663,7 +663,7 @@ PHP_MINIT_FUNCTION(http_message_parser)
 	php_http_message_parser_class_entry->create_object = php_http_message_parser_object_new;
 	php_http_message_parser_object_handlers.clone_obj = NULL;
 	php_http_message_parser_object_handlers.free_obj = php_http_message_parser_object_free;
-	php_http_message_parser_object_handlers.offset = XtOffsetOf(php_http_message_parser_object_t, zo);
+	php_http_message_parser_object_handlers.offset = offsetof(php_http_message_parser_object_t, zo);
 
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("CLEANUP"), PHP_HTTP_MESSAGE_PARSER_CLEANUP);
 	zend_declare_class_constant_long(php_http_message_parser_class_entry, ZEND_STRL("DUMB_BODIES"), PHP_HTTP_MESSAGE_PARSER_DUMB_BODIES);

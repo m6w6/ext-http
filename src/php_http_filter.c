@@ -22,6 +22,14 @@ PHP_MINIT_FUNCTION(http_filter)
 	return SUCCESS;
 }
 
+#if PHP_VERSION_ID >= 80600
+#define PHP_HTTP_FILTER_ALLOC(fops, abstract, persistent) \
+	php_stream_filter_alloc(fops, abstract, persistent, PSFS_SEEKABLE_NEVER, PSFS_SEEKABLE_NEVER)
+#else
+#define PHP_HTTP_FILTER_ALLOC(fops, abstract, persistent) \
+	php_stream_filter_alloc(fops, abstract, persistent)
+#endif
+
 #define PHP_HTTP_FILTER_PARAMS \
 	php_stream *stream, \
 	php_stream_filter *this, \
@@ -359,24 +367,36 @@ static PHP_HTTP_FILTER_DESTRUCTOR(stream)
 
 static PHP_HTTP_FILTER_OPS(chunked_decode) = {
 	PHP_HTTP_FILTER_FUNC(chunked_decode),
+#if PHP_VERSION_ID >= 80600
+	NULL,
+#endif
 	PHP_HTTP_FILTER_DTOR(chunked_decode),
 	"http.chunked_decode"
 };
 
 static PHP_HTTP_FILTER_OPS(chunked_encode) = {
 	PHP_HTTP_FILTER_FUNC(chunked_encode),
+#if PHP_VERSION_ID >= 80600
+	NULL,
+#endif
 	NULL,
 	"http.chunked_encode"
 };
 
 static PHP_HTTP_FILTER_OPS(deflate) = {
 	PHP_HTTP_FILTER_FUNC(stream),
+#if PHP_VERSION_ID >= 80600
+	NULL,
+#endif
 	PHP_HTTP_FILTER_DTOR(stream),
 	"http.deflate"
 };
 
 static PHP_HTTP_FILTER_OPS(inflate) = {
 	PHP_HTTP_FILTER_FUNC(stream),
+#if PHP_VERSION_ID >= 80600
+	NULL,
+#endif
 	PHP_HTTP_FILTER_DTOR(stream),
 	"http.inflate"
 };
@@ -384,18 +404,26 @@ static PHP_HTTP_FILTER_OPS(inflate) = {
 #if PHP_HTTP_HAVE_LIBBROTLI
 static PHP_HTTP_FILTER_OPS(brotli_encode) = {
 	PHP_HTTP_FILTER_FUNC(stream),
+#if PHP_VERSION_ID >= 80600
+	NULL,
+#endif
 	PHP_HTTP_FILTER_DTOR(stream),
 	"http.brotli_encode"
 };
 
 static PHP_HTTP_FILTER_OPS(brotli_decode) = {
 	PHP_HTTP_FILTER_FUNC(stream),
+#if PHP_VERSION_ID >= 80600
+	NULL,
+#endif
 	PHP_HTTP_FILTER_DTOR(stream),
 	"http.brotli_decode"
 };
 #endif
 
-#if PHP_VERSION_ID >= 70200
+#if PHP_VERSION_ID >= 80600
+static php_stream_filter *http_filter_create(const char *name, zval *params, bool p)
+#elif PHP_VERSION_ID >= 70200
 static php_stream_filter *http_filter_create(const char *name, zval *params, uint8_t p)
 #else
 static php_stream_filter *http_filter_create(const char *name, zval *params, int p)
@@ -424,21 +452,21 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		
 		if ((b = pecalloc(1, sizeof(PHP_HTTP_FILTER_BUFFER(chunked_decode)), p))) {
 			php_http_buffer_init_ex(PHP_HTTP_BUFFER(b), 4096, p ? PHP_HTTP_BUFFER_INIT_PERSISTENT : 0);
-			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(chunked_decode), b, p))) {
+			if (!(f = PHP_HTTP_FILTER_ALLOC(&PHP_HTTP_FILTER_OP(chunked_decode), b, p))) {
 				pefree(b, p);
 			}
 		}
 	} else
 	
 	if (!strcasecmp(name, "http.chunked_encode")) {
-		f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(chunked_encode), NULL, p);
+		f = PHP_HTTP_FILTER_ALLOC(&PHP_HTTP_FILTER_OP(chunked_encode), NULL, p);
 	} else
 	
 	if (!strcasecmp(name, "http.inflate")) {
 		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
 		
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_inflate_ops(), flags))) {
-			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(inflate), b, p))) {
+			if (!(f = PHP_HTTP_FILTER_ALLOC(&PHP_HTTP_FILTER_OP(inflate), b, p))) {
 				php_http_encoding_stream_free(&b);
 			}
 		}
@@ -448,7 +476,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
 		
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_deflate_ops(), flags))) {
-			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(deflate), b, p))) {
+			if (!(f = PHP_HTTP_FILTER_ALLOC(&PHP_HTTP_FILTER_OP(deflate), b, p))) {
 				php_http_encoding_stream_free(&b);
 			}
 		}
@@ -459,7 +487,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
 
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_enbrotli_ops(), flags))) {
-			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(brotli_encode), b, p))) {
+			if (!(f = PHP_HTTP_FILTER_ALLOC(&PHP_HTTP_FILTER_OP(brotli_encode), b, p))) {
 				php_http_encoding_stream_free(&b);
 			}
 		}
@@ -469,7 +497,7 @@ static php_stream_filter *http_filter_create(const char *name, zval *params, int
 		PHP_HTTP_FILTER_BUFFER(stream) *b = NULL;
 
 		if ((b = php_http_encoding_stream_init(NULL, php_http_encoding_stream_get_debrotli_ops(), flags))) {
-			if (!(f = php_stream_filter_alloc(&PHP_HTTP_FILTER_OP(brotli_decode), b, p))) {
+			if (!(f = PHP_HTTP_FILTER_ALLOC(&PHP_HTTP_FILTER_OP(brotli_decode), b, p))) {
 				php_http_encoding_stream_free(&b);
 			}
 		}

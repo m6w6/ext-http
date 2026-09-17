@@ -25,7 +25,7 @@ static void php_http_client_driver_hash_dtor(zval *pData)
 	pefree(Z_PTR_P(pData), 1);
 }
 
-ZEND_RESULT_CODE php_http_client_driver_add(php_http_client_driver_t *driver)
+zend_result php_http_client_driver_add(php_http_client_driver_t *driver)
 {
 	return zend_hash_add_mem(&php_http_client_drivers, driver->driver_name, (void *) driver, sizeof(php_http_client_driver_t))
 			? SUCCESS : FAILURE;
@@ -227,7 +227,7 @@ void php_http_client_free(php_http_client_t **h) {
 	}
 }
 
-ZEND_RESULT_CODE php_http_client_enqueue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
+zend_result php_http_client_enqueue(php_http_client_t *h, php_http_client_enqueue_t *enqueue)
 {
 	if (h->ops->enqueue) {
 		if (php_http_client_enqueued(h, enqueue->request, NULL)) {
@@ -240,7 +240,7 @@ ZEND_RESULT_CODE php_http_client_enqueue(php_http_client_t *h, php_http_client_e
 	return FAILURE;
 }
 
-ZEND_RESULT_CODE php_http_client_dequeue(php_http_client_t *h, php_http_message_t *request)
+zend_result php_http_client_dequeue(php_http_client_t *h, php_http_message_t *request)
 {
 	if (h->ops->dequeue) {
 		php_http_client_enqueue_t *enqueue = php_http_client_enqueued(h, request, NULL);
@@ -254,7 +254,7 @@ ZEND_RESULT_CODE php_http_client_dequeue(php_http_client_t *h, php_http_message_
 	return FAILURE;
 }
 
-ZEND_RESULT_CODE php_http_client_requeue(php_http_client_t *h, php_http_message_t *request)
+zend_result php_http_client_requeue(php_http_client_t *h, php_http_message_t *request)
 {
 	if (h->ops->dequeue) {
 		php_http_client_enqueue_t *enqueue = php_http_client_enqueued(h, request, NULL);
@@ -288,7 +288,7 @@ php_http_client_enqueue_t *php_http_client_enqueued(php_http_client_t *h, void *
 	return el ? (php_http_client_enqueue_t *) el->data : NULL;
 }
 
-ZEND_RESULT_CODE php_http_client_wait(php_http_client_t *h, struct timeval *custom_timeout)
+zend_result php_http_client_wait(php_http_client_t *h, struct timeval *custom_timeout)
 {
 	if (h->ops->wait) {
 		return h->ops->wait(h, custom_timeout);
@@ -306,7 +306,7 @@ int php_http_client_once(php_http_client_t *h)
 	return FAILURE;
 }
 
-ZEND_RESULT_CODE php_http_client_exec(php_http_client_t *h)
+zend_result php_http_client_exec(php_http_client_t *h)
 {
 	if (h->ops->exec) {
 		return h->ops->exec(h);
@@ -325,7 +325,7 @@ void php_http_client_reset(php_http_client_t *h)
 	zend_llist_clean(&h->responses);
 }
 
-ZEND_RESULT_CODE php_http_client_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
+zend_result php_http_client_setopt(php_http_client_t *h, php_http_client_setopt_opt_t opt, void *arg)
 {
 	if (h->ops->setopt) {
 		return h->ops->setopt(h, opt, arg);
@@ -334,7 +334,7 @@ ZEND_RESULT_CODE php_http_client_setopt(php_http_client_t *h, php_http_client_se
 	return FAILURE;
 }
 
-ZEND_RESULT_CODE php_http_client_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void *res_ptr)
+zend_result php_http_client_getopt(php_http_client_t *h, php_http_client_getopt_opt_t opt, void *arg, void *res_ptr)
 {
 	if (h->ops->getopt) {
 		return h->ops->getopt(h, opt, arg, res_ptr);
@@ -447,7 +447,7 @@ static void handle_history(zval *zclient, php_http_message_t *request, php_http_
 	zval_ptr_dtor(&new_hist);
 }
 
-static ZEND_RESULT_CODE handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **response)
+static zend_result handle_response(void *arg, php_http_client_t *client, php_http_client_enqueue_t *e, php_http_message_t **response)
 {
 	zend_bool dequeue = 0;
 	zval zclient;
@@ -1407,7 +1407,7 @@ PHP_MINIT_FUNCTION(http_client)
 	php_http_client_class_entry->create_object = php_http_client_object_new;
 	zend_class_implements(php_http_client_class_entry, 2, spl_ce_SplSubject, zend_ce_countable);
 	memcpy(&php_http_client_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
-	php_http_client_object_handlers.offset = XtOffsetOf(php_http_client_object_t, zo);
+	php_http_client_object_handlers.offset = offsetof(php_http_client_object_t, zo);
 	php_http_client_object_handlers.free_obj = php_http_client_object_free;
 	php_http_client_object_handlers.clone_obj = NULL;
 	php_http_client_object_handlers.get_gc = php_http_client_object_get_gc;

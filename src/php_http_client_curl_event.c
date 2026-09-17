@@ -176,7 +176,7 @@ static int php_http_client_curl_event_socket(CURL *easy, curl_socket_t sock, int
 	return 0;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_event_once(void *context)
+static zend_result php_http_client_curl_event_once(void *context)
 {
 	php_http_client_curl_event_context_t *ctx = context;
 
@@ -190,7 +190,7 @@ static ZEND_RESULT_CODE php_http_client_curl_event_once(void *context)
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_event_wait(void *context, struct timeval *custom_timeout)
+static zend_result php_http_client_curl_event_wait(void *context, struct timeval *custom_timeout)
 {
 	php_http_client_curl_event_context_t *ctx = context;
 	struct timeval timeout;
@@ -221,7 +221,7 @@ static ZEND_RESULT_CODE php_http_client_curl_event_wait(void *context, struct ti
 	return SUCCESS;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_event_exec(void *context)
+static zend_result php_http_client_curl_event_exec(void *context)
 {
 	php_http_client_curl_event_context_t *ctx = context;
 	php_http_client_curl_t *curl = ctx->client->ctx;

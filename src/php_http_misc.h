@@ -163,7 +163,7 @@ static inline zend_string *php_http_cs2zs(char *s, size_t l)
 	return str;
 }
 
-static inline ZEND_RESULT_CODE php_http_ini_entry(const char *name_str, size_t name_len, const char **val_str, size_t *val_len, zend_bool orig)
+static inline zend_result php_http_ini_entry(const char *name_str, size_t name_len, const char **val_str, size_t *val_len, zend_bool orig)
 {
 	zend_ini_entry *ini_entry;
 

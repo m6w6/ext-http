@@ -117,7 +117,7 @@ static int php_http_client_curl_user_socket(CURL *easy, curl_socket_t sock, int 
 	return 0;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_user_once(void *context)
+static zend_result php_http_client_curl_user_once(void *context)
 {
 	php_http_client_curl_user_context_t *ctx = context;
 
@@ -128,12 +128,12 @@ static ZEND_RESULT_CODE php_http_client_curl_user_once(void *context)
 	return php_http_object_method_call(&ctx->once, &ctx->user, NULL, 0, NULL);
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_user_wait(void *context, struct timeval *custom_timeout)
+static zend_result php_http_client_curl_user_wait(void *context, struct timeval *custom_timeout)
 {
 	php_http_client_curl_user_context_t *ctx = context;
 	struct timeval timeout;
 	zval args[1], *ztimeout = &args[0];
-	ZEND_RESULT_CODE rv;
+	zend_result rv;
 
 #if DBG_EVENTS
 	fprintf(stderr, "W");
@@ -151,7 +151,7 @@ static ZEND_RESULT_CODE php_http_client_curl_user_wait(void *context, struct tim
 	return rv;
 }
 
-static ZEND_RESULT_CODE php_http_client_curl_user_exec(void *context)
+static zend_result php_http_client_curl_user_exec(void *context)
 {
 	php_http_client_curl_user_context_t *ctx = context;
 	php_http_client_curl_t *curl = ctx->client->ctx;
@@ -178,6 +178,7 @@ static void *php_http_client_curl_user_init(php_http_client_t *client, void *use
 	php_http_client_curl_user_context_t *ctx;
 	php_http_object_method_t init;
 	zval args[1], *zclosure = &args[0];
+	int i;
 
 #if DBG_EVENTS
 	fprintf(stderr, "I");
@@ -191,7 +192,15 @@ static void *php_http_client_curl_user_init(php_http_client_t *client, void *use
 	ctx->closure.common.type = ZEND_INTERNAL_FUNCTION;
 	ctx->closure.common.function_name = zend_string_init(ZEND_STRL("php_http_client_curl_user_handler"), 0);
 	ctx->closure.internal_function.handler = php_http_client_curl_user_handler;
-	ctx->closure.internal_function.arg_info = (zend_internal_arg_info *) &ai_user_handler[1];
+	for (i = 0; i < 3; i++) {
+		ctx->ai[i].type = ai_user_handler[i+1].type;
+#if PHP_VERSION_ID < 80600
+		ctx->ai[i].name = ai_user_handler[i+1].name;
+#else
+		ctx->ai[i].name = zend_string_init(ai_user_handler[i+1].name, strlen(ai_user_handler[i+1].name), 0);
+#endif
+	}
+	ctx->closure.internal_function.arg_info = ctx->ai;
 	ctx->closure.internal_function.num_args = 3;
 	ctx->closure.internal_function.required_num_args = 1;
 
@@ -221,6 +230,7 @@ static void php_http_client_curl_user_dtor(void **context)
 {
 	php_http_client_curl_user_context_t *ctx = *context;
 	php_http_client_curl_t *curl;
+	int i;
 
 #if DBG_EVENTS
 	fprintf(stderr, "D");
@@ -239,6 +249,11 @@ static void php_http_client_curl_user_dtor(void **context)
 	php_http_object_method_dtor(&ctx->wait);
 	php_http_object_method_dtor(&ctx->send);
 
+#if PHP_VERSION_ID >= 80600
+	for (i = 0; i < 3; i++) {
+		zend_string_release(ctx->ai[i].name);
+	}
+#endif
 	zend_string_release(ctx->closure.common.function_name);
 	zval_ptr_dtor(&ctx->user);
 

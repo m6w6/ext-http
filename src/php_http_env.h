@@ -58,14 +58,14 @@ typedef enum php_http_cache_status {
 
 PHP_HTTP_API long php_http_env_get_response_code(void);
 PHP_HTTP_API const char *php_http_env_get_response_status_for_code(unsigned code);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_env_get_response_headers(HashTable *headers_ht);
+PHP_HTTP_API zend_result php_http_env_get_response_headers(HashTable *headers_ht);
 PHP_HTTP_API char *php_http_env_get_response_header(const char *name_str, size_t name_len);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_env_set_response_code(long http_code);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_env_set_response_protocol_version(php_http_version_t *v);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_env_set_response_header_format(long http_code, zend_bool replace, const char *fmt, ...);
-PHP_HTTP_API ZEND_RESULT_CODE php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv);
+PHP_HTTP_API zend_result php_http_env_set_response_code(long http_code);
+PHP_HTTP_API zend_result php_http_env_set_response_protocol_version(php_http_version_t *v);
+PHP_HTTP_API zend_result php_http_env_set_response_header(long http_code, const char *header_str, size_t header_len, zend_bool replace);
+PHP_HTTP_API zend_result php_http_env_set_response_header_value(long http_code, const char *name_str, size_t name_len, zval *value, zend_bool replace);
+PHP_HTTP_API zend_result php_http_env_set_response_header_format(long http_code, zend_bool replace, const char *fmt, ...);
+PHP_HTTP_API zend_result php_http_env_set_response_header_va(long http_code, zend_bool replace, const char *fmt, va_list argv);
 
 PHP_HTTP_API zval *php_http_env_get_server_var(const char *key_str, size_t key_len, zend_bool check);
 PHP_HTTP_API zval *php_http_env_get_superglobal(const char *key, size_t key_len);

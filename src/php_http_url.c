@@ -252,8 +252,8 @@ php_http_url_t *php_http_url_mod(const php_http_url_t *old_url, const php_http_u
 			url(buf)->query = &buf.data[buf.used];
 			url_append(&buf, php_http_buffer_append(&buf, Z_STRVAL(qstr), Z_STRLEN(qstr) + 1));
 
-			zval_dtor(&qstr);
-			zval_dtor(&qarr);
+			zval_ptr_dtor_nogc(&qstr);
+			zval_ptr_dtor_nogc(&qarr);
 		} else {
 			url_copy(query);
 		}
@@ -518,7 +518,7 @@ HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct)
 	if (strct) {
 		switch (Z_TYPE_P(strct)) {
 			default:
-				zval_dtor(strct);
+				zval_ptr_dtor_nogc(strct);
 				array_init(strct);
 				/* no break */
 			case IS_ARRAY:
@@ -577,7 +577,7 @@ HashTable *php_http_url_to_struct(const php_http_url_t *url, zval *strct)
 	return ht;
 }
 
-ZEND_RESULT_CODE php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len)
+zend_result php_http_url_encode_hash(HashTable *hash, const char *pre_encoded_str, size_t pre_encoded_len, char **encoded_str, size_t *encoded_len)
 {
 	const char *arg_sep_str = "&";
 	size_t arg_sep_len = 1;
@@ -596,7 +596,7 @@ ZEND_RESULT_CODE php_http_url_encode_hash(HashTable *hash, const char *pre_encod
 	return SUCCESS;
 }
 
-ZEND_RESULT_CODE php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *pre_encoded_str, size_t pre_encoded_len)
+zend_result php_http_url_encode_hash_ex(HashTable *hash, php_http_buffer_t *qstr, const char *arg_sep_str, size_t arg_sep_len, const char *val_sep_str, size_t val_sep_len, const char *pre_encoded_str, size_t pre_encoded_len)
 {
 	if (pre_encoded_len && pre_encoded_str) {
 		php_http_buffer_append(qstr, pre_encoded_str, pre_encoded_len);
@@ -793,7 +793,7 @@ static inline size_t parse_mb(struct parse_state *state, parse_mb_what_t what, c
 	return 0;
 }
 
-static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *ptr)
+static zend_result parse_userinfo(struct parse_state *state, const char *ptr)
 {
 	size_t mb;
 	const char *password = NULL, *end = state->ptr, *tmp = ptr;
@@ -875,7 +875,7 @@ static ZEND_RESULT_CODE parse_userinfo(struct parse_state *state, const char *pt
 
 #if PHP_WIN32 || HAVE_UIDNA_IDNTOASCII
 typedef size_t (*parse_mb_func)(unsigned *wc, const char *ptr, const char *end);
-static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len)
+static zend_result to_utf16(parse_mb_func fn, const char *u8, uint16_t **u16, size_t *len)
 {
 	size_t offset = 0, u8_len = strlen(u8);
 
@@ -918,7 +918,7 @@ static ZEND_RESULT_CODE to_utf16(parse_mb_func fn, const char *u8, uint16_t **u1
 #	if __GNUC__
 __attribute__ ((unused))
 #	endif
-static ZEND_RESULT_CODE parse_gidn_2008(struct parse_state *state, size_t prev_len)
+static zend_result parse_gidn_2008(struct parse_state *state, size_t prev_len)
 {
 	char *idn = NULL;
 	int rv = -1;
@@ -952,7 +952,7 @@ static ZEND_RESULT_CODE parse_gidn_2008(struct parse_state *state, size_t prev_l
 #	if __GNUC__
 __attribute__ ((unused))
 #	endif
-static ZEND_RESULT_CODE parse_gidn_2003(struct parse_state *state, size_t prev_len)
+static zend_result parse_gidn_2003(struct parse_state *state, size_t prev_len)
 {
 	char *idn = NULL;
 	int rv = -1;
@@ -988,7 +988,7 @@ typedef uint16_t UChar;
 typedef enum { U_ZERO_ERROR = 0 } UErrorCode;
 int32_t uidna_IDNToASCII(const UChar *src, int32_t srcLength, UChar *dest, int32_t destCapacity, int32_t options, void *parseError, UErrorCode *status);
 #	endif
-static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state, size_t prev_len)
+static zend_result parse_uidn_2003(struct parse_state *state, size_t prev_len)
 {
 	char ebuf[64] = {0}, *error = NULL;
 	uint16_t *uhost_str, ahost_str[256];
@@ -1045,7 +1045,7 @@ static ZEND_RESULT_CODE parse_uidn_2003(struct parse_state *state, size_t prev_l
 #endif
 
 #if PHP_HTTP_HAVE_LIBICU && HAVE_UIDNA_NAMETOASCII_UTF8
-static ZEND_RESULT_CODE parse_uidn_2008(struct parse_state *state, size_t prev_len)
+static zend_result parse_uidn_2008(struct parse_state *state, size_t prev_len)
 {
 	char *error = NULL, ebuf[64] = {0};
 	UErrorCode rc = U_ZERO_ERROR;
@@ -1122,7 +1122,7 @@ static ZEND_RESULT_CODE parse_uidn_2008(struct parse_state *state, size_t prev_l
 #	if __GNUC__
 __attribute__ ((unused))
 #	endif
-static ZEND_RESULT_CODE parse_kidn(struct parse_state *state, size_t prev_len)
+static zend_result parse_kidn(struct parse_state *state, size_t prev_len)
 {
 	idn_result_t rc;
 #if PHP_HTTP_HAVE_LIBIDNKIT
@@ -1156,7 +1156,7 @@ static ZEND_RESULT_CODE parse_kidn(struct parse_state *state, size_t prev_len)
 #endif
 
 #if 0 && PHP_WIN32
-static ZEND_RESULT_CODE parse_widn_2003(struct parse_state *state, size_t prev_len)
+static zend_result parse_widn_2003(struct parse_state *state, size_t prev_len)
 {
 	char *host_ptr;
 	uint16_t *uhost_str, ahost_str[256];
@@ -1197,7 +1197,7 @@ static ZEND_RESULT_CODE parse_widn_2003(struct parse_state *state, size_t prev_l
 }
 #endif
 
-static ZEND_RESULT_CODE parse_idna(struct parse_state *state, size_t len)
+static zend_result parse_idna(struct parse_state *state, size_t len)
 {
 #if PHP_HTTP_HAVE_IDNA2008
 	if ((state->flags & PHP_HTTP_URL_PARSE_TOIDN_2008) == PHP_HTTP_URL_PARSE_TOIDN_2008
@@ -1294,7 +1294,7 @@ static const char *parse_ip6(struct parse_state *state, const char *ptr)
 }
 #endif
 
-static ZEND_RESULT_CODE parse_hostinfo(struct parse_state *state, const char *ptr)
+static zend_result parse_hostinfo(struct parse_state *state, const char *ptr)
 {
 	size_t mb, len = state->offset;
 	const char *end = state->ptr, *tmp = ptr, *port = NULL, *label = NULL;
